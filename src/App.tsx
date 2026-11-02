@@ -3,6 +3,7 @@ import { ProjectProvider } from './context/ProjectContext';
 import { ExactLandingPage } from './components/landing/ExactLandingPage';
 import { AboutPage } from './components/about/AboutPage';
 import { FeaturesPage } from './components/landing/features/FeaturesPage';
+import { FaqPage } from './faq/FaqPage';
 import { AdvantagesPage } from './components/landing/advantages/AdvantagesPage';
 import { AuthRoutePage } from './components/auth/AuthRoutePage';
 import { AcceptInvitationPage } from './components/auth/AcceptInvitationPage';
@@ -179,6 +180,7 @@ export const App: React.FC = () => {
     (location.pathname === '/masuk' || location.pathname === '/daftar') && LOGIN_UI.showModal;
   const isPrivacy = location.pathname === '/privacy';
   const isTerms = location.pathname === '/terms';
+  const isFaq = location.pathname === '/faq';
   const isHomePath = location.pathname === '/' || location.pathname === '';
   // Host blog: fallback SPA bila rewrite statis /blog/* tidak tersaji.
   const isBlogHost =
@@ -208,11 +210,12 @@ export const App: React.FC = () => {
     else if (isAdvantages) document.title = 'Keunggulan EZRAB — Mengapa Memilih EZRAB';
     else if (isPrivacy) document.title = 'Kebijakan Privasi — EZRAB';
     else if (isTerms) document.title = 'Ketentuan Layanan — EZRAB';
+    else if (isFaq) document.title = 'Pertanyaan Umum (FAQ) — EZRAB';
     else if (isAuthRoute) document.title = authNoticeTab === 'daftar' ? 'Daftar — EZRAB' : 'Masuk — EZRAB';
     else if (isAuthNotice) document.title = authNoticeTab === 'daftar' ? 'Daftar — EZRAB' : 'Masuk — EZRAB';
     else if (!isHomePath) document.title = 'Halaman Tidak Ditemukan — EZRAB';
     else document.title = 'EZRAB — RAB & Estimasi Konstruksi';
-  }, [isAbout, isFeatures, isAdvantages, isWorkspace, workspaceRoute, isPrivacy, isTerms, isAuthRoute, isAuthNotice, authNoticeTab, isHomePath]);
+  }, [isAbout, isFeatures, isAdvantages, isWorkspace, workspaceRoute, isPrivacy, isTerms, isFaq, isAuthRoute, isAuthNotice, authNoticeTab, isHomePath]);
 
   useEffect(() => {
     migrateLegacyOnboardingFlag(); // idempoten: pengguna lama tidak ditanya ulang
@@ -356,6 +359,18 @@ export const App: React.FC = () => {
         }}
       />
     );
+  } else if (isFaq) {
+    content = (
+      <FaqPage
+        onOpenAuth={handleOpenAuth}
+        onBackToLanding={handleReturnToLanding}
+        onOpenAbout={handleOpenAbout}
+        onOpenAdvantages={() => {
+          navigateTo('/keunggulan');
+          window.scrollTo(0, 0);
+        }}
+      />
+    );
   } else if (isAdvantages) {
     content = (
       <AdvantagesPage
@@ -442,6 +457,10 @@ export const App: React.FC = () => {
           onOpenAbout={handleOpenAbout}
           onOpenAdvantages={() => {
             navigateTo('/keunggulan');
+            window.scrollTo(0, 0);
+          }}
+          onOpenFaq={() => {
+            navigateTo(paths.faq());
             window.scrollTo(0, 0);
           }}
         />

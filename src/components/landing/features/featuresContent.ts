@@ -149,57 +149,6 @@ export const TRANSPARENCY = [
   },
 ];
 
-export interface Faq {
-  q: string;
-  a: string;
-}
-
-export const FAQS: Faq[] = [
-  {
-    q: 'Apa itu EZRAB?',
-    a: 'EZRAB adalah aplikasi web untuk estimasi konstruksi: menghitung volume (QTO), menyusun RAB berbasis AHSP 2026, mengelola proyek, dan membuat laporan — dibantu AI yang transparan.',
-  },
-  {
-    q: 'Siapa yang cocok menggunakan EZRAB?',
-    a: 'Estimator, quantity surveyor, kontraktor, konsultan perencana, arsitek, engineer sipil, pelaksana proyek, hingga mahasiswa konstruksi yang belajar menyusun RAB.',
-  },
-  {
-    q: 'Apa perbedaan AI Chat dan DED → RAB AI?',
-    a: 'AI Chat adalah asisten percakapan untuk bertanya dan memahami fitur. DED → RAB AI membaca gambar kerja dan menyusun draft daftar pekerjaan. Keduanya berbeda modul dengan fungsi berbeda.',
-  },
-  {
-    q: 'Bagaimana EZRAB menggunakan AHSP?',
-    a: 'EZRAB memiliki library AHSP 2026 (5.792 item) yang terintegrasi dengan penyusunan RAB. Saat Anda memilih item pekerjaan, koefisien analisa harganya ikut terbawa sebagai acuan perhitungan.',
-  },
-  {
-    q: 'Apakah harga dibuat oleh AI?',
-    a: 'Tidak. AI hanya menyusun usulan item dan perkiraan volume. Harga final selalu dihitung dari koefisien AHSP dikali database harga material, upah, dan alat milik Anda.',
-  },
-  {
-    q: 'Bagaimana jika harga atau referensi belum tersedia?',
-    a: 'Item tersebut ditandai "belum tersedia" dan tidak diisi angka karangan — tidak pernah ditampilkan sebagai nol atau diklaim sebagai harga resmi.',
-  },
-  {
-    q: 'Apakah hasil AI dapat diperiksa sebelum digunakan?',
-    a: 'Ya. Setiap angka hasil AI bisa diklik untuk melihat dasar perhitungannya, dan tidak ada yang masuk ke RAB sebelum Anda meninjau dan menyetujui.',
-  },
-  {
-    q: 'Apakah EZRAB bisa digunakan di HP?',
-    a: 'Ya. EZRAB berjalan di browser, termasuk browser HP. Tampilan menyesuaikan layar kecil.',
-  },
-  {
-    q: 'Bagaimana cara mulai menggunakan EZRAB?',
-    a: 'Buka aplikasi dan Anda langsung masuk ke workspace. Ikuti tutorial terpandu dan checklist proyek pertama untuk mulai menyusun estimasi.',
-  },
-  {
-    q: 'Bagaimana informasi mengenai paket dan harga?',
-    a: 'Lihat bagian Harga di halaman utama untuk paket Free, Starter, dan Pro beserta batasannya.',
-  },
-  {
-    q: 'Bagaimana keamanan data proyek?',
-    a: 'Setiap proyek tersimpan terpisah di workspace Anda. Fitur AI hanya memakai ringkasan yang diperlukan untuk menjawab, bukan seluruh basis data Anda.',
-  },
-];
 
 export const ANCHORS = [
   { id: 'mengapa', label: 'Mengapa EZRAB' },

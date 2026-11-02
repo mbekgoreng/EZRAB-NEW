@@ -33,6 +33,7 @@ const projectRoot = (projectId: string) => `${PROJECTS_PREFIX}/${encodeURICompon
 export const paths = {
   home: () => '/',
   about: () => '/about',
+  faq: () => '/faq',
   login: () => '/masuk',
   signup: () => '/daftar',
   loginRole: () => '/masuk/role',

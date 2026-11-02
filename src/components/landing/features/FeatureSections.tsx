@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
-import { ChevronDown, Check, ShieldCheck, ArrowRight, Layers, Award, Tag } from 'lucide-react';
+import React from 'react';
+import { Check, ShieldCheck, ArrowRight, Layers, Award, Tag } from 'lucide-react';
 import {
   PROBLEMS,
   AI_ROLES,
   AUDIENCES,
   START_STEPS,
   TRANSPARENCY,
-  FAQS,
 } from './featuresContent';
+import { FaqAccordion } from '../../../faq/FaqAccordion';
+import { getFaqsByIds, FAQ_FITUR_IDS } from '../../../faq/faqData';
 
 /* ---------- B — Mengapa EZRAB: pernyataan editorial ---------- */
 export const WhySection: React.FC = () => (
@@ -190,36 +191,9 @@ export const TransparencySection: React.FC = () => (
   </div>
 );
 
-/* ---------- M — FAQ ---------- */
-const FaqItem: React.FC<{ q: string; a: string; id: string }> = ({ q, a, id }) => {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className={`fp-faq-item ${open ? 'is-open' : ''}`}>
-      <button
-        type="button"
-        className="fp-faq-q"
-        onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}
-        aria-controls={id}
-      >
-        <span>{q}</span>
-        <ChevronDown size={18} className="fp-faq-chevron" aria-hidden="true" />
-      </button>
-      {open && (
-        <p className="fp-faq-a" id={id}>
-          {a}
-        </p>
-      )}
-    </div>
-  );
-};
-
+/* ---------- M — FAQ (dataset kanonis src/faq/faqData.ts) ---------- */
 export const FaqSection: React.FC = () => (
-  <div className="fp-faq-list">
-    {FAQS.map((f, i) => (
-      <FaqItem key={f.q} q={f.q} a={f.a} id={`faq-a-${i}`} />
-    ))}
-  </div>
+  <FaqAccordion items={getFaqsByIds(FAQ_FITUR_IDS)} idPrefix="fitur-faq" />
 );
 
 /* ---------- Wayfinding: tiga jalur + CTA mulai (hub "Kenali EZRAB") ---------- */

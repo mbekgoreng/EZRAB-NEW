@@ -1,0 +1,76 @@
+/* FAQ EZRAB — akordeon bersama (beranda, /fitur, /faq) + halaman /faq.
+   Bahasa visual mengikuti landing: terang premium, navy & blue-gray,
+   aksen biru EZRAB, Plus Jakarta Sans. Tanpa library tambahan. */
+
+/* ---------- Akordeon (dipakai semua permukaan) ---------- */
+.faq-acc-list {display:flex;flex-direction:column;gap:10px}
+.faq-acc-item {background:#fff;border:1px solid #E2E8F0;border-radius:14px;overflow:hidden;transition:border-color .2s ease, box-shadow .2s ease}
+.faq-acc-item:hover {border-color:#C7D6EA}
+.faq-acc-item.open {border-color:#B9CFF5;box-shadow:0 10px 26px rgba(15,37,69,.06)}
+.faq-acc-heading {margin:0}
+.faq-acc-q {width:100%;display:flex;align-items:center;justify-content:space-between;gap:16px;background:none;border:0;cursor:pointer;text-align:left;padding:17px 20px;font-family:inherit;font-size:15.5px;font-weight:700;color:#0F2545;line-height:1.45}
+.faq-acc-q:hover {background:#F7FAFD}
+.faq-acc-q:focus-visible {outline:2px solid #2563EB;outline-offset:-2px}
+.faq-acc-chevron {flex:none;color:#2563EB;transition:transform .25s ease}
+.faq-acc-item.open .faq-acc-chevron {transform:rotate(180deg)}
+.faq-acc-a {animation:faqAccIn .28s ease}
+.faq-acc-a p {margin:0;padding:0 20px 19px;font-size:15px;line-height:1.68;color:#4A5B74}
+@keyframes faqAccIn {from {opacity:0;transform:translateY(-5px)} to {opacity:1;transform:none}}
+
+/* ---------- Halaman /faq ---------- */
+.faq-page {min-height:100vh;background:#F7FAFD;font-family:'Plus Jakarta Sans',system-ui,sans-serif;color:#0F2545}
+.faq-main {max-width:920px;margin:0 auto;padding:132px 24px 30px}
+.faq-hero {text-align:center;max-width:720px;margin:0 auto}
+.faq-eyebrow {font-size:12px;font-weight:800;letter-spacing:.16em;color:#2563EB;text-transform:uppercase}
+.faq-hero h1 {margin:14px 0 0;font-size:clamp(30px,5vw,44px);font-weight:800;letter-spacing:-.02em;line-height:1.16;color:#0A2540}
+.faq-hero .faq-sub {margin:16px auto 0;font-size:16.5px;line-height:1.6;color:#5B6B82}
+.faq-search {margin:30px auto 0;display:flex;align-items:center;gap:10px;background:#fff;border:1.5px solid #CBD5E1;border-radius:14px;padding:6px 8px 6px 16px;max-width:620px;transition:border-color .2s ease, box-shadow .2s ease}
+.faq-search:focus-within {border-color:#2563EB;box-shadow:0 0 0 4px rgba(37,99,235,.12)}
+.faq-search svg {flex:none;color:#7A8CA3}
+.faq-search input {flex:1;min-width:0;border:0;outline:0;background:none;font-family:inherit;font-size:15.5px;color:#0F2545;padding:10px 0}
+.faq-search input::placeholder {color:#8494AB}
+.faq-clear {flex:none;display:inline-flex;align-items:center;gap:6px;border:1px solid #E2E8F0;background:#F1F5F9;color:#33475F;font-family:inherit;font-size:13px;font-weight:700;border-radius:999px;padding:7px 13px;cursor:pointer}
+.faq-clear:hover {background:#E8EEF6}
+.faq-clear:focus-visible {outline:2px solid #2563EB;outline-offset:2px}
+.faq-count {margin:16px 0 0;font-size:13.5px;color:#64748B;text-align:center}
+.faq-cats {margin:34px auto 6px;display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:860px}
+.faq-chip {border:1px solid #DCE5F0;background:#fff;color:#33475F;font-family:inherit;font-size:13.5px;font-weight:600;border-radius:999px;padding:9px 15px;cursor:pointer;transition:background .18s ease,color .18s ease,border-color .18s ease}
+.faq-chip:hover {border-color:#2563EB;color:#1E40AF}
+.faq-chip:focus-visible {outline:2px solid #2563EB;outline-offset:2px}
+.faq-chip.on {background:#2563EB;border-color:#2563EB;color:#fff}
+.faq-group {margin-top:38px}
+.faq-group h2 {margin:0 0 6px;font-size:20px;font-weight:800;letter-spacing:-.01em;color:#0F2545}
+.faq-group .faq-group-count {margin:0 0 14px;font-size:13.5px;color:#7A8CA3}
+.faq-empty {margin-top:38px;text-align:center;background:#fff;border:1.5px dashed #C7D2E2;border-radius:16px;padding:44px 26px}
+.faq-empty h2 {margin:0;font-size:19px;font-weight:800;color:#0F2545}
+.faq-empty p {margin:10px auto 0;max-width:440px;font-size:15px;line-height:1.6;color:#5B6B82}
+.faq-empty .faq-clear {margin-top:20px}
+.faq-cta {margin:52px 0 64px;background:linear-gradient(135deg,#EFF6FF,#E8F0FE);border:1px solid #CFE0F7;border-radius:20px;padding:38px 34px;text-align:center}
+.faq-cta h2 {margin:0;font-size:24px;font-weight:800;letter-spacing:-.01em;color:#0A2540}
+.faq-cta p {margin:12px auto 0;max-width:520px;font-size:15.5px;line-height:1.6;color:#43536B}
+.faq-cta-row {margin-top:24px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.faq-cta a {display:inline-flex;align-items:center;gap:8px;text-decoration:none;font-size:14.5px;font-weight:700;border-radius:12px;padding:12px 20px;transition:transform .18s ease, box-shadow .18s ease, background .18s ease}
+.faq-cta a.primary {background:#2563EB;color:#fff;box-shadow:0 10px 22px rgba(37,99,235,.25)}
+.faq-cta a.primary:hover {background:#1D4ED8;transform:translateY(-1px)}
+.faq-cta a.ghost {background:#fff;color:#1E40AF;border:1px solid #C9D9F2}
+.faq-cta a.ghost:hover {background:#F4F8FF}
+.faq-cta a:focus-visible {outline:2px solid #2563EB;outline-offset:2px}
+.faq-back {display:inline-flex;align-items:center;gap:7px;margin-top:6px;background:none;border:0;cursor:pointer;font-family:inherit;font-size:14px;font-weight:700;color:#2563EB;padding:6px 2px}
+.faq-back:hover {color:#1E40AF}
+.faq-back:focus-visible {outline:2px solid #2563EB;outline-offset:2px;border-radius:6px}
+
+@media (max-width:640px) {
+  .faq-main {padding:112px 16px 20px}
+  .faq-cats {flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;padding:4px 2px 10px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .faq-cats::-webkit-scrollbar {display:none}
+  .faq-chip {flex:none}
+  .faq-acc-q {padding:15px 16px;font-size:15px}
+  .faq-acc-a p {padding:0 16px 17px}
+  .faq-cta {padding:30px 20px}
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .faq-acc-a {animation:none}
+  .faq-acc-chevron, .faq-acc-item, .faq-search, .faq-chip, .faq-cta a {transition:none}
+  .faq-cta a.primary:hover {transform:none}
+}

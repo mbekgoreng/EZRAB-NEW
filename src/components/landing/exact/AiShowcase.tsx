@@ -4,10 +4,14 @@ import { PLAN_DEFINITIONS, PLAN_IDS, type PlanId } from '../../../billing/plans'
 import logoImg from '../../../assets/ezrab-logo.png';
 import mascotImg from '../../../assets/mascot-ezrab-new.png';
 import mascotFullbody from '../../../assets/mascot-ezrab-fullbody.png';
+import mascotSitting from '../../../assets/mascot-ezrab-sitting.png';
+import { FaqAccordion } from '../../../faq/FaqAccordion';
+import { getFeaturedFaqs } from '../../../faq/faqData';
 
 interface AiShowcaseProps {
   onOpenAuth: (tab?: 'masuk' | 'daftar') => void;
   onOpenDemo: () => void;
+  onOpenFaq?: () => void;
 }
 
 const PLAN_BULLETS: Record<PlanId, string[]> = {
@@ -34,7 +38,7 @@ const formatNum = (n: number) => n.toLocaleString('id-ID');
  * strip pendukung, kejujuran AI, harga (data kanonis plans.ts), FAQ, CTA, footer.
  * Semua ilustrasi adalah SIMULASI animasi CSS — diberi label sebagai ilustrasi.
  */
-export const AiShowcase: React.FC<AiShowcaseProps> = ({ onOpenAuth, onOpenDemo }) => {
+export const AiShowcase: React.FC<AiShowcaseProps> = ({ onOpenAuth, onOpenDemo, onOpenFaq }) => {
   // Animasi transisi: teks & gambar muncul berjenjang (fade + naik) saat
   // masuk viewport. Kelas .rv/.rv-on diatur di landing-ai-showcase.css;
   // prefers-reduced-motion menonaktifkannya dari sisi CSS.
@@ -44,7 +48,7 @@ export const AiShowcase: React.FC<AiShowcaseProps> = ({ onOpenAuth, onOpenDemo }
     if (!root) return;
     const targets = Array.from(
       root.querySelectorAll<HTMLElement>(
-        '.ezai-sec h2, .ezai-sec .eyebrow, .ezai-sec .sub, .ezai-sec .step, .win, .plan, .pillar, .tile, .hcard, .qa, .mini, .cta-box'
+        '.ezai-sec h2, .ezai-sec .eyebrow, .ezai-sec .sub, .ezai-sec .step, .win, .plan, .pillar, .tile, .hcard, .faq-acc-item, .mini, .cta-box'
       )
     );
     targets.forEach((el) => el.classList.add('rv'));
@@ -337,19 +341,10 @@ export const AiShowcase: React.FC<AiShowcaseProps> = ({ onOpenAuth, onOpenDemo }
       </div></section>
 
       <section className="ezai-sec" id="faq" style={{paddingTop: '16px'}}><div className="wrap">
-      <div className="center"><h2 style={{fontSize: '32px'}}>Sering ditanyakan <span className="bl">soal EZRAB</span></h2></div>
-      <div className="faq">
-      <div className="qa"><b>Apakah AI bisa mengarang harga? <span>−</span></b><p>Tidak. Harga satuan selalu diambil dari AHSP 2026 atau data harga proyek Anda. Jika harga resmi belum tersedia, item ditahan dan diberi label — tidak pernah diisi angka karangan atau Rp0.</p></div>
-      <div className="qa"><b>Bisakah hasil AI diedit manual? <span>+</span></b><p>Bisa, selalu. Hasil DED Estimate AI, Smart RAB, dan AI Document masuk sebagai draf yang dapat Anda periksa, ubah, dan kunci sendiri sebelum dipakai.</p></div>
-      <div className="qa"><b>Apakah gambar kerja saya dipakai melatih AI? <span>+</span></b><p>Gambar dan dokumen Anda hanya diproses untuk proyek Anda. Anda dapat menghapus proyek beserta datanya kapan saja.</p></div>
-
-      <div className="qa"><b>EZRAB itu untuk siapa? <span>+</span></b><p>Untuk kontraktor, konsultan perencana, estimator, dan pemilik proyek — dari renovasi rumah tinggal sampai gedung dan jalan. Jika pekerjaan Anda berputar di sekitar RAB, volume, dan AHSP, EZRAB dibuat untuk Anda.</p></div>
-      <div className="qa"><b>Apakah data AHSP di EZRAB resmi? <span>+</span></b><p>Ya. AHSP 2026 di EZRAB bersumber dari dokumen resmi (SE DJBK Kementerian PUPR) dan koefisiennya tidak diubah. Harga satuan dihitung dari koefisien × harga dasar setempat; item yang belum ada sumber resminya diberi label yang jelas, bukan dikarang.</p></div>
-      <div className="qa"><b>Bisakah hasil RAB diekspor ke Excel atau PDF? <span>+</span></b><p>Bisa. RAB, rekapitulasi, dan laporan dapat diekspor ke Excel dan PDF — siap dikirim ke klien atau dilampirkan pada penawaran.</p></div>
-      <div className="qa"><b>Apakah harus install aplikasi? <span>+</span></b><p>Tidak. EZRAB adalah aplikasi web — cukup buka dari browser di laptop atau HP, tanpa install. Di HP, tampilannya dirancang ringkas dengan fungsi yang sama seperti di web.</p></div>
-      <div className="qa"><b>Berapa biaya EZRAB? Apakah ada yang gratis? <span>+</span></b><p>Ada paket Gratis (Rp0) dengan 100 kredit AI awal. Paket berbayar mulai Rp54.999/bulan dengan kredit AI setiap bulan. Saat ini langganan masih dalam mode simulasi — belum ada penagihan nyata.</p></div>
-      <div className="qa"><b>Bisakah mencoba tanpa daftar? <span>+</span></b><p>Bisa. Gunakan mode demo — masuk sebagai peran demo dan jelajahi workspace EZRAB tanpa perlu membuat akun.</p></div></div>
-      <div className="cta-box" style={{marginTop: '132px'}}><img className="mascot-cta" src={mascotFullbody} alt="Maskot EZRAB" /><span className="eyebrow" style={{background: 'rgba(255,255,255,.14)', borderColor: 'rgba(255,255,255,.3)', color: '#DCEBFF'}}> Mulai Sekarang</span>
+      <div className="center"><span className="eyebrow">Pusat Bantuan</span><h2 style={{fontSize: '32px'}}>Sering ditanyakan <span className="bl">soal EZRAB</span></h2></div>
+      <div style={{maxWidth: '860px', margin: '34px auto 0'}}><FaqAccordion items={getFeaturedFaqs()} idPrefix="home-faq" /></div>
+      <div className="center" style={{marginTop: '26px'}}><button type="button" className="btn" onClick={() => onOpenFaq?.()}>Lihat Semua Pertanyaan</button></div>
+      <div className="cta-box" style={{marginTop: '132px'}}><img className="mascot-cta" src={mascotSitting} alt="Maskot EZRAB" /><span className="eyebrow" style={{background: 'rgba(255,255,255,.14)', borderColor: 'rgba(255,255,255,.3)', color: '#DCEBFF'}}> Mulai Sekarang</span>
       <h2>Rasakan estimator<br/>yang bekerja dengan AI.</h2>
       <p className="sub" style={{margin: '0 auto 30px', color: '#C9DCF7'}}>Masuk sebagai peran demo dan coba DED Estimate AI, Chat AI, dan AI Document — tanpa kartu kredit.</p>
       <div style={{display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap'}}><button className="btn" style={{background: '#fff', color: '#1E40AF'}} onClick={onOpenDemo}>Coba Masuk sebagai Demo</button><button className="btn ghost" onClick={() => onOpenAuth('daftar')}>Daftar Gratis</button></div></div>
