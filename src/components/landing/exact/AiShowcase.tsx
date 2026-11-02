@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import '../../../styles/landing-ai-showcase.css';
 import { PLAN_DEFINITIONS, PLAN_IDS, type PlanId } from '../../../billing/plans';
 import logoImg from '../../../assets/ezrab-logo.png';
 import mascotImg from '../../../assets/mascot-ezrab-new.png';
-import mascotCutout from '../../../assets/mascot-ezrab-cutout.png';
+import mascotFullbody from '../../../assets/mascot-ezrab-fullbody.png';
 
 interface AiShowcaseProps {
   onOpenAuth: (tab?: 'masuk' | 'daftar') => void;
@@ -35,6 +35,48 @@ const formatNum = (n: number) => n.toLocaleString('id-ID');
  * Semua ilustrasi adalah SIMULASI animasi CSS — diberi label sebagai ilustrasi.
  */
 export const AiShowcase: React.FC<AiShowcaseProps> = ({ onOpenAuth, onOpenDemo }) => {
+  // Animasi transisi: teks & gambar muncul berjenjang (fade + naik) saat
+  // masuk viewport. Kelas .rv/.rv-on diatur di landing-ai-showcase.css;
+  // prefers-reduced-motion menonaktifkannya dari sisi CSS.
+  const scopeRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const root = scopeRef.current;
+    if (!root) return;
+    const targets = Array.from(
+      root.querySelectorAll<HTMLElement>(
+        '.ezai-sec h2, .ezai-sec .eyebrow, .ezai-sec .sub, .ezai-sec .step, .win, .plan, .pillar, .tile, .hcard, .qa, .mini, .cta-box'
+      )
+    );
+    targets.forEach((el) => el.classList.add('rv'));
+    const perParent = new Map<Element, number>();
+    targets.forEach((el) => {
+      const p = el.parentElement;
+      if (!p) return;
+      const n = perParent.get(p) ?? 0;
+      perParent.set(p, n + 1);
+      el.style.transitionDelay = `${Math.min(n * 70, 350)}ms`;
+    });
+    if (!('IntersectionObserver' in window)) {
+      targets.forEach((el) => el.classList.add('rv-on'));
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (!e.isIntersecting) return;
+          const el = e.target as HTMLElement;
+          el.classList.add('rv-on');
+          io.unobserve(el);
+          window.setTimeout(() => {
+            el.style.transitionDelay = '0ms';
+          }, 1000);
+        });
+      },
+      { threshold: 0.1, rootMargin: '0px 0px -6% 0px' }
+    );
+    targets.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, []);
   const plansBlock = (
     <div className="plans">
       {PLAN_IDS.map((id) => {
@@ -72,7 +114,7 @@ export const AiShowcase: React.FC<AiShowcaseProps> = ({ onOpenAuth, onOpenDemo }
   );
 
   return (
-    <div className="ezai-scope">
+    <div className="ezai-scope" ref={scopeRef}>
       <section className="ezai-sec"><div className="grid-bg"></div><div className="glow" style={{width: '560px', height: '560px', background: 'rgba(37,99,235,.15)', top: '-160px', left: '50%', transform: 'translateX(-50%)'}}></div>
       <div className="wrap center" style={{position: 'relative'}}>
       <span className="eyebrow"> Fitur AI EZRAB</span>
@@ -238,7 +280,7 @@ export const AiShowcase: React.FC<AiShowcaseProps> = ({ onOpenAuth, onOpenDemo }
       </div>
       </div>
       <div style={{position: 'relative'}}>
-      <img className="mascot-hero" src={mascotCutout} alt="Maskot EZRAB" />
+      <img className="mascot-hero" src={mascotFullbody} alt="Maskot EZRAB" />
       <div className="win">
       <div className="win-head"><span className="dot" style={{background: '#F87171'}}></span><span className="dot" style={{background: '#FBBF24'}}></span><span className="dot" style={{background: '#34D399'}}></span><span className="win-title">Ezrab AI Assistant — panel pendamping</span></div>
       <div className="sim" style={{borderRadius: '0 0 19px 19px', overflow: 'hidden'}}>
@@ -307,7 +349,7 @@ export const AiShowcase: React.FC<AiShowcaseProps> = ({ onOpenAuth, onOpenDemo }
       <div className="qa"><b>Apakah harus install aplikasi? <span>+</span></b><p>Tidak. EZRAB adalah aplikasi web — cukup buka dari browser di laptop atau HP, tanpa install. Di HP, tampilannya dirancang ringkas dengan fungsi yang sama seperti di web.</p></div>
       <div className="qa"><b>Berapa biaya EZRAB? Apakah ada yang gratis? <span>+</span></b><p>Ada paket Gratis (Rp0) dengan 100 kredit AI awal. Paket berbayar mulai Rp54.999/bulan dengan kredit AI setiap bulan. Saat ini langganan masih dalam mode simulasi — belum ada penagihan nyata.</p></div>
       <div className="qa"><b>Bisakah mencoba tanpa daftar? <span>+</span></b><p>Bisa. Gunakan mode demo — masuk sebagai peran demo dan jelajahi workspace EZRAB tanpa perlu membuat akun.</p></div></div>
-      <div className="cta-box" style={{marginTop: '70px'}}><img className="mascot-cta" src={mascotCutout} alt="Maskot EZRAB" /><span className="eyebrow" style={{background: 'rgba(255,255,255,.14)', borderColor: 'rgba(255,255,255,.3)', color: '#DCEBFF'}}> Mulai Sekarang</span>
+      <div className="cta-box" style={{marginTop: '132px'}}><img className="mascot-cta" src={mascotFullbody} alt="Maskot EZRAB" /><span className="eyebrow" style={{background: 'rgba(255,255,255,.14)', borderColor: 'rgba(255,255,255,.3)', color: '#DCEBFF'}}> Mulai Sekarang</span>
       <h2>Rasakan estimator<br/>yang bekerja dengan AI.</h2>
       <p className="sub" style={{margin: '0 auto 30px', color: '#C9DCF7'}}>Masuk sebagai peran demo dan coba DED Estimate AI, Chat AI, dan AI Document — tanpa kartu kredit.</p>
       <div style={{display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap'}}><button className="btn" style={{background: '#fff', color: '#1E40AF'}} onClick={onOpenDemo}>Coba Masuk sebagai Demo</button><button className="btn ghost" onClick={() => onOpenAuth('daftar')}>Daftar Gratis</button></div></div>

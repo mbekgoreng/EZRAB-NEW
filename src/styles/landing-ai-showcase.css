@@ -280,13 +280,13 @@
 .ezai-scope .on {color:#15803D;font-size:11px;font-weight:700}
 .ezai-scope .acard {margin-top:8px;border:1px solid #BBF7D0;background:#F0FDF4;border-radius:10px;padding:8px 11px;font-size:12.5px;color:#166534;display:flex;gap:8px;align-items:center}
 .ezai-scope .bigamt {font-size:21px;font-weight:800;color:#0A2540}
-.ezai-scope .mascot-hero {position:absolute;left:-88px;bottom:-4px;width:152px;z-index:5;filter:drop-shadow(0 14px 20px rgba(13,40,80,.25))}
-.ezai-scope .mascot-cta {position:absolute;right:30px;top:-64px;width:124px;z-index:5;filter:drop-shadow(0 12px 18px rgba(2,20,60,.35))}
+.ezai-scope .mascot-hero {position:absolute;right:-32px;top:-86px;width:124px;z-index:5;filter:drop-shadow(0 14px 20px rgba(13,40,80,.25))}
+.ezai-scope .mascot-cta {position:absolute;right:38px;top:-124px;width:118px;z-index:5;filter:drop-shadow(0 12px 18px rgba(2,20,60,.35))}
 @keyframes curAsst{0%{left:76%;top:88%;opacity:0}5%{opacity:1}56%{left:76%;top:88%}66%{left:33%;top:74%}70%{transform:scale(1)}72%{transform:scale(.78)}74%{transform:scale(1)}90%{opacity:1}96%,100%{left:33%;top:74%;opacity:0}}
 .ezai-scope .curAsst {animation:curAsst 12s ease-in-out infinite}
 .ezai-scope .ringAsst {left:calc(33% - 3px);top:calc(74% - 4px);animation:ringAsstA 12s ease-in-out infinite}
 @keyframes ringAsstA{0%,68%{opacity:0;transform:scale(.4)}73%{opacity:.9}81%,100%{opacity:0;transform:scale(1.6)}}
-@media(max-width:1150px) {
+@media(max-width:1280px) {
 .ezai-scope .mascot-hero {display:none}
 }
 /* Jangkar seksi: beri ruang di bawah navbar lengket supaya label & judul seksi tidak tertutup saat lompat via tautan navbar */
@@ -299,7 +299,22 @@
 .ezai-scope .plan .tag {white-space:nowrap}
 }
 @media(max-width:640px) {
-.ezai-scope .mascot-cta {width:86px;top:-44px;right:14px}
+.ezai-scope .mascot-cta {width:88px;top:-90px;right:16px}
+}
+/* Animasi transisi teks & gambar: elemen muncul berjenjang (fade + naik) saat masuk viewport; kelas .rv/.rv-on dipasang AiShowcase via IntersectionObserver (nama .rv-on dipilih agar tidak bertabrakan dengan kelas .on status online) */
+.ezai-scope .rv {opacity:0;transform:translateY(26px);transition:opacity .65s ease,transform .65s cubic-bezier(.21,.8,.28,1)}
+.ezai-scope .rv.rv-on {opacity:1;transform:none}
+.ezai-scope .win.rv {transform:translateY(30px) scale(.985)}
+.ezai-scope .win.rv.rv-on {transform:none}
+.ezai-scope .plan.rv-on:hover, .ezai-scope .pillar.rv-on:hover, .ezai-scope .tile.rv-on:hover, .ezai-scope .hcard.rv-on:hover {transform:translateY(-4px)}
+.ezai-scope .btn {transition:transform .25s ease,box-shadow .25s ease,background .25s ease}
+.ezai-scope .btn:hover {transform:translateY(-2px);box-shadow:0 12px 24px rgba(37,99,235,.28)}
+@keyframes mascotBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.ezai-scope .mascot-hero, .ezai-scope .mascot-cta {animation:mascotBob 4.6s ease-in-out infinite}
+@media (prefers-reduced-motion: reduce) {
+.ezai-scope .rv {opacity:1;transform:none;transition:none}
+.ezai-scope .mascot-hero, .ezai-scope .mascot-cta {animation:none}
+.ezai-scope .btn:hover, .ezai-scope .plan.rv-on:hover, .ezai-scope .pillar.rv-on:hover, .ezai-scope .tile.rv-on:hover, .ezai-scope .hcard.rv-on:hover {transform:none}
 }
 .ezai-scope .eyebrow {background:none!important;border:none!important;border-radius:0!important;padding:0!important}
 .ezai-scope .ezai-footer button{background:none;border:none;padding:0;font:inherit;color:#8498AF;cursor:pointer;text-align:left;font-size:13.5px}
