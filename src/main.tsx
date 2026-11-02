@@ -7,6 +7,7 @@ import { CurrencyProvider } from './context/CurrencyContext';
 import { I18nProvider } from './i18n';
 import { RoleProvider } from './auth/RoleContext';
 import { AuthProvider } from './auth/AuthContext';
+import { Analytics } from '@vercel/analytics/react';
 import './styles/global.css';
 import './styles/premium-themes.css';
 import './styles/magic-ai.css';
@@ -24,6 +25,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <RoleProvider>
           <AuthProvider>
             <App />
+            <Analytics />
           </AuthProvider>
         </RoleProvider>
       </I18nProvider>
