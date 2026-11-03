@@ -651,14 +651,14 @@ export const getDocumentDefinition = (id: string) => DOCUMENT_REGISTRY.find(d =>
 
 export const TENDER_PACKAGE_PRESETS = {
   ALL: [
-    'offer-letter', 'qualification', 'integrity-pact', 'personnel-availability', 'commitment-statement',
+    'offer-letter', 'qualification', 'integrity-pact', 'personnel-availability', 'competency-statement', 'commitment-statement',
     'execution-method', 'personnel-list', 'quality-plan', 'ibpr', 'jsa',
     'boq', 'rab', 'ahsp', 'recap', 'weight',
     'schedule', 'curve-s',
     'rkk'
   ],
   ADMINISTRATION: [
-    'offer-letter', 'qualification', 'integrity-pact', 'personnel-availability', 'commitment-statement'
+    'offer-letter', 'qualification', 'integrity-pact', 'personnel-availability', 'competency-statement', 'commitment-statement'
   ],
   TECHNICAL: [
     'execution-method', 'personnel-list', 'quality-plan', 'ibpr', 'jsa'

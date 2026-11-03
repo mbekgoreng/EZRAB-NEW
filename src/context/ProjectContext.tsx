@@ -37,6 +37,7 @@ import {
   computeSeedCostSummary,
   markSeedProject,
   injectOnceById,
+  reconcileProjectSummaries,
 } from '../lib/demoSeed';
 import {
   PREMIUM_DEMO_PROJECT,
@@ -503,6 +504,15 @@ const FLAGSHIP_COST_SUMMARY = computeSeedCostSummary(DEFAULT_FLAGSHIP_RAB_ITEMS,
 const DEFAULT_FLAGSHIP_PROJECT: Project = {
   id: DEFAULT_FLAGSHIP_PROJECT_ID,
   projectNumber: 'PRJ-2026-001',
+  // AUDIT REGRESI FINAL (2026-11-03): ringkasan biaya flagship DITULIS
+  // terkonfigurasi — PPN 11% terhitung (taxAmount > 0) dan overhead 5%.
+  // Menurut model konfigurasi owner 2026-10-27, konfigurasi hidup di
+  // FIELD proyek (mesin kanonis membacanya dari sini; overhead tanpa
+  // field jatuh ke fallback 10 dan PPN opt-in butuh flag). Tanpa kedua
+  // field ini, ekspor PDF/Rekap/kalkulasi ulang mengubah total proyek
+  // (843.305.479 / tanpa PPN) tanpa tindakan pengguna apa pun.
+  ppnEnabled: true,
+  overheadPercent: 5,
   name: 'Rumah Tinggal 2 Lantai',
   client: 'Ir. Hendra Kusuma',
   clientName: 'Ir. Hendra Kusuma',
@@ -520,6 +530,11 @@ const DEFAULT_FLAGSHIP_PROJECT: Project = {
 
 export const DEFAULT_PORTFOLIO_PROJECTS: Project[] = ([
   DEFAULT_FLAGSHIP_PROJECT,
+  // AUDIT LINTAS MODUL (2026-11-03): proyek bawaan selain flagship & premium
+  // demo TIDAK memiliki item RAB di store (ezrab_prod_rab_items) — ringkasan
+  // biayanya karena itu dikosongkan agar total selalu cocok dengan record
+  // item yang benar-benar ada (proyek kosong tetap jujur kosong). Identitas
+  // proyek (nama/klien/lokasi/status/progres) tidak diubah.
   {
     id: 'PRJ-KANTOR-BDG-02',
     projectNumber: 'PRJ-2026-002',
@@ -535,11 +550,11 @@ export const DEFAULT_PORTFOLIO_PROJECTS: Project[] = ([
     updatedAt: '2026-09-18T14:12:00.000Z',
         itemsCount: 0, sections: [],
     costSummary: {
-      directCost: 8054054054,
+      directCost: 0,
       overheadPercent: 5,
-      overheadAmount: 402702702,
+      overheadAmount: 0,
       profitPercent: 5,
-      profitAmount: 402702702,
+      profitAmount: 0,
       contingencyPercent: 0,
       contingencyAmount: 0,
       directorMarkupPercent: 0,
@@ -547,11 +562,11 @@ export const DEFAULT_PORTFOLIO_PROJECTS: Project[] = ([
       directorMarkupTotal: 0,
       showMarkupToEditor: false,
       showMarkupToClient: false,
-      subtotalBeforeTax: 8859459458,
+      subtotalBeforeTax: 0,
       taxPercent: 11,
-      taxAmount: 80540542,
-      grandTotal: 8940000000,
-      costPerM2: 5200000,
+      taxAmount: 0,
+      grandTotal: 0,
+      costPerM2: 0,
     },
   },
   {
@@ -567,14 +582,14 @@ export const DEFAULT_PORTFOLIO_PROJECTS: Project[] = ([
     totalRab: 0,
     createdAt: '2026-09-17T08:00:00.000Z',
     updatedAt: '2026-09-17T09:03:00.000Z',
-    itemsCount: 18,
+    itemsCount: 0,
     sections: [],
     costSummary: {
-      directCost: 3200000000,
+      directCost: 0,
       overheadPercent: 5,
-      overheadAmount: 160000000,
+      overheadAmount: 0,
       profitPercent: 5,
-      profitAmount: 160000000,
+      profitAmount: 0,
       contingencyPercent: 0,
       contingencyAmount: 0,
       directorMarkupPercent: 0,
@@ -582,11 +597,11 @@ export const DEFAULT_PORTFOLIO_PROJECTS: Project[] = ([
       directorMarkupTotal: 0,
       showMarkupToEditor: false,
       showMarkupToClient: false,
-      subtotalBeforeTax: 3520000000,
+      subtotalBeforeTax: 0,
       taxPercent: 11,
-      taxAmount: 387200000,
-      grandTotal: 3907200000,
-      costPerM2: 3200000,
+      taxAmount: 0,
+      grandTotal: 0,
+      costPerM2: 0,
     },
   },
   {
@@ -599,17 +614,17 @@ export const DEFAULT_PORTFOLIO_PROJECTS: Project[] = ([
     buildingType: 'Gudang & Pabrik',
     status: 'completed',
     progress: 100,
-    totalRab: 5750000000,
+    totalRab: 0,
     createdAt: '2026-07-01T08:00:00.000Z',
     updatedAt: '2026-09-15T11:00:00.000Z',
-    itemsCount: 22,
+    itemsCount: 0,
     sections: [],
     costSummary: {
-      directCost: 5180180180,
+      directCost: 0,
       overheadPercent: 5,
-      overheadAmount: 259009009,
+      overheadAmount: 0,
       profitPercent: 5,
-      profitAmount: 259009009,
+      profitAmount: 0,
       contingencyPercent: 0,
       contingencyAmount: 0,
       directorMarkupPercent: 0,
@@ -617,11 +632,11 @@ export const DEFAULT_PORTFOLIO_PROJECTS: Project[] = ([
       directorMarkupTotal: 0,
       showMarkupToEditor: false,
       showMarkupToClient: false,
-      subtotalBeforeTax: 5698198198,
+      subtotalBeforeTax: 0,
       taxPercent: 11,
-      taxAmount: 51801802,
-      grandTotal: 5750000000,
-      costPerM2: 7800000,
+      taxAmount: 0,
+      grandTotal: 0,
+      costPerM2: 0,
     },
   },
   {
@@ -634,17 +649,17 @@ export const DEFAULT_PORTFOLIO_PROJECTS: Project[] = ([
     buildingType: 'Rumah Tinggal',
     status: 'draft',
     progress: 0,
-    totalRab: 813111324,
+    totalRab: 0,
     createdAt: '2026-08-10T08:00:00.000Z',
     updatedAt: '2026-09-14T08:30:00.000Z',
-    itemsCount: 7,
+    itemsCount: 0,
     sections: [],
     costSummary: {
-      directCost: 732532724,
+      directCost: 0,
       overheadPercent: 5,
-      overheadAmount: 36626636,
+      overheadAmount: 0,
       profitPercent: 5,
-      profitAmount: 36626636,
+      profitAmount: 0,
       contingencyPercent: 0,
       contingencyAmount: 0,
       directorMarkupPercent: 0,
@@ -652,11 +667,11 @@ export const DEFAULT_PORTFOLIO_PROJECTS: Project[] = ([
       directorMarkupTotal: 0,
       showMarkupToEditor: false,
       showMarkupToClient: false,
-      subtotalBeforeTax: 805786000,
+      subtotalBeforeTax: 0,
       taxPercent: 11,
-      taxAmount: 7325324,
-      grandTotal: 813111324,
-      costPerM2: 2450000,
+      taxAmount: 0,
+      grandTotal: 0,
+      costPerM2: 0,
     },
   },
   // F1a: seluruh proyek bawaan ditandai sebagai data contoh (isDemo) dan
@@ -832,6 +847,23 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }
     });
     return unsubscribe;
+  }, []);
+
+  // AUDIT REGRESI FINAL (2026-11-03): rekonsiliasi cache ringkasan SEKALI
+  // saat muat awal — instalasi lama dapat menyimpan totalRab/costSummary
+  // basi terhadap record itemnya. Non-destruktif & idempoten (lihat
+  // reconcileProjectSummaries di lib/demoSeed): record item tidak diubah,
+  // proyek tanpa item tidak disentuh, perlakuan pajak dipertahankan.
+  const summaryReconcileDoneRef = useRef(false);
+  useEffect(() => {
+    if (summaryReconcileDoneRef.current) return;
+    summaryReconcileDoneRef.current = true;
+    setProjects((prev) => {
+      const { projects: next, changedIds } = reconcileProjectSummaries(prev, allRabItems);
+      return changedIds.length > 0 ? next : prev;
+    });
+    // Hanya muat awal: allRabItems awal adalah hasil loader penyimpanan.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Refs for unmount flush — always point at latest state.

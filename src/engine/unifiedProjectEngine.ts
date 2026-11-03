@@ -129,8 +129,13 @@ export class UnifiedProjectEngine {
       try {
         const result = loadVersioned<any[]>('ezrab_prod_rab_items');
         if (result.ok && Array.isArray(result.data) && result.data.length > 0) {
-          const matched = result.data.filter((it: any) => it.projectId === project.id);
-          rawItems = matched.length > 0 ? matched : result.data;
+          // AUDIT REGRESI FINAL (2026-11-03): fallback lama memakai SEMUA
+          // item dari SEMUA proyek bila proyek ini tidak punya item —
+          // ekspor PDF proyek kosong (PRJ-2026-002) terbukti berisi item
+          // flagship + premium di bawah nama proyek kosong itu (total
+          // Rp1.148.979.504 karangan lintas proyek). Kini: hanya item
+          // milik proyek ini; tidak ada padanan = tetap kosong.
+          rawItems = result.data.filter((it: any) => it.projectId === project.id);
         }
       } catch {
         // ignore storage error

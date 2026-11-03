@@ -61,7 +61,6 @@ import { useProject } from '../../context/ProjectContext';
 
 // Dedicated Sub-components & Helpers
 import { MaterialInspectorPanel } from './MaterialInspectorPanel';
-import { getMaterialThumbnail } from './materialThumbnailHelper';
 import { AddMaterialWizardModal } from './AddMaterialWizardModal';
 import { MaterialCompareModal } from './MaterialCompareModal';
 import { MaterialDataQualityModal } from './MaterialDataQualityModal';
@@ -90,6 +89,41 @@ export type MaterialDatabaseTab =
 interface MaterialDatabaseViewProps {
   initialTab?: MaterialDatabaseTab;
   onNavigateToTab?: (tab: string) => void;
+}
+
+/**
+ * Kelompok sinonim istilah lapangan ↔ nama katalog (audit pencarian 2026-11-03).
+ * "Hebel" adalah nama dagang bata ringan, "paralon" nama umum pipa PVC, dst. —
+ * tanpa ekspansi ini pencarian istilah lapangan menghasilkan 0–1 hasil.
+ * Ekspansi hanya MENAMBAH varian kueri; item cocok bila SATU varian cocok penuh.
+ */
+const SEARCH_SYNONYM_GROUPS: string[][] = [
+  ['hebel', 'bata ringan', 'aac', 'beton ringan'],
+  ['paralon', 'pvc'],
+  ['gipsum', 'gypsum'],
+  ['triplek', 'multiplek', 'plywood'],
+];
+
+function queryVariants(raw: string): string[] {
+  const q = raw.toLowerCase().trim().replace(/\s+/g, ' ');
+  if (!q) return [];
+  const variants = new Set<string>([q]);
+  for (const group of SEARCH_SYNONYM_GROUPS) {
+    for (const term of group) {
+      if (q.includes(term)) {
+        for (const alt of group) {
+          if (alt !== term) variants.add(q.split(term).join(alt));
+        }
+      }
+    }
+  }
+  return [...variants];
+}
+
+/** Cocok bila SEMUA token dari salah satu varian kueri muncul di teks gabungan item (token-AND lintas kolom). */
+function matchesSearchQuery(haystack: string, rawQuery: string): boolean {
+  const hay = haystack.toLowerCase();
+  return queryVariants(rawQuery).some((variant) => variant.split(' ').every((token) => hay.includes(token)));
 }
 
 const SECTOR_OPTIONS: Array<{ id: ConstructionSector | 'ALL'; label: string; icon: string }> = [
@@ -151,6 +185,25 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
   const allSuppliers = useMemo(() => matDb.getAllSuppliers(), [matDb, dbVersion]);
   const allPrices = useMemo(() => matDb.getAllPrices(), [matDb, dbVersion]);
 
+  // KPI header dihitung dari data aktif (audit 2026-11-03: angka lama hardcoded
+  // 6.164 / 24.583 / 94% tidak cocok dengan data dan menyesatkan). Nilai di sini
+  // selalu konsisten dengan tab & tabel karena berasal dari sumber yang sama.
+  const kpiStats = useMemo(() => {
+    const pricedIds = new Set(allPrices.map((p) => p.materialId));
+    const covered = allMaterials.filter((m) => pricedIds.has(m.id)).length;
+    const buildingCount = allMaterials.filter((m) => m.sector === 'BANGUNAN').length;
+    return {
+      materials: allMaterials.length,
+      priceRecords: allPrices.length,
+      brands: BRAND_CATALOG.length,
+      provinces: INDONESIA_38_PROVINCES.length,
+      coveragePct: allMaterials.length ? Math.round((covered / allMaterials.length) * 100) : 0,
+      covered,
+      buildingCount,
+      otherSectorCount: allMaterials.length - buildingCount,
+    };
+  }, [allMaterials, allPrices]);
+
   // Spreadsheet modal
   const [isSpreadsheetModalOpen, setIsSpreadsheetModalOpen] = useState(false);
 
@@ -173,6 +226,9 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
   const [selectedBrand, setSelectedBrand] = useState<string>('ALL');
   const [selectedTier, setSelectedTier] = useState<PriceTier | 'ALL'>('ALL');
   const [selectedStatus, setSelectedStatus] = useState<string>('ALL');
+  // Filter detail di HP: disembunyikan dulu, tampil saat tombol Filter diklik
+  // (perintah owner 2026-11-03). Desktop tidak terpengaruh (selalu tampil).
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   // Popover state
   const [isSectorPopoverOpen, setIsSectorPopoverOpen] = useState(false);
@@ -244,15 +300,10 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
       if (selectedTier !== 'ALL' && m.priceTier !== selectedTier) return false;
       if (selectedBrand !== 'ALL' && m.brand !== selectedBrand) return false;
 
-      // Search Query Matching
+      // Search Query Matching — token-AND lintas kolom + sinonim istilah lapangan
       if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
-        const matchName = m.name.toLowerCase().includes(q);
-        const matchCode = m.materialCode.toLowerCase().includes(q);
-        const matchBrand = m.brand?.toLowerCase().includes(q);
-        const matchSpec = m.specification?.toLowerCase().includes(q);
-        const matchAlias = m.aliases?.some((a) => a.toLowerCase().includes(q));
-        if (!matchName && !matchCode && !matchBrand && !matchSpec && !matchAlias) return false;
+        const haystack = [m.name, m.materialCode, m.brand || '', m.specification || '', ...(m.aliases || [])].join(' ');
+        if (!matchesSearchQuery(haystack, searchQuery)) return false;
       }
 
       // Province filter
@@ -298,19 +349,19 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
   const filteredLabor = useMemo(() => {
     return allLabor.filter((l) => {
       if (!searchQuery.trim()) return true;
-      const q = searchQuery.toLowerCase().trim();
-      return (
-        l.name.toLowerCase().includes(q) ||
-        l.code.toLowerCase().includes(q) ||
-        l.category.toLowerCase().includes(q) ||
-        l.subcategory.toLowerCase().includes(q) ||
-        (l.roleCategory || '').toLowerCase().includes(q) ||
-        (l.specialization || '').toLowerCase().includes(q) ||
-        (l.englishName || '').toLowerCase().includes(q) ||
-        (l.skkLevel || '').toLowerCase().includes(q) ||
-        l.aliases.some((a) => a.toLowerCase().includes(q)) ||
-        l.duties.some((d) => d.toLowerCase().includes(q))
-      );
+      const haystack = [
+        l.name,
+        l.code,
+        l.category,
+        l.subcategory,
+        l.roleCategory || '',
+        l.specialization || '',
+        l.englishName || '',
+        l.skkLevel || '',
+        ...l.aliases,
+        ...l.duties,
+      ].join(' ');
+      return matchesSearchQuery(haystack, searchQuery);
     });
   }, [allLabor, searchQuery]);
 
@@ -318,13 +369,8 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
   const filteredEquipment = useMemo(() => {
     return allEquipment.filter((e) => {
       if (!searchQuery.trim()) return true;
-      const q = searchQuery.toLowerCase();
-      return (
-        e.name.toLowerCase().includes(q) ||
-        e.code.toLowerCase().includes(q) ||
-        e.category.toLowerCase().includes(q) ||
-        e.capacity.toLowerCase().includes(q)
-      );
+      const haystack = [e.name, e.code, e.category, e.capacity].join(' ');
+      return matchesSearchQuery(haystack, searchQuery);
     });
   }, [allEquipment, searchQuery]);
 
@@ -332,13 +378,8 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
   const filteredProjectPrices = useMemo(() => {
     return projectPrices.filter((p) => {
       if (!searchQuery.trim()) return true;
-      const q = searchQuery.toLowerCase();
-      return (
-        p.code.toLowerCase().includes(q) ||
-        p.name.toLowerCase().includes(q) ||
-        p.category.toLowerCase().includes(q) ||
-        (p.specification || '').toLowerCase().includes(q)
-      );
+      const haystack = [p.code, p.name, p.category, p.specification || ''].join(' ');
+      return matchesSearchQuery(haystack, searchQuery);
     });
   }, [projectPrices, searchQuery]);
 
@@ -853,15 +894,10 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
         {/* TOP 5 KPI CARDS & COMPREHENSIVE FILTER BOX (MATERIALS ONLY) */}
         {activeCategoryTab === 'MATERIALS' && (
           <>
-            <div
-              className="mat-kpi-grid"
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
-                gap: '14px',
-                width: '100%',
-              }}
-            >
+            {/* Grid diatur penuh oleh .mat-kpi-grid di material-intelligence.css.
+                JANGAN beri gridTemplateColumns inline: inline style mengalahkan
+                media query CSS dan menghancurkan kartu di HP (audit F-DB-04). */}
+            <div className="mat-kpi-grid">
           {/* Card 1: Material Terindeks */}
           <div
             className="ez-stat mat-kpi-card"
@@ -893,8 +929,8 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
             </div>
             <div>
               <div style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(255, 255, 255, 0.88)' }}>Material Terindeks</div>
-              <div style={{ fontSize: '18px', fontWeight: 900, color: '#FFFFFF', lineHeight: 1.2 }}>6.164</div>
-              <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.8)', fontWeight: 500 }}>10 Sektor Lengkap</div>
+              <div style={{ fontSize: '18px', fontWeight: 900, color: '#FFFFFF', lineHeight: 1.2 }}>{kpiStats.materials.toLocaleString('id-ID')}</div>
+              <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.8)', fontWeight: 500 }}>{kpiStats.buildingCount.toLocaleString('id-ID')} Bangunan · {kpiStats.otherSectorCount} sektor lain</div>
             </div>
           </div>
 
@@ -928,9 +964,9 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
               <Tag size={20} />
             </div>
             <div>
-              <div style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(255, 255, 255, 0.88)' }}>Price Records</div>
-              <div style={{ fontSize: '18px', fontWeight: 900, color: '#FFFFFF', lineHeight: 1.2 }}>24.583</div>
-              <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.8)', fontWeight: 500 }}>Update 2026</div>
+              <div style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(255, 255, 255, 0.88)' }}>Record Harga</div>
+              <div style={{ fontSize: '18px', fontWeight: 900, color: '#FFFFFF', lineHeight: 1.2 }}>{kpiStats.priceRecords.toLocaleString('id-ID')}</div>
+              <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.8)', fontWeight: 500 }}>Basis data harga aktif</div>
             </div>
           </div>
 
@@ -965,7 +1001,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
             </div>
             <div>
               <div style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(255, 255, 255, 0.88)' }}>Merek & Produsen</div>
-              <div style={{ fontSize: '18px', fontWeight: 900, color: '#FFFFFF', lineHeight: 1.2 }}>42</div>
+              <div style={{ fontSize: '18px', fontWeight: 900, color: '#FFFFFF', lineHeight: 1.2 }}>{kpiStats.brands}</div>
               <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.8)', fontWeight: 500 }}>Canonical & Alias</div>
             </div>
           </div>
@@ -1001,7 +1037,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
             </div>
             <div>
               <div style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(255, 255, 255, 0.88)' }}>Cakupan Wilayah</div>
-              <div style={{ fontSize: '18px', fontWeight: 900, color: '#FFFFFF', lineHeight: 1.2 }}>38 Provinsi</div>
+              <div style={{ fontSize: '18px', fontWeight: 900, color: '#FFFFFF', lineHeight: 1.2 }}>{kpiStats.provinces} Provinsi</div>
               <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.8)', fontWeight: 500 }}>514 Kota & Kabupaten</div>
             </div>
           </div>
@@ -1033,7 +1069,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                     fill="none"
                     stroke="#FFFFFF"
                     strokeWidth="3.5"
-                    strokeDasharray="94, 100"
+                    strokeDasharray={`${kpiStats.coveragePct}, 100`}
                     strokeLinecap="round"
                   />
                 </svg>
@@ -1049,15 +1085,15 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                     color: '#FFFFFF',
                   }}
                 >
-                  94%
+                  {kpiStats.coveragePct}%
                 </span>
               </div>
               <div>
                 <div style={{ fontSize: '11px', fontWeight: 800, color: '#FFFFFF', display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <ShieldCheck size={12} color="#FFFFFF" />
-                  Kualitas Data
+                  Kelengkapan Harga
                 </div>
-                <div style={{ fontSize: '10.5px', color: 'rgba(255, 255, 255, 0.8)' }}>Source Coverage</div>
+                <div style={{ fontSize: '10.5px', color: 'rgba(255, 255, 255, 0.8)' }}>{kpiStats.covered.toLocaleString('id-ID')} dari {kpiStats.materials.toLocaleString('id-ID')} material berharga</div>
                 <button
                   onClick={() => setIsDataQualityModalOpen(true)}
                   style={{
@@ -1137,6 +1173,48 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
 
             {/* Right Controls: View Density, Columns, Export */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+              {/* Toggle Filter — hanya tampil di HP (.mat-filter-toggle di CSS).
+                  Di HP baris filter detail mulai tersembunyi; klik untuk membuka. */}
+              <button
+                className="mat-filter-toggle"
+                onClick={() => setFiltersOpen((o) => !o)}
+                aria-expanded={filtersOpen}
+                style={{
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '6px 12px',
+                  borderRadius: '10px',
+                  backgroundColor: filtersOpen ? 'var(--ez-color-primary)' : 'var(--ez-color-surface)',
+                  border: '1px solid var(--ez-color-border-strong)',
+                  color: filtersOpen ? '#FFFFFF' : 'var(--ez-color-text-body)',
+                  fontWeight: 700,
+                  fontSize: '11.5px',
+                  cursor: 'pointer',
+                }}
+              >
+                <SlidersHorizontal size={13} />
+                Filter
+                {activeFilters.length > 0 && (
+                  <span
+                    style={{
+                      minWidth: '17px',
+                      height: '17px',
+                      padding: '0 4px',
+                      borderRadius: '999px',
+                      backgroundColor: filtersOpen ? '#FFFFFF' : 'var(--ez-color-primary)',
+                      color: filtersOpen ? 'var(--ez-color-primary)' : '#FFFFFF',
+                      fontSize: '10.5px',
+                      fontWeight: 800,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    {activeFilters.length}
+                  </span>
+                )}
+                <ChevronDown size={13} style={{ transform: filtersOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s ease' }} />
+              </button>
               {/* Table / Compact Segmented Toggle */}
               <div
                 style={{
@@ -1278,16 +1356,10 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
             </div>
           </div>
 
-          {/* Row 2: 5 Filter Dropdowns Grid + More Filters */}
-          <div
-            className="mat-filter-grid-5"
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(5, minmax(0, 1fr)) 120px',
-              gap: '10px',
-              alignItems: 'flex-end',
-            }}
-          >
+          {/* Row 2: 5 Filter Dropdowns Grid + More Filters.
+              Kolom diatur .mat-filter-grid-5 di CSS — JANGAN inline
+              gridTemplateColumns (mengalahkan media query, label bertumpuk di HP). */}
+          <div className={`mat-filter-grid-5${filtersOpen ? ' is-open' : ''}`}>
             {/* Sektor Dropdown */}
             <div style={{ position: 'relative' }}>
               <label style={{ fontSize: '10px', fontWeight: 800, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block', marginBottom: '4px' }}>
@@ -1961,7 +2033,6 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                     const isOverridden = Boolean(activeOverride && activeOverride.active);
                     const isSelected = selectedMaterialIds.includes(mat.id);
                     const isInspected = selectedMaterialForInspector?.id === mat.id;
-                    const thumb = getMaterialThumbnail(mat);
                     const padY = viewDensity === 'COMPACT' ? '6px' : '9px';
 
                     return (
@@ -2319,6 +2390,45 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                       </tr>
                     );
                   })}
+                  {paginatedMaterials.length === 0 && (
+                    <tr>
+                      <td colSpan={12} style={{ padding: '40px 16px', textAlign: 'center' }}>
+                        <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--ez-color-text-strong)' }}>
+                          Tidak ditemukan
+                        </div>
+                        <div style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted, #64748B)', marginTop: '4px' }}>
+                          {searchQuery.trim()
+                            ? `Tidak ada material yang cocok dengan “${searchQuery.trim()}” pada filter aktif.`
+                            : 'Tidak ada material pada filter aktif.'}{' '}
+                          Coba kata kunci lain — istilah lapangan seperti “hebel” atau “paralon” juga dikenali.
+                        </div>
+                        <button
+                          onClick={() => {
+                            setSearchQuery('');
+                            setSelectedSector('ALL');
+                            setSelectedBrand('ALL');
+                            setSelectedTier('ALL');
+                            setSelectedStatus('ALL');
+                            setSelectedProvince('Indonesia');
+                            setCurrentPage(1);
+                          }}
+                          style={{
+                            marginTop: '12px',
+                            padding: '8px 16px',
+                            borderRadius: '8px',
+                            border: 'none',
+                            background: 'var(--ez-color-primary)',
+                            color: '#FFFFFF',
+                            fontSize: '12.5px',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          Reset Pencarian &amp; Filter
+                        </button>
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>

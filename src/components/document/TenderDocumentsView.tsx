@@ -320,7 +320,10 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
                     <div style={{ fontSize: 13, color: 'var(--ez-color-text-slate)', display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 18 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><MapPin size={13} color="#94A3B8" /> <strong>Lokasi:</strong> {proj.location || '—'}</div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Wallet size={13} color="#94A3B8" /> <strong>RAB:</strong> {formatRupiah(proj.totalRab || 0)}</div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><ClipboardList size={13} color="#94A3B8" /> <strong>Status RAB:</strong> <span style={{ color: 'var(--ez-hue-green-text-bright)', fontWeight: 600 }}>Lengkap</span></div>
+                      {/* Audit F-DP-05: lencana status sebelumnya hardcoded
+                          "Lengkap" untuk semua proyek — termasuk yang
+                          RAB-nya Rp0. Kini dihitung dari nilai RAB kartu ini. */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><ClipboardList size={13} color="#94A3B8" /> <strong>Status RAB:</strong> {(proj.totalRab || 0) > 0 ? <span style={{ color: 'var(--ez-hue-green-text-bright)', fontWeight: 600 }}>Lengkap</span> : <span style={{ color: 'var(--ez-hue-amber-text-deep)', fontWeight: 600 }}>Belum ada RAB</span>}</div>
                     </div>
                   </div>
 
@@ -1182,12 +1185,21 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
         scheduleTasks={scheduleTasks}
         kurvaSData={kurvaSData}
         onCompletePackage={() => {
+          // Audit F-DP-02 (2026-11-03): JANGAN tutup wizard di sini — wizard
+          // menampilkan layar sukses (langkah 5) setelah generate; menutup
+          // modal pada callback ini membuat layar sukses tidak pernah
+          // terlihat. Cukup muat ulang daftar; penutupan adalah urusan
+          // tombol langkah 5 / tombol tutup wizard.
           reloadActiveRecords();
-          setIsAiWizardOpen(false);
         }}
         onNavigateToTab={(tab) => {
+          // Audit F-DP-03 (2026-11-03): sebelumnya handler ini menelan semua
+          // tab selain 'dokumen-tender', sehingga tombol "Lengkapi Data"
+          // pada wizard tidak mengantar ke mana pun. Teruskan ke induk.
           if (tab === 'dokumen-tender') {
             reloadActiveRecords();
+          } else {
+            onNavigateToTab?.(tab);
           }
         }}
       />

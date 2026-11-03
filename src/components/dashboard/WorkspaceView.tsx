@@ -767,6 +767,7 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
               rabItems={projectRabItems}
               scheduleTasks={projectScheduleTasks}
               kurvaSData={projectKurvaSData}
+              onSelectProject={(p) => setCurrentProjectId(p.id)}
             />
           </main>
         ) : (activeMenu === 'keuangan-proyek' || activeMenu === 'keuangan' || activeMenu === 'termin' || activeMenu === 'invoice' || activeMenu === 'pemasukan' || activeMenu === 'pengeluaran' || activeMenu === 'cash-flow') ? (
@@ -1010,7 +1011,11 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
       )}
         </div>
       </div>
-      <FirstProjectChecklist />
+      {/* Checklist onboarding hanya di Dashboard (audit 2026-11-03 F-DB-05):
+          panel terbuka menutupi kolom harga pada view data (Database, RAB,
+          Laporan) di semua view non-dashboard. Progres tetap tersimpan dan
+          checklist muncul lagi saat kembali ke Dashboard. */}
+      {activeMenu === 'dashboard' && <FirstProjectChecklist />}
     </div>
   );
 };

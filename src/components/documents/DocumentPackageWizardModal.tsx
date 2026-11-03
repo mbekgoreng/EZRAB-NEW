@@ -85,14 +85,20 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
   const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
 
   // User input overrides for Step 3
-  const [letterNumber, setLetterNumber] = useState<string>('001/TDR/EZRAB/2026');
+  // Audit F-DP-07: contoh spesifik tidak lagi menjadi NILAI awal formulir
+  // (bisa ikut tercetak bila user tidak menyadari). Contoh pindah ke
+  // placeholder input — petunjuk visual, bukan data.
+  const [letterNumber, setLetterNumber] = useState<string>('');
   const [letterDate, setLetterDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
-  const [recipientName, setRecipientName] = useState<string>('Pokja Pemilihan / PPK');
-  const [recipientOrg, setRecipientOrg] = useState<string>('Dinas Pekerjaan Umum & Penataan Ruang');
+  const [recipientName, setRecipientName] = useState<string>('');
+  const [recipientOrg, setRecipientOrg] = useState<string>('');
   const [signatoryName, setSignatoryName] = useState<string>('');
-  const [signatoryPosition, setSignatoryPosition] = useState<string>('Direktur Utama');
+  const [signatoryPosition, setSignatoryPosition] = useState<string>('');
   // Company identity: loaded from real workspace branding. Never hardcoded demo.
   const [companyName, setCompanyName] = useState<string>('');
+  const [companyAddress, setCompanyAddress] = useState<string>('');
+  const [companyPhone, setCompanyPhone] = useState<string>('');
+  const [companyEmail, setCompanyEmail] = useState<string>('');
   const [brandingLoading, setBrandingLoading] = useState<boolean>(false);
   const [identityError, setIdentityError] = useState<string | null>(null);
 
@@ -115,11 +121,20 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
         const raw = (b.companyName || '').trim();
         const valid = raw && raw !== 'PT EZRAB KONSTRUKSI DIGITAL' ? raw : '';
         setCompanyName(valid);
+        // Alamat/telepon/email perusahaan juga dari branding asli (audit
+        // F-DP-04: sebelumnya alamat Jl. Sudirman + telepon + email karangan
+        // tercetak ke dokumen resmi).
+        setCompanyAddress((b as any).address || '');
+        setCompanyPhone((b as any).phone || '');
+        setCompanyEmail((b as any).email || '');
         setBrandingLoading(false);
       }).catch(() => {
         if (cancelled) return;
         // Fetch failed: no fictional fallback — user must fill the field.
         setCompanyName('');
+        setCompanyAddress('');
+        setCompanyPhone('');
+        setCompanyEmail('');
         setBrandingLoading(false);
       });
       return () => { cancelled = true; };
@@ -136,6 +151,47 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [isOpen, onClose]);
 
+  // AUDIT FASE 2 (2026-11-03): draf wizard persisten per proyek. Tanpa ini,
+  // klik "Lengkapi …" (menutup wizard & berpindah menu) menghapus seluruh
+  // input sah yang sudah diketik pengguna. Draf dimuat setiap wizard dibuka,
+  // disimpan setiap ada perubahan, dan dihapus setelah paket berhasil dibuat.
+  const draftKey = projectId ? `ezrab:wizard-draft:${projectId}` : null;
+  const draftLoadedRef = React.useRef<string | null>(null);
+  useEffect(() => {
+    if (!isOpen || !draftKey) return;
+    if (draftLoadedRef.current === draftKey) return;
+    draftLoadedRef.current = draftKey;
+    try {
+      const raw = localStorage.getItem(draftKey);
+      if (!raw) return;
+      const d = JSON.parse(raw);
+      if (Array.isArray(d.selectedDocIds) && d.selectedDocIds.length > 0) {
+        setSelectedDocIds(d.selectedDocIds.filter((x: unknown) => typeof x === 'string'));
+        setActivePreset('CUSTOM');
+      }
+      if (typeof d.letterNumber === 'string') setLetterNumber(d.letterNumber);
+      if (typeof d.letterDate === 'string' && d.letterDate) setLetterDate(d.letterDate);
+      if (typeof d.recipientName === 'string') setRecipientName(d.recipientName);
+      if (typeof d.recipientOrg === 'string') setRecipientOrg(d.recipientOrg);
+      if (typeof d.signatoryName === 'string') setSignatoryName(d.signatoryName);
+      if (typeof d.signatoryPosition === 'string') setSignatoryPosition(d.signatoryPosition);
+    } catch {
+      /* draf rusak diabaikan */
+    }
+  }, [isOpen, draftKey]);
+  useEffect(() => {
+    if (!isOpen || !draftKey) return;
+    if (draftLoadedRef.current !== draftKey) return;
+    try {
+      localStorage.setItem(
+        draftKey,
+        JSON.stringify({ selectedDocIds, letterNumber, letterDate, recipientName, recipientOrg, signatoryName, signatoryPosition })
+      );
+    } catch {
+      /* abaikan */
+    }
+  }, [isOpen, draftKey, selectedDocIds, letterNumber, letterDate, recipientName, recipientOrg, signatoryName, signatoryPosition]);
+
   const masterData: ProjectMasterData = useMemo(() => {
     if (!currentProject) {
       return {
@@ -147,49 +203,66 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
       ...EMPTY_MASTER_DATA,
       projectName: currentProject.name || 'Proyek Tanpa Nama',
       projectNumber: projectId,
-      owner: currentProject.clientName || 'Pemberi Kerja',
+      // Audit F-DP-04 (2026-11-03): fallback karangan dihapus. Nilai yang
+      // tidak ada di data proyek/branding dibiarkan KOSONG agar mekanisme
+      // placeholder dokumen menandainya — bukan diisi nama orang, alamat,
+      // durasi, atau nomor tender rekaan yang tercetak sebagai fakta.
+      owner: currentProject.clientName || '',
       contractor: companyName,
-      location: currentProject.location || 'Indonesia',
+      location: currentProject.location || '',
       contractValue: currentProject.totalRab || 0,
       duration: currentProject.startDate && currentProject.targetDate
         ? `${currentProject.startDate} s/d ${currentProject.targetDate}`
-        : '120 Hari Kalender',
+        : '',
       startDate: currentProject.startDate || '',
       endDate: currentProject.targetDate || '',
-      tenderNumber: currentProject.projectNumber || 'TDR-2026-001',
-      projectType: currentProject.buildingType || 'Konstruksi Gedung',
-      tenderType: currentProject.contractType || 'Pelelangan Terbuka',
+      tenderNumber: currentProject.projectNumber || '',
+      projectType: currentProject.buildingType || '',
+      tenderType: currentProject.contractType || '',
       director: signatoryName,
       projectManager: signatoryName,
-      engineer: 'M. Pratama, S.T.',
-      architect: 'A. Rahman, IAI',
-      hseOfficer: 'Siti Handayani, S.T., Ahli K3',
-      qs: 'QS Team EZRAB',
+      engineer: '',
+      architect: '',
+      hseOfficer: '',
+      qs: '',
       companyName: companyName,
-      companyAddress: 'Jl. Sudirman No. 45, Jakarta',
-      companyPhone: '(021) 555-0199',
-      companyEmail: 'kontraktor@ezrab.co.id',
+      companyAddress: companyAddress,
+      companyPhone: companyPhone,
+      companyEmail: companyEmail,
     };
-  }, [currentProject, projectId, signatoryName, companyName]);
+  }, [currentProject, projectId, signatoryName, companyName, companyAddress, companyPhone, companyEmail]);
 
   // Calculate authoritative RAB total
   const calculatedRabTotal = useMemo(() => {
     if (rabItems && rabItems.length > 0) {
-      return rabItems.reduce((acc, it) => {
+      const directSum = rabItems.reduce((acc, it) => {
         const lineTotal = it.total || it.amount || (it.price && it.volume ? it.price * it.volume : 0) || 0;
         return acc + lineTotal;
       }, 0);
+      // AUDIT LINTAS MODUL (2026-11-03): nilai dokumen harus sama dengan
+      // total proyek yang ditampilkan modul lain — grand total ringkasan
+      // biaya (langsung + overhead + profit + pajak) — bukan jumlah langsung
+      // item saja. Ringkasan hanya dipakai bila directCost-nya terbukti
+      // berasal dari item-item ini; selain itu item adalah sumber kebenaran.
+      const cs = currentProject?.costSummary;
+      if (cs && cs.grandTotal > 0 && Math.abs((cs.directCost ?? 0) - directSum) <= 1) {
+        return cs.grandTotal;
+      }
+      return directSum;
     }
     return typeof masterData.contractValue === 'number'
       ? masterData.contractValue
       : parseFloat(String(masterData.contractValue).replace(/[^0-9.-]+/g, '')) || 0;
-  }, [rabItems, masterData.contractValue]);
+  }, [rabItems, masterData.contractValue, currentProject]);
 
   // Evaluated Source Availability
   const sourceStatus: SourceStatus = useMemo(() => {
     return getSourceStatus({
       personnel: Boolean(masterData.projectManager || masterData.director),
-      equipment: true,
+      // Audit 2026-11-03: peralatan tidak punya sumber data yang terhubung
+      // ke wizard ini — sebelumnya selalu dinyatakan siap ("Daftar alat
+      // standar tersedia") tanpa data apa pun.
+      equipment: false,
       jsa: true,
       rkk: true,
       ahsp: rabItems.some((it) => it.ahspCode),
@@ -199,6 +272,16 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
       curveS: kurvaSData.length > 0,
     });
   }, [masterData, rabItems, scheduleTasks, kurvaSData]);
+
+  // Sumber wajib yang belum lengkap + tujuan routing untuk melengkapinya
+  // (audit F-DP-03, 2026-11-03): peringatan menyebut data yang kurang dan
+  // setiap tombol mengantar langsung ke tempat data itu diisi — menggantikan
+  // satu tombol umum "Lengkapi Data Sekarang" yang selalu ke RAB dan handler
+  // induknya tidak meneruskan navigasi sama sekali.
+  const missingSources: Array<{ label: string; tab: string }> = [
+    ...(!sourceStatus.rab ? [{ label: 'RAB & Harga', tab: 'rab-estimasi' }] : []),
+    ...(!sourceStatus.schedule ? [{ label: 'Jadwal & Schedule', tab: 'jadwal' }] : []),
+  ];
 
   // Presets handling
   const applyPreset = (presetKey: TenderPresetKey | 'CUSTOM') => {
@@ -332,6 +415,16 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
     });
 
     setCreatedDocsCount(count);
+    // Paket sudah dibuat — draf tidak diperlukan lagi (jangan bangkitkan
+    // input lama pada pembukaan wizard berikutnya).
+    if (draftKey) {
+      try {
+        localStorage.removeItem(draftKey);
+      } catch {
+        /* abaikan */
+      }
+      draftLoadedRef.current = null;
+    }
     setStep(5);
     if (onCompletePackage) {
       onCompletePackage(selectedDocIds);
@@ -524,12 +617,12 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
               {/* QUICK SELECT PRESETS */}
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '20px' }}>
                 {[
-                  { key: 'ALL', label: 'Semua Dokumen Tender (18 Dokumen)', count: 18 },
-                  { key: 'ADMINISTRATION', label: 'Administrasi (5)', count: 5 },
-                  { key: 'TECHNICAL', label: 'Teknis (5)', count: 5 },
-                  { key: 'COMMERCIAL', label: 'Biaya (5)', count: 5 },
-                  { key: 'SCHEDULE', label: 'Jadwal (2)', count: 2 },
-                  { key: 'HSE', label: 'K3 / HSE (1)', count: 1 },
+                  { key: 'ALL', label: `Semua Dokumen Tender (${TENDER_PACKAGE_PRESETS.ALL.length} Dokumen)`, count: TENDER_PACKAGE_PRESETS.ALL.length },
+                  { key: 'ADMINISTRATION', label: `Administrasi (${TENDER_PACKAGE_PRESETS.ADMINISTRATION.length})`, count: TENDER_PACKAGE_PRESETS.ADMINISTRATION.length },
+                  { key: 'TECHNICAL', label: `Teknis (${TENDER_PACKAGE_PRESETS.TECHNICAL.length})`, count: TENDER_PACKAGE_PRESETS.TECHNICAL.length },
+                  { key: 'COMMERCIAL', label: `Biaya (${TENDER_PACKAGE_PRESETS.COMMERCIAL.length})`, count: TENDER_PACKAGE_PRESETS.COMMERCIAL.length },
+                  { key: 'SCHEDULE', label: `Jadwal (${TENDER_PACKAGE_PRESETS.SCHEDULE.length})`, count: TENDER_PACKAGE_PRESETS.SCHEDULE.length },
+                  { key: 'HSE', label: `K3 / HSE (${TENDER_PACKAGE_PRESETS.HSE.length})`, count: TENDER_PACKAGE_PRESETS.HSE.length },
                 ].map((preset) => {
                   const isSelected = activePreset === preset.key;
                   return (
@@ -709,7 +802,7 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
                   { name: 'Jadwal & Schedule', ready: sourceStatus.schedule, detail: sourceStatus.schedule ? `${scheduleTasks.length} aktivitas jadwal` : 'Jadwal belum disusun' },
                   { name: 'Kurva-S Proyek', ready: sourceStatus.curveS, detail: sourceStatus.curveS ? `${kurvaSData.length} titik progress` : 'Kurva-S belum dibuat' },
                   { name: 'Personil Inti Proyek', ready: sourceStatus.personnel, detail: `PM: ${masterData.projectManager || 'Belum diisi'}` },
-                  { name: 'Peralatan Konstruksi', ready: sourceStatus.equipment, detail: 'Daftar alat standar tersedia' },
+                  { name: 'Peralatan Konstruksi', ready: sourceStatus.equipment, detail: sourceStatus.equipment ? 'Daftar alat tersedia' : 'Belum ada data peralatan terhubung' },
                 ].map((src, idx) => (
                   <div
                     key={idx}
@@ -759,9 +852,9 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
                       Sebagian Sumber Data Belum Lengkap
                     </h4>
                     <p style={{ fontSize: '12.5px', color: 'var(--ez-hue-amber-text)', margin: '4px 0 10px 0', lineHeight: 1.5 }}>
-                      Dokumen tetap dapat dibuat dan di-generate ke dalam status <strong>DRAFT</strong>. Nilai atau jadwal yang belum lengkap akan diberi tanda placeholder yang dapat Anda edit kemudian di dokumen editor.
+                      Data yang belum lengkap: <strong>{missingSources.map((m) => m.label).join(' dan ')}</strong>. Dokumen tetap dapat dibuat dan di-generate ke dalam status <strong>DRAFT</strong>. Nilai atau jadwal yang belum lengkap akan diberi tanda placeholder yang dapat Anda edit kemudian di dokumen editor. Gunakan tombol lengkapi untuk langsung menuju tempat data tersebut diisi.
                     </p>
-                    <div style={{ display: 'flex', gap: '10px' }}>
+                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                       <button
                         onClick={() => setStep(3)}
                         style={{
@@ -777,30 +870,32 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
                       >
                         Lewati Sementara (Tetap Lanjutkan)
                       </button>
-                      {onNavigateToTab && (
-                        <button
-                          onClick={() => {
-                            onClose();
-                            onNavigateToTab('rab-estimasi');
-                          }}
-                          style={{
-                            padding: '7px 14px',
-                            borderRadius: '6px',
-                            backgroundColor: 'var(--ez-color-surface)',
-                            color: 'var(--ez-hue-amber-text-dark)',
-                            border: '1px solid #FCD34D',
-                            fontSize: '12px',
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                          }}
-                        >
-                          <span>Lengkapi Data Sekarang</span>
-                          <ExternalLink size={12} />
-                        </button>
-                      )}
+                      {onNavigateToTab &&
+                        missingSources.map((m) => (
+                          <button
+                            key={m.tab}
+                            onClick={() => {
+                              onClose();
+                              onNavigateToTab(m.tab);
+                            }}
+                            style={{
+                              padding: '7px 14px',
+                              borderRadius: '6px',
+                              backgroundColor: 'var(--ez-color-surface)',
+                              color: 'var(--ez-hue-amber-text-dark)',
+                              border: '1px solid #FCD34D',
+                              fontSize: '12px',
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                            }}
+                          >
+                            <span>Lengkapi {m.label}</span>
+                            <ExternalLink size={12} />
+                          </button>
+                        ))}
                     </div>
                   </div>
                 </div>
@@ -864,6 +959,7 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
                   <input
                     type="text"
                     value={letterNumber}
+                    placeholder="mis. 001/TDR/EZRAB/2026"
                     onChange={(e) => setLetterNumber(e.target.value)}
                     style={{
                       width: '100%',
@@ -902,6 +998,7 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
                   <input
                     type="text"
                     value={recipientName}
+                    placeholder="mis. Pokja Pemilihan / PPK"
                     onChange={(e) => setRecipientName(e.target.value)}
                     style={{
                       width: '100%',
@@ -921,6 +1018,7 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
                   <input
                     type="text"
                     value={recipientOrg}
+                    placeholder="mis. Dinas Pekerjaan Umum & Penataan Ruang"
                     onChange={(e) => setRecipientOrg(e.target.value)}
                     style={{
                       width: '100%',
@@ -985,6 +1083,7 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
                   <input
                     type="text"
                     value={signatoryPosition}
+                    placeholder="mis. Direktur Utama"
                     onChange={(e) => setSignatoryPosition(e.target.value)}
                     style={{
                       width: '100%',
@@ -1048,6 +1147,27 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
                   {consistencyReport.score}/100 Skor
                 </div>
               </div>
+
+              {/* Audit F-DP-06: skor konsistensi hanya memeriksa kontradiksi
+                  antar data yang ADA; sumber yang hilang tidak menguranginya.
+                  Tanpa catatan ini, skor 100/100 tampil menyesatkan di
+                  samping peringatan sumber kosong pada langkah 2. */}
+              {missingSources.length > 0 && (
+                <div
+                  style={{
+                    padding: '12px 16px',
+                    borderRadius: 'var(--ez-radius-control)',
+                    border: '1px solid var(--ez-hue-amber-border)',
+                    backgroundColor: 'var(--ez-hue-amber-bg)',
+                    marginBottom: '18px',
+                    fontSize: '12.5px',
+                    lineHeight: 1.55,
+                    color: 'var(--ez-hue-amber-text)',
+                  }}
+                >
+                  <strong>Catatan kelengkapan:</strong> skor di atas hanya menilai kesesuaian antar data yang tersedia. Sumber berikut masih kosong dan <strong>tidak mengurangi skor</strong>: {missingSources.map((m) => m.label).join(' dan ')}. Dokumen terkait sumber tersebut akan berisi placeholder.
+                </div>
+              )}
 
               {/* ISSUES LIST IF ANY */}
               {consistencyReport.issues.length > 0 && (

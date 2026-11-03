@@ -25,7 +25,6 @@ import { LaborRateRecord, LaborDatabaseService } from '../../domain/labor/laborD
 import { EquipmentRecord, EquipmentDatabaseService } from '../../domain/equipment/equipmentDatabaseService';
 import { projectPriceEngine, ResolvedPrice } from '../../engine/pricing/projectPriceEngine';
 import { formatCurrencyIDR } from '../../calculations/decimalEngine';
-import { getMaterialThumbnail } from './materialThumbnailHelper';
 
 interface MaterialInspectorPanelProps {
   material?: MaterialMaster | null;

@@ -114,6 +114,16 @@ const { t, lang, setLang } = useI18n();
   const { activeRole, logoutRole } = useRole();
   const { session: supabaseSession, signOut: signOutAuth } = useAuth();
   const [currentUser, setCurrentUser] = useState(() => ClientUserManagementService.getCurrentUser());
+  // Audit 2026-11-03: foto stok eksternal (Unsplash) tidak ditampilkan sebagai
+  // avatar siapa pun — avatar kosong/stok dirender sebagai inisial nama.
+  const avatarSrc =
+    currentUser.avatar && !/unsplash\.com|picsum\.photos/.test(currentUser.avatar)
+      ? currentUser.avatar
+      : '';
+  const userInitials = (() => {
+    const parts = String(currentUser.name || '').replace(/,.*$/, '').trim().split(/\s+/).filter(Boolean);
+    return (((parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '')).toUpperCase() || '?');
+  })();
   const [helpOpen, setHelpOpen] = useState(false);
   const [shortcutOpen, setShortcutOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -972,18 +982,41 @@ onFocus={(e) => {
               }
             }}
           >
-            <img
-              src={currentUser.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'}
-              alt={currentUser.name}
-              style={{
-                width: isNarrowMobile ? '28px' : '30px',
-                height: isNarrowMobile ? '28px' : '30px',
-                borderRadius: '50%',
-                objectFit: 'cover',
-                border: '1.5px solid var(--ez-color-border-line)',
-                flexShrink: 0,
-              }}
-            />
+            {avatarSrc ? (
+              <img
+                src={avatarSrc}
+                alt={currentUser.name}
+                style={{
+                  width: isNarrowMobile ? '28px' : '30px',
+                  height: isNarrowMobile ? '28px' : '30px',
+                  borderRadius: '50%',
+                  objectFit: 'cover',
+                  border: '1.5px solid var(--ez-color-border-line)',
+                  flexShrink: 0,
+                }}
+              />
+            ) : (
+              <div
+                aria-label={currentUser.name}
+                style={{
+                  width: isNarrowMobile ? '28px' : '30px',
+                  height: isNarrowMobile ? '28px' : '30px',
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #2563eb 0%, #0ea5e9 100%)',
+                  color: '#ffffff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '11px',
+                  fontWeight: 800,
+                  border: '1.5px solid var(--ez-color-border-line)',
+                  flexShrink: 0,
+                  userSelect: 'none',
+                }}
+              >
+                {userInitials}
+              </div>
+            )}
             {!isNarrowMobile && (
               <div style={{ textAlign: 'left', lineHeight: 1.25 }}>
                 <div style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>
@@ -1022,18 +1055,42 @@ onFocus={(e) => {
                 }}
               >
                 <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                  <img
-                    src={currentUser.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'}
-                    alt={currentUser.name}
-                    style={{
-                      width: '44px',
-                      height: '44px',
-                      borderRadius: '50%',
-                      objectFit: 'cover',
-                      border: '2px solid var(--ez-color-surface)',
-                      boxShadow: 'var(--ez-shadow-avatar)',
-                    }}
-                  />
+                  {avatarSrc ? (
+                    <img
+                      src={avatarSrc}
+                      alt={currentUser.name}
+                      style={{
+                        width: '44px',
+                        height: '44px',
+                        borderRadius: '50%',
+                        objectFit: 'cover',
+                        border: '2px solid var(--ez-color-surface)',
+                        boxShadow: 'var(--ez-shadow-avatar)',
+                      }}
+                    />
+                  ) : (
+                    <div
+                      aria-label={currentUser.name}
+                      style={{
+                        width: '44px',
+                        height: '44px',
+                        borderRadius: '50%',
+                        background: 'linear-gradient(135deg, #2563eb 0%, #0ea5e9 100%)',
+                        color: '#ffffff',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '15px',
+                        fontWeight: 800,
+                        border: '2px solid var(--ez-color-surface)',
+                        boxShadow: 'var(--ez-shadow-avatar)',
+                        userSelect: 'none',
+                        flexShrink: 0,
+                      }}
+                    >
+                      {userInitials}
+                    </div>
+                  )}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: '13.5px', fontWeight: 800, color: 'var(--ez-color-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {currentUser.name}

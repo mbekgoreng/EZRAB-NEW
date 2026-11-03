@@ -3,6 +3,7 @@ import {
   Database,
   Search,
   Filter,
+  ChevronDown,
   Eye,
   Plus,
   BookOpen,
@@ -28,6 +29,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { officialAhspRepository } from '../../data/nationalCostDatabase/officialAhspRepository';
+import { QUARANTINE_REGISTRY } from '../../data/nationalCostDatabase/ahspQuarantine';
 import { NationalAHSPItem, AHSPDomain } from '../../data/nationalCostDatabase/types';
 import { formatCurrencyIDR } from '../../calculations/decimalEngine';
 import { useCurrency } from '../../context/CurrencyContext';
@@ -127,6 +129,11 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ routeParams,
   const [selectedMethod, setSelectedMethod] = useState<string>('ALL');
   const [selectedStatus, setSelectedStatus] = useState<string>('ALL');
   const [priceStatusFilter, setPriceStatusFilter] = useState<'ALL' | 'FULL' | 'PARTIAL' | 'MISSING'>('ALL');
+  // Grup filter di HP: disembunyikan dulu, tampil saat tombol Filter diklik
+  // (perintah owner 2026-11-03). Desktop tidak terpengaruh.
+  const [ahspFiltersOpen, setAhspFiltersOpen] = useState(false);
+  const ahspActiveFilterCount =
+    (selectedMethod !== 'ALL' ? 1 : 0) + (selectedStatus !== 'ALL' ? 1 : 0) + (priceStatusFilter !== 'ALL' ? 1 : 0);
   const [searchQuery, setSearchQuery] = useState(routeParams?.q ?? '');
   const [sortBy, setSortBy] = useState<'code' | 'name' | 'priceAsc' | 'priceDesc'>('code');
 
@@ -655,6 +662,11 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ routeParams,
               <>Daftar resmi <strong>{domainCounts.ALL.toLocaleString('id-ID')} item Analisa Harga Satuan Pekerjaan Nasional</strong> lintas bidang Cipta Karya, Sumber Daya Air, Bina Marga, dan SMKK Konstruksi.</>
             )}
           </p>
+          <p style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted, #64748B)', margin: '6px 0 0', lineHeight: 1.5 }}>
+            Katalog resmi memuat {officialAhspRepository.size.toLocaleString('id-ID')} record; yang ditampilkan adalah{' '}
+            {activeAhspItems.length.toLocaleString('id-ID')} item aktif. {QUARANTINE_REGISTRY.length} record terbukti tidak
+            valid dikarantina (artefak parsing &amp; duplikat persis) dan disembunyikan dari katalog, pencarian, dan pencocokan AI.
+          </p>
         </div>
 
         {/* Quick Stats Tiles (pastel summary) */}
@@ -1049,8 +1061,53 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ routeParams,
           />
         </div>
 
-        {/* Filters Group */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '10px' }}>
+        {/* Toggle Filter — hanya tampil di HP (.ahsp-filter-toggle di CSS) */}
+        <button
+          className="ahsp-filter-toggle"
+          onClick={() => setAhspFiltersOpen((o) => !o)}
+          aria-expanded={ahspFiltersOpen}
+          style={{
+            alignItems: 'center',
+            gap: '6px',
+            height: '42px',
+            padding: '0 14px',
+            borderRadius: 'var(--ez-radius-control)',
+            backgroundColor: ahspFiltersOpen ? 'var(--ez-color-primary)' : 'var(--ez-color-surface)',
+            border: '1.5px solid var(--ez-color-border-line)',
+            color: ahspFiltersOpen ? '#FFFFFF' : 'var(--ez-color-text-body)',
+            fontWeight: 700,
+            fontSize: '12.5px',
+            cursor: 'pointer',
+            flexShrink: 0,
+          }}
+        >
+          <Filter size={14} />
+          Filter
+          {ahspActiveFilterCount > 0 && (
+            <span
+              style={{
+                minWidth: '17px',
+                height: '17px',
+                padding: '0 4px',
+                borderRadius: '999px',
+                backgroundColor: ahspFiltersOpen ? '#FFFFFF' : 'var(--ez-color-primary)',
+                color: ahspFiltersOpen ? 'var(--ez-color-primary)' : '#FFFFFF',
+                fontSize: '10.5px',
+                fontWeight: 800,
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              {ahspActiveFilterCount}
+            </span>
+          )}
+          <ChevronDown size={13} style={{ transform: ahspFiltersOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s ease' }} />
+        </button>
+
+        {/* Filters Group — tata letak dipindah ke .ahsp-filters-group (CSS)
+            agar di HP bisa disembunyikan sampai tombol Filter diklik. */}
+        <div className={`ahsp-filters-group${ahspFiltersOpen ? ' is-open' : ''}`}>
           {/* Method Filter */}
           <select
             value={selectedMethod}

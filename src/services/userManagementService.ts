@@ -37,7 +37,8 @@ const INITIAL_USERS: WorkspaceMember[] = [
     status: 'ACTIVE',
     title: 'Lead Cost Estimator & Super Admin',
     company: 'PT Sinergi Konstruksi Nusantara',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+    // Audit 2026-11-03: avatar foto stok eksternal dihapus — UI menampilkan
+    // avatar inisial dari nama pengguna (tidak ada identitas manusia karangan).
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z',
   },

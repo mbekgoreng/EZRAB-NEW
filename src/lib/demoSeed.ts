@@ -1,4 +1,98 @@
 /**
+ * reconcileProjectSummaries — rekonsiliasi NON-DESTRUKTIF cache ringkasan
+ * proyek terhadap record item (AUDIT REGRESI FINAL 2026-11-03, §6/§7).
+ *
+ * Latar: totalRab/costSummary/itemsCount adalah CACHE turunan. Instalasi
+ * lama dapat menyimpan cache basi (mis. directCost tidak lagi sama dengan
+ * jumlah item) dan tidak ada jalur yang memperbaikinya selain mengedit
+ * item. Fungsi ini murni & idempoten:
+ *
+ * - Proyek TANPA item tidak pernah disentuh — cache-nya tidak dapat
+ *   dibuktikan salah dari record, dan menghapusnya bisa merusak data sah.
+ * - Proyek yang cache-nya sudah cocok dikembalikan apa adanya.
+ * - Proyek basi dibangun ulang dari item dengan persen ringkasan EKSISTING
+ *   (overhead/profit/kontingensi/markup dipertahankan) dan perlakuan pajak
+ *   EKSISTING (pajak hanya diterapkan bila ringkasan lama memang memuat
+ *   taxAmount > 0 — rekonsiliasi tidak pernah mengubah perlakuan pajak
+ *   sebuah proyek). Item PRICE_UNRESOLVED tidak masuk directCost, selaras
+ *   mesin kanonis. Record item tidak pernah diubah.
+ */
+export function reconcileProjectSummaries(
+  projects: Project[],
+  items: Array<{ projectId?: string; amount?: number | null; priceStatus?: string }>
+): { projects: Project[]; changedIds: string[] } {
+  const itemsByProject = new Map<string, typeof items>();
+  for (const item of items) {
+    if (!item.projectId) continue;
+    const list = itemsByProject.get(item.projectId);
+    if (list) list.push(item);
+    else itemsByProject.set(item.projectId, [item]);
+  }
+
+  const changedIds: string[] = [];
+  const next = projects.map((project) => {
+    const projectItems = itemsByProject.get(project.id);
+    if (!projectItems || projectItems.length === 0) return project;
+
+    const directCost = projectItems.reduce(
+      (sum, i) => sum + (i.priceStatus === 'PRICE_UNRESOLVED' ? 0 : (i.amount ?? 0)),
+      0
+    );
+    const cs = project.costSummary;
+    if (
+      cs &&
+      cs.directCost === directCost &&
+      project.totalRab === cs.grandTotal &&
+      project.itemsCount === projectItems.length
+    ) {
+      return project;
+    }
+
+    const overheadPercent = cs?.overheadPercent ?? 5;
+    const profitPercent = cs?.profitPercent ?? 5;
+    const contingencyPercent = cs?.contingencyPercent ?? 0;
+    const directorMarkupPercent = cs?.directorMarkupPercent ?? 0;
+    const taxPercent = cs?.taxPercent ?? 11;
+    const overheadAmount = Math.round((directCost * overheadPercent) / 100);
+    const profitAmount = Math.round((directCost * profitPercent) / 100);
+    const contingencyAmount = Math.round((directCost * contingencyPercent) / 100);
+    const directorMarkupTotal = Math.round((directCost * directorMarkupPercent) / 100);
+    const subtotalBeforeTax =
+      directCost + overheadAmount + profitAmount + contingencyAmount + directorMarkupTotal;
+    // Perlakuan pajak dipertahankan dari ringkasan lama: hanya proyek yang
+    // ringkasannya memang memuat pajak yang dihitung ulang pajaknya.
+    const taxAmount = (cs?.taxAmount ?? 0) > 0 ? Math.round((subtotalBeforeTax * taxPercent) / 100) : 0;
+    const grandTotal = subtotalBeforeTax + taxAmount;
+
+    changedIds.push(project.id);
+    return {
+      ...project,
+      totalRab: grandTotal,
+      itemsCount: projectItems.length,
+      updatedAt: new Date().toISOString(),
+      costSummary: {
+        ...(cs as ProjectCostSummary),
+        directCost,
+        overheadPercent,
+        overheadAmount,
+        profitPercent,
+        profitAmount,
+        contingencyPercent,
+        contingencyAmount,
+        directorMarkupPercent,
+        directorMarkupTotal,
+        subtotalBeforeTax,
+        taxPercent,
+        taxAmount,
+        grandTotal,
+      },
+    };
+  });
+
+  return { projects: next, changedIds };
+}
+
+/**
  * demoSeed — logika murni untuk P0-B (data demo tidak respawn).
  *
  * Aturan: seed default HANYA pada instalasi pertama (belum ada flag seed).

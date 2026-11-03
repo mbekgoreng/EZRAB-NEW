@@ -64,6 +64,15 @@
   }
 }
 
+/* Mode ringkas HP (mockup ACC owner 2026-11-03, "jangan ditampilkan semua"):
+   kartu statistik tidak ditampilkan di layar utama HP. Angka yang sama tetap
+   tersedia di tab berkode jumlah, modal Kualitas Data, dan di desktop. */
+@media (max-width: 720px) {
+  .mat-kpi-grid {
+    display: none;
+  }
+}
+
 .mat-kpi-card {
   background: var(--ez-color-surface);
   border: 1px solid var(--ez-color-border-line);
@@ -116,6 +125,26 @@
 @media (max-width: 640px) {
   .mat-filter-grid-5 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Toggle filter khusus HP (perintah owner 2026-11-03: bagian detail
+   disembunyikan dulu, tampil saat diklik). Tombol Filter hanya ada di HP;
+   baris filter mulai tersembunyi dan terbuka lewat kelas .is-open.
+   Desktop tidak terpengaruh: tombol tidak dirender tampil & grid selalu tampil. */
+.mat-filter-toggle {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .mat-filter-toggle {
+    display: inline-flex;
+  }
+  .mat-filter-grid-5 {
+    display: none;
+  }
+  .mat-filter-grid-5.is-open {
+    display: grid;
   }
 }
 

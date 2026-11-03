@@ -452,12 +452,33 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
           <div style={{
             padding: '24px', borderRadius: '12px', background: 'var(--ez-hue-blue-bg)',
             border: '1px solid var(--ez-hue-blue-border)', marginBottom: '16px',
-            display: 'flex', alignItems: 'center', gap: '12px',
+            display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap',
           }}>
-            <div style={{ fontSize: '13px', color: 'var(--ez-color-text-primary)' }}>
-              <strong>Belum ada jadwal tahapan.</strong> Klik "Tambah Tahapan" untuk membuat jadwal proyek,
+            <div style={{ fontSize: '13px', color: 'var(--ez-color-text-primary)', flex: '1 1 260px', lineHeight: 1.55 }}>
+              <strong>Belum ada jadwal tahapan.</strong> Buat tahapan pertama untuk menyusun jadwal proyek,
               atau tambah item RAB terlebih dahulu agar Kurva S dapat dihitung otomatis.
             </div>
+            <button
+              onClick={() => setIsAddModalOpen(true)}
+              style={{
+                height: '38px',
+                padding: '0 16px',
+                borderRadius: '10px',
+                background: 'var(--ez-color-primary)',
+                color: '#FFFFFF',
+                fontSize: '12.5px',
+                fontWeight: 600,
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: '0 2px 6px rgba(37,99,235,0.2)',
+              }}
+            >
+              <Plus size={15} />
+              <span>Tambah Tahapan</span>
+            </button>
           </div>
         )}
 

@@ -273,3 +273,94 @@
     min-height: 44px;
   }
 }
+
+/* --- R6. Laporan: layout dua kolom runtuh rapi di layar kecil -------------
+   Audit 2026-11-03: grid inline "1fr 330px" menghimpit kolom kiri sampai
+   ~40px di HP sehingga kartu KPI jadi strip warna dan kartu info bertumpuk
+   di atas konten. Di bawah 1100px susun satu kolom (konten dulu, info
+   menyusul); tab tidak membungkus label; KPI 2 kolom lalu 1 kolom. */
+@media (max-width: 1100px) {
+  .lap-main-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .lap-tabs {
+    flex-wrap: nowrap;
+    scrollbar-width: none;
+  }
+  .lap-tabs::-webkit-scrollbar {
+    display: none;
+  }
+  .lap-tabs > button {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+  .lap-kpi-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+  .lap-export-actions {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+  .lap-export-actions > button {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 430px) {
+  .lap-kpi-row {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+/* --- R8. Grup filter AHSP + tombol toggle (perintah owner 2026-11-03) -----
+   Bagian detail disembunyikan dulu, tampil saat diklik — pola yang sama
+   dengan filter Database Material. Tata letak grup dipindah dari inline
+   style JSX ke sini agar display bisa diatur per breakpoint. */
+.ahsp-filters-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.ahsp-filter-toggle {
+  display: none;
+}
+@media (max-width: 720px) {
+  .ahsp-filter-toggle {
+    display: inline-flex;
+  }
+  .ahsp-filters-group {
+    display: none;
+  }
+  .ahsp-filters-group.is-open {
+    display: flex;
+  }
+}
+
+/* --- R7. Affordance geser untuk baris tab horizontal (sisa Fase 2) --------
+   Baris tab yang bisa digeser menyembunyikan scrollbar dan diberi fade di
+   tepi kanan pada HP, agar jelas masih ada tab di luar layar. Tombol tab
+   tidak menyusut / label tidak membungkus. */
+.ez-tabs-scroll {
+  scrollbar-width: none;
+}
+.ez-tabs-scroll::-webkit-scrollbar {
+  display: none;
+}
+.ez-tabs-scroll > button {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+@media (max-width: 767px) {
+  .ez-tabs-scroll,
+  .lap-tabs {
+    -webkit-mask-image: linear-gradient(to right, #000 88%, transparent 100%);
+    mask-image: linear-gradient(to right, #000 88%, transparent 100%);
+  }
+}

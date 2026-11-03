@@ -73,6 +73,12 @@ export class LocalDocumentRepository implements DocumentRepository {
   }
 
   getProjectDocuments(projectId?: string): DocumentRecord[] {
+    // Instance repository lain (mis. wizard paket dokumen) dapat menulis ke
+    // localStorage setelah instance ini dibuat; tanpa muat ulang, daftar
+    // membaca salinan memori basi dan dokumen hasil generate tidak muncul
+    // (temuan audit F-DP-01, 2026-11-03). Semua mutasi di kelas ini langsung
+    // persist(), jadi memuat ulang saat membaca aman.
+    this.loadFromStorage();
     const targetId = projectId || this.projectId;
     return targetId ? this.records.filter((r) => r.projectId === targetId) : this.records;
   }

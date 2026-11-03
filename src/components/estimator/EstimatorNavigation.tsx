@@ -43,6 +43,7 @@ export const EstimatorNavigation: React.FC<EstimatorNavigationProps> = ({
 
   return (
     <div
+      className="ez-tabs-scroll"
       style={{
         display: 'flex',
         alignItems: 'center',

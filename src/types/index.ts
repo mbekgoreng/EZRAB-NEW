@@ -514,6 +514,19 @@ export interface Project {
   companyId?: string;
   coverImage?: string;
 
+  // Konfigurasi pajak tingkat proyek (kebijakan opt-in owner 2026-10-27).
+  // Ditulis oleh Pengaturan Estimasi dan dibaca recalculateProjectSummary;
+  // sebelumnya hanya diakses lewat cast `(p as any)` — kini terdeklarasi.
+  ppnEnabled?: boolean;
+  ppnPercent?: number;
+
+  // Konfigurasi biaya tingkat proyek: field inilah "konfigurasi" menurut
+  // penyelarasan owner 2026-10-27 (nilai di costSummary hanyalah default
+  // pembuatan). Mesin kanonis membaca field ini; overhead tanpa field
+  // jatuh ke fallback 10. Juga sebelumnya hanya diakses via cast.
+  overheadPercent?: number;
+  profitPercent?: number;
+
   // Government & Standard Template Engine Snapshot
   institution?: string;           // e.g. "Kementerian PUPR", "Dinas PU Daerah", "Swasta"
   directorate?: string;           // e.g. "Bina Marga", "Cipta Karya", "Sumber Daya Air"

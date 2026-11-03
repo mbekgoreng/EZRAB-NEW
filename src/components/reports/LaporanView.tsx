@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   FileText,
   Download,
@@ -52,6 +52,7 @@ import { brandingClient } from '../../services/brandingClient';
 import { ExportProjectPackageModal } from '../export/ExportProjectPackageModal';
 import { checkKurvaSRequirements } from '../../engine/kurvaSEngine';
 import { computeLaporanSummary, resolveItemAmount } from '../../lib/laporanSummary';
+import { computeSeedCostSummary } from '../../lib/demoSeed';
 import { buildLaporanKurvaS } from '../../lib/kurvaSHonesty';
 import { buildGanttTasks, formatScheduleDuration, resolveHonestCompany } from '../../lib/scheduleHonesty';
 import { MASTER_AHSP_DATABASE } from '../../data/indonesianAHSP';
@@ -129,23 +130,51 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
   const selectedProjectId = currentProjectId || activeProject.id;
   const setSelectedProjectId = (id: string) => setCurrentProjectId(id);
 
-  // Period filter
-  const [selectedPeriod, setSelectedPeriod] = useState<string>('Semua Periode');
+  // AUDIT LINTAS MODUL (2026-11-03): tampilan menjadikan proyek pertama
+  // sebagai bawaan, tetapi seluruh data konteks (item RAB, jadwal, kurva S)
+  // terikat proyek AKTIF — tanpa sinkronisasi, laporan menampilkan nama
+  // proyek A dengan data kosong. Samakan proyek aktif dengan yang tampil.
+  useEffect(() => {
+    if (!currentProjectId && activeProject?.id && activeProject.id !== 'p-1') {
+      setCurrentProjectId(activeProject.id);
+    }
+  }, [currentProjectId, activeProject?.id, setCurrentProjectId]);
+
+  // Audit F-LP-01 (2026-11-03): pemilih "Periode" dihapus — sebelumnya ia
+  // tampil seperti dropdown (cursor pointer + chevron) tetapi tidak punya
+  // onClick dan nilainya tidak pernah dipakai memfilter apa pun.
+
+  // Opsi lembar Excel (audit F-LP-03): tombol header mengekspor paket penuh;
+  // panel Pengaturan Laporan mengisi override ini lalu memicu tombol header
+  // yang sama — satu implementasi ekspor, tanpa jalur ganda.
+  const excelIncludeRef = useRef<Record<string, boolean> | null>(null);
+  const excelButtonRef = useRef<HTMLButtonElement>(null);
+  const [isProjectMenuOpen, setIsProjectMenuOpen] = useState(false);
 
   // Fullscreen state
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // Project Cover Image State
-  const [projectCoverPhoto, setProjectCoverPhoto] = useState<string>(
-    'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&auto=format&fit=crop&q=80'
-  );
+  // Project Cover Image State — audit F-LP-04 (2026-11-03): default BUKAN
+  // lagi foto stok Unsplash yang tampil sebagai "foto proyek" untuk semua
+  // proyek. Kosong = placeholder netral; foto tersimpan per proyek.
+  const [projectCoverPhoto, setProjectCoverPhoto] = useState<string>('');
   const [photoUploadModalOpen, setPhotoUploadModalOpen] = useState(false);
+
+  // Foto sampul dimuat per proyek (audit F-LP-04: sebelumnya satu state
+  // global berisi URL stok — foto "milik" proyek lain ikut tampil dan hilang
+  // setiap reload).
+  useEffect(() => {
+    try {
+      setProjectCoverPhoto(localStorage.getItem(`ezrab:report-cover:${activeProject.id}`) || '');
+    } catch {
+      setProjectCoverPhoto('');
+    }
+  }, [activeProject.id]);
   const [tempPhotoUrl, setTempPhotoUrl] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Report Settings Switches
   const [reportFormat, setReportFormat] = useState('Lengkap (RAB + QTO + Kurva S + Jadwal)');
-  const [reportTemplate, setReportTemplate] = useState('Standar EZRAB');
   const [includeAhsp, setIncludeAhsp] = useState(true);
   const [includeResources, setIncludeResources] = useState(true);
   const [includeCover, setIncludeCover] = useState(false);
@@ -204,6 +233,18 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
   const totalRekapValue = useMemo(() => {
     return rekapCategories.reduce((acc, cat) => acc + cat.value, 0);
   }, [rekapCategories]);
+
+  // AUDIT LINTAS MODUL X-08 (2026-11-03): total resmi proyek adalah grand
+  // total ringkasan biayanya (langsung + overhead + profit + pajak) — angka
+  // yang sama dengan picker Dokumen Proyek, wizard, dan totalRab proyek.
+  // Ringkasan hanya dipakai bila directCost-nya terbukti berasal dari
+  // item-item ini; selain itu tangga ringkasan tidak ditampilkan.
+  const projectSummary = activeProject?.costSummary;
+  const summaryMatchesItems =
+    !!projectSummary &&
+    projectSummary.grandTotal > 0 &&
+    Math.abs((projectSummary.directCost ?? 0) - totalRekapValue) <= 1;
+  const grandTotalValue = summaryMatchesItems ? projectSummary!.grandTotal : totalRekapValue;
 
   // Ringkasan jujur untuk kartu KPI (definisi metrik: lib/laporanSummary).
   // Field progress hanya diteruskan bila ada proyek nyata — objek fallback
@@ -533,6 +574,11 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
   const handleSavePhoto = () => {
     if (tempPhotoUrl) {
       setProjectCoverPhoto(tempPhotoUrl);
+      try {
+        localStorage.setItem(`ezrab:report-cover:${activeProject.id}`, tempPhotoUrl);
+      } catch {
+        /* penyimpanan penuh/ditolak — foto tetap tampil selama sesi ini */
+      }
       setPhotoUploadModalOpen(false);
       setTempPhotoUrl('');
     }
@@ -631,6 +677,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
 
   return (
     <div
+      className="lap-view"
       style={{
         width: '100%',
         maxWidth: isFullscreen ? '100%' : '1680px',
@@ -716,6 +763,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
           2. HORIZONTAL REPORT TABS BAR (REKAPITULASI, BOQ, AHSP, KURVA S, JADWAL)
          ========================================================================= */}
       <div
+        className="lap-tabs"
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -776,61 +824,101 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
       >
         {/* Left: Project Selector & Period Selector */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-          {/* Project Selector */}
-          <div
-            style={{
-              background: 'var(--ez-color-surface)',
-              border: '1px solid var(--ez-color-border-line)',
-              borderRadius: '10px',
-              padding: '6px 14px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
-              cursor: 'pointer',
-            }}
-          >
-            <div style={{ width: '28px', height: '28px', borderRadius: '6px', background: 'var(--ez-hue-blue-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ez-color-primary)' }}>
-              <Building size={14} />
-            </div>
-            <div>
-              <div style={{ fontSize: '10px', color: '#94A3B8', fontWeight: 600, lineHeight: 1 }}>Proyek</div>
-              <div style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--ez-color-text-primary)', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
-                <span>{activeProject.name}</span>
-                <ChevronDown size={14} color="#94A3B8" />
+          {/* Project Selector — audit F-LP-02 (2026-11-03): sebelumnya kotak
+              ini hanya mirip dropdown (chevron + cursor pointer) tanpa menu;
+              setSelectedProjectId tidak pernah terhubung. Kini dropdown
+              betulan yang mengganti proyek aktif lewat konteks proyek. */}
+          <div style={{ position: 'relative' }}>
+            <div
+              onClick={() => setIsProjectMenuOpen((o) => !o)}
+              style={{
+                background: 'var(--ez-color-surface)',
+                border: '1px solid var(--ez-color-border-line)',
+                borderRadius: '10px',
+                padding: '6px 14px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+                cursor: 'pointer',
+              }}
+            >
+              <div style={{ width: '28px', height: '28px', borderRadius: '6px', background: 'var(--ez-hue-blue-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ez-color-primary)' }}>
+                <Building size={14} />
+              </div>
+              <div>
+                <div style={{ fontSize: '10px', color: '#94A3B8', fontWeight: 600, lineHeight: 1 }}>Proyek</div>
+                <div style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--ez-color-text-primary)', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
+                  <span>{activeProject.name}</span>
+                  <ChevronDown size={14} color="#94A3B8" />
+                </div>
               </div>
             </div>
+            {isProjectMenuOpen && (
+              <>
+                <div
+                  onClick={() => setIsProjectMenuOpen(false)}
+                  style={{ position: 'fixed', inset: 0, zIndex: 40 }}
+                />
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 'calc(100% + 6px)',
+                    left: 0,
+                    minWidth: '260px',
+                    maxHeight: '320px',
+                    overflowY: 'auto',
+                    background: 'var(--ez-color-surface)',
+                    border: '1px solid var(--ez-color-border-line)',
+                    borderRadius: '12px',
+                    boxShadow: '0 16px 40px rgba(15,23,42,0.16)',
+                    padding: '6px',
+                    zIndex: 41,
+                  }}
+                >
+                  {contextProjects.length === 0 && (
+                    <div style={{ padding: '10px 12px', fontSize: '12.5px', color: 'var(--ez-color-text-muted)' }}>
+                      Belum ada proyek
+                    </div>
+                  )}
+                  {contextProjects.map((p) => (
+                    <button
+                      key={p.id}
+                      onClick={() => {
+                        setSelectedProjectId(p.id);
+                        setIsProjectMenuOpen(false);
+                      }}
+                      style={{
+                        display: 'flex',
+                        width: '100%',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '10px',
+                        padding: '9px 12px',
+                        borderRadius: '8px',
+                        border: 'none',
+                        background: p.id === activeProject.id ? 'var(--ez-hue-blue-bg)' : 'transparent',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                      }}
+                    >
+                      <span>
+                        <span style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>{p.name}</span>
+                        <span style={{ display: 'block', fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>{p.projectNumber || p.id}</span>
+                      </span>
+                      {p.id === activeProject.id && <Check size={14} color="var(--ez-color-primary)" />}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
 
-          {/* Period Selector */}
-          <div
-            style={{
-              background: 'var(--ez-color-surface)',
-              border: '1px solid var(--ez-color-border-line)',
-              borderRadius: '10px',
-              padding: '6px 14px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
-              cursor: 'pointer',
-            }}
-          >
-            <div style={{ width: '28px', height: '28px', borderRadius: '6px', background: 'var(--ez-color-surface-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ez-color-text-muted)' }}>
-              <Calendar size={14} />
-            </div>
-            <div>
-              <div style={{ fontSize: '10px', color: '#94A3B8', fontWeight: 600, lineHeight: 1 }}>Periode</div>
-              <div style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--ez-color-text-primary)', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
-                <span>{selectedPeriod}</span>
-                <ChevronDown size={14} color="#94A3B8" />
-              </div>
-            </div>
-          </div>
+          {/* Pemilih Periode dihapus (audit F-LP-01): kontrol palsu tanpa fungsi. */}
         </div>
 
         {/* Right: Export PDF & Export Excel Buttons */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div className="lap-export-actions" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <button
             onClick={() => setIsExportPackageModalOpen(true)}
             disabled={!hasRealProject}
@@ -896,6 +984,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
           </button>
 
           <button
+            ref={excelButtonRef}
             onClick={async () => {
               try {
                 // Identitas perusahaan dari branding workspace (JUJUR —
@@ -953,32 +1042,37 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                       verificationStatus: it.verificationStatus ?? 'NEEDS_VERIFICATION',
                     })),
                   })),
-                  costSummary: {
-                    directCost: totalBoqAmount,
-                    overheadPercent: 5,
-                    overheadAmount: Math.round(totalBoqAmount * 0.05),
-                    profitPercent: 5,
-                    profitAmount: Math.round(totalBoqAmount * 0.05),
-                    contingencyPercent: 0,
-                    contingencyAmount: 0,
-                    directorMarkupPercent: 0,
-                    directorMarkupNominal: 0,
-                    directorMarkupTotal: 0,
-                    showMarkupToEditor: false,
-                    showMarkupToClient: false,
-                    subtotalBeforeTax: totalBoqAmount,
-                    taxPercent: 11,
-                    taxAmount: Math.round(totalBoqAmount * 0.11),
-                    grandTotal: totalBoqAmount,
-                    // Luas bangunan ASLI proyek; tanpa luas tercatat → 0
-                    // (tidak ada pembagi karangan 120 m²).
-                    costPerM2: activeProject.buildingArea && activeProject.buildingArea > 0
-                      ? Math.round(totalBoqAmount / activeProject.buildingArea)
-                      : 0,
-                  },
+                  // AUDIT LINTAS MODUL X-08 (2026-11-03): ringkasan ekspor
+                  // sebelumnya tidak konsisten internal (subtotal & grand
+                  // total disamakan dengan biaya langsung, mengabaikan
+                  // overhead/profit/pajak yang dihitungnya sendiri). Kini:
+                  // pakai costSummary proyek bila terbukti berasal dari
+                  // item-item ini; selain itu hitung konsisten dengan
+                  // formula kanonis (subtotal = langsung+OH+profit;
+                  // pajak = % × subtotal; grand total = subtotal+pajak).
+                  costSummary: (() => {
+                    const cs = activeProject?.costSummary;
+                    if (cs && cs.grandTotal > 0 && Math.abs((cs.directCost ?? 0) - totalBoqAmount) <= 1) {
+                      return cs;
+                    }
+                    return computeSeedCostSummary(
+                      initialRabItems.map((i) => ({ amount: resolveItemAmount(i) ?? 0 })),
+                      {
+                        // Luas bangunan ASLI proyek; tanpa luas tercatat → 0
+                        // (tidak ada pembagi karangan 120 m²).
+                        costPerM2: activeProject.buildingArea && activeProject.buildingArea > 0
+                          ? Math.round(totalBoqAmount / activeProject.buildingArea)
+                          : 0,
+                      }
+                    );
+                  })(),
                 };
 
-                await exportProjectToExcel(exportProj, company, {
+                // Lembar yang disertakan: override dari panel Pengaturan
+                // Laporan bila ada (audit F-LP-03), selain itu paket penuh.
+                const settingsOverride = excelIncludeRef.current;
+                excelIncludeRef.current = null;
+                await exportProjectToExcel(exportProj, company, settingsOverride ?? {
                   includeCover: true,
                   includeProjectIdentity: true,
                   includeRekap: true,
@@ -993,7 +1087,9 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                   includeCashflow: true,
                 });
 
-                alert('Workbook Excel (.xlsx) 16-Sheets berhasil di-generate & diunduh!');
+                alert(settingsOverride
+                  ? 'Workbook Excel (.xlsx) sesuai Pengaturan Laporan berhasil di-generate & diunduh!'
+                  : 'Workbook Excel (.xlsx) 16-Sheets berhasil di-generate & diunduh!');
               } catch (err) {
                 console.error(err);
                 alert('Gagal mengunduh berkas Excel.');
@@ -1028,6 +1124,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
           4. MAIN TWO-COLUMN LAYOUT: REPORT CONTENT (LEFT) + INFO/SETTINGS (RIGHT)
          ========================================================================= */}
       <div
+        className="lap-main-grid"
         style={{
           display: 'grid',
           gridTemplateColumns: 'minmax(0, 1fr) 330px',
@@ -1047,6 +1144,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
             <>
               {/* 4 TOP KPI CARDS */}
               <div
+                className="lap-kpi-row"
                 style={{
                   display: 'grid',
                   gridTemplateColumns: 'repeat(4, 1fr)',
@@ -1257,12 +1355,44 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                             </tr>
                           );
                         })}
-                        {/* Total Row */}
+                        {/* Total Row — biaya langsung (jumlah item berharga) */}
                         <tr style={{ borderTop: '2px solid var(--ez-color-text-primary)', fontWeight: 800, background: 'var(--ez-color-surface-secondary)' }}>
-                          <td colSpan={2} style={{ padding: '10px', textAlign: 'left' }}>Total</td>
+                          <td colSpan={2} style={{ padding: '10px', textAlign: 'left' }}>Total Biaya Langsung</td>
                           <td style={{ padding: '10px', textAlign: 'right', color: 'var(--ez-color-primary)' }}>{laporanSummary.pricedItemCount === 0 ? 'Harga belum diisi' : formatCurrencyIDR(totalRekapValue)}</td>
                           <td style={{ padding: '10px', textAlign: 'right', color: 'var(--ez-color-primary)' }}>{totalRekapValue > 0 ? '100,00%' : '—'}</td>
                         </tr>
+                        {/* Tangga ringkasan biaya proyek (X-08): overhead, profit,
+                            subtotal, pajak, grand total — dari costSummary proyek
+                            yang terverifikasi cocok dengan item-item ini. */}
+                        {summaryMatchesItems && projectSummary && (
+                          <>
+                            <tr style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
+                              <td colSpan={2} style={{ padding: '6px 10px', color: 'var(--ez-color-text-muted)' }}>Overhead ({projectSummary.overheadPercent}%)</td>
+                              <td style={{ padding: '6px 10px', textAlign: 'right' }}>{formatCurrencyIDR(projectSummary.overheadAmount)}</td>
+                              <td style={{ padding: '6px 10px', textAlign: 'right', color: 'var(--ez-color-text-muted)' }}>—</td>
+                            </tr>
+                            <tr style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
+                              <td colSpan={2} style={{ padding: '6px 10px', color: 'var(--ez-color-text-muted)' }}>Profit ({projectSummary.profitPercent}%)</td>
+                              <td style={{ padding: '6px 10px', textAlign: 'right' }}>{formatCurrencyIDR(projectSummary.profitAmount)}</td>
+                              <td style={{ padding: '6px 10px', textAlign: 'right', color: 'var(--ez-color-text-muted)' }}>—</td>
+                            </tr>
+                            <tr style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)', fontWeight: 600 }}>
+                              <td colSpan={2} style={{ padding: '6px 10px' }}>Subtotal sebelum Pajak</td>
+                              <td style={{ padding: '6px 10px', textAlign: 'right' }}>{formatCurrencyIDR(projectSummary.subtotalBeforeTax)}</td>
+                              <td style={{ padding: '6px 10px', textAlign: 'right', color: 'var(--ez-color-text-muted)' }}>—</td>
+                            </tr>
+                            <tr style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
+                              <td colSpan={2} style={{ padding: '6px 10px', color: 'var(--ez-color-text-muted)' }}>PPN ({projectSummary.taxPercent}%)</td>
+                              <td style={{ padding: '6px 10px', textAlign: 'right' }}>{formatCurrencyIDR(projectSummary.taxAmount)}</td>
+                              <td style={{ padding: '6px 10px', textAlign: 'right', color: 'var(--ez-color-text-muted)' }}>—</td>
+                            </tr>
+                            <tr style={{ borderTop: '2px solid var(--ez-color-text-primary)', fontWeight: 800, background: 'var(--ez-hue-blue-bg)' }}>
+                              <td colSpan={2} style={{ padding: '10px', textAlign: 'left' }}>Total Anggaran (Grand Total)</td>
+                              <td style={{ padding: '10px', textAlign: 'right', color: 'var(--ez-color-primary)' }}>{formatCurrencyIDR(projectSummary.grandTotal)}</td>
+                              <td style={{ padding: '10px', textAlign: 'right', color: 'var(--ez-color-primary)' }}>—</td>
+                            </tr>
+                          </>
+                        )}
                       </tbody>
                     </table>
                   </div>
@@ -1290,7 +1420,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                       <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
                         <span style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-color-text-primary)', lineHeight: 1 }}>{totalRekapValue > 0 ? '100%' : '—'}</span>
                         <span style={{ fontSize: '9px', color: '#94A3B8', marginTop: '2px' }}>Total Anggaran</span>
-                        <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--ez-color-primary)' }}>{laporanSummary.pricedItemCount === 0 ? 'Harga belum diisi' : formatCurrencyIDR(totalRekapValue)}</span>
+                        <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--ez-color-primary)' }}>{laporanSummary.pricedItemCount === 0 ? 'Harga belum diisi' : formatCurrencyIDR(grandTotalValue)}</span>
                       </div>
                     </div>
 
@@ -2459,7 +2589,26 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                 </div>
               </div>
 
-              {/* Gantt Interactive Board */}
+              {/* Gantt Interactive Board — audit F-LP-05 (2026-11-03): saat
+                  kosong, status ditampilkan sebagai blok utuh. Sebelumnya
+                  pesan berada di sel colSpan tabel 920px+ di dalam kontainer
+                  overflow, sehingga kalimat terpotong di tengah. */}
+              {ganttTasks.length === 0 ? (
+                <div
+                  style={{
+                    border: '1px solid var(--ez-color-border-line)',
+                    borderRadius: '14px',
+                    padding: '26px 18px',
+                    textAlign: 'center',
+                    color: 'var(--ez-color-text-muted)',
+                    fontStyle: 'italic',
+                    fontSize: '12.5px',
+                    lineHeight: 1.6,
+                  }}
+                >
+                  Belum ada tugas jadwal untuk proyek ini — Gantt hanya menampilkan jadwal yang benar-benar tercatat.
+                </div>
+              ) : (
               <div style={{ overflowX: 'auto', border: '1px solid var(--ez-color-border-line)', borderRadius: '14px' }}>
                 <table style={{ width: '100%', minWidth: '920px', borderCollapse: 'collapse', fontSize: '11.5px' }}>
                   <thead>
@@ -2488,13 +2637,6 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                     </tr>
                   </thead>
                   <tbody>
-                    {ganttTasks.length === 0 && (
-                      <tr>
-                        <td colSpan={17} style={{ padding: '18px 14px', textAlign: 'center', color: 'var(--ez-color-text-muted)', fontStyle: 'italic' }}>
-                          Belum ada tugas jadwal untuk proyek ini — Gantt hanya menampilkan jadwal yang benar-benar tercatat.
-                        </td>
-                      </tr>
-                    )}
                     {ganttTasks.map((t) => (
                       <tr key={t.id} style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
                         <td style={{ color: 'var(--ez-color-primary)', fontWeight: 700, padding: '10px 12px' }}>{t.wbs}</td>
@@ -2559,6 +2701,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                   </tbody>
                 </table>
               </div>
+              )}
             </div>
           )}
 
@@ -2597,15 +2740,35 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
 
             {/* Project Photo Image Container with Upload Overlay */}
             <div style={{ position: 'relative', width: '100%', height: '140px', background: 'var(--ez-color-surface-secondary)' }}>
-              <img
-                src={projectCoverPhoto}
-                alt={activeProject.name}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                }}
-              />
+              {projectCoverPhoto ? (
+                <img
+                  src={projectCoverPhoto}
+                  alt={activeProject.name}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                  }}
+                />
+              ) : (
+                <div
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                    color: 'var(--ez-color-text-faint)',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                  }}
+                >
+                  <Building size={26} />
+                  <span>Belum ada foto proyek</span>
+                </div>
+              )}
               <button
                 onClick={() => setPhotoUploadModalOpen(true)}
                 style={{
@@ -2715,18 +2878,8 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
               </select>
             </div>
 
-            <div>
-              <label style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>Template</label>
-              <select
-                value={reportTemplate}
-                onChange={(e) => setReportTemplate(e.target.value)}
-                style={{ width: '100%', height: '34px', borderRadius: '8px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12px', padding: '0 8px', marginTop: '4px', background: 'var(--ez-color-surface)' }}
-              >
-                <option>Standar EZRAB</option>
-                <option>Formal SNI</option>
-                <option>Engineering Minimal</option>
-              </select>
-            </div>
+            {/* Pilihan "Template" dihapus (audit F-LP-03): tidak ada mesin
+                ekspor yang mendukungnya — pilihan dekoratif yang menipu. */}
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -2760,40 +2913,55 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
               </div>
             </div>
 
+            {/* Audit F-LP-03: tombol panel sebelumnya memanggil ekspor PDF
+                yang mengabaikan seluruh pengaturan di panel ini. Kini
+                pengaturan format + saklar isi dipetakan ke lembar Excel dan
+                diterapkan lewat tombol Export Excel di header. */}
             <button
-              onClick={handleExportPdf}
-              disabled={isExportingPdf}
+              onClick={() => {
+                const ringkas = reportFormat.startsWith('Ringkas');
+                const rabBoq = reportFormat.startsWith('RAB + BOQ');
+                excelIncludeRef.current = {
+                  includeCover,
+                  includeProjectIdentity: true,
+                  includeRekap: true,
+                  includeRABDetail: !ringkas,
+                  includeVolumeBackUp: !ringkas,
+                  includeLabor: includeResources && !ringkas,
+                  includeMaterial: includeResources && !ringkas,
+                  includeEquipment: includeResources && !ringkas,
+                  includeAHSP: includeAhsp && !ringkas,
+                  includeSchedule: !ringkas && !rabBoq,
+                  includeKurvaS: !ringkas && !rabBoq,
+                  includeCashflow: !ringkas && !rabBoq,
+                };
+                excelButtonRef.current?.click();
+              }}
               style={{
                 marginTop: '4px',
                 width: '100%',
                 height: '38px',
                 borderRadius: '10px',
-                background: isExportingPdf ? '#94A3B8' : 'var(--ez-color-primary)',
+                background: 'var(--ez-color-primary)',
                 color: '#FFFFFF',
                 fontSize: '12.5px',
                 fontWeight: 600,
                 border: 'none',
-                cursor: isExportingPdf ? 'not-allowed' : 'pointer',
+                cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '6px',
-                boxShadow: isExportingPdf ? 'none' : '0 4px 12px rgba(37,99,235,0.25)',
+                boxShadow: '0 4px 12px rgba(37,99,235,0.25)',
                 transition: 'all 0.15s ease',
               }}
             >
-              {isExportingPdf ? (
-                <>
-                  <Loader2 size={14} className="animate-spin" />
-                  <span>Sedang Men-generate PDF...</span>
-                </>
-              ) : (
-                <>
-                  <Sparkles size={14} />
-                  <span>Generate Laporan</span>
-                </>
-              )}
+              <Upload size={14} />
+              <span>Terapkan & Export Excel</span>
             </button>
+            <p style={{ fontSize: '11px', color: 'var(--ez-color-text-faint)', margin: 0, lineHeight: 1.5 }}>
+              Format & isi di panel ini berlaku untuk Export Excel (.xlsx). Export PDF memakai format resmi standar.
+            </p>
           </div>
 
         </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   LayoutDashboard,
   FolderKanban,
@@ -88,11 +88,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
    * selalu dilabeli simulasi). Default mock = starter. */
   const { balance } = useCreditSimulation();
   const billingPlan = balance.plan;
-  const [proyekSubmenuOpen, setProyekSubmenuOpen] = useState(true);
+  // Grup submenu mulai TERTUTUP agar sidebar ringkas (perintah owner 2026-11-03:
+  // detail disembunyikan dulu, tampil saat grup diklik). Grup yang memuat menu
+  // aktif dibuka otomatis oleh effect akordeon di bawah.
+  const [proyekSubmenuOpen, setProyekSubmenuOpen] = useState(false);
   // Floating pill toggle: slides sidebar completely away (manual only, no auto-expand)
   const [isHidden, setIsHidden] = useState(false);
-  const [rabSubmenuOpen, setRabSubmenuOpen] = useState(true);
-  const [databaseSubmenuOpen, setDatabaseSubmenuOpen] = useState(true);
+  const [rabSubmenuOpen, setRabSubmenuOpen] = useState(false);
+  const [databaseSubmenuOpen, setDatabaseSubmenuOpen] = useState(false);
   const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
   const [tooltipPos, setTooltipPos] = useState<{ top: number; label: string } | null>(null);
   const [projectPickerOpen, setProjectPickerOpen] = useState(false);
@@ -198,6 +201,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
   ];
 
   const isDatabaseActive = databaseSubItems.some((sub) => sub.match(activeMenu));
+
+  // Akordeon ringkas: setiap pindah menu, hanya grup yang memuat menu aktif
+  // yang terbuka; grup lain tertutup. Klik manual pada header grup tetap bisa
+  // membuka/menutup bebas sampai navigasi berikutnya.
+  useEffect(() => {
+    setDatabaseSubmenuOpen(isDatabaseActive);
+    setRabSubmenuOpen(isRabActive);
+  }, [isDatabaseActive, isRabActive]);
 
   // Counts for Project Statuses
   const totalProjects = projects.length;

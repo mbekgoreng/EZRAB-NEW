@@ -22,6 +22,8 @@ export const PREMIUM_DEMO_PROJECT: Project = {
   "year": 2026,
   "status": "draft",
   "isDemo": true,
+  "ppnEnabled": true,
+  "overheadPercent": 5,
   "notes": "DATA DEMONSTRASI — bukan dokumen konstruksi. Kuantitas dari asumsi geometri contoh; harga hanya dari katalog resmi AHSP 2026 lewat resolver kanonis; item tanpa padanan terverifikasi dibiarkan tanpa harga (null) dan tercatat di register unresolved.",
   "sections": [],
   "costSummary": {
