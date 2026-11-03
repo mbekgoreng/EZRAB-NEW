@@ -274,6 +274,27 @@
 .ezai-scope .scrib path {stroke-dasharray:120;stroke-dashoffset:120;animation:draw 12s ease-in-out infinite}
 .ezai-scope .planbox {display:flex;flex-direction:column;justify-content:center}
 .ezai-scope .cta-box {position:relative}
+/* Aurora lembut kartu CTA: gradasi dasar menyapu sangat lambat + tiga
+   gumpalan cahaya (sky/teal/indigo khas EZRAB) melayang di belakang
+   konten. Teks & tombol diangkat ke z-index 1, maskot z-index 2. */
+.ezai-scope .cta-box {background-size:150% 150%; animation:ctaBase 34s ease-in-out infinite alternate}
+@keyframes ctaBase {from {background-position:0% 0%} to {background-position:100% 100%}}
+.ezai-scope .cta-box::before {content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none;
+  background-image:radial-gradient(560px 340px at center, rgba(56,189,248,.50), transparent 65%),
+    radial-gradient(640px 380px at center, rgba(45,212,191,.36), transparent 65%),
+    radial-gradient(480px 300px at center, rgba(129,140,248,.32), transparent 65%);
+  background-repeat:no-repeat; background-position:12% 18%, 88% 84%, 70% 8%;
+  animation:ctaAurora 26s ease-in-out infinite alternate}
+.ezai-scope .cta-box::after {content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none;
+  background:radial-gradient(720px 300px at 50% -10%, rgba(255,255,255,.16), transparent 60%);
+  animation:ctaAuroraGlow 17s ease-in-out infinite alternate}
+@keyframes ctaAurora {to {background-position:34% 30%, 62% 66%, 42% 26%}}
+@keyframes ctaAuroraGlow {from {opacity:.55} to {opacity:1}}
+.ezai-scope .cta-box > * {position:relative; z-index:1}
+.ezai-scope .cta-box .mascot-cta {z-index:2}
+@media (prefers-reduced-motion: reduce) {
+  .ezai-scope .cta-box, .ezai-scope .cta-box::before, .ezai-scope .cta-box::after {animation:none}
+}
 .ezai-scope .asst {padding:16px;display:flex;flex-direction:column;gap:9px;background:linear-gradient(180deg,#FDFEFF,#F4F9FF)}
 .ezai-scope .ahead {display:flex;gap:11px;align-items:center;border-bottom:1px solid #E4ECF5;padding-bottom:11px}
 .ezai-scope .ahead img {width:42px;height:42px;border-radius:50%;object-fit:cover;border:2px solid #D7E6F8}
