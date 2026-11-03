@@ -153,8 +153,18 @@ describe('Fase 1 — kontrak sumber view.tsx', () => {
 
   it('gerbang adalah satu-satunya jalur debit chat-ai di view (satu titik panggilan, sesudah send)', () => {
     const gateIdx = viewSrc.indexOf('debitChatCreditOnSuccess(res,');
-    const sendIdx = viewSrc.indexOf('await ezrabAiService.send(');
-    expect(sendIdx).toBeGreaterThan(-1);
+    // Pola diperbarui (penutupan audit 2026-11-04): implementasi kini
+    // memanggil send() sebagai promise bernama lalu MENUNGGUNYA lewat
+    // pembungkus waktu minimum (waitForMinimum/waitForRabMinimum) —
+    // bentuk lama `await ezrabAiService.send(` sudah tidak ada. Kontrak
+    // yang ditegaskan tidak berubah: send ada, hasilnya ditunggu tuntas,
+    // dan gerbang debit berjalan SETELAH penyelesaian itu.
+    const sendMatch = /ezrabAiService\.send\s*\(/.exec(viewSrc);
+    expect(sendMatch).not.toBeNull();
+    const sendIdx = sendMatch!.index;
+    const between = viewSrc.slice(sendIdx, gateIdx);
+    expect(/await\s+waitFor(?:Minimum|RabMinimum)\s*\(/.test(between)).toBe(true);
+    expect(between).toContain('sendPromise');
     expect(gateIdx).toBeGreaterThan(sendIdx);
     // consume('chat-ai' hanya boleh muncul di dalam callback gerbang.
     const consumeIdx = viewSrc.indexOf("consume('chat-ai'");
@@ -173,6 +183,11 @@ describe('Fase 1 — kontrak sumber view.tsx', () => {
     expect(viewSrc).toContain("import { debitChatCreditOnSuccess } from './chatCreditDebit';");
     const localReturnIdx = viewSrc.indexOf('preRouted.localOnly');
     expect(localReturnIdx).toBeGreaterThan(-1);
-    expect(localReturnIdx).toBeLessThan(viewSrc.indexOf('await ezrabAiService.send('));
+    // Titik banding diperbarui mengikuti bentuk panggilan saat ini
+    // (promise bernama, lihat tes di atas): jalur lokal tetap kembali
+    // SEBELUM panggilan send() apa pun.
+    const sendMatch = /ezrabAiService\.send\s*\(/.exec(viewSrc);
+    expect(sendMatch).not.toBeNull();
+    expect(localReturnIdx).toBeLessThan(sendMatch!.index);
   });
 });

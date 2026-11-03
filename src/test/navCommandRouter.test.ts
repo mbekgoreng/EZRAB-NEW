@@ -42,7 +42,7 @@ describe('navRegistry: struktur', () => {
     const slashes = NAV_ENTRIES.map((e) => e.slash);
     expect(new Set(ids).size).toBe(ids.length);
     expect(new Set(slashes).size).toBe(slashes.length);
-    expect(NAV_ENTRIES.length).toBe(32); // 30 target brief + jadwal + analisa-harga RAB
+    expect(NAV_ENTRIES.length).toBe(33); // 30 target brief + jadwal + analisa-harga RAB + informasi-proyek (entri sah: fitur Informasi Proyek, commit 8295c74; ekspektasi 32 basi — ditutup audit R-06 2026-11-04)
     for (const e of NAV_ENTRIES) {
       expect(e.label.length).toBeGreaterThan(0);
       expect(e.description.length).toBeGreaterThan(0);
@@ -223,7 +223,7 @@ describe('slash menu helpers', () => {
   });
 
   it('filterSlashEntries: kosong = semua, prefix/substring bekerja', () => {
-    expect(filterSlashEntries('').length).toBe(32);
+    expect(filterSlashEntries('').length).toBe(33); // selaras jumlah registri (lihat R-06)
     const spr = filterSlashEntries('spr');
     expect(spr.some((e) => e.id === 'spreadsheet-rab')).toBe(true);
     const proyek = filterSlashEntries('proyek');
@@ -232,7 +232,7 @@ describe('slash menu helpers', () => {
   });
 
   it('suggestSlash: query kosong = semua; fallback 4 terpakai', () => {
-    expect(suggestSlash('').length).toBe(32);
+    expect(suggestSlash('').length).toBe(33); // selaras jumlah registri (lihat R-06)
     expect(suggestSlash('/zzz-tidak-ada').map((e) => e.id)).toContain('spreadsheet-rab');
   });
 });

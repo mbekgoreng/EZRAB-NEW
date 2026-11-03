@@ -155,7 +155,7 @@ await test('demo rate limit: stricter bucket (limit=3 -> 4th request 429)', asyn
   }
 });
 
-await test('evaluateCreditAccess: failed auth -> 401, demo -> 403, registered/degraded -> allow', async () => {
+await test('evaluateCreditAccess: failed auth -> 401, demo -> 403, registered -> allow, degraded/tanpa identitas -> 401 (Phase 5.3)', async () => {
   eq(evaluateCreditAccess({ ok: false }).status, 401, 'failed auth status');
   eq(evaluateCreditAccess({ ok: false }).errorCode, 'AUTH_REQUIRED', 'failed auth code');
   eq(evaluateCreditAccess(null).allow, false, 'null auth denied');
@@ -164,7 +164,16 @@ await test('evaluateCreditAccess: failed auth -> 401, demo -> 403, registered/de
   eq(demo.status, 403, 'demo status');
   eq(demo.errorCode, 'DEMO_RESTRICTED', 'demo code');
   eq(evaluateCreditAccess({ ok: true, user: registeredUser }).allow, true, 'registered allowed');
-  eq(evaluateCreditAccess({ ok: true, user: null }).allow, true, 'degraded allowed (existing contract)');
+  // Phase 5.3 (audit R-01): mode degraded & service-token memberi ok=true
+  // TANPA identitas user. Kontrak lama ("degraded allowed") membuat endpoint
+  // kredit jatuh ke saldo bersama 'anonymous' — kini ditolak fail-closed.
+  // Aseri ini MENGGANTIKAN kontrak pra-5.3 atas keputusan keamanan owner.
+  const degraded = evaluateCreditAccess({ ok: true, user: null });
+  eq(degraded.allow, false, 'degraded denied (no verified identity)');
+  eq(degraded.status, 401, 'degraded status');
+  eq(degraded.errorCode, 'AUTH_REQUIRED', 'degraded code');
+  eq(evaluateCreditAccess({ ok: true, method: 'token', user: null }).allow, false, 'service-token tanpa user id denied');
+  eq(evaluateCreditAccess({ ok: true, user: {} }).allow, false, 'user tanpa id denied');
 });
 
 await test('source contract: gateway clamps demo maxTokens and verifies is_anonymous from Supabase user', async () => {
