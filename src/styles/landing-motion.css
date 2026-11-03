@@ -1,0 +1,65 @@
+/* ============================================================
+   EZRAB Landing Motion — lapisan animasi advanced untuk beranda
+   & halaman /faq. Dimuat oleh motionEnhancer.ts.
+   Prinsip: hanya transform/opacity/filter (GPU-friendly),
+   easing spring cubic-bezier(.22,1,.36,1), dan SEMUA gerak mati
+   pada prefers-reduced-motion / .motion-off.
+   ============================================================ */
+
+/* ---------- Split-text (kata per kata) ---------- */
+.mw {display:inline-block; will-change:transform,opacity,filter}
+.split-host .mw {opacity:0; transform:translateY(26px) rotate(3deg); filter:blur(7px);
+  transition:opacity .75s ease, transform .85s cubic-bezier(.22,1,.36,1), filter .75s ease;
+  transition-delay:var(--d,0ms)}
+.split-host.mrv-on .mw {opacity:1; transform:none; filter:none}
+
+/* ---------- Reveal blok (fade + rise + unblur) ---------- */
+.mrv {opacity:0; transform:translateY(32px); filter:blur(5px);
+  transition:opacity .9s ease, transform .95s cubic-bezier(.22,1,.36,1), filter .9s ease;
+  transition-delay:var(--d,0ms)}
+.mrv.mrv-on {opacity:1; transform:none; filter:none}
+
+/* ---------- Teks gradien mengalir (span .bl di judul seksi) ---------- */
+html .ezai-scope h2 .bl {background-size:100% 230%; animation:blShimmer 5.5s ease-in-out infinite}
+@keyframes blShimmer {0%,100% {background-position:50% 0%} 50% {background-position:50% 100%}}
+
+/* ---------- Tilt 3D mengikuti kursor (kartu harga, tile, hcard) ---------- */
+[data-tilt] {transform-style:preserve-3d; position:relative}
+[data-tilt]::after {content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none;
+  background:radial-gradient(420px circle at var(--mx,50%) var(--my,50%), rgba(255,255,255,.20), transparent 65%);
+  opacity:0; transition:opacity .3s ease}
+[data-tilt].tilting::after {opacity:1}
+.ezai-scope [data-tilt].rv-on {transition:transform .25s ease, box-shadow .3s ease}
+
+/* ---------- Magnetic button ---------- */
+[data-magnetic] {transition:transform .3s cubic-bezier(.22,1,.36,1)}
+
+/* ---------- Kilau menyapu tombol utama ---------- */
+.ch-cta-primary, .ezai-scope .cta-box .btn {position:relative; overflow:hidden}
+.ch-cta-primary::after, .ezai-scope .cta-box .btn::after {content:""; position:absolute; top:0; bottom:0; width:55%;
+  left:-80%; transform:skewX(-18deg); pointer-events:none;
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,.38), transparent);
+  transition:left .65s ease}
+.ch-cta-primary:hover::after, .ezai-scope .cta-box .btn:hover::after {left:130%}
+
+/* ---------- Navbar: masuk dari atas + garis bawah tautan ---------- */
+.ez-nav-dark {animation:navDrop .85s cubic-bezier(.22,1,.36,1) both}
+@keyframes navDrop {from {transform:translateY(-102%); opacity:0} to {transform:none; opacity:1}}
+.ez-nav-link {position:relative}
+.ez-nav-link::after {content:""; position:absolute; left:14px; right:14px; bottom:5px; height:2px; border-radius:2px;
+  background:currentColor; transform:scaleX(0); transform-origin:left; transition:transform .35s cubic-bezier(.22,1,.36,1)}
+.ez-nav-link:hover::after {transform:scaleX(1)}
+
+/* ---------- Maskot: bob + sway lembut (menimpa mascotBob lama) ---------- */
+.ezai-scope .mascot-cta.motion-sway, .ezai-scope .mascot-hero.motion-sway {animation:mascotSway 5.4s ease-in-out infinite}
+@keyframes mascotSway {0%,100% {transform:translateY(0) rotate(-1.6deg)} 50% {transform:translateY(-9px) rotate(1.6deg)}}
+
+/* ---------- Matikan semua gerak bila diminta ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .mw, .mrv, [data-tilt], [data-magnetic] {transition:none !important}
+  .split-host .mw, .mrv {opacity:1 !important; transform:none !important; filter:none !important}
+  .ez-nav-dark, html .ezai-scope h2 .bl,
+  .ezai-scope .mascot-cta.motion-sway, .ezai-scope .mascot-hero.motion-sway {animation:none !important}
+}
+.motion-off .split-host .mw, .motion-off .mrv {opacity:1 !important; transform:none !important; filter:none !important}
+.motion-off .ez-nav-dark, .motion-off .bl {animation:none !important}

@@ -1,8 +1,9 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Search, X, ArrowRight } from 'lucide-react';
 import { ExactNavbar } from '../components/landing/exact/ExactNavbar';
 import { ExactFooter } from '../components/landing/exact/ExactFooter';
 import { FaqAccordion } from './FaqAccordion';
+import { enhanceLandingMotion } from '../components/landing/exact/motionEnhancer';
 import {
   FAQ_CATEGORIES,
   FAQ_ITEMS,
@@ -49,6 +50,14 @@ export const FaqPage: React.FC<FaqPageProps> = ({
 }) => {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<string>('semua');
+  const pageRef = useRef<HTMLDivElement>(null);
+
+  // Animasi masuk halaman (split-text judul + reveal blok) — sama seperti
+  // beranda; grup hasil pencarian yang me-render ulang tampil normal.
+  useEffect(() => {
+    if (!pageRef.current) return;
+    return enhanceLandingMotion(pageRef.current);
+  }, []);
 
   useEffect(() => {
     const restores: Array<() => void> = [];
@@ -139,7 +148,7 @@ export const FaqPage: React.FC<FaqPageProps> = ({
   };
 
   return (
-    <div className="faq-page">
+    <div className="faq-page" ref={pageRef}>
       <ExactNavbar
         onOpenAuth={onOpenAuth}
         onBackToLanding={onBackToLanding}
@@ -149,8 +158,8 @@ export const FaqPage: React.FC<FaqPageProps> = ({
       <main className="faq-main">
         <section className="faq-hero">
           <span className="faq-eyebrow">Pusat Bantuan</span>
-          <h1>Ada yang ingin kamu ketahui tentang EZRAB?</h1>
-          <p className="faq-sub">
+          <h1 data-split>Ada yang ingin kamu ketahui tentang EZRAB?</h1>
+          <p className="faq-sub" data-reveal>
             Cari jawaban tentang RAB, AHSP 2026, Magic AI, sampai keamanan data. Semua
             jawaban ditulis sesuai kondisi EZRAB yang sebenarnya — termasuk fitur yang
             masih dalam tahap persiapan.
@@ -158,6 +167,7 @@ export const FaqPage: React.FC<FaqPageProps> = ({
           <form
             className="faq-search"
             role="search"
+            data-reveal
             onSubmit={(e) => e.preventDefault()}
           >
             <Search size={20} aria-hidden="true" />
@@ -181,7 +191,7 @@ export const FaqPage: React.FC<FaqPageProps> = ({
           </p>
         </section>
 
-        <nav className="faq-cats" aria-label="Kategori pertanyaan">
+        <nav className="faq-cats" aria-label="Kategori pertanyaan" data-reveal>
           <button
             type="button"
             className={`faq-chip${category === 'semua' ? ' on' : ''}`}
@@ -204,7 +214,7 @@ export const FaqPage: React.FC<FaqPageProps> = ({
         </nav>
 
         {groups.map(({ cat, items }) => (
-          <section className="faq-group" key={cat.id} aria-labelledby={`faq-cat-${cat.id}`}>
+          <section className="faq-group" key={cat.id} data-reveal aria-labelledby={`faq-cat-${cat.id}`}>
             <h2 id={`faq-cat-${cat.id}`}>{cat.label}</h2>
             <p className="faq-group-count">{items.length} pertanyaan</p>
             <FaqAccordion items={items} idPrefix={`faq-${cat.id}`} />
@@ -224,7 +234,7 @@ export const FaqPage: React.FC<FaqPageProps> = ({
           </div>
         )}
 
-        <section className="faq-cta">
+        <section className="faq-cta" data-reveal>
           <h2>Masih belum menemukan jawaban?</h2>
           <p>
             Hubungi tim EZRAB melalui kanal komunikasi resmi kami. Pengumuman fitur dan

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import '../../styles/landing-critical.css';
 import '../../styles/exact-landing-flagship-mobile.css';
 import { ExactNavbar } from './exact/ExactNavbar';
@@ -11,6 +11,7 @@ import { CinematicHero } from './cinematic/CinematicHero';
 // daripada code-splitting di sini — hero Three.js sudah mendominasi bundle.
 import { ExactWorkflow } from './exact/ExactWorkflow';
 import { AiShowcase } from './exact/AiShowcase';
+import { enhanceLandingMotion } from './exact/motionEnhancer';
 
 interface ExactLandingPageProps {
   onOpenWorkspace: () => void;
@@ -38,8 +39,16 @@ export const ExactLandingPage: React.FC<ExactLandingPageProps> = ({
     void import('../../styles/exact-landing.css');
   }, []);
 
+  // Lapisan animasi advanced (split-text, tilt, magnetic, parallax) —
+  // diterapkan ke DOM landing setelah mount; cleanup saat unmount.
+  const pageRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!pageRef.current) return;
+    return enhanceLandingMotion(pageRef.current);
+  }, []);
+
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#ffffff' }}>
+    <div ref={pageRef} style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#ffffff' }}>
       {/* 1. Fixed Dark Navbar */}
       <ExactNavbar
         onOpenAuth={onOpenAuth}
