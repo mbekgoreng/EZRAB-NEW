@@ -35,7 +35,14 @@ export default async function handler(req, res) {
   if (!access.allow) {
     return res.status(access.status).json({ success: false, error: access.error, errorCode: access.errorCode });
   }
-  const userId = auth.user ? auth.user.id : 'anonymous';
+  // Phase 5.3 (audit R-01): TIDAK ada fallback 'anonymous'. evaluateCreditAccess
+  // sudah menjamin identitas terverifikasi saat allow=true; penjaga eksplisit
+  // ini memastikan handler gagal tertutup bila jaminan itu tidak terpenuhi,
+  // bukan mengarang identitas bersama.
+  if (!auth.user || !auth.user.id) {
+    return res.status(401).json({ success: false, error: 'AUTH_REQUIRED', errorCode: 'AUTH_REQUIRED' });
+  }
+  const userId = auth.user.id;
   const engine = createCreditEngine(adapter);
   const balance = await engine.getBalance(userId);
   return res.status(200).json({ success: true, balance, simulated: false });

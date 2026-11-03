@@ -25,7 +25,11 @@ export default async function handler(req, res) {
   if (!access.allow) {
     return res.status(access.status).json({ success: false, error: access.error, errorCode: access.errorCode });
   }
-  const userId = auth.user ? auth.user.id : 'anonymous';
+  // Phase 5.3 (audit R-01): TIDAK ada fallback 'anonymous' — lihat balance.js.
+  if (!auth.user || !auth.user.id) {
+    return res.status(401).json({ success: false, error: 'AUTH_REQUIRED', errorCode: 'AUTH_REQUIRED' });
+  }
+  const userId = auth.user.id;
   const limit = Math.min(100, Math.max(1, parseInt(String(req.query.limit || '50'), 10) || 50));
   const meter = createUsageMeter(null);
   const usage = await meter.getUsage(userId, limit);

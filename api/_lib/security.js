@@ -352,19 +352,29 @@ export function rateLimitIdentity(req, auth) {
  * Access decision for the credit endpoints (balance/usage), given an
  * authenticateRequest() result. Pure + exported so the policy is unit-testable
  * without a live Supabase project:
- *  - failed auth            -> deny 401 AUTH_REQUIRED (never an "anonymous"
- *                              bucket once a credit database is configured)
+ *  - failed auth            -> deny 401 AUTH_REQUIRED
+ *  - NO verified identity   -> deny 401 AUTH_REQUIRED. Phase 5.3 hardening
+ *    (audit R-01): degraded mode and the static service-token method return
+ *    auth.ok=true with user=null — they carry NO user identity. The previous
+ *    contract allowed them through and the handlers then fell back to a
+ *    shared userId 'anonymous', i.e. one shared credit balance for every
+ *    unauthenticated caller once a credit database is configured. That
+ *    fallback is now closed here, at the single policy point; handlers must
+ *    never invent an identity when this returns deny.
  *  - demo (anonymous) users -> deny 403 DEMO_RESTRICTED (demo credit is a
  *                              gateway-side quota, never a ledger balance)
- *  - anything else that authenticated (incl. deliberate degraded mode, where
- *    auth.ok is true with user=null) -> allow; the caller keeps its current
- *    not-configured behaviour ahead of this check.
+ *  - verified user          -> allow; the caller keeps its not-configured
+ *    (503) behaviour ahead of this check, so nothing changes while the
+ *    credit backend is dormant.
  */
 export function evaluateCreditAccess(auth) {
   if (!auth || !auth.ok) {
     return { allow: false, status: 401, errorCode: 'AUTH_REQUIRED', error: 'Login diperlukan.' };
   }
-  if (auth.user && auth.user.isAnonymous) {
+  if (!auth.user || !auth.user.id) {
+    return { allow: false, status: 401, errorCode: 'AUTH_REQUIRED', error: 'Identitas terverifikasi diperlukan untuk akses kredit.' };
+  }
+  if (auth.user.isAnonymous) {
     return { allow: false, status: 403, errorCode: 'DEMO_RESTRICTED', error: 'Mode demo tidak memiliki akses kredit.' };
   }
   return { allow: true };
