@@ -603,6 +603,11 @@ export const AllProjectsView: React.FC<AllProjectsViewProps> = ({
                             >
                               {p.name}
                             </span>
+                            {p.isDemo && (
+                              <span style={{ marginLeft: 8, fontSize: 10, fontWeight: 800, letterSpacing: '0.05em', padding: '2px 8px', borderRadius: 'var(--ez-radius-pill)', background: '#FEF3C7', color: '#92400E', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
+                                CONTOH
+                              </span>
+                            )}
                           </td>
                           <td style={{ padding: '12px 10px', color: 'var(--ez-color-text-primary)' }}>{p.clientName || (p as unknown as { client?: string }).client || '—'}</td>
                           <td style={{ padding: '12px 10px', color: 'var(--ez-color-text-muted)' }}>

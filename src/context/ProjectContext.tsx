@@ -703,7 +703,14 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       // Hardened: unwrap versioned envelope if present, else legacy raw.
       const loaded = loadVersioned<Project[]>('ezrab_prod_projects');
       const savedJson = loaded.ok ? JSON.stringify(loaded.data) : localStorage.getItem('ezrab_prod_projects');
-      const resolved = resolveInitialProjects(savedJson, alreadySeeded, DEFAULT_PORTFOLIO_PROJECTS);
+      // Keputusan owner 2026-11-04 — SATU proyek contoh super lengkap:
+      // instalasi baru TIDAK lagi di-seed portofolio 5 proyek. Daftar awal
+      // kosong; satu-satunya proyek contoh datang dari injeksi Premium Demo
+      // di bawah (213 item AHSP kanonis, isDemo, terlabel demonstrasi).
+      // DEFAULT_PORTFOLIO_PROJECTS dipertahankan sebagai dataset legacy
+      // (fixture tes & referensi), tidak lagi di-seed. Instalasi lama:
+      // isi penyimpanan tetap dihormati apa adanya (aturan P0-B).
+      const resolved = resolveInitialProjects(savedJson, alreadySeeded, []);
       if (resolved.shouldMarkSeeded) {
         try {
           localStorage.setItem(SEED_FLAG, '1');
@@ -726,7 +733,8 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }
       return injected.items;
     } catch {
-      return DEFAULT_PORTFOLIO_PROJECTS;
+      // Jalur pengecualian mengikuti model yang sama: satu proyek contoh.
+      return [PREMIUM_DEMO_PROJECT];
     }
   });
 
@@ -763,15 +771,17 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   // 6. RAB Items Flat Database per Project
   // F1a: kunci yang SUDAH ADA dihormati apa adanya — termasuk array kosong
-  // hasil pengguna menghapus seluruh item (dulu: array kosong selalu
-  // memunculkan kembali item flagship setelah reload). Seed flagship hanya
-  // untuk instalasi pertama (kunci belum pernah ada) / data rusak.
+  // hasil pengguna menghapus seluruh item (menghapus semua item tidak boleh
+  // memunculkan kembali item contoh setelah reload).
+  // Keputusan owner 2026-11-04: instalasi pertama TIDAK lagi di-seed item
+  // flagship — daftar awal kosong; item contoh satu-satunya berasal dari
+  // injeksi Premium Demo (213 item) di bawah ini.
   const [allRabItems, setAllRabItems] = useState<RabItem[]>(() => {
     const result = loadVersioned<RabItem[]>('ezrab_prod_rab_items');
     if (!result.ok && (result.error === 'CORRUPT' || result.error === 'MIGRATION_FAILED')) {
       console.warn(`[EZRAB] Storage ${result.error} for key ezrab_prod_rab_items; using fallback.`);
     }
-    const baseItems = resolveInitialRabItems(result, DEFAULT_FLAGSHIP_RAB_ITEMS);
+    const baseItems = resolveInitialRabItems(result, []);
     // Premium Demo: item-itemnya diinjeksikan satu kali dengan flag sendiri
     // (terpisah dari flag proyek agar urutan inisialisasi tidak saling kunci).
     try {

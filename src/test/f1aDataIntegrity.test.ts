@@ -162,8 +162,12 @@ check(
   ctxSource.includes(').map(markSeedProject)')
 );
 check(
-  'ProjectContext: loader memakai resolveInitialRabItems',
-  ctxSource.includes('resolveInitialRabItems(result, DEFAULT_FLAGSHIP_RAB_ITEMS)')
+  'ProjectContext: loader memakai resolveInitialRabItems (tanpa seed flagship — keputusan 1 proyek contoh 2026-11-04)',
+  ctxSource.includes('resolveInitialRabItems(result, [])')
+);
+check(
+  'ProjectContext: instalasi baru tanpa seed portofolio (satu proyek contoh via injeksi Premium)',
+  ctxSource.includes('resolveInitialProjects(savedJson, alreadySeeded, [])')
 );
 check(
   'ProjectContext: API duplicateProjectData terdaftar',
