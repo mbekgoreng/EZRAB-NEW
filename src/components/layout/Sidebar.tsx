@@ -52,6 +52,8 @@ export interface SidebarProps {
   currentProject: Project | null;
   onBackToLanding?: () => void;
   onOpenSettingsTab?: (tab: string) => void;
+  /** Buka modal Buat Proyek Baru (dimiliki WorkspaceView). */
+  onCreateProject?: () => void;
 }
 
 interface NavItemDef {
@@ -79,6 +81,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   currentProject,
   onBackToLanding,
   onOpenSettingsTab,
+  onCreateProject,
 }) => {
   const { t } = useI18n();
   /* Billing aktif (owner 2026-10-27): kartu bawah sidebar BUKAN lagi
@@ -99,6 +102,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
   const [tooltipPos, setTooltipPos] = useState<{ top: number; label: string } | null>(null);
   const [projectPickerOpen, setProjectPickerOpen] = useState(false);
+  // Mode rel ikon (keputusan owner 2026-11-04): di desktop sidebar TIDAK
+  // pernah hilang total — tombol "sembunyikan" kini berhenti di rel ikon
+  // 72px agar ikon menu minimal selalu tampil dan bisa diklik. isHidden
+  // (state lokal pill) dan sidebarCollapsed (prop) sama-sama berarti rel.
+  const railMode = !isMobile && (sidebarCollapsed || isHidden);
 
   // Volume Calculation Submenu Items
   const volumeSubItems = [
@@ -224,7 +232,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const handleMouseEnterItem = (e: React.MouseEvent<HTMLElement>, label: string, id: string) => {
     setHoveredItemId(id);
-    if (!isMobile && sidebarCollapsed) {
+    if (railMode) {
       const rect = e.currentTarget.getBoundingClientRect();
       setTooltipPos({ top: rect.top + rect.height / 2, label });
     }
@@ -338,7 +346,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 pointerEvents: mobileDrawerOpen ? 'auto' : 'none',
               }
             : {
-                width: sidebarCollapsed ? '72px' : '256px',
+                width: railMode ? '72px' : '256px',
                 background: 'var(--ez-color-sidebar)',
                 borderRight: '1px solid var(--ez-color-sidebar-border)',
                 display: 'flex',
@@ -348,7 +356,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 position: 'sticky',
                 top: 0,
                 height: '100%',
-                marginLeft: isHidden ? (sidebarCollapsed ? '-72px' : '-256px') : '0',
+                // Desktop: sidebar tidak pernah keluar layar — mode
+                // sembunyi berhenti di rel ikon (railMode, lebar 72px).
+                marginLeft: '0',
                 transition: 'margin-left 0.35s cubic-bezier(0.4, 0, 0.2, 1), width 200ms ease-out',
                 zIndex: 40,
               }
@@ -363,8 +373,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
               height: '64px',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: !isMobile && sidebarCollapsed ? 'center' : 'space-between',
-              padding: !isMobile && sidebarCollapsed ? '0 12px' : '0 16px',
+              justifyContent: railMode ? 'center' : 'space-between',
+              padding: railMode ? '0 12px' : '0 16px',
               borderBottom: '1px solid var(--ez-color-sidebar-border)',
               flexShrink: 0,
             }}
@@ -406,7 +416,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 />
               </div>
 
-              {(!sidebarCollapsed || isMobile) && (
+              {(!railMode) && (
                 <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
                     <span style={{ fontWeight: 800, fontSize: '16px', letterSpacing: '-0.025em', color: 'var(--ez-color-text-primary)' }}>
@@ -448,7 +458,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
 
           {/* Project selector — compact, minimal */}
-          {(!sidebarCollapsed || isMobile) ? (
+          {(!railMode) ? (
             <div style={{ position: 'relative', margin: '4px 0 8px 0' }}>
               <button
                 type="button"
@@ -577,8 +587,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     <button
                       type="button"
                       onClick={() => {
-                        onSelectMenu('proyek');
+                        // Entri ini WAJIB benar-benar membuka modal buat
+                        // proyek (dulu hanya menavigasi ke daftar proyek).
                         setProjectPickerOpen(false);
+                        if (onCreateProject) onCreateProject();
+                        else onSelectMenu('proyek');
                       }}
                       style={{
                         width: '100%',
@@ -628,19 +641,56 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
           )}
 
+          {/* Buat Proyek Baru — permanen di sidebar, terlihat & bisa diklik
+              di SEMUA mode (lebar penuh, rel ikon, drawer mobile). Keputusan
+              owner 2026-11-04: menu proyek baru tidak boleh ikut hilang. */}
+          <div style={{ display: 'flex', justifyContent: railMode ? 'center' : 'stretch', padding: railMode ? 0 : '0 12px', margin: '2px 0 8px' }}>
+            <button
+              type="button"
+              onClick={() => {
+                if (isMobile) onCloseMobileDrawer();
+                if (onCreateProject) onCreateProject();
+                else onSelectMenu('proyek');
+              }}
+              title={t('nav.create_project')}
+              aria-label={t('nav.create_project')}
+              style={{
+                width: railMode ? '38px' : '100%',
+                height: railMode ? '38px' : undefined,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: railMode ? 'center' : 'flex-start',
+                gap: '8px',
+                padding: railMode ? '0' : '9px 12px',
+                borderRadius: railMode ? '12px' : '10px',
+                border: 'none',
+                background: 'var(--ez-color-primary)',
+                color: '#FFFFFF',
+                fontSize: '12.5px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(37,99,235,0.25)',
+                flexShrink: 0,
+              }}
+            >
+              <Plus size={16} />
+              {!railMode && <span>{t('nav.create_project')}</span>}
+            </button>
+          </div>
+
           {/* =========================================================================
               MAIN NAVIGATION
              ========================================================================= */}
           <nav
             style={{
-              padding: sidebarCollapsed && !isMobile ? '12px 8px' : '10px 12px',
+              padding: railMode ? '12px 8px' : '10px 12px',
               display: 'flex',
               flexDirection: 'column',
               gap: '3px',
             }}
           >
             {/* 1. BERANDA Header & Dashboard */}
-            {(!sidebarCollapsed || isMobile) && (
+            {(!railMode) && (
               <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '6px 12px 3px 12px' }}>
                 {t('nav.group_beranda')}
               </div>
@@ -662,8 +712,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     height: '36px',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: sidebarCollapsed && !isMobile ? 'center' : 'flex-start',
-                    padding: sidebarCollapsed && !isMobile ? '0' : '0 12px',
+                    justifyContent: railMode ? 'center' : 'flex-start',
+                    padding: railMode ? '0' : '0 12px',
                     borderRadius: '8px',
                     fontSize: '13px',
                     fontWeight: active ? 650 : 500,
@@ -678,13 +728,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   }}
                 >
                   <IconComp size={17} color={active ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)'} />
-                  {(!sidebarCollapsed || isMobile) && <span>{item.label}</span>}
+                  {(!railMode) && <span>{item.label}</span>}
                 </button>
               );
             })()}
 
             {/* 2. PROYEK — status filters with real counts */}
-            {(!sidebarCollapsed || isMobile) && (
+            {(!railMode) && (
               <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '12px 12px 3px 12px' }}>
                 {t('nav.proyek')}
               </div>
@@ -714,8 +764,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     height: '36px',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: sidebarCollapsed && !isMobile ? 'center' : 'space-between',
-                    padding: sidebarCollapsed && !isMobile ? '0' : '0 12px',
+                    justifyContent: railMode ? 'center' : 'space-between',
+                    padding: railMode ? '0' : '0 12px',
                     borderRadius: '8px',
                     fontSize: '13px',
                     fontWeight: isSubActive ? 650 : 500,
@@ -730,9 +780,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 >
                   <span style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <SubIcon size={17} color={isSubActive ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)'} />
-                    {(!sidebarCollapsed || isMobile) && <span>{sub.label}</span>}
+                    {(!railMode) && <span>{sub.label}</span>}
                   </span>
-                  {(!sidebarCollapsed || isMobile) && sub.count > 0 && (
+                  {(!railMode) && sub.count > 0 && (
                     <span style={{ fontSize: '11px', fontWeight: 650, color: isSubActive ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)' }}>
                       {sub.count}
                     </span>
@@ -742,7 +792,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             })}
 
             {/* 3. VOLUME & QTO */}
-            {(!sidebarCollapsed || isMobile) && (
+            {(!railMode) && (
               <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '12px 12px 3px 12px' }}>
                 {t('nav.group_volume_qto')}
               </div>
@@ -763,8 +813,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     height: '36px',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: sidebarCollapsed && !isMobile ? 'center' : 'flex-start',
-                    padding: sidebarCollapsed && !isMobile ? '0' : '0 12px',
+                    justifyContent: railMode ? 'center' : 'flex-start',
+                    padding: railMode ? '0' : '0 12px',
                     borderRadius: '8px',
                     fontSize: '13px',
                     fontWeight: isSubActive ? 650 : 500,
@@ -779,13 +829,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   }}
                 >
                   <SubIcon size={17} color={isSubActive ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)'} />
-                  {(!sidebarCollapsed || isMobile) && <span>{sub.label}</span>}
+                  {(!railMode) && <span>{sub.label}</span>}
                 </button>
               );
             })}
 
             {/* 3b. JADWAL & MANAJEMEN */}
-            {(!sidebarCollapsed || isMobile) && (
+            {(!railMode) && (
               <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '12px 12px 3px 12px' }}>
                 {t('nav.group_jadwal')}
               </div>
@@ -800,8 +850,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 height: '36px',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: sidebarCollapsed && !isMobile ? 'center' : 'flex-start',
-                padding: sidebarCollapsed && !isMobile ? '0' : '0 12px',
+                justifyContent: railMode ? 'center' : 'flex-start',
+                padding: railMode ? '0' : '0 12px',
                 borderRadius: '8px',
                 fontSize: '13px',
                 fontWeight: activeMenu === 'manajemen-proyek' ? 650 : 500,
@@ -816,11 +866,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
               }}
             >
               <Calendar size={17} color={activeMenu === 'manajemen-proyek' ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)'} />
-              {(!sidebarCollapsed || isMobile) && <span>{t('nav.jadwal_manajemen')}</span>}
+              {(!railMode) && <span>{t('nav.jadwal_manajemen')}</span>}
             </button>
 
             {/* 4. RAB & ESTIMASI */}
-            {(!sidebarCollapsed || isMobile) && (
+            {(!railMode) && (
               <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '12px 12px 3px 12px' }}>
                 {t('nav.group_rab')}
               </div>
@@ -831,8 +881,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   height: '36px',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: sidebarCollapsed && !isMobile ? 'center' : 'space-between',
-                  padding: sidebarCollapsed && !isMobile ? '0' : '0 12px',
+                  justifyContent: railMode ? 'center' : 'space-between',
+                  padding: railMode ? '0' : '0 12px',
                   borderRadius: '8px',
                   fontSize: '13px',
                   fontWeight: isRabActive ? 650 : 500,
@@ -851,10 +901,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, height: '100%' }}
                 >
                   <Coins size={17} color={isRabActive ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)'} />
-                  {(!sidebarCollapsed || isMobile) && <span>{t('nav.rab_estimasi')}</span>}
+                  {(!railMode) && <span>{t('nav.rab_estimasi')}</span>}
                 </div>
 
-                {(!sidebarCollapsed || isMobile) && (
+                {(!railMode) && (
                   <button
                     type="button"
                     onClick={(e) => {
@@ -877,7 +927,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </div>
 
               {/* Sub-items RAB & Estimasi */}
-              {(!sidebarCollapsed || isMobile) && rabSubmenuOpen && (
+              {(!railMode) && rabSubmenuOpen && (
                 <div
                   style={{
                     paddingLeft: '22px',
@@ -935,13 +985,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
               const isAi = !!item.ai;
               return (
                 <React.Fragment key={item.id}>
-                  {item.id === 'ezrab-ai' && (!sidebarCollapsed || isMobile) && (
+                  {item.id === 'ezrab-ai' && (!railMode) && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '10px', fontWeight: 800, color: 'var(--ez-ai-text)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '12px 12px 3px 12px' }}>
                       <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--ez-ai-chip)', flexShrink: 0 }} />
                       {t('nav.group_ai')}
                     </div>
                   )}
-                  {item.id === 'template-rab' && (!sidebarCollapsed || isMobile) && (
+                  {item.id === 'template-rab' && (!railMode) && (
                     <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '12px 12px 3px 12px' }}>
                       {t('nav.group_data')}
                     </div>
@@ -958,8 +1008,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     height: '36px',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: sidebarCollapsed && !isMobile ? 'center' : 'space-between',
-                    padding: sidebarCollapsed && !isMobile ? '0' : '0 12px',
+                    justifyContent: railMode ? 'center' : 'space-between',
+                    padding: railMode ? '0' : '0 12px',
                     borderRadius: isAi ? '10px' : '8px',
                     fontSize: '13px',
                     fontWeight: isAi ? (active ? 700 : 600) : active ? 650 : 500,
@@ -988,10 +1038,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     ) : (
                       <IconComp size={17} color={active ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)'} />
                     )}
-                    {(!sidebarCollapsed || isMobile) && <span>{item.label}</span>}
+                    {(!railMode) && <span>{item.label}</span>}
                   </div>
 
-                  {(!sidebarCollapsed || isMobile) && item.badge && (
+                  {(!railMode) && item.badge && (
                     isAi ? (
                       <span
                         style={{
@@ -1028,8 +1078,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         height: '36px',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: sidebarCollapsed && !isMobile ? 'center' : 'space-between',
-                        padding: sidebarCollapsed && !isMobile ? '0' : '0 12px',
+                        justifyContent: railMode ? 'center' : 'space-between',
+                        padding: railMode ? '0' : '0 12px',
                         borderRadius: '8px',
                         fontSize: '13px',
                         fontWeight: isDatabaseActive ? 650 : 500,
@@ -1055,10 +1105,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, height: '100%' }}
                       >
                         <Database size={17} color={isDatabaseActive ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)'} />
-                        {(!sidebarCollapsed || isMobile) && <span>{t('nav.database')}</span>}
+                        {(!railMode) && <span>{t('nav.database')}</span>}
                       </div>
 
-                      {(!sidebarCollapsed || isMobile) && (
+                      {(!railMode) && (
                         <button
                           type="button"
                           onClick={(e) => {
@@ -1088,7 +1138,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     </div>
 
                     {/* Expanded Database Submenu */}
-                    {(!sidebarCollapsed || isMobile) && databaseSubmenuOpen && (
+                    {(!railMode) && databaseSubmenuOpen && (
                       <div
                         style={{
                           display: 'flex',
@@ -1146,7 +1196,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <div style={{ height: '1px', background: 'var(--ez-color-sidebar-border)', margin: '8px 4px' }} />
 
             {/* SYSTEM: Pengaturan */}
-            {(!sidebarCollapsed || isMobile) && (
+            {(!railMode) && (
               <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '6px 12px 3px 12px' }}>
                 {t('nav.group_lainnya')}
               </div>
@@ -1161,8 +1211,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 height: '36px',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: sidebarCollapsed && !isMobile ? 'center' : 'flex-start',
-                padding: sidebarCollapsed && !isMobile ? '0' : '0 12px',
+                justifyContent: railMode ? 'center' : 'flex-start',
+                padding: railMode ? '0' : '0 12px',
                 borderRadius: '8px',
                 fontSize: '13px',
                 fontWeight: activeMenu === 'pengaturan' || activeMenu === 'subscription' ? 650 : 500,
@@ -1185,7 +1235,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 size={17}
                 color={activeMenu === 'pengaturan' || activeMenu === 'subscription' ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)'}
               />
-              {(!sidebarCollapsed || isMobile) && <span>{t('nav.pengaturan')}</span>}
+              {(!railMode) && <span>{t('nav.pengaturan')}</span>}
             </button>
             {/* Tutorial EZRAB */}
             <button
@@ -1204,8 +1254,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 height: '36px',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: sidebarCollapsed && !isMobile ? 'center' : 'flex-start',
-                padding: sidebarCollapsed && !isMobile ? '0' : '0 12px',
+                justifyContent: railMode ? 'center' : 'flex-start',
+                padding: railMode ? '0' : '0 12px',
                 borderRadius: '8px',
                 fontSize: '13px',
                 fontWeight: 500,
@@ -1223,7 +1273,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 size={17}
                 color={hoveredItemId === 'tutorial' ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)'}
               />
-              {(!sidebarCollapsed || isMobile) && <span>{t('nav.tutorial')}</span>}
+              {(!railMode) && <span>{t('nav.tutorial')}</span>}
             </button>
           </nav>
         </div>
@@ -1235,7 +1285,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
            ========================================================================= */}
         <div
           style={{
-            padding: sidebarCollapsed && !isMobile ? '12px 8px' : '12px 12px',
+            padding: railMode ? '12px 8px' : '12px 12px',
             borderTop: '1px solid var(--ez-color-sidebar-border)',
             display: 'flex',
             flexDirection: 'column',
@@ -1246,7 +1296,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             background: isMobile ? 'var(--ez-color-surface)' : 'var(--ez-color-sidebar)',
           }}
         >
-          {(!sidebarCollapsed || isMobile) && (() => {
+          {(!railMode) && (() => {
             /* Tampilan kotak BERBEDA per paket (owner 2026-10-27):
                Free = polos sederhana; Starter = biru muda berbingkai;
                Pro = gradien biru premium. Judul = paket aktif, bukan
@@ -1353,15 +1403,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
               fontWeight: 600,
               display: 'flex',
               alignItems: 'center',
-              justifyContent: sidebarCollapsed && !isMobile ? 'center' : 'flex-start',
-              padding: sidebarCollapsed && !isMobile ? '0' : '0 12px',
+              justifyContent: railMode ? 'center' : 'flex-start',
+              padding: railMode ? '0' : '0 12px',
               gap: '12px',
               cursor: 'pointer',
               transition: 'all 0.15s ease',
             }}
           >
             <LogOut size={16} />
-            {(!sidebarCollapsed || isMobile) && <span>{t('nav.back_landing')}</span>}
+            {(!railMode) && <span>{t('nav.back_landing')}</span>}
           </button>
         </div>
       </aside>
@@ -1371,16 +1421,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {!isMobile && (
         <button
           type="button"
-          onClick={() => setIsHidden((v) => !v)}
-          title={isHidden ? t('nav.show_sidebar') : t('nav.hide_sidebar')}
-          aria-label={isHidden ? t('nav.show_sidebar') : t('nav.hide_sidebar')}
-          aria-pressed={isHidden}
+          onClick={() => {
+            // Pill kini berputar antara lebar penuh ⇄ rel ikon (tidak ada
+            // lagi keadaan hilang total di desktop).
+            if (isHidden) setIsHidden(false);
+            else if (sidebarCollapsed) onToggleCollapse();
+            else setIsHidden(true);
+          }}
+          title={railMode ? t('nav.show_sidebar') : t('nav.hide_sidebar')}
+          aria-label={railMode ? t('nav.show_sidebar') : t('nav.hide_sidebar')}
+          aria-pressed={railMode}
           style={{
             position: 'fixed',
             // 8px clear of the sidebar edge so the capsule never crowds
             // group-header text or item rows; bottom-anchored in the
             // sidebar's neutral empty band instead of vertical center.
-            left: isHidden ? '8px' : sidebarCollapsed ? '68px' : '252px',
+            left: railMode ? '68px' : '252px',
             top: 'auto',
             bottom: '32px',
             transform: 'none',
@@ -1411,12 +1467,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
             e.currentTarget.style.color = 'var(--ez-color-text-muted)';
           }}
         >
-          {isHidden ? '›' : '‹'}
+          {railMode ? '›' : '‹'}
         </button>
       )}
 
       {/* Floating Tooltip when collapsed */}
-      {!isMobile && sidebarCollapsed && tooltipPos && (
+      {railMode && tooltipPos && (
         <div
           style={{
             position: 'fixed',

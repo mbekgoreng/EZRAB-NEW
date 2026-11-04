@@ -434,6 +434,7 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
           setPengaturanActiveTab(tab);
           setActiveMenu('pengaturan');
         }}
+        onCreateProject={() => setCreateModalOpen(true)}
       />
 
       {/* =========================================================================
