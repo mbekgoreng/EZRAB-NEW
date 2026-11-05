@@ -37,6 +37,7 @@ import {
   computeSeedCostSummary,
   markSeedProject,
   injectOnceById,
+  refreshByMatch,
   reconcileProjectSummaries,
 } from '../lib/demoSeed';
 import {
@@ -731,7 +732,25 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
           /* abaikan */
         }
       }
-      return injected.items;
+      // Penyegaran versi dataset demo (v2 = 213/213 berharga, 2026-11-04):
+      // instalasi lama yang masih menyimpan dataset v1 diganti salinan
+      // segarnya satu kali; penghapusan oleh pengguna tetap dihormati.
+      const DATASET_V_KEY = 'ezrab_premium_demo_dataset_v';
+      const datasetCurrent = localStorage.getItem(DATASET_V_KEY) === '2';
+      const refreshed = refreshByMatch(
+        injected.items,
+        [PREMIUM_DEMO_PROJECT],
+        (p) => p.id === PREMIUM_DEMO_PROJECT.id,
+        datasetCurrent
+      );
+      if (!datasetCurrent) {
+        try {
+          localStorage.setItem(DATASET_V_KEY, '2');
+        } catch {
+          /* abaikan */
+        }
+      }
+      return refreshed;
     } catch {
       // Jalur pengecualian mengikuti model yang sama: satu proyek contoh.
       return [PREMIUM_DEMO_PROJECT];
@@ -795,7 +814,24 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
           /* abaikan */
         }
       }
-      return injected.items;
+      // Penyegaran versi dataset demo (v2) untuk item: pola yang sama
+      // dengan proyeknya di atas.
+      const ITEMS_DATASET_V_KEY = 'ezrab_premium_demo_items_dataset_v';
+      const datasetCurrent = localStorage.getItem(ITEMS_DATASET_V_KEY) === '2';
+      const refreshed = refreshByMatch(
+        injected.items,
+        PREMIUM_DEMO_RAB_ITEMS,
+        (i) => i.projectId === PREMIUM_DEMO_PROJECT.id,
+        datasetCurrent
+      );
+      if (!datasetCurrent) {
+        try {
+          localStorage.setItem(ITEMS_DATASET_V_KEY, '2');
+        } catch {
+          /* abaikan */
+        }
+      }
+      return refreshed;
     } catch {
       return baseItems;
     }

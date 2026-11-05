@@ -1,11 +1,16 @@
 /**
  * Generator dataset "Rumah Tinggal 2 Lantai — EZRAB Premium Demo".
  *
- * Prinsip integritas (tidak bisa ditawar):
- * - Harga HANYA dari gerbang kanonis (matchDedItemToAhsp status RESOLVED:
+ * Prinsip integritas:
+ * - Harga UTAMA dari gerbang kanonis (matchDedItemToAhsp status RESOLVED:
  *   kode terverifikasi + satuan persis + komposisi FULL + konsisten facade).
- * - Status lain => unitPrice/amount null (BUKAN 0) + status pemetaan jujur.
- * - Deskripsi item RESOLVED = judul resmi katalog, bukan karangan.
+ * - Arahan owner 2026-11-04 (dataset demo harus tampil bersih): baris yang
+ *   tidak lolos gerbang diselesaikan berlapis — kurasi kode eksplisit,
+ *   penyelesaian komponen terdokumentasi, terakhir estimasi contoh berlabel
+ *   EZRAB_ASSUMPTION (demo-gen/completions.ts). Provenance tiap baris selalu
+ *   tercatat; tidak ada harga tanpa label sumber. Ini khusus dataset demo —
+ *   gerbang harga proyek nyata tidak berubah.
+ * - Deskripsi item berkode = judul resmi katalog, bukan karangan.
  * - Kuantitas = input demonstrasi dari asumsi geometri yang dinyatakan.
  *
  * Output:
@@ -17,6 +22,7 @@ import * as path from 'path';
 import { SPEC, SECTIONS, type DemoSpecItem } from './spec';
 import { SPEC2 } from './spec2';
 import { SPEC3 } from './spec3';
+import { CURATED, COMPONENT_COMPLETIONS, ESTIMATES } from './completions';
 import { matchDedItemToAhsp, type CanonicalDedMatch } from '../src/ai-tools/ded-canonical/canonicalDedPricing';
 import { officialAhspRepository } from '../src/data/nationalCostDatabase/officialAhspRepository';
 import { priceResolver2026 } from '../src/data/priceDatabase2026/resolver';
@@ -32,6 +38,7 @@ interface GenRow {
   spec: DemoSpecItem;
   verdict: CanonicalDedMatch;
   item: RabItem;
+  path: 'CANONICAL' | 'COMPLETED' | 'ESTIMATE' | 'UNRESOLVED';
 }
 
 /** Komponen snapshot dari komposisi resolver 2026 (sumber harga yang sama
@@ -52,15 +59,93 @@ function toSnapshotComponents(
   }));
 }
 
+/**
+ * Jalur COMPLETED: analisa AHSP terverifikasi yang kurang tepat satu/beberapa
+ * harga komponen dilengkapi dari tabel penyelesaian (completions.ts).
+ * Mengembalikan false bila ada komponen hilang di luar tabel — item jatuh ke
+ * jalur estimasi/fallback dan validasi akhir akan menandainya.
+ */
+function tryComplete(base: RabItem, code: string, spec: DemoSpecItem): boolean {
+  const cat = officialAhspRepository.getOfficialAhsp(code);
+  if (!cat) return false;
+  const comp = priceResolver2026.resolveAhspUnitPrice(cat as never);
+  if (comp.unitPrice == null) return false;
+  const kinds = ['labor', 'material', 'equipment'] as const;
+  const additions: Record<(typeof kinds)[number], number> = { labor: 0, material: 0, equipment: 0 };
+  const used: { name: string; completion: (typeof COMPONENT_COMPLETIONS)[string] }[] = [];
+  for (const kind of kinds) {
+    for (const c of comp[kind].components) {
+      if (c.unitPrice == null || c.subtotalPerUnit == null) {
+        const completion = COMPONENT_COMPLETIONS[`${c.itemName}|${c.unit}`];
+        if (!completion) return false;
+        additions[kind] += c.coefficient * completion.price;
+        used.push({ name: c.itemName, completion });
+      }
+    }
+  }
+  if (used.length === 0) return false;
+  const unitPrice = Math.round(comp.unitPrice + additions.labor + additions.material + additions.equipment);
+  const tail = spec.name.split('—').slice(1).join('—').trim();
+  base.description =
+    tail && !cat.name.toLowerCase().includes(tail.toLowerCase())
+      ? `${cat.name} — ${tail}`
+      : cat.name;
+  base.code = cat.code;
+  base.ahspCode = cat.code;
+  base.unit = cat.unit;
+  base.materialPrice = Math.round(comp.material.subtotalPerUnit + additions.material);
+  base.laborPrice = Math.round(comp.labor.subtotalPerUnit + additions.labor);
+  base.equipmentPrice = Math.round(comp.equipment.subtotalPerUnit + additions.equipment);
+  base.unitPrice = unitPrice;
+  base.amount = Math.round(spec.qty * unitPrice);
+  base.totalPrice = base.amount;
+  base.priceStatus = 'PRICE_RESOLVED';
+  const allOfficial = used.every((u) => u.completion.official);
+  base.priceSourceKind = allOfficial ? 'OFFICIAL_AHSP' : 'MARKET_REFERENCE';
+  base.priceSourceLabel = allOfficial
+    ? 'AHSP 2026 — SE DJBK No. 47/SE/Dk/2026'
+    : 'AHSP 2026 + pelengkap harga pasar (dataset demo)';
+  base.priceSourceName = cat.sourceDocument;
+  base.priceSourceExplanation =
+    `Kode ${cat.code} terverifikasi di katalog resmi AHSP 2026 (${cat.sourceDocument}); ` +
+    'satuan cocok persis. Komposisi resmi kecuali: ' +
+    used.map((u) => `${u.name} — ${u.completion.basis}`).join(' ');
+  base.ahspMappingStatus = 'VERIFIED';
+  base.ahspIdentityStatus = 'SAFE';
+  const patch = (comps: AHSPComponent[]): AHSPComponent[] =>
+    comps.map((sc) => {
+      if (sc.unitPrice != null) return sc;
+      const completion = COMPONENT_COMPLETIONS[`${sc.name}|${sc.unit}`];
+      if (!completion) return sc;
+      return { ...sc, unitPrice: completion.price, total: Math.round(sc.coefficient * completion.price) };
+    });
+  base.ahspSnapshot = {
+    ahspId: cat.id,
+    code: cat.code,
+    version: '2026',
+    name: cat.name,
+    unit: cat.unit,
+    laborComponents: patch(toSnapshotComponents(comp.labor.components, 'LABOR')),
+    materialComponents: patch(toSnapshotComponents(comp.material.components, 'MATERIAL')),
+    equipmentComponents: patch(toSnapshotComponents(comp.equipment.components, 'EQUIPMENT')),
+    unitPrice,
+    sourceDocument: cat.sourceDocument,
+    snapshotTimestamp: TS,
+  };
+  return true;
+}
+
 const perSectionCount = new Map<number, number>();
 const rows: GenRow[] = ALL.map((spec, idx) => {
   const n = (perSectionCount.get(spec.s) ?? 0) + 1;
   perSectionCount.set(spec.s, n);
+  const curated = CURATED[idx + 1];
+  const effUnit = curated?.unit ?? spec.unit;
   const verdict = matchDedItemToAhsp({
     name: spec.name,
-    unit: spec.unit,
+    unit: effUnit,
     specification: spec.spec,
-    claimedAhspCode: spec.code,
+    claimedAhspCode: curated?.code ?? spec.code,
   });
   const sectionName = SECTIONS[spec.s - 1];
   const base: RabItem = {
@@ -73,7 +158,7 @@ const rows: GenRow[] = ALL.map((spec, idx) => {
     sectionName,
     description: spec.name,
     volume: spec.qty,
-    unit: spec.unit,
+    unit: effUnit,
     unitPrice: null,
     amount: null,
     totalPrice: null,
@@ -84,7 +169,9 @@ const rows: GenRow[] = ALL.map((spec, idx) => {
     notes: spec.basis,
   };
 
+  let path: GenRow['path'] = 'UNRESOLVED';
   if (verdict.status === 'RESOLVED' && verdict.matchedCode) {
+    path = 'CANONICAL';
     const cat = officialAhspRepository.getOfficialAhsp(verdict.matchedCode);
     if (!cat) throw new Error(`RESOLVED tanpa item katalog: ${verdict.matchedCode}`);
     // Komposisi dari resolver 2026 — jalur yang sama dengan gerbang kanonis.
@@ -135,6 +222,27 @@ const rows: GenRow[] = ALL.map((spec, idx) => {
       sourceDocument: cat.sourceDocument,
       snapshotTimestamp: TS,
     };
+  } else if (
+    verdict.status === 'INCOMPLETE_COMPONENTS' &&
+    verdict.matchedCode &&
+    tryComplete(base, verdict.matchedCode, spec)
+  ) {
+    path = 'COMPLETED';
+  } else if (ESTIMATES[idx + 1]) {
+    const est = ESTIMATES[idx + 1];
+    const amount = Math.round(spec.qty * est.price);
+    base.unitPrice = est.price;
+    base.amount = amount;
+    base.totalPrice = amount;
+    base.priceStatus = 'PRICE_RESOLVED';
+    base.priceSourceKind = 'EZRAB_ASSUMPTION';
+    base.priceSourceLabel = 'Estimasi contoh — dataset demo EZRAB';
+    base.priceSourceName = 'Dataset Premium Demo (estimasi terdokumentasi)';
+    base.priceSourceExplanation =
+      est.basis +
+      ' Estimasi dataset demonstrasi atas arahan owner 2026-11-04; bukan harga resmi dan bukan untuk dokumen konstruksi.';
+    base.ahspMappingStatus = 'NOT_APPLICABLE';
+    path = 'ESTIMATE';
   } else {
     base.priceSourceExplanation = verdict.reason;
     if (verdict.status === 'UNIT_MISMATCH') {
@@ -147,7 +255,7 @@ const rows: GenRow[] = ALL.map((spec, idx) => {
       base.ahspMappingStatus = 'NEEDS_MAPPING';
     }
   }
-  return { spec, verdict, item: base };
+  return { spec, verdict, item: base, path };
 });
 
 // ---------- Ringkasan biaya konsisten (rumus sama computeSeedCostSummary) ----------
@@ -172,10 +280,15 @@ const project: Project = {
   year: 2026,
   status: 'draft',
   isDemo: true,
+  // Bidang konfigurasi finansial proyek (dibaca mesin dari FIELD proyek —
+  // R-02/R-03): jangan sampai hilang saat regenerasi.
+  ...( { ppnEnabled: true, overheadPercent: 5 } as object),
   notes:
-    'DATA DEMONSTRASI — bukan dokumen konstruksi. Kuantitas dari asumsi geometri contoh; ' +
-    'harga hanya dari katalog resmi AHSP 2026 lewat resolver kanonis; item tanpa padanan ' +
-    'terverifikasi dibiarkan tanpa harga (null) dan tercatat di register unresolved.',
+    'DATA DEMONSTRASI — bukan dokumen konstruksi. Kuantitas dari asumsi geometri contoh. ' +
+    'Harga: mayoritas dari katalog resmi AHSP 2026 lewat resolver kanonis; sebagian kecil ' +
+    'komponen dilengkapi konversi/harga pasar terdokumentasi, dan baris di luar katalog ' +
+    'memakai estimasi contoh berlabel (arahan owner 2026-11-04) — provenance tiap baris ' +
+    'tercatat di label sumbernya.',
   sections: [],
   costSummary: {
     directCost,
@@ -215,11 +328,17 @@ for (const r of rows) {
   ids.add(r.item.id);
   if (wbs.has(r.item.wbsCode!)) errors.push(`WBS ganda ${r.item.wbsCode}`);
   wbs.add(r.item.wbsCode!);
-  if (r.item.priceStatus === 'PRICE_RESOLVED') {
+  // Doktrin owner 2026-11-04: dataset demo WAJIB 213/213 berharga.
+  if (r.item.unitPrice == null || r.item.amount == null) {
+    errors.push(`Item tanpa harga pada ${r.item.id} (jalur ${r.path}, status gerbang ${r.verdict.status})`);
+  } else if (r.item.amount !== Math.round(r.item.volume * r.item.unitPrice)) {
+    errors.push(`Aritmetika ${r.item.id}`);
+  }
+  if (r.path === 'CANONICAL' || r.path === 'COMPLETED') {
     if (!r.item.ahspCode || !officialAhspRepository.hasOfficialAhsp(r.item.ahspCode)) errors.push(`Kode tak resmi pada ${r.item.id}`);
-    if (r.item.unitPrice == null || r.item.amount !== Math.round(r.item.volume * r.item.unitPrice)) errors.push(`Aritmetika ${r.item.id}`);
-  } else if (r.item.unitPrice !== null || r.item.amount !== null) {
-    errors.push(`Item unresolved berharga pada ${r.item.id}`);
+  }
+  if (r.path === 'ESTIMATE' && r.item.priceSourceKind !== 'EZRAB_ASSUMPTION') {
+    errors.push(`Item estimasi tanpa label asumsi pada ${r.item.id}`);
   }
 }
 const sumCheck = priced.reduce((s, r) => s + (r.item.amount ?? 0), 0);
@@ -231,9 +350,11 @@ fs.mkdirSync(outDir, { recursive: true });
 const items = rows.map((r) => r.item);
 const moduleBody = `/**
  * GENERATED — JANGAN EDIT MANUAL.
- * Dataset "Rumah Tinggal 2 Lantai — EZRAB Premium Demo" (213 baris direncanakan).
- * Digenerate dari katalog resmi AHSP 2026 lewat gerbang kanonis
- * (matchDedItemToAhsp): harga hanya untuk item RESOLVED; selain itu null.
+ * Dataset "Rumah Tinggal 2 Lantai — EZRAB Premium Demo" (213 baris).
+ * Harga: gerbang kanonis AHSP 2026 (matchDedItemToAhsp) + kurasi kode
+ * eksplisit + penyelesaian komponen terdokumentasi + estimasi contoh
+ * berlabel untuk baris di luar katalog (demo-gen/completions.ts;
+ * arahan owner 2026-11-04: 213/213 berharga, provenance per baris).
  * Regenerasi: demo-gen/generate.ts (lihat laporan pendamping di your_files).
  */
 import type { Project, RabItem } from '../types';
@@ -260,9 +381,12 @@ fs.writeFileSync(path.join(outDir, 'matching-report.csv'), matchCsv);
 
 const byStatus = new Map<string, number>();
 for (const r of rows) byStatus.set(r.verdict.status, (byStatus.get(r.verdict.status) ?? 0) + 1);
+const byPath = new Map<string, number>();
+for (const r of rows) byPath.set(r.path, (byPath.get(r.path) ?? 0) + 1);
 const summary = {
   totalItems: rows.length,
   byStatus: Object.fromEntries(byStatus),
+  byPath: Object.fromEntries(byPath),
   pricedItems: priced.length,
   unresolvedItems: rows.length - priced.length,
   directCost, overheadAmount, profitAmount, subtotalBeforeTax, taxAmount, grandTotal,
