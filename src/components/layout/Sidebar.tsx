@@ -911,7 +911,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       e.stopPropagation();
                       setRabSubmenuOpen(!rabSubmenuOpen);
                     }}
-                    style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--ez-color-text-muted)', padding: '2px', display: 'flex' }}
+                    style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--ez-color-text-muted)', padding: '5px', display: 'flex' }}
                     title={t('nav.toggle_rab')}
                     aria-label={t('nav.toggle_rab')}
                   >
@@ -1120,7 +1120,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             border: 'none',
                             cursor: 'pointer',
                             color: 'var(--ez-color-text-muted)',
-                            padding: '2px',
+                            padding: '5px',
                             display: 'flex',
                           }}
                           title={t('nav.toggle_db')}

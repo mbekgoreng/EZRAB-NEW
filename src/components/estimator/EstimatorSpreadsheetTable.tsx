@@ -494,8 +494,8 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                             }}
                             title={`+ Tambah item di kelompok ${group.categoryName}`}
                             style={{
-                              height: '24px',
-                              padding: '0 8px',
+                              height: '30px',
+                              padding: '0 10px',
                               borderRadius: '4px',
                               background: 'var(--ez-hue-blue-bg)',
                               border: '1px solid var(--ez-hue-blue-border)',
@@ -880,8 +880,8 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                                     border: 'none',
                                     color: 'var(--ez-color-text-muted)',
                                     cursor: 'pointer',
-                                    padding: '3px',
-                                    borderRadius: '4px',
+                                    padding: '6px',
+                                    borderRadius: '6px',
                                   }}
                                   onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--ez-color-primary)')}
                                   onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ez-color-text-muted)')}
@@ -900,8 +900,8 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                                     border: 'none',
                                     color: 'var(--ez-color-text-muted)',
                                     cursor: 'pointer',
-                                    padding: '3px',
-                                    borderRadius: '4px',
+                                    padding: '6px',
+                                    borderRadius: '6px',
                                   }}
                                   onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--ez-color-primary)')}
                                   onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ez-color-text-muted)')}
@@ -916,7 +916,7 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                                   style={{
                                     position: 'absolute',
                                     right: '8px',
-                                    top: '32px',
+                                    top: '38px',
                                     background: 'var(--ez-color-surface)',
                                     borderRadius: '8px',
                                     border: '1px solid var(--ez-color-border-line)',

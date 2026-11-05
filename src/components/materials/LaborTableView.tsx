@@ -317,7 +317,7 @@ export const LaborTableView: React.FC<LaborTableViewProps> = ({
                         onSelectLabor(lab);
                       }}
                       style={{
-                        padding: '4px 6px',
+                        padding: '7px 9px',
                         borderRadius: '6px',
                         border: '1px solid var(--ez-color-border-line)',
                         backgroundColor: 'var(--ez-color-surface)',
@@ -335,7 +335,7 @@ export const LaborTableView: React.FC<LaborTableViewProps> = ({
                         onOverridePrice?.(lab);
                       }}
                       style={{
-                        padding: '4px 7px',
+                        padding: '7px 10px',
                         borderRadius: '6px',
                         border: '1px solid var(--ez-hue-blue-border)',
                         backgroundColor: 'var(--ez-hue-blue-bg)',

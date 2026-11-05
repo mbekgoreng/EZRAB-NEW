@@ -1696,6 +1696,29 @@ export class MaterialDatabaseService {
   }
 
   /**
+   * Updates an existing material master (jalur Edit di Database Material).
+   * Identitas (id + materialCode) tidak berubah. Hasil edit dipersistenkan
+   * sebagai override pengguna agar bertahan setelah reload — termasuk untuk
+   * material katalog bawaan (salinan hasil edit menimpa versi katalog saat
+   * inisialisasi, pola yang sama dengan userAddedMaterials).
+   */
+  public updateMaterial(material: MaterialMaster): void {
+    const prev = this.materialsById.get(material.id);
+    if (prev && prev.materialCode !== material.materialCode) {
+      this.materialsByCode.delete(prev.materialCode.toUpperCase());
+    }
+    this.materialsById.set(material.id, material);
+    this.materialsByCode.set(material.materialCode.toUpperCase(), material);
+    if (this.isInitialized) {
+      this.userAddedMaterials = [
+        material,
+        ...this.userAddedMaterials.filter((m) => m.id !== material.id),
+      ];
+      saveUserJson(USER_MATERIALS_KEY, this.userAddedMaterials);
+    }
+  }
+
+  /**
    * Retrieves project price override if present
    */
   public getProjectPriceOverride(projectId: string, materialIdOrCode: string): MaterialPrice | undefined {

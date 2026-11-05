@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   X,
   Package,
@@ -26,13 +26,20 @@ interface AddMaterialWizardModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (material: MaterialMaster, price?: MaterialPrice) => void;
+  /** Mode edit: material yang sedang diedit (id + kode dipertahankan). */
+  initialMaterial?: MaterialMaster | null;
+  /** Harga utama material saat ini, untuk prefill langkah Harga. */
+  initialPrice?: MaterialPrice | null;
 }
 
 export const AddMaterialWizardModal: React.FC<AddMaterialWizardModalProps> = ({
   isOpen,
   onClose,
   onSave,
+  initialMaterial,
+  initialPrice,
 }) => {
+  const isEdit = !!initialMaterial;
   const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
 
   // Form State
@@ -63,6 +70,31 @@ export const AddMaterialWizardModal: React.FC<AddMaterialWizardModalProps> = ({
     notes: '',
   });
 
+  // Prefill mode edit setiap kali wizard dibuka untuk material tertentu.
+  useEffect(() => {
+    if (!isOpen || !initialMaterial) return;
+    setStep(1);
+    setFormData({
+      name: initialMaterial.name || '',
+      sector: (initialMaterial.sector as ConstructionSector) || 'BANGUNAN',
+      category: initialMaterial.category || 'Material Pokok',
+      unit: initialMaterial.unit || 'sak',
+      specification: initialMaterial.specification || '',
+      standard: initialMaterial.standard || 'SNI Berlaku',
+      grade: initialMaterial.grade || '',
+      brand: initialMaterial.brand || 'Multi-Brand',
+      productLine: initialMaterial.product || '',
+      priceTier: (initialMaterial.priceTier as PriceTier) || 'STANDARD',
+      price: initialPrice?.price ?? 0,
+      province: initialPrice?.region?.province || 'Jawa Timur',
+      city: initialPrice?.region?.city || '',
+      supplierName: initialPrice?.supplierName || initialPrice?.sourceName || '',
+      taxIncluded: initialPrice?.taxIncluded ?? false,
+      deliveryIncluded: initialPrice?.deliveryIncluded ?? false,
+      notes: initialPrice?.notes || '',
+    });
+  }, [isOpen, initialMaterial, initialPrice]);
+
   if (!isOpen) return null;
 
   const handleNext = () => {
@@ -82,6 +114,58 @@ export const AddMaterialWizardModal: React.FC<AddMaterialWizardModalProps> = ({
   };
 
   const handleSubmit = () => {
+    if (isEdit && initialMaterial) {
+      // Mode edit: identitas dipertahankan (id + kode sama); harga hanya
+      // dicatat sebagai record baru bila nilainya berubah dari harga utama
+      // saat ini (pola riwayat harga — record lama tidak ditimpa).
+      const edited: MaterialMaster = {
+        ...initialMaterial,
+        name: formData.name.trim(),
+        category: formData.category,
+        sector: formData.sector,
+        unit: formData.unit.trim().toLowerCase(),
+        specification: formData.specification.trim() || initialMaterial.specification,
+        standard: formData.standard.trim(),
+        grade: formData.grade.trim() || undefined,
+        brand: formData.brand.trim() || 'Multi-Brand',
+        product: formData.productLine.trim() || undefined,
+        priceTier: formData.priceTier,
+      };
+      let priceRec: MaterialPrice | undefined = undefined;
+      if (formData.price > 0 && formData.price !== (initialPrice?.price ?? 0)) {
+        priceRec = {
+          id: `prc-${Date.now()}`,
+          materialId: edited.id,
+          materialCode: edited.materialCode,
+          brand: edited.brand,
+          brandName: edited.brand,
+          regionId: `REG-${(formData.city || formData.province).toUpperCase()}`,
+          region: { country: 'Indonesia', province: formData.province, city: formData.city },
+          price: Number(formData.price),
+          currency: 'IDR',
+          unit: edited.unit,
+          priceTier: formData.priceTier,
+          priceType: 'USER_DEFINED',
+          sourceType: 'USER_INPUT',
+          sourceName: formData.supplierName || 'Input pengguna (edit material)',
+          supplierName: formData.supplierName || undefined,
+          taxIncluded: formData.taxIncluded,
+          taxRate: 0.11,
+          deliveryIncluded: formData.deliveryIncluded,
+          confidence: 'HIGH',
+          verificationStatus: 'VERIFIED',
+          freshness: 'CURRENT',
+          priceDate: new Date().toISOString().split('T')[0],
+          notes: formData.notes || 'Diperbarui dari Edit Material',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+      }
+      onSave(edited, priceRec);
+      onClose();
+      return;
+    }
+
     const autoCode = `MAT-${formData.sector.slice(0, 3)}-${Date.now().toString().slice(-5)}`;
     const newMaterial: MaterialMaster = {
       id: `mat-${Date.now()}`,
@@ -144,10 +228,12 @@ export const AddMaterialWizardModal: React.FC<AddMaterialWizardModalProps> = ({
         <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
           <div>
             <span className="text-[10px] font-bold text-emerald-700 tracking-wider uppercase">
-              Wizard Tambah Material
+              {isEdit ? 'Wizard Edit Material' : 'Wizard Tambah Material'}
             </span>
             <h3 className="text-base font-black ez-text-primary mt-0.5">
-              Registrasi Material Baru ke Database 2026
+              {isEdit
+                ? `Edit: ${initialMaterial?.name} (${initialMaterial?.materialCode})`
+                : 'Registrasi Material Baru ke Database 2026'}
             </h3>
           </div>
           <button
@@ -486,7 +572,15 @@ export const AddMaterialWizardModal: React.FC<AddMaterialWizardModalProps> = ({
               <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 flex items-start gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                 <div>
-                  <strong>Jaminan Integritas Data EZRAB:</strong> Material ini akan mendapatkan kode unik kanonikal, siap digunakan untuk estimasi RAB, AHSP, dan kalkulator konstruksi.
+                  {isEdit ? (
+                    <>
+                      <strong>Mode Edit:</strong> kode material ({initialMaterial?.materialCode}) dan seluruh relasi RAB/AHSP tetap sama — hanya data di atas yang diperbarui. Bila harga berubah, harga baru dicatat sebagai record riwayat baru.
+                    </>
+                  ) : (
+                    <>
+                      <strong>Jaminan Integritas Data EZRAB:</strong> Material ini akan mendapatkan kode unik kanonikal, siap digunakan untuk estimasi RAB, AHSP, dan kalkulator konstruksi.
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -519,7 +613,7 @@ export const AddMaterialWizardModal: React.FC<AddMaterialWizardModalProps> = ({
               className="px-6 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition flex items-center gap-1.5 shadow-xs"
             >
               <Check className="w-4 h-4" />
-              Simpan ke Database
+              {isEdit ? 'Simpan Perubahan' : 'Simpan ke Database'}
             </button>
           )}
         </div>

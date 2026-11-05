@@ -43,6 +43,18 @@ import {
   Square,
   ArrowUpDown,
   FolderKanban,
+  Globe,
+  Building2,
+  Route,
+  Droplets,
+  Landmark,
+  Sprout,
+  Waves,
+  Construction,
+  Droplet,
+  Mountain,
+  Factory,
+  type LucideIcon,
 } from 'lucide-react';
 import {
   MaterialMaster,
@@ -62,6 +74,7 @@ import { useProject } from '../../context/ProjectContext';
 // Dedicated Sub-components & Helpers
 import { MaterialInspectorPanel } from './MaterialInspectorPanel';
 import { AddMaterialWizardModal } from './AddMaterialWizardModal';
+import { AddBrandPriceModal } from './AddBrandPriceModal';
 import { MaterialCompareModal } from './MaterialCompareModal';
 import { MaterialDataQualityModal } from './MaterialDataQualityModal';
 import { AiPriceResearchDrawer } from './AiPriceResearchDrawer';
@@ -126,18 +139,19 @@ function matchesSearchQuery(haystack: string, rawQuery: string): boolean {
   return queryVariants(rawQuery).some((variant) => variant.split(' ').every((token) => hay.includes(token)));
 }
 
-const SECTOR_OPTIONS: Array<{ id: ConstructionSector | 'ALL'; label: string; icon: string }> = [
-  { id: 'ALL', label: 'Semua Sektor', icon: '🌐' },
-  { id: 'BANGUNAN', label: 'Bangunan', icon: '🏠' },
-  { id: 'JALAN', label: 'Jalan', icon: '🛣️' },
-  { id: 'DRAINASE', label: 'Drainase', icon: '💧' },
-  { id: 'JEMBATAN', label: 'Jembatan', icon: '🌉' },
-  { id: 'IRIGASI', label: 'Irigasi', icon: '🌱' },
-  { id: 'SUNGAI', label: 'Sungai', icon: '🌊' },
-  { id: 'BENDUNG', label: 'Bendung', icon: '🏗️' },
-  { id: 'EMBUNG', label: 'Embung', icon: '💦' },
-  { id: 'BENDUNGAN', label: 'Bendungan', icon: '🏔️' },
-  { id: 'BANGUNAN_AIR', label: 'Bangunan Air', icon: '🏞️' },
+// Ikon sektor = Lucide (aturan owner 2026-11-02: tanpa ikon emoji/buatan AI).
+const SECTOR_OPTIONS: Array<{ id: ConstructionSector | 'ALL'; label: string; Icon: LucideIcon }> = [
+  { id: 'ALL', label: 'Semua Sektor', Icon: Globe },
+  { id: 'BANGUNAN', label: 'Bangunan', Icon: Building2 },
+  { id: 'JALAN', label: 'Jalan', Icon: Route },
+  { id: 'DRAINASE', label: 'Drainase', Icon: Droplets },
+  { id: 'JEMBATAN', label: 'Jembatan', Icon: Landmark },
+  { id: 'IRIGASI', label: 'Irigasi', Icon: Sprout },
+  { id: 'SUNGAI', label: 'Sungai', Icon: Waves },
+  { id: 'BENDUNG', label: 'Bendung', Icon: Construction },
+  { id: 'EMBUNG', label: 'Embung', Icon: Droplet },
+  { id: 'BENDUNGAN', label: 'Bendungan', Icon: Mountain },
+  { id: 'BANGUNAN_AIR', label: 'Bangunan Air', Icon: Factory },
 ];
 
 export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
@@ -271,6 +285,8 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
 
   // Modals & Drawers State
   const [isAddMaterialWizardOpen, setIsAddMaterialWizardOpen] = useState(false);
+  const [editingMaterial, setEditingMaterial] = useState<MaterialMaster | null>(null);
+  const [brandPriceMaterial, setBrandPriceMaterial] = useState<MaterialMaster | null>(null);
   const [isDataQualityModalOpen, setIsDataQualityModalOpen] = useState(false);
   const [isAiPriceDrawerOpen, setIsAiPriceDrawerOpen] = useState(false);
   const [isAiResourceDrawerOpen, setIsAiResourceDrawerOpen] = useState(false);
@@ -1229,7 +1245,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                 <button
                   onClick={() => setViewDensity('TABLE')}
                   style={{
-                    padding: '5px 12px',
+                    padding: '8px 12px',
                     borderRadius: '8px',
                     fontSize: '11.5px',
                     fontWeight: 700,
@@ -1245,7 +1261,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                 <button
                   onClick={() => setViewDensity('COMPACT')}
                   style={{
-                    padding: '5px 12px',
+                    padding: '8px 12px',
                     borderRadius: '8px',
                     fontSize: '11.5px',
                     fontWeight: 700,
@@ -1592,7 +1608,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                   color: selectedSector === sec.id ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-body)',
                 }}
               >
-                <span>{sec.icon}</span>
+                <span style={{ display: 'inline-flex' }}><sec.Icon size={13} /></span>
                 <span>{sec.label}</span>
               </button>
             ))}
@@ -1658,7 +1674,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                         cursor: 'pointer',
                       }}
                     >
-                      <span>{sec.icon}</span>
+                      <span style={{ display: 'inline-flex' }}><sec.Icon size={13} /></span>
                       <span>{sec.label}</span>
                     </button>
                   ))}
@@ -2266,7 +2282,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                                 display: 'inline-flex',
                                 alignItems: 'center',
                                 gap: '3px',
-                                padding: '4px 7px',
+                                padding: '7px 10px',
                                 borderRadius: '6px',
                                 fontSize: '10.5px',
                                 fontWeight: 700,
@@ -2286,7 +2302,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                                 setActionMenuMaterialId(actionMenuMaterialId === mat.id ? null : mat.id)
                               }
                               style={{
-                                padding: '3px',
+                                padding: '6px',
                                 borderRadius: '6px',
                                 color: 'var(--ez-color-text-faint)',
                                 cursor: 'pointer',
@@ -2511,7 +2527,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
                   style={{
-                    padding: '4px 6px',
+                    padding: '8px 10px',
                     borderRadius: '7px',
                     border: '1px solid var(--ez-color-border-strong)',
                     color: 'var(--ez-color-text-muted)',
@@ -2530,8 +2546,8 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                     key={page}
                     onClick={() => setCurrentPage(page)}
                     style={{
-                      width: '28px',
-                      height: '28px',
+                      width: '32px',
+                      height: '32px',
                       borderRadius: '7px',
                       fontWeight: 700,
                       fontSize: '11.5px',
@@ -2551,7 +2567,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                   onClick={() => setCurrentPage(totalPages)}
                   style={{
                     padding: '0 8px',
-                    height: '28px',
+                    height: '32px',
                     borderRadius: '7px',
                     fontWeight: 700,
                     fontSize: '11.5px',
@@ -2568,7 +2584,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                   disabled={currentPage === totalPages}
                   style={{
-                    padding: '4px 6px',
+                    padding: '8px 10px',
                     borderRadius: '7px',
                     border: '1px solid var(--ez-color-border-strong)',
                     color: 'var(--ez-color-text-muted)',
@@ -2622,11 +2638,11 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
               labor={activeCategoryTab === 'LABOR' ? selectedLaborForInspector : undefined}
               equipment={activeCategoryTab === 'EQUIPMENT' ? selectedEquipmentForInspector : undefined}
               selectedProvince={selectedProvince}
-              projectId={currentProject ? currentProject.id : 'PROJ-DEMO-01'}
+              projectId={currentProject ? currentProject.id : ''}
               projectName={currentProject ? currentProject.name : 'Pilih proyek'}
               onClose={() => setIsInspectorOpen(false)}
-              onEditMaterial={(mat) => setIsAddMaterialWizardOpen(true)}
-              onAddPrice={(mat) => setIsAddMaterialWizardOpen(true)}
+              onEditMaterial={(mat) => setEditingMaterial(mat)}
+              onAddPrice={(mat) => setBrandPriceMaterial(mat)}
               onOpenProjectPriceModal={(mat) => {
                 setTargetMaterialForProjectPrice(mat);
                 setIsProjectPriceModalOpen(true);
@@ -2736,6 +2752,34 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
         }}
       />
 
+      {/* Wizard mode EDIT: prefill dari material yang dipilih di inspektur;
+          simpan memperbarui material yang sama (bukan membuat baru). */}
+      <AddMaterialWizardModal
+        isOpen={!!editingMaterial}
+        initialMaterial={editingMaterial}
+        initialPrice={editingMaterial ? matDb.getPricesByMaterialId(editingMaterial.id)[0] ?? null : null}
+        onClose={() => setEditingMaterial(null)}
+        onSave={(editedMat: MaterialMaster, newPrice?: MaterialPrice) => {
+          matDb.updateMaterial(editedMat);
+          if (newPrice) matDb.addPriceRecord(newPrice);
+          setDbVersion((v) => v + 1);
+          setSelectedMaterialForInspector(editedMat);
+          setEditingMaterial(null);
+        }}
+      />
+
+      {/* "+ Tambah Merek": record harga bermerek untuk material terpilih. */}
+      <AddBrandPriceModal
+        isOpen={!!brandPriceMaterial}
+        material={brandPriceMaterial}
+        onClose={() => setBrandPriceMaterial(null)}
+        onSave={(price: MaterialPrice) => {
+          matDb.addPriceRecord(price);
+          setDbVersion((v) => v + 1);
+          setBrandPriceMaterial(null);
+        }}
+      />
+
       <MaterialCompareModal
         isOpen={isCompareModalOpen}
         onClose={() => setIsCompareModalOpen(false)}
@@ -2832,7 +2876,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
         }}
         material={targetMaterialForProjectPrice}
         resource={targetResourceForOverride}
-        projectId={currentProject ? currentProject.id : 'PROJ-DEMO-01'}
+        projectId={currentProject ? currentProject.id : ''}
         projectName={currentProject ? currentProject.name : 'Pilih proyek'}
         referencePrice={
           targetResourceForOverride

@@ -58,6 +58,10 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
   referencePrice = 0,
   onSaved,
 }) => {
+  // Override hanya bermakna bila ada proyek terpilih. Tanpa proyek, simpan
+  // DIBLOKIR (dulu pemanggil mengirim id proyek palsu 'PROJ-DEMO-01' sehingga
+  // override tersimpan ke proyek hantu dan hilang tanpa penjelasan).
+  const noProject = !projectId;
   // Services
   const matDb = useMemo(() => MaterialDatabaseService.getInstance(), []);
   const laborDb = useMemo(() => LaborDatabaseService.getInstance(), []);
@@ -525,6 +529,23 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
           /* VIEW 2: OVERRIDE PRICING FORM                                 */
           /* ============================================================== */
           <div style={{ padding: '18px 20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            {noProject && (
+              <div
+                style={{
+                  padding: '12px 14px',
+                  backgroundColor: 'var(--ez-hue-amber-bg)',
+                  border: '1px solid var(--ez-hue-amber-border)',
+                  borderRadius: '10px',
+                  fontSize: '12px',
+                  color: 'var(--ez-hue-amber-text)',
+                  lineHeight: 1.55,
+                }}
+              >
+                <strong>Belum ada proyek yang dipilih.</strong> Override harga hanya berlaku untuk
+                proyek tertentu, jadi tombol simpan dinonaktifkan. Pilih proyek dulu lewat menu
+                Project Context di bagian atas halaman Database, lalu buka Override lagi.
+              </div>
+            )}
             {/* Resource Identity Banner */}
             {selectedResource && (
               <div
@@ -857,16 +878,16 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
               <button
                 type="button"
                 onClick={handleSaveOverride}
-                disabled={!selectedResource || overridePrice <= 0}
+                disabled={noProject || !selectedResource || overridePrice <= 0}
                 style={{
                   padding: '8px 18px',
                   borderRadius: '8px',
                   border: 'none',
-                  backgroundColor: !selectedResource || overridePrice <= 0 ? '#94A3B8' : 'var(--ez-color-primary)',
+                  backgroundColor: noProject || !selectedResource || overridePrice <= 0 ? '#94A3B8' : 'var(--ez-color-primary)',
                   color: '#FFFFFF',
                   fontSize: '12px',
                   fontWeight: 700,
-                  cursor: !selectedResource || overridePrice <= 0 ? 'not-allowed' : 'pointer',
+                  cursor: noProject || !selectedResource || overridePrice <= 0 ? 'not-allowed' : 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '6px',

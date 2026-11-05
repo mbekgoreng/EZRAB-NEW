@@ -8,6 +8,7 @@ import {
   Download,
   MapPin,
   Trash2,
+  Pencil,
   Database,
   Layers,
   X,
@@ -39,6 +40,8 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
 
   // Modal State for adding new item
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<PriceItem | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<PriceItem | null>(null);
   const [newItemCode, setNewItemCode] = useState('');
   const [newItemName, setNewItemName] = useState('');
   const [newItemBrand, setNewItemBrand] = useState('');
@@ -134,15 +137,52 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
 
   const Icon = categoryMeta.icon;
 
-  const handleAddItem = (e: React.FormEvent) => {
+  const resetForm = () => {
+    setNewItemCode('');
+    setNewItemName('');
+    setNewItemBrand('');
+    setNewItemSubcat('Keramik & Porselen');
+    setNewItemSpec('');
+    setNewItemUnit('m²');
+    setNewItemPrice(0);
+    setNewItemMinPrice(0);
+    setNewItemMaxPrice(0);
+    setNewItemLocation('Jabodetabek');
+  };
+
+  const openAddModal = () => {
+    setEditingItem(null);
+    resetForm();
+    setIsAddModalOpen(true);
+  };
+
+  const openEditItem = (item: PriceItem) => {
+    setEditingItem(item);
+    setNewItemCode(item.code || '');
+    setNewItemName(item.name || '');
+    setNewItemBrand(item.brand || '');
+    setNewItemSubcat(item.subcategory || 'Keramik & Porselen');
+    setNewItemSpec(item.specification || '');
+    setNewItemUnit(item.unit || 'm²');
+    setNewItemPrice(item.price || 0);
+    setNewItemMinPrice(item.minPrice || 0);
+    setNewItemMaxPrice(item.maxPrice || 0);
+    setNewItemLocation(item.location || 'Jabodetabek');
+    setIsAddModalOpen(true);
+  };
+
+  const closeItemModal = () => {
+    setIsAddModalOpen(false);
+    setEditingItem(null);
+  };
+
+  const handleSaveItem = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newItemName.trim()) return;
 
-    const created: PriceItem = {
-      id: `custom-${Date.now()}`,
+    const fields = {
       code: newItemCode || `${category === 'MATERIAL' ? 'MAT' : category === 'LABOR' ? 'L' : 'E'}.${itemsList.length + 1}`,
       name: newItemName,
-      category,
       subcategory: category === 'MATERIAL' ? newItemSubcat : undefined,
       brand: newItemBrand || 'Umum',
       unit: newItemUnit,
@@ -151,22 +191,35 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
       maxPrice: Number(newItemMaxPrice) || Number(newItemPrice) * 1.5 || 0,
       location: newItemLocation,
       specification: newItemSpec || '-',
-      priceSource: 'EZRAB Master Database 2026',
-      periodVersion: '2026-Q1',
-      lastUpdated: '2026-09-06',
     };
 
-    setItemsList([created, ...itemsList]);
-    setIsAddModalOpen(false);
-    setNewItemCode('');
-    setNewItemName('');
-    setNewItemBrand('');
-    setNewItemSpec('');
-    setNewItemPrice(0);
+    if (editingItem) {
+      // Mode edit: perbarui item yang sama (id & kategori dipertahankan).
+      setItemsList(
+        itemsList.map((it) =>
+          it.id === editingItem.id
+            ? { ...it, ...fields, lastUpdated: new Date().toISOString().slice(0, 10) }
+            : it
+        )
+      );
+    } else {
+      const created: PriceItem = {
+        id: `custom-${Date.now()}`,
+        category,
+        priceSource: 'EZRAB Master Database 2026',
+        periodVersion: '2026-Q1',
+        lastUpdated: '2026-09-06',
+        ...fields,
+      };
+      setItemsList([created, ...itemsList]);
+    }
+    closeItemModal();
+    resetForm();
   };
 
   const handleDeleteItem = (id: string) => {
     setItemsList(itemsList.filter((item) => item.id !== id));
+    setPendingDelete(null);
   };
 
   return (
@@ -220,7 +273,7 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
         {/* Action Buttons */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <button
-            onClick={() => setIsAddModalOpen(true)}
+            onClick={openAddModal}
             style={{
               height: '38px',
               padding: '0 16px',
@@ -384,7 +437,7 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
                 )}
                 <th style={{ padding: '12px 14px', textAlign: 'right', width: '130px' }}>Harga Standar</th>
                 <th className="tablet-up" style={{ padding: '12px 14px', width: '100px' }}>Wilayah</th>
-                <th style={{ padding: '12px 10px', textAlign: 'center', width: '50px' }}>Aksi</th>
+                <th style={{ padding: '12px 10px', textAlign: 'center', width: '92px' }}>Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -465,7 +518,26 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
                     </td>
                     <td style={{ padding: '10px 10px', textAlign: 'center' }}>
                       <button
-                        onClick={() => handleDeleteItem(item.id)}
+                        onClick={() => openEditItem(item)}
+                        className="ezrab-touch-target"
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: 'var(--ez-color-text-slate)',
+                          cursor: 'pointer',
+                          width: '32px',
+                          height: '32px',
+                          borderRadius: '6px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                        title="Edit item"
+                      >
+                        <Pencil size={14} />
+                      </button>
+                      <button
+                        onClick={() => setPendingDelete(item)}
                         className="ezrab-touch-target"
                         style={{
                           background: 'transparent',
@@ -529,18 +601,20 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
                   <Icon size={18} />
                 </div>
                 <h2 style={{ fontSize: '16px', fontWeight: 800, margin: 0, color: 'var(--ez-color-text-primary)' }}>
-                  Tambah {category === 'MATERIAL' ? 'Material' : category === 'LABOR' ? 'Upah' : 'Alat'} ke Database
+                  {editingItem ? 'Edit ' : 'Tambah '}
+                  {category === 'MATERIAL' ? 'Material' : category === 'LABOR' ? 'Upah' : 'Alat'}
+                  {editingItem ? `: ${editingItem.code}` : ' ke Database'}
                 </h2>
               </div>
               <button
-                onClick={() => setIsAddModalOpen(false)}
+                onClick={closeItemModal}
                 style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#94A3B8' }}
               >
                 <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={handleAddItem} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <form onSubmit={handleSaveItem} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
                   <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>
@@ -689,7 +763,7 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>
                 <button
                   type="button"
-                  onClick={() => setIsAddModalOpen(false)}
+                  onClick={closeItemModal}
                   style={{ height: '36px', padding: '0 14px', borderRadius: '8px', border: '1px solid var(--ez-hue-slate-border)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-slate)', fontSize: '12.5px', fontWeight: 600, cursor: 'pointer' }}
                 >
                   Batal
@@ -698,10 +772,66 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
                   type="submit"
                   style={{ height: '36px', padding: '0 16px', borderRadius: '8px', border: 'none', background: 'var(--ez-color-primary)', color: '#FFFFFF', fontSize: '12.5px', fontWeight: 600, cursor: 'pointer' }}
                 >
-                  Simpan Item
+                  {editingItem ? 'Simpan Perubahan' : 'Simpan Item'}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          6. KONFIRMASI HAPUS — hapus tidak lagi langsung terjadi
+         ========================================================================= */}
+      {pendingDelete && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(15, 23, 42, 0.6)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1001,
+            padding: '20px',
+          }}
+        >
+          <div
+            style={{
+              background: 'var(--ez-color-surface)',
+              borderRadius: '16px',
+              width: '100%',
+              maxWidth: '420px',
+              padding: '22px',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
+            }}
+          >
+            <h3 style={{ fontSize: '15px', fontWeight: 800, margin: '0 0 8px 0', color: 'var(--ez-color-text-primary)' }}>
+              Hapus item ini?
+            </h3>
+            <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: 0, lineHeight: 1.55 }}>
+              <strong style={{ color: 'var(--ez-color-text-primary)' }}>{pendingDelete.code} — {pendingDelete.name}</strong> akan
+              dihapus dari daftar {category === 'MATERIAL' ? 'material' : category === 'LABOR' ? 'upah' : 'alat'} pada tampilan
+              ini. Tindakan ini tidak bisa dibatalkan dari layar ini.
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '18px' }}>
+              <button
+                onClick={() => setPendingDelete(null)}
+                style={{ height: '36px', padding: '0 14px', borderRadius: '8px', border: '1px solid var(--ez-hue-slate-border)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-slate)', fontSize: '12.5px', fontWeight: 600, cursor: 'pointer' }}
+              >
+                Batal
+              </button>
+              <button
+                onClick={() => handleDeleteItem(pendingDelete.id)}
+                style={{ height: '36px', padding: '0 16px', borderRadius: '8px', border: 'none', background: '#DC2626', color: '#FFFFFF', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer' }}
+              >
+                Ya, Hapus
+              </button>
+            </div>
           </div>
         </div>
       )}

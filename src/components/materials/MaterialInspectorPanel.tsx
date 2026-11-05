@@ -47,7 +47,7 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
   equipment,
   activeCategory = 'MATERIALS',
   selectedProvince = 'Indonesia',
-  projectId = 'PROJ-DEMO-01',
+  projectId = '',
   projectName = 'Proyek Aktif',
   onClose,
   onEditMaterial,
@@ -112,7 +112,7 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
           </div>
           <button
             onClick={onClose}
-            style={{ border: 'none', background: 'transparent', color: 'var(--ez-color-text-faint)', cursor: 'pointer', padding: '4px' }}
+            style={{ border: 'none', background: 'transparent', color: 'var(--ez-color-text-faint)', cursor: 'pointer', padding: '7px' }}
             title="Tutup Panel"
           >
             <X size={16} />
@@ -320,7 +320,7 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
           </div>
           <button
             onClick={onClose}
-            style={{ border: 'none', background: 'transparent', color: 'var(--ez-color-text-faint)', cursor: 'pointer', padding: '4px' }}
+            style={{ border: 'none', background: 'transparent', color: 'var(--ez-color-text-faint)', cursor: 'pointer', padding: '7px' }}
             title="Tutup Panel"
           >
             <X size={16} />
@@ -514,26 +514,21 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
   const primaryPriceRec = prices[0];
   const basePrice = primaryPriceRec?.price || 0;
 
-  const brandComparisons = [
-    {
-      name: `${material.brand || 'Gresik'} ${material.product || 'PCC'}`,
-      price: basePrice > 0 ? basePrice : 74000,
-      tier: material.priceTier || 'STANDARD',
-      isCurrent: true,
-    },
-    {
-      name: 'Tiga Roda PPC',
-      price: 76500,
-      tier: 'STANDARD',
-      isCurrent: false,
-    },
-    {
-      name: 'Holcim',
-      price: 82000,
-      tier: 'PREMIUM',
-      isCurrent: false,
-    },
-  ];
+  // Perbandingan merek berasal dari RECORD HARGA NYATA material ini
+  // (termasuk yang ditambahkan lewat "+ Tambah Merek"). Sebelumnya daftar ini
+  // hardcoded (Tiga Roda/Holcim untuk semua material) — sudah diganti.
+  const brandComparisons = prices
+    .filter((p) => p.price > 0)
+    .slice(0, 5)
+    .map((p, i) => ({
+      name:
+        p.brandName ||
+        p.brand ||
+        (i === 0 ? `${material.brand || 'Harga Acuan'} ${material.product || ''}`.trim() : 'Harga Acuan'),
+      price: p.price,
+      tier: p.priceTier || material.priceTier || 'STANDARD',
+      isCurrent: i === 0,
+    }));
 
   return (
     <aside
@@ -586,7 +581,7 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
         <button
           onClick={onClose}
           style={{
-            padding: '4px',
+            padding: '7px',
             borderRadius: '8px',
             color: 'var(--ez-color-text-faint)',
             cursor: 'pointer',
@@ -695,7 +690,7 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
             <button
               onClick={() => onEditMaterial && onEditMaterial(material)}
               style={{
-                padding: '3px 8px',
+                padding: '6px 12px',
                 borderRadius: '6px',
                 border: '1px solid var(--ez-color-border-strong)',
                 backgroundColor: 'var(--ez-color-surface)',
@@ -714,7 +709,7 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
             <button
               onClick={() => onAddPrice && onAddPrice(material)}
               style={{
-                padding: '3px 8px',
+                padding: '6px 12px',
                 borderRadius: '6px',
                 border: '1px solid var(--ez-hue-blue-border)',
                 backgroundColor: 'var(--ez-hue-blue-bg)',
@@ -758,7 +753,7 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
                 color: isSelected ? 'var(--ez-color-text)' : 'var(--ez-color-text-muted)',
                 fontWeight: isSelected ? 800 : 600,
                 fontSize: '9.5px',
-                padding: '5px 2px',
+                padding: '8px 2px',
                 borderRadius: '7px',
                 cursor: 'pointer',
                 boxShadow: isSelected ? '0 1px 3px rgba(15, 23, 42, 0.08)' : 'none',
@@ -819,8 +814,14 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
                   <span style={{ fontSize: '9.5px', color: 'var(--ez-color-text-muted)' }}>EZRAB Master 2026</span>
                 </div>
                 <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>
-                  Rp {(basePrice > 0 ? basePrice : 74000).toLocaleString('id-ID')}
-                  <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--ez-color-text-muted)', marginLeft: '4px' }}>/ {material.unit}</span>
+                  {basePrice > 0 ? (
+                    <>
+                      Rp {basePrice.toLocaleString('id-ID')}
+                      <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--ez-color-text-muted)', marginLeft: '4px' }}>/ {material.unit}</span>
+                    </>
+                  ) : (
+                    <span style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)' }}>Belum ada harga tercatat</span>
+                  )}
                 </div>
                 <div style={{ fontSize: '10px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>
                   Wilayah: {primaryPriceRec?.region.province || 'Jawa Barat'} • Sumber: {primaryPriceRec?.sourceName || 'Katalog Nasional'}
@@ -873,7 +874,7 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
                   <button
                     onClick={() => onOpenProjectPriceModal && onOpenProjectPriceModal(material)}
                     style={{
-                      padding: '4px 8px',
+                      padding: '7px 10px',
                       borderRadius: '6px',
                       border: '1px solid var(--ez-hue-blue-border)',
                       backgroundColor: 'var(--ez-color-surface)',
@@ -950,6 +951,11 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            {brandComparisons.length === 0 && (
+              <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', padding: '8px 10px', border: '1px dashed var(--ez-color-border-strong)', borderRadius: '8px' }}>
+                Belum ada harga bermerek tercatat untuk material ini. Gunakan tombol <strong>+ Tambah Merek</strong> di atas untuk menambahkan.
+              </div>
+            )}
             {brandComparisons.map((b, idx) => (
               <div
                 key={idx}
@@ -980,44 +986,84 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
           </div>
         </div>
 
-        {/* SECTION: Harga & Tren */}
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-            <div style={{ fontSize: '10.5px', fontWeight: 800, color: 'var(--ez-color-text-muted)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-              Harga & Tren
+        {/* SECTION: Harga & Tren — dihitung dari riwayat record harga NYATA
+            material ini (matDb.getPriceHistory). Sebelumnya grafik + angka
+            "+2,3%" di sini dekoratif/karangan untuk semua material. */}
+        {(() => {
+          const history = matDb
+            .getPriceHistory(material.id)
+            .filter((h) => h.price > 0)
+            .sort((a, b) => (a.priceDate < b.priceDate ? -1 : a.priceDate > b.priceDate ? 1 : 0));
+          const fmtDate = (d: string) => {
+            const dt = new Date(`${d}T00:00:00`);
+            return Number.isNaN(dt.getTime())
+              ? d
+              : dt.toLocaleDateString('id-ID', { month: 'short', year: 'numeric' });
+          };
+          const first = history[0];
+          const last = history[history.length - 1];
+          const pct =
+            history.length >= 2 && first && last && first.price > 0
+              ? ((last.price - first.price) / first.price) * 100
+              : null;
+          const min = history.length ? Math.min(...history.map((h) => h.price)) : 0;
+          const max = history.length ? Math.max(...history.map((h) => h.price)) : 0;
+          const pts = history
+            .map((h, i) => {
+              const x = history.length > 1 ? (i / (history.length - 1)) * 196 + 2 : 100;
+              const y = max > min ? 38 - ((h.price - min) / (max - min)) * 32 : 21;
+              return `${x},${y}`;
+            })
+            .join(' ');
+          return (
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <div style={{ fontSize: '10.5px', fontWeight: 800, color: 'var(--ez-color-text-muted)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                  Harga & Tren
+                </div>
+                {pct !== null && (
+                  <span style={{ fontSize: '10.5px', fontWeight: 700, color: pct >= 0 ? 'var(--ez-hue-green-text)' : 'var(--ez-color-danger-strong)', display: 'flex', alignItems: 'center', gap: '2px' }}>
+                    <TrendingUp size={11} /> {pct >= 0 ? '+' : ''}{pct.toFixed(1).replace('.', ',')}% ({history.length} record)
+                  </span>
+                )}
+              </div>
+              <div
+                style={{
+                  backgroundColor: 'var(--ez-color-surface-secondary)',
+                  border: '1px solid var(--ez-color-border-line)',
+                  borderRadius: '10px',
+                  padding: '10px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '6px',
+                }}
+              >
+                {history.length >= 2 ? (
+                  <>
+                    <div style={{ height: '42px', width: '100%', position: 'relative' }}>
+                      <svg viewBox="0 0 200 42" preserveAspectRatio="none" style={{ width: '100%', height: '100%' }}>
+                        <polyline points={pts} fill="none" stroke="var(--ez-color-primary)" strokeWidth="2.5" />
+                      </svg>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9.5px', color: 'var(--ez-color-text-faint)' }}>
+                      <span>{fmtDate(first.priceDate)} — Rp {first.price.toLocaleString('id-ID')}</span>
+                      <span>{fmtDate(last.priceDate)} — Rp {last.price.toLocaleString('id-ID')}</span>
+                    </div>
+                  </>
+                ) : (
+                  <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>
+                    {history.length === 1
+                      ? `Baru 1 record harga tercatat (${fmtDate(first.priceDate)}, Rp ${first.price.toLocaleString('id-ID')}) — tren belum bisa dihitung.`
+                      : 'Belum ada record harga — tren belum bisa dihitung.'}
+                  </div>
+                )}
+              </div>
             </div>
-            <span style={{ fontSize: '10.5px', fontWeight: 700, color: 'var(--ez-hue-green-text)', display: 'flex', alignItems: 'center', gap: '2px' }}>
-              <TrendingUp size={11} /> +2.3% (30 hari)
-            </span>
-          </div>
+          );
+        })()}
 
-          <div
-            style={{
-              backgroundColor: 'var(--ez-color-surface-secondary)',
-              border: '1px solid var(--ez-color-border-line)',
-              borderRadius: '10px',
-              padding: '10px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '6px',
-            }}
-          >
-            <div style={{ height: '42px', width: '100%', position: 'relative' }}>
-              <svg viewBox="0 0 200 42" preserveAspectRatio="none" style={{ width: '100%', height: '100%' }}>
-                <path d="M 0,32 Q 50,30 100,24 T 200,10" fill="none" stroke="var(--ez-color-primary)" strokeWidth="2.5" />
-                <path d="M 0,32 Q 50,30 100,24 T 200,10 L 200,42 L 0,42 Z" fill="rgba(37,99,235,0.08)" />
-                <circle cx="200" cy="10" r="3.5" fill="var(--ez-color-primary)" />
-              </svg>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9.5px', color: 'var(--ez-color-text-faint)' }}>
-              <span>Jan 2026</span>
-              <span>Feb 2026</span>
-              <span>Mar 2026 (Now)</span>
-            </div>
-          </div>
-        </div>
-
-        {/* SECTION: Provenance */}
+        {/* SECTION: Provenance — dari record harga utama yang nyata.
+            Baris "Hash Dokumen" palsu (sha256:4b91...8c2) sudah dihapus. */}
         <div>
           <div style={{ fontSize: '10.5px', fontWeight: 800, color: 'var(--ez-color-text-muted)', letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: '8px' }}>
             Provenance
@@ -1025,15 +1071,19 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
           <div style={{ backgroundColor: 'var(--ez-color-surface-secondary)', border: '1px solid var(--ez-color-border-line)', borderRadius: '10px', padding: '10px', display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '11px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ color: 'var(--ez-color-text-muted)' }}>Sumber Acuan:</span>
-              <span style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>SE DJBK No. 12/2026</span>
+              <span style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>{primaryPriceRec?.sourceName || 'Katalog EZRAB 2026'}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ color: 'var(--ez-color-text-muted)' }}>Integritas Mutu:</span>
-              <span style={{ fontWeight: 700, color: 'var(--ez-hue-green-text)' }}>SNI 7064:2014</span>
+              <span style={{ color: 'var(--ez-color-text-muted)' }}>Status Verifikasi:</span>
+              <span style={{ fontWeight: 700, color: 'var(--ez-hue-green-text)' }}>{primaryPriceRec?.verificationStatus || material.coverageStatus || '—'}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ color: 'var(--ez-color-text-muted)' }}>Hash Dokumen:</span>
-              <span style={{ fontFamily: 'monospace', fontSize: '9.5px', color: 'var(--ez-color-text-muted)' }}>sha256:4b91...8c2</span>
+              <span style={{ color: 'var(--ez-color-text-muted)' }}>Standar Mutu:</span>
+              <span style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>{material.standard || '—'}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span style={{ color: 'var(--ez-color-text-muted)' }}>Tanggal Harga:</span>
+              <span style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>{primaryPriceRec?.priceDate || '—'}</span>
             </div>
           </div>
         </div>
