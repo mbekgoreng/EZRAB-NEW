@@ -11,11 +11,12 @@ interface ExactNavbarProps {
   onOpenAdvantages?: () => void;
 }
 
-type NavKey = 'beranda' | 'kenali' | 'keunggulan';
+type NavKey = 'beranda' | 'kenali' | 'keunggulan' | 'harga';
 
 const keyForPath = (pathname: string): NavKey => {
   if (pathname === '/keunggulan') return 'keunggulan';
   if (pathname === '/fitur') return 'kenali';
+  if (pathname === '/harga') return 'harga';
   return 'beranda';
 };
 
@@ -137,7 +138,7 @@ export const ExactNavbar: React.FC<ExactNavbarProps> = ({
           <a href="/keunggulan" onClick={goPage('/keunggulan')} className={linkCls('keunggulan')}>
             Keunggulan
           </a>
-          <a href="/#harga" onClick={goLandingSection('harga')} className="ez-nav-link">
+          <a href="/harga" onClick={goPage('/harga')} className={linkCls('harga')}>
             Harga
           </a>
           {/* Blog tinggal di subdomain — tautan absolut */}
@@ -184,7 +185,7 @@ export const ExactNavbar: React.FC<ExactNavbarProps> = ({
         <a href="/#fitur" onClick={goLandingSection('fitur')}><span>02</span> Fitur Utama</a>
         <a href="/fitur" onClick={goPage('/fitur')}><span>03</span> Kenali EZRAB</a>
         <a href="/keunggulan" onClick={goPage('/keunggulan')}><span>04</span> Keunggulan</a>
-        <a href="/#harga" onClick={goLandingSection('harga')}><span>05</span> Harga</a>
+        <a href="/harga" onClick={goPage('/harga')}><span>05</span> Harga</a>
         <button type="button" onClick={() => { setMobileMenuOpen(false); onOpenAuth('masuk'); }}>
           Masuk <ArrowRight size={16} />
         </button>

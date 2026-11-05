@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import '../../../styles/landing-ai-showcase.css';
-import { PLAN_DEFINITIONS, PLAN_IDS, type PlanId } from '../../../billing/plans';
+import { PricingCards } from './PricingBlocks';
 import logoImg from '../../../assets/ezrab-logo.png';
 import mascotImg from '../../../assets/mascot-ezrab-new.png';
 import mascotFullbody from '../../../assets/mascot-ezrab-fullbody.png';
@@ -12,21 +12,8 @@ interface AiShowcaseProps {
   onOpenAuth: (tab?: 'masuk' | 'daftar') => void;
   onOpenDemo: () => void;
   onOpenFaq?: () => void;
+  onOpenPricing?: () => void;
 }
-
-const PLAN_BULLETS: Record<PlanId, string[]> = {
-  free: ['1 proyek aktif', 'Kalkulator Volume dasar', 'Template rumah tinggal'],
-  starter: ['7 proyek aktif', 'DED Estimate AI', 'Ekspor Excel & PDF'],
-  professional: ['25 proyek aktif', 'AI Document (kredit)', 'Kolaborasi tim'],
-  business: ['Proyek tanpa batas', 'AI Document penuh', 'Semua fitur Professional'],
-};
-
-const PLAN_CTA: Record<PlanId, string> = {
-  free: 'Mulai Gratis',
-  starter: 'Pilih Starter',
-  professional: 'Pilih Professional',
-  business: 'Pilih Business',
-};
 
 const formatIdr = (n: number) => 'Rp' + n.toLocaleString('id-ID');
 const formatNum = (n: number) => n.toLocaleString('id-ID');
@@ -38,7 +25,7 @@ const formatNum = (n: number) => n.toLocaleString('id-ID');
  * strip pendukung, kejujuran AI, harga (data kanonis plans.ts), FAQ, CTA, footer.
  * Semua ilustrasi adalah SIMULASI animasi CSS — diberi label sebagai ilustrasi.
  */
-export const AiShowcase: React.FC<AiShowcaseProps> = ({ onOpenAuth, onOpenDemo, onOpenFaq }) => {
+export const AiShowcase: React.FC<AiShowcaseProps> = ({ onOpenAuth, onOpenDemo, onOpenFaq, onOpenPricing }) => {
   // Animasi transisi: teks & gambar muncul berjenjang (fade + naik) saat
   // masuk viewport. Kelas .rv/.rv-on diatur di landing-ai-showcase.css;
   // prefers-reduced-motion menonaktifkannya dari sisi CSS.
@@ -81,41 +68,6 @@ export const AiShowcase: React.FC<AiShowcaseProps> = ({ onOpenAuth, onOpenDemo, 
     targets.forEach((el) => io.observe(el));
     return () => io.disconnect();
   }, []);
-  const plansBlock = (
-    <div className="plans">
-      {PLAN_IDS.map((id) => {
-        const p = PLAN_DEFINITIONS[id];
-        const popular = id === 'professional';
-        return (
-          <div className={popular ? 'plan pop' : 'plan'} key={id}>
-            {popular && <span className="tag">PALING POPULER</span>}
-            <h3>{p.displayName}</h3>
-            <div className="price">
-              {formatIdr(p.monthlyPriceIdr)}
-              {p.monthlyPriceIdr > 0 && <small>/bln</small>}
-            </div>
-            <div className="cred">
-              {p.credits.kind === 'initial'
-                ? `${formatNum(p.credits.credits)} kredit awal`
-                : `${formatNum(p.credits.credits)} kredit AI/bln`}
-            </div>
-            <ul>
-              {PLAN_BULLETS[id].map((b) => (
-                <li key={b}>{b}</li>
-              ))}
-            </ul>
-            <button
-              type="button"
-              className={popular ? 'btn' : 'btn soft'}
-              onClick={() => onOpenAuth('daftar')}
-            >
-              {PLAN_CTA[id]}
-            </button>
-          </div>
-        );
-      })}
-    </div>
-  );
 
   return (
     <div className="ezai-scope" ref={scopeRef}>
@@ -335,8 +287,9 @@ export const AiShowcase: React.FC<AiShowcaseProps> = ({ onOpenAuth, onOpenDemo, 
       <section className="ezai-sec" id="harga" style={{paddingTop: '20px'}}><div className="grid-bg"></div><div className="wrap" style={{position: 'relative'}}>
       <div className="center"><span className="eyebrow"> Harga & Kredit AI</span>
       <h2>Paket mengikuti <span className="bl">kebutuhan AI Anda.</span></h2>
-      <p className="sub" style={{margin: '0 auto'}}>Setiap paket berbayar dilengkapi kredit AI bulanan untuk DED Estimate AI, Chat AI, dan AI Document.</p></div>
-      {plansBlock}
+      <p className="sub" style={{margin: '0 auto'}}>Semua paket memakai mesin hitung yang sama. Yang berbeda: akses AHSP, kredit AI bulanan, kuota ekspor, dan kolaborasi tim. Free gratis selamanya — bukan uji coba.</p></div>
+      <PricingCards onOpenAuth={onOpenAuth} />
+      <p className="cmp-link"><button type="button" className="btn soft" onClick={() => onOpenPricing?.()}>Lihat Perbandingan Lengkap</button></p>
       <p className="demo-note" style={{textAlign: 'center'}}>Mode simulasi — langganan belum aktif, belum ada penagihan nyata.</p>
       </div></section>
 

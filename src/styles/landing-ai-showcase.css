@@ -340,3 +340,37 @@
 .ezai-scope .eyebrow {background:none!important;border:none!important;border-radius:0!important;padding:0!important}
 .ezai-scope .ezai-footer button{background:none;border:none;padding:0;font:inherit;color:#8498AF;cursor:pointer;text-align:left;font-size:13.5px}
 .ezai-scope .ezai-footer button:hover{color:#1E40AF}
+
+/* ===== Perbandingan fitur paket (Spec Billing v1.0 §3) + ketentuan transparan ===== */
+.ezai-scope .plan .plan-tag {font-size:12.5px;color:#5A718C;margin:2px 0 0;line-height:1.45}
+.ezai-scope .cmp-link {text-align:center;margin:26px 0 0}
+.ezai-scope .cmp-link a {color:#1D4ED8;font-weight:700;font-size:14px;text-decoration:none}
+.ezai-scope .cmp-link a:hover {text-decoration:underline}
+.ezai-scope .cmp-wrap {margin-top:44px;text-align:left}
+.ezai-scope .cmp-title {font-size:22px;font-weight:800;color:#0A2540;text-align:center;letter-spacing:-.01em}
+.ezai-scope .cmp-legend {display:flex;gap:22px;justify-content:center;flex-wrap:wrap;margin:14px 0 18px;font-size:13px;color:#5A718C}
+.ezai-scope .cmp-yes {color:#1D4ED8;font-weight:800}
+.ezai-scope .cmp-lim {color:#B45309;font-weight:700;white-space:nowrap}
+.ezai-scope .cmp-no {color:#94A3B8;font-weight:700}
+.ezai-scope .cmp-txt {color:#12263F;font-weight:600}
+.ezai-scope .cmp-scroll {overflow-x:auto;border:1px solid #E2EAF3;border-radius:16px;background:#FFFFFF;box-shadow:0 18px 40px rgba(13,40,80,.08);-webkit-overflow-scrolling:touch}
+.ezai-scope table.cmp {border-collapse:collapse;width:100%;min-width:680px;font-size:14px}
+.ezai-scope table.cmp thead th {position:sticky;top:0;background:#0A2540;color:#FFFFFF;font-weight:800;font-size:14px;padding:14px 16px;text-align:center;z-index:2}
+.ezai-scope table.cmp thead th:first-child {text-align:left}
+.ezai-scope table.cmp thead th small {display:block;font-weight:600;font-size:12px;color:#B9CFEE;margin-top:2px}
+.ezai-scope table.cmp th[scope="row"] {text-align:left;font-weight:600;color:#12263F;padding:11px 16px;white-space:nowrap}
+.ezai-scope table.cmp td {text-align:center;padding:11px 16px;color:#12263F}
+.ezai-scope table.cmp tbody tr:not(.cmp-cat):not(.cmp-note) {border-top:1px solid #EDF2F8}
+.ezai-scope table.cmp td.cmp-pop, .ezai-scope table.cmp tbody th.cmp-pop {background:#EFF5FF}
+.ezai-scope table.cmp thead th.cmp-pop {background:#2563EB}
+.ezai-scope table.cmp tr.cmp-cat th {background:#E4EDFF;color:#1E40AF;font-weight:800;font-size:13px;letter-spacing:.04em;text-transform:uppercase;text-align:left;padding:12px 16px;border-top:10px solid #FFFFFF}
+.ezai-scope table.cmp tr.cmp-note td {text-align:left;font-size:12.5px;line-height:1.55;color:#5A718C;background:#F7FAFD;padding:10px 16px 14px}
+.ezai-scope .bill-notes {margin-top:30px;background:#F7FAFD;border:1px solid #E2EAF3;border-radius:16px;padding:24px 26px}
+.ezai-scope .bill-notes h4 {font-size:16px;font-weight:800;color:#0A2540;margin:0 0 12px}
+.ezai-scope .bill-notes ul {display:grid;grid-template-columns:1fr 1fr;gap:8px 28px;margin:0;padding:0;list-style:none}
+.ezai-scope .bill-notes li {font-size:13.5px;line-height:1.55;color:#33475E;padding-left:20px;position:relative}
+.ezai-scope .bill-notes li::before {content:'✓';position:absolute;left:0;color:#1D4ED8;font-weight:800}
+@media(max-width:760px) {
+  .ezai-scope .bill-notes ul {grid-template-columns:1fr}
+  .ezai-scope .cmp-legend {gap:12px;font-size:12.5px}
+}

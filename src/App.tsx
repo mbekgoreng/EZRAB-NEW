@@ -4,6 +4,7 @@ import { ExactLandingPage } from './components/landing/ExactLandingPage';
 import { AboutPage } from './components/about/AboutPage';
 import { FeaturesPage } from './components/landing/features/FeaturesPage';
 import { FaqPage } from './faq/FaqPage';
+import { PricingPage } from './components/landing/pricing/PricingPage';
 import { AdvantagesPage } from './components/landing/advantages/AdvantagesPage';
 import { AuthRoutePage } from './components/auth/AuthRoutePage';
 import { AcceptInvitationPage } from './components/auth/AcceptInvitationPage';
@@ -181,6 +182,7 @@ export const App: React.FC = () => {
   const isPrivacy = location.pathname === '/privacy';
   const isTerms = location.pathname === '/terms';
   const isFaq = location.pathname === '/faq';
+  const isPricing = location.pathname === '/harga';
   const isHomePath = location.pathname === '/' || location.pathname === '';
   // Host blog: fallback SPA bila rewrite statis /blog/* tidak tersaji.
   const isBlogHost =
@@ -211,11 +213,12 @@ export const App: React.FC = () => {
     else if (isPrivacy) document.title = 'Kebijakan Privasi — EZRAB';
     else if (isTerms) document.title = 'Ketentuan Layanan — EZRAB';
     else if (isFaq) document.title = 'Pertanyaan Umum (FAQ) — EZRAB';
+    else if (isPricing) document.title = 'Harga & Paket — EZRAB';
     else if (isAuthRoute) document.title = authNoticeTab === 'daftar' ? 'Daftar — EZRAB' : 'Masuk — EZRAB';
     else if (isAuthNotice) document.title = authNoticeTab === 'daftar' ? 'Daftar — EZRAB' : 'Masuk — EZRAB';
     else if (!isHomePath) document.title = 'Halaman Tidak Ditemukan — EZRAB';
     else document.title = 'EZRAB — RAB & Estimasi Konstruksi';
-  }, [isAbout, isFeatures, isAdvantages, isWorkspace, workspaceRoute, isPrivacy, isTerms, isFaq, isAuthRoute, isAuthNotice, authNoticeTab, isHomePath]);
+  }, [isAbout, isFeatures, isAdvantages, isWorkspace, workspaceRoute, isPrivacy, isTerms, isFaq, isPricing, isAuthRoute, isAuthNotice, authNoticeTab, isHomePath]);
 
   useEffect(() => {
     migrateLegacyOnboardingFlag(); // idempoten: pengguna lama tidak ditanya ulang
@@ -263,10 +266,8 @@ export const App: React.FC = () => {
   };
 
   const handleOpenPricing = () => {
-    navigateTo(paths.home());
-    setTimeout(() => {
-      document.getElementById('harga')?.scrollIntoView({ behavior: 'smooth' });
-    }, 150);
+    navigateTo(paths.pricing());
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleOpenAuth = (tab: 'masuk' | 'daftar' = 'masuk') => {
@@ -371,6 +372,18 @@ export const App: React.FC = () => {
         }}
       />
     );
+  } else if (isPricing) {
+    content = (
+      <PricingPage
+        onOpenAuth={handleOpenAuth}
+        onBackToLanding={handleReturnToLanding}
+        onOpenAbout={handleOpenAbout}
+        onOpenAdvantages={() => {
+          navigateTo('/keunggulan');
+          window.scrollTo(0, 0);
+        }}
+      />
+    );
   } else if (isAdvantages) {
     content = (
       <AdvantagesPage
@@ -463,6 +476,7 @@ export const App: React.FC = () => {
             navigateTo(paths.faq());
             window.scrollTo(0, 0);
           }}
+          onOpenPricing={handleOpenPricing}
         />
 
         {/* AuthModal lama sudah dipensiunkan (AUTH-07, audit 2026-10-29):

@@ -34,6 +34,7 @@ export const paths = {
   home: () => '/',
   about: () => '/about',
   faq: () => '/faq',
+  pricing: () => '/harga',
   login: () => '/masuk',
   signup: () => '/daftar',
   loginRole: () => '/masuk/role',

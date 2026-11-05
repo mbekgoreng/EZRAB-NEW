@@ -21,6 +21,7 @@ interface ExactLandingPageProps {
   onOpenAbout?: () => void;
   onOpenAdvantages?: () => void;
   onOpenFaq?: () => void;
+  onOpenPricing?: () => void;
 }
 
 export const ExactLandingPage: React.FC<ExactLandingPageProps> = ({
@@ -31,6 +32,7 @@ export const ExactLandingPage: React.FC<ExactLandingPageProps> = ({
   onOpenAbout,
   onOpenAdvantages,
   onOpenFaq,
+  onOpenPricing,
 }) => {
   // Defer non-critical landing CSS: only the navbar/hero styles above are
   // bundled synchronously (landing-critical.css). The full stylesheet is
@@ -73,7 +75,7 @@ export const ExactLandingPage: React.FC<ExactLandingPageProps> = ({
             Ezrab AI Assistant, strip pendukung, kejujuran AI, harga
             (id="harga"), FAQ, CTA, dan footer ramping — port dari mockup
             v8 yang di-ACC owner 2026-11-02. */}
-        <AiShowcase onOpenAuth={onOpenAuth} onOpenDemo={onOpenDemo} onOpenFaq={onOpenFaq} />
+        <AiShowcase onOpenAuth={onOpenAuth} onOpenDemo={onOpenDemo} onOpenFaq={onOpenFaq} onOpenPricing={onOpenPricing} />
       </main>
     </div>
   );
