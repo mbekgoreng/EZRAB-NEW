@@ -59,6 +59,11 @@ export interface LedgerEntry {
   credits: number; // positif = masuk, negatif = pakai
   status: LedgerStatus;
   jobReference?: string;
+  /** Rincian metering token (Amendemen v1.1) — pada simulasi klien ini
+   *  ESTIMASI dari teks; pada backend kelak token aktual provider. */
+  tokensIn?: number;
+  tokensOut?: number;
+  weightedTokens?: number;
 }
 
 export type LedgerStatus =

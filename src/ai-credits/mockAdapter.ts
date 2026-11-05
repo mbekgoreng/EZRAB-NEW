@@ -90,7 +90,7 @@ export function mockConsume(
   feature: AiFeature,
   credits: number,
   description: string,
-  opts: { model?: string; jobReference?: string } = {}
+  opts: { model?: string; jobReference?: string; tokensIn?: number; tokensOut?: number; weightedTokens?: number } = {}
 ): boolean {
   const total = state.subscription + state.topup + state.bonus;
   if (credits <= 0 || credits > total) return false;
@@ -111,6 +111,9 @@ export function mockConsume(
     credits: -credits,
     status: 'simulated',
     jobReference: opts.jobReference,
+    tokensIn: opts.tokensIn,
+    tokensOut: opts.tokensOut,
+    weightedTokens: opts.weightedTokens,
   });
   notify();
   return true;

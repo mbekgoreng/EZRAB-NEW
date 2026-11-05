@@ -62,7 +62,7 @@ import { unifiedConversationStore } from '../../services/ai/conversation/unified
 import './ezrab-ai-chat.css';
 import '../../ai-credits/ai-credits.css';
 import { useCreditSimulation } from '../../ai-credits/useCreditSimulation';
-import { tariffFor } from '../../ai-credits/config';
+import { estimateReservationCredits, meterTexts } from '../../ai-credits/tokenMetering';
 import { CreditEstimateBadge } from '../../ai-credits/components/CreditEstimateBadge';
 import { CreditBalance } from '../../ai-credits/components/CreditBalance';
 import { CreditTopUpModal } from '../../ai-credits/components/CreditTopUpModal';
@@ -225,7 +225,20 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   const { balance, consume } = useCreditSimulation();
   const [creditConfirm, setCreditConfirm] = useState<{ estimate: number; pending: () => void } | null>(null);
   const [creditTopUpOpen, setCreditTopUpOpen] = useState(false);
-  const chatEstimate = tariffFor(mode === 'fast' ? 'chat-ai/fast' : 'chat-ai/advanced');
+  // Estimasi kredit LIVE berbasis token (Amendemen Spec Billing v1.1):
+  // token masuk = riwayat percakapan + draf saat ini, token keluar =
+  // tunjangan reservation. Settlement sesudah jawaban memakai token
+  // aktual teks terkirim + teks jawaban (lihat titik debit di submit()).
+  const liveReservationCredits = estimateReservationCredits(
+    [...messages.map((m) => m.content), input].join('\n'),
+  );
+  const chatEstimate = {
+    min: liveReservationCredits,
+    max: liveReservationCredits,
+    feature: 'chat-ai' as const,
+    model: mode === 'fast' ? 'FAST' : 'ADVANCED',
+    isCalibratedDraft: true,
+  };
   const [listening, setListening] = useState(false);
   /** Game Space overlay — opened by the `game` command, closed back to chat. */
   const [gameSpaceOpen, setGameSpaceOpen] = useState(false);
@@ -683,10 +696,15 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     // --- AI Credits: intent lokal tidak memanggil AI → tanpa biaya ---
     const preRouted = routeIntent(msg);
     const needsAi = forcedAi || (!(preRouted.localOnly && preRouted.intent !== 'UNKNOWN') && !preRouted.needsClarification);
-    if (needsAi && !navHit && balance.total < chatEstimate.max) {
+    // Gerbang saldo memakai estimasi reservation berbasis token
+    // (riwayat + pesan ini + tunjangan token keluar) — bukan tarif flat.
+    const reservationEstimate = estimateReservationCredits(
+      [...messages.map((m) => m.content), msg].join('\n'),
+    );
+    if (needsAi && !navHit && balance.total < reservationEstimate) {
       // Saldo simulasi tidak cukup → dialog konfirmasi (bukan blokir diam-diam).
       setCreditConfirm({
-        estimate: chatEstimate.max,
+        estimate: reservationEstimate,
         pending: () => { setCreditConfirm(null); forceAiRef.current = forcedAi; void submit(text, opts); },
       });
       return;
@@ -998,17 +1016,30 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       // tidak didebit — minimum sudah terpenuhi oleh gerbang
       // di atas, jadi di sini hanya cek keaslian.
       if (!timingCoordinatorRef.current.isLatest(timingRequestId)) return;
-      // --- AI Credits: catat pemakaian SIMULASI (batas atas estimasi, transparan) ---
+      // --- AI Credits: settlement SIMULASI berbasis token (Amendemen v1.1) ---
       // FASE 1 RECOVERY (P1-2): debit HANYA bila send() sukses tegas
       // (res.success === true) — kegagalan gateway/HTTP/timeout/respons
       // tidak valid tidak boleh mengurangi saldo. Gerbang tunggal:
       // debitChatCreditOnSuccess (chatCreditDebit.ts, teruji regresi).
-      const simUsed = chatEstimate.max;
-      debitChatCreditOnSuccess(res, () =>
-        consume('chat-ai', simUsed, `Chat AI (${mode === 'fast' ? 'Cepat' : 'Mendalam'}): ${msg.slice(0, 60)}`, {
+      // Besaran debit BUKAN lagi tarif flat: dihitung dari token masuk
+      // (teks percakapan yang benar-benar dikirim) + token keluar (teks
+      // jawaban), 1 kredit per 200 token terbobot (tokenMetering.ts).
+      // Token provider tidak mencapai klien, jadi pada simulasi ini
+      // token DIESTIMASI dari teks dan dilabeli estimasi — bukan usage
+      // provider. Label kredit di balon hanya tampil bila debitnya
+      // benar-benar tercatat (consume mengembalikan true).
+      const sentInputText = [...next.slice(0, -1).map((m) => m.content), content].join('\n');
+      const metered = meterTexts(sentInputText, res.reply ?? '');
+      const simUsed = metered.credits;
+      let charged = false;
+      debitChatCreditOnSuccess(res, () => {
+        charged = consume('chat-ai', simUsed, `Chat AI (${mode === 'fast' ? 'Cepat' : 'Mendalam'}): ${msg.slice(0, 60)} · ±${metered.tokensIn.toLocaleString('id-ID')} token masuk, ±${metered.tokensOut.toLocaleString('id-ID')} token keluar (estimasi simulasi)`, {
           model: mode === 'fast' ? 'FAST' : 'ADVANCED',
-        }),
-      );
+          tokensIn: metered.tokensIn,
+          tokensOut: metered.tokensOut,
+          weightedTokens: metered.weightedTokens,
+        });
+      });
       // Plan operasi yang dibuat tool propose_* selama pengiriman ini:
       // lampirkan kartu konfirmasinya ke balon jawaban (plan pertama) dan
       // sebagai entry tersendiri untuk plan tambahan apa pun.
@@ -1020,7 +1051,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         fromAi: true,
         model: (res as any).model,
         ts: Date.now(),
-        creditsUsed: res.success ? simUsed : undefined,
+        creditsUsed: res.success && charged ? simUsed : undefined,
         planId: newPlans[0]?.id,
       };
       setMessages((prev) => [...prev, assistantEntry]);

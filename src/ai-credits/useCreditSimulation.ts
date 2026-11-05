@@ -31,7 +31,7 @@ export function useCreditSimulation() {
     balance,
     ledger,
     /** Catat pemakaian simulasi. false = saldo tidak cukup. */
-    consume: (feature: AiFeature, credits: number, description: string, opts?: { model?: string; jobReference?: string }) =>
+    consume: (feature: AiFeature, credits: number, description: string, opts?: { model?: string; jobReference?: string; tokensIn?: number; tokensOut?: number; weightedTokens?: number }) =>
       mockConsume(feature, credits, description, opts),
     topUp: () => mockTopUp(),
     setPlan: (plan: CreditBalance['plan']) => mockSetPlan(plan),
