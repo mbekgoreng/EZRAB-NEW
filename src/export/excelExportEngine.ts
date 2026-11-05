@@ -129,7 +129,12 @@ export async function exportRABToProfessionalExcel(
   const exportPartialNote = exportTotalNote(exportSummary);
 
   const taxPercent = costSummary.taxPercent ?? 11;
-  const pphPercent = project.costSummary?.pphPercent ?? 1.75;
+  // Batch 4 (addendum A5): PPh figures come from the canonical computed summary.
+  // The previous source (stale project.costSummary cache, defaulting to an
+  // invented 1.75%) plus a direct-cost recompute made exported workbooks show
+  // a PPh the project never enabled, on a base the engine never uses.
+  const pphPercent = costSummary.pphPercent ?? 0;
+  const pphAmount = costSummary.pphAmount || 0;
   /* Fallback tampilan selaras keputusan overhead 10% (compute di atas
    * selalu mengembalikan angka, jadi fallback ini praktis tidak terpicu). */
   const overheadPercent = costSummary.overheadPercent ?? 10;
@@ -547,7 +552,7 @@ export async function exportRABToProfessionalExcel(
     const cards = [
       { label: 'BIAYA LANGSUNG (DIRECT)', val: directCost },
       { label: 'OVERHEAD & PROFIT', val: (costSummary.overheadAmount || 0) + (costSummary.profitAmount || 0) },
-      { label: 'TOTAL PAJAK (PPN+PPH)', val: (costSummary.taxAmount || 0) + Math.round(directCost * (pphPercent / 100)) },
+      { label: 'TOTAL PAJAK (PPN+PPH)', val: (costSummary.taxAmount || 0) + pphAmount },
       { label: exportSummary.isPartial ? 'GRAND TOTAL RAB (PARSIAL)' : 'GRAND TOTAL RAB', val: grandTotal },
     ];
 
@@ -704,8 +709,8 @@ export async function exportRABToProfessionalExcel(
     });
 
     // Summary Block
-    const subtotalPreTaxVal = directCost + (costSummary.overheadAmount || 0) + (costSummary.profitAmount || 0);
-    const pphVal = Math.round(directCost * (pphPercent / 100));
+    const subtotalPreTaxVal = costSummary.subtotalBeforeTax;
+    const pphVal = pphAmount;
     const sumRange = rStart > 6 ? `E6:E${rStart - 1}` : `E6`;
 
     const summaryRows = [
@@ -714,7 +719,7 @@ export async function exportRABToProfessionalExcel(
       { label: `Keuntungan / Profit (${profitPercent}%)`, formula: `E${rStart}*${profitPercent / 100}`, val: costSummary.profitAmount || 0 },
       { label: 'SUBTOTAL SEBELUM PAJAK', formula: `SUM(E${rStart}:E${rStart + 2})`, val: subtotalPreTaxVal, bold: true },
       { label: `Pajak Pertambahan Nilai PPN (${taxPercent}%)`, formula: `E${rStart + 3}*${taxPercent / 100}`, val: costSummary.taxAmount || 0 },
-      { label: `Pajak Penghasilan PPh (${pphPercent}%)`, formula: `E${rStart}*${pphPercent / 100}`, val: pphVal },
+      { label: `Pajak Penghasilan PPh (${pphPercent}%)`, formula: `${pphAmount}`, val: pphVal },
       { label: noPricedTotal ? 'TOTAL ESTIMASI ANGGARAN BIAYA (GRAND TOTAL) — HARGA BELUM TERSEDIA' : 'TOTAL ESTIMASI ANGGARAN BIAYA (GRAND TOTAL)', formula: `E${rStart + 3}+E${rStart + 4}+E${rStart + 5}`, val: grandTotal, isGrandTotal: true },
     ];
 
@@ -900,15 +905,15 @@ export async function exportRABToProfessionalExcel(
     // Grand Summary in Detail Sheet
     const subtotalCells = Object.values(sectionCoordinates).map((c) => `G${c.subtotalRow}`);
     const directCostFormula = subtotalCells.length > 0 ? `SUM(${subtotalCells.join(',')})` : `0`;
-    const pphVal = Math.round(directCost * (pphPercent / 100));
+    const pphVal = pphAmount;
 
     const sumDetails = [
       { label: exportSummary.isPartial ? 'TOTAL BIAYA LANGSUNG (DIRECT COST) — PARSIAL' : 'TOTAL BIAYA LANGSUNG (DIRECT COST)', formula: directCostFormula, val: directCost, bold: true },
       { label: `Overhead Cost (${overheadPercent}%)`, formula: `G${rabDetailDirectCostRow}*${overheadPercent / 100}`, val: costSummary.overheadAmount || 0 },
       { label: `Profit Margin (${profitPercent}%)`, formula: `G${rabDetailDirectCostRow}*${profitPercent / 100}`, val: costSummary.profitAmount || 0 },
-      { label: 'SUBTOTAL SEBELUM PAJAK', formula: `SUM(G${rabDetailDirectCostRow}:G${rabDetailProfitRow})`, val: directCost + (costSummary.overheadAmount || 0) + (costSummary.profitAmount || 0), bold: true },
+      { label: 'SUBTOTAL SEBELUM PAJAK', formula: `SUM(G${rabDetailDirectCostRow}:G${rabDetailProfitRow})`, val: costSummary.subtotalBeforeTax, bold: true },
       { label: `Pajak Pertambahan Nilai PPN (${taxPercent}%)`, formula: `G${rabDetailSubtotalPreTaxRow}*${taxPercent / 100}`, val: costSummary.taxAmount || 0 },
-      { label: `Pajak Penghasilan PPh (${pphPercent}%)`, formula: `G${rabDetailDirectCostRow}*${pphPercent / 100}`, val: pphVal },
+      { label: `Pajak Penghasilan PPh (${pphPercent}%)`, formula: `${pphAmount}`, val: pphVal },
       { label: noPricedTotal ? 'TOTAL ESTIMASI ANGGARAN BIAYA (GRAND TOTAL) — HARGA BELUM TERSEDIA' : 'TOTAL ESTIMASI ANGGARAN BIAYA (GRAND TOTAL)', formula: `G${rabDetailSubtotalPreTaxRow}+G${rabDetailTaxRow}+G${rabDetailPphRow}`, val: grandTotal, isGrandTotal: true },
     ];
 

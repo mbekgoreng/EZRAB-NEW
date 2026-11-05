@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { Project, RabItem } from "../../types";
 import { useCurrency } from "../../context/CurrencyContext";
+import { recalculateCostSummary } from "../../engine/unifiedProjectEngine";
 
 interface EstimatorRekapitulasiViewProps {
   currentProject: Project | null;
@@ -34,11 +35,9 @@ export const EstimatorRekapitulasiView: React.FC<EstimatorRekapitulasiViewProps>
    *   pajak ganda dari spreadsheet — ganda hanya mungkin bila harga
    *   input memang sudah termasuk pajak, dan itulah yang dicegah
    *   centang per-item ini. */
-  const { categoryList, directCost, overheadNominal, ppnNominal, pphNominal, grandTotal, overheadPct, ppnPct, pphPct, ppnEnabled, pphEnabled, ppnExcludedCount, pphExcludedCount } = useMemo(() => {
+  const { categoryList, directCost, overheadNominal, profitNominal, profitPct, ppnNominal, pphNominal, grandTotal, overheadPct, ppnPct, pphPct, ppnEnabled, pphEnabled, ppnExcludedCount, pphExcludedCount, unresolvedCount } = useMemo(() => {
     const map = new Map<string, { name: string; total: number; count: number }>();
     let direct = 0;
-    let directPpnTaxable = 0;
-    let directPphTaxable = 0;
     let ppnExcluded = 0;
     let pphExcluded = 0;
 
@@ -48,9 +47,7 @@ export const EstimatorRekapitulasiView: React.FC<EstimatorRekapitulasiViewProps>
       const amt = item.amount || (item.volume || 0) * (item.unitPrice || 0);
       direct += amt;
       if ((item as any)?.taxIncludedPpn === true) ppnExcluded += 1;
-      else directPpnTaxable += amt;
       if ((item as any)?.taxIncludedPph === true) pphExcluded += 1;
-      else directPphTaxable += amt;
 
       const existing = map.get(cat);
       if (existing) {
@@ -69,35 +66,52 @@ export const EstimatorRekapitulasiView: React.FC<EstimatorRekapitulasiViewProps>
       weight: direct > 0 ? (c.total / direct) * 100 : 0,
     }));
 
-    const overheadPct = (currentProject as any)?.overheadPercent ?? 10;
-    const ppnPct = (currentProject as any)?.ppnPercent ?? 11;
-    const ppnEnabled = (currentProject as any)?.ppnEnabled === true;
-    const pphEnabled = (currentProject as any)?.pphEnabled === true;
-    const pphPct = (currentProject as any)?.pphPercent ?? 0;
-
-    const overhead = (direct * overheadPct) / 100;
-    // Overhead dialokasikan proporsional ke basis kena pajak, supaya
-    // item yang sudah termasuk pajak tidak ikut kena pajak lewat overhead.
-    const overheadPpn = direct > 0 ? (overhead * directPpnTaxable) / direct : 0;
-    const overheadPph = direct > 0 ? (overhead * directPphTaxable) / direct : 0;
-    const ppn = ppnEnabled ? ((directPpnTaxable + overheadPpn) * ppnPct) / 100 : 0;
-    const pph = pphEnabled ? ((directPphTaxable + overheadPph) * pphPct) / 100 : 0;
-    const total = direct + overhead + ppn + pph;
+    // Batch 4 (P0 — total Rekapitulasi menyimpang dari semua permukaan lain):
+    // tangga uang diambil dari mesin kanonis yang sama dengan kartu proyek,
+    // Laporan, ekspor, dan konteks AI (recalculateCostSummary). View ini
+    // sebelumnya menghitung tangga sendiri dan TIDAK PERNAH membaca
+    // profitPercent, sehingga totalnya lebih kecil dari total kanonis untuk
+    // proyek yang sama (terverifikasi pada proyek demo premium:
+    // Rp1.040.339.744 di sini vs Rp1.089.879.733 kanonis). Resolusi konfigurasi
+    // meniru projectContext: overhead dari field proyek, profit dari field
+    // proyek lalu costSummary, pajak dari field proyek/costSummary; pajak
+    // hanya bila flag proyek aktif (opt-in).
+    const proj: any = currentProject as any;
+    const cs: any = proj?.costSummary ?? {};
+    const ppnEnabled = proj?.ppnEnabled === true;
+    const pphEnabled = proj?.pphEnabled === true;
+    const summary = recalculateCostSummary(items as never, {
+      overheadPercent:
+        typeof proj?.overheadPercent === "number" ? proj.overheadPercent : typeof cs.overheadPercent === "number" ? cs.overheadPercent : undefined,
+      profitPercent:
+        typeof proj?.profitPercent === "number" ? proj.profitPercent : typeof cs.profitPercent === "number" ? cs.profitPercent : undefined,
+      taxPercent:
+        typeof proj?.ppnPercent === "number" ? proj.ppnPercent : typeof cs.taxPercent === "number" ? cs.taxPercent : undefined,
+      contingencyPercent: typeof cs.contingencyPercent === "number" ? cs.contingencyPercent : undefined,
+      directorMarkupPercent: typeof cs.directorMarkupPercent === "number" ? cs.directorMarkupPercent : undefined,
+      ppnEnabled,
+      pphEnabled,
+      pphPercent:
+        typeof proj?.pphPercent === "number" ? proj.pphPercent : typeof cs.pphPercent === "number" ? cs.pphPercent : 0,
+    } as never);
 
     return {
       categoryList: categories,
-      directCost: direct,
-      overheadNominal: overhead,
-      ppnNominal: ppn,
-      pphNominal: pph,
-      grandTotal: total,
-      overheadPct,
-      ppnPct,
-      pphPct,
+      directCost: summary.directCost,
+      overheadNominal: summary.overheadAmount,
+      profitNominal: summary.profitAmount,
+      profitPct: summary.profitPercent,
+      ppnNominal: summary.taxAmount,
+      pphNominal: summary.pphAmount,
+      grandTotal: summary.grandTotal,
+      overheadPct: summary.overheadPercent,
+      ppnPct: summary.taxPercent,
+      pphPct: summary.pphPercent,
       ppnEnabled,
       pphEnabled,
       ppnExcludedCount: ppnExcluded,
       pphExcludedCount: pphExcluded,
+      unresolvedCount: summary.unresolvedItems ?? 0,
     };
   }, [items, currentProject]);
 
@@ -129,16 +143,16 @@ export const EstimatorRekapitulasiView: React.FC<EstimatorRekapitulasiViewProps>
         {/* Card 2: Overhead & Profit */}
         <div className="ez-stat" style={{ background: "var(--ez-stat-indigo)", borderRadius: "20px", padding: "20px", boxShadow: "0 4px 20px rgba(0,0,0,0.045)" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
-<span style={{ fontSize: "12px", fontWeight: 600, color: "rgba(255, 255, 255, 0.88)" }}>Overhead & Keuntungan ({overheadPct}%)</span>
+<span style={{ fontSize: "12px", fontWeight: 600, color: "rgba(255, 255, 255, 0.88)" }}>Overhead & Keuntungan ({overheadPct}% + {profitPct}%)</span>
             <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "var(--ez-color-surface)", color: "#16A34A", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <TrendingUp size={16} />
             </div>
           </div>
           <div style={{ fontSize: "20px", fontWeight: 800, color: "#FFFFFF", fontVariantNumeric: "tabular-nums" }}>
-            {formatDisplay(overheadNominal)}
+            {formatDisplay(overheadNominal + profitNominal)}
           </div>
           <span style={{ fontSize: "11.5px", color: "rgba(255, 255, 255, 0.8)", marginTop: "4px", display: "block" }}>
-            Margin jasa pelaksana & manajemen
+            Overhead {formatDisplay(overheadNominal)} + keuntungan {formatDisplay(profitNominal)}
           </span>
         </div>
 
@@ -191,7 +205,7 @@ export const EstimatorRekapitulasiView: React.FC<EstimatorRekapitulasiViewProps>
             {formatDisplay(grandTotal)}
           </div>
           <span style={{ fontSize: "11.5px", color: "rgba(255, 255, 255, 0.8)", marginTop: "4px", display: "block" }}>
-            {ppnEnabled || pphEnabled ? "Termasuk overhead + pajak yang diaktifkan" : "Biaya langsung + overhead saja (pajak nonaktif)"}
+            {ppnEnabled || pphEnabled ? "Termasuk overhead, keuntungan + pajak yang diaktifkan" : "Biaya langsung + overhead + keuntungan (pajak nonaktif)"}
           </span>
         </div>
       </div>
@@ -316,17 +330,26 @@ export const EstimatorRekapitulasiView: React.FC<EstimatorRekapitulasiViewProps>
                 </tr>
                 <tr style={{ background: "var(--ez-color-surface)", borderTop: "1px solid var(--ez-color-surface-tertiary)", color: "var(--ez-color-text-slate)" }}>
                   <td colSpan={3} style={{ padding: "9px 14px", textAlign: "right" }}>
-                    Jasa Overhead & Keuntungan Pelaksana ({overheadPct}%) (B)
+                    Jasa Overhead Pelaksana ({overheadPct}%) (B)
                   </td>
                   <td style={{ padding: "9px 14px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
                     {formatDisplay(overheadNominal)}
                   </td>
                   <td style={{ padding: "9px 14px", textAlign: "right", color: "#94A3B8" }}>—</td>
                 </tr>
+                <tr style={{ background: "var(--ez-color-surface)", borderTop: "1px solid var(--ez-color-surface-tertiary)", color: "var(--ez-color-text-slate)" }}>
+                  <td colSpan={3} style={{ padding: "9px 14px", textAlign: "right" }}>
+                    Keuntungan Pelaksana ({profitPct}%) (C)
+                  </td>
+                  <td style={{ padding: "9px 14px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
+                    {formatDisplay(profitNominal)}
+                  </td>
+                  <td style={{ padding: "9px 14px", textAlign: "right", color: "#94A3B8" }}>—</td>
+                </tr>
                 {ppnEnabled && (
                 <tr style={{ background: "var(--ez-color-surface)", borderTop: "1px solid var(--ez-color-surface-tertiary)", color: "var(--ez-color-text-slate)" }}>
                   <td colSpan={3} style={{ padding: "9px 14px", textAlign: "right" }}>
-                    Pajak Pertambahan Nilai (PPN {ppnPct}%) (C)
+                    Pajak Pertambahan Nilai (PPN {ppnPct}%) (D)
                     {ppnExcludedCount > 0 ? ` — ${ppnExcludedCount} item sudah termasuk PPN, tidak dihitung lagi` : ""}
                   </td>
                   <td style={{ padding: "9px 14px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
@@ -338,7 +361,7 @@ export const EstimatorRekapitulasiView: React.FC<EstimatorRekapitulasiViewProps>
                 {pphEnabled && (
                 <tr style={{ background: "var(--ez-color-surface)", borderTop: "1px solid var(--ez-color-surface-tertiary)", color: "var(--ez-color-text-slate)" }}>
                   <td colSpan={3} style={{ padding: "9px 14px", textAlign: "right" }}>
-                    Pajak Penghasilan (PPh {pphPct}%) (D)
+                    Pajak Penghasilan (PPh {pphPct}%) (E)
                     {pphExcludedCount > 0 ? ` — ${pphExcludedCount} item sudah termasuk PPh, tidak dihitung lagi` : ""}
                   </td>
                   <td style={{ padding: "9px 14px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
@@ -349,7 +372,7 @@ export const EstimatorRekapitulasiView: React.FC<EstimatorRekapitulasiViewProps>
                 )}
                 <tr style={{ background: "var(--ez-hue-blue-bg)", borderTop: "2px solid var(--ez-hue-blue-border)", fontWeight: 800, fontSize: "14px" }}>
                   <td colSpan={3} style={{ padding: "13px 14px", textAlign: "right", color: "var(--ez-hue-blue-text-deep)" }}>
-                    TOTAL BIAYA PROYEK (A + B{ppnEnabled ? " + C" : ""}{pphEnabled ? " + D" : ""})
+                    TOTAL BIAYA PROYEK (A + B + C{ppnEnabled ? " + D" : ""}{pphEnabled ? " + E" : ""})
                   </td>
                   <td style={{ padding: "13px 14px", textAlign: "right", color: "var(--ez-hue-blue-text)", fontVariantNumeric: "tabular-nums" }}>
                     {formatDisplay(grandTotal)}
@@ -358,6 +381,13 @@ export const EstimatorRekapitulasiView: React.FC<EstimatorRekapitulasiViewProps>
                     100.00%
                   </td>
                 </tr>
+                {unresolvedCount > 0 && (
+                <tr style={{ background: "var(--ez-hue-amber-bg)", borderTop: "1px solid var(--ez-hue-amber-border)" }}>
+                  <td colSpan={5} style={{ padding: "9px 14px", textAlign: "right", color: "var(--ez-hue-amber-text)", fontSize: "12px", fontWeight: 600 }}>
+                    {unresolvedCount} item belum memiliki harga dan TIDAK masuk total di atas — total bersifat PARSIAL sampai semua item berharga.
+                  </td>
+                </tr>
+                )}
               </tfoot>
             )}
           </table>

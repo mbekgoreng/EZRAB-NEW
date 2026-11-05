@@ -37,7 +37,6 @@ export function buildPdfSourceAnnotations(item: {
   );
 }
 // PHASE 1 (audit §16): single canonical default set, so the PDF agrees with the screen.
-import { resolvePolicyValue } from '../engine/cost/policy/costPolicyDefaults';
 
 const SafeJsPDF: any =
   (jspdfNamespace as any).default?.jsPDF ||
@@ -72,40 +71,6 @@ const DOC_COLORS = {
   TEXT_DARK: [15, 23, 42] as [number, number, number],
   TEXT_BODY: [51, 65, 85] as [number, number, number], // #334155
 };
-
-/**
- * Computes exact mathematical totals
- */
-function computeCostSummary(project: Project, sections: RABSection[]) {
-  const directCost = sections.reduce((sum, s) => sum + s.subtotal, 0);
-  const cost = project.costSummary || ({} as any);
-
-  const overheadPercent = resolvePolicyValue('overheadPercent', cost.overheadPercent, 'pdfExporter.computeCostSummary');
-  const overheadAmount = Math.round(directCost * (overheadPercent / 100));
-
-  // PHASE 1 (audit C-10): was `: 10`, which made the PDF disagree with the screen (5%).
-  const profitPercent = resolvePolicyValue('profitPercent', cost.profitPercent, 'pdfExporter.computeCostSummary');
-  const profitAmount = Math.round(directCost * (profitPercent / 100));
-
-  const subtotalBeforeTax = directCost + overheadAmount + profitAmount;
-
-  const taxPercent = resolvePolicyValue('taxPercent', cost.taxPercent, 'pdfExporter.computeCostSummary');
-  const taxAmount = Math.round(subtotalBeforeTax * (taxPercent / 100));
-
-  const grandTotal = subtotalBeforeTax + taxAmount;
-
-  return {
-    directCost,
-    overheadPercent,
-    overheadAmount,
-    profitPercent,
-    profitAmount,
-    subtotalBeforeTax,
-    taxPercent,
-    taxAmount,
-    grandTotal,
-  };
-}
 
 /**
  * Main export function to generate high-end, professional construction RAB PDF.
@@ -425,10 +390,13 @@ export async function exportProjectToPDF(
     ]);
   }
 
-  // Tax PPh Row (if configured)
-  const pphPercent = (project.costSummary as any)?.pphPercent || 0;
-  if (pphPercent > 0) {
-    const pphAmount = Math.round(costs.directCost * (pphPercent / 100));
+  // Tax PPh Row — Batch 4 (addendum): print the canonical engine's PPh figure.
+  // The previous export-layer recompute used the direct-cost base while the
+  // engine (whose total this row sits above) allocates PPh on the taxable
+  // subtotal, and it ignored the pphEnabled opt-in flag entirely.
+  const pphPercent = (costs as any).pphPercent || 0;
+  if ((costs as any).pphEnabled === true && pphPercent > 0) {
+    const pphAmount = (costs as any).pphAmount || 0;
     recapRows.push([
       '',
       { content: `Pajak Penghasilan (PPh Final ${pphPercent}%)`, styles: { halign: 'right', textColor: DOC_COLORS.SLATE_MUTED } },

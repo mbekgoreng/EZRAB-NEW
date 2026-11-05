@@ -636,7 +636,9 @@ export class PriceResolver2026 {
         }
 
         if (subtotalPerUnit === null) {
-          missing.push({ type: effectiveType, code, name, unit });
+          // Batch 4: keep WHY it failed (UNIT_MISMATCH / NOT_FOUND / policy),
+          // not just WHAT failed — the explanation was previously discarded.
+          missing.push({ type: effectiveType, code, name, unit, reason: res.explanation || undefined });
         } else {
           subtotal += subtotalPerUnit;
           resolvedCount++;
@@ -655,6 +657,7 @@ export class PriceResolver2026 {
           sourceName,
           verificationStatus,
           matchMethod,
+          unresolvedReason: subtotalPerUnit === null ? res.explanation || null : null,
         });
       });
 

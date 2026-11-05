@@ -95,7 +95,17 @@ export const generateXlsx = async (
 
     if (rows.length > 0) {
       const endDataRow = startDataRow + rows.length - 1;
-      const totalRow = ws.addRow(['', '', '', '', '', '', '', 'GRAND TOTAL', null]);
+      // Batch 4: a total over rows with missing prices is PARTIAL and must say
+      // so on the total row itself — never present it as a final grand total.
+      const anyUnresolved = rows.some(
+        (x) => x.unitPrice == null || (x as any).priceStatus === 'PRICE_UNRESOLVED'
+      );
+      const totalRow = ws.addRow([
+        '', '', '', '', '', '', '',
+        anyUnresolved ? 'GRAND TOTAL (PARSIAL — BELUM FINAL)' : 'GRAND TOTAL',
+        null,
+        anyUnresolved ? 'ADA HARGA BELUM TERSEDIA' : '',
+      ]);
       totalRow.font = { bold: true };
       totalRow.getCell(9).value = { formula: `SUM(I${startDataRow}:I${endDataRow})` };
       totalRow.getCell(9).numFmt = '#,##0';
@@ -145,7 +155,15 @@ export const generateXlsx = async (
 
     if (rows.length > 0) {
       const endDataRow = startDataRow + rows.length - 1;
-      const totalRow = ws.addRow(['', '', '', '', '', 'TOTAL AHSP', null]);
+      // Batch 4: same partial-total doctrine — unresolved components make
+      // the AHSP total partial, and the total row must say so.
+      const anyUnresolved = rows.some((x) => (x.unitPrice ?? x.price) == null);
+      const totalRow = ws.addRow([
+        '', '', '', '', '',
+        anyUnresolved ? 'TOTAL AHSP (PARSIAL — BELUM FINAL)' : 'TOTAL AHSP',
+        null,
+        anyUnresolved ? 'ADA HARGA BELUM TERSEDIA' : '',
+      ]);
       totalRow.font = { bold: true };
       totalRow.getCell(7).value = { formula: `SUM(G${startDataRow}:G${endDataRow})` };
       totalRow.getCell(7).numFmt = '#,##0';
@@ -338,7 +356,16 @@ export const generateXlsx = async (
 
     if (rows.length > 0) {
       const endDataRow = startDataRow + rows.length - 1;
-      const totalRow = ws.addRow(['', '', '', '', '', 'GRAND TOTAL', null]);
+      // Batch 4: same partial-total doctrine as the BOQ branch above.
+      const anyUnresolved = rows.some(
+        (x) => x.unitPrice == null || (x as any).priceStatus === 'PRICE_UNRESOLVED'
+      );
+      const totalRow = ws.addRow([
+        '', '', '', '', '',
+        anyUnresolved ? 'GRAND TOTAL (PARSIAL — BELUM FINAL)' : 'GRAND TOTAL',
+        null,
+        anyUnresolved ? 'ADA HARGA BELUM TERSEDIA' : '',
+      ]);
       totalRow.font = { bold: true };
       totalRow.getCell(7).value = { formula: `SUM(G${startDataRow}:G${endDataRow})` };
       totalRow.getCell(7).numFmt = '#,##0';

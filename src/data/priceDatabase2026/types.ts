@@ -265,6 +265,9 @@ export interface AhspComponentPricing {
   sourceName?: string | null;
   verificationStatus?: PriceVerificationStatus | null;
   matchMethod?: PriceMatchMethod | null;
+  /** Batch 4: WHY this component could not be priced (e.g. UNIT_MISMATCH),
+   *  carried from the resource resolution explanation. Null when resolved. */
+  unresolvedReason?: string | null;
 }
 
 export interface AhspCategoryPricing {
@@ -301,7 +304,8 @@ export interface AhspUnitPriceComposition {
   missingComponents: number;
   /** PHASE 20 — the authoritative status. */
   pricingStatus: PricingStatus;
-  /** Component names that could not be priced (PHASE 19 — never hidden). */
-  missing: Array<{ type: string; code: string; name: string; unit: string }>;
+  /** Component names that could not be priced (PHASE 19 — never hidden).
+   *  Batch 4: `reason` carries the resolution explanation (e.g. UNIT_MISMATCH). */
+  missing: Array<{ type: string; code: string; name: string; unit: string; reason?: string }>;
   warnings: string[];
 }

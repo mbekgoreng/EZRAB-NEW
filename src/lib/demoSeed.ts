@@ -48,11 +48,18 @@ export function reconcileProjectSummaries(
       return project;
     }
 
-    const overheadPercent = cs?.overheadPercent ?? 5;
-    const profitPercent = cs?.profitPercent ?? 5;
+    // Batch 4: persen diselesaikan KANONIS — field konfigurasi proyek dulu
+    // (sumber konfigurasi di semua permukaan lain: ProjectContext, ekspor,
+    // Rekapitulasi), baru ringkasan lama, baru fallback historis. Sebelumnya
+    // fungsi ini HANYA membaca ringkasan lama, sehingga proyek yang
+    // ringkasannya hilang/basi tetapi field-nya terkonfigurasi (mis.
+    // overheadPercent 10) dibangun ulang dengan overhead karangan 5% dan
+    // totalRab-nya menyimpang dari total kanonis proyek yang sama.
+    const overheadPercent = (project as any).overheadPercent ?? cs?.overheadPercent ?? 5;
+    const profitPercent = (project as any).profitPercent ?? cs?.profitPercent ?? 5;
     const contingencyPercent = cs?.contingencyPercent ?? 0;
     const directorMarkupPercent = cs?.directorMarkupPercent ?? 0;
-    const taxPercent = cs?.taxPercent ?? 11;
+    const taxPercent = (project as any).ppnPercent ?? cs?.taxPercent ?? 11;
     const overheadAmount = Math.round((directCost * overheadPercent) / 100);
     const profitAmount = Math.round((directCost * profitPercent) / 100);
     const contingencyAmount = Math.round((directCost * contingencyPercent) / 100);
@@ -243,4 +250,22 @@ export function injectOnceById<T extends { id: string }>(
     items: fresh.length ? [...existing, ...fresh] : existing,
     shouldMarkInjected: true,
   };
+}
+
+/**
+ * Segarkan dataset demo saat versi dataset naik (mis. v2: 213/213 berharga).
+ * Hanya entri demo yang cocok `isDemoEntry` yang diganti dengan salinan
+ * segar; entri lain tidak disentuh. Bila pengguna sudah menghapus dataset
+ * demo (tidak ada entri cocok), penghapusan dihormati — tidak respawn.
+ * Bila versi sudah mutakhir, array dikembalikan apa adanya.
+ */
+export function refreshByMatch<T>(
+  existing: T[],
+  fresh: T[],
+  isDemoEntry: (x: T) => boolean,
+  alreadyCurrent: boolean
+): T[] {
+  if (alreadyCurrent) return existing;
+  if (!existing.some(isDemoEntry)) return existing;
+  return [...existing.filter((x) => !isDemoEntry(x)), ...fresh];
 }
