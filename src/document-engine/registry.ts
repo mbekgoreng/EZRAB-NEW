@@ -334,7 +334,7 @@ Disusun oleh,
       autoField('location', 'Lokasi Proyek', '{{project.location}}'),
       autoField('contractValue', 'Total Nilai BOQ', '{{boq.total}}'),
     ],
-    autoVariables: ['project.name', 'project.location', 'boq.total', 'boq.itemCount', 'company.name'],
+    autoVariables: ['project.name', 'project.location', 'boq.total', 'boq.totalLabel', 'boq.itemCount', 'company.name'],
     userFields: [
       userField('signatory.name', 'Penanggung Jawab Estimasi', '{{signatory.name}}', 'Nama Estimator / QS'),
       userField('signatory.position', 'Jabatan', '{{signatory.position}}', 'Quantity Surveyor', 'Quantity Surveyor'),
@@ -346,7 +346,7 @@ Disusun oleh,
 
 Pekerjaan       : {{project.name}}
 Lokasi Proyek   : {{project.location}}
-Total Nilai BOQ : {{boq.total}}
+{{boq.totalLabel}} : {{boq.total}}
 Penyedia Jasa   : {{company.name}}
 
 Daftar kuantitas volume dan estimasi harga satuan pekerjaan disajikan lengkap pada tabel terlampir.

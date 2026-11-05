@@ -25,6 +25,7 @@ export const VARIABLE_REGISTRY: Record<string, TemplateVariableMeta> = {
   'rab.itemCount': { path: 'rab.itemCount', label: 'Jumlah Item RAB', sourceType: 'AUTO', description: 'Banyaknya baris item pekerjaan dalam RAB' },
 
   'boq.total': { path: 'boq.total', label: 'Total Nilai BOQ', sourceType: 'AUTO', description: 'Total nilai rekapitulasi BOQ' },
+  'boq.totalLabel': { path: 'boq.totalLabel', label: 'Label Total Nilai BOQ', sourceType: 'AUTO', description: 'Label total BOQ; memuat kualifikasi PARSIAL bila ada item dengan harga belum tersedia' },
   'boq.itemCount': { path: 'boq.itemCount', label: 'Jumlah Item BOQ', sourceType: 'AUTO', description: 'Total kuantitas item pekerjaan pada BOQ' },
 
   'schedule.taskCount': { path: 'schedule.taskCount', label: 'Jumlah Aktivitas Jadwal', sourceType: 'AUTO', description: 'Banyaknya aktivitas jadwal konstruksi' },
@@ -156,6 +157,16 @@ export function buildTemplateContext(
     },
     boq: {
       total: formattedRab,
+      // Batch 4.1: the narrative total label must disclose partial status.
+      // The summed total only includes priced items; when any item lacks a
+      // usable price the label says so, otherwise it stays exactly as before.
+      totalLabel: rabItems.some(
+        (item: any) =>
+          item?.priceStatus === 'PRICE_UNRESOLVED' ||
+          (item?.unitPrice == null && item?.totalPrice == null && item?.amount == null)
+      )
+        ? 'Total Nilai BOQ Sementara (Parsial — Belum Termasuk Item dengan Harga Belum Tersedia)'
+        : 'Total Nilai BOQ',
       itemCount: rabItems.length,
     },
     schedule: {
