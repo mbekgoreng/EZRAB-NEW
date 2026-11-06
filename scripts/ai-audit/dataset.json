@@ -1,0 +1,155 @@
+{
+  "cases": [
+    {
+      "category": "residential-multiturn",
+      "expect": {
+        "bathrooms": 2,
+        "bedrooms": 3,
+        "buildingArea": 120,
+        "carport": true,
+        "finalize": "draft",
+        "floors": 2,
+        "kind": "rumah",
+        "landArea": 90
+      },
+      "id": "mandatory-incremental-house",
+      "title": "Skenario wajib: spek rumah bertahap + koreksi luas + finalisasi",
+      "turns": [
+        "buatkan RAB rumah tinggal",
+        "2 lantai, 6x15, 3 kamar tidur, 2 kamar mandi, ada carport",
+        "luas 100m2",
+        "2 lantai, 6x15, 3 kamar tidur, 2 kamar mandi, ada carport, luas 120m2",
+        "itu aja"
+      ]
+    },
+    {
+      "category": "correction",
+      "expect": {
+        "bedrooms": 3,
+        "buildingArea": 95,
+        "finalize": "draft",
+        "floors": 2,
+        "kind": "rumah"
+      },
+      "id": "correction-single-field",
+      "title": "Koreksi satu kolom: luas berubah, kolom lain utuh",
+      "turns": [
+        "buatkan rab rumah 2 lantai luas 80 m2, 3 kamar tidur",
+        "luasnya 95 m2",
+        "itu aja"
+      ]
+    },
+    {
+      "category": "residential-minimal",
+      "expect": {
+        "buildingArea": 45,
+        "finalize": "draft",
+        "floors": 1,
+        "kind": "rumah"
+      },
+      "id": "minimal-essential-only",
+      "title": "Data inti saja cukup: kamar opsional tidak memblokir draft",
+      "turns": [
+        "buatkan rab rumah",
+        "1 lantai, luas 45 m2",
+        "itu aja"
+      ]
+    },
+    {
+      "category": "clarification",
+      "expect": {
+        "bedrooms": 3,
+        "finalize": "blocked-essential",
+        "floors": 2,
+        "kind": "rumah"
+      },
+      "id": "finalize-missing-essential",
+      "title": "Finalisasi tanpa luas/dimensi: harus bertanya data inti saja, bukan mengarang draft",
+      "turns": [
+        "buatkan rab rumah 2 lantai, 3 kamar tidur",
+        "itu aja"
+      ]
+    },
+    {
+      "category": "area-semantics",
+      "expect": {
+        "buildingArea": 120,
+        "finalize": "n/a",
+        "floors": 2,
+        "kind": "rumah",
+        "landArea": 90
+      },
+      "id": "land-vs-building-not-conflict",
+      "title": "Lahan 90 m2 vs bangunan 120 m2 pada 2 lantai BUKAN konflik",
+      "turns": [
+        "buatkan rab rumah 2 lantai tanah 6x15 luas bangunan 120 m2"
+      ]
+    },
+    {
+      "category": "infrastructure",
+      "expect": {
+        "bathrooms": null,
+        "finalize": "n/a",
+        "kind": "jalan",
+        "lengthM": 1000
+      },
+      "id": "road-linear-km-not-bathroom",
+      "title": "Pekerjaan linear: '1 km' adalah panjang, bukan kamar mandi",
+      "turns": [
+        "buatkan rab jalan hotmix panjang 1 km"
+      ]
+    },
+    {
+      "category": "renovation",
+      "expect": {
+        "buildingArea": 60,
+        "finalize": "n/a",
+        "floors": 1,
+        "kind": "renovasi"
+      },
+      "id": "renovation-kind",
+      "title": "Renovasi rumah terbaca sebagai kind renovasi",
+      "turns": [
+        "buatkan rab renovasi rumah 1 lantai luas 60 m2"
+      ]
+    },
+    {
+      "category": "terminology",
+      "expect": {
+        "bathrooms": 2,
+        "bedrooms": 3,
+        "finalize": "n/a",
+        "floors": 2,
+        "kind": "rumah",
+        "landArea": 54
+      },
+      "id": "word-number-floors",
+      "title": "Kata bilangan: 'dua lantai' terbaca 2",
+      "turns": [
+        "buatkan rab rumah dua lantai 6x9, tiga kamar tidur, dua kamar mandi"
+      ]
+    },
+    {
+      "id": "affirmation-finalize-oke",
+      "title": "Afirmasi tunggal 'oke' mengeksekusi draft (aturan owner 2026-11-06: jangan dijawab dengan jawaban lain)",
+      "category": "confirmation",
+      "turns": [
+        "buatkan RAB rumah tinggal",
+        "2 lantai, 6x15, 3 kamar tidur, 2 kamar mandi, ada carport, luas 120m2",
+        "oke"
+      ],
+      "expect": {
+        "kind": "rumah",
+        "floors": 2,
+        "landArea": 90,
+        "buildingArea": 120,
+        "bedrooms": 3,
+        "bathrooms": 2,
+        "carport": true,
+        "finalize": "draft"
+      }
+    }
+  ],
+  "description": "Dataset regresi percakapan konstruksi Indonesia untuk audit AI EZRAB. Setiap kasus: giliran pesan pengguna + keadaan kebutuhan yang diharapkan + perilaku finalisasi yang diharapkan. Kasus ditambah setiap cacat produksi baru ditemukan (setelah data sensitif dibuang).",
+  "version": 1
+}

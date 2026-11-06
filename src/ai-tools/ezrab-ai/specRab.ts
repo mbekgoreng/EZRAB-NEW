@@ -32,6 +32,7 @@ import {
   resolveLandAreaM2,
   stripLandPhrases,
 } from './rabNeeds';
+import type { RabNeeds } from './rabNeeds';
 import { masterBuildingTemplateRegistry } from '../../data/buildingTemplates/masterTemplateRegistry';
 import { parametricVolumeEngine } from '../../engine/parametricVolumeEngine/parametricVolumeEngine';
 import {
@@ -131,11 +132,16 @@ export function parseFreeSpec(rawText: string): FreeSpec | null {
   let areaSource: FreeSpec['areaSource'];
   let areaMismatch = false;
   if (dims && explicitBuildingArea) {
-    footprintArea = dims.p * dims.l;
+    // Alokasi awal (perbaikan overhaul 2026-11-06): luas eksplisit adalah
+    // TOTAL seluruh lantai; tapak per lantai = total ÷ lantai. Memakai
+    // dimensi sebagai tapak di sini menghasilkan alokasi tak masuk akal
+    // (mis. lahan 6×15 + total 120 m² 2 lantai → tapak 90 / lantai atas 30).
+    // Dimensi tetap dicatat (lahan) dan selisihnya ditandai areaMismatch.
+    footprintArea = explicitBuildingArea / floors;
     totalArea = explicitBuildingArea;
     areaSource = 'explicit';
     areaMismatch =
-      Math.abs(explicitBuildingArea - footprintArea * floors) > 0.15 * explicitBuildingArea;
+      Math.abs(explicitBuildingArea - dims.p * dims.l * floors) > 0.15 * explicitBuildingArea;
   } else if (dims) {
     footprintArea = dims.p * dims.l;
     totalArea = footprintArea * floors;
@@ -201,6 +207,72 @@ function fmtArea(v: number): string {
 export function buildSpecRab(rawText: string): DirectRabResult | null {
   const spec = parseFreeSpec(rawText);
   if (!spec) return null;
+  return buildFromFreeSpec(spec, rawText);
+}
+
+/**
+ * Bangun RAB langsung dari state kebutuhan percakapan (RabNeeds) — jalur
+ * finalisasi chat ("itu aja"). Perbedaan penting dari jalur teks:
+ * - Luas bangunan eksplisit adalah TOTAL seluruh lantai; tapak per lantai
+ *   dialokasikan awal = total ÷ lantai (berlabel asumsi di hasil).
+ * - Dimensi pada RabNeeds adalah LAHAN bila luas bangunan juga ada —
+ *   tidak dipakai sebagai tapak; dicatat sebagai luas lahan.
+ * - Tanpa luas bangunan, dimensi mengikuti konvensi jalur teks (tapak).
+ * Mengembalikan null bila basis luas tidak ada / di luar kewajaran —
+ * pemanggil wajib menjawab jujur, bukan mengarang draft.
+ */
+export function buildSpecRabFromNeeds(needs: RabNeeds): DirectRabResult | null {
+  if (needs.kind && needs.kind !== 'rumah') return null;
+  const floors = needs.floors ?? 1;
+  const dims =
+    needs.landLength && needs.landWidth
+      ? { p: needs.landLength, l: needs.landWidth }
+      : null;
+
+  let spec: FreeSpec;
+  if (needs.buildingArea) {
+    spec = {
+      floors,
+      floorsMentioned: needs.floors != null,
+      dims: null,
+      footprintArea: needs.buildingArea / floors,
+      totalArea: needs.buildingArea,
+      areaSource: 'explicit',
+      explicitBuildingArea: needs.buildingArea,
+      landAreaM2: dims ? dims.p * dims.l : null,
+      areaMismatch: dims
+        ? Math.abs(needs.buildingArea - dims.p * dims.l * floors) > 0.15 * needs.buildingArea
+        : false,
+      bedrooms: needs.bedrooms,
+      bathrooms: needs.bathrooms,
+      location: needs.location,
+      typeNumber: null,
+    };
+  } else if (dims) {
+    spec = {
+      floors,
+      floorsMentioned: needs.floors != null,
+      dims,
+      footprintArea: dims.p * dims.l,
+      totalArea: dims.p * dims.l * floors,
+      areaSource: 'dims',
+      explicitBuildingArea: null,
+      landAreaM2: null,
+      areaMismatch: false,
+      bedrooms: needs.bedrooms,
+      bathrooms: needs.bathrooms,
+      location: needs.location,
+      typeNumber: null,
+    };
+  } else {
+    return null;
+  }
+  if (spec.footprintArea < 15 || spec.footprintArea > 250 || spec.totalArea > 500) return null;
+  return buildFromFreeSpec(spec, '');
+}
+
+/** Inti generate dari FreeSpec — dipakai jalur teks & jalur kebutuhan. */
+function buildFromFreeSpec(spec: FreeSpec, rawText: string): DirectRabResult | null {
   // Template rumah terdaftar hanya 1–2 lantai; 3+ lantai tidak dimodelkan
   // engine secara jujur → ringkasan, bukan dipaksa.
   if (spec.floors > 2) return null;

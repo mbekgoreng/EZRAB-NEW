@@ -128,6 +128,19 @@ const WORD_FLOORS: Record<string, number> = {
   lima: 5,
 };
 
+const WORD_COUNTS: Record<string, number> = {
+  satu: 1,
+  dua: 2,
+  tiga: 3,
+  empat: 4,
+  lima: 5,
+  enam: 6,
+  tujuh: 7,
+  delapan: 8,
+  sembilan: 9,
+  sepuluh: 10,
+};
+
 /**
  * Jumlah lantai dari teks, semua bentuk yang dipakai pengguna Indonesia.
  * Urutan pemeriksaan menyelesaikan dua ambiguitas nyata:
@@ -149,8 +162,16 @@ export function parseFloorsMention(text: string): number | null {
     if (prev === 'x' || prev === '×') continue; // ekor dimensi, bukan lantai
     return parseInt(bm[1], 10);
   }
-  const after = t.match(/\blantai\s*(\d+)/);
-  if (after) return parseInt(after[1], 10);
+  // "lantai <angka>": lewati angka yang merupakan AWAL dimensi ("dua
+  // lantai 6x9" — angka 6 adalah dimensi, bukan lantai; bentuk kata
+  // bilangan di bawah yang berlaku). Perbaikan dataset audit 2026-11-06.
+  const afterRe = /\blantai\s*(\d+)/g;
+  let am: RegExpExecArray | null;
+  while ((am = afterRe.exec(t)) !== null) {
+    const next = t[(am.index ?? 0) + am[0].length];
+    if (next === 'x' || next === '×') continue;
+    return parseInt(am[1], 10);
+  }
   const wordAfter = t.match(/\blantai\s+(satu|dua|tiga|empat|lima)\b/);
   if (wordAfter) return WORD_FLOORS[wordAfter[1]];
   const wordBefore = t.match(/\b(satu|dua|tiga|empat|lima)\s+lantai\b/);
@@ -258,6 +279,17 @@ export function extractRabNeeds(text: string, base?: RabNeeds): RabNeeds {
   if (kt) n.bedrooms = parseInt(kt[1], 10);
   const km = tForBathrooms.match(/(\d+)\s*(?:kamar mandi|km)\b/);
   if (km) n.bathrooms = parseInt(km[1], 10);
+  // Kata bilangan untuk kamar ("tiga kamar tidur, dua kamar mandi") —
+  // sebelumnya hanya angka digit yang terbaca (temuan dataset audit
+  // 2026-11-06). Hanya mengisi bila pola digit tidak menemukan apa pun.
+  if (n.bedrooms == null) {
+    const w = t.match(/\b(satu|dua|tiga|empat|lima|enam|tujuh|delapan|sembilan|sepuluh)\s*(?:kamar tidur|kt)\b/);
+    if (w) n.bedrooms = WORD_COUNTS[w[1]];
+  }
+  if (n.bathrooms == null) {
+    const w = tForBathrooms.match(/\b(satu|dua|tiga|empat|lima|enam|tujuh|delapan|sembilan|sepuluh)\s*(?:kamar mandi|km)\b/);
+    if (w) n.bathrooms = WORD_COUNTS[w[1]];
+  }
   if (/\bcarport\b/.test(t)) n.carport = !/\b(tanpa|tidak ada|nggak ada|ga ada)\s+carport\b/.test(t);
 
   const loc = t.match(/\bdi\s+([a-z][a-z\s]{2,24}?)(?=\s*(?:,|\.|$|\d+\s*lantai|\d+\s*m\b))/);
@@ -281,7 +313,10 @@ export function missingNeeds(n: RabNeeds): string[] {
   if (n.kind === 'rumah' || n.kind === 'gedung' || !n.kind) {
     if (!n.floors) missing.push('jumlah lantai');
     if (!n.buildingArea && !(n.landLength && n.landWidth)) missing.push('luas bangunan atau ukuran tanah (mis. 6 × 15 m)');
-    if (n.kind === 'rumah' && !n.bedrooms) missing.push('jumlah kamar tidur');
+    // Kamar tidur/mandi BUKAN kebutuhan inti (perbaikan overhaul
+    // 2026-11-06): engine parametrik punya default template yang
+    // dinyatakan terbuka sebagai asumsi — data opsional tidak boleh
+    // memberi kesan draft terblokir.
   }
   return missing;
 }

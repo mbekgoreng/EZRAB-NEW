@@ -1,0 +1,118 @@
+{
+  "at": "2026-11-05T19:43:18.115Z",
+  "casesTotal": 8,
+  "casesPassed": 4,
+  "fieldAccuracy": 90.6,
+  "defects": [
+    {
+      "id": "SUMMARY_REPEATED",
+      "severity": "MAJOR",
+      "caseId": "mandatory-incremental-house",
+      "rootCause": "continueRabNeeds selalu me-render ulang ringkasan kebutuhan lengkap pada setiap refinement (rabSummaryResult → summarizeRabNeeds tanpa jalur balasan ringkas).",
+      "evidence": "Kasus mandatory-incremental-house, giliran \"2 lantai, 6x15, 3 kamar tidur, 2 kamar m…\": balasan memuat pembuka ringkasan penuh."
+    },
+    {
+      "id": "FINALIZE_UNHANDLED",
+      "severity": "CRITICAL",
+      "caseId": "mandatory-incremental-house",
+      "rootCause": "Tidak ada handler finalisasi percakapan di actionRegistry — frasa penutup jatuh ke pipeline LLM tanpa state kebutuhan deterministik.",
+      "evidence": "Kasus mandatory-incremental-house: giliran \"itu aja\" tidak tertangani lokal (routeIntent=UNKNOWN)."
+    },
+    {
+      "id": "SUMMARY_REPEATED",
+      "severity": "MAJOR",
+      "caseId": "minimal-essential-only",
+      "rootCause": "continueRabNeeds selalu me-render ulang ringkasan kebutuhan lengkap pada setiap refinement (rabSummaryResult → summarizeRabNeeds tanpa jalur balasan ringkas).",
+      "evidence": "Kasus minimal-essential-only, giliran \"1 lantai, luas 45 m2…\": balasan memuat pembuka ringkasan penuh."
+    },
+    {
+      "id": "FINALIZE_UNHANDLED",
+      "severity": "CRITICAL",
+      "caseId": "minimal-essential-only",
+      "rootCause": "Tidak ada handler finalisasi percakapan di actionRegistry — frasa penutup jatuh ke pipeline LLM tanpa state kebutuhan deterministik.",
+      "evidence": "Kasus minimal-essential-only: giliran \"itu aja\" tidak tertangani lokal (routeIntent=UNKNOWN)."
+    },
+    {
+      "id": "FINALIZE_UNHANDLED",
+      "severity": "CRITICAL",
+      "caseId": "finalize-missing-essential",
+      "rootCause": "Tidak ada handler finalisasi percakapan di actionRegistry — frasa penutup jatuh ke pipeline LLM tanpa state kebutuhan deterministik.",
+      "evidence": "Kasus finalize-missing-essential: giliran \"itu aja\" tidak tertangani lokal (routeIntent=UNKNOWN)."
+    },
+    {
+      "id": "OPTIONAL_BLOCKS_DRAFT",
+      "severity": "MAJOR",
+      "caseId": "(probe)",
+      "rootCause": "missingNeeds() memasukkan jumlah kamar tidur sebagai kebutuhan wajib rumah, padahal engine parametrik memiliki default template yang dinyatakan sebagai asumsi.",
+      "evidence": "missingNeeds(rumah 2 lantai, luas 100) = [\"jumlah kamar tidur\"]"
+    },
+    {
+      "id": "PRICE_INTEGRITY",
+      "severity": "CRITICAL",
+      "caseId": "(probe)",
+      "rootCause": "Ada item dengan harga satuan 0/negatif yang diperlakukan sebagai berharga.",
+      "evidence": "1 item bermasalah."
+    }
+  ],
+  "caseResults": [
+    {
+      "id": "mandatory-incremental-house",
+      "passed": false,
+      "notes": [
+        "balasan refinement mengulang ringkasan penuh",
+        "balasan refinement mengulang ringkasan penuh",
+        "balasan refinement mengulang ringkasan penuh",
+        "finalisasi tidak tertangani lokal"
+      ]
+    },
+    {
+      "id": "correction-single-field",
+      "passed": true,
+      "notes": []
+    },
+    {
+      "id": "minimal-essential-only",
+      "passed": false,
+      "notes": [
+        "balasan refinement mengulang ringkasan penuh",
+        "finalisasi tidak tertangani lokal"
+      ]
+    },
+    {
+      "id": "finalize-missing-essential",
+      "passed": false,
+      "notes": [
+        "finalisasi tidak tertangani lokal"
+      ]
+    },
+    {
+      "id": "land-vs-building-not-conflict",
+      "passed": true,
+      "notes": []
+    },
+    {
+      "id": "road-linear-km-not-bathroom",
+      "passed": true,
+      "notes": []
+    },
+    {
+      "id": "renovation-kind",
+      "passed": true,
+      "notes": []
+    },
+    {
+      "id": "word-number-floors",
+      "passed": false,
+      "notes": [
+        "kolom floors: diharapkan 2, aktual 6",
+        "kolom bedrooms: diharapkan 3, aktual null",
+        "kolom bathrooms: diharapkan 2, aktual null"
+      ]
+    }
+  ],
+  "unavailableMetrics": [
+    "Latensi provider AI live — tidak terukur dari lingkungan lokal tanpa memanggil provider berbayar",
+    "Biaya AI per tugas live — menunggu metering backend aktif (saat ini simulasi frontend)",
+    "Ketersediaan model/provider real-time — tidak dipantau dari repo"
+  ]
+}

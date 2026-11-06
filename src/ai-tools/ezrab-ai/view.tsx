@@ -38,7 +38,7 @@ import { renderMarkdown } from './markdown';
 import { routeIntent, localGreeting, HELP_TEXT } from './intentRouter';
 import { extractSlashToken, filterSlashEntries, NAV_BY_ID, resolveNavCommand, type NavEntry } from './navRegistry';
 import { consumePendingAiEntry, requestAiEntry, consumePendingEzrabAiEntry, peekPendingEzrabAiEntry, ezrabAiEntryRemainingMs, openEzrabAI, type EzrabAiEntryContext } from '../aiNavigation';
-import { executeIntent, continueRabNeeds, continueRabChoice, tryContinueRabSubtype, getLastRabDesignPrompt, ChatActionContext, ChatActionButton } from './actionRegistry';
+import { executeIntent, continueRabNeeds, continueRabFinalize, hasActiveRabNeeds, continueRabChoice, tryContinueRabSubtype, getLastRabDesignPrompt, ChatActionContext, ChatActionButton } from './actionRegistry';
 import { getLastDirectRab } from './directRab';
 import { classifyRequest, minDelayFor, statusTextFor, waitForMinimum, waitForRabMinimum, rabMinDelayMs, activityForRequest, createRequestCoordinator, isAbortError, type AiActivity } from '../aiResponseTiming';
 import { mapDirectRabPushItems } from './directRabPush';
@@ -827,6 +827,37 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
           const res = continueRabNeeds(msg);
           const acts = res.actions && res.actions.length > 0 ? res.actions : undefined;
           await postAssistant(res.message, acts);
+        } finally {
+          setBusy(false);
+        }
+        return;
+      }
+    }
+    /* ---- Finalisasi & refinement sesi kebutuhan (perbaikan overhaul
+     * 2026-11-06): selama sesi kebutuhan RAB aktif, frasa penutup
+     * ("itu aja") menyusun draft nyata dan jawaban berbentuk kebutuhan
+     * digabung ke state — keduanya TIDAK bocor ke pipeline LLM hanya
+     * karena flag awaitingNeeds (yang kini juga disetel ringkasan
+     * pertama) sedang tidak aktif. Perintah baru berbentuk perintah
+     * tidak tertangkap looksLikeNeedsAnswer dan diproses normal. */
+    if (!forcedAi && hasActiveRabNeeds()) {
+      const fin = continueRabFinalize(msg);
+      if (fin) {
+        try {
+          const acts = fin.actions && fin.actions.length > 0 ? fin.actions : undefined;
+          await postAssistant(fin.message, acts);
+          if (fin.awaitRabNeeds) setAwaitingNeeds(true);
+        } finally {
+          setBusy(false);
+        }
+        return;
+      }
+      if (!awaitingNeeds && looksLikeNeedsAnswer(msg)) {
+        try {
+          const res = continueRabNeeds(msg);
+          const acts = res.actions && res.actions.length > 0 ? res.actions : undefined;
+          await postAssistant(res.message, acts);
+          if (res.awaitRabNeeds) setAwaitingNeeds(true);
         } finally {
           setBusy(false);
         }
@@ -1822,7 +1853,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
           />
         </div>
         <div className="ezchat2-title">
-          <div className="ezchat2-name">Ezrab Chat AI</div>
+          <div className="ezchat2-name">Ezrab Chat AI <span className="ezchat2-ver">V 01.00</span></div>
         </div>
         <div className="ezchat2-actions">
           {/* Saldo kredit AI (simulasi) — selalu terlihat di header chat;

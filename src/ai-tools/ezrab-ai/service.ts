@@ -6,7 +6,7 @@
  */
 
 import { aiToolsProviderClient } from '../providerClient';
-import { EZRAB_AI_SYSTEM_PROMPT } from './prompt';
+import { EZRAB_AI_SYSTEM_PROMPT, RESPONSE_LANGUAGE_RULE } from './prompt';
 import { getToolListText, runTool, EZRAB_AI_TOOL_MAP, setActiveProjectSnapshot } from './tools';
 import { ProjectSnapshot, formatProjectSummary } from './projectContext';
 import { EzrabAiRequest, EzrabAiResponse, EzrabAiToolCall, EzrabAiToolResult } from './types';
@@ -72,7 +72,7 @@ ALAT YANG TERSEDIA:
 ${getToolListText()}
 
 Jika diperlukan, panggil alat dengan format JSON: {"tool":"<nama_alat>","args":{...}}
-Kemudian lanjutkan jawabanmu. Kamu harus menjawab dalam Bahasa Indonesia.`;
+Kemudian lanjutkan jawabanmu. ${RESPONSE_LANGUAGE_RULE}`;
 
     // Satu kunci per operasi kirim ini; pemanggil yang mengulang operasi
     // yang sama dapat meneruskan kuncinya lewat request agar replay

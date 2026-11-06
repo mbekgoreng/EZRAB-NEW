@@ -20,6 +20,7 @@ import { getRegionalFactor, REGIONAL_WIZARD_OPTIONS } from '../data/regionalCost
 import { unifiedConversationStore } from './ai/conversation/unifiedConversationStore';
 import { notificationBus } from '../notifications/notificationBus';
 import { aiToolsProviderClient } from '../ai-tools/providerClient';
+import { RESPONSE_LANGUAGE_RULE } from '../ai-tools/ezrab-ai/prompt';
 import { classifyRequest, minDelayFor, statusTextFor, waitForMinimum, waitForRabMinimum, activityForRequest } from '../ai-tools/aiResponseTiming';
 
 export interface CoAssistantMessage {
@@ -352,7 +353,7 @@ class CoAssistantService {
     const result = await aiToolsProviderClient.execute({
       productId: 'EZRAB_AI',
       mode: 'fast',
-      prompt: `${contextBlock}PERTANYAAN PENGGUNA: ${trimmedMessage}\n\nJawab dalam Bahasa Indonesia.`,
+      prompt: `${contextBlock}PERTANYAAN PENGGUNA: ${trimmedMessage}\n\n${RESPONSE_LANGUAGE_RULE}`,
       jsonMode: false,
       temperature: 0.4,
       maxTokens: 3000,

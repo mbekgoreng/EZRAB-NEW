@@ -29,7 +29,7 @@ import { clarifyTopicCard, clarifyPickResult } from './clarifyTopics';
 import { evaluateCalculation } from './calcIntent';
 import { findGamesMentioned, buildGameInfoAnswer } from '../../game-space/catalog';
 import { buildDirectRab, displayTemplateBasisName, findDirectTemplate, formatDirectRabMessage, matchDirectRegion } from './directRab';
-import { buildSpecRab } from './specRab';
+import { buildSpecRab, buildSpecRabFromNeeds } from './specRab';
 import { buildUniversalDraft, formatUniversalDraftMessage } from './universalRab';
 
 export interface ChatActionContext {
@@ -278,6 +278,50 @@ function rabSummaryResult(raw: string, base?: RabNeeds): ActionResult {
   lastRabNeeds = needs;
   if (raw) lastRabRaw = raw;
   const missing = missingNeeds(needs);
+
+  /* Refinement (perbaikan overhaul 2026-11-06): bila ini lanjutan dari
+   * ringkasan yang sudah tampil (base ada), jawab RINGKAS — hanya kolom
+   * yang berubah + kekurangan inti — JANGAN mengulang ringkasan penuh.
+   * Ringkasan penuh hanya untuk pesan pertama. */
+  if (
+    base &&
+    (needs.kind === 'rumah' || needs.kind === 'gedung' || needs.kind === 'renovasi' || needs.kind === null)
+  ) {
+    const changes: string[] = [];
+    const num = (v: number) => v.toLocaleString('id-ID', { maximumFractionDigits: 1 });
+    if (needs.kindLabel !== base.kindLabel && needs.kindLabel) changes.push(`Jenis pekerjaan: ${needs.kindLabel}`);
+    if (needs.floors !== base.floors && needs.floors) changes.push(`Jumlah lantai: ${needs.floors} lantai`);
+    if (needs.buildingArea !== base.buildingArea && needs.buildingArea) changes.push(`Luas bangunan: ${num(needs.buildingArea)} m²`);
+    if (
+      (needs.landLength !== base.landLength || needs.landWidth !== base.landWidth) &&
+      needs.landLength && needs.landWidth
+    ) changes.push(`Ukuran tanah: ${num(needs.landLength)} × ${num(needs.landWidth)} m`);
+    if (needs.bedrooms !== base.bedrooms && needs.bedrooms) changes.push(`Kamar tidur: ${needs.bedrooms}`);
+    if (needs.bathrooms !== base.bathrooms && needs.bathrooms) changes.push(`Kamar mandi: ${needs.bathrooms}`);
+    if (needs.carport !== base.carport && needs.carport !== null) changes.push(`Carport: ${needs.carport ? 'ada' : 'tidak ada'}`);
+    if (needs.location !== base.location && needs.location) changes.push(`Lokasi: ${needs.location}`);
+    const lines: string[] = [
+      changes.length
+        ? `Siap, saya perbarui: ${changes.join('; ')}. Data lainnya tetap sama.`
+        : 'Siap — tidak ada perubahan dari data sebelumnya.',
+    ];
+    if (missing.length > 0) {
+      lines.push(`Satu data inti lagi: ${missing.join('; ')}. Tulis jawabannya langsung di chat, contoh: "2 lantai, 6x15, 3 kamar tidur".`);
+    } else {
+      lines.push('Datanya sudah cukup — tulis "itu aja" bila mau saya susun draft RAB-nya sekarang, atau pakai tombol di bawah.');
+    }
+    return {
+      ok: true,
+      message: lines.join('\n'),
+      awaitRabNeeds: missing.length > 0,
+      actions: [
+        { label: 'Buka Workspace Desain & RAB', action: { kind: 'intent', intent: 'OPEN_DESIGN_WORKSPACE' } },
+        { label: 'Lengkapi kebutuhan', action: { kind: 'intent', intent: 'RAB_NEEDS_REFINE' } },
+        { label: 'Mulai manual', action: { kind: 'navigate', menu: 'rab-estimasi' } },
+      ],
+    };
+  }
+
   const summary = summarizeRabNeeds(needs, missing);
 
   if (needs.kind === 'ded') {
@@ -294,6 +338,11 @@ function rabSummaryResult(raw: string, base?: RabNeeds): ActionResult {
     return {
       ok: true,
       message: summary,
+      // Perbaikan overhaul 2026-11-06: ringkasan pertama ikut menyetel
+      // status menunggu kelengkapan — sebelumnya flag ini hanya disetel
+      // hasil klik tombol "Lengkapi kebutuhan", sehingga jawaban ketikan
+      // pengguna bocor ke pipeline LLM tanpa state kebutuhan.
+      awaitRabNeeds: missing.length > 0,
       actions: [
         { label: 'Buka Workspace Desain & RAB', action: { kind: 'intent', intent: 'OPEN_DESIGN_WORKSPACE' } },
         { label: 'Lengkapi kebutuhan', action: { kind: 'intent', intent: 'RAB_NEEDS_REFINE' } },
@@ -328,6 +377,97 @@ function rabSummaryResult(raw: string, base?: RabNeeds): ActionResult {
 /** Lanjutan "Lengkapi kebutuhan": gabungkan jawaban pengguna ke ringkasan. */
 export function continueRabNeeds(text: string): ActionResult {
   return rabSummaryResult(text, lastRabNeeds ?? undefined);
+}
+
+/** Apakah ada sesi kebutuhan RAB yang aktif pada percakapan ini? */
+export function hasActiveRabNeeds(): boolean {
+  return lastRabNeeds !== null;
+}
+
+/* ------------------------------------------------------------------ */
+/* Finalisasi percakapan → draft RAB (perbaikan overhaul 2026-11-06). */
+/* "itu aja" sebelumnya tidak dikenal di mana pun: pesan jatuh ke      */
+/* pipeline LLM dan tidak pernah menjadi draft. Kini finalisasi       */
+/* menyusun draft NYATA dari state kebutuhan memakai builder spek     */
+/* (mesin parametrik + data engine yang sama seperti jalur tombol),   */
+/* atau menjelaskan bloker teknis yang sebenarnya.                    */
+/* ------------------------------------------------------------------ */
+
+const FINALIZE_RE =
+  /^\s*(?:oke?\s+|ya\s+)?(?:itu\s*(?:aja|saja|dulu)|segitu\s*(?:aja|saja)|sudah(?:\s+cukup)?|cukup(?:\s+itu)?|lanjut(?:kan)?|proses|generate|buatkan\s+sekarang)[\s.!]*$/i;
+
+/* Afirmasi tunggal (aturan owner 2026-11-06): "oke", "iya", "ya", "siap"
+ * dan sejenisnya adalah KONFIRMASI untuk mengeksekusi langkah yang
+ * sedang menunggu — jangan dijawab dengan jawaban lain (ringkasan,
+ * pertanyaan ulang, atau teks basa-basi). Hanya berlaku sebagai pesan
+ * yang berdiri sendiri (jangkar penuh), dan continueRabFinalize tetap
+ * mengembalikan null bila tidak ada sesi kebutuhan rumah yang aktif. */
+const AFFIRM_RE =
+  /^\s*(?:oke?|ok|iya+|ya|baik|siap|setuju|boleh|gas|lanjut)(?:\s+(?:oke?|ok|iya+|ya|baik|siap|setuju|boleh|gas|lanjut))?[\s.!]*$/i;
+
+/** Apakah teks ini pernyataan penutup/konfirmasi kebutuhan ("itu aja", "oke", "iya", …)? */
+export function isRabFinalizeText(text: string): boolean {
+  const t = text ?? '';
+  return FINALIZE_RE.test(t) || AFFIRM_RE.test(t);
+}
+
+/**
+ * Tangani finalisasi. Mengembalikan null bila teks bukan finalisasi,
+ * tidak ada sesi kebutuhan, atau jenisnya bukan rumah (jenis lain tetap
+ * pada alur kartu jalurnya masing-masing).
+ */
+export function continueRabFinalize(text: string): ActionResult | null {
+  if (!isRabFinalizeText(text)) return null;
+  const needs = lastRabNeeds;
+  if (!needs || needs.kind !== 'rumah') return null;
+
+  const hasAreaBasis = Boolean(needs.buildingArea || (needs.landLength && needs.landWidth));
+  if (!hasAreaBasis) {
+    return {
+      ok: true,
+      message:
+        'Siap — sebelum saya susun draft-nya, saya masih butuh satu data inti: luas bangunan atau ukuran tanah/bangunan ' +
+        '(mis. "6x15" atau "luas 120 m2"). Jumlah lantai dan kamar bisa mengikuti asumsi yang saya labeli terbuka.',
+      awaitRabNeeds: true,
+      actions: [
+        { label: 'Lengkapi kebutuhan', action: { kind: 'intent', intent: 'RAB_NEEDS_REFINE' } },
+        { label: 'Mulai manual', action: { kind: 'navigate', menu: 'rab-estimasi' } },
+      ],
+    };
+  }
+
+  const built = buildSpecRabFromNeeds(needs);
+  if (!built) {
+    return {
+      ok: true,
+      message:
+        `Jujur: mesin parametrik rumah EZRAB saat ini mendukung 1–2 lantai dan luas wajar (tapak 15–250 m², total ≤ 500 m²). ` +
+        `Kebutuhan Anda (${needs.floors ? `${needs.floors} lantai` : 'lantai belum jelas'}${needs.buildingArea ? `, luas ${needs.buildingArea} m²` : ''}) berada di luar model itu, ` +
+        'jadi saya tidak memaksakan angka dari template yang tidak sesuai. Susun lewat Workspace Desain & RAB atau mulai manual dari kebutuhan yang sama.',
+      actions: [
+        { label: 'Buka Workspace Desain & RAB', action: { kind: 'navigate', menu: 'desain-rab' } },
+        { label: 'Mulai manual', action: { kind: 'navigate', menu: 'rab-estimasi' } },
+      ],
+    };
+  }
+
+  const num = (v: number) => v.toLocaleString('id-ID', { maximumFractionDigits: 1 });
+  const facts: string[] = [`${built.floors} lantai`, `luas bangunan ${num(built.totalArea)} m²`];
+  if (needs.landLength && needs.landWidth) {
+    facts.push(`lahan ${num(needs.landLength * needs.landWidth)} m² (${num(needs.landLength)} × ${num(needs.landWidth)} m)`);
+  }
+  if (needs.bedrooms) facts.push(`${needs.bedrooms} kamar tidur`);
+  if (needs.bathrooms) facts.push(`${needs.bathrooms} kamar mandi`);
+  if (needs.carport) facts.push('carport ada');
+  const table = directRabTableResult(built);
+  return {
+    ok: true,
+    message:
+      `Draft RAB rumah tinggal — ${facts.join(' · ')}.\n` +
+      'Status: DRAFT AWAL untuk ditinjau, bukan estimasi final. Item yang masih menunggu spesifikasi teknis atau verifikasi harga ditandai di tabel dan tidak dicampur ke total terverifikasi.\n\n' +
+      table.message,
+    actions: table.actions,
+  };
 }
 
 /* ------------------------------------------------------------------ */
@@ -431,7 +571,10 @@ function syntheticUniversalRawText(n: RabNeeds): string | null {
  */
 function syntheticHouseRawText(n: RabNeeds): string | null {
   const parts: string[] = ['buatkan rab rumah'];
-  if (n.buildingArea) parts.push(`type ${n.buildingArea}`);
+  // Perbaikan overhaul 2026-11-06: luas bangunan BUKAN angka tipe — bentuk
+  // lama (`type 120`) dibaca parseFreeSpec sebagai typeNumber sehingga
+  // tapak/total menjadi 2× lipat dari yang diminta pengguna.
+  if (n.buildingArea) parts.push(`luas bangunan ${n.buildingArea} m2`);
   else if (n.landLength && n.landWidth) parts.push(`${n.landLength}x${n.landWidth}`);
   else return null;
   if (n.floors) parts.push(`${n.floors} lantai`);
