@@ -4,6 +4,10 @@ import { Project } from '../../types';
 import { RabItem } from '../../types';
 import { formatCurrencyIDR } from '../../calculations/decimalEngine';
 import { computeProjectInfoTotal } from '../../services/projectInfoTotal';
+import { RegionCascade } from './RegionCascade';
+
+/** Kunci kode wilayah Kemendagri yang menyertai field Lokasi. */
+const REGION_CODE_KEYS = ['provinceCode', 'regencyCode', 'districtCode', 'villageCode'] as const;
 
 /**
  * Tab "Informasi Proyek" (pertama di nav Estimator).
@@ -33,6 +37,8 @@ type StrKey =
   | 'description'
   | 'province'
   | 'cityRegency'
+  | 'district'
+  | 'village'
   | 'address'
   | 'ownerName'
   | 'consultantName'
@@ -67,11 +73,13 @@ const SECTIONS: Array<{ title: string; hint: string; fields: TextFieldDef[] }> =
   },
   {
     title: 'Lokasi',
-    hint: 'Wilayah proyek menentukan basis harga.',
+    hint: 'Pilih wilayah dari database wilayah Indonesia (kode Kemendagri) — provinsi, kabupaten/kota, kecamatan, desa/kelurahan.',
     fields: [
       { key: 'province', label: 'Provinsi', required: true, kind: 'text', placeholder: 'cth. Jawa Timur' },
       { key: 'cityRegency', label: 'Kabupaten/Kota', required: true, kind: 'text', placeholder: 'cth. Probolinggo' },
-      { key: 'address', label: 'Alamat Lokasi', kind: 'textarea', placeholder: 'Jalan, desa/kelurahan, kecamatan…' },
+      { key: 'district', label: 'Kecamatan', kind: 'text', placeholder: 'cth. Kraksaan' },
+      { key: 'village', label: 'Desa/Kelurahan', kind: 'text', placeholder: 'cth. Kraksaan Wetan' },
+      { key: 'address', label: 'Alamat Lokasi', kind: 'textarea', placeholder: 'Jalan, nomor, RT/RW, patokan…' },
     ],
   },
   {
@@ -143,6 +151,10 @@ export const ProjectInfoTab: React.FC<ProjectInfoTabProps> = ({ currentProject, 
       const v = anyP[f.key];
       out[f.key] = v === undefined || v === null ? '' : String(v);
     }
+    for (const k of REGION_CODE_KEYS) {
+      const v = anyP[k];
+      out[k] = v === undefined || v === null ? '' : String(v);
+    }
     return out;
   };
 
@@ -175,6 +187,9 @@ export const ProjectInfoTab: React.FC<ProjectInfoTabProps> = ({ currentProject, 
       } else {
         fields[f.key] = raw;
       }
+    }
+    for (const k of REGION_CODE_KEYS) {
+      fields[k] = (values[k] ?? '').trim();
     }
     onSave(fields);
     setIsSaved(true);
@@ -261,6 +276,23 @@ export const ProjectInfoTab: React.FC<ProjectInfoTabProps> = ({ currentProject, 
             {section.title}
           </h4>
           <p style={{ fontSize: '11.5px', color: '#64748B', margin: '4px 0 14px 0' }}>{section.hint}</p>
+          {section.title === 'Lokasi' ? (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px' }}>
+              <RegionCascade values={values} set={set} />
+              <div style={{ gridColumn: '1 / -1' }}>
+                <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>
+                  Alamat Lokasi (opsional)
+                </label>
+                <textarea
+                  value={values.address ?? ''}
+                  onChange={(e) => set('address', e.target.value)}
+                  placeholder="Jalan, nomor, RT/RW, patokan…"
+                  rows={3}
+                  style={{ ...inputStyle(false), height: 'auto', padding: '10px 12px', resize: 'vertical' }}
+                />
+              </div>
+            </div>
+          ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px' }}>
             {section.fields.map((f) => {
               const missing = !!f.required && !(values[f.key] ?? '').trim();
@@ -299,6 +331,7 @@ export const ProjectInfoTab: React.FC<ProjectInfoTabProps> = ({ currentProject, 
               );
             })}
           </div>
+          )}
           {section.title === 'Waktu & Ukuran' && (
             <div style={{ marginTop: '14px' }}>
               <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>

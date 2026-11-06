@@ -257,10 +257,22 @@ export function listProvinces(): string[] {
   return INDONESIA_PROVINCES.map((p) => p.name);
 }
 
+/**
+ * Alias nama provinsi: nama resmi Kemendagri (dipakai database wilayah
+ * berkode di data/wilayah.ts) → nama kanonis modul ini. Tanpa alias ini,
+ * proyek yang memilih Jakarta dari pemilih wilayah berkode akan gagal
+ * dicocokkan dan jatuh ke fallback indeks harga.
+ */
+const PROVINCE_NAME_ALIASES: Record<string, string> = {
+  /* kunci & nilai sama-sama dalam bentuk ternormalisasi normalizeRegionName */
+  'daerah khusus ibukota jakarta': 'dki jakarta',
+};
+
 /** Provinsi berdasarkan nama (tak peka huruf besar/kecil). */
 export function findProvinceByName(name: string): Province | null {
   const q = normalizeRegionName(name);
-  return INDONESIA_PROVINCES.find((p) => normalizeRegionName(p.name) === q) ?? null;
+  const canonical = PROVINCE_NAME_ALIASES[q] ?? q;
+  return INDONESIA_PROVINCES.find((p) => normalizeRegionName(p.name) === canonical) ?? null;
 }
 
 /** Daftar kabupaten/kota dalam satu provinsi (nama provinsi tak peka huruf). */

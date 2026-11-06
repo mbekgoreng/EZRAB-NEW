@@ -545,6 +545,12 @@ export interface Project {
   budgetYear?: number;            // Tahun Anggaran
   province?: string;              // Provinsi
   cityRegency?: string;           // Kabupaten / Kota
+  district?: string;              // Kecamatan (dari database wilayah, lib data/wilayah)
+  village?: string;               // Desa / Kelurahan (dari database wilayah)
+  provinceCode?: string;          // Kode Kemendagri provinsi (mis. "35")
+  regencyCode?: string;           // Kode Kemendagri kabupaten/kota (mis. "35.13")
+  districtCode?: string;          // Kode Kemendagri kecamatan (mis. "35.13.14")
+  villageCode?: string;           // Kode Kemendagri desa/kelurahan
 
   sections: RABSection[];
   costSummary: ProjectCostSummary;
