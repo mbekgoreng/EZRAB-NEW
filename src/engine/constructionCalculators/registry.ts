@@ -1,4 +1,5 @@
 import { ConstructionCalculatorSpec, CalculationResult } from './types';
+import { resolveCanonicalIdentity } from './canonicalResources';
 import { SafeDecimalEngine } from '../safeDecimalEngine';
 import {
   WF_PROFILE_REGISTRY,
@@ -22,7 +23,6 @@ export const CONSTRUCTION_CALCULATORS: ConstructionCalculatorSpec[] = [
     primaryQuantityLabel: 'Panjang Keliling Bowplank',
     defaultAhspCode: 'A.2.2.1.4',
     defaultAhspName: 'Pengukuran dan Pemasangan 1 m\' Bouwplank',
-    defaultUnitPrice: 95400,
     parameters: [
       { id: 'P', label: 'Panjang Lahan / Bangunan (P)', description: 'Panjang bersih as luar bangunan', unit: 'm', defaultValue: 12, min: 1, max: 200, step: 0.1 },
       { id: 'L', label: 'Lebar Lahan / Bangunan (L)', description: 'Lebar bersih as luar bangunan', unit: 'm', defaultValue: 8, min: 1, max: 200, step: 0.1 },
@@ -141,7 +141,6 @@ export const CONSTRUCTION_CALCULATORS: ConstructionCalculatorSpec[] = [
     primaryQuantityLabel: 'Volume Pasangan Batu Belah',
     defaultAhspCode: 'A.3.2.1.2',
     defaultAhspName: 'Pemasangan 1 m³ Pondasi Batu Belah Campuran 1 SP : 4 PP / 1 SP : 3 PP',
-    defaultUnitPrice: 985000,
     parameters: [
       // 2.1 Galian Tanah Pondasi
       { id: 'a1', label: 'a.1 Lebar Atas Galian', description: 'Lebar bukaan atas galian tanah', unit: 'm', defaultValue: 0.90, min: 0.2, max: 10.0, step: 0.05, category: 'dimensi' },
@@ -336,7 +335,6 @@ export const CONSTRUCTION_CALCULATORS: ConstructionCalculatorSpec[] = [
     primaryQuantityLabel: 'Volume Cor Pondasi Tapak',
     defaultAhspCode: 'A.4.1.1.5',
     defaultAhspName: 'Membuat 1 m³ Pondasi Telapak Beton Bertulang Mutu f\'c = 19,3 MPa (K 225 / K 250)',
-    defaultUnitPrice: 1350000,
     parameters: [
       // 3.1 Dimensi Utama
       { id: 'a1', label: 'a1 Lebar Kolom 1', description: 'Lebar sisi kolom pedestal arah X', unit: 'm', defaultValue: 0.25, min: 0.15, max: 2.0, step: 0.05, category: 'dimensi' },
@@ -526,7 +524,6 @@ export const CONSTRUCTION_CALCULATORS: ConstructionCalculatorSpec[] = [
     primaryQuantityLabel: 'Volume Pekerjaan Cor Sloof',
     defaultAhspCode: 'A.4.1.1.25',
     defaultAhspName: 'Membuat 1 m³ Sloof Beton Bertulang (150 kg Besi + Bekisting)',
-    defaultUnitPrice: 4850000,
     parameters: [
       { id: 'P', label: 'P Panjang Sloof', description: 'Panjang balok sloof per bentang', unit: 'm', defaultValue: 3.00, min: 0.5, max: 200, step: 0.1, category: 'dimensi' },
       { id: 'b', label: 'b Lebar Sloof', description: 'Lebar penampang sloof', unit: 'm', defaultValue: 0.20, min: 0.10, max: 1.0, step: 0.05, category: 'dimensi' },
@@ -671,7 +668,6 @@ export const CONSTRUCTION_CALCULATORS: ConstructionCalculatorSpec[] = [
     primaryQuantityLabel: 'Volume Cor Kolom Beton',
     defaultAhspCode: 'A.4.1.1.26',
     defaultAhspName: 'Membuat 1 m³ Kolom Beton Bertulang (180 kg Besi + Bekisting)',
-    defaultUnitPrice: 5350000,
     parameters: [
       { id: 'T', label: 'T Tinggi Kolom', description: 'Tinggi kolom per lantai', unit: 'm', defaultValue: 3.00, min: 1.0, max: 10.0, step: 0.1, category: 'dimensi' },
       { id: 'L', label: 'L Lebar Kolom', description: 'Dimensi penampang kolom arah X', unit: 'm', defaultValue: 0.15, min: 0.10, max: 2.0, step: 0.05, category: 'dimensi' },
@@ -809,7 +805,6 @@ export const CONSTRUCTION_CALCULATORS: ConstructionCalculatorSpec[] = [
     primaryQuantityLabel: 'Volume Beton Balok',
     defaultAhspCode: 'A.4.1.1.27',
     defaultAhspName: 'Membuat 1 m³ Balok Beton Bertulang (180 kg Besi + Bekisting)',
-    defaultUnitPrice: 5450000,
     parameters: [
       { id: 'L', label: 'Panjang Total Balok (L)', description: 'Panjang bentang balok', unit: 'm', defaultValue: 36.0, min: 1, max: 500, step: 0.5 },
       { id: 'b', label: 'Lebar Balok (b)', description: 'Lebar penampang balok', unit: 'm', defaultValue: 0.20, min: 0.10, max: 1.0, step: 0.05 },
@@ -917,7 +912,6 @@ export const CONSTRUCTION_CALCULATORS: ConstructionCalculatorSpec[] = [
     primaryQuantityLabel: 'Total Berat Baja WF',
     defaultAhspCode: 'A.4.2.1.1',
     defaultAhspName: 'Pemasangan 1 kg Rangka Kuda-Kuda / Kolom / Balok Baja IWF',
-    defaultUnitPrice: 38500,
     parameters: [
       { id: 'h', label: 'Tinggi Profil (h)', description: 'Tinggi total penampang profil WF', unit: 'mm', defaultValue: 200, min: 100, max: 1000, step: 10, category: 'dimensi' },
       { id: 'bf', label: 'Lebar Sayap (bf)', description: 'Lebar sayap flange profil WF', unit: 'mm', defaultValue: 100, min: 50, max: 500, step: 5, category: 'dimensi' },
@@ -1123,7 +1117,6 @@ export const CONSTRUCTION_CALCULATORS: ConstructionCalculatorSpec[] = [
     primaryQuantityLabel: 'Luas Pasangan Dinding Bata Ringan',
     defaultAhspCode: 'A.4.4.1.14',
     defaultAhspName: 'Pemasangan 1 m² Dinding Bata Ringan Tebal 7.5 cm / 10 cm dengan Mortar Siap Pakai',
-    defaultUnitPrice: 145000,
     parameters: [
       // 7.1 Ukuran Dinding
       { id: 'Pi', label: 'Pi Panjang Dinding Interior', description: 'Panjang total sekat dinding dalam ruangan', unit: 'm', defaultValue: 36.0, min: 0.0, max: 1000.0, step: 0.5, category: 'dimensi' },
@@ -1267,7 +1260,6 @@ export const CONSTRUCTION_CALCULATORS: ConstructionCalculatorSpec[] = [
     primaryQuantityLabel: 'Luas Pasangan Bata Merah',
     defaultAhspCode: 'A.4.4.1.9',
     defaultAhspName: 'Pemasangan 1 m² Dinding Bata Merah (5x11x22) cm Tebal 1/2 Batu Campuran 1 SP : 4 PP',
-    defaultUnitPrice: 165000,
     parameters: [
       { id: 'P', label: 'Panjang Total Dinding (P)', description: 'Panjang kumulatif dinding bata', unit: 'm', defaultValue: 32.0, min: 1, max: 500, step: 0.5 },
       { id: 'H', label: 'Tinggi Dinding (H)', description: 'Tinggi dinding bersih', unit: 'm', defaultValue: 3.50, min: 1, max: 10, step: 0.1 },
@@ -1342,7 +1334,6 @@ export const CONSTRUCTION_CALCULATORS: ConstructionCalculatorSpec[] = [
     primaryQuantityLabel: 'Luas Pasangan Batako',
     defaultAhspCode: 'A.4.4.1.12',
     defaultAhspName: 'Pemasangan 1 m² Dinding Batako Press Semen (10x20x40) cm',
-    defaultUnitPrice: 138000,
     parameters: [
       { id: 'P', label: 'Panjang Total Dinding (P)', description: 'Panjang kumulatif dinding', unit: 'm', defaultValue: 28.0, min: 1, max: 500, step: 0.5 },
       { id: 'H', label: 'Tinggi Dinding (H)', description: 'Tinggi dinding', unit: 'm', defaultValue: 3.0, min: 1, max: 10, step: 0.1 },
@@ -1416,7 +1407,6 @@ export const CONSTRUCTION_CALCULATORS: ConstructionCalculatorSpec[] = [
     primaryQuantityLabel: 'Luas Daun Pintu & Jendela',
     defaultAhspCode: 'A.4.6.1.5',
     defaultAhspName: 'Pembuatan dan Pemasangan 1 m² Daun Pintu Panel Kayu Kamper',
-    defaultUnitPrice: 950000,
     parameters: [
       { id: 'nPintuUtama', label: 'Jml Pintu Utama (90x210)', description: 'Pintu masuk utama', unit: 'unit', defaultValue: 1, min: 0, max: 20, step: 1 },
       { id: 'nPintuKamar', label: 'Jml Pintu Kamar (80x210)', description: 'Pintu kamar tidur & ruangan', unit: 'unit', defaultValue: 4, min: 0, max: 50, step: 1 },
@@ -1511,7 +1501,6 @@ export const CONSTRUCTION_CALCULATORS: ConstructionCalculatorSpec[] = [
     primaryQuantityLabel: 'Luas Bidang Atap Miring',
     defaultAhspCode: 'A.4.2.1.21',
     defaultAhspName: 'Pemasangan 1 m² Rangka Atap Baja Ringan Profil C75 Profil Standar',
-    defaultUnitPrice: 185000,
     parameters: [
       { id: 'Lb', label: 'Bentang Bangunan (Lb)', description: 'Lebar bersih bentang atap', unit: 'm', defaultValue: 8.0, min: 2, max: 50, step: 0.5 },
       { id: 'Pb', label: 'Panjang Bangunan (Pb)', description: 'Panjang horisontal bangunan', unit: 'm', defaultValue: 12.0, min: 2, max: 100, step: 0.5 },
@@ -1617,7 +1606,6 @@ export const CONSTRUCTION_CALCULATORS: ConstructionCalculatorSpec[] = [
     primaryQuantityLabel: 'Luas Plesteran Dinding',
     defaultAhspCode: 'A.4.4.2.4',
     defaultAhspName: 'Pemasangan 1 m² Plesteran 1 SP : 4 PP Tebal 15 mm + Acian',
-    defaultUnitPrice: 92000,
     parameters: [
       { id: 'luasDinding', label: 'Luas Dinding Kasar (m²)', description: 'Luas netto pasangan dinding bata/hebel', unit: 'm²', defaultValue: 105.0, min: 1, max: 1000, step: 1 },
       { id: 'sisiPlester', label: 'Jumlah Sisi Plesteran', description: 'Plesteran 2 sisi (dalam & luar) atau 1 sisi', unit: 'sisi', defaultValue: 2, min: 1, max: 2, step: 1 },
@@ -1691,7 +1679,6 @@ export const CONSTRUCTION_CALCULATORS: ConstructionCalculatorSpec[] = [
     primaryQuantityLabel: 'Luas Penutup Lantai',
     defaultAhspCode: 'A.4.4.3.35',
     defaultAhspName: 'Pemasangan 1 m² Lantai Homogeneous Tile / Granit 60x60 cm',
-    defaultUnitPrice: 245000,
     parameters: [
       { id: 'P', label: 'Panjang Ruangan (P)', description: 'Panjang lantai ruangan', unit: 'm', defaultValue: 10.0, min: 1, max: 100, step: 0.5 },
       { id: 'L', label: 'Lebar Ruangan (L)', description: 'Lebar lantai ruangan', unit: 'm', defaultValue: 8.0, min: 1, max: 100, step: 0.5 },
@@ -1774,7 +1761,6 @@ export const CONSTRUCTION_CALCULATORS: ConstructionCalculatorSpec[] = [
     primaryQuantityLabel: 'Luas Penutup Dinding Keramik',
     defaultAhspCode: 'A.4.4.3.50',
     defaultAhspName: 'Pemasangan 1 m² Dinding Keramik 30x60 cm / Homogeneous Tile',
-    defaultUnitPrice: 265000,
     parameters: [
       { id: 'K', label: 'Keliling Dinding (K)', description: 'Keliling ruangan yang dipasang keramik', unit: 'm', defaultValue: 8.0, min: 1, max: 100, step: 0.5 },
       { id: 'H', label: 'Tinggi Pasangan Dinding (H)', description: 'Tinggi pasangan keramik dinding', unit: 'm', defaultValue: 2.40, min: 0.5, max: 5.0, step: 0.1 },
@@ -1838,7 +1824,6 @@ export const CONSTRUCTION_CALCULATORS: ConstructionCalculatorSpec[] = [
     primaryQuantityLabel: 'Luas Pasangan Plafon',
     defaultAhspCode: 'A.4.5.1.7',
     defaultAhspName: 'Pemasangan 1 m² Langit-langit Gypsum Board Tebal 9 mm + Rangka Hollow',
-    defaultUnitPrice: 135000,
     parameters: [
       { id: 'P', label: 'Panjang Ruangan (P)', description: 'Panjang bidang plafon', unit: 'm', defaultValue: 10.0, min: 1, max: 100, step: 0.5 },
       { id: 'L', label: 'Lebar Ruangan (L)', description: 'Lebar bidang plafon', unit: 'm', defaultValue: 8.0, min: 1, max: 100, step: 0.5 },
@@ -1924,7 +1909,6 @@ export const CONSTRUCTION_CALCULATORS: ConstructionCalculatorSpec[] = [
     primaryQuantityLabel: 'Total Luas Pengecatan',
     defaultAhspCode: 'A.4.7.1.10',
     defaultAhspName: 'Pengecatan 1 m² Tembok Baru Interior (1 Lapis Plamir, 1 Lapis Cat Dasar, 2 Lapis Cat Penutup)',
-    defaultUnitPrice: 38500,
     parameters: [
       { id: 'luasInterior', label: 'Luas Dinding Interior (m²)', description: 'Luas dinding dalam ruangan', unit: 'm²', defaultValue: 140.0, min: 0, max: 1500, step: 1 },
       { id: 'luasEksterior', label: 'Luas Dinding Eksterior (m²)', description: 'Luas dinding luar tahan cuaca', unit: 'm²', defaultValue: 70.0, min: 0, max: 1500, step: 1 },
@@ -2005,7 +1989,6 @@ export const CONSTRUCTION_CALCULATORS: ConstructionCalculatorSpec[] = [
     primaryQuantityLabel: 'Total Titik Instalasi Listrik',
     defaultAhspCode: 'A.8.1.1.1',
     defaultAhspName: 'Pemasangan 1 Titik Instalasi Penerangan & Daya Kabel NYM 3x2.5 mm',
-    defaultUnitPrice: 275000,
     parameters: [
       { id: 'nLampu', label: 'Jumlah Titik Lampu', description: 'Titik lampu downlight / fitting', unit: 'titik', defaultValue: 18, min: 1, max: 200, step: 1 },
       { id: 'nStopKontak', label: 'Jumlah Stop Kontak', description: 'Titik colokan listrik', unit: 'titik', defaultValue: 12, min: 1, max: 100, step: 1 },
@@ -2087,7 +2070,6 @@ export const CONSTRUCTION_CALCULATORS: ConstructionCalculatorSpec[] = [
     primaryQuantityLabel: 'Panjang Total Pipa Air Bersih',
     defaultAhspCode: 'A.5.1.1.2',
     defaultAhspName: 'Pemasangan 1 m\' Pipa PVC Tipe AW Diameter 1/2" - 3/4"',
-    defaultUnitPrice: 42000,
     parameters: [
       { id: 'pjgPipaUtama', label: 'Panjang Pipa Utama 3/4" (m)', description: 'Jalur pipa induk dari tandon/pompa', unit: 'm', defaultValue: 24.0, min: 1, max: 200, step: 1 },
       { id: 'pjgPipaCabang', label: 'Panjang Pipa Cabang 1/2" (m)', description: 'Distribusi ke masing-masing kran/shower', unit: 'm', defaultValue: 32.0, min: 1, max: 200, step: 1 },
@@ -2165,7 +2147,6 @@ export const CONSTRUCTION_CALCULATORS: ConstructionCalculatorSpec[] = [
     primaryQuantityLabel: 'Total Unit Sanitair',
     defaultAhspCode: 'A.5.1.1.15',
     defaultAhspName: 'Pemasangan 1 Unit Kloset Duduk Monoblok Komplit Aksesoris',
-    defaultUnitPrice: 2350000,
     parameters: [
       { id: 'nKlosetDuduk', label: 'Jumlah Kloset Duduk (Monoblok)', description: 'Kloset duduk lengkap jet washer', unit: 'unit', defaultValue: 2, min: 0, max: 20, step: 1 },
       { id: 'nKlosetJongkok', label: 'Jumlah Kloset Jongkok', description: 'Kloset jongkok porselen', unit: 'unit', defaultValue: 0, min: 0, max: 20, step: 1 },
@@ -2233,7 +2214,6 @@ export const CONSTRUCTION_CALCULATORS: ConstructionCalculatorSpec[] = [
     primaryQuantityLabel: 'Luas Perkerasan Paving Block',
     defaultAhspCode: 'A.4.4.3.60',
     defaultAhspName: 'Pemasangan 1 m² Paving Block Bata Tebal 6 cm / 8 cm K-300',
-    defaultUnitPrice: 165000,
     parameters: [
       { id: 'P', label: 'Panjang Jalan (P)', description: 'Panjang bentang jalan paving', unit: 'm', defaultValue: 100.0, min: 1, max: 10000, step: 1 },
       { id: 'L', label: 'Lebar Jalan (L)', description: 'Lebar bersih perkerasan jalan', unit: 'm', defaultValue: 4.0, min: 1, max: 50, step: 0.25 },
@@ -2326,7 +2306,6 @@ export const CONSTRUCTION_CALCULATORS: ConstructionCalculatorSpec[] = [
     primaryQuantityLabel: 'Luas Perkerasan Aspal',
     defaultAhspCode: 'B.06.1.1',
     defaultAhspName: 'Penghamparan 1 Ton Laston Lapis Aus (AC-WC) Tebal Padat 4 cm',
-    defaultUnitPrice: 1750000,
     parameters: [
       { id: 'P', label: 'Panjang Jalan (P)', description: 'Panjang total ruas jalan', unit: 'm', defaultValue: 200.0, min: 1, max: 100000, step: 10 },
       { id: 'L', label: 'Lebar Jalan (L)', description: 'Lebar efektif lajur aspal', unit: 'm', defaultValue: 5.0, min: 2, max: 50, step: 0.5 },
@@ -2418,7 +2397,6 @@ export const CONSTRUCTION_CALCULATORS: ConstructionCalculatorSpec[] = [
     primaryQuantityLabel: 'Volume Beton Rigid Pavement',
     defaultAhspCode: 'B.05.1.1',
     defaultAhspName: 'Pengecoran 1 m³ Perkerasan Jalan Beton Semen Mutu f\'c 25 MPa / FS 45',
-    defaultUnitPrice: 1650000,
     parameters: [
       { id: 'P', label: 'Panjang Jalan (P)', description: 'Panjang ruas perkerasan kaku', unit: 'm', defaultValue: 100.0, min: 1, max: 100000, step: 10 },
       { id: 'L', label: 'Lebar Jalan (L)', description: 'Lebar efektif lajur beton', unit: 'm', defaultValue: 4.0, min: 2, max: 50, step: 0.5 },
@@ -2519,7 +2497,6 @@ export const CONSTRUCTION_CALCULATORS: ConstructionCalculatorSpec[] = [
     primaryQuantityLabel: 'Panjang Total Saluran Drainase',
     defaultAhspCode: 'B.07.1.1',
     defaultAhspName: 'Pemasangan 1 m\' Saluran Pracetak U-Ditch 40x40 cm Komplit Tutup',
-    defaultUnitPrice: 485000,
     parameters: [
       { id: 'P', label: 'Panjang Saluran (P)', description: 'Panjang total saluran drainase', unit: 'm', defaultValue: 50.0, min: 1, max: 10000, step: 1 },
       { id: 'lebarUDitch', label: 'Lebar Bersih U-Ditch (cm)', description: 'Lebar dalam box (30 / 40 / 60 / 80 cm)', unit: 'cm', defaultValue: 40, min: 30, max: 120, step: 10 },
@@ -2796,6 +2773,40 @@ export const ALL_CONSTRUCTION_CALCULATORS: ConstructionCalculatorSpec[] = [
   ...ROAD_CALCULATOR_SPECS,
   ...CIVIL_EXPANSION_CALCULATOR_SPECS,
 ];
+
+// === Master Repair Fase 6: cap identitas kanonis pada hasil hitung =======
+// Pembungkus di SATU titik batas registry: setiap hasil calculate() diberi
+// resourceCode/resourceCategory bila nama komponen cocok PERSIS satu
+// identitas terverifikasi di canonicalResources. Kuantitas, koefisien, dan
+// urutan komponen TIDAK diubah; komponen tanpa identitas tetap utuh.
+function stampCanonicalIdentities(result: CalculationResult): CalculationResult {
+  const stampRows = <T extends { unit?: string; resourceCode?: string }>(
+    rows: T[] | undefined,
+    category: 'MATERIAL' | 'LABOR' | 'EQUIPMENT',
+    nameOf: (row: T) => string,
+  ): T[] | undefined => {
+    if (!rows) return rows;
+    return rows.map((row) => {
+      if (row.resourceCode) return row;
+      const match = resolveCanonicalIdentity({ name: nameOf(row), unit: row.unit ?? '', category });
+      if (match.kind !== 'FOUND') return row;
+      return { ...row, resourceCode: match.resource.code, resourceCategory: category };
+    });
+  };
+  const next: CalculationResult = { ...result };
+  const materials = stampRows(result.materials, 'MATERIAL', (r) => r.name);
+  if (materials) next.materials = materials;
+  const labor = stampRows(result.labor, 'LABOR', (r) => r.role);
+  if (labor) next.labor = labor;
+  const equipment = stampRows(result.equipment, 'EQUIPMENT', (r) => r.name);
+  if (equipment) next.equipment = equipment;
+  return next;
+}
+
+for (const spec of ALL_CONSTRUCTION_CALCULATORS) {
+  const originalCalculate = spec.calculate;
+  spec.calculate = (inputs: Record<string, number>) => stampCanonicalIdentities(originalCalculate(inputs));
+}
 
 export function getCalculatorById(id: string): ConstructionCalculatorSpec | undefined {
   if (!id) return undefined;

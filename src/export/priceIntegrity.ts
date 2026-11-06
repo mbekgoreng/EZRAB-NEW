@@ -41,6 +41,14 @@ export interface ExportPriceItem {
   amount?: number | null;
   priceStatus?: string | null;
   priceSourceKind?: string | null;
+  /**
+   * ONE-PASS Task B: flag parsial EKSPLISIT dari item (rincian komponennya
+   * belum lengkap walau item sendiri berharga). Ringkasan WAJIB
+   * menghormatinya — item seperti ini tidak boleh terwakili sebagai lengkap.
+   */
+  isPartial?: boolean | null;
+  /** Jumlah komponen item yang belum berharga (dari rincian kalkulator). */
+  unresolvedComponentCount?: number | null;
 }
 
 export interface ExportItemSummary {
@@ -52,8 +60,15 @@ export interface ExportItemSummary {
   manualTotal: number;
   /** Item berharga yang bukan resmi/pasar/manual (legacy teresolusi, asumsi). */
   otherTotal: number;
-  /** true bila ada item tanpa harga — total yang ditampilkan adalah PARSIAL. */
+  /**
+   * true bila total PARSIAL: ada item tanpa harga, ATAU ada item berharga
+   * yang membawa flag parsial eksplisit / komponen unresolved.
+   */
   isPartial: boolean;
+  /** Jumlah item berharga yang ditandai parsial secara eksplisit. */
+  partialItemCount: number;
+  /** Total komponen belum berharga dari item-item berflag parsial. */
+  unresolvedComponentTotal: number;
   /** true bila total berharga mencampur sumber (bukan total resmi murni). */
   isMixed: boolean;
 }
@@ -97,6 +112,12 @@ function bucketOf(it: ExportPriceItem): 'official' | 'market' | 'manual' | 'othe
   return 'other';
 }
 
+/** Item ditandai parsial secara eksplisit (flag atau komponen unresolved > 0). */
+function isFlaggedPartial(it: ExportPriceItem): boolean {
+  if (it.isPartial === true) return true;
+  return typeof it.unresolvedComponentCount === 'number' && it.unresolvedComponentCount > 0;
+}
+
 export function summarizeExportItems(items: ExportPriceItem[]): ExportItemSummary {
   let pricedCount = 0;
   let unpricedCount = 0;
@@ -105,7 +126,18 @@ export function summarizeExportItems(items: ExportPriceItem[]): ExportItemSummar
   let marketTotal = 0;
   let manualTotal = 0;
   let otherTotal = 0;
+  let partialItemCount = 0;
+  let unresolvedComponentTotal = 0;
   for (const it of items) {
+    // Flag parsial dihitung dari SEMUA item (berharga maupun tidak) agar
+    // hitungan komponen unresolved tetap akurat; jumlah rupiahnya sendiri
+    // tetap digerbangi exportItemAmount di bawah (UNRESOLVED dibuang).
+    if (isFlaggedPartial(it)) {
+      partialItemCount++;
+      if (typeof it.unresolvedComponentCount === 'number' && it.unresolvedComponentCount > 0) {
+        unresolvedComponentTotal += it.unresolvedComponentCount;
+      }
+    }
     const amt = exportItemAmount(it);
     if (amt == null) {
       unpricedCount++;
@@ -132,7 +164,11 @@ export function summarizeExportItems(items: ExportPriceItem[]): ExportItemSummar
     marketTotal,
     manualTotal,
     otherTotal,
-    isPartial: unpricedCount > 0,
+    // ONE-PASS Task B: item berflag parsial membuat total PARSIAL walau
+    // semua item berharga — flag tidak lagi diabaikan ringkasan.
+    isPartial: unpricedCount > 0 || partialItemCount > 0,
+    partialItemCount,
+    unresolvedComponentTotal,
     isMixed,
   };
 }
@@ -148,6 +184,8 @@ export function summarizeExportSections(
   let marketTotal = 0;
   let manualTotal = 0;
   let otherTotal = 0;
+  let partialItemCount = 0;
+  let unresolvedComponentTotal = 0;
   for (const sec of sections) {
     const s = summarizeExportItems(sec.items || []);
     per.push({
@@ -162,6 +200,8 @@ export function summarizeExportSections(
     marketTotal += s.marketTotal;
     manualTotal += s.manualTotal;
     otherTotal += s.otherTotal;
+    partialItemCount += s.partialItemCount;
+    unresolvedComponentTotal += s.unresolvedComponentTotal;
   }
   const isMixed = officialTotal > 0
     ? (marketTotal > 0 || manualTotal > 0 || otherTotal > 0)
@@ -177,15 +217,20 @@ export function summarizeExportSections(
     marketTotal,
     manualTotal,
     otherTotal,
-    isPartial: unpricedCount > 0,
+    isPartial: unpricedCount > 0 || partialItemCount > 0,
+    partialItemCount,
+    unresolvedComponentTotal,
     isMixed,
   };
 }
 
-/** Label penjelas total ekspor: parsial bila ada item tanpa harga. */
+/** Label penjelas total ekspor: parsial bila ada item tanpa harga ATAU berflag parsial. */
 export function exportTotalNote(summary: ExportItemSummary): string {
   if (summary.isPartial) {
-    return `TOTAL PARSIAL — ${summary.unpricedCount} item belum memiliki harga dan tidak termasuk dalam total`;
+    if (summary.unpricedCount > 0) {
+      return `TOTAL PARSIAL — ${summary.unpricedCount} item belum memiliki harga dan tidak termasuk dalam total`;
+    }
+    return `TOTAL PARSIAL — ${summary.partialItemCount} item memiliki rincian komponen yang belum lengkap (${summary.unresolvedComponentTotal} komponen belum berharga)`;
   }
   if (summary.isMixed) {
     return 'Total campuran sumber harga (resmi/pasar/manual/lainnya) — bukan total resmi murni';

@@ -68,6 +68,15 @@ import { getCalculatorIllustration } from './calculatorIllustrations';
 import { formatRupiah, formatNumberId } from '../../engine/formulaEngine';
 import { SafeDecimalEngine } from '../../engine/safeDecimalEngine';
 import { MASTER_PRICE_ITEMS } from '../../data/indonesianPrices';
+import {
+  resolveComponentPrice,
+  PROVENANCE_LABELS_ID,
+  crossRegionNoteId,
+  type ComponentPriceResult,
+  type ComponentPriceStatus,
+  type ComponentPriceProvenance,
+} from '../../engine/constructionCalculators/componentPriceResolution';
+import type { RegionalPriceSource } from '../../engine/constructionCalculators/regionalPrices';
 import { useScopeBasedCost } from '../../hooks/useScopeBasedCost';
 import { PriceContext } from '../../engine/pricing/contracts/types';
 // PHASE 6A: Weir forensic cost pipeline
@@ -107,6 +116,50 @@ interface QtoPriceRow {
   jumlahHarga: number | null;
   isOverridden: boolean;
   priceSource: CostPriceSourceKind;
+  /** Master Repair Fase 7: hasil resolusi terstruktur dari engine. */
+  resolutionStatus?: ComponentPriceStatus;
+  provenance?: ComponentPriceProvenance;
+  resourceCode?: string | null;
+  sourceReference?: string | null;
+  resolutionExplanation?: string;
+  /** Remediasi 2026-11-06: harga regional dipakai sebagai asumsi wilayah (provinsi proyek tidak diketahui). */
+  regionalPriceAssumption?: boolean;
+  /** Coverage Completion §9: label Bahasa Indonesia kelas provenance baris ini. */
+  provenanceLabel?: string;
+  /** Coverage Completion §5: harga berasal dari provinsi lain (referensi lintas-wilayah). */
+  crossRegion?: boolean;
+  /** Provinsi asal harga bila berasal dari registry riset regional/pasar. */
+  sourceRegion?: string | null;
+  /** Catatan ringkas lintas-wilayah untuk ditampilkan di dekat label sumber. */
+  crossRegionNote?: string;
+  /**
+   * Price Integrity Gate 2026-11-06: keyakinan bukti sumber riset diteruskan
+   * dari hasil resolver (sebelumnya gugur di titik serah ini) agar INDEX_ONLY
+   * tampil terbedakan di UI, bukan hanya di dalam teks penjelasan.
+   */
+  priceConfidence?: 'VERIFIED_LIVE' | 'INDEX_ONLY' | null;
+  /** Sumber regional/pasar penuh (penerbit, dokumen, URL, tanggal, taxNote). */
+  regionalSource?: RegionalPriceSource | null;
+}
+
+/**
+ * Peringatan provenance yang tetap relevan untuk disimpan di item RAB:
+ * catatan lintas-wilayah per baris + penanda sumber INDEX_ONLY. Dipakai
+ * bersama oleh jalur sinkron langsung (handleSyncToRAB) dan jalur simpan
+ * QTO (handleSaveToQTO, ONE-PASS Task C) agar kedua jalur menyusun
+ * peringatan dari data rincian yang sama persis.
+ */
+function buildQtoSyncWarnings(
+  rows: Array<Pick<QtoPriceRow, 'crossRegionNote' | 'priceConfidence' | 'uraian' | 'sourceReference'>>
+): string[] {
+  const warnings: string[] = [];
+  for (const row of rows) {
+    if (row.crossRegionNote) warnings.push(row.crossRegionNote);
+    if (row.priceConfidence === 'INDEX_ONLY') {
+      warnings.push(`Sumber INDEX ONLY (keyakinan lebih rendah): ${row.uraian} — ${row.sourceReference ?? 'sumber riset regional/pasar'}.`);
+    }
+  }
+  return warnings;
 }
 
 // 6 Structured Categories (24 Master SNI/Workbook + 30 Residential Pack)
@@ -740,6 +793,16 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
       const { qto, run } = executeCalculationAndSave(selectedCalcId, inputs, {
         targetQtoId: editingQtoId || undefined,
         autoSyncRab: false,
+        // ONE-PASS Task C: teruskan integritas rincian AKTUAL agar jalur
+        // existingMapping di ProjectContext dapat menyebarkan status
+        // parsial/lengkap baru ke item RAB tertaut (sebelumnya jalur
+        // simpan-ke-QTO ini tidak membawa data integritas sama sekali,
+        // sehingga rekalkulasi parsial tidak pernah terlihat di RAB).
+        priceIntegrity: {
+          isPartial: priceBreakdown.unresolvedRowCount > 0,
+          unresolvedComponentCount: priceBreakdown.unresolvedRowCount,
+          priceValidationWarnings: buildQtoSyncWarnings(priceBreakdown.allRows),
+        },
       });
       showToast(`Hasil kalkulasi berhasil ditambahkan ke QTO: ${qto.uraian} (${qto.quantity} ${qto.unit}) - Run ${run.id}`);
       if (editingQtoId) setEditingQtoId(null);
@@ -755,6 +818,15 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
       showToast('Parameter perhitungan belum valid.', 'warning');
       return;
     }
+    // Master Repair Fase 9 (P0): bila ada komponen UNRESOLVED, grandTotal
+    // adalah total PARSIAL — membaginya dengan volume menghasilkan harga
+    // satuan semu yang terlihat lengkap. Sinkron final DIBLOKIR; simpan ke
+    // QTO (tanpa harga) tetap boleh. ProjectContext juga menolak jalur ini
+    // sebagai pertahanan lapis kedua.
+    if (priceBreakdown.unresolvedRowCount > 0) {
+      showToast(`Sinkron ke RAB dibatalkan: ${priceBreakdown.unresolvedRowCount} komponen belum memiliki harga dari sumber nyata — total saat ini parsial dan tidak boleh menjadi harga final RAB. Simpan ke QTO terlebih dahulu, lalu lengkapi harga komponennya.`, 'warning');
+      return;
+    }
     // Tanpa satu pun harga dari sumber nyata, sinkron akan mencatat harga
     // satuan Rp0 di RAB — batalkan dengan jujur.
     if (priceBreakdown.grandTotal <= 0) {
@@ -762,14 +834,26 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
       return;
     }
     try {
-      const unitPrice = calculationResult.primaryQuantity > 0 
-        ? priceBreakdown.grandTotal / calculationResult.primaryQuantity 
+      const unitPrice = calculationResult.primaryQuantity > 0
+        ? priceBreakdown.grandTotal / calculationResult.primaryQuantity
         : 0;
+
+      // Price Integrity Gate 2026-11-06: peringatan provenance baris yang
+      // TETAP relevan pada rincian lengkap (lintas-wilayah & INDEX_ONLY)
+      // diteruskan agar tersimpan di item RAB — sebelumnya peringatan ini
+      // hanya hidup di state UI dan hilang saat sinkronisasi.
+      // (Penyusunan kini lewat helper bersama buildQtoSyncWarnings.)
+      const syncWarnings = buildQtoSyncWarnings(priceBreakdown.allRows);
 
       const { qto } = executeCalculationAndSave(selectedCalcId, inputs, {
         targetQtoId: editingQtoId || undefined,
         autoSyncRab: true,
         unitPrice: unitPrice,
+        priceIntegrity: {
+          isPartial: false,
+          unresolvedComponentCount: 0,
+          ...(syncWarnings.length > 0 ? { priceValidationWarnings: syncWarnings } : {}),
+        },
       });
       showToast(`Berhasil disinkronkan langsung ke Spreadsheet RAB: ${qto.uraian} (${qto.quantity} ${qto.unit})!`);
       if (editingQtoId) setEditingQtoId(null);
@@ -989,84 +1073,92 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
   // Rantai tebakan kata-kunci, tarif tebak-peran, dan last-resort Rp50.000
   // DIHAPUS: tanpa sumber → harga null berlabel UNRESOLVED (bukan angka tebak).
   const priceBreakdown = useMemo(() => {
-    // 1. Tenaga Kerja
-    const laborRows: QtoPriceRow[] = calculationResult.labor.map((l) => {
-      const match = MASTER_PRICE_ITEMS.find(p => p.category === 'LABOR' && p.name.toLowerCase().includes(l.role.toLowerCase()));
-      const unitRate: number | null = match
-        ? match.price
-        : l.rateEstimate && l.rateEstimate > 0
-          ? l.rateEstimate
-          : null;
-      const laborPriceSource: CostPriceSourceKind = match
-        ? 'MASTER_DB'
-        : unitRate != null
-          ? 'CALCULATOR_ESTIMATE'
-          : 'UNRESOLVED';
-      return {
-        key: `labor_${l.role}`,
-        uraian: l.role,
-        volume: l.hoursOrDays,
-        satuan: l.unit || 'OH',
-        hargaSatuan: unitRate,
-        jumlahHarga: unitRate == null ? null : SafeDecimalEngine.safeMultiply(l.hoursOrDays, unitRate),
-        isOverridden: false,
-        priceSource: laborPriceSource,
-      };
+    // Master Repair Fase 7: resolusi harga komponen dipindah ke engine
+    // (componentPriceResolution.ts). UI hanya mengonsumsi hasil terstruktur:
+    // status + provenance + alasan. Urutan resolusi di engine:
+    // USER_PROVIDED → OFFICIAL_AHSP_2026 (terverifikasi, satuan lolos) →
+    // MARKET_REFERENCE (tautan registry terverifikasi + gerbang satuan) →
+    // CALCULATOR_ESTIMATE → UNRESOLVED (null, berlabel — bukan Rp0).
+    const projectProvince = effectiveProject?.province ?? null;
+    const toRow = (
+      keyPrefix: string,
+      name: string,
+      r: ComponentPriceResult,
+    ): QtoPriceRow => ({
+      key: `${keyPrefix}_${name}`,
+      uraian: name,
+      volume: r.quantity,
+      satuan: r.unit,
+      hargaSatuan: r.unitPrice,
+      jumlahHarga: r.subtotal,
+      isOverridden: r.provenance === 'USER_PROVIDED',
+      priceSource:
+        r.provenance === 'OFFICIAL_HSPK_REGIONAL'
+          ? 'HSPK_REGIONAL'
+          : r.provenance === 'OFFICIAL_AHSP_2026' || r.provenance === 'MARKET_REFERENCE'
+            ? 'MASTER_DB'
+            : r.provenance === 'USER_PROVIDED'
+              ? 'OVERRIDE'
+              : r.provenance === 'CALCULATOR_ESTIMATE'
+                ? 'CALCULATOR_ESTIMATE'
+                : 'UNRESOLVED',
+      resolutionStatus: r.status,
+      provenance: r.provenance,
+      resourceCode: r.resourceCode,
+      sourceReference: r.sourceReference,
+      resolutionExplanation: r.explanation,
+      regionalPriceAssumption: r.regionalPriceAssumption ?? false,
+      provenanceLabel: PROVENANCE_LABELS_ID[r.provenance],
+      crossRegion: r.crossRegion ?? false,
+      sourceRegion: r.sourceRegion ?? r.regionalSource?.provinceScope ?? null,
+      crossRegionNote:
+        r.crossRegion && r.sourceRegion && projectProvince
+          ? crossRegionNoteId(r.sourceRegion, projectProvince)
+          : undefined,
+      priceConfidence: r.priceConfidence ?? null,
+      regionalSource: r.regionalSource ?? null,
     });
+
+    // 1. Tenaga Kerja
+    const laborRows: QtoPriceRow[] = calculationResult.labor.map((l) =>
+      toRow('labor', l.role, resolveComponentPrice({
+        name: l.role,
+        quantity: l.hoursOrDays,
+        unit: l.unit || 'OH',
+        kind: 'LABOR',
+        resourceCode: l.resourceCode,
+        declaredEstimate: l.rateEstimate,
+        projectProvince,
+      })),
+    );
     const subtotalLabor = laborRows.reduce((acc, row) => acc + (row.jumlahHarga ?? 0), 0);
 
     // 2. Bahan
-    const materialRows: QtoPriceRow[] = calculationResult.materials.map((m) => {
-      const match =
-        m.unitPriceEstimate && m.unitPriceEstimate > 0
-          ? null
-          : MASTER_PRICE_ITEMS.find(p => p.category === 'MATERIAL' && (p.name.toLowerCase().includes(m.name.toLowerCase()) || m.name.toLowerCase().includes(p.name.toLowerCase())));
-      const unitPrice: number | null =
-        m.unitPriceEstimate && m.unitPriceEstimate > 0 ? m.unitPriceEstimate : match ? match.price : null;
-      const materialPriceSource: CostPriceSourceKind =
-        m.unitPriceEstimate && m.unitPriceEstimate > 0
-          ? 'CALCULATOR_ESTIMATE'
-          : match
-            ? 'MASTER_DB'
-            : 'UNRESOLVED';
-      return {
-        key: `mat_${m.name}`,
-        uraian: m.name,
-        volume: m.quantity,
-        satuan: m.unit,
-        hargaSatuan: unitPrice,
-        jumlahHarga: unitPrice == null ? null : SafeDecimalEngine.safeMultiply(m.quantity, unitPrice),
-        isOverridden: false,
-        priceSource: materialPriceSource,
-      };
-    });
+    const materialRows: QtoPriceRow[] = calculationResult.materials.map((m) =>
+      toRow('mat', m.name, resolveComponentPrice({
+        name: m.name,
+        quantity: m.quantity,
+        unit: m.unit,
+        kind: 'MATERIAL',
+        resourceCode: m.resourceCode,
+        declaredEstimate: m.unitPriceEstimate,
+        projectProvince,
+      })),
+    );
     const subtotalMaterials = materialRows.reduce((acc, row) => acc + (row.jumlahHarga ?? 0), 0);
 
-    // 3. Peralatan — hanya alat yang benar-benar dideklarasikan kalkulator;
-    // baris "Alat Bantu" implisit Rp45.000 DIHAPUS.
-    const equipmentRows: QtoPriceRow[] = (calculationResult.equipment || []).map((eq) => {
-      const match = MASTER_PRICE_ITEMS.find(p => p.category === 'EQUIPMENT' && p.name.toLowerCase().includes(eq.name.toLowerCase()));
-      const unitPrice: number | null = match
-        ? match.price
-        : eq.unitPriceEstimate && eq.unitPriceEstimate > 0
-          ? eq.unitPriceEstimate
-          : null;
-      const equipmentPriceSource: CostPriceSourceKind = match
-        ? 'MASTER_DB'
-        : unitPrice != null
-          ? 'CALCULATOR_ESTIMATE'
-          : 'UNRESOLVED';
-      return {
-        key: `eq_${eq.name}`,
-        uraian: eq.name,
-        volume: eq.quantity,
-        satuan: eq.unit,
-        hargaSatuan: unitPrice,
-        jumlahHarga: unitPrice == null ? null : SafeDecimalEngine.safeMultiply(eq.quantity, unitPrice),
-        isOverridden: false,
-        priceSource: equipmentPriceSource,
-      };
-    });
+    // 3. Peralatan — hanya alat yang benar-benar dideklarasikan kalkulator.
+    const equipmentRows: QtoPriceRow[] = (calculationResult.equipment || []).map((eq) =>
+      toRow('eq', eq.name, resolveComponentPrice({
+        name: eq.name,
+        quantity: eq.quantity,
+        unit: eq.unit,
+        kind: 'EQUIPMENT',
+        resourceCode: eq.resourceCode,
+        declaredEstimate: eq.unitPriceEstimate,
+        projectProvince,
+      })),
+    );
     const subtotalEquipment = equipmentRows.reduce((acc, row) => acc + (row.jumlahHarga ?? 0), 0);
 
     const finalLaborRows = [...laborRows];
@@ -1085,6 +1177,12 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
     const fabricatedRowCount = allDisplayedRows.filter((r) => r.priceSource === 'FABRICATED').length;
     const estimatedRowCount = allDisplayedRows.filter((r) => r.priceSource === 'CALCULATOR_ESTIMATE').length;
     const unresolvedRowCount = allDisplayedRows.filter((r) => r.hargaSatuan == null).length;
+    const structuredRows = [...finalLaborRows, ...materialRows, ...equipmentRows];
+    const officialRowCount = structuredRows.filter((r) => r.provenance === 'OFFICIAL_AHSP_2026').length;
+    const hspkRegionalRowCount = structuredRows.filter((r) => r.provenance === 'OFFICIAL_HSPK_REGIONAL').length;
+    const marketRowCount = structuredRows.filter((r) => r.provenance === 'MARKET_REFERENCE').length;
+    const unitMismatchRowCount = structuredRows.filter((r) => r.resolutionStatus === 'UNIT_MISMATCH').length;
+    const ambiguousRowCount = structuredRows.filter((r) => r.resolutionStatus === 'AMBIGUOUS_MAPPING').length;
     const priceStatus: CostPriceStatus =
       unresolvedRowCount > 0 ? 'INCOMPLETE'
         : estimatedRowCount > 0 ? 'REFERENCE_ESTIMATE'
@@ -1097,13 +1195,20 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
       subtotalMaterials,
       equipmentRows,
       subtotalEquipment,
+      /** Semua baris komponen (untuk tabel rincian provenance di UI). */
+      allRows: structuredRows,
       grandTotal: finalGrandTotal,
       priceStatus,
       fabricatedRowCount,
       estimatedRowCount,
       unresolvedRowCount,
+      officialRowCount,
+      hspkRegionalRowCount,
+      marketRowCount,
+      unitMismatchRowCount,
+      ambiguousRowCount,
     };
-  }, [calculationResult, activeSpec, selectedCalcId]);
+  }, [calculationResult, activeSpec, selectedCalcId, effectiveProject?.province]);
 
   // Empty State if No Project Available
   if (!effectiveProject) {
@@ -2710,6 +2815,85 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                   {scopeCost.hasMapping ? 'Scope-Based AHSP' : 'AHSP 2025/2026'}
                 </span>
               </div>
+              )}
+
+              {/* Price Integrity Gate 2026-11-06: rincian harga per komponen.
+                  Baris resolver sebelumnya dihitung tetapi TIDAK pernah
+                  dirender — label provenance, peringatan lintas-wilayah,
+                  keyakinan INDEX_ONLY, dan penjelasan ekuivalensi sumber
+                  tidak terlihat di titik keputusan harga. Tabel ini
+                  menampilkannya apa adanya dari hasil resolver. */}
+              {priceBreakdown.allRows.length > 0 && (
+                <div
+                  style={{
+                    background: 'var(--ez-color-surface)',
+                    borderRadius: '20px',
+                    border: '1px solid #EEF1F6',
+                    padding: '12px 14px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '8px',
+                  }}
+                >
+                  <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--ez-color-text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Rincian Harga Komponen
+                  </div>
+                  {([
+                    { label: 'Tenaga Kerja', rows: priceBreakdown.laborRows },
+                    { label: 'Bahan', rows: priceBreakdown.materialRows },
+                    { label: 'Peralatan', rows: priceBreakdown.equipmentRows },
+                  ] as const).filter((sec) => sec.rows.length > 0).map((sec) => (
+                    <div key={sec.label}>
+                      <div style={{ fontSize: '10.5px', fontWeight: 700, color: 'var(--ez-color-text-muted)', marginBottom: '4px' }}>{sec.label}</div>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
+                        <tbody>
+                          {sec.rows.map((row) => (
+                            <tr key={row.key} style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)', verticalAlign: 'top' }}>
+                              <td style={{ padding: '5px 6px 5px 0', minWidth: '130px' }}>
+                                <div style={{ fontWeight: 600, color: 'var(--ez-color-text-primary)' }}>{row.uraian}</div>
+                                {row.resolutionExplanation && (
+                                  <div style={{ fontSize: '9.5px', color: 'var(--ez-color-text-muted)', lineHeight: 1.45, marginTop: '2px' }}>{row.resolutionExplanation}</div>
+                                )}
+                              </td>
+                              <td style={{ padding: '5px 6px', textAlign: 'right', fontFamily: 'monospace', whiteSpace: 'nowrap' }}>
+                                {formatNumberId(row.volume, 2)} {row.satuan}
+                              </td>
+                              <td style={{ padding: '5px 6px', textAlign: 'right', fontFamily: 'monospace', whiteSpace: 'nowrap' }}>
+                                {row.hargaSatuan != null ? formatRupiah(row.hargaSatuan) : (
+                                  <span style={{ color: 'var(--ez-hue-amber-text-dark)', fontWeight: 700 }}>Belum tersedia</span>
+                                )}
+                              </td>
+                              <td style={{ padding: '5px 6px', textAlign: 'right', fontFamily: 'monospace', whiteSpace: 'nowrap' }}>
+                                {row.jumlahHarga != null ? formatRupiah(row.jumlahHarga) : '—'}
+                              </td>
+                              <td style={{ padding: '5px 0 5px 6px', minWidth: '120px' }}>
+                                <div style={{ fontWeight: 700, color: 'var(--ez-color-text-slate)' }}>{row.provenanceLabel ?? row.provenance ?? ''}</div>
+                                {row.crossRegion && (
+                                  <div style={{ fontSize: '9.5px', color: 'var(--ez-hue-amber-text-dark)', fontWeight: 700, marginTop: '2px' }}>
+                                    LINTAS-WILAYAH{row.sourceRegion ? ` — dari ${row.sourceRegion}` : ''}
+                                  </div>
+                                )}
+                                {row.crossRegionNote && (
+                                  <div style={{ fontSize: '9.5px', color: 'var(--ez-hue-amber-text-dark)', lineHeight: 1.4 }}>{row.crossRegionNote}</div>
+                                )}
+                                {row.priceConfidence === 'INDEX_ONLY' && (
+                                  <div style={{ fontSize: '9.5px', color: 'var(--ez-hue-amber-text-dark)', fontWeight: 700, marginTop: '2px' }}>
+                                    INDEX ONLY — keyakinan sumber lebih rendah
+                                  </div>
+                                )}
+                                {row.regionalPriceAssumption && (
+                                  <div style={{ fontSize: '9.5px', color: 'var(--ez-hue-amber-text-dark)', fontWeight: 700, marginTop: '2px' }}>
+                                    ASUMSI WILAYAH — provinsi proyek belum diisi
+                                  </div>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ))}
+                </div>
               )}
 
               {/* Action Buttons: Tambah ke QTO & Tambah ke RAB */}

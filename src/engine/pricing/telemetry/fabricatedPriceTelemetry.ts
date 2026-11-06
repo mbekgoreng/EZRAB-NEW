@@ -26,6 +26,7 @@ export type FabricatedSeverity = 'CRITICAL' | 'HIGH' | 'MEDIUM';
  */
 export type CostPriceSourceKind =
   | 'MASTER_DB'            // resolved from a real price record
+  | 'HSPK_REGIONAL'        // regional government HSPK price (Perbup/Perwali) — official REGIONAL, not national AHSP
   | 'PROJECT_PRICE'        // resolved from a project-scoped price
   | 'OVERRIDE'             // explicit estimator override
   | 'CALCULATOR_ESTIMATE'  // supplied by the calculator itself (not authoritative, but not invented here)

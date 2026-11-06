@@ -174,6 +174,9 @@ export interface MaterialBreakdown {
   coefficient?: number;
   notes?: string;
   unitPriceEstimate?: number;
+  /** Identitas kanonis (Master Repair Fase 1) — opsional, additive. */
+  resourceCode?: string;
+  resourceCategory?: 'MATERIAL';
 }
 
 export interface LaborBreakdown {
@@ -181,6 +184,9 @@ export interface LaborBreakdown {
   hoursOrDays: number;
   unit: string;
   coefficient?: number;
+  /** Identitas kanonis (Master Repair Fase 1) — opsional, additive. */
+  resourceCode?: string;
+  resourceCategory?: 'LABOR';
 }
 
 export interface EquipmentBreakdown {
@@ -188,6 +194,9 @@ export interface EquipmentBreakdown {
   quantity: number;
   unit: string;
   coefficient?: number;
+  /** Identitas kanonis (Master Repair Fase 1) — opsional, additive. */
+  resourceCode?: string;
+  resourceCategory?: 'EQUIPMENT';
 }
 
 export interface CalculationOutput {

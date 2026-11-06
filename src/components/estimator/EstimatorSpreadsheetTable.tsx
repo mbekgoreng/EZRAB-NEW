@@ -22,6 +22,7 @@ import { formatCurrencyIDR } from '../../calculations/decimalEngine';
 import { useCurrency } from '../../context/CurrencyContext';
 import { CURRENCY_DEFINITIONS } from '../../services/currencyService';
 import { AddItemMode } from './SmartAddWorkItemModal';
+import { getRabItemIntegrityNotice } from './rabPriceIntegrityBadge';
 
 export interface GroupedWbsCategory {
   categoryName: string;
@@ -109,6 +110,16 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
   const { formatDisplay, displayCurrency } = useCurrency();
   const displaySymbol = CURRENCY_DEFINITIONS[displayCurrency]?.symbol ?? 'Rp';
   const [openRowMenuId, setOpenRowMenuId] = useState<string | null>(null);
+  // ONE-PASS Task A: item yang detail peringatan integritas harganya
+  // sedang diperluas di editor (badge parsial/peringatan → klik → detail).
+  const [expandedIntegrityIds, setExpandedIntegrityIds] = useState<Set<string>>(new Set());
+  const toggleIntegrityDetail = (itemId: string) =>
+    setExpandedIntegrityIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(itemId)) next.delete(itemId);
+      else next.add(itemId);
+      return next;
+    });
   const [isMobile, setIsMobile] = useState<boolean>(() => {
     if (typeof window !== 'undefined') return window.innerWidth < 768;
     return false;
@@ -669,6 +680,35 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                                       ⚠ {item.priceStatus === 'PRICE_UNRESOLVED' ? 'Harga belum diisi' : 'Perlu verifikasi'}
                                     </span>
                                   )}
+                                  {/* ONE-PASS Task A: badge integritas harga TERSIMPAN
+                                      (isPartial / unresolvedComponentCount /
+                                      priceValidationWarnings) + detail yang bisa
+                                      diperluas — sebelumnya field ini tersimpan
+                                      di item tetapi tidak tampil di editor. */}
+                                  {(() => {
+                                    const notice = getRabItemIntegrityNotice(item);
+                                    if (!notice) return null;
+                                    const expanded = expandedIntegrityIds.has(item.id);
+                                    return (
+                                      <div style={{ marginTop: '3px' }}>
+                                        <button
+                                          type="button"
+                                          onClick={(e) => { e.stopPropagation(); toggleIntegrityDetail(item.id); }}
+                                          title={notice.hasDetail ? 'Klik untuk melihat detail peringatan harga item ini' : notice.badgeLabel}
+                                          style={{ display: 'inline-block', background: '#FFFBEB', color: '#92400E', border: '1px solid #F59E0B', padding: '1px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 700, cursor: 'pointer' }}
+                                        >
+                                          ⚠ {notice.badgeLabel}{notice.hasDetail ? (expanded ? ' ▾' : ' ▸') : ''}
+                                        </button>
+                                        {expanded && notice.hasDetail && (
+                                          <div style={{ marginTop: '4px', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: '6px', padding: '6px 8px', fontSize: '10.5px', fontWeight: 400, color: '#92400E', lineHeight: 1.5 }}>
+                                            {notice.warnings.map((w, wi) => (
+                                              <div key={wi}>• {w}</div>
+                                            ))}
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  })()}
                                   <div
                                     className="mobile-only"
                                     style={{

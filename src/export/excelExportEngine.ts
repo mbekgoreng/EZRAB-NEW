@@ -2111,7 +2111,7 @@ export const exportProjectToExcel = exportRABToProfessionalExcel;
  * - OFFICIAL_AHSP tanpa konversi → tampil seperti sebelumnya (tanpa penanda).
  * - PRICE_UNRESOLVED → "HARGA BELUM TERSEDIA".
  */
-export function buildExcelSourceText(itm: {
+function buildExcelSourceTextBase(itm: {
   priceStatus?: string;
   priceSourceKind?: string;
   priceSourceLabel?: string;
@@ -2155,4 +2155,30 @@ export function buildExcelSourceText(itm: {
   }
   // legacy: no source kind recorded
   return srcLabel || itm.volumeSource || itm.ahspCode || 'MANUAL';
+}
+
+/**
+ * Price Integrity Gate 2026-11-06: pembungkus ekspor buildExcelSourceText —
+ * peringatan validasi harga yang tersimpan di item RAB (mis. catatan
+ * lintas-wilayah §9 dan penanda INDEX_ONLY dari sinkronisasi QTO) ikut
+ * tampil di kolom Sumber Excel. Sebelumnya peringatan itu tidak pernah
+ * mencapai ekspor mana pun. Tanpa peringatan tersimpan, teks identik
+ * dengan perilaku lama.
+ */
+export function buildExcelSourceText(itm: {
+  priceStatus?: string;
+  priceSourceKind?: string;
+  priceSourceLabel?: string;
+  priceSourceExplanation?: string;
+  priceSourceName?: string | null;
+  priceSourceSupplier?: string | null;
+  priceSourceDate?: string | null;
+  priceSourceRegion?: string | null;
+  priceValidationWarnings?: string[];
+  volumeSource?: string;
+  ahspCode?: string;
+}): string {
+  const base = buildExcelSourceTextBase(itm);
+  const warnings = (itm.priceValidationWarnings ?? []).filter((w) => typeof w === 'string' && w.trim().length > 0);
+  return warnings.length > 0 ? `${base} — PERINGATAN: ${warnings.join(' ')}` : base;
 }

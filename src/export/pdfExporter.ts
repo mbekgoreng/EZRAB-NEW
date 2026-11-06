@@ -24,16 +24,63 @@ export function buildPdfSourceAnnotations(item: {
   priceStatus?: string;
   priceSourceKind?: string;
   priceSourceExplanation?: string;
+  priceValidationWarnings?: string[];
+  priceSourceName?: string | null;
+  priceSourceSupplier?: string | null;
+  priceSourceDate?: string | null;
+  priceSourceRegion?: string | null;
+  isPartial?: boolean | null;
+  unresolvedComponentCount?: number | null;
 }): string {
   const isUnresolved = item.priceStatus === 'PRICE_UNRESOLVED';
   const isManualPrice = item.priceStatus === 'PRICE_MANUAL';
   const isAssumption = item.priceSourceKind === 'EZRAB_ASSUMPTION';
   const conversionTrail = extractConversionTrail(item.priceSourceExplanation);
+  // ONE-PASS Task D: samakan informasi sumber PDF dengan Excel —
+  // (1) flag parsial eksplisit item tampil sebagai anotasi (sebelumnya PDF
+  // hanya tahu status per item, bukan kelengkapan rinciannya);
+  // (2) REFERENSI PASAR mendapat label + metadata tercatat (pemasok/
+  // tanggal/wilayah sumber) seperti kolom Sumber Excel — metadata hanya
+  // ditampilkan bila benar-benar tercatat, tidak dikarang. Harga item
+  // hasil sinkron QTO adalah campuran banyak komponen: anotasinya tetap
+  // per kelas item ini, TIDAK mengklaim satu sumber resmi terverifikasi.
+  const flaggedPartial =
+    item.isPartial === true ||
+    (typeof item.unresolvedComponentCount === 'number' && item.unresolvedComponentCount > 0);
+  const partialNote = flaggedPartial
+    ? `\n[HARGA PARSIAL — ${
+        typeof item.unresolvedComponentCount === 'number' && item.unresolvedComponentCount > 0
+          ? `${item.unresolvedComponentCount} komponen belum memiliki harga; `
+          : ''
+      }total baris ini bukan total lengkap]`
+    : '';
+  let marketNote = '';
+  if (item.priceSourceKind === 'MARKET_REFERENCE' && !isManualPrice) {
+    const supplier = item.priceSourceSupplier || item.priceSourceName || '';
+    const meta = [
+      supplier,
+      item.priceSourceDate ? `berlaku ${item.priceSourceDate}` : '',
+      item.priceSourceRegion || '',
+    ]
+      .filter(Boolean)
+      .join(' · ');
+    marketNote = `\n[REFERENSI PASAR${meta ? ` (${meta})` : ''} — bukan harga resmi AHSP]`;
+  }
+  // Price Integrity Gate 2026-11-06: peringatan validasi harga tersimpan
+  // (catatan lintas-wilayah §9, penanda INDEX_ONLY dari sinkronisasi QTO)
+  // diteruskan ke anotasi PDF — sebelumnya tidak mencapai ekspor mana pun.
+  const warnings = (item.priceValidationWarnings ?? [])
+    .filter((w) => typeof w === 'string' && w.trim().length > 0)
+    .map((w) => `\n[PERINGATAN HARGA: ${w}]`)
+    .join('');
   return (
     (isUnresolved ? '\n(Harga belum tersedia — bukan Rp0)' : '') +
+    partialNote +
     (isAssumption ? '\n[ASUMSI — PERLU VERIFIKASI, bukan harga resmi AHSP]' : '') +
     (isManualPrice ? '\n[INPUT MANUAL — bukan harga resmi AHSP]' : '') +
-    (conversionTrail ? `\n[KONVERSI SATUAN: ${conversionTrail}]` : '')
+    marketNote +
+    (conversionTrail ? `\n[KONVERSI SATUAN: ${conversionTrail}]` : '') +
+    warnings
   );
 }
 // PHASE 1 (audit §16): single canonical default set, so the PDF agrees with the screen.

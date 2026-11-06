@@ -25,6 +25,7 @@ import { CONSTRUCTION_CALCULATORS, getCalculatorById } from '../engine/construct
 import { SafeDecimalEngine } from '../engine/safeDecimalEngine';
 import { createRabItemRecord } from '../engine/rab/rabItemFactory';
 import { resolveQtoSyncPrice, resolveQtoSyncCode } from '../lib/qtoSyncPricing';
+import { applyRecalcPriceIntegrity } from '../lib/qtoRecalcIntegrity';
 import { checkAhspIdentitySafety, canonicalAhspCodeExists } from '../data/priceDatabase2026/ahspDisplayPolicy';
 import { normalizeName, normalizeUnit } from '../data/priceDatabase2026/normalize';
 import { resolvePriceStatus } from '../engine/pricing/priceStatus';
@@ -286,6 +287,12 @@ interface ProjectContextType {
       targetSectionName?: string;
       ahspCode?: string;
       unitPrice?: number;
+      /** Master Repair Fase 9: integritas harga rincian kalkulator. */
+      priceIntegrity?: {
+        isPartial: boolean;
+        unresolvedComponentCount: number;
+        priceValidationWarnings?: string[];
+      };
     }
   ) => { run: CalculationRun; qto: QTOItem; updatedRabItem?: RabItem };
 
@@ -1380,6 +1387,12 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
         targetSectionName?: string;
         ahspCode?: string;
         unitPrice?: number;
+        /** Master Repair Fase 9: integritas harga rincian kalkulator. */
+        priceIntegrity?: {
+          isPartial: boolean;
+          unresolvedComponentCount: number;
+          priceValidationWarnings?: string[];
+        };
       }
     ): { run: CalculationRun; qto: QTOItem; updatedRabItem?: RabItem } => {
       if (!currentProjectId) {
@@ -1496,6 +1509,14 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 amount: newAmount,
                 calculationRunId: calcRunId,
                 volumeSource: 'CALCULATOR',
+                // ONE-PASS Task C: status integritas rincian BARU kini
+                // disebarkan ke item tertaut. Bila rincian berubah lengkap
+                // → parsial, flag + peringatan ditetapkan (harga satuan
+                // tersimpan TIDAK ditimpa, tidak ada harga sintetis); bila
+                // parsial → lengkap, metadata dibersihkan dari data rincian
+                // tervalidasi pemanggil. Tanpa data integritas dari
+                // pemanggil, metadata lama tidak disentuh.
+                ...applyRecalcPriceIntegrity(item, options?.priceIntegrity),
               };
               updatedRabItemResult = updatedItem;
               return updatedItem;
@@ -1506,6 +1527,17 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
           return next;
         });
       } else if (options?.autoSyncRab) {
+        // Master Repair Fase 9 (P0): rincian komponen yang TIDAK lengkap
+        // tidak boleh menjadi item RAB berharga final lewat jalur mana pun.
+        // Harga satuan campuran grandTotal/volume dari breakdown parsial
+        // adalah angka semu — tolak di boundary ini, bukan hanya di UI.
+        if (options.priceIntegrity?.isPartial) {
+          throw new Error(
+            `Sinkronisasi RAB ditolak: ${options.priceIntegrity.unresolvedComponentCount} komponen belum memiliki harga — ` +
+            'total kalkulator bersifat parsial dan tidak boleh tercatat sebagai harga final RAB. ' +
+            'Simpan ke QTO terlebih dahulu, lalu lengkapi harga komponennya.'
+          );
+        }
         if (options.unitPrice === undefined || !Number.isFinite(options.unitPrice) || options.unitPrice < 0) {
           throw new Error('AHSP/pricing context wajib disediakan sebelum sinkronisasi RAB.');
         }
@@ -1530,6 +1562,20 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
             qtoItemId: qtoToReturn.id,
             calculationRunId: calcRunId,
             calculatorId,
+            // Price Integrity Gate 2026-11-06: teruskan status integritas
+            // harga dari pemanggil ke record RAB. Factory adalah allowlist —
+            // tanpa penerusan ini, isPartial/unresolvedComponentCount/
+            // priceValidationWarnings yang sudah lolos gerbang di atas
+            // hilang senyap saat item dibuat.
+            ...(options.priceIntegrity
+              ? {
+                  isPartial: options.priceIntegrity.isPartial,
+                  unresolvedComponentCount: options.priceIntegrity.unresolvedComponentCount,
+                  ...(options.priceIntegrity.priceValidationWarnings?.length
+                    ? { priceValidationWarnings: options.priceIntegrity.priceValidationWarnings }
+                    : {}),
+                }
+              : {}),
           },
           currentProjectId,
           { defaultVolumeSource: 'CALCULATOR' as const }
@@ -1586,6 +1632,10 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
           const unitPrice = customUnitPrice !== undefined ? customUnitPrice : existingRab.unitPrice;
           // Bug fix (audit 2026-10-18): sinkronkan priceStatus saat harga berubah.
           // Sebelumnya status tidak dihitung ulang → UNRESOLVED dengan harga valid.
+          // ONE-PASS Task E: harga pemanggil di sini menghasilkan
+          // PRICE_RESOLVED (bukan PRICE_MANUAL) — batasan klasifikasi yang
+          // sama dengan resolveQtoSyncPrice; lihat dokumentasi presisinya
+          // di src/lib/qtoSyncPricing.ts (menunggu keputusan owner).
           const priceStatus = customUnitPrice !== undefined
             ? resolvePriceStatus(customUnitPrice)
             : existingRab.priceStatus;

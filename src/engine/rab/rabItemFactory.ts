@@ -165,6 +165,24 @@ export function createRabItemRecord(
     ...(itemData.priceSourceDate !== undefined ? { priceSourceDate: itemData.priceSourceDate } : {}),
     ...(itemData.priceSourceRegion !== undefined ? { priceSourceRegion: itemData.priceSourceRegion } : {}),
     ...(itemData.ahspMappingStatus ? { ahspMappingStatus: itemData.ahspMappingStatus } : {}),
+    // Price Integrity Gate 2026-11-06: identitas sumber kalkulator/QTO
+    // diteruskan apa adanya. Sebelumnya factory membuang ketiga field ini
+    // yang diberikan jalur sinkron QTO (ProjectContext), sehingga item RAB
+    // hasil sinkronisasi kehilangan identitas sumbernya di record item
+    // (tautan hanya bertahan di tabel mapping terpisah).
+    ...(itemData.qtoItemId ? { qtoItemId: itemData.qtoItemId } : {}),
+    ...(itemData.calculationRunId ? { calculationRunId: itemData.calculationRunId } : {}),
+    ...(itemData.calculatorId ? { calculatorId: itemData.calculatorId } : {}),
+    // Master Repair Fase 9: tanda harga parsial diteruskan apa adanya —
+    // factory adalah allowlist, field yang tidak diteruskan di sini hilang
+    // senyap saat kreasi item.
+    ...(itemData.isPartial ? { isPartial: true } : {}),
+    ...(typeof itemData.unresolvedComponentCount === 'number'
+      ? { unresolvedComponentCount: itemData.unresolvedComponentCount }
+      : {}),
+    ...(itemData.priceValidationWarnings && itemData.priceValidationWarnings.length > 0
+      ? { priceValidationWarnings: [...itemData.priceValidationWarnings] }
+      : {}),
     verificationStatus: effectiveVerificationStatus,
     ...(ahspIdentityStatus ? { ahspIdentityStatus, ahspIdentityReason } : {}),
     ...(!ahspIdentityStatus && codelessOfficialReason

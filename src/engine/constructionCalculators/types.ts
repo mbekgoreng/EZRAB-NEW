@@ -13,6 +13,22 @@ export interface CalculatorParamDef {
   options?: Array<{ label: string; value: number | string }>;
 }
 
+/**
+ * Identitas sumber daya kanonis (Fase 1 Master Repair, 2026-11-06).
+ * Nama bebas BUKAN lagi identitas finansial: komponen boleh membawa
+ * `resourceCode` kanonis (lihat canonicalResources.ts) dan resolver harga
+ * memutuskan berdasarkan kode + kategori + satuan, bukan kemiripan nama.
+ * Semua field bersifat opsional (kompatibel mundur) — komponen tanpa kode
+ * tetap tampil dan berstatus eksplisit, tidak pernah dihargai diam-diam.
+ */
+export type ResourceCategory = 'MATERIAL' | 'LABOR' | 'EQUIPMENT';
+
+export type PriceResolutionPolicy =
+  | 'OFFICIAL_FIRST'      // resmi AHSP 2026 dulu, lalu referensi pasar berlabel
+  | 'MARKET_REFERENCE'    // hanya referensi pasar berlabel (bukan resmi)
+  | 'ESTIMATE_ALLOWED'    // estimasi kalkulator boleh dipakai (berlabel)
+  | 'MANUAL_ONLY';        // hanya harga manual pengguna yang boleh mengisi
+
 export interface MaterialBreakdownItem {
   name: string;
   quantity: number;
@@ -20,6 +36,14 @@ export interface MaterialBreakdownItem {
   coefficient?: number;
   ahspCategory?: string;
   unitPriceEstimate?: number;
+  /** Kode identitas kanonis (canonicalResources.ts), mis. CEMENT_PCC_50KG. */
+  resourceCode?: string;
+  /** Kategori sumber daya kanonis. */
+  resourceCategory?: ResourceCategory;
+  /** Deskripsi/spesifikasi kanonis bila berbeda dari nama tampilan. */
+  resourceDescription?: string;
+  /** Kebijakan resolusi harga untuk komponen ini. */
+  priceResolutionPolicy?: PriceResolutionPolicy;
 }
 
 export interface LaborBreakdownItem {
@@ -28,6 +52,14 @@ export interface LaborBreakdownItem {
   unit: string;
   coefficient?: number;
   rateEstimate?: number;
+  /** Kode identitas kanonis peran upah, mis. LABOR_TUKANG. */
+  resourceCode?: string;
+  /** Kategori sumber daya kanonis (selalu LABOR untuk item ini). */
+  resourceCategory?: ResourceCategory;
+  /** Deskripsi/spesifikasi kanonis bila berbeda dari nama tampilan. */
+  resourceDescription?: string;
+  /** Kebijakan resolusi harga untuk komponen ini. */
+  priceResolutionPolicy?: PriceResolutionPolicy;
 }
 
 export interface CalculatorFormulaStep {
@@ -72,8 +104,6 @@ export interface ConstructionCalculatorSpec {
   defaultAhspCode?: string;
   /** @deprecated Pricing belongs to the AHSP/pricing adapter, not quantity Core. */
   defaultAhspName?: string;
-  /** @deprecated Do not use for production pricing. */
-  defaultUnitPrice?: number;
   parameters: CalculatorParamDef[];
   calculate: (inputs: Record<string, number>) => CalculationResult;
   diagramComponentKey: string; // e.g. 'BowplankDiagram'

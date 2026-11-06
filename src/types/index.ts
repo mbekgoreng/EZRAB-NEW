@@ -924,6 +924,16 @@ export interface RabItem {
   totalPrice?: number | null;
   /** Phase 2: explicit price status. Absent (legacy items) => treated as resolved. */
   priceStatus?: PriceStatus;
+  /**
+   * Master Repair Fase 9 (2026-11-06): item yang harga satuannya berasal
+   * dari rincian komponen yang TIDAK lengkap wajib membawa tanda ini —
+   * status parsial tidak boleh hilang saat item disimpan/dibuka kembali.
+   */
+  isPartial?: boolean;
+  /** Jumlah komponen kalkulator yang belum berharga saat sinkronisasi. */
+  unresolvedComponentCount?: number;
+  /** Peringatan validasi harga yang menyertai item parsial. */
+  priceValidationWarnings?: string[];
   itemNumber?: string;
   wbsCode?: string;
   status?: string;
