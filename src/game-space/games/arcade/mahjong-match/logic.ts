@@ -101,6 +101,27 @@ export function freePairs(tiles: Tile[]): [Tile, Tile][] {
   return out;
 }
 
+/** Jumlah pasangan yang bisa diambil SAAT INI (ubin bebas berpasangan sejenis). */
+export function countAvailablePairs(tiles: Tile[]): number {
+  return freePairs(tiles).length;
+}
+
+/**
+ * Buntu = masih ada ubin tersisa tetapi tidak ada satu pun pasangan bebas.
+ * Buntu bukan akhir permainan selama kocok masih tersedia (tawarkan kocok).
+ */
+export function isDeadlocked(tiles: Tile[]): boolean {
+  return remaining(tiles) > 0 && freePairs(tiles).length === 0;
+}
+
+/**
+ * REGRESI (soft-lock): buntu + kocok habis = tidak ada aksi pemain yang bisa
+ * mengubah papan, jadi permainan harus berakhir — bukan menunggu timer habis.
+ */
+export function isStuck(tiles: Tile[], shufflesLeft: number): boolean {
+  return shufflesLeft <= 0 && isDeadlocked(tiles);
+}
+
 export function remaining(tiles: Tile[]): number {
   return tiles.filter((t) => t.alive).length;
 }

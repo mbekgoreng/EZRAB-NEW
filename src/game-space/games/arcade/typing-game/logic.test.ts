@@ -6,6 +6,7 @@ import { strict as assert } from 'node:assert';
 import {
   WORDS, levelFor, fallSpeedAt, spawnDelayAt, pickWord, wordPoints,
   matchesNext, gradeFor, WORDS_PER_LEVEL,
+  comboBonus,
 } from './logic';
 
 let passed = 0;
@@ -74,6 +75,17 @@ test('grade S..D', () => {
   assert.equal(gradeFor(450), 'B');
   assert.equal(gradeFor(250), 'C');
   assert.equal(gradeFor(10), 'D');
+});
+
+console.log('\n[G2] bonus kombo pertahanan deadline');
+test('comboBonus: tangga 0/3/8/15', () => {
+  assert.equal(comboBonus(0), 0);
+  assert.equal(comboBonus(1), 0);
+  assert.equal(comboBonus(2), 3);
+  assert.equal(comboBonus(3), 8);
+  assert.equal(comboBonus(4), 8);
+  assert.equal(comboBonus(5), 15);
+  assert.equal(comboBonus(12), 15);
 });
 
 console.log(`\n${passed} lulus, ${failed} gagal${failed ? ` — ${failures.join(', ')}` : ''}`);

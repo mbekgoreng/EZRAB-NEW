@@ -6,7 +6,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useGameCanvas, type GameApi, sfx } from '../../../engine2d';
 import { bestKey, getJson, setJson } from '../../../engine2d/best';
 import {
-  WORD_LEN, MAX_GUESSES, pickWord, isValidGuess, scoreGuess,
+  WORD_LEN, MAX_GUESSES, pickNextWord, isValidGuess, scoreGuess,
   recordResult, emptyStats, keyStatus, type Mark, type Stats,
 } from './logic';
 
@@ -21,6 +21,78 @@ const MARK_COLOR: Record<Mark, [string, string]> = {
   present: ['#b45309', '#fbbf24'],
   absent: ['#3f4c63', '#232c40'],
 };
+
+/* ---------- Ikon SVG prosedural (pengganti emoji) ---------- */
+function Svg({ size = 18, children }: { size?: number; children: React.ReactNode }): React.ReactElement {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+      strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ display: 'block' }}>{children}</svg>
+  );
+}
+const FlameIcon = ({ size = 13 }: { size?: number }) => (
+  <Svg size={size}><path d="M12 21.5c3.9 0 6.3-2.7 6.3-6 0-2.2-1.2-4-2.4-5.6C14.6 8.2 13.5 6.6 13.4 4.2 11.5 5.4 10.2 7.1 9.6 9c-.3-.9-.8-1.8-1.6-2.5-.5 1.5-2.2 4.1-2.2 9 0 3.3 2.4 6 6.2 6z" /></Svg>
+);
+const TrophyIcon = ({ size = 13 }: { size?: number }) => (
+  <Svg size={size}><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4zM7 5H3.5v1.5A3.5 3.5 0 0 0 7 10M17 5h3.5v1.5A3.5 3.5 0 0 1 17 10" /></Svg>
+);
+const PauseIcon = ({ size = 18 }: { size?: number }) => (
+  <Svg size={size}><rect x="6" y="4.5" width="4" height="15" rx="1.2" fill="currentColor" stroke="none" /><rect x="14" y="4.5" width="4" height="15" rx="1.2" fill="currentColor" stroke="none" /></Svg>
+);
+const PlayIcon = ({ size = 18 }: { size?: number }) => (
+  <Svg size={size}><polygon points="7,4.5 20,12 7,19.5" fill="currentColor" stroke="none" /></Svg>
+);
+const SoundIcon = ({ size = 19 }: { size?: number }) => (
+  <Svg size={size}><polygon points="4,9.5 4,14.5 8,14.5 13,19 13,5 8,9.5" fill="currentColor" stroke="none" /><path d="M16 9.2a4 4 0 0 1 0 5.6M18.4 6.8a7.4 7.4 0 0 1 0 10.4" /></Svg>
+);
+const MuteIcon = ({ size = 19 }: { size?: number }) => (
+  <Svg size={size}><polygon points="4,9.5 4,14.5 8,14.5 13,19 13,5 8,9.5" fill="currentColor" stroke="none" /><line x1="16" y1="9.5" x2="21" y2="14.5" /><line x1="21" y1="9.5" x2="16" y2="14.5" /></Svg>
+);
+const CloseIcon = ({ size = 17 }: { size?: number }) => (
+  <Svg size={size}><line x1="5" y1="5" x2="19" y2="19" /><line x1="19" y1="5" x2="5" y2="19" /></Svg>
+);
+const BackIcon = ({ size = 19 }: { size?: number }) => (
+  <Svg size={size}><path d="M21 5H9L3.5 12 9 19h12a1.5 1.5 0 0 0 1.5-1.5v-11A1.5 1.5 0 0 0 21 5z" /><line x1="12" y1="9.5" x2="17.5" y2="15" /><line x1="17.5" y1="9.5" x2="12" y2="15" /></Svg>
+);
+const EnterIcon = ({ size = 17 }: { size?: number }) => (
+  <Svg size={size}><polyline points="9 10 4 15 9 20" /><path d="M20 4v7a4 4 0 0 1-4 4H4" /></Svg>
+);
+const RetryIcon = ({ size = 16 }: { size?: number }) => (
+  <Svg size={size}><polyline points="2 5 2 11 8 11" /><path d="M4.3 15.5a8.5 8.5 0 1 0 2-9.2L2 11" /></Svg>
+);
+
+/**
+ * Penanda BENTUK per status (bukan hanya warna, agar ramah buta warna):
+ * correct = centang, present = segitiga, absent = garis datar.
+ * Dipakai di sudut ubin papan dan tombol keyboard.
+ */
+function MarkBadge({ mark, size = 11 }: { mark: Mark; size?: number }): React.ReactElement {
+  return (
+    <svg width={size} height={size} viewBox="0 0 12 12" aria-hidden="true" style={{ display: 'block' }}>
+      {mark === 'correct' && <path d="M2 6.8 4.7 9.3 10 3.2" fill="none" stroke="#fff" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" />}
+      {mark === 'present' && <polygon points="6,2.2 10.4,9.8 1.6,9.8" fill="#fff" />}
+      {mark === 'absent' && <rect x="2" y="5" width="8" height="2.1" rx="1" fill="rgba(255,255,255,0.8)" />}
+    </svg>
+  );
+}
+
+/** Ubin mini terdesain untuk header tutorial & legenda status. */
+function MiniTile({ mark, letter, size = 24 }: { mark: Mark; letter: string; size?: number }): React.ReactElement {
+  const [d1, d2] = MARK_COLOR[mark];
+  return (
+    <span style={{
+      width: size, height: size, borderRadius: 6, position: 'relative', flexShrink: 0,
+      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+      background: `linear-gradient(160deg, ${d2}, ${d1})`, border: `1.5px solid ${d2}`,
+      color: '#fff', fontWeight: 900, fontSize: size * 0.52,
+      boxShadow: `0 3px 8px ${d1}55, inset 0 1px 2px rgba(255,255,255,0.3)`,
+    }}>
+      {letter}
+      <span style={{ position: 'absolute', top: 2, right: 2 }}>
+        <MarkBadge mark={mark} size={Math.max(6, size * 0.3)} />
+      </span>
+    </span>
+  );
+}
 
 function confetti(api: GameApi, W: number): void {
   const colors = ['#4ade80', '#fbbf24', '#60a5fa', '#f472b6', '#a78bfa'];
@@ -97,7 +169,8 @@ export default function ArcadeWordle({ onExit }: { onExit: () => void }): React.
   }, []);
 
   const newRound = useCallback(() => {
-    const a = pickWord();
+    // Kata berikutnya tidak pernah mengulang jawaban ronde sebelumnya.
+    const a = pickNextWord(stateRef.current.answer);
     stateRef.current = { rows: [], cur: '', answer: a, over: false, won: false };
     setRows([]); setCur(''); setAnswer(a); setReveal(false);
     setFlipRow(-1); setShakeRow(-1); setHudRound((r) => r + 1);
@@ -235,12 +308,16 @@ export default function ArcadeWordle({ onExit }: { onExit: () => void }): React.
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 10, pointerEvents: 'none' }}>
         <div style={{ pointerEvents: 'auto', background: 'rgba(12,18,36,0.6)', border: '1px solid rgba(255,255,255,0.16)', borderRadius: 14, padding: '8px 14px', color: '#fff', backdropFilter: 'blur(6px)' }}>
           <div style={{ fontWeight: 900, fontSize: 15, letterSpacing: 3, color: '#fbbf24' }}>KATA PROYEK</div>
-          <div style={{ fontSize: 11.5, opacity: 0.8, marginTop: 2 }}>🔥 Streak {stats.streak} • 🏆 {stats.maxStreak}</div>
+          <div style={{ fontSize: 11.5, opacity: 0.85, marginTop: 3, display: 'flex', alignItems: 'center', gap: 5 }}>
+            <span style={{ color: '#fb923c', display: 'inline-flex' }}><FlameIcon /></span> Streak {stats.streak}
+            <span style={{ opacity: 0.5 }}>•</span>
+            <span style={{ color: '#fbbf24', display: 'inline-flex' }}><TrophyIcon /></span> {stats.maxStreak}
+          </div>
         </div>
         <div style={{ display: 'flex', gap: 8, pointerEvents: 'auto' }}>
-          {inGame && <button style={btn} onClick={togglePause} aria-label="Jeda">{screen === 'play' ? '⏸' : '▶'}</button>}
-          <button style={btn} onClick={toggleMute} aria-label="Suara">{muted ? '🔇' : '🔊'}</button>
-          <button style={btn} onClick={onExit} aria-label="Keluar">✕</button>
+          {inGame && <button style={btn} onClick={togglePause} aria-label="Jeda">{screen === 'play' ? <PauseIcon /> : <PlayIcon />}</button>}
+          <button style={btn} onClick={toggleMute} aria-label="Suara">{muted ? <MuteIcon /> : <SoundIcon />}</button>
+          <button style={btn} onClick={onExit} aria-label="Keluar"><CloseIcon /></button>
         </div>
       </div>
 
@@ -261,7 +338,7 @@ export default function ArcadeWordle({ onExit }: { onExit: () => void }): React.
                 const [d1, d2] = mark ? MARK_COLOR[mark] : ['#1b2440', '#141b33'];
                 return (
                   <div key={c} style={{
-                    width: tileSize, height: tileSize, borderRadius: 10,
+                    width: tileSize, height: tileSize, borderRadius: 10, position: 'relative',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontWeight: 900, fontSize: 'calc(min(13.5vw,56px)*0.52)', color: '#fff',
                     background: mark ? `linear-gradient(160deg, ${d2}, ${d1})` : 'linear-gradient(160deg, #232c4a, #161d36)',
@@ -272,6 +349,11 @@ export default function ArcadeWordle({ onExit }: { onExit: () => void }): React.
                     transitionDelay: `${c * 60}ms`,
                   }}>
                     {ch}
+                    {mark && (
+                      <span style={{ position: 'absolute', top: 4, right: 4, opacity: 0.95 }} title={mark}>
+                        <MarkBadge mark={mark} />
+                      </span>
+                    )}
                   </div>
                 );
               })}
@@ -289,13 +371,20 @@ export default function ArcadeWordle({ onExit }: { onExit: () => void }): React.
           {KEY_ROWS.map((kr, ri) => (
             <div key={ri} style={{ display: 'flex', gap: 5, justifyContent: 'center', width: '100%' }}>
               {ri === 2 && (
-                <button onClick={() => typeKey('ENTER')} style={{ ...keyBtn(ks), flex: '1.5', fontSize: 12 }}>⏎</button>
+                <button onClick={() => typeKey('ENTER')} aria-label="Enter" style={{ ...keyBtn(ks), flex: '1.5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><EnterIcon /></button>
               )}
               {kr.split('').map((k) => (
-                <button key={k} onClick={() => typeKey(k)} style={keyBtn(ks, ks[k])}>{k}</button>
+                <button key={k} onClick={() => typeKey(k)} style={keyBtn(ks, ks[k])}>
+                  {k}
+                  {ks[k] && (
+                    <span style={{ position: 'absolute', top: 3, right: 3 }}>
+                      <MarkBadge mark={ks[k]} size={8} />
+                    </span>
+                  )}
+                </button>
               ))}
               {ri === 2 && (
-                <button onClick={() => typeKey('BACK')} style={{ ...keyBtn(ks), flex: '1.5', fontSize: 16 }}>⌫</button>
+                <button onClick={() => typeKey('BACK')} aria-label="Hapus" style={{ ...keyBtn(ks), flex: '1.5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><BackIcon /></button>
               )}
             </div>
           ))}
@@ -306,25 +395,34 @@ export default function ArcadeWordle({ onExit }: { onExit: () => void }): React.
 
       {screen === 'tutorial' && (
         <div style={card}><div style={panel}>
-          <div style={{ fontSize: 42 }}>🔤</div>
-          <h2 style={{ margin: '8px 0 4px', fontWeight: 900, fontSize: 24, color: '#fbbf24', letterSpacing: 2 }}>KATA PROYEK</h2>
+          <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
+            <MiniTile mark="correct" letter="K" size={44} />
+            <MiniTile mark="present" letter="A" size={44} />
+            <MiniTile mark="absent" letter="T" size={44} />
+          </div>
+          <h2 style={{ margin: '10px 0 4px', fontWeight: 900, fontSize: 24, color: '#fbbf24', letterSpacing: 2 }}>KATA PROYEK</h2>
           <p style={{ fontSize: 13.5, lineHeight: 1.6, opacity: 0.92 }}>
             Tebak <b>kata proyek 5 huruf</b> dalam <b>6x kesempatan</b>.
           </p>
-          <div style={{ textAlign: 'left', fontSize: 13, lineHeight: 2, background: 'rgba(0,0,0,0.25)', borderRadius: 12, padding: '10px 14px', margin: '8px 0' }}>
-            <div>🟩 Huruf <b>tepat</b> di posisi yang benar</div>
-            <div>🟨 Huruf ada di kata, tapi <b>posisinya salah</b></div>
-            <div>⬛ Huruf <b>tidak ada</b> di kata rahasia</div>
+          <div style={{ textAlign: 'left', fontSize: 13, background: 'rgba(0,0,0,0.25)', borderRadius: 12, padding: '10px 14px', margin: '8px 0', display: 'flex', flexDirection: 'column', gap: 9 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}><MiniTile mark="correct" letter="B" /> <span>Huruf <b>tepat</b> di posisi yang benar</span></div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}><MiniTile mark="present" letter="B" /> <span>Huruf ada di kata, tapi <b>posisinya salah</b></span></div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}><MiniTile mark="absent" letter="B" /> <span>Huruf <b>tidak ada</b> di kata rahasia</span></div>
           </div>
-          <p style={{ fontSize: 12.5, opacity: 0.8 }}>Kata baru yang acak setiap ronde. Jaga streak kemenanganmu! 🔥</p>
+          <p style={{ fontSize: 12.5, opacity: 0.8, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+            Kata baru yang acak setiap ronde — tak pernah mengulang kata sebelumnya. Jaga streak kemenanganmu!
+            <span style={{ color: '#fb923c', display: 'inline-flex' }}><FlameIcon size={14} /></span>
+          </p>
           <button style={{ ...bigBtn, background: 'linear-gradient(180deg,#fde047,#f59e0b)', color: '#3a2a00' }} onClick={startGame}>Mulai Menebak</button>
         </div></div>
       )}
 
       {screen === 'pause' && (
         <div style={card}><div style={panel}>
-          <div style={{ fontSize: 40 }}>☕</div>
-          <h2 style={{ margin: '8px 0 4px', fontWeight: 900, fontSize: 22 }}>JEDA</h2>
+          <div style={{ width: 64, height: 64, margin: '0 auto', borderRadius: '50%', border: '2px solid rgba(251,191,36,0.45)', background: 'rgba(251,191,36,0.1)', color: '#fbbf24', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <PauseIcon size={26} />
+          </div>
+          <h2 style={{ margin: '10px 0 4px', fontWeight: 900, fontSize: 22 }}>JEDA</h2>
           <p style={{ fontSize: 13, opacity: 0.85 }}>Kata rahasianya sabar menunggu. Kopinya jangan sampai dingin.</p>
           <button style={{ ...bigBtn, background: 'linear-gradient(180deg,#fde047,#f59e0b)', color: '#3a2a00' }} onClick={togglePause}>Lanjutkan</button>
           <button style={{ ...bigBtn, background: 'transparent', color: '#94a3b8' }} onClick={onExit}>Keluar</button>
@@ -333,13 +431,23 @@ export default function ArcadeWordle({ onExit }: { onExit: () => void }): React.
 
       {screen === 'over' && (
         <div style={card}><div style={panel}>
-          <div style={{ fontSize: 42 }}>{stateRef.current.won ? '🎉' : '😅'}</div>
-          <h2 style={{ margin: '8px 0 4px', fontWeight: 900, fontSize: 22, color: stateRef.current.won ? '#4ade80' : '#fbbf24' }}>
+          <div style={{ width: 68, height: 68, margin: '0 auto', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            border: `2px solid ${stateRef.current.won ? 'rgba(74,222,128,0.5)' : 'rgba(251,191,36,0.5)'}`,
+            background: stateRef.current.won ? 'rgba(74,222,128,0.12)' : 'rgba(251,191,36,0.1)',
+            color: stateRef.current.won ? '#4ade80' : '#fbbf24' }}>
+            {stateRef.current.won ? <TrophyIcon size={30} /> : <RetryIcon size={28} />}
+          </div>
+          <h2 style={{ margin: '10px 0 4px', fontWeight: 900, fontSize: 22, color: stateRef.current.won ? '#4ade80' : '#fbbf24' }}>
             {stateRef.current.won ? 'KETEMU!' : 'BELUM BERUNTUNG'}
           </h2>
           <p style={{ fontSize: 14, opacity: 0.9 }}>
             Kata: <b style={{ letterSpacing: 3, fontSize: 18, color: '#fde047' }}>{answer}</b><br />
-            {stateRef.current.won ? `Tebakan ke-${rows.length} • Streak ${stats.streak} 🔥` : 'Coba lagi, kata baru menanti.'}
+            {stateRef.current.won ? (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 4 }}>
+                Tebakan ke-{rows.length} • Streak {stats.streak}
+                <span style={{ color: '#fb923c', display: 'inline-flex' }}><FlameIcon size={14} /></span>
+              </span>
+            ) : 'Coba lagi, kata baru menanti.'}
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8, margin: '12px 0', fontSize: 12 }}>
             {[['Main', stats.played], ['Menang', stats.won], ['Streak', stats.streak], ['Max', stats.maxStreak]].map(([l, v]) => (
@@ -349,7 +457,9 @@ export default function ArcadeWordle({ onExit }: { onExit: () => void }): React.
               </div>
             ))}
           </div>
-          <button style={{ ...bigBtn, background: 'linear-gradient(180deg,#4ade80,#16a34a)', color: '#052e12' }} onClick={() => { sfx.ensure(); newRound(); setScreen('play'); }}>Kata Baru 🔁</button>
+          <button style={{ ...bigBtn, background: 'linear-gradient(180deg,#4ade80,#16a34a)', color: '#052e12' }} onClick={() => { sfx.ensure(); newRound(); setScreen('play'); }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}><RetryIcon size={15} /> Kata Baru</span>
+          </button>
           <button style={{ ...bigBtn, background: 'transparent', color: '#94a3b8' }} onClick={onExit}>Keluar</button>
         </div></div>
       )}
@@ -362,7 +472,7 @@ function keyBtn(ks: Record<string, Mark>, mark?: Mark): React.CSSProperties {
   const bg = mark ? `linear-gradient(160deg, ${d2}, ${d1})` : 'linear-gradient(160deg,#31405f,#232c46)';
   return {
     flex: 1, maxWidth: 44, height: 52, borderRadius: 9, border: '1px solid rgba(255,255,255,0.14)',
-    background: bg, color: '#fff', fontWeight: 800, fontSize: 14, cursor: 'pointer',
+    background: bg, color: '#fff', fontWeight: 800, fontSize: 14, cursor: 'pointer', position: 'relative',
     fontFamily: FONT, boxShadow: '0 3px 0 rgba(0,0,0,0.35)',
   };
 }

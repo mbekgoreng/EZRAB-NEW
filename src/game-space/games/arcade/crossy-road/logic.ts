@@ -53,6 +53,41 @@ export function mulberry(seed: number): () => number {
 const VEH_W: Record<VehicleKind, number> = { molen: 2.4, pickup: 1.3, beko: 1.7 };
 const KINDS: VehicleKind[] = ['molen', 'pickup', 'beko'];
 
+/* ------------------------------------------------------------------ */
+/* PEMBEDA PASANGAN PENYEBERANGAN — identitas Nyebrang Proyek:        */
+/* penyeberangan DARAT TAK BERUJUNG. Tidak ada slot rumah, tidak ada  */
+/* sungai/balok, tidak ada nyawa/timer misi: skor murni JARAK (baris  */
+/* terjauh) dan kesulitan naik lewat ZONA KEPADATAN — tiap 8 baris    */
+/* masuk zona baru, lalu lintas proyek makin CEPAT dan makin PADAT.   */
+/* (Pasangannya, Tukang Nyebrang, adalah misi terbatas: isi 5 slot    */
+/* rumah menyeberangi jalan + sungai dalam 3 nyawa & 60 dtk/nyawa.)  */
+/* ------------------------------------------------------------------ */
+
+/** Baris per zona kepadatan. */
+export const ZONE_ROWS = 8;
+
+/** Zona kepadatan untuk suatu baris (mulai dari 1). Murni. */
+export function zoneForRow(row: number): number {
+  return Math.floor(Math.max(0, row) / ZONE_ROWS) + 1;
+}
+
+/** Bonus kecepatan kendaraan (tile/detik) dari zona baris itu. Murni. */
+export function zoneSpeedBonus(row: number): number {
+  return Math.min(1.6, (zoneForRow(row) - 1) * 0.4);
+}
+
+/** Kendaraan ekstra per lajur jalan dari zona baris itu. Murni. */
+export function extraVehiclesForRow(row: number): number {
+  if (row >= 40) return 2;
+  if (row >= 16) return 1;
+  return 0;
+}
+
+/** True bila baris ini adalah gerbang masuk zona baru. Murni. */
+export function isZoneStart(row: number): boolean {
+  return row > 0 && row % ZONE_ROWS === 0;
+}
+
 /** Lajur deterministik dari (seed, row). Murni. */
 export function genLane(seed: number, row: number): Lane {
   const rng = mulberry((seed ^ Math.imul(row + 1, 0x9e3779b1)) >>> 0);
@@ -71,10 +106,10 @@ export function genLane(seed: number, row: number): Lane {
     for (let c = 0; c < COLS; c += 1) if (rng() < 0.35) deco.push(c);
     return { kind: 'aman', dir: 1, speed: 0, vehicles: [], deco };
   }
-  // jalan: kendaraan
+  // jalan: kendaraan — zona kepadatan menaikkan kecepatan & jumlahnya
   const dir: 1 | -1 = rng() < 0.5 ? 1 : -1;
-  const speed = 2.2 + rng() * 3.2 + Math.min(2, row * 0.03);
-  const n = 2 + Math.floor(rng() * 2);
+  const speed = 2.2 + rng() * 3.2 + Math.min(2, row * 0.03) + zoneSpeedBonus(row);
+  const n = 2 + Math.floor(rng() * 2) + extraVehiclesForRow(row);
   const vehicles: Vehicle[] = [];
   const spacing = COLS / n;
   for (let i = 0; i < n; i += 1) {

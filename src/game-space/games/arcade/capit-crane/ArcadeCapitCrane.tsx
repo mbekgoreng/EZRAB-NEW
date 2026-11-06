@@ -10,12 +10,21 @@ import { bestKey, getBest, setBest } from '../../../engine2d/best';
 import { popText } from '../../../engine2d/juice2d';
 import {
   ITEM_DEFS, trolleyAt, swayAt, descendSpeed, spawnItem, grabCheck,
-  scoreFor, comboBonus, GAME_DURATION, DROP_X_FRAC,
+  scoreFor, comboBonus, orderFor, orderBonusFor, GAME_DURATION, DROP_X_FRAC,
   type CraneItem, type CranePhase, type ItemKind,
 } from './logic';
 
 const FONT = "'Plus Jakarta Sans','Inter',system-ui,sans-serif";
 const BK = bestKey('capit-material', 'best');
+
+/** Warna khas per jenis material — penanda visual di HUD/chip menggantikan emoji. */
+const KIND_COLORS: Record<ItemKind, string> = {
+  helm: '#facc15',
+  bata: '#ef4444',
+  pipa: '#94a3b8',
+  semen: '#d6c9a8',
+  'kunci-emas': '#f59e0b',
+};
 
 type Screen = 'tutorial' | 'play' | 'pause' | 'over';
 
@@ -33,6 +42,7 @@ interface S {
   carryFrom: number;
   carryT: number;
   carried: CraneItem | null;
+  order: ItemKind; // pesanan Mandor saat ini
   items: CraneItem[];
   nextId: number;
   score: number;
@@ -52,7 +62,7 @@ export default function ArcadeCapitCrane({ onExit }: { onExit: () => void }): Re
   const apiRef = useRef<GameApi | null>(null);
   const screenRef = useRef<Screen>('tutorial');
   const [screen, setScreenState] = useState<Screen>('tutorial');
-  const [hud, setHud] = useState({ score: 0, timeLeft: GAME_DURATION, streak: 0, best: getBest(BK, 0), bestStreak: 0 });
+  const [hud, setHud] = useState<{ score: number; timeLeft: number; streak: number; best: number; bestStreak: number; order: ItemKind }>({ score: 0, timeLeft: GAME_DURATION, streak: 0, best: getBest(BK, 0), bestStreak: 0, order: 'bata' });
   const [muted, setMuted] = useState(false);
 
   const setScreen = (s: Screen): void => {
@@ -76,7 +86,7 @@ export default function ArcadeCapitCrane({ onExit }: { onExit: () => void }): Re
     const s: S = {
       phase: 'sweep', t: 0, sweepT: 0, swayNow: 0, elapsed: 0, rope: ROPE_MIN, clawX: 0,
       carryX: null, carryFrom: 0, carryT: 0,
-      carried: null, items: [], nextId: 1, score: 0, streak: 0, bestStreak: 0,
+      carried: null, order: 'bata', items: [], nextId: 1, score: 0, streak: 0, bestStreak: 0,
       grabs: 0, misses: 0, drops: [], over: false,
     };
     let rngState = (Date.now() ^ (Math.random() * 1e9)) | 0;
@@ -86,14 +96,14 @@ export default function ArcadeCapitCrane({ onExit }: { onExit: () => void }): Re
     };
 
     const push = (): void => {
-      api.pushHud({ score: s.score, timeLeft: Math.max(0, GAME_DURATION - s.elapsed), streak: s.streak, best: getBest(BK, 0), bestStreak: s.bestStreak });
+      api.pushHud({ score: s.score, timeLeft: Math.max(0, GAME_DURATION - s.elapsed), streak: s.streak, best: getBest(BK, 0), bestStreak: s.bestStreak, order: s.order });
     };
 
     const reset = (): void => {
       s.phase = 'sweep';
       s.t = 0; s.sweepT = 0; s.swayNow = 0; s.elapsed = 0; s.rope = ROPE_MIN;
       s.carryX = null; s.carryFrom = 0; s.carryT = 0;
-      s.carried = null; s.items = []; s.nextId = 1;
+      s.carried = null; s.order = orderFor(rng); s.items = []; s.nextId = 1;
       s.score = 0; s.streak = 0; s.bestStreak = 0;
       s.grabs = 0; s.misses = 0; s.drops = []; s.over = false;
       for (let i = 0; i < MAX_ITEMS; i += 1) {
@@ -113,7 +123,7 @@ export default function ArcadeCapitCrane({ onExit }: { onExit: () => void }): Re
         speed: [100, 380], life: [0.6, 1.1], size: [2, 6], gravity: 300, shape: 'rect', rotation: true,
       });
       window.setTimeout(() => {
-        api.pushHud({ score: s.score, timeLeft: 0, streak: s.streak, best: nb, bestStreak: s.bestStreak });
+        api.pushHud({ score: s.score, timeLeft: 0, streak: s.streak, best: nb, bestStreak: s.bestStreak, order: s.order });
         setScreen('over');
       }, 1200);
     };
@@ -227,13 +237,20 @@ export default function ArcadeCapitCrane({ onExit }: { onExit: () => void }): Re
             s.streak += 1;
             s.bestStreak = Math.max(s.bestStreak, s.streak);
             const bonus = comboBonus(s.streak);
-            s.score += pts + bonus;
+            const orderBonus = orderBonusFor(d.kind, s.order);
+            s.score += pts + bonus + orderBonus;
             s.grabs += 1;
+            // Pesanan Mandor berganti setiap pengantaran sukses, apa pun jenisnya.
+            s.order = orderFor(rng, s.order);
             sfx.pop(d.kind === 'kunci-emas' ? 1.5 : 1.1);
             const gx = api.W * DROP_X_FRAC;
-            api.scores.add(gx, api.H * 0.80, `+${pts}${bonus > 0 ? ` (+${bonus} kombo!)` : ''}`, {
+            api.scores.add(gx, api.H * 0.80, `+${pts}${bonus > 0 ? ` (+${bonus} kombo!)` : ''}${orderBonus > 0 ? ` (+${orderBonus} pesanan!)` : ''}`, {
               color: d.kind === 'kunci-emas' ? '#fde047' : '#fef3c7', size: d.kind === 'kunci-emas' ? 24 : 19,
             });
+            if (orderBonus > 0) {
+              const wrap = wrapRef.current;
+              if (wrap) popText(wrap, `PESANAN MANDOR SELESAI! +${orderBonus}`, { size: 18, color: '#4ade80' });
+            }
             api.particles.spawn(gx, api.H * 0.88, {
               count: d.kind === 'kunci-emas' ? 26 : 12,
               colors: d.kind === 'kunci-emas' ? ['#fde047', '#fbbf24', '#fff7d6'] : ['#d6a05c', '#a16207', '#fef3c7'],
@@ -241,7 +258,7 @@ export default function ArcadeCapitCrane({ onExit }: { onExit: () => void }): Re
             });
             if (d.kind === 'kunci-emas') {
               const wrap = wrapRef.current;
-              if (wrap) popText(wrap, '🔑 KUNCI GUDANG MANDOR!', { size: 20, color: '#fde047' });
+              if (wrap) popText(wrap, 'KUNCI GUDANG MANDOR!', { size: 20, color: '#fde047' });
               sfx.chime(3);
             }
             // respawn item baru
@@ -330,7 +347,7 @@ export default function ArcadeCapitCrane({ onExit }: { onExit: () => void }): Re
       ctx.fillStyle = 'rgba(60,35,8,0.75)';
       ctx.font = `800 10px ${FONT}`;
       ctx.textAlign = 'center';
-      ctx.fillText('⚠️ AREA CAPIT — MANDOR BERTUGAS', W / 2, y + 30);
+      ctx.fillText('AREA CAPIT — MANDOR BERTUGAS', W / 2, y + 30);
     };
 
     const drawTrolleyAndClaw = (ctx: CanvasRenderingContext2D): void => {
@@ -388,13 +405,14 @@ export default function ArcadeCapitCrane({ onExit }: { onExit: () => void }): Re
       if (s.carried) {
         ctx.save();
         ctx.rotate(-sway);
-        drawItem(ctx, s.carried.kind, 0, 46, 1);
+        drawItemGlyph(ctx, s.carried.kind, 0, 46, 1);
         ctx.restore();
       }
       ctx.restore();
     };
 
-    const drawItem = (ctx: CanvasRenderingContext2D, kind: ItemKind, x: number, y: number, sc: number): void => {
+    // Glif canvas prosedural per jenis material (helm, bata, pipa, sak semen, kunci emas) — tanpa emoji.
+    const drawItemGlyph = (ctx: CanvasRenderingContext2D, kind: ItemKind, x: number, y: number, sc: number): void => {
       ctx.save();
       ctx.translate(x, y);
       ctx.scale(sc, sc);
@@ -513,10 +531,10 @@ export default function ArcadeCapitCrane({ onExit }: { onExit: () => void }): Re
         ctx.fillStyle = 'rgba(0,0,0,0.25)';
         ctx.beginPath(); ctx.ellipse(it.x, y + 10, 22, 5, 0, 0, TAU); ctx.fill();
         ctx.restore();
-        drawItem(ctx, it.kind, it.x, y - 6, 1);
+        drawItemGlyph(ctx, it.kind, it.x, y - 6, 1);
       }
       // item yang jatuh ke gudang
-      for (const d of s.drops) drawItem(ctx, d.kind, d.x, d.y, 1);
+      for (const d of s.drops) drawItemGlyph(ctx, d.kind, d.x, d.y, 1);
     };
 
     const drawWarehouse = (ctx: CanvasRenderingContext2D, W: number, H: number): void => {
@@ -542,7 +560,7 @@ export default function ArcadeCapitCrane({ onExit }: { onExit: () => void }): Re
       ctx.fillStyle = 'rgba(50,28,10,0.9)';
       ctx.font = `900 13px ${FONT}`;
       ctx.textAlign = 'center';
-      ctx.fillText('🏚️ GUDANG', gx, gy - h - 12);
+      ctx.fillText('GUDANG', gx, gy - h - 12);
       // panah penanda
       const bob = Math.sin(s.t * 3) * 5;
       ctx.fillStyle = '#fde047';
@@ -612,42 +630,57 @@ export default function ArcadeCapitCrane({ onExit }: { onExit: () => void }): Re
     <div ref={wrapRef} style={{ position: 'relative', width: '100%', height: '100%', minHeight: 620, overflow: 'hidden', borderRadius: 18, background: '#7cc4f2', fontFamily: FONT }}>
       <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', touchAction: 'none' }} />
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', zIndex: 5, pointerEvents: 'none' }}>
-        <div style={{ pointerEvents: 'auto', background: 'rgba(20,30,50,0.6)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 14, padding: '7px 12px', color: '#fff', backdropFilter: 'blur(6px)', minWidth: 150 }}>
-          <div style={{ fontWeight: 900, fontSize: 17, color: '#fde047' }}>{hud.score.toLocaleString('id-ID')}</div>
-          <div style={{ height: 7, borderRadius: 999, background: 'rgba(255,255,255,0.15)', marginTop: 5, overflow: 'hidden' }}>
-            <div style={{ height: '100%', width: `${(hud.timeLeft / GAME_DURATION) * 100}%`, background: 'linear-gradient(90deg,#4ade80,#22c55e)', borderRadius: 999 }} />
+        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+          <div style={{ pointerEvents: 'auto', background: 'rgba(20,30,50,0.6)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 14, padding: '7px 12px', color: '#fff', backdropFilter: 'blur(6px)', minWidth: 150 }}>
+            <div style={{ fontWeight: 900, fontSize: 17, color: '#fde047' }}>{hud.score.toLocaleString('id-ID')}</div>
+            <div style={{ height: 7, borderRadius: 999, background: 'rgba(255,255,255,0.15)', marginTop: 5, overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: `${(hud.timeLeft / GAME_DURATION) * 100}%`, background: 'linear-gradient(90deg,#4ade80,#22c55e)', borderRadius: 999 }} />
+            </div>
+            <div style={{ fontSize: 12, marginTop: 3, opacity: 0.9, display: 'flex', alignItems: 'center', gap: 5 }}>
+              <IconClock size={13} /> {Math.ceil(hud.timeLeft)}s {hud.streak >= 2 && <span style={{ color: '#fb923c', fontWeight: 900, display: 'inline-flex', alignItems: 'center', gap: 3 }}>• <IconFlame size={12} />x{hud.streak}</span>}
+            </div>
           </div>
-          <div style={{ fontSize: 12, marginTop: 3, opacity: 0.9 }}>
-            ⏱ {Math.ceil(hud.timeLeft)}s {hud.streak >= 2 && <span style={{ color: '#fb923c', fontWeight: 900 }}>• 🔥x{hud.streak}</span>}
+          <div style={{ pointerEvents: 'auto', background: 'rgba(20,30,50,0.6)', border: '1px solid rgba(74,222,128,0.45)', borderRadius: 14, padding: '7px 12px', color: '#fff', backdropFilter: 'blur(6px)' }}>
+            <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: 1, color: '#4ade80' }}>PESANAN MANDOR</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+              <span style={{ width: 12, height: 12, borderRadius: 4, background: KIND_COLORS[hud.order], border: '1px solid rgba(255,255,255,0.5)', flexShrink: 0 }} />
+              <span style={{ fontWeight: 900, fontSize: 13 }}>{ITEM_DEFS[hud.order].name}</span>
+            </div>
+            <div style={{ fontSize: 11, opacity: 0.9 }}>Antar jenis ini: bonus +50% poin</div>
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8, pointerEvents: 'auto' }}>
           {(screen === 'play' || screen === 'pause') && (
-            <button style={btn} onClick={togglePause} aria-label="Jeda">{screen === 'play' ? '⏸' : '▶'}</button>
+            <button style={btn} onClick={togglePause} aria-label="Jeda">{screen === 'play' ? <IconPause size={17} /> : <IconPlay size={17} />}</button>
           )}
-          <button style={btn} onClick={toggleMute} aria-label="Suara">{muted ? '🔇' : '🔊'}</button>
-          <button style={btn} onClick={onExit} aria-label="Keluar">✕</button>
+          <button style={btn} onClick={toggleMute} aria-label="Suara">{muted ? <IconMute size={18} /> : <IconSound size={18} />}</button>
+          <button style={btn} onClick={onExit} aria-label="Keluar"><IconClose size={16} /></button>
         </div>
       </div>
 
       {screen === 'play' && (
         <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: '12px 16px 16px', zIndex: 5, display: 'flex', justifyContent: 'center' }}>
-          <button onClick={dropClaw} style={dropBtn}>⬇ TURUNKAN CAPIT</button>
+          <button onClick={dropClaw} style={{ ...dropBtn, display: 'inline-flex', alignItems: 'center', gap: 8 }}><IconDown size={17} /> TURUNKAN CAPIT</button>
         </div>
       )}
 
       {screen === 'tutorial' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>🏗️</div>
+          <div style={{ display: 'flex', justifyContent: 'center' }}><IconCrane size={46} /></div>
           <h2 style={h2}>CAPIT MATERIAL</h2>
           <p style={p}>
-            Troli crane <b>mengayun sendiri</b> — tekan <b>⬇ TURUNKAN CAPIT</b> (atau ketuk layar)
-            saat capit pas di atas material! Capit mengantar barang ke <b>🏚️ GUDANG</b>.
-            Capit beruntun tanpa meleset = <b>bonus kombo</b>. Awas: <b>🔑 Kunci Gudang Mandor</b> langka = 150 poin!
+            Troli crane <b>mengayun sendiri</b> — tekan <b>TURUNKAN CAPIT</b> (atau ketuk layar)
+            saat capit pas di atas material! Capit mengantar barang ke <b>GUDANG</b>.
+            Capit beruntun tanpa meleset = <b>bonus kombo</b>. Kartu <b>Pesanan Mandor</b> di HUD:
+            mengantar jenis yang dipesan memberi <b>bonus +50% poin</b>, dan pesanan berganti tiap pengantaran sukses.
+            Awas: <b>Kunci Gudang Mandor</b> langka = 150 poin!
           </p>
           <div style={{ display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap', margin: '8px 0' }}>
             {(Object.keys(ITEM_DEFS) as ItemKind[]).map((k) => (
-              <span key={k} style={chip}>{ITEM_DEFS[k].emoji} {ITEM_DEFS[k].points}</span>
+              <span key={k} style={{ ...chip, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ width: 10, height: 10, borderRadius: 3, background: KIND_COLORS[k], border: '1px solid rgba(255,255,255,0.5)' }} />
+                {ITEM_DEFS[k].name} {ITEM_DEFS[k].points}
+              </span>
             ))}
           </div>
           {hud.best > 0 && <p style={p}>Skor terbaik: <b style={{ color: '#fde047' }}>{hud.best.toLocaleString('id-ID')}</b></p>}
@@ -656,7 +689,7 @@ export default function ArcadeCapitCrane({ onExit }: { onExit: () => void }): Re
       )}
       {screen === 'pause' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>☕</div>
+          <div style={{ display: 'flex', justifyContent: 'center', color: '#fde047' }}><IconPause size={40} /></div>
           <h2 style={h2}>JEDA</h2>
           <p style={p}>Crane-nya diparkir dulu. Materialnya ditungguin satpam.</p>
           <button style={primaryBtn} onClick={togglePause}>Lanjutkan</button>
@@ -664,11 +697,11 @@ export default function ArcadeCapitCrane({ onExit }: { onExit: () => void }): Re
       )}
       {screen === 'over' && (
         <Overlay>
-          <div style={{ fontSize: 48 }}>🏚️</div>
+          <div style={{ display: 'flex', justifyContent: 'center' }}><IconWarehouse size={48} /></div>
           <h2 style={h2}>GUDANG PENUH!</h2>
           <div style={{ fontSize: 40, fontWeight: 900, color: '#fde047' }}>{hud.score.toLocaleString('id-ID')}</div>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'center', margin: '10px 0' }}>
-            <Stat label="Streak max" value={`🔥${hud.bestStreak}x`} />
+            <Stat label="Streak max" value={`${hud.bestStreak}x`} />
             <Stat label="Terbaik" value={hud.best.toLocaleString('id-ID')} />
           </div>
           <button style={primaryBtn} onClick={startGame}>Main Lagi</button>
@@ -696,6 +729,79 @@ const chip: React.CSSProperties = {
   fontSize: 12, fontWeight: 800, color: '#fef3c7', background: 'rgba(255,255,255,0.08)',
   border: '1px solid rgba(255,255,255,0.18)', borderRadius: 999, padding: '5px 10px',
 };
+
+function IconClock({ size }: { size: number }): React.JSX.Element {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" />
+    </svg>
+  );
+}
+function IconFlame({ size }: { size: number }): React.JSX.Element {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="#fb923c" aria-hidden="true">
+      <path d="M12 2c1 4-3 5.5-3 9a3 3 0 0 0 6 0c0-1-.5-1.8-1-2.5 2 1.2 3.5 3.2 3.5 5.5a5.5 5.5 0 0 1-11 0C6.5 8 11 6 12 2z" />
+    </svg>
+  );
+}
+function IconPause({ size }: { size: number }): React.JSX.Element {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <rect x="6" y="4" width="4" height="16" rx="1" /><rect x="14" y="4" width="4" height="16" rx="1" />
+    </svg>
+  );
+}
+function IconPlay({ size }: { size: number }): React.JSX.Element {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M7 4.5v15l13-7.5-13-7.5z" />
+    </svg>
+  );
+}
+function IconSound({ size }: { size: number }): React.JSX.Element {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M11 5 6 9H3v6h3l5 4V5z" fill="currentColor" stroke="none" /><path d="M15 9a4 4 0 0 1 0 6" /><path d="M17.5 6.5a8 8 0 0 1 0 11" />
+    </svg>
+  );
+}
+function IconMute({ size }: { size: number }): React.JSX.Element {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M11 5 6 9H3v6h3l5 4V5z" fill="currentColor" stroke="none" /><path d="m16 9 5 6M21 9l-5 6" />
+    </svg>
+  );
+}
+function IconClose({ size }: { size: number }): React.JSX.Element {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true">
+      <path d="M5 5l14 14M19 5L5 19" />
+    </svg>
+  );
+}
+function IconDown({ size }: { size: number }): React.JSX.Element {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 3v14M5 11l7 7 7-7" />
+    </svg>
+  );
+}
+function IconCrane({ size }: { size: number }): React.JSX.Element {
+  return (
+    <svg width={size} height={size} viewBox="0 0 48 48" fill="none" stroke="#f59e0b" strokeWidth="3" strokeLinecap="round" aria-hidden="true">
+      <path d="M10 44V8M10 8h30M10 14l8-6M18 44V26" stroke="#fde047" />
+      <path d="M34 8v10" /><path d="M30 22l4-4 4 4M30 22c0 3 8 3 8 0" stroke="#fb923c" />
+      <path d="M4 44h26" stroke="#fde047" />
+    </svg>
+  );
+}
+function IconWarehouse({ size }: { size: number }): React.JSX.Element {
+  return (
+    <svg width={size} height={size} viewBox="0 0 48 48" fill="none" stroke="#d9a05b" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M6 20 24 8l18 12" /><path d="M10 19v21h28V19" /><path d="M18 40V28h12v12" /><path d="M18 34h12" />
+    </svg>
+  );
+}
 
 function Overlay({ children }: { children: React.ReactNode }): React.JSX.Element {
   return (

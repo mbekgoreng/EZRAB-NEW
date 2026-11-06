@@ -33,6 +33,16 @@ export interface Gate {
   gapY: number; // pusat celah
   gapH: number; // tinggi celah
   passed: boolean;
+  /** Gelombang 2 — pembeda Mandor Terbang: celah crane BERGERAK naik-turun
+   *  mulai gate ke-5. baseGapY = pusat awal; oscAmp 0 = diam (gate awal). */
+  baseGapY?: number;
+  oscAmp?: number;
+  oscPhase?: number;
+}
+
+/** Amplitudo osilasi celah: 0 sebelum gate ke-5, lalu tumbuh terbatas. */
+export function oscAmpFor(passed: number): number {
+  return passed < 4 ? 0 : Math.min(44, 16 + (passed - 4) * 3);
 }
 
 export interface FlapState {
@@ -111,7 +121,11 @@ export function spawnGate(st: FlapState, rng: () => number, atX: number): Gate {
   const lo = margin + gapH / 2;
   const hi = st.groundY - margin - gapH / 2;
   const gapY = lo + rng() * Math.max(1, hi - lo);
-  const g: Gate = { x: atX, w: GATE_W, gapY, gapH, passed: false };
+  const amp = oscAmpFor(st.passed);
+  const g: Gate = {
+    x: atX, w: GATE_W, gapY, gapH, passed: false,
+    baseGapY: gapY, oscAmp: amp, oscPhase: rng() * Math.PI * 2,
+  };
   st.gates.push(g);
   return g;
 }
@@ -146,8 +160,17 @@ export function updateState(st: FlapState, dt: number, rng: () => number): StepR
     b.vy = Math.max(0, b.vy);
   }
 
-  // geser gate
-  for (const g of st.gates) g.x -= st.speed * dt;
+  // geser gate + osilasi celah (Mandor Terbang: crane bergerak)
+  for (const g of st.gates) {
+    g.x -= st.speed * dt;
+    if (g.oscAmp && g.baseGapY !== undefined) {
+      const margin = 110;
+      const lo = margin + g.gapH / 2;
+      const hi = st.groundY - margin - g.gapH / 2;
+      const y = g.baseGapY + Math.sin(st.t * 1.7 + (g.oscPhase ?? 0)) * g.oscAmp;
+      g.gapY = Math.max(lo, Math.min(hi, y));
+    }
+  }
 
   // spawn: jaga jarak antar gate
   const last = st.gates[st.gates.length - 1];

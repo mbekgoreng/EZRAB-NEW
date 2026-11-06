@@ -1,8 +1,9 @@
 /**
  * ArcadeSolitaire — "Solitaire Proyek" (Klondike).
- * Susun 52 kartu material (🔩🧱🪵🎨) ke 4 Tower. Drag & drop + klik
- * (klik kartu = naik otomatis ke tower), undo, skor, timer.
- * Aturan murni di logic.ts; file ini render + interaksi + juice.
+ * Susun 52 kartu material (glif vektor Besi/Bata/Kayu/Cat) ke 4 Tower.
+ * Drag & drop + klik (klik kartu = naik otomatis ke tower), undo, skor,
+ * timer. Kartu yang bisa dipindah disorot hijau berdenyut.
+ * Aturan murni di logic.ts (tidak diubah); file ini render + interaksi.
  */
 import React, { useRef, useState } from 'react';
 import { useGameCanvas, type GameApi } from '../../../engine2d';
@@ -12,9 +13,34 @@ import {
   deal, drawStock, moveWasteToTableau, moveWasteToFoundation,
   moveTableauToFoundation, moveTableauToTableau, moveFoundationToTableau,
   autoToFoundation, isWon, undo, canUndo, validSequence,
+  canPlaceTableau, canPlaceFoundation,
   SUIT_INFO, RANK_LABEL, RANK_NAME,
   type Card, type SolState,
 } from './logic';
+
+/**
+ * Kartu yang BISA dipindah sekarang (umpan balik keterbacaan):
+ * kartu waste teratas + kartu/urutan tableau teratas yang punya tujuan
+ * legal (foundation atau tableau lain). Dipakai untuk sorotan hijau
+ * di papan dan chip "BISA PINDAH" di HUD. Aturan murni dari logic.ts.
+ */
+function movableCards(st: SolState): Set<number> {
+  const ids = new Set<number>();
+  const toFound = (c: Card): boolean => st.foundations.some((f) => canPlaceFoundation(c, f));
+  const toTab = (c: Card, exceptCol: number): boolean =>
+    st.tableau.some((p, i) => i !== exceptCol && canPlaceTableau(c, p));
+  const w = st.waste[st.waste.length - 1];
+  if (w && (toFound(w) || toTab(w, -1))) ids.add(w.id);
+  for (let col = 0; col < 7; col += 1) {
+    const pile = st.tableau[col];
+    for (let count = 1; count <= pile.length; count += 1) {
+      if (!validSequence(pile, count)) break;
+      const moving = pile[pile.length - count];
+      if (toTab(moving, col) || (count === 1 && toFound(moving))) ids.add(moving.id);
+    }
+  }
+  return ids;
+}
 
 const SLUG = 'solitaire';
 const LW = 390;
@@ -58,6 +84,8 @@ interface Hud {
   time: number;
   stockCount: number;
   canUndo: boolean;
+  movable: number;
+  found: number;
 }
 
 /* ================= geometry ================= */
@@ -110,6 +138,116 @@ function drawSlot(ctx: CanvasRenderingContext2D, x: number, y: number, label: st
   ctx.fillText(sub, x + CW / 2, y + CH / 2 + 12);
 }
 
+/**
+ * Glif material prosedural (vektor digambar kode, pola SuitMaterial pilot
+ * Blackjack) di tengah & sudut kartu — menggantikan ikon emoji suit.
+ * suit: 0 Besi (mur heksagon), 1 Bata, 2 Kayu (papan), 3 Cat (rol cat).
+ * `s` = setengah lebar glif dalam px.
+ */
+function drawSuitGlyph(ctx: CanvasRenderingContext2D, suit: number, cx: number, cy: number, s: number): void {
+  ctx.save();
+  ctx.lineWidth = Math.max(1, s * 0.16);
+  if (suit === 0) {
+    // Besi: mur baut heksagon + lubang
+    ctx.beginPath();
+    for (let i = 0; i < 6; i += 1) {
+      const a = (Math.PI / 3) * i + Math.PI / 6;
+      const px = cx + Math.cos(a) * s;
+      const py = cy + Math.sin(a) * s;
+      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+    ctx.fillStyle = '#94a3b8';
+    ctx.fill();
+    ctx.strokeStyle = '#475569';
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(cx, cy, s * 0.42, 0, TAU);
+    ctx.fillStyle = '#f1f5f9';
+    ctx.fill();
+    ctx.strokeStyle = '#334155';
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(cx - s * 0.28, cy + s * 0.28);
+    ctx.lineTo(cx + s * 0.28, cy - s * 0.28);
+    ctx.strokeStyle = '#64748b';
+    ctx.stroke();
+  } else if (suit === 1) {
+    // Bata: balok + garis nat
+    const w = s * 2;
+    const h = s * 1.3;
+    rr(ctx, cx - s, cy - h / 2, w, h, s * 0.18);
+    ctx.fillStyle = '#c4502e';
+    ctx.fill();
+    ctx.strokeStyle = '#7e2f16';
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(cx - s, cy); ctx.lineTo(cx + s, cy);
+    ctx.moveTo(cx, cy - h / 2); ctx.lineTo(cx, cy);
+    ctx.moveTo(cx - s * 0.5, cy); ctx.lineTo(cx - s * 0.5, cy + h / 2);
+    ctx.moveTo(cx + s * 0.5, cy); ctx.lineTo(cx + s * 0.5, cy + h / 2);
+    ctx.strokeStyle = '#7e2f16';
+    ctx.stroke();
+  } else if (suit === 2) {
+    // Kayu: papan + serat
+    const w = s * 2;
+    const h = s * 1.5;
+    rr(ctx, cx - s, cy - h / 2, w, h, s * 0.14);
+    ctx.fillStyle = '#b07f42';
+    ctx.fill();
+    ctx.strokeStyle = '#5d3a1a';
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(cx - s, cy - h * 0.18); ctx.lineTo(cx + s, cy - h * 0.18);
+    ctx.moveTo(cx - s, cy + h * 0.22); ctx.lineTo(cx + s, cy + h * 0.22);
+    ctx.strokeStyle = 'rgba(93,58,26,0.65)';
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(cx + s * 0.45, cy + h * 0.02, s * 0.16, 0, TAU);
+    ctx.stroke();
+  } else {
+    // Cat: rol cat + gagang
+    const w = s * 1.9;
+    const h = s * 0.62;
+    rr(ctx, cx - s * 0.95, cy - s * 0.85, w, h, s * 0.2);
+    ctx.fillStyle = '#dc2626';
+    ctx.fill();
+    ctx.strokeStyle = '#7f1d1d';
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - s * 0.2);
+    ctx.lineTo(cx, cy + s * 0.25);
+    ctx.lineTo(cx + s * 0.55, cy + s * 0.25);
+    ctx.strokeStyle = '#374151';
+    ctx.stroke();
+    rr(ctx, cx + s * 0.42, cy + s * 0.25, s * 0.28, s * 0.75, s * 0.1);
+    ctx.fillStyle = '#78350f';
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+/** Helm proyek prosedural untuk kartu wajah (J/Q/K). */
+function drawHelmetGlyph(ctx: CanvasRenderingContext2D, cx: number, cy: number, s: number): void {
+  ctx.save();
+  const helm = ctx.createLinearGradient(cx, cy - s, cx, cy + s * 0.3);
+  helm.addColorStop(0, '#fde047');
+  helm.addColorStop(1, '#f59e0b');
+  ctx.fillStyle = helm;
+  ctx.beginPath();
+  ctx.arc(cx, cy + s * 0.25, s * 0.92, Math.PI, 0);
+  ctx.fill();
+  ctx.fillRect(cx - s * 1.05, cy + s * 0.18, s * 2.1, s * 0.2);
+  ctx.fillStyle = '#f59e0b';
+  ctx.fillRect(cx - s * 0.13, cy - s * 0.95, s * 0.26, s * 0.45);
+  ctx.strokeStyle = 'rgba(120,53,15,0.5)';
+  ctx.lineWidth = Math.max(1, s * 0.09);
+  ctx.beginPath();
+  ctx.arc(cx, cy + s * 0.25, s * 0.92, Math.PI, 0);
+  ctx.stroke();
+  ctx.restore();
+}
+
 function drawCardBack(ctx: CanvasRenderingContext2D, x: number, y: number): void {
   rr(ctx, x, y, CW, CH, 9);
   const g = ctx.createLinearGradient(x, y, x, y + CH);
@@ -130,13 +268,25 @@ function drawCardBack(ctx: CanvasRenderingContext2D, x: number, y: number): void
     ctx.beginPath(); ctx.moveTo(x + 3, gy); ctx.lineTo(x + CW - 3, gy); ctx.stroke();
   }
   ctx.restore();
-  ctx.font = `19px system-ui`;
+  // tower crane terdesain (garis vektor di atas grid blueprint)
+  ctx.strokeStyle = 'rgba(219,234,254,0.95)';
+  ctx.lineWidth = 1.7;
+  ctx.beginPath();
+  const mx = x + CW / 2 - 9;
+  ctx.moveTo(mx, y + 12); ctx.lineTo(mx, y + CH / 2 + 8); // tiang
+  ctx.moveTo(x + 7, y + 15); ctx.lineTo(x + CW - 7, y + 15); // jib
+  ctx.moveTo(mx, y + 12); ctx.lineTo(x + CW - 7, y + 15); // tali atas
+  ctx.moveTo(mx, y + 12); ctx.lineTo(x + 7, y + 15);
+  ctx.moveTo(x + CW - 13, y + 15); ctx.lineTo(x + CW - 13, y + 27); // kabel beban
+  ctx.moveTo(x + 5, y + CH / 2 + 8); ctx.lineTo(x + CW - 5, y + CH / 2 + 8); // dasar
+  ctx.stroke();
+  ctx.fillStyle = 'rgba(219,234,254,0.95)';
+  ctx.fillRect(x + CW - 16.5, y + 27, 7, 5); // blok beban
+  ctx.font = `800 7.5px ${FONT}`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText('🏗️', x + CW / 2, y + CH / 2 - 4);
-  ctx.font = `800 7.5px ${FONT}`;
   ctx.fillStyle = '#bfdbfe';
-  ctx.fillText('EZRAB', x + CW / 2, y + CH / 2 + 13);
+  ctx.fillText('EZRAB', x + CW / 2, y + CH - 12);
   ctx.strokeStyle = 'rgba(191,219,254,0.7)';
   ctx.lineWidth = 1.6;
   rr(ctx, x + 0.8, y + 0.8, CW - 1.6, CH - 1.6, 8);
@@ -168,22 +318,18 @@ function drawCardFace(ctx: CanvasRenderingContext2D, c: Card, x: number, y: numb
   ctx.fillStyle = col;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  // rank sudut
+  // rank sudut + glif material kecil
   ctx.font = `900 12px ${FONT}`;
   ctx.fillText(RANK_LABEL[c.rank], x + 10, y + 10);
-  ctx.font = `11px system-ui`;
-  ctx.fillText(info.ikon, x + 10, y + 23);
-  // tengah: ikon suit besar / tokoh untuk J Q K
-  const faceEmoji = c.rank === 11 ? '👷' : c.rank === 12 ? '🧑‍🎨' : c.rank === 13 ? '👨‍💼' : null;
-  if (faceEmoji) {
-    ctx.font = `24px system-ui`;
-    ctx.fillText(faceEmoji, x + CW / 2, y + CH / 2 - 6);
+  drawSuitGlyph(ctx, c.suit, x + 10, y + 24, 6);
+  // tengah: glif material besar; kartu wajah (J/Q/K) memakai helm + nama peran
+  if (c.rank >= 11) {
+    drawHelmetGlyph(ctx, x + CW / 2, y + CH / 2 - 7, 12);
     ctx.font = `800 7px ${FONT}`;
     ctx.fillStyle = info.merah ? '#b91c1c' : '#374151';
     ctx.fillText(RANK_NAME[c.rank].toUpperCase(), x + CW / 2, y + CH / 2 + 14);
   } else {
-    ctx.font = c.rank === 1 ? `26px system-ui` : `24px system-ui`;
-    ctx.fillText(info.ikon, x + CW / 2, y + CH / 2 + 1);
+    drawSuitGlyph(ctx, c.suit, x + CW / 2, y + CH / 2 + 1, c.rank === 1 ? 13 : 11.5);
     if (c.rank === 1) {
       ctx.font = `800 7px ${FONT}`;
       ctx.fillStyle = info.merah ? '#b91c1c' : '#374151';
@@ -211,7 +357,7 @@ export default function ArcadeSolitaire({ onExit }: { onExit: () => void }): Rea
   const timeRef = useRef(0);
   const [screen, setScreenState] = useState<Screen>('tutorial');
   const [muted, setMuted] = useState(false);
-  const [hud, setHud] = useState<Hud>({ score: 0, moves: 0, time: 0, stockCount: 24, canUndo: false });
+  const [hud, setHud] = useState<Hud>({ score: 0, moves: 0, time: 0, stockCount: 24, canUndo: false, movable: 0, found: 0 });
 
   const setScreen = (s: Screen): void => {
     screenRef.current = s;
@@ -227,6 +373,8 @@ export default function ArcadeSolitaire({ onExit }: { onExit: () => void }): Rea
       time: Math.floor(timeRef.current),
       stockCount: st.stock.length,
       canUndo: canUndo(st),
+      movable: movableCards(st).size,
+      found: st.foundations.reduce((n, f) => n + f.length, 0),
     } as Hud);
   };
 
@@ -505,19 +653,23 @@ export default function ArcadeSolitaire({ onExit }: { onExit: () => void }): Rea
         for (let k = 2; k >= 1; k -= 1) drawCardBack(ctx, stockRect().x + k * 1.5, stockRect().y - k * 1.5);
         drawCardBack(ctx, stockRect().x, stockRect().y);
         ctx.fillStyle = '#fff';
-        ctx.font = `900 13px ${FONT}`;
+        ctx.font = `900 11px ${FONT}`;
         ctx.textAlign = 'center';
-        ctx.fillText(String(st.stock.length), stockRect().x + CW / 2, stockRect().y + CH + 15);
+        ctx.fillText(`STOK ${st.stock.length}`, stockRect().x + CW / 2, stockRect().y + CH + 15);
       } else {
-        drawSlot(ctx, stockRect().x, stockRect().y, '🔄', 'DAUR ULANG');
+        drawSlot(ctx, stockRect().x, stockRect().y, '↻', 'DAUR ULANG');
       }
 
       // waste
       if (st.waste.length > 0) {
         const w = st.waste[st.waste.length - 1];
         if (!dragIds.has(w.id)) drawCardFace(ctx, w, wasteRect().x, wasteRect().y);
+        ctx.fillStyle = 'rgba(255,255,255,0.75)';
+        ctx.font = `800 9px ${FONT}`;
+        ctx.textAlign = 'center';
+        ctx.fillText('BUANGAN', wasteRect().x + CW / 2, wasteRect().y + CH + 14);
       } else {
-        drawSlot(ctx, wasteRect().x, wasteRect().y, '📥', 'SORTIR');
+        drawSlot(ctx, wasteRect().x, wasteRect().y, '◇', 'SORTIR');
       }
 
       // foundations (4 tower)
@@ -525,7 +677,7 @@ export default function ArcadeSolitaire({ onExit }: { onExit: () => void }): Rea
         const f = st.foundations[fi];
         const r = foundRect(fi);
         if (f.length === 0) {
-          drawSlot(ctx, r.x, r.y, '🏗️', `TOWER ${fi + 1}`);
+          drawSlot(ctx, r.x, r.y, 'A', `TOWER ${fi + 1}`);
         } else {
           const top = f[f.length - 1];
           if (!dragIds.has(top.id)) drawCardFace(ctx, top, r.x, r.y);
@@ -540,7 +692,7 @@ export default function ArcadeSolitaire({ onExit }: { onExit: () => void }): Rea
       for (let col = 0; col < 7; col += 1) {
         const pile = st.tableau[col];
         const x = tabX(col);
-        if (pile.length === 0) drawSlot(ctx, x, TAB_Y, '🚧', 'LAHAN');
+        if (pile.length === 0) drawSlot(ctx, x, TAB_Y, 'K', 'LAHAN');
         const ys = tabCardY(pile);
         for (let i = 0; i < pile.length; i += 1) {
           const c = pile[i];
@@ -548,6 +700,38 @@ export default function ArcadeSolitaire({ onExit }: { onExit: () => void }): Rea
           if (c.faceUp) drawCardFace(ctx, c, x, ys[i]);
           else drawCardBack(ctx, x, ys[i]);
         }
+      }
+
+      // sorotan umpan balik: kartu yang bisa dipindah berbingkai hijau
+      // berdenyut; stok yang masih berisi berbingkai emas (bisa diambil)
+      {
+        const movable = movableCards(st);
+        const pulse = 0.55 + 0.35 * Math.sin(Date.now() / 280);
+        ctx.save();
+        ctx.lineWidth = 2.4;
+        if (st.stock.length > 0) {
+          ctx.strokeStyle = `rgba(253,224,71,${pulse})`;
+          rr(ctx, stockRect().x - 2, stockRect().y - 2, CW + 4, CH + 4, 10);
+          ctx.stroke();
+        }
+        ctx.strokeStyle = `rgba(74,222,128,${pulse})`;
+        const wTop = st.waste[st.waste.length - 1];
+        if (wTop && movable.has(wTop.id) && !dragIds.has(wTop.id)) {
+          rr(ctx, wasteRect().x - 2, wasteRect().y - 2, CW + 4, CH + 4, 10);
+          ctx.stroke();
+        }
+        for (let col = 0; col < 7; col += 1) {
+          const pile = st.tableau[col];
+          const ys = tabCardY(pile);
+          for (let i = 0; i < pile.length; i += 1) {
+            const c = pile[i];
+            if (!movable.has(c.id) || dragIds.has(c.id)) continue;
+            const visibleH = i < pile.length - 1 ? ys[i + 1] - ys[i] + 3 : CH + 4;
+            rr(ctx, tabX(col) - 2, ys[i] - 2, CW + 4, visibleH, 9);
+            ctx.stroke();
+          }
+        }
+        ctx.restore();
       }
 
       // ghost drag
@@ -623,13 +807,19 @@ export default function ArcadeSolitaire({ onExit }: { onExit: () => void }): Rea
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '76px 10px 0', display: 'flex', alignItems: 'center', gap: 6, zIndex: 5, pointerEvents: 'none' }}>
         <div style={{ pointerEvents: 'auto', display: 'flex', gap: 6, alignItems: 'center' }}>
           <div style={{ background: 'rgba(10,25,18,0.55)', borderRadius: 11, padding: '5px 10px', color: '#fff', fontWeight: 800, fontSize: 13 }}>
-            ⭐ {hud.score}
+            SKOR {hud.score}
           </div>
           <div style={{ background: 'rgba(10,25,18,0.45)', borderRadius: 11, padding: '5px 10px', color: '#e2e8f0', fontWeight: 800, fontSize: 13 }}>
-            ⏱️ {fmt(hud.time)}
+            {fmt(hud.time)}
           </div>
           <div style={{ background: 'rgba(10,25,18,0.45)', borderRadius: 11, padding: '5px 10px', color: '#e2e8f0', fontWeight: 800, fontSize: 13 }}>
-            👆 {hud.moves}
+            LANGKAH {hud.moves}
+          </div>
+          <div style={{ background: 'rgba(10,25,18,0.45)', borderRadius: 11, padding: '5px 10px', color: hud.movable > 0 ? '#4ade80' : '#fca5a5', fontWeight: 800, fontSize: 13 }}>
+            BISA PINDAH {hud.movable}
+          </div>
+          <div style={{ background: 'rgba(10,25,18,0.45)', borderRadius: 11, padding: '5px 10px', color: '#e2e8f0', fontWeight: 800, fontSize: 13 }}>
+            TOWER {hud.found}/52
           </div>
         </div>
         <div style={{ flex: 1 }} />
@@ -649,19 +839,18 @@ export default function ArcadeSolitaire({ onExit }: { onExit: () => void }): Rea
 
       {screen === 'tutorial' && (
         <Overlay>
-          <div style={{ fontSize: 46 }}>🃏🏗️</div>
           <h2 style={titleStyle}>SOLITAIRE PROYEK</h2>
           <p style={textStyle}>
             Susun 52 kartu material ke 4 Tower (A→K per material).
-            <b> Seret</b> kartu antar Lahan (turun & beda warna), <b>ketuk</b> kartu untuk menaikkannya otomatis, <b>ketuk tumpukan</b> untuk ambil kartu baru.
+            <b> Seret</b> kartu antar Lahan (turun & beda warna), <b>ketuk</b> kartu untuk menaikkannya otomatis, <b>ketuk tumpukan STOK</b> untuk ambil kartu baru.
+            Kartu berbingkai <b style={{ color: '#4ade80' }}>hijau berdenyut</b> = bisa dipindah sekarang; stok berbingkai emas = masih bisa diambil.
           </p>
-          <button style={primaryBtn} onClick={() => { apiRef.current?.sfx.ensure(); apiRef.current?.sfx.click(); setScreen('play'); }}>Mulai Kerja 🃏</button>
+          <button style={primaryBtn} onClick={() => { apiRef.current?.sfx.ensure(); apiRef.current?.sfx.click(); setScreen('play'); }}>Mulai Kerja</button>
         </Overlay>
       )}
 
       {screen === 'pause' && (
         <Overlay>
-          <div style={{ fontSize: 40 }}>☕</div>
           <h2 style={titleStyle}>ISTIRAHAT</h2>
           <p style={textStyle}>Kartu-kartunya ditinggal, tidak ke mana-mana. Kayak progres proyek.</p>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
@@ -673,18 +862,18 @@ export default function ArcadeSolitaire({ onExit }: { onExit: () => void }): Rea
 
       {screen === 'win' && (
         <Overlay>
-          <div style={{ fontSize: 48 }}>🏆</div>
+          <div style={{ fontSize: 15, fontWeight: 900, letterSpacing: 2, color: '#4ade80' }}>— MENANG: 52/52 KARTU DI TOWER —</div>
           <h2 style={titleStyle}>PROYEK SELESAI!</h2>
           <p style={textStyle}>
-            4 Tower berdiri megah. Serah terima tanpa revisi — keajaiban konstruksi!
+            4 Tower berdiri megah (52 dari 52 kartu naik). Serah terima tanpa revisi — keajaiban konstruksi!
           </p>
           <p style={{ ...textStyle, fontSize: 16 }}>
-            ⏱️ Waktu: <b>{fmt(hud.time)}</b> {bestTime > 0 && <span>• 🏅 Terbaik: <b>{fmt(bestTime)}</b></span>}<br />
-            ⭐ Skor: <b>{hud.score}</b> • 👆 Langkah: <b>{hud.moves}</b>
+            Waktu: <b>{fmt(hud.time)}</b> {bestTime > 0 && <span>• Terbaik: <b>{fmt(bestTime)}</b></span>}<br />
+            Skor: <b>{hud.score}</b> • Langkah: <b>{hud.moves}</b>
           </p>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
-            <button style={primaryBtn} onClick={newGame}>Main Lagi 🔁</button>
-            <button style={secondaryBtn} onClick={onExit}>Tutup ✕</button>
+            <button style={primaryBtn} onClick={newGame}>Main Lagi</button>
+            <button style={secondaryBtn} onClick={onExit}>Tutup</button>
           </div>
         </Overlay>
       )}

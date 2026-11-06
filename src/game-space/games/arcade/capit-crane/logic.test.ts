@@ -5,8 +5,9 @@
 import { strict as assert } from 'node:assert';
 import {
   trolleyAt, swayAt, descendSpeed, pickKind, spawnItem, grabCheck,
-  scoreFor, comboBonus, ITEM_DEFS, TROLLEY_MIN, TROLLEY_MAX,
+  scoreFor, comboBonus, orderFor, orderBonusFor, ITEM_DEFS, TROLLEY_MIN, TROLLEY_MAX,
   GAME_DURATION, GRAB_RADIUS,
+  type ItemKind,
 } from './logic';
 
 let passed = 0;
@@ -104,6 +105,48 @@ test('comboBonus: <3 = 0, naik, dijepit 100', () => {
   assert.equal(comboBonus(2), 0);
   assert.ok(comboBonus(5) > comboBonus(3));
   assert.equal(comboBonus(999), 100);
+});
+
+console.log('\n[5] Pesanan Mandor (orderFor & orderBonusFor)');
+test('orderFor: sapuan rng mencakup semua jenis', () => {
+  const seen = new Set<ItemKind>();
+  for (let i = 0; i < 100; i += 1) seen.add(orderFor(() => i / 100));
+  for (const k of Object.keys(ITEM_DEFS) as ItemKind[]) assert.ok(seen.has(k), `tak pernah dipesan: ${k}`);
+});
+test('orderFor: excludeKind tak pernah dipilih (pesanan selalu berganti)', () => {
+  for (const ex of Object.keys(ITEM_DEFS) as ItemKind[]) {
+    for (let i = 0; i < 100; i += 1) {
+      assert.notEqual(orderFor(() => i / 100, ex), ex, `exclude=${ex} i=${i}`);
+    }
+  }
+});
+test('orderFor: tepi rng deterministik', () => {
+  assert.equal(orderFor(() => 0), 'helm');
+  assert.equal(orderFor(() => 0.999999), 'kunci-emas');
+  assert.equal(orderFor(() => 0, 'helm'), 'bata');
+  assert.equal(orderFor(() => 0.999999, 'kunci-emas'), 'semen');
+});
+test('orderBonusFor: cocok = +50% poin dibulatkan, tak cocok = 0', () => {
+  assert.equal(orderBonusFor('bata', 'bata'), 10);
+  assert.equal(orderBonusFor('helm', 'helm'), 25);
+  assert.equal(orderBonusFor('pipa', 'pipa'), 20);
+  assert.equal(orderBonusFor('semen', 'semen'), 15);
+  assert.equal(orderBonusFor('kunci-emas', 'kunci-emas'), 75);
+  assert.equal(orderBonusFor('bata', 'helm'), 0);
+  assert.equal(orderBonusFor('kunci-emas', 'bata'), 0);
+});
+
+console.log('\n[6] Regresi grabCheck & tanpa emoji');
+test('REGRESI grabCheck: item tepat sejauh GRAB_RADIUS tetap kena capit', () => {
+  const items = [{ id: 1, kind: 'bata' as const, x: 100 + GRAB_RADIUS }];
+  const got = grabCheck(100, 400, items, 400);
+  assert.ok(got && got.id === 1, 'batas radius harus inklusif');
+  assert.equal(grabCheck(100, 400, [{ id: 2, kind: 'bata' as const, x: 100 + GRAB_RADIUS + 0.01 }], 400), null);
+});
+test('ITEM_DEFS tanpa field emoji (glif digambar prosedural)', () => {
+  for (const k of Object.keys(ITEM_DEFS) as ItemKind[]) {
+    assert.ok(!('emoji' in ITEM_DEFS[k]), `${k} masih punya field emoji`);
+  }
 });
 
 console.log(`\n${passed} lulus, ${failed} gagal${failed > 0 ? `: ${failures.join(', ')}` : ''}`);

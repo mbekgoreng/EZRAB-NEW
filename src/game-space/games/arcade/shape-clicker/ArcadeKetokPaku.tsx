@@ -9,6 +9,7 @@ import { bestKey, getBest, setBest } from '../../../engine2d/best';
 import { popText } from '../../../engine2d/juice2d';
 import {
   levelFor, maxActiveAt, spawnDelayAt, upTimeAt, nextKind, tapPoints, gradeFor,
+  hitsNeededFor, partialPoints, nailDepthFor,
   type NailKind,
 } from './logic';
 
@@ -25,6 +26,9 @@ interface Nail {
   age: number;
   upTime: number;
   r: number;
+  /** Ketokan yang sudah masuk & yang dibutuhkan sampai tenggelam penuh. */
+  hitsDone: number;
+  hitsNeeded: number;
 }
 
 interface Ring { x: number; y: number; age: number; gold: boolean; }
@@ -90,7 +94,7 @@ export default function ArcadeKetokPaku({ onExit }: { onExit: () => void }): Rea
       const nb = setBest(BK, s.score);
       sfx.fail();
       const wrap = wrapRef.current;
-      if (wrap) popText(wrap, '🔩 PAKU LEPAS SEMUA!', { size: 26, color: '#fca5a5' });
+      if (wrap) popText(wrap, 'PAKU LEPAS SEMUA!', { size: 26, color: '#fca5a5' });
       api.shake.add(0.7);
       window.setTimeout(() => {
         api.pushHud({ score: s.score, level: s.level, lives: s.lives, streak: s.streak, best: nb });
@@ -115,6 +119,7 @@ export default function ArcadeKetokPaku({ onExit }: { onExit: () => void }): Rea
             id: s.nextId++, kind, x, y,
             age: 0, upTime: upTimeAt(s.level, rng),
             r: kind === 'emas' ? 30 : 26,
+            hitsDone: 0, hitsNeeded: hitsNeededFor(kind, s.level),
           });
           sfx.whoosh();
           return;
@@ -125,14 +130,38 @@ export default function ArcadeKetokPaku({ onExit }: { onExit: () => void }): Rea
     api.input.onDown = (p) => {
       sfx.ensure();
       if (screenRef.current !== 'play' || s.over) return;
-      // paku aktif terdekat yang kena ketuk
+      // paku aktif terdekat yang kena ketuk — titik uji mengikuti kepala paku
+      // yang DIGAMBAR (kepala turun seiring kedalaman ketokan yang masuk)
       let best: Nail | null = null;
       let bestD = 52;
       for (const n of s.nails) {
-        const d = Math.hypot(p.x - n.x, p.y - (n.y - n.r * 1.4));
+        const headY = n.y - n.r * 2.2 * (1 - nailDepthFor(n.hitsDone, n.hitsNeeded) * 0.78) + 5;
+        const d = Math.hypot(p.x - n.x, p.y - headY);
         if (d < bestD) { bestD = d; best = n; }
       }
       if (best) {
+        best.hitsDone += 1;
+        if (best.hitsDone < best.hitsNeeded) {
+          // KETOKAN PARSIAL: paku makin tenggelam, poin kecil, streak diam —
+          // paku tetap hidup sampai tenggelam penuh atau upTime habis.
+          const pp = partialPoints(best.kind);
+          s.score += pp;
+          sfx.thud(0.75 + nailDepthFor(best.hitsDone, best.hitsNeeded) * 0.35);
+          api.shake.add(0.12);
+          s.rings.push({ x: best.x, y: best.y - best.r, age: 0, gold: best.kind === 'emas' });
+          api.particles.spawn(best.x, best.y - best.r * 1.6, {
+            count: 6, colors: ['#d1d5db', '#9ca3af'],
+            speed: [60, 200], life: [0.2, 0.45], size: [2, 4], gravity: 620, shape: 'spark', rotation: true,
+          });
+          if (pp > 0) {
+            api.scores.add(best.x, best.y - best.r * 2.6, `+${pp}`, {
+              color: '#bae6fd', size: 14,
+            });
+          }
+          push();
+          return;
+        }
+        // KETOKAN PENUTUP: tenggelam penuh — poin penuh + streak berjalan.
         s.nails = s.nails.filter((n) => n !== best);
         const res = tapPoints(best.kind, s.streak);
         s.streak = res.newStreak;
@@ -148,7 +177,7 @@ export default function ArcadeKetokPaku({ onExit }: { onExit: () => void }): Rea
           colors: gold ? ['#fde047', '#fbbf24', '#fff7d6'] : ['#d1d5db', '#6b7280', '#fef3c7'],
           speed: [80, 320], life: [0.3, 0.7], size: [2, 5], gravity: 620, shape: 'spark', rotation: true,
         });
-        api.scores.add(best.x, best.y - best.r * 2.6, `+${res.points}${gold ? ' ✨' : ''}`, {
+        api.scores.add(best.x, best.y - best.r * 2.6, `+${res.points}`, {
           color: gold ? '#fde047' : '#ffffff', size: gold ? 24 : 19,
         });
         // naik level?
@@ -156,12 +185,12 @@ export default function ArcadeKetokPaku({ onExit }: { onExit: () => void }): Rea
         if (lv > s.level) {
           s.level = lv;
           const wrap = wrapRef.current;
-          if (wrap) popText(wrap, `📐 LEVEL ${lv} — MAKIN RAMAI!`, { size: 22, color: '#7dd3fc' });
+          if (wrap) popText(wrap, `LEVEL ${lv} — MAKIN RAMAI & KERAS!`, { size: 22, color: '#7dd3fc' });
           sfx.chime(3, 660);
         }
         const wrap2 = wrapRef.current;
         if (s.streak > 0 && s.streak % 8 === 0 && wrap2) {
-          popText(wrap2, `🔨 Streak x${s.streak}!`, { size: 20, color: '#fdba74' });
+          popText(wrap2, `Streak x${s.streak}!`, { size: 20, color: '#fdba74' });
         }
       } else {
         // salah ketok: streak putus
@@ -197,7 +226,7 @@ export default function ArcadeKetokPaku({ onExit }: { onExit: () => void }): Rea
         s.streak = 0;
         sfx.thud(0.6);
         const wrap = wrapRef.current;
-        if (wrap) popText(wrap, '🔩 Paku lepas! −1 nyawa', { size: 15, color: '#fca5a5' });
+        if (wrap) popText(wrap, 'Paku belum tuntas — lepas! −1 nyawa', { size: 15, color: '#fca5a5' });
         api.particles.spawn(n.x, n.y, {
           count: 8, colors: ['#6b7280', '#374151'],
           speed: [40, 160], life: [0.3, 0.5], size: [2, 4], gravity: 500, shape: 'circle',
@@ -264,7 +293,7 @@ export default function ArcadeKetokPaku({ onExit }: { onExit: () => void }): Rea
       ctx.fillStyle = 'rgba(224,242,254,0.85)';
       ctx.font = `900 12px ${FONT}`;
       ctx.textAlign = 'center';
-      ctx.fillText('📐 GAMBAR KERJA — DENAH PAKU LANTAI 1', W / 2, H - 14);
+      ctx.fillText('GAMBAR KERJA — DENAH PAKU LANTAI 1', W / 2, H - 14);
     };
 
     const drawNailHole = (ctx: CanvasRenderingContext2D, n: Nail): void => {
@@ -283,7 +312,10 @@ export default function ArcadeKetokPaku({ onExit }: { onExit: () => void }): Rea
       const sink = n.age > sinkStart ? clamp(1 - (n.age - sinkStart) / 0.18, 0, 1) : 1;
       const pop = grow * sink;
       if (pop <= 0.01) return;
-      const nh = (n.r * 2.2) * pop;
+      // kedalaman ketokan: tiap ketokan parsial menenggelamkan paku —
+      // batang yang menonjol makin pendek (faktor hingga 0.22× saat tuntas)
+      const depth = nailDepthFor(n.hitsDone, n.hitsNeeded);
+      const nh = (n.r * 2.2) * pop * (1 - depth * 0.78);
       const wob = Math.sin(n.age * 9 + n.x) * 0.06 * (1 - grow * 0.5);
       ctx.save();
       ctx.translate(n.x, n.y);
@@ -351,6 +383,37 @@ export default function ArcadeKetokPaku({ onExit }: { onExit: () => void }): Rea
       ctx.beginPath();
       ctx.ellipse(0, 2, n.r * 1.15, n.r * 0.5, 0, -Math.PI / 2, -Math.PI / 2 + TAU * frac);
       ctx.stroke();
+      // KEDALAMAN: cincin progres mengelilingi kepala paku — busur terisi
+      // sebanding ketokan masuk / ketokan dibutuhkan (digambar prosedural)
+      if (n.hitsNeeded > 1) {
+        ctx.strokeStyle = 'rgba(2,6,23,0.55)';
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.ellipse(0, top + 5, n.r * 0.82, n.r * 0.42, 0, 0, TAU);
+        ctx.stroke();
+        ctx.strokeStyle = n.kind === 'emas' ? '#fde047' : '#38bdf8';
+        ctx.lineWidth = 3.5;
+        ctx.beginPath();
+        ctx.ellipse(0, top + 5, n.r * 0.82, n.r * 0.42, 0, -Math.PI / 2, -Math.PI / 2 + TAU * depth);
+        ctx.stroke();
+        // pip penanda ketokan di atas kepala: terisi = sudah diketok
+        for (let i = 0; i < n.hitsNeeded; i += 1) {
+          const px = (i - (n.hitsNeeded - 1) / 2) * 13;
+          const py = top - 16;
+          ctx.beginPath();
+          ctx.arc(px, py, 4, 0, TAU);
+          if (i < n.hitsDone) {
+            ctx.fillStyle = n.kind === 'emas' ? '#fde047' : '#38bdf8';
+            ctx.fill();
+          } else {
+            ctx.fillStyle = 'rgba(2,6,23,0.5)';
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(224,242,254,0.85)';
+            ctx.lineWidth = 1.4;
+            ctx.stroke();
+          }
+        }
+      }
       ctx.restore();
     };
 
@@ -424,29 +487,35 @@ export default function ArcadeKetokPaku({ onExit }: { onExit: () => void }): Rea
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', zIndex: 5, pointerEvents: 'none' }}>
         <div style={{ pointerEvents: 'auto', background: 'rgba(8,20,35,0.6)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 14, padding: '7px 12px', color: '#fff', backdropFilter: 'blur(6px)', minWidth: 132 }}>
           <div style={{ fontWeight: 900, fontSize: 17, color: '#7dd3fc' }}>{hud.score.toLocaleString('id-ID')}</div>
-          <div style={{ fontSize: 12, marginTop: 3, opacity: 0.95 }}>
-            {'❤️'.repeat(Math.max(0, hud.lives))}{'🖤'.repeat(Math.max(0, MAX_LIVES - hud.lives))}
-            <span style={{ marginLeft: 6 }}>📐 Lv.{hud.level}</span>
+          <div style={{ fontSize: 12, marginTop: 3, opacity: 0.95, display: 'flex', alignItems: 'center', gap: 2 }}>
+            {Array.from({ length: MAX_LIVES }, (_, i) => (
+              <HeartIcon key={i} filled={i < Math.max(0, hud.lives)} />
+            ))}
+            <span style={{ marginLeft: 6 }}>Lv.{hud.level}</span>
           </div>
-          {hud.streak >= 2 && <div style={{ fontSize: 12, color: '#fdba74', fontWeight: 900 }}>🔨 Streak x{hud.streak}</div>}
+          {hud.streak >= 2 && <div style={{ fontSize: 12, color: '#fdba74', fontWeight: 900 }}>Streak x{hud.streak}</div>}
         </div>
         <div style={{ display: 'flex', gap: 8, pointerEvents: 'auto' }}>
           {(screen === 'play' || screen === 'pause') && (
-            <button style={btn} onClick={togglePause} aria-label="Jeda">{screen === 'play' ? '⏸' : '▶'}</button>
+            <button style={btn} onClick={togglePause} aria-label="Jeda">{screen === 'play' ? <PauseIcon /> : <PlayIcon />}</button>
           )}
-          <button style={btn} onClick={toggleMute} aria-label="Suara">{muted ? '🔇' : '🔊'}</button>
-          <button style={btn} onClick={onExit} aria-label="Keluar">✕</button>
+          <button style={btn} onClick={toggleMute} aria-label="Suara">{muted ? <SpeakerOffIcon /> : <SpeakerOnIcon />}</button>
+          <button style={btn} onClick={onExit} aria-label="Keluar"><CloseIcon /></button>
         </div>
       </div>
 
       {screen === 'tutorial' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>🔩</div>
+          <div style={{ display: 'flex', justifyContent: 'center' }}><NailArt /></div>
           <h2 style={h2}>KETOK PAKU</h2>
           <p style={p}>
-            Paku-paku <b>menonjol</b> di atas gambar kerja — <b>ketuk</b> secepatnya
-            sebelum tenggelam lagi! Tiap <b>8 ketokan = naik level</b> (makin ramai & cepat).
-            ✨ <b>Paku emas</b> = bonus. Paku yang lolos = <b>−1 nyawa</b>!
+            Paku-paku <b>menonjol</b> di atas gambar kerja — <b>ketok berulang kali</b> sampai
+            tenggelam penuh sebelum waktunya habis! Paku biasa butuh <b>2–4 ketokan</b> (level
+            makin tinggi, paku makin keras); ketokan awal memberi poin kecil, ketokan penutup
+            memberi <b>poin penuh + streak</b>. Cincin & titik di kepala paku menunjukkan
+            kedalamannya. Tiap <b>8 paku tuntas = naik level</b>.
+            <b style={{ color: '#fde047' }}> Paku emas</b> cukup 1 ketokan = bonus.
+            Paku yang lolos belum tuntas = <b>−1 nyawa & streak putus</b>!
           </p>
           {hud.best > 0 && <p style={p}>Skor terbaik: <b style={{ color: '#fde047' }}>{hud.best.toLocaleString('id-ID')}</b></p>}
           <button style={primaryBtn} onClick={startGame}>Mulai Mengetok</button>
@@ -454,7 +523,11 @@ export default function ArcadeKetokPaku({ onExit }: { onExit: () => void }): Rea
       )}
       {screen === 'pause' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>☕</div>
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <span style={{ width: 56, height: 56, borderRadius: '50%', border: '2px solid rgba(125,211,252,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#7dd3fc' }}>
+              <PauseIcon size={26} />
+            </span>
+          </div>
           <h2 style={h2}>JEDA</h2>
           <p style={p}>Paku-pakunya ikut ngopi. Gambar kerjanya dijaga.</p>
           <button style={primaryBtn} onClick={togglePause}>Lanjutkan</button>
@@ -462,7 +535,7 @@ export default function ArcadeKetokPaku({ onExit }: { onExit: () => void }): Rea
       )}
       {screen === 'over' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>{grade === 'S' ? '🏆' : '🔩'}</div>
+          <div style={{ display: 'flex', justifyContent: 'center' }}>{grade === 'S' ? <TrophyIcon /> : <NailArt />}</div>
           <h2 style={h2}>PAKU HABIS!</h2>
           <div style={{ fontSize: 40, fontWeight: 900, color: '#7dd3fc' }}>{hud.score.toLocaleString('id-ID')}</div>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'center', margin: '10px 0' }}>
@@ -494,6 +567,104 @@ function Overlay({ children }: { children: React.ReactNode }): React.JSX.Element
         {children}
       </div>
     </div>
+  );
+}
+
+/* ---- Ikon SVG inline (pengganti emoji HUD/overlay) ---- */
+
+function HeartIcon({ filled }: { filled: boolean }): React.JSX.Element {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M12 21s-7.5-4.7-10-9.3C.3 8.6 2.2 5 5.7 5c2 0 3.4 1.1 4.3 2.4h4c.9-1.3 2.3-2.4 4.3-2.4 3.5 0 5.4 3.6 3.7 6.7C19.5 16.3 12 21 12 21z"
+        transform="scale(0.92) translate(1 0)"
+        fill={filled ? '#f87171' : 'rgba(255,255,255,0.18)'}
+        stroke={filled ? '#fca5a5' : 'rgba(255,255,255,0.35)'}
+        strokeWidth="1.4"
+      />
+    </svg>
+  );
+}
+
+function PauseIcon({ size = 18 }: { size?: number }): React.JSX.Element {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <rect x="6" y="5" width="4" height="14" rx="1" />
+      <rect x="14" y="5" width="4" height="14" rx="1" />
+    </svg>
+  );
+}
+
+function PlayIcon({ size = 18 }: { size?: number }): React.JSX.Element {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M8 5.5v13l11-6.5z" />
+    </svg>
+  );
+}
+
+function SpeakerOnIcon(): React.JSX.Element {
+  return (
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M11 5 6 9H3v6h3l5 4z" fill="currentColor" stroke="none" />
+      <path d="M15.5 8.5a5 5 0 0 1 0 7" />
+      <path d="M18.2 6a9 9 0 0 1 0 12" />
+    </svg>
+  );
+}
+
+function SpeakerOffIcon(): React.JSX.Element {
+  return (
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M11 5 6 9H3v6h3l5 4z" fill="currentColor" stroke="none" />
+      <line x1="16" y1="9" x2="22" y2="15" />
+      <line x1="22" y1="9" x2="16" y2="15" />
+    </svg>
+  );
+}
+
+function CloseIcon(): React.JSX.Element {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true">
+      <line x1="5" y1="5" x2="19" y2="19" />
+      <line x1="19" y1="5" x2="5" y2="19" />
+    </svg>
+  );
+}
+
+function TrophyIcon(): React.JSX.Element {
+  return (
+    <svg width="46" height="46" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M7 4h10v5a5 5 0 0 1-10 0z" fill="#fbbf24" stroke="#b45309" strokeWidth="1.2" />
+      <path d="M7 5H4a3 3 0 0 0 3 4M17 5h3a3 3 0 0 1-3 4" stroke="#b45309" strokeWidth="1.4" />
+      <path d="M12 14v3M8.5 20h7M10 17h4l.6 3H9.4z" fill="#f59e0b" stroke="#b45309" strokeWidth="1.1" />
+    </svg>
+  );
+}
+
+/** Ilustrasi paku prosedural (SVG): kepala bundar + batang berulir + bayangan. */
+function NailArt(): React.JSX.Element {
+  return (
+    <svg width="52" height="52" viewBox="0 0 52 52" aria-hidden="true">
+      <defs>
+        <linearGradient id="kp-steel" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stopColor="#4b5563" />
+          <stop offset="0.4" stopColor="#e5e7eb" />
+          <stop offset="0.6" stopColor="#9ca3af" />
+          <stop offset="1" stopColor="#374151" />
+        </linearGradient>
+        <linearGradient id="kp-head" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#f3f4f6" />
+          <stop offset="0.5" stopColor="#9ca3af" />
+          <stop offset="1" stopColor="#4b5563" />
+        </linearGradient>
+      </defs>
+      <ellipse cx="26" cy="46" rx="15" ry="4" fill="rgba(2,6,23,0.55)" />
+      <rect x="21.5" y="14" width="9" height="30" rx="3" fill="url(#kp-steel)" />
+      <path d="M22 22h8M22 29h8M22 36h8" stroke="rgba(30,35,45,0.55)" strokeWidth="1.4" />
+      <ellipse cx="26" cy="13" rx="12" ry="5.5" fill="url(#kp-head)" />
+      <ellipse cx="21.5" cy="11" rx="5" ry="2" fill="rgba(255,255,255,0.55)" />
+    </svg>
   );
 }
 

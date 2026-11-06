@@ -9,9 +9,9 @@ import { bestKey, getBest, setBest } from '../../../engine2d/best';
 import { popText } from '../../../engine2d/juice2d';
 import {
   createBoard, trySwap, resolveBoard, detonate, hasPossibleMove, shuffleBoard,
-  levelConfig, MATERIALS,
+  levelConfig, MATERIALS, hintMove,
   ROWS, COLS,
-  type Board, type Pos, type ResolveResult, type Special,
+  type Board, type MovePair, type Pos, type ResolveResult, type Special,
 } from './logic';
 
 const FONT = "'Plus Jakarta Sans','Inter',system-ui,sans-serif";
@@ -49,6 +49,8 @@ interface S {
   invalidFlash: number; // timer tile invalid
   invalidA: Pos | null;
   invalidB: Pos | null;
+  hint: MovePair | null; // petunjuk langkah sah saat pemain lama diam
+  idleT: number; // detik sejak aktivitas/animasi terakhir
   // layout
   bx: number; by: number; cell: number;
 }
@@ -60,7 +62,24 @@ const MAT_COLORS: [string, string][] = [
   ['#d9a05b', '#8a5a24'], // kayu
   ['#a5e3fc', '#0369a1'], // kaca
 ];
-const MAT_EMOJI = ['🧱', '🧺', '🔩', '🪵', '🪟'];
+/** Swatch prosedural DOM per material (gradasi sama dengan ubin Canvas). */
+function MatSwatches({ size = 13 }: { size?: number }): React.JSX.Element {
+  return (
+    <span style={{ display: 'inline-flex', gap: 5, verticalAlign: 'middle' }}>
+      {MAT_COLORS.map(([c0, c1], i) => (
+        <span
+          key={i}
+          title={MATERIALS[i]}
+          style={{
+            width: size, height: size, borderRadius: 4, display: 'inline-block',
+            background: `linear-gradient(180deg, ${c0}, ${c1})`,
+            border: '1px solid rgba(0,0,0,0.35)', boxShadow: 'inset 0 2px 3px rgba(255,255,255,0.35)',
+          }}
+        />
+      ))}
+    </span>
+  );
+}
 
 export default function ArcadeCandyCrush({ onExit }: { onExit: () => void }): React.JSX.Element {
   const wrapRef = useRef<HTMLDivElement | null>(null);
@@ -85,6 +104,7 @@ export default function ArcadeCandyCrush({ onExit }: { onExit: () => void }): Re
       phase: 'idle', phaseT: 0, resolve: null, stepIdx: 0,
       over: false, won: false, seed: (Date.now() % 100000) | 0,
       invalidFlash: 0, invalidA: null, invalidB: null,
+      hint: null, idleT: 0,
       bx: 0, by: 0, cell: 40,
     };
 
@@ -165,6 +185,8 @@ export default function ArcadeCandyCrush({ onExit }: { onExit: () => void }): Re
       s.resolve = null;
       s.over = false;
       s.won = false;
+      s.hint = null;
+      s.idleT = 0;
       // render cells langsung tanpa animasi jatuh
       s.cells = [];
       for (let r = 0; r < ROWS; r += 1) {
@@ -199,11 +221,13 @@ export default function ArcadeCandyCrush({ onExit }: { onExit: () => void }): Re
         s.phase = 'idle';
         s.resolve = null;
         s.sel = null;
+        s.hint = null;
+        s.idleT = 0;
         if (!hasPossibleMove(s.board)) {
           s.board = shuffleBoard(s.board, (s.seed + 7) | 0);
           reconcile(s.board);
           const wrap = wrapRef.current;
-          if (wrap) popText(wrap, '🔀 Material diacak!', { size: 20, color: '#7dd3fc' });
+          if (wrap) popText(wrap, 'Material diacak ulang!', { size: 20, color: '#7dd3fc' });
           api.sfx.whoosh();
         }
         if (s.score >= s.target && !s.over) {
@@ -212,7 +236,7 @@ export default function ArcadeCandyCrush({ onExit }: { onExit: () => void }): Re
           const nb = setBest(BK, s.score);
           api.sfx.chime(4);
           const wrap = wrapRef.current;
-          if (wrap) popText(wrap, '🎯 TARGET TERCAPAI!', { size: 30, color: '#4ade80' });
+          if (wrap) popText(wrap, 'TARGET TERCAPAI!', { size: 30, color: '#4ade80' });
           api.particles.spawn(api.W / 2, api.H * 0.45, {
             count: 70, colors: ['#4ade80', '#bbf7d0', '#fde047', '#ffffff'],
             speed: [120, 420], life: [0.6, 1.2], size: [2, 6], gravity: 300, shape: 'rect', rotation: true,
@@ -268,6 +292,8 @@ export default function ArcadeCandyCrush({ onExit }: { onExit: () => void }): Re
     };
 
     const doSwap = (a: Pos, b: Pos): void => {
+      s.hint = null;
+      s.idleT = 0;
       const info = trySwap(s.board, a, b);
       if (!info) {
         s.invalidA = a; s.invalidB = b; s.invalidFlash = 0.35;
@@ -302,6 +328,8 @@ export default function ArcadeCandyCrush({ onExit }: { onExit: () => void }): Re
     api.input.onDown = (p) => {
       api.sfx.ensure();
       if (screenRef.current !== 'play' || s.over || s.phase !== 'idle') return;
+      s.idleT = 0;
+      s.hint = null;
       downPos = tileFromPoint(p.x, p.y);
     };
 
@@ -355,6 +383,11 @@ export default function ArcadeCandyCrush({ onExit }: { onExit: () => void }): Re
       if (s.invalidFlash > 0) s.invalidFlash -= dt;
 
       if (screenRef.current !== 'play' || s.over) return;
+      // petunjuk langkah sah: muncul setelah 5 detik diam di fase idle
+      if (s.phase === 'idle') {
+        s.idleT += dt;
+        if (s.idleT >= 5 && !s.hint) s.hint = hintMove(s.board);
+      }
       if (s.phase === 'swapAnim' || s.phase === 'crushAnim' || s.phase === 'fallAnim') {
         s.phaseT -= dt;
         if (s.phaseT <= 0) {
@@ -548,7 +581,7 @@ export default function ArcadeCandyCrush({ onExit }: { onExit: () => void }): Re
       ctx.font = `800 11px ${FONT}`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText('🏗️ GUDANG MATERIAL — GESER / KETUK UNTUK TUKAR', W / 2, s.by - 24);
+      ctx.fillText('GUDANG MATERIAL — GESER / KETUK UNTUK TUKAR', W / 2, s.by - 24);
       // sel dipilih
       if (s.sel && s.phase === 'idle') {
         const { x, y } = cellXY(s.sel.r, s.sel.c);
@@ -561,6 +594,27 @@ export default function ArcadeCandyCrush({ onExit }: { onExit: () => void }): Re
         ctx.beginPath();
         if (typeof ctx.roundRect === 'function') ctx.roundRect(x - 2, y - 2, s.cell + 4, s.cell + 4, 10);
         else ctx.rect(x - 2, y - 2, s.cell + 4, s.cell + 4);
+        ctx.stroke();
+        ctx.restore();
+      }
+      // sorotan petunjuk: dua ubin langkah sah berdenyut cyan + garis penghubung
+      if (s.hint && s.phase === 'idle') {
+        const pulse = 0.55 + 0.45 * Math.sin(performance.now() / 220);
+        ctx.save();
+        ctx.strokeStyle = `rgba(125,211,252,${0.5 + 0.5 * pulse})`;
+        ctx.lineWidth = 3.5;
+        ctx.shadowColor = 'rgba(125,211,252,0.85)';
+        ctx.shadowBlur = 12;
+        const pts = [s.hint.a, s.hint.b].map((pp) => cellXY(pp.r, pp.c));
+        for (const pt of pts) {
+          ctx.beginPath();
+          if (typeof ctx.roundRect === 'function') ctx.roundRect(pt.x - 2, pt.y - 2, s.cell + 4, s.cell + 4, 10);
+          else ctx.rect(pt.x - 2, pt.y - 2, s.cell + 4, s.cell + 4);
+          ctx.stroke();
+        }
+        ctx.beginPath();
+        ctx.moveTo(pts[0].x + s.cell / 2, pts[0].y + s.cell / 2);
+        ctx.lineTo(pts[1].x + s.cell / 2, pts[1].y + s.cell / 2);
         ctx.stroke();
         ctx.restore();
       }
@@ -648,31 +702,29 @@ export default function ArcadeCandyCrush({ onExit }: { onExit: () => void }): Re
             <div style={{ height: '100%', width: `${progress * 100}%`, background: 'linear-gradient(90deg,#4ade80,#22c55e)', borderRadius: 999, transition: 'width 0.3s' }} />
           </div>
           <div style={{ fontSize: 12, marginTop: 4, opacity: 0.9 }}>
-            🎯 {hud.target.toLocaleString('id-ID')} &nbsp;•&nbsp; 👣 {hud.moves} langkah
+            Target {hud.target.toLocaleString('id-ID')} &nbsp;•&nbsp; Sisa {(hud.target - hud.score).toLocaleString('id-ID')} &nbsp;•&nbsp; {hud.moves} langkah
           </div>
-          <div style={{ fontSize: 13, marginTop: 2, opacity: 0.9, letterSpacing: 2 }}>
-            {MAT_EMOJI.map((e, i) => (
-              <span key={i} title={MATERIALS[i]} style={{ marginRight: 6 }}>{e}</span>
-            ))}
+          <div style={{ marginTop: 5 }}>
+            <MatSwatches />
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8, pointerEvents: 'auto' }}>
           {(screen === 'play' || screen === 'pause') && (
-            <button style={btn} onClick={togglePause} aria-label="Jeda">{screen === 'play' ? '⏸' : '▶'}</button>
+            <button style={btn} onClick={togglePause} aria-label="Jeda">{screen === 'play' ? 'II' : '▶'}</button>
           )}
-          <button style={btn} onClick={toggleMute} aria-label="Suara">{muted ? '🔇' : '🔊'}</button>
-          <button style={btn} onClick={onExit} aria-label="Keluar">✕</button>
+          <button style={{ ...btn, fontSize: 10, fontWeight: 800 }} onClick={toggleMute} aria-label="Suara">{muted ? 'MATI' : 'NYALA'}</button>
+          <button style={btn} onClick={onExit} aria-label="Keluar">×</button>
         </div>
       </div>
 
       {screen === 'tutorial' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>🧱</div>
+          <div><MatSwatches size={26} /></div>
           <h2 style={h2}>MATERIAL MATCH</h2>
           <p style={p}>
             <b>Ketuk / geser</b> 2 material bersebelahan untuk menukar — buat <b>3+ sejajar</b> agar hancur!
-            4 sejajar jadi <b>⚡ Baja</b>, 5 sejajar jadi <b>🧨 Dinamit</b>.
-            Capai target skor sebelum langkah habis!
+            4 sejajar jadi <b>Baja Berulir</b>, 5 sejajar jadi <b>Dinamit</b>.
+            Capai target skor sebelum langkah habis! Diam 5 detik? Dua ubin yang berdenyut biru adalah langkah yang sah.
           </p>
           {hud.best > 0 && <p style={p}>Skor terbaik: <b style={{ color: '#fde047' }}>{hud.best.toLocaleString('id-ID')}</b></p>}
           <button style={primaryBtn} onClick={startGame}>Mulai Menyusun</button>
@@ -680,7 +732,7 @@ export default function ArcadeCandyCrush({ onExit }: { onExit: () => void }): Re
       )}
       {screen === 'pause' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>☕</div>
+          <div style={{ fontSize: 42, fontWeight: 900, color: '#fde047', letterSpacing: 6 }}>II</div>
           <h2 style={h2}>JEDA</h2>
           <p style={p}>Materialnya ditutup terpal dulu. Santai...</p>
           <button style={primaryBtn} onClick={togglePause}>Lanjutkan</button>
@@ -688,12 +740,12 @@ export default function ArcadeCandyCrush({ onExit }: { onExit: () => void }): Re
       )}
       {screen === 'over' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>{hud.score >= hud.target ? '🏆' : '🧱'}</div>
+          <div><MatSwatches size={26} /></div>
           <h2 style={h2}>{hud.score >= hud.target ? 'GUDANG RAPI!' : 'LANGKAH HABIS'}</h2>
           <div style={{ fontSize: 40, fontWeight: 900, color: '#fde047' }}>{hud.score.toLocaleString('id-ID')}</div>
           <p style={p}>Target: {hud.target.toLocaleString('id-ID')} • Level {hud.level}</p>
           {hud.score >= hud.target ? (
-            <button style={primaryBtn} onClick={nextLevel}>Level {hud.level + 1} ➜</button>
+            <button style={primaryBtn} onClick={nextLevel}>Level {hud.level + 1} →</button>
           ) : (
             <button style={primaryBtn} onClick={startGame}>Coba Lagi</button>
           )}

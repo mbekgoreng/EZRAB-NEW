@@ -1,14 +1,17 @@
 /**
  * Ular Kabel — ular kabel listrik merayap di area proyek.
- * Makan konektor 🔌 untuk memanjang (makin banyak = makin cepat!).
+ * Makan konektor (digambar prosedural: stekker dua pin + ekor kabel)
+ * untuk memanjang. Level naik tiap 5 konektor — tick makin cepat.
  * Jangan menabrak pagar proyek atau menggigit kabel sendiri.
- * Konektor emas ⭐ = bonus 25, muncul sebentar saja!
+ * Konektor emas (varian warna emas prosedural) = bonus 25, muncul sebentar!
  */
 import React, { useRef, useState } from 'react';
 import { useGameCanvas, sfx, type GameApi } from '../../../engine2d';
 import { bestKey, getBest, setBest } from '../../../engine2d/best';
 import {
-  COLS, ROWS, DIRS, createGame, turn, step, stepInterval, gradeFor,
+  COLS, ROWS, DIRS, createGame, turn, step, gradeFor,
+  levelFor, tickSecondsFor, progressInLevel, connectorsToNextLevel,
+  CONNECTORS_PER_LEVEL,
   type SnakeState, type DirName,
 } from './logic';
 
@@ -23,7 +26,7 @@ const ARCADE =
   new URLSearchParams(window.location.search).has('arcade');
 
 type Screen = 'ready' | 'play' | 'pause' | 'over';
-interface Hud { score: number; eaten: number; best: number; speed: number }
+interface Hud { score: number; eaten: number; best: number; speed: number; level: number; toNext: number }
 
 export default function ArcadeSnake({ onExit }: { onExit: () => void }): React.JSX.Element {
   const apiRef = useRef<GameApi | null>(null);
@@ -32,9 +35,10 @@ export default function ArcadeSnake({ onExit }: { onExit: () => void }): React.J
   const stRef = useRef<SnakeState | null>(null);
   const accRef = useRef(0);
   const fxRef = useRef({ t: 0, deathAt: -9 });
+  const levelRef = useRef(1);
   const swipeRef = useRef<{ x: number; y: number } | null>(null);
   const [screen, setScreen] = useState<Screen>('ready');
-  const [hud, setHud] = useState<Hud>({ score: 0, eaten: 0, best: getBest(bestKey(SLUG, 'best')), speed: 1 });
+  const [hud, setHud] = useState<Hud>({ score: 0, eaten: 0, best: getBest(bestKey(SLUG, 'best')), speed: 1, level: 1, toNext: CONNECTORS_PER_LEVEL });
   const [muted, setMuted] = useState(false);
   const [isTouch] = useState(() => typeof window !== 'undefined' && 'ontouchstart' in window);
 
@@ -46,6 +50,8 @@ export default function ArcadeSnake({ onExit }: { onExit: () => void }): React.J
       eaten: st.eaten,
       best: getBest(bestKey(SLUG, 'best')),
       speed: st.eaten + 1,
+      level: levelFor(st.eaten),
+      toNext: connectorsToNextLevel(st.eaten),
     });
   };
 
@@ -61,6 +67,7 @@ export default function ArcadeSnake({ onExit }: { onExit: () => void }): React.J
 
   const restart = (): void => {
     stRef.current = createGame(rngRef.current);
+    levelRef.current = 1;
     accRef.current = 0;
     pushHud();
     screenRef.current = 'ready';
@@ -98,7 +105,7 @@ export default function ArcadeSnake({ onExit }: { onExit: () => void }): React.J
         if (st.goldT <= 0) { st.gold = null; st.goldT = 0; }
       }
       accRef.current += dt;
-      const iv = stepInterval(st.eaten);
+      const iv = tickSecondsFor(st.eaten);
       let guard = 8;
       while (accRef.current >= iv && guard > 0) {
         guard -= 1;
@@ -115,6 +122,12 @@ export default function ArcadeSnake({ onExit }: { onExit: () => void }): React.J
           }
           api.scores.add(hx, hy - 14, '+10', { color: '#fde047', size: 18 });
           sfx.pop(1.0 + Math.min(0.8, st.eaten * 0.03));
+          const nl = levelFor(st.eaten);
+          if (nl > levelRef.current) {
+            levelRef.current = nl;
+            api.scores.add(hx, hy - 38, `LEVEL ${nl}`, { color: '#7dd3fc', size: 20 });
+            sfx.chime(2, 660);
+          }
           pushHud();
         } else if (ev === 'ate-gold') {
           const hx = (st.snake[0].x + 0.5) * CELL;
@@ -125,8 +138,13 @@ export default function ArcadeSnake({ onExit }: { onExit: () => void }): React.J
               speed: [80, 380], life: [0.4, 1.1], size: [2, 6], shape: 'rect', rotation: true,
             });
           }
-          api.scores.add(hx, hy - 16, '+25 ⭐', { color: '#fbbf24', size: 20 });
+          api.scores.add(hx, hy - 16, '+25 EMAS', { color: '#fbbf24', size: 20 });
           sfx.chime(3, 880);
+          const nl2 = levelFor(st.eaten);
+          if (nl2 > levelRef.current) {
+            levelRef.current = nl2;
+            api.scores.add(hx, hy - 40, `LEVEL ${nl2}`, { color: '#7dd3fc', size: 20 });
+          }
           pushHud();
         } else if (ev === 'died') {
           const hx = (st.snake[0].x + 0.5) * CELL;
@@ -163,13 +181,13 @@ export default function ArcadeSnake({ onExit }: { onExit: () => void }): React.J
         ctx.textAlign = 'center';
         ctx.fillStyle = '#fff'; ctx.font = `900 28px ${FONT}`;
         ctx.shadowColor = '#f59e0b'; ctx.shadowBlur = 16;
-        ctx.fillText('🐍 ULAR KABEL', LW / 2, LH * 0.32);
+        ctx.fillText('ULAR KABEL', LW / 2, LH * 0.32);
         ctx.shadowBlur = 0;
         ctx.fillStyle = '#bae6fd'; ctx.font = `700 14px ${FONT}`;
-        ctx.fillText('Makan konektor 🔌 biar kabelmu memanjang.', LW / 2, LH * 0.32 + 34);
+        ctx.fillText('Makan konektor biar kabelmu memanjang.', LW / 2, LH * 0.32 + 34);
         ctx.fillText('Jangan tabrak pagar proyek atau gigit kabel sendiri!', LW / 2, LH * 0.32 + 56);
         ctx.fillStyle = '#fde68a'; ctx.font = `600 13px ${FONT}`;
-        ctx.fillText('Konektor emas ⭐ = bonus 25 • makin kenyang makin ngebut ⚡', LW / 2, LH * 0.32 + 78);
+        ctx.fillText('Konektor emas = bonus 25 • tiap 5 konektor naik level, makin ngebut!', LW / 2, LH * 0.32 + 78);
         ctx.fillStyle = '#e2e8f0'; ctx.font = `700 13px ${FONT}`;
         ctx.fillText(isTouch ? 'Geser (swipe) untuk belok' : '← ↑ ↓ → / WASD untuk belok', LW / 2, LH * 0.32 + 102);
         const pulse = 0.7 + 0.3 * Math.sin(t * 5);
@@ -263,19 +281,19 @@ export default function ArcadeSnake({ onExit }: { onExit: () => void }): React.J
       <div style={{ position: 'relative', width: '100%', maxWidth: 560, aspectRatio: '1 / 1', maxHeight: '100%' }}>
         <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: 'block', touchAction: 'none' }} />
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 8, zIndex: 5 }}>
-          <div style={{ background: 'rgba(15,23,42,0.6)', borderRadius: 12, padding: '6px 12px', color: '#fde68a', fontWeight: 800, fontSize: 14 }}>⭐ {hud.score}</div>
-          <div style={{ background: 'rgba(15,23,42,0.6)', borderRadius: 12, padding: '6px 10px', color: '#7dd3fc', fontWeight: 800, fontSize: 13 }}>🔌 {hud.eaten}</div>
-          <div style={{ background: 'rgba(15,23,42,0.45)', borderRadius: 12, padding: '6px 10px', color: '#c4b5fd', fontWeight: 800, fontSize: 13 }}>⚡x{hud.speed}</div>
+          <div style={{ background: 'rgba(15,23,42,0.6)', borderRadius: 12, padding: '6px 12px', color: '#fde68a', fontWeight: 800, fontSize: 14 }}>Skor {hud.score}</div>
+          <div style={{ background: 'rgba(15,23,42,0.6)', borderRadius: 12, padding: '6px 10px', color: '#7dd3fc', fontWeight: 800, fontSize: 13 }}>Konektor {hud.eaten}</div>
+          <div style={{ background: 'rgba(37,99,235,0.75)', borderRadius: 12, padding: '6px 10px', color: '#fff', fontWeight: 800, fontSize: 13 }} title={`${hud.toNext} konektor lagi ke level ${hud.level + 1}`}>Lv {hud.level} <span style={{ opacity: 0.75, fontWeight: 700 }}>({progressInLevel(hud.eaten)}/{CONNECTORS_PER_LEVEL})</span></div>
           <div style={{ flex: 1 }} />
           {(screen === 'play' || screen === 'pause') && (
-            <button style={btn} onClick={screen === 'play' ? doPause : doResume} aria-label="Jeda">{screen === 'play' ? '⏸' : '▶'}</button>
+            <button style={btn} onClick={screen === 'play' ? doPause : doResume} aria-label="Jeda">{screen === 'play' ? 'II' : '>'}</button>
           )}
-          <button style={btn} onClick={toggleMute} aria-label="Bisukan">{muted ? '🔇' : '🔊'}</button>
-          <button style={btn} onClick={onExit} aria-label="Tutup">✕</button>
+          <button style={{ ...btn, fontSize: 11, fontWeight: 800 }} onClick={toggleMute} aria-label="Bisukan">{muted ? 'OFF' : 'ON'}</button>
+          <button style={btn} onClick={onExit} aria-label="Tutup">X</button>
         </div>
         {screen === 'pause' && (
           <Overlay>
-            <div style={{ fontSize: 44 }}>🔌</div>
+            <div style={{ fontSize: 30, fontWeight: 900, color: '#7dd3fc', letterSpacing: 4 }}>II</div>
             <h2 style={titleStyle}>JEDA</h2>
             <p style={textStyle}>Kabelnya ikut istirahat. Jangan sampai korslet ya!</p>
             <div style={{ display: 'flex', gap: 10 }}>
@@ -286,16 +304,16 @@ export default function ArcadeSnake({ onExit }: { onExit: () => void }): React.J
         )}
         {screen === 'over' && (
           <Overlay>
-            <div style={{ fontSize: 44 }}>⚡</div>
-            <h2 style={titleStyle}>KORSLET!</h2>
+            <div style={{ fontSize: 30, fontWeight: 900, color: '#fbbf24', letterSpacing: 2 }}>KORSLET</div>
+            <h2 style={titleStyle}>GAME OVER</h2>
             <p style={{ ...textStyle, fontSize: 16 }}>
-              Skor: <b>{hud.score}</b> • Konektor: <b>{hud.eaten}</b> 🔌<br />
+              Skor: <b>{hud.score}</b> • Konektor: <b>{hud.eaten}</b> • Level: <b>{hud.level}</b><br />
               Grade: <b>{gradeFor(hud.score)}</b> • Terbaik: <b>{hud.best}</b>
               {hud.score > 0 && hud.score >= hud.best && <span style={{ color: '#4ade80', fontWeight: 900 }}> — REKOR BARU!</span>}
             </p>
             <div style={{ display: 'flex', gap: 10 }}>
-              <button style={primaryBtn} onClick={() => { sfx.ensure(); restart(); }}>Main Lagi 🔁</button>
-              <button style={secondaryBtn} onClick={onExit}>Tutup ✕</button>
+              <button style={primaryBtn} onClick={() => { sfx.ensure(); restart(); }}>Main Lagi</button>
+              <button style={secondaryBtn} onClick={onExit}>Tutup</button>
             </div>
           </Overlay>
         )}
@@ -372,43 +390,77 @@ function stripeV(ctx: CanvasRenderingContext2D, x: number, y: number, w: number)
   ctx.closePath(); ctx.fill();
 }
 
-/** Konektor: stopkontak biru + varian emas bonus. */
+/** Konektor makanan: stekker dua pin + ekor kabel, digambar prosedural.
+ *  Varian biasa = badan biru EZRAB; varian emas = badan emas prosedural. */
 function drawFood(ctx: CanvasRenderingContext2D, st: SnakeState, t: number): void {
-  drawSocket(ctx, st.food.x, st.food.y, false, t);
-  if (st.gold) drawSocket(ctx, st.gold.x, st.gold.y, true, t);
+  drawPlugConnector(ctx, st.food.x, st.food.y, false, t);
+  if (st.gold) drawPlugConnector(ctx, st.gold.x, st.gold.y, true, t);
 }
 
-function drawSocket(ctx: CanvasRenderingContext2D, gx: number, gy: number, gold: boolean, t: number): void {
+function drawPlugConnector(ctx: CanvasRenderingContext2D, gx: number, gy: number, gold: boolean, t: number): void {
   const cx = (gx + 0.5) * CELL;
   const cy = (gy + 0.5) * CELL;
   const pulse = 1 + 0.08 * Math.sin(t * (gold ? 9 : 5));
-  const r = CELL * 0.42 * pulse;
+  const r = CELL * 0.44 * pulse;
+  // arah stekker berputar perlahan supaya terasa hidup (emas lebih cepat)
+  const ang = Math.sin(t * (gold ? 1.7 : 1.1) + gx * 1.3 + gy * 0.7) * 0.5;
   ctx.save();
   ctx.translate(cx, cy);
-  ctx.shadowColor = gold ? '#fbbf24' : '#38bdf8';
+  ctx.rotate(ang);
+  ctx.shadowColor = gold ? '#fbbf24' : '#2563EB';
   ctx.shadowBlur = gold ? 18 : 12;
-  // pelat stopkontak
+  // ekor kabel melengkung keluar dari belakang badan stekker
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = gold ? '#b45309' : '#0A2540';
+  ctx.lineWidth = r * 0.34;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(-r * 0.7, 0);
+  ctx.quadraticCurveTo(-r * 1.5, r * 0.15, -r * 1.35, r * 0.85);
+  ctx.stroke();
+  ctx.strokeStyle = gold ? '#f59e0b' : '#2563EB';
+  ctx.lineWidth = r * 0.2;
+  ctx.beginPath();
+  ctx.moveTo(-r * 0.7, 0);
+  ctx.quadraticCurveTo(-r * 1.5, r * 0.15, -r * 1.35, r * 0.85);
+  ctx.stroke();
+  // dua pin logam di depan (kanan)
+  ctx.fillStyle = '#e5e7eb';
+  ctx.strokeStyle = '#475569'; ctx.lineWidth = 1.2;
+  for (const oy of [-r * 0.38, r * 0.38]) {
+    roundRect(ctx, r * 0.55, oy - r * 0.13, r * 0.62, r * 0.26, 2); ctx.fill(); ctx.stroke();
+  }
+  // badan stekker
   const g = ctx.createLinearGradient(-r, -r, r, r);
   if (gold) { g.addColorStop(0, '#fef3c7'); g.addColorStop(0.5, '#fbbf24'); g.addColorStop(1, '#b45309'); }
-  else { g.addColorStop(0, '#e0f2fe'); g.addColorStop(0.5, '#7dd3fc'); g.addColorStop(1, '#0284c7'); }
+  else { g.addColorStop(0, '#60a5fa'); g.addColorStop(0.5, '#2563EB'); g.addColorStop(1, '#0A2540'); }
   ctx.fillStyle = g;
-  roundRect(ctx, -r, -r, r * 2, r * 2, 5); ctx.fill();
+  ctx.shadowColor = gold ? '#fbbf24' : '#2563EB';
+  ctx.shadowBlur = gold ? 16 : 10;
+  roundRect(ctx, -r * 0.75, -r * 0.72, r * 1.35, r * 1.44, r * 0.3); ctx.fill();
   ctx.shadowBlur = 0;
-  ctx.strokeStyle = gold ? '#92400e' : '#0c4a6e'; ctx.lineWidth = 2;
-  roundRect(ctx, -r, -r, r * 2, r * 2, 5); ctx.stroke();
-  // dua lubang colokan
-  ctx.fillStyle = gold ? '#78350f' : '#0c4a6e';
-  roundRect(ctx, -r * 0.55, -r * 0.28, r * 0.32, r * 0.56, 3); ctx.fill();
-  roundRect(ctx, r * 0.23, -r * 0.28, r * 0.32, r * 0.56, 3); ctx.fill();
+  ctx.strokeStyle = gold ? '#92400e' : '#0A2540'; ctx.lineWidth = 2;
+  roundRect(ctx, -r * 0.75, -r * 0.72, r * 1.35, r * 1.44, r * 0.3); ctx.stroke();
+  // grip ridge di badan
+  ctx.strokeStyle = gold ? 'rgba(146,64,14,0.6)' : 'rgba(10,37,64,0.55)';
+  ctx.lineWidth = 1.6;
+  for (const ox of [-r * 0.42, -r * 0.18, r * 0.06]) {
+    ctx.beginPath(); ctx.moveTo(ox, -r * 0.5); ctx.lineTo(ox, r * 0.5); ctx.stroke();
+  }
   // kilau
   ctx.fillStyle = 'rgba(255,255,255,0.5)';
-  ctx.fillRect(-r * 0.8, -r * 0.8, r * 1.2, r * 0.25);
+  ctx.beginPath(); ctx.ellipse(-r * 0.2, -r * 0.48, r * 0.42, r * 0.13, -0.2, 0, TAU); ctx.fill();
   if (gold) {
-    // bintang berputar
+    // percik bintang prosedural berputar (poligon 4 titik, bukan emoji)
     ctx.fillStyle = '#fffbeb';
     for (let i = 0; i < 4; i += 1) {
       const a = t * 3 + (i / 4) * TAU;
-      ctx.beginPath(); ctx.arc(Math.cos(a) * (r + 7), Math.sin(a) * (r + 7), 2.2, 0, TAU); ctx.fill();
+      const sx = Math.cos(a) * (r + 8); const sy = Math.sin(a) * (r + 8);
+      ctx.beginPath();
+      ctx.moveTo(sx, sy - 3.4); ctx.lineTo(sx + 1.2, sy - 1.2); ctx.lineTo(sx + 3.4, sy);
+      ctx.lineTo(sx + 1.2, sy + 1.2); ctx.lineTo(sx, sy + 3.4); ctx.lineTo(sx - 1.2, sy + 1.2);
+      ctx.lineTo(sx - 3.4, sy); ctx.lineTo(sx - 1.2, sy - 1.2);
+      ctx.closePath(); ctx.fill();
     }
   }
   ctx.restore();

@@ -6,18 +6,22 @@
 
 export const SIZE = 10;
 
+/** Jenis alat berat — kunci dispatch gambar vektor prosedural di komponen. */
+export type ShipKind = 'crane' | 'bulldozer' | 'excavator' | 'molen' | 'pickup';
+
 export interface ShipDef {
   name: string;
   emoji: string;
   size: number;
+  kind: ShipKind;
 }
 
 export const FLEET: ShipDef[] = [
-  { name: 'Tower Crane', emoji: '🏗️', size: 5 },
-  { name: 'Bulldozer', emoji: '🚜', size: 4 },
-  { name: 'Excavator', emoji: '🦺', size: 3 },
-  { name: 'Molen', emoji: '🚚', size: 3 },
-  { name: 'Pickup', emoji: '🛻', size: 2 },
+  { name: 'Tower Crane', emoji: '🏗️', size: 5, kind: 'crane' },
+  { name: 'Bulldozer', emoji: '🚜', size: 4, kind: 'bulldozer' },
+  { name: 'Excavator', emoji: '🦺', size: 3, kind: 'excavator' },
+  { name: 'Molen', emoji: '🚚', size: 3, kind: 'molen' },
+  { name: 'Pickup', emoji: '🛻', size: 2, kind: 'pickup' },
 ];
 
 export interface Placed {
@@ -59,23 +63,34 @@ export function cellsOf(b: Board): Set<string> {
   return s;
 }
 
+/**
+ * Sel yang AKAN ditempati kapal bila ditaruh di jangkar (x, y) — murni,
+ * tanpa efek samping. Dipakai pratinjau penempatan (ghost mengikuti titik
+ * bidik pemain), canPlace, dan placeShip agar ketiganya selalu sepakat.
+ */
+export function placementCells(
+  def: ShipDef, x: number, y: number, horiz: boolean,
+): { x: number; y: number }[] {
+  const cells: { x: number; y: number }[] = [];
+  for (let i = 0; i < def.size; i += 1) {
+    cells.push({ x: x + (horiz ? i : 0), y: y + (horiz ? 0 : i) });
+  }
+  return cells;
+}
+
 /** Cek apakah kapal bisa ditaruh (di dalam grid & tidak tabrakan). */
 export function canPlace(b: Board, def: ShipDef, x: number, y: number, horiz: boolean): boolean {
   const taken = cellsOf(b);
-  for (let i = 0; i < def.size; i += 1) {
-    const cx = x + (horiz ? i : 0);
-    const cy = y + (horiz ? 0 : i);
-    if (cx < 0 || cy < 0 || cx >= SIZE || cy >= SIZE) return false;
-    if (taken.has(key(cx, cy))) return false;
+  for (const c of placementCells(def, x, y, horiz)) {
+    if (c.x < 0 || c.y < 0 || c.x >= SIZE || c.y >= SIZE) return false;
+    if (taken.has(key(c.x, c.y))) return false;
   }
   return true;
 }
 
 export function placeShip(b: Board, def: ShipDef, x: number, y: number, horiz: boolean): Placed | null {
   if (!canPlace(b, def, x, y, horiz)) return null;
-  const cells: { x: number; y: number }[] = [];
-  for (let i = 0; i < def.size; i += 1) cells.push({ x: x + (horiz ? i : 0), y: y + (horiz ? 0 : i) });
-  const p: Placed = { id: b.ships.length, def, cells };
+  const p: Placed = { id: b.ships.length, def, cells: placementCells(def, x, y, horiz) };
   b.ships.push(p);
   return p;
 }
@@ -147,8 +162,56 @@ function neighbors(x: number, y: number): { x: number; y: number }[] {
   return out;
 }
 
+/**
+ * Ujung perpanjangan garis: bila openHits memuat >=2 hit yang segaris dan
+ * bersebelahan (satu baris atau satu kolom), kapal pasti membentang di
+ * sepanjang garis itu — sel tepat di kedua ujung runtutan adalah bidikan
+ * bernilai tertinggi. Murni: hanya membaca mem, tidak mengubahnya.
+ * Mengembalikan [] bila belum ada garis (atau kedua ujung sudah tertutup).
+ */
+export function aiLineTargets(mem: AiMemory): { x: number; y: number }[] {
+  const out: { x: number; y: number }[] = [];
+  const push = (x: number, y: number): void => {
+    if (x < 0 || y < 0 || x >= SIZE || y >= SIZE) return;
+    if (mem.shotKeys.has(key(x, y))) return;
+    if (!out.some((c) => c.x === x && c.y === y)) out.push({ x, y });
+  };
+  // runtutan mendatar: kelompokkan hit per baris, urutkan per kolom
+  const rows = new Map<number, number[]>();
+  const cols = new Map<number, number[]>();
+  for (const h of mem.openHits) {
+    const r = rows.get(h.y) ?? []; r.push(h.x); rows.set(h.y, r);
+    const c = cols.get(h.x) ?? []; c.push(h.y); cols.set(h.x, c);
+  }
+  const scan = (
+    groups: Map<number, number[]>,
+    extend: (fixed: number, lo: number, hi: number) => void,
+  ): void => {
+    for (const [fixed, vals] of groups) {
+      const sorted = [...new Set(vals)].sort((a, b) => a - b);
+      let runStart = sorted[0];
+      let prev = sorted[0];
+      const flush = (lo: number, hi: number): void => {
+        if (hi - lo + 1 >= 2) extend(fixed, lo, hi);
+      };
+      for (let i = 1; i < sorted.length; i += 1) {
+        if (sorted[i] === prev + 1) { prev = sorted[i]; continue; }
+        flush(runStart, prev);
+        runStart = sorted[i]; prev = sorted[i];
+      }
+      if (sorted.length > 0) flush(runStart, prev);
+    }
+  };
+  scan(rows, (y, lo, hi) => { push(lo - 1, y); push(hi + 1, y); });
+  scan(cols, (x, lo, hi) => { push(x, lo - 1); push(x, hi + 1); });
+  return out;
+}
+
 /** Pilih tembakan: prioritaskan tetangga openHits, lalu sel paritas yang belum ditembak. */
 export function aiChooseShot(mem: AiMemory, rng: () => number): { x: number; y: number } {
+  // mode garis: dua hit segaris -> perpanjang di ujung garis, jangan acak tegak-lurus
+  const line = aiLineTargets(mem);
+  if (line.length > 0) return line[(rng() * line.length) | 0];
   // mode target
   const cands: { x: number; y: number }[] = [];
   for (const h of mem.openHits) {

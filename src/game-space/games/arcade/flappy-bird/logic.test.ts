@@ -5,7 +5,7 @@
 import { strict as assert } from 'node:assert';
 import {
   createState, startRun, flap, updateState, updateReady, inGrace,
-  spawnGate, gapHeightFor, speedFor, medalFor, GRACE_T, BIRD_R,
+  spawnGate, gapHeightFor, speedFor, medalFor, oscAmpFor, GRACE_T, BIRD_R,
   type FlapState,
 } from './logic';
 
@@ -178,6 +178,30 @@ test('ready: gate diam, burung bobbing', () => {
   assert.equal(st.phase, 'ready');
 });
 
-console.log(`\n${passed} passed, ${failed} failed`);
 if (failures.length > 0) console.log('FAILURES:', failures.join(', '));
+
+
+console.log('\n[G2] celah crane bergerak (pembeda Mandor Terbang)');
+test('oscAmpFor: 0 sebelum gate ke-5, tumbuh terbatas sesudahnya', () => {
+  assert.equal(oscAmpFor(0), 0);
+  assert.equal(oscAmpFor(3), 0);
+  assert.ok(oscAmpFor(4) > 0);
+  assert.ok(oscAmpFor(99) <= 44);
+});
+test('gapY gate berosilasi berubah seiring waktu & tetap dalam batas aman', () => {
+  const st = createState(7, 400, 640);
+  st.passed = 6;
+  startRun(st);
+  const keepAlive = (n: number) => { for (let i = 0; i < n; i++) { st.bird.y = 300; st.bird.vy = 0; updateState(st, DT, rng); } };
+  keepAlive(40);
+  const g = st.gates.find((x) => (x.oscAmp ?? 0) > 0);
+  assert.ok(g, 'ada gate berosilasi');
+  const y0 = g!.gapY;
+  keepAlive(60);
+  assert.ok(Math.abs(g!.gapY - y0) > 1, 'gapY berubah');
+  assert.ok(g!.gapY - g!.gapH / 2 >= 110 - 1);
+  assert.ok(g!.gapY + g!.gapH / 2 <= st.groundY - 110 + 1);
+});
+
+console.log(`\n${passed} passed, ${failed} failed`);
 if (failed > 0) process.exit(1);

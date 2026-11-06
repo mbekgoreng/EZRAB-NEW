@@ -11,7 +11,7 @@ import { bestKey, getBest, setBest } from '../../../engine2d/best';
 import { popText } from '../../../engine2d/juice2d';
 import {
   VH, NAIL_SPEED, GRAVITY, WIND_ACCEL, NAILS_PER_ROUND, MAX_ROUNDS,
-  roundSpec, targetScale, flightTime, fireShot, type RoundSpec,
+  roundSpec, targetScale, flightTime, fireShot, windInfo, ringLabel, type RoundSpec,
 } from './logic';
 
 const FONT = "'Plus Jakarta Sans','Inter',system-ui,sans-serif";
@@ -40,6 +40,7 @@ interface S {
   hits: number;
   bulls: number;
   aimY: number; // dalam unit VH
+  hitFx: { y: number; t: number; ring: number } | null;
   flight: NailFlight | null;
   stuck: StuckNail[];
   t: number;
@@ -65,7 +66,7 @@ export default function ArcadeArchery({ onExit }: { onExit: () => void }): React
     const s: S = {
       level: 0, spec: roundSpec(0), nailsLeft: NAILS_PER_ROUND,
       score: 0, totalScore: 0, hits: 0, bulls: 0,
-      aimY: VH / 2, flight: null, stuck: [], t: 0, over: false,
+      aimY: VH / 2, flight: null, stuck: [], t: 0, over: false, hitFx: null,
     };
     const gunX = (): number => 44;
 
@@ -91,7 +92,7 @@ export default function ArcadeArchery({ onExit }: { onExit: () => void }): React
       s.over = true;
       const nb = setBest(BK, s.totalScore + s.score);
       const wrap = wrapRef.current;
-      if (wrap) popText(wrap, s.bulls > 0 ? '🎯 SELESAI!' : 'SELESAI!', { size: 32, color: '#fde047' });
+      if (wrap) popText(wrap, 'SELESAI!', { size: 32, color: '#fde047' });
       sfx.chime(3);
       api.particles.spawn(api.W / 2, api.H * 0.4, {
         count: 70, colors: ['#fde047', '#fb923c', '#fff7d6', '#f59e0b'],
@@ -130,6 +131,7 @@ export default function ArcadeArchery({ onExit }: { onExit: () => void }): React
       if (!f) return;
       s.flight = null;
       const res = fireShot(f.aimY, f.spec);
+      s.hitFx = { y: res.hitY, t: 0, ring: res.ring };
       const ty = (f.spec.targetY / VH) * api.H;
       const scale = targetScale(f.spec.distance);
       const ypx = (res.hitY / VH) * api.H;
@@ -143,9 +145,12 @@ export default function ArcadeArchery({ onExit }: { onExit: () => void }): React
           s.bulls += 1;
           api.shake.add(0.7);
           sfx.chime(2);
-          if (wrapRef.current) popText(wrapRef.current, '🎯 TEPAT TENGAH!', { size: 24, color: '#fde047' });
+          if (wrapRef.current) popText(wrapRef.current, 'TEPAT TENGAH!', { size: 24, color: '#fde047' });
         } else {
           sfx.thud(0.7);
+          if (res.ring === 3 && wrapRef.current) {
+            popText(wrapRef.current, ringLabel(3), { size: 17, color: '#bfdbfe' });
+          }
         }
         api.scores.add(api.W - 84, ty - 90 * scale, `+${res.score}`, {
           color: res.bullseye ? '#fde047' : '#fff7d6', size: res.bullseye ? 26 : 20,
@@ -157,7 +162,7 @@ export default function ArcadeArchery({ onExit }: { onExit: () => void }): React
         });
       } else {
         sfx.fail();
-        if (wrapRef.current) popText(wrapRef.current, dx < 0.25 * VH ? 'Tipis! Awas angin 💨' : 'Meleset!', { size: 16, color: '#fca5a5' });
+        if (wrapRef.current) popText(wrapRef.current, dx < 0.25 * VH ? 'Tipis! Awas arah angin' : 'Meleset!', { size: 16, color: '#fca5a5' });
       }
       push();
       window.setTimeout(() => {
@@ -196,6 +201,7 @@ export default function ArcadeArchery({ onExit }: { onExit: () => void }): React
         else if (screenRef.current === 'pause') { api.loop.setPaused(false); setScreen('play'); }
       }
       s.t += dt;
+      if (s.hitFx) { s.hitFx.t += dt; if (s.hitFx.t > 0.45) s.hitFx = null; }
       if (screenRef.current !== 'play' || s.over) return;
       if (s.flight) {
         s.flight.t += dt;
@@ -268,9 +274,10 @@ export default function ArcadeArchery({ onExit }: { onExit: () => void }): React
 
     const drawWind = (ctx: CanvasRenderingContext2D, W: number, H: number): void => {
       const w = s.spec.wind;
-      const label = w === 0 ? 'Tenang' : w > 0 ? 'Angin ↓' : 'Angin ↑';
-      const str = Math.abs(w) / (s.spec.windMax || 1);
-      const bx = 12, by = 118, bw = 108, bh = 34;
+      const wi = windInfo(s.spec);
+      const label = wi.dir === 0 ? 'ANGIN TENANG' : `ANGIN ${wi.band.toUpperCase()}`;
+      const str = wi.strength;
+      const bx = 12, by = 118, bw = 136, bh = 34;
       ctx.fillStyle = 'rgba(10,10,20,0.55)';
       ctx.beginPath();
       if (typeof ctx.roundRect === 'function') ctx.roundRect(bx, by, bw, bh, 10);
@@ -280,7 +287,19 @@ export default function ArcadeArchery({ onExit }: { onExit: () => void }): React
       ctx.font = `800 12px ${FONT}`;
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
-      ctx.fillText(`💨 ${label}`, bx + 10, by + 12);
+      ctx.fillText(label, bx + 10, by + 8);
+      // chevron arah angin digambar prosedural: 1-3 segitiga sesuai kekuatan
+      if (wi.dir !== 0) {
+        ctx.fillStyle = '#93c5fd';
+        const n = 1 + Math.round(str * 2);
+        for (let i = 0; i < n; i += 1) {
+          const cxp = bx + bw - 34 + i * 11; const cyp = by + 8;
+          ctx.beginPath();
+          if (wi.dir > 0) { ctx.moveTo(cxp - 4, cyp - 3); ctx.lineTo(cxp + 4, cyp - 3); ctx.lineTo(cxp, cyp + 4); }
+          else { ctx.moveTo(cxp - 4, cyp + 3); ctx.lineTo(cxp + 4, cyp + 3); ctx.lineTo(cxp, cyp - 4); }
+          ctx.closePath(); ctx.fill();
+        }
+      }
       // panah kekuatan
       ctx.fillStyle = 'rgba(255,255,255,0.18)';
       ctx.fillRect(bx + 10, by + 22, bw - 20, 5);
@@ -426,11 +445,22 @@ export default function ArcadeArchery({ onExit }: { onExit: () => void }): React
         ctx.beginPath(); ctx.ellipse(0, -14, 4.6, 2.6, 0, 0, TAU); ctx.fill();
         ctx.restore();
       }
+      // kilau kena sasaran: cincin mengembang lalu memudar di titik paku tiba
+      if (s.hitFx) {
+        const k = s.hitFx.t / 0.45;
+        const hy = (s.hitFx.y / VH) * H;
+        ctx.save();
+        ctx.globalAlpha = 1 - k;
+        ctx.strokeStyle = s.hitFx.ring > 0 ? '#fde047' : '#f87171';
+        ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(tx, hy, 8 + k * 30, 0, TAU); ctx.stroke();
+        ctx.restore();
+      }
       // label jarak
       ctx.fillStyle = 'rgba(255,255,255,0.85)';
       ctx.font = `800 11px ${FONT}`;
       ctx.textAlign = 'center';
-      ctx.fillText(`📏 ${(s.spec.distance / 25).toFixed(0)} m`, tx, ty + r + 16);
+      ctx.fillText(`Jarak ${(s.spec.distance / 25).toFixed(0)} m`, tx, ty + r + 16);
     };
 
     const drawAim = (ctx: CanvasRenderingContext2D, W: number, H: number): void => {
@@ -556,7 +586,7 @@ export default function ArcadeArchery({ onExit }: { onExit: () => void }): React
         <div style={{ pointerEvents: 'auto', background: 'rgba(15,10,25,0.6)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 14, padding: '7px 12px', color: '#fff', backdropFilter: 'blur(6px)', minWidth: 140 }}>
           <div style={{ fontWeight: 900, fontSize: 17, color: '#fde047' }}>{hud.score.toLocaleString('id-ID')}</div>
           <div style={{ fontSize: 12, marginTop: 3, opacity: 0.9 }}>
-            🎯 Ronde {hud.level + 1}/{MAX_ROUNDS} • 🔩 {hud.nails}
+            Ronde {hud.level + 1}/{MAX_ROUNDS} • Paku tersisa: {hud.nails}
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8, pointerEvents: 'auto' }}>
@@ -579,19 +609,20 @@ export default function ArcadeArchery({ onExit }: { onExit: () => void }): React
               boxShadow: '0 10px 26px rgba(245,158,11,0.5)',
             }}
           >
-            🔫 TEMBAK
+            TEMBAK
           </button>
         </div>
       )}
 
       {screen === 'tutorial' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>🔫</div>
+          <TargetBadge label="PAKU" />
           <h2 style={h2}>TEMBAK PAKU</h2>
           <p style={p}>
             Tembak <b>nail gun</b> ke papan triplek! <b>Geser jari</b> untuk membidik,
-            waspadai <b>💨 angin</b> yang mendorong paku ke atas/bawah —
-            garis kuning menunjukkan perkiraan lintasan. Tiap ronde papan <b>makin jauh</b>!
+            waspadai <b>angin</b> yang mendorong paku ke atas/bawah — panel ANGIN di kiri
+            menunjukkan arah (chevron) &amp; kekuatannya; garis kuning adalah perkiraan
+            lintasan jujur termasuk gravitasi + angin. Tiap ronde papan <b>makin jauh</b>!
           </p>
           {hud.best > 0 && <p style={p}>Skor terbaik: <b style={{ color: '#fde047' }}>{hud.best.toLocaleString('id-ID')}</b></p>}
           <button style={primaryBtn} onClick={startGame}>Mulai Menembak</button>
@@ -599,7 +630,7 @@ export default function ArcadeArchery({ onExit }: { onExit: () => void }): React
       )}
       {screen === 'pause' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>☕</div>
+          <TargetBadge label="JEDA" />
           <h2 style={h2}>JEDA</h2>
           <p style={p}>Nail gun-nya ikut istirahat dulu.</p>
           <button style={primaryBtn} onClick={togglePause}>Lanjutkan</button>
@@ -607,7 +638,7 @@ export default function ArcadeArchery({ onExit }: { onExit: () => void }): React
       )}
       {screen === 'over' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>🎯</div>
+          <TargetBadge label="SELESAI" />
           <h2 style={h2}>PAPAN PENUH PAKU!</h2>
           <div style={{ fontSize: 40, fontWeight: 900, color: '#fde047' }}>{hud.score.toLocaleString('id-ID')}</div>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'center', margin: '10px 0' }}>
@@ -629,6 +660,15 @@ const primaryBtn: React.CSSProperties = {
   background: 'linear-gradient(180deg,#fde047,#f59e0b)', color: '#3a2a00', boxShadow: '0 8px 20px rgba(245,158,11,0.4)',
 };
 const ghostBtn: React.CSSProperties = { ...primaryBtn, background: 'transparent', color: '#fde047', boxShadow: 'none', border: '1px solid rgba(255,255,255,0.25)' };
+
+/** Lencana target prosedural: lingkaran konsentris CSS (bukan emoji/gambar). */
+function TargetBadge({ label }: { label: string }): React.JSX.Element {
+  return (
+    <div aria-hidden style={{ width: 64, height: 64, margin: '0 auto', borderRadius: '50%', background: '#f8fafc', border: '3px solid #1e293b', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 0 6px #3b82f6, 0 0 0 9px #1e293b' }}>
+      <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#451a03', fontSize: 8, fontWeight: 900, letterSpacing: 0.5 }}>{label}</div>
+    </div>
+  );
+}
 
 function Overlay({ children }: { children: React.ReactNode }): React.JSX.Element {
   return (

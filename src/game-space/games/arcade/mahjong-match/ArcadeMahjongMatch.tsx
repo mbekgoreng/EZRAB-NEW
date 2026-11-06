@@ -9,6 +9,7 @@ import { sfx } from '../../../engine2d';
 import { bestKey, setJson, getJson } from '../../../engine2d/best';
 import {
   buildLayout, isFree, freePairs, remaining, isCleared, shuffleRemaining,
+  countAvailablePairs, isDeadlocked, isStuck,
   mulberry, TILE_W, TILE_H, COLS, ROWS,
   type Tile,
 } from './logic';
@@ -30,6 +31,7 @@ interface Hud {
   time: number;
   shuffles: number;
   hints: number;
+  pairs: number;
 }
 
 interface Run {
@@ -47,19 +49,20 @@ interface Run {
   result: { score: number; cleared: boolean; newBest: boolean } | null;
 }
 
-const MATERIALS: { name: string; emoji: string; color: string }[] = [
-  { name: 'Keramik', emoji: '🟧', color: '#fb923c' },
-  { name: 'Bata', emoji: '🧱', color: '#ef4444' },
-  { name: 'Marmer', emoji: '⬜', color: '#e2e8f0' },
-  { name: 'Kayu', emoji: '🪵', color: '#a16207' },
-  { name: 'Besi', emoji: '🔩', color: '#64748b' },
-  { name: 'Cat', emoji: '🎨', color: '#f472b6' },
-  { name: 'Semen', emoji: '⚪', color: '#cbd5e1' },
-  { name: 'Pasir', emoji: '🟨', color: '#facc15' },
-  { name: 'Kaca', emoji: '🪟', color: '#7dd3fc' },
-  { name: 'Genteng', emoji: '🟥', color: '#dc2626' },
-  { name: 'Pipa', emoji: '🛢️', color: '#0ea5e9' },
-  { name: 'Kabel', emoji: '🔌', color: '#8b5cf6' },
+/** 12 jenis material; glifnya digambar prosedural oleh drawMaterialGlyph (bukan emoji). */
+const MATERIALS: { name: string; color: string }[] = [
+  { name: 'Keramik', color: '#fb923c' },
+  { name: 'Bata', color: '#ef4444' },
+  { name: 'Marmer', color: '#e2e8f0' },
+  { name: 'Kayu', color: '#a16207' },
+  { name: 'Besi', color: '#64748b' },
+  { name: 'Cat', color: '#f472b6' },
+  { name: 'Semen', color: '#cbd5e1' },
+  { name: 'Pasir', color: '#facc15' },
+  { name: 'Kaca', color: '#7dd3fc' },
+  { name: 'Genteng', color: '#dc2626' },
+  { name: 'Pipa', color: '#0ea5e9' },
+  { name: 'Kabel', color: '#8b5cf6' },
 ];
 
 const TIME_LIMIT = 300;
@@ -77,7 +80,7 @@ export default function ArcadeMahjongMatch({ onExit }: { onExit: () => void }): 
   const screenRef = useRef<Screen>('ready');
   const [screen, setScreenState] = useState<Screen>('ready');
   const [muted, setMuted] = useState(false);
-  const [hud, setHud] = useState<Hud>({ left: 0, score: 0, time: TIME_LIMIT, shuffles: 3, hints: 3 });
+  const [hud, setHud] = useState<Hud>({ left: 0, score: 0, time: TIME_LIMIT, shuffles: 3, hints: 3, pairs: 0 });
 
   const setScreen = (s: Screen): void => {
     screenRef.current = s;
@@ -86,7 +89,7 @@ export default function ArcadeMahjongMatch({ onExit }: { onExit: () => void }): 
   const pushHud = (run: Run): void => {
     apiRef.current?.pushHud({
       left: remaining(run.tiles), score: run.score, time: Math.ceil(run.time),
-      shuffles: run.shuffles, hints: run.hints,
+      shuffles: run.shuffles, hints: run.hints, pairs: countAvailablePairs(run.tiles),
     } as Hud);
   };
 
@@ -141,7 +144,7 @@ export default function ArcadeMahjongMatch({ onExit }: { onExit: () => void }): 
     if (!isFree(run.tiles, t)) {
       api.sfx.thud(0.3);
       api.shake.add(0.12);
-      run.msg = '🚧 Ubin tertutup! Cari yang bebas.';
+      run.msg = 'Ubin tertutup! Cari yang bebas.';
       run.msgT = 1.2;
       return;
     }
@@ -171,8 +174,16 @@ export default function ArcadeMahjongMatch({ onExit }: { onExit: () => void }): 
       });
       api.scores.add(x + TILE_W / 2, y - 8, '+100', { color: mat.color, size: 16 });
       if (isCleared(run.tiles)) return finishGame(true);
-      if (freePairs(run.tiles).length === 0) {
-        run.msg = '😵 Buntu! Kocok ubin 🔀';
+      if (isDeadlocked(run.tiles)) {
+        if (isStuck(run.tiles, run.shuffles)) {
+          // Perbaikan soft-lock: buntu + kocok habis -> akhiri sekarang,
+          // jangan biarkan pemain menunggu timer 5 menit tanpa aksi valid.
+          run.msg = 'Buntu & kocok habis — permainan berakhir.';
+          run.msgT = 2;
+          pushHud(run);
+          return finishGame(false);
+        }
+        run.msg = 'Buntu! Kocok ubin sekarang';
         run.msgT = 2;
       }
     } else {
@@ -193,7 +204,7 @@ export default function ArcadeMahjongMatch({ onExit }: { onExit: () => void }): 
     run.score = Math.max(0, run.score - 50);
     api.sfx.whoosh();
     api.shake.add(0.2);
-    run.msg = '🔀 Ubin dikocok (−50)';
+    run.msg = 'Ubin dikocok (−50)';
     run.msgT = 1.4;
     pushHud(run);
   };
@@ -205,7 +216,7 @@ export default function ArcadeMahjongMatch({ onExit }: { onExit: () => void }): 
     api.sfx.ensure();
     const pairs = freePairs(run.tiles);
     if (pairs.length === 0) {
-      run.msg = '😵 Tidak ada pasangan bebas!';
+      run.msg = 'Tidak ada pasangan bebas!';
       run.msgT = 1.4;
       return;
     }
@@ -303,6 +314,7 @@ export default function ArcadeMahjongMatch({ onExit }: { onExit: () => void }): 
         get screen() { return screenRef.current; },
         get left() { return runRef.current ? remaining(runRef.current.tiles) : 0; },
         get score() { return runRef.current?.score ?? 0; },
+        get pairs() { return runRef.current ? countAvailablePairs(runRef.current.tiles) : 0; },
         get result() { return runRef.current?.result ?? null; },
         tiles() {
           return runRef.current
@@ -357,13 +369,13 @@ export default function ArcadeMahjongMatch({ onExit }: { onExit: () => void }): 
       <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: 'block', touchAction: 'none' }} />
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 8, zIndex: 5 }}>
         <div style={{ background: 'rgba(15,23,42,0.55)', borderRadius: 12, padding: '6px 12px', color: '#fff', fontWeight: 800, fontSize: 14 }}>
-          🧱 {hud.left} ubin
+          {hud.left} ubin
         </div>
         <div style={{ background: 'rgba(15,23,42,0.45)', borderRadius: 12, padding: '6px 10px', color: '#ffd166', fontWeight: 800, fontSize: 13 }}>
-          ⭐ {hud.score}
+          Skor {hud.score}
         </div>
         <div style={{ background: 'rgba(15,23,42,0.45)', borderRadius: 12, padding: '6px 10px', color: hud.time < 60 ? '#f87171' : '#7dd3fc', fontWeight: 800, fontSize: 13 }}>
-          ⏱ {fmt(hud.time)}
+          {fmt(hud.time)}
         </div>
         <div style={{ flex: 1 }} />
         {(screen === 'play' || screen === 'pause') && (
@@ -373,28 +385,48 @@ export default function ArcadeMahjongMatch({ onExit }: { onExit: () => void }): 
         <button style={btn} onClick={onExit} aria-label="Tutup">✕</button>
       </div>
 
+      {screen === 'play' && (
+        <div style={{
+          position: 'absolute', left: 12, top: 62, zIndex: 5,
+          background: hud.pairs === 0 ? 'rgba(127,29,29,0.75)' : 'rgba(15,23,42,0.55)',
+          borderRadius: 12, padding: '6px 12px', color: hud.pairs === 0 ? '#fecaca' : '#a7f3d0',
+          fontWeight: 800, fontSize: 13,
+        }}>
+          {hud.pairs === 0
+            ? (hud.shuffles > 0 ? 'Pasangan bebas: 0 — buntu, kocok ubin!' : 'Pasangan bebas: 0 — buntu!')
+            : `Pasangan bebas: ${hud.pairs}`}
+        </div>
+      )}
+
       {screen === 'ready' && (
         <Overlay>
-          <div style={{ fontSize: 44 }}>🧱</div>
+          <div aria-hidden style={{
+            width: 54, height: 62, borderRadius: 9,
+            background: 'repeating-linear-gradient(0deg,#dc2626 0 10px,#fef3c7 10px 12px), #dc2626',
+            border: '3px solid #fff', boxShadow: '0 8px 20px rgba(0,0,0,0.45)',
+          }} />
           <h2 style={titleStyle}>UBIN MATERIAL</h2>
           <p style={textStyle}>Ketuk dua ubin material yang SAMA &amp; BEBAS (tidak tertimpa, sisi kiri/kanan terbuka). Bersihkan semua sebelum timer habis!</p>
-          <button style={primaryBtn} onClick={startGame}>Mulai Nyusun 🧱</button>
+          <button style={primaryBtn} onClick={startGame}>Mulai Nyusun</button>
           {best > 0 && (
-            <p style={{ ...textStyle, marginTop: 10, fontSize: 13 }}>🏅 Skor terbaik: {best}</p>
+            <p style={{ ...textStyle, marginTop: 10, fontSize: 13 }}>Skor terbaik: {best}</p>
           )}
         </Overlay>
       )}
 
       {screen === 'play' && (
         <div style={{ position: 'absolute', right: 12, bottom: 18, zIndex: 6, display: 'flex', gap: 8 }}>
-          <button style={toolBtn} onClick={doHint} aria-label="Petunjuk">💡 {hud.hints}</button>
-          <button style={toolBtn} onClick={doShuffle} aria-label="Kocok">🔀 {hud.shuffles}</button>
+          <button style={toolBtn} onClick={doHint} aria-label="Petunjuk">Petunjuk {hud.hints}</button>
+          <button style={toolBtn} onClick={doShuffle} aria-label="Kocok">Kocok {hud.shuffles}</button>
         </div>
       )}
 
       {screen === 'pause' && (
         <Overlay>
-          <div style={{ fontSize: 40 }}>⏸</div>
+          <div aria-hidden style={{ display: 'flex', gap: 8 }}>
+            <div style={{ width: 12, height: 40, background: '#fff', borderRadius: 3 }} />
+            <div style={{ width: 12, height: 40, background: '#fff', borderRadius: 3 }} />
+          </div>
           <h2 style={titleStyle}>JEDA</h2>
           <p style={textStyle}>Ubin-ubin ikut istirahat.</p>
           <button style={primaryBtn} onClick={doResume}>Lanjut</button>
@@ -403,15 +435,14 @@ export default function ArcadeMahjongMatch({ onExit }: { onExit: () => void }): 
 
       {screen === 'over' && res && (
         <Overlay>
-          <div style={{ fontSize: 44 }}>{res.cleared ? '🏆' : '⏰'}</div>
-          <h2 style={titleStyle}>{res.cleared ? 'GUDANG BERSIH!' : 'WAKTU HABIS!'}</h2>
+          <h2 style={titleStyle}>{res.cleared ? 'GUDANG BERSIH!' : hud.time > 0 ? 'BUNTU TOTAL!' : 'WAKTU HABIS!'}</h2>
           <p style={{ ...textStyle, fontSize: 16 }}>
-            ⭐ Skor: {res.score}
+            Skor: {res.score}
             {res.newBest && <span style={{ color: '#4ade80', fontWeight: 900 }}> — REKOR BARU!</span>}
           </p>
-          <p style={textStyle}>{res.cleared ? 'Semua ubin kepakai. Mandor puas!' : 'Sisa ubin numpuk — coba lebih cepat!'}</p>
+          <p style={textStyle}>{res.cleared ? 'Semua ubin kepakai. Mandor puas!' : hud.time > 0 ? 'Tidak ada pasangan bebas dan kocok sudah habis.' : 'Sisa ubin numpuk — coba lebih cepat!'}</p>
           <div style={{ display: 'flex', gap: 10 }}>
-            <button style={primaryBtn} onClick={startGame}>Main Lagi 🔁</button>
+            <button style={primaryBtn} onClick={startGame}>Main Lagi</button>
             <button style={secondaryBtn} onClick={() => setScreen('ready')}>Menu</button>
           </div>
         </Overlay>
@@ -435,7 +466,7 @@ function drawDepot(ctx: CanvasRenderingContext2D, t: number, lh: number, rm: boo
   ctx.fillStyle = '#fff';
   ctx.font = `900 14px ${FONT}`;
   ctx.textAlign = 'center';
-  ctx.fillText('📦 GUDANG MATERIAL — cari pasangan bebas', 195, 118);
+  ctx.fillText('GUDANG MATERIAL — cari pasangan bebas', 195, 118);
   ctx.font = `700 11.5px ${FONT}`;
   ctx.fillStyle = '#94a3b8';
   ctx.fillText('ubin terang = bebas • ubin gelap = tertutup/kejepit', 195, 138);
@@ -445,6 +476,196 @@ function drawDepot(ctx: CanvasRenderingContext2D, t: number, lh: number, rm: boo
     ctx.fillStyle = `rgba(255,220,150,${a})`;
     ctx.fillRect(0, 0, LW, 90);
   }
+}
+
+/**
+ * Glif material PROSEDURAL — digambar dari primitif canvas (bukan emoji,
+ * bukan aset generate). Kotak glif: x+7..x+37, y+6..y+32 di dalam ubin 44x56,
+ * cukup besar & kontras bentuknya agar 12 jenis terbedakan sekilas.
+ * kind mengikuti urutan MATERIALS: 0 Keramik 1 Bata 2 Marmer 3 Kayu 4 Besi
+ * 5 Cat 6 Semen 7 Pasir 8 Kaca 9 Genteng 10 Pipa 11 Kabel.
+ */
+function drawMaterialGlyph(ctx: CanvasRenderingContext2D, kind: number, x: number, y: number): void {
+  const gx = x + 7;
+  const gy = y + 6;
+  const cx = x + TILE_W / 2;
+  const cy = y + 19;
+  ctx.save();
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+  switch (kind) {
+    case 0: { // Keramik: kisi 2x2 ubin oranye + garis nat
+      const shades = ['#fb923c', '#f97316', '#fdba74', '#ea580c'];
+      for (let i = 0; i < 4; i += 1) {
+        ctx.fillStyle = shades[i];
+        ctx.fillRect(gx + (i % 2) * 15, gy + ((i / 2) | 0) * 13, 14, 12);
+      }
+      ctx.strokeStyle = '#fff7ed';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(gx, gy, 29, 25);
+      ctx.beginPath(); ctx.moveTo(cx, gy); ctx.lineTo(cx, gy + 25);
+      ctx.moveTo(gx, cy); ctx.lineTo(gx + 29, cy); ctx.stroke();
+      break;
+    }
+    case 1: { // Bata: pola bata 3 baris berselang-seling
+      ctx.fillStyle = '#fef3c7';
+      ctx.fillRect(gx, gy, 30, 26);
+      const bw = 14; const bh = 7;
+      for (let row = 0; row < 3; row += 1) {
+        const off = row % 2 === 0 ? 0 : -bw / 2;
+        for (let col = 0; col < 3; col += 1) {
+          ctx.fillStyle = row % 2 === 0 ? '#dc2626' : '#b91c1c';
+          ctx.fillRect(gx + off + col * (bw + 1) + 1, gy + row * (bh + 1) + 1, bw - 1, bh - 1);
+        }
+      }
+      ctx.strokeStyle = '#7f1d1d'; ctx.lineWidth = 1.5; ctx.strokeRect(gx, gy, 30, 26);
+      break;
+    }
+    case 2: { // Marmer: lempeng terang + urat abu melengkung
+      ctx.fillStyle = '#f8fafc';
+      ctx.fillRect(gx, gy, 30, 26);
+      ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1.5; ctx.strokeRect(gx, gy, 30, 26);
+      ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.moveTo(gx + 3, gy + 20);
+      ctx.bezierCurveTo(gx + 10, gy + 8, gx + 16, gy + 22, gx + 27, gy + 6); ctx.stroke();
+      ctx.strokeStyle = '#cbd5e1';
+      ctx.beginPath(); ctx.moveTo(gx + 4, gy + 6);
+      ctx.bezierCurveTo(gx + 12, gy + 14, gx + 18, gy + 4, gx + 27, gy + 16); ctx.stroke();
+      break;
+    }
+    case 3: { // Kayu: potongan log — lingkaran tahun konsentris
+      ctx.fillStyle = '#92400e';
+      ctx.beginPath(); ctx.arc(cx, cy, 13, 0, TAU); ctx.fill();
+      const rings: [number, string][] = [[10.5, '#d97706'], [8, '#b45309'], [5.5, '#f59e0b'], [3, '#fbbf24']];
+      for (const [r, c] of rings) {
+        ctx.fillStyle = c;
+        ctx.beginPath(); ctx.arc(cx, cy, r, 0, TAU); ctx.fill();
+      }
+      ctx.strokeStyle = '#78350f'; ctx.lineWidth = 1.4;
+      ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + 9, cy - 7); ctx.stroke();
+      break;
+    }
+    case 4: { // Besi: kepala baut heksagon + lubang + celah obeng
+      ctx.fillStyle = '#94a3b8';
+      ctx.strokeStyle = '#475569'; ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      for (let i = 0; i < 6; i += 1) {
+        const a = (i / 6) * TAU - Math.PI / 6;
+        const px = cx + 12 * Math.cos(a); const py = cy + 12 * Math.sin(a);
+        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      }
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#64748b';
+      ctx.beginPath(); ctx.arc(cx, cy, 6, 0, TAU); ctx.fill();
+      ctx.strokeStyle = '#1e293b'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(cx - 4, cy + 4); ctx.lineTo(cx + 4, cy - 4); ctx.stroke();
+      break;
+    }
+    case 5: { // Cat: kaleng + tumpahan cat merah muda di bibir & badan
+      ctx.fillStyle = '#e2e8f0';
+      ctx.fillRect(gx + 6, gy + 7, 18, 18);
+      ctx.strokeStyle = '#64748b'; ctx.lineWidth = 1.5;
+      ctx.strokeRect(gx + 6, gy + 7, 18, 18);
+      ctx.fillStyle = '#f472b6';
+      ctx.beginPath(); ctx.ellipse(cx, gy + 7, 9, 3, 0, 0, TAU); ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(cx - 6, gy + 8); ctx.lineTo(cx - 2, gy + 8); ctx.lineTo(cx - 2, gy + 16);
+      ctx.quadraticCurveTo(cx - 4, gy + 19, cx - 6, gy + 16); ctx.closePath(); ctx.fill();
+      ctx.fillRect(gx + 6, gy + 18, 18, 4);
+      break;
+    }
+    case 6: { // Semen: karung kertas — lipatan atas + badan trapezium + label
+      ctx.fillStyle = '#d6a860';
+      ctx.beginPath();
+      ctx.moveTo(gx + 7, gy + 6); ctx.lineTo(gx + 23, gy + 6);
+      ctx.lineTo(gx + 27, gy + 25); ctx.lineTo(gx + 3, gy + 25);
+      ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = '#92400e'; ctx.lineWidth = 1.4; ctx.stroke();
+      ctx.fillStyle = '#b45309'; ctx.fillRect(gx + 7, gy + 3, 16, 4);
+      ctx.fillStyle = '#f8fafc'; ctx.fillRect(gx + 9, gy + 12, 12, 8);
+      ctx.fillStyle = '#64748b';
+      ctx.beginPath(); ctx.arc(cx, gy + 16, 2.6, 0, TAU); ctx.fill();
+      break;
+    }
+    case 7: { // Pasir: gundukan kuning + butiran
+      ctx.fillStyle = '#eab308';
+      ctx.beginPath();
+      ctx.moveTo(gx + 1, gy + 24);
+      ctx.quadraticCurveTo(gx + 10, gy + 4, cx, gy + 3);
+      ctx.quadraticCurveTo(gx + 20, gy + 4, gx + 29, gy + 24);
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#fef08a';
+      ctx.beginPath();
+      ctx.moveTo(gx + 9, gy + 24);
+      ctx.quadraticCurveTo(cx, gy + 10, gx + 21, gy + 24);
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#a16207';
+      for (const [dx, dy] of [[12, 19], [17, 15], [20, 21], [15, 22]] as const) {
+        ctx.beginPath(); ctx.arc(gx + dx, gy + dy, 1.1, 0, TAU); ctx.fill();
+      }
+      ctx.strokeStyle = '#a16207'; ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.moveTo(gx, gy + 25); ctx.lineTo(gx + 30, gy + 25); ctx.stroke();
+      break;
+    }
+    case 8: { // Kaca: panel jendela biru + mullion silang + kilau diagonal
+      ctx.fillStyle = '#bae6fd';
+      ctx.fillRect(gx + 3, gy + 1, 24, 24);
+      ctx.strokeStyle = '#0369a1'; ctx.lineWidth = 2.4; ctx.strokeRect(gx + 3, gy + 1, 24, 24);
+      ctx.lineWidth = 1.8;
+      ctx.beginPath(); ctx.moveTo(cx, gy + 1); ctx.lineTo(cx, gy + 25);
+      ctx.moveTo(gx + 3, cy); ctx.lineTo(gx + 27, cy); ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,0.65)';
+      ctx.beginPath();
+      ctx.moveTo(gx + 7, gy + 21); ctx.lineTo(gx + 15, gy + 5); ctx.lineTo(gx + 19, gy + 5);
+      ctx.lineTo(gx + 11, gy + 21); ctx.closePath(); ctx.fill();
+      break;
+    }
+    case 9: { // Genteng: baris lengkung tumpang tindih merah tua
+      for (let row = 0; row < 3; row += 1) {
+        for (let col = 0; col < 4; col += 1) {
+          ctx.fillStyle = (row + col) % 2 === 0 ? '#dc2626' : '#991b1b';
+          ctx.beginPath();
+          ctx.arc(gx + 4 + col * 7.5, gy + 6 + row * 8, 4.6, Math.PI, 0);
+          ctx.lineTo(gx + 8.6 + col * 7.5, gy + 12 + row * 8);
+          ctx.lineTo(gx - 0.6 + col * 7.5, gy + 12 + row * 8);
+          ctx.closePath(); ctx.fill();
+          ctx.strokeStyle = '#7f1d1d'; ctx.lineWidth = 1; ctx.stroke();
+        }
+      }
+      break;
+    }
+    case 10: { // Pipa: silinder horizontal biru baja + dua gelang flensa
+      const pg = ctx.createLinearGradient(0, gy + 6, 0, gy + 20);
+      pg.addColorStop(0, '#7dd3fc'); pg.addColorStop(0.5, '#0284c7'); pg.addColorStop(1, '#075985');
+      ctx.fillStyle = pg;
+      ctx.fillRect(gx + 1, gy + 7, 28, 12);
+      ctx.fillStyle = '#0369a1';
+      ctx.fillRect(gx + 5, gy + 5, 4, 16);
+      ctx.fillRect(gx + 21, gy + 5, 4, 16);
+      ctx.fillStyle = 'rgba(255,255,255,0.5)';
+      ctx.fillRect(gx + 1, gy + 9, 28, 3);
+      ctx.strokeStyle = '#0c4a6e'; ctx.lineWidth = 1.4;
+      ctx.strokeRect(gx + 1, gy + 7, 28, 12);
+      break;
+    }
+    case 11: { // Kabel: colokan ungu — dua colok di atas + kabel melengkung
+      ctx.strokeStyle = '#4c1d95'; ctx.lineWidth = 2.6;
+      ctx.beginPath(); ctx.moveTo(cx - 5, gy + 2); ctx.lineTo(cx - 5, gy + 8);
+      ctx.moveTo(cx + 5, gy + 2); ctx.lineTo(cx + 5, gy + 8); ctx.stroke();
+      ctx.fillStyle = '#8b5cf6';
+      if (typeof ctx.roundRect === 'function') { ctx.beginPath(); ctx.roundRect(cx - 8, gy + 8, 16, 11, 3); ctx.fill(); }
+      else ctx.fillRect(cx - 8, gy + 8, 16, 11);
+      ctx.strokeStyle = '#4c1d95'; ctx.lineWidth = 2.4;
+      ctx.beginPath(); ctx.moveTo(cx, gy + 19);
+      ctx.bezierCurveTo(cx, gy + 25, gx + 24, gy + 21, gx + 27, gy + 26); ctx.stroke();
+      ctx.fillStyle = '#ede9fe';
+      ctx.beginPath(); ctx.arc(cx, gy + 13.5, 2.2, 0, TAU); ctx.fill();
+      break;
+    }
+    default:
+      break;
+  }
+  ctx.restore();
 }
 
 function drawTile(
@@ -481,14 +702,17 @@ function drawTile(
   // pita warna material
   ctx.fillStyle = free ? mat.color : '#2b3548';
   ctx.fillRect(x, y + TILE_H - 10, TILE_W, 10);
-  // emoji material
+  // glif material prosedural (vektor canvas, bukan emoji)
   const pop = sel && !rm ? 1 + 0.08 * Math.sin(t * 10) : 1;
-  ctx.font = `${Math.round(26 * pop)}px system-ui`;
+  ctx.save();
+  ctx.globalAlpha = free ? 1 : 0.45;
+  ctx.translate(x + TILE_W / 2, y + 19);
+  ctx.scale(pop, pop);
+  ctx.translate(-(x + TILE_W / 2), -(y + 19));
+  drawMaterialGlyph(ctx, tl.kind, x, y);
+  ctx.restore();
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.globalAlpha = free ? 1 : 0.45;
-  ctx.fillText(mat.emoji, x + TILE_W / 2, y + TILE_H / 2 - 2);
-  ctx.globalAlpha = 1;
   // nama material
   ctx.fillStyle = free ? '#1e293b' : '#94a3b8';
   ctx.font = `800 8px ${FONT}`;

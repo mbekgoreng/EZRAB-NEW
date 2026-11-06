@@ -5,7 +5,8 @@
 import { strict as assert } from 'node:assert';
 import {
   createBoard, dropPiece, dropRow, isWinningMove, isFull, legalColumns,
-  aiChooseColumn, COLS, ROWS, AI_BLUNDER_CHANCE, type Board,
+  aiChooseColumn, winningCells, winningColumns, givesOpponentImmediateWin,
+  scoreMove, COLS, ROWS, AI_BLUNDER_CHANCE, type Board,
 } from './logic';
 
 let passed = 0;
@@ -131,6 +132,76 @@ test('AI hindari kolom penuh', () => {
     const col = aiChooseColumn(b, 2, () => 0.5);
     assert.notEqual(col, 3);
   }
+});
+
+console.log('\n[4] winningCells (sorotan garis kemenangan)');
+test('garis tunggal: 4 sel horizontal', () => {
+  const b = createBoard();
+  for (const c of [1, 2, 3]) dropPiece(b, c, 1);
+  const r = dropPiece(b, 4, 1)!;
+  const cells = winningCells(b, 4, r.row, 1);
+  assert.equal(cells.length, 4);
+  assert.ok(cells.every((cell) => cell.r === ROWS - 1));
+});
+test('REGRESI: langkah penutup DUA garis (silang) mengembalikan gabungan 7 sel', () => {
+  const b = createBoard();
+  // horizontal bawah: col0-2 biru; diagonal naik: (4,4),(5,3),(6,2) biru di atas pengisi oranye
+  dropPiece(b, 0, 1); dropPiece(b, 1, 1); dropPiece(b, 2, 1);
+  dropPiece(b, 4, 2); dropPiece(b, 4, 1);
+  dropPiece(b, 5, 2); dropPiece(b, 5, 2); dropPiece(b, 5, 1);
+  dropPiece(b, 6, 2); dropPiece(b, 6, 2); dropPiece(b, 6, 2); dropPiece(b, 6, 1);
+  const r = dropPiece(b, 3, 1)!; // menutup horizontal DAN diagonal sekaligus
+  assert.ok(isWinningMove(b, 3, r.row, 1));
+  const cells = winningCells(b, 3, r.row, 1);
+  assert.equal(cells.length, 7, 'kedua garis harus disorot, bukan hanya arah pertama');
+  assert.ok(cells.some((cell) => cell.c === 0 && cell.r === 5), 'ujung horizontal ikut');
+  assert.ok(cells.some((cell) => cell.c === 6 && cell.r === 2), 'ujung diagonal ikut');
+});
+test('langkah bukan kemenangan → []', () => {
+  const b = createBoard();
+  const r = dropPiece(b, 3, 1)!;
+  assert.deepEqual(winningCells(b, 3, r.row, 1), []);
+  assert.deepEqual(winningCells(b, 0, 5, 1), []); // sel bukan milik player
+});
+
+console.log('\n[5] AI taktis: scoreMove / winningColumns / givesOpponentImmediateWin');
+/** Papan jebakan: oranye (AI) menggoda di dasar col0/col4, biru punya 3 mendatar "melayang" di row4 col1-3. */
+function trapBoard(): Board {
+  const b = createBoard();
+  dropPiece(b, 1, 2); dropPiece(b, 1, 1);
+  dropPiece(b, 2, 2); dropPiece(b, 2, 1);
+  dropPiece(b, 3, 1); dropPiece(b, 3, 1);
+  return b;
+}
+test('winningColumns: 3 di dasar → kolom penutupnya', () => {
+  const b = createBoard();
+  for (const c of [0, 1, 2]) dropPiece(b, c, 2);
+  assert.deepEqual(winningColumns(b, 2), [3]);
+  assert.deepEqual(winningColumns(createBoard(), 1), []);
+});
+test('AI membangun ancaman ganda: sesudah 3 beruntun di dasar ada 2 kolom kemenangan', () => {
+  const b = createBoard();
+  dropPiece(b, 1, 2); dropPiece(b, 2, 2);
+  dropPiece(b, 3, 2); // kini col1-3 oranye di dasar
+  assert.deepEqual(winningColumns(b, 2), [0, 4], 'ancaman bercabang: lawan hanya bisa blokir satu');
+  const before = createBoard();
+  dropPiece(before, 1, 2); dropPiece(before, 2, 2);
+  assert.ok(scoreMove(before, 3, 2) > scoreMove(before, 0, 2), 'langkah pembangun ancaman ganda dinilai tertinggi');
+});
+test('givesOpponentImmediateWin: keping dasar di bawah 3 melayang lawan = umpan', () => {
+  const b = trapBoard();
+  assert.equal(givesOpponentImmediateWin(b, 0, 2), true, 'lawan mendarat di atasnya & menutup row4 col0-3');
+  assert.equal(givesOpponentImmediateWin(b, 4, 2), true, 'ujung satunya juga umpan');
+  assert.equal(givesOpponentImmediateWin(b, 5, 2), false, 'kolom jauh aman');
+  assert.equal(givesOpponentImmediateWin(b, 3, 2), false);
+});
+test('DISKRIMINATIF: AI menghindari umpan col0 (heuristik lama memilihnya: run 3 di dasar)', () => {
+  const b = trapBoard();
+  assert.ok(scoreMove(b, 0, 2) < scoreMove(b, 5, 2), 'umpan dipenalti di bawah langkah polos yang aman');
+  const col = aiChooseColumn(b, 2, () => 0.99);
+  assert.notEqual(col, 0);
+  assert.equal(col, 3);
+  assert.equal(givesOpponentImmediateWin(b, col, 2), false);
 });
 
 console.log(`\n${passed} lulus, ${failed} gagal${failed ? ` — ${failures.join(', ')}` : ''}`);

@@ -582,7 +582,12 @@ export default function ArcadeFlappyBird({ onExit }: { onExit: () => void }): Re
         ctx.shadowBlur = 12;
         const fy = lh * 0.2 + Math.sin(t * 5) * -8;
         ctx.font = '44px system-ui';
-        ctx.fillText('👆', LW / 2, fy);
+        ctx.save();
+        ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.arc(LW / 2, fy, 15 + Math.sin(t * 5) * 3, 0, Math.PI * 2); ctx.stroke();
+        ctx.fillStyle = '#ffd166';
+        ctx.beginPath(); ctx.moveTo(LW / 2, fy - 30); ctx.lineTo(LW / 2 - 10, fy - 14); ctx.lineTo(LW / 2 + 10, fy - 14); ctx.closePath(); ctx.fill();
+        ctx.restore();
         ctx.font = `900 24px ${FONT}`;
         ctx.fillText('KETUK UNTUK TERBANG', LW / 2, fy + 46);
         ctx.restore();
@@ -599,7 +604,7 @@ export default function ArcadeFlappyBird({ onExit }: { onExit: () => void }): Re
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText('Ketuk = kepakan pertama + 1 detik kebal.', LW / 2, ty + 16);
-        ctx.fillText('Lewati celah crane, jangan senggol balok!', LW / 2, ty + 36);
+        ctx.fillText('Lewati celah crane — mulai crane ke-5 celahnya BERGERAK!', LW / 2, ty + 36);
         ctx.restore();
       }
 
@@ -679,10 +684,10 @@ export default function ArcadeFlappyBird({ onExit }: { onExit: () => void }): Re
 
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 8, zIndex: 5 }}>
         <div style={{ background: 'rgba(20,10,30,0.55)', borderRadius: 12, padding: '6px 12px', color: '#fff', fontWeight: 800, fontSize: 14 }}>
-          🏗️ {hud.score}
+          CRANE {hud.score}
         </div>
         <div style={{ background: 'rgba(20,10,30,0.45)', borderRadius: 12, padding: '6px 10px', color: '#ffd166', fontWeight: 800, fontSize: 13 }}>
-          🏅 {hud.best}
+          Terbaik {hud.best}
         </div>
         <div style={{ flex: 1 }} />
         {(screen === 'play' || screen === 'pause') && (
@@ -696,19 +701,19 @@ export default function ArcadeFlappyBird({ onExit }: { onExit: () => void }): Re
 
       {screen === 'tutorial' && (
         <Overlay>
-          <div style={{ fontSize: 46 }}>👷‍♂️🏗️</div>
+          <div style={{ fontSize: 15, fontWeight: 900, letterSpacing: 2, color: '#ffd166' }}>— MANDOR TERBANG —</div>
           <h2 style={titleStyle}>MANDOR TERBANG</h2>
           <p style={textStyle}>
             Lembur sampai senja, mandor pulang terbang menembus tower crane.
             Ketuk untuk mengepak — ketukan pertama memberimu 1 detik kebal, jadi jangan panik!
           </p>
-          <button style={primaryBtn} onClick={startTutorialDone}>Mulai Terbang 🚀</button>
+          <button style={primaryBtn} onClick={startTutorialDone}>Mulai Terbang</button>
         </Overlay>
       )}
 
       {screen === 'pause' && (
         <Overlay>
-          <div style={{ fontSize: 40 }}>☕</div>
+          <div style={{ fontSize: 15, fontWeight: 900, letterSpacing: 2, color: '#ffd166' }}>— JEDA —</div>
           <h2 style={titleStyle}>ISTIRAHAT</h2>
           <p style={textStyle}>Mandor ngopi dulu di bedeng. Crane-nya disuruh nunggu.</p>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
@@ -720,7 +725,7 @@ export default function ArcadeFlappyBird({ onExit }: { onExit: () => void }): Re
 
       {screen === 'over' && (
         <Overlay>
-          <div style={{ fontSize: 44 }}>💥</div>
+          <div style={{ fontSize: 15, fontWeight: 900, letterSpacing: 2, color: '#f87171' }}>— TABRAKAN —</div>
           <h2 style={titleStyle}>MANDOR JATUH!</h2>
           <p style={textStyle}>
             {deathCause === 'ground'
@@ -733,12 +738,12 @@ export default function ArcadeFlappyBird({ onExit }: { onExit: () => void }): Re
             </div>
           )}
           <p style={{ ...textStyle, fontSize: 16 }}>
-            🏗️ Crane: <b>{hud.score}</b> &nbsp;•&nbsp; 🏅 Terbaik: <b>{hud.best}</b>
+            Crane: <b>{hud.score}</b> &nbsp;•&nbsp; Terbaik: <b>{hud.best}</b>
             {isBest && <span style={{ color: '#4ade80', fontWeight: 900 }}> — REKOR BARU!</span>}
           </p>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
-            <button style={primaryBtn} onClick={() => { apiRef.current?.sfx.ensure(); restart(); }}>Main Lagi 🔁</button>
-            <button style={secondaryBtn} onClick={onExit}>Tutup ✕</button>
+            <button style={primaryBtn} onClick={() => { apiRef.current?.sfx.ensure(); restart(); }}>Main Lagi</button>
+            <button style={secondaryBtn} onClick={onExit}>Tutup</button>
           </div>
         </Overlay>
       )}

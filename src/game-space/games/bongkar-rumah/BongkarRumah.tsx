@@ -6,9 +6,11 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Bongkar3DEngine, type Hud3D, type EngineEvent } from './engine3d';
 import { bestKey, getBest, setBest } from '../../engine2d/best';
+import { CoffeeCupIcon, TapTargetIcon } from '../../engine2d/icons';
 import { popText } from '../../engine2d/juice2d';
 import { sfx } from '../../engine2d/audio';
 import { LEVELS } from './logic';
+import puingUrl from '../../assets/bongkar-rumah/fx-puing.webp';
 
 const SLUG = 'bongkar-rumah';
 const FONT = `'Plus Jakarta Sans', 'Inter', system-ui, sans-serif`;
@@ -181,7 +183,7 @@ export default function BongkarRumah({ onExit }: { onExit: () => void }): React.
       {(screen === 'play' || screen === 'pause') && (
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 8, zIndex: 5 }}>
           <div style={{ background: 'rgba(15,23,42,0.55)', borderRadius: 12, padding: '6px 12px', color: '#fff', fontWeight: 800, fontSize: 14 }}>
-            ⭐ {hud.score}
+            Skor {hud.score}
           </div>
           <div style={{ flex: 1, background: 'rgba(15,23,42,0.35)', borderRadius: 10, height: 14, overflow: 'hidden' }}>
             <div style={{ width: `${hud.pct}%`, height: '100%', background: 'linear-gradient(90deg,#f5b301,#ff7847)', borderRadius: 10, transition: 'width .25s' }} />
@@ -199,16 +201,16 @@ export default function BongkarRumah({ onExit }: { onExit: () => void }): React.
       {(screen === 'play') && (
         <div style={{ position: 'absolute', top: 62, left: 12, zIndex: 5, pointerEvents: 'none' }}>
           <div style={{ background: 'rgba(15,23,42,0.45)', color: '#fff', borderRadius: 10, padding: '4px 10px', fontSize: 12, fontWeight: 700 }}>
-            🏚 {hud.levelName}
+            {hud.levelName}
           </div>
           <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
-            <Chip label="🧱 Fasad" left={L.facade.left} total={L.facade.total} />
-            <Chip label="🛋 Interior" left={L.interior.left} total={L.interior.total} />
-            <Chip label="🏛 Struktur" left={L.structure.left} total={L.structure.total} />
+            <Chip label="Fasad" left={L.facade.left} total={L.facade.total} />
+            <Chip label="Interior" left={L.interior.left} total={L.interior.total} />
+            <Chip label="Struktur" left={L.structure.left} total={L.structure.total} />
           </div>
           {hud.mult >= 2 && (
             <div style={{ marginTop: 6, background: '#ffd166', color: '#7a2f12', borderRadius: 10, padding: '4px 10px', fontSize: 13, fontWeight: 900, display: 'inline-block' }}>
-              🔥 KOMBO x{hud.mult}
+              KOMBO x{hud.mult}
             </div>
           )}
         </div>
@@ -216,7 +218,7 @@ export default function BongkarRumah({ onExit }: { onExit: () => void }): React.
 
       {screen === 'tutorial' && (
         <Overlay>
-          <div className="br3-tap-hint" style={{ fontSize: 52 }}>👆</div>
+          <div className="br3-tap-hint"><TapTargetIcon size={52} /></div>
           <h2 style={titleStyle}>BONGKAR RUMAH 3D</h2>
           <p style={textStyle}>
             <b>Ketuk bangunan sampai rata dengan tanah</b> — kupas fasadnya, lalu hancurkan kolom betonnya biar runtuh berantai!
@@ -227,7 +229,7 @@ export default function BongkarRumah({ onExit }: { onExit: () => void }): React.
 
       {screen === 'pause' && (
         <Overlay>
-          <div style={{ fontSize: 40 }}>☕</div>
+          <div><CoffeeCupIcon size={40} /></div>
           <h2 style={titleStyle}>ISTIRAHAT DULU</h2>
           <p style={textStyle}>Mandor lagi ngopi. Godam aman di tanganmu.</p>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
@@ -239,13 +241,13 @@ export default function BongkarRumah({ onExit }: { onExit: () => void }): React.
 
       {screen === 'win' && (
         <Overlay>
-          <div style={{ fontSize: 44 }}>🏆</div>
+          <img src={puingUrl} alt="Tumpukan puing" style={{ width: 150, objectFit: 'contain' }} />
           <h2 style={titleStyle}>RATA DENGAN TANAH!</h2>
           <p style={textStyle}>
             {LEVELS[lv]?.tagline ?? ''} Bangunan <b>{LEVELS[lv]?.name}</b> tinggal kenangan.
           </p>
           <p style={{ ...textStyle, fontSize: 15 }}>
-            ⭐ Skor: <b>{hud.score}</b> &nbsp;•&nbsp; 🏅 Terbaik: <b>{best}</b>
+            Skor: <b>{hud.score}</b> &nbsp;•&nbsp; Terbaik: <b>{best}</b>
           </p>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
             {lv < LEVELS.length - 1 && (

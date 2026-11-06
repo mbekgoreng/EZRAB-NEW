@@ -8,7 +8,8 @@ export type ItemKind = 'helm' | 'bonus' | 'bata';
 
 export interface FallingItem {
   kind: ItemKind;
-  emoji: string;
+  emoji: string; // warisan data lama — komponen TIDAK lagi menggambar dari emoji (Gelombang 5: prosedural per kind+variant)
+  variant: number; // indeks varian visual prosedural (helm: 0..4, bonus: 0..1, bata: 0)
   x: number; // posisi horizontal (px, CSS)
   y: number; // posisi vertikal (px, CSS)
   vy: number; // kecepatan jatuh px/detik
@@ -31,6 +32,21 @@ const BRICK = '🧱';
 /** Level dari jumlah tangkapan: tiap 12 tangkapan naik 1 level. */
 export function levelFor(caught: number): number {
   return 1 + Math.floor(Math.max(0, caught) / CATCHES_PER_LEVEL);
+}
+
+/** Progres tangkapan di dalam level berjalan: 0..CATCHES_PER_LEVEL-1 (untuk HUD). */
+export function progressInLevel(caught: number): number {
+  return Math.max(0, caught) % CATCHES_PER_LEVEL;
+}
+
+/** Berapa tangkapan lagi menuju level berikutnya (untuk HUD). */
+export function catchesToNextLevel(caught: number): number {
+  return CATCHES_PER_LEVEL - progressInLevel(caught);
+}
+
+/** Fraksi progres level 0..1 (untuk bar progres HUD). */
+export function levelProgressFraction(caught: number): number {
+  return progressInLevel(caught) / CATCHES_PER_LEVEL;
 }
 
 /** Kecepatan jatuh dasar (px/detik) — naik per level, dengan variasi rng. */
@@ -68,14 +84,19 @@ export function spawnItem(
   now: number,
 ): FallingItem {
   const kind = kindFor(level, rng);
+  const variant =
+    kind === 'bata' ? 0
+    : kind === 'bonus' ? Math.floor(rng() * BONUSES.length)
+    : Math.floor(rng() * HELMS.length);
   const emoji =
     kind === 'bata' ? BRICK
-    : kind === 'bonus' ? BONUSES[Math.floor(rng() * BONUSES.length)]
-    : HELMS[Math.floor(rng() * HELMS.length)];
+    : kind === 'bonus' ? BONUSES[variant]
+    : HELMS[variant];
   const r = kind === 'bonus' ? 17 : 15;
   return {
     kind,
     emoji,
+    variant,
     x: r + rng() * Math.max(1, width - r * 2),
     y: yStart,
     vy: fallSpeed(level, rng),

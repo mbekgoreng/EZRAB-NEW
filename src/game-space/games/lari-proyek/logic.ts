@@ -394,3 +394,81 @@ export function checkBataLanding(p: Player, o: Obstacle): boolean {
 export function scoreFor(meters: number, helmCount: number): number {
   return meters + helmCount * 50;
 }
+
+/* ================= progresi jarak/kecepatan (Gelombang 3) =================
+   Progresi dibuat EKSPLISIT & terukur: level naik pada ambang jarak yang
+   sama dengan milestone engine, dan HUD menampilkan jarak tempuh, level,
+   serta sisa meter menuju milestone berikutnya. Murni & teruji. */
+
+/** Ambang milestone (meter) — satu sumber untuk engine & HUD. */
+export const MILESTONE_AT: readonly number[] = [100, 250, 500, 1000, 2000, 3500, 5000];
+
+const LEVEL_LABELS: readonly string[] = [
+  'Pemanasan', 'Ritme Kerja', 'Kejar Deadline', 'Maraton Proyek',
+  'Mandor Senior', 'Mandor Legend', 'Mesin Deadline', 'Legenda Proyek',
+];
+
+export interface Progression {
+  /** level 1..8 (1 + jumlah milestone terlewati) */
+  level: number;
+  label: string;
+  /** milestone berikutnya (meter); null bila semua terlewati */
+  nextAt: number | null;
+  /** sisa meter menuju nextAt (0 bila null) */
+  toNext: number;
+  /** kemajuan 0..1 dari milestone sebelumnya ke nextAt (1 bila tuntas) */
+  progress: number;
+}
+
+export function progressionFor(distanceM: number): Progression {
+  const d = Math.max(0, distanceM);
+  let passed = 0;
+  while (passed < MILESTONE_AT.length && d >= MILESTONE_AT[passed]) passed += 1;
+  const level = passed + 1;
+  const label = LEVEL_LABELS[Math.min(passed, LEVEL_LABELS.length - 1)];
+  if (passed >= MILESTONE_AT.length) {
+    return { level, label, nextAt: null, toNext: 0, progress: 1 };
+  }
+  const nextAt = MILESTONE_AT[passed];
+  const prevAt = passed === 0 ? 0 : MILESTONE_AT[passed - 1];
+  const span = Math.max(1, nextAt - prevAt);
+  return {
+    level, label, nextAt,
+    toNext: Math.max(0, Math.ceil(nextAt - d)),
+    progress: Math.min(1, Math.max(0, (d - prevAt) / span)),
+  };
+}
+
+/* ================= umpan balik tabrakan (Gelombang 3) =================
+   Satu deskriptor per jenis tabrakan: label teks tegas (bukan emoji),
+   kekuatan guncangan kamera, hit-stop, dan warna partikel ledakan.
+   Engine memakai deskriptor ini apa adanya agar feedback konsisten
+   dan teruji tanpa perlu menjalankan renderer. */
+
+export interface CrashFeedback {
+  /** label popup tegas, mis. 'TABRAK BARIER!' */
+  label: string;
+  /** kekuatan camera shake 0..1 */
+  shake: number;
+  /** hit-stop (ms) — dunia membeku sesaat agar tabrakan terasa */
+  hitStopMs: number;
+  /** warna partikel utama (hex) */
+  particle: number;
+}
+
+/** reason = kind rintangan dari checkHits, atau 'ketiban' (bata mendarat). */
+export function crashFeedbackFor(reason: string): CrashFeedback {
+  switch (reason) {
+    case 'balok':
+      return { label: 'NABRAK BALOK GANTUNG!', shake: 0.75, hitStopMs: 60, particle: 0xf5c518 };
+    case 'barikade':
+      return { label: 'TABRAK BARIKADE!', shake: 0.9, hitStopMs: 70, particle: 0xe8722a };
+    case 'bata':
+      return { label: 'TERSANDUNG PUING BATA!', shake: 0.8, hitStopMs: 60, particle: 0xb5542f };
+    case 'ketiban':
+      return { label: 'KETIBAN BATA!', shake: 1, hitStopMs: 80, particle: 0xef4444 };
+    case 'barier':
+    default:
+      return { label: 'TABRAK BARIER!', shake: 0.65, hitStopMs: 60, particle: 0xf97316 };
+  }
+}

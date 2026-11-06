@@ -7,9 +7,23 @@ import { useGameCanvas, type GameApi, TAU, clamp, easeOutBack } from '../../../e
 import { bestKey, getBest, setBest } from '../../../engine2d/best';
 import { popText } from '../../../engine2d/juice2d';
 import {
-  nextSpawn, spawnDelay, scoreHit, gradeFor,
+  nextSpawn, spawnDelay, scoreHit, gradeFor, multiplierForStreak,
   GAME_DURATION, HOLE_COUNT, type NailKind,
 } from './logic';
+
+/** Ikon SVG prosedural (pengganti emoji) untuk tombol & overlay DOM. */
+function SvgIcon({ kind, size = 20 }: { kind: 'pause' | 'play' | 'sound' | 'mute' | 'close' | 'hammer' | 'coffee' | 'trophy'; size?: number }): React.JSX.Element {
+  const s = size;
+  if (kind === 'pause') return (<svg width={s} height={s} viewBox="0 0 24 24" aria-hidden><rect x="5" y="4" width="5" height="16" rx="1.5" fill="currentColor" /><rect x="14" y="4" width="5" height="16" rx="1.5" fill="currentColor" /></svg>);
+  if (kind === 'play') return (<svg width={s} height={s} viewBox="0 0 24 24" aria-hidden><path d="M7 4.5v15c0 1.2 1.3 1.9 2.3 1.3l11-7.5c0.9-0.6 0.9-1.9 0-2.5l-11-7.5C8.3 2.6 7 3.3 7 4.5z" fill="currentColor" /></svg>);
+  if (kind === 'sound') return (<svg width={s} height={s} viewBox="0 0 24 24" aria-hidden><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor" /><path d="M16 9c1.2 1.6 1.2 4.4 0 6M18.5 6.5c2.4 3.2 2.4 7.8 0 11" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" /></svg>);
+  if (kind === 'mute') return (<svg width={s} height={s} viewBox="0 0 24 24" aria-hidden><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor" /><path d="M16 9l6 6M22 9l-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>);
+  if (kind === 'close') return (<svg width={s} height={s} viewBox="0 0 24 24" aria-hidden><path d="M5 5l14 14M19 5L5 19" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" /></svg>);
+  if (kind === 'coffee') return (<svg width={s} height={s} viewBox="0 0 24 24" aria-hidden><path d="M4 9h13v6a5 5 0 0 1-5 5h-3a5 5 0 0 1-5-5V9z" fill="#d6a05c" stroke="#78350f" strokeWidth="1.4" /><path d="M17 10h1.5a2.5 2.5 0 0 1 0 5H17M7 3.5c0 1.2 1 1.3 1 2.5M11 3.5c0 1.2 1 1.3 1 2.5" stroke="#78350f" strokeWidth="1.6" fill="none" strokeLinecap="round" /></svg>);
+  if (kind === 'trophy') return (<svg width={s} height={s} viewBox="0 0 24 24" aria-hidden><path d="M6 3h12v5a6 6 0 0 1-12 0V3z" fill="#F5B301" stroke="#92400e" strokeWidth="1.2" /><path d="M6 5H3.5a2.5 2.5 0 0 0 2.6 3.4M18 5h2.5a2.5 2.5 0 0 1-2.6 3.4M11 14h2v3h-2zM8 20h8M9.5 17h5l0.7 3H8.8L9.5 17z" fill="#F5B301" stroke="#92400e" strokeWidth="1.2" /></svg>);
+  // hammer
+  return (<svg width={s} height={s} viewBox="0 0 48 48" aria-hidden><rect x="20" y="18" width="8" height="26" rx="3" transform="rotate(18 24 24)" fill="#b45309" stroke="#78350f" strokeWidth="1.6" /><path d="M8 8h26a4 4 0 0 1 4 4v4a4 4 0 0 1-4 4H14l-6-6V8z" fill="#9ca3af" stroke="#374151" strokeWidth="1.6" /></svg>);
+}
 
 const FONT = "'Plus Jakarta Sans','Inter',system-ui,sans-serif";
 const BK = bestKey('pukul-paku', 'best');
@@ -40,6 +54,7 @@ interface S {
   bestStreak: number;
   hits: number;
   golds: number;
+  bauts: number;
   misses: number;
   over: boolean;
   t: number;
@@ -50,7 +65,7 @@ export default function ArcadeWhackAMole({ onExit }: { onExit: () => void }): Re
   const apiRef = useRef<GameApi | null>(null);
   const screenRef = useRef<Screen>('tutorial');
   const [screen, setScreenState] = useState<Screen>('tutorial');
-  const [hud, setHud] = useState({ score: 0, timeLeft: GAME_DURATION, streak: 0, best: getBest(BK, 0) });
+  const [hud, setHud] = useState({ score: 0, timeLeft: GAME_DURATION, streak: 0, best: getBest(BK, 0), hits: 0, golds: 0, bauts: 0 });
   const [muted, setMuted] = useState(false);
 
   const setScreen = (s: Screen): void => {
@@ -64,7 +79,7 @@ export default function ArcadeWhackAMole({ onExit }: { onExit: () => void }): Re
 
     const s: S = {
       nails: [], strikes: [], spawnT: 0.6, elapsed: 0,
-      score: 0, streak: 0, bestStreak: 0, hits: 0, golds: 0, misses: 0,
+      score: 0, streak: 0, bestStreak: 0, hits: 0, golds: 0, bauts: 0, misses: 0,
       over: false, t: 0,
     };
     let rngState = (Date.now() ^ (Math.random() * 1e9)) | 0;
@@ -74,12 +89,12 @@ export default function ArcadeWhackAMole({ onExit }: { onExit: () => void }): Re
     };
 
     const push = (): void => {
-      api.pushHud({ score: s.score, timeLeft: Math.max(0, GAME_DURATION - s.elapsed), streak: s.streak, best: getBest(BK, 0) });
+      api.pushHud({ score: s.score, timeLeft: Math.max(0, GAME_DURATION - s.elapsed), streak: s.streak, best: getBest(BK, 0), hits: s.hits, golds: s.golds, bauts: s.bauts });
     };
 
     const reset = (): void => {
       s.nails = []; s.strikes = []; s.spawnT = 0.6; s.elapsed = 0;
-      s.score = 0; s.streak = 0; s.bestStreak = 0; s.hits = 0; s.golds = 0; s.misses = 0;
+      s.score = 0; s.streak = 0; s.bestStreak = 0; s.hits = 0; s.golds = 0; s.bauts = 0; s.misses = 0;
       s.over = false;
       push();
     };
@@ -95,7 +110,7 @@ export default function ArcadeWhackAMole({ onExit }: { onExit: () => void }): Re
         speed: [100, 380], life: [0.6, 1.1], size: [2, 6], gravity: 320, shape: 'rect', rotation: true,
       });
       window.setTimeout(() => {
-        api.pushHud({ score: s.score, timeLeft: 0, streak: s.streak, best: nb });
+        api.pushHud({ score: s.score, timeLeft: 0, streak: s.streak, best: nb, hits: s.hits, golds: s.golds, bauts: s.bauts });
         setScreen('over');
       }, 1200);
     };
@@ -125,24 +140,41 @@ export default function ArcadeWhackAMole({ onExit }: { onExit: () => void }): Re
       if (best) {
         best.hit = true;
         const res = scoreHit(best.kind, s.streak);
-        s.streak = res.newStreak;
-        s.bestStreak = Math.max(s.bestStreak, s.streak);
-        s.score += res.points;
-        s.hits += 1;
-        if (best.kind === 'emas') s.golds += 1;
         const hp = holePos(best.hole, api.W, api.H);
-        api.sfx.thud(best.kind === 'emas' ? 1.3 : 0.9);
-        api.particles.spawn(hp.x, hp.y - 30, {
-          count: best.kind === 'emas' ? 26 : 14,
-          colors: best.kind === 'emas' ? ['#fde047', '#fbbf24', '#fff7d6'] : ['#d6a05c', '#a16207', '#fef3c7'],
-          speed: [90, 340], life: [0.35, 0.8], size: [2, 5], gravity: 600, shape: 'rect', rotation: true,
-        });
-        api.scores.add(hp.x, hp.y - 70, `+${res.points}${best.kind === 'emas' ? ' ✨' : ''}`, {
-          color: best.kind === 'emas' ? '#fde047' : '#fef3c7', size: best.kind === 'emas' ? 24 : 19,
-        });
-        if (s.streak >= 5 && s.streak % 5 === 0) {
+        if (best.kind === 'baut') {
+          // BAUT LARANGAN: potong skor (dijepit >= 0), putus streak, potong waktu.
+          s.score = Math.max(0, s.score + res.points);
+          s.streak = 0;
+          s.elapsed = Math.min(GAME_DURATION, s.elapsed + res.timePenalty);
+          s.bauts += 1;
+          api.sfx.fail();
+          api.shake.add(0.35);
+          api.particles.spawn(hp.x, hp.y - 30, {
+            count: 18, colors: ['#ef4444', '#F97316', '#fca5a5'],
+            speed: [90, 320], life: [0.35, 0.8], size: [2, 5], gravity: 600, shape: 'rect', rotation: true,
+          });
+          api.scores.add(hp.x, hp.y - 70, `${res.points} • -${res.timePenalty} dtk`, { color: '#f87171', size: 21 });
           const wrap = wrapRef.current;
-          if (wrap) popText(wrap, `🔨 Streak x${s.streak}!`, { size: 22, color: '#fb923c' });
+          if (wrap) popText(wrap, 'BAUT LARANGAN!', { size: 20, color: '#f87171' });
+        } else {
+          s.streak = res.newStreak;
+          s.bestStreak = Math.max(s.bestStreak, s.streak);
+          s.score += res.points;
+          s.hits += 1;
+          if (best.kind === 'emas') s.golds += 1;
+          api.sfx.thud(best.kind === 'emas' ? 1.3 : 0.9);
+          api.particles.spawn(hp.x, hp.y - 30, {
+            count: best.kind === 'emas' ? 26 : 14,
+            colors: best.kind === 'emas' ? ['#fde047', '#fbbf24', '#fff7d6'] : ['#d6a05c', '#a16207', '#fef3c7'],
+            speed: [90, 340], life: [0.35, 0.8], size: [2, 5], gravity: 600, shape: 'rect', rotation: true,
+          });
+          api.scores.add(hp.x, hp.y - 70, `+${res.points}${res.multiplier > 1 ? ` KOMBO x${res.multiplier}` : ''}`, {
+            color: best.kind === 'emas' ? '#fde047' : '#fef3c7', size: best.kind === 'emas' ? 24 : 19,
+          });
+          if (s.streak >= 5 && s.streak % 5 === 0) {
+            const wrap = wrapRef.current;
+            if (wrap) popText(wrap, `STREAK x${s.streak}!`, { size: 22, color: '#fb923c' });
+          }
         }
         s.nails = s.nails.filter((n) => n !== best);
       } else {
@@ -267,7 +299,7 @@ export default function ArcadeWhackAMole({ onExit }: { onExit: () => void }): Re
       ctx.font = `900 15px ${FONT}`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText('🪵 PAPAN PAKU MANDOR', W / 2, by + bh - 22);
+      ctx.fillText('PAPAN PAKU MANDOR', W / 2, by + bh - 22);
     };
 
     const drawHole = (ctx: CanvasRenderingContext2D, x: number, y: number): void => {
@@ -300,6 +332,47 @@ export default function ArcadeWhackAMole({ onExit }: { onExit: () => void }): Re
       ctx.save();
       ctx.translate(x, y);
       ctx.rotate(tilt);
+      if (kind === 'baut') {
+        // BAUT LARANGAN prosedural: cincin peringatan oranye-merah di mulut lubang,
+        // batang berulir diagonal, kepala heksagonal oranye dengan slot silang gelap.
+        ctx.strokeStyle = '#ef4444';
+        ctx.lineWidth = 3.5;
+        ctx.beginPath(); ctx.ellipse(0, 2, 30, 12, 0, 0, TAU); ctx.stroke();
+        ctx.strokeStyle = 'rgba(249,115,22,0.85)';
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.ellipse(0, 2, 36, 15, 0, 0, TAU); ctx.stroke();
+        const bwB = 16;
+        const topB = -nh;
+        const shaft = ctx.createLinearGradient(-bwB / 2, 0, bwB / 2, 0);
+        shaft.addColorStop(0, '#57534e'); shaft.addColorStop(0.45, '#d6d3d1'); shaft.addColorStop(1, '#44403c');
+        ctx.fillStyle = shaft;
+        ctx.fillRect(-bwB / 2, topB + 10, bwB, nh - 10);
+        ctx.strokeStyle = 'rgba(28,25,23,0.65)';
+        ctx.lineWidth = 1.6;
+        for (let i = 0; i < 4; i += 1) {
+          const yy = topB + 16 + i * 9;
+          if (yy < -2) { ctx.beginPath(); ctx.moveTo(-bwB / 2, yy + 4); ctx.lineTo(bwB / 2, yy); ctx.stroke(); }
+        }
+        // kepala heksagonal
+        ctx.fillStyle = '#F97316';
+        ctx.strokeStyle = '#7c2d12';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (let k = 0; k < 6; k += 1) {
+          const ang = (k / 6) * TAU + Math.PI / 6;
+          const px = Math.cos(ang) * 16; const py = topB + 5 + Math.sin(ang) * 10;
+          if (k === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+        }
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.strokeStyle = '#431407';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(-7, topB + 5); ctx.lineTo(7, topB + 5);
+        ctx.moveTo(0, topB - 1); ctx.lineTo(0, topB + 11);
+        ctx.stroke();
+        ctx.restore();
+        return;
+      }
       if (kind === 'emas') {
         ctx.shadowColor = 'rgba(253,224,71,0.9)';
         ctx.shadowBlur = 20;
@@ -458,26 +531,27 @@ export default function ArcadeWhackAMole({ onExit }: { onExit: () => void }): Re
             <div style={{ height: '100%', width: `${(hud.timeLeft / GAME_DURATION) * 100}%`, background: 'linear-gradient(90deg,#fbbf24,#f59e0b)', borderRadius: 999 }} />
           </div>
           <div style={{ fontSize: 12, marginTop: 3, opacity: 0.9 }}>
-            ⏱ {Math.ceil(hud.timeLeft)}s {hud.streak >= 2 && <span style={{ color: '#fb923c', fontWeight: 900 }}>• 🔨x{hud.streak}</span>}
+            Sisa {Math.ceil(hud.timeLeft)} dtk {hud.streak >= 2 && <span style={{ color: '#fb923c', fontWeight: 900 }}>• STREAK x{hud.streak}{multiplierForStreak(hud.streak) > 1 ? ` • KOMBO x${multiplierForStreak(hud.streak)}` : ''}</span>}
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8, pointerEvents: 'auto' }}>
           {(screen === 'play' || screen === 'pause') && (
-            <button style={btn} onClick={togglePause} aria-label="Jeda">{screen === 'play' ? '⏸' : '▶'}</button>
+            <button style={btn} onClick={togglePause} aria-label="Jeda"><SvgIcon kind={screen === 'play' ? 'pause' : 'play'} size={18} /></button>
           )}
-          <button style={btn} onClick={toggleMute} aria-label="Suara">{muted ? '🔇' : '🔊'}</button>
-          <button style={btn} onClick={onExit} aria-label="Keluar">✕</button>
+          <button style={btn} onClick={toggleMute} aria-label="Suara"><SvgIcon kind={muted ? 'mute' : 'sound'} size={20} /></button>
+          <button style={btn} onClick={onExit} aria-label="Keluar"><SvgIcon kind="close" size={18} /></button>
         </div>
       </div>
 
       {screen === 'tutorial' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>🔨</div>
+          <div style={{ display: 'flex', justifyContent: 'center' }}><SvgIcon kind="hammer" size={48} /></div>
           <h2 style={h2}>PUKUL PAKU</h2>
           <p style={p}>
-            Paku-paku menonjol dari papan — <b>ketuk</b> sebelum masuk lagi!
-            <b> ✨ Paku emas</b> = bonus besar. Streak pukulan beruntun = <b>poin ekstra</b>.
-            Waktumu <b>60 detik</b>!
+            Paku menonjol dari papan kayu — <b>ketuk</b> sebelum masuk lagi!
+            <b> Paku emas</b> = poin besar tapi nongolnya <b>sangat singkat</b>.
+            <b> Baut berkepala oranye = LARANGAN</b>: terpukul memotong <b>skor &amp; waktu</b>!
+            Streak beruntun menaikkan <b>pengganda kombo x2 / x3</b>. Waktumu <b>60 detik</b>!
           </p>
           {hud.best > 0 && <p style={p}>Skor terbaik: <b style={{ color: '#fde047' }}>{hud.best.toLocaleString('id-ID')}</b></p>}
           <button style={primaryBtn} onClick={startGame}>Mulai Memaku</button>
@@ -485,7 +559,7 @@ export default function ArcadeWhackAMole({ onExit }: { onExit: () => void }): Re
       )}
       {screen === 'pause' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>☕</div>
+          <div style={{ display: 'flex', justifyContent: 'center' }}><SvgIcon kind="coffee" size={44} /></div>
           <h2 style={h2}>JEDA</h2>
           <p style={p}>Paku-pakunya ikut istirahat. Palunya jangan sampai hilang.</p>
           <button style={primaryBtn} onClick={togglePause}>Lanjutkan</button>
@@ -493,11 +567,14 @@ export default function ArcadeWhackAMole({ onExit }: { onExit: () => void }): Re
       )}
       {screen === 'over' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>{grade === 'S' ? '🏆' : '🔨'}</div>
+          <div style={{ display: 'flex', justifyContent: 'center' }}><SvgIcon kind={grade === 'S' ? 'trophy' : 'hammer'} size={46} /></div>
           <h2 style={h2}>PAPAN RATA!</h2>
           <div style={{ fontSize: 40, fontWeight: 900, color: '#fde047' }}>{hud.score.toLocaleString('id-ID')}</div>
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'center', margin: '10px 0' }}>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'center', margin: '10px 0', flexWrap: 'wrap' }}>
             <Stat label="Grade" value={grade} />
+            <Stat label="Paku kena" value={`${hud.hits}`} />
+            <Stat label="Emas" value={`${hud.golds}`} />
+            <Stat label="Baut kena" value={`${hud.bauts}`} />
             <Stat label="Terbaik" value={hud.best.toLocaleString('id-ID')} />
           </div>
           <button style={primaryBtn} onClick={startGame}>Main Lagi</button>

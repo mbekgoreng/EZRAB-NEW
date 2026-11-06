@@ -6,6 +6,7 @@ import { strict as assert } from 'node:assert';
 import {
   levelFor, fallSpeed, spawnInterval, kindFor, pointsFor,
   spawnItem, hitsBasket, isMissed, CATCHES_PER_LEVEL, MAX_LIVES,
+  progressInLevel, catchesToNextLevel, levelProgressFraction,
   type FallingItem,
 } from './logic';
 
@@ -90,7 +91,7 @@ test('bata selalu emoji 🧱', () => {
 
 console.log('\n[5] hitsBasket');
 const mk = (x: number, y: number): FallingItem => ({
-  kind: 'helm', emoji: '⛑️', x, y, vy: 100, r: 15, points: 10, wobble: 0, born: 0,
+  kind: 'helm', emoji: '⛑️', variant: 0, x, y, vy: 100, r: 15, points: 10, wobble: 0, born: 0,
 });
 test('tepat di keranjang → kena', () => {
   assert.ok(hitsBasket(mk(200, 500), 200, 90, 490, 40));
@@ -113,6 +114,51 @@ test('masih di layar → belum missed', () => {
 console.log('\n[7] konstanta');
 test('MAX_LIVES = 3', () => {
   assert.equal(MAX_LIVES, 3);
+});
+
+console.log('\n[8] progres level eksplisit & varian prosedural (Gelombang 5)');
+test('progressInLevel berputar tiap CATCHES_PER_LEVEL', () => {
+  assert.equal(progressInLevel(0), 0);
+  assert.equal(progressInLevel(5), 5);
+  assert.equal(progressInLevel(CATCHES_PER_LEVEL - 1), CATCHES_PER_LEVEL - 1);
+  assert.equal(progressInLevel(CATCHES_PER_LEVEL), 0);
+  assert.equal(progressInLevel(CATCHES_PER_LEVEL + 3), 3);
+  assert.equal(progressInLevel(-4), 0);
+});
+test('catchesToNextLevel konsisten dengan levelFor', () => {
+  assert.equal(catchesToNextLevel(0), CATCHES_PER_LEVEL);
+  assert.equal(catchesToNextLevel(CATCHES_PER_LEVEL - 1), 1);
+  // tepat di ambang: level sudah naik, sisa dihitung dari level BARU
+  assert.equal(catchesToNextLevel(CATCHES_PER_LEVEL), CATCHES_PER_LEVEL);
+  for (const c of [0, 1, 7, 11, 12, 23, 24, 40]) {
+    assert.equal(progressInLevel(c) + catchesToNextLevel(c), CATCHES_PER_LEVEL, `c=${c}`);
+    assert.equal(levelFor(c + catchesToNextLevel(c)), levelFor(c) + 1, `c=${c}`);
+  }
+});
+test('levelProgressFraction 0..1', () => {
+  assert.equal(levelProgressFraction(0), 0);
+  assert.ok(Math.abs(levelProgressFraction(6) - 0.5) < 1e-9);
+  assert.ok(levelProgressFraction(CATCHES_PER_LEVEL - 1) < 1);
+});
+test('BUKAN-BUG: progres 0 tepat di ambang bukan reset yang salah', () => {
+  // Kandidat: HUD bisa terlihat "progres hilang" saat tangkapan ke-12.
+  // Buktinya: di titik yang sama levelFor naik 1->2, jadi progres 0 adalah
+  // awal level baru yang benar, bukan kehilangan progres.
+  const c = CATCHES_PER_LEVEL;
+  assert.equal(levelFor(c - 1), 1);
+  assert.equal(levelFor(c), 2);
+  assert.equal(progressInLevel(c), 0);
+});
+test('spawnItem memberi variant dalam rentang per kind', () => {
+  const bata = spawnItem(seqRng([0.01, 0.5, 0.5, 0.5]), 1, 390, -30, 0);
+  assert.equal(bata.kind, 'bata');
+  assert.equal(bata.variant, 0);
+  for (let i = 0; i < 40; i += 1) {
+    const it = spawnItem(() => ((i * 37) % 100) / 100, 2, 390, -30, 0);
+    assert.ok(it.variant >= 0 && it.variant <= 4, `variant=${it.variant}`);
+    if (it.kind === 'bonus') assert.ok(it.variant <= 1);
+    if (it.kind === 'bata') assert.equal(it.variant, 0);
+  }
 });
 
 console.log(`\n${passed} lulus, ${failed} gagal${failed ? ` — ${failures.join(', ')}` : ''}`);

@@ -2,7 +2,7 @@
  * ArcadeBlackjack (meja proyek) — lawan "Mandor Besar", taruhan sak semen.
  * Aturan 21 baku: bandar hit sampai 17, blackjack bayar 3:2, bisa double.
  */
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { sfx } from '../../../engine2d';
 import { bestKey, getBest, setBest, getJson, setJson } from '../../../engine2d/best';
 import { popText } from '../../../engine2d/juice2d';
@@ -10,6 +10,18 @@ import {
   makeShoe, handValue, isBlackjack, dealerShouldHit, resolve, payout, isRed,
   RESHUFFLE_AT, RANKS, SUITS, type Card, type Outcome,
 } from './logic';
+import { useSprite } from '../../../engine2d/sprites';
+import cardBackUrl from '../../../assets/blackjack/card-back-proyek.webp';
+import { CoffeeCupIcon } from '../../../engine2d/icons';
+
+/** Ikon material di tengah kartu, per suit (0..3): Bata, Besi, Kayu, Pipa. */
+function SuitMaterial({ suit, size = 34 }: { suit: number; size?: number }): React.JSX.Element {
+  const st: React.CSSProperties = { width: size, height: size, display: 'block' };
+  if (suit === 0) return (<svg style={st} viewBox="0 0 40 40"><rect x="4" y="10" width="32" height="20" rx="3" fill="#c4502e" stroke="#7e2f16" strokeWidth="2" /><line x1="4" y1="20" x2="36" y2="20" stroke="#7e2f16" strokeWidth="2" /><line x1="20" y1="10" x2="20" y2="20" stroke="#7e2f16" strokeWidth="2" /><line x1="12" y1="20" x2="12" y2="30" stroke="#7e2f16" strokeWidth="2" /><line x1="28" y1="20" x2="28" y2="30" stroke="#7e2f16" strokeWidth="2" /></svg>);
+  if (suit === 1) return (<svg style={st} viewBox="0 0 40 40"><polygon points="20,5 32,12 32,28 20,35 8,28 8,12" fill="#94a3b8" stroke="#475569" strokeWidth="2" /><circle cx="20" cy="20" r="6.5" fill="#64748b" stroke="#334155" strokeWidth="2" /><line x1="16" y1="16" x2="24" y2="24" stroke="#e2e8f0" strokeWidth="2.4" /></svg>);
+  if (suit === 2) return (<svg style={st} viewBox="0 0 40 40"><rect x="5" y="8" width="30" height="24" rx="2" fill="#a06a35" stroke="#5d3a1a" strokeWidth="2" /><line x1="5" y1="16" x2="35" y2="16" stroke="#5d3a1a" strokeWidth="2" /><line x1="5" y1="24" x2="35" y2="24" stroke="#5d3a1a" strokeWidth="2" /></svg>);
+  return (<svg style={st} viewBox="0 0 40 40"><path d="M10 6 V20 a8 8 0 0 0 8 8 H34" fill="none" stroke="#38bdf8" strokeWidth="9" /><rect x="5" y="3" width="10" height="6" fill="#0369a1" /><rect x="31" y="23" width="6" height="10" fill="#0369a1" /></svg>);
+}
 
 const FONT = "'Plus Jakarta Sans','Inter',system-ui,sans-serif";
 const BK = bestKey('blackjack-meja', 'best');
@@ -34,6 +46,17 @@ export default function ArcadeBlackjack({ onExit }: { onExit: () => void }): Rea
   const [muted, setMuted] = useState(false);
   const busyRef = useRef(false);
 
+  /* auto-pause saat tab disembunyikan (tidak mengganggu fase bandar) */
+  const screenRef = useRef(screen);
+  screenRef.current = screen;
+  useEffect(() => {
+    const onVis = (): void => {
+      if (document.hidden && screenRef.current === 'play') setScreen('pause');
+    };
+    document.addEventListener('visibilitychange', onVis);
+    return () => document.removeEventListener('visibilitychange', onVis);
+  }, []);
+
   const saveSaldo = (v: number): void => {
     setSaldo(v);
     setJson(SALDO_K, v);
@@ -45,7 +68,7 @@ export default function ArcadeBlackjack({ onExit }: { onExit: () => void }): Rea
     if (shoeRef.current.length < RESHUFFLE_AT) {
       shoeRef.current = makeShoe(Math.random);
       const wrap = wrapRef.current;
-      if (wrap) popText(wrap, '🃏 Sepatu kartu dikocok ulang', { size: 15, color: '#93c5fd' });
+      if (wrap) popText(wrap, 'Sepatu kartu dikocok ulang', { size: 15, color: '#93c5fd' });
     }
     return shoeRef.current.pop() as Card;
   };
@@ -164,7 +187,7 @@ export default function ArcadeBlackjack({ onExit }: { onExit: () => void }): Rea
     const wrap = wrapRef.current;
     if (outcome === 'blackjack') {
       sfx.chime(4);
-      if (wrap) popText(wrap, `BLACKJACK! +${win} sak 🎉`, { size: 24, color: '#fde047' });
+      if (wrap) popText(wrap, `BLACKJACK! +${win} sak!`, { size: 24, color: '#fde047' });
     } else if (outcome === 'win') {
       sfx.chime(3);
       if (wrap) popText(wrap, `Menang +${win} sak!`, { size: 22, color: '#4ade80' });
@@ -192,7 +215,7 @@ export default function ArcadeBlackjack({ onExit }: { onExit: () => void }): Rea
     saveSaldo(START_SALDO);
     newRound();
     const wrap = wrapRef.current;
-    if (wrap) popText(wrap, 'Mandor kasih modal 1000 sak lagi 😅', { size: 16, color: '#fde047' });
+    if (wrap) popText(wrap, 'Mandor kasih modal 1000 sak lagi', { size: 16, color: '#fde047' });
   };
 
   const toggleMute = (): void => {
@@ -213,6 +236,7 @@ export default function ArcadeBlackjack({ onExit }: { onExit: () => void }): Rea
       borderRadius: 18, fontFamily: FONT, color: '#f1f5f9', display: 'flex', flexDirection: 'column',
       background: 'radial-gradient(130% 100% at 50% 0%, #166534 0%, #14532d 45%, #052e16 100%)',
     }}>
+      <style>{`@keyframes bjDeal { 0% { opacity: 0; transform: translateY(-16px) scale(.85) rotate(-3deg); } 100% { opacity: 1; transform: translateY(0) scale(1) rotate(0); } }`}</style>
       {/* trim emas meja */}
       <div aria-hidden style={{ position: 'absolute', inset: 10, borderRadius: 16, border: '2px solid rgba(253,224,71,0.35)', pointerEvents: 'none' }} />
       <div aria-hidden style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(rgba(255,255,255,0.05) 1.5px, transparent 1.5px)', backgroundSize: '30px 30px' }} />
@@ -220,7 +244,7 @@ export default function ArcadeBlackjack({ onExit }: { onExit: () => void }): Rea
       {/* HUD */}
       <div style={{ position: 'relative', zIndex: 5, padding: '14px 16px 4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ background: 'rgba(4,20,10,0.6)', border: '1px solid rgba(253,224,71,0.4)', borderRadius: 12, padding: '7px 12px' }}>
-          <div style={{ fontSize: 11, opacity: 0.75 }}>💰 Sak semen</div>
+          <div style={{ fontSize: 11, opacity: 0.75 }}>SAK SEMEN</div>
           <div style={{ fontWeight: 900, fontSize: 18, color: '#fde047' }}>{saldo.toLocaleString('id-ID')}</div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
@@ -236,10 +260,10 @@ export default function ArcadeBlackjack({ onExit }: { onExit: () => void }): Rea
 
       {/* area bandar */}
       <div style={{ position: 'relative', zIndex: 4, padding: '8px 16px 0', textAlign: 'center' }}>
-        <div style={{ fontSize: 13, fontWeight: 900, letterSpacing: 1, color: '#fde047' }}>👷 MANDOR BESAR {dealerHidden || dealer.length === 0 ? '' : `· ${dVal.value}`}</div>
+        <div style={{ fontSize: 13, fontWeight: 900, letterSpacing: 1, color: '#fde047' }}>MANDOR BESAR {dealerHidden || dealer.length === 0 ? '' : `· ${dVal.value}`}</div>
         <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 8, minHeight: 92 }}>
           {dealer.map((c, i) => (
-            <CardView key={i} card={c} hidden={dealerHidden && i === 1} />
+            <CardView key={`${i}-${c.rank}-${c.suit}`} card={c} hidden={dealerHidden && i === 1} dealIndex={i} />
           ))}
           {dealer.length === 0 && <div style={slotHint}>Kartu bandar</div>}
         </div>
@@ -254,11 +278,11 @@ export default function ArcadeBlackjack({ onExit }: { onExit: () => void }): Rea
       {/* area pemain */}
       <div style={{ position: 'relative', zIndex: 4, padding: '0 16px', textAlign: 'center' }}>
         <div style={{ fontSize: 13, fontWeight: 900, letterSpacing: 1, color: '#bbf7d0' }}>
-          🧑‍🔧 KAMU {player.length > 0 && `· ${pVal.value}${pVal.soft && pVal.value !== 21 ? ' (soft)' : ''}`}
+          KAMU {player.length > 0 && `· ${pVal.value}${pVal.soft && pVal.value !== 21 ? ' (soft)' : ''}`}
         </div>
         <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 8, minHeight: 92 }}>
           {player.map((c, i) => (
-            <CardView key={i} card={c} />
+            <CardView key={`${i}-${c.rank}-${c.suit}`} card={c} dealIndex={i} />
           ))}
           {player.length === 0 && <div style={slotHint}>Kartumu</div>}
         </div>
@@ -281,16 +305,16 @@ export default function ArcadeBlackjack({ onExit }: { onExit: () => void }): Rea
                 }}>{b}</button>
               ))}
             </div>
-            <button style={primaryBtn} onClick={deal}>BAGI KARTU 🃏</button>
+            <button style={primaryBtn} onClick={deal}>BAGI KARTU</button>
             {saldo < 10 && (
-              <button style={ghostBtn} onClick={resetSaldo}>Bangkrut! Minta modal ke Mandor 🙏</button>
+              <button style={ghostBtn} onClick={resetSaldo}>Bangkrut! Minta modal ke Mandor</button>
             )}
           </>
         )}
         {phase === 'player' && (
           <div style={{ display: 'flex', gap: 8 }}>
-            <button style={actionBtn('#4ade80')} onClick={doHit}>TAMBAH ➕</button>
-            <button style={actionBtn('#38bdf8')} onClick={() => doStand()}>CUKUP ✋</button>
+            <button style={actionBtn('#4ade80')} onClick={doHit}>TAMBAH +</button>
+            <button style={actionBtn('#38bdf8')} onClick={() => doStand()}>CUKUP</button>
             <button
               style={{ ...actionBtn('#fbbf24'), opacity: player.length === 2 && saldo >= bet ? 1 : 0.4 }}
               onClick={doDouble}
@@ -304,7 +328,7 @@ export default function ArcadeBlackjack({ onExit }: { onExit: () => void }): Rea
           <div style={{ textAlign: 'center', fontSize: 13, color: '#bbf7d0', padding: 10 }}>Mandor Besar sedang main…</div>
         )}
         {phase === 'done' && (
-          <button style={primaryBtn} onClick={newRound}>RONDE BARU 🎲</button>
+          <button style={primaryBtn} onClick={newRound}>RONDE BARU</button>
         )}
         <div style={{ textAlign: 'center', fontSize: 11, opacity: 0.65, marginTop: 8 }}>
           Saldo puncak: {best.toLocaleString('id-ID')} sak • Blackjack bayar 3:2
@@ -313,15 +337,15 @@ export default function ArcadeBlackjack({ onExit }: { onExit: () => void }): Rea
 
       {screen === 'tutorial' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>🃏</div>
+          <img src={cardBackUrl} alt="Punggung kartu proyek" style={{ height: 84, borderRadius: 8 }} />
           <h2 style={h2}>BLACKJACK<br />MEJA PROYEK</h2>
           <p style={p}>
-            Duel kartu melawan <b>👷 Mandor Besar</b>! Dekati <b>21</b> tanpa lewat.
+            Duel kartu melawan <b>Mandor Besar</b>! Dekati <b>21</b> tanpa lewat.
             Taruhan pakai <b>sak semen</b> — menang dapat semen, kalah disuruh lembur.
           </p>
           <ul style={{ textAlign: 'left', fontSize: 13, lineHeight: 1.9, margin: '0 0 6px', paddingLeft: 20, color: '#e2e8f0' }}>
-            <li>🂡 Blackjack (A+10) bayar <b>3:2</b></li>
-            <li>✋ Bandar berhenti di semua 17</li>
+            <li>Blackjack (A+10) bayar <b>3:2</b></li>
+            <li>Bandar berhenti di semua 17</li>
             <li>×2 <b>Ganda</b>: tambah taruhan, 1 kartu, wajib cukup</li>
           </ul>
           <button style={primaryBtn} onClick={() => { sfx.ensure(); setScreen('play'); }}>Duduk di Meja</button>
@@ -329,7 +353,7 @@ export default function ArcadeBlackjack({ onExit }: { onExit: () => void }): Rea
       )}
       {screen === 'pause' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>☕</div>
+          <div><CoffeeCupIcon size={42} /></div>
           <h2 style={h2}>JEDA</h2>
           <p style={p}>Kartunya ditutup dulu. Mandor tidak ngintip, janji.</p>
           <button style={primaryBtn} onClick={() => setScreen('play')}>Lanjutkan</button>
@@ -339,16 +363,24 @@ export default function ArcadeBlackjack({ onExit }: { onExit: () => void }): Rea
   );
 }
 
-function CardView({ card, hidden }: { card: Card; hidden?: boolean }): React.JSX.Element {
+function CardView({ card, hidden, dealIndex = 0 }: { card: Card; hidden?: boolean; dealIndex?: number }): React.JSX.Element {
+  const backImg = useSprite(hidden ? cardBackUrl : null);
+  const anim: React.CSSProperties = {
+    animation: `bjDeal .38s cubic-bezier(.2,.9,.3,1.2) ${dealIndex * 110}ms both`,
+  };
   if (hidden) {
     return (
       <div style={{
-        width: 62, height: 88, borderRadius: 10,
+        width: 62, height: 88, borderRadius: 10, overflow: 'hidden',
         background: 'repeating-linear-gradient(45deg,#1e3a8a,#1e3a8a 8px,#1d4ed8 8px,#1d4ed8 16px)',
         border: '3px solid #f8fafc', boxShadow: '0 6px 14px rgba(0,0,0,0.4)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        color: '#fff', fontWeight: 900, fontSize: 11, textAlign: 'center',
-      }}>SEMEN<br />🦺</div>
+        color: '#fff', fontWeight: 900, fontSize: 11, textAlign: 'center', ...anim,
+      }}>
+        {backImg
+          ? <img src={cardBackUrl} alt="Punggung kartu blueprint" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          : <>SEMEN<br />PROYEK</>}
+      </div>
     );
   }
   const red = isRed(card.suit);
@@ -356,13 +388,13 @@ function CardView({ card, hidden }: { card: Card; hidden?: boolean }): React.JSX
     <div style={{
       width: 62, height: 88, borderRadius: 10, background: 'linear-gradient(160deg,#ffffff,#e2e8f0)',
       border: '1px solid #cbd5e1', boxShadow: '0 6px 14px rgba(0,0,0,0.4)',
-      color: red ? '#dc2626' : '#1e293b', position: 'relative',
+      color: red ? '#dc2626' : '#1e293b', position: 'relative', ...anim,
     }}>
       <div style={{ position: 'absolute', top: 5, left: 7, fontWeight: 900, fontSize: 15, lineHeight: 1.1, textAlign: 'center' }}>
         {RANKS[card.rank - 1]}<br />{SUITS[card.suit]}
       </div>
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 30 }}>
-        {SUITS[card.suit]}
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <SuitMaterial suit={card.suit} />
       </div>
       <div style={{ position: 'absolute', bottom: 5, right: 7, fontWeight: 900, fontSize: 15, lineHeight: 1.1, textAlign: 'center', transform: 'rotate(180deg)' }}>
         {RANKS[card.rank - 1]}<br />{SUITS[card.suit]}

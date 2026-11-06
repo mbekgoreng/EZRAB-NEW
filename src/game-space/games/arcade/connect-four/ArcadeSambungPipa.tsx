@@ -8,7 +8,7 @@ import { bestKey, getJson, setJson } from '../../../engine2d/best';
 import { popText } from '../../../engine2d/juice2d';
 import {
   createBoard, dropPiece, dropRow, isWinningMove, isFull, legalColumns,
-  aiChooseColumn, COLS, ROWS, other, type Board, type Player, type Cell,
+  aiChooseColumn, winningCells, COLS, ROWS, other, type Board, type Player, type Cell,
 } from './logic';
 
 const FONT = "'Plus Jakarta Sans','Inter',system-ui,sans-serif";
@@ -33,23 +33,6 @@ interface S {
   winCells: WinCell[];
   hoverCol: number;
   t: number;
-}
-
-/** Telusuri garis kemenangan dari langkah terakhir, kembalikan sel-selnya. */
-function winCellsOf(board: Board, col: number, row: number, player: Player): WinCell[] {
-  const dirs: ReadonlyArray<readonly [number, number]> = [[1, 0], [0, 1], [1, 1], [1, -1]];
-  for (const [dx, dy] of dirs) {
-    const cells: WinCell[] = [{ c: col, r: row }];
-    for (const s of [1, -1] as const) {
-      let c = col + dx * s; let r = row + dy * s;
-      while (c >= 0 && c < COLS && r >= 0 && r < ROWS && board[r][c] === player) {
-        cells.push({ c, r });
-        c += dx * s; r += dy * s;
-      }
-    }
-    if (cells.length >= 4) return cells;
-  }
-  return [];
 }
 
 export default function ArcadeSambungPipa({ onExit }: { onExit: () => void }): React.JSX.Element {
@@ -101,11 +84,11 @@ export default function ArcadeSambungPipa({ onExit }: { onExit: () => void }): R
     const finish = (winner: Player | 'draw', col: number, row: number, player: Player): void => {
       s.winner = winner;
       if (winner === 1) {
-        s.winCells = winCellsOf(s.board, col, row, player);
+        s.winCells = winningCells(s.board, col, row, player);
         sfx.chime(4);
         api.shake.add(0.55);
         const wrap = wrapRef.current;
-        if (wrap) popText(wrap, '🚰 PIPA TERSAMBUNG!', { size: 30, color: '#7dd3fc' });
+        if (wrap) popText(wrap, 'PIPA TERSAMBUNG!', { size: 30, color: '#7dd3fc' });
         const { bx, by, cell } = geom();
         api.particles.spawn(api.W / 2, by + cell * 2, {
           count: 70, colors: ['#7dd3fc', '#38bdf8', '#ffffff', '#0ea5e9'],
@@ -113,17 +96,17 @@ export default function ArcadeSambungPipa({ onExit }: { onExit: () => void }): R
         });
         const prev = getJson<number>(BK, 0);
         if (prev === 0 || s.moves < prev) setJson(BK, s.moves);
-        if (wrap) window.setTimeout(() => popText(wrap, `⏱ ${s.moves} langkah — rekor!`, { size: 18, color: '#fde047' }), 900);
+        if (wrap) window.setTimeout(() => popText(wrap, `${s.moves} langkah — rekor!`, { size: 18, color: '#fde047' }), 900);
       } else if (winner === 2) {
-        s.winCells = winCellsOf(s.board, col, row, player);
+        s.winCells = winningCells(s.board, col, row, player);
         sfx.fail();
         const wrap = wrapRef.current;
-        if (wrap) popText(wrap, '😤 Mandor AI menang...', { size: 24, color: '#fb923c' });
+        if (wrap) popText(wrap, 'Mandor AI menang...', { size: 24, color: '#fb923c' });
         api.shake.add(0.7);
       } else {
         sfx.click();
         const wrap = wrapRef.current;
-        if (wrap) popText(wrap, '😐 Pipa buntu — seri!', { size: 24, color: '#e2e8f0' });
+        if (wrap) popText(wrap, 'Pipa buntu — seri!', { size: 24, color: '#e2e8f0' });
       }
       window.setTimeout(() => {
         push();
@@ -444,25 +427,27 @@ export default function ArcadeSambungPipa({ onExit }: { onExit: () => void }): R
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', zIndex: 5, pointerEvents: 'none' }}>
         <div style={{ pointerEvents: 'auto', background: 'rgba(8,20,35,0.6)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 14, padding: '7px 12px', color: '#fff', backdropFilter: 'blur(6px)', minWidth: 132 }}>
           <div style={{ fontSize: 12, opacity: 0.85 }}>
-            {hud.turn === 1 ? '🔵 Giliranmu (PVC)' : '🟠 Mandor AI berpikir…'}
+            {hud.turn === 1
+              ? <><PipeDot color={P1} />Giliranmu (PVC)</>
+              : <><PipeDot color={P2} />Mandor AI berpikir…</>}
           </div>
           <div style={{ fontSize: 12, marginTop: 3, opacity: 0.9 }}>
             Langkah: <b>{hud.moves}</b>
-            {best > 0 && <span style={{ color: '#fde047' }}> • 🏆 {best}</span>}
+            {best > 0 && <span style={{ color: '#fde047' }}> • Rekor: {best} langkah</span>}
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8, pointerEvents: 'auto' }}>
           {(screen === 'play' || screen === 'pause') && (
-            <button style={btn} onClick={togglePause} aria-label="Jeda">{screen === 'play' ? '⏸' : '▶'}</button>
+            <button style={btn} onClick={togglePause} aria-label="Jeda">{screen === 'play' ? <IconPause /> : <IconPlay />}</button>
           )}
-          <button style={btn} onClick={toggleMute} aria-label="Suara">{muted ? '🔇' : '🔊'}</button>
-          <button style={btn} onClick={onExit} aria-label="Keluar">✕</button>
+          <button style={btn} onClick={toggleMute} aria-label="Suara">{muted ? <IconSoundOff /> : <IconSoundOn />}</button>
+          <button style={btn} onClick={onExit} aria-label="Keluar"><IconClose /></button>
         </div>
       </div>
 
       {screen === 'tutorial' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>🚰</div>
+          <div><PipeFlangeIcon color={P1} /></div>
           <h2 style={h2}>SAMBUNG PIPA</h2>
           <p style={p}>
             <b>Ketuk kolom</b> untuk menjatuhkan segmen pipa PVC birumu.
@@ -475,7 +460,7 @@ export default function ArcadeSambungPipa({ onExit }: { onExit: () => void }): R
       )}
       {screen === 'pause' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>☕</div>
+          <div><PausePipesIcon /></div>
           <h2 style={h2}>JEDA</h2>
           <p style={p}>Tukangnya ikut istirahat. Pipanya ditunggu mandor.</p>
           <button style={primaryBtn} onClick={togglePause}>Lanjutkan</button>
@@ -483,7 +468,7 @@ export default function ArcadeSambungPipa({ onExit }: { onExit: () => void }): R
       )}
       {screen === 'over' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>🚰</div>
+          <div><PipeFlangeIcon color={P1} /></div>
           <h2 style={h2}>SELESAI</h2>
           <div style={{ fontSize: 40, fontWeight: 900, color: '#7dd3fc' }}>{hud.moves} langkah</div>
           {best > 0 && <p style={p}>Rekor tercepat: <b style={{ color: '#fde047' }}>{best} langkah</b></p>}
@@ -511,6 +496,102 @@ function Overlay({ children }: { children: React.ReactNode }): React.JSX.Element
         {children}
       </div>
     </div>
+  );
+}
+
+/** Keping pipa mini (CSS prosedural): flensa baja + cakram berwarna + lubang tengah. */
+function PipeDot({ color }: { color: string }): React.JSX.Element {
+  return (
+    <span style={{
+      position: 'relative', display: 'inline-block', width: 13, height: 13, borderRadius: '50%',
+      marginRight: 6, verticalAlign: -2, border: '2px solid #cbd5e1',
+      background: `radial-gradient(circle at 35% 32%, #ffffff 0%, ${color} 48%, ${color} 100%)`,
+      boxShadow: 'inset 0 0 3px rgba(15,23,42,0.55)',
+    }}>
+      <span style={{
+        position: 'absolute', left: '50%', top: '50%', width: 4.5, height: 4.5, borderRadius: '50%',
+        background: '#0f172a', transform: 'translate(-50%,-50%)',
+      }} />
+    </span>
+  );
+}
+
+/** Ikon flensa pipa prosedural (SVG): pelat baja bundar, 6 baut tepi, lubang pipa berwarna di tengah. */
+function PipeFlangeIcon({ size = 54, color = '#3b82f6' }: { size?: number; color?: string }): React.JSX.Element {
+  const bolts = Array.from({ length: 6 }, (_, i) => {
+    const a = (Math.PI / 3) * i - Math.PI / 2;
+    return { x: 32 + Math.cos(a) * 23.5, y: 32 + Math.sin(a) * 23.5 };
+  });
+  return (
+    <svg width={size} height={size} viewBox="0 0 64 64" aria-hidden="true">
+      <circle cx="32" cy="32" r="29" fill="#94a3b8" stroke="#475569" strokeWidth="2" />
+      <circle cx="32" cy="32" r="24.5" fill="none" stroke="rgba(15,23,42,0.35)" strokeWidth="1.5" />
+      {bolts.map((b, i) => (
+        <circle key={i} cx={b.x} cy={b.y} r="3.4" fill="#e2e8f0" stroke="#475569" strokeWidth="1.2" />
+      ))}
+      <circle cx="32" cy="32" r="17" fill={color} />
+      <ellipse cx="26" cy="24" rx="6" ry="3.2" fill="rgba(255,255,255,0.5)" transform="rotate(-30 26 24)" />
+      <circle cx="32" cy="32" r="8" fill="#0f172a" />
+    </svg>
+  );
+}
+
+/** Ikon jeda prosedural (SVG): dua batang pipa tegak biru berflensa. */
+function PausePipesIcon({ size = 54 }: { size?: number }): React.JSX.Element {
+  return (
+    <svg width={size} height={size} viewBox="0 0 64 64" aria-hidden="true">
+      {[18, 37].map((x) => (
+        <g key={x}>
+          <rect x={x} y="10" width="9" height="44" rx="4" fill="#38bdf8" stroke="#bae6fd" strokeWidth="1.6" />
+          <rect x={x - 2.5} y="14" width="14" height="5" rx="2" fill="#94a3b8" />
+          <rect x={x - 2.5} y="45" width="14" height="5" rx="2" fill="#94a3b8" />
+        </g>
+      ))}
+    </svg>
+  );
+}
+
+function IconPause(): React.JSX.Element {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="5" y="4" width="5" height="16" rx="1.6" fill="#fff" />
+      <rect x="14" y="4" width="5" height="16" rx="1.6" fill="#fff" />
+    </svg>
+  );
+}
+
+function IconPlay(): React.JSX.Element {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true">
+      <polygon points="7,4 20,12 7,20" fill="#fff" />
+    </svg>
+  );
+}
+
+function IconSoundOn(): React.JSX.Element {
+  return (
+    <svg width="19" height="19" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M3 9v6h4l5 4V5L7 9H3z" fill="#fff" />
+      <path d="M15.5 8.5a5 5 0 0 1 0 7" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M18 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function IconSoundOff(): React.JSX.Element {
+  return (
+    <svg width="19" height="19" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M3 9v6h4l5 4V5L7 9H3z" fill="#fff" />
+      <path d="M16 9l6 6M22 9l-6 6" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function IconClose(): React.JSX.Element {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M5 5l14 14M19 5L5 19" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" />
+    </svg>
   );
 }
 

@@ -28,8 +28,8 @@ interface Rt {
 }
 
 const DIFFS: Difficulty[] = ['gampang', 'sedang', 'sulit', 'ahli'];
-const DIFF_EMOJI: Record<Difficulty, string> = {
-  gampang: '🟢', sedang: '🟡', sulit: '🟠', ahli: '🔴',
+const DIFF_DOT: Record<Difficulty, string> = {
+  gampang: '#22c55e', sedang: '#eab308', sulit: '#f97316', ahli: '#ef4444',
 };
 
 function bestTimeKey(diff: Difficulty): string {
@@ -168,7 +168,7 @@ export default function SudokuTukang({ onExit }: { onExit: () => void }) {
         speed: [120, 420], angle: -Math.PI / 2, spread: Math.PI * 2,
         gravity: 500, life: [0.8, 1.6], size: [3, 7], shape: 'rect',
       });
-      if (wrapRef.current) popText(wrapRef.current, 'RAB KLOP! 🎉', { size: 34, color: '#fbbf24' });
+      if (wrapRef.current) popText(wrapRef.current, 'RAB KLOP!', { size: 34, color: '#fbbf24' });
     }
   };
 
@@ -260,7 +260,7 @@ export default function SudokuTukang({ onExit }: { onExit: () => void }) {
         count: 22, colors: ['#fde68a', '#fbbf24', '#ffffff'], speed: [50, 200],
         life: [0.5, 1], size: [2, 5], shape: 'spark',
       });
-      api.scores.add(c.x, c.y - 18, '💡', { size: 22 });
+      api.scores.add(c.x, c.y - 18, 'HINT', { size: 22 });
       syncHud();
       if (isComplete(s)) doWin();
     }
@@ -315,7 +315,7 @@ export default function SudokuTukang({ onExit }: { onExit: () => void }) {
       {/* ===== header ===== */}
       <div style={styles.topbar}>
         <button style={styles.iconBtn} onClick={onExit} title="Keluar">✕</button>
-        <div style={styles.title}>🧱 Sudoku Tukang</div>
+        <div style={styles.title}>Sudoku Tukang</div>
         <div style={{ display: 'flex', gap: 6 }}>
           {(screen === 'play') && (
             <button style={styles.iconBtn} onClick={togglePause} title={paused ? 'Lanjut' : 'Jeda'}>
@@ -333,13 +333,16 @@ export default function SudokuTukang({ onExit }: { onExit: () => void }) {
         <div style={styles.hud}>
           <div style={styles.hudItem}>⏱ <b>{fmtTime(hud.elapsed)}</b></div>
           <div style={styles.hudItem} title="Salah baca gambar">
-            ❌ <b>{hud.mistakes}/3</b>
+            Salah <b>{hud.mistakes}/3</b>
           </div>
-          <div style={styles.hudItem}>💡 <b>{hud.hintsLeft}</b></div>
+          <div style={styles.hudItem}>Hint <b>{hud.hintsLeft}</b></div>
+          <div style={styles.hudItem} title="Progres pengisian papan">
+            Terisi <b>{Math.round((counts.reduce((a, b) => a + b, 0) / 81) * 100)}%</b>
+          </div>
           <div style={styles.hudItem}>
             <span style={{ fontSize: 11, color: '#64748b' }}>
-              {DIFF_EMOJI[diff]} {DIFF_LABEL[diff]}
-              {bestTimes[diff] !== null && ` · 🏆 ${fmtTime(bestTimes[diff] as number)}`}
+              <span style={{ display: 'inline-block', width: 9, height: 9, borderRadius: '50%', background: DIFF_DOT[diff], marginRight: 4 }} />{DIFF_LABEL[diff]}
+              {bestTimes[diff] !== null && ` · Rekor ${fmtTime(bestTimes[diff] as number)}`}
             </span>
           </div>
         </div>
@@ -372,14 +375,14 @@ export default function SudokuTukang({ onExit }: { onExit: () => void }) {
               style={{ ...styles.toolBtn, flex: 1 }}
               onClick={() => { apiRef.current?.sfx.click(); setNoteMode((m) => !m); }}
             >
-              ✏️ Catatan {noteMode ? 'ON' : 'OFF'}
+              Catatan {noteMode ? 'ON' : 'OFF'}
             </button>
             <button
               className="stk-toolbtn"
               style={{ ...styles.toolBtn, flex: 1, opacity: hud.hintsLeft > 0 ? 1 : 0.4 }}
               onClick={pressHint}
             >
-              💡 Hint ({hud.hintsLeft})
+              Hint ({hud.hintsLeft})
             </button>
           </div>
         </div>
@@ -388,7 +391,7 @@ export default function SudokuTukang({ onExit }: { onExit: () => void }) {
       {/* ===== overlays ===== */}
       {screen === 'diff' && (
         <Overlay>
-          <div style={styles.cardTitle}>🧱 Sudoku Tukang</div>
+          <div style={styles.cardTitle}>Sudoku Tukang</div>
           <p style={styles.cardText}>
             Gambar kerja 9×9 dari mandor. Isi semua kotak dengan angka 1–9 —
             tiap baris, kolom, dan kotak 3×3 tidak boleh kembar.
@@ -397,11 +400,11 @@ export default function SudokuTukang({ onExit }: { onExit: () => void }) {
           <div style={styles.diffGrid}>
             {DIFFS.map((d) => (
               <button key={d} className="stk-diffbtn" style={styles.diffBtn} onClick={() => chooseDiff(d)}>
-                <div style={{ fontSize: 20 }}>{DIFF_EMOJI[d]}</div>
+                <div style={{ width: 18, height: 18, borderRadius: '50%', background: DIFF_DOT[d], margin: '0 auto' }} />
                 <div style={{ fontWeight: 800 }}>{DIFF_LABEL[d]}</div>
                 <div style={{ fontSize: 11, color: '#64748b' }}>{CLUES[d]} petunjuk</div>
                 <div style={{ fontSize: 11, color: '#b45309' }}>
-                  {bestTimes[d] !== null ? `🏆 ${fmtTime(bestTimes[d] as number)}` : 'belum ada rekor'}
+                  {bestTimes[d] !== null ? `Rekor ${fmtTime(bestTimes[d] as number)}` : 'belum ada rekor'}
                 </div>
               </button>
             ))}
@@ -411,24 +414,24 @@ export default function SudokuTukang({ onExit }: { onExit: () => void }) {
 
       {screen === 'loading' && (
         <Overlay>
-          <div style={styles.cardTitle}>📐 Menyiapkan gambar kerja…</div>
+          <div style={styles.cardTitle}>Menyiapkan gambar kerja…</div>
           <p style={styles.cardText}>Mandor sedang menghapus coretan yang salah.</p>
         </Overlay>
       )}
 
       {screen === 'tutorial' && (
         <Overlay>
-          <div style={styles.cardTitle}>📋 Briefing Mandor</div>
+          <div style={styles.cardTitle}>Briefing Mandor</div>
           <div style={{ ...styles.cardText, textAlign: 'left' }}>
-            <p>👆 <b>Ketuk kotak</b> lalu pilih angka 1–9.</p>
-            <p>✏️ <b>Mode Catatan</b> untuk corat-coret kandidat angka.</p>
-            <p>❌ <b>3x salah baca gambar</b> = proyek DIBATALKAN.</p>
-            <p>💡 <b>Hint 3x</b> — tanya konsultan, tapi jatah terbatas.</p>
+            <p><b>Ketuk kotak</b> lalu pilih angka 1–9.</p>
+            <p><b>Mode Catatan</b> untuk corat-coret kandidat angka.</p>
+            <p><b>3x salah baca gambar</b> = proyek DIBATALKAN.</p>
+            <p><b>Hint 3x</b> — tanya konsultan, tapi jatah terbatas.</p>
             <p style={{ color: '#64748b', fontSize: 13 }}>
               *"AHSP bilang cukup, harga pasar bilang tidak. Sudoku tidak peduli — yang penting konsisten."*
             </p>
           </div>
-          <button style={styles.primaryBtn} onClick={startGame}>Mulai Kerja 🔨</button>
+          <button style={styles.primaryBtn} onClick={startGame}>Mulai Kerja</button>
         </Overlay>
       )}
 
@@ -438,7 +441,7 @@ export default function SudokuTukang({ onExit }: { onExit: () => void }) {
           <p style={styles.cardText}>Timer dibekukan. Gambarnya aman, tidak ada yang revisi.</p>
           <div style={styles.btnRow}>
             <button style={styles.primaryBtn} onClick={togglePause}>Lanjut ▶</button>
-            <button style={styles.ghostBtn} onClick={restart}>Ulangi 🔄</button>
+            <button style={styles.ghostBtn} onClick={restart}>Ulangi</button>
             <button style={styles.ghostBtn} onClick={() => { apiRef.current?.loop.setPaused(false); setPaused(false); setScreen('diff'); }}>
               Ganti Level
             </button>
@@ -448,17 +451,17 @@ export default function SudokuTukang({ onExit }: { onExit: () => void }) {
 
       {screen === 'win' && (
         <Overlay>
-          <div style={{ fontSize: 52 }}>🏆</div>
+          <div style={{ fontSize: 15, fontWeight: 900, letterSpacing: 2, color: '#b45309' }}>— SELESAI —</div>
           <div style={styles.cardTitle}>RAB klop tanpa revisi!</div>
           <p style={styles.cardText}>
             Selesai dalam <b>{fmtTime(winInfo.time)}</b>
-            {winInfo.isBest && <span style={{ color: '#b45309' }}> — 🏆 rekor baru!</span>}
+            {winInfo.isBest && <span style={{ color: '#b45309' }}> — rekor baru!</span>}
           </p>
           <p style={{ ...styles.cardText, fontSize: 13, color: '#64748b' }}>
             *"Estimasi selesai… eh, gambar revisi." — tidak kali ini. Kerja bagus, estimator!*
           </p>
           <div style={styles.btnRow}>
-            <button style={styles.primaryBtn} onClick={restart}>Main Lagi 🔄</button>
+            <button style={styles.primaryBtn} onClick={restart}>Main Lagi</button>
             <button style={styles.ghostBtn} onClick={() => setScreen('diff')}>Ganti Level</button>
           </div>
         </Overlay>
@@ -466,7 +469,7 @@ export default function SudokuTukang({ onExit }: { onExit: () => void }) {
 
       {screen === 'lose' && (
         <Overlay>
-          <div style={{ fontSize: 52 }}>🚧</div>
+          <div style={{ fontSize: 15, fontWeight: 900, letterSpacing: 2, color: '#dc2626' }}>— DIBATALKAN —</div>
           <div style={styles.cardTitle}>Proyek DIBATALKAN!</div>
           <p style={styles.cardText}>
             Mandor salah baca gambar <b>3x</b>. Owner ngamuk, konsultan geleng-geleng,
@@ -476,7 +479,7 @@ export default function SudokuTukang({ onExit }: { onExit: () => void }) {
             *"Konsultan: 'coba dihitung ulang ya.'"*
           </p>
           <div style={styles.btnRow}>
-            <button style={styles.primaryBtn} onClick={restart}>Coba Lagi 💪</button>
+            <button style={styles.primaryBtn} onClick={restart}>Coba Lagi</button>
             <button style={styles.ghostBtn} onClick={() => setScreen('diff')}>Ganti Level</button>
           </div>
         </Overlay>

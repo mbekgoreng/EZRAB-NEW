@@ -23,6 +23,8 @@ import {
   type Block3D, type Mat3D, type Layer3D, type LogicEvent,
 } from './logic';
 import { sfx } from '../../engine2d/audio';
+import { loadSprite } from '../../engine2d/sprites';
+import puingUrl from '../../assets/bongkar-rumah/fx-puing.webp';
 
 export interface Hud3D {
   score: number;
@@ -168,6 +170,10 @@ export class Bongkar3DEngine {
   private clouds: THREE.Sprite[] = [];
   private motes: THREE.Points | null = null;
 
+  // tumpukan puing (aset gambar pilot Fase C) di kaki bangunan
+  private rubble: THREE.Sprite | null = null;
+  private rubbleAnchor: { x: number; z: number } | null = null;
+
   private tmpM = new THREE.Matrix4();
   private tmpQ = new THREE.Quaternion();
   private tmpV = new THREE.Vector3();
@@ -194,6 +200,22 @@ export class Bongkar3DEngine {
 
     this.buildEnvironment();
     this.buildPools();
+    // Muat sprite puing lewat loader bersama; gagal muat -> scene tetap
+    // prosedural (debu & debris pooled), tidak ada fallback emoji di 3D.
+    void loadSprite(puingUrl).then((e) => {
+      if (this.disposed || e.status !== 'ready' || !e.image) return;
+      const tex = new THREE.CanvasTexture(e.image as HTMLImageElement);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      this.track(tex);
+      const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false });
+      this.track(mat);
+      const sp = new THREE.Sprite(mat);
+      sp.scale.set(4.4, 3.0, 1);
+      sp.visible = false;
+      this.rubble = sp;
+      this.scene.add(sp);
+      this.placeRubble();
+    });
     this.attachListeners();
     this.resize();
     this.last = performance.now();
@@ -530,6 +552,10 @@ export class Bongkar3DEngine {
       slab.position.set((bounds.x0 + bounds.x1) / 2, -0.12, (bounds.z0 + bounds.z1) / 2);
     }
 
+    // puing menumpuk di depan-tengah tapak (selalu masuk bingkai kamera)
+    this.rubbleAnchor = { x: (bounds.x0 + bounds.x1) / 2 - 1.2, z: bounds.z1 + 1.7 };
+    this.placeRubble();
+
     // kamera: bingkai bangunan
     const cx = (bounds.x0 + bounds.x1) / 2;
     const cz = (bounds.z0 + bounds.z1) / 2;
@@ -546,6 +572,13 @@ export class Bongkar3DEngine {
     });
 
     this.pushHud();
+  }
+
+  /** Posisikan tumpukan puing di kaki bangunan (jangkar dari bounds level). */
+  private placeRubble(): void {
+    if (!this.rubble || !this.rubbleAnchor) return;
+    this.rubble.position.set(this.rubbleAnchor.x, 1.05, this.rubbleAnchor.z);
+    this.rubble.visible = true;
   }
 
   /** Posisikan mesh blok (solo) mengikuti logika. */
@@ -1104,6 +1137,11 @@ export class Bongkar3DEngine {
   /* ============================== HUD & debug ============================== */
 
   private pushHud(): void {
+    // Tumpukan puing membesar seiring progres penghancuran (umpan balik dampak).
+    if (this.rubble) {
+      const s = 0.65 + progress(this.blocks) * 0.95;
+      this.rubble.scale.set(4.4 * s, 3.0 * s, 1);
+    }
     this.cb.onHud({
       score: this.score,
       pct: Math.round(progress(this.blocks) * 100),

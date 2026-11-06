@@ -8,6 +8,7 @@ import {
   mulberry32, LANES, createPlayer, stepPlayer, playerBox, playerHeight, jumpHeight,
   speedFor, gapFor, spawnRow, spawnHelmRow, obstacleBox, boxesOverlap,
   checkHits, stepWorld, checkBataLanding, scoreFor,
+  progressionFor, crashFeedbackFor, MILESTONE_AT,
   GRAV, JUMP_V, JUMP_BUFFER_T, ROLL_T, STAND_H, ROLL_H, GRACE_T,
   BATA_FALL_T, type Obstacle, type Player,
 } from './logic';
@@ -345,6 +346,62 @@ console.log('\n[9] scoreFor');
 test('skor = meter + helm*50', () => {
   assert.equal(scoreFor(100, 0), 100);
   assert.equal(scoreFor(100, 2), 200);
+});
+
+console.log('\n[10] progressionFor — progresi jarak eksplisit (Gelombang 3)');
+test('level 1 di awal, label Pemanasan, nextAt = milestone pertama', () => {
+  const pr = progressionFor(0);
+  assert.equal(pr.level, 1);
+  assert.equal(pr.label, 'Pemanasan');
+  assert.equal(pr.nextAt, MILESTONE_AT[0]);
+  assert.equal(pr.toNext, MILESTONE_AT[0]);
+  assert.equal(pr.progress, 0);
+});
+test('level naik tepat di setiap ambang milestone & monoton', () => {
+  let prevLevel = 0;
+  for (const at of MILESTONE_AT) {
+    const before = progressionFor(at - 1);
+    const on = progressionFor(at);
+    assert.equal(on.level, before.level + 1, `di ${at}m level harus naik 1`);
+    assert.ok(on.level > prevLevel);
+    prevLevel = on.level;
+  }
+});
+test('progress 0..1 di dalam pita & toNext konsisten', () => {
+  const pr = progressionFor(175); // pita 100..250
+  assert.ok(pr.progress > 0 && pr.progress < 1, `progress=${pr.progress}`);
+  assert.ok(Math.abs(pr.progress - 0.5) < 0.01, `progress=${pr.progress} harus ~0.5`);
+  assert.equal(pr.nextAt, 250);
+  assert.equal(pr.toNext, 75);
+});
+test('melewati semua milestone: nextAt null, progress 1, level maks', () => {
+  const pr = progressionFor(99999);
+  assert.equal(pr.nextAt, null);
+  assert.equal(pr.progress, 1);
+  assert.equal(pr.level, MILESTONE_AT.length + 1);
+  assert.equal(pr.toNext, 0);
+});
+test('jarak negatif diperlakukan sebagai 0', () => {
+  assert.deepEqual(progressionFor(-50), progressionFor(0));
+});
+
+console.log('\n[11] crashFeedbackFor — umpan balik tabrakan per jenis');
+test('setiap jenis tabrakan punya label tegas, shake & hit-stop > 0', () => {
+  for (const r of ['barier', 'balok', 'barikade', 'bata', 'ketiban']) {
+    const fb = crashFeedbackFor(r);
+    assert.ok(fb.label.length > 3 && fb.label.endsWith('!'), `${r}: label "${fb.label}"`);
+    assert.ok(fb.shake > 0 && fb.shake <= 1, `${r}: shake=${fb.shake}`);
+    assert.ok(fb.hitStopMs >= 50 && fb.hitStopMs <= 100, `${r}: hitStop=${fb.hitStopMs}`);
+  }
+});
+test('ketiban bata = feedback terkuat; label per jenis berbeda', () => {
+  const all = ['barier', 'balok', 'barikade', 'bata', 'ketiban'].map(crashFeedbackFor);
+  const ketiban = crashFeedbackFor('ketiban');
+  for (const fb of all) assert.ok(ketiban.shake >= fb.shake, 'ketiban harus >= semua');
+  assert.equal(new Set(all.map((f) => f.label)).size, all.length, 'label harus unik per jenis');
+});
+test('reason tak dikenal jatuh ke feedback barier (aman)', () => {
+  assert.deepEqual(crashFeedbackFor('apapun'), crashFeedbackFor('barier'));
 });
 
 console.log(`\n${passed} passed, ${failed} failed`);

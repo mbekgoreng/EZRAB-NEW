@@ -8,6 +8,7 @@ export * from './input';
 export * from './particles';
 export * from './juice2d';
 export * from './best';
+export * from './sprites';
 export { sfx } from './audio';
 export { useGameCanvas } from './useGameCanvas';
 export type { GameApi } from './useGameCanvas';

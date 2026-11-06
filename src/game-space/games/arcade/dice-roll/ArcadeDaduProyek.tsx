@@ -1,15 +1,19 @@
 /**
  * ArcadeDaduProyek ("Dadu Proyek") — dadu bersisi material proyek.
- * Tebak ATAS (4-6) / BAWAH (1-3) / PAS melawan Bandar Mandor.
- * Koin virtual, yang bangkrut duluan kalah.
+ * Pertandingan 10 ronde: tebak ATAS (4-6) / BAWAH (1-3) / PAS melawan
+ * Bandar Mandor, pilih risiko Standar / Berani x2 tiap ronde (semua
+ * angka tampil sebelum lempar). Unggul koin di akhir = menang;
+ * bangkrut sebelum ronde habis = kalah seketika.
  */
 import React, { useRef, useState } from 'react';
 import { useGameCanvas, type GameApi, TAU, clamp, sfx } from '../../../engine2d';
 import { bestKey, getBest, setBest } from '../../../engine2d/best';
 import { popText } from '../../../engine2d/juice2d';
 import {
-  FACES, rollDie, resolveRound, aiChoosesSide, aiExactNumber, clampStake, resultLabel,
-  START_COINS, MIN_STAKE, type BetSide, type DieFace, type BetResult,
+  FACES, rollDie, clampStake, resultLabel,
+  createMatch, resolveMatchRound, previewRound, aiStake, RISK_INFO, MATCH_ROUNDS,
+  START_COINS, MIN_STAKE,
+  type BetSide, type DieFace, type BetResult, type RiskTier, type MatchState,
 } from './logic';
 
 const FONT = "'Plus Jakarta Sans','Inter',system-ui,sans-serif";
@@ -25,6 +29,7 @@ interface S {
   side: BetSide;
   exact: number;
   stake: number;
+  risk: RiskTier;
   stage: Stage;
   rollT: number;
   face: DieFace;
@@ -50,6 +55,9 @@ export default function ArcadeDaduProyek({ onExit }: { onExit: () => void }): Re
     coins: START_COINS, aiCoins: START_COINS, side: 'atas' as BetSide,
     exact: 4, stake: 10, stage: 'bet' as Stage, result: null as BetResult | null,
     delta: 0, best: getBest(BK, 0),
+    risk: 'standar' as RiskTier, roundsPlayed: 0, totalRounds: MATCH_ROUNDS,
+    aiStakeNext: 0, effP: 10, effAi: 0, pot: 10,
+    over: false, winner: null as string | null, bankrupt: null as string | null,
   });
   const [muted, setMuted] = useState(false);
 
@@ -64,7 +72,7 @@ export default function ArcadeDaduProyek({ onExit }: { onExit: () => void }): Re
 
     const s: S = {
       coins: START_COINS, aiCoins: START_COINS,
-      side: 'atas', exact: 4, stake: 10, stage: 'bet',
+      side: 'atas', exact: 4, stake: 10, risk: 'standar', stage: 'bet',
       rollT: 0, face: FACES[0], cycleFace: FACES[0],
       result: null, delta: 0, t: 0, dieAng: 0,
     };
@@ -74,31 +82,51 @@ export default function ArcadeDaduProyek({ onExit }: { onExit: () => void }): Re
       return ((rngState >>> 0) % 100000) / 100000;
     };
 
+    /* Status pertandingan (ronde tetap) + taruhan Bandar ronde berikutnya.
+       Taruhan Bandar dihitung & DITAMPILKAN sebelum lempar agar pratinjau
+       risiko jujur sepenuhnya. */
+    let match: MatchState = createMatch();
+    let aiStakeNext = 0;
+
     const push = (): void => {
+      const preview = previewRound(clampStake(s.stake, match.playerCoins), aiStakeNext, s.risk);
+      const effP = Math.min(preview.playerEffective, match.playerCoins);
+      const effAi = Math.min(preview.aiEffective, match.aiCoins);
       api.pushHud({
         coins: s.coins, aiCoins: s.aiCoins, side: s.side, exact: s.exact,
         stake: s.stake, stage: s.stage, result: s.result, delta: s.delta,
         best: getBest(BK, 0),
+        risk: s.risk, roundsPlayed: match.roundsPlayed, totalRounds: match.totalRounds,
+        aiStakeNext, effP, effAi, pot: effP + effAi,
+        over: match.over, winner: match.winner, bankrupt: match.bankrupt,
       });
     };
 
     const reset = (): void => {
-      s.coins = START_COINS; s.aiCoins = START_COINS;
-      s.side = 'atas'; s.exact = 4; s.stake = 10; s.stage = 'bet';
+      match = createMatch();
+      aiStakeNext = aiStake(match.aiCoins, rng);
+      s.coins = match.playerCoins; s.aiCoins = match.aiCoins;
+      s.side = 'atas'; s.exact = 4; s.stake = 10; s.risk = 'standar'; s.stage = 'bet';
       s.result = null; s.delta = 0; s.rollT = 0; s.face = FACES[0];
       push();
     };
 
     const reveal = (): void => {
-      const stake = clampStake(s.stake, s.coins);
-      const aiSide = aiChoosesSide(s.side, rng);
-      const aiNum = s.side === 'pas' ? aiExactNumber(s.exact, rng) : null;
-      const r = resolveRound(s.side, s.side === 'pas' ? s.exact : null, stake, aiSide, aiNum, s.aiCoins, rng);
+      const outcome = resolveMatchRound(match, {
+        side: s.side,
+        exact: s.side === 'pas' ? s.exact : null,
+        stake: clampStake(s.stake, match.playerCoins),
+        risk: s.risk,
+        aiStake: aiStakeNext,
+      }, rng);
+      if (!outcome.result) { s.stage = 'bet'; push(); return; }
+      match = outcome.state;
+      const r = outcome.result;
       s.face = r.roll;
       s.result = r.player;
       s.delta = r.playerDelta;
-      s.coins = Math.max(0, s.coins + r.playerDelta);
-      s.aiCoins = Math.max(0, s.aiCoins + r.aiDelta);
+      s.coins = match.playerCoins;
+      s.aiCoins = match.aiCoins;
       setBest(BK, s.coins);
       s.stage = 'reveal';
       const wrap = wrapRef.current;
@@ -110,29 +138,23 @@ export default function ArcadeDaduProyek({ onExit }: { onExit: () => void }): Re
           count: 40, colors: ['#fde047', '#fbbf24', '#fff7d6', '#f59e0b'],
           speed: [100, 360], life: [0.5, 1], size: [2, 6], gravity: 480, shape: 'rect', rotation: true,
         });
-        if (wrap) popText(wrap, `+${r.playerDelta} 🪙`, { size: 30, color: '#fde047' });
+        if (wrap) popText(wrap, `+${r.playerDelta} KOIN`, { size: 30, color: '#fde047' });
       } else if (r.player === 'kalah') {
         sfx.fail();
-        if (wrap) popText(wrap, `−${stake} 🪙`, { size: 26, color: '#fca5a5' });
+        if (wrap) popText(wrap, `${r.playerDelta} KOIN`, { size: 26, color: '#fca5a5' });
       } else {
         sfx.click();
         if (wrap) popText(wrap, resultLabel(r.player), { size: 20, color: '#e2e8f0' });
       }
       push();
       window.setTimeout(() => {
-        if (s.coins < MIN_STAKE) {
-          sfx.fail();
+        if (match.over) {
+          if (match.winner === 'pemain') sfx.chime(4);
+          else if (match.winner === 'ai') sfx.fail();
           setScreen('over');
           return;
         }
-        if (s.aiCoins < MIN_STAKE) {
-          sfx.chime(4);
-          const w = wrapRef.current;
-          if (w) popText(w, '🏆 BANDAR BANGKRUT!', { size: 26, color: '#fde047' });
-          setBest(BK, s.coins);
-          window.setTimeout(() => setScreen('over'), 1400);
-          return;
-        }
+        aiStakeNext = aiStake(match.aiCoins, rng);
         s.stage = 'bet';
         s.result = null;
         push();
@@ -141,6 +163,7 @@ export default function ArcadeDaduProyek({ onExit }: { onExit: () => void }): Re
 
     const startRoll = (): void => {
       if (s.stage !== 'bet') return;
+      if (match.over) { setScreen('over'); return; }
       if (s.coins < MIN_STAKE) { setScreen('over'); return; }
       s.stage = 'rolling';
       s.rollT = 0;
@@ -154,8 +177,15 @@ export default function ArcadeDaduProyek({ onExit }: { onExit: () => void }): Re
     (api as unknown as {
       __reset: () => void; __setSide: (v: BetSide) => void;
       __setExact: (v: number) => void; __setStake: (v: number) => void;
+      __setRisk: (v: RiskTier) => void;
       __roll: () => void;
     }).__reset = reset;
+    (api as unknown as { __setRisk: (v: RiskTier) => void }).__setRisk = (v) => {
+      if (s.stage !== 'bet') return;
+      s.risk = v;
+      sfx.click();
+      push();
+    };
     (api as unknown as { __setSide: (v: BetSide) => void }).__setSide = (v) => {
       if (s.stage !== 'bet') return;
       s.side = v;
@@ -243,7 +273,7 @@ export default function ArcadeDaduProyek({ onExit }: { onExit: () => void }): Re
       }
     };
 
-    /** Gambar dadu 3D-ish dengan ikon material + nama. */
+    /** Gambar dadu 3D-ish dengan pip terdesain + nama material. */
     const drawDie = (ctx: CanvasRenderingContext2D, face: DieFace, cx: number, cy: number, size: number, ang: number, rolling: boolean): void => {
       ctx.save();
       ctx.translate(cx, cy);
@@ -283,14 +313,27 @@ export default function ArcadeDaduProyek({ onExit }: { onExit: () => void }): Re
       gl.addColorStop(1, 'rgba(255,255,255,0)');
       ctx.fillStyle = gl;
       ctx.fillRect(-d, -d, size, d);
-      // ikon material + nilai
+      // pip terdesain (pola titik standar dadu) — digambar, bukan emoji
+      const PIP_POS: Record<number, Array<[number, number]>> = {
+        1: [[0, 0]],
+        2: [[-1, -1], [1, 1]],
+        3: [[-1, -1], [0, 0], [1, 1]],
+        4: [[-1, -1], [1, -1], [-1, 1], [1, 1]],
+        5: [[-1, -1], [1, -1], [0, 0], [-1, 1], [1, 1]],
+        6: [[-1, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [1, 1]],
+      };
+      ctx.fillStyle = '#78350f';
+      for (const [px, py] of PIP_POS[face.value] ?? []) {
+        ctx.beginPath();
+        ctx.arc(px * size * 0.20, py * size * 0.20 - size * 0.10, size * 0.058, 0, TAU);
+        ctx.fill();
+      }
+      // nama material di bawah pip
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.font = `${Math.floor(size * 0.42)}px serif`;
-      ctx.fillText(face.icon, 0, -size * 0.10);
-      ctx.font = `900 ${Math.floor(size * 0.16)}px ${FONT}`;
+      ctx.font = `900 ${Math.floor(size * 0.15)}px ${FONT}`;
       ctx.fillStyle = '#78350f';
-      ctx.fillText(face.name.toUpperCase(), 0, size * 0.30);
+      ctx.fillText(face.name.toUpperCase(), 0, size * 0.36);
       ctx.restore();
     };
 
@@ -378,7 +421,7 @@ export default function ArcadeDaduProyek({ onExit }: { onExit: () => void }): Re
       ctx.font = `800 13px ${FONT}`;
       ctx.textAlign = 'center';
       ctx.fillStyle = '#fbbf24';
-      ctx.fillText(`🪙 ${s.aiCoins}`, W - 62, 214);
+      ctx.fillText(`KOIN ${s.aiCoins}`, W - 62, 214);
       ctx.restore();
       // vignette
       const vg = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.42, W / 2, H / 2, Math.max(W, H) * 0.75);
@@ -431,18 +474,17 @@ export default function ArcadeDaduProyek({ onExit }: { onExit: () => void }): Re
     background: 'rgba(255,255,255,0.08)',
   };
 
-  const bankrupt = hud.coins < MIN_STAKE;
-  const aiBankrupt = hud.aiCoins < MIN_STAKE;
+  const matchDone = hud.over;
 
   return (
     <div ref={wrapRef} style={{ position: 'relative', width: '100%', height: '100%', minHeight: 600, overflow: 'hidden', borderRadius: 18, background: '#1a1109', fontFamily: FONT }}>
       <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', touchAction: 'none' }} />
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', zIndex: 5, pointerEvents: 'none' }}>
         <div style={{ pointerEvents: 'auto', background: 'rgba(26,17,9,0.6)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 14, padding: '7px 12px', color: '#fff', backdropFilter: 'blur(6px)', minWidth: 132 }}>
-          <div style={{ fontWeight: 900, fontSize: 17, color: '#fde047' }}>🪙 {hud.coins}</div>
+          <div style={{ fontWeight: 900, fontSize: 17, color: '#fde047' }}>KOIN {hud.coins}</div>
           <div style={{ fontSize: 12, marginTop: 3, opacity: 0.9 }}>
-            {hud.best > 0 && <span>🏆 {hud.best} • </span>}
-            taruhan {hud.stake}
+            {hud.best > 0 && <span>Rekor {hud.best} • </span>}
+            Ronde {Math.min(hud.roundsPlayed + 1, hud.totalRounds)}/{hud.totalRounds} • taruhan {hud.stake}
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8, pointerEvents: 'auto' }}>
@@ -455,7 +497,7 @@ export default function ArcadeDaduProyek({ onExit }: { onExit: () => void }): Re
       </div>
 
       {/* panel taruhan bawah */}
-      {screen === 'play' && hud.stage === 'bet' && !bankrupt && (
+      {screen === 'play' && hud.stage === 'bet' && !matchDone && (
         <div style={{ position: 'absolute', left: 12, right: 12, bottom: 12, zIndex: 6, background: 'rgba(26,17,9,0.78)', border: '1px solid rgba(253,224,71,0.25)', borderRadius: 18, padding: 12, backdropFilter: 'blur(8px)' }}>
           <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
             {(['atas', 'bawah', 'pas'] as BetSide[]).map((sd) => (
@@ -473,14 +515,31 @@ export default function ArcadeDaduProyek({ onExit }: { onExit: () => void }): Re
               {FACES.map((f) => (
                 <button
                   key={f.value}
-                  style={{ ...chip, width: 44, fontSize: 16, background: hud.exact === f.value ? 'linear-gradient(180deg,#fde047,#f59e0b)' : chip.background }}
+                  style={{ ...chip, width: 44, fontSize: 15, background: hud.exact === f.value ? 'linear-gradient(180deg,#fde047,#f59e0b)' : chip.background, color: hud.exact === f.value ? '#3a2a00' : '#fff' }}
                   onClick={() => call('__setExact', f.value)}
+                  aria-label={`Angka ${f.value} ${f.name}`}
                 >
-                  {f.icon}
+                  {f.value}
                 </button>
               ))}
             </div>
           )}
+          <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+            {(['standar', 'berani'] as RiskTier[]).map((rk) => (
+              <button
+                key={rk}
+                style={{ ...chip, flex: 1, background: hud.risk === rk ? 'linear-gradient(180deg,#fca5a5,#dc2626)' : chip.background, color: hud.risk === rk ? '#450a0a' : '#fff' }}
+                onClick={() => call('__setRisk', rk)}
+              >
+                {RISK_INFO[rk].label}
+              </button>
+            ))}
+          </div>
+          <div style={{ fontSize: 12, lineHeight: 1.55, color: '#fef3c7', marginBottom: 10, textAlign: 'center' }}>
+            {RISK_INFO[hud.risk].blurb}<br />
+            Bandar pasang <b>{hud.aiStakeNext}</b> • Efektif: kamu <b>{hud.effP}</b> vs Bandar <b>{hud.effAi}</b> • Pot <b>{hud.pot}</b><br />
+            Menang <b style={{ color: '#4ade80' }}>+{hud.effAi}</b> • Kalah <b style={{ color: '#fca5a5' }}>−{hud.effP}</b> • Seri <b>0</b>
+          </div>
           <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
             {STAKES.filter((st) => st <= hud.coins).map((st) => (
               <button
@@ -496,39 +555,52 @@ export default function ArcadeDaduProyek({ onExit }: { onExit: () => void }): Re
             style={{ ...primaryBtn, marginTop: 0 }}
             onClick={() => call('__roll')}
           >
-            🎲 KOCOK DADU
+            KOCOK DADU — RONDE {Math.min(hud.roundsPlayed + 1, hud.totalRounds)}/{hud.totalRounds}
           </button>
         </div>
       )}
 
       {screen === 'tutorial' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>🎲</div>
           <h2 style={h2}>DADU PROYEK</h2>
           <p style={p}>
-            Dadu bersisi <b>material proyek</b>. Tebak <b>ATAS (4–6)</b>, <b>BAWAH (1–3)</b>,
-            atau <b>PAS</b> (tebak angka persis) melawan Bandar Mandor.
-            Menang = meraup pot gabungan. Koin habis = bangkrut!
+            Pertandingan <b>{MATCH_ROUNDS} ronde</b> melawan Bandar Mandor. Tiap ronde tebak
+            <b> ATAS (4–6)</b>, <b>BAWAH (1–3)</b>, atau <b>PAS</b> (angka persis), pilih nominal,
+            lalu pilih risiko: <b>Standar</b> atau <b>Berani ×2</b> (taruhan efektif kamu DAN Bandar
+            digandakan). Semua angka — taruhan Bandar, pot, menang/kalah — tampil <b>sebelum</b> kamu melempar.
           </p>
-          {hud.best > 0 && <p style={p}>Rekor koin: <b style={{ color: '#fde047' }}>🪙 {hud.best}</b></p>}
-          <button style={primaryBtn} onClick={startGame}>Mulai Bertaruh</button>
+          <p style={p}>
+            Menang pertandingan: akhiri {MATCH_ROUNDS} ronde dengan koin <b>di atas Bandar</b>.
+            Bangkrut di tengah jalan = <b>langsung kalah</b>.
+          </p>
+          {hud.best > 0 && <p style={p}>Rekor koin: <b style={{ color: '#fde047' }}>{hud.best}</b></p>}
+          <button style={primaryBtn} onClick={startGame}>Mulai Pertandingan</button>
         </Overlay>
       )}
       {screen === 'pause' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>☕</div>
           <h2 style={h2}>JEDA</h2>
-          <p style={p}>Bandar ikut ngopi dulu. Dadunya dijaga satpam.</p>
+          <p style={p}>Bandar ikut ngopi dulu. Pertandingan berhenti di ronde {hud.roundsPlayed}/{hud.totalRounds}.</p>
           <button style={primaryBtn} onClick={togglePause}>Lanjutkan</button>
         </Overlay>
       )}
       {screen === 'over' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>{aiBankrupt ? '🏆' : '💸'}</div>
-          <h2 style={h2}>{aiBankrupt ? 'BANDAR TUMBANG!' : 'BANGKRUT!'}</h2>
-          <div style={{ fontSize: 40, fontWeight: 900, color: '#fde047' }}>🪙 {hud.coins}</div>
-          <p style={p}>{aiBankrupt ? 'Bandar Mandor kehabisan koin. Proyek lanjut!' : 'Koin proyek ludes. Minta DP lagi ke owner!'}</p>
-          {hud.best > 0 && <p style={p}>Rekor koin: <b style={{ color: '#fde047' }}>🪙 {hud.best}</b></p>}
+          <h2 style={h2}>
+            {hud.winner === 'pemain'
+              ? (hud.bankrupt === 'ai' ? 'BANDAR BANGKRUT — KAMU MENANG!' : 'KAMU MENANG PERTANDINGAN!')
+              : hud.winner === 'seri'
+                ? 'PERTANDINGAN SERI'
+                : (hud.bankrupt === 'pemain' ? 'BANGKRUT — KAMU KALAH' : 'KAMU KALAH PERTANDINGAN')}
+          </h2>
+          <div style={{ fontSize: 34, fontWeight: 900, color: '#fde047' }}>KOIN {hud.coins}</div>
+          <p style={p}>
+            Koin kamu <b>{hud.coins}</b> vs Bandar <b>{hud.aiCoins}</b> • Ronde dimainkan <b>{hud.roundsPlayed}/{hud.totalRounds}</b>
+            {hud.bankrupt === 'pemain' && <><br />Koin proyek ludes sebelum ronde habis. Minta DP lagi ke owner!</>}
+            {hud.bankrupt === 'ai' && <><br />Bandar Mandor kehabisan koin. Proyek lanjut!</>}
+            {hud.winner === 'seri' && <><br />Sama kuat sampai ronde terakhir!</>}
+          </p>
+          {hud.best > 0 && <p style={p}>Rekor koin: <b style={{ color: '#fde047' }}>{hud.best}</b></p>}
           <button style={primaryBtn} onClick={startGame}>Main Lagi</button>
           <button style={ghostBtn} onClick={onExit}>Keluar</button>
         </Overlay>

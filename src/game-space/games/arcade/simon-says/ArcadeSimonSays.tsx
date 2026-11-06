@@ -7,7 +7,21 @@ import React, { useRef, useState } from 'react';
 import { useGameCanvas, type GameApi, TAU, clamp } from '../../../engine2d';
 import { bestKey, getBest, setBest } from '../../../engine2d/best';
 import { popText } from '../../../engine2d/juice2d';
-import { ABA_ABA, extendSequence, stepDuration, checkInput, STEP_GAP } from './logic';
+import { ABA_ABA, extendSequence, checkInput, tempoFor, hudSummary } from './logic';
+
+/** Ikon SVG prosedural (pengganti emoji) untuk tombol & overlay DOM. */
+function SvgIcon({ kind, size = 20 }: { kind: 'pause' | 'play' | 'sound' | 'mute' | 'close' | 'helmet' | 'coffee' | 'barrier'; size?: number }): React.JSX.Element {
+  const s = size;
+  if (kind === 'pause') return (<svg width={s} height={s} viewBox="0 0 24 24" aria-hidden><rect x="5" y="4" width="5" height="16" rx="1.5" fill="currentColor" /><rect x="14" y="4" width="5" height="16" rx="1.5" fill="currentColor" /></svg>);
+  if (kind === 'play') return (<svg width={s} height={s} viewBox="0 0 24 24" aria-hidden><path d="M7 4.5v15c0 1.2 1.3 1.9 2.3 1.3l11-7.5c0.9-0.6 0.9-1.9 0-2.5l-11-7.5C8.3 2.6 7 3.3 7 4.5z" fill="currentColor" /></svg>);
+  if (kind === 'sound') return (<svg width={s} height={s} viewBox="0 0 24 24" aria-hidden><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor" /><path d="M16 9c1.2 1.6 1.2 4.4 0 6M18.5 6.5c2.4 3.2 2.4 7.8 0 11" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" /></svg>);
+  if (kind === 'mute') return (<svg width={s} height={s} viewBox="0 0 24 24" aria-hidden><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor" /><path d="M16 9l6 6M22 9l-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>);
+  if (kind === 'close') return (<svg width={s} height={s} viewBox="0 0 24 24" aria-hidden><path d="M5 5l14 14M19 5L5 19" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" /></svg>);
+  if (kind === 'coffee') return (<svg width={s} height={s} viewBox="0 0 24 24" aria-hidden><path d="M4 9h13v6a5 5 0 0 1-5 5h-3a5 5 0 0 1-5-5V9z" fill="#d6a05c" stroke="#78350f" strokeWidth="1.4" /><path d="M17 10h1.5a2.5 2.5 0 0 1 0 5H17M7 3.5c0 1.2 1 1.3 1 2.5M11 3.5c0 1.2 1 1.3 1 2.5" stroke="#78350f" strokeWidth="1.6" fill="none" strokeLinecap="round" /></svg>);
+  if (kind === 'barrier') return (<svg width={s} height={s} viewBox="0 0 48 48" aria-hidden><rect x="4" y="16" width="40" height="10" rx="2" fill="#F97316" stroke="#7c2d12" strokeWidth="1.6" /><path d="M10 16l8 10M22 16l8 10M34 16l8 10" stroke="#fff" strokeWidth="4" /><rect x="10" y="26" width="5" height="14" fill="#78716c" /><rect x="33" y="26" width="5" height="14" fill="#78716c" /></svg>);
+  // helmet
+  return (<svg width={s} height={s} viewBox="0 0 48 48" aria-hidden><path d="M10 30a14 13 0 0 1 11-12.8V12h6v5.2A14 13 0 0 1 38 30H10z" fill="#F5B301" stroke="#92400e" strokeWidth="2" /><rect x="6" y="29" width="36" height="6" rx="3" fill="#F97316" /><circle cx="17" cy="38" r="2.4" fill="#0A2540" /><circle cx="31" cy="38" r="2.4" fill="#0A2540" /><path d="M18 43c2 1.6 10 1.6 12 0" stroke="#0A2540" strokeWidth="2.2" fill="none" strokeLinecap="round" /></svg>);
+}
 
 const FONT = "'Plus Jakarta Sans','Inter',system-ui,sans-serif";
 const BK = bestKey('ikuti-mandor', 'best');
@@ -155,8 +169,9 @@ export default function ArcadeSimonSays({ onExit }: { onExit: () => void }): Rea
       }
       if (s.phase === 'watch') {
         const round = s.seq.length;
-        const sd = api.reducedMotion ? Math.max(0.45, stepDuration(round)) : stepDuration(round);
-        const stepLen = sd + STEP_GAP;
+        const tempo = tempoFor(round);
+        const sd = api.reducedMotion ? Math.max(0.45, tempo.stepDuration) : tempo.stepDuration;
+        const stepLen = sd + tempo.gap;
         s.playT += dt;
         const idx = Math.floor(s.playT / stepLen);
         if (idx >= s.seq.length) {
@@ -292,66 +307,89 @@ export default function ArcadeSimonSays({ onExit }: { onExit: () => void }): Rea
       if (typeof ctx.roundRect === 'function') ctx.roundRect(r.x, r.y, r.w, r.h, 18);
       else ctx.rect(r.x, r.y, r.w, r.h);
       ctx.stroke();
-      // bentuk rambu
-      const fill = lit ? a.color : a.dark;
-      ctx.fillStyle = fill;
-      ctx.strokeStyle = '#f8fafc';
-      ctx.lineWidth = 3;
-      if (i === 0) {
-        // oktagon BERHENTI
+      // Glif perkakas/isyarat prosedural per panel (bukan emoji):
+      // 0 palu, 1 helm, 2 bendera aba-aba, 3 peluit — menyala mengikuti `lit`.
+      const main = lit ? a.color : a.dark;
+      const ink = lit ? '#ffffff' : 'rgba(226,232,240,0.85)';
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      if (a.glyph === 'palu') {
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(-0.6);
+        // gagang kayu
+        ctx.fillStyle = lit ? '#d97706' : '#92400e';
         ctx.beginPath();
-        for (let k = 0; k < 8; k += 1) {
-          const ang = (k / 8) * TAU + Math.PI / 8;
-          const px = cx + Math.cos(ang) * R;
-          const py = cy + Math.sin(ang) * R;
-          if (k === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
-        }
-        ctx.closePath(); ctx.fill(); ctx.stroke();
-      } else if (i === 1) {
-        // segitiga AWAS
+        if (typeof ctx.roundRect === 'function') ctx.roundRect(-R * 0.13, -R * 0.15, R * 0.26, R * 1.15, R * 0.1);
+        else ctx.rect(-R * 0.13, -R * 0.15, R * 0.26, R * 1.15);
+        ctx.fill();
+        // kepala palu baja + cakar
+        ctx.fillStyle = lit ? '#e5e7eb' : '#6b7280';
+        ctx.strokeStyle = ink; ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.moveTo(cx, cy - R);
-        ctx.lineTo(cx + R * 0.95, cy + R * 0.75);
-        ctx.lineTo(cx - R * 0.95, cy + R * 0.75);
-        ctx.closePath(); ctx.fill(); ctx.stroke();
-        ctx.fillStyle = lit ? '#451a03' : '#fef3c7';
-        ctx.font = `900 ${Math.round(R * 0.7)}px ${FONT}`;
-        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.fillText('!', cx, cy + R * 0.22);
-      } else if (i === 2) {
-        // lingkaran JALAN
-        ctx.beginPath(); ctx.arc(cx, cy, R * 0.92, 0, TAU); ctx.fill(); ctx.stroke();
-        ctx.strokeStyle = lit ? '#052e12' : '#d1fae5';
-        ctx.lineWidth = 5;
-        ctx.lineCap = 'round';
-        ctx.beginPath();
-        ctx.moveTo(cx - R * 0.45, cy);
-        ctx.lineTo(cx + R * 0.45, cy);
-        ctx.moveTo(cx + R * 0.15, cy - R * 0.3);
-        ctx.lineTo(cx + R * 0.45, cy);
-        ctx.lineTo(cx + R * 0.15, cy + R * 0.3);
-        ctx.stroke();
-      } else {
-        // kotak retak BONGKAR
-        ctx.beginPath();
-        if (typeof ctx.roundRect === 'function') ctx.roundRect(cx - R * 0.85, cy - R * 0.85, R * 1.7, R * 1.7, 8);
-        else ctx.rect(cx - R * 0.85, cy - R * 0.85, R * 1.7, R * 1.7);
+        if (typeof ctx.roundRect === 'function') ctx.roundRect(-R * 0.85, -R * 0.78, R * 1.35, R * 0.55, R * 0.12);
+        else ctx.rect(-R * 0.85, -R * 0.78, R * 1.35, R * 0.55);
         ctx.fill(); ctx.stroke();
-        ctx.strokeStyle = lit ? '#1e3a8a' : '#bfdbfe';
-        ctx.lineWidth = 2.5;
         ctx.beginPath();
-        ctx.moveTo(cx - R * 0.4, cy - R * 0.7);
-        ctx.lineTo(cx - R * 0.1, cy - R * 0.2);
-        ctx.lineTo(cx - R * 0.35, cy + R * 0.1);
-        ctx.lineTo(cx + R * 0.1, cy + R * 0.6);
+        ctx.moveTo(R * 0.5, -R * 0.78);
+        ctx.quadraticCurveTo(R * 1.0, -R * 0.7, R * 0.95, -R * 0.2);
+        ctx.lineTo(R * 0.5, -R * 0.35);
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.restore();
+      } else if (a.glyph === 'helm') {
+        // helm keselamatan: kubah kuning helm EZRAB + brim + rusuk tengah
+        ctx.fillStyle = lit ? '#F5B301' : '#a16207';
+        ctx.strokeStyle = ink; ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.arc(cx, cy + R * 0.25, R * 0.88, Math.PI, TAU);
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = lit ? '#F97316' : '#9a3412';
+        ctx.beginPath();
+        if (typeof ctx.roundRect === 'function') ctx.roundRect(cx - R * 1.05, cy + R * 0.18, R * 2.1, R * 0.28, R * 0.12);
+        else ctx.rect(cx - R * 1.05, cy + R * 0.18, R * 2.1, R * 0.28);
+        ctx.fill(); ctx.stroke();
+        ctx.fillStyle = lit ? '#fde047' : '#ca8a04';
+        ctx.fillRect(cx - R * 0.14, cy - R * 0.82, R * 0.28, R * 0.95);
+      } else if (a.glyph === 'bendera') {
+        // bendera aba-aba: tiang + kain berkibar segitiga-gelombang
+        ctx.strokeStyle = lit ? '#e5e7eb' : '#9ca3af';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(cx - R * 0.55, cy - R * 0.95);
+        ctx.lineTo(cx - R * 0.55, cy + R * 0.95);
         ctx.stroke();
+        ctx.fillStyle = main;
+        ctx.strokeStyle = ink; ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(cx - R * 0.55, cy - R * 0.95);
+        ctx.quadraticCurveTo(cx + R * 0.25, cy - R * 1.1, cx + R * 0.95, cy - R * 0.55);
+        ctx.quadraticCurveTo(cx + R * 0.25, cy - R * 0.25, cx - R * 0.55, cy - R * 0.1);
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = lit ? '#78350f' : '#57534e';
+        ctx.beginPath(); ctx.arc(cx - R * 0.55, cy - R * 0.95, 4, 0, TAU); ctx.fill();
+      } else {
+        // peluit mandor: badan bulat + lubang bunyi + corong tiup
+        ctx.fillStyle = main;
+        ctx.strokeStyle = ink; ctx.lineWidth = 2.5;
+        ctx.beginPath(); ctx.arc(cx - R * 0.1, cy + R * 0.15, R * 0.68, 0, TAU); ctx.fill(); ctx.stroke();
+        ctx.beginPath();
+        if (typeof ctx.roundRect === 'function') ctx.roundRect(cx - R * 0.15, cy - R * 0.72, R * 1.05, R * 0.42, R * 0.16);
+        else ctx.rect(cx - R * 0.15, cy - R * 0.72, R * 1.05, R * 0.42);
+        ctx.fill(); ctx.stroke();
+        ctx.fillStyle = lit ? '#0A2540' : 'rgba(10,37,64,0.75)';
+        ctx.beginPath(); ctx.arc(cx - R * 0.1, cy + R * 0.05, R * 0.26, 0, TAU); ctx.fill();
+        ctx.strokeStyle = ink; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(cx + R * 0.62, cy - R * 0.5, R * 0.14, 0, TAU); ctx.stroke();
       }
-      // label
+      // label aba-aba + nama glif di bawah panel glif
       ctx.fillStyle = lit ? '#ffffff' : 'rgba(226,232,240,0.75)';
       ctx.font = `900 15px ${FONT}`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(a.label, cx, r.y + r.h - 20);
+      ctx.fillText(a.label, cx, r.y + r.h - 30);
+      ctx.fillStyle = lit ? a.color : 'rgba(148,163,184,0.8)';
+      ctx.font = `700 11px ${FONT}`;
+      ctx.fillText(a.glyphLabel, cx, r.y + r.h - 13);
       ctx.restore();
     };
 
@@ -361,15 +399,17 @@ export default function ArcadeSimonSays({ onExit }: { onExit: () => void }): Rea
       ctx.translate(api.shake.x, api.shake.y);
       drawBackground(ctx, W, H);
       drawMandor(ctx, W);
-      // info ronde
+      // HUD eksplisit: ronde + panjang urutan + tempo + progres input
+      const summary = hudSummary(s.seq.length, s.seq.length, s.phase, s.inputPos);
       ctx.textAlign = 'right';
       ctx.textBaseline = 'middle';
       ctx.fillStyle = '#e2e8f0';
       ctx.font = `900 16px ${FONT}`;
-      ctx.fillText(`Ronde ${s.seq.length}`, W - 16, 100);
+      ctx.fillText(summary.title, W - 16, 96);
       ctx.font = `700 12px ${FONT}`;
-      ctx.fillStyle = 'rgba(226,232,240,0.7)';
-      ctx.fillText(`lolos: ${s.cleared}`, W - 16, 120);
+      ctx.fillStyle = 'rgba(226,232,240,0.78)';
+      ctx.fillText(summary.detail, W - 16, 116);
+      ctx.fillText(`lolos: ${s.cleared}`, W - 16, 134);
       for (let i = 0; i < 4; i += 1) drawRambu(ctx, i, W, H);
       // indikator progres urutan saat input
       if (s.phase === 'input' && !s.over) {
@@ -429,20 +469,21 @@ export default function ArcadeSimonSays({ onExit }: { onExit: () => void }): Rea
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '10px 12px', display: 'flex', justifyContent: 'flex-end', zIndex: 5 }}>
         <div style={{ display: 'flex', gap: 8 }}>
           {(screen === 'play' || screen === 'pause') && (
-            <button style={btn} onClick={togglePause} aria-label="Jeda">{screen === 'play' ? '⏸' : '▶'}</button>
+            <button style={btn} onClick={togglePause} aria-label="Jeda"><SvgIcon kind={screen === 'play' ? 'pause' : 'play'} size={18} /></button>
           )}
-          <button style={btn} onClick={toggleMute} aria-label="Suara">{muted ? '🔇' : '🔊'}</button>
-          <button style={btn} onClick={onExit} aria-label="Keluar">✕</button>
+          <button style={btn} onClick={toggleMute} aria-label="Suara"><SvgIcon kind={muted ? 'mute' : 'sound'} size={20} /></button>
+          <button style={btn} onClick={onExit} aria-label="Keluar"><SvgIcon kind="close" size={18} /></button>
         </div>
       </div>
 
       {screen === 'tutorial' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>👷</div>
+          <div style={{ display: 'flex', justifyContent: 'center' }}><SvgIcon kind="helmet" size={52} /></div>
           <h2 style={h2}>IKUTI MANDOR</h2>
           <p style={p}>
-            Mandor memberi aba-aba lewat <b>4 rambu</b>: BERHENTI, AWAS, JALAN, BONGKAR.
-            <b> Perhatikan urutannya</b>, lalu <b>ketuk rambu</b> dengan urutan yang sama.
+            Mandor memberi aba-aba lewat <b>4 panel berglif</b>: palu (BERHENTI), helm (AWAS),
+            bendera (JALAN), peluit (BONGKAR). <b>Perhatikan urutannya</b>, lalu <b>ketuk panel</b>
+            dengan urutan yang sama. Tiap ronde urutan bertambah dan <b>temponya makin cepat</b>.
             Salah sekali → shift berakhir!
           </p>
           {hud.best > 0 && <p style={p}>Ronde terbaik: <b style={{ color: '#fde047' }}>{hud.best}</b></p>}
@@ -451,7 +492,7 @@ export default function ArcadeSimonSays({ onExit }: { onExit: () => void }): Rea
       )}
       {screen === 'pause' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>☕</div>
+          <div style={{ display: 'flex', justifyContent: 'center' }}><SvgIcon kind="coffee" size={44} /></div>
           <h2 style={h2}>JEDA</h2>
           <p style={p}>Mandor ikut ngopi dulu. Urutannya dijamin tidak lupa.</p>
           <button style={primaryBtn} onClick={togglePause}>Lanjutkan</button>
@@ -459,7 +500,7 @@ export default function ArcadeSimonSays({ onExit }: { onExit: () => void }): Rea
       )}
       {screen === 'over' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>🚧</div>
+          <div style={{ display: 'flex', justifyContent: 'center' }}><SvgIcon kind="barrier" size={52} /></div>
           <h2 style={h2}>SHIFT BERAKHIR</h2>
           <div style={{ fontSize: 40, fontWeight: 900, color: '#fde047' }}>{hud.round > 0 ? hud.round - 1 : 0} ronde</div>
           <p style={p}>Terbaik: <b style={{ color: '#fde047' }}>{hud.best} ronde</b></p>

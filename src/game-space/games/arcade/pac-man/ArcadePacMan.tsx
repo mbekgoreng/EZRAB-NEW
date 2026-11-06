@@ -6,6 +6,14 @@ import React, { useRef, useState } from 'react';
 import { useGameCanvas, type GameApi, TAU, clamp } from '../../../engine2d';
 import { bestKey, getBest, setBest } from '../../../engine2d/best';
 import { popText } from '../../../engine2d/juice2d';
+import { loadSprite, readySprite, drawSprite } from '../../../engine2d/sprites';
+import { CoffeeCupIcon } from '../../../engine2d/icons';
+import mandorIdleUrl from '../../../assets/pac-man/char-mandor-idle.webp';
+import mandorRunUrl from '../../../assets/pac-man/char-mandor-run-01.webp';
+import klienUrl from '../../../assets/pac-man/char-klien-revisi-01.webp';
+import helmUrl from '../../../assets/pac-man/obj-helm-koleksi.webp';
+
+const SPRITES = { idle: mandorIdleUrl, run: mandorRunUrl, klien: klienUrl, helm: helmUrl };
 import {
   createGame, step, setInput, tileAt,
   COLS, ROWS, T_WALL, T_DOT, T_PELLET, T_DOOR,
@@ -15,6 +23,11 @@ import {
 
 const FONT = "'Plus Jakarta Sans','Inter',system-ui,sans-serif";
 const BK = bestKey('pak-mandor', 'best');
+
+/** Titik legenda berwarna sesuai warna Klien Revisi di logic (GHOST_DEFS). */
+const LegendDot = ({ c }: { c: string }): React.ReactElement => (
+  <span style={{ display: 'inline-block', width: 9, height: 9, borderRadius: '50%', background: c, marginRight: 4 }} />
+);
 
 type Screen = 'tutorial' | 'play' | 'pause' | 'over';
 
@@ -41,6 +54,11 @@ export default function ArcadePacMan({ onExit }: { onExit: () => void }): React.
   const canvasRef = useGameCanvas((api) => {
     apiRef.current = api;
     api.pushHud = (h) => setHud(h as typeof hud);
+    // muat sprite pilot (cache bersama); gagal muat -> renderer fallback prosedural
+    for (const u of Object.values(SPRITES)) void loadSprite(u);
+    api.onHidden = () => {
+      if (screenRef.current === 'play') { api.loop.setPaused(true); setScreen('pause'); }
+    };
 
     let st: GameState = createGame((Date.now() % 100000) | 0);
     let tile = 20;
@@ -81,7 +99,7 @@ export default function ArcadePacMan({ onExit }: { onExit: () => void }): React.
       const nb = setBest(BK, st.score);
       api.sfx.fail();
       const wrap = wrapRef.current;
-      if (wrap) popText(wrap, '📋 PROYEK DIBATALKAN KLIEN!', { size: 22, color: '#f87171' });
+      if (wrap) popText(wrap, 'PROYEK DIBATALKAN KLIEN!', { size: 22, color: '#f87171' });
       window.setTimeout(() => {
         api.pushHud({ score: st.score, lives: 0, level: st.level, best: nb });
         setScreen('over');
@@ -135,7 +153,7 @@ export default function ArcadePacMan({ onExit }: { onExit: () => void }): React.
         } else if (gained >= 50) {
           api.sfx.pop(1.4);
           const wrap = wrapRef.current;
-          if (wrap) popText(wrap, '☕ KOPI TUBRUK! Klien setuju!', { size: 17, color: '#7dd3fc' });
+          if (wrap) popText(wrap, 'KOPI TUBRUK! Klien setuju!', { size: 17, color: '#7dd3fc' });
         } else {
           api.sfx.pop(0.7 + Math.random() * 0.2);
         }
@@ -147,14 +165,14 @@ export default function ArcadePacMan({ onExit }: { onExit: () => void }): React.
         api.shake.add(0.7);
         api.sfx.fail();
         const wrap = wrapRef.current;
-        if (wrap) popText(wrap, '🚧 KETABRAK REVISI!', { size: 20, color: '#f87171' });
+        if (wrap) popText(wrap, 'KETABRAK REVISI!', { size: 20, color: '#f87171' });
       }
       if (deathT > 0) deathT -= dt;
       if (st.levelClear && !wasClear) {
         levelToast = 2.2;
         api.sfx.chime(3);
         const wrap = wrapRef.current;
-        if (wrap) popText(wrap, `🎉 LANTAI ${st.level} BERES!`, { size: 24, color: '#4ade80' });
+        if (wrap) popText(wrap, `LANTAI ${st.level} BERES!`, { size: 24, color: '#4ade80' });
         api.particles.spawn(api.W / 2, api.H * 0.5, {
           count: 50, colors: ['#4ade80', '#fde047', '#ffffff'],
           speed: [100, 380], life: [0.6, 1.1], size: [2, 6], gravity: 260, shape: 'rect', rotation: true,
@@ -190,13 +208,18 @@ export default function ArcadePacMan({ onExit }: { onExit: () => void }): React.
               ctx.setLineDash([]);
             }
           } else if (t === T_DOT) {
-            // helm proyek mini
+            // helm proyek: sprite aset; fallback gambar prosedural di bawah
+            const helmImg = readySprite(SPRITES.helm);
+            if (helmImg && drawSprite(ctx, helmImg, cx, cy, tile * 0.95, tile * 0.8)) {
+              // tertangani sprite
+            } else {
             const r = tile * 0.16;
             ctx.fillStyle = '#fde047';
             ctx.beginPath(); ctx.arc(cx, cy - r * 0.3, r, Math.PI, 0); ctx.fill();
             ctx.fillRect(cx - r * 1.35, cy - r * 0.35, r * 2.7, r * 0.5);
             ctx.fillStyle = 'rgba(255,255,255,0.6)';
             ctx.beginPath(); ctx.arc(cx - r * 0.35, cy - r * 0.55, r * 0.3, 0, TAU); ctx.fill();
+            }
           } else if (t === T_PELLET) {
             // kopi tubruk
             const pulse = 1 + 0.12 * Math.sin(performance.now() / 240);
@@ -234,6 +257,21 @@ export default function ArcadePacMan({ onExit }: { onExit: () => void }): React.
       const p = st.player;
       const cx = px(p.x);
       const cy = py(p.y);
+      // Sprite Mandor (aset pilot): run saat bergerak, idle saat diam.
+      // Animasi sederhana: bob naik-turun + ayunan skala mengikuti chomp.
+      if (deathT <= 0) {
+        const moving = p.dir.x !== 0 || p.dir.y !== 0;
+        const img = readySprite(moving ? SPRITES.run : SPRITES.idle);
+        if (img) {
+          const bobY = moving ? Math.sin(chomp * 1.6) * tile * 0.06 : Math.sin(chomp * 0.8) * tile * 0.03;
+          ctx.save();
+          ctx.translate(cx, cy + bobY);
+          if (p.dir.x < 0) ctx.scale(-1, 1);
+          const ok = drawSprite(ctx, img, 0, 0, tile * 1.9, tile * 2.1);
+          ctx.restore();
+          if (ok) return;
+        }
+      }
       const r = tile * 0.62;
       let scale = 1;
       let alpha = 1;
@@ -278,14 +316,31 @@ export default function ArcadePacMan({ onExit }: { onExit: () => void }): React.
 
     const drawGhost = (ctx: CanvasRenderingContext2D, g: GhostInfo): void => {
       if (g.state === 'house' || g.state === 'exit') {
-        // di ruang rapat: gambar mini
+        // di ruang rapat: sprite Klien Revisi; fallback prosedural (dasi vektor)
         const cx = px(g.x);
         const cy = py(g.y);
-        ctx.globalAlpha = 0.85;
-        ctx.font = `${tile * 0.7}px serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('👔', cx, cy);
+        ctx.globalAlpha = 0.9;
+        const kImg = readySprite(SPRITES.klien);
+        if (!(kImg && drawSprite(ctx, kImg, cx, cy, tile * 1.1, tile * 1.5))) {
+          const s = tile;
+          ctx.fillStyle = '#1e3a8a';
+          ctx.beginPath();
+          ctx.moveTo(cx - s * 0.09, cy - s * 0.34);
+          ctx.lineTo(cx + s * 0.09, cy - s * 0.34);
+          ctx.lineTo(cx + s * 0.05, cy - s * 0.18);
+          ctx.lineTo(cx - s * 0.05, cy - s * 0.18);
+          ctx.closePath();
+          ctx.fill();
+          ctx.fillStyle = '#2563eb';
+          ctx.beginPath();
+          ctx.moveTo(cx - s * 0.05, cy - s * 0.18);
+          ctx.lineTo(cx + s * 0.05, cy - s * 0.18);
+          ctx.lineTo(cx + s * 0.13, cy + s * 0.22);
+          ctx.lineTo(cx, cy + s * 0.38);
+          ctx.lineTo(cx - s * 0.13, cy + s * 0.22);
+          ctx.closePath();
+          ctx.fill();
+        }
         ctx.globalAlpha = 1;
         return;
       }
@@ -363,7 +418,7 @@ export default function ArcadePacMan({ onExit }: { onExit: () => void }): React.
         ctx.fillStyle = '#bfdbfe';
         ctx.font = `800 ${Math.max(7, tile * 0.26)}px ${FONT}`;
         ctx.textAlign = 'center';
-        ctx.fillText('SETUJU 👍', cx, cy + r + tile * 0.28);
+        ctx.fillText('SETUJU!', cx, cy + r + tile * 0.28);
       }
     };
 
@@ -387,7 +442,7 @@ export default function ArcadePacMan({ onExit }: { onExit: () => void }): React.
       ctx.font = `800 11px ${FONT}`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText('🏗️ SITE PLAN — MAKAN SEMUA HELM, HINDARI KLIEN!', W / 2, oy - 26);
+      ctx.fillText('SITE PLAN — MAKAN SEMUA HELM, HINDARI KLIEN!', W / 2, oy - 26);
       // kopi tubruk aktif: border biru berdenyut
       if (st.frightT > 0) {
         ctx.save();
@@ -449,8 +504,10 @@ export default function ArcadePacMan({ onExit }: { onExit: () => void }): React.
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', zIndex: 5, pointerEvents: 'none' }}>
         <div style={{ pointerEvents: 'auto', background: 'rgba(10,16,34,0.62)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 14, padding: '7px 12px', color: '#fff', backdropFilter: 'blur(6px)', minWidth: 150 }}>
           <div style={{ fontWeight: 900, fontSize: 17, color: '#fde047' }}>{hud.score.toLocaleString('id-ID')}</div>
-          <div style={{ fontSize: 12, marginTop: 3 }}>
-            {'🪖'.repeat(Math.max(0, hud.lives))}<span style={{ opacity: 0.6 }}>{'🪖'.repeat(Math.max(0, 3 - hud.lives))}</span>
+          <div style={{ fontSize: 12, marginTop: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
+            {[0, 1, 2].map((i) => (
+              <img key={i} src={helmUrl} alt="" width={17} height={14} style={{ opacity: i < hud.lives ? 1 : 0.25, objectFit: 'contain' }} />
+            ))}
             <span style={{ opacity: 0.8, marginLeft: 8 }}>Lt.{hud.level}</span>
           </div>
           <div style={{ fontSize: 11, marginTop: 2, opacity: 0.75 }}>Terbaik: <b>{hud.best.toLocaleString('id-ID')}</b></div>
@@ -466,15 +523,15 @@ export default function ArcadePacMan({ onExit }: { onExit: () => void }): React.
 
       {screen === 'tutorial' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>👷</div>
+          <img src={mandorIdleUrl} alt="Pak Mandor" style={{ height: 120, objectFit: 'contain' }} />
           <h2 style={h2}>PAK MANDOR</h2>
           <p style={p}>
             <b>Geser layar / tombol panah</b> untuk menggerakkan Pak Mandor.
-            Makan semua <b>🪖 helm</b>! Hindari para <b>Klien Revisi</b> 👔 —
-            tapi rebut <b>☕ Kopi Tubruk</b> agar mereka <i>setuju</i> dan bisa dimakan!
+            Makan semua <b>helm proyek</b>! Hindari para <b>Klien Revisi</b> —
+            tapi rebut <b>Kopi Tubruk</b> agar mereka <i>setuju</i> dan bisa dimakan!
           </p>
           <div style={{ fontSize: 12, opacity: 0.85, lineHeight: 1.9, margin: '6px 0' }}>
-            🔴 Revisi Denah • 🌸 Revisi RAB<br />🔵 Revisi Desain • 🟠 Revisi Spek
+            <LegendDot c="#ef4444" />Revisi Denah • <LegendDot c="#f9a8d4" />Revisi RAB<br /><LegendDot c="#22d3ee" />Revisi Desain • <LegendDot c="#fb923c" />Revisi Spek
           </div>
           {hud.best > 0 && <p style={p}>Skor terbaik: <b style={{ color: '#fde047' }}>{hud.best.toLocaleString('id-ID')}</b></p>}
           <button style={primaryBtn} onClick={startGame}>Mulai Keliling Site</button>
@@ -482,7 +539,7 @@ export default function ArcadePacMan({ onExit }: { onExit: () => void }): React.
       )}
       {screen === 'pause' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>☕</div>
+          <div><CoffeeCupIcon size={42} /></div>
           <h2 style={h2}>JEDA</h2>
           <p style={p}>Mandor ngopi dulu. Klien ikut nunggu.</p>
           <button style={primaryBtn} onClick={togglePause}>Lanjutkan</button>
@@ -490,7 +547,7 @@ export default function ArcadePacMan({ onExit }: { onExit: () => void }): React.
       )}
       {screen === 'over' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>📋</div>
+          <img src={klienUrl} alt="Klien Revisi" style={{ height: 110, objectFit: 'contain' }} />
           <h2 style={h2}>KLIEN MENANG</h2>
           <div style={{ fontSize: 40, fontWeight: 900, color: '#fde047' }}>{hud.score.toLocaleString('id-ID')}</div>
           <p style={p}>Lantai {hud.level} • Terbaik: <b style={{ color: '#fde047' }}>{hud.best.toLocaleString('id-ID')}</b></p>

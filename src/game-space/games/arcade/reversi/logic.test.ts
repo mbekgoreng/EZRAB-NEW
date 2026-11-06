@@ -4,7 +4,7 @@
 import { strict as assert } from 'node:assert';
 import {
   emptyBoard, legalMoves, applyMove, count, isGameOver,
-  aiPickMove, BLACK, WHITE, N,
+  aiPickMove, flipsAt, movePreviews, flipVisibleFace, BLACK, WHITE, N,
 } from './logic';
 
 let passed = 0;
@@ -107,6 +107,73 @@ test('simulasi penuh berakhir tanpa error', () => {
   assert.ok(isGameOver(b));
   const { black, white } = count(b);
   assert.equal(black + white, 64);
+});
+
+// --- Pratinjau langkah (flipsAt + movePreviews) ---
+// Papan rancangan: (3,2) untuk HITAM membalik 3 keping dari dua arah
+// (2 mendatar + 1 tegak); (0,0) membalik 1 keping dan adalah sudut.
+function previewBoard() {
+  const b = emptyBoard();
+  for (let r = 0; r < N; r += 1) for (let c = 0; c < N; c += 1) b[r][c] = 0;
+  b[0][1] = WHITE; b[0][2] = BLACK;
+  b[3][3] = WHITE; b[3][4] = WHITE; b[3][5] = BLACK;
+  b[4][2] = WHITE; b[5][2] = BLACK;
+  return b;
+}
+
+test('flipsAt menghitung balik multi-arah dengan tepat', () => {
+  const b = previewBoard();
+  const flips = flipsAt(b, 3, 2, BLACK);
+  assert.equal(flips.length, 3);
+  assert.ok(flips.some(([r, c]) => r === 3 && c === 3));
+  assert.ok(flips.some(([r, c]) => r === 3 && c === 4));
+  assert.ok(flips.some(([r, c]) => r === 4 && c === 2));
+  assert.equal(flipsAt(b, 0, 0, BLACK).length, 1);
+});
+
+test('flipsAt menolak sel terisi, di luar papan, dan tanpa jepitan', () => {
+  const b = previewBoard();
+  assert.deepEqual(flipsAt(b, 3, 3, BLACK), []); // terisi putih
+  assert.deepEqual(flipsAt(b, 3, 5, BLACK), []); // terisi hitam
+  assert.deepEqual(flipsAt(b, -1, 0, BLACK), []); // luar papan
+  assert.deepEqual(flipsAt(b, 8, 8, BLACK), []); // luar papan
+  assert.deepEqual(flipsAt(b, 7, 7, BLACK), []); // kosong tapi tidak menjepit
+});
+
+test('movePreviews papan awal: 4 langkah, masing-masing membalik 1', () => {
+  const previews = movePreviews(emptyBoard(), BLACK);
+  assert.equal(previews.length, 4);
+  assert.ok(previews.every((p) => p.flipCount === 1));
+  assert.ok(previews.every((p) => !p.isCorner));
+});
+
+test('movePreviews membedakan langkah besar vs kecil + menandai sudut (diskriminatif)', () => {
+  const previews = movePreviews(previewBoard(), BLACK);
+  const big = previews.find((p) => p.r === 3 && p.c === 2);
+  const corner = previews.find((p) => p.r === 0 && p.c === 0);
+  assert.ok(big, 'langkah (3,2) harus ada di pratinjau');
+  assert.ok(corner, 'langkah (0,0) harus ada di pratinjau');
+  assert.equal(big!.flipCount, 3);
+  assert.equal(corner!.flipCount, 1);
+  assert.equal(corner!.isCorner, true);
+  assert.equal(big!.isCorner, false);
+  // jumlah pada pratinjau harus sama dengan flips pada langkah legalnya
+  for (const p of previews) {
+    const mv = legalMoves(previewBoard(), BLACK).find((m) => m.r === p.r && m.c === p.c);
+    assert.equal(p.flipCount, mv!.flips.length);
+  }
+});
+
+// --- Regresi bug animasi balik: sisi lama harus tampil di separuh pertama ---
+test('flipVisibleFace: separuh pertama sisi lama, separuh kedua sisi baru', () => {
+  assert.equal(flipVisibleFace(WHITE, BLACK, 0), WHITE);
+  assert.equal(flipVisibleFace(WHITE, BLACK, 0.25), WHITE);
+  assert.equal(flipVisibleFace(WHITE, BLACK, 0.49), WHITE);
+  assert.equal(flipVisibleFace(WHITE, BLACK, 0.5), BLACK);
+  assert.equal(flipVisibleFace(WHITE, BLACK, 0.75), BLACK);
+  assert.equal(flipVisibleFace(WHITE, BLACK, 1), BLACK);
+  assert.equal(flipVisibleFace(BLACK, WHITE, 0.1), BLACK);
+  assert.equal(flipVisibleFace(BLACK, BLACK, 0.1), BLACK); // tanpa perubahan sisi
 });
 
 console.log(`\n${passed} passed, ${failed} failed`);

@@ -99,7 +99,7 @@ export default function ArcadeSpeedTyping({ onExit }: { onExit: () => void }): R
       // nada naik tipis tiap huruf benar beruntun
       sfx.click();
       if (ch === ' ' && state.wordsDone > 0 && state.wordsDone % 10 === 0) {
-        setPopMsg(`🔥 ${state.wordsDone} kata!`);
+        setPopMsg(`${state.wordsDone} kata!`);
         sfx.pop(1.2);
         window.setTimeout(() => setPopMsg(''), 900);
       }
@@ -164,7 +164,7 @@ export default function ArcadeSpeedTyping({ onExit }: { onExit: () => void }): R
             <div style={{ height: '100%', width: `${(timeLeft / DURATION_SEC) * 100}%`, background: 'linear-gradient(90deg,#fde047,#f59e0b)', borderRadius: 999 }} />
           </div>
           <div style={{ fontSize: 12, marginTop: 4, opacity: 0.9 }}>
-            ⚡ {liveWpm} WPM • 🎯 {liveAcc}%
+            {liveWpm} WPM • Akurasi {liveAcc}%{ts.streak > 1 ? ` • Rentetan ${ts.streak}` : ''}
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
@@ -186,7 +186,7 @@ export default function ArcadeSpeedTyping({ onExit }: { onExit: () => void }): R
         }}
       >
         <div style={{ fontSize: 11, letterSpacing: 2, opacity: 0.6, marginBottom: 10, fontWeight: 800 }}>
-          📋 DAFTAR ISTILAH PROYEK
+          DAFTAR ISTILAH PROYEK
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px 14px', alignContent: 'flex-start', maxHeight: 'calc(100% - 60px)', overflow: 'hidden' }}>
           {wordsToShow.map((w, i) => {
@@ -228,7 +228,7 @@ export default function ArcadeSpeedTyping({ onExit }: { onExit: () => void }): R
         </div>
         {screen === 'play' && (
           <div style={{ marginTop: 12, fontSize: 12, opacity: 0.55 }}>
-            👆 Ketuk area ini bila keyboard belum muncul • spasi = kata selesai
+            Ketuk area ini bila keyboard belum muncul • spasi = kata selesai
           </div>
         )}
         {popMsg && (
@@ -263,7 +263,7 @@ export default function ArcadeSpeedTyping({ onExit }: { onExit: () => void }): R
       )}
       {screen === 'pause' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>☕</div>
+          <div style={{ fontSize: 15, fontWeight: 900, letterSpacing: 2, color: '#ffd166' }}>— JEDA —</div>
           <h2 style={h2}>JEDA</h2>
           <p style={p}>Jari-jarinya istirahat dulu.</p>
           <button style={primaryBtn} onClick={togglePause}>Lanjutkan</button>
@@ -271,13 +271,14 @@ export default function ArcadeSpeedTyping({ onExit }: { onExit: () => void }): R
       )}
       {screen === 'over' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>🏁</div>
+          <div style={{ fontSize: 15, fontWeight: 900, letterSpacing: 2, color: '#4ade80' }}>— WAKTU HABIS —</div>
           <h2 style={h2}>WAKTU HABIS!</h2>
           <div style={{ fontSize: 44, fontWeight: 900, color: '#fde047' }}>{result.wpm} <span style={{ fontSize: 18 }}>WPM</span></div>
           <div style={{ fontSize: 15, marginTop: 4, color: '#fef3c7' }}>{result.rank}</div>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'center', margin: '12px 0' }}>
             <Stat label="Akurasi" value={`${result.acc}%`} />
             <Stat label="Kata" value={`${ts.wordsDone}`} />
+            <Stat label="Rentetan Terbaik" value={`${ts.bestStreak}`} />
             <Stat label="Terbaik" value={`${result.best}`} />
           </div>
           <button style={primaryBtn} onClick={startGame}>Main Lagi</button>

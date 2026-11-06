@@ -74,3 +74,45 @@ export function fireShot(aimY: number, spec: RoundSpec): ShotResult {
   }
   return { hitY, ring, score: RING_SCORE[ring], bullseye: ring === 4 };
 }
+
+/* --- Gelombang 3: indikator angin terbaca & label ring (murni) --- */
+
+/** Pergeseran vertikal akibat angin saja selama penerbangan (unit VH). */
+export function windDrift(spec: RoundSpec): number {
+  const t = flightTime(spec.distance);
+  return 0.5 * spec.wind * WIND_ACCEL * t * t;
+}
+
+/** Total pergeseran vertikal (gravitasi + angin) — dasar garis prediksi. */
+export function totalDrift(spec: RoundSpec): number {
+  return dropAt(spec.distance) + windDrift(spec);
+}
+
+export type WindBand = 'Tenang' | 'Lemah' | 'Sedang' | 'Kencang';
+
+/**
+ * Klasifikasi angin untuk panel indikator: arah (-1 ke atas, 0 tenang,
+ * +1 ke bawah), pita kekuatan, dan kekuatan ternormalisasi 0..1.
+ * Pemain harus bisa membaca ketiganya tanpa ikon emoji.
+ */
+export function windInfo(spec: RoundSpec): { dir: -1 | 0 | 1; band: WindBand; strength: number } {
+  const strength = spec.windMax > 0 ? Math.min(1, Math.abs(spec.wind) / spec.windMax) : 0;
+  const dir = (spec.wind === 0 ? 0 : spec.wind > 0 ? 1 : -1) as -1 | 0 | 1;
+  const band: WindBand = spec.wind === 0 || strength < 0.05 ? 'Tenang'
+    : strength < 0.4 ? 'Lemah' : strength < 0.75 ? 'Sedang' : 'Kencang';
+  return { dir, band, strength: spec.wind === 0 ? 0 : strength };
+}
+
+/** Bidik Y yang mengompensasi gravitasi+angin agar paku tiba di tengah papan. */
+export function compensatedAimY(spec: RoundSpec): number {
+  return spec.targetY - totalDrift(spec);
+}
+
+/** Label ring hasil tembakan untuk umpan balik teks yang tegas. */
+export function ringLabel(ring: number): string {
+  if (ring === 4) return 'TEPAT TENGAH';
+  if (ring === 3) return 'Ring 3 — nyaris tengah';
+  if (ring === 2) return 'Ring 2';
+  if (ring === 1) return 'Ring 1 — tepi papan';
+  return 'Meleset';
+}

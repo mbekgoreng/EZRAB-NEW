@@ -5,6 +5,7 @@ import { strict as assert } from 'node:assert';
 import {
   createState, stepShip, fireBullet, updateState, splitRock, rockScore,
   makeRock, mulberry32, LW, LH,
+  rockTier, rockTierLabel, levelRockCount, levelRockSpeed,
 } from './logic';
 
 let passed = 0;
@@ -132,6 +133,19 @@ test('saucer spawn setelah countdown', () => {
 test('mulberry32 deterministik', () => {
   const a = mulberry32(9); const b = mulberry32(9);
   assert.equal(a(), b());
+});
+
+test('rockTier selaras ambang rockScore', () => {
+  assert.equal(rockTier(44), 'besar');
+  assert.equal(rockTier(21), 'sedang');
+  assert.equal(rockTier(10), 'kecil');
+  assert.equal(rockScore(44), 20);
+  assert.equal(rockTierLabel(44), 'Bata Besar');
+});
+test('progresi level: bata bertambah & makin cepat, terbatasi', () => {
+  assert.equal(levelRockCount(1), 4);
+  assert.equal(levelRockCount(99), 9);
+  assert.ok(levelRockSpeed(5) > levelRockSpeed(1));
 });
 
 console.log(`\n${passed} passed, ${failed} failed`);

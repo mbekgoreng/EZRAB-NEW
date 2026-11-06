@@ -57,6 +57,38 @@ function flipsFor(b: Board, r: number, c: number, who: Cell): [number, number][]
   return out;
 }
 
+/**
+ * Keping yang akan berbalik bila `who` menaruh di (r, c) — sumber pratinjau langkah.
+ * Sel terisi, di luar papan, atau langkah tanpa jepitan -> [] (bukan langkah legal).
+ */
+export function flipsAt(b: Board, r: number, c: number, who: Cell): [number, number][] {
+  if (r < 0 || r >= N || c < 0 || c >= N || b[r][c] !== 0) return [];
+  return flipsFor(b, r, c, who);
+}
+
+export interface MovePreview { r: number; c: number; flipCount: number; isCorner: boolean }
+
+/** Pratinjau semua langkah legal: berapa keping berbalik per langkah + penanda sudut. */
+export function movePreviews(b: Board, who: Cell): MovePreview[] {
+  return legalMoves(b, who).map((m) => ({
+    r: m.r,
+    c: m.c,
+    flipCount: m.flips.length,
+    isCorner: (m.r === 0 || m.r === N - 1) && (m.c === 0 || m.c === N - 1),
+  }));
+}
+
+/**
+ * Sisi keping yang terlihat pada progres animasi balik t (0..1):
+ * separuh pertama sisi lama (from), separuh kedua sisi baru (to).
+ * Regresi: papan berganti warna seketika saat langkah diterapkan, jadi tanpa
+ * fungsi ini animasi hanya menampilkan sisi baru yang menyusut–tumbuh.
+ */
+export function flipVisibleFace(from: Cell, to: Cell, t: number): Cell {
+  if (from === to) return to;
+  return t < 0.5 ? from : to;
+}
+
 export function legalMoves(b: Board, who: Cell): Move[] {
   const moves: Move[] = [];
   for (let r = 0; r < N; r += 1) {

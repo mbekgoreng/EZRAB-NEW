@@ -1,6 +1,12 @@
 /**
- * ArcadeTicTacToe ("Bata vs Semen") — X = Bata 🧱, O = Semen.
+ * ArcadeTicTacToe ("Bata vs Semen") — X = Bata, O = Semen (karung).
  * Mode: vs AI Sedang (bisa dikalahkan) atau 2 Pemain lokal.
+ *
+ * Grafis (Gelombang 1 rekonstruksi): token pemain = glif prosedural
+ * digambar kode di dalam komponen — bata oranye-merah (Canvas + SVG DOM)
+ * dan karung semen krem (Canvas + SVG DOM), pola MaterialGlyph pilot
+ * Sudoku. Bukan emoji, bukan hasil generate. Sisa simbol di file hanya
+ * tombol fungsional shell (jeda/suara/keluar).
  */
 import React, { useRef, useState } from 'react';
 import { useGameCanvas, type GameApi, sfx, TAU, clamp, easeOutBack } from '../../../engine2d';
@@ -20,6 +26,8 @@ interface S {
   mode: Mode;
   placedAt: number[];   // waktu animasi per sel (-1 = kosong)
   win: { mark: Mark; line: number[] } | null;
+  /** waktu (s.t) saat ronde diputuskan — untuk animasi garis menang */
+  winAt: number;
   draw: boolean;
   round: number;
   xWins: number;
@@ -55,8 +63,12 @@ export default function ArcadeTicTacToe({ onExit }: { onExit: () => void }): Rea
 
     const s: S = {
       board: emptyBoard(), turn: 'X', mode: 'ai',
-      placedAt: Array(9).fill(-1), win: null, draw: false,
+      placedAt: Array(9).fill(-1), win: null, winAt: 0, draw: false,
       round: 0, xWins: 0, oWins: 0, draws: 0, streak: 0, aiThinking: -1, t: 0,
+    };
+    // auto-pause saat tab disembunyikan (pola pilot: api.onHidden)
+    api.onHidden = () => {
+      if (screenRef.current === 'play') { api.loop.setPaused(true); setScreen('pause'); }
     };
 
     const push = (): void => {
@@ -68,6 +80,7 @@ export default function ArcadeTicTacToe({ onExit }: { onExit: () => void }): Rea
       s.placedAt = Array(9).fill(-1);
       s.turn = first;
       s.win = null;
+      s.winAt = 0;
       s.draw = false;
       s.aiThinking = -1;
       s.round += 1;
@@ -82,11 +95,12 @@ export default function ArcadeTicTacToe({ onExit }: { onExit: () => void }): Rea
     const finishRound = (): void => {
       const w = winner(s.board);
       s.win = w;
+      if (w) s.winAt = s.t;
       if (w) {
         if (w.mark === 'X') {
           s.xWins += 1;
           api.sfx.chime(3, 620);
-          const label = s.mode === 'ai' ? '🧱 BATA MENANG!' : '🧱 BATA (P1) MENANG!';
+          const label = s.mode === 'ai' ? 'BATA MENANG!' : 'BATA (P1) MENANG!';
           if (wrapRef.current) popText(wrapRef.current, label, { size: 26, color: '#fdba74' });
           if (s.mode === 'ai') {
             s.streak += 1;
@@ -96,7 +110,7 @@ export default function ArcadeTicTacToe({ onExit }: { onExit: () => void }): Rea
         } else {
           s.oWins += 1;
           api.sfx.thud(0.9);
-          const label = s.mode === 'ai' ? 'SEMEN MENANG! 😅' : 'SEMEN (P2) MENANG!';
+          const label = s.mode === 'ai' ? 'SEMEN MENANG!' : 'SEMEN (P2) MENANG!';
           if (wrapRef.current) popText(wrapRef.current, label, { size: 26, color: '#d1d5db' });
           if (s.mode === 'ai') s.streak = 0;
         }
@@ -110,7 +124,7 @@ export default function ArcadeTicTacToe({ onExit }: { onExit: () => void }): Rea
         s.draw = true;
         s.draws += 1;
         api.sfx.click();
-        if (wrapRef.current) popText(wrapRef.current, '🤝 SERI! Adukan rata.', { size: 24, color: '#e2e8f0' });
+        if (wrapRef.current) popText(wrapRef.current, 'SERI! Adukan rata.', { size: 24, color: '#e2e8f0' });
       }
       push();
       window.setTimeout(() => {
@@ -245,65 +259,99 @@ export default function ArcadeTicTacToe({ onExit }: { onExit: () => void }): Rea
       }
     };
 
+    /**
+     * Glif BATA prosedural (Canvas, digambar kode): satu bata oranye-merah
+     * terdesain — badan bergradasi, garis nat pasangan bata, kilau atas,
+     * garis tepi gelap, bayangan kontak. Menggantikan gambar bata ganda
+     * lama yang kabur bacanya. `age` menggerakkan animasi pop penempatan.
+     */
     const drawBrick = (ctx: CanvasRenderingContext2D, x: number, y: number, r: number, age: number): void => {
       const pop = easeOutBack(clamp(age / 0.22, 0, 1));
       const sc = Math.max(0.01, pop);
       ctx.save();
       ctx.translate(x, y);
       ctx.scale(sc, sc);
-      ctx.rotate(-Math.PI / 4);
-      const w = r * 1.15; const h = r * 1.15;
-      const g = ctx.createLinearGradient(-w, -h, w, h);
-      g.addColorStop(0, '#fdba74'); g.addColorStop(0.5, '#ea580c'); g.addColorStop(1, '#9a3412');
+      ctx.rotate(-0.1);
+      const w = r * 1.02; const h = r * 0.62;
+      // bayangan kontak
+      ctx.fillStyle = 'rgba(0,0,0,0.3)';
+      ctx.beginPath(); ctx.ellipse(2, h + 4, w * 0.95, 4.5, 0, 0, TAU); ctx.fill();
+      const g = ctx.createLinearGradient(0, -h, 0, h);
+      g.addColorStop(0, '#fb923c'); g.addColorStop(0.5, '#ea580c'); g.addColorStop(1, '#9a3412');
       ctx.fillStyle = g;
       ctx.beginPath();
-      if (typeof ctx.roundRect === 'function') ctx.roundRect(-w, -h / 2.6, w * 2, h / 1.3, 7);
-      else ctx.rect(-w, -h / 2.6, w * 2, h / 1.3);
+      if (typeof ctx.roundRect === 'function') ctx.roundRect(-w, -h, w * 2, h * 2, 6);
+      else ctx.rect(-w, -h, w * 2, h * 2);
       ctx.fill();
-      ctx.save();
-      ctx.beginPath();
-      if (typeof ctx.roundRect === 'function') ctx.roundRect(-w, -h / 2.6, w * 2, h / 1.3, 7);
-      else ctx.rect(-w, -h / 2.6, w * 2, h / 1.3);
-      ctx.clip();
-      ctx.strokeStyle = 'rgba(67,20,7,0.5)'; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(-w, 0); ctx.lineTo(w, 0); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(0, -h / 2.6); ctx.lineTo(0, 0); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(-w / 2, 0); ctx.lineTo(-w / 2, h / 2.6); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(w / 2, 0); ctx.lineTo(w / 2, h / 2.6); ctx.stroke();
-      ctx.fillStyle = 'rgba(255,255,255,0.25)';
-      ctx.fillRect(-w, -h / 2.6, w * 2, 5);
-      ctx.restore();
-      ctx.rotate(Math.PI / 2);
-      const g2 = ctx.createLinearGradient(-w, -h, w, h);
-      g2.addColorStop(0, '#fdba74'); g2.addColorStop(0.5, '#ea580c'); g2.addColorStop(1, '#9a3412');
-      ctx.fillStyle = g2;
-      ctx.beginPath();
-      if (typeof ctx.roundRect === 'function') ctx.roundRect(-w, -h / 2.6, w * 2, h / 1.3, 7);
-      else ctx.rect(-w, -h / 2.6, w * 2, h / 1.3);
-      ctx.fill();
+      ctx.strokeStyle = '#7c2d12'; ctx.lineWidth = 2.2; ctx.stroke();
+      // garis nat: horizontal tengah + vertikal berselang (pasangan bata)
+      ctx.strokeStyle = 'rgba(67,20,7,0.55)'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(-w + 3, 0); ctx.lineTo(w - 3, 0); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, -h + 3); ctx.lineTo(0, -3); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-w / 2, 3); ctx.lineTo(-w / 2, h - 3); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(w / 2, 3); ctx.lineTo(w / 2, h - 3); ctx.stroke();
+      // kilau atas + tekstur bintik bata
+      ctx.fillStyle = 'rgba(255,255,255,0.28)';
+      ctx.fillRect(-w + 4, -h + 3, w * 2 - 8, 4);
+      ctx.fillStyle = 'rgba(67,20,7,0.25)';
+      for (const [dx, dy] of [[-w * 0.6, -h * 0.45], [w * 0.35, -h * 0.5], [-w * 0.2, h * 0.5], [w * 0.65, h * 0.42]] as number[][]) {
+        ctx.beginPath(); ctx.arc(dx, dy, 1.7, 0, TAU); ctx.fill();
+      }
       ctx.restore();
     };
 
+    /**
+     * Glif KARUNG SEMEN prosedural (Canvas, digambar kode): karung krem
+     * terdesain — badan krem bergradasi, lipatan atas terikat, jahitan
+     * samping, cap kotak biru EZRAB (bentuk saja, tanpa teks terbaca,
+     * sesuai arah seni), bayangan kontak. Menggantikan cincin semen lama.
+     */
     const drawCement = (ctx: CanvasRenderingContext2D, x: number, y: number, r: number, age: number): void => {
       const pop = easeOutBack(clamp(age / 0.22, 0, 1));
       const sc = Math.max(0.01, pop);
       ctx.save();
       ctx.translate(x, y);
       ctx.scale(sc, sc);
-      const g = ctx.createRadialGradient(-r * 0.3, -r * 0.3, r * 0.2, 0, 0, r);
-      g.addColorStop(0, '#f5f5f4'); g.addColorStop(0.55, '#d6d3d1'); g.addColorStop(1, '#78716c');
-      ctx.strokeStyle = g; ctx.lineWidth = r * 0.42;
-      ctx.beginPath(); ctx.arc(0, 0, r * 0.72, 0, TAU); ctx.stroke();
-      // bintik semen
-      ctx.fillStyle = 'rgba(87,83,78,0.5)';
-      for (let i = 0; i < 10; i += 1) {
-        const a = (i / 10) * TAU + 0.4;
-        ctx.beginPath();
-        ctx.arc(Math.cos(a) * r * 0.72, Math.sin(a) * r * 0.72, 2.2, 0, TAU);
-        ctx.fill();
-      }
-      ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.arc(0, 0, r * 0.72, -2.4, -1.2); ctx.stroke();
+      ctx.rotate(0.07);
+      const w = r * 0.82; const h = r * 0.95;
+      // bayangan kontak
+      ctx.fillStyle = 'rgba(0,0,0,0.3)';
+      ctx.beginPath(); ctx.ellipse(2, h + 3, w * 0.95, 4.5, 0, 0, TAU); ctx.fill();
+      // badan karung krem
+      const g = ctx.createLinearGradient(0, -h, 0, h);
+      g.addColorStop(0, '#f7f1de'); g.addColorStop(0.6, '#e7dcc0'); g.addColorStop(1, '#cbbd97');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      if (typeof ctx.roundRect === 'function') ctx.roundRect(-w, -h * 0.72, w * 2, h * 1.72, 8);
+      else ctx.rect(-w, -h * 0.72, w * 2, h * 1.72);
+      ctx.fill();
+      ctx.strokeStyle = '#8a7a52'; ctx.lineWidth = 2.2; ctx.stroke();
+      // lipatan atas + ikatan
+      ctx.fillStyle = '#d9cba6';
+      ctx.beginPath();
+      if (typeof ctx.roundRect === 'function') ctx.roundRect(-w * 0.82, -h, w * 1.64, h * 0.34, 5);
+      else ctx.rect(-w * 0.82, -h, w * 1.64, h * 0.34);
+      ctx.fill();
+      ctx.strokeStyle = '#8a7a52'; ctx.lineWidth = 1.8; ctx.stroke();
+      ctx.fillStyle = '#78716c';
+      ctx.fillRect(-w * 0.82, -h * 0.68, w * 1.64, 3.4);
+      // jahitan samping putus-putus
+      ctx.strokeStyle = 'rgba(120,104,66,0.6)'; ctx.lineWidth = 1.4;
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath(); ctx.moveTo(-w + 5, -h * 0.6); ctx.lineTo(-w + 5, h * 0.88); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(w - 5, -h * 0.6); ctx.lineTo(w - 5, h * 0.88); ctx.stroke();
+      ctx.setLineDash([]);
+      // cap kotak biru EZRAB (bentuk, tanpa teks) + garis label
+      ctx.fillStyle = '#2563EB';
+      ctx.beginPath();
+      if (typeof ctx.roundRect === 'function') ctx.roundRect(-w * 0.34, -h * 0.18, w * 0.68, h * 0.5, 3);
+      else ctx.rect(-w * 0.34, -h * 0.18, w * 0.68, h * 0.5);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.85)';
+      ctx.fillRect(-w * 0.22, h * 0.02, w * 0.44, 3);
+      ctx.fillStyle = 'rgba(120,104,66,0.55)';
+      ctx.fillRect(-w * 0.5, h * 0.5, w, 2.6);
+      ctx.fillRect(-w * 0.38, h * 0.64, w * 0.76, 2.6);
       ctx.restore();
     };
 
@@ -312,11 +360,16 @@ export default function ArcadeTicTacToe({ onExit }: { onExit: () => void }): Rea
       const a = cellCenter(s.win.line[0], W, H);
       const b2 = cellCenter(s.win.line[2], W, H);
       const ang = Math.atan2(b2.y - a.y, b2.x - a.x);
-      const len = Math.hypot(b2.x - a.x, b2.y - a.y);
+      const fullLen = Math.hypot(b2.x - a.x, b2.y - a.y);
+      // garis TUMBUH dari sel pertama ke sel terakhir dalam 0.35 dtk —
+      // arah kemenangan langsung terbaca, bukan muncul sekejap utuh
+      const grow = clamp((s.t - s.winAt) / 0.35, 0, 1);
+      const eased = 1 - (1 - grow) * (1 - grow);
+      const len = fullLen * eased;
+      const ext = 26 * eased;
       ctx.save();
       ctx.translate(a.x, a.y);
       ctx.rotate(ang);
-      const ext = 26;
       // pita ukur kuning-hitam berjalan
       ctx.fillStyle = 'rgba(253,224,71,0.22)';
       ctx.fillRect(-ext, -14, len + ext * 2, 28);
@@ -348,27 +401,67 @@ export default function ArcadeTicTacToe({ onExit }: { onExit: () => void }): Rea
         const cx = i % 3; const cy = Math.floor(i / 3);
         const x = g.x + (cx + 0.5) * g.cell;
         const y = g.y + (cy + 0.5) * g.cell;
+        // sorot sel garis menang: pijar berdenyut di belakang glif pemenang
+        if (s.win && s.win.line.includes(i)) {
+          const pulse = 0.3 + Math.sin(s.t * 6) * 0.12;
+          ctx.save();
+          ctx.fillStyle = s.win.mark === 'X' ? `rgba(249,115,22,${pulse.toFixed(2)})` : `rgba(231,229,228,${pulse.toFixed(2)})`;
+          ctx.beginPath();
+          if (typeof ctx.roundRect === 'function') ctx.roundRect(x - g.cell * 0.44, y - g.cell * 0.44, g.cell * 0.88, g.cell * 0.88, 12);
+          else ctx.rect(x - g.cell * 0.44, y - g.cell * 0.44, g.cell * 0.88, g.cell * 0.88);
+          ctx.fill();
+          ctx.restore();
+        }
         const age = s.placedAt[i] < 0 ? 9 : s.t - s.placedAt[i];
         const r = g.cell * 0.30;
         if (m === 'X') drawBrick(ctx, x, y, r, age);
         else drawCement(ctx, x, y, r, age);
       }
       drawWinLine(ctx, W, H);
+      // spanduk SERI tegas di tengah papan (sebelumnya hanya teks melayang)
+      if (s.draw) {
+        const cxp = W / 2; const cyp = g.y + g.cell * 1.5;
+        ctx.save();
+        ctx.fillStyle = 'rgba(20,12,5,0.82)';
+        ctx.font = `900 17px ${FONT}`;
+        const label = 'SERI — ADUKAN RATA';
+        const tw = ctx.measureText(label).width;
+        ctx.beginPath();
+        if (typeof ctx.roundRect === 'function') ctx.roundRect(cxp - tw / 2 - 16, cyp - 20, tw + 32, 40, 12);
+        else ctx.rect(cxp - tw / 2 - 16, cyp - 20, tw + 32, 40);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(253,186,116,0.6)'; ctx.lineWidth = 1.5; ctx.stroke();
+        ctx.fillStyle = '#e2e8f0';
+        ctx.textAlign = 'center';
+        ctx.fillText(label, cxp, cyp + 6);
+        ctx.restore();
+      }
       ctx.restore();
-      // giliran siapa — di bawah papan
+      // giliran siapa — di bawah papan: glif mini prosedural + teks
       if (screenRef.current === 'play' && !s.win && !s.draw) {
         const g2 = boardGeom(W, H);
-        ctx.fillStyle = 'rgba(255,255,255,0.85)';
         ctx.font = `800 13px ${FONT}`;
-        ctx.textAlign = 'center';
         const label = s.mode === 'ai'
-          ? (s.turn === 'X' ? '🧱 Giliranmu (Bata)' : '⏳ Semen mikir…')
-          : (s.turn === 'X' ? '🧱 Giliran Bata (P1)' : '⚪ Giliran Semen (P2)');
-        ctx.fillText(label, W / 2, g2.y + g2.cell * 3 + 34);
+          ? (s.turn === 'X' ? 'Giliranmu (Bata)' : 'Semen sedang berpikir…')
+          : (s.turn === 'X' ? 'Giliran Bata (P1)' : 'Giliran Semen (P2)');
+        const tw = ctx.measureText(label).width;
+        const ly = g2.y + g2.cell * 3 + 34;
+        const gx = W / 2 - tw / 2 - 16;
+        if (s.turn === 'X') drawBrick(ctx, gx, ly - 5, 11, 9);
+        else drawCement(ctx, gx, ly - 5, 11, 9);
+        ctx.fillStyle = 'rgba(255,255,255,0.85)';
+        ctx.textAlign = 'center';
+        ctx.fillText(label, W / 2, ly);
       }
     });
 
     (api as unknown as { __reset: () => void }).__reset = resetAll;
+    // PERBAIKAN LOOP: ronde berikutnya yang sungguhan (papan dikosongkan,
+    // skor antar ronde DIPERTAHANKAN — newRound tidak menyentuh
+    // xWins/oWins/draws/streak). Sebelumnya tombol Ronde Berikutnya hanya
+    // mengganti layar tanpa memanggil ini, sehingga papan tetap berisi
+    // tanda pemenang, s.win tidak null, dan semua klik ditolak (macet).
+    (api as unknown as { __newRound: () => void }).__newRound = () => { newRound(); };
     (api as unknown as { __mode: (m: Mode) => void }).__mode = (m: Mode) => { s.mode = m; resetAll(); };
     resetAll();
     api.loop.start();
@@ -384,6 +477,8 @@ export default function ArcadeTicTacToe({ onExit }: { onExit: () => void }): Rea
   };
   const nextRound = (): void => {
     sfx.ensure();
+    const api = apiRef.current;
+    (api as unknown as { __newRound?: () => void } | null)?.__newRound?.();
     setScreen('play');
   };
   const togglePause = (): void => {
@@ -414,15 +509,15 @@ export default function ArcadeTicTacToe({ onExit }: { onExit: () => void }): Rea
 
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', zIndex: 5, pointerEvents: 'none' }}>
         <div style={{ pointerEvents: 'auto', background: 'rgba(20,12,5,0.62)', border: '1px solid rgba(253,186,116,0.3)', borderRadius: 14, padding: '7px 12px', color: '#fff', backdropFilter: 'blur(6px)', minWidth: 150 }}>
-          <div style={{ fontWeight: 900, fontSize: 15 }}>
-            <span style={{ color: '#fdba74' }}>🧱 {hud.x}</span>
-            <span style={{ opacity: 0.5, margin: '0 6px' }}>•</span>
-            <span style={{ color: '#d6d3d1' }}>⚪ {hud.o}</span>
-            <span style={{ opacity: 0.5, margin: '0 6px' }}>•</span>
-            <span style={{ opacity: 0.7 }}>🤝 {hud.d}</span>
+          <div style={{ fontWeight: 900, fontSize: 15, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <BrickGlyph size={16} /><span style={{ color: '#fdba74' }}>{hud.x}</span>
+            <span style={{ opacity: 0.5 }}>•</span>
+            <CementGlyph size={16} /><span style={{ color: '#d6d3d1' }}>{hud.o}</span>
+            <span style={{ opacity: 0.5 }}>•</span>
+            <span style={{ opacity: 0.7 }}>Seri {hud.d}</span>
           </div>
           <div style={{ fontSize: 11, opacity: 0.75, marginTop: 2 }}>
-            {mode === 'ai' ? `🔥 Streak: ${hud.streak} • ⭐ ${hud.best}` : '👥 2 Pemain'}
+            {mode === 'ai' ? `Streak: ${hud.streak} • Terbaik ${hud.best}` : '2 Pemain'}
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8, pointerEvents: 'auto' }}>
@@ -436,19 +531,19 @@ export default function ArcadeTicTacToe({ onExit }: { onExit: () => void }): Rea
 
       {screen === 'tutorial' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>🧱⚪</div>
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'center', alignItems: 'center' }}><BrickGlyph size={42} /><CementGlyph size={42} /></div>
           <h2 style={h2}>BATA vs SEMEN</h2>
           <p style={p}>
-            Kamu <b>🧱 Bata</b>, lawanmu <b>⚪ Semen</b>. Buat <b>3 sejajar</b> duluan — baris, kolom, atau diagonal!
+            Kamu <b>Bata</b>, lawanmu <b>Semen</b> (karung krem). Buat <b>3 sejajar</b> duluan — baris, kolom, atau diagonal!
             AI <b>Sedang</b> kadang lengah, jadi bisa dikalahkan. Ketuk petak atau tekan 1–9.
           </p>
-          <button style={primaryBtn} onClick={() => startGame('ai')}>🧱 Lawan Semen (AI Sedang)</button>
-          <button style={ghostBtn} onClick={() => startGame('2p')}>👥 2 Pemain (1 HP)</button>
+          <button style={{ ...primaryBtn, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }} onClick={() => startGame('ai')}><BrickGlyph size={18} /> Lawan Semen (AI Sedang)</button>
+          <button style={ghostBtn} onClick={() => startGame('2p')}>2 Pemain (1 HP)</button>
         </Overlay>
       )}
       {screen === 'pause' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>☕</div>
+          <div style={{ display: 'flex', justifyContent: 'center' }}><CoffeeGlyph size={44} /></div>
           <h2 style={h2}>ISTIRAHAT</h2>
           <p style={p}>Adukan semennya ditutup plastik dulu biar tidak kering.</p>
           <button style={primaryBtn} onClick={togglePause}>Lanjutkan</button>
@@ -456,15 +551,15 @@ export default function ArcadeTicTacToe({ onExit }: { onExit: () => void }): Rea
       )}
       {screen === 'round' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>🏗️</div>
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'center', alignItems: 'center' }}><BrickGlyph size={38} /><CementGlyph size={38} /></div>
           <h2 style={h2}>RONDE SELESAI</h2>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'center', margin: '10px 0' }}>
-            <Stat label="🧱 Bata" value={`${hud.x}`} />
-            <Stat label="⚪ Semen" value={`${hud.o}`} />
-            <Stat label="🤝 Seri" value={`${hud.d}`} />
+            <Stat label="Bata" value={`${hud.x}`} />
+            <Stat label="Semen" value={`${hud.o}`} />
+            <Stat label="Seri" value={`${hud.d}`} />
           </div>
           {mode === 'ai' && hud.streak >= 2 && (
-            <p style={p}>🔥 Rentetan menang: <b style={{ color: '#fde047' }}>{hud.streak}x</b> — mandor bangga!</p>
+            <p style={p}>Rentetan menang: <b style={{ color: '#fde047' }}>{hud.streak}x</b> — mandor bangga!</p>
           )}
           <button style={primaryBtn} onClick={nextRound}>Ronde Berikutnya</button>
           <button style={ghostBtn} onClick={onExit}>Keluar</button>
@@ -490,6 +585,53 @@ function Overlay({ children }: { children: React.ReactNode }): React.JSX.Element
         {children}
       </div>
     </div>
+  );
+}
+
+/**
+ * Glif DOM prosedural (SVG digambar kode — BUKAN emoji, BUKAN hasil
+ * generate; pola MaterialGlyph pilot Sudoku). Bahasa visualnya sama
+ * dengan glif Canvas di papan: bata oranye-merah bergaris nat, karung
+ * semen krem berlipat dengan cap kotak biru.
+ */
+function BrickGlyph({ size = 24 }: { size?: number }): React.JSX.Element {
+  const s = { width: size, height: size, display: 'block', flexShrink: 0 } as React.CSSProperties;
+  return (
+    <svg style={s} viewBox="0 0 40 40" aria-label="Bata">
+      <rect x="4" y="11" width="32" height="19" rx="3.5" fill="#ea580c" stroke="#7c2d12" strokeWidth="2" />
+      <rect x="4" y="11" width="32" height="5" rx="2.5" fill="#fb923c" opacity="0.8" />
+      <line x1="4" y1="20.5" x2="36" y2="20.5" stroke="#7c2d12" strokeWidth="1.8" />
+      <line x1="20" y1="11" x2="20" y2="20.5" stroke="#7c2d12" strokeWidth="1.8" />
+      <line x1="12" y1="20.5" x2="12" y2="30" stroke="#7c2d12" strokeWidth="1.8" />
+      <line x1="28" y1="20.5" x2="28" y2="30" stroke="#7c2d12" strokeWidth="1.8" />
+    </svg>
+  );
+}
+
+function CementGlyph({ size = 24 }: { size?: number }): React.JSX.Element {
+  const s = { width: size, height: size, display: 'block', flexShrink: 0 } as React.CSSProperties;
+  return (
+    <svg style={s} viewBox="0 0 40 40" aria-label="Karung semen">
+      <path d="M9 12 h22 a3 3 0 0 1 3 3 v17 a3 3 0 0 1 -3 3 H9 a3 3 0 0 1 -3 -3 V15 a3 3 0 0 1 3 -3 Z" fill="#e7dcc0" stroke="#8a7a52" strokeWidth="2" />
+      <rect x="9" y="6" width="22" height="7" rx="2.5" fill="#d9cba6" stroke="#8a7a52" strokeWidth="1.8" />
+      <rect x="9" y="12.4" width="22" height="2" fill="#78716c" />
+      <rect x="15" y="19" width="10" height="8" rx="1.5" fill="#2563EB" />
+      <line x1="17.5" y1="23" x2="22.5" y2="23" stroke="#ffffff" strokeWidth="1.6" />
+      <line x1="12" y1="30.5" x2="28" y2="30.5" stroke="#8a7a52" strokeWidth="1.4" opacity="0.6" />
+    </svg>
+  );
+}
+
+function CoffeeGlyph({ size = 44 }: { size?: number }): React.JSX.Element {
+  const s = { width: size, height: size, display: 'block' } as React.CSSProperties;
+  return (
+    <svg style={s} viewBox="0 0 48 48" aria-label="Kopi">
+      <path d="M17 6 c-2 3 2 4 0 7 M25 6 c-2 3 2 4 0 7" fill="none" stroke="#a8a29e" strokeWidth="2.2" strokeLinecap="round" />
+      <path d="M10 18 h24 v10 a8 8 0 0 1 -8 8 h-8 a8 8 0 0 1 -8 -8 Z" fill="#e7e5e4" stroke="#78716c" strokeWidth="2" />
+      <path d="M34 21 c5 -1 7 2 6 5 c-1 3 -4 4 -7 3" fill="none" stroke="#78716c" strokeWidth="2.2" />
+      <ellipse cx="22" cy="19" rx="11" ry="2" fill="#78350f" />
+      <rect x="8" y="40" width="30" height="3" rx="1.5" fill="#a8a29e" />
+    </svg>
   );
 }
 

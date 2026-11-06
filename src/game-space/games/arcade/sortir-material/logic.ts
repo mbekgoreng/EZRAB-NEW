@@ -7,15 +7,14 @@
 export type MatKind = 'bata' | 'kayu' | 'besi';
 
 export interface BinDef {
-  emoji: string;
   name: string;
   color: string; // aksen
 }
 
 export const BINS: Record<MatKind, BinDef> = {
-  bata: { emoji: '🧱', name: 'BATA', color: '#ef4444' },
-  kayu: { emoji: '🪵', name: 'KAYU', color: '#b45309' },
-  besi: { emoji: '🔩', name: 'BESI', color: '#64748b' },
+  bata: { name: 'BATA', color: '#ef4444' },
+  kayu: { name: 'KAYU', color: '#b45309' },
+  besi: { name: 'BESI', color: '#64748b' },
 };
 
 export const MAT_WEIGHTS: Record<MatKind, number> = { bata: 34, kayu: 33, besi: 33 };
@@ -31,6 +30,8 @@ export interface SortItem {
 export const MAX_LIVES = 3;
 export const START_FALL = 130; // px/detik
 export const START_SPAWN = 1.6; // detik antar spawn
+/** Tiap kelipatan streak ini, pemain memulihkan +1 nyawa (maks MAX_LIVES). */
+export const LIFE_STREAK_INTERVAL = 12;
 
 /** Kecepatan jatuh (px/detik) — naik seiring waktu. */
 export function fallSpeed(elapsed: number): number {
@@ -56,12 +57,16 @@ export function pickKind(rng: () => number): MatKind {
 
 /** Spawn item di atas layar pada salah satu lajur. */
 export function spawnItem(rng: () => number, id: number, lanes: number[], y: number): SortItem {
+  // Jepit indeks: rng tepi (mis. tepat 1) tidak boleh menghasilkan lajur
+  // di luar array (x undefined) atau variant di luar kontrak 0..2.
+  const laneIdx = Math.min(lanes.length - 1, Math.max(0, Math.floor(rng() * lanes.length)));
+  const variant = Math.min(2, Math.max(0, Math.floor(rng() * 3)));
   return {
     id,
     kind: pickKind(rng),
-    x: lanes[Math.floor(rng() * lanes.length)],
+    x: lanes[laneIdx],
     y,
-    variant: Math.floor(rng() * 3),
+    variant,
   };
 }
 
@@ -78,4 +83,15 @@ export function scoreFor(streak: number): number {
 /** Level kesulitan 1..5 dari waktu berjalan (untuk label & efek). */
 export function levelAt(elapsed: number): number {
   return Math.min(5, 1 + Math.floor(elapsed / 25));
+}
+
+/**
+ * Total nyawa yang diperoleh dari streak saat ini: +1 tiap kelipatan
+ * LIFE_STREAK_INTERVAL sortir benar beruntun (streak 12 → 1, 24 → 2, dst).
+ * Komponen membandingkan nilai sebelum/sesudah streak naik untuk tahu
+ * kapan kelipatan baru tercapai, lalu menambah nyawa (dijepit MAX_LIVES).
+ */
+export function lifeGainFor(streak: number): number {
+  if (!Number.isFinite(streak) || streak <= 0) return 0;
+  return Math.floor(streak / LIFE_STREAK_INTERVAL);
 }

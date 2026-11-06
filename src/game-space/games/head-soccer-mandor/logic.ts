@@ -227,6 +227,34 @@ export const AI_LEVELS: AiLevel[] = [
   { name: 'Konsultan Galak', speed: 300, jumpReact: 150, kickPower: 660, thinkInterval: 0.15, defendBias: 0.55, tackleRange: 145 },
 ];
 
+/* ---------------- progresi lawan (jenjang level) ---------------- */
+
+/**
+ * Progresi lawan diperjelas sebagai fungsi murni (dipakai UI & tes):
+ * maxLevel tersimpan adalah JUMLAH level terbuka (1..5, 1-based).
+ * Menang di level indeks i membuka sampai level indeks i+1.
+ */
+export function maxLevelAfterWin(levelIndex: number, currentMax: number): number {
+  return Math.max(currentMax, Math.min(AI_LEVELS.length, levelIndex + 2));
+}
+
+/** Level indeks i terbuka bila i+1 <= maxLevel tersimpan. Murni. */
+export function isLevelUnlocked(levelIndex: number, maxLevel: number): boolean {
+  return levelIndex + 1 <= maxLevel;
+}
+
+/** Ringkasan progresi untuk HUD/tutorial. Murni. */
+export function levelProgress(levelIndex: number): {
+  current: number; total: number; name: string; nextName: string | null;
+} {
+  const lv = AI_LEVELS[Math.max(0, Math.min(AI_LEVELS.length - 1, levelIndex))];
+  const next = AI_LEVELS[levelIndex + 1] ?? null;
+  return {
+    current: levelIndex + 1, total: AI_LEVELS.length,
+    name: lv.name, nextName: next ? next.name : null,
+  };
+}
+
 /** Otak AI: menyimpan keputusan terakhir + timer berpikir. */
 export interface AiBrain {
   reactT: number;

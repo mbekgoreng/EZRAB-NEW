@@ -3,7 +3,8 @@
  */
 import { strict as assert } from 'node:assert';
 import {
-  makeDeck, shuffle, evaluate, createState, placeDeal, placeDraw, refill,
+  makeDeck, shuffle, evaluate, winningIndices, isValidBet, createState,
+  placeDeal, placeDraw, refill,
   mulberry32, type Card,
 } from './logic';
 
@@ -116,6 +117,89 @@ test('refill isi ulang saat bangkrut', () => {
   st.credits = 0;
   refill(st);
   assert.equal(st.credits, 100);
+});
+
+/* ---------- regresi: taruhan di luar 1..5 tidak boleh diterima ---------- */
+
+test('isValidBet hanya menerima bulat 1..5', () => {
+  for (const ok of [1, 2, 3, 4, 5]) assert.equal(isValidBet(ok), true);
+  for (const bad of [0, -5, 6, 99, 2.5, Number.NaN]) assert.equal(isValidBet(bad), false);
+});
+
+test('REGRESI deal menolak taruhan tidak sah & kredit utuh (negatif dulu menambah kredit)', () => {
+  for (const bad of [-5, 0, 6, 99, 2.5]) {
+    const st = createState();
+    st.bet = bad;
+    assert.equal(placeDeal(st, mulberry32(1)), false, `bet=${bad}`);
+    assert.equal(st.credits, 100, `bet=${bad} mengubah kredit`);
+    assert.equal(st.phase, 'deal');
+    assert.equal(st.hand.length, 0);
+  }
+});
+
+/* ---------- winningIndices: sorotan kartu pembentuk bayaran ---------- */
+
+test('winningIndices royal: semua kartu disorot', () => {
+  const w = winningIndices([C(10, 0), C(11, 0), C(12, 0), C(13, 0), C(14, 0)]);
+  assert.deepEqual(w, [true, true, true, true, true]);
+});
+
+test('winningIndices flush & straight & full house: semua kartu', () => {
+  assert.deepEqual(
+    winningIndices([C(2, 1), C(5, 1), C(9, 1), C(11, 1), C(13, 1)]),
+    [true, true, true, true, true],
+  );
+  assert.deepEqual(
+    winningIndices([C(12, 0), C(12, 1), C(12, 2), C(4, 0), C(4, 3)]),
+    [true, true, true, true, true],
+  );
+  assert.deepEqual(
+    winningIndices([C(14, 0), C(2, 1), C(3, 2), C(4, 0), C(5, 3)]), // wheel
+    [true, true, true, true, true],
+  );
+});
+
+test('winningIndices kuartet: kicker tidak disorot, urutan tangan dipertahankan', () => {
+  const w = winningIndices([C(2, 0), C(9, 0), C(9, 1), C(9, 2), C(9, 3)]);
+  assert.deepEqual(w, [false, true, true, true, true]);
+});
+
+test('winningIndices trio & dua pasang: hanya kartu pembentuk', () => {
+  assert.deepEqual(
+    winningIndices([C(7, 0), C(2, 0), C(7, 1), C(13, 3), C(7, 2)]),
+    [true, false, true, false, true],
+  );
+  assert.deepEqual(
+    winningIndices([C(6, 0), C(3, 0), C(6, 1), C(10, 2), C(10, 3)]),
+    [true, false, true, true, true],
+  );
+});
+
+test('winningIndices pasangan Tukang: hanya pasangan; pasangan 10 & zonk: kosong', () => {
+  assert.deepEqual(
+    winningIndices([C(3, 2), C(11, 0), C(7, 0), C(11, 1), C(9, 3)]),
+    [false, true, false, true, false],
+  );
+  assert.deepEqual(
+    winningIndices([C(10, 0), C(10, 1), C(3, 2), C(7, 0), C(9, 3)]), // pair 10 tidak dibayar
+    [false, false, false, false, false],
+  );
+  assert.deepEqual(
+    winningIndices([C(2, 0), C(5, 1), C(7, 2), C(9, 0), C(13, 3)]),
+    [false, false, false, false, false],
+  );
+});
+
+test('winningIndices konsisten dengan hasil draw nyata (royal tertahan)', () => {
+  const st = createState();
+  st.phase = 'hold';
+  st.hand = [C(10, 0), C(11, 0), C(12, 0), C(13, 0), C(14, 0)];
+  st.held = [true, true, true, true, true];
+  st.deck = [C(2, 1), C(3, 2)];
+  const res = placeDraw(st);
+  assert.equal(res?.key, 'royal');
+  assert.equal(st.lastWin, 250);
+  assert.deepEqual(winningIndices(st.hand), [true, true, true, true, true]);
 });
 
 console.log(`\n${passed} passed, ${failed} failed`);

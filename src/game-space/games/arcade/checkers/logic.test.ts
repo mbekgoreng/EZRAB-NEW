@@ -5,7 +5,8 @@
 import { strict as assert } from 'node:assert';
 import {
   initialBoard, genMoves, applyMove, countPieces, gameStatus,
-  aiPickMove, other, inBoard, SIZE, type Board, type Move,
+  aiPickMove, other, inBoard, SIZE, captureCount, forcedCapture,
+  movesEndingAt, type Board, type Move,
 } from './logic';
 
 let passed = 0;
@@ -155,6 +156,80 @@ test('other & inBoard', () => {
   assert.ok(inBoard(0, 0) && inBoard(7, 7));
   assert.ok(!inBoard(8, 0) && !inBoard(-1, 3));
   assert.equal(SIZE, 8);
+});
+
+console.log('\n[8] forcedCapture — kewajiban makan dari papan saja');
+test('papan awal: tidak wajib makan', () => {
+  const fc = forcedCapture(initialBoard(), 'merah');
+  assert.equal(fc.mandatory, false);
+  assert.deepEqual(fc.capturers, []);
+  assert.equal(fc.moveCount, 0);
+  assert.equal(fc.maxChain, 0);
+});
+test('satu penangkap terdeteksi tanpa memilih bidak apa pun', () => {
+  const b = emptyBoard();
+  b[4][3] = { side: 'merah', king: false };
+  b[3][2] = { side: 'abu', king: false };
+  b[5][0] = { side: 'merah', king: false }; // hanya bisa jalan biasa
+  const fc = forcedCapture(b, 'merah');
+  assert.equal(fc.mandatory, true);
+  assert.deepEqual(fc.capturers, [[4, 3]]);
+  assert.equal(fc.moveCount, 1);
+  assert.equal(fc.maxChain, 1);
+});
+test('dua penangkap independen, urut baris-kolom', () => {
+  const b = emptyBoard();
+  b[4][1] = { side: 'merah', king: false };
+  b[3][2] = { side: 'abu', king: false };
+  b[6][5] = { side: 'merah', king: false };
+  b[5][6] = { side: 'abu', king: false };
+  const fc = forcedCapture(b, 'merah');
+  assert.equal(fc.mandatory, true);
+  assert.deepEqual(fc.capturers, [[4, 1], [6, 5]]);
+  assert.equal(fc.moveCount, 2);
+  assert.equal(fc.maxChain, 1);
+});
+test('rantai ganda: maxChain 2 & captureCount menghitung semua yang dimakan', () => {
+  const b = emptyBoard();
+  b[5][0] = { side: 'merah', king: false };
+  b[4][1] = { side: 'abu', king: false };
+  b[2][3] = { side: 'abu', king: false };
+  const fc = forcedCapture(b, 'merah');
+  assert.equal(fc.mandatory, true);
+  assert.deepEqual(fc.capturers, [[5, 0]]);
+  assert.equal(fc.maxChain, 2);
+  const dbl = genMoves(b, 'merah').find((m) => m.steps.length === 2) as Move;
+  assert.equal(captureCount(dbl), 2);
+});
+test('kewajiban makan juga berlaku untuk sisi abu', () => {
+  const b = emptyBoard();
+  b[3][4] = { side: 'abu', king: false };
+  b[4][3] = { side: 'merah', king: false };
+  const fc = forcedCapture(b, 'abu');
+  assert.equal(fc.mandatory, true);
+  assert.deepEqual(fc.capturers, [[3, 4]]);
+});
+
+console.log('\n[9] movesEndingAt — regresi bug tujuan ambigu');
+test('dua rantai berbeda berakhir di kotak sama: keduanya tertahan, bukan yang pertama saja', () => {
+  const b = emptyBoard();
+  b[6][3] = { side: 'merah', king: false };
+  b[5][2] = { side: 'abu', king: false };
+  b[3][2] = { side: 'abu', king: false };
+  b[5][4] = { side: 'abu', king: false };
+  b[3][4] = { side: 'abu', king: false };
+  // jalur A: (6,3)->(4,1)->(2,3) makan (5,2),(3,2)
+  // jalur B: (6,3)->(4,5)->(2,3) makan (5,4),(3,4)
+  const moves = genMoves(b, 'merah');
+  const variants = movesEndingAt(moves, 2, 3);
+  assert.equal(variants.length, 2, `diharapkan 2 varian, dapat ${variants.length}`);
+  const capSets = variants
+    .map((m) => m.steps.map((s) => (s.captured as [number, number]).join(',')).sort().join('|'))
+    .sort();
+  assert.deepEqual(capSets, ['3,2|5,2', '3,4|5,4']);
+  // kotak perantara BUKAN tujuan akhir — tidak boleh cocok
+  assert.equal(movesEndingAt(moves, 4, 1).length, 0);
+  assert.equal(movesEndingAt(moves, 4, 5).length, 0);
 });
 
 console.log(`\n${passed} lulus, ${failed} gagal${failed ? ` — ${failures.join(', ')}` : ''}`);

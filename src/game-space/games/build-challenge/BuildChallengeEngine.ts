@@ -295,6 +295,8 @@ export class BuildChallengeEngine {
     this.ro?.disconnect();
     window.removeEventListener('pointermove', this.onPointerMove);
     window.removeEventListener('pointerdown', this.onPointerDown);
+    // Fallback listener registered in attachListeners when ResizeObserver is unavailable.
+    window.removeEventListener('resize', this.resize);
     document.removeEventListener('visibilitychange', this.onVisibility);
     this.canvas.removeEventListener('pointerleave', this.onPointerLeave);
     this.tweens = [];

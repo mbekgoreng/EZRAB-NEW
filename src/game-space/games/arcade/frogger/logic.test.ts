@@ -4,7 +4,9 @@
 import { strict as assert } from 'node:assert';
 import {
   COLS, ROWS, HOME_COLS, START_LIVES, ATTEMPT_TIME, HOME_SCORE, ROW_SCORE,
+  BONUS_HOME_COUNT,
   createGame, move, update, obstacleCells, homesFilled, mulberry32,
+  homesRemaining, missionProgress, isMissionComplete,
   type Game,
 } from './logic';
 
@@ -166,6 +168,39 @@ test('obstacleCells deterministik & melingkar', () => {
   lane.speed = 1;
   const cells2 = obstacleCells(lane, 1);
   assert.deepEqual([...cells2].sort((a, b) => a - b), [0, 1, 2]);
+});
+
+test('PEMBEDA misi: progres & sisa slot rumah terhitung murni', () => {
+  const g = createGame(20);
+  assert.deepEqual(missionProgress(g), { filled: 0, remaining: 5, total: 5 });
+  assert.equal(homesRemaining(g), 5);
+  assert.equal(isMissionComplete(g), false);
+  g.homes[0] = true; g.homes[4] = true;
+  assert.deepEqual(missionProgress(g), { filled: 2, remaining: 3, total: 5 });
+  assert.equal(homesRemaining(g), 3);
+});
+
+test('PEMBEDA misi: rumah ke-3 memberi bonus +1 nyawa, sekali saja', () => {
+  const g = createGame(21);
+  for (const lane of g.lanes) lane.obstacles = [];
+  const fill = (h: number): void => {
+    g.fx = HOME_COLS[h]; g.y = 1; g.bestY = 1; g.timeLeft = 50;
+    assert.equal(move(g, 0, -1), 'home');
+  };
+  fill(0);
+  assert.equal(g.lives, START_LIVES, 'rumah ke-1 belum bonus');
+  fill(1);
+  assert.equal(g.lives, START_LIVES, 'rumah ke-2 belum bonus');
+  fill(2);
+  assert.equal(homesFilled(g), BONUS_HOME_COUNT);
+  assert.equal(g.lives, START_LIVES + 1, 'rumah ke-3: +1 nyawa misi');
+  assert.equal(g.bonusLifeGranted, true);
+  fill(3);
+  assert.equal(g.lives, START_LIVES + 1, 'bonus tidak dobel di rumah ke-4');
+  fill(4);
+  assert.equal(g.lives, START_LIVES + 1, 'bonus tidak dobel di rumah ke-5');
+  assert.equal(isMissionComplete(g), true);
+  assert.equal(g.status, 'won');
 });
 
 console.log(`\n${passed} passed, ${failed} failed`);

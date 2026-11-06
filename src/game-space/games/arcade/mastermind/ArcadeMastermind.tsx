@@ -7,7 +7,7 @@ import React, { useRef, useState } from 'react';
 import { sfx } from '../../../engine2d';
 import { bestKey, getBest, setBest } from '../../../engine2d/best';
 import { popText } from '../../../engine2d/juice2d';
-import { BAHAN, SLOTS, MAX_GUESSES, genCode, evaluate, isWin, scoreFor, type Feedback } from './logic';
+import { BAHAN, SLOTS, MAX_GUESSES, genCode, evaluate, isWin, scoreFor, countRemaining, type Feedback } from './logic';
 
 const FONT = "'Plus Jakarta Sans','Inter',system-ui,sans-serif";
 const BK = bestKey('tebak-campuran', 'best');
@@ -63,7 +63,7 @@ export default function ArcadeMastermind({ onExit }: { onExit: () => void }): Re
       setBestState(nb);
       sfx.chime(4);
       const wrap = wrapRef.current;
-      if (wrap) popText(wrap, 'BETON K-300 LULUS! 🏗️', { size: 26, color: '#4ade80' });
+      if (wrap) popText(wrap, 'BETON K-300 LULUS!', { size: 26, color: '#4ade80' });
       window.setTimeout(() => setScreen('win'), 900);
     } else if (nRows.length >= MAX_GUESSES) {
       sfx.fail();
@@ -72,7 +72,7 @@ export default function ArcadeMastermind({ onExit }: { onExit: () => void }): Re
       sfx.pop(0.9);
       if (fb.hitam > 0) {
         const wrap = wrapRef.current;
-        if (wrap) popText(wrap, `● ${fb.hitam} takaran tepat!`, { size: 16, color: '#e2e8f0' });
+        if (wrap) popText(wrap, `${fb.hitam} takaran tepat!`, { size: 16, color: '#e2e8f0' });
       }
     }
   };
@@ -87,6 +87,8 @@ export default function ArcadeMastermind({ onExit }: { onExit: () => void }): Re
   };
 
   const emptyRows = MAX_GUESSES - rows.length;
+  // Bantuan berpikir: dihitung HANYA dari riwayat tebakan pemain sendiri.
+  const sisaKemungkinan = countRemaining(rows.map((r) => ({ guess: r.guess, feedback: r.fb })));
 
   return (
     <div ref={wrapRef} style={{
@@ -105,13 +107,19 @@ export default function ArcadeMastermind({ onExit }: { onExit: () => void }): Re
         <div style={{ display: 'flex', gap: 8 }}>
           {(screen === 'play' || screen === 'pause') && (
             <button style={iconBtn} onClick={() => setScreen(screen === 'play' ? 'pause' : 'play')} aria-label="Jeda">
-              {screen === 'play' ? '⏸' : '▶'}
+              {screen === 'play' ? <PauseIcon /> : <PlayIcon />}
             </button>
           )}
-          <button style={iconBtn} onClick={toggleMute} aria-label="Suara">{muted ? '🔇' : '🔊'}</button>
-          <button style={iconBtn} onClick={onExit} aria-label="Keluar">✕</button>
+          <button style={iconBtn} onClick={toggleMute} aria-label="Suara">{muted ? <MuteIcon /> : <SoundIcon />}</button>
+          <button style={iconBtn} onClick={onExit} aria-label="Keluar"><CloseIcon /></button>
         </div>
       </div>
+
+      {rows.length > 0 && (
+        <div style={{ position: 'relative', zIndex: 5, margin: '0 12px 8px', padding: '7px 12px', borderRadius: 11, background: 'rgba(56,189,248,0.12)', border: '1px solid rgba(56,189,248,0.35)', fontSize: 13, fontWeight: 800, color: '#bae6fd', textAlign: 'center' }}>
+          Sisa kemungkinan: {sisaKemungkinan}
+        </div>
+      )}
 
       {/* papan tebakan */}
       <div style={{ position: 'relative', zIndex: 4, flex: 1, overflowY: 'auto', padding: '4px 14px 8px', display: 'flex', flexDirection: 'column', gap: 7 }}>
@@ -128,7 +136,7 @@ export default function ArcadeMastermind({ onExit }: { onExit: () => void }): Re
         ))}
         {screen === 'play' && (
           <div style={{ ...rowStyle, borderColor: 'rgba(253,224,71,0.55)', background: 'rgba(253,224,71,0.06)' }}>
-            <span style={rowNum}>▶</span>
+            <span style={rowNum}>{rows.length + 1}</span>
             {Array.from({ length: SLOTS }, (_, i) => (
               cur[i] !== undefined
                 ? <button key={i} onClick={() => unpick(i)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }} aria-label="Hapus"><Peg bahanId={cur[i]} /></button>
@@ -142,9 +150,10 @@ export default function ArcadeMastermind({ onExit }: { onExit: () => void }): Re
                 fontFamily: FONT, fontWeight: 900, fontSize: 13, cursor: cur.length < SLOTS ? 'default' : 'pointer',
                 background: cur.length < SLOTS ? 'rgba(255,255,255,0.12)' : 'linear-gradient(180deg,#fde047,#f59e0b)',
                 color: cur.length < SLOTS ? '#71717a' : '#3a2a00',
+                display: 'inline-flex', alignItems: 'center', gap: 6,
               }}
             >
-              COR! 🪣
+              <BucketIcon size={16} /> COR!
             </button>
           </div>
         )}
@@ -177,15 +186,19 @@ export default function ArcadeMastermind({ onExit }: { onExit: () => void }): Re
 
       {screen === 'tutorial' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>🪣</div>
+          <div style={overlayIcon}><BucketIcon size={42} /></div>
           <h2 style={h2}>TEBAK CAMPURAN</h2>
           <p style={p}>
             Mandor minta <b>beton K-300</b> tapi resepnya hilang! Tebak <b>4 takaran</b> dari{' '}
             <b>6 bahan</b> dalam <b>10× tebakan</b>.
           </p>
           <p style={p}>
-            <span style={dot('#111827')}>●</span> hitam = bahan & takaran <b>tepat</b><br />
-            <span style={dot('#f8fafc')}>●</span> putih = bahan benar, <b>takaran salah</b>
+            <span style={legendDot('#111827', '#f8fafc')} /> hitam = bahan & takaran <b>tepat</b><br />
+            <span style={legendDot('#f8fafc', '#111827')} /> putih = bahan benar, <b>takaran salah</b>
+          </p>
+          <p style={p}>
+            Panel <b>Sisa kemungkinan</b> menghitung berapa resep yang masih cocok dengan
+            semua feedback tebakanmu — makin kecil, makin dekat ke jawaban.
           </p>
           {best > 0 && <p style={p}>Skor terbaik: <b style={{ color: '#fde047' }}>{best}</b></p>}
           <button style={primaryBtn} onClick={newGame}>Mulai Meracik</button>
@@ -193,7 +206,7 @@ export default function ArcadeMastermind({ onExit }: { onExit: () => void }): Re
       )}
       {screen === 'pause' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>☕</div>
+          <div style={overlayIcon}><CoffeeIcon size={42} /></div>
           <h2 style={h2}>JEDA</h2>
           <p style={p}>Adukan cor menunggu. Jangan sampai mengeras!</p>
           <button style={primaryBtn} onClick={() => setScreen('play')}>Lanjutkan</button>
@@ -201,7 +214,7 @@ export default function ArcadeMastermind({ onExit }: { onExit: () => void }): Re
       )}
       {screen === 'win' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>🏗️</div>
+          <div style={overlayIcon}><BuildingIcon size={42} /></div>
           <h2 style={h2}>K-300 LULUS UJI!</h2>
           <div style={{ fontSize: 40, fontWeight: 900, color: '#fde047' }}>{score}</div>
           <p style={p}>Tebakan ke-{rows.length} • Terbaik: <b style={{ color: '#fde047' }}>{best}</b></p>
@@ -211,7 +224,7 @@ export default function ArcadeMastermind({ onExit }: { onExit: () => void }): Re
       )}
       {screen === 'lose' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>🧪</div>
+          <div style={overlayIcon}><FlaskIcon size={42} /></div>
           <h2 style={h2}>CAMPURAN GAGAL</h2>
           <p style={p}>Resep yang benar:</p>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'center', margin: '8px 0 12px' }}>
@@ -256,7 +269,47 @@ function FbPegs({ fb }: { fb: Feedback }): React.JSX.Element {
 const fbDot = (bg: string, border: string): React.CSSProperties => ({
   width: 13, height: 13, borderRadius: '50%', background: bg, border: `2px solid ${border}`, display: 'inline-block',
 });
-const dot = (c: string): React.CSSProperties => ({ color: c, fontSize: 18 });
+const legendDot = (bg: string, border: string): React.CSSProperties => ({
+  width: 14, height: 14, borderRadius: '50%', background: bg, border: `2px solid ${border}`,
+  display: 'inline-block', verticalAlign: 'middle', marginRight: 6,
+});
+const overlayIcon: React.CSSProperties = { display: 'flex', justifyContent: 'center', color: '#fde047' };
+
+/* Ikon SVG inline (pengganti emoji) */
+function SvgIcon({ size = 20, children }: { size?: number; children: React.ReactNode }): React.JSX.Element {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      {children}
+    </svg>
+  );
+}
+function BucketIcon({ size = 20 }: { size?: number }): React.JSX.Element {
+  return <SvgIcon size={size}><path d="M5 10h14l-1.6 9.2a2 2 0 0 1-2 1.8H8.6a2 2 0 0 1-2-1.8L5 10Z" /><path d="M5 10c2-1.2 4.5-1.8 7-1.8s5 .6 7 1.8" /><path d="M8.5 10a3.5 3.5 0 0 1 7 0" /></SvgIcon>;
+}
+function CoffeeIcon({ size = 20 }: { size?: number }): React.JSX.Element {
+  return <SvgIcon size={size}><path d="M4 9h13v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V9Z" /><path d="M17 10h1.5a2.5 2.5 0 0 1 0 5H17" /><path d="M7 5.5c0-1 .8-1 .8-2M11 5.5c0-1 .8-1 .8-2" /></SvgIcon>;
+}
+function BuildingIcon({ size = 20 }: { size?: number }): React.JSX.Element {
+  return <SvgIcon size={size}><path d="M4 21V8l6-4v17" /><path d="M10 21V11l7 3v7" /><path d="M2.5 21h19" /><path d="M6.5 9h1M6.5 13h1M6.5 17h1M13.5 16.5h1M13.5 19.5h1" /></SvgIcon>;
+}
+function FlaskIcon({ size = 20 }: { size?: number }): React.JSX.Element {
+  return <SvgIcon size={size}><path d="M10 3h4M10 3v5.2L5.6 17a2.4 2.4 0 0 0 2.1 3.5h8.6a2.4 2.4 0 0 0 2.1-3.5L14 8.2V3" /><path d="M8 14h8" /></SvgIcon>;
+}
+function PauseIcon(): React.JSX.Element {
+  return <SvgIcon size={18}><path d="M9 5v14M15 5v14" strokeWidth={2.6} /></SvgIcon>;
+}
+function PlayIcon(): React.JSX.Element {
+  return <SvgIcon size={18}><path d="M8 5.5v13l11-6.5-11-6.5Z" fill="currentColor" stroke="none" /></SvgIcon>;
+}
+function SoundIcon(): React.JSX.Element {
+  return <SvgIcon size={18}><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5H4Z" /><path d="M15.5 9.5a4 4 0 0 1 0 5M18 7a7.5 7.5 0 0 1 0 10" /></SvgIcon>;
+}
+function MuteIcon(): React.JSX.Element {
+  return <SvgIcon size={18}><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5H4Z" /><path d="M15.5 9.8l5 5M20.5 9.8l-5 5" /></SvgIcon>;
+}
+function CloseIcon(): React.JSX.Element {
+  return <SvgIcon size={18}><path d="M6 6l12 12M18 6L6 18" strokeWidth={2.4} /></SvgIcon>;
+}
 
 const rowStyle: React.CSSProperties = {
   display: 'flex', alignItems: 'center', gap: 8,

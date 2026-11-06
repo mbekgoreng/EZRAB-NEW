@@ -2,6 +2,9 @@
  * ArcadeNonogram ("Bongkar Gambar: Piksel Proyek") — pure logic.
  * Pemain mengungkap pixel-art alat proyek (palu, helm, tower crane) dari
  * petunjuk baris/kolom. Sel yang diisi salah = kesalahan mandor.
+ *
+ * Ikon setiap puzzle BUKAN emoji: komponen menggambar pratinjau piksel-art
+ * prosedural langsung dari `grid` puzzle itu sendiri.
  */
 
 export type CellMark = 0 | 1 | 2; // 0 kosong, 1 terisi, 2 silang
@@ -9,7 +12,6 @@ export type CellMark = 0 | 1 | 2; // 0 kosong, 1 terisi, 2 silang
 export interface NonogramPuzzle {
   id: string;
   name: string;
-  emoji: string;
   difficulty: string;
   grid: string[]; // 10 string, masing-masing 10 char '0'/'1'
 }
@@ -54,9 +56,9 @@ const CRANE = [
 ];
 
 export const PUZZLES: NonogramPuzzle[] = [
-  { id: 'palu', name: 'Palu Godam', emoji: '🔨', difficulty: 'Mudah', grid: PALU },
-  { id: 'helm', name: 'Helm Proyek', emoji: '⛑️', difficulty: 'Sedang', grid: HELM },
-  { id: 'crane', name: 'Tower Crane', emoji: '🏗️', difficulty: 'Sulit', grid: CRANE },
+  { id: 'palu', name: 'Palu Godam', difficulty: 'Mudah', grid: PALU },
+  { id: 'helm', name: 'Helm Proyek', difficulty: 'Sedang', grid: HELM },
+  { id: 'crane', name: 'Tower Crane', difficulty: 'Sulit', grid: CRANE },
 ];
 
 export interface Clues {
@@ -150,4 +152,67 @@ export function colComplete(grid: string[], marks: CellMark[][], c: number): boo
     if (solutionAt(grid, r, c) !== (marks[r][c] === 1)) return false;
   }
   return true;
+}
+
+/**
+ * Panjang run sel TERISI (mark 1) berurutan dalam satu baris/kolom pemain.
+ * Sel kosong (0) dan silang (2) sama-sama memisahkan run — persis cara
+ * petunjuk dibaca dari grid solusi oleh lineClue().
+ */
+export function filledRuns(line: readonly CellMark[]): number[] {
+  const runs: number[] = [];
+  let cur = 0;
+  for (const m of line) {
+    if (m === 1) cur += 1;
+    else {
+      if (cur > 0) { runs.push(cur); cur = 0; }
+    }
+  }
+  if (cur > 0) runs.push(cur);
+  return runs;
+}
+
+/**
+ * Umpan balik live inti nonogram: apakah petunjuk satu baris/kolom SUDAH
+ * terpenuhi oleh pola isian pemain saat ini juga — tanpa membaca solusi.
+ *
+ * Terpenuhi bila run sel terisi pemain persis sama dengan angka petunjuk
+ * (petunjuk [] terpenuhi bila belum ada isian sama sekali). Karena game ini
+ * menolak isian di luar solusi (dihitung kesalahan, tidak ditempatkan),
+ * pola yang cocok berarti baris/kolom itu memang selesai — jadi komponen
+ * boleh mencoret & meredupkan angkanya segera, tidak menunggu baris penuh
+ * disilang satu-satu. Fungsi ini murni pola: penempatan bergeser dengan
+ * run yang sama tetap "satisfied" di sini, sedangkan rowComplete() yang
+ * membaca solusi akan menolaknya.
+ */
+export function clueSatisfied(clue: readonly number[], line: readonly CellMark[]): boolean {
+  const runs = filledRuns(line);
+  if (runs.length !== clue.length) return false;
+  return runs.every((n, i) => n === clue[i]);
+}
+
+/** clueSatisfied untuk baris r pada papan saat ini. */
+export function rowClueSatisfied(grid: string[], marks: CellMark[][], r: number): boolean {
+  return clueSatisfied(computeClues(grid).rows[r], marks[r]);
+}
+
+/** clueSatisfied untuk kolom c pada papan saat ini. */
+export function colClueSatisfied(grid: string[], marks: CellMark[][], c: number): boolean {
+  const line = marks.map((row) => row[c]);
+  return clueSatisfied(computeClues(grid).cols[c], line);
+}
+
+/**
+ * Keputusan tombol Escape terhadap layar saat ini: 'pause' | 'resume' | null.
+ *
+ * Regresi yang dijaga: keputusan ini dulu hidup di dalam update() game —
+ * padahal Loop engine2d MELEWATI update() selama terjeda, sehingga cabang
+ * 'resume' tidak pernah bisa tercapai dan Escape tidak bisa melanjutkan
+ * permainan. Komponen kini memanggil fungsi murni ini dari listener
+ * keydown window yang tetap hidup saat loop terjeda.
+ */
+export function pauseToggleFor(screen: string): 'pause' | 'resume' | null {
+  if (screen === 'play') return 'pause';
+  if (screen === 'pause') return 'resume';
+  return null;
 }

@@ -9,9 +9,46 @@ import { bestKey, getBest, setBest } from '../../../engine2d';
 import { Particles2D } from '../../../engine2d';
 import { popText } from '../../../engine2d';
 import {
-  createMatch, playRound, resetMatch, currentWinStreak,
-  MOVES, MOVE_INFO, type Move, type RpsRound, type RpsState,
+  createMatch, playRoundAdaptive, resetMatch, currentWinStreak,
+  aiPhaseFor, AI_WARMUP_ROUNDS,
+  MOVES, MOVE_INFO, type Move, type RpsRound, type RpsState, type AiPhase,
 } from './logic';
+
+/** Glif prosedural terdesain per jurus (SVG digambar kode — bukan emoji). */
+function MoveGlyph({ move, size = 40, faded = false }: { move: Move; size?: number; faded?: boolean }): React.JSX.Element {
+  const st: React.CSSProperties = { width: size, height: size, display: 'block', opacity: faded ? 0.45 : 1 };
+  if (move === 'bata') {
+    return (
+      <svg style={st} viewBox="0 0 48 48" aria-label="Bata">
+        <rect x="5" y="13" width="38" height="22" rx="3" fill="#c4502e" stroke="#7e2f16" strokeWidth="2.4" />
+        <line x1="5" y1="24" x2="43" y2="24" stroke="#7e2f16" strokeWidth="2.4" />
+        <line x1="24" y1="13" x2="24" y2="24" stroke="#7e2f16" strokeWidth="2.4" />
+        <line x1="14" y1="24" x2="14" y2="35" stroke="#7e2f16" strokeWidth="2.4" />
+        <line x1="34" y1="24" x2="34" y2="35" stroke="#7e2f16" strokeWidth="2.4" />
+      </svg>
+    );
+  }
+  if (move === 'gergaji') {
+    return (
+      <svg style={st} viewBox="0 0 48 48" aria-label="Gergaji">
+        <g transform="rotate(-14 24 24)">
+          <path d="M3 27 L33 27 L29 36 L26 30 L23 36 L20 30 L17 36 L14 30 L11 36 L8 30 L5 36 L3 32 Z" fill="#cbd5e1" stroke="#64748b" strokeWidth="2" />
+          <rect x="33" y="18" width="10" height="17" rx="3.5" fill="#b45309" stroke="#78350f" strokeWidth="2" />
+          <circle cx="38" cy="26.5" r="2.4" fill="#78350f" />
+        </g>
+      </svg>
+    );
+  }
+  return (
+    <svg style={st} viewBox="0 0 48 48" aria-label="Gambar Kerja">
+      <rect x="7" y="6" width="34" height="36" rx="2.5" fill="#1d4ed8" stroke="#93c5fd" strokeWidth="2.2" />
+      <path d="M13 34 L24 15 L35 34 Z" fill="none" stroke="#e0f2fe" strokeWidth="2.2" />
+      <circle cx="24" cy="27" r="3.6" fill="none" stroke="#e0f2fe" strokeWidth="2" />
+      <line x1="12" y1="38.5" x2="36" y2="38.5" stroke="#93c5fd" strokeWidth="1.8" />
+      <line x1="12" y1="10.5" x2="24" y2="10.5" stroke="#93c5fd" strokeWidth="1.8" />
+    </svg>
+  );
+}
 
 const SLUG = 'rock-paper-scissors';
 const FONT = `'Plus Jakarta Sans', 'Inter', system-ui, sans-serif`;
@@ -33,6 +70,8 @@ interface Ui {
   winner: 'pemain' | 'ai' | null;
   streak: number;
   bestStreak: number;
+  aiPhase: AiPhase;
+  completed: number;
 }
 
 const KONTRAKTOR_QUOTES = [
@@ -64,6 +103,7 @@ export default function ArcadeRockPaperScissors({ onExit }: { onExit: () => void
     pScore: 0, aScore: 0, round: 0, last: null, revealing: false,
     playerPick: null, over: false, winner: null, streak: 0,
     bestStreak: getBest(bestKey(SLUG, 'streak')),
+    aiPhase: 'acak', completed: 0,
   });
 
   const uiRef = useRef(ui);
@@ -79,6 +119,8 @@ export default function ArcadeRockPaperScissors({ onExit }: { onExit: () => void
       over: st.over,
       winner: st.winner,
       streak: currentWinStreak(st),
+      aiPhase: aiPhaseFor(st.playerMoves.length),
+      completed: st.playerMoves.length,
       ...extra,
     }));
   };
@@ -140,7 +182,7 @@ export default function ArcadeRockPaperScissors({ onExit }: { onExit: () => void
     setUi((u) => ({ ...u, revealing: true, playerPick: m, last: null }));
     // AI "berpikir" 550ms — tangan bergetar
     window.setTimeout(() => {
-      const round = playRound(stRef.current, m, Math.random);
+      const round = playRoundAdaptive(stRef.current, m, Math.random);
       if (round.outcome === 'menang') {
         sfx.pop(1.3);
         if (wrapRef.current) popText(wrapRef.current, 'MENANG! +1', { size: 30, color: '#4ade80' });
@@ -174,6 +216,8 @@ export default function ArcadeRockPaperScissors({ onExit }: { onExit: () => void
         winner: st.winner,
         streak,
         bestStreak: best,
+        aiPhase: aiPhaseFor(st.playerMoves.length),
+        completed: st.playerMoves.length,
       }));
     }, reducedRef.current ? 120 : 550);
   };
@@ -243,7 +287,7 @@ export default function ArcadeRockPaperScissors({ onExit }: { onExit: () => void
 
       {/* header */}
       <div style={{ padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 8, zIndex: 5 }}>
-        <div style={{ fontWeight: 900, fontSize: 15, letterSpacing: 0.5 }}>🥊 SUIT KONTRAKTOR</div>
+        <div style={{ fontWeight: 900, fontSize: 15, letterSpacing: 0.5 }}>SUIT KONTRAKTOR</div>
         <div style={{ flex: 1 }} />
         {(screen === 'play' || screen === 'pause') && (
           <button style={btn} onClick={() => { sfx.click(); goto(screen === 'play' ? 'pause' : 'play'); }} aria-label="Jeda">
@@ -257,7 +301,7 @@ export default function ArcadeRockPaperScissors({ onExit }: { onExit: () => void
       {/* papan skor */}
       <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center', padding: '4px 16px', zIndex: 5 }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 13, fontWeight: 800, color: '#93c5fd' }}>👷 KAMU</div>
+          <div style={{ fontSize: 13, fontWeight: 800, color: '#93c5fd' }}>KAMU</div>
           <div style={{ fontSize: 30, fontWeight: 900 }}>{ui.pScore}</div>
           {pips(ui.pScore, stRef.current.target, '#4ade80')}
         </div>
@@ -266,10 +310,24 @@ export default function ArcadeRockPaperScissors({ onExit }: { onExit: () => void
           <div style={{ fontSize: 11, color: '#94a3b8' }}>best of {stRef.current.target * 2 - 1}</div>
         </div>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 13, fontWeight: 800, color: '#fca5a5' }}>🤖 MANDOR AI</div>
+          <div style={{ fontSize: 13, fontWeight: 800, color: '#fca5a5' }}>MANDOR AI</div>
           <div style={{ fontSize: 30, fontWeight: 900 }}>{ui.aScore}</div>
           {pips(ui.aScore, stRef.current.target, '#ef4444')}
         </div>
+      </div>
+
+      {/* indikator fase AI adaptif */}
+      <div style={{ textAlign: 'center', padding: '2px 16px 0', zIndex: 5 }}>
+        <span style={{
+          fontSize: 11.5, fontWeight: 800, borderRadius: 999, padding: '4px 12px',
+          background: ui.aiPhase === 'membaca' ? 'rgba(239,68,68,0.22)' : 'rgba(255,255,255,0.1)',
+          color: ui.aiPhase === 'membaca' ? '#fca5a5' : '#cbd5e1',
+          border: '1px solid rgba(255,255,255,0.18)',
+        }}>
+          {ui.aiPhase === 'membaca'
+            ? `Mandor AI MEMBACA POLAMU dari ${ui.completed} ronde — jangan spam satu jurus!`
+            : `Mandor AI masih acak — membaca pola (${ui.completed}/${AI_WARMUP_ROUNDS} ronde)`}
+        </span>
       </div>
 
       {/* arena */}
@@ -294,7 +352,7 @@ export default function ArcadeRockPaperScissors({ onExit }: { onExit: () => void
       {/* hasil ronde */}
       <div style={{ minHeight: 56, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 20px', zIndex: 5 }}>
         {ui.revealing ? (
-          <div style={{ fontWeight: 800, color: '#fbbf24', fontSize: 15 }}>Mandor AI mikir… 🤔</div>
+          <div style={{ fontWeight: 800, color: '#fbbf24', fontSize: 15 }}>Mandor AI mikir…</div>
         ) : ui.last ? (
           <div key={ui.round} className="rps-pop" style={{
             fontWeight: 800, fontSize: 14, textAlign: 'center', lineHeight: 1.45,
@@ -324,7 +382,9 @@ export default function ArcadeRockPaperScissors({ onExit }: { onExit: () => void
               color: '#fff', fontFamily: FONT, opacity: screen !== 'play' || ui.over ? 0.45 : 1,
             }}
           >
-            <div style={{ fontSize: 34 }} className={ui.revealing ? '' : 'rps-float'}>{MOVE_INFO[m].ikon}</div>
+            <div style={{ display: 'flex', justifyContent: 'center' }} className={ui.revealing ? '' : 'rps-float'}>
+              <MoveGlyph move={m} size={38} />
+            </div>
             <div style={{ fontWeight: 900, fontSize: 13, marginTop: 2 }}>{MOVE_INFO[m].nama}</div>
           </button>
         ))}
@@ -332,33 +392,38 @@ export default function ArcadeRockPaperScissors({ onExit }: { onExit: () => void
 
       {/* streak */}
       <div style={{ position: 'absolute', bottom: 100, right: 14, zIndex: 5, background: 'rgba(15,23,42,0.55)', borderRadius: 12, padding: '6px 10px', fontSize: 12, fontWeight: 800, color: '#ffd166' }}>
-        🔥 Streak {ui.streak} • Best {ui.bestStreak}
+        Streak {ui.streak} • Best {ui.bestStreak}
       </div>
 
       {screen === 'tutorial' && (
         <Overlay>
-          <div style={{ fontSize: 46 }}>🧱🪚📐</div>
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
+            {MOVES.map((m) => <MoveGlyph key={m} move={m} size={46} />)}
+          </div>
           <h2 style={titleStyle}>SUIT KONTRAKTOR</h2>
           <p style={textStyle}>
-            Adu jurus melawan Mandor AI yang menghafal polamu — pertama menang 3 ronde yang juara.
-            🧱 Bata menumpulkan 🪚 Gergaji, 🪚 mencacah 📐 Gambar Kerja, 📐 merevisi 🧱 Bata!
+            Adu jurus melawan Mandor AI — pertama menang 3 ronde yang juara.
+            Bata menumpulkan Gergaji, Gergaji mencacah Gambar Kerja, Gambar Kerja merevisi Bata!
+            Awalnya AI main acak, tapi setelah {AI_WARMUP_ROUNDS} ronde ia mulai membaca
+            frekuensi &amp; pola jurusmu lalu memainkan penangkalnya. Variasikan jurusmu!
           </p>
-          <button style={primaryBtn} onClick={() => { sfx.ensure(); sfx.click(); goto('play'); }}>Mulai Suit 🥊</button>
+          <button style={primaryBtn} onClick={() => { sfx.ensure(); sfx.click(); goto('play'); }}>Mulai Suit</button>
         </Overlay>
       )}
 
       {screen === 'pause' && (
         <Overlay>
-          <div style={{ fontSize: 40 }}>☕</div>
           <h2 style={titleStyle}>JEDA</h2>
-          <p style={textStyle}>Mandor AI pura-pura tidak mengintip polamu.</p>
+          <p style={textStyle}>Mandor AI pura-pura tidak mengintip polamu. (Ia memang hanya membaca ronde yang sudah selesai.)</p>
           <button style={primaryBtn} onClick={() => { sfx.ensure(); goto('play'); }}>Lanjutkan</button>
         </Overlay>
       )}
 
       {screen === 'over' && (
         <Overlay>
-          <div style={{ fontSize: 48 }}>{ui.winner === 'pemain' ? '🏆' : '🤖'}</div>
+          <div style={{ fontSize: 15, fontWeight: 900, letterSpacing: 2, color: ui.winner === 'pemain' ? '#4ade80' : '#fca5a5' }}>
+            {ui.winner === 'pemain' ? '— KONTRAK DIMENANGKAN —' : '— KONTRAK LEPAS —'}
+          </div>
           <h2 style={titleStyle}>{ui.winner === 'pemain' ? 'KAMU MENANG!' : 'MANDOR AI MENANG!'}</h2>
           <p style={textStyle}>
             {ui.winner === 'pemain'
@@ -366,11 +431,11 @@ export default function ArcadeRockPaperScissors({ onExit }: { onExit: () => void
               : 'AI-nya belajar dari polamu. Ganti strategi, jangan spam satu jurus!'}
           </p>
           <p style={{ ...textStyle, fontSize: 16 }}>
-            Skor <b>{ui.pScore} – {ui.aScore}</b> • 🔥 Streak terbaik: <b>{ui.bestStreak}</b>
+            Skor <b>{ui.pScore} – {ui.aScore}</b> • Streak terbaik: <b>{ui.bestStreak}</b>
           </p>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
-            <button style={primaryBtn} onClick={newMatch}>Tanding Lagi 🔁</button>
-            <button style={secondaryBtn} onClick={onExit}>Tutup ✕</button>
+            <button style={primaryBtn} onClick={newMatch}>Tanding Lagi</button>
+            <button style={secondaryBtn} onClick={onExit}>Tutup</button>
           </div>
         </Overlay>
       )}
@@ -411,7 +476,11 @@ function Fighter({ label, move, thinking, reduced }: {
           fontSize: 56, boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
         }}
       >
-        {thinking ? '❔' : info ? <span key={info.nama} className={reduced ? '' : 'rps-pop'}>{info.ikon}</span> : <span style={{ fontSize: 40, opacity: 0.4 }}>✊</span>}
+        {thinking
+          ? <span style={{ fontSize: 44, fontWeight: 900, color: '#fbbf24' }}>?</span>
+          : info && move
+            ? <span key={info.nama} className={reduced ? '' : 'rps-pop'} style={{ display: 'flex' }}><MoveGlyph move={move} size={58} /></span>
+            : <span style={{ fontSize: 34, fontWeight: 900, opacity: 0.35 }}>?</span>}
       </div>
       <div style={{ fontWeight: 800, fontSize: 13, marginTop: 6, minHeight: 18 }}>
         {thinking ? '…' : info?.nama ?? '—'}

@@ -10,6 +10,7 @@ import { popText } from '../../../engine2d/juice2d';
 import {
   DEADLINES, waveSpec, scoreForRow, UFO_SCORE, speedFactor,
   rectsOverlap, makeShield, erodeShield, MAX_LIVES,
+  waveBonus, dangerLevel, shieldPercent,
   type WaveSpec,
 } from './logic';
 
@@ -141,7 +142,7 @@ export default function ArcadeSpaceInvaders({ onExit }: { onExit: () => void }):
       api.sfx.fail();
       api.shake.add(0.7);
       const wrap = wrapRef.current;
-      if (wrap) popText(wrap, 'DEADLINE MENANG! 📅', { size: 30, color: '#f87171' });
+      if (wrap) popText(wrap, 'DEADLINE MENANG!', { size: 30, color: '#f87171' });
       window.setTimeout(() => {
         api.pushHud({ score: s.score, wave: s.wave, lives: 0, best: nb });
         setScreen('over');
@@ -167,7 +168,7 @@ export default function ArcadeSpaceInvaders({ onExit }: { onExit: () => void }):
       push();
       const alive = s.enemies.filter((x) => x.alive).length;
       if (alive === 0) {
-        s.score += 100 * s.wave;
+        s.score += waveBonus(s.wave);
         api.sfx.chime(4);
         const wrap = wrapRef.current;
         if (wrap) popText(wrap, `WAVE ${s.wave} BERES!`, { size: 28, color: '#4ade80' });
@@ -342,7 +343,7 @@ export default function ArcadeSpaceInvaders({ onExit }: { onExit: () => void }):
           s.ufo.x = s.ufo.dir === 1 ? -60 : api.W + 60;
           s.ufoT = s.spec.ufoInterval;
           const wrap = wrapRef.current;
-          if (wrap) popText(wrap, '👷 Mandor lewat!', { size: 16, color: '#93c5fd' });
+          if (wrap) popText(wrap, 'Mandor lewat!', { size: 16, color: '#93c5fd' });
         }
       } else {
         s.ufo.x += s.ufo.dir * 130 * dt;
@@ -467,6 +468,11 @@ export default function ArcadeSpaceInvaders({ onExit }: { onExit: () => void }):
       if (typeof ctx.roundRect === 'function') ctx.roundRect(0, 0, EW, 9, [7, 7, 0, 0]);
       else ctx.rect(0, 0, EW, 9);
       ctx.fill();
+      // cincin pengikat kalender (dua lingkaran logam di atas strip)
+      ctx.fillStyle = '#e2e8f0';
+      for (const rx of [EW * 0.28, EW * 0.72]) {
+        ctx.beginPath(); ctx.arc(rx, 4.5, 2.4, 0, TAU); ctx.fill();
+      }
       // label
       ctx.fillStyle = '#fff';
       ctx.font = `900 12px ${FONT}`;
@@ -489,7 +495,7 @@ export default function ArcadeSpaceInvaders({ onExit }: { onExit: () => void }):
       ctx.fillStyle = 'rgba(226,232,240,0.6)';
       ctx.font = `700 10px ${FONT}`;
       ctx.textAlign = 'center';
-      ctx.fillText('RAB', sh.x + (13 * 6) / 2, y0 - 8);
+      ctx.fillText(`RAB ${shieldPercent(sh.grid)}%`, sh.x + (13 * 6) / 2, y0 - 8);
     };
 
     const drawUfo = (ctx: CanvasRenderingContext2D): void => {
@@ -569,6 +575,23 @@ export default function ArcadeSpaceInvaders({ onExit }: { onExit: () => void }):
         ctx.restore();
       }
       drawPlayer(ctx);
+      // peringatan bahaya: jarak formasi ke pemain dihitung via dangerLevel
+      {
+        let maxY = -Infinity;
+        for (const e of s.enemies) if (e.alive) maxY = Math.max(maxY, enemyXY(e).y + EH);
+        if (maxY > -Infinity) {
+          const dl = dangerLevel(maxY, s.py - 24);
+          if (dl !== 'aman') {
+            ctx.save();
+            ctx.globalAlpha = dl === 'kritis' ? 0.75 + 0.25 * Math.sin(s.t * 10) : 0.9;
+            ctx.fillStyle = dl === 'kritis' ? '#ef4444' : '#f59e0b';
+            ctx.font = `900 ${dl === 'kritis' ? 17 : 14}px ${FONT}`;
+            ctx.textAlign = 'center';
+            ctx.fillText(dl === 'kritis' ? 'DEADLINE KRITIS — HABISI BARIS BAWAH!' : 'Deadline mendekat…', W / 2, 108);
+            ctx.restore();
+          }
+        }
+      }
       // banner wave
       if (s.waveMsg > 0) {
         ctx.save();
@@ -638,7 +661,11 @@ export default function ArcadeSpaceInvaders({ onExit }: { onExit: () => void }):
         <div style={{ pointerEvents: 'auto', background: 'rgba(10,20,38,0.6)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 14, padding: '7px 12px', color: '#fff', backdropFilter: 'blur(6px)' }}>
           <div style={{ fontWeight: 900, fontSize: 17, color: '#fef08a' }}>{hud.score.toLocaleString('id-ID')}</div>
           <div style={{ fontSize: 12, opacity: 0.9 }}>
-            {'❤️'.repeat(Math.max(0, hud.lives))}{'🤍'.repeat(Math.max(0, MAX_LIVES - hud.lives))} • Wave {hud.wave}
+            Nyawa:{' '}
+            {Array.from({ length: MAX_LIVES }).map((_, i) => (
+              <span key={i} aria-hidden style={{ display: 'inline-block', width: 11, height: 11, borderRadius: '50%', marginRight: 3, verticalAlign: -1, background: i < hud.lives ? '#ef4444' : 'rgba(255,255,255,0.25)', border: '1px solid rgba(255,255,255,0.45)' }} />
+            ))}
+            • Wave {hud.wave}
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8, pointerEvents: 'auto' }}>
@@ -650,26 +677,26 @@ export default function ArcadeSpaceInvaders({ onExit }: { onExit: () => void }):
         </div>
       </div>
       <div style={{ position: 'absolute', bottom: 6, left: 0, right: 0, textAlign: 'center', fontSize: 11.5, color: 'rgba(226,232,240,0.6)', fontWeight: 700, zIndex: 4, pointerEvents: 'none' }}>
-        Geser untuk bergerak • tembakan otomatis 🔫
+        Geser untuk bergerak • tembakan otomatis
       </div>
 
       {screen === 'tutorial' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>📅</div>
+          <CalendarBadge label="DL!" />
           <h2 style={h2}>TEMBAK DEADLINE</h2>
           <p style={p}>
             Tanggal-tanggal <b>deadline & revisi</b> berjatuhan dari atas!
             <b> Geser</b> tukangmu untuk bergerak — tembakan <b>otomatis</b>.
             Berlindung di balik <b>tumpukan RAB</b>!
           </p>
-          <p style={p}>👷 <b>Mandor lewat</b> sesekali — tembak dia untuk <b>+200</b>!</p>
+          <p style={p}><b>Mandor lewat</b> sesekali (helm kuning melintas di atas) — tembak dia untuk <b>+200</b>! Peringatan <b>DEADLINE KRITIS</b> muncul saat formasi hampir menyentuhmu.</p>
           {hud.best > 0 && <p style={p}>Skor terbaik: <b style={{ color: '#fde047' }}>{hud.best.toLocaleString('id-ID')}</b></p>}
           <button style={primaryBtn} onClick={startGame}>Mulai Lembur</button>
         </Overlay>
       )}
       {screen === 'pause' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>☕</div>
+          <CalendarBadge label="JEDA" />
           <h2 style={h2}>JEDA</h2>
           <p style={p}>Deadline ikut nunggu. Kopi dulu biar tidak panik.</p>
           <button style={primaryBtn} onClick={togglePause}>Lanjutkan</button>
@@ -677,7 +704,7 @@ export default function ArcadeSpaceInvaders({ onExit }: { onExit: () => void }):
       )}
       {screen === 'over' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>📅</div>
+          <CalendarBadge label="DL!" />
           <h2 style={h2}>DEADLINE MENANG!</h2>
           <div style={{ fontSize: 40, fontWeight: 900, color: '#fef08a' }}>{hud.score.toLocaleString('id-ID')}</div>
           <p style={p}>Wave {hud.wave} • Terbaik: <b style={{ color: '#fde047' }}>{hud.best.toLocaleString('id-ID')}</b></p>
@@ -697,6 +724,16 @@ const primaryBtn: React.CSSProperties = {
   background: 'linear-gradient(180deg,#fde047,#f59e0b)', color: '#3a2a00', boxShadow: '0 8px 20px rgba(245,158,11,0.4)',
 };
 const ghostBtn: React.CSSProperties = { ...primaryBtn, background: 'transparent', color: '#93c5fd', boxShadow: 'none', border: '1px solid rgba(255,255,255,0.25)' };
+
+/** Lencana kalender prosedural: kotak CSS + strip header merah + label. */
+function CalendarBadge({ label }: { label: string }): React.JSX.Element {
+  return (
+    <div aria-hidden style={{ width: 58, height: 58, margin: '0 auto', borderRadius: 12, background: '#f8fafc', overflow: 'hidden', border: '2px solid #7f1d1d', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ height: 13, background: '#dc2626' }} />
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#7f1d1d', fontSize: 13, fontWeight: 900 }}>{label}</div>
+    </div>
+  );
+}
 
 function Overlay({ children }: { children: React.ReactNode }): React.JSX.Element {
   return (

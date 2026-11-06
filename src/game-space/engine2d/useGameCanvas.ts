@@ -51,6 +51,11 @@ export interface GameApi {
   onResize: (cb: (w: number, h: number) => void) => void;
   /** Push React HUD state — assign in setup: api.pushHud = setHud */
   pushHud: (h: unknown) => void;
+  /**
+   * Dipanggil saat tab disembunyikan (visibilitychange). Game mengisinya
+   * untuk auto-pause: api.onHidden = () => { ...setPaused(true)... }.
+   */
+  onHidden: (() => void) | null;
 }
 
 // React 19: useRef requires an initial value argument.
@@ -81,6 +86,7 @@ export function useGameCanvas(
     let updateFn: (dt: number) => void = () => {};
     let renderFn: () => void = () => {};
     let pushHud: (h: unknown) => void = () => {};
+    let hiddenCb: (() => void) | null = null;
 
     const loop = new Loop(
       (dt) => {
@@ -130,7 +136,20 @@ export function useGameCanvas(
         resizeCbs.add(cb);
       },
       pushHud: (h: unknown) => pushHud(h),
+      onHidden: null,
     };
+    Object.defineProperty(api, 'onHidden', {
+      configurable: true,
+      get: () => hiddenCb,
+      set: (fn: (() => void) | null) => {
+        hiddenCb = fn;
+      },
+    });
+
+    const onVis = (): void => {
+      if (document.hidden) hiddenCb?.();
+    };
+    document.addEventListener('visibilitychange', onVis);
     // allow worker to replace pushHud: api.pushHud = setHud
     Object.defineProperty(api, 'pushHud', {
       configurable: true,
@@ -149,6 +168,7 @@ export function useGameCanvas(
     const cleanup = setupRef.current(api) as void | (() => void);
 
     return () => {
+      document.removeEventListener('visibilitychange', onVis);
       ro.disconnect();
       if (typeof cleanup === 'function') cleanup();
       loop.dispose();

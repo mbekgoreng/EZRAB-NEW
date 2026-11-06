@@ -51,6 +51,18 @@ export function matchesNext(word: string, typed: number, ch: string): boolean {
   return word[typed] === ch;
 }
 
+/**
+ * G2 — bonus kombo Ketik Proyek (pembeda dari Ketik Cepat): menghancurkan
+ * kata beruntun TANPA satu pun lolos garis deadline menumpuk bonus.
+ * Kata lolos -> kombo reset. Murni pertahanan deadline, bukan sprint WPM.
+ */
+export function comboBonus(combo: number): number {
+  if (combo >= 5) return 15;
+  if (combo >= 3) return 8;
+  if (combo >= 2) return 3;
+  return 0;
+}
+
 /** Grade akhir. */
 export function gradeFor(score: number): string {
   if (score >= 900) return 'S';

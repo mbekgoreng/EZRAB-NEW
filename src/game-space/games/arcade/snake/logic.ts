@@ -83,6 +83,45 @@ export function stepInterval(eaten: number): number {
   return Math.max(0.08, 0.16 - eaten * 0.004);
 }
 
+/* ---------- Progresi level eksplisit (Gelombang 5) ----------
+ * Level naik tiap CONNECTORS_PER_LEVEL konektor yang dimakan.
+ * Kecepatan tick adalah fungsi murni DARI LEVEL (bukan kontinu per
+ * konektor) supaya HUD bisa menampilkan level + sisa ke level berikut
+ * dan pemain merasakan "gigi" kecepatan yang jelas tiap naik level.
+ * stepInterval lama dipertahankan apa adanya untuk kompatibilitas;
+ * loop game kini memakai tickMsFor(levelFor(eaten)).
+ */
+export const CONNECTORS_PER_LEVEL = 5;
+export const BASE_TICK_MS = 160;
+export const MIN_TICK_MS = 80;
+export const TICK_STEP_MS = 20; // = 4ms/konektor (laju stepInterval lama) x 5 konektor per level
+
+/** Level dari jumlah konektor yang dimakan (mulai dari 1). */
+export function levelFor(eaten: number): number {
+  return 1 + Math.floor(Math.max(0, eaten) / CONNECTORS_PER_LEVEL);
+}
+
+/** Interval tick (ms) untuk level tertentu: turun TICK_STEP_MS per level, floor MIN_TICK_MS. */
+export function tickMsFor(level: number): number {
+  const lv = Math.max(1, Math.floor(level));
+  return Math.max(MIN_TICK_MS, BASE_TICK_MS - (lv - 1) * TICK_STEP_MS);
+}
+
+/** Interval tick (detik) langsung dari jumlah makanan — dipakai loop game. */
+export function tickSecondsFor(eaten: number): number {
+  return tickMsFor(levelFor(eaten)) / 1000;
+}
+
+/** Progres dalam level berjalan: 0..CONNECTORS_PER_LEVEL-1. */
+export function progressInLevel(eaten: number): number {
+  return Math.max(0, eaten) % CONNECTORS_PER_LEVEL;
+}
+
+/** Berapa konektor lagi menuju level berikutnya. */
+export function connectorsToNextLevel(eaten: number): number {
+  return CONNECTORS_PER_LEVEL - progressInLevel(eaten);
+}
+
 /** Peluang konektor emas muncul tiap konektor biasa dimakan. */
 export const GOLD_CHANCE = 0.35;
 export const GOLD_DURATION = 6; // detik

@@ -105,9 +105,72 @@ export function aiPick(playerMoves: Move[], rng: () => number): Move {
   return MOVES[Math.floor(rng() * 3)];
 }
 
-/** Mainkan satu ronde. Mengembalikan ronde yang baru dimainkan. */
-export function playRound(st: RpsState, player: Move, rng: () => number): RpsRound {
-  const ai = aiPick(st.playerMoves, rng);
+/* ================================================================== */
+/*  AI ADAPTIF BERTAHAP (Gelombang 1C)                                  */
+/*                                                                      */
+/*  Fase 'acak'    : ronde selesai < AI_WARMUP_ROUNDS -> AI acak murni, */
+/*                   belum membaca pola apa pun.                        */
+/*  Fase 'membaca' : AI memprediksi langkah pemain berikutnya dari      */
+/*                   riwayat ronde yang SUDAH SELESAI saja:             */
+/*                   1) transisi dari langkah terakhir pemain           */
+/*                      (sesudah X pemain paling sering main apa),      */
+/*                   2) bila tak ada data transisi: frekuensi total.    */
+/*                   Prediksi DETERMINISTIK (tanpa rng) dan AI memainkan  */
+/*                   penangkalnya. Pilihan ronde yang SEDANG berjalan    */
+/*                   tidak pernah dibaca: prediksi dihitung dari        */
+/*                   st.playerMoves SEBELUM langkah baru dicatat.       */
+/* ================================================================== */
+
+export const AI_WARMUP_ROUNDS = 2;
+
+export type AiPhase = 'acak' | 'membaca';
+
+export function aiPhaseFor(completedRounds: number): AiPhase {
+  return completedRounds < AI_WARMUP_ROUNDS ? 'acak' : 'membaca';
+}
+
+/** Argmax deterministik: seri -> urutan MOVES (bata, gergaji, gambar). */
+function argmaxMove(counts: Record<Move, number>): Move {
+  let best: Move = MOVES[0];
+  for (const m of MOVES) {
+    if (counts[m] > counts[best]) best = m;
+  }
+  return best;
+}
+
+/**
+ * Prediksi langkah pemain berikutnya dari riwayat langkah SELESAI.
+ * Mengembalikan null bila riwayat belum cukup (< AI_WARMUP_ROUNDS).
+ */
+export function predictPlayerMove(playerMoves: Move[]): Move | null {
+  if (playerMoves.length < AI_WARMUP_ROUNDS) return null;
+  const last = playerMoves[playerMoves.length - 1];
+  const trans: Record<Move, number> = { bata: 0, gergaji: 0, gambar: 0 };
+  let transTotal = 0;
+  for (let i = 0; i < playerMoves.length - 1; i += 1) {
+    if (playerMoves[i] === last) {
+      trans[playerMoves[i + 1]] += 1;
+      transTotal += 1;
+    }
+  }
+  if (transTotal > 0) return argmaxMove(trans);
+  const freq: Record<Move, number> = { bata: 0, gergaji: 0, gambar: 0 };
+  for (const m of playerMoves) freq[m] += 1;
+  return argmaxMove(freq);
+}
+
+/**
+ * Pilihan AI adaptif: fase acak / riwayat kurang -> acak via rng;
+ * fase membaca -> penangkal prediksi, deterministik (rng tak dipakai).
+ */
+export function aiPickAdaptive(playerMoves: Move[], rng: () => number): Move {
+  const predicted = predictPlayerMove(playerMoves);
+  if (predicted === null) return MOVES[Math.floor(rng() * 3)];
+  return counterOf(predicted);
+}
+
+/** Catat satu ronde dengan pilihan AI yang sudah ditentukan. */
+function applyRound(st: RpsState, player: Move, ai: Move): RpsRound {
   const outcome = decide(player, ai);
   const round: RpsRound = { player, ai, outcome };
   st.history.push(round);
@@ -123,6 +186,21 @@ export function playRound(st: RpsState, player: Move, rng: () => number): RpsRou
     st.winner = 'ai';
   }
   return round;
+}
+
+/** Mainkan satu ronde (AI klasik frekuensi — dipertahankan apa adanya). */
+export function playRound(st: RpsState, player: Move, rng: () => number): RpsRound {
+  return applyRound(st, player, aiPick(st.playerMoves, rng));
+}
+
+/**
+ * Mainkan satu ronde dengan AI adaptif bertahap.
+ * KEADILAN: pilihan AI dihitung dari st.playerMoves (ronde SELESAI)
+ * SEBELUM langkah pemain ronde ini dicatat — AI tidak mengintip
+ * pilihan ronde berjalan.
+ */
+export function playRoundAdaptive(st: RpsState, player: Move, rng: () => number): RpsRound {
+  return applyRound(st, player, aiPickAdaptive(st.playerMoves, rng));
 }
 
 /** Reset match dengan target yang sama. */

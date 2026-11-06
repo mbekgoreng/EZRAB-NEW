@@ -6,6 +6,7 @@ import { strict as assert } from 'node:assert';
 import {
   decide, counterOf, createMatch, playRound, aiPick, resetMatch,
   currentWinStreak, MOVES, MOVE_INFO,
+  AI_WARMUP_ROUNDS, aiPhaseFor, predictPlayerMove, aiPickAdaptive, playRoundAdaptive,
   type Move,
 } from './logic';
 
@@ -138,6 +139,87 @@ test('currentWinStreak hitung beruntun dari akhir', () => {
   assert.equal(currentWinStreak(st), 2);
   playRound(st, 'gambar', () => 0.0); // ai gambar → seri → streak reset
   assert.equal(currentWinStreak(st), 0);
+});
+
+console.log('\n[6] AI adaptif bertahap: fase & fallback acak');
+test('fase: awal acak, setelah warmup membaca', () => {
+  assert.equal(AI_WARMUP_ROUNDS, 2);
+  assert.equal(aiPhaseFor(0), 'acak');
+  assert.equal(aiPhaseFor(1), 'acak');
+  assert.equal(aiPhaseFor(2), 'membaca');
+  assert.equal(aiPhaseFor(9), 'membaca');
+});
+test('prediksi null bila riwayat kosong / sedikit', () => {
+  assert.equal(predictPlayerMove([]), null);
+  assert.equal(predictPlayerMove(['bata']), null);
+});
+test('fallback acak: riwayat kurang -> pakai rng', () => {
+  assert.equal(aiPickAdaptive([], () => 0.5), 'gergaji'); // floor(1.5)=1
+  assert.equal(aiPickAdaptive(['bata'], () => 0.0), 'bata'); // floor(0)=0
+  assert.equal(aiPickAdaptive(['gambar'], () => 0.99), 'gambar'); // floor(2.97)=2
+});
+
+console.log('\n[7] AI adaptif: prediksi frekuensi & transisi');
+test('prediksi frekuensi bila langkah terakhir tanpa transisi', () => {
+  // terakhir 'gergaji' tak pernah diikuti langkah lain -> frekuensi: bata terbanyak
+  assert.equal(predictPlayerMove(['bata', 'bata', 'gergaji']), 'bata');
+  // AI memainkan penangkalnya: counterOf('bata') = 'gambar'
+  assert.equal(aiPickAdaptive(['bata', 'bata', 'gergaji'], () => 0.0), 'gambar');
+});
+test('prediksi transisi mengalahkan frekuensi', () => {
+  // frekuensi: bata 3x (terbanyak), TAPI sesudah bata pemain selalu main gergaji
+  const hist: Move[] = ['bata', 'gergaji', 'bata', 'gergaji', 'bata'];
+  assert.equal(predictPlayerMove(hist), 'gergaji');
+  // penangkal gergaji = bata, deterministik untuk rng berapa pun
+  assert.equal(aiPickAdaptive(hist, () => 0.0), 'bata');
+  assert.equal(aiPickAdaptive(hist, () => 0.99), 'bata');
+});
+test('prediksi transisi berulang sederhana', () => {
+  // sesudah gergaji selalu bata
+  const hist: Move[] = ['gergaji', 'bata', 'gergaji', 'bata', 'gergaji'];
+  assert.equal(predictPlayerMove(hist), 'bata');
+  assert.equal(aiPickAdaptive(hist, () => 0.42), 'gambar');
+});
+test('fase membaca deterministik: rng yang melempar pun tak dipakai', () => {
+  const hist: Move[] = ['bata', 'bata'];
+  const boom = (): number => { throw new Error('rng tidak boleh dipakai di fase membaca'); };
+  assert.equal(aiPickAdaptive(hist, boom), 'gambar'); // prediksi bata -> penangkal gambar
+});
+
+console.log('\n[8] AI adaptif: keadilan (tak membaca ronde berjalan)');
+test('AI hanya membaca ronde selesai, bukan pilihan ronde ini', () => {
+  const st = createMatch(99);
+  // 3 ronde selesai: bata -> gergaji -> bata (transisi: sesudah bata = gergaji)
+  st.playerMoves.push('bata', 'gergaji', 'bata');
+  st.round = 3;
+  // Ronde berjalan pemain memilih 'gambar'. Bila AI mengintip pilihan ini,
+  // riwayat menjadi [..., 'gambar']: langkah terakhir gambar tanpa transisi ->
+  // frekuensi bata -> AI akan main 'gambar'. AI yang adil memprediksi dari
+  // riwayat lama: sesudah bata = gergaji -> penangkalnya 'bata'.
+  const boom = (): number => { throw new Error('rng tidak boleh dipakai di fase membaca'); };
+  const r = playRoundAdaptive(st, 'gambar', boom);
+  assert.equal(r.ai, 'bata');
+  assert.equal(r.outcome, 'menang'); // gambar mengalahkan bata
+  // langkah ronde ini baru tercatat SETELAH AI memilih
+  assert.equal(st.playerMoves[st.playerMoves.length - 1], 'gambar');
+  assert.equal(st.history[st.history.length - 1].ai, 'bata');
+});
+test('playRoundAdaptive fase awal tetap acak via rng', () => {
+  const st = createMatch(99);
+  const r1 = playRoundAdaptive(st, 'gambar', () => 0.0); // ai acak: bata
+  assert.equal(r1.ai, 'bata');
+  assert.equal(r1.outcome, 'menang');
+  const r2 = playRoundAdaptive(st, 'bata', () => 0.99); // masih fase acak (1 selesai): gambar
+  assert.equal(r2.ai, 'gambar');
+  assert.equal(r2.outcome, 'kalah'); // gambar mengalahkan bata
+});
+test('match adaptif bisa selesai & winner tercatat', () => {
+  const st = createMatch(2);
+  // pemain spam 'bata'; setelah warmup AI memprediksi bata -> main gambar -> pemain kalah terus
+  playRoundAdaptive(st, 'bata', () => 0.5); // acak: gergaji -> pemain menang 1-0
+  playRoundAdaptive(st, 'bata', () => 0.5); // acak: gergaji -> pemain menang 2-0 -> selesai
+  assert.ok(st.over);
+  assert.equal(st.winner, 'pemain');
 });
 
 console.log(`\n${passed} passed, ${failed} failed`);

@@ -5,6 +5,8 @@ import { strict as assert } from 'node:assert';
 import {
   generateMaze, bfsPath, collideWalls, moveBall, cellCenter, isWall,
   mazeSizeForLevel, mulberry32, SLAM_SPEED,
+  parSecondsFor, starsFor, checkpointsPassed, furthestCheckpointIndex,
+  improvedBestTime, PAR_CELLS_PER_SEC,
 } from './logic';
 
 let passed = 0;
@@ -124,6 +126,58 @@ test('cellCenter: tengah sel yang benar', () => {
   const c = cellCenter(m, 20, { c: 2, r: 3 });
   assert.equal(c.x, 50);
   assert.equal(c.y, 70);
+});
+
+test('parSecondsFor: diturunkan dari panjang path BFS / PAR_CELLS_PER_SEC', () => {
+  const m = generateMaze(11, 11, mulberry32(7));
+  assert.ok(m.path.length > 1);
+  const par = parSecondsFor(m);
+  assert.ok(Math.abs(par - (m.path.length - 1) / PAR_CELLS_PER_SEC) < 1e-9, `par=${par}`);
+  assert.equal(PAR_CELLS_PER_SEC, 3);
+});
+
+test('parSecondsFor: path kosong -> 0', () => {
+  const m = generateMaze(9, 9, mulberry32(5));
+  const empty = { ...m, path: [] };
+  assert.equal(parSecondsFor(empty), 0);
+});
+
+test('starsFor: batas 3 / 2 / 1 bintang terhadap par', () => {
+  assert.equal(starsFor(10, 10), 3, 'tepat par = 3');
+  assert.equal(starsFor(9.9, 10), 3);
+  assert.equal(starsFor(10.1, 10), 2);
+  assert.equal(starsFor(15, 10), 2, 'tepat 1,5x par = 2');
+  assert.equal(starsFor(15.1, 10), 1);
+  assert.equal(starsFor(60, 10), 1);
+});
+
+test('starsFor: par tidak valid -> 1 bintang (selesai saja)', () => {
+  assert.equal(starsFor(5, 0), 1);
+  assert.equal(starsFor(5, -3), 1);
+});
+
+test('checkpointsPassed: bola di pusat checkpoint terhitung', () => {
+  const m = generateMaze(11, 11, mulberry32(3));
+  assert.ok(m.checkpoints.length >= 1);
+  const cp = m.checkpoints[0];
+  const n = checkpointsPassed(m, cp.c + 0.5, cp.r + 0.5, 0.55);
+  assert.ok(n >= 1, `n=${n}`);
+  assert.equal(furthestCheckpointIndex(m, cp.c + 0.5, cp.r + 0.5, 0.55), 0);
+});
+
+test('checkpointsPassed: bola jauh dari semua checkpoint -> 0 / -1', () => {
+  const m = generateMaze(11, 11, mulberry32(3));
+  // sudut start (1.5, 1.5) jauh dari checkpoint yang ada di tengah path
+  assert.equal(checkpointsPassed(m, 1.5, 1.5, 0.55), 0);
+  assert.equal(furthestCheckpointIndex(m, 1.5, 1.5, 0.55), -1);
+  // radius sangat besar mencakup semua checkpoint
+  assert.equal(checkpointsPassed(m, 1.5, 1.5, 100), m.checkpoints.length);
+});
+
+test('improvedBestTime: regresi — waktu terbaik memakai min, bukan max', () => {
+  assert.equal(improvedBestTime(20, 12), 12, 'waktu lebih cepat harus menggantikan');
+  assert.equal(improvedBestTime(20, 25), 20, 'waktu lebih lambat TIDAK boleh menimpa rekor');
+  assert.equal(improvedBestTime(0, 9), 9, 'belum ada catatan -> pakai waktu pertama');
 });
 
 console.log(`\n${passed} passed, ${failed} failed`);

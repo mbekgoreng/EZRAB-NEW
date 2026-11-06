@@ -6,19 +6,34 @@ import React, { useEffect, useRef, useState } from 'react';
 import { sfx } from '../../../engine2d';
 import { bestKey, getBest, setBest } from '../../../engine2d/best';
 import { popText } from '../../../engine2d/juice2d';
-import { buildRound, scoreAnswer, gradeFor, TIME_PER_QUESTION, type Question } from './logic';
+import { buildRound, scoreAnswer, gradeFor, tierLabel, TIME_PER_QUESTION, type Question } from './logic';
 
 const FONT = "'Plus Jakarta Sans','Inter',system-ui,sans-serif";
 const BK = bestKey('quiz', 'best');
 
 const CAT_COLOR: Record<string, string> = {
-  'RAB & AHSP': '#fbbf24',
-  Material: '#fb923c',
-  Struktur: '#38bdf8',
+  'RAB & AHSP': '#F5B301',
+  Material: '#F97316',
+  Struktur: '#2563EB',
   K3: '#4ade80',
-  'Alat Berat': '#f472b6',
+  'Alat Berat': '#38bdf8',
   Proyek: '#a78bfa',
 };
+
+const TIER_COLOR: Record<number, string> = { 1: '#2563EB', 2: '#F5B301', 3: '#F97316' };
+
+/** Ikon SVG prosedural (pengganti emoji) untuk tombol & lencana. */
+function SvgIcon({ kind, size = 20 }: { kind: 'pause' | 'play' | 'sound' | 'mute' | 'close' | 'helmet' | 'trophy'; size?: number }): React.JSX.Element {
+  const s = size;
+  if (kind === 'pause') return (<svg width={s} height={s} viewBox="0 0 24 24" aria-hidden><rect x="5" y="4" width="5" height="16" rx="1.5" fill="currentColor" /><rect x="14" y="4" width="5" height="16" rx="1.5" fill="currentColor" /></svg>);
+  if (kind === 'play') return (<svg width={s} height={s} viewBox="0 0 24 24" aria-hidden><path d="M7 4.5v15c0 1.2 1.3 1.9 2.3 1.3l11-7.5c0.9-0.6 0.9-1.9 0-2.5l-11-7.5C8.3 2.6 7 3.3 7 4.5z" fill="currentColor" /></svg>);
+  if (kind === 'sound') return (<svg width={s} height={s} viewBox="0 0 24 24" aria-hidden><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor" /><path d="M16 9c1.2 1.6 1.2 4.4 0 6M18.5 6.5c2.4 3.2 2.4 7.8 0 11" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" /></svg>);
+  if (kind === 'mute') return (<svg width={s} height={s} viewBox="0 0 24 24" aria-hidden><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor" /><path d="M16 9l6 6M22 9l-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>);
+  if (kind === 'close') return (<svg width={s} height={s} viewBox="0 0 24 24" aria-hidden><path d="M5 5l14 14M19 5L5 19" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" /></svg>);
+  if (kind === 'trophy') return (<svg width={s} height={s} viewBox="0 0 24 24" aria-hidden><path d="M6 3h12v5a6 6 0 0 1-12 0V3z" fill="#F5B301" stroke="#92400e" strokeWidth="1.2" /><path d="M6 5H3.5a2.5 2.5 0 0 0 2.6 3.4M18 5h2.5a2.5 2.5 0 0 1-2.6 3.4M11 14h2v3h-2zM8 20h8M9.5 17h5l0.7 3H8.8L9.5 17z" fill="#F5B301" stroke="#92400e" strokeWidth="1.2" /></svg>);
+  // helmet
+  return (<svg width={s} height={s} viewBox="0 0 48 48" aria-hidden><path d="M10 30a14 13 0 0 1 11-12.8V12h6v5.2A14 13 0 0 1 38 30H10z" fill="#F5B301" stroke="#92400e" strokeWidth="2" /><rect x="6" y="29" width="36" height="6" rx="3" fill="#F97316" /><circle cx="17" cy="38" r="2.4" fill="#0A2540" /><circle cx="31" cy="38" r="2.4" fill="#0A2540" /><path d="M18 43c2 1.6 10 1.6 12 0" stroke="#0A2540" strokeWidth="2.2" fill="none" strokeLinecap="round" /></svg>);
+}
 
 type Screen = 'tutorial' | 'play' | 'pause' | 'result';
 
@@ -86,7 +101,7 @@ export default function ArcadeQuiz({ onExit }: { onExit: () => void }): React.JS
       setLastGain(res.points);
       if (wrap) popText(wrap, `+${res.points}`, { size: 26, color: '#4ade80' });
       if (res.newStreak >= 3 && wrap) {
-        window.setTimeout(() => popText(wrap, `🔥 Streak x${res.newStreak}!`, { size: 20, color: '#fb923c' }), 180);
+        window.setTimeout(() => popText(wrap, `STREAK x${res.newStreak}!`, { size: 20, color: '#fb923c' }), 180);
       }
     } else {
       sfx.fail();
@@ -140,17 +155,17 @@ export default function ArcadeQuiz({ onExit }: { onExit: () => void }): React.JS
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           {streak >= 2 && (
-            <div style={{ background: 'linear-gradient(180deg,#fb923c,#ea580c)', borderRadius: 12, padding: '6px 10px', fontWeight: 900, fontSize: 14, boxShadow: '0 4px 14px rgba(234,88,12,0.5)' }}>
-              🔥 x{streak}
+            <div style={{ background: 'linear-gradient(180deg,#F97316,#ea580c)', borderRadius: 12, padding: '6px 10px', fontWeight: 900, fontSize: 13, letterSpacing: 0.5, boxShadow: '0 4px 14px rgba(234,88,12,0.5)' }}>
+              STREAK x{streak}
             </div>
           )}
           {(screen === 'play' || screen === 'pause') && (
             <button onClick={() => setScreen(screen === 'play' ? 'pause' : 'play')} aria-label="Jeda" style={iconBtn}>
-              {screen === 'play' ? '⏸' : '▶'}
+              <SvgIcon kind={screen === 'play' ? 'pause' : 'play'} size={18} />
             </button>
           )}
-          <button onClick={toggleMute} aria-label="Suara" style={iconBtn}>{muted ? '🔇' : '🔊'}</button>
-          <button onClick={onExit} aria-label="Keluar" style={iconBtn}>✕</button>
+          <button onClick={toggleMute} aria-label="Suara" style={iconBtn}><SvgIcon kind={muted ? 'mute' : 'sound'} size={20} /></button>
+          <button onClick={onExit} aria-label="Keluar" style={iconBtn}><SvgIcon kind="close" size={18} /></button>
         </div>
       </div>
 
@@ -159,7 +174,10 @@ export default function ArcadeQuiz({ onExit }: { onExit: () => void }): React.JS
           {/* progress */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
             <span style={{ fontSize: 13, fontWeight: 800, opacity: 0.85 }}>Soal {idx + 1}/{round.length}</span>
-            <span style={{ fontSize: 12, fontWeight: 800, background: catColor, color: '#0b1526', borderRadius: 999, padding: '3px 10px' }}>{q.cat}</span>
+            <span style={{ display: 'flex', gap: 6 }}>
+              <span style={{ fontSize: 12, fontWeight: 800, background: TIER_COLOR[q.tier] ?? '#2563EB', color: '#0b1526', borderRadius: 999, padding: '3px 10px' }}>Level {q.tier} · {tierLabel(q.tier)}</span>
+              <span style={{ fontSize: 12, fontWeight: 800, background: catColor, color: '#0b1526', borderRadius: 999, padding: '3px 10px' }}>{q.cat}</span>
+            </span>
           </div>
           {/* timer bar */}
           <div style={{ height: 10, borderRadius: 999, background: 'rgba(255,255,255,0.12)', overflow: 'hidden', marginBottom: 14 }}>
@@ -218,11 +236,12 @@ export default function ArcadeQuiz({ onExit }: { onExit: () => void }): React.JS
 
       {screen === 'tutorial' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>👷</div>
+          <div style={{ display: 'flex', justifyContent: 'center', color: '#F5B301' }}><SvgIcon kind="helmet" size={52} /></div>
           <h2 style={h2}>KUIS TUKANG</h2>
           <p style={p}>
             Uji ilmu proyekmu: <b>10 soal</b> konstruksi dalam <b>15 detik</b> per soal —
-            dari RAB & AHSP sampai K3. Jawaban cepat & beruntun (streak) = <b>bonus poin</b>!
+            dari RAB & AHSP sampai K3. Soal <b>menanjak tingkatnya</b>: Dasar, lalu Menengah,
+            ditutup Lanjutan. Jawaban cepat & beruntun (streak) = <b>bonus poin</b>!
           </p>
           {best > 0 && <p style={p}>Skor terbaikmu: <b style={{ color: '#fde047' }}>{best.toLocaleString('id-ID')}</b></p>}
           <button style={primaryBtn} onClick={startRound}>Mulai Kuis</button>
@@ -231,7 +250,7 @@ export default function ArcadeQuiz({ onExit }: { onExit: () => void }): React.JS
 
       {screen === 'pause' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>⏸️</div>
+          <div style={{ display: 'flex', justifyContent: 'center', color: '#fde047' }}><SvgIcon kind="pause" size={40} /></div>
           <h2 style={h2}>JEDA</h2>
           <p style={p}>Timer berhenti. Kopinya diminum dulu, soalnya nunggu.</p>
           <button style={primaryBtn} onClick={() => setScreen('play')}>Lanjutkan</button>
@@ -240,7 +259,10 @@ export default function ArcadeQuiz({ onExit }: { onExit: () => void }): React.JS
 
       {screen === 'result' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>{grade === 'S' ? '🏆' : grade === 'A' ? '🥇' : grade === 'B' ? '🥈' : '📝'}</div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+            <SvgIcon kind="trophy" size={44} />
+            <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'linear-gradient(180deg,#2563EB,#0A2540)', border: '2px solid #F5B301', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 26, color: '#fff' }}>{grade}</div>
+          </div>
           <h2 style={h2}>RONDE SELESAI</h2>
           <div style={{ fontSize: 44, fontWeight: 900, color: '#fde047' }}>{score.toLocaleString('id-ID')}</div>
           <div style={{ display: 'flex', gap: 10, justifyContent: 'center', margin: '10px 0', flexWrap: 'wrap' }}>

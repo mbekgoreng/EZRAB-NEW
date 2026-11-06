@@ -14,6 +14,15 @@ import {
   starsFor, resetState, LEVELS, KIND_R, WARN_LEAD,
   type MandorState, type Vec, type Body, type FallKind,
 } from './logic';
+import { loadSprite, readySprite, drawSprite } from '../../engine2d/sprites';
+import mandorIdleUrl from '../../assets/selamatkan-mandor/char-mandor-idle.webp';
+import mandorRunUrl from '../../assets/selamatkan-mandor/char-mandor-run-01.webp';
+
+/** Sprite Mandor keluarga pilot pac-man (generate + keying, dipakai ulang
+ * sebagai keluarga karakter yang sama). Bata/palu/ember tetap digambar
+ * prosedural terdesain di drawBody — lebih terbaca saat berputar/bergerak
+ * cepat dan tidak butuh aset raster per frame. */
+const MANDOR_SPRITES = { idle: mandorIdleUrl, run: mandorRunUrl };
 
 type Screen = 'menu' | 'intro' | 'play' | 'win' | 'dead';
 
@@ -28,6 +37,8 @@ interface Rt {
   /** telegraph shadows: key -> {x, kind, at} */
   telegraphs: Map<string, { x: number; kind: FallKind; at: number }>;
   deadAt: number;
+  /** waktu terakhir garis dihantam benda (untuk kilau perisai) */
+  lineFlashAt: number;
 }
 
 const STARS_KEY = bestKey('selamatkan-mandor', 'stars');
@@ -104,7 +115,7 @@ export default function SelamatkanMandor({ onExit }: { onExit: () => void }) {
   const rt = useRef<Rt>({
     state: null, drawing: false, pts: [], t: 0,
     levelIndex: 0, lastStatus: 'play', hudT: 0,
-    telegraphs: new Map(), deadAt: 0,
+    telegraphs: new Map(), deadAt: 0, lineFlashAt: -9,
   });
   const screenRef = useRef<Screen>(screen);
   screenRef.current = screen;
@@ -163,7 +174,7 @@ export default function SelamatkanMandor({ onExit }: { onExit: () => void }) {
     setScreen('win');
     if (api) {
       api.sfx.chime(4, 720);
-      if (wrapRef.current) popText(wrapRef.current, 'MANDOR SELAMAT! 🎉', { size: 30, color: '#4ade80' });
+      if (wrapRef.current) popText(wrapRef.current, 'MANDOR SELAMAT!', { size: 30, color: '#4ade80' });
       for (let k = 0; k < 3; k += 1) {
         window.setTimeout(() => {
           api.particles.spawn(api.W * (0.25 + 0.25 * k), api.H * 0.3, {
@@ -197,6 +208,15 @@ export default function SelamatkanMandor({ onExit }: { onExit: () => void }) {
   const canvasRef = useGameCanvas((api) => {
     apiRef.current = api;
     setMuted(api.sfx.muted);
+    // muat sprite Mandor (cache bersama); gagal muat -> fallback prosedural
+    for (const u of Object.values(MANDOR_SPRITES)) void loadSprite(u);
+    // auto-pause saat tab disembunyikan: loop dibekukan + overlay jeda tampil
+    api.onHidden = () => {
+      if (screenRef.current === 'play' && !pausedRef.current) {
+        api.loop.setPaused(true);
+        setPaused(true);
+      }
+    };
 
     api.setUpdate((dt) => {
       const r = rt.current;
@@ -207,6 +227,8 @@ export default function SelamatkanMandor({ onExit }: { onExit: () => void }) {
 
       // consume events → juice
       for (const th of s.thuds) {
+        // benda menghantam GARIS: kilau perisai pada garis (drawScene membaca ini)
+        r.lineFlashAt = r.t;
         api.particles.spawn(th.x, th.y, {
           count: Math.round(6 + th.strength * 14),
           colors: ['#e2e8f0', '#94a3b8', '#ffffff'],
@@ -214,6 +236,15 @@ export default function SelamatkanMandor({ onExit }: { onExit: () => void }) {
           gravity: 700,
         });
         if (th.strength > 0.15) api.sfx.thud(0.4 + th.strength * 0.6);
+      }
+      // benda menghantam MANDOR: ledakan merah + label KENA! (status dead
+      // sendiri ditangani doDead di bawah; ini lapisan umpan balik instannya)
+      for (const h of s.hits) {
+        api.particles.spawn(h.x, h.y, {
+          count: 26, colors: ['#ef4444', '#f87171', '#fbbf24'],
+          speed: [100, 320], life: [0.4, 0.9], size: [3, 6], gravity: 500,
+        });
+        api.scores.add(h.x, h.y - 34, 'KENA!', { color: '#dc2626', size: 22 });
       }
       for (const ld of s.lands) {
         api.particles.spawn(ld.x, ld.y - 4, {
@@ -378,7 +409,10 @@ export default function SelamatkanMandor({ onExit }: { onExit: () => void }) {
     <div ref={wrapRef} style={styles.wrap}>
       <div style={styles.topbar}>
         <button style={styles.iconBtn} onClick={screen === 'menu' ? onExit : backToMenu} title="Kembali">✕</button>
-        <div style={styles.title}>🦺 Selamatkan Mandor</div>
+        <div style={{ ...styles.title, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <img src={mandorIdleUrl} alt="" style={{ height: 30, width: 'auto', display: 'block' }} />
+          Selamatkan Mandor
+        </div>
         <div style={{ display: 'flex', gap: 6 }}>
           {screen === 'play' && (
             <button style={styles.iconBtn} onClick={togglePause} title={paused ? 'Lanjut' : 'Jeda'}>
@@ -391,10 +425,10 @@ export default function SelamatkanMandor({ onExit }: { onExit: () => void }) {
 
       {(screen === 'play' || screen === 'win' || screen === 'dead') && (
         <div style={styles.hud}>
-          <div style={styles.hudItem}>🏗️ <b>Lv{rt.current.levelIndex + 1}</b></div>
-          <div style={styles.hudItem}>⏱ <b>{hud.timeLeft.toFixed(0)}s</b></div>
+          <div style={styles.hudItem}>Level <b>{rt.current.levelIndex + 1}</b></div>
+          <div style={styles.hudItem}>Sisa <b>{hud.timeLeft.toFixed(0)}s</b></div>
           <div style={{ flex: 1 }}>
-            <div style={styles.inkLabel}>🖊️ Tinta spidol</div>
+            <div style={styles.inkLabel}>Tinta spidol</div>
             <div style={styles.inkTrack}>
               <div
                 style={{
@@ -408,7 +442,7 @@ export default function SelamatkanMandor({ onExit }: { onExit: () => void }) {
             </div>
           </div>
           {screen === 'play' && !paused && (
-            <button style={styles.eraseBtn} onClick={eraseLine}>🧽 Hapus garis</button>
+            <button style={styles.eraseBtn} onClick={eraseLine}>Hapus garis</button>
           )}
         </div>
       )}
@@ -418,13 +452,14 @@ export default function SelamatkanMandor({ onExit }: { onExit: () => void }) {
       </div>
       {screen === 'play' && !paused && (
         <div style={styles.hint}>
-          {hud.drawing ? 'Lepas untuk mengunci garis…' : '👆 Gambar SATU garis pelindung di atas mandor!'}
+          {hud.drawing ? 'Lepas untuk mengunci garis…' : 'Gambar SATU garis pelindung di atas mandor!'}
         </div>
       )}
 
       {screen === 'menu' && (
         <Overlay>
-          <div style={styles.cardTitle}>🦺 Selamatkan Mandor</div>
+          <img src={mandorIdleUrl} alt="Pak Mandor" style={{ height: 92, width: 'auto', margin: '0 auto 4px', display: 'block' }} />
+          <div style={styles.cardTitle}>Selamatkan Mandor</div>
           <p style={styles.cardText}>
             Bata, palu, dan ember semen berjatuhan dari langit proyek.
             Gambar <b>satu garis spidol</b> sebagai perisai — mandor harus selamat sampai timer habis!
@@ -443,7 +478,7 @@ export default function SelamatkanMandor({ onExit }: { onExit: () => void }) {
                   onClick={() => beginLevel(i)}
                   style={{ ...styles.levelBtn, opacity: locked ? 0.45 : 1 }}
                 >
-                  <div style={{ fontWeight: 800, fontSize: 13 }}>{locked ? '🔒' : `${i + 1}`}</div>
+                  <div style={{ fontWeight: 800, fontSize: 13 }}>{locked ? 'Terkunci' : `${i + 1}`}</div>
                   <div style={{ fontSize: 10, color: '#64748b', lineHeight: 1.2 }}>{l.name}</div>
                   <div style={{ fontSize: 11, color: '#b45309' }}>
                     {'★'.repeat(st)}{'☆'.repeat(3 - st)}
@@ -463,13 +498,13 @@ export default function SelamatkanMandor({ onExit }: { onExit: () => void }) {
             Gambar <b>satu garis atap</b> di atas mandor — selamatkan dia selama <b>{lvl.duration} detik</b>! Tinta terbatas, garis hemat = bintang 3.
           </p>
           <div style={styles.chipRow}>
-            <span style={styles.chip}>⏱ {lvl.duration}s</span>
-            <span style={styles.chip}>📦 {lvl.spawns.length} benda</span>
-            <span style={styles.chip}>🖊️ {lvl.ink}px tinta</span>
-            {lvlStars > 0 && <span style={styles.chip}>🏆 {'★'.repeat(lvlStars)}</span>}
+            <span style={styles.chip}>{lvl.duration} detik</span>
+            <span style={styles.chip}>{lvl.spawns.length} benda jatuh</span>
+            <span style={styles.chip}>{lvl.ink}px tinta</span>
+            {lvlStars > 0 && <span style={styles.chip}>Terbaik: {'★'.repeat(lvlStars)}</span>}
           </div>
           <div style={styles.btnRow}>
-            <button style={styles.primaryBtn} onClick={startPlay}>Mulai 🦺</button>
+            <button style={styles.primaryBtn} onClick={startPlay}>Mulai</button>
             <button style={styles.ghostBtn} onClick={backToMenu}>Pilih Level</button>
           </div>
         </Overlay>
@@ -477,11 +512,11 @@ export default function SelamatkanMandor({ onExit }: { onExit: () => void }) {
 
       {screen === 'play' && paused && (
         <Overlay>
-          <div style={styles.cardTitle}>⏸ Istirahat Ngopi</div>
+          <div style={styles.cardTitle}>Istirahat Ngopi</div>
           <p style={styles.cardText}>Benda-benda berhenti di udara. Fisika pun butuh kopi.</p>
           <div style={styles.btnRow}>
             <button style={styles.primaryBtn} onClick={togglePause}>Lanjut ▶</button>
-            <button style={styles.ghostBtn} onClick={retry}>Ulangi Level 🔄</button>
+            <button style={styles.ghostBtn} onClick={retry}>Ulangi Level</button>
             <button style={styles.ghostBtn} onClick={backToMenu}>Pilih Level</button>
           </div>
         </Overlay>
@@ -489,7 +524,7 @@ export default function SelamatkanMandor({ onExit }: { onExit: () => void }) {
 
       {screen === 'win' && (
         <Overlay>
-          <div style={{ fontSize: 46 }}>🦺🎉</div>
+          <img src={mandorRunUrl} alt="Pak Mandor selamat" style={{ height: 92, width: 'auto', margin: '0 auto 4px', display: 'block' }} />
           <div style={styles.cardTitle}>Mandor selamat!</div>
           <div style={{ fontSize: 30, color: '#b45309', letterSpacing: 4 }}>
             {'★'.repeat(winStars)}{'☆'.repeat(3 - winStars)}
@@ -504,9 +539,9 @@ export default function SelamatkanMandor({ onExit }: { onExit: () => void }) {
                 Level {rt.current.levelIndex + 2} ▶
               </button>
             ) : (
-              <button style={styles.primaryBtn} onClick={backToMenu}>Tamat! Pilih Level 🏁</button>
+              <button style={styles.primaryBtn} onClick={backToMenu}>Tamat! Pilih Level</button>
             )}
-            <button style={styles.ghostBtn} onClick={retry}>Ulangi 🔄</button>
+            <button style={styles.ghostBtn} onClick={retry}>Ulangi</button>
             <button style={styles.ghostBtn} onClick={backToMenu}>Pilih Level</button>
           </div>
         </Overlay>
@@ -514,7 +549,7 @@ export default function SelamatkanMandor({ onExit }: { onExit: () => void }) {
 
       {screen === 'dead' && (
         <Overlay>
-          <div style={{ fontSize: 46 }}>🪖💥</div>
+          <img src={mandorIdleUrl} alt="Pak Mandor tumbang" style={{ height: 92, width: 'auto', margin: '0 auto 4px', display: 'block', transform: 'rotate(72deg)', filter: 'grayscale(0.35)' }} />
           <div style={styles.cardTitle}>ADUH!</div>
           <p style={{ ...styles.cardText, fontSize: 17, fontWeight: 800, color: '#b91c1c' }}>
             {deadQuip}
@@ -523,7 +558,7 @@ export default function SelamatkanMandor({ onExit }: { onExit: () => void }) {
             *"Mandor tumbang, tapi helmnya tetap mengkilap. Prioritas."*
           </p>
           <div style={styles.btnRow}>
-            <button style={styles.primaryBtn} onClick={retry}>Coba Lagi 💪</button>
+            <button style={styles.primaryBtn} onClick={retry}>Coba Lagi</button>
             <button style={styles.ghostBtn} onClick={backToMenu}>Pilih Level</button>
           </div>
         </Overlay>
@@ -652,12 +687,24 @@ function drawScene(api: GameApi, r: Rt, ghostHint: boolean): void {
   const mood: 'worried' | 'dead' | 'happy' =
     s.status === 'dead' ? 'dead' : s.status === 'win' ? 'happy' : 'worried';
   const blink = mood === 'worried' && panic < 0.35 && (t % 3.6) < 0.13;
-  drawForeman(ctx, s.foreman.x, s.foreman.y, s.foreman.r, t, {
+  drawForemanSprite(ctx, s.foreman.x, s.foreman.y, s.foreman.r, t, {
     blink,
     panic: mood === 'worried' ? panic : 0,
     mood,
     sinceDead: mood === 'dead' ? Math.max(0, t - r.deadAt) : 0,
   });
+  // apakah ada segmen garis di atas kepala mandor? (lencana AMAN di bawah)
+  const fx0 = s.foreman.x;
+  const headY = s.foreman.y - s.foreman.r - 14;
+  let protectedNow = false;
+  for (let i = 1; i < s.line.length; i += 1) {
+    const a = s.line[i - 1];
+    const b = s.line[i];
+    if (Math.min(a.x, b.x) <= fx0 && fx0 <= Math.max(a.x, b.x)) {
+      const tt = Math.abs(b.x - a.x) < 0.001 ? 0 : (fx0 - a.x) / (b.x - a.x);
+      if (a.y + (b.y - a.y) * tt < headY) protectedNow = true;
+    }
+  }
 
   // --- garis spidol: glow + outline + gradient core + highlight ---
   const pts = s.line; // selalu versi yg dihaluskan (setLine)
@@ -692,6 +739,50 @@ function drawScene(api: GameApi, r: Rt, ghostHint: boolean): void {
     ctx.moveTo(pts[0].x, pts[0].y - 1.6);
     for (let i = 1; i < pts.length; i += 1) ctx.lineTo(pts[i].x, pts[i].y - 1.6);
     ctx.stroke();
+    // KILAU PERISAI: sesaat setelah garis dihantam benda (lineFlashAt dari
+    // event thuds) garis menyala putih — pemain melihat garisnya BEKERJA.
+    const flashAge = t - r.lineFlashAt;
+    if (flashAge >= 0 && flashAge < 0.22) {
+      ctx.strokeStyle = `rgba(255,255,255,${0.85 * (1 - flashAge / 0.22)})`;
+      ctx.lineWidth = 13;
+      trace();
+      ctx.stroke();
+    }
+    // GARIS SEDANG DIGAMBAR: ujung-ujungnya berdenyut agar jelas ia masih
+    // "basah" dan akan terkunci saat jari/kursor dilepas.
+    if (r.drawing) {
+      const pulse = 0.6 + 0.4 * Math.sin(t * 9);
+      ctx.fillStyle = `rgba(255,255,255,${pulse})`;
+      for (const e of [pts[0], pts[pts.length - 1]]) {
+        ctx.beginPath();
+        ctx.arc(e.x, e.y, 5.5, 0, TAU);
+        ctx.fill();
+      }
+    }
+  }
+
+  // --- lencana status mandor: AMAN (perisai hijau ✓) saat garis menaungi
+  // kepalanya; PERINGATAN (!) saat hujan benda terarah ke dia tanpa garis.
+  if (s.status === 'play') {
+    const bx = s.foreman.x + 34;
+    const by = s.foreman.y - s.foreman.r - 40;
+    const danger = panic > 0.25 && !protectedNow;
+    if (protectedNow || danger) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(bx, by, 11, 0, TAU);
+      ctx.fillStyle = protectedNow ? '#22c55e' : '#ef4444';
+      ctx.fill();
+      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = '#ffffff';
+      ctx.stroke();
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `900 13px 'Plus Jakarta Sans','Inter',system-ui,sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(protectedNow ? '✓' : '!', bx, by + 0.5);
+      ctx.restore();
+    }
   }
 
   // --- petunjuk tutorial: atap hantu berdenyut di menu/intro ---
@@ -715,7 +806,7 @@ function drawScene(api: GameApi, r: Rt, ghostHint: boolean): void {
     ctx.fillStyle = 'rgba(255,255,255,0.95)';
     ctx.strokeStyle = 'rgba(15,23,42,0.45)';
     ctx.lineWidth = 4;
-    const label = '👆 Gambar garis atap di sini!';
+    const label = 'Gambar garis atap di sini!';
     ctx.strokeText(label, fx, fy - 185 + bobY);
     ctx.fillText(label, fx, fy - 185 + bobY);
     ctx.restore();
@@ -935,6 +1026,65 @@ interface ForemanOpts {
   panic: number;
   mood: 'worried' | 'dead' | 'happy';
   sinceDead: number;
+}
+
+/**
+ * Mandor versi SPRITE (aset pilot keluarga pac-man): pose lari saat panik
+ * tinggi, idle selain itu; tumbang = miring easing, selamat = memantul.
+ * Lapisan umpan balik yang sprite statis tidak punya (keringat panik,
+ * bintang pusing saat tumbang) digambar di atasnya. Bila sprite belum siap
+ * / gagal muat -> fallback prosedural drawForeman (tidak pernah melempar).
+ */
+function drawForemanSprite(
+  ctx: CanvasRenderingContext2D, x: number, y: number, r: number,
+  t: number, o: ForemanOpts,
+): void {
+  const dead = o.mood === 'dead';
+  const happy = o.mood === 'happy';
+  const img = readySprite(o.panic > 0.45 ? MANDOR_SPRITES.run : MANDOR_SPRITES.idle);
+  if (!img) {
+    drawForeman(ctx, x, y, r, t, o);
+    return;
+  }
+  const tilt = dead ? Math.min(1, o.sinceDead * 2.6) ** 2 * 1.35 : 0;
+  const tremble = o.panic > 0 ? Math.sin(t * 42) * 2.2 * o.panic : 0;
+  const bob = dead ? 0 : happy ? Math.abs(Math.sin(t * 5)) * 7 : Math.sin(t * 3.2) * 1.6;
+  // bayangan tanah (tidak ikut miring)
+  ctx.save();
+  ctx.fillStyle = 'rgba(15,23,42,0.25)';
+  ctx.beginPath();
+  ctx.ellipse(x + tremble, y + r + 22, 26, 7, 0, 0, TAU);
+  ctx.fill();
+  ctx.restore();
+  ctx.save();
+  ctx.translate(x + tremble, y - 2 + bob);
+  ctx.rotate(tilt);
+  // sprite 256x512 (idle): tampil ±54x108, kaki menapak di bawah titik asal
+  drawSprite(ctx, img, 0, 0, 56, 110);
+  ctx.restore();
+  // keringat panik di atas sprite
+  if (!dead && !happy && o.panic > 0.25) {
+    const sw = (t * 2.4) % 1;
+    ctx.fillStyle = `rgba(125,211,252,${0.9 * (1 - sw)})`;
+    for (const sx of [-16, 16]) {
+      const sy = y - r - 30 + sw * 14;
+      ctx.beginPath();
+      ctx.arc(x + tremble + sx, sy, 2.6, 0, TAU);
+      ctx.fill();
+    }
+  }
+  // bintang pusing mengorbit saat tumbang
+  if (dead) {
+    for (let i = 0; i < 3; i += 1) {
+      const a = t * 4 + (i * TAU) / 3;
+      ctx.fillStyle = '#fde047';
+      ctx.save();
+      ctx.translate(x + Math.cos(a) * 24, y - r - 34 + Math.sin(a) * 8);
+      ctx.rotate(a);
+      ctx.fillRect(-3.5, -3.5, 7, 7);
+      ctx.restore();
+    }
+  }
 }
 
 function drawForeman(

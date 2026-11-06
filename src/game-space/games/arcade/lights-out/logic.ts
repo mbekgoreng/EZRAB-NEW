@@ -51,16 +51,38 @@ export function scramble(rng: () => number, presses: number): boolean[] {
 export interface Shift {
   id: string;
   name: string;
-  emoji: string;
   presses: number; // jumlah ketukan acak
   hint: string;
 }
 
 export const SHIFTS: Shift[] = [
-  { id: 'pagi', name: 'Shift Pagi', emoji: '🌅', presses: 4, hint: 'Pemanasan: sedikit lampu menyala.' },
-  { id: 'siang', name: 'Shift Siang', emoji: '☀️', presses: 8, hint: 'Lembur: lumayan banyak yang menyala.' },
-  { id: 'malam', name: 'Shift Malam', emoji: '🌙', presses: 12, hint: 'Proyek 24 jam: gelap-gelapan total!' },
+  { id: 'pagi', name: 'Shift Pagi', presses: 4, hint: 'Pemanasan: sedikit lampu menyala.' },
+  { id: 'siang', name: 'Shift Siang', presses: 8, hint: 'Lembur: lumayan banyak yang menyala.' },
+  { id: 'malam', name: 'Shift Malam', presses: 12, hint: 'Proyek 24 jam: gelap-gelapan total!' },
 ];
+
+/**
+ * Rating bintang untuk papan yang SELESAI dimatikan.
+ *
+ * `parMoves` adalah par PENDEKATAN: jumlah ketukan acak (`presses` shift
+ * aktif) yang membentuk papan lewat scramble. Urutan ketukan itu memang
+ * salah satu solusi, tetapi ketukan acak bisa saling membatalkan / tumpang
+ * tindih, jadi par ini BUKAN optimum yang terbukti — hanya patokan wajar.
+ *
+ * - belum selesai (`solved` = false) -> 0 bintang
+ * - selesai & moves <= par -> 3
+ * - selesai & moves <= ceil(par * 1,5) -> 2
+ * - selesai di atas itu -> 1
+ * Par tidak valid (<= 0 / bukan bilangan berhingga) saat selesai -> 1
+ * (menyelesaikan papan tetap dihargai; tidak ada patokan untuk dinilai).
+ */
+export function starsFor(moves: number, parMoves: number, solved: boolean): number {
+  if (!solved) return 0;
+  if (!Number.isFinite(parMoves) || parMoves <= 0) return 1;
+  if (moves <= parMoves) return 3;
+  if (moves <= Math.ceil(parMoves * 1.5)) return 2;
+  return 1;
+}
 
 /** Skor: dasar 1000 − 40/langkah − 3/detik, min 100. */
 export function scoreFor(moves: number, seconds: number): number {

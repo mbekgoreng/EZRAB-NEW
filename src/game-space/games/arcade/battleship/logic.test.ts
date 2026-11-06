@@ -5,6 +5,7 @@ import { strict as assert } from 'node:assert';
 import {
   SIZE, FLEET, emptyBoard, canPlace, placeShip, placeFleetRandom, fireAt, allSunk,
   sunkShips, shipAt, key, createAi, aiChooseShot, aiRegister, mulberry32,
+  placementCells, aiLineTargets,
 } from './logic';
 
 let passed = 0;
@@ -126,6 +127,77 @@ test('simulasi penuh: AI menenggelamkan armada < 100 tembakan', () => {
   assert.ok(allSunk(b), 'AI menenggelamkan semua kapal');
   console.log(`    (AI menang dalam ${shots} tembakan)`);
   assert.ok(shots < 100, 'AI menang sebelum 100 tembakan (bisa dikalahkan tapi kompeten)');
+});
+
+test('REGRESI pratinjau: placementCells mengikuti jangkar, bukan origin (0,0)', () => {
+  // Bug lama: ghost penempatan selalu digambar & divalidasi di (0,0).
+  // Helper murni harus mengembalikan sel tepat di jangkar yang diminta.
+  assert.deepEqual(
+    placementCells(FLEET[0], 4, 4, true),
+    [{ x: 4, y: 4 }, { x: 5, y: 4 }, { x: 6, y: 4 }, { x: 7, y: 4 }, { x: 8, y: 4 }],
+    'mendatar: sel mulai di jangkar (4,4)',
+  );
+  assert.deepEqual(
+    placementCells(FLEET[4], 7, 2, false),
+    [{ x: 7, y: 2 }, { x: 7, y: 3 }],
+    'tegak: sel turun dari jangkar (7,2)',
+  );
+  // Validitas bergantung posisi: origin terisi tidak boleh meracuni titik lain.
+  const b = emptyBoard();
+  placeShip(b, FLEET[4], 0, 0, true); // origin kini terisi
+  assert.equal(canPlace(b, FLEET[4], 0, 0, true), false, 'origin memang tidak valid');
+  assert.equal(canPlace(b, FLEET[4], 5, 5, true), true, 'jangkar (5,5) tetap valid');
+  // placementCells murni: tidak mengubah papan
+  const before = b.ships.length;
+  placementCells(FLEET[0], 2, 2, true);
+  assert.equal(b.ships.length, before, 'tanpa efek samping');
+});
+
+test('AI garis: dua hit segaris mendatar -> tembakan SELALU di ujung garis', () => {
+  // Diskriminatif: AI lama mengundi 6 tetangga (4 di antaranya tegak-lurus);
+  // AI garis hanya boleh memilih (4,5) atau (7,5).
+  for (let seed = 1; seed <= 40; seed += 1) {
+    const mem = createAi();
+    aiRegister(mem, 5, 5, true, null);
+    aiRegister(mem, 6, 5, true, null);
+    const s = aiChooseShot(mem, mulberry32(seed));
+    assert.ok(
+      (s.x === 4 && s.y === 5) || (s.x === 7 && s.y === 5),
+      `seed ${seed}: (${s.x},${s.y}) harus ujung garis, bukan tegak-lurus`,
+    );
+  }
+});
+
+test('AI garis: dua hit segaris tegak -> tembakan SELALU di ujung garis', () => {
+  for (let seed = 1; seed <= 40; seed += 1) {
+    const mem = createAi();
+    aiRegister(mem, 3, 3, true, null);
+    aiRegister(mem, 3, 4, true, null);
+    const s = aiChooseShot(mem, mulberry32(seed + 1000));
+    assert.ok(
+      (s.x === 3 && s.y === 2) || (s.x === 3 && s.y === 5),
+      `seed ${seed}: (${s.x},${s.y}) harus ujung garis tegak`,
+    );
+  }
+});
+
+test('AI garis: aiLineTargets — ujung tertutup/tepi papan & tanpa garis', () => {
+  const edge = createAi();
+  aiRegister(edge, 0, 5, true, null);
+  aiRegister(edge, 1, 5, true, null);
+  assert.deepEqual(aiLineTargets(edge), [{ x: 2, y: 5 }], 'tepi kiri: hanya ujung kanan');
+  const blocked = createAi();
+  aiRegister(blocked, 5, 5, true, null);
+  aiRegister(blocked, 6, 5, true, null);
+  aiRegister(blocked, 4, 5, false, null); // ujung kiri sudah ditembak (meleset)
+  assert.deepEqual(aiLineTargets(blocked), [{ x: 7, y: 5 }], 'ujung tertutup tersingkir');
+  const single = createAi();
+  aiRegister(single, 5, 5, true, null);
+  assert.deepEqual(aiLineTargets(single), [], 'satu hit belum membentuk garis');
+  const scattered = createAi();
+  aiRegister(scattered, 1, 1, true, null);
+  aiRegister(scattered, 3, 1, true, null); // sebaris tapi tidak bersebelahan
+  assert.deepEqual(aiLineTargets(scattered), [], 'hit tidak bersebelahan bukan garis');
 });
 
 console.log(`\n${passed} passed, ${failed} failed`);

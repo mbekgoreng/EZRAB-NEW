@@ -2,6 +2,13 @@
  * ArcadePingPong ("Tenis Sendok Semen") — bet = sendok semen, bola = bola beton.
  * Pemain (kiri) vs AI "Tukang Beton" (kanan). AI adil: kecepatan dibatasi,
  * bidikan meleset acak. Best-of: pertama capai 7 poin menang.
+ *
+ * Grafis (Gelombang 1 rekonstruksi): SEMUA prosedural Canvas/SVG digambar
+ * kode — bet sendok semen vektor, bola beton bergradasi + bayangan, helm &
+ * penonton digambar bentuk, ikon overlay SVG. Tanpa emoji sebagai grafis
+ * permainan dan tanpa aset raster (paling tajam pada ukuran main; preseden
+ * glif prosedural pilot Sudoku). Sisa simbol di file hanya tombol
+ * fungsional shell (jeda/suara/keluar).
  */
 import React, { useRef, useState } from 'react';
 import {
@@ -27,6 +34,16 @@ interface S {
   targetPY: number;
   t: number;
   trail: Array<{ x: number; y: number; age: number }>;
+  /** sisa detik kilau bet setelah memukul bola (umpan balik pantulan) */
+  hitP: number;
+  hitA: number;
+  /** sisa detik kilat tepi meja setelah gol: siapa yang baru mencetak poin */
+  flashScorer: 'p' | 'a' | null;
+  flashT: number;
+  /** sisa detik denyut angka skor setelah berubah */
+  scoreT: number;
+  /** rally kelipatan 5 terakhir yang sudah diumumkan (pop progresi) */
+  milestone: number;
 }
 
 export default function ArcadePingPong({ onExit }: { onExit: () => void }): React.JSX.Element {
@@ -45,8 +62,13 @@ export default function ArcadePingPong({ onExit }: { onExit: () => void }): Reac
   const canvasRef = useGameCanvas((api) => {
     apiRef.current = api;
     api.pushHud = (h) => setHud(h as typeof hud);
+    // auto-pause saat tab disembunyikan (pola pilot Pak Mandor: api.onHidden)
+    api.onHidden = () => {
+      if (screenRef.current === 'play') { api.loop.setPaused(true); setScreen('pause'); }
+    };
     const s: S = {
       st: newMatch(), sense: { err: 0 }, errT: 0, targetPY: VH / 2, t: 0, trail: [],
+      hitP: 0, hitA: 0, flashScorer: null, flashT: 0, scoreT: 0, milestone: 0,
     };
 
     // skala: ruang virtual 800×480 → canvas
@@ -68,6 +90,9 @@ export default function ArcadePingPong({ onExit }: { onExit: () => void }): Reac
       s.targetPY = VH / 2;
       s.trail = [];
       s.t = 0;
+      s.hitP = 0; s.hitA = 0;
+      s.flashScorer = null; s.flashT = 0; s.scoreT = 0; s.milestone = 0;
+      (s as { serveT?: number }).serveT = 0;
       push();
     };
 
@@ -79,7 +104,7 @@ export default function ArcadePingPong({ onExit }: { onExit: () => void }): Reac
         const nb = setBest(BK, getBest(BK, 0) + 1);
         setBest(BK_RALLY, 0); // rally best di-update per rally
         sfx.chime(3);
-        if (wrap) popText(wrap, '🏆 KAMU MENANG!', { size: 30, color: '#fde047' });
+        if (wrap) popText(wrap, 'KAMU MENANG!', { size: 30, color: '#fde047' });
         api.particles.spawn(api.W / 2, api.H * 0.4, {
           count: 80, colors: ['#fde047', '#fbbf24', '#fff7d6', '#4ade80'],
           speed: [120, 420], life: [0.6, 1.2], size: [2, 6], gravity: 320, shape: 'rect', rotation: true,
@@ -87,7 +112,7 @@ export default function ArcadePingPong({ onExit }: { onExit: () => void }): Reac
         void nb;
       } else {
         sfx.fail();
-        if (wrap) popText(wrap, '😤 Tukang Beton menang...', { size: 24, color: '#fca5a5' });
+        if (wrap) popText(wrap, 'Tukang Beton menang...', { size: 24, color: '#fca5a5' });
       }
       window.setTimeout(() => {
         push();
@@ -115,6 +140,11 @@ export default function ArcadePingPong({ onExit }: { onExit: () => void }): Reac
         else if (screenRef.current === 'pause') { api.loop.setPaused(false); setScreen('play'); }
       }
       s.t += dt;
+      // peluruhan timer umpan balik visual
+      s.hitP = Math.max(0, s.hitP - dt);
+      s.hitA = Math.max(0, s.hitA - dt);
+      s.flashT = Math.max(0, s.flashT - dt);
+      s.scoreT = Math.max(0, s.scoreT - dt);
       if (screenRef.current !== 'play' || s.st.over) return;
 
       // AI: acak galat bidikan tiap ~0.45 dtk (adil)
@@ -137,6 +167,7 @@ export default function ArcadePingPong({ onExit }: { onExit: () => void }): Reac
       s.st = res.state;
       for (const ev of res.events) {
         if (ev === 'pHit' || ev === 'aHit') {
+          if (ev === 'pHit') s.hitP = 0.18; else s.hitA = 0.18;
           sfx.thud(0.5);
           setBest(BK_RALLY, s.st.rally);
           api.shake.add(0.25);
@@ -150,11 +181,21 @@ export default function ArcadePingPong({ onExit }: { onExit: () => void }): Reac
           sfx.click();
         } else if (ev === 'pScore' || ev === 'aScore') {
           if (ev === 'pScore') sfx.pop(1.2); else sfx.fail();
+          s.flashScorer = ev === 'pScore' ? 'p' : 'a';
+          s.flashT = 0.5;
+          s.scoreT = 0.35;
           const wrap = wrapRef.current;
-          if (wrap) popText(wrap, ev === 'pScore' ? '✅ Poin!' : '❌ Kebobolan', {
+          if (wrap) popText(wrap, ev === 'pScore' ? 'POIN!' : 'KEBOBOLAN', {
             size: 18, color: ev === 'pScore' ? '#4ade80' : '#fca5a5',
           });
         }
+      }
+      // progresi rally terasa: umumkan tiap kelipatan 5 (bola memang makin
+      // cepat di logic: x1.045 per pantulan, plafon 760)
+      if (s.st.rally >= 5 && s.st.rally % 5 === 0 && s.st.rally !== s.milestone) {
+        s.milestone = s.st.rally;
+        const wrap = wrapRef.current;
+        if (wrap) popText(wrap, `RALLY ${s.st.rally} — BOLA MAKIN CEPAT!`, { size: 16, color: '#fde047' });
       }
       if ((s.st.p !== prevP || s.st.a !== prevA) || s.st.over !== prevOver) push();
       if (s.st.over && !prevOver) { endMatch(); return; }
@@ -224,12 +265,19 @@ export default function ArcadePingPong({ onExit }: { onExit: () => void }): Reac
       else ctx.rect(X(0), Y(0), S2(VW), S2(VH));
       ctx.stroke();
       ctx.restore();
-      // penonton: helm-helm di kejauhan
-      ctx.font = `${Math.max(12, S2(22))}px ${FONT}`;
+      // penonton jauh: barisan helm proyek prosedural (kubah + brim + ridge)
       for (let i = 0; i < 8; i += 1) {
         const hx = X(40 + i * 100);
         const hy = Y(0) - Math.max(18, S2(30)) - (i % 2) * 6;
-        ctx.fillText('⛑️', hx, hy);
+        const hr = Math.max(7, S2(11));
+        ctx.save();
+        ctx.translate(hx, hy);
+        ctx.fillStyle = i % 3 === 0 ? '#f97316' : '#F5B301';
+        ctx.beginPath(); ctx.arc(0, 0, hr, Math.PI, 0); ctx.closePath(); ctx.fill();
+        ctx.fillRect(-hr * 1.25, -1.5, hr * 2.5, 3);
+        ctx.fillStyle = 'rgba(0,0,0,0.18)';
+        ctx.fillRect(-2, -hr, 4, hr);
+        ctx.restore();
       }
       // sorot lampu arena
       ctx.save();
@@ -245,64 +293,117 @@ export default function ArcadePingPong({ onExit }: { onExit: () => void }): Reac
         ctx.fill();
       }
       ctx.restore();
-      // spanduk arena
+      // spanduk arena (teks UI + belah ketupat digambar, tanpa simbol emoji)
       ctx.fillStyle = 'rgba(253,224,71,0.85)';
       ctx.font = `900 ${Math.max(11, S2(15))}px ${FONT}`;
       ctx.textAlign = 'center';
       const bannerY = Y(0) - Math.max(44, S2(58));
-      if (bannerY > 76) ctx.fillText('★ ARENA SENDOK SEMEN ★', W / 2, bannerY);
-      // barisan tukang nonton di bawah
-      ctx.font = `${Math.max(14, S2(24))}px ${FONT}`;
-      ctx.textAlign = 'center';
+      if (bannerY > 76) {
+        ctx.fillText('ARENA SENDOK SEMEN', W / 2, bannerY);
+        const tw = ctx.measureText('ARENA SENDOK SEMEN').width;
+        for (const sgn of [-1, 1]) {
+          const dx = W / 2 + sgn * (tw / 2 + 16);
+          ctx.save();
+          ctx.translate(dx, bannerY - 5);
+          ctx.rotate(Math.PI / 4);
+          ctx.fillRect(-4, -4, 8, 8);
+          ctx.restore();
+        }
+      }
+      // barisan tukang nonton di bawah: kepala + helm + bahu rompi prosedural
       const crowdY = Y(VH) + Math.max(52, S2(64));
       if (crowdY < H - 12) {
-        const faces = ['👷', '👷‍♀️', '🧑‍🔧', '👨‍🏭', '👷', '🧑‍🔧', '👷‍♀️', '👨‍🏭'];
-        faces.forEach((f, i) => {
+        const skins = ['#c68e5e', '#8d5a33', '#e0aa72', '#a06a3b'];
+        for (let i = 0; i < 8; i += 1) {
           const bx = X(60 + i * 100);
           const bob = Math.sin(s.t * 2.4 + i * 1.3) * S2(4);
-          ctx.fillText(f, bx, crowdY + bob);
-        });
+          const by = crowdY + bob;
+          const hr = Math.max(9, S2(13));
+          ctx.save();
+          ctx.translate(bx, by);
+          // bahu rompi keselamatan
+          ctx.fillStyle = i % 2 ? '#2563EB' : '#F97316';
+          ctx.beginPath(); ctx.arc(0, hr * 1.5, hr * 1.05, Math.PI, 0); ctx.closePath(); ctx.fill();
+          // kepala
+          ctx.fillStyle = skins[i % skins.length];
+          ctx.beginPath(); ctx.arc(0, 0, hr * 0.78, 0, TAU); ctx.fill();
+          // helm kuning helm (#F5B301 arah seni)
+          ctx.fillStyle = '#F5B301';
+          ctx.beginPath(); ctx.arc(0, -hr * 0.12, hr * 0.85, Math.PI, 0); ctx.closePath(); ctx.fill();
+          ctx.fillRect(-hr * 1.05, -hr * 0.16, hr * 2.1, 3);
+          ctx.restore();
+        }
       }
     };
 
-    /** Sendok semen sebagai bet. */
-    const drawSpoon = (ctx: CanvasRenderingContext2D, px: number, py: number, facing: 1 | -1, color: string): void => {
+    /**
+     * Sendok semen (trowel) sebagai bet — vektor Canvas prosedural:
+     * daun baja segitiga khas sendok semen (lebar di pangkal, runcing di
+     * ujung atas), leher menekuk, gagang kayu menjauhi lapangan, kilau
+     * logam, noda semen. `flash` 0..1 = kilau sesaat sesudah memukul bola.
+     */
+    const drawSpoon = (ctx: CanvasRenderingContext2D, px: number, py: number, facing: 1 | -1, color: string, flash: number): void => {
       const w = S2(PADDLE_W);
       const h = S2(PADDLE_H);
       ctx.save();
       ctx.translate(X(px), Y(py));
+      // kilau pantulan (umpan balik pukulan)
+      if (flash > 0) {
+        ctx.save();
+        ctx.globalAlpha = flash / 0.18 * 0.55;
+        ctx.fillStyle = '#fef9c3';
+        ctx.beginPath(); ctx.arc(0, 0, h * 0.62, 0, TAU); ctx.fill();
+        ctx.restore();
+      }
       ctx.shadowColor = 'rgba(0,0,0,0.5)';
       ctx.shadowBlur = 10;
       ctx.shadowOffsetY = 3;
-      // daun sendok (segitiga khas sendok semen)
+      // daun sendok: pangkal lebar di bawah -> ujung runcing di atas
       const g = ctx.createLinearGradient(-w / 2, -h / 2, w / 2, h / 2);
       g.addColorStop(0, color);
       g.addColorStop(0.5, '#ffffff');
       g.addColorStop(1, '#8a8a8a');
       ctx.fillStyle = g;
       ctx.beginPath();
-      ctx.moveTo(-w / 2, -h / 2);
-      ctx.lineTo(w / 2, -h / 2 + 6);
-      ctx.lineTo(w / 2, h / 2 - 6);
+      ctx.moveTo(0, -h / 2); // ujung runcing
+      ctx.lineTo(w / 2, -h / 2 + S2(16));
+      ctx.lineTo(w / 2, h / 2);
       ctx.lineTo(-w / 2, h / 2);
+      ctx.lineTo(-w / 2, -h / 2 + S2(16));
       ctx.closePath();
       ctx.fill();
       ctx.shadowBlur = 0;
-      // gagang
-      ctx.fillStyle = '#7c2d12';
-      const hg = ctx.createLinearGradient(0, 0, facing * w, 0);
+      ctx.strokeStyle = 'rgba(30,30,30,0.55)';
+      ctx.lineWidth = 1.4;
+      ctx.stroke();
+      // tulang tengah daun (ridge) dari ujung ke pangkal
+      ctx.strokeStyle = 'rgba(70,70,70,0.4)';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.moveTo(0, -h / 2 + 3); ctx.lineTo(0, h / 2 - 3); ctx.stroke();
+      // leher + gagang kayu: menjauhi lapangan (pemain kiri -> gagang ke kiri)
+      const hx0 = facing * (w / 2);
+      const hg = ctx.createLinearGradient(hx0, 0, hx0 + facing * S2(36), 0);
       hg.addColorStop(0, '#9a3412');
       hg.addColorStop(1, '#431407');
+      ctx.fillStyle = '#57534e'; // leher baja
+      ctx.fillRect(Math.min(0, hx0), -S2(3), Math.abs(hx0), S2(6));
       ctx.fillStyle = hg;
-      ctx.fillRect(facing === 1 ? -w / 2 - S2(34) : w / 2, -S2(7), S2(34), S2(14));
+      const gx = facing === 1 ? w / 2 : -w / 2 - S2(36);
+      ctx.beginPath();
+      if (typeof ctx.roundRect === 'function') ctx.roundRect(gx, -S2(8), S2(36), S2(16), S2(7));
+      else ctx.rect(gx, -S2(8), S2(36), S2(16));
+      ctx.fill();
+      ctx.fillStyle = 'rgba(0,0,0,0.35)'; // paku gagang
+      ctx.beginPath(); ctx.arc(gx + S2(36) / 2, 0, S2(2), 0, TAU); ctx.fill();
       // kilau logam
       ctx.fillStyle = 'rgba(255,255,255,0.5)';
       ctx.beginPath();
-      ctx.ellipse(0, -h / 4, w * 0.22, h * 0.1, -0.5, 0, TAU);
+      ctx.ellipse(-w * 0.16, -h / 4, w * 0.16, h * 0.1, -0.5, 0, TAU);
       ctx.fill();
       // noda semen
       ctx.fillStyle = 'rgba(160,160,150,0.5)';
       ctx.beginPath(); ctx.arc(w * 0.1, h * 0.25, S2(7), 0, TAU); ctx.fill();
+      ctx.beginPath(); ctx.arc(-w * 0.18, h * 0.38, S2(4.5), 0, TAU); ctx.fill();
       ctx.restore();
     };
 
@@ -313,6 +414,26 @@ export default function ArcadePingPong({ onExit }: { onExit: () => void }): Reac
         const a = 1 - tr.age / 0.22;
         ctx.fillStyle = `rgba(180,170,160,${(a * 0.35).toFixed(2)})`;
         ctx.beginPath(); ctx.arc(X(tr.x), Y(tr.y), S2(8) * a, 0, TAU); ctx.fill();
+      }
+      // bayangan kontak di atas meja (cahaya kiri-atas -> bayangan kanan-bawah)
+      ctx.save();
+      ctx.fillStyle = 'rgba(0,0,0,0.32)';
+      ctx.beginPath(); ctx.ellipse(X(b.x) + S2(7), Y(b.y) + S2(10), S2(10), S2(4.5), 0, 0, TAU); ctx.fill();
+      ctx.restore();
+      // garis kecepatan saat bola kencang (progresi rally terbaca)
+      const spd = Math.hypot(b.vx, b.vy);
+      if (!s.st.serving && spd > 470) {
+        const ux = b.vx / spd; const uy = b.vy / spd;
+        ctx.save();
+        ctx.strokeStyle = 'rgba(254,249,195,0.5)';
+        ctx.lineWidth = 2;
+        for (const off of [-6, 0, 6]) {
+          ctx.beginPath();
+          ctx.moveTo(X(b.x) - ux * S2(14) - uy * off, Y(b.y) - uy * S2(14) + ux * off);
+          ctx.lineTo(X(b.x) - ux * S2(30) - uy * off, Y(b.y) - uy * S2(30) + ux * off);
+          ctx.stroke();
+        }
+        ctx.restore();
       }
       const r = S2(9);
       ctx.save();
@@ -330,36 +451,105 @@ export default function ArcadePingPong({ onExit }: { onExit: () => void }): Reac
       ctx.restore();
     };
 
+    /** Api rally prosedural: dua lidah bezier oranye/kuning. */
+    const drawFlame = (ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number): void => {
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.fillStyle = '#F97316';
+      ctx.beginPath();
+      ctx.moveTo(0, -r);
+      ctx.bezierCurveTo(r * 0.85, -r * 0.1, r * 0.6, r * 0.75, 0, r * 0.9);
+      ctx.bezierCurveTo(-r * 0.6, r * 0.75, -r * 0.85, -r * 0.1, 0, -r);
+      ctx.fill();
+      ctx.fillStyle = '#fde047';
+      ctx.beginPath();
+      ctx.moveTo(0, -r * 0.35);
+      ctx.bezierCurveTo(r * 0.45, r * 0.15, r * 0.3, r * 0.6, 0, r * 0.72);
+      ctx.bezierCurveTo(-r * 0.3, r * 0.6, -r * 0.45, r * 0.15, 0, -r * 0.35);
+      ctx.fill();
+      ctx.restore();
+    };
+
     api.setRender(() => {
       const { ctx, W, H } = api;
       drawBackground(ctx, W, H);
-      drawSpoon(ctx, PLAYER_X + PADDLE_W / 2, s.st.pY, -1, '#cbd5e1');
-      drawSpoon(ctx, AI_X + PADDLE_W / 2, s.st.aY, 1, '#fbbf24');
-      // label pemain
-      ctx.fillStyle = 'rgba(255,255,255,0.85)';
+      // kilat tepi meja sesudah gol: hijau di tepi kanan (kamu mencetak),
+      // merah di tepi kiri (kebobolan) — sisi = arah bola keluar
+      if (s.flashT > 0 && s.flashScorer) {
+        const a = (s.flashT / 0.5) * 0.4;
+        const fx = s.flashScorer === 'p' ? X(VW) : X(0);
+        const fg = ctx.createLinearGradient(fx, 0, fx + (s.flashScorer === 'p' ? -1 : 1) * S2(90), 0);
+        fg.addColorStop(0, s.flashScorer === 'p' ? `rgba(74,222,128,${a.toFixed(2)})` : `rgba(248,113,113,${a.toFixed(2)})`);
+        fg.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = fg;
+        ctx.fillRect(Math.min(fx, fx + (s.flashScorer === 'p' ? -1 : 1) * S2(90)), Y(0), S2(90), S2(VH));
+      }
+      drawSpoon(ctx, PLAYER_X + PADDLE_W / 2, s.st.pY, -1, '#cbd5e1', s.hitP);
+      drawSpoon(ctx, AI_X + PADDLE_W / 2, s.st.aY, 1, '#fbbf24', s.hitA);
+      // label pemain: teks + penanda warna (biru EZRAB vs emas lawan)
       ctx.font = `800 ${Math.max(11, S2(16))}px ${FONT}`;
-      ctx.textAlign = 'center';
-      ctx.fillText('🧑‍🔧 KAMU', X(PLAYER_X + 40), Y(VH) + Math.max(16, S2(26)));
+      ctx.fillStyle = '#2563EB';
+      ctx.fillRect(X(PLAYER_X + 6), Y(VH) + Math.max(8, S2(14)), S2(10), S2(10));
+      ctx.fillStyle = 'rgba(255,255,255,0.85)';
+      ctx.textAlign = 'left';
+      ctx.fillText('KAMU', X(PLAYER_X + 22), Y(VH) + Math.max(16, S2(26)));
+      ctx.fillStyle = '#fbbf24';
+      ctx.fillRect(X(VW - 66), Y(VH) + Math.max(8, S2(14)), S2(10), S2(10));
+      ctx.fillStyle = 'rgba(255,255,255,0.85)';
       ctx.textAlign = 'right';
-      ctx.fillText('🤖 TUKANG BETON', X(VW - 8), Y(VH) + Math.max(16, S2(26)));
+      ctx.fillText('TUKANG BETON', X(VW - 8), Y(VH) + Math.max(16, S2(26)));
       ctx.textAlign = 'center';
       if (s.st.serving === 'p' && screenRef.current === 'play' && !s.st.over) {
-        ctx.fillStyle = 'rgba(255,255,255,0.9)';
+        // petunjuk serve: pil berdenyut + segitiga penunjuk ke bola
+        const pulse = 0.72 + Math.sin(s.t * 5) * 0.28;
+        ctx.save();
+        ctx.globalAlpha = pulse;
+        ctx.fillStyle = 'rgba(8,14,26,0.72)';
+        const label = 'KETUK UNTUK SERVE';
         ctx.font = `800 ${Math.max(12, S2(18))}px ${FONT}`;
+        const tw = ctx.measureText(label).width;
+        ctx.beginPath();
+        if (typeof ctx.roundRect === 'function') ctx.roundRect(X(VW / 2) - tw / 2 - 14, Y(VH / 2) - S2(64), tw + 28, S2(34), 10);
+        else ctx.rect(X(VW / 2) - tw / 2 - 14, Y(VH / 2) - S2(64), tw + 28, S2(34));
+        ctx.fill();
+        ctx.fillStyle = '#fde047';
         ctx.textAlign = 'center';
-        ctx.fillText('👆 ketuk untuk serve', X(VW / 2), Y(VH / 2) - S2(40));
+        ctx.fillText(label, X(VW / 2), Y(VH / 2) - S2(41));
+        ctx.fillStyle = '#fde047';
+        ctx.beginPath();
+        ctx.moveTo(X(s.st.ball.x) - 7, Y(s.st.ball.y) - S2(30) + Math.sin(s.t * 5) * 3);
+        ctx.lineTo(X(s.st.ball.x) + 7, Y(s.st.ball.y) - S2(30) + Math.sin(s.t * 5) * 3);
+        ctx.lineTo(X(s.st.ball.x), Y(s.st.ball.y) - S2(18) + Math.sin(s.t * 5) * 3);
+        ctx.closePath(); ctx.fill();
+        ctx.restore();
       }
       drawBall(ctx);
-      // skor besar
+      // skor besar (berdenyut sesaat setelah berubah)
+      const pulseS = 1 + (s.scoreT / 0.35) * 0.22;
       ctx.fillStyle = 'rgba(255,255,255,0.92)';
-      ctx.font = `900 ${Math.max(28, S2(52))}px ${FONT}`;
+      ctx.font = `900 ${Math.max(28, S2(52) * pulseS)}px ${FONT}`;
       ctx.textAlign = 'center';
       ctx.fillText(`${s.st.p} : ${s.st.a}`, X(VW / 2), Y(0) + Math.max(30, S2(56)));
-      // rally
-      if (s.st.rally >= 4) {
-        ctx.fillStyle = '#fde047';
+      // rally + meter kecepatan bola (plafon logic 760) — progresi terbaca
+      if (s.st.rally >= 2) {
+        const spd = Math.hypot(s.st.ball.vx, s.st.ball.vy);
+        const cy = Y(VH) - Math.max(14, S2(22));
         ctx.font = `800 ${Math.max(11, S2(17))}px ${FONT}`;
-        ctx.fillText(`🔥 Rally x${s.st.rally}`, X(VW / 2), Y(VH) - Math.max(10, S2(18)));
+        const label = `RALLY x${s.st.rally}`;
+        const tw = ctx.measureText(label).width;
+        drawFlame(ctx, X(VW / 2) - tw / 2 - S2(14), cy - S2(6), S2(9));
+        ctx.fillStyle = '#fde047';
+        ctx.textAlign = 'center';
+        ctx.fillText(label, X(VW / 2), cy);
+        if (!s.st.serving) {
+          const bw = S2(120);
+          const bx = X(VW / 2) - bw / 2;
+          const by = cy + S2(7);
+          ctx.fillStyle = 'rgba(255,255,255,0.18)';
+          ctx.fillRect(bx, by, bw, 4);
+          ctx.fillStyle = spd > 620 ? '#f87171' : spd > 470 ? '#fb923c' : '#4ade80';
+          ctx.fillRect(bx, by, bw * Math.min(1, spd / 760), 4);
+        }
       }
       const vg = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.45, W / 2, H / 2, Math.max(W, H) * 0.78);
       vg.addColorStop(0, 'rgba(0,0,0,0)');
@@ -368,6 +558,11 @@ export default function ArcadePingPong({ onExit }: { onExit: () => void }): Reac
       ctx.fillRect(0, 0, W, H);
     });
 
+    // PERBAIKAN LOOP: reset sungguhan untuk tombol Mulai/Tanding Lagi.
+    // Sebelumnya startGame memanggil __reset yang tidak pernah dipasang,
+    // sehingga setelah game-over tombol Tanding Lagi tidak mereset state
+    // (st.over tetap true) dan permainan macet.
+    (api as unknown as { __reset: () => void }).__reset = reset;
     reset();
     api.loop.start();
     return () => { apiRef.current = null; };
@@ -405,7 +600,7 @@ export default function ArcadePingPong({ onExit }: { onExit: () => void }): Reac
         <div style={{ pointerEvents: 'auto', background: 'rgba(8,14,26,0.6)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 14, padding: '7px 12px', color: '#fff', backdropFilter: 'blur(6px)', minWidth: 150 }}>
           <div style={{ fontWeight: 900, fontSize: 17, color: '#fde047' }}>{hud.p} : {hud.a}</div>
           <div style={{ fontSize: 12, marginTop: 3, opacity: 0.9 }}>
-            🏆 Menang {hud.wins}x {hud.bestRally > 0 && <span>• 🔥x{hud.bestRally}</span>}
+            Menang {hud.wins}x{hud.bestRally > 0 && <span> • Rally terbaik {hud.bestRally}</span>}
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8, pointerEvents: 'auto' }}>
@@ -419,7 +614,7 @@ export default function ArcadePingPong({ onExit }: { onExit: () => void }): Reac
 
       {screen === 'tutorial' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>🥄</div>
+          <div style={{ display: 'flex', justifyContent: 'center' }}><TrowelIcon size={46} /></div>
           <h2 style={h2}>TENIS SENDOK SEMEN</h2>
           <p style={p}>
             Bet-mu <b>sendok semen</b>, bolanya <b>bola beton</b>! <b>Geser jari / mouse</b>
@@ -432,7 +627,7 @@ export default function ArcadePingPong({ onExit }: { onExit: () => void }): Reac
       )}
       {screen === 'pause' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>☕</div>
+          <div style={{ display: 'flex', justifyContent: 'center' }}><CoffeeIcon size={44} /></div>
           <h2 style={h2}>JEDA</h2>
           <p style={p}>Semennya jangan sampai kering.</p>
           <button style={primaryBtn} onClick={togglePause}>Lanjutkan</button>
@@ -440,7 +635,7 @@ export default function ArcadePingPong({ onExit }: { onExit: () => void }): Reac
       )}
       {screen === 'over' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>{hud.p >= WIN_SCORE ? '🏆' : '😤'}</div>
+          <div style={{ display: 'flex', justifyContent: 'center' }}>{hud.p >= WIN_SCORE ? <TrophyIcon size={46} /> : <TrowelIcon size={46} />}</div>
           <h2 style={h2}>{hud.p >= WIN_SCORE ? 'KAMU MENANG!' : 'KALAH TIPIS!'}</h2>
           <div style={{ fontSize: 40, fontWeight: 900, color: '#fde047' }}>{hud.p} : {hud.a}</div>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'center', margin: '10px 0' }}>
@@ -471,6 +666,49 @@ function Overlay({ children }: { children: React.ReactNode }): React.JSX.Element
         {children}
       </div>
     </div>
+  );
+}
+
+/**
+ * Ikon overlay prosedural (SVG digambar kode — BUKAN emoji, BUKAN hasil
+ * generate; pola yang sama dengan MaterialGlyph pilot Sudoku).
+ */
+function TrowelIcon({ size = 44 }: { size?: number }): React.JSX.Element {
+  const s = { width: size, height: size, display: 'block' } as React.CSSProperties;
+  return (
+    <svg style={s} viewBox="0 0 48 48" aria-label="Sendok semen">
+      <polygon points="10,38 10,16 16,8 24,4 24,30 17,38" fill="#cbd5e1" stroke="#64748b" strokeWidth="2" />
+      <line x1="17" y1="10" x2="17" y2="36" stroke="#94a3b8" strokeWidth="1.6" />
+      <rect x="22" y="28" width="7" height="4" fill="#57534e" />
+      <rect x="28" y="26" width="15" height="8" rx="4" fill="#9a3412" stroke="#431407" strokeWidth="1.6" />
+      <circle cx="35" cy="30" r="1.6" fill="#431407" />
+    </svg>
+  );
+}
+
+function TrophyIcon({ size = 44 }: { size?: number }): React.JSX.Element {
+  const s = { width: size, height: size, display: 'block' } as React.CSSProperties;
+  return (
+    <svg style={s} viewBox="0 0 48 48" aria-label="Piala">
+      <path d="M14 6 h20 v10 a10 10 0 0 1 -20 0 Z" fill="#fbbf24" stroke="#b45309" strokeWidth="2" />
+      <path d="M14 9 C7 9 6 17 14 19 M34 9 c7 0 8 8 0 10" fill="none" stroke="#b45309" strokeWidth="2.4" />
+      <rect x="21" y="25" width="6" height="7" fill="#b45309" />
+      <rect x="15" y="32" width="18" height="5" rx="2" fill="#92400e" />
+      <rect x="17" y="40" width="14" height="3" rx="1.5" fill="#78350f" />
+    </svg>
+  );
+}
+
+function CoffeeIcon({ size = 44 }: { size?: number }): React.JSX.Element {
+  const s = { width: size, height: size, display: 'block' } as React.CSSProperties;
+  return (
+    <svg style={s} viewBox="0 0 48 48" aria-label="Kopi">
+      <path d="M17 6 c-2 3 2 4 0 7 M25 6 c-2 3 2 4 0 7" fill="none" stroke="#a8a29e" strokeWidth="2.2" strokeLinecap="round" />
+      <path d="M10 18 h24 v10 a8 8 0 0 1 -8 8 h-8 a8 8 0 0 1 -8 -8 Z" fill="#e7e5e4" stroke="#78716c" strokeWidth="2" />
+      <path d="M34 21 c5 -1 7 2 6 5 c-1 3 -4 4 -7 3" fill="none" stroke="#78716c" strokeWidth="2.2" />
+      <ellipse cx="22" cy="19" rx="11" ry="2" fill="#78350f" />
+      <rect x="8" y="40" width="30" height="3" rx="1.5" fill="#a8a29e" />
+    </svg>
   );
 }
 

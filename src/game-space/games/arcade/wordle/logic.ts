@@ -42,6 +42,21 @@ export function pickWord(rng: Rng = Math.random): string {
   return WORDS[(rng() * WORDS.length) | 0];
 }
 
+/**
+ * Kata untuk ronde berikutnya dalam satu sesi: TIDAK PERNAH mengulang kata
+ * ronde sebelumnya. Undian acak murni (pickWord) bisa mengembalikan jawaban
+ * yang sama persis saat pemain menekan "Kata Baru" — ronde itu langsung
+ * ketahuan jawabannya dan streak jadi gratis. Fungsi ini memilih dari semua
+ * kata KECUALI `previous`; bila `previous` kosong/tidak dikenal, setara pickWord.
+ */
+export function pickNextWord(previous: string | null | undefined, rng: Rng = Math.random): string {
+  const prev = (previous ?? '').toUpperCase();
+  const candidates = WORDS.filter((w) => w !== prev);
+  if (candidates.length === 0) return WORDS[0];
+  const idx = Math.min(candidates.length - 1, Math.max(0, (rng() * candidates.length) | 0));
+  return candidates[idx];
+}
+
 /** Tebakan valid: tepat 5 huruf A-Z. */
 export function isValidGuess(s: string): boolean {
   return /^[A-Z]{5}$/.test(s.toUpperCase());

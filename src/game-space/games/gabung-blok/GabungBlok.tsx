@@ -601,7 +601,7 @@ export default function GabungBlok({ onExit }: { onExit: () => void }): React.Re
 
       {screen === 'tutorial' && (
         <Overlay>
-          <h2 style={h2}>🏗️ Gabung Blok</h2>
+          <h2 style={h2}>Gabung Blok</h2>
           <p style={p}>
             Geser blok bangunan untuk menggabungkan dua yang sama.
             Dari <b>BATA</b> sampai jadi <b>MENARA</b>!
@@ -637,7 +637,7 @@ export default function GabungBlok({ onExit }: { onExit: () => void }): React.Re
 
       {screen === 'win' && (
         <Overlay>
-          <h2 style={{ ...h2, color: '#FFE08A' }}>🎉 MENARA SELESAI!</h2>
+          <h2 style={{ ...h2, color: '#FFE08A' }}>MENARA SELESAI!</h2>
           <p style={p}>Serah terima tanpa revisi! Klien sampai speechless.</p>
           <p style={p}>Skor: <b>{hud.score}</b></p>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
@@ -649,7 +649,7 @@ export default function GabungBlok({ onExit }: { onExit: () => void }): React.Re
 
       {screen === 'over' && (
         <Overlay>
-          <h2 style={{ ...h2, color: '#FF8A8A' }}>🧱 Lahan Habis!</h2>
+          <h2 style={{ ...h2, color: '#FF8A8A' }}>Lahan Habis!</h2>
           <p style={p}>Kayak budget proyek — tiba-tiba nggak ada ruang gerak.</p>
           <p style={p}>Skor: <b>{hud.score}</b> • Terbaik: <b>{hud.best}</b></p>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>

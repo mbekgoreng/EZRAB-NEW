@@ -9,6 +9,7 @@ import { bestKey, getBest, setBest } from '../../../engine2d/best';
 import { popText } from '../../../engine2d/juice2d';
 import {
   createState, hop, step, getLane, COLS,
+  zoneForRow, isZoneStart,
   type State, type Lane, type Vehicle,
 } from './logic';
 
@@ -31,7 +32,7 @@ export default function ArcadeCrossyRoad({ onExit }: { onExit: () => void }): Re
   const apiRef = useRef<GameApi | null>(null);
   const screenRef = useRef<Screen>('tutorial');
   const [screen, setScreenState] = useState<Screen>('tutorial');
-  const [hud, setHud] = useState({ score: 0, best: getBest(BK, 0), hops: 0 });
+  const [hud, setHud] = useState({ score: 0, best: getBest(BK, 0), hops: 0, zone: 1 });
   const [muted, setMuted] = useState(false);
 
   const setScreen = (s: Screen): void => {
@@ -59,7 +60,7 @@ export default function ArcadeCrossyRoad({ onExit }: { onExit: () => void }): Re
     const rowY = (row: number, H: number): number => H * 0.68 - (row - s.camRow) * tile;
 
     const push = (): void => {
-      api.pushHud({ score: s.st.score, best: getBest(BK, 0), hops: s.st.hops });
+      api.pushHud({ score: s.st.score, best: getBest(BK, 0), hops: s.st.hops, zone: zoneForRow(s.st.score) });
     };
 
     const reset = (): void => {
@@ -87,6 +88,11 @@ export default function ArcadeCrossyRoad({ onExit }: { onExit: () => void }): Re
         });
         if (s.st.score > before) {
           api.scores.add(cx, rowY(s.st.py, api.H) - tile, `+1`, { color: '#4ade80', size: 16 });
+          // Gerbang zona baru: lalu lintas proyek makin cepat & padat (identitas endless)
+          if (isZoneStart(s.st.score)) {
+            api.scores.add(api.W / 2, api.H * 0.3, `ZONA ${zoneForRow(s.st.score)} — LALU LINTAS MAKIN PADAT!`, { color: '#fde047', size: 19 });
+            api.sfx.chime(2);
+          }
         }
         push();
       }
@@ -98,13 +104,13 @@ export default function ArcadeCrossyRoad({ onExit }: { onExit: () => void }): Re
       api.shake.add(0.8);
       api.sfx.fail();
       const wrap = wrapRef.current;
-      if (wrap) popText(wrap, '🚚 KEGILAS MOLEN!', { size: 24, color: '#f87171' });
+      if (wrap) popText(wrap, 'KEGILAS MOLEN!', { size: 24, color: '#f87171' });
       api.particles.spawn((s.st.px + 0.5) * tile, rowY(s.st.py, api.H), {
         count: 30, colors: ['#f87171', '#fbbf24', '#78716c'],
         speed: [100, 400], life: [0.4, 0.9], size: [2, 6], gravity: 600, shape: 'rect', rotation: true,
       });
       window.setTimeout(() => {
-        api.pushHud({ score: s.st.score, best: nb, hops: s.st.hops });
+        api.pushHud({ score: s.st.score, best: nb, hops: s.st.hops, zone: zoneForRow(s.st.score) });
         setScreen('over');
       }, 1300);
     };
@@ -220,7 +226,7 @@ export default function ArcadeCrossyRoad({ onExit }: { onExit: () => void }): Re
           ctx.font = `800 ${Math.max(9, tile * 0.28)}px ${FONT}`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
-          ctx.fillText('🛖 POS ISTIRAHAT', W / 2, y + tile * 0.68);
+          ctx.fillText('POS ISTIRAHAT', W / 2, y + tile * 0.68);
         }
         // dekorasi: cone & tumpukan material
         for (const c of lane.deco) {
@@ -455,7 +461,7 @@ export default function ArcadeCrossyRoad({ onExit }: { onExit: () => void }): Re
         ctx.font = `800 11px ${FONT}`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('🏕️ BASECAMP', W / 2, Math.min(H - 24, gy0 + 30));
+        ctx.fillText('BASECAMP', W / 2, Math.min(H - 24, gy0 + 30));
       }
       // kendaraan (di atas lajur, di bawah pemain)
       for (let r = r0; r <= r1; r += 1) {
@@ -476,7 +482,7 @@ export default function ArcadeCrossyRoad({ onExit }: { onExit: () => void }): Re
       ctx.font = `800 11px ${FONT}`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText('🚧 AWAS KENDARAAN PROYEK', W / 2, H - 14);
+      ctx.fillText('AWAS KENDARAAN PROYEK', W / 2, H - 14);
       // vignette
       const vg = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.45, W / 2, H / 2, Math.max(W, H) * 0.78);
       vg.addColorStop(0, 'rgba(0,0,0,0)');
@@ -526,8 +532,8 @@ export default function ArcadeCrossyRoad({ onExit }: { onExit: () => void }): Re
       <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', touchAction: 'none' }} />
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', zIndex: 5, pointerEvents: 'none' }}>
         <div style={{ pointerEvents: 'auto', background: 'rgba(12,18,34,0.6)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 14, padding: '7px 12px', color: '#fff', backdropFilter: 'blur(6px)', minWidth: 130 }}>
-          <div style={{ fontWeight: 900, fontSize: 17, color: '#fde047' }}>🚧 {hud.score.toLocaleString('id-ID')}</div>
-          <div style={{ fontSize: 11, marginTop: 2, opacity: 0.85 }}>Terbaik: <b>{hud.best.toLocaleString('id-ID')}</b> • 🐾 {hud.hops}</div>
+          <div style={{ fontWeight: 900, fontSize: 17, color: '#fde047' }}>JARAK {hud.score.toLocaleString('id-ID')}</div>
+          <div style={{ fontSize: 11, marginTop: 2, opacity: 0.85 }}>Terbaik: <b>{hud.best.toLocaleString('id-ID')}</b> • Lompat {hud.hops} • <b style={{ color: '#fde047' }}>ZONA {hud.zone}</b></div>
         </div>
         <div style={{ display: 'flex', gap: 8, pointerEvents: 'auto' }}>
           {(screen === 'play' || screen === 'pause') && (
@@ -540,12 +546,13 @@ export default function ArcadeCrossyRoad({ onExit }: { onExit: () => void }): Re
 
       {screen === 'tutorial' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>🚧</div>
+          <ConeIcon />
           <h2 style={h2}>NYEBRANG PROYEK</h2>
           <p style={p}>
             <b>Geser / ketuk / panah</b> untuk melompatkan tukang.
-            Seberangi jalan proyek sejauh mungkin — hindari <b>truk molen 🚚</b>, pickup & beko!
-            Tiap 7 baris ada <b>🛖 pos istirahat</b> yang aman.
+            <b>TAK BERUJUNG:</b> skor = jarak terjauh di darat — tidak ada rumah/tujuan akhir.
+            Hindari <b>truk molen</b>, pickup & beko! Tiap 7 baris ada <b>pos istirahat</b> yang aman.
+            Tiap 8 baris masuk <b>ZONA</b> baru: lalu lintas makin cepat & padat.
           </p>
           {hud.best > 0 && <p style={p}>Rekor: <b style={{ color: '#fde047' }}>{hud.best.toLocaleString('id-ID')}</b> baris</p>}
           <button style={primaryBtn} onClick={startGame}>Mulai Nyebrang</button>
@@ -553,7 +560,7 @@ export default function ArcadeCrossyRoad({ onExit }: { onExit: () => void }): Re
       )}
       {screen === 'pause' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>☕</div>
+          <ConeIcon />
           <h2 style={h2}>JEDA</h2>
           <p style={p}>Tukang istirahat di pos. Kendaraan ikut berhenti.</p>
           <button style={primaryBtn} onClick={togglePause}>Lanjutkan</button>
@@ -561,10 +568,10 @@ export default function ArcadeCrossyRoad({ onExit }: { onExit: () => void }): Re
       )}
       {screen === 'over' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>🚚</div>
+          <TruckIcon />
           <h2 style={h2}>KEGILAS!</h2>
           <div style={{ fontSize: 40, fontWeight: 900, color: '#fde047' }}>{hud.score.toLocaleString('id-ID')}</div>
-          <p style={p}>Baris terjauh: <b>{hud.score}</b> • Terbaik: <b style={{ color: '#fde047' }}>{hud.best.toLocaleString('id-ID')}</b></p>
+          <p style={p}>Baris terjauh: <b>{hud.score}</b> • Zona dicapai: <b>{hud.zone}</b> • Terbaik: <b style={{ color: '#fde047' }}>{hud.best.toLocaleString('id-ID')}</b></p>
           <button style={primaryBtn} onClick={startGame}>Nyebrang Lagi</button>
           <button style={ghostBtn} onClick={onExit}>Keluar</button>
         </Overlay>
@@ -581,6 +588,33 @@ const primaryBtn: React.CSSProperties = {
   background: 'linear-gradient(180deg,#fde047,#f59e0b)', color: '#3a2a00', boxShadow: '0 8px 20px rgba(245,158,11,0.4)',
 };
 const ghostBtn: React.CSSProperties = { ...primaryBtn, background: 'transparent', color: '#bbf7d0', boxShadow: 'none', border: '1px solid rgba(255,255,255,0.25)' };
+
+/** Ikon prosedural SVG (bukan emoji): kerucut lalu lintas proyek. */
+function ConeIcon(): React.JSX.Element {
+  return (
+    <svg width="52" height="52" viewBox="0 0 52 52" aria-hidden="true">
+      <rect x="8" y="44" width="36" height="5" rx="2" fill="#7c2d12" />
+      <path d="M26 6 L40 44 L12 44 Z" fill="#f97316" />
+      <path d="M20 26 L32 26 L34.5 33 L17.5 33 Z" fill="#ffffff" />
+      <rect x="23" y="2" width="6" height="6" rx="3" fill="#fde047" />
+    </svg>
+  );
+}
+
+/** Ikon prosedural SVG (bukan emoji): truk molen proyek. */
+function TruckIcon(): React.JSX.Element {
+  return (
+    <svg width="64" height="44" viewBox="0 0 64 44" aria-hidden="true">
+      <ellipse cx="32" cy="28" rx="13" ry="10" fill="#e2e8f0" stroke="#64748b" strokeWidth="2" />
+      <path d="M22 22 L42 34" stroke="#f97316" strokeWidth="4" />
+      <rect x="44" y="18" width="14" height="14" rx="3" fill="#94a3b8" />
+      <rect x="48" y="21" width="7" height="6" rx="1" fill="#bae6fd" />
+      <rect x="4" y="26" width="16" height="6" rx="2" fill="#475569" />
+      <circle cx="18" cy="36" r="5" fill="#111827" /><circle cx="18" cy="36" r="2" fill="#9ca3af" />
+      <circle cx="46" cy="36" r="5" fill="#111827" /><circle cx="46" cy="36" r="2" fill="#9ca3af" />
+    </svg>
+  );
+}
 
 function Overlay({ children }: { children: React.ReactNode }): React.JSX.Element {
   return (

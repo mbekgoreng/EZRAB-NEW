@@ -4,9 +4,10 @@
  */
 import React, { useRef, useState } from 'react';
 import { useGameCanvas, type GameApi } from '../../../engine2d';
-import { bestKey, getBest, setBest } from '../../../engine2d/best';
+import { bestKey, getBest, setBest, setJson } from '../../../engine2d/best';
 import {
   generateMaze, mazeSizeForLevel, moveBall, cellCenter, mulberry32,
+  parSecondsFor, starsFor, furthestCheckpointIndex, improvedBestTime,
   type Maze,
 } from './logic';
 
@@ -27,6 +28,16 @@ interface Hud {
   time: number;
   bestLevel: number;
   bestTime: number;
+  cp: number;
+  cpTotal: number;
+  lastStars: number;
+}
+
+interface ClearInfo {
+  level: number;
+  time: number;
+  par: number;
+  stars: number;
 }
 
 interface Level {
@@ -155,6 +166,54 @@ function prerenderMaze(lv: Level): HTMLCanvasElement {
   return cv;
 }
 
+/* Ikon SVG prosedural (pengganti emoji HUD/overlay) */
+const svgBase = { fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const, viewBox: '0 0 24 24' };
+function IconWarehouse({ size = 16 }: { size?: number }): React.JSX.Element {
+  return (<svg width={size} height={size} {...svgBase}><path d="M3 21V9l9-6 9 6v12" /><path d="M7 21v-8h10v8" /><path d="M7 17h10M7 20h10" /></svg>);
+}
+function IconClock({ size = 14 }: { size?: number }): React.JSX.Element {
+  return (<svg width={size} height={size} {...svgBase}><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>);
+}
+function IconMedal({ size = 14 }: { size?: number }): React.JSX.Element {
+  return (<svg width={size} height={size} {...svgBase}><circle cx="12" cy="14" r="5" /><path d="M8.5 9.5 6 3h4l2 4 2-4h4l-2.5 6.5" /></svg>);
+}
+function IconRing({ size = 14 }: { size?: number }): React.JSX.Element {
+  return (<svg width={size} height={size} {...svgBase}><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="2.5" fill="currentColor" stroke="none" /></svg>);
+}
+function IconPlay({ size = 18 }: { size?: number }): React.JSX.Element {
+  return (<svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l13-7.5z" /></svg>);
+}
+function IconPause({ size = 18 }: { size?: number }): React.JSX.Element {
+  return (<svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1" /><rect x="14" y="4" width="4" height="16" rx="1" /></svg>);
+}
+function IconSound({ size = 20, off = false }: { size?: number; off?: boolean }): React.JSX.Element {
+  return (<svg width={size} height={size} {...svgBase}><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor" stroke="none" />{off ? <path d="M16 9l6 6M22 9l-6 6" /> : <path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12" />}</svg>);
+}
+function IconClose({ size = 18 }: { size?: number }): React.JSX.Element {
+  return (<svg width={size} height={size} {...svgBase}><path d="M5 5l14 14M19 5L5 19" /></svg>);
+}
+/** Bintang rating: poligon SVG prosedural (bukan glif teks). */
+function StarIcon({ size = 26, filled = true }: { size?: number; filled?: boolean }): React.JSX.Element {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24">
+      <polygon
+        points="12,2 14.9,8.6 22,9.3 16.7,14 18.2,21 12,17.3 5.8,21 7.3,14 2,9.3 9.1,8.6"
+        fill={filled ? '#ffd166' : 'rgba(255,255,255,0.18)'}
+        stroke={filled ? '#d97706' : 'rgba(255,255,255,0.35)'}
+        strokeWidth="1.2"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+function StarsRow({ stars, size = 26 }: { stars: number; size?: number }): React.JSX.Element {
+  return (
+    <div style={{ display: 'flex', gap: 4, justifyContent: 'center' }} aria-label={`${stars} dari 3 bintang`}>
+      {[1, 2, 3].map((i) => <StarIcon key={i} size={size} filled={i <= stars} />)}
+    </div>
+  );
+}
+
 export default function ArcadeMazeDrag({ onExit }: { onExit: () => void }): React.JSX.Element {
   const wrapRef = useRef<HTMLDivElement>(null);
   const apiRef = useRef<GameApi | null>(null);
@@ -169,7 +228,10 @@ export default function ArcadeMazeDrag({ onExit }: { onExit: () => void }): Reac
     level: 1, time: 0,
     bestLevel: getBest(bestKey(SLUG, 'level')),
     bestTime: getBest(bestKey(SLUG, 'time')),
+    cp: 0, cpTotal: 0, lastStars: 0,
   });
+  const [clear, setClear] = useState<ClearInfo | null>(null);
+  const resultRef = useRef<ClearInfo | null>(null);
 
   const fxRef = useRef({
     animT: 0,
@@ -179,6 +241,7 @@ export default function ArcadeMazeDrag({ onExit }: { onExit: () => void }): Reac
     toast: '',
     toastT: 0,
     pointerSpeed: 0,
+    done: false,
     lastP: null as { x: number; y: number } | null,
   });
 
@@ -194,6 +257,9 @@ export default function ArcadeMazeDrag({ onExit }: { onExit: () => void }): Reac
       time: lv?.time ?? 0,
       bestLevel: getBest(bestKey(SLUG, 'level')),
       bestTime: getBest(bestKey(SLUG, 'time')),
+      cp: lv ? lv.checkpointIdx + 1 : 0,
+      cpTotal: lv ? lv.maze.checkpoints.length : 0,
+      lastStars: resultRef.current?.stars ?? 0,
     } as Hud);
   };
 
@@ -202,6 +268,8 @@ export default function ArcadeMazeDrag({ onExit }: { onExit: () => void }): Reac
     const areaH = api.H / s - 150; // ruang HUD atas + bawah
     const lv = makeLevel(level, seedRef.current, LW - 24, Math.max(280, areaH));
     lvRef.current = lv;
+    fxRef.current.done = false;
+    setClear(null);
     mazeCvRef.current = prerenderMaze(lv);
     pushHud();
   };
@@ -226,6 +294,11 @@ export default function ArcadeMazeDrag({ onExit }: { onExit: () => void }): Reac
 
   const doGoal = (api: GameApi, lv: Level): void => {
     const fx = fxRef.current;
+    // Penjaga selesai: tanpa ini doGoal terpanggil ulang tiap frame selama
+    // bola diam di goal -> banyak timeout antre, level melompat-lompat.
+    if (fx.done) return;
+    fx.done = true;
+    lv.dragging = false;
     fx.goalBurst = 1;
     api.sfx.chime(4);
     api.particles.spawn(lv.ball.x, lv.ball.y, {
@@ -234,11 +307,19 @@ export default function ArcadeMazeDrag({ onExit }: { onExit: () => void }): Reac
       shape: 'rect', rotation: true,
     });
     const t = lv.time;
+    // Waktu terbaik = nilai TERKECIL. setBest() menyimpan max (untuk
+    // skor/level), jadi untuk waktu wajib tulis hanya bila membaik —
+    // dulu rekor justru mengunci waktu terburuk & toast TERBAIK mati.
     const prevBest = getBest(bestKey(SLUG, 'time'));
-    const isBest = (prevBest === 0 || t < prevBest) && levelRef.current >= 1;
-    if (levelRef.current === 1 || isBest) setBest(bestKey(SLUG, 'time'), t);
+    const isBest = improvedBestTime(prevBest, t) !== prevBest || prevBest === 0;
+    if (isBest) setJson(bestKey(SLUG, 'time'), t);
     setBest(bestKey(SLUG, 'level'), levelRef.current + 1);
-    fx.toast = t < (getBest(bestKey(SLUG, 'time')) || 1e9)
+    const par = parSecondsFor(lv.maze);
+    const stars = starsFor(t, par);
+    const info: ClearInfo = { level: levelRef.current, time: t, par, stars };
+    resultRef.current = info;
+    setClear(info);
+    fx.toast = isBest
       ? `Level ${levelRef.current} selesai: ${t.toFixed(1)}s — TERBAIK!`
       : `Level ${levelRef.current} selesai: ${t.toFixed(1)}s`;
     fx.toastT = 1.6;
@@ -300,6 +381,7 @@ export default function ArcadeMazeDrag({ onExit }: { onExit: () => void }): Reac
       fx.goalBurst = Math.max(0, fx.goalBurst - dt * 1.4);
       fx.toastT = Math.max(0, fx.toastT - dt);
       if (!lv || screenRef.current !== 'play') return;
+      if (fx.done) return; // level sudah selesai: bekukan bola & timer
 
       lv.time += dt;
       if (Math.floor(lv.time * 10) !== Math.floor((lv.time - dt) * 10)) pushHud();
@@ -330,20 +412,23 @@ export default function ArcadeMazeDrag({ onExit }: { onExit: () => void }): Reac
       // peluruhan kecepatan pointer
       fx.pointerSpeed *= Math.max(0, 1 - dt * 6);
 
-      // checkpoint
-      const cps = checkpointCells(lv);
-      for (let i = lv.checkpointIdx + 2; i < cps.length; i += 1) {
-        const cp = cps[i];
-        if (Math.hypot(lv.ball.x - cp.x, lv.ball.y - cp.y) < lv.cell * 0.55) {
-          lv.checkpointIdx = i - 1;
-          api.sfx.pop(1.3);
-          api.scores.add(cp.x, cp.y - 18, 'CHECKPOINT', { color: '#4ade80', size: 15 });
-          api.particles.spawn(cp.x, cp.y, {
-            count: 14, colors: ['#4ade80', '#bbf7d0'],
-            speed: [40, 180], life: [0.4, 0.8], size: [2, 5], shape: 'circle',
-          });
-          break;
-        }
+      // checkpoint: fungsi murni di ruang grid (radius 0,55 sel)
+      const gi = furthestCheckpointIndex(
+        lv.maze,
+        (lv.ball.x - lv.ox) / lv.cell,
+        (lv.ball.y - lv.oy) / lv.cell,
+        0.55,
+      );
+      if (gi > lv.checkpointIdx) {
+        lv.checkpointIdx = gi;
+        const cp = checkpointCells(lv)[gi + 1];
+        api.sfx.pop(1.3);
+        api.scores.add(cp.x, cp.y - 18, 'CHECKPOINT', { color: '#4ade80', size: 15 });
+        api.particles.spawn(cp.x, cp.y, {
+          count: 14, colors: ['#4ade80', '#bbf7d0'],
+          speed: [40, 180], life: [0.4, 0.8], size: [2, 5], shape: 'circle',
+        });
+        pushHud();
       }
 
       // goal?
@@ -395,15 +480,16 @@ export default function ArcadeMazeDrag({ onExit }: { onExit: () => void }): Reac
         ctx.drawImage(mazeCvRef.current, lv.ox, lv.oy, mw, mh);
       }
 
-      // start / checkpoint / goal
-      const drawMarker = (
-        x: number, y: number, label: string, color: string, pulse: boolean,
-      ): void => {
-        const pr = pulse ? 1 + 0.12 * Math.sin(t * 5) : 1;
-        const rr = lv.cell * 0.32 * pr;
+      // start / checkpoint / goal — semua bentuk canvas prosedural
+      const cellU = lv.cell;
+      // START: lingkaran hijau + segitiga main putih tergambar (path)
+      const sc = cellCenter(lv.maze, lv.cell, lv.maze.start);
+      {
+        const x = sc.x + lv.ox;
+        const y = sc.y + lv.oy;
+        const rr = cellU * 0.32;
         ctx.save();
-        ctx.globalAlpha = 0.9;
-        ctx.fillStyle = color;
+        ctx.fillStyle = '#4ade80';
         ctx.beginPath();
         ctx.arc(x, y, rr, 0, TAU);
         ctx.fill();
@@ -411,27 +497,102 @@ export default function ArcadeMazeDrag({ onExit }: { onExit: () => void }): Reac
         ctx.beginPath();
         ctx.arc(x - rr * 0.3, y - rr * 0.35, rr * 0.4, 0, TAU);
         ctx.fill();
-        ctx.fillStyle = '#0b1226';
-        ctx.font = `900 ${Math.max(10, lv.cell * 0.3)}px ${FONT}`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(label, x, y + 0.5);
+        ctx.fillStyle = '#052e12';
+        ctx.beginPath();
+        ctx.moveTo(x - rr * 0.38, y - rr * 0.48);
+        ctx.lineTo(x - rr * 0.38, y + rr * 0.48);
+        ctx.lineTo(x + rr * 0.52, y);
+        ctx.closePath();
+        ctx.fill();
         ctx.restore();
-      };
-      const sc = cellCenter(lv.maze, lv.cell, lv.maze.start);
-      drawMarker(sc.x + lv.ox, sc.y + lv.oy, '▶', '#4ade80', false);
+      }
+      // CHECKPOINT: cincin berdenyut + belah ketupat di tengah
       const cps = checkpointCells(lv);
       lv.maze.checkpoints.forEach((_, i) => {
         const done = lv.checkpointIdx >= i;
-        drawMarker(cps[i + 1].x, cps[i + 1].y, '◆', done ? '#4ade80' : '#fbbf24', !done);
+        const x = cps[i + 1].x;
+        const y = cps[i + 1].y;
+        const col = done ? '#4ade80' : '#fbbf24';
+        const ringR = cellU * 0.36 * (done ? 1 : 1 + 0.1 * Math.sin(t * 5 + i));
+        ctx.save();
+        ctx.strokeStyle = col;
+        ctx.lineWidth = 2.5;
+        ctx.globalAlpha = done ? 0.95 : 0.85;
+        ctx.beginPath();
+        ctx.arc(x, y, ringR, 0, TAU);
+        ctx.stroke();
+        const dr = cellU * 0.15;
+        ctx.fillStyle = col;
+        ctx.beginPath();
+        ctx.moveTo(x, y - dr);
+        ctx.lineTo(x + dr, y);
+        ctx.lineTo(x, y + dr);
+        ctx.lineTo(x - dr, y);
+        ctx.closePath();
+        ctx.fill();
+        if (done) {
+          ctx.fillStyle = '#052e12';
+          ctx.beginPath();
+          ctx.arc(x, y, dr * 0.38, 0, TAU);
+          ctx.fill();
+        }
+        ctx.restore();
       });
+      // GOAL: pintu gudang emas + bendera berkibar di atasnya
       const gc = cellCenter(lv.maze, lv.cell, lv.maze.goal);
-      const pulse = 1 + 0.15 * Math.sin(t * 6);
-      ctx.save();
-      ctx.shadowColor = '#ffd166';
-      ctx.shadowBlur = 18 * pulse;
-      drawMarker(gc.x + lv.ox, gc.y + lv.oy, '★', '#ffd166', true);
-      ctx.restore();
+      {
+        const x = gc.x + lv.ox;
+        const y = gc.y + lv.oy;
+        const pulse = 1 + 0.15 * Math.sin(t * 6);
+        const dw = cellU * 0.56;
+        const dh = cellU * 0.62;
+        ctx.save();
+        ctx.shadowColor = '#ffd166';
+        ctx.shadowBlur = 18 * pulse;
+        const dg = ctx.createLinearGradient(x, y - dh / 2, x, y + dh / 2);
+        dg.addColorStop(0, '#ffe08a');
+        dg.addColorStop(1, '#d97706');
+        ctx.fillStyle = dg;
+        ctx.beginPath();
+        ctx.moveTo(x - dw / 2, y + dh / 2);
+        ctx.lineTo(x - dw / 2, y - dh * 0.1);
+        ctx.arc(x, y - dh * 0.1, dw / 2, Math.PI, 0);
+        ctx.lineTo(x + dw / 2, y + dh / 2);
+        ctx.closePath();
+        ctx.fill();
+        ctx.shadowColor = 'transparent';
+        // bilah pintu gudang (rolling door)
+        ctx.strokeStyle = 'rgba(120,53,15,0.75)';
+        ctx.lineWidth = 1.5;
+        for (let k = 1; k <= 3; k += 1) {
+          const ly = y - dh / 2 + (dh / 4) * k;
+          ctx.beginPath();
+          ctx.moveTo(x - dw / 2 + 2, ly);
+          ctx.lineTo(x + dw / 2 - 2, ly);
+          ctx.stroke();
+        }
+        ctx.fillStyle = '#78350f';
+        ctx.beginPath();
+        ctx.arc(x, y + dh * 0.18, Math.max(1.8, cellU * 0.06), 0, TAU);
+        ctx.fill();
+        // tiang + bendera keselamatan oranye berkibar
+        const poleTop = y - dh / 2 - cellU * 0.34;
+        ctx.strokeStyle = '#e2e8f0';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(x, y - dh / 2);
+        ctx.lineTo(x, poleTop);
+        ctx.stroke();
+        const wave = Math.sin(t * 7) * cellU * 0.05;
+        ctx.fillStyle = '#fb923c';
+        ctx.beginPath();
+        ctx.moveTo(x, poleTop);
+        ctx.lineTo(x + cellU * 0.34, poleTop + cellU * 0.09 + wave);
+        ctx.lineTo(x, poleTop + cellU * 0.2);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      }
 
       // TROLI GUDANG: bak + dus semen + 2 roda + gagang dorong
       const b = lv.ball;
@@ -586,37 +747,58 @@ export default function ArcadeMazeDrag({ onExit }: { onExit: () => void }): Reac
     <div ref={wrapRef} style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden', background: '#0b1226', fontFamily: FONT }}>
       <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: 'block', touchAction: 'none' }} />
 
-      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 8, zIndex: 5 }}>
-        <div style={{ background: 'rgba(15,23,42,0.55)', borderRadius: 12, padding: '6px 12px', color: '#fff', fontWeight: 800, fontSize: 14 }}>
-          🏗️ Lv {hud.level}
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 8, zIndex: 5, flexWrap: 'wrap' }}>
+        <div style={{ background: 'rgba(15,23,42,0.55)', borderRadius: 12, padding: '6px 12px', color: '#fff', fontWeight: 800, fontSize: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <IconWarehouse /> Lv {hud.level}
         </div>
-        <div style={{ background: 'rgba(15,23,42,0.45)', borderRadius: 12, padding: '6px 10px', color: '#7dd3fc', fontWeight: 800, fontSize: 13 }}>
-          ⏱ {fmt(hud.time)}
+        <div style={{ background: 'rgba(15,23,42,0.45)', borderRadius: 12, padding: '6px 10px', color: '#7dd3fc', fontWeight: 800, fontSize: 13, display: 'flex', alignItems: 'center', gap: 5 }}>
+          <IconClock /> {fmt(hud.time)}
         </div>
-        <div style={{ background: 'rgba(15,23,42,0.45)', borderRadius: 12, padding: '6px 10px', color: '#ffd166', fontWeight: 800, fontSize: 13 }}>
-          🏅 Lv {hud.bestLevel}{hud.bestTime > 0 ? ` • ${fmt(hud.bestTime)}` : ''}
+        <div style={{ background: 'rgba(15,23,42,0.45)', borderRadius: 12, padding: '6px 10px', color: '#4ade80', fontWeight: 800, fontSize: 13, display: 'flex', alignItems: 'center', gap: 5 }}>
+          <IconRing /> Checkpoint {hud.cp}/{hud.cpTotal}
         </div>
+        <div style={{ background: 'rgba(15,23,42,0.45)', borderRadius: 12, padding: '6px 10px', color: '#ffd166', fontWeight: 800, fontSize: 13, display: 'flex', alignItems: 'center', gap: 5 }}>
+          <IconMedal /> Lv {hud.bestLevel}{hud.bestTime > 0 ? ` • ${fmt(hud.bestTime)}` : ''}
+        </div>
+        {hud.lastStars > 0 && (
+          <div style={{ background: 'rgba(15,23,42,0.45)', borderRadius: 12, padding: '4px 8px', display: 'flex', alignItems: 'center' }}>
+            <StarsRow stars={hud.lastStars} size={15} />
+          </div>
+        )}
         <div style={{ flex: 1 }} />
         {(screen === 'play' || screen === 'pause') && (
           <button style={btn} onClick={screen === 'play' ? doPause : doResume} aria-label="Jeda">
-            {screen === 'play' ? '⏸' : '▶'}
+            {screen === 'play' ? <IconPause /> : <IconPlay />}
           </button>
         )}
-        <button style={btn} onClick={toggleMute} aria-label="Bisukan">{muted ? '🔇' : '🔊'}</button>
-        <button style={btn} onClick={onExit} aria-label="Tutup">✕</button>
+        <button style={btn} onClick={toggleMute} aria-label="Bisukan"><IconSound off={muted} /></button>
+        <button style={btn} onClick={onExit} aria-label="Tutup"><IconClose /></button>
       </div>
+
+      {clear && screen === 'play' && (
+        <div style={{ position: 'absolute', inset: 0, zIndex: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', padding: 24 }}>
+          <div style={{ background: 'rgba(10,18,32,0.88)', border: '1px solid rgba(255,209,102,0.45)', borderRadius: 18, padding: '18px 26px', textAlign: 'center', boxShadow: '0 12px 40px rgba(0,0,0,0.5)' }}>
+            <div style={{ color: '#fff', fontWeight: 900, fontSize: 20, marginBottom: 8 }}>Level {clear.level} Selesai!</div>
+            <StarsRow stars={clear.stars} size={30} />
+            <div style={{ color: '#7dd3fc', fontWeight: 800, fontSize: 14, marginTop: 10 }}>
+              Waktu {clear.time.toFixed(1)}s • Par {clear.par.toFixed(1)}s
+            </div>
+            <div style={{ color: '#f1f5f9', fontSize: 12, marginTop: 4 }}>Rating {clear.stars} dari 3 bintang</div>
+          </div>
+        </div>
+      )}
 
       {screen === 'ready' && (
         <Overlay>
-          <div style={{ fontSize: 44 }}>🏗️</div>
+          <div style={{ color: '#ffd166' }}><IconWarehouse size={52} /></div>
           <h2 style={titleStyle}>LABIRIN GUDANG</h2>
-          <p style={textStyle}>Seret troli semen dari ▶ menuju ★ melewati rak-rak gudang. Senggol rak keras-keras = troli balik ke checkpoint ◆ terakhir. Estimator teliti, troli selamat!</p>
-          <button style={primaryBtn} onClick={begin}>Mulai ▶</button>
+          <p style={textStyle}>Seret troli semen dari titik awal hijau menuju pintu gudang emas melewati rak-rak gudang. Senggol rak keras-keras = troli balik ke checkpoint terakhir. Estimator teliti, troli selamat!</p>
+          <button style={{ ...primaryBtn, display: 'flex', alignItems: 'center', gap: 8 }} onClick={begin}>Mulai <IconPlay size={16} /></button>
         </Overlay>
       )}
       {screen === 'pause' && (
         <Overlay>
-          <div style={{ fontSize: 40 }}>⏸</div>
+          <div style={{ color: '#fff' }}><IconPause size={42} /></div>
           <h2 style={titleStyle}>JEDA</h2>
           <p style={textStyle}>Troli lagi parkir di pos satpam. Jangan diganggu.</p>
           <div style={{ display: 'flex', gap: 10 }}>

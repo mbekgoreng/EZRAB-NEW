@@ -6,7 +6,7 @@ import React, { useRef, useState } from 'react';
 import { useGameCanvas, type GameApi, sfx } from '../../../engine2d';
 import { bestKey, getBest, setBest } from '../../../engine2d/best';
 import {
-  createState, stepShip, fireBullet, updateState, mulberry32,
+  createState, stepShip, fireBullet, updateState, mulberry32, rockScore, rockTier,
   LW, LH, SHIP_R, RESPAWN_T,
   type AstroState, type Rock, type Saucer,
 } from './logic';
@@ -108,6 +108,19 @@ function drawBrick(ctx: CanvasRenderingContext2D, r: Rock): void {
   ctx.beginPath(); ctx.moveTo(-w * 0.4, 0); ctx.lineTo(w * 0.4, 0); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(0, -h * 0.4); ctx.lineTo(0, 0); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(-w * 0.2, 0); ctx.lineTo(-w * 0.2, h * 0.4); ctx.stroke();
+  // retakan prosedural pada bata besar & sedang (pecahan kecil polos)
+  const tier = rockTier(r.r);
+  if (tier !== 'kecil') {
+    ctx.strokeStyle = 'rgba(69,10,10,0.65)'; ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.moveTo(-w * 0.3, -h * 0.4); ctx.lineTo(-w * 0.08, -h * 0.05); ctx.lineTo(-w * 0.22, h * 0.3);
+    ctx.stroke();
+    if (tier === 'besar') {
+      ctx.beginPath();
+      ctx.moveTo(w * 0.34, -h * 0.34); ctx.lineTo(w * 0.12, 0); ctx.lineTo(w * 0.28, h * 0.36);
+      ctx.stroke();
+    }
+  }
   // highlight
   ctx.fillStyle = 'rgba(255,255,255,0.22)';
   ctx.fillRect(-w * 0.42, -h * 0.42, w * 0.84, h * 0.16);
@@ -156,8 +169,8 @@ interface TouchBtn { id: string; x: number; y: number; r: number; label: string 
 const BTNS: TouchBtn[] = [
   { id: 'left', x: 46, y: 0, r: 30, label: '⟲' },
   { id: 'right', x: 122, y: 0, r: 30, label: '⟳' },
-  { id: 'thrust', x: 0, y: 0, r: 30, label: '💨' },
-  { id: 'fire', x: 0, y: 0, r: 30, label: '🔩' },
+  { id: 'thrust', x: 0, y: 0, r: 30, label: 'GAS' },
+  { id: 'fire', x: 0, y: 0, r: 30, label: 'PAKU' },
 ];
 
 export default function ArcadeAsteroids({ onExit }: { onExit: () => void }): React.JSX.Element {
@@ -168,7 +181,7 @@ export default function ArcadeAsteroids({ onExit }: { onExit: () => void }): Rea
   const keysRef = useRef({ left: false, right: false, thrust: false });
   const touchRef = useRef({ left: false, right: false, thrust: false });
   const starsRef = useRef<Star[]>(makeStars(110, 7));
-  const fxRef = useRef({ t: 0, deathAt: -9 });
+  const fxRef = useRef({ t: 0, deathAt: -9, levelMsg: 0 });
   const [screen, setScreen] = useState<Screen>('ready');
   const [hud, setHud] = useState<Hud>({ score: 0, lives: 3, level: 1, best: getBest(bestKey(SLUG, 'best')) });
   const [muted, setMuted] = useState(false);
@@ -205,6 +218,7 @@ export default function ArcadeAsteroids({ onExit }: { onExit: () => void }): Rea
       if (!st || screenRef.current !== 'play') return;
       const fx = fxRef.current;
       fx.t += dt;
+      if (fx.levelMsg > 0) fx.levelMsg -= dt;
       const k = keysRef.current;
       const tch = touchRef.current;
       const left = k.left || tch.left;
@@ -215,7 +229,7 @@ export default function ArcadeAsteroids({ onExit }: { onExit: () => void }): Rea
       for (const r of ev.rockHit) {
         explode(r.x, r.y, r.r > 30);
         api.sfx.pop(r.r > 30 ? 0.7 : 1.1);
-        api.scores.add(r.x, r.y - 10, `+${r.r > 30 ? 20 : r.r > 16 ? 50 : 100}`, { color: '#fde68a', size: 18 });
+        api.scores.add(r.x, r.y - 10, `+${rockScore(r.r)}`, { color: '#fde68a', size: 18 });
       }
       for (const sc of ev.saucerHit) {
         explode(sc.x, sc.y, true);
@@ -232,6 +246,7 @@ export default function ArcadeAsteroids({ onExit }: { onExit: () => void }): Rea
       }
       if (ev.leveledUp) {
         api.sfx.chime(2);
+        fx.levelMsg = 2.2;
         pushHudFor(st);
       }
       if (st.over) {
@@ -353,11 +368,24 @@ export default function ArcadeAsteroids({ onExit }: { onExit: () => void }): Rea
           ctx.fillStyle = '#1e293b';
           ctx.beginPath(); ctx.arc(c.x, c.y, b.r, 0, TAU); ctx.fill();
           ctx.strokeStyle = '#67e8f9'; ctx.lineWidth = 2; ctx.stroke();
-          ctx.fillStyle = '#e0f2fe'; ctx.font = '22px system-ui';
+          ctx.fillStyle = '#e0f2fe'; ctx.font = b.label.length > 2 ? '700 11px system-ui' : '22px system-ui';
           ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
           ctx.fillText(b.label, c.x, c.y + 1);
           ctx.restore();
         }
+      }
+
+      if (fxRef.current.levelMsg > 0 && screenRef.current === 'play') {
+        ctx.save();
+        ctx.globalAlpha = Math.min(1, fxRef.current.levelMsg);
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#fde68a'; ctx.font = `900 24px ${FONT}`;
+        ctx.shadowColor = '#f59e0b'; ctx.shadowBlur = 14;
+        ctx.fillText(`LEVEL ${st.level}`, LW / 2, lh * 0.3);
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = '#e0f2fe'; ctx.font = `700 13px ${FONT}`;
+        ctx.fillText('Bata makin banyak & makin cepat!', LW / 2, lh * 0.3 + 24);
+        ctx.restore();
       }
 
       if (screenRef.current === 'ready') {
@@ -366,7 +394,13 @@ export default function ArcadeAsteroids({ onExit }: { onExit: () => void }): Rea
         ctx.textAlign = 'center';
         ctx.fillStyle = '#fff'; ctx.font = `900 30px ${FONT}`;
         ctx.shadowColor = '#f59e0b'; ctx.shadowBlur = 18;
-        ctx.fillText('🧱 HUJAN BATA', LW / 2, lh * 0.32);
+        ctx.fillText('HUJAN BATA', LW / 2, lh * 0.32);
+        // bata mini prosedural mengapit judul
+        for (const bx of [LW / 2 - 118, LW / 2 + 104]) {
+          ctx.fillStyle = '#dc2626'; ctx.fillRect(bx, lh * 0.32 - 13, 15, 10);
+          ctx.strokeStyle = '#7f1d1d'; ctx.lineWidth = 1.4; ctx.strokeRect(bx, lh * 0.32 - 13, 15, 10);
+          ctx.beginPath(); ctx.moveTo(bx, lh * 0.32 - 8); ctx.lineTo(bx + 15, lh * 0.32 - 8); ctx.stroke();
+        }
         ctx.shadowBlur = 0;
         ctx.fillStyle = '#bae6fd'; ctx.font = `700 15px ${FONT}`;
         ctx.fillText(isTouch ? 'Tombol: putar • gas • paku' : '← → putar • ↑ gas • SPASI tembak paku', LW / 2, lh * 0.32 + 34);
@@ -489,8 +523,13 @@ export default function ArcadeAsteroids({ onExit }: { onExit: () => void }): Rea
     <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden', background: '#070b1a', fontFamily: FONT }}>
       <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: 'block', touchAction: 'none' }} />
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 8, zIndex: 5 }}>
-        <div style={{ background: 'rgba(15,23,42,0.6)', borderRadius: 12, padding: '6px 12px', color: '#fde68a', fontWeight: 800, fontSize: 14 }}>⭐ {hud.score}</div>
-        <div style={{ background: 'rgba(15,23,42,0.6)', borderRadius: 12, padding: '6px 10px', color: '#67e8f9', fontWeight: 800, fontSize: 13 }}>🚁 {'❤'.repeat(Math.max(0, hud.lives)) || '—'}</div>
+        <div style={{ background: 'rgba(15,23,42,0.6)', borderRadius: 12, padding: '6px 12px', color: '#fde68a', fontWeight: 800, fontSize: 14 }}>Skor {hud.score}</div>
+        <div style={{ background: 'rgba(15,23,42,0.6)', borderRadius: 12, padding: '6px 10px', color: '#67e8f9', fontWeight: 800, fontSize: 13 }}>
+          Nyawa:{' '}
+          {Array.from({ length: 3 }).map((_, i) => (
+            <span key={i} aria-hidden style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', marginRight: 3, verticalAlign: -1, background: i < hud.lives ? '#22d3ee' : 'rgba(255,255,255,0.25)', border: '1px solid rgba(255,255,255,0.45)' }} />
+          ))}
+        </div>
         <div style={{ background: 'rgba(15,23,42,0.45)', borderRadius: 12, padding: '6px 10px', color: '#c4b5fd', fontWeight: 800, fontSize: 13 }}>Lv {hud.level}</div>
         <div style={{ flex: 1 }} />
         {(screen === 'play' || screen === 'pause') && (
@@ -501,7 +540,7 @@ export default function ArcadeAsteroids({ onExit }: { onExit: () => void }): Rea
       </div>
       {screen === 'pause' && (
         <Overlay>
-          <div style={{ fontSize: 44 }}>🛸</div>
+          <BurstBadge label="II" color="#64748b" />
           <h2 style={titleStyle}>JEDA</h2>
           <p style={textStyle}>Bata tidak akan menunggumu. Mandor marah kalau site berantakan.</p>
           <div style={{ display: 'flex', gap: 10 }}>
@@ -512,14 +551,14 @@ export default function ArcadeAsteroids({ onExit }: { onExit: () => void }): Rea
       )}
       {screen === 'over' && (
         <Overlay>
-          <div style={{ fontSize: 44 }}>💥</div>
+          <BurstBadge label="!" color="#dc2626" />
           <h2 style={titleStyle}>DRONE JATUH!</h2>
           <p style={{ ...textStyle, fontSize: 16 }}>
             Skor: <b>{hud.score}</b> • Level: <b>{hud.level}</b> • Terbaik: <b>{hud.best}</b>
             {hud.score > 0 && hud.score >= hud.best && <span style={{ color: '#4ade80', fontWeight: 900 }}> — REKOR BARU!</span>}
           </p>
           <div style={{ display: 'flex', gap: 10 }}>
-            <button style={primaryBtn} onClick={() => { apiRef.current?.sfx.ensure(); restart(); }}>Main Lagi 🔁</button>
+            <button style={primaryBtn} onClick={() => { apiRef.current?.sfx.ensure(); restart(); }}>Main Lagi</button>
             <button style={secondaryBtn} onClick={onExit}>Tutup ✕</button>
           </div>
         </Overlay>
@@ -532,6 +571,13 @@ const titleStyle: React.CSSProperties = { color: '#fff', fontSize: 26, fontWeigh
 const textStyle: React.CSSProperties = { color: '#e2e8f0', fontSize: 14, lineHeight: 1.55, margin: '6px 0 12px', maxWidth: 300 };
 const primaryBtn: React.CSSProperties = { background: 'linear-gradient(135deg,#22d3ee,#818cf8)', color: '#0b1030', fontWeight: 900, fontSize: 16, border: 'none', borderRadius: 14, padding: '14px 26px', cursor: 'pointer', minHeight: 52, fontFamily: FONT, boxShadow: '0 6px 20px rgba(34,211,238,0.4)' };
 const secondaryBtn: React.CSSProperties = { background: 'rgba(255,255,255,0.14)', color: '#fff', fontWeight: 800, fontSize: 15, border: '1px solid rgba(255,255,255,0.35)', borderRadius: 14, padding: '12px 20px', cursor: 'pointer', minHeight: 52, fontFamily: FONT };
+/** Lencana ledakan prosedural: bintang clip-path CSS + label teks. */
+function BurstBadge({ label, color }: { label: string; color: string }): React.JSX.Element {
+  return (
+    <div aria-hidden style={{ width: 58, height: 58, background: color, clipPath: 'polygon(50% 0%, 61% 12%, 76% 5%, 79% 20%, 95% 24%, 90% 39%, 100% 50%, 90% 61%, 95% 76%, 79% 80%, 76% 95%, 61% 88%, 50% 100%, 39% 88%, 24% 95%, 21% 80%, 5% 76%, 10% 61%, 0% 50%, 10% 39%, 5% 24%, 21% 20%, 24% 5%, 39% 12%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 20, fontWeight: 900 }}>{label}</div>
+  );
+}
+
 function Overlay({ children }: { children: React.ReactNode }): React.JSX.Element {
   return (
     <div style={{ position: 'absolute', inset: 0, zIndex: 10, background: 'rgba(7,11,26,0.72)', backdropFilter: 'blur(3px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: 24 }}>

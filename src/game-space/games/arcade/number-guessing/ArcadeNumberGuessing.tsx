@@ -1,14 +1,18 @@
 /**
  * Tebak Volume — Mandor butuh beton sekian m³ untuk pengecoran hari ini.
- * Tebak volumenya (1–50 m³) lewat kolom input teks (tanpa mic!).
- * Petunjuk PANAS/DINGIN memandumu makin dekat. 8x kesempatan!
+ * Tebak volumenya lewat kolom input teks (tanpa mic!).
+ * Petunjuk PANAS/DINGIN memandumu makin dekat.
+ * Sistem LEVEL: Level 1 = 1–50 m³ / 8 kesempatan; menang naik level —
+ * rentang berlipat dua, kesempatan +1, pita panas/dingin terskala,
+ * skor terakumulasi lintas level. Kehabisan kesempatan = game over.
  */
 import React, { useRef, useState } from 'react';
 import { useGameCanvas, sfx, type GameApi } from '../../../engine2d';
 import { bestKey, getBest, setBest } from '../../../engine2d/best';
 import {
-  MIN_VOL, MAX_VOL, MAX_ATTEMPTS, newTarget, heatFor, heatLabel,
-  directionHint, scoreFor, parseGuess, type Heat,
+  MIN_VOL, MAX_VOL, MAX_ATTEMPTS, newTargetForLevel, heatForLevel, heatLabel,
+  directionHint, directionFor, levelSpec, nextLevel, levelScore, addRoundScore,
+  isRoundOver, parseGuessForLevel, type Heat, type Direction,
 } from './logic';
 
 const SLUG = 'number-guessing';
@@ -20,9 +24,13 @@ const ARCADE =
   typeof window !== 'undefined' &&
   new URLSearchParams(window.location.search).has('arcade');
 
-type Screen = 'ready' | 'play' | 'over';
-interface GuessRec { g: number; heat: Heat }
-interface Hud { attempts: number; best: number; won: boolean | null; score: number; lastHeat: Heat | null }
+type Screen = 'ready' | 'play' | 'levelup' | 'over';
+interface GuessRec { g: number; heat: Heat; dir: Direction }
+interface Hud {
+  attempts: number; best: number; won: boolean | null; score: number;
+  totalScore: number; level: number; maxVol: number; maxAttempts: number;
+  lastHeat: Heat | null; lastDir: Direction | null; revealed: number;
+}
 
 const HEAT_COLOR: Record<Heat, string> = {
   tepat: '#4ade80', panas: '#ef4444', hangat: '#f59e0b', dingin: '#38bdf8', beku: '#a5b4fc',
@@ -33,11 +41,19 @@ export default function ArcadeNumberGuessing({ onExit }: { onExit: () => void })
   const rngRef = useRef<() => number>(() => Math.random());
   const screenRef = useRef<Screen>('ready');
   const targetRef = useRef(25);
+  const levelRef = useRef(1);
+  const totalScoreRef = useRef(0);
+  const roundScoreRef = useRef(0);
+  const roundOverRef = useRef(false);
   const guessesRef = useRef<GuessRec[]>([]);
   const fxRef = useRef({ t: 0, pourT: 0, confettiT: 0, shakeMsg: 0, revealed: 0 });
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [screen, setScreen] = useState<Screen>('ready');
-  const [hud, setHud] = useState<Hud>({ attempts: 0, best: getBest(bestKey(SLUG, 'best')), won: null, score: 0, lastHeat: null });
+  const [hud, setHud] = useState<Hud>({
+    attempts: 0, best: getBest(bestKey(SLUG, 'best')), won: null, score: 0,
+    totalScore: 0, level: 1, maxVol: MAX_VOL, maxAttempts: MAX_ATTEMPTS,
+    lastHeat: null, lastDir: null, revealed: 0,
+  });
   const [history, setHistory] = useState<GuessRec[]>([]);
   const [err, setErr] = useState('');
   const [msg, setMsg] = useState('');
@@ -49,35 +65,67 @@ export default function ArcadeNumberGuessing({ onExit }: { onExit: () => void })
 
   const pushHud = (): void => {
     const g = guessesRef.current;
+    const spec = levelSpec(levelRef.current);
     setHud({
       attempts: g.length,
       best: getBest(bestKey(SLUG, 'best')),
       won: hudRef.current.won,
       score: hudRef.current.score,
+      totalScore: totalScoreRef.current,
+      level: spec.level,
+      maxVol: spec.max,
+      maxAttempts: spec.maxAttempts,
       lastHeat: g.length > 0 ? g[g.length - 1].heat : null,
+      lastDir: g.length > 0 ? g[g.length - 1].dir : null,
+      revealed: fxRef.current.revealed,
     });
   };
   const hudRef = useRef({ won: null as boolean | null, score: 0 });
   hudRef.current = { won: hud.won, score: hud.score };
 
+  /** Mulai ronde untuk level saat ini (level & total skor dipertahankan). */
   const startRound = (): void => {
-    targetRef.current = newTarget(rngRef.current);
+    const spec = levelSpec(levelRef.current);
+    targetRef.current = newTargetForLevel(rngRef.current, spec.level);
     guessesRef.current = [];
+    roundOverRef.current = false;
+    roundScoreRef.current = 0;
+    fxRef.current.revealed = 0;
     setHistory([]);
     setErr(''); setMsg('');
     setRawBoth('');
     hudRef.current = { won: null, score: 0 };
-    setHud({ attempts: 0, best: getBest(bestKey(SLUG, 'best')), won: null, score: 0, lastHeat: null });
+    setHud({
+      attempts: 0, best: getBest(bestKey(SLUG, 'best')), won: null, score: 0,
+      totalScore: totalScoreRef.current, level: spec.level, maxVol: spec.max,
+      maxAttempts: spec.maxAttempts, lastHeat: null, lastDir: null, revealed: 0,
+    });
     screenRef.current = 'play';
     setScreen('play');
     window.setTimeout(() => inputRef.current?.focus({ preventScroll: true }), 60);
   };
 
+  /** Permainan baru dari Level 1 dengan total skor nol. */
+  const startGame = (): void => {
+    levelRef.current = 1;
+    totalScoreRef.current = 0;
+    startRound();
+  };
+
+  /** Naik level sesudah menang ronde, total skor tetap terakumulasi. */
+  const advanceLevel = (): void => {
+    levelRef.current = nextLevel(levelRef.current);
+    startRound();
+  };
+
   const submit = (): void => {
     const api = apiRef.current;
-    if (screenRef.current !== 'play') return;
+    // Kunci input begitu ronde berakhir (regresi: tebakan sempat masih
+    // diterima selama jeda transisi sehingga hasil/skor bisa tertimpa).
+    if (screenRef.current !== 'play' || roundOverRef.current) return;
+    const spec = levelSpec(levelRef.current);
     sfx.ensure();
-    const parsed = parseGuess(rawRef.current);
+    const parsed = parseGuessForLevel(rawRef.current, spec.level);
     if (!parsed.ok) {
       setErr(parsed.error);
       fxRef.current.shakeMsg = 0.4;
@@ -86,14 +134,19 @@ export default function ArcadeNumberGuessing({ onExit }: { onExit: () => void })
     }
     setErr('');
     const v = parsed.value;
-    const heat = heatFor(v, targetRef.current);
-    guessesRef.current.push({ g: v, heat });
+    const heat = heatForLevel(v, targetRef.current, spec.level);
+    guessesRef.current.push({ g: v, heat, dir: directionFor(v, targetRef.current) });
     setHistory([...guessesRef.current]);
     setRawBoth('');
     fxRef.current.pourT = 1.1; // animasi cor dari molen
+    if (isRoundOver(heat, guessesRef.current.length, spec.maxAttempts)) {
+      roundOverRef.current = true;
+    }
     if (heat === 'tepat') {
-      const sc = scoreFor(guessesRef.current.length);
-      const nb = setBest(bestKey(SLUG, 'best'), sc);
+      const sc = levelScore(guessesRef.current.length, spec.level);
+      roundScoreRef.current = sc;
+      totalScoreRef.current = addRoundScore(totalScoreRef.current, guessesRef.current.length, spec.level);
+      const nb = setBest(bestKey(SLUG, 'best'), totalScoreRef.current);
       hudRef.current = { won: true, score: sc };
       fxRef.current.confettiT = 2.2;
       sfx.chime(5, 523);
@@ -103,9 +156,9 @@ export default function ArcadeNumberGuessing({ onExit }: { onExit: () => void })
           speed: [100, 420], life: [0.6, 1.6], size: [2, 6], shape: 'rect', rotation: true,
         });
       }
-      setMsg(`🎯 TEPAT! ${v} m³ — coran hari ini aman, Bos!`);
+      setMsg(`TEPAT! ${v} m³ — coran level ini aman, Bos!`);
       pushHud();
-      window.setTimeout(() => { screenRef.current = 'over'; setScreen('over'); }, 1400);
+      window.setTimeout(() => { screenRef.current = 'levelup'; setScreen('levelup'); }, 1400);
       void nb;
       return;
     }
@@ -115,11 +168,12 @@ export default function ArcadeNumberGuessing({ onExit }: { onExit: () => void })
     else sfx.thud(0.6);
     const dir = directionHint(v, targetRef.current);
     setMsg(`${heatLabel(heat)} ${dir}`);
-    if (guessesRef.current.length >= MAX_ATTEMPTS) {
-      hudRef.current = { won: false, score: 0 };
+    if (guessesRef.current.length >= spec.maxAttempts) {
+      hudRef.current = { won: false, score: roundScoreRef.current };
       fxRef.current.revealed = targetRef.current;
+      void setBest(bestKey(SLUG, 'best'), totalScoreRef.current);
       sfx.fail();
-      setMsg(`😅 Habis! Mandor butuh ${targetRef.current} m³. Besok coba lagi ya!`);
+      setMsg(`Habis! Mandor butuh ${targetRef.current} m³. Besok coba lagi ya!`);
       pushHud();
       window.setTimeout(() => { screenRef.current = 'over'; setScreen('over'); }, 1600);
       return;
@@ -132,7 +186,7 @@ export default function ArcadeNumberGuessing({ onExit }: { onExit: () => void })
     apiRef.current = api;
     setMuted(sfx.muted);
     rngRef.current = mulberry32((Date.now() % 100000) | 0);
-    targetRef.current = newTarget(rngRef.current);
+    targetRef.current = newTargetForLevel(rngRef.current, 1);
 
     api.setUpdate((dt) => {
       const fx = fxRef.current;
@@ -162,14 +216,15 @@ export default function ArcadeNumberGuessing({ onExit }: { onExit: () => void })
         ctx.textAlign = 'center';
         ctx.fillStyle = '#fff'; ctx.font = `900 28px ${FONT}`;
         ctx.shadowColor = '#f59e0b'; ctx.shadowBlur = 16;
-        ctx.fillText('🚧 TEBAK VOLUME', LW / 2, lh * 0.34);
+        ctx.fillText('TEBAK VOLUME', LW / 2, lh * 0.34);
         ctx.shadowBlur = 0;
         ctx.fillStyle = '#bae6fd'; ctx.font = `700 14px ${FONT}`;
         ctx.fillText('Mandor butuh beton untuk cor hari ini.', LW / 2, lh * 0.34 + 34);
         ctx.fillText(`Tebak volumenya (${MIN_VOL}–${MAX_VOL} m³) lewat kolom input.`, LW / 2, lh * 0.34 + 56);
-        ctx.fillText('Ikuti petunjuk PANAS 🔥 / DINGIN 🧊 — makin panas makin dekat!', LW / 2, lh * 0.34 + 78);
+        ctx.fillText('Ikuti petunjuk PANAS / DINGIN — makin panas makin dekat!', LW / 2, lh * 0.34 + 78);
         ctx.fillStyle = '#fde68a'; ctx.font = `600 13px ${FONT}`;
-        ctx.fillText(`Kamu punya ${MAX_ATTEMPTS} kesempatan.`, LW / 2, lh * 0.34 + 100);
+        ctx.fillText(`Kamu punya ${MAX_ATTEMPTS} kesempatan di Level 1.`, LW / 2, lh * 0.34 + 100);
+        ctx.fillText('Menang naik level: rentang melebar, skor menumpuk!', LW / 2, lh * 0.34 + 120);
         const pulse = 0.7 + 0.3 * Math.sin(t * 5);
         ctx.globalAlpha = pulse;
         ctx.fillStyle = '#fde68a'; ctx.font = `900 17px ${FONT}`;
@@ -181,11 +236,11 @@ export default function ArcadeNumberGuessing({ onExit }: { onExit: () => void })
 
     api.input.onDown = () => {
       sfx.ensure();
-      if (screenRef.current === 'ready') startRound();
+      if (screenRef.current === 'ready') startGame();
     };
 
     const kd = (e: KeyboardEvent): void => {
-      if (e.code === 'Space' && screenRef.current === 'ready') { e.preventDefault(); sfx.ensure(); startRound(); }
+      if (e.code === 'Space' && screenRef.current === 'ready') { e.preventDefault(); sfx.ensure(); startGame(); }
     };
     window.addEventListener('keydown', kd);
     api.loop.start();
@@ -196,7 +251,11 @@ export default function ArcadeNumberGuessing({ onExit }: { onExit: () => void })
         get target() { return targetRef.current; },
         get attempts() { return guessesRef.current.length; },
         get won() { return hudRef.current.won; },
-        start: () => startRound(),
+        get level() { return levelRef.current; },
+        get totalScore() { return totalScoreRef.current; },
+        get roundOver() { return roundOverRef.current; },
+        start: () => startGame(),
+        nextLevel: () => advanceLevel(),
         guess: (v: number) => { setRawBoth(String(v)); window.setTimeout(() => submit(), 0); },
         setRawDirect: (v: string) => setRawBoth(v),
       };
@@ -215,31 +274,39 @@ export default function ArcadeNumberGuessing({ onExit }: { onExit: () => void })
     display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontFamily: FONT,
   };
   const lastHeat = hud.lastHeat;
-  const remaining = MAX_ATTEMPTS - hud.attempts;
+  const remaining = hud.maxAttempts - hud.attempts;
+  const nextSpec = levelSpec(nextLevel(hud.level));
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden', background: '#101728', fontFamily: FONT, display: 'flex', flexDirection: 'column' }}>
       <div style={{ position: 'relative', flex: '0 0 42%', minHeight: 220 }}>
         <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: 'block', touchAction: 'manipulation' }} />
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 8, zIndex: 5 }}>
-          <div style={{ background: 'rgba(15,23,42,0.6)', borderRadius: 12, padding: '6px 12px', color: '#fde68a', fontWeight: 800, fontSize: 14 }}>🏆 {hud.best}</div>
-          <div style={{ background: 'rgba(15,23,42,0.6)', borderRadius: 12, padding: '6px 10px', color: '#bae6fd', fontWeight: 800, fontSize: 13 }}>
-            {Array.from({ length: MAX_ATTEMPTS }, (_, i) => (
-              <span key={i} style={{ opacity: i < hud.attempts ? 0.25 : 1, marginRight: 2 }}>🪖</span>
+          <div style={{ background: 'rgba(15,23,42,0.6)', borderRadius: 12, padding: '6px 12px', color: '#fde68a', fontWeight: 800, fontSize: 14 }}>Terbaik: {hud.best}</div>
+          <div style={{ background: 'rgba(15,23,42,0.6)', borderRadius: 12, padding: '6px 12px', color: '#fff', fontWeight: 900, fontSize: 14 }}>Lv {hud.level}</div>
+          <div style={{ background: 'rgba(15,23,42,0.6)', borderRadius: 12, padding: '8px 10px', display: 'flex', alignItems: 'center', gap: 4 }} aria-label={`Sisa ${remaining} kesempatan`}>
+            {Array.from({ length: hud.maxAttempts }, (_, i) => (
+              <span key={i} style={{ width: 10, height: 10, borderRadius: '50%', background: i < hud.attempts ? 'rgba(148,163,184,0.35)' : '#f59e0b', display: 'inline-block' }} />
             ))}
           </div>
           <div style={{ flex: 1 }} />
-          <button style={btn} onClick={toggleMute} aria-label="Bisukan">{muted ? '🔇' : '🔊'}</button>
-          <button style={btn} onClick={onExit} aria-label="Tutup">✕</button>
+          <button style={btn} onClick={toggleMute} aria-label="Bisukan">{muted ? <SpeakerOffIcon /> : <SpeakerIcon />}</button>
+          <button style={btn} onClick={onExit} aria-label="Tutup"><CloseIcon /></button>
         </div>
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '12px 14px 16px', background: 'linear-gradient(180deg,#16202f,#0d1420)', color: '#e2e8f0' }}>
         {screen === 'play' && (
           <>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-              <div style={{ fontWeight: 900, fontSize: 15, color: '#fff' }}>🚧 Berapa m³ cor hari ini?</div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4, gap: 8, flexWrap: 'wrap' }}>
+              <div style={{ fontWeight: 900, fontSize: 15, color: '#fff' }}>Berapa m³ cor hari ini?</div>
               <div style={{ fontSize: 12, fontWeight: 700, color: remaining <= 2 ? '#f87171' : '#94a3b8' }}>Sisa: {remaining} tebak</div>
+            </div>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', fontSize: 12, fontWeight: 800, color: '#bae6fd', marginBottom: 8 }}>
+              <span>Level {hud.level}</span>
+              <span>Rentang {MIN_VOL}–{hud.maxVol} m³</span>
+              <span>Kesempatan {hud.maxAttempts}x</span>
+              <span style={{ color: '#fde68a' }}>Total skor: {hud.totalScore}</span>
             </div>
             <div style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
               <div style={{ flex: 1, display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.07)', border: '2px solid #f59e0b', borderRadius: 14, padding: '4px 12px' }}>
@@ -248,7 +315,7 @@ export default function ArcadeNumberGuessing({ onExit }: { onExit: () => void })
                   value={raw}
                   onChange={(e) => setRawBoth(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') submit(); }}
-                  placeholder={`${MIN_VOL}–${MAX_VOL}`}
+                  placeholder={`${MIN_VOL}–${hud.maxVol}`}
                   inputMode="numeric"
                   autoComplete="off"
                   aria-label="Tebakan volume m3"
@@ -256,21 +323,37 @@ export default function ArcadeNumberGuessing({ onExit }: { onExit: () => void })
                 />
                 <span style={{ color: '#94a3b8', fontWeight: 800 }}>m³</span>
               </div>
-              <button onClick={submit} style={{ ...primaryBtn, minHeight: 56, padding: '10px 22px' }}>COR! 🧱</button>
+              <button onClick={submit} style={{ ...primaryBtn, minHeight: 56, padding: '10px 22px' }}>COR!</button>
             </div>
             {err && (
               <div style={{
                 color: '#fecaca', background: 'rgba(127,29,29,0.45)', border: '1px solid #ef4444',
                 borderRadius: 10, padding: '8px 12px', fontSize: 13, fontWeight: 700, marginBottom: 6,
                 transform: fxRef.current.shakeMsg > 0 ? `translateX(${Math.sin(fxRef.current.shakeMsg * 60) * 6}px)` : undefined,
-              }}>⚠️ {err}</div>
+              }}><b>Perhatian:</b> {err}</div>
             )}
             {msg && !err && (
               <div style={{
                 color: '#fff', background: lastHeat ? `${HEAT_COLOR[lastHeat]}33` : 'rgba(255,255,255,0.06)',
                 border: `1px solid ${lastHeat ? HEAT_COLOR[lastHeat] : '#475569'}`,
                 borderRadius: 10, padding: '8px 12px', fontSize: 14, fontWeight: 800, marginBottom: 6,
-              }}>{msg}</div>
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ flex: 1 }}>{msg}</span>
+                  {hud.lastDir === 'kurang' && <ArrowIcon dir="up" />}
+                  {hud.lastDir === 'lebih' && <ArrowIcon dir="down" />}
+                </div>
+                {lastHeat && (
+                  <div aria-label={`Termometer: ${heatLabel(lastHeat)}`} style={{ marginTop: 8 }}>
+                    <div style={{ height: 10, borderRadius: 6, background: 'rgba(2,6,23,0.55)', overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${heatPos(lastHeat)}%`, borderRadius: 6, background: 'linear-gradient(90deg,#38bdf8,#a5b4fc,#f59e0b,#ef4444)', transition: 'width 300ms ease' }} />
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#cbd5e1', marginTop: 2 }}>
+                      <span>Dingin</span><span>{heatLabel(lastHeat)}</span><span>Panas</span>
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
             {history.length > 0 && (
               <div style={{ marginTop: 10 }}>
@@ -280,45 +363,113 @@ export default function ArcadeNumberGuessing({ onExit }: { onExit: () => void })
                     <div key={i} style={{
                       background: 'rgba(255,255,255,0.06)', border: `2px solid ${HEAT_COLOR[h.heat]}`,
                       borderRadius: 12, padding: '8px 12px', fontSize: 14, fontWeight: 800, color: '#fff',
+                      display: 'flex', alignItems: 'center', gap: 6,
                     }}>
                       {h.g} m³ <span style={{ fontWeight: 700, fontSize: 12 }}>{heatLabel(h.heat)}</span>
+                      {h.dir === 'kurang' && <ArrowIcon dir="up" small />}
+                      {h.dir === 'lebih' && <ArrowIcon dir="down" small />}
                     </div>
                   ))}
                 </div>
                 {/* baris petunjuk visual panas/dingin */}
                 <div style={{ marginTop: 10, height: 14, borderRadius: 8, background: 'linear-gradient(90deg,#38bdf8,#a5b4fc,#f59e0b,#ef4444)', position: 'relative', overflow: 'hidden' }}>
                   {history.map((h, i) => {
-                    return <div key={i} style={{ position: 'absolute', left: `${(i / MAX_ATTEMPTS) * 100}%`, top: 0, bottom: 0, width: `${100 / MAX_ATTEMPTS}%`, background: 'rgba(2,6,23,0.55)', borderRight: '1px solid rgba(255,255,255,0.4)' }} title={`${h.g}`} />;
+                    return <div key={i} style={{ position: 'absolute', left: `${(i / hud.maxAttempts) * 100}%`, top: 0, bottom: 0, width: `${100 / hud.maxAttempts}%`, background: 'rgba(2,6,23,0.55)', borderRight: '1px solid rgba(255,255,255,0.4)' }} title={`${h.g}`} />;
                   })}
                   {lastHeat && (
                     <div style={{ position: 'absolute', top: -2, bottom: -2, width: 4, borderRadius: 2, background: '#fff', boxShadow: `0 0 8px ${HEAT_COLOR[lastHeat]}`, left: `calc(${heatPos(lastHeat)}% - 2px)` }} />
                   )}
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#64748b', marginTop: 2 }}>
-                  <span>🧊 dingin</span><span>🔥 panas</span>
+                  <span>Dingin</span><span>Panas</span>
                 </div>
               </div>
             )}
           </>
         )}
+        {screen === 'levelup' && (
+          <Overlay>
+            <ResultIcon won />
+            <h2 style={titleStyle}>LEVEL {hud.level} SELESAI!</h2>
+            <p style={{ ...textStyle, fontSize: 16 }}>
+              Tebakan tepat dalam <b>{hud.attempts}x</b> percobaan — skor ronde <b>+{hud.score}</b>!<br />
+              Total skor: <b>{hud.totalScore}</b> · Terbaik: <b>{hud.best}</b><br />
+              Level berikutnya: rentang <b>{MIN_VOL}–{nextSpec.max} m³</b>, <b>{nextSpec.maxAttempts}x</b> kesempatan.
+            </p>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
+              <button style={primaryBtn} onClick={() => { sfx.ensure(); advanceLevel(); }}>Lanjut Level {nextSpec.level}</button>
+              <button style={secondaryBtn} onClick={onExit}>Tutup</button>
+            </div>
+          </Overlay>
+        )}
         {screen === 'over' && (
           <Overlay>
-            <div style={{ fontSize: 48 }}>{hud.won ? '🎉' : '😅'}</div>
-            <h2 style={titleStyle}>{hud.won ? 'CORAN AMAN, BOS!' : 'MOLEN PULANG DULU'}</h2>
+            <ResultIcon won={false} />
+            <h2 style={titleStyle}>MOLEN PULANG DULU</h2>
             <p style={{ ...textStyle, fontSize: 16 }}>
-              {hud.won
-                ? <>Tebakan tepat dalam <b>{hud.attempts}x</b> percobaan — skor <b>{hud.score}</b>!<br />Terbaik: <b>{hud.best}</b>
-                  {hud.score > 0 && hud.score >= hud.best && <span style={{ color: '#4ade80', fontWeight: 900 }}> — REKOR BARU!</span>}</>
-                : <>Volume yang benar: <b>{fxRef.current.revealed} m³</b>.<br />Mandor: "Besok bawa kalkulator ya!" 😄</>}
+              Volume yang benar: <b>{hud.revealed} m³</b>.<br />
+              Kamu mencapai <b>Level {hud.level}</b> dengan total skor <b>{hud.totalScore}</b>.<br />
+              Terbaik: <b>{hud.best}</b><br />
+              Mandor: &quot;Besok bawa kalkulator ya!&quot;
             </p>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button style={primaryBtn} onClick={() => { sfx.ensure(); startRound(); }}>Main Lagi 🔁</button>
-              <button style={secondaryBtn} onClick={onExit}>Tutup ✕</button>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
+              <button style={primaryBtn} onClick={() => { sfx.ensure(); startGame(); }}>Main Lagi</button>
+              <button style={secondaryBtn} onClick={onExit}>Tutup</button>
             </div>
           </Overlay>
         )}
       </div>
     </div>
+  );
+}
+
+/** Ikon panah arah prosedural (SVG): naik = tambah volume, turun = kurangi. */
+function ArrowIcon({ dir, small }: { dir: 'up' | 'down'; small?: boolean }): React.JSX.Element {
+  const size = small ? 14 : 20;
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true" style={{ flex: '0 0 auto' }}>
+      {dir === 'up'
+        ? <path d="M12 20V4M5 11l7-7 7 7" stroke="#4ade80" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+        : <path d="M12 4v16M5 13l7 7 7-7" stroke="#38bdf8" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />}
+    </svg>
+  );
+}
+
+function SpeakerIcon(): React.JSX.Element {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M4 9v6h4l5 4V5L8 9H4z" fill="#fff" />
+      <path d="M16 9c1.2 1.6 1.2 4.4 0 6M18.5 6.5c2.4 3.2 2.4 7.8 0 11" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function SpeakerOffIcon(): React.JSX.Element {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M4 9v6h4l5 4V5L8 9H4z" fill="#fff" />
+      <path d="M16 9l6 6M22 9l-6 6" stroke="#f87171" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function CloseIcon(): React.JSX.Element {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M5 5l14 14M19 5L5 19" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+/** Ikon hasil prosedural: centang hijau saat naik level, silang saat game over. */
+function ResultIcon({ won }: { won: boolean }): React.JSX.Element {
+  return (
+    <svg width="64" height="64" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+      <circle cx="32" cy="32" r="29" fill={won ? 'rgba(74,222,128,0.18)' : 'rgba(248,113,113,0.18)'} stroke={won ? '#4ade80' : '#f87171'} strokeWidth="3" />
+      {won
+        ? <path d="M20 33l8 8 16-18" stroke="#4ade80" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
+        : <path d="M23 23l18 18M41 23L23 41" stroke="#f87171" strokeWidth="5" strokeLinecap="round" />}
+    </svg>
   );
 }
 
@@ -416,7 +567,7 @@ function drawScene(
   ctx.fillStyle = 'rgba(255,255,255,0.35)';
   ctx.beginPath(); ctx.arc(tx + tw / 2 - 4, ty + th + 10, 5, 0, TAU); ctx.fill();
   ctx.fillStyle = '#fff'; ctx.font = `900 12px ${FONT}`; ctx.textAlign = 'center';
-  ctx.fillText('🌡️', tx + tw / 2, ty - 10);
+  ctx.fillText('SUHU', tx + tw / 2, ty - 10);
   if (last) {
     ctx.font = `900 13px ${FONT}`;
     ctx.fillStyle = '#fff';

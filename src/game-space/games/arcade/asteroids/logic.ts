@@ -265,4 +265,31 @@ export function updateState(st: AstroState, dt: number, rng: () => number): Step
   return ev;
 }
 
+/* --- Gelombang 3: tingkatan bata & progresi level (murni) --- */
+
+export type RockTier = 'besar' | 'sedang' | 'kecil';
+
+/** Tingkatan bata dari radiusnya — ambang yang sama dengan rockScore. */
+export function rockTier(r: number): RockTier {
+  if (r > 30) return 'besar';
+  if (r > 16) return 'sedang';
+  return 'kecil';
+}
+
+/** Label tingkatan untuk umpan balik skor/HUD. */
+export function rockTierLabel(r: number): string {
+  const t = rockTier(r);
+  return t === 'besar' ? 'Bata Besar' : t === 'sedang' ? 'Bata Sedang' : 'Pecahan Bata';
+}
+
+/** Jumlah bata awal sebuah level (selaras spawnLevelRocks). */
+export function levelRockCount(level: number): number {
+  return Math.min(3 + level, 9);
+}
+
+/** Kecepatan dasar bata sebuah level (selaras spawnLevelRocks). */
+export function levelRockSpeed(level: number): number {
+  return 40 + level * 6;
+}
+
 export const __priv = { clamp, rand };

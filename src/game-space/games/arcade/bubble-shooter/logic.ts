@@ -132,6 +132,32 @@ export function colorsForLevel(level: number): number {
   return Math.min(6, 4 + Math.floor(level / 2));
 }
 
+/* --- Gelombang 3: identitas material & hitung mundur plafon (murni) --- */
+
+/**
+ * Nama material per indeks warna — satu kamus bersama HUD/tutorial/renderer.
+ * Tiap warna juga punya glif prosedural sendiri di renderer (pembedaan
+ * bentuk, bukan warna saja).
+ */
+export const MATERIAL_NAMES = [
+  'Semen Abu', 'Pasir Kuning', 'Bata Merah', 'Pipa Biru', 'Cat Hijau', 'Cat Ungu',
+] as const;
+
+export function materialName(color: number): string {
+  return MATERIAL_NAMES[((color % MATERIAL_NAMES.length) + MATERIAL_NAMES.length) % MATERIAL_NAMES.length];
+}
+
+/** Tembakan tersisa sebelum langit-langit turun (siklus 5 tembakan). */
+export function shotsUntilCeiling(shots: number): number {
+  const r = ((shots % 5) + 5) % 5;
+  return r === 0 ? 5 : 5 - r;
+}
+
+/** Total skor satu snap: letusan + runtuhan yang menggantung. */
+export function snapScore(popped: number, dropped: number): number {
+  return scorePop(popped) + scoreDrop(dropped);
+}
+
 /** Skor: letusan 10/biji, yang jatuh 20/biji, bonus level 500. */
 export function scorePop(n: number): number {
   return n * 10;

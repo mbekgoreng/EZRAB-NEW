@@ -10,6 +10,7 @@ import { popText } from '../../../engine2d/juice2d';
 import {
   PUZZLES, computeClues, solutionAt, checkWin, emptyMarks,
   scoreFor, findHintCell, rowComplete, colComplete,
+  clueSatisfied, pauseToggleFor,
   type CellMark, type NonogramPuzzle,
 } from './logic';
 
@@ -19,6 +20,9 @@ const BK = bestKey('bongkar-gambar', 'best');
 type Screen = 'tutorial' | 'play' | 'pause' | 'over';
 
 interface Flash { r: number; c: number; age: number; ok: boolean; }
+
+/** Centang vektor sesaat di tepi baris/kolom yang baru selesai (pengganti glif teks). */
+interface LineCheck { axis: 'row' | 'col'; idx: number; age: number; }
 
 interface S {
   puzzle: NonogramPuzzle;
@@ -32,6 +36,7 @@ interface S {
   over: boolean;
   won: boolean;
   flashes: Flash[];
+  lineChecks: LineCheck[];
   reveal: number; // 0..1 animasi kemenangan
   t: number;
 }
@@ -90,6 +95,7 @@ export default function ArcadeNonogram({ onExit }: { onExit: () => void }): Reac
       over: false,
       won: false,
       flashes: [],
+      lineChecks: [],
       reveal: 0,
       t: 0,
     });
@@ -116,7 +122,7 @@ export default function ArcadeNonogram({ onExit }: { onExit: () => void }): Reac
       const nb = setBest(BK, s.score);
       sfx.chime(5);
       const wrap = wrapRef.current;
-      if (wrap) popText(wrap, `${s.puzzle.emoji} ${s.puzzle.name.toUpperCase()} TERUNGKAP!`, { size: 26, color: '#fde047' });
+      if (wrap) popText(wrap, `${s.puzzle.name.toUpperCase()} TERUNGKAP!`, { size: 26, color: '#fde047' });
       api.particles.spawn(api.W / 2, api.H * 0.42, {
         count: 70, colors: ['#fde047', '#fbbf24', '#fff7d6', '#fb923c'],
         speed: [80, 360], life: [0.7, 1.3], size: [2, 6], gravity: 260, shape: 'rect', rotation: true,
@@ -127,22 +133,17 @@ export default function ArcadeNonogram({ onExit }: { onExit: () => void }): Reac
     };
 
     const checkLines = (): void => {
-      const g = geom(api.W, api.H);
       for (let r = 0; r < 10; r += 1) {
         if (!s.rowsDone[r] && rowComplete(s.puzzle.grid, s.marks, r)) {
           s.rowsDone[r] = true;
-          const x = g.ox - 10;
-          const y = g.oy + r * g.cell + g.cell / 2;
-          api.scores.add(x, y, '✓', { color: '#4ade80', size: 18 });
+          s.lineChecks.push({ axis: 'row', idx: r, age: 0 });
           sfx.pop(1.2);
         }
       }
       for (let c = 0; c < 10; c += 1) {
         if (!s.colsDone[c] && colComplete(s.puzzle.grid, s.marks, c)) {
           s.colsDone[c] = true;
-          const x = g.ox + c * g.cell + g.cell / 2;
-          const y = g.oy - 12;
-          api.scores.add(x, y, '✓', { color: '#4ade80', size: 18 });
+          s.lineChecks.push({ axis: 'col', idx: c, age: 0 });
           sfx.pop(1.2);
         }
       }
@@ -189,14 +190,23 @@ export default function ArcadeNonogram({ onExit }: { onExit: () => void }): Reac
       push();
     };
 
+    // Escape ditangani listener window, BUKAN update(): Loop engine2d melewati
+    // update() selama terjeda, jadi cabang "lanjutkan" di update tidak akan
+    // pernah tercapai (bug lama). Keputusan murninya: pauseToggleFor().
+    const onKeyDown = (e: KeyboardEvent): void => {
+      if (e.code !== 'Escape') return;
+      const action = pauseToggleFor(screenRef.current);
+      if (action === 'pause') { api.loop.setPaused(true); setScreen('pause'); }
+      else if (action === 'resume') { api.loop.setPaused(false); setScreen('play'); }
+    };
+    window.addEventListener('keydown', onKeyDown);
+
     api.setUpdate((dt) => {
-      if (api.input.wasPressed('Escape')) {
-        if (screenRef.current === 'play') { api.loop.setPaused(true); setScreen('pause'); }
-        else if (screenRef.current === 'pause') { api.loop.setPaused(false); setScreen('play'); }
-      }
       s.t += dt;
       for (const f of s.flashes) f.age += dt;
       s.flashes = s.flashes.filter((f) => f.age < 0.5);
+      for (const lc of s.lineChecks) lc.age += dt;
+      s.lineChecks = s.lineChecks.filter((lc) => lc.age < 0.9);
       if (screenRef.current !== 'play' || s.over) {
         if (s.won) s.reveal = Math.min(1, s.reveal + dt * 1.6);
         return;
@@ -219,12 +229,21 @@ export default function ArcadeNonogram({ onExit }: { onExit: () => void }): Reac
       ctx.strokeStyle = 'rgba(120,170,255,0.16)';
       for (let x = 0; x < W; x += 130) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
       for (let y = 0; y < H; y += 130) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
-      // judul gambar teknik
+      // judul gambar teknik + penggaris segitiga prosedural (path canvas)
+      ctx.strokeStyle = 'rgba(190,220,255,0.65)';
+      ctx.fillStyle = 'rgba(120,170,255,0.14)';
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.moveTo(14, 74); ctx.lineTo(30, 58); ctx.lineTo(30, 74); ctx.closePath();
+      ctx.fill(); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(20.5, 70.5); ctx.lineTo(26.5, 64.5); ctx.lineTo(26.5, 70.5); ctx.closePath();
+      ctx.stroke();
       ctx.fillStyle = 'rgba(190,220,255,0.55)';
       ctx.font = `800 11px ${FONT}`;
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
-      ctx.fillText('📐 DENAH ALAT PROYEK — SKALA 1:1', 14, 66);
+      ctx.fillText('DENAH ALAT PROYEK — SKALA 1:1', 38, 66);
     };
 
     const drawSheet = (ctx: CanvasRenderingContext2D, W: number): void => {
@@ -321,29 +340,66 @@ export default function ArcadeNonogram({ onExit }: { onExit: () => void }): Reac
       const { ox, oy, cell } = g;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
+      // Umpan balik live: petunjuk yang polanya sudah terpenuhi oleh isian
+      // pemain (clueSatisfied — murni pola, tanpa membaca solusi) langsung
+      // DIREDUPKAN + DICORET, seperti penanda pensil mandor di denah.
+      const strike = (cx: number, cy: number, w: number): void => {
+        ctx.strokeStyle = 'rgba(220,38,38,0.8)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(cx - w / 2 - 2, cy);
+        ctx.lineTo(cx + w / 2 + 2, cy);
+        ctx.stroke();
+      };
       // baris (kiri)
       for (let r = 0; r < 10; r += 1) {
         const clue = clues.rows[r];
-        const done = s.rowsDone[r];
+        const satisfied = clueSatisfied(clue, s.marks[r]);
         ctx.font = `800 ${Math.max(10, cell * 0.34)}px ${FONT}`;
-        ctx.fillStyle = done ? 'rgba(74,222,128,0.9)' : '#1e3a6e';
+        ctx.fillStyle = satisfied ? 'rgba(30,58,110,0.38)' : '#1e3a6e';
         const txt = clue.length === 0 ? '–' : clue.join(' ');
-        ctx.fillText(txt, ox - 30, oy + r * cell + cell / 2);
+        const cy = oy + r * cell + cell / 2;
+        ctx.fillText(txt, ox - 30, cy);
+        if (satisfied && clue.length > 0) strike(ox - 30, cy, ctx.measureText(txt).width);
       }
       // kolom (atas)
       for (let c = 0; c < 10; c += 1) {
         const clue = clues.cols[c];
-        const done = s.colsDone[c];
+        const colLine = s.marks.map((row) => row[c]);
+        const satisfied = clueSatisfied(clue, colLine);
         ctx.font = `800 ${Math.max(10, cell * 0.34)}px ${FONT}`;
-        ctx.fillStyle = done ? 'rgba(74,222,128,0.9)' : '#1e3a6e';
+        ctx.fillStyle = satisfied ? 'rgba(30,58,110,0.38)' : '#1e3a6e';
         const x = ox + c * cell + cell / 2;
         if (clue.length === 0) {
           ctx.fillText('–', x, oy - 18);
         } else {
           clue.forEach((n, i) => {
-            ctx.fillText(String(n), x, oy - 16 - (clue.length - 1 - i) * (cell * 0.36));
+            const y = oy - 16 - (clue.length - 1 - i) * (cell * 0.36);
+            ctx.fillText(String(n), x, y);
+            if (satisfied) strike(x, y, ctx.measureText(String(n)).width);
           });
         }
+      }
+    };
+
+    const drawLineChecks = (ctx: CanvasRenderingContext2D, g: { ox: number; oy: number; cell: number }): void => {
+      const { ox, oy, cell } = g;
+      for (const lc of s.lineChecks) {
+        const k = 1 - lc.age / 0.9;
+        const cx = lc.axis === 'row' ? ox - 9 : ox + lc.idx * cell + cell / 2;
+        const cy = lc.axis === 'row' ? oy + lc.idx * cell + cell / 2 : oy - 9;
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, k);
+        ctx.strokeStyle = '#16a34a';
+        ctx.lineWidth = 2.6;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
+        ctx.moveTo(cx - 5, cy + 0.5);
+        ctx.lineTo(cx - 1.2, cy + 4.2);
+        ctx.lineTo(cx + 5.5, cy - 4.2);
+        ctx.stroke();
+        ctx.restore();
       }
     };
 
@@ -356,6 +412,7 @@ export default function ArcadeNonogram({ onExit }: { onExit: () => void }): Reac
       const g = geom(W, H);
       drawGrid(ctx, g);
       drawClues(ctx, g);
+      drawLineChecks(ctx, g);
       ctx.restore();
       // vignette
       const vg = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.42, W / 2, H / 2, Math.max(W, H) * 0.75);
@@ -379,7 +436,7 @@ export default function ArcadeNonogram({ onExit }: { onExit: () => void }): Reac
     };
     reset(puzzleRef.current);
     api.loop.start();
-    return () => { apiRef.current = null; };
+    return () => { window.removeEventListener('keydown', onKeyDown); apiRef.current = null; };
   });
 
   const startGame = (pi: number): void => {
@@ -425,41 +482,46 @@ export default function ArcadeNonogram({ onExit }: { onExit: () => void }): Reac
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', zIndex: 5, pointerEvents: 'none' }}>
         <div style={{ pointerEvents: 'auto', background: 'rgba(10,20,40,0.6)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 14, padding: '7px 12px', color: '#fff', backdropFilter: 'blur(6px)', minWidth: 150 }}>
           <div style={{ fontWeight: 900, fontSize: 14, color: '#fde047' }}>{hud.puzzle}</div>
-          <div style={{ fontSize: 12, marginTop: 3, opacity: 0.92 }}>
-            ❌ {hud.mistakes} &nbsp;💡 {hud.hints} &nbsp;⏱ {mm}:{ss}
+          <div style={{ fontSize: 12, marginTop: 3, opacity: 0.92, display: 'flex', alignItems: 'center', gap: 5 }}>
+            <IcoX size={12} color="#f87171" /> {hud.mistakes}
+            <span style={{ width: 6 }} />
+            <IcoBulb size={13} color="#fde047" /> {hud.hints}
+            <span style={{ width: 6 }} />
+            <IcoClock size={13} color="#93c5fd" /> {mm}:{ss}
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8, pointerEvents: 'auto' }}>
           {(screen === 'play' || screen === 'pause') && (
-            <button style={btn} onClick={togglePause} aria-label="Jeda">{screen === 'play' ? '⏸' : '▶'}</button>
+            <button style={btn} onClick={togglePause} aria-label="Jeda">{screen === 'play' ? <IcoPause size={16} /> : <IcoPlay size={16} />}</button>
           )}
-          <button style={btn} onClick={toggleMute} aria-label="Suara">{muted ? '🔇' : '🔊'}</button>
-          <button style={btn} onClick={onExit} aria-label="Keluar">✕</button>
+          <button style={btn} onClick={toggleMute} aria-label="Suara">{muted ? <IcoMute size={18} /> : <IcoSound size={18} />}</button>
+          <button style={btn} onClick={onExit} aria-label="Keluar"><IcoX size={16} /></button>
         </div>
       </div>
 
       {(screen === 'play' || screen === 'pause') && (
         <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: '10px 12px 14px', display: 'flex', gap: 8, zIndex: 5 }}>
-          <button onClick={() => setMode(mode === 1 ? 2 : 1)} style={{ ...toolBtn, flex: 1, background: mode === 1 ? 'linear-gradient(180deg,#fde047,#f59e0b)' : 'rgba(10,20,40,0.6)', color: mode === 1 ? '#3a2a00' : '#fff' }}>
-            {mode === 1 ? '✏️ Mode: ISI' : '❌ Mode: SILANG'}
+          <button onClick={() => setMode(mode === 1 ? 2 : 1)} style={{ ...toolBtn, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, background: mode === 1 ? 'linear-gradient(180deg,#fde047,#f59e0b)' : 'rgba(10,20,40,0.6)', color: mode === 1 ? '#3a2a00' : '#fff' }}>
+            {mode === 1 ? <><IcoFill size={15} /> Mode: ISI</> : <><IcoX size={14} /> Mode: SILANG</>}
           </button>
-          <button onClick={useHint} style={{ ...toolBtn, flex: 1, background: 'rgba(10,20,40,0.6)', color: '#fff' }}>💡 Bocoran</button>
+          <button onClick={useHint} style={{ ...toolBtn, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, background: 'rgba(10,20,40,0.6)', color: '#fff' }}><IcoBulb size={15} color="#fde047" /> Bocoran</button>
         </div>
       )}
 
       {screen === 'tutorial' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>📐</div>
+          <div style={{ display: 'flex', justifyContent: 'center' }}><IcoRuler size={46} color="#fde047" /></div>
           <h2 style={h2}>BONGKAR GAMBAR</h2>
           <p style={p}>
             Ungkap <b>pixel-art alat proyek</b> dari petunjuk angka baris &amp; kolom —
             seperti baca denah! Ketuk kotak untuk <b>mengisi</b>, ganti mode untuk <b>menyilang</b>
-            yang pasti kosong. Salah isi = <b>teguran mandor</b> ❌
+            yang pasti kosong. Angka petunjuk yang sudah terpenuhi akan <b>dicoret &amp; diredupkan</b>.
+            Salah isi = <b>teguran mandor</b>.
           </p>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'center', margin: '10px 0' }}>
             {PUZZLES.map((pz, i) => (
               <button key={pz.id} onClick={() => selectPuzzle(i)} style={{ ...pzBtn, outline: pzSel === i ? '2px solid #fde047' : 'none' }}>
-                <div style={{ fontSize: 26 }}>{pz.emoji}</div>
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 5 }}><PixelPreview puzzle={pz} size={52} /></div>
                 <div style={{ fontSize: 11, fontWeight: 800, color: '#fef3c7' }}>{pz.name}</div>
                 <div style={{ fontSize: 10, opacity: 0.7, color: '#fef3c7' }}>{pz.difficulty}</div>
               </button>
@@ -471,7 +533,7 @@ export default function ArcadeNonogram({ onExit }: { onExit: () => void }): Reac
       )}
       {screen === 'pause' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>☕</div>
+          <div style={{ display: 'flex', justifyContent: 'center' }}><IcoCoffee size={46} color="#fde047" /></div>
           <h2 style={h2}>JEDA</h2>
           <p style={p}>Denahnya ditutup dulu. Kopi mandor jangan sampai dingin.</p>
           <button style={primaryBtn} onClick={togglePause}>Lanjutkan</button>
@@ -479,7 +541,7 @@ export default function ArcadeNonogram({ onExit }: { onExit: () => void }): Reac
       )}
       {screen === 'over' && (
         <Overlay>
-          <div style={{ fontSize: 48 }}>{PUZZLES[puzzleRef.current].emoji}</div>
+          <div style={{ display: 'flex', justifyContent: 'center' }}><PixelPreview puzzle={PUZZLES[puzzleRef.current]} size={92} /></div>
           <h2 style={h2}>{PUZZLES[puzzleRef.current].name.toUpperCase()} TERUNGKAP!</h2>
           <div style={{ fontSize: 40, fontWeight: 900, color: '#fde047' }}>{hud.score}</div>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'center', margin: '10px 0' }}>
@@ -490,7 +552,7 @@ export default function ArcadeNonogram({ onExit }: { onExit: () => void }): Reac
           <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginBottom: 8 }}>
             {PUZZLES.map((pz, i) => (
               i !== puzzleRef.current && (
-                <button key={pz.id} onClick={() => startGame(i)} style={pzBtnSm}>{pz.emoji} {pz.name}</button>
+                <button key={pz.id} onClick={() => startGame(i)} style={pzBtnSm}><PixelPreview puzzle={pz} size={18} /> {pz.name}</button>
               )
             ))}
           </div>
@@ -521,6 +583,7 @@ const pzBtn: React.CSSProperties = {
 const pzBtnSm: React.CSSProperties = {
   padding: '8px 10px', borderRadius: 11, border: '1px solid rgba(255,255,255,0.2)',
   background: 'rgba(255,255,255,0.06)', cursor: 'pointer', color: '#fff', fontFamily: FONT, fontSize: 12, fontWeight: 800,
+  display: 'inline-flex', alignItems: 'center', gap: 6,
 };
 
 function Overlay({ children }: { children: React.ReactNode }): React.JSX.Element {
@@ -539,5 +602,132 @@ function Stat({ label, value }: { label: string; value: string }): React.JSX.Ele
       <div style={{ fontSize: 11, opacity: 0.7, color: '#e8f1ff' }}>{label}</div>
       <div style={{ fontWeight: 900, fontSize: 18, color: '#fff' }}>{value}</div>
     </div>
+  );
+}
+
+/**
+ * Pratinjau puzzle PROSEDURAL: piksel-art digambar dari grid puzzle itu
+ * sendiri (bukan emoji), dengan palet yang sama seperti sel papan di canvas.
+ */
+function PixelPreview({ puzzle, size }: { puzzle: NonogramPuzzle; size: number }): React.JSX.Element {
+  const pal = ART_COLORS[puzzle.id] ?? ART_COLORS.palu;
+  return (
+    <div
+      aria-hidden
+      style={{
+        width: size, height: size, flexShrink: 0, display: 'grid',
+        gridTemplateColumns: 'repeat(10, 1fr)', gridTemplateRows: 'repeat(10, 1fr)',
+        background: 'rgba(12,24,48,0.85)', borderRadius: Math.max(3, size * 0.1),
+        padding: Math.max(1, size * 0.05), boxSizing: 'border-box',
+        border: '1px solid rgba(255,255,255,0.18)',
+      }}
+    >
+      {puzzle.grid.flatMap((row, r) => row.split('').map((ch, c) => {
+        const idx = Math.min(pal.length - 1, Math.floor((r + c) * 0.7) % pal.length);
+        return (
+          <div
+            key={`${r}-${c}`}
+            style={{
+              background: ch === '1' ? pal[idx] : 'transparent',
+              borderRadius: 1,
+              boxShadow: ch === '1' ? 'inset 0 1px 0 rgba(255,255,255,0.35)' : 'none',
+            }}
+          />
+        );
+      }))}
+    </div>
+  );
+}
+
+/* ── Ikon SVG prosedural (stroke currentColor) — pengganti seluruh glif emoji UI ── */
+
+function IcoX({ size, color }: { size: number; color?: string }): React.JSX.Element {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color ?? 'currentColor'} strokeWidth={2.6} strokeLinecap="round" aria-hidden>
+      <path d="M5 5l14 14M19 5L5 19" />
+    </svg>
+  );
+}
+
+function IcoBulb({ size, color }: { size: number; color?: string }): React.JSX.Element {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color ?? 'currentColor'} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M9 18h6M10 21h4" />
+      <path d="M12 3a6 6 0 0 0-3.3 11c.6.5 1 1.2 1.2 2h3.8c.2-.8.6-1.5 1.2-2A6 6 0 0 0 12 3z" />
+    </svg>
+  );
+}
+
+function IcoClock({ size, color }: { size: number; color?: string }): React.JSX.Element {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color ?? 'currentColor'} strokeWidth={2} strokeLinecap="round" aria-hidden>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 7.5V12l3 2" />
+    </svg>
+  );
+}
+
+function IcoPause({ size }: { size: number }): React.JSX.Element {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <rect x="6" y="5" width="4" height="14" rx="1.2" />
+      <rect x="14" y="5" width="4" height="14" rx="1.2" />
+    </svg>
+  );
+}
+
+function IcoPlay({ size }: { size: number }): React.JSX.Element {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M8 5.5v13c0 .8.9 1.3 1.6.9l9.5-6.5c.6-.4.6-1.4 0-1.8L9.6 4.6C8.9 4.2 8 4.7 8 5.5z" />
+    </svg>
+  );
+}
+
+function IcoSound({ size }: { size: number }): React.JSX.Element {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5H4z" fill="currentColor" stroke="none" />
+      <path d="M15.5 9.5a3.6 3.6 0 0 1 0 5M18 7a7 7 0 0 1 0 10" />
+    </svg>
+  );
+}
+
+function IcoMute({ size }: { size: number }): React.JSX.Element {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5H4z" fill="currentColor" stroke="none" />
+      <path d="M16 9.5l5 5M21 9.5l-5 5" />
+    </svg>
+  );
+}
+
+function IcoFill({ size }: { size: number }): React.JSX.Element {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden>
+      <rect x="4.5" y="4.5" width="15" height="15" rx="3.5" fill="currentColor" />
+      <rect x="4.5" y="4.5" width="15" height="6.5" rx="3.5" fill="rgba(255,255,255,0.38)" />
+    </svg>
+  );
+}
+
+function IcoRuler({ size, color }: { size: number; color?: string }): React.JSX.Element {
+  return (
+    <svg width={size} height={size} viewBox="0 0 48 48" fill="none" stroke={color ?? 'currentColor'} strokeWidth={2.4} strokeLinejoin="round" aria-hidden>
+      <path d="M8 40L40 8v32H8z" fill="rgba(120,170,255,0.14)" />
+      <path d="M19.5 28.5L28.5 19.5v9h-9z" />
+      <path d="M31 17l2.5 2.5M26.5 21.5l2.5 2.5M35.5 12.5l2.5 2.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function IcoCoffee({ size, color }: { size: number; color?: string }): React.JSX.Element {
+  return (
+    <svg width={size} height={size} viewBox="0 0 48 48" fill="none" stroke={color ?? 'currentColor'} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M10 20h24v9a10 10 0 0 1-10 10h-4a10 10 0 0 1-10-10v-9z" fill="rgba(120,170,255,0.12)" />
+      <path d="M34 22h2.5a5.5 5.5 0 0 1 0 11H33" />
+      <path d="M17 15c-1.4-2 .8-3.2 0-5.5M25 15c-1.4-2 .8-3.2 0-5.5" />
+      <path d="M8 44h32" />
+    </svg>
   );
 }

@@ -6,6 +6,7 @@ import {
   makeBall, makePlayer, stepBall, stepPlayer, collidePlayerBall, kick,
   checkGoal, makeBrain, aiDecide, brainToCtl, AI_LEVELS,
   makeMatch, onGoal, stepMatch, MATCH_TIME, SUDDEN_DEATH_TIME, KICK_RANGE,
+  maxLevelAfterWin, isLevelUnlocked, levelProgress,
   Field, Ball,
 } from './logic';
 
@@ -272,6 +273,30 @@ test('AI menyerang: bola di wilayah pemain → kejar bola', () => {
   aiDecide(brain, ai, b, AI_LEVELS[2], 1, field);
   const ctl = brainToCtl(brain);
   assert.equal(ctl.left, true, 'AI mengejar bola ke kiri');
+});
+
+console.log('\n[8] progresi lawan');
+test('menang membuka tepat satu level berikutnya', () => {
+  assert.equal(maxLevelAfterWin(0, 1), 2);
+  assert.equal(maxLevelAfterWin(1, 2), 3);
+  assert.equal(maxLevelAfterWin(3, 4), 5);
+});
+test('progresi tidak mundur & tidak melewati level terakhir', () => {
+  assert.equal(maxLevelAfterWin(0, 4), 4, 'max tersimpan lebih tinggi dipertahankan');
+  assert.equal(maxLevelAfterWin(4, 5), 5, 'jenuh di 5');
+});
+test('isLevelUnlocked konsisten dengan maxLevel 1-based', () => {
+  assert.equal(isLevelUnlocked(0, 1), true);
+  assert.equal(isLevelUnlocked(1, 1), false);
+  assert.equal(isLevelUnlocked(4, 5), true);
+});
+test('levelProgress merangkum jenjang saat ini & berikutnya', () => {
+  const p0 = levelProgress(0);
+  assert.equal(p0.current, 1);
+  assert.equal(p0.total, 5);
+  assert.equal(p0.name, AI_LEVELS[0].name);
+  assert.equal(p0.nextName, AI_LEVELS[1].name);
+  assert.equal(levelProgress(4).nextName, null, 'level terakhir tak punya berikutnya');
 });
 
 console.log(`\n${passed} passed, ${failed} failed`);

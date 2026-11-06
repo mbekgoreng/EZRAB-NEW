@@ -8,6 +8,7 @@ import {
   difficulty, medalFor, mulberry32,
   GRAVITY, FLAP_V, BIRD_R, GATE_W, GRACE_T, FLAP_BUFFER_S, FIRST_GATE_X,
   type FlapState,
+  clearanceAtPass, isNearMiss, NEAR_MISS_MAX_CLEARANCE,
 } from './logic';
 
 let passed = 0;
@@ -284,6 +285,19 @@ test('mulberry32 deterministik', () => {
   const b = mulberry32(1);
   assert.equal(a(), b());
   assert.equal(a(), b());
+});
+
+console.log('\n[G2] nyaris / near-miss (pembeda Flappy Mandor)');
+test('clearanceAtPass: tengah celah besar, mepet tepi kecil', () => {
+  const g = { x: 0, gapY: 300, gapH: 160, w: 72, passed: true };
+  assert.ok(clearanceAtPass(300, g) > NEAR_MISS_MAX_CLEARANCE);
+  assert.ok(isNearMiss(clearanceAtPass(300 - 80 + 14 + 6, g)));
+});
+test('isNearMiss: negatif (tabrakan) dan longgar bukan nyaris', () => {
+  assert.equal(isNearMiss(-1), false);
+  assert.equal(isNearMiss(NEAR_MISS_MAX_CLEARANCE + 1), false);
+  assert.equal(isNearMiss(0), true);
+  assert.equal(isNearMiss(NEAR_MISS_MAX_CLEARANCE), true);
 });
 
 console.log(`\n${passed} passed, ${failed} failed`);

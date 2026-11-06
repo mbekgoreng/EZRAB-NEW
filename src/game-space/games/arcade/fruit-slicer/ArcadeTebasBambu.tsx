@@ -103,7 +103,7 @@ export default function ArcadeTebasBambu({ onExit }: { onExit: () => void }): Re
       if (reason === 'boom') sfx.crumble(1.2);
       else sfx.chime(3);
       const wrap = wrapRef.current;
-      if (wrap) popText(wrap, reason === 'boom' ? '💥 MELEDAK!' : '⏱ WAKTU HABIS!', { size: 30, color: '#fde047' });
+      if (wrap) popText(wrap, reason === 'boom' ? 'MELEDAK!' : 'WAKTU HABIS!', { size: 30, color: '#fde047' });
       api.particles.spawn(api.W / 2, api.H * 0.4, {
         count: 70, colors: ['#4ade80', '#fbbf24', '#fde047', '#dcfce7'],
         speed: [100, 400], life: [0.6, 1.2], size: [2, 6], gravity: 420, shape: 'rect', rotation: true,
@@ -143,7 +143,7 @@ export default function ArcadeTebasBambu({ onExit }: { onExit: () => void }): Re
       it.sliced = true;
       const secsSince = s.t - s.lastSliceT;
       if (it.kind === 'dinamit') {
-        // 💥 KABOOM
+        // KABOOM
         s.lives -= 1;
         s.combo = 0;
         s.flash = { age: 0 };
@@ -154,7 +154,7 @@ export default function ArcadeTebasBambu({ onExit }: { onExit: () => void }): Re
           speed: [120, 520], life: [0.4, 1], size: [3, 8], gravity: 300, shape: 'spark', rotation: true,
         });
         const wrap = wrapRef.current;
-        if (wrap) popText(wrap, '💥 DINAMIT! −1 nyawa', { size: 22, color: '#fca5a5' });
+        if (wrap) popText(wrap, 'DINAMIT! −1 nyawa', { size: 22, color: '#fca5a5' });
         if (s.lives <= 0) { endGame('boom'); return; }
         push();
         return;
@@ -188,7 +188,7 @@ export default function ArcadeTebasBambu({ onExit }: { onExit: () => void }): Re
         const wrap = wrapRef.current;
         const mult = s.combo >= 6 ? 'x3' : 'x2';
         if (wrap && (s.combo === 3 || s.combo === 6 || s.combo % 10 === 0)) {
-          popText(wrap, `⚡ KOMBO ${s.combo}! (${mult})`, { size: 22, color: '#fde047' });
+          popText(wrap, `KOMBO ${s.combo}! (${mult})`, { size: 22, color: '#fde047' });
         }
         if (s.combo % 5 === 0) sfx.chime(2, 760);
       }
@@ -432,10 +432,13 @@ export default function ArcadeTebasBambu({ onExit }: { onExit: () => void }): Re
         ctx.fillStyle = '#f97316';
         ctx.beginPath(); ctx.arc(r * 0.7, -r * 1.1, sp * 0.55, 0, TAU); ctx.fill();
         // label bahaya
+        // tengkorak prosedural (G2 — bukan emoji): tengkorak + rahang + mata
         ctx.fillStyle = '#fecaca';
-        ctx.font = `900 ${Math.floor(r * 0.5)}px ${FONT}`;
-        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.fillText('☠', 0, 0);
+        ctx.beginPath(); ctx.arc(0, -r * 0.08, r * 0.30, 0, Math.PI * 2); ctx.fill();
+        ctx.fillRect(-r * 0.18, r * 0.12, r * 0.36, r * 0.22);
+        ctx.fillStyle = '#7f1d1d';
+        ctx.beginPath(); ctx.arc(-r * 0.12, -r * 0.12, r * 0.075, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(r * 0.12, -r * 0.12, r * 0.075, 0, Math.PI * 2); ctx.fill();
       }
       ctx.restore();
     };
@@ -560,10 +563,14 @@ export default function ArcadeTebasBambu({ onExit }: { onExit: () => void }): Re
         <div style={{ pointerEvents: 'auto', background: 'rgba(28,10,3,0.6)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 14, padding: '7px 12px', color: '#fff', backdropFilter: 'blur(6px)', minWidth: 132 }}>
           <div style={{ fontWeight: 900, fontSize: 17, color: '#4ade80' }}>{hud.score.toLocaleString('id-ID')}</div>
           <div style={{ fontSize: 12, marginTop: 3, opacity: 0.95 }}>
-            {'❤️'.repeat(Math.max(0, hud.lives))}{'🖤'.repeat(Math.max(0, MAX_LIVES - hud.lives))}
+            {Array.from({ length: MAX_LIVES }, (_, i) => (
+            <svg key={i} width="17" height="16" viewBox="0 0 24 22" style={{ opacity: i < hud.lives ? 1 : 0.25 }} aria-hidden>
+              <path d="M12 20s-8-5.3-8-11a4.6 4.6 0 0 1 8-3.4A4.6 4.6 0 0 1 20 9c0 5.7-8 11-8 11z" fill={i < hud.lives ? '#f87171' : '#475569'} />
+            </svg>
+          ))}
             <span style={{ marginLeft: 6 }}>⏱ {Math.ceil(hud.timeLeft)}s</span>
           </div>
-          {hud.combo >= 2 && <div style={{ fontSize: 12, color: '#fde047', fontWeight: 900 }}>⚡ KOMBO x{hud.combo}</div>}
+          {hud.combo >= 2 && <div style={{ fontSize: 12, color: '#fde047', fontWeight: 900 }}>KOMBO x{hud.combo}</div>}
         </div>
         <div style={{ display: 'flex', gap: 8, pointerEvents: 'auto' }}>
           {(screen === 'play' || screen === 'pause') && (
@@ -576,11 +583,11 @@ export default function ArcadeTebasBambu({ onExit }: { onExit: () => void }): Re
 
       {screen === 'tutorial' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>🎋</div>
+          <div style={{ fontSize: 15, fontWeight: 900, letterSpacing: 2, color: '#4ade80' }}>— TEBAS BAMBU —</div>
           <h2 style={h2}>TEBAS BAMBU</h2>
           <p style={p}>
             <b>Swipe / usap layar</b> untuk menebas bambu, kayu & triplek yang beterbangan.
-            <b> JANGAN tebas dinamit</b> 🧨 (nyawa −1)! 🪖 <b>Helm emas</b> = bonus besar.
+            <b> JANGAN tebas dinamit</b> (nyawa −1)! <b>Helm emas</b> = bonus besar.
             Tebasan beruntun = <b>kombo</b>!
           </p>
           {hud.best > 0 && <p style={p}>Skor terbaik: <b style={{ color: '#fde047' }}>{hud.best.toLocaleString('id-ID')}</b></p>}
@@ -589,7 +596,7 @@ export default function ArcadeTebasBambu({ onExit }: { onExit: () => void }): Re
       )}
       {screen === 'pause' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>☕</div>
+          <div style={{ fontSize: 15, fontWeight: 900, letterSpacing: 2, color: '#ffd166' }}>— JEDA —</div>
           <h2 style={h2}>JEDA</h2>
           <p style={p}>Pisaunya diasah dulu. Bambunya nunggu.</p>
           <button style={primaryBtn} onClick={togglePause}>Lanjutkan</button>
@@ -597,7 +604,7 @@ export default function ArcadeTebasBambu({ onExit }: { onExit: () => void }): Re
       )}
       {screen === 'over' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>{grade === 'S' ? '🏆' : '🎋'}</div>
+          <div style={{ fontSize: 15, fontWeight: 900, letterSpacing: 2, color: '#ffd166' }}>— SELESAI —</div>
           <h2 style={h2}>SELESAI MENEBAS</h2>
           <div style={{ fontSize: 40, fontWeight: 900, color: '#4ade80' }}>{hud.score.toLocaleString('id-ID')}</div>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'center', margin: '10px 0' }}>

@@ -10,6 +10,8 @@ import {
   LEVELS, WORLD_W, WORLD_H, GROUND_Y, BALL_R, DRAG_MAX,
   predict, launchVel, createState, updateState,
   starFor, leftoverBonus, MAT_SCORE, allBerkasDead,
+  crackLevel, remainingBerkas, launchPowerFrac, launchPowerLabel,
+  type Block,
   type KState, type Mat,
 } from './logic';
 
@@ -177,7 +179,7 @@ export default function KetapelKonstruksi({ onExit }: { onExit: () => void }) {
             return next;
           });
           api.sfx.chime(3);
-          if (wrapRef.current) popText(wrapRef.current, '🎉 REVISI LUNAS!', { size: 34, color: '#4ade80' });
+          if (wrapRef.current) popText(wrapRef.current, 'REVISI LUNAS!', { size: 34, color: '#4ade80' });
           api.pushHud({ score: s.score, balls: s.ballsLeft, level: s.levelIndex + 1, best: 0 });
           window.setTimeout(() => setScreen('win'), 900);
         } else {
@@ -269,7 +271,8 @@ export default function KetapelKonstruksi({ onExit }: { onExit: () => void }) {
           background:linear-gradient(180deg,#3b82f6,#1d4ed8); box-shadow:0 6px 18px rgba(37,99,235,.4); }
         .kk-btn:active { transform:translateY(1px); }
         .kk-btn.ghost { background:rgba(148,163,184,.15); box-shadow:none; border:1px solid rgba(148,163,184,.3); }
-        .kk-stars { font-size:34px; letter-spacing:6px; margin:4px 0 8px; }
+        .kk-stars { margin:4px 0 10px; }
+        .kk-stars span { display:inline-block; width:26px; height:26px; margin:0 7px; transform:rotate(45deg); border-radius:6px; }
         .kk-stars .on { color:#fbbf24; text-shadow:0 0 14px rgba(251,191,36,.7); animation:kkpop .5s cubic-bezier(.2,1.6,.4,1) backwards; }
         .kk-stars .off { color:#475569; }
         @keyframes kkpop { from { transform:scale(0) rotate(-40deg); } to { transform:scale(1) rotate(0); } }
@@ -293,11 +296,12 @@ export default function KetapelKonstruksi({ onExit }: { onExit: () => void }) {
           </div>
           <div style={{ textAlign: 'center', color: '#fff', fontWeight: 800 }}>
             <div style={{ fontSize: 12, opacity: 0.85 }}>Level {hud.level} · {LEVELS[hud.level - 1]?.name}</div>
-            <div style={{ fontSize: 20 }}>⭐ {hud.score}</div>
+            <div style={{ fontSize: 20 }}>Skor {hud.score}</div>
+            <div style={{ fontSize: 11, opacity: 0.9 }}>Berkas tersisa: {sRef.current ? remainingBerkas(sRef.current.blocks) : 0}</div>
           </div>
           <div style={{ display: 'flex', gap: 4, fontSize: 18 }} aria-label={`Sisa bola ${hud.balls}`}>
             {Array.from({ length: LEVELS[hud.level - 1]?.balls ?? 3 }).map((_, i) => (
-              <span key={i} style={{ opacity: i < hud.balls ? 1 : 0.22, filter: i < hud.balls ? 'none' : 'grayscale(1)' }}>⚫</span>
+              <span key={i} aria-hidden style={{ opacity: i < hud.balls ? 1 : 0.22, width: 17, height: 17, borderRadius: '50%', display: 'inline-block', background: 'radial-gradient(circle at 35% 30%, #9aa3b2, #3a4150 60%, #171b22)', border: '2px solid #10131a', boxShadow: 'inset 0 -3px 5px rgba(0,0,0,.5)' }} />
             ))}
           </div>
         </div>
@@ -306,14 +310,16 @@ export default function KetapelKonstruksi({ onExit }: { onExit: () => void }) {
       {screen === 'tutorial' && (
         <div className="kk-overlay">
           <div className="kk-card">
-            <h2 className="kk-title">🎯 Ketapel Konstruksi</h2>
+            <h2 className="kk-title">Ketapel Konstruksi</h2>
             <p className="kk-sub">
               Klien sudah revisi gambar <b>13 kali</b>. Berkas revisinya numpuk di site.
               <br /><br />
-              👆 <b>Tarik bola besi</b> ke belakang, <b>lepas</b> untuk meluncurkan.
-              Hancurkan <b>semua BERKAS REVISI</b> 📄 (kertas putih) untuk menang.
+              <b>Tarik bola besi</b> ke belakang, <b>lepas</b> untuk meluncurkan.
+              Meteran daya &amp; titik lintasan membantumu membidik.
+              Hancurkan <b>semua BERKAS REVISI</b> (kertas putih berlabel REV) untuk menang.
               <br />
-              🪵 Kayu & 🪟 kaca rapuh · 🧱 bata 2x pukul · 🏗️ beton 3x pukul.
+              Kayu &amp; kaca rapuh (1x pukul) · bata 2x pukul · beton 3x pukul.
+              Blok yang kena pukul akan <b>retak</b> — retakannya menunjukkan sisa kekuatannya.
               <br /><br />
               <i>Tenang, ini cuma game. Jangan beneran lempar berkas ke klien.</i>
             </p>
@@ -328,12 +334,12 @@ export default function KetapelKonstruksi({ onExit }: { onExit: () => void }) {
         <div className="kk-overlay">
           <div className="kk-card">
             <h2 className="kk-title">Pilih Level</h2>
-            <p className="kk-sub">Makin hemat bola, makin banyak ⭐. Estimator yang baik tidak buang-buang resource.</p>
+            <p className="kk-sub">Makin hemat bola, makin banyak bintang (maks 3 per level). Estimator yang baik tidak buang-buang resource.</p>
             <div className="kk-lvlgrid">
               {LEVELS.map((l, i) => (
                 <button key={i} className="kk-lvl" onClick={() => startLevel(i)}>
                   {i + 1}
-                  <small>{'★'.repeat(stars[String(i)] ?? 0)}</small>
+                  <small>{(stars[String(i)] ?? 0) > 0 ? `${stars[String(i)]}/3 bintang` : ''}</small>
                 </button>
               ))}
             </div>
@@ -359,10 +365,10 @@ export default function KetapelKonstruksi({ onExit }: { onExit: () => void }) {
           <div className="kk-card">
             <div className="kk-stars">
               {[1, 2, 3].map((i) => (
-                <span key={i} className={i <= winStars ? 'on' : 'off'} style={{ animationDelay: `${i * 0.15}s` }}>★</span>
+                <span key={i} className={i <= winStars ? 'on' : 'off'} style={{ animationDelay: `${i * 0.15}s` }} />
               ))}
             </div>
-            <h2 className="kk-title">🎉 Level {hud.level} Lunas!</h2>
+            <h2 className="kk-title">Level {hud.level} Lunas!</h2>
             <p className="kk-sub">Skor: <b>{hud.score}</b></p>
             <p className="kk-quip">"{quip}"</p>
             {hud.level < 10
@@ -377,10 +383,10 @@ export default function KetapelKonstruksi({ onExit }: { onExit: () => void }) {
       {screen === 'lose' && (
         <div className="kk-overlay">
           <div className="kk-card">
-            <h2 className="kk-title">💸 Berkas Selamat…</h2>
+            <h2 className="kk-title">Berkas Selamat…</h2>
             <p className="kk-sub">Skor: <b>{hud.score}</b></p>
             <p className="kk-quip">"{quip}"</p>
-            <button className="kk-btn" onClick={() => startLevel(sRef.current?.levelIndex ?? 0)}>🔨 Coba Lagi</button>
+            <button className="kk-btn" onClick={() => startLevel(sRef.current?.levelIndex ?? 0)}>Coba Lagi</button>
             <button className="kk-btn ghost" onClick={() => setScreen('levels')}>Pilih Level</button>
           </div>
         </div>
@@ -601,9 +607,20 @@ function drawTrajectory(ctx: CanvasRenderingContext2D, s: KState, pk: { x: numbe
     ctx.beginPath(); ctx.arc(p.x, p.y, 5 - (i / n) * 2.2, 0, Math.PI * 2); ctx.fill();
   }
   ctx.globalAlpha = 1;
+  // meteran daya tarikan: bar + label teks (bukan warna saja)
+  const frac = launchPowerFrac(Math.hypot(dx, dy));
+  const mx = s.level.sling.x - 62; const my = s.level.sling.y + 74;
+  ctx.fillStyle = 'rgba(10,18,32,.62)';
+  roundRect(ctx, mx, my, 124, 26, 7); ctx.fill();
+  ctx.fillStyle = frac >= 0.95 ? '#ef4444' : frac >= 0.6 ? '#f97316' : '#22c55e';
+  if (frac > 0) { roundRect(ctx, mx + 4, my + 4, 116 * frac, 8, 4); ctx.fill(); }
+  ctx.fillStyle = '#fff';
+  ctx.font = "800 10px 'Plus Jakarta Sans', system-ui, sans-serif";
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(`DAYA ${launchPowerLabel(frac)} ${Math.round(frac * 100)}%`, mx + 62, my + 19);
 }
 
-function drawBlock(ctx: CanvasRenderingContext2D, b: { mat: Mat; x: number; y: number; w: number; h: number; angle: number }): void {
+function drawBlock(ctx: CanvasRenderingContext2D, b: Block): void {
   const cx = b.x + b.w / 2;
   const cy = b.y + b.h / 2;
   // drop shadow
@@ -694,6 +711,29 @@ function drawBlock(ctx: CanvasRenderingContext2D, b: { mat: Mat; x: number; y: n
     ctx.beginPath(); ctx.moveTo(x0 + w, y0); ctx.lineTo(x0 + w - 9, y0); ctx.lineTo(x0 + w, y0 + 9); ctx.closePath(); ctx.fill();
   }
 
+  // retakan prosedural sesuai sisa HP (crackLevel dari logic): makin parah
+  // makin banyak garis retak — umpan balik kena pukul yang terbaca seketika
+  const crack = crackLevel(b.mat, b.hp);
+  if (crack > 0) {
+    ctx.strokeStyle = 'rgba(15,18,24,.72)';
+    ctx.lineWidth = 1.6;
+    const lines = crack === 1 ? 2 : 4;
+    for (let i = 0; i < lines; i += 1) {
+      const sx = x0 + w * (0.22 + 0.18 * i);
+      ctx.beginPath();
+      ctx.moveTo(sx, y0 + 2);
+      ctx.lineTo(sx + w * 0.08, y0 + h * 0.38);
+      ctx.lineTo(sx - w * 0.05, y0 + h * 0.66);
+      if (crack === 2) ctx.lineTo(sx + w * 0.1, y0 + h - 3);
+      ctx.stroke();
+    }
+    if (crack === 2) {
+      ctx.fillStyle = 'rgba(15,18,24,.35)';
+      ctx.beginPath();
+      ctx.moveTo(x0 + w, y0 + h); ctx.lineTo(x0 + w - 9, y0 + h); ctx.lineTo(x0 + w, y0 + h - 9);
+      ctx.closePath(); ctx.fill();
+    }
+  }
   ctx.strokeStyle = b.mat === 'berkas' ? '#94a3b8' : 'rgba(20,25,35,.65)';
   ctx.lineWidth = 2;
   roundRect(ctx, x0, y0, w, h, 3); ctx.stroke();

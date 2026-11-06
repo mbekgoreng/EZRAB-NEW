@@ -4,7 +4,8 @@
 import { strict as assert } from 'node:assert';
 import {
   COLS, ROWS, MATERIALS, SHAPES, bag7, collides, clearLines, emptyBoard,
-  gravityMs, levelFor, merge, rotate, scoreFor, spawnPiece, type PieceKind,
+  gravityMs, landingY, levelFor, linesToNextLevel, merge, peekNext, rotate,
+  scoreFor, spawnPiece, type PieceKind,
 } from './logic';
 
 let passed = 0;
@@ -95,6 +96,39 @@ test('gravitasi makin cepat, ada batas bawah', () => {
   assert.ok(gravityMs(1) < gravityMs(0));
   assert.ok(gravityMs(40) >= 60);
   assert.equal(gravityMs(100), 60);
+});
+
+console.log('\n[tetris] ghost / next / progres level');
+test('landingY: jatuh ke lantai papan kosong & tidak menabrak', () => {
+  const b = emptyBoard();
+  const p = spawnPiece('O');
+  const y = landingY(b, p.shape, p.x, p.y);
+  assert.equal(y, ROWS - 2);
+  assert.ok(!collides(b, p.shape, p.x, y), 'posisi ghost tak boleh menabrak');
+  assert.ok(collides(b, p.shape, p.x, y + 1), 'ghost harus maksimal (1 lagi = tabrakan)');
+});
+test('landingY: berhenti tepat di atas tumpukan (kandidat ghost tembus = BUKAN bug)', () => {
+  let b = merge(emptyBoard(), SHAPES.O, 4, ROWS - 2, 'O');
+  const p = spawnPiece('O'); // x=4
+  const y = landingY(b, p.shape, p.x, 0);
+  assert.equal(y, ROWS - 4, `y=${y}`);
+  assert.ok(!collides(b, p.shape, p.x, y));
+});
+test('peekNext: elemen terakhir kantong, tidak mengubah kantong', () => {
+  const bag: PieceKind[] = ['I', 'O', 'T'];
+  assert.equal(peekNext(bag), 'T');
+  assert.equal(bag.length, 3, 'peek tak boleh mem-pop');
+  assert.equal(peekNext([]), null);
+  // konsisten dengan urutan pop komponen (refill mem-pop dari ujung)
+  const bag2 = bag7(() => 0.5);
+  assert.equal(peekNext(bag2), bag2[bag2.length - 1]);
+});
+test('linesToNextLevel: 10 di awal & tepat setelah naik level', () => {
+  assert.equal(linesToNextLevel(0), 10);
+  assert.equal(linesToNextLevel(1), 9);
+  assert.equal(linesToNextLevel(9), 1);
+  assert.equal(linesToNextLevel(10), 10);
+  assert.equal(linesToNextLevel(27), 3);
 });
 
 console.log(`\n${passed} lulus, ${failed} gagal${failed ? ` (${failures.join(', ')})` : ''}`);

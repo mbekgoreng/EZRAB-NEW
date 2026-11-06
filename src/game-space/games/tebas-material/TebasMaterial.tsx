@@ -566,13 +566,20 @@ function drawDynamiteDanger(ctx: CanvasRenderingContext2D, it: FlyingItem, t: nu
   // ikon tengkorak melayang di atas (tegak, berdenyut)
   const bobY = Math.sin(t * 6 + it.id) * 4;
   const skullR = r * (0.95 + 0.12 * pulse);
+  // tengkorak prosedural (G2 — bukan emoji): tengkorak + rahang + rongga mata
   ctx.save();
-  ctx.font = `${Math.round(skullR)}px system-ui`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
+  ctx.translate(it.x, it.y - r * 1.85 + bobY);
   ctx.shadowColor = 'rgba(239,68,68,0.9)';
   ctx.shadowBlur = 10;
-  ctx.fillText('💀', it.x, it.y - r * 1.85 + bobY);
+  ctx.fillStyle = '#f8fafc';
+  const sr = skullR * 0.5;
+  ctx.beginPath(); ctx.arc(0, -sr * 0.15, sr, 0, TAU); ctx.fill();
+  ctx.fillRect(-sr * 0.55, sr * 0.45, sr * 1.1, sr * 0.6);
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = '#991b1b';
+  ctx.beginPath(); ctx.arc(-sr * 0.38, -sr * 0.2, sr * 0.24, 0, TAU); ctx.fill();
+  ctx.beginPath(); ctx.arc(sr * 0.38, -sr * 0.2, sr * 0.24, 0, TAU); ctx.fill();
+  ctx.fillRect(-sr * 0.07, sr * 0.5, sr * 0.14, sr * 0.45);
   ctx.restore();
   // tint merah pada badan (berkedip)
   ctx.save();
@@ -851,7 +858,7 @@ export default function TebasMaterial({ onExit }: { onExit: () => void }): React
           count: 16, colors: ['#450a0a', '#1f2937', '#6b7280'], speed: [40, 220],
           life: [0.6, 1.3], size: [3, 8], gravity: 300, shape: 'circle',
         });
-        loseLife(it.x, it.y - 30, 'DINAMIT! -1⛑️', true);
+        loseLife(it.x, it.y - 30, 'DINAMIT! -1 HELM', true);
       }
       if (dyn === 0) {
         const bonus = comboBonus(g.swipeSlices);
@@ -959,7 +966,7 @@ export default function TebasMaterial({ onExit }: { onExit: () => void }): React
           if (lost > 0 && playing && g.lives > 0) {
             g.missFlash = 1;
             api.sfx.thud(1.1);
-            loseLife(Math.min(Math.max(m.x, 70), api.W - 70), api.H - 90, 'MISS! -1⛑️', false);
+            loseLife(Math.min(Math.max(m.x, 70), api.W - 70), api.H - 90, 'MISS! -1 HELM', false);
           }
         }
       }
@@ -1160,11 +1167,14 @@ export default function TebasMaterial({ onExit }: { onExit: () => void }): React
       {/* HUD */}
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', zIndex: 5, pointerEvents: 'none' }}>
         <div style={{ pointerEvents: 'auto', background: 'rgba(10,18,32,0.55)', border: '1px solid rgba(255,255,255,0.18)', borderRadius: 14, padding: '8px 12px', color: '#fff', backdropFilter: 'blur(6px)' }}>
-          <div style={{ fontWeight: 900, fontSize: 20, lineHeight: 1 }}>🎋 {hud.score}</div>
+          <div style={{ fontWeight: 900, fontSize: 20, lineHeight: 1 }}>SKOR {hud.score}</div>
           <div style={{ fontSize: 11, opacity: 0.75, marginTop: 3 }}>Terbaik: {hud.best}</div>
           <div style={{ fontSize: 17, marginTop: 2, letterSpacing: 2 }} aria-label={`${hud.lives} nyawa`}>
             {[0, 1, 2].map((i) => (
-              <span key={i} style={{ opacity: i < hud.lives ? 1 : 0.22, filter: i < hud.lives ? 'none' : 'grayscale(1)' }}>⛑️</span>
+              <svg key={i} width="19" height="15" viewBox="0 0 24 18" style={{ opacity: i < hud.lives ? 1 : 0.22, marginRight: 2 }} aria-hidden>
+                <path d="M3 15a9 8 0 0 1 6-7.4V5h6v2.6a9 8 0 0 1 6 7.4z" fill={i < hud.lives ? '#fbbf24' : '#64748b'} />
+                <rect x="1" y="14" width="22" height="3" rx="1.5" fill={i < hud.lives ? '#f59e0b' : '#475569'} />
+              </svg>
             ))}
           </div>
         </div>
@@ -1180,14 +1190,14 @@ export default function TebasMaterial({ onExit }: { onExit: () => void }): React
       {screen === 'tutorial' && (
         <div style={card}>
           <div style={panel}>
-            <div style={{ fontSize: 40 }}>🎋⚔️</div>
+            <div style={{ fontSize: 15, fontWeight: 900, letterSpacing: 2, color: '#fde047' }}>— TEBAS MATERIAL —</div>
             <h2 style={{ margin: '8px 0 4px', fontWeight: 900, fontSize: 24, color: '#fde047' }}>TEBAS MATERIAL</h2>
             {/* Tutorial 1 kalimat + visual (panah swipe animasi di canvas) */}
             <p style={{ fontSize: 14.5, lineHeight: 1.6, opacity: 0.95, margin: '6px 0 4px' }}>
-              <b>Tebas</b> material yang beterbangan dengan jarimu — <b>JANGAN</b> sentuh <b>💥dinamit💥</b>!
+              <b>Tebas</b> material yang beterbangan dengan jarimu — <b>JANGAN</b> sentuh <b>dinamit</b>!
             </p>
             <p style={{ fontSize: 12.5, lineHeight: 1.55, opacity: 0.75, margin: '0 0 6px' }}>
-              +10 per tebasan • kombo x{COMBO_MIN}+ = slow-mo • 3 ⛑️ • miss = -1 ⛑️
+              +10 per tebasan • kombo x{COMBO_MIN}+ = slow-mo • 3 helm • material lolos = -1 helm
             </p>
             <button style={{ ...bigBtn, background: 'linear-gradient(180deg,#fde047,#f59e0b)', color: '#3a2a00' }} onClick={startGame}>
               Mulai Menebas
@@ -1199,7 +1209,7 @@ export default function TebasMaterial({ onExit }: { onExit: () => void }): React
       {screen === 'pause' && (
         <div style={card}>
           <div style={panel}>
-            <div style={{ fontSize: 40 }}>☕</div>
+            <div style={{ fontSize: 15, fontWeight: 900, letterSpacing: 2, color: '#fde047' }}>— JEDA —</div>
             <h2 style={{ margin: '8px 0 4px', fontWeight: 900, fontSize: 22 }}>JEDA</h2>
             <p style={{ fontSize: 13, opacity: 0.85 }}>Mandor lagi ngopi. Material menunggu dengan sabar (tidak seperti klien).</p>
             <button style={{ ...bigBtn, background: 'linear-gradient(180deg,#fde047,#f59e0b)', color: '#3a2a00' }} onClick={togglePause}>Lanjutkan</button>
@@ -1212,7 +1222,7 @@ export default function TebasMaterial({ onExit }: { onExit: () => void }): React
       {screen === 'over' && (
         <div style={card}>
           <div style={panel}>
-            <div style={{ fontSize: 40 }}>💥</div>
+            <div style={{ fontSize: 15, fontWeight: 900, letterSpacing: 2, color: '#f87171' }}>— MELEDAK —</div>
             <h2 style={{ margin: '8px 0 4px', fontWeight: 900, fontSize: 22, color: '#f87171' }}>PROYEK MELEDAK!</h2>
             <p style={{ fontSize: 13.5, lineHeight: 1.55, opacity: 0.92 }}>
               3 helm habis! Proyek diledakkan sebelum serah terima.

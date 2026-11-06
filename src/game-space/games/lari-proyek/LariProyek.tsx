@@ -5,6 +5,17 @@
  */
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { LariProyekEngine, type HudState, type GameOverInfo } from './LariProyekEngine';
+import { progressionFor } from './logic';
+
+/** Ikon helm proyek prosedural (SVG): kubah kuning + brim + ridge — pengganti emoji helm. */
+function HelmIcon({ size = 16 }: { size?: number }): React.JSX.Element {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" style={{ verticalAlign: '-3px' }}>
+      <path d="M4 15a8 8 0 0 1 6-7.8V5h4v2.2a8 8 0 0 1 6 7.8z" fill="#facc15" stroke="#a16207" strokeWidth="1.2" />
+      <rect x="2" y="15" width="20" height="3" rx="1.5" fill="#eab308" stroke="#a16207" strokeWidth="1" />
+    </svg>
+  );
+}
 
 type Screen = 'tutorial' | 'play' | 'over';
 
@@ -14,7 +25,10 @@ let popupId = 0;
 
 export default function LariProyek({ onExit }: { onExit: () => void }) {
   const [screen, setScreen] = useState<Screen>('tutorial');
-  const [hud, setHud] = useState<HudState>({ score: 0, best: 0, helm: 0, meters: 0, kmh: 0 });
+  const [hud, setHud] = useState<HudState>({
+    score: 0, best: 0, helm: 0, meters: 0, kmh: 0,
+    level: 1, levelLabel: 'Pemanasan', nextAt: 100, progress: 0,
+  });
   const [muted, setMuted] = useState(false);
   const [paused, setPaused] = useState(false);
   const [quip, setQuip] = useState('');
@@ -42,7 +56,11 @@ export default function LariProyek({ onExit }: { onExit: () => void }) {
           setOver(r);
           setQuip(r.reason);
           setNewBest(r.newBest);
-          setHud({ score: r.score, best: r.best, helm: r.helm, meters: r.meters, kmh: 0 });
+          const prog = progressionFor(r.meters);
+          setHud({
+            score: r.score, best: r.best, helm: r.helm, meters: r.meters, kmh: 0,
+            level: prog.level, levelLabel: prog.label, nextAt: prog.nextAt, progress: prog.progress,
+          });
           setScreen('over');
         },
         onPopup: (text, color, x, y, size = 'big') => {
@@ -149,12 +167,18 @@ export default function LariProyek({ onExit }: { onExit: () => void }) {
             <div style={{ fontSize: 11, opacity: 0.85, letterSpacing: 1 }}>SKOR</div>
             <div style={{ fontSize: 22 }}>{hud.score}</div>
           </div>
-          <div style={{ color: '#fff', fontWeight: 800, textAlign: 'center' }}>
-            <div style={{ fontSize: 11, opacity: 0.85, letterSpacing: 1 }}>KECEPATAN</div>
-            <div style={{ fontSize: 15 }}>{hud.kmh} km/h</div>
+          <div style={{ color: '#fff', fontWeight: 800, textAlign: 'center', minWidth: 118 }}>
+            <div style={{ fontSize: 11, opacity: 0.85, letterSpacing: 1 }}>JARAK · KECEPATAN</div>
+            <div style={{ fontSize: 15 }}>{hud.meters} m · {hud.kmh} km/h</div>
+            <div style={{ fontSize: 10, opacity: 0.9, marginTop: 2 }}>
+              Lv{hud.level} {hud.levelLabel}{hud.nextAt !== null ? ` · target ${hud.nextAt} m (${Math.max(0, hud.nextAt - hud.meters)} m lagi)` : ' · MAKS'}
+            </div>
+            <div style={{ height: 5, borderRadius: 99, background: 'rgba(255,255,255,0.25)', marginTop: 4, overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: `${Math.round(hud.progress * 100)}%`, background: '#f5b301', borderRadius: 99 }} />
+            </div>
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <div style={{ color: '#fde047', fontWeight: 800, fontSize: 14, marginRight: 4 }}>🪖 {hud.helm}</div>
+            <div style={{ color: '#fde047', fontWeight: 800, fontSize: 14, marginRight: 4 }}><HelmIcon /> {hud.helm}</div>
             <button className="gs2d-iconbtn" onClick={togglePause} aria-label="Jeda">⏸</button>
             <button className="gs2d-iconbtn" onClick={toggleMute} aria-label="Suara">{muted ? '🔇' : '🔊'}</button>
             <button className="gs2d-iconbtn" onClick={onExit} aria-label="Keluar">✕</button>
@@ -182,9 +206,9 @@ export default function LariProyek({ onExit }: { onExit: () => void }) {
       {screen === 'tutorial' && !glError && (
         <div className="lr-overlay">
           <div className="lr-card">
-            <h2 className="lr-title">🏃 Lari Proyek 3D</h2>
+            <h2 className="lr-title">Lari Proyek 3D</h2>
             <p className="lr-sub">
-              <b style={{ color: '#fde68a' }}>Geser / ← → untuk pindah lajur — ⤴ lompat, ⬇ guling, kumpulin 🪖 helm proyek!</b>
+              <b style={{ color: '#fde68a' }}>Geser / ← → untuk pindah lajur — ⤴ lompat, ⬇ guling, kumpulin helm proyek <HelmIcon />!</b>
             </p>
             <div className="lr-tutrow">
               <div className="lr-tutkey"><span>◀ ▶</span>geser / panah<br />pindah lajur</div>
@@ -192,10 +216,11 @@ export default function LariProyek({ onExit }: { onExit: () => void }) {
               <div className="lr-tutkey"><span>⬇</span>bawah / swipe<br />guling 0,6 dtk</div>
             </div>
             <p className="lr-sub" style={{ marginTop: 10 }}>
-              🧱 <b>Lingkaran merah</b> = bata mau jatuh, minggir atau lompat!
-              🪖 Helm = <b>+50</b>. Makin jauh makin ngebut — kayak kejar deadline.
+              <b style={{ color: '#f87171' }}>Lingkaran merah + kolom merah</b> = bata mau jatuh, minggir atau lompat!
+              Barier punya <b style={{ color: '#ffb020' }}>lampu beacon berkedip</b>, balok gantung punya <b>papan segitiga</b> — guling di bawahnya!
+              Helm <HelmIcon /> = <b>+50</b>. Makin jauh makin ngebut — kayak kejar deadline.
             </p>
-            <button className="lr-btn" onClick={start}>Mulai Lari! 🏃</button>
+            <button className="lr-btn" onClick={start}>Mulai Lari!</button>
             <button className="lr-btn ghost" onClick={onExit}>← Kembali</button>
           </div>
         </div>
@@ -204,7 +229,7 @@ export default function LariProyek({ onExit }: { onExit: () => void }) {
       {glError && (
         <div className="lr-overlay">
           <div className="lr-card">
-            <h2 className="lr-title">⚠️ WebGL bermasalah</h2>
+            <h2 className="lr-title">WebGL bermasalah</h2>
             <p className="lr-sub">{glError}</p>
             <button className="lr-btn ghost" onClick={onExit}>← Kembali</button>
           </div>
@@ -214,7 +239,7 @@ export default function LariProyek({ onExit }: { onExit: () => void }) {
       {screen === 'play' && paused && (
         <div className="lr-overlay">
           <div className="lr-card">
-            <h2 className="lr-title">⏸ Jeda</h2>
+            <h2 className="lr-title">Jeda</h2>
             <p className="lr-sub">Mandor istirahat. Deadline tetap jalan sih.</p>
             <button className="lr-btn" onClick={togglePause}>Lanjutkan ▶</button>
             <button className="lr-btn ghost" onClick={start}>↻ Ulangi</button>
@@ -225,14 +250,14 @@ export default function LariProyek({ onExit }: { onExit: () => void }) {
       {screen === 'over' && over && (
         <div className="lr-overlay">
           <div className="lr-card">
-            <h2 className="lr-title">💥 Aduh!</h2>
+            <h2 className="lr-title">Aduh!</h2>
             <div className="lr-score">{over.score}</div>
             <div className="lr-best">
-              {over.meters} m + 🪖 {over.helm}×50 · Terbaik: <b>{over.best}</b>
+              {over.meters} m · Lv{hud.level} {hud.levelLabel} + <HelmIcon /> {over.helm}×50 · Terbaik: <b>{over.best}</b>
             </div>
-            {newBest && <div><span className="lr-newbest">🏆 REKOR BARU!</span></div>}
+            {newBest && <div><span className="lr-newbest">REKOR BARU!</span></div>}
             <p className="lr-quip">"{quip}"</p>
-            <button className="lr-btn" onClick={start}>🏃 Lari Lagi</button>
+            <button className="lr-btn" onClick={start}>Lari Lagi</button>
             <button className="lr-btn ghost" onClick={onExit}>← Kembali</button>
           </div>
         </div>

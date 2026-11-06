@@ -3,7 +3,7 @@
  * Run: npx tsx src/game-space/games/arcade/sliding-puzzle/logic.test.ts
  */
 import { strict as assert } from 'node:assert';
-import { solvedBoard, neighbors, shuffleBoard, canMove, moveTile, isSolved, misplaced } from './logic';
+import { solvedBoard, neighbors, shuffleBoard, canMove, moveTile, isSolved, misplaced, isSolvable, isAtHome, homeMask, placedCount } from './logic';
 
 let passed = 0;
 let failed = 0;
@@ -111,6 +111,85 @@ test('solved → 0, satu geser → 1', () => {
   const m = moveTile(solvedBoard(3), 3, 7);
   assert.ok(m);
   assert.equal(misplaced(m), 1);
+});
+
+console.log('\n[6] isSolvable — penjaga paritas (regresi kandidat acak mentah)');
+test('solved 3x3 & 4x4 solvable', () => {
+  assert.ok(isSolvable(solvedBoard(3), 3));
+  assert.ok(isSolvable(solvedBoard(4), 4));
+});
+test('satu langkah sah dari solved tetap solvable', () => {
+  for (const size of [3, 4]) {
+    const b = solvedBoard(size);
+    const m = moveTile(b, size, size * size - 2);
+    assert.ok(m);
+    assert.ok(isSolvable(m, size), `size ${size}`);
+  }
+});
+test('tukar dua keping dari solved = MUSTAHIL (bug klasik permutasi mentah)', () => {
+  const b4 = solvedBoard(4);
+  [b4[13], b4[14]] = [b4[14], b4[13]]; // tukar keping 14 & 15
+  assert.ok(!isSolvable(b4, 4));
+  const b3 = solvedBoard(3);
+  [b3[0], b3[1]] = [b3[1], b3[0]]; // tukar keping 1 & 2
+  assert.ok(!isSolvable(b3, 3));
+});
+test('statistik: 200 acakan generator per ukuran SEMUA solvable & tak ada yang solved', () => {
+  for (const size of [3, 4]) {
+    for (let s = 0; s < 200; s += 1) {
+      const b = shuffleBoard(size, 120, lcg(s * 31 + size));
+      assert.ok(isSolvable(b, size), `size ${size} seed ${s} tidak solvable`);
+      assert.ok(!isSolved(b));
+    }
+  }
+});
+test('diskriminatif: permutasi mentah Fisher-Yates menghasilkan yang mustahil juga', () => {
+  let unsolvable = 0;
+  const total = 60;
+  for (let s = 0; s < total; s += 1) {
+    const rng = lcg(s * 17 + 5);
+    const b = solvedBoard(4);
+    for (let i = b.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(rng() * (i + 1));
+      [b[i], b[j]] = [b[j], b[i]];
+    }
+    if (!isSolvable(b, 4)) unsolvable += 1;
+  }
+  // ±setengah permutasi mentah mustahil; penjaga harus menangkap sebagian besar itu
+  assert.ok(unsolvable >= 10 && unsolvable <= 50, `unsolvable=${unsolvable}/${total} di luar rentang wajar`);
+});
+
+console.log('\n[7] indikator keping tepat — isAtHome / homeMask / placedCount');
+test('solved: semua keping tepat, lubang tidak dihitung', () => {
+  for (const size of [3, 4]) {
+    const b = solvedBoard(size);
+    assert.equal(placedCount(b), size * size - 1);
+    const mask = homeMask(b);
+    assert.equal(mask.length, size * size);
+    assert.ok(mask.slice(0, -1).every(Boolean));
+    assert.equal(mask[mask.length - 1], false, 'lubang bukan keping tepat');
+    assert.ok(isAtHome(b, 0));
+    assert.ok(!isAtHome(b, b.length - 1));
+  }
+});
+test('satu geser dari solved 4x4: placed 14, masker cocok posisi', () => {
+  const m = moveTile(solvedBoard(4), 4, 14);
+  assert.ok(m);
+  assert.equal(placedCount(m), 14);
+  assert.equal(misplaced(m), 1);
+  const mask = homeMask(m);
+  assert.equal(mask[14], false, 'sel lubang tidak tepat');
+  assert.equal(mask[15], false, 'keping 15 pindah dari rumahnya');
+  assert.equal(mask[0], true);
+});
+test('invarian acak: placedCount + misplaced = jumlah keping', () => {
+  for (const size of [3, 4]) {
+    for (let s = 0; s < 30; s += 1) {
+      const b = shuffleBoard(size, 90, lcg(s * 13 + size));
+      assert.equal(placedCount(b) + misplaced(b), size * size - 1);
+      assert.equal(homeMask(b).filter(Boolean).length, placedCount(b));
+    }
+  }
 });
 
 console.log(`\n${passed} lulus, ${failed} gagal${failed ? ` — ${failures.join(', ')}` : ''}`);

@@ -10,7 +10,7 @@ import { popText } from '../../../engine2d/juice2d';
 import {
   EMPTY, neighbors, levelGrid, findCluster, findFloating, colorsInGrid,
   pushCeiling, isCleared, rowsForLevel, colorsForLevel,
-  scorePop, scoreDrop, LEVEL_BONUS, type Grid,
+  scoreDrop, LEVEL_BONUS, materialName, shotsUntilCeiling, snapScore, type Grid,
 } from './logic';
 
 const FONT = "'Plus Jakarta Sans','Inter',system-ui,sans-serif";
@@ -139,7 +139,7 @@ export default function ArcadeBubbleShooter({ onExit }: { onExit: () => void }):
       api.sfx.fail();
       api.shake.add(0.6);
       const wrap = wrapRef.current;
-      if (wrap) popText(wrap, 'ADONAN MELEBER! 🪣', { size: 30, color: '#f87171' });
+      if (wrap) popText(wrap, 'ADONAN MELEBER!', { size: 30, color: '#f87171' });
       window.setTimeout(() => {
         api.pushHud({ score: s.score, level: s.level, best: nb, shots: 0 });
         setScreen('over');
@@ -195,7 +195,7 @@ export default function ArcadeBubbleShooter({ onExit }: { onExit: () => void }):
           });
           s.grid[cr][cc] = EMPTY;
         }
-        const pts = scorePop(cluster.length);
+        const pts = snapScore(cluster.length, 0);
         s.score += pts;
         api.scores.add(p.x, p.y - 20, `+${pts}`, { color: '#fef08a', size: 20 });
         api.sfx.chime(2);
@@ -219,7 +219,7 @@ export default function ArcadeBubbleShooter({ onExit }: { onExit: () => void }):
         const maxRows = Math.floor((s.shooterY - 110 - s.y0) / s.cellH);
         pushCeiling(s.grid, s.cols, colorsForLevel(s.level), rng, Math.max(6, maxRows));
         const wrap = wrapRef.current;
-        if (wrap) popText(wrap, 'Langit-langit turun! ⬇️', { size: 18, color: '#fb923c' });
+        if (wrap) popText(wrap, 'Langit-langit turun!', { size: 18, color: '#fb923c' });
         api.sfx.thud(0.7);
       }
       // cek kalah: adonan menyentuh batas
@@ -333,6 +333,23 @@ export default function ArcadeBubbleShooter({ onExit }: { onExit: () => void }):
         ctx.arc(x + Math.cos(a) * rr, y + Math.sin(a) * rr, R * 0.09, 0, TAU);
         ctx.fill();
       }
+      // glif material prosedural di tengah: bentuk berbeda per warna
+      // (garis / segitiga / kotak / cincin / wajik / silang) — terbaca
+      // walau warna sulit dibedakan
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255,255,255,0.75)';
+      ctx.fillStyle = 'rgba(255,255,255,0.75)';
+      ctx.lineWidth = 2;
+      const gr = R * 0.34;
+      const kind = ((color % 6) + 6) % 6;
+      ctx.beginPath();
+      if (kind === 0) { ctx.moveTo(x - gr, y); ctx.lineTo(x + gr, y); ctx.stroke(); }
+      else if (kind === 1) { ctx.moveTo(x, y - gr); ctx.lineTo(x + gr, y + gr); ctx.lineTo(x - gr, y + gr); ctx.closePath(); ctx.fill(); }
+      else if (kind === 2) { ctx.fillRect(x - gr * 0.8, y - gr * 0.8, gr * 1.6, gr * 1.6); }
+      else if (kind === 3) { ctx.arc(x, y, gr * 0.85, 0, TAU); ctx.stroke(); }
+      else if (kind === 4) { ctx.moveTo(x, y - gr); ctx.lineTo(x + gr, y); ctx.lineTo(x, y + gr); ctx.lineTo(x - gr, y); ctx.closePath(); ctx.fill(); }
+      else { ctx.moveTo(x - gr, y); ctx.lineTo(x + gr, y); ctx.moveTo(x, y - gr); ctx.lineTo(x, y + gr); ctx.stroke(); }
+      ctx.restore();
       // gloss
       ctx.fillStyle = 'rgba(255,255,255,0.4)';
       ctx.beginPath();
@@ -435,7 +452,10 @@ export default function ArcadeBubbleShooter({ onExit }: { onExit: () => void }):
       ctx.fillStyle = 'rgba(255,255,255,0.75)';
       ctx.font = `700 11px ${FONT}`;
       ctx.textAlign = 'center';
-      ctx.fillText('⬇ berikutnya', sx + 66, sy + 8);
+      ctx.beginPath();
+      ctx.moveTo(sx + 40, sy + 2); ctx.lineTo(sx + 50, sy + 2); ctx.lineTo(sx + 45, sy + 10);
+      ctx.closePath(); ctx.fill();
+      ctx.fillText('berikutnya', sx + 72, sy + 8);
       drawCement(ctx, sx + 66, sy + 26, s.next, s.R * 0.6, 13);
       ctx.restore();
     };
@@ -467,6 +487,11 @@ export default function ArcadeBubbleShooter({ onExit }: { onExit: () => void }):
         else break;
       }
       ctx.stroke();
+      // ujung garis bidik: lingkaran penanda titik akhir pantulan terakhir
+      ctx.setLineDash([]);
+      ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(x, y, 6, 0, TAU); ctx.stroke();
       ctx.restore();
     };
 
@@ -574,7 +599,7 @@ export default function ArcadeBubbleShooter({ onExit }: { onExit: () => void }):
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', zIndex: 5, pointerEvents: 'none' }}>
         <div style={{ pointerEvents: 'auto', background: 'rgba(10,20,35,0.6)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 14, padding: '7px 12px', color: '#fff', backdropFilter: 'blur(6px)' }}>
           <div style={{ fontWeight: 900, fontSize: 17, color: '#fef08a' }}>{hud.score.toLocaleString('id-ID')}</div>
-          <div style={{ fontSize: 12, opacity: 0.9 }}>Level {hud.level} • plafon {hud.shots}/5</div>
+          <div style={{ fontSize: 12, opacity: 0.9 }}>Level {hud.level} • plafon turun dalam {shotsUntilCeiling(hud.shots)} tembakan</div>
         </div>
         <div style={{ display: 'flex', gap: 8, pointerEvents: 'auto' }}>
           {(screen === 'play' || screen === 'pause') && (
@@ -587,15 +612,20 @@ export default function ArcadeBubbleShooter({ onExit }: { onExit: () => void }):
 
       {screen === 'tutorial' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>🪣</div>
+          <CementBadge label="SEMEN" />
           <h2 style={h2}>TEMBAK SEMEN</h2>
           <p style={p}>
             <b>Ketuk</b> untuk menembakkan gumpalan semen ke atas — bisa <b>memantul</b> di dinding!
-            Samakan <b>3 warna</b> untuk meletuskannya. Yang menggantung akan <b>runtuh</b>!
+            Garis bidik putus-putus berakhir di lingkaran penanda. Samakan <b>3 warna</b> untuk
+            meletuskannya. Yang menggantung akan <b>runtuh</b>!
           </p>
           <p style={p}>
-            ⚠️ Tiap 5 tembakan <b>langit-langit turun</b>. Jangan sampai adonan menyentuh{' '}
-            <b style={{ color: '#f87171' }}>BATAS COR</b>!
+            Enam material — {materialName(0)}, {materialName(1)}, {materialName(2)}, {materialName(3)},
+            {' '}{materialName(4)}, {materialName(5)} — dibedakan juga oleh <b>bentuk glif</b> di tengahnya.
+          </p>
+          <p style={p}>
+            Perhatian: tiap 5 tembakan <b>langit-langit turun</b> (hitung mundurnya ada di HUD).
+            Jangan sampai adonan menyentuh <b style={{ color: '#f87171' }}>BATAS COR</b>!
           </p>
           {hud.best > 0 && <p style={p}>Skor terbaik: <b style={{ color: '#fde047' }}>{hud.best.toLocaleString('id-ID')}</b></p>}
           <button style={primaryBtn} onClick={startGame}>Mulai Nyemen</button>
@@ -603,7 +633,7 @@ export default function ArcadeBubbleShooter({ onExit }: { onExit: () => void }):
       )}
       {screen === 'pause' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>☕</div>
+          <CementBadge label="JEDA" />
           <h2 style={h2}>JEDA</h2>
           <p style={p}>Adonan tidak akan mengeras selama jeda. Janji mandor.</p>
           <button style={primaryBtn} onClick={togglePause}>Lanjutkan</button>
@@ -611,7 +641,7 @@ export default function ArcadeBubbleShooter({ onExit }: { onExit: () => void }):
       )}
       {screen === 'over' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>🪣</div>
+          <CementBadge label="MELEBER" />
           <h2 style={h2}>ADONAN MELEBER!</h2>
           <div style={{ fontSize: 40, fontWeight: 900, color: '#fef08a' }}>{hud.score.toLocaleString('id-ID')}</div>
           <p style={p}>Level {hud.level} • Terbaik: <b style={{ color: '#fde047' }}>{hud.best.toLocaleString('id-ID')}</b></p>
@@ -631,6 +661,13 @@ const primaryBtn: React.CSSProperties = {
   background: 'linear-gradient(180deg,#fde047,#f59e0b)', color: '#3a2a00', boxShadow: '0 8px 20px rgba(245,158,11,0.4)',
 };
 const ghostBtn: React.CSSProperties = { ...primaryBtn, background: 'transparent', color: '#93c5fd', boxShadow: 'none', border: '1px solid rgba(255,255,255,0.25)' };
+
+/** Lencana gumpalan semen prosedural: lingkaran gradasi CSS + label teks. */
+function CementBadge({ label }: { label: string }): React.JSX.Element {
+  return (
+    <div aria-hidden style={{ width: 64, height: 64, margin: '0 auto', borderRadius: '50%', background: 'radial-gradient(circle at 32% 30%, #e5e7eb, #9ca3af 55%, #4b5563)', border: '2px solid rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#1f2937', fontSize: 9, fontWeight: 900, letterSpacing: 0.5 }}>{label}</div>
+  );
+}
 
 function Overlay({ children }: { children: React.ReactNode }): React.JSX.Element {
   return (

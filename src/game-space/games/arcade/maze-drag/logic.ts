@@ -256,3 +256,77 @@ export function moveBall(
 export function dist2(ax: number, ay: number, bx: number, by: number): number {
   return Math.hypot(ax - bx, ay - by);
 }
+
+/**
+ * Kecepatan gerak wajar pemain saat menyeret bola menyusuri jalur
+ * solusi: 3 sel per detik. Dipakai menurunkan waktu par dari
+ * panjang path BFS.
+ */
+export const PAR_CELLS_PER_SEC = 3;
+
+/**
+ * Waktu par (detik) untuk sebuah labirin: jumlah langkah pada path
+ * BFS terpendek (path.length - 1) dibagi kecepatan wajar
+ * PAR_CELLS_PER_SEC. Path kosong/satu titik -> 0 (tidak ada par).
+ */
+export function parSecondsFor(m: Maze): number {
+  if (!m.path || m.path.length <= 1) return 0;
+  return (m.path.length - 1) / PAR_CELLS_PER_SEC;
+}
+
+/**
+ * Rating bintang berbasis waktu:
+ * 3 bintang bila selesai <= par, 2 bila <= 1,5x par, 1 bila selesai
+ * di atas itu. Par tidak valid (<= 0 / tak hingga) -> 1 bintang
+ * (selesai saja, tanpa acuan waktu).
+ */
+export function starsFor(elapsedSec: number, parSec: number): 1 | 2 | 3 {
+  if (!Number.isFinite(elapsedSec) || !Number.isFinite(parSec) || parSec <= 0) return 1;
+  if (elapsedSec <= parSec) return 3;
+  if (elapsedSec <= parSec * 1.5) return 2;
+  return 1;
+}
+
+/**
+ * Jumlah checkpoint yang berada dalam radius dari posisi bola.
+ * Posisi bola (gx, gy) dalam satuan SEL (koordinat grid pecahan:
+ * px / cellSize), radius juga dalam sel; pusat checkpoint sel
+ * (c, r) adalah (c + 0.5, r + 0.5). Murni: komponen memakai ini
+ * untuk mendeteksi capaian dan mengakumulasikannya sebagai progres.
+ */
+export function checkpointsPassed(m: Maze, gx: number, gy: number, radius: number): number {
+  let n = 0;
+  for (const cp of m.checkpoints) {
+    if (Math.hypot(gx - (cp.c + 0.5), gy - (cp.r + 0.5)) <= radius) n += 1;
+  }
+  return n;
+}
+
+/**
+ * Indeks checkpoint terjauh (0-based) yang berada dalam radius dari
+ * posisi bola (satuan sel, sama seperti checkpointsPassed), atau -1
+ * bila tidak ada checkpoint yang tercapai pada posisi ini.
+ */
+export function furthestCheckpointIndex(
+  m: Maze,
+  gx: number,
+  gy: number,
+  radius: number,
+): number {
+  let best = -1;
+  m.checkpoints.forEach((cp, i) => {
+    if (Math.hypot(gx - (cp.c + 0.5), gy - (cp.r + 0.5)) <= radius) best = i;
+  });
+  return best;
+}
+
+/**
+ * Waktu terbaik (terkecil) dari dua catatan waktu; 0 berarti
+ * "belum ada catatan". Regresi: catatan waktu harus memakai min —
+ * helper max (untuk skor/level) akan mengunci waktu TERBURUK.
+ */
+export function improvedBestTime(prevBest: number, elapsed: number): number {
+  if (!Number.isFinite(elapsed)) return prevBest;
+  if (!Number.isFinite(prevBest) || prevBest <= 0) return elapsed;
+  return Math.min(prevBest, elapsed);
+}

@@ -86,3 +86,44 @@ export function misplaced(board: Board): number {
   }
   return n;
 }
+
+/**
+ * Apakah papan ini MUNGKIN diselesaikan? (aturan paritas klasik)
+ * - Lebar ganjil (3×3): solvable ⟺ jumlah inversi genap.
+ * - Lebar genap (4×4): solvable ⟺ inversi + baris lubang dari bawah ganjil.
+ * Permutasi mentah acak melanggar aturan ini ±50% waktu — fungsi ini
+ * adalah penjaga yang bisa dipakai generator/tes untuk menolaknya.
+ * `shuffleBoard` di atas sudah aman (random walk dari solved), fungsi
+ * ini membuktikannya secara eksplisit per papan.
+ */
+export function isSolvable(board: Board, size: number): boolean {
+  const tiles = board.filter((v) => v !== 0);
+  let inversions = 0;
+  for (let i = 0; i < tiles.length; i += 1) {
+    for (let j = i + 1; j < tiles.length; j += 1) {
+      if (tiles[i] > tiles[j]) inversions += 1;
+    }
+  }
+  if (size % 2 === 1) return inversions % 2 === 0;
+  const emptyRowFromBottom = size - Math.floor(board.indexOf(0) / size);
+  return (inversions + emptyRowFromBottom) % 2 === 1;
+}
+
+/** Apakah keping di idx sudah duduk di posisi asalnya? (lubang: tidak) */
+export function isAtHome(board: Board, idx: number): boolean {
+  return board[idx] !== 0 && board[idx] === idx + 1;
+}
+
+/** Masker per sel: true bila keping di sel itu sudah di tempat benar. */
+export function homeMask(board: Board): boolean[] {
+  return board.map((_, idx) => isAtHome(board, idx));
+}
+
+/** Jumlah keping yang sudah di tempat benar (0..n-1, lubang tak dihitung). */
+export function placedCount(board: Board): number {
+  let n = 0;
+  for (let i = 0; i < board.length; i += 1) {
+    if (isAtHome(board, i)) n += 1;
+  }
+  return n;
+}

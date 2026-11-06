@@ -613,3 +613,37 @@ export function starFor(ballsUsed: number, ballsTotal: number): 1 | 2 | 3 {
 export function leftoverBonus(ballsLeft: number): number {
   return ballsLeft * 250;
 }
+
+/* --- Gelombang 3: umpan balik kerusakan & kejelasan objektif (murni) --- */
+
+/**
+ * Tingkat retak visual sebuah blok: 0 = utuh, 1 = retak, 2 = retak parah.
+ * Diturunkan dari sisa HP relatif terhadap HP maksimum materialnya, agar
+ * renderer menggambar retakan yang jujur (bata 2 HP retak setelah 1 pukul,
+ * beton 3 HP retak bertahap) tanpa menebak di komponen.
+ */
+export function crackLevel(mat: Mat, hp: number): 0 | 1 | 2 {
+  const max = MAT_HP[mat];
+  if (hp >= max) return 0;
+  if (hp <= 1 && max > 1) return max >= 3 && hp > 1 ? 1 : 2;
+  return 1;
+}
+
+/** Jumlah berkas revisi yang masih utuh — objektif level, ditampilkan di HUD. */
+export function remainingBerkas(blocks: Array<{ mat: Mat; dead: boolean }>): number {
+  return blocks.filter((b) => b.mat === 'berkas' && !b.dead).length;
+}
+
+/** Kekuatan tarikan ketapel 0..1 dari jarak tarik (untuk meteran daya). */
+export function launchPowerFrac(dragDist: number): number {
+  if (dragDist <= 0) return 0;
+  return Math.min(1, dragDist / DRAG_MAX);
+}
+
+/** Label daya dari fraksi tarikan, untuk meteran yang terbaca tanpa warna saja. */
+export function launchPowerLabel(frac: number): 'LEMAH' | 'SEDANG' | 'KUAT' | 'MAKSIMUM' {
+  if (frac >= 0.95) return 'MAKSIMUM';
+  if (frac >= 0.6) return 'KUAT';
+  if (frac >= 0.3) return 'SEDANG';
+  return 'LEMAH';
+}

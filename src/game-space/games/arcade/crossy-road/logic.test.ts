@@ -4,6 +4,7 @@
 import { strict as assert } from 'node:assert';
 import {
   createState, hop, step, checkCollision, genLane, getLane, COLS,
+  zoneForRow, zoneSpeedBonus, extraVehiclesForRow, isZoneStart, ZONE_ROWS,
   type State,
 } from './logic';
 
@@ -141,6 +142,47 @@ test('simulasi: hop acak 200x, state konsisten', () => {
   assert.ok(st.score === st.maxRow, 'skor = maxRow');
   assert.ok(st.score >= 0);
   assert.ok(st.hops === 200 || st.over, 'konsisten');
+});
+
+test('PEMBEDA endless: zona kepadatan naik tiap ZONE_ROWS baris', () => {
+  assert.equal(zoneForRow(0), 1);
+  assert.equal(zoneForRow(ZONE_ROWS - 1), 1);
+  assert.equal(zoneForRow(ZONE_ROWS), 2);
+  assert.equal(zoneForRow(ZONE_ROWS * 3), 4);
+  assert.ok(isZoneStart(ZONE_ROWS));
+  assert.ok(isZoneStart(ZONE_ROWS * 2));
+  assert.ok(!isZoneStart(0), 'baris 0 bukan gerbang zona');
+  assert.ok(!isZoneStart(ZONE_ROWS + 1));
+});
+
+test('PEMBEDA endless: zona menaikkan bonus kecepatan (jenuh di plafon)', () => {
+  assert.equal(zoneSpeedBonus(0), 0);
+  assert.ok(zoneSpeedBonus(ZONE_ROWS * 2) > zoneSpeedBonus(ZONE_ROWS));
+  assert.equal(zoneSpeedBonus(1000), 1.6, 'bonus dibatasi plafon 1.6');
+});
+
+test('PEMBEDA endless: kendaraan ekstra hanya di baris jauh', () => {
+  assert.equal(extraVehiclesForRow(0), 0);
+  assert.equal(extraVehiclesForRow(15), 0);
+  assert.equal(extraVehiclesForRow(16), 1);
+  assert.equal(extraVehiclesForRow(39), 1);
+  assert.equal(extraVehiclesForRow(40), 2);
+});
+
+test('PEMBEDA endless: lajur jauh rata-rata lebih cepat & lebih padat dari lajur dekat', () => {
+  const avg = (rows: number[]): { speed: number; veh: number } => {
+    let s = 0; let c = 0; let n = 0;
+    for (const r of rows) {
+      const lane = genLane(42, r);
+      if (lane.kind === 'jalan') { s += lane.speed; c += lane.vehicles.length; n += 1; }
+    }
+    assert.ok(n > 5, 'sampel lajur jalan cukup');
+    return { speed: s / n, veh: c / n };
+  };
+  const near = avg(Array.from({ length: 30 }, (_, i) => i + 1));
+  const far = avg(Array.from({ length: 31 }, (_, i) => i + 80));
+  assert.ok(far.speed > near.speed + 1, `jauh ${far.speed.toFixed(2)} harus jauh lebih cepat dari dekat ${near.speed.toFixed(2)}`);
+  assert.ok(far.veh > near.veh, `jauh ${far.veh.toFixed(2)} kendaraan harus lebih padat dari dekat ${near.veh.toFixed(2)}`);
 });
 
 console.log(`\n${passed} passed, ${failed} failed`);

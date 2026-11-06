@@ -270,6 +270,25 @@ export function updateState(s: FlapState, dt: number, rng: () => number): StepRe
   return res;
 }
 
+/* ---------------- nyaris (near-miss) — pembeda Flappy Mandor ----------------
+ * Flappy Mandor adalah versi PRESISI: melewati gate mepet tepi celah
+ * dihitung "NYARIS" dan membangun streak (umpan balik keterampilan),
+ * tanpa mengubah skor gate / medali yang sudah terverifikasi. */
+
+/** Sisa ruang (px) antara lingkaran burung dan tepi celah terdekat. */
+export function clearanceAtPass(birdY: number, g: Gate): number {
+  const top = g.gapY - g.gapH / 2;
+  const bot = g.gapY + g.gapH / 2;
+  return Math.min(birdY - top, bot - birdY) - BIRD_R;
+}
+
+export const NEAR_MISS_MAX_CLEARANCE = 12;
+
+/** Nyaris bila sisa ruang <= 12px (tapi belum tabrakan, yakni >= 0). */
+export function isNearMiss(clearance: number): boolean {
+  return clearance >= 0 && clearance <= NEAR_MISS_MAX_CLEARANCE;
+}
+
 /* ---------------- medals ---------------- */
 
 export type Medal = 'perunggu' | 'perak' | 'emas' | 'platinum' | null;

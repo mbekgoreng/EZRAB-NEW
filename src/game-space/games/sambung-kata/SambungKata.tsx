@@ -8,7 +8,8 @@ import { bestKey, getBest, setBest, getJson, setJson } from '../../engine2d/best
 import { popText } from '../../engine2d/juice2d';
 import {
   mulberry32, shuffleSeeded, generateLevel, submitWord, revealHint,
-  levelComplete, nextPosition, appendSelection, HINTS_PER_PACK, PACK_NAMES,
+  levelComplete, nextPosition, appendSelection, collectBonusWord, bonusScore,
+  HINTS_PER_PACK, PACK_NAMES,
   type Level,
 } from './logic';
 import { drawNoise, hashRand } from './fx';
@@ -23,6 +24,8 @@ interface Hud {
   found: number;
   total: number;
   hintsLeft: number;
+  bonus: number;
+  bonusPoints: number;
 }
 
 interface S {
@@ -30,6 +33,7 @@ interface S {
   letters: string[];
   sel: number[];
   found: string[];
+  bonus: string[];
   foundTs: Record<string, number>;
   hints: Record<string, string>;
   hintsLeft: number;
@@ -281,7 +285,18 @@ function drawCircleBtn(
   ctx.arc(x, y, r, 0, TAU);
   ctx.stroke();
   ctx.fillStyle = labelColor;
-  if (label === 'back') {
+  if (label === 'check') {
+    // check mark drawn as a vector stroke (procedural, no glyph font)
+    ctx.strokeStyle = labelColor;
+    ctx.lineWidth = r * 0.16;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(x - r * 0.38, y + r * 0.02);
+    ctx.lineTo(x - r * 0.12, y + r * 0.30);
+    ctx.lineTo(x + r * 0.42, y - r * 0.28);
+    ctx.stroke();
+  } else if (label === 'back') {
     // backspace glyph drawn manually (font coverage for ⌫ is spotty)
     ctx.strokeStyle = labelColor;
     ctx.lineWidth = 3;
@@ -307,6 +322,147 @@ function drawCircleBtn(
   }
 }
 
+/* ---------- procedural SVG icons & badges (no emoji glyphs) ---------- */
+
+function Ico({ size = 22, children }: { size?: number; children: React.ReactNode }): React.JSX.Element {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      {children}
+    </svg>
+  );
+}
+
+const IconShuffle = (): React.JSX.Element => (
+  <Ico>
+    <path d="M16 3h5v5" /><path d="M4 20 21 3" /><path d="M21 16v5h-5" />
+    <path d="m15 15 6 6" /><path d="M4 4l5 5" />
+  </Ico>
+);
+const IconBulb = ({ size = 22 }: { size?: number }): React.JSX.Element => (
+  <Ico size={size}>
+    <path d="M9 18h6" /><path d="M10 21h4" />
+    <path d="M12 3a6 6 0 0 0-4 10.5c.8.7 1 1.5 1 2.5h6c0-1 .2-1.8 1-2.5A6 6 0 0 0 12 3Z" />
+  </Ico>
+);
+const IconSoundOn = (): React.JSX.Element => (
+  <Ico>
+    <path d="M11 5 6 9H3v6h3l5 4V5Z" fill="currentColor" stroke="none" />
+    <path d="M15.5 8.5a5 5 0 0 1 0 7" /><path d="M18.5 5.5a9 9 0 0 1 0 13" />
+  </Ico>
+);
+const IconSoundOff = (): React.JSX.Element => (
+  <Ico>
+    <path d="M11 5 6 9H3v6h3l5 4V5Z" fill="currentColor" stroke="none" />
+    <path d="m16 9 6 6" /><path d="m22 9-6 6" />
+  </Ico>
+);
+const IconClose = (): React.JSX.Element => (
+  <Ico><path d="M5 5l14 14" /><path d="M19 5 5 19" /></Ico>
+);
+const IconPause = (): React.JSX.Element => (
+  <Ico><path d="M9 5v14" strokeWidth={3.4} /><path d="M15 5v14" strokeWidth={3.4} /></Ico>
+);
+const IconPlay = (): React.JSX.Element => (
+  <svg width={22} height={22} viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M8 5.5v13l11-6.5Z" fill="currentColor" />
+  </svg>
+);
+const IconTarget = ({ size = 15 }: { size?: number }): React.JSX.Element => (
+  <Ico size={size}>
+    <circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="5" />
+    <circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none" />
+  </Ico>
+);
+const IconRepeat = ({ size = 15 }: { size?: number }): React.JSX.Element => (
+  <Ico size={size}>
+    <path d="m17 2 4 4-4 4" /><path d="M3 11v-1a4 4 0 0 1 4-4h14" />
+    <path d="m7 22-4-4 4-4" /><path d="M21 13v1a4 4 0 0 1-4 4H3" />
+  </Ico>
+);
+const IconSparkle = ({ size = 15 }: { size?: number }): React.JSX.Element => (
+  <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M12 2.5 14.3 9.7 21.5 12 14.3 14.3 12 21.5 9.7 14.3 2.5 12 9.7 9.7Z" fill="currentColor" />
+    <circle cx="19" cy="4.6" r="1.5" fill="currentColor" />
+    <circle cx="4.8" cy="18.6" r="1.2" fill="currentColor" />
+  </svg>
+);
+
+/** Inline list marker: small coloured chip holding an SVG icon. */
+function Bullet({ color, children }: { color: string; children: React.ReactNode }): React.JSX.Element {
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 22, height: 22, borderRadius: 7, background: `${color}26`, color, marginRight: 8, verticalAlign: '-6px' }}>
+      {children}
+    </span>
+  );
+}
+
+/** Tutorial header badge: a miniature letter wheel drawn in SVG. */
+function WheelBadge(): React.JSX.Element {
+  const chips: Array<{ x: number; y: number; ch: string }> = [
+    { x: 44, y: 12, ch: 'B' }, { x: 66, y: 30, ch: 'A' }, { x: 58, y: 56, ch: 'T' },
+    { x: 30, y: 56, ch: 'A' }, { x: 22, y: 30, ch: 'S' },
+  ];
+  return (
+    <svg width={88} height={76} viewBox="0 0 88 76" aria-hidden="true">
+      <defs>
+        <radialGradient id="skWheelFace" cx="0.35" cy="0.3" r="0.9">
+          <stop offset="0" stopColor="#f0e2c0" /><stop offset="0.6" stopColor="#d9bd85" /><stop offset="1" stopColor="#b99a63" />
+        </radialGradient>
+        <linearGradient id="skWheelRing" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#9db2ca" /><stop offset="0.5" stopColor="#5f748c" /><stop offset="1" stopColor="#43566c" />
+        </linearGradient>
+      </defs>
+      <circle cx="44" cy="38" r="30" fill="none" stroke="rgba(150,190,230,0.35)" strokeWidth="2" strokeDasharray="5 5" />
+      <path d="M44 12 66 30 58 56 30 56 22 30Z" fill="none" stroke="#fde047" strokeWidth="2.4" strokeLinejoin="round" opacity="0.85" />
+      {chips.map((c) => (
+        <g key={`${c.ch}-${c.x}-${c.y}`}>
+          <circle cx={c.x} cy={c.y} r="11.5" fill="url(#skWheelRing)" />
+          <circle cx={c.x} cy={c.y} r="8.6" fill="url(#skWheelFace)" />
+          <text x={c.x} y={c.y + 3.4} textAnchor="middle" fontSize="10" fontWeight="900" fill="#3d2c12" fontFamily={FONT}>{c.ch}</text>
+        </g>
+      ))}
+      <circle cx="44" cy="38" r="9" fill="#10233d" stroke="rgba(253,224,71,0.5)" />
+      <text x="44" y="41.5" textAnchor="middle" fontSize="8.5" fontWeight="900" fill="#fde047" fontFamily={FONT}>5</text>
+    </svg>
+  );
+}
+
+/** Round gradient badge used by the pause / win / pack / all-done panels. */
+function Badge({ from, to, children }: { from: string; to: string; children: React.ReactNode }): React.JSX.Element {
+  return (
+    <div style={{ width: 64, height: 64, margin: '0 auto', borderRadius: '50%', background: `linear-gradient(160deg, ${from}, ${to})`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', boxShadow: '0 10px 24px rgba(0,0,0,0.4), inset 0 2px 3px rgba(255,255,255,0.45), inset 0 -6px 10px rgba(0,0,0,0.25)', border: '2px solid rgba(255,255,255,0.35)' }}>
+      {children}
+    </div>
+  );
+}
+const PauseBadge = (): React.JSX.Element => (
+  <Badge from="#64748b" to="#334155">
+    <Ico size={28}><path d="M9.5 5v14" strokeWidth={3.4} /><path d="M14.5 5v14" strokeWidth={3.4} /></Ico>
+  </Badge>
+);
+const WinBadge = (): React.JSX.Element => (
+  <Badge from="#4ade80" to="#15803d">
+    <svg width={30} height={30} viewBox="0 0 24 24" fill="none" stroke="#052e12" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="m4.5 12.5 5 5 10-11" />
+    </svg>
+  </Badge>
+);
+const PackBadge = (): React.JSX.Element => (
+  <Badge from="#fbbf24" to="#b45309">
+    <Ico size={28}>
+      <path d="M12 3 4 7v10l8 4 8-4V7Z" /><path d="M4 7l8 4 8-4" /><path d="M12 11v10" /><path d="m8 5 8 4" />
+    </Ico>
+  </Badge>
+);
+const TrophyBadge = (): React.JSX.Element => (
+  <Badge from="#fde047" to="#d97706">
+    <svg width={30} height={30} viewBox="0 0 24 24" fill="none" stroke="#4a2c00" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M7 4h10v5a5 5 0 0 1-10 0Z" /><path d="M7 5H4a3 3 0 0 0 3 4" /><path d="M17 5h3a3 3 0 0 1-3 4" />
+      <path d="M12 14v3" /><path d="M8.5 20h7" /><path d="M10 17h4l.6 3H9.4Z" />
+    </svg>
+  </Badge>
+);
+
 /* ---------------- component ---------------- */
 
 type Screen = 'tutorial' | 'play' | 'pause' | 'win' | 'packdone' | 'alldone';
@@ -317,7 +473,7 @@ export default function SambungKata({ onExit }: { onExit: () => void }): React.J
   const ctlRef = useRef<{ load: (pack: number, level: number) => void; shuffle: () => void; hint: () => void } | null>(null);
   const screenRef = useRef<Screen>('tutorial');
   const [screen, setScreenState] = useState<Screen>('tutorial');
-  const [hud, setHud] = useState<Hud>({ pack: 0, level: 0, found: 0, total: 0, hintsLeft: HINTS_PER_PACK });
+  const [hud, setHud] = useState<Hud>({ pack: 0, level: 0, found: 0, total: 0, hintsLeft: HINTS_PER_PACK, bonus: 0, bonusPoints: 0 });
   const [muted, setMuted] = useState(false);
 
   const setScreen = (s: Screen): void => {
@@ -334,6 +490,7 @@ export default function SambungKata({ onExit }: { onExit: () => void }): React.J
       letters: [],
       sel: [],
       found: [],
+      bonus: [],
       foundTs: {},
       hints: {},
       hintsLeft: HINTS_PER_PACK,
@@ -353,6 +510,7 @@ export default function SambungKata({ onExit }: { onExit: () => void }): React.J
       pack: s.level.pack, level: s.level.level,
       found: s.found.length, total: s.level.words.length,
       hintsLeft: s.hintsLeft,
+      bonus: s.bonus.length, bonusPoints: bonusScore(s.bonus),
     });
     const hintKey = (pack: number): string => bestKey('sambung-kata', `hints-p${pack}`);
 
@@ -361,6 +519,7 @@ export default function SambungKata({ onExit }: { onExit: () => void }): React.J
       s.letters = [...s.level.letters];
       s.sel = [];
       s.found = [];
+      s.bonus = [];
       s.foundTs = {};
       s.hints = getJson<Record<string, string>>(bestKey('sambung-kata', `revealed-p${pack}l${level}`), {});
       s.hintsLeft = getJson<number>(hintKey(pack), HINTS_PER_PACK);
@@ -384,10 +543,18 @@ export default function SambungKata({ onExit }: { onExit: () => void }): React.J
         api.sfx.click();
         return;
       }
-      const h = revealHint(s.level, s.found);
+      const h = revealHint(s.level, s.found, Object.keys(s.hints));
       if (!h) {
         const wrap = wrapRef.current;
-        if (wrap) popText(wrap, 'Semua kata sudah ketemu!', { size: 18, color: '#bae6fd' });
+        if (wrap) {
+          popText(
+            wrap,
+            levelComplete(s.level, s.found)
+              ? 'Semua kata sudah ketemu!'
+              : 'Semua kata tersisa sudah pernah diberi hint.',
+            { size: 18, color: '#bae6fd' },
+          );
+        }
         return;
       }
       s.hints[h.word] = h.ch;
@@ -457,8 +624,24 @@ export default function SambungKata({ onExit }: { onExit: () => void }): React.J
         api.scores.add(api.W / 2, 92, 'Sudah ketemu!', { color: '#cbd5e1', size: 18 });
         api.sfx.click();
       } else if (res.status === 'other') {
-        if (wrap) popText(wrap, `"${res.word}" — bukan kata level ini`, { size: 17, color: '#fcd34d' });
-        api.sfx.click();
+        const cb = collectBonusWord(s.level, s.bonus, res.word);
+        if (cb.status === 'bonus') {
+          s.bonus = [...s.bonus, cb.word];
+          api.sfx.chime(1);
+          api.particles.spawn(api.W / 2, api.H * 0.62, {
+            count: 18, colors: ['#7dd3fc', '#38bdf8', '#e0f2fe'],
+            speed: [60, 240], life: [0.4, 0.8], size: [2, 5], shape: 'spark',
+          });
+          api.scores.add(api.W / 2, 92, `+${cb.points} BONUS`, { color: '#7dd3fc', size: 20 });
+          if (wrap) popText(wrap, `"${cb.word}" — kata bonus!`, { size: 17, color: '#7dd3fc' });
+          api.pushHud(hudOf());
+        } else if (cb.status === 'already-bonus') {
+          api.scores.add(api.W / 2, 92, 'Bonus sudah dikumpulkan!', { color: '#cbd5e1', size: 17 });
+          api.sfx.click();
+        } else {
+          if (wrap) popText(wrap, `"${res.word}" — bukan kata level ini`, { size: 17, color: '#fcd34d' });
+          api.sfx.click();
+        }
       } else {
         api.shake.add(0.28);
         api.sfx.click();
@@ -663,11 +846,16 @@ export default function SambungKata({ onExit }: { onExit: () => void }): React.J
       ctx.font = `700 11px ${FONT}`;
       ctx.fillStyle = 'rgba(200,220,240,0.6)';
       ctx.fillText('KATA', lay.cx, lay.cy + 14);
+      if (s.bonus.length > 0) {
+        ctx.font = `900 11px ${FONT}`;
+        ctx.fillStyle = '#7dd3fc';
+        ctx.fillText(`BONUS +${bonusScore(s.bonus)}`, lay.cx, lay.cy + 30);
+      }
 
       // action buttons
       const hasSel = s.sel.length > 0;
       ctx.globalAlpha = hasSel ? 1 : 0.45;
-      drawCircleBtn(ctx, lay.okPos.x, lay.okPos.y, lay.btnR, '#4ade80', '#15803d', '✓', '#052e12');
+      drawCircleBtn(ctx, lay.okPos.x, lay.okPos.y, lay.btnR, '#4ade80', '#15803d', 'check', '#052e12');
       ctx.globalAlpha = 1;
       drawCircleBtn(ctx, lay.clrPos.x, lay.clrPos.y, lay.btnR, '#94a3b8', '#475569', 'back', '#0f172a');
     });
@@ -749,37 +937,42 @@ export default function SambungKata({ onExit }: { onExit: () => void }): React.J
         <div style={{ pointerEvents: 'auto', background: 'rgba(10,18,32,0.55)', border: '1px solid rgba(255,255,255,0.18)', borderRadius: 14, padding: '8px 12px', color: '#fff', backdropFilter: 'blur(6px)' }}>
           <div style={{ fontWeight: 900, fontSize: 14, color: '#fde047' }}>{packName}</div>
           <div style={{ fontSize: 12, opacity: 0.85, marginTop: 2 }}>Level {hud.level + 1} • {hud.found}/{hud.total} kata</div>
+          {hud.bonus > 0 && (
+            <div style={{ fontSize: 12, fontWeight: 800, color: '#7dd3fc', marginTop: 2 }}>
+              Bonus: {hud.bonus} kata • +{hud.bonusPoints} poin
+            </div>
+          )}
         </div>
         <div style={{ display: 'flex', gap: 8, pointerEvents: 'auto' }}>
           {inGame && (
             <>
-              <button style={btn} onClick={() => ctlRef.current?.shuffle()} aria-label="Acak huruf">🔀</button>
+              <button style={btn} onClick={() => ctlRef.current?.shuffle()} aria-label="Acak huruf"><IconShuffle /></button>
               <button style={btn} onClick={() => ctlRef.current?.hint()} aria-label={`Hint (${hud.hintsLeft} tersisa)`}>
-                💡
+                <IconBulb />
                 <span style={{ position: 'absolute', top: -6, right: -6, background: '#f59e0b', color: '#3a2a00', fontSize: 11, fontWeight: 900, borderRadius: 10, padding: '1px 6px' }}>{hud.hintsLeft}</span>
               </button>
-              <button style={btn} onClick={togglePause} aria-label={screen === 'play' ? 'Jeda' : 'Lanjut'}>{screen === 'play' ? '⏸' : '▶'}</button>
+              <button style={btn} onClick={togglePause} aria-label={screen === 'play' ? 'Jeda' : 'Lanjut'}>{screen === 'play' ? <IconPause /> : <IconPlay />}</button>
             </>
           )}
-          <button style={btn} onClick={toggleMute} aria-label={muted ? 'Nyalakan suara' : 'Bisukan'}>{muted ? '🔇' : '🔊'}</button>
-          <button style={btn} onClick={onExit} aria-label="Keluar">✕</button>
+          <button style={btn} onClick={toggleMute} aria-label={muted ? 'Nyalakan suara' : 'Bisukan'}>{muted ? <IconSoundOff /> : <IconSoundOn />}</button>
+          <button style={btn} onClick={onExit} aria-label="Keluar"><IconClose /></button>
         </div>
       </div>
 
       {screen === 'tutorial' && (
         <div style={card}>
           <div style={panel}>
-            <div style={{ fontSize: 40 }}>🔤🏗️</div>
+            <div style={{ display: 'flex', justifyContent: 'center' }}><WheelBadge /></div>
             <h2 style={{ margin: '8px 0 4px', fontWeight: 900, fontSize: 24, color: '#fde047' }}>SAMBUNG KATA</h2>
             <p style={{ fontSize: 13.5, lineHeight: 1.55, opacity: 0.92, margin: '6px 0 10px' }}>
               <b>Seret jarimu</b> melewati huruf-huruf di roda secara berurutan, lalu <b>lepas</b> untuk
-              submit. Atau <b>ketuk</b> huruf satu-satu lalu tekan <b>✓</b>.
+              submit. Atau <b>ketuk</b> huruf satu-satu lalu tekan <b>tombol centang hijau</b>.
             </p>
-            <ul style={{ textAlign: 'left', fontSize: 13, lineHeight: 1.9, margin: '0 0 6px', paddingLeft: 20 }}>
-              <li>🎯 Temukan semua kata target tiap level</li>
-              <li>🔁 Huruf boleh dipakai berulang (BATA butuh dua A!)</li>
-              <li>💡 Hint membuka huruf pertama (5 per pack)</li>
-              <li>🤔 Kata benar tapi bukan target? "Bukan kata level ini" — seperti usulan harga yang masuk akal tapi bukan HSPK: ditampung, tidak dipakai.</li>
+            <ul style={{ textAlign: 'left', fontSize: 13, lineHeight: 1.9, margin: '0 0 6px', paddingLeft: 2, listStyle: 'none' }}>
+              <li><Bullet color="#f87171"><IconTarget /></Bullet>Temukan semua kata target tiap level</li>
+              <li><Bullet color="#7dd3fc"><IconRepeat /></Bullet>Huruf boleh dipakai berulang (BATA butuh dua A!)</li>
+              <li><Bullet color="#fde047"><IconBulb size={15} /></Bullet>Hint membuka huruf pertama (5 per pack)</li>
+              <li><Bullet color="#38bdf8"><IconSparkle /></Bullet>Kata konstruksi sah tapi bukan target? Jadi <b>kata bonus</b>: +10 poin per huruf!</li>
             </ul>
             <button style={{ ...bigBtn, background: 'linear-gradient(180deg,#fde047,#f59e0b)', color: '#3a2a00' }} onClick={startGame}>
               Mulai Menyambung
@@ -791,7 +984,7 @@ export default function SambungKata({ onExit }: { onExit: () => void }): React.J
       {screen === 'pause' && (
         <div style={card}>
           <div style={panel}>
-            <div style={{ fontSize: 40 }}>☕</div>
+            <PauseBadge />
             <h2 style={{ margin: '8px 0 4px', fontWeight: 900, fontSize: 22 }}>JEDA</h2>
             <p style={{ fontSize: 13, opacity: 0.85 }}>Istirahat dulu. Huruf-hurufnya tidak akan kabur seperti mandor pas hujan.</p>
             <button style={{ ...bigBtn, background: 'linear-gradient(180deg,#fde047,#f59e0b)', color: '#3a2a00' }} onClick={togglePause}>Lanjutkan</button>
@@ -803,9 +996,14 @@ export default function SambungKata({ onExit }: { onExit: () => void }): React.J
       {screen === 'win' && (
         <div style={card}>
           <div style={panel}>
-            <div style={{ fontSize: 40 }}>🎉</div>
+            <WinBadge />
             <h2 style={{ margin: '8px 0 4px', fontWeight: 900, fontSize: 22, color: '#4ade80' }}>RAB DISETUJUI TANPA REVISI!</h2>
             <p style={{ fontSize: 13.5, opacity: 0.9 }}>Level {hud.level + 1} selesai. Konsultan tidak minta hitung ulang — keajaiban hari ini.</p>
+            {hud.bonusPoints > 0 && (
+              <p style={{ fontSize: 13, fontWeight: 800, color: '#7dd3fc', margin: '2px 0 0' }}>
+                Kata bonus: {hud.bonus} kata • +{hud.bonusPoints} poin
+              </p>
+            )}
             <button
               style={{ ...bigBtn, background: 'linear-gradient(180deg,#4ade80,#16a34a)', color: '#052e12' }}
               onClick={() => {
@@ -823,7 +1021,7 @@ export default function SambungKata({ onExit }: { onExit: () => void }): React.J
       {screen === 'packdone' && (
         <div style={card}>
           <div style={panel}>
-            <div style={{ fontSize: 40 }}>📦</div>
+            <PackBadge />
             <h2 style={{ margin: '8px 0 4px', fontWeight: 900, fontSize: 22, color: '#fde047' }}>PACK SELESAI!</h2>
             <p style={{ fontSize: 13.5, opacity: 0.9 }}>
               Pack "{packName}" tuntas 20/20. Naik jabatan: dari kuli kata jadi tukang kata.
@@ -843,7 +1041,7 @@ export default function SambungKata({ onExit }: { onExit: () => void }): React.J
       {screen === 'alldone' && (
         <div style={card}>
           <div style={panel}>
-            <div style={{ fontSize: 40 }}>🏆</div>
+            <TrophyBadge />
             <h2 style={{ margin: '8px 0 4px', fontWeight: 900, fontSize: 22, color: '#fde047' }}>MANDOR BESAR!</h2>
             <p style={{ fontSize: 13.5, lineHeight: 1.6, opacity: 0.92 }}>
               Semua 60 level, 3 pack — selesai tanpa satu pun revisi.

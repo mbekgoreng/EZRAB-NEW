@@ -36,10 +36,14 @@ export interface TypeState {
   totalChars: number;
   errors: number;
   wordsDone: number;
+  /** G2: rentetan kata benar tanpa satu pun salah ketik (fokus Ketik Cepat:
+   *  kecepatan DAN ketelitian istilah estimator). */
+  streak: number;
+  bestStreak: number;
 }
 
 export function newTypeState(words: string[]): TypeState {
-  return { words, wi: 0, typed: '', correctChars: 0, totalChars: 0, errors: 0, wordsDone: 0 };
+  return { words, wi: 0, typed: '', correctChars: 0, totalChars: 0, errors: 0, wordsDone: 0, streak: 0, bestStreak: 0 };
 }
 
 export type CharResult = 'correct' | 'wrong' | 'ignored';
@@ -60,6 +64,8 @@ export function typeChar(st: TypeState, ch: string): { state: TypeState; res: Ch
         wi: st.wi + 1,
         typed: '',
         wordsDone: st.wordsDone + 1,
+        streak: st.streak + 1,
+        bestStreak: Math.max(st.bestStreak, st.streak + 1),
         correctChars: st.correctChars + 1, // spasi dihitung benar
         totalChars: st.totalChars + 1,
       };
@@ -81,7 +87,7 @@ export function typeChar(st: TypeState, ch: string): { state: TypeState; res: Ch
     };
   }
   return {
-    state: { ...st, errors: st.errors + 1, totalChars: st.totalChars + 1 },
+    state: { ...st, errors: st.errors + 1, totalChars: st.totalChars + 1, streak: 0 },
     res: 'wrong',
   };
 }

@@ -12,6 +12,7 @@ import {
   makeBall, makePlayer, stepBall, stepPlayer, collidePlayerBall, kick,
   checkGoal, makeBrain, aiDecide, brainToCtl, AI_LEVELS,
   makeMatch, onGoal, stepMatch, GOAL_COMMENTS, CONCEDE_COMMENTS, KICK_RANGE,
+  maxLevelAfterWin, isLevelUnlocked, levelProgress,
 } from './logic';
 
 type Screen = 'tutorial' | 'play' | 'pause' | 'over';
@@ -258,7 +259,8 @@ export default function HeadSoccerMandor({ onExit }: { onExit: () => void }): Re
     setResult(m.result);
     if (m.result === 'win') {
       api.sfx.chime(5, 523);
-      const unlocked = Math.min(5, gs.level + 2);
+      // Progresi jenjang lawan via fungsi murni teruji (logic.ts)
+      const unlocked = maxLevelAfterWin(gs.level, maxLevel);
       if (unlocked > maxLevel) {
         setMaxLevel(unlocked);
         setJson(MAXLEVEL_KEY, unlocked);
@@ -364,8 +366,16 @@ export default function HeadSoccerMandor({ onExit }: { onExit: () => void }): Re
           doKick(gs, gs.ai, lv.kickPower, false);
         }
         // --- bola ---
-        collidePlayerBall(gs.player, gs.ball);
-        collidePlayerBall(gs.ai, gs.ball);
+        // Umpan balik tabrakan JELAS: sundulan/benturan kencang memercik
+        // partikel di titik kontak (tabrakan pelan tidak berisik visual).
+        const hitP = collidePlayerBall(gs.player, gs.ball);
+        const hitA = collidePlayerBall(gs.ai, gs.ball);
+        if ((hitP || hitA) && Math.hypot(gs.ball.vx, gs.ball.vy) > 320) {
+          api.particles.spawn(gs.ball.x, gs.ball.y, {
+            count: 4, colors: ['#ffffff', '#FFE08A'],
+            speed: [50, 160], life: [0.2, 0.4], size: [1.5, 3], gravity: 150,
+          });
+        }
         stepBall(gs.ball, sdt, f);
         const goal = checkGoal(gs.ball, f);
         if (goal) {
@@ -493,7 +503,7 @@ export default function HeadSoccerMandor({ onExit }: { onExit: () => void }): Re
         </div>
         <div style={{ flex: 1, textAlign: 'center' }}>
           <div style={{ ...timer, color: hud.suddenDeath ? '#B45309' : '#0F172A' }}>
-            {hud.suddenDeath ? '☠️ ' : '⏱️ '}{hud.time}
+            {'⏱️ '}{hud.time}
           </div>
           <div style={{ fontSize: 10, fontWeight: 800, color: '#475569' }}>
             {hud.suddenDeath ? 'SUDDEN DEATH' : `Lawan: ${hud.levelName}`}
@@ -516,7 +526,7 @@ export default function HeadSoccerMandor({ onExit }: { onExit: () => void }): Re
             </div>
             <div style={{ position: 'absolute', right: 12, bottom: 12, display: 'flex', gap: 10, zIndex: 6 }}>
               <button {...tapProps('jump')} style={{ ...touchBtn, background: 'rgba(29,78,216,0.85)' }} aria-label="Lompat">⤒</button>
-              <button {...tapProps('kick')} style={{ ...touchBtn, background: 'rgba(220,38,38,0.85)' }} aria-label="Tendang">⚽</button>
+              <button {...tapProps('kick')} style={{ ...touchBtn, background: 'rgba(220,38,38,0.85)', fontSize: 13, fontWeight: 900 }} aria-label="Tendang">TENDANG</button>
             </div>
           </>
         )}
@@ -524,7 +534,7 @@ export default function HeadSoccerMandor({ onExit }: { onExit: () => void }): Re
 
       {screen === 'tutorial' && (
         <Overlay>
-          <h2 style={h2}>⚽ Head Soccer Mandor</h2>
+          <h2 style={h2}>Head Soccer Mandor</h2>
           <p style={{ ...p, fontSize: 15, fontWeight: 700, color: '#fff' }}>
             Cetak gol ke gawang <b style={{ color: '#F2B441' }}>kanan</b> sebanyak-banyaknya dalam 60 detik!
           </p>
@@ -532,7 +542,7 @@ export default function HeadSoccerMandor({ onExit }: { onExit: () => void }): Re
             {[
               ['◀ ▶', 'gerak'],
               ['⤒', 'lompat'],
-              ['⚽', 'tendang'],
+              ['J', 'tendang'],
             ].map(([icon, label]) => (
               <div key={label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
                 <span style={keyCap}>{icon}</span>
@@ -541,7 +551,9 @@ export default function HeadSoccerMandor({ onExit }: { onExit: () => void }): Re
             ))}
           </div>
           <p style={{ ...p, fontSize: 11, color: '#8EA2C7' }}>
-            Keyboard: <b>A/D</b> gerak · <b>Spasi</b> lompat · <b>J</b> tendang · 📱 tombol besar di layar
+            Keyboard: <b>A/D</b> gerak · <b>Spasi</b> lompat · <b>J</b> tendang · atau tombol besar di layar.
+            Menang membuka lawan berikutnya — jenjang {levelProgress(levelSel).current}/5: <b>{levelProgress(levelSel).name}</b>
+            {levelProgress(levelSel).nextName ? <> → berikutnya <b>{levelProgress(levelSel).nextName}</b></> : ' (jenjang tertinggi)'}.
           </p>
           <p style={{ ...p, fontStyle: 'italic', color: '#9FB3D9', fontSize: 12 }}>
             "Anggap bolanya deadline revisi. Tendang sejauh mungkin."
@@ -550,7 +562,7 @@ export default function HeadSoccerMandor({ onExit }: { onExit: () => void }): Re
             <div style={{ color: '#8EA2C7', fontSize: 11, fontWeight: 800, marginBottom: 6 }}>PILIH LAWAN</div>
             <div style={{ display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap' }}>
               {AI_LEVELS.map((lv, i) => {
-                const locked = i + 1 > maxLevel;
+                const locked = !isLevelUnlocked(i, maxLevel);
                 return (
                   <button
                     key={lv.name}
@@ -562,7 +574,7 @@ export default function HeadSoccerMandor({ onExit }: { onExit: () => void }): Re
                       color: levelSel === i ? '#3A2A08' : '#fff',
                       opacity: locked ? 0.35 : 1, cursor: locked ? 'not-allowed' : 'pointer',
                     }}
-                  >{locked ? '🔒' : `${i + 1}. ${lv.name}`}</button>
+                  >{locked ? `${i + 1}. ${lv.name} (terkunci)` : `${i + 1}. ${lv.name}`}</button>
                 );
               })}
             </div>
@@ -587,7 +599,7 @@ export default function HeadSoccerMandor({ onExit }: { onExit: () => void }): Re
       {screen === 'over' && (
         <Overlay>
           <h2 style={{ ...h2, color: result === 'win' ? '#B8F5C8' : '#FF8A8A' }}>
-            {result === 'win' ? '🏆 MENANG!' : '😤 KALAH'}
+            {result === 'win' ? 'MENANG!' : 'KALAH'}
           </h2>
           <p style={{ ...p, fontSize: 20, fontWeight: 900 }}>
             {hud.scoreL} - {hud.scoreR}
@@ -743,7 +755,7 @@ function drawGame(api: GameApi, gs: GS): void {
   ctx.font = `800 ${Math.min(13, W * 0.032)}px 'Plus Jakarta Sans','Inter',system-ui,sans-serif`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText('★ EZRAB CUP ★  RAB LUNAS • MANDOR SENANG • KLIEN PUAS  ★ EZRAB CUP ★', W / 2, f.groundY - 11);
+  ctx.fillText('EZRAB CUP — RAB LUNAS • MANDOR SENANG • KLIEN PUAS — EZRAB CUP', W / 2, f.groundY - 11);
 
   // --- lapangan ---
   const fg = ctx.createLinearGradient(0, f.groundY, 0, H);

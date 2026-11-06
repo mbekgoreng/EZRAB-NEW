@@ -37,6 +37,37 @@ export interface Game {
   timeLeft: number;
   t: number; // waktu game berjalan
   status: 'playing' | 'won' | 'lost';
+  /** bonus +1 nyawa misi (3 rumah terisi) sudah diberikan? */
+  bonusLifeGranted: boolean;
+}
+
+/* ------------------------------------------------------------------ */
+/* PEMBEDA PASANGAN PENYEBERANGAN — identitas Tukang Nyebrang:        */
+/* MISI TERBATAS klasik. Menyeberangi JALAN + SUNGAI (naik balok      */
+/* kayu yang mengapung) untuk mengisi SEMUA 5 slot rumah, dalam       */
+/* 3 nyawa & 60 detik per nyawa. Mengisi rumah ke-3 memberi BONUS     */
+/* +1 nyawa misi (sekali per misi) — manajemen nyawa antar-slot.      */
+/* (Pasangannya, Nyebrang Proyek, adalah jarak tak berujung di darat  */
+/* saja: skor = baris terjauh, zona kepadatan naik, tanpa rumah.)     */
+/* ------------------------------------------------------------------ */
+
+/** Jumlah rumah yang memberi bonus nyawa misi. */
+export const BONUS_HOME_COUNT = 3;
+
+/** Sisa slot rumah yang belum terisi. Murni. */
+export function homesRemaining(g: Game): number {
+  return g.homes.filter((h) => !h).length;
+}
+
+/** Progres misi: {filled, remaining, total}. Murni. */
+export function missionProgress(g: Game): { filled: number; remaining: number; total: number } {
+  const filled = g.homes.filter(Boolean).length;
+  return { filled, remaining: g.homes.length - filled, total: g.homes.length };
+}
+
+/** Misi selesai bila semua slot rumah terisi. Murni. */
+export function isMissionComplete(g: Game): boolean {
+  return g.homes.every(Boolean);
 }
 
 export function mulberry32(seed: number): () => number {
@@ -90,7 +121,7 @@ export function createGame(seed: number): Game {
     fx: (COLS - 1) / 2, y: ROWS - 1,
     lives: START_LIVES, homes: [false, false, false, false, false],
     score: 0, bestY: ROWS - 1, timeLeft: ATTEMPT_TIME, t: 0,
-    status: 'playing',
+    status: 'playing', bonusLifeGranted: false,
   };
   return g;
 }
@@ -141,6 +172,11 @@ export function move(g: Game, dx: number, dy: number): MoveResult {
     if (hi < 0 || g.homes[hi]) return 'blocked';
     g.homes[hi] = true;
     g.score += HOME_SCORE + Math.ceil(g.timeLeft);
+    // Mekanik misi: rumah ke-3 yang terisi memberi +1 nyawa (sekali per misi)
+    if (!g.bonusLifeGranted && homesFilled(g) >= BONUS_HOME_COUNT) {
+      g.bonusLifeGranted = true;
+      g.lives += 1;
+    }
     if (g.homes.every(Boolean)) {
       g.status = 'won';
       return 'home';

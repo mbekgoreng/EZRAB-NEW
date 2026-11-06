@@ -4,6 +4,7 @@
 import { strict as assert } from 'node:assert';
 import {
   createWorld, stepWorld, maxJumpHeight, GRAVITY, BOUNCE_V, SUPER_V, WORLD_W,
+  zoneFor, platformStyleFor, ZONES,
   type World,
 } from './logic';
 
@@ -161,6 +162,60 @@ test('deterministik: seed sama -> dunia sama', () => {
     a.platforms.map((p) => [p.x, p.y, p.kind]),
     b.platforms.map((p) => [p.x, p.y, p.kind]),
   );
+});
+
+test('zoneFor: zona naik pada ambang meter & progress terukur', () => {
+  assert.equal(zoneFor(0).zone.name, 'Fondasi');
+  assert.equal(zoneFor(149).index, 0);
+  assert.equal(zoneFor(150).zone.name, 'Kolom');
+  assert.equal(zoneFor(400).zone.name, 'Balok');
+  assert.equal(zoneFor(800).zone.name, 'Atap');
+  const mid = zoneFor(275); // tengah zona Kolom (150..400)
+  assert.ok(Math.abs(mid.progress - 0.5) < 0.01, `progress=${mid.progress}`);
+  assert.equal(mid.toNext, 125);
+  const top = zoneFor(99999);
+  assert.equal(top.next, null);
+  assert.equal(top.progress, 1);
+  // ambang monoton naik
+  for (let i = 1; i < ZONES.length; i += 1) assert.ok(ZONES[i].at > ZONES[i - 1].at);
+});
+
+test('stepWorld: event zoneUp tepat saat skor melewati ambang zona', () => {
+  const w = createWorld(21);
+  assert.equal(w.zone, 0);
+  // angkat pemain tepat di bawah ambang Kolom (150 m -> maxY = 60 + 150*10)
+  w.py = 60 + 149 * 10; w.vy = 100;
+  let ev = stepWorld(w, DT, idle);
+  assert.equal(ev.zoneUp, null, 'belum masuk zona baru');
+  w.py = 60 + 151 * 10; w.vy = 100;
+  ev = stepWorld(w, DT, idle);
+  assert.ok(ev.zoneUp && ev.zoneUp.name === 'Kolom', `zoneUp=${ev.zoneUp?.name}`);
+  assert.equal(w.zone, 1);
+  // tidak terpicu ulang saat tetap di zona yang sama
+  w.py = 60 + 160 * 10; w.vy = 100;
+  ev = stepWorld(w, DT, idle);
+  assert.equal(ev.zoneUp, null);
+});
+
+test('platformStyleFor: kokoh vs rapuh terbaca beda tanpa emoji', () => {
+  const base = { x: 0, y: 0, w: 80, vx: 0, broken: false, id: 10 };
+  const kayu = platformStyleFor({ ...base, kind: 'kayu' });
+  const lapuk = platformStyleFor({ ...base, kind: 'lapuk' });
+  const gerobak = platformStyleFor({ ...base, kind: 'gerobak' });
+  const dongkrak = platformStyleFor({ ...base, kind: 'dongkrak' });
+  assert.equal(kayu.marking, 'serat-kayu');
+  assert.equal(kayu.bounce, 'normal');
+  assert.equal(kayu.tiltDeg, 0);
+  assert.equal(lapuk.marking, 'retak');
+  assert.equal(lapuk.bounce, 'patah');
+  assert.notEqual(lapuk.tiltDeg, 0, 'papan lapuk harus miring agar terbaca rapuh');
+  assert.notDeepEqual(lapuk.fill, kayu.fill, 'warna lapuk harus beda dari kayu kokoh');
+  assert.equal(gerobak.marking, 'roda-baja');
+  assert.equal(dongkrak.marking, 'pegas');
+  assert.equal(dongkrak.bounce, 'super');
+  // marking unik per jenis
+  const markings = [kayu.marking, lapuk.marking, gerobak.marking, dongkrak.marking];
+  assert.equal(new Set(markings).size, 4);
 });
 
 console.log(`\n${passed} passed, ${failed} failed`);

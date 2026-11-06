@@ -1,17 +1,49 @@
 /**
  * ArcadeSudoku — "Sudoku Material".
- * Isi 9x9 dengan IKON material proyek (🧱🪵🔩…). Generator solusi-unik,
+ * Isi 9x9 dengan IKON material proyek (glif SVG prosedural). Generator solusi-unik,
  * 4 difficulty, notes, hint, 3x salah = gagal. DOM + confetti canvas.
  */
 import React, { useEffect, useRef, useState } from 'react';
 import { sfx } from '../../../engine2d';
 import { bestKey, getBest, setBest } from '../../../engine2d';
 import { Particles2D } from '../../../engine2d';
+import { CoffeeCupIcon } from '../../../engine2d/icons';
 import {
   generatePuzzle, isValidPlacement, isCompleteValid, conflictsAt, findHint,
   fmtTime, MATERIALS, DIFFICULTY_INFO, DIFFICULTIES,
   type Difficulty, type Puzzle,
 } from './logic';
+
+/**
+ * Glif material prosedural (SVG digambar kode — BUKAN emoji, BUKAN hasil
+ * generate; provenance dicatat di manifest). Satu kamus visual untuk nilai
+ * 1..9, dirancang terbaca pada 24px: siluet + warna khas per material.
+ */
+export function MaterialGlyph({ v, size = 26 }: { v: number; size?: number }): React.JSX.Element {
+  const s = { width: size, height: size, display: 'block' } as React.CSSProperties;
+  switch (v) {
+    case 1: // Bata
+      return (<svg style={s} viewBox="0 0 40 40" aria-label="Bata"><rect x="4" y="10" width="32" height="20" rx="3" fill="#c4502e" stroke="#7e2f16" strokeWidth="2" /><line x1="20" y1="10" x2="20" y2="20" stroke="#7e2f16" strokeWidth="2" /><line x1="12" y1="20" x2="12" y2="30" stroke="#7e2f16" strokeWidth="2" /><line x1="28" y1="20" x2="28" y2="30" stroke="#7e2f16" strokeWidth="2" /><line x1="4" y1="20" x2="36" y2="20" stroke="#7e2f16" strokeWidth="2" /></svg>);
+    case 2: // Kayu
+      return (<svg style={s} viewBox="0 0 40 40" aria-label="Kayu"><rect x="5" y="8" width="30" height="24" rx="2" fill="#a06a35" stroke="#5d3a1a" strokeWidth="2" /><line x1="5" y1="16" x2="35" y2="16" stroke="#5d3a1a" strokeWidth="2" /><line x1="5" y1="24" x2="35" y2="24" stroke="#5d3a1a" strokeWidth="2" /><path d="M8 12 q6 -2 12 0 M20 28 q6 -2 12 0" stroke="#7c5228" strokeWidth="1.6" fill="none" /></svg>);
+    case 3: // Besi (baut)
+      return (<svg style={s} viewBox="0 0 40 40" aria-label="Besi"><polygon points="20,5 32,12 32,28 20,35 8,28 8,12" fill="#94a3b8" stroke="#475569" strokeWidth="2" /><circle cx="20" cy="20" r="6.5" fill="#64748b" stroke="#334155" strokeWidth="2" /><line x1="16" y1="16" x2="24" y2="24" stroke="#e2e8f0" strokeWidth="2.4" /></svg>);
+    case 4: // Batu
+      return (<svg style={s} viewBox="0 0 40 40" aria-label="Batu"><polygon points="8,28 6,16 14,8 26,6 34,14 33,28 20,33" fill="#9aa0a8" stroke="#565d66" strokeWidth="2" /><path d="M14 8 L18 18 L12 26 M18 18 L30 16" stroke="#6b7280" strokeWidth="1.6" fill="none" /></svg>);
+    case 5: // Kaca
+      return (<svg style={s} viewBox="0 0 40 40" aria-label="Kaca"><rect x="8" y="6" width="24" height="28" rx="2" fill="#a8d4f0" stroke="#3a6ea8" strokeWidth="2" /><line x1="20" y1="6" x2="20" y2="34" stroke="#3a6ea8" strokeWidth="2" /><line x1="8" y1="20" x2="32" y2="20" stroke="#3a6ea8" strokeWidth="2" /><path d="M11 30 L22 10" stroke="#ffffff" strokeWidth="3" opacity="0.65" /></svg>);
+    case 6: // Cat (ember)
+      return (<svg style={s} viewBox="0 0 40 40" aria-label="Cat"><path d="M10 14 L30 14 L27 34 L13 34 Z" fill="#e8e4da" stroke="#78716c" strokeWidth="2" /><rect x="10" y="14" width="20" height="6" fill="#2563eb" /><path d="M12 14 a8 6 0 0 1 16 0" fill="none" stroke="#78716c" strokeWidth="2" /><circle cx="20" cy="27" r="3" fill="#2563eb" /></svg>);
+    case 7: // Kawat (rantai)
+      return (<svg style={s} viewBox="0 0 40 40" aria-label="Kawat"><g fill="none" stroke="#57534e" strokeWidth="3.4"><rect x="6" y="13" width="16" height="12" rx="6" transform="rotate(-24 14 19)" /><rect x="18" y="15" width="16" height="12" rx="6" transform="rotate(-24 26 21)" /></g></svg>);
+    case 8: // Pipa (siku)
+      return (<svg style={s} viewBox="0 0 40 40" aria-label="Pipa"><path d="M10 6 V20 a8 8 0 0 0 8 8 H34" fill="none" stroke="#38bdf8" strokeWidth="9" /><path d="M10 6 V20 a8 8 0 0 0 8 8 H34" fill="none" stroke="#0369a1" strokeWidth="9" strokeDasharray="2.5 7" opacity="0.45" /><rect x="5" y="3" width="10" height="6" fill="#0369a1" /><rect x="31" y="23" width="6" height="10" fill="#0369a1" /></svg>);
+    case 9: // Aspal (drum)
+      return (<svg style={s} viewBox="0 0 40 40" aria-label="Aspal"><rect x="11" y="6" width="18" height="28" rx="4" fill="#3f3f46" stroke="#18181b" strokeWidth="2" /><line x1="11" y1="14" x2="29" y2="14" stroke="#a1a1aa" strokeWidth="2.4" /><line x1="11" y1="26" x2="29" y2="26" stroke="#a1a1aa" strokeWidth="2.4" /><ellipse cx="20" cy="7" rx="9" ry="2.6" fill="#52525b" /></svg>);
+    default:
+      return (<svg style={s} viewBox="0 0 40 40" aria-label=""><circle cx="20" cy="20" r="4" fill="#cbd5e1" /></svg>);
+  }
+}
 
 const SLUG = 'sudoku';
 const FONT = `'Plus Jakarta Sans', 'Inter', system-ui, sans-serif`;
@@ -75,6 +107,15 @@ export default function ArcadeSudoku({ onExit }: { onExit: () => void }): React.
     typeof window.matchMedia !== 'undefined' &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches,
   );
+
+  /* auto-pause saat tab disembunyikan */
+  useEffect(() => {
+    const onVis = (): void => {
+      if (document.hidden && screenRef.current === 'play') setScreen('pause');
+    };
+    document.addEventListener('visibilitychange', onVis);
+    return () => document.removeEventListener('visibilitychange', onVis);
+  }, []);
 
   /* timer */
   useEffect(() => {
@@ -333,6 +374,9 @@ export default function ArcadeSudoku({ onExit }: { onExit: () => void }): React.
       color: isGiven ? '#0f172a' : '#1d4ed8',
       fontWeight: isGiven ? 900 : 700,
       transition: 'background 0.12s',
+      outline: isSel ? '3px solid #b45309' : isConflict ? '3px solid #dc2626' : 'none',
+      outlineOffset: -3,
+      boxShadow: isGiven ? 'inset 0 0 0 2px rgba(15,23,42,0.12)' : undefined,
     };
   };
 
@@ -352,7 +396,7 @@ export default function ArcadeSudoku({ onExit }: { onExit: () => void }): React.
 
       {/* header */}
       <div style={{ padding: '10px 12px 4px', display: 'flex', alignItems: 'center', gap: 8, zIndex: 5 }}>
-        <div style={{ fontWeight: 900, fontSize: 15 }}>🧱 SUDOKU MATERIAL</div>
+        <div style={{ fontWeight: 900, fontSize: 15, display: 'flex', alignItems: 'center', gap: 6 }}><MaterialGlyph v={1} size={18} /> SUDOKU MATERIAL</div>
         <div style={{ flex: 1 }} />
         {(screen === 'play' || screen === 'pause') && (
           <button style={btn} onClick={() => { sfx.click(); setScreen(screen === 'play' ? 'pause' : 'play'); }} aria-label="Jeda">
@@ -368,13 +412,13 @@ export default function ArcadeSudoku({ onExit }: { onExit: () => void }): React.
         <span style={{ background: '#0f172a', color: '#ffd166', borderRadius: 10, padding: '4px 10px' }}>
           {DIFFICULTY_INFO[gd.puzzle.difficulty].label}
         </span>
-        <span>⏱️ {fmtTime(gd.seconds)}</span>
-        <span style={{ color: gd.mistakes > 0 ? '#dc2626' : '#64748b' }}>
-          {'❌'.repeat(gd.mistakes)}{'🤍'.repeat(MAX_MISTAKES - gd.mistakes)}
+        <span>Waktu {fmtTime(gd.seconds)}</span>
+        <span style={{ color: gd.mistakes > 0 ? '#dc2626' : '#64748b' }} aria-label={`Salah ${gd.mistakes} dari ${MAX_MISTAKES}`}>
+          {'✕'.repeat(gd.mistakes)}{'○'.repeat(MAX_MISTAKES - gd.mistakes)} salah
         </span>
         <div style={{ flex: 1 }} />
         {best[gd.puzzle.difficulty] > 0 && (
-          <span style={{ color: '#b45309' }}>🏅 {fmtTime(best[gd.puzzle.difficulty])}</span>
+          <span style={{ color: '#b45309' }}>Terbaik {fmtTime(best[gd.puzzle.difficulty])}</span>
         )}
       </div>
 
@@ -405,11 +449,11 @@ export default function ArcadeSudoku({ onExit }: { onExit: () => void }): React.
                 title={v > 0 ? MATERIALS[v].nama : note?.length ? `Catatan: ${note.map((n) => MATERIALS[n].nama).join(', ')}` : 'Kosong'}
               >
                 {v > 0 ? (
-                  <span>{MATERIALS[v].ikon}</span>
+                  <MaterialGlyph v={v} size={24} />
                 ) : note && note.length > 0 ? (
-                  <span style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', fontSize: 8, lineHeight: 1.1, color: '#64748b', width: '100%', textAlign: 'center' }}>
+                  <span style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 0, width: '100%', justifyItems: 'center', opacity: 0.75 }}>
                     {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
-                      <span key={n}>{note.includes(n) ? MATERIALS[n].ikon : ''}</span>
+                      <span key={n}>{note.includes(n) ? <MaterialGlyph v={n} size={9} /> : null}</span>
                     ))}
                   </span>
                 ) : null}
@@ -418,8 +462,9 @@ export default function ArcadeSudoku({ onExit }: { onExit: () => void }): React.
           })}
         </div>
         {gd.selected >= 0 && gd.grid[gd.selected] > 0 && (
-          <div style={{ textAlign: 'center', fontSize: 12, fontWeight: 800, color: '#92400e', marginTop: 4 }}>
-            {MATERIALS[gd.grid[gd.selected]].ikon} {MATERIALS[gd.grid[gd.selected]].nama}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontSize: 12, fontWeight: 800, color: '#92400e', marginTop: 4 }}>
+            <MaterialGlyph v={gd.grid[gd.selected]} size={16} /> {MATERIALS[gd.grid[gd.selected]].nama}
+            {gd.givens[gd.selected] ? ' • soal (tetap)' : ''}
           </div>
         )}
       </div>
@@ -434,15 +479,17 @@ export default function ArcadeSudoku({ onExit }: { onExit: () => void }): React.
               onClick={() => placeValue(v)}
               disabled={screen !== 'play'}
               title={MATERIALS[v].nama}
+              aria-label={MATERIALS[v].nama}
               style={{
-                aspectRatio: '0.85', borderRadius: 12, border: '2px solid #e2e8f0',
-                background: done ? '#e2e8f0' : 'linear-gradient(160deg,#ffffff,#f1f5f9)',
-                fontSize: 22, cursor: 'pointer', opacity: done ? 0.35 : 1,
+                aspectRatio: '0.85', borderRadius: 12, border: selVal === v ? '2px solid #b45309' : '2px solid #e2e8f0',
+                background: done ? '#e2e8f0' : selVal === v ? '#fef3c7' : 'linear-gradient(160deg,#ffffff,#f1f5f9)',
+                cursor: 'pointer', opacity: done ? 0.35 : 1,
                 boxShadow: '0 3px 8px rgba(0,0,0,0.08)',
-                minHeight: 44,
+                minHeight: 44, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1,
               }}
             >
-              {MATERIALS[v].ikon}
+              <MaterialGlyph v={v} size={24} />
+              <span style={{ fontSize: 8, fontWeight: 800, color: '#64748b', fontFamily: FONT }}>{MATERIALS[v].nama}</span>
             </button>
           );
         })}
@@ -453,18 +500,18 @@ export default function ArcadeSudoku({ onExit }: { onExit: () => void }): React.
         <ToolBtn
           active={gd.notesMode}
           onClick={() => { sfx.ensure(); sfx.click(); setGd({ ...gdRef.current, notesMode: !gdRef.current.notesMode }); }}
-          icon="📝" label={`Catatan ${gd.notesMode ? 'ON' : 'OFF'}`}
+          icon={<NotesIcon />} label={`Catatan ${gd.notesMode ? 'ON' : 'OFF'}`}
         />
-        <ToolBtn onClick={erase} icon="🧽" label="Hapus" />
+        <ToolBtn onClick={erase} icon={<EraserIcon />} label="Hapus" />
         <ToolBtn
           onClick={useHint}
-          icon="💡"
+          icon={<HintIcon />}
           label={`Hint (${gd.hintsLeft})`}
           disabled={gd.hintsLeft <= 0}
         />
         <ToolBtn
           onClick={() => startGame(gd.puzzle.difficulty)}
-          icon="🎲"
+          icon={<DiceIcon />}
           label="Acak Baru"
         />
       </div>
@@ -491,7 +538,7 @@ export default function ArcadeSudoku({ onExit }: { onExit: () => void }): React.
 
       {screen === 'tutorial' && (
         <Overlay>
-          <div style={{ fontSize: 46 }}>🧱📋</div>
+          <div style={{ display: 'flex', gap: 6 }}><MaterialGlyph v={1} size={40} /><MaterialGlyph v={8} size={40} /><MaterialGlyph v={3} size={40} /></div>
           <h2 style={titleStyle}>SUDOKU MATERIAL</h2>
           <p style={textStyle}>
             Isi 9×9 dengan 9 material proyek — tiap baris, kolom, dan kotak 3×3 harus berisi
@@ -510,7 +557,7 @@ export default function ArcadeSudoku({ onExit }: { onExit: () => void }): React.
 
       {screen === 'pause' && (
         <Overlay>
-          <div style={{ fontSize: 40 }}>☕</div>
+          <div><CoffeeCupIcon size={40} /></div>
           <h2 style={titleStyle}>JEDA</h2>
           <p style={textStyle}>Materialnya ditungguin satpam. Aman.</p>
           <button style={primaryBtn} onClick={() => { sfx.ensure(); setScreen('play'); }}>Lanjutkan</button>
@@ -519,17 +566,17 @@ export default function ArcadeSudoku({ onExit }: { onExit: () => void }): React.
 
       {screen === 'win' && (
         <Overlay>
-          <div style={{ fontSize: 48 }}>🏆</div>
+          <div style={{ fontSize: 48, color: '#ffd166' }}>★</div>
           <h2 style={titleStyle}>GUDANG RAPI!</h2>
           <p style={textStyle}>
             Semua material terpetakan sempurna. Bagian logistik proyek menangis haru.
           </p>
           <p style={{ ...textStyle, fontSize: 16 }}>
-            ⏱️ {fmtTime(gd.seconds)} • {DIFFICULTY_INFO[gd.puzzle.difficulty].label}
-            {best[gd.puzzle.difficulty] > 0 && <> • 🏅 Terbaik: <b>{fmtTime(best[gd.puzzle.difficulty])}</b></>}
+            Waktu {fmtTime(gd.seconds)} • {DIFFICULTY_INFO[gd.puzzle.difficulty].label}
+            {best[gd.puzzle.difficulty] > 0 && <> • Terbaik: <b>{fmtTime(best[gd.puzzle.difficulty])}</b></>}
           </p>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
-            <button style={primaryBtn} onClick={() => startGame(gd.puzzle.difficulty)}>Main Lagi 🔁</button>
+            <button style={primaryBtn} onClick={() => startGame(gd.puzzle.difficulty)}>Main Lagi</button>
             <button style={secondaryBtn} onClick={onExit}>Tutup ✕</button>
           </div>
         </Overlay>
@@ -537,13 +584,13 @@ export default function ArcadeSudoku({ onExit }: { onExit: () => void }): React.
 
       {screen === 'over' && (
         <Overlay>
-          <div style={{ fontSize: 48 }}>👷💢</div>
+          <div style={{ fontSize: 48, color: '#f87171', fontWeight: 900 }}>✕✕✕</div>
           <h2 style={titleStyle}>MANDOR MARAH!</h2>
           <p style={textStyle}>
             3x salah pasang material. "Ini bata apa puzzle?!" — proyek dihentikan sementara.
           </p>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
-            <button style={primaryBtn} onClick={() => startGame(gd.puzzle.difficulty)}>Coba Lagi 🔁</button>
+            <button style={primaryBtn} onClick={() => startGame(gd.puzzle.difficulty)}>Coba Lagi</button>
             <button style={secondaryBtn} onClick={onExit}>Tutup ✕</button>
           </div>
         </Overlay>
@@ -552,8 +599,26 @@ export default function ArcadeSudoku({ onExit }: { onExit: () => void }): React.
   );
 }
 
+const toolStroke = {
+  fill: 'none', stroke: 'currentColor', strokeWidth: 1.8,
+  strokeLinecap: 'round', strokeLinejoin: 'round',
+} as const;
+/** Ikon alat prosedural (Fase F — pengganti ikon emoji toolbar lama). */
+const NotesIcon = (): React.JSX.Element => (
+  <svg width={19} height={19} viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14M5 9h14M5 14h9" {...toolStroke} /><path d="M15.5 20.5l4.7-4.7a1.8 1.8 0 0 0-2.5-2.5l-4.7 4.7-0.7 3.2z" {...toolStroke} /></svg>
+);
+const EraserIcon = (): React.JSX.Element => (
+  <svg width={19} height={19} viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 19.5h12" {...toolStroke} /><path d="M5.6 15.2l6.8-8.6a1.6 1.6 0 0 1 2.3-0.2l3.4 3a1.6 1.6 0 0 1-0.1 2.4l-5.5 5.4a1.6 1.6 0 0 1-1.1 0.5H8.2a1.6 1.6 0 0 1-1.2-0.5l-1.2-1.2a1.6 1.6 0 0 1-0.2-0.8z" {...toolStroke} /></svg>
+);
+const HintIcon = (): React.JSX.Element => (
+  <svg width={19} height={19} viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="10" r="5.5" {...toolStroke} /><path d="M9.8 19h4.4M10.6 21.5h2.8M12 1.8v2M3.6 10H1.6M22.4 10h-2M5.4 4.2L3.9 2.8M18.6 4.2l1.5-1.4" {...toolStroke} /></svg>
+);
+const DiceIcon = (): React.JSX.Element => (
+  <svg width={19} height={19} viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="4" {...toolStroke} /><circle cx="8.6" cy="8.6" r="1.5" fill="currentColor" /><circle cx="15.4" cy="8.6" r="1.5" fill="currentColor" /><circle cx="12" cy="12" r="1.5" fill="currentColor" /><circle cx="8.6" cy="15.4" r="1.5" fill="currentColor" /><circle cx="15.4" cy="15.4" r="1.5" fill="currentColor" /></svg>
+);
+
 function ToolBtn({ icon, label, onClick, active, disabled }: {
-  icon: string; label: string; onClick: () => void; active?: boolean; disabled?: boolean;
+  icon: React.ReactNode; label: string; onClick: () => void; active?: boolean; disabled?: boolean;
 }): React.JSX.Element {
   return (
     <button

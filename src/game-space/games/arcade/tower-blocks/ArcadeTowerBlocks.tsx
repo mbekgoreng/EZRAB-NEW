@@ -10,6 +10,7 @@ import { bestKey, getBest, setBest } from '../../../engine2d/best';
 import { popText } from '../../../engine2d/juice2d';
 import {
   dropBlock, slideSpeed, scoreForDrop, slabHue, SLIDE_RANGE,
+  regrowSlab, REGROW_STREAK_MIN,
   type Slab, type Axis,
 } from './logic';
 
@@ -19,6 +20,104 @@ const FLOOR_H = 1;
 const BASE_SLAB: Slab = { cx: 0, cz: 0, w: 3.4, d: 3.4 };
 
 type Screen = 'tutorial' | 'play' | 'pause' | 'over';
+
+/* ---- Ikon prosedural (SVG inline, palet EZRAB) — pengganti emoji ---- */
+
+function IconBuilding({ size = 20, color = '#F5B301' }: { size?: number; color?: string }): React.JSX.Element {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinejoin="round" aria-hidden="true">
+      <path d="M5 21V4a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v17" />
+      <path d="M15 9h3a1 1 0 0 1 1 1v11" />
+      <path d="M3 21h18" strokeLinecap="round" />
+      <path d="M8 7h1.5M11 7h1.5M8 11h1.5M11 11h1.5M8 15h1.5M11 15h1.5" strokeLinecap="round" />
+      <path d="M17 14h.01M17 17.5h.01" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function IconCollapse({ size = 20 }: { size?: number }): React.JSX.Element {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" strokeLinejoin="round" aria-hidden="true">
+      <g stroke="#94a3b8" strokeWidth="1.8">
+        <path d="M4 21V5a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v16" />
+        <path d="M2.5 21h13" strokeLinecap="round" />
+      </g>
+      <path d="M9.5 4 8 8l2.5 3L8.5 15l1.5 3" stroke="#F97316" strokeWidth="1.8" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      <rect x="15.5" y="15" width="5.5" height="5.5" rx="0.8" transform="rotate(18 18 18)" fill="none" stroke="#F97316" strokeWidth="1.8" />
+    </svg>
+  );
+}
+
+function IconStar({ size = 14 }: { size?: number }): React.JSX.Element {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="#F5B301" aria-hidden="true">
+      <path d="M12 2.6l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17.4l-5.8 3.1 1.1-6.5L2.6 9.4l6.5-.9z" />
+    </svg>
+  );
+}
+
+function IconSpark({ size = 14, color = '#7dd3fc' }: { size?: number; color?: string }): React.JSX.Element {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={color} aria-hidden="true">
+      <path d="M12 2c.7 5.8 2.4 7.9 9 9.3-6.6 1.4-8.3 3.5-9 9.3-.7-5.8-2.4-7.9-9-9.3C9.6 9.9 11.3 7.8 12 2z" />
+    </svg>
+  );
+}
+
+function IconPause({ size = 18 }: { size?: number }): React.JSX.Element {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="#fff" aria-hidden="true">
+      <rect x="6" y="4.5" width="4" height="15" rx="1.2" />
+      <rect x="14" y="4.5" width="4" height="15" rx="1.2" />
+    </svg>
+  );
+}
+
+function IconDrop({ size = 18 }: { size?: number }): React.JSX.Element {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 3v11M7.5 10 12 14.5 16.5 10" />
+      <path d="M4 20.5h16" />
+    </svg>
+  );
+}
+
+function IconSpeaker({ size = 19, off = false }: { size?: number; off?: boolean }): React.JSX.Element {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5H4z" fill="#fff" stroke="none" />
+      {off
+        ? <path d="M16 9.5l5 5M21 9.5l-5 5" />
+        : <><path d="M15.5 9.2a4 4 0 0 1 0 5.6" /><path d="M18 6.8a7.4 7.4 0 0 1 0 10.4" /></>}
+    </svg>
+  );
+}
+
+function IconClose({ size = 17 }: { size?: number }): React.JSX.Element {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
+      <path d="M5.5 5.5l13 13M18.5 5.5l-13 13" />
+    </svg>
+  );
+}
+
+function IconPointer({ size = 15 }: { size?: number }): React.JSX.Element {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="#7dd3fc" aria-hidden="true">
+      <path d="M6.2 3.4 20 11.6l-6.9 1.6 3 6.1-2.7 1.3-3-6.1-4.9 4.6z" />
+    </svg>
+  );
+}
+
+function IconCup({ size = 20, color = '#7dd3fc' }: { size?: number; color?: string }): React.JSX.Element {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M4 10h13v5.5A4.5 4.5 0 0 1 12.5 20h-4A4.5 4.5 0 0 1 4 15.5z" />
+      <path d="M17 11h1.6a2.9 2.9 0 0 1 0 5.8H17" />
+      <path d="M8 3.8c0 1.2-1 1.4-1 2.4M12.5 3.8c0 1.2-1 1.4-1 2.4" />
+    </svg>
+  );
+}
 
 interface Debris {
   mesh: THREE.Mesh;
@@ -185,9 +284,13 @@ export default function ArcadeTowerBlocks({ onExit }: { onExit: () => void }): R
     let axis: Axis = 'x';
     let moveMesh: THREE.Mesh | null = null;
     let elapsed = 0;
-    const spawnMoving = (): void => {
+    const spawnMoving = (perfectStreak = 0): void => {
       const prev = tower[tower.length - 1];
-      moving = { cx: prev.cx, cz: prev.cz, w: prev.w, d: prev.d };
+      // Regrow: ukuran awal balok baru = ukuran prev yang ditumbuhkan pada
+      // sumbu gerak berikutnya (fungsi murni regrowSlab; streak diteruskan
+      // eksplisit agar pemanggilan awal/reset tidak menyentuh state combo).
+      const grown = regrowSlab(prev, BASE_SLAB, axis, perfectStreak);
+      moving = { cx: prev.cx, cz: prev.cz, w: grown.w, d: grown.d };
       if (moveMesh) scene.remove(moveMesh);
       moveMesh = makeSlabMesh(tower.length);
       placeSlabMesh(moveMesh, moving, tower.length);
@@ -269,7 +372,7 @@ export default function ArcadeTowerBlocks({ onExit }: { onExit: () => void }): R
         sfx.thud(1.3);
         if (!reduced) shakeT = 0.55;
         burst(moving.cx, level * FLOOR_H, moving.cz, ['#d6d3d1', '#a8a29e', '#78716c'], 40, 4);
-        if (wrap) popText(wrap, '🏚️ LANTAI MELESET!', { size: 26, color: '#fca5a5' });
+        if (wrap) popText(wrap, 'LANTAI MELESET!', { size: 26, color: '#fca5a5' });
         const nb = setBest(BK, score);
         overTimer = 1.25;
         setHud({ floors: tower.length - 1, score, best: nb, combo: 0 });
@@ -285,7 +388,7 @@ export default function ArcadeTowerBlocks({ onExit }: { onExit: () => void }): R
       if (res.perfect) {
         combo += 1;
         sfx.chime(3, 660 + Math.min(combo, 8) * 40);
-        if (wrap) popText(wrap, `✨ SEMPURNA! +${pts}`, { size: 24, color: '#fde047' });
+        if (wrap) popText(wrap, `SEMPURNA! +${pts}`, { size: 24, color: '#fde047' });
         burst(res.placed.cx, level * FLOOR_H + 0.6, res.placed.cz, ['#fde047', '#fbbf24', '#fff7d6'], 30, 3);
       } else {
         combo = 0;
@@ -294,7 +397,9 @@ export default function ArcadeTowerBlocks({ onExit }: { onExit: () => void }): R
       }
       if (res.debris) dropDebris(res.debris, level, 2.0);
       axis = axis === 'x' ? 'z' : 'x';
-      spawnMoving();
+      // combo di sini sudah memuat drop barusan: perfect menaikkannya,
+      // non-perfect meng-nol-kannya — regrow membaca streak yang benar.
+      spawnMoving(combo);
       push();
     };
 
@@ -307,7 +412,7 @@ export default function ArcadeTowerBlocks({ onExit }: { onExit: () => void }): R
       if (moveMesh) scene.remove(moveMesh);
       score = 0; combo = 0; over = false; shakeT = 0; overTimer = -1; elapsed = 0;
       axis = 'x';
-      spawnMoving();
+      spawnMoving(0);
       push();
     };
     (mount as unknown as { __reset?: () => void }).__reset = reset;
@@ -463,41 +568,63 @@ export default function ArcadeTowerBlocks({ onExit }: { onExit: () => void }): R
       <div ref={mountRef} style={{ position: 'absolute', inset: 0 }} />
 
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', zIndex: 5, pointerEvents: 'none' }}>
-        <div style={{ pointerEvents: 'auto', background: 'rgba(10,18,32,0.62)', border: '1px solid rgba(125,211,252,0.3)', borderRadius: 14, padding: '7px 12px', color: '#fff', backdropFilter: 'blur(6px)', minWidth: 150 }}>
-          <div style={{ fontWeight: 900, fontSize: 17, color: '#fde047' }}>🏢 {hud.floors} lantai</div>
+        <div style={{ pointerEvents: 'auto', background: 'rgba(10,18,32,0.62)', border: '1px solid rgba(125,211,252,0.3)', borderRadius: 14, padding: '7px 12px', color: '#fff', backdropFilter: 'blur(6px)', minWidth: 168 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontWeight: 900, fontSize: 17, color: '#fde047' }}>
+            <IconBuilding size={19} /> {hud.floors} lantai
+          </div>
           <div style={{ fontSize: 12, marginTop: 2, opacity: 0.92 }}>
             Skor {hud.score.toLocaleString('id-ID')}
-            {hud.combo >= 2 && <span style={{ color: '#7dd3fc', fontWeight: 900 }}> • ✨x{hud.combo}</span>}
+            {hud.combo >= 2 && <span style={{ color: '#7dd3fc', fontWeight: 900 }}> • Kombo x{hud.combo}</span>}
           </div>
-          <div style={{ fontSize: 11, opacity: 0.7 }}>⭐ Terbaik: {hud.best.toLocaleString('id-ID')}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, opacity: 0.85, marginTop: 1 }}>
+            <IconStar size={12} /> Terbaik: {hud.best.toLocaleString('id-ID')}
+          </div>
+          <div style={{ marginTop: 6, borderTop: '1px solid rgba(255,255,255,0.14)', paddingTop: 6 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 800, color: '#e2e8f0' }}>
+              <IconSpark size={12} color={hud.combo >= REGROW_STREAK_MIN ? '#F5B301' : '#2563EB'} />
+              Sempurna beruntun x{hud.combo}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 4 }} role="img" aria-label={`Rentetan sempurna ${hud.combo} dari ${REGROW_STREAK_MIN} untuk tumbuh kembali`}>
+              {Array.from({ length: REGROW_STREAK_MIN }, (_, i) => (
+                <span key={i} style={{ width: 22, height: 6, borderRadius: 999, background: hud.combo > i ? (hud.combo >= REGROW_STREAK_MIN ? '#F5B301' : '#2563EB') : 'rgba(255,255,255,0.18)' }} />
+              ))}
+              {hud.combo > REGROW_STREAK_MIN && <span style={{ fontSize: 10, fontWeight: 900, color: '#F5B301' }}>+{hud.combo - REGROW_STREAK_MIN}</span>}
+            </div>
+            <div style={{ fontSize: 10, marginTop: 3, fontWeight: hud.combo >= REGROW_STREAK_MIN ? 800 : 400, color: hud.combo >= REGROW_STREAK_MIN ? '#F5B301' : 'rgba(226,232,240,0.65)' }}>
+              {hud.combo >= REGROW_STREAK_MIN
+                ? 'Tumbuh kembali aktif: balok melebar lagi'
+                : `${REGROW_STREAK_MIN - hud.combo} sempurna lagi untuk tumbuh kembali`}
+            </div>
+          </div>
         </div>
         <div style={{ display: 'flex', gap: 8, pointerEvents: 'auto' }}>
           {screen === 'play' && (
             <>
-              <button style={btn} onClick={togglePauseRef.current} aria-label="Jeda">⏸</button>
-              <button style={{ ...btn, width: 56, fontSize: 14, fontWeight: 900 }} onClick={doDropBtn} aria-label="Jatuhkan">⤵</button>
+              <button style={btn} onClick={togglePauseRef.current} aria-label="Jeda"><IconPause /></button>
+              <button style={{ ...btn, width: 56 }} onClick={doDropBtn} aria-label="Jatuhkan"><IconDrop /></button>
             </>
           )}
-          <button style={btn} onClick={toggleMute} aria-label="Suara">{muted ? '🔇' : '🔊'}</button>
-          <button style={btn} onClick={onExit} aria-label="Keluar">✕</button>
+          <button style={btn} onClick={toggleMute} aria-label="Suara"><IconSpeaker off={muted} /></button>
+          <button style={btn} onClick={onExit} aria-label="Keluar"><IconClose /></button>
         </div>
       </div>
 
       {screen === 'play' && (
         <div style={{ position: 'absolute', bottom: 12, left: 0, right: 0, textAlign: 'center', zIndex: 5, pointerEvents: 'none' }}>
-          <span style={{ background: 'rgba(10,18,32,0.6)', color: '#e2e8f0', fontSize: 13, padding: '8px 16px', borderRadius: 999, border: '1px solid rgba(255,255,255,0.18)' }}>
-            👆 Ketuk layar / Spasi untuk menjatuhkan lantai
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: 'rgba(10,18,32,0.6)', color: '#e2e8f0', fontSize: 13, padding: '8px 16px', borderRadius: 999, border: '1px solid rgba(255,255,255,0.18)' }}>
+            <IconPointer /> Ketuk layar / Spasi untuk menjatuhkan lantai
           </span>
         </div>
       )}
 
       {screen === 'tutorial' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>🏢</div>
+          <div style={{ display: 'flex', justifyContent: 'center' }}><IconBuilding size={52} /></div>
           <h2 style={h2}>MENARA LANTAI</h2>
           <p style={p}>
             <b>Ketuk layar</b> untuk menjatuhkan lantai yang meluncur! Bagian yang <b>menonjol terpotong</b> jadi puing —
-            menara makin langsing. <b>Pas sempurna</b> = bonus beruntun. Meleset total = proyek ambruk!
+            menara makin langsing. <b>Pas sempurna</b> = bonus beruntun. <b>{REGROW_STREAK_MIN} sempurna beruntun</b> membuat
+            balok berikutnya <b>tumbuh kembali</b> melebar selangkah menuju ukuran awal. Meleset total = proyek ambruk!
           </p>
           {hud.best > 0 && <p style={p}>Skor terbaik: <b style={{ color: '#fde047' }}>{hud.best.toLocaleString('id-ID')}</b></p>}
           <button style={primaryBtn} onClick={startGame}>Mulai Membangun</button>
@@ -505,7 +632,7 @@ export default function ArcadeTowerBlocks({ onExit }: { onExit: () => void }): R
       )}
       {screen === 'pause' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>☕</div>
+          <div style={{ display: 'flex', justifyContent: 'center' }}><IconCup size={52} /></div>
           <h2 style={h2}>ISTIRAHAT</h2>
           <p style={p}>Crane-nya dimatikan dulu. Lantainya tidak ke mana-mana.</p>
           <button style={primaryBtn} onClick={togglePauseRef.current}>Lanjutkan</button>
@@ -513,7 +640,7 @@ export default function ArcadeTowerBlocks({ onExit }: { onExit: () => void }): R
       )}
       {screen === 'over' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>🏚️</div>
+          <div style={{ display: 'flex', justifyContent: 'center' }}><IconCollapse size={52} /></div>
           <h2 style={h2}>PROYEK AMBRUK!</h2>
           <div style={{ fontSize: 40, fontWeight: 900, color: '#fde047' }}>{hud.floors} lantai</div>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'center', margin: '10px 0' }}>

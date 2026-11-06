@@ -261,6 +261,7 @@ export function resolveBoard(
     if (matches.length === 0) break;
     const crushKeys = new Map<number, Pos>();
     const spawned: SpawnedSpecial[] = [];
+    const spawnedKeys = new Set<number>();
     for (const m of matches) {
       const special = specialForMatch(m);
       let spawnIdx = Math.floor(m.cells.length / 2);
@@ -269,12 +270,20 @@ export function resolveBoard(
         if (pi >= 0) spawnIdx = pi;
       }
       m.cells.forEach((p, i) => {
+        const k = posKey(p.r, p.c);
         if (i === spawnIdx && special !== 'none') {
+          // Sel spawn TIDAK BOLEH ikut hancur di langkah yang sama, walau ia
+          // juga anggota match lain yang berpotongan (silang/T/L): kalau ikut
+          // hancur, bonus spawn dibayar untuk special yang tak pernah ada dan
+          // efek areanya ikut meledak secara hantu.
+          if (spawnedKeys.has(k)) return;
+          crushKeys.delete(k);
+          spawnedKeys.add(k);
           const cell = b[p.r][p.c];
           cell.s = special;
           spawned.push({ r: p.r, c: p.c, s: special, t: cell.t });
-        } else {
-          crushKeys.set(posKey(p.r, p.c), p);
+        } else if (!spawnedKeys.has(k)) {
+          crushKeys.set(k, p);
         }
       });
     }
@@ -377,6 +386,41 @@ export function hasPossibleMove(b: Board): boolean {
     }
   }
   return false;
+}
+
+export interface MovePair {
+  a: Pos;
+  b: Pos;
+}
+
+/**
+ * Semua langkah sah saat ini (pasangan bersebelahan yang bila ditukar
+ * membentuk match, atau menyentuh material spesial). Murni & tidak mengubah
+ * papan — dipakai indikator petunjuk (hint) di komponen: pemain yang lama
+ * diam diperlihatkan satu langkah yang pasti sah, tanpa mengubah mekanik
+ * swap-match inti. Urutan deterministik: baris per baris, kanan lalu bawah.
+ */
+export function findPossibleMoves(b: Board): MovePair[] {
+  const moves: MovePair[] = [];
+  for (let r = 0; r < ROWS; r += 1) {
+    for (let c = 0; c < COLS; c += 1) {
+      const dirs: Pos[] = [
+        { r, c: c + 1 },
+        { r: r + 1, c },
+      ];
+      for (const d of dirs) {
+        if (!inBounds(d.r, d.c)) continue;
+        if (trySwap(b, { r, c }, d) !== null) moves.push({ a: { r, c }, b: d });
+      }
+    }
+  }
+  return moves;
+}
+
+/** Satu langkah petunjuk (yang pertama secara deterministik), atau null. */
+export function hintMove(b: Board): MovePair | null {
+  const moves = findPossibleMoves(b);
+  return moves.length > 0 ? moves[0] : null;
 }
 
 /** Acak ulang tipe material (special dipertahankan) sampai valid. */

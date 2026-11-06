@@ -5,6 +5,7 @@ import { strict as assert } from 'node:assert';
 import {
   buildLayout, isFree, freePairs, remaining, isCleared,
   shuffleRemaining, mulberry, tileAt,
+  countAvailablePairs, isDeadlocked, isStuck,
   type Tile,
 } from './logic';
 
@@ -80,6 +81,42 @@ test('tileAt menemukan ubin hidup di slot', () => {
   const tiles = buildLayout(21);
   const t = tiles[0];
   assert.equal(tileAt(tiles, t.x, t.y, t.z)?.id, t.id);
+});
+
+test('countAvailablePairs: konsisten dengan freePairs & hanya ubin bebas', () => {
+  for (const seed of [2, 13, 42, 777]) {
+    const tiles = buildLayout(seed);
+    assert.equal(countAvailablePairs(tiles), freePairs(tiles).length, `seed ${seed}`);
+  }
+  // dua bebas sejenis = 1; bebas beda jenis = 0; pasangan tertutup tidak dihitung
+  const mixed: Tile[] = [
+    { id: 0, x: 0, y: 0, z: 0, kind: 3, alive: true },
+    { id: 1, x: 7, y: 5, z: 0, kind: 3, alive: true },
+    { id: 2, x: 0, y: 5, z: 0, kind: 4, alive: true },
+    { id: 3, x: 0, y: 5, z: 1, kind: 4, alive: true }, // id2 tertutup atas -> bukan pasangan bebas
+  ];
+  assert.equal(countAvailablePairs(mixed), 1);
+});
+
+test('isDeadlocked: sisa ubin tanpa pasangan bebas, bukan saat bersih/ada pasangan', () => {
+  const stuck: Tile[] = [
+    { id: 0, x: 0, y: 0, z: 0, kind: 0, alive: true },
+    { id: 1, x: 7, y: 5, z: 0, kind: 1, alive: true },
+  ];
+  assert.ok(isDeadlocked(stuck));
+  assert.ok(!isDeadlocked([{ ...stuck[0], kind: 1 }, stuck[1]])); // sejenis -> ada pasangan
+  assert.ok(!isDeadlocked(stuck.map((t) => ({ ...t, alive: false })))); // bersih != buntu
+  assert.ok(!isDeadlocked(buildLayout(9)));
+});
+
+test('REGRESI soft-lock: buntu + kocok habis = stuck; kocok tersisa = belum stuck', () => {
+  const stuck: Tile[] = [
+    { id: 0, x: 0, y: 0, z: 0, kind: 0, alive: true },
+    { id: 1, x: 7, y: 5, z: 0, kind: 1, alive: true },
+  ];
+  assert.ok(isStuck(stuck, 0));
+  assert.ok(!isStuck(stuck, 1)); // masih bisa kocok
+  assert.ok(!isStuck(buildLayout(9), 0)); // ada pasangan bebas
 });
 
 console.log(`\n${passed} passed, ${failed} failed`);

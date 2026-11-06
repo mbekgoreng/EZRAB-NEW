@@ -103,5 +103,18 @@ test('batas tepat', () => {
   assert.notEqual(rankFor(20), rankFor(19));
 });
 
+console.log('\n[G2] streak ketelitian');
+test('streak naik per kata benar & reset saat salah ketik', () => {
+  let st = newTypeState(['semen', 'pasir', 'beton']);
+  st = typeWord(st, 'semen');
+  assert.equal(st.streak, 1);
+  st = typeWord(st, 'pasir');
+  assert.equal(st.streak, 2);
+  assert.equal(st.bestStreak, 2);
+  st = typeChar(st, 'x').state; // salah (harus b)
+  assert.equal(st.streak, 0);
+  assert.equal(st.bestStreak, 2);
+});
+
 console.log(`\n${passed} lulus, ${failed} gagal${failed ? ` — ${failures.join(', ')}` : ''}`);
 process.exit(failed ? 1 : 0);

@@ -30,7 +30,12 @@ export interface Feedback {
 
 /** Kode rahasia: 4 takaran acak (bahan boleh berulang). */
 export function genCode(rng: () => number): number[] {
-  return Array.from({ length: SLOTS }, () => Math.floor(rng() * BAHAN.length));
+  return Array.from({ length: SLOTS }, () => {
+    // Clamp: rng() === 1 (atau di luar [0,1)) tidak boleh menghasilkan
+    // indeks 6 / negatif yang tidak ada di BAHAN.
+    const v = Math.floor(rng() * BAHAN.length);
+    return Math.min(BAHAN.length - 1, Math.max(0, v));
+  });
 }
 
 /**
@@ -57,6 +62,44 @@ export function evaluate(guess: readonly number[], code: readonly number[]): Fee
     }
   }
   return { hitam, putih };
+}
+
+/** Satu entri riwayat tebakan pemain sendiri (tebakan + feedback yang diterima). */
+export interface GuessHistoryEntry {
+  guess: readonly number[];
+  feedback: Feedback;
+}
+
+/** Total seluruh kode yang mungkin: 6 bahan ^ 4 takaran. */
+export const TOTAL_CODES = BAHAN.length ** SLOTS;
+
+/**
+ * Semua kode kandidat yang masih konsisten dengan SELURUH riwayat.
+ * Kandidat konsisten bila evaluate(guess, kandidat) sama persis dengan
+ * feedback tercatat untuk setiap entri. Hanya memakai riwayat tebakan
+ * pemain sendiri — tidak pernah membaca kode rahasia.
+ */
+export function remainingCodes(history: readonly GuessHistoryEntry[]): number[][] {
+  const out: number[][] = [];
+  for (let n = 0; n < TOTAL_CODES; n += 1) {
+    const candidate: number[] = [];
+    let rest = n;
+    for (let i = SLOTS - 1; i >= 0; i -= 1) {
+      candidate[i] = rest % BAHAN.length;
+      rest = Math.floor(rest / BAHAN.length);
+    }
+    const consistent = history.every((entry) => {
+      const fb = evaluate(entry.guess, candidate);
+      return fb.hitam === entry.feedback.hitam && fb.putih === entry.feedback.putih;
+    });
+    if (consistent) out.push(candidate);
+  }
+  return out;
+}
+
+/** Jumlah kode yang masih mungkin tersisa sesudah riwayat tebakan tertentu. */
+export function countRemaining(history: readonly GuessHistoryEntry[]): number {
+  return remainingCodes(history).length;
 }
 
 /** Menang bila 4 hitam. */

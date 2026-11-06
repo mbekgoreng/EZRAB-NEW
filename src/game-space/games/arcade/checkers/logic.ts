@@ -135,6 +135,59 @@ export function genMoves(board: Board, side: Side): Move[] {
   return captures.length > 0 ? captures : quiets;
 }
 
+/** Jumlah bidak lawan yang dimakan satu langkah (0 = langkah jalan biasa). */
+export function captureCount(move: Move): number {
+  return move.steps.reduce((n, s) => n + (s.captured ? 1 : 0), 0);
+}
+
+export interface ForcedCapture {
+  /** true bila sisi ini WAJIB makan pada gilirannya. */
+  mandatory: boolean;
+  /** Posisi bidak yang wajib menangkap, urut baris lalu kolom. */
+  capturers: Array<[number, number]>;
+  /** Jumlah langkah makan legal (0 bila tidak wajib makan). */
+  moveCount: number;
+  /** Rantai makan terpanjang yang tersedia (0 bila tidak ada). */
+  maxChain: number;
+}
+
+/**
+ * Kewajiban makan sisi ini, dihitung dari papan + giliran SAJA —
+ * bukan dari bidak yang sedang dipilih pemain. Dipakai UI untuk
+ * menyorot bidak yang wajib menangkap SEBELUM pemain menyentuh apa pun.
+ */
+export function forcedCapture(board: Board, side: Side): ForcedCapture {
+  const moves = genMoves(board, side);
+  const byKey = new Map<string, [number, number]>();
+  let maxChain = 0;
+  for (const m of moves) {
+    const caps = captureCount(m);
+    if (caps === 0) continue;
+    if (caps > maxChain) maxChain = caps;
+    byKey.set(`${m.from[0]},${m.from[1]}`, m.from);
+  }
+  const mandatory = byKey.size > 0;
+  return {
+    mandatory,
+    capturers: [...byKey.values()],
+    moveCount: mandatory ? moves.length : 0,
+    maxChain,
+  };
+}
+
+/**
+ * SEMUA langkah yang langkah terakhirnya mendarat di (r,c).
+ * Bisa lebih dari satu: dua rantai makan berbeda dapat berakhir di
+ * kotak yang sama sambil memakan bidak yang berbeda — pemanggil
+ * wajib menawarkan pilihan, bukan mengambil yang pertama saja.
+ */
+export function movesEndingAt(moves: Move[], r: number, c: number): Move[] {
+  return moves.filter((m) => {
+    const last = m.steps[m.steps.length - 1];
+    return last !== undefined && last.to[0] === r && last.to[1] === c;
+  });
+}
+
 /** Terapkan langkah → papan baru. */
 export function applyMove(board: Board, move: Move): Board {
   const b = board.map((row) => row.map((p) => (p ? { ...p } : null)));

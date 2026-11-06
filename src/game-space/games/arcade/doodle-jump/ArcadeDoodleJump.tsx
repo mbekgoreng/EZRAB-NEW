@@ -7,9 +7,19 @@ import { useGameCanvas, type GameApi, TAU, clamp, lerp } from '../../../engine2d
 import { bestKey, getBest, setBest } from '../../../engine2d/best';
 import { popText } from '../../../engine2d/juice2d';
 import {
-  createWorld, stepWorld, WORLD_W,
+  createWorld, stepWorld, WORLD_W, zoneFor, platformStyleFor,
   type World, type Platform,
 } from './logic';
+
+/** Ikon helm proyek prosedural (SVG) — pengganti emoji di layar menu. */
+function HelmIcon({ size = 40 }: { size?: number }): React.JSX.Element {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4 15a8 8 0 0 1 6-7.8V5h4v2.2a8 8 0 0 1 6 7.8z" fill="#facc15" stroke="#a16207" strokeWidth="1.2" />
+      <rect x="2" y="15" width="20" height="3" rx="1.5" fill="#eab308" stroke="#a16207" strokeWidth="1" />
+    </svg>
+  );
+}
 
 const FONT = "'Plus Jakarta Sans','Inter',system-ui,sans-serif";
 const BK = bestKey('lompat-scaffolding', 'best');
@@ -28,7 +38,10 @@ export default function ArcadeDoodleJump({ onExit }: { onExit: () => void }): Re
   const apiRef = useRef<GameApi | null>(null);
   const screenRef = useRef<Screen>('tutorial');
   const [screen, setScreenState] = useState<Screen>('tutorial');
-  const [hud, setHud] = useState({ score: 0, best: getBest(BK, 0) });
+  const [hud, setHud] = useState({
+    score: 0, best: getBest(BK, 0),
+    zoneName: 'Fondasi', zoneNext: 'Kolom · 150 m lagi', zoneProgress: 0,
+  });
   const [muted, setMuted] = useState(false);
 
   const setScreen = (s: Screen): void => {
@@ -44,7 +57,13 @@ export default function ArcadeDoodleJump({ onExit }: { onExit: () => void }): Re
     let touchSide = 0; // -1 kiri, 1 kanan, 0 lepas
 
     const push = (): void => {
-      api.pushHud({ score: s.w.score, best: getBest(BK, 0) });
+      const zp = zoneFor(s.w.score);
+      api.pushHud({
+        score: s.w.score, best: getBest(BK, 0),
+        zoneName: zp.zone.name,
+        zoneNext: zp.next ? `${zp.next.name} · ${zp.toNext} m lagi` : 'Zona teratas',
+        zoneProgress: zp.progress,
+      });
     };
 
     const reset = (): void => {
@@ -60,9 +79,15 @@ export default function ArcadeDoodleJump({ onExit }: { onExit: () => void }): Re
       api.sfx.fail();
       api.shake.add(0.6);
       const wrap = wrapRef.current;
-      if (wrap) popText(wrap, '💥 JATUH! Butuh safety harness!', { size: 22, color: '#f87171' });
+      if (wrap) popText(wrap, 'JATUH! Butuh safety harness!', { size: 22, color: '#f87171' });
       window.setTimeout(() => {
-        api.pushHud({ score: s.w.score, best: nb });
+        const zp = zoneFor(s.w.score);
+        api.pushHud({
+          score: s.w.score, best: nb,
+          zoneName: zp.zone.name,
+          zoneNext: zp.next ? `${zp.next.name} · ${zp.toNext} m lagi` : 'Zona teratas',
+          zoneProgress: zp.progress,
+        });
         setScreen('over');
       }, 1100);
     };
@@ -73,8 +98,6 @@ export default function ArcadeDoodleJump({ onExit }: { onExit: () => void }): Re
       touchSide = p.x < api.W / 2 ? -1 : 1;
     };
     api.input.onUp = () => { touchSide = 0; };
-
-    let lastScore = 0;
 
     api.setUpdate((dt) => {
       if (api.input.wasPressed('Escape')) {
@@ -102,7 +125,7 @@ export default function ArcadeDoodleJump({ onExit }: { onExit: () => void }): Re
         if (ev.super) {
           api.shake.add(0.35);
           api.sfx.whoosh();
-          api.scores.add(sx, api.H * 0.5, 'DONGKRAK! 🚀', { color: '#fde047', size: 22 });
+          api.scores.add(sx, api.H * 0.5, 'DONGKRAK!', { color: '#fde047', size: 22 });
         } else {
           api.sfx.pop(0.8 + Math.random() * 0.25);
         }
@@ -115,12 +138,12 @@ export default function ArcadeDoodleJump({ onExit }: { onExit: () => void }): Re
         });
         api.sfx.crumble(1);
         const wrap = wrapRef.current;
-        if (wrap) popText(wrap, '⚠️ Papan lapuk!', { size: 15, color: '#fbbf24' });
+        if (wrap) popText(wrap, 'Papan lapuk patah!', { size: 15, color: '#fbbf24' });
       }
-      if (s.w.score >= lastScore + 500 && s.w.score > 0) {
-        lastScore = s.w.score;
+      if (ev.zoneUp) {
+        // progresi ketinggian terukur: popup nama zona + meter saat zona naik
         const wrap = wrapRef.current;
-        if (wrap) popText(wrap, `🏗️ ${s.w.score}!`, { size: 20, color: '#7dd3fc' });
+        if (wrap) popText(wrap, `ZONA ${ev.zoneUp.name.toUpperCase()} — ${s.w.score} m!`, { size: 20, color: '#7dd3fc' });
         api.sfx.chime(2);
       }
       push();
@@ -128,14 +151,6 @@ export default function ArcadeDoodleJump({ onExit }: { onExit: () => void }): Re
     });
 
     /* ---------------- render ---------------- */
-
-    // langit berubah seiring ketinggian
-    const skyColors = (h: number): [string, string] => {
-      if (h < 1500) return ['#fbbf24', '#f59e0b']; // fajar proyek
-      if (h < 4000) return ['#7dd3fc', '#38bdf8']; // siang
-      if (h < 8000) return ['#fb923c', '#c2410c']; // senja
-      return ['#1e1b4b', '#0b0f2a']; // malam
-    };
 
     const worldToScreen = (wx: number, wy: number, W: number, H: number): { x: number; y: number } => ({
       x: (wx / WORLD_W) * W,
@@ -148,93 +163,157 @@ export default function ArcadeDoodleJump({ onExit }: { onExit: () => void }): Re
       const wpx = (p.w / WORLD_W) * W;
       if (y < -40 || y > H + 40) return;
       const ph = Math.max(10, W * 0.028);
+      // gaya dari deskriptor murni logic.ts — kokoh vs rapuh terbaca tanpa emoji
+      const style = platformStyleFor(p);
       ctx.save();
+      // papan lapuk digambar miring (sudah rapuh sebelum patah)
+      if (style.tiltDeg !== 0) {
+        ctx.translate(x + wpx / 2, y + ph / 2);
+        ctx.rotate((style.tiltDeg * Math.PI) / 180);
+        ctx.translate(-(x + wpx / 2), -(y + ph / 2));
+      }
       ctx.shadowColor = 'rgba(0,0,0,0.4)';
       ctx.shadowBlur = 8;
       ctx.shadowOffsetY = 4;
-      // tiang perancah
-      ctx.strokeStyle = 'rgba(120,130,150,0.85)';
-      ctx.lineWidth = Math.max(3, W * 0.012);
-      const legL = x + 6;
-      const legR = x + wpx - 6;
-      ctx.beginPath();
-      ctx.moveTo(legL, y + ph); ctx.lineTo(legL, y + ph + 34);
-      ctx.moveTo(legR, y + ph); ctx.lineTo(legR, y + ph + 34);
-      ctx.stroke();
-      // papan
-      let g: CanvasGradient;
-      if (p.kind === 'lapuk') {
-        g = ctx.createLinearGradient(0, y, 0, y + ph);
-        g.addColorStop(0, '#8a7a66');
-        g.addColorStop(1, '#4a4038');
-      } else if (p.kind === 'dongkrak') {
-        g = ctx.createLinearGradient(0, y, 0, y + ph);
-        g.addColorStop(0, '#fca5a5');
-        g.addColorStop(1, '#b91c1c');
-      } else {
-        g = ctx.createLinearGradient(0, y, 0, y + ph);
-        g.addColorStop(0, '#e0aa63');
-        g.addColorStop(0.5, '#c68b4e');
-        g.addColorStop(1, '#8a5a24');
+      // tiang perancah (gerobak tidak bertiang — ia beroda)
+      if (style.marking !== 'roda-baja') {
+        ctx.strokeStyle = 'rgba(120,130,150,0.85)';
+        ctx.lineWidth = Math.max(3, W * 0.012);
+        const legL = x + 6;
+        const legR = x + wpx - 6;
+        ctx.beginPath();
+        ctx.moveTo(legL, y + ph); ctx.lineTo(legL, y + ph + 34);
+        ctx.moveTo(legR, y + ph); ctx.lineTo(legR, y + ph + 34);
+        ctx.stroke();
       }
+      // papan: gradasi per deskriptor + tepi rangka tegas di bawah
+      const g = ctx.createLinearGradient(0, y, 0, y + ph);
+      g.addColorStop(0, style.fill[0]);
+      g.addColorStop(1, style.fill[1]);
       ctx.fillStyle = g;
       ctx.beginPath();
       if (typeof ctx.roundRect === 'function') ctx.roundRect(x, y, wpx, ph, 5);
       else ctx.rect(x, y, wpx, ph);
       ctx.fill();
-      ctx.restore();
-      // detail
+      ctx.shadowColor = 'transparent';
+      ctx.fillStyle = style.edge;
+      ctx.fillRect(x + 2, y + ph - 3, wpx - 4, 3);
+      // detail per marking (di-clip ke papan)
       ctx.save();
       ctx.beginPath();
       if (typeof ctx.roundRect === 'function') ctx.roundRect(x, y, wpx, ph, 5);
       else ctx.rect(x, y, wpx, ph);
       ctx.clip();
-      if (p.kind === 'lapuk') {
-        ctx.strokeStyle = 'rgba(20,15,10,0.7)';
-        ctx.lineWidth = 1.5;
+      if (style.marking === 'retak') {
+        // retakan bercabang + serpihan menggantung di tepi bawah
+        ctx.strokeStyle = 'rgba(15,10,5,0.85)';
+        ctx.lineWidth = 1.6;
         ctx.beginPath();
-        ctx.moveTo(x + wpx * 0.3, y + 1); ctx.lineTo(x + wpx * 0.45, y + ph - 1);
-        ctx.moveTo(x + wpx * 0.6, y + 1); ctx.lineTo(x + wpx * 0.5, y + ph - 1);
+        ctx.moveTo(x + wpx * 0.28, y);
+        ctx.lineTo(x + wpx * 0.4, y + ph * 0.45); ctx.lineTo(x + wpx * 0.36, y + ph);
+        ctx.moveTo(x + wpx * 0.4, y + ph * 0.45); ctx.lineTo(x + wpx * 0.58, y + ph * 0.6);
+        ctx.moveTo(x + wpx * 0.66, y); ctx.lineTo(x + wpx * 0.58, y + ph * 0.6); ctx.lineTo(x + wpx * 0.63, y + ph);
+        ctx.stroke();
+        ctx.fillStyle = 'rgba(15,10,5,0.5)';
+        ctx.beginPath();
+        ctx.arc(x + wpx * 0.5, y + ph * 0.5, 2.2, 0, TAU);
+        ctx.arc(x + wpx * 0.82, y + ph * 0.4, 1.8, 0, TAU);
+        ctx.fill();
+        ctx.fillStyle = style.fill[1];
+        ctx.beginPath();
+        ctx.moveTo(x + wpx * 0.12, y + ph); ctx.lineTo(x + wpx * 0.2, y + ph); ctx.lineTo(x + wpx * 0.15, y + ph + 6);
+        ctx.closePath(); ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(x + wpx * 0.74, y + ph); ctx.lineTo(x + wpx * 0.84, y + ph); ctx.lineTo(x + wpx * 0.8, y + ph + 5);
+        ctx.closePath(); ctx.fill();
+      } else if (style.marking === 'roda-baja') {
+        // pelat baja: rivet di sudut + chevron arah gerak
+        ctx.fillStyle = 'rgba(15,23,42,0.55)';
+        for (const rx of [x + 6, x + wpx - 6]) {
+          for (const ry of [y + 3.5, y + ph - 3.5]) {
+            ctx.beginPath(); ctx.arc(rx, ry, 1.8, 0, TAU); ctx.fill();
+          }
+        }
+        const dir = p.vx >= 0 ? 1 : -1;
+        ctx.strokeStyle = 'rgba(254,240,138,0.9)';
+        ctx.lineWidth = 2;
+        for (let cix = 0; cix < 2; cix += 1) {
+          const cx0 = x + wpx / 2 + dir * (cix * 11 - 5);
+          ctx.beginPath();
+          ctx.moveTo(cx0 - dir * 4, y + 3);
+          ctx.lineTo(cx0 + dir * 4, y + ph / 2);
+          ctx.lineTo(cx0 - dir * 4, y + ph - 3);
+          ctx.stroke();
+        }
+      } else if (style.marking === 'pegas') {
+        // papan baja merah: rivet + garis las
+        ctx.fillStyle = 'rgba(69,10,10,0.6)';
+        for (const rx of [x + 6, x + wpx - 6]) {
+          ctx.beginPath(); ctx.arc(rx, y + ph / 2, 1.8, 0, TAU); ctx.fill();
+        }
+        ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.moveTo(x + 4, y + ph * 0.5); ctx.lineTo(x + wpx - 4, y + ph * 0.5);
         ctx.stroke();
       } else {
-        ctx.strokeStyle = 'rgba(90,50,10,0.4)';
+        // serat kayu kokoh: serat melengkung + sambungan papan + paku
+        ctx.strokeStyle = 'rgba(90,50,10,0.45)';
         ctx.lineWidth = 1.5;
         ctx.beginPath();
         ctx.moveTo(x + 4, y + ph * 0.55);
         ctx.bezierCurveTo(x + wpx * 0.3, y + ph * 0.7, x + wpx * 0.6, y + ph * 0.4, x + wpx - 4, y + ph * 0.6);
         ctx.stroke();
-      }
-      if (p.kind === 'gerobak') {
-        // roda gerobak
-        ctx.fillStyle = '#1f2937';
+        ctx.strokeStyle = 'rgba(90,50,10,0.35)';
         ctx.beginPath();
-        ctx.arc(x + wpx * 0.25, y + ph + 7, 7, 0, TAU);
-        ctx.arc(x + wpx * 0.75, y + ph + 7, 7, 0, TAU);
-        ctx.fill();
-        ctx.fillStyle = '#9ca3af';
-        ctx.beginPath();
-        ctx.arc(x + wpx * 0.25, y + ph + 7, 2.6, 0, TAU);
-        ctx.arc(x + wpx * 0.75, y + ph + 7, 2.6, 0, TAU);
-        ctx.fill();
+        ctx.moveTo(x + wpx * 0.5, y + 1); ctx.lineTo(x + wpx * 0.5, y + ph - 1);
+        ctx.stroke();
+        ctx.fillStyle = 'rgba(60,35,5,0.7)';
+        for (const nx of [x + 6, x + wpx - 6]) {
+          ctx.beginPath(); ctx.arc(nx, y + ph / 2, 1.7, 0, TAU); ctx.fill();
+        }
       }
-      if (p.kind === 'dongkrak') {
-        // dongkrak merah di atas papan
-        const jx = x + wpx / 2;
-        ctx.fillStyle = '#dc2626';
-        ctx.beginPath();
-        ctx.moveTo(jx - 12, y); ctx.lineTo(jx, y - 16); ctx.lineTo(jx + 12, y); ctx.closePath();
-        ctx.fill();
-        ctx.fillStyle = '#7f1d1d';
-        ctx.fillRect(jx - 14, y - 20, 28, 5);
-        ctx.fillStyle = 'rgba(255,255,255,0.5)';
-        ctx.fillRect(jx - 14, y - 20, 28, 2);
-      }
-      // kilau
+      // kilau atas
       const gl = ctx.createLinearGradient(0, y, 0, y + ph * 0.5);
-      gl.addColorStop(0, 'rgba(255,255,255,0.3)');
+      gl.addColorStop(0, 'rgba(255,255,255,0.28)');
       gl.addColorStop(1, 'rgba(255,255,255,0)');
       ctx.fillStyle = gl;
       ctx.fillRect(x, y, wpx, ph * 0.5);
+      ctx.restore();
+      // di luar clip: roda gerobak / pegas dongkrak
+      if (style.marking === 'roda-baja') {
+        for (const wx of [x + wpx * 0.25, x + wpx * 0.75]) {
+          ctx.fillStyle = '#1f2937';
+          ctx.beginPath(); ctx.arc(wx, y + ph + 7, 7, 0, TAU); ctx.fill();
+          ctx.strokeStyle = '#9ca3af';
+          ctx.lineWidth = 1.6;
+          ctx.beginPath();
+          ctx.moveTo(wx - 5, y + ph + 7); ctx.lineTo(wx + 5, y + ph + 7);
+          ctx.moveTo(wx, y + ph + 2); ctx.lineTo(wx, y + ph + 12);
+          ctx.stroke();
+          ctx.fillStyle = '#d1d5db';
+          ctx.beginPath(); ctx.arc(wx, y + ph + 7, 2.2, 0, TAU); ctx.fill();
+        }
+      }
+      if (style.marking === 'pegas') {
+        // pegas koil zigzag di atas papan + pelat injak — lantingan super terbaca
+        const jx = x + wpx / 2;
+        ctx.strokeStyle = '#7f1d1d';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(jx - 9, y);
+        const coils = 4;
+        for (let ci = 0; ci < coils; ci += 1) {
+          ctx.lineTo(jx + 9, y - 4 - ci * 4);
+          ctx.lineTo(jx - 9, y - 8 - ci * 4);
+        }
+        ctx.lineTo(jx + 9, y - 4 - coils * 4);
+        ctx.stroke();
+        ctx.fillStyle = '#dc2626';
+        ctx.fillRect(jx - 15, y - 22, 30, 5);
+        ctx.fillStyle = 'rgba(255,255,255,0.55)';
+        ctx.fillRect(jx - 15, y - 22, 30, 2);
+      }
       ctx.restore();
     };
 
@@ -264,6 +343,27 @@ export default function ArcadeDoodleJump({ onExit }: { onExit: () => void }): Re
       ctx.fillStyle = 'rgba(253,224,71,0.9)';
       ctx.fillRect(-11 * u, -32 * u, 22 * u, 5 * u);
       ctx.fillRect(-11 * u, -20 * u, 22 * u, 5 * u);
+      // safety harness: dua tali menyilang navy + gesper perak di dada
+      ctx.strokeStyle = '#1e3a5f';
+      ctx.lineWidth = 3.2 * u;
+      ctx.beginPath();
+      ctx.moveTo(-9 * u, -42 * u); ctx.lineTo(9 * u, -13 * u);
+      ctx.moveTo(9 * u, -42 * u); ctx.lineTo(-9 * u, -13 * u);
+      ctx.stroke();
+      ctx.fillStyle = '#cbd5e1';
+      ctx.fillRect(-2.6 * u, -30 * u, 5.2 * u, 5.2 * u);
+      // sepatu bot kerja yang menendang bergantian mengikuti irama lompatan
+      const kick = Math.sin(performance.now() / 130) * 2.6 * u;
+      ctx.fillStyle = '#451a03';
+      ctx.beginPath();
+      if (typeof ctx.roundRect === 'function') {
+        ctx.roundRect(-13 * u, -6.5 * u + Math.max(0, kick), 12 * u, 6.5 * u, 2.5 * u);
+        ctx.roundRect(1 * u, -6.5 * u + Math.max(0, -kick), 12 * u, 6.5 * u, 2.5 * u);
+      } else {
+        ctx.rect(-13 * u, -6.5 * u, 12 * u, 6.5 * u);
+        ctx.rect(1 * u, -6.5 * u, 12 * u, 6.5 * u);
+      }
+      ctx.fill();
       // kepala
       ctx.fillStyle = '#f2c79b';
       ctx.beginPath(); ctx.arc(0, -54 * u, 11 * u, 0, TAU); ctx.fill();
@@ -291,15 +391,15 @@ export default function ArcadeDoodleJump({ onExit }: { onExit: () => void }): Re
 
     api.setRender(() => {
       const { ctx, W, H } = api;
-      const hgt = s.camY + s.w.py;
-      const [sky0, sky1] = skyColors(hgt);
+      // langit mengikuti ZONA ketinggian yang sama dengan HUD (logic.zoneFor)
+      const zp = zoneFor(s.w.score);
       const bg = ctx.createLinearGradient(0, 0, 0, H);
-      bg.addColorStop(0, sky1);
-      bg.addColorStop(1, sky0);
+      bg.addColorStop(0, zp.zone.sky[0]);
+      bg.addColorStop(1, zp.zone.sky[1]);
       ctx.fillStyle = bg;
       ctx.fillRect(0, 0, W, H);
       // matahari/bulan
-      const night = hgt > 8000;
+      const night = zp.zone.night;
       ctx.save();
       ctx.globalAlpha = 0.9;
       const sunX = W * 0.8;
@@ -403,9 +503,15 @@ export default function ArcadeDoodleJump({ onExit }: { onExit: () => void }): Re
     <div ref={wrapRef} style={{ position: 'relative', width: '100%', height: '100%', minHeight: 600, overflow: 'hidden', borderRadius: 18, background: '#38bdf8', fontFamily: FONT }}>
       <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', touchAction: 'none' }} />
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', zIndex: 5, pointerEvents: 'none' }}>
-        <div style={{ pointerEvents: 'auto', background: 'rgba(12,20,40,0.6)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 14, padding: '7px 12px', color: '#fff', backdropFilter: 'blur(6px)', minWidth: 130 }}>
-          <div style={{ fontWeight: 900, fontSize: 17, color: '#fde047' }}>🏗️ {hud.score.toLocaleString('id-ID')}</div>
-          <div style={{ fontSize: 11, marginTop: 2, opacity: 0.85 }}>Terbaik: <b>{hud.best.toLocaleString('id-ID')}</b></div>
+        <div style={{ pointerEvents: 'auto', background: 'rgba(12,20,40,0.6)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 14, padding: '7px 12px', color: '#fff', backdropFilter: 'blur(6px)', minWidth: 150 }}>
+          <div style={{ fontWeight: 900, fontSize: 17, color: '#fde047' }}>{hud.score.toLocaleString('id-ID')} m</div>
+          <div style={{ fontSize: 11, marginTop: 2, opacity: 0.9 }}>
+            Zona <b>{hud.zoneName}</b> · {hud.zoneNext}
+          </div>
+          <div style={{ height: 5, borderRadius: 99, background: 'rgba(255,255,255,0.25)', marginTop: 5, overflow: 'hidden' }}>
+            <div style={{ height: '100%', width: `${Math.round(hud.zoneProgress * 100)}%`, background: '#f5b301', borderRadius: 99 }} />
+          </div>
+          <div style={{ fontSize: 11, marginTop: 4, opacity: 0.85 }}>Terbaik: <b>{hud.best.toLocaleString('id-ID')} m</b></div>
         </div>
         <div style={{ display: 'flex', gap: 8, pointerEvents: 'auto' }}>
           {(screen === 'play' || screen === 'pause') && (
@@ -415,22 +521,24 @@ export default function ArcadeDoodleJump({ onExit }: { onExit: () => void }): Re
           <button style={btn} onClick={onExit} aria-label="Keluar">✕</button>
         </div>
       </div>
-      {/* indikator sentuh kiri/kanan */}
+      {/* indikator sentuh kiri/kanan: segitiga CSS prosedural (bukan emoji) */}
       {screen === 'play' && (
         <div style={{ position: 'absolute', bottom: 12, left: 0, right: 0, display: 'flex', justifyContent: 'space-between', padding: '0 18px', zIndex: 4, pointerEvents: 'none', opacity: 0.55 }}>
-          <div style={{ fontSize: 30 }}>◀️</div>
-          <div style={{ fontSize: 30 }}>▶️</div>
+          <div style={{ width: 0, height: 0, borderTop: '14px solid transparent', borderBottom: '14px solid transparent', borderRight: '22px solid #fff' }} />
+          <div style={{ width: 0, height: 0, borderTop: '14px solid transparent', borderBottom: '14px solid transparent', borderLeft: '22px solid #fff' }} />
         </div>
       )}
 
       {screen === 'tutorial' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>🦺</div>
+          <div style={{ display: 'flex', justifyContent: 'center' }}><HelmIcon size={42} /></div>
           <h2 style={h2}>LOMPAT SCAFFOLDING</h2>
           <p style={p}>
             <b>Tahan kiri / kanan layar</b> (atau tombol ← →) untuk bergerak.
             Pantulkan tukang dari perancah ke perancah setinggi mungkin!
-            Awas <b>papan lapuk</b> ⚠️, kejar <b>dongkrak merah</b> 🚀 untuk lantingan super!
+            Awas <b>papan lapuk</b> (kusam, retak, miring — patah sekali injak),
+            kejar <b>dongkrak merah berpegas</b> untuk lantingan super!
+            Naiki zona <b>Fondasi → Kolom → Balok → Atap</b> (800 m).
           </p>
           {hud.best > 0 && <p style={p}>Rekor: <b style={{ color: '#fde047' }}>{hud.best.toLocaleString('id-ID')}</b></p>}
           <button style={primaryBtn} onClick={startGame}>Mulai Memanjat</button>
@@ -438,7 +546,6 @@ export default function ArcadeDoodleJump({ onExit }: { onExit: () => void }): Re
       )}
       {screen === 'pause' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>☕</div>
           <h2 style={h2}>JEDA</h2>
           <p style={p}>Tukang istirahat ngopi dulu.</p>
           <button style={primaryBtn} onClick={togglePause}>Lanjutkan</button>
@@ -446,10 +553,9 @@ export default function ArcadeDoodleJump({ onExit }: { onExit: () => void }): Re
       )}
       {screen === 'over' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>💥</div>
           <h2 style={h2}>JATUH!</h2>
-          <div style={{ fontSize: 40, fontWeight: 900, color: '#fde047' }}>{hud.score.toLocaleString('id-ID')}</div>
-          <p style={p}>Ketinggian terbaik: <b style={{ color: '#fde047' }}>{hud.best.toLocaleString('id-ID')}</b></p>
+          <div style={{ fontSize: 40, fontWeight: 900, color: '#fde047' }}>{hud.score.toLocaleString('id-ID')} m</div>
+          <p style={p}>Berhenti di zona <b>{hud.zoneName}</b> · Ketinggian terbaik: <b style={{ color: '#fde047' }}>{hud.best.toLocaleString('id-ID')} m</b></p>
           <button style={primaryBtn} onClick={startGame}>Panjat Lagi</button>
           <button style={ghostBtn} onClick={onExit}>Keluar</button>
         </Overlay>

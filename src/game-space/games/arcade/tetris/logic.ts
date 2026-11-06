@@ -126,3 +126,27 @@ export function spawnPiece(kind: PieceKind): ActivePiece {
   const shape = SHAPES[kind].map((r) => [...r]);
   return { kind, shape, x: Math.floor(COLS / 2) - Math.ceil(shape[0].length / 2), y: 0 };
 }
+
+/**
+ * Posisi Y pendaratan (ghost piece): turunkan piece sejauh mungkin tanpa
+ * tabrakan. Murni — dipakai pratinjau ghost & hard-drop agar keduanya selalu
+ * sepakat soal titik jatuh.
+ */
+export function landingY(board: Board, shape: number[][], px: number, py: number): number {
+  let y = py;
+  while (!collides(board, shape, px, y + 1)) y += 1;
+  return y;
+}
+
+/**
+ * Intip piece berikutnya TANPA mengambilnya dari kantong 7-bag.
+ * Kantong di-pop dari ujung, jadi berikutnya = elemen terakhir.
+ */
+export function peekNext(bag: PieceKind[]): PieceKind | null {
+  return bag.length > 0 ? bag[bag.length - 1] : null;
+}
+
+/** Baris tersisa menuju level berikutnya (level naik tiap 10 baris). */
+export function linesToNextLevel(lines: number): number {
+  return 10 - (lines % 10);
+}

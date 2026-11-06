@@ -1,7 +1,8 @@
 /**
  * Video Poker Proyek — Jacks or Better reskin konstruksi.
- * Corak kartu = material proyek: Bata 🧱, Kayu 🪵, Besi 🔩, Cat 🎨.
+ * Corak kartu = material proyek: Bata, Kayu, Besi, Cat.
  * Pangkat J/Q/K/A = Tukang/Mandor/Arsitek/Direktur. Pure logic, tanpa canvas.
+ * Glif material digambar prosedural (canvas) di komponen, bukan emoji.
  */
 
 export interface Card {
@@ -10,10 +11,10 @@ export interface Card {
 }
 
 export const SUITS = [
-  { name: 'Bata', symbol: '🧱' },
-  { name: 'Kayu', symbol: '🪵' },
-  { name: 'Besi', symbol: '🔩' },
-  { name: 'Cat', symbol: '🎨' },
+  { name: 'Bata' },
+  { name: 'Kayu' },
+  { name: 'Besi' },
+  { name: 'Cat' },
 ] as const;
 
 export const RANK_LABEL: Record<number, string> = {
@@ -106,6 +107,36 @@ export function evaluate(cards: Card[]): HandResult {
   return { key, name: p.name, pay: p.pay };
 }
 
+/**
+ * Kartu mana saja yang MEMBENTUK kombinasi bayaran (untuk sorotan pemenang
+ * di meja). Murni turunan dari `evaluate` — tidak menilai ulang aturan:
+ * - kombinasi 5 kartu (royal/straight/flush/full house/straight flush): semua;
+ * - kuartet/trio: kartu se-pangkat itu saja (kicker tidak disorot);
+ * - dua pasang / pasangan Tukang ke Atas: kartu berpasangan saja;
+ * - tanpa bayaran (termasuk pasangan rendah di bawah Tukang): tidak ada.
+ * Urutan hasil mengikuti urutan kartu di tangan (bukan urutan terurut).
+ */
+export function winningIndices(cards: Card[]): boolean[] {
+  const none = cards.map(() => false);
+  if (cards.length !== 5) return none;
+  const res = evaluate(cards);
+  if (res.pay <= 0) return none;
+  if (
+    res.key === 'royal' || res.key === 'straightFlush' || res.key === 'flush'
+    || res.key === 'straight' || res.key === 'fullHouse'
+  ) {
+    return cards.map(() => true);
+  }
+  const counts = new Map<number, number>();
+  for (const c of cards) counts.set(c.rank, (counts.get(c.rank) ?? 0) + 1);
+  if (res.key === 'four') return cards.map((c) => counts.get(c.rank) === 4);
+  if (res.key === 'three') return cards.map((c) => counts.get(c.rank) === 3);
+  if (res.key === 'twoPair' || res.key === 'jacks') {
+    return cards.map((c) => counts.get(c.rank) === 2);
+  }
+  return none;
+}
+
 export type Phase = 'deal' | 'hold';
 
 export interface VPState {
@@ -130,8 +161,13 @@ export function createState(): VPState {
   };
 }
 
+/** Taruhan sah hanya bilangan bulat 1..MAX_BET (kontrak `bet` di VPState). */
+export function isValidBet(bet: number): boolean {
+  return Number.isInteger(bet) && bet >= 1 && bet <= MAX_BET;
+}
+
 export function canAfford(st: VPState): boolean {
-  return st.credits >= st.bet;
+  return isValidBet(st.bet) && st.credits >= st.bet;
 }
 
 /** Taruhan dipotong, 5 kartu dibagikan. Return false jika kredit kurang. */

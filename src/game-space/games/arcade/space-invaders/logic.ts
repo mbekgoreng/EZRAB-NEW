@@ -77,3 +77,36 @@ export function erodeShield(shield: boolean[][], px: number, py: number, radius:
 export function shieldAlive(shield: boolean[][]): boolean {
   return shield.some((row) => row.some((v) => v));
 }
+
+/* --- Gelombang 3: kejelasan bahaya & integritas tameng (murni) --- */
+
+/** Bonus menyelesaikan satu wave (sebelumnya angka inline di komponen). */
+export function waveBonus(wave: number): number {
+  return 100 * wave;
+}
+
+export type DangerLevel = 'aman' | 'dekat' | 'kritis';
+
+/**
+ * Tingkat bahaya dari jarak tepi bawah formasi ke pemain:
+ * >140px aman, 70..140 dekat, <70 kritis (peringatan tegas di layar).
+ */
+export function dangerLevel(formationBottomY: number, playerY: number): DangerLevel {
+  const gap = playerY - formationBottomY;
+  if (gap < 70) return 'kritis';
+  if (gap < 140) return 'dekat';
+  return 'aman';
+}
+
+/** Persentase kertas tameng yang masih utuh (0..100, dibulatkan). */
+export function shieldPercent(shield: boolean[][]): number {
+  let total = 0;
+  let alive = 0;
+  for (const row of shield) {
+    for (const v of row) {
+      total += 1;
+      if (v) alive += 1;
+    }
+  }
+  return total === 0 ? 0 : Math.round((alive / total) * 100);
+}

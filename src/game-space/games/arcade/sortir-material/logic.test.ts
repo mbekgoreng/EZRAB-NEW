@@ -5,7 +5,8 @@
 import { strict as assert } from 'node:assert';
 import {
   fallSpeed, spawnInterval, pickKind, spawnItem, sortResult,
-  scoreFor, levelAt, BINS, MAT_WEIGHTS, MAX_LIVES, START_FALL, START_SPAWN,
+  scoreFor, levelAt, lifeGainFor, BINS, MAT_WEIGHTS, MAX_LIVES, START_FALL, START_SPAWN,
+  LIFE_STREAK_INTERVAL,
 } from './logic';
 
 let passed = 0;
@@ -83,6 +84,36 @@ test('level 1..5', () => {
 test('3 bin terdefinisi & 3 nyawa', () => {
   assert.equal(Object.keys(BINS).length, 3);
   assert.equal(MAX_LIVES, 3);
+});
+
+console.log('\n[5] lifeGainFor — pemulihan nyawa dari streak');
+test('streak 0 & di bawah kelipatan = 0 nyawa', () => {
+  assert.equal(LIFE_STREAK_INTERVAL, 12);
+  assert.equal(lifeGainFor(0), 0);
+  assert.equal(lifeGainFor(1), 0);
+  assert.equal(lifeGainFor(LIFE_STREAK_INTERVAL - 1), 0);
+  assert.equal(lifeGainFor(-5), 0);
+});
+test('tepat kelipatan = +1, kelipatan ganda bertambah', () => {
+  assert.equal(lifeGainFor(LIFE_STREAK_INTERVAL), 1);
+  assert.equal(lifeGainFor(LIFE_STREAK_INTERVAL + 1), 1);
+  assert.equal(lifeGainFor(LIFE_STREAK_INTERVAL * 2), 2);
+  assert.equal(lifeGainFor(LIFE_STREAK_INTERVAL * 3), 3);
+  assert.equal(lifeGainFor(LIFE_STREAK_INTERVAL * 2 - 1), 1);
+});
+
+console.log('\n[6] regresi spawnItem — rng tepi dijepit');
+test('rng()=1 tidak menghasilkan lajur/variant di luar kontrak', () => {
+  const lanes = [80, 195, 310];
+  const it = spawnItem(() => 1, 7, lanes, -30);
+  assert.ok(lanes.includes(it.x), `x=${it.x}`);
+  assert.ok(it.variant >= 0 && it.variant <= 2, `variant=${it.variant}`);
+});
+test('rng()=0 memilih lajur pertama & variant 0', () => {
+  const lanes = [80, 195, 310];
+  const it = spawnItem(() => 0, 8, lanes, -30);
+  assert.equal(it.x, lanes[0]);
+  assert.equal(it.variant, 0);
 });
 
 console.log(`\n${passed} lulus, ${failed} gagal${failed > 0 ? `: ${failures.join(', ')}` : ''}`);

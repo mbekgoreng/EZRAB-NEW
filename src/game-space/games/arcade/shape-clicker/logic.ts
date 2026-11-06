@@ -37,6 +37,37 @@ export function nextKind(rng: () => number): NailKind {
   return rng() < GOLD_CHANCE ? 'emas' : 'paku';
 }
 
+/** Batas atas ketokan untuk paku biasa (dinyatakan: cap 4). */
+export const MAX_HITS_NEEDED = 4;
+/** Poin tiap ketokan parsial (paku belum tenggelam penuh). */
+export const PARTIAL_POINTS = 2;
+
+/**
+ * Berapa ketokan sampai paku tenggelam penuh — pembeda mekanik dari
+ * whack-a-mole (satu ketuk hilang). Paku biasa: 2 + floor((level-1)/3),
+ * dibatasi MAX_HITS_NEEDED (4) — L1–3: 2, L4–6: 3, L7+: 4.
+ * Paku emas selalu 1 ketokan.
+ */
+export function hitsNeededFor(kind: NailKind, level: number): number {
+  if (kind === 'emas') return 1;
+  const lv = Math.max(1, Math.floor(level));
+  return Math.min(MAX_HITS_NEEDED, 2 + Math.floor((lv - 1) / 3));
+}
+
+/**
+ * Poin ketokan parsial (belum tenggelam penuh): PARTIAL_POINTS (2) untuk
+ * paku biasa. Paku emas tidak punya ketokan parsial (1 ketokan tuntas) → 0.
+ */
+export function partialPoints(kind: NailKind): number {
+  return kind === 'emas' ? 0 : PARTIAL_POINTS;
+}
+
+/** Fraksi kedalaman tenggelam 0..1 dari ketokan yang sudah masuk. */
+export function nailDepthFor(hitsDone: number, hitsNeeded: number): number {
+  if (hitsNeeded <= 0) return 1;
+  return Math.min(1, Math.max(0, hitsDone / hitsNeeded));
+}
+
 /** Poin ketokan: paku 10 + streak×3; emas 40 + streak×3. */
 export function tapPoints(kind: NailKind, streak: number): { points: number; newStreak: number } {
   const newStreak = streak + 1;

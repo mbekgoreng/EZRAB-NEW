@@ -7,6 +7,7 @@ import {
   EMPTY, neighbors, levelGrid, findCluster, findFloating, colorsInGrid,
   pushCeiling, isCleared, rowsForLevel, colorsForLevel,
   scorePop, scoreDrop, LEVEL_BONUS, type Grid,
+  MATERIAL_NAMES, materialName, shotsUntilCeiling, snapScore,
 } from './logic';
 
 let passed = 0;
@@ -149,6 +150,22 @@ test('scorePop/scoreDrop/LEVEL_BONUS', () => {
   assert.equal(scorePop(5), 50);
   assert.equal(scoreDrop(3), 60);
   assert.equal(LEVEL_BONUS, 500);
+});
+
+console.log('\n[gelombang-3] material & hitung mundur plafon');
+test('materialName memetakan 6 warna & membungkus indeks', () => {
+  assert.equal(MATERIAL_NAMES.length, 6);
+  assert.equal(materialName(0), 'Semen Abu');
+  assert.equal(materialName(2), 'Bata Merah');
+  assert.equal(materialName(6), materialName(0));
+  assert.equal(materialName(-1), materialName(5));
+});
+test('shotsUntilCeiling bersiklus 5..1', () => {
+  assert.deepEqual([0,1,2,3,4,5,6].map(shotsUntilCeiling), [5,4,3,2,1,5,4]);
+});
+test('snapScore = letusan + runtuhan', () => {
+  assert.equal(snapScore(3, 2), 30 + 40);
+  assert.equal(snapScore(0, 0), 0);
 });
 
 console.log(`\n${passed} lulus, ${failed} gagal${failed ? ` — ${failures.join(', ')}` : ''}`);

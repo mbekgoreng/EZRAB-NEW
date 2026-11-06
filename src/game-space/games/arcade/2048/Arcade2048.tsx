@@ -1,6 +1,6 @@
 /**
  * Arcade2048 — "Cor 2048".
- * Gabungkan material proyek: 🧱 Bata → … → 🌆 Pencakar Langit (2048).
+ * Gabungkan material proyek: Bata → … → Pencakar Langit (2048).
  * Swipe + keyboard + tombol arah, undo, best, juice pengecoran.
  * Logika murni di logic.ts; file ini render + input + juice.
  */
@@ -9,7 +9,7 @@ import { useGameCanvas, type GameApi } from '../../../engine2d';
 import { sfx } from '../../../engine2d';
 import { bestKey, getBest, setBest } from '../../../engine2d';
 import {
-  createGame, move, undo, canMove, cloneGrid, tierOf, tileName, tileIcon,
+  createGame, move, undo, canMove, cloneGrid, tierOf, tileName,
   TIERS, TIER_COLORS, MAX_TIER, WIN_VALUE, N,
   type G2048, type Dir,
 } from './logic';
@@ -114,8 +114,7 @@ function drawTile(
   ctx.fillStyle = '#fff';
   ctx.shadowColor = 'rgba(0,0,0,0.35)';
   ctx.shadowBlur = 4;
-  ctx.font = `${tier >= 9 ? 34 : 30}px system-ui`;
-  ctx.fillText(tileIcon(value), CELL / 2, CELL / 2 - 10);
+  drawTierGlyph(ctx, tier, CELL / 2, CELL / 2 - 12, tier >= 9 ? 30 : 27);
   ctx.shadowBlur = 0;
   ctx.font = `800 ${tier >= 9 ? 10 : 9}px ${FONT}`;
   ctx.fillStyle = 'rgba(255,255,255,0.95)';
@@ -124,6 +123,70 @@ function drawTile(
   ctx.font = `700 10px ${FONT}`;
   ctx.fillStyle = 'rgba(255,255,255,0.75)';
   ctx.fillText(String(value), CELL / 2, CELL / 2 + 29);
+  ctx.restore();
+}
+
+
+/** Gelombang 2: glif ubin PROSEDURAL per tier (menggantikan ikon emoji TIERS).
+ *  Bahasa visual sama dengan pilot Sudoku Material: bentuk sederhana, putih
+ *  di atas warna ubin, terbaca pada ukuran sel nyata. */
+function drawTierGlyph(ctx: CanvasRenderingContext2D, tier: number, cx: number, cy: number, s: number): void {
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.strokeStyle = 'rgba(255,255,255,0.95)';
+  ctx.fillStyle = 'rgba(255,255,255,0.92)';
+  ctx.lineWidth = 2.4;
+  const u = s / 2;
+  if (tier === 1) { // Bata: balok + garis nat
+    ctx.strokeRect(-u, -u * 0.55, s, s * 0.55 + u * 0.55);
+    ctx.beginPath(); ctx.moveTo(-u, 0); ctx.lineTo(u, 0); ctx.moveTo(0, -u * 0.55); ctx.lineTo(0, 0); ctx.moveTo(-u * 0.4, 0); ctx.lineTo(-u * 0.4, u * 0.55); ctx.stroke();
+  } else if (tier === 2) { // Batu kali: gugus batu bulat
+    for (const [x, y, r] of [[-u * 0.45, u * 0.3, u * 0.5], [u * 0.5, u * 0.35, u * 0.42], [0, -u * 0.35, u * 0.48]] as const) {
+      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.stroke();
+    }
+  } else if (tier === 3) { // Kayu: penampang log + lingkaran tahun
+    ctx.beginPath(); ctx.arc(0, 0, u * 0.95, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(0, 0, u * 0.55, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(0, 0, u * 0.2, 0, Math.PI * 2); ctx.fill();
+  } else if (tier === 4) { // Besi: baut heksagon
+    ctx.beginPath();
+    for (let i = 0; i < 6; i++) { const a = (Math.PI / 3) * i - Math.PI / 6; const x = Math.cos(a) * u * 0.95, y = Math.sin(a) * u * 0.95; if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); }
+    ctx.closePath(); ctx.stroke();
+    ctx.beginPath(); ctx.arc(0, 0, u * 0.42, 0, Math.PI * 2); ctx.stroke();
+  } else if (tier === 5) { // Hebel: blok berpori
+    ctx.strokeRect(-u, -u * 0.8, s, s * 0.8);
+    for (const [x, y] of [[-u * 0.5, -u * 0.3], [u * 0.3, -u * 0.45], [0, u * 0.15], [-u * 0.35, u * 0.5], [u * 0.55, u * 0.4]] as const) {
+      ctx.beginPath(); ctx.arc(x, y, 2.2, 0, Math.PI * 2); ctx.fill();
+    }
+  } else if (tier === 6) { // Cor beton: bidang + bintik agregat
+    ctx.strokeRect(-u * 0.9, -u * 0.9, s * 0.9, s * 0.9);
+    for (const [x, y] of [[-u * 0.4, -u * 0.2], [u * 0.35, -u * 0.5], [u * 0.1, u * 0.35], [-u * 0.5, u * 0.55]] as const) {
+      ctx.beginPath(); ctx.arc(x, y, 2.6, 0, Math.PI * 2); ctx.fill();
+    }
+  } else if (tier === 7) { // Dinding: pola bata bertumpuk
+    ctx.strokeRect(-u, -u * 0.85, s, s * 0.85);
+    ctx.beginPath();
+    ctx.moveTo(-u, -u * 0.28); ctx.lineTo(u, -u * 0.28); ctx.moveTo(-u, u * 0.28); ctx.lineTo(u, u * 0.28);
+    ctx.moveTo(0, -u * 0.85); ctx.lineTo(0, -u * 0.28); ctx.moveTo(-u * 0.5, -u * 0.28); ctx.lineTo(-u * 0.5, u * 0.28); ctx.moveTo(u * 0.5, -u * 0.28); ctx.lineTo(u * 0.5, u * 0.28); ctx.moveTo(0, u * 0.28); ctx.lineTo(0, u * 0.85);
+    ctx.stroke();
+  } else if (tier === 8) { // Fasad kaca: kisi jendela
+    ctx.strokeRect(-u * 0.85, -u, s * 0.85, s);
+    ctx.beginPath();
+    ctx.moveTo(-u * 0.85 + s * 0.85 / 3, -u); ctx.lineTo(-u * 0.85 + s * 0.85 / 3, u); ctx.moveTo(-u * 0.85 + (s * 0.85 * 2) / 3, -u); ctx.lineTo(-u * 0.85 + (s * 0.85 * 2) / 3, u);
+    ctx.moveTo(-u * 0.85, 0); ctx.lineTo(u * 0.85, 0);
+    ctx.stroke();
+  } else if (tier === 9) { // Rumah: atap + badan
+    ctx.beginPath(); ctx.moveTo(-u, -u * 0.15); ctx.lineTo(0, -u * 0.95); ctx.lineTo(u, -u * 0.15); ctx.closePath(); ctx.stroke();
+    ctx.strokeRect(-u * 0.7, -u * 0.15, s * 0.7, s * 0.55);
+    ctx.strokeRect(-u * 0.18, u * 0.05, u * 0.36, u * 0.5);
+  } else if (tier === 10) { // Gedung: menara + jendela
+    ctx.strokeRect(-u * 0.62, -u, s * 0.62, s);
+    for (let r = 0; r < 3; r++) for (let c = 0; c < 2; c++) ctx.fillRect(-u * 0.42 + c * u * 0.45, -u * 0.75 + r * u * 0.55, u * 0.26, u * 0.3);
+  } else { // Pencakar langit: menara ramping + antena
+    ctx.strokeRect(-u * 0.42, -u * 0.55, s * 0.42, s * 0.78);
+    ctx.beginPath(); ctx.moveTo(0, -u * 0.55); ctx.lineTo(0, -u * 1.05); ctx.stroke();
+    for (let r = 0; r < 3; r++) ctx.fillRect(-u * 0.22, -u * 0.3 + r * u * 0.42, u * 0.44, u * 0.2);
+  }
   ctx.restore();
 }
 
@@ -389,8 +452,8 @@ export default function Arcade2048({ onExit }: { onExit: () => void }): React.JS
       ctx.font = `800 12.5px ${FONT}`;
       ctx.textAlign = 'center';
       const nextName = maxTier < MAX_TIER ? TIERS[maxTier].nama : 'SEMPURNA';
-      const nextIcon = maxTier < MAX_TIER ? TIERS[maxTier].ikon : '🌆';
-      ctx.fillText(`🎯 Target: ${nextIcon} ${nextName}`, LW / 2, bt - 22);
+      const nextIcon = '';
+      ctx.fillText(`Target: ${nextName}`, LW / 2, bt - 22);
 
       ctx.restore();
     });
@@ -464,10 +527,10 @@ export default function Arcade2048({ onExit }: { onExit: () => void }): React.JS
       {/* HUD atas */}
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 8, zIndex: 5 }}>
         <div style={{ background: 'rgba(10,14,22,0.6)', borderRadius: 12, padding: '6px 12px', color: '#fff', fontWeight: 800, fontSize: 14 }}>
-          ⭐ {hud.score}
+          ★ {hud.score}
         </div>
         <div style={{ background: 'rgba(10,14,22,0.45)', borderRadius: 12, padding: '6px 10px', color: '#ffd166', fontWeight: 800, fontSize: 13 }}>
-          🏅 {hud.best}
+          Terbaik {hud.best}
         </div>
         <div style={{ flex: 1 }} />
         <button style={btn} onClick={doUndo} aria-label="Urungkan" title="Urungkan (Z)" disabled={!hud.canUndo} >
@@ -498,19 +561,19 @@ export default function Arcade2048({ onExit }: { onExit: () => void }): React.JS
 
       {screen === 'tutorial' && (
         <Overlay>
-          <div style={{ fontSize: 46 }}>🧱🏢</div>
+          <div style={{ fontSize: 15, fontWeight: 900, letterSpacing: 2, color: '#ffd166' }}>— COR 2048 —</div>
           <h2 style={titleStyle}>COR 2048</h2>
           <p style={textStyle}>
-            Geser untuk menggabungkan material yang sama: 🧱 Bata → … → 🌆 Pencakar Langit (2048)!
+            Geser untuk menggabungkan material yang sama: Bata → Batu → Kayu → … → Pencakar Langit (2048)!
             Tiap gabungan menaikkan nilai cor. Papan penuh & tak bisa gabung = proyek mangkrak.
           </p>
-          <button style={primaryBtn} onClick={() => { apiRef.current?.sfx.ensure(); apiRef.current?.sfx.click(); setScreen('play'); }}>Mulai Mengecor 🏗️</button>
+          <button style={primaryBtn} onClick={() => { apiRef.current?.sfx.ensure(); apiRef.current?.sfx.click(); setScreen('play'); }}>Mulai Mengecor</button>
         </Overlay>
       )}
 
       {screen === 'pause' && (
         <Overlay>
-          <div style={{ fontSize: 40 }}>☕</div>
+          <div style={{ fontSize: 15, fontWeight: 900, letterSpacing: 2, color: '#ffd166' }}>— JEDA —</div>
           <h2 style={titleStyle}>ISTIRAHAT</h2>
           <p style={textStyle}>Corannya ditutup terpal dulu. Jangan sampai kehujanan.</p>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
@@ -522,34 +585,34 @@ export default function Arcade2048({ onExit }: { onExit: () => void }): React.JS
 
       {screen === 'win' && (
         <Overlay>
-          <div style={{ fontSize: 48 }}>🌆</div>
+          <div style={{ fontSize: 15, fontWeight: 900, letterSpacing: 2, color: '#4ade80' }}>— PENCAKAR LANGIT TERCAPAI —</div>
           <h2 style={titleStyle}>PENCAR LANGIT!</h2>
           <p style={textStyle}>
             Dari bata jadi pencakar langit {wonTier}! Kontraktor lain cuma bisa melongo.
           </p>
           <p style={{ ...textStyle, fontSize: 16 }}>
-            ⭐ Skor: <b>{hud.score}</b> • 🏅 Terbaik: <b>{hud.best}</b> • 👆 {hud.moves} langkah
+            Skor: <b>{hud.score}</b> • Terbaik: <b>{hud.best}</b> • {hud.moves} langkah
           </p>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
-            <button style={primaryBtn} onClick={keepGoing}>Lanjut Bangun 🚀</button>
-            <button style={secondaryBtn} onClick={newGame}>Ulangi 🔁</button>
+            <button style={primaryBtn} onClick={keepGoing}>Lanjut Bangun</button>
+            <button style={secondaryBtn} onClick={newGame}>Ulangi</button>
           </div>
         </Overlay>
       )}
 
       {screen === 'over' && (
         <Overlay>
-          <div style={{ fontSize: 48 }}>🚧</div>
+          <div style={{ fontSize: 15, fontWeight: 900, letterSpacing: 2, color: '#f87171' }}>— LAHAN HABIS —</div>
           <h2 style={titleStyle}>PROYEK MANGKRAK!</h2>
           <p style={textStyle}>
             Papan penuh, tak ada yang bisa digabung. Seperti RAB yang tak kunjung disetujui.
           </p>
           <p style={{ ...textStyle, fontSize: 16 }}>
-            ⭐ Skor: <b>{hud.score}</b> • 🏅 Terbaik: <b>{hud.best}</b>
+            Skor: <b>{hud.score}</b> • Terbaik: <b>{hud.best}</b>
           </p>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
-            <button style={primaryBtn} onClick={newGame}>Cor Lagi 🔁</button>
-            <button style={secondaryBtn} onClick={onExit}>Tutup ✕</button>
+            <button style={primaryBtn} onClick={newGame}>Cor Lagi</button>
+            <button style={secondaryBtn} onClick={onExit}>Tutup</button>
           </div>
         </Overlay>
       )}

@@ -7,10 +7,38 @@ import { useGameCanvas, type GameApi, sfx, TAU } from '../../../engine2d';
 import { bestKey, getBest, setBest } from '../../../engine2d/best';
 import { popText } from '../../../engine2d/juice2d';
 import {
-  COLS, ROWS, MATERIALS, bag7, collides, clearLines, emptyBoard,
-  gravityMs, levelFor, merge, rotate, scoreFor, spawnPiece,
+  COLS, ROWS, MATERIALS, SHAPES, bag7, collides, clearLines, emptyBoard,
+  gravityMs, landingY, levelFor, linesToNextLevel, merge, peekNext, rotate,
+  scoreFor, spawnPiece,
   type ActivePiece, type Board, type PieceKind,
 } from './logic';
+
+/** Pratinjau tetromino prosedural (DOM/CSS grid) dari SHAPES + warna material. */
+function TetroIcon({ kind, cell = 11, tilt = 0 }: { kind: PieceKind; cell?: number; tilt?: number }): React.JSX.Element {
+  const shape = SHAPES[kind];
+  const m = MATERIALS[kind];
+  return (
+    <span
+      style={{
+        display: 'inline-grid', gap: 1.5, verticalAlign: 'middle',
+        gridTemplateColumns: `repeat(${shape[0].length}, ${cell}px)`,
+        transform: tilt ? `rotate(${tilt}deg)` : undefined,
+      }}
+    >
+      {shape.flatMap((row, y) => row.map((v, x) => (
+        <span
+          key={`${y}-${x}`}
+          style={{
+            width: cell, height: cell, borderRadius: 2.5,
+            background: v ? `linear-gradient(180deg, ${m.c1}, ${m.c2})` : 'transparent',
+            border: v ? '1px solid rgba(0,0,0,0.4)' : '1px solid transparent',
+            boxShadow: v ? 'inset 0 2px 2px rgba(255,255,255,0.35)' : 'none',
+          }}
+        />
+      )))}
+    </span>
+  );
+}
 
 const FONT = "'Plus Jakarta Sans','Inter',system-ui,sans-serif";
 const BK = bestKey('susun-bata', 'best');
@@ -41,7 +69,7 @@ export default function ArcadeTetris({ onExit }: { onExit: () => void }): React.
   const apiRef = useRef<GameApi | null>(null);
   const screenRef = useRef<Screen>('tutorial');
   const [screen, setScreenState] = useState<Screen>('tutorial');
-  const [hud, setHud] = useState({ score: 0, lines: 0, level: 0, best: getBest(BK, 0) });
+  const [hud, setHud] = useState({ score: 0, lines: 0, level: 0, next: '' as PieceKind | '', best: getBest(BK, 0) });
   const [muted, setMuted] = useState(false);
 
   const setScreen = (s: Screen): void => {
@@ -59,8 +87,15 @@ export default function ArcadeTetris({ onExit }: { onExit: () => void }): React.
       acc: 0, dasT: 0, repT: 0, dir: 0, over: false, t: 0,
     };
 
+    // push HANYA saat HUD benar-benar berubah: dulu push() dipanggil di akhir
+    // update() setiap frame -> setState React 60x/detik (badai re-render).
+    let lastHudKey = '';
     const push = (): void => {
-      api.pushHud({ score: s.score, lines: s.lines, level: s.level, best: getBest(BK, 0) });
+      const next = peekNext(s.bag) ?? '';
+      const key = `${s.score}|${s.lines}|${s.level}|${next}`;
+      if (key === lastHudKey) return;
+      lastHudKey = key;
+      api.pushHud({ score: s.score, lines: s.lines, level: s.level, next, best: getBest(BK, 0) });
     };
 
     const refill = (): PieceKind => {
@@ -70,6 +105,9 @@ export default function ArcadeTetris({ onExit }: { onExit: () => void }): React.
 
     const newPiece = (): boolean => {
       const kind = refill();
+      // isi ulang kantong segera bila habis agar pratinjau NEXT selalu valid
+      // (urutan keluaran 7-bag tidak berubah: kantong baru memang berikutnya).
+      if (s.bag.length === 0) s.bag = bag7();
       s.cur = spawnPiece(kind);
       s.ghostY = dropY(s.board, s.cur);
       if (collides(s.board, s.cur.shape, s.cur.x, s.cur.y)) { endGame(); return false; }
@@ -92,13 +130,13 @@ export default function ArcadeTetris({ onExit }: { onExit: () => void }): React.
       api.sfx.thud(1.2);
       api.shake.add(10);
       const wrap = wrapRef.current;
-      if (wrap) popText(wrap, '🧱 DINDING ROBOH!', { size: 30, color: '#fca5a5' });
+      if (wrap) popText(wrap, 'DINDING ROBOH!', { size: 30, color: '#fca5a5' });
       api.particles.spawn(api.W / 2, api.H * 0.3, {
         count: 70, colors: ['#fca5a5', '#fdba74', '#d6d3d1', '#92400e'],
         speed: [80, 360], life: [0.7, 1.4], size: [3, 8], gravity: 500, shape: 'rect', rotation: true,
       });
       window.setTimeout(() => {
-        api.pushHud({ score: s.score, lines: s.lines, level: s.level, best: nb });
+        api.pushHud({ score: s.score, lines: s.lines, level: s.level, next: peekNext(s.bag) ?? '', best: nb });
         setScreen('over');
       }, 1300);
     };
@@ -121,10 +159,10 @@ export default function ArcadeTetris({ onExit }: { onExit: () => void }): React.
           count: cleared * 14, colors: ['#fde047', '#fdba74', '#fff7d6', '#f59e0b'],
           speed: [90, 320], life: [0.5, 1.0], size: [2, 6], gravity: 380, shape: 'rect', rotation: true,
         });
-        if (cleared >= 4 && wrapRef.current) popText(wrapRef.current, '🏗️ DINDING KOKOH!', { size: 24, color: '#fde047' });
+        if (cleared >= 4 && wrapRef.current) popText(wrapRef.current, 'DINDING KOKOH! (4 BARIS)', { size: 24, color: '#fde047' });
         if (nl > s.level) {
           s.level = nl;
-          if (wrapRef.current) popText(wrapRef.current, `⚡ LEVEL ${nl + 1} — MAKIN CEPAT!`, { size: 20, color: '#7dd3fc' });
+          if (wrapRef.current) popText(wrapRef.current, `LEVEL ${nl + 1} — MAKIN CEPAT!`, { size: 20, color: '#7dd3fc' });
           api.sfx.whoosh();
         }
       }
@@ -431,39 +469,44 @@ export default function ArcadeTetris({ onExit }: { onExit: () => void }): React.
       {/* HUD atas */}
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', zIndex: 5, pointerEvents: 'none' }}>
         <div style={{ pointerEvents: 'auto', background: 'rgba(10,18,32,0.62)', border: '1px solid rgba(125,211,252,0.3)', borderRadius: 14, padding: '7px 12px', color: '#fff', backdropFilter: 'blur(6px)', minWidth: 150 }}>
-          <div style={{ fontWeight: 900, fontSize: 17, color: '#fde047' }}>🧱 {hud.score.toLocaleString('id-ID')}</div>
+          <div style={{ fontWeight: 900, fontSize: 17, color: '#fde047' }}>{hud.score.toLocaleString('id-ID')}</div>
           <div style={{ fontSize: 12, marginTop: 2, opacity: 0.92 }}>
-            Lv.{hud.level + 1} • {hud.lines} baris
+            Lv.{hud.level + 1} • {hud.lines} baris • {linesToNextLevel(hud.lines)} lagi naik level
           </div>
-          <div style={{ fontSize: 11, opacity: 0.7 }}>⭐ Terbaik: {hud.best.toLocaleString('id-ID')}</div>
+          <div style={{ fontSize: 11, opacity: 0.7 }}>Terbaik: {hud.best.toLocaleString('id-ID')}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 5 }}>
+            <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1, opacity: 0.75 }}>NEXT</span>
+            {hud.next ? <TetroIcon kind={hud.next} cell={9} /> : <span style={{ fontSize: 11, opacity: 0.6 }}>—</span>}
+            {hud.next && <span style={{ fontSize: 11, opacity: 0.85 }}>{MATERIALS[hud.next].name}</span>}
+          </div>
         </div>
         <div style={{ display: 'flex', gap: 8, pointerEvents: 'auto' }}>
           {(screen === 'play' || screen === 'pause') && (
-            <button style={btn} onClick={togglePause} aria-label="Jeda">{screen === 'play' ? '⏸' : '▶'}</button>
+            <button style={btn} onClick={togglePause} aria-label="Jeda">{screen === 'play' ? 'II' : '▶'}</button>
           )}
-          <button style={btn} onClick={toggleMute} aria-label="Suara">{muted ? '🔇' : '🔊'}</button>
-          <button style={btn} onClick={onExit} aria-label="Keluar">✕</button>
+          <button style={{ ...btn, fontSize: 10, fontWeight: 800 }} onClick={toggleMute} aria-label="Suara">{muted ? 'MATI' : 'NYALA'}</button>
+          <button style={btn} onClick={onExit} aria-label="Keluar">×</button>
         </div>
       </div>
 
       {/* kontrol sentuh */}
       {(screen === 'play') && (
         <div style={{ position: 'absolute', bottom: 10, left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: 10, zIndex: 5 }}>
-          <button style={padBtn} onPointerDown={(e) => { e.preventDefault(); doAct('left'); }} aria-label="Kiri">◀</button>
-          <button style={padBtn} onPointerDown={(e) => { e.preventDefault(); doAct('rotate'); }} aria-label="Putar">🔄</button>
-          <button style={padBtn} onPointerDown={(e) => { e.preventDefault(); doAct('soft'); }} aria-label="Turun">⬇</button>
-          <button style={padBtn} onPointerDown={(e) => { e.preventDefault(); doAct('right'); }} aria-label="Kanan">▶</button>
-          <button style={{ ...padBtn, borderColor: 'rgba(248,113,113,0.5)', color: '#fca5a5' }} onPointerDown={(e) => { e.preventDefault(); doAct('hard'); }} aria-label="Jatuhkan">⏬</button>
+          <button style={padBtn} onPointerDown={(e) => { e.preventDefault(); doAct('left'); }} aria-label="Kiri">←</button>
+          <button style={padBtn} onPointerDown={(e) => { e.preventDefault(); doAct('rotate'); }} aria-label="Putar">↻</button>
+          <button style={padBtn} onPointerDown={(e) => { e.preventDefault(); doAct('soft'); }} aria-label="Turun">↓</button>
+          <button style={padBtn} onPointerDown={(e) => { e.preventDefault(); doAct('right'); }} aria-label="Kanan">→</button>
+          <button style={{ ...padBtn, borderColor: 'rgba(248,113,113,0.5)', color: '#fca5a5' }} onPointerDown={(e) => { e.preventDefault(); doAct('hard'); }} aria-label="Jatuhkan">⇓</button>
         </div>
       )}
 
       {screen === 'tutorial' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>🧱</div>
+          <div><TetroIcon kind="T" cell={17} /></div>
           <h2 style={h2}>SUSUN BATA</h2>
           <p style={p}>
             Susun balok <b>material bangunan</b> jadi <b>baris penuh</b> — baris penuh berubah jadi dinding kokoh!
-            Tiap naik level, balok <b>makin cepat</b> turunnya. Jangan sampai menara material roboh!
+            Tiap naik level, balok <b>makin cepat</b> turunnya. Panel <b>NEXT</b> di kiri atas menunjukkan balok berikutnya. Jangan sampai menara material roboh!
           </p>
           <p style={{ ...p, fontSize: 12, opacity: 0.8 }}>← → geser • ↑ putar • Spasi jatuhkan • P jeda</p>
           {hud.best > 0 && <p style={p}>Skor terbaik: <b style={{ color: '#fde047' }}>{hud.best.toLocaleString('id-ID')}</b></p>}
@@ -472,7 +515,7 @@ export default function ArcadeTetris({ onExit }: { onExit: () => void }): React.
       )}
       {screen === 'pause' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>☕</div>
+          <div style={{ fontSize: 42, fontWeight: 900, color: '#fde047', letterSpacing: 6 }}>II</div>
           <h2 style={h2}>ISTIRAHAT</h2>
           <p style={p}>Mandornya ngopi dulu. Baloknya aman tidak ke mana-mana.</p>
           <button style={primaryBtn} onClick={togglePause}>Lanjutkan</button>
@@ -480,7 +523,7 @@ export default function ArcadeTetris({ onExit }: { onExit: () => void }): React.
       )}
       {screen === 'over' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>🏚️</div>
+          <div><TetroIcon kind="L" cell={17} tilt={28} /></div>
           <h2 style={h2}>DINDING ROBOH!</h2>
           <div style={{ fontSize: 40, fontWeight: 900, color: '#fde047' }}>{hud.score.toLocaleString('id-ID')}</div>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'center', margin: '10px 0' }}>
@@ -497,9 +540,7 @@ export default function ArcadeTetris({ onExit }: { onExit: () => void }): React.
 }
 
 function dropY(board: Board, p: ActivePiece): number {
-  let y = p.y;
-  while (!collides(board, p.shape, p.x, y + 1)) y += 1;
-  return y;
+  return landingY(board, p.shape, p.x, p.y);
 }
 
 const h2: React.CSSProperties = { margin: '8px 0 4px', fontWeight: 900, fontSize: 22, color: '#fde047', letterSpacing: 1 };

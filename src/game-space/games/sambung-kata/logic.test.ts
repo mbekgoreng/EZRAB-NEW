@@ -7,6 +7,7 @@ import {
   generateLevel, canForm, isValidWord, submitWord, revealHint,
   levelComplete, nextPosition, appendSelection, PACK_COUNT, LEVELS_PER_PACK,
   MAX_WHEEL_LETTERS, MIN_WHEEL_LETTERS, HINTS_PER_PACK,
+  bonusPointsFor, bonusScore, findBonusWords, collectBonusWord, BONUS_PER_LETTER,
   type Level,
 } from './logic';
 
@@ -226,6 +227,78 @@ test('revealHint tak pernah menunjuk kata yang sudah ditemukan', () => {
       assert.equal(revealHint(lv, found), null, `p${p}l${l}: hint harus null saat tuntas`);
     }
   }
+});
+
+console.log('\n[9] kata bonus');
+const lvBonus: Level = { pack: 1, level: 0, words: ['SEMEN'], letters: ['S', 'E', 'M', 'N', 'B', 'A', 'T', 'X'] };
+test('bonusPointsFor: poin = panjang x per-huruf, 0 untuk kata tak dikenal', () => {
+  assert.equal(bonusPointsFor('BATA'), 4 * BONUS_PER_LETTER);
+  assert.equal(bonusPointsFor('bata'), 4 * BONUS_PER_LETTER);
+  assert.equal(bonusPointsFor('ZZZZ'), 0);
+  assert.equal(bonusPointsFor(''), 0);
+});
+test('collectBonusWord: kata valid non-target jadi bonus + poin', () => {
+  const r = collectBonusWord(lvBonus, [], 'BATA');
+  assert.equal(r.status, 'bonus');
+  assert.equal(r.points, 4 * BONUS_PER_LETTER);
+  assert.equal(r.totalPoints, 4 * BONUS_PER_LETTER);
+});
+test('collectBonusWord: bonus yang sama tidak dibayar dua kali', () => {
+  const r = collectBonusWord(lvBonus, ['BATA'], 'BATA');
+  assert.equal(r.status, 'already-bonus');
+  assert.equal(r.points, 0);
+  assert.equal(r.totalPoints, 4 * BONUS_PER_LETTER);
+});
+test('collectBonusWord: target level BUKAN bonus', () => {
+  const r = collectBonusWord(lvBonus, [], 'SEMEN');
+  assert.equal(r.status, 'not-bonus');
+  assert.equal(r.points, 0);
+});
+test('collectBonusWord: kata tak dikenal / tak terformable BUKAN bonus', () => {
+  assert.equal(collectBonusWord(lvBonus, [], 'SEMINAR').status, 'not-bonus');
+  assert.equal(collectBonusWord(lvBonus, [], 'BXTA').status, 'not-bonus');
+});
+test('bonusScore menjumlahkan poin semua bonus terkumpul', () => {
+  assert.equal(bonusScore([]), 0);
+  assert.equal(bonusScore(['BATA', 'CAT']), (4 + 3) * BONUS_PER_LETTER);
+});
+test('findBonusWords: formable, valid, bukan target, deterministik', () => {
+  const a = findBonusWords(lvBonus);
+  const b = findBonusWords(lvBonus);
+  assert.deepEqual(a, b);
+  assert.ok(a.includes('BATA'), `BATA harus tersedia sebagai bonus: [${a}]`);
+  assert.ok(!a.includes('SEMEN'), 'target tidak boleh masuk daftar bonus');
+  for (const w of a) {
+    assert.ok(isValidWord(w) && canForm(w, lvBonus.letters), `${w} harus valid & formable`);
+  }
+});
+test('findBonusWords konsisten di semua 60 level (tak pernah memuat target)', () => {
+  for (let p = 0; p < PACK_COUNT; p += 1) {
+    for (let l = 0; l < LEVELS_PER_PACK; l += 1) {
+      const lv = generateLevel(p, l);
+      for (const w of findBonusWords(lv)) {
+        assert.ok(!lv.words.includes(w), `p${p}l${l}: bonus ${w} adalah target`);
+        assert.ok(canForm(w, lv.letters), `p${p}l${l}: bonus ${w} tak formable`);
+      }
+    }
+  }
+});
+
+console.log('\n[10] regresi bug: hint tidak boleh mengulang kata yang sama');
+test('revealHint melewati kata yang sudah pernah di-hint', () => {
+  const h = revealHint(lv, [], ['BATA']);
+  assert.ok(h !== null);
+  assert.equal(h.word, 'CAT');
+  assert.equal(h.ch, 'C');
+});
+test('revealHint null bila semua kata tersisa sudah pernah di-hint', () => {
+  assert.equal(revealHint(lv, [], ['BATA', 'CAT']), null);
+  assert.equal(revealHint(lv, ['BATA'], ['CAT']), null);
+});
+test('revealHint tanpa daftar hinted mempertahankan perilaku lama', () => {
+  const h = revealHint(lv, []);
+  assert.ok(h !== null);
+  assert.equal(h.word, 'BATA');
 });
 
 console.log(`\n${passed} passed, ${failed} failed`);

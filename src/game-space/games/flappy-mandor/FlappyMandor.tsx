@@ -14,7 +14,7 @@ import { bestKey, getBest, setBest } from '../../engine2d/best';
 import { popText } from '../../engine2d/juice2d';
 import {
   createState, flap, updateState, updateReady, startRun, readyBobOffset,
-  inGrace, difficulty, medalFor, MEDAL_LABEL,
+  inGrace, difficulty, medalFor, MEDAL_LABEL, clearanceAtPass, isNearMiss,
   GRAVITY, FLAP_V, BIRD_R, GATE_W, GRACE_T, FLAP_BUFFER_S,
   type FlapState, type Gate, type DeathCause, type Bird,
 } from './logic';
@@ -440,6 +440,8 @@ export default function FlappyMandor({ onExit }: { onExit: () => void }): React.
   const [hud, setHud] = useState<Hud>({ score: 0, best: getBest(bestKey(SLUG, 'best')) });
 
   // mutable per-frame (tidak memicu render React)
+  const nearRef = useRef(0);
+  const nearBestRef = useRef(0);
   const fxRef = useRef({
     animT: 0,          // jam ambient (awan, teks pulse) — jalan terus
     flapAnim: 0,       // 1 -> 0 setelah flap (sayap + squash)
@@ -487,6 +489,7 @@ export default function FlappyMandor({ onExit }: { onExit: () => void }): React.
   };
 
   const restart = (): void => {
+    nearRef.current = 0; nearBestRef.current = 0;
     const api = apiRef.current;
     if (!api) return;
     stRef.current = createState((Date.now() % 100000) | 0, api.W, api.H);
@@ -594,6 +597,16 @@ export default function FlappyMandor({ onExit }: { onExit: () => void }): React.
       if (res.scored) {
         api.sfx.pop(1 + Math.min(0.6, st.passed * 0.02));
         api.scores.add(st.bird.x + 30, st.bird.y - 34, '+1', { color: '#ffd166', size: 26 });
+        // NYARIS: lewati gate mepet tepi celah -> streak presisi (pembeda Flappy Mandor)
+        const lastGate = [...st.gates].reverse().find((g) => g.passed);
+        if (lastGate && isNearMiss(clearanceAtPass(st.bird.y, lastGate))) {
+          nearRef.current += 1;
+          if (nearRef.current > nearBestRef.current) nearBestRef.current = nearRef.current;
+          api.scores.add(st.bird.x + 30, st.bird.y + 34, nearRef.current > 1 ? `NYARIS! x${nearRef.current}` : 'NYARIS!', { color: '#7dd3fc', size: 22 });
+          if (nearRef.current >= 3) api.sfx.chime(1);
+        } else {
+          nearRef.current = 0;
+        }
         if (st.passed % 10 === 0 && st.passed > 0 && wrapRef.current) {
           const m = medalFor(st.passed);
           popText(wrapRef.current, m ? `MEDALI ${MEDAL_LABEL[m]}!` : `${st.passed} GATE!`, { size: 26, color: '#ffd166' });
@@ -721,8 +734,13 @@ export default function FlappyMandor({ onExit }: { onExit: () => void }): React.
         ctx.shadowBlur = 12;
         // jari menunjuk animasi naik-turun (di atas burung agar tak menutupi)
         const fy = lh * 0.20 + Math.sin(t * 5) * -8;
-        ctx.font = '44px system-ui';
-        ctx.fillText('👆', LW / 2, fy);
+        // penunjuk prosedural: cincin berdenyut + segitiga arah (bukan emoji)
+        ctx.save();
+        ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.arc(LW / 2, fy, 15 + Math.sin(t * 5) * 3, 0, Math.PI * 2); ctx.stroke();
+        ctx.fillStyle = '#ffd166';
+        ctx.beginPath(); ctx.moveTo(LW / 2, fy - 30); ctx.lineTo(LW / 2 - 10, fy - 14); ctx.lineTo(LW / 2 + 10, fy - 14); ctx.closePath(); ctx.fill();
+        ctx.restore();
         ctx.font = `900 26px ${FONT}`;
         ctx.fillText('KETUK UNTUK MULAI', LW / 2, fy + 48);
         ctx.restore();
@@ -749,7 +767,7 @@ export default function FlappyMandor({ onExit }: { onExit: () => void }): React.
           ctx.fillStyle = 'rgba(15,23,42,0.55)';
           ctx.font = `800 15px ${FONT}`;
           ctx.textAlign = 'center';
-          ctx.fillText(`🏅 Terbaik: ${best}`, LW / 2, ty + 78);
+          ctx.fillText(`Terbaik: ${best} gate`, LW / 2, ty + 78);
           ctx.restore();
         }
       }
@@ -824,10 +842,10 @@ export default function FlappyMandor({ onExit }: { onExit: () => void }): React.
       {/* HUD */}
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 8, zIndex: 5 }}>
         <div style={{ background: 'rgba(15,23,42,0.55)', borderRadius: 12, padding: '6px 12px', color: '#fff', fontWeight: 800, fontSize: 14 }}>
-          🚧 {hud.score}
+          GATE {hud.score}
         </div>
         <div style={{ background: 'rgba(15,23,42,0.45)', borderRadius: 12, padding: '6px 10px', color: '#ffd166', fontWeight: 800, fontSize: 13 }}>
-          🏅 {hud.best}
+          Terbaik {hud.best}
         </div>
         <div style={{ flex: 1 }} />
         {(screen === 'play' || screen === 'pause') && (
@@ -841,7 +859,7 @@ export default function FlappyMandor({ onExit }: { onExit: () => void }): React.
 
       {screen === 'pause' && (
         <Overlay>
-          <div style={{ fontSize: 40 }}>☕</div>
+          <div style={{ fontSize: 15, fontWeight: 900, letterSpacing: 2, color: '#ffd166' }}>— JEDA —</div>
           <h2 style={titleStyle}>ISTIRAHAT DULU</h2>
           <p style={textStyle}>Mandor lagi ngopi di pos satpam. Jangan diganggu.</p>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
@@ -853,7 +871,7 @@ export default function FlappyMandor({ onExit }: { onExit: () => void }): React.
 
       {screen === 'over' && (
         <Overlay>
-          <div style={{ fontSize: 44 }}>💥</div>
+          <div style={{ fontSize: 15, fontWeight: 900, letterSpacing: 2, color: '#f87171' }}>— TABRAKAN —</div>
           <h2 style={titleStyle}>MANDOR JATUH!</h2>
           <p style={textStyle}>
             Lupa pakai safety harness. Seperti biasa.
@@ -865,12 +883,12 @@ export default function FlappyMandor({ onExit }: { onExit: () => void }): React.
             </div>
           )}
           <p style={{ ...textStyle, fontSize: 16 }}>
-            🚧 Gate: <b>{hud.score}</b> &nbsp;•&nbsp; 🏅 Terbaik: <b>{hud.best}</b>
+            Gate: <b>{hud.score}</b> &nbsp;•&nbsp; Terbaik: <b>{hud.best}</b> &nbsp;•&nbsp; Nyaris terbaik: <b>{nearBestRef.current}</b>
             {isBest && <span style={{ color: '#4ade80', fontWeight: 900 }}> — REKOR BARU!</span>}
           </p>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
-            <button style={primaryBtn} onClick={() => { apiRef.current?.sfx.ensure(); restart(); }}>Main Lagi 🔁</button>
-            <button style={secondaryBtn} onClick={onExit}>Tutup ✕</button>
+            <button style={primaryBtn} onClick={() => { apiRef.current?.sfx.ensure(); restart(); }}>Main Lagi</button>
+            <button style={secondaryBtn} onClick={onExit}>Tutup</button>
           </div>
         </Overlay>
       )}

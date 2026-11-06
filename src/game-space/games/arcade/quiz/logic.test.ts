@@ -5,6 +5,8 @@ import { strict as assert } from 'node:assert';
 import {
   QUESTIONS, buildRound, scoreAnswer, gradeFor, mulberry32,
   QUESTIONS_PER_ROUND, TIME_PER_QUESTION, CATEGORIES,
+  pickQuestionsForRound, tierPlanForRound, tierLabel, validateQuestionBank,
+  ROUND_TIER_PLAN,
 } from './logic';
 
 let passed = 0;
@@ -24,8 +26,38 @@ function test(name: string, fn: () => void): void {
 }
 
 console.log('\n[1] bank soal');
-test('bank ≥ 40 soal', () => {
-  assert.ok(QUESTIONS.length >= 40, `hanya ${QUESTIONS.length}`);
+test('bank ≥ 90 soal (Gelombang 5)', () => {
+  assert.ok(QUESTIONS.length >= 90, `hanya ${QUESTIONS.length}`);
+});
+test('bank tepat 96 soal saat ini', () => {
+  assert.equal(QUESTIONS.length, 96);
+});
+test('validateQuestionBank: bank lolos tanpa error', () => {
+  assert.deepEqual(validateQuestionBank(), []);
+});
+test('tidak ada pertanyaan duplikat (case-insensitive)', () => {
+  const keys = QUESTIONS.map((q) => q.q.trim().toLowerCase());
+  assert.equal(new Set(keys).size, keys.length);
+});
+test('tiap tier terwakili ≥ 20 soal & tier sah', () => {
+  for (const t of [1, 2, 3] as const) {
+    const n = QUESTIONS.filter((q) => q.tier === t).length;
+    assert.ok(n >= 20, `tier ${t} hanya ${n}`);
+  }
+  for (const q of QUESTIONS) assert.ok([1, 2, 3].includes(q.tier), `tier asing: ${q.q}`);
+});
+test('tierLabel memetakan 1/2/3', () => {
+  assert.equal(tierLabel(1), 'Dasar');
+  assert.equal(tierLabel(2), 'Menengah');
+  assert.equal(tierLabel(3), 'Lanjutan');
+});
+test('validateQuestionBank menangkap bank rusak (regresi validator)', () => {
+  const bad = [
+    { q: 'Soal A?', options: ['a', 'a', 'b', 'c'], answer: 9, cat: 'Material', tier: 1 as const },
+    { q: 'Soal A?', options: ['a', 'b', 'c', 'd'], answer: 0, cat: 'Material', tier: 1 as const },
+  ];
+  const errs = validateQuestionBank(bad);
+  assert.ok(errs.length >= 3, `errors: ${errs.join('; ')}`);
 });
 test('tiap soal: 4 opsi, answer valid, kategori dikenal', () => {
   for (const q of QUESTIONS) {
@@ -69,6 +101,40 @@ test('jawaban teracak valid: opsi pada index answer adalah opsi benar asli', () 
     assert.ok(orig, 'soal ronde tidak ada di bank');
     assert.equal(rq.options[rq.answer], orig.options[orig.answer]);
   }
+});
+test('tierPlanForRound: pola menanjak 3 dasar, 4 menengah, 3 lanjutan', () => {
+  assert.deepEqual(tierPlanForRound(10), [...ROUND_TIER_PLAN]);
+  assert.deepEqual(tierPlanForRound(0), []);
+  const plan = tierPlanForRound(10);
+  assert.equal(plan.filter((t) => t === 1).length, 3);
+  assert.equal(plan.filter((t) => t === 2).length, 4);
+  assert.equal(plan.filter((t) => t === 3).length, 3);
+});
+test('pickQuestionsForRound mengikuti rencana tier per posisi', () => {
+  for (const seed of [1, 7, 42, 99]) {
+    const picked = pickQuestionsForRound(seed);
+    assert.equal(picked.length, QUESTIONS_PER_ROUND);
+    assert.deepEqual(picked.map((q) => q.tier), tierPlanForRound(10));
+    assert.equal(new Set(picked.map((q) => q.q)).size, picked.length, 'soal berulang dalam ronde');
+  }
+});
+test('buildRound mempertahankan tier soal asli', () => {
+  for (const rq of buildRound(5)) {
+    const orig = QUESTIONS.find((q) => q.q === rq.q);
+    assert.ok(orig);
+    assert.equal(rq.tier, orig.tier);
+  }
+});
+test('fakta kunci terverifikasi: konversi & APD & campuran', () => {
+  const byQ = (frag: string) => QUESTIONS.find((q) => q.q.includes(frag));
+  const m = byQ('Satu meter sama dengan');
+  assert.ok(m); assert.equal(m.options[m.answer], '100 cm');
+  const ton = byQ('Satu ton sama dengan');
+  assert.ok(ton); assert.equal(ton.options[ton.answer], '1.000 kg');
+  const helm = byQ('safety helmet');
+  assert.ok(helm); assert.ok(helm.options[helm.answer].includes('kepala'));
+  const vol = byQ('Volume beton untuk plat');
+  assert.ok(vol); assert.equal(vol.options[vol.answer], '2,4 m³');
 });
 
 console.log('\n[3] scoreAnswer');

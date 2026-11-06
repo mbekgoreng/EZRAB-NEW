@@ -7,7 +7,7 @@ import { useGameCanvas, type GameApi, TAU, clamp, easeOutBack } from '../../../e
 import { sfx } from '../../../engine2d';
 import { bestKey, getBest, setBest } from '../../../engine2d/best';
 import { popText } from '../../../engine2d/juice2d';
-import { GRID, toggle, isSolved, emptyBoard, scramble, scoreFor, SHIFTS } from './logic';
+import { GRID, affected, toggle, isSolved, emptyBoard, scramble, scoreFor, starsFor, SHIFTS } from './logic';
 
 const FONT = "'Plus Jakarta Sans','Inter',system-ui,sans-serif";
 const BK = bestKey('lampu-proyek', 'best');
@@ -23,6 +23,8 @@ interface S {
   shiftIdx: number;
   pops: { i: number; age: number }[];
   t: number;
+  /** Riwayat langkah (r,c) untuk Urungkan. Invarian: history.length === moves. */
+  history: { r: number; c: number }[];
 }
 
 export default function ArcadeLightsOut({ onExit }: { onExit: () => void }): React.JSX.Element {
@@ -51,7 +53,7 @@ export default function ArcadeLightsOut({ onExit }: { onExit: () => void }): Rea
     apiRef.current = api;
     api.pushHud = (h) => setHud(h as typeof hud);
 
-    const s: S = { board: emptyBoard(), moves: 0, elapsed: 0, over: false, score: 0, shiftIdx: 1, pops: [], t: 0 };
+    const s: S = { board: emptyBoard(), moves: 0, elapsed: 0, over: false, score: 0, shiftIdx: 1, pops: [], t: 0, history: [] };
     let rngState = (Date.now() ^ (Math.random() * 1e9)) | 0;
     const rng = (): number => {
       rngState = (rngState + 0x6d2b79f5) | 0;
@@ -71,6 +73,28 @@ export default function ArcadeLightsOut({ onExit }: { onExit: () => void }): Rea
       s.over = false;
       s.score = 0;
       s.pops = [];
+      s.history = [];
+      push();
+    };
+
+    /**
+     * Urungkan satu langkah. Toggle adalah invers dirinya sendiri, jadi
+     * menerapkan toggle yang sama pada langkah terakhir persis membatalkan
+     * langkah itu. Perilaku: riwayat kosong / permainan sudah selesai =
+     * no-op aman; selain itu langkah terakhir dikeluarkan dari riwayat,
+     * moves berkurang 1, dan papan kembali ke keadaan sebelum langkah itu
+     * (keadaan itu pasti belum solved: papan awal dijamin belum solved oleh
+     * reset, dan langkah sesudah solved tidak pernah tercatat karena
+     * permainan berakhir saat solved).
+     */
+    const undo = (): void => {
+      if (s.over) return;
+      const last = s.history.pop();
+      if (!last) return;
+      s.board = toggle(s.board, last.r, last.c);
+      s.moves = Math.max(0, s.moves - 1);
+      for (const i of affected(last.r, last.c)) s.pops.push({ i, age: 0 });
+      sfx.click();
       push();
     };
 
@@ -80,7 +104,7 @@ export default function ArcadeLightsOut({ onExit }: { onExit: () => void }): Rea
       const nb = setBest(BK, s.score);
       sfx.chime(4);
       const wrap = wrapRef.current;
-      if (wrap) popText(wrap, '💡 LISTRIK HEMAT! PROYEK GELAP!', { size: 24, color: '#fde047' });
+      if (wrap) popText(wrap, 'LISTRIK HEMAT! PROYEK GELAP!', { size: 24, color: '#fde047' });
       // kembang api hemat energi
       for (let k = 0; k < 3; k += 1) {
         window.setTimeout(() => {
@@ -104,6 +128,7 @@ export default function ArcadeLightsOut({ onExit }: { onExit: () => void }): Rea
       const before = s.board;
       s.board = toggle(before, r, c);
       s.moves += 1;
+      s.history.push({ r, c });
       sfx.click();
       const turnedOff: number[] = [];
       const turnedOn: number[] = [];
@@ -280,6 +305,7 @@ export default function ArcadeLightsOut({ onExit }: { onExit: () => void }): Rea
     });
 
     (api as unknown as { __reset: (i: number) => void }).__reset = reset;
+    (api as unknown as { __undo: () => void }).__undo = undo;
     reset(shiftRef.current);
     api.loop.start();
     return () => { apiRef.current = null; };
@@ -291,6 +317,10 @@ export default function ArcadeLightsOut({ onExit }: { onExit: () => void }): Rea
     setShiftSel(si);
     (apiRef.current as unknown as { __reset?: (i: number) => void } | null)?.__reset?.(si);
     setScreen('play');
+  };
+  const undoGame = (): void => {
+    if (screenRef.current !== 'play') return;
+    (apiRef.current as unknown as { __undo?: () => void } | null)?.__undo?.();
   };
   const togglePause = (): void => {
     const api = apiRef.current;
@@ -321,18 +351,33 @@ export default function ArcadeLightsOut({ onExit }: { onExit: () => void }): Rea
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', zIndex: 5, pointerEvents: 'none' }}>
         <div style={{ pointerEvents: 'auto', background: 'rgba(8,14,30,0.6)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 14, padding: '7px 12px', color: '#fff', backdropFilter: 'blur(6px)', minWidth: 150 }}>
           <div style={{ fontWeight: 900, fontSize: 14, color: '#fde047' }}>{hud.shift}</div>
-          <div style={{ fontSize: 12, marginTop: 3, opacity: 0.92 }}>
-            👆 {hud.moves} langkah &nbsp;⏱ {mm}:{ss}
+          <div style={{ fontSize: 12, marginTop: 3, opacity: 0.92, display: 'flex', alignItems: 'center', gap: 5 }}>
+            <StepsIcon /> {hud.moves} langkah &nbsp;<ClockIcon /> {mm}:{ss}
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8, pointerEvents: 'auto' }}>
           {(screen === 'play' || screen === 'pause') && (
-            <button style={btn} onClick={togglePause} aria-label="Jeda">{screen === 'play' ? '⏸' : '▶'}</button>
+            <button style={btn} onClick={togglePause} aria-label="Jeda">{screen === 'play' ? <PauseIcon /> : <PlayIcon />}</button>
           )}
-          <button style={btn} onClick={toggleMute} aria-label="Suara">{muted ? '🔇' : '🔊'}</button>
-          <button style={btn} onClick={onExit} aria-label="Keluar">✕</button>
+          <button style={btn} onClick={toggleMute} aria-label="Suara">{muted ? <MutedIcon /> : <SoundIcon />}</button>
+          <button style={btn} onClick={onExit} aria-label="Keluar"><CloseIcon /></button>
         </div>
       </div>
+      {screen === 'play' && (
+        <button
+          onClick={undoGame}
+          disabled={hud.moves === 0}
+          aria-label="Urungkan langkah terakhir"
+          style={{
+            position: 'absolute', left: 12, bottom: 12, zIndex: 6, display: 'flex', alignItems: 'center', gap: 7,
+            padding: '9px 14px', borderRadius: 999, border: '1px solid rgba(255,255,255,0.25)',
+            background: 'rgba(8,14,30,0.62)', color: '#fff', fontFamily: FONT, fontWeight: 800, fontSize: 13,
+            cursor: hud.moves === 0 ? 'default' : 'pointer', opacity: hud.moves === 0 ? 0.45 : 1, backdropFilter: 'blur(6px)',
+          }}
+        >
+          <UndoIcon /> Urungkan
+        </button>
+      )}
       <div style={{ position: 'absolute', top: 76, left: 0, right: 0, textAlign: 'center', zIndex: 4, pointerEvents: 'none' }}>
         <span style={{ fontSize: 12, color: '#93c5fd', background: 'rgba(8,14,30,0.55)', padding: '4px 12px', borderRadius: 999, border: '1px solid rgba(147,197,253,0.25)' }}>
           Matikan SEMUA lampu proyek! Satu ketuk = dirinya + tetangga.
@@ -341,7 +386,7 @@ export default function ArcadeLightsOut({ onExit }: { onExit: () => void }): Rea
 
       {screen === 'tutorial' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>💡</div>
+          <div style={{ display: 'flex', justifyContent: 'center' }}><BulbIcon size={46} /></div>
           <h2 style={h2}>MATIKAN LAMPU PROYEK</h2>
           <p style={p}>
             Malam hari, lampu menara proyek masih menyala — <b>boros listrik!</b> Ketuk
@@ -351,7 +396,7 @@ export default function ArcadeLightsOut({ onExit }: { onExit: () => void }): Rea
           <div style={{ display: 'flex', gap: 8, justifyContent: 'center', margin: '10px 0' }}>
             {SHIFTS.map((sh, i) => (
               <button key={sh.id} onClick={() => { shiftRef.current = i; setShiftSel(i); }} style={{ ...shiftBtn, outline: shiftSel === i ? '2px solid #fde047' : 'none' }}>
-                <div style={{ fontSize: 26 }}>{sh.emoji}</div>
+                <div style={{ display: 'flex', justifyContent: 'center' }}><ShiftIcon id={sh.id} size={28} /></div>
                 <div style={{ fontSize: 11, fontWeight: 800, color: '#e8f1ff' }}>{sh.name}</div>
                 <div style={{ fontSize: 10, opacity: 0.7, color: '#e8f1ff' }}>{sh.hint}</div>
               </button>
@@ -363,7 +408,7 @@ export default function ArcadeLightsOut({ onExit }: { onExit: () => void }): Rea
       )}
       {screen === 'pause' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>☕</div>
+          <div style={{ display: 'flex', justifyContent: 'center' }}><CoffeeIcon size={44} /></div>
           <h2 style={h2}>JEDA</h2>
           <p style={p}>Lampu-lampunya ikut istirahat. Jangan lupa dimatikan lagi nanti.</p>
           <button style={primaryBtn} onClick={togglePause}>Lanjutkan</button>
@@ -371,8 +416,16 @@ export default function ArcadeLightsOut({ onExit }: { onExit: () => void }): Rea
       )}
       {screen === 'over' && (
         <Overlay>
-          <div style={{ fontSize: 48 }}>🌃</div>
+          <div style={{ display: 'flex', justifyContent: 'center' }}><NightIcon size={48} /></div>
           <h2 style={h2}>PROYEK GELAP GULITA!</h2>
+          <div style={{ display: 'flex', gap: 6, justifyContent: 'center', margin: '6px 0 2px' }} aria-label={`Bintang ${starsFor(hud.moves, SHIFTS[shiftSel].presses, true)} dari 3`}>
+            {[0, 1, 2].map((i) => (
+              <StarIcon key={i} filled={i < starsFor(hud.moves, SHIFTS[shiftSel].presses, true)} size={30} />
+            ))}
+          </div>
+          <div style={{ fontSize: 11, color: '#93c5fd' }}>
+            Par shift ini: {SHIFTS[shiftSel].presses} langkah (par pendekatan dari ketukan acak pembentuk papan, bukan optimum terbukti)
+          </div>
           <div style={{ fontSize: 40, fontWeight: 900, color: '#fde047' }}>{hud.score}</div>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'center', margin: '10px 0' }}>
             <Stat label="Langkah" value={String(hud.moves)} />
@@ -407,6 +460,143 @@ function Overlay({ children }: { children: React.ReactNode }): React.JSX.Element
         {children}
       </div>
     </div>
+  );
+}
+
+/* ---------- Ikon SVG prosedural (pengganti emoji) ---------- */
+
+function ShiftIcon({ id, size = 28 }: { id: string; size?: number }): React.JSX.Element {
+  if (id === 'pagi') {
+    // Matahari terbit: setengah matahari di atas garis horizon + sinar.
+    return (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M6.5 17a5.5 5.5 0 0 1 11 0Z" fill="#fbbf24" />
+        <path d="M12 7.5V5M5.9 10.1 4.5 8.7M18.1 10.1l1.4-1.4" stroke="#fde047" strokeWidth="1.8" strokeLinecap="round" />
+        <path d="M3 17.5h18M5.5 20.5h13" stroke="#93c5fd" strokeWidth="1.8" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  if (id === 'malam') {
+    // Bulan sabit + satu bintang kecil.
+    return (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M19.5 14.2A7.5 7.5 0 1 1 9.8 4.5a6 6 0 0 0 9.7 9.7Z" fill="#c7d6fb" />
+        <path d="M18.6 4.2l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7.7-1.8Z" fill="#fde047" />
+      </svg>
+    );
+  }
+  // Shift Siang: matahari penuh dengan sinar.
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="12" cy="12" r="4.6" fill="#fbbf24" stroke="#fde047" strokeWidth="1.4" />
+      <path d="M12 3v2.2M12 18.8V21M3 12h2.2M18.8 12H21M5.6 5.6l1.6 1.6M16.8 16.8l1.6 1.6M18.4 5.6l-1.6 1.6M7.2 16.8l-1.6 1.6" stroke="#fde047" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function StarIcon({ filled, size = 30 }: { filled: boolean; size?: number }): React.JSX.Element {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M12 2.6l2.8 5.9 6.5.8-4.8 4.4 1.3 6.4L12 17l-5.8 3.1 1.3-6.4L2.7 9.3l6.5-.8L12 2.6Z"
+        fill={filled ? '#fde047' : 'rgba(255,255,255,0.12)'}
+        stroke={filled ? '#f59e0b' : 'rgba(255,255,255,0.35)'}
+        strokeWidth="1.2" strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function BulbIcon({ size = 46 }: { size?: number }): React.JSX.Element {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M9 18.5h6M10 21h4" stroke="#93c5fd" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M12 3a6 6 0 0 1 3.3 10.9c-.6.5-1 1-1.1 1.8h-4.4c-.1-.8-.5-1.3-1.1-1.8A6 6 0 0 1 12 3Z" fill="#fde047" stroke="#f59e0b" strokeWidth="1.2" />
+      <path d="M12 6.2a3.2 3.2 0 0 1 2 5.9" stroke="#fff7cc" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function CoffeeIcon({ size = 44 }: { size?: number }): React.JSX.Element {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M8 3.5c0 1.2-1 1.3-1 2.5M12.5 3.5c0 1.2-1 1.3-1 2.5" stroke="#93c5fd" strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M4.5 9.5h11v5.2a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5V9.5Z" fill="#e8f1ff" />
+      <path d="M15.5 10.5h1.2a2.9 2.9 0 0 1 0 5.8h-1.4" stroke="#e8f1ff" strokeWidth="1.8" />
+      <path d="M4.5 12h11" stroke="#93c5fd" strokeWidth="1.4" />
+    </svg>
+  );
+}
+
+function NightIcon({ size = 48 }: { size?: number }): React.JSX.Element {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M18.8 12.6A6.4 6.4 0 1 1 11.4 5.2a5.1 5.1 0 0 0 7.4 7.4Z" fill="#c7d6fb" />
+      <path d="M3 21v-6.2h4V21M8.5 21v-4h3.6v4M15 21v-3.2h3V21" fill="#31456f" />
+      <path d="M2.5 21h19" stroke="#93c5fd" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function StepsIcon(): React.JSX.Element {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true" style={{ flexShrink: 0 }}>
+      <path d="M6.5 3.5c1.9-.4 3.4 1.6 3.2 4-.1 1.9-1.2 3.4-2.6 3.3-1.5-.1-2.4-2-2.2-4 .2-1.9.8-3.1 1.6-3.3ZM15.5 12.5c1.9-.4 3.4 1.6 3.2 4-.1 1.9-1.2 3.4-2.6 3.3-1.5-.1-2.4-2-2.2-4 .2-1.9.8-3.1 1.6-3.3Z" fill="#fde047" />
+    </svg>
+  );
+}
+
+function ClockIcon(): React.JSX.Element {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true" style={{ flexShrink: 0 }}>
+      <circle cx="12" cy="12" r="8.5" stroke="#93c5fd" strokeWidth="2" />
+      <path d="M12 7.5V12l3 2" stroke="#e8f1ff" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function PauseIcon(): React.JSX.Element {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1.2" fill="#fff" /><rect x="14" y="5" width="4" height="14" rx="1.2" fill="#fff" /></svg>
+  );
+}
+
+function PlayIcon(): React.JSX.Element {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5-11-6.5Z" fill="#fff" /></svg>
+  );
+}
+
+function SoundIcon(): React.JSX.Element {
+  return (
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5H4Z" fill="#fff" />
+      <path d="M15 9.5a3.6 3.6 0 0 1 0 5M17.5 7a7 7 0 0 1 0 10" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function MutedIcon(): React.JSX.Element {
+  return (
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5H4Z" fill="#fff" />
+      <path d="M15.5 9.8l5 5M20.5 9.8l-5 5" stroke="#fda4af" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function CloseIcon(): React.JSX.Element {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" /></svg>
+  );
+}
+
+function UndoIcon(): React.JSX.Element {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M8.5 6.5 5 10l3.5 3.5" stroke="#fde047" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M5.5 10H14a5 5 0 0 1 0 10h-2.5" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" />
+    </svg>
   );
 }
 

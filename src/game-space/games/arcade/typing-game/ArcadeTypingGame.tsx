@@ -7,7 +7,9 @@
 import React, { useRef, useState } from 'react';
 import { useGameCanvas, sfx, type GameApi } from '../../../engine2d';
 import { bestKey, getBest, setBest } from '../../../engine2d/best';
+import { ClockIcon } from '../../../engine2d/icons';
 import {
+  comboBonus,
   MAX_LIVES, WORDS_PER_LEVEL, levelFor, fallSpeedAt, spawnDelayAt,
   pickWord, wordPoints, matchesNext, gradeFor,
 } from './logic';
@@ -44,7 +46,7 @@ export default function ArcadeTypingGame({ onExit }: { onExit: () => void }): Re
   const screenRef = useRef<Screen>('ready');
   const wordsRef = useRef<FallWord[]>([]);
   const targetRef = useRef(-1);
-  const simRef = useRef({ lives: MAX_LIVES, score: 0, destroyed: 0, spawnT: 0.6, t: 0, flashT: 0, levelAnnounced: 1, over: false });
+  const simRef = useRef({ lives: MAX_LIVES, score: 0, destroyed: 0, combo: 0, spawnT: 0.6, t: 0, flashT: 0, levelAnnounced: 1, over: false });
   const cloudsRef = useRef<Cloud[]>([]);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [screen, setScreen] = useState<Screen>('ready');
@@ -86,7 +88,8 @@ export default function ArcadeTypingGame({ onExit }: { onExit: () => void }): Re
     const w = wordsRef.current[idx];
     if (!w) return;
     const yFrac = Math.max(0, Math.min(1, w.y / DEADLINE_Y));
-    const pts = wordPoints(w.word, yFrac);
+    s.combo += 1;
+    const pts = wordPoints(w.word, yFrac) + comboBonus(s.combo);
     s.score += pts;
     s.destroyed += 1;
     wordsRef.current.splice(idx, 1);
@@ -100,6 +103,7 @@ export default function ArcadeTypingGame({ onExit }: { onExit: () => void }): Re
       });
     }
     api.scores.add(w.x, w.y - 24, `+${pts}`, { color: '#fde68a', size: 20 });
+    if (s.combo >= 3) api.scores.add(w.x, w.y - 48, `KOMBO x${s.combo}`, { color: '#7dd3fc', size: 16 });
     sfx.crumble(0.9);
     const lv = levelFor(s.destroyed);
     if (lv > simRef.current.levelAnnounced) {
@@ -152,7 +156,7 @@ export default function ArcadeTypingGame({ onExit }: { onExit: () => void }): Re
   };
 
   const restart = (): void => {
-    simRef.current = { lives: MAX_LIVES, score: 0, destroyed: 0, spawnT: 0.6, t: 0, flashT: 0, levelAnnounced: 1, over: false };
+    simRef.current = { lives: MAX_LIVES, score: 0, destroyed: 0, combo: 0, spawnT: 0.6, t: 0, flashT: 0, levelAnnounced: 1, over: false };
     wordsRef.current = [];
     targetRef.current = -1;
     rngRef.current = mulberry32((Date.now() % 100000) | 0);
@@ -228,7 +232,8 @@ export default function ArcadeTypingGame({ onExit }: { onExit: () => void }): Re
               speed: [80, 360], life: [0.4, 1.0], size: [2, 6], shape: 'rect', rotation: true,
             });
           }
-          api.scores.add(w.x, DEADLINE_Y - 40, '-1 🪖', { color: '#f87171', size: 22 });
+          simRef.current.combo = 0;
+          api.scores.add(w.x, DEADLINE_Y - 40, '-1 HELM', { color: '#f87171', size: 22 });
           sfx.fail();
           pushHud();
           if (fx.lives <= 0) { gameOver(); return; }
@@ -258,9 +263,9 @@ export default function ArcadeTypingGame({ onExit }: { onExit: () => void }): Re
         ctx.shadowBlur = 0;
         ctx.fillStyle = '#bae6fd'; ctx.font = `700 15px ${FONT}`;
         ctx.fillText('Ketik kata proyek yang jatuh untuk menghancurkannya', LW / 2, lh * 0.3 + 36);
-        ctx.fillText('sebelum menyentuh GARIS DEADLINE! 🚧', LW / 2, lh * 0.3 + 60);
+        ctx.fillText('sebelum menyentuh GARIS DEADLINE!', LW / 2, lh * 0.3 + 60);
         ctx.fillStyle = '#fde68a'; ctx.font = `600 13px ${FONT}`;
-        ctx.fillText('Salah ketik tidak apa-apa — tapi kata yang lolos = -1 🪖', LW / 2, lh * 0.3 + 84);
+        ctx.fillText('Salah ketik tidak apa-apa — tapi kata yang lolos = -1 helm & kombo putus', LW / 2, lh * 0.3 + 84);
         const pulse = 0.7 + 0.3 * Math.sin(t * 5);
         ctx.globalAlpha = pulse;
         ctx.fillStyle = '#fde68a'; ctx.font = `900 18px ${FONT}`;
@@ -349,8 +354,8 @@ export default function ArcadeTypingGame({ onExit }: { onExit: () => void }): Re
     <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden', background: '#0b1023', fontFamily: FONT }}>
       <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: 'block', touchAction: 'manipulation' }} />
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 8, zIndex: 5 }}>
-        <div style={{ background: 'rgba(15,23,42,0.6)', borderRadius: 12, padding: '6px 12px', color: '#fde68a', fontWeight: 800, fontSize: 14 }}>⭐ {hud.score}</div>
-        <div style={{ background: 'rgba(15,23,42,0.6)', borderRadius: 12, padding: '6px 10px', color: '#fdba74', fontWeight: 800, fontSize: 13 }}>🪖 {'●'.repeat(Math.max(0, hud.lives)) || '—'}</div>
+        <div style={{ background: 'rgba(15,23,42,0.6)', borderRadius: 12, padding: '6px 12px', color: '#fde68a', fontWeight: 800, fontSize: 14 }}>★ {hud.score}</div>
+        <div style={{ background: 'rgba(15,23,42,0.6)', borderRadius: 12, padding: '6px 10px', color: '#fdba74', fontWeight: 800, fontSize: 13 }}>HELM {'●'.repeat(Math.max(0, hud.lives)) || '—'}</div>
         <div style={{ background: 'rgba(15,23,42,0.45)', borderRadius: 12, padding: '6px 10px', color: '#c4b5fd', fontWeight: 800, fontSize: 13 }}>Lv {hud.level}</div>
         <div style={{ flex: 1 }} />
         {(screen === 'play' || screen === 'pause') && (
@@ -382,7 +387,7 @@ export default function ArcadeTypingGame({ onExit }: { onExit: () => void }): Re
 
       {screen === 'pause' && (
         <Overlay>
-          <div style={{ fontSize: 44 }}>🚧</div>
+          <div style={{ fontSize: 15, fontWeight: 900, letterSpacing: 2, color: '#f87171' }}>— DEADLINE JEBOL —</div>
           <h2 style={titleStyle}>JEDA</h2>
           <p style={textStyle}>Kata-katanya ikut istirahat. Mandor tidak marah… kali ini.</p>
           <div style={{ display: 'flex', gap: 10 }}>
@@ -393,7 +398,7 @@ export default function ArcadeTypingGame({ onExit }: { onExit: () => void }): Re
       )}
       {screen === 'over' && (
         <Overlay>
-          <div style={{ fontSize: 44 }}>⏰</div>
+          <div><ClockIcon size={44} /></div>
           <h2 style={titleStyle}>DEADLINE JEBOL!</h2>
           <p style={{ ...textStyle, fontSize: 16 }}>
             Skor: <b>{hud.score}</b> • Kata hancur: <b>{hud.destroyed}</b> • Level: <b>{hud.level}</b><br />
@@ -401,8 +406,8 @@ export default function ArcadeTypingGame({ onExit }: { onExit: () => void }): Re
             {hud.score > 0 && hud.score >= hud.best && <span style={{ color: '#4ade80', fontWeight: 900 }}> — REKOR BARU!</span>}
           </p>
           <div style={{ display: 'flex', gap: 10 }}>
-            <button style={primaryBtn} onClick={() => { sfx.ensure(); restart(); }}>Main Lagi 🔁</button>
-            <button style={secondaryBtn} onClick={onExit}>Tutup ✕</button>
+            <button style={primaryBtn} onClick={() => { sfx.ensure(); restart(); }}>Main Lagi</button>
+            <button style={secondaryBtn} onClick={onExit}>Tutup</button>
           </div>
         </Overlay>
       )}
@@ -519,7 +524,7 @@ function drawDeadline(ctx: CanvasRenderingContext2D, y: number, lh: number, flas
   ctx.fillStyle = flash ? '#fecaca' : '#451a03';
   ctx.font = `900 13px ${FONT}`;
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText('🚧 GARIS DEADLINE — JANGAN LOLOS! 🚧', LW / 2, y - 23);
+  ctx.fillText('GARIS DEADLINE — JANGAN LOLOS!', LW / 2, y - 23);
   ctx.restore();
   void lh;
 }

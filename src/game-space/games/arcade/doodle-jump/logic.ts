@@ -45,6 +45,93 @@ export interface World {
   nextId: number;
   rngState: number;
   viewH: number;
+  /** zona ketinggian saat ini (indeks ZONES) — naik memicu event zoneUp */
+  zone: number;
+}
+
+/* ================= zona ketinggian (Gelombang 3) =================
+   Skor game ini SUDAH dalam "meter" (score = (maxY-60)/10). Zona membuat
+   progresi ketinggian terukur & bernama: HUD menampilkan meter, nama zona,
+   dan sisa meter ke zona berikutnya; langit renderer mengikuti zona yang
+   sama (satu sumber kebenaran, bukan ambang terpisah di komponen). */
+
+export interface Zone {
+  name: string;
+  /** meter awal zona ini */
+  at: number;
+  /** [langit atas, langit bawah] untuk renderer */
+  sky: [string, string];
+  night: boolean;
+}
+
+export const ZONES: readonly Zone[] = [
+  { name: 'Fondasi', at: 0, sky: ['#f59e0b', '#fbbf24'], night: false },
+  { name: 'Kolom', at: 150, sky: ['#38bdf8', '#7dd3fc'], night: false },
+  { name: 'Balok', at: 400, sky: ['#c2410c', '#fb923c'], night: false },
+  { name: 'Atap', at: 800, sky: ['#0b0f2a', '#1e1b4b'], night: true },
+];
+
+export interface ZoneProgress {
+  index: number;
+  zone: Zone;
+  /** zona berikutnya; null di zona teratas */
+  next: Zone | null;
+  /** sisa meter menuju zona berikutnya (0 bila null) */
+  toNext: number;
+  /** kemajuan 0..1 di dalam zona ini */
+  progress: number;
+}
+
+export function zoneFor(meters: number): ZoneProgress {
+  const m = Math.max(0, meters);
+  let index = 0;
+  for (let i = 0; i < ZONES.length; i += 1) if (m >= ZONES[i].at) index = i;
+  const zone = ZONES[index];
+  const next = index + 1 < ZONES.length ? ZONES[index + 1] : null;
+  if (!next) return { index, zone, next: null, toNext: 0, progress: 1 };
+  const span = Math.max(1, next.at - zone.at);
+  return {
+    index, zone, next,
+    toNext: Math.max(0, Math.ceil(next.at - m)),
+    progress: Math.min(1, Math.max(0, (m - zone.at) / span)),
+  };
+}
+
+/* ================= gaya visual platform (Gelombang 3) =================
+   Deskriptor murni per jenis platform: renderer menggambar berdasarkan
+   deskriptor ini agar papan kokoh vs rapuh terbaca beda TANPA emoji —
+   kayu = papan hangat berserat, gerobak = pelat baja beroda,
+   lapuk = kusam retak miring, dongkrak = baja merah + pegas. */
+
+export type PlatformMarking = 'serat-kayu' | 'roda-baja' | 'retak' | 'pegas';
+
+export interface PlatformStyle {
+  /** warna papan [atas, bawah] */
+  fill: [string, string];
+  /** warna tepi bawah / rangka */
+  edge: string;
+  marking: PlatformMarking;
+  /** papan rapuh digambar sedikit miring (derajat, deterministik per id) */
+  tiltDeg: number;
+  /** pantulan saat diinjak: normal / super / patah-setelah-injak */
+  bounce: 'normal' | 'super' | 'patah';
+}
+
+export function platformStyleFor(p: Platform): PlatformStyle {
+  switch (p.kind) {
+    case 'gerobak':
+      return { fill: ['#94a3b8', '#475569'], edge: '#1f2937', marking: 'roda-baja', tiltDeg: 0, bounce: 'normal' };
+    case 'lapuk':
+      return {
+        fill: ['#8a7a66', '#453b31'], edge: '#292019', marking: 'retak',
+        tiltDeg: p.id % 2 === 0 ? -2.2 : 2.2, bounce: 'patah',
+      };
+    case 'dongkrak':
+      return { fill: ['#f87171', '#991b1b'], edge: '#7f1d1d', marking: 'pegas', tiltDeg: 0, bounce: 'super' };
+    case 'kayu':
+    default:
+      return { fill: ['#e0aa63', '#8a5a24'], edge: '#6b4420', marking: 'serat-kayu', tiltDeg: 0, bounce: 'normal' };
+  }
 }
 
 export function mulberry(seed: number): () => number {
@@ -89,7 +176,7 @@ export function createWorld(seed: number, viewH = 700): World {
     px: WORLD_W / 2, py: 60, vx: 0, vy: BOUNCE_V,
     platforms: [], cameraY: 0, maxY: 60, score: 0,
     over: false, bounces: 0, nextId: 1,
-    rngState: seed >>> 0, viewH,
+    rngState: seed >>> 0, viewH, zone: 0,
   };
   const rng = mulberry(seed);
   // platform awal di bawah pemain
@@ -120,11 +207,13 @@ export interface StepEvents {
   bounced: Platform | null;
   broke: Platform | null;
   super: boolean;
+  /** zona ketinggian BARU yang baru saja dimasuki langkah ini (null bila tetap) */
+  zoneUp: Zone | null;
 }
 
 /** Satu langkah fisika. Murni kecuali memakai w.rngState internal. */
 export function stepWorld(w: World, dt: number, input: Input): StepEvents {
-  const ev: StepEvents = { bounced: null, broke: null, super: false };
+  const ev: StepEvents = { bounced: null, broke: null, super: false, zoneUp: null };
   if (w.over) return ev;
   // rng deterministik per langkah (derivasi dari rngState, lalu increment)
   let ra = (w.rngState + 0x9e3779b9) >>> 0;
@@ -187,6 +276,12 @@ export function stepWorld(w: World, dt: number, input: Input): StepEvents {
   if (w.py > w.maxY) {
     w.maxY = w.py;
     w.score = Math.max(0, Math.floor((w.maxY - 60) / 10));
+  }
+  // progresi zona ketinggian: skor (meter) menentukan zona; naik zona = event
+  const zp = zoneFor(w.score);
+  if (zp.index > w.zone) {
+    w.zone = zp.index;
+    ev.zoneUp = zp.zone;
   }
 
   // isi platform di atas

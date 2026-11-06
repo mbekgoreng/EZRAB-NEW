@@ -5,6 +5,7 @@ import { strict as assert } from 'node:assert';
 import {
   createBoard, findMatches, trySwap, resolveBoard, detonate, triggerArea,
   hasPossibleMove, shuffleBoard, levelConfig, cloneBoard,
+  findPossibleMoves, hintMove,
   ROWS, COLS, NTYPES,
   type Board, type Cell,
 } from './logic';
@@ -242,6 +243,70 @@ test('levelConfig: target naik per level, moves 30', () => {
   const l3 = levelConfig(3);
   assert.equal(l1.moves, 30);
   assert.ok(l3.target > l1.target, `${l3.target} > ${l1.target}`);
+});
+
+/* ---------- regresi: match berpotongan (silang) ---------- */
+test('resolveBoard: sel spawn match silang TIDAK ikut hancur & special selamat', () => {
+  // match-H 4 di baris 0 + match-V 3 di kolom 2 berbagi sel (0,2) = titik spawn bajaH.
+  const b = boardFrom([
+    '00001234',
+    '12034012',
+    '23040123',
+    '34102340',
+    '40123401',
+    '01234012',
+    '12340123',
+    '23401234',
+  ]);
+  assert.equal(findMatches(b).length, 2, 'prasyarat: tepat 2 match berpotongan');
+  const res = resolveBoard(b, null, 42);
+  const st = res.steps[0];
+  assert.equal(st.spawned.length, 1);
+  assert.deepEqual({ r: st.spawned[0].r, c: st.spawned[0].c }, { r: 0, c: 2 });
+  const overlap = st.spawned.filter((sp) => st.cleared.some((cl) => cl.r === sp.r && cl.c === sp.c));
+  assert.equal(overlap.length, 0, `spawn ikut hancur: ${JSON.stringify(overlap)}`);
+  // special yang dibayar bonusnya harus benar-benar ada di papan hasil langkah
+  const alive = st.board.flat().filter((cell) => cell.s === 'bajaH');
+  assert.equal(alive.length, 1, 'bajaH harus selamat di papan pasca-langkah');
+  // baris 0 TIDAK boleh ikut terledakkan hantu oleh special yang baru lahir
+  assert.ok(!st.cleared.some((cl) => cl.r === 0 && cl.c >= 4), 'ledakan hantu di baris 0!');
+});
+
+/* ---------- findPossibleMoves / hintMove ---------- */
+test('findPossibleMoves: semua langkah lolos trySwap & papan tak berubah', () => {
+  const b = createBoard(2024);
+  const before = JSON.stringify(b);
+  const moves = findPossibleMoves(b);
+  assert.ok(moves.length > 0, 'papan baru harus punya langkah');
+  for (const m of moves) {
+    assert.ok(trySwap(b, m.a, m.b) !== null, `langkah ${JSON.stringify(m)} harus sah`);
+  }
+  assert.equal(JSON.stringify(b), before, 'papan tak boleh berubah');
+  assert.equal(hasPossibleMove(b), true);
+});
+
+test('findPossibleMoves: papan buntu -> kosong & hint null', () => {
+  // pola geser (r+c)%5: tak ada match dan tak ada swap yang membentuk match
+  const b = boardFrom([
+    '01234012',
+    '12340123',
+    '23401234',
+    '34012340',
+    '40123401',
+    '01234012',
+    '12340123',
+    '23401234',
+  ]);
+  assert.equal(findMatches(b).length, 0);
+  assert.equal(hasPossibleMove(b), false);
+  assert.deepEqual(findPossibleMoves(b), []);
+  assert.equal(hintMove(b), null);
+});
+
+test('hintMove: konsisten dengan findPossibleMoves[0]', () => {
+  const b = createBoard(7);
+  const moves = findPossibleMoves(b);
+  assert.deepEqual(hintMove(b), moves[0]);
 });
 
 console.log(`\n${passed} passed, ${failed} failed`);

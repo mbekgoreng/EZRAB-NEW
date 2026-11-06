@@ -1,7 +1,7 @@
 /**
  * ArcadeSortirMaterial ("Sortir Material") — material jatuh dari conveyor,
- * seret ke bin yang benar: 🧱 BATA, 🪵 KAYU, 🔩 BESI. Salah bin atau lolos
- * = nyawa berkurang. Makin lama makin cepat!
+ * seret ke bin yang benar: BATA, KAYU, BESI. Salah bin atau lolos
+ * = nyawa berkurang. Makin lama makin cepat! Streak 12 beruntun = nyawa +1.
  */
 import React, { useRef, useState } from 'react';
 import { useGameCanvas, type GameApi, TAU, clamp } from '../../../engine2d';
@@ -10,7 +10,7 @@ import { bestKey, getBest, setBest } from '../../../engine2d/best';
 import { popText } from '../../../engine2d/juice2d';
 import {
   BINS, MAX_LIVES, fallSpeed, spawnInterval, spawnItem, sortResult,
-  scoreFor, levelAt, type SortItem, type MatKind,
+  scoreFor, levelAt, lifeGainFor, type SortItem, type MatKind,
 } from './logic';
 
 const FONT = "'Plus Jakarta Sans','Inter',system-ui,sans-serif";
@@ -98,7 +98,7 @@ export default function ArcadeSortirMaterial({ onExit }: { onExit: () => void })
       api.shake.add(0.5);
       const wrap = wrapRef.current;
       if (wrap) popText(wrap, reason, { size: 17, color: '#f87171' });
-      api.scores.add(x, y, '💔 -1', { color: '#f87171', size: 20 });
+      api.scores.add(x, y, 'NYAWA -1', { color: '#f87171', size: 19 });
       if (s.lives <= 0) {
         s.over = true;
         const nb = setBest(BK, s.score);
@@ -144,7 +144,11 @@ export default function ArcadeSortirMaterial({ onExit }: { onExit: () => void })
       s.dragId = null;
       if (idx < 0) return;
       const it = s.items[idx];
-      const bi = binAt(api.W, api.H, p.x, p.y);
+      void p;
+      // Jatuhkan dinilai dari PUSAT ITEM, bukan posisi pointer: offset
+      // genggaman (dragDX/DY s.d. 44px) dulu bisa membuat item yang
+      // terlihat di atas bin ditolak, atau sebaliknya diterima dari luar.
+      const bi = binAt(api.W, api.H, it.x, it.y);
       if (bi < 0) return; // dilepas di udara: biarkan jatuh lagi
       const res = sortResult(it.kind, BIN_ORDER[bi]);
       const b = binRect(api.W, api.H, bi);
@@ -162,9 +166,18 @@ export default function ArcadeSortirMaterial({ onExit }: { onExit: () => void })
           count: 12, colors: ['#4ade80', '#bbf7d0', '#ffffff'], speed: [60, 240],
           life: [0.3, 0.7], size: [2, 5], gravity: 420, shape: 'circle',
         });
+        // Pemulihan nyawa: streak mencapai kelipatan baru → +1 nyawa.
+        const gain = lifeGainFor(s.streak) - lifeGainFor(s.streak - 1);
+        if (gain > 0 && s.lives < MAX_LIVES) {
+          s.lives = Math.min(MAX_LIVES, s.lives + gain);
+          const wrap = wrapRef.current;
+          if (wrap) popText(wrap, 'NYAWA +1', { size: 21, color: '#4ade80' });
+          api.scores.add(bx, by - 76, 'NYAWA +1', { color: '#4ade80', size: 19 });
+          sfx.chime(3);
+        }
         if (s.streak > 0 && s.streak % 8 === 0) {
           const wrap = wrapRef.current;
-          if (wrap) popText(wrap, `🔥 STREAK x${s.streak}! Mandor bangga!`, { size: 18, color: '#fb923c' });
+          if (wrap) popText(wrap, `STREAK x${s.streak}! Mandor bangga!`, { size: 18, color: '#fb923c' });
         }
         s.items.splice(idx, 1);
       } else {
@@ -187,7 +200,7 @@ export default function ArcadeSortirMaterial({ onExit }: { onExit: () => void })
       if (lv > s.level) {
         s.level = lv;
         const wrap = wrapRef.current;
-        if (wrap) popText(wrap, `⚡ LEVEL ${lv}: CONVEYOR NGEBUT!`, { size: 19, color: '#fde047' });
+        if (wrap) popText(wrap, `LEVEL ${lv}: CONVEYOR NGEBUT!`, { size: 19, color: '#fde047' });
         sfx.chime(2);
       }
 
@@ -257,7 +270,58 @@ export default function ArcadeSortirMaterial({ onExit }: { onExit: () => void })
       ctx.fillStyle = '#fbbf24';
       ctx.font = `900 11px ${FONT}`;
       ctx.textAlign = 'center';
-      ctx.fillText('🏭 CONVEYOR MATERIAL — SERET KE BIN YANG BENAR!', W / 2, y + 52);
+      ctx.fillText('CONVEYOR MATERIAL — SERET KE BIN YANG BENAR!', W / 2, y + 52);
+    };
+
+    /** Glif prosedural per jenis material (untuk label bin). */
+    const drawBinGlyph = (ctx: CanvasRenderingContext2D, kind: MatKind, cx: number, cy: number): void => {
+      ctx.save();
+      ctx.translate(cx, cy);
+      if (kind === 'bata') {
+        // tumpukan bata: 2 di bawah, 1 di atas
+        ctx.fillStyle = '#ef4444';
+        ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+        ctx.lineWidth = 1.5;
+        for (const [gx, gy] of [[-15, 2], [1, 2], [-7, -10]] as const) {
+          ctx.beginPath();
+          if (typeof ctx.roundRect === 'function') ctx.roundRect(gx, gy, 14, 10, 2);
+          else ctx.rect(gx, gy, 14, 10);
+          ctx.fill(); ctx.stroke();
+        }
+        ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+        ctx.beginPath(); ctx.moveTo(-8, -5); ctx.lineTo(-8, -10); ctx.moveTo(8, 2); ctx.lineTo(8, 7); ctx.stroke();
+      } else if (kind === 'kayu') {
+        // balok kayu + lingkaran tahun di ujung
+        const g = ctx.createLinearGradient(0, -8, 0, 8);
+        g.addColorStop(0, '#d9a05b');
+        g.addColorStop(1, '#92400e');
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        if (typeof ctx.roundRect === 'function') ctx.roundRect(-18, -8, 30, 16, 3);
+        else ctx.rect(-18, -8, 30, 16);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(90,50,10,0.65)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(-15, -2); ctx.bezierCurveTo(-6, 0, 2, -4, 9, -1); ctx.stroke();
+        ctx.fillStyle = '#e7c084';
+        ctx.beginPath(); ctx.ellipse(13, 0, 6, 8, 0, 0, TAU); ctx.fill();
+        ctx.strokeStyle = '#92400e';
+        ctx.beginPath(); ctx.ellipse(13, 0, 3.5, 5, 0, 0, TAU); ctx.stroke();
+        ctx.beginPath(); ctx.ellipse(13, 0, 1.4, 2.2, 0, 0, TAU); ctx.stroke();
+      } else {
+        // balok besi I
+        const g = ctx.createLinearGradient(-14, 0, 14, 0);
+        g.addColorStop(0, '#64748b');
+        g.addColorStop(0.5, '#e2e8f0');
+        g.addColorStop(1, '#475569');
+        ctx.fillStyle = g;
+        ctx.fillRect(-15, -10, 30, 6);
+        ctx.fillRect(-15, 4, 30, 6);
+        ctx.fillRect(-3.5, -10, 7, 20);
+        ctx.fillStyle = 'rgba(255,255,255,0.45)';
+        ctx.fillRect(-15, -10, 30, 2);
+      }
+      ctx.restore();
     };
 
     const drawBin = (ctx: CanvasRenderingContext2D, W: number, H: number, i: number): void => {
@@ -289,15 +353,53 @@ export default function ArcadeSortirMaterial({ onExit }: { onExit: () => void })
       ctx.beginPath();
       ctx.ellipse(b.x + b.w / 2, b.y + 18, b.w / 2 - 8, 12, 0, 0, TAU);
       ctx.fill();
-      // label
+      // glif jenis + label nama
+      drawBinGlyph(ctx, kind, b.x + b.w / 2, b.y + 58);
       ctx.fillStyle = '#fff';
       ctx.font = `900 15px ${FONT}`;
       ctx.textAlign = 'center';
-      ctx.fillText(`${def.emoji} ${def.name}`, b.x + b.w / 2, b.y + b.h - 16);
+      ctx.fillText(def.name, b.x + b.w / 2, b.y + b.h - 12);
       // papan kayu
       ctx.strokeStyle = 'rgba(0,0,0,0.3)';
       ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(b.x + 6, b.y + 52); ctx.lineTo(b.x + b.w - 6, b.y + 52); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(b.x + 6, b.y + 78); ctx.lineTo(b.x + b.w - 6, b.y + 78); ctx.stroke();
+    };
+
+    /** Satu bata prosedural dengan nat. */
+    const oneBrick = (ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number): void => {
+      const g = ctx.createLinearGradient(0, y, 0, y + h);
+      g.addColorStop(0, '#f87171');
+      g.addColorStop(1, '#b91c1c');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      if (typeof ctx.roundRect === 'function') ctx.roundRect(x, y, w, h, 3);
+      else ctx.rect(x, y, w, h);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.28)';
+      ctx.fillRect(x + 2, y + 1.5, w - 4, 3);
+    };
+
+    /** Satu balok kayu prosedural dengan alur serat. */
+    const oneLog = (ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, seed: number): void => {
+      const g = ctx.createLinearGradient(0, y, 0, y + h);
+      g.addColorStop(0, '#d9a05b');
+      g.addColorStop(0.5, '#b45309');
+      g.addColorStop(1, '#7c3a06');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      if (typeof ctx.roundRect === 'function') ctx.roundRect(x, y, w, h, 3);
+      else ctx.rect(x, y, w, h);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(90,50,10,0.6)';
+      ctx.lineWidth = 1.3;
+      for (const oy of [0.3, 0.58, 0.8]) {
+        ctx.beginPath();
+        ctx.moveTo(x + 3, y + h * oy + seed);
+        ctx.bezierCurveTo(x + w * 0.3, y + h * oy + 1.5, x + w * 0.65, y + h * oy - 1.5, x + w - 3, y + h * oy);
+        ctx.stroke();
+      }
+      ctx.fillStyle = 'rgba(255,235,190,0.3)';
+      ctx.fillRect(x + 2, y + 1.5, w - 4, 3);
     };
 
     const drawItem = (ctx: CanvasRenderingContext2D, it: SortItem): void => {
@@ -310,47 +412,60 @@ export default function ArcadeSortirMaterial({ onExit }: { onExit: () => void })
       ctx.shadowOffsetY = dragged ? 8 : 4;
       const v = it.variant;
       if (it.kind === 'bata') {
-        const w = 44 - v * 4;
-        const g = ctx.createLinearGradient(0, -11, 0, 11);
-        g.addColorStop(0, '#f87171');
-        g.addColorStop(1, '#b91c1c');
-        ctx.fillStyle = g;
-        ctx.beginPath();
-        if (typeof ctx.roundRect === 'function') ctx.roundRect(-w / 2, -11, w, 22, 4);
-        else ctx.rect(-w / 2, -11, w, 22);
-        ctx.fill();
-        ctx.shadowBlur = 0;
-        ctx.strokeStyle = 'rgba(255,255,255,0.55)';
-        ctx.lineWidth = 1.5;
-        ctx.beginPath(); ctx.moveTo(-w / 2 + 2, 0); ctx.lineTo(w / 2 - 2, 0); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(-w / 6, -11); ctx.lineTo(-w / 6, 0); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(w / 6, 0); ctx.lineTo(w / 6, 11); ctx.stroke();
-        ctx.fillStyle = 'rgba(255,255,255,0.3)';
-        ctx.fillRect(-w / 2 + 3, -11 + 2, w - 6, 5);
-      } else if (it.kind === 'kayu') {
-        const w = 52 - v * 5;
-        const g = ctx.createLinearGradient(0, -9, 0, 9);
-        g.addColorStop(0, '#d9a05b');
-        g.addColorStop(0.5, '#b45309');
-        g.addColorStop(1, '#7c3a06');
-        ctx.fillStyle = g;
-        ctx.beginPath();
-        if (typeof ctx.roundRect === 'function') ctx.roundRect(-w / 2, -9, w, 18, 4);
-        else ctx.rect(-w / 2, -9, w, 18);
-        ctx.fill();
-        ctx.shadowBlur = 0;
-        ctx.strokeStyle = 'rgba(90,50,10,0.6)';
-        ctx.lineWidth = 1.5;
-        for (const oy of [-4, 1, 5]) {
-          ctx.beginPath();
-          ctx.moveTo(-w / 2 + 4, oy);
-          ctx.bezierCurveTo(-w / 6, oy + 2, w / 6, oy - 2, w / 2 - 4, oy + 1);
-          ctx.stroke();
+        if (v === 0) {
+          // varian 0: bata tunggal
+          oneBrick(ctx, -22, -11, 44, 22);
+          ctx.shadowBlur = 0;
+          ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath(); ctx.moveTo(-20, 0); ctx.lineTo(20, 0); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(-7, -11); ctx.lineTo(-7, 0); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(7, 0); ctx.lineTo(7, 11); ctx.stroke();
+        } else if (v === 1) {
+          // varian 1: dua bata bertumpuk, nat bergeser
+          oneBrick(ctx, -21, -14, 42, 13);
+          oneBrick(ctx, -21, 1, 42, 13);
+          ctx.shadowBlur = 0;
+          ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+          ctx.lineWidth = 1.4;
+          ctx.beginPath(); ctx.moveTo(0, -14); ctx.lineTo(0, -1); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(-10, 1); ctx.lineTo(-10, 14); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(11, 1); ctx.lineTo(11, 14); ctx.stroke();
+        } else {
+          // varian 2: piramida — 2 bata di bawah, 1 di atas
+          oneBrick(ctx, -25, 2, 24, 12);
+          oneBrick(ctx, 1, 2, 24, 12);
+          oneBrick(ctx, -12, -11, 24, 12);
+          ctx.shadowBlur = 0;
+          ctx.strokeStyle = 'rgba(120,20,20,0.6)';
+          ctx.lineWidth = 1.4;
+          ctx.beginPath(); ctx.moveTo(-13, 8); ctx.lineTo(-3, 8); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(3, -5); ctx.lineTo(11, -5); ctx.stroke();
         }
-        ctx.fillStyle = 'rgba(255,235,190,0.35)';
-        ctx.fillRect(-w / 2 + 3, -9 + 2, w - 6, 4);
-      } else {
-        // besi: balok I
+      } else if (it.kind === 'kayu') {
+        if (v === 0) {
+          // varian 0: balok tunggal beralur
+          oneLog(ctx, -26, -9, 52, 18, 0);
+        } else if (v === 1) {
+          // varian 1: dua balok bertumpuk
+          oneLog(ctx, -25, -14, 50, 13, 0);
+          oneLog(ctx, -25, 1, 50, 13, 1);
+        } else {
+          // varian 2: balok dengan potongan melintang (lingkaran tahun) di ujung
+          oneLog(ctx, -24, -10, 48, 20, 0);
+          ctx.shadowBlur = 0;
+          for (const ex of [-24, 24]) {
+            ctx.fillStyle = '#e7c084';
+            ctx.beginPath(); ctx.ellipse(ex, 0, 5.5, 10, 0, 0, TAU); ctx.fill();
+            ctx.strokeStyle = '#92400e';
+            ctx.lineWidth = 1.3;
+            ctx.beginPath(); ctx.ellipse(ex, 0, 3.4, 6.4, 0, 0, TAU); ctx.stroke();
+            ctx.beginPath(); ctx.ellipse(ex, 0, 1.4, 2.8, 0, 0, TAU); ctx.stroke();
+          }
+        }
+        ctx.shadowBlur = 0;
+      } else if (v === 0) {
+        // besi varian 0: balok I
         const g = ctx.createLinearGradient(-8, 0, 8, 0);
         g.addColorStop(0, '#475569');
         g.addColorStop(0.5, '#cbd5e1');
@@ -362,6 +477,44 @@ export default function ArcadeSortirMaterial({ onExit }: { onExit: () => void })
         ctx.shadowBlur = 0;
         ctx.fillStyle = 'rgba(255,255,255,0.4)';
         ctx.fillRect(-22, -13, 44, 2.5);
+      } else if (v === 1) {
+        // besi varian 1: bundel 3 pipa bundar + tali pengikat
+        for (const px of [-15, 0, 15]) {
+          const g = ctx.createRadialGradient(px - 3, -4, 2, px, 0, 10);
+          g.addColorStop(0, '#e2e8f0');
+          g.addColorStop(0.6, '#94a3b8');
+          g.addColorStop(1, '#475569');
+          ctx.fillStyle = g;
+          ctx.beginPath(); ctx.arc(px, 0, 9.5, 0, TAU); ctx.fill();
+          ctx.fillStyle = '#1e293b';
+          ctx.beginPath(); ctx.arc(px, 0, 4.6, 0, TAU); ctx.fill();
+          ctx.fillStyle = 'rgba(255,255,255,0.35)';
+          ctx.beginPath(); ctx.arc(px - 3, -3.5, 2, 0, TAU); ctx.fill();
+        }
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = '#b45309';
+        ctx.fillRect(-25, -2.2, 50, 4.4);
+      } else {
+        // besi varian 2: tumpukan 3 plat + titik baut
+        const g = ctx.createLinearGradient(0, -14, 0, 14);
+        g.addColorStop(0, '#94a3b8');
+        g.addColorStop(1, '#475569');
+        ctx.fillStyle = g;
+        for (const py of [-14, -4.5, 5]) {
+          ctx.beginPath();
+          if (typeof ctx.roundRect === 'function') ctx.roundRect(-23, py, 46, 8, 2);
+          else ctx.rect(-23, py, 46, 8);
+          ctx.fill();
+        }
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = '#1e293b';
+        for (const py of [-10, -0.5, 9]) {
+          for (const px of [-17, 17]) {
+            ctx.beginPath(); ctx.arc(px, py, 1.8, 0, TAU); ctx.fill();
+          }
+        }
+        ctx.fillStyle = 'rgba(255,255,255,0.4)';
+        ctx.fillRect(-23, -14, 46, 2);
       }
       ctx.restore();
       // cincin saat diseret
@@ -375,12 +528,37 @@ export default function ArcadeSortirMaterial({ onExit }: { onExit: () => void })
       }
     };
 
+    /** Hati prosedural untuk indikator nyawa di kanvas. */
+    const drawHeart = (ctx: CanvasRenderingContext2D, cx: number, cy: number, size: number, filled: boolean): void => {
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.beginPath();
+      ctx.moveTo(0, size * 0.85);
+      ctx.bezierCurveTo(-size * 1.25, -size * 0.1, -size * 0.62, -size * 1.05, 0, -size * 0.38);
+      ctx.bezierCurveTo(size * 0.62, -size * 1.05, size * 1.25, -size * 0.1, 0, size * 0.85);
+      ctx.closePath();
+      if (filled) {
+        const g = ctx.createLinearGradient(0, -size, 0, size);
+        g.addColorStop(0, '#f87171');
+        g.addColorStop(1, '#dc2626');
+        ctx.fillStyle = g;
+        ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,0.45)';
+        ctx.beginPath(); ctx.ellipse(-size * 0.34, -size * 0.34, size * 0.2, size * 0.13, -0.6, 0, TAU); ctx.fill();
+      } else {
+        ctx.fillStyle = 'rgba(0,0,0,0.45)';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+        ctx.lineWidth = 1.4;
+        ctx.stroke();
+      }
+      ctx.restore();
+    };
+
     const drawLives = (ctx: CanvasRenderingContext2D, W: number): void => {
-      ctx.font = '18px ' + FONT;
-      ctx.textAlign = 'right';
-      let hearts = '';
-      for (let i = 0; i < MAX_LIVES; i += 1) hearts += i < s.lives ? '❤️' : '🖤';
-      ctx.fillText(hearts, W - 14, 178);
+      for (let i = 0; i < MAX_LIVES; i += 1) {
+        drawHeart(ctx, W - 16 - (MAX_LIVES - 1 - i) * 25, 172, 9, i < s.lives);
+      }
     };
 
     api.setRender(() => {
@@ -439,26 +617,38 @@ export default function ArcadeSortirMaterial({ onExit }: { onExit: () => void })
         <div style={{ pointerEvents: 'auto', background: 'rgba(20,14,8,0.6)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 14, padding: '7px 12px', color: '#fff', backdropFilter: 'blur(6px)', minWidth: 150 }}>
           <div style={{ fontWeight: 900, fontSize: 17, color: '#fde047' }}>{hud.score.toLocaleString('id-ID')}</div>
           <div style={{ fontSize: 12, marginTop: 3, opacity: 0.9 }}>
-            ⚡ Level {hud.level} {hud.streak >= 2 && <span style={{ color: '#fb923c', fontWeight: 900 }}>• 🔥x{hud.streak}</span>}
+            Level {hud.level} {hud.streak >= 2 && <span style={{ color: '#fb923c', fontWeight: 900 }}>• Streak x{hud.streak}</span>}
+          </div>
+          <div style={{ display: 'flex', gap: 4, marginTop: 5 }} aria-label={`Nyawa ${hud.lives} dari ${MAX_LIVES}`}>
+            {Array.from({ length: MAX_LIVES }, (_, i) => (
+              <HeartIcon key={i} filled={i < hud.lives} size={15} />
+            ))}
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8, pointerEvents: 'auto' }}>
           {(screen === 'play' || screen === 'pause') && (
-            <button style={btn} onClick={togglePause} aria-label="Jeda">{screen === 'play' ? '⏸' : '▶'}</button>
+            <button style={btn} onClick={togglePause} aria-label="Jeda">{screen === 'play' ? <IconPause /> : <IconPlay />}</button>
           )}
-          <button style={btn} onClick={toggleMute} aria-label="Suara">{muted ? '🔇' : '🔊'}</button>
-          <button style={btn} onClick={onExit} aria-label="Keluar">✕</button>
+          <button style={btn} onClick={toggleMute} aria-label="Suara">{muted ? <IconMuted /> : <IconSound />}</button>
+          <button style={btn} onClick={onExit} aria-label="Keluar"><IconClose /></button>
         </div>
       </div>
 
       {screen === 'tutorial' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>🏭</div>
+          <FactoryIcon />
           <h2 style={h2}>SORTIR MATERIAL</h2>
           <p style={p}>
             Material berjatuhan dari conveyor! <b>Seret</b> tiap material ke bin yang benar:
-            🧱 <b>BATA</b>, 🪵 <b>KAYU</b>, 🔩 <b>BESI</b>. Salah bin atau material
-            lolos jatuh = <b>❤️ nyawa berkurang</b> (3x = bubar!). Conveyor makin ngebut tiap level!
+          </p>
+          <div style={{ display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <BinChip kind="bata" />
+            <BinChip kind="kayu" />
+            <BinChip kind="besi" />
+          </div>
+          <p style={p}>
+            Salah bin atau material lolos jatuh = <b>nyawa berkurang</b> (3x = bubar!).
+            Sortir benar <b>12x beruntun</b> memulihkan <b>+1 nyawa</b>. Conveyor makin ngebut tiap level!
           </p>
           {hud.best > 0 && <p style={p}>Skor terbaik: <b style={{ color: '#fde047' }}>{hud.best.toLocaleString('id-ID')}</b></p>}
           <button style={primaryBtn} onClick={startGame}>Mulai Menyortir</button>
@@ -466,7 +656,7 @@ export default function ArcadeSortirMaterial({ onExit }: { onExit: () => void })
       )}
       {screen === 'pause' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>☕</div>
+          <PauseIcon />
           <h2 style={h2}>JEDA</h2>
           <p style={p}>Conveyor dimatikan dulu. Materialnya antre rapi.</p>
           <button style={primaryBtn} onClick={togglePause}>Lanjutkan</button>
@@ -474,12 +664,12 @@ export default function ArcadeSortirMaterial({ onExit }: { onExit: () => void })
       )}
       {screen === 'over' && (
         <Overlay>
-          <div style={{ fontSize: 48 }}>💥</div>
+          <BurstIcon />
           <h2 style={h2}>GUDANG BERANTAKAN!</h2>
           <div style={{ fontSize: 40, fontWeight: 900, color: '#fde047' }}>{hud.score.toLocaleString('id-ID')}</div>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'center', margin: '10px 0' }}>
-            <Stat label="Level" value={`⚡${hud.level}`} />
-            <Stat label="Streak max" value={`🔥${hud.bestStreak}x`} />
+            <Stat label="Level" value={`${hud.level}`} />
+            <Stat label="Streak max" value={`${hud.bestStreak}x`} />
             <Stat label="Terbaik" value={hud.best.toLocaleString('id-ID')} />
           </div>
           <button style={primaryBtn} onClick={startGame}>Main Lagi</button>
@@ -515,6 +705,129 @@ function Stat({ label, value }: { label: string; value: string }): React.JSX.Ele
       <div style={{ fontSize: 11, opacity: 0.7, color: '#fef3c7' }}>{label}</div>
       <div style={{ fontWeight: 900, fontSize: 18, color: '#fff' }}>{value}</div>
     </div>
+  );
+}
+
+/* ---------- Ikon SVG prosedural (pengganti emoji HUD/overlay) ---------- */
+
+function HeartIcon({ filled, size = 16 }: { filled: boolean; size?: number }): React.JSX.Element {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M12 20.5C6 16 3 12.6 3 9.3 3 6.4 5.2 4.5 7.7 4.5c1.7 0 3.3.9 4.3 2.4 1-1.5 2.6-2.4 4.3-2.4 2.5 0 4.7 1.9 4.7 4.8 0 3.3-3 6.7-9 11.2z"
+        fill={filled ? '#ef4444' : 'rgba(255,255,255,0.15)'}
+        stroke={filled ? '#fca5a5' : 'rgba(255,255,255,0.4)'}
+        strokeWidth="1.4"
+      />
+    </svg>
+  );
+}
+
+function IconPause(): React.JSX.Element {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="5.5" y="4" width="4.6" height="16" rx="1.4" fill="#fff" />
+      <rect x="13.9" y="4" width="4.6" height="16" rx="1.4" fill="#fff" />
+    </svg>
+  );
+}
+
+function IconPlay(): React.JSX.Element {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M7 4.8c0-.9 1-1.5 1.8-1L20 11c.8.5.8 1.6 0 2.1L8.8 20.2c-.8.5-1.8-.1-1.8-1V4.8z" fill="#fff" />
+    </svg>
+  );
+}
+
+function IconSound(): React.JSX.Element {
+  return (
+    <svg width="19" height="19" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M11 5 6.5 9H3v6h3.5L11 19V5z" fill="#fff" stroke="none" />
+      <path d="M15 9.5a4 4 0 0 1 0 5" />
+      <path d="M17.5 7a7.5 7.5 0 0 1 0 10" />
+    </svg>
+  );
+}
+
+function IconMuted(): React.JSX.Element {
+  return (
+    <svg width="19" height="19" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M11 5 6.5 9H3v6h3.5L11 19V5z" fill="#fff" stroke="none" />
+      <path d="M15.5 9.5l5 5M20.5 9.5l-5 5" />
+    </svg>
+  );
+}
+
+function IconClose(): React.JSX.Element {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round">
+      <path d="M5 5l14 14M19 5L5 19" />
+    </svg>
+  );
+}
+
+function FactoryIcon(): React.JSX.Element {
+  return (
+    <svg width="52" height="52" viewBox="0 0 48 48" aria-hidden="true" style={{ margin: '0 auto', display: 'block' }}>
+      <path d="M6 42V22l10 6V22l10 6V14h8v28z" fill="#f59e0b" stroke="#fde047" strokeWidth="1.6" />
+      <rect x="30" y="6" width="5" height="10" fill="#78716c" />
+      <rect x="11" y="33" width="5" height="5" fill="#fef3c7" />
+      <rect x="20" y="33" width="5" height="5" fill="#fef3c7" />
+      <rect x="29" y="33" width="5" height="5" fill="#fef3c7" />
+      <rect x="4" y="42" width="40" height="3" rx="1.5" fill="#fde047" />
+    </svg>
+  );
+}
+
+function PauseIcon(): React.JSX.Element {
+  return (
+    <svg width="52" height="52" viewBox="0 0 48 48" aria-hidden="true" style={{ margin: '0 auto', display: 'block' }}>
+      <circle cx="24" cy="24" r="20" fill="rgba(253,224,71,0.14)" stroke="#fde047" strokeWidth="2" />
+      <rect x="17" y="14" width="5.4" height="20" rx="1.8" fill="#fde047" />
+      <rect x="25.6" y="14" width="5.4" height="20" rx="1.8" fill="#fde047" />
+    </svg>
+  );
+}
+
+function BurstIcon(): React.JSX.Element {
+  return (
+    <svg width="56" height="56" viewBox="0 0 48 48" aria-hidden="true" style={{ margin: '0 auto', display: 'block' }}>
+      <path d="M24 3l3.2 8.4L35 6l-1.8 8.9L42 13l-4.6 7.6L45 24l-7.6 3.4L42 35l-8.8-1.9L35 42l-7.8-5.4L24 45l-3.2-8.4L13 42l1.8-8.9L6 35l4.6-7.6L3 24l7.6-3.4L6 13l8.8 1.9L13 6l7.8 5.4z" fill="#ef4444" stroke="#fca5a5" strokeWidth="1.4" />
+      <circle cx="24" cy="24" r="6.5" fill="#fde047" />
+    </svg>
+  );
+}
+
+/** Chip tutorial: glif SVG mini per jenis material + nama bin. */
+function BinChip({ kind }: { kind: MatKind }): React.JSX.Element {
+  const def = BINS[kind];
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.08)', border: `1px solid ${def.color}`, borderRadius: 999, padding: '5px 11px 5px 7px', color: '#fff', fontWeight: 900, fontSize: 12.5 }}>
+      {kind === 'bata' && (
+        <svg width="22" height="16" viewBox="0 0 22 16" aria-hidden="true">
+          <rect x="1" y="8.5" width="9" height="6" rx="1" fill="#ef4444" />
+          <rect x="12" y="8.5" width="9" height="6" rx="1" fill="#dc2626" />
+          <rect x="6.5" y="1.5" width="9" height="6" rx="1" fill="#f87171" />
+        </svg>
+      )}
+      {kind === 'kayu' && (
+        <svg width="22" height="16" viewBox="0 0 22 16" aria-hidden="true">
+          <rect x="1" y="3" width="16" height="10" rx="2" fill="#b45309" />
+          <path d="M3 7c4-1.6 8 1.4 12 0" stroke="#7c3a06" strokeWidth="1.3" fill="none" />
+          <ellipse cx="18.6" cy="8" rx="2.6" ry="4.6" fill="#e7c084" stroke="#92400e" strokeWidth="1" />
+          <ellipse cx="18.6" cy="8" rx="1.2" ry="2.2" fill="none" stroke="#92400e" strokeWidth="0.9" />
+        </svg>
+      )}
+      {kind === 'besi' && (
+        <svg width="22" height="16" viewBox="0 0 22 16" aria-hidden="true">
+          <rect x="2" y="1.5" width="18" height="3.6" fill="#94a3b8" />
+          <rect x="2" y="10.9" width="18" height="3.6" fill="#64748b" />
+          <rect x="9.2" y="1.5" width="3.6" height="13" fill="#cbd5e1" />
+        </svg>
+      )}
+      {def.name}
+    </span>
   );
 }
 

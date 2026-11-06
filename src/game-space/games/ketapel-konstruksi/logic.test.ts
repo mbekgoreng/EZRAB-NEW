@@ -9,6 +9,7 @@ import {
   createState, updateState, stepBall, ballShouldDie,
   toppleStep, allBerkasDead, starFor, leftoverBonus, MAT_HP,
   type Block, type KEvent,
+  crackLevel, remainingBerkas, launchPowerFrac, launchPowerLabel, DRAG_MAX, MAT_HP,
 } from './logic';
 
 let passed = 0;
@@ -206,6 +207,34 @@ test('sedang -> 2 bintang, boros -> 1 bintang', () => {
 test('leftoverBonus proporsional', () => {
   assert.equal(leftoverBonus(0), 0);
   assert.ok(leftoverBonus(3) > leftoverBonus(1));
+});
+
+console.log('\n[gelombang-3] retak, berkas & meteran daya');
+test('crackLevel: utuh bila HP penuh untuk semua material', () => {
+  for (const m of ['kayu','kaca','bata','beton','berkas'] as const) assert.equal(crackLevel(m, MAT_HP[m]), 0);
+});
+test('crackLevel: bata retak parah di HP 1, beton bertahap', () => {
+  assert.equal(crackLevel('bata', 1), 2);
+  assert.equal(crackLevel('beton', 2), 1);
+  assert.equal(crackLevel('beton', 1), 2);
+  assert.equal(crackLevel('kayu', 1), 0);
+});
+test('remainingBerkas hanya menghitung berkas hidup', () => {
+  const blocks = [
+    { mat: 'berkas' as const, dead: false }, { mat: 'berkas' as const, dead: true },
+    { mat: 'bata' as const, dead: false }, { mat: 'berkas' as const, dead: false },
+  ];
+  assert.equal(remainingBerkas(blocks), 2);
+  assert.equal(remainingBerkas([]), 0);
+});
+test('launchPowerFrac & label monoton dan terbatasi', () => {
+  assert.equal(launchPowerFrac(0), 0);
+  assert.equal(launchPowerFrac(DRAG_MAX), 1);
+  assert.equal(launchPowerFrac(DRAG_MAX * 3), 1);
+  assert.equal(launchPowerLabel(0.1), 'LEMAH');
+  assert.equal(launchPowerLabel(0.5), 'SEDANG');
+  assert.equal(launchPowerLabel(0.8), 'KUAT');
+  assert.equal(launchPowerLabel(1), 'MAKSIMUM');
 });
 
 console.log(`\n${passed} passed, ${failed} failed`);

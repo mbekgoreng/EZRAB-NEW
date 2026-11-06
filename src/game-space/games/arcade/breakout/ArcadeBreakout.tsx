@@ -1,6 +1,8 @@
 /**
- * ArcadeBreakout ("Bobok Tembok") — hancurkan susunan bata pakai bola kerikil.
- * Papan = papan bekisting. Powerup: papan lebar, multibola, semen beku (bola lambat), helm (nyawa).
+ * ArcadeBreakout ("Bobok Tembok") — hancurkan susunan bata pakai bola baja.
+ * Papan = papan perancah/bekisting kayu. Powerup: papan lebar, multibola,
+ * semen beku (bola lambat), helm (nyawa). Bata digambar prosedural berlapis
+ * dengan retak mengikuti sisa HP; bola = bola baja mengilap.
  */
 import React, { useRef, useState } from 'react';
 import {
@@ -10,7 +12,7 @@ import { bestKey, getBest, setBest } from '../../../engine2d/best';
 import { popText } from '../../../engine2d/juice2d';
 import {
   createLevel, stepBall, circleRectHit, reflect, bouncePaddle, powerForBrick,
-  ballSpeed, KIND_HP, KIND_SCORE,
+  ballSpeed, ballSpeedAt, rescaleBall, settleLevelScore, KIND_HP, KIND_SCORE,
   type Brick, type Ball, type PowerKind,
 } from './logic';
 
@@ -35,6 +37,7 @@ interface S {
   level: number;
   score: number;
   levelScore: number;
+  broken: number; // bata bobok di level berjalan (untuk eskalasi kecepatan)
   t: number;
   over: boolean;
   win: boolean;
@@ -42,8 +45,34 @@ interface S {
 }
 
 const POWER_LABEL: Record<PowerKind, string> = {
-  panjang: '📏 Bekisting Lebar!', multibola: '⚽ Multibola!', semenbeku: '🧊 Semen Beku!', helm: '⛑️ Helm Nyawa!',
+  panjang: 'Bekisting Lebar!', multibola: 'Multibola!', semenbeku: 'Semen Beku!', helm: 'Helm Nyawa!',
 };
+
+/** Tiga contoh bata prosedural (DOM/CSS) untuk overlay — sama seperti Canvas. */
+function BrickSwatches(): React.JSX.Element {
+  const items: { label: string; bg: string }[] = [
+    { label: 'BATA', bg: 'linear-gradient(180deg,#f87171,#991b1b)' },
+    { label: 'HEBEL', bg: 'linear-gradient(180deg,#f1f5f9,#94a3b8)' },
+    { label: 'BETON', bg: 'linear-gradient(180deg,#d6d3d1,#57534e)' },
+  ];
+  return (
+    <span style={{ display: 'inline-flex', gap: 6, verticalAlign: 'middle' }}>
+      {items.map((it) => (
+        <span
+          key={it.label}
+          style={{
+            width: 52, height: 26, borderRadius: 5, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            background: it.bg, border: '1.5px solid rgba(60,40,20,0.5)',
+            fontSize: 8, fontWeight: 800, color: 'rgba(255,255,255,0.85)', letterSpacing: 0.5,
+            boxShadow: 'inset 0 3px 4px rgba(255,255,255,0.3)',
+          }}
+        >
+          {it.label}
+        </span>
+      ))}
+    </span>
+  );
+}
 const POWER_COLOR: Record<PowerKind, string> = {
   panjang: '#4ade80', multibola: '#fbbf24', semenbeku: '#7dd3fc', helm: '#fb923c',
 };
@@ -53,7 +82,7 @@ export default function ArcadeBreakout({ onExit }: { onExit: () => void }): Reac
   const apiRef = useRef<GameApi | null>(null);
   const screenRef = useRef<Screen>('tutorial');
   const [screen, setScreenState] = useState<Screen>('tutorial');
-  const [hud, setHud] = useState({ score: 0, lives: 3, level: 1, best: getBest(BK, 0) });
+  const [hud, setHud] = useState({ score: 0, lives: 3, level: 1, speed: ballSpeedAt(0, 0), best: getBest(BK, 0) });
   const [muted, setMuted] = useState(sfx.muted);
 
   const setScreen = (s: Screen): void => {
@@ -71,7 +100,7 @@ export default function ArcadeBreakout({ onExit }: { onExit: () => void }): Reac
     const s: S = {
       bricks: [], balls: [], pws: [],
       paddleX: api.W / 2, paddleW: 96, frozen: 0, shield: false,
-      lives: 3, level: 0, score: 0, levelScore: 0, t: 0, over: false, win: false, launched: false,
+      lives: 3, level: 0, score: 0, levelScore: 0, broken: 0, t: 0, over: false, win: false, launched: false,
     };
 
     const gridToPx = (b: Brick): { x: number; y: number; w: number; h: number } => {
@@ -83,7 +112,7 @@ export default function ArcadeBreakout({ onExit }: { onExit: () => void }): Reac
     };
 
     const push = (): void => {
-      api.pushHud({ score: s.score + s.levelScore, lives: s.lives, level: s.level + 1, best: getBest(BK, 0) });
+      api.pushHud({ score: s.score + s.levelScore, lives: s.lives, level: s.level + 1, speed: ballSpeedAt(s.level, s.broken), best: getBest(BK, 0) });
     };
 
     const launchBalls = (): void => {
@@ -103,6 +132,7 @@ export default function ArcadeBreakout({ onExit }: { onExit: () => void }): Reac
       s.frozen = 0;
       s.launched = false;
       s.levelScore = 0;
+      s.broken = 0;
       push();
     };
 
@@ -118,10 +148,10 @@ export default function ArcadeBreakout({ onExit }: { onExit: () => void }): Reac
       const total = s.score + s.levelScore;
       const nb = setBest(BK, total);
       const wrap = wrapRef.current;
-      if (wrap) popText(wrap, win ? '🏗️ TEMBOK RATA!' : '💥 KERIKIL HABIS!', { size: 30, color: '#fde047' });
+      if (wrap) popText(wrap, win ? 'TEMBOK RATA!' : 'BOLA BAJA HABIS!', { size: 30, color: '#fde047' });
       if (win) sfx.chime(3); else sfx.fail();
       window.setTimeout(() => {
-        api.pushHud({ score: total, lives: s.lives, level: s.level + 1, best: nb });
+        api.pushHud({ score: total, lives: s.lives, level: s.level + 1, speed: ballSpeedAt(s.level, s.broken), best: nb });
         setScreen('over');
       }, 1300);
     };
@@ -215,6 +245,9 @@ export default function ArcadeBreakout({ onExit }: { onExit: () => void }): Reac
           nb = reflect(nb, hitSide);
           brickHit.hp -= 1;
           if (brickHit.hp <= 0) {
+            s.broken += 1;
+            // eskalasi kecepatan eksplisit per bata bobok (arah dipertahankan)
+            nb = rescaleBall(nb, ballSpeedAt(s.level, s.broken));
             s.levelScore += KIND_SCORE[brickHit.kind];
             const bp = gridToPx(brickHit);
             const colors = brickHit.kind === 'bata'
@@ -242,11 +275,14 @@ export default function ArcadeBreakout({ onExit }: { onExit: () => void }): Reac
       }
       s.balls = nextBalls;
       if (s.bricks.length === 0) {
-        // level selesai
-        s.score += s.levelScore;
+        // level selesai: settle SEKALI agar endGame tak menghitung ulang
+        // levelScore yang sama (bug lama: skor akhir level 5 terhitung ganda).
+        const st = settleLevelScore(s.score, s.levelScore);
+        s.score = st.score;
+        s.levelScore = st.levelScore;
         sfx.chime(2);
         const wrap = wrapRef.current;
-        if (wrap) popText(wrap, '🧱 Dinding bobok!', { size: 22, color: '#4ade80' });
+        if (wrap) popText(wrap, 'Dinding bobok!', { size: 22, color: '#4ade80' });
         if (s.level >= 4) { endGame(true); return; }
         s.level += 1;
         window.setTimeout(() => { if (!s.over) startLevel(s.level); }, 900);
@@ -259,13 +295,13 @@ export default function ArcadeBreakout({ onExit }: { onExit: () => void }): Reac
           s.shield = false;
           sfx.pop(0.7);
           const wrap = wrapRef.current;
-          if (wrap) popText(wrap, '⛑️ Helm menyelamatkanmu!', { size: 18, color: '#fb923c' });
+          if (wrap) popText(wrap, 'Helm menyelamatkanmu!', { size: 18, color: '#fb923c' });
           launchBalls();
         } else {
           s.lives -= 1;
           sfx.fail();
           const wrap = wrapRef.current;
-          if (wrap) popText(wrap, 'Bola kerikil jatuh!', { size: 18, color: '#fca5a5' });
+          if (wrap) popText(wrap, 'Bola baja jatuh!', { size: 18, color: '#fca5a5' });
           push();
           if (s.lives <= 0) { endGame(false); return; }
           s.launched = false;
@@ -314,7 +350,6 @@ export default function ArcadeBreakout({ onExit }: { onExit: () => void }): Reac
 
     const drawBrick = (ctx: CanvasRenderingContext2D, br: Brick): void => {
       const p = gridToPx(br);
-      const dmg = br.hp / KIND_HP[br.kind];
       ctx.save();
       ctx.shadowColor = 'rgba(0,0,0,0.45)';
       ctx.shadowBlur = 8;
@@ -355,8 +390,9 @@ export default function ArcadeBreakout({ onExit }: { onExit: () => void }): Reac
       // highlight atas
       ctx.fillStyle = 'rgba(255,255,255,0.22)';
       ctx.fillRect(p.x + 3, p.y + 2, p.w - 6, 4);
-      // retakan bila rusak
-      if (dmg < 1) {
+      // retakan berlapis mengikuti sisa HP: makin sedikit HP, makin parah
+      const missing = KIND_HP[br.kind] - br.hp;
+      if (missing >= 1) {
         ctx.strokeStyle = 'rgba(20,10,5,0.75)';
         ctx.lineWidth = 1.6;
         ctx.beginPath();
@@ -364,6 +400,24 @@ export default function ArcadeBreakout({ onExit }: { onExit: () => void }): Reac
         ctx.lineTo(p.x + p.w * 0.55, p.y + p.h * 0.5);
         ctx.lineTo(p.x + p.w * 0.4, p.y + p.h);
         ctx.stroke();
+      }
+      if (missing >= 2) {
+        ctx.strokeStyle = 'rgba(20,10,5,0.85)';
+        ctx.lineWidth = 1.4;
+        ctx.beginPath();
+        ctx.moveTo(p.x + p.w * 0.72, p.y);
+        ctx.lineTo(p.x + p.w * 0.58, p.y + p.h * 0.42);
+        ctx.lineTo(p.x + p.w * 0.8, p.y + p.h * 0.78);
+        ctx.lineTo(p.x + p.w * 0.68, p.y + p.h);
+        ctx.stroke();
+        // cuilan sudut kanan bawah
+        ctx.fillStyle = 'rgba(15,10,8,0.55)';
+        ctx.beginPath();
+        ctx.moveTo(p.x + p.w - 11, p.y + p.h);
+        ctx.lineTo(p.x + p.w, p.y + p.h - 9);
+        ctx.lineTo(p.x + p.w, p.y + p.h);
+        ctx.closePath();
+        ctx.fill();
       }
       // label kecil
       ctx.fillStyle = 'rgba(255,255,255,0.75)';
@@ -416,23 +470,41 @@ export default function ArcadeBreakout({ onExit }: { onExit: () => void }): Reac
       }
     };
 
+    /** Bola baja: gradasi metalik biru-abu + kilau specular + ring las. */
     const drawBall = (ctx: CanvasRenderingContext2D, b: Ball): void => {
       ctx.save();
-      ctx.shadowColor = 'rgba(0,0,0,0.4)';
+      ctx.shadowColor = 'rgba(0,0,0,0.45)';
       ctx.shadowBlur = 8;
       const g = ctx.createRadialGradient(b.x - 3, b.y - 3, 1, b.x, b.y, b.r);
-      g.addColorStop(0, '#e7e5e4');
-      g.addColorStop(0.6, '#a8a29e');
-      g.addColorStop(1, '#57534e');
+      g.addColorStop(0, '#ffffff');
+      g.addColorStop(0.35, '#cbd5e1');
+      g.addColorStop(0.75, '#64748b');
+      g.addColorStop(1, '#1e293b');
       ctx.fillStyle = g;
       ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, TAU); ctx.fill();
-      // tekstur kerikil
-      ctx.fillStyle = 'rgba(68,64,60,0.6)';
-      ctx.beginPath(); ctx.arc(b.x - 2, b.y + 2, 1.8, 0, TAU); ctx.fill();
-      ctx.beginPath(); ctx.arc(b.x + 3, b.y - 1, 1.3, 0, TAU); ctx.fill();
+      // ring ekuator baja
+      ctx.strokeStyle = 'rgba(15,23,42,0.45)';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.ellipse(b.x, b.y + 1, b.r - 1, b.r * 0.45, 0, 0, TAU); ctx.stroke();
+      // kilau specular
+      ctx.fillStyle = 'rgba(255,255,255,0.85)';
+      ctx.beginPath(); ctx.ellipse(b.x - 3, b.y - 3.5, 2.4, 1.5, -0.6, 0, TAU); ctx.fill();
       ctx.restore();
     };
 
+    /** Ikon helm prosedural (kubah + brim kuning helm) untuk nyawa & powerup. */
+    const drawHelmIcon = (ctx: CanvasRenderingContext2D, x: number, y: number, r: number): void => {
+      const hg = ctx.createLinearGradient(x - r, y - r, x + r, y + r * 0.4);
+      hg.addColorStop(0, '#fde047');
+      hg.addColorStop(1, '#f59e0b');
+      ctx.fillStyle = hg;
+      ctx.beginPath(); ctx.arc(x, y, r, Math.PI, 0); ctx.fill();
+      ctx.fillRect(x - r - 3, y - 1.5, (r + 3) * 2, 4);
+      ctx.fillStyle = 'rgba(255,255,255,0.55)';
+      ctx.beginPath(); ctx.ellipse(x - r * 0.35, y - r * 0.55, r * 0.28, r * 0.42, -0.4, 0, TAU); ctx.fill();
+    };
+
+    /** Powerup: lingkaran berwarna + ikon digambar prosedural per jenis. */
     const drawPowerup = (ctx: CanvasRenderingContext2D, pw: Pw): void => {
       const bob = Math.sin(s.t * 6 + pw.id) * 3;
       ctx.save();
@@ -442,13 +514,43 @@ export default function ArcadeBreakout({ onExit }: { onExit: () => void }): Reac
       ctx.fillStyle = POWER_COLOR[pw.kind];
       ctx.beginPath(); ctx.arc(0, 0, 13, 0, TAU); ctx.fill();
       ctx.shadowBlur = 0;
-      ctx.fillStyle = 'rgba(0,0,0,0.35)';
+      ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+      ctx.lineWidth = 1.5;
       ctx.beginPath(); ctx.arc(0, 0, 13, 0, TAU); ctx.stroke();
+      ctx.strokeStyle = '#0c1222';
       ctx.fillStyle = '#0c1222';
-      ctx.font = `900 13px ${FONT}`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(pw.kind === 'panjang' ? '↔' : pw.kind === 'multibola' ? '✸' : pw.kind === 'semenbeku' ? '❄' : '⛑', 0, 1);
+      if (pw.kind === 'panjang') {
+        // penggaris lebar: garis mendatar + panah dua arah
+        ctx.lineWidth = 2.4;
+        ctx.beginPath(); ctx.moveTo(-8, 0); ctx.lineTo(8, 0); ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(-8, 0); ctx.lineTo(-3.5, -3.5); ctx.moveTo(-8, 0); ctx.lineTo(-3.5, 3.5);
+        ctx.moveTo(8, 0); ctx.lineTo(3.5, -3.5); ctx.moveTo(8, 0); ctx.lineTo(3.5, 3.5);
+        ctx.stroke();
+        ctx.lineWidth = 1.4;
+        for (const tx of [-4, 0, 4]) { ctx.beginPath(); ctx.moveTo(tx, -3); ctx.lineTo(tx, 0); ctx.stroke(); }
+      } else if (pw.kind === 'multibola') {
+        // tiga bola baja kecil
+        for (const [ox, oy] of [[-4.5, 3.5], [4.5, 3.5], [0, -4]] as const) {
+          ctx.beginPath(); ctx.arc(ox, oy, 3.4, 0, TAU); ctx.fill();
+        }
+      } else if (pw.kind === 'semenbeku') {
+        // keping beku: 6 jari-jari bersilangan
+        ctx.lineWidth = 2;
+        for (let i = 0; i < 6; i += 1) {
+          const a = (i * Math.PI) / 3;
+          ctx.beginPath();
+          ctx.moveTo(-Math.cos(a) * 7.5, -Math.sin(a) * 7.5);
+          ctx.lineTo(Math.cos(a) * 7.5, Math.sin(a) * 7.5);
+          ctx.stroke();
+        }
+        ctx.fillStyle = POWER_COLOR[pw.kind];
+        ctx.beginPath(); ctx.arc(0, 0, 2.2, 0, TAU); ctx.fill();
+      } else {
+        // helm: kubah + brim
+        ctx.beginPath(); ctx.arc(0, 2, 6.5, Math.PI, 0); ctx.fill();
+        ctx.fillRect(-9, 1, 18, 3.2);
+      }
       ctx.restore();
     };
 
@@ -460,13 +562,13 @@ export default function ArcadeBreakout({ onExit }: { onExit: () => void }): Reac
       drawPaddle(ctx, W, H);
       if (!s.launched && !s.over && screenRef.current === 'play') {
         const g = ctx.createRadialGradient(s.paddleX - 3, H - 128, 1, s.paddleX, H - 120, 9);
-        g.addColorStop(0, '#e7e5e4'); g.addColorStop(1, '#57534e');
+        g.addColorStop(0, '#ffffff'); g.addColorStop(0.5, '#94a3b8'); g.addColorStop(1, '#1e293b');
         ctx.fillStyle = g;
         ctx.beginPath(); ctx.arc(s.paddleX, H - 120, 8, 0, TAU); ctx.fill();
         ctx.fillStyle = 'rgba(255,255,255,0.8)';
         ctx.font = `800 12px ${FONT}`;
         ctx.textAlign = 'center';
-        ctx.fillText('👆 ketuk untuk meluncurkan', s.paddleX, H - 140);
+        ctx.fillText('Ketuk untuk meluncurkan bola baja', s.paddleX, H - 140);
       }
       for (const b of s.balls) drawBall(ctx, b);
       if (s.frozen > 0) {
@@ -475,13 +577,18 @@ export default function ArcadeBreakout({ onExit }: { onExit: () => void }): Reac
         ctx.fillStyle = '#7dd3fc';
         ctx.font = `800 13px ${FONT}`;
         ctx.textAlign = 'center';
-        ctx.fillText(`🧊 Semen beku ${Math.ceil(s.frozen)}s`, W / 2, H - 60);
+        ctx.fillText(`Semen beku ${Math.ceil(s.frozen)}s — bola melambat`, W / 2, H - 60);
       }
-      // nyawa sebagai helm
-      ctx.font = `20px ${FONT}`;
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'alphabetic';
-      ctx.fillText('⛑️'.repeat(Math.max(0, s.lives)), 12, H - 30);
+      // nyawa sebagai helm prosedural
+      for (let i = 0; i < Math.max(0, s.lives); i += 1) {
+        drawHelmIcon(ctx, 22 + i * 34, H - 26, 10);
+      }
+      if (s.shield) {
+        ctx.fillStyle = 'rgba(251,146,60,0.9)';
+        ctx.font = `800 11px ${FONT}`;
+        ctx.textAlign = 'left';
+        ctx.fillText('HELM AKTIF', 14, H - 44);
+      }
       // vignette
       const vg = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.45, W / 2, H / 2, Math.max(W, H) * 0.78);
       vg.addColorStop(0, 'rgba(0,0,0,0)');
@@ -527,25 +634,26 @@ export default function ArcadeBreakout({ onExit }: { onExit: () => void }): Reac
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', zIndex: 5, pointerEvents: 'none' }}>
         <div style={{ pointerEvents: 'auto', background: 'rgba(10,15,30,0.6)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 14, padding: '7px 12px', color: '#fff', backdropFilter: 'blur(6px)', minWidth: 140 }}>
           <div style={{ fontWeight: 900, fontSize: 17, color: '#fde047' }}>{hud.score.toLocaleString('id-ID')}</div>
-          <div style={{ fontSize: 12, marginTop: 3, opacity: 0.9 }}>🧱 Dinding {hud.level}/5</div>
+          <div style={{ fontSize: 12, marginTop: 3, opacity: 0.9 }}>Dinding {hud.level}/5 • Bola {hud.speed} px/s</div>
         </div>
         <div style={{ display: 'flex', gap: 8, pointerEvents: 'auto' }}>
           {(screen === 'play' || screen === 'pause') && (
-            <button style={btn} onClick={togglePause} aria-label="Jeda">{screen === 'play' ? '⏸' : '▶'}</button>
+            <button style={btn} onClick={togglePause} aria-label="Jeda">{screen === 'play' ? 'II' : '▶'}</button>
           )}
-          <button style={btn} onClick={toggleMute} aria-label="Suara">{muted ? '🔇' : '🔊'}</button>
-          <button style={btn} onClick={onExit} aria-label="Keluar">✕</button>
+          <button style={{ ...btn, fontSize: 10, fontWeight: 800 }} onClick={toggleMute} aria-label="Suara">{muted ? 'MATI' : 'NYALA'}</button>
+          <button style={btn} onClick={onExit} aria-label="Keluar">×</button>
         </div>
       </div>
 
       {screen === 'tutorial' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>🧱</div>
+          <div><BrickSwatches /></div>
           <h2 style={h2}>BOBOK TEMBOK</h2>
           <p style={p}>
-            Hancurkan susunan <b>bata, hebel, dan beton</b> pakai bola kerikil!
-            <b> Geser jari</b> untuk menggerakkan papan bekisting.
-            Tangkap <b>powerup</b>: papan lebar 📏, multibola ✸, semen beku ❄, helm nyawa ⛑.
+            Hancurkan susunan <b>bata, hebel, dan beton</b> pakai bola baja!
+            <b> Geser jari</b> untuk menggerakkan papan perancah.
+            Tangkap <b>powerup</b>: Bekisting Lebar, Multibola, Semen Beku, Helm Nyawa.
+            Makin banyak bata bobok, bola <b>makin cepat</b>!
           </p>
           {hud.best > 0 && <p style={p}>Skor terbaik: <b style={{ color: '#fde047' }}>{hud.best.toLocaleString('id-ID')}</b></p>}
           <button style={primaryBtn} onClick={startGame}>Mulai Membobok</button>
@@ -553,7 +661,7 @@ export default function ArcadeBreakout({ onExit }: { onExit: () => void }): Reac
       )}
       {screen === 'pause' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>☕</div>
+          <div style={{ fontSize: 42, fontWeight: 900, color: '#fde047', letterSpacing: 6 }}>II</div>
           <h2 style={h2}>JEDA</h2>
           <p style={p}>Temboknya nungguin, santai dulu.</p>
           <button style={primaryBtn} onClick={togglePause}>Lanjutkan</button>
@@ -561,8 +669,8 @@ export default function ArcadeBreakout({ onExit }: { onExit: () => void }): Reac
       )}
       {screen === 'over' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>{hud.lives > 0 ? '🏗️' : '💥'}</div>
-          <h2 style={h2}>{hud.lives > 0 ? 'SEMUA TEMBOK RATA!' : 'KERIKIL HABIS!'}</h2>
+          <div><BrickSwatches /></div>
+          <h2 style={h2}>{hud.lives > 0 ? 'SEMUA TEMBOK RATA!' : 'BOLA BAJA HABIS!'}</h2>
           <div style={{ fontSize: 40, fontWeight: 900, color: '#fde047' }}>{hud.score.toLocaleString('id-ID')}</div>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'center', margin: '10px 0' }}>
             <Stat label="Terbaik" value={hud.best.toLocaleString('id-ID')} />

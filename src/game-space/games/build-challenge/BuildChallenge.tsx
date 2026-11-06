@@ -8,7 +8,13 @@
  */
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Pause, Play, RotateCcw, X, Trophy, Clock, MousePointerClick, ChevronRight, Flag } from 'lucide-react';
+import {
+  Pause, Play, RotateCcw, X, Trophy, Clock, MousePointerClick, ChevronRight, Flag,
+  Construction, PartyPopper, MonitorOff, Layers, Landmark, RectangleHorizontal, BrickWall, Triangle,
+  type LucideIcon,
+} from 'lucide-react';
+import { sfx } from '../../engine2d';
+import { bestKey, getBest, setBest } from '../../engine2d/best';
 import { BuildChallengeEngine } from './BuildChallengeEngine';
 import {
   LEVELS, COMP_ORDER, COMP_META, createGameState, resetForLevel, tryPlace,
@@ -26,13 +32,15 @@ type Phase = 'tutorial' | 'playing' | 'levelDone' | 'victory';
 const fmtTime = (s: number): string =>
   `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 
-const COMP_ICON: Record<CompType, string> = {
-  pondasi: '🧱',
-  kolom: '🏛️',
-  balok: '➖',
-  dinding: '🧱',
-  atap: '🔺',
+const COMP_ICON: Record<CompType, LucideIcon> = {
+  pondasi: Layers,
+  kolom: Landmark,
+  balok: RectangleHorizontal,
+  dinding: BrickWall,
+  atap: Triangle,
 };
+
+const BEST_KEY = bestKey('build-challenge', 'best');
 
 export const BuildChallenge: React.FC<Props> = ({ onExit }) => {
   const [phase, setPhase] = useState<Phase>('tutorial');
@@ -45,6 +53,7 @@ export const BuildChallenge: React.FC<Props> = ({ onExit }) => {
   const [totalScore, setTotalScore] = useState(0);
   const [counts, setCounts] = useState<Targets>({ pondasi: 0, kolom: 0, balok: 0, dinding: 0, atap: 0 });
   const [bonus, setBonus] = useState(0);
+  const [best, setBestState] = useState<number>(() => getBest(BEST_KEY, 0));
 
   const stateRef = useRef<GameState>(createGameState());
   const engineRef = useRef<BuildChallengeEngine | null>(null);
@@ -144,9 +153,11 @@ export const BuildChallenge: React.FC<Props> = ({ onExit }) => {
     const res = tryPlace(st, selectedRef.current, x, z);
     syncHud();
     if (!res.ok) {
+      sfx.fail();
       showToast(res.reason ? REASON_TEXT[res.reason] : 'Tidak bisa ditaruh di sini.');
       return;
     }
+    sfx.pop();
     engineRef.current?.place(selectedRef.current, x, z);
     engineRef.current?.setGhost(null, null);
     if (levelTargetMet(st)) {
@@ -154,6 +165,8 @@ export const BuildChallenge: React.FC<Props> = ({ onExit }) => {
       st.score += b;
       setBonus(b);
       setLevelScore(st.score);
+      setBestState(setBest(BEST_KEY, st.score));
+      sfx.chime(4, 660);
       syncHud();
       setPhase(st.levelIdx + 1 >= LEVELS.length ? 'victory' : 'levelDone');
       import('canvas-confetti').then(({ default: confetti }) => {
@@ -170,6 +183,10 @@ export const BuildChallenge: React.FC<Props> = ({ onExit }) => {
 
   const startLevel = useCallback((idx: number) => {
     resetForLevel(stateRef.current, idx);
+    // BUGFIX: "Ulangi level" saat engine masih hidup (fase tetap 'playing')
+    // tidak memicu pembuatan engine baru, jadi mesh & tinggi tumpukan 3D lama
+    // harus dibersihkan eksplisit agar sinkron dengan board logika yang reset.
+    engineRef.current?.clearBoard();
     elapsedRef.current = 0;
     setElapsed(0);
     setBonus(0);
@@ -198,7 +215,7 @@ export const BuildChallenge: React.FC<Props> = ({ onExit }) => {
     return (
       <div className="gs-fallback" onKeyDown={(e) => e.stopPropagation()}>
         <div className="gs-fallback-card">
-          <div className="gs-fallback-emoji">🖥️</div>
+          <div className="gs-fallback-emoji"><MonitorOff size={40} /></div>
           <h3>Perangkat tidak mendukung 3D</h3>
           <p>Browser/perangkat ini tidak menyediakan WebGL, jadi scene 3D tidak bisa ditampilkan. Chat AI tetap berfungsi normal.</p>
           <button className="gs-btn primary" onClick={onExit}>Kembali ke chat</button>
@@ -238,9 +255,10 @@ export const BuildChallenge: React.FC<Props> = ({ onExit }) => {
         {COMP_ORDER.filter((c) => level.targets[c] > 0).map((c) => {
           const need = level.targets[c];
           const have = Math.min(stateRef.current.counts[c], need);
+          const Icon = COMP_ICON[c];
           return (
             <span key={c} className={`gs-target ${have >= need ? 'done' : ''}`}>
-              {COMP_ICON[c]} {COMP_META[c].label} {have}/{need}
+              <Icon size={13} /> {COMP_META[c].label} {have}/{need}
             </span>
           );
         })}
@@ -253,7 +271,7 @@ export const BuildChallenge: React.FC<Props> = ({ onExit }) => {
         {paused && phase === 'playing' && (
           <div className="gs-pause-overlay">
             <div className="gs-modal">
-              <h3>Jeda ⏸️</h3>
+              <h3><Pause size={18} /> Jeda</h3>
               <p>Game dihentikan sementara. Timer ikut berhenti.</p>
               <div className="gs-modal-actions">
                 <button className="gs-btn primary" onClick={togglePause}><Play size={15} /> Lanjutkan</button>
@@ -272,6 +290,7 @@ export const BuildChallenge: React.FC<Props> = ({ onExit }) => {
           {COMP_ORDER.map((c) => {
             const rem = remaining[c];
             const disabled = rem <= 0;
+            const Icon = COMP_ICON[c];
             return (
               <button
                 key={c}
@@ -280,7 +299,7 @@ export const BuildChallenge: React.FC<Props> = ({ onExit }) => {
                 disabled={disabled}
                 title={COMP_META[c].hint}
               >
-                <span className="gs-comp-icon">{COMP_ICON[c]}</span>
+                <span className="gs-comp-icon"><Icon size={20} /></span>
                 <span className="gs-comp-name">{COMP_META[c].label}</span>
                 <span className="gs-comp-count">{disabled ? '✓' : `×${rem}`}</span>
               </button>
@@ -293,18 +312,18 @@ export const BuildChallenge: React.FC<Props> = ({ onExit }) => {
       {phase === 'tutorial' && (
         <div className="gs-overlay-modal">
           <div className="gs-modal wide">
-            <h3>🏗️ EZRAB Build Challenge</h3>
+            <h3><Construction size={20} /> EZRAB Build Challenge</h3>
             <p className="gs-brief">{level.briefing}</p>
             <ol className="gs-rules">
-              <li><b>Pondasi</b> 🧱 — hanya di tanah kosong.</li>
-              <li><b>Kolom</b> 🏛️ — hanya di atas pondasi.</li>
-              <li><b>Balok</b> ➖ — hanya di atas kolom.</li>
-              <li><b>Dinding</b> 🧱 — tanah kosong yang <b>menempel</b> pondasi.</li>
-              <li><b>Atap</b> 🔺 — hanya di atas balok.</li>
+              <li><b>Pondasi</b> <Layers size={13} /> — hanya di tanah kosong.</li>
+              <li><b>Kolom</b> <Landmark size={13} /> — hanya di atas pondasi.</li>
+              <li><b>Balok</b> <RectangleHorizontal size={13} /> — hanya di atas kolom.</li>
+              <li><b>Dinding</b> <BrickWall size={13} /> — tanah kosong yang <b>menempel</b> pondasi.</li>
+              <li><b>Atap</b> <Triangle size={13} /> — hanya di atas balok.</li>
             </ol>
             <p className="gs-rules-note">Penempatan benar <b>+100 poin</b>. Salah tempat <b>−25 poin</b>. Selesaikan sebelum waktu par untuk <b>bonus kecepatan</b>. Ada 3 level.</p>
             <div className="gs-modal-actions">
-              <button className="gs-btn primary" onClick={() => startLevel(0)}>Mulai main <ChevronRight size={15} /></button>
+              <button className="gs-btn primary" onClick={() => { sfx.ensure(); sfx.click(); startLevel(0); }}>Mulai main <ChevronRight size={15} /></button>
               <button className="gs-btn" onClick={onExit}>Nanti saja</button>
             </div>
           </div>
@@ -315,7 +334,7 @@ export const BuildChallenge: React.FC<Props> = ({ onExit }) => {
       {phase === 'levelDone' && (
         <div className="gs-overlay-modal">
           <div className="gs-modal">
-            <h3>🎉 Level {level.id} selesai!</h3>
+            <h3><PartyPopper size={20} /> Level {level.id} selesai!</h3>
             <div className="gs-score-rows">
               <div><span>Waktu</span><b>{fmtTime(elapsed)}</b></div>
               <div><span>Bonus kecepatan</span><b>+{bonus}</b></div>
@@ -335,10 +354,11 @@ export const BuildChallenge: React.FC<Props> = ({ onExit }) => {
       {phase === 'victory' && (
         <div className="gs-overlay-modal">
           <div className="gs-modal">
-            <h3>🏆 Bangunan selesai!</h3>
+            <h3><Trophy size={20} /> Bangunan selesai!</h3>
             <p>Kamu menyelesaikan 3 level EZRAB Build Challenge.</p>
             <div className="gs-score-rows">
               <div><span>Skor akhir</span><b>{totalScore}</b></div>
+              <div><span>Skor terbaik</span><b>{best}</b></div>
               <div><span>Total langkah</span><b>{stateRef.current.moves}</b></div>
               <div><span>Salah tempat</span><b>{stateRef.current.invalidAttempts}×</b></div>
             </div>

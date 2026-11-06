@@ -3,7 +3,7 @@
  */
 import { strict as assert } from 'node:assert';
 import {
-  WORDS, WORD_LEN, MAX_GUESSES, pickWord, isValidGuess, scoreGuess,
+  WORDS, WORD_LEN, MAX_GUESSES, pickWord, pickNextWord, isValidGuess, scoreGuess,
   recordResult, emptyStats, keyStatus,
 } from './logic';
 
@@ -29,6 +29,37 @@ test('semua kata tepat 5 huruf A-Z, unik, jumlah ≥ 100', () => {
 });
 test('pickWord mengembalikan kata dari daftar', () => {
   for (let i = 0; i < 20; i += 1) assert.ok(WORDS.includes(pickWord()));
+});
+test('pickNextWord tidak pernah mengulang kata ronde sebelumnya', () => {
+  const prev = WORDS[10];
+  // Sapu seluruh rentang rng: hasil selalu kata sah dan tidak pernah `prev`.
+  for (let i = 0; i < 200; i += 1) {
+    const w = pickNextWord(prev, () => i / 200);
+    assert.ok(WORDS.includes(w), w);
+    assert.notEqual(w, prev);
+  }
+  // Rng yang pada pickWord tepat menunjuk `prev` pun harus bergeser ke kata lain.
+  const idxPrev = WORDS.indexOf(prev);
+  assert.equal(pickWord(() => idxPrev / WORDS.length), prev);
+  assert.notEqual(pickNextWord(prev, () => idxPrev / WORDS.length), prev);
+});
+test('pickNextWord: rantai sesi panjang tanpa pengulangan berurutan', () => {
+  let seed = 42;
+  const lcg = () => { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; };
+  let prev = pickNextWord(null, lcg);
+  for (let round = 0; round < 60; round += 1) {
+    const next = pickNextWord(prev, lcg);
+    assert.notEqual(next, prev, `ronde ${round}`);
+    prev = next;
+  }
+});
+test('pickNextWord: previous kosong/tidak dikenal setara undian biasa', () => {
+  for (const prev of [null, undefined, '', 'XXXXX']) {
+    const w = pickNextWord(prev, () => 0);
+    assert.ok(WORDS.includes(w), w);
+  }
+  // Huruf kecil pada previous tetap dikenali sebagai kata yang sama.
+  assert.notEqual(pickNextWord(WORDS[0].toLowerCase(), () => 0), WORDS[0]);
 });
 
 console.log('\n[wordle] validasi');
@@ -58,6 +89,18 @@ test('huruf ganda: tebakan punya 2, jawaban 1 -> hanya 1 present', () => {
 test('huruf ganda: correct didahulukan dari present', () => {
   // jawaban PASIR, tebakan PARIT
   assert.deepEqual(scoreGuess('PARIT', 'PASIR'), ['correct', 'correct', 'present', 'correct', 'absent']);
+});
+test('huruf ganda: kelebihan huruf tebakan sesudah kuota jawaban habis -> absent', () => {
+  // jawaban PASIR (R x1, A x1), tebakan RARAT (R x2, A x2):
+  // R pertama present (memakai satu-satunya R), R kedua absent;
+  // A pertama correct (memakai satu-satunya A), A kedua absent.
+  assert.deepEqual(scoreGuess('RARAT', 'PASIR'), ['present', 'correct', 'absent', 'absent', 'absent']);
+});
+test('huruf ganda: jawaban 2x, tebakan 1x di luar posisi -> present dari sisa', () => {
+  // jawaban HEBEL (E x2 di pos 1 & 3), tebakan EMBER (E di pos 0 & 3):
+  // pos 3 correct memakai satu E; E di pos 0 present dari E sisa di pos 1.
+  // (B di pos 2 juga exact di kedua kata -> correct.)
+  assert.deepEqual(scoreGuess('EMBER', 'HEBEL'), ['present', 'absent', 'correct', 'correct', 'absent']);
 });
 
 console.log('\n[wordle] statistik');

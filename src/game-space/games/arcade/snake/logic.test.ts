@@ -5,7 +5,9 @@
 import { strict as assert } from 'node:assert';
 import {
   createGame, step, turn, freeCell, stepInterval, gradeFor,
-  COLS, ROWS, DIRS, GOLD_DURATION,
+  levelFor, tickMsFor, tickSecondsFor, progressInLevel, connectorsToNextLevel,
+  COLS, ROWS, DIRS, GOLD_DURATION, CONNECTORS_PER_LEVEL,
+  BASE_TICK_MS, MIN_TICK_MS,
 } from './logic';
 
 let passed = 0;
@@ -118,6 +120,50 @@ test('grade S..D', () => {
   assert.equal(gradeFor(200), 'B');
   assert.equal(gradeFor(100), 'C');
   assert.equal(gradeFor(0), 'D');
+});
+
+console.log('\n[4] progresi level eksplisit (Gelombang 5)');
+test('level 1 sebelum ambang, naik tepat di kelipatan N', () => {
+  assert.equal(levelFor(0), 1);
+  assert.equal(levelFor(CONNECTORS_PER_LEVEL - 1), 1);
+  assert.equal(levelFor(CONNECTORS_PER_LEVEL), 2);
+  assert.equal(levelFor(CONNECTORS_PER_LEVEL * 3), 4);
+  assert.equal(levelFor(-3), 1);
+});
+test('tickMsFor: level 1 = basis, turun monoton per level', () => {
+  assert.equal(tickMsFor(1), BASE_TICK_MS);
+  assert.ok(tickMsFor(2) < tickMsFor(1));
+  assert.ok(tickMsFor(4) < tickMsFor(3));
+  assert.ok(tickMsFor(3) > MIN_TICK_MS);
+});
+test('tickMsFor ada floor MIN_TICK_MS di level sangat tinggi', () => {
+  assert.equal(tickMsFor(99), MIN_TICK_MS);
+  assert.equal(tickMsFor(0), BASE_TICK_MS); // level < 1 dijepit ke 1
+});
+test('tickSecondsFor konsisten dengan levelFor+tickMsFor', () => {
+  assert.equal(tickSecondsFor(0), BASE_TICK_MS / 1000);
+  assert.equal(tickSecondsFor(CONNECTORS_PER_LEVEL), tickMsFor(2) / 1000);
+  assert.ok(tickSecondsFor(40) <= tickSecondsFor(0));
+});
+test('progres & sisa ke level berikut', () => {
+  assert.equal(progressInLevel(0), 0);
+  assert.equal(progressInLevel(CONNECTORS_PER_LEVEL + 2), 2);
+  assert.equal(connectorsToNextLevel(0), CONNECTORS_PER_LEVEL);
+  assert.equal(connectorsToNextLevel(CONNECTORS_PER_LEVEL - 1), 1);
+  assert.equal(connectorsToNextLevel(CONNECTORS_PER_LEVEL), CONNECTORS_PER_LEVEL);
+});
+test('BUKAN-BUG: tick per level = stepInterval lama tepat di tiap ambang level', () => {
+  // Kandidat: mengganti interval kontinu dengan tick per level bisa dituduh
+  // mengubah kurva kecepatan. Buktinya: TICK_STEP_MS (20) = laju lama
+  // 4ms/konektor x 5 konektor/level, jadi di SETIAP ambang level nilai tick
+  // persis sama dengan stepInterval kontinu lama; di tengah level tick
+  // konstan (sedikit lebih lambat, tidak pernah lebih cepat dari desain lama).
+  assert.equal(stepInterval(0), 0.16);
+  assert.ok(Math.abs(stepInterval(10) - 0.12) < 1e-9);
+  for (const eaten of [0, 5, 10, 15, 20, 25, 30]) {
+    assert.ok(Math.abs(tickSecondsFor(eaten) - stepInterval(eaten)) < 1e-9, `eaten=${eaten}`);
+  }
+  assert.ok(tickSecondsFor(7) >= stepInterval(7)); // tengah level: tidak lebih cepat
 });
 
 console.log(`\n${passed} lulus, ${failed} gagal${failed ? ` — ${failures.join(', ')}` : ''}`);

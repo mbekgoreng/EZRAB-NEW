@@ -4,7 +4,7 @@
  */
 import { strict as assert } from 'node:assert';
 import {
-  DIFFS, emptyBoard, createBoard, openCell, toggleFlag, chord, checkWin, countFlags,
+  DIFFS, emptyBoard, createBoard, openCell, toggleFlag, chord, checkWin, countFlags, findHint,
 } from './logic';
 
 let passed = 0;
@@ -134,6 +134,122 @@ test('menang saat semua aman terbuka', () => {
 });
 test('belum menang bila ada yang tertutup', () => {
   const b = emptyBoard(3, 3);
+  assert.equal(checkWin(b), false);
+});
+
+console.log('\n[6] chord & hitCell (regresi: ledakan chord tak teridentifikasi)');
+test('openCell aman -> hitCell null; kena pipa -> hitCell = sel pipa itu', () => {
+  const b = createBoard(9, 9, 10, 0, 0, () => 0.999);
+  let px = -1;
+  let py = -1;
+  outer: for (let y = 0; y < 9; y += 1) {
+    for (let x = 0; x < 9; x += 1) {
+      if (b[y][x].pipe) { px = x; py = y; break outer; }
+    }
+  }
+  assert.deepEqual(openCell(b, px, py).result.hitCell, [px, py]);
+  const safe = openCell(b, 0, 0);
+  assert.equal(safe.result.hitPipe, false);
+  assert.equal(safe.result.hitCell, null);
+});
+test('chord dengan katup pas membuka sisa tetangga', () => {
+  let b = emptyBoard(3, 3);
+  b[0][0].pipe = true;
+  b[0][1].n = 1; b[1][0].n = 1; b[1][1].n = 1;
+  b[1][1].open = true;
+  b = toggleFlag(b, 0, 0);
+  const r = chord(b, 1, 1);
+  assert.equal(r.result.hitPipe, false);
+  assert.equal(r.result.hitCell, null);
+  assert.equal(r.result.opened, 7);
+  assert.equal(checkWin(r.board), true);
+});
+test('chord tanpa katup pas tidak melakukan apa-apa', () => {
+  const b = emptyBoard(3, 3);
+  b[0][0].pipe = true;
+  b[1][1].n = 1;
+  b[1][1].open = true;
+  const r = chord(b, 1, 1);
+  assert.equal(r.result.opened, 0);
+  assert.equal(r.result.hitPipe, false);
+  assert.equal(r.result.hitCell, null);
+});
+test('chord kena pipa -> hitCell menunjuk pipa yang meledak', () => {
+  let b = emptyBoard(3, 3);
+  b[0][2].pipe = true; // pipa di (2,0)
+  b[0][1].n = 1; b[1][1].n = 1; b[1][2].n = 1;
+  b[1][1].open = true;
+  b = toggleFlag(b, 0, 0); // katup SALAH: jumlah pas, posisi meleset
+  const r = chord(b, 1, 1);
+  assert.equal(r.result.hitPipe, true);
+  assert.deepEqual(r.result.hitCell, [2, 0]);
+  assert.equal(r.board[0][2].open, true);
+});
+
+console.log('\n[7] findHint — petunjuk deduksi logis');
+test('sisa 0 di sekitar angka -> petak tersembunyi pasti aman', () => {
+  let b = emptyBoard(3, 3);
+  b[0][0].pipe = true;
+  b[1][1].n = 1;
+  b[1][1].open = true;
+  b = toggleFlag(b, 0, 0);
+  assert.deepEqual(findHint(b), { kind: 'safe', x: 1, y: 0, basedOn: [1, 1] });
+});
+test('sisa == petak tersembunyi -> petak itu pasti pipa', () => {
+  const b = emptyBoard(3, 3);
+  b[0][0].pipe = true;
+  b[1][1].n = 1;
+  b[1][1].open = true;
+  for (let y = 0; y < 3; y += 1) {
+    for (let x = 0; x < 3; x += 1) {
+      if (!(x === 0 && y === 0) && !(x === 1 && y === 1)) b[y][x].open = true;
+    }
+  }
+  assert.deepEqual(findHint(b), { kind: 'pipe', x: 0, y: 0, basedOn: [1, 1] });
+});
+test('posisi ambigu / papan baru -> null (tidak mengarang tebakan)', () => {
+  const b = emptyBoard(3, 3);
+  b[0][0].pipe = true;
+  b[1][1].n = 1;
+  b[1][1].open = true;
+  assert.equal(findHint(b), null);
+  assert.equal(findHint(emptyBoard(3, 3)), null);
+});
+test('petunjuk aman didahulukan dari petunjuk pipa; deterministik & murni', () => {
+  let b = emptyBoard(5, 5);
+  b[0][0].pipe = true;
+  b[4][4].pipe = true;
+  for (let y = 0; y < 5; y += 1) for (let x = 0; x < 5; x += 1) b[y][x].open = true;
+  b[0][0].open = false; // satu-satunya tersembunyi di sekitar (1,1) -> deduksi pipa
+  b[4][4].open = false;
+  b[2][2].open = false; // tersembunyi aman di sekitar (3,3)
+  b[1][1].n = 1;
+  b[3][3].n = 1;
+  b = toggleFlag(b, 4, 4); // katup tepat di sekitar (3,3) -> deduksi aman
+  const snapshot = JSON.stringify(b);
+  const h1 = findHint(b);
+  const h2 = findHint(b);
+  assert.deepEqual(h1, { kind: 'safe', x: 2, y: 2, basedOn: [3, 3] });
+  assert.deepEqual(h1, h2);
+  assert.equal(JSON.stringify(b), snapshot, 'findHint mengubah papan');
+});
+
+console.log('\n[8] regresi: sisa pipa BUKAN penentu menang/kalah');
+test('menang sah dengan sisa pipa > 0 (tanpa memasang semua katup)', () => {
+  const b = emptyBoard(3, 3);
+  b[0][0].pipe = true;
+  b[0][1].pipe = true;
+  for (let y = 0; y < 3; y += 1) {
+    for (let x = 0; x < 3; x += 1) if (!b[y][x].pipe) b[y][x].open = true;
+  }
+  assert.equal(checkWin(b), true);
+  assert.equal(2 - countFlags(b), 2);
+});
+test('sisa pipa 0 tapi permainan belum menang', () => {
+  let b = emptyBoard(3, 3);
+  b[0][0].pipe = true;
+  b = toggleFlag(b, 0, 0);
+  assert.equal(1 - countFlags(b), 0);
   assert.equal(checkWin(b), false);
 });
 

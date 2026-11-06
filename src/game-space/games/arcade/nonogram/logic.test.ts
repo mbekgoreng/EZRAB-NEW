@@ -6,6 +6,8 @@ import { strict as assert } from 'node:assert';
 import {
   lineClue, computeClues, solutionAt, checkWin, emptyMarks,
   scoreFor, findHintCell, rowComplete, colComplete, PUZZLES,
+  filledRuns, clueSatisfied, rowClueSatisfied, colClueSatisfied, pauseToggleFor,
+  type CellMark,
 } from './logic';
 
 let passed = 0;
@@ -111,6 +113,70 @@ test('findHintCell menunjuk sel solusi yang belum terisi', () => {
   const cell = findHintCell(grid, emptyMarks());
   assert.ok(cell !== null);
   if (cell) assert.equal(solutionAt(grid, cell.r, cell.c), true);
+});
+
+console.log('\n[5] clueSatisfied — petunjuk terpenuhi secara live (pola, tanpa solusi)');
+const line = (s: string): CellMark[] => s.split('').map((ch) => Number(ch) as CellMark);
+test('filledRuns membaca run isian, silang & kosong memisahkan', () => {
+  assert.deepEqual(filledRuns(line('1102110010')), [2, 2, 1]);
+  assert.deepEqual(filledRuns(line('0002220000')), []);
+});
+test('run persis petunjuk -> satisfied', () => assert.equal(clueSatisfied([4], line('0001111000')), true));
+test('isian kurang dari petunjuk -> belum', () => assert.equal(clueSatisfied([4], line('0001110000')), false));
+test('isian berlebih dari petunjuk -> belum (bukan sekadar >=)', () => assert.equal(clueSatisfied([4], line('0001111100')), false));
+test('beberapa run harus cocok semua & urutannya', () => {
+  assert.equal(clueSatisfied([2, 3], line('1100111000')), true);
+  assert.equal(clueSatisfied([2, 3], line('1111100000')), false); // run menyatu [5]
+  assert.equal(clueSatisfied([3, 2], line('1100111000')), false); // urutan terbalik
+});
+test('petunjuk kosong [] terpenuhi hanya bila tak ada isian', () => {
+  assert.equal(clueSatisfied([], line('0002220000')), true);
+  assert.equal(clueSatisfied([], line('0001000000')), false);
+});
+test('silang menutup run: [2] satisfied walau sisa sel belum ditandai', () => {
+  assert.equal(clueSatisfied([2], line('0011200000')), true);
+});
+test('DISKRIMINATIF vs rowComplete: pola bergeser satisfied di clueSatisfied, ditolak rowComplete', () => {
+  // baris-1 palu: solusi di kolom 3-6 (petunjuk [4]); pemain "mengisi" kolom 0-3.
+  const marks = emptyMarks();
+  marks[1] = line('1111000000');
+  assert.equal(clueSatisfied([4], marks[1]), true); // murni pola run — tidak membaca solusi
+  assert.equal(rowComplete(PUZZLES[0].grid, marks, 1), false); // pembaca solusi menolak
+});
+test('rowClueSatisfied pada puzzle nyata', () => {
+  const grid = PUZZLES[0].grid;
+  const marks = emptyMarks();
+  assert.equal(rowClueSatisfied(grid, marks, 0), true); // baris kosong: petunjuk [] sudah terpenuhi
+  assert.equal(rowClueSatisfied(grid, marks, 1), false);
+  marks[1] = line('0001111000');
+  assert.equal(rowClueSatisfied(grid, marks, 1), true);
+});
+test('colClueSatisfied pada puzzle nyata', () => {
+  const grid = PUZZLES[0].grid;
+  const marks = emptyMarks();
+  assert.equal(colClueSatisfied(grid, marks, 0), true); // kolom kosong
+  assert.equal(colClueSatisfied(grid, marks, 3), false);
+  for (let r = 0; r < 10; r += 1) marks[r][3] = grid[r][3] === '1' ? 1 : 0;
+  assert.equal(colClueSatisfied(grid, marks, 3), true);
+});
+test('papan selesai: semua baris & kolom clueSatisfied (konsisten dgn checkWin)', () => {
+  const grid = PUZZLES[2].grid;
+  const marks = grid.map((row) => row.split('').map((ch) => (ch === '1' ? 1 : 0) as CellMark));
+  assert.equal(checkWin(grid, marks), true);
+  for (let i = 0; i < 10; i += 1) {
+    assert.equal(rowClueSatisfied(grid, marks, i), true, `baris ${i}`);
+    assert.equal(colClueSatisfied(grid, marks, i), true, `kolom ${i}`);
+  }
+});
+
+console.log('\n[6] pauseToggleFor — regresi Escape saat terjeda');
+test("layar 'play' -> 'pause'", () => assert.equal(pauseToggleFor('play'), 'pause'));
+test("layar 'pause' -> 'resume' (dulu tak tercapai: keputusan hidup di update yang dilewati Loop saat jeda)", () => {
+  assert.equal(pauseToggleFor('pause'), 'resume');
+});
+test('layar lain tidak berubah', () => {
+  assert.equal(pauseToggleFor('tutorial'), null);
+  assert.equal(pauseToggleFor('over'), null);
 });
 
 console.log(`\n${passed} lulus, ${failed} gagal${failed > 0 ? `: ${failures.join(', ')}` : ''}`);

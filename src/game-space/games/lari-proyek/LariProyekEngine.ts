@@ -17,12 +17,14 @@ import {
   SPAWN_Z, WARN_AHEAD, BATA_FALL_T, BATA_HOVER_Y, GRACE_T,
   mulberry32, createPlayer, stepPlayer, playerHeight,
   speedFor, gapFor, spawnRow, spawnHelmRow, checkHits, stepWorld,
-  checkBataLanding, scoreFor,
+  checkBataLanding, scoreFor, progressionFor, crashFeedbackFor,
   type Player, type Obstacle, type ObKind, type PlayerEvent,
 } from './logic';
 
 export interface HudState {
   score: number; best: number; helm: number; meters: number; kmh: number;
+  /** progresi eksplisit (Gelombang 3): level & sisa meter ke milestone berikut */
+  level: number; levelLabel: string; nextAt: number | null; progress: number;
 }
 
 export interface GameOverInfo {
@@ -218,6 +220,20 @@ function barikadeTexture(): THREE.CanvasTexture {
   });
 }
 
+/** papan peringatan gantung untuk balok: segitiga kuning + tanda seru prosedural */
+function warnSignTexture(): THREE.CanvasTexture {
+  return makeTex(64, 64, (g) => {
+    g.clearRect(0, 0, 64, 64);
+    g.beginPath();
+    g.moveTo(32, 6); g.lineTo(60, 56); g.lineTo(4, 56); g.closePath();
+    g.fillStyle = '#f5c518'; g.fill();
+    g.lineWidth = 5; g.strokeStyle = '#1f2937'; g.stroke();
+    g.fillStyle = '#1f2937';
+    g.fillRect(29, 26, 6, 16);
+    g.beginPath(); g.arc(32, 49, 3.4, 0, Math.PI * 2); g.fill();
+  });
+}
+
 function cloudTexture(): THREE.CanvasTexture {
   return makeTex(128, 64, (g) => {
     g.clearRect(0, 0, 128, 64);
@@ -391,6 +407,7 @@ export class LariProyekEngine {
   private foreL!: THREE.Group; private foreR!: THREE.Group;
   private torso!: THREE.Mesh;
   private helmet!: THREE.Group;
+  private laneRing!: THREE.Mesh;
   private runPhase = 0;
 
   // pooled dust particles (1 draw call)
@@ -908,6 +925,18 @@ export class LariProyekEngine {
 
     this.rig.position.set(0, 0, 0);
     this.scene.add(this.rig);
+
+    // cincin penanda lajur di tanah (kuning helm) — posisi lajur pelari
+    // terbaca sekilas saat ngebut; menyusut & memudar saat melompat.
+    this.laneRing = new THREE.Mesh(
+      this.track(new THREE.RingGeometry(0.42, 0.6, 28)),
+      this.track(new THREE.MeshBasicMaterial({
+        color: 0xf5b301, transparent: true, opacity: 0.55, side: THREE.DoubleSide, depthWrite: false,
+      })),
+    );
+    this.laneRing.rotation.x = -Math.PI / 2;
+    this.laneRing.position.set(0, 0.03, 0);
+    this.scene.add(this.laneRing);
   }
 
   /** animasi prosedural mandor tiap frame */
@@ -915,6 +944,14 @@ export class LariProyekEngine {
     const p = this.player;
     this.rig.position.x = p.laneX;
     this.rig.position.y = p.y;
+    // cincin lajur mengikuti x pelari; di udara menyusut seperti bayangan
+    if (this.laneRing) {
+      this.laneRing.position.x = p.laneX;
+      const airK = Math.min(1, p.y / 1.3);
+      const sc = 1 - airK * 0.35;
+      this.laneRing.scale.setScalar(sc);
+      (this.laneRing.material as THREE.MeshBasicMaterial).opacity = 0.55 - airK * 0.3;
+    }
 
     if (this.phase === 'dying') {
       // tersandung: jatuh ke depan + helm mental
@@ -998,7 +1035,7 @@ export class LariProyekEngine {
   /** ref per-instance hasil clone: { ring?, ringMat?, brick?, spin?, glow?, beam? } */
   private resolveObRefs(m: THREE.Group): Record<string, THREE.Object3D | THREE.Material | undefined> {
     const refs: Record<string, THREE.Object3D | THREE.Material | undefined> = {};
-    for (const n of ['obRing', 'obBrick', 'obSpin', 'obGlow', 'obBeam']) {
+    for (const n of ['obRing', 'obBrick', 'obSpin', 'obGlow', 'obBeam', 'obBeacon', 'obSign', 'obShaft', 'obRubble']) {
       const found = m.getObjectByName(n);
       if (found) refs[n] = found;
     }
@@ -1020,6 +1057,18 @@ export class LariProyekEngine {
       const board2 = board.clone();
       board2.position.y = 0.36;
       grp.add(board2);
+      // lampu beacon amber di tengah papan atas — penanda "rintangan aktif"
+      // yang terbaca dari jauh; berdenyut via skala di animateObstacle.
+      const beaconMat = this.mat('barierBeacon', () => new THREE.MeshStandardMaterial({
+        color: 0xffb020, emissive: 0xff9500, emissiveIntensity: 1.6, roughness: 0.35,
+      }));
+      const beaconPole = new THREE.Mesh(this.track(new THREE.CylinderGeometry(0.03, 0.03, 0.16, 6)), this.std(0x374151, 0.6, 0.5));
+      beaconPole.position.set(0, 1.0, 0);
+      grp.add(beaconPole);
+      const beacon = new THREE.Mesh(this.track(new THREE.SphereGeometry(0.075, 10, 8)), beaconMat);
+      beacon.position.set(0, 1.12, 0);
+      beacon.name = 'obBeacon';
+      grp.add(beacon);
       // kaki A
       const legMat = this.std(0x7c4a21, 0.8);
       for (const lx of [-0.7, 0.7]) {
@@ -1061,6 +1110,18 @@ export class LariProyekEngine {
       beam.castShadow = true;
       grp.add(beam);
       beam.name = 'obBeam';
+      // papan segitiga peringatan tergantung di bawah balok (rantai pendek) —
+      // membedakan balok gantung ("guling!") dari barier ("lompat!") dari jauh.
+      const signChain = new THREE.Mesh(this.track(new THREE.CylinderGeometry(0.02, 0.02, 0.22, 6)), chainMat);
+      signChain.position.set(0, 0.94, 0);
+      grp.add(signChain);
+      const sign = new THREE.Mesh(
+        this.track(new THREE.PlaneGeometry(0.42, 0.42)),
+        this.track(new THREE.MeshBasicMaterial({ map: this.track(warnSignTexture()), transparent: true, side: THREE.DoubleSide })),
+      );
+      sign.position.set(0, 0.68, 0);
+      sign.name = 'obSign';
+      grp.add(sign);
     } else if (kind === 'barikade') {
       const tex = this.track(barikadeTexture());
       const panel = new THREE.Mesh(
@@ -1104,6 +1165,37 @@ export class LariProyekEngine {
       brick.visible = false;
       brick.name = 'obBrick';
       grp.add(brick);
+      // poros jatuh tembus pandang: kolom merah dari bata ke ring tanah selama
+      // warn/fall — lintasan jatuh terbaca jelas, bukan hanya ring di tanah.
+      // Material di-clone per instance di addObstacle (opacity per rintangan).
+      const shaft = new THREE.Mesh(
+        this.track(new THREE.CylinderGeometry(0.5, 0.88, BATA_HOVER_Y, 20, 1, true)),
+        this.track(new THREE.MeshBasicMaterial({
+          color: 0xef4444, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false,
+        })),
+      );
+      shaft.position.y = BATA_HOVER_Y / 2;
+      shaft.visible = false;
+      shaft.name = 'obShaft';
+      grp.add(shaft);
+      // tumpukan puing setelah mendarat: 3 pecahan bata berserak menggantikan
+      // balok bata utuh melayang, agar fase rubble terbaca sebagai rintangan tanah.
+      const rubble = new THREE.Group();
+      const rubbleMat = this.track(new THREE.MeshStandardMaterial({ map: this.track(brickTexture()), roughness: 0.9 }));
+      const pieces: Array<[number, number, number, number, number]> = [
+        // [x, z, rotY, w, h]
+        [-0.28, 0.1, 0.4, 0.55, 0.24], [0.3, -0.12, -0.7, 0.48, 0.2], [0.02, 0.28, 1.1, 0.4, 0.3],
+      ];
+      for (const [px2, pz, ry, pw, ph] of pieces) {
+        const piece = new THREE.Mesh(this.track(new THREE.BoxGeometry(pw, ph, pw * 0.8)), rubbleMat);
+        piece.position.set(px2, ph / 2, pz);
+        piece.rotation.set(0.06, ry, 0.1);
+        piece.castShadow = true;
+        rubble.add(piece);
+      }
+      rubble.visible = false;
+      rubble.name = 'obRubble';
+      grp.add(rubble);
     } else if (kind === 'helm') {
       // helm METALIK berputar + glow
       const helmMat = this.mat('helmPickup', () => new THREE.MeshStandardMaterial({
@@ -1341,12 +1433,18 @@ export class LariProyekEngine {
     mesh.position.set(LANES[o.lane], o.kind === 'helm' ? o.yOff : 0, o.z);
     const refs = this.resolveObRefs(mesh);
     if (o.kind === 'bata') {
-      // ring telegraph: material per-instance (opacity dianimasikan per rintangan)
+      // ring telegraph + poros jatuh: material per-instance (opacity per rintangan)
       const ring = refs.obRing as THREE.Mesh | undefined;
       if (ring) {
         const ringMat = (ring.material as THREE.MeshBasicMaterial).clone();
         ring.material = ringMat;
         refs.obRingMat = ringMat;
+      }
+      const shaft = refs.obShaft as THREE.Mesh | undefined;
+      if (shaft) {
+        const shaftMat = (shaft.material as THREE.MeshBasicMaterial).clone();
+        shaft.material = shaftMat;
+        refs.obShaftMat = shaftMat;
       }
     }
     mesh.userData.refs = refs;
@@ -1361,6 +1459,8 @@ export class LariProyekEngine {
       const refs = m.userData.refs as Record<string, THREE.Object3D | THREE.Material | undefined> | undefined;
       const ringMat = refs?.obRingMat as THREE.Material | undefined;
       if (ringMat) { ringMat.dispose(); this.disposables.delete(ringMat); }
+      const shaftMat = refs?.obShaftMat as THREE.Material | undefined;
+      if (shaftMat) { shaftMat.dispose(); this.disposables.delete(shaftMat); }
       this.scene.remove(m);
       this.obMeshes.delete(o);
     }
@@ -1376,13 +1476,17 @@ export class LariProyekEngine {
     if (this.phase !== 'run') return;
     this.phase = 'dying';
     this.deathT = 0;
-    this.hitStop = 0.06; // hit-stop 60ms
+    // umpan balik tabrakan dari deskriptor murni logic.ts: guncangan,
+    // hit-stop, warna partikel & label tegas per jenis rintangan.
+    const fb = crashFeedbackFor(reason);
+    this.hitStop = fb.hitStopMs / 1000;
     this.deathReason = reason;
     this.player.dead = true;
     this.sfx.crash();
-    this.shake = 0.8;
+    this.shake = fb.shake;
+    this.cb.onPopup(fb.label, '#f87171', 50, 36, 'big');
     const px = this.player.laneX;
-    this.spawnP(px, 0.8, 0, 26, 0xd9a066, 5, 4, 0.9);
+    this.spawnP(px, 0.8, 0, 26, fb.particle, 5, 4, 0.9);
     this.spawnP(px, 0.5, 0, 12, 0xef4444, 4, 3, 0.7);
   }
 
@@ -1403,14 +1507,19 @@ export class LariProyekEngine {
 
   private pushHud(force = false): void {
     const meters = Math.floor(this.distance);
+    const prog = progressionFor(this.distance);
     const h: HudState = {
       score: scoreFor(meters, this.helmCount),
       best: this.best,
       helm: this.helmCount,
       meters,
       kmh: Math.round(this.speed * 3.6),
+      level: prog.level,
+      levelLabel: prog.label,
+      nextAt: prog.nextAt,
+      progress: prog.progress,
     };
-    const key = `${h.score}|${h.helm}|${h.meters}|${h.kmh}`;
+    const key = `${h.score}|${h.helm}|${h.meters}|${h.kmh}|${h.level}|${Math.round(h.progress * 20)}`;
     if (force || key !== this.lastHud) {
       this.lastHud = key;
       this.cb.onHud(h);
@@ -1429,10 +1538,26 @@ export class LariProyekEngine {
       const ring = refs.obRing as THREE.Mesh | undefined;
       const brick = refs.obBrick as THREE.Mesh | undefined;
       const mat = refs.obRingMat as THREE.MeshBasicMaterial | undefined;
+      const shaft = refs.obShaft as THREE.Mesh | undefined;
+      const shaftMat = refs.obShaftMat as THREE.MeshBasicMaterial | undefined;
+      const rubble = refs.obRubble as THREE.Group | undefined;
       if (o.phase === 'warn' && mat) {
         mat.opacity = 0.45 + 0.35 * Math.sin(this.time * 16);
       } else if (mat) {
         mat.opacity = o.phase === 'fall' ? 0.6 : 0;
+      }
+      // poros jatuh: menyala selama warn (berdenyut) & fall (lebih pekat)
+      if (shaft && shaftMat) {
+        if (o.phase === 'warn') {
+          shaft.visible = true;
+          shaftMat.opacity = 0.1 + 0.05 * Math.sin(this.time * 16);
+        } else if (o.phase === 'fall') {
+          shaft.visible = true;
+          shaftMat.opacity = 0.2;
+        } else {
+          shaft.visible = false;
+          shaftMat.opacity = 0;
+        }
       }
       if (brick) {
         if (o.phase === 'warn') {
@@ -1444,16 +1569,24 @@ export class LariProyekEngine {
           brick.position.y = Math.max(0.2, (o.brickY ?? 0) + 0.2);
           brick.rotation.y += dt * 6;
         } else if (o.phase === 'rubble') {
-          brick.visible = true;
-          brick.position.y = 0.2;
-          brick.rotation.set(0.15, 0.5, 0.28);
+          // bata utuh hilang; yang tersisa tumpukan puing di tanah
+          brick.visible = false;
         } else {
           brick.visible = false;
         }
       }
+      if (rubble) rubble.visible = o.phase === 'rubble';
     } else if (o.kind === 'balok') {
       const beam = refs.obBeam as THREE.Mesh | undefined;
       if (beam) beam.rotation.z = Math.sin(this.time * 2.2 + o.z) * 0.035;
+      const sign = refs.obSign as THREE.Mesh | undefined;
+      if (sign) sign.rotation.y = Math.sin(this.time * 2.2 + o.z) * 0.3;
+    } else if (o.kind === 'barier') {
+      const beacon = refs.obBeacon as THREE.Mesh | undefined;
+      if (beacon) {
+        const s = 1 + 0.3 * Math.max(0, Math.sin(this.time * 6 + o.z));
+        beacon.scale.setScalar(s);
+      }
     }
   }
 

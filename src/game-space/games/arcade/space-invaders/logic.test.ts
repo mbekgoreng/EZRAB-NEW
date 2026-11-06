@@ -6,6 +6,7 @@ import { strict as assert } from 'node:assert';
 import {
   DEADLINES, waveSpec, scoreForRow, UFO_SCORE, speedFactor,
   rectsOverlap, makeShield, erodeShield, shieldAlive, MAX_LIVES,
+  waveBonus, dangerLevel, shieldPercent,
 } from './logic';
 
 let passed = 0;
@@ -90,6 +91,24 @@ test('shieldAlive', () => {
 console.log('\n[6] nyawa');
 test('MAX_LIVES = 3', () => {
   assert.equal(MAX_LIVES, 3);
+});
+
+console.log('\n[gelombang-3] bahaya, bonus & tameng');
+test('waveBonus linear per wave', () => {
+  assert.equal(waveBonus(1), 100);
+  assert.equal(waveBonus(4), 400);
+});
+test('dangerLevel berjenjang dari jarak formasi', () => {
+  assert.equal(dangerLevel(100, 500), 'aman');
+  assert.equal(dangerLevel(400, 500), 'dekat');
+  assert.equal(dangerLevel(460, 500), 'kritis');
+});
+test('shieldPercent menghitung sisa kertas', () => {
+  const full = makeShield(4, 2);
+  assert.equal(shieldPercent(full), 100);
+  erodeShield(full, 0, 0, 0);
+  assert.equal(shieldPercent(full), 88);
+  assert.equal(shieldPercent([]), 0);
 });
 
 console.log(`\n${passed} lulus, ${failed} gagal${failed ? ` — ${failures.join(', ')}` : ''}`);

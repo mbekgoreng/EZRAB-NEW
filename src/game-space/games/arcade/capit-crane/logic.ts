@@ -7,18 +7,17 @@
 export type ItemKind = 'helm' | 'bata' | 'pipa' | 'semen' | 'kunci-emas';
 
 export interface ItemDef {
-  emoji: string;
   name: string;
   points: number;
   weight: number; // bobot spawn
 }
 
 export const ITEM_DEFS: Record<ItemKind, ItemDef> = {
-  helm: { emoji: '⛑️', name: 'Helm Proyek', points: 50, weight: 30 },
-  bata: { emoji: '🧱', name: 'Bata Merah', points: 20, weight: 35 },
-  pipa: { emoji: '🔩', name: 'Pipa Besi', points: 40, weight: 20 },
-  semen: { emoji: '🧺', name: 'Sak Semen', points: 30, weight: 12 },
-  'kunci-emas': { emoji: '🔑', name: 'Kunci Gudang Mandor', points: 150, weight: 3 },
+  helm: { name: 'Helm Proyek', points: 50, weight: 30 },
+  bata: { name: 'Bata Merah', points: 20, weight: 35 },
+  pipa: { name: 'Pipa Besi', points: 40, weight: 20 },
+  semen: { name: 'Sak Semen', points: 30, weight: 12 },
+  'kunci-emas': { name: 'Kunci Gudang Mandor', points: 150, weight: 3 },
 };
 
 export type CranePhase = 'sweep' | 'descend' | 'grab-check' | 'ascend' | 'carry' | 'drop';
@@ -77,10 +76,11 @@ export function spawnItem(rng: () => number, id: number, minX: number, maxX: num
  */
 export function grabCheck(clawX: number, clawY: number, items: CraneItem[], itemY: number): CraneItem | null {
   let best: CraneItem | null = null;
-  let bestD = GRAB_RADIUS;
+  let bestD = Infinity;
   for (const it of items) {
     const d = Math.hypot(it.x - clawX, itemY - clawY);
-    if (d < bestD) { bestD = d; best = it; }
+    // Radius adalah toleransi inklusif: item tepat sejauh GRAB_RADIUS tetap kena capit.
+    if (d <= GRAB_RADIUS && d < bestD) { bestD = d; best = it; }
   }
   return best;
 }
@@ -94,4 +94,22 @@ export function scoreFor(kind: ItemKind): number {
 export function comboBonus(streak: number): number {
   if (streak < 3) return 0;
   return Math.min(100, (streak - 2) * 15);
+}
+
+/**
+ * Pesanan Mandor: pilih jenis material yang sedang dipesan.
+ * Bila `excludeKind` diberikan, jenis itu tidak dipilih (pesanan selalu berganti).
+ */
+export function orderFor(rng: () => number, excludeKind?: ItemKind): ItemKind {
+  const all = Object.keys(ITEM_DEFS) as ItemKind[];
+  const pool = all.filter((k) => k !== excludeKind);
+  const usable = pool.length > 0 ? pool : all;
+  const idx = Math.min(usable.length - 1, Math.max(0, Math.floor(rng() * usable.length)));
+  return usable[idx];
+}
+
+/** Bonus pesanan: mengantar jenis yang dipesan Mandor memberi +50% poin item (dibulatkan). */
+export function orderBonusFor(kind: ItemKind, order: ItemKind): number {
+  if (kind !== order) return 0;
+  return Math.round(scoreFor(kind) * 0.5);
 }

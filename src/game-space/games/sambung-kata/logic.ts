@@ -172,16 +172,91 @@ export function submitWord(level: Level, found: readonly string[], word: string)
   return { status: 'other', word: w };
 }
 
+/* ---------- kata bonus (word-wheel staple) ---------- */
+
+/** Poin per huruf untuk kata bonus yang sah. */
+export const BONUS_PER_LETTER = 10;
+
+/** Poin untuk satu kata bonus; 0 bila bukan kata kosakata yang sah. */
+export function bonusPointsFor(word: string): number {
+  const w = word.toUpperCase();
+  if (w.length < 3 || !WORD_SET.has(w)) return 0;
+  return w.length * BONUS_PER_LETTER;
+}
+
+/** Total poin dari daftar kata bonus yang sudah dikumpulkan. */
+export function bonusScore(bonusFound: readonly string[]): number {
+  return bonusFound.reduce((sum, w) => sum + bonusPointsFor(w), 0);
+}
+
+/**
+ * Semua kata kosakata yang bisa dibentuk dari roda TAPI bukan target level —
+ * yaitu kata bonus yang tersedia di level ini. Deterministik:
+ * terpanjang dulu, lalu alfabetis (sama seperti urutan slot target).
+ */
+export function findBonusWords(level: Level): string[] {
+  return KOSAKATA
+    .filter((w) => !level.words.includes(w) && canForm(w, level.letters))
+    .sort((a, b) => b.length - a.length || a.localeCompare(b));
+}
+
+export type BonusStatus = 'bonus' | 'already-bonus' | 'not-bonus';
+
+export interface BonusResult {
+  status: BonusStatus;
+  word: string;
+  /** Poin yang diberikan submit ini saja (0 bila bukan bonus baru). */
+  points: number;
+  /** Total poin bonus sesudah submit ini. */
+  totalPoints: number;
+}
+
+/**
+ * Kumpulkan satu kata sebagai kata bonus (murni). Sah hanya bila kata itu
+ * kata kosakata yang bisa dibentuk dari roda dan BUKAN target level
+ * (klasifikasi 'other' dari submitWord). Target / kata yang sudah ditemukan /
+ * kata tak dikenal tidak pernah jadi bonus, dan bonus yang sama tidak
+ * dibayar dua kali.
+ */
+export function collectBonusWord(
+  level: Level,
+  bonusFound: readonly string[],
+  word: string,
+): BonusResult {
+  const w = word.toUpperCase();
+  const total = bonusScore(bonusFound);
+  if (submitWord(level, [], w).status !== 'other') {
+    return { status: 'not-bonus', word: w, points: 0, totalPoints: total };
+  }
+  if (bonusFound.includes(w)) {
+    return { status: 'already-bonus', word: w, points: 0, totalPoints: total };
+  }
+  const points = bonusPointsFor(w);
+  return { status: 'bonus', word: w, points, totalPoints: total + points };
+}
+
 export interface Hint {
   word: string;
   ch: string;
   index: number;
 }
 
-/** Reveal the first letter of the first unsolved target word. */
-export function revealHint(level: Level, found: readonly string[]): Hint | null {
+/**
+ * Reveal the first letter of the first unsolved target word.
+ * `alreadyHinted` = kata yang huruf pertamanya SUDAH dibuka oleh hint
+ * sebelumnya: kata itu dilewati, supaya satu jatah hint tidak pernah
+ * terbuang untuk membuka huruf yang sama dua kali. Null bila semua kata
+ * belum-selesai sudah pernah di-hint (atau level sudah tuntas).
+ */
+export function revealHint(
+  level: Level,
+  found: readonly string[],
+  alreadyHinted: readonly string[] = [],
+): Hint | null {
   for (const w of level.words) {
-    if (!found.includes(w)) return { word: w, ch: w[0], index: 0 };
+    if (!found.includes(w) && !alreadyHinted.includes(w)) {
+      return { word: w, ch: w[0], index: 0 };
+    }
   }
   return null;
 }

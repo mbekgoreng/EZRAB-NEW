@@ -7,8 +7,11 @@ import { useGameCanvas, type GameApi, TAU, clamp, sfx } from '../../../engine2d'
 import { bestKey, getBest, setBest } from '../../../engine2d/best';
 import { popText } from '../../../engine2d/juice2d';
 import {
-  nextTool, fallSpeedAt, spawnDelayAt, tapPoints, gradeFor,
+  fallSpeedAt, spawnDelayAt, tapPoints, gradeFor,
   GAME_DURATION, COMBO_STEP, TOOL_META, type ToolKind,
+  createMission, applyTapToMission, advanceMission, roundBonus,
+  missTimePenalty, spawnKindForMission, isTargetKind, remainingFor,
+  MISSION_KINDS, type MissionState,
 } from './logic';
 
 const FONT = "'Plus Jakarta Sans','Inter',system-ui,sans-serif";
@@ -38,7 +41,11 @@ interface S {
   over: boolean;
   t: number;
   nextId: number;
+  mission: MissionState;
+  spawnPick: number;
 }
+
+interface HudTarget { kind: ToolKind; name: string; got: number; need: number; done: boolean }
 
 const TOOL_COLORS: Record<ToolKind, string[]> = {
   palu: ['#d6a05c', '#8a5a28', '#9ca3af'],
@@ -53,7 +60,9 @@ export default function ArcadeTangkapPerkakas({ onExit }: { onExit: () => void }
   const apiRef = useRef<GameApi | null>(null);
   const screenRef = useRef<Screen>('tutorial');
   const [screen, setScreenState] = useState<Screen>('tutorial');
-  const [hud, setHud] = useState({ score: 0, timeLeft: GAME_DURATION, combo: 0, best: getBest(BK, 0) });
+  const [hud, setHud] = useState<{ score: number; timeLeft: number; combo: number; best: number; round: number; targets: HudTarget[] }>(
+    { score: 0, timeLeft: GAME_DURATION, combo: 0, best: getBest(BK, 0), round: 1, targets: [] },
+  );
   const [muted, setMuted] = useState(false);
 
   const setScreen = (s: Screen): void => {
@@ -68,6 +77,7 @@ export default function ArcadeTangkapPerkakas({ onExit }: { onExit: () => void }
     const s: S = {
       tools: [], spawnT: 0.4, elapsed: 0, score: 0, combo: 0,
       bestCombo: 0, caught: 0, missed: 0, over: false, t: 0, nextId: 1,
+      mission: createMission(1), spawnPick: 0,
     };
     let rngState = (Date.now() ^ (Math.random() * 1e9)) | 0;
     const rng = (): number => {
@@ -75,16 +85,28 @@ export default function ArcadeTangkapPerkakas({ onExit }: { onExit: () => void }
       return ((rngState >>> 0) % 100000) / 100000;
     };
 
+    const missionTargets = (): HudTarget[] => MISSION_KINDS
+      .filter((k) => (s.mission.mission[k] ?? 0) > 0)
+      .map((k) => ({
+        kind: k,
+        name: TOOL_META[k].name,
+        got: s.mission.collected[k] ?? 0,
+        need: s.mission.mission[k] ?? 0,
+        done: remainingFor(s.mission, k) === 0,
+      }));
+
     const push = (): void => {
       api.pushHud({
         score: s.score, timeLeft: Math.max(0, GAME_DURATION - s.elapsed),
         combo: s.combo, best: getBest(BK, 0),
+        round: s.mission.round, targets: missionTargets(),
       });
     };
 
     const reset = (): void => {
       s.tools = []; s.spawnT = 0.4; s.elapsed = 0; s.score = 0; s.combo = 0;
       s.bestCombo = 0; s.caught = 0; s.missed = 0; s.over = false;
+      s.mission = createMission(1); s.spawnPick = 0;
       push();
     };
 
@@ -96,19 +118,24 @@ export default function ArcadeTangkapPerkakas({ onExit }: { onExit: () => void }
       const nb = setBest(BK, s.score);
       sfx.chime(3);
       const wrap = wrapRef.current;
-      if (wrap) popText(wrap, '⏱ SHIFT SELESAI!', { size: 30, color: '#fde047' });
+      if (wrap) popText(wrap, 'SHIFT SELESAI!', { size: 30, color: '#fde047' });
       api.particles.spawn(api.W / 2, api.H * 0.4, {
         count: 60, colors: ['#fde047', '#fbbf24', '#fdba74', '#fff7d6'],
         speed: [100, 380], life: [0.6, 1.1], size: [2, 6], gravity: 420, shape: 'rect', rotation: true,
       });
       window.setTimeout(() => {
-        api.pushHud({ score: s.score, timeLeft: 0, combo: s.combo, best: nb });
+        api.pushHud({
+          score: s.score, timeLeft: 0, combo: s.combo, best: nb,
+          round: s.mission.round, targets: missionTargets(),
+        });
         setScreen('over');
       }, 1300);
     };
 
     const spawnTool = (): void => {
-      const kind = nextTool(rng);
+      // bias misi: mayoritas spawn adalah target yang masih dibutuhkan
+      const kind = spawnKindForMission(s.mission, rng, s.spawnPick);
+      s.spawnPick += 1;
       s.tools.push({
         id: s.nextId++,
         kind,
@@ -139,6 +166,20 @@ export default function ArcadeTangkapPerkakas({ onExit }: { onExit: () => void }
         const pts = tapPoints(best.kind, s.combo);
         s.score += pts;
         s.caught += 1;
+        // MISI: hanya target yang mengisi daftar set perkakas ronde ini
+        const mres = applyTapToMission(s.mission, best.kind);
+        s.mission = mres.state;
+        const wrapM = wrapRef.current;
+        if (mres.roundCompleted) {
+          const bonus = roundBonus(s.mission.round);
+          s.score += bonus;
+          const doneRound = s.mission.round;
+          s.mission = advanceMission(s.mission);
+          if (wrapM) popText(wrapM, `RONDE ${doneRound} TUNTAS! +${bonus}`, { size: 24, color: '#4ade80' });
+          sfx.chime(3, 880);
+        } else if (mres.outcome === 'target') {
+          api.scores.add(best.x, best.y - 58, 'TARGET', { color: '#4ade80', size: 13 });
+        }
         sfx.pop(best.kind === 'bor-emas' ? 1.5 : 1);
         if (best.kind === 'bor-emas') sfx.chime(2, 880);
         api.particles.spawn(best.x, best.y, {
@@ -152,10 +193,10 @@ export default function ArcadeTangkapPerkakas({ onExit }: { onExit: () => void }
         });
         const wrap = wrapRef.current;
         if (s.combo > 0 && s.combo % COMBO_STEP === 0 && wrap) {
-          popText(wrap, `🔧 Kombo x${s.combo}!`, { size: 22, color: '#fdba74' });
+          popText(wrap, `Kombo x${s.combo}!`, { size: 22, color: '#fdba74' });
           sfx.chime(2, 760);
         }
-        if (best.kind === 'bor-emas' && wrap) popText(wrap, '✨ BOR EMAS!', { size: 22, color: '#fde047' });
+        if (best.kind === 'bor-emas' && wrap) popText(wrap, 'BOR EMAS!', { size: 22, color: '#fde047' });
       } else {
         // ketuk angin: kombo putus
         if (s.combo >= 3) {
@@ -194,9 +235,15 @@ export default function ArcadeTangkapPerkakas({ onExit }: { onExit: () => void }
       const landed = s.tools.filter((t) => t.y >= gy);
       for (const t of landed) {
         s.missed += 1;
-        if (s.combo >= 3) {
+        // MISI: target yang jatuh kena penalti waktu; non-target tidak
+        const penalty = missTimePenalty(s.mission, t.kind);
+        if (penalty > 0) {
+          s.elapsed = Math.min(GAME_DURATION, s.elapsed + penalty);
           const wrap = wrapRef.current;
-          if (wrap) popText(wrap, `💥 ${TOOL_META[t.kind].name} jatuh!`, { size: 15, color: '#fca5a5' });
+          if (wrap) popText(wrap, `Target ${TOOL_META[t.kind].name} jatuh! -${penalty}s`, { size: 16, color: '#f87171' });
+        } else if (s.combo >= 3) {
+          const wrap = wrapRef.current;
+          if (wrap) popText(wrap, `${TOOL_META[t.kind].name} jatuh!`, { size: 15, color: '#fca5a5' });
         }
         s.combo = 0;
         sfx.thud(0.7);
@@ -205,7 +252,12 @@ export default function ArcadeTangkapPerkakas({ onExit }: { onExit: () => void }
           speed: [60, 220], life: [0.3, 0.6], size: [2, 4], gravity: 600, shape: 'circle',
         });
       }
-      s.tools = s.tools.filter((t) => t.y < gy + 20);
+      // BUGFIX (Gelombang 5): perkakas yang sudah mendarat WAJIB dibuang di
+      // frame yang sama. Filter lama `y < gy + 20` membiarkannya hidup
+      // 2-3 frame lagi sehingga `landed` menghitungnya berulang: missed
+      // menggembung, thud/particles berulang, dan kini penalti waktu misi
+      // ikut terlipat. Buang tepat di garis tanah.
+      s.tools = s.tools.filter((t) => t.y < gy);
       push();
     });
 
@@ -252,7 +304,7 @@ export default function ArcadeTangkapPerkakas({ onExit }: { onExit: () => void }
       ctx.fillStyle = '#fef3c7';
       ctx.font = `900 12px ${FONT}`;
       ctx.textAlign = 'center';
-      ctx.fillText('🏗️ AWAS BARANG JATUH', lx, fy - 23);
+      ctx.fillText('AWAS BARANG JATUH', lx, fy - 23);
       // gedung setengah jadi di kejauhan
       ctx.fillStyle = 'rgba(120,113,108,0.5)';
       ctx.fillRect(W * 0.05, H * 0.45, W * 0.2, H * 0.43);
@@ -291,6 +343,23 @@ export default function ArcadeTangkapPerkakas({ onExit }: { onExit: () => void }
     const drawTool = (ctx: CanvasRenderingContext2D, t: Tool): void => {
       ctx.save();
       ctx.translate(t.x, t.y);
+      // penanda TARGET misi: cincin emas berdenyut + label kecil (prosedural)
+      if (isTargetKind(s.mission, t.kind)) {
+        const pulse = 1 + Math.sin(s.t * 5 + t.sway) * 0.07;
+        ctx.save();
+        ctx.strokeStyle = 'rgba(74,222,128,0.95)';
+        ctx.lineWidth = 3;
+        ctx.setLineDash([7, 5]);
+        ctx.beginPath(); ctx.arc(0, 0, (t.r + 9) * pulse, 0, TAU); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#16a34a';
+        ctx.beginPath(); ctx.roundRect(-22, -t.r - 24, 44, 13, 6); ctx.fill();
+        ctx.fillStyle = '#fff';
+        ctx.font = `900 8.5px ${FONT}`;
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('TARGET', 0, -t.r - 17);
+        ctx.restore();
+      }
       ctx.rotate(t.rot);
       const gold = t.kind === 'bor-emas';
       if (gold) {
@@ -461,26 +530,42 @@ export default function ArcadeTangkapPerkakas({ onExit }: { onExit: () => void }
             <div style={{ height: '100%', width: `${(hud.timeLeft / GAME_DURATION) * 100}%`, background: 'linear-gradient(90deg,#fdba74,#f97316)', borderRadius: 999 }} />
           </div>
           <div style={{ fontSize: 12, marginTop: 3, opacity: 0.9 }}>
-            ⏱ {Math.ceil(hud.timeLeft)}s {hud.combo >= 2 && <span style={{ color: '#fde047', fontWeight: 900 }}>• 🔧x{hud.combo}</span>}
+            Waktu {Math.ceil(hud.timeLeft)}s {hud.combo >= 2 && <span style={{ color: '#fde047', fontWeight: 900 }}>• Kombo x{hud.combo}</span>}
+          </div>
+          <div style={{ marginTop: 6, borderTop: '1px solid rgba(255,255,255,0.18)', paddingTop: 5 }}>
+            <div style={{ fontSize: 11, fontWeight: 900, color: '#4ade80', letterSpacing: 0.5 }}>MISI RONDE {hud.round}</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 3 }}>
+              {hud.targets.map((tg) => (
+                <span key={tg.kind} style={{
+                  fontSize: 11, fontWeight: 800, borderRadius: 999, padding: '2px 8px',
+                  background: tg.done ? 'rgba(22,163,74,0.85)' : 'rgba(255,255,255,0.14)',
+                  color: tg.done ? '#fff' : '#ffedd5',
+                  border: tg.done ? '1px solid #4ade80' : '1px solid rgba(255,255,255,0.2)',
+                }}>
+                  {tg.name} {tg.got}/{tg.need}{tg.done ? ' OK' : ''}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8, pointerEvents: 'auto' }}>
           {(screen === 'play' || screen === 'pause') && (
-            <button style={btn} onClick={togglePause} aria-label="Jeda">{screen === 'play' ? '⏸' : '▶'}</button>
+            <button style={btn} onClick={togglePause} aria-label="Jeda">{screen === 'play' ? 'II' : '>'}</button>
           )}
-          <button style={btn} onClick={toggleMute} aria-label="Suara">{muted ? '🔇' : '🔊'}</button>
-          <button style={btn} onClick={onExit} aria-label="Keluar">✕</button>
+          <button style={{ ...btn, fontSize: 11, fontWeight: 800 }} onClick={toggleMute} aria-label="Suara">{muted ? 'OFF' : 'ON'}</button>
+          <button style={btn} onClick={onExit} aria-label="Keluar">X</button>
         </div>
       </div>
 
       {screen === 'tutorial' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>🔨</div>
+          <div style={{ fontSize: 15, fontWeight: 900, color: '#431407', background: '#fdba74', borderRadius: 999, padding: '6px 14px', display: 'inline-block' }}>MISI SET PERKAKAS</div>
           <h2 style={h2}>TANGKAP PERKAKAS</h2>
           <p style={p}>
-            Perkakas jatuh dari <b>lantai 2</b> — <b>ketuk</b> sebelum menyentuh tanah!
-            Yang jatuh = kombo putus. ✨ <b>Bor emas</b> = bonus besar.
-            Shift-mu <b>60 detik</b>!
+            Tuntaskan <b>misi set perkakas</b> tiap ronde: ketuk perkakas <b>bercincin
+            TARGET</b> sesuai daftar misi. Non-target tetap dapat poin tapi <b>tidak
+            mengisi misi</b>; target yang jatuh ke lantai kena <b>penalti -4 detik</b>.
+            <b> Bor emas</b> = bonus besar. Shift-mu <b>60 detik</b>!
           </p>
           {hud.best > 0 && <p style={p}>Skor terbaik: <b style={{ color: '#fde047' }}>{hud.best.toLocaleString('id-ID')}</b></p>}
           <button style={primaryBtn} onClick={startGame}>Mulai Shift</button>
@@ -488,7 +573,7 @@ export default function ArcadeTangkapPerkakas({ onExit }: { onExit: () => void }
       )}
       {screen === 'pause' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>☕</div>
+          <div style={{ fontSize: 30, fontWeight: 900, color: '#fdba74', letterSpacing: 4 }}>II</div>
           <h2 style={h2}>JEDA</h2>
           <p style={p}>Tukangnya istirahat, perkakasnya melayang dulu.</p>
           <button style={primaryBtn} onClick={togglePause}>Lanjutkan</button>
@@ -496,11 +581,12 @@ export default function ArcadeTangkapPerkakas({ onExit }: { onExit: () => void }
       )}
       {screen === 'over' && (
         <Overlay>
-          <div style={{ fontSize: 42 }}>{grade === 'S' ? '🏆' : '🧰'}</div>
+          <div style={{ fontSize: 34, fontWeight: 900, color: '#fde047' }}>{grade}</div>
           <h2 style={h2}>SHIFT SELESAI</h2>
           <div style={{ fontSize: 40, fontWeight: 900, color: '#fdba74' }}>{hud.score.toLocaleString('id-ID')}</div>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'center', margin: '10px 0' }}>
             <Stat label="Grade" value={grade} />
+            <Stat label="Ronde" value={String(hud.round)} />
             <Stat label="Terbaik" value={hud.best.toLocaleString('id-ID')} />
           </div>
           <button style={primaryBtn} onClick={startGame}>Shift Lagi</button>

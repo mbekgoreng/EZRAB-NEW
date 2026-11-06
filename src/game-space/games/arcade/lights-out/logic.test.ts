@@ -3,7 +3,7 @@
  * Run: npx tsx src/game-space/games/arcade/lights-out/logic.test.ts
  */
 import { strict as assert } from 'node:assert';
-import { affected, toggle, isSolved, emptyBoard, scramble, scoreFor, GRID, CELL_COUNT, SHIFTS } from './logic';
+import { affected, toggle, isSolved, emptyBoard, scramble, scoreFor, starsFor, GRID, CELL_COUNT, SHIFTS } from './logic';
 
 let passed = 0;
 let failed = 0;
@@ -83,6 +83,61 @@ test('skor sempurna = 1000, dijepit min 100', () => {
 });
 test('langkah lebih sedikit = skor lebih tinggi', () => {
   assert.ok(scoreFor(5, 10) > scoreFor(15, 10));
+});
+// Penyesuaian tes emoji (dinyatakan eksplisit): tes lama tidak memeriksa
+// field emoji SHIFTS secara langsung, tetapi field itu kini DIBUANG dari
+// data logic (ikon shift digambar SVG prosedural di komponen). Tes di
+// bawah menegaskan ketiadaannya agar emoji tidak kembali lewat data.
+test('SHIFTS tidak lagi memuat field emoji / karakter emoji', () => {
+  for (const sh of SHIFTS) {
+    assert.ok(!('emoji' in sh), `shift ${sh.id} masih punya field emoji`);
+    const text = `${sh.id} ${sh.name} ${sh.hint}`;
+    for (const ch of text) {
+      const cp = ch.codePointAt(0) ?? 0;
+      const isEmoji = (cp >= 0x1f300 && cp <= 0x1faff) || (cp >= 0x2600 && cp <= 0x27bf) || cp === 0x2b50 || cp === 0x2b55;
+      assert.ok(!isEmoji, `karakter emoji U+${cp.toString(16)} di shift ${sh.id}`);
+    }
+  }
+});
+
+console.log('\n[5] starsFor (par = presses shift, pendekatan — bukan optimum terbukti)');
+test('belum selesai = 0 bintang berapa pun langkahnya', () => {
+  assert.equal(starsFor(0, 8, false), 0);
+  assert.equal(starsFor(3, 8, false), 0);
+  assert.equal(starsFor(99, 8, false), 0);
+});
+test('selesai <= par = 3 bintang', () => {
+  assert.equal(starsFor(1, 8, true), 3);
+  assert.equal(starsFor(8, 8, true), 3, 'tepat par = 3');
+  assert.equal(starsFor(4, 4, true), 3, 'par shift pagi = 4');
+});
+test('selesai <= ceil(par x 1,5) = 2 bintang', () => {
+  assert.equal(starsFor(9, 8, true), 2);
+  assert.equal(starsFor(12, 8, true), 2, 'tepat ceil(8 x 1,5) = 12 = 2');
+  assert.equal(starsFor(6, 4, true), 2, 'tepat ceil(4 x 1,5) = 6 = 2');
+  assert.equal(starsFor(18, 12, true), 2, 'tepat ceil(12 x 1,5) = 18 = 2');
+});
+test('selesai di atas 1,5x par = 1 bintang', () => {
+  assert.equal(starsFor(13, 8, true), 1);
+  assert.equal(starsFor(7, 4, true), 1);
+  assert.equal(starsFor(100, 12, true), 1);
+});
+test('par tidak valid saat selesai = 1 bintang', () => {
+  assert.equal(starsFor(5, 0, true), 1);
+  assert.equal(starsFor(5, -3, true), 1);
+});
+
+console.log('\n[6] model undo (toggle adalah invers dirinya sendiri)');
+test('undo: toggle ulang langkah terakhir mengembalikan papan sebelum langkah itu', () => {
+  const seq: Array<[number, number]> = [[0, 0], [2, 2], [4, 3], [1, 4]];
+  let board = scramble(() => 0.42, 8);
+  const before: boolean[][] = [];
+  for (const [r, c] of seq) { before.push(board); board = toggle(board, r, c); }
+  // undo = terapkan toggle yang sama pada langkah terakhir, urut mundur
+  for (let i = seq.length - 1; i >= 0; i -= 1) {
+    board = toggle(board, seq[i][0], seq[i][1]);
+    assert.deepEqual(board, before[i], `setelah undo langkah ke-${i + 1}`);
+  }
 });
 
 console.log(`\n${passed} lulus, ${failed} gagal${failed > 0 ? `: ${failures.join(', ')}` : ''}`);

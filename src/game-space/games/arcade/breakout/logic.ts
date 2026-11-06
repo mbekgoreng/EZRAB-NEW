@@ -98,3 +98,34 @@ export function powerForBrick(rng: Rng = Math.random): PowerKind | null {
 export function ballSpeed(level: number): number {
   return 380 + level * 36;
 }
+
+/**
+ * Eskalasi kecepatan eksplisit: bola makin cepat seiring bata yang sudah
+ * bobok di level berjalan (+1,2% per bata, plafon +30% dari kecepatan dasar
+ * level). Murni — komponen menerapkannya lewat rescaleBall agar arah gerak
+ * bola tidak berubah, hanya lajunya.
+ */
+export function ballSpeedAt(level: number, bricksBroken: number): number {
+  const ramp = 1 + Math.min(0.3, Math.max(0, bricksBroken) * 0.012);
+  return Math.round(ballSpeed(level) * ramp);
+}
+
+/** Skalakan vektor kecepatan bola ke laju target, arah dipertahankan. */
+export function rescaleBall(b: Ball, targetSpeed: number): Ball {
+  const cur = Math.hypot(b.vx, b.vy);
+  if (cur === 0 || targetSpeed <= 0) return { ...b };
+  const k = targetSpeed / cur;
+  return { ...b, vx: b.vx * k, vy: b.vy * k };
+}
+
+/**
+ * Selesaikan skor level ke skor total SEKALI: levelScore dikosongkan
+ * sehingga pemanggilan total berikutnya (mis. endGame) tidak menghitung
+ * skor level yang sama dua kali.
+ */
+export function settleLevelScore(
+  score: number,
+  levelScore: number,
+): { score: number; levelScore: number } {
+  return { score: score + levelScore, levelScore: 0 };
+}

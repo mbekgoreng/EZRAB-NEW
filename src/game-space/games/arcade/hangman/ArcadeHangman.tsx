@@ -8,7 +8,8 @@ import { useGameCanvas, type GameApi, sfx, TAU } from '../../../engine2d';
 import { bestKey, getBest, setBest } from '../../../engine2d/best';
 import {
   CATEGORIES, MAX_WRONG, newGame, guessLetter, maskedWord,
-  isWon, isLost, livesLeft, hintLetter, collapsedPart, type Category, type Game,
+  isWon, isLost, livesLeft, hintLetter, collapsedPart,
+  newGameInTier, nextTier, TIER_LABELS, type Category, type Game, type Tier,
 } from './logic';
 
 const FONT = "'Plus Jakarta Sans','Inter',system-ui,sans-serif";
@@ -230,11 +231,83 @@ function drawScaffold(ctx: CanvasRenderingContext2D, wrong: number, W: number, H
   }
 }
 
+/* ---------- ikon prosedural (SVG inline, bukan emoji) ---------- */
+const ScaffoldIcon = ({ size = 18 }: { size?: number }): React.ReactElement => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path d="M5 21V4M19 21V4M5 8h14M5 15h14M5 21h14M5 15l14-7M19 15L5 8" stroke="#fbbf24" strokeWidth="2" strokeLinecap="round" />
+    <circle cx="12" cy="5.2" r="1.8" fill="#fde047" />
+  </svg>
+);
+const StarIcon = ({ size = 13 }: { size?: number }): React.ReactElement => (
+  <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z" fill="#fbbf24" stroke="#92400e" strokeWidth="1" />
+  </svg>
+);
+const BulbIcon = ({ size = 18 }: { size?: number }): React.ReactElement => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path d="M9.5 18h5M10.5 21h3M12 3a6 6 0 0 1 3.6 10.8c-.7.5-1.1 1-1.1 2.2h-5c0-1.2-.4-1.7-1.1-2.2A6 6 0 0 1 12 3z" stroke="#fde047" strokeWidth="1.8" strokeLinejoin="round" />
+  </svg>
+);
+const WarnIcon = ({ size = 13 }: { size?: number }): React.ReactElement => (
+  <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M12 3L22 20H2z" fill="#f59e0b" stroke="#7c2d12" strokeWidth="1.4" strokeLinejoin="round" />
+    <path d="M12 9.5V14" stroke="#1c1917" strokeWidth="2" strokeLinecap="round" />
+    <circle cx="12" cy="17" r="1.2" fill="#1c1917" />
+  </svg>
+);
+const CoffeeIcon = ({ size = 42 }: { size?: number }): React.ReactElement => (
+  <svg width={size} height={size} viewBox="0 0 48 48" fill="none" aria-hidden="true">
+    <path d="M10 18h24v10a8 8 0 0 1-8 8h-8a8 8 0 0 1-8-8z" fill="#e7e5e4" stroke="#78716c" strokeWidth="2" />
+    <path d="M34 20h2.5a5 5 0 0 1 0 10H34" stroke="#78716c" strokeWidth="2" />
+    <path d="M17 12c0-2 2-2 2-4M25 12c0-2 2-2 2-4" stroke="#fbbf24" strokeWidth="2" strokeLinecap="round" />
+    <path d="M8 40h28" stroke="#78716c" strokeWidth="2" strokeLinecap="round" />
+  </svg>
+);
+const BurstIcon = ({ size = 42 }: { size?: number }): React.ReactElement => (
+  <svg width={size} height={size} viewBox="0 0 48 48" aria-hidden="true">
+    <path d="M24 3l3.5 9.5L37 6l-3 10 11-1.5L37 21l9 6.5-11 1L39 38l-10-4.5L26.5 44 22 35 12 40l2.5-10.5L4 27l9.5-5L7 13l10.5 2.5z" fill="#f87171" stroke="#7f1d1d" strokeWidth="1.6" strokeLinejoin="round" />
+    <circle cx="24" cy="24" r="5.5" fill="#fde047" />
+  </svg>
+);
+const PartyIcon = ({ size = 42 }: { size?: number }): React.ReactElement => (
+  <svg width={size} height={size} viewBox="0 0 48 48" aria-hidden="true">
+    <path d="M24 5l3.2 6.6 7.3 1-5.3 5.1 1.3 7.2L24 21.5l-6.5 3.4 1.3-7.2-5.3-5.1 7.3-1z" fill="#4ade80" stroke="#14532d" strokeWidth="1.4" strokeLinejoin="round" />
+    <rect x="6" y="30" width="5" height="9" rx="1.5" fill="#fbbf24" transform="rotate(-18 8 34)" />
+    <rect x="37" y="30" width="5" height="9" rx="1.5" fill="#60a5fa" transform="rotate(18 39 34)" />
+    <circle cx="24" cy="38" r="3" fill="#f472b6" />
+    <circle cx="12" cy="24" r="2.4" fill="#fde047" />
+    <circle cx="36" cy="24" r="2.4" fill="#fde047" />
+  </svg>
+);
+/** Lencana kode kategori (teks terdesain, bukan emoji). */
+const CatBadge = ({ code, size = 22 }: { code: string; size?: number }): React.ReactElement => (
+  <span style={{
+    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+    width: size, height: size, borderRadius: 6, background: 'linear-gradient(160deg,#b45309,#78350f)',
+    border: '1px solid rgba(251,191,36,0.55)', color: '#fde68a',
+    fontSize: size * 0.42, fontWeight: 900, letterSpacing: 0.5, verticalAlign: 'middle', flex: 'none',
+  }}>{code}</span>
+);
+/** Titik nyawa CSS: hijau = sisa nyawa, redup = sudah roboh. */
+const LifeDots = ({ left, wrong }: { left: number; wrong: number }): React.ReactElement => (
+  <span style={{ display: 'inline-flex', gap: 3, verticalAlign: 'middle' }}>
+    {Array.from({ length: left }, (_, i) => (
+      <span key={`l${i}`} style={{ width: 9, height: 9, borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 5px rgba(74,222,128,0.8)' }} />
+    ))}
+    {Array.from({ length: wrong }, (_, i) => (
+      <span key={`w${i}`} style={{ width: 9, height: 9, borderRadius: '50%', background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.3)' }} />
+    ))}
+  </span>
+);
+
 export default function ArcadeHangman({ onExit }: { onExit: () => void }): React.ReactElement {
   const [screen, setScreen] = useState<Screen>('tutorial');
   const screenRef = useRef(screen);
   screenRef.current = screen;
   const [cat, setCat] = useState<Category>(CATEGORIES[0]);
+  const [tier, setTierState] = useState<Tier>(1);
+  const tierRef = useRef<Tier>(1);
+  const setTier = useCallback((t: Tier) => { tierRef.current = t; setTierState(t); }, []);
   const [game, setGame] = useState<Game>(() => newGame(CATEGORIES[0]));
   const [tick, setTick] = useState(0);
   const [hintsLeft, setHintsLeft] = useState(HINTS);
@@ -299,8 +372,10 @@ export default function ArcadeHangman({ onExit }: { onExit: () => void }): React
 
   const refresh = useCallback(() => setTick((x) => x + 1), []);
 
-  const startRound = useCallback((c: Category) => {
-    gameRef.current = newGame(c);
+  const startRound = useCallback((c: Category, tr: Tier = tierRef.current) => {
+    tierRef.current = tr;
+    setTierState(tr);
+    gameRef.current = newGameInTier(c, tr);
     setGame(gameRef.current);
     setCat(c);
     setHintsLeft(HINTS);
@@ -325,6 +400,8 @@ export default function ArcadeHangman({ onExit }: { onExit: () => void }): React
     }
     refresh();
     if (isWon(g)) {
+      // progresi antar ronde: menang menaikkan tingkat ronde berikutnya
+      setTier(nextTier(tierRef.current, true));
       sfx.chime(4);
       const score = livesLeft(g) * 100 + g.word.length * 20;
       const nb = setBest(BK, score);
@@ -343,7 +420,7 @@ export default function ArcadeHangman({ onExit }: { onExit: () => void }): React
       sfx.fail();
       window.setTimeout(() => { if (screenRef.current === 'play') setScreen('over'); }, 1500);
     }
-  }, [refresh]);
+  }, [refresh, setTier]);
 
   const useHint = useCallback(() => {
     if (screenRef.current !== 'play' || hintsLeft <= 0) return;
@@ -369,7 +446,7 @@ export default function ArcadeHangman({ onExit }: { onExit: () => void }): React
 
   const startGame = (): void => {
     sfx.ensure(); sfx.whoosh();
-    startRound(CATEGORIES[0]);
+    startRound(CATEGORIES[0], 1); // sesi baru selalu mulai dari tingkat Mudah
     apiRef.current?.loop.setPaused(false);
     setScreen('play');
   };
@@ -420,16 +497,26 @@ export default function ArcadeHangman({ onExit }: { onExit: () => void }): React
       {/* HUD */}
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', zIndex: 10, pointerEvents: 'none' }}>
         <div style={{ pointerEvents: 'auto', background: 'rgba(14,16,34,0.6)', border: '1px solid rgba(255,255,255,0.16)', borderRadius: 14, padding: '8px 14px', color: '#fff', backdropFilter: 'blur(6px)', maxWidth: 230 }}>
-          <div style={{ fontWeight: 900, fontSize: 15, letterSpacing: 1, color: '#fbbf24' }}>🪜 SELAMATKAN TUKANG</div>
-          <div style={{ fontSize: 11.5, opacity: 0.85, marginTop: 2 }}>
-            {cat.icon} {cat.label} • {'🟢'.repeat(livesLeft(g))}{'⚪'.repeat(g.wrong)} • ⭐ {best}
+          <div style={{ fontWeight: 900, fontSize: 15, letterSpacing: 1, color: '#fbbf24', display: 'flex', alignItems: 'center', gap: 7 }}>
+            <ScaffoldIcon size={19} /> SELAMATKAN TUKANG
+          </div>
+          <div style={{ fontSize: 11.5, opacity: 0.9, marginTop: 3, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            <CatBadge code={cat.icon} size={19} /> {cat.label} • Lv{tier} {TIER_LABELS[tier]} • <LifeDots left={livesLeft(g)} wrong={g.wrong} /> • <StarIcon /> {best}
           </div>
           {g.wrong > 0 && !won && (
-            <div style={{ fontSize: 11, color: '#fca5a5', marginTop: 2 }}>💥 {collapsedPart(g.wrong)}</div>
+            <div style={{ fontSize: 11, color: '#fca5a5', marginTop: 3, display: 'flex', alignItems: 'center', gap: 5 }}>
+              <WarnIcon /> {collapsedPart(g.wrong)}
+            </div>
           )}
         </div>
         <div style={{ display: 'flex', gap: 8, pointerEvents: 'auto' }}>
-          {inGame && <button style={btn} onClick={togglePause} aria-label="Jeda">{screen === 'play' ? '⏸' : '▶'}</button>}
+          {inGame && (
+            <button style={btn} onClick={togglePause} aria-label="Jeda">
+              {screen === 'play'
+                ? <span style={{ display: 'inline-flex', gap: 4 }}><span style={{ width: 5, height: 18, background: '#fff', borderRadius: 2 }} /><span style={{ width: 5, height: 18, background: '#fff', borderRadius: 2 }} /></span>
+                : <span style={{ width: 0, height: 0, borderTop: '9px solid transparent', borderBottom: '9px solid transparent', borderLeft: '15px solid #fff', marginLeft: 3 }} />}
+            </button>
+          )}
           <button style={btn} onClick={toggleMute} aria-label="Suara">{muted ? '🔇' : '🔊'}</button>
           <button style={btn} onClick={onExit} aria-label="Keluar">✕</button>
         </div>
@@ -455,8 +542,8 @@ export default function ArcadeHangman({ onExit }: { onExit: () => void }): React
       {screen === 'play' && (
         <div style={{ position: 'absolute', top: '47%', right: 12, zIndex: 9, transform: 'translateY(-92px)' }}>
           <button onClick={useHint} disabled={hintsLeft <= 0} aria-label="Hint"
-            style={{ ...btn, opacity: hintsLeft <= 0 ? 0.4 : 1, fontSize: 16 }}>
-            💡{hintsLeft}
+            style={{ ...btn, opacity: hintsLeft <= 0 ? 0.4 : 1, fontSize: 14, fontWeight: 900, gap: 2 }}>
+            <BulbIcon size={19} />{hintsLeft}
           </button>
         </div>
       )}
@@ -485,17 +572,22 @@ export default function ArcadeHangman({ onExit }: { onExit: () => void }): React
 
       {screen === 'tutorial' && (
         <div style={card}><div style={panel}>
-          <div style={{ fontSize: 42 }}>🪜</div>
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <span style={{ display: 'inline-flex', padding: 12, borderRadius: 18, background: 'rgba(251,191,36,0.12)', border: '1px solid rgba(251,191,36,0.35)' }}>
+              <ScaffoldIcon size={42} />
+            </span>
+          </div>
           <h2 style={{ margin: '8px 0 4px', fontWeight: 900, fontSize: 22, color: '#fbbf24', letterSpacing: 1 }}>SELAMATKAN TUKANG</h2>
           <p style={{ fontSize: 13.5, lineHeight: 1.6, opacity: 0.92 }}>
             Tebak <b>kata konstruksi</b> huruf per huruf! Tiap salah tebak, <b>satu bagian perancah roboh</b> —
-            <b> 6x salah</b>, Pak Tukang ikut jatuh! 🧑‍🔧
+            <b> 6x salah</b>, Pak Tukang ikut jatuh!
           </p>
           <div style={{ textAlign: 'left', fontSize: 13, lineHeight: 2, background: 'rgba(0,0,0,0.25)', borderRadius: 12, padding: '10px 14px', margin: '8px 0' }}>
-            <div>🟢 <b>6 nyawa</b> — tiap salah, perancah makin oleng</div>
-            <div>🗂️ 4 kategori: material, alat, tukang & tim, proyek</div>
-            <div>💡 3 hint per ronde (membuka huruf)</div>
-            <div>⌨️ Bisa pakai keyboard fisik juga</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><LifeDots left={6} wrong={0} /> <span><b>6 nyawa</b> — tiap salah, perancah makin oleng</span></div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><CatBadge code="MT" size={19} /> <span>4 kategori: material, alat, tukang &amp; tim, proyek</span></div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><BulbIcon size={19} /> <span>3 hint per ronde (membuka huruf)</span></div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><StarIcon size={17} /> <span>Menang menaikkan tingkat: Mudah → Menengah → Sulit</span></div>
+            <div><kbd style={{ background: '#334155', borderRadius: 5, padding: '1px 7px', fontSize: 11.5, border: '1px solid rgba(255,255,255,0.3)' }}>A–Z</kbd> Bisa pakai keyboard fisik juga</div>
           </div>
           <button style={{ ...bigBtn, background: 'linear-gradient(180deg,#fde047,#f59e0b)', color: '#3a2a00' }} onClick={startGame}>Mulai Menyelamatkan</button>
         </div></div>
@@ -503,7 +595,7 @@ export default function ArcadeHangman({ onExit }: { onExit: () => void }): React
 
       {screen === 'pause' && (
         <div style={card}><div style={panel}>
-          <div style={{ fontSize: 40 }}>☕</div>
+          <div style={{ display: 'flex', justifyContent: 'center' }}><CoffeeIcon size={44} /></div>
           <h2 style={{ margin: '8px 0 4px', fontWeight: 900, fontSize: 22 }}>JEDA</h2>
           <p style={{ fontSize: 13, opacity: 0.85 }}>Perancahnya berhenti roboh. Pak Tukang ikut ngopi dulu.</p>
           <button style={{ ...bigBtn, background: 'linear-gradient(180deg,#fde047,#f59e0b)', color: '#3a2a00' }} onClick={togglePause}>Lanjutkan</button>
@@ -513,23 +605,35 @@ export default function ArcadeHangman({ onExit }: { onExit: () => void }): React
 
       {screen === 'over' && (
         <div style={card}><div style={panel}>
-          <div style={{ fontSize: 42 }}>{won ? '🎉' : '💥'}</div>
+          <div style={{ display: 'flex', justifyContent: 'center' }}>{won ? <PartyIcon size={44} /> : <BurstIcon size={44} />}</div>
           <h2 style={{ margin: '8px 0 4px', fontWeight: 900, fontSize: 22, color: won ? '#4ade80' : '#f87171' }}>
             {won ? 'TUKANG SELAMAT!' : 'PERANCAH ROBOH!'}
           </h2>
           <p style={{ fontSize: 14, opacity: 0.9 }}>
             Kata: <b style={{ letterSpacing: 3, fontSize: 18, color: '#fde047' }}>{g.word}</b><br />
-            {won ? `Skor ronde: ${livesLeft(g) * 100 + g.word.length * 20} — mandor kasih bonus!` : 'Pak Tukang selamat dari reruntuhan. Coba kata lain!'}
+            {won ? `Skor ronde: ${livesLeft(g) * 100 + g.word.length * 20} — mandor kasih bonus! Ronde berikutnya: Lv${tier} ${TIER_LABELS[tier]}.` : 'Pak Tukang selamat dari reruntuhan. Coba kata lain!'}
           </p>
+          {/* Pilihan kategori/tingkat HANYA memilih (perbaikan bug: dulu memanggil
+              startRound sehingga game yang baru selesai tertimpa game baru —
+              judul menang berubah jadi ROBOH dan kata ronde berikutnya bocor).
+              Ronde baru dibuat hanya oleh tombol Main Lagi. */}
           <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap', margin: '10px 0' }}>
             {CATEGORIES.map((c) => (
-              <button key={c.id} onClick={() => { startRound(c); }}
-                style={{ padding: '8px 10px', borderRadius: 10, border: cat.id === c.id ? '2px solid #fbbf24' : '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.3)', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>
-                {c.icon} {c.label}
+              <button key={c.id} onClick={() => setCat(c)}
+                style={{ padding: '8px 10px', borderRadius: 10, border: cat.id === c.id ? '2px solid #fbbf24' : '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.3)', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: FONT, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <CatBadge code={c.icon} size={18} /> {c.label}
               </button>
             ))}
           </div>
-          <button style={{ ...bigBtn, background: 'linear-gradient(180deg,#4ade80,#16a34a)', color: '#052e12' }} onClick={() => { sfx.ensure(); startRound(cat); setScreen('play'); }}>Main Lagi 🔁</button>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap', margin: '0 0 4px' }}>
+            {([1, 2, 3] as Tier[]).map((t) => (
+              <button key={t} onClick={() => setTier(t)}
+                style={{ padding: '6px 12px', borderRadius: 999, border: tier === t ? '2px solid #4ade80' : '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.3)', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>
+                Lv{t} {TIER_LABELS[t]}
+              </button>
+            ))}
+          </div>
+          <button style={{ ...bigBtn, background: 'linear-gradient(180deg,#4ade80,#16a34a)', color: '#052e12' }} onClick={() => { sfx.ensure(); startRound(cat); setScreen('play'); }}>Main Lagi</button>
           <button style={{ ...bigBtn, background: 'transparent', color: '#94a3b8' }} onClick={onExit}>Keluar</button>
         </div></div>
       )}

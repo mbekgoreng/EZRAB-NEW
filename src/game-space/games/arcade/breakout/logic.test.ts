@@ -5,7 +5,8 @@
 import { strict as assert } from 'node:assert';
 import {
   createLevel, stepBall, circleRectHit, reflect, bouncePaddle, powerForBrick,
-  ballSpeed, KIND_HP, KIND_SCORE,
+  ballSpeed, ballSpeedAt, rescaleBall, settleLevelScore, KIND_HP, KIND_SCORE,
+  type Ball,
 } from './logic';
 
 let passed = 0;
@@ -103,6 +104,42 @@ test('bola makin cepat tiap level', () => {
 });
 test('skor kind konsisten', () => {
   assert.ok(KIND_SCORE.beton > KIND_SCORE.hebel && KIND_SCORE.hebel > KIND_SCORE.bata);
+});
+
+console.log('\n[7] ballSpeedAt & rescaleBall (eskalasi kecepatan)');
+test('ballSpeedAt(0 broken) = ballSpeed dasar level', () => {
+  assert.equal(ballSpeedAt(0, 0), ballSpeed(0));
+  assert.equal(ballSpeedAt(3, 0), ballSpeed(3));
+});
+test('ballSpeedAt naik per bata bobok & terplafon +30%', () => {
+  assert.ok(ballSpeedAt(0, 10) > ballSpeedAt(0, 0));
+  assert.equal(ballSpeedAt(0, 25), Math.round(ballSpeed(0) * 1.3));
+  assert.equal(ballSpeedAt(0, 500), Math.round(ballSpeed(0) * 1.3));
+  assert.ok(ballSpeedAt(2, 10) > ballSpeedAt(0, 10), 'level tetap berpengaruh');
+});
+test('rescaleBall: laju jadi target, arah & posisi utuh', () => {
+  const b: Ball = { x: 7, y: 9, vx: 30, vy: -40, r: 8 }; // laju 50
+  const nb = rescaleBall(b, 100);
+  assert.ok(Math.abs(Math.hypot(nb.vx, nb.vy) - 100) < 1e-9);
+  assert.ok(Math.abs(nb.vx / nb.vy - b.vx / b.vy) < 1e-9, 'arah sama');
+  assert.equal(nb.x, 7); assert.equal(nb.y, 9); assert.equal(nb.r, 8);
+});
+test('rescaleBall: bola diam dibiarkan', () => {
+  const b: Ball = { x: 0, y: 0, vx: 0, vy: 0, r: 8 };
+  assert.deepEqual(rescaleBall(b, 300), b);
+});
+
+console.log('\n[8] settleLevelScore (regresi double-count skor akhir)');
+test('settle memindahkan levelScore sekali saja', () => {
+  const st = settleLevelScore(1000, 450);
+  assert.equal(st.score, 1450);
+  assert.equal(st.levelScore, 0);
+  // pola bug lama: endGame menghitung score+levelScore SETELAH settle ->
+  // dulu menghasilkan 1900 (levelScore terhitung dua kali), kini tetap 1450.
+  const totalAfter = st.score + st.levelScore;
+  assert.equal(totalAfter, 1450);
+  const st2 = settleLevelScore(st.score, st.levelScore);
+  assert.equal(st2.score, 1450, 'settle kedua tidak mengubah apa pun');
 });
 
 console.log(`\n${passed} lulus, ${failed} gagal${failed ? ` — ${failures.join(', ')}` : ''}`);

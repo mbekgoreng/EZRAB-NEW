@@ -94,16 +94,18 @@ export function createBoard(w: number, h: number, pipes: number, sx: number, sy:
 export interface OpenResult {
   hitPipe: boolean;
   opened: number; // petak baru yang terbuka
+  /** Koordinat pipa yang meledak (klik langsung maupun via chord); null bila aman. */
+  hitCell: [number, number] | null;
 }
 
 /** Buka petak; flood-fill bila n === 0. Kembalikan salinan papan baru. */
 export function openCell(prev: Board, x: number, y: number): { board: Board; result: OpenResult } {
   const board = prev.map((row) => row.map((c) => ({ ...c })));
   const cell = board[y]?.[x];
-  if (!cell || cell.open || cell.flag) return { board, result: { hitPipe: false, opened: 0 } };
+  if (!cell || cell.open || cell.flag) return { board, result: { hitPipe: false, opened: 0, hitCell: null } };
   if (cell.pipe) {
     cell.open = true;
-    return { board, result: { hitPipe: true, opened: 1 } };
+    return { board, result: { hitPipe: true, opened: 1, hitCell: [x, y] } };
   }
   let opened = 0;
   const stack: Array<[number, number]> = [[x, y]];
@@ -119,7 +121,7 @@ export function openCell(prev: Board, x: number, y: number): { board: Board; res
       }
     }
   }
-  return { board, result: { hitPipe: false, opened } };
+  return { board, result: { hitPipe: false, opened, hitCell: null } };
 }
 
 /** Pasang/lepas katup (flag). */
@@ -134,12 +136,13 @@ export function toggleFlag(prev: Board, x: number, y: number): Board {
 /** Chord: klik angka yang katup sekitarnya sudah pas -> buka sisanya. */
 export function chord(prev: Board, x: number, y: number): { board: Board; result: OpenResult } {
   const cell = prev[y]?.[x];
-  if (!cell || !cell.open || cell.n === 0) return { board: prev, result: { hitPipe: false, opened: 0 } };
+  if (!cell || !cell.open || cell.n === 0) return { board: prev, result: { hitPipe: false, opened: 0, hitCell: null } };
   const nbs = neighbors(prev, x, y);
   const flags = nbs.filter(([nx, ny]) => prev[ny][nx].flag).length;
-  if (flags !== cell.n) return { board: prev, result: { hitPipe: false, opened: 0 } };
+  if (flags !== cell.n) return { board: prev, result: { hitPipe: false, opened: 0, hitCell: null } };
   let board = prev;
   let hitPipe = false;
+  let hitCell: [number, number] | null = null;
   let opened = 0;
   for (const [nx, ny] of nbs) {
     const c = board[ny][nx];
@@ -147,10 +150,11 @@ export function chord(prev: Board, x: number, y: number): { board: Board; result
       const r = openCell(board, nx, ny);
       board = r.board;
       hitPipe = hitPipe || r.result.hitPipe;
+      if (r.result.hitCell && !hitCell) hitCell = r.result.hitCell;
       opened += r.result.opened;
     }
   }
-  return { board, result: { hitPipe, opened } };
+  return { board, result: { hitPipe, opened, hitCell } };
 }
 
 /** Menang bila semua petak aman sudah terbuka. */
@@ -167,4 +171,48 @@ export function countFlags(board: Board): number {
   let n = 0;
   for (const row of board) for (const c of row) if (c.flag) n += 1;
   return n;
+}
+
+export interface Hint {
+  /** 'safe' = petak pasti aman dibuka; 'pipe' = petak pasti berisi pipa bocor. */
+  kind: 'safe' | 'pipe';
+  x: number;
+  y: number;
+  /** Petak angka terbuka yang menjadi dasar deduksi. */
+  basedOn: [number, number];
+}
+
+/**
+ * Petunjuk deduksi logis (aturan petak tunggal, deterministik, tanpa menebak):
+ * untuk tiap petak angka terbuka, sisa pipa yang belum terkatup di sekitarnya
+ * dibandingkan dengan petak tersembunyi di sekitarnya —
+ *  - sisa 0            -> semua petak tersembunyi di sekitarnya pasti aman;
+ *  - sisa == tersembunyi -> semua petak tersembunyi itu pasti pipa.
+ * Lintasan 'safe' didahulukan (paling bisa ditindaklanjuti), lalu 'pipe';
+ * di dalam lintasan, papan dipindai baris-demi-baris sehingga hasil untuk
+ * papan yang sama selalu sama. Mengembalikan null bila tidak ada langkah
+ * yang bisa dibuktikan dari satu petak angka (pemain memang harus menebak).
+ * Fungsi murni: papan tidak diubah.
+ */
+export function findHint(board: Board): Hint | null {
+  for (const pass of ['safe', 'pipe'] as const) {
+    for (let y = 0; y < board.length; y += 1) {
+      for (let x = 0; x < board[y].length; x += 1) {
+        const cell = board[y][x];
+        if (!cell.open || cell.n === 0) continue;
+        const nbs = neighbors(board, x, y);
+        const hidden = nbs.filter(([nx, ny]) => !board[ny][nx].open && !board[ny][nx].flag);
+        if (hidden.length === 0) continue;
+        const flagged = nbs.filter(([nx, ny]) => board[ny][nx].flag).length;
+        const need = cell.n - flagged;
+        if (pass === 'safe' && need === 0) {
+          return { kind: 'safe', x: hidden[0][0], y: hidden[0][1], basedOn: [x, y] };
+        }
+        if (pass === 'pipe' && need > 0 && need === hidden.length) {
+          return { kind: 'pipe', x: hidden[0][0], y: hidden[0][1], basedOn: [x, y] };
+        }
+      }
+    }
+  }
+  return null;
 }

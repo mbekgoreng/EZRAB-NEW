@@ -3,6 +3,9 @@
  * Sambungkan 4 segmen pipa sewarna dalam garis (7 kolom × 6 baris).
  * Pemain 1 = pipa PVC biru, Pemain 2/AI = pipa HDPE oranye.
  * AI SEDANG: selalu ambil kemenangan, biasanya blokir ancaman, kadang blunder.
+ * Langkah heuristiknya dinilai scoreMove: membangun ancaman garis sendiri
+ * (termasuk ancaman ganda) dan menghindari langkah umpan yang memberi lawan
+ * kemenangan langsung di giliran berikut.
  */
 
 export const COLS = 7;
@@ -55,6 +58,38 @@ export function isWinningMove(board: Board, col: number, row: number, player: Pl
   return false;
 }
 
+export interface WinningCell { c: number; r: number; }
+
+/**
+ * SEMUA sel pembentuk garis kemenangan dari langkah terakhir (col,row,player).
+ * Satu langkah bisa menutup dua garis sekaligus (mis. mendatar + diagonal);
+ * gabungan (union) kedua garis dikembalikan, bukan hanya arah pertama.
+ * Urutan deterministik: baris lalu kolom. [] bila langkah itu tidak menang.
+ */
+export function winningCells(board: Board, col: number, row: number, player: Player): WinningCell[] {
+  if (row < 0 || row >= ROWS || col < 0 || col >= COLS || board[row][col] !== player) return [];
+  const found = new Map<string, WinningCell>();
+  const dirs: ReadonlyArray<readonly [number, number]> = [
+    [1, 0], [0, 1], [1, 1], [1, -1],
+  ];
+  for (const [dx, dy] of dirs) {
+    const line: WinningCell[] = [{ c: col, r: row }];
+    for (const s of [1, -1] as const) {
+      let c = col + dx * s;
+      let r = row + dy * s;
+      while (c >= 0 && c < COLS && r >= 0 && r < ROWS && board[r][c] === player) {
+        line.push({ c, r });
+        c += dx * s;
+        r += dy * s;
+      }
+    }
+    if (line.length >= CONNECT) {
+      for (const cell of line) found.set(`${cell.c},${cell.r}`, cell);
+    }
+  }
+  return [...found.values()].sort((a, b) => (a.r - b.r) || (a.c - b.c));
+}
+
 export function isFull(board: Board): boolean {
   for (let c = 0; c < COLS; c += 1) {
     if (board[0][c] === 0) return false;
@@ -86,6 +121,48 @@ function winsImmediately(board: Board, col: number, player: Player): boolean {
   const win = isWinningMove(board, col, row, player);
   board[row][col] = 0;
   return win;
+}
+
+/** Kolom-kolom di mana player langsung menang bila menjatuhkan keping sekarang. */
+export function winningColumns(board: Board, player: Player): number[] {
+  return legalColumns(board).filter((c) => winsImmediately(board, c, player));
+}
+
+/**
+ * Apakah keping player di col menjadi UMPAN bagi lawan: sesudah langkah ini
+ * lawan punya kemenangan langsung di giliran berikut (klasiknya keping lawan
+ * mendarat tepat di atas keping ini dan menutup garisnya). Murni, tanpa mutasi.
+ */
+export function givesOpponentImmediateWin(board: Board, col: number, player: Player): boolean {
+  const row = dropRow(board, col);
+  if (row < 0) return false;
+  board[row][col] = player;
+  const foeWins = winningColumns(board, other(player)).length > 0;
+  board[row][col] = 0;
+  return foeWins;
+}
+
+/**
+ * Nilai taktis satu langkah (fungsi murni, dipakai AI di langkah heuristik):
+ * - menang langsung: 1000.
+ * - membangun ancaman: sesudah langkah ini, tiap kolom kemenangan untuk
+ *   giliran berikut +30; dua ancaman sekaligus (garis bercabang yang tak
+ *   bisa diblokir dua-duanya) +60.
+ * - menjadi umpan kemenangan lawan di giliran berikut: −120.
+ * - selebihnya heuristik kolom dasar (pusat + potensi garis terbuka).
+ */
+export function scoreMove(board: Board, col: number, player: Player): number {
+  const row = dropRow(board, col);
+  if (row < 0) return -Infinity;
+  if (winsImmediately(board, col, player)) return 1000;
+  let score = columnScore(board, col, player);
+  board[row][col] = player;
+  const threats = winningColumns(board, player).length;
+  board[row][col] = 0;
+  if (threats >= 2) score += 60;
+  else if (threats === 1) score += 30;
+  if (givesOpponentImmediateWin(board, col, player)) score -= 120;
+  return score;
 }
 
 /** Skor heuristik kolom: pusat lebih baik + potensi garis terbuka. */
@@ -146,11 +223,11 @@ export function aiChooseColumn(board: Board, aiPlayer: Player, rng: () => number
     // blunder total: kolom acak
     return legal[Math.floor(rng() * legal.length)];
   }
-  // 3. Heuristik + noise kecil
+  // 3. Nilai taktis (scoreMove: bangun ancaman sendiri, hindari umpan) + noise kecil
   let best = legal[0];
   let bestScore = -Infinity;
   for (const c of legal) {
-    const sc = columnScore(board, c, aiPlayer) + rng() * 3;
+    const sc = scoreMove(board, c, aiPlayer) + rng() * 3;
     if (sc > bestScore) {
       bestScore = sc;
       best = c;

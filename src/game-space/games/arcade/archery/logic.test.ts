@@ -6,6 +6,7 @@ import { strict as assert } from 'node:assert';
 import {
   VH, NAIL_SPEED, GRAVITY, WIND_ACCEL, NAILS_PER_ROUND, MAX_ROUNDS,
   roundSpec, targetScale, flightTime, dropAt, fireShot,
+  windDrift, totalDrift, windInfo, compensatedAimY, ringLabel,
 } from './logic';
 
 let passed = 0;
@@ -94,6 +95,34 @@ test('konstanta waras', () => {
   assert.equal(NAILS_PER_ROUND, 5);
   assert.equal(MAX_ROUNDS, 5);
   assert.ok(NAIL_SPEED > 0 && GRAVITY > 0 && WIND_ACCEL > 0 && VH > 0);
+});
+
+console.log('\n[gelombang-3] angin terbaca & kompensasi bidik');
+test('windDrift nol tanpa angin, bertanda sesuai arah', () => {
+  const base = { level: 0, distance: 400, targetY: 300, wind: 0, windMax: 2, nails: 5 };
+  assert.equal(windDrift(base), 0);
+  assert.ok(windDrift({ ...base, wind: 2 }) > 0);
+  assert.ok(windDrift({ ...base, wind: -2 }) < 0);
+  assert.ok(Math.abs(totalDrift(base) - dropAt(400)) < 1e-9);
+});
+test('windInfo: arah, pita & kekuatan ternormalisasi', () => {
+  const calm = windInfo({ level: 0, distance: 300, targetY: 300, wind: 0, windMax: 1, nails: 5 });
+  assert.deepEqual(calm, { dir: 0, band: 'Tenang', strength: 0 });
+  const strong = windInfo({ level: 0, distance: 300, targetY: 300, wind: -2, windMax: 2, nails: 5 });
+  assert.equal(strong.dir, -1);
+  assert.equal(strong.band, 'Kencang');
+  assert.equal(strong.strength, 1);
+});
+test('compensatedAimY membidik tengah papan secara eksak', () => {
+  const spec = { level: 2, distance: 440, targetY: 320, wind: 1.4, windMax: 2, nails: 5 };
+  const r = fireShot(compensatedAimY(spec), spec);
+  assert.equal(r.bullseye, true);
+  assert.equal(r.ring, 4);
+});
+test('ringLabel tegas per ring', () => {
+  assert.equal(ringLabel(4), 'TEPAT TENGAH');
+  assert.equal(ringLabel(0), 'Meleset');
+  assert.ok(ringLabel(1).includes('tepi'));
 });
 
 console.log(`\n${passed} lulus, ${failed} gagal${failed ? ` — ${failures.join(', ')}` : ''}`);
