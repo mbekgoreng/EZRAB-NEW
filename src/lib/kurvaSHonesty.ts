@@ -10,15 +10,19 @@
  *   didistribusikan merata pada rentang minggu tugas (startWeek..endWeek).
  *   Tanpa tugas jadwal, engine mengembalikan [] — tidak ada basis jadwal,
  *   jadi kurva rencana TIDAK digambar.
- * - Kurva REALISASI per minggu: TIDAK ADA di model data. ScheduleTask hanya
- *   menyimpan progres aktual TERKINI per tugas (actualProgressPercent) —
- *   bukan riwayat mingguan. Menyebar snapshot itu ke minggu-minggu (cara
- *   lama: mengikuti trajektori rencana sampai project.progress, deviasi
- *   dipaksa 0,00) adalah fabrikasi seri waktu.
+ * - Kurva REALISASI per minggu: berasal dari RIWAYAT LAPORAN MINGGUAN
+ *   (lib/progressHistory) — snapshot persen aktual seluruh tugas yang
+ *   dicatat eksplisit per minggu oleh pengguna. ScheduleTask sendiri
+ *   hanya menyimpan progres TERKINI; menyebar snapshot terkini itu ke
+ *   minggu-minggu (cara lama: mengikuti trajektori rencana sampai
+ *   project.progress, deviasi dipaksa 0,00) adalah fabrikasi seri waktu.
  *
  * ATURAN:
- * - actWeekly/actCum/dev SELALU null di sini → UI menampilkan "belum
- *   tersedia", bukan garis realisasi karangan dan bukan deviasi karangan.
+ * - Tanpa riwayat laporan, actWeekly/actCum/dev null → UI menampilkan
+ *   "belum tersedia", bukan garis realisasi karangan dan bukan deviasi
+ *   karangan. Dengan riwayat, seri dihitung murni dari snapshot
+ *   tersimpan (computeRealisasiSeries); minggu sebelum laporan pertama
+ *   tetap null (belum dilaporkan, bukan 0 karangan).
  *   Progres aktual terkini tetap dapat ditampilkan sebagai ANGKA SNAPSHOT
  *   (lihat computeLaporanSummary.progressPercent), bukan sebagai kurva.
  * - TIDAK ada fallback total biaya karangan (dulu konstanta Rp150 juta) dan TIDAK
@@ -29,16 +33,18 @@
  */
 
 import type { KurvaSDataPoint, ScheduleTask } from '../types';
+import { computeRealisasiSeries } from './progressHistory';
+import type { ProgressHistoryEntry } from './progressHistory';
 
 export interface LaporanKurvaSWeek {
   week: string;
   planWeekly: number;
   planCum: number;
-  /** Selalu null: riwayat realisasi mingguan tidak tersimpan di model data. */
+  /** Null bila minggu ini belum masuk riwayat laporan mingguan. */
   actWeekly: number | null;
-  /** Selalu null: riwayat realisasi mingguan tidak tersimpan di model data. */
+  /** Null bila minggu ini belum masuk riwayat laporan mingguan. */
   actCum: number | null;
-  /** Selalu null: deviasi butuh realisasi pada minggu yang sama. */
+  /** Null bila realisasi minggu ini belum tersedia. */
   dev: number | null;
 }
 
@@ -53,6 +59,12 @@ export interface LaporanKurvaS {
   totalWeeks: number;
   /** Persen rencana kumulatif minggu terakhir; null bila tidak tersedia. */
   finalPlanCum: number | null;
+  /** true bila seri realisasi tersedia dari riwayat laporan mingguan. */
+  hasActuals: boolean;
+  /** Deviasi (realisasi − rencana) pada minggu laporan terakhir; null bila belum ada laporan. */
+  finalDev: number | null;
+  /** Indeks minggu laporan terakhir; null bila belum ada laporan. */
+  lastReportedWeek: number | null;
 }
 
 const isFiniteNumber = (v: unknown): v is number =>
@@ -65,7 +77,8 @@ const isFiniteNumber = (v: unknown): v is number =>
  */
 export function buildLaporanKurvaS(
   kurvaSData: KurvaSDataPoint[] | null | undefined,
-  scheduleTasks: ScheduleTask[] | null | undefined
+  scheduleTasks: ScheduleTask[] | null | undefined,
+  progressHistory?: readonly ProgressHistoryEntry[] | null
 ): LaporanKurvaS {
   const empty = (reason: KurvaSUnavailableReason): LaporanKurvaS => ({
     available: false,
@@ -73,6 +86,9 @@ export function buildLaporanKurvaS(
     weeks: [],
     totalWeeks: 0,
     finalPlanCum: null,
+    hasActuals: false,
+    finalDev: null,
+    lastReportedWeek: null,
   });
 
   if (!scheduleTasks || scheduleTasks.length === 0) return empty('NO_TASKS');
@@ -85,14 +101,33 @@ export function buildLaporanKurvaS(
   const totalPlanned = points.reduce((s, p) => s + p.plannedWeeklyPercent, 0);
   if (!(totalPlanned > 0)) return empty('NO_WEIGHTS');
 
-  const weeks: LaporanKurvaSWeek[] = points.map((p) => ({
-    week: p.weekLabel,
-    planWeekly: p.plannedWeeklyPercent,
-    planCum: p.cumulativePlannedPercent,
-    actWeekly: null,
-    actCum: null,
-    dev: null,
-  }));
+  /* Seri realisasi HANYA dari riwayat laporan mingguan tersimpan. Tanpa
+   * riwayat → null semua (perilaku jujur lama, tidak berubah). */
+  const series = progressHistory && progressHistory.length > 0
+    ? computeRealisasiSeries(scheduleTasks, points, progressHistory)
+    : null;
+
+  const weeks: LaporanKurvaSWeek[] = points.map((p) => {
+    const r = series?.get(p.weekIndex);
+    return {
+      week: p.weekLabel,
+      planWeekly: p.plannedWeeklyPercent,
+      planCum: p.cumulativePlannedPercent,
+      actWeekly: r ? r.actWeekly : null,
+      actCum: r ? r.actCum : null,
+      dev: r ? r.dev : null,
+    };
+  });
+
+  let finalDev: number | null = null;
+  let lastReportedWeek: number | null = null;
+  if (series) {
+    const keys = [...series.keys()].sort((a, b) => a - b);
+    if (keys.length > 0) {
+      lastReportedWeek = keys[keys.length - 1];
+      finalDev = series.get(lastReportedWeek)?.dev ?? null;
+    }
+  }
 
   return {
     available: true,
@@ -100,6 +135,9 @@ export function buildLaporanKurvaS(
     weeks,
     totalWeeks: weeks.length,
     finalPlanCum: weeks[weeks.length - 1].planCum,
+    hasActuals: series !== null,
+    finalDev,
+    lastReportedWeek,
   };
 }
 

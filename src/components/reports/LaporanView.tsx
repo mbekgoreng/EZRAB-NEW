@@ -54,6 +54,8 @@ import { checkKurvaSRequirements } from '../../engine/kurvaSEngine';
 import { computeLaporanSummary, resolveItemAmount } from '../../lib/laporanSummary';
 import { computeSeedCostSummary } from '../../lib/demoSeed';
 import { buildLaporanKurvaS } from '../../lib/kurvaSHonesty';
+import { loadProgressHistory, recordProgressSnapshot } from '../../lib/progressHistory';
+import type { ProgressHistoryEntry } from '../../lib/progressHistory';
 import { buildGanttTasks, formatScheduleDuration, resolveHonestCompany } from '../../lib/scheduleHonesty';
 import { MASTER_AHSP_DATABASE } from '../../data/indonesianAHSP';
 
@@ -532,21 +534,36 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
     return checkKurvaSRequirements(activeProject, projectScheduleTasks);
   }, [activeProject, projectScheduleTasks]);
 
-  // S-Curve Dataset — HANYA kurva rencana dari tugas jadwal tersimpan
+  // S-Curve Dataset — kurva rencana dari tugas jadwal tersimpan
   // (lib/kurvaSHonesty.buildLaporanKurvaS di atas projectKurvaSData).
-  // Implementasi sebelumnya mensintesis tiga hal yang tidak ada di data:
+  // Implementasi lama mensintesis tiga hal yang tidak ada di data:
   // (1) total biaya fallback karangan (konstanta Rp150 juta), (2) urutan konstruksi
   // mingguan dari seksi RAB bila tugas tidak ada (generateKurvaSData CASE 2),
   // (3) seri "realisasi" yang disebar mengikuti trajektori rencana sampai
-  // project.progress dengan deviasi dipaksa 0,00. Ketiganya dihapus: model
-  // data hanya menyimpan progres aktual TERKINI per tugas, bukan riwayat
-  // mingguan — jadi actWeekly/actCum/dev selalu null dan tab menampilkan
-  // status data-tidak-tersedia secara eksplisit bila rencana pun tak ada.
+  // project.progress dengan deviasi dipaksa 0,00. Ketiganya dihapus.
+  // Seri realisasi & deviasi kini dihitung dari RIWAYAT LAPORAN MINGGUAN
+  // (lib/progressHistory): snapshot progres tugas yang dicatat eksplisit
+  // per minggu oleh pengguna lewat kontrol pencatatan di tab ini. Tanpa
+  // riwayat, actWeekly/actCum/dev tetap null dan tab menampilkan status
+  // belum tersedia secara eksplisit — tidak pernah disintesis.
+  const [progressHistory, setProgressHistory] = useState<ProgressHistoryEntry[]>(
+    () => loadProgressHistory(activeProject?.id ?? '')
+  );
+  useEffect(() => {
+    setProgressHistory(loadProgressHistory(activeProject?.id ?? ''));
+  }, [activeProject?.id]);
+  const [reportWeek, setReportWeek] = useState<number>(1);
   const laporanKurvaS = useMemo(
-    () => buildLaporanKurvaS(projectKurvaSData, projectScheduleTasks),
-    [projectKurvaSData, projectScheduleTasks]
+    () => buildLaporanKurvaS(projectKurvaSData, projectScheduleTasks, progressHistory),
+    [projectKurvaSData, projectScheduleTasks, progressHistory]
   );
   const sCurveWeeks = laporanKurvaS.weeks;
+  const handleRecordProgress = () => {
+    if (!activeProject?.id) return;
+    setProgressHistory(
+      recordProgressSnapshot(activeProject.id, projectScheduleTasks ?? [], reportWeek)
+    );
+  };
 
   // Gantt Schedule Dataset — HANYA dari tugas jadwal tersimpan
   // (lib/scheduleHonesty.buildGanttTasks). Sebelumnya dataset ini difabrikasi
@@ -2048,7 +2065,9 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                     Kurva S Rencana Progres
                   </h3>
                   <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
-                    Kurva rencana diturunkan dari tugas jadwal tersimpan: bobot tiap tugas didistribusikan pada rentang minggunya. Riwayat realisasi per minggu tidak tersimpan di proyek ini — yang tersedia hanya progres aktual terkini per tugas, jadi seri realisasi dan deviasi tidak digambar.
+                    {laporanKurvaS.hasActuals
+                      ? 'Kurva rencana diturunkan dari tugas jadwal tersimpan: bobot tiap tugas didistribusikan pada rentang minggunya. Kurva realisasi dan deviasi dihitung dari laporan progres mingguan yang dicatat pada proyek ini.'
+                      : 'Kurva rencana diturunkan dari tugas jadwal tersimpan: bobot tiap tugas didistribusikan pada rentang minggunya. Seri realisasi dan deviasi dihitung dari laporan progres mingguan — catat laporan pertama lewat kontrol di bawah agar kurva realisasi mulai tergambar.'}
                   </p>
                 </div>
 
@@ -2058,11 +2077,43 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                     Rencana (%)
                   </span>
                   <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11.5px', color: 'var(--ez-color-text-muted)', fontWeight: 700 }}>
-                    <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#94A3B8' }} />
-                    Realisasi (%) — data mingguan belum tersedia
+                    <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: laporanKurvaS.hasActuals ? '#10B981' : '#94A3B8' }} />
+                    {laporanKurvaS.hasActuals ? 'Realisasi (%)' : 'Realisasi (%) — data mingguan belum tersedia'}
                   </span>
                 </div>
               </div>
+
+              {/* Kontrol pencatatan laporan progres mingguan — sumber seri
+                  realisasi & deviasi. Snapshot membekukan progres aktual
+                  TERKINI seluruh tugas sebagai laporan akhir minggu yang
+                  dipilih; mencatat ulang minggu yang sama menimpa
+                  (koreksi laporan). */}
+              {laporanKurvaS.available && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', background: 'var(--ez-color-surface-secondary)', border: '1px solid var(--ez-color-border-line)', borderRadius: 'var(--ez-radius-control)', padding: '12px 16px' }}>
+                  <span style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>Laporan Progres Mingguan</span>
+                  <select
+                    value={reportWeek}
+                    onChange={(e) => setReportWeek(Number(e.target.value))}
+                    style={{ fontSize: '12.5px', padding: '6px 8px', borderRadius: '8px', border: '1px solid var(--ez-color-border-line)', background: 'var(--ez-color-surface)' }}
+                  >
+                    {(projectKurvaSData ?? []).map((p) => (
+                      <option key={p.weekIndex} value={p.weekIndex}>{p.weekLabel}</option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={handleRecordProgress}
+                    style={{ fontSize: '12.5px', fontWeight: 700, padding: '7px 14px', borderRadius: '8px', border: 'none', background: 'var(--ez-color-primary)', color: '#fff', cursor: 'pointer' }}
+                  >
+                    Catat Progres Saat Ini
+                  </button>
+                  <span style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)' }}>
+                    {laporanKurvaS.hasActuals
+                      ? `Realisasi tercatat sampai minggu ke-${laporanKurvaS.lastReportedWeek}. Perbarui progres tugas di menu Jadwal terlebih dahulu, lalu catat sebagai laporan minggu berjalan.`
+                      : 'Membekukan progres aktual tugas saat ini sebagai laporan akhir minggu terpilih. Kerjakan ini setiap akhir minggu agar deviasi terbaca.'}
+                  </span>
+                </div>
+              )}
 
               {/* Data Readiness Banner if Schedule Tasks incomplete */}
               {!kurvaSRequirement.isComplete && (
@@ -2202,12 +2253,25 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
 
                     <div style={{ background: 'var(--ez-color-surface-secondary)', border: '1px solid var(--ez-color-border-line)', borderRadius: 'var(--ez-radius-control)', padding: '14px 16px' }}>
                       <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>Deviasi Rencana vs Realisasi</div>
-                      <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-color-text-primary)', marginTop: '2px' }}>
-                        Belum dapat dihitung
-                      </div>
-                      <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>
-                        Riwayat realisasi per minggu tidak tersimpan pada proyek ini
-                      </div>
+                      {laporanKurvaS.hasActuals && laporanKurvaS.finalDev !== null ? (
+                        <>
+                          <div style={{ fontSize: '18px', fontWeight: 800, color: laporanKurvaS.finalDev >= 0 ? '#10B981' : '#D97706', marginTop: '2px' }}>
+                            {`${laporanKurvaS.finalDev >= 0 ? '+' : ''}${laporanKurvaS.finalDev.toFixed(1)}%`}
+                          </div>
+                          <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>
+                            {`Pada minggu laporan terakhir (minggu ke-${laporanKurvaS.lastReportedWeek}) — ${laporanKurvaS.finalDev >= 0 ? 'di depan rencana' : 'di belakang rencana'}`}
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-color-text-primary)', marginTop: '2px' }}>
+                            Belum dapat dihitung
+                          </div>
+                          <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>
+                            Belum ada laporan progres mingguan tercatat pada proyek ini
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
                 );
