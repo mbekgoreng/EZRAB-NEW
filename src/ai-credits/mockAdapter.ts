@@ -22,7 +22,7 @@ import type {
   LedgerEntry,
   TopUpStatus,
 } from './types';
-import { PLAN_CREDITS, TOPUP_OFFER } from './config';
+import { FREE_INITIAL_CREDITS, PLAN_CREDITS, TOPUP_OFFER } from './config';
 
 const nowIso = () => new Date().toISOString();
 
@@ -119,8 +119,24 @@ export function mockConsume(
   return true;
 }
 
-/** Simulasi top-up: menambah saldo mock + entri ledger. BUKAN pembayaran nyata. */
+/**
+ * Simulasi top-up: menambah saldo mock + entri ledger. BUKAN pembayaran nyata.
+ * Top-up TIDAK tersedia untuk paket Free (kebijakan billing) — pada paket
+ * Free fungsi ini menolak tanpa mengubah state dan melaporkan status
+ * 'failed'; permukaan UI (modal top-up) menampilkan alasannya ke pengguna.
+ */
 export function mockTopUp(): TopUpStatus {
+  if (state.plan === 'free') {
+    return {
+      topUpId: '',
+      amountIdr: TOPUP_OFFER.priceIdr,
+      baseCredits: 0,
+      bonusCredits: 0,
+      totalCredits: 0,
+      status: 'failed',
+      simulated: true,
+    };
+  }
   state.topup += TOPUP_OFFER.baseCredits;
   state.bonus += TOPUP_OFFER.bonusCredits;
   const id = nextId('topup');
@@ -144,13 +160,26 @@ export function mockTopUp(): TopUpStatus {
   };
 }
 
-/** Ganti paket simulasi (untuk demo). */
+/**
+ * Ganti paket simulasi (untuk demo). Berpindah paket = memulai keadaan
+ * demo paket tujuan dari awal: jatah paket tujuan diberikan penuh dan
+ * bucket top-up/bonus dari paket sebelumnya dibersihkan (riwayat ledger
+ * dipertahankan sebagai jejak audit simulasi).
+ *
+ * Free: jatahnya adalah kredit AWAL 100 (FREE_INITIAL_CREDITS, sekali) —
+ * BUKAN 0 dan bukan jatah periodik (Keputusan Owner 2026-11-07 /
+ * Amendemen Spec v1.2). Perbaikan bug: sebelumnya Free diberi 0 sehingga
+ * saldo Free selalu kosong dan Chat AI Free selalu tertahan dialog
+ * "saldo tidak cukup", bertentangan dengan teks paketnya sendiri.
+ */
 export function mockSetPlan(plan: CreditPlan): void {
   state.plan = plan;
+  state.topup = 0;
+  state.bonus = 0;
   if (plan === 'starter') state.subscription = PLAN_CREDITS.starter;
   else if (plan === 'pro') state.subscription = PLAN_CREDITS.pro;
   else if (plan === 'business') state.subscription = PLAN_CREDITS.business;
-  else state.subscription = 0;
+  else state.subscription = FREE_INITIAL_CREDITS;
   notify();
 }
 

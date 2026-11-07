@@ -138,7 +138,11 @@ describe('ai-credits mockAdapter (SIMULASI)', () => {
     expect(mockGetBalance().plan).toBe('business');
     expect(mockGetBalance().subscription).toBe(30_000);
     mockSetPlan('free');
-    expect(mockGetBalance().subscription).toBe(0);
+    // Keputusan Owner 2026-11-07 (Amendemen Spec v1.2): Free mendapat
+    // kredit AWAL 100 SEKALI — bukan 0 (Spec v1.0) dan bukan jatah
+    // periodik. Assertion lama (0) mengkodekan bug saldo Free kosong.
+    expect(mockGetBalance().subscription).toBe(100);
+    expect(mockGetBalance().total).toBe(100);
   });
 
   it('14. ambang saldo rendah terdefinisi', () => {

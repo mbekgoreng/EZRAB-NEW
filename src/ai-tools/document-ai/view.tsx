@@ -21,7 +21,9 @@
  * DokumenAiView melaporkan status workspace via onAnalysisActiveChange.
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { FolderOpen, ScanSearch, History, Sparkles, LayoutTemplate, ClipboardCheck } from 'lucide-react';
+import { FolderOpen, ScanSearch, History, Sparkles, LayoutTemplate, ClipboardCheck, Lock } from 'lucide-react';
+import { useCreditSimulation } from '../../ai-credits/useCreditSimulation';
+import { aiFeatureLockedMessage, planAllowsAiFeature } from '../../ai-credits/featureGate';
 import type { DraftVersion } from './store';
 import type { ContextField } from './types';
 
@@ -248,6 +250,14 @@ export const DokumenAiView: React.FC<DokumenAiViewProps> = ({ onAnalysisActiveCh
 
   const analysisActive = tab === 'analyze' && activeDoc !== null;
 
+  // Gerbang paket (simulasi): paket Free tidak punya entitlement dokumen
+  // sama sekali (aiDocuments 'locked' + documentTemplates 'none' di
+  // plans.ts) — seluruh permukaan AI Document dikunci untuk Free dengan
+  // pesan yang jelas. Paket lain diteruskan ke gerbang per-permukaan
+  // (DocAnalyzer untuk Starter, DocCreator mode AI untuk Starter).
+  const { balance: creditBalance } = useCreditSimulation();
+  const docViewLockedForFree = creditBalance.plan === 'free' && !planAllowsAiFeature(creditBalance.plan, 'ai-document');
+
   useEffect(() => {
     onAnalysisActiveChange?.(analysisActive);
   }, [analysisActive, onAnalysisActiveChange]);
@@ -334,6 +344,21 @@ export const DokumenAiView: React.FC<DokumenAiViewProps> = ({ onAnalysisActiveCh
       </nav>
 
       <div className="docai-content">
+        {docViewLockedForFree ? (
+          <div
+            role="alert"
+            style={{
+              display: 'flex', gap: 10, alignItems: 'flex-start',
+              background: '#FDF2F2', border: '1px solid #F3C2C2', color: '#8A2A2A',
+              borderRadius: 10, padding: '14px 16px',
+              fontSize: 14, lineHeight: 1.6, maxWidth: 640,
+            }}
+          >
+            <Lock size={18} style={{ flexShrink: 0, marginTop: 2 }} />
+            <span>{aiFeatureLockedMessage(creditBalance.plan, 'ai-document')}</span>
+          </div>
+        ) : (
+          <>
         {tab === 'library' && (
           <DocLibrary docs={docs} onUpsertDoc={upsertDoc} onRemoveDoc={removeDoc} onAnalyze={openAnalyze} />
         )}
@@ -350,6 +375,8 @@ export const DokumenAiView: React.FC<DokumenAiViewProps> = ({ onAnalysisActiveCh
           />
         )}
         {tab === 'history' && <DocHistory history={history} onRemoveHistory={removeHistory} />}
+          </>
+        )}
       </div>
     </div>
   );

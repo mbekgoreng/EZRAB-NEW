@@ -14,7 +14,7 @@ interface Props {
 }
 
 export const CreditTopUpModal: React.FC<Props> = ({ onClose }) => {
-  const { topUp } = useCreditSimulation();
+  const { topUp, balance } = useCreditSimulation();
   const [done, setDone] = useState(false);
 
   const handleSimulate = () => {
@@ -33,7 +33,22 @@ export const CreditTopUpModal: React.FC<Props> = ({ onClose }) => {
         </div>
         <p className="aic-sub">Tambah saldo kredit untuk memakai fitur AI.</p>
 
-        {!done ? (
+        {balance.plan === 'free' ? (
+          <>
+            <div className="aic-sim-banner">
+              <Info size={15} style={{ flexShrink: 0, marginTop: 2 }} />
+              <span>
+                <strong>Top-up tidak tersedia untuk paket Free (Gratis).</strong> Kredit Free
+                adalah jatah awal 100 kredit sekali — habis berarti habis, tanpa top-up dan
+                tanpa isi ulang. Untuk top-up dan fitur AI penuh, gunakan paket berbayar
+                (Starter / Professional / Business). Mode demo — simulasi, bukan penagihan nyata.
+              </span>
+            </div>
+            <div className="aic-modal-actions">
+              <button type="button" className="aic-btn-primary" onClick={onClose}>Tutup</button>
+            </div>
+          </>
+        ) : !done ? (
           <>
             <div className="aic-offer">
               <div className="aic-offer-row"><span>Harga</span><strong>{formatRupiah(TOPUP_OFFER.priceIdr)}</strong></div>

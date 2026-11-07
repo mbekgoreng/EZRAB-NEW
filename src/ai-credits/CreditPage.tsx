@@ -154,7 +154,7 @@ export const CreditPage: React.FC<Props> = ({ onBack }) => {
             <span className="aic-ic"><Repeat size={16} /></span> Kredit langganan
           </div>
           <div className="aic-v">{balance.subscription.toLocaleString('id-ID')}</div>
-          <div className="aic-s">jatah paket {planLabel} per periode</div>
+          <div className="aic-s">{balance.plan === 'free' ? 'kredit awal (sekali) — bukan jatah periodik' : `jatah paket ${planLabel} per periode`}</div>
         </div>
         <div className="aic-card tone-green">
           <div className="aic-k">

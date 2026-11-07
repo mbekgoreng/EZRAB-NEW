@@ -5,7 +5,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   UploadCloud, FileText, X, Zap, Brain, FolderOpen, PlusCircle,
-  ArrowRight, AlertTriangle, History, Trash2, RotateCcw, Scale,
+  ArrowRight, AlertTriangle, History, Trash2, RotateCcw, Scale, Lock,
 } from 'lucide-react';
 import { DedAiMode, DedAiProjectType , DedEstimationPolicy } from './types';
 import { useI18n } from '../../i18n/I18nContext';
@@ -15,6 +15,7 @@ import { useCreditSimulation } from '../../ai-credits/useCreditSimulation';
 import { tariffFor } from '../../ai-credits/config';
 import { CreditBalance } from '../../ai-credits/components/CreditBalance';
 import { CreditTopUpModal } from '../../ai-credits/components/CreditTopUpModal';
+import { aiFeatureLockedMessage, planAllowsAiFeature } from '../../ai-credits/featureGate';
 
 export interface DedAiFileItem {
   file: File;
@@ -100,6 +101,9 @@ export const DedAiInputView: React.FC<Props> = ({
   const [creditApproved, setCreditApproved] = useState(false);
   const [creditTopUpOpen, setCreditTopUpOpen] = useState(false);
   const { balance, consume } = useCreditSimulation();
+  // Gerbang paket (simulasi): DED AI tidak termasuk paket Free (fitur AI
+  // Free hanya Chat AI — Keputusan Owner 2026-11-07 / Amendemen v1.2).
+  const dedAllowed = planAllowsAiFeature(balance.plan, 'ded-ai');
   const dedEstimate = tariffFor(`ded-ai/${complexity}`);
   const dedTarget = dedEstimate.target ?? dedEstimate.max;
 
@@ -125,7 +129,7 @@ export const DedAiInputView: React.FC<Props> = ({
   const canStart = validFiles.length > 0;
 
   const handleStart = () => {
-    if (!canStart || !creditApproved) return;
+    if (!canStart || !creditApproved || !dedAllowed) return;
     // --- AI Credits: catat pemakaian SIMULASI (batas target kategori) ---
     consume('ded-ai', dedTarget, `DED AI (${complexityLabel(complexity)}): ${validFiles.length} dokumen`, {
       jobReference: `ded-${Date.now().toString(36)}`,
@@ -326,6 +330,20 @@ export const DedAiInputView: React.FC<Props> = ({
           Pilih kategori yang paling mendekati dokumen Anda. Kategori ini pilihan Anda —
           bukan hasil deteksi otomatis. Angka berikut simulasi frontend.
         </p>
+        {!dedAllowed && (
+          <div
+            role="alert"
+            style={{
+              display: 'flex', gap: 10, alignItems: 'flex-start',
+              background: '#FDF2F2', border: '1px solid #F3C2C2', color: '#8A2A2A',
+              borderRadius: 10, padding: '12px 14px', marginBottom: 12,
+              fontSize: 13.5, lineHeight: 1.55,
+            }}
+          >
+            <Lock size={16} style={{ flexShrink: 0, marginTop: 2 }} />
+            <span>{aiFeatureLockedMessage(balance.plan, 'ded-ai')}</span>
+          </div>
+        )}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
           <CreditBalance compact showTopUp={false} />
           <span style={{ fontSize: 12, color: 'var(--ez-color-text-faint)' }}>saldo simulasi</span>
@@ -338,6 +356,7 @@ export const DedAiInputView: React.FC<Props> = ({
               <button
                 key={o.value}
                 type="button"
+                disabled={!dedAllowed}
                 onClick={() => { setComplexity(o.value); setCreditApproved(false); }}
                 style={{
                   textAlign: 'left', padding: 12, borderRadius: 12, cursor: 'pointer',
@@ -370,6 +389,7 @@ export const DedAiInputView: React.FC<Props> = ({
           <input
             type="checkbox"
             checked={creditApproved}
+            disabled={!dedAllowed}
             onChange={(e) => setCreditApproved(e.target.checked)}
             style={{ marginTop: 3 }}
           />
@@ -384,7 +404,7 @@ export const DedAiInputView: React.FC<Props> = ({
       </div>
 
       <div className="dedai-cta">
-        <button className="dedai-btn primary" disabled={!canStart || !creditApproved} onClick={handleStart}>
+        <button className="dedai-btn primary" disabled={!canStart || !creditApproved || !dedAllowed} onClick={handleStart}>
           {t('ai.ded.input.cta')} <ArrowRight size={18} />
         </button>
       </div>

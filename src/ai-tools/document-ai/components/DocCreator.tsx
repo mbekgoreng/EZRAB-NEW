@@ -40,6 +40,8 @@ import {
 import { DocStudioReview } from './DocStudioReview';
 import { DocEnhance } from './DocEnhance';
 import { documentStudioOrchestrator } from '../orchestrator';
+import { useCreditSimulation } from '../../../ai-credits/useCreditSimulation';
+import { aiFeatureLockedMessage, planAllowsAiFeature } from '../../../ai-credits/featureGate';
 import { collectProjectContext, detectMissingFields } from '../contextAdapter';
 import { approveDraft, buildTranslatedDraft, deriveDisplayStatus, pushVersion, restoreVersion } from '../store';
 import { TRANSLATE_LANGUAGE_NAMES } from '../prompt';
@@ -125,6 +127,13 @@ export const DocCreator: React.FC<{
   studioPath?: DocStudioPath;
 }> = ({ drafts, onUpsertDraft, onAddHistory, onNavigateToMenu, studioPath }) => {
   const { t } = useI18n();
+  // Gerbang paket (simulasi): mode "Buat dengan AI" (generate bebas AI)
+  // mengikuti entitlement aiDocuments plans.ts — tertutup untuk Free &
+  // Starter. Mode Form Template mengikuti entitlement template (sumbu
+  // terpisah) dan tidak diubah di sini.
+  const { balance: creditBalance } = useCreditSimulation();
+  const docAiAllowed = planAllowsAiFeature(creditBalance.plan, 'ai-document');
+  const docAiLockedMsg = aiFeatureLockedMessage(creditBalance.plan, 'ai-document');
   const TEMPLATES = getTemplates(t);
   /* Paper System (Fase B): subnavigasi + template tambahan + profil perusahaan */
   const [subView, setSubView] = useState<'buat' | 'tersimpan' | 'template' | 'identitas'>('buat');
@@ -375,6 +384,7 @@ export const DocCreator: React.FC<{
   /* ---------------- generate (AI) via Document Studio Orchestrator ---------------- */
 
   const runGenerate = async (isRegen: boolean) => {
+    if (!docAiAllowed && createMode === 'ai') { setError(docAiLockedMsg); return; }
     setBusy(true);
     setError(null);
     setPending(null);
@@ -980,6 +990,20 @@ export const DocCreator: React.FC<{
             </div>
             {createMode === 'ai' && (
               <>
+                {!docAiAllowed && (
+                  <div
+                    role="alert"
+                    style={{
+                      display: 'flex', gap: 10, alignItems: 'flex-start',
+                      background: '#FDF2F2', border: '1px solid #F3C2C2', color: '#8A2A2A',
+                      borderRadius: 10, padding: '12px 14px', marginBottom: 12,
+                      fontSize: 13.5, lineHeight: 1.55, textAlign: 'left',
+                    }}
+                  >
+                    <Lock size={16} style={{ flexShrink: 0, marginTop: 2 }} />
+                    <span>{docAiLockedMsg}</span>
+                  </div>
+                )}
                 <div className="docai-step" style={{ textAlign: 'left' }}>1 · Instruksi untuk AI</div>
                 <textarea
                   className="docai-textarea"

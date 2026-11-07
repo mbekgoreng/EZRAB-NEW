@@ -19,7 +19,7 @@
 import React, { useMemo, useRef, useState } from 'react';
 import {
   ArrowLeft, Loader2, Send, BookOpen, MessageCircle, Table2,
-  GitCompare, ClipboardCheck, Copy, Check, AlertTriangle, ChevronLeft, ChevronRight,
+  GitCompare, ClipboardCheck, Copy, Check, AlertTriangle, ChevronLeft, ChevronRight, Lock,
 } from 'lucide-react';
 import { dokumenAiService } from '../service';
 import { markdownToHtml } from '../markdownHtml';
@@ -27,6 +27,7 @@ import type { DocRecord, ChatMessage, HistoryEntry, HistoryType } from '../view'
 import { useI18n } from '../../../i18n/I18nContext';
 import '../../../ai-credits/ai-credits.css';
 import { useCreditSimulation } from '../../../ai-credits/useCreditSimulation';
+import { aiFeatureLockedMessage, planAllowsAiFeature } from '../../../ai-credits/featureGate';
 import { tariffFor } from '../../../ai-credits/config';
 import { CreditBalance } from '../../../ai-credits/components/CreditBalance';
 import { CreditEstimateBadge } from '../../../ai-credits/components/CreditEstimateBadge';
@@ -113,7 +114,12 @@ export const DocAnalyzer: React.FC<{
   );
   const chatEndRef = useRef<HTMLDivElement>(null);
   // --- AI Credits (simulasi frontend) ---
-  const { consume } = useCreditSimulation();
+  const { consume, balance } = useCreditSimulation();
+  // Gerbang paket (simulasi): AI Document tertutup untuk Free & Starter
+  // (entitlement aiDocuments 'locked' di plans.ts — Keputusan Owner
+  // 2026-11-07 / Amendemen v1.2). Analisis tidak boleh jalan sama sekali.
+  const docAiAllowed = planAllowsAiFeature(balance.plan, 'ai-document');
+  const docAiLockedMsg = aiFeatureLockedMessage(balance.plan, 'ai-document');
   const docEstimate = tariffFor(`ai-document/${TAB_CREDIT_CATEGORY[tab]}`);
 
   const pages = useMemo(() => splitPages(doc.text), [doc.text]);
@@ -139,6 +145,7 @@ export const DocAnalyzer: React.FC<{
     fileNameOverride?: string,
     truncNoteOverride?: string | null,
   ) => {
+    if (!docAiAllowed) { setError(docAiLockedMsg); return; }
     const mode = MODE_OF[anaTab];
     const docText = docTextOverride ?? doc.text;
     setBusy(true); setError(null); setResult(''); setTruncNote(truncNoteOverride ?? null);
@@ -180,6 +187,7 @@ export const DocAnalyzer: React.FC<{
   const askQuestion = async () => {
     const q = question.trim();
     if (!q || busy) return;
+    if (!docAiAllowed) { setError(docAiLockedMsg); return; }
     const userMsg: ChatMessage = { role: 'user', text: q, at: Date.now() };
     const next = [...chat, userMsg];
     setChat(next); setQuestion(''); setBusy(true); setError(null); scrollChat();
@@ -250,6 +258,21 @@ export const DocAnalyzer: React.FC<{
         </div>
         <CreditBalance compact showTopUp={false} />
       </div>
+
+      {!docAiAllowed && (
+        <div
+          role="alert"
+          style={{
+            display: 'flex', gap: 10, alignItems: 'flex-start',
+            background: '#FDF2F2', border: '1px solid #F3C2C2', color: '#8A2A2A',
+            borderRadius: 10, padding: '12px 14px', margin: '0 0 12px',
+            fontSize: 13.5, lineHeight: 1.55,
+          }}
+        >
+          <Lock size={16} style={{ flexShrink: 0, marginTop: 2 }} />
+          <span>{docAiLockedMsg}</span>
+        </div>
+      )}
 
       <div className="docai-anatabs">
         {TABS.map((tb) => {
