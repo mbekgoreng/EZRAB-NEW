@@ -287,7 +287,7 @@ export const AiShowcase: React.FC<AiShowcaseProps> = ({ onOpenAuth, onOpenDemo, 
       <section className="ezai-sec" id="harga" style={{paddingTop: '20px'}}><div className="grid-bg"></div><div className="wrap" style={{position: 'relative'}}>
       <div className="center"><span className="eyebrow"> Harga & Kredit AI</span>
       <h2>Paket mengikuti <span className="bl">kebutuhan AI Anda.</span></h2>
-      <p className="sub" style={{margin: '0 auto'}}>Semua paket memakai mesin hitung yang sama. Yang berbeda: akses AHSP, kredit AI bulanan, kuota ekspor, dan kolaborasi tim. Free gratis selamanya — bukan uji coba.</p></div>
+      <p className="sub" style={{margin: '0 auto'}}>Semua paket memakai mesin hitung yang sama. Yang berbeda: akses AHSP, jatah kredit AI, kuota ekspor, dan kolaborasi tim. Free gratis selamanya — bukan uji coba.</p></div>
       <PricingCards onOpenAuth={onOpenAuth} />
       <p className="cmp-link"><button type="button" className="btn soft" onClick={() => onOpenPricing?.()}>Lihat Perbandingan Lengkap</button></p>
       <p className="demo-note" style={{textAlign: 'center'}}>Mode simulasi — langganan belum aktif, belum ada penagihan nyata.</p>

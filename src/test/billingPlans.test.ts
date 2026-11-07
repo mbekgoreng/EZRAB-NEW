@@ -21,6 +21,8 @@ import {
   isUnlimitedProjects,
   periodicCredits,
   initialCredits,
+  activeAiFeatures,
+  isChatAiOnly,
 } from '../billing/plans';
 import {
   PLAN_CREDITS,
@@ -120,6 +122,20 @@ check('AI Documents: locked/locked/credit-metered/full (O-6)',
   getEntitlement('free', 'aiDocuments') === 'locked' && getEntitlement('starter', 'aiDocuments') === 'locked'
   && getEntitlement('professional', 'aiDocuments') === 'credit-metered'
   && getEntitlement('business', 'aiDocuments') === 'full');
+
+console.log('=== Keputusan Owner 2026-11-07 (Amendemen Spec v1.2): Free chat-only + 100 sekali ===');
+check('Chat AI aktif di semua paket (termasuk Free)',
+  getEntitlement('free', 'chatAi') === true && getEntitlement('starter', 'chatAi') === true
+  && getEntitlement('professional', 'chatAi') === true && getEntitlement('business', 'chatAi') === true);
+check("fitur AI Free TEPAT ['chat-ai'] (DED AI & AI Document nonaktif)",
+  eq(activeAiFeatures('free'), ['chat-ai']) && isChatAiOnly('free') === true);
+check('fitur AI Starter = chat + DED (Dokumen AI masih locked di plans.ts)',
+  eq(activeAiFeatures('starter'), ['chat-ai', 'ded-ai']) && isChatAiOnly('starter') === false);
+check('fitur AI Professional & Business = ketiganya',
+  eq(activeAiFeatures('professional'), ['chat-ai', 'ded-ai', 'ai-document'])
+  && eq(activeAiFeatures('business'), ['chat-ai', 'ded-ai', 'ai-document']));
+check('Free 100 kredit SEKALI: kind initial + periodicCredits null (bukan per bulan)',
+  freeCredits.kind === 'initial' && freeCredits.credits === 100 && periodicCredits('free') === null);
 check('Document Templates: none/bast-only/project-documents-and-schedule/all (O-4)',
   getEntitlement('free', 'documentTemplates') === 'none'
   && getEntitlement('starter', 'documentTemplates') === 'bast-only'
@@ -168,6 +184,20 @@ check('tidak ada klaim 10/20 Proyek', !pricingSrc.includes('10 Proyek') && !pric
 check("ctaText pins tetap ('Coba Starter'/'Coba Pro')",
   pricingSrc.includes("ctaText: 'Coba Starter'") && pricingSrc.includes("ctaText: 'Coba Pro'"));
 check('pengungkapan tahap pengujian tetap ada', pricingSrc.includes('tahap pengujian'));
+const blocksSrc = read('src/components/landing/exact/PricingBlocks.tsx');
+const matrixSrc = read('src/components/landing/exact/pricingMatrix.ts');
+check('kartu Free menampilkan "kredit AI (sekali)", bukan 0/bln (Amendemen v1.2)',
+  blocksSrc.includes('kredit AI (sekali)') && !blocksSrc.includes('0 kredit AI/bln'));
+check('kartu Free menyatakan Chat AI saja, bukan "Tanpa fitur AI"',
+  blocksSrc.includes('hanya untuk Chat AI') && !blocksSrc.includes('Tanpa fitur AI'));
+check('matriks: Chat AI Free = terbatas (aktif), RAB AI & Dokumen AI Free = tidak',
+  matrixSrc.includes("label: 'Chat AI', values: { free: L")
+  && matrixSrc.includes("label: 'RAB AI', values: { free: N")
+  && matrixSrc.includes("label: 'Dokumen AI', values: { free: N"));
+check('matriks: kredit Free tampil "100 (sekali)", bukan sel credits bulanan',
+  matrixSrc.includes("free: T('100 (sekali)')"));
+check('ketentuan transparan memuat aturan Free v1.2 (100 sekali, chat saja, tanpa top-up)',
+  matrixSrc.includes('100 kredit AI sekali di awal') && matrixSrc.includes('top-up tidak tersedia untuk paket Free'));
 
 console.log('=== Permukaan 3: tab Paket & Billing Pengaturan jujur ===');
 const settingsSrc = read('src/components/settings/UnifiedSettingsView.tsx');

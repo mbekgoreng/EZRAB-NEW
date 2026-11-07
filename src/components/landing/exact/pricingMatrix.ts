@@ -15,9 +15,12 @@ import type { PlanId } from '../../../billing/plans';
  * CATATAN KETIDAKSESUAIAN (didokumentasikan, tidak diubah diam-diam):
  * - plans.ts masih menamai paket tertinggi 'Business' (id 'business');
  *   Spec v1.0 menamainya 'Advanced'. Nama tampil di landing mengikuti spec.
- * - plans.ts memberi Free kredit 'initial' 100 (kebijakan lama Phase 5.1);
- *   Spec v1.0 §4 menetapkan Free = 0 kredit AI dan tanpa alokasi otomatis.
- *   Landing menampilkan kredit BULANAN (Free = 0) sesuai spec.
+ * - (TERSELESAIKAN oleh Amendemen v1.2, Keputusan Owner 2026-11-07)
+ *   plans.ts memberi Free kredit 'initial' 100; Spec v1.0 §4 semula
+ *   menetapkan Free = 0 kredit AI. Amendemen v1.2 membatalkan ketentuan
+ *   itu: Free = 100 kredit AI SEKALI per akun (bukan per bulan; habis =
+ *   habis), dan fitur AI Free hanya Chat AI. Landing kini menampilkan
+ *   ketentuan amendemen ini, selaras dengan plans.ts.
  * - Entitlement di plans.ts (keputusan owner O-1..O-13, Okt 2026) belum
  *   diselaraskan ke Spec v1.0 (mis. AHSP Starter di plans.ts masih
  *   Cipta Karya saja; spec: semua kategori untuk paket berbayar).
@@ -34,7 +37,9 @@ export type PricingCell =
   | { t: 'quota'; v: string }
   /** Diselesaikan dari plans.ts: batas proyek (null = Tanpa batas). */
   | { t: 'projects' }
-  /** Diselesaikan dari plans.ts: kredit periodik per bulan (Free = 0). */
+  /** Diselesaikan dari plans.ts: kredit periodik per bulan untuk paket
+   *  berbayar. Free tidak memakai sel ini (grant sekali — lihat baris
+   *  kredit pada kategori AI). */
   | { t: 'credits' };
 
 export interface PricingRow {
@@ -112,10 +117,10 @@ export const PRICING_CATEGORIES: PricingCategory[] = [
     note: 'AI membantu membaca dokumen, mengidentifikasi item pekerjaan, mencocokkan referensi, dan menyusun draf. Koefisien, harga resmi, volume, dan total RAB selalu berasal dari database dan mesin hitung EZRAB — bukan dari AI. Kredit AI dihitung dari pemakaian aktual, bukan jumlah generasi.',
     rows: [
       { label: 'RAB AI', values: { free: N, starter: L, professional: Y, business: Y } },
-      { label: 'Chat AI', values: { free: N, starter: L, professional: Y, business: Y } },
+      { label: 'Chat AI', values: { free: L, starter: L, professional: Y, business: Y } },
       { label: 'Dokumen AI', values: { free: N, starter: L, professional: Y, business: Y } },
       { label: 'Custom Instructions', values: { free: N, starter: N, professional: Y, business: Y } },
-      { label: 'Kredit AI per Bulan', values: { free: { t: 'credits' }, starter: { t: 'credits' }, professional: { t: 'credits' }, business: { t: 'credits' } } },
+      { label: 'Kredit AI per Bulan', values: { free: T('100 (sekali)'), starter: { t: 'credits' }, professional: { t: 'credits' }, business: { t: 'credits' } } },
     ],
   },
   {
@@ -147,6 +152,7 @@ export const PRICING_CATEGORIES: PricingCategory[] = [
 /** Ketentuan billing transparan (Spec v1.0 §4–§11), ditampilkan apa adanya. */
 export const BILLING_TRANSPARENCY_POINTS: string[] = [
   'Paket Free berlaku selamanya — bukan uji coba berbatas waktu dan tidak memiliki tanggal kedaluwarsa.',
+  'Paket Free menerima 100 kredit AI sekali di awal — bukan per bulan. Bila habis, kredit tidak terisi otomatis dan top-up tidak tersedia untuk paket Free. Pada paket Free, fitur AI yang aktif hanya Chat AI (Keputusan Owner 2026-11-07, Amendemen v1.2).',
   'Paket berbayar berjalan sebagai langganan berkala per siklus tagihan.',
   'Kredit langganan diperbarui hanya setelah pembayaran berhasil — pembayaran pending atau gagal tidak menghasilkan alokasi baru.',
   'Sisa kredit langganan yang memenuhi syarat mengikuti kebijakan rollover maksimal 30 hari.',

@@ -16,6 +16,12 @@
  * - Angka harga/batas/jatah JANGAN di-hardcode di komponen — impor dari sini.
  * - Kredit Free bersifat INITIAL (sekali di awal), BUKAN periodik. Jangan
  *   pernah memperlakukannya sebagai jatah per periode.
+ * - KEPUTUSAN OWNER FINAL 2026-11-07 (Amendemen Spec v1.2): Free mendapat
+ *   100 kredit AI SEKALI per akun (semantik FREE_ONCE — habis = habis,
+ *   tanpa isi ulang otomatis), dan fitur AI yang aktif untuk Free HANYA
+ *   Chat AI (DED AI & AI Document nonaktif untuk Free berapa pun sisa
+ *   kreditnya). Ketentuan ini MENGGANTIKAN Spec v1.0 yang menetapkan
+ *   Free = 0 kredit AI; top-up untuk Free tetap tidak tersedia.
  * - Business tanpa batas proyek direpresentasikan sebagai `null` secara
  *   eksplisit (bukan angka besar karangan); gunakan `isUnlimitedProjects`.
  * - Harga top-up TIDAK didefinisikan di sini: owner menunda keputusannya
@@ -80,6 +86,11 @@ export type TemplateAccess =
   | { kind: 'categories'; categories: readonly string[] }
   | { kind: 'all' };
 
+/** Chat AI (Ezrab Chat AI): tersedia atau tidak. Untuk Free ini adalah
+ *  SATU-SATUNYA fitur AI yang aktif (Keputusan Owner 2026-11-07,
+ *  Amendemen Spec v1.2) — lihat juga `activeAiFeatures`. */
+export type ChatAiAccess = boolean;
+
 /** AI Documents: 'credit-metered' = tersedia, dibatasi kredit per operasi
  *  saja (Keputusan O-6 — tanpa batas kategori/frekuensi). */
 export type AiDocumentsAccess = 'locked' | 'credit-metered' | 'full';
@@ -115,6 +126,9 @@ export interface PlanEntitlements {
   /** Domain AHSP yang dibuka (dari union AHSPDomain aplikasi). */
   ahspDomains: readonly AHSPDomain[];
   templates: TemplateAccess;
+  /** Chat AI aktif. Free: true — dan untuk Free ini satu-satunya fitur AI
+   *  yang aktif (dedAi false + aiDocuments 'locked'). */
+  chatAi: ChatAiAccess;
   dedAi: boolean;
   aiDocuments: AiDocumentsAccess;
   documentTemplates: DocumentTemplateAccess;
@@ -218,11 +232,15 @@ export const PLAN_DEFINITIONS: Record<PlanId, PlanDefinition> = {
     displayName: 'Free',
     monthlyPriceIdr: 0,
     projectLimit: 1,
+    // FREE_ONCE: 100 kredit SEKALI per akun (Keputusan Owner 2026-11-07,
+    // Amendemen Spec v1.2). Habis = habis; tidak ada isi ulang otomatis
+    // dan tidak ada top-up untuk Free.
     credits: { kind: 'initial', credits: 100 },
     entitlements: {
       calculators: { kind: 'restricted-set', calculatorIds: FREE_CALCULATOR_IDS },
       ahspDomains: ['CIPTA_KARYA'],
       templates: { kind: 'template-ids', templateIds: FREE_TEMPLATE_IDS },
+      chatAi: true,
       dedAi: false,
       aiDocuments: 'locked',
       documentTemplates: 'none',
@@ -244,6 +262,7 @@ export const PLAN_DEFINITIONS: Record<PlanId, PlanDefinition> = {
       calculators: { kind: 'sni-verified-set', calculatorIds: STARTER_SNI_VERIFIED_CALCULATOR_IDS },
       ahspDomains: ['CIPTA_KARYA'],
       templates: { kind: 'categories', categories: STARTER_TEMPLATE_CATEGORIES },
+      chatAi: true,
       dedAi: true,
       aiDocuments: 'locked',
       documentTemplates: 'bast-only',
@@ -265,6 +284,7 @@ export const PLAN_DEFINITIONS: Record<PlanId, PlanDefinition> = {
       calculators: { kind: 'all' },
       ahspDomains: ALL_AHSP_DOMAINS,
       templates: { kind: 'all' },
+      chatAi: true,
       dedAi: true,
       aiDocuments: 'credit-metered',
       documentTemplates: 'project-documents-and-schedule',
@@ -286,6 +306,7 @@ export const PLAN_DEFINITIONS: Record<PlanId, PlanDefinition> = {
       calculators: { kind: 'all' },
       ahspDomains: ALL_AHSP_DOMAINS,
       templates: { kind: 'all' },
+      chatAi: true,
       dedAi: true,
       aiDocuments: 'full',
       documentTemplates: 'all',
@@ -329,4 +350,34 @@ export function periodicCredits(planId: PlanId): number | null {
 export function initialCredits(planId: PlanId): number | null {
   const c = PLAN_DEFINITIONS[planId].credits;
   return c.kind === 'initial' ? c.credits : null;
+}
+
+// ---------------------------------------------------------------------------
+// Fitur AI aktif per paket (Keputusan Owner 2026-11-07, Amendemen Spec v1.2)
+// ---------------------------------------------------------------------------
+
+/** Kunci fitur AI yang dapat dikonsumsi kredit. */
+export type AiFeatureKey = 'chat-ai' | 'ded-ai' | 'ai-document';
+
+/**
+ * Daftar fitur AI yang AKTIF untuk sebuah paket, diturunkan dari matriks
+ * entitlement (chatAi / dedAi / aiDocuments). Untuk Free hasilnya tepat
+ * ['chat-ai'] — DED AI & AI Document tidak aktif untuk Free berapa pun
+ * sisa kreditnya, dan kredit Free hanya dapat dikonsumsi Chat AI.
+ * Ini DEFINISI untuk fase penegakan berikutnya; belum ada permukaan yang
+ * menegakkannya (billing masih dormant).
+ */
+export function activeAiFeatures(planId: PlanId): readonly AiFeatureKey[] {
+  const e = PLAN_DEFINITIONS[planId].entitlements;
+  const features: AiFeatureKey[] = [];
+  if (e.chatAi) features.push('chat-ai');
+  if (e.dedAi) features.push('ded-ai');
+  if (e.aiDocuments !== 'locked') features.push('ai-document');
+  return features;
+}
+
+/** true bila Chat AI adalah satu-satunya fitur AI aktif paket (Free). */
+export function isChatAiOnly(planId: PlanId): boolean {
+  const f = activeAiFeatures(planId);
+  return f.length === 1 && f[0] === 'chat-ai';
 }

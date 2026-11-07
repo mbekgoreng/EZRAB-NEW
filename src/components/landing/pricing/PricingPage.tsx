@@ -54,7 +54,7 @@ export const PricingPage: React.FC<PricingPageProps> = ({
                 <h2>Paket mengikuti <span className="bl">kebutuhan AI Anda.</span></h2>
                 <p className="sub" style={{ margin: '0 auto' }}>
                   Semua paket memakai mesin hitung dan ketepatan numerik yang sama. Yang berbeda:
-                  akses AHSP, kredit AI bulanan, kuota ekspor, dan kolaborasi tim.
+                  akses AHSP, jatah kredit AI, kuota ekspor, dan kolaborasi tim.
                   Free gratis selamanya — bukan uji coba berbatas waktu.
                 </p>
               </div>
