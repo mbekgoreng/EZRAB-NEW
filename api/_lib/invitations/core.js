@@ -144,7 +144,10 @@ export function maskEmail(email) {
  */
 export function resolvePublicBaseUrl(env = process.env, requestOrigin = '') {
   const candidates = [env.PUBLIC_APP_URL, env.APP_PUBLIC_URL, env.INVITATION_BASE_URL];
-  const isProd = String(env.VERCEL_ENV || '').toLowerCase() === 'production';
+  // PORTABILITY (migrasi AWS/VPS): APP_ENV=production setara VERCEL_ENV
+  // di luar Vercel; aditif murni, perilaku di Vercel tidak berubah.
+  const isProd = String(env.VERCEL_ENV || '').toLowerCase() === 'production'
+    || String(env.APP_ENV || '').toLowerCase() === 'production';
   for (const c of candidates) {
     const v = String(c || '').trim().replace(/\/+$/, '');
     if (!v) continue;

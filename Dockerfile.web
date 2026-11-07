@@ -1,0 +1,27 @@
+# EZRAB — image WEB: build frontend Vite lalu sajikan statis via Nginx.
+# Build context = root repo. Frontend dibangun persis seperti di Vercel
+# (npm run build:full = vite build + prerender blog), tanpa ketergantungan
+# Vercel apa pun. Nilai VITE_* yang publik dibake saat build dari build args
+# (hanya URL + publishable/anon key — TIDAK PERNAH secret server).
+FROM node:24-alpine AS build
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --no-audit --no-fund
+COPY . .
+ARG VITE_SUPABASE_URL=""
+ARG VITE_SUPABASE_PUBLISHABLE_KEY=""
+ARG VITE_SUPABASE_ANON_KEY=""
+ARG VITE_EZRAB_API_BASE_URL=""
+ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL \
+    VITE_SUPABASE_PUBLISHABLE_KEY=$VITE_SUPABASE_PUBLISHABLE_KEY \
+    VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY \
+    VITE_EZRAB_API_BASE_URL=$VITE_EZRAB_API_BASE_URL \
+    NODE_OPTIONS=--max-old-space-size=4096
+RUN npm run build:full
+
+FROM nginx:1.27-alpine
+COPY nginx/ezrab.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /app/dist /usr/share/nginx/html
+EXPOSE 80
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+  CMD wget -qO- http://127.0.0.1/ >/dev/null 2>&1 || exit 1

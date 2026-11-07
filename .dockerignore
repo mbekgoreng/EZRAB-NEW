@@ -1,0 +1,16 @@
+.git
+.github
+node_modules
+dist
+dist-*
+.env
+.env.*
+!.env.example
+.vercel
+coverage
+.tmp_test
+demo-gen
+~
+*.log
+docs
+your_files

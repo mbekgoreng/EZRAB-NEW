@@ -1,0 +1,16 @@
+# EZRAB — image API: runner Node persisten yang melayani handler api/
+# yang sama dengan Vercel Functions (lihat deployment/runner/server.mjs).
+# Tanpa dependensi npm runtime untuk runner itu sendiri; node_modules tetap
+# disalin karena sebagian _lib mengimpor paket (mis. @supabase/supabase-js).
+FROM node:24-alpine
+WORKDIR /app
+ENV NODE_ENV=production
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev --no-audit --no-fund
+COPY api ./api
+COPY deployment ./deployment
+USER node
+EXPOSE 3001
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+  CMD wget -qO- http://127.0.0.1:3001/health >/dev/null 2>&1 || exit 1
+CMD ["node", "deployment/runner/server.mjs"]

@@ -1,0 +1,35 @@
+# EZRAB — override PRODUKSI (EC2/VPS). Dipakai bersama file dasar:
+#   docker compose -f docker-compose.yml -f docker-compose.production.yml \
+#     --env-file .env.docker up -d --build
+# Perbedaan dari lokal: tanpa port db, batas sumber daya konservatif untuk
+# instance kecil, log rotation, dan web hanya terekspos ke reverse proxy
+# host (Nginx di host menangani TLS) — ubah ke "80:80"/"443:443" bila
+# container web langsung menghadapi internet tanpa proxy host.
+services:
+  web:
+    ports:
+      - "127.0.0.1:8080:80"
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  api:
+    environment:
+      # Penanda produksi portabel: mengaktifkan pagar yang di Vercel
+      # digerakkan VERCEL_ENV (mis. penolakan AI_ALLOW_ANONYMOUS).
+      APP_ENV: production
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
