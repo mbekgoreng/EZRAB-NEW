@@ -14,16 +14,92 @@ import { ARCADE_GAMES } from './games/arcade/manifest';
 import { CONSTRUCTION_GAMES } from './catalog';
 
 /**
- * Ukuran desain acuan semua game (px). Stage mengecil/membesar agar game
+ * Ukuran desain acuan game (px). Stage mengecil/membesar agar game
  * selalu pas di ruang yang tersedia — tidak ada lagi yang ke-crop di
  * layar pendek.
+ *
+ * Default-nya portrait 390×700 (acuan desain mayoritas game). Game yang
+ * memang dirancang landscape-native (arena/field menyamping) dan
+ * square-native (papan persegi) punya acuan sendiri di STAGE_SPECS,
+ * supaya panggungnya mengisi layar lebar secara maksimal dengan rasio
+ * aspek asli game — tanpa distorsi dan tanpa terpotong. Game
+ * portrait-native tetap portrait dan terpusat rapi.
+ *
+ * Yang diubah di sini HANYA ukuran tampil panggung (kotak CSS). Dimensi
+ * logis, resolusi render internal, grafis, dan mekanik tiap game tidak
+ * disentuh sama sekali.
  */
 const STAGE_W = 390;
 const STAGE_H = 700;
 const STAGE_MAX_SCALE = 1.3;
 
+interface StageSpec {
+  w: number;
+  h: number;
+  max: number;
+}
+
+const STAGE_PORTRAIT: StageSpec = { w: STAGE_W, h: STAGE_H, max: STAGE_MAX_SCALE };
+/** 16:9 — field/arena menyamping penuh (field difraksi W×H / runner / slicer). */
+const LAND_WIDE: StageSpec = { w: 1120, h: 630, max: 2 };
+/** 16:10 — adegan 3D/DOM menyamping (kanvas + palet/HUD horizontal). */
+const LAND: StageSpec = { w: 1120, h: 700, max: 2 };
+/** 10:7 — arena menyamping ringan (fraksi W×H, formasi, bin, target). */
+const LAND_MILD: StageSpec = { w: 1000, h: 700, max: 2 };
+/** 1:1 — papan persegi (board diskalakan min(W,H) atau aspect-ratio 1). */
+const SQUARE: StageSpec = { w: 700, h: 700, max: 2 };
+
+/**
+ * Klasifikasi orientasi panggung per game, dari geometri desainnya:
+ * dunia virtual tetap (WORLD/VW), papan cols×rows, board min(W,H),
+ * atau komposisi adegan fraksi W×H. Game yang tidak terdaftar =
+ * portrait-native (termasuk keluarga lebar-logis-tetap LW yang diskalakan
+ * dari lebar, papan DOM bertumpuk vertikal, dan sumur/kolom vertikal).
+ */
+const STAGE_SPECS: Record<string, StageSpec> = {
+  // ---- Landscape-native ----
+  'bongkar-rumah': LAND, // adegan 3D + palet horizontal
+  'build-challenge': LAND, // site 3D + palet komponen horizontal
+  'head-soccer-mandor': LAND_WIDE, // field sepak bola fraksi W×H
+  'ketapel-konstruksi': { w: 900, h: 700, max: 2 }, // dunia WORLD 900×700 persis
+  'lari-proyek': LAND_WIDE, // endless runner menyamping (Three.js)
+  'selamatkan-mandor': LAND_MILD, // adegan crane/bata fraksi W×H
+  'tebas-material': LAND_WIDE, // slicer layar penuh
+  'arcade-archery': LAND_MILD, // tembak horizontal, ruang virtual VH
+  'arcade-breakout': LAND_MILD, // field bata 8 kolom fraksi W×H
+  'arcade-capit-crane': LAND_MILD, // rel crane menyamping
+  'arcade-dice-roll': LAND_MILD, // elips meja adegan fraksi W×H
+  'arcade-emoji-catcher': LAND_MILD, // tangkap jatuh, keranjang menyamping
+  'arcade-fruit-slicer': LAND_WIDE, // slicer layar penuh
+  'arcade-hangman': LAND_MILD, // komposisi adegan menyamping fraksi W×H
+  'arcade-insect-catch': LAND_MILD, // target menyebar fraksi W×H
+  'arcade-ping-pong': { w: 1000, h: 600, max: 2 }, // dunia VW×VH 800×480 (5:3)
+  'arcade-shape-clicker': LAND_MILD, // target menyebar fraksi W×H
+  'arcade-sortir-material': LAND_MILD, // 3 bin membentang selebar W
+  'arcade-space-invaders': LAND_MILD, // formasi 8 kolom menyamping
+  // ---- Square-native ----
+  'gabung-blok': SQUARE, // papan 2048: size = min(W,H)
+  'sambung-kata': SQUARE, // roda huruf: komposisi persegi
+  'sudoku-tukang': SQUARE, // papan 9×9: n = min(W,H)
+  'arcade-candy-crush': SQUARE, // papan 8×8
+  'arcade-checkers': SQUARE, // papan DOM aspect 1
+  'arcade-chess': SQUARE, // papan DOM aspect 1
+  'arcade-connect-four': SQUARE, // papan 7×6 di tengah bidang
+  'arcade-crossy-road': SQUARE, // lajur menyamping, progres vertikal
+  'arcade-lights-out': SQUARE, // grid 5×5, cell = min(W,H)
+  'arcade-minesweeper': SQUARE, // level 9×9 / 16×16 / 30×16
+  'arcade-nonogram': SQUARE, // grid 10×10 + petunjuk
+  'arcade-pac-man': SQUARE, // labirin 19×17
+  'arcade-simon-says': SQUARE, // 4 pad 2×2
+  'arcade-sliding-puzzle': SQUARE, // papan DOM aspect 1
+  'arcade-snake': SQUARE, // dunia logis 440×440
+  'arcade-sudoku': SQUARE, // papan DOM aspect 1
+  'arcade-tic-tac-toe': SQUARE, // papan: size = min(W,H)
+  'arcade-whack-a-mole': SQUARE, // papan lubang persegi di tengah adegan
+};
+
 /** Pembungkus game aktif: ukur ruang, skala stage agar pas, tanpa crop. */
-const GameStage: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+const GameStage: React.FC<{ spec: StageSpec; children: React.ReactNode }> = ({ spec, children }) => {
   const measRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
   useEffect(() => {
@@ -33,19 +109,19 @@ const GameStage: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       const w = el.clientWidth - 16; // kurangi padding .gs-stage
       const h = el.clientHeight - 16;
       if (w > 0 && h > 0) {
-        setScale(Math.min(w / STAGE_W, h / STAGE_H, STAGE_MAX_SCALE));
+        setScale(Math.min(w / spec.w, h / spec.h, spec.max));
       }
     };
     update();
     const ro = new ResizeObserver(update);
     ro.observe(el);
     return () => ro.disconnect();
-  }, []);
+  }, [spec]);
   return (
     <div ref={measRef} className="gs-stage">
       <div
         className="gs-stage-box"
-        style={{ width: Math.floor(STAGE_W * scale), height: Math.floor(STAGE_H * scale) }}
+        style={{ width: Math.floor(spec.w * scale), height: Math.floor(spec.h * scale) }}
       >
         {children}
       </div>
@@ -242,7 +318,7 @@ export const GameSpaceOverlay: React.FC<Props> = ({ onClose }) => {
             <p className="gs-menu-note">🎮 Berjalan 100% lokal di perangkatmu — tanpa AI, tanpa kuota.</p>
           </div>
         ) : (
-          <GameStage>
+          <GameStage spec={STAGE_SPECS[activeGame.id] ?? STAGE_PORTRAIT}>
             <Suspense
               fallback={
                 <div className="gs-loading">
