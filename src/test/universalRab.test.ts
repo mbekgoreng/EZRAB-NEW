@@ -159,14 +159,31 @@ test('irigasi tanpa ukuran → needs-spec dengan SATU pertanyaan ukuran utama', 
   }
 });
 
-test('permintaan terlalu ambigu → unsupported (jalur klarifikasi lama yang memiliki)', () => {
+test('permintaan terlalu ambigu → klarifikasi objek terpandu (finalisasi §4)', () => {
+  // Perilaku diubah OLEH BRIEF finalisasi §4 (owner 2026-11-08):
+  // permintaan berniat RAB tanpa objek yang teridentifikasi WAJIB
+  // mendapat klarifikasi terpandu (needs-spec) — kasus dataset amb-025
+  // ('buatkan rab sesuatu yang besar'). Asersi lama 'unsupported'
+  // adalah perilaku yang dinyatakan cacat oleh brief itu. Yang tetap
+  // dijaga dari asersi lama: 'unsupported' HANYA untuk pesan tanpa
+  // niat RAB sama sekali (dibuktikan di suite buildingTypology F4).
   const res = buildUniversalDraft('Buatkan RAB');
-  assert.equal(res.kind, 'unsupported');
+  assert.equal(res.kind, 'needs-spec');
+  if (res.kind === 'needs-spec') {
+    assert.ok(/objek/i.test(res.reason), 'klarifikasi menanyakan objek pekerjaan');
+  }
 });
 
-test('rumah typed T70 2 lantai → unsupported (TETAP jalur rumah directRab/specRab)', () => {
+test('rumah typed T70 2 lantai → lapisan universal tidak mengklaim (TETAP jalur rumah directRab/specRab)', () => {
+  // Kontrak antar-lapisan yang dijaga asersi lama: buildUniversalDraft
+  // TIDAK BOLEH membuat draft rumah typed — rumah adalah jalur
+  // directRab/specRab di produksi (intentRouter CREATE_RAB_DIRECT).
+  // Bentuk pengembalian berubah needs-spec sejak klarifikasi terpandu
+  // §4 (fungsi generik 'rumah' dikenali tipologi → ditanya ukurannya),
+  // tetapi TIDAK PERNAH draft dari lapisan ini; dan cakupan tetap
+  // kosong persis seperti asersi lama.
   const res = buildUniversalDraft('Buatkan RAB rumah type 70 2 lantai');
-  assert.equal(res.kind, 'unsupported');
+  assert.notEqual(res.kind, 'draft');
   assert.deepEqual(detectScopes('Buatkan RAB rumah type 70 2 lantai').map((s) => s.id), []);
 });
 

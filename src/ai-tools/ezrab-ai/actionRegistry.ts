@@ -31,6 +31,7 @@ import { findGamesMentioned, buildGameInfoAnswer } from '../../game-space/catalo
 import { buildDirectRab, displayTemplateBasisName, findDirectTemplate, formatDirectRabMessage, matchDirectRegion } from './directRab';
 import { buildSpecRab, buildSpecRabFromNeeds } from './specRab';
 import { buildUniversalDraft, formatUniversalDraftMessage } from './universalRab';
+import { captureFeedback } from './constructionFeedback';
 
 export interface ChatActionContext {
   /** Navigate to a menu id (WorkspaceView.setActiveMenu) */
@@ -291,6 +292,10 @@ function rabSummaryResult(raw: string, base?: RabNeeds): ActionResult {
     const num = (v: number) => v.toLocaleString('id-ID', { maximumFractionDigits: 1 });
     if (needs.kindLabel !== base.kindLabel && needs.kindLabel) changes.push(`Jenis pekerjaan: ${needs.kindLabel}`);
     if (needs.floors !== base.floors && needs.floors) changes.push(`Jumlah lantai: ${needs.floors} lantai`);
+    // Luas lahan dilaporkan SEBAGAI lahan (audit ekstrem F-080/F-082):
+    // sebelumnya kolom ini tidak punya baris perubahan sama sekali dan
+    // angkanya bocor menjadi "Luas bangunan" lewat fallback parser.
+    if (needs.landAreaM2 !== base.landAreaM2 && needs.landAreaM2) changes.push(`Luas lahan: ${num(needs.landAreaM2)} m²`);
     if (needs.buildingArea !== base.buildingArea && needs.buildingArea) changes.push(`Luas bangunan: ${num(needs.buildingArea)} m²`);
     if (
       (needs.landLength !== base.landLength || needs.landWidth !== base.landWidth) &&
@@ -300,6 +305,17 @@ function rabSummaryResult(raw: string, base?: RabNeeds): ActionResult {
     if (needs.bathrooms !== base.bathrooms && needs.bathrooms) changes.push(`Kamar mandi: ${needs.bathrooms}`);
     if (needs.carport !== base.carport && needs.carport !== null) changes.push(`Carport: ${needs.carport ? 'ada' : 'tidak ada'}`);
     if (needs.location !== base.location && needs.location) changes.push(`Lokasi: ${needs.location}`);
+    // Material atap kini kolom state tersendiri (audit ekstrem
+    // F-081/F-083) — koreksinya dilaporkan seperti kolom lain, bukan
+    // "tidak ada perubahan".
+    if (needs.roofMaterial !== base.roofMaterial && needs.roofMaterial) changes.push(`Atap: ${needs.roofMaterial}`);
+    // Integrasi feedback (audit jalur produksi P0 §3): koreksi
+    // pengguna pada sesi kebutuhan adalah peristiwa belajar yang
+    // memang dirancang ditangkap constructionFeedback — ditangkap di
+    // memori proses saja (tanpa persistensi, tanpa mengubah jawaban).
+    if (changes.length > 0) {
+      captureFeedback('user-correction', raw, { changes: [...changes] });
+    }
     const lines: string[] = [
       changes.length
         ? `Siap, saya perbarui: ${changes.join('; ')}. Data lainnya tetap sama.`
@@ -528,7 +544,26 @@ function directRabTableResult(built: BuiltRab): ActionResult {
  */
 function universalResultFor(raw: string, forcedTemplateId?: string): ActionResult | null {
   const res = buildUniversalDraft(raw, forcedTemplateId);
+  // Integrasi feedback (audit jalur produksi P0 §3): permintaan yang
+  // tidak terdukung / tidak ada template katalognya adalah sinyal
+  // kesenjangan pengetahuan — ditangkap constructionFeedback di sini
+  // (memori proses, dedup per subjek) agar antrean review manusia
+  // punya bahan nyata dari jalur produksi, bukan hanya dari tes.
+  if (res.kind === 'unsupported') {
+    captureFeedback('unsupported-request', raw, { reason: res.reason });
+  }
+  if (res.kind === 'needs-spec' && /tidak ada template katalog/i.test(res.reason)) {
+    captureFeedback('missing-knowledge', raw, { reason: res.reason });
+  }
   if (res.kind === 'draft') {
+    // Ganti-topik membersihkan sesi kebutuhan rumah (audit ekstrem
+    // 2026-11-08, Kategori F): draft universal adalah HASIL AKHIR topik
+    // non-rumah — bila state rumah dari topik sebelumnya dibiarkan,
+    // afirmasi berikutnya ("itu aja") difinalisasi terhadap kebutuhan
+    // rumah lama yang sudah ditinggalkan pengguna (bocor antar-topik
+    // terukur: rumah → gudang → "itu aja" menghasilkan draft rumah).
+    // Sesi kebutuhan hanya hidup selama topiknya rumah/kebutuhan.
+    lastRabNeeds = null;
     return {
       ok: true,
       message: formatUniversalDraftMessage(res.draft),
@@ -539,6 +574,19 @@ function universalResultFor(raw: string, forcedTemplateId?: string): ActionResul
     };
   }
   if (res.kind === 'needs-spec') {
+    // Pesan kontekstual tipologi (2026-11-08): bila builder sudah
+    // menyusun ringkasan pemahaman, tampilkan itu — pengguna melihat apa
+    // yang sudah dipahami dan hanya ditanya SATU hal yang benar-benar
+    // menghalangi; bukan penolakan generik.
+    if (res.understoodSummary) {
+      return {
+        ok: true,
+        message:
+          `${res.reason}\n\nYang sudah saya pahami: ${res.understoodSummary}.\n\n` +
+          `Yang masih dibutuhkan:\n${res.missing.map((m) => `• ${m}`).join('\n')}\n\n` +
+          'Begitu ukurannya ada, draft awal langsung saya siapkan — spesifikasi lain (struktur, pondasi, atap) cukup ditandai perlu konfirmasi, tidak menghalangi draft.',
+      };
+    }
     return {
       ok: true,
       message:
@@ -554,6 +602,7 @@ function syntheticUniversalRawText(n: RabNeeds): string | null {
   if (n.kindLabel) parts.push(n.kindLabel);
   if (n.lengthM) parts.push(`sepanjang ${n.lengthM} m`);
   else if (n.buildingArea) parts.push(`luas ${n.buildingArea} m2`);
+  else if (n.buildingWidth && n.buildingLength) parts.push(`${n.buildingWidth}x${n.buildingLength}`);
   if (n.floors) parts.push(`${n.floors} lantai`);
   if (n.location) parts.push(`di ${n.location}`);
   if (!n.kindLabel && !n.lengthM && !n.buildingArea && !n.floors) return null;

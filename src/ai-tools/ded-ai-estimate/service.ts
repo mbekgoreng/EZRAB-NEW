@@ -18,6 +18,7 @@ import { buildFastPrompt, DedFastOutput, DedFastPromptInput } from './prompts/fa
 import { buildDetailPrompt, DedDetailOutput, DedDetailPromptInput } from './prompts/detail';
 import { parseDedPdf, DedParsedDocument } from './parser';
 import { attemptQuantityFromDimensionString, parseDimensionsString } from './quantity';
+import { evaluateAssumptionBasis, type AssumptionBasisKind } from './assumptionBasis';
 import { applyQuantityReasonablenessReview } from './reasonableness';
 import { resolveDedPriceForPolicy } from './pricing';
 import { matchDedItemToAhsp, resolveDedPriceWithCanonical } from '../ded-canonical/canonicalDedPricing';
@@ -62,7 +63,9 @@ export function isProjectTypeSupported(v: string): v is DedAiProjectType {
   return PROJECT_TYPES.includes(v);
 }
 
-function convertAiItem(idx: number, raw: any, mode: DedAiMode, policy?: import('./types').DedEstimationPolicy): DedAiItem {
+// Diekspor agar lapisan konversi dapat diuji deterministik tanpa model live
+// (pola yang sama dengan helper lain di berkas ini).
+export function convertAiItem(idx: number, raw: any, mode: DedAiMode, policy?: import('./types').DedEstimationPolicy): DedAiItem {
   const name = String(raw.name || `Pekerjaan ${idx + 1}`);
   const units = String(raw.units || raw.unit || 'm2');
   const dims = raw.dimensions || raw.quantityFormula || '';
@@ -170,12 +173,94 @@ function convertAiItem(idx: number, raw: any, mode: DedAiMode, policy?: import('
     quantitySource = 'UNRESOLVED';
   }
 
+  // ---------------------------------------------------------------------------
+  // TANGGA ASUMSI BERLABEL (keputusan owner 2026-11-08) — FULL_AI SAJA.
+  // Mode DATABASE mempertahankan perilaku ketat di atas apa adanya.
+  //
+  // Filosofi owner: estimasi dikerjakan PENUH sampai ada angka, tetapi
+  // setiap angka asumsi WAJIB berlabel + dasarnya dinyatakan dan bisa
+  // ditunjukkan. Maka di FULL_AI:
+  //  - item yang gagal resolusi deterministik TETAPI punya dasar
+  //    terstruktur yang terverifikasi mekanis dari keluaran model itu
+  //    sendiri (assumptionBasis.ts) → DIISI sebagai ASSUMPTION, dengan
+  //    derivation + rumus tertulis, dan terhitung ke subtotal berlabel.
+  //  - angka telanjang (AI_INFERENCE: raw.quantity tanpa dasar yang bisa
+  //    ditunjuk) TIDAK lagi dipertahankan sebagai kuantitas — diturunkan
+  //    ke UNRESOLVED ("Perlu Input") kecuali dasar terstruktur ditemukan,
+  //    dalam hal ini nilai terhitung-dari-dasar yang dipakai (bukan angka
+  //    telanjangnya).
+  // Pagar lama tidak berubah: diameter-saja tidak menjadi panjang; dimensi
+  // ambigu-satuan tetap ditolak sebagai dimensi (hanya sah sebagai asumsi
+  // bila model menyatakan satuannya eksplisit — kanal SATUAN_DIASUMSIKAN).
+  // ---------------------------------------------------------------------------
+  const effectivePolicy = policy ?? 'FULL_AI';
+  let assumptionFormula: string | undefined;
+  let assumptionNote: string | undefined;
+  let assumptionKind: AssumptionBasisKind | undefined;
+  if (effectivePolicy === 'FULL_AI' && quantitySource !== 'DERIVED') {
+    const basisCtx = {
+      units,
+      dimensionString: dims ? String(dims) : null,
+      ambiguousUnit: fromDim.ambiguousUnit,
+      diameterOnly: fromDim.diameterOnly === true,
+    };
+    if (quantity === null) {
+      const basis = evaluateAssumptionBasis(raw, basisCtx);
+      if (basis) {
+        quantity = basis.quantity;
+        quantitySource = 'ASSUMPTION';
+        derivation = basis.derivation;
+        assumptionFormula = basis.quantityFormula;
+        assumptionNote = basis.note;
+        assumptionKind = basis.kind;
+      }
+    } else if (quantitySource === 'AI_INFERENCE') {
+      const basis = evaluateAssumptionBasis(raw, basisCtx);
+      if (basis) {
+        const replaced = Math.abs(basis.quantity - quantity) > 0.0001
+          ? ` Angka telanjang model (${quantity}) digantikan nilai terhitung dari dasar terstruktur (${basis.quantity}).`
+          : '';
+        quantity = basis.quantity;
+        quantitySource = 'ASSUMPTION';
+        derivation = basis.derivation;
+        assumptionFormula = basis.quantityFormula;
+        assumptionNote = basis.note + replaced;
+        assumptionKind = basis.kind;
+      } else {
+        quantity = null;
+        quantitySource = 'UNRESOLVED';
+        assumptionNote =
+          'Perlu Input: kuantitas dari model tanpa dasar terstruktur yang bisa ditunjuk ' +
+          '(derivation terstruktur / jadwal unit / satuan dimensi yang dinyatakan sebagai asumsi). ' +
+          'Mode Full AI tidak menghitung angka telanjang — lengkapi dasar asumsi atau isi kuantitas manual.';
+      }
+    }
+  }
+
   // Resolusi kanonis dulu (adapter ded-canonical): DATABASE mencoba AHSP
   // dulu; bila tidak ada di database, estimasi AI dipakai sebagai fallback
   // berlabel jelas (keputusan owner 2026-10-27 malam). FULL_AI memakai
   // harga kanonis bila terverifikasi, sisanya estimasi AI + match terlampir
   // untuk review.
-  const aiPrice = resolveDedPriceForPolicy(policy, raw.estimatedUnitPrice ?? raw.unitPrice, raw.unitPriceNote);
+  const aiPriceRaw = resolveDedPriceForPolicy(policy, raw.estimatedUnitPrice ?? raw.unitPrice, raw.unitPriceNote);
+  // Tangga harga FULL_AI (owner 2026-11-08): estimasi harga AI hanya
+  // ditempel bila model menyertakan CATATAN DASAR (unitPriceNote) — harga
+  // tanpa dasar tidak ditampilkan sebagai angka. Gerbang ini di lapisan
+  // konversi (bukan pricing.ts, yang kontraknya dikunci suite kebijakan)
+  // dan hanya menjatuhkan FALLBACK AI: harga kanonis dari adapter di
+  // bawah tetap menang bila cocok (tangga: kanonis → estimasi berdasar →
+  // belum tersedia). Mode DATABASE tidak berubah.
+  const aiPriceBasisNote = typeof raw.unitPriceNote === 'string' ? raw.unitPriceNote.trim() : '';
+  const aiPrice =
+    effectivePolicy === 'FULL_AI' && aiPriceRaw.priceSource === 'AI_ESTIMATE' && aiPriceBasisNote.length < 4
+      ? {
+          unitPrice: null,
+          priceSource: 'UNRESOLVED' as const,
+          note:
+            'Estimasi harga AI tidak ditempel: model tidak menyertakan catatan dasar harga (unitPriceNote). ' +
+            'Harga tanpa dasar tidak ditampilkan sebagai angka — lengkapi catatan dasar, pilih harga AHSP, atau isi harga manual.',
+        }
+      : aiPriceRaw;
   const claimedCode = typeof raw.ahspCode === 'string'
     ? raw.ahspCode
     : (typeof raw.code === 'string' ? raw.code : undefined);
@@ -209,11 +294,16 @@ function convertAiItem(idx: number, raw: any, mode: DedAiMode, policy?: import('
           : undefined;
   // Sprint 3 (G3): konflik dimensi antar-pass selalu terlihat sebagai
   // catatan review, apa pun catatan dasarnya.
-  const quantityNote = dedupDimensionConflict
+  const quantityNoteWithConflict = dedupDimensionConflict
     ? [baseQuantityNote, 'Item se-nama dan se-satuan dengan dimensi berbeda ditemukan antar-pass — keduanya dipertahankan; perlu review.']
         .filter(Boolean)
         .join(' ')
     : baseQuantityNote;
+  // Catatan tangga asumsi selalu tampil (dasar terstruktur yang dipakai,
+  // atau alasan spesifik angka telanjang diturunkan ke Perlu Input).
+  const quantityNote = assumptionNote
+    ? [quantityNoteWithConflict, assumptionNote].filter(Boolean).join(' ')
+    : quantityNoteWithConflict;
 
   return {
     id: `dedai-${idx + 1}`,
@@ -224,7 +314,7 @@ function convertAiItem(idx: number, raw: any, mode: DedAiMode, policy?: import('
     units,
     quantity,
     quantitySource,
-    quantityFormula: fromDim.formula || raw.quantityFormula || undefined,
+    quantityFormula: assumptionFormula || fromDim.formula || raw.quantityFormula || undefined,
     quantityNote,
     rawDimensions: fromDim.rawDimensions || undefined,
     derivation,
@@ -245,6 +335,7 @@ function convertAiItem(idx: number, raw: any, mode: DedAiMode, policy?: import('
     sourceEvidence: raw.sourceEvidence || undefined,
     provenance: [
       `quantity:${quantitySource}`,
+      ...(assumptionKind ? [`assumption-basis:${assumptionKind}`] : []),
       `price:${price.source}`,
       ...(price.ahspCode ? [`ahsp:${price.ahspCode}`] : []),
       quantity !== null ? `qty=${quantity}` : 'qty=null',

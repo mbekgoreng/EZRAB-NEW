@@ -31,6 +31,8 @@ import { QuickActionFollowUpSuggestions } from './QuickActionFollowUpSuggestions
 import { EZRABMascotLucu } from '../mascot/EZRABMascotLucu';
 import ezrabAvatarImg from '../../assets/ezrab_avatar.png';
 import { unifiedConversationStore } from '../../services/ai/conversation/unifiedConversationStore';
+import { renderMarkdown } from '../../ai-tools/ezrab-ai/markdown';
+import '../../ai-tools/ezrab-ai/markdown.css';
 import { useI18n } from '../../i18n/I18nContext';
 import { STT_LOCALES } from '../../i18n/dictionaries';
 
@@ -882,50 +884,13 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
 
   if (isClosed) return null;
 
-  // Render Markdown-like formatted message content
-  const renderMessageContent = (text: string) => {
-    const lines = text.split('\n');
-    return lines.map((line, idx) => {
-      // Bold rendering
-      let processed: React.ReactNode = line;
-      if (line.includes('**')) {
-        const parts = line.split(/(\*\*[^*]+\*\*)/g);
-        processed = parts.map((part, pIdx) => {
-          if (part.startsWith('**') && part.endsWith('**')) {
-            return <strong key={pIdx} style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>{part.slice(2, -2)}</strong>;
-          }
-          return part;
-        });
-      }
-
-      // Bullet list items
-      if (line.trim().startsWith('- ') || line.trim().startsWith('• ')) {
-        return (
-          <div key={idx} style={{ display: 'flex', gap: '6px', marginTop: '3px' }}>
-            <span style={{ color: 'var(--ez-color-primary)', fontWeight: 700 }}>•</span>
-            <span style={{ flex: 1 }}>{typeof processed === 'string' ? processed.replace(/^[-•]\s*/, '') : processed}</span>
-          </div>
-        );
-      }
-
-      // Numbered list items
-      const numMatch = line.trim().match(/^(\d+)\.\s+(.*)/);
-      if (numMatch) {
-        return (
-          <div key={idx} style={{ display: 'flex', gap: '6px', marginTop: '3px' }}>
-            <span style={{ color: 'var(--ez-color-primary)', fontWeight: 600 }}>{numMatch[1]}.</span>
-            <span style={{ flex: 1 }}>{numMatch[2]}</span>
-          </div>
-        );
-      }
-
-      return (
-        <p key={idx} style={{ margin: idx > 0 ? '4px 0 0' : '0', minHeight: line.trim() ? 'auto' : '6px' }}>
-          {processed}
-        </p>
-      );
-    });
-  };
+  // Render konten pesan lewat RENDERER SENTRAL EZRAB Chat
+  // (ai-tools/ezrab-ai/markdown) — sebelumnya chatbox ini punya renderer
+  // mini sendiri yang hanya mengenal **bold** dan daftar sederhana,
+  // sehingga tabel/LaTeX/entitas tampil mentah di sini.
+  const renderMessageContent = (text: string) => (
+    <div className="md-body">{renderMarkdown(text)}</div>
+  );
 
   // Compact Responsive Layout Styles
   const desktopWidth = isExpanded ? 'min(640px, calc(100vw - 24px))' : 'min(390px, calc(100vw - 24px))';

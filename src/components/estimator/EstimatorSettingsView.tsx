@@ -23,7 +23,7 @@ export const EstimatorSettingsView: React.FC<EstimatorSettingsViewProps> = ({
   onOpenExportModal,
 }) => {
   const [overheadPercent, setOverheadPercent] = useState<number>(
-    (currentProject as any)?.overheadPercent ?? 10
+    (currentProject as any)?.overheadPercent ?? 0
   );
   const [ppnPercent, setPpnPercent] = useState<number>(
     (currentProject as any)?.ppnPercent ?? 11

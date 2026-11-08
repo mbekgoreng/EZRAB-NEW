@@ -1,11 +1,37 @@
 /**
  * ArcadeChess ("Catur Proyek") — catur peran proyek.
- * Kamu = Tim Mandor (emas) vs AI = Tim Klien (merah). Aturan penuh di logic.ts.
+ * Kamu = Tim Mandor (biru EZRAB, alas emas) vs AI = Tim Klien (merah, alas
+ * gunmetal). Aturan penuh di logic.ts.
+ * Bidak = aset generate-AI (assets/chess/); gagal muat -> fallback glif SVG
+ * prosedural lama (PieceGlyph) agar game tak pernah tampil kosong.
  */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { sfx } from '../../../engine2d';
 import { bestKey, getBest, setBest } from '../../../engine2d/best';
 import { popText } from '../../../engine2d/juice2d';
+import { useSprite } from '../../../engine2d/sprites';
+import pieceMandorBiru from '../../../assets/chess/piece-mandor-biru.webp';
+import pieceArsitekBiru from '../../../assets/chess/piece-arsitek-biru.webp';
+import pieceCraneBiru from '../../../assets/chess/piece-crane-biru.webp';
+import pieceSurveyorBiru from '../../../assets/chess/piece-surveyor-biru.webp';
+import pieceTrukBiru from '../../../assets/chess/piece-truk-biru.webp';
+import pieceTukangBiru from '../../../assets/chess/piece-tukang-biru.webp';
+import pieceMandorMerah from '../../../assets/chess/piece-mandor-merah.webp';
+import pieceArsitekMerah from '../../../assets/chess/piece-arsitek-merah.webp';
+import pieceCraneMerah from '../../../assets/chess/piece-crane-merah.webp';
+import pieceSurveyorMerah from '../../../assets/chess/piece-surveyor-merah.webp';
+import pieceTrukMerah from '../../../assets/chess/piece-truk-merah.webp';
+import pieceTukangMerah from '../../../assets/chess/piece-tukang-merah.webp';
+
+/** URL sprite bidak generate-AI per peran & kubu. */
+const PIECE_URL: Record<PieceType, { w: string; b: string }> = {
+  k: { w: pieceMandorBiru, b: pieceMandorMerah },
+  q: { w: pieceArsitekBiru, b: pieceArsitekMerah },
+  r: { w: pieceCraneBiru, b: pieceCraneMerah },
+  b: { w: pieceSurveyorBiru, b: pieceSurveyorMerah },
+  n: { w: pieceTrukBiru, b: pieceTrukMerah },
+  p: { w: pieceTukangBiru, b: pieceTukangMerah },
+};
 import {
   startState, legalMovesFor, applyMove, gameStatus, aiBestMove, squareName,
   kingSquare,
@@ -16,8 +42,9 @@ const FONT = "'Plus Jakarta Sans','Inter',system-ui,sans-serif";
 const BK_STREAK = bestKey('catur-proyek', 'winstreak');
 const BK_WINS = bestKey('catur-proyek', 'wins');
 
-/** Buah catur = peran proyek. Bidak digambar sebagai SVG prosedural
- * (PieceGlyph di bawah) — bukan emoji, bukan hasil generate. */
+/** Buah catur = peran proyek. Bidak utama = sprite generate-AI
+ * (PIECE_URL di atas); PieceGlyph SVG prosedural tetap dipertahankan
+ * sebagai fallback bila sprite gagal dimuat. */
 const ROLE: Record<PieceType, { name: string }> = {
   k: { name: 'Mandor' },
   q: { name: 'Arsitek' },
@@ -237,7 +264,7 @@ export default function ArcadeChess({ onExit }: { onExit: () => void }): React.J
       <div style={{ padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'sticky', top: 0, zIndex: 5 }}>
         <div style={{ background: 'rgba(10,16,34,0.7)', border: '1px solid rgba(255,255,255,0.18)', borderRadius: 14, padding: '8px 12px', backdropFilter: 'blur(6px)', minWidth: 190 }}>
           <div style={{ fontWeight: 900, fontSize: 14, letterSpacing: 0.5, color: '#fde047', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <PieceGlyph t="r" mine size={18} /> CATUR PROYEK
+            <PieceArt t="r" mine size={18} /> CATUR PROYEK
           </div>
           <div style={{ fontSize: 12, marginTop: 3, opacity: 0.92, display: 'flex', alignItems: 'center', gap: 6 }}>
             {status.over ? 'Selesai' : st.turn === 'w'
@@ -339,7 +366,7 @@ export default function ArcadeChess({ onExit }: { onExit: () => void }): React.J
         <div style={{ marginTop: 8, fontSize: 11, opacity: 0.85, lineHeight: 1.7, display: 'flex', flexWrap: 'wrap', gap: '2px 10px', alignItems: 'center' }}>
           {(Object.keys(ROLE) as PieceType[]).map((t) => (
             <span key={t} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-              <PieceGlyph t={t} mine size={15} /> {ROLE[t].name}={t === 'k' ? 'raja' : t === 'q' ? 'menteri' : t === 'r' ? 'benteng' : t === 'b' ? 'gajah' : t === 'n' ? 'kuda' : 'pion'}
+              <PieceArt t={t} mine size={15} /> {ROLE[t].name}={t === 'k' ? 'raja' : t === 'q' ? 'menteri' : t === 'r' ? 'benteng' : t === 'b' ? 'gajah' : t === 'n' ? 'kuda' : 'pion'}
             </span>
           ))}
         </div>
@@ -351,13 +378,13 @@ export default function ArcadeChess({ onExit }: { onExit: () => void }): React.J
       {/* pilih promosi */}
       {pendingPromo && (
         <Overlay>
-          <div style={{ display: 'flex', justifyContent: 'center' }}><PieceGlyph t="q" mine size={44} /></div>
+          <div style={{ display: 'flex', justifyContent: 'center' }}><PieceArt t="q" mine size={44} /></div>
           <h2 style={h2}>TUKANG NAIK PANGKAT!</h2>
           <p style={p}>Pion mencapai ujung proyek. Promosikan jadi:</p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 8 }}>
             {(['q', 'r', 'b', 'n'] as PieceType[]).map((t) => (
               <button key={t} onClick={() => choosePromo(t)} style={promoBtn}>
-                <PieceGlyph t={t} mine size={32} />
+                <PieceArt t={t} mine size={32} />
                 <span style={{ fontSize: 12, fontWeight: 800 }}>{ROLE[t].name}</span>
               </button>
             ))}
@@ -368,8 +395,8 @@ export default function ArcadeChess({ onExit }: { onExit: () => void }): React.J
       {screen === 'tutorial' && (
         <Overlay>
           <div style={{ display: 'flex', justifyContent: 'center', gap: 10 }}>
-            <PieceGlyph t="k" mine size={46} />
-            <PieceGlyph t="r" mine={false} size={46} />
+            <PieceArt t="k" mine size={46} />
+            <PieceArt t="r" mine={false} size={46} />
           </div>
           <h2 style={h2}>CATUR PROYEK</h2>
           <p style={p}>
@@ -392,7 +419,7 @@ export default function ArcadeChess({ onExit }: { onExit: () => void }): React.J
       {screen === 'over' && result && (
         <Overlay>
           <div style={{ display: 'flex', justifyContent: 'center' }}>
-            <PieceGlyph t={result.win ? 'k' : 'r'} mine={result.win} size={46} />
+            <PieceArt t={result.win ? 'k' : 'r'} mine={result.win} size={46} />
           </div>
           <h2 style={{ ...h2, color: result.win ? '#4ade80' : '#f87171' }}>{result.text}</h2>
           <p style={p}>{result.sub}</p>
@@ -410,8 +437,8 @@ function Dot({ color }: { color: string }): React.JSX.Element {
 }
 
 /**
- * Glif bidak TERDESAIN — SVG prosedural digambar kode (BUKAN hasil generate,
- * dicatat jujur mengikuti pola Sudoku pilot). Satu siluet khas per peran
+ * FALLBACK glif bidak — SVG prosedural digambar kode, dipakai HANYA bila
+ * sprite generate-AI belum siap / gagal dimuat (pola loader repo). Satu siluet khas per peran
  * proyek + tanda peran bergaya mahkota catur agar tetap terbaca sebagai
  * bidak: Mandor = helm + mahkota kecil, Arsitek = mahkota + segitiga siku,
  * T.Crane = menara crane, Surveyor = tripod theodolite, Truk = truk molen,
@@ -489,6 +516,21 @@ function PieceGlyph({ t, mine, size = 24 }: { t: PieceType; mine: boolean; size?
 function PieceToken({ p }: { p: Piece }): React.JSX.Element {
   const mine = p.c === 'w';
   const role = ROLE[p.t];
+  const img = useSprite(PIECE_URL[p.t][p.c]);
+  if (img) {
+    // Sprite generate-AI: bidak sudah membawa alas pedestalnya sendiri,
+    // jadi token tampil polos di atas sel + bayangan tanah lembut.
+    return (
+      <div style={{
+        width: '94%', height: '94%',
+        display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+        filter: 'drop-shadow(0 3px 3px rgba(10,16,34,0.45))',
+        pointerEvents: 'none',
+      }} title={role.name}>
+        <img src={img.src} alt={role.name} draggable={false} style={{ width: '100%', height: '100%', objectFit: 'contain', userSelect: 'none' }} />
+      </div>
+    );
+  }
   return (
     <div style={{
       width: '88%', height: '88%', borderRadius: '50%',
@@ -508,6 +550,21 @@ function PieceToken({ p }: { p: Piece }): React.JSX.Element {
   );
 }
 
+/** Bidak untuk permukaan kecil (header, tray rampasan, legenda, dialog):
+ * sprite generate-AI bila siap, fallback glif prosedural. */
+function PieceArt({ t, mine, size }: { t: PieceType; mine: boolean; size: number }): React.JSX.Element {
+  const img = useSprite(PIECE_URL[t][mine ? 'w' : 'b']);
+  if (!img) return <PieceGlyph t={t} mine={mine} size={size} />;
+  return (
+    <img
+      src={img.src}
+      alt={ROLE[t].name}
+      draggable={false}
+      style={{ width: size, height: size, objectFit: 'contain', display: 'block', flexShrink: 0, userSelect: 'none' }}
+    />
+  );
+}
+
 function Tray({ title, pieces, color }: { title: string; pieces: Piece[]; color: string }): React.JSX.Element {
   return (
     <div style={{ flex: 1, background: 'rgba(255,255,255,0.05)', borderRadius: 10, padding: '6px 8px', minHeight: 44 }}>
@@ -515,7 +572,7 @@ function Tray({ title, pieces, color }: { title: string; pieces: Piece[]; color:
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center' }}>
         {pieces.length === 0 ? <span style={{ opacity: 0.3 }}>—</span> : pieces.map((p, i) => (
           <span key={i} title={ROLE[p.t].name} style={{ background: color, borderRadius: '50%', padding: 1, display: 'inline-flex' }}>
-            <PieceGlyph t={p.t} mine={p.c === 'w'} size={15} />
+            <PieceArt t={p.t} mine={p.c === 'w'} size={20} />
           </span>
         ))}
       </div>

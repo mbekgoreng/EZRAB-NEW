@@ -60,6 +60,7 @@ import {
   type UniversalDraft,
   type UniversalDraftItem,
 } from '../ai-tools/ezrab-ai/universalRab';
+import { validatePhysicalDimensions, extractRabNeeds, parseFloorsMention } from '../ai-tools/ezrab-ai/rabNeeds';
 import { createRabItemRecord } from '../engine/rab/rabItemFactory';
 
 // Mock localStorage for Node test environment (pola templateCatalog180.test.ts)
@@ -431,14 +432,106 @@ test('D3: draft blokir menampilkan alasan blokir di pesan (bukan sekadar catatan
   assert.ok(msg.includes('Alasan blokir transfer'));
 });
 
-test('Kompatibilitas: rumah typed tetap unsupported di universal (jalur directRab/specRab tidak disentuh)', () => {
+test('Kompatibilitas: rumah typed TIDAK dibuat draft oleh universal (jalur directRab/specRab tidak disentuh)', () => {
+  // Kontrak yang dijaga tes ini: lapisan universal TIDAK PERNAH membuat
+  // draft rumah typed — rumah milik jalur directRab/specRab (intentRouter
+  // CREATE_RAB_DIRECT). Bentuk pengembalian berubah 'unsupported' →
+  // 'needs-spec' sejak klarifikasi terpandu finalisasi §4 (owner
+  // 2026-11-08, kasus dataset amb-023/024/025): fungsi generik 'rumah'
+  // kini ditanya ukurannya, bukan ditolak tanpa pertanyaan. Kontrak
+  // antar-lapisannya (bukan draft dari lapisan ini) tidak berubah.
   const res = buildUniversalDraft('Buatkan RAB rumah type 70 2 lantai');
-  assert.equal(res.kind, 'unsupported');
+  assert.notEqual(res.kind, 'draft');
   const item: UniversalDraftItem = {
     id: 'x', description: 'Uji', volume: 1, unit: 'm2', unitPrice: 1000,
     priceStatus: 'PRICE_RESOLVED', ahspCode: null, ahspMappingStatus: 'NEEDS_MAPPING',
   };
   assert.equal(displayPriceStatus({ ...item, priceSourceKind: 'OFFICIAL_AHSP' }).label, 'RESMI AHSP');
+});
+
+console.log('== 9. Audit ekstrem 2026-11-08: basis jumlah, renovasi-modifier, panjang negatif ==');
+
+test('X-A1: pondasi berbasis JUMLAH titik menjadi draft (count diekstrak, bukan dibuang)', () => {
+  for (const t of [
+    'Buatkan RAB pondasi bore pile 24 titik',
+    'Buatkan RAB pondasi tiang pancang 30 titik',
+    'Buatkan RAB pondasi sumuran 12 titik',
+    'Buatkan RAB pondasi foot plat 20 titik',
+    'Buatkan RAB pondasi strauss 18 titik',
+  ]) {
+    assert.equal(buildUniversalDraft(t).kind, 'draft', t);
+  }
+  assert.equal(extractUniversalSpec('Buatkan RAB pondasi bore pile 24 titik').count, 24);
+});
+
+test('X-A2: sanitasi berbasis jumlah/volume menjadi draft (IPAL paket, tangki septik & sumur resapan m3)', () => {
+  assert.equal(buildUniversalDraft('Buatkan RAB ipal 1 paket').kind, 'draft');
+  assert.equal(buildUniversalDraft('Buatkan RAB tangki septik 6 m3').kind, 'draft');
+  assert.equal(buildUniversalDraft('Buatkan RAB sumur resapan 4 m3').kind, 'draft');
+});
+
+test('X-A3: basis jumlah TIDAK digeneralisasi ke cakupan yang basisnya luas (kusen unit tetap needs-spec)', () => {
+  // Perbaikan Keluarga A disengaja sempit: hanya cakupan yang memang
+  // berbasis jumlah/volume (pondasi 'any', sanitasi) yang menerima
+  // count/volume. Finishing (kusen) tetap menuntut luas pekerjaan.
+  assert.equal(buildUniversalDraft('Buatkan RAB kusen 20 unit').kind, 'needs-spec');
+  assert.equal(buildUniversalDraft('Buatkan RAB perkuatan kolom 20 titik').kind, 'needs-spec');
+});
+
+test('X-B1: renovasi sebagai MODIFIER pekerjaan linear/jembatan tidak lagi menolak basis yang lengkap', () => {
+  assert.equal(buildUniversalDraft('Buatkan RAB rehab drainase sepanjang 250 m').kind, 'draft');
+  assert.equal(buildUniversalDraft('Buatkan RAB perbaikan jalan sepanjang 2 km').kind, 'draft');
+  assert.equal(buildUniversalDraft('Buatkan RAB rehab jembatan bentang 12 m').kind, 'draft');
+  assert.equal(buildUniversalDraft('Buatkan RAB rehabilitasi saluran irigasi 2 km').kind, 'draft');
+});
+
+test('X-B2: renovasi gedung berbasis luas tetap draft; renovasi tanpa basis apa pun tetap needs-spec', () => {
+  assert.equal(buildUniversalDraft('Buatkan RAB renovasi gedung luas 500 m2').kind, 'draft');
+  assert.equal(buildUniversalDraft('Buatkan RAB renovasi').kind, 'needs-spec');
+});
+
+test('X-V1: panjang linear negatif/nol POLOS terdeteksi lapisan validasi bersama (paritas dengan bentuk berbingkai)', () => {
+  assert.ok(validatePhysicalDimensions('buatkan rab jalan -5 km').length > 0);
+  assert.ok(validatePhysicalDimensions('buatkan rab drainase -100 m').length > 0);
+  assert.ok(validatePhysicalDimensions('buatkan rab drainase sepanjang -100 m').length > 0);
+  assert.ok(validatePhysicalDimensions('buatkan rab jalan 0 km').length > 0);
+  assert.equal(validatePhysicalDimensions('buatkan rab jalan 2 km').length, 0);
+  assert.equal(validatePhysicalDimensions('buatkan rab gudang 10x20').length, 0);
+  assert.equal(buildUniversalDraft('Buatkan RAB jalan -5 km').kind, 'needs-spec');
+  assert.equal(buildUniversalDraft('Buatkan RAB drainase -100 m').kind, 'needs-spec');
+});
+
+test('X-F1: koreksi percakapan urutan label→angka ("kamar tidur 4") terbaca saat penggabungan state (audit ekstrem Kategori F)', () => {
+  // Akar cacat: pola label→angka digerbang "kolom gabungan == null",
+  // padahal pada jalur lanjutan objek adalah salinan base yang sudah
+  // terisi — koreksi tidak pernah terbaca dan nilai lama bertahan.
+  // Kini gerbangnya keterbacaan pola pada teks itu sendiri.
+  const base = extractRabNeeds('buatkan rab rumah 2 lantai 8x12 3 kamar tidur 2 kamar mandi');
+  assert.equal(extractRabNeeds('kamar tidur 4', { ...base }).bedrooms, 4);
+  assert.equal(extractRabNeeds('kamar tidurnya jadi 4', { ...base }).bedrooms, 4);
+  assert.equal(extractRabNeeds('kamar mandi 3', { ...base }).bathrooms, 3);
+  // Urutan digit-di-depan tetap otoritatif (jalur lama tidak berubah):
+  assert.equal(extractRabNeeds('4 kamar tidur', { ...base }).bedrooms, 4);
+  assert.equal(extractRabNeeds('3 kamar mandi', { ...base }).bathrooms, 3);
+  // Tanpa penyebutan kamar, nilai base bertahan utuh (tidak tertimpa):
+  const m = extractRabNeeds('ganti jadi 1 lantai', { ...base });
+  assert.equal(m.bedrooms, 3);
+  assert.equal(m.bathrooms, 2);
+  // "km" arah label→angka SENGAJA tidak didukung (ambigu kilometer):
+  assert.equal(extractRabNeeds('buatkan rab jalan 1 km').bathrooms, null);
+});
+
+test('X-F2: koreksi kepemilikan "lantainya 1 saja" terbaca lapisan bersama penyebutan lantai (audit ekstrem Kategori F)', () => {
+  // Akar cacat: akhiran kepemilikan -nya membuat pola "lantai <angka>"
+  // tidak cocok; koreksi pengguna dilaporkan "tidak ada perubahan".
+  assert.equal(parseFloorsMention('lantainya 1 saja'), 1);
+  assert.equal(parseFloorsMention('lantainya 3'), 3);
+  // Bentuk-bentuk lama tidak berubah:
+  assert.equal(parseFloorsMention('rumah 2 lantai 8x12'), 2);
+  assert.equal(parseFloorsMention('ganti jadi 1 lantai'), 1);
+  assert.equal(parseFloorsMention('jangan dua lantai'), 1);
+  assert.equal(parseFloorsMention('2 lantai 3 kamar'), 2);
+  assert.equal(parseFloorsMention('buatkan rab jalan'), null);
 });
 
 console.log(`\nUNIVERSAL RAB HARDENING: ${passed} PASS, ${failed} FAIL`);

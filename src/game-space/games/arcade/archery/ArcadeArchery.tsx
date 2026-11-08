@@ -13,6 +13,9 @@ import {
   VH, NAIL_SPEED, GRAVITY, WIND_ACCEL, NAILS_PER_ROUND, MAX_ROUNDS,
   roundSpec, targetScale, flightTime, fireShot, windInfo, ringLabel, type RoundSpec,
 } from './logic';
+import { drawShooterSprite, preloadShooterSprites } from '../../../shared/shooterSprites';
+
+preloadShooterSprites();
 
 const FONT = "'Plus Jakarta Sans','Inter',system-ui,sans-serif";
 const BK = bestKey('tembak-paku', 'best');
@@ -326,7 +329,26 @@ export default function ArcadeArchery({ onExit }: { onExit: () => void }): React
       }
     };
 
+    /**
+     * Nail gun: sprite AI (moncong di kanan sejajar moncong prosedural
+     * x=+74); prosedural utuh = fallback di `drawNailGunProcedural`.
+     */
     const drawNailGun = (ctx: CanvasRenderingContext2D, W: number, H: number): void => {
+      const gx = gunX();
+      const gy = (s.aimY / VH) * H;
+      void W;
+      ctx.save();
+      ctx.shadowColor = 'rgba(0,0,0,0.5)';
+      ctx.shadowBlur = 14;
+      ctx.shadowOffsetY = 5;
+      const drew = drawShooterSprite(ctx, 'obj-nail-gun', gx + 29, gy, 150, 150);
+      ctx.restore();
+      if (!drew) drawNailGunProcedural(ctx, W, H);
+    };
+
+    /** Nail gun prosedural (FALLBACK). */
+    const drawNailGunProcedural = (ctx: CanvasRenderingContext2D, W: number, H: number): void => {
+      void W;
       const gx = gunX();
       const gy = (s.aimY / VH) * H;
       ctx.save();
@@ -380,7 +402,63 @@ export default function ArcadeArchery({ onExit }: { onExit: () => void }): React
       ctx.restore();
     };
 
+    /**
+     * Papan target: sprite triplek AI (ring lukis urutan warna sama dengan
+     * ring skor `RING_RADII` logic); paku menancap + kilau kena + label
+     * jarak tetap digambar di atasnya di kedua jalur. Prosedural = fallback.
+     */
     const drawTarget = (ctx: CanvasRenderingContext2D, W: number, H: number): void => {
+      const tx = W - 84;
+      const ty = (s.spec.targetY / VH) * H;
+      const scale = targetScale(s.spec.distance);
+      const r = 62 * scale;
+      if (!drawShooterSprite(ctx, 'obj-papan-triplek', tx, ty, r * 2 + 14, r * 2 + 14)) {
+        drawTargetProcedural(ctx, W, H);
+      }
+      drawTargetOverlays(ctx, W, H);
+    };
+
+    /** Paku menancap, kilau kena sasaran & label jarak (kedua jalur). */
+    const drawTargetOverlays = (ctx: CanvasRenderingContext2D, W: number, H: number): void => {
+      const tx = W - 84;
+      const ty = (s.spec.targetY / VH) * H;
+      const scale = targetScale(s.spec.distance);
+      const r = 62 * scale;
+      // paku yang menancap
+      for (const n of s.stuck) {
+        const ny = (n.y / VH) * H;
+        ctx.save();
+        ctx.translate(tx, ny);
+        ctx.fillStyle = '#e5e7eb';
+        ctx.fillRect(-1.6, -14, 3.2, 14);
+        const hg = ctx.createLinearGradient(-4, -18, 4, -18);
+        hg.addColorStop(0, '#f8fafc');
+        hg.addColorStop(0.5, '#9ca3af');
+        hg.addColorStop(1, '#4b5563');
+        ctx.fillStyle = hg;
+        ctx.beginPath(); ctx.ellipse(0, -14, 4.6, 2.6, 0, 0, TAU); ctx.fill();
+        ctx.restore();
+      }
+      // kilau kena sasaran: cincin mengembang lalu memudar di titik paku tiba
+      if (s.hitFx) {
+        const k = s.hitFx.t / 0.45;
+        const hy = (s.hitFx.y / VH) * H;
+        ctx.save();
+        ctx.globalAlpha = 1 - k;
+        ctx.strokeStyle = s.hitFx.ring > 0 ? '#fde047' : '#f87171';
+        ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(tx, hy, 8 + k * 30, 0, TAU); ctx.stroke();
+        ctx.restore();
+      }
+      // label jarak
+      ctx.fillStyle = 'rgba(255,255,255,0.85)';
+      ctx.font = `800 11px ${FONT}`;
+      ctx.textAlign = 'center';
+      ctx.fillText(`Jarak ${(s.spec.distance / 25).toFixed(0)} m`, tx, ty + r + 16);
+    };
+
+    /** Papan target prosedural (FALLBACK): tiang + triplek + 4 ring skor. */
+    const drawTargetProcedural = (ctx: CanvasRenderingContext2D, W: number, H: number): void => {
       const tx = W - 84;
       const ty = (s.spec.targetY / VH) * H;
       const scale = targetScale(s.spec.distance);
@@ -430,37 +508,6 @@ export default function ArcadeArchery({ onExit }: { onExit: () => void }): React
           ctx.beginPath(); ctx.arc(tx, ty, rr, 0, TAU); ctx.stroke();
         }
       }
-      // paku yang menancap
-      for (const n of s.stuck) {
-        const ny = (n.y / VH) * H;
-        ctx.save();
-        ctx.translate(tx, ny);
-        ctx.fillStyle = '#e5e7eb';
-        ctx.fillRect(-1.6, -14, 3.2, 14);
-        const hg = ctx.createLinearGradient(-4, -18, 4, -18);
-        hg.addColorStop(0, '#f8fafc');
-        hg.addColorStop(0.5, '#9ca3af');
-        hg.addColorStop(1, '#4b5563');
-        ctx.fillStyle = hg;
-        ctx.beginPath(); ctx.ellipse(0, -14, 4.6, 2.6, 0, 0, TAU); ctx.fill();
-        ctx.restore();
-      }
-      // kilau kena sasaran: cincin mengembang lalu memudar di titik paku tiba
-      if (s.hitFx) {
-        const k = s.hitFx.t / 0.45;
-        const hy = (s.hitFx.y / VH) * H;
-        ctx.save();
-        ctx.globalAlpha = 1 - k;
-        ctx.strokeStyle = s.hitFx.ring > 0 ? '#fde047' : '#f87171';
-        ctx.lineWidth = 3;
-        ctx.beginPath(); ctx.arc(tx, hy, 8 + k * 30, 0, TAU); ctx.stroke();
-        ctx.restore();
-      }
-      // label jarak
-      ctx.fillStyle = 'rgba(255,255,255,0.85)';
-      ctx.font = `800 11px ${FONT}`;
-      ctx.textAlign = 'center';
-      ctx.fillText(`Jarak ${(s.spec.distance / 25).toFixed(0)} m`, tx, ty + r + 16);
     };
 
     const drawAim = (ctx: CanvasRenderingContext2D, W: number, H: number): void => {

@@ -9,6 +9,27 @@
 export const EMAIL_FORMAT = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**
+ * Tujuan redirect sesudah tautan email Supabase diklik (konfirmasi
+ * pendaftaran & reset kata sandi). Supabase menambahkan hash sesi-nya
+ * sendiri ke URL ini; rute /masuk yang menerimanya (klien mendeteksi
+ * sesi dari URL). Path relatif terhadap origin aplikasi, SATU definisi
+ * untuk kedua wrapper Supabase — tanpa ini Supabase jatuh ke Site URL
+ * mentah dan alur reset tidak punya halaman tujuan.
+ */
+export const AUTH_EMAIL_REDIRECT_PATH = '/masuk';
+
+/** Origin aplikasi saat ini ('' di luar browser/SSR). */
+export function authRedirectOrigin(): string {
+  return typeof window !== 'undefined' ? window.location.origin : '';
+}
+
+/** URL redirect email lengkap, atau undefined di luar browser. */
+export function authEmailRedirectTo(): string | undefined {
+  const origin = authRedirectOrigin();
+  return origin ? `${origin}${AUTH_EMAIL_REDIRECT_PATH}` : undefined;
+}
+
+/**
  * AUTH-09: pesan error provider TIDAK ditampilkan mentah ke pengguna —
  * petakan ke pesan aman berbahasa Indonesia (selaras friendlyAuthError
  * di AuthContext).

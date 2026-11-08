@@ -241,3 +241,45 @@ export function attemptQuantityFromDimensionString(
     : formula;
   return { quantity: res.quantity, formula: annotated, ambiguousUnit: false, rawDimensions: raw };
 }
+
+/**
+ * Tingkat asumsi berlabel (owner 2026-11-08): varian parser dimensi untuk
+ * dimensi yang satuannya TIDAK tertulis, tetapi model MENYATAKAN satuannya
+ * secara eksplisit sebagai asumsi (dimensionUnitAssumption). Hasilnya
+ * hanya sah sebagai kuantitas ASSUMPTION di mode FULL_AI — tidak pernah
+ * sebagai dimensi DED. Pagar diameter-saja tetap berlaku penuh: diameter
+ * tidak pernah menjadi panjang, dengan atau tanpa asumsi satuan.
+ */
+export function attemptQuantityWithAssumedUnit(
+  unit: string,
+  dimensionString: string | undefined,
+  assumedUnit: 'mm' | 'cm' | 'm',
+): DimensionParseResult {
+  const raw = dimensionString || '';
+  if (!dimensionString) return { quantity: null, formula: '', ambiguousUnit: true, rawDimensions: raw };
+  const nums = parseDimensionsString(dimensionString);
+  if (nums.length === 0) return { quantity: null, formula: dimensionString, ambiguousUnit: true, rawDimensions: raw };
+
+  if (shapeForUnit(unit) === 'LENGTH' && isDiameterOnlyDimension(dimensionString, nums.length)) {
+    return {
+      quantity: null,
+      formula: `${dimensionString} [hanya diameter; panjang elemen tidak tercantum — asumsi satuan tidak mengubah diameter menjadi panjang]`,
+      ambiguousUnit: false,
+      rawDimensions: raw,
+      diameterOnly: true,
+    };
+  }
+
+  const factor = assumedUnit === 'mm' ? 0.001 : assumedUnit === 'cm' ? 0.01 : 1;
+  const scaled = nums.map((n) => n * factor);
+  const shape = shapeForUnit(unit);
+  const [a, b, c] = scaled;
+  const res = computeQuantity(shape, { length: a, width: b, height: c }, dimensionString);
+  const base = res.formula || dimensionString;
+  return {
+    quantity: res.quantity,
+    formula: `${base} [satuan dimensi DIASUMSIKAN model: ${assumedUnit} — asumsi, bukan fakta DED]`,
+    ambiguousUnit: false,
+    rawDimensions: raw,
+  };
+}

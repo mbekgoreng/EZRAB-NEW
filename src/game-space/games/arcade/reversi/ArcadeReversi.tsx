@@ -2,8 +2,9 @@
  * ArcadeReversi — 'Balik Triplek': Othello 8x8 melawan AI SEDANG (cukup pintar, bisa dikalahkan).
  * Ketuk sel legal untuk menaruh keping: angka pada penanda = keping yang akan berbalik
  * (pratinjau dari movePreviews/flipsAt); arahkan penunjuk ke sel legal untuk menyorot
- * keping yang akan berbalik. Keping digambar prosedural di canvas: cakram dua sisi —
- * sisi triplek berlapis/serat (pemain) vs sisi bata/semen (AI), tepi berketebalan.
+ * keping yang akan berbalik. Keping: sprite dua sisi generate-AI (set
+ * token papan bersama) — sisi triplek berlapis/serat (pemain) vs sisi
+ * bata/semen (AI); gambar prosedural di drawDisk = fallback sprite.
  */
 import React, { useRef, useState } from 'react';
 import { useGameCanvas, type GameApi, sfx } from '../../../engine2d';
@@ -13,6 +14,7 @@ import {
   aiPickMove, flipsAt, movePreviews, flipVisibleFace, BLACK, WHITE, N,
   type Board, type Move, type Cell,
 } from './logic';
+import { REVERSI_FACES, drawBoardToken, loadSprite, useSprite } from '../../../shared/boardTokenSprites';
 
 const SLUG = 'reversi';
 const FONT = `'Plus Jakarta Sans', 'Inter', system-ui, sans-serif`;
@@ -143,6 +145,8 @@ export default function ArcadeReversi({ onExit }: { onExit: () => void }): React
 
   const canvasRef = useGameCanvas((api) => {
     apiRef.current = api;
+    void loadSprite(REVERSI_FACES[1]);
+    void loadSprite(REVERSI_FACES[2]);
     setMuted(api.sfx.muted);
     pushHudFor(stRef.current);
 
@@ -208,7 +212,9 @@ export default function ArcadeReversi({ onExit }: { onExit: () => void }): React
           const anim = st.anims.find((a) => a.r === r && a.c === c);
           const squash = anim ? Math.abs(Math.cos(anim.t * Math.PI)) : 1;
           const face: Cell = anim ? flipVisibleFace(anim.from, v, anim.t) : v;
-          drawDisk(ctx, cx, cy, (cs / 2 - 4) * squash, face);
+          // diameter penuh diteruskan terpisah agar sprite bisa memakai
+          // tinggi penuh selagi lebarnya memampat mengikuti squash.
+          drawDisk(ctx, cx, cy, (cs / 2 - 4) * squash, face, cs / 2 - 4);
         }
       }
 
@@ -397,8 +403,21 @@ function hash2(a: number, b: number): number {
  * v=2 (AI) sisi BATA/SEMEN — permukaan bata kemerahan dengan siar semen + bintik semen.
  * Tepi keping berketebalan: silinder gelap di bawah muka + garis lapisan pada rim bawah.
  */
-function drawDisk(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, v: Cell): void {
+function drawDisk(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, v: Cell, fullR?: number): void {
   if (r <= 1.5) return;
+  // Sprite dua sisi keping (Kelompok 2): lebar sprite mengikuti squash
+  // animasi balik yang sama (r di sini sudah = radius x squash dari
+  // pemanggil); tinggi tetap diameter penuh (fullR). Bayangan papan
+  // digambar lebih dulu agar sprite duduk di papan seperti keping
+  // prosedural. Bila sprite belum siap/gagal -> prosedural (fallback).
+  const fr = fullR ?? r;
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,0,0,0.35)';
+  ctx.beginPath(); ctx.ellipse(cx + 2, cy + r * 0.22, r, r * 0.82, 0, 0, TAU); ctx.fill();
+  ctx.restore();
+  if (drawBoardToken(ctx, REVERSI_FACES[v], cx, cy, r * 2, fr * 2)) {
+    return;
+  }
   ctx.save();
   // bayangan di papan
   ctx.fillStyle = 'rgba(0,0,0,0.35)';
@@ -478,8 +497,22 @@ const titleStyle: React.CSSProperties = { color: '#fff', fontSize: 26, fontWeigh
 const textStyle: React.CSSProperties = { color: '#e2e8f0', fontSize: 14, lineHeight: 1.55, margin: '6px 0 12px', maxWidth: 300 };
 const primaryBtn: React.CSSProperties = { background: 'linear-gradient(135deg,#22c55e,#4ade80)', color: '#052e16', fontWeight: 900, fontSize: 16, border: 'none', borderRadius: 14, padding: '14px 26px', cursor: 'pointer', minHeight: 52, fontFamily: FONT, boxShadow: '0 6px 20px rgba(34,197,94,0.4)' };
 const secondaryBtn: React.CSSProperties = { background: 'rgba(255,255,255,0.14)', color: '#fff', fontWeight: 800, fontSize: 15, border: '1px solid rgba(255,255,255,0.35)', borderRadius: 14, padding: '12px 20px', cursor: 'pointer', minHeight: 52, fontFamily: FONT };
-/** Miniatur keping prosedural (CSS): face 1 = triplek terang, 2 = bata, 0 = seri (belah dua). */
+/** Dot skor CSS: sprite sisi keping bila siap; gradasi CSS lama = fallback. */
 function FaceDot({ face, size }: { face: 0 | 1 | 2; size: number }): React.JSX.Element {
+  const imgTriplek = useSprite(REVERSI_FACES[1]);
+  const imgBata = useSprite(REVERSI_FACES[2]);
+  const img = face === 1 ? imgTriplek : face === 2 ? imgBata : null;
+  if (img) {
+    return (
+      <img
+        src={img.src}
+        alt=""
+        aria-hidden
+        draggable={false}
+        style={{ width: size, height: size, flexShrink: 0, objectFit: 'contain', display: 'inline-block', filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.4))' }}
+      />
+    );
+  }
   const background =
     face === 1
       ? 'radial-gradient(circle at 35% 30%, #f7e0a1, #e6ba67 55%, #bd8a3d)'

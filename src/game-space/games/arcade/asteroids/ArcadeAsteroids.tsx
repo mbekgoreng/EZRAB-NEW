@@ -10,6 +10,9 @@ import {
   LW, LH, SHIP_R, RESPAWN_T,
   type AstroState, type Rock, type Saucer,
 } from './logic';
+import { drawShooterSprite, preloadShooterSprites } from '../../../shared/shooterSprites';
+
+preloadShooterSprites();
 
 const SLUG = 'asteroids';
 const FONT = `'Plus Jakarta Sans', 'Inter', system-ui, sans-serif`;
@@ -29,8 +32,35 @@ function makeStars(n: number, seed: number): Star[] {
   return out;
 }
 
-/** Drone proyek: badan kapsul + 4 lengan propeller yang berputar. */
+/**
+ * Drone proyek: sprite AI (tampak depan, SELALU tegak — putaran haluan
+ * kapal tetap rotasi pemanggil seperti prosedural lama); prosedural =
+ * fallback di `drawDroneProcedural`.
+ */
 function drawDrone(ctx: CanvasRenderingContext2D, x: number, y: number, angle: number, thrusting: boolean, t: number, ghost: boolean): void {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angle + Math.PI / 2);
+  if (ghost) ctx.globalAlpha = 0.35 + 0.25 * Math.sin(t * 14);
+  // semburan debu pendorong tetap prosedural di kedua jalur (efek mesin)
+  if (thrusting) {
+    const fl = 14 + Math.random() * 10;
+    const fg = ctx.createLinearGradient(0, 10, 0, 10 + fl);
+    fg.addColorStop(0, 'rgba(255,244,214,0.95)');
+    fg.addColorStop(0.5, 'rgba(251,191,36,0.7)');
+    fg.addColorStop(1, 'rgba(251,191,36,0)');
+    ctx.fillStyle = fg;
+    ctx.beginPath();
+    ctx.moveTo(-6, 10); ctx.lineTo(0, 10 + fl); ctx.lineTo(6, 10);
+    ctx.closePath(); ctx.fill();
+  }
+  ctx.restore();
+  if (drawShooterSprite(ctx, 'char-drone', x, y, 62, 62)) return;
+  drawDroneProcedural(ctx, x, y, angle, thrusting, t, ghost);
+}
+
+/** Drone proyek prosedural (FALLBACK): badan kapsul + 4 lengan propeller. */
+function drawDroneProcedural(ctx: CanvasRenderingContext2D, x: number, y: number, angle: number, thrusting: boolean, t: number, ghost: boolean): void {
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(angle + Math.PI / 2);
@@ -83,8 +113,24 @@ function drawDrone(ctx: CanvasRenderingContext2D, x: number, y: number, angle: n
   ctx.restore();
 }
 
-/** Bata merah jatuh: balok bertekstur bata + pecahan sudut. */
+/**
+ * Bata merah jatuh: sprite AI diputar oleh `r.rot`; kontur bergerigi
+ * `Rock.verts` dari logic tetap penentu tabrakan. Prosedural = fallback.
+ */
 function drawBrick(ctx: CanvasRenderingContext2D, r: Rock): void {
+  ctx.save();
+  ctx.translate(r.x, r.y);
+  ctx.rotate(r.rot);
+  if (drawShooterSprite(ctx, 'obj-bata-jatuh', 0, 0, r.r * 2.05, r.r * 2.05)) {
+    ctx.restore();
+    return;
+  }
+  ctx.restore();
+  drawBrickProcedural(ctx, r);
+}
+
+/** Bata merah prosedural (FALLBACK): balok bertekstur bata + pecahan sudut. */
+function drawBrickProcedural(ctx: CanvasRenderingContext2D, r: Rock): void {
   ctx.save();
   ctx.translate(r.x, r.y);
   ctx.rotate(r.rot);
@@ -127,8 +173,28 @@ function drawBrick(ctx: CanvasRenderingContext2D, r: Rock): void {
   ctx.restore();
 }
 
-/** Drone maling material: merah menyala, menggotong karung semen curian. */
+/**
+ * Drone maling material: sprite AI (karung semen curian ikut di sprite);
+ * lampu alarm keliling tetap prosedural di kedua jalur (penanda animasi).
+ * Prosedural utuh = fallback di `drawRivalDroneProcedural`.
+ */
 function drawRivalDrone(ctx: CanvasRenderingContext2D, sc: Saucer, t: number): void {
+  if (!drawShooterSprite(ctx, 'char-drone-maling', sc.x, sc.y, 64, 64)) {
+    drawRivalDroneProcedural(ctx, sc, t);
+  }
+  ctx.save();
+  ctx.translate(sc.x, sc.y);
+  for (let i = 0; i < 6; i += 1) {
+    const a = (i / 6) * TAU + t * 6;
+    const on = Math.sin(t * 10 + i) > 0;
+    ctx.fillStyle = on ? '#fde047' : 'rgba(113,63,18,0.55)';
+    ctx.beginPath(); ctx.arc(Math.cos(a) * 17, -4 + Math.sin(a) * 6, 2.4, 0, TAU); ctx.fill();
+  }
+  ctx.restore();
+}
+
+/** Drone maling prosedural (FALLBACK): merah menyala + karung semen curian. */
+function drawRivalDroneProcedural(ctx: CanvasRenderingContext2D, sc: Saucer, t: number): void {
   ctx.save();
   ctx.translate(sc.x, sc.y);
   ctx.shadowColor = '#ef4444'; ctx.shadowBlur = 16;

@@ -7,6 +7,7 @@ import React, { useRef, useState } from 'react';
 import { useGameCanvas, type GameApi, TAU, clamp } from '../../../engine2d';
 import { bestKey, getBest, setBest } from '../../../engine2d/best';
 import { popText } from '../../../engine2d/juice2d';
+import { drawSceneSprite, preloadSceneSprites } from '../../../shared/sceneSprites';
 import {
   EMPTY, neighbors, levelGrid, findCluster, findFloating, colorsInGrid,
   pushCeiling, isCleared, rowsForLevel, colorsForLevel,
@@ -60,6 +61,7 @@ interface S {
 }
 
 export default function ArcadeBubbleShooter({ onExit }: { onExit: () => void }): React.JSX.Element {
+  preloadSceneSprites();
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const apiRef = useRef<GameApi | null>(null);
   const screenRef = useRef<Screen>('tutorial');
@@ -316,6 +318,29 @@ export default function ArcadeBubbleShooter({ onExit }: { onExit: () => void }):
 
     const drawCement = (ctx: CanvasRenderingContext2D, x: number, y: number, color: number, R: number, seed: number): void => {
       const cm = CEMENT[color % CEMENT.length];
+      // Badan bola = sprite semen netral generate-AI + rona warna kode
+      // (warna = identitas match dari logic) terpotong lingkaran; glif
+      // bentuk per warna tetap prosedural di atasnya (penanda fungsional).
+      const useSpr = drawSceneSprite(ctx, 'scene-gumpalan-semen', x, y, R * 2.06, R * 2.06);
+      if (useSpr) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(x, y, R, 0, TAU);
+        ctx.clip();
+        ctx.globalAlpha = 0.52;
+        ctx.fillStyle = cm.base;
+        ctx.fillRect(x - R, y - R, R * 2, R * 2);
+        ctx.restore();
+        ctx.save();
+        const sh = ctx.createRadialGradient(x, y, R * 0.55, x, y, R);
+        sh.addColorStop(0, 'rgba(0,0,0,0)');
+        sh.addColorStop(1, 'rgba(0,0,0,0.30)');
+        ctx.fillStyle = sh;
+        ctx.beginPath();
+        ctx.arc(x, y, R, 0, TAU);
+        ctx.fill();
+        ctx.restore();
+      } else {
       const g = ctx.createRadialGradient(x - R * 0.35, y - R * 0.4, R * 0.15, x, y, R * 1.05);
       g.addColorStop(0, cm.light);
       g.addColorStop(0.45, cm.base);
@@ -324,6 +349,7 @@ export default function ArcadeBubbleShooter({ onExit }: { onExit: () => void }):
       ctx.beginPath();
       ctx.arc(x, y, R, 0, TAU);
       ctx.fill();
+      }
       // bintik semen (deterministik)
       ctx.fillStyle = 'rgba(0,0,0,0.16)';
       for (let i = 0; i < 5; i += 1) {

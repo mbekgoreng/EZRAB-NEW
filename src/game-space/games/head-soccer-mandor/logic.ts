@@ -1,8 +1,8 @@
 /**
  * Head Soccer Mandor — fisika & AI bola kepala. Pure (tanpa DOM/window).
  *
- * Koordinat: x→kanan, y→bawah. Pemain kiri (kamu) menyerang gawang kanan,
- * pemain kanan (AI mandor) menyerang gawang kiri.
+ * Koordinat: x→kanan, y→bawah. Pemain kiri (kamu, "Si Gesit") menyerang
+ * gawang kanan, pemain kanan (AI bintang tamu) menyerang gawang kiri.
  */
 
 export const MATCH_TIME = 60;
@@ -219,12 +219,15 @@ export interface AiLevel {
   tackleRange: number;
 }
 
+// Roster bintang tamu EZRAB Cup — nama panggilan KARANGAN (parodi generik,
+// bukan orang asli). Statistik per jenjang TIDAK berubah dari era nama lama:
+// hanya identitas lawan yang diganti, keseimbangan turnamen tetap sama.
 export const AI_LEVELS: AiLevel[] = [
-  { name: 'Magang',          speed: 165, jumpReact: 60,  kickPower: 430, thinkInterval: 0.60, defendBias: 0.25, tackleRange: 80 },
-  { name: 'Tukang',          speed: 215, jumpReact: 90,  kickPower: 530, thinkInterval: 0.38, defendBias: 0.38, tackleRange: 105 },
-  { name: 'Mandor',          speed: 250, jumpReact: 110, kickPower: 590, thinkInterval: 0.28, defendBias: 0.46, tackleRange: 120 },
-  { name: 'Pengawas',        speed: 280, jumpReact: 130, kickPower: 640, thinkInterval: 0.20, defendBias: 0.54, tackleRange: 135 },
-  { name: 'Konsultan Galak', speed: 300, jumpReact: 150, kickPower: 660, thinkInterval: 0.15, defendBias: 0.55, tackleRange: 145 },
+  { name: 'Tolo',          speed: 165, jumpReact: 60,  kickPower: 430, thinkInterval: 0.60, defendBias: 0.25, tackleRange: 80 },
+  { name: 'Pipit',         speed: 215, jumpReact: 90,  kickPower: 530, thinkInterval: 0.38, defendBias: 0.38, tackleRange: 105 },
+  { name: 'Bang Jago',     speed: 250, jumpReact: 110, kickPower: 590, thinkInterval: 0.28, defendBias: 0.46, tackleRange: 120 },
+  { name: 'El Toro',       speed: 280, jumpReact: 130, kickPower: 640, thinkInterval: 0.20, defendBias: 0.54, tackleRange: 135 },
+  { name: 'Sang Maestro',  speed: 300, jumpReact: 150, kickPower: 660, thinkInterval: 0.15, defendBias: 0.55, tackleRange: 145 },
 ];
 
 /* ---------------- progresi lawan (jenjang level) ---------------- */
@@ -373,13 +376,13 @@ export const GOAL_COMMENTS: string[] = [
   'GOOL! Estimator ikut selebrasi!',
   'Gol! Bonus cair!',
   'GOOL! Revisi RAB dibatalkan!',
-  'Masuk! Mandor sampai joget!',
+  'Masuk! Tribun sampai joget!',
   'Gol! Harga satuan disetujui klien!',
   'GOOL! Lembur hari ini terbayar!',
 ];
 
 export const CONCEDE_COMMENTS: string[] = [
   'Kebobolan! Kayak budget jebol…',
-  'Gol lawan. Konsultan minta hitung ulang.',
+  'Gol lawan. Bintang tamu memang beda kelas.',
   'Aduh! Itu kayak revisi gambar ke-14.',
 ];

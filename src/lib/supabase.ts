@@ -25,7 +25,11 @@ export function getSupabaseClient(): SupabaseClient | null {
   if (!cached) {
     const env = (import.meta as unknown as { env: Record<string, string> }).env;
     cached = createClient(env.VITE_SUPABASE_URL, env.VITE_SUPABASE_ANON_KEY || env.VITE_SUPABASE_PUBLISHABLE_KEY, {
-      auth: { persistSession: true, autoRefreshToken: true },
+      // detectSessionInUrl: WAJIB agar tautan email Supabase (konfirmasi &
+      // reset kata sandi) yang mendarat di /masuk benar-benar menghasilkan
+      // sesi — sebelumnya hanya wrapper services/supabaseClient yang
+      // menyalakannya, jalur AuthContext (lib) tidak (WS-A 2026-11-08).
+      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
     });
   }
   return cached;

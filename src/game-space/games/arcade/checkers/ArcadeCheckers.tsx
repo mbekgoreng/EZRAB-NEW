@@ -2,9 +2,10 @@
  * ArcadeCheckers ("Dam Bata") — dam Inggris 8x8: bata merah (kamu) vs
  * batako abu (AI). Wajib makan, promosi jadi Bata Raja.
  * AI "sedang": pintar tapi kadang blunder — bisa dikalahkan!
- * Bidak digambar sebagai SVG prosedural: keping bata merah (pola susun
- * bata) vs keping batako abu (pola helm semen); raja = keping ganda
- * bercincin emas + bintang tergambar. Bukan emoji.
+ * Bidak di papan: sprite token generate-AI (keping bata merah vs keping
+ * batako abu; raja = keping bercincin emas + bintang di dalam aset) lewat
+ * set token papan bersama; SVG prosedural PieceGlyph = fallback bila
+ * sprite belum siap/gagal muat. Bukan emoji.
  */
 import React, { useEffect, useRef, useState } from 'react';
 import { sfx } from '../../../engine2d';
@@ -15,6 +16,7 @@ import {
   aiPickMove, forcedCapture, movesEndingAt, captureCount,
   SIZE, type Board, type Move, type Side,
 } from './logic';
+import { CHECKERS_TOKENS, preloadBoardTokens, useSprite } from '../../../shared/boardTokenSprites';
 
 const FONT = "'Plus Jakarta Sans','Inter',system-ui,sans-serif";
 const BK = bestKey('dam-bata', 'menang');
@@ -23,6 +25,7 @@ type Screen = 'tutorial' | 'play' | 'pause' | 'over';
 
 export default function ArcadeCheckers({ onExit }: { onExit: () => void }): React.JSX.Element {
   const wrapRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => { preloadBoardTokens(); }, []);
   const [screen, setScreen] = useState<Screen>('tutorial');
   const [board, setBoard] = useState<Board>(() => initialBoard());
   const [turn, setTurn] = useState<Side>('merah');
@@ -426,17 +429,34 @@ function starPoints(cx: number, cy: number, outer: number, inner: number): strin
 }
 
 /**
- * Glif bidak SVG prosedural.
+ * Glif bidak: sprite generate-AI (set token papan bersama, Kelompok 2)
+ * bila sudah siap; SVG prosedural di bawah ini adalah FALLBACK-nya.
  * Merah = keping bata: cakram merah + garis nat susun bata.
  * Abu = keping batako: cakram abu + kubah helm semen & bibir helm.
  * Raja = keping GANDA (cakram kedua di bawah) + cincin emas + bintang.
  */
 function PieceGlyph({ side, king, size }: { side: Side; king: boolean; size: number | string }): React.JSX.Element {
+  const img = useSprite(CHECKERS_TOKENS[king ? `${side}-raja` : side]);
   const red = side === 'merah';
   const cy = king ? 21 : 24;
   const baseFill = red ? '#c22f24' : '#9aa3ad';
   const edgeFill = red ? '#7f1d1d' : '#4b5563';
   const faceStroke = red ? '#8f2318' : '#5b6470';
+  if (img) {
+    // Sprite bidak generate-AI (Kelompok 2): token mengisi kotak glif;
+    // raja membawa cincin emas + bintangnya sendiri di dalam aset.
+    return (
+      <img
+        src={img.src}
+        width={size}
+        height={size}
+        alt=""
+        aria-label={king ? `bidak ${red ? 'bata merah' : 'batako'} raja` : `bidak ${red ? 'bata merah' : 'batako'}`}
+        style={{ display: 'block', flex: 'none', objectFit: 'contain' }}
+        draggable={false}
+      />
+    );
+  }
   return (
     <svg
       width={size}

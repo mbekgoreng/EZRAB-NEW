@@ -8,15 +8,24 @@ import { sfx } from '../../../engine2d';
 import { bestKey, getBest, setBest } from '../../../engine2d';
 import { Particles2D } from '../../../engine2d';
 import { popText } from '../../../engine2d';
+import { SCENE_SPRITES, useSprite, type SceneSlug } from '../../../shared/sceneSprites';
 import {
   createMatch, playRoundAdaptive, resetMatch, currentWinStreak,
   aiPhaseFor, AI_WARMUP_ROUNDS,
   MOVES, MOVE_INFO, type Move, type RpsRound, type RpsState, type AiPhase,
 } from './logic';
 
-/** Glif prosedural terdesain per jurus (SVG digambar kode — bukan emoji). */
+/** Glif jurus: sprite generate-AI per jurus; SVG prosedural = fallback. */
+const MOVE_SPRITE: Record<Move, SceneSlug> = {
+  bata: 'scene-jurus-bata', gergaji: 'scene-jurus-gergaji', gambar: 'scene-jurus-gambar',
+};
+
 function MoveGlyph({ move, size = 40, faded = false }: { move: Move; size?: number; faded?: boolean }): React.JSX.Element {
+  const spr = useSprite(SCENE_SPRITES[MOVE_SPRITE[move]]);
   const st: React.CSSProperties = { width: size, height: size, display: 'block', opacity: faded ? 0.45 : 1 };
+  if (spr) {
+    return (<img src={SCENE_SPRITES[MOVE_SPRITE[move]]} style={st} alt="" aria-label={move} />);
+  }
   if (move === 'bata') {
     return (
       <svg style={st} viewBox="0 0 48 48" aria-label="Bata">

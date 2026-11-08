@@ -25,16 +25,22 @@
  * onSuccessLogin agar animasinya sempat terlihat. Memakai
  * services/supabaseClient milik branch ini (bukan AuthContext).
  *
- * Deviasi sadar dari desain pratinjau: baris "ingat saya / lupa kata
- * sandi" tidak di-port (belum ada perilaku app di baliknya — desain
- * pratinjau memalsukan tautan reset terkirim), dan judul memakai teks
- * app berbahasa Indonesia yang sudah ada.
+ * Deviasi sadar dari desain pratinjau: baris "ingat saya" tidak
+ * di-port, dan judul memakai teks app berbahasa Indonesia yang sudah
+ * ada. "Lupa kata sandi" DULU juga tidak di-port (desain pratinjau
+ * memalsukan tautan reset terkirim); WS-A 2026-11-08 kini memasang
+ * alur reset SUNGGUHAN di baliknya (requestPasswordReset →
+ * SupabaseLoginPanel menangani sesi pemulihan), hanya tampil saat
+ * auth nyata aktif (bukan demo-only) — di mode demo tautannya tetap
+ * tidak ditampilkan agar tidak menjanjikan email yang tidak terkirim.
  */
 import React, { useState } from 'react';
 import { AlertCircle, CheckCircle2, Eye, EyeOff, Loader2, LogOut, X } from 'lucide-react';
 import {
   getCurrentSupabaseUser,
+  getSupabaseClient,
   isSupabaseConfigured,
+  requestPasswordReset,
   signInWithEmailPassword,
   signInWithGoogleOAuth,
   signOutSupabase,
@@ -128,6 +134,7 @@ export const SlidingAuthCard: React.FC<Props> = ({
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [googleBusy, setGoogleBusy] = useState(false);
+  const [resetBusy, setResetBusy] = useState(false);
   const [checking, setChecking] = useState(true);
   const [sceneReady, setSceneReady] = useState(false);
   // Login pemilik (keputusan owner 2026-10-30): tersedia bila server
@@ -224,6 +231,32 @@ export const SlidingAuthCard: React.FC<Props> = ({
     return () => {
       alive = false;
     };
+  }, []);
+
+  // WS-A (2026-11-08): sesi PEMULIHAN (tautan reset kata sandi) tidak
+  // boleh diperlakukan sebagai "sudah masuk" penuh oleh cek sesi di
+  // atas — pengguna yang mengeklik tautan reset harus diarahkan
+  // memasang kata sandi baru, bukan dilepas ke workspace dengan sandi
+  // lama yang terlupakan. Sesi pemulihan ditandai
+  // sessionStorage 'ezrab_pw_recovery' (satu-satunya pemakai kuncinya
+  // adalah SupabaseLoginPanel, yang menangani pemasangan sandi baru);
+  // di sini sesi seperti itu diperlakukan sebagai belum masuk agar
+  // alur pemulihan yang menanganinya yang tampil.
+  React.useEffect(() => {
+    const client = getSupabaseClient();
+    if (!client) return;
+    const { data: sub } = client.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        try {
+          sessionStorage.setItem('ezrab_pw_recovery', '1');
+        } catch {
+          /* storage tak tersedia — pemulihan tetap ditangani panel */
+        }
+        setCurrentUserEmail(null);
+        setChecking(false);
+      }
+    });
+    return () => sub.subscription.unsubscribe();
   }, []);
 
   /* ---- Tracking kursor global: wajah/helm karakter mengikuti kursor
@@ -517,6 +550,48 @@ export const SlidingAuthCard: React.FC<Props> = ({
     }
   };
 
+  const forgotPassword = async () => {
+    setError(null);
+    setNotice(null);
+    // Urutan pagar sama seperti submit: demo-only tidak pernah mengirim
+    // email reset (provider tidak terkonfigurasi / pendaftaran tertutup).
+    if (demoOnly) {
+      setError('Login email belum diaktifkan. Gunakan peran demo untuk masuk.');
+      triggerShake();
+      return;
+    }
+    if (!isSupabaseConfigured()) {
+      setError('Layanan autentikasi Supabase belum terhubung atau konfigurasi belum lengkap.');
+      triggerShake();
+      return;
+    }
+    if (!email.trim()) {
+      setFieldErrors((prev) => ({ ...prev, email: 'Isi email Anda untuk menerima tautan reset.' }));
+      triggerShake();
+      return;
+    }
+    if (!EMAIL_FORMAT.test(email.trim())) {
+      setFieldErrors((prev) => ({ ...prev, email: 'Format email tidak valid.' }));
+      triggerShake();
+      return;
+    }
+    setResetBusy(true);
+    try {
+      const r = await requestPasswordReset(email.trim());
+      if (r.error) {
+        setError(friendlyAuthError(r.error.message));
+        triggerShake();
+      } else {
+        // Pesan netral yang sama apa pun keadaan akunnya (tidak membocorkan
+        // apakah email terdaftar); tautan mendarat di /masuk sebagai sesi
+        // pemulihan dan ditangani SupabaseLoginPanel.
+        setNotice('Jika email terdaftar, tautan reset kata sandi sudah dikirim. Periksa kotak masuk Anda.');
+      }
+    } finally {
+      setResetBusy(false);
+    }
+  };
+
   const googleLogin = async () => {
     setError(null);
     setNotice(null);
@@ -783,6 +858,19 @@ export const SlidingAuthCard: React.FC<Props> = ({
                         {fieldErrors.confirm}
                       </p>
                     )}
+                  </div>
+                )}
+
+                {!isSignUp && !demoOnly && (
+                  <div style={{ textAlign: 'right', marginTop: -4 }}>
+                    <button
+                      type="button"
+                      className="signup-link"
+                      onClick={() => void forgotPassword()}
+                      disabled={resetBusy || busy || googleBusy}
+                    >
+                      {resetBusy ? 'Mengirim…' : 'Lupa kata sandi?'}
+                    </button>
                   </div>
                 )}
 

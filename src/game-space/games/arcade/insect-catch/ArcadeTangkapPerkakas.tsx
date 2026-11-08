@@ -13,6 +13,19 @@ import {
   missTimePenalty, spawnKindForMission, isTargetKind, remainingFor,
   MISSION_KINDS, type MissionState,
 } from './logic';
+import { drawMaterialSprite, preloadMaterialSprites, type MaterialSlug } from '../../../shared/materialSprites';
+import { drawFallerSprite, preloadFallerSprites } from '../../../shared/fallerSprites';
+
+// Sapuan visual Kelompok 5: muat awal set material bersama (Kelompok 1)
+// + set objek jatuh baru; gambar prosedural tetap FALLBACK.
+preloadMaterialSprites();
+preloadFallerSprites();
+
+/** Perkakas biasa -> slug set material bersama Kelompok 1 (bor emas
+ * memakai sprite fallers baru, ditangani terpisah di drawTool). */
+const TOOL_SLUGS: Record<Exclude<ToolKind, 'bor-emas'>, MaterialSlug> = {
+  palu: 'palu', obeng: 'obeng', kunci: 'kunci', meteran: 'meteran',
+};
 
 const FONT = "'Plus Jakarta Sans','Inter',system-ui,sans-serif";
 const BK = bestKey('tangkap-perkakas', 'best');
@@ -370,6 +383,13 @@ export default function ArcadeTangkapPerkakas({ onExit }: { onExit: () => void }
         ctx.shadowBlur = 8;
         ctx.shadowOffsetY = 5;
       }
+      // Sapuan visual Kelompok 5: sprite generate-AI lebih dulu (kotak
+      // 96x96 menyamai bentang prosedural -46..+46; pijar emas & cincin
+      // TARGET di atas tidak berubah). Gagal/belum siap -> prosedural.
+      const drawn = gold
+        ? drawFallerSprite(ctx, 'bor-emas', 0, 0, 96, 96)
+        : drawMaterialSprite(ctx, TOOL_SLUGS[t.kind as Exclude<ToolKind, 'bor-emas'>], 0, 0, 96, 96);
+      if (!drawn) {
       const cols = TOOL_COLORS[t.kind];
       const metal = (x0: number, x1: number): CanvasGradient => {
         const g = ctx.createLinearGradient(x0, 0, x1, 0);
@@ -466,6 +486,7 @@ export default function ArcadeTangkapPerkakas({ onExit }: { onExit: () => void }
         // kilau
         ctx.fillStyle = 'rgba(255,255,255,0.55)';
         ctx.beginPath(); ctx.ellipse(-2, -8, 10, 3.5, -0.3, 0, TAU); ctx.fill();
+      }
       }
       ctx.restore();
     };

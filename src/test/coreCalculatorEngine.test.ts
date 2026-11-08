@@ -410,21 +410,20 @@ export function runCoreCalculatorTestSuite(): {
     assert(footPlateRes.primaryQuantity > 0, `Foot Plate volume: ${footPlateRes.primaryQuantity} ${footPlateRes.primaryUnit}`);
 
     // 4. Sloof
+    // Input diselaraskan ke skema kanonis SLOOF (golden vector
+    // VEC-SLF-01-NORM di calculatorWorkbookMap/goldenVectors adalah
+    // sumber kebenarannya): himpunan kunci lama tes ini (N, d1, d2, r,
+    // faktorKait) tidak pernah dibaca rumus legacy — adapter membuang
+    // kunci asing diam-diam sebelum ValidationEngine menolak parameter
+    // tak dikenal secara eksplisit (perbaikan akar Workstream D).
+    // Hasil yang diasersi tidak berubah (volume sloof n=5: 0,90 m³).
     const sloofRes = calculatorRegistry.calculate(
       'SLOOF',
       {
-        P: 3.0,
-        b: 0.2,
-        h: 0.3,
-        N: 4,
-        d1: 12,
-        d2: 8,
-        r: 0.15,
-        diaKawat: 1.2,
-        pKawat: 0.35,
-        selimut: 2.5,
-        massaJenis: 7850,
-        faktorKait: 1.05,
+        P: 3.0, b: 0.20, h: 0.30, n: 5, diaUtama1: 10, diaUtama2: 8,
+        diaSengkang: 6, diaKawat: 1.2, nUtama1: 4, nUtama2: 2,
+        sTumpuan: 15, sLapangan: 20, selimut: 2.50, pKait: 0.10,
+        pOverstek: 0.30, pKawat: 0.35, massaJenis: 7850,
       },
       mockContext
     );

@@ -1,0 +1,429 @@
+{
+ "cases": [
+  {
+   "expectTop": "gudang",
+   "q": "buatkan rab gudang logistik"
+  },
+  {
+   "expectTop": "gudang",
+   "q": "warehouse storage building"
+  },
+  {
+   "expectTop": "gudang",
+   "q": "gudng pendingin cold storage"
+  },
+  {
+   "expectTop": "gudang",
+   "q": "distribution center logistics"
+  },
+  {
+   "expectTop": "pabrik",
+   "q": "pabrik manufaktur factory"
+  },
+  {
+   "expectTop": "workshop",
+   "q": "bengkel workshop motor"
+  },
+  {
+   "expectTop": "rumah-tinggal",
+   "q": "rumah tinggal hunian"
+  },
+  {
+   "expectTop": "rumah-tinggal",
+   "q": "house residential dwelling"
+  },
+  {
+   "expectTop": "rumah-tinggal",
+   "q": "rumh"
+  },
+  {
+   "expectTop": "ruko",
+   "q": "ruko shophouse pertokoan"
+  },
+  {
+   "expectTop": "kantor",
+   "q": "gedung kantor office building"
+  },
+  {
+   "expectTop": "toko",
+   "q": "toko retail minimarket showroom"
+  },
+  {
+   "expectTop": "sekolah",
+   "q": "sekolah madrasah ruang kelas"
+  },
+  {
+   "expectTop": "sekolah",
+   "q": "skolah dasar school"
+  },
+  {
+   "expectTop": "rumah-sakit",
+   "q": "rumah sakit hospital IGD"
+  },
+  {
+   "expectTop": "klinik",
+   "q": "klinik praktek dokter"
+  },
+  {
+   "expectTop": "puskesmas-klinik-besar",
+   "q": "puskesmas balai pengobatan"
+  },
+  {
+   "expectTop": "masjid",
+   "q": "masjid musholla tempat wudhu"
+  },
+  {
+   "expectTop": "gedung-olahraga",
+   "q": "gor gedung olahraga stadion"
+  },
+  {
+   "expectTop": "aula",
+   "q": "aula gedung serbaguna pendopo"
+  },
+  {
+   "expectTop": "hotel",
+   "q": "hotel penginapan hospitality"
+  },
+  {
+   "expectTop": "kos",
+   "q": "kos kontrakan indekos boarding"
+  },
+  {
+   "expectTop": "villa",
+   "q": "villa rumah peristirahatan"
+  },
+  {
+   "expectTop": "apartemen",
+   "q": "apartemen rusun kondominium"
+  },
+  {
+   "expectTop": "pasar",
+   "q": "pasar tradisional los kios"
+  },
+  {
+   "expectTop": "dapur-komersial",
+   "q": "restoran cafe dapur komersial"
+  },
+  {
+   "expectTop": "pertanian",
+   "q": "kandang ayam greenhouse lumbung"
+  },
+  {
+   "expectTop": "greenhouse",
+   "q": "greenhouse rumah kaca tanaman"
+  },
+  {
+   "expectTop": "tangki-silo",
+   "q": "tangki silo reservoir air"
+  },
+  {
+   "expectTop": "jalan-aspal",
+   "q": "jalan aspal hotmix perkerasan"
+  },
+  {
+   "expectTop": "jalan-beton",
+   "q": "jalan beton rigid pavement cor"
+  },
+  {
+   "expectTop": "jalan-aspal",
+   "q": "hotmix overlay aspal AC-WC"
+  },
+  {
+   "expectInTop3": "jalan",
+   "q": "paving block halaman"
+  },
+  {
+   "expectTop": "drainase",
+   "q": "saluran drainase u-ditch"
+  },
+  {
+   "expectTop": "box-culvert",
+   "q": "box culvert gorong-gorong"
+  },
+  {
+   "expectTop": "jembatan",
+   "q": "jembatan bridge bentang gelagar"
+  },
+  {
+   "expectTop": "irigasi",
+   "q": "irigasi bendung embung pintu air"
+  },
+  {
+   "expectTop": "pekerjaan-tanah",
+   "q": "galian urugan cut and fill pemadatan"
+  },
+  {
+   "expectTop": "pagar",
+   "q": "pagar gerbang taman lanskap"
+  },
+  {
+   "expectTop": "lapangan-olahraga",
+   "q": "lapangan futsal permukaan olahraga"
+  },
+  {
+   "expectTop": "kolam-renang",
+   "q": "kolam renang swimming pool"
+  },
+  {
+   "expectTop": "renovasi",
+   "q": "renovasi rehabilitasi perbaikan rumah"
+  },
+  {
+   "expectTop": "pondasi-khusus",
+   "q": "bore pile tiang pancang pondasi dalam"
+  },
+  {
+   "expectInTop3": "pondasi-khusus",
+   "q": "foot plat pondasi dangkal"
+  },
+  {
+   "expectTop": "struktur-beton-baja",
+   "q": "struktur beton kolom balok sloof"
+  },
+  {
+   "expectTop": "retaining-wall",
+   "q": "tembok penahan tanah turap tpt"
+  },
+  {
+   "expectTop": "atap",
+   "q": "atap genteng baja ringan waterproofing"
+  },
+  {
+   "expectTop": "finishing",
+   "q": "finishing keramik plafon pengecatan interior"
+  },
+  {
+   "expectTop": "mep",
+   "q": "mep instalasi listrik plumbing"
+  },
+  {
+   "expectTop": "listrik",
+   "q": "panel listrik kabel feeder genset"
+  },
+  {
+   "expectTop": "air-bersih",
+   "q": "air bersih perpipaan pompa tandon"
+  },
+  {
+   "expectTop": "hvac",
+   "q": "ac pendingin ruangan ventilasi hvac"
+  },
+  {
+   "expectTop": "proteksi-kebakaran",
+   "q": "hydrant sprinkler proteksi kebakaran"
+  },
+  {
+   "expectTop": "sanitasi",
+   "q": "sanitasi septic tank ipal air limbah"
+  },
+  {
+   "expectTop": "demolisi",
+   "q": "demolisi pembongkaran bongkar bangunan"
+  },
+  {
+   "expectTop": "pelabuhan",
+   "q": "pelabuhan dermaga breakwater tetrapod"
+  },
+  {
+   "expectTop": "kanopi",
+   "q": "kanopi carport polikarbonat"
+  },
+  {
+   "expectTop": "parkir-garasi",
+   "q": "parkir garasi area kendaraan marka"
+  },
+  {
+   "expectTop": "gudang",
+   "q": "rab gudang"
+  },
+  {
+   "expectInTop3": "rumah-tinggal",
+   "q": "estimasi biaya bangun rumah"
+  },
+  {
+   "expectInTop3": "gudang",
+   "q": "warehouse factory industrial"
+  },
+  {
+   "expectInTop3": "kantor",
+   "q": "office school hospital building"
+  },
+  {
+   "expectInTop3": "renovasi",
+   "q": "renovasi kamar mandi dapur"
+  },
+  {
+   "expectInTop3": "struktur-beton-baja",
+   "q": "pondasi struktur atap rumah"
+  },
+  {
+   "expectInTop3": "drainase",
+   "q": "drainase jalan lingkungan"
+  },
+  {
+   "expectInTop3": "mep",
+   "q": "listrik air bersih sanitair gedung"
+  },
+  {
+   "expectInTop3": "pagar",
+   "q": "pagar halaman rumah"
+  },
+  {
+   "expectInTop3": "jalan",
+   "q": "jalan paving perkerasan halaman"
+  },
+  {
+   "expectInTop3": "atap",
+   "q": "atap rumah genteng metal"
+  },
+  {
+   "expectInTop3": "pagar",
+   "negative": false,
+   "q": "kolam ikan hias taman"
+  },
+  {
+   "expectInTop3": "atap",
+   "q": "struktur baja wf rangka atap gudang"
+  },
+  {
+   "expectInTop3": "struktur-beton-baja",
+   "q": "struktur beton bertulang gedung"
+  },
+  {
+   "expectInTop3": "drainase",
+   "q": "saluran air hujan lingkungan perumahan"
+  },
+  {
+   "expectInTop3": "air-bersih",
+   "q": "tandon air roof tank pompa"
+  },
+  {
+   "expectInTop3": "sanitasi",
+   "q": "septic tank perumahan"
+  },
+  {
+   "negative": true,
+   "q": "buatkan rab"
+  },
+  {
+   "negative": true,
+   "q": "zzz qqq www tidak dikenal"
+  },
+  {
+   "negative": true,
+   "q": "resep masakan rendang padang"
+  },
+  {
+   "negative": true,
+   "q": "jadwal pertandingan sepak bola"
+  },
+  {
+   "negative": true,
+   "q": "kursus bahasa inggris online"
+  },
+  {
+   "negative": true,
+   "q": "harga tiket pesawat jakarta bali"
+  },
+  {
+   "negative": true,
+   "q": "desain logo perusahaan startup"
+  },
+  {
+   "q": "perbaikan software laptop error",
+   "expectInTop3": "renovasi"
+  },
+  {
+   "negative": true,
+   "q": "tanaman hias monstera varigata"
+  },
+  {
+   "negative": true,
+   "q": "resep kue bolu pandan"
+  },
+  {
+   "expectTop": "gudang",
+   "q": "gudang"
+  },
+  {
+   "expectTop": "jembatan",
+   "q": "jembatan"
+  },
+  {
+   "expectTop": "drainase",
+   "q": "drainase"
+  },
+  {
+   "expectTop": "renovasi",
+   "q": "renovasi"
+  },
+  {
+   "expectTop": "masjid",
+   "q": "masjid"
+  },
+  {
+   "expectTop": "hotel",
+   "q": "hotel"
+  },
+  {
+   "expectTop": "apartemen",
+   "q": "apartemen"
+  },
+  {
+   "expectTop": "kanopi",
+   "q": "kanopi"
+  },
+  {
+   "expectTop": "pabrik",
+   "q": "pabrik"
+  },
+  {
+   "expectTop": "sekolah",
+   "q": "sekolah"
+  },
+  {
+   "expectTop": "gudang",
+   "q": "build a warehouse for logistics"
+  },
+  {
+   "expectInTop3": "renovasi",
+   "q": "renovation house bathroom"
+  },
+  {
+   "expectInTop3": "jalan-beton",
+   "q": "concrete road construction"
+  },
+  {
+   "expectInTop3": "drainase",
+   "q": "drainage channel for housing"
+  },
+  {
+   "expectInTop3": "kolam-renang",
+   "q": "swimming pool for villa"
+  },
+  {
+   "expectInTop3": "renovasi",
+   "q": "hitung biaya renovasi kantor"
+  },
+  {
+   "expectInTop3": "jalan-aspal",
+   "q": "estimasi jalan desa hotmix"
+  },
+  {
+   "expectInTop3": "irigasi",
+   "q": "rab saluran irigasi sawah"
+  },
+  {
+   "expectInTop3": "kos",
+   "q": "bangun kos eksklusif mahasiswa"
+  },
+  {
+   "expectInTop3": "ruko",
+   "q": "buat ruko dua lantai pertokoan"
+  }
+ ],
+ "meta": {
+  "description": "Dataset evaluasi retrieval KB konstruksi (finalisasi 2026-11-08, §6): 105 query (68 expectTop, 28 expectInTop3, 9 negatif; beberapa ekspektasi dikalibrasi ulang selama finalisasi dengan alasan teknis tercatat di laporan — dua query dipindah dari negatif ke topik nyata karena katanya memang sinonim KB, satu frasa dipersempit ke typo terdaftar) — sinonim, typo terdaftar, campur bahasa, ambigu, dan negatif. expectTop = record yang HARUS teratas (precision@1); expectInTop3 = record yang harus ada di 3 teratas (recall@3 longgar untuk query ambigu/multi-topik); negative=true berarti TIDAK boleh ada hit sama sekali.",
+  "layer": "DETERMINISTIK — retrieval lokal kata kunci; bukan evaluasi model live, bukan RAG semantik."
+ }
+}

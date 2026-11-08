@@ -68,7 +68,10 @@ export function computeProjectInfoTotal(
   const directPph = items
     .filter((it) => it.taxIncludedPph !== true)
     .reduce((a, it) => a + itemAmount(it), 0);
-  const overheadPercent = Number(project?.overheadPercent ?? 10);
+  // Fallback 0% (keputusan owner 2026-11-08, selaras mesin kanonis):
+  // proyek tanpa field overhead belum dikonfigurasi → overhead 0,
+  // bukan 10% karangan. Nilai eksplisit (termasuk 0) dipertahankan.
+  const overheadPercent = Number(project?.overheadPercent ?? 0);
   const overhead = (direct * overheadPercent) / 100;
   const overheadPpn = direct > 0 ? (overhead * directPpn) / direct : 0;
   const overheadPph = direct > 0 ? (overhead * directPph) / direct : 0;

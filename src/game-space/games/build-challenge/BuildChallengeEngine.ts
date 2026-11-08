@@ -185,7 +185,10 @@ export class BuildChallengeEngine {
         shape.lineTo(0, h);
         shape.closePath();
         const extruded = new THREE.ExtrudeGeometry(shape, { depth: w, bevelEnabled: false });
-        extruded.translate(0, 0, -w / 2);
+        // Origin di tengah (sama seperti Box/Cylinder): place() & ghost
+        // menempatkan mesh di base + h/2. Tanpa -h/2 di Y, atap melayang
+        // h/2 di atas tumpukan (celah di bawah prisma atap).
+        extruded.translate(0, -h / 2, -w / 2);
         geo = extruded;
         break;
       }

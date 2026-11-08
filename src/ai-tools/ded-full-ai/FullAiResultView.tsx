@@ -15,6 +15,12 @@ interface Props {
   output: FullAiOutput;
   onFinalize: (items: FullAiItem[]) => Promise<{ ok: boolean; message: string }>;
   onBack: () => void;
+  /**
+   * true = dirender di dalam FeatureFullscreenShell: baris header internal
+   * (tombol kembali + judul + chip provenans) disembunyikan karena shell
+   * sudah menyediakannya di bar atasnya. Murni presentasi.
+   */
+  embedded?: boolean;
 }
 
 const PROVENANCE_LABEL: Record<string, { label: string; color: string }> = {
@@ -336,7 +342,7 @@ function ItemCard({ item, onUpdate }: { item: FullAiItem; onUpdate: (updated: Fu
   );
 }
 
-export const FullAiResultView: React.FC<Props> = ({ output, onFinalize, onBack }) => {
+export const FullAiResultView: React.FC<Props> = ({ output, onFinalize, onBack, embedded = false }) => {
   const [finalizing, setFinalizing] = useState(false);
   const [finalMsg, setFinalMsg] = useState('');
   const [items, setItems] = useState<FullAiItem[]>(output.items);
@@ -397,21 +403,23 @@ export const FullAiResultView: React.FC<Props> = ({ output, onFinalize, onBack }
 
   return (
     <div className="dedai" style={{ maxWidth: 900, margin: '0 auto', padding: 16 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-        <button onClick={onBack} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid #e5e7eb', cursor: 'pointer' }}>
-          ← Kembali
-        </button>
-        <h1 style={{ margin: 0, fontSize: 20 }}>Hasil Full AI Estimate</h1>
-        <span style={{
-          fontSize: 11, padding: '4px 12px', borderRadius: 12,
-          background: '#7C3AED15', color: '#7C3AED', fontWeight: 700,
-        }}>
-          {output.mode === 'FAST' ? 'Cepat' : 'Mendalam'} •{' '}
-          {output.provenance.provider && output.provenance.model
-            ? `${output.provenance.provider} / ${output.provenance.model}`
-            : output.provenance.model || 'Model tidak diketahui'}
-        </span>
-      </div>
+      {!embedded && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+          <button onClick={onBack} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid #e5e7eb', cursor: 'pointer' }}>
+            ← Kembali
+          </button>
+          <h1 style={{ margin: 0, fontSize: 20 }}>Hasil Full AI Estimate</h1>
+          <span style={{
+            fontSize: 11, padding: '4px 12px', borderRadius: 12,
+            background: '#7C3AED15', color: '#7C3AED', fontWeight: 700,
+          }}>
+            {output.mode === 'FAST' ? 'Cepat' : 'Mendalam'} •{' '}
+            {output.provenance.provider && output.provenance.model
+              ? `${output.provenance.provider} / ${output.provenance.model}`
+              : output.provenance.model || 'Model tidak diketahui'}
+          </span>
+        </div>
+      )}
 
       {/* ---- Banner kebijakan harga (Full AI vs Database) ---- */}
       {(() => {

@@ -20,7 +20,27 @@ import { getRegionalFactor, REGIONAL_WIZARD_OPTIONS } from '../data/regionalCost
 import { unifiedConversationStore } from './ai/conversation/unifiedConversationStore';
 import { notificationBus } from '../notifications/notificationBus';
 import { aiToolsProviderClient } from '../ai-tools/providerClient';
-import { RESPONSE_LANGUAGE_RULE } from '../ai-tools/ezrab-ai/prompt';
+import { RESPONSE_LANGUAGE_RULE, RESPONSE_FORMAT_RULE } from '../ai-tools/ezrab-ai/prompt';
+
+/**
+ * System prompt jalur server Co-Assistant (Magic AI & Assistant FullView).
+ * Sebelumnya jalur ini TIDAK mengirim systemPrompt sama sekali — hanya
+ * aturan bahasa yang ditempel di akhir prompt pengguna — sehingga kontrak
+ * format & kejujuran Chat AI tidak berlaku di sini. Kini memakai kontrak
+ * BERSAMA yang sama (RESPONSE_LANGUAGE_RULE + RESPONSE_FORMAT_RULE dari
+ * prompt.ts, satu sumber dengan EZRAB_AI_SYSTEM_PROMPT) DITAMBAH batasan
+ * jalur ini: co-assistant tidak punya perangkat tool-calling Chat AI, jadi
+ * model tidak boleh berpura-pura memanggil tool.
+ */
+const CO_ASSISTANT_SYSTEM_PROMPT = `Kamu adalah EZRAB AI — asisten konstruksi & estimasi biaya dari EZRAB, tampil sebagai Co-Assistant (Magic AI) di dalam aplikasi EZRAB.
+
+${RESPONSE_LANGUAGE_RULE}
+
+BATASAN JALUR INI
+- Kamu menjawab dari KONTEKS PROYEK yang diberikan pada prompt (hanya-baca) dan pengetahuan umum konstruksi. Kamu TIDAK memiliki akses tool di jalur ini: jangan berpura-pura memanggil tool, jangan menulis panggilan tool/JSON sebagai jawaban, dan jangan mengklaim sudah memeriksa database bila datanya tidak ada di konteks.
+- Bila angka yang diminta tidak ada di konteks, katakan tidak tersedia apa adanya dan arahkan ke menu/fitur EZRAB yang relevan.
+
+${RESPONSE_FORMAT_RULE}`;
 import { classifyRequest, minDelayFor, statusTextFor, waitForMinimum, waitForRabMinimum, activityForRequest } from '../ai-tools/aiResponseTiming';
 
 export interface CoAssistantMessage {
@@ -353,6 +373,7 @@ class CoAssistantService {
     const result = await aiToolsProviderClient.execute({
       productId: 'EZRAB_AI',
       mode: 'fast',
+      systemPrompt: CO_ASSISTANT_SYSTEM_PROMPT,
       prompt: `${contextBlock}PERTANYAAN PENGGUNA: ${trimmedMessage}\n\n${RESPONSE_LANGUAGE_RULE}`,
       jsonMode: false,
       temperature: 0.4,

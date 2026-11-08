@@ -106,6 +106,14 @@ const SPELLING_MAP: Record<string, string> = { kloset: 'closet' };
 
 const UNIT_TOKENS = new Set(['m2', 'm3', 'kg', "m'", 'buah', 'unit', 'titik', 'ls', 'm']);
 
+/**
+ * Ambang kosakata generik katalog: istilah yang tercantum pada lebih
+ * dari 25 judul item (dari ±5.725 item aktif) adalah kata umum
+ * pekerjaan (mis. "material"), bukan identitas item — dipakai gerbang
+ * anti over-matching N2 di searchChatAhsp.
+ */
+const GENERIC_TERM_DF = 25;
+
 const DEMOLITION_RE = /bongkar|pembongkaran|dibongkar/;
 
 export function normalizeUnit(u: string | null | undefined): string {
@@ -431,6 +439,24 @@ export function searchChatAhsp(
     );
   }
 
+  // Indeks token judul katalog — bahan gerbang anti over-matching di
+  // bawah (audit ekstrem C-039/C-040): istilah kueri yang tidak ada
+  // pada judul item MANA PUN berarti katalog memang tidak menamai hal
+  // itu; frekuensi dokumen (DF) membedakan istilah diskriminan dari
+  // kosakata generik katalog.
+  const titleTokenSets: Array<Set<string>> = (active as any[]).map(
+    (it) => new Set(tokenize(String(it.title ?? it.name ?? '')))
+  );
+  const globalTitleTokens = new Set<string>();
+  for (const s of titleTokenSets) for (const tk of s) globalTitleTokens.add(tk);
+  const nonexistentTerms = n.terms.filter((term) => !globalTitleTokens.has(term));
+  const termDf = new Map<string, number>();
+  for (const term of n.terms) {
+    let c = 0;
+    for (const s of titleTokenSets) if (s.has(term)) c++;
+    termDf.set(term, c);
+  }
+
   // 4. Scoring batas kata atas katalog aktif.
   const scored: ChatSearchItem[] = [];
   for (const it of active as any[]) {
@@ -455,6 +481,51 @@ export function searchChatAhsp(
   const topAll = scored
     .filter((it) => it.score === topScore)
     .sort((a, b) => compareCodes(a.code, b.code));
+
+  /* Gerbang anti over-matching (audit ekstrem C-039/C-040, 2026-11-08).
+   * Skor token saja tidak cukup: satu kata yang kebetulan sama bisa
+   * menempel pada item yang sama sekali tidak terkait ("emas" →
+   * pohon "Hujan Emas" untuk pertanyaan harga emas batangan;
+   * "material" → item pemadatan untuk "teleportasi material"), lalu
+   * tampil sebagai jawaban parsial yang menyesatkan. Dua gerbang
+   * berbasis bukti katalog (bukan daftar kata per kasus):
+   * N1 — mayoritas istilah kueri (≥ 2 istilah dan ≥ separuh) tidak
+   *   tercantum pada judul item mana pun: subjek/spesifikasi
+   *   permintaan memang di luar katalog; sisa kecocokan adalah
+   *   tempelan insidental.
+   * N2 — istilah PERTAMA (subjek permintaan) tidak tercantum di
+   *   judul mana pun DAN seluruh istilah yang cocok pada kelompok
+   *   skor teratas adalah kosakata generik katalog (DF > ambang):
+   *   yang cocok bukan identitas pekerjaan, hanya kata umum.
+   * Kasus sah yang dijaga dataset ekstrem (C-001 "persiapan lahan",
+   * C-014 "dynabolt m10", C-013 "sekrup gypsum") lolos karena istilah
+   * penopangnya diskriminan (DF rendah) atau subjeknya memang ada. */
+  if (
+    n.terms.length >= 2 &&
+    nonexistentTerms.length >= 2 &&
+    nonexistentTerms.length * 2 >= n.terms.length
+  ) {
+    return notFound(
+      nonexistentTerms.join(', '),
+      `Tidak ditemukan AHSP untuk "${raw}" di katalog AHSP 2026 resmi: kata "${nonexistentTerms.join('", "')}" ` +
+        'tidak tercantum pada judul item mana pun, sehingga sisa kata yang cocok hanya menempel pada item yang tidak terkait. ' +
+        'Katalog tidak memuat pekerjaan/komoditas itu — sebutkan nama pekerjaan konstruksinya atau periksa ejaannya.',
+    );
+  }
+  const topMatchedUnion = [...new Set(topAll.flatMap((it) => it.matchedTerms))];
+  if (
+    n.terms.length >= 2 &&
+    nonexistentTerms.includes(n.terms[0]) &&
+    topMatchedUnion.length > 0 &&
+    topMatchedUnion.every((term) => (termDf.get(term) ?? 0) > GENERIC_TERM_DF)
+  ) {
+    return notFound(
+      n.terms[0],
+      `Tidak ditemukan AHSP untuk "${raw}" di katalog AHSP 2026 resmi: subjek "${n.terms[0]}" ` +
+        'tidak tercantum pada judul item mana pun, dan kata lain pada pertanyaan Anda terlalu umum untuk memastikan itemnya. ' +
+        'Sebutkan nama pekerjaannya dengan istilah katalog (mis. "galian tanah", "pasangan bata", "plesteran 1:4") atau kodenya.',
+    );
+  }
 
   // 5. Satuan yang diminta mengalahkan urutan katalog.
   let answer: ChatSearchItem[];

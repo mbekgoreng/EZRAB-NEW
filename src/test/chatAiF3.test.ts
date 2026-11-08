@@ -103,7 +103,14 @@ describe('renderMarkdown — chat bubble rendering', () => {
     const html = renderToStaticMarkup(
       React.createElement(React.Fragment, null, ...renderMarkdown('Dokumen "Berita Acara" sudah siap.')),
     );
-    expect(html).toContain('"Berita Acara"');
+    // Penyesuaian hardening renderer (2026-11-08): renderer kini React
+    // nodes (tanpa dangerouslySetInnerHTML) sehingga SSR menserialisasi
+    // text node '"' sebagai &quot; — TEKS TERLIHAT pengguna identik.
+    // Asersi menilai teks terlihat (decode entitas serialisasi SSR),
+    // bukan serialisasi HTML mentah; makna asersi (kutip utuh, tidak
+    // menjadi bold) tidak berubah. Dijaga juga oleh chatRendering A13.
+    const visibleText = html.replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+    expect(visibleText).toContain('"Berita Acara"');
     expect(html).not.toContain('<strong>Berita Acara</strong>');
   });
 

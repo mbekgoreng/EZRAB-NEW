@@ -1,15 +1,19 @@
 /**
- * overheadFallbackAndDraftTax.test — regresi keputusan owner 2026-10-27:
- * (A) fallback overhead 10% bila proyek belum dikonfigurasi;
- * (B) pajak opt-in di seluruh preview draf DED/RAB.
+ * overheadFallbackAndDraftTax.test — regresi keputusan owner:
+ * (A) fallback overhead/profit 0% bila proyek belum dikonfigurasi
+ *     (keputusan owner 2026-11-08, MENGGANTIKAN fallback overhead 10%
+ *     dari 2026-10-27 — nilai eksplisit berapa pun tetap dipertahankan);
+ * (B) pajak opt-in di seluruh preview draf DED/RAB (owner 2026-10-27).
  *
  * Gaya plain-tsx (tanpa vitest — vitest tidak terinstal di sandbox):
  * jalankan dari ROOT repo: `npx --yes tsx src/test/overheadFallbackAndDraftTax.test.ts`
  *
  * Cakupan:
- * OVERHEAD (mesin utama + ringkasan ekspor + helper Info Proyek):
- * - tanpa konfigurasi → 10% (bukan 5 lama, bukan 0);
- * - eksplisit 5% → 5%; eksplisit 0% → 0% (bukan 10% — ??, bukan truthy);
+ * OVERHEAD/PROFIT (mesin utama + ringkasan ekspor + helper Info Proyek):
+ * - tanpa konfigurasi → 0% overhead & 0% profit; grand total = direct
+ *   cost (pajak mati) — bukan 10/5 lama, bukan 5 lama;
+ * - eksplisit 10/5 → tetap 10/5; eksplisit 5% → 5%; eksplisit 0% → 0%
+ *   (?? mempertahankan nilai eksplisit, bukan truthy);
  * - Rekap/helper vs mesin konsisten untuk input & konfigurasi yang sama;
  * - recalculate berulang tidak menggandakan overhead dan tidak mengubah
  *   objek proyek yang diberikan (konfigurasi tersimpan tidak ditimpa).
@@ -36,6 +40,8 @@ import { templatePreviewTax } from '../services/templatePreviewTax';
 import { resolveClientWizardStep } from '../services/coAssistantService';
 import { SpreadsheetApprovalEngine } from '../../server/services/spreadsheetApprovalEngine';
 import type { RabItem, Project } from '../types';
+import { readFileSync } from 'fs';
+import { PREMIUM_DEMO_PROJECT } from '../data/premiumDemoData';
 
 let passed = 0;
 let failed = 0;
@@ -63,30 +69,43 @@ const proj = (over: Partial<Project> & Record<string, unknown>): Project =>
   ({ id: 'p1', name: 'P', sections: [], ...over } as unknown as Project);
 
 // ---------------------------------------------------------------- overhead
-check('A1. mesin: tanpa overheadPercent → fallback 10%', () => {
-  const s = UnifiedProjectEngine.recalculateCostSummary([item], { profitPercent: 0, contingencyPercent: 0, directorMarkupPercent: 0 } as any);
-  eq(s.overheadPercent, 10, 'fallback harus 10');
-  eq(s.overheadAmount, 10000, 'overhead 10% × 100.000');
+check('A1. mesin: tanpa konfigurasi → overhead 0% & profit 0%, grand = direct', () => {
+  const s = UnifiedProjectEngine.recalculateCostSummary([item], { contingencyPercent: 0, directorMarkupPercent: 0 } as any);
+  eq(s.overheadPercent, 0, 'fallback overhead harus 0 (keputusan 2026-11-08)');
+  eq(s.overheadAmount, 0, 'overhead 0');
+  eq(s.profitPercent, 0, 'fallback profit harus 0');
+  eq(s.profitAmount, 0, 'profit 0');
+  eq(s.grandTotal, 100000, 'grand total = direct cost (pajak mati, komponen lain 0)');
 });
 check('A2. mesin: overhead eksplisit 5% → tetap 5%', () => {
   const s = UnifiedProjectEngine.recalculateCostSummary([item], { overheadPercent: 5, profitPercent: 0, contingencyPercent: 0, directorMarkupPercent: 0 } as any);
   eq(s.overheadAmount, 5000, 'overhead 5%');
 });
-check('A3. mesin: overhead eksplisit 0% → tetap 0% (bukan 10%)', () => {
+check('A3. mesin: overhead eksplisit 0% → tetap 0% (bukan fallback apa pun)', () => {
   const s = UnifiedProjectEngine.recalculateCostSummary([item], { overheadPercent: 0, profitPercent: 0, contingencyPercent: 0, directorMarkupPercent: 0 } as any);
   eq(s.overheadPercent, 0, '0 eksplisit harus bertahan');
   eq(s.overheadAmount, 0, 'overhead 0');
 });
-check('A4. mesin: overhead null → fallback 10% (null ≠ 0)', () => {
-  const s = UnifiedProjectEngine.recalculateCostSummary([item], { overheadPercent: null, profitPercent: 0, contingencyPercent: 0, directorMarkupPercent: 0 } as any);
-  eq(s.overheadPercent, 10, 'null diperlakukan belum dikonfigurasi');
+check('A4. mesin: overhead null → fallback 0% (null = belum dikonfigurasi)', () => {
+  const s = UnifiedProjectEngine.recalculateCostSummary([item], { overheadPercent: null, profitPercent: null, contingencyPercent: 0, directorMarkupPercent: 0 } as any);
+  eq(s.overheadPercent, 0, 'null diperlakukan belum dikonfigurasi → 0');
+  eq(s.profitPercent, 0, 'profit null → 0');
 });
-check('A5. helper Info Proyek: tanpa overhead → 10%, konsisten dengan mesin', () => {
+check('A4b. mesin: eksplisit 10/5 (konfigurasi lama yang disetel) → tetap 10/5, TIDAK ditimpa', () => {
+  const s = UnifiedProjectEngine.recalculateCostSummary([item], { overheadPercent: 10, profitPercent: 5, contingencyPercent: 0, directorMarkupPercent: 0 } as any);
+  eq(s.overheadPercent, 10, 'overhead eksplisit 10 bertahan');
+  eq(s.profitPercent, 5, 'profit eksplisit 5 bertahan');
+  eq(s.overheadAmount, 10000, 'overhead 10% × 100.000');
+  eq(s.profitAmount, 5000, 'profit 5% × 100.000');
+  eq(s.grandTotal, 115000, 'grand = direct + 10% + 5%');
+});
+check('A5. helper Info Proyek: tanpa overhead → 0%, konsisten dengan mesin', () => {
   const info = computeProjectInfoTotal([item], {});
   assert(info !== null, 'helper tidak null');
-  eq(info!.overheadPercent, 10, 'helper fallback 10');
-  const engine = UnifiedProjectEngine.recalculateCostSummary([item], { profitPercent: 0, contingencyPercent: 0, directorMarkupPercent: 0 } as any);
-  eq(engine.grandTotal, info!.total, 'mesin (tanpa pajak, profit 0) == helper');
+  eq(info!.overheadPercent, 0, 'helper fallback 0 (keputusan 2026-11-08)');
+  eq(info!.total, 100000, 'helper total = direct cost saja');
+  const engine = UnifiedProjectEngine.recalculateCostSummary([item], { contingencyPercent: 0, directorMarkupPercent: 0 } as any);
+  eq(engine.grandTotal, info!.total, 'mesin (tanpa pajak, tanpa konfigurasi) == helper');
 });
 check('A6. recalculate berulang tidak menggandakan overhead & tidak mengubah proyek', () => {
   const p = proj({ overheadPercent: 5, costSummary: { overheadPercent: 5, profitPercent: 5, taxPercent: 11 } as any });
@@ -96,10 +115,11 @@ check('A6. recalculate berulang tidak menggandakan overhead & tidak mengubah pro
   eq(s1.overheadAmount, s2.overheadAmount, 'refresh kedua sama dengan pertama');
   eq(JSON.stringify(p), before, 'objek proyek tidak dimutasi recalculate');
 });
-check('A7. ringkasan ekspor: tanpa field proyek → 10%; field 0 → 0%; field 5 → 5%', () => {
+check('A7. ringkasan ekspor: tanpa field proyek → overhead 0%; field 0 → 0%; field 5 → 5%', () => {
   const sec: any = [{ id: 's1', code: 'A', name: 'A', subtotal: 0, items: [mk({ id: 'a', amount: 100000 })] }];
   const noField = UnifiedProjectEngine.computeCostSummaryFromSections(proj({ costSummary: { overheadPercent: 5, profitPercent: 5, taxPercent: 11 } as any }), sec);
-  eq(noField.overheadPercent, 10, 'field proyek tidak ada → 10 (angka 5 ringkasan lama bukan konfigurasi)');
+  eq(noField.overheadPercent, 0, 'field proyek tidak ada → fallback 0 (keputusan 2026-11-08)');
+  eq(noField.profitPercent, 5, 'profit dari ringkasan yang ada tetap dipakai (eksplisit tersimpan)');
   const zero = UnifiedProjectEngine.computeCostSummaryFromSections(proj({ overheadPercent: 0, costSummary: { overheadPercent: 5, profitPercent: 5, taxPercent: 11 } as any }), sec);
   eq(zero.overheadPercent, 0, 'field 0 bertahan');
   const five = UnifiedProjectEngine.computeCostSummaryFromSections(proj({ overheadPercent: 5, costSummary: { overheadPercent: 5, profitPercent: 5, taxPercent: 11 } as any }), sec);
@@ -113,7 +133,7 @@ check('A8. ringkasan ekspor: pajak off default; flag proyek mengaktifkan; unreso
   const off = UnifiedProjectEngine.computeCostSummaryFromSections(proj({ overheadPercent: 10, costSummary: { profitPercent: 0, taxPercent: 11 } as any }), sec);
   eq(off.directCost, 100000, 'unresolved tidak masuk direct');
   eq(off.taxAmount, 0, 'pajak off default');
-  eq(off.grandTotal, 110000, 'grand = direct + overhead saja');
+  eq(off.grandTotal, 110000, 'grand = direct + overhead eksplisit 10 saja');
   const on = UnifiedProjectEngine.computeCostSummaryFromSections(proj({ overheadPercent: 10, ppnEnabled: true, ppnPercent: 11, costSummary: { profitPercent: 0, taxPercent: 11 } as any }), sec);
   eq(on.taxAmount, 12100, 'PPN 11% × 110.000 saat flag aktif');
   eq(on.grandTotal, 122100, 'grand dengan PPN');
@@ -174,6 +194,38 @@ check('B7. wizard: tanpa projectTax → pajak 0; dengan flag → sesuai; persen 
   eq(on.summary.taxAmount, Math.round(on.summary.subtotalBeforeTax * 0.11), 'wizard flag PPN aktif');
   eq(on.summary.pphAmount, Math.round(on.summary.subtotalBeforeTax * 0.02), 'wizard flag PPh aktif');
   eq(on.summary.grandTotal, on.summary.subtotalBeforeTax + on.summary.taxAmount + on.summary.pphAmount, 'wizard grand konsisten');
+});
+
+/* --- C. Penyamaan 0/0: template, contoh, portfolio (owner 2026-11-08 05:01) ---
+ * Tiga permukaan sisa disamakan ke 0/0. Pemeriksaan sumber di sini
+ * SENGAJA tekstual (pola aiResponseTiming): perilaku UI penuhnya butuh
+ * render React; yang dijaga adalah kontrak default-nya tidak kembali
+ * ke 10/5 atau 5/5, DAN dua proyek eksplisit tidak ikut berubah. */
+check('C1. template katalog: default global settings kini 0/0 (bukan 10/5)', () => {
+  const src = readFileSync('src/components/templates/TemplateRabCatalogView.tsx', 'utf8');
+  const m = src.match(/const defaults: GlobalEstimationSettings = \{[^}]*\}/);
+  if (!m) throw new Error('blok defaults tidak ditemukan');
+  if (!/overheadPercent: 0,/.test(m[0]) || !/profitPercent: 0,/.test(m[0])) throw new Error('default template bukan 0/0');
+  if (/overheadPercent: 10|profitPercent: 5/.test(m[0])) throw new Error('default template masih 10/5');
+});
+check('C2. generator contoh ProjectContext: tanpa markup 0.05 & ringkasan 0/0', () => {
+  const src = readFileSync('src/context/ProjectContext.tsx', 'utf8');
+  if (/Math\.round\(direct \* 0\.05\)/.test(src)) throw new Error('markup contoh 0.05 masih ada');
+  if (/overheadPercent: 5,\s*\n\s*overheadAmount: overhead/.test(src)) throw new Error('ringkasan contoh masih 5');
+});
+check('C3. literal portfolio bawaan: blok ringkasan directCost 0 kini 0/0', () => {
+  const src = readFileSync('src/context/ProjectContext.tsx', 'utf8');
+  const blocks = src.match(/costSummary: \{\s*\n\s*directCost: 0,[\s\S]{0,120}/g) ?? [];
+  const bad = blocks.filter((b) => /overheadPercent: [^0]|profitPercent: [^0]/.test(b));
+  eq(bad.length, 0, `blok literal bukan 0/0: ${bad.length}`);
+});
+check('C4. flagship PRJ-2026-001 TIDAK berubah: field overhead 5 eksplisit utuh', () => {
+  const src = readFileSync('src/context/ProjectContext.tsx', 'utf8');
+  if (!/ppnEnabled: true,\s*\n\s*overheadPercent: 5,/.test(src)) throw new Error('field flagship berubah!');
+});
+check('C5. Premium Demo TIDAK berubah: field 5 eksplisit & total kanonis', () => {
+  eq(PREMIUM_DEMO_PROJECT.costSummary.overheadPercent, 5, 'premium overhead tetap 5');
+  eq(PREMIUM_DEMO_PROJECT.costSummary.grandTotal, 1089879733, 'premium grand total tetap Rp1.089.879.733');
 });
 
 console.log(`\noverheadFallbackAndDraftTax: ${passed} passed, ${failed} failed`);

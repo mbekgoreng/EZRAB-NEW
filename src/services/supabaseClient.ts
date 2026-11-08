@@ -1,5 +1,6 @@
 import { createClient, SupabaseClient, User, Session } from '@supabase/supabase-js';
 import { isSupabaseReadyForAuth } from '../auth/authMode';
+import { authEmailRedirectTo } from '../components/auth/authFormShared';
 
 // Safe environment retrieval without exposing secrets
 const supabaseUrl: string =
@@ -105,6 +106,7 @@ export async function signUpWithEmailPassword(
     email,
     password,
     options: {
+      emailRedirectTo: authEmailRedirectTo(),
       data: {
         full_name: fullName || '',
       },
@@ -116,6 +118,33 @@ export async function signUpWithEmailPassword(
     session: data.session,
     error: error ? new Error(error.message) : null,
   };
+}
+
+/**
+ * Kirim email reset kata sandi. Tautan di email mendarat di /masuk
+ * dengan sesi pemulihan (type=recovery) — lihat penanganan
+ * PASSWORD_RECOVERY di SupabaseLoginPanel. Mengembalikan error jujur
+ * (termasuk saat Supabase belum terkonfigurasi), tidak pernah melempar.
+ */
+export async function requestPasswordReset(email: string): Promise<{ error: Error | null }> {
+  const client = getSupabaseClient();
+  if (!client) {
+    return { error: new Error('Konfigurasi Supabase tidak ditemukan atau belum valid.') };
+  }
+  const { error } = await client.auth.resetPasswordForEmail(email, {
+    redirectTo: authEmailRedirectTo(),
+  });
+  return { error: error ? new Error(error.message) : null };
+}
+
+/** Pasang kata sandi baru pada sesi pemulihan yang aktif. */
+export async function updatePasswordWithSession(newPassword: string): Promise<{ error: Error | null }> {
+  const client = getSupabaseClient();
+  if (!client) {
+    return { error: new Error('Konfigurasi Supabase tidak ditemukan atau belum valid.') };
+  }
+  const { error } = await client.auth.updateUser({ password: newPassword });
+  return { error: error ? new Error(error.message) : null };
 }
 
 export async function signOutSupabase(): Promise<{ error: Error | null }> {

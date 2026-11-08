@@ -18,6 +18,7 @@
 declare const process: any;
 
 import { AHSP_2026_CANONICAL } from '../data/nationalCostDatabase/ahsp2026Canonical.generated';
+import { ALL_OFFICIAL_AHSP_ITEMS } from '../data/nationalCostDatabase/masterRegistry';
 import { officialAhspRepository as repo } from '../data/nationalCostDatabase/officialAhspRepository';
 import {
   CODE_ALIASES,
@@ -42,6 +43,18 @@ function check(name: string, passed: boolean, detail = '') {
 
 const CK = AHSP_2026_CANONICAL.filter((i: any) => i.domain === 'CIPTA_KARYA');
 const byCode = new Map<string, any>(CK.map((i: any) => [String(i.code), i]));
+// PHASE C FIX (2026-11-08, Master AHSP Audit Phase C §10): C7 below iterates ALL
+// corrected codes, including SDA (A.1.02.5c.1) and Bina Marga (I.15/I.44/I.64)
+// targets that can never exist in the CK-only map above — they failed as
+// "item exists: false" even at a clean HEAD. C7 therefore looks raw records up
+// in the ASSEMBLED catalog (ALL_OFFICIAL_AHSP_ITEMS, first record per code,
+// mirroring the repository). The CK map stays for the CK-scoped D-section
+// counts (D1–D3), whose semantics are intentionally CK-only.
+const byCodeAll = new Map<string, any>();
+for (const i of ALL_OFFICIAL_AHSP_ITEMS as any[]) {
+  const code = String(i.code);
+  if (!byCodeAll.has(code)) byCodeAll.set(code, i);
+}
 
 // ============ C1: canonical vs alias search/lookup ============
 {
@@ -166,7 +179,7 @@ const byCode = new Map<string, any>(CK.map((i: any) => [String(i.code), i]));
   const correctedCodes = [...new Set(DESCRIPTION_CORRECTIONS.map(c => c.code))];
   let intact = 0;
   for (const code of correctedCodes) {
-    const dbItem = byCode.get(code);
+    const dbItem = byCodeAll.get(code);
     const repoItem = repo.getOfficialAhsp(code);
     if (!dbItem || !repoItem) { check(`C7 item exists: ${code}`, false); continue; }
     const samePrice = dbItem.unitPrice === repoItem.unitPrice;
@@ -213,7 +226,19 @@ const byCode = new Map<string, any>(CK.map((i: any) => [String(i.code), i]));
   check('D2 quarantined in CK = 10', quarantinedInCk === 10, `got ${quarantinedInCk}`);
   check('D3 active CK = 2849', active === 2849, `got ${active}`);
   check('D4 alias count = 16', CODE_ALIASES.length === 16, `got ${CODE_ALIASES.length}`);
-  check('D5 correction count = 26', DESCRIPTION_CORRECTIONS.length === 26, `got ${DESCRIPTION_CORRECTIONS.length}`);
+  // PHASE C (Phase C §10): the previous assertion hardcoded the correction
+  // count (26), which went stale the moment legitimate, provenanced entries
+  // were added (Mistar, Crabe, I.44, I.64 → 31) and failed despite correct
+  // behaviour. Replaced with identity/behaviour assertions that express the
+  // actual invariant: every registered correction targets a record the
+  // repository can resolve, and correction keys (code+field+indexes) are
+  // unique. The count is reported for information only.
+  const corrKeys = new Set(DESCRIPTION_CORRECTIONS.map(
+    c => `${c.code}.${c.field}.${c.materialIndex ?? ''}.${c.equipmentIndex ?? ''}`));
+  const allResolve = DESCRIPTION_CORRECTIONS.every(c => repo.getOfficialAhsp(c.code) !== undefined);
+  check('D5 corrections resolve via repository & keys unique',
+    allResolve && corrKeys.size === DESCRIPTION_CORRECTIONS.length,
+    `${DESCRIPTION_CORRECTIONS.length} corrections, ${corrKeys.size} unique keys, allResolve=${allResolve}`);
 
   // No duplicate active candidates: every alias target unique and in DB
   const targets = new Set(CODE_ALIASES.map(a => a.canonical));

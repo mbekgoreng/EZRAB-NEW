@@ -12,6 +12,11 @@ import {
   SUITS, RANK_LABEL, RANK_NAME, MAX_BET,
   type VPState, type HandResult,
 } from './logic';
+import { drawCardSuit, preloadCardSuits, VIDEO_POKER_SUITS } from '../../../shared/cardSuitSprites';
+
+// Sapuan visual Kelompok 3: muat awal set corak kartu bersama (sprite
+// generate-AI); glif prosedural di bawah tetap FALLBACK.
+preloadCardSuits();
 
 const SLUG = 'video-poker';
 const LW = 390;
@@ -509,12 +514,20 @@ function rrPath(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, 
 }
 
 /**
- * Glif material prosedural (vektor canvas, pola SuitMaterial pilot Blackjack
- * & glif Solitaire Gelombang 1) — menggantikan emoji suit di wajah kartu.
+ * Glif material: sprite corak generate-AI dari set bersama
+ * (shared/cardSuitSprites, peta VIDEO_POKER_SUITS per SUITS) digambar
+ * lebih dulu pada kotak s*2 — tapak identik glif lama; prosedural di
+ * bawah menjadi FALLBACK bila sprite belum siap / gagal muat.
  * suit VP: 0 Bata (balok + nat), 1 Kayu (papan + serat), 2 Besi (mur
  * heksagon), 3 Cat (rol cat + gagang). `s` = setengah lebar glif.
  */
 function drawSuitGlyph(ctx: CanvasRenderingContext2D, suit: number, cx: number, cy: number, s: number): void {
+  const url = VIDEO_POKER_SUITS[suit];
+  if (url && drawCardSuit(ctx, url, cx, cy, s * 2)) return;
+  drawSuitGlyphProcedural(ctx, suit, cx, cy, s);
+}
+
+function drawSuitGlyphProcedural(ctx: CanvasRenderingContext2D, suit: number, cx: number, cy: number, s: number): void {
   ctx.save();
   ctx.lineWidth = Math.max(1, s * 0.16);
   if (suit === 0) {

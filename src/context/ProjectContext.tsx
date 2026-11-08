@@ -559,9 +559,9 @@ export const DEFAULT_PORTFOLIO_PROJECTS: Project[] = ([
         itemsCount: 0, sections: [],
     costSummary: {
       directCost: 0,
-      overheadPercent: 5,
+      overheadPercent: 0,
       overheadAmount: 0,
-      profitPercent: 5,
+      profitPercent: 0,
       profitAmount: 0,
       contingencyPercent: 0,
       contingencyAmount: 0,
@@ -594,9 +594,9 @@ export const DEFAULT_PORTFOLIO_PROJECTS: Project[] = ([
     sections: [],
     costSummary: {
       directCost: 0,
-      overheadPercent: 5,
+      overheadPercent: 0,
       overheadAmount: 0,
-      profitPercent: 5,
+      profitPercent: 0,
       profitAmount: 0,
       contingencyPercent: 0,
       contingencyAmount: 0,
@@ -629,9 +629,9 @@ export const DEFAULT_PORTFOLIO_PROJECTS: Project[] = ([
     sections: [],
     costSummary: {
       directCost: 0,
-      overheadPercent: 5,
+      overheadPercent: 0,
       overheadAmount: 0,
-      profitPercent: 5,
+      profitPercent: 0,
       profitAmount: 0,
       contingencyPercent: 0,
       contingencyAmount: 0,
@@ -664,9 +664,9 @@ export const DEFAULT_PORTFOLIO_PROJECTS: Project[] = ([
     sections: [],
     costSummary: {
       directCost: 0,
-      overheadPercent: 5,
+      overheadPercent: 0,
       overheadAmount: 0,
-      profitPercent: 5,
+      profitPercent: 0,
       profitAmount: 0,
       contingencyPercent: 0,
       contingencyAmount: 0,
@@ -1154,10 +1154,10 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // mesin). Komputasi dilakukan di dalam updater setProjects agar flag
   // yang baru saja disimpan lewat updateProject (mis. centang PPN di
   // Pengaturan) ikut terbaca — updater fungsional dieksekusi berurutan.
-  // Fallback overhead 10% (owner 2026-10-27, selaras Rekapitulasi):
-  // overhead proyek diambil dari FIELD PROYEK (yang ditulis Pengaturan);
-  // bila field itu undefined/null (belum dikonfigurasi), mesin memakai
-  // fallback 10 — BUKAN persen ringkasan lama (5, default pembuatan
+  // Fallback overhead 0% (keputusan owner 2026-11-08, menggantikan
+  // fallback 10% dari 2026-10-27): overhead proyek diambil dari FIELD
+  // PROYEK (yang ditulis Pengaturan); bila field itu undefined/null
+  // (belum dikonfigurasi), mesin memakai fallback 0 — BUKAN persen ringkasan lama (5, default pembuatan
   // proyek). Operator ?? mempertahankan nilai eksplisit 0%. Recalculate
   // tidak pernah menulis field proyek, jadi fallback tidak menimpa
   // konfigurasi tersimpan apa pun.
@@ -1226,9 +1226,12 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       sections: [],
       costSummary: {
         directCost: 0,
-        overheadPercent: 5,
+        // Proyek BARU lahir dengan overhead/profit 0 (keputusan owner
+        // 2026-11-08) — selaras fallback mesin kanonis, agar kalkulasi
+        // ulang pertama tidak mengubah persen proyek baru.
+        overheadPercent: 0,
         overheadAmount: 0,
-        profitPercent: 5,
+        profitPercent: 0,
         profitAmount: 0,
         contingencyPercent: 0,
         contingencyAmount: 0,
@@ -2688,9 +2691,9 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
         sections: [],
         costSummary: {
           directCost: 0,
-          overheadPercent: 5,
+          overheadPercent: 0,
           overheadAmount: 0,
-          profitPercent: 5,
+          profitPercent: 0,
           profitAmount: 0,
           contingencyPercent: 0,
           contingencyAmount: 0,
@@ -2916,8 +2919,11 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       ];
 
       const direct = sampleRab.reduce((sum, i) => sum + (i.amount ?? 0), 0);
-      const overhead = Math.round(direct * 0.05);
-      const profit = Math.round(direct * 0.05);
+      // Proyek contoh juga 0/0 (keputusan owner 2026-11-08 05:01 —
+      // penyamaan template/contoh/portfolio): tanpa markup overhead/
+      // profit 5%; total contoh konsisten internal dari item-itemnya.
+      const overhead = 0;
+      const profit = 0;
       const subtotal = direct + overhead + profit;
       const tax = Math.round(subtotal * 0.11);
       const grandTotal = subtotal + tax;
@@ -2925,9 +2931,9 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       sampleProject.totalRab = grandTotal;
       sampleProject.costSummary = {
         directCost: direct,
-        overheadPercent: 5,
+        overheadPercent: 0,
         overheadAmount: overhead,
-        profitPercent: 5,
+        profitPercent: 0,
         profitAmount: profit,
         contingencyPercent: 0,
         contingencyAmount: 0,

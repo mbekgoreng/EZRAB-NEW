@@ -92,5 +92,40 @@ const resStarter = mockTopUp();
 check("top-up starter: status 'simulated'", resStarter.status === 'simulated');
 check('top-up starter: +3.600 (3.000 + bonus 600)', mockGetBalance().total === 8_600);
 
+console.log('=== WS-B: gerbang fitur ditegakkan DI LAPISAN DEBIT (bukan hanya UI) ===');
+mockReset();
+mockSetPlan('free');
+check('free: debit ded-ai DITOLAK walau saldo cukup (100 >= 50)',
+  mockConsume('ded-ai', 50, 'uji debit ded free') === false);
+check('free: saldo utuh sesudah penolakan ded-ai', mockGetBalance().total === 100);
+check('free: debit ai-document DITOLAK walau saldo cukup',
+  mockConsume('ai-document', 50, 'uji debit dokumen free') === false);
+check('free: saldo utuh sesudah penolakan ai-document', mockGetBalance().total === 100);
+mockReset();
+check('starter: debit ai-document DITOLAK (locked di matriks kanonis)',
+  mockConsume('ai-document', 50, 'uji debit dokumen starter') === false);
+check('starter: saldo utuh 5.000', mockGetBalance().total === 5_000);
+check('starter: debit ded-ai tetap BOLEH (matriks: dedAi true)',
+  mockConsume('ded-ai', 50, 'uji debit ded starter') === true);
+check('starter: saldo 4.950 sesudah debit ded sah', mockGetBalance().total === 4_950);
+
+console.log('=== WS-B: idempotency debit via jobReference ===');
+mockReset();
+check('debit pertama jobReference job-wsb-1 berhasil',
+  mockConsume('chat-ai', 25, 'uji idem', { jobReference: 'job-wsb-1' }) === true);
+check('saldo 4.975 sesudah debit pertama', mockGetBalance().total === 4_975);
+check('debit KEDUA jobReference sama DITOLAK (tidak terpotong dua kali)',
+  mockConsume('chat-ai', 25, 'uji idem ulang', { jobReference: 'job-wsb-1' }) === false);
+check('saldo tetap 4.975 (tidak ada potongan ganda)', mockGetBalance().total === 4_975);
+check('ledger hanya memuat SATU entri untuk job-wsb-1',
+  mockGetLedger().filter((e) => e.jobReference === 'job-wsb-1').length === 1);
+check('debit jobReference berbeda tetap berhasil',
+  mockConsume('chat-ai', 25, 'uji idem lain', { jobReference: 'job-wsb-2' }) === true);
+check('saldo 4.950 sesudah debit job lain', mockGetBalance().total === 4_950);
+
+console.log('=== WS-B: jumlah kredit pecahan ditolak (integer-only) ===');
+check('debit 4.5 kredit DITOLAK', mockConsume('chat-ai', 4.5, 'uji pecahan') === false);
+check('saldo tidak berubah oleh debit pecahan', mockGetBalance().total === 4_950);
+
 console.log(`\nHasil: ${pass} PASS, ${fail} FAIL`);
 if (fail > 0) process.exit(1);

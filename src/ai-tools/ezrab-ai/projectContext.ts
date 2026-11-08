@@ -123,8 +123,8 @@ export function buildProjectSnapshot(
     const pj = (project ?? {}) as Record<string, unknown>;
     const summary = recalculateCostSummary(engineItems as never, {
       /* Overhead: field proyek dulu; bila tak ada, mesin memakai fallback
-       * 10 (bukan persen ringkasan lama 5 — itu default pembuatan, bukan
-       * konfigurasi). Selaras dengan kartu total & Rekapitulasi. */
+       * 0 (keputusan owner 2026-11-08). Selaras dengan kartu total &
+       * Rekapitulasi. */
       overheadPercent: typeof pj.overheadPercent === 'number' ? pj.overheadPercent : undefined,
       profitPercent: typeof cs.profitPercent === 'number' ? cs.profitPercent : undefined,
       taxPercent: typeof cs.taxPercent === 'number' ? cs.taxPercent : undefined,

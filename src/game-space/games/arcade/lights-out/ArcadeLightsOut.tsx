@@ -7,6 +7,7 @@ import { useGameCanvas, type GameApi, TAU, clamp, easeOutBack } from '../../../e
 import { sfx } from '../../../engine2d';
 import { bestKey, getBest, setBest } from '../../../engine2d/best';
 import { popText } from '../../../engine2d/juice2d';
+import { drawSceneSpriteRegion, preloadSceneSprites } from '../../../shared/sceneSprites';
 import { GRID, affected, toggle, isSolved, emptyBoard, scramble, scoreFor, starsFor, SHIFTS } from './logic';
 
 const FONT = "'Plus Jakarta Sans','Inter',system-ui,sans-serif";
@@ -28,6 +29,7 @@ interface S {
 }
 
 export default function ArcadeLightsOut({ onExit }: { onExit: () => void }): React.JSX.Element {
+  preloadSceneSprites();
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const apiRef = useRef<GameApi | null>(null);
   const screenRef = useRef<Screen>('tutorial');
@@ -248,6 +250,12 @@ export default function ArcadeLightsOut({ onExit }: { onExit: () => void }): Rea
       const sc = 0.9 + 0.1 * pk;
       ctx.translate(x, headY);
       ctx.scale(sc, sc);
+      // fixture lampu = sprite generate-AI dalam kotak sel yang sama;
+      // kerucut cahaya, genangan, kedip & pop tetap prosedural (di atas).
+      if (drawSceneSpriteRegion(ctx, on ? 'scene-lampu-nyala' : 'scene-lampu-mati', 0, cell * 0.30, cell * 0.52, cell * 1.02, 0.30, 0.02, 0.40, 0.62)) {
+        ctx.restore();
+        return;
+      }
       // tiang
       const pole = ctx.createLinearGradient(-3, 0, 3, 0);
       pole.addColorStop(0, '#3f4a5f');

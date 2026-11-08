@@ -31,7 +31,7 @@ export function createFastSystemPrompt(ctx: { projectType: string; pricingPolicy
   const contract = `Kamu adalah estimator DED (DED AI Estimate — mode CEPAT). Tugasmu: identifikasi pekerjaan konstruksi proyek tipe "${projectType}" dan susun daftar pekerjaan dengan detail dasar.
 
 ${standardPricingPolicySection(policy)}
-${policy === 'FULL_AI' ? `FIELD TAMBAHAN MODE FULL_AI: setiap workItem boleh berisi "proposedSubtotal": quantity × estimatedUnitPrice (null bila salah satunya null); tingkat atas berisi "proposedGrandTotal": jumlah semua proposedSubtotal.` : `MODE DATABASE: JANGAN mengeluarkan field proposedSubtotal atau proposedGrandTotal — total resmi dihitung aplikasi dari data tervalidasi.`}
+${policy === 'FULL_AI' ? `FIELD TAMBAHAN MODE FULL_AI: "proposedSubtotal" per workItem & "proposedGrandTotal" di tingkat atas (usulanmu; null bila quantity/harga null). Kuantitas hanya dihitung dari dasar terstruktur: derivation ber-satuan eksplisit (nilai tertulis di teks item), jadwal unit tertulis, atau "dimensionUnitAssumption"; angka telanjang menjadi Perlu Input.` : `MODE DATABASE: JANGAN mengeluarkan field proposedSubtotal atau proposedGrandTotal — total resmi dihitung aplikasi dari data tervalidasi.`}
 
 ATURAN WAJIB:
 - Keluarkan JSON MURNI (tanpa teks lain, tanpa markdown).
@@ -71,7 +71,7 @@ ATURAN PENDEKATAN KUANTITAS:
 
 ATURAN KHUSUS PROYEK JALAN: cari STATIONING ("STA 0+000"–"STA 1+595" = 1595 m). Perkerasan: panjang × lebar (m2), lebar dari potongan melintang. Urugan: panjang × lebar × tebal (m3). Lebar tak ada → estimasi dari tipe jalan, asumsi di quantityFormula. Item perkerasan JANGAN dikosongkan.
 
-${policy === 'FULL_AI' ? `ATURAN ESTIMASI HARGA: estimatedUnitPrice = estimasi harga satuan (Rupiah) pasar konstruksi Indonesia 2026. WAJIB isi estimatedUnitPrice untuk SEMUA item yang umum. Referensi tipikal 2026: AC-WC Rp120.000-180.000/m2; lapen Rp100.000-150.000/m2; urugan sirtu Rp200.000-300.000/m3; urugan tanah Rp50.000-100.000/m3; gorong-gorong pelat Rp15-25jt/unit; buis beton Rp8-15jt/unit; jembatan: dari bentang. estimatedUnitPrice = null HANYA untuk item sangat kustom tanpa referensi pasar. unitPriceNote = alasan singkat. Harga adalah ESTIMASI AI, bukan harga resmi.` : `ATURAN HARGA FALLBACK (MODE DATABASE — tidak ada tabel harga pasar di mode ini): estimatedUnitPrice HANYA kandidat fallback — isi bila ada perkiraan masuk akal dari DED/spesifikasi, boleh null bila tak ada dasar. TIDAK ADA kewajiban mengisi harga semua item; TIDAK ADA tabel harga pasar yang harus diikuti — harga resmi hanya dari database kanonis tervalidasi. Perkiraanmu BUKAN harga resmi/database: aplikasi mengutamakan harga kanonis bila cocok; perkiraanmu dipakai hanya bila tak ada di database, berlabel "Estimasi AI".`}
+${policy === 'FULL_AI' ? `ATURAN ESTIMASI HARGA: estimatedUnitPrice = estimasi harga satuan pasar Indonesia 2026; WAJIB isi estimatedUnitPrice untuk item umum. Referensi tipikal: AC-WC Rp120.000-180.000/m2; lapen Rp100.000-150.000/m2; sirtu Rp200.000-300.000/m3; urugan tanah Rp50.000-100.000/m3; gorong-gorong pelat Rp15-25jt/unit; buis beton Rp8-15jt/unit; jembatan: dari bentang. null HANYA untuk item sangat kustom. unitPriceNote WAJIB berisi dasar estimasi; tanpa dasar, estimasi tak ditempel. Harga = ESTIMASI AI, bukan harga resmi.` : `ATURAN HARGA FALLBACK (MODE DATABASE — tidak ada tabel harga pasar di mode ini): estimatedUnitPrice HANYA kandidat fallback — isi bila ada perkiraan masuk akal dari DED/spesifikasi, boleh null bila tak ada dasar. TIDAK ADA kewajiban mengisi harga semua item; TIDAK ADA tabel harga pasar yang harus diikuti — harga resmi hanya dari database kanonis tervalidasi. Perkiraanmu BUKAN harga resmi/database: aplikasi mengutamakan harga kanonis bila cocok; perkiraanmu dipakai hanya bila tak ada di database, berlabel "Estimasi AI".`}
 
 ATURAN SATUAN DIMENSI (WAJIB): setiap dimensi WAJIB berpenanda satuan eksplisit (mm, cm, atau m). BENAR: "4000 x 150 x 200 mm". SALAH: "4000 x 150 x 200" tanpa satuan — JANGAN. Satuan tak diketahui → dimensions=null, quantity=null.
 
@@ -116,6 +116,10 @@ export interface DedFastOutput {
     confidence?: 'HIGH' | 'MEDIUM' | 'LOW';
     estimatedUnitPrice?: number | null;
     unitPriceNote?: string;
+    /** Dasar terstruktur kuantitas (inputs bernilai + satuan eksplisit per input). */
+    derivation?: { formulaType: string; inputs: Array<{ name: string; value: number; unit: string; source?: string }> };
+    /** Satuan dimensi yang dinyatakan model sebagai ASUMSI (bukan fakta DED). */
+    dimensionUnitAssumption?: 'mm' | 'cm' | 'm';
     /** Usulan AI (mode FULL_AI saja): quantity × estimatedUnitPrice, null bila salah satunya null. */
     proposedSubtotal?: number | null;
   }>;

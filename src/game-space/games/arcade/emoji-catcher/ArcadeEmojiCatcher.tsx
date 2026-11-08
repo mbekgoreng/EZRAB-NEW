@@ -12,6 +12,19 @@ import {
   progressInLevel, catchesToNextLevel, levelProgressFraction, CATCHES_PER_LEVEL,
   MAX_LIVES, type FallingItem,
 } from './logic';
+import { drawMaterialSprite, preloadMaterialSprites, type MaterialSlug } from '../../../shared/materialSprites';
+import { drawFallerSprite, preloadFallerSprites, type FallerSlug } from '../../../shared/fallerSprites';
+
+// Sapuan visual Kelompok 5: muat awal set material bersama (Kelompok 1)
+// + set objek jatuh baru; gambar prosedural tetap FALLBACK.
+preloadMaterialSprites();
+preloadFallerSprites();
+
+/** Varian APD (kind 'helm') -> sprite: 0 helm, 1 rompi, 4 palu dari set
+ * material bersama Kelompok 1; 2 sarung tangan & 3 sepatu boot dari set
+ * fallers baru. Bonus: 0 bintang & 1 medali (fallers). Bata: mat-bata. */
+const APD_MATERIAL_SLUGS: Partial<Record<number, MaterialSlug>> = { 0: 'helm', 1: 'rompi', 4: 'palu' };
+const APD_FALLER_SLUGS: Partial<Record<number, FallerSlug>> = { 2: 'sarung-tangan', 3: 'sepatu-boot' };
 
 const FONT = "'Plus Jakarta Sans','Inter',system-ui,sans-serif";
 const BK = bestKey('emoji-catcher', 'best');
@@ -272,7 +285,27 @@ export default function ArcadeEmojiCatcher({ onExit }: { onExit: () => void }): 
      * kind 'helm' -> APD per variant: 0 helm kuning, 1 rompi, 2 sarung
      * tangan, 3 sepatu boot, 4 palu. kind 'bonus' -> 0 bintang proyek,
      * 1 medali mandor. kind 'bata' -> bata merah prosedural. */
+    // Sprite generate-AI lebih dulu (dipanggil dalam translasi item);
+    // troli penangkap (drawBasket) TIDAK diganti — penangkap fungsional.
+    const drawFallingItemSprite = (ctx: CanvasRenderingContext2D, it: FallingItem, R: number): boolean => {
+      if (it.kind === 'bata') return drawMaterialSprite(ctx, 'bata', 0, 0, R * 2, R * 1.35);
+      if (it.kind === 'bonus') return drawFallerSprite(ctx, it.variant === 1 ? 'medali' : 'bintang', 0, 0, R * 2, R * 2);
+      const fs = APD_FALLER_SLUGS[it.variant];
+      if (fs) return drawFallerSprite(ctx, fs, 0, 0, R * 2, R * 2);
+      const ms = APD_MATERIAL_SLUGS[it.variant];
+      if (ms) return drawMaterialSprite(ctx, ms, 0, 0, R * 2, R * 2);
+      return false;
+    };
+
     const drawFallingItem = (ctx: CanvasRenderingContext2D, it: FallingItem, R: number): void => {
+      ctx.save();
+      ctx.translate(it.x, it.y);
+      const drawn = drawFallingItemSprite(ctx, it, R);
+      ctx.restore();
+      if (!drawn) drawFallingItemProcedural(ctx, it, R);
+    };
+
+    const drawFallingItemProcedural = (ctx: CanvasRenderingContext2D, it: FallingItem, R: number): void => {
       ctx.save();
       ctx.translate(it.x, it.y);
       if (it.kind === 'bata') {

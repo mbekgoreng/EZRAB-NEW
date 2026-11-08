@@ -2,17 +2,19 @@
  * ArcadeTicTacToe ("Bata vs Semen") — X = Bata, O = Semen (karung).
  * Mode: vs AI Sedang (bisa dikalahkan) atau 2 Pemain lokal.
  *
- * Grafis (Gelombang 1 rekonstruksi): token pemain = glif prosedural
- * digambar kode di dalam komponen — bata oranye-merah (Canvas + SVG DOM)
- * dan karung semen krem (Canvas + SVG DOM), pola MaterialGlyph pilot
- * Sudoku. Bukan emoji, bukan hasil generate. Sisa simbol di file hanya
- * tombol fungsional shell (jeda/suara/keluar).
+ * Grafis: token pemain = sprite generate-AI (set token papan bersama,
+ * Kelompok 2) — bata oranye-merah dan karung semen krem — di Canvas
+ * maupun SVG DOM; glif prosedural lama (drawBrick/drawCement Canvas +
+ * BrickGlyph/CementGlyph DOM) menjadi FALLBACK bila sprite belum siap.
+ * Bukan emoji. Sisa simbol di file hanya tombol fungsional shell
+ * (jeda/suara/keluar).
  */
 import React, { useRef, useState } from 'react';
 import { useGameCanvas, type GameApi, sfx, TAU, clamp, easeOutBack } from '../../../engine2d';
 import { bestKey, getBest, setBest } from '../../../engine2d/best';
 import { popText } from '../../../engine2d/juice2d';
 import { emptyBoard, winner, isFull, place, aiOpening, type Board, type Mark } from './logic';
+import { TTT_TOKENS, drawBoardToken, loadSprite, useSprite } from '../../../shared/boardTokenSprites';
 
 const FONT = "'Plus Jakarta Sans','Inter',system-ui,sans-serif";
 const BK = bestKey('bata-vs-semen', 'streak');
@@ -59,6 +61,8 @@ export default function ArcadeTicTacToe({ onExit }: { onExit: () => void }): Rea
 
   const canvasRef = useGameCanvas((api) => {
     apiRef.current = api;
+    void loadSprite(TTT_TOKENS.X);
+    void loadSprite(TTT_TOKENS.O);
     api.pushHud = (h) => setHud(h as typeof hud);
 
     const s: S = {
@@ -266,6 +270,15 @@ export default function ArcadeTicTacToe({ onExit }: { onExit: () => void }): Rea
      * lama yang kabur bacanya. `age` menggerakkan animasi pop penempatan.
      */
     const drawBrick = (ctx: CanvasRenderingContext2D, x: number, y: number, r: number, age: number): void => {
+      // Sprite bata generate-AI (Kelompok 2) dengan animasi pop yang sama;
+      // gambar prosedural di bawah = fallback bila sprite belum siap.
+      const popS = easeOutBack(clamp(age / 0.22, 0, 1));
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.scale(Math.max(0.01, popS), Math.max(0.01, popS));
+      ctx.rotate(-0.1);
+      if (drawBoardToken(ctx, TTT_TOKENS.X, 0, 0, r * 2.35, r * 2.35)) { ctx.restore(); return; }
+      ctx.restore();
       const pop = easeOutBack(clamp(age / 0.22, 0, 1));
       const sc = Math.max(0.01, pop);
       ctx.save();
@@ -307,6 +320,15 @@ export default function ArcadeTicTacToe({ onExit }: { onExit: () => void }): Rea
      * sesuai arah seni), bayangan kontak. Menggantikan cincin semen lama.
      */
     const drawCement = (ctx: CanvasRenderingContext2D, x: number, y: number, r: number, age: number): void => {
+      // Sprite karung semen generate-AI (Kelompok 2), pop yang sama;
+      // gambar prosedural di bawah = fallback bila sprite belum siap.
+      const popS = easeOutBack(clamp(age / 0.22, 0, 1));
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.scale(Math.max(0.01, popS), Math.max(0.01, popS));
+      ctx.rotate(0.07);
+      if (drawBoardToken(ctx, TTT_TOKENS.O, 0, 0, r * 2.35, r * 2.35)) { ctx.restore(); return; }
+      ctx.restore();
       const pop = easeOutBack(clamp(age / 0.22, 0, 1));
       const sc = Math.max(0.01, pop);
       ctx.save();
@@ -589,13 +611,15 @@ function Overlay({ children }: { children: React.ReactNode }): React.JSX.Element
 }
 
 /**
- * Glif DOM prosedural (SVG digambar kode — BUKAN emoji, BUKAN hasil
- * generate; pola MaterialGlyph pilot Sudoku). Bahasa visualnya sama
- * dengan glif Canvas di papan: bata oranye-merah bergaris nat, karung
- * semen krem berlipat dengan cap kotak biru.
+ * Glif DOM: sprite generate-AI (set token papan bersama, Kelompok 2)
+ * bila siap; SVG prosedural di bawah = fallback. Bahasa visualnya sama
+ * dengan token di papan: bata oranye-merah bergaris nat, karung semen
+ * krem berlipat dengan cap kotak biru.
  */
 function BrickGlyph({ size = 24 }: { size?: number }): React.JSX.Element {
+  const img = useSprite(TTT_TOKENS.X);
   const s = { width: size, height: size, display: 'block', flexShrink: 0 } as React.CSSProperties;
+  if (img) return <img src={img.src} alt="Bata" draggable={false} style={{ ...s, objectFit: 'contain' }} />;
   return (
     <svg style={s} viewBox="0 0 40 40" aria-label="Bata">
       <rect x="4" y="11" width="32" height="19" rx="3.5" fill="#ea580c" stroke="#7c2d12" strokeWidth="2" />
@@ -609,7 +633,9 @@ function BrickGlyph({ size = 24 }: { size?: number }): React.JSX.Element {
 }
 
 function CementGlyph({ size = 24 }: { size?: number }): React.JSX.Element {
+  const img = useSprite(TTT_TOKENS.O);
   const s = { width: size, height: size, display: 'block', flexShrink: 0 } as React.CSSProperties;
+  if (img) return <img src={img.src} alt="Karung semen" draggable={false} style={{ ...s, objectFit: 'contain' }} />;
   return (
     <svg style={s} viewBox="0 0 40 40" aria-label="Karung semen">
       <path d="M9 12 h22 a3 3 0 0 1 3 3 v17 a3 3 0 0 1 -3 3 H9 a3 3 0 0 1 -3 -3 V15 a3 3 0 0 1 3 -3 Z" fill="#e7dcc0" stroke="#8a7a52" strokeWidth="2" />

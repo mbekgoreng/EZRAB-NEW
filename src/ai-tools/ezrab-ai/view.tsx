@@ -34,7 +34,7 @@ import {
 } from './textAttachment';
 import { debitChatCreditOnSuccess } from './chatCreditDebit';
 
-import { renderMarkdown } from './markdown';
+import { renderMarkdown, markdownToPlainText } from './markdown';
 import { routeIntent, localGreeting, HELP_TEXT } from './intentRouter';
 import { extractSlashToken, filterSlashEntries, NAV_BY_ID, resolveNavCommand, type NavEntry } from './navRegistry';
 import { consumePendingAiEntry, requestAiEntry, consumePendingEzrabAiEntry, peekPendingEzrabAiEntry, ezrabAiEntryRemainingMs, openEzrabAI, type EzrabAiEntryContext } from '../aiNavigation';
@@ -60,6 +60,7 @@ import {
 import { buildProjectSnapshot, ProjectSnapshot, snapshotAllItems } from './projectContext';
 import { unifiedConversationStore } from '../../services/ai/conversation/unifiedConversationStore';
 import './ezrab-ai-chat.css';
+import './markdown.css';
 import '../../ai-credits/ai-credits.css';
 import { useCreditSimulation } from '../../ai-credits/useCreditSimulation';
 import { estimateReservationCredits, meterTexts } from '../../ai-credits/tokenMetering';
@@ -1206,18 +1207,34 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   }, [injectedPrompt, conversationReady, busy, input]);
 
   const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const copyMsg = (idx: number, text: string) => {
+  const copiedMdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [copiedMdIdx, setCopiedMdIdx] = useState<number | null>(null);
+  /* Salin pesan: tombol utama menyalin TEKS BERSIH yang terbaca pengguna
+     (markdownToPlainText — tanpa penanda markdown/entitas mentah; tabel
+     menjadi baris " | ", matematika terbaca, isi blok kode utuh). Salin
+     sumber Markdown adalah aksi TERPISAH yang disengaja (copyMsgMarkdown,
+     tombol FileText) bagi yang memang butuh sintaks sumbernya. */
+  const writeClipboard = (text: string, onOk: () => void) => {
     /* Tanda centang hanya bila salin BENAR-BENAR berhasil — sebelumnya
        centang tampil juga saat writeText gagal (izin clipboard ditolak,
        konteks non-HTTPS), sehingga pengguna mengira sudah tersalin. */
-    const showCopied = () => {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(onOk).catch(() => {});
+    }
+  };
+  const copyMsg = (idx: number, text: string) => {
+    writeClipboard(markdownToPlainText(text), () => {
       if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
       setCopiedIdx(idx);
       copiedTimerRef.current = setTimeout(() => setCopiedIdx(null), 1500);
-    };
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(text).then(showCopied).catch(() => {});
-    }
+    });
+  };
+  const copyMsgMarkdown = (idx: number, text: string) => {
+    writeClipboard(text, () => {
+      if (copiedMdTimerRef.current) clearTimeout(copiedMdTimerRef.current);
+      setCopiedMdIdx(idx);
+      copiedMdTimerRef.current = setTimeout(() => setCopiedMdIdx(null), 1500);
+    });
   };
 
   /* ---------- P0 Command Center: action button handler ---------- */
@@ -2011,8 +2028,11 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
                           ⚡ {m.creditsUsed} kredit (simulasi)
                         </span>
                       )}
-                      <button className="ezchat2-copy" onClick={() => copyMsg(i, m.content)} title="Salin jawaban">
+                      <button className="ezchat2-copy" onClick={() => copyMsg(i, m.content)} title="Salin jawaban (teks bersih)" aria-label="Salin jawaban sebagai teks bersih">
                         {copiedIdx === i ? <Check size={13} /> : <Copy size={13} />}
+                      </button>
+                      <button className="ezchat2-copy" onClick={() => copyMsgMarkdown(i, m.content)} title="Salin sebagai Markdown (sumber)" aria-label="Salin jawaban sebagai Markdown">
+                        {copiedMdIdx === i ? <Check size={13} /> : <FileText size={13} />}
                       </button>
                     </div>
                   </div>

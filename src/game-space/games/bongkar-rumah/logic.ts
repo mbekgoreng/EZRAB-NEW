@@ -448,13 +448,18 @@ function buildHouse(facadeHp: number): Block3D[] {
   B(blocks, s++, 0, 0, W, 1, WH, 0.5, 'structure', 'beton', 3);
   B(blocks, s++, 0, D - 1, W, 1, WH, 0.5, 'structure', 'beton', 3);
   // atap prism: 2 panel miring (genteng). Selatan: tepi+z naik -> slope negatif.
-  const slope = Math.PI / 5.2; // ~34.6 deg
-  B(blocks, s++, -0.3, -0.3, W + 0.6, 3.1, WH, 0.22, 'facade', 'genteng', facadeHp,
+  // Kemiringan panel HARUS sejajar tepi miring gable (naik GH sejauh D/2) dan
+  // bidang panel duduk tepat di garis tepi itu; slope/y0 lama membuat panel
+  // tenggelam memotong balok & dinding atas dan tidak bertemu gable.
+  const GH = 1.55; // tinggi gable (segitiga ujung atap)
+  const slope = Math.atan2(GH, D / 2); // ~31.8 deg
+  const panelY = WH + 0.64; // bidang panel melewati garis tepi gable
+  B(blocks, s++, -0.3, -0.3, W + 0.6, 3.1, panelY, 0.22, 'facade', 'genteng', facadeHp,
     { shape: 'panel', slope: -slope });
-  B(blocks, s++, -0.3, D - 2.8, W + 0.6, 3.1, WH, 0.22, 'facade', 'genteng', facadeHp,
+  B(blocks, s++, -0.3, D - 2.8, W + 0.6, 3.1, panelY, 0.22, 'facade', 'genteng', facadeHp,
     { shape: 'panel', slope });
-  B(blocks, s++, -0.15, 0, 0.3, D, WH, 1.55, 'facade', 'bata', facadeHp, { shape: 'gable' });
-  B(blocks, s++, W - 0.15, 0, 0.3, D, WH, 1.55, 'facade', 'bata', facadeHp, { shape: 'gable' });
+  B(blocks, s++, -0.15, 0, 0.3, D, WH, GH, 'facade', 'bata', facadeHp, { shape: 'gable' });
+  B(blocks, s++, W - 0.15, 0, 0.3, D, WH, GH, 'facade', 'bata', facadeHp, { shape: 'gable' });
   // interior: sekat + perabot
   B(blocks, s++, 4, 1, 0.35, 2, 0.25, 2.4, 'interior', 'plester', 1); // sekat (celah z=3)
   B(blocks, s++, 1.2, 2.2, 1.6, 1, 0.25, 0.75, 'interior', 'kayu', 1); // meja

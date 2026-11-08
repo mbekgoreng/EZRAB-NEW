@@ -10,7 +10,7 @@
 
 declare const process: any;
 
-import { AHSP_2026_CANONICAL } from '../data/nationalCostDatabase/ahsp2026Canonical.generated';
+import { ALL_OFFICIAL_AHSP_ITEMS } from '../data/nationalCostDatabase/masterRegistry';
 import {
   DESCRIPTION_CORRECTIONS,
   getCorrections,
@@ -24,10 +24,18 @@ function check(name: string, passed: boolean, detail = '') {
   checks.push({ name, passed, detail });
 }
 
-const byCode = new Map<string, any>(
-  AHSP_2026_CANONICAL.filter((i: any) => i.domain === 'CIPTA_KARYA')
-    .map((i: any) => [String(i.code), i]),
-);
+// PHASE C FIX (2026-11-08, Master AHSP Audit Phase C §10): the search set is the
+// ASSEMBLED catalog the application actually serves (ALL_OFFICIAL_AHSP_ITEMS via
+// masterRegistry), not the raw canonical module filtered to CIPTA_KARYA. The old
+// CK-only set could never contain the SDA correction target (A.1.02.5c.1) or the
+// Bina Marga targets (I.15/I.44/I.64 — BM items live in the BM master module),
+// so those corrections failed as "not in DB" even at a clean HEAD. First record
+// per code wins, mirroring officialAhspRepository's byCode behaviour.
+const byCode = new Map<string, any>();
+for (const i of ALL_OFFICIAL_AHSP_ITEMS as any[]) {
+  const code = String(i.code);
+  if (!byCode.has(code)) byCode.set(code, i);
+}
 
 // 1. Every correction's oldValue matches the DB
 let matched = 0;
@@ -42,6 +50,12 @@ for (const c of DESCRIPTION_CORRECTIONS) {
   else if (c.field === 'unit') actual = item.unit;
   else if (c.field === 'materialName') {
     actual = item.materialComponents?.[c.materialIndex ?? 0]?.name;
+  }
+  // PHASE C: support the equipmentName field added by the owner-approved
+  // mechanism extension (Phase B §4.1) so the I.15 Crabe correction is
+  // actually exercised by this assertion instead of comparing undefined.
+  else if (c.field === 'equipmentName') {
+    actual = item.equipmentComponents?.[c.equipmentIndex ?? 0]?.name;
   }
   if (actual === c.oldValue) matched++;
   else check(`oldValue matches DB: ${c.code}.${c.field}`, false,
@@ -93,7 +107,7 @@ check('all corrections have PDF provenance', provOk === DESCRIPTION_CORRECTIONS.
 const seen = new Set<string>();
 let dupes = 0;
 for (const c of DESCRIPTION_CORRECTIONS) {
-  const key = `${c.code}.${c.field}.${c.materialIndex ?? ''}`;
+  const key = `${c.code}.${c.field}.${c.materialIndex ?? ''}.${c.equipmentIndex ?? ''}`;
   if (seen.has(key)) dupes++;
   seen.add(key);
 }

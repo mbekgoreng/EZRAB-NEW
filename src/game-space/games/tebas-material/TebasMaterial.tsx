@@ -20,6 +20,29 @@ import {
   SLOWMO_SCALE, SLOWMO_T, GRACE_NO_DYNAMITE_T, missLivesLost, MAX_ITEMS,
   type FlyingItem, type ItemKind, type Rng,
 } from './logic';
+import { drawMaterialSprite, preloadMaterialSprites } from '../../shared/materialSprites';
+import { drawFallerSprite, preloadFallerSprites } from '../../shared/fallerSprites';
+
+// Sapuan visual Kelompok 5: muat awal set material bersama (Kelompok 1)
+// + set objek jatuh baru; gambar prosedural tetap FALLBACK.
+preloadMaterialSprites();
+preloadFallerSprites();
+
+/**
+ * Sprite badan tebasan per jenis (peta TEBAS_SPRITES): bata & kayu &
+ * dinamit dari set material Kelompok 1; bambu & beton dari set fallers
+ * baru. Kotak mengikuti bentang prosedural tiap jenis. Karena belahan
+ * memanggil drawBody di bawah klip bidang-setengah yang sudah ada,
+ * jalur sprite ini mencakup utuh DAN belahan; muka potong tetap
+ * prosedural (drawCutFace tidak berubah). False bila belum siap.
+ */
+function drawTebasSprite(ctx: CanvasRenderingContext2D, kind: ItemKind, r: number): boolean {
+  if (kind === 'bata') return drawMaterialSprite(ctx, 'bata', 0, 0, 2 * r, 1.1 * r);
+  if (kind === 'kayu') return drawMaterialSprite(ctx, 'kayu', 0, 0, 2.3 * r, 0.95 * r);
+  if (kind === 'bambu') return drawFallerSprite(ctx, 'bambu', 0, 0, 2.1 * r, 1.5 * r);
+  if (kind === 'beton') return drawFallerSprite(ctx, 'beton', 0, 0, 1.9 * r, 1.28 * r);
+  return drawMaterialSprite(ctx, 'dinamit', 0, 0, 1.7 * r, 1.75 * r);
+}
 
 const FONT = "'Plus Jakarta Sans', 'Inter', system-ui, sans-serif";
 const BK = bestKey('tebas-material', 'best');
@@ -262,6 +285,12 @@ function drawBackground(ctx: CanvasRenderingContext2D, W: number, H: number, g: 
 /* ---------------- item bodies: base + gradient + highlight + detail ---------------- */
 
 function drawBody(ctx: CanvasRenderingContext2D, kind: ItemKind, r: number, id: number, t: number): void {
+  // Sprite generate-AI lebih dulu; gagal/belum siap -> prosedural.
+  if (drawTebasSprite(ctx, kind, r)) return;
+  drawBodyProcedural(ctx, kind, r, id, t);
+}
+
+function drawBodyProcedural(ctx: CanvasRenderingContext2D, kind: ItemKind, r: number, id: number, t: number): void {
   if (kind === 'bata') {
     const w = 2 * r;
     const h = 1.02 * r;

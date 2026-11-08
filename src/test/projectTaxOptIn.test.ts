@@ -60,11 +60,12 @@ check('1. default: pajak mati, grand = subtotal (overhead+profit mesin)', () => 
   const s = UnifiedProjectEngine.recalculateCostSummary([itemA, mk({ id: 'c', amount: 40000 })]);
   eq(s.taxAmount, 0, 'PPN harus 0 tanpa flag');
   eq(s.pphAmount, 0, 'PPh harus 0 tanpa flag');
-  // Fallback overhead owner 2026-10-27: direct 100.000 + overhead 10%
-  // + profit 5% = 115.000, tanpa pajak. (Sebelumnya 110.000 dengan
-  // overhead default 5% — diubah oleh keputusan fallback 10%.)
-  eq(s.overheadPercent, 10, 'fallback overhead 10%');
-  eq(s.grandTotal, 115000, 'grand tanpa pajak');
+  // Fallback owner 2026-11-08 (menggantikan fallback 10/5 dari
+  // 2026-10-27): proyek tanpa konfigurasi → overhead 0% + profit 0%,
+  // grand = direct 100.000, tanpa pajak.
+  eq(s.overheadPercent, 0, 'fallback overhead 0%');
+  eq(s.profitPercent, 0, 'fallback profit 0%');
+  eq(s.grandTotal, 100000, 'grand tanpa pajak');
   eq(s.ppnEnabled, false, 'flag PPN tercatat false');
   eq(s.pphEnabled, false, 'flag PPh tercatat false');
 });

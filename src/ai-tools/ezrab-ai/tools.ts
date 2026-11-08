@@ -10,6 +10,8 @@ import { officialAhspRepository } from '../../data/nationalCostDatabase/official
 import { priceResolver2026 } from '../../data/priceDatabase2026/resolver';
 import { ahspChatPriceSuffix } from './ahspChatPrice';
 import { searchChatAhsp, formatChatAhspResult } from './chatSearch';
+import { searchWithOutcome, formatKnowledgeContext } from './constructionRetrieval';
+import { toolCalculateQto, toolSearchAvailableCalculators } from './constructionTools';
 import { masterBuildingTemplateRegistry } from '../../data/buildingTemplates/masterTemplateRegistry';
 import { ProjectSnapshot, formatIDR, snapshotAllItems } from './projectContext';
 import {
@@ -239,6 +241,84 @@ export const EZRAB_AI_TOOLS: EzrabAiToolDef[] = [
         return lines.join('\n');
       } catch (e: any) {
         return 'ERROR: gagal mencari harga: ' + (e?.message ?? e);
+      }
+    },
+  },
+  // ===== Construction intelligence tools (FINISH MODE Workstream D) =====
+  // Pengkabelan constructionRetrieval + toolCalculateQto ke permukaan
+  // tool LLM produksi. Sebelumnya kedua modul ini IMPLEMENTED BUT NOT
+  // INTEGRATED (audit integrasi jalur produksi P0 §3): tidak ada
+  // pemanggil produksi. Keduanya read-only murni dan deterministik —
+  // tidak menulis proyek/RAB dan tidak mengubah hasil finansial apa pun.
+  {
+    name: 'cari_pengetahuan_konstruksi',
+    description: 'Mencari pengetahuan konstruksi di knowledge base internal EZRAB (50 record terkurasi: fungsi bangunan & disiplin pekerjaan — spek wajib/opsional, disiplin terkait, kalkulator yang tersedia). Argumen: kata_kunci (wajib), maks (opsional, default 5). Setiap hasil membawa sitasi + status verifikasi record apa adanya: SELURUH record berstatus "unverified" (bahan referensi terkurasi, BUKAN kebenaran terverifikasi) — jangan menyajikannya sebagai fakta resmi. Bila tidak ada yang cocok, tool menyatakan topik di luar cakupan KB secara eksplisit — JANGAN mengarang pengetahuan pengganti.',
+    invoke: (args) => {
+      const q = String(args.kata_kunci ?? args.query ?? '').trim();
+      if (!q) return 'ERROR: kata_kunci wajib diisi.';
+      const max = Math.min(10, Math.max(1, Number(args.maks ?? args.maxResults ?? 5) || 5));
+      try {
+        const out = searchWithOutcome(q, { maxResults: max });
+        if (out.hits.length === 0) {
+          return `Tidak ada pengetahuan konstruksi yang cocok untuk "${q}". ${out.negativeReason ?? ''} Jangan mengarang pengetahuan pengganti — katakan topik ini di luar cakupan knowledge base terdaftar.`;
+        }
+        return formatKnowledgeContext(out.hits);
+      } catch (e: any) {
+        return 'ERROR: gagal mencari pengetahuan konstruksi: ' + (e?.message ?? e);
+      }
+    },
+  },
+  {
+    name: 'hitung_qto',
+    description: 'Menghitung kuantitas (QTO) deterministik memakai kalkulator resmi calculatorCore. Argumen: kalkulator (wajib — id kalkulator terdaftar, mis. "road.geometry"; daftar id sah bisa dilihat lewat cari_kalkulator), parameter (wajib — objek parameter sesuai skema kalkulator itu), satuan_hasil (opsional — bila diisi dan berbeda dari satuan kalkulator, panggilan DITOLAK; tidak ada konversi diam-diam). Parameter yang tidak dikenal DITOLAK secara eksplisit dengan daftar parameter yang sah. Hasil membawa provenance hitungan (id, versi, sumber rumus) dan peringatan mesin apa adanya. Tool ini read-only: tidak menulis proyek/RAB.',
+    invoke: (args) => {
+      const calcId = String(args.kalkulator ?? args.calculatorId ?? '').trim();
+      if (!calcId) return 'ERROR: argumen "kalkulator" (id kalkulator) wajib diisi. Lihat daftar id sah lewat tool cari_kalkulator.';
+      const rawParams = (args.parameter ?? args.inputs ?? args.params) as Record<string, unknown> | undefined;
+      if (!rawParams || typeof rawParams !== 'object' || Array.isArray(rawParams)) {
+        return 'ERROR: argumen "parameter" wajib berupa objek parameter kalkulator.';
+      }
+      const inputs: Record<string, number | string | boolean | null | undefined> = {};
+      for (const [k, v] of Object.entries(rawParams)) {
+        if (v === null || typeof v === 'number' || typeof v === 'string' || typeof v === 'boolean') inputs[k] = v;
+        else return `ERROR: nilai parameter "${k}" harus angka, string, atau boolean.`;
+      }
+      const expectedUnit = String(args.satuan_hasil ?? args.expectedUnit ?? '').trim() || undefined;
+      try {
+        const r = toolCalculateQto({ calculatorId: calcId, inputs, ...(expectedUnit ? { expectedUnit } : {}) });
+        const num = (n: number) => n.toLocaleString('id-ID', { maximumFractionDigits: 4 });
+        const lines = [
+          `Hasil QTO — kalkulator ${r.calculatorId} (versi ${r.calculatorVersion}):`,
+          `Kuantitas utama: ${num(r.primaryQuantity)} ${r.primaryUnit}`,
+        ];
+        const bd = Object.entries(r.breakdown ?? {}).filter(([, v]) => typeof v === 'number');
+        if (bd.length > 0) {
+          lines.push('Rincian:');
+          for (const [k, v] of bd) lines.push(`- ${k}: ${num(v as number)}`);
+        }
+        if (r.warnings.length > 0) lines.push(`Peringatan mesin: ${r.warnings.join('; ')}`);
+        if (r.provenance.length > 0) lines.push(`Provenance: ${r.provenance.join(' · ')}`);
+        lines.push('Catatan: hasil hitungan deterministik dari mesin kalkulator EZRAB — kutip apa adanya, jangan dihitung ulang.');
+        return lines.join('\n');
+      } catch (e: any) {
+        return 'ERROR: ' + (e?.message ?? e);
+      }
+    },
+  },
+  {
+    name: 'cari_kalkulator',
+    description: 'Mendaftar kalkulator kuantitas (calculatorCore) yang tersedia beserta id, nama, kategori, dan satuan hasil utamanya. Argumen: kata_kunci (opsional — saring daftar). Pakai untuk mengetahui id kalkulator yang sah sebelum memanggil hitung_qto.',
+    invoke: (args) => {
+      const kw = String(args.kata_kunci ?? args.keyword ?? '').trim() || undefined;
+      try {
+        const list = toolSearchAvailableCalculators(kw ? { keyword: kw } : {});
+        if (list.length === 0) return `Tidak ada kalkulator yang cocok dengan "${kw}".`;
+        return (
+          `${list.length} kalkulator tersedia:\n` +
+          list.map((c) => `- ${c.id} — ${c.name} [${c.category}] — satuan hasil: ${c.primaryUnit}`).join('\n')
+        );
+      } catch (e: any) {
+        return 'ERROR: gagal mendaftar kalkulator: ' + (e?.message ?? e);
       }
     },
   },

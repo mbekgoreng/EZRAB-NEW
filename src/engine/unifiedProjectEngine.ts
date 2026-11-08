@@ -30,15 +30,17 @@ export class UnifiedProjectEngine {
     const unresolved = items.filter((itm) => itm.priceStatus === 'PRICE_UNRESOLVED');
     const pricedItems = items.filter((itm) => itm.priceStatus !== 'PRICE_UNRESOLVED');
     const directCost = pricedItems.reduce((acc, itm) => acc + (itm.amount || 0), 0);
-    /* Fallback overhead 10% (owner 2026-10-27, selaras Rekapitulasi):
-     * berlaku bila pemanggil tidak memberi overheadPercent SAMA SEKALI
-     * (undefined/null). Nilai eksplisit — termasuk 0% — dipertahankan
-     * karena ?? tidak mengubah 0. Nilai ini BUKAN konfigurasi tersimpan:
+    /* Fallback overhead/profit 0% (keputusan owner 2026-11-08,
+     * menggantikan fallback 10%/5% dari 2026-10-27):
+     * berlaku bila pemanggil tidak memberi persen SAMA SEKALI
+     * (undefined/null). Nilai eksplisit — termasuk 0% dan 10/5 yang
+     * memang disetel — dipertahankan karena ?? tidak mengubah nilai
+     * yang ada. Nilai ini BUKAN konfigurasi tersimpan:
      * pemanggil jalur proyek (ProjectContext) selalu memberi nilai dari
      * field proyek bila ada, sehingga fallback ini hanya menyentuh
      * proyek yang memang belum dikonfigurasi. */
-    const overheadPercent = currentSummary?.overheadPercent ?? 10;
-    const profitPercent = currentSummary?.profitPercent ?? 5;
+    const overheadPercent = currentSummary?.overheadPercent ?? 0;
+    const profitPercent = currentSummary?.profitPercent ?? 0;
     const taxPercent = currentSummary?.taxPercent ?? 11;
     const contingencyPercent = currentSummary?.contingencyPercent ?? 0;
     const directorMarkupPercent = currentSummary?.directorMarkupPercent ?? 0;
@@ -240,23 +242,25 @@ export class UnifiedProjectEngine {
     const cost = project.costSummary || ({} as any);
     const pj = project as any;
 
-    /* Penyelarasan 2026-10-27 (owner): ringkasan ekspor ini adalah
-     * "ringkasan proyek" yang sama dengan kartu/Rekap, jadi memakai
-     * aturan yang sama — sebelumnya ia memakai default sendiri
-     * (overhead 5, PPN 11% otomatis) sehingga total ekspor selalu
-     * berbeda dari layar.
+    /* Penyelarasan 2026-10-27 (owner), fallback diperbarui 2026-11-08:
+     * ringkasan ekspor ini adalah "ringkasan proyek" yang sama dengan
+     * kartu/Rekap, jadi memakai aturan yang sama — sebelumnya ia
+     * memakai default sendiri (overhead 5, PPN 11% otomatis) sehingga
+     * total ekspor selalu berbeda dari layar.
      * - Overhead: field proyek (ditulis Pengaturan); bila tidak ada,
-     *   fallback 10. Angka 5 di costSummary adalah default pembuatan
-     *   proyek, bukan konfigurasi — tidak dipakai sebagai fallback.
-     *   Nilai eksplisit 0% dipertahankan (typeof-check, bukan truthy).
+     *   fallback 0 (keputusan owner 2026-11-08 — proyek belum
+     *   dikonfigurasi tidak lagi dibebani overhead karangan; sebelumnya
+     *   fallback 10). Nilai eksplisit 0% dipertahankan (typeof-check,
+     *   bukan truthy).
+     * - Profit: persen ringkasan; bila tidak ada, fallback 0 (dulu 5).
      * - Pajak opt-in: PPN/PPh hanya bila flag === true (field proyek
      *   ATAU salinan ringkasan dari recalculate sebelumnya); persen dari
      *   proyek, PPh default 0. Basis pajak proporsional seperti mesin
      *   utama (item sudah-termasuk-pajak dikeluarkan). */
-    const overheadPercent = typeof pj?.overheadPercent === 'number' ? pj.overheadPercent : 10;
+    const overheadPercent = typeof pj?.overheadPercent === 'number' ? pj.overheadPercent : 0;
     const overheadAmount = Math.round(directCost * (overheadPercent / 100));
 
-    const profitPercent = typeof cost.profitPercent === 'number' ? cost.profitPercent : 5;
+    const profitPercent = typeof cost.profitPercent === 'number' ? cost.profitPercent : 0;
     const profitAmount = Math.round(directCost * (profitPercent / 100));
 
     const subtotalBeforeTax = directCost + overheadAmount + profitAmount;

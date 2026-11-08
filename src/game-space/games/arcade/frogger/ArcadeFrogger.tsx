@@ -13,6 +13,12 @@ import {
   homesFilled, missionProgress, BONUS_HOME_COUNT,
   type Game, type MoveResult,
 } from './logic';
+import vehMolenUrl from '../../../assets/crossy-road/veh-molen.webp';
+import vehBekoUrl from '../../../assets/crossy-road/veh-beko.webp';
+import vehPickupUrl from '../../../assets/crossy-road/veh-pickup.webp';
+import charTukangUrl from '../../../assets/crossy-road/char-tukang.webp';
+import objHouseUrl from '../../../assets/frogger/obj-house.webp';
+import { loadSprite, readySprite } from '../../../engine2d/sprites';
 
 const SLUG = 'frogger';
 const LW = 390;
@@ -46,7 +52,21 @@ interface Run {
 
 const CELL = 42;
 const GX = (LW - COLS * CELL) / 2;
-const GY = 148;
+/**
+ * PERBAIKAN CACAT "bagian atas tak kelihatan": GY lama = 148 adalah offset
+ * FIXED di dunia logis 390 lebar, padahal kanvas diskalakan dari TINGGI
+ * panggung (lh = H/s berubah mengikuti panggung). Di panggung pendek papan
+ * (mulai 148, tinggi 462) terdorong keluar bawah dan strip 0..148 di atas
+ * papan kosong hitam — rumah & lajur atas tampak terpotong/hilang.
+ * GY kini diturunkan dari tinggi logis aktual: papan dipusatkan vertikal
+ * dengan margin atas-bawah seimbang, jadi SELURUH papan (rumah di baris 0
+ * sampai start di baris terakhir) selalu utuh di dalam kanvas.
+ */
+const BOARD_H = ROWS * CELL;
+let GY = 148;
+function layoutGY(lh: number): void {
+  GY = Math.max(56, Math.round((lh - BOARD_H) / 2));
+}
 
 /** Jenis kendaraan proyek prosedural (bukan emoji), bergilir per lajur/kendaraan. */
 const VEHICLE_KINDS = ['molen', 'beko', 'pickup', 'molen'] as const;
@@ -182,6 +202,8 @@ export default function ArcadeFrogger({ onExit }: { onExit: () => void }): React
     apiRef.current = api;
     api.pushHud = (h) => setHud(h as Hud);
     setMuted(api.sfx.muted);
+    for (const u of [vehMolenUrl, vehBekoUrl, vehPickupUrl, charTukangUrl, objHouseUrl]) void loadSprite(u);
+    api.onResize((_w, h) => layoutGY(h / (api.W / LW)));
 
     const toLogical = (px: number, py: number): { x: number; y: number } => {
       const s = api.W / LW;
@@ -240,6 +262,7 @@ export default function ArcadeFrogger({ onExit }: { onExit: () => void }): React
       const { ctx } = api;
       const s = api.W / LW;
       const lh = api.H / s;
+      layoutGY(lh);
       const t = performance.now() / 1000;
       ctx.save();
       ctx.scale(s, s);
@@ -373,10 +396,22 @@ function cellXY(cx: number, cy: number): { x: number; y: number } {
 
 function drawBackdrop(ctx: CanvasRenderingContext2D, lh: number): void {
   const g = ctx.createLinearGradient(0, 0, 0, lh);
-  g.addColorStop(0, '#1c2b1e');
-  g.addColorStop(1, '#0d1a12');
+  g.addColorStop(0, '#2a422c');
+  g.addColorStop(1, '#16281a');
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, LW, lh);
+  // tanah proyek membingkai papan (atas papan = halaman pos rumah, bawah = basecamp):
+  // strip di luar papan TIDAK lagi hitam polos
+  const fg = ctx.createLinearGradient(0, 0, 0, GY);
+  fg.addColorStop(0, '#5d4a30');
+  fg.addColorStop(1, '#6e583a');
+  ctx.fillStyle = fg;
+  ctx.fillRect(0, 0, LW, GY);
+  ctx.fillStyle = '#5d4a30';
+  ctx.fillRect(0, GY + BOARD_H, LW, Math.max(0, lh - GY - BOARD_H));
+  ctx.fillStyle = 'rgba(255,255,255,0.16)';
+  ctx.fillRect(0, GY - 3, LW, 3);
+  ctx.fillRect(0, GY + BOARD_H, LW, 3);
 }
 
 function drawLanes(ctx: CanvasRenderingContext2D, g: Game, t: number, rm: boolean): void {
@@ -386,8 +421,8 @@ function drawLanes(ctx: CanvasRenderingContext2D, g: Game, t: number, rm: boolea
     if (lane.kind === 'river') {
       // air berlapis + ombak
       const wg = ctx.createLinearGradient(0, yy, 0, yy + CELL);
-      wg.addColorStop(0, '#1d6fa5');
-      wg.addColorStop(1, '#0d3d63');
+      wg.addColorStop(0, '#2b86c4');
+      wg.addColorStop(1, '#155d8a');
       ctx.fillStyle = wg;
       ctx.fillRect(GX, yy, COLS * CELL, CELL);
       if (!rm) {
@@ -419,8 +454,8 @@ function drawLanes(ctx: CanvasRenderingContext2D, g: Game, t: number, rm: boolea
     } else if (lane.kind === 'road') {
       // aspal berlapis
       const ag = ctx.createLinearGradient(0, yy, 0, yy + CELL);
-      ag.addColorStop(0, '#3a3f4a');
-      ag.addColorStop(1, '#23262e');
+      ag.addColorStop(0, '#565e6e');
+      ag.addColorStop(1, '#39404e');
       ctx.fillStyle = ag;
       ctx.fillRect(GX, yy, COLS * CELL, CELL);
       ctx.strokeStyle = 'rgba(250,204,21,0.6)';
@@ -446,8 +481,8 @@ function drawLanes(ctx: CanvasRenderingContext2D, g: Game, t: number, rm: boolea
     } else {
       // safe / start / home: tanah
       const sg = ctx.createLinearGradient(0, yy, 0, yy + CELL);
-      sg.addColorStop(0, lane.kind === 'home' ? '#4a3b28' : '#3d5a34');
-      sg.addColorStop(1, lane.kind === 'home' ? '#33271c' : '#2a4024');
+      sg.addColorStop(0, lane.kind === 'home' ? '#6b543a' : '#527a46');
+      sg.addColorStop(1, lane.kind === 'home' ? '#4a3826' : '#3a5c32');
       ctx.fillStyle = sg;
       ctx.fillRect(GX, yy, COLS * CELL, CELL);
       ctx.fillStyle = 'rgba(255,255,255,0.05)';
@@ -497,6 +532,22 @@ function drawVehicle(
   ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number,
   kind: VehicleKind, dir: 1 | -1,
 ): void {
+  // sprite generate-AI (aset bersama Nyebrang Proyek, sudah menghadap kanan);
+  // dir<0 dibalik. Bila belum siap/gagal -> fallback prosedural di bawah.
+  const sprUrl = kind === 'molen' ? vehMolenUrl : kind === 'beko' ? vehBekoUrl : vehPickupUrl;
+  const spr = readySprite(sprUrl);
+  if (spr) {
+    const dh = h * (kind === 'beko' ? 1.18 : 1.1);
+    const dw = (dh * spr.naturalWidth) / spr.naturalHeight;
+    ctx.save();
+    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    ctx.beginPath(); ctx.ellipse(x + w / 2, y + h - 2, dw * 0.44, 4, 0, 0, TAU); ctx.fill();
+    ctx.translate(x + w / 2, y + h - 1);
+    if (dir < 0) ctx.scale(-1, 1);
+    ctx.drawImage(spr, -dw / 2, -dh, dw, dh);
+    ctx.restore();
+    return;
+  }
   ctx.save();
   ctx.fillStyle = 'rgba(0,0,0,0.4)';
   ctx.beginPath();
@@ -583,6 +634,29 @@ function drawHomes(ctx: CanvasRenderingContext2D, g: Game, t: number, rm: boolea
     const cx = GX + HOME_COLS[h] * CELL;
     const filled = g.homes[h];
     const pulse = filled && !rm ? 1 + 0.05 * Math.sin(t * 5 + h) : 1;
+    // sprite rumah generate-AI; terisi = penuh warna + penghuni, kosong = redup
+    const spr = readySprite(objHouseUrl);
+    if (spr) {
+      ctx.save();
+      ctx.translate(cx + CELL / 2, yy + CELL / 2);
+      ctx.scale(pulse, pulse);
+      const dw = CELL * 1.04;
+      const dh = (dw * spr.naturalHeight) / spr.naturalWidth;
+      ctx.fillStyle = 'rgba(0,0,0,0.3)';
+      ctx.beginPath(); ctx.ellipse(0, CELL / 2 - 3, dw * 0.42, 4, 0, 0, TAU); ctx.fill();
+      if (!filled) ctx.globalAlpha = 0.55;
+      ctx.drawImage(spr, -dw / 2, CELL / 2 - 2 - dh, dw, dh);
+      ctx.globalAlpha = 1;
+      if (filled) {
+        if (!rm) {
+          ctx.fillStyle = `rgba(255,255,255,${0.35 + 0.15 * Math.sin(t * 3 + h)})`;
+          ctx.beginPath(); ctx.arc(10, -26 - 2 * Math.sin(t * 3 + h), 3.5, 0, TAU); ctx.fill();
+        }
+        drawTukangHead(ctx, 0, 8, 0.55);
+      }
+      ctx.restore();
+      continue;
+    }
     ctx.save();
     ctx.translate(cx + CELL / 2, yy + CELL / 2);
     ctx.scale(pulse, pulse);
@@ -641,6 +715,15 @@ function drawFrog(ctx: CanvasRenderingContext2D, run: Run, t: number, rm: boolea
   // bayangan
   ctx.fillStyle = 'rgba(0,0,0,0.35)';
   ctx.beginPath(); ctx.ellipse(0, 14 + lift, 13, 4, 0, 0, TAU); ctx.fill();
+  // sprite karakter generate-AI (sama dgn Nyebrang Proyek); fallback prosedural di bawah
+  const spr = readySprite(charTukangUrl);
+  if (spr) {
+    const dh = 56;
+    const dw = (dh * spr.naturalWidth) / spr.naturalHeight;
+    ctx.drawImage(spr, -dw / 2, 15 - dh, dw, dh);
+    ctx.restore();
+    return;
+  }
   // tukang prosedural: kaki, rompi oranye, kepala + helm kuning
   ctx.fillStyle = '#1f2937';
   ctx.fillRect(-8, 4, 6, 10);
@@ -735,10 +818,13 @@ function drawTimerBar(ctx: CanvasRenderingContext2D, g: Game): void {
   tg.addColorStop(1, frac > 0.3 ? '#22c55e' : '#ef4444');
   ctx.fillStyle = tg;
   ctx.fillRect(GX, GY - 14, w * frac, 8);
+  // label waktu di BAWAH bar (di atasnya menabrak tepi kanvas & kepotong)
   ctx.fillStyle = '#fff';
   ctx.font = `800 10px ${FONT}`;
   ctx.textAlign = 'right';
-  ctx.fillText(`${Math.ceil(g.timeLeft)}s`, GX + w, GY - 18);
+  ctx.textBaseline = 'top';
+  ctx.fillText(`${Math.ceil(g.timeLeft)}s`, GX + w, GY - 13);
+  ctx.textBaseline = 'alphabetic';
 }
 
 const titleStyle: React.CSSProperties = {

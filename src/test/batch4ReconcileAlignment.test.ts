@@ -1,7 +1,8 @@
 /**
  * Batch 4 regression (P1): reconcileProjectSummaries must resolve percentages
  * canonically — project configuration FIELDS first, then the old summary,
- * then historical fallbacks.
+ * then the final fallback (0% since the owner's 2026-11-08 decision;
+ * before that the historical fallback was 5%).
  *
  * Root cause covered: the heal read percentages ONLY from the old costSummary
  * (?? 5), so a project whose summary was missing/stale but whose fields were
@@ -41,11 +42,14 @@ console.log('B4-REC-1: proyek terkonfigurasi via FIELD (tanpa costSummary) disem
   const r = reconcileProjectSummaries([proj], items('P-B4-1', [3400000, 4717500, null], true));
   const healed = r.projects[0] as any;
   // Independent: direct = 3,400,000 + 4,717,500 = 8,117,500 (unresolved excluded)
-  // overhead 10% = 811,750; profit (fallback historis) 5% = 405,875; tax 0.
+  // overhead 10% dari field = 811,750; profit tanpa field & tanpa ringkasan
+  // → fallback 0% (keputusan owner 2026-11-08; sebelumnya fallback historis
+  // 5% = 405,875 sehingga total lama 9.335.125); tax 0.
   check('directCost 8.117.500', healed.costSummary.directCost === 8117500, `dapat ${healed.costSummary.directCost}`);
   check('overheadPercent dari field = 10', healed.costSummary.overheadPercent === 10, `dapat ${healed.costSummary.overheadPercent}`);
   check('overheadAmount 811.750', healed.costSummary.overheadAmount === 811750, `dapat ${healed.costSummary.overheadAmount}`);
-  check('totalRab kanonis 9.335.125', healed.totalRab === 9335125, `dapat ${healed.totalRab}`);
+  check('profitPercent fallback 0', healed.costSummary.profitPercent === 0, `dapat ${healed.costSummary.profitPercent}`);
+  check('totalRab kanonis 8.929.250', healed.totalRab === 8929250, `dapat ${healed.totalRab}`);
 }
 
 console.log('B4-REC-2: tanpa field, persen ringkasan lama dipertahankan');

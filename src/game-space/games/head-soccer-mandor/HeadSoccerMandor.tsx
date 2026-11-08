@@ -1,5 +1,6 @@
 /**
- * Head Soccer Mandor — head soccer 2D: kepala besar + helm vs AI mandor.
+ * Head Soccer Bintang — head soccer 2D turnamen EZRAB Cup di lapangan proyek:
+ * kamu bermain sebagai "Si Gesit" melawan 5 bintang tamu (sprite generate AI).
  * Kontrol: A/D / Panah (tahan) gerak, W / PanahAtas / Spasi lompat,
  * J / X tendang. Mobile: tombol ◀ ▶ + LOMPAT + TENDANG.
  */
@@ -7,6 +8,32 @@ import React, { useRef, useState, useCallback } from 'react';
 import { useGameCanvas, GameApi, clamp } from '../../engine2d';
 import { bestKey, getJson, setJson } from '../../engine2d/best';
 import { popText } from '../../engine2d/juice2d';
+import { loadSprite, readySprite } from '../../engine2d/sprites';
+import siGesitUrl from '../../assets/head-soccer/char-si-gesit.webp';
+import toloUrl from '../../assets/head-soccer/char-tolo.webp';
+import pipitUrl from '../../assets/head-soccer/char-pipit.webp';
+import bangJagoUrl from '../../assets/head-soccer/char-bang-jago.webp';
+import elToroUrl from '../../assets/head-soccer/char-el-toro.webp';
+import sangMaestroUrl from '../../assets/head-soccer/char-sang-maestro.webp';
+
+/**
+ * Roster bintang: karakter FIKSI hasil generate AI (nama panggilan karangan,
+ * arketipe generik — bukan wajah/nama orang asli, tanpa logo klub/merek).
+ * Sprite menghadap kanan; lawan dibalik horizontal lewat facing.
+ * Bila sprite belum siap/gagal muat -> fallback prosedural drawPlayer
+ * (pola loader engine2d: kegagalan muat tidak pernah melempar).
+ */
+const PLAYER_NAME = 'Si Gesit';
+const PLAYER_SPRITE = siGesitUrl;
+const OPPONENT_SPRITES = [toloUrl, pipitUrl, bangJagoUrl, elToroUrl, sangMaestroUrl];
+const OPPONENT_TAGLINES = [
+  'Striker veteran tambun. Lambat — tapi sundulannya jangan diremehkan.',
+  'Gelandang keriting tak kenal lelah. Larinya nggak habis-habis.',
+  'Playmaker flamboyan bermohawk ungu. Skill-nya bikin pusing.',
+  'Powerhouse berotot. Duel badan dengannya bukan ide bagus.',
+  'Kapten legendaris beruban. Dia yang mengatur seluruh permainan.',
+];
+const ALL_STAR_SPRITES = [PLAYER_SPRITE, ...OPPONENT_SPRITES];
 import {
   Ball, Player, Field, Match, AiBrain,
   makeBall, makePlayer, stepBall, stepPlayer, collidePlayerBall, kick,
@@ -211,7 +238,7 @@ export default function HeadSoccerMandor({ onExit }: { onExit: () => void }): Re
         count: 10, colors: ['#ffffff', '#FFD94D'],
         speed: [80, 260], life: [0.3, 0.6], size: [2, 4], gravity: 200,
       });
-      if (!isPlayer) api.scores.add(gs.ball.x, gs.ball.y - 30, 'Ditendang mandor!', { color: '#FFB3B3', size: 15 });
+      if (!isPlayer) api.scores.add(gs.ball.x, gs.ball.y - 30, 'Ditendang lawan!', { color: '#FFB3B3', size: 15 });
       return true;
     }
     return false;
@@ -279,6 +306,8 @@ export default function HeadSoccerMandor({ onExit }: { onExit: () => void }): Re
 
   const canvasRef = useGameCanvas((api) => {
     apiRef.current = api;
+    // Panaskan semua sprite roster sejak awal (cache loader dipakai bersama).
+    for (const u of ALL_STAR_SPRITES) void loadSprite(u);
 
     api.setUpdate((dt) => {
       const gs = gsRef.current;
@@ -534,10 +563,24 @@ export default function HeadSoccerMandor({ onExit }: { onExit: () => void }): Re
 
       {screen === 'tutorial' && (
         <Overlay>
-          <h2 style={h2}>Head Soccer Mandor</h2>
+          <h2 style={h2}>Head Soccer Bintang</h2>
           <p style={{ ...p, fontSize: 15, fontWeight: 700, color: '#fff' }}>
-            Cetak gol ke gawang <b style={{ color: '#F2B441' }}>kanan</b> sebanyak-banyaknya dalam 60 detik!
+            Turnamen EZRAB Cup di lapangan proyek! Kamu adalah <b style={{ color: '#F2B441' }}>{PLAYER_NAME}</b> —
+            cetak gol ke gawang <b style={{ color: '#F2B441' }}>kanan</b> sebanyak-banyaknya dalam 60 detik!
           </p>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, margin: '4px 0 8px' }}>
+            <div style={vsCard}>
+              <img src={PLAYER_SPRITE} alt={PLAYER_NAME} style={vsImg} draggable={false} />
+              <div style={vsName}>{PLAYER_NAME}</div>
+              <div style={vsTag}>Bintang muda tuan rumah</div>
+            </div>
+            <div style={{ fontWeight: 900, color: '#F2B441', fontSize: 20 }}>VS</div>
+            <div style={vsCard}>
+              <img src={OPPONENT_SPRITES[levelSel]} alt={AI_LEVELS[levelSel].name} style={vsImg} draggable={false} />
+              <div style={vsName}>{AI_LEVELS[levelSel].name}</div>
+              <div style={vsTag}>{OPPONENT_TAGLINES[levelSel]}</div>
+            </div>
+          </div>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'center', margin: '10px 0', flexWrap: 'wrap' }}>
             {[
               ['◀ ▶', 'gerak'],
@@ -606,8 +649,8 @@ export default function HeadSoccerMandor({ onExit }: { onExit: () => void }): Re
           </p>
           <p style={p}>
             {result === 'win'
-              ? `Level ${AI_LEVELS[gsRef.current?.level ?? 0].name} takluk! Bonus cair, estimator ikut selebrasi.`
-              : 'AI menang! Dia lembur tiap hari, kamu cuma main pas istirahat.'}
+              ? `${AI_LEVELS[gsRef.current?.level ?? 0].name} takluk! Bonus cair, estimator ikut selebrasi.`
+              : `${AI_LEVELS[gsRef.current?.level ?? 0].name} menang! Bintang tamu latihannya tiap hari, kamu cuma main pas istirahat proyek.`}
           </p>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
             {result === 'win' && (gsRef.current?.level ?? 0) < 4 && (
@@ -663,6 +706,13 @@ function Overlay({ children }: { children: React.ReactNode }): React.ReactElemen
 }
 const h2: React.CSSProperties = { color: '#fff', margin: '0 0 10px', fontSize: 24, fontWeight: 900 };
 const p: React.CSSProperties = { color: '#C7D4EE', margin: '0 0 10px', fontSize: 14, lineHeight: 1.5 };
+const vsCard: React.CSSProperties = {
+  flex: 1, maxWidth: 132, background: 'rgba(255,255,255,0.06)',
+  border: '1px solid rgba(255,255,255,0.12)', borderRadius: 14, padding: '8px 6px 7px',
+};
+const vsImg: React.CSSProperties = { height: 104, maxWidth: '100%', objectFit: 'contain', display: 'block', margin: '0 auto' };
+const vsName: React.CSSProperties = { color: '#fff', fontWeight: 900, fontSize: 13, marginTop: 4 };
+const vsTag: React.CSSProperties = { color: '#8EA2C7', fontSize: 9.5, lineHeight: 1.35, marginTop: 2 };
 
 /* ---------------- render ---------------- */
 
@@ -788,8 +838,8 @@ function drawGame(api: GameApi, gs: GS): void {
   drawShadow(ctx, gs.ai.x, f.groundY, 34, 0.35);
 
   // pemain & bola
-  drawPlayer(ctx, gs.player, '#F2B441', '#1D4ED8', 'KAMU', t, api.reducedMotion);
-  drawPlayer(ctx, gs.ai, '#DC2626', '#7C2D12', AI_LEVELS[gs.level].name.toUpperCase(), t, api.reducedMotion);
+  drawStar(ctx, gs.player, PLAYER_SPRITE, PLAYER_NAME.toUpperCase(), '#F2B441', '#1D4ED8', t, api.reducedMotion);
+  drawStar(ctx, gs.ai, OPPONENT_SPRITES[gs.level], AI_LEVELS[gs.level].name.toUpperCase(), '#DC2626', '#7C2D12', t, api.reducedMotion);
   drawBall(ctx, gs.ball);
 
   // freeze overlay (selebrasi gol)
@@ -912,6 +962,50 @@ function drawShadow(ctx: CanvasRenderingContext2D, x: number, groundY: number, r
   ctx.beginPath();
   ctx.ellipse(x, groundY + 6, r, r * 0.32, 0, 0, Math.PI * 2);
   ctx.fill();
+}
+
+/** Label nama melayang (gaya sama seperti label prosedural lama). */
+function drawNameLabel(ctx: CanvasRenderingContext2D, cx: number, topY: number, label: string): void {
+  ctx.font = `800 11px 'Plus Jakarta Sans','Inter',system-ui,sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const tw = ctx.measureText(label).width + 12;
+  ctx.fillStyle = 'rgba(15,23,42,0.65)';
+  rr(ctx, cx - tw / 2, topY, tw, 17, 8);
+  ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.fillText(label, cx, topY + 8.5);
+}
+
+/**
+ * Karakter versi SPRITE generate AI: sprite asli menghadap kanan, dibalik
+ * horizontal mengikuti facing; bob lari sama seperti versi prosedural; miring
+ * ringan saat melompat. Kaki sprite ditaruh tepat di titik kaki logika (p.y)
+ * dan pusat massa visual kepala sejajar lingkaran kepala fisika (p.y - 0.78h).
+ * Sprite belum siap/gagal muat -> fallback prosedural drawPlayer (tak melempar).
+ */
+function drawStar(
+  ctx: CanvasRenderingContext2D, p: Player,
+  spriteUrl: string, label: string,
+  fbHelmet: string, fbJersey: string,
+  t: number, reduced: boolean,
+): void {
+  const img = readySprite(spriteUrl);
+  if (!img) {
+    drawPlayer(ctx, p, fbHelmet, fbJersey, label, t, reduced);
+    return;
+  }
+  const moving = Math.abs(p.vx) > 40;
+  const bob = reduced || !moving ? 0 : Math.abs(Math.sin(t * 14)) * 3;
+  const dh = 118;
+  const dw = (dh * img.naturalWidth) / img.naturalHeight;
+  ctx.save();
+  ctx.translate(p.x, p.y - bob);
+  if (!p.onGround) ctx.rotate(clamp(p.vy / 2400, -0.14, 0.2) * p.facing);
+  if (p.facing < 0) ctx.scale(-1, 1);
+  ctx.drawImage(img, -dw / 2, -dh + 5, dw, dh);
+  ctx.restore();
+  drawNameLabel(ctx, p.x, p.y - bob - dh - 12, label);
 }
 
 function drawPlayer(

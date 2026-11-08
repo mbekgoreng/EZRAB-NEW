@@ -7,14 +7,23 @@ import React, { useEffect, useRef, useState } from 'react';
 import { sfx } from '../../../engine2d';
 import { bestKey, getJson, setJson, fmtTime } from '../../../engine2d';
 import { popText } from '../../../engine2d/juice2d';
+import { SCENE_SPRITES } from '../../../shared/sceneSprites';
 import { solvedBoard, shuffleBoard, canMove, moveTile, isSolved, misplaced, isAtHome, placedCount } from './logic';
 
 const FONT = "'Plus Jakarta Sans','Inter',system-ui,sans-serif";
 
 type Screen = 'tutorial' | 'play' | 'pause' | 'win';
 
-/** Blueprint denah rumah sebagai SVG data-URI — dipotong per keping. */
-function blueprintUri(): string {
+/**
+ * Gambar puzzle = blueprint generate-AI (scene-blueprint), dipotong per
+ * keping lewat backgroundPosition persis seperti SVG prosedural sebelumnya
+ * (`blueprintUriProcedural`, dipertahankan sebagai fallback). Sprite sengaja
+ * TANPA teks/label ruang — teks hasil generate tidak dapat dipercaya.
+ */
+const BP = `url("${SCENE_SPRITES['scene-blueprint']}")`;
+
+/** Blueprint denah rumah sebagai SVG data-URI — dipotong per keping (fallback prosedural). */
+function blueprintUriProcedural(): string {
   const s = `
 <svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
 <rect width="400" height="400" fill="#0d2b52"/>
@@ -66,7 +75,7 @@ ${Array.from({ length: 9 }, (_, i) => `<line x1="0" y1="${(i + 1) * 40}" x2="400
 </svg>`;
   return `url("data:image/svg+xml,${encodeURIComponent(s)}")`;
 }
-const BP = blueprintUri();
+void blueprintUriProcedural;
 
 /* ——— Ikon SVG prosedural (pengganti emoji) ——— */
 function Svg({ size = 20, children, viewBox = '0 0 24 24' }: { size?: number; children: React.ReactNode; viewBox?: string }): React.JSX.Element {

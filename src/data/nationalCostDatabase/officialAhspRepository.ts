@@ -31,7 +31,7 @@ import { getCorrections } from './ahspDescriptionCorrections';
 
 /**
  * Apply Phase 2E description corrections overlay to an item.
- * Returns a shallow copy with corrected name/unit/material names.
+ * Returns a shallow copy with corrected name/unit/material/equipment names.
  * Prices, coefficients, and identity are NEVER touched.
  */
 function applyCorrections(item: NationalAHSPItem): NationalAHSPItem {
@@ -40,6 +40,7 @@ function applyCorrections(item: NationalAHSPItem): NationalAHSPItem {
   const copy: NationalAHSPItem = {
     ...item,
     materialComponents: item.materialComponents.map(m => ({ ...m })),
+    equipmentComponents: item.equipmentComponents.map(m => ({ ...m })),
   };
   for (const c of corrections) {
     if (c.field === 'name') copy.name = c.newValue;
@@ -47,6 +48,14 @@ function applyCorrections(item: NationalAHSPItem): NationalAHSPItem {
     else if (c.field === 'materialName' && copy.materialComponents[c.materialIndex ?? 0]) {
       copy.materialComponents[c.materialIndex ?? 0] = {
         ...copy.materialComponents[c.materialIndex ?? 0],
+        name: c.newValue,
+      };
+    }
+    // Owner-approved mechanism extension (2026-11-08, Phase B §4.1):
+    // equipment component names, identical semantics to materialName.
+    else if (c.field === 'equipmentName' && copy.equipmentComponents[c.equipmentIndex ?? 0]) {
+      copy.equipmentComponents[c.equipmentIndex ?? 0] = {
+        ...copy.equipmentComponents[c.equipmentIndex ?? 0],
         name: c.newValue,
       };
     }

@@ -50,13 +50,17 @@ export function reconcileProjectSummaries(
 
     // Batch 4: persen diselesaikan KANONIS — field konfigurasi proyek dulu
     // (sumber konfigurasi di semua permukaan lain: ProjectContext, ekspor,
-    // Rekapitulasi), baru ringkasan lama, baru fallback historis. Sebelumnya
+    // Rekapitulasi), baru ringkasan lama, baru fallback. Sebelumnya
     // fungsi ini HANYA membaca ringkasan lama, sehingga proyek yang
     // ringkasannya hilang/basi tetapi field-nya terkonfigurasi (mis.
     // overheadPercent 10) dibangun ulang dengan overhead karangan 5% dan
     // totalRab-nya menyimpang dari total kanonis proyek yang sama.
-    const overheadPercent = (project as any).overheadPercent ?? cs?.overheadPercent ?? 5;
-    const profitPercent = (project as any).profitPercent ?? cs?.profitPercent ?? 5;
+    // Fallback terakhir kini 0 (keputusan owner 2026-11-08, selaras
+    // mesin kanonis): proyek tanpa konfigurasi apa pun tidak lagi
+    // dibebani 5% karangan. Nilai eksplisit di field/ringkasan lama
+    // tetap menang karena ?? hanya jatuh bila undefined/null.
+    const overheadPercent = (project as any).overheadPercent ?? cs?.overheadPercent ?? 0;
+    const profitPercent = (project as any).profitPercent ?? cs?.profitPercent ?? 0;
     const contingencyPercent = cs?.contingencyPercent ?? 0;
     const directorMarkupPercent = cs?.directorMarkupPercent ?? 0;
     const taxPercent = (project as any).ppnPercent ?? cs?.taxPercent ?? 11;

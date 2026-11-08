@@ -13,6 +13,18 @@ import {
   mulberry32,
   type MemoryState, type Mode,
 } from './logic';
+import {
+  drawMaterialSprite, preloadMaterialSprites, type MaterialSlug,
+} from '../../../shared/materialSprites';
+
+/** id material logic.ts -> slug set ikon bersama. 'pipa' di logic bernama
+ * "Baut Pipa" tetapi glif proseduralnya menggambar baut heksagon -> ikon besi. */
+const MEMORY_SLUGS: Record<string, MaterialSlug> = {
+  bata: 'bata', semen: 'semen', helm: 'helm', crane: 'crane', palu: 'palu',
+  gergaji: 'gergaji', kunci: 'kunci', obeng: 'obeng', toolbox: 'toolbox',
+  cat: 'cat', kayu: 'kayu', tangga: 'tangga', paku: 'paku', batu: 'batu',
+  barikade: 'barikade', rompi: 'rompi', pipa: 'besi', meteran: 'meteran',
+};
 
 const SLUG = 'memory-card';
 const LW = 390;
@@ -180,6 +192,7 @@ export default function ArcadeMemoryCard({ onExit }: { onExit: () => void }): Re
 
   const canvasRef = useGameCanvas((api) => {
     apiRef.current = api;
+    preloadMaterialSprites();
     api.pushHud = (h) => setHud(h as Hud);
     setMuted(api.sfx.muted);
 
@@ -522,6 +535,10 @@ function drawCard(
 function drawMaterialGlyph(
   ctx: CanvasRenderingContext2D, id: string, cx: number, cy: number, s: number,
 ): void {
+  // Ikon utama = sprite generate-AI dari set bersama (kotak sisi 2*s di
+  // sekitar pusat medali); gambar prosedural di bawah = FALLBACK.
+  const slug = MEMORY_SLUGS[id];
+  if (slug && drawMaterialSprite(ctx, slug, cx, cy, s * 2, s * 2)) return;
   ctx.save();
   ctx.translate(cx, cy);
   ctx.scale(s / 16, s / 16);

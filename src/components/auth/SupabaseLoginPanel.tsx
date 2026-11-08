@@ -29,7 +29,7 @@ function GoogleIcon() {
 }
 
 export const SupabaseLoginPanel: React.FC<Props> = ({ onSuccess, onBackToLogin, initialMode = 'signin' }) => {
-  const { user, loading, signIn, signUp, signInWithGoogle, signOut } = useAuth();
+  const { user, loading, signIn, signUp, signInWithGoogle, signOut, updatePassword } = useAuth();
   const { logoutRole } = useRole();
   const [mode, setMode] = useState<'signin' | 'signup'>(initialMode);
   const [name, setName] = useState('');
@@ -40,11 +40,106 @@ export const SupabaseLoginPanel: React.FC<Props> = ({ onSuccess, onBackToLogin, 
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [googleBusy, setGoogleBusy] = useState(false);
+  // WS-A (2026-11-08): mode PEMULIHAN — terpicu penanda sesi pemulihan
+  // yang dipasang SlidingAuthCard saat event PASSWORD_RECOVERY (tautan
+  // reset dari email). Selama mode ini, panel menampilkan form kata
+  // sandi baru, BUKAN status "sudah masuk".
+  const [recovery, setRecovery] = useState<boolean>(() => {
+    try {
+      return sessionStorage.getItem('ezrab_pw_recovery') === '1';
+    } catch {
+      return false;
+    }
+  });
+  const [newPassword, setNewPassword] = useState('');
+  const [newConfirm, setNewConfirm] = useState('');
 
   if (loading) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '24px 0', color: '#64748b' }}>
         <Loader2 size={18} className="animate-spin" /> Memeriksa sesi…
+      </div>
+    );
+  }
+
+  if (recovery && user) {
+    const submitRecovery = async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!newPassword) {
+        setError('Isi kata sandi baru Anda.');
+        return;
+      }
+      if (newPassword.length < 6) {
+        setError('Kata sandi minimal 6 karakter.');
+        return;
+      }
+      if (newPassword !== newConfirm) {
+        setError('Konfirmasi kata sandi tidak sama.');
+        return;
+      }
+      setBusy(true);
+      setError(null);
+      setNotice(null);
+      const r = await updatePassword(newPassword);
+      setBusy(false);
+      if (r.ok) {
+        try {
+          sessionStorage.removeItem('ezrab_pw_recovery');
+        } catch {
+          /* abaikan */
+        }
+        setRecovery(false);
+        setNewPassword('');
+        setNewConfirm('');
+        setNotice('Kata sandi berhasil diganti. Anda sudah masuk dengan kata sandi baru.');
+      } else {
+        setError(r.error || 'Gagal mengganti kata sandi. Tautan reset mungkin sudah kedaluwarsa — minta tautan baru.');
+      }
+    };
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div>
+          <h3 style={{ fontSize: 20, fontWeight: 800, color: '#0f172a', margin: '0 0 6px' }}>
+            Atur kata sandi baru
+          </h3>
+          <p style={{ fontSize: 13, color: '#64748b', margin: 0 }}>
+            Anda membuka tautan reset kata sandi. Pasang kata sandi baru untuk akun Anda.
+          </p>
+        </div>
+        <form noValidate onSubmit={submitRecovery} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <label style={field}>
+            <span style={labelRow}><Lock size={14} /> Kata sandi baru</span>
+            <input
+              type="password" value={newPassword} onChange={(e) => { setNewPassword(e.target.value); if (error) setError(null); }}
+              placeholder="Min. 6 karakter" style={input} autoComplete="new-password"
+            />
+          </label>
+          <label style={field}>
+            <span style={labelRow}><Lock size={14} /> Konfirmasi kata sandi baru</span>
+            <input
+              type="password" value={newConfirm} onChange={(e) => { setNewConfirm(e.target.value); if (error) setError(null); }}
+              placeholder="••••••••" style={input} autoComplete="new-password"
+            />
+          </label>
+          {error && (
+            <div role="alert" style={{ display: 'flex', gap: 8, alignItems: 'center', color: '#DC2626', fontSize: 12.5 }}>
+              <AlertCircle size={14} /> {error}
+            </div>
+          )}
+          {notice && (
+            <div role="status" style={{ display: 'flex', gap: 8, alignItems: 'center', color: '#166534', fontSize: 12.5 }}>
+              <CheckCircle2 size={14} /> {notice}
+            </div>
+          )}
+          <button type="submit" disabled={busy} style={primaryBtn}>
+            {busy ? <Loader2 size={16} className="animate-spin" /> : 'Simpan kata sandi baru'}
+          </button>
+        </form>
+        <div>
+          <button type="button" onClick={onBackToLogin} style={linkBtn}>
+            <ArrowLeft size={14} /> Kembali
+          </button>
+        </div>
       </div>
     );
   }

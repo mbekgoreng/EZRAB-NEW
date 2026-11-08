@@ -6,6 +6,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useGameCanvas, type GameApi, sfx, TAU } from '../../../engine2d';
 import { bestKey, getBest, setBest } from '../../../engine2d/best';
+import { drawSceneSprite, drawSceneSpriteRegion, preloadSceneSprites } from '../../../shared/sceneSprites';
 import {
   CATEGORIES, MAX_WRONG, newGame, guessLetter, maskedWord,
   isWon, isLost, livesLeft, hintLetter, collapsedPart,
@@ -43,7 +44,7 @@ function woodPlank(ctx: CanvasRenderingContext2D, x: number, y: number, w: numbe
 }
 
 /** Pak Tukang: helm kuning, rompi oranye. pose: tenang | panik | pusing. */
-function drawWorker(ctx: CanvasRenderingContext2D, x: number, y: number, sc: number, pose: 'calm' | 'panic' | 'dazed', t: number): void {
+function drawWorkerProcedural(ctx: CanvasRenderingContext2D, x: number, y: number, sc: number, pose: 'calm' | 'panic' | 'dazed', t: number): void {
   ctx.save();
   ctx.translate(x, y);
   ctx.scale(sc, sc);
@@ -112,6 +113,10 @@ function drawWorker(ctx: CanvasRenderingContext2D, x: number, y: number, sc: num
   ctx.restore();
 }
 
+function drawWorker(ctx: CanvasRenderingContext2D, x: number, y: number, sc: number, pose: 'calm' | 'panic' | 'dazed', t: number): void {
+  drawWorkerProcedural(ctx, x, y, sc, pose, t);
+}
+
 function drawScaffold(ctx: CanvasRenderingContext2D, wrong: number, W: number, H: number, t: number): void {
   const cx = W / 2;
   const groundY = H * 0.96;
@@ -164,6 +169,16 @@ function drawScaffold(ctx: CanvasRenderingContext2D, wrong: number, W: number, H
 
   const tilt = [0, -0.02, -0.06, -0.11, -0.17, -0.26][wrong];
   const wobble = wrong >= 3 ? Math.sin(t * (2 + wrong)) * 0.012 * wrong : 0;
+
+  // Perancah UTAK (wrong=0) = sprite generate-AI; keadaan roboh bertahap
+  // 1..5 adalah keadaan permainan dari kode (patahan/miring) -> prosedural.
+  // Tukang digambar terpisah SESUDAH sprite (berdiri di papan sprite).
+  if (wrong === 0 && drawSceneSpriteRegion(ctx, 'scene-perancah', cx, (platY - 18 + groundY) / 2 - 40, half * 2 + 30, groundY - platY + 24, 0, 0, 1, 1)) {
+    if (!drawSceneSprite(ctx, 'scene-tukang', cx, platY - 58, 56, 88)) {
+      drawWorker(ctx, cx, platY - 14, 1.0, 'calm', t);
+    }
+    return;
+  }
 
   ctx.save();
   ctx.translate(cx, platY);
@@ -430,6 +445,8 @@ export default function ArcadeHangman({ onExit }: { onExit: () => void }): React
     setHintsLeft((x) => x - 1);
     doGuess(h);
   }, [doGuess, hintsLeft]);
+
+  useEffect(() => { preloadSceneSprites(); }, []);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

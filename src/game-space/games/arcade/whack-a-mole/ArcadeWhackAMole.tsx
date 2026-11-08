@@ -10,6 +10,40 @@ import {
   nextSpawn, spawnDelay, scoreHit, gradeFor, multiplierForStreak,
   GAME_DURATION, HOLE_COUNT, type NailKind,
 } from './logic';
+import { MATERIAL_SPRITES, preloadMaterialSprites, readySprite } from '../../../shared/materialSprites';
+import { drawFallerSprite, preloadFallerSprites } from '../../../shared/fallerSprites';
+
+// Sapuan visual Kelompok 5: muat awal set material bersama (Kelompok 1)
+// + set objek jatuh baru; gambar prosedural tetap FALLBACK.
+preloadMaterialSprites();
+preloadFallerSprites();
+
+/**
+ * Paku sprite KOMPOSIT dua paruh dari ikon paku Kelompok 1 (ikonnya
+ * kipas tiga paku berkepala — salah sebagai paku tunggal utuh): paruh
+ * ATAS ikon dibalik vertikal sebagai mahkota kepala; paruh BAWAH
+ * digambar apa adanya direntangkan sebagai batang+ujung. Emas = ikon
+ * baja yang sama + filter emas. False bila sprite belum siap.
+ * Koordinat lokal pemanggil: paku menempati y -nh..0, pusat x=0.
+ */
+function drawNailSprite(ctx: CanvasRenderingContext2D, nh: number, destW: number, gold: boolean): boolean {
+  const img = readySprite(MATERIAL_SPRITES.paku);
+  if (!img || nh <= 4) return false;
+  const W = img.naturalWidth;
+  const H = img.naturalHeight;
+  const headH = Math.min(nh * 0.4, destW);
+  ctx.save();
+  if (gold) ctx.filter = 'hue-rotate(-8deg) saturate(2.6) brightness(1.18)';
+  ctx.save();
+  ctx.beginPath(); ctx.rect(-destW / 2, -nh, destW, headH); ctx.clip();
+  ctx.translate(0, -nh + headH);
+  ctx.scale(1, -1);
+  ctx.drawImage(img, -destW / 2, 0, destW, destW);
+  ctx.restore();
+  ctx.drawImage(img, 0, H / 2, W, H / 2, -destW / 2, -nh + headH, destW, nh - headH);
+  ctx.restore();
+  return true;
+}
 
 /** Ikon SVG prosedural (pengganti emoji) untuk tombol & overlay DOM. */
 function SvgIcon({ kind, size = 20 }: { kind: 'pause' | 'play' | 'sound' | 'mute' | 'close' | 'hammer' | 'coffee' | 'trophy'; size?: number }): React.JSX.Element {
@@ -341,6 +375,13 @@ export default function ArcadeWhackAMole({ onExit }: { onExit: () => void }): Re
         ctx.strokeStyle = 'rgba(249,115,22,0.85)';
         ctx.lineWidth = 2;
         ctx.beginPath(); ctx.ellipse(0, 2, 36, 15, 0, 0, TAU); ctx.stroke();
+        // Sprite baut larangan generate-AI (cincin peringatan di atas
+        // tetap prosedural di jalur sprite MAUPUN fallback — penanda
+        // peran larangan). Gagal/belum siap -> prosedural di bawah.
+        if (drawFallerSprite(ctx, 'baut-larangan', 0, -nh / 2, 38, Math.max(nh, 20))) {
+          ctx.restore();
+          return;
+        }
         const bwB = 16;
         const topB = -nh;
         const shaft = ctx.createLinearGradient(-bwB / 2, 0, bwB / 2, 0);
@@ -376,6 +417,12 @@ export default function ArcadeWhackAMole({ onExit }: { onExit: () => void }): Re
       if (kind === 'emas') {
         ctx.shadowColor = 'rgba(253,224,71,0.9)';
         ctx.shadowBlur = 20;
+      }
+      // Sprite paku komposit dua paruh (emas = filter emas + pijar di
+      // atas). Gagal/belum siap -> badan prosedural di bawah.
+      if (drawNailSprite(ctx, nh, 30, kind === 'emas')) {
+        ctx.restore();
+        return;
       }
       // badan paku (baja berlapis)
       const bw2 = 13;

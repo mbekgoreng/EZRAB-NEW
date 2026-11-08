@@ -1,0 +1,3058 @@
+{
+ "meta": {
+  "title": "EZRAB Construction AI — 350+ Scenario Regression Dataset",
+  "version": "1.0",
+  "created": "2026-11-08",
+  "layer": "deterministic (parser/typology/workflow) — NOT a live model test",
+  "expectLegend": {
+   "function": "buildingTypology functionId harapan (null = bukan fungsi bangunan)",
+   "scopes": "grup cakupan universalRab yang harus terdeteksi (subset match)",
+   "footprint": "tapak bangunan m2 dari dimensi (null = tidak boleh dikarang)",
+   "buildingArea": "luas bangunan yang disebut eksplisit",
+   "land": "luas lahan m2 eksplisit (tidak boleh diturunkan dari bangunan)",
+   "floors": "jumlah lantai eksplisit (null = tidak disebut)",
+   "floorsSource": "explicit | assumption (aturan owner: tak disebut = asumsi 1 lantai terlabel)",
+   "notMultistory": "kompleksitas TIDAK boleh bertingkat",
+   "build": "draft | needs-spec | unsupported | any (buildUniversalDraft)",
+   "clarify": "respons harus klarifikasi kontekstual, bukan penolakan generik",
+   "missingOnlyMeasure": "satu-satunya blokir tier A adalah basis ukuran"
+  }
+ },
+ "groups": {
+  "recognition": [
+   {
+    "id": "rec-001",
+    "input": "buatkan rab rumah tinggal 2 lantai 8x12",
+    "expect": {
+     "function": "rumah-tinggal"
+    }
+   },
+   {
+    "id": "rec-002",
+    "input": "buatkan rab rumah minimalis 6x10",
+    "expect": {
+     "function": "rumah-tinggal"
+    }
+   },
+   {
+    "id": "rec-003",
+    "input": "buatkan rab rumah mewah 15x20",
+    "expect": {
+     "function": "rumah-tinggal"
+    }
+   },
+   {
+    "id": "rec-004",
+    "input": "buatkan rab rumah 1 lantai 7x12",
+    "expect": {
+     "function": "rumah-tinggal"
+    }
+   },
+   {
+    "id": "rec-005",
+    "input": "buatkan rab rumah bertingkat 9x11",
+    "expect": {
+     "function": "rumah-tinggal"
+    }
+   },
+   {
+    "id": "rec-006",
+    "input": "buatkan rab kost 10 kamar 2 lantai",
+    "expect": {
+     "function": "kos"
+    }
+   },
+   {
+    "id": "rec-007",
+    "input": "buatkan rab kos-kosan 3 lantai luas 450 m2",
+    "expect": {
+     "function": "kos"
+    }
+   },
+   {
+    "id": "rec-008",
+    "input": "buatkan rab kontrakan 5 pintu",
+    "expect": {
+     "function": "kos"
+    }
+   },
+   {
+    "id": "rec-009",
+    "input": "buatkan rab ruko 2 lantai 5x15",
+    "expect": {
+     "function": "ruko"
+    }
+   },
+   {
+    "id": "rec-010",
+    "input": "buatkan rab ruko 4x12",
+    "expect": {
+     "function": "ruko"
+    }
+   },
+   {
+    "id": "rec-011",
+    "input": "buatkan rab kantor 3 lantai luas 900 m2",
+    "expect": {
+     "function": "kantor"
+    }
+   },
+   {
+    "id": "rec-012",
+    "input": "buatkan rab gedung kantor cabang",
+    "expect": {
+     "function": "kantor"
+    }
+   },
+   {
+    "id": "rec-013",
+    "input": "buatkan rab gudang 10x20",
+    "expect": {
+     "function": "gudang"
+    }
+   },
+   {
+    "id": "rec-014",
+    "input": "buatkan rab gudang logistik 30x50",
+    "expect": {
+     "function": "gudang"
+    }
+   },
+   {
+    "id": "rec-015",
+    "input": "buatkan rab pabrik makanan 40x60",
+    "expect": {
+     "function": "pabrik"
+    }
+   },
+   {
+    "id": "rec-016",
+    "input": "buatkan rab workshop fabrikasi 20x30",
+    "expect": {
+     "function": "workshop"
+    }
+   },
+   {
+    "id": "rec-017",
+    "input": "buatkan rab bengkel mobil 12x18",
+    "expect": {
+     "function": "workshop"
+    }
+   },
+   {
+    "id": "rec-018",
+    "input": "buatkan rab sekolah dasar 2 lantai",
+    "expect": {
+     "function": "sekolah"
+    }
+   },
+   {
+    "id": "rec-019",
+    "input": "buatkan rab gedung sekolah smk",
+    "expect": {
+     "function": "sekolah"
+    }
+   },
+   {
+    "id": "rec-020",
+    "input": "buatkan rab klinik pratama 8x14",
+    "expect": {
+     "function": "klinik"
+    }
+   },
+   {
+    "id": "rec-021",
+    "input": "buatkan rab rumah sakit tipe c",
+    "expect": {
+     "function": "rumah-sakit"
+    }
+   },
+   {
+    "id": "rec-022",
+    "input": "buatkan rab puskesmas rawat inap",
+    "expect": {
+     "function": "klinik"
+    }
+   },
+   {
+    "id": "rec-023",
+    "input": "buatkan rab toko kelontong 5x10",
+    "expect": {
+     "function": "toko"
+    }
+   },
+   {
+    "id": "rec-024",
+    "input": "buatkan rab minimarket 10x15",
+    "expect": {
+     "function": "toko"
+    }
+   },
+   {
+    "id": "rec-025",
+    "input": "buatkan rab showroom mobil",
+    "expect": {
+     "function": "toko"
+    }
+   },
+   {
+    "id": "rec-026",
+    "input": "buatkan rab masjid 20x20",
+    "expect": {
+     "function": "masjid"
+    }
+   },
+   {
+    "id": "rec-027",
+    "input": "buatkan rab musholla 8x10",
+    "expect": {
+     "function": "masjid"
+    }
+   },
+   {
+    "id": "rec-028",
+    "input": "buatkan rab aula serbaguna 15x25",
+    "expect": {
+     "function": "aula"
+    }
+   },
+   {
+    "id": "rec-029",
+    "input": "buatkan rab gedung olahraga indoor",
+    "expect": {
+     "function": "gedung-olahraga"
+    }
+   },
+   {
+    "id": "rec-030",
+    "input": "buatkan rab gor bulutangkis",
+    "expect": {
+     "function": "gedung-olahraga"
+    }
+   },
+   {
+    "id": "rec-031",
+    "input": "buatkan rab mall kecil 3 lantai",
+    "expect": {
+     "function": "komersial"
+    }
+   },
+   {
+    "id": "rec-032",
+    "input": "buatkan rab kawasan industri",
+    "expect": {
+     "function": "industri"
+    }
+   },
+   {
+    "id": "rec-033",
+    "input": "buatkan rab kandang ayam closed house 12x40",
+    "expect": {
+     "function": "pertanian"
+    }
+   },
+   {
+    "id": "rec-034",
+    "input": "buatkan rab greenhouse sayur 8x24",
+    "expect": {
+     "function": "pertanian"
+    }
+   },
+   {
+    "id": "rec-035",
+    "input": "buatkan rab lumbung padi 6x12",
+    "expect": {
+     "function": "pertanian"
+    }
+   },
+   {
+    "id": "rec-036",
+    "input": "buatkan rab hotel bintang 3 5 lantai",
+    "expect": {
+     "function": "hotel"
+    }
+   },
+   {
+    "id": "rec-037",
+    "input": "buatkan rab villa private pool",
+    "expect": {
+     "function": "villa"
+    }
+   },
+   {
+    "id": "rec-038",
+    "input": "buatkan rab apartemen 12 lantai",
+    "expect": {
+     "function": "apartemen"
+    }
+   },
+   {
+    "id": "rec-039",
+    "input": "buatkan rab rusun 4 lantai",
+    "expect": {
+     "function": "apartemen"
+    }
+   },
+   {
+    "id": "rec-040",
+    "input": "buatkan rab pasar tradisional",
+    "expect": {
+     "function": "pasar"
+    }
+   },
+   {
+    "id": "rec-041",
+    "input": "buatkan rab gedung serbaguna desa",
+    "expect": {
+     "function": "aula"
+    }
+   },
+   {
+    "id": "rec-042",
+    "input": "buatkan rab bangunan 10x15",
+    "expect": {
+     "function": "bangunan-umum"
+    }
+   },
+   {
+    "id": "rec-043",
+    "input": "buatkan rab gedung 4 lantai",
+    "expect": {
+     "function": "gedung-umum"
+    }
+   },
+   {
+    "id": "rec-044",
+    "input": "tolong hitungkan rab rumah 2 lantai tipe 45",
+    "expect": {
+     "function": "rumah-tinggal"
+    }
+   },
+   {
+    "id": "rec-045",
+    "input": "minta dibuatkan rab gudang baja ringan",
+    "expect": {
+     "function": "gudang"
+    }
+   },
+   {
+    "id": "rec-046",
+    "input": "rab ruko dong",
+    "expect": {
+     "function": "ruko"
+    }
+   },
+   {
+    "id": "rec-047",
+    "input": "buatin rab kantor kecil 6x8",
+    "expect": {
+     "function": "kantor"
+    }
+   },
+   {
+    "id": "rec-048",
+    "input": "buatkan rab bengkel las dan bubut",
+    "expect": {
+     "function": "workshop"
+    }
+   },
+   {
+    "id": "rec-049",
+    "input": "buatkan rab pabrik sepatu 50x80",
+    "expect": {
+     "function": "pabrik"
+    }
+   },
+   {
+    "id": "rec-050",
+    "input": "buatkan rab sekolah alam 1 lantai",
+    "expect": {
+     "function": "sekolah"
+    }
+   },
+   {
+    "id": "rec-051",
+    "input": "buatkan rab jalan beton sepanjang 1 km",
+    "expect": {
+     "scopes": [
+      "jalan"
+     ]
+    }
+   },
+   {
+    "id": "rec-052",
+    "input": "buatkan rab jalan aspal hotmix 2 km",
+    "expect": {
+     "scopes": [
+      "jalan"
+     ]
+    }
+   },
+   {
+    "id": "rec-053",
+    "input": "buatkan rab paving block area parkir 500 m2",
+    "expect": {
+     "scopes": [
+      "jalan"
+     ]
+    }
+   },
+   {
+    "id": "rec-054",
+    "input": "buatkan rab rabat beton jalan desa 800 m",
+    "expect": {
+     "scopes": [
+      "jalan"
+     ]
+    }
+   },
+   {
+    "id": "rec-055",
+    "input": "buatkan rab trotoar sepanjang 300 m",
+    "expect": {
+     "scopes": [
+      "jalan"
+     ]
+    }
+   },
+   {
+    "id": "rec-056",
+    "input": "buatkan rab drainase u-ditch 500 m",
+    "expect": {
+     "scopes": [
+      "drainase"
+     ]
+    }
+   },
+   {
+    "id": "rec-057",
+    "input": "buatkan rab saluran pasangan batu 400 m",
+    "expect": {
+     "scopes": [
+      "drainase"
+     ]
+    }
+   },
+   {
+    "id": "rec-058",
+    "input": "buatkan rab box culvert 50 m",
+    "expect": {
+     "scopes": [
+      "drainase"
+     ]
+    }
+   },
+   {
+    "id": "rec-059",
+    "input": "buatkan rab gorong-gorong beton 20 m",
+    "expect": {
+     "scopes": [
+      "drainase"
+     ]
+    }
+   },
+   {
+    "id": "rec-060",
+    "input": "buatkan rab jembatan beton bentang 12 m",
+    "expect": {
+     "scopes": [
+      "jembatan"
+     ]
+    }
+   },
+   {
+    "id": "rec-061",
+    "input": "buatkan rab jpo penyeberangan",
+    "expect": {
+     "scopes": [
+      "jembatan"
+     ]
+    }
+   },
+   {
+    "id": "rec-062",
+    "input": "buatkan rab flyover bentang 40 m",
+    "expect": {
+     "scopes": [
+      "jembatan"
+     ]
+    }
+   },
+   {
+    "id": "rec-063",
+    "input": "buatkan rab irigasi saluran sekunder 1,5 km",
+    "expect": {
+     "scopes": [
+      "irigasi"
+     ]
+    }
+   },
+   {
+    "id": "rec-064",
+    "input": "buatkan rab bendung kecil",
+    "expect": {
+     "scopes": [
+      "irigasi"
+     ]
+    }
+   },
+   {
+    "id": "rec-065",
+    "input": "buatkan rab embung desa",
+    "expect": {
+     "scopes": [
+      "irigasi"
+     ]
+    }
+   },
+   {
+    "id": "rec-066",
+    "input": "buatkan rab tanggul sungai 200 m",
+    "expect": {
+     "scopes": [
+      "irigasi"
+     ]
+    }
+   },
+   {
+    "id": "rec-067",
+    "input": "buatkan rab galian tanah pondasi 300 m3",
+    "expect": {
+     "scopes": [
+      "tanah"
+     ]
+    }
+   },
+   {
+    "id": "rec-068",
+    "input": "buatkan rab urugan dan pemadatan lahan",
+    "expect": {
+     "scopes": [
+      "tanah"
+     ]
+    }
+   },
+   {
+    "id": "rec-069",
+    "input": "buatkan rab cut and fill lahan 2000 m2",
+    "expect": {
+     "scopes": [
+      "tanah"
+     ]
+    }
+   },
+   {
+    "id": "rec-070",
+    "input": "buatkan rab pagar panel beton 150 m",
+    "expect": {
+     "scopes": [
+      "lanskap"
+     ]
+    }
+   },
+   {
+    "id": "rec-071",
+    "input": "buatkan rab gerbang dan pagar besi",
+    "expect": {
+     "scopes": [
+      "lanskap"
+     ]
+    }
+   },
+   {
+    "id": "rec-072",
+    "input": "buatkan rab lapangan futsal 800 m2",
+    "expect": {
+     "scopes": [
+      "olahraga"
+     ]
+    }
+   },
+   {
+    "id": "rec-073",
+    "input": "buatkan rab lapangan badminton indoor",
+    "expect": {
+     "scopes": [
+      "olahraga"
+     ]
+    }
+   },
+   {
+    "id": "rec-074",
+    "input": "buatkan rab kolam renang 25 m",
+    "expect": {
+     "scopes": [
+      "olahraga"
+     ]
+    }
+   },
+   {
+    "id": "rec-075",
+    "input": "buatkan rab stadion mini",
+    "expect": {
+     "scopes": [
+      "olahraga"
+     ]
+    }
+   },
+   {
+    "id": "rec-076",
+    "input": "buatkan rab renovasi total rumah 120 m2",
+    "expect": {
+     "scopes": [
+      "renovasi"
+     ]
+    }
+   },
+   {
+    "id": "rec-077",
+    "input": "buatkan rab rehab gedung kantor",
+    "expect": {
+     "scopes": [
+      "renovasi"
+     ]
+    }
+   },
+   {
+    "id": "rec-078",
+    "input": "buatkan rab perbaikan atap bocor",
+    "expect": {
+     "scopes": [
+      "renovasi"
+     ]
+    }
+   },
+   {
+    "id": "rec-079",
+    "input": "buatkan rab restorasi rumah lama",
+    "expect": {
+     "scopes": [
+      "renovasi"
+     ]
+    }
+   },
+   {
+    "id": "rec-080",
+    "input": "buatkan rab instalasi listrik rumah",
+    "expect": {
+     "scopes": [
+      "mep"
+     ]
+    }
+   },
+   {
+    "id": "rec-081",
+    "input": "buatkan rab panel listrik utama gedung",
+    "expect": {
+     "scopes": [
+      "mep"
+     ]
+    }
+   },
+   {
+    "id": "rec-082",
+    "input": "buatkan rab plumbing air bersih",
+    "expect": {
+     "scopes": [
+      "mep"
+     ]
+    }
+   },
+   {
+    "id": "rec-083",
+    "input": "buatkan rab instalasi ac central",
+    "expect": {
+     "scopes": [
+      "mep"
+     ]
+    }
+   },
+   {
+    "id": "rec-084",
+    "input": "buatkan rab hydrant kebakaran",
+    "expect": {
+     "scopes": [
+      "mep"
+     ]
+    }
+   },
+   {
+    "id": "rec-085",
+    "input": "buatkan rab sanitasi dan septic tank",
+    "expect": {
+     "scopes": [
+      "sanitasi"
+     ]
+    }
+   },
+   {
+    "id": "rec-086",
+    "input": "buatkan rab ipal domestik",
+    "expect": {
+     "scopes": [
+      "sanitasi"
+     ]
+    }
+   },
+   {
+    "id": "rec-087",
+    "input": "buatkan rab pondasi bore pile",
+    "expect": {
+     "scopes": [
+      "pondasi"
+     ]
+    }
+   },
+   {
+    "id": "rec-088",
+    "input": "buatkan rab tiang pancang gedung",
+    "expect": {
+     "scopes": [
+      "pondasi"
+     ]
+    }
+   },
+   {
+    "id": "rec-089",
+    "input": "buatkan rab pondasi foot plat 24 titik",
+    "expect": {
+     "scopes": [
+      "pondasi"
+     ]
+    }
+   },
+   {
+    "id": "rec-090",
+    "input": "buatkan rab struktur beton bertulang 500 m2",
+    "expect": {
+     "scopes": [
+      "struktur"
+     ]
+    }
+   },
+   {
+    "id": "rec-091",
+    "input": "buatkan rab struktur baja wf",
+    "expect": {
+     "scopes": [
+      "struktur"
+     ]
+    }
+   },
+   {
+    "id": "rec-092",
+    "input": "buatkan rab pengecoran kolom balok",
+    "expect": {
+     "scopes": [
+      "struktur"
+     ]
+    }
+   },
+   {
+    "id": "rec-093",
+    "input": "buatkan rab atap baja ringan 150 m2",
+    "expect": {
+     "scopes": [
+      "atap"
+     ]
+    }
+   },
+   {
+    "id": "rec-094",
+    "input": "buatkan rab waterproofing membran dak",
+    "expect": {
+     "scopes": [
+      "atap"
+     ]
+    }
+   },
+   {
+    "id": "rec-095",
+    "input": "buatkan rab pasang genteng metal",
+    "expect": {
+     "scopes": [
+      "atap"
+     ]
+    }
+   },
+   {
+    "id": "rec-096",
+    "input": "buatkan rab finishing interior kantor",
+    "expect": {
+     "scopes": [
+      "finishing"
+     ]
+    }
+   },
+   {
+    "id": "rec-097",
+    "input": "buatkan rab pasang keramik granit",
+    "expect": {
+     "scopes": [
+      "finishing"
+     ]
+    }
+   },
+   {
+    "id": "rec-098",
+    "input": "buatkan rab plafon gypsum dan partisi",
+    "expect": {
+     "scopes": [
+      "finishing"
+     ]
+    }
+   },
+   {
+    "id": "rec-099",
+    "input": "buatkan rab demolisi bangunan lama",
+    "expect": {
+     "scopes": [
+      "demolisi"
+     ]
+    }
+   },
+   {
+    "id": "rec-100",
+    "input": "buatkan rab pembongkaran rumah 90 m2",
+    "expect": {
+     "scopes": [
+      "demolisi"
+     ]
+    }
+   },
+   {
+    "id": "rec-101",
+    "input": "buatkan rab dermaga kecil",
+    "expect": {
+     "scopes": [
+      "pelabuhan"
+     ]
+    }
+   },
+   {
+    "id": "rec-102",
+    "input": "buatkan rab breakwater tetrapod",
+    "expect": {
+     "scopes": [
+      "pelabuhan"
+     ]
+    }
+   }
+  ],
+  "language": [
+   {
+    "id": "lng-001",
+    "input": "tolong buatkan rab gudang ukuran sepuluh kali dua puluh",
+    "expect": {
+     "function": "gudang"
+    }
+   },
+   {
+    "id": "lng-002",
+    "input": "buatkan rab gudng 10x20 dong",
+    "expect": {
+     "function": "gudang",
+     "footprint": 200
+    }
+   },
+   {
+    "id": "lng-003",
+    "input": "buatkan rab gudnag buat stok barang 15x25",
+    "expect": {
+     "function": "gudang",
+     "footprint": 375
+    }
+   },
+   {
+    "id": "lng-004",
+    "input": "buatkan RAB warehouse 500 sqm",
+    "expect": {
+     "function": "gudang"
+    }
+   },
+   {
+    "id": "lng-005",
+    "input": "rab gudang",
+    "expect": {
+     "function": "gudang"
+    }
+   },
+   {
+    "id": "lng-006",
+    "input": "gudang 10x20",
+    "expect": {
+     "function": "gudang",
+     "footprint": 200
+    }
+   },
+   {
+    "id": "lng-007",
+    "input": "Bikinkan RAB buat gudang penyimpanan, ukurannya 12 kali 18 meter",
+    "expect": {
+     "function": "gudang",
+     "footprint": 216
+    }
+   },
+   {
+    "id": "lng-008",
+    "input": "mohon dibuatkan rab pembangunan gudang dengan ukuran 10 x 20 m",
+    "expect": {
+     "function": "gudang",
+     "footprint": 200
+    }
+   },
+   {
+    "id": "lng-009",
+    "input": "buatkan rab pabrikasi baja 25x40",
+    "expect": {
+     "function": "pabrik",
+     "footprint": 1000
+    }
+   },
+   {
+    "id": "lng-010",
+    "input": "buatkan rab kntor 2 lantai",
+    "expect": {
+     "function": "kantor"
+    }
+   },
+   {
+    "id": "lng-011",
+    "input": "buatkan rab skolah 2 lantai",
+    "expect": {
+     "function": "sekolah"
+    }
+   },
+   {
+    "id": "lng-012",
+    "input": "buatkan rab msjid 15x15",
+    "expect": {
+     "function": "masjid",
+     "footprint": 225
+    }
+   },
+   {
+    "id": "lng-013",
+    "input": "buatkan rab rumh 2 lantai 6x12",
+    "expect": {
+     "function": "rumah-tinggal",
+     "footprint": 72
+    }
+   },
+   {
+    "id": "lng-014",
+    "input": "buatkan rab rmh tinggal 8x10",
+    "expect": {
+     "function": "rumah-tinggal",
+     "footprint": 80
+    }
+   },
+   {
+    "id": "lng-015",
+    "input": "buatkan rab rmh sakit bersalin",
+    "expect": {
+     "function": "rumah-sakit"
+    }
+   },
+   {
+    "id": "lng-016",
+    "input": "buatkan rab kosan 2 lantai",
+    "expect": {
+     "function": "kos"
+    }
+   },
+   {
+    "id": "lng-017",
+    "input": "buatkan rab wrkshop motor 10x12",
+    "expect": {
+     "function": "workshop",
+     "footprint": 120
+    }
+   },
+   {
+    "id": "lng-018",
+    "input": "buatkan rab bngkel mobil 10x15",
+    "expect": {
+     "function": "workshop",
+     "footprint": 150
+    }
+   },
+   {
+    "id": "lng-019",
+    "input": "buatkan rab toko sembako punya saya 4x8",
+    "expect": {
+     "function": "toko",
+     "footprint": 32
+    }
+   },
+   {
+    "id": "lng-020",
+    "input": "buatkan rab gudang tanpa spasi 10x20m",
+    "expect": {
+     "function": "gudang",
+     "footprint": 200
+    }
+   },
+   {
+    "id": "lng-021",
+    "input": "buatkan rab gudang 10X20M",
+    "expect": {
+     "function": "gudang",
+     "footprint": 200
+    }
+   },
+   {
+    "id": "lng-022",
+    "input": "buatkan rab gudang 10×20",
+    "expect": {
+     "function": "gudang",
+     "footprint": 200
+    }
+   },
+   {
+    "id": "lng-023",
+    "input": "buatkan rab GUDANG 10 x 20 M",
+    "expect": {
+     "function": "gudang",
+     "footprint": 200
+    }
+   },
+   {
+    "id": "lng-024",
+    "input": "buatkan rab gudang ukuran 10x20 meter persegi",
+    "expect": {
+     "function": "gudang",
+     "footprint": 200
+    }
+   },
+   {
+    "id": "lng-025",
+    "input": "buatkan rab gudang di lahan kosong ukuran 10 x 20",
+    "expect": {
+     "function": "gudang",
+     "footprint": 200
+    }
+   },
+   {
+    "id": "lng-026",
+    "input": "buatkan rab gudang buat parkir forklift 18x30",
+    "expect": {
+     "function": "gudang",
+     "footprint": 540
+    }
+   },
+   {
+    "id": "lng-027",
+    "input": "buatkan rab warehouse ukuran 20x40 m untuk logistik",
+    "expect": {
+     "function": "gudang",
+     "footprint": 800
+    }
+   },
+   {
+    "id": "lng-028",
+    "input": "buatkan rab storage building 15x30",
+    "expect": {
+     "function": "gudang"
+    }
+   },
+   {
+    "id": "lng-029",
+    "input": "buatkan rab rumah 2 lantai tolong ya",
+    "expect": {
+     "function": "rumah-tinggal"
+    }
+   },
+   {
+    "id": "lng-030",
+    "input": "BUATKAN RAB RUMAH 2 LANTAI 7X14",
+    "expect": {
+     "function": "rumah-tinggal",
+     "footprint": 98
+    }
+   },
+   {
+    "id": "lng-031",
+    "input": "buatkan rab rumah subsidi tipe 36",
+    "expect": {
+     "function": "rumah-tinggal"
+    }
+   },
+   {
+    "id": "lng-032",
+    "input": "buatkan rab rumah type 45/90",
+    "expect": {
+     "function": "rumah-tinggal"
+    }
+   },
+   {
+    "id": "lng-033",
+    "input": "buatkan rab ruko 3 lantai punya kakak saya",
+    "expect": {
+     "function": "ruko"
+    }
+   },
+   {
+    "id": "lng-034",
+    "input": "buatkan rab kost eksklusif 20 kamar",
+    "expect": {
+     "function": "kos"
+    }
+   },
+   {
+    "id": "lng-035",
+    "input": "buatkan rab pabrik tahu dan tempe",
+    "expect": {
+     "function": "pabrik"
+    }
+   },
+   {
+    "id": "lng-036",
+    "input": "buatkan rab home industry keripik",
+    "expect": {
+     "function": "pabrik"
+    }
+   },
+   {
+    "id": "lng-037",
+    "input": "buatkan rab aula untuk acara warga",
+    "expect": {
+     "function": "aula"
+    }
+   },
+   {
+    "id": "lng-038",
+    "input": "buatkan rab balai pertemuan 12x20",
+    "expect": {
+     "function": "aula",
+     "footprint": 240
+    }
+   },
+   {
+    "id": "lng-039",
+    "input": "buatkan rab lapangan olahraga serbaguna",
+    "expect": {
+     "function": "gedung-olahraga"
+    }
+   },
+   {
+    "id": "lng-040",
+    "input": "buatkan rab sport center 30x50",
+    "expect": {
+     "function": "gedung-olahraga"
+    }
+   },
+   {
+    "id": "lng-041",
+    "input": "buatkan rab klinik gigi 6x10",
+    "expect": {
+     "function": "klinik",
+     "footprint": 60
+    }
+   },
+   {
+    "id": "lng-042",
+    "input": "buatkan rab klinik kecantikan",
+    "expect": {
+     "function": "klinik"
+    }
+   },
+   {
+    "id": "lng-043",
+    "input": "buatkan rab sekolah tahfidz 2 lantai",
+    "expect": {
+     "function": "sekolah"
+    }
+   },
+   {
+    "id": "lng-044",
+    "input": "buatkan rab madrasah ibtidaiyah",
+    "expect": {
+     "function": "sekolah"
+    }
+   },
+   {
+    "id": "lng-045",
+    "input": "buatkan rab pasar ikan higienis",
+    "expect": {
+     "function": "pasar"
+    }
+   },
+   {
+    "id": "lng-046",
+    "input": "buatkan rab pasar malam permanen",
+    "expect": {
+     "function": "pasar"
+    }
+   },
+   {
+    "id": "lng-047",
+    "input": "buatkan rab hotel melati 3 lantai",
+    "expect": {
+     "function": "hotel"
+    }
+   },
+   {
+    "id": "lng-048",
+    "input": "buatkan rab penginapan syariah",
+    "expect": {
+     "function": "hotel"
+    }
+   },
+   {
+    "id": "lng-049",
+    "input": "buatkan rab villa 2 lantai dengan kolam",
+    "expect": {
+     "function": "villa"
+    }
+   },
+   {
+    "id": "lng-050",
+    "input": "buatkan rab apartemen mahasiswa",
+    "expect": {
+     "function": "apartemen"
+    }
+   }
+  ],
+  "dimensions": [
+   {
+    "id": "dim-001",
+    "input": "buatkan rab gudang 8x15",
+    "expect": {
+     "footprint": 120
+    }
+   },
+   {
+    "id": "dim-002",
+    "input": "buatkan rab gudang 12 x 18 m",
+    "expect": {
+     "footprint": 216
+    }
+   },
+   {
+    "id": "dim-003",
+    "input": "buatkan rab gudang 20x10",
+    "expect": {
+     "footprint": 200
+    }
+   },
+   {
+    "id": "dim-004",
+    "input": "buatkan rab gudang 7,5 x 12 m",
+    "expect": {
+     "footprint": 90
+    }
+   },
+   {
+    "id": "dim-005",
+    "input": "buatkan rab gudang 9.5 x 11 m",
+    "expect": {
+     "footprint": 104.5
+    }
+   },
+   {
+    "id": "dim-006",
+    "input": "buatkan rab gudang panjang 30 m lebar 12 m",
+    "expect": {
+     "footprint": 360
+    }
+   },
+   {
+    "id": "dim-007",
+    "input": "buatkan rab gudang lebar 8 panjang 22",
+    "expect": {
+     "footprint": 176
+    }
+   },
+   {
+    "id": "dim-008",
+    "input": "buatkan rab gudang ukuran 14 meter kali 9 meter",
+    "expect": {
+     "footprint": 126
+    }
+   },
+   {
+    "id": "dim-009",
+    "input": "buatkan rab gudang 11 kali 13 meter",
+    "expect": {
+     "footprint": 143
+    }
+   },
+   {
+    "id": "dim-010",
+    "input": "buatkan rab rumah 6x15 m",
+    "expect": {
+     "footprint": 90
+    }
+   },
+   {
+    "id": "dim-011",
+    "input": "buatkan rab rumah 8 x 12 meter",
+    "expect": {
+     "footprint": 96
+    }
+   },
+   {
+    "id": "dim-012",
+    "input": "buatkan rab rumah panjang 10 lebar 7",
+    "expect": {
+     "footprint": 70
+    }
+   },
+   {
+    "id": "dim-013",
+    "input": "buatkan rab ruko 4x16",
+    "expect": {
+     "footprint": 64
+    }
+   },
+   {
+    "id": "dim-014",
+    "input": "buatkan rab ruko 5,5 x 14 m",
+    "expect": {
+     "footprint": 77
+    }
+   },
+   {
+    "id": "dim-015",
+    "input": "buatkan rab pabrik 25 x 40 m",
+    "expect": {
+     "footprint": 1000
+    }
+   },
+   {
+    "id": "dim-016",
+    "input": "buatkan rab pabrik 18 kali 22 meter",
+    "expect": {
+     "footprint": 396
+    }
+   },
+   {
+    "id": "dim-017",
+    "input": "buatkan rab toko 6x9",
+    "expect": {
+     "footprint": 54
+    }
+   },
+   {
+    "id": "dim-018",
+    "input": "buatkan rab kantor 12x20 m",
+    "expect": {
+     "footprint": 240
+    }
+   },
+   {
+    "id": "dim-019",
+    "input": "buatkan rab sekolah 20 x 30 m",
+    "expect": {
+     "footprint": 600
+    }
+   },
+   {
+    "id": "dim-020",
+    "input": "buatkan rab masjid 18x18",
+    "expect": {
+     "footprint": 324
+    }
+   },
+   {
+    "id": "dim-021",
+    "input": "buatkan rab kandang 9x36",
+    "expect": {
+     "footprint": 324
+    }
+   },
+   {
+    "id": "dim-022",
+    "input": "buatkan rab workshop 11 x 13 m",
+    "expect": {
+     "footprint": 143
+    }
+   },
+   {
+    "id": "dim-023",
+    "input": "buatkan rab klinik 9 x 13 m",
+    "expect": {
+     "footprint": 117
+    }
+   },
+   {
+    "id": "dim-024",
+    "input": "buatkan rab kos 10 x 18 m",
+    "expect": {
+     "footprint": 180
+    }
+   },
+   {
+    "id": "dim-025",
+    "input": "buatkan rab gudang luas 150 m2",
+    "expect": {
+     "buildingArea": 150
+    }
+   },
+   {
+    "id": "dim-026",
+    "input": "buatkan rab gudang luas bangunan 275 m²",
+    "expect": {
+     "buildingArea": 275
+    }
+   },
+   {
+    "id": "dim-027",
+    "input": "buatkan rab gudang luas bangunan 320 meter persegi",
+    "expect": {
+     "buildingArea": 320
+    }
+   },
+   {
+    "id": "dim-028",
+    "input": "buatkan rab gudang lb 180",
+    "expect": {
+     "buildingArea": 180
+    }
+   },
+   {
+    "id": "dim-029",
+    "input": "buatkan rab rumah luas 90m2",
+    "expect": {
+     "buildingArea": 90
+    }
+   },
+   {
+    "id": "dim-030",
+    "input": "buatkan rab rumah luas bangunan 135 m2",
+    "expect": {
+     "buildingArea": 135
+    }
+   },
+   {
+    "id": "dim-031",
+    "input": "buatkan rab kantor luas 750 m2",
+    "expect": {
+     "buildingArea": 750
+    }
+   },
+   {
+    "id": "dim-032",
+    "input": "buatkan rab gudang dengan luas lahan 750 m2",
+    "expect": {
+     "land": 750
+    }
+   },
+   {
+    "id": "dim-033",
+    "input": "buatkan rab gudang luas lahan 1.200 m2",
+    "expect": {
+     "land": 1200
+    }
+   },
+   {
+    "id": "dim-034",
+    "input": "buatkan rab gudang lahan 600 m2",
+    "expect": {
+     "land": 600
+    }
+   },
+   {
+    "id": "dim-035",
+    "input": "buatkan rab gudang tanah seluas 900 m2",
+    "expect": {
+     "land": 900
+    }
+   },
+   {
+    "id": "dim-036",
+    "input": "buatkan rab gudang 10x20 luas lahan 500",
+    "expect": {
+     "footprint": 200,
+     "land": 500
+    }
+   },
+   {
+    "id": "dim-037",
+    "input": "buatkan rab gudang 10x20 di lahan 400 m2",
+    "expect": {
+     "footprint": 200
+    }
+   },
+   {
+    "id": "dim-038",
+    "input": "buatkan rab gudang lahan 15x30",
+    "expect": {
+     "land": 450
+    }
+   },
+   {
+    "id": "dim-039",
+    "input": "buatkan rab gudang tanah ukuran 12 x 25",
+    "expect": {
+     "land": 300
+    }
+   },
+   {
+    "id": "dim-040",
+    "input": "buatkan rab gudang luas 200 m2 lahan 800 m2",
+    "expect": {
+     "buildingArea": 200,
+     "land": 800
+    }
+   },
+   {
+    "id": "dim-041",
+    "input": "buatkan rab rumah 6x12 luas tanah 90 m2",
+    "expect": {
+     "footprint": 72
+    }
+   },
+   {
+    "id": "dim-042",
+    "input": "buatkan rab rumah luas bangunan 100 luas tanah 150",
+    "expect": {
+     "buildingArea": 100,
+     "land": 150
+    }
+   },
+   {
+    "id": "dim-043",
+    "input": "buatkan rab gudang 500 sqm",
+    "expect": {
+     "buildingArea": 500
+    }
+   },
+   {
+    "id": "dim-044",
+    "input": "buatkan rab gudang 1000 sq ft",
+    "expect": {
+     "buildingArea": 92.9
+    }
+   },
+   {
+    "id": "dim-045",
+    "input": "buatkan rab gudang luas 1.000 m2",
+    "expect": {
+     "buildingArea": 1000
+    }
+   },
+   {
+    "id": "dim-046",
+    "input": "buatkan rab gudang luas 250,5 m2",
+    "expect": {
+     "buildingArea": 250.5
+    }
+   },
+   {
+    "id": "dim-047",
+    "input": "buatkan rab gudang 15 x 20 m dengan luas lahan 1 hektar",
+    "expect": {
+     "footprint": 300
+    }
+   },
+   {
+    "id": "dim-048",
+    "input": "buatkan rab pabrik luas bangunan 2000 m2 di lahan 5000 m2",
+    "expect": {
+     "buildingArea": 2000,
+     "land": 5000
+    }
+   },
+   {
+    "id": "dim-049",
+    "input": "buatkan rab ruko luas 120 m2 tanah 100 m2",
+    "expect": {
+     "buildingArea": 120,
+     "land": 100
+    }
+   },
+   {
+    "id": "dim-050",
+    "input": "buatkan rab gudang 2 lantai 10x20",
+    "expect": {
+     "floors": 2,
+     "footprint": 200
+    }
+   },
+   {
+    "id": "dim-051",
+    "input": "buatkan rab gudang dua lantai 12x15",
+    "expect": {
+     "floors": 2,
+     "footprint": 180
+    }
+   },
+   {
+    "id": "dim-052",
+    "input": "buatkan rab kantor tiga lantai luas 900",
+    "expect": {
+     "floors": 3
+    }
+   },
+   {
+    "id": "dim-053",
+    "input": "buatkan rab kantor lantai 4 luas 800",
+    "expect": {
+     "floors": 4
+    }
+   },
+   {
+    "id": "dim-054",
+    "input": "buatkan rab sekolah 2 lantai",
+    "expect": {
+     "floors": 2
+    }
+   },
+   {
+    "id": "dim-055",
+    "input": "buatkan rab rumah lima lantai 8x10",
+    "expect": {
+     "floors": 5,
+     "footprint": 80
+    }
+   },
+   {
+    "id": "dim-056",
+    "input": "buatkan rab ruko bertingkat 5x12",
+    "expect": {
+     "floors": 2,
+     "footprint": 60
+    }
+   },
+   {
+    "id": "dim-057",
+    "input": "buatkan rab apartemen bertingkat 20x30",
+    "expect": {
+     "floors": 2,
+     "footprint": 600
+    }
+   },
+   {
+    "id": "dim-058",
+    "input": "buatkan rab gudang 1 lantai 10x30",
+    "expect": {
+     "floors": 1,
+     "footprint": 300
+    }
+   },
+   {
+    "id": "dim-059",
+    "input": "buatkan rab gudang satu lantai 12 x 25 m",
+    "expect": {
+     "floors": 1,
+     "footprint": 300
+    }
+   },
+   {
+    "id": "dim-060",
+    "input": "buatkan rab gudang lantai satu 10x14",
+    "expect": {
+     "floors": 1,
+     "footprint": 140
+    }
+   },
+   {
+    "id": "dim-061",
+    "input": "buatkan rab rumah 5x10 lantai 2",
+    "expect": {
+     "floors": 2,
+     "footprint": 50
+    }
+   },
+   {
+    "id": "dim-062",
+    "input": "buatkan rab rumah 2 lantai 3 kamar",
+    "expect": {
+     "floors": 2
+    }
+   }
+  ],
+  "multiturn": [
+   {
+    "id": "mul-001",
+    "turns": [
+     "buatkan rab gudang 10 x 20 m",
+     "luas lahannya 500m2"
+    ],
+    "expect": {
+     "function": "gudang",
+     "footprint": 200,
+     "land": 500
+    }
+   },
+   {
+    "id": "mul-002",
+    "turns": [
+     "buatkan rab gudang",
+     "ukuran 10 x 20 m"
+    ],
+    "expect": {
+     "function": "gudang",
+     "footprint": 200
+    }
+   },
+   {
+    "id": "mul-003",
+    "turns": [
+     "buatkan rab gudang 10 x 20 m",
+     "gudang bukan gedung"
+    ],
+    "expect": {
+     "function": "gudang",
+     "footprint": 200
+    }
+   },
+   {
+    "id": "mul-004",
+    "turns": [
+     "buatkan rab gedung 10x20",
+     "maksud saya gudang, bukan gedung"
+    ],
+    "expect": {
+     "function": "gudang",
+     "footprint": 200
+    }
+   },
+   {
+    "id": "mul-005",
+    "turns": [
+     "buatkan rab rumah 8x12",
+     "dua lantai"
+    ],
+    "expect": {
+     "function": "rumah-tinggal",
+     "footprint": 96,
+     "floors": 2
+    }
+   },
+   {
+    "id": "mul-006",
+    "turns": [
+     "buatkan rab rumah 8x12",
+     "luas tanahnya 150 meter"
+    ],
+    "expect": {
+     "function": "rumah-tinggal",
+     "footprint": 96,
+     "land": 150
+    }
+   },
+   {
+    "id": "mul-007",
+    "turns": [
+     "buatkan rab rumah 8x12",
+     "atap baja ringan"
+    ],
+    "expect": {
+     "function": "rumah-tinggal",
+     "footprint": 96
+    }
+   },
+   {
+    "id": "mul-008",
+    "turns": [
+     "buatkan rab rumah 8x12",
+     "buatkan draft RAB"
+    ],
+    "expect": {
+     "function": "rumah-tinggal",
+     "footprint": 96
+    }
+   },
+   {
+    "id": "mul-009",
+    "turns": [
+     "buatkan rab rumah 6x10",
+     "ganti ukuran jadi 7x12"
+    ],
+    "expect": {
+     "footprint": 84
+    }
+   },
+   {
+    "id": "mul-010",
+    "turns": [
+     "buatkan rab rumah 6x10",
+     "ukurannya 8x12 saja"
+    ],
+    "expect": {
+     "footprint": 96
+    }
+   },
+   {
+    "id": "mul-011",
+    "turns": [
+     "buatkan rab kantor 12x15",
+     "3 lantai"
+    ],
+    "expect": {
+     "function": "kantor",
+     "footprint": 180,
+     "floors": 3
+    }
+   },
+   {
+    "id": "mul-012",
+    "turns": [
+     "buatkan rab kantor 3 lantai",
+     "turunkan jadi 2 lantai"
+    ],
+    "expect": {
+     "floors": 2
+    }
+   },
+   {
+    "id": "mul-013",
+    "turns": [
+     "buatkan rab gudang 10x20",
+     "jadikan 2 lantai"
+    ],
+    "expect": {
+     "floors": 2,
+     "footprint": 200
+    }
+   },
+   {
+    "id": "mul-014",
+    "turns": [
+     "buatkan rab gudang 2 lantai 10x20",
+     "satu lantai saja"
+    ],
+    "expect": {
+     "floors": 1,
+     "footprint": 200
+    }
+   },
+   {
+    "id": "mul-015",
+    "turns": [
+     "buatkan rab ruko 5x15",
+     "tambah drainase di depan"
+    ],
+    "expect": {
+     "function": "ruko",
+     "footprint": 75
+    }
+   },
+   {
+    "id": "mul-016",
+    "turns": [
+     "buatkan rab ruko 5x15",
+     "pakai atap dak beton"
+    ],
+    "expect": {
+     "footprint": 75
+    }
+   },
+   {
+    "id": "mul-017",
+    "turns": [
+     "buatkan rab pabrik 20x30",
+     "luas lahannya 2000 m2"
+    ],
+    "expect": {
+     "footprint": 600,
+     "land": 2000
+    }
+   },
+   {
+    "id": "mul-018",
+    "turns": [
+     "buatkan rab pabrik 20x30",
+     "lahannya 1500 bukan 2000"
+    ],
+    "expect": {
+     "land": 1500
+    }
+   },
+   {
+    "id": "mul-019",
+    "turns": [
+     "buatkan rab gudang",
+     "10x20",
+     "lantai 1"
+    ],
+    "expect": {
+     "footprint": 200,
+     "floors": 1
+    }
+   },
+   {
+    "id": "mul-020",
+    "turns": [
+     "buatkan rab gudang",
+     "10x20",
+     "luas tanah 350"
+    ],
+    "expect": {
+     "footprint": 200,
+     "land": 350
+    }
+   },
+   {
+    "id": "mul-021",
+    "turns": [
+     "buatkan rab sekolah",
+     "2 lantai",
+     "luas 1200 m2"
+    ],
+    "expect": {
+     "function": "sekolah",
+     "floors": 2,
+     "buildingArea": 1200
+    }
+   },
+   {
+    "id": "mul-022",
+    "turns": [
+     "buatkan rab sekolah 2 lantai",
+     "ganti jadi 3 lantai"
+    ],
+    "expect": {
+     "floors": 3
+    }
+   },
+   {
+    "id": "mul-023",
+    "turns": [
+     "buatkan rab rumah tinggal",
+     "2 lantai, 6x15",
+     "3 kamar tidur, 2 kamar mandi",
+     "ada carport"
+    ],
+    "expect": {
+     "floors": 2,
+     "footprint": 90
+    }
+   },
+   {
+    "id": "mul-024",
+    "turns": [
+     "buatkan rab rumah 2 lantai 6x15",
+     "luas 100m2"
+    ],
+    "expect": {
+     "buildingArea": 100
+    }
+   },
+   {
+    "id": "mul-025",
+    "turns": [
+     "buatkan rab rumah 2 lantai 6x15",
+     "luas 100m2",
+     "luas 120m2"
+    ],
+    "expect": {
+     "buildingArea": 120
+    }
+   },
+   {
+    "id": "mul-026",
+    "turns": [
+     "buatkan rab gudang 10x20",
+     "tinggi bersih 8 meter"
+    ],
+    "expect": {
+     "footprint": 200
+    }
+   },
+   {
+    "id": "mul-027",
+    "turns": [
+     "buatkan rab gudang 10x20",
+     "struktur rangka baja"
+    ],
+    "expect": {
+     "footprint": 200
+    }
+   },
+   {
+    "id": "mul-028",
+    "turns": [
+     "buatkan rab gudang 10x20",
+     "jangan pakai asumsi lantai, memang 1 lantai"
+    ],
+    "expect": {
+     "floors": 1,
+     "footprint": 200
+    }
+   },
+   {
+    "id": "mul-029",
+    "turns": [
+     "buatkan rab gudang 10x20",
+     "hapus asumsi lantainya, saya sebutkan: 2 lantai"
+    ],
+    "expect": {
+     "floors": 2
+    }
+   },
+   {
+    "id": "mul-030",
+    "turns": [
+     "buatkan rab gudang 10x20",
+     "buatkan rab jalan beton 1 km",
+     "kembali ke gudang tadi"
+    ],
+    "expect": {
+     "function": "gudang",
+     "footprint": 200
+    }
+   },
+   {
+    "id": "mul-031",
+    "turns": [
+     "buatkan rab rumah 8x12",
+     "buatkan rab gudang 10x20"
+    ],
+    "expect": {
+     "function": "gudang",
+     "footprint": 200
+    }
+   },
+   {
+    "id": "mul-032",
+    "turns": [
+     "buatkan rab gudang 10x20",
+     "buatkan rab gudang 10x20"
+    ],
+    "expect": {
+     "footprint": 200
+    }
+   },
+   {
+    "id": "mul-033",
+    "turns": [
+     "buatkan rab gudang 10x20",
+     "10x20"
+    ],
+    "expect": {
+     "footprint": 200
+    }
+   },
+   {
+    "id": "mul-034",
+    "turns": [
+     "buatkan rab toko 5x10",
+     "luas tanahnya 75 m2"
+    ],
+    "expect": {
+     "footprint": 50,
+     "land": 75
+    }
+   },
+   {
+    "id": "mul-035",
+    "turns": [
+     "buatkan rab toko 5x10",
+     "tanahnya 100 m2 bukan 75"
+    ],
+    "expect": {
+     "land": 100
+    }
+   },
+   {
+    "id": "mul-036",
+    "turns": [
+     "buatkan rab klinik 8x12",
+     "tambah parkir dan pagar"
+    ],
+    "expect": {
+     "footprint": 96
+    }
+   },
+   {
+    "id": "mul-037",
+    "turns": [
+     "buatkan rab masjid 15x15",
+     "ada kubah dan menara"
+    ],
+    "expect": {
+     "footprint": 225
+    }
+   },
+   {
+    "id": "mul-038",
+    "turns": [
+     "buatkan rab masjid 15x15",
+     "tanpa menara"
+    ],
+    "expect": {
+     "footprint": 225
+    }
+   },
+   {
+    "id": "mul-039",
+    "turns": [
+     "buatkan rab kandang 10x30",
+     "luas lahan 1000 m2"
+    ],
+    "expect": {
+     "footprint": 300,
+     "land": 1000
+    }
+   },
+   {
+    "id": "mul-040",
+    "turns": [
+     "buatkan rab gudang 12x22",
+     "lokasinya di surabaya"
+    ],
+    "expect": {
+     "footprint": 264
+    }
+   },
+   {
+    "id": "mul-041",
+    "turns": [
+     "buatkan rab gudang 12x22",
+     "anggaran maksimal 900 juta"
+    ],
+    "expect": {
+     "footprint": 264
+    }
+   },
+   {
+    "id": "mul-042",
+    "turns": [
+     "buatkan rab kantor 10x16",
+     "lantai 2",
+     "luas tanah 300 m2"
+    ],
+    "expect": {
+     "floors": 2,
+     "land": 300,
+     "footprint": 160
+    }
+   },
+   {
+    "id": "mul-043",
+    "turns": [
+     "buatkan rab rumah 7x11",
+     "3 kamar tidur"
+    ],
+    "expect": {
+     "footprint": 77
+    }
+   },
+   {
+    "id": "mul-044",
+    "turns": [
+     "buatkan rab rumah 7x11",
+     "2 kamar mandi"
+    ],
+    "expect": {
+     "footprint": 77
+    }
+   },
+   {
+    "id": "mul-045",
+    "turns": [
+     "buatkan rab rumah 7x11",
+     "ada carport dan dapur"
+    ],
+    "expect": {
+     "footprint": 77
+    }
+   },
+   {
+    "id": "mul-046",
+    "turns": [
+     "buatkan rab gudang 10x20",
+     "500m2"
+    ],
+    "expect": {
+     "footprint": 200
+    }
+   },
+   {
+    "id": "mul-047",
+    "turns": [
+     "buatkan rab sekolah",
+     "gedung sekolah 2 lantai luas tanah 2000 m2"
+    ],
+    "expect": {
+     "floors": 2,
+     "land": 2000
+    }
+   },
+   {
+    "id": "mul-048",
+    "turns": [
+     "buatkan rab pabrik",
+     "ukuran 30x45",
+     "2 lantai untuk kantor di dalamnya"
+    ],
+    "expect": {
+     "footprint": 1350,
+     "floors": 2
+    }
+   },
+   {
+    "id": "mul-049",
+    "turns": [
+     "buatkan rab gudang 10 x 20 m",
+     "luas lahannya 500m2",
+     "gudang bukan gedung"
+    ],
+    "expect": {
+     "function": "gudang",
+     "footprint": 200,
+     "land": 500
+    }
+   },
+   {
+    "id": "mul-050",
+    "turns": [
+     "buatkan rab villa 12x15",
+     "2 lantai",
+     "ada kolam renang pribadi"
+    ],
+    "expect": {
+     "function": "villa",
+     "footprint": 180,
+     "floors": 2
+    }
+   }
+  ],
+  "ambiguity": [
+   {
+    "id": "amb-001",
+    "input": "buatkan rab gudang",
+    "expect": {
+     "clarify": true,
+     "missingOnlyMeasure": true
+    }
+   },
+   {
+    "id": "amb-002",
+    "input": "buatkan rab pabrik",
+    "expect": {
+     "clarify": true,
+     "missingOnlyMeasure": true
+    }
+   },
+   {
+    "id": "amb-003",
+    "input": "buatkan rab kantor",
+    "expect": {
+     "clarify": true,
+     "missingOnlyMeasure": true
+    }
+   },
+   {
+    "id": "amb-004",
+    "input": "buatkan rab ruko",
+    "expect": {
+     "clarify": true,
+     "missingOnlyMeasure": true
+    }
+   },
+   {
+    "id": "amb-005",
+    "input": "buatkan rab toko",
+    "expect": {
+     "clarify": true,
+     "missingOnlyMeasure": true
+    }
+   },
+   {
+    "id": "amb-006",
+    "input": "buatkan rab sekolah",
+    "expect": {
+     "clarify": true,
+     "missingOnlyMeasure": true
+    }
+   },
+   {
+    "id": "amb-007",
+    "input": "buatkan rab rumah sakit",
+    "expect": {
+     "clarify": true,
+     "missingOnlyMeasure": true
+    }
+   },
+   {
+    "id": "amb-008",
+    "input": "buatkan rab workshop",
+    "expect": {
+     "clarify": true,
+     "missingOnlyMeasure": true
+    }
+   },
+   {
+    "id": "amb-009",
+    "input": "buatkan rab masjid",
+    "expect": {
+     "clarify": true,
+     "missingOnlyMeasure": true
+    }
+   },
+   {
+    "id": "amb-010",
+    "input": "buatkan rab gudang besar",
+    "expect": {
+     "clarify": true,
+     "missingOnlyMeasure": true
+    }
+   },
+   {
+    "id": "amb-011",
+    "input": "buatkan rab gudang sedang saja",
+    "expect": {
+     "clarify": true,
+     "missingOnlyMeasure": true
+    }
+   },
+   {
+    "id": "amb-012",
+    "input": "buatkan rab gudang kira-kira 15 meter",
+    "expect": {
+     "clarify": true
+    }
+   },
+   {
+    "id": "amb-013",
+    "input": "buatkan rab gudang sekitar 15 meter",
+    "expect": {
+     "clarify": true
+    }
+   },
+   {
+    "id": "amb-014",
+    "input": "buatkan rab gudang panjangnya 20 meter",
+    "expect": {
+     "clarify": true
+    }
+   },
+   {
+    "id": "amb-015",
+    "input": "buatkan rab gudang lebar 10 m",
+    "expect": {
+     "clarify": true
+    }
+   },
+   {
+    "id": "amb-016",
+    "input": "buatkan rab gudang dengan luas lahan 500 m2",
+    "expect": {
+     "clarify": true,
+     "missingOnlyMeasure": true
+    }
+   },
+   {
+    "id": "amb-017",
+    "input": "buatkan rab gudang tanah 20x30",
+    "expect": {
+     "clarify": true,
+     "missingOnlyMeasure": true
+    }
+   },
+   {
+    "id": "amb-018",
+    "input": "buatkan rab gudang di lahan 500 m2",
+    "expect": {
+     "clarify": true,
+     "missingOnlyMeasure": true
+    }
+   },
+   {
+    "id": "amb-019",
+    "input": "buatkan rab gudang 0x0",
+    "expect": {
+     "clarify": true
+    }
+   },
+   {
+    "id": "amb-020",
+    "input": "buatkan rab gudang -5x10",
+    "expect": {
+     "clarify": true
+    }
+   },
+   {
+    "id": "amb-021",
+    "input": "buatkan rab gudang 10x20 atau 12x25",
+    "expect": {
+     "footprint": 200
+    }
+   },
+   {
+    "id": "amb-022",
+    "input": "buatkan rab gudang ukuran bervariasi",
+    "expect": {
+     "clarify": true,
+     "missingOnlyMeasure": true
+    }
+   },
+   {
+    "id": "amb-023",
+    "input": "buatkan rab bangunan",
+    "expect": {
+     "clarify": true,
+     "missingOnlyMeasure": true
+    }
+   },
+   {
+    "id": "amb-024",
+    "input": "buatkan rab bangunan komersial",
+    "expect": {
+     "clarify": true,
+     "missingOnlyMeasure": true
+    }
+   },
+   {
+    "id": "amb-025",
+    "input": "buatkan rab sesuatu yang besar",
+    "expect": {
+     "clarify": true
+    }
+   },
+   {
+    "id": "amb-026",
+    "input": "buatkan rab jalan",
+    "expect": {
+     "scopes": [
+      "jalan"
+     ]
+    }
+   },
+   {
+    "id": "amb-027",
+    "input": "buatkan rab drainase",
+    "expect": {
+     "scopes": [
+      "drainase"
+     ]
+    }
+   },
+   {
+    "id": "amb-028",
+    "input": "buatkan rab jembatan",
+    "expect": {
+     "scopes": [
+      "jembatan"
+     ]
+    }
+   },
+   {
+    "id": "amb-029",
+    "input": "buatkan rab pondasi",
+    "expect": {
+     "scopes": [
+      "pondasi"
+     ]
+    }
+   },
+   {
+    "id": "amb-030",
+    "input": "buatkan rab bore pile",
+    "expect": {
+     "scopes": [
+      "pondasi"
+     ]
+    }
+   },
+   {
+    "id": "amb-031",
+    "input": "buatkan rab septic tank",
+    "expect": {
+     "scopes": [
+      "sanitasi"
+     ]
+    }
+   },
+   {
+    "id": "amb-032",
+    "input": "buatkan rab ipal",
+    "expect": {
+     "scopes": [
+      "sanitasi"
+     ]
+    }
+   },
+   {
+    "id": "amb-033",
+    "input": "buatkan rab pompa air",
+    "expect": {
+     "scopes": [
+      "mep"
+     ]
+    }
+   },
+   {
+    "id": "amb-034",
+    "input": "buatkan rab gudang 10x20 tanpa struktur",
+    "expect": {
+     "footprint": 200
+    }
+   },
+   {
+    "id": "amb-035",
+    "input": "buatkan rab gudang 10x20 nanti saja strukturnya",
+    "expect": {
+     "footprint": 200
+    }
+   },
+   {
+    "id": "amb-036",
+    "input": "buatkan rab gudang 10x20 spek menyusul",
+    "expect": {
+     "footprint": 200
+    }
+   },
+   {
+    "id": "amb-037",
+    "input": "buatkan rab gudang 10x20 lokasi belum tahu",
+    "expect": {
+     "footprint": 200
+    }
+   },
+   {
+    "id": "amb-038",
+    "input": "buatkan rab kantor 3 lantai tanpa luas",
+    "expect": {
+     "floors": 3
+    }
+   },
+   {
+    "id": "amb-039",
+    "input": "buatkan rab apartemen 10 lantai tanpa luas",
+    "expect": {
+     "floors": 10
+    }
+   },
+   {
+    "id": "amb-040",
+    "input": "buatkan rab gedung bertingkat",
+    "expect": {
+     "floors": 2
+    }
+   }
+  ],
+  "integrity": [
+   {
+    "id": "int-001",
+    "input": "buatkan rab gudang 10x20",
+    "expect": {
+     "build": "draft",
+     "notMultistory": true
+    }
+   },
+   {
+    "id": "int-002",
+    "input": "buatkan rab gudang ukuran 10 x 20 m dengan luas lahan 500m2",
+    "expect": {
+     "build": "draft",
+     "footprint": 200,
+     "land": 500
+    }
+   },
+   {
+    "id": "int-003",
+    "input": "buatkan rab gudang luas lahan 500 m2",
+    "expect": {
+     "build": "needs-spec",
+     "footprint": null,
+     "land": 500
+    }
+   },
+   {
+    "id": "int-004",
+    "input": "buatkan rab gudang 10x20",
+    "expect": {
+     "floorsSource": "assumption"
+    }
+   },
+   {
+    "id": "int-005",
+    "input": "buatkan rab gudang 2 lantai 10x20",
+    "expect": {
+     "floorsSource": "explicit",
+     "floors": 2
+    }
+   },
+   {
+    "id": "int-006",
+    "input": "buatkan rab gudang",
+    "expect": {
+     "build": "needs-spec"
+    }
+   },
+   {
+    "id": "int-007",
+    "input": "buatkan rab pabrik 20x30",
+    "expect": {
+     "build": "draft"
+    }
+   },
+   {
+    "id": "int-008",
+    "input": "buatkan rab ruko 5x15",
+    "expect": {
+     "build": "draft"
+    }
+   },
+   {
+    "id": "int-009",
+    "input": "buatkan rab kantor 3 lantai luas 900 m2",
+    "expect": {
+     "build": "draft",
+     "floors": 3
+    }
+   },
+   {
+    "id": "int-010",
+    "input": "buatkan rab jalan beton sepanjang 1 km lebar 4 m",
+    "expect": {
+     "build": "draft",
+     "scopes": [
+      "jalan"
+     ]
+    }
+   },
+   {
+    "id": "int-011",
+    "input": "buatkan rab jalan aspal hotmix sepanjang 2 km",
+    "expect": {
+     "build": "draft",
+     "scopes": [
+      "jalan"
+     ]
+    }
+   },
+   {
+    "id": "int-012",
+    "input": "buatkan rab drainase u-ditch sepanjang 500 m",
+    "expect": {
+     "build": "draft",
+     "scopes": [
+      "drainase"
+     ]
+    }
+   },
+   {
+    "id": "int-013",
+    "input": "buatkan rab paving block luas 300 m2",
+    "expect": {
+     "build": "draft",
+     "scopes": [
+      "jalan"
+     ]
+    }
+   },
+   {
+    "id": "int-014",
+    "input": "buatkan rab jembatan beton bentang 12 m",
+    "expect": {
+     "build": "draft",
+     "scopes": [
+      "jembatan"
+     ]
+    }
+   },
+   {
+    "id": "int-015",
+    "input": "buatkan rab renovasi rumah luas 100 m2",
+    "expect": {
+     "build": "draft",
+     "scopes": [
+      "renovasi"
+     ]
+    }
+   },
+   {
+    "id": "int-016",
+    "input": "buatkan rab sekolah 2 lantai luas 1200 m2",
+    "expect": {
+     "build": "draft"
+    }
+   },
+   {
+    "id": "int-017",
+    "input": "buatkan rab masjid luas 400 m2",
+    "expect": {
+     "build": "draft"
+    }
+   },
+   {
+    "id": "int-018",
+    "input": "buatkan rab gudang 10x20 struktur belum ditentukan",
+    "expect": {
+     "build": "draft"
+    }
+   },
+   {
+    "id": "int-019",
+    "input": "buatkan rab gudang 10x20 pondasi belum tahu",
+    "expect": {
+     "build": "draft"
+    }
+   },
+   {
+    "id": "int-020",
+    "input": "buatkan rab gudang 10x20 mutu beton belum tahu",
+    "expect": {
+     "build": "draft"
+    }
+   },
+   {
+    "id": "int-021",
+    "input": "buatkan rab gudang 10x20 tulangan menyusul",
+    "expect": {
+     "build": "draft"
+    }
+   },
+   {
+    "id": "int-022",
+    "input": "buatkan rab gudang 10x20 harga mengikuti ahsp resmi",
+    "expect": {
+     "build": "draft"
+    }
+   },
+   {
+    "id": "int-023",
+    "input": "buatkan rab gudang 10x20 jangan karang harga",
+    "expect": {
+     "build": "draft"
+    }
+   },
+   {
+    "id": "int-024",
+    "input": "buatkan rab rumah 2 lantai 8x12",
+    "expect": {
+     "build": "any"
+    },
+    "note": "Reklasifikasi finalisasi 2026-11-08 (§4): ekspektasi lama 'unsupported' tidak lagi dapat dipertahankan — jalur produksi (intentRouter CREATE_RAB_DIRECT: pola buat+rab+rumah+dimensi) mengarahkan permintaan ini ke generate parametrik rumah, BUKAN ke buildUniversalDraft; di lapisan universal sendiri hasilnya needs-spec sejak klarifikasi terpandu §4. Yang dijaga di sini: tidak crash & keluar dari cakupan lapisan ini ('any' = lapisan universal tidak mengklaimnya). Perilaku lapisan produksi dibuktikan di rabFinalizeFlow/directRab suites."
+   },
+   {
+    "id": "int-025",
+    "input": "buatkan rab bore pile diameter 40 cm",
+    "expect": {
+     "build": "needs-spec"
+    }
+   },
+   {
+    "id": "int-026",
+    "input": "buatkan rab tiang pancang 30 titik",
+    "expect": {
+     "build": "draft"
+    },
+    "note": "Ekspektasi DIPERBARUI 2026-11-08 (audit ekstrem, Keluarga Cacat A) dengan justifikasi teknis tertulis: ekspektasi lama needs-spec adalah gejala cacat yang terverifikasi dari kode — extractUniversalSpec mengunci spec.count = null sehingga basis JUMLAH tidak pernah terbaca dan cakupan pondasi (primaryMeasure 'any', primaryLabel menjanjikan 'jumlah titik') selalu menolak basis yang sudah diberikan. Perbaikan akar mengekstrak count dan menerimanya di scopeMeasureAvailable; template pondasi katalog nyata menerima parameter jumlah titik. Perilaku produk yang benar = draft. Kasus bore-pile int-025 (diameter saja, tanpa jumlah/kedalaman) tetap needs-spec dan tidak berubah."
+   },
+   {
+    "id": "int-027",
+    "input": "buatkan rab septic tank untuk 20 orang",
+    "expect": {
+     "build": "needs-spec"
+    }
+   },
+   {
+    "id": "int-028",
+    "input": "buatkan rab ipal komunal",
+    "expect": {
+     "build": "needs-spec"
+    }
+   },
+   {
+    "id": "int-029",
+    "input": "buatkan rab kanopi carport luas 30 m2",
+    "expect": {
+     "build": "draft",
+     "scopes": [
+      "renovasi"
+     ]
+    },
+    "note": "Ekspektasi diperbarui finalisasi 2026-11-08 (§4) dari kode: katalog resmi memuat pekerjaan kanopi carport nyata (rabTemplateService 'Kanopi Carport Rangka Hollow Besi Galvanis Atap Polikarbonat', m2) dan luas 30 m2 adalah basis ukuran yang sah — draft dari template nyata adalah perilaku produk yang benar; needs-spec lama basi."
+   },
+   {
+    "id": "int-030",
+    "input": "buatkan rab tembok penahan tanah sepanjang 50 m",
+    "expect": {
+     "build": "draft",
+     "scopes": [
+      "lanskap"
+     ]
+    }
+   },
+   {
+    "id": "int-031",
+    "input": "buatkan rab kandang ayam 10 x 30 m",
+    "expect": {
+     "build": "draft",
+     "scopes": [
+      "pertanian"
+     ]
+    },
+    "note": "Ekspektasi diperbarui finalisasi 2026-11-08 (§4) dari kode: katalog 180 memuat template kandang ayam closed-house nyata (templateCatalog180/buildings2.ts) dan dimensi 10 x 30 m adalah basis ukuran yang sah — draft dari template nyata adalah perilaku produk yang benar; needs-spec lama basi."
+   },
+   {
+    "id": "int-032",
+    "input": "buatkan rab gudang 10x20 3 lantai",
+    "expect": {
+     "floors": 3,
+     "build": "draft"
+    }
+   },
+   {
+    "id": "int-033",
+    "input": "buatkan rab gudang luas 200 m2",
+    "expect": {
+     "build": "draft",
+     "buildingArea": 200
+    }
+   },
+   {
+    "id": "int-034",
+    "input": "buatkan rab gudang luas 200 m2 lahan 300 m2",
+    "expect": {
+     "build": "draft",
+     "buildingArea": 200,
+     "land": 300
+    }
+   },
+   {
+    "id": "int-035",
+    "input": "buatkan rab gudang luas 200 m2 lahan 150 m2",
+    "expect": {
+     "build": "draft",
+     "buildingArea": 200,
+     "land": 150
+    }
+   },
+   {
+    "id": "int-036",
+    "input": "buatkan rab gudang 10x20 di atas lahan 180 m2",
+    "expect": {
+     "build": "draft",
+     "footprint": 200,
+     "land": 180
+    }
+   },
+   {
+    "id": "int-037",
+    "input": "buatkan rab kantor 3 lantai",
+    "expect": {
+     "build": "draft",
+     "floors": 3
+    }
+   },
+   {
+    "id": "int-038",
+    "input": "buatkan rab apartemen 10 lantai",
+    "expect": {
+     "build": "draft",
+     "floors": 10
+    }
+   },
+   {
+    "id": "int-039",
+    "input": "buatkan rab gudang satu lantai 12x25",
+    "expect": {
+     "build": "draft",
+     "floors": 1
+    }
+   },
+   {
+    "id": "int-040",
+    "input": "buatkan rab gudang",
+    "expect": {
+     "notMultistory": true
+    }
+   }
+  ],
+  "crosscategory": [
+   {
+    "id": "xct-001",
+    "input": "buatkan rab gudang 10x20 dan drainase 100 m",
+    "expect": {
+     "scopes": [
+      "gedung",
+      "drainase"
+     ],
+     "build": "any"
+    }
+   },
+   {
+    "id": "xct-002",
+    "input": "buatkan rab jalan beton 1 km dan drainase u-ditch",
+    "expect": {
+     "scopes": [
+      "jalan",
+      "drainase"
+     ],
+     "build": "any"
+    }
+   },
+   {
+    "id": "xct-003",
+    "input": "buatkan rab rumah 2 lantai dan pagar 50 m",
+    "expect": {
+     "scopes": [
+      "lanskap"
+     ],
+     "build": "any"
+    }
+   },
+   {
+    "id": "xct-004",
+    "input": "buatkan rab gudang 10x20 dengan instalasi listrik",
+    "expect": {
+     "scopes": [
+      "gedung",
+      "mep"
+     ],
+     "build": "any"
+    }
+   },
+   {
+    "id": "xct-005",
+    "input": "buatkan rab kantor 3 lantai dan lanskap taman",
+    "expect": {
+     "scopes": [
+      "gedung",
+      "lanskap"
+     ],
+     "build": "any"
+    }
+   },
+   {
+    "id": "xct-006",
+    "input": "buatkan rab sekolah dan lapangan futsal",
+    "expect": {
+     "scopes": [
+      "gedung",
+      "olahraga"
+     ],
+     "build": "any"
+    }
+   },
+   {
+    "id": "xct-007",
+    "input": "buatkan rab renovasi rumah dan ganti atap",
+    "expect": {
+     "scopes": [
+      "renovasi",
+      "atap"
+     ],
+     "build": "any"
+    }
+   },
+   {
+    "id": "xct-008",
+    "input": "buatkan rab jalan paving dan trotoar",
+    "expect": {
+     "scopes": [
+      "jalan"
+     ],
+     "build": "any"
+    }
+   },
+   {
+    "id": "xct-009",
+    "input": "buatkan rab jembatan dan jalan akses 500 m",
+    "expect": {
+     "scopes": [
+      "jembatan",
+      "jalan"
+     ],
+     "build": "any"
+    }
+   },
+   {
+    "id": "xct-010",
+    "input": "buatkan rab gudang dan pondasi bore pile",
+    "expect": {
+     "scopes": [
+      "gedung",
+      "pondasi"
+     ],
+     "build": "any"
+    }
+   },
+   {
+    "id": "xct-011",
+    "input": "buatkan rab pabrik dan ipal",
+    "expect": {
+     "scopes": [
+      "gedung",
+      "sanitasi"
+     ],
+     "build": "any"
+    }
+   },
+   {
+    "id": "xct-012",
+    "input": "buatkan rab masjid dan tempat wudhu",
+    "expect": {
+     "scopes": [
+      "gedung"
+     ],
+     "build": "any"
+    }
+   },
+   {
+    "id": "xct-013",
+    "input": "buatkan rab rumah sakit dan instalasi gas medis",
+    "expect": {
+     "scopes": [
+      "gedung",
+      "mep"
+     ],
+     "build": "any"
+    }
+   },
+   {
+    "id": "xct-014",
+    "input": "buatkan rab hotel dan kolam renang",
+    "expect": {
+     "scopes": [
+      "gedung",
+      "olahraga"
+     ],
+     "build": "any"
+    }
+   },
+   {
+    "id": "xct-015",
+    "input": "buatkan rab gudang 10x20",
+    "expect": {
+     "build": "draft"
+    }
+   },
+   {
+    "id": "xct-016",
+    "input": "buatkan rab gudang dengan ukuran 10 x 20 m",
+    "expect": {
+     "build": "draft"
+    }
+   },
+   {
+    "id": "xct-017",
+    "input": "buatkan rab gudang ukuran 10 x 20 m dengan luas lahan 500m2",
+    "expect": {
+     "build": "draft"
+    }
+   },
+   {
+    "id": "xct-018",
+    "input": "gudang bukan gedung",
+    "expect": {
+     "function": "gudang",
+     "notMultistory": true
+    }
+   },
+   {
+    "id": "xct-019",
+    "input": "buatkan rab kantor 3 lantai luas 900 m²",
+    "expect": {
+     "build": "draft"
+    }
+   },
+   {
+    "id": "xct-020",
+    "input": "buatkan rab paving 300 m2",
+    "expect": {
+     "build": "draft"
+    }
+   }
+  ]
+ }
+}

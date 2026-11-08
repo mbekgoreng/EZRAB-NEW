@@ -16,6 +16,7 @@ import { DedAiCalculator, applyUnitChange, clearStaleProposal } from './calculat
 import { resolveCanonicalCode } from '../ded-canonical/canonicalDedPricing';
 import { groupByWbs, WbsGroup } from './wbsClassifier';
 import { useI18n } from '../../i18n/I18nContext';
+import { FsFooterPortal } from '../../components/feature-shell/FeatureFullscreenShell';
 import './dedAi.css';
 import '../../ai-credits/ai-credits.css';
 
@@ -692,29 +693,44 @@ export const DedAiResultView: React.FC<Props> = ({
         </div>
       )}
 
-      {/* ---- Aksi: utama dulu, sekunder sesudahnya ---- */}
-      <div className="dedai-actions-primary">
-        <button className="dedai-btn primary" disabled={finalizing || finalized || calculableCount === 0} onClick={handleFinalize}>
-          <FolderCheck size={16} /> {finalized ? t('ai.ded.result.act_finalized') : finalizing ? t('ai.ded.result.act_finalizing') : t('ai.ded.result.act_finalize')}
-        </button>
-        <button className="dedai-btn ghost" onClick={onOpenSpreadsheet}>
-          <Table2 size={16} /> {t('ai.ded.result.act_open_rab')}
-        </button>
-      </div>
-      <div className="dedai-actions">
-        <button className="dedai-btn ghost" onClick={() => onSaveDraft(items)}>
-          <Save size={16} /> {draftSaved ? t('ai.ded.result.act_saved_draft') : t('ai.ded.result.act_save_draft')}
-        </button>
-        <button className="dedai-btn ghost" onClick={onBackToInput}>
-          <ArrowLeft size={16} /> {t('ai.ded.result.act_back_input')}
-        </button>
-        <button className="dedai-btn ghost" onClick={exportExcel}>
-          <FileSpreadsheet size={16} /> {t('ai.ded.result.act_export_excel')}
-        </button>
-        <button className="dedai-btn ghost" onClick={exportJson}>
-          <FileJson size={16} /> {t('ai.ded.result.act_export_json')}
-        </button>
-      </div>
+      {/* ---- Aksi: utama dulu, sekunder sesudahnya ----
+          Di dalam shell layar-penuh, blok aksi yang sama ini diportalkan ke
+          bar aksi menempel di bawah (state & handler tetap di komponen ini —
+          hanya posisi DOM yang berpindah). Di luar shell tampil di tempat. */}
+      <FsFooterPortal>
+        <div className="fs-actions">
+          {(counts.blocked + counts['no-price'] > 0) && (
+            <span className="fs-action-note">
+              <AlertTriangle size={15} style={{ flexShrink: 0 }} />
+              {counts.blocked + counts['no-price']} item belum lengkap tidak masuk total — lengkapi agar total final.
+            </span>
+          )}
+          <div className="fs-actions-btns">
+            <div className="dedai-actions-primary">
+              <button className="dedai-btn primary" disabled={finalizing || finalized || calculableCount === 0} onClick={handleFinalize}>
+                <FolderCheck size={16} /> {finalized ? t('ai.ded.result.act_finalized') : finalizing ? t('ai.ded.result.act_finalizing') : t('ai.ded.result.act_finalize')}
+              </button>
+              <button className="dedai-btn ghost" onClick={onOpenSpreadsheet}>
+                <Table2 size={16} /> {t('ai.ded.result.act_open_rab')}
+              </button>
+            </div>
+            <div className="dedai-actions">
+              <button className="dedai-btn ghost" onClick={() => onSaveDraft(items)}>
+                <Save size={16} /> {draftSaved ? t('ai.ded.result.act_saved_draft') : t('ai.ded.result.act_save_draft')}
+              </button>
+              <button className="dedai-btn ghost" onClick={onBackToInput}>
+                <ArrowLeft size={16} /> {t('ai.ded.result.act_back_input')}
+              </button>
+              <button className="dedai-btn ghost" onClick={exportExcel}>
+                <FileSpreadsheet size={16} /> {t('ai.ded.result.act_export_excel')}
+              </button>
+              <button className="dedai-btn ghost" onClick={exportJson}>
+                <FileJson size={16} /> {t('ai.ded.result.act_export_json')}
+              </button>
+            </div>
+          </div>
+        </div>
+      </FsFooterPortal>
 
       {!finalized && (
         <p style={{ fontSize: 12, color: 'var(--ez-color-text-muted)', marginTop: 10, lineHeight: 1.6 }}>

@@ -74,7 +74,8 @@
 import { RabTemplateService } from '../../services/rabTemplateService';
 import type { RabTemplate, TemplateCategory, GeneratedTemplateRabResult } from '../../types/rabTemplate';
 import type { RabItem } from '../../types';
-import { extractRabNeeds, stripLandPhrases } from './rabNeeds';
+import { extractRabNeeds, stripLandPhrases, detectNeedsFunction, isNegatedAt } from './rabNeeds';
+import { understandProject, assessBuildingMissingInfo, summarizeUnderstanding } from './buildingTypology';
 import { formatRupiah } from '../../engine/formulaEngine';
 
 /* ------------------------------------------------------------------ */
@@ -114,22 +115,22 @@ export interface ScopeGroup {
 
 export const SCOPE_GROUPS: ScopeGroup[] = [
   { id: 'jembatan', label: 'Jembatan & Struktur Khusus', categories: ['JEMBATAN_STRUKTUR'], keywords: ['jembatan', 'jpo', 'flyover', 'overpass', 'box culvert jembatan'], primaryMeasure: 'span', primaryLabel: 'bentang (meter)' },
-  { id: 'drainase', label: 'Drainase & Saluran', categories: ['DRAINASE_SANITASI', 'SDA_IRIGASI'], keywords: ['u-ditch', 'uditch', 'u ditch', 'drainase', 'saluran', 'gorong', 'box culvert'], primaryMeasure: 'length', primaryLabel: 'panjang (meter)' },
+  { id: 'drainase', label: 'Drainase & Saluran', categories: ['DRAINASE_SANITASI', 'SDA_IRIGASI'], keywords: ['u-ditch', 'uditch', 'u ditch', 'drainase', 'saluran', 'gorong', 'box culvert', 'pasangan batu'], primaryMeasure: 'length', primaryLabel: 'panjang (meter)' },
   { id: 'irigasi', label: 'Irigasi & Sumber Daya Air', categories: ['SDA_IRIGASI'], keywords: ['irigasi', 'bendung', 'bendungan', 'embung', 'sungai', 'pintu air', 'bangunan air', 'tanggul'], primaryMeasure: 'areaOrLength', primaryLabel: 'panjang atau luas' },
   { id: 'pondasi', label: 'Pondasi & Geoteknik', categories: ['PONDASI_GEOTEKNIK'], keywords: ['pondasi', 'bore pile', 'bored pile', 'tiang pancang', 'foot plat', 'sumuran', 'strauss', 'geoteknik'], primaryMeasure: 'any', primaryLabel: 'luas, panjang, atau jumlah titik' },
   { id: 'struktur', label: 'Struktur Beton & Baja', categories: ['STRUKTUR_BETON_BAJA'], keywords: ['struktur beton', 'sloof', 'kolom', 'balok', 'pelat lantai', 'tangga beton', 'dinding geser', 'struktur baja', 'bekisting', 'pembesian', 'pengecoran'], primaryMeasure: 'areaOrFloors', primaryLabel: 'luas atau jumlah lantai' },
   { id: 'atap', label: 'Atap & Waterproofing', categories: ['ATAP_WATERPROOFING'], keywords: ['atap', 'rangka atap', 'genteng', 'baja ringan', 'waterproofing', 'membran bakar', 'penutup atap'], primaryMeasure: 'area', primaryLabel: 'luas atap (m²)' },
   { id: 'finishing', label: 'Finishing & Interior', categories: ['FINISHING_INTERIOR'], keywords: ['finishing', 'keramik', 'granit', 'plafon', 'partisi', 'kusen', 'pintu', 'jendela', 'plester', 'acian', 'pengecatan', 'cat tembok', 'bata ringan', 'pasangan bata'], primaryMeasure: 'area', primaryLabel: 'luas pekerjaan (m²)' },
-  { id: 'mep', label: 'Mekanikal, Elektrikal & Plumbing', categories: ['MEP_SYSTEM', 'UTILITAS'], keywords: ['mep', 'mekanikal', 'elektrikal', 'plumbing', 'instalasi listrik', 'panel listrik', 'pompa air', 'perpipaan', 'hvac', 'instalasi air'], primaryMeasure: 'areaOrLength', primaryLabel: 'luas bangunan atau panjang instalasi' },
-  { id: 'sanitasi', label: 'Sanitasi & Air Limbah', categories: ['DRAINASE_SANITASI', 'UTILITAS'], keywords: ['sanitasi', 'septictank', 'septic tank', 'ipal', 'wastafel', 'kloset', 'floor drain', 'air limbah'], primaryMeasure: 'areaOrLength', primaryLabel: 'luas atau panjang' },
+  { id: 'mep', label: 'Mekanikal, Elektrikal & Plumbing', categories: ['MEP_SYSTEM', 'UTILITAS'], keywords: ['mep', 'mekanikal', 'elektrikal', 'plumbing', 'instalasi listrik', 'panel listrik', 'pompa air', 'perpipaan', 'hvac', 'instalasi air', 'instalasi ac', 'hydrant', 'gas medis'], primaryMeasure: 'areaOrLength', primaryLabel: 'luas bangunan atau panjang instalasi' },
+  { id: 'sanitasi', label: 'Sanitasi & Air Limbah', categories: ['DRAINASE_SANITASI', 'UTILITAS'], keywords: ['sanitasi', 'septictank', 'septic tank', 'tangki septik', 'sumur resapan', 'ipal', 'wastafel', 'kloset', 'floor drain', 'air limbah'], primaryMeasure: 'areaOrLength', primaryLabel: 'luas atau panjang' },
   { id: 'jalan', label: 'Jalan & Perkerasan', categories: ['JALAN_TRANSPORTASI', 'PERKERASAN'], keywords: ['jalan', 'perkerasan', 'aspal', 'hotmix', 'paving', 'rabat beton', 'trotoar', 'kanstin', 'marka jalan', 'bahu jalan'], primaryMeasure: 'length', primaryLabel: 'panjang (meter) atau luas (m²) untuk paving' },
-  { id: 'gedung', label: 'Gedung & Bangunan Bertingkat', categories: ['GEDUNG', 'BANGUNAN_TINGGI', 'HOTEL_HOSPITALITY', 'KESEHATAN', 'PENDIDIKAN', 'INDUSTRI'], keywords: ['gedung', 'kantor', 'sekolah', 'rumah sakit', 'klinik', 'gudang', 'hotel', 'ruko', 'villa', 'kos', 'apartemen', 'masjid', 'puskesmas', 'pasar'], primaryMeasure: 'areaOrFloors', primaryLabel: 'luas atau jumlah lantai' },
-  { id: 'lanskap', label: 'Lanskap, Pagar & Halaman', categories: ['LANDSCAPE_SITE'], keywords: ['lanskap', 'landscape', 'pagar', 'gerbang', 'halaman', 'taman', 'area parkir', 'pekarangan'], primaryMeasure: 'areaOrLength', primaryLabel: 'luas atau panjang' },
-  { id: 'renovasi', label: 'Renovasi & Rehabilitasi', categories: ['RENOVASI_MAINTENANCE'], keywords: ['renovasi', 'rehabilitasi', 'rehab', 'perbaikan', 'restorasi', 'perkuatan', 'renov'], primaryMeasure: 'areaOrBudget', primaryLabel: 'luas atau batas anggaran' },
+  { id: 'gedung', label: 'Gedung & Bangunan', categories: ['GEDUNG', 'BANGUNAN_TINGGI', 'HOTEL_HOSPITALITY', 'KESEHATAN', 'PENDIDIKAN', 'INDUSTRI'], keywords: ['gedung', 'kantor', 'sekolah', 'rumah sakit', 'klinik', 'gudang', 'hotel', 'ruko', 'villa', 'kos', 'apartemen', 'masjid', 'puskesmas', 'pasar', 'pabrik', 'bengkel', 'workshop', 'warehouse', 'toko', 'aula', 'minimarket', 'restoran', 'kafe', 'showroom', 'apotek', 'laundry', 'kios', 'warung', 'musholla', 'mushola', 'vihara', 'klenteng', 'gereja', 'pura', 'madrasah', 'perpustakaan', 'kontrakan', 'rumah makan', 'tempat ibadah'], primaryMeasure: 'areaOrFloors', primaryLabel: 'luas atau dimensi bangunan' },
+  { id: 'lanskap', label: 'Lanskap, Pagar & Halaman', categories: ['LANDSCAPE_SITE'], keywords: ['lanskap', 'landscape', 'pagar', 'gerbang', 'halaman', 'taman', 'area parkir', 'pekarangan', 'tembok penahan', 'retaining wall', 'dinding penahan'], primaryMeasure: 'areaOrLength', primaryLabel: 'luas atau panjang' },
+  { id: 'renovasi', label: 'Renovasi & Rehabilitasi', categories: ['RENOVASI_MAINTENANCE'], keywords: ['renovasi', 'rehabilitasi', 'rehab', 'perbaikan', 'restorasi', 'perkuatan', 'renov', 'kanopi'], primaryMeasure: 'areaOrBudget', primaryLabel: 'luas atau batas anggaran' },
   { id: 'demolisi', label: 'Demolisi & Pembongkaran', categories: ['DEMOLISI_REKONSTRUKSI'], keywords: ['demolisi', 'pembongkaran', 'bongkar', 'robohkan', 'pembongkaran'], primaryMeasure: 'area', primaryLabel: 'luas bangunan yang dibongkar (m²)' },
   { id: 'pelabuhan', label: 'Pelabuhan & Pesisir', categories: ['PELABUHAN_PESISIR'], keywords: ['pelabuhan', 'dermaga', 'pesisir', 'tetrapod', 'turap', 'breakwater', 'dinding laut'], primaryMeasure: 'length', primaryLabel: 'panjang (meter)' },
-  { id: 'olahraga', label: 'Fasilitas Olahraga', categories: ['FASILITAS_OLAHRAGA'], keywords: ['lapangan', 'stadion', 'olahraga', 'futsal', 'badminton', 'kolam renang', 'sport'], primaryMeasure: 'area', primaryLabel: 'luas lapangan (m²)' },
-  { id: 'pertanian', label: 'Pertanian & Perkebunan', categories: ['PERTANIAN_PERKEBUNAN'], keywords: ['pertanian', 'perkebunan', 'sawah', 'sumur bor', 'kebun'], primaryMeasure: 'areaOrLength', primaryLabel: 'luas atau panjang' },
+  { id: 'olahraga', label: 'Fasilitas Olahraga', categories: ['FASILITAS_OLAHRAGA'], keywords: ['lapangan', 'stadion', 'olahraga', 'futsal', 'badminton', 'kolam renang', 'kolam ikan', 'kolam', 'sport'], primaryMeasure: 'area', primaryLabel: 'luas lapangan (m²)' },
+  { id: 'pertanian', label: 'Pertanian & Perkebunan', categories: ['PERTANIAN_PERKEBUNAN'], keywords: ['pertanian', 'perkebunan', 'sawah', 'sumur bor', 'kebun', 'kandang', 'greenhouse', 'rumah kaca', 'lumbung'], primaryMeasure: 'areaOrLength', primaryLabel: 'luas atau panjang' },
   { id: 'tanah', label: 'Pekerjaan Tanah', categories: ['PEKERJAAN_TANAH'], keywords: ['galian', 'urugan', 'timbunan', 'pemadatan', 'cut and fill', 'cut & fill', 'pekerjaan tanah'], primaryMeasure: 'any', primaryLabel: 'volume, luas, atau panjang' },
 ];
 
@@ -139,7 +140,19 @@ export function detectScopes(rawText: string): ScopeGroup[] {
   const found: ScopeGroup[] = [];
   for (const g of SCOPE_GROUPS) {
     for (const kw of g.keywords) {
-      if (t.includes(kw)) {
+      // Kemunculan kata kunci yang DINEGASIKAN pengguna tidak memicu
+      // cakupan (audit ekstrem G-081): pada "bukan gudang tapi rumah",
+      // kata "gudang" sebelumnya tetap menyalakan cakupan gedung
+      // sehingga koreksi fungsi yang sudah benar pun berakhir sebagai
+      // draft template gudang. Aturan negasi yang sama dengan deteksi
+      // fungsi (rabNeeds.isNegatedAt — satu sumber aturan).
+      let idx = t.indexOf(kw);
+      let hit = false;
+      while (idx >= 0) {
+        if (!isNegatedAt(t, idx)) { hit = true; break; }
+        idx = t.indexOf(kw, idx + 1);
+      }
+      if (hit) {
         found.push(g);
         break;
       }
@@ -158,6 +171,32 @@ export interface UniversalSpec {
   /** Jenis/tipe bangunan dari rabNeeds (mis. 'kantor', 'sekolah'). */
   kindLabel: string | null;
   floors: number | null;
+  /* --- Lapisan tipologi (2026-11-08): fungsi ≠ kompleksitas ------- */
+  /** Fungsi bangunan terstruktur ('gudang', 'pabrik', …) — null bila bukan bangunan. */
+  functionId: string | null;
+  /** Label fungsi bangunan untuk judul/pesan ('Gudang'). */
+  functionLabel: string | null;
+  /**
+   * Versi draf fungsi dari rabNeeds.detectedFunctionLabel (finalisasi
+   * 2026-11-08) — fungsi generik yang TIDAK menghasilkan TemplateKind
+   * ("bangunan", "bangunan komersial"). Dipakai jalur klarifikasi gedung
+   * agar fungsi generik tetap mendapat pertanyaan kontekstual.
+   */
+  needsFunctionLabel: string | null;
+  /** true bila jumlah lantai disebut eksplisit; false = asumsi 1 lantai terlabel. */
+  floorsExplicit: boolean;
+  /** Tapak bangunan dari dimensi eksplisit (m²) — bukan luas lahan. */
+  footprintM2: number | null;
+  /** Luas lahan eksplisit (m²), selalu terpisah dari luas bangunan. */
+  landAreaM2: number | null;
+  /** Cakupan tapak terhadap lahan (%) bila kedua luas eksplisit. */
+  coveragePct: number | null;
+  /** Peringatan pemahaman tipologi (koreksi klasifikasi, salah ketik…). */
+  understandingFlags: string[];
+  /** Lebar bangunan dari dimensi "A x B" (m). */
+  buildingWidthM: number | null;
+  /** Panjang bangunan dari dimensi "A x B" (m). */
+  buildingLengthM: number | null;
   /** Luas kerja: luas bangunan untuk gedung, luas area untuk paving/dll. */
   areaM2: number | null;
   lengthM: number | null;
@@ -202,6 +241,7 @@ export function extractUniversalSpec(rawText: string): UniversalSpec {
   const lower = text.toLowerCase();
   const needs = extractRabNeeds(stripLandPhrases(text));
   const scopes = detectScopes(text);
+  const understanding = understandProject(text);
 
   let budgetCap: number | null = null;
   const budget = lower.match(/(?:anggaran|budget|dana|biaya\s*maks(?:imal)?|maks(?:imal)?)\s*(?:sekitar\s*)?(?:rp\.?\s*)?([\d.]+(?:,\d+)?)\s*(miliar|milyar|jt|juta|rb|ribu)?\b/);
@@ -225,14 +265,52 @@ export function extractUniversalSpec(rawText: string): UniversalSpec {
     scopes,
     kindLabel: needs.kindLabel,
     floors: needs.floors,
-    areaM2: needs.buildingArea,
+    functionId: understanding.functionId,
+    functionLabel: understanding.functionLabel,
+    needsFunctionLabel: detectNeedsFunction(text)?.label ?? null,
+    floorsExplicit: needs.floorsMentioned,
+    // Fallback IR tipologi (audit P0 A-099/A-100): dimensi yang hanya
+    // terbaca lapisan pemahaman (kata bilangan "sepuluh kali dua
+    // puluh", rasio ukuran "10:20") sebelumnya berhenti di IR dan
+    // tidak pernah menjadi basis ukuran spek — jalur needs digit-only
+    // mengembalikan null sehingga permintaan sah jatuh ke needs-spec.
+    // IR membuang frasa lahan sebelum membaca dimensi, jadi sumbernya
+    // konsisten dengan jalur needs.
+    footprintM2: needs.footprintM2 ?? understanding.footprint.value,
+    landAreaM2: understanding.landArea.value,
+    coveragePct: understanding.coveragePct,
+    understandingFlags: understanding.flags,
+    buildingWidthM: needs.buildingWidth ?? understanding.width.value,
+    buildingLengthM: needs.buildingLength ?? understanding.length.value,
+    // Luas kerja: luas bangunan eksplisit, atau TAPAK dari dimensi
+    // eksplisit (perbaikan tipologi 2026-11-08 — sebelumnya dimensi
+    // "10 x 20 m" tidak pernah menjadi luas di jalur ini sehingga
+    // permintaan gudang ditolak sebagai "belum ada luas/lantai").
+    areaM2: needs.buildingArea ?? needs.footprintM2 ?? understanding.footprint.value,
     lengthM: needs.lengthM,
     widthM: width ? NUM(width[1]) : null,
     spanM: span ? NUM(span[1]) : null,
     heightM: height ? NUM(height[1]) : null,
     thicknessCm: thick ? NUM(thick[1]) : null,
     volumeM3: vol ? NUM(vol[1]) : null,
-    count: null,
+    // Audit ekstrem 2026-11-08 (KELUARGA CACAT A): basis ukuran JUMLAH
+    // ("24 titik", "20 unit", "5 buah", "1 paket") sebelumnya dibuang —
+    // count dikunci null sehingga pekerjaan berbasis jumlah (bore pile
+    // per titik, kusen per unit, IPAL per paket, dst.) selalu ditolak
+    // sebagai belum ada ukuran padahal ukurannya sudah diberikan.
+    // Ekstraksi jumlah: angka + satuan jumlah yang eksplisit. "titik"
+    // hanya dihitung bila teks menyebut pekerjaan yang memang berbasis
+    // titik (pondasi/sanitasi/MEP) agar "titik" geografis tidak salah
+    // tafsir; unit/buah/paket bersifat umum untuk pekerjaan berbasis
+    // jumlah.
+    count: (() => {
+      const cm = lower.match(/(\d+(?:[.,]\d+)?)\s*(unit|buah|paket|set|titik)\b/);
+      if (!cm) return null;
+      const v = NUM(cm[1]);
+      if (!(v > 0)) return null;
+      if (cm[2] === 'titik' && !/(pondasi|bore|pancang|sumuran|strauss|kloset|floor drain|perkuatan|titik lampu|titik air|instalasi|sanitasi)/.test(lower)) return null;
+      return v;
+    })(),
     budgetCap,
     location: needs.location,
     materialKeywords,
@@ -248,10 +326,26 @@ export function scopeMeasureAvailable(spec: UniversalSpec, scope: ScopeGroup): b
     case 'length': return spec.lengthM != null || (scope.id === 'jalan' && spec.areaM2 != null);
     case 'span': return spec.spanM != null;
     case 'area': return spec.areaM2 != null;
-    case 'areaOrLength': return spec.areaM2 != null || spec.lengthM != null;
-    case 'areaOrFloors': return spec.areaM2 != null || spec.floors != null;
+    // KELUARGA CACAT A (audit ekstrem 2026-11-08): cakupan sanitasi
+    // berisi pekerjaan berbasis JUMLAH dan VOLUME (IPAL per paket,
+    // tangki septik per m³) — basis itu kini diterima untuk cakupan
+    // sanitasi saja; cakupan areaOrLength lain tidak berubah.
+    case 'areaOrLength': return spec.areaM2 != null || spec.lengthM != null
+      || (scope.id === 'sanitasi' && (spec.count != null || spec.volumeM3 != null));
+    // Audit ekstrem A-094 (2026-11-08): bangunan berbasis JUMLAH UNIT
+    // (kos/kontrakan "10 unit") punya basis ukuran yang sah untuk
+    // cakupan gedung — template katalognya sendiri berparameter jumlah
+    // (num_units/num_rooms/num_villas). Pola yang sama dengan basis
+    // jumlah cakupan sanitasi di atas: basis count hanya diterima
+    // untuk cakupan yang memang berjenis unit (gedung), bukan global.
+    case 'areaOrFloors': return spec.areaM2 != null || spec.floors != null
+      || (scope.id === 'gedung' && spec.count != null);
     case 'areaOrBudget': return spec.areaM2 != null || spec.budgetCap != null;
-    case 'any': return spec.areaM2 != null || spec.lengthM != null || spec.floors != null || spec.volumeM3 != null;
+    // KELUARGA CACAT A (audit ekstrem 2026-11-08): cakupan 'any' yang
+    // labelnya sendiri menjanjikan "jumlah titik" (pondasi) kini
+    // menerima basis jumlah yang diekstrak — sebelumnya spec.count
+    // selalu null sehingga janji label itu tidak pernah terpenuhi.
+    case 'any': return spec.areaM2 != null || spec.lengthM != null || spec.floors != null || spec.volumeM3 != null || spec.count != null;
     default: return false;
   }
 }
@@ -504,16 +598,35 @@ export function scoreTemplate(
   }
   // Kompatibilitas ukuran utama: template menerima ukuran yang disebut user.
   const relevant = relevantParamKinds(scope.primaryMeasure);
+  const templateKindsAll = new Set(
+    (template.parameters || [])
+      .filter((p) => p.type === 'NUMBER')
+      .map((p) => classifyParam(p.key, p.label))
+  );
+  // Basis JUMLAH (audit ekstrem A-094): bila pengguna menyebut jumlah
+  // (unit/titik/buah), template yang berparameter jumlah menerima
+  // basis ukuran itu — tanpa bonus ini semua template se-kategori seri
+  // dan pilihan jatuh ke urutan katalog (kantor untuk "kontrakan
+  // 10 unit"). Aturan umum untuk semua cakupan berbasis jumlah.
+  if (spec.count != null && templateKindsAll.has('count')) {
+    score += 6;
+    reasons.push('menerima basis jumlah yang disebut');
+  }
   if (relevant.length > 0) {
-    const templateKinds = new Set(
-      (template.parameters || [])
-        .filter((p) => p.type === 'NUMBER')
-        .map((p) => classifyParam(p.key, p.label))
-    );
+    const templateKinds = templateKindsAll;
     const provided = relevant.filter((k) => specValueFor(spec, k) != null);
     if (provided.some((k) => templateKinds.has(k))) {
       score += 6;
       reasons.push('menerima ukuran utama yang disebut');
+    } else if (provided.includes('area') && templateKinds.has('length') && templateKinds.has('width')) {
+      // Template yang didimensi PASANGAN panjang × lebar (kolam,
+      // lapangan) menerima basis luas lewat dimensi tapaknya — luas
+      // pengguna dipetakan dari dimensi yang ia sebut sendiri.
+      // Sebelumnya template semacam ini selalu kena penalti "tidak
+      // menerima ukuran utama" walau dimensinya persis yang diminta
+      // (audit ekstrem A-088: kolam tidak pernah bisa dipilih).
+      score += 6;
+      reasons.push('menerima ukuran utama lewat pasangan panjang × lebar');
     } else if (provided.length > 0 && !relevant.some((k) => templateKinds.has(k))) {
       score -= 8;
       reasons.push('tidak menerima ukuran utama');
@@ -978,7 +1091,7 @@ export function readinessLabel(status: DraftReadinessStatus): string {
 
 export type BuildResult =
   | { kind: 'draft'; draft: UniversalDraft }
-  | { kind: 'needs-spec'; reason: string; missing: string[] }
+  | { kind: 'needs-spec'; reason: string; missing: string[]; understoodSummary?: string }
   | { kind: 'unsupported'; reason: string };
 
 let draftCounter = 0;
@@ -1002,13 +1115,109 @@ function fmtNum(v: number): string {
  */
 export function buildUniversalDraft(rawText: string, forcedTemplateId?: string): BuildResult {
   const spec = extractUniversalSpec(rawText);
+  // Finalisasi §4 (2026-11-08): dimensi fisik tidak valid (nol/negatif)
+  // dari lapisan validasi bersama (rabNeeds.validatePhysicalDimensions,
+  // lewat IR) → klarifikasi koreksi dimensi, BUKAN draft dari angka yang
+  // salah. Dicek sebelum jalur cakupan apa pun.
+  const understandingForValidation = understandProject(rawText);
+  if (understandingForValidation.dimensionProblems.length > 0) {
+    return {
+      kind: 'needs-spec',
+      reason:
+        `Ukuran yang Anda sebut belum valid: ${understandingForValidation.dimensionProblems.join(' ')} ` +
+        'Koreksi ukurannya (mis. "10 x 20 m") — draft tidak dibuat dari dimensi yang tidak valid.',
+      missing: ['ukuran bangunan yang valid (panjang dan lebar lebih dari 0 meter)'],
+      understoodSummary: summarizeUnderstanding(understandingForValidation),
+    };
+  }
   if (spec.scopes.length === 0) {
+    // Finalisasi §4 (2026-11-08): pesan dengan NIAT RAB yang jelas tapi
+    // tanpa cakupan yang terpetakan mendapat KLARIFIKASI TERPANDU, bukan
+    // penolakan generik 'unsupported'. Dua bentuk:
+    // (a) fungsi bangunan GENERIK terdeteksi ("bangunan", "bangunan
+    //     komersial" — kata-katanya memang bukan kata kunci grup gedung)
+    //     → klarifikasi kontekstual per fungsi: yang ditanya hanya
+    //     ukurannya (kasus amb-023/amb-024);
+    // (b) tanpa objek apa pun ("buatkan rab sesuatu yang besar") →
+    //     klarifikasi objek dulu (kasus amb-025).
+    // Bila tidak ada niat RAB sama sekali, 'unsupported' tetap jujur.
+    const uNoScope = understandProject(rawText);
+    if (/\b(rab|anggaran|biaya|estimasi|hitung)\b/i.test(rawText)) {
+      if (uNoScope.functionLabel) {
+        const assessment = assessBuildingMissingInfo(uNoScope, rawText);
+        const essential = assessment.items.filter((i) => i.blocksDraft);
+        return {
+          kind: 'needs-spec',
+          reason:
+            `Saya memahami ini sebagai ${uNoScope.functionLabel.toLowerCase()} — fungsi bangunan, bukan otomatis bangunan bertingkat. ` +
+            `Yang masih saya butuhkan untuk memulai draft awal hanyalah ${essential.map((e) => e.label).join('; ') || 'ukuran atau luas bangunan'}. ` +
+            'Jumlah lantai tidak wajib disebut: bila tidak disebutkan saya memakai asumsi 1 lantai yang saya tulis terbuka.',
+          missing: essential.map((e) => e.label),
+          understoodSummary: summarizeUnderstanding(uNoScope),
+        };
+      }
+      return {
+        kind: 'needs-spec',
+        reason:
+          'Saya belum bisa mengenali pekerjaan apa yang ingin dihitung dari pesan Anda. ' +
+          'Sebutkan objek pekerjaannya (mis. gudang, rumah, jalan, saluran drainase, pagar) — ' +
+          'setelah objeknya jelas, saya hanya akan menanyakan ukurannya.',
+        missing: ['objek/pekerjaan konstruksi yang ingin dihitung (jenis bangunan atau pekerjaan)'],
+        understoodSummary: uNoScope.footprint.value != null || uNoScope.landArea.value != null
+          ? summarizeUnderstanding(uNoScope)
+          : undefined,
+      };
+    }
     return { kind: 'unsupported', reason: 'Cakupan pekerjaan tidak dikenali dari pesan.' };
   }
 
   // SATU pertanyaan paling penting: ukuran utama pertama yang hilang.
+  // Untuk permintaan BANGUNAN pesannya kontekstual per FUNGSI (bukan
+  // label grup generik): pengguna gudang tidak lagi ditolak sebagai
+  // "Gedung & Bangunan Bertingkat" dan tidak lagi disyaratkan menyebut
+  // lantai — yang ditanyakan hanya basis ukuran yang memang belum ada.
+  //
+  // KELUARGA CACAT B (audit ekstrem 2026-11-08): cakupan RENOVASI adalah
+  // MODIFIER lintas-pekerjaan ("perbaikan jalan 2 km", "rehab drainase
+  // 250 m", "rehab jembatan bentang 12 m"), bukan pekerjaan tersendiri
+  // dengan basis ukurannya sendiri — basis ukur renovasi gedung adalah
+  // luas/anggaran, tetapi pekerjaan linear/jembatan yang diperbaiki
+  // membawa basisnya sendiri (panjang/bentang). Sebelumnya loop di
+  // bawah memeriksa renovasi dengan basis gedung dan menolak seluruh
+  // permintaan meski pekerjaan utamanya berukuran lengkap. Aturan kini:
+  // renovasi dianggap terukur bila (a) basisnya sendiri tersedia, ATAU
+  // (b) ada cakupan pekerjaan lain yang basisnya tersedia (pekerjaan
+  // yang diperbaiki itulah yang dihitung; renovasi tetap ikut sebagai
+  // konteks part bila templatenya cocok).
+  const measureAvailableFor = (scope: ScopeGroup): boolean => {
+    if (scopeMeasureAvailable(spec, scope)) return true;
+    if (scope.id === 'renovasi') {
+      return spec.scopes.some((s) => s.id !== 'renovasi' && scopeMeasureAvailable(spec, s));
+    }
+    return false;
+  };
   for (const scope of spec.scopes) {
-    if (!scopeMeasureAvailable(spec, scope)) {
+    if (!measureAvailableFor(scope)) {
+      // Finalisasi §4 (2026-11-08): fungsi bangunan GENERIK ("bangunan",
+      // "bangunan komersial") tidak membawa TemplateKind.kindLabel —
+      // sebelumnya jalur gedung di sini jatuh ke 'unsupported'. Bila
+      // tipologi mengenali fungsi generiknya, klarifikasinya tetap
+      // kontekstual per fungsi (bukan label grup generik).
+      const effectiveFunctionLabel = spec.functionLabel ?? spec.needsFunctionLabel;
+      if (scope.id === 'gedung' && effectiveFunctionLabel) {
+        const u = understandProject(rawText);
+        const assessment = assessBuildingMissingInfo(u, rawText);
+        const essential = assessment.items.filter((i) => i.blocksDraft);
+        return {
+          kind: 'needs-spec',
+          reason:
+            `Saya memahami ini sebagai ${effectiveFunctionLabel.toLowerCase()} — fungsi bangunan, bukan otomatis bangunan bertingkat. ` +
+            `Yang masih saya butuhkan untuk memulai draft awal hanyalah ${essential.map((e) => e.label).join('; ') || scope.primaryLabel}. ` +
+            `Jumlah lantai tidak wajib disebut: bila tidak disebutkan saya memakai asumsi 1 lantai yang saya tulis terbuka.`,
+          missing: essential.map((e) => e.label),
+          understoodSummary: summarizeUnderstanding(u),
+        };
+      }
       return {
         kind: 'needs-spec',
         reason: `Untuk ${scope.label} saya belum bisa menghitung volume secara bertanggung jawab.`,
@@ -1200,10 +1409,31 @@ export function buildUniversalDraft(rawText: string, forcedTemplateId?: string):
     assumptions.push(`Batas anggaran dari pesan Anda: ${formatRupiah(spec.budgetCap)} — dipakai sebagai pembanding, bukan untuk memangkas lingkup diam-diam.`);
   }
   if (spec.location) assumptions.push(`Lokasi: ${spec.location} (indeks harga mengikuti template; konfirmasi HSD setempat sebelum kontrak).`);
+  // Catatan tipologi (2026-11-08): pemahaman fungsi & lahan ditulis
+  // terbuka di draft — lahan tidak pernah disamakan dengan bangunan,
+  // lantai tak disebut adalah asumsi terlabel, bukan kesimpulan.
+  if (spec.functionLabel) {
+    for (const flag of spec.understandingFlags) assumptions.push(`[Pemahaman] ${flag}`);
+    if (spec.footprintM2 != null && spec.buildingWidthM != null && spec.buildingLengthM != null) {
+      assumptions.push(`[Pemahaman] Tapak bangunan ${fmtNum(spec.buildingWidthM)} × ${fmtNum(spec.buildingLengthM)} m = ${fmtNum(spec.footprintM2)} m² (hasil hitung dari dimensi yang Anda sebut).`);
+    }
+    if (spec.landAreaM2 != null) {
+      assumptions.push(`[Pemahaman] Luas lahan ${fmtNum(spec.landAreaM2)} m² tercatat TERPISAH dari luas bangunan${spec.coveragePct != null ? ` — tapak menutupi ±${fmtNum(spec.coveragePct)}% lahan` : ''}; luas lahan tidak dipakai sebagai luas bangunan.`);
+    }
+    if (!spec.floorsExplicit) {
+      assumptions.push('[Pemahaman] Jumlah lantai tidak disebutkan — dipakai ASUMSI 1 lantai (aturan standar EZRAB, tertulis terbuka); koreksi lewat revisi bila bangunannya bertingkat.');
+    }
+  }
+
+  // Judul draft: fungsi bangunan yang disebut pengguna didahulukan
+  // ("Gudang"), bukan label grup cakupan generik.
+  const draftTitle = spec.scopes.length === 1 && spec.scopes[0].id === 'gedung' && spec.functionLabel
+    ? spec.functionLabel
+    : spec.scopes.map((s) => s.label).join(' + ');
 
   const draft: UniversalDraft = {
     id: `uni-${Date.now()}-${++draftCounter}`,
-    title: spec.scopes.map((s) => s.label).join(' + '),
+    title: draftTitle,
     spec,
     parts,
     assumptions,

@@ -10,6 +10,59 @@ import {
   nextKind, spawnDelayAt, slicePoints, nextCombo, gradeFor,
   GAME_DURATION, MAX_LIVES, COMBO_WINDOW, KIND_META, type SliceKind,
 } from './logic';
+import { drawMaterialSprite, preloadMaterialSprites } from '../../../shared/materialSprites';
+import { drawFallerSprite, preloadFallerSprites } from '../../../shared/fallerSprites';
+
+// Sapuan visual Kelompok 5: muat awal set material bersama (Kelompok 1)
+// + set objek jatuh baru; gambar prosedural tetap FALLBACK.
+preloadMaterialSprites();
+preloadFallerSprites();
+
+/**
+ * Sprite tebasan per jenis dengan kotak aspek mengikuti bentang
+ * proseduralnya: bambu & triplek dari set fallers baru; kayu & dinamit
+ * dari set material Kelompok 1; emas = mat-helm + filter emas + pijar
+ * (dinamit + pijar merah). False bila sprite belum siap.
+ */
+function drawSliceSprite(ctx: CanvasRenderingContext2D, kind: SliceKind, r: number): boolean {
+  ctx.save();
+  if (kind === 'emas') {
+    ctx.shadowColor = 'rgba(253,224,71,0.9)';
+    ctx.shadowBlur = 22;
+    ctx.filter = 'hue-rotate(-8deg) saturate(2.6) brightness(1.18)';
+  } else if (kind === 'dinamit') {
+    ctx.shadowColor = 'rgba(239,68,68,0.9)';
+    ctx.shadowBlur = 22;
+  }
+  let ok = false;
+  if (kind === 'bambu') ok = drawFallerSprite(ctx, 'bambu', 0, 0, r * 0.95, r * 2.35);
+  else if (kind === 'kayu') ok = drawMaterialSprite(ctx, 'kayu', 0, 0, r * 2.2, r * 1.5);
+  else if (kind === 'triplek') ok = drawFallerSprite(ctx, 'triplek', 0, 0, r * 1.75, r * 1.2);
+  else if (kind === 'emas') ok = drawMaterialSprite(ctx, 'helm', 0, 0, r * 2.05, r * 1.35);
+  else ok = drawMaterialSprite(ctx, 'dinamit', 0, 0, r * 1.6, r * 1.9);
+  ctx.restore();
+  return ok;
+}
+
+/**
+ * Belahan sprite: sprite utuh di bawah klip setengah-lingkaran
+ * (konvensi radius/sisi sama dengan belahan prosedural) + strip
+ * potong putih yang sama. False bila sprite belum siap.
+ */
+function drawSliceSpriteHalf(ctx: CanvasRenderingContext2D, kind: SliceKind, side: number, r: number): boolean {
+  ctx.save();
+  ctx.beginPath();
+  if (side < 0) ctx.arc(0, 0, r * 0.9, Math.PI / 2, (3 * Math.PI) / 2);
+  else ctx.arc(0, 0, r * 0.9, -Math.PI / 2, Math.PI / 2);
+  ctx.closePath();
+  ctx.clip();
+  const ok = drawSliceSprite(ctx, kind, r);
+  ctx.restore();
+  if (!ok) return false;
+  ctx.fillStyle = 'rgba(255,255,255,0.65)';
+  ctx.fillRect(-2, -r * 0.9, 4, r * 1.8);
+  return true;
+}
 
 const FONT = "'Plus Jakarta Sans','Inter',system-ui,sans-serif";
 const BK = bestKey('tebas-bambu', 'best');
@@ -327,6 +380,11 @@ export default function ArcadeTebasBambu({ onExit }: { onExit: () => void }): Re
       ctx.shadowColor = 'rgba(0,0,0,0.4)';
       ctx.shadowBlur = 10;
       ctx.shadowOffsetY = 6;
+      // Sprite generate-AI lebih dulu; gagal/belum siap -> prosedural.
+      if (drawSliceSprite(ctx, it.kind, r)) {
+        ctx.restore();
+        return;
+      }
       if (it.kind === 'bambu') {
         // batang bambu beruas
         const w = r * 0.9;
@@ -449,6 +507,12 @@ export default function ArcadeTebasBambu({ onExit }: { onExit: () => void }): Re
       ctx.translate(h.x, h.y);
       ctx.rotate(h.rot);
       const r = 24;
+      // Belahan sprite lebih dulu (sprite utuh terklip setengah bidang
+      // + strip potong yang sama); gagal -> belahan prosedural.
+      if (drawSliceSpriteHalf(ctx, h.kind, h.side, r)) {
+        ctx.restore();
+        return;
+      }
       const cols = KIND_COLORS[h.kind];
       const g = ctx.createLinearGradient(-r, 0, r, 0);
       g.addColorStop(0, cols[1]);

@@ -10,6 +10,7 @@ import {
   createBoard, dropPiece, dropRow, isWinningMove, isFull, legalColumns,
   aiChooseColumn, winningCells, COLS, ROWS, other, type Board, type Player, type Cell,
 } from './logic';
+import { PIPE_TOKENS, drawBoardToken, loadSprite } from '../../../shared/boardTokenSprites';
 
 const FONT = "'Plus Jakarta Sans','Inter',system-ui,sans-serif";
 const BK = bestKey('sambung-pipa', 'tercepat'); // rekor: kemenangan dengan langkah paling sedikit
@@ -50,6 +51,8 @@ export default function ArcadeSambungPipa({ onExit }: { onExit: () => void }): R
 
   const canvasRef = useGameCanvas((api) => {
     apiRef.current = api;
+    void loadSprite(PIPE_TOKENS[1]);
+    void loadSprite(PIPE_TOKENS[2]);
     api.pushHud = (h) => setHud(h as typeof hud);
 
     const s: S = {
@@ -266,8 +269,19 @@ export default function ArcadeSambungPipa({ onExit }: { onExit: () => void }): R
       }
     };
 
-    /** Segmen pipa berlapis: ring baja + cakram berwarna + highlight. */
+    /** Keping pipa: sprite flensa generate-AI (Kelompok 2) — ring baja +
+     * muka berwarna + lubang gelap di dalam aset; pijar menang tetap
+     * digambar sebagai bayangan di belakang sprite. Gambar berlapis
+     * prosedural di bawah = fallback bila sprite belum siap. */
     const drawPipe = (ctx: CanvasRenderingContext2D, x: number, y: number, r: number, player: Player, glow: boolean): void => {
+      ctx.save();
+      if (glow) {
+        const pulse = 0.6 + 0.4 * Math.sin(s.t * 8);
+        ctx.shadowColor = player === 1 ? 'rgba(56,189,248,0.95)' : 'rgba(249,115,22,0.95)';
+        ctx.shadowBlur = 26 * pulse;
+      }
+      if (drawBoardToken(ctx, PIPE_TOKENS[player], x, y, r * 2, r * 2)) { ctx.restore(); return; }
+      ctx.restore();
       ctx.save();
       if (glow) {
         const pulse = 0.6 + 0.4 * Math.sin(s.t * 8);

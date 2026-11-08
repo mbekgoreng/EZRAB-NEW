@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { DedAiMode, DedAiProjectType , DedEstimationPolicy } from './types';
 import { useI18n } from '../../i18n/I18nContext';
+import { FsFooterPortal } from '../../components/feature-shell/FeatureFullscreenShell';
 import './dedAi.css';
 import '../../ai-credits/ai-credits.css';
 import { useCreditSimulation } from '../../ai-credits/useCreditSimulation';
@@ -403,11 +404,24 @@ export const DedAiInputView: React.FC<Props> = ({
 
       </div>
 
-      <div className="dedai-cta">
-        <button className="dedai-btn primary" disabled={!canStart || !creditApproved || !dedAllowed} onClick={handleStart}>
-          {t('ai.ded.input.cta')} <ArrowRight size={18} />
-        </button>
-      </div>
+      {/* CTA utama: di dalam shell layar-penuh diportalkan ke bar aksi bawah
+          (tombol & handler yang sama); di luar shell tampil di tempat. */}
+      <FsFooterPortal>
+        <div className="fs-actions">
+          {validFiles.length > 0 && (
+            <span className="fs-action-meta">
+              {validFiles.length} file terpilih · mode dan detail proyek bisa diubah sebelum analisis dimulai.
+            </span>
+          )}
+          <div className="fs-actions-btns">
+            <div className="dedai-cta">
+              <button className="dedai-btn primary" disabled={!canStart || !creditApproved || !dedAllowed} onClick={handleStart}>
+                {t('ai.ded.input.cta')} <ArrowRight size={18} />
+              </button>
+            </div>
+          </div>
+        </div>
+      </FsFooterPortal>
       {!canStart && (
         <p style={{ textAlign: 'center', color: 'var(--ez-color-text-muted)', fontSize: 12.5, marginTop: 10 }}>
           {t('ai.ded.input.cta_hint')}

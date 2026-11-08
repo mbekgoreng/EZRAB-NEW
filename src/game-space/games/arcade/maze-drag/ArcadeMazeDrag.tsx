@@ -5,6 +5,7 @@
 import React, { useRef, useState } from 'react';
 import { useGameCanvas, type GameApi } from '../../../engine2d';
 import { bestKey, getBest, setBest, setJson } from '../../../engine2d/best';
+import { drawSceneSprite, preloadSceneSprites } from '../../../shared/sceneSprites';
 import {
   generateMaze, mazeSizeForLevel, moveBall, cellCenter, mulberry32,
   parSecondsFor, starsFor, furthestCheckpointIndex, improvedBestTime,
@@ -215,6 +216,7 @@ function StarsRow({ stars, size = 26 }: { stars: number; size?: number }): React
 }
 
 export default function ArcadeMazeDrag({ onExit }: { onExit: () => void }): React.JSX.Element {
+  preloadSceneSprites();
   const wrapRef = useRef<HTMLDivElement>(null);
   const apiRef = useRef<GameApi | null>(null);
   const lvRef = useRef<Level | null>(null);
@@ -601,6 +603,9 @@ export default function ArcadeMazeDrag({ onExit }: { onExit: () => void }): Reac
       ctx.shadowColor = 'rgba(0,0,0,0.5)';
       ctx.shadowBlur = 10;
       ctx.shadowOffsetY = 3;
+      // troli = sprite generate-AI terpusat di titik bola (tabrakan tetap
+      // BALL_R logic); cincin seret prosedural digambar sesudahnya.
+      if (!drawSceneSprite(ctx, 'scene-troli', b.x, b.y, tr * 3.1, tr * 3.1)) {
       // bak troli
       const tg = ctx.createLinearGradient(b.x - tr, b.y - tr, b.x - tr, b.y + tr);
       tg.addColorStop(0, '#7dd3fc');
@@ -653,6 +658,7 @@ export default function ArcadeMazeDrag({ onExit }: { onExit: () => void }): Reac
       if (typeof ctx.roundRect === 'function') ctx.roundRect(b.x - tr, b.y - tr * 0.9, tr * 2, tr * 1.5, 4);
       else ctx.rect(b.x - tr, b.y - tr * 0.9, tr * 2, tr * 1.5);
       ctx.stroke();
+      }
       if (lv.dragging) {
         ctx.strokeStyle = `rgba(125,211,252,${0.5 + 0.4 * Math.sin(t * 8)})`;
         ctx.lineWidth = 2.5;

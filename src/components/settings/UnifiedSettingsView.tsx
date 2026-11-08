@@ -359,8 +359,8 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
   const [projLocation, setProjLocation] = useState(activeProject?.location || '');
   const [projBuildingType, setProjBuildingType] = useState(activeProject?.buildingType || 'Rumah Tinggal');
   const [projBuildingArea, setProjBuildingArea] = useState(activeProject?.buildingArea || 120);
-  const [projOverhead, setProjOverhead] = useState((activeProject as any)?.overheadPercent ?? 10);
-  const [projProfit, setProjProfit] = useState((activeProject as any)?.profitPercent ?? 10);
+  const [projOverhead, setProjOverhead] = useState((activeProject as any)?.overheadPercent ?? 0);
+  const [projProfit, setProjProfit] = useState((activeProject as any)?.profitPercent ?? 0);
   const [projPpn, setProjPpn] = useState((activeProject as any)?.ppnPercent ?? 11);
   const [projRounding, setProjRounding] = useState((activeProject as any)?.roundingScheme || 'RIBUAN');
   const [projWaste, setProjWaste] = useState((activeProject as any)?.wastePercent ?? 5);
@@ -394,8 +394,8 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
       setProjLocation(activeProject.location || '');
       setProjBuildingType(activeProject.buildingType || 'Rumah Tinggal');
       setProjBuildingArea(activeProject.buildingArea || 120);
-      setProjOverhead((activeProject as any)?.overheadPercent ?? 10);
-      setProjProfit((activeProject as any)?.profitPercent ?? 10);
+      setProjOverhead((activeProject as any)?.overheadPercent ?? 0);
+      setProjProfit((activeProject as any)?.profitPercent ?? 0);
       setProjPpn((activeProject as any)?.ppnPercent ?? 11);
       setProjRounding((activeProject as any)?.roundingScheme || 'RIBUAN');
       setProjWaste((activeProject as any)?.wastePercent ?? 5);

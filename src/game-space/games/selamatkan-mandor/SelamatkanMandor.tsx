@@ -1,6 +1,6 @@
 /**
  * Selamatkan Mandor — save-the-dog 2D rasa proyek.
- * Benda jatuh dari atas (bata, palu, ember semen). Gambar SATU garis spidol
+ * Benda jatuh & terlempar (bata, palu, ember, pipa, drum). Gambar SATU garis spidol
  * sebagai perisai, selamatkan mandor sampai timer habis.
  */
 import React, { useState, useRef, useEffect } from 'react';
@@ -11,7 +11,8 @@ import { popText } from '../../engine2d/juice2d';
 import { clamp, TAU } from '../../engine2d/helpers';
 import {
   createState, step, setLine, clearLine, inkLeft,
-  starsFor, resetState, LEVELS, KIND_R, WARN_LEAD,
+  starsFor, resetState, LEVELS, KIND_R, KIND_NAME, WARN_LEAD,
+  segGeom, segMid,
   type MandorState, type Vec, type Body, type FallKind,
 } from './logic';
 import { loadSprite, readySprite, drawSprite } from '../../engine2d/sprites';
@@ -34,8 +35,8 @@ interface Rt {
   levelIndex: number;
   lastStatus: string;
   hudT: number;
-  /** telegraph shadows: key -> {x, kind, at} */
-  telegraphs: Map<string, { x: number; kind: FallKind; at: number }>;
+  /** telegraph warnings: key -> {x, kind, at, from, y} */
+  telegraphs: Map<string, { x: number; kind: FallKind; at: number; from: 'top' | 'left' | 'right'; y: number }>;
   deadAt: number;
   /** waktu terakhir garis dihantam benda (untuk kilau perisai) */
   lineFlashAt: number;
@@ -48,6 +49,8 @@ const KIND_COLORS: Record<FallKind, string[]> = {
   bata: ['#fdba74', '#ea580c', '#9a3412'],
   palu: ['#cbd5e1', '#64748b', '#92400e'],
   ember: ['#cbd5e1', '#64748b', '#a8a29e'],
+  pipa: ['#bae6fd', '#38bdf8', '#0369a1'],
+  drum: ['#fca5a5', '#dc2626', '#7f1d1d'],
 };
 
 /** Quip kematian — dipilih acak tiap mandor tumbang. */
@@ -59,6 +62,18 @@ const DEATH_QUIPS = [
   'Estimasi meleset: helm vs bata.',
   'Lembur dibayar, helm tidak.',
 ];
+
+/** Judul & quip per penyebab tumbang (mandor / tukang / sakelar). */
+const DEATH_TITLES: Record<string, string> = {
+  mandor: 'ADUH!',
+  tukang: 'TUKANG IKUT TUMBANG!',
+  sakelar: 'GENSET MELEDAK!',
+};
+const DEATH_CAUSE_TEXT: Record<string, string> = {
+  mandor: 'Mandor kena benda jatuh.',
+  tukang: 'Tukangnya ikut kena — lindungi dua-duanya!',
+  sakelar: 'Sakelar darurat kena benda — genset meledak.',
+};
 
 /* ---------- procedural fx audio (di luar sfx engine) ---------- */
 let fxCtx: AudioContext | null = null;
@@ -109,6 +124,7 @@ export default function SelamatkanMandor({ onExit }: { onExit: () => void }) {
   const [unlocked, setUnlocked] = useState<number>(() => getJson<number>(UNLOCK_KEY, 1));
   const [winStars, setWinStars] = useState(0);
   const [deadQuip, setDeadQuip] = useState(DEATH_QUIPS[0]);
+  const [deadCause, setDeadCause] = useState<string>('mandor');
 
   const apiRef = useRef<GameApi | null>(null);
   const wrapRef = useRef<HTMLDivElement | null>(null);
@@ -192,15 +208,22 @@ export default function SelamatkanMandor({ onExit }: { onExit: () => void }) {
     const s = rt.current.state;
     const quip = DEATH_QUIPS[(Math.random() * DEATH_QUIPS.length) | 0];
     setDeadQuip(quip);
+    const cause = s?.deathCause ?? 'mandor';
+    setDeadCause(cause);
     rt.current.deadAt = rt.current.t; // overlay menyusul 1.1 dtk (animasi dulu)
     if (api && s) {
       api.sfx.fail();
       api.shake.add(0.65);
-      api.particles.spawn(s.foreman.x, s.foreman.y - 10, {
+      const boom = cause === 'sakelar' && s.switchBox
+        ? { x: s.switchBox.x, y: s.switchBox.y }
+        : cause === 'tukang'
+          ? { x: s.protectees[1]?.x ?? s.foreman.x, y: s.foreman.y - 10 }
+          : { x: s.foreman.x, y: s.foreman.y - 10 };
+      api.particles.spawn(boom.x, boom.y, {
         count: 45, colors: ['#f87171', '#ef4444', '#fbbf24', '#fde047'],
         speed: [120, 420], life: [0.6, 1.2], size: [3, 7], gravity: 600,
       });
-      api.scores.add(s.foreman.x, s.foreman.y - 60, 'DUAKH!', { color: '#ef4444', size: 26 });
+      api.scores.add(s.foreman.x, s.foreman.y - 60, cause === 'sakelar' ? 'BOOM!' : 'DUAKH!', { color: '#ef4444', size: 26 });
       if (wrapRef.current) popText(wrapRef.current, quip, { size: 22, color: '#fca5a5' });
     }
   };
@@ -252,6 +275,31 @@ export default function SelamatkanMandor({ onExit }: { onExit: () => void }) {
           angle: -Math.PI / 2, spread: Math.PI, life: [0.4, 0.8], size: [2, 5],
         });
       }
+      // garis PATAH: serpihan oranye + label — pemain harus TAHU bentangnya jebol
+      for (const br of s.breaks) {
+        api.particles.spawn(br.x, br.y, {
+          count: 22, colors: ['#38bdf8', '#0ea5e9', '#f8fafc'],
+          speed: [80, 260], life: [0.4, 0.9], size: [2, 5], gravity: 800,
+        });
+        api.scores.add(br.x, br.y - 26, 'GARIS PATAH!', { color: '#dc2626', size: 20 });
+        api.sfx.thud(0.9);
+        api.shake.add(0.3);
+      }
+      // perancah RUNTUH: debu kayu
+      for (const cr of s.crumbles) {
+        api.particles.spawn(cr.x, cr.y, {
+          count: 30, colors: ['#b45309', '#92400e', '#d6c9b8'],
+          speed: [60, 220], life: [0.5, 1.1], size: [3, 6], gravity: 700,
+        });
+        api.scores.add(cr.x, cr.y - 20, 'PERANCAH RUNTUH!', { color: '#b45309', size: 18 });
+      }
+      // sakelar KENA: percikan listrik
+      for (const sh of s.switchHits) {
+        api.particles.spawn(sh.x, sh.y, {
+          count: 40, colors: ['#fde047', '#f97316', '#ffffff'],
+          speed: [140, 420], life: [0.3, 0.8], size: [2, 5], gravity: 300,
+        });
+      }
 
       if (s.status !== r.lastStatus) {
         r.lastStatus = s.status;
@@ -259,15 +307,19 @@ export default function SelamatkanMandor({ onExit }: { onExit: () => void }) {
         else if (s.status === 'dead') doDead();
       }
 
-      // telegraph: pending baru → siulan + catat; yang kedaluwarsa dibuang
+      // telegraph: pending baru → siulan + catat; yang kedaluwarsa dibuang.
+      // Lemparan samping digambar sebagai panah tepi layar (bukan bayangan
+      // tanah) — kuncinya menyertakan arah agar tidak tertukar hujan.
       if (s.status === 'play') {
         const seen = r.telegraphs;
         const cur = new Set<string>();
         for (const ev of s.pending) {
-          const key = `${ev.at.toFixed(2)}|${ev.xf.toFixed(3)}`;
+          const from = ev.from ?? 'top';
+          const key = `${ev.at.toFixed(2)}|${(ev.xf ?? 0).toFixed(3)}|${from}`;
           cur.add(key);
           if (!seen.has(key)) {
-            seen.set(key, { x: ev.xf * s.W, kind: ev.kind, at: ev.at });
+            const x = from === 'left' ? 26 : from === 'right' ? s.W - 26 : (ev.xf ?? 0.5) * s.W;
+            seen.set(key, { x, kind: ev.kind, at: ev.at, from, y: (ev.yf ?? 0.75) * s.H });
             whistleFall(api.sfx.muted);
           }
         }
@@ -452,7 +504,13 @@ export default function SelamatkanMandor({ onExit }: { onExit: () => void }) {
       </div>
       {screen === 'play' && !paused && (
         <div style={styles.hint}>
-          {hud.drawing ? 'Lepas untuk mengunci garis…' : 'Gambar SATU garis pelindung di atas mandor!'}
+          {hud.drawing
+            ? 'Lepas untuk mengunci garis…'
+            : lvl.switchDef
+              ? 'Gambar SATU garis struktur — lindungi orang DAN sakelar merah!'
+              : (lvl.extraProtectees?.length ?? 0) > 0
+                ? 'Gambar SATU garis struktur — lindungi DUA orang sekaligus!'
+                : 'Gambar SATU garis struktur pelindung!'}
         </div>
       )}
 
@@ -461,8 +519,10 @@ export default function SelamatkanMandor({ onExit }: { onExit: () => void }) {
           <img src={mandorIdleUrl} alt="Pak Mandor" style={{ height: 92, width: 'auto', margin: '0 auto 4px', display: 'block' }} />
           <div style={styles.cardTitle}>Selamatkan Mandor</div>
           <p style={styles.cardText}>
-            Bata, palu, dan ember semen berjatuhan dari langit proyek.
-            Gambar <b>satu garis spidol</b> sebagai perisai — mandor harus selamat sampai timer habis!
+            Bata, palu, dan ember semen berjatuhan — di level lanjut ada lemparan
+            dari samping, perancah runtuh, dua orang, bahkan sakelar genset.
+            Gambar <b>satu garis spidol</b> sebagai struktur: bentang panjang tanpa
+            tumpuan bisa <b>patah</b> — bikin sangkar, landasan, dan tiang penyangga!
           </p>
           <p style={{ ...styles.cardText, fontSize: 12, color: '#64748b' }}>
             *"Mandor kabur pas hujan. Seperti biasa." — tapi tidak hari ini.*
@@ -494,12 +554,20 @@ export default function SelamatkanMandor({ onExit }: { onExit: () => void }) {
         <Overlay>
           <div style={styles.levelTag}>LEVEL {rt.current.levelIndex + 1}/15</div>
           <div style={styles.cardTitle}>{lvl.name}</div>
+          <p style={styles.cardText}>{lvl.sub}</p>
           <p style={styles.cardText}>
-            Gambar <b>satu garis atap</b> di atas mandor — selamatkan dia selama <b>{lvl.duration} detik</b>! Tinta terbatas, garis hemat = bintang 3.
+            Gambar <b>satu garis struktur</b> — selamatkan semua yang ditandai selama <b>{lvl.duration} detik</b>! Tinta terbatas, garis hemat = bintang 3.
           </p>
+          {(lvl.features?.length ?? 0) > 0 && (
+            <div style={styles.chipRow}>
+              {lvl.features!.map((f) => (
+                <span key={f} style={{ ...styles.chip, background: '#fef3c7', color: '#92400e' }}>BARU: {f}</span>
+              ))}
+            </div>
+          )}
           <div style={styles.chipRow}>
             <span style={styles.chip}>{lvl.duration} detik</span>
-            <span style={styles.chip}>{lvl.spawns.length} benda jatuh</span>
+            <span style={styles.chip}>{lvl.spawns.length} bahaya</span>
             <span style={styles.chip}>{lvl.ink}px tinta</span>
             {lvlStars > 0 && <span style={styles.chip}>Terbaik: {'★'.repeat(lvlStars)}</span>}
           </div>
@@ -550,7 +618,10 @@ export default function SelamatkanMandor({ onExit }: { onExit: () => void }) {
       {screen === 'dead' && (
         <Overlay>
           <img src={mandorIdleUrl} alt="Pak Mandor tumbang" style={{ height: 92, width: 'auto', margin: '0 auto 4px', display: 'block', transform: 'rotate(72deg)', filter: 'grayscale(0.35)' }} />
-          <div style={styles.cardTitle}>ADUH!</div>
+          <div style={styles.cardTitle}>{DEATH_TITLES[deadCause] ?? 'ADUH!'}</div>
+          <p style={{ ...styles.cardText, fontSize: 13, fontWeight: 700, color: '#334155' }}>
+            {DEATH_CAUSE_TEXT[deadCause] ?? ''}
+          </p>
           <p style={{ ...styles.cardText, fontSize: 17, fontWeight: 800, color: '#b91c1c' }}>
             {deadQuip}
           </p>
@@ -639,9 +710,96 @@ function drawScene(api: GameApi, r: Rt, ghostHint: boolean): void {
 
   if (!s) return;
 
+  // --- platforms (perancah): dek kayu + kaki; yang runtuh retak & bergetar ---
+  for (const pl of s.platforms) {
+    if (pl.gone) continue;
+    const left = pl.x - pl.w / 2;
+    const shake = pl.def.crumble && pl.contactT > 0.4 ? Math.sin(t * 46) * 1.6 : 0;
+    ctx.save();
+    ctx.translate(shake, 0);
+    // legs
+    ctx.fillStyle = '#92400e';
+    ctx.fillRect(left + 5, pl.y + 8, 7, pl.h - 8);
+    ctx.fillRect(left + pl.w - 12, pl.y + 8, 7, pl.h - 8);
+    ctx.fillRect(left + 3, pl.y + pl.h * 0.55, pl.w - 6, 5);
+    // deck
+    const deckGrad = ctx.createLinearGradient(0, pl.y, 0, pl.y + 10);
+    deckGrad.addColorStop(0, pl.def.crumble ? '#d6a05a' : '#b45309');
+    deckGrad.addColorStop(1, '#92400e');
+    ctx.fillStyle = deckGrad;
+    ctx.strokeStyle = '#451a03';
+    ctx.lineWidth = 2;
+    roundRectPath(ctx, left, pl.y, pl.w, 10, 3);
+    ctx.fill();
+    ctx.stroke();
+    // retakan saat perancah menua
+    if (pl.def.crumble && pl.contactT > 0) {
+      const frac = clamp(pl.contactT / (pl.def.crumbleAfter ?? 2), 0, 1);
+      ctx.strokeStyle = `rgba(69,26,3,${0.35 + 0.55 * frac})`;
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.moveTo(left + pl.w * 0.3, pl.y + 1);
+      ctx.lineTo(left + pl.w * (0.34 + 0.1 * frac), pl.y + 9);
+      ctx.moveTo(left + pl.w * 0.62, pl.y + 1);
+      ctx.lineTo(left + pl.w * 0.58, pl.y + 9);
+      ctx.stroke();
+      // label perancah
+      ctx.fillStyle = 'rgba(69,26,3,0.75)';
+      ctx.font = `700 9px 'Plus Jakarta Sans','Inter',system-ui,sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillText(pl.def.crumble ? 'PERANCAH TUA' : 'PERANCAH', pl.x, pl.y + 24);
+    }
+    ctx.restore();
+  }
+
+  // --- sakelar darurat: tiang + kotak merah berdenyut ---
+  if (s.switchBox) {
+    const sw = s.switchBox;
+    ctx.fillStyle = '#475569';
+    ctx.fillRect(sw.x - 3, sw.y + sw.hh, 6, groundY - (sw.y + sw.hh));
+    const pulse = 0.5 + 0.5 * Math.sin(t * 5);
+    ctx.fillStyle = '#dc2626';
+    ctx.strokeStyle = '#7f1d1d';
+    ctx.lineWidth = 2.5;
+    roundRectPath(ctx, sw.x - sw.hw, sw.y - sw.hh, sw.hw * 2, sw.hh * 2, 6);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = `rgba(254,240,138,${0.65 + 0.35 * pulse})`;
+    ctx.beginPath();
+    ctx.arc(sw.x, sw.y - 6, 5.5, 0, TAU);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `900 13px 'Plus Jakarta Sans','Inter',system-ui,sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('⚡', sw.x, sw.y + 10);
+    ctx.font = `800 9px 'Plus Jakarta Sans','Inter',system-ui,sans-serif`;
+    ctx.fillStyle = 'rgba(127,29,29,0.9)';
+    ctx.fillText('SAKELAR', sw.x, sw.y + sw.hh + 12);
+    ctx.textBaseline = 'alphabetic';
+  }
+
   // --- telegraph: bayangan peringatan yg membesar + ring merah + "!" ---
   for (const tg of r.telegraphs.values()) {
     const prog = clamp(1 - (tg.at - s.time) / WARN_LEAD, 0, 1);
+    if (tg.from !== 'top') {
+      // lemparan samping: panah merah berdenyut di tepi layar setinggi jalur terbang
+      const dir = tg.from === 'left' ? 1 : -1;
+      const ax = tg.from === 'left' ? 14 + 6 * prog : W - 14 - 6 * prog;
+      ctx.save();
+      ctx.fillStyle = `rgba(220,38,38,${0.55 + 0.4 * prog})`;
+      ctx.beginPath();
+      ctx.moveTo(ax + dir * 16, tg.y);
+      ctx.lineTo(ax - dir * 10, tg.y - 11 - 5 * prog);
+      ctx.lineTo(ax - dir * 10, tg.y + 11 + 5 * prog);
+      ctx.closePath();
+      ctx.fill();
+      ctx.font = `900 ${Math.round(13 + 8 * prog)}px 'Plus Jakarta Sans','Inter',system-ui,sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillText('!', tg.from === 'left' ? 16 : W - 16, tg.y - 22);
+      ctx.restore();
+      continue;
+    }
     const maxR = KIND_R[tg.kind] * 1.5;
     const rad = 6 + (maxR - 6) * prog;
     const pulse = 0.5 + 0.5 * Math.sin(t * 10);
@@ -693,6 +851,34 @@ function drawScene(api: GameApi, r: Rt, ghostHint: boolean): void {
     mood,
     sinceDead: mood === 'dead' ? Math.max(0, t - r.deadAt) : 0,
   });
+  // --- tukang (protectee kedua): sprite sama dgn rompi oranye + label ---
+  for (let pi = 1; pi < s.protectees.length; pi += 1) {
+    const p = s.protectees[pi];
+    let pPanic = 0;
+    for (const b of s.bodies) {
+      if (b.landed) continue;
+      const dx = Math.abs(b.x - p.x);
+      const dy = p.y - b.y;
+      if (dx < 110 && dy > -20 && dy < 300) pPanic = Math.max(pPanic, clamp(1 - dx / 110, 0, 1));
+    }
+    drawForemanSprite(ctx, p.x, p.y, p.r, t + 1.7, {
+      blink: mood === 'worried' && pPanic < 0.35 && ((t + 1.7) % 3.6) < 0.13,
+      panic: mood === 'worried' ? pPanic : 0,
+      mood,
+      sinceDead: mood === 'dead' ? Math.max(0, t - r.deadAt) : 0,
+    });
+    // rompi oranye penanda tukang (sprite dasar sama dgn mandor)
+    if (s.status === 'play') {
+      ctx.save();
+      ctx.fillStyle = 'rgba(249,115,22,0.85)';
+      ctx.fillRect(p.x - 11, p.y + 2, 22, 7);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `800 9px 'Plus Jakarta Sans','Inter',system-ui,sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillText('TUKANG', p.x, p.y + 62);
+      ctx.restore();
+    }
+  }
   // apakah ada segmen garis di atas kepala mandor? (lencana AMAN di bawah)
   const fx0 = s.foreman.x;
   const headY = s.foreman.y - s.foreman.r - 14;
@@ -706,14 +892,27 @@ function drawScene(api: GameApi, r: Rt, ghostHint: boolean): void {
     }
   }
 
-  // --- garis spidol: glow + outline + gradient core + highlight ---
-  const pts = s.line; // selalu versi yg dihaluskan (setLine)
-  if (pts.length >= 2) {
+  // --- garis spidol: digambar PER SEGMEN BEAM (tengah melengkung sesuai
+  // strain; segmen yg menegang berubah warna ke merah) ---
+  const segPath = (seg: (typeof s.segs)[number]) => {
+    const g = segGeom(seg);
+    const mid = segMid(seg);
+    ctx.moveTo(g.a.x, g.a.y);
+    ctx.quadraticCurveTo(mid.x, mid.y, g.b.x, g.b.y);
+  };
+  const drawSegPath = (seg: (typeof s.segs)[number]) => {
+    ctx.beginPath();
+    segPath(seg);
+  };
+  if (s.segs.length >= 1) {
     const trace = () => {
+      // SATU path untuk semua segmen: beginPath di dalam loop akan mereset
+      // path tiap segmen sehingga hanya segmen TERAKHIR yang ter-stroke.
       ctx.beginPath();
-      ctx.moveTo(pts[0].x, pts[0].y);
-      for (let i = 1; i < pts.length; i += 1) ctx.lineTo(pts[i].x, pts[i].y);
+      for (const seg of s.segs) segPath(seg);
     };
+    const pts = s.line;
+    void pts;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     ctx.strokeStyle = 'rgba(56,189,248,0.28)';
@@ -739,6 +938,16 @@ function drawScene(api: GameApi, r: Rt, ghostHint: boolean): void {
     ctx.moveTo(pts[0].x, pts[0].y - 1.6);
     for (let i = 1; i < pts.length; i += 1) ctx.lineTo(pts[i].x, pts[i].y - 1.6);
     ctx.stroke();
+    // TEGANGAN: segmen bebas yg strain-nya tinggi digambar ulang oranye→
+    // merah — pemain melihat bentangnya akan patah SEBELUM benar-benar patah.
+    for (const seg of s.segs) {
+      if (seg.supported || seg.strain < 0.35) continue;
+      const heat = clamp((seg.strain - 0.35) / 0.5, 0, 1);
+      ctx.strokeStyle = `rgba(${220 + Math.round(35 * heat)},${Math.round(120 - 100 * heat)},30,${0.55 + 0.4 * heat})`;
+      ctx.lineWidth = 7;
+      drawSegPath(seg);
+      ctx.stroke();
+    }
     // KILAU PERISAI: sesaat setelah garis dihantam benda (lineFlashAt dari
     // event thuds) garis menyala putih — pemain melihat garisnya BEKERJA.
     const flashAge = t - r.lineFlashAt;
@@ -759,6 +968,22 @@ function drawScene(api: GameApi, r: Rt, ghostHint: boolean): void {
         ctx.fill();
       }
     }
+  }
+
+  // --- puing garis yang patah: serpihan spidol jatuh & memudar ---
+  for (const d of s.debris) {
+    ctx.save();
+    ctx.globalAlpha = clamp(d.life / 1.5, 0, 1);
+    ctx.translate(d.cx, d.cy);
+    ctx.rotate(d.rot);
+    const len = Math.hypot(d.b.x - d.a.x, d.b.y - d.a.y);
+    ctx.fillStyle = '#0ea5e9';
+    ctx.strokeStyle = '#0f172a';
+    ctx.lineWidth = 1.5;
+    roundRectPath(ctx, -len / 2, -3, len, 6, 3);
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
   }
 
   // --- lencana status mandor: AMAN (perisai hijau ✓) saat garis menaungi
@@ -974,6 +1199,57 @@ function drawBody(ctx: CanvasRenderingContext2D, b: Body): void {
       ctx.fill();
       ctx.fillStyle = '#334155';
     }
+  } else if (b.kind === 'pipa') {
+    // pipa PVC biru memanjang (ringan — terbawa angin)
+    const hl = 52;
+    const pg = ctx.createLinearGradient(0, -10, 0, 10);
+    pg.addColorStop(0, '#bae6fd');
+    pg.addColorStop(0.55, '#38bdf8');
+    pg.addColorStop(1, '#0369a1');
+    ctx.fillStyle = pg;
+    ctx.strokeStyle = '#0c4a6e';
+    roundRectPath(ctx, -hl / 2, -10, hl, 20, 9);
+    ctx.fill();
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,0.65)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(-hl * 0.3, -3.5);
+    ctx.lineTo(hl * 0.3, -3.5);
+    ctx.stroke();
+    ctx.strokeStyle = '#0c4a6e';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(-hl / 2 + 6, -10);
+    ctx.lineTo(-hl / 2 + 6, 10);
+    ctx.moveTo(hl / 2 - 6, -10);
+    ctx.lineTo(hl / 2 - 6, 10);
+    ctx.stroke();
+  } else if (b.kind === 'drum') {
+    // drum minyak merah — benda PALING berat (bentang bisa patah karenanya)
+    const dg = ctx.createLinearGradient(-19, 0, 19, 0);
+    dg.addColorStop(0, '#7f1d1d');
+    dg.addColorStop(0.5, '#dc2626');
+    dg.addColorStop(1, '#fca5a5');
+    ctx.fillStyle = dg;
+    ctx.strokeStyle = '#450a0a';
+    roundRectPath(ctx, -19, -23, 38, 46, 5);
+    ctx.fill();
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(69,10,10,0.65)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(-19, -8);
+    ctx.lineTo(19, -8);
+    ctx.moveTo(-19, 8);
+    ctx.lineTo(19, 8);
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.92)';
+    ctx.font = `900 15px 'Plus Jakarta Sans','Inter',system-ui,sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('!', 0, 0.5);
+    ctx.textBaseline = 'alphabetic';
   } else {
     // ember semen: trapezoid bucket
     ctx.fillStyle = '#64748b';
@@ -1378,6 +1654,12 @@ const styles: Record<string, React.CSSProperties> = {
   canvasBox: { flex: 1, display: 'flex', minHeight: 0, padding: 0 },
   canvas: { width: '100%', height: '100%', display: 'block', touchAction: 'none', userSelect: 'none' },
   hint: {
+    // Tinggi TETAP 2 baris: teks objektif level sakelar membungkus 2 baris
+    // sedangkan teks saat menggambar 1 baris — tanpa tinggi tetap, bar ini
+    // berubah ukuran di tengah permainan, kanvas ikut resize, dan onResize
+    // me-reset state level (garis pemain hilang). Jangan dikembalikan.
+    height: 53, boxSizing: 'border-box',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
     padding: '8px 12px', textAlign: 'center', fontSize: 13, fontWeight: 700,
     color: '#0c4a6e', background: 'rgba(255,255,255,.9)',
   },

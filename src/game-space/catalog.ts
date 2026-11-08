@@ -37,14 +37,14 @@ export interface ArcadeGameMetaText {
 export const CONSTRUCTION_GAMES: ConstructionGameMeta[] = [
   { id: 'bongkar-rumah', title: 'Bongkar Rumah', tagline: 'Ketuk rumahnya sampai rata dengan tanah. 4 level: rumah, ruko, apartemen, tower.', emoji: '💥', meta: '4 level · kombo runtuh · pelepas stres', theme: 'gs-card-bongkar', badge: 'PELEPAS STRES' },
   { id: 'flappy-mandor', title: 'Flappy Mandor', tagline: 'Terbangkan mandor berhelm lewati crane & balok. Jangan sampai jatuh!', emoji: '🪖', meta: 'Medali tiap 10 gate · best score', theme: 'gs-card-flappy' },
-  { id: 'ketapel-konstruksi', title: 'Ketapel Konstruksi', tagline: 'Luncurkan wrecking ball, robohkan struktur & berkas revisi. 10 level.', emoji: '🎯', meta: '10 level · bintang 1–3', theme: 'gs-card-ketapel' },
+  { id: 'ketapel-konstruksi', title: 'Ketapel Konstruksi', tagline: 'Luncurkan kepala berhelm proyek — 4 warna, 4 skill ketuk: tumbuk, ledak, boost, belah. Robohkan Klien Revisi!', emoji: '🎯', meta: '10 level · bintang 1–3', theme: 'gs-card-ketapel' },
   { id: 'lari-proyek', title: 'Lari Proyek', tagline: 'Endless runner: lompat & nunduk hindari barier, lubang & bata jatuh.', emoji: '🏃', meta: 'Endless · kumpulkan helm', theme: 'gs-card-lari' },
   { id: 'sudoku-tukang', title: 'Sudoku Tukang', tagline: 'Sudoku 9×9 klasik. 4 tingkat kesulitan, mode catatan, timer.', emoji: '🧩', meta: '4 difficulty · best time', theme: 'gs-card-sudoku' },
-  { id: 'selamatkan-mandor', title: 'Selamatkan Mandor', tagline: 'Gambar garis pelindung, selamatkan mandor dari hujan bata. 15 level.', emoji: '✏️', meta: '15 level · fisika garis', theme: 'gs-card-selamat' },
+  { id: 'selamatkan-mandor', title: 'Selamatkan Mandor', tagline: 'Gambar garis struktur — bentang bisa patah, bahaya datang dari segala arah. 15 level.', emoji: '✏️', meta: '15 level · fisika beam', theme: 'gs-card-selamat' },
   { id: 'tebas-material', title: 'Tebas Material', tagline: 'Swipe tebas material beterbangan. Kombo swipe, awas dinamit!', emoji: '🍉', meta: 'Kombo · 3 nyawa', theme: 'gs-card-tebas' },
   { id: 'sambung-kata', title: 'Sambung Kata', tagline: 'Susun istilah konstruksi dari roda huruf. 3 pack × 20 level.', emoji: '🔤', meta: '60 level · kosakata proyek', theme: 'gs-card-kata' },
   { id: 'gabung-blok', title: 'Gabung Blok', tagline: '2048 ala kontraktor: BATA → BATAKO → … → MENARA.', emoji: '🧱', meta: '8 tier · best score', theme: 'gs-card-gabung' },
-  { id: 'head-soccer-mandor', title: 'Head Soccer Mandor', tagline: 'Sundul & tendang bola, kalahkan 5 level AI dalam turnamen.', emoji: '⚽', meta: 'Turnamen 5 level', theme: 'gs-card-soccer' },
+  { id: 'head-soccer-mandor', title: 'Head Soccer Bintang', tagline: 'EZRAB Cup di lapangan proyek: jadi Si Gesit, kalahkan 5 bintang tamu beruntun!', emoji: '⚽', meta: 'Turnamen 5 bintang', theme: 'gs-card-soccer' },
   { id: 'build-challenge', title: 'Build Challenge', tagline: 'Susun pondasi, kolom, balok & atap jadi bangunan 3D.', emoji: '🏗️', meta: '3 level • ±5 menit • mouse & sentuh', theme: 'gs-card-build' },
 ];
 

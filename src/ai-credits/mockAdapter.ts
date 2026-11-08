@@ -23,6 +23,7 @@ import type {
   TopUpStatus,
 } from './types';
 import { FREE_INITIAL_CREDITS, PLAN_CREDITS, TOPUP_OFFER } from './config';
+import { planAllowsAiFeature } from './featureGate';
 
 const nowIso = () => new Date().toISOString();
 
@@ -83,8 +84,23 @@ function nextId(prefix: string): string {
 }
 
 /**
- * Catat pemakaian SIMULASI (mengurangi saldo mock). Mengembalikan false bila
- * saldo tidak cukup — pemanggil wajib menampilkan konfirmasi/penolakan.
+ * Catat pemakaian SIMULASI (mengurangi saldo mock). Mengembalikan false bila:
+ * - fitur AI tidak termasuk paket aktif (gerbang kanonis plans.ts via
+ *   featureGate — ditegakkan di lapisan debit ini, bukan hanya di UI;
+ *   audit FINISH WS-B 2026-11-08: sebelumnya consume menerima fitur apa
+ *   pun selama saldo cukup, jadi panggilan UI yang terlewat/baru bisa
+ *   memotong kredit untuk fitur yang dikunci paket, mis. DED/Dokumen
+ *   untuk Free yang masih punya sisa 100 kredit),
+ * - jumlah kredit tidak sah (<= 0 / bukan bilangan bulat), atau
+ * - kunci idempotency `jobReference` sudah pernah tercatat sebagai
+ *   pemakaian (satu pekerjaan AI tidak terpotong dua kali — retry/klik
+ *   ganda pada referensi yang sama adalah no-op yang melaporkan false;
+ *   audit FINISH WS-B: sebelumnya dua consume dengan jobReference sama
+ *   memotong dua kali),
+ * - saldo tidak cukup.
+ * Pemanggil wajib menampilkan konfirmasi/penolakan. Pemakaian tanpa
+ * jobReference tetap diizinkan (jalur lama) tetapi tidak terlindungi
+ * idempotency — pemanggil baru WAJIB mengisinya.
  */
 export function mockConsume(
   feature: AiFeature,
@@ -92,8 +108,21 @@ export function mockConsume(
   description: string,
   opts: { model?: string; jobReference?: string; tokensIn?: number; tokensOut?: number; weightedTokens?: number } = {}
 ): boolean {
+  if (
+    (feature === 'chat-ai' || feature === 'ded-ai' || feature === 'ai-document') &&
+    !planAllowsAiFeature(state.plan, feature)
+  ) {
+    return false;
+  }
+  if (!Number.isInteger(credits) || credits <= 0) return false;
+  if (
+    opts.jobReference &&
+    state.ledger.some((e) => e.jobReference === opts.jobReference && e.credits < 0)
+  ) {
+    return false;
+  }
   const total = state.subscription + state.topup + state.bonus;
-  if (credits <= 0 || credits > total) return false;
+  if (credits > total) return false;
   // Kurangi dengan urutan: bonus → topup → langganan.
   let rest = credits;
   for (const k of ['bonus', 'topup', 'subscription'] as const) {

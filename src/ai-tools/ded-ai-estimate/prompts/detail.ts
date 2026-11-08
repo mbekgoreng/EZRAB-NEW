@@ -31,7 +31,7 @@ export function createDetailSystemPrompt(ctx: { projectType: string; pricingPoli
   const contract = `Kamu adalah estimator DED (DED AI Estimate — mode DETAIL). Tugasmu: analisis mendalam gambar kerja DED proyek tipe "${projectType}" dan susun daftar pekerjaan dengan kuantitas + estimasi harga satuan yang dapat dipertanggungjawabkan.
 
 ${standardPricingPolicySection(policy)}
-${policy === 'FULL_AI' ? `FIELD TAMBAHAN MODE FULL_AI: setiap workItem boleh berisi "proposedSubtotal": quantity × estimatedUnitPrice (null bila salah satunya null); tingkat atas berisi "proposedGrandTotal": jumlah semua proposedSubtotal.` : `MODE DATABASE: JANGAN mengeluarkan field proposedSubtotal atau proposedGrandTotal — total resmi dihitung aplikasi dari data tervalidasi.`}
+${policy === 'FULL_AI' ? `FIELD TAMBAHAN MODE FULL_AI: "proposedSubtotal" per workItem & "proposedGrandTotal" di tingkat atas (usulanmu; null bila quantity/harga null). Kuantitas hanya dihitung dari dasar terstruktur: derivation ber-satuan eksplisit, jadwal unit tertulis, atau "dimensionUnitAssumption"; angka telanjang menjadi Perlu Input.` : `MODE DATABASE: JANGAN mengeluarkan field proposedSubtotal atau proposedGrandTotal — total resmi dihitung aplikasi dari data tervalidasi.`}
 
 ATURAN WAJIB:
 - Keluarkan JSON MURNI (tanpa teks lain, tanpa markdown).
@@ -54,6 +54,7 @@ ATURAN WAJIB:
       "sourceEvidence": "catatan pada denah/potongan",
       "estimatedUnitPrice": 950000,
       "unitPriceNote": "alasan singkat estimasi harga",
+      "derivation": { "formulaType": "sloof_volume|luas_dimensi|keliling|panjang_total|jumlah_terjadwal", "inputs": [ {"name": "lebar", "value": 15, "unit": "cm"} ] },
       "confidence": "HIGH|MEDIUM|LOW"
     }
   ]
@@ -67,8 +68,8 @@ PENALARAN DIMENSI, AMBIGUITAS & DUPLIKAT (wajib, mode DETAIL):
 
 ATURAN KUANTITAS & HARGA:
 - quantity = null SAAT TIDAK ADA dasar yang dapat kamu yakini. BUKAN 0.
-${policy === 'FULL_AI' ? `- estimatedUnitPrice: WAJIB diisi untuk semua item umum — jangan biarkan kosong untuk item standar. Referensi 2026: lapis aus Rp120-180rb/m2, aspal lapen Rp100-150rb/m2, sirtu Rp200-300rb/m3, urugan tanah Rp50-100rb/m3, gorong-gorong pelat Rp15-25jt/unit, buis beton Rp8-15jt/unit.
-- estimatedUnitPrice = null HANYA untuk item sangat kustom tanpa referensi pasar. Harga SEMUANYA adalah AI_ESTIMATE (bukan harga resmi AHSP/database).
+${policy === 'FULL_AI' ? `- estimatedUnitPrice: WAJIB untuk semua item umum; null HANYA untuk item sangat kustom. Referensi 2026: lapis aus Rp120-180rb/m2, lapen Rp100-150rb/m2, sirtu Rp200-300rb/m3, urugan tanah Rp50-100rb/m3, gorong-gorong pelat Rp15-25jt/unit, buis beton Rp8-15jt/unit. Semua harga = AI_ESTIMATE (bukan harga resmi AHSP/database).
+- unitPriceNote WAJIB berisi dasar estimasi; tanpa dasar, estimasi tak ditempel.
 - Subtotal/total resmi dihitung aplikasi secara deterministik; yang kamu hitung hanya proposedSubtotal/proposedGrandTotal sebagai usulan.` : `- estimatedUnitPrice HANYA kandidat fallback (mode DATABASE — tidak ada tabel harga pasar di mode ini): isi bila ada perkiraan masuk akal dari DED/spesifikasi, boleh null bila tak ada dasar. TIDAK ADA kewajiban mengisi harga untuk semua item.
 - Harga final ditentukan aplikasi: kanonis bila item cocok database, estimasi AI berlabel bila tidak. Perkiraanmu BUKAN harga resmi dan BUKAN harga database. JANGAN menghitung subtotal/total resmi — aplikasi yang menghitung dari data tervalidasi.`}
 - KOLOM: quantity = TOTAL VOLUME semua kolom (m³), BUKAN panjang. BENAR: 12 kolom @ 0.15×0.15×3m → 0.81, units "m3". SALAH: 0.15, units "m'".
@@ -121,6 +122,10 @@ export interface DedDetailOutput {
     sourceEvidence?: string;
     estimatedUnitPrice: number | null;
     unitPriceNote?: string;
+    /** Dasar terstruktur kuantitas (inputs bernilai + satuan eksplisit per input). */
+    derivation?: { formulaType: string; inputs: Array<{ name: string; value: number; unit: string; source?: string }> };
+    /** Satuan dimensi yang dinyatakan model sebagai ASUMSI (bukan fakta DED). */
+    dimensionUnitAssumption?: 'mm' | 'cm' | 'm';
     confidence?: 'HIGH' | 'MEDIUM' | 'LOW';
     /** Usulan AI (mode FULL_AI saja): quantity × estimatedUnitPrice, null bila salah satunya null. */
     proposedSubtotal?: number | null;

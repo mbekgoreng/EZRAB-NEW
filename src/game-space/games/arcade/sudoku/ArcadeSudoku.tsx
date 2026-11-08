@@ -13,13 +13,37 @@ import {
   fmtTime, MATERIALS, DIFFICULTY_INFO, DIFFICULTIES,
   type Difficulty, type Puzzle,
 } from './logic';
+import { useSprite, MATERIAL_SPRITES, type MaterialSlug } from '../../../shared/materialSprites';
+
+/** Nilai 1..9 -> slug set ikon material bersama (generate-AI). */
+const SUDOKU_SLUGS: Record<number, MaterialSlug> = {
+  1: 'bata', 2: 'kayu', 3: 'besi', 4: 'batu', 5: 'kaca',
+  6: 'cat', 7: 'kawat', 8: 'pipa', 9: 'aspal',
+};
 
 /**
- * Glif material prosedural (SVG digambar kode — BUKAN emoji, BUKAN hasil
- * generate; provenance dicatat di manifest). Satu kamus visual untuk nilai
+ * FALLBACK glif material prosedural (SVG digambar kode — BUKAN emoji, BUKAN
+ * hasil generate; provenance dicatat di manifest). Dipakai HANYA bila sprite
+ * generate-AI dari set material bersama (shared/materialSprites) belum siap
+ * atau gagal muat. Satu kamus visual untuk nilai
  * 1..9, dirancang terbaca pada 24px: siluet + warna khas per material.
  */
 export function MaterialGlyph({ v, size = 26 }: { v: number; size?: number }): React.JSX.Element {
+  const slug = SUDOKU_SLUGS[v];
+  const img = useSprite(slug ? MATERIAL_SPRITES[slug] : null);
+  if (img && slug) {
+    // Sprite generate-AI dari set material bersama; glif prosedural di bawah
+    // menjadi FALLBACK bila sprite belum siap / gagal muat.
+    return (
+      <img
+        src={img.src}
+        alt={MATERIALS[v].nama}
+        aria-label={MATERIALS[v].nama}
+        draggable={false}
+        style={{ width: size, height: size, objectFit: 'contain', display: 'block', userSelect: 'none' }}
+      />
+    );
+  }
   const s = { width: size, height: size, display: 'block' } as React.CSSProperties;
   switch (v) {
     case 1: // Bata

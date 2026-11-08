@@ -2,8 +2,10 @@
  * PERANG CRANE — Battleship reskin konstruksi.
  * Taruh armada alat berat di grid lahan 10x10, lalu bombardir markas AI SEDANG.
  * Hunt/target AI (paritas + perpanjangan garis) — bisa dikalahkan dengan strategi.
- * Semua grafis gameplay digambar prosedural di canvas (siluet vektor per jenis
- * alat berat, ledakan bintang, riak meleset, asap bangkai) — tanpa emoji.
+ * Semua grafis gameplay digambar prosedural di canvas (ledakan bintang,
+ * riak meleset, asap bangkai) — tanpa emoji. Siluet alat berat kini sprite
+ * generate-AI (set bersama `shooterSprites`, kelompok 6); gambar vektor
+ * prosedural lama menjadi fallback-nya.
  */
 import React, { useRef, useState } from 'react';
 import { useGameCanvas, type GameApi } from '../../../engine2d';
@@ -14,6 +16,15 @@ import {
   shipAt, key, createAi, aiChooseShot, aiRegister, mulberry32, placementCells,
   type Board, type AiMemory, type Placed, type ShipKind,
 } from './logic';
+import { drawShooterSprite, preloadShooterSprites, useSprite, SHOOTER_SPRITES, type ShooterSlug } from '../../../shared/shooterSprites';
+
+preloadShooterSprites();
+
+/** Peta ShipKind (logic.ts) -> slug sprite kendaraan kelompok 6. */
+const VEHICLE_SLUGS: Record<ShipKind, ShooterSlug> = {
+  crane: 'veh-crane', bulldozer: 'veh-bulldozer', excavator: 'veh-excavator',
+  molen: 'veh-molen', pickup: 'veh-pickup',
+};
 
 const SLUG = 'battleship';
 const LW = 390;
@@ -370,7 +381,7 @@ export default function ArcadeBattleship({ onExit }: { onExit: () => void }): Re
 
       {screen === 'ready' && (
         <Overlay>
-          <VehicleIcon kind="crane" size={92} />
+          <VehicleHero />
           <h2 style={titleStyle}>PERANG CRANE</h2>
           <p style={textStyle}>Taruh 5 alat berat di lahanmu, lalu bombardir markas kontraktor lawan sampai semua armadanya tenggelam. Dia balas tembak — jangan sampai markasmu duluan yang rata!</p>
           <button style={primaryBtn} onClick={startPlace}>Atur Armada</button>
@@ -498,8 +509,8 @@ function track(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h
   }
 }
 
-/** Siluet alat berat digambar di ruang lokal L (panjang) x T (tebal), depan = +x. */
-function drawVehicleShape(ctx: CanvasRenderingContext2D, kind: ShipKind, L: number, T: number, p: Palette): void {
+/** Siluet alat berat prosedural (FALLBACK) di ruang lokal L (panjang) x T (tebal), depan = +x. */
+function drawVehicleShapeProcedural(ctx: CanvasRenderingContext2D, kind: ShipKind, L: number, T: number, p: Palette): void {
   ctx.lineJoin = 'round';
   if (kind === 'crane') {
     // pondasi + menara kisi
@@ -659,12 +670,30 @@ function drawVehicle(
   ctx.beginPath();
   ctx.ellipse(b.x + b.w / 2, b.y + b.h * 0.86, b.w * 0.46, b.h * 0.16, 0, 0, TAU);
   ctx.fill();
-  ctx.translate(b.x + b.w / 2, b.y + b.h / 2);
-  if (!b.horiz) ctx.rotate(Math.PI / 2);
-  ctx.translate(-L / 2, -T / 2);
-  // inset tipis agar siluet tidak menempel garis petak
-  ctx.translate(L * 0.015, T * 0.06);
-  drawVehicleShape(ctx, ship.def.kind, L * 0.97, T * 0.88, p);
+  let drew = false;
+  if (!wreck) {
+    // sprite AI: ruang lokal sama (depan = +x), kotak L x L — sprite kendaraan
+    // sendiri lebar-dominan sehingga muat tanpa distorsi terasa.
+    ctx.save();
+    ctx.translate(b.x + b.w / 2, b.y + b.h / 2);
+    if (!b.horiz) ctx.rotate(Math.PI / 2);
+    drew = drawShooterSprite(ctx, VEHICLE_SLUGS[ship.def.kind], 0, 0, L * 0.99, L * 0.99);
+    ctx.restore();
+  }
+  if (!drew) {
+    ctx.translate(b.x + b.w / 2, b.y + b.h / 2);
+    if (!b.horiz) ctx.rotate(Math.PI / 2);
+    ctx.translate(-L / 2, -T / 2);
+    // inset tipis agar siluet tidak menempel garis petak
+    ctx.translate(L * 0.015, T * 0.06);
+    drawVehicleShapeProcedural(ctx, ship.def.kind, L * 0.97, T * 0.88, p);
+    if (wreck) {
+      // bangkai sprite tidak ada — kendaraan tenggelam tetap prosedural abu
+      ctx.restore();
+      drawSmoke(ctx, b.x + b.w / 2, b.y + b.h * 0.2, T, t, rm);
+      return;
+    }
+  }
   ctx.restore();
   if (wreck) drawSmoke(ctx, b.x + b.w / 2, b.y + b.h * 0.2, T, t, rm);
 }
@@ -936,7 +965,21 @@ function drawFlashMsg(ctx: CanvasRenderingContext2D, msg: string, alpha: number)
   ctx.restore();
 }
 
-/** Ikon SVG garis sederhana per jenis alat berat (palet & layar sambutan). */
+/** Pahlawan layar sambutan: sprite crane AI; ikon garis = fallback. */
+function VehicleHero(): React.JSX.Element {
+  const img = useSprite(SHOOTER_SPRITES['veh-crane']);
+  if (!img) return <VehicleIcon kind="crane" size={92} />;
+  return <img src={img.src} alt="" aria-hidden="true" style={{ width: 132, height: 132, objectFit: 'contain' }} />;
+}
+
+/** Cuplikan palet armada: sprite kendaraan AI; ikon garis = fallback. */
+function VehicleThumb({ kind }: { kind: ShipKind }): React.JSX.Element {
+  const img = useSprite(SHOOTER_SPRITES[VEHICLE_SLUGS[kind]]);
+  if (!img) return <VehicleIcon kind={kind} size={26} />;
+  return <img src={img.src} alt="" aria-hidden="true" style={{ width: 34, height: 24, objectFit: 'contain' }} />;
+}
+
+/** Ikon SVG garis sederhana per jenis alat berat (FALLBACK palet & sambutan). */
 function VehicleIcon({ kind, size }: { kind: ShipKind; size: number }): React.JSX.Element {
   const color = KIND_COLOR[kind];
   const common: React.SVGProps<SVGSVGElement> = {
@@ -1015,7 +1058,7 @@ function FleetPalette(props: {
                 display: 'flex', alignItems: 'center', gap: 6,
               }}
             >
-              <VehicleIcon kind={d.kind} size={26} />
+              <VehicleThumb kind={d.kind} />
               {d.name}{done ? ' · terpasang' : ''}
             </button>
           );

@@ -12,10 +12,25 @@ import {
 } from './logic';
 import { useSprite } from '../../../engine2d/sprites';
 import cardBackUrl from '../../../assets/blackjack/card-back-proyek.webp';
+import { BLACKJACK_SUITS } from '../../../shared/cardSuitSprites';
 import { CoffeeCupIcon } from '../../../engine2d/icons';
 
-/** Ikon material di tengah kartu, per suit (0..3): Bata, Besi, Kayu, Pipa. */
+/**
+ * Ikon material di tengah kartu: sprite corak generate-AI dari set
+ * bersama (shared/cardSuitSprites, peta BLACKJACK_SUITS — indeks 3 =
+ * Pipa, BUKAN Cat) via useSprite seperti punggung kartu; SVG prosedural
+ * di bawah menjadi FALLBACK bila sprite belum siap / gagal muat.
+ */
 function SuitMaterial({ suit, size = 34 }: { suit: number; size?: number }): React.JSX.Element {
+  const img = useSprite(BLACKJACK_SUITS[suit] ?? null);
+  if (img) {
+    return (<img src={img.src} alt="" draggable={false} style={{ width: size, height: size, display: 'block' }} />);
+  }
+  return (<SuitMaterialProcedural suit={suit} size={size} />);
+}
+
+/** Ikon material prosedural (fallback), per suit (0..3): Bata, Besi, Kayu, Pipa. */
+function SuitMaterialProcedural({ suit, size = 34 }: { suit: number; size?: number }): React.JSX.Element {
   const st: React.CSSProperties = { width: size, height: size, display: 'block' };
   if (suit === 0) return (<svg style={st} viewBox="0 0 40 40"><rect x="4" y="10" width="32" height="20" rx="3" fill="#c4502e" stroke="#7e2f16" strokeWidth="2" /><line x1="4" y1="20" x2="36" y2="20" stroke="#7e2f16" strokeWidth="2" /><line x1="20" y1="10" x2="20" y2="20" stroke="#7e2f16" strokeWidth="2" /><line x1="12" y1="20" x2="12" y2="30" stroke="#7e2f16" strokeWidth="2" /><line x1="28" y1="20" x2="28" y2="30" stroke="#7e2f16" strokeWidth="2" /></svg>);
   if (suit === 1) return (<svg style={st} viewBox="0 0 40 40"><polygon points="20,5 32,12 32,28 20,35 8,28 8,12" fill="#94a3b8" stroke="#475569" strokeWidth="2" /><circle cx="20" cy="20" r="6.5" fill="#64748b" stroke="#334155" strokeWidth="2" /><line x1="16" y1="16" x2="24" y2="24" stroke="#e2e8f0" strokeWidth="2.4" /></svg>);

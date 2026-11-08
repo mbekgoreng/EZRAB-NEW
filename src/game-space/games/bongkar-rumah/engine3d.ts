@@ -484,7 +484,11 @@ export class Bongkar3DEngine {
         shape.lineTo(0, b.h);
         shape.closePath();
         const geo = this.track(new THREE.ExtrudeGeometry(shape, { depth: w, bevelEnabled: false }));
-        geo.translate(0, 0, -w / 2);
+        // Origin geometri WAJIB di tengah (sama seperti box): placeBlockMesh &
+        // syncViewMatrix menempatkan mesh di py + h/2. Tanpa -h/2 di Y, alas
+        // segitiga (lokal y=0) ikut terangkat h/2 -> gable melayang di atas
+        // atap dan puncaknya menusuk keluar dari bidang panel.
+        geo.translate(0, -b.h / 2, -w / 2);
         const pair = tex[MAT_TEX[b.mat]];
         const mapI = new THREE.CanvasTexture(pair.intact);
         mapI.colorSpace = THREE.SRGBColorSpace;
@@ -530,11 +534,15 @@ export class Bongkar3DEngine {
       this.levelTrash.push(st);
       this.signIds.add(sign.id);
       const sm = new THREE.Mesh(
-        new THREE.BoxGeometry(sign.cw, sign.h, sign.cd),
+        // Unit box: ukuran akhir datang dari scale di placeBlockMesh.
+        // BoxGeometry sebesar blok + scale sebesar blok = skala ganda
+        // (papan ter-render 16 satuan lebar, melayang menutupi atap ruko).
+        new THREE.BoxGeometry(1, 1, 1),
         new THREE.MeshStandardMaterial({ map: st, roughness: 0.8 }),
       );
       this.levelTrash.push(sm.geometry, sm.material as THREE.Material);
       sm.castShadow = true;
+      sm.userData.blockId = sign.id; // identitas pemilik mesh (utk pickAt & onDestroyed)
       this.placeBlockMesh(sm, sign);
       this.scene.add(sm);
       this.signMeshes.push(sm);
@@ -576,8 +584,19 @@ export class Bongkar3DEngine {
 
   /** Posisikan tumpukan puing di kaki bangunan (jangkar dari bounds level). */
   private placeRubble(): void {
+    this.layoutRubble();
+  }
+
+  /**
+   * Tata tumpukan puing: kecil saat progres 0% (belum ada yang dihancurkan,
+   * jangan menutupi fasad), membesar dari tanah seiring progres. Ukuran &
+   * posisi Y dihitung dari satu faktor s agar alas sprite selalu di tanah.
+   */
+  private layoutRubble(): void {
     if (!this.rubble || !this.rubbleAnchor) return;
-    this.rubble.position.set(this.rubbleAnchor.x, 1.05, this.rubbleAnchor.z);
+    const s = 0.3 + progress(this.blocks) * 1.0;
+    this.rubble.scale.set(4.4 * s, 3.0 * s, 1);
+    this.rubble.position.set(this.rubbleAnchor.x, 1.5 * s + 0.02, this.rubbleAnchor.z);
     this.rubble.visible = true;
   }
 
@@ -693,9 +712,12 @@ export class Bongkar3DEngine {
     const v = this.instByView.get(b.id);
     if (v) {
       this.hideView(v);
-      // papan nama ikut hilang
+      // Papan nama ikut hilang HANYA bila blok papan nama itu sendiri yang
+      // hancur. Pencocokan lama via posisi.x menyembunyikan papan nama saat
+      // blok lain ber-pusat-x sama hancur (pelat lantai ruko px=3) -> blok
+      // papan nama kehilangan representasi klik-nya dan tak bisa dihancurkan.
       for (const s of this.signMeshes) {
-        if (Math.abs(s.position.x - b.px) < 0.01) s.visible = false;
+        if (s.userData.blockId === b.id) s.visible = false;
       }
     }
     this.score += points;
@@ -1096,7 +1118,10 @@ export class Bongkar3DEngine {
         }
         const sign = this.signMeshes.find((s) => s === obj);
         if (sign) {
-          const sb = this.blocks.find((b) => b.mat === 'kayu' && b.anchored && b.cd < 0.6);
+          // Blok pemilik mesh ini (identitas eksplisit); heuristik lama hanya
+          // cadangan bila userData hilang.
+          const sb = this.blocks.find((b) => b.id === sign.userData.blockId)
+            ?? this.blocks.find((b) => b.mat === 'kayu' && b.anchored && b.cd < 0.6);
           if (sb) { this.tapBlock(sb.id); return; }
         }
       }
@@ -1138,10 +1163,7 @@ export class Bongkar3DEngine {
 
   private pushHud(): void {
     // Tumpukan puing membesar seiring progres penghancuran (umpan balik dampak).
-    if (this.rubble) {
-      const s = 0.65 + progress(this.blocks) * 0.95;
-      this.rubble.scale.set(4.4 * s, 3.0 * s, 1);
-    }
+    this.layoutRubble();
     this.cb.onHud({
       score: this.score,
       pct: Math.round(progress(this.blocks) * 100),

@@ -13,6 +13,15 @@ import {
   mulberry, TILE_W, TILE_H, COLS, ROWS,
   type Tile,
 } from './logic';
+import {
+  drawMaterialSprite, preloadMaterialSprites, type MaterialSlug,
+} from '../../../shared/materialSprites';
+
+/** Indeks MATERIALS komponen (0..11) -> slug set ikon material bersama. */
+const MAHJONG_SLUGS: MaterialSlug[] = [
+  'keramik', 'bata', 'marmer', 'kayu', 'besi', 'cat',
+  'semen', 'pasir', 'kaca', 'genteng', 'pipa', 'kabel',
+];
 
 const SLUG = 'mahjong-match';
 const LW = 390;
@@ -230,6 +239,7 @@ export default function ArcadeMahjongMatch({ onExit }: { onExit: () => void }): 
 
   const canvasRef = useGameCanvas((api) => {
     apiRef.current = api;
+    preloadMaterialSprites();
     api.pushHud = (h) => setHud(h as Hud);
     setMuted(api.sfx.muted);
 
@@ -486,6 +496,9 @@ function drawDepot(ctx: CanvasRenderingContext2D, t: number, lh: number, rm: boo
  * 5 Cat 6 Semen 7 Pasir 8 Kaca 9 Genteng 10 Pipa 11 Kabel.
  */
 function drawMaterialGlyph(ctx: CanvasRenderingContext2D, kind: number, x: number, y: number): void {
+  // Ikon material utama = sprite generate-AI dari set bersama; seluruh gambar
+  // prosedural di bawah menjadi FALLBACK bila sprite belum siap/gagal muat.
+  if (drawMaterialSprite(ctx, MAHJONG_SLUGS[kind], x + TILE_W / 2, y + 19, 34, 30)) return;
   const gx = x + 7;
   const gy = y + 6;
   const cx = x + TILE_W / 2;

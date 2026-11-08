@@ -1,0 +1,67 @@
+{
+  "at": "2026-11-08T00:55:19.054Z",
+  "casesTotal": 9,
+  "casesPassed": 9,
+  "fieldAccuracy": 100,
+  "defects": [
+    {
+      "id": "ENGINE_ZERO_PRICE_REPRESENTATION",
+      "severity": "MINOR",
+      "caseId": "(probe)",
+      "rootCause": "Mesin parametrik merepresentasikan harga belum terpetakan sebagai 0, bukan null. Lapisan tampil menanganinya dengan benar (diperlakukan tak berharga), tetapi representasi ini rapuh untuk konsumen baru. Perbaikan engine = APPROVAL_REQUIRED (mesin harga) — TIDAK diperbaiki otonom.",
+      "evidence": "1 item berharga satuan 0 pada probe skenario wajib."
+    }
+  ],
+  "caseResults": [
+    {
+      "id": "mandatory-incremental-house",
+      "passed": true,
+      "notes": []
+    },
+    {
+      "id": "correction-single-field",
+      "passed": true,
+      "notes": []
+    },
+    {
+      "id": "minimal-essential-only",
+      "passed": true,
+      "notes": []
+    },
+    {
+      "id": "finalize-missing-essential",
+      "passed": true,
+      "notes": []
+    },
+    {
+      "id": "land-vs-building-not-conflict",
+      "passed": true,
+      "notes": []
+    },
+    {
+      "id": "road-linear-km-not-bathroom",
+      "passed": true,
+      "notes": []
+    },
+    {
+      "id": "renovation-kind",
+      "passed": true,
+      "notes": []
+    },
+    {
+      "id": "word-number-floors",
+      "passed": true,
+      "notes": []
+    },
+    {
+      "id": "affirmation-finalize-oke",
+      "passed": true,
+      "notes": []
+    }
+  ],
+  "unavailableMetrics": [
+    "Latensi provider AI live — tidak terukur dari lingkungan lokal tanpa memanggil provider berbayar",
+    "Biaya AI per tugas live — menunggu metering backend aktif (saat ini simulasi frontend)",
+    "Ketersediaan model/provider real-time — tidak dipantau dari repo"
+  ]
+}

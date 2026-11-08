@@ -11,6 +11,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { User, Session } from '@supabase/supabase-js';
 import { getSupabaseClient, isSupabaseAuthEnabled } from '../lib/supabase';
+import { authEmailRedirectTo } from '../components/auth/authFormShared';
 
 interface AuthState {
   /** false when Supabase env is not configured (legacy demo mode) */
@@ -20,6 +21,10 @@ interface AuthState {
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
   signUp: (email: string, password: string, name?: string) => Promise<{ ok: boolean; error?: string }>;
+  /** Kirim email reset kata sandi (tautan mendarat di /masuk, type=recovery). */
+  resetPassword: (email: string) => Promise<{ ok: boolean; error?: string }>;
+  /** Pasang kata sandi baru pada sesi pemulihan yang aktif. */
+  updatePassword: (newPassword: string) => Promise<{ ok: boolean; error?: string }>;
   /** Redirects the browser to Google; resolves false only when the redirect cannot start. */
   signInWithGoogle: () => Promise<{ ok: boolean; error?: string }>;
   signOut: () => Promise<void>;
@@ -34,6 +39,8 @@ const AuthContext = createContext<AuthState>({
   loading: false,
   signIn: async () => ({ ok: false, error: 'Auth tidak dikonfigurasi' }),
   signUp: async () => ({ ok: false, error: 'Auth tidak dikonfigurasi' }),
+  resetPassword: async () => ({ ok: false, error: 'Auth tidak dikonfigurasi' }),
+  updatePassword: async () => ({ ok: false, error: 'Auth tidak dikonfigurasi' }),
   signInWithGoogle: async () => ({ ok: false, error: 'Auth tidak dikonfigurasi' }),
   signOut: async () => {},
   getAccessToken: async () => null,
@@ -88,8 +95,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { error } = await sb.auth.signUp({
       email: email.trim(),
       password,
-      options: cleanName ? { data: { full_name: cleanName, display_name: cleanName } } : undefined,
+      options: {
+        emailRedirectTo: authEmailRedirectTo(),
+        ...(cleanName ? { data: { full_name: cleanName, display_name: cleanName } } : {}),
+      },
     });
+    if (error) return { ok: false, error: friendlyAuthError(error.message) };
+    return { ok: true };
+  }, []);
+
+  const resetPassword = useCallback(async (email: string) => {
+    const sb = getSupabaseClient();
+    if (!sb) return { ok: false, error: 'Auth tidak dikonfigurasi' };
+    const { error } = await sb.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: authEmailRedirectTo(),
+    });
+    if (error) return { ok: false, error: friendlyAuthError(error.message) };
+    return { ok: true };
+  }, []);
+
+  const updatePassword = useCallback(async (newPassword: string) => {
+    const sb = getSupabaseClient();
+    if (!sb) return { ok: false, error: 'Auth tidak dikonfigurasi' };
+    const { error } = await sb.auth.updateUser({ password: newPassword });
     if (error) return { ok: false, error: friendlyAuthError(error.message) };
     return { ok: true };
   }, []);
@@ -125,8 +153,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const value = useMemo(
-    () => ({ enabled, user, session, loading, signIn, signUp, signInWithGoogle, signOut, getAccessToken }),
-    [enabled, user, session, loading, signIn, signUp, signInWithGoogle, signOut, getAccessToken]
+    () => ({ enabled, user, session, loading, signIn, signUp, resetPassword, updatePassword, signInWithGoogle, signOut, getAccessToken }),
+    [enabled, user, session, loading, signIn, signUp, resetPassword, updatePassword, signInWithGoogle, signOut, getAccessToken]
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

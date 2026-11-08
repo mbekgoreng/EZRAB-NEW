@@ -148,6 +148,10 @@ eq(rNoTax.projects[0].totalRab, 110000, 'rekonsiliasi: grand total tanpa pajak =
 // 10% (grand total 843.305.479) karena field proyek tidak terpasang —
 // mesin ekspor membaca overhead HANYA dari field proyek (fallback 10,
 // penyelarasan owner 2026-10-27), bukan dari costSummary.
+// DIPERBARUI keputusan owner 2026-11-08: fallback tanpa field kini 0%
+// (bukan 10), sehingga proyek tanpa field overhead mengekspor grand
+// 769.974.568 (direct 660.638.840 + profit ringkasan 5% + PPN 11%).
+// Kasus field terpasang di bawah TIDAK berubah (806.640.024).
 const sectionsFixture = [{
   id: 'sec-1', code: 'A', name: 'Semua',
   subtotal: 660638840,
@@ -158,8 +162,8 @@ const projNoField: any = {
   ppnEnabled: true,
 };
 const expNoField = UnifiedProjectEngine.computeCostSummaryFromSections(projNoField, sectionsFixture);
-eq(expNoField.overheadPercent, 10, 'ekspor: overhead tanpa field proyek = fallback 10');
-eq(expNoField.grandTotal, 843305479, 'ekspor: grand total tanpa field = 843.305.479 (divergensi lama)');
+eq(expNoField.overheadPercent, 0, 'ekspor: overhead tanpa field proyek = fallback 0 (2026-11-08)');
+eq(expNoField.grandTotal, 769974568, 'ekspor: grand total tanpa field = 769.974.568 (fallback 0%)');
 const expWithField = UnifiedProjectEngine.computeCostSummaryFromSections(
   { ...projNoField, overheadPercent: 5 }, sectionsFixture
 );

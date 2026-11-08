@@ -19,6 +19,11 @@ import {
   inGrace, medalFor, MEDAL_LABEL, FLAP_BUFFER_S, BIRD_R,
   type FlapState, type Gate, type DeathCause, type Bird,
 } from './logic';
+import { drawFlyer, preloadFlyers } from '../../../shared/flyerSprites';
+
+// Sapuan visual Kelompok 4: muat awal sprite mandor terbang bersama
+// (generate-AI); gambar prosedural di bawah tetap FALLBACK.
+preloadFlyers();
 
 const SLUG = 'flappy-bird';
 const LW = 390;
@@ -161,8 +166,30 @@ function drawGate(ctx: CanvasRenderingContext2D, g: Gate, groundY: number, t: nu
   }
 }
 
-/** Mandor berhelm: rompi oranye, helm kuning, lengan mengepak. */
+/**
+ * Mandor terbang: sprite generate-AI bersama (shared/flyerSprites,
+ * crossfade dua pose sayap berbobot fase `wing` yang sama) digambar
+ * lebih dulu dengan transformasi identik gambar lama — translasi,
+ * rotasi b.rot, squash — lebar 62px, pusat digeser (+6, +8).
+ * Prosedural di bawah menjadi FALLBACK.
+ */
 function drawMandor(ctx: CanvasRenderingContext2D, b: Bird, t: number, wing: number, squash: number): void {
+  if (drawMandorSprite(ctx, b, wing, squash)) return;
+  drawMandorProcedural(ctx, b, t, wing, squash);
+}
+
+function drawMandorSprite(ctx: CanvasRenderingContext2D, b: Bird, wing: number, squash: number): boolean {
+  ctx.save();
+  ctx.translate(b.x, b.y);
+  ctx.rotate(b.rot);
+  if (squash > 0) ctx.scale(1 + squash * 0.1, 1 - squash * 0.12);
+  const ok = drawFlyer(ctx, 6, 8, 62, wing);
+  ctx.restore();
+  return ok;
+}
+
+/** Mandor berhelm prosedural (fallback): rompi oranye, helm kuning, lengan mengepak. */
+function drawMandorProcedural(ctx: CanvasRenderingContext2D, b: Bird, t: number, wing: number, squash: number): void {
   ctx.save();
   ctx.translate(b.x, b.y);
   ctx.rotate(b.rot);

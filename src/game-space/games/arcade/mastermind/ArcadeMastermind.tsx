@@ -8,6 +8,7 @@ import { sfx } from '../../../engine2d';
 import { bestKey, getBest, setBest } from '../../../engine2d/best';
 import { popText } from '../../../engine2d/juice2d';
 import { BAHAN, SLOTS, MAX_GUESSES, genCode, evaluate, isWin, scoreFor, countRemaining, type Feedback } from './logic';
+import { MASTERMIND_PEGS, preloadBoardTokens, useSprite } from '../../../shared/boardTokenSprites';
 
 const FONT = "'Plus Jakarta Sans','Inter',system-ui,sans-serif";
 const BK = bestKey('tebak-campuran', 'best');
@@ -21,6 +22,7 @@ interface Row {
 
 export default function ArcadeMastermind({ onExit }: { onExit: () => void }): React.JSX.Element {
   const wrapRef = useRef<HTMLDivElement | null>(null);
+  React.useEffect(() => { preloadBoardTokens(); }, []);
   const [screen, setScreen] = useState<Screen>('tutorial');
   const [code, setCode] = useState<number[]>([]);
   const [rows, setRows] = useState<Row[]>([]);
@@ -239,9 +241,28 @@ export default function ArcadeMastermind({ onExit }: { onExit: () => void }): Re
   );
 }
 
+/**
+ * Pin bahan: sprite bola bahan generate-AI (Kelompok 2) — WARNA tiap
+ * bahan tetap persis warna BAHAN di logic (abu semen, kuning pasir,
+ * cokelat kerikil, biru air, putih kapur, ungu aditif) karena warna
+ * adalah kode fungsi permainan; lingkaran gradasi CSS di bawah =
+ * fallback bila sprite belum siap/gagal.
+ */
 function Peg({ bahanId, small }: { bahanId: number; small?: boolean }): React.JSX.Element {
   const b = BAHAN[bahanId];
+  const img = useSprite(MASTERMIND_PEGS[bahanId]);
   const d = small ? 30 : 40;
+  if (img) {
+    return (
+      <img
+        src={img.src}
+        alt={b.nama}
+        title={b.nama}
+        draggable={false}
+        style={{ width: d, height: d, display: 'block', objectFit: 'contain', filter: 'drop-shadow(0 3px 5px rgba(0,0,0,0.45))' }}
+      />
+    );
+  }
   return (
     <div style={{
       width: d, height: d, borderRadius: '50%',

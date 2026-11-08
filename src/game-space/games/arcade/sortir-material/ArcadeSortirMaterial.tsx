@@ -12,6 +12,15 @@ import {
   BINS, MAX_LIVES, fallSpeed, spawnInterval, spawnItem, sortResult,
   scoreFor, levelAt, lifeGainFor, type SortItem, type MatKind,
 } from './logic';
+import {
+  drawMaterialSprite, preloadMaterialSprites, useSprite,
+  MATERIAL_SPRITES, type MaterialSlug,
+} from '../../../shared/materialSprites';
+
+/** MatKind -> slug set ikon bersama; besi sortir digambar sebagai balok I. */
+const SORTIR_SLUGS: Record<MatKind, MaterialSlug> = {
+  bata: 'bata', kayu: 'kayu', besi: 'balok-besi',
+};
 
 const FONT = "'Plus Jakarta Sans','Inter',system-ui,sans-serif";
 const BK = bestKey('sortir-material', 'best');
@@ -67,6 +76,7 @@ export default function ArcadeSortirMaterial({ onExit }: { onExit: () => void })
 
   const canvasRef = useGameCanvas((api) => {
     apiRef.current = api;
+    preloadMaterialSprites();
     api.pushHud = (h) => setHud(h as typeof hud);
 
     const s: S = {
@@ -275,6 +285,8 @@ export default function ArcadeSortirMaterial({ onExit }: { onExit: () => void })
 
     /** Glif prosedural per jenis material (untuk label bin). */
     const drawBinGlyph = (ctx: CanvasRenderingContext2D, kind: MatKind, cx: number, cy: number): void => {
+      // Ikon bin = sprite generate-AI dari set bersama; prosedural = fallback.
+      if (drawMaterialSprite(ctx, SORTIR_SLUGS[kind], cx, cy, 40, 40)) return;
       ctx.save();
       ctx.translate(cx, cy);
       if (kind === 'bata') {
@@ -404,6 +416,19 @@ export default function ArcadeSortirMaterial({ onExit }: { onExit: () => void })
 
     const drawItem = (ctx: CanvasRenderingContext2D, it: SortItem): void => {
       const dragged = it.id === s.dragId;
+      // Item jatuh utama = sprite generate-AI dari set bersama (satu ikon per
+      // jenis; varian prosedural menjadi FALLBACK bila sprite belum siap).
+      if (drawMaterialSprite(ctx, SORTIR_SLUGS[it.kind], it.x, it.y, dragged ? 62 : 54, dragged ? 62 : 54)) {
+        if (dragged) {
+          ctx.save();
+          ctx.strokeStyle = '#fde047';
+          ctx.lineWidth = 3;
+          ctx.setLineDash([8, 6]);
+          ctx.beginPath(); ctx.arc(it.x, it.y, 34 + Math.sin(s.t * 8) * 2, 0, TAU); ctx.stroke();
+          ctx.restore();
+        }
+        return;
+      }
       ctx.save();
       ctx.translate(it.x, it.y);
       if (dragged) ctx.scale(1.18, 1.18);
@@ -802,16 +827,20 @@ function BurstIcon(): React.JSX.Element {
 /** Chip tutorial: glif SVG mini per jenis material + nama bin. */
 function BinChip({ kind }: { kind: MatKind }): React.JSX.Element {
   const def = BINS[kind];
+  const img = useSprite(MATERIAL_SPRITES[SORTIR_SLUGS[kind]]);
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.08)', border: `1px solid ${def.color}`, borderRadius: 999, padding: '5px 11px 5px 7px', color: '#fff', fontWeight: 900, fontSize: 12.5 }}>
-      {kind === 'bata' && (
+      {img && (
+        <img src={img.src} alt="" aria-hidden="true" draggable={false} style={{ width: 22, height: 22, objectFit: 'contain', display: 'block', userSelect: 'none' }} />
+      )}
+      {!img && kind === 'bata' && (
         <svg width="22" height="16" viewBox="0 0 22 16" aria-hidden="true">
           <rect x="1" y="8.5" width="9" height="6" rx="1" fill="#ef4444" />
           <rect x="12" y="8.5" width="9" height="6" rx="1" fill="#dc2626" />
           <rect x="6.5" y="1.5" width="9" height="6" rx="1" fill="#f87171" />
         </svg>
       )}
-      {kind === 'kayu' && (
+      {!img && kind === 'kayu' && (
         <svg width="22" height="16" viewBox="0 0 22 16" aria-hidden="true">
           <rect x="1" y="3" width="16" height="10" rx="2" fill="#b45309" />
           <path d="M3 7c4-1.6 8 1.4 12 0" stroke="#7c3a06" strokeWidth="1.3" fill="none" />
@@ -819,7 +848,7 @@ function BinChip({ kind }: { kind: MatKind }): React.JSX.Element {
           <ellipse cx="18.6" cy="8" rx="1.2" ry="2.2" fill="none" stroke="#92400e" strokeWidth="0.9" />
         </svg>
       )}
-      {kind === 'besi' && (
+      {!img && kind === 'besi' && (
         <svg width="22" height="16" viewBox="0 0 22 16" aria-hidden="true">
           <rect x="2" y="1.5" width="18" height="3.6" fill="#94a3b8" />
           <rect x="2" y="10.9" width="18" height="3.6" fill="#64748b" />

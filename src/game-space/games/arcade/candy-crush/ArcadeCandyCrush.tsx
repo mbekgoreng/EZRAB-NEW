@@ -13,6 +13,13 @@ import {
   ROWS, COLS,
   type Board, type MovePair, type Pos, type ResolveResult, type Special,
 } from './logic';
+import {
+  drawMaterialSprite, preloadMaterialSprites, useSprite,
+  MATERIAL_SPRITES, type MaterialSlug,
+} from '../../../shared/materialSprites';
+
+/** Indeks material logic (0..4) -> slug set ikon material bersama. */
+const CANDY_SLUGS: MaterialSlug[] = ['bata', 'semen', 'besi', 'kayu', 'kaca'];
 
 const FONT = "'Plus Jakarta Sans','Inter',system-ui,sans-serif";
 const BK = bestKey('material-match', 'best');
@@ -62,20 +69,39 @@ const MAT_COLORS: [string, string][] = [
   ['#d9a05b', '#8a5a24'], // kayu
   ['#a5e3fc', '#0369a1'], // kaca
 ];
-/** Swatch prosedural DOM per material (gradasi sama dengan ubin Canvas). */
+/** Swatch material per material: sprite generate-AI dari set bersama bila
+ * siap; FALLBACK swatch prosedural DOM (gradasi sama dengan ubin Canvas). */
+function MatSwatch({ i, size }: { i: number; size: number }): React.JSX.Element {
+  const img = useSprite(MATERIAL_SPRITES[CANDY_SLUGS[i]]);
+  if (img) {
+    return (
+      <img
+        src={img.src}
+        alt={MATERIALS[i]}
+        title={MATERIALS[i]}
+        draggable={false}
+        style={{ width: size, height: size, objectFit: 'contain', display: 'inline-block', userSelect: 'none' }}
+      />
+    );
+  }
+  const [c0, c1] = MAT_COLORS[i];
+  return (
+    <span
+      title={MATERIALS[i]}
+      style={{
+        width: size, height: size, borderRadius: 4, display: 'inline-block',
+        background: `linear-gradient(180deg, ${c0}, ${c1})`,
+        border: '1px solid rgba(0,0,0,0.35)', boxShadow: 'inset 0 2px 3px rgba(255,255,255,0.35)',
+      }}
+    />
+  );
+}
+
 function MatSwatches({ size = 13 }: { size?: number }): React.JSX.Element {
   return (
     <span style={{ display: 'inline-flex', gap: 5, verticalAlign: 'middle' }}>
-      {MAT_COLORS.map(([c0, c1], i) => (
-        <span
-          key={i}
-          title={MATERIALS[i]}
-          style={{
-            width: size, height: size, borderRadius: 4, display: 'inline-block',
-            background: `linear-gradient(180deg, ${c0}, ${c1})`,
-            border: '1px solid rgba(0,0,0,0.35)', boxShadow: 'inset 0 2px 3px rgba(255,255,255,0.35)',
-          }}
-        />
+      {MAT_COLORS.map((_, i) => (
+        <MatSwatch key={i} i={i} size={size} />
       ))}
     </span>
   );
@@ -96,6 +122,7 @@ export default function ArcadeCandyCrush({ onExit }: { onExit: () => void }): Re
 
   const canvasRef = useGameCanvas((api) => {
     apiRef.current = api;
+    preloadMaterialSprites();
     api.pushHud = (h) => setHud(h as typeof hud);
 
     const s: S = {
@@ -440,9 +467,12 @@ export default function ArcadeCandyCrush({ onExit }: { onExit: () => void }): Re
       if (typeof ctx.roundRect === 'function') ctx.roundRect(x + 2, y + 2, sz - 4, sz - 4, r * 0.8);
       else ctx.rect(x + 2, y + 2, sz - 4, sz - 4);
       ctx.stroke();
-      // detail material
+      // ikon material: sprite generate-AI dari set bersama; detail prosedural
+      // di bawah menjadi FALLBACK bila sprite belum siap / gagal muat.
+      const iconOk = drawMaterialSprite(ctx, CANDY_SLUGS[rc.t], x + sz / 2, y + sz / 2, sz * 0.8, sz * 0.8);
+      // detail material (fallback prosedural)
       ctx.lineWidth = Math.max(1, sz * 0.045);
-      if (rc.t === 0) {
+      if (!iconOk && rc.t === 0) {
         // bata: susunan bata
         ctx.strokeStyle = 'rgba(120,20,20,0.55)';
         for (let i = 1; i < 3; i += 1) {
@@ -455,14 +485,14 @@ export default function ArcadeCandyCrush({ onExit }: { onExit: () => void }): Re
         ctx.moveTo((3 * sz) / 4, y + sz / 3); ctx.lineTo((3 * sz) / 4, y + (2 * sz) / 3);
         ctx.moveTo(x + sz / 2, y + (2 * sz) / 3); ctx.lineTo(x + sz / 2, y + sz - 3);
         ctx.stroke();
-      } else if (rc.t === 1) {
+      } else if (!iconOk && rc.t === 1) {
         // semen: karung + lipatan
         ctx.strokeStyle = 'rgba(90,85,80,0.6)';
         ctx.beginPath(); ctx.moveTo(x + 4, y + sz * 0.3); ctx.lineTo(x + sz - 4, y + sz * 0.3); ctx.stroke();
         ctx.beginPath(); ctx.moveTo(x + 4, y + sz * 0.62); ctx.lineTo(x + sz - 4, y + sz * 0.62); ctx.stroke();
         ctx.fillStyle = 'rgba(70,65,60,0.5)';
         ctx.beginPath(); ctx.arc(x + sz / 2, y + sz * 0.46, sz * 0.09, 0, TAU); ctx.fill();
-      } else if (rc.t === 2) {
+      } else if (!iconOk && rc.t === 2) {
         // besi: 3 batang beton
         for (let i = 0; i < 3; i += 1) {
           const yy = y + sz * (0.25 + i * 0.25);
@@ -473,7 +503,7 @@ export default function ArcadeCandyCrush({ onExit }: { onExit: () => void }): Re
           ctx.fillStyle = bg;
           ctx.fillRect(x + 4, yy - Math.max(2, sz * 0.05), sz - 8, Math.max(4, sz * 0.1));
         }
-      } else if (rc.t === 3) {
+      } else if (!iconOk && rc.t === 3) {
         // kayu: serat
         ctx.strokeStyle = 'rgba(120,70,20,0.5)';
         for (let i = 0; i < 3; i += 1) {
@@ -483,7 +513,7 @@ export default function ArcadeCandyCrush({ onExit }: { onExit: () => void }): Re
           ctx.bezierCurveTo(x + sz * 0.35, yy + 3, x + sz * 0.65, yy - 3, x + sz - 4, yy + 2);
           ctx.stroke();
         }
-      } else {
+      } else if (!iconOk) {
         // kaca: kilau diagonal + bingkai
         ctx.strokeStyle = 'rgba(255,255,255,0.75)';
         ctx.lineWidth = Math.max(2, sz * 0.07);
@@ -511,7 +541,10 @@ export default function ArcadeCandyCrush({ onExit }: { onExit: () => void }): Re
         ctx.save();
         ctx.shadowColor = 'rgba(239,68,68,0.9)';
         ctx.shadowBlur = 12;
-        ctx.fillStyle = '#dc2626';
+        // ikon dinamit generate-AI menutupi ikon material dasar; batang
+        // prosedural di bawah = fallback bila sprite belum siap.
+        if (!drawMaterialSprite(ctx, 'dinamit', x + sz / 2, y + sz / 2, sz * 0.92, sz * 0.92)) {
+          ctx.fillStyle = '#dc2626';
         const sw = sz * 0.16;
         for (let i = 0; i < 3; i += 1) {
           const sx = x + sz * 0.26 + i * sw * 1.15;
@@ -529,6 +562,7 @@ export default function ArcadeCandyCrush({ onExit }: { onExit: () => void }): Re
         ctx.stroke();
         ctx.fillStyle = '#fde047';
         ctx.beginPath(); ctx.arc(x + sz * 0.85, y + 2, 3, 0, TAU); ctx.fill();
+        }
         ctx.restore();
       }
       // kilau atas

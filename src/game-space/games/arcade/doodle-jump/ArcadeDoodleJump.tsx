@@ -10,6 +10,11 @@ import {
   createWorld, stepWorld, WORLD_W, zoneFor, platformStyleFor,
   type World, type Platform,
 } from './logic';
+import { drawJumper, preloadFlyers } from '../../../shared/flyerSprites';
+
+// Sapuan visual Kelompok 4: muat awal sprite tukang lompat bersama
+// (generate-AI); gambar prosedural di bawah tetap FALLBACK.
+preloadFlyers();
 
 /** Ikon helm proyek prosedural (SVG) — pengganti emoji di layar menu. */
 function HelmIcon({ size = 40 }: { size?: number }): React.JSX.Element {
@@ -317,7 +322,28 @@ export default function ArcadeDoodleJump({ onExit }: { onExit: () => void }): Re
       ctx.restore();
     };
 
+    // Tukang lompat: sprite generate-AI bersama (shared/flyerSprites)
+    // digambar lebih dulu di dalam transformasi yang sama persis
+    // (translasi kaki, tilt, squash & stretch) — kotak 58u x 78u
+    // berpusat (0, -39u) meniru bentang figur lama (x -15..+19,
+    // y -78..0). Prosedural di bawah menjadi FALLBACK.
     const drawPlayer = (ctx: CanvasRenderingContext2D, W: number, H: number): void => {
+      const { x, y } = worldToScreen(s.w.px, s.w.py, W, H);
+      const u = W / 400; // unit skala
+      const sq = s.squash;
+      const stretchY = 1 + sq * 0.25 - clamp(-s.w.vy / 1500, 0, 0.2);
+      const squashX = 1 - sq * 0.18;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(s.tilt);
+      ctx.scale(squashX, Math.max(0.6, stretchY));
+      const ok = drawJumper(ctx, 0, -39 * u, 58 * u, 78 * u);
+      ctx.restore();
+      if (ok) return;
+      drawPlayerProcedural(ctx, W, H);
+    };
+
+    const drawPlayerProcedural = (ctx: CanvasRenderingContext2D, W: number, H: number): void => {
       const { x, y } = worldToScreen(s.w.px, s.w.py, W, H);
       const u = W / 400; // unit skala
       const sq = s.squash;

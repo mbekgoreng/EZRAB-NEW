@@ -13,6 +13,15 @@ import {
   scoreFor, comboBonus, orderFor, orderBonusFor, GAME_DURATION, DROP_X_FRAC,
   type CraneItem, type CranePhase, type ItemKind,
 } from './logic';
+import {
+  drawMaterialSprite, preloadMaterialSprites, useSprite,
+  MATERIAL_SPRITES, type MaterialSlug,
+} from '../../../shared/materialSprites';
+
+/** ItemKind -> slug set ikon material bersama (ItemKind persis slug-nya). */
+const CAPIT_SLUGS: Record<ItemKind, MaterialSlug> = {
+  helm: 'helm', bata: 'bata', pipa: 'pipa', semen: 'semen', 'kunci-emas': 'kunci-emas',
+};
 
 const FONT = "'Plus Jakarta Sans','Inter',system-ui,sans-serif";
 const BK = bestKey('capit-material', 'best');
@@ -25,6 +34,26 @@ const KIND_COLORS: Record<ItemKind, string> = {
   semen: '#d6c9a8',
   'kunci-emas': '#f59e0b',
 };
+
+/** Penanda jenis di HUD/chip: ikon sprite set bersama bila siap; FALLBACK
+ * kotak warna khas per jenis material. */
+function KindMark({ kind, size }: { kind: ItemKind; size: number }): React.JSX.Element {
+  const img = useSprite(MATERIAL_SPRITES[CAPIT_SLUGS[kind]]);
+  if (img) {
+    return (
+      <img
+        src={img.src}
+        alt=""
+        aria-hidden="true"
+        draggable={false}
+        style={{ width: size, height: size, objectFit: 'contain', flexShrink: 0, display: 'block', userSelect: 'none' }}
+      />
+    );
+  }
+  return (
+    <span style={{ width: size, height: size, borderRadius: 4, background: KIND_COLORS[kind], border: '1px solid rgba(255,255,255,0.5)', flexShrink: 0, display: 'inline-block' }} />
+  );
+}
 
 type Screen = 'tutorial' | 'play' | 'pause' | 'over';
 
@@ -81,6 +110,7 @@ export default function ArcadeCapitCrane({ onExit }: { onExit: () => void }): Re
 
   const canvasRef = useGameCanvas((api) => {
     apiRef.current = api;
+    preloadMaterialSprites();
     api.pushHud = (h) => setHud(h as typeof hud);
 
     const s: S = {
@@ -411,8 +441,10 @@ export default function ArcadeCapitCrane({ onExit }: { onExit: () => void }): Re
       ctx.restore();
     };
 
-    // Glif canvas prosedural per jenis material (helm, bata, pipa, sak semen, kunci emas) — tanpa emoji.
+    // Hadiah material utama = sprite generate-AI dari set bersama; glif canvas
+    // prosedural per jenis di bawah menjadi FALLBACK bila sprite belum siap.
     const drawItemGlyph = (ctx: CanvasRenderingContext2D, kind: ItemKind, x: number, y: number, sc: number): void => {
+      if (drawMaterialSprite(ctx, CAPIT_SLUGS[kind], x, y, 46 * sc, 46 * sc)) return;
       ctx.save();
       ctx.translate(x, y);
       ctx.scale(sc, sc);
@@ -643,7 +675,7 @@ export default function ArcadeCapitCrane({ onExit }: { onExit: () => void }): Re
           <div style={{ pointerEvents: 'auto', background: 'rgba(20,30,50,0.6)', border: '1px solid rgba(74,222,128,0.45)', borderRadius: 14, padding: '7px 12px', color: '#fff', backdropFilter: 'blur(6px)' }}>
             <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: 1, color: '#4ade80' }}>PESANAN MANDOR</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
-              <span style={{ width: 12, height: 12, borderRadius: 4, background: KIND_COLORS[hud.order], border: '1px solid rgba(255,255,255,0.5)', flexShrink: 0 }} />
+              <KindMark kind={hud.order} size={18} />
               <span style={{ fontWeight: 900, fontSize: 13 }}>{ITEM_DEFS[hud.order].name}</span>
             </div>
             <div style={{ fontSize: 11, opacity: 0.9 }}>Antar jenis ini: bonus +50% poin</div>
@@ -678,7 +710,7 @@ export default function ArcadeCapitCrane({ onExit }: { onExit: () => void }): Re
           <div style={{ display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap', margin: '8px 0' }}>
             {(Object.keys(ITEM_DEFS) as ItemKind[]).map((k) => (
               <span key={k} style={{ ...chip, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ width: 10, height: 10, borderRadius: 3, background: KIND_COLORS[k], border: '1px solid rgba(255,255,255,0.5)' }} />
+                <KindMark kind={k} size={16} />
                 {ITEM_DEFS[k].name} {ITEM_DEFS[k].points}
               </span>
             ))}

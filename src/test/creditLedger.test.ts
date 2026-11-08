@@ -609,6 +609,27 @@ describe('tariffRegistry', () => {
   });
 });
 
+describe('usageMeter — jalur fallback usageLog (tanpa saveUsage)', () => {
+  it('35. WS-B: record() idempoten juga pada adapter polos { usageLog } — retry dengan kunci sama tidak menggandakan catatan', async () => {
+    const plainAdapter: { usageLog: unknown[] } = { usageLog: [] };
+    const meter = createUsageMeter(plainAdapter as never);
+    const rec = {
+      jobId: 'job_wsb', requestId: 'req_wsb', idempotencyKey: 'um_wsb_fallback',
+      userId: 'u-wsb', feature: 'chat-ai/fast',
+      provider: 'gemini', model: 'gemini-3.5-flash-lite',
+      usage: { inputTokens: 10, outputTokens: 5 },
+      attempts: 1, durationMs: 100, status: 'actual',
+    };
+    const r1 = await meter.record(rec);
+    const r2 = await meter.record(rec);
+    expect(r1.ok).toBe(true);
+    expect(r2.duplicate).toBe(true);
+    expect(plainAdapter.usageLog.length).toBe(1);
+    const viaMeter = await meter.getUsage('u-wsb');
+    expect(viaMeter.length).toBe(1);
+  });
+});
+
 describe('usageStore + usageMeter', () => {
   it('34. meter MENYIMPAN ke store (tidak dibuang); bisa di-query; duplikat tidak menggandakan', async () => {
     const store = createMemoryUsageStore();

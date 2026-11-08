@@ -7,6 +7,7 @@ import React, { useRef, useState } from 'react';
 import { useGameCanvas, type GameApi, TAU, clamp } from '../../../engine2d';
 import { bestKey, getBest, setBest } from '../../../engine2d/best';
 import { popText } from '../../../engine2d/juice2d';
+import { drawSceneSprite, preloadSceneSprites, type SceneSlug } from '../../../shared/sceneSprites';
 import { ABA_ABA, extendSequence, checkInput, tempoFor, hudSummary } from './logic';
 
 /** Ikon SVG prosedural (pengganti emoji) untuk tombol & overlay DOM. */
@@ -44,6 +45,7 @@ interface S {
 }
 
 export default function ArcadeSimonSays({ onExit }: { onExit: () => void }): React.JSX.Element {
+  preloadSceneSprites();
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const apiRef = useRef<GameApi | null>(null);
   const screenRef = useRef<Screen>('tutorial');
@@ -307,6 +309,16 @@ export default function ArcadeSimonSays({ onExit }: { onExit: () => void }): Rea
       if (typeof ctx.roundRect === 'function') ctx.roundRect(r.x, r.y, r.w, r.h, 18);
       else ctx.rect(r.x, r.y, r.w, r.h);
       ctx.stroke();
+      // Glif = sprite generate-AI per aba-aba; panel, cahaya keadaan `lit`,
+      // warna panel & label tetap digambar kode (fungsional). Bila sprite
+      // belum siap, glif prosedural lama di bawah menjadi fallback.
+      const GLYPH_SPRITE: Record<string, SceneSlug> = {
+        palu: 'scene-rambu-palu', helm: 'scene-rambu-helm',
+        bendera: 'scene-rambu-bendera', peluit: 'scene-rambu-peluit',
+      };
+      const glyphSlug = GLYPH_SPRITE[a.glyph];
+      const glyphOk = glyphSlug ? drawSceneSprite(ctx, glyphSlug, cx, cy, R * 2.1, R * 2.1) : false;
+      if (!glyphOk) {
       // Glif perkakas/isyarat prosedural per panel (bukan emoji):
       // 0 palu, 1 helm, 2 bendera aba-aba, 3 peluit — menyala mengikuti `lit`.
       const main = lit ? a.color : a.dark;
@@ -380,6 +392,7 @@ export default function ArcadeSimonSays({ onExit }: { onExit: () => void }): Rea
         ctx.beginPath(); ctx.arc(cx - R * 0.1, cy + R * 0.05, R * 0.26, 0, TAU); ctx.fill();
         ctx.strokeStyle = ink; ctx.lineWidth = 2;
         ctx.beginPath(); ctx.arc(cx + R * 0.62, cy - R * 0.5, R * 0.14, 0, TAU); ctx.stroke();
+      }
       }
       // label aba-aba + nama glif di bawah panel glif
       ctx.fillStyle = lit ? '#ffffff' : 'rgba(226,232,240,0.75)';

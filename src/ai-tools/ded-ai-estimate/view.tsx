@@ -24,6 +24,11 @@ import { consumePendingAiEntry } from '../aiNavigation';
 import { notificationBus } from '../../notifications/notificationBus';
 import { useProject } from '../../context/ProjectContext';
 import { useI18n } from '../../i18n/I18nContext';
+import { Building2 } from 'lucide-react';
+import {
+  FeatureFullscreenShell, FsChip, FsStep,
+} from '../../components/feature-shell/FeatureFullscreenShell';
+import { useCreditSimulation } from '../../ai-credits/useCreditSimulation';
 
 interface Props {
   onNavigateToTab?: (tab: string) => void;
@@ -55,6 +60,9 @@ const initialStages = (t: (key: string) => string): DedAiStage[] =>
 export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
   const { t } = useI18n();
   const { projects, createProject, bulkAddRabItems, getLastBulkAddOutcome, setCurrentProjectId } = useProject();
+  // Saldo kredit simulasi (store bersama mockAdapter — angka yang sama
+  // dengan yang dilihat InputView) untuk chip Kredit AI di bar atas shell.
+  const { balance: creditBalance } = useCreditSimulation();
   const [screen, setScreen] = useState<Screen>('input');
   const [session, setSession] = useState<DedAiSession>({
     files: [], description: '', projectName: '',
@@ -588,8 +596,61 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
     }
   };
 
+  // ---- Kerangka layar-penuh (mockup ter-ACC owner 2026-11-08) ----
+  // Shell hanya membingkai: ketiga sub-view di bawah tidak berubah logika,
+  // state, maupun servicenya. "Kembali ke Workspace" memakai jalur navigasi
+  // yang sudah ada (onNavigateToTab ke menu dashboard).
+  const handleExit = () => {
+    if (onNavigateToTab) onNavigateToTab('dashboard');
+    else if (screen !== 'input') setScreen('input');
+  };
+
+  const shellSteps: FsStep[] =
+    screen === 'input'
+      ? [
+          { label: 'Upload DED', state: 'active' },
+          { label: 'Analisis', state: 'upcoming' },
+          { label: 'Hasil', state: 'upcoming' },
+        ]
+      : screen === 'progress'
+        ? [
+            { label: 'Upload DED', state: 'done', onClick: handleBack },
+            { label: 'Analisis', state: 'active' },
+            { label: 'Hasil', state: 'upcoming' },
+          ]
+        : [
+            { label: 'Upload DED', state: 'done', onClick: () => setScreen('input') },
+            { label: 'Analisis', state: 'done' },
+            { label: 'Hasil', state: 'active' },
+          ];
+
+  const isFullAiResult = screen === 'result' && !!fullAiOutput;
+  const shellChips = isFullAiResult ? (
+    <>
+      <FsChip>Full AI Estimate</FsChip>
+      <FsChip kind="plain">
+        {fullAiOutput.provenance.provider && fullAiOutput.provenance.model
+          ? `${fullAiOutput.provenance.provider} / ${fullAiOutput.provenance.model}`
+          : fullAiOutput.provenance.model || 'Model tidak diketahui'}
+      </FsChip>
+    </>
+  ) : screen !== 'input' ? (
+    <>
+      <FsChip>
+        {(session.policy ?? 'FULL_AI') === 'DATABASE'
+          ? 'Mode: Estimasi Database EZRAB'
+          : 'Mode: Estimasi Full AI'}
+      </FsChip>
+      <FsChip kind="plain">{session.mode === 'FAST' ? 'Cepat' : 'Mendalam'}</FsChip>
+    </>
+  ) : undefined;
+
+  const shellContextText =
+    result?.projectName || summary.projectName || session.projectName || undefined;
+
+  let screenContent: React.ReactNode;
   if (screen === 'progress') {
-    return (
+    screenContent = (
       <DedAiProgressView
         stages={stages}
         percent={percent}
@@ -602,30 +663,28 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
         resultReady={resultReady}
       />
     );
-  }
-
-  if (screen === 'result' && fullAiOutput) {
-    return (
+  } else if (screen === 'result' && fullAiOutput) {
+    screenContent = (
       <FullAiResultView
         output={fullAiOutput}
         onFinalize={handleFullAiFinalize}
         onBack={() => setScreen('input')}
+        embedded
       />
     );
-  }
-  if (screen === 'result' && result) {
+  } else if (screen === 'result' && result) {
     // G2 (Opsi A): bila ada kuantitas ASSUMPTION yang masuk total, nyatakan
     // secara terlihat di layar hasil — total tunggal adalah ESTIMASI dan
     // tidak boleh terbaca sebagai total tervalidasi sumber. Tanpa asumsi,
     // tidak ada strip tambahan.
     const assumptionCount = resolveAssumptionCount(result.coverage, result.items);
-    return (
+    screenContent = (
       <>
         {assumptionCount > 0 && (
           <div
             role="note"
             style={{
-              margin: '12px 16px 0',
+              margin: '20px 24px 0',
               padding: '10px 14px',
               borderRadius: '12px',
               border: '1px solid var(--ez-hue-amber-border, #F59E0B)',
@@ -651,28 +710,43 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
         />
       </>
     );
+  } else {
+    screenContent = (
+      <>
+        {dedEntryBanner && (
+          <div style={{ margin: '20px 24px 0', padding: '10px 14px', borderRadius: '12px', border: '1px solid var(--ez-color-border)', background: 'var(--ez-color-surface)', fontSize: '12.5px', lineHeight: 1.5 }}>
+            <strong>Konteks DED: {dedEntryBanner.label}</strong>
+            {dedEntryBanner.prompt ? <div style={{ marginTop: '4px', whiteSpace: 'pre-wrap' }}>{dedEntryBanner.prompt}</div> : null}
+          </div>
+        )}
+        <DedAiInputView
+          initialSession={session}
+          projects={projects.map((p) => ({ id: p.id, name: p.name }))}
+          drafts={drafts.map((d) => ({
+            id: d.id, createdAt: d.createdAt, projectName: d.projectName,
+            itemCount: d.output.items.length, grandTotal: d.output.grandTotal,
+          }))}
+          onStart={handleStart}
+          onLoadDraft={handleLoadDraft}
+          onDeleteDraft={handleDeleteDraft}
+        />
+      </>
+    );
   }
 
   return (
-    <>
-      {dedEntryBanner && (
-        <div style={{ margin: '12px 16px 0', padding: '10px 14px', borderRadius: '12px', border: '1px solid var(--ez-color-border)', background: 'var(--ez-color-surface)', fontSize: '12.5px', lineHeight: 1.5 }}>
-          <strong>Konteks DED: {dedEntryBanner.label}</strong>
-          {dedEntryBanner.prompt ? <div style={{ marginTop: '4px', whiteSpace: 'pre-wrap' }}>{dedEntryBanner.prompt}</div> : null}
-        </div>
-      )}
-      <DedAiInputView
-      initialSession={session}
-      projects={projects.map((p) => ({ id: p.id, name: p.name }))}
-      drafts={drafts.map((d) => ({
-        id: d.id, createdAt: d.createdAt, projectName: d.projectName,
-        itemCount: d.output.items.length, grandTotal: d.output.grandTotal,
-      }))}
-      onStart={handleStart}
-      onLoadDraft={handleLoadDraft}
-      onDeleteDraft={handleDeleteDraft}
-      />
-    </>
+    <FeatureFullscreenShell
+      title="DED Estimate AI"
+      icon={<Building2 size={18} />}
+      contextLabel="Proyek aktif:"
+      contextText={shellContextText}
+      chips={shellChips}
+      creditText={`Kredit AI: ${creditBalance.total.toLocaleString('id-ID')}`}
+      onBack={handleExit}
+      steps={shellSteps}
+    >
+      {screenContent}
+    </FeatureFullscreenShell>
   );
 };
 

@@ -21,7 +21,10 @@
  * DokumenAiView melaporkan status workspace via onAnalysisActiveChange.
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { FolderOpen, ScanSearch, History, Sparkles, LayoutTemplate, ClipboardCheck, Lock } from 'lucide-react';
+import { FolderOpen, ScanSearch, History, Sparkles, LayoutTemplate, ClipboardCheck, Lock, FileText } from 'lucide-react';
+import {
+  FeatureFullscreenShell, FsChip, FsStep,
+} from '../../components/feature-shell/FeatureFullscreenShell';
 import { useCreditSimulation } from '../../ai-credits/useCreditSimulation';
 import { aiFeatureLockedMessage, planAllowsAiFeature } from '../../ai-credits/featureGate';
 import type { DraftVersion } from './store';
@@ -292,7 +295,80 @@ export const DokumenAiView: React.FC<DokumenAiViewProps> = ({ onAnalysisActiveCh
     setTab('analyze');
   };
 
+  // ---- Kerangka layar-penuh (mockup ter-ACC owner 2026-11-08) ----
+  // Shell hanya membingkai Studio: tab, state, dan komponen di dalamnya
+  // tidak berubah. Stepper memetakan tahap NYATA dokumen: Dokumen Saya
+  // (unggah) → status ekstraksi dokumen aktif → workspace Analisis.
+  // Pada tab Studio/Riwayat stepper disembunyikan (bukan alur analisis).
+  const handleExit = () => {
+    if (onNavigateToMenu) onNavigateToMenu('dashboard');
+    else setTab('library');
+  };
+
+  const docSteps: FsStep[] | undefined =
+    tab === 'library' || tab === 'analyze'
+      ? [
+          {
+            label: 'Unggah Dokumen',
+            state: tab === 'library' ? 'active' : 'done',
+            onClick: () => setTab('library'),
+          },
+          {
+            label: 'Proses Ekstraksi',
+            state: !activeDoc
+              ? 'upcoming'
+              : activeDoc.status === 'processing'
+                ? 'active'
+                : activeDoc.status === 'failed'
+                  ? 'upcoming'
+                  : 'done',
+          },
+          {
+            label: 'Hasil Analisis',
+            state: tab === 'analyze' ? 'active' : 'upcoming',
+            onClick: activeDoc ? () => setTab('analyze') : undefined,
+          },
+        ]
+      : undefined;
+
+  const docContextText = activeDoc
+    ? `${activeDoc.fileName}${activeDoc.pages ? ` · ${activeDoc.pages} halaman` : ''} · ${formatBytes(activeDoc.sizeBytes)}`
+    : undefined;
+
+  const docStatusChip = activeDoc ? (
+    <FsChip
+      kind={
+        activeDoc.status === 'ready'
+          ? 'ok'
+          : activeDoc.status === 'needs_review'
+            ? 'warn'
+            : activeDoc.status === 'failed'
+              ? 'danger'
+              : 'mode'
+      }
+    >
+      Status:{' '}
+      {activeDoc.status === 'ready'
+        ? 'Siap'
+        : activeDoc.status === 'needs_review'
+          ? 'Perlu Ditinjau'
+          : activeDoc.status === 'failed'
+            ? 'Gagal'
+            : 'Diproses'}
+    </FsChip>
+  ) : undefined;
+
   return (
+    <FeatureFullscreenShell
+      title="Document AI"
+      icon={<FileText size={18} />}
+      contextLabel={activeDoc ? 'Dokumen:' : undefined}
+      contextText={docContextText}
+      chips={docStatusChip}
+      creditText={`Kredit AI: ${creditBalance.total.toLocaleString('id-ID')}`}
+      onBack={handleExit}
+      steps={docSteps}
+    >
     <div className="docai-shell" data-tutorial="dokumenai-main">
       <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '8px 12px 0' }}>
         <TutorialHelpButton tutorialId="dokumen-ai" label="Buka tutorial AI Dokumen" />
@@ -379,6 +455,7 @@ export const DokumenAiView: React.FC<DokumenAiViewProps> = ({ onAnalysisActiveCh
         )}
       </div>
     </div>
+    </FeatureFullscreenShell>
   );
 };
 

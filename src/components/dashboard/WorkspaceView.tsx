@@ -100,6 +100,17 @@ import '../layout/menu-animations.css';
 import '../layout/premium-frame.css';
 import '../../styles/dashboard-refined.css';
 import '../../styles/workspace-mobile-fixes.css';
+import '../../styles/mobile-v3.css';
+import {
+  MobileBottomNavV3,
+  MobileNotifSheet,
+  MobileMenuSheet,
+  MobileHomeV3,
+  MobileProjectsV3,
+  MobileRabQtoHeader,
+  type MobileNavTab,
+} from '../mobile/MobileV3';
+import { openDashboardTour } from '../onboarding/OnboardingOrchestrator';
 import { UnifiedBreadcrumb } from '../navigation/UnifiedBreadcrumb';
 import { TopBar } from '../navigation/TopBar';
 import { TemplateRabCatalogView } from '../templates/TemplateRabCatalogView';
@@ -196,6 +207,9 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
 
   // Mobile Navigation & Viewport State
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  // Overlay mobile v3 (ACC owner 2026-11-08): panel Notifikasi & layar Menu
+  // semua fitur — presentasi saja, datanya dari konteks aplikasi yang sama.
+  const [mobileSheet, setMobileSheet] = useState<'notif' | 'menu' | null>(null);
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' ? window.innerWidth < 1024 : false);
   const [isNarrowMobile, setIsNarrowMobile] = useState(() => typeof window !== 'undefined' ? window.innerWidth < 768 : false);
 
@@ -448,7 +462,7 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
           flexDirection: 'column',
           minWidth: 0,
           overflowY: 'auto',
-          paddingBottom: isNarrowMobile ? 'calc(68px + var(--ezrab-safe-bottom))' : '0px',
+          paddingBottom: isNarrowMobile ? 'calc(96px + var(--ezrab-safe-bottom, 0px))' : '0px',
         }}
       >
         {/* TOPBAR (CLEAN, MINIMAL — breadcrumb menyatu dalam satu header).
@@ -543,7 +557,19 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
             </section>
           </main>
         ) : activeMenu === 'proyek' ? (
-          <main style={{ padding: '20px 24px', background: 'var(--ez-color-background)', minHeight: 'calc(100vh - 64px)' }}>
+          <main style={{ padding: isNarrowMobile ? '14px 14px 20px' : '20px 24px', background: 'var(--ez-color-background)', minHeight: 'calc(100vh - 64px)' }}>
+            {isNarrowMobile ? (
+              <MobileProjectsV3
+                projects={projects}
+                initialFilter={projectFilter}
+                onFilterChange={(f) => setProjectFilter(f)}
+                onCreateProject={() => setCreateModalOpen(true)}
+                onOpenProject={(projectId) => {
+                  setCurrentProjectId(projectId);
+                  setActiveMenu('manajemen-proyek', projectId);
+                }}
+              />
+            ) : (
             <ProjectsView
               projects={projects}
               activities={derivedActivities}
@@ -557,6 +583,7 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
                 setActiveMenu(menu, projectId);
               }}
             />
+            )}
           </main>
         ) : (activeMenu === 'daftar-pekerjaan' || activeMenu === 'pekerjaan' || activeMenu === 'qto-daftar') ? (
           <main style={{ padding: '20px 24px', background: 'var(--ez-color-background)', minHeight: 'calc(100vh - 64px)' }}>
@@ -624,6 +651,15 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
              activeMenu === 'rab-catatan' ||
              activeMenu === 'rab-pengaturan') ? (
           <main style={{ padding: '20px 24px', background: 'var(--ez-color-background)', minHeight: 'calc(100vh - 64px)' }}>
+            {isNarrowMobile && (
+              <MobileRabQtoHeader
+                family="rab"
+                onSelectFamily={(fam) => { if (fam === 'qto') setActiveMenu('qto-rekap'); }}
+                currentProject={currentProject}
+                rabItems={projectRabItems}
+                onOpenRelatedProject={() => { if (currentProject) setActiveMenu('manajemen-proyek', currentProject.id); }}
+              />
+            )}
             <RabEstimasiView
               key={activeMenu}
               projects={projects}
@@ -693,7 +729,16 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
             </Suspense>
           </main>
         ) : (activeMenu === 'qto' || activeMenu === 'qto-rekap') ? (
-          <main style={{ minHeight: 'calc(100vh - 64px)' }}>
+          <main style={{ minHeight: 'calc(100vh - 64px)', padding: isNarrowMobile ? '20px 24px' : undefined }}>
+            {isNarrowMobile && (
+              <MobileRabQtoHeader
+                family="qto"
+                onSelectFamily={(fam) => { if (fam === 'rab') setActiveMenu('rab-estimasi'); }}
+                currentProject={currentProject}
+                rabItems={projectRabItems}
+                onOpenRelatedProject={() => { if (currentProject) setActiveMenu('manajemen-proyek', currentProject.id); }}
+              />
+            )}
             <QtoRekapVolumeView
               onNavigateToCalculator={(calcId, qtoId) => {
                 setActiveCalcId(calcId || 'BOWPLANK');
@@ -859,7 +904,28 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
           // CMS blog — internal, tidak ada di sidebar. Gate capability di BlogAdminPage.
           <BlogAdminPage />
         ) : (
-          <main data-tour="dashboard" style={{ padding: isNarrowMobile ? '16px 14px' : '24px 28px', background: 'var(--ez-color-background)', minHeight: 'calc(100vh - 64px)', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <main data-tour="dashboard" style={{ padding: isNarrowMobile ? '14px 14px 20px' : '24px 28px', background: 'var(--ez-color-background)', minHeight: 'calc(100vh - 64px)', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {isNarrowMobile ? (
+              <MobileHomeV3
+                projects={projects}
+                currentProject={currentProject}
+                onNavigate={(menu, projectId) => {
+                  if (menu === '__menu__') {
+                    setMobileSheet('menu');
+                  } else if (projectId) {
+                    setCurrentProjectId(projectId);
+                    setActiveMenu(menu, projectId);
+                  } else {
+                    setActiveMenu(menu);
+                  }
+                }}
+                onCreateProject={() => setCreateModalOpen(true)}
+                onOpenProjects={(filter) => {
+                  setProjectFilter(filter);
+                  setActiveMenu('proyek', null);
+                }}
+              />
+            ) : (
             <DashboardViewSwitcher
               projects={projects}
               activities={derivedActivities}
@@ -888,6 +954,7 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
               onOpenSubscription={() => setActiveMenu('subscription')}
               onResetData={handleResetData}
             />
+            )}
           </main>
         )}
         </div>
@@ -923,57 +990,57 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
           MOBILE BOTTOM NAVIGATION BAR (< 768px)
          ========================================================================= */}
       {isNarrowMobile && (
-        <nav className="ezrab-bottom-nav" aria-label={t('nav.bottom_nav')}>
-          <button
-            type="button"
-            className={`ezrab-bottom-nav-item ${activeMenu === 'proyek' || activeMenu === 'dashboard' || activeMenu === 'manajemen-proyek' ? 'is-active' : ''}`}
-            onClick={() => setActiveMenu('proyek')}
-            aria-label={t('nav.bottom_proyek')}
-          >
-            <FolderKanban size={18} />
-            <span>{t('nav.bottom_proyek')}</span>
-          </button>
-
-          <button
-            type="button"
-            className={`ezrab-bottom-nav-item ${activeMenu === 'rab-estimasi' ? 'is-active' : ''}`}
-            onClick={() => setActiveMenu('rab-estimasi')}
-            aria-label={t('nav.bottom_estimator')}
-          >
-            <Coins size={18} />
-            <span>{t('nav.bottom_estimator')}</span>
-          </button>
-
-          <button
-            type="button"
-            className="ezrab-bottom-nav-ai-btn"
-            onClick={() => openEzrabAI({ mode: 'chat', projectId: currentProjectId, projectName: currentProject?.name, source: 'mobile' })}
-            title={t('nav.bottom_magic_ai')}
-            aria-label={t('nav.bottom_magic_ai')}
-          >
-            <Sparkles size={19} />
-          </button>
-
-          <button
-            type="button"
-            className={`ezrab-bottom-nav-item ${activeMenu === 'material' || activeMenu === 'database-material' || activeMenu === 'material-harga' || activeMenu === 'harga' ? 'is-active' : ''}`}
-            onClick={() => setActiveMenu('material')}
-            aria-label="Harga"
-          >
-            <Tag size={18} />
-            <span>Harga</span>
-          </button>
-
-          <button
-            type="button"
-            className={`ezrab-bottom-nav-item ${activeMenu === 'ahsp-2026' || activeMenu === 'ahsp' || activeMenu === 'analisa-ahsp' ? 'is-active' : ''}`}
-            onClick={() => setActiveMenu('ahsp-2026')}
-            aria-label={t('nav.bottom_ahsp')}
-          >
-            <Database size={18} />
-            <span>AHSP</span>
-          </button>
-        </nav>
+        <>
+          <MobileBottomNavV3
+            activeTab={
+              mobileSheet === 'notif'
+                ? 'notif'
+                : mobileSheet === 'menu'
+                  ? 'menu'
+                  : activeMenu === 'dashboard'
+                    ? 'beranda'
+                    : activeMenu === 'proyek'
+                      ? 'proyek'
+                      : null
+            }
+            onTab={(tab: MobileNavTab) => {
+              if (tab === 'beranda') {
+                setMobileSheet(null);
+                setActiveMenu('dashboard');
+              } else if (tab === 'proyek') {
+                setMobileSheet(null);
+                setActiveMenu('proyek', null);
+              } else if (tab === 'notif') {
+                setMobileSheet('notif');
+              } else {
+                setMobileSheet('menu');
+              }
+            }}
+            onCreateProject={() => {
+              setMobileSheet(null);
+              setCreateModalOpen(true);
+            }}
+          />
+          {mobileSheet === 'notif' && <MobileNotifSheet onClose={() => setMobileSheet(null)} />}
+          {mobileSheet === 'menu' && (
+            <MobileMenuSheet
+              activeMenu={activeMenu}
+              onSelectMenu={(menu) => {
+                setMobileSheet(null);
+                setActiveMenu(menu);
+              }}
+              onOpenSubscription={() => {
+                setMobileSheet(null);
+                setActiveMenu('subscription');
+              }}
+              onOpenTutorial={() => {
+                setMobileSheet(null);
+                openDashboardTour();
+              }}
+              onClose={() => setMobileSheet(null)}
+            />
+          )}
+        </>
       )}
 
 

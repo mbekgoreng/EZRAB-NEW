@@ -9,6 +9,7 @@
 import React, { useRef, useState } from 'react';
 import { useGameCanvas, sfx, type GameApi } from '../../../engine2d';
 import { bestKey, getBest, setBest } from '../../../engine2d/best';
+import { drawSceneSprite, preloadSceneSprites } from '../../../shared/sceneSprites';
 import {
   MIN_VOL, MAX_VOL, MAX_ATTEMPTS, newTargetForLevel, heatForLevel, heatLabel,
   directionHint, directionFor, levelSpec, nextLevel, levelScore, addRoundScore,
@@ -37,6 +38,7 @@ const HEAT_COLOR: Record<Heat, string> = {
 };
 
 export default function ArcadeNumberGuessing({ onExit }: { onExit: () => void }): React.JSX.Element {
+  preloadSceneSprites();
   const apiRef = useRef<GameApi | null>(null);
   const rngRef = useRef<() => number>(() => Math.random());
   const screenRef = useRef<Screen>('ready');
@@ -577,7 +579,7 @@ function drawScene(
 }
 
 /** Truk molen kartun menghadap kanan: kabin kiri + drum berputar + chute ke bekisting. */
-function drawMixerTruck(ctx: CanvasRenderingContext2D, t: number, gy: number, pourT: number): void {
+function drawMixerTruckProcedural(ctx: CanvasRenderingContext2D, t: number, gy: number, pourT: number): void {
   const bx = 56; const by = gy; // area truk
   ctx.save();
   // bayangan
@@ -647,6 +649,33 @@ function drawMixerTruck(ctx: CanvasRenderingContext2D, t: number, gy: number, po
     ctx.beginPath(); ctx.arc(bx + 66, by - 110 - Math.random() * 20, 5 + Math.random() * 4, 0, TAU); ctx.fill();
   }
   ctx.restore();
+}
+
+function drawMixerTruck(ctx: CanvasRenderingContext2D, t: number, gy: number, pourT: number): void {
+  // Badan truk = sprite generate-AI; strip spiral drum berputar, chute,
+  // aliran cor & asap tetap prosedural dinamis (digambar pemanggil).
+  const bx = 56; const by = gy;
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,0,0,0.25)';
+  ctx.beginPath(); ctx.ellipse(bx + 110, by + 6, 110, 12, 0, 0, TAU); ctx.fill();
+  const ok = drawSceneSprite(ctx, 'scene-molen', bx + 105, by - 62, 250, 128);
+  if (ok) {
+    // strip spiral berputar di atas drum sprite
+    const dx = bx + 132; const dy = by - 88;
+    ctx.save();
+    ctx.translate(dx, dy); ctx.rotate(0.18);
+    ctx.beginPath(); ctx.ellipse(0, 0, 52, 27, 0, 0, TAU); ctx.clip();
+    ctx.strokeStyle = 'rgba(255,255,255,0.4)'; ctx.lineWidth = 8;
+    const off = (t * 40) % 44;
+    for (let sx = -70 + off; sx < 80; sx += 44) {
+      ctx.beginPath(); ctx.moveTo(sx, -30); ctx.lineTo(sx + 22, 30); ctx.stroke();
+    }
+    ctx.restore();
+    ctx.restore();
+    return;
+  }
+  ctx.restore();
+  drawMixerTruckProcedural(ctx, t, gy, pourT);
 }
 
 function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number): void {

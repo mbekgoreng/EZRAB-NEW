@@ -17,6 +17,11 @@ import {
   SUIT_INFO, RANK_LABEL, RANK_NAME,
   type Card, type SolState,
 } from './logic';
+import { drawCardSuit, preloadCardSuits, SOLITAIRE_SUITS, HELMET_URL } from '../../../shared/cardSuitSprites';
+
+// Sapuan visual Kelompok 3: muat awal set corak kartu bersama (sprite
+// generate-AI); glif prosedural di bawah tetap FALLBACK.
+preloadCardSuits();
 
 /**
  * Kartu yang BISA dipindah sekarang (umpan balik keterbacaan):
@@ -139,12 +144,20 @@ function drawSlot(ctx: CanvasRenderingContext2D, x: number, y: number, label: st
 }
 
 /**
- * Glif material prosedural (vektor digambar kode, pola SuitMaterial pilot
- * Blackjack) di tengah & sudut kartu — menggantikan ikon emoji suit.
+ * Glif material: sprite corak generate-AI dari set bersama
+ * (shared/cardSuitSprites, peta SOLITAIRE_SUITS per SUIT_INFO) digambar
+ * lebih dulu pada kotak s*2 — tapak identik glif lama; prosedural di
+ * bawah menjadi FALLBACK bila sprite belum siap / gagal muat.
  * suit: 0 Besi (mur heksagon), 1 Bata, 2 Kayu (papan), 3 Cat (rol cat).
  * `s` = setengah lebar glif dalam px.
  */
 function drawSuitGlyph(ctx: CanvasRenderingContext2D, suit: number, cx: number, cy: number, s: number): void {
+  const url = SOLITAIRE_SUITS[suit];
+  if (url && drawCardSuit(ctx, url, cx, cy, s * 2)) return;
+  drawSuitGlyphProcedural(ctx, suit, cx, cy, s);
+}
+
+function drawSuitGlyphProcedural(ctx: CanvasRenderingContext2D, suit: number, cx: number, cy: number, s: number): void {
   ctx.save();
   ctx.lineWidth = Math.max(1, s * 0.16);
   if (suit === 0) {
@@ -227,8 +240,14 @@ function drawSuitGlyph(ctx: CanvasRenderingContext2D, suit: number, cx: number, 
   ctx.restore();
 }
 
-/** Helm proyek prosedural untuk kartu wajah (J/Q/K). */
+/** Helm kartu wajah (J/Q/K): sprite helm bersama lebih dulu, prosedural fallback. */
 function drawHelmetGlyph(ctx: CanvasRenderingContext2D, cx: number, cy: number, s: number): void {
+  if (drawCardSuit(ctx, HELMET_URL, cx, cy, s * 2)) return;
+  drawHelmetGlyphProcedural(ctx, cx, cy, s);
+}
+
+/** Helm proyek prosedural untuk kartu wajah (J/Q/K). */
+function drawHelmetGlyphProcedural(ctx: CanvasRenderingContext2D, cx: number, cy: number, s: number): void {
   ctx.save();
   const helm = ctx.createLinearGradient(cx, cy - s, cx, cy + s * 0.3);
   helm.addColorStop(0, '#fde047');

@@ -175,8 +175,13 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
       detailLevel: 'PROFESSIONAL',
       priceSource: 'OFFICIAL_AHSP',
       wastePercent: 5,
-      overheadPercent: 10,
-      profitPercent: 5,
+      // Default finansial proyek baru 0/0 (keputusan owner 2026-11-08,
+      // diperluas 05:01 ke permukaan template): pratinjau konfigurator
+      // tidak lagi menambah markup 10/5 secara bawaan. Nilai tersimpan
+      // pengguna di localStorage (pilihan eksplisitnya) tetap dihormati
+      // apa adanya lewat merge di bawah.
+      overheadPercent: 0,
+      profitPercent: 0,
       taxPercent: 11,
       taxEnabled: false
     };

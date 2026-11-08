@@ -5,6 +5,7 @@
  */
 import React, { useRef, useState } from 'react';
 import { useGameCanvas, type GameApi, TAU, clamp, lerp } from '../../../engine2d';
+import { loadSprite, readySprite } from '../../../engine2d/sprites';
 import { bestKey, getBest, setBest } from '../../../engine2d/best';
 import { popText } from '../../../engine2d/juice2d';
 import {
@@ -12,6 +13,20 @@ import {
   zoneForRow, isZoneStart,
   type State, type Lane, type Vehicle,
 } from './logic';
+import vehMolenUrl from '../../../assets/crossy-road/veh-molen.webp';
+import vehBekoUrl from '../../../assets/crossy-road/veh-beko.webp';
+import vehPickupUrl from '../../../assets/crossy-road/veh-pickup.webp';
+import charTukangUrl from '../../../assets/crossy-road/char-tukang.webp';
+import objConeUrl from '../../../assets/crossy-road/obj-cone.webp';
+import objBataUrl from '../../../assets/crossy-road/obj-bata.webp';
+import objDrumUrl from '../../../assets/crossy-road/obj-drum.webp';
+
+/** Sprite generate-AI (visual utama); gagal muat -> fallback prosedural. */
+const VEH_SPRITES: Record<Vehicle['kind'], string> = {
+  molen: vehMolenUrl, beko: vehBekoUrl, pickup: vehPickupUrl,
+};
+const DECO_SPRITES: readonly string[] = [objConeUrl, objBataUrl, objDrumUrl];
+const ALL_SPRITES: readonly string[] = [...Object.values(VEH_SPRITES), ...DECO_SPRITES, charTukangUrl];
 
 const FONT = "'Plus Jakarta Sans','Inter',system-ui,sans-serif";
 const BK = bestKey('nyebrang-proyek', 'best');
@@ -43,6 +58,7 @@ export default function ArcadeCrossyRoad({ onExit }: { onExit: () => void }): Re
   const canvasRef = useGameCanvas((api) => {
     apiRef.current = api;
     api.pushHud = (h) => setHud(h as typeof hud);
+    for (const u of ALL_SPRITES) void loadSprite(u);
 
     const s: S = {
       st: createState((Date.now() % 100000) | 0),
@@ -167,15 +183,15 @@ export default function ArcadeCrossyRoad({ onExit }: { onExit: () => void }): Re
       const y = rowY(row, H) - tile / 2;
       if (y < -tile * 2 || y > H + tile) return;
       if (lane.kind === 'jalan') {
-        // aspal berlapis
+        // aspal berlapis — terang agar lajur terbaca jelas sampai tepi atas
         const g = ctx.createLinearGradient(0, y, 0, y + tile);
-        g.addColorStop(0, '#3f4756');
-        g.addColorStop(0.12, '#333a49');
-        g.addColorStop(1, '#22262f');
+        g.addColorStop(0, '#59637a');
+        g.addColorStop(0.12, '#48536a');
+        g.addColorStop(1, '#39435a');
         ctx.fillStyle = g;
         ctx.fillRect(0, y, W, tile);
         // marka tengah putus-putus
-        ctx.fillStyle = 'rgba(253,224,71,0.75)';
+        ctx.fillStyle = 'rgba(253,224,71,0.9)';
         const dashW = tile * 0.5;
         const off = (s.st.t * lane.speed * lane.dir * tile) % (dashW * 2);
         for (let x = -dashW * 2 + off; x < W + dashW; x += dashW * 2) {
@@ -191,11 +207,11 @@ export default function ArcadeCrossyRoad({ onExit }: { onExit: () => void }): Re
         const rest = row % 7 === 6;
         const g = ctx.createLinearGradient(0, y, 0, y + tile);
         if (rest) {
-          g.addColorStop(0, '#b8a06a');
-          g.addColorStop(1, '#8a744a');
+          g.addColorStop(0, '#cbb37e');
+          g.addColorStop(1, '#a5854f');
         } else {
-          g.addColorStop(0, '#a08c5f');
-          g.addColorStop(1, '#77653f');
+          g.addColorStop(0, '#b39d68');
+          g.addColorStop(1, '#8a744a');
         }
         ctx.fillStyle = g;
         ctx.fillRect(0, y, W, tile);
@@ -228,9 +244,18 @@ export default function ArcadeCrossyRoad({ onExit }: { onExit: () => void }): Re
           ctx.textBaseline = 'middle';
           ctx.fillText('POS ISTIRAHAT', W / 2, y + tile * 0.68);
         }
-        // dekorasi: cone & tumpukan material
+        // dekorasi: cone & tumpukan material (sprite generate-AI; fallback prosedural)
         for (const c of lane.deco) {
           const dx = (c + 0.5) * tile;
+          const spr = readySprite(DECO_SPRITES[c % 3]);
+          if (spr) {
+            const dw = tile * 0.62;
+            const dh = (dw * spr.naturalHeight) / spr.naturalWidth;
+            ctx.fillStyle = 'rgba(0,0,0,0.25)';
+            ctx.beginPath(); ctx.ellipse(dx, y + tile - 6, dw * 0.42, 5, 0, 0, TAU); ctx.fill();
+            ctx.drawImage(spr, dx - dw / 2, y + tile - 6 - dh, dw, dh);
+            continue;
+          }
           if (c % 3 === 0) {
             // cone
             ctx.fillStyle = '#f97316';
@@ -288,6 +313,15 @@ export default function ArcadeCrossyRoad({ onExit }: { onExit: () => void }): Re
       ctx.translate(x, y);
       if (flip) ctx.scale(-1, 1);
       const bx = -wpx / 2;
+      // sprite generate-AI: aspek asli, alas sprite sejajar alas kotak tabrakan
+      const spr = readySprite(VEH_SPRITES[v.kind]);
+      if (spr) {
+        const dh2 = tile * (v.kind === 'molen' ? 1.06 : v.kind === 'beko' ? 1.12 : 0.82);
+        const dw2 = (dh2 * spr.naturalWidth) / spr.naturalHeight;
+        ctx.drawImage(spr, -dw2 / 2, tile * 0.44 - dh2, dw2, dh2);
+        ctx.restore();
+        return;
+      }
       // badan
       let body: CanvasGradient;
       if (v.kind === 'molen') {
@@ -399,6 +433,15 @@ export default function ArcadeCrossyRoad({ onExit }: { onExit: () => void }): Re
         ctx.scale(1.3 - 0.3 * k, 0.4 + 0.6 * k);
         ctx.globalAlpha = 0.4 + 0.6 * k;
       }
+      // sprite karakter generate-AI (kaki di alas kotak pemain); fallback prosedural di bawah
+      const spr = readySprite(charTukangUrl);
+      if (spr) {
+        const dh = tile * 1.35;
+        const dw = (dh * spr.naturalWidth) / spr.naturalHeight;
+        ctx.drawImage(spr, -dw / 2, tile * 0.42 - dh, dw, dh);
+        ctx.restore();
+        return;
+      }
       ctx.shadowColor = 'rgba(0,0,0,0.35)';
       ctx.shadowBlur = 8;
       ctx.shadowOffsetY = 3;
@@ -435,11 +478,11 @@ export default function ArcadeCrossyRoad({ onExit }: { onExit: () => void }): Re
 
     api.setRender(() => {
       const { ctx, W, H } = api;
-      // langit-langit lokasi (atas = jauh)
+      // langit-langit lokasi (atas = jauh) — terang agar kontras lajur aman
       const bg = ctx.createLinearGradient(0, 0, 0, H);
-      bg.addColorStop(0, '#0e1628');
-      bg.addColorStop(0.5, '#1a2b1a');
-      bg.addColorStop(1, '#2b2118');
+      bg.addColorStop(0, '#22345c');
+      bg.addColorStop(0.5, '#2c4a2e');
+      bg.addColorStop(1, '#3d2f1e');
       ctx.fillStyle = bg;
       ctx.fillRect(0, 0, W, H);
       const r0 = Math.floor(s.camRow) - 2;
@@ -453,8 +496,8 @@ export default function ArcadeCrossyRoad({ onExit }: { onExit: () => void }): Re
       const gy0 = rowY(0, H) + tile / 2;
       if (gy0 < H) {
         const gg = ctx.createLinearGradient(0, gy0, 0, H);
-        gg.addColorStop(0, '#6b5a3e');
-        gg.addColorStop(1, '#2b2118');
+        gg.addColorStop(0, '#7d6a45');
+        gg.addColorStop(1, '#4a3a26');
         ctx.fillStyle = gg;
         ctx.fillRect(0, gy0, W, H - gy0);
         ctx.fillStyle = 'rgba(220,230,250,0.55)';
@@ -471,12 +514,13 @@ export default function ArcadeCrossyRoad({ onExit }: { onExit: () => void }): Re
         for (const v of lane.vehicles) drawVehicle(ctx, v, lane, r, H);
       }
       if (!(s.st.over && s.deathT <= 0)) drawPlayer(ctx, H);
-      // kabut jarak di atas
-      const fog = ctx.createLinearGradient(0, 0, 0, H * 0.35);
-      fog.addColorStop(0, 'rgba(10,14,28,0.75)');
+      // kabut jarak di atas — RINGAN: lajur terjauh harus tetap terbaca jelas
+      // (versi lama 0.75 menggelapkan sepertiga atas sampai jalan tak terlihat)
+      const fog = ctx.createLinearGradient(0, 0, 0, H * 0.22);
+      fog.addColorStop(0, 'rgba(10,14,28,0.16)');
       fog.addColorStop(1, 'rgba(10,14,28,0)');
       ctx.fillStyle = fog;
-      ctx.fillRect(0, 0, W, H * 0.35);
+      ctx.fillRect(0, 0, W, H * 0.22);
       // judul
       ctx.fillStyle = 'rgba(220,230,250,0.6)';
       ctx.font = `800 11px ${FONT}`;

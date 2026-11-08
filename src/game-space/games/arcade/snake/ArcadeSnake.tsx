@@ -14,6 +14,9 @@ import {
   CONNECTORS_PER_LEVEL,
   type SnakeState, type DirName,
 } from './logic';
+import { drawShooterSprite, preloadShooterSprites } from '../../../shared/shooterSprites';
+
+preloadShooterSprites();
 
 const SLUG = 'snake';
 const FONT = `'Plus Jakarta Sans', 'Inter', system-ui, sans-serif`;
@@ -397,7 +400,52 @@ function drawFood(ctx: CanvasRenderingContext2D, st: SnakeState, t: number): voi
   if (st.gold) drawPlugConnector(ctx, st.gold.x, st.gold.y, true, t);
 }
 
+/**
+ * Konektor makanan: sprite AI (biru biasa / emas bonus) diputar oleh
+ * ayunan sudut yang sama; pijar + percik bintang emas tetap prosedural di
+ * kedua jalur. Varian prosedural = fallback `drawPlugConnectorProcedural`.
+ */
 function drawPlugConnector(ctx: CanvasRenderingContext2D, gx: number, gy: number, gold: boolean, t: number): void {
+  const cx = (gx + 0.5) * CELL;
+  const cy = (gy + 0.5) * CELL;
+  const pulse = 1 + 0.08 * Math.sin(t * (gold ? 9 : 5));
+  const r = CELL * 0.44 * pulse;
+  // arah stekker berayun perlahan supaya terasa hidup (emas lebih cepat)
+  const ang = Math.sin(t * (gold ? 1.7 : 1.1) + gx * 1.3 + gy * 0.7) * 0.5;
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(ang);
+  ctx.shadowColor = gold ? '#fbbf24' : '#2563EB';
+  ctx.shadowBlur = gold ? 18 : 12;
+  const drew = drawShooterSprite(ctx, gold ? 'obj-konektor-emas' : 'obj-konektor', 0, 0, r * 3.6, r * 3.6);
+  ctx.shadowBlur = 0;
+  ctx.restore();
+  if (!drew) {
+    drawPlugConnectorProcedural(ctx, gx, gy, gold, t);
+    return;
+  }
+  if (gold) drawGoldSparkles(ctx, cx, cy, r, t);
+}
+
+/** Percik bintang emas prosedural berputar (kedua jalur; bukan emoji). */
+function drawGoldSparkles(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, t: number): void {
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.fillStyle = '#fffbeb';
+  for (let i = 0; i < 4; i += 1) {
+    const a = t * 3 + (i / 4) * TAU;
+    const sx = Math.cos(a) * (r + 8); const sy = Math.sin(a) * (r + 8);
+    ctx.beginPath();
+    ctx.moveTo(sx, sy - 3.4); ctx.lineTo(sx + 1.2, sy - 1.2); ctx.lineTo(sx + 3.4, sy);
+    ctx.lineTo(sx + 1.2, sy + 1.2); ctx.lineTo(sx, sy + 3.4); ctx.lineTo(sx - 1.2, sy + 1.2);
+    ctx.lineTo(sx - 3.4, sy); ctx.lineTo(sx - 1.2, sy - 1.2);
+    ctx.closePath(); ctx.fill();
+  }
+  ctx.restore();
+}
+
+/** Konektor prosedural (FALLBACK): stekker dua pin + ekor kabel. */
+function drawPlugConnectorProcedural(ctx: CanvasRenderingContext2D, gx: number, gy: number, gold: boolean, t: number): void {
   const cx = (gx + 0.5) * CELL;
   const cy = (gy + 0.5) * CELL;
   const pulse = 1 + 0.08 * Math.sin(t * (gold ? 9 : 5));
@@ -450,19 +498,7 @@ function drawPlugConnector(ctx: CanvasRenderingContext2D, gx: number, gy: number
   // kilau
   ctx.fillStyle = 'rgba(255,255,255,0.5)';
   ctx.beginPath(); ctx.ellipse(-r * 0.2, -r * 0.48, r * 0.42, r * 0.13, -0.2, 0, TAU); ctx.fill();
-  if (gold) {
-    // percik bintang prosedural berputar (poligon 4 titik, bukan emoji)
-    ctx.fillStyle = '#fffbeb';
-    for (let i = 0; i < 4; i += 1) {
-      const a = t * 3 + (i / 4) * TAU;
-      const sx = Math.cos(a) * (r + 8); const sy = Math.sin(a) * (r + 8);
-      ctx.beginPath();
-      ctx.moveTo(sx, sy - 3.4); ctx.lineTo(sx + 1.2, sy - 1.2); ctx.lineTo(sx + 3.4, sy);
-      ctx.lineTo(sx + 1.2, sy + 1.2); ctx.lineTo(sx, sy + 3.4); ctx.lineTo(sx - 1.2, sy + 1.2);
-      ctx.lineTo(sx - 3.4, sy); ctx.lineTo(sx - 1.2, sy - 1.2);
-      ctx.closePath(); ctx.fill();
-    }
-  }
+  if (gold) drawGoldSparkles(ctx, 0, 0, r, t);
   ctx.restore();
 }
 
@@ -500,25 +536,29 @@ function drawSnake(ctx: CanvasRenderingContext2D, st: SnakeState, t: number, scr
     ctx.lineTo(a.x - Math.cos(ang) * wBody * 0.3, a.y - Math.sin(ang) * wBody * 0.3);
     ctx.stroke();
   }
-  // kepala = steker
+  // kepala = steker: sprite AI; mata kedip & mulut tetap prosedural di
+  // atasnya (ekspresi fungsional). Prosedural utuh = fallback di bawah.
   const h = pts[0];
   const n = pts[1] ?? { x: h.x - CELL, y: h.y };
   const ang = Math.atan2(h.y - n.y, h.x - n.x);
   ctx.translate(h.x, h.y); ctx.rotate(ang);
   const hr = wBody * 0.62;
-  // dua pin steker di depan
-  ctx.fillStyle = st.dead ? '#78716c' : '#e7e5e4';
-  ctx.strokeStyle = '#44403c'; ctx.lineWidth = 1.5;
-  for (const oy of [-hr * 0.42, hr * 0.42]) {
-    roundRect(ctx, hr * 0.7, oy - 3, 12, 6, 2); ctx.fill(); ctx.stroke();
+  const headDrew = !st.dead && drawShooterSprite(ctx, 'char-kepala-steker', hr * 0.05, 0, hr * 3.6, hr * 3.6);
+  if (!headDrew) {
+    // dua pin steker di depan
+    ctx.fillStyle = st.dead ? '#78716c' : '#e7e5e4';
+    ctx.strokeStyle = '#44403c'; ctx.lineWidth = 1.5;
+    for (const oy of [-hr * 0.42, hr * 0.42]) {
+      roundRect(ctx, hr * 0.7, oy - 3, 12, 6, 2); ctx.fill(); ctx.stroke();
+    }
+    // badan steker
+    const hg = ctx.createLinearGradient(0, -hr, 0, hr);
+    hg.addColorStop(0, '#fcd34d'); hg.addColorStop(1, '#d97706');
+    ctx.fillStyle = st.dead ? '#a8a29e' : hg;
+    roundRect(ctx, -hr, -hr * 0.9, hr * 1.7, hr * 1.8, 7); ctx.fill();
+    ctx.strokeStyle = '#92400e'; ctx.lineWidth = 2;
+    roundRect(ctx, -hr, -hr * 0.9, hr * 1.7, hr * 1.8, 7); ctx.stroke();
   }
-  // badan steker
-  const hg = ctx.createLinearGradient(0, -hr, 0, hr);
-  hg.addColorStop(0, '#fcd34d'); hg.addColorStop(1, '#d97706');
-  ctx.fillStyle = st.dead ? '#a8a29e' : hg;
-  roundRect(ctx, -hr, -hr * 0.9, hr * 1.7, hr * 1.8, 7); ctx.fill();
-  ctx.strokeStyle = '#92400e'; ctx.lineWidth = 2;
-  roundRect(ctx, -hr, -hr * 0.9, hr * 1.7, hr * 1.8, 7); ctx.stroke();
   // mata (kedip)
   const blink = Math.sin(t * 2.3) > -0.96;
   ctx.fillStyle = '#fff';

@@ -24,6 +24,25 @@ export class ValidationEngine {
     const warnings: CalculationWarning[] = [];
     const sanitizedInputs: Record<string, any> = {};
 
+    // 0. Unknown Parameter Check (perbaikan akar, FINISH MODE Workstream D)
+    // Kunci input yang TIDAK ada di skema DITOLAK eksplisit sebagai
+    // error. Sebelumnya kunci asing diabaikan diam-diam (iterasi hanya
+    // atas aturan skema), sehingga ejaan parameter yang salah tampak
+    // seperti panggilan yang sah — temuan audit integrasi jalur
+    // produksi P0 §3 butir 3. Sanitized inputs tetap hanya memuat
+    // parameter skema, tetapi validasi kini GAGAL agar pemanggil tahu
+    // persis parameter mana yang asing.
+    const knownIds = new Set(rules.map((r) => r.id));
+    for (const key of Object.keys(inputs ?? {})) {
+      if (!knownIds.has(key)) {
+        errors.push({
+          code: 'ERR_UNKNOWN_PARAMETER',
+          message: `Parameter "${key}" is not defined in this calculator's schema. Known parameters: ${[...knownIds].join(', ') || '(none)'}. Unknown parameters are rejected explicitly, never silently ignored.`,
+          field: key,
+        });
+      }
+    }
+
     for (const rule of rules) {
       const rawVal = inputs[rule.id];
       const isMissing = rawVal === null || rawVal === undefined || rawVal === '';

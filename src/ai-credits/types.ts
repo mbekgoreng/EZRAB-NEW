@@ -58,6 +58,11 @@ export interface LedgerEntry {
   description: string;
   credits: number; // positif = masuk, negatif = pakai
   status: LedgerStatus;
+  /** Referensi pekerjaan AI. Pada lapisan debit simulasi (mockAdapter),
+   *  nilai ini berfungsi sebagai KUNCI IDEMPOTENCY pemakaian: consume
+   *  kedua dengan jobReference yang sama ditolak (audit FINISH WS-B
+   *  2026-11-08). Backend kelak menegakkan hal yang sama via kolom
+   *  idempotency_key UNIQUE pada ledger server. */
   jobReference?: string;
   /** Rincian metering token (Amendemen v1.1) — pada simulasi klien ini
    *  ESTIMASI dari teks; pada backend kelak token aktual provider. */

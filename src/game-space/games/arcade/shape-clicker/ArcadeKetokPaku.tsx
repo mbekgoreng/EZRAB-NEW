@@ -12,6 +12,37 @@ import {
   hitsNeededFor, partialPoints, nailDepthFor,
   type NailKind,
 } from './logic';
+import { MATERIAL_SPRITES, preloadMaterialSprites, readySprite } from '../../../shared/materialSprites';
+
+// Sapuan visual Kelompok 5: muat awal set material bersama (Kelompok 1);
+// gambar prosedural tetap FALLBACK.
+preloadMaterialSprites();
+
+/**
+ * Paku sprite KOMPOSIT dua paruh dari ikon paku Kelompok 1 — pola yang
+ * sama seperti whack-a-mole: paruh ATAS ikon dibalik vertikal sebagai
+ * mahkota kepala; paruh BAWAH apa adanya direntangkan sebagai
+ * batang+ujung. Emas = ikon baja yang sama + filter emas. False bila
+ * sprite belum siap. Koordinat lokal: paku menempati y -nh..0.
+ */
+function drawNailSprite(ctx: CanvasRenderingContext2D, nh: number, destW: number, gold: boolean): boolean {
+  const img = readySprite(MATERIAL_SPRITES.paku);
+  if (!img || nh <= 4) return false;
+  const W = img.naturalWidth;
+  const H = img.naturalHeight;
+  const headH = Math.min(nh * 0.4, destW);
+  ctx.save();
+  if (gold) ctx.filter = 'hue-rotate(-8deg) saturate(2.6) brightness(1.18)';
+  ctx.save();
+  ctx.beginPath(); ctx.rect(-destW / 2, -nh, destW, headH); ctx.clip();
+  ctx.translate(0, -nh + headH);
+  ctx.scale(1, -1);
+  ctx.drawImage(img, -destW / 2, 0, destW, destW);
+  ctx.restore();
+  ctx.drawImage(img, 0, H / 2, W, H / 2, -destW / 2, -nh + headH, destW, nh - headH);
+  ctx.restore();
+  return true;
+}
 
 const FONT = "'Plus Jakarta Sans','Inter',system-ui,sans-serif";
 const BK = bestKey('ketok-paku', 'best');
@@ -306,6 +337,53 @@ export default function ArcadeKetokPaku({ onExit }: { onExit: () => void }): Rea
       ctx.beginPath(); ctx.ellipse(n.x, n.y, n.r * 1.05, n.r * 0.45, 0, 0, TAU); ctx.fill();
     };
 
+    // Overlay FUNGSIONAL paku (penanda dari logic, digambar prosedural
+    // di jalur sprite maupun fallback — diekstrak agar kedua jalur
+    // memanggilnya persis sama): cincin timer tenggelam, cincin progres
+    // kedalaman, pip ketokan.
+    const drawNailOverlays = (ctx: CanvasRenderingContext2D, n: Nail, nh: number): void => {
+      const top = -nh;
+      const depth = nailDepthFor(n.hitsDone, n.hitsNeeded);
+      // timer tenggelam: cincin menyusut
+      const frac = clamp(1 - n.age / n.upTime, 0, 1);
+      ctx.strokeStyle = frac > 0.4 ? 'rgba(125,211,252,0.8)' : 'rgba(248,113,113,0.9)';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.ellipse(0, 2, n.r * 1.15, n.r * 0.5, 0, -Math.PI / 2, -Math.PI / 2 + TAU * frac);
+      ctx.stroke();
+      // KEDALAMAN: cincin progres mengelilingi kepala paku — busur terisi
+      // sebanding ketokan masuk / ketokan dibutuhkan (digambar prosedural)
+      if (n.hitsNeeded > 1) {
+        ctx.strokeStyle = 'rgba(2,6,23,0.55)';
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.ellipse(0, top + 5, n.r * 0.82, n.r * 0.42, 0, 0, TAU);
+        ctx.stroke();
+        ctx.strokeStyle = n.kind === 'emas' ? '#fde047' : '#38bdf8';
+        ctx.lineWidth = 3.5;
+        ctx.beginPath();
+        ctx.ellipse(0, top + 5, n.r * 0.82, n.r * 0.42, 0, -Math.PI / 2, -Math.PI / 2 + TAU * depth);
+        ctx.stroke();
+        // pip penanda ketokan di atas kepala: terisi = sudah diketok
+        for (let i = 0; i < n.hitsNeeded; i += 1) {
+          const px = (i - (n.hitsNeeded - 1) / 2) * 13;
+          const py = top - 16;
+          ctx.beginPath();
+          ctx.arc(px, py, 4, 0, TAU);
+          if (i < n.hitsDone) {
+            ctx.fillStyle = n.kind === 'emas' ? '#fde047' : '#38bdf8';
+            ctx.fill();
+          } else {
+            ctx.fillStyle = 'rgba(2,6,23,0.5)';
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(224,242,254,0.85)';
+            ctx.lineWidth = 1.4;
+            ctx.stroke();
+          }
+        }
+      }
+    };
+
     const drawNail = (ctx: CanvasRenderingContext2D, n: Nail): void => {
       const grow = easeOutBack(clamp(n.age / 0.16, 0, 1));
       const sinkStart = n.upTime;
@@ -328,6 +406,11 @@ export default function ArcadeKetokPaku({ onExit }: { onExit: () => void }): Rea
         ctx.shadowBlur = 10;
         ctx.shadowOffsetY = 6;
       }
+      // Sprite paku komposit dua paruh lebih dulu (batang memendek
+      // mengikuti kedalaman lewat nh yang sama). Gagal/belum siap ->
+      // badan prosedural di bawah. Overlay fungsional selalu digambar
+      // sesudahnya lewat drawNailOverlays.
+      if (!drawNailSprite(ctx, nh, n.r * 1.05, n.kind === 'emas')) {
       const bw2 = n.r * 0.52;
       // badan paku baja berlapis
       const steel = ctx.createLinearGradient(-bw2 / 2, 0, bw2 / 2, 0);
@@ -376,44 +459,8 @@ export default function ArcadeKetokPaku({ onExit }: { onExit: () => void }): Rea
       ctx.beginPath();
       ctx.ellipse(-n.r * 0.2, top + 2, n.r * 0.26, n.r * 0.11, -0.25, 0, TAU);
       ctx.fill();
-      // timer tenggelam: cincin menyusut
-      const frac = clamp(1 - n.age / n.upTime, 0, 1);
-      ctx.strokeStyle = frac > 0.4 ? 'rgba(125,211,252,0.8)' : 'rgba(248,113,113,0.9)';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.ellipse(0, 2, n.r * 1.15, n.r * 0.5, 0, -Math.PI / 2, -Math.PI / 2 + TAU * frac);
-      ctx.stroke();
-      // KEDALAMAN: cincin progres mengelilingi kepala paku — busur terisi
-      // sebanding ketokan masuk / ketokan dibutuhkan (digambar prosedural)
-      if (n.hitsNeeded > 1) {
-        ctx.strokeStyle = 'rgba(2,6,23,0.55)';
-        ctx.lineWidth = 5;
-        ctx.beginPath();
-        ctx.ellipse(0, top + 5, n.r * 0.82, n.r * 0.42, 0, 0, TAU);
-        ctx.stroke();
-        ctx.strokeStyle = n.kind === 'emas' ? '#fde047' : '#38bdf8';
-        ctx.lineWidth = 3.5;
-        ctx.beginPath();
-        ctx.ellipse(0, top + 5, n.r * 0.82, n.r * 0.42, 0, -Math.PI / 2, -Math.PI / 2 + TAU * depth);
-        ctx.stroke();
-        // pip penanda ketokan di atas kepala: terisi = sudah diketok
-        for (let i = 0; i < n.hitsNeeded; i += 1) {
-          const px = (i - (n.hitsNeeded - 1) / 2) * 13;
-          const py = top - 16;
-          ctx.beginPath();
-          ctx.arc(px, py, 4, 0, TAU);
-          if (i < n.hitsDone) {
-            ctx.fillStyle = n.kind === 'emas' ? '#fde047' : '#38bdf8';
-            ctx.fill();
-          } else {
-            ctx.fillStyle = 'rgba(2,6,23,0.5)';
-            ctx.fill();
-            ctx.strokeStyle = 'rgba(224,242,254,0.85)';
-            ctx.lineWidth = 1.4;
-            ctx.stroke();
-          }
-        }
       }
+      drawNailOverlays(ctx, n, nh);
       ctx.restore();
     };
 

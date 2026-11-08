@@ -13,6 +13,9 @@ import {
   waveBonus, dangerLevel, shieldPercent,
   type WaveSpec,
 } from './logic';
+import { drawShooterSprite, preloadShooterSprites } from '../../../shared/shooterSprites';
+
+preloadShooterSprites();
 
 const FONT = "'Plus Jakarta Sans','Inter',system-ui,sans-serif";
 const BK = bestKey('tembak-deadline', 'best');
@@ -392,6 +395,10 @@ export default function ArcadeSpaceInvaders({ onExit }: { onExit: () => void }):
       ctx.fillRect(0, H - 44, W, 3);
     };
 
+    /**
+     * Pemain: sprite tukang AI (bayangan + penanda bidik prosedural tetap
+     * digambar di kedua jalur); prosedural utuh = fallback.
+     */
     const drawPlayer = (ctx: CanvasRenderingContext2D): void => {
       const x = s.px; const y = s.py;
       ctx.save();
@@ -400,6 +407,32 @@ export default function ArcadeSpaceInvaders({ onExit }: { onExit: () => void }):
       ctx.beginPath();
       ctx.ellipse(x, y + 22, 22, 6, 0, 0, TAU);
       ctx.fill();
+      ctx.restore();
+      if (drawShooterSprite(ctx, 'char-tukang-tembak', x, y - 6, 52, 52)) {
+        drawShooterStamp(ctx, x, y);
+        return;
+      }
+      drawPlayerProcedural(ctx);
+      drawShooterStamp(ctx, x, y);
+    };
+
+    /** Stempel penembak berdenyut di atas pemain (fungsional, kedua jalur). */
+    const drawShooterStamp = (ctx: CanvasRenderingContext2D, x: number, y: number): void => {
+      ctx.save();
+      ctx.translate(x, y - 34);
+      const pulse = 1 + Math.sin(s.t * 10) * 0.08;
+      ctx.scale(pulse, pulse);
+      ctx.fillStyle = '#22d3ee';
+      ctx.beginPath();
+      ctx.moveTo(-6, 0); ctx.lineTo(6, 0); ctx.lineTo(0, -14);
+      ctx.closePath(); ctx.fill();
+      ctx.restore();
+    };
+
+    /** Pemain prosedural (FALLBACK): rompi proyek + kepala + helm. */
+    const drawPlayerProcedural = (ctx: CanvasRenderingContext2D): void => {
+      const x = s.px; const y = s.py;
+      ctx.save();
       // badan (rompi proyek)
       const bg = ctx.createLinearGradient(x - 14, y - 14, x + 14, y + 18);
       bg.addColorStop(0, '#fb923c');
@@ -427,19 +460,14 @@ export default function ArcadeSpaceInvaders({ onExit }: { onExit: () => void }):
       ctx.arc(x, y - 26, 11, Math.PI, TAU);
       ctx.fill();
       ctx.fillRect(x - 14, y - 29, 28, 4);
-      // stempel penembak
-      ctx.save();
-      ctx.translate(x, y - 34);
-      const pulse = 1 + Math.sin(s.t * 10) * 0.08;
-      ctx.scale(pulse, pulse);
-      ctx.fillStyle = '#22d3ee';
-      ctx.beginPath();
-      ctx.moveTo(-6, 0); ctx.lineTo(6, 0); ctx.lineTo(0, -14);
-      ctx.closePath(); ctx.fill();
-      ctx.restore();
       ctx.restore();
     };
 
+    /**
+     * Musuh deadline: sprite kalender AI (panas untuk baris 0) dengan label
+     * teks `DEADLINES` dari logic tetap digambar kode DI ATAS sprite —
+     * label adalah identitas fungsional per baris. Prosedural = fallback.
+     */
     const drawEnemy = (ctx: CanvasRenderingContext2D, e: Enemy): void => {
       const p = enemyXY(e);
       const label = DEADLINES[e.r % DEADLINES.length];
@@ -447,11 +475,27 @@ export default function ArcadeSpaceInvaders({ onExit }: { onExit: () => void }):
       ctx.save();
       ctx.translate(p.x + EW / 2, p.y + EH / 2);
       ctx.rotate(Math.sin(s.t * 2.4 + e.wob) * 0.06);
-      ctx.translate(-EW / 2, -EH / 2);
       if (hot) {
         ctx.shadowColor = 'rgba(248,113,113,0.8)';
         ctx.shadowBlur = 12;
       }
+      const drew = drawShooterSprite(ctx, hot ? 'obj-kalender-panas' : 'obj-kalender', 0, 0, EW + 4, EH + 4);
+      ctx.shadowBlur = 0;
+      if (!drew) {
+        ctx.translate(-EW / 2, -EH / 2);
+        drawEnemyProcedural(ctx, hot);
+      }
+      // label deadline (teks dari logic) — selalu digambar
+      ctx.fillStyle = '#fff';
+      ctx.font = `900 12px ${FONT}`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(label, 0, 4);
+      ctx.restore();
+    };
+
+    /** Badan kalender prosedural (FALLBACK) di kotak lokal 0..EW x 0..EH. */
+    const drawEnemyProcedural = (ctx: CanvasRenderingContext2D, hot: boolean): void => {
       // badan kalender
       const bg = ctx.createLinearGradient(0, 0, 0, EH);
       bg.addColorStop(0, hot ? '#fca5a5' : '#fdba74');
@@ -473,13 +517,6 @@ export default function ArcadeSpaceInvaders({ onExit }: { onExit: () => void }):
       for (const rx of [EW * 0.28, EW * 0.72]) {
         ctx.beginPath(); ctx.arc(rx, 4.5, 2.4, 0, TAU); ctx.fill();
       }
-      // label
-      ctx.fillStyle = '#fff';
-      ctx.font = `900 12px ${FONT}`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(label, EW / 2, EH / 2 + 4);
-      ctx.restore();
     };
 
     const drawShield = (ctx: CanvasRenderingContext2D, sh: Shield): void => {
@@ -498,9 +535,34 @@ export default function ArcadeSpaceInvaders({ onExit }: { onExit: () => void }):
       ctx.fillText(`RAB ${shieldPercent(sh.grid)}%`, sh.x + (13 * 6) / 2, y0 - 8);
     };
 
+    /**
+     * Mandor lewat (UFO): sprite helm-piring AI; lampu kelip + teks MANDOR
+     * tetap prosedural di kedua jalur. Prosedural utuh = fallback.
+     */
     const drawUfo = (ctx: CanvasRenderingContext2D): void => {
       if (!s.ufo.active) return;
       const x = s.ufo.x; const y = 80;
+      if (!drawShooterSprite(ctx, 'char-mandor-lewat', x, y - 2, 84, 84)) {
+        drawUfoProcedural(ctx, x, y);
+      }
+      ctx.save();
+      // lampu kelip
+      const on = Math.sin(s.t * 12) > 0;
+      ctx.fillStyle = on ? '#f87171' : '#7f1d1d';
+      for (const dx of [-22, 0, 22]) {
+        ctx.beginPath();
+        ctx.arc(x + dx, y + 8, 3.5, 0, TAU);
+        ctx.fill();
+      }
+      ctx.fillStyle = '#451a03';
+      ctx.font = `900 10px ${FONT}`;
+      ctx.textAlign = 'center';
+      ctx.fillText('MANDOR', x, y + 2);
+      ctx.restore();
+    };
+
+    /** UFO prosedural (FALLBACK): piring = helm raksasa + wajah. */
+    const drawUfoProcedural = (ctx: CanvasRenderingContext2D, x: number, y: number): void => {
       ctx.save();
       // piring = helm raksasa
       const hg = ctx.createLinearGradient(0, y - 16, 0, y + 10);
@@ -518,18 +580,6 @@ export default function ArcadeSpaceInvaders({ onExit }: { onExit: () => void }):
       ctx.beginPath();
       ctx.arc(x, y - 10, 10, Math.PI, TAU);
       ctx.fill();
-      // lampu kelip
-      const on = Math.sin(s.t * 12) > 0;
-      ctx.fillStyle = on ? '#f87171' : '#7f1d1d';
-      for (const dx of [-22, 0, 22]) {
-        ctx.beginPath();
-        ctx.arc(x + dx, y + 8, 3.5, 0, TAU);
-        ctx.fill();
-      }
-      ctx.fillStyle = '#451a03';
-      ctx.font = `900 10px ${FONT}`;
-      ctx.textAlign = 'center';
-      ctx.fillText('MANDOR', x, y + 2);
       ctx.restore();
     };
 

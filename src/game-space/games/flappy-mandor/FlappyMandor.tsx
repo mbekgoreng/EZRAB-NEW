@@ -18,6 +18,11 @@ import {
   GRAVITY, FLAP_V, BIRD_R, GATE_W, GRACE_T, FLAP_BUFFER_S,
   type FlapState, type Gate, type DeathCause, type Bird,
 } from './logic';
+import { drawFlyer, preloadFlyers } from '../../shared/flyerSprites';
+
+// Sapuan visual Kelompok 4: muat awal sprite mandor terbang bersama
+// (generate-AI); gambar prosedural di bawah tetap FALLBACK.
+preloadFlyers();
 
 void GRAVITY;
 void FLAP_V;
@@ -178,7 +183,35 @@ interface MandorDrawOpts {
   squash: number; // 0..1 squash sesaat setelah flap
 }
 
+/**
+ * Mandor terbang: sprite generate-AI bersama (shared/flyerSprites,
+ * crossfade dua pose sayap berbobot fase `wing` yang sama) digambar
+ * lebih dulu dengan transformasi identik gambar lama — translasi,
+ * rotasi b.rot, skala dasar 1,15, squash — lebar 64px, pusat digeser
+ * (+6, +8) agar titik berat visual (kepala) jatuh di sekitar pusat
+ * tabrakan. Prosedural di bawah menjadi FALLBACK.
+ */
 function drawMandor(
+  ctx: CanvasRenderingContext2D, b: Bird, t: number, o: MandorDrawOpts,
+): void {
+  if (drawMandorSprite(ctx, b, o)) return;
+  drawMandorProcedural(ctx, b, t, o);
+}
+
+function drawMandorSprite(
+  ctx: CanvasRenderingContext2D, b: Bird, o: MandorDrawOpts,
+): boolean {
+  ctx.save();
+  ctx.translate(b.x, b.y);
+  ctx.rotate(b.rot);
+  ctx.scale(1.15, 1.15);
+  if (o.squash > 0) ctx.scale(1 + o.squash * 0.12, 1 - o.squash * 0.14);
+  const ok = drawFlyer(ctx, 6, 8, 64, o.wing);
+  ctx.restore();
+  return ok;
+}
+
+function drawMandorProcedural(
   ctx: CanvasRenderingContext2D, b: Bird, t: number, o: MandorDrawOpts,
 ): void {
   ctx.save();

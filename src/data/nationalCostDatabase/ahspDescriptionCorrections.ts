@@ -10,9 +10,15 @@
 
 export interface DescriptionCorrection {
   code: string;
-  field: 'name' | 'unit' | 'materialName';
+  field: 'name' | 'unit' | 'materialName' | 'equipmentName';
   /** Material index for materialName corrections (0-based). */
   materialIndex?: number;
+  /**
+   * Equipment index for equipmentName corrections (0-based).
+   * Mechanism extension approved by the owner on 2026-11-08 (Phase B §4.1):
+   * identical semantics to materialName, for equipment component names.
+   */
+  equipmentIndex?: number;
   oldValue: string;
   newValue: string;
   /** PDF page number in lampiran-VI.pdf (file page, not printed number). */
@@ -20,7 +26,48 @@ export interface DescriptionCorrection {
   reason: string;
 }
 
+/**
+ * PHASE B DISPLAY ALIASES (Master AHSP Audit Phase B, 2026-11-08).
+ * Display-layer ONLY: these entries patch a component display name whose
+ * original source spelling is a proven typo. The canonical record, its
+ * coefficients, units, and prices are untouched; removing an entry fully
+ * restores the source spelling (reversible by construction).
+ * NOTE: `pdfPage` here is the page of the SOURCE attachment that carries the
+ * record (Lampiran IV for SDA items), not lampiran-VI.pdf as above.
+ */
+export const PHASE_B_DISPLAY_CORRECTIONS: DescriptionCorrection[] = [
+  {
+    code: 'A.1.02.5c.1', field: 'materialName', materialIndex: 0,
+    oldValue: 'Mistar Ukur Allumunium, lebar 8 M.76.a',
+    newValue: 'Mistar Ukur Aluminium, lebar 8 M.76.a',
+    pdfPage: 327,
+    reason: 'Phase B VERIFIED_TYPO: "Allumunium" (dobel-L) adalah salah eja dari "Aluminium" — raw master JSON item A.1.02.5c.1, Lampiran IV hal. 327. Alias display saja; identitas sumber, koefisien (1), satuan (m\'), dan harga TIDAK diubah.',
+  },
+];
+
+/**
+ * OWNER-APPROVED DISPLAY ALIASES (persetujuan owner 2026-11-08, tap opsi
+ * widget 12:53 WIB — persetujuan TERBATAS: perluasan mekanisme + alias di
+ * bawah ini saja, BUKAN izin normalisasi massal).
+ * Blok ini adalah rumah bagi alias yang memerlukan perluasan mekanisme
+ * koreksi nama komponen PERALATAN (field 'equipmentName' + 'equipmentIndex',
+ * pola identik dengan 'materialName'). Sama seperti blok Phase B: display
+ * saja, identitas sumber utuh di backing store, reversibel dengan menghapus
+ * entri. NOTE: `pdfPage` di sini adalah halaman PDF Lampiran V (Bina Marga).
+ */
+export const OWNER_APPROVED_DISPLAY_CORRECTIONS: DescriptionCorrection[] = [
+  {
+    code: 'I.15', field: 'equipmentName', equipmentIndex: 0,
+    oldValue: 'ALAT Crabe 10-15 Ton',
+    newValue: 'ALAT Crane 10-15 Ton',
+    pdfPage: 1762,
+    reason: 'PERSETUJUAN OWNER 2026-11-08 atas usulan Phase B §4.1. VERIFIED_TYPO: "Crabe" adalah varian OCR dari "Crane" — master sumber daya Bina Marga sendiri mencatat kode E07 = "jam Crane 10-15 Ton" dan mendaftarkan "ALAT Crabe 10-15 Ton" sebagai varian deskripsinya; harga sumber identik Rp773.917,31; Lampiran V hal. PDF 1762 (item katalog "Truck Crane 10 - 15 Ton"). Alias DISPLAY saja; identitas sumber "Crabe" dipertahankan di backing store — koefisien (1,0), satuan (jam), dan harga TIDAK diubah.',
+  },
+];
+
 export const DESCRIPTION_CORRECTIONS: DescriptionCorrection[] = [
+  ...PHASE_B_DISPLAY_CORRECTIONS,
+  ...OWNER_APPROVED_DISPLAY_CORRECTIONS,
   // ---- 2.2.1.2.4: waterstop width (Phase 2D §B, verified 2E PDF hal. 253) ----
   {
     code: '2.2.1.2.4', field: 'name',

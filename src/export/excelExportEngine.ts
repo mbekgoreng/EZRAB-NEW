@@ -135,10 +135,11 @@ export async function exportRABToProfessionalExcel(
   // a PPh the project never enabled, on a base the engine never uses.
   const pphPercent = costSummary.pphPercent ?? 0;
   const pphAmount = costSummary.pphAmount || 0;
-  /* Fallback tampilan selaras keputusan overhead 10% (compute di atas
-   * selalu mengembalikan angka, jadi fallback ini praktis tidak terpicu). */
-  const overheadPercent = costSummary.overheadPercent ?? 10;
-  const profitPercent = costSummary.profitPercent ?? 5;
+  /* Fallback tampilan selaras keputusan fallback 0% owner 2026-11-08
+   * (compute di atas selalu mengembalikan angka, jadi fallback ini
+   * praktis tidak terpicu). */
+  const overheadPercent = costSummary.overheadPercent ?? 0;
+  const profitPercent = costSummary.profitPercent ?? 0;
   // Perbaikan final: HAPUS fabrikasi Rp1. Bila seluruh item tanpa harga,
   // total berharga = 0 (jujur) dan sel display memakai teks HARGA BELUM
   // TERSEDIA (lihat noPricedTotal di bawah). Guard pembagi internal tetap

@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo, useTransition } from 'react';
+import { renderMarkdown } from '../../ai-tools/ezrab-ai/markdown';
+import '../../ai-tools/ezrab-ai/markdown.css';
 import {
   Send,
   Plus,
@@ -1016,207 +1018,15 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
     showToast('Usulan perubahan dibatalkan.');
   };
 
-  // Safe markdown & structured content renderer
-  const renderFormattedAiContent = (content: string) => {
-    const lines = content.split('\n');
-    const elements: React.ReactNode[] = [];
-
-    let currentListItems: string[] = [];
-
-    const flushList = (key: string) => {
-      if (currentListItems.length > 0) {
-        elements.push(
-          <ul
-            key={key}
-            style={{
-              margin: '6px 0 10px 0',
-              paddingLeft: '20px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '4px',
-            }}
-          >
-            {currentListItems.map((item, idx) => (
-              <li key={idx} style={{ fontSize: '13.5px', color: 'var(--ez-color-text-strong)', lineHeight: '1.6' }}>
-                {renderInlineFormatting(item)}
-              </li>
-            ))}
-          </ul>
-        );
-        currentListItems = [];
-      }
-    };
-
-    lines.forEach((line, lineIndex) => {
-      const trimmed = line.trim();
-
-      // Heading 3: ###
-      if (trimmed.startsWith('###')) {
-        flushList(`list-before-h3-${lineIndex}`);
-        elements.push(
-          <h3
-            key={`h3-${lineIndex}`}
-            style={{
-              fontSize: '14.5px',
-              fontWeight: 700,
-              color: 'var(--ez-color-text-primary)',
-              margin: '14px 0 6px 0',
-              letterSpacing: '-0.01em',
-            }}
-          >
-            {renderInlineFormatting(trimmed.replace(/^###\s*/, ''))}
-          </h3>
-        );
-        return;
-      }
-
-      // Heading 4: ####
-      if (trimmed.startsWith('####')) {
-        flushList(`list-before-h4-${lineIndex}`);
-        elements.push(
-          <h4
-            key={`h4-${lineIndex}`}
-            style={{
-              fontSize: '13.5px',
-              fontWeight: 700,
-              color: 'var(--ez-color-text-strong)',
-              margin: '12px 0 4px 0',
-            }}
-          >
-            {renderInlineFormatting(trimmed.replace(/^####\s*/, ''))}
-          </h4>
-        );
-        return;
-      }
-
-      // Bullet list items (- or *)
-      if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
-        currentListItems.push(trimmed.slice(2));
-        return;
-      }
-
-      // Numbered list items (e.g. "1. ")
-      const numMatch = trimmed.match(/^(\d+)\.\s+(.*)/);
-      if (numMatch) {
-        flushList(`list-before-num-${lineIndex}`);
-        elements.push(
-          <div
-            key={`num-${lineIndex}`}
-            style={{
-              display: 'flex',
-              alignItems: 'baseline',
-              gap: '8px',
-              margin: '4px 0',
-              fontSize: '13.5px',
-              color: 'var(--ez-color-text-strong)',
-              lineHeight: '1.6',
-            }}
-          >
-            <span
-              style={{
-                fontSize: '12px',
-                fontWeight: 700,
-                color: 'var(--ez-color-primary)',
-                width: '18px',
-                flexShrink: 0,
-              }}
-            >
-              {numMatch[1]}.
-            </span>
-            <span style={{ flex: 1 }}>{renderInlineFormatting(numMatch[2])}</span>
-          </div>
-        );
-        return;
-      }
-
-      // If regular paragraph or empty line
-      flushList(`list-before-p-${lineIndex}`);
-      if (!trimmed) {
-        elements.push(<div key={`empty-${lineIndex}`} style={{ height: '6px' }} />);
-      } else {
-        elements.push(
-          <p
-            key={`p-${lineIndex}`}
-            style={{
-              margin: '4px 0',
-              fontSize: '13.5px',
-              color: 'var(--ez-color-text-strong)',
-              lineHeight: '1.65',
-            }}
-          >
-            {renderInlineFormatting(trimmed)}
-          </p>
-        );
-      }
-    });
-
-    flushList('list-final');
-    return elements;
-  };
-
-  // Inline formatting helper for **bold** and `code`
-  const renderInlineFormatting = (text: string): React.ReactNode => {
-    const parts: React.ReactNode[] = [];
-    let remaining = text;
-    let keyIdx = 0;
-
-    while (remaining) {
-      // Check for bold **text**
-      const boldMatch = remaining.match(/\*\*(.*?)\*\*/);
-      // Check for `code`
-      const codeMatch = remaining.match(/`([^`]+)`/);
-
-      let firstMatch: { type: 'bold' | 'code'; index: number; matchStr: string; inner: string } | null = null;
-
-      if (boldMatch && boldMatch.index !== undefined) {
-        firstMatch = { type: 'bold', index: boldMatch.index, matchStr: boldMatch[0], inner: boldMatch[1] };
-      }
-
-      if (codeMatch && codeMatch.index !== undefined) {
-        if (!firstMatch || codeMatch.index < firstMatch.index) {
-          firstMatch = { type: 'code', index: codeMatch.index, matchStr: codeMatch[0], inner: codeMatch[1] };
-        }
-      }
-
-      if (!firstMatch) {
-        parts.push(remaining);
-        break;
-      }
-
-      if (firstMatch.index > 0) {
-        parts.push(remaining.slice(0, firstMatch.index));
-      }
-
-      if (firstMatch.type === 'bold') {
-        parts.push(
-          <strong key={`bold-${keyIdx++}`} style={{ fontWeight: 650, color: 'var(--ez-color-text-primary)' }}>
-            {firstMatch.inner}
-          </strong>
-        );
-      } else {
-        parts.push(
-          <code
-            key={`code-${keyIdx++}`}
-            style={{
-              fontFamily: 'monospace',
-              fontSize: '12px',
-              backgroundColor: 'var(--ez-color-surface-tertiary)',
-              color: 'var(--ez-color-text-strong)',
-              padding: '1px 5px',
-              borderRadius: '4px',
-              border: '1px solid var(--ez-color-border-line)',
-            }}
-          >
-            {firstMatch.inner}
-          </code>
-        );
-      }
-
-      remaining = remaining.slice(firstMatch.index + firstMatch.matchStr.length);
-    }
-
-    return parts;
-  };
+  // Render konten AI lewat RENDERER SENTRAL EZRAB Chat
+  // (ai-tools/ezrab-ai/markdown) — sebelumnya view ini punya renderer
+  // sendiri (heading/list/bold/code saja) sehingga tabel, matematika,
+  // dan entitas tampil mentah di sini. Ukuran teks dipertahankan 13.5px.
+  const renderFormattedAiContent = (content: string) => (
+    <div className="md-body" style={{ fontSize: '13.5px', lineHeight: '1.65' }}>
+      {renderMarkdown(content)}
+    </div>
+  );
 
   return (
     <div

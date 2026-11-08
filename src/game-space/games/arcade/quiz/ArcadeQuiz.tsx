@@ -6,6 +6,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { sfx } from '../../../engine2d';
 import { bestKey, getBest, setBest } from '../../../engine2d/best';
 import { popText } from '../../../engine2d/juice2d';
+import { SCENE_SPRITES, useSprite } from '../../../shared/sceneSprites';
 import { buildRound, scoreAnswer, gradeFor, tierLabel, TIME_PER_QUESTION, type Question } from './logic';
 
 const FONT = "'Plus Jakarta Sans','Inter',system-ui,sans-serif";
@@ -24,6 +25,7 @@ const TIER_COLOR: Record<number, string> = { 1: '#2563EB', 2: '#F5B301', 3: '#F9
 
 /** Ikon SVG prosedural (pengganti emoji) untuk tombol & lencana. */
 function SvgIcon({ kind, size = 20 }: { kind: 'pause' | 'play' | 'sound' | 'mute' | 'close' | 'helmet' | 'trophy'; size?: number }): React.JSX.Element {
+  const helmetImg = useSprite(SCENE_SPRITES['scene-wajah-helm']);
   const s = size;
   if (kind === 'pause') return (<svg width={s} height={s} viewBox="0 0 24 24" aria-hidden><rect x="5" y="4" width="5" height="16" rx="1.5" fill="currentColor" /><rect x="14" y="4" width="5" height="16" rx="1.5" fill="currentColor" /></svg>);
   if (kind === 'play') return (<svg width={s} height={s} viewBox="0 0 24 24" aria-hidden><path d="M7 4.5v15c0 1.2 1.3 1.9 2.3 1.3l11-7.5c0.9-0.6 0.9-1.9 0-2.5l-11-7.5C8.3 2.6 7 3.3 7 4.5z" fill="currentColor" /></svg>);
@@ -31,7 +33,10 @@ function SvgIcon({ kind, size = 20 }: { kind: 'pause' | 'play' | 'sound' | 'mute
   if (kind === 'mute') return (<svg width={s} height={s} viewBox="0 0 24 24" aria-hidden><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor" /><path d="M16 9l6 6M22 9l-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>);
   if (kind === 'close') return (<svg width={s} height={s} viewBox="0 0 24 24" aria-hidden><path d="M5 5l14 14M19 5L5 19" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" /></svg>);
   if (kind === 'trophy') return (<svg width={s} height={s} viewBox="0 0 24 24" aria-hidden><path d="M6 3h12v5a6 6 0 0 1-12 0V3z" fill="#F5B301" stroke="#92400e" strokeWidth="1.2" /><path d="M6 5H3.5a2.5 2.5 0 0 0 2.6 3.4M18 5h2.5a2.5 2.5 0 0 1-2.6 3.4M11 14h2v3h-2zM8 20h8M9.5 17h5l0.7 3H8.8L9.5 17z" fill="#F5B301" stroke="#92400e" strokeWidth="1.2" /></svg>);
-  // helmet
+  // helmet = maskot wajah helm generate-AI; SVG prosedural = fallback
+  if (kind === 'helmet' && helmetImg) {
+    return (<img src={SCENE_SPRITES['scene-wajah-helm']} width={s} height={s} alt="" aria-hidden style={{ display: 'block', objectFit: 'contain' }} />);
+  }
   return (<svg width={s} height={s} viewBox="0 0 48 48" aria-hidden><path d="M10 30a14 13 0 0 1 11-12.8V12h6v5.2A14 13 0 0 1 38 30H10z" fill="#F5B301" stroke="#92400e" strokeWidth="2" /><rect x="6" y="29" width="36" height="6" rx="3" fill="#F97316" /><circle cx="17" cy="38" r="2.4" fill="#0A2540" /><circle cx="31" cy="38" r="2.4" fill="#0A2540" /><path d="M18 43c2 1.6 10 1.6 12 0" stroke="#0A2540" strokeWidth="2.2" fill="none" strokeLinecap="round" /></svg>);
 }
 

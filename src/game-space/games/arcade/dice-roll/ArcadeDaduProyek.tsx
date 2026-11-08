@@ -9,6 +9,7 @@ import React, { useRef, useState } from 'react';
 import { useGameCanvas, type GameApi, TAU, clamp, sfx } from '../../../engine2d';
 import { bestKey, getBest, setBest } from '../../../engine2d/best';
 import { popText } from '../../../engine2d/juice2d';
+import { drawSceneSprite, preloadSceneSprites, type SceneSlug } from '../../../shared/sceneSprites';
 import {
   FACES, rollDie, clampStake, resultLabel,
   createMatch, resolveMatchRound, previewRound, aiStake, RISK_INFO, MATCH_ROUNDS,
@@ -47,6 +48,7 @@ const SIDE_LABEL: Record<BetSide, string> = {
 };
 
 export default function ArcadeDaduProyek({ onExit }: { onExit: () => void }): React.JSX.Element {
+  preloadSceneSprites();
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const apiRef = useRef<GameApi | null>(null);
   const screenRef = useRef<Screen>('tutorial');
@@ -328,12 +330,22 @@ export default function ArcadeDaduProyek({ onExit }: { onExit: () => void }): Re
         ctx.arc(px * size * 0.20, py * size * 0.20 - size * 0.10, size * 0.058, 0, TAU);
         ctx.fill();
       }
-      // nama material di bawah pip
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.font = `900 ${Math.floor(size * 0.15)}px ${FONT}`;
-      ctx.fillStyle = '#78350f';
-      ctx.fillText(face.name.toUpperCase(), 0, size * 0.36);
+      // ikon material generate-AI di area atas dadu, menggantikan nama
+      // material teks; pip & angka nilai tetap prosedural (fungsional).
+      const FACE_ICON: Record<number, SceneSlug> = {
+        1: 'scene-ikon-bata', 2: 'scene-ikon-kayu', 3: 'scene-ikon-baut',
+        4: 'scene-ikon-cat', 5: 'scene-ikon-lampu', 6: 'scene-ikon-crane',
+      };
+      const iconSlug = FACE_ICON[face.value];
+      const iconOk = iconSlug ? drawSceneSprite(ctx, iconSlug, 0, -size * 0.36, size * 0.32, size * 0.32) : false;
+      // nama material di bawah pip (hanya bila ikon belum siap = fallback)
+      if (!iconOk) {
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.font = `900 ${Math.floor(size * 0.15)}px ${FONT}`;
+        ctx.fillStyle = '#78350f';
+        ctx.fillText(face.name.toUpperCase(), 0, size * 0.36);
+      }
       ctx.restore();
     };
 
