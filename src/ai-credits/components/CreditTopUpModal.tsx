@@ -1,25 +1,75 @@
 /**
- * Modal top-up kredit — SIMULASI FRONTEND.
- * Tidak memotong saldo, tidak mengirim pembayaran, tidak menyatakan
- * transaksi berhasil. Tombol "Simulasikan Top-up" menambah saldo mock.
+ * Modal top-up kredit — SIMULASI FRONTEND + jalur checkout online.
+ * Jalur simulasi tidak memotong saldo dan tidak menyatakan transaksi
+ * berhasil; tombol "Simulasikan Top-up" hanya menambah saldo mock.
+ * Jalur online (Midtrans) hanya muncul bila VITE_MIDTRANS_CLIENT_KEY
+ * terpasang; bila tidak, status "payment gateway not connected"
+ * ditampilkan apa adanya. Kredit dari jalur online diberikan SERVER
+ * dari webhook terverifikasi — callback Snap di sini hanya umpan balik.
  */
 import React, { useState } from 'react';
 import { X, Info, CheckCircle2 } from 'lucide-react';
 import { TOPUP_OFFER } from '../config';
 import { formatRupiah, formatCredits } from '../format';
 import { useCreditSimulation } from '../useCreditSimulation';
+import { useAuth } from '../../auth/AuthContext';
+import { isOnlinePaymentConfigured, startOnlineCheckout } from '../../billing/checkoutClient';
 
 interface Props {
   onClose: () => void;
+  workspaceId?: string;
 }
 
-export const CreditTopUpModal: React.FC<Props> = ({ onClose }) => {
+export const CreditTopUpModal: React.FC<Props> = ({ onClose, workspaceId }) => {
   const { topUp, balance } = useCreditSimulation();
+  const auth = useAuth();
   const [done, setDone] = useState(false);
+  const [onlineBusy, setOnlineBusy] = useState(false);
+  const [onlineNote, setOnlineNote] = useState<string | null>(null);
+  const onlineConfigured = isOnlinePaymentConfigured();
 
   const handleSimulate = () => {
     topUp(); // mock — hanya menambah saldo simulasi
     setDone(true);
+  };
+
+  const handleOnline = async () => {
+    setOnlineNote(null);
+    if (!auth.enabled || !auth.user) {
+      setOnlineNote('Pembayaran online memerlukan akun yang masuk (mode demo memakai simulasi).');
+      return;
+    }
+    setOnlineBusy(true);
+    try {
+      const token = await auth.getAccessToken();
+      if (!token) {
+        setOnlineNote('Sesi tidak ditemukan. Masuk kembali, lalu coba lagi.');
+        return;
+      }
+      const result = await startOnlineCheckout({
+        accessToken: token,
+        workspaceId,
+        kind: 'TOP_UP',
+        itemId: 'topup-3600',
+        callbacks: {
+          onSuccess: () =>
+            setOnlineNote('Pembayaran diterima Midtrans. Kredit masuk ke saldo server setelah notifikasi terverifikasi diproses — bukan dari halaman ini.'),
+          onPending: () =>
+            setOnlineNote('Pembayaran menunggu penyelesaian. Kredit masuk setelah Midtrans mengonfirmasi pembayaran ke server.'),
+          onError: () => setOnlineNote('Pembayaran gagal atau ditolak. Tidak ada kredit yang diberikan.'),
+          onClose: () => setOnlineNote(null),
+        },
+      });
+      if (!result.ok) {
+        setOnlineNote(
+          result.error === 'BILLING_NOT_CONFIGURED'
+            ? 'Server pembayaran belum terhubung (konfigurasi server belum lengkap).'
+            : `Checkout online gagal dimulai (${result.error}).`
+        );
+      }
+    } finally {
+      setOnlineBusy(false);
+    }
   };
 
   return (
@@ -64,8 +114,33 @@ export const CreditTopUpModal: React.FC<Props> = ({ onClose }) => {
                 demonstrasi, bukan transaksi nyata.
               </span>
             </div>
+            <div className="aic-offer" style={{ marginTop: 10 }}>
+              <div className="aic-offer-row">
+                <span>Pembayaran online (Midtrans)</span>
+                <strong>{onlineConfigured ? 'Terhubung' : 'Belum terhubung'}</strong>
+              </div>
+              {onlineConfigured ? (
+                <div style={{ fontSize: 13, color: 'var(--ez-color-text-faint)' }}>
+                  Bayar sungguhan lewat QRIS / VA / e-wallet / kartu. Kredit diberikan
+                  server setelah notifikasi Midtrans terverifikasi — bukan oleh halaman ini.
+                </div>
+              ) : (
+                <div style={{ fontSize: 13, color: 'var(--ez-color-text-faint)' }}>
+                  Payment gateway not connected — kunci pembayaran belum terpasang,
+                  jadi belum ada pembayaran sungguhan yang bisa dijalankan.
+                </div>
+              )}
+              {onlineNote && (
+                <div style={{ fontSize: 13, marginTop: 6 }}>{onlineNote}</div>
+              )}
+            </div>
             <div className="aic-modal-actions">
               <button type="button" className="aic-btn-ghost" onClick={onClose}>Batal</button>
+              {onlineConfigured && (
+                <button type="button" className="aic-btn-primary" onClick={handleOnline} disabled={onlineBusy}>
+                  {onlineBusy ? 'Memproses…' : 'Bayar Online (Midtrans)'}
+                </button>
+              )}
               <button type="button" className="aic-btn-primary" onClick={handleSimulate}>
                 Simulasikan Top-up
               </button>
