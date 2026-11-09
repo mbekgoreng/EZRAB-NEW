@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useRef, useState, lazy, Suspense } from 'react';
-import { ProjectProvider } from './context/ProjectContext';
 import { ExactLandingPage } from './components/landing/ExactLandingPage';
 import { AboutPage } from './components/about/AboutPage';
 import { FeaturesPage } from './components/landing/features/FeaturesPage';
@@ -8,8 +7,8 @@ import { PricingPage } from './components/landing/pricing/PricingPage';
 import { AdvantagesPage } from './components/landing/advantages/AdvantagesPage';
 import { AuthRoutePage } from './components/auth/AuthRoutePage';
 import { AcceptInvitationPage } from './components/auth/AcceptInvitationPage';
-import { WorkspaceView } from './components/dashboard/WorkspaceView';
 import { DemoModal } from './components/common/DemoModal';
+import { BootScreen, ChunkErrorBoundary } from './components/common/BootScreen';
 import { AuthNoticePage, PrivacyPage, PublicNotFoundPage, TermsPage } from './components/public/PublicInfoPages';
 import { NotificationProvider } from './notifications/NotificationContext';
 import {
@@ -152,6 +151,12 @@ const AuthFailsafeBanner: React.FC = () => {
 const BlogHostPage = lazy(() =>
   import('./blog/BlogHostPage').then((m) => ({ default: m.BlogHostPage })),
 );
+
+// Workspace lazy (code-splitting, mandat owner 2026-11-09): seluruh pohon
+// workspace — WorkspaceView, ProjectProvider, engine, dan data AHSP
+// generated (±20 MB sumber) — menjadi chunk terpisah yang baru diunduh
+// saat pengguna masuk /app/*. Muat awal rute publik tidak menanggungnya.
+const WorkspaceShell = lazy(() => import('./components/workspace/WorkspaceShell'));
 
 export const App: React.FC = () => {
   const location = useBrowserLocation();
@@ -325,19 +330,22 @@ export const App: React.FC = () => {
       <PasscodeGate enabled={AUTH_MODE !== 'real-login'} standalone />
     );
   } else if (isWorkspace) {
-    // KUNCI SEMENTARA (user 2026-10-20): seluruh /app/* digerbang kode
-    // akses selama login dimatikan; validasi di server (bukan client).
-    // Nonaktif otomatis saat AUTH_MODE menjadi 'real-login'.
+    // Komposisi gerbang + provider + WorkspaceView hidup di WorkspaceShell
+    // (chunk terpisah). Selama chunk diunduh, tampil layar muat bermerek
+    // yang sama dengan layar boot index.html; bila unduhan gagal, boundary
+    // menawarkan muat ulang — perilaku sesudah tampil identik seperti
+    // sebelumnya.
     content = (
-      <PasscodeGate enabled={AUTH_MODE !== 'real-login'}>
-        <ProjectProvider>
-          <WorkspaceView
+      <ChunkErrorBoundary>
+        <Suspense fallback={<BootScreen message="Memuat workspace…" />}>
+          <WorkspaceShell
+            authMode={AUTH_MODE}
             route={workspaceRoute}
             onBackToLanding={handleReturnToLanding}
             onNavigateMenu={(menu, projectId) => navigateTo(routeForMenu(menu, projectId))}
           />
-        </ProjectProvider>
-      </PasscodeGate>
+        </Suspense>
+      </ChunkErrorBoundary>
     );
   } else if (isAbout) {
     content = (
