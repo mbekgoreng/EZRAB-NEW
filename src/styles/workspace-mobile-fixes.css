@@ -364,3 +364,83 @@
     mask-image: linear-gradient(to right, #000 88%, transparent 100%);
   }
 }
+
+/* --- R9. Kalkulator Volume: pola HP praktis (ACC owner 2026-11-09) --------
+   Daftar menjadi halaman pilih yang ringkas, hitung menjadi layar kerja
+   pendek: chip domain satu baris geser samping, grid kartu satu kolom,
+   kartu berikon tersusun sebagai baris, ilustrasi menyusut menjadi strip
+   118px, dan input parameter setinggi target sentuh. Murni presentasi —
+   struktur DOM, handler, dan logika hitung tidak berubah. */
+@media (max-width: 767px) {
+  /* Chip domain: satu baris, geser samping, scrollbar disembunyikan */
+  .ezrab-domain-chips {
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .ezrab-domain-chips::-webkit-scrollbar {
+    display: none;
+  }
+  .ezrab-domain-chips > button {
+    flex-shrink: 0;
+  }
+
+  /* Daftar kalkulator: satu kolom selebar layar */
+  .ezrab-calc-card-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  /* Kartu berikon keluarga: baris ringkas ~56px. Susunan DOM tetap
+     (bar atas → ikon → nama); urutan visual diatur lewat order:
+     ikon di kiri, nama fleksibel di tengah, bar atas (bintang favorit +
+     badge satuan) menyusut di kanan. */
+  .ezrab-calc-card.has-icon {
+    flex-direction: row !important;
+    align-items: center;
+    min-height: 56px;
+    gap: 10px;
+  }
+  .ezrab-calc-card-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    object-fit: cover;
+    flex-shrink: 0;
+    display: block;
+    order: 0;
+  }
+  .ezrab-calc-card.has-icon > div:first-child {
+    order: 2;
+    width: auto !important;
+    flex-shrink: 0;
+    gap: 6px;
+  }
+  .ezrab-calc-card.has-icon > div:last-child {
+    order: 1;
+    flex: 1 1 auto;
+    width: auto !important;
+  }
+  /* Deskripsi cukup satu baris di HP agar kartu tetap ringkas;
+     nama tetap boleh dua baris (aturan bawaan kartu). */
+  .ezrab-calc-card.has-icon > div:last-child p {
+    -webkit-line-clamp: 1 !important;
+  }
+
+  /* Ilustrasi pekerjaan: strip pendek di atas workbench (ketuk gambar
+     asli tetap membuka tampilan penuh lewat alur yang sudah ada). */
+  .ezrab-illus-card {
+    padding: 10px !important;
+  }
+  .ezrab-illus-img {
+    height: 118px !important;
+    object-fit: cover;
+    width: 100%;
+  }
+
+  /* Input parameter workbench: target sentuh minimum 44px.
+     Checkbox/radio dikecualikan agar kontrol khusus tidak rusak. */
+  #active-calculator-workbench input:not([type='checkbox']):not([type='radio']) {
+    min-height: 44px;
+  }
+}

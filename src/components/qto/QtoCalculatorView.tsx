@@ -65,6 +65,7 @@ import { useProject } from '../../context/ProjectContext';
 import { CONSTRUCTION_CALCULATORS, getCalculatorById } from '../../engine/constructionCalculators/registry';
 import { MASTER_VOLUME_CALCULATOR_SPEC } from '../../engine/constructionCalculators/masterJsonSpec';
 import { getCalculatorIllustration } from './calculatorIllustrations';
+import { getCalcFamilyIcon } from './calcFamilyIcon';
 import { formatRupiah, formatNumberId } from '../../engine/formulaEngine';
 import { SafeDecimalEngine } from '../../engine/safeDecimalEngine';
 import { MASTER_PRICE_ITEMS } from '../../data/indonesianPrices';
@@ -615,6 +616,12 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
 
   const handleSelectCalculator = (id: string) => {
     setSelectedCalcId(id);
+    // Pola HP praktis (ACC owner 2026-11-09): di layar HP, memilih kalkulator
+    // langsung melipat daftar — bar minimize menyisakan nama kalkulator
+    // terpilih + tombol "Buka" sebagai jalan ganti kalkulator.
+    if (typeof window !== 'undefined' && window.innerWidth <= 767) {
+      setListMinimized(true);
+    }
     setEditingQtoId(null);
     setShowFormulaSteps(false);
     recordRecent(id);
@@ -1679,7 +1686,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
           <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {/* Chip Domain — pintasan membuka satu kelompok domain pada
                 daftar di bawahnya (murni navigasi expand/collapse). */}
-            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+            <div className="ezrab-domain-chips" style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
               {domainGroups.map((domain) => {
                 const isActive = activeDomainChip === domain.id;
                 return (
@@ -2080,6 +2087,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                       <div className="ezrab-calc-card-grid">
                         {group.items.map((item) => {
                           const isSelected = selectedCalcId === item.id;
+                          const familyIcon = getCalcFamilyIcon(item.name);
                           return (
                             <div
                               key={item.id}
@@ -2090,7 +2098,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter' || e.key === ' ') handleSelectCalculator(item.id);
                               }}
-                              className={`ezrab-calc-card ${isSelected ? 'active' : ''}`}
+                              className={`ezrab-calc-card ${isSelected ? 'active' : ''}${familyIcon ? ' has-icon' : ''}`}
                               title={item.name}
                             >
                               {/* Bar atas kartu: bintang favorit (kiri) */}
@@ -2129,6 +2137,21 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                                 </span>
 
                               </div>
+
+                              {/* Ikon keluarga kalkulator — pola HP praktis
+                                  (ACC owner 2026-11-09); hanya tampil menonjol
+                                  di layout baris mobile (.has-icon). */}
+                              {familyIcon && (
+                                <img
+                                  className="ezrab-calc-card-icon"
+                                  src={familyIcon}
+                                  alt=""
+                                  aria-hidden="true"
+                                  loading="lazy"
+                                  width={40}
+                                  height={40}
+                                />
+                              )}
 
                               {/* Nama + deskripsi kartu (maks 2 baris) */}
                               <div style={{ minWidth: 0, width: '100%' }}>
@@ -2196,6 +2219,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                 visual kalkulator (diagram CAD sudah diganti ilustrasi). */}
             {activeIllustration && (
               <div
+                className="ezrab-illus-card"
                 style={{
                   background: 'var(--ez-color-surface)',
                   border: '1px solid #EEF1F6',
@@ -2218,6 +2242,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                   }}
                 >
                   <img
+                    className="ezrab-illus-img"
                     src={activeIllustration.src}
                     alt={activeIllustration.title}
                     title={activeIllustration.title}
