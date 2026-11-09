@@ -12,6 +12,7 @@ import { CinematicHero } from './cinematic/CinematicHero';
 import { ExactWorkflow } from './exact/ExactWorkflow';
 import { AiShowcase } from './exact/AiShowcase';
 import { enhanceLandingMotion } from './exact/motionEnhancer';
+import { CookieConsentBanner } from './CookieConsentBanner';
 
 interface ExactLandingPageProps {
   onOpenWorkspace: () => void;
@@ -77,6 +78,11 @@ export const ExactLandingPage: React.FC<ExactLandingPageProps> = ({
             v8 yang di-ACC owner 2026-11-02. */}
         <AiShowcase onOpenAuth={onOpenAuth} onOpenDemo={onOpenDemo} onOpenFaq={onOpenFaq} onOpenPricing={onOpenPricing} />
       </main>
+
+      {/* Persetujuan cookie — hanya di landing publik ini; komponen ini
+          tidak dirender di rute mana pun selain akar landing, jadi tidak
+          pernah tampil di dalam workspace /app. */}
+      <CookieConsentBanner />
     </div>
   );
 };
