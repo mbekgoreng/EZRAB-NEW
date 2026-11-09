@@ -444,3 +444,570 @@
     min-height: 44px;
   }
 }
+
+/* --- R10 dasar (SEMUA lebar): elemen BARU khusus HP ----------------------
+   Dua class berikut hanya dipakai elemen baru pola formulir HP (tombol
+   stepper parameter dan bar hasil menempel). Aturan dasarnya display:none
+   agar tampilan desktop tidak berubah sama sekali; aturan tampilnya ada
+   di blok R10 (max-width: 767px) di bawah. */
+.ezrab-param-stepper-btn {
+  display: none;
+}
+.ezrab-result-stickybar {
+  display: none;
+}
+
+/* --- R10. Formulir Kalkulator Volume: satu baris per parameter (HP) ------
+   ACC owner 2026-11-09: sel parameter menjadi baris [lencana][label]
+   [stepper − nilai +][satuan], kotak isian 48px font 16px, deskripsi
+   panjang + tip Tab disembunyikan, dan bar hasil menempel di atas navbar
+   bawah. Murni presentasi — struktur DOM, handler, dan mesin hitung
+   tidak berubah. Grid bawah sudah satu kolom di bawah 1024px dari
+   global.css (.ezrab-volume-bottom-grid), jadi tidak diduplikasi. */
+@media (max-width: 767px) {
+  /* Sel parameter: dari tumpukan vertikal menjadi baris fleksibel */
+  .ezrab-param-cell {
+    flex-direction: row !important;
+    flex-wrap: wrap;
+    align-items: center;
+    column-gap: 8px !important;
+  }
+  .ezrab-param-labelrow {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .ezrab-param-inputrow {
+    flex: 0 0 auto;
+    margin-left: auto;
+  }
+
+  /* Deskripsi panjang parameter + tip "tekan Tab" tidak relevan di HP */
+  .ezrab-param-desc {
+    display: none !important;
+  }
+  .ezrab-eng-tip {
+    display: none !important;
+  }
+
+  /* Kotak isian: 48px, font 16px (tidak memicu zoom otomatis iPhone) */
+  .ezrab-param-input {
+    height: 48px !important;
+    font-size: 16px !important;
+    width: 74px !important;
+    flex: none !important;
+    text-align: center !important;
+  }
+
+  /* Stepper − / + di sisi kotak isian */
+  .ezrab-param-stepper-btn {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 48px;
+    padding: 0;
+    border-radius: 11px;
+    border: 1px solid var(--ez-color-border-line);
+    background: var(--ez-color-surface);
+    color: var(--ez-color-primary);
+    font-size: 17px;
+    font-weight: 800;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .ezrab-param-stepper-btn:active {
+    background: var(--ez-hue-blue-bg);
+  }
+
+  /* Bar hasil menempel di atas navbar bawah HP (70px + safe-area) */
+  .ezrab-result-stickybar {
+    display: flex !important;
+    align-items: center;
+    gap: 10px;
+    position: sticky;
+    bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+    z-index: 30;
+    margin-top: 12px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: linear-gradient(120deg, #0B2B57, #123E7D);
+    color: #FFFFFF;
+    box-shadow: 0 -10px 24px -12px rgba(9, 32, 66, 0.5);
+  }
+  .ezrab-result-stickybar-main {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .ezrab-result-stickybar-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #BFD8FF;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .ezrab-result-stickybar-value {
+    font-size: 19px;
+    font-weight: 800;
+    line-height: 1.15;
+    white-space: nowrap;
+  }
+  .ezrab-result-stickybar-actions {
+    display: flex;
+    gap: 8px;
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+  .ezrab-result-stickybar-btn {
+    height: 40px;
+    padding: 0 14px;
+    border-radius: 999px;
+    font-size: 12.5px;
+    font-weight: 800;
+    cursor: pointer;
+  }
+  .ezrab-result-stickybar-btn-save {
+    background: #FFFFFF;
+    color: var(--ez-color-primary-hover);
+    border: none;
+  }
+  .ezrab-result-stickybar-btn-rab {
+    background: transparent;
+    color: #BFD8FF;
+    border: 1px solid #3E639E;
+  }
+  .ezrab-result-stickybar-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  /* Ruang napas di dasar workbench agar konten terakhir tidak tertutup
+     bar hasil yang menempel. */
+  #active-calculator-workbench {
+    padding-bottom: 84px !important;
+  }
+}
+
+/* =========================================================================
+   OVERHAUL MOBILE VIDEO OWNER (2026-11-09, build Preview 96ec502)
+   -------------------------------------------------------------------------
+   R11–R27: pola yang sama untuk semua menu dalam — tabel lebar menjadi
+   scroll-x dengan min-width isi, kartu statistik satu kolom, modal
+   ≤100vw−16px satu kolom, form dua kolom menjadi satu kolom, teks tidak
+   tertutup elemen melayang. Hanya @media (max-width: 767px); desktop
+   tidak berubah. class penanda ezrab-* ditambahkan di JSX terkait.
+   ========================================================================= */
+@media (max-width: 767px) {
+
+  /* --- R11. TopBar (S1): cluster kanan rapat ------------------------------ */
+  /* Pil kredit (pil ke-2 sesudah tombol mata uang IDR) adalah elemen yang
+     di video tampak sebagai "pil kosong": label paket .aic-plan tidak
+     dirender pada mode compact sehingga pil hanya berisi koin + angka
+     tipis dan melebar tanpa isi. Sembunyikan label paket di HP (defensif;
+     bila muncul ia menghabiskan lebar tanpa fungsi). */
+  .ezrab-topbar-right {
+    gap: 4px !important;
+  }
+  .ezrab-topbar-right .aic-balance.compact {
+    height: 28px !important;
+    padding: 0 6px 0 8px !important;
+    gap: 5px !important;
+  }
+  .ezrab-topbar-right .aic-balance.compact .aic-coin {
+    width: 16px !important;
+    height: 16px !important;
+  }
+  .ezrab-topbar-right .aic-plan {
+    display: none !important;
+  }
+
+  /* --- R12. Breadcrumb (S6): satu baris scroll-x -------------------------- */
+  .ezrab-breadcrumb {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    scrollbar-width: none !important;
+    -webkit-overflow-scrolling: touch;
+  }
+  .ezrab-breadcrumb::-webkit-scrollbar {
+    display: none !important;
+  }
+  .ezrab-breadcrumb > * {
+    flex-shrink: 0 !important;
+  }
+  .ezrab-breadcrumb > span {
+    max-width: 150px !important;
+  }
+  .ezrab-breadcrumb > button {
+    max-width: 150px !important;
+  }
+
+  /* --- R13. Pil launcher Ezrab AI (S5): lebih ramping + ruang aman bawah - */
+  /* Pembungkus launcher adalah satu-satunya div fixed anak langsung
+     .pf-panel; rantai ini sama dengan yang dipakai mobile-v3.css untuk
+     mengangkat posisinya. */
+  .pf-panel > div[style*='position: fixed'] .ezrab-touch-target,
+  .pf-panel > div[style*='position:fixed'] .ezrab-touch-target {
+    height: 36px !important;
+    padding: 0 12px !important;
+    font-size: 12.5px !important;
+  }
+  .pf-main main {
+    padding-bottom: calc(120px + var(--ezrab-safe-bottom, 0px)) !important;
+  }
+
+  /* --- R14. Pemilih proyek di drawer (P2) --------------------------------- */
+  .ezrab-project-picker-btn {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+  .ezrab-project-picker-btn > div {
+    min-width: 0 !important;
+  }
+
+  /* --- R15. Kalkulator Volume — header & daftar (V1, V2) ------------------ */
+  .ezrab-qto-title-row {
+    flex-wrap: wrap !important;
+    row-gap: 4px !important;
+  }
+  .ezrab-calc-card {
+    gap: 6px !important;
+  }
+  .ezrab-calc-card-topbar {
+    width: 100% !important;
+  }
+  .ezrab-calc-card-unit {
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+  }
+  .ezrab-calc-card-text {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+  /* Deskripsi kartu maksimal 1 baris di HP (seragam dengan kartu berikon
+     pada R9) agar baris daftar ringkas dan lencana tidak bertabrakan. */
+  .ezrab-calc-card-desc {
+    -webkit-line-clamp: 1 !important;
+    line-clamp: 1 !important;
+  }
+
+  /* --- R16. Rincian Harga Komponen (V3) ----------------------------------- */
+  /* Kartu menjadi pembungkus scroll-x; tabel diberi min-width agar kolom
+     angka (volume/harga) tetap nowrap di kolomnya dan tidak lagi melayang
+     menimpa paragraf provenans. */
+  .ezrab-prov-wrap {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+  .ezrab-prov-table {
+    min-width: 560px !important;
+  }
+  .ezrab-prov-note {
+    font-size: 11px !important;
+    line-height: 1.5 !important;
+  }
+  .ezrab-prov-cell > div {
+    font-size: 11px !important;
+    line-height: 1.5 !important;
+  }
+
+  /* --- R17. Rekapitulasi QTO (Q1, Q2) ------------------------------------- */
+  .ezrab-qto-kpi-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  .ezrab-qto-search {
+    min-width: 0 !important;
+    flex: 1 1 100% !important;
+    max-width: none !important;
+  }
+  .ezrab-qto-controls {
+    flex-wrap: wrap !important;
+  }
+
+  /* --- R18. Jadwal Tahapan & Kurva S (J1, J2) ----------------------------- */
+  /* Pembungkus tabel jadwal sudah overflow-x auto; beri min-width isi. */
+  .ezrab-sched-table {
+    min-width: 640px !important;
+  }
+  .ezrab-sched-table td:first-child {
+    white-space: normal !important;
+  }
+  /* SVG kurva dipaksa selebar kontainer sehingga label pekan berdesakan;
+     beri min-width agar pembungkusnya (sudah overflow-x auto) bisa digeser. */
+  .ezrab-kurva-chart {
+    padding: 14px !important;
+  }
+  .ezrab-kurva-chart svg {
+    min-width: 640px !important;
+  }
+  .ezrab-kurva-tablecard {
+    padding: 14px !important;
+  }
+
+  /* --- R19. Spreadsheet RAB (R1–R3) --------------------------------------- */
+  .ezrab-rab-metrics {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  /* Tabel spreadsheet: min-width isi agar kolom Jumlah tidak terpotong
+     diam di tepi kanan; digeser utuh lewat .ezrab-sheet-scroll. */
+  .ezrab-sheet-table {
+    min-width: 620px !important;
+  }
+  .ezrab-sheet-desc {
+    overflow-wrap: break-word !important;
+  }
+
+  /* --- R20. Rekapitulasi RAB (K1) ------------------------------------------ */
+  .ezrab-rekap-metrics {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  .ezrab-rekap-table {
+    min-width: 560px !important;
+  }
+  .ezrab-rekap-table th:nth-child(2),
+  .ezrab-rekap-table td:nth-child(2) {
+    min-width: 180px !important;
+    white-space: normal !important;
+  }
+
+  /* --- R21. AHSP proyek + Explorer (A1, A2) -------------------------------- */
+  /* Kartu AHSP proyek: kepala kartu membungkus — blok harga turun ke baris
+     sendiri, judul boleh 2 baris, meta terbaca (bukan satu garis terjepit). */
+  .ezrab-ahsp-card-head {
+    flex-wrap: wrap !important;
+    row-gap: 10px !important;
+  }
+  .ezrab-ahsp-price {
+    margin-left: 0 !important;
+    flex-basis: 100% !important;
+  }
+  .ezrab-ahsp-price > div {
+    text-align: left !important;
+  }
+  .ezrab-ahsp-title {
+    white-space: normal !important;
+    line-height: 1.4 !important;
+  }
+  .ezrab-ahsp-meta {
+    font-size: 11.5px !important;
+    line-height: 1.5 !important;
+  }
+  .ezrab-ahsp-detail {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+  .ezrab-ahsp-detail table {
+    min-width: 520px !important;
+  }
+  /* Modal detail AHSP Explorer. */
+  .ezrab-ahsp-modal-overlay {
+    padding: 8px !important;
+  }
+  .ezrab-ahsp-modal {
+    max-width: calc(100vw - 16px) !important;
+  }
+  .ezrab-ahsp-modal-body {
+    overflow-x: auto !important;
+    padding: 16px !important;
+  }
+  .ezrab-ahsp-modal-table {
+    min-width: 620px !important;
+  }
+  .ezrab-ahsp-modal-foot {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+  .ezrab-ahsp-modal-foot button {
+    flex: 1 1 40% !important;
+    justify-content: center !important;
+  }
+
+  /* --- R22. Modal Template RAB (T1, T2) ------------------------------------ */
+  .ezrab-tpl-modal-overlay {
+    padding: 8px !important;
+  }
+  .ezrab-tpl-modal {
+    max-width: calc(100vw - 16px) !important;
+  }
+  /* Badan modal 70/30 menjadi tumpukan vertikal: ringkasan total (kolom
+     kanan gelap) tampil sebagai blok penuh di bawah formulir. */
+  .ezrab-tpl-split {
+    flex-direction: column !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+  }
+  .ezrab-tpl-left,
+  .ezrab-tpl-right {
+    flex: none !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: visible !important;
+  }
+  .ezrab-tpl-target-tabs {
+    flex-wrap: wrap !important;
+  }
+  .ezrab-tpl-level-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* --- R23. Database Material & Resource Library (D1, D2) ------------------ */
+  /* Kolom nama material sticky kiri (sesudah kolom centang 36px) agar
+     konteks baris tetap terlihat saat tabel digeser. Latar sel mengikuti
+     permukaan kartu; baris membawa latar inline pada <tr> sehingga ini
+     aproksimasi terbaik dari CSS. */
+  .mat-table th:nth-child(2),
+  .mat-table td:nth-child(2) {
+    position: sticky !important;
+    left: 36px !important;
+    z-index: 2 !important;
+  }
+  .mat-table th:nth-child(2) {
+    background: var(--ez-color-surface-secondary) !important;
+  }
+  .mat-table td:nth-child(2) {
+    background: var(--ez-color-surface) !important;
+  }
+  /* Resource Library: kartu tabel menjadi scroll-x, isi min-width. */
+  .ezrab-reslib-card {
+    overflow-x: auto !important;
+  }
+  .ezrab-reslib-table {
+    min-width: 680px !important;
+  }
+  .ezrab-supplier-grid {
+    grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr)) !important;
+  }
+
+  /* --- R24. AI Document — panel konteks (DA1) ------------------------------- */
+  /* Baris konteks bertumpuk: label + lencana sumber di baris 1, nilai
+     selebar penuh di bawahnya (tidak lagi patah di tengah kata). */
+  .docai-ctxrow {
+    flex-wrap: wrap !important;
+  }
+  .docai-ctxname {
+    flex: 1 1 auto !important;
+  }
+  .docai-ctxvalue,
+  .docai-ctxmissing {
+    flex: 1 1 100% !important;
+    order: 3 !important;
+  }
+  .docai-ctxsrc {
+    margin-left: auto !important;
+  }
+
+  /* --- R25. Catatan, Laporan, Keuangan (C1, L1, KE1) ------------------------ */
+  .ezrab-notes-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  .ezrab-lap-donut-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  .ezrab-lap-donut-row {
+    flex-wrap: wrap !important;
+  }
+  .ezrab-lap-legend {
+    min-width: 200px !important;
+    flex: 1 1 200px !important;
+  }
+  /* Budget vs Actual: kepala baris membungkus — label di atas, pil varian
+     di bawahnya; nilai bar boleh melebar agar tidak menimpa label. */
+  .ezrab-bva-head {
+    flex-wrap: wrap !important;
+    row-gap: 4px !important;
+  }
+  .ezrab-bva-label {
+    min-width: 0 !important;
+    overflow-wrap: anywhere !important;
+  }
+  .ezrab-bva-var {
+    white-space: nowrap !important;
+  }
+  .ezrab-bva-val {
+    width: auto !important;
+    min-width: 64px !important;
+  }
+
+  /* --- R26. Pengaturan & Dokumen Proyek (PG1, PG2, DP1) --------------------- */
+  .ezrab-set-grid2,
+  .ezrab-set-grid3 {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  /* Grid form lain di panel pengaturan (tanpa class penanda, belasan
+     tempat memakai pola inline repeat(2, 1fr) / repeat(3, 1fr) yang sama)
+     ikut satu kolom lewat selektor atribut gaya inline. */
+  .ezrab-set-panel [style*='repeat(2, 1fr)'],
+  .ezrab-set-panel [style*='repeat(3, 1fr)'] {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  .ezrab-set-panel {
+    padding: 18px 16px !important;
+  }
+  /* Kepala kartu pengaturan bertumpuk: judul + pil Scope membungkus,
+     bar scope boleh membungkus penuh. */
+  .ezrab-set-titlerow {
+    flex-wrap: wrap !important;
+  }
+  .ezrab-set-scopebar {
+    flex-wrap: wrap !important;
+  }
+  /* Pengaturan RAB: grid kartu minmax(320px) runtuh ke lebar penuh. */
+  .ezrab-rabs-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  /* Dokumen Proyek: baris filter membungkus, pencarian melebar fleksibel. */
+  .ezrab-tender-filterrow {
+    flex-wrap: wrap !important;
+    width: 100% !important;
+  }
+  .ezrab-tender-search {
+    flex: 1 1 160px !important;
+    width: auto !important;
+  }
+
+  /* --- R27. Header Chat AI (CA1) -------------------------------------------- */
+  /* ezrab-ai-chat.css tidak diubah di paket ini; dilawan dari sini dengan
+     kekhususan + !important. Nama chat dapat ruang (flex menyusut wajar),
+     pil kredit & pemilih mode dirampingkan. */
+  .ezchat2-header {
+    gap: 6px !important;
+    padding: 10px 12px 8px !important;
+  }
+  .ezchat2-mascot {
+    width: 32px !important;
+    height: 32px !important;
+  }
+  .ezchat2-title {
+    flex: 0 1 auto !important;
+    overflow: hidden !important;
+  }
+  .ezchat2-name {
+    font-size: 14px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+  .ezchat2-actions {
+    flex-shrink: 0 !important;
+    gap: 5px !important;
+  }
+  .ezchat2-actions .aic-balance.compact {
+    height: 28px !important;
+    padding: 0 6px 0 8px !important;
+    gap: 5px !important;
+  }
+  .ezchat2-actions .aic-balance.compact .aic-coin {
+    width: 16px !important;
+    height: 16px !important;
+  }
+  .ezchat2-modesel {
+    max-width: 92px !important;
+    padding: 6px 2px 6px 8px !important;
+    font-size: 11.5px !important;
+  }
+  .ezchat2-new {
+    padding: 6px 9px !important;
+  }
+}

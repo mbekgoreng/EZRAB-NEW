@@ -681,6 +681,17 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
     return initial;
   });
 
+  // Teks mentah per parameter (pola formulir HP, ACC owner 2026-11-09).
+  // Kotak isian boleh kosong saat pengguna menghapus isinya — teks kosong
+  // TIDAK lagi dipetakan ke angka 0. Selama teks sebuah parameter kosong /
+  // belum valid, parameter itu dianggap belum lengkap: angka efektif di
+  // `inputs` dibiarkan pada nilai terakhirnya, tetapi hasil utama
+  // menampilkan "Perlu dilengkapi" dan tombol Simpan/kirim nonaktif.
+  // Entri dihapus (state dikosongkan) setiap kali `inputs` diganti dari
+  // luar (ganti kalkulator, muat item edit, tempel Excel) agar tampilan
+  // kembali tersinkron dari `inputs`.
+  const [inputText, setInputText] = useState<Record<string, string>>({});
+
   // Track if inputs have changed from default
   const hasUnsavedChanges = useMemo(() => {
     for (const p of activeSpec.parameters) {
@@ -697,6 +708,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
         initial[p.id] = p.defaultValue;
       });
       setInputs(initial);
+      setInputText({});
       setActiveParam(activeSpec.parameters[0]?.id || 'P');
     }
   }, [selectedCalcId, activeSpec, editingQtoId]);
@@ -731,6 +743,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
       loaded[p.id] = Number.isFinite(num) ? num : p.defaultValue;
     });
     setInputs(loaded);
+    setInputText({});
     setActiveParam(spec.parameters[0]?.id || 'P');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editingQtoId, projectQtoItems]);
@@ -756,6 +769,45 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
     setActiveParam(id);
   };
 
+  // Parameter dianggap belum lengkap bila teks kotaknya sedang kosong /
+  // belum berupa angka (pengguna menghapus isi kotak). Nilai efektif di
+  // `inputs` sengaja TIDAK diubah pada keadaan ini — tidak ada lagi
+  // pemetaan diam-diam ke 0.
+  const isParamTextIncomplete = (id: string): boolean => {
+    const t = inputText[id];
+    if (t === undefined) return false;
+    return t.trim() === '' || !Number.isFinite(parseFloat(t));
+  };
+  const hasIncompleteParams = activeSpec.parameters.some((p) => isParamTextIncomplete(p.id));
+
+  // Perubahan teks kotak isian: teks mentah selalu disimpan agar kotak
+  // bisa kosong; angka efektif hanya diperbarui bila teks sudah angka.
+  const handleParamTextChange = (id: string, raw: string) => {
+    setInputText((prev) => ({ ...prev, [id]: raw }));
+    const parsed = parseFloat(raw);
+    if (raw.trim() !== '' && Number.isFinite(parsed)) {
+      handleInputChange(id, parsed);
+    } else {
+      setActiveParam(id);
+    }
+  };
+
+  // Stepper − / + (pola formulir HP): ubah nilai sebesar step parameter,
+  // dibatasi min/max, dibulatkan ke presisi step agar tidak muncul
+  // 0.30000000004, lalu sinkronkan angka efektif dan teks kotak.
+  const handleStepParam = (param: (typeof activeSpec.parameters)[number], dir: 1 | -1) => {
+    const step = param.step || 0.1;
+    const rawText = inputText[param.id];
+    const fromText = rawText !== undefined ? parseFloat(rawText) : NaN;
+    const base = Number.isFinite(fromText) ? fromText : (inputs[param.id] ?? param.defaultValue);
+    const min = param.min ?? 0;
+    const max = param.max ?? 10000;
+    const decimals = (String(step).split('.')[1] || '').length;
+    const next = parseFloat(Math.min(max, Math.max(min, base + dir * step)).toFixed(decimals));
+    handleInputChange(param.id, next);
+    setInputText((prev) => ({ ...prev, [param.id]: String(next) }));
+  };
+
   // Excel Paste Handler
   const handlePasteExcelData = (e: React.ClipboardEvent) => {
     const clipboardData = e.clipboardData.getData('text');
@@ -775,19 +827,21 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
         }
       });
       setInputs(updated);
+      setInputText({});
       showToast(`Berhasil menyalin ${values.length} nilai dari Clipboard Excel!`);
     }
   };
 
   // Validation Check
   const isCalculationValid = useMemo(() => {
+    if (hasIncompleteParams) return false;
     if (calculationResult.primaryQuantity <= 0) return false;
     for (const p of activeSpec.parameters) {
       const val = inputs[p.id] ?? p.defaultValue;
       if (val < (p.min ?? 0)) return false;
     }
     return true;
-  }, [calculationResult, activeSpec, inputs]);
+  }, [calculationResult, activeSpec, inputs, hasIncompleteParams]);
 
   // Handle Save Calculation Run & Create QTO Item
   const handleSaveToQTO = () => {
@@ -1450,7 +1504,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
           </div>
 
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div className="ezrab-qto-title-row" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <h1 data-tutorial="qto-calc" style={{ fontSize: '17px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0, letterSpacing: '-0.01em', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                 Volume Calculator
               </h1>
@@ -2102,7 +2156,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                               title={item.name}
                             >
                               {/* Bar atas kartu: bintang favorit (kiri) */}
-                              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', width: '100%' }}>
+                              <div className="ezrab-calc-card-topbar" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', width: '100%' }}>
                                 <button
                                   type="button"
                                   tabIndex={-1}
@@ -2123,6 +2177,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                                   <Star size={13} fill={item.isFavorite ? '#F59E0B' : 'none'} />
                                 </button>
                                 <span
+                                  className="ezrab-calc-card-unit"
                                   style={{
                                     fontSize: '10.5px',
                                     fontWeight: 700,
@@ -2154,11 +2209,12 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                               )}
 
                               {/* Nama + deskripsi kartu (maks 2 baris) */}
-                              <div style={{ minWidth: 0, width: '100%' }}>
+                              <div className="ezrab-calc-card-text" style={{ minWidth: 0, width: '100%' }}>
                                 <span style={{ fontSize: '12px', fontWeight: isSelected ? 800 : 700, color: isSelected ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-primary)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', lineHeight: 1.3 }}>
                                   {item.name}
                                 </span>
                                 <p
+                                  className="ezrab-calc-card-desc"
                                   style={{
                                     fontSize: '10.5px',
                                     color: 'var(--ez-color-text-muted)',
@@ -2467,11 +2523,14 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                 {activeSpec.parameters.map((param) => {
                   const isFocused = activeParam === param.id;
                   const currentVal = inputs[param.id] ?? param.defaultValue;
-                  const isInvalid = currentVal < (param.min ?? 0);
+                  const displayText = inputText[param.id] ?? String(currentVal);
+                  const paramIncomplete = isParamTextIncomplete(param.id);
+                  const isInvalid = paramIncomplete || currentVal < (param.min ?? 0);
 
                   return (
                     <div
                       key={param.id}
+                      className="ezrab-param-cell"
                       onClick={() => setActiveParam(param.id)}
                       style={{
                         display: 'flex',
@@ -2493,7 +2552,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                           Perilaku lama (grid label 1fr + input 88px + satuan 30px)
                           memotong label panjang di panel sempit karena item flex
                           tanpa minWidth: 0 tidak mau menyusut. */}
-                      <div style={{ minWidth: 0, display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
+                      <div className="ezrab-param-labelrow" style={{ minWidth: 0, display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
                         <span
                           style={{
                             fontSize: '10.5px',
@@ -2512,19 +2571,30 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                           {param.label}
                         </span>
                       </div>
-                      <div style={{ fontSize: '11px', color: '#94A3B8', lineHeight: 1.4, overflowWrap: 'break-word', wordBreak: 'break-word', whiteSpace: 'normal' }}>
+                      <div className="ezrab-param-desc" style={{ fontSize: '11px', color: '#94A3B8', lineHeight: 1.4, overflowWrap: 'break-word', wordBreak: 'break-word', whiteSpace: 'normal' }}>
                         {param.description}
                       </div>
-                      {/* Input lebar penuh + satuan */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                      {/* Input lebar penuh + satuan. Stepper − / + hanya tampil
+                          di HP (display:none di luar media 767px, diatur di
+                          workspace-mobile-fixes.css R10). */}
+                      <div className="ezrab-param-inputrow" style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                        <button
+                          type="button"
+                          className="ezrab-param-stepper-btn"
+                          aria-label={`Kurangi ${param.label}`}
+                          onClick={() => handleStepParam(param, -1)}
+                        >
+                          −
+                        </button>
                         <input
                           type="number"
+                          className="ezrab-param-input"
                           inputMode="decimal"
                           step={param.step || 0.1}
                           min={param.min || 0}
                           max={param.max || 10000}
-                          value={currentVal}
-                          onChange={(e) => handleInputChange(param.id, parseFloat(e.target.value))}
+                          value={displayText}
+                          onChange={(e) => handleParamTextChange(param.id, e.target.value)}
                           onFocus={() => setActiveParam(param.id)}
                           style={{
                             flex: 1,
@@ -2544,6 +2614,14 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                             boxShadow: isFocused ? '0 0 0 2px rgba(37,99,235,0.2)' : 'none',
                           }}
                         />
+                        <button
+                          type="button"
+                          className="ezrab-param-stepper-btn"
+                          aria-label={`Tambah ${param.label}`}
+                          onClick={() => handleStepParam(param, 1)}
+                        >
+                          +
+                        </button>
                         <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-muted)', flexShrink: 0, minWidth: '28px' }}>
                           {param.unit}
                         </span>
@@ -2555,6 +2633,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
 
               {/* Engineering Tip */}
               <div
+                className="ezrab-eng-tip"
                 style={{
                   background: 'var(--ez-color-surface-secondary)',
                   borderRadius: '6px',
@@ -2574,6 +2653,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
 
             {/* COLUMN 2: HASIL VOLUME & ESTIMASI BIAYA PEKERJAAN */}
             <div
+              className="ezrab-result-col"
               style={{
                 background: 'var(--ez-color-surface)',
                 borderRadius: '20px',
@@ -2605,12 +2685,14 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginTop: '4px' }}>
-                  <span style={{ fontSize: '30px', fontWeight: 800, fontFamily: "'Plus Jakarta Sans', sans-serif", color: 'var(--ez-color-text-primary)', letterSpacing: '-0.02em', lineHeight: 1 }}>
-                    {formatNumberId(calculationResult.primaryQuantity, 2)}
+                  <span style={{ fontSize: hasIncompleteParams ? '20px' : '30px', fontWeight: 800, fontFamily: "'Plus Jakarta Sans', sans-serif", color: 'var(--ez-color-text-primary)', letterSpacing: '-0.02em', lineHeight: 1 }}>
+                    {hasIncompleteParams ? 'Perlu dilengkapi' : formatNumberId(calculationResult.primaryQuantity, 2)}
                   </span>
-                  <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--ez-color-text-slate)' }}>
-                    {calculationResult.primaryUnit}
-                  </span>
+                  {!hasIncompleteParams && (
+                    <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--ez-color-text-slate)' }}>
+                      {calculationResult.primaryUnit}
+                    </span>
+                  )}
                 </div>
 
                 <div style={{ marginTop: '8px', paddingTop: '6px', borderTop: '1px solid rgba(15,23,42,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>
@@ -2850,6 +2932,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                   menampilkannya apa adanya dari hasil resolver. */}
               {priceBreakdown.allRows.length > 0 && (
                 <div
+                  className="ezrab-prov-wrap"
                   style={{
                     background: 'var(--ez-color-surface)',
                     borderRadius: '20px',
@@ -2870,14 +2953,14 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                   ] as const).filter((sec) => sec.rows.length > 0).map((sec) => (
                     <div key={sec.label}>
                       <div style={{ fontSize: '10.5px', fontWeight: 700, color: 'var(--ez-color-text-muted)', marginBottom: '4px' }}>{sec.label}</div>
-                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
+                      <table className="ezrab-prov-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
                         <tbody>
                           {sec.rows.map((row) => (
                             <tr key={row.key} style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)', verticalAlign: 'top' }}>
                               <td style={{ padding: '5px 6px 5px 0', minWidth: '130px' }}>
                                 <div style={{ fontWeight: 600, color: 'var(--ez-color-text-primary)' }}>{row.uraian}</div>
                                 {row.resolutionExplanation && (
-                                  <div style={{ fontSize: '9.5px', color: 'var(--ez-color-text-muted)', lineHeight: 1.45, marginTop: '2px' }}>{row.resolutionExplanation}</div>
+                                  <div className="ezrab-prov-note" style={{ fontSize: '9.5px', color: 'var(--ez-color-text-muted)', lineHeight: 1.45, marginTop: '2px' }}>{row.resolutionExplanation}</div>
                                 )}
                               </td>
                               <td style={{ padding: '5px 6px', textAlign: 'right', fontFamily: 'monospace', whiteSpace: 'nowrap' }}>
@@ -2891,7 +2974,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                               <td style={{ padding: '5px 6px', textAlign: 'right', fontFamily: 'monospace', whiteSpace: 'nowrap' }}>
                                 {row.jumlahHarga != null ? formatRupiah(row.jumlahHarga) : '—'}
                               </td>
-                              <td style={{ padding: '5px 0 5px 6px', minWidth: '120px' }}>
+                              <td className="ezrab-prov-cell" style={{ padding: '5px 0 5px 6px', minWidth: '120px' }}>
                                 <div style={{ fontWeight: 700, color: 'var(--ez-color-text-slate)' }}>{row.provenanceLabel ?? row.provenance ?? ''}</div>
                                 {row.crossRegion && (
                                   <div style={{ fontSize: '9.5px', color: 'var(--ez-hue-amber-text-dark)', fontWeight: 700, marginTop: '2px' }}>
@@ -2971,6 +3054,39 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                 </button>
               </div>
 
+            </div>
+          </div>
+
+          {/* Bar hasil menempel khusus HP (≤767px; display:none di luar itu,
+              diatur di workspace-mobile-fixes.css R10). Memakai handler yang
+              sama persis dengan tombol di kolom hasil: handleSaveToQTO
+              (Simpan) dan handleSyncToRAB (Ke RAB) — tidak ada jalur baru. */}
+          <div className="ezrab-result-stickybar">
+            <div className="ezrab-result-stickybar-main">
+              <span className="ezrab-result-stickybar-label">{activeSpec.primaryQuantityLabel}</span>
+              <span className="ezrab-result-stickybar-value">
+                {hasIncompleteParams
+                  ? 'Perlu dilengkapi'
+                  : `${formatNumberId(calculationResult.primaryQuantity, 2)} ${calculationResult.primaryUnit}`}
+              </span>
+            </div>
+            <div className="ezrab-result-stickybar-actions">
+              <button
+                type="button"
+                className="ezrab-result-stickybar-btn ezrab-result-stickybar-btn-rab"
+                onClick={handleSyncToRAB}
+                disabled={!isCalculationValid}
+              >
+                Ke RAB
+              </button>
+              <button
+                type="button"
+                className="ezrab-result-stickybar-btn ezrab-result-stickybar-btn-save"
+                onClick={handleSaveToQTO}
+                disabled={!isCalculationValid}
+              >
+                {editingQtoId ? 'Update' : 'Simpan'}
+              </button>
             </div>
           </div>
 
