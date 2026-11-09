@@ -123,7 +123,7 @@ export const EstimatorRekapitulasiView: React.FC<EstimatorRekapitulasiViewProps>
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "20px", width: "100%", maxWidth: "1600px", margin: "0 auto" }}>
       {/* 1. TOP STATS CARDS */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "14px" }}>
+      <div className="ezrab-rekap-metrics" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "14px" }}>
         {/* Card 1: Biaya Langsung */}
         <div className="ez-stat" style={{ background: "var(--ez-stat-sky)", borderRadius: "20px", padding: "20px", boxShadow: "0 4px 20px rgba(0,0,0,0.045)" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
@@ -275,8 +275,8 @@ export const EstimatorRekapitulasiView: React.FC<EstimatorRekapitulasiViewProps>
         )}
 
         {/* Table */}
-        <div style={{ overflowX: "auto", border: "1px solid var(--ez-color-border-line)", borderRadius: "10px" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
+        <div className="ezrab-rekap-wrap" style={{ overflowX: "auto", border: "1px solid var(--ez-color-border-line)", borderRadius: "10px" }}>
+          <table className="ezrab-rekap-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
             <thead>
               <tr style={{ background: "var(--ez-color-surface-secondary)", borderBottom: "1px solid var(--ez-color-border-line)", color: "var(--ez-color-text-slate)", fontWeight: 700, fontSize: "12px" }}>
                 <th style={{ padding: "12px 14px", textAlign: "center", width: "50px" }}>No</th>

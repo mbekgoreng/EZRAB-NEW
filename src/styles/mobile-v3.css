@@ -529,7 +529,7 @@
   color: rgba(255, 255, 255, 0.85);
 }
 .mv3-hero-title {
-  font-size: 23px;
+  font-size: 20px;
   font-weight: 800;
   color: #FFFFFF;
   letter-spacing: -0.4px;
@@ -629,6 +629,9 @@
   line-height: 1.45;
   color: rgba(255, 255, 255, 0.86);
   margin: 0;
+  /* Overhaul video owner 2026-11-09 (S3): teks tidak mengalir ke bawah
+     maskot (lapisan terdepan, sisi kanan) — dibatasi ±60% seperti chatbox. */
+  max-width: 60%;
 }
 .mv3-ai-form {
   margin-top: auto;
@@ -698,7 +701,9 @@
 }
 .mv3-tiles {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  /* Overhaul video owner 2026-11-09 (S4): kolom boleh menyusut sampai 0
+     agar ubin ke-4 tidak terpotong tepi kanan pada lebar 390px. */
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
 }
 .mv3-tile {
@@ -712,6 +717,7 @@
   background: #FFFFFF;
   box-shadow: 0 8px 22px rgba(30, 64, 175, 0.07);
   cursor: pointer;
+  min-width: 0;
 }
 .mv3-tile-ic {
   width: 42px;
@@ -722,11 +728,12 @@
   justify-content: center;
 }
 .mv3-tile-label {
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 700;
   color: #334155;
   text-align: center;
   line-height: 1.3;
+  overflow-wrap: anywhere;
 }
 .mv3-home-projects {
   display: flex;

@@ -1348,7 +1348,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                   Rekapitulasi Anggaran Biaya
                 </h3>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1.25fr 1fr', gap: '24px', alignItems: 'center' }}>
+                <div className="ezrab-lap-donut-grid" style={{ display: 'grid', gridTemplateColumns: '1.25fr 1fr', gap: '24px', alignItems: 'center' }}>
                   {/* Left: Summary Table */}
                   <div style={{ overflowX: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
@@ -1415,7 +1415,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                   </div>
 
                   {/* Right: Donut Chart + Legend */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                  <div className="ezrab-lap-donut-row" style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
                     {/* SVG Donut Chart */}
                     <div style={{ position: 'relative', width: '130px', height: '130px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <svg viewBox="0 0 36 36" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
@@ -1442,7 +1442,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                     </div>
 
                     {/* Categories Legend List */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flexGrow: 1, fontSize: '11px' }}>
+                    <div className="ezrab-lap-legend" style={{ display: 'flex', flexDirection: 'column', gap: '4px', flexGrow: 1, fontSize: '11px' }}>
                       {rekapCategories.slice(0, 6).map((cat) => {
                         const pct = totalRekapValue > 0 && cat.pricedCount > 0 ? ((cat.value / totalRekapValue) * 100).toFixed(2) : null;
                         return (

@@ -65,6 +65,7 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
 
   return (
     <div
+      className="ezrab-rab-metrics"
       style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',

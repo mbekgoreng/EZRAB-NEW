@@ -82,7 +82,7 @@ export const EstimatorNotesView: React.FC<EstimatorNotesViewProps> = ({
       </div>
 
       {/* 2. MAIN NOTES EDITOR */}
-      <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: "20px" }}>
+      <div className="ezrab-notes-grid" style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: "20px" }}>
         <div style={{ background: "var(--ez-color-surface)", border: "1px solid var(--ez-color-border-line)", borderRadius: "16px", padding: "20px", boxShadow: "0 1px 4px rgba(15,23,42,0.04)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px" }}>
             <FileText size={18} color="var(--ez-hue-blue-text)" />

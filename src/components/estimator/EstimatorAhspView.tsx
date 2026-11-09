@@ -177,6 +177,7 @@ export const EstimatorAhspView: React.FC<EstimatorAhspViewProps> = ({
             return (
               <div
                 key={item.id}
+                className="ezrab-ahsp-card"
                 style={{
                   background: "var(--ez-color-surface)",
                   border: "1px solid var(--ez-color-border-line)",
@@ -188,6 +189,7 @@ export const EstimatorAhspView: React.FC<EstimatorAhspViewProps> = ({
               >
                 {/* Header Row */}
                 <div
+                  className="ezrab-ahsp-card-head"
                   onClick={() => toggleExpand(item.id)}
                   style={{
                     padding: "16px 20px",
@@ -229,14 +231,14 @@ export const EstimatorAhspView: React.FC<EstimatorAhspViewProps> = ({
                       {code}
                     </span>
                     <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: "14px", fontWeight: 700, color: "var(--ez-color-text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <div className="ezrab-ahsp-title" style={{ fontSize: "14px", fontWeight: 700, color: "var(--ez-color-text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {item.description}
                       </div>
-                      <div style={{ fontSize: "11.5px", color: "#64748B", marginTop: "2px" }}>
+                      <div className="ezrab-ahsp-meta" style={{ fontSize: "11.5px", color: "#64748B", marginTop: "2px" }}>
                         Kategori: {item.category} • Satuan: <strong>{item.unit || "—"}</strong> • Sumber:{" "}
                         {snap?.sourceDocument || (matchOfficial ? "Database AHSP Resmi EZRAB" : "Belum terhubung ke AHSP resmi")}
                       </div>
-                      <div style={{ fontSize: "11.5px", marginTop: "3px", display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap" }}>
+                      <div className="ezrab-ahsp-badgerow" style={{ fontSize: "11.5px", marginTop: "3px", display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap" }}>
                         <span
                           style={{
                             fontWeight: 700,
@@ -260,7 +262,7 @@ export const EstimatorAhspView: React.FC<EstimatorAhspViewProps> = ({
                     </div>
                   </div>
 
-                  <div style={{ display: "flex", alignItems: "center", gap: "16px", flexShrink: 0, marginLeft: "12px" }}>
+                  <div className="ezrab-ahsp-price" style={{ display: "flex", alignItems: "center", gap: "16px", flexShrink: 0, marginLeft: "12px" }}>
                     <div style={{ textAlign: "right" }}>
                       <span style={{ fontSize: "11px", color: "#64748B", display: "block" }}>Harga Satuan (HSP)</span>
                       <span style={{ fontSize: "15px", fontWeight: 800, color: "var(--ez-color-text-primary)", fontVariantNumeric: "tabular-nums" }}>
@@ -298,7 +300,7 @@ export const EstimatorAhspView: React.FC<EstimatorAhspViewProps> = ({
 
                 {/* Expanded Decomposition Table */}
                 {isExpanded && (
-                  <div style={{ padding: "18px 20px", background: "var(--ez-color-surface)" }}>
+                  <div className="ezrab-ahsp-detail" style={{ padding: "18px 20px", background: "var(--ez-color-surface)" }}>
                     {materials.length === 0 && labors.length === 0 && equipments.length === 0 ? (
                       <div style={{ padding: "16px", background: "var(--ez-color-surface-secondary)", borderRadius: "8px", fontSize: "12.5px", color: "#64748B", textAlign: "center" }}>
                         Dekomposisi koefisien AHSP mengacu pada standar umum analisa satuan nasional. Klik tombol <strong>Rincian</strong> untuk melihat atau menyesuaikan koefisien bahan dan upah di Work Item Inspector.

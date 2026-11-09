@@ -119,7 +119,7 @@ export const EstimatorSettingsView: React.FC<EstimatorSettingsViewProps> = ({
       </div>
 
       {/* 2. SETTINGS CARDS GRID */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "18px" }}>
+      <div className="ezrab-rabs-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "18px" }}>
         {/* Card 1: Overhead & Keuntungan */}
         <div style={{ background: "var(--ez-color-surface)", border: "1px solid var(--ez-color-border-line)", borderRadius: "14px", padding: "20px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px" }}>

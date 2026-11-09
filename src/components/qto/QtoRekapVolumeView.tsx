@@ -560,6 +560,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
 
       {/* 3. KPI Cards Grid (4 Cards) */}
       <div
+        className="ezrab-qto-kpi-grid"
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
@@ -707,7 +708,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
 
       {/* 5. Search, Group by, Columns & View Toolbar */}
       <div
-        className="ezdb-anim"
+        className="ezdb-anim ezrab-qto-toolbar"
         style={{
           background: 'var(--ez-color-surface)',
           borderRadius: 'var(--ez-radius-card)',
@@ -723,7 +724,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
         }}
       >
         {/* Search Bar */}
-        <div style={{ position: 'relative', flex: 1, minWidth: '240px', maxWidth: '420px' }}>
+        <div className="ezrab-qto-search" style={{ position: 'relative', flex: 1, minWidth: '240px', maxWidth: '420px' }}>
           <Search size={15} color="#94A3B8" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
           <input
             type="text"
@@ -745,7 +746,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
         </div>
 
         {/* Right Controls */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div className="ezrab-qto-controls" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           {/* Group By Select */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <span style={{ fontSize: '12px', color: 'var(--ez-color-text-warm)', fontWeight: 500 }}>Group by:</span>

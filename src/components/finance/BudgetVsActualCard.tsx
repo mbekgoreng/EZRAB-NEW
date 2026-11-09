@@ -47,7 +47,7 @@ export const BudgetVsActualCard: React.FC<BudgetVsActualCardProps> = ({
   const maxVal = Math.max(...items.flatMap((i) => [i.budgetAmount, i.actualAmount]), 1);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+    <div className="ezrab-bva" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
       {/* Overall Variance Header Badge */}
       <div
         style={{
@@ -115,9 +115,10 @@ export const BudgetVsActualCard: React.FC<BudgetVsActualCardProps> = ({
                 transition: 'all 120ms ease',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px' }}>
-                <span style={{ fontWeight: 650, color: 'var(--ez-color-text-strong)' }}>{item.groupName}</span>
+              <div className="ezrab-bva-head" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px' }}>
+                <span className="ezrab-bva-label" style={{ fontWeight: 650, color: 'var(--ez-color-text-strong)' }}>{item.groupName}</span>
                 <span
+                  className="ezrab-bva-var"
                   style={{
                     fontSize: '11px',
                     fontWeight: 700,
@@ -146,7 +147,7 @@ export const BudgetVsActualCard: React.FC<BudgetVsActualCardProps> = ({
                       }}
                     />
                   </div>
-                  <span style={{ width: '75px', textAlign: 'right', fontSize: '10px', color: 'var(--ez-color-text-slate)', fontWeight: 600 }}>
+                  <span className="ezrab-bva-val" style={{ width: '75px', textAlign: 'right', fontSize: '10px', color: 'var(--ez-color-text-slate)', fontWeight: 600 }}>
                     {formatRupiah(item.budgetAmount)}
                   </span>
                 </div>
@@ -164,7 +165,7 @@ export const BudgetVsActualCard: React.FC<BudgetVsActualCardProps> = ({
                       }}
                     />
                   </div>
-                  <span style={{ width: '75px', textAlign: 'right', fontSize: '10px', color: isOver ? 'var(--ez-hue-rose-text)' : 'var(--ez-hue-green-text-bright)', fontWeight: 600 }}>
+                  <span className="ezrab-bva-val" style={{ width: '75px', textAlign: 'right', fontSize: '10px', color: isOver ? 'var(--ez-hue-rose-text)' : 'var(--ez-hue-green-text-bright)', fontWeight: 600 }}>
                     {formatRupiah(item.actualAmount)}
                   </span>
                 </div>

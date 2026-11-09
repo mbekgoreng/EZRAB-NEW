@@ -315,6 +315,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
 
   return (
     <div
+      className="ezrab-tpl-modal-overlay"
       style={{
         position: 'fixed',
         inset: 0,
@@ -328,6 +329,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
       }}
     >
       <div
+        className="ezrab-tpl-modal"
         style={{
           background: 'var(--ez-color-surface)',
           borderRadius: '16px',
@@ -438,11 +440,12 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
         {/* =====================================================================
             2. WORKSTATION 70 / 30 SPLIT BODY
            ===================================================================== */}
-        <div style={{ display: 'flex', flex: 1, minHeight: 0, overflow: 'hidden' }}>
+        <div className="ezrab-tpl-split" style={{ display: 'flex', flex: 1, minHeight: 0, overflow: 'hidden' }}>
           {/* ===================================================================
               LEFT SECTION: CONFIGURATION FORM (~68% width)
              =================================================================== */}
           <div
+            className="ezrab-tpl-left"
             style={{
               flex: '1 1 68%',
               overflowY: 'auto',
@@ -468,7 +471,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
               </div>
 
               {/* Mode Tabs */}
-              <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+              <div className="ezrab-tpl-target-tabs" style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
                 {currentProject && (
                   <button
                     onClick={() => setTargetMode('CURRENT')}
@@ -605,7 +608,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
                 </span>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+              <div className="ezrab-tpl-level-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
                 {([
                   {
                     id: 'STANDARD' as DetailLevel,
@@ -1049,6 +1052,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
               RIGHT SECTION: STICKY ESTIMATION SUMMARY (~32% width)
              =================================================================== */}
           <div
+            className="ezrab-tpl-right"
             style={{
               flex: '1 1 32%',
               background: 'var(--ez-color-surface-secondary)',

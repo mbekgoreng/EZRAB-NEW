@@ -1671,6 +1671,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ routeParams,
          ========================================================================= */}
       {selectedAhsp && (
         <div
+          className="ezrab-ahsp-modal-overlay"
           style={{
             position: 'fixed',
             inset: 0,
@@ -1685,6 +1686,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ routeParams,
           onClick={() => setSelectedAhsp(null)}
         >
           <div
+            className="ezrab-ahsp-modal"
             style={{
               background: 'var(--ez-color-surface)',
               borderRadius: 'var(--ez-radius-card)',
@@ -1745,7 +1747,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ routeParams,
             </div>
 
             {/* Modal Body: Rincian Koefisien Table */}
-            <div style={{ padding: '20px 24px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div className="ezrab-ahsp-modal-body" style={{ padding: '20px 24px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {selectedAhspAugmented?.hasMarketPrices ? (
                 <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#166534', padding: '10px 14px', borderRadius: 'var(--ez-radius-card)', fontSize: '12.5px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Info size={15} style={{ flexShrink: 0 }} />
@@ -1765,7 +1767,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ routeParams,
                 </div>
               )}
 
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px' }}>
+              <table className="ezrab-ahsp-modal-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px' }}>
                 <thead>
                   <tr style={{ background: 'var(--ez-hue-slate-bg)', borderBottom: '1.5px solid var(--ez-color-border-line)', color: 'var(--ez-color-text-slate)', fontWeight: 700 }}>
                     <th style={{ padding: '10px', textAlign: 'left' }}>Uraian Sumber Daya</th>
@@ -1905,6 +1907,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ routeParams,
 
             {/* Modal Footer */}
             <div
+              className="ezrab-ahsp-modal-foot"
               style={{
                 padding: '16px 24px',
                 borderTop: '1px solid var(--ez-color-border-soft)',

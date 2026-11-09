@@ -105,6 +105,7 @@ export const UnifiedBreadcrumb: React.FC<UnifiedBreadcrumbProps> = ({
 
   return (
     <nav
+      className="ezrab-breadcrumb"
       aria-label="Breadcrumb"
       style={{
         display: 'flex',

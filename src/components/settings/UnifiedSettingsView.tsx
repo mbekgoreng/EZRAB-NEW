@@ -689,6 +689,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
       {/* 1. TOP HEADER & SCOPE SWITCHER                                */}
       {/* ------------------------------------------------------------- */}
       <div
+        className="ezrab-set-header"
         style={{
           background: 'var(--ez-color-surface)',
           borderRadius: '20px',
@@ -719,7 +720,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
               <Settings size={22} />
             </div>
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div className="ezrab-set-titlerow" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <h1 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0, letterSpacing: '-0.02em' }}>
                   {t('settings.judul')}
                 </h1>
@@ -773,7 +774,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
         </div>
 
         {/* Scope Switcher Bar & Live Search */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', borderTop: '1px solid var(--ez-color-surface-tertiary)', paddingTop: '12px' }}>
+        <div className="ezrab-set-scopebar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', borderTop: '1px solid var(--ez-color-surface-tertiary)', paddingTop: '12px' }}>
           {/* Level Switcher (Level 1/2 vs Level 3) */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--ez-color-surface-tertiary)', padding: '3px', borderRadius: '10px' }}>
             <button
@@ -1074,6 +1075,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
 
         {/* Right Content Panel */}
         <div
+          className="ezrab-set-panel"
           style={{
             background: 'var(--ez-color-surface)',
             borderRadius: '20px',
@@ -1122,7 +1124,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
+              <div className="ezrab-set-grid2" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
                 <div>
                   <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.nama_lengkap')}</label>
                   <input
@@ -1223,7 +1225,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   <span style={{ fontSize: '13.5px', fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>{t('settings.sistem_judul')}</span>
                 </div>
                 <p style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', margin: '0 0 10px' }}>{t('settings.sistem_desc')}</p>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+                <div className="ezrab-set-grid3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
                   <div style={{ background: 'var(--ez-color-surface)', border: '1px solid #EEF1F6', borderRadius: '10px', padding: '10px 12px' }}>
                     <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>{t('settings.versi_aplikasi')}</div>
                     <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--ez-color-text-primary)', marginTop: '2px' }}>v{APP_VERSION}</div>
@@ -1267,7 +1269,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-body)', display: 'block', marginBottom: '12px' }}>
                   Umum
                 </label>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
+                <div className="ezrab-set-grid2" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
                   <div>
                     <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.pilih_bahasa')}</label>
                     <select

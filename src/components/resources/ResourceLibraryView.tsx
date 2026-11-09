@@ -917,7 +917,7 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
             <div style={{ marginBottom: '14px', padding: '10px 14px', borderRadius: 'var(--ez-radius-control)', background: 'var(--ez-pastel-cream)', border: '1px solid var(--ez-hue-amber-border)', color: 'var(--ez-hue-amber-text)', fontSize: '12px', fontWeight: 600 }}>
               Direktori contoh: daftar referensi bawaan aplikasi. Entitas di bawah ini belum diverifikasi EZRAB — status, kontak, dan rating tidak diklaim sebagai hasil verifikasi.
             </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '16px' }}>
+          <div className="ezrab-supplier-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '16px' }}>
             {suppliersDirectory.map((supplier) => (
               <div
                 key={supplier.id}
@@ -994,8 +994,8 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
           </div>
         ) : (
           // RESOURCE PRICE INTELLIGENCE TABLE
-          <div style={{ background: 'var(--ez-color-surface)', borderRadius: 'var(--ez-radius-card)', border: '1px solid #EEF1F6', overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+          <div className="ezrab-reslib-card" style={{ background: 'var(--ez-color-surface)', borderRadius: 'var(--ez-radius-card)', border: '1px solid #EEF1F6', overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
+            <table className="ezrab-reslib-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
               <thead>
                 <tr style={{ background: '#FAFAF8', borderBottom: '1px solid #EEF1F6', color: 'var(--ez-color-text-warm)', fontSize: '11.5px' }}>
                   <th style={{ padding: '10px 14px', textAlign: 'left', width: '18%' }}>Material</th>

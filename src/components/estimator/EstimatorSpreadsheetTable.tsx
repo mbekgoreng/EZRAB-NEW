@@ -167,6 +167,7 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
 
   return (
     <div
+      className="ezrab-sheet"
       style={{
         background: 'var(--ez-color-surface)',
         borderRadius: 'var(--ez-radius-control)',
@@ -176,8 +177,9 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
         position: 'relative',
       }}
     >
-      <div style={{ overflowX: 'auto', width: '100%' }}>
+      <div className="ezrab-sheet-scroll" style={{ overflowX: 'auto', width: '100%' }}>
         <table
+          className="ezrab-sheet-table"
           style={{
             width: '100%',
             borderCollapse: 'collapse',
@@ -641,6 +643,7 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
 
                             {/* 4. Uraian Pekerjaan */}
                             <td
+                              className="ezrab-sheet-desc"
                               onClick={() => onCellClick(item.id, 'description')}
                               onDoubleClick={() => onStartEditing(item.id, 'description', item.description)}
                               style={{

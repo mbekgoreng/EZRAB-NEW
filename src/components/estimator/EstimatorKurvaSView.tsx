@@ -280,7 +280,7 @@ export const EstimatorKurvaSView: React.FC<EstimatorKurvaSViewProps> = ({
       ) : (
       <>
       {/* 2. S-CURVE VISUAL CHART */}
-      <div style={{ background: "var(--ez-color-surface)", border: "1px solid var(--ez-color-border-line)", borderRadius: "16px", padding: "24px", boxShadow: "0 1px 4px rgba(15,23,42,0.04)" }}>
+      <div className="ezrab-kurva-chart" style={{ background: "var(--ez-color-surface)", border: "1px solid var(--ez-color-border-line)", borderRadius: "16px", padding: "24px", boxShadow: "0 1px 4px rgba(15,23,42,0.04)" }}>
         <style>{`
           @keyframes estkurva-draw { to { stroke-dashoffset: 0; } }
           @keyframes estkurva-pop {
@@ -431,7 +431,7 @@ export const EstimatorKurvaSView: React.FC<EstimatorKurvaSViewProps> = ({
       </div>
 
       {/* 3. TIMELINE & WEEKLY SCHEDULE TABLE */}
-      <div style={{ background: "var(--ez-color-surface)", border: "1px solid var(--ez-color-border-line)", borderRadius: "16px", padding: "20px 24px", boxShadow: "0 1px 4px rgba(15,23,42,0.04)", overflowX: "auto" }}>
+      <div className="ezrab-kurva-tablecard" style={{ background: "var(--ez-color-surface)", border: "1px solid var(--ez-color-border-line)", borderRadius: "16px", padding: "20px 24px", boxShadow: "0 1px 4px rgba(15,23,42,0.04)", overflowX: "auto" }}>
         <h3 style={{ fontSize: "15px", fontWeight: 800, color: "var(--ez-color-text-primary)", marginBottom: "14px" }}>
           Distribusi Bobot Mingguan per Tahapan Jadwal
         </h3>

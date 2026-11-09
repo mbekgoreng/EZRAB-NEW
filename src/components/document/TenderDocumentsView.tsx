@@ -559,6 +559,7 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
 
       {/* FILTER TABS & SEARCH TOOLBAR */}
       <div
+        className="ezrab-tender-toolbar"
         style={{
           background: 'var(--ez-color-surface)',
           borderRadius: 'var(--ez-radius-control)',
@@ -573,7 +574,7 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
         }}
       >
         {/* CATEGORY TABS */}
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+        <div className="ezrab-tender-tabs" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
           {[
             { key: 'ALL', label: 'Semua', count: stats.total },
             { key: 'ADMINISTRATION', label: 'Administrasi', count: activeRecords.filter(r => (getDocumentDefinition(r.definitionId)?.category === 'ADMINISTRATION')).length },
@@ -621,8 +622,8 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
         </div>
 
         {/* SEARCH & STATUS FILTER */}
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-          <div style={{ position: 'relative', width: '220px' }}>
+        <div className="ezrab-tender-filterrow" style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <div className="ezrab-tender-search" style={{ position: 'relative', width: '220px' }}>
             <Search size={14} color="#94A3B8" style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)' }} />
             <input
               type="text"

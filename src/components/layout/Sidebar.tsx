@@ -462,6 +462,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <div style={{ position: 'relative', margin: '4px 0 8px 0' }}>
               <button
                 type="button"
+                className="ezrab-project-picker-btn"
                 onClick={() => setProjectPickerOpen((v) => !v)}
                 aria-label={t('nav.pick_current_project')}
                 aria-expanded={projectPickerOpen}
