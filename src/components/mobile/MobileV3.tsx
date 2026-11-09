@@ -9,8 +9,8 @@
  *
  * Aset visual: foto & ikon navigasi hasil generate AI dari folder aset
  * mockup (src/assets/mobile-v3/), logo memakai file resmi repo
- * (public/images/ezrab-logo.png), maskot memakai aset asli aplikasi
- * (src/assets/mascot-ezrab-fullbody.png).
+ * (public/images/ezrab-logo.png), maskot kartu AI memakai artwork kepala
+ * 2D kiriman owner 2026-11-09 (src/assets/mascot-ezrab-kepala-2d.webp).
  */
 import React, { useMemo, useState } from 'react';
 import {
@@ -22,6 +22,9 @@ import {
 } from './mobileV3Utils';
 import {
   Bell,
+  Home,
+  Folder,
+  Plus,
   CheckCircle2,
   AlertCircle,
   Info,
@@ -71,17 +74,7 @@ import photoTerkait from '../../assets/mobile-v3/photo-terkait.jpg';
 // Suntik daftar foto ilustrasi proyek ke mobileV3Utils (modul itu bebas
 // impor aset agar fungsi murninya bisa diuji di runner Node).
 setProyekPhotos([photoProyekA, photoProyekB, photoProyekC]);
-import navBerandaActive from '../../assets/mobile-v3/rnav-beranda-active.png';
-import navBerandaMuted from '../../assets/mobile-v3/rnav-beranda-muted.png';
-import navProyekActive from '../../assets/mobile-v3/rnav-proyek-active.png';
-import navProyekMuted from '../../assets/mobile-v3/rnav-proyek-muted.png';
-import navBuatActive from '../../assets/mobile-v3/rnav-buat-active.png';
-import navNotifActive from '../../assets/mobile-v3/rnav-notif-active.png';
-import navNotifMuted from '../../assets/mobile-v3/rnav-notif-muted.png';
-import navProfilActive from '../../assets/mobile-v3/rnav-profil-active.png';
-import navProfilMuted from '../../assets/mobile-v3/rnav-profil-muted.png';
-import plusWhite from '../../assets/mobile-v3/plus-white.png';
-import mascotAsli from '../../assets/mascot-ezrab-fullbody.png';
+import mascotAsli from '../../assets/mascot-ezrab-kepala-2d.webp';
 
 /* ------------------------------------------------- utils: mobileV3Utils */
 /* Fungsi murni (formatRp*, projectStatusMeta, projectPhoto) tinggal di
@@ -115,17 +108,18 @@ interface MobileBottomNavV3Props {
 }
 
 /**
- * Navbar bawah v3: pil kaca melayang dengan ikon generate khusus.
- * Titik merah Notifikasi hanya tampil bila unreadCount nyata > 0 dari
- * NotificationContext (sumber data notifikasi aplikasi yang sebenarnya).
+ * Navbar bawah v3 — varian B (pilihan owner 2026-11-09): bar flat
+ * ikon-saja tanpa label, ikon garis Lucide, item aktif biru pekat +
+ * titik di bawahnya, slot Profil diisi maskot kepala 2D. Tombol buat
+ * proyek = ikon + polos sejajar. Titik merah Notifikasi hanya tampil
+ * bila unreadCount nyata > 0 dari NotificationContext.
  */
 export const MobileBottomNavV3: React.FC<MobileBottomNavV3Props> = ({ activeTab, onTab, onCreateProject }) => {
   const { unreadCount } = useNotifications();
   const item = (
     tab: MobileNavTab,
     label: string,
-    activeImg: string,
-    mutedImg: string,
+    Icon: LucideIcon,
   ) => {
     const active = activeTab === tab;
     return (
@@ -137,23 +131,41 @@ export const MobileBottomNavV3: React.FC<MobileBottomNavV3Props> = ({ activeTab,
         aria-current={active ? 'page' : undefined}
       >
         <span className="mv3-nav-icwrap">
-          <img src={active ? activeImg : mutedImg} alt="" className="mv3-nav-icon" draggable={false} />
+          <Icon size={23} strokeWidth={2} />
           {tab === 'notif' && unreadCount > 0 && <span className="mv3-nav-dot" aria-label={`${unreadCount} belum dibaca`} />}
         </span>
-        <span>{label}</span>
+        <span className="mv3-nav-under" aria-hidden="true" />
       </button>
     );
   };
   return (
     <nav className="mv3-bottom-nav" aria-label="Navigasi bawah mobile v3">
-      {item('beranda', 'Beranda', navBerandaActive, navBerandaMuted)}
-      {item('proyek', 'Proyek', navProyekActive, navProyekMuted)}
-      <button type="button" className="mv3-nav-create" onClick={onCreateProject} aria-label="Buat proyek baru">
-        <img src={navBuatActive} alt="" className="mv3-nav-create-bg" draggable={false} />
-        <img src={plusWhite} alt="" className="mv3-nav-create-plus" draggable={false} />
+      {item('beranda', 'Beranda', Home)}
+      {item('proyek', 'Proyek', Folder)}
+      <button
+        type="button"
+        className="mv3-nav-item mv3-nav-create"
+        onClick={onCreateProject}
+        aria-label="Buat proyek baru"
+      >
+        <span className="mv3-nav-icwrap">
+          <Plus size={23} strokeWidth={2} />
+        </span>
+        <span className="mv3-nav-under" aria-hidden="true" />
       </button>
-      {item('notif', 'Notifikasi', navNotifActive, navNotifMuted)}
-      {item('menu', 'Profil', navProfilActive, navProfilMuted)}
+      {item('notif', 'Notifikasi', Bell)}
+      <button
+        type="button"
+        className={`mv3-nav-item${activeTab === 'menu' ? ' is-active' : ''}`}
+        onClick={() => onTab('menu')}
+        aria-label="Profil"
+        aria-current={activeTab === 'menu' ? 'page' : undefined}
+      >
+        <span className="mv3-nav-icwrap">
+          <img src={mascotAsli} alt="" className="mv3-nav-mascot" draggable={false} />
+        </span>
+        <span className="mv3-nav-under" aria-hidden="true" />
+      </button>
     </nav>
   );
 };

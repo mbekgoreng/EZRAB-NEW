@@ -8,7 +8,7 @@
  *     menu (.mv3-icon-btn 40px), aksi sheet (min-height 40px), baris menu
  *     (min-height 52px), chip filter (padding → ≥33px adalah pengecualian
  *     terdokumentasi — bukan kontrol utama; yang dijaga di sini: tombol
- *     buat proyek 46px & item nav (tinggi pil 68px)).
+ *     buat proyek 46px & tinggi bar nav 68px).
  *  3. Pelindung overflow 390px: nilai total RAB & nominal kartu proyek
  *     boleh mematah (overflow-wrap: anywhere), sapaan hero hanya nama yang
  *     nowrap, label total terpotong ellipsis (bukan meluber).
@@ -62,7 +62,14 @@ check('.mv3-icon-btn 40×40', /width:\s*40px/.test(ruleBody('.mv3-icon-btn')) &&
 check('aksi sheet min-height 40px', /min-height:\s*40px/.test(ruleBody('.mv3-sheet-actions button')));
 check('baris menu min-height 52px', /min-height:\s*52px/.test(ruleBody('.mv3-menu-row')));
 check('tombol buat proyek height 46px', /height:\s*46px/.test(ruleBody('.mv3-create-btn')));
-check('pil nav height 68px', /height:\s*68px/.test(ruleBody('.mv3-bottom-nav')));
+check('bar nav height 68px + safe-bottom', /height:\s*calc\(68px \+ var\(--ezrab-safe-bottom/.test(ruleBody('.mv3-bottom-nav')));
+check('bar nav flat menempel (bottom: 0, radius 0)', /bottom:\s*0;/.test(ruleBody('.mv3-bottom-nav')) && /border-radius:\s*0;/.test(ruleBody('.mv3-bottom-nav')));
+check('bar nav berlayer 3D (gradasi + highlight atas)', /linear-gradient\(180deg, #FFFFFF/.test(ruleBody('.mv3-bottom-nav')) && /inset 0 1px 0 #FFFFFF/.test(ruleBody('.mv3-bottom-nav')));
+check('chatbox kartu AI mengecil ke kiri (width 62%)', /width:\s*62%/.test(ruleBody('.mv3-ai-form')));
+check('maskot kartu AI kepala 2D besar ke bawah (height 118px, bottom 0)', /height:\s*118px/.test(ruleBody('.mv3-ai-mascot')) && /bottom:\s*0;/.test(ruleBody('.mv3-ai-mascot')));
+check('maskot selalu di depan latar (z-index di atas .mv3-ai-main)', /z-index:\s*3/.test(ruleBody('.mv3-ai-mascot')));
+check('navbar varian B: titik aktif di bawah ikon', /background:\s*#1D4ED8/.test(ruleBody('.mv3-nav-item.is-active .mv3-nav-under')));
+check('navbar varian B: slot profil memakai maskot (img .mv3-nav-mascot)', tsx.includes('mv3-nav-mascot') && /object-fit:\s*contain/.test(ruleBody('.mv3-nav-mascot')));
 
 /* 3 — pelindung overflow -------------------------------------------------- */
 check('nilai total RAB overflow-wrap: anywhere', /overflow-wrap:\s*anywhere/.test(ruleBody('.mv3-total-value')));
@@ -83,7 +90,7 @@ check('tokens.css diimpor oleh global.css (variabel safe-area aktif)', globalCss
 const utilsTs = readFileSync(join(repo, 'src/components/mobile/mobileV3Utils.ts'), 'utf8');
 const importRe = /from\s+'(\.\.\/\.\.\/assets\/[^']+)'/g;
 const relImports = [...tsx.matchAll(importRe), ...utilsTs.matchAll(importRe)].map((m) => m[1]);
-check(`MobileV3+utils mengimpor ${relImports.length} aset lokal`, relImports.length >= 16);
+check(`MobileV3+utils mengimpor ${relImports.length} aset lokal`, relImports.length >= 6);
 for (const rel of relImports) {
   check(`aset ada: ${rel.split('/').pop()}`, existsSync(resolve(repo, 'src/components/mobile', rel)));
 }
