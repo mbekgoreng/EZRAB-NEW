@@ -59,6 +59,10 @@ import { ManajemenProyekView } from '../management/ManajemenProyekView';
 const AhspExplorerViewLazy = lazy(() =>
   import('../ahsp/AhspExplorerView').then(m => ({ default: m.AhspExplorerView })),
 );
+// Gelombang 1 native: penjelajah AHSP mobile juga lazy (data kanonis sama).
+const MobileAhspExplorerLazy = lazy(() =>
+  import('../mobile/MobileAhspExplorer').then(m => ({ default: m.MobileAhspExplorer })),
+);
 import { DaftarPekerjaanView } from '../workItems/DaftarPekerjaanView';
 import { QtoCalculatorView } from '../qto/QtoCalculatorView';
 import { QtoRekapVolumeView } from '../qto/QtoRekapVolumeView';
@@ -101,15 +105,17 @@ import '../layout/premium-frame.css';
 import '../../styles/dashboard-refined.css';
 import '../../styles/workspace-mobile-fixes.css';
 import '../../styles/mobile-v3.css';
+import '../../styles/mobile-native-w1.css';
 import {
   MobileBottomNavV3,
-  MobileNotifSheet,
   MobileMenuSheet,
   MobileHomeV3,
   MobileProjectsV3,
   MobileRabQtoHeader,
   type MobileNavTab,
 } from '../mobile/MobileV3';
+import { MobileQtoRekap } from '../mobile/MobileQtoRekap';
+import type { NationalAHSPItem } from '../../data/nationalCostDatabase/types';
 import { openDashboardTour } from '../onboarding/OnboardingOrchestrator';
 import { UnifiedBreadcrumb } from '../navigation/UnifiedBreadcrumb';
 import { TopBar } from '../navigation/TopBar';
@@ -207,9 +213,9 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
 
   // Mobile Navigation & Viewport State
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
-  // Overlay mobile v3 (ACC owner 2026-11-08): panel Notifikasi & layar Menu
-  // semua fitur — presentasi saja, datanya dari konteks aplikasi yang sama.
-  const [mobileSheet, setMobileSheet] = useState<'notif' | 'menu' | null>(null);
+  // Overlay mobile v3 (ACC owner 2026-11-08): layar Menu semua fitur —
+  // presentasi saja, datanya dari konteks aplikasi yang sama.
+  const [mobileSheet, setMobileSheet] = useState<'menu' | null>(null);
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' ? window.innerWidth < 1024 : false);
   const [isNarrowMobile, setIsNarrowMobile] = useState(() => typeof window !== 'undefined' ? window.innerWidth < 768 : false);
 
@@ -401,6 +407,34 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
     setActivities([]);
     localStorage.removeItem('ezrab_db_activities');
   };
+
+  // Handler tambah-ke-RAB dari penjelajah AHSP — dipakai bersama oleh
+  // penjelajah desktop dan presentasi native mobile (Gelombang 1),
+  // agar perilaku F-01 (false tanpa proyek aktif) identik di keduanya.
+  const handleAddAhspToRab = (ahsp: NationalAHSPItem, volume: number): boolean => {
+                if (currentProject) {
+                  createRabItemDirect({
+                    code: ahsp.code,
+                    ahspCode: ahsp.code,
+                    description: ahsp.name,
+                    unit: ahsp.unit,
+                    volume: volume,
+                    unitPrice: ahsp.unitPrice,
+                    // Harga AHSP boleh null (belum tersedia): total ikut null agar
+                    // factory membuat PRICE_UNRESOLVED — JANGAN fallback ke 0.
+                    totalPrice: ahsp.unitPrice != null ? ahsp.unitPrice * volume : null,
+                    category: ahsp.category || 'Pekerjaan',
+                    sectionName: ahsp.category || 'Pekerjaan',
+                    laborPrice: ahsp.totalLabor || 0,
+                    materialPrice: ahsp.totalMaterial || 0,
+                    equipmentPrice: ahsp.totalEquipment || 0,
+                  });
+                  return true;
+                }
+                // Tanpa proyek aktif: kembalikan false agar explorer menampilkan
+                // peringatan, bukan toast sukses palsu (regresi F-01).
+                return false;
+              };
 
   return (
     <div
@@ -699,53 +733,44 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
                 </div>
               }
             >
-            <AhspExplorerViewLazy
-              routeParams={route.ahsp}
-              onAddAhspToRab={(ahsp, volume) => {
-                if (currentProject) {
-                  createRabItemDirect({
-                    code: ahsp.code,
-                    ahspCode: ahsp.code,
-                    description: ahsp.name,
-                    unit: ahsp.unit,
-                    volume: volume,
-                    unitPrice: ahsp.unitPrice,
-                    // Harga AHSP boleh null (belum tersedia): total ikut null agar
-                    // factory membuat PRICE_UNRESOLVED — JANGAN fallback ke 0.
-                    totalPrice: ahsp.unitPrice != null ? ahsp.unitPrice * volume : null,
-                    category: ahsp.category || 'Pekerjaan',
-                    sectionName: ahsp.category || 'Pekerjaan',
-                    laborPrice: ahsp.totalLabor || 0,
-                    materialPrice: ahsp.totalMaterial || 0,
-                    equipmentPrice: ahsp.totalEquipment || 0,
-                  });
-                  return true;
-                }
-                // Tanpa proyek aktif: kembalikan false agar explorer menampilkan
-                // peringatan, bukan toast sukses palsu (regresi F-01).
-                return false;
-              }}
-            />
+            {isNarrowMobile ? (
+              <MobileAhspExplorerLazy
+                key={JSON.stringify(route.ahsp ?? {})}
+                routeParams={route.ahsp}
+                onAddAhspToRab={handleAddAhspToRab}
+              />
+            ) : (
+              <AhspExplorerViewLazy
+                routeParams={route.ahsp}
+                onAddAhspToRab={handleAddAhspToRab}
+              />
+            )}
             </Suspense>
           </main>
         ) : (activeMenu === 'qto' || activeMenu === 'qto-rekap') ? (
           <main style={{ minHeight: 'calc(100vh - 64px)', padding: isNarrowMobile ? '20px 24px' : undefined }}>
-            {isNarrowMobile && (
-              <MobileRabQtoHeader
-                family="qto"
-                onSelectFamily={(fam) => { if (fam === 'rab') setActiveMenu('rab-estimasi'); }}
-                currentProject={currentProject}
-                rabItems={projectRabItems}
-                onOpenRelatedProject={() => { if (currentProject) setActiveMenu('manajemen-proyek', currentProject.id); }}
+            {isNarrowMobile ? (
+              /* Gelombang 1 native: Rekapitulasi QTO di HP memakai
+                 presentasi native dari data & handler yang sama
+                 (useProject + qtoCategory). Header keluarga lama tidak
+                 lagi dirender untuk menu ini. */
+              <MobileQtoRekap
+                onNavigateToCalculator={(calcId, qtoId) => {
+                  setActiveCalcId(calcId || 'BOWPLANK');
+                  setActiveCalcQtoId(qtoId || null);
+                  setActiveMenu('qto-vc');
+                }}
+                onNavigateToTab={(tab) => setActiveMenu(tab)}
+              />
+            ) : (
+              <QtoRekapVolumeView
+                onNavigateToCalculator={(calcId, qtoId) => {
+                  setActiveCalcId(calcId || 'BOWPLANK');
+                  setActiveCalcQtoId(qtoId || null);
+                  setActiveMenu('qto-vc');
+                }}
               />
             )}
-            <QtoRekapVolumeView
-              onNavigateToCalculator={(calcId, qtoId) => {
-                setActiveCalcId(calcId || 'BOWPLANK');
-                setActiveCalcQtoId(qtoId || null);
-                setActiveMenu('qto-vc');
-              }}
-            />
           </main>
         ) : (activeMenu === 'qto-vc' || activeMenu === 'volume-calculation') ? (
           <main style={{ padding: '20px 24px', background: 'var(--ez-color-background)', minHeight: 'calc(100vh - 64px)' }}>
@@ -993,14 +1018,14 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
         <>
           <MobileBottomNavV3
             activeTab={
-              mobileSheet === 'notif'
-                ? 'notif'
-                : mobileSheet === 'menu'
-                  ? 'menu'
-                  : activeMenu === 'dashboard'
-                    ? 'beranda'
-                    : activeMenu === 'proyek'
-                      ? 'proyek'
+              mobileSheet === 'menu'
+                ? 'menu'
+                : activeMenu === 'dashboard'
+                  ? 'beranda'
+                  : activeMenu === 'proyek'
+                    ? 'proyek'
+                    : activeMenu === 'ezrab-ai' || activeMenu === 'ai-assistant'
+                      ? 'chat'
                       : null
             }
             onTab={(tab: MobileNavTab) => {
@@ -1010,8 +1035,9 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
               } else if (tab === 'proyek') {
                 setMobileSheet(null);
                 setActiveMenu('proyek', null);
-              } else if (tab === 'notif') {
-                setMobileSheet('notif');
+              } else if (tab === 'chat') {
+                setMobileSheet(null);
+                setActiveMenu('ezrab-ai');
               } else {
                 setMobileSheet('menu');
               }
@@ -1021,7 +1047,6 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
               setCreateModalOpen(true);
             }}
           />
-          {mobileSheet === 'notif' && <MobileNotifSheet onClose={() => setMobileSheet(null)} />}
           {mobileSheet === 'menu' && (
             <MobileMenuSheet
               activeMenu={activeMenu}

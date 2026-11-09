@@ -73,6 +73,8 @@ import { useProject } from '../../context/ProjectContext';
 
 // Dedicated Sub-components & Helpers
 import { MaterialInspectorPanel } from './MaterialInspectorPanel';
+import { useNarrowMobile } from '../mobile/useNarrowMobile';
+import { MobileMaterialDb } from '../mobile/MobileMaterialDb';
 import { AddMaterialWizardModal } from './AddMaterialWizardModal';
 import { AddBrandPriceModal } from './AddBrandPriceModal';
 import { MaterialCompareModal } from './MaterialCompareModal';
@@ -230,6 +232,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
   );
 
   // Search & Autocomplete
+  const isNarrowMobile = useNarrowMobile();
   const [searchQuery, setSearchQuery] = useState('');
   const [isAutocompleteOpen, setIsAutocompleteOpen] = useState(false);
   const searchContainerRef = useRef<HTMLDivElement>(null);
@@ -509,6 +512,79 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  // --- Gelombang Native 2: handler & derivasi harga bersama --------------
+  // Dipakai baris tabel desktop dan kartu MobileMaterialDb agar ketukan
+  // kartu membuka inspector/modal yang sama dengan nilai yang sama.
+  const handleInspectMaterial = (mat: MaterialMaster) => {
+    setSelectedMaterialForInspector(mat);
+    setIsInspectorOpen(true);
+    if (!selectedMaterialIds.includes(mat.id)) {
+      setSelectedMaterialIds([mat.id]);
+    }
+  };
+
+  const materialPriceInfo = (mat: MaterialMaster) => {
+    const prices = matDb.getPricesByMaterialId(mat.id);
+    const primaryPriceRec = prices[0];
+    const activeOverride = currentProject
+      ? projectPriceEngine.getProjectOverride(currentProject.id, mat.materialCode || mat.id)
+      : undefined;
+    return {
+      basePrice: prices[0]?.price || 0,
+      verificationStatus: primaryPriceRec?.verificationStatus,
+      regionProvince: primaryPriceRec?.region.province,
+      isOverridden: Boolean(activeOverride && activeOverride.active),
+    };
+  };
+
+  const handleOverrideLabor = (lab: any) => {
+    setTargetResourceForOverride({
+      id: lab.id,
+      code: lab.code,
+      name: lab.name,
+      unit: lab.unit,
+      category: 'LABOR',
+      masterPrice: lab.basePriceOH,
+      specification: lab.skkLevel || lab.category,
+    });
+    setIsProjectPriceModalOpen(true);
+  };
+
+  const handleOverrideEquipment = (eq: any) => {
+    setTargetResourceForOverride({
+      id: eq.id,
+      code: eq.code,
+      name: eq.name,
+      unit: eq.unit,
+      category: 'EQUIPMENT',
+      masterPrice: eq.rentalPricePerHour,
+      specification: eq.capacity ? `${eq.category} - ${eq.capacity}` : eq.category,
+    });
+    setIsProjectPriceModalOpen(true);
+  };
+
+  const handleEditProjectPrice = (item: any) => {
+    setTargetResourceForOverride({
+      id: item.id,
+      code: item.itemCode || item.code || item.resourceCode || item.id,
+      name: item.notes || item.name || item.resourceName || item.id,
+      unit: item.unit || 'unit',
+      category: (item.category as any) || 'MATERIAL',
+      masterPrice: item.masterPrice ?? item.basePrice ?? item.minPrice ?? 0,
+    });
+    setIsProjectPriceModalOpen(true);
+  };
+
+  const handleResetProjectPrice = (item: any) => {
+    if (currentProject) {
+      const code = item.itemCode || item.code || item.resourceCode || item.id;
+      projectPriceEngine.removeProjectOverride(currentProject.id, code);
+      projectPriceEngine.removeProjectPrice(currentProject.id, code);
+      priceRepo.removeProjectPriceOverride(currentProject.id, code);
+      setPriceVersion((v) => v + 1);
+    }
   };
 
   return (
@@ -1884,35 +1960,26 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
             </div>
 
             {/* Project Price Table Component */}
-            <ProjectPriceTableView
-              projectPrices={projectPrices}
-              viewDensity={viewDensity}
-              onAddNewOverride={() => {
-                setTargetResourceForOverride(null);
-                setTargetMaterialForProjectPrice(null);
-                setIsProjectPriceModalOpen(true);
-              }}
-              onEditPrice={(item) => {
-                setTargetResourceForOverride({
-                  id: item.id,
-                  code: item.itemCode || item.code || item.resourceCode || item.id,
-                  name: item.notes || item.name || item.resourceName || item.id,
-                  unit: item.unit || 'unit',
-                  category: (item.category as any) || 'MATERIAL',
-                  masterPrice: item.masterPrice ?? item.basePrice ?? item.minPrice ?? 0,
-                });
-                setIsProjectPriceModalOpen(true);
-              }}
-              onResetPrice={(item) => {
-                if (currentProject) {
-                  const code = item.itemCode || item.code || item.resourceCode || item.id;
-                  projectPriceEngine.removeProjectOverride(currentProject.id, code);
-                  projectPriceEngine.removeProjectPrice(currentProject.id, code);
-                  priceRepo.removeProjectPriceOverride(currentProject.id, code);
-                  setPriceVersion((v) => v + 1);
-                }
-              }}
-            />
+            {isNarrowMobile ? (
+              <MobileMaterialDb
+                mode="PROJECT_PRICE"
+                projectPrices={projectPrices}
+                onEditProjectPrice={handleEditProjectPrice}
+                onResetProjectPrice={handleResetProjectPrice}
+              />
+            ) : (
+              <ProjectPriceTableView
+                projectPrices={projectPrices}
+                viewDensity={viewDensity}
+                onAddNewOverride={() => {
+                  setTargetResourceForOverride(null);
+                  setTargetMaterialForProjectPrice(null);
+                  setIsProjectPriceModalOpen(true);
+                }}
+                onEditPrice={handleEditProjectPrice}
+                onResetPrice={handleResetProjectPrice}
+              />
+            )}
           </div>
         ) : (
           <div
@@ -1987,7 +2054,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
             </div>
 
             {/* Table */}
-            {activeCategoryTab === 'MATERIALS' && (
+            {activeCategoryTab === 'MATERIALS' && !isNarrowMobile && (
               <div style={{ overflowX: 'auto', width: '100%' }}>
                 <table
                 className="mat-table"
@@ -2062,13 +2129,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                           cursor: 'pointer',
                           transition: 'background-color 0.15s',
                         }}
-                        onClick={() => {
-                          setSelectedMaterialForInspector(mat);
-                          setIsInspectorOpen(true);
-                          if (!selectedMaterialIds.includes(mat.id)) {
-                            setSelectedMaterialIds([mat.id]);
-                          }
-                        }}
+                        onClick={() => handleInspectMaterial(mat)}
                       >
                         {/* Checkbox */}
                         <td
@@ -2450,7 +2511,16 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
             </div>
             )}
 
-            {activeCategoryTab === 'LABOR' && (
+            {activeCategoryTab === 'MATERIALS' && isNarrowMobile && (
+              <MobileMaterialDb
+                mode="MATERIALS"
+                materials={paginatedMaterials}
+                getMaterialPriceInfo={materialPriceInfo}
+                onInspectMaterial={handleInspectMaterial}
+              />
+            )}
+
+            {activeCategoryTab === 'LABOR' && !isNarrowMobile && (
               <LaborTableView
                 laborList={paginatedLabor}
                 selectedLabor={selectedLaborForInspector}
@@ -2461,22 +2531,25 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                 selectedProvince={selectedProvince}
                 viewDensity={viewDensity}
                 projectId={currentProject?.id}
-                onOverridePrice={(lab) => {
-                  setTargetResourceForOverride({
-                    id: lab.id,
-                    code: lab.code,
-                    name: lab.name,
-                    unit: lab.unit,
-                    category: 'LABOR',
-                    masterPrice: lab.basePriceOH,
-                    specification: lab.skkLevel || lab.category,
-                  });
-                  setIsProjectPriceModalOpen(true);
-                }}
+                onOverridePrice={handleOverrideLabor}
               />
             )}
 
-            {activeCategoryTab === 'EQUIPMENT' && (
+            {activeCategoryTab === 'LABOR' && isNarrowMobile && (
+              <MobileMaterialDb
+                mode="LABOR"
+                labor={paginatedLabor}
+                selectedProvince={selectedProvince}
+                projectId={currentProject?.id}
+                onInspectLabor={(lab) => {
+                  setSelectedLaborForInspector(lab);
+                  setIsInspectorOpen(true);
+                }}
+                onOverrideLabor={handleOverrideLabor}
+              />
+            )}
+
+            {activeCategoryTab === 'EQUIPMENT' && !isNarrowMobile && (
               <EquipmentTableView
                 equipmentList={paginatedEquipment}
                 selectedEquipment={selectedEquipmentForInspector}
@@ -2486,18 +2559,20 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                 }}
                 viewDensity={viewDensity}
                 projectId={currentProject?.id}
-                onOverridePrice={(eq) => {
-                  setTargetResourceForOverride({
-                    id: eq.id,
-                    code: eq.code,
-                    name: eq.name,
-                    unit: eq.unit,
-                    category: 'EQUIPMENT',
-                    masterPrice: eq.rentalPricePerHour,
-                    specification: eq.capacity ? `${eq.category} - ${eq.capacity}` : eq.category,
-                  });
-                  setIsProjectPriceModalOpen(true);
+                onOverridePrice={handleOverrideEquipment}
+              />
+            )}
+
+            {activeCategoryTab === 'EQUIPMENT' && isNarrowMobile && (
+              <MobileMaterialDb
+                mode="EQUIPMENT"
+                equipment={paginatedEquipment}
+                projectId={currentProject?.id}
+                onInspectEquipment={(eq) => {
+                  setSelectedEquipmentForInspector(eq);
+                  setIsInspectorOpen(true);
                 }}
+                onOverrideEquipment={handleOverrideEquipment}
               />
             )}
 

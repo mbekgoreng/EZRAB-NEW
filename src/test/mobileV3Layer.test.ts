@@ -31,6 +31,10 @@ const repo = resolve(here, '..', '..');
 const css = readFileSync(join(repo, 'src/styles/mobile-v3.css'), 'utf8');
 const tsx = readFileSync(join(repo, 'src/components/mobile/MobileV3.tsx'), 'utf8');
 const globalCss = readFileSync(join(repo, 'src/styles/global.css'), 'utf8');
+const workspaceTsx = readFileSync(join(repo, 'src/components/dashboard/WorkspaceView.tsx'), 'utf8');
+const navStart = tsx.indexOf('export const MobileBottomNavV3');
+const navEnd = tsx.indexOf('export const MobileNotifSheet', navStart);
+const navTsx = tsx.slice(navStart, navEnd);
 
 let pass = 0;
 let fail = 0;
@@ -70,6 +74,10 @@ check('maskot kartu AI kepala 2D besar ke bawah (height 118px, bottom 0)', /heig
 check('maskot selalu di depan latar (z-index di atas .mv3-ai-main)', /z-index:\s*3/.test(ruleBody('.mv3-ai-mascot')));
 check('navbar varian B: titik aktif di bawah ikon', /background:\s*#1D4ED8/.test(ruleBody('.mv3-nav-item.is-active .mv3-nav-under')));
 check('navbar varian B: slot profil memakai maskot (img .mv3-nav-mascot)', tsx.includes('mv3-nav-mascot') && /object-fit:\s*contain/.test(ruleBody('.mv3-nav-mascot')));
+check('navbar bawah: tipe tab memakai chat, bukan notif', tsx.includes("export type MobileNavTab = 'beranda' | 'proyek' | 'chat' | 'menu';"));
+check('navbar bawah: slot keempat Ezrab Chat AI dengan ikon Sparkles Sidebar', navTsx.includes("{item('chat', 'Ezrab Chat AI', Sparkles)}"));
+check('navbar bawah: slot Notifikasi dan titik merah navbar hilang', !navTsx.includes("item('notif'") && !navTsx.includes('mv3-nav-dot') && !navTsx.includes('unreadCount') && !css.includes('.mv3-nav-dot'));
+check('navbar bawah: Chat AI membuka menu ezrab-ai dan aktif di menu itu', workspaceTsx.includes("tab === 'chat'") && workspaceTsx.includes("setActiveMenu('ezrab-ai')") && workspaceTsx.includes("activeMenu === 'ezrab-ai' || activeMenu === 'ai-assistant'"));
 
 /* 3 — pelindung overflow -------------------------------------------------- */
 check('nilai total RAB overflow-wrap: anywhere', /overflow-wrap:\s*anywhere/.test(ruleBody('.mv3-total-value')));

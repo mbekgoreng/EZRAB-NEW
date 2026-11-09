@@ -67,6 +67,10 @@ import { EstimatorAhspView } from '../estimator/EstimatorAhspView';
 import { EstimatorKurvaSView } from '../estimator/EstimatorKurvaSView';
 import { EstimatorNotesView } from '../estimator/EstimatorNotesView';
 import { EstimatorSettingsView } from '../estimator/EstimatorSettingsView';
+import { useNarrowMobile } from '../mobile/useNarrowMobile';
+import { MobileSpreadsheetRab } from '../mobile/MobileSpreadsheetRab';
+import { MobileRekapRab } from '../mobile/MobileRekapRab';
+import { MobileAhspProyek } from '../mobile/MobileAhspProyek';
 import { SmartAddWorkItemModal, AddItemMode } from '../estimator/SmartAddWorkItemModal';
 import { EstimatorAdvancedFilterModal, EstimatorFilterState } from '../estimator/EstimatorAdvancedFilterModal';
 import { EstimatorColumnManagerModal } from '../estimator/EstimatorColumnManagerModal';
@@ -156,6 +160,7 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
   // NAVIGATION & TAB STATE
   // ---------------------------------------------------------------------------
   const [activeEstimatorTab, setActiveEstimatorTab] = useState<EstimatorTabType>(initialTab || 'spreadsheet');
+  const isNarrowMobile = useNarrowMobile();
 
   useEffect(() => {
     if (initialTab && initialTab !== activeEstimatorTab) {
@@ -935,155 +940,11 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
     return typeof d === 'number' && Number.isFinite(d) ? d : null;
   }, [projectEstimateVersions]);
 
-  return (
-    <div
-      style={{
-        display: 'flex',
-        width: '100%',
-        maxWidth: '1440px',
-        margin: '0 auto',
-        minHeight: 'calc(100vh - 64px)',
-        position: 'relative',
-        overflow: 'hidden',
-        color: 'var(--ez-color-text-primary)',
-        fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-      }}
-    >
-      {/* Dashboard entrance animation language (prefers-reduced-motion respected) */}
-      <style>{`
-        @keyframes ezdb-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
-        @media (prefers-reduced-motion: reduce) { .ezdb-anim { animation: none !important; } }
-      `}</style>
-      {/* =====================================================================
-          MAIN SPREADSHEET WORKSPACE (Left / Center)
-         ===================================================================== */}
-      <div
-        className="ezdb-anim"
-        style={{
-          flexGrow: 1,
-          minWidth: 0,
-          padding: '20px 24px',
-          overflowY: 'auto',
-          display: 'flex',
-          flexDirection: 'column',
-          animation: 'ezdb-rise 0.6s 0s both',
-        }}
-      >
-        {/* 1. PROJECT CONTEXT HEADER */}
-        <ProjectContextHeader
-          currentProject={currentProject}
-          onSwitchProject={() => onNavigateToTab?.('proyek')}
-          onImportAhsp={() => handleOpenSmartAdd('ahsp')}
-          onImportExcel={() => setImportExcelModalOpen(true)}
-          onOpenVersionsAndScenarios={() => setIsVersionModalOpen(true)}
-          onExport={() => setIsExportPackageModalOpen(true)}
-          latestVersionLabel={latestVersionNumber}
-        />
-
-        {/* 2. ESTIMATOR MODULE NAVIGATION TABS */}
-        <EstimatorNavigation
-          activeTab={activeEstimatorTab}
-          onTabChange={(tab) => {
-            setActiveEstimatorTab(tab);
-          }}
-        />
-
-        {/* 3. ACTIVE TAB VIEW */}
-        {/* 3A. INFORMASI PROYEK VIEW (owner 2026-10-27, tab pertama):
-            profil lengkap proyek, tersimpan di objek proyek lewat jalur
-            yang sama dengan Pengaturan (updateProject + refresh totals). */}
-        {activeEstimatorTab === 'informasi-proyek' && (
-          <ProjectInfoTab
-            currentProject={currentProject}
-            items={projectRabItems}
-            onSave={(fields) => {
-              if (currentProject) {
-                updateProject(currentProject.id, fields as any);
-                refreshProjectTotals(currentProject.id);
-                showToast('Informasi proyek berhasil disimpan');
-              }
-            }}
-          />
-        )}
-
-        {activeEstimatorTab === 'spreadsheet' && (
-          <>
-            {/* 3A. 5 ESSENTIAL PROJECT METRICS — values always from real data.
-                No demo fallbacks: empty projects render 0 / Rp0 / "—". */}
-            <EstimatorMetrics
-              totalRab={totalRabNominal}
-              totalItems={totalItemsCount}
-              ahspCount={ahspLinkedCount}
-              totalVolume={totalVolumeSum}
-              lastSavedText="Tersinkronisasi Otomatis"
-              isSaving={saveStatus === 'saving'}
-// FASE F: hitung dari data aktual, bukan angka hardcoded.
-              progressPercent={(() => {
-                const total = projectRabItems.length;
-                if (total === 0) return 0;
-                const done = projectRabItems.filter((i) => i.priceStatus === 'PRICE_RESOLVED' || (i.unitPrice || 0) > 0).length;
-                return Math.round((done / total) * 100);
-              })()}
-              completedItemsCount={projectRabItems.filter((i) => i.priceStatus === 'PRICE_RESOLVED' || (i.unitPrice || 0) > 0).length}
-              inProgressItemsCount={projectRabItems.filter((i) => i.priceStatus === 'PRICE_UNRESOLVED').length}
-              pendingItemsCount={0}
-              unpricedCount={unpricedItemsCount}
-            />
-
-            {/* Referensi konversi tampil (display-only): total resmi tetap
-                IDR; nilai asing di bawah ini hanya estimasi referensi. */}
-            <ConvertedReference idrAmount={totalRabNominal} unpricedCount={unpricedItemsCount} />
-
-            {/* 3B. SPREADSHEET TOOLBAR */}
-            <EstimatorToolbar
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
-              selectedCategory={filters.category}
-              onCategoryChange={(cat) => setFilters((prev) => ({ ...prev, category: cat }))}
-              selectedSource={filters.source}
-              onSourceChange={(src) => setFilters((prev) => ({ ...prev, source: src }))}
-              activeFiltersCount={activeFiltersCount}
-              onToggleFilterModal={() => setIsFilterModalOpen(true)}
-              isGrouped={isGrouped}
-              onToggleGroupMode={() => setIsGrouped((prev) => !prev)}
-              onExpandAllGroups={handleExpandAllGroups}
-              onCollapseAllGroups={handleCollapseAllGroups}
-              activeSortLabel={
-                sortField === 'amount'
-                  ? 'Jumlah'
-                  : sortField === 'description'
-                  ? 'Uraian'
-                  : sortField === 'volume'
-                  ? 'Volume'
-                  : undefined
-              }
-              sortDirection={sortDirection}
-              onToggleSortModal={handleCycleSort}
-              onToggleColumnsModal={() => setIsColumnsModalOpen(true)}
-              onAddItem={(mode) => handleOpenSmartAdd(mode || 'selector')}
-              onUndo={handleUndo}
-              onRedo={handleRedo}
-              canUndo={canUndo}
-              canRedo={canRedo}
-              onOpenDocumentReview={() => setIsDocumentReviewModalOpen(true)}
-              onRefreshData={handleRefreshData}
-              onImportExcel={() => setImportExcelModalOpen(true)}
-              onExportPackage={() => setIsExportPackageModalOpen(true)}
-              onValidateIntegrity={handleValidateIntegrity}
-              onRecalculateTotals={handleRecalculateTotals}
-              onResetView={handleResetView}
-              onOpenKeyboardShortcuts={() => setIsShortcutsModalOpen(true)}
-              onOpenVersionHistory={() => setIsVersionModalOpen(true)}
-              totalMatchedItems={filteredItems.length}
-              totalItems={totalItemsCount}
-            />
-
-            {/* 3B2. TOMBOL PAJAK SPREADSHEET (owner 2026-10-27): toggle
-                PPN/PPh di sini memakai flag proyek YANG SAMA dengan
-                Pengaturan Estimasi — Rekap mengikuti flag ini, dan item
-                yang dicentang "sudah termasuk pajak" tetap tidak dihitung
-                ganda. Tarifnya sendiri diatur di Pengaturan. */}
-            {currentProject && (
+  // Blok toggle pajak diekstrak apa adanya dari JSX tab spreadsheet agar
+  // presentasi desktop dan native mobile memakai kontrol pajak yang sama
+  // (satu-satunya salinan markup ini).
+  const taxToggleBlock = (
+    currentProject && (
               <div
                 style={{
                   display: 'flex',
@@ -1167,7 +1028,174 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
                   Item yang dicentang &quot;sudah termasuk pajak&quot; tidak dihitung ganda di Rekap.
                 </span>
               </div>
-            )}
+            )
+  );
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        width: '100%',
+        maxWidth: '1440px',
+        margin: '0 auto',
+        minHeight: 'calc(100vh - 64px)',
+        position: 'relative',
+        overflow: 'hidden',
+        color: 'var(--ez-color-text-primary)',
+        fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+      }}
+    >
+      {/* Dashboard entrance animation language (prefers-reduced-motion respected) */}
+      <style>{`
+        @keyframes ezdb-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+        @media (prefers-reduced-motion: reduce) { .ezdb-anim { animation: none !important; } }
+      `}</style>
+      {/* =====================================================================
+          MAIN SPREADSHEET WORKSPACE (Left / Center)
+         ===================================================================== */}
+      <div
+        className="ezdb-anim"
+        style={{
+          flexGrow: 1,
+          minWidth: 0,
+          padding: '20px 24px',
+          overflowY: 'auto',
+          display: 'flex',
+          flexDirection: 'column',
+          animation: 'ezdb-rise 0.6s 0s both',
+        }}
+      >
+        {/* 1. PROJECT CONTEXT HEADER */}
+        <ProjectContextHeader
+          currentProject={currentProject}
+          onSwitchProject={() => onNavigateToTab?.('proyek')}
+          onImportAhsp={() => handleOpenSmartAdd('ahsp')}
+          onImportExcel={() => setImportExcelModalOpen(true)}
+          onOpenVersionsAndScenarios={() => setIsVersionModalOpen(true)}
+          onExport={() => setIsExportPackageModalOpen(true)}
+          latestVersionLabel={latestVersionNumber}
+        />
+
+        {/* 2. ESTIMATOR MODULE NAVIGATION TABS */}
+        <EstimatorNavigation
+          activeTab={activeEstimatorTab}
+          onTabChange={(tab) => {
+            setActiveEstimatorTab(tab);
+          }}
+        />
+
+        {/* 3. ACTIVE TAB VIEW */}
+        {/* 3A. INFORMASI PROYEK VIEW (owner 2026-10-27, tab pertama):
+            profil lengkap proyek, tersimpan di objek proyek lewat jalur
+            yang sama dengan Pengaturan (updateProject + refresh totals). */}
+        {activeEstimatorTab === 'informasi-proyek' && (
+          <ProjectInfoTab
+            currentProject={currentProject}
+            items={projectRabItems}
+            onSave={(fields) => {
+              if (currentProject) {
+                updateProject(currentProject.id, fields as any);
+                refreshProjectTotals(currentProject.id);
+                showToast('Informasi proyek berhasil disimpan');
+              }
+            }}
+          />
+        )}
+
+        {activeEstimatorTab === 'spreadsheet' && (
+          isNarrowMobile ? (
+            <>
+              {taxToggleBlock}
+              <MobileSpreadsheetRab
+                groups={groupedWbsCategories}
+                totalRab={totalRabNominal}
+                onOpenInspector={(item) => {
+                  setInspectorItem(item);
+                  setInspectorDrawerOpen(true);
+                }}
+                onAddNewItem={(mode, catContext) => handleOpenSmartAdd(mode || 'selector', catContext)}
+                collapsedCategories={collapsedCategories}
+                onToggleCollapseCategory={handleToggleCollapseCategory}
+              />
+            </>
+          ) : (
+          <>
+            {/* 3A. 5 ESSENTIAL PROJECT METRICS — values always from real data.
+                No demo fallbacks: empty projects render 0 / Rp0 / "—". */}
+            <EstimatorMetrics
+              totalRab={totalRabNominal}
+              totalItems={totalItemsCount}
+              ahspCount={ahspLinkedCount}
+              totalVolume={totalVolumeSum}
+              lastSavedText="Tersinkronisasi Otomatis"
+              isSaving={saveStatus === 'saving'}
+// FASE F: hitung dari data aktual, bukan angka hardcoded.
+              progressPercent={(() => {
+                const total = projectRabItems.length;
+                if (total === 0) return 0;
+                const done = projectRabItems.filter((i) => i.priceStatus === 'PRICE_RESOLVED' || (i.unitPrice || 0) > 0).length;
+                return Math.round((done / total) * 100);
+              })()}
+              completedItemsCount={projectRabItems.filter((i) => i.priceStatus === 'PRICE_RESOLVED' || (i.unitPrice || 0) > 0).length}
+              inProgressItemsCount={projectRabItems.filter((i) => i.priceStatus === 'PRICE_UNRESOLVED').length}
+              pendingItemsCount={0}
+              unpricedCount={unpricedItemsCount}
+            />
+
+            {/* Referensi konversi tampil (display-only): total resmi tetap
+                IDR; nilai asing di bawah ini hanya estimasi referensi. */}
+            <ConvertedReference idrAmount={totalRabNominal} unpricedCount={unpricedItemsCount} />
+
+            {/* 3B. SPREADSHEET TOOLBAR */}
+            <EstimatorToolbar
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              selectedCategory={filters.category}
+              onCategoryChange={(cat) => setFilters((prev) => ({ ...prev, category: cat }))}
+              selectedSource={filters.source}
+              onSourceChange={(src) => setFilters((prev) => ({ ...prev, source: src }))}
+              activeFiltersCount={activeFiltersCount}
+              onToggleFilterModal={() => setIsFilterModalOpen(true)}
+              isGrouped={isGrouped}
+              onToggleGroupMode={() => setIsGrouped((prev) => !prev)}
+              onExpandAllGroups={handleExpandAllGroups}
+              onCollapseAllGroups={handleCollapseAllGroups}
+              activeSortLabel={
+                sortField === 'amount'
+                  ? 'Jumlah'
+                  : sortField === 'description'
+                  ? 'Uraian'
+                  : sortField === 'volume'
+                  ? 'Volume'
+                  : undefined
+              }
+              sortDirection={sortDirection}
+              onToggleSortModal={handleCycleSort}
+              onToggleColumnsModal={() => setIsColumnsModalOpen(true)}
+              onAddItem={(mode) => handleOpenSmartAdd(mode || 'selector')}
+              onUndo={handleUndo}
+              onRedo={handleRedo}
+              canUndo={canUndo}
+              canRedo={canRedo}
+              onOpenDocumentReview={() => setIsDocumentReviewModalOpen(true)}
+              onRefreshData={handleRefreshData}
+              onImportExcel={() => setImportExcelModalOpen(true)}
+              onExportPackage={() => setIsExportPackageModalOpen(true)}
+              onValidateIntegrity={handleValidateIntegrity}
+              onRecalculateTotals={handleRecalculateTotals}
+              onResetView={handleResetView}
+              onOpenKeyboardShortcuts={() => setIsShortcutsModalOpen(true)}
+              onOpenVersionHistory={() => setIsVersionModalOpen(true)}
+              totalMatchedItems={filteredItems.length}
+              totalItems={totalItemsCount}
+            />
+
+            {/* 3B2. TOMBOL PAJAK SPREADSHEET (owner 2026-10-27): toggle
+                PPN/PPh di sini memakai flag proyek YANG SAMA dengan
+                Pengaturan Estimasi — Rekap mengikuti flag ini, dan item
+                yang dicentang "sudah termasuk pajak" tetap tidak dihitung
+                ganda. Tarifnya sendiri diatur di Pengaturan. */}
+            {taxToggleBlock}
 
             {/* 3C. ESTIMATOR SPREADSHEET GRID */}
             <EstimatorSpreadsheetTable
@@ -1220,28 +1248,46 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
               isSaving={saveStatus === 'saving'}
             />
           </>
+          )
         )}
 
         {/* 3E. REKAPITULASI VIEW */}
-        {activeEstimatorTab === 'rekapitulasi' && (
-          <EstimatorRekapitulasiView
-            currentProject={currentProject}
-            items={projectRabItems}
-            onOpenExportModal={() => setIsExportPackageModalOpen(true)}
-          />
-        )}
+        {activeEstimatorTab === 'rekapitulasi' &&
+          (isNarrowMobile ? (
+            <MobileRekapRab
+              currentProject={currentProject}
+              items={projectRabItems}
+              onOpenExportModal={() => setIsExportPackageModalOpen(true)}
+            />
+          ) : (
+            <EstimatorRekapitulasiView
+              currentProject={currentProject}
+              items={projectRabItems}
+              onOpenExportModal={() => setIsExportPackageModalOpen(true)}
+            />
+          ))}
 
         {/* 3F. ANALISA HARGA SATUAN (AHSP) VIEW */}
-        {activeEstimatorTab === 'analisa-harga' && (
-          <EstimatorAhspView
-            currentProject={currentProject}
-            items={projectRabItems}
-            onOpenInspector={(item) => {
-              setInspectorItem(item);
-              setInspectorDrawerOpen(true);
-            }}
-          />
-        )}
+        {activeEstimatorTab === 'analisa-harga' &&
+          (isNarrowMobile ? (
+            <MobileAhspProyek
+              currentProject={currentProject}
+              items={projectRabItems}
+              onOpenInspector={(item) => {
+                setInspectorItem(item);
+                setInspectorDrawerOpen(true);
+              }}
+            />
+          ) : (
+            <EstimatorAhspView
+              currentProject={currentProject}
+              items={projectRabItems}
+              onOpenInspector={(item) => {
+                setInspectorItem(item);
+                setInspectorDrawerOpen(true);
+              }}
+            />
+          ))}
 
         {/* 3G. KURVA S & JADWAL VIEW */}
         {activeEstimatorTab === 'kurva-s' && (

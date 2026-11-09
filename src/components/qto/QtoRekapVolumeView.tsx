@@ -36,6 +36,10 @@ import {
 import { useProject } from '../../context/ProjectContext';
 import { CONSTRUCTION_CALCULATORS, getCalculatorById } from '../../engine/constructionCalculators/registry';
 import { QTOItem } from '../../types';
+import {
+  getQtoCategoryOfItem as getCategoryOfItem,
+  getQtoSectionHeadingOfItem as getSectionHeadingOfItem,
+} from './qtoCategory';
 import { formatNumberId, formatRupiah } from '../../engine/formulaEngine';
 import bowplankImg from '../../assets/bowplank-technical.jpg';
 import foundationImg from '../../assets/volume-foundation.jpg';
@@ -118,44 +122,6 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
   const showToast = (text: string, type: 'success' | 'info' = 'success') => {
     setToastMsg({ text, type });
     setTimeout(() => setToastMsg(null), 3500);
-  };
-
-  // Helper to categorize calculator/QTO
-  const getCategoryOfItem = (item: QTOItem): 'struktur' | 'arsitektur' | 'mep' | 'lainnya' => {
-    const calc = item.calculatorId ? getCalculatorById(item.calculatorId) : null;
-    if (!calc) {
-      if (item.kode?.startsWith('1.') || item.kode?.startsWith('2.') || item.kode?.startsWith('3.') || item.kode?.startsWith('4.')) return 'struktur';
-      if (item.kode?.startsWith('5.') || item.kode?.startsWith('6.') || item.kode?.startsWith('7.')) return 'arsitektur';
-      return 'lainnya';
-    }
-    const cat = calc.category as string;
-    if (cat === 'persiapan' || cat === 'struktur' || cat === 'pondasi') return 'struktur';
-    if (cat === 'arsitektur' || cat === 'finishing' || cat === 'dinding' || cat === 'atap' || cat === 'lantai') return 'arsitektur';
-    if (cat === 'mep' || cat === 'me' || cat === 'sanitair') return 'mep';
-    return 'lainnya';
-  };
-
-  // Helper for Category Section Heading
-  const getSectionHeadingOfItem = (item: QTOItem): string => {
-    const calc = item.calculatorId ? getCalculatorById(item.calculatorId) : null;
-    if (calc) {
-      const cat = calc.category as string;
-      if (cat === 'persiapan') return 'Pekerjaan Persiapan';
-      if (cat === 'struktur') {
-        if (item.kode?.startsWith('2.')) return 'Pekerjaan Tanah';
-        if (item.kode?.startsWith('3.')) return 'Pekerjaan Pondasi';
-        return 'Pekerjaan Struktur';
-      }
-      if (cat === 'arsitektur') return 'Pekerjaan Pasangan & Dinding';
-      if (cat === 'finishing') return 'Pekerjaan Finishing & Lantai';
-      if (cat === 'mep') return 'Pekerjaan Mekanikal & Elektrikal';
-    }
-    if (item.kode?.startsWith('1.')) return 'Pekerjaan Persiapan';
-    if (item.kode?.startsWith('2.')) return 'Pekerjaan Tanah';
-    if (item.kode?.startsWith('3.')) return 'Pekerjaan Pondasi';
-    if (item.kode?.startsWith('4.')) return 'Pekerjaan Struktur';
-    if (item.kode?.startsWith('5.')) return 'Pekerjaan Dinding & Plesteran';
-    return 'Pekerjaan Lain-lain';
   };
 
   // Category counts for tabs

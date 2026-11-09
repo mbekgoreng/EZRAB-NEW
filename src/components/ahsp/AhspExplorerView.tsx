@@ -51,7 +51,7 @@ import { marketReviewStore } from '../../engine/pricing/market/reviewStore';
  * adalah identitas → dilewati agar daftar 5.732 item tidak membayar biaya
  * overlay per render.
  */
-function resolveWithMarket(item: NationalAHSPItem) {
+export function resolveWithMarket(item: NationalAHSPItem) {
   const comp = priceResolver2026.resolveAhspUnitPrice(item);
   try {
     if (marketReviewStore.list('MARKET_VERIFIED').length === 0) return comp;
@@ -101,7 +101,7 @@ const DOMAIN_SHORT_LABEL: Record<string, string> = {
   CIPTA_KARYA: 'Cipta Karya (Lampiran VI)',
 };
 
-function domainShortLabel(domain: AHSPDomain | 'ALL'): string {
+export function domainShortLabel(domain: AHSPDomain | 'ALL'): string {
   if (domain === 'ALL') return 'Semua Bidang';
   return DOMAIN_SHORT_LABEL[domain] || String(domain);
 }

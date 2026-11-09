@@ -12,8 +12,7 @@ import {
 import { Project, RabItem } from "../../types";
 import { formatCurrencyIDR, formatNumberID } from "../../calculations/decimalEngine";
 import { officialAhspRepository } from "../../data/nationalCostDatabase/officialAhspRepository";
-import { priceResolver2026 } from "../../data/priceDatabase2026/resolver";
-import { getAhspDirectPrice } from "../../data/priceDatabase2026/ahspDisplayPolicy";
+import { resolveAhspItemDisplay } from "./ahspItemDisplay";
 
 interface EstimatorAhspViewProps {
   currentProject: Project | null;
@@ -151,28 +150,8 @@ export const EstimatorAhspView: React.FC<EstimatorAhspViewProps> = ({
         ) : (
           filteredItems.map((item, idx) => {
             const isExpanded = !!expandedAhspIds[item.id];
-            const snap = item.ahspSnapshot;
-            const code = item.code || item.ahspCode || "A.HSP";
-            
-            const matchOfficial = officialAhspRepository.getOfficialAhsp(code);
-            const resolvedOfficial = matchOfficial ? priceResolver2026.resolveAhspUnitPrice(matchOfficial) : null;
-            const unitPrice = (item.unitPrice && item.unitPrice > 0) ? item.unitPrice : (resolvedOfficial?.unitPrice ?? (item.unitPrice ?? null));
-            // F-11: badge status + sumber + penanda basi. Harga tampil TIDAK
-            // diubah (tetap mengutamakan harga tersimpan item) — hanya diberi label.
-            const storedPrice = (item.unitPrice && item.unitPrice > 0) ? item.unitPrice : null;
-            const catalogPrice = resolvedOfficial ? (getAhspDirectPrice(resolvedOfficial) ?? resolvedOfficial.unitPrice ?? null) : null;
-            const statusBadge = !matchOfficial ? 'MISSING' : (resolvedOfficial?.pricingStatus ?? 'MISSING');
-            const isStale = storedPrice != null && catalogPrice != null && storedPrice !== catalogPrice;
-
-            const materials = (snap?.materialComponents && snap.materialComponents.length > 0)
-              ? snap.materialComponents
-              : (resolvedOfficial ? resolvedOfficial.material.components.map((c) => ({ name: c.itemName, unit: c.unit, coefficient: c.coefficient, unitPrice: c.unitPrice })) : []);
-            const labors = (snap?.laborComponents && snap.laborComponents.length > 0)
-              ? snap.laborComponents
-              : (resolvedOfficial ? resolvedOfficial.labor.components.map((c) => ({ name: c.itemName, unit: c.unit, coefficient: c.coefficient, unitPrice: c.unitPrice })) : []);
-            const equipments = (snap?.equipmentComponents && snap.equipmentComponents.length > 0)
-              ? snap.equipmentComponents
-              : (resolvedOfficial ? resolvedOfficial.equipment.components.map((c) => ({ name: c.itemName, unit: c.unit, coefficient: c.coefficient, unitPrice: c.unitPrice })) : []);
+            const { snap, code, matchOfficial, resolvedOfficial, unitPrice, storedPrice, catalogPrice, statusBadge, isStale, materials, labors, equipments } =
+              resolveAhspItemDisplay(item);
 
             return (
               <div

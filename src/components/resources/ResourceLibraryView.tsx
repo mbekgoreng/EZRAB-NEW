@@ -36,6 +36,8 @@ import { formatCurrencyIDR } from '../../calculations/decimalEngine';
 import { useProject } from '../../context/ProjectContext';
 import { officialAhspRepository } from '../../data/nationalCostDatabase/officialAhspRepository';
 import { PriceRepository } from '../../engine/pricing/repository/priceRepository';
+import { useNarrowMobile } from '../mobile/useNarrowMobile';
+import { MobileResourceLibrary } from '../mobile/MobileResourceLibrary';
 
 export interface ExtendedPriceRecord extends PriceItem {
   province?: string;
@@ -72,6 +74,7 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
 
   // Active Tab
   const [activeTab, setActiveTab] = useState<'MATERIAL' | 'LABOR' | 'EQUIPMENT' | 'SUPPLIERS'>(initialTab);
+  const isNarrowMobile = useNarrowMobile();
 
   // Search & Filters
   const [search, setSearch] = useState('');
@@ -992,6 +995,14 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
             ))}
           </div>
           </div>
+        ) : isNarrowMobile ? (
+          // Gelombang Native 2: daftar catatan harga menjadi kartu native;
+          // tab SUPPLIERS di atas sudah berbentuk kartu dan tidak berubah.
+          <MobileResourceLibrary
+            records={filteredRecords}
+            projectOverrideCodes={projectPriceOverrides.map((o) => o.resourceCode)}
+            onCompare={(item) => setComparingResource(item)}
+          />
         ) : (
           // RESOURCE PRICE INTELLIGENCE TABLE
           <div className="ezrab-reslib-card" style={{ background: 'var(--ez-color-surface)', borderRadius: 'var(--ez-radius-card)', border: '1px solid #EEF1F6', overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>

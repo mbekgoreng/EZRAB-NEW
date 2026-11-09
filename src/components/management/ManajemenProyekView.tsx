@@ -26,6 +26,9 @@ import { computeScheduleProgress } from '../../lib/scheduleHonesty';
 import { formatCurrencyIDR } from '../../calculations/decimalEngine';
 import { exportItemAmount } from '../../export/priceIntegrity';
 import { ScheduleTask } from '../../types';
+import { scurveSmoothPath } from '../../lib/scurvePath';
+import { useNarrowMobile } from '../mobile/useNarrowMobile';
+import { MobileManajemenProyek } from '../mobile/MobileManajemenProyek';
 import { TutorialHelpButton } from '../onboarding/tutorials/TutorialHelpButton';
 
 interface ManajemenProyekViewProps {
@@ -66,6 +69,10 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
     updateScheduleTask,
     deleteScheduleTask,
   } = useProject();
+
+  // Gelombang Native 2: deteksi viewport sempit (mekanisme yang sama
+  // dengan lapisan MobileV3) untuk presentasi Jadwal & Kurva S native.
+  const isNarrowMobile = useNarrowMobile();
 
   // Modal for adding task
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -121,24 +128,7 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
   // --- S-Curve chart enhancements: hover tooltip state ---
   const [scurveHoverIdx, setScurveHoverIdx] = useState<number | null>(null);
 
-  // Smooth path (Catmull-Rom → cubic bezier) for the S-curve line
-  const scurveSmoothPath = (pts: { x: number; y: number }[]): string => {
-    if (pts.length === 0) return '';
-    if (pts.length === 1) return `M ${pts[0].x} ${pts[0].y}`;
-    let d = `M ${pts[0].x} ${pts[0].y}`;
-    for (let i = 0; i < pts.length - 1; i++) {
-      const p0 = pts[Math.max(0, i - 1)];
-      const p1 = pts[i];
-      const p2 = pts[i + 1];
-      const p3 = pts[Math.min(pts.length - 1, i + 2)];
-      const c1x = p1.x + (p2.x - p0.x) / 6;
-      const c1y = p1.y + (p2.y - p0.y) / 6;
-      const c2x = p2.x - (p3.x - p1.x) / 6;
-      const c2y = p2.y - (p3.y - p1.y) / 6;
-      d += ` C ${c1x.toFixed(1)} ${c1y.toFixed(1)}, ${c2x.toFixed(1)} ${c2y.toFixed(1)}, ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`;
-    }
-    return d;
-  };
+  // Jalur halus Kurva S memakai scurveSmoothPath bersama (src/lib/scurvePath.ts).
 
   // Auto-sync tasks from RAB Categories
   const handleAutoSyncFromRab = () => {
@@ -214,6 +204,193 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
         <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--ez-color-text-primary)', margin: '0 0 6px' }}>Belum Ada Proyek Aktif</h3>
         <p style={{ fontSize: '13px', color: 'var(--ez-color-text-muted)', margin: 0 }}>Silakan buat atau pilih proyek di menu utama untuk melihat jadwal dan Kurva S.</p>
       </div>
+    );
+  }
+
+  // Modal tambah/edit diekstrak sebagai konstanta agar presentasi
+  // desktop & mobile me-render modal yang PERSIS sama (state & handler
+  // di atas tidak berubah).
+  const addTaskModal = <>{isAddModalOpen && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{ background: 'var(--ez-color-surface)', borderRadius: '20px', padding: '24px', width: '100%', maxWidth: '440px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: 700, margin: 0, color: 'var(--ez-color-text-primary)' }}>Tambah Tahapan Proyek</h3>
+              <button onClick={() => setIsAddModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ez-color-text-muted)' }}>
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateTask} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div>
+                <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>Nama Tahapan</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Pekerjaan Pondasi Tapak"
+                  value={taskName}
+                  onChange={(e) => setTaskName(e.target.value)}
+                  style={{ width: '100%', height: '38px', padding: '0 12px', borderRadius: '10px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '13px', boxSizing: 'border-box', fontFamily: 'inherit' }}
+                  required
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>Kategori Pekerjaan</label>
+                <select
+                  value={taskCategory}
+                  onChange={(e) => setTaskCategory(e.target.value)}
+                  style={{ width: '100%', height: '38px', padding: '0 12px', borderRadius: '10px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '13px', boxSizing: 'border-box', fontFamily: 'inherit' }}
+                >
+                  <option value="Pekerjaan Persiapan">Pekerjaan Persiapan</option>
+                  <option value="Pekerjaan Tanah & Pondasi">Pekerjaan Tanah & Pondasi</option>
+                  <option value="Pekerjaan Struktur">Pekerjaan Struktur</option>
+                  <option value="Pekerjaan Arsitektur">Pekerjaan Arsitektur</option>
+                  <option value="Pekerjaan MEP">Pekerjaan MEP</option>
+                </select>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>Mulai Pekan Ke-</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="12"
+                    value={taskStartWeek}
+                    onChange={(e) => setTaskStartWeek(Number(e.target.value))}
+                    style={{ width: '100%', height: '38px', padding: '0 12px', borderRadius: '10px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '13px', boxSizing: 'border-box', fontFamily: 'inherit' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>Selesai Pekan Ke-</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="12"
+                    value={taskEndWeek}
+                    onChange={(e) => setTaskEndWeek(Number(e.target.value))}
+                    style={{ width: '100%', height: '38px', padding: '0 12px', borderRadius: '10px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '13px', boxSizing: 'border-box', fontFamily: 'inherit' }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>Bobot Pekerjaan (%)</label>
+                <input
+                  type="number"
+                  step="0.1"
+                  min="0.1"
+                  max="100"
+                  value={taskWeightInput}
+                  onChange={(e) => setTaskWeightInput(Number(e.target.value))}
+                  style={{ width: '100%', height: '38px', padding: '0 12px', borderRadius: '10px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '13px', boxSizing: 'border-box', fontFamily: 'inherit' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '10px' }}>
+                <button
+                  type="button"
+                  onClick={() => setIsAddModalOpen(false)}
+                  style={{ height: '36px', padding: '0 14px', borderRadius: '10px', background: 'var(--ez-color-surface-tertiary)', color: 'var(--ez-color-text-slate)', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  style={{ height: '36px', padding: '0 16px', borderRadius: '10px', background: 'var(--ez-color-primary)', color: '#FFFFFF', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}
+                >
+                  Simpan Tahapan
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}</>;
+  const editProgressModal = <>{editingTask && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{ background: 'var(--ez-color-surface)', borderRadius: '20px', padding: '24px', width: '100%', maxWidth: '380px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '15px', fontWeight: 700, margin: 0, color: 'var(--ez-color-text-primary)' }}>Update Progres: {editingTask.name}</h3>
+              <button onClick={() => setEditingTask(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ez-color-text-muted)' }}>
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveProgress} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div>
+                <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>Progres Realisasi Lapangan (%)</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={editProgress}
+                  onChange={(e) => setEditProgress(Number(e.target.value))}
+                  style={{ width: '100%', height: '38px', padding: '0 12px', borderRadius: '10px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '13px', boxSizing: 'border-box', fontFamily: 'inherit' }}
+                  required
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>Status Pelaksanaan</label>
+                <select
+                  value={editStatus}
+                  onChange={(e) => setEditStatus(e.target.value as any)}
+                  style={{ width: '100%', height: '38px', padding: '0 12px', borderRadius: '10px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '13px', boxSizing: 'border-box', fontFamily: 'inherit' }}
+                >
+                  <option value="PENDING">PENDING</option>
+                  <option value="ON_TRACK">ON_TRACK</option>
+                  <option value="DELAYED">DELAYED</option>
+                  <option value="COMPLETED">COMPLETED</option>
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '10px' }}>
+                <button
+                  type="button"
+                  onClick={() => setEditingTask(null)}
+                  style={{ height: '36px', padding: '0 14px', borderRadius: '10px', background: 'var(--ez-color-surface-tertiary)', color: 'var(--ez-color-text-slate)', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  style={{ height: '36px', padding: '0 16px', borderRadius: '10px', background: '#16A34A', color: '#FFFFFF', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}
+                >
+                  Simpan Perubahan
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}</>;
+
+  if (isNarrowMobile) {
+    return (
+      <>
+        <MobileManajemenProyek
+          projectName={currentProject.name}
+          clientLabel={currentProject.client || currentProject.clientName || '-'}
+          locationLabel={currentProject.location || '-'}
+          totalRab={currentProject.totalRab || 0}
+          rabItemCount={projectRabItems.length}
+          tasks={projectScheduleTasks}
+          kurvaSData={projectKurvaSData}
+          actualSeries={actualSeries}
+          deviasi={deviasi}
+          currentPlannedProgress={currentPlannedProgress}
+          currentActualProgress={currentActualProgress}
+          initialSection={initialSection}
+          onAddTask={() => setIsAddModalOpen(true)}
+          onSyncFromRab={handleAutoSyncFromRab}
+          onEditTask={(task) => {
+            setEditingTask(task);
+            setEditProgress(task.actualProgressPercent);
+            setEditStatus(task.status);
+          }}
+          onDeleteTask={deleteScheduleTask}
+        />
+        {addTaskModal}
+        {editProgressModal}
+      </>
     );
   }
 
@@ -841,161 +1018,9 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
         )}
       </div>
 
-      {/* Add Task Modal */}
-      {isAddModalOpen && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div style={{ background: 'var(--ez-color-surface)', borderRadius: '20px', padding: '24px', width: '100%', maxWidth: '440px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
-              <h3 style={{ fontSize: '16px', fontWeight: 700, margin: 0, color: 'var(--ez-color-text-primary)' }}>Tambah Tahapan Proyek</h3>
-              <button onClick={() => setIsAddModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ez-color-text-muted)' }}>
-                <X size={18} />
-              </button>
-            </div>
+      {addTaskModal}
 
-            <form onSubmit={handleCreateTask} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div>
-                <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>Nama Tahapan</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Pekerjaan Pondasi Tapak"
-                  value={taskName}
-                  onChange={(e) => setTaskName(e.target.value)}
-                  style={{ width: '100%', height: '38px', padding: '0 12px', borderRadius: '10px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '13px', boxSizing: 'border-box', fontFamily: 'inherit' }}
-                  required
-                />
-              </div>
-
-              <div>
-                <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>Kategori Pekerjaan</label>
-                <select
-                  value={taskCategory}
-                  onChange={(e) => setTaskCategory(e.target.value)}
-                  style={{ width: '100%', height: '38px', padding: '0 12px', borderRadius: '10px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '13px', boxSizing: 'border-box', fontFamily: 'inherit' }}
-                >
-                  <option value="Pekerjaan Persiapan">Pekerjaan Persiapan</option>
-                  <option value="Pekerjaan Tanah & Pondasi">Pekerjaan Tanah & Pondasi</option>
-                  <option value="Pekerjaan Struktur">Pekerjaan Struktur</option>
-                  <option value="Pekerjaan Arsitektur">Pekerjaan Arsitektur</option>
-                  <option value="Pekerjaan MEP">Pekerjaan MEP</option>
-                </select>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>Mulai Pekan Ke-</label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="12"
-                    value={taskStartWeek}
-                    onChange={(e) => setTaskStartWeek(Number(e.target.value))}
-                    style={{ width: '100%', height: '38px', padding: '0 12px', borderRadius: '10px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '13px', boxSizing: 'border-box', fontFamily: 'inherit' }}
-                  />
-                </div>
-                <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>Selesai Pekan Ke-</label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="12"
-                    value={taskEndWeek}
-                    onChange={(e) => setTaskEndWeek(Number(e.target.value))}
-                    style={{ width: '100%', height: '38px', padding: '0 12px', borderRadius: '10px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '13px', boxSizing: 'border-box', fontFamily: 'inherit' }}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>Bobot Pekerjaan (%)</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  min="0.1"
-                  max="100"
-                  value={taskWeightInput}
-                  onChange={(e) => setTaskWeightInput(Number(e.target.value))}
-                  style={{ width: '100%', height: '38px', padding: '0 12px', borderRadius: '10px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '13px', boxSizing: 'border-box', fontFamily: 'inherit' }}
-                />
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '10px' }}>
-                <button
-                  type="button"
-                  onClick={() => setIsAddModalOpen(false)}
-                  style={{ height: '36px', padding: '0 14px', borderRadius: '10px', background: 'var(--ez-color-surface-tertiary)', color: 'var(--ez-color-text-slate)', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  style={{ height: '36px', padding: '0 16px', borderRadius: '10px', background: 'var(--ez-color-primary)', color: '#FFFFFF', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}
-                >
-                  Simpan Tahapan
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Edit Progress Modal */}
-      {editingTask && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div style={{ background: 'var(--ez-color-surface)', borderRadius: '20px', padding: '24px', width: '100%', maxWidth: '380px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h3 style={{ fontSize: '15px', fontWeight: 700, margin: 0, color: 'var(--ez-color-text-primary)' }}>Update Progres: {editingTask.name}</h3>
-              <button onClick={() => setEditingTask(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ez-color-text-muted)' }}>
-                <X size={18} />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveProgress} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div>
-                <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>Progres Realisasi Lapangan (%)</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={editProgress}
-                  onChange={(e) => setEditProgress(Number(e.target.value))}
-                  style={{ width: '100%', height: '38px', padding: '0 12px', borderRadius: '10px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '13px', boxSizing: 'border-box', fontFamily: 'inherit' }}
-                  required
-                />
-              </div>
-
-              <div>
-                <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>Status Pelaksanaan</label>
-                <select
-                  value={editStatus}
-                  onChange={(e) => setEditStatus(e.target.value as any)}
-                  style={{ width: '100%', height: '38px', padding: '0 12px', borderRadius: '10px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '13px', boxSizing: 'border-box', fontFamily: 'inherit' }}
-                >
-                  <option value="PENDING">PENDING</option>
-                  <option value="ON_TRACK">ON_TRACK</option>
-                  <option value="DELAYED">DELAYED</option>
-                  <option value="COMPLETED">COMPLETED</option>
-                </select>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '10px' }}>
-                <button
-                  type="button"
-                  onClick={() => setEditingTask(null)}
-                  style={{ height: '36px', padding: '0 14px', borderRadius: '10px', background: 'var(--ez-color-surface-tertiary)', color: 'var(--ez-color-text-slate)', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  style={{ height: '36px', padding: '0 16px', borderRadius: '10px', background: '#16A34A', color: '#FFFFFF', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}
-                >
-                  Simpan Perubahan
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {editProgressModal}
     </div>
   );
 };

@@ -23,6 +23,8 @@ import { CashFlowProfitTab } from './CashFlowProfitTab';
 import { BudgetVsActualTab } from './BudgetVsActualTab';
 import { UnifiedTransactionsTab } from './UnifiedTransactionsTab';
 import { FinancialReportsTab } from './FinancialReportsTab';
+import { useNarrowMobile } from '../mobile/useNarrowMobile';
+import { MobileKeuangan } from '../mobile/MobileKeuangan';
 
 export type FinanceSubTab =
   | 'overview'
@@ -53,6 +55,7 @@ export const ProjectFinanceView: React.FC<ProjectFinanceViewProps> = ({
   onNavigateToTab,
 }) => {
   const [activeSubTab, setActiveSubTab] = useState<FinanceSubTab>(initialTab);
+  const isNarrowMobile = useNarrowMobile();
   const [targetInvoiceForPayment, setTargetInvoiceForPayment] = useState<Invoice | null>(null);
 
   const projectId = currentProject?.id || 'global';
@@ -160,68 +163,10 @@ export const ProjectFinanceView: React.FC<ProjectFinanceViewProps> = ({
     { id: 'reports', label: 'Laporan', icon: FileText },
   ];
 
-  return (
-    <div style={{ maxWidth: '1280px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      {/* Navigation Sub-Tabs Bar */}
-      <div
-        style={{
-          backgroundColor: 'var(--ez-color-surface)',
-          borderRadius: 'var(--ez-radius-card)',
-          border: '1px solid #EEF1F6',
-          padding: '6px 8px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '4px',
-          overflowX: 'auto',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
-        }}
-      >
-        {subNavTabs.map((tab) => {
-          const IconComp = tab.icon;
-          const isActive = activeSubTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setActiveSubTab(tab.id)}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '8px 12px',
-                borderRadius: 'var(--ez-radius-control)',
-                border: 'none',
-                backgroundColor: isActive ? 'var(--ez-color-primary)' : 'transparent',
-                color: isActive ? '#FFFFFF' : 'var(--ez-color-text-slate)',
-                fontSize: '12px',
-                fontWeight: isActive ? 700 : 600,
-                cursor: 'pointer',
-                whiteSpace: 'nowrap',
-                transition: 'all 120ms ease',
-              }}
-            >
-              <IconComp size={14} color={isActive ? '#FFFFFF' : '#64748B'} />
-              <span>{tab.label}</span>
-              {tab.count !== undefined && tab.count > 0 && (
-                <span
-                  style={{
-                    fontSize: '10px',
-                    fontWeight: 750,
-                    padding: '1px 5px',
-                    borderRadius: 'var(--ez-radius-pill)',
-                    backgroundColor: isActive ? 'rgba(255, 255, 255, 0.25)' : 'var(--ez-color-surface-tertiary)',
-                    color: isActive ? '#FFFFFF' : 'var(--ez-color-text-muted)',
-                  }}
-                >
-                  {tab.count}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Main Tab Content View */}
+  // Isi sub-tab diekstrak sebagai konstanta agar presentasi desktop
+  // & mobile me-render komponen tab yang PERSIS sama.
+  const tabContent = (
+    <>
       {activeSubTab === 'overview' && (
         <FinanceOverviewTab
           currentProject={currentProject}
@@ -316,6 +261,85 @@ export const ProjectFinanceView: React.FC<ProjectFinanceViewProps> = ({
           company={company}
         />
       )}
+    </>
+  );
+
+  if (isNarrowMobile) {
+    return (
+      <MobileKeuangan
+        projectName={currentProject?.name || 'Proyek'}
+        summary={summary}
+        subNavTabs={subNavTabs}
+        activeSubTab={activeSubTab}
+        onSelectSubTab={setActiveSubTab}
+      >
+        {tabContent}
+      </MobileKeuangan>
+    );
+  }
+
+  return (
+    <div style={{ maxWidth: '1280px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      {/* Navigation Sub-Tabs Bar */}
+      <div
+        style={{
+          backgroundColor: 'var(--ez-color-surface)',
+          borderRadius: 'var(--ez-radius-card)',
+          border: '1px solid #EEF1F6',
+          padding: '6px 8px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '4px',
+          overflowX: 'auto',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
+        }}
+      >
+        {subNavTabs.map((tab) => {
+          const IconComp = tab.icon;
+          const isActive = activeSubTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveSubTab(tab.id)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '8px 12px',
+                borderRadius: 'var(--ez-radius-control)',
+                border: 'none',
+                backgroundColor: isActive ? 'var(--ez-color-primary)' : 'transparent',
+                color: isActive ? '#FFFFFF' : 'var(--ez-color-text-slate)',
+                fontSize: '12px',
+                fontWeight: isActive ? 700 : 600,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                transition: 'all 120ms ease',
+              }}
+            >
+              <IconComp size={14} color={isActive ? '#FFFFFF' : '#64748B'} />
+              <span>{tab.label}</span>
+              {tab.count !== undefined && tab.count > 0 && (
+                <span
+                  style={{
+                    fontSize: '10px',
+                    fontWeight: 750,
+                    padding: '1px 5px',
+                    borderRadius: 'var(--ez-radius-pill)',
+                    backgroundColor: isActive ? 'rgba(255, 255, 255, 0.25)' : 'var(--ez-color-surface-tertiary)',
+                    color: isActive ? '#FFFFFF' : 'var(--ez-color-text-muted)',
+                  }}
+                >
+                  {tab.count}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {tabContent}
     </div>
   );
 };

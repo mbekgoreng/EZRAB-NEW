@@ -1844,7 +1844,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         </button>
       </div>
       <div className="ezchat2-foot">
-        Ezrab AI bisa salah, cek ulang angka penting 😉
+        Ezrab AI bisa salah, cek ulang angka penting
       </div>
       <div style={{ display: 'flex', justifyContent: 'center', marginTop: 6 }}>
         <CreditEstimateBadge estimate={chatEstimate} />

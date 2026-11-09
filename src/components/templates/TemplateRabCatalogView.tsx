@@ -42,7 +42,7 @@ import {
   ShieldAlert
 } from 'lucide-react';
 import { Project } from '../../types';
-import { RabTemplate, TemplateCategory, DetailLevel, TemplateMappingReadiness } from '../../types/rabTemplate';
+import { RabTemplate, TemplateCategory, DetailLevel } from '../../types/rabTemplate';
 import { RabTemplateService } from '../../services/rabTemplateService';
 import { useProject } from '../../context/ProjectContext';
 import { useToast } from '../onboarding/Toast';
@@ -53,6 +53,9 @@ import {
   GlobalEstimationSettingsModal,
   GlobalEstimationSettings
 } from './GlobalEstimationSettingsModal';
+import { deriveTemplateCardDisplay } from './templateCardDisplay';
+import { useNarrowMobile } from '../mobile/useNarrowMobile';
+import { MobileTemplateRab } from '../mobile/MobileTemplateRab';
 
 interface TemplateRabCatalogViewProps {
   currentProject: Project | null;
@@ -70,7 +73,7 @@ interface TemplateRabCatalogViewProps {
   ) => void;
 }
 
-const CATEGORY_ITEMS: Array<{
+export const CATEGORY_ITEMS: Array<{
   id: TemplateCategory | 'ALL';
   label: string;
   icon: any;
@@ -201,6 +204,7 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
   const [previewingTemplate, setPreviewingTemplate] = useState<RabTemplate | null>(null);
 
   const tplService = useMemo(() => RabTemplateService.getInstance(), []);
+  const isNarrowMobile = useNarrowMobile();
 
   // Refresh templates list from service
   const refreshTemplates = () => {
@@ -449,6 +453,106 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
       default: return Layers;
     }
   };
+
+  // Modal & drawer katalog (Preview, Builder, Apply/konfigurator,
+  // Pengaturan Global) diekstrak sebagai konstanta agar presentasi
+  // desktop & mobile membuka modal yang PERSIS sama.
+  const trailingModals = (
+    <>
+      {/* 4. MODALS & DRAWERS */}
+      {/* Work Package Preview Drawer */}
+      {previewingTemplate && (
+        <TemplatePreviewDrawer
+          template={previewingTemplate}
+          isOpen={!!previewingTemplate}
+          onClose={() => setPreviewingTemplate(null)}
+          initialDetailLevel={globalDetailLevel}
+          onUseTemplate={(tpl, lvl) => {
+            setPreviewingTemplate(null);
+            setApplyingTemplate(tpl);
+          }}
+        />
+      )}
+
+      {/* Custom Template Builder Modal */}
+      {isBuilderOpen && (
+        <CustomTemplateBuilderModal
+          initialTemplate={editingTemplate}
+          isOpen={isBuilderOpen}
+          onClose={() => {
+            setIsBuilderOpen(false);
+            setEditingTemplate(null);
+          }}
+          onSaved={() => {
+            refreshTemplates();
+            setIsBuilderOpen(false);
+            setEditingTemplate(null);
+          }}
+        />
+      )}
+
+      {/* Universal Workstation Template Configurator Modal */}
+      {applyingTemplate && (
+        <ApplyTemplateModal
+          template={applyingTemplate}
+          currentProject={currentProject}
+          projects={projects}
+          isOpen={!!applyingTemplate}
+          onClose={() => setApplyingTemplate(null)}
+          onConfirmApply={handleConfirmApply}
+          globalSettings={globalSettings}
+        />
+      )}
+
+      {/* Global Estimation Settings Modal */}
+      {isSettingsOpen && (
+        <GlobalEstimationSettingsModal
+          isOpen={isSettingsOpen}
+          onClose={() => setIsSettingsOpen(false)}
+          settings={globalSettings}
+          onSave={newSettings => {
+            setGlobalSettings(newSettings);
+            setGlobalDetailLevel(newSettings.detailLevel);
+            try {
+              localStorage.setItem('ezrab_global_estimation_settings_v1', JSON.stringify(newSettings));
+            } catch {
+              /* abaikan */
+            }
+          }}
+        />
+      )}
+    </>
+  );
+
+  if (isNarrowMobile) {
+    return (
+      <>
+        <MobileTemplateRab
+          filteredTemplates={filteredTemplates}
+          categoryItems={CATEGORY_ITEMS}
+          categoryCounts={categoryCounts}
+          selectedCategory={selectedCategory}
+          onSelectCategory={setSelectedCategory}
+          availableSubcategories={availableSubcategories}
+          selectedSubcategory={selectedSubcategory}
+          onSelectSubcategory={setSelectedSubcategory}
+          sourceFilter={sourceFilter}
+          onSelectSourceFilter={setSourceFilter}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          globalDetailLevel={globalDetailLevel}
+          getCategoryIcon={getCategoryIcon}
+          onPreview={(tpl) => handlePreviewClick(tpl)}
+          onApply={(tpl) => handleApplyClick(tpl)}
+          onDuplicate={(tpl) => handleDuplicate(tpl)}
+          onDelete={(tpl) => handleDelete(tpl)}
+          onOpenBuilder={() => handleOpenBuilder()}
+          onOpenSettings={() => setIsSettingsOpen(true)}
+        />
+        {trailingModals}
+      </>
+    );
+  }
 
   return (
     <div
@@ -993,25 +1097,14 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
               }}
             >
               {paginatedTemplates.map(tpl => {
-                const Icon = getCategoryIcon(tpl.category);
-                const isUser = tpl.metadata.source === 'USER_TEMPLATE' || tpl.metadata.source === 'USER';
-
-                // Real-time calculation based on global detail level
-                const defaultParams: Record<string, any> = {};
-                for (const p of tpl.parameters) {
-                  defaultParams[p.key] = p.defaultValue !== undefined ? p.defaultValue : 0;
-                }
-                let previewRes = null;
-                try {
-                  previewRes = tplService.generateRabFromTemplate(tpl, defaultParams, undefined, globalDetailLevel);
-                } catch {}
-
-                // Katalog 180 (Fase H): kesiapan pemetaan AHSP dihitung dari
-                // katalog kanonis (bukan kosmetik) — murah: lookup kode+satuan.
-                let readiness: TemplateMappingReadiness | null = null;
-                try {
-                  if (!isUser) readiness = tplService.getTemplateMappingReadiness(tpl);
-                } catch {}
+                // Derivasi kartu bersama (ikon, pratinjau generate, kesiapan
+                // pemetaan) — juga dipakai MobileTemplateRab.
+                const { Icon, isUser, previewRes, readiness } = deriveTemplateCardDisplay(
+                  tplService,
+                  tpl,
+                  globalDetailLevel,
+                  getCategoryIcon
+                );
 
                 return (
                   <div
@@ -1419,68 +1512,7 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
         </div>
       </div>
 
-      {/* 4. MODALS & DRAWERS */}
-      {/* Work Package Preview Drawer */}
-      {previewingTemplate && (
-        <TemplatePreviewDrawer
-          template={previewingTemplate}
-          isOpen={!!previewingTemplate}
-          onClose={() => setPreviewingTemplate(null)}
-          initialDetailLevel={globalDetailLevel}
-          onUseTemplate={(tpl, lvl) => {
-            setPreviewingTemplate(null);
-            setApplyingTemplate(tpl);
-          }}
-        />
-      )}
-
-      {/* Custom Template Builder Modal */}
-      {isBuilderOpen && (
-        <CustomTemplateBuilderModal
-          initialTemplate={editingTemplate}
-          isOpen={isBuilderOpen}
-          onClose={() => {
-            setIsBuilderOpen(false);
-            setEditingTemplate(null);
-          }}
-          onSaved={() => {
-            refreshTemplates();
-            setIsBuilderOpen(false);
-            setEditingTemplate(null);
-          }}
-        />
-      )}
-
-      {/* Universal Workstation Template Configurator Modal */}
-      {applyingTemplate && (
-        <ApplyTemplateModal
-          template={applyingTemplate}
-          currentProject={currentProject}
-          projects={projects}
-          isOpen={!!applyingTemplate}
-          onClose={() => setApplyingTemplate(null)}
-          onConfirmApply={handleConfirmApply}
-          globalSettings={globalSettings}
-        />
-      )}
-
-      {/* Global Estimation Settings Modal */}
-      {isSettingsOpen && (
-        <GlobalEstimationSettingsModal
-          isOpen={isSettingsOpen}
-          onClose={() => setIsSettingsOpen(false)}
-          settings={globalSettings}
-          onSave={newSettings => {
-            setGlobalSettings(newSettings);
-            setGlobalDetailLevel(newSettings.detailLevel);
-            try {
-              localStorage.setItem('ezrab_global_estimation_settings_v1', JSON.stringify(newSettings));
-            } catch {
-              /* abaikan */
-            }
-          }}
-        />
-      )}
+      {trailingModals}
     </div>
   );
 };

@@ -7,8 +7,7 @@
  * server artefacts with DUMMY env values (never the production code):
  *
  *   api/_lib/accessGate.js   — token sign/verify, cookie, code compare
- *   api/access/verify.js     — POST endpoint (mock req/res)
- *   api/access/session.js    — GET endpoint (mock req/res)
+ *   api/access/[action].js   — POST aksi verify + GET aksi session (mock req/res)
  *   middleware.ts            — Edge gate decisions (real Request objects)
  *
  * Run: npx tsx src/test/passcodeGate.test.ts
@@ -30,9 +29,14 @@ const {
   // @ts-ignore — plain JS server module
 } = await import('../../api/_lib/accessGate.js');
 // @ts-ignore — plain JS server module
-const verifyHandler = (await import('../../api/access/verify.js')).default;
+const accessHandler = (await import('../../api/access/[action].js')).default;
+// Endpoint verify/session dulu file terpisah; kini digabung verbatim ke
+// api/access/[action].js (demi plafon 12 fungsi Vercel) dan dipilih lewat
+// req.query.action — pembungkus ini meniru pemetaan Vercel persis.
 // @ts-ignore — plain JS server module
-const sessionHandler = (await import('../../api/access/session.js')).default;
+const verifyHandler = (req: any, res: any) => accessHandler({ ...req, query: { action: 'verify' } }, res);
+// @ts-ignore — plain JS server module
+const sessionHandler = (req: any, res: any) => accessHandler({ ...req, query: { action: 'session' } }, res);
 // @ts-ignore — Edge middleware (Web APIs only)
 const middleware = (await import('../../middleware')).default;
 const { sanitizeNextPath } = await import('../auth/passcode');

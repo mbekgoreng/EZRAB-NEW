@@ -45,6 +45,8 @@ import {
   Loader2,
 } from 'lucide-react';
 import { Project, RabItem, AhspItem, Company } from '../../types';
+import { useNarrowMobile } from '../mobile/useNarrowMobile';
+import { MobileLaporan } from '../mobile/MobileLaporan';
 import { formatCurrencyIDR } from '../../calculations/decimalEngine';
 import { exportProjectToExcel } from '../../export/excelExportEngine';
 import { exportProjectToPDF } from '../../export/pdfExporter';
@@ -92,7 +94,7 @@ const laporanSmoothPath = (pts: { x: number; y: number }[]): string => {
  * Format sel harga: angka bila ada, label jujur bila null.
  * null = harga belum tersedia (UNRESOLVED) — JANGAN tampilkan 0.
  */
-const formatPriceCell = (v: number | null | undefined): string =>
+export const formatPriceCell = (v: number | null | undefined): string =>
   v == null ? 'Harga belum diisi' : v.toLocaleString('id-ID');
 
 export const LaporanView: React.FC<LaporanViewProps> = ({
@@ -126,6 +128,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
   const initialRabItems = projectRabItems;
 
   // Active Tab: Rekapitulasi, BOQ, Analisa Harga Satuan, Kurva S, Jadwal Waktu
+  const isNarrowMobile = useNarrowMobile();
   const [activeTab, setActiveTab] = useState<'rekapitulasi' | 'boq' | 'ahsp' | 'kurva-s' | 'jadwal'>('rekapitulasi');
 
   // Selected Project selector
@@ -692,6 +695,293 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
     }
   };
 
+  // Handler ekspor Excel — diekstrak VERBATIM dari onClick tombol
+  // header desktop agar tombol Excel mobile memakai jalur yang sama
+  // (termasuk override Pengaturan Laporan lewat excelButtonRef).
+  const handleExportExcel = async () => {
+              try {
+                // Identitas perusahaan dari branding workspace (JUJUR —
+                // resolveHonestCompany; tanpa branding, field kosong).
+                // Sebelumnya blok ini meng-hardcode identitas contoh utuh.
+                const branding = await brandingClient.getBranding('ws-default-ezrab');
+                const honestCompany = resolveHonestCompany({
+                  name: branding.companyName,
+                  address: branding.address,
+                  phone: branding.phone,
+                  email: branding.email,
+                  website: branding.website,
+                  taxNumber: branding.taxNumber,
+                  directorName: branding.directorName,
+                  leadEstimatorName: branding.leadEstimatorName,
+                });
+                const company: Company = {
+                  id: 'comp-1',
+                  name: honestCompany.name,
+                  address: honestCompany.address,
+                  phone: honestCompany.phone,
+                  email: honestCompany.email,
+                  website: honestCompany.website,
+                  taxNumber: honestCompany.taxNumber,
+                  directorName: honestCompany.directorName,
+                  leadEstimatorName: honestCompany.leadEstimatorName,
+                  defaultOverheadPercent: 5,
+                  defaultProfitPercent: 5,
+                  defaultContingencyPercent: 0,
+                  defaultTaxPercent: 11,
+                };
+
+                const exportProj: Project = {
+                  ...activeProject,
+                  sections: boqData.map((b) => ({
+                    id: `sec-${b.categoryCode}`,
+                    code: b.categoryCode,
+                    name: b.categoryName,
+                    subtotal: b.items.reduce((s, it) => s + (it.amount ?? 0), 0),
+                    items: b.items.map((it, idx) => ({
+                      id: `it-${it.no}`,
+                      sectionId: `sec-${b.categoryCode}`,
+                      itemNumber: it.no,
+                      code: it.no,
+                      description: it.desc,
+                      specification: it.desc,
+                      volume: it.vol,
+                      unit: it.unit,
+                      // Harga komponen & status verifikasi ASLI dari item.
+                      materialPrice: it.materialPrice ?? 0,
+                      laborPrice: it.laborPrice ?? 0,
+                      equipmentPrice: it.equipmentPrice ?? 0,
+                      unitPrice: it.price,
+                      totalPrice: it.amount,
+                      verificationStatus: it.verificationStatus ?? 'NEEDS_VERIFICATION',
+                    })),
+                  })),
+                  // AUDIT LINTAS MODUL X-08 (2026-11-03): ringkasan ekspor
+                  // sebelumnya tidak konsisten internal (subtotal & grand
+                  // total disamakan dengan biaya langsung, mengabaikan
+                  // overhead/profit/pajak yang dihitungnya sendiri). Kini:
+                  // pakai costSummary proyek bila terbukti berasal dari
+                  // item-item ini; selain itu hitung konsisten dengan
+                  // formula kanonis (subtotal = langsung+OH+profit;
+                  // pajak = % × subtotal; grand total = subtotal+pajak).
+                  costSummary: (() => {
+                    const cs = activeProject?.costSummary;
+                    if (cs && cs.grandTotal > 0 && Math.abs((cs.directCost ?? 0) - totalBoqAmount) <= 1) {
+                      return cs;
+                    }
+                    return computeSeedCostSummary(
+                      initialRabItems.map((i) => ({ amount: resolveItemAmount(i) ?? 0 })),
+                      {
+                        // Luas bangunan ASLI proyek; tanpa luas tercatat → 0
+                        // (tidak ada pembagi karangan 120 m²).
+                        costPerM2: activeProject.buildingArea && activeProject.buildingArea > 0
+                          ? Math.round(totalBoqAmount / activeProject.buildingArea)
+                          : 0,
+                      }
+                    );
+                  })(),
+                };
+
+                // Lembar yang disertakan: override dari panel Pengaturan
+                // Laporan bila ada (audit F-LP-03), selain itu paket penuh.
+                const settingsOverride = excelIncludeRef.current;
+                excelIncludeRef.current = null;
+                await exportProjectToExcel(exportProj, company, settingsOverride ?? {
+                  includeCover: true,
+                  includeProjectIdentity: true,
+                  includeRekap: true,
+                  includeRABDetail: true,
+                  includeVolumeBackUp: true,
+                  includeLabor: true,
+                  includeMaterial: true,
+                  includeEquipment: true,
+                  includeAHSP: true,
+                  includeSchedule: true,
+                  includeKurvaS: true,
+                  includeCashflow: true,
+                });
+
+                alert(settingsOverride
+                  ? 'Workbook Excel (.xlsx) sesuai Pengaturan Laporan berhasil di-generate & diunduh!'
+                  : 'Workbook Excel (.xlsx) 16-Sheets berhasil di-generate & diunduh!');
+              } catch (err) {
+                console.error(err);
+                alert('Gagal mengunduh berkas Excel.');
+              }
+  };
+
+  // Modal penutup (upload foto + ekspor paket) sebagai konstanta
+  // bersama untuk presentasi desktop & mobile.
+  const trailingModals = (
+    <>
+      {/* =========================================================================
+          5. MODAL: UPLOAD / REPLACE PROJECT PHOTO
+         ========================================================================= */}
+      {photoUploadModalOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.6)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '20px',
+          }}
+        >
+          <div
+            style={{
+              background: 'var(--ez-color-surface)',
+              borderRadius: '20px',
+              maxWidth: '480px',
+              width: '100%',
+              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
+              padding: '24px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--ez-color-border-line)', paddingBottom: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Camera size={18} color="var(--ez-hue-blue-text)" />
+                <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>
+                  Foto Sampul Proyek
+                </h3>
+              </div>
+              <button
+                onClick={() => setPhotoUploadModalOpen(false)}
+                style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: '#94A3B8' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Dropzone Container */}
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              style={{
+                border: '2px dashed var(--ez-hue-slate-border)',
+                borderRadius: 'var(--ez-radius-control)',
+                padding: '30px 20px',
+                textAlign: 'center',
+                background: 'var(--ez-color-surface-secondary)',
+                cursor: 'pointer',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '10px',
+              }}
+            >
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileUpload}
+                accept="image/png, image/jpeg, image/webp"
+                style={{ display: 'none' }}
+              />
+
+              {tempPhotoUrl ? (
+                <img
+                  src={tempPhotoUrl}
+                  alt="Pratinjau Foto"
+                  style={{ maxHeight: '140px', width: 'auto', borderRadius: '8px', objectFit: 'cover' }}
+                />
+              ) : (
+                <>
+                  <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--ez-hue-blue-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ez-color-primary)' }}>
+                    <Upload size={20} />
+                  </div>
+                  <div>
+                    <strong style={{ fontSize: '13px', color: 'var(--ez-color-text-primary)' }}>Drag & drop foto di sini</strong>
+                    <div style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>
+                      atau klik untuk memilih dari perangkat (JPG, PNG, WEBP max 10MB)
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '6px' }}>
+              <button
+                onClick={() => setPhotoUploadModalOpen(false)}
+                style={{ height: '36px', padding: '0 16px', borderRadius: '8px', border: '1px solid var(--ez-hue-slate-border)', background: 'var(--ez-color-surface)', fontSize: '12.5px', cursor: 'pointer' }}
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleSavePhoto}
+                disabled={!tempPhotoUrl}
+                style={{
+                  height: '36px',
+                  padding: '0 20px',
+                  borderRadius: '8px',
+                  background: tempPhotoUrl ? 'var(--ez-color-primary)' : '#94A3B8',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  fontSize: '12.5px',
+                  fontWeight: 600,
+                  cursor: tempPhotoUrl ? 'pointer' : 'not-allowed',
+                }}
+              >
+                Simpan Foto
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Menu ekspor paket lengkap — modal yang sama dengan yang dibuka dari
+          toolbar RAB (preset resmi + pilihan 15 lembar, Excel/PDF/both). */}
+      {exportProject && (
+        <ExportProjectPackageModal
+          isOpen={isExportPackageModalOpen}
+          onClose={() => setIsExportPackageModalOpen(false)}
+          currentProject={{
+            ...exportProject,
+            rabItems: projectRabItems,
+            items: projectRabItems,
+          } as any}
+        />
+      )}
+
+    </>
+  );
+
+  // Gelombang Native 2: tab Rekapitulasi di viewport sempit memakai
+  // presentasi kartu native (angka & handler ekspor yang sama). Tab lain
+  // tetap dirender cabang utama di bawah (sudah ditangani overhaul).
+  if (isNarrowMobile && activeTab === 'rekapitulasi') {
+    return (
+      <>
+        <MobileLaporan
+          projectName={activeProject.name}
+          projectOptions={contextProjects.map((p) => ({ id: p.id, name: p.name }))}
+          selectedProjectId={selectedProjectId}
+          onSelectProject={setSelectedProjectId}
+          hasRealProject={hasRealProject}
+          onExportPackage={() => setIsExportPackageModalOpen(true)}
+          onExportPdf={handleExportPdf}
+          isExportingPdf={isExportingPdf}
+          onExportExcel={handleExportExcel}
+          activeTab={activeTab}
+          onSelectTab={setActiveTab}
+          summary={laporanSummary}
+          rekapCategories={rekapCategories}
+          totalRekapValue={totalRekapValue}
+          grandTotalValue={grandTotalValue}
+          projectSummary={projectSummary}
+          summaryMatchesItems={summaryMatchesItems}
+          boqData={boqData}
+          expandedCategories={expandedCategories}
+          onToggleCategory={toggleCategory}
+        />
+        {trailingModals}
+      </>
+    );
+  }
+
   return (
     <div
       className="lap-view"
@@ -1002,116 +1292,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
 
           <button
             ref={excelButtonRef}
-            onClick={async () => {
-              try {
-                // Identitas perusahaan dari branding workspace (JUJUR —
-                // resolveHonestCompany; tanpa branding, field kosong).
-                // Sebelumnya blok ini meng-hardcode identitas contoh utuh.
-                const branding = await brandingClient.getBranding('ws-default-ezrab');
-                const honestCompany = resolveHonestCompany({
-                  name: branding.companyName,
-                  address: branding.address,
-                  phone: branding.phone,
-                  email: branding.email,
-                  website: branding.website,
-                  taxNumber: branding.taxNumber,
-                  directorName: branding.directorName,
-                  leadEstimatorName: branding.leadEstimatorName,
-                });
-                const company: Company = {
-                  id: 'comp-1',
-                  name: honestCompany.name,
-                  address: honestCompany.address,
-                  phone: honestCompany.phone,
-                  email: honestCompany.email,
-                  website: honestCompany.website,
-                  taxNumber: honestCompany.taxNumber,
-                  directorName: honestCompany.directorName,
-                  leadEstimatorName: honestCompany.leadEstimatorName,
-                  defaultOverheadPercent: 5,
-                  defaultProfitPercent: 5,
-                  defaultContingencyPercent: 0,
-                  defaultTaxPercent: 11,
-                };
-
-                const exportProj: Project = {
-                  ...activeProject,
-                  sections: boqData.map((b) => ({
-                    id: `sec-${b.categoryCode}`,
-                    code: b.categoryCode,
-                    name: b.categoryName,
-                    subtotal: b.items.reduce((s, it) => s + (it.amount ?? 0), 0),
-                    items: b.items.map((it, idx) => ({
-                      id: `it-${it.no}`,
-                      sectionId: `sec-${b.categoryCode}`,
-                      itemNumber: it.no,
-                      code: it.no,
-                      description: it.desc,
-                      specification: it.desc,
-                      volume: it.vol,
-                      unit: it.unit,
-                      // Harga komponen & status verifikasi ASLI dari item.
-                      materialPrice: it.materialPrice ?? 0,
-                      laborPrice: it.laborPrice ?? 0,
-                      equipmentPrice: it.equipmentPrice ?? 0,
-                      unitPrice: it.price,
-                      totalPrice: it.amount,
-                      verificationStatus: it.verificationStatus ?? 'NEEDS_VERIFICATION',
-                    })),
-                  })),
-                  // AUDIT LINTAS MODUL X-08 (2026-11-03): ringkasan ekspor
-                  // sebelumnya tidak konsisten internal (subtotal & grand
-                  // total disamakan dengan biaya langsung, mengabaikan
-                  // overhead/profit/pajak yang dihitungnya sendiri). Kini:
-                  // pakai costSummary proyek bila terbukti berasal dari
-                  // item-item ini; selain itu hitung konsisten dengan
-                  // formula kanonis (subtotal = langsung+OH+profit;
-                  // pajak = % × subtotal; grand total = subtotal+pajak).
-                  costSummary: (() => {
-                    const cs = activeProject?.costSummary;
-                    if (cs && cs.grandTotal > 0 && Math.abs((cs.directCost ?? 0) - totalBoqAmount) <= 1) {
-                      return cs;
-                    }
-                    return computeSeedCostSummary(
-                      initialRabItems.map((i) => ({ amount: resolveItemAmount(i) ?? 0 })),
-                      {
-                        // Luas bangunan ASLI proyek; tanpa luas tercatat → 0
-                        // (tidak ada pembagi karangan 120 m²).
-                        costPerM2: activeProject.buildingArea && activeProject.buildingArea > 0
-                          ? Math.round(totalBoqAmount / activeProject.buildingArea)
-                          : 0,
-                      }
-                    );
-                  })(),
-                };
-
-                // Lembar yang disertakan: override dari panel Pengaturan
-                // Laporan bila ada (audit F-LP-03), selain itu paket penuh.
-                const settingsOverride = excelIncludeRef.current;
-                excelIncludeRef.current = null;
-                await exportProjectToExcel(exportProj, company, settingsOverride ?? {
-                  includeCover: true,
-                  includeProjectIdentity: true,
-                  includeRekap: true,
-                  includeRABDetail: true,
-                  includeVolumeBackUp: true,
-                  includeLabor: true,
-                  includeMaterial: true,
-                  includeEquipment: true,
-                  includeAHSP: true,
-                  includeSchedule: true,
-                  includeKurvaS: true,
-                  includeCashflow: true,
-                });
-
-                alert(settingsOverride
-                  ? 'Workbook Excel (.xlsx) sesuai Pengaturan Laporan berhasil di-generate & diunduh!'
-                  : 'Workbook Excel (.xlsx) 16-Sheets berhasil di-generate & diunduh!');
-              } catch (err) {
-                console.error(err);
-                alert('Gagal mengunduh berkas Excel.');
-              }
-            }}
+            onClick={handleExportExcel}
             style={{
               height: '38px',
               padding: '0 18px',
@@ -3032,139 +3213,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
 
       </div>
 
-      {/* =========================================================================
-          5. MODAL: UPLOAD / REPLACE PROJECT PHOTO
-         ========================================================================= */}
-      {photoUploadModalOpen && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(15, 23, 42, 0.6)',
-            backdropFilter: 'blur(4px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-            padding: '20px',
-          }}
-        >
-          <div
-            style={{
-              background: 'var(--ez-color-surface)',
-              borderRadius: '20px',
-              maxWidth: '480px',
-              width: '100%',
-              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
-              padding: '24px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '16px',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--ez-color-border-line)', paddingBottom: '12px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Camera size={18} color="var(--ez-hue-blue-text)" />
-                <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>
-                  Foto Sampul Proyek
-                </h3>
-              </div>
-              <button
-                onClick={() => setPhotoUploadModalOpen(false)}
-                style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: '#94A3B8' }}
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Dropzone Container */}
-            <div
-              onClick={() => fileInputRef.current?.click()}
-              style={{
-                border: '2px dashed var(--ez-hue-slate-border)',
-                borderRadius: 'var(--ez-radius-control)',
-                padding: '30px 20px',
-                textAlign: 'center',
-                background: 'var(--ez-color-surface-secondary)',
-                cursor: 'pointer',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: '10px',
-              }}
-            >
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileUpload}
-                accept="image/png, image/jpeg, image/webp"
-                style={{ display: 'none' }}
-              />
-
-              {tempPhotoUrl ? (
-                <img
-                  src={tempPhotoUrl}
-                  alt="Pratinjau Foto"
-                  style={{ maxHeight: '140px', width: 'auto', borderRadius: '8px', objectFit: 'cover' }}
-                />
-              ) : (
-                <>
-                  <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--ez-hue-blue-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ez-color-primary)' }}>
-                    <Upload size={20} />
-                  </div>
-                  <div>
-                    <strong style={{ fontSize: '13px', color: 'var(--ez-color-text-primary)' }}>Drag & drop foto di sini</strong>
-                    <div style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>
-                      atau klik untuk memilih dari perangkat (JPG, PNG, WEBP max 10MB)
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '6px' }}>
-              <button
-                onClick={() => setPhotoUploadModalOpen(false)}
-                style={{ height: '36px', padding: '0 16px', borderRadius: '8px', border: '1px solid var(--ez-hue-slate-border)', background: 'var(--ez-color-surface)', fontSize: '12.5px', cursor: 'pointer' }}
-              >
-                Batal
-              </button>
-              <button
-                onClick={handleSavePhoto}
-                disabled={!tempPhotoUrl}
-                style={{
-                  height: '36px',
-                  padding: '0 20px',
-                  borderRadius: '8px',
-                  background: tempPhotoUrl ? 'var(--ez-color-primary)' : '#94A3B8',
-                  color: '#FFFFFF',
-                  border: 'none',
-                  fontSize: '12.5px',
-                  fontWeight: 600,
-                  cursor: tempPhotoUrl ? 'pointer' : 'not-allowed',
-                }}
-              >
-                Simpan Foto
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Menu ekspor paket lengkap — modal yang sama dengan yang dibuka dari
-          toolbar RAB (preset resmi + pilihan 15 lembar, Excel/PDF/both). */}
-      {exportProject && (
-        <ExportProjectPackageModal
-          isOpen={isExportPackageModalOpen}
-          onClose={() => setIsExportPackageModalOpen(false)}
-          currentProject={{
-            ...exportProject,
-            rabItems: projectRabItems,
-            items: projectRabItems,
-          } as any}
-        />
-      )}
-
+      {trailingModals}
     </div>
   );
 };

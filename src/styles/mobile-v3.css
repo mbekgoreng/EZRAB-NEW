@@ -118,16 +118,6 @@
 .mv3-nav-item.is-active .mv3-nav-under {
   background: #1D4ED8;
 }
-.mv3-nav-dot {
-  position: absolute;
-  top: 1px;
-  right: 1px;
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: #EF4444;
-  border: 2px solid #FFFFFF;
-}
 .mv3-nav-create:active {
   transform: scale(0.93);
 }

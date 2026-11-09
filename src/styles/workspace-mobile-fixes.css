@@ -1044,3 +1044,106 @@
   font-size: 11px !important;
   line-height: 1.5 !important;
 }
+
+/* =========================================================================
+   R29. Chat AI mobile: header DUA BARIS + composer rapi (owner 2026-11-09,
+   lanjutan R27 — screenshot HP Preview: nama masih terpotong "Ezr…").
+   Akar sesak: R27 memadatkan tapi semua kontrol tetap sebaris. Perkiraan
+   lebar pada 390px (padding header 2×12px → ruang isi 366px): maskot 32 +
+   nama ~150 + pil kredit ~78 + pemilih mode ~92 + tombol Baru ~64 + kebab
+   36 + gap antaritem — total >500px, jadi judul selalu jadi korban.
+   Solusi murni CSS: .ezchat2-header membungkus (flex-wrap) dan
+   .ezchat2-actions menjadi display:contents — keempat anaknya (pil kredit,
+   pemilih mode, tombol Baru, menuwrap) berubah menjadi item flex langsung
+   dari header sehingga bisa diatur ulang dengan order:
+     baris 1 = maskot, nama (flex 1, ruang penuh), pil kredit, kebab
+     baris 2 = pemilih mode + tombol Baru (baris kontrol)
+   Modal top-up di dalam CreditBalance memakai position:fixed sehingga
+   tidak ikut tata letak flex; menu kebab tetap absolut terhadap
+   .ezchat2-menuwrap. Semua kontrol ≥36px target sentuh. Hanya ≤767px —
+   desktop tidak berubah.
+   ========================================================================= */
+@media (max-width: 767px) {
+  .ezchat2-header {
+    flex-wrap: wrap !important;
+    column-gap: 8px !important;
+    row-gap: 8px !important;
+    align-items: center !important;
+  }
+  .ezchat2-actions {
+    display: contents !important;
+  }
+  .ezchat2-mascot {
+    order: 1 !important;
+  }
+  .ezchat2-title {
+    order: 2 !important;
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+  }
+  /* Ruang baris 1 kini lega: nama 15px, target terbaca utuh
+     "Ezrab Chat AI" + lencana versi; ellipsis tetap jadi pengaman. */
+  .ezchat2-name {
+    font-size: 15px !important;
+  }
+  .ezchat2-actions .aic-balance {
+    order: 3 !important;
+  }
+  .ezchat2-actions .aic-balance.compact {
+    height: 36px !important;
+    padding: 0 8px 0 10px !important;
+  }
+  .ezchat2-menuwrap {
+    order: 4 !important;
+  }
+  .ezchat2-menubtn {
+    width: 36px !important;
+    height: 36px !important;
+  }
+  .ezchat2-modesel {
+    order: 5 !important;
+    min-height: 36px !important;
+    max-width: 132px !important;
+  }
+  .ezchat2-new {
+    order: 6 !important;
+    min-height: 36px !important;
+    padding: 7px 12px !important;
+  }
+
+  /* --- Composer: baris konsisten, placeholder tidak terpotong -------------
+     autoresize() di view.tsx menulis tinggi inline dari scrollHeight;
+     pada muat awal tingginya bisa berhenti di ±1,5 baris sehingga baris
+     kedua placeholder ("…misalnya /template") menggantung terpotong.
+     min-height textarea = DUA baris teks (2 × 1,35 × 14,5px ≈ 40px)
+     menaikkan lantai tinggi di atas tinggi inline mana pun yang lebih
+     pendek — placeholder selalu tampil utuh. Pill align-items: center
+     menengahkan tombol mic (40px) & kirim (42px) terhadap kotak teks. */
+  .ezchat2-pill {
+    align-items: center !important;
+    min-height: 56px !important;
+    padding: 6px 6px 6px 12px !important;
+  }
+  .ezchat2-pill textarea {
+    line-height: 1.35 !important;
+    padding: 7px 4px !important;
+    min-height: 40px !important;
+  }
+  .ezchat2-tool {
+    width: 40px !important;
+    height: 40px !important;
+  }
+  .ezchat2-send {
+    width: 42px !important;
+    height: 42px !important;
+  }
+
+  /* --- Keadaan kosong: jarak dari header dua baris + sub-judul aman ------ */
+  .ezchat2-empty {
+    padding-top: 28px !important;
+  }
+  .ezchat2-sub {
+    max-width: 36ch !important;
+    margin: 8px auto 0 !important;
+  }
+}

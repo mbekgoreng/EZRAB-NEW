@@ -99,7 +99,7 @@ const greetingForHour = (h: number): string => {
 
 /* ------------------------------------------------------- bottom nav (pil) */
 
-export type MobileNavTab = 'beranda' | 'proyek' | 'notif' | 'menu';
+export type MobileNavTab = 'beranda' | 'proyek' | 'chat' | 'menu';
 
 interface MobileBottomNavV3Props {
   activeTab: MobileNavTab | null;
@@ -111,11 +111,10 @@ interface MobileBottomNavV3Props {
  * Navbar bawah v3 — varian B (pilihan owner 2026-11-09): bar flat
  * ikon-saja tanpa label, ikon garis Lucide, item aktif biru pekat +
  * titik di bawahnya, slot Profil diisi maskot kepala 2D. Tombol buat
- * proyek = ikon + polos sejajar. Titik merah Notifikasi hanya tampil
- * bila unreadCount nyata > 0 dari NotificationContext.
+ * proyek = ikon + polos sejajar. Keputusan owner 2026-11-09: slot
+ * Notifikasi diganti Chat AI; notifikasi tetap tersedia lewat TopBar.
  */
 export const MobileBottomNavV3: React.FC<MobileBottomNavV3Props> = ({ activeTab, onTab, onCreateProject }) => {
-  const { unreadCount } = useNotifications();
   const item = (
     tab: MobileNavTab,
     label: string,
@@ -132,7 +131,6 @@ export const MobileBottomNavV3: React.FC<MobileBottomNavV3Props> = ({ activeTab,
       >
         <span className="mv3-nav-icwrap">
           <Icon size={23} strokeWidth={2} />
-          {tab === 'notif' && unreadCount > 0 && <span className="mv3-nav-dot" aria-label={`${unreadCount} belum dibaca`} />}
         </span>
         <span className="mv3-nav-under" aria-hidden="true" />
       </button>
@@ -153,7 +151,7 @@ export const MobileBottomNavV3: React.FC<MobileBottomNavV3Props> = ({ activeTab,
         </span>
         <span className="mv3-nav-under" aria-hidden="true" />
       </button>
-      {item('notif', 'Notifikasi', Bell)}
+      {item('chat', 'Ezrab Chat AI', Sparkles)}
       <button
         type="button"
         className={`mv3-nav-item${activeTab === 'menu' ? ' is-active' : ''}`}

@@ -17,6 +17,8 @@ import {
 import { DocumentWorkspace } from './DocumentWorkspace';
 import { DocumentPackageWizardModal } from '../documents/DocumentPackageWizardModal';
 import { ProjectContext } from '../../context/ProjectContext';
+import { useNarrowMobile } from '../mobile/useNarrowMobile';
+import { MobileDokumenProyek, MobileDokumenPilihPekerjaan } from '../mobile/MobileDokumenProyek';
 import { formatRupiah } from '../../document-engine/templateEngine';
 import { computeSourceHash } from '../../document-engine/sourceChangeDetector';
 
@@ -51,6 +53,7 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
   kurvaSData = [],
 }) => {
   const projectCtx = useContext(ProjectContext);
+  const isNarrowMobile = useNarrowMobile();
   const [selectedJob, setSelectedJob] = useState<Project | null>(null);
   const [isSelectingJob, setIsSelectingJob] = useState(false);
 
@@ -187,6 +190,26 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
     }
   };
 
+  // Memilih pekerjaan dari layar pemilihan — diekstrak dari onClick kartu
+  // desktop agar layar mobile memakai handler yang sama persis.
+  const handleSelectJob = (proj: Project) => {
+    setSelectedJob(proj);
+    setIsSelectingJob(false);
+    onSelectProject?.(proj);
+    if (projectCtx?.setCurrentProjectId) {
+      projectCtx.setCurrentProjectId(proj.id);
+    }
+  };
+
+  // Membuka wizard manual dari keadaan awal — dipakai header desktop
+  // (inline) dan layar mobile lewat prop.
+  const handleOpenManualWizard = () => {
+    setSelectionStep(1);
+    setSelectedWorkflow(null);
+    setSelectedDocuments([]);
+    setWizard(true);
+  };
+
   const handleDeleteDocument = (defId: string, docName: string) => {
     setDeleteTarget({ defId, docName });
   };
@@ -281,6 +304,15 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
 
   // 0. JOB SELECTION SCREEN (Section 2)
   if (!activeProject || isSelectingJob) {
+    if (isNarrowMobile) {
+      return (
+        <MobileDokumenPilihPekerjaan
+          projects={allProjects}
+          activeProjectId={activeProject?.id}
+          onSelectJob={handleSelectJob}
+        />
+      );
+    }
     return (
       <div style={{ fontFamily: "'Plus Jakarta Sans', 'Inter', system-ui, sans-serif", color: 'var(--ez-color-text-primary)', maxWidth: 900, margin: '0 auto', padding: '24px 0' }}>
         <div style={{ marginBottom: 28, textAlign: 'center' }}>
@@ -328,14 +360,7 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
                   </div>
 
                   <button
-                    onClick={() => {
-                      setSelectedJob(proj);
-                      setIsSelectingJob(false);
-                      onSelectProject?.(proj);
-                      if (projectCtx?.setCurrentProjectId) {
-                        projectCtx.setCurrentProjectId(proj.id);
-                      }
-                    }}
+                    onClick={() => handleSelectJob(proj)}
                     style={{
                       background: isSelected ? '#16A34A' : 'var(--ez-color-primary)',
                       color: '#fff',
@@ -365,6 +390,353 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
           </div>
         )}
       </div>
+    );
+  }
+
+  // Tab kategori dokumen — konstanta bersama agar toolbar desktop dan
+  // chip mobile memakai label & hitungan yang sama persis.
+  const categoryTabs: Array<{ key: string; label: string; count: number }> = [
+            { key: 'ALL', label: 'Semua', count: stats.total },
+            { key: 'ADMINISTRATION', label: 'Administrasi', count: activeRecords.filter(r => (getDocumentDefinition(r.definitionId)?.category === 'ADMINISTRATION')).length },
+            { key: 'TECHNICAL', label: 'Teknis', count: activeRecords.filter(r => (getDocumentDefinition(r.definitionId)?.category === 'TECHNICAL')).length },
+            { key: 'COMMERCIAL', label: 'Biaya', count: activeRecords.filter(r => { const c = getDocumentDefinition(r.definitionId)?.category; return c === 'COMMERCIAL' || c === 'COST'; }).length },
+            { key: 'SCHEDULE', label: 'Jadwal', count: activeRecords.filter(r => (getDocumentDefinition(r.definitionId)?.category === 'SCHEDULE')).length },
+            { key: 'HSE', label: 'K3 / HSE', count: activeRecords.filter(r => (getDocumentDefinition(r.definitionId)?.category === 'HSE')).length },
+          ];
+
+  // Overlay penutup (dialog hapus, wizard paket, wizard AI) diekstrak
+  // sebagai konstanta agar presentasi desktop & mobile me-render
+  // overlay yang PERSIS sama.
+  const trailingOverlays = (
+    <>
+      {/* DELETE CONFIRMATION DIALOG */}
+      {deleteTarget && (
+        <div
+          role="alertdialog"
+          aria-modal="true"
+          aria-labelledby="delete-dialog-title"
+          aria-describedby="delete-dialog-desc"
+          onClick={() => setDeleteTarget(null)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', zIndex: 200, display: 'grid', placeItems: 'center', padding: 20 }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ background: 'var(--ez-color-surface)', borderRadius: 14, width: 'min(420px, 100%)', padding: 22, boxShadow: '0 20px 25px -5px rgba(0,0,0,0.15)', border: '1px solid var(--ez-color-border-line)' }}
+          >
+            <h3 id="delete-dialog-title" style={{ margin: 0, fontSize: 16, fontWeight: 750, color: 'var(--ez-color-text-primary)' }}>
+              Hapus Dokumen
+            </h3>
+            <p id="delete-dialog-desc" style={{ margin: '8px 0 0', fontSize: 13.5, color: 'var(--ez-color-text-muted)', lineHeight: 1.55 }}>
+              Hapus dokumen <strong style={{ color: 'var(--ez-color-text-primary)' }}>"{deleteTarget.docName}"</strong> dari
+              dokumen aktif? Tindakan ini tidak dapat dibatalkan.
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 20 }}>
+              <button
+                onClick={() => setDeleteTarget(null)}
+                autoFocus
+                style={{ padding: '9px 18px', background: 'var(--ez-color-surface-tertiary)', border: '1px solid var(--ez-hue-slate-border)', borderRadius: 8, fontWeight: 600, fontSize: 13, color: 'var(--ez-color-text-body)', cursor: 'pointer' }}
+              >
+                Batal
+              </button>
+              <button
+                onClick={confirmDeleteDocument}
+                style={{ padding: '9px 18px', background: '#DC2626', border: 0, borderRadius: 8, fontWeight: 700, fontSize: 13, color: '#fff', cursor: 'pointer' }}
+              >
+                Hapus Dokumen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* WIZARD MODAL */}
+      {wizard && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Wizard pembuatan dokumen manual"
+          onClick={() => setWizard(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', zIndex: 100, display: 'grid', placeItems: 'center', padding: 20 }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ background: 'var(--ez-color-surface)', borderRadius: 16, width: 'min(760px, 100%)', padding: 24, maxHeight: '90vh', overflow: 'auto', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>
+                  {selectionStep === 1 ? 'Pilih Workflow' : selectionStep === 2 ? 'Pilih Dokumen' : 'Konfirmasi Pembuatan Dokumen'}
+                </h2>
+                <div style={{ fontSize: 12, color: 'var(--ez-color-text-muted)', marginTop: 2 }}>
+                  Langkah {selectionStep} dari 3
+                </div>
+              </div>
+              <button onClick={() => setWizard(false)} style={{ border: 0, background: 'none', cursor: 'pointer', color: 'var(--ez-color-text-muted)' }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            {selectionStep === 1 && (
+              <div style={{ marginTop: 20 }}>
+                <p style={{ color: 'var(--ez-color-text-muted)', fontSize: 13, marginBottom: 16 }}>Pilih kategori workflow dokumen yang akan dibuat:</p>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
+                  {workflows.map((w) => (
+                    <button
+                      key={w.id}
+                      onClick={() => {
+                        setSelectedWorkflow(w.id);
+                        setSelectionStep(2);
+                      }}
+                      style={{
+                        textAlign: 'left',
+                        padding: 16,
+                        borderRadius: 'var(--ez-radius-control)',
+                        border: '1px solid var(--ez-color-border-line)',
+                        background: 'var(--ez-color-surface)',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                      }}
+                    >
+                      <div style={{ marginBottom: 8, color: 'var(--ez-color-primary)' }}><w.icon size={22} /></div>
+                      <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--ez-color-text-primary)' }}>{w.label}</div>
+                      <div style={{ fontSize: 12, color: 'var(--ez-color-text-muted)', marginTop: 4 }}>{w.description}</div>
+                    </button>
+                  ))}
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 20 }}>
+                  <button onClick={() => setWizard(false)} style={{ padding: '10px 20px', background: 'var(--ez-color-surface-tertiary)', borderRadius: 8, border: 0, cursor: 'pointer', fontWeight: 600 }}>
+                    Batal
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {selectionStep === 2 && (
+              <div style={{ marginTop: 20 }}>
+                <p style={{ color: 'var(--ez-color-text-muted)', fontSize: 13, marginBottom: 16 }}>
+                  Pilih dokumen yang ingin ditambahkan ke proyek:
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 420, overflowY: 'auto', paddingRight: 4 }}>
+                  {selectedDocumentsList.map((def) => {
+                    const isAlreadyCreated = activeRecords.some((r) => r.definitionId === def.id);
+                    const isChecked = selectedDocuments.includes(def.id);
+
+                    return (
+                      <div
+                        key={def.id}
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          padding: '12px 16px',
+                          border: `1px solid ${isAlreadyCreated ? 'var(--ez-hue-green-border)' : isChecked ? 'var(--ez-hue-blue-border)' : 'var(--ez-color-border)'}`,
+                          background: isAlreadyCreated ? 'var(--ez-hue-green-bg)' : isChecked ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
+                          borderRadius: 10,
+                        }}
+                      >
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            {isAlreadyCreated && <CheckCircle2 size={16} style={{ color: 'var(--ez-hue-green-text-bright)' }} />}
+                            <span style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>{def.name}</span>
+                            {isAlreadyCreated && (
+                              <span
+                                style={{
+                                  background: 'var(--ez-hue-green-bg-deep)',
+                                  color: 'var(--ez-hue-green-text)',
+                                  fontSize: 11,
+                                  fontWeight: 700,
+                                  padding: '2px 8px',
+                                  borderRadius: 'var(--ez-radius-pill)',
+                                }}
+                              >
+                                Sudah dibuat
+                              </span>
+                            )}
+                          </div>
+                          <div style={{ fontSize: 12, color: 'var(--ez-color-text-muted)', marginTop: 2 }}>
+                            {def.description || def.name} ({def.category})
+                          </div>
+                          <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
+                            {def.autoVariables && def.autoVariables.length > 0 && (
+                              <span style={{ fontSize: 10.5, background: 'var(--ez-hue-green-bg-deep)', color: 'var(--ez-hue-green-text)', padding: '1px 6px', borderRadius: 4, fontWeight: 650 }}>
+                                Auto: {def.autoVariables.length} data proyek
+                              </span>
+                            )}
+                            {def.userFields && def.userFields.length > 0 && (
+                              <span style={{ fontSize: 10.5, background: 'var(--ez-hue-blue-bg)', color: 'var(--ez-color-primary)', padding: '1px 6px', borderRadius: 4, fontWeight: 650 }}>
+                                Input: {def.userFields.length} field
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {isAlreadyCreated ? (
+                          <button
+                            onClick={() => {
+                              setWizard(false);
+                              setActiveDocumentDef(def);
+                            }}
+                            style={{
+                              background: 'var(--ez-color-surface)',
+                              color: 'var(--ez-hue-green-text-bright)',
+                              border: '1px solid var(--ez-hue-green-border)',
+                              borderRadius: 7,
+                              padding: '6px 14px',
+                              fontSize: 12,
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                            }}
+                          >
+                            Buka
+                          </button>
+                        ) : (
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => {
+                              setSelectedDocuments((prev) =>
+                                prev.includes(def.id) ? prev.filter((id) => id !== def.id) : [...prev, def.id]
+                              );
+                            }}
+                            style={{ width: 18, height: 18, cursor: 'pointer', accentColor: 'var(--ez-color-primary)' }}
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 20 }}>
+                  <button onClick={() => setSelectionStep(1)} style={{ padding: '10px 18px', border: '1px solid var(--ez-color-border-line)', background: 'var(--ez-color-surface)', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>
+                    Kembali
+                  </button>
+                  <button
+                    onClick={() => setSelectionStep(3)}
+                    disabled={selectedDocuments.length === 0}
+                    style={{
+                      padding: '10px 22px',
+                      background: selectedDocuments.length === 0 ? '#94A3B8' : 'var(--ez-color-primary)',
+                      color: '#fff',
+                      border: 0,
+                      borderRadius: 8,
+                      cursor: selectedDocuments.length === 0 ? 'not-allowed' : 'pointer',
+                      fontWeight: 700,
+                    }}
+                  >
+                    Lanjut ({selectedDocuments.length})
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {selectionStep === 3 && (
+              <div style={{ marginTop: 20 }}>
+                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Konfirmasi Dokumen Baru</h3>
+                <p style={{ color: 'var(--ez-color-text-muted)', fontSize: 13, marginTop: 4 }}>
+                  Dokumen berikut akan dibuat dan ditambahkan ke daftar Dokumen Proyek aktif Anda:
+                </p>
+                <div style={{ marginTop: 14, padding: 14, background: 'var(--ez-color-surface-secondary)', borderRadius: 10, border: '1px solid var(--ez-color-border-line)', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {selectedDocuments.map((docId) => {
+                    const def = getDocumentDefinition(docId);
+                    return (
+                      <div key={docId} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 600, color: 'var(--ez-color-text-strong)' }}>
+                        <FileText size={16} style={{ color: 'var(--ez-color-primary)' }} />
+                        <span>{def?.name || docId}</span>
+                        <span style={{ fontSize: 11, color: 'var(--ez-color-text-muted)', fontWeight: 400 }}>({def?.category || 'PROYEK'})</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 20 }}>
+                  <button onClick={() => setSelectionStep(2)} style={{ padding: '10px 18px', border: '1px solid var(--ez-color-border-line)', background: 'var(--ez-color-surface)', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>
+                    Kembali
+                  </button>
+                  <button
+                    onClick={handleCreateDocuments}
+                    style={{
+                      padding: '10px 26px',
+                      background: '#16A34A',
+                      color: '#fff',
+                      border: 0,
+                      borderRadius: 8,
+                      cursor: 'pointer',
+                      fontWeight: 700,
+                      boxShadow: '0 2px 8px rgba(22,163,74,0.25)',
+                    }}
+                  >
+                    Buat Dokumen
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* AI DOCUMENT PACKAGE WIZARD MODAL */}
+      <DocumentPackageWizardModal
+        isOpen={isAiWizardOpen}
+        onClose={() => setIsAiWizardOpen(false)}
+        currentProject={activeProject}
+        rabItems={rabItems}
+        scheduleTasks={scheduleTasks}
+        kurvaSData={kurvaSData}
+        onCompletePackage={() => {
+          // Audit F-DP-02 (2026-11-03): JANGAN tutup wizard di sini — wizard
+          // menampilkan layar sukses (langkah 5) setelah generate; menutup
+          // modal pada callback ini membuat layar sukses tidak pernah
+          // terlihat. Cukup muat ulang daftar; penutupan adalah urusan
+          // tombol langkah 5 / tombol tutup wizard.
+          reloadActiveRecords();
+        }}
+        onNavigateToTab={(tab) => {
+          // Audit F-DP-03 (2026-11-03): sebelumnya handler ini menelan semua
+          // tab selain 'dokumen-tender', sehingga tombol "Lengkapi Data"
+          // pada wizard tidak mengantar ke mana pun. Teruskan ke induk.
+          if (tab === 'dokumen-tender') {
+            reloadActiveRecords();
+          } else {
+            onNavigateToTab?.(tab);
+          }
+        }}
+      />
+    </>
+  );
+
+  if (isNarrowMobile) {
+    return (
+      <>
+        <MobileDokumenProyek
+          projectName={activeProject.name}
+          projectLocation={activeProject.location || ''}
+          buildingType={activeProject.buildingType || ''}
+          totalRab={activeProject.totalRab || 0}
+          masterProjectName={masterData.projectName}
+          activeCount={activeRecords.length}
+          overallProgress={overallProgress}
+          stats={stats}
+          categoryTabs={categoryTabs}
+          selectedCategoryTab={selectedCategoryTab}
+          onSelectCategoryTab={(key) => setSelectedCategoryTab(key as any)}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          statusFilter={statusFilter}
+          onSelectStatusFilter={setStatusFilter}
+          filteredCardData={filteredCardData}
+          onChangeProject={() => setIsSelectingJob(true)}
+          onCreateAiPackage={() => setIsAiWizardOpen(true)}
+          onCreateManual={handleOpenManualWizard}
+          onOpenFreeDocAi={onNavigateToTab ? () => onNavigateToTab('dokumen-ai') : undefined}
+          onOpenDocument={(def) => setActiveDocumentDef(def)}
+          onDeleteDocument={handleDeleteDocument}
+          onResetFilters={() => {
+            setSelectedCategoryTab('ALL');
+            setStatusFilter('ALL');
+            setSearchQuery('');
+          }}
+        />
+        {trailingOverlays}
+      </>
     );
   }
 
@@ -575,14 +947,7 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
       >
         {/* CATEGORY TABS */}
         <div className="ezrab-tender-tabs" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
-          {[
-            { key: 'ALL', label: 'Semua', count: stats.total },
-            { key: 'ADMINISTRATION', label: 'Administrasi', count: activeRecords.filter(r => (getDocumentDefinition(r.definitionId)?.category === 'ADMINISTRATION')).length },
-            { key: 'TECHNICAL', label: 'Teknis', count: activeRecords.filter(r => (getDocumentDefinition(r.definitionId)?.category === 'TECHNICAL')).length },
-            { key: 'COMMERCIAL', label: 'Biaya', count: activeRecords.filter(r => { const c = getDocumentDefinition(r.definitionId)?.category; return c === 'COMMERCIAL' || c === 'COST'; }).length },
-            { key: 'SCHEDULE', label: 'Jadwal', count: activeRecords.filter(r => (getDocumentDefinition(r.definitionId)?.category === 'SCHEDULE')).length },
-            { key: 'HSE', label: 'K3 / HSE', count: activeRecords.filter(r => (getDocumentDefinition(r.definitionId)?.category === 'HSE')).length },
-          ].map((tab) => {
+          {categoryTabs.map((tab) => {
             const isTabActive = selectedCategoryTab === tab.key;
             return (
               <button
@@ -913,297 +1278,7 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
         </div>
       )}
 
-      {/* DELETE CONFIRMATION DIALOG */}
-      {deleteTarget && (
-        <div
-          role="alertdialog"
-          aria-modal="true"
-          aria-labelledby="delete-dialog-title"
-          aria-describedby="delete-dialog-desc"
-          onClick={() => setDeleteTarget(null)}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', zIndex: 200, display: 'grid', placeItems: 'center', padding: 20 }}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{ background: 'var(--ez-color-surface)', borderRadius: 14, width: 'min(420px, 100%)', padding: 22, boxShadow: '0 20px 25px -5px rgba(0,0,0,0.15)', border: '1px solid var(--ez-color-border-line)' }}
-          >
-            <h3 id="delete-dialog-title" style={{ margin: 0, fontSize: 16, fontWeight: 750, color: 'var(--ez-color-text-primary)' }}>
-              Hapus Dokumen
-            </h3>
-            <p id="delete-dialog-desc" style={{ margin: '8px 0 0', fontSize: 13.5, color: 'var(--ez-color-text-muted)', lineHeight: 1.55 }}>
-              Hapus dokumen <strong style={{ color: 'var(--ez-color-text-primary)' }}>"{deleteTarget.docName}"</strong> dari
-              dokumen aktif? Tindakan ini tidak dapat dibatalkan.
-            </p>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 20 }}>
-              <button
-                onClick={() => setDeleteTarget(null)}
-                autoFocus
-                style={{ padding: '9px 18px', background: 'var(--ez-color-surface-tertiary)', border: '1px solid var(--ez-hue-slate-border)', borderRadius: 8, fontWeight: 600, fontSize: 13, color: 'var(--ez-color-text-body)', cursor: 'pointer' }}
-              >
-                Batal
-              </button>
-              <button
-                onClick={confirmDeleteDocument}
-                style={{ padding: '9px 18px', background: '#DC2626', border: 0, borderRadius: 8, fontWeight: 700, fontSize: 13, color: '#fff', cursor: 'pointer' }}
-              >
-                Hapus Dokumen
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* WIZARD MODAL */}
-      {wizard && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label="Wizard pembuatan dokumen manual"
-          onClick={() => setWizard(false)}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', zIndex: 100, display: 'grid', placeItems: 'center', padding: 20 }}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{ background: 'var(--ez-color-surface)', borderRadius: 16, width: 'min(760px, 100%)', padding: 24, maxHeight: '90vh', overflow: 'auto', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>
-                  {selectionStep === 1 ? 'Pilih Workflow' : selectionStep === 2 ? 'Pilih Dokumen' : 'Konfirmasi Pembuatan Dokumen'}
-                </h2>
-                <div style={{ fontSize: 12, color: 'var(--ez-color-text-muted)', marginTop: 2 }}>
-                  Langkah {selectionStep} dari 3
-                </div>
-              </div>
-              <button onClick={() => setWizard(false)} style={{ border: 0, background: 'none', cursor: 'pointer', color: 'var(--ez-color-text-muted)' }}>
-                <X size={20} />
-              </button>
-            </div>
-
-            {selectionStep === 1 && (
-              <div style={{ marginTop: 20 }}>
-                <p style={{ color: 'var(--ez-color-text-muted)', fontSize: 13, marginBottom: 16 }}>Pilih kategori workflow dokumen yang akan dibuat:</p>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
-                  {workflows.map((w) => (
-                    <button
-                      key={w.id}
-                      onClick={() => {
-                        setSelectedWorkflow(w.id);
-                        setSelectionStep(2);
-                      }}
-                      style={{
-                        textAlign: 'left',
-                        padding: 16,
-                        borderRadius: 'var(--ez-radius-control)',
-                        border: '1px solid var(--ez-color-border-line)',
-                        background: 'var(--ez-color-surface)',
-                        cursor: 'pointer',
-                        transition: 'all 0.15s ease',
-                      }}
-                    >
-                      <div style={{ marginBottom: 8, color: 'var(--ez-color-primary)' }}><w.icon size={22} /></div>
-                      <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--ez-color-text-primary)' }}>{w.label}</div>
-                      <div style={{ fontSize: 12, color: 'var(--ez-color-text-muted)', marginTop: 4 }}>{w.description}</div>
-                    </button>
-                  ))}
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 20 }}>
-                  <button onClick={() => setWizard(false)} style={{ padding: '10px 20px', background: 'var(--ez-color-surface-tertiary)', borderRadius: 8, border: 0, cursor: 'pointer', fontWeight: 600 }}>
-                    Batal
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {selectionStep === 2 && (
-              <div style={{ marginTop: 20 }}>
-                <p style={{ color: 'var(--ez-color-text-muted)', fontSize: 13, marginBottom: 16 }}>
-                  Pilih dokumen yang ingin ditambahkan ke proyek:
-                </p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 420, overflowY: 'auto', paddingRight: 4 }}>
-                  {selectedDocumentsList.map((def) => {
-                    const isAlreadyCreated = activeRecords.some((r) => r.definitionId === def.id);
-                    const isChecked = selectedDocuments.includes(def.id);
-
-                    return (
-                      <div
-                        key={def.id}
-                        style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          padding: '12px 16px',
-                          border: `1px solid ${isAlreadyCreated ? 'var(--ez-hue-green-border)' : isChecked ? 'var(--ez-hue-blue-border)' : 'var(--ez-color-border)'}`,
-                          background: isAlreadyCreated ? 'var(--ez-hue-green-bg)' : isChecked ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
-                          borderRadius: 10,
-                        }}
-                      >
-                        <div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            {isAlreadyCreated && <CheckCircle2 size={16} style={{ color: 'var(--ez-hue-green-text-bright)' }} />}
-                            <span style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>{def.name}</span>
-                            {isAlreadyCreated && (
-                              <span
-                                style={{
-                                  background: 'var(--ez-hue-green-bg-deep)',
-                                  color: 'var(--ez-hue-green-text)',
-                                  fontSize: 11,
-                                  fontWeight: 700,
-                                  padding: '2px 8px',
-                                  borderRadius: 'var(--ez-radius-pill)',
-                                }}
-                              >
-                                Sudah dibuat
-                              </span>
-                            )}
-                          </div>
-                          <div style={{ fontSize: 12, color: 'var(--ez-color-text-muted)', marginTop: 2 }}>
-                            {def.description || def.name} ({def.category})
-                          </div>
-                          <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
-                            {def.autoVariables && def.autoVariables.length > 0 && (
-                              <span style={{ fontSize: 10.5, background: 'var(--ez-hue-green-bg-deep)', color: 'var(--ez-hue-green-text)', padding: '1px 6px', borderRadius: 4, fontWeight: 650 }}>
-                                Auto: {def.autoVariables.length} data proyek
-                              </span>
-                            )}
-                            {def.userFields && def.userFields.length > 0 && (
-                              <span style={{ fontSize: 10.5, background: 'var(--ez-hue-blue-bg)', color: 'var(--ez-color-primary)', padding: '1px 6px', borderRadius: 4, fontWeight: 650 }}>
-                                Input: {def.userFields.length} field
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        {isAlreadyCreated ? (
-                          <button
-                            onClick={() => {
-                              setWizard(false);
-                              setActiveDocumentDef(def);
-                            }}
-                            style={{
-                              background: 'var(--ez-color-surface)',
-                              color: 'var(--ez-hue-green-text-bright)',
-                              border: '1px solid var(--ez-hue-green-border)',
-                              borderRadius: 7,
-                              padding: '6px 14px',
-                              fontSize: 12,
-                              fontWeight: 700,
-                              cursor: 'pointer',
-                            }}
-                          >
-                            Buka
-                          </button>
-                        ) : (
-                          <input
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={() => {
-                              setSelectedDocuments((prev) =>
-                                prev.includes(def.id) ? prev.filter((id) => id !== def.id) : [...prev, def.id]
-                              );
-                            }}
-                            style={{ width: 18, height: 18, cursor: 'pointer', accentColor: 'var(--ez-color-primary)' }}
-                          />
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 20 }}>
-                  <button onClick={() => setSelectionStep(1)} style={{ padding: '10px 18px', border: '1px solid var(--ez-color-border-line)', background: 'var(--ez-color-surface)', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>
-                    Kembali
-                  </button>
-                  <button
-                    onClick={() => setSelectionStep(3)}
-                    disabled={selectedDocuments.length === 0}
-                    style={{
-                      padding: '10px 22px',
-                      background: selectedDocuments.length === 0 ? '#94A3B8' : 'var(--ez-color-primary)',
-                      color: '#fff',
-                      border: 0,
-                      borderRadius: 8,
-                      cursor: selectedDocuments.length === 0 ? 'not-allowed' : 'pointer',
-                      fontWeight: 700,
-                    }}
-                  >
-                    Lanjut ({selectedDocuments.length})
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {selectionStep === 3 && (
-              <div style={{ marginTop: 20 }}>
-                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Konfirmasi Dokumen Baru</h3>
-                <p style={{ color: 'var(--ez-color-text-muted)', fontSize: 13, marginTop: 4 }}>
-                  Dokumen berikut akan dibuat dan ditambahkan ke daftar Dokumen Proyek aktif Anda:
-                </p>
-                <div style={{ marginTop: 14, padding: 14, background: 'var(--ez-color-surface-secondary)', borderRadius: 10, border: '1px solid var(--ez-color-border-line)', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {selectedDocuments.map((docId) => {
-                    const def = getDocumentDefinition(docId);
-                    return (
-                      <div key={docId} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 600, color: 'var(--ez-color-text-strong)' }}>
-                        <FileText size={16} style={{ color: 'var(--ez-color-primary)' }} />
-                        <span>{def?.name || docId}</span>
-                        <span style={{ fontSize: 11, color: 'var(--ez-color-text-muted)', fontWeight: 400 }}>({def?.category || 'PROYEK'})</span>
-                      </div>
-                    );
-                  })}
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 20 }}>
-                  <button onClick={() => setSelectionStep(2)} style={{ padding: '10px 18px', border: '1px solid var(--ez-color-border-line)', background: 'var(--ez-color-surface)', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>
-                    Kembali
-                  </button>
-                  <button
-                    onClick={handleCreateDocuments}
-                    style={{
-                      padding: '10px 26px',
-                      background: '#16A34A',
-                      color: '#fff',
-                      border: 0,
-                      borderRadius: 8,
-                      cursor: 'pointer',
-                      fontWeight: 700,
-                      boxShadow: '0 2px 8px rgba(22,163,74,0.25)',
-                    }}
-                  >
-                    Buat Dokumen
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* AI DOCUMENT PACKAGE WIZARD MODAL */}
-      <DocumentPackageWizardModal
-        isOpen={isAiWizardOpen}
-        onClose={() => setIsAiWizardOpen(false)}
-        currentProject={activeProject}
-        rabItems={rabItems}
-        scheduleTasks={scheduleTasks}
-        kurvaSData={kurvaSData}
-        onCompletePackage={() => {
-          // Audit F-DP-02 (2026-11-03): JANGAN tutup wizard di sini — wizard
-          // menampilkan layar sukses (langkah 5) setelah generate; menutup
-          // modal pada callback ini membuat layar sukses tidak pernah
-          // terlihat. Cukup muat ulang daftar; penutupan adalah urusan
-          // tombol langkah 5 / tombol tutup wizard.
-          reloadActiveRecords();
-        }}
-        onNavigateToTab={(tab) => {
-          // Audit F-DP-03 (2026-11-03): sebelumnya handler ini menelan semua
-          // tab selain 'dokumen-tender', sehingga tombol "Lengkapi Data"
-          // pada wizard tidak mengantar ke mana pun. Teruskan ke induk.
-          if (tab === 'dokumen-tender') {
-            reloadActiveRecords();
-          } else {
-            onNavigateToTab?.(tab);
-          }
-        }}
-      />
+      {trailingOverlays}
     </div>
   );
 };
