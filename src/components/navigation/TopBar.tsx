@@ -603,7 +603,15 @@ onFocus={(e) => {
         )}
 
         {/* 0a. CURRENCY SELECTOR — ganti kurs tampil dari Top Bar (owner 2026-10-27).
-            Animasi loading: Loader2 berputar selama refreshRates berjalan. */}
+            Animasi loading: Loader2 berputar selama refreshRates berjalan.
+            Sisa overhaul S1 (owner 2026-11-09): di HP ringkas tombol ini
+            DISEMBUNYIKAN — ia adalah "pil kosong ±66px" pada audit video:
+            satu-satunya elemen cluster kanan dengan min-width tetap 64px,
+            berbatasan dengan pil kredit, berlabel redup (kode 3 huruf)
+            sehingga terbaca kosong sambil memakan lebar hingga pil kredit
+            terpotong. Kurs tampil tetap bisa diganti dari Pengaturan —
+            pola yang sama seperti pemilih bahasa/tema/bantuan di HP. */}
+        {!isNarrowMobile && (
         <div style={{ position: 'relative' }} ref={currencyRef}>
           <style>{`@keyframes ezTopbarSpin { to { transform: rotate(360deg); } }`}</style>
           <button
@@ -700,6 +708,7 @@ onFocus={(e) => {
             </div>
           )}
         </div>
+        )}
 
         {/* 0b. LANGUAGE SELECTOR (compact dropdown, wired to I18nContext) —
             di HP ringkas: bahasa tetap bisa diganti dari Pengaturan. */}

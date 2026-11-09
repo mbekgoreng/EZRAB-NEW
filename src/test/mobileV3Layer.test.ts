@@ -76,7 +76,8 @@ check('nilai total RAB overflow-wrap: anywhere', /overflow-wrap:\s*anywhere/.tes
 check('nominal kartu proyek overflow-wrap: anywhere', /overflow-wrap:\s*anywhere/.test(ruleBody('.mv3-project-amount')));
 check('nama sapaan hero nowrap (hanya nama)', /white-space:\s*nowrap/.test(ruleBody('.mv3-hero-name')));
 check('label total terpotong ellipsis', /text-overflow:\s*ellipsis/.test(ruleBody('.mv3-total-label')));
-check(' judul hero dibatasi max-width 86%', /max-width:\s*86%/.test(ruleBody('.mv3-hero-title')));
+/* Diubah atas perintah owner 2026-11-09: max-width judul hero 86% → 62%. */
+check(' judul hero dibatasi max-width 62%', /max-width:\s*62%/.test(ruleBody('.mv3-hero-title')));
 
 /* 4 — latar cadangan foto -------------------------------------------------- */
 check('hero punya background cadangan #0B2A5C', /background:\s*#0B2A5C/.test(ruleBody('.mv3-hero')));

@@ -535,7 +535,9 @@
   letter-spacing: -0.4px;
   line-height: 1.18;
   margin: 0;
-  max-width: 86%;
+  /* Diubah atas perintah owner 2026-11-09: 86% → 62% agar judul hero
+     tidak lagi menabrak area kanan hero (lencana avatar QS). */
+  max-width: 62%;
 }
 .mv3-hero-name {
   white-space: nowrap;

@@ -1011,3 +1011,36 @@
     padding: 6px 9px !important;
   }
 }
+
+/* =========================================================================
+   R28. Sisa overhaul V3 (owner 2026-11-09): provenans Rincian Harga Komponen
+   dapat dilipat — berlaku SEMUA viewport (perilaku <details> tertutup memang
+   bawaan barunya). Teks provenans di dalamnya 11px / line-height 1,5.
+   ========================================================================= */
+.ezrab-prov-details {
+  margin-top: 2px;
+}
+.ezrab-prov-summary {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--ez-color-primary, #2563EB);
+  list-style: none;
+}
+.ezrab-prov-summary::-webkit-details-marker {
+  display: none;
+}
+.ezrab-prov-summary::before {
+  content: '▸';
+  font-size: 9px;
+}
+.ezrab-prov-details[open] > .ezrab-prov-summary::before {
+  content: '▾';
+}
+.ezrab-prov-details > div {
+  font-size: 11px !important;
+  line-height: 1.5 !important;
+}

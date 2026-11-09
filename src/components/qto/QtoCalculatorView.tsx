@@ -2960,7 +2960,14 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                               <td style={{ padding: '5px 6px 5px 0', minWidth: '130px' }}>
                                 <div style={{ fontWeight: 600, color: 'var(--ez-color-text-primary)' }}>{row.uraian}</div>
                                 {row.resolutionExplanation && (
-                                  <div className="ezrab-prov-note" style={{ fontSize: '9.5px', color: 'var(--ez-color-text-muted)', lineHeight: 1.45, marginTop: '2px' }}>{row.resolutionExplanation}</div>
+                                  /* Sisa overhaul V3 (owner 2026-11-09): penjelasan
+                                     sumber dilipat dalam <details> tertutup —
+                                     isi teks tidak diubah; label & bendera
+                                     peringatan provenans tetap selalu terlihat. */
+                                  <details className="ezrab-prov-details">
+                                    <summary className="ezrab-prov-summary">Sumber &amp; dasar harga</summary>
+                                    <div className="ezrab-prov-note" style={{ fontSize: '9.5px', color: 'var(--ez-color-text-muted)', lineHeight: 1.45, marginTop: '2px' }}>{row.resolutionExplanation}</div>
+                                  </details>
                                 )}
                               </td>
                               <td style={{ padding: '5px 6px', textAlign: 'right', fontFamily: 'monospace', whiteSpace: 'nowrap' }}>
@@ -2982,7 +2989,10 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                                   </div>
                                 )}
                                 {row.crossRegionNote && (
-                                  <div style={{ fontSize: '9.5px', color: 'var(--ez-hue-amber-text-dark)', lineHeight: 1.4 }}>{row.crossRegionNote}</div>
+                                  <details className="ezrab-prov-details">
+                                    <summary className="ezrab-prov-summary">Penjelasan lintas-wilayah</summary>
+                                    <div style={{ fontSize: '9.5px', color: 'var(--ez-hue-amber-text-dark)', lineHeight: 1.4 }}>{row.crossRegionNote}</div>
+                                  </details>
                                 )}
                                 {row.priceConfidence === 'INDEX_ONLY' && (
                                   <div style={{ fontSize: '9.5px', color: 'var(--ez-hue-amber-text-dark)', fontWeight: 700, marginTop: '2px' }}>

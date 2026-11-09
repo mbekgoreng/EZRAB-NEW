@@ -68,6 +68,8 @@ check('R11: .ezrab-topbar-right gap 4px', /gap:\s*4px/.test(fx('.ezrab-topbar-ri
 check('R11: pil kredit compact ramping (height 28px)', /height:\s*28px/.test(fx('.ezrab-topbar-right .aic-balance.compact')));
 check('R11: koin kredit 16px', /width:\s*16px/.test(fx('.ezrab-topbar-right .aic-balance.compact .aic-coin')));
 check('R11: label paket .aic-plan disembunyikan di TopBar HP', /display:\s*none/.test(fx('.ezrab-topbar-right .aic-plan')));
+const topbar = read('src/components/navigation/TopBar.tsx');
+check('S1-sisa: pil mata uang (min-width 64px, "pil kosong" audit) digating !isNarrowMobile di TopBar', /!isNarrowMobile && \(\s*<div style=\{\{ position: 'relative' \}\} ref=\{currencyRef\}/.test(topbar));
 
 /* --- S6 Breadcrumb satu baris scroll-x ----------------------------------- */
 const breadcrumb = read('src/components/navigation/UnifiedBreadcrumb.tsx');
@@ -82,7 +84,8 @@ check('R13: ruang aman bawah .pf-main main 120px + safe-area', /padding-bottom:\
 
 /* --- S2–S4 Shell MobileV3 (mobile-v3.css) --------------------------------- */
 check('S2: judul hero font-size 20px', /font-size:\s*20px/.test(ruleBody(mv3css, '.mv3-hero-title')));
-check('S2: judul hero tetap dibatasi max-width 86% (pagar tes lama)', /max-width:\s*86%/.test(ruleBody(mv3css, '.mv3-hero-title')));
+/* Diubah atas perintah owner 2026-11-09: pagar 86% diganti 62%. */
+check('S2: judul hero dibatasi max-width 62% (perintah owner 2026-11-09)', /max-width:\s*62%/.test(ruleBody(mv3css, '.mv3-hero-title')));
 check('S3: deskripsi kartu AI max-width 60%', /max-width:\s*60%/.test(ruleBody(mv3css, '.mv3-ai-sub')));
 check('S4: grid ubin minmax(0, 1fr)', /minmax\(0, 1fr\)/.test(ruleBody(mv3css, '.mv3-tiles')));
 check('S4: ubin min-width 0', /min-width:\s*0/.test(ruleBody(mv3css, '.mv3-tile')));
@@ -118,6 +121,10 @@ check('R15: deskripsi kartu line-clamp 1 di HP', /line-clamp:\s*1/.test(fx('.ezr
 check('R16: kartu provenans scroll-x', /overflow-x:\s*auto/.test(fx('.ezrab-prov-wrap')));
 check('R16: tabel provenans min-width 560px', /min-width:\s*560px/.test(fx('.ezrab-prov-table')));
 check('R16: catatan provenans font 11px lh 1.5', /font-size:\s*11px/.test(fx('.ezrab-prov-note')) && /line-height:\s*1\.5/.test(fx('.ezrab-prov-note')));
+check('V3-sisa: provenans dibungkus <details class="ezrab-prov-details"> tertutup bawaan', qto.includes('<details className="ezrab-prov-details">') && qto.includes('<summary className="ezrab-prov-summary">Sumber &amp; dasar harga</summary>'));
+check('R28: summary provenans cursor pointer + warna primer', /cursor:\s*pointer/.test(ruleBody(fixes, '.ezrab-prov-summary')) && /var\(--ez-color-primary/.test(ruleBody(fixes, '.ezrab-prov-summary')));
+check('R28: penanda ▾ saat details terbuka', ruleBody(fixes, '.ezrab-prov-details[open] > .ezrab-prov-summary').includes('▾'));
+check('R28: teks di dalam details provenans 11px lh 1.5', /font-size:\s*11px/.test(ruleBody(fixes, '.ezrab-prov-details > div')) && /line-height:\s*1\.5/.test(ruleBody(fixes, '.ezrab-prov-details > div')));
 
 /* --- Q1–Q2 Rekapitulasi QTO ------------------------------------------------ */
 const rekapQto = read('src/components/qto/QtoRekapVolumeView.tsx');
