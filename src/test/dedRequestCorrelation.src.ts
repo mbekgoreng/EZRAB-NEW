@@ -20,13 +20,20 @@
  *   parsial); Full AI: requestId + token diteruskan, alasan konsisten.
  * - B5: normalizer klien (X2) — Node providerId/modelId menang atas
  *   target yang diminta; usage malformed tak menjadi angka.
- * - C1: kontrak kompleksitas SAAT INI terpin: FAST → ded-ai/simple;
- *   DETAIL tanpa kompleksitas eksplisit → ded-ai/medium (diskrepansi
- *   F-E2 terdokumentasi — pilihan kompleksitas view hanya tarif
- *   SIMULASI dan TIDAK mencapai service); fungsi murni dengan
- *   kompleksitas eksplisit menghasilkan key yang sah di matriks.
+ * - C1: kontrak kompleksitas terpin: FAST → ded-ai/simple;
+ *   DETAIL tanpa kompleksitas eksplisit → ded-ai/medium (default lama
+ *   fungsi murni, dipertahankan); fungsi murni dengan kompleksitas
+ *   eksplisit menghasilkan key yang sah di matriks.
  * - C2: semua key yang bisa dihasilkan builder ada di matriks kanonis
  *   (dibaca dari berkas api/_lib/featureBillingMatrix.js, read-only).
+ * - C3: F-E2 TERSAMBUNG (keputusan owner 2026-11-10, "perbaiki semua",
+ *   menyetujui proposal DED_SPRINT_5_COMPLEXITY_CONTRACT): kompleksitas
+ *   yang diteruskan konteks service menentukan featureKey DETAIL pada
+ *   catatan usage DAN tercatat apa adanya pada usage.complexity;
+ *   kompleksitas ABSEN → featureKey tetap ded-ai/medium (default lama)
+ *   TETAPI usage.complexity === null — ketiadaan eksplisit, tidak lagi
+ *   diam-diam terbaca sebagai pilihan 'medium'; FAST mengabaikan
+ *   kompleksitas (tetap ded-ai/simple).
  */
 import { readFileSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -152,14 +159,37 @@ async function main(): Promise<void> {
   const kept = normalizeAiUsage({ inputTokens: 7, outputTokens: 3, totalTokens: 10, cachedTokens: 2, reasoningTokens: 1, source: 'oai_usage' });
   check('B5d cached & reasoning tetap terbedakan', kept.usage?.cachedTokens === 2 && kept.usage?.reasoningTokens === 1 && kept.usageStatus === 'measured');
 
-  console.log('== C1: kontrak kompleksitas SAAT INI (F-E2 terpin, diskrepansi terdokumentasi) ==');
+  console.log('== C1: kontrak kompleksitas (fungsi murni) ==');
   check('C1a FAST selalu ded-ai/simple', dedStandardFeatureKey('FAST') === 'ded-ai/simple');
-  check('C1b DETAIL tanpa kompleksitas eksplisit → ded-ai/medium (perilaku saat ini; pilihan view TIDAK sampai ke service)',
+  check('C1b DETAIL tanpa kompleksitas eksplisit → ded-ai/medium (default lama fungsi murni; ketiadaan dibuat eksplisit oleh builder — lihat C3d)',
     dedStandardFeatureKey('DETAIL') === 'ded-ai/medium');
   check('C1c fungsi murni: kompleksitas eksplisit menghasilkan key berbeda',
     dedStandardFeatureKey('DETAIL', 'simple') === 'ded-ai/simple'
     && dedStandardFeatureKey('DETAIL', 'complex') === 'ded-ai/complex'
     && dedStandardFeatureKey('DETAIL', 'medium') === 'ded-ai/medium');
+
+  console.log('== C3: F-E2 tersambung — kompleksitas konteks menentukan featureKey catatan usage ==');
+  const uSimple = buildDedUsageFromStandard(outA as never, { complexity: 'simple' });
+  check('C3a DETAIL + simple → ded-ai/simple, tercatat simple',
+    uSimple.featureKey === 'ded-ai/simple' && uSimple.complexity === 'simple',
+    `key=${uSimple.featureKey} complexity=${uSimple.complexity}`);
+  const uComplex = buildDedUsageFromStandard(outA as never, { complexity: 'complex' });
+  check('C3b DETAIL + complex → ded-ai/complex, tercatat complex',
+    uComplex.featureKey === 'ded-ai/complex' && uComplex.complexity === 'complex',
+    `key=${uComplex.featureKey} complexity=${uComplex.complexity}`);
+  const uMedium = buildDedUsageFromStandard(outA as never, { complexity: 'medium' });
+  check('C3c DETAIL + medium eksplisit → ded-ai/medium, tercatat medium (terbedakan dari absen)',
+    uMedium.featureKey === 'ded-ai/medium' && uMedium.complexity === 'medium',
+    `key=${uMedium.featureKey} complexity=${uMedium.complexity}`);
+  const uAbsent = buildDedUsageFromStandard(outA as never, {});
+  check('C3d DETAIL tanpa kompleksitas → key default ded-ai/medium TETAPI complexity null (absen eksplisit, bukan pilihan diam-diam)',
+    uAbsent.featureKey === 'ded-ai/medium' && uAbsent.complexity === null,
+    `key=${uAbsent.featureKey} complexity=${uAbsent.complexity}`);
+  const outFast = { ...outA, mode: 'FAST' as const };
+  const uFast = buildDedUsageFromStandard(outFast as never, { complexity: 'complex' });
+  check('C3e FAST mengabaikan kompleksitas → tetap ded-ai/simple',
+    uFast.featureKey === 'ded-ai/simple',
+    `key=${uFast.featureKey}`);
 
   console.log('== C2: key builder ⊆ matriks kanonis (read-only) ==');
   const matrixText = readFileSync(join(findRepoRoot(), 'api/_lib/featureBillingMatrix.js'), 'utf8');

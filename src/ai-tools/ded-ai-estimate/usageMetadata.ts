@@ -62,6 +62,12 @@ export interface DedUsageContext {
   finishedAt?: string;
   /** SPRINT 4: nama berkas yang diproses workflow ini (satu workflow standar = satu berkas). */
   fileName?: string;
+  /**
+   * F-E2 (keputusan owner 2026-11-10): kompleksitas pilihan user yang
+   * diteruskan service dari view; absen = tidak ada pilihan (dicatat
+   * eksplisit sebagai null pada catatan, bukan ditebak).
+   */
+  complexity?: 'simple' | 'medium' | 'complex';
 }
 
 const TOKENS_NOT_REPORTED = 'GATEWAY_DOES_NOT_REPORT_TOKENS' as const;
@@ -93,7 +99,11 @@ function consensusIdentity(calls: DedUsageCallRecord[]): { provider: string | nu
 export function dedStandardFeatureKey(mode: DedAiOutput['mode'], complexity?: 'simple' | 'medium' | 'complex'): string {
   // Matriks mendaftarkan ded-ai/simple|medium|complex (FLAT_DRAFT).
   // Mode FAST dipetakan ke simple; DETAIL memakai kompleksitas yang
-  // dipilih pengguna bila diketahui, default medium.
+  // dipilih pengguna bila diketahui. Default 'medium' untuk kompleksitas
+  // absen adalah perilaku lama yang DIPERTAHANKAN untuk kompatibilitas
+  // kunci — sejak wiring F-E2 (keputusan owner 2026-11-10) ketiadaan itu
+  // TIDAK lagi diam-diam: builder mencatatnya eksplisit sebagai
+  // DedWorkflowUsage.complexity = null pada catatan yang sama.
   if (mode === 'FAST') return 'ded-ai/simple';
   return `ded-ai/${complexity ?? 'medium'}`;
 }
@@ -173,7 +183,10 @@ export function buildDedUsageFromStandard(
   const generatedAt = ctx.generatedAt ?? new Date().toISOString();
   return {
     workflowId: output.jobId,
-    featureKey: dedStandardFeatureKey(output.mode),
+    // F-E2: kompleksitas pilihan user (dari konteks service) menentukan
+    // kunci fitur DETAIL; absen dicatat eksplisit pada field complexity.
+    featureKey: dedStandardFeatureKey(output.mode, ctx.complexity),
+    complexity: ctx.complexity ?? null,
     pipeline: 'STANDARD',
     policy: output.policy,
     projectId: ctx.projectId,
@@ -270,6 +283,8 @@ export function buildDedUsageFromFullAi(
   return {
     workflowId: ctx.workflowId,
     featureKey: 'ded-ai/full-ai',
+    // F-E2: pipeline Full AI tidak memiliki masukan kompleksitas — null eksplisit.
+    complexity: null,
     pipeline: 'FULL_AI',
     policy: ctx.policy,
     projectId: ctx.projectId,

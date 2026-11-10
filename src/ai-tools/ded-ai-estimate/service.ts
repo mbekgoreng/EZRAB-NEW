@@ -1210,6 +1210,9 @@ export class DedAiEstimateService {
       startedAt: runStartedAt,
       finishedAt: new Date().toISOString(),
       fileName: options.fileName,
+      // F-E2 (keputusan owner 2026-11-10): teruskan kompleksitas pilihan
+      // user apa adanya; absen tetap absen (builder mencatat null).
+      complexity: options.complexity,
     });
 
     if (output.coverage.itemsFullyResolved === 0 && output.coverage.totalItems > 0) {

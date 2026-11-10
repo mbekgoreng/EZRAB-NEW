@@ -455,6 +455,15 @@ export interface DedUsageCallRecord {
 export interface DedWorkflowUsage {
   workflowId: string;
   featureKey: string;
+  /**
+   * F-E2 (keputusan owner 2026-11-10): kompleksitas yang benar-benar
+   * dipilih user untuk workflow ini; null = TIDAK ada pilihan yang
+   * sampai ke service. Ketiadaan dibuat EKSPLISIT di sini agar
+   * featureKey hasil default lama (DETAIL tanpa kompleksitas →
+   * 'ded-ai/medium') tidak pernah terbaca sebagai pilihan user.
+   * Pipeline FULL_AI tidak punya masukan kompleksitas → selalu null.
+   */
+  complexity?: 'simple' | 'medium' | 'complex' | null;
   pipeline: 'STANDARD' | 'FULL_AI';
   policy: DedEstimationPolicy;
   projectId?: string;
@@ -745,6 +754,14 @@ export interface DedAiServiceOptions {
   mode: DedAiMode;
   /** Kebijakan harga (default 'FULL_AI' bila tidak diisi — perilaku lama). */
   policy?: DedEstimationPolicy;
+  /**
+   * F-E2 (keputusan owner 2026-11-10, "perbaiki semua"): kompleksitas
+   * MENTAH yang dipilih user di view — diteruskan agar kunci fitur pada
+   * catatan usage sesuai pilihan user. OPSIONAL dan absen tetap absen:
+   * JANGAN pernah di-default diam-diam ke 'medium' di lapisan mana pun;
+   * ketiadaan dicatat eksplisit pada DedWorkflowUsage.complexity = null.
+   */
+  complexity?: 'simple' | 'medium' | 'complex';
   projectName?: string;
   onProgress?: (event: DedAiProgressEvent) => void;
   /** HARDENING Tahap 6: konteks identitas untuk metadata usage (opsional; diteruskan apa adanya ke DedWorkflowUsage). */

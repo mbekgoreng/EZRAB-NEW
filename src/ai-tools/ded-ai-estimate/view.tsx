@@ -312,6 +312,10 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
           projectType: sess.projectType,
           mode: sess.mode,
           policy: sess.policy ?? 'FULL_AI',
+          // F-E2 (keputusan owner 2026-11-10): kompleksitas pilihan user
+          // diteruskan untuk run DETAIL agar kunci fitur usage tercatat
+          // sesuai pilihan; FAST tidak memakai kompleksitas.
+          complexity: sess.mode === 'DETAIL' ? sess.complexity : undefined,
           projectName: sess.projectName,
           onProgress: (e) => {
             if (cancelRef.current) return;

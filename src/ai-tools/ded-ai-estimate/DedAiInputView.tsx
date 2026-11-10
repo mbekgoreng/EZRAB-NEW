@@ -46,6 +46,13 @@ export interface DedAiSession {
   fullAi?: boolean;
   /** Estimasi kredit simulasi yang disetujui user (kategori dipilih user). */
   creditEstimate?: { category: string; credits: number };
+  /**
+   * F-E2 (keputusan owner 2026-11-10): nilai kompleksitas MENTAH yang
+   * dipilih user — diteruskan lewat session ke service agar kunci fitur
+   * pada catatan usage sesuai pilihan user (bukan default). Tampilan
+   * simulasi tidak berubah.
+   */
+  complexity?: 'simple' | 'medium' | 'complex';
 }
 
 interface Props {
@@ -166,6 +173,8 @@ export const DedAiInputView: React.FC<Props> = ({
       targetProjectId: chosenProjectId,
       fullAi,
       creditEstimate: { category: complexityLabel(complexity), credits: dedTarget },
+      // F-E2: sertakan nilai mentahnya juga (satu field aditif).
+      complexity,
     });
   };
 

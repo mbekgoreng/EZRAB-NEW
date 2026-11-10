@@ -2,6 +2,20 @@
 
 Date: 2026-11-10. **Decision: OWNER DECISION REQUIRED. No behavioural change implemented.**
 
+> **RESOLUTION (FIXALL, 2026-11-10):** the owner approved this proposal
+> ("perbaiki semua", 2026-11-10 16:06 WIB). The minimal wiring below is
+> IMPLEMENTED exactly as proposed: session carries the raw complexity,
+> `DedAiServiceOptions.complexity` is optional with absence preserved,
+> `view.tsx` passes it for DETAIL runs, and `buildDedUsageFromStandard`
+> derives the feature key from it. Absence is explicit in metadata
+> (`DedWorkflowUsage.complexity = null`) — the legacy `ded-ai/medium`
+> default key is retained for compatibility but is never again
+> indistinguishable from a user-selected 'medium'. Pins updated in
+> `dedRequestCorrelation` section C (C1 relabelled; C3a–C3e added):
+> 31 PASS / 0 FAIL. Tariff values unchanged; no credit debited;
+> `AI_METERING_ENABLED` remains OFF. See
+> `docs/audits/EZRAB_FIXALL_2026-11-10.md`.
+
 ## Evidence from the code (why the gate fired)
 
 1. `src/ai-tools/ded-ai-estimate/DedAiInputView.tsx` labels the control explicitly as
