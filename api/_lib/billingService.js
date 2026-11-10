@@ -43,6 +43,10 @@ import {
 } from './midtrans.js';
 import { withLedger } from './billingStore.js';
 import {
+  ensureFreeOnceGrant,
+  getOrCreateBillingAccount,
+} from './billingAccountService.js';
+import {
   addMonths,
   createSubscriptionState,
   applyPaymentSucceeded,
@@ -141,9 +145,20 @@ export function createBillingService(deps = {}) {
   }
 
   async function getOrCreateAccount(workspaceId, userId) {
-    const existing = await repo.getBillingAccountByWorkspace(workspaceId);
-    if (existing) return existing;
-    return repo.createBillingAccount({ workspaceId, createdBy: userId });
+    const account = await getOrCreateBillingAccount(repo, workspaceId, userId);
+    // D18(iii) (2026-11-10): Free-once 100 kredit (Amendemen v1.2) terbit
+    // tepat sekali per akun pada provisioning pertamanya, dari titik
+    // pembuatan akun yang sama dengan endpoint balance. Idempoten:
+    // pemanggilan ulang adalah replay tanpa entri baru. Kegagalan grant
+    // menggagalkan provisioning secara terbuka (fail-closed), bukan
+    // dilewati diam-diam.
+    const grant = await ensureFreeOnceGrant(repo, account, {
+      actorUserId: userId,
+      workspaceId,
+      now: nowFn(),
+    });
+    if (!grant.ok) throw new Error('free_once_grant_failed');
+    return account;
   }
 
   // ------------------------------------------------------------- checkout

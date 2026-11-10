@@ -12,8 +12,9 @@
  * TIDAK boleh menjadi fungsi baru, jadi ia digabung ke handler credits yang
  * sudah ada — pola yang sama persis dengan api/access/[action].js dan
  * api/invitations/[action].js. File ini MENGGANTIKAN api/credits/balance.js;
- * handler balance di bawah ini verbatim dari file asalnya, URL publik
- * /api/credits/balance tidak berubah. Total handler tetap 11
+ * URL publik /api/credits/balance tidak berubah (isi handler balance
+ * di-re-point ke ledger batch gen-2 pada 2026-11-10, D18(ii)). Total
+ * handler tetap 11
  * (src/test/apiEndpointInventory.test.ts adalah penjaganya).
  *
  * KEJUJURAN STATUS: billing hanya hidup bila env server lengkap
@@ -23,21 +24,16 @@
  * Webhook TIDAK memakai auth pengguna: autentikasinya adalah signature
  * Midtrans yang diverifikasi di billingService sebelum apa pun diproses.
  */
-import { createCreditEngine, createMemoryAdapter } from '../_lib/creditEngine.js';
 import { applyCors, authenticateRequest, evaluateCreditAccess, readJsonBody } from '../_lib/security.js';
 import { getBillingRepository } from '../_lib/billingStore.js';
 import { getMidtransConfig } from '../_lib/midtrans.js';
 import { createBillingService } from '../_lib/billingService.js';
 import { requestedWorkspaceId } from '../_lib/billingAuthorization.js';
-
-function getAdapter() {
-  // Supabase adapter menyusul setelah migration di-apply + koneksi terverifikasi.
-  // Saat ini: kembalikan null → endpoint lapor NOT_CONFIGURED dengan jujur.
-  if (process.env.CREDITS_DB_CONFIGURED === 'true') {
-    return createMemoryAdapter(); // placeholder — ganti Supabase adapter
-  }
-  return null;
-}
+import {
+  ensureFreeOnceGrant,
+  getOrCreateBillingAccount,
+  resolveWorkspaceAccess,
+} from '../_lib/billingAccountService.js';
 
 function buildBillingService() {
   return createBillingService({
@@ -67,17 +63,22 @@ function sendServiceResult(res, result) {
 }
 
 // ---------------------------------------------------------------------------
-// GET /api/credits/balance — verbatim dari api/credits/balance.js (Phase 2/3).
-// Backend authoritative. Mengembalikan 503 jujur bila database kredit
-// belum dikonfigurasi (frontend tetap memakai mock Phase 1).
+// GET /api/credits/balance — saldo ledger batch gen-2 (D18(ii), 2026-11-10;
+// menggantikan adapter gen-1/placeholder memori). Backend authoritative:
+// saldo diturunkan dari batch kredit akun billing workspace pemanggil.
+// Provisioning di jalur baca ini (D18(iii)): akun billing dibuat bila
+// belum ada dan Free-once 100 kredit diterbitkan tepat sekali per akun
+// (idempoten). 503 jujur bila repository Supabase server belum
+// terkonfigurasi (frontend tetap memakai simulasi Phase 1). Flag lama
+// CREDITS_DB_CONFIGURED tidak lagi menentukan endpoint ini.
 // ---------------------------------------------------------------------------
 async function balanceHandler(req, res) {
   if (!applyCors(req, res)) return res.status(403).json({ success: false, error: 'Origin tidak diizinkan' });
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'GET') return res.status(405).json({ success: false, error: 'Method not allowed' });
 
-  const adapter = getAdapter();
-  if (!adapter) {
+  const repo = getBillingRepository();
+  if (!repo) {
     return res.status(503).json({
       success: false,
       error: 'CREDITS_NOT_CONFIGURED',
@@ -98,9 +99,28 @@ async function balanceHandler(req, res) {
     return res.status(401).json({ success: false, error: 'AUTH_REQUIRED', errorCode: 'AUTH_REQUIRED' });
   }
   const userId = auth.user.id;
-  const engine = createCreditEngine(adapter);
-  const balance = await engine.getBalance(userId);
-  return res.status(200).json({ success: true, balance, simulated: false });
+  try {
+    const authz = await resolveWorkspaceAccess(repo, auth, requestedWorkspaceId(req), 'billing:read');
+    if (!authz.ok) {
+      return res.status(authz.status).json({ success: false, error: authz.error, errorCode: authz.errorCode });
+    }
+    const account = await getOrCreateBillingAccount(repo, authz.workspaceId, userId);
+    const grant = await ensureFreeOnceGrant(repo, account, {
+      actorUserId: userId,
+      workspaceId: authz.workspaceId,
+    });
+    if (!grant.ok) {
+      return res.status(503).json({ success: false, error: 'CREDITS_BACKEND_UNAVAILABLE' });
+    }
+    return res.status(200).json({
+      success: true,
+      balance: grant.balance,
+      freeOnceGranted: grant.granted === true,
+      simulated: false,
+    });
+  } catch {
+    return res.status(503).json({ success: false, error: 'CREDITS_BACKEND_UNAVAILABLE' });
+  }
 }
 
 // ---------------------------------------------------------------------------

@@ -65,6 +65,19 @@ async function grantEntries(repo: InMemoryBillingRepository, accountId: string) 
   return snap.store.ledger.filter((e: any) => e.kind === 'GRANT');
 }
 
+// D18(iii) (2026-11-10): provisioning akun kini menerbitkan grant FREE_ONCE
+// 100 kredit yang sah (Amendemen v1.2) — entri GRANT-nya BUKAN grant
+// pembayaran. Pin keamanan suite ini adalah "pembayaran gagal/curang tidak
+// memberi kredit BERBAYAR", jadi hitungan grant berbayar mengecualikan
+// batch FREE_ONCE secara eksplisit.
+async function paidGrantEntries(repo: InMemoryBillingRepository, accountId: string) {
+  const snap = await loadLedgerSnapshot(repo, accountId, { ownerUserId: 'user-owner', workspaceId: 'ws-1' });
+  const freeOnceBatchIds = new Set(
+    [...snap.store.batches.values()].filter((b: any) => b.type === 'FREE_ONCE').map((b: any) => b.id),
+  );
+  return snap.store.ledger.filter((e: any) => e.kind === 'GRANT' && !freeOnceBatchIds.has(e.batchId));
+}
+
 console.log('=== Langganan: settlement → grant sekali; replay aman ===');
 {
   clock = T0;
@@ -86,7 +99,7 @@ console.log('=== Langganan: settlement → grant sekali; replay aman ===');
   check('replay settlement → duplicate, tanpa grant baru', r2.ok === true && r2.duplicate === true && r2.granted === false);
   bal = await balanceOf(repo, account!.id, clock);
   check('saldo tetap 5.000 sesudah replay', bal.subscriptionAvailable === 5000);
-  check('entri GRANT tetap 1', (await grantEntries(repo, account!.id)).length === 1);
+  check('entri GRANT berbayar tetap 1', (await paidGrantEntries(repo, account!.id)).length === 1);
 
   console.log('=== Perpanjangan gagal → PAST_DUE → GRACE lewat → EXPIRED ===');
   const co2: any = await service.checkout({ auth: OWNER, workspaceId: 'ws-1', kind: 'SUBSCRIPTION', itemId: 'starter' });
@@ -126,7 +139,7 @@ console.log('=== Top-up: grant dasar + bonus, replay aman ===');
   check('replay top-up → duplicate', r2.duplicate === true);
   bal = await balanceOf(repo, account!.id, clock);
   check('saldo top-up tidak ganda', bal.topupAvailable === 3000 && bal.bonusAvailable === 600);
-  check('entri GRANT = 2 (top-up + bonus)', (await grantEntries(repo, account!.id)).length === 2);
+  check('entri GRANT berbayar = 2 (top-up + bonus)', (await paidGrantEntries(repo, account!.id)).length === 2);
 
   console.log('=== Refund sesudah lunas: tercatat, saldo TIDAK berubah ===');
   const rr: any = await service.handleNotification(notify(co.orderId, '5000.00', 'refund'));
@@ -155,12 +168,16 @@ console.log('=== Status non-lunas & serangan ===');
   const re: any = await service.handleNotification(notify(coE.orderId, '54999.00', 'expire'));
   check('expire → order EXPIRED, tanpa grant', re.granted === false && (await repo.getOrderByOrderId(coE.orderId))?.status === 'EXPIRED');
   const acct = await account();
-  check('saldo tetap 0', (await balanceOf(repo, acct!.id, clock)).total === 0);
+  const balE: any = await balanceOf(repo, acct!.id, clock);
+  check('saldo BERBAYAR tetap 0 (hanya Free-once 100 dari provisioning D18(iii))',
+    balE.subscriptionAvailable === 0 && balE.topupAvailable === 0 && balE.bonusAvailable === 0 && balE.freeOnceAvailable === 100);
 
   const coM: any = await service.checkout({ auth: OWNER, workspaceId: 'ws-1', kind: 'SUBSCRIPTION', itemId: 'starter' });
   const rm: any = await service.handleNotification(notify(coM.orderId, '1.00', 'settlement'));
   check('jumlah tidak cocok → tanpa grant (AMOUNT_MISMATCH)', rm.granted === false && rm.reason === 'AMOUNT_MISMATCH');
-  check('saldo tetap 0 sesudah mismatch', (await balanceOf(repo, acct!.id, clock)).total === 0);
+  const balM: any = await balanceOf(repo, acct!.id, clock);
+  check('saldo BERBAYAR tetap 0 sesudah mismatch (hanya Free-once 100)',
+    balM.subscriptionAvailable === 0 && balM.topupAvailable === 0 && balM.bonusAvailable === 0 && balM.freeOnceAvailable === 100);
 
   const forged = notify(coM.orderId, '54999.00', 'settlement');
   forged.signature_key = 'f'.repeat(128);
