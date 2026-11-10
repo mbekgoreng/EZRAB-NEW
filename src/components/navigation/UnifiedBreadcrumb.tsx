@@ -159,11 +159,17 @@ export const UnifiedBreadcrumb: React.FC<UnifiedBreadcrumbProps> = ({
         </>
       )}
 
-      {/* Case C: Project Scoped Module View (e.g. Dashboard > Proyek > [Project Name] > [RAB Spreadsheet]) */}
+      {/* Case C: Project Scoped Module View (e.g. Dashboard > Proyek > [Project Name] > [RAB Spreadsheet]).
+          Elemen tengah (Proyek + nama proyek) berclass ez-breadcrumb-mid:
+          di HP disembunyikan oleh workspace-mobile-fixes.css R30 (owner
+          2026-11-10: breadcrumb panjang terpotong tak bermakna) sehingga
+          yang tampil hanya Dashboard › [Modul]. Fungsi navigasinya tetap
+          ada di desktop dan lewat menu/drawer di HP. */}
       {currentProject && activeMenu !== 'dashboard' && activeMenu !== 'proyek' && activeMenu !== 'magic-ai' && activeMenu !== 'ded-rab' && activeMenu !== 'ai-assistant' && (
         <>
-          <ChevronRight size={13} color="#94A3B8" />
+          <ChevronRight size={13} color="#94A3B8" className="ez-breadcrumb-mid" />
           <button
+            className="ez-breadcrumb-mid"
             onClick={() => onNavigate('proyek', null)}
             style={crumbLinkStyle}
             onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--ez-color-primary)')}
@@ -173,8 +179,9 @@ export const UnifiedBreadcrumb: React.FC<UnifiedBreadcrumbProps> = ({
             Proyek
           </button>
 
-          <ChevronRight size={13} color="#94A3B8" />
+          <ChevronRight size={13} color="#94A3B8" className="ez-breadcrumb-mid" />
           <button
+            className="ez-breadcrumb-mid"
             onClick={() => onNavigate('manajemen-proyek', currentProject.id)}
             style={{
               ...crumbLinkStyle,

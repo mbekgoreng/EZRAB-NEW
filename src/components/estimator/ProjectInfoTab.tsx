@@ -213,9 +213,9 @@ export const ProjectInfoTab: React.FC<ProjectInfoTabProps> = ({ currentProject, 
     new Date(values.targetDate as string) < new Date(values.startDate as string);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', width: '100%' }}>
+    <div className="ez-projinfo" style={{ display: 'flex', flexDirection: 'column', gap: '18px', width: '100%' }}>
       {/* Header + kelengkapan + simpan */}
-      <div style={{ background: 'var(--ez-color-surface)', border: '1px solid var(--ez-color-border-line)', borderRadius: '14px', padding: '18px 20px', boxShadow: '0 1px 3px rgba(15,23,42,0.04)' }}>
+      <div className="ez-projinfo-card" style={{ background: 'var(--ez-color-surface)', border: '1px solid var(--ez-color-border-line)', borderRadius: '14px', padding: '18px 20px', boxShadow: '0 1px 3px rgba(15,23,42,0.04)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--ez-hue-blue-bg)', color: 'var(--ez-hue-blue-text)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -231,6 +231,7 @@ export const ProjectInfoTab: React.FC<ProjectInfoTabProps> = ({ currentProject, 
             </div>
           </div>
           <button
+            className="ez-projinfo-save"
             onClick={handleSave}
             style={{
               display: 'inline-flex',
@@ -271,13 +272,13 @@ export const ProjectInfoTab: React.FC<ProjectInfoTabProps> = ({ currentProject, 
 
       {/* Kartu-kartu field */}
       {SECTIONS.map((section) => (
-        <div key={section.title} style={{ background: 'var(--ez-color-surface)', border: '1px solid var(--ez-color-border-line)', borderRadius: '14px', padding: '20px' }}>
+        <div key={section.title} className="ez-projinfo-card" style={{ background: 'var(--ez-color-surface)', border: '1px solid var(--ez-color-border-line)', borderRadius: '14px', padding: '20px' }}>
           <h4 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--ez-color-text-primary)', margin: 0 }}>
             {section.title}
           </h4>
           <p style={{ fontSize: '11.5px', color: '#64748B', margin: '4px 0 14px 0' }}>{section.hint}</p>
           {section.title === 'Lokasi' ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px' }}>
+            <div className="ez-projinfo-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px' }}>
               <RegionCascade values={values} set={set} />
               <div style={{ gridColumn: '1 / -1' }}>
                 <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>
@@ -293,7 +294,7 @@ export const ProjectInfoTab: React.FC<ProjectInfoTabProps> = ({ currentProject, 
               </div>
             </div>
           ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px' }}>
+          <div className="ez-projinfo-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px' }}>
             {section.fields.map((f) => {
               const missing = !!f.required && !(values[f.key] ?? '').trim();
               const label = `${f.label}${f.required ? '' : ' (opsional)'}`;
@@ -354,7 +355,7 @@ export const ProjectInfoTab: React.FC<ProjectInfoTabProps> = ({ currentProject, 
       ))}
 
       {/* Total Nilai RAB — terhitung, read-only */}
-      <div style={{ background: 'var(--ez-color-surface)', border: '1px solid var(--ez-color-border-line)', borderRadius: '14px', padding: '20px' }}>
+      <div className="ez-projinfo-card" style={{ background: 'var(--ez-color-surface)', border: '1px solid var(--ez-color-border-line)', borderRadius: '14px', padding: '20px' }}>
         <h4 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--ez-color-text-primary)', margin: 0 }}>
           Total Nilai RAB (terhitung)
         </h4>

@@ -46,6 +46,7 @@ export const ProjectContextHeader: React.FC<ProjectContextHeaderProps> = ({
     <div style={{ marginBottom: '16px' }}>
       {/* 1. Breadcrumbs */}
       <div
+        className="ez-proj-crumbs"
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -58,13 +59,14 @@ export const ProjectContextHeader: React.FC<ProjectContextHeaderProps> = ({
       >
         <span>Proyek</span>
         <span>›</span>
-        <span>{projectName}</span>
+        <span className="ez-proj-crumb-name">{projectName}</span>
         <span>›</span>
         <span style={{ color: 'var(--ez-color-primary)', fontWeight: 700 }}>Estimator Spreadsheet</span>
       </div>
 
       {/* 2. Main Context Card */}
       <div
+        className="ez-proj-headcard"
         style={{
           background: 'var(--ez-color-surface)',
           borderRadius: '20px',
@@ -180,10 +182,12 @@ export const ProjectContextHeader: React.FC<ProjectContextHeaderProps> = ({
           </div>
         </div>
 
-        {/* Right: Primary Action Buttons */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+        {/* Right: Primary Action Buttons (di HP menjadi grid 2×2 rata —
+            workspace-mobile-fixes.css R30) */}
+        <div className="ez-proj-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           {/* Ganti Proyek */}
           <button
+            className="ez-proj-action"
             onClick={onSwitchProject}
             style={{
               height: '34px',
@@ -209,6 +213,7 @@ export const ProjectContextHeader: React.FC<ProjectContextHeaderProps> = ({
 
           {/* Import AHSP */}
           <button
+            className="ez-proj-action"
             onClick={onImportAhsp}
             style={{
               height: '34px',
@@ -234,6 +239,7 @@ export const ProjectContextHeader: React.FC<ProjectContextHeaderProps> = ({
 
           {/* Import Excel */}
           <button
+            className="ez-proj-action"
             onClick={onImportExcel}
             style={{
               height: '34px',
@@ -259,6 +265,7 @@ export const ProjectContextHeader: React.FC<ProjectContextHeaderProps> = ({
 
           {/* Versi & Skenario (Phase 11) */}
           <button
+            className="ez-proj-action"
             onClick={onOpenVersionsAndScenarios}
             title="Versi Estimasi & Simulasi Value Engineering"
             style={{

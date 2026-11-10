@@ -59,7 +59,7 @@ export const EstimatorSettingsView: React.FC<EstimatorSettingsViewProps> = ({
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "20px", width: "100%", maxWidth: "1600px", margin: "0 auto" }}>
+    <div className="ez-rabset" style={{ display: "flex", flexDirection: "column", gap: "20px", width: "100%", maxWidth: "1600px", margin: "0 auto" }}>
       {/* 1. HEADER */}
       <div style={{ background: "var(--ez-color-surface)", border: "1px solid var(--ez-color-border-line)", borderRadius: "14px", padding: "18px 20px", boxShadow: "0 1px 3px rgba(15,23,42,0.04)" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
@@ -72,7 +72,7 @@ export const EstimatorSettingsView: React.FC<EstimatorSettingsViewProps> = ({
             </p>
           </div>
 
-          <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+          <div className="ez-rabset-actions" style={{ display: "inline-flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
             {onOpenExportModal && (
               <button
                 onClick={onOpenExportModal}
