@@ -1,15 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState, lazy, Suspense } from 'react';
 import { ExactLandingPage } from './components/landing/ExactLandingPage';
-import { AboutPage } from './components/about/AboutPage';
-import { FeaturesPage } from './components/landing/features/FeaturesPage';
-import { FaqPage } from './faq/FaqPage';
-import { PricingPage } from './components/landing/pricing/PricingPage';
-import { AdvantagesPage } from './components/landing/advantages/AdvantagesPage';
-import { AuthRoutePage } from './components/auth/AuthRoutePage';
-import { AcceptInvitationPage } from './components/auth/AcceptInvitationPage';
 import { DemoModal } from './components/common/DemoModal';
 import { BootScreen, ChunkErrorBoundary } from './components/common/BootScreen';
-import { AuthNoticePage, PrivacyPage, PublicNotFoundPage, TermsPage } from './components/public/PublicInfoPages';
 import { NotificationProvider } from './notifications/NotificationContext';
 import {
   OnboardingTour,
@@ -157,6 +149,50 @@ const BlogHostPage = lazy(() =>
 // generated (±20 MB sumber) — menjadi chunk terpisah yang baru diunduh
 // saat pengguna masuk /app/*. Muat awal rute publik tidak menanggungnya.
 const WorkspaceShell = lazy(() => import('./components/workspace/WorkspaceShell'));
+
+// Halaman publik selain landing: lazy (audit performa 2026-11-10) agar muat
+// awal rute "/" tidak menanggung kode halaman tentang/fitur/faq/harga/
+// keunggulan/login/undangan. Masing-masing menjadi chunk terpisah yang baru
+// diunduh saat rutenya dibuka; fallback Suspense ada di render root.
+const AboutPage = lazy(() =>
+  import('./components/about/AboutPage').then((m) => ({ default: m.AboutPage })),
+);
+const FeaturesPage = lazy(() =>
+  import('./components/landing/features/FeaturesPage').then((m) => ({ default: m.FeaturesPage })),
+);
+const FaqPage = lazy(() =>
+  import('./faq/FaqPage').then((m) => ({ default: m.FaqPage })),
+);
+const PricingPage = lazy(() =>
+  import('./components/landing/pricing/PricingPage').then((m) => ({ default: m.PricingPage })),
+);
+const AdvantagesPage = lazy(() =>
+  import('./components/landing/advantages/AdvantagesPage').then((m) => ({
+    default: m.AdvantagesPage,
+  })),
+);
+const AuthRoutePage = lazy(() =>
+  import('./components/auth/AuthRoutePage').then((m) => ({ default: m.AuthRoutePage })),
+);
+const AcceptInvitationPage = lazy(() =>
+  import('./components/auth/AcceptInvitationPage').then((m) => ({
+    default: m.AcceptInvitationPage,
+  })),
+);
+const PrivacyPage = lazy(() =>
+  import('./components/public/PublicInfoPages').then((m) => ({ default: m.PrivacyPage })),
+);
+const TermsPage = lazy(() =>
+  import('./components/public/PublicInfoPages').then((m) => ({ default: m.TermsPage })),
+);
+const AuthNoticePage = lazy(() =>
+  import('./components/public/PublicInfoPages').then((m) => ({ default: m.AuthNoticePage })),
+);
+const PublicNotFoundPage = lazy(() =>
+  import('./components/public/PublicInfoPages').then((m) => ({
+    default: m.PublicNotFoundPage,
+  })),
+);
 
 export const App: React.FC = () => {
   const location = useBrowserLocation();
@@ -534,7 +570,7 @@ export const App: React.FC = () => {
           {/* Banner fail-safe hanya di mode 'failsafe-demo' (AUTH_ENABLED=true
               tanpa Supabase valid). Di mode 'open'/'real-login' tidak tampil. */}
           {AUTH_MODE === 'failsafe-demo' && <AuthFailsafeBanner />}
-          {content}
+          <Suspense fallback={<BootScreen message="Memuat halaman…" />}>{content}</Suspense>
           <OnboardingTour open={tourOpen || tourPending} onClose={handleTourClose} />
           <OnboardingOrchestrator />
           <FeatureTutorialPlayer />
