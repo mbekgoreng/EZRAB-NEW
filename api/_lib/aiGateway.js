@@ -38,6 +38,7 @@ import {
   ipHash,
   sha256hex,
 } from './security.js';
+import { runChatFastWithMetering } from './chatFastMetering.js';
 
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta';
 const ZYROUTER_BASE = 'https://api.zyrouter.com/v1';
@@ -293,12 +294,13 @@ async function callGemini(key, model, message, systemPrompt, temperature, maxTok
     // Blokir keamanan Gemini bisa tiba sebagai HTTP 200 tanpa kandidat
     // (promptFeedback.blockReason / finishReason SAFETY) — itu penolakan
     // kebijakan, BUKAN respons kosong; jangan difailover (F1).
-    const geminiBlock =
-      (d.promptFeedback && d.promptFeedback.blockReason) ||
-      (((d.candidates || [])[0] || {}).finishReason === 'SAFETY' ? 'SAFETY' : null);
-    if (!text && geminiBlock) return { ok: false, provider: 'gemini', model, ms: Date.now() - started, error: 'Gemini content blocked: ' + geminiBlock, errorClass: 'policy' };
-    if (!text) return { ok: false, provider: 'gemini', model, ms: Date.now() - started, error: 'Empty', errorClass: 'empty' };
-    // Usage meter (Phase 3): tangkap usageMetadata resmi Gemini.
+    // Usage meter (Phase 3) + SPRINT 5 (X4): usageMetadata resmi Gemini
+    // dibangun SEBELUM cek blokir/kosong dan DIBAWA juga oleh return
+    // GAGAL — provider bisa mengembalikan usage terukur pada respons
+    // yang diblokir/kosong (token prompt tetap terpakai). Tanpa ini,
+    // bukti "terukur" vs "tidak ada" tak bisa dibedakan di hilir
+    // (aturan REQUIRES_REVIEW Unified Credits). Kegagalan HTTP/jaringan
+    // tetap tanpa usage (provider tak mengirim apa pun yang terukur).
     const um = d.usageMetadata || {};
     const usage = {
       inputTokens: typeof um.promptTokenCount === 'number' ? um.promptTokenCount : null,
@@ -307,6 +309,11 @@ async function callGemini(key, model, message, systemPrompt, temperature, maxTok
       cachedTokens: typeof um.cachedContentTokenCount === 'number' ? um.cachedContentTokenCount : null,
       source: 'gemini_usageMetadata',
     };
+    const geminiBlock =
+      (d.promptFeedback && d.promptFeedback.blockReason) ||
+      (((d.candidates || [])[0] || {}).finishReason === 'SAFETY' ? 'SAFETY' : null);
+    if (!text && geminiBlock) return { ok: false, provider: 'gemini', model, ms: Date.now() - started, error: 'Gemini content blocked: ' + geminiBlock, errorClass: 'policy', usage };
+    if (!text) return { ok: false, provider: 'gemini', model, ms: Date.now() - started, error: 'Empty', errorClass: 'empty', usage };
     return { ok: true, content: text, model, provider: 'gemini', ms: Date.now() - started, usage };
   } catch (e) {
     clearTimeout(t);
@@ -377,9 +384,10 @@ async function callOAI(base, key, model, provider, message, systemPrompt, temper
     if (provider === 'atmorouter') text = stripAtmoPromoFooter(text);
     // Blok reasoning MiniMax (Crown) tidak boleh sampai ke pengguna.
     if (provider === 'crown') text = stripThinkBlocks(text);
-    if (!text) return { ok: false, provider, model, ms: Date.now() - started, error: 'Empty', errorClass: 'empty' };
-    // Usage meter (Phase 3): tangkap usage resmi OpenAI-compatible.
-    // Hindari double-counting: cached/reasoning sudah termasuk dalam total provider.
+    // Usage meter (Phase 3) + SPRINT 5 (X4): usage resmi OpenAI-compatible
+    // dibangun SEBELUM cek kosong dan DIBAWA juga oleh return 'Empty' —
+    // respons kosong bisa tetap membawa usage terukur. Hindari
+    // double-counting: cached/reasoning sudah termasuk dalam total provider.
     const u = sseUsage || d.usage || {};
     const details = u.prompt_tokens_details || {};
     const compDetails = u.completion_tokens_details || {};
@@ -391,6 +399,7 @@ async function callOAI(base, key, model, provider, message, systemPrompt, temper
       reasoningTokens: typeof compDetails.reasoning_tokens === 'number' ? compDetails.reasoning_tokens : null,
       source: 'oai_usage',
     };
+    if (!text) return { ok: false, provider, model, ms: Date.now() - started, error: 'Empty', errorClass: 'empty', usage };
     return { ok: true, content: text, model, provider, ms: Date.now() - started, usage };
   } catch (e) {
     clearTimeout(t);
@@ -544,7 +553,11 @@ export async function executeAI(o, onAttempt) {
     providerAttempts.set(a.provider, tries + 1);
     const r = await a.run();
     if (!r.ok) providerFailures.set(a.provider, fails + 1);
-    outcomes.push({ provider: r.provider, model: r.model, ok: r.ok, ms: r.ms, error: r.ok ? undefined : r.error, errorClass: r.ok ? undefined : r.errorClass, usage: r.ok ? r.usage || null : null });
+    // SPRINT 5 (X4): usage attempt GAGAL dipertahankan bila provider
+    // benar-benar mengembalikannya (respons kosong/diblokir yang tetap
+    // membawa usage terukur); tetap null bila provider tak mengirim
+    // apa pun — tak dikenal TIDAK PERNAH diubah menjadi nol/diagregasi.
+    outcomes.push({ provider: r.provider, model: r.model, ok: r.ok, ms: r.ms, error: r.ok ? undefined : r.error, errorClass: r.ok ? undefined : r.errorClass, usage: r.usage || null });
     if (!r.ok && (r.errorClass === 'policy' || r.errorClass === 'client_error')) {
       // Penolakan kebijakan / permintaan tak valid: JANGAN failover dengan
       // prompt yang sama (F1). Berhenti sekarang dengan kode yang jelas.
@@ -616,7 +629,87 @@ function idempotencyStore(scopeKey, body) {
 /**
  * Full request pipeline for AI endpoints. opts:
  *  - productIdToMode(pid): map product id -> 'fast' | 'advanced' (for tools/execute compat)
+ *  - meteringContext: konteks akun billing terautentikasi untuk adapter
+ *    Chat FAST (objek, atau fungsi ({auth,input,mode,requestId}) -> objek);
+ *    hanya dibaca saat gerbang AI_METERING_ENABLED menyala.
+ *  - meteringBoundary: hasil createAiMeteringBoundary(...) untuk adapter
+ *    Chat FAST; hanya dibaca saat gerbang menyala.
  */
+/**
+ * SPRINT 5 (X1/X4) — Bukti usage client-safe untuk batas HTTP.
+ *
+ * Skema attempt client-safe (SATU-SATUNYA bentuk riwayat attempt yang
+ * boleh keluar dari gateway): { provider, model, ok, ms, errorClass?,
+ * usage, usageStatus }. Teks error mentah TIDAK PERNAH disertakan —
+ * pesan error provider bisa memuat URL/param internal; errorClass
+ * adalah klasifikasi yang aman dan cukup untuk korelasi.
+ *
+ * `usageStatus` membedakan keadaan bukti (X4):
+ * - 'measured'      : usage terukur sah (≥1 field token numerik, tak semua nol).
+ * - 'measured_zero' : usage terukur yang SEMUA field numeriknya nol persis
+ *                     (nol terukur ≠ tidak ada usage).
+ * - 'missing'       : provider tidak mengembalikan usage sama sekali.
+ * - 'malformed'     : provider mengembalikan sesuatu yang diklaim usage
+ *                     tetapi tak satu pun field-nya angka sah — ditolak
+ *                     menjadi null agar tak pernah menjadi jumlah token
+ *                     karangan.
+ * Field token yang hilang di dalam usage yang sah tetap null (tidak
+ * diubah menjadi 0). Nilai negatif/NaN/tak-hingga diperlakukan malformed
+ * per field → null.
+ */
+const USAGE_TOKEN_FIELDS = ['inputTokens', 'outputTokens', 'totalTokens', 'cachedTokens', 'reasoningTokens'];
+
+export function sanitizeUsageForClient(raw) {
+  if (raw == null) return { usage: null, usageStatus: 'missing' };
+  if (typeof raw !== 'object' || Array.isArray(raw)) return { usage: null, usageStatus: 'malformed' };
+  const usage = {};
+  let numericCount = 0;
+  let allZero = true;
+  let sawInvalid = false;
+  for (const f of USAGE_TOKEN_FIELDS) {
+    const v = raw[f];
+    if (v === undefined) continue;
+    if (typeof v === 'number' && Number.isFinite(v) && v >= 0) {
+      usage[f] = v;
+      numericCount++;
+      if (v !== 0) allZero = false;
+    } else if (v === null) {
+      usage[f] = null;
+    } else {
+      // Tipe salah / negatif / NaN: bukti rusak — jangan diselundupkan
+      // menjadi angka, dan tandai keseluruhan sebagai malformed bila
+      // tak ada angka sah lain yang menambalnya.
+      usage[f] = null;
+      sawInvalid = true;
+    }
+  }
+  if (numericCount === 0) {
+    if (sawInvalid) return { usage: null, usageStatus: 'malformed' };
+    // Tak satu pun angka terukur: baik blok usage absen maupun kerangka
+    // usage yang semua field-nya null (konstruksi gateway sendiri saat
+    // provider tak melaporkan angka) — keduanya "missing" dengan usage
+    // null, agar klien menerima satu bentuk kanonik untuk tanpa-bukti.
+    return { usage: null, usageStatus: 'missing' };
+  }
+  usage.source = typeof raw.source === 'string' ? raw.source : null;
+  return { usage, usageStatus: allZero ? 'measured_zero' : 'measured' };
+}
+
+export function sanitizeAttemptForClient(a) {
+  if (!a || typeof a !== 'object') return null;
+  const { usage, usageStatus } = sanitizeUsageForClient(a.usage ?? null);
+  const out = {
+    provider: typeof a.provider === 'string' ? a.provider : null,
+    model: typeof a.model === 'string' ? a.model : null,
+    ok: a.ok === true,
+    ms: typeof a.ms === 'number' && Number.isFinite(a.ms) ? a.ms : null,
+    usage,
+    usageStatus,
+  };
+  if (!out.ok) out.errorClass = typeof a.errorClass === 'string' ? a.errorClass : 'unknown';
+  return out;
+}
+
 export async function handleAiRequest(req, res, opts = {}) {
   const started = Date.now();
   const requestId = newRequestId();
@@ -749,7 +842,65 @@ export async function handleAiRequest(req, res, opts = {}) {
 
   // 6. Execute with structured, secret-free logging
   const attemptLog = [];
-  const r = await executeAI({ ...input, mode, requestId }, (a) => attemptLog.push(a));
+  // 6a. Sprint 4 Fase 3 — integrasi Chat FAST ke batas metering bersama
+  //     lewat adapter berlingkup sempit (api/_lib/chatFastMetering.js).
+  //     Titik sisip di handleAiRequest (BUKAN di executeAI): konteks
+  //     terautentikasi (auth), mode hasil pemetaan server, productId
+  //     tervalidasi, dan kunci idempotensi klien hanya tersedia di sini;
+  //     executeAI sendiri tidak berubah. Adapter menurunkan identitas
+  //     'chat-ai/fast' secara server-side; operasi lain (advanced,
+  //     vision, DED, Dokumen, generik) lolos tanpa metering. Saat gerbang
+  //     AI_METERING_ENABLED mati (default), adapter mem-bypass metering
+  //     sepenuhnya — executeAI dipanggil persis seperti sebelumnya, nol
+  //     panggilan billing/ledger. Saat gerbang menyala, konteks akun
+  //     billing + boundary WAJIB disuntikkan server lewat
+  //     opts.meteringContext / opts.meteringBoundary; tanpa keduanya
+  //     adapter fail-closed dan provider tidak dijalankan (konteks tidak
+  //     pernah difabrikasi dari auth.user.id — lihat chatFastMetering.js).
+  const meteringContext =
+    typeof opts.meteringContext === 'function'
+      ? opts.meteringContext({ auth, input, mode, requestId })
+      : opts.meteringContext || null;
+  const chatFastOutcome = await runChatFastWithMetering({
+    mode,
+    productId: input.productId,
+    env: process.env,
+    context: meteringContext,
+    boundary: opts.meteringBoundary || null,
+    idempotencyKey: clientIdemKey ? 'chatfast-' + clientIdemKey : 'chatfast-' + requestId,
+    requestId,
+    message: input.message,
+    systemPrompt: input.systemPrompt,
+    clientPayload: body,
+    execute: () => executeAI({ ...input, mode, requestId }, (a) => attemptLog.push(a)),
+  });
+  if (chatFastOutcome.metered && !chatFastOutcome.result) {
+    // Gerbang menyala dan operasi Chat FAST ditolak SEBELUM provider
+    // berjalan (atau replay terminal tanpa hasil baru): jawab dengan
+    // kode metering yang bisa dibedakan — jangan runtuhkan ke 502.
+    const meteringError = chatFastOutcome.error || chatFastOutcome.status || 'AI_METERING_ERROR';
+    logAiUsage({
+      requestId,
+      event: 'chat_fast_metering_rejected',
+      error: meteringError,
+      status: chatFastOutcome.status || null,
+      ipHash: ipHash(req),
+      userId: auth.user ? auth.user.id : null,
+    });
+    const status =
+      meteringError === 'AUTH_CONTEXT_REQUIRED' ? 401
+      : meteringError === 'CLIENT_BILLING_FIELDS_FORBIDDEN' ? 400
+      : meteringError === 'INSUFFICIENT_BALANCE' || meteringError === 'ESTIMATE_EXCEEDS_APPROVED_MAX' ? 402
+      : chatFastOutcome.duplicate ? 409
+      : 403;
+    return res.status(status).json({
+      success: false,
+      error: 'Penagihan AI belum dapat diproses untuk permintaan ini.',
+      errorCode: meteringError,
+      requestId,
+    });
+  }
+  const r = chatFastOutcome.result;
   const durationMs = Date.now() - started;
 
   // 6b. Usage meter (Phase 3) — best-effort, tidak pernah menggagalkan request.
@@ -811,6 +962,14 @@ export async function handleAiRequest(req, res, opts = {}) {
   }
 
   if (r.ok) {
+    // SPRINT 5 (X1): bukti yang SUDAH dihitung gateway kini MELEWATI
+    // batas HTTP secara aditif — `usage` adalah usage attempt FINAL
+    // (yang melayani), `attempts` adalah riwayat failover lengkap
+    // dalam skema client-safe di atas (usage attempt gagal yang
+    // terukur tetap terlihat per attempt, TIDAK diagregasi ke usage
+    // final). Klien lama yang tak membaca field baru tak terpengaruh.
+    // Usage yang hilang tetap null + usageStatus 'missing' — bukan nol.
+    const finalUsage = sanitizeUsageForClient(r.usage ?? null);
     const responseBody = {
       success: true,
       content: r.content,
@@ -819,6 +978,9 @@ export async function handleAiRequest(req, res, opts = {}) {
       mode,
       requestId,
       durationMs,
+      usage: finalUsage.usage,
+      usageStatus: finalUsage.usageStatus,
+      attempts: (Array.isArray(r.attempts) ? r.attempts : []).map(sanitizeAttemptForClient).filter(Boolean),
     };
     if (idemScope) idempotencyStore(idemScope, responseBody);
     return res.status(200).json(responseBody);

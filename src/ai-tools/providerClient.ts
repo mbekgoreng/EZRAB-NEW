@@ -32,6 +32,108 @@ export interface AiToolsRequest {
   idempotencyKey?: string;
 }
 
+/**
+ * SPRINT 5 (X2) — Usage provider ternormalisasi (SATU tipe bersama
+ * untuk jalur browser & Node). Semua field token `number | null`:
+ * null = provider/gateway TIDAK melaporkan angka itu. Nilai absen
+ * TIDAK PERNAH dinormalisasi menjadi 0 — nol hanya sah bila provider
+ * benar-benar mengukur nol (`usageStatus: 'measured_zero'`).
+ * - cachedTokens: token input yang dilayani dari cache (sudah termasuk
+ *   di dalam inputTokens menurut pelaporan provider — jangan dijumlah
+ *   ulang).
+ * - reasoningTokens: token penalaran (sudah termasuk di dalam
+ *   outputTokens menurut pelaporan provider).
+ */
+export interface AiToolsUsage {
+  inputTokens: number | null;
+  outputTokens: number | null;
+  totalTokens: number | null;
+  cachedTokens: number | null;
+  reasoningTokens: number | null;
+  /** Tag sumber pelaporan ('gemini_usageMetadata' | 'oai_usage' | 'node_adapter'); bukan identitas penagih. */
+  source: string | null;
+}
+
+/** Keadaan bukti usage — selaras skema client-safe gateway (X1/X4). */
+export type AiToolsUsageStatus = 'measured' | 'measured_zero' | 'missing' | 'malformed';
+
+/** Satu attempt dalam riwayat failover gateway, bentuk client-safe (X1). */
+export interface AiToolsAttemptEvidence {
+  provider: string | null;
+  model: string | null;
+  ok: boolean;
+  ms: number | null;
+  /** Hanya pada attempt gagal; teks error mentah tidak pernah diteruskan. */
+  errorClass?: string;
+  usage: AiToolsUsage | null;
+  usageStatus: AiToolsUsageStatus;
+}
+
+const usageTokenOrNull = (v: unknown): number | null =>
+  typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : null;
+
+const USAGE_TOKEN_FIELDS = ['inputTokens', 'outputTokens', 'totalTokens', 'cachedTokens', 'reasoningTokens'] as const;
+
+/**
+ * Normalisasi usage mentah (respons gateway / adapter Node) menjadi
+ * AiToolsUsage + status. Aturan kejujuran: absen → null; rusak →
+ * 'malformed' + usage null (tidak pernah menjadi jumlah karangan);
+ * semua angka nol persis → 'measured_zero' (berbeda dari 'missing').
+ * Pure + exported untuk tes.
+ */
+export function normalizeAiUsage(
+  raw: unknown,
+  reportedStatus?: unknown,
+): { usage: AiToolsUsage | null; usageStatus: AiToolsUsageStatus } {
+  if (raw == null) return { usage: null, usageStatus: 'missing' };
+  if (typeof raw !== 'object' || Array.isArray(raw)) return { usage: null, usageStatus: 'malformed' };
+  const rec = raw as Record<string, unknown>;
+  const usage = {} as AiToolsUsage;
+  let numericCount = 0;
+  let allZero = true;
+  let sawInvalid = false;
+  for (const f of USAGE_TOKEN_FIELDS) {
+    const v = rec[f];
+    if (v === undefined) { usage[f] = null; continue; }
+    const n = usageTokenOrNull(v);
+    if (n !== null) { usage[f] = n; numericCount++; if (n !== 0) allZero = false; }
+    else if (v === null) usage[f] = null;
+    else { usage[f] = null; sawInvalid = true; }
+  }
+  usage.source = typeof rec.source === 'string' ? rec.source : null;
+  if (numericCount === 0) {
+    if (sawInvalid) return { usage: null, usageStatus: 'malformed' };
+    // Tanpa satu pun angka terukur → bentuk kanonik tanpa-bukti:
+    // usage null + 'missing' (kerangka semua-null tidak diteruskan).
+    return { usage: null, usageStatus: 'missing' };
+  }
+  const computed: AiToolsUsageStatus = allZero ? 'measured_zero' : 'measured';
+  // Status yang dilaporkan gateway (X1) dihormati bila sah & konsisten
+  // dengan angka yang lolos normalisasi; selain itu hasil hitung lokal.
+  const reported = typeof reportedStatus === 'string' ? reportedStatus : '';
+  if ((reported === 'measured' || reported === 'measured_zero') && reported !== computed) {
+    return { usage, usageStatus: computed };
+  }
+  return { usage, usageStatus: computed };
+}
+
+/** Normalisasi satu entri attempts[] gateway (X1) — defensif, tanpa fabrikasi. */
+export function normalizeAiAttempt(raw: unknown): AiToolsAttemptEvidence | null {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  const rec = raw as Record<string, unknown>;
+  const { usage, usageStatus } = normalizeAiUsage(rec.usage ?? null, rec.usageStatus);
+  const out: AiToolsAttemptEvidence = {
+    provider: typeof rec.provider === 'string' ? rec.provider : null,
+    model: typeof rec.model === 'string' ? rec.model : null,
+    ok: rec.ok === true,
+    ms: usageTokenOrNull(rec.ms),
+    usage,
+    usageStatus,
+  };
+  if (!out.ok) out.errorClass = typeof rec.errorClass === 'string' ? rec.errorClass : 'unknown';
+  return out;
+}
+
 export interface AiToolsSuccess<T = unknown> {
   success: true;
   content: string;
@@ -42,6 +144,13 @@ export interface AiToolsSuccess<T = unknown> {
    * null bila sumber tidak menyediakannya — pemanggil wajib jujur soal itu. */
   provider?: string | null;
   model?: string | null;
+  /** SPRINT 5 (X2): usage attempt FINAL yang melayani, ternormalisasi.
+   * null = tidak dilaporkan (lihat usageStatus); JANGAN dianggap nol. */
+  usage?: AiToolsUsage | null;
+  /** SPRINT 5 (X2): keadaan bukti usage (measured/measured_zero/missing/malformed). */
+  usageStatus?: AiToolsUsageStatus;
+  /** SPRINT 5 (X2): riwayat attempt gateway client-safe (X1); jalur Node: undefined (adapter tak mengekspos riwayat). */
+  attempts?: AiToolsAttemptEvidence[];
 }
 
 export type AiToolsResult<T = unknown> = AiToolsSuccess<T> | AIToolsStructuredError;
@@ -232,10 +341,32 @@ export class AiToolsProviderClient {
           }
         }
 
+        // SPRINT 5 (X2): adapter Node melaporkan identitas AKTUAL lewat
+        // `providerId`/`modelId` — nama field lama (`provider`/`model`)
+        // tidak pernah ada di hasil adapter, sehingga fallback target
+        // (identitas yang DIMINTA) selalu menang dan menyamar sebagai
+        // aktual. Sekarang providerId/modelId dibaca lebih dulu;
+        // fallback target hanya bila adapter tak melaporkan apa pun.
+        // Token adapter (promptTokens/…) kini diteruskan ternormalisasi;
+        // cachedTokens tidak dilaporkan adapter → null (bukan 0).
+        const rawResult = result as any;
+        const hasNodeTokens =
+          rawResult?.promptTokens != null || rawResult?.completionTokens != null ||
+          rawResult?.totalTokens != null || rawResult?.reasoningTokens != null;
+        const nodeUsage = normalizeAiUsage(hasNodeTokens ? {
+          inputTokens: rawResult.promptTokens ?? null,
+          outputTokens: rawResult.completionTokens ?? null,
+          totalTokens: rawResult.totalTokens ?? null,
+          cachedTokens: null,
+          reasoningTokens: rawResult.reasoningTokens ?? null,
+          source: 'node_adapter',
+        } : null);
         return {
           success: true, content: result.content, structured, requestId: '',
-          provider: (result as any)?.provider ?? target.provider,
-          model: (result as any)?.model ?? target.model,
+          provider: typeof rawResult?.providerId === 'string' ? rawResult.providerId : (rawResult?.provider ?? target.provider),
+          model: typeof rawResult?.modelId === 'string' ? rawResult.modelId : (rawResult?.model ?? target.model),
+          usage: nodeUsage.usage,
+          usageStatus: nodeUsage.usageStatus,
         };
       } catch (err: any) {
         const code = this.classifyError(err);
@@ -316,10 +447,19 @@ export class AiToolsProviderClient {
           return aiToolsError('MALFORMED_JSON', `${stage}:parse`, 'Respons model tidak valid sebagai JSON.', { retryable: true });
         }
       }
+      // SPRINT 5 (X2): bukti usage X1 dari gateway diteruskan
+      // ternormalisasi. Respons gateway LAMA (tanpa field usage) tetap
+      // diterima: usage null + 'missing' — kompatibilitas mundur utuh.
+      const gwUsage = normalizeAiUsage(json.usage ?? null, json.usageStatus);
       return {
         success: true, content: json.content, structured, requestId: json.requestId,
         provider: typeof json.provider === 'string' ? json.provider : null,
         model: typeof json.model === 'string' ? json.model : null,
+        usage: gwUsage.usage,
+        usageStatus: gwUsage.usageStatus,
+        attempts: Array.isArray(json.attempts)
+          ? json.attempts.map(normalizeAiAttempt).filter((a: AiToolsAttemptEvidence | null): a is AiToolsAttemptEvidence => a !== null)
+          : undefined,
       };
     } catch (err: any) {
       const code = err?.name === 'AbortError' ? 'MODEL_TIMEOUT' : this.classifyError(err);
