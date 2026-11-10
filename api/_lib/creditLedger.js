@@ -102,11 +102,15 @@ function isAccountId(v) {
 }
 
 function isNonNegativeInt(v) {
-  return Number.isInteger(v) && v >= 0;
+  // Phase 2 hardening: SAFE integer wajib — Number.isInteger menerima
+  // nilai ≥ 2^53 yang tidak bisa direpresentasikan persis, sehingga
+  // penjumlahan saldo kehilangan presisi secara diam-diam (terbukti:
+  // grant 2^53 lalu +1 menghasilkan total yang salah tanpa error).
+  return Number.isSafeInteger(v) && v >= 0;
 }
 
 function isPositiveInt(v) {
-  return Number.isInteger(v) && v > 0;
+  return Number.isSafeInteger(v) && v > 0;
 }
 
 /**
@@ -147,10 +151,21 @@ export function createCreditLedger(store, options) {
   const db = store || createMemoryLedgerStore();
   const tariffs = (options && options.tariffs) || defaultTariffRegistry;
 
-  function idemGet(accountId, key) {
+  // Sprint 3 (Tugas 1): replay idempotensi kini membandingkan payload
+  // finansial. Kunci yang sama + payload yang SAMA → replay tercatat
+  // (duplicate:true). Kunci yang sama + payload finansial BERBEDA →
+  // konflik eksplisit IDEMPOTENCY_CONFLICT (ok:false) — bukan lagi
+  // diam-diam mengembalikan hasil lama seolah permintaan baru sah.
+  // `matches` (opsional) menerima hasil tercatat dan mengembalikan true
+  // bila payload permintaan saat ini setara secara finansial.
+  function idemGet(accountId, key, matches) {
     if (key == null) return null;
     const hit = db.idempotency.get(`${accountId}::${key}`);
-    return hit ? { ...clone(hit), duplicate: true } : null;
+    if (!hit) return null;
+    if (typeof matches === 'function' && !matches(clone(hit))) {
+      return { ok: false, error: 'IDEMPOTENCY_CONFLICT', conflict: true, idempotencyConflict: true };
+    }
+    return { ...clone(hit), duplicate: true };
   }
 
   function idemPut(accountId, key, result) {
@@ -215,7 +230,16 @@ export function createCreditLedger(store, options) {
     const now = args.now == null ? Date.now() : args.now;
     if (!isAccountId(args.accountId)) return { ok: false, error: 'INVALID_ACCOUNT' };
     if (!isPositiveInt(args.amount)) return { ok: false, error: 'INVALID_AMOUNT' };
-    const replay = idemGet(args.accountId, args.idempotencyKey);
+    const replay = idemGet(args.accountId, args.idempotencyKey, (hit) => {
+      const b = hit && hit.batch;
+      if (!b) return false;
+      const periodOk = JSON.stringify(b.periodRef || null) === JSON.stringify(extra.periodRef || null);
+      return b.type === type
+        && b.grantedAmount === args.amount
+        && (b.expiresAt ?? null) === (extra.expiresAt ?? null)
+        && (b.sourceRef ?? null) === (extra.sourceRef ?? null)
+        && periodOk;
+    });
     if (replay) return replay;
     const batch = makeBatch({
       accountId: args.accountId,
@@ -260,6 +284,12 @@ export function createCreditLedger(store, options) {
 
   /** Grant bonus promosi: batch sendiri, sumber campaign + atribusi pemberi tercatat. */
   function grantBonus(args) {
+    // Phase 2 hardening: expiresAt bonus datang dari pemanggil — tolak
+    // nilai malformed (NaN/string/negatif) sebelum batch tercipta, karena
+    // expiresAt rusak akan terbaca sebagai "tidak pernah kedaluwarsa".
+    if (args.expiresAt != null && !(Number.isSafeInteger(args.expiresAt) && args.expiresAt >= 0)) {
+      return { ok: false, error: 'INVALID_EXPIRY' };
+    }
     return grantCommon(
       { ...args, actor: args.grantedBy || args.actor },
       'BONUS',
@@ -342,7 +372,10 @@ export function createCreditLedger(store, options) {
     const now = args.now == null ? Date.now() : args.now;
     if (!isAccountId(args.accountId)) return { ok: false, error: 'INVALID_ACCOUNT' };
     if (!isNonNegativeInt(args.estimatedCredits)) return { ok: false, error: 'INVALID_AMOUNT' };
-    const replay = idemGet(args.accountId, args.idempotencyKey);
+    const replay = idemGet(args.accountId, args.idempotencyKey, (hit) => {
+      const o = hit && hit.operation;
+      return !!o && o.estimatedCredits === args.estimatedCredits && (o.feature ?? null) === (args.feature || null);
+    });
     if (replay) return replay;
     const op = {
       id: nextId(db, 'op'),
@@ -378,7 +411,10 @@ export function createCreditLedger(store, options) {
   function reserve(operationId, args) {
     const now = args.now == null ? Date.now() : args.now;
     if (!isAccountId(args.accountId)) return { ok: false, error: 'INVALID_ACCOUNT' };
-    const replay = idemGet(args.accountId, args.idempotencyKey);
+    const replay = idemGet(args.accountId, args.idempotencyKey, (hit) => {
+      const o = hit && hit.operation;
+      return !!o && o.id === operationId;
+    });
     if (replay) return replay;
     const found = ownedOperation(operationId, args.accountId);
     if (found.error) return { ok: false, error: found.error };
@@ -508,7 +544,10 @@ export function createCreditLedger(store, options) {
   function settle(operationId, args) {
     const now = args.now == null ? Date.now() : args.now;
     if (!isAccountId(args.accountId)) return { ok: false, error: 'INVALID_ACCOUNT' };
-    const replay = idemGet(args.accountId, args.idempotencyKey);
+    const replay = idemGet(args.accountId, args.idempotencyKey, (hit) => {
+      const o = hit && hit.operation;
+      return !!o && o.id === operationId && o.actualCredits === args.actualCredits;
+    });
     if (replay) return replay;
     const found = ownedOperation(operationId, args.accountId);
     if (found.error) return { ok: false, error: found.error };
@@ -605,7 +644,10 @@ export function createCreditLedger(store, options) {
   function release(operationId, args) {
     const now = args.now == null ? Date.now() : args.now;
     if (!isAccountId(args.accountId)) return { ok: false, error: 'INVALID_ACCOUNT' };
-    const replay = idemGet(args.accountId, args.idempotencyKey);
+    const replay = idemGet(args.accountId, args.idempotencyKey, (hit) => {
+      const o = hit && hit.operation;
+      return !!o && o.id === operationId;
+    });
     if (replay) return replay;
     const found = ownedOperation(operationId, args.accountId);
     if (found.error) return { ok: false, error: found.error };
@@ -692,7 +734,10 @@ export function createCreditLedger(store, options) {
   function resolveReview(operationId, args) {
     const now = args.now == null ? Date.now() : args.now;
     if (!isAccountId(args.accountId)) return { ok: false, error: 'INVALID_ACCOUNT' };
-    const replay = idemGet(args.accountId, args.idempotencyKey);
+    const replay = idemGet(args.accountId, args.idempotencyKey, (hit) => {
+      const o = hit && hit.operation;
+      return !!o && o.id === operationId && hit.status === args.decision;
+    });
     if (replay) return replay;
     const found = ownedOperation(operationId, args.accountId);
     if (found.error) return { ok: false, error: found.error };
@@ -734,6 +779,12 @@ export function createCreditLedger(store, options) {
       if (available < overage) {
         return { ok: false, error: 'INSUFFICIENT_BALANCE', review: clone(review), operation: clone(op) };
       }
+      // Sprint 3: snapshot pra-mutasi untuk assertion pasca-loop (padanan
+      // F-10 di SQL). Bila debit overage ternyata tidak terpenuhi penuh,
+      // seluruh cabang APPROVED dipulihkan — nol persetujuan parsial.
+      const batchSnapshot = new Map();
+      for (const b of accountBatches(args.accountId)) batchSnapshot.set(b.id, clone(b));
+      const ledgerLengthBefore = db.ledger.length;
       // 1) Konsumsi seluruh alokasi reservasi (actual > reserved, jadi
       //    tidak ada sisa reservasi yang dilepas).
       for (const alloc of op.allocations) {
@@ -767,6 +818,15 @@ export function createCreditLedger(store, options) {
           actor: reviewerId, reason: 'review_approved_overage', now,
         });
         need -= take;
+      }
+      if (need !== 0) {
+        // Assertion gagal: pulihkan batch + jurnal ke keadaan pra-mutasi.
+        for (const [id, snap] of batchSnapshot.entries()) {
+          const cur = db.batches.get(id);
+          if (cur) Object.assign(cur, clone(snap));
+        }
+        db.ledger.length = ledgerLengthBefore;
+        return { ok: false, error: 'INSUFFICIENT_BALANCE', review: clone(review), operation: clone(op) };
       }
       op.status = 'SETTLED';
       op.settledCredits = op.actualCredits;
@@ -824,7 +884,10 @@ export function createCreditLedger(store, options) {
     const now = args.now == null ? Date.now() : args.now;
     if (!isAccountId(args.accountId)) return { ok: false, error: 'INVALID_ACCOUNT' };
     const key = args.idempotencyKey || `free-once-correction:${args.batchId}`;
-    const replay = idemGet(args.accountId, key);
+    const replay = idemGet(args.accountId, key, (hit) => {
+      const b = hit && hit.batch;
+      return !!b && b.id === args.batchId;
+    });
     if (replay) return replay;
     const batch = db.batches.get(args.batchId);
     if (!batch) return { ok: false, error: 'NOT_FOUND' };

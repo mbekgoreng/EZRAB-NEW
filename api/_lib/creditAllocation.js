@@ -75,6 +75,11 @@ export function isBatchEligible(batch, now) {
     return false;
   }
   if (!Number.isInteger(batch.remainingAmount) || batch.remainingAmount <= 0) return false;
+  // Phase 2 hardening: expiresAt malformed (NaN/string/Infinity dari data
+  // eksternal) tidak boleh lolos sebagai "tidak pernah kedaluwarsa" —
+  // perbandingan NaN selalu false sehingga batch rusak akan abadi.
+  // Fail closed: batch dengan expiresAt tak valid dianggap tidak layak.
+  if (batch.expiresAt != null && !Number.isFinite(batch.expiresAt)) return false;
   if (batch.expiresAt != null && batch.expiresAt <= now) return false;
   return true;
 }
