@@ -197,6 +197,14 @@ export interface FullAiServiceOptions {
   mode: 'FAST' | 'ADVANCED';
   /** Kebijakan harga (default 'FULL_AI' bila tidak diisi — perilaku lama). */
   policy?: DedEstimationPolicy;
+  /**
+   * Cakupan halaman pilihan pengguna (USULAN BARU ter-ACC owner
+   * 2026-11-10): nomor halaman 1-based yang BOLEH dianalisis, diterapkan
+   * di lapisan ekstraksi sesudah parse — sebelum teks dokumen dibangun.
+   * Absen/kosong = semua halaman (perilaku lama persis). Pembatasan
+   * dicatat terbuka di warnings keluaran.
+   */
+  pageScope?: number[];
   projectName?: string;
   onProgress?: (stage: string, percent: number, message: string) => void;
 }

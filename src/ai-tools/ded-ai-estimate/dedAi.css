@@ -236,3 +236,187 @@
   .dedai-settings { overflow: visible; }
   .dedai-settings-scroll { overflow: visible; }
 }
+
+/* ===== REDESIGN PREMIUM ONE-SCREEN (ter-ACC owner 2026-11-10 21:21,
+   mockup D6): bahasa visual spec redesign — navy #142B4A, biru elektrik
+   #2563EB, latar #F4F7FC, surface putih, border #E5EAF2, sekunder
+   #64748B, sukses #0D9488, warning #F59E0B. Terlingkup layar INPUT saja
+   (.dedai-input): kartu lebih ramping & tegas, dropzone kompak refined,
+   baris konfigurasi analisis (cfgrow), strip pratinjau, panel kanan
+   rapat, CTA dominan dengan keadaan disabled khas spec. Struktur &
+   handler tidak berubah — murni presentasi di atas pola app shell. ===== */
+.dedai.dedai-input {
+  --dd-navy: #142B4A;
+  --dd-blue: #2563EB;
+  --dd-border: #E5EAF2;
+  --dd-muted: #64748B;
+  --dd-ok: #0D9488;
+  --dd-warn: #F59E0B;
+  color: var(--dd-navy);
+}
+.dedai-input .dedai-card {
+  border: 1px solid var(--dd-border);
+  border-radius: 14px;
+  box-shadow: 0 2px 10px rgba(20, 43, 74, 0.045);
+  padding: 16px 18px;
+  margin-bottom: 14px;
+}
+.dedai-input .dedai-card h2 { font-size: 14.5px; color: var(--dd-navy); }
+.dedai-input .dedai-card h2 .ico {
+  width: 27px; height: 27px; border-radius: 8px;
+  background: #EEF4FF; color: var(--dd-blue);
+}
+.dedai-input .dedai-card .sub { font-size: 12px; color: var(--dd-muted); margin-bottom: 10px; }
+/* Dropzone refined & kompak (tidak lagi tumbuh 48px): satu instruksi jelas. */
+.dedai-input-main .dedai-drop {
+  border: 1.6px dashed #B9CFF5;
+  background: #F8FBFF;
+  border-radius: 12px;
+  padding: 16px 14px;
+}
+.dedai-input-main .dedai-drop:hover, .dedai-input-main .dedai-drop.over { border-color: var(--dd-blue); background: #EEF4FF; }
+.dedai-drop .big-ico { width: 32px; height: 32px; border-radius: 9px; background: #EEF4FF; color: var(--dd-blue); margin-bottom: 5px; }
+.dedai-drop p { font-size: 13.5px; }
+.dedai-drop p b, .dedai-drop .fmt { color: var(--dd-blue); }
+.dedai-drop .fmt { background: #EEF4FF; margin-top: 6px; padding: 2px 10px; }
+/* Baris berkas: halaman nyata + lencana kesiapan teks + ganti/hapus. */
+.dedai-input .dedai-file { background: #fff; border: 1px solid var(--dd-border); border-radius: 11px; padding: 8px 11px; }
+.dedai-input .dedai-file .f-ico { width: 32px; height: 32px; border-radius: 8px; background: #FEF2F2; color: #DC2626; }
+.dedai-file .f-tag {
+  font-size: 9.5px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase;
+  padding: 3px 8px; border-radius: 999px; flex-shrink: 0; white-space: nowrap;
+}
+.dedai-file .f-tag.ok { background: #ECFDF9; color: #0B6E63; }
+.dedai-file .f-tag.warn { background: #FFF7E6; color: #B45309; border: 1px solid #FDE3B0; }
+.dedai-file .f-act {
+  border: 1px solid var(--dd-border); background: #fff; color: var(--dd-muted);
+  width: 28px; height: 28px; border-radius: 8px; cursor: pointer; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.dedai-file .f-act:hover { border-color: var(--dd-blue); color: var(--dd-blue); }
+.dedai-input .dedai-file .f-del { width: 28px; height: 28px; border-radius: 8px; background: #fff; border: 1px solid var(--dd-border); color: var(--dd-muted); }
+.dedai-input .dedai-file .f-del:hover { border-color: #DC2626; color: #DC2626; background: #FEF2F2; }
+.dedai-input .dedai-notice { border-radius: 10px; padding: 8px 11px; font-size: 11.5px; line-height: 1.45; margin-top: 10px; }
+/* Kartu Konfigurasi Analisis: baris label + segmen + petunjuk. */
+.dedai-cfgcard { padding: 8px 16px !important; }
+.dedai-cfgrow {
+  display: flex; align-items: center; gap: 12px;
+  padding: 7px 0; border-bottom: 1px solid #EEF2F8;
+}
+.dedai-cfgrow.last { border-bottom: none; }
+.dedai-cfgrow.is-dim { opacity: 0.55; }
+.dedai-cfglbl {
+  width: 112px; flex: none; font-size: 11px; font-weight: 800;
+  letter-spacing: 0.05em; text-transform: uppercase; color: var(--dd-muted);
+}
+.dedai-cfgseg { flex: none; }
+.dedai-cfghint { font-size: 11px; color: #94A3B8; margin-left: auto; text-align: right; max-width: 250px; line-height: 1.35; }
+.dedai-cfgtext { font-size: 12px; color: #475569; line-height: 1.45; }
+.dedai-cfgcheck { display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 600; color: #33475E; cursor: pointer; }
+.dedai-cfgcheck input { accent-color: var(--dd-blue); width: 15px; height: 15px; }
+.dedai-input .dedai-seg { background: #F1F5F9; border-radius: 9px; padding: 3px; gap: 4px; }
+.dedai-input .dedai-seg button { border-radius: 7px; padding: 7px 10px; font-size: 12.5px; }
+.dedai-input .dedai-seg button.active { background: #fff; color: var(--dd-blue); box-shadow: 0 1px 5px rgba(20, 43, 74, 0.12); }
+.dedai-input .dedai-seg button:disabled { opacity: 0.55; cursor: not-allowed; }
+/* Pemilih rentang halaman (cakupan dipilih). */
+.dedai-scopepick { display: flex; align-items: center; gap: 10px; margin-left: auto; flex: 1; justify-content: flex-end; min-width: 0; }
+.dedai-scopepick input {
+  width: 150px; border: 1.5px solid var(--dd-border); border-radius: 9px;
+  padding: 7px 11px; font-size: 12.5px; font-family: inherit; color: var(--dd-navy);
+  background: #fff; outline: none; flex: none;
+}
+.dedai-scopepick input:focus { border-color: var(--dd-blue); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12); }
+.dedai-scopepick .dedai-cfghint { margin-left: 0; }
+.dedai-scopeerr { font-size: 11px; color: #DC2626; font-weight: 600; line-height: 1.35; text-align: right; }
+/* Strip pratinjau hasil (keadaan nyata). */
+.dedai-preview { margin-bottom: 14px; }
+.dedai-preview-head {
+  font-size: 11px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase;
+  color: var(--dd-muted); margin-bottom: 7px;
+}
+.dedai-preview-head span { font-weight: 600; text-transform: none; letter-spacing: 0; }
+.dedai-preview-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.dedai-preview .pv {
+  background: #fff; border: 1px solid var(--dd-border); border-radius: 12px;
+  padding: 9px 12px; box-shadow: 0 2px 8px rgba(20, 43, 74, 0.04);
+}
+.dedai-preview .pv .k { font-size: 10.5px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--dd-muted); }
+.dedai-preview .pv .v { font-size: 15px; font-weight: 800; color: var(--dd-navy); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dedai-preview .pv .v.empty { color: #C3CEDD; }
+.dedai-preview .pv .s { font-size: 10.5px; color: #94A3B8; }
+/* Panel kanan rapat + preferensi output. */
+.dedai-input .dedai-settings { border: 1px solid var(--dd-border); border-radius: 14px; box-shadow: 0 2px 10px rgba(20, 43, 74, 0.045); }
+.dedai-input .dedai-settings-head h2 { color: var(--dd-navy); }
+.dedai-input .dedai-settings-head h2 .ico { background: #EEF4FF; color: var(--dd-blue); border-radius: 8px; }
+.dedai-input .dedai-set-sec h3 { color: var(--dd-muted); }
+.dedai-input .dedai-chip { border: 1.5px solid var(--dd-border); padding: 4px 10px; font-size: 11.5px; }
+.dedai-input .dedai-chip.active { border-color: var(--dd-blue); background: #EEF4FF; color: var(--dd-blue); }
+.dedai-prefs { display: flex; flex-direction: column; gap: 5px; }
+.dedai-prefs label { display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 600; color: #33475E; cursor: pointer; }
+.dedai-prefs input { accent-color: var(--dd-blue); width: 15px; height: 15px; flex: none; }
+/* CTA: dominan biru elektrik; disabled = biru pudar khas spec (tetap terlihat jelas). */
+.dedai-settings-foot .dedai-btn.primary { background: var(--dd-blue); box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3); }
+.dedai-settings-foot .dedai-btn.primary:disabled {
+  background: #C7D6F5; color: #F4F8FF; opacity: 1; box-shadow: none; cursor: not-allowed;
+}
+.dedai-cta-sub { font-size: 12px; font-weight: 700; }
+/* Panel lebih lebar di layar lebar (mockup D6: 404px). */
+@media (min-width: 1281px) {
+  .dedai-input-layout { grid-template-columns: minmax(0, 1fr) 404px; }
+}
+/* Tablet & HP (D7): bertumpuk — panel di bawah input (pola lama ≤1100px
+   dipertahankan); strip pratinjau 2 kolom dan baris konfigurasi membungkus. */
+@media (max-width: 700px) {
+  .dedai-preview-grid { grid-template-columns: 1fr 1fr; }
+  .dedai-cfgrow { flex-wrap: wrap; }
+  .dedai-cfglbl { width: 100%; }
+  .dedai-cfghint { margin-left: 0; text-align: left; max-width: none; }
+  .dedai-scopepick { margin-left: 0; justify-content: flex-start; }
+}
+
+/* ===== Layar PENDEK (owner 2026-11-10 19:15): keadaan awal muat satu
+   viewport lewat KOMPRESI — tidak ada fungsi/seksi yang dibuang.
+   Dropzone ringkas (ikon + teks cukup), kartu & panel dipadatkan,
+   paragraf penjelasan diperkecil, kotak peringatan kuning & bilah
+   catatan biru versi kompak (isi & makna utuh), baris konfigurasi
+   analisis & strip pratinjau redesign ikut dipadatkan.
+   Tombol Mulai Analisis tetap menempel di kaki panel (pinned) dan
+   selalu terlihat. Blok kembar ada di feature-page-shell.css. ===== */
+@media (max-height: 880px) {
+  .fp-shell .dedai-card { padding: 14px 16px; margin-bottom: 12px; }
+  .fp-shell .dedai-card h2 { font-size: 15px; }
+  .fp-shell .dedai-card h2 .ico { width: 28px; height: 28px; }
+  .fp-shell .dedai-card .sub { margin-bottom: 8px; font-size: 12px; line-height: 1.45; }
+  .dedai-input-main .dedai-drop { padding: 16px; }
+  .dedai-drop .big-ico { width: 38px; height: 38px; margin-bottom: 6px; }
+  .dedai-drop p { font-size: 13.5px; }
+  .dedai-drop .fmt { margin-top: 6px; padding: 2px 10px; }
+  .dedai-notice { padding: 8px 10px; font-size: 11.5px; line-height: 1.45; margin-top: 8px; gap: 8px; }
+  .dedai-settings-scroll { padding: 12px 14px 2px; }
+  .dedai-settings-head h2 { font-size: 15px; }
+  .dedai-settings-head h2 .ico { width: 28px; height: 28px; }
+  .dedai-settings-head p { display: none; }
+  .dedai-set-sec { padding: 9px 0 10px; }
+  .dedai-set-sec h3 { margin-bottom: 7px; }
+  .dedai-set-sub { font-size: 11.5px; line-height: 1.45; margin-bottom: 8px; }
+  .dedai-set-sec .hint { font-size: 11px; line-height: 1.4; margin-top: 5px; }
+  .dedai-seg button { padding: 7px 6px; font-size: 12.5px; }
+  .dedai-chips { gap: 6px; }
+  .dedai-chip { padding: 6px 11px; font-size: 12.5px; }
+  .dedai-field { margin-bottom: 10px; }
+  .dedai-field label { margin-bottom: 5px; }
+  .dedai-field input[type=text], .dedai-field textarea, .dedai-field select { padding: 8px 11px; }
+  .dedai-field textarea { min-height: 52px; }
+  .dedai-file { padding: 8px 10px; }
+  .dedai-draft { padding: 7px 10px; }
+  .dedai-settings-foot { padding: 10px 14px 12px; }
+  .dedai-settings-meta { margin-bottom: 6px; font-size: 11.5px; }
+  .dedai-settings-foot .dedai-btn { padding: 11px 16px; font-size: 14px; }
+  .dedai-settings-hint { margin-top: 6px; font-size: 11.5px; line-height: 1.4; }
+  /* Baris konfigurasi & strip pratinjau ikut dipadatkan (redesign D6). */
+  .dedai-cfgrow { padding: 4px 0; }
+  .dedai-cfgcard { padding: 4px 14px !important; }
+  .dedai-preview { margin-bottom: 10px; }
+  .dedai-preview .pv { padding: 7px 11px; }
+  .dedai-prefs label { font-size: 12px; }
+}

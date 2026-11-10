@@ -107,6 +107,81 @@ export function classifyPageTitle(text: string): string {
   return 'HALAMAN';
 }
 
+/**
+ * Cakupan halaman pilihan pengguna (USULAN BARU ter-ACC owner 2026-11-10,
+ * mockup D6): spesifikasi rentang bebas seperti "1-5, 8, 12" diterjemahkan
+ * menjadi nomor halaman 1-based yang sah untuk dokumen sejumlah
+ * `pageCount`. Token tidak sah / di luar rentang dibuang dan dilaporkan
+ * lewat `invalid` agar UI bisa memperingatkan — tidak pernah ditebak.
+ * Spesifikasi kosong menghasilkan daftar kosong (pemanggil membedakannya
+ * dari "semua halaman" lewat mode cakupan, bukan lewat fungsi ini).
+ */
+export function resolvePageScope(
+  spec: string,
+  pageCount: number,
+): { pages: number[]; invalid: string[] } {
+  const pages = new Set<number>();
+  const invalid: string[] = [];
+  const total = Number.isFinite(pageCount) && pageCount > 0 ? Math.floor(pageCount) : 0;
+  for (const rawToken of spec.split(',')) {
+    const token = rawToken.trim();
+    if (!token) continue;
+    const range = token.match(/^(\d+)\s*-\s*(\d+)$/);
+    if (range) {
+      const a = Number(range[1]);
+      const b = Number(range[2]);
+      if (a < 1 || b < a || total === 0 || a > total) { invalid.push(token); continue; }
+      for (let p = a; p <= Math.min(b, total); p += 1) pages.add(p);
+      continue;
+    }
+    if (/^\d+$/.test(token)) {
+      const n = Number(token);
+      if (n < 1 || total === 0 || n > total) { invalid.push(token); continue; }
+      pages.add(n);
+      continue;
+    }
+    invalid.push(token);
+  }
+  return { pages: [...pages].sort((x, y) => x - y), invalid };
+}
+
+/**
+ * Probe ringan dokumen PDF untuk layar input: jumlah halaman + jumlah
+ * karakter teks pada maksimal 3 halaman pertama (sampel keterbacaan).
+ * TIDAK menjalankan parse penuh — hanya membuka dokumen lewat pdfjs dan
+ * membaca konten teks sampel. Mengembalikan null bila dokumen tidak bisa
+ * dibuka sama sekali (UI menampilkan keadaan "belum terprobe", bukan
+ * mengarang angka).
+ */
+export async function probeDedPdf(
+  buffer: ArrayBuffer | Uint8Array | Buffer | string,
+): Promise<{ pageCount: number; sampleTextChars: number } | null> {
+  try {
+    const bytes = toUint8Array(buffer);
+    if (bytes.length === 0) return null;
+    const pdfjs = await loadPdfjs();
+    const doc = await (pdfjs.getDocument({ data: bytes, useSystemFonts: true }) as any).promise;
+    const pageCount = doc.numPages as number;
+    let sampleTextChars = 0;
+    const sample = Math.min(3, pageCount);
+    for (let p = 1; p <= sample; p += 1) {
+      try {
+        const page = await (doc.getPage(p) as any);
+        const tc = await page.getTextContent();
+        sampleTextChars += tc.items
+          .map((it: any) => it.str || '')
+          .join(' ')
+          .replace(/\s+/g, ' ')
+          .trim().length;
+      } catch { /* halaman sampel gagal dibaca — chars tetap 0 untuknya */ }
+    }
+    try { await doc.destroy?.(); } catch { /* abaikan */ }
+    return { pageCount, sampleTextChars };
+  } catch {
+    return null;
+  }
+}
+
 export async function parseDedPdf(
   buffer: ArrayBuffer | Uint8Array | Buffer | string,
   fileName: string,

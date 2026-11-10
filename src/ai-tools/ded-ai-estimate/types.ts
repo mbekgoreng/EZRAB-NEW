@@ -45,6 +45,33 @@ export type DedAiMode = 'FAST' | 'DETAIL';
  */
 export type DedEstimationPolicy = 'FULL_AI' | 'DATABASE';
 
+/**
+ * Preferensi Output (USULAN BARU ter-ACC owner 2026-11-10, mockup D6):
+ * mengatur bagian mana yang tampil pada tampilan hasil & keluaran Excel
+ * pipeline standar. Murni presentasi/keluaran — tidak mengubah item,
+ * harga, total, atau perilaku finalisasi. Peringatan kebijakan harga dan
+ * lencana status item TIDAK pernah disembunyikan oleh preferensi ini.
+ * Default mengikuti mockup ter-ACC: tiga pertama aktif, laporan item tak
+ * teresolusi nonaktif.
+ */
+export interface DedOutputPrefs {
+  /** Tabel detail item RAB pada hasil (+ baris item pada ekspor Excel). */
+  detailRab: boolean;
+  /** Ringkasan volume pekerjaan per satuan (hero hasil + kolom Excel). */
+  volume: boolean;
+  /** Rincian analisis harga & asal-usul harga per item (+ kolom provenans Excel). */
+  priceAnalysis: boolean;
+  /** Seksi/lembar laporan khusus item tak teresolusi (diblokir & tanpa harga). */
+  unresolvedReport: boolean;
+}
+
+export const DEFAULT_DED_OUTPUT_PREFS: DedOutputPrefs = {
+  detailRab: true,
+  volume: true,
+  priceAnalysis: true,
+  unresolvedReport: false,
+};
+
 export type DedAiQuantitySource =
   | 'DED_EXPLICIT'   // Nilai dan satuan benar-benar dinyatakan di dokumen sumber dan terverifikasi
   | 'DED_GEOMETRIC'  // Dihitung dari dimensi/geometri yang ditemukan di DED
@@ -762,6 +789,15 @@ export interface DedAiServiceOptions {
    * ketiadaan dicatat eksplisit pada DedWorkflowUsage.complexity = null.
    */
   complexity?: 'simple' | 'medium' | 'complex';
+  /**
+   * Cakupan halaman pilihan pengguna (USULAN BARU ter-ACC owner
+   * 2026-11-10): nomor halaman 1-based yang BOLEH dianalisis. Diterapkan
+   * di lapisan ekstraksi — hasil parse difilter ke halaman ini sebelum
+   * seleksi/pass/prompt dibangun. Absen/kosong = semua halaman (perilaku
+   * lama, persis). Nomor halaman pada jejak & bukti tetap nomor asli
+   * dokumen; pembatasan dicatat terbuka di analysisTrace.warnings.
+   */
+  pageScope?: number[];
   projectName?: string;
   onProgress?: (event: DedAiProgressEvent) => void;
   /** HARDENING Tahap 6: konteks identitas untuk metadata usage (opsional; diteruskan apa adanya ke DedWorkflowUsage). */

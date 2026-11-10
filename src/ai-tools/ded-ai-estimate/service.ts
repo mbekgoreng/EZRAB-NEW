@@ -887,9 +887,34 @@ export class DedAiEstimateService {
       };
     }
 
+    // === Cakupan halaman pilihan pengguna (USULAN BARU ter-ACC owner
+    // 2026-11-10) === Diterapkan di lapisan ekstraksi: hasil parse DIFILTER
+    // ke halaman terpilih sebelum seleksi/pass/prompt dibangun — logika AI,
+    // harga, dan kalkulator tidak berubah. Absen/kosong = semua halaman
+    // (perilaku lama persis). Nomor halaman tetap nomor asli dokumen;
+    // pembatasan dicatat terbuka di analysisTrace.warnings, dan pageCount
+    // keluaran tetap jumlah halaman dokumen yang sebenarnya.
+    const documentTotalPages = parsed.pages.length;
+    let pageScopeApplied: number[] | null = null;
+    if (options.pageScope && options.pageScope.length > 0) {
+      const wanted = new Set(options.pageScope);
+      const scopedPages = parsed.pages.filter((p) => wanted.has(p.page));
+      if (scopedPages.length === 0) {
+        return {
+          success: false,
+          errorCode: 'NO_DATA',
+          stage: 'parse',
+          message: 'Tidak ada halaman terpilih yang dapat dibaca dari PDF — periksa kembali pilihan halaman Anda.',
+          retryable: false,
+        };
+      }
+      pageScopeApplied = scopedPages.map((p) => p.page);
+      parsed.pages = scopedPages;
+    }
+
     notify('PICK_MODE', mode === 'FAST' ? 'Mode Cepat' : 'Mode Detail', 30, `Menyiapkan model ${mode === 'FAST' ? 'EZRAB Fast Engine' : 'EZRAB Deep Engine'}…`, {
       pagesRead: parsed.pages.length,
-      totalPages: parsed.pages.length,
+      totalPages: documentTotalPages,
     });
 
     // === Seleksi halaman TANPA batas buang (owner 2026-10-27) ===
@@ -1010,7 +1035,7 @@ export class DedAiEstimateService {
         passPlan.length > 1
           ? `Mengirim kelompok halaman ${gi + 1}/${passPlan.length} ke model AI…`
           : 'Mengirim prompt ke model AI untuk analisis…',
-        { pagesRead: parsed.pages.length, totalPages: parsed.pages.length });
+        { pagesRead: parsed.pages.length, totalPages: documentTotalPages });
 
       // Sprint 3.1: eksekusi + interpretasi + retry MALFORMED terbatas
       // dirangkum executeDedPassAttempt (item hanya dari outcome final).
@@ -1121,7 +1146,7 @@ export class DedAiEstimateService {
       policy,
       projectName: options.projectName || 'Proyek DED AI',
       fileName: options.fileName,
-      pageCount: parsed.pages.length,
+      pageCount: documentTotalPages,
       items: finalItems,
     });
     if (completionReport) output.completionReport = completionReport;
@@ -1140,6 +1165,11 @@ export class DedAiEstimateService {
       projectType,
     });
     const traceWarnings: string[] = [];
+    if (pageScopeApplied) {
+      traceWarnings.push(
+        `Cakupan halaman dibatasi pilihan pengguna: ${pageScopeApplied.length} dari ${documentTotalPages} halaman dianalisis (halaman ${formatPageRanges(pageScopeApplied)}). Halaman lain TIDAK dianalisis.`
+      );
+    }
     if (budgetSkippedCount > 0) {
       traceWarnings.push(
         `${budgetSkippedCount} halaman tidak dikirim ke model karena melebihi anggaran request per pass — lihat analysisTrace.pages berstatus SKIPPED_BUDGET.`
@@ -1188,7 +1218,7 @@ export class DedAiEstimateService {
       );
     }
     output.analysisTrace = {
-      totalPages: parsed.pages.length,
+      totalPages: documentTotalPages,
       selectedPageCount: pageSummaries.length,
       skippedPageCount: budgetSkippedCount,
 

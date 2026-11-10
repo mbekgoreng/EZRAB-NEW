@@ -9,14 +9,25 @@
  * menempel di bawah panel. Judul + stepper kini disediakan shell halaman
  * (FeaturePageShell) — blok head/steps internal lama dihapus agar tidak
  * ganda. Semua state, handler, dan gerbang kredit TIDAK berubah.
+ *
+ * REDESIGN PREMIUM ONE-SCREEN (ter-ACC owner 2026-11-10 21:21, mockup D6):
+ * kolom tengah kini memuat kartu Konfigurasi Analisis kompak (Mode AI,
+ * Kompleksitas — hanya aktif pada DETAIL, Cakupan dokumen, mesin Full AI,
+ * ringkasan ekstraksi) dan strip Pratinjau Hasil dari keadaan nyata;
+ * panel kanan memuat Preferensi Output. Tiga elemen USULAN BARU yang ikut
+ * ter-ACC dibangun sebagai fitur nyata: cakupan halaman (diteruskan ke
+ * service dan diterapkan di lapisan ekstraksi), preferensi output
+ * (mengatur tampilan hasil & ekspor), strip pratinjau (angka nyata sesi
+ * ini — "—" sebelum ada). Logika AI/harga/kredit tidak berubah.
  */
 import React, { useEffect, useRef, useState } from 'react';
 import {
   UploadCloud, FileText, X, Zap, Brain, FolderOpen, PlusCircle,
-  ArrowRight, AlertTriangle, History, Trash2, RotateCcw, Scale, Lock,
-  Settings2,
+  AlertTriangle, History, Trash2, RotateCcw, Scale, Lock,
+  Settings2, Sparkles,
 } from 'lucide-react';
-import { DedAiMode, DedAiProjectType , DedEstimationPolicy } from './types';
+import { DedAiMode, DedAiProjectType, DedEstimationPolicy, DedOutputPrefs, DEFAULT_DED_OUTPUT_PREFS } from './types';
+import { probeDedPdf, resolvePageScope } from './parser';
 import { useI18n } from '../../i18n/I18nContext';
 import './dedAi.css';
 import '../../ai-credits/ai-credits.css';
@@ -30,6 +41,13 @@ export interface DedAiFileItem {
   file: File;
   id: string;
   error?: string;
+}
+
+/** Ringkasan lari analisis terakhir pada sesi view ini (untuk strip pratinjau). */
+export interface DedLastRunSummary {
+  items: number;
+  volumesIdentified: number;
+  pricesNeedVerify: number;
 }
 
 export interface DedAiSession {
@@ -53,6 +71,12 @@ export interface DedAiSession {
    * simulasi tidak berubah.
    */
   complexity?: 'simple' | 'medium' | 'complex';
+  /** Cakupan dokumen (USULAN BARU ter-ACC 2026-11-10): semua halaman atau rentang pilihan. */
+  pageScope?: { kind: 'ALL' } | { kind: 'SELECTED'; spec: string };
+  /** Jumlah halaman nyata per berkas (id berkas → halaman), hasil probe di layar input. */
+  filePageCounts?: Record<string, number>;
+  /** Preferensi output (USULAN BARU ter-ACC 2026-11-10) — mengatur hasil & ekspor. */
+  outputPrefs?: DedOutputPrefs;
 }
 
 interface Props {
@@ -62,6 +86,8 @@ interface Props {
   onStart: (session: DedAiSession) => void;
   onLoadDraft: (id: string) => void;
   onDeleteDraft: (id: string) => void;
+  /** Ringkasan analisis terakhir sesi ini untuk strip pratinjau (null = belum ada). */
+  lastRunSummary?: DedLastRunSummary | null;
 }
 
 const MAX_FILE_MB = 25;
@@ -78,8 +104,11 @@ const COMPLEXITY_OPTIONS = [
 ];
 const complexityLabel = (v: string) => COMPLEXITY_OPTIONS.find((o) => o.value === v)?.label ?? v;
 
+/** Hasil probe per berkas: jumlah halaman + karakter teks sampel (keterbacaan). */
+type FileProbe = { pages: number; textChars: number } | 'error';
+
 export const DedAiInputView: React.FC<Props> = ({
-  initialSession, projects, drafts, onStart, onLoadDraft, onDeleteDraft,
+  initialSession, projects, drafts, onStart, onLoadDraft, onDeleteDraft, lastRunSummary,
 }) => {
   const { t } = useI18n();
   const PROJECT_TYPE_OPTIONS: Array<{ value: DedAiProjectType; label: string }> = [
@@ -123,6 +152,47 @@ export const DedAiInputView: React.FC<Props> = ({
   const dedEstimate = tariffFor(`ded-ai/${complexity}`);
   const dedTarget = dedEstimate.target ?? dedEstimate.max;
 
+  // --- Cakupan dokumen & preferensi output (USULAN BARU ter-ACC) ---
+  const [scopeKind, setScopeKind] = useState<'ALL' | 'SELECTED'>(
+    initialSession.pageScope?.kind === 'SELECTED' ? 'SELECTED' : 'ALL',
+  );
+  const [scopeSpec, setScopeSpec] = useState(
+    initialSession.pageScope?.kind === 'SELECTED' ? initialSession.pageScope.spec : '',
+  );
+  const [outputPrefs, setOutputPrefs] = useState<DedOutputPrefs>(
+    initialSession.outputPrefs ?? DEFAULT_DED_OUTPUT_PREFS,
+  );
+
+  // --- Probe berkas: jumlah halaman + keterbacaan teks (keadaan nyata) ---
+  const [fileProbe, setFileProbe] = useState<Record<string, FileProbe>>({});
+  const probingRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    for (const item of files) {
+      if (item.error || probingRef.current.has(item.id) || fileProbe[item.id] !== undefined) continue;
+      probingRef.current.add(item.id);
+      const target = item;
+      target.file.arrayBuffer()
+        .then((buf) => probeDedPdf(buf))
+        .then((res) => {
+          setFileProbe((prev) => ({
+            ...prev,
+            [target.id]: res ? { pages: res.pageCount, textChars: res.sampleTextChars } : 'error',
+          }));
+        })
+        .catch(() => setFileProbe((prev) => ({ ...prev, [target.id]: 'error' as FileProbe })));
+    }
+    // fileProbe sengaja bukan dependensi: probe berjalan sekali per id berkas.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [files]);
+
+  const validateFile = (f: File): string | undefined => {
+    const isPdf = f.type === 'application/pdf' || /\.pdf$/i.test(f.name);
+    if (!isPdf) return t('ai.ded.input.err_pdf_only');
+    if (f.size > MAX_FILE_MB * 1048576) return `${t('ai.ded.input.err_size_a')} ${MAX_FILE_MB} ${t('ai.ded.input.err_size_b')}`;
+    if (f.size === 0) return t('ai.ded.input.err_empty');
+    return undefined;
+  };
+
   const addFiles = (list: FileList | File[]) => {
     const arr = Array.from(list);
     setFiles((prev) => {
@@ -130,19 +200,49 @@ export const DedAiInputView: React.FC<Props> = ({
       for (const f of arr) {
         if (next.length >= MAX_FILES) break;
         const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-        let error: string | undefined;
-        const isPdf = f.type === 'application/pdf' || /\.pdf$/i.test(f.name);
-        if (!isPdf) error = t('ai.ded.input.err_pdf_only');
-        else if (f.size > MAX_FILE_MB * 1048576) error = `${t('ai.ded.input.err_size_a')} ${MAX_FILE_MB} ${t('ai.ded.input.err_size_b')}`;
-        else if (f.size === 0) error = t('ai.ded.input.err_empty');
-        next.push({ file: f, id, error });
+        next.push({ file: f, id, error: validateFile(f) });
       }
       return next;
     });
   };
 
+  // Ganti berkas pada barisnya (fungsi yang sama seperti mockup D6:
+  // aksi ganti + hapus per berkas) — validasi identik dengan tambah berkas.
+  const replaceRef = useRef<HTMLInputElement>(null);
+  const replaceIdRef = useRef<string | null>(null);
+  const startReplace = (id: string) => { replaceIdRef.current = id; replaceRef.current?.click(); };
+  const onReplacePicked = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    e.target.value = '';
+    const id = replaceIdRef.current;
+    replaceIdRef.current = null;
+    if (!f || !id) return;
+    setFiles((prev) => prev.map((x) => (x.id === id ? { file: f, id, error: validateFile(f) } : x)));
+    setFileProbe((prev) => { const next = { ...prev }; delete next[id]; return next; });
+    probingRef.current.delete(id);
+  };
+
   const validFiles = files.filter((f) => !f.error);
-  const canStart = validFiles.length > 0;
+
+  // Validasi cakupan halaman: sintaks rentang + (bila jumlah halaman sudah
+  // terprobe) halaman terpilih harus ada di dalam dokumen.
+  const knownCounts = validFiles
+    .map((f) => fileProbe[f.id])
+    .filter((p): p is { pages: number; textChars: number } => !!p && p !== 'error')
+    .map((p) => p.pages);
+  const scopeError = (() => {
+    if (scopeKind !== 'SELECTED') return null;
+    if (!scopeSpec.trim()) return 'Isi rentang halaman dulu, mis. 1-5, 8, 12.';
+    const probe = resolvePageScope(scopeSpec, 100000);
+    if (probe.invalid.length > 0) return `Format tidak dikenal: ${probe.invalid.join(', ')}`;
+    if (probe.pages.length === 0) return 'Rentang halaman kosong.';
+    if (knownCounts.length > 0 && knownCounts.every((c) => resolvePageScope(scopeSpec, c).pages.length === 0)) {
+      return `Halaman terpilih di luar dokumen (dokumen terpanjang ${Math.max(...knownCounts)} halaman).`;
+    }
+    return null;
+  })();
+
+  const canStart = validFiles.length > 0 && !scopeError;
 
   const handleStart = () => {
     if (!canStart || !creditApproved || !dedAllowed) return;
@@ -163,6 +263,11 @@ export const DedAiInputView: React.FC<Props> = ({
       projectName.trim() ||
       (chosenProjectId ? projects.find((p) => p.id === chosenProjectId)?.name || '' : '') ||
       validFiles[0].file.name.replace(/\.pdf$/i, '');
+    const filePageCounts: Record<string, number> = {};
+    for (const f of validFiles) {
+      const p = fileProbe[f.id];
+      if (p && p !== 'error') filePageCounts[f.id] = p.pages;
+    }
     onStart({
       files: validFiles,
       description: description.trim(),
@@ -175,13 +280,29 @@ export const DedAiInputView: React.FC<Props> = ({
       creditEstimate: { category: complexityLabel(complexity), credits: dedTarget },
       // F-E2: sertakan nilai mentahnya juga (satu field aditif).
       complexity,
+      pageScope: scopeKind === 'SELECTED' ? { kind: 'SELECTED', spec: scopeSpec.trim() } : { kind: 'ALL' },
+      filePageCounts,
+      outputPrefs,
     });
   };
+
+  const complexityActive = COMPLEXITY_OPTIONS.find((o) => o.value === complexity);
+  const probedPagesTotal = validFiles.reduce((acc, f) => {
+    const p = fileProbe[f.id];
+    return acc + (p && p !== 'error' ? p.pages : 0);
+  }, 0);
+  const allFilesProbed = validFiles.length > 0 && validFiles.every((f) => fileProbe[f.id] !== undefined);
+  const stripDocs = validFiles.length === 0
+    ? { v: '—', s: 'belum ada berkas' }
+    : {
+        v: allFilesProbed ? `${validFiles.length} dokumen · ${probedPagesTotal} halaman` : `${validFiles.length} dokumen`,
+        s: allFilesProbed ? 'berkas terunggah sesi ini' : 'menghitung halaman…',
+      };
 
   return (
     <div className="dedai dedai-input">
       <div className="dedai-input-layout">
-        {/* ================= Kolom utama: upload + draft ================= */}
+        {/* ================= Kolom utama: upload + konfigurasi + pratinjau ================= */}
         <div className="dedai-input-main">
           {/* ---- Upload ---- */}
           <div className="dedai-card">
@@ -203,26 +324,159 @@ export const DedAiInputView: React.FC<Props> = ({
                 onChange={(e) => { if (e.target.files?.length) addFiles(e.target.files); e.target.value = ''; }}
               />
             </div>
+            <input
+              ref={replaceRef} type="file" accept=".pdf,application/pdf" hidden
+              onChange={onReplacePicked}
+            />
             {files.length > 0 && (
               <div className="dedai-files">
-                {files.map((f) => (
-                  <div key={f.id} className={`dedai-file ${f.error ? 'err' : ''}`}>
-                    <div className="f-ico"><FileText size={18} /></div>
-                    <div className="f-info">
-                      <div className="f-name">{f.file.name}</div>
-                      <div className="f-meta">{fmtSize(f.file.size)}</div>
-                      {f.error && <div className="f-err"><AlertTriangle size={13} /> {f.error}</div>}
+                {files.map((f) => {
+                  const probe = fileProbe[f.id];
+                  return (
+                    <div key={f.id} className={`dedai-file ${f.error ? 'err' : ''}`}>
+                      <div className="f-ico"><FileText size={18} /></div>
+                      <div className="f-info">
+                        <div className="f-name">{f.file.name}</div>
+                        <div className="f-meta">
+                          {probe && probe !== 'error' ? `${probe.pages} halaman · ` : ''}{fmtSize(f.file.size)}
+                        </div>
+                        {f.error && <div className="f-err"><AlertTriangle size={13} /> {f.error}</div>}
+                      </div>
+                      {!f.error && probe && probe !== 'error' && (
+                        probe.textChars > 0
+                          ? <span className="f-tag ok">Teks terbaca · siap</span>
+                          : <span className="f-tag warn">Tanpa teks — mungkin scan</span>
+                      )}
+                      {!f.error && probe === 'error' && <span className="f-tag warn">Tidak terprobe</span>}
+                      <button className="f-act" onClick={() => startReplace(f.id)} title="Ganti berkas">
+                        <RotateCcw size={14} />
+                      </button>
+                      <button className="f-del" onClick={() => setFiles((p) => p.filter((x) => x.id !== f.id))} title={t('ai.ded.input.del_file')}>
+                        <X size={15} />
+                      </button>
                     </div>
-                    <button className="f-del" onClick={() => setFiles((p) => p.filter((x) => x.id !== f.id))} title={t('ai.ded.input.del_file')}>
-                      <X size={15} />
-                    </button>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
             <div className="dedai-notice blue">
               <AlertTriangle size={15} style={{ flexShrink: 0, marginTop: 2 }} />
               <span>{t('ai.ded.input.notice_a')} <b>{t('ai.ded.input.notice_b')}</b> {t('ai.ded.input.notice_c')}</span>
+            </div>
+          </div>
+
+          {/* ---- Konfigurasi analisis kompak (mockup D6) ---- */}
+          <div className="dedai-card dedai-cfgcard">
+            <div className="dedai-cfgrow">
+              <span className="dedai-cfglbl">Mode AI</span>
+              <div className="dedai-seg dedai-cfgseg">
+                <button className={mode === 'FAST' ? 'active' : ''} onClick={() => setMode('FAST')}>
+                  <Zap size={14} /> {t('ai.ded.input.mode_fast')}
+                </button>
+                <button className={mode === 'DETAIL' ? 'active' : ''} onClick={() => setMode('DETAIL')}>
+                  <Brain size={14} /> {t('ai.ded.input.mode_deep')}
+                </button>
+              </div>
+              <span className="dedai-cfghint">{mode === 'FAST' ? t('ai.ded.input.hint_mode_fast') : t('ai.ded.input.hint_mode_detail')}</span>
+            </div>
+            <div className={`dedai-cfgrow ${mode !== 'DETAIL' ? 'is-dim' : ''}`}>
+              <span className="dedai-cfglbl">Kompleksitas</span>
+              <div className="dedai-seg dedai-cfgseg" role="group" aria-label="Kompleksitas analisis DETAIL">
+                {COMPLEXITY_OPTIONS.map((o) => (
+                  <button
+                    key={o.value}
+                    type="button"
+                    className={complexity === o.value ? 'active' : ''}
+                    disabled={mode !== 'DETAIL' || !dedAllowed}
+                    onClick={() => { setComplexity(o.value); setCreditApproved(false); }}
+                    aria-pressed={complexity === o.value}
+                    title={o.desc}
+                  >
+                    {o.label}
+                  </button>
+                ))}
+              </div>
+              <span className="dedai-cfghint">
+                {mode !== 'DETAIL'
+                  ? 'Aktif pada mode DETAIL — menentukan estimasi kredit.'
+                  : `${complexityActive?.desc ?? ''} · ±${(tariffFor(complexityActive?.tariffKey ?? 'ded-ai/simple').target ?? 0).toLocaleString('id-ID')} kredit`}
+              </span>
+            </div>
+            <div className="dedai-cfgrow">
+              <span className="dedai-cfglbl">Cakupan</span>
+              <div className="dedai-seg dedai-cfgseg">
+                <button className={scopeKind === 'ALL' ? 'active' : ''} onClick={() => setScopeKind('ALL')}>
+                  Semua halaman
+                </button>
+                <button className={scopeKind === 'SELECTED' ? 'active' : ''} onClick={() => setScopeKind('SELECTED')}>
+                  Halaman dipilih
+                </button>
+              </div>
+              {scopeKind === 'SELECTED' ? (
+                <span className="dedai-scopepick">
+                  <input
+                    type="text"
+                    value={scopeSpec}
+                    onChange={(e) => setScopeSpec(e.target.value)}
+                    placeholder="mis. 1-5, 8, 12"
+                    aria-label="Rentang halaman yang dianalisis"
+                  />
+                  {scopeError
+                    ? <span className="dedai-scopeerr">{scopeError}</span>
+                    : <span className="dedai-cfghint">Hanya halaman ini yang diteruskan ke analisis, per berkas.</span>}
+                </span>
+              ) : (
+                <span className="dedai-cfghint">Seluruh halaman setiap berkas dianalisis.</span>
+              )}
+            </div>
+            <div className="dedai-cfgrow">
+              <span className="dedai-cfglbl">Mesin</span>
+              <label className="dedai-cfgcheck">
+                <input
+                  type="checkbox"
+                  checked={fullAi}
+                  onChange={(e) => setFullAi(e.target.checked)}
+                />
+                <span>Full AI Estimate (eksperimental)</span>
+              </label>
+              <span className="dedai-cfghint">
+                {fullAi
+                  ? 'AI sebagai mesin estimasi utama. Hasil tidak di-recalculate pipeline lama.'
+                  : 'Gunakan pipeline standar.'}
+              </span>
+            </div>
+            <div className="dedai-cfgrow last">
+              <span className="dedai-cfglbl">Yang diekstrak</span>
+              <span className="dedai-cfgtext">AI mengekstrak item pekerjaan, dimensi &amp; volume, serta konteks material dari dokumen untuk disusun menjadi draf RAB.</span>
+            </div>
+          </div>
+
+          {/* ---- Strip pratinjau hasil: keadaan NYATA sesi ini ---- */}
+          <div className="dedai-preview">
+            <div className="dedai-preview-head">
+              Pratinjau hasil <span>— keadaan sesi ini; terisi dari berkas &amp; analisis terakhir, bukan contoh</span>
+            </div>
+            <div className="dedai-preview-grid">
+              <div className="pv">
+                <div className="k">Dokumen terdeteksi</div>
+                <div className={`v ${stripDocs.v === '—' ? 'empty' : ''}`}>{stripDocs.v}</div>
+                <div className="s">{stripDocs.s}</div>
+              </div>
+              <div className="pv">
+                <div className="k">Item pekerjaan</div>
+                <div className={`v ${lastRunSummary ? '' : 'empty'}`}>{lastRunSummary ? lastRunSummary.items.toLocaleString('id-ID') : '—'}</div>
+                <div className="s">{lastRunSummary ? 'dari analisis terakhir' : 'belum ada analisis'}</div>
+              </div>
+              <div className="pv">
+                <div className="k">Volume teridentifikasi</div>
+                <div className={`v ${lastRunSummary ? '' : 'empty'}`}>{lastRunSummary ? lastRunSummary.volumesIdentified.toLocaleString('id-ID') : '—'}</div>
+                <div className="s">{lastRunSummary ? 'item bervolume, analisis terakhir' : 'belum ada analisis'}</div>
+              </div>
+              <div className="pv">
+                <div className="k">Harga perlu verifikasi</div>
+                <div className={`v ${lastRunSummary ? '' : 'empty'}`}>{lastRunSummary ? lastRunSummary.pricesNeedVerify.toLocaleString('id-ID') : '—'}</div>
+                <div className="s">{lastRunSummary ? 'item analisis terakhir' : 'belum ada analisis'}</div>
+              </div>
             </div>
           </div>
 
@@ -264,7 +518,7 @@ export const DedAiInputView: React.FC<Props> = ({
             {/* ---- Kebijakan harga: Full AI vs Database (pilihan di awal) ---- */}
             <section className="dedai-set-sec">
               <h3><Scale size={14} /> Kebijakan Harga</h3>
-              <p className="dedai-set-sub">Pilih dulu bagaimana harga ditentukan. Pilihan ini dikunci ke hasil estimasi dan ditegakkan di service — bukan sekadar instruksi tampilan.</p>
+              <p className="dedai-set-sub">Pilih dulu bagaimana harga ditentukan — dikunci ke hasil estimasi dan ditegakkan di service, bukan sekadar tampilan.</p>
               <div className="dedai-seg" style={{ marginBottom: 12 }}>
                 <button className={policy === 'FULL_AI' ? 'active' : ''} onClick={() => setPolicy('FULL_AI')}>
                   Estimasi Full AI
@@ -276,12 +530,12 @@ export const DedAiInputView: React.FC<Props> = ({
               {policy === 'FULL_AI' ? (
                 <div className="dedai-notice">
                   <AlertTriangle size={15} style={{ flexShrink: 0, marginTop: 2 }} />
-                  <span><b>Estimasi awal dengan harga estimasi AI</b> saat harga terverifikasi tidak tersedia. Harga estimasi AI <b>bukan harga resmi AHSP</b> maupun penawaran pasar terverifikasi. Periksa dan validasi sebelum RAB dipakai untuk pengadaan, tender, atau kontrak.</span>
+                  <span><b>Estimasi awal dengan harga estimasi AI</b> saat harga terverifikasi tidak tersedia. Harga estimasi AI <b>bukan harga resmi AHSP</b> maupun penawaran pasar terverifikasi — validasi sebelum RAB dipakai untuk pengadaan, tender, atau kontrak.</span>
                 </div>
               ) : (
                 <div className="dedai-notice blue">
                   <AlertTriangle size={15} style={{ flexShrink: 0, marginTop: 2 }} />
-                  <span><b>Hanya harga terverifikasi / input pengguna.</b> Estimasi harga AI ditolak — item tanpa harga terverifikasi tetap <b>belum tersedia</b> dan total yang tampil bisa <b>parsial</b> sampai harga yang hilang dilengkapi. Catatan: mesin DED standar tidak mengkueri master AHSP; lengkapi harga lewat AHSP picker setelah hasil di-push ke spreadsheet.</span>
+                  <span><b>Hanya harga terverifikasi / input pengguna.</b> Estimasi harga AI ditolak — item tanpa harga terverifikasi tetap <b>belum tersedia</b> dan total bisa <b>parsial</b> sampai dilengkapi. Mesin DED standar tidak mengkueri master AHSP; lengkapi harga lewat AHSP picker setelah hasil di-push ke spreadsheet.</span>
                 </div>
               )}
             </section>
@@ -330,33 +584,43 @@ export const DedAiInputView: React.FC<Props> = ({
               </div>
             </section>
 
-            {/* ---- Mode AI ---- */}
+            {/* ---- Preferensi Output (USULAN BARU ter-ACC): mengatur hasil ---- */}
             <section className="dedai-set-sec">
-              <h3>{t('ai.ded.input.label_mode')}</h3>
-              <div className="dedai-seg">
-                <button className={mode === 'FAST' ? 'active' : ''} onClick={() => setMode('FAST')}>
-                  <Zap size={15} /> {t('ai.ded.input.mode_fast')}
-                </button>
-                <button className={mode === 'DETAIL' ? 'active' : ''} onClick={() => setMode('DETAIL')}>
-                  <Brain size={15} /> {t('ai.ded.input.mode_deep')}
-                </button>
-              </div>
-              <div className="hint">{mode === 'FAST' ? t('ai.ded.input.hint_mode_fast') : t('ai.ded.input.hint_mode_detail')}</div>
-              <div className="dedai-field" style={{ marginTop: 12 }}>
+              <h3>Preferensi Output</h3>
+              <p className="dedai-set-sub">Mengatur bagian yang tampil pada hasil &amp; ekspor Excel. Peringatan harga dan status item tetap selalu tampil.</p>
+              <div className="dedai-prefs">
                 <label>
                   <input
                     type="checkbox"
-                    checked={fullAi}
-                    onChange={(e) => setFullAi(e.target.checked)}
-                    style={{ marginRight: 8 }}
+                    checked={outputPrefs.detailRab}
+                    onChange={(e) => setOutputPrefs((p) => ({ ...p, detailRab: e.target.checked }))}
                   />
-                  Full AI Estimate (eksperimental)
+                  <span>Detail RAB</span>
                 </label>
-                <div className="hint">
-                  {fullAi
-                    ? 'AI sebagai mesin estimasi utama. Hasil tidak di-recalculate pipeline lama.'
-                    : 'Gunakan pipeline standar.'}
-                </div>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={outputPrefs.volume}
+                    onChange={(e) => setOutputPrefs((p) => ({ ...p, volume: e.target.checked }))}
+                  />
+                  <span>Volume pekerjaan</span>
+                </label>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={outputPrefs.priceAnalysis}
+                    onChange={(e) => setOutputPrefs((p) => ({ ...p, priceAnalysis: e.target.checked }))}
+                  />
+                  <span>Analisis harga &amp; asal-usul harga</span>
+                </label>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={outputPrefs.unresolvedReport}
+                    onChange={(e) => setOutputPrefs((p) => ({ ...p, unresolvedReport: e.target.checked }))}
+                  />
+                  <span>Laporan item tak teresolusi</span>
+                </label>
               </div>
             </section>
 
@@ -364,8 +628,7 @@ export const DedAiInputView: React.FC<Props> = ({
             <section className="dedai-set-sec">
               <h3><Zap size={14} /> Kompleksitas & Estimasi Kredit</h3>
               <p className="dedai-set-sub">
-                Pilih kategori yang paling mendekati dokumen Anda. Kategori ini pilihan Anda —
-                bukan hasil deteksi otomatis. Angka berikut simulasi frontend.
+                Kategori kompleksitas dipilih pada kartu Konfigurasi Analisis di tengah (mode DETAIL) — pilihan Anda, bukan deteksi otomatis. Angka berikut simulasi frontend.
               </p>
               {!dedAllowed && (
                 <div
@@ -384,32 +647,6 @@ export const DedAiInputView: React.FC<Props> = ({
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
                 <CreditBalance compact showTopUp={false} />
                 <span style={{ fontSize: 12, color: 'var(--ez-color-text-faint)' }}>saldo simulasi</span>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10, marginBottom: 12 }}>
-                {COMPLEXITY_OPTIONS.map((o) => {
-                  const t = tariffFor(o.tariffKey);
-                  const active = complexity === o.value;
-                  return (
-                    <button
-                      key={o.value}
-                      type="button"
-                      disabled={!dedAllowed}
-                      onClick={() => { setComplexity(o.value); setCreditApproved(false); }}
-                      style={{
-                        textAlign: 'left', padding: 12, borderRadius: 12, cursor: 'pointer',
-                        border: active ? '2px solid var(--ez-color-primary)' : '1px solid var(--ez-color-border-line)',
-                        background: active ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
-                      }}
-                      aria-pressed={active}
-                    >
-                      <div style={{ fontWeight: 800, fontSize: 13.5 }}>{o.label}</div>
-                      <div style={{ fontSize: 12, color: 'var(--ez-color-text-faint)', margin: '2px 0 6px' }}>{o.desc}</div>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ez-color-primary)', fontVariantNumeric: 'tabular-nums' }}>
-                        ±{t.target!.toLocaleString('id-ID')} kredit
-                      </div>
-                    </button>
-                  );
-                })}
               </div>
               <div className="aic-estimate" style={{ marginBottom: 10 }}>
                 <span>Estimasi pemakaian: <strong>{dedTarget.toLocaleString('id-ID')} kredit</strong> (maksimum simulasi)</span>
@@ -461,10 +698,11 @@ export const DedAiInputView: React.FC<Props> = ({
             )}
             <div className="dedai-cta">
               <button className="dedai-btn primary" disabled={!canStart || !creditApproved || !dedAllowed} onClick={handleStart}>
-                {t('ai.ded.input.cta')} <ArrowRight size={18} />
+                <Sparkles size={17} /> {t('ai.ded.input.cta')}
+                {!canStart && <small className="dedai-cta-sub">— unggah berkas valid dulu</small>}
               </button>
             </div>
-            {!canStart && (
+            {!canStart && !scopeError && (
               <p className="dedai-settings-hint">
                 {t('ai.ded.input.cta_hint')}
               </p>
@@ -474,6 +712,9 @@ export const DedAiInputView: React.FC<Props> = ({
                 Centang persetujuan estimasi kredit di atas untuk memulai analisis.
               </p>
             )}
+            <p className="dedai-settings-hint">
+              Estimasi dapat ditinjau dan divalidasi sebelum disimpan ke proyek.
+            </p>
           </div>
         </aside>
       </div>

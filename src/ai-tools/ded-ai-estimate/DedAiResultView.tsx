@@ -11,7 +11,7 @@ import {
   ArrowLeft, Info, Check, X, Sparkles, Undo2,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
-import { DedAiItem, DedAiOutput, DedCompletionReport } from './types';
+import { DedAiItem, DedAiOutput, DedCompletionReport, DedOutputPrefs, DEFAULT_DED_OUTPUT_PREFS } from './types';
 import { DedAiCalculator, applyUnitChange, clearStaleProposal } from './calculator';
 import {
   completeDedBatch, completeDedItem, derivePlanContext, rejectCompletion, acceptCompletion,
@@ -72,12 +72,19 @@ interface Props {
   finalized: boolean;
   /** Estimasi kredit simulasi yang disetujui (dari input view). */
   creditEstimate?: { category: string; credits: number };
+  /**
+   * Preferensi output dari layar input (USULAN BARU ter-ACC 2026-11-10):
+   * mengatur bagian yang tampil di hasil & ekspor Excel. Peringatan
+   * kebijakan harga, lencana status, dan aksi koreksi TIDAK digerbang.
+   */
+  outputPrefs?: DedOutputPrefs;
 }
 
 export const DedAiResultView: React.FC<Props> = ({
   output, onBackToInput, onSaveDraft, onFinalize, onOpenSpreadsheet, draftSaved, finalized,
-  creditEstimate,
+  creditEstimate, outputPrefs,
 }) => {
+  const prefs = outputPrefs ?? DEFAULT_DED_OUTPUT_PREFS;
   const { t } = useI18n();
   const statusMeta = getStatusMeta(t);
   const filters = getFilters(t);
@@ -292,23 +299,62 @@ export const DedAiResultView: React.FC<Props> = ({
   };
 
   const exportExcel = () => {
-    const rows = withStatus.map(({ it, status }, i) => ({
-      'No': i + 1,
-      [t('ai.ded.result.th_desc')]: it.name,
-      [t('ai.ded.result.x_category')]: it.category,
-      [t('ai.ded.result.th_volume')]: it.quantity ?? '',
-      [t('ai.ded.result.th_unit')]: it.units,
-      [t('ai.ded.result.x_unit_price')]: it.unitPrice ?? '',
-      [t('ai.ded.result.x_total')]: it.subtotal ?? '',
-      [t('ai.ded.result.x_status')]: statusMeta[status].label,
-      [t('ai.ded.result.x_qty_src')]: it.quantitySource,
-      [t('ai.ded.result.x_formula')]: it.quantityFormula || '',
-      [t('ai.ded.result.x_pages')]: it.sourcePages.join(', '),
-    }));
-    const ws = XLSX.utils.json_to_sheet(rows);
-    ws['!cols'] = [{ wch: 5 }, { wch: 42 }, { wch: 18 }, { wch: 12 }, { wch: 8 }, { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 16 }, { wch: 36 }, { wch: 14 }];
+    // Preferensi output mengatur kolom & lembar ekspor (USULAN BARU
+    // ter-ACC 2026-11-10): volume → kolom Volume; analisis harga → kolom
+    // provenans; laporan tak teresolusi → lembar tersendiri; detail RAB
+    // nonaktif → ekspor ringkasan saja, bukan baris item.
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, t('ai.ded.result.sheet_name'));
+    if (!prefs.detailRab) {
+      const ws = XLSX.utils.json_to_sheet([{
+        Proyek: output.projectName,
+        'Total Item': items.length,
+        'Item Terhitung': calculableCount,
+        'Total (Rp)': grandTotal,
+        'Item Diblokir': counts.blocked,
+        'Item Tanpa Harga': counts['no-price'],
+      }]);
+      ws['!cols'] = [{ wch: 42 }, { wch: 12 }, { wch: 14 }, { wch: 20 }, { wch: 13 }, { wch: 16 }];
+      XLSX.utils.book_append_sheet(wb, ws, 'Ringkasan');
+    } else {
+      const rows = withStatus.map(({ it, status }, i) => {
+        const row: Record<string, unknown> = {
+          'No': i + 1,
+          [t('ai.ded.result.th_desc')]: it.name,
+          [t('ai.ded.result.x_category')]: it.category,
+        };
+        if (prefs.volume) row[t('ai.ded.result.th_volume')] = it.quantity ?? '';
+        row[t('ai.ded.result.th_unit')] = it.units;
+        row[t('ai.ded.result.x_unit_price')] = it.unitPrice ?? '';
+        row[t('ai.ded.result.x_total')] = it.subtotal ?? '';
+        row[t('ai.ded.result.x_status')] = statusMeta[status].label;
+        if (prefs.priceAnalysis) {
+          row[t('ai.ded.result.x_qty_src')] = it.quantitySource;
+          row[t('ai.ded.result.x_formula')] = it.quantityFormula || '';
+          row[t('ai.ded.result.x_pages')] = it.sourcePages.join(', ');
+        }
+        return row;
+      });
+      const ws = XLSX.utils.json_to_sheet(rows);
+      const cols = [{ wch: 5 }, { wch: 42 }, { wch: 18 }];
+      if (prefs.volume) cols.push({ wch: 12 });
+      cols.push({ wch: 8 }, { wch: 18 }, { wch: 18 }, { wch: 18 });
+      if (prefs.priceAnalysis) cols.push({ wch: 16 }, { wch: 36 }, { wch: 14 });
+      ws['!cols'] = cols;
+      XLSX.utils.book_append_sheet(wb, ws, t('ai.ded.result.sheet_name'));
+    }
+    if (prefs.unresolvedReport) {
+      const unresolved = withStatus.filter(({ status }) => status === 'blocked' || status === 'no-price');
+      const uRows = unresolved.map(({ it, status }, i) => ({
+        'No': i + 1,
+        [t('ai.ded.result.th_desc')]: it.name,
+        [t('ai.ded.result.x_status')]: statusMeta[status].label,
+        Alasan: status === 'blocked' ? t('ai.ded.result.reason_blocked') : t('ai.ded.result.reason_no_price'),
+        [t('ai.ded.result.x_pages')]: it.sourcePages.join(', '),
+      }));
+      const uws = XLSX.utils.json_to_sheet(uRows.length > 0 ? uRows : [{ Keterangan: 'Tidak ada item tak teresolusi.' }]);
+      uws['!cols'] = [{ wch: 5 }, { wch: 42 }, { wch: 18 }, { wch: 60 }, { wch: 14 }];
+      XLSX.utils.book_append_sheet(wb, uws, 'Item Tak Teresolusi');
+    }
     XLSX.writeFile(wb, `ded-ai-${output.projectName.replace(/\s+/g, '-').toLowerCase()}.xlsx`);
   };
 
@@ -391,7 +437,7 @@ export const DedAiResultView: React.FC<Props> = ({
             </div>
           );
         })()}
-        {volumeByUnit.length > 0 && (
+        {prefs.volume && volumeByUnit.length > 0 && (
           <div className="vol">
             <Info size={13} style={{ verticalAlign: -2 }} /> {t('ai.ded.result.vol_per_unit')}{' '}
             {volumeByUnit.map(([u, v]) => <b key={u}>{fmtQty(v)} {u}</b>).reduce((a, b) => <>{a} · {b}</>)}
@@ -583,6 +629,9 @@ export const DedAiResultView: React.FC<Props> = ({
         </div>
       )}
 
+      {/* ---- Detail RAB: filter + isi cepat + tabel (digerbang preferensi
+          output "Detail RAB" — USULAN BARU ter-ACC 2026-11-10) ---- */}
+      {prefs.detailRab && (<>
       {/* ---- Filter ---- */}
       <div className="dedai-filters">
         {filters.map((f) => (
@@ -718,8 +767,8 @@ export const DedAiResultView: React.FC<Props> = ({
                       <td colSpan={8}>
                         <div className="dedai-detail">
                           <div className="dl-row"><span className="dl-k">{t('ai.ded.result.detail_basis')}</span><span>{it.quantityFormula || '—'}</span></div>
-                          <div className="dl-row"><span className="dl-k">{t('ai.ded.result.detail_source')}</span><span><code>{it.quantitySource}</code> · <code>{it.priceSource}</code>{it.ahspCode ? <> · <code>AHSP {it.ahspCode}</code></> : null}</span></div>
-                          {it.ahspMatch && it.ahspMatch.status !== 'RESOLVED' && it.ahspMatch.status !== 'NEEDS_REVIEW' && (
+                          {prefs.priceAnalysis && <div className="dl-row"><span className="dl-k">{t('ai.ded.result.detail_source')}</span><span><code>{it.quantitySource}</code> · <code>{it.priceSource}</code>{it.ahspCode ? <> · <code>AHSP {it.ahspCode}</code></> : null}</span></div>}
+                          {prefs.priceAnalysis && it.ahspMatch && it.ahspMatch.status !== 'RESOLVED' && it.ahspMatch.status !== 'NEEDS_REVIEW' && (
                             <div className="dl-row"><span className="dl-k">AHSP</span><span style={{ color: 'var(--ez-color-text-muted)' }}>{it.ahspMatch.reason}{it.ahspMatch.matchedCode ? ` (kode: ${it.ahspMatch.matchedCode})` : ''}</span></div>
                           )}
                           {it.ahspMatch && it.ahspMatch.status === 'NEEDS_REVIEW' && it.ahspMatch.candidates.length > 0 && (
@@ -739,8 +788,8 @@ export const DedAiResultView: React.FC<Props> = ({
                               </span>
                             </div>
                           )}
-                          {it.priceAssumptionNote && <div className="dl-row"><span className="dl-k">{t('ai.ded.result.detail_price_note')}</span><span>{it.priceAssumptionNote}</span></div>}
-                          {it.priceCompletion && (
+                          {prefs.priceAnalysis && it.priceAssumptionNote && <div className="dl-row"><span className="dl-k">{t('ai.ded.result.detail_price_note')}</span><span>{it.priceAssumptionNote}</span></div>}
+                          {prefs.priceAnalysis && it.priceCompletion && (
                             <div className="dl-row"><span className="dl-k">Penyelesaian AI</span><span>
                               Klasifikasi: <b>{it.priceCompletion.classification}</b> · keyakinan {it.priceCompletion.confidence}
                               {it.priceCompletion.rangeMin != null && it.priceCompletion.rangeMax != null
@@ -767,7 +816,7 @@ export const DedAiResultView: React.FC<Props> = ({
                                 : null}
                             </span></div>
                           )}
-                          {it.quantityAudit && (
+                          {prefs.priceAnalysis && it.quantityAudit && (
                             <div className="dl-row"><span className="dl-k">Audit Kuantitas</span><span>
                               Kelas: <b>{it.quantityAudit.classification}</b> · metode {it.quantityAudit.method} · keyakinan {it.quantityAudit.confidence} · verifikasi {it.quantityAudit.verificationStatus} · persetujuan {it.quantityAudit.userApprovalStatus}
                               {it.quantityAudit.formula ? <><br />Dasar: {it.quantityAudit.formula}</> : null}
@@ -795,7 +844,7 @@ export const DedAiResultView: React.FC<Props> = ({
                               </button>
                             </span></div>
                           )}
-                          {it.sourceEvidence && <div className="dl-row"><span className="dl-k">{t('ai.ded.result.detail_proof')}</span><span>{it.sourceEvidence}</span></div>}
+                          {prefs.priceAnalysis && it.sourceEvidence && <div className="dl-row"><span className="dl-k">{t('ai.ded.result.detail_proof')}</span><span>{it.sourceEvidence}</span></div>}
                           <div className="dl-row"><span className="dl-k">{t('ai.ded.result.detail_pages')}</span><span>{it.sourcePages.length ? it.sourcePages.map((p) => `${t('ai.ded.result.page_abbr')}${p}${t('ai.ded.result.page_abbr_suffix')}`).join(', ') : '—'}</span></div>
                           {status === 'blocked' && <div className="dl-row"><span className="dl-k">{t('ai.ded.result.detail_reason')}</span><span style={{ color: 'var(--ez-color-danger)', fontWeight: 600 }}>{t('ai.ded.result.reason_blocked')}</span></div>}
                           {status === 'no-price' && <div className="dl-row"><span className="dl-k">{t('ai.ded.result.detail_reason')}</span><span style={{ color: 'var(--ez-color-warning)', fontWeight: 600 }}>{t('ai.ded.result.reason_no_price')}</span></div>}
@@ -811,6 +860,35 @@ export const DedAiResultView: React.FC<Props> = ({
         </table>
         {filtered.length === 0 && <div className="dedai-empty">{t('ai.ded.result.empty_filter')}</div>}
       </div>
+      </>)}
+
+      {/* ---- Laporan Item Tak Teresolusi (preferensi output — USULAN BARU
+          ter-ACC 2026-11-10): daftar khusus item diblokir & tanpa harga
+          beserta alasannya; item yang sama tetap tampil berlencana di
+          tabel & statistik di atas — ini laporan tambahan, bukan pengganti
+          peringatan. ---- */}
+      {prefs.unresolvedReport && (
+        <div className="aic-card" style={{ marginTop: 16 }}>
+          <div className="aic-k">Laporan Item Tak Teresolusi</div>
+          {(() => {
+            const unresolved = withStatus.filter(({ status }) => status === 'blocked' || status === 'no-price');
+            if (unresolved.length === 0) {
+              return <div style={{ fontSize: 12.5, marginTop: 6 }}>Tidak ada item tak teresolusi — semua item punya kuantitas dan harga.</div>;
+            }
+            return (
+              <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {unresolved.map(({ it, status }) => (
+                  <div key={it.id} style={{ display: 'flex', gap: 10, alignItems: 'baseline', fontSize: 12.5, borderBottom: '1px dashed var(--ez-color-border)', paddingBottom: 6 }}>
+                    <span className={`dedai-badge ${status}`}>{statusMeta[status].icon}{statusMeta[status].label}</span>
+                    <span style={{ flex: 1 }}><b>{it.name}</b> — {status === 'blocked' ? t('ai.ded.result.reason_blocked') : t('ai.ded.result.reason_no_price')}</span>
+                    <span style={{ color: 'var(--ez-color-text-muted)' }}>{it.sourcePages.length ? `hal. ${it.sourcePages.join(', ')}` : ''}</span>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+        </div>
+      )}
 
       {finalMsg && (
         <div className={finalMsg.ok ? 'dedai-notice blue' : 'dedai-error'} style={{ marginTop: 16 }}>

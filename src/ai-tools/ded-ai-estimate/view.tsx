@@ -13,8 +13,10 @@ import { buildDivisionCoverage } from './divisions';
 import { groupByWbs } from './wbsClassifier';
 import {
   DedAiItem, DedAiMode, DedAiOutput, DedAiProjectType,
+  DedOutputPrefs, DEFAULT_DED_OUTPUT_PREFS,
 } from './types';
-import { DedAiInputView, DedAiSession } from './DedAiInputView';
+import { probeDedPdf, resolvePageScope } from './parser';
+import { DedAiInputView, DedAiSession, DedLastRunSummary } from './DedAiInputView';
 import { DedAiProgressView, DedAiStage, getStageDefs, ProgressSummary } from './DedAiProgressView';
 import { DedAiResultView } from './DedAiResultView';
 import { fullAiDedService, FULL_AI_TIMEOUT_MS } from '../ded-full-ai/service';
@@ -43,7 +45,35 @@ interface DraftRecord {
   mode: DedAiMode;
   fileNames: string[];
   output: DedAiOutput;
+  /** Preferensi output saat draft disimpan (USULAN BARU ter-ACC 2026-11-10). */
+  outputPrefs?: DedOutputPrefs;
 }
+
+/**
+ * Resolusi cakupan halaman sesi menjadi nomor halaman nyata per berkas
+ * (USULAN BARU ter-ACC 2026-11-10). Mengembalikan:
+ * - undefined: cakupan "Semua halaman" (atau jumlah halaman tak diketahui —
+ *   probe gagal; parse analisis sendiri akan gagal sesudahnya bila berkas
+ *   memang tidak terbaca);
+ * - array non-kosong: halaman terpilih untuk berkas ini;
+ * - array KOSONG: user memilih halaman tetapi tidak satu pun ada di berkas
+ *   ini — pemanggil WAJIB menggagalkan lari dengan pesan jujur, bukan
+ *   diam-diam menganalisis semua halaman.
+ */
+const resolveSessionPageScope = async (
+  sess: DedAiSession,
+  item: DedAiSession['files'][number],
+  buffer: ArrayBuffer,
+): Promise<number[] | undefined> => {
+  if (sess.pageScope?.kind !== 'SELECTED') return undefined;
+  let count = sess.filePageCounts?.[item.id];
+  if (!count) {
+    const probe = await probeDedPdf(buffer);
+    count = probe?.pageCount;
+  }
+  if (!count) return undefined;
+  return resolvePageScope(sess.pageScope.spec, count).pages;
+};
 const DRAFT_KEY = 'ezrab_dedai_drafts_v1';
 
 const loadDrafts = (): DraftRecord[] => {
@@ -153,6 +183,17 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
         setPercent(5 + (fi / sess.files.length) * 20);
 
         const buffer = await f.file.arrayBuffer();
+        // Cakupan halaman pilihan pengguna (per berkas) untuk mesin Full AI.
+        const fullAiScope = await resolveSessionPageScope(sess, f, buffer);
+        if (fullAiScope && fullAiScope.length === 0) {
+          markUpTo('identify', 'failed');
+          setError({
+            message: `Berkas ${f.file.name} tidak memiliki halaman dalam rentang terpilih — sesuaikan cakupan halaman atau gunakan "Semua halaman".`,
+            retryable: false,
+          });
+          setStatusLine('Full AI: Analisis gagal');
+          return;
+        }
         markUpTo('extract', 'done');
         markUpTo('identify', 'active');
         setStatusLine(`Full AI: Menganalisis ${f.file.name}…`);
@@ -163,6 +204,7 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
           projectType: sess.projectType,
           mode: sess.mode === 'FAST' ? 'FAST' : 'ADVANCED',
           policy: sess.policy ?? 'FULL_AI',
+          pageScope: fullAiScope,
           projectName: sess.projectName,
           onProgress: (stage, pct, msg) => {
             if (cancelRef.current) return;
@@ -305,6 +347,19 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
         setStatusLine(`${t('ai.ded.reading_doc_a')} ${fi + 1}/${sess.files.length}: ${f.file.name}`);
         const buffer = await f.file.arrayBuffer();
 
+        // Cakupan halaman pilihan pengguna (per berkas): halaman terpilih
+        // diteruskan ke service dan diterapkan di lapisan ekstraksi.
+        const pageScope = await resolveSessionPageScope(sess, f, buffer);
+        if (pageScope && pageScope.length === 0) {
+          markUpTo('identify', 'failed');
+          setError({
+            message: `Berkas ${f.file.name} tidak memiliki halaman dalam rentang terpilih — sesuaikan cakupan halaman atau gunakan "Semua halaman".`,
+            retryable: false,
+          });
+          setStatusLine(t('ai.ded.status_failed'));
+          return;
+        }
+
         const res: DedAiOutputEnvelope = await dedAiEstimateService.execute({
           fileName: f.file.name,
           buffer,
@@ -312,6 +367,7 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
           projectType: sess.projectType,
           mode: sess.mode,
           policy: sess.policy ?? 'FULL_AI',
+          pageScope,
           // F-E2 (keputusan owner 2026-11-10): kompleksitas pilihan user
           // diteruskan untuk run DETAIL agar kunci fitur usage tercatat
           // sesuai pilihan; FAST tidak memakai kompleksitas.
@@ -447,6 +503,7 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
       mode: result.mode,
       fileNames: session.files.map((f) => f.file.name),
       output: { ...result, items },
+      outputPrefs: session.outputPrefs,
     };
     persistDrafts([rec, ...drafts].slice(0, 20));
     setDraftSaved(true);
@@ -459,7 +516,7 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
     setResultReady(true);
     setDraftSaved(true);
     setFinalized(false);
-    setSession((s) => ({ ...s, projectName: d.projectName, projectType: d.projectType, mode: d.mode, policy: d.output.policy ?? 'FULL_AI', files: [] }));
+    setSession((s) => ({ ...s, projectName: d.projectName, projectType: d.projectType, mode: d.mode, policy: d.output.policy ?? 'FULL_AI', files: [], outputPrefs: d.outputPrefs ?? s.outputPrefs }));
     setSummary((s) => ({ ...s, projectName: d.projectName, fileCount: d.fileNames.length, mode: d.mode }));
     setScreen('result');
   };
@@ -624,12 +681,15 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
             { label: t('ai.ded.input.step_3'), state: 'active' },
           ];
 
+  /* Teks status stepper DIPERSINGKAT (owner 2026-11-10 19:15: stepper
+     kompak satu baris) — posisi langkah tetap jelas, frasa penjelas
+     panjang dibuang. */
   const shellStepsNote =
     screen === 'input'
-      ? 'Langkah 1 dari 3 — belum ada proses yang berjalan'
+      ? 'Langkah 1 dari 3'
       : screen === 'progress'
-        ? 'Langkah 2 dari 3 — analisis sedang berjalan'
-        : 'Langkah 3 dari 3 — tinjau hasil sebelum disimpan';
+        ? 'Langkah 2 dari 3'
+        : 'Langkah 3 dari 3';
 
   const isFullAiResult = screen === 'result' && !!fullAiOutput;
   const shellChips = isFullAiResult ? (
@@ -654,6 +714,27 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
 
   const shellContextText =
     result?.projectName || summary.projectName || session.projectName || undefined;
+
+  // Strip pratinjau hasil di layar input (USULAN BARU ter-ACC 2026-11-10):
+  // angka dari hasil NYATA terakhir pada sesi view ini — null sebelum ada
+  // analisis, tidak pernah angka contoh.
+  const lastRunSummary: DedLastRunSummary | null = fullAiOutput
+    ? {
+        items: fullAiOutput.items.length,
+        volumesIdentified: fullAiOutput.items.filter((i) => i.quantity.value != null).length,
+        pricesNeedVerify: fullAiOutput.items.filter(
+          (i) => i.price.unitPrice == null || i.price.source === 'AI_ESTIMATE',
+        ).length,
+      }
+    : result
+      ? {
+          items: result.items.length,
+          volumesIdentified: result.items.filter((i) => i.quantity != null).length,
+          pricesNeedVerify: result.items.filter(
+            (i) => i.unitPrice == null || i.priceSource === 'AI_ESTIMATE',
+          ).length,
+        }
+      : null;
 
   let screenContent: React.ReactNode;
   if (screen === 'progress') {
@@ -714,6 +795,7 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
           draftSaved={draftSaved}
           finalized={finalized}
           creditEstimate={session.creditEstimate}
+          outputPrefs={session.outputPrefs ?? DEFAULT_DED_OUTPUT_PREFS}
         />
       </>
     );
@@ -736,6 +818,7 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
           onStart={handleStart}
           onLoadDraft={handleLoadDraft}
           onDeleteDraft={handleDeleteDraft}
+          lastRunSummary={lastRunSummary}
         />
       </>
     );

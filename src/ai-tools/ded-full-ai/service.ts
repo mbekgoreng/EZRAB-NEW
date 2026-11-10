@@ -208,7 +208,24 @@ export class FullAiDedService {
         });
       }
 
-      const pages = parsed.pages || [];
+      // Cakupan halaman pilihan pengguna (USULAN BARU ter-ACC 2026-11-10):
+      // filter di lapisan ekstraksi, sebelum teks dokumen dibangun —
+      // logika AI/harga tidak berubah. Absen/kosong = semua halaman.
+      const documentTotalPages = (parsed.pages || []).length;
+      let pages = parsed.pages || [];
+      let pageScopeApplied: number[] | null = null;
+      if (options.pageScope && options.pageScope.length > 0) {
+        const wanted = new Set(options.pageScope);
+        pages = pages.filter((p: any) => wanted.has(p.page));
+        pageScopeApplied = pages.map((p: any) => p.page);
+        if (pages.length === 0) {
+          return this.errorOutput(mode, policy, {
+            code: 'NO_DATA',
+            message: 'Tidak ada halaman terpilih yang dapat dibaca dari PDF — periksa kembali pilihan halaman Anda.',
+            retryable: false,
+          });
+        }
+      }
       notify('PARSE', 25, `Dokumen dibaca: ${pages.length} halaman`);
 
       // Tahap 2: Siapkan teks dengan seleksi halaman berprioritas (F4 3.4/3.6)
@@ -219,6 +236,11 @@ export class FullAiDedService {
       const totalChars = doc.totalChars;
 
       const warnings: string[] = [];
+      if (pageScopeApplied) {
+        warnings.push(
+          `Cakupan halaman dibatasi pilihan pengguna: ${pageScopeApplied.length} dari ${documentTotalPages} halaman dianalisis (halaman ${formatPageRanges(pageScopeApplied)}). Halaman lain TIDAK dianalisis.`
+        );
+      }
       if (doc.skippedPages.length > 0) {
         warnings.push(
           `Halaman tidak terkirim ke AI karena batas ${MAX_TOTAL_CHARS.toLocaleString('id-ID')} karakter ` +
