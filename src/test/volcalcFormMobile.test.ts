@@ -16,7 +16,9 @@
  *  5. CSS: stepper & stickybar display:none di luar media query
  *     (desktop tidak berubah); blok R10 (max-width: 767px) memuat
  *     kotak 48px / font 16px, deskripsi & tip disembunyikan, dan
- *     stickybar position sticky di atas navbar bawah.
+ *     bar hasil DALAM ALUR (position static) di akhir workbench —
+ *     diubah owner 2026-11-10 19:04 dari sticky karena versi menempel
+ *     menutupi kolom formulir pada screenshot HP-nya.
  *
  * Run (repo): npx --yes tsx src/test/volcalcFormMobile.test.ts
  */
@@ -148,8 +150,8 @@ check(
 
 const stickyBody = ruleBodyFrom('.ezrab-result-stickybar', r10MediaIdx);
 check(
-  'stickybar sticky di atas navbar bawah (bottom 70px + safe-area)',
-  stickyBody.includes('position: sticky') && stickyBody.includes('bottom: calc(70px + env(safe-area-inset-bottom, 0px))'),
+  'bar hasil dalam alur (position static, tanpa bottom menempel — owner 2026-11-10)',
+  stickyBody.includes('position: static') && !stickyBody.includes('position: sticky') && !stickyBody.includes('bottom:'),
 );
 check(
   'stickybar bergaya navy gradient seperti mockup',

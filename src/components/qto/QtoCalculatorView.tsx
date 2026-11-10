@@ -1574,7 +1574,8 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
               alignItems: 'center',
               gap: '5px',
             }}
-            title="Reset parameter kalkulator aktif ke nilai standar"
+            title="Reset parameter"
+            aria-label="Reset parameter kalkulator aktif ke nilai standar"
           >
             <RefreshCw size={12} />
             <span>Reset {hasUnsavedChanges ? '(*)' : ''}</span>
@@ -2397,7 +2398,8 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                   alignItems: 'center',
                   gap: '4px',
                 }}
-                title="Reset parameter kalkulator aktif"
+                title="Reset parameter"
+                aria-label="Reset parameter kalkulator aktif"
               >
                 <RefreshCw size={12} />
                 <span>Reset</span>
@@ -3067,10 +3069,12 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
             </div>
           </div>
 
-          {/* Bar hasil menempel khusus HP (≤767px; display:none di luar itu,
-              diatur di workspace-mobile-fixes.css R10). Memakai handler yang
-              sama persis dengan tombol di kolom hasil: handleSaveToQTO
-              (Simpan) dan handleSyncToRAB (Ke RAB) — tidak ada jalur baru. */}
+          {/* Bar hasil khusus HP (≤767px; display:none di luar itu, diatur
+              di workspace-mobile-fixes.css R10). DALAM ALUR di akhir
+              workbench (owner 2026-11-10: versi menempel menutupi kolom
+              formulir). Memakai handler yang sama persis dengan tombol di
+              kolom hasil: handleSaveToQTO (Simpan) dan handleSyncToRAB
+              (Ke RAB) — tidak ada jalur baru. */}
           <div className="ezrab-result-stickybar">
             <div className="ezrab-result-stickybar-main">
               <span className="ezrab-result-stickybar-label">{activeSpec.primaryQuantityLabel}</span>

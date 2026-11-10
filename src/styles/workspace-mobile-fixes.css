@@ -460,8 +460,10 @@
 /* --- R10. Formulir Kalkulator Volume: satu baris per parameter (HP) ------
    ACC owner 2026-11-09: sel parameter menjadi baris [lencana][label]
    [stepper − nilai +][satuan], kotak isian 48px font 16px, deskripsi
-   panjang + tip Tab disembunyikan, dan bar hasil menempel di atas navbar
-   bawah. Murni presentasi — struktur DOM, handler, dan mesin hitung
+   panjang + tip Tab disembunyikan. Bar hasil: semula menempel di atas
+   navbar bawah, diubah owner 2026-11-10 19:04 menjadi DALAM ALUR di
+   akhir workbench karena versi menempel menutupi kolom formulir.
+   Murni presentasi — struktur DOM, handler, dan mesin hitung
    tidak berubah. Grid bawah sudah satu kolom di bawah 1024px dari
    global.css (.ezrab-volume-bottom-grid), jadi tidak diduplikasi. */
 @media (max-width: 767px) {
@@ -519,20 +521,22 @@
     background: var(--ez-hue-blue-bg);
   }
 
-  /* Bar hasil menempel di atas navbar bawah HP (70px + safe-area) */
+  /* Bar hasil DALAM ALUR di akhir workbench (perintah owner 2026-11-10
+     19:04: versi sticky menutupi kolom formulir — mis. isian Lebar tertelan
+     bar saat menggulir). Kini statis mengikuti DOM-nya (sesudah kolom hasil
+     workbench): tidak pernah menimpa isian, dan tombolnya tetap handler
+     yang sama (Ke RAB / Simpan). */
   .ezrab-result-stickybar {
     display: flex !important;
     align-items: center;
     gap: 10px;
-    position: sticky;
-    bottom: calc(70px + env(safe-area-inset-bottom, 0px));
-    z-index: 30;
+    position: static;
     margin-top: 12px;
     padding: 12px 14px;
     border-radius: 14px;
     background: linear-gradient(120deg, #0B2B57, #123E7D);
     color: #FFFFFF;
-    box-shadow: 0 -10px 24px -12px rgba(9, 32, 66, 0.5);
+    box-shadow: 0 10px 24px -12px rgba(9, 32, 66, 0.35);
   }
   .ezrab-result-stickybar-main {
     display: flex;
@@ -584,10 +588,10 @@
     cursor: not-allowed;
   }
 
-  /* Ruang napas di dasar workbench agar konten terakhir tidak tertutup
-     bar hasil yang menempel. */
+  /* Ruang napas di dasar workbench (bar hasil kini dalam alur, jadi cukup
+     napas biasa — bukan lagi ruang bebas untuk bar melayang). */
   #active-calculator-workbench {
-    padding-bottom: 84px !important;
+    padding-bottom: 20px !important;
   }
 }
 
@@ -1145,5 +1149,121 @@
   .ezchat2-sub {
     max-width: 36ch !important;
     margin: 8px auto 0 !important;
+  }
+}
+
+/* =========================================================================
+   R30. PENYEDERHANAAN TAMPILAN HP (owner 2026-11-10 19:04, 6 screenshot
+   Production): "perbaiki semua tampilannya, buat lebih simple, dan juga
+   untuk pengaturan setting juga."
+   - Breadcrumb: elemen tengah (Proyek + nama proyek) disembunyikan —
+     tampil hanya Dashboard › [Modul]; nama proyek panjang tidak lagi
+     terpotong tak bermakna. (Melengkapi R12.)
+   - Kartu header proyek: 4 tombol aksi menjadi grid 2×2 sama lebar.
+   - Informasi Proyek & Pengaturan RAB & panel Pengaturan: kartu seksi
+     konsisten (padding 14px), satu kolom, isian 44px font 16px (tidak
+     memicu zoom otomatis iPhone), tombol simpan selebar kartu.
+   - Bar hasil Kalkulator Volume kini dalam alur (lihat R10); tooltip
+     Reset dipersingkat di TSX agar tidak keluar viewport.
+   Hanya @media (max-width: 767px); desktop tidak berubah. Tidak ada
+   fungsi yang dihapus — hanya ditata ulang.
+   ========================================================================= */
+@media (max-width: 767px) {
+
+  /* --- R30a. Breadcrumb ringkas ------------------------------------------ */
+  .ezrab-breadcrumb .ez-breadcrumb-mid {
+    display: none !important;
+  }
+  .ezrab-breadcrumb > span {
+    max-width: 200px !important;
+  }
+  /* Breadcrumb mini pada kartu header proyek: nama proyek di-ellipsis. */
+  .ez-proj-crumb-name {
+    min-width: 0 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+  .ez-proj-crumbs {
+    flex-wrap: nowrap !important;
+    overflow: hidden !important;
+  }
+
+  /* --- R30b. Kartu header proyek: aksi grid 2×2 --------------------------- */
+  .ez-proj-headcard {
+    padding: 14px !important;
+    gap: 12px !important;
+  }
+  .ez-proj-actions {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+  .ez-proj-action {
+    width: 100% !important;
+    height: 40px !important;
+    justify-content: flex-start !important;
+    padding: 0 10px !important;
+  }
+
+  /* --- R30c. Informasi Proyek: kartu & isian sederhana -------------------- */
+  .ez-projinfo {
+    gap: 12px !important;
+  }
+  .ez-projinfo-card {
+    padding: 14px !important;
+    border-radius: 12px !important;
+  }
+  .ez-projinfo-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 12px !important;
+  }
+  .ez-projinfo input,
+  .ez-projinfo select,
+  .ez-projinfo textarea {
+    font-size: 16px !important;
+  }
+  .ez-projinfo input:not([type='checkbox']):not([type='radio']),
+  .ez-projinfo select {
+    height: 44px !important;
+  }
+  .ez-projinfo-save {
+    width: 100% !important;
+    justify-content: center !important;
+    min-height: 44px !important;
+  }
+
+  /* --- R30d. Pengaturan RAB: kartu ringkas, aksi selebar kartu ------------ */
+  .ez-rabset {
+    gap: 12px !important;
+  }
+  .ez-rabset .ezrab-rabs-grid {
+    gap: 12px !important;
+  }
+  .ez-rabset .ezrab-rabs-grid > div {
+    padding: 14px !important;
+    border-radius: 12px !important;
+  }
+  .ez-rabset-actions {
+    display: flex !important;
+    width: 100% !important;
+  }
+  .ez-rabset-actions > button {
+    flex: 1 1 0 !important;
+    justify-content: center !important;
+    min-height: 44px !important;
+  }
+  .ez-rabset input:not([type='checkbox']):not([type='radio']),
+  .ez-rabset select {
+    font-size: 16px !important;
+    height: 44px !important;
+  }
+
+  /* --- R30e. Panel Pengaturan (terpadu): isian font 16px anti-zoom -------- */
+  .ezrab-set-panel input:not([type='checkbox']):not([type='radio']),
+  .ezrab-set-panel select,
+  .ezrab-set-panel textarea {
+    font-size: 16px !important;
   }
 }
