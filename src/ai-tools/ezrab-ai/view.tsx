@@ -38,7 +38,7 @@ import { renderMarkdown, markdownToPlainText } from './markdown';
 import { routeIntent, localGreeting, HELP_TEXT } from './intentRouter';
 import { extractSlashToken, filterSlashEntries, NAV_BY_ID, resolveNavCommand, type NavEntry } from './navRegistry';
 import { consumePendingAiEntry, requestAiEntry, consumePendingEzrabAiEntry, peekPendingEzrabAiEntry, ezrabAiEntryRemainingMs, openEzrabAI, type EzrabAiEntryContext } from '../aiNavigation';
-import { executeIntent, continueRabNeeds, continueRabFinalize, hasActiveRabNeeds, continueRabChoice, tryContinueRabSubtype, getLastRabDesignPrompt, ChatActionContext, ChatActionButton } from './actionRegistry';
+import { executeIntent, continueRabNeeds, continueRabFinalize, hasActiveRabNeeds, continueRabChoice, tryContinueRabSubtype, tryContinueRabMaterial, getLastRabDesignPrompt, ChatActionContext, ChatActionButton } from './actionRegistry';
 import { getLastDirectRab } from './directRab';
 import { classifyRequest, minDelayFor, statusTextFor, waitForMinimum, waitForRabMinimum, rabMinDelayMs, activityForRequest, createRequestCoordinator, isAbortError, type AiActivity } from '../aiResponseTiming';
 import { mapDirectRabPushItems } from './directRabPush';
@@ -249,6 +249,9 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   const [awaitingChoice, setAwaitingChoice] = useState(false);
   /** Klarifikasi subtipe (2026-10-23): menunggu jawaban "Jalan apa?" */
   const [awaitingSubtype, setAwaitingSubtype] = useState(false);
+  /** Gerbang klarifikasi material (2026-11-10): menunggu jawaban bahan
+   *  ("Bahan rangka & penutup atapnya apa?") sebelum draft disusun */
+  const [awaitingMaterial, setAwaitingMaterial] = useState(false);
   /** Klarifikasi topik (2026-10-23): menunggu query lanjutan atas kartu
    *  klarifikasi — nilai = mode ('ahsp' | 'harga-material' | 'harga-upah'
    *  | 'harga-alat' | 'template'); null = tidak menunggu. */
@@ -818,6 +821,25 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       }
       setAwaitingSubtype(false);
     }
+    /* ---- Gerbang klarifikasi material (2026-11-10): jawaban atas
+     * pertanyaan bahan ("Bahan rangka & penutup atapnya apa?") ----
+     * Selama gerbang aktif, pesan yang menyebut bahan (klik diketik),
+     * bahan tanpa template, atau afirmasi ("itu aja" → draft dengan
+     * asumsi terbuka) dijawab lokal lewat tryContinueRabMaterial —
+     * BUKAN dilempar ke AI. Pesan lain (perintah baru) menggugurkan
+     * status menunggu dan diproses normal di bawah. */
+    if (!forcedAi && awaitingMaterial) {
+      const matRes = tryContinueRabMaterial(msg);
+      if (matRes) {
+        const acts = matRes.actions && matRes.actions.length > 0 ? matRes.actions : undefined;
+        setMessages((prev) => [...prev, { role: 'assistant', content: matRes.message, ts: Date.now(), actions: acts }]);
+        persistMessage('assistant', matRes.message);
+        setAwaitingMaterial(matRes.awaitRabMaterial === true);
+        setBusy(false);
+        return;
+      }
+      setAwaitingMaterial(false);
+    }
     /* ---- Chat-to-RAB Fase 2: jawaban atas "Lengkapi kebutuhan" ----
      * Bila chat sedang menunggu kelengkapan dan pesan ini berbentuk jawaban
      * (lantai/dimensi/kamar), gabungkan ke ringkasan — jangan lempar ke AI. */
@@ -987,6 +1009,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
           if (res.awaitRabNeeds) setAwaitingNeeds(true);
           if (res.awaitRabChoice) setAwaitingChoice(true);
           if (res.awaitRabSubtype) setAwaitingSubtype(true);
+          if (res.awaitRabMaterial) setAwaitingMaterial(true);
           if (res.awaitClarify) setAwaitingClarify(res.awaitClarify);
           // Action buttons — attached to the assistant message
           const entryActions = res.actions && res.actions.length > 0 ? res.actions : undefined;
@@ -1469,6 +1492,24 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       const entry: ChatEntry = { role: 'assistant', content: res.message, ts: Date.now(), actions: res.actions };
       setMessages((prev) => [...prev, entry]);
       persistMessage('assistant', res.message);
+    } else if (btn.action.intent === 'RAB_MATERIAL_SELECT') {
+      // Gerbang klarifikasi material (2026-11-10): klik bahan → draft
+      // disusun dari template bahan itu; klik "pakai asumsi" → draft
+      // dengan asumsi terbuka; klik "Pilih bahan katalog" (dari jawaban
+      // bahan-tanpa-template) → pertanyaan tampil lagi (awaitRabMaterial
+      // dari hasil menyetel status menunggu). Lokal penuh lewat registry.
+      const res = executeIntent('RAB_MATERIAL_SELECT', btn.action.param, {
+        navigate: (menu: string) => navigateChat(menu),
+        currentMenu,
+        activeProject,
+        projects,
+        projectTotal: projectSnapshot ? projectSnapshot.totalDirect : projectTotal,
+        projectItems: projectSnapshot?.items ?? null,
+      });
+      const entry: ChatEntry = { role: 'assistant', content: res.message, ts: Date.now(), actions: res.actions };
+      setMessages((prev) => [...prev, entry]);
+      persistMessage('assistant', res.message);
+      setAwaitingMaterial(res.awaitRabMaterial === true);
     } else if (btn.action.intent === 'RAB_FULL_AI') {
       // Klik "Full AI" pada kartu jalur = persetujuan pengguna. Kontrak baru:
       // registry lebih dulu mencoba komposisi deterministik dari kebutuhan
@@ -1479,6 +1520,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       // dikirim ke pipeline Chat AI dengan bendera paksa-AI agar tidak
       // tertangkap router lokal CREATE_RAB_SUMMARY lagi.
       setAwaitingSubtype(false);
+      setAwaitingMaterial(false);
       setAwaitingClarify(null);
       const res = executeIntent('RAB_FULL_AI', btn.action.param, {
         navigate: (menu: string) => navigateChat(menu),

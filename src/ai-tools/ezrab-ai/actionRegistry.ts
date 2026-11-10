@@ -16,6 +16,9 @@ import {
 import {
   RabSubtype, subtypeGroupFor, getSubtype, detectSubtypeFromText, findSubtypeTemplates,
 } from './rabSubtypes';
+import {
+  RabMaterialGroup, materialGroupForScope, classifyMaterialText, formatMaterialKnownLine,
+} from './rabMaterialClarify';
 import { RabTemplateService } from '../../services/rabTemplateService';
 import { listUnifiedTemplates } from '../../services/rabTemplateCatalogAdapter';
 import { officialAhspRepository } from '../../data/nationalCostDatabase/officialAhspRepository';
@@ -30,7 +33,7 @@ import { evaluateCalculation } from './calcIntent';
 import { findGamesMentioned, buildGameInfoAnswer } from '../../game-space/catalog';
 import { buildDirectRab, displayTemplateBasisName, findDirectTemplate, formatDirectRabMessage, matchDirectRegion } from './directRab';
 import { buildSpecRab, buildSpecRabFromNeeds } from './specRab';
-import { buildUniversalDraft, formatUniversalDraftMessage } from './universalRab';
+import { buildUniversalDraft, formatUniversalDraftMessage, extractUniversalSpec } from './universalRab';
 import { captureFeedback } from './constructionFeedback';
 
 export interface ChatActionContext {
@@ -105,6 +108,8 @@ export interface ActionResult {
   awaitRabChoice?: boolean;
   /** Chat menunggu jawaban subtipe pekerjaan (klarifikasi "Jalan apa?") */
   awaitRabSubtype?: boolean;
+  /** Chat menunggu jawaban klarifikasi material (gerbang bahan sebelum draft) */
+  awaitRabMaterial?: boolean;
   /** Chat menunggu query lanjutan klarifikasi topik (nilai = mode-nya) */
   awaitClarify?: string;
   /** Prompt Full AI yang disusun dari kebutuhan terkumpul (dijalankan view) */
@@ -268,6 +273,160 @@ export function tryContinueRabSubtype(text: string): ActionResult | null {
   lastRabNeeds = merged;
   lastRabRaw = text;
   return pathCardResult(merged);
+}
+
+/* ------------------------------------------------------------------ */
+/* Gerbang klarifikasi MATERIAL (perintah owner 2026-11-10): untuk     */
+/* kategori pekerjaan spesifik berpeta bahan (atap, pondasi — lihat    */
+/* rabMaterialClarify.ts), draft universal TIDAK langsung disusun bila */
+/* bahan belum disebut: chat bertanya balik dulu dengan tombol pilihan */
+/* bahan NYATA dari katalog. Pola sama persis dengan klarifikasi       */
+/* subtipe di atas: satu putaran ringkas, jawaban bisa diklik/diketik, */
+/* dan afirmasi ("itu aja") selalu bisa melewati — draft lalu memakai  */
+/* asumsi yang DINYATAKAN TERBUKA di dalam draft-nya. Bahan yang       */
+/* disebut tetapi belum ada template-nya (baja ringan, foot plat, …)   */
+/* TIDAK diganti template lain secara diam-diam: dijawab jujur +       */
+/* ditawarkan jalur Full AI dengan bahan persis itu.                   */
+/* ------------------------------------------------------------------ */
+interface PendingRabMaterial {
+  rawText: string;
+  group: RabMaterialGroup;
+}
+
+let pendingMaterialGate: PendingRabMaterial | null = null;
+
+export function getPendingRabMaterial(): PendingRabMaterial | null {
+  return pendingMaterialGate;
+}
+
+/** Pertanyaan klarifikasi material (tombol bahan nyata dari katalog). */
+function materialQuestionResult(rawText: string, group: RabMaterialGroup): ActionResult {
+  pendingMaterialGate = { rawText, group };
+  const known = formatMaterialKnownLine(extractUniversalSpec(rawText));
+  const lines: string[] = [
+    `Siap — sebelum saya susun draft RAB ${group.workLabel}-nya, bahannya perlu jelas dulu: ` +
+      'pilihan bahan mengubah susunan item dan harga, dan katalog EZRAB punya beberapa ' +
+      `sistem ${group.workLabel} yang berbeda.`,
+  ];
+  if (known) lines.push('', `Yang sudah jelas dari permintaan Anda: **${known}**.`);
+  lines.push(
+    '',
+    `**${group.question}**`,
+    '',
+    'Pilih lewat tombol di bawah, atau ketik bahannya langsung (mis. "baja ringan + spandek"). ' +
+      'Bila ingin lanjut sekarang tanpa menentukan bahan, jawab **"itu aja"** — draft akan saya ' +
+      'susun dengan asumsi yang dinyatakan terbuka di dalamnya.'
+  );
+  return {
+    ok: true,
+    message: lines.join('\n'),
+    awaitRabMaterial: true,
+    actions: [
+      ...group.options.map((o) => ({
+        label: o.label,
+        action: { kind: 'intent', intent: 'RAB_MATERIAL_SELECT', param: o.id } as const,
+      })),
+      { label: 'Susun saja — pakai asumsi terbuka', action: { kind: 'intent', intent: 'RAB_MATERIAL_SELECT', param: 'assume' } as const },
+      { label: 'Mulai manual', action: { kind: 'navigate', menu: 'rab-estimasi' } as const },
+    ],
+  };
+}
+
+/** Prompt Full AI untuk bahan yang disebut pengguna tetapi belum ada template-nya. */
+function buildMaterialFullAiPrompt(rawText: string, group: RabMaterialGroup, materialLabel: string): string {
+  return (
+    `Buatkan RAB ${group.workLabel} untuk permintaan pengguna berikut: "${rawText}". ` +
+    `Bahan yang diminta pengguna: ${materialLabel} — katalog template EZRAB belum punya ` +
+    'template untuk bahan ini. Susun daftar pekerjaan lengkap dari persiapan sampai ' +
+    'selesai memakai data AHSP 2026 dan data EZRAB untuk bahan tersebut (gunakan alat ' +
+    'pencarian yang tersedia), hitung volume dari dimensi pada permintaan, dan tandai ' +
+    'dengan jelas setiap harga yang merupakan estimasi beserta dasarnya — jangan ' +
+    'mengarang angka; bila harga suatu item belum tersedia, nyatakan belum tersedia.'
+  );
+}
+
+/**
+ * Jawaban jujur untuk bahan TANPA template: tidak disusun dari template
+ * lain (hasilnya pasti salah bahan — persis keluhan owner 2026-11-10),
+ * ditawarkan Full AI dengan bahan persis itu + tanya ulang bahan katalog.
+ * State gerbang DIPERTAHANKAN agar tombol "Pilih bahan katalog" bisa
+ * menampilkan pertanyaan lagi; sesi kebutuhan rumah dibersihkan agar
+ * klik Full AI jatuh ke fallback prompt (bukan komposisi basi).
+ */
+function materialUntemplatedResult(rawText: string, group: RabMaterialGroup, materialLabel: string): ActionResult {
+  pendingMaterialGate = { rawText, group };
+  lastRabNeeds = null;
+  return {
+    ok: true,
+    message:
+      `Bahan yang Anda sebutkan — **${materialLabel}** — saat ini **belum ada template-nya** ` +
+      `di katalog EZRAB, jadi saya tidak menyusunnya dari template bahan lain (hasilnya akan salah bahan). ` +
+      `Jalur yang bisa memakai bahan persis itu adalah **Full AI**: komposisi dari data AHSP 2026 dengan bahan **${materialLabel}**. ` +
+      'Klik "Susun via Full AI" untuk melanjutkan, atau "Pilih bahan katalog" untuk melihat bahan yang templatenya sudah tersedia.',
+    actions: [
+      { label: 'Susun via Full AI', action: { kind: 'intent', intent: 'RAB_FULL_AI', param: buildMaterialFullAiPrompt(rawText, group, materialLabel) } as const },
+      { label: 'Pilih bahan katalog', action: { kind: 'intent', intent: 'RAB_MATERIAL_SELECT', param: 'reask' } as const },
+      { label: 'Mulai manual', action: { kind: 'navigate', menu: 'rab-estimasi' } as const },
+    ],
+  };
+}
+
+/** Susun draft dari permintaan yang gerbangnya sudah terjawab (klik tombol). */
+function materialAnsweredDraft(pending: PendingRabMaterial, templateId: string, note: string): ActionResult {
+  const res = universalResultFor(pending.rawText, templateId, note);
+  return res ?? { ok: false, message: 'Draft belum bisa disusun dari pilihan bahan itu.' };
+}
+
+const MATERIAL_ASSUME_NOTE =
+  'Bahan belum ditentukan — Anda memilih lanjut tanpa memilih bahan ("itu aja"). ' +
+  'ASUMSI TERBUKA: draft memakai template katalog "{template}"; bahan rangka & penutup ' +
+  'mengikuti template itu. Sebutkan bahannya (mis. baja ringan, genteng, bore pile) ' +
+  'untuk menyusun ulang dengan bahan yang tepat.';
+
+/**
+ * Keputusan gerbang di titik draft universal berhasil dibangun: hanya
+ * untuk draft SATU cakupan berpeta bahan. Bahan terklasifikasi opsi →
+ * null (draft berjalan seperti biasa); tanpa template → jawaban jujur;
+ * belum disebut → pertanyaan klarifikasi.
+ */
+function materialGateResult(raw: string, draft: { parts: { scope: { id: string } }[] }): ActionResult | null {
+  if (draft.parts.length !== 1) return null;
+  const group = materialGroupForScope(draft.parts[0].scope.id);
+  if (!group) return null;
+  const cls = classifyMaterialText(group, raw);
+  if (cls.kind === 'option') return null;
+  if (cls.kind === 'untemplated') return materialUntemplatedResult(raw, group, cls.material.label);
+  return materialQuestionResult(raw, group);
+}
+
+/**
+ * Jawaban klarifikasi material yang DIKETIK pengguna selama pertanyaan
+ * gerbang aktif. Mengembalikan null bila tidak ada gerbang aktif atau
+ * teks tidak menyebut bahan/afirmasi apa pun — pemanggil (view) lalu
+ * memproses pesan secara normal (perintah baru menggugurkan gerbang).
+ */
+export function tryContinueRabMaterial(text: string): ActionResult | null {
+  const pending = pendingMaterialGate;
+  if (!pending) return null;
+  const cls = classifyMaterialText(pending.group, text);
+  if (cls.kind === 'option') {
+    pendingMaterialGate = null;
+    return materialAnsweredDraft(
+      pending,
+      cls.option.templateId,
+      `Bahan sesuai jawaban klarifikasi Anda: **${cls.option.label}** — template "{template}" dipakai mengikuti pilihan itu.`
+    );
+  }
+  if (cls.kind === 'untemplated') {
+    return materialUntemplatedResult(pending.rawText, pending.group, cls.material.label);
+  }
+  // Aturan afirmasi owner 2026-11-06: "itu aja"/"oke" = eksekusi langkah
+  // tertunda (susun draft), BUKAN pertanyaan ulang — dengan asumsi terbuka.
+  if (isRabFinalizeText(text)) {
+    pendingMaterialGate = null;
+    return universalResultFor(pending.rawText, undefined, MATERIAL_ASSUME_NOTE);
+  }
+  return null;
 }
 
 function rabSummaryResult(raw: string, base?: RabNeeds): ActionResult {
@@ -542,8 +701,17 @@ function directRabTableResult(built: BuiltRab): ActionResult {
  * (target revisi chat dan tombol Push); pertanyaan ambiguitas membawa
  * tombol pilih template; kekurangan data membawa SATU pertanyaan inti.
  */
-function universalResultFor(raw: string, forcedTemplateId?: string): ActionResult | null {
+function universalResultFor(raw: string, forcedTemplateId?: string, materialNote?: string): ActionResult | null {
   const res = buildUniversalDraft(raw, forcedTemplateId);
+  // Gerbang klarifikasi material (owner 2026-11-10): draft SATU cakupan
+  // berpeta bahan (atap/pondasi) yang bahannya BELUM disebut tidak
+  // langsung ditampilkan — pengguna ditanya balik dulu. Hanya berjalan
+  // pada jalur tanpa template paksa: jawaban gerbang (klik opsi) datang
+  // lewat forcedTemplateId, dan lewati-afirmasi datang dengan materialNote.
+  if (!forcedTemplateId && !materialNote && res.kind === 'draft') {
+    const gate = materialGateResult(raw, res.draft);
+    if (gate) return gate;
+  }
   // Integrasi feedback (audit jalur produksi P0 §3): permintaan yang
   // tidak terdukung / tidak ada template katalognya adalah sinyal
   // kesenjangan pengetahuan — ditangkap constructionFeedback di sini
@@ -564,6 +732,13 @@ function universalResultFor(raw: string, forcedTemplateId?: string): ActionResul
     // terukur: rumah → gudang → "itu aja" menghasilkan draft rumah).
     // Sesi kebutuhan hanya hidup selama topiknya rumah/kebutuhan.
     lastRabNeeds = null;
+    // Catatan gerbang material (jawaban/asumsi terbuka) menjadi asumsi
+    // PERTAMA draft — tercetak di bagian "Asumsi yang dipakai" dan ikut
+    // terbawa ke revisi/transfer, tidak pernah hilang diam-diam.
+    if (materialNote) {
+      const names = res.draft.parts.map((p) => p.template.name).join(' + ');
+      res.draft.assumptions.unshift(materialNote.replace('{template}', names));
+    }
     return {
       ok: true,
       message: formatUniversalDraftMessage(res.draft),
@@ -1123,6 +1298,51 @@ export function executeIntent(
       pendingSubtypeNeeds = null;
       lastRabNeeds = merged;
       return pathCardResult(merged);
+    }
+
+    case 'RAB_MATERIAL_SELECT': {
+      // Klik tombol pada pertanyaan klarifikasi material (gerbang bahan
+      // owner 2026-11-10). param = id opsi bahan dari peta
+      // rabMaterialClarify, atau perintah khusus:
+      //  - 'assume' → susun draft sekarang dengan asumsi terbuka;
+      //  - 'reask'  → tampilkan lagi pertanyaan bahan katalog (dari
+      //    jawaban "bahan belum ada template-nya").
+      const pending = pendingMaterialGate;
+      if (!pending) {
+        return {
+          ok: false,
+          message:
+            'Konteks pertanyaan bahan sudah tidak aktif. Tulis ulang kebutuhannya beserta bahannya, misalnya "buatkan rab rangka atap kayu 5x9".',
+        };
+      }
+      if (param === 'reask') {
+        return materialQuestionResult(pending.rawText, pending.group);
+      }
+      if (param === 'assume') {
+        pendingMaterialGate = null;
+        return (
+          universalResultFor(pending.rawText, undefined, MATERIAL_ASSUME_NOTE) ?? {
+            ok: false,
+            message: 'Draft belum bisa disusun saat ini.',
+          }
+        );
+      }
+      const option = pending.group.options.find((o) => o.id === param);
+      if (!option) {
+        return {
+          ok: false,
+          message: 'Pilihan bahan itu tidak dikenal. Pilih lewat tombol bahan yang tersedia atau ketik bahannya.',
+        };
+      }
+      pendingMaterialGate = null;
+      // Template DIPAKSA mengikuti jawaban — draft tidak boleh jatuh ke
+      // template lain (kasus owner: jawaban tidak boleh tetap standing
+      // seam komersial bila yang dipilih bukan itu).
+      return materialAnsweredDraft(
+        pending,
+        option.templateId,
+        `Bahan sesuai pilihan Anda pada klarifikasi: **${option.label}** — template "{template}" dipakai mengikuti pilihan itu.`
+      );
     }
 
     case 'RAB_PATH_TEMPLATE': {
