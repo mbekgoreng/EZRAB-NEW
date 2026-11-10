@@ -118,6 +118,13 @@ export default async function middleware(request: Request): Promise<Response | u
   // lost, nobody could ever mint a session (permanent lockout).
   if (path.startsWith('/api/access/')) return undefined;
 
+  // D17 (2026-11-10): Midtrans payment notifications are server-to-server
+  // and carry no session cookie — gating them would reject every payment
+  // notification before it reaches the handler. Exempt EXACTLY this one
+  // path; its authentication is the Midtrans signature verification inside
+  // the handler itself. Every other /api/credits/* path stays gated.
+  if (path === '/api/credits/webhook') return undefined;
+
   const code = process.env.EZRAB_ACCESS_CODE || '';
   const secret = process.env.EZRAB_ACCESS_SESSION_SECRET || '';
   const configured = code.length > 0 && secret.length >= 16;

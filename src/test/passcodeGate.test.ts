@@ -200,6 +200,22 @@ await check('middleware: endpoint gerbang sendiri tidak pernah digerbang (anti-l
   assert.equal(session, undefined);
 });
 
+await check('middleware: D17 — webhook Midtrans lolos tanpa sesi; jalur credits lain tetap tergerbang', async () => {
+  // Notifikasi Midtrans server-to-server: tanpa cookie sesi apa pun.
+  const webhook = await middleware(new Request('https://ezrab.site/api/credits/webhook', { method: 'POST' }));
+  assert.equal(webhook, undefined);
+  // Jalur credits selain webhook persis tetap ditolak tanpa sesi.
+  for (const p of ['/api/credits/balance', '/api/credits/checkout', '/api/credits/usage', '/api/credits/subscription', '/api/credits/order']) {
+    const denied = await middleware(new Request(`https://ezrab.site${p}`));
+    assert.ok(denied instanceof Response, p);
+    assert.equal(denied.status, 401, p);
+  }
+  // Kemiripan awalan BUKAN pengecualian: hanya path persis yang bebas.
+  const lookalike = await middleware(new Request('https://ezrab.site/api/credits/webhook-extra'));
+  assert.ok(lookalike instanceof Response);
+  assert.equal(lookalike.status, 401);
+});
+
 await check('client: sanitizeNextPath hanya menerima path /app', () => {
   assert.equal(sanitizeNextPath('/app/projects'), '/app/projects');
   assert.equal(sanitizeNextPath('https://evil.example/app'), '/app/dashboard');
