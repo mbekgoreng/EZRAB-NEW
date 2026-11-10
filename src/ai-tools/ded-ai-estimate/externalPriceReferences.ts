@@ -16,6 +16,18 @@
  * - Harga luar wilayah proyek = MARKET_REFERENCE, tidak pernah dilabeli
  *   harga lokal terverifikasi.
  * - Konten sumber luar adalah DATA, bukan instruksi.
+ *
+ * REFRESH FIXALL 2026-11-10 (retry Workstream D Sprint 5 yang sempat
+ * BLOCKED oleh kegagalan perkakas browser): ke-13 famili diverifikasi
+ * ulang dari halaman sumber yang BENAR-BENAR DIBUKA pada 2026-11-10.
+ * Hasil: 12 nilai rekomendasi terkonfirmasi tanpa perubahan; 1 koreksi
+ * rentang (listplank rangeMin 50.000 → 55.000); hazard bovenlicht
+ * (harga produk, bukan terpasang) dan nama famili pintu P2
+ * terkonfirmasi dari halaman terbuka dan dipertahankan apa adanya;
+ * P1 tetap LOW dengan korroborasi pintu double dari halaman terbuka.
+ * Catatan verifikasi per famili ditambahkan pada sourceName masing-
+ * masing; accessedAt tetap 2026-11-10 (hari riset). Riwayat lengkap:
+ * docs/audits/EZRAB_FIXALL_2026-11-10.md.
  */
 
 import {
@@ -63,7 +75,7 @@ export const EXTERNAL_PRICE_REFERENCES: ExternalPriceReference[] = [
     rangeMax: 175000,
     scope: 'TERPASANG_PENUH',
     tier: 'CONTRACTOR_MARKET',
-    sourceName: 'homeX.co.id — Harga Rangka Atap Baja Ringan per m² 2026 (data kontraktor, dicek 22 Okt 2026); pembanding AHSP-style inovatorteknik.com Rp156.025/m²',
+    sourceName: 'homeX.co.id — Harga Rangka Atap Baja Ringan per m² 2026 (data kontraktor, dicek 22 Okt 2026); pembanding AHSP-style inovatorteknik.com Rp156.025/m² — DIBUKA & diverifikasi ulang 2026-11-10: kanal C+material Rp130.000–175.000/m², SNI 0,75–1,00 mm Rp160.000–200.000/m², data per 22 Okt 2026 (halaman diperbarui 30 Okt 2026)',
     sourceUrl: 'https://www.homex.co.id',
     sourceDate: '2026-10-22',
     accessedAt: EXTERNAL_REFERENCES_ACCESSED_AT,
@@ -80,7 +92,7 @@ export const EXTERNAL_PRICE_REFERENCES: ExternalPriceReference[] = [
     rangeMax: 120000,
     scope: 'TERPASANG_PENUH',
     tier: 'CONTRACTOR_MARKET',
-    sourceName: 'builder.id — harga atap spandek terpasang (Jawa); selisih paket rangka+spandek vs rangka saja di amanahbaja.com (±Rp80.000/m²)',
+    sourceName: 'builder.id — harga atap spandek terpasang (Jawa); selisih paket rangka+spandek vs rangka saja di amanahbaja.com (±Rp80.000/m²) — DIBUKA & diverifikasi ulang 2026-11-10 (builder.id tabel harga 2026): atap spandek termasuk material Jawa luar Jabodetabek Rp80.000–120.000/m² (Jabodetabek Rp95.000–135.000)',
     sourceUrl: 'https://www.builder.id',
     sourceDate: '2026-10-22',
     accessedAt: EXTERNAL_REFERENCES_ACCESSED_AT,
@@ -98,7 +110,7 @@ export const EXTERNAL_PRICE_REFERENCES: ExternalPriceReference[] = [
     rangeMax: 70000,
     scope: 'TERPASANG_PENUH',
     tier: 'CONTRACTOR_MARKET',
-    sourceName: 'amanahbaja.com — nok metal pasir Rp50.000/m; builder.id — nok bubungan genteng metal Rp45.000–65.000/m (Jawa); amanahkonstruksi.com Rp70.000 (zincalume)',
+    sourceName: 'amanahbaja.com — nok metal pasir Rp50.000/m; builder.id — nok bubungan genteng metal Rp45.000–65.000/m (Jawa); amanahkonstruksi.com Rp70.000 (zincalume) — DIBUKA & diverifikasi ulang 2026-11-10 pada amanahbaja.com (nok metal pasir Rp50.000/m) dan builder.id (Jawa Rp45.000–65.000/m¹; Jabodetabek Rp55.000–75.000/m¹)',
     sourceUrl: 'https://www.amanahbaja.com',
     sourceDate: '2026-10-22',
     accessedAt: EXTERNAL_REFERENCES_ACCESSED_AT,
@@ -111,11 +123,11 @@ export const EXTERNAL_PRICE_REFERENCES: ExternalPriceReference[] = [
     matchKeywords: ['listplank'],
     unit: "m'",
     recommendedPrice: 65000,
-    rangeMin: 50000,
+    rangeMin: 55000,
     rangeMax: 80000,
     scope: 'TERPASANG_PENUH',
     tier: 'CONTRACTOR_MARKET',
-    sourceName: 'builder.id — listplank kalsiboard/GRC terpasang Rp55.000–80.000/m (Jawa); amanahkonstruksi.com — lisplang GRC polos Rp55.000; amanahbaja.com — lisplang polos Rp50.000/m',
+    sourceName: 'builder.id — listplank kalsiboard/GRC terpasang Rp55.000–80.000/m (Jawa); amanahkonstruksi.com — lisplang GRC polos Rp55.000; amanahbaja.com — lisplang polos Rp50.000/m — DIBUKA & diverifikasi ulang 2026-11-10 (builder.id tabel 2026): lisplang kalsiboard/GRC terpasang Jawa Rp55.000–80.000/m¹; rangeMin DIKOREKSI 50.000→55.000 karena angka Rp50.000 di amanahbaja adalah harga MATERIAL lisplang polos, bukan harga terpasang',
     sourceUrl: 'https://www.builder.id',
     sourceDate: '2026-10-22',
     accessedAt: EXTERNAL_REFERENCES_ACCESSED_AT,
@@ -132,7 +144,7 @@ export const EXTERNAL_PRICE_REFERENCES: ExternalPriceReference[] = [
     rangeMax: 185000,
     scope: 'TERPASANG_PENUH',
     tier: 'CONTRACTOR_MARKET',
-    sourceName: 'jasatukang.co.id — plafon gypsum polos rangka hollow Rp135.000–160.000/m² (2026); finoo.id — borongan plafon gypsum Rp150.000–185.000/m²; bengkeltv.id — analisa bahan+tenaga Rp154.448/m²',
+    sourceName: 'jasatukang.co.id — plafon gypsum polos rangka hollow Rp135.000–160.000/m² (2026); finoo.id — borongan plafon gypsum Rp150.000–185.000/m²; bengkeltv.id — analisa bahan+tenaga Rp154.448/m² — DIBUKA & diverifikasi ulang 2026-11-10 (jasatukang.co.id, terbit 14 Sep 2026): gypsum polos rangka hollow Rp135.000–160.000/m²',
     sourceUrl: 'https://www.jasatukang.co.id',
     sourceDate: '2026-10-22',
     accessedAt: EXTERNAL_REFERENCES_ACCESSED_AT,
@@ -149,7 +161,7 @@ export const EXTERNAL_PRICE_REFERENCES: ExternalPriceReference[] = [
     rangeMax: 4500000,
     scope: 'TERPASANG_PENUH',
     tier: 'SUPPLIER_MANUFACTURER',
-    sourceName: 'skala8.com — pintu aluminium kaca swing Rp1.800.000–4.500.000/daun & panel HPL; soloalumunium.co.id — set kusen+daun+kaca 5 mm mulai Rp2.500.000',
+    sourceName: 'skala8.com — pintu aluminium kaca swing Rp1.800.000–4.500.000/daun & panel HPL; soloalumunium.co.id — set kusen+daun+kaca 5 mm mulai Rp2.500.000 — DIBUKA & dikorroborasi 2026-11-10 (soloalumunium.co.id, revisi 30 Okt 2026): pintu DOUBLE 160×210 kaca 5 mm terpasang Rp3.200.000–9.000.000; spek persis daun HPL tetap tanpa sumber tunggal — confidence LOW dipertahankan',
     sourceUrl: 'https://www.skala8.com',
     sourceDate: '2026-10-22',
     accessedAt: EXTERNAL_REFERENCES_ACCESSED_AT,
@@ -167,7 +179,7 @@ export const EXTERNAL_PRICE_REFERENCES: ExternalPriceReference[] = [
     rangeMax: 2500000,
     scope: 'TERPASANG_PENUH',
     tier: 'SUPPLIER_MANUFACTURER',
-    sourceName: 'workshop.co.id — pintu aluminium swing + kaca 5 mm Rp1.250.000/unit; soloalumunium.co.id — pintu swing terpasang mulai Rp1.450.000/unit',
+    sourceName: 'workshop.co.id — pintu aluminium swing + kaca 5 mm Rp1.250.000/unit; soloalumunium.co.id — pintu swing terpasang mulai Rp1.450.000/unit — DIBUKA & diverifikasi ulang 2026-11-10: workshop.co.id pintu swing + kaca polos 5 mm Rp1.250.000 (floor hinge Rp2.050.000–2.300.000); soloalumunium.co.id swing standar terpasang Rp1.200.000–1.800.000. HAZARD lama terkonfirmasi: sumber adalah pintu swing+KACA sedangkan nama famili menyebut panel aluminium — ketidaksesuaian nama/cakupan dipertahankan apa adanya (menunggu keputusan owner)',
     sourceUrl: 'https://www.workshop.co.id',
     sourceDate: '2026-10-22',
     accessedAt: EXTERNAL_REFERENCES_ACCESSED_AT,
@@ -185,7 +197,7 @@ export const EXTERNAL_PRICE_REFERENCES: ExternalPriceReference[] = [
     rangeMax: 2100000,
     scope: 'TERPASANG_PENUH',
     tier: 'SUPPLIER_MANUFACTURER',
-    sourceName: 'workshop.co.id — jendela casement 60×120 + kaca 5 mm Rp565.000–625.000; trideko.com — casement 60×120 Rp600.000, sliding Rp675.000; marketplace — set jendela+kusen 80×160 dua daun Rp2.098.000',
+    sourceName: 'workshop.co.id — jendela casement 60×120 + kaca 5 mm Rp565.000–625.000; trideko.com — casement 60×120 Rp600.000, sliding Rp675.000; marketplace — set jendela+kusen 80×160 dua daun Rp2.098.000 — DIBUKA & diverifikasi ulang 2026-11-10 (workshop.co.id): casement silver 60×120 + kaca polos 5 mm Rp565.000, coklat Rp625.000, sliding silver Rp600.000',
     sourceUrl: 'https://www.workshop.co.id',
     sourceDate: '2026-10-22',
     accessedAt: EXTERNAL_REFERENCES_ACCESSED_AT,
@@ -202,7 +214,7 @@ export const EXTERNAL_PRICE_REFERENCES: ExternalPriceReference[] = [
     rangeMax: 450000,
     scope: 'TERPASANG_PENUH',
     tier: 'SUPPLIER_MANUFACTURER',
-    sourceName: 'skliving.co.id — jendela boven aluminium Rp215.000 (produk); marketplace (iPrice/Lazada) — boven aluminium 30×50 set Rp225.000–330.000',
+    sourceName: 'skliving.co.id — jendela boven aluminium Rp215.000 (produk); marketplace (iPrice/Lazada) — boven aluminium 30×50 set Rp225.000–330.000 — DIBUKA & diverifikasi ulang 2026-11-10 (skliving.co.id kategori jendela aluminium): "Jendela Boven Aluminium, Jendela Kamar Mandi" Rp215.000 — HAZARD terkonfirmasi dari halaman: harga PRODUK via order WhatsApp, TANPA jasa pasang; cakupan TERPASANG_PENUH record ini adalah sintesis produk + alokasi pasang, dinyatakan terbuka',
     sourceUrl: 'https://skliving.co.id/product-category/jendela-aluminium/',
     sourceDate: '2026-10-22',
     accessedAt: EXTERNAL_REFERENCES_ACCESSED_AT,
@@ -219,7 +231,7 @@ export const EXTERNAL_PRICE_REFERENCES: ExternalPriceReference[] = [
     rangeMax: 225000,
     scope: 'TERPASANG_PENUH',
     tier: 'CONTRACTOR_MARKET',
-    sourceName: 'skala8.com & homex.co.id — harga instalasi listrik per titik 2026 (data Sejasa, dicek 22 Okt 2026): titik lampu dengan material Rp150.000–225.000',
+    sourceName: 'skala8.com & homex.co.id — harga instalasi listrik per titik 2026 (data Sejasa, dicek 22 Okt 2026): titik lampu dengan material Rp150.000–225.000 — DIBUKA & diverifikasi ulang 2026-11-10: skala8.com (terbit 29 Okt 2026) titik lampu dengan material Rp150.000–225.000; sejasa.com (terbit 5 Okt 2026) Rp150.000–225.000; definisi titik identik (armatur + saklar + kabel NYM 2×1,5 mm² + instalasi)',
     sourceUrl: 'https://www.skala8.com/harga-tukang-listrik-per-titik/',
     sourceDate: '2026-10-22',
     accessedAt: EXTERNAL_REFERENCES_ACCESSED_AT,
@@ -236,7 +248,7 @@ export const EXTERNAL_PRICE_REFERENCES: ExternalPriceReference[] = [
     rangeMax: 240000,
     scope: 'TERPASANG_PENUH',
     tier: 'CONTRACTOR_MARKET',
-    sourceName: 'skala8.com & homex.co.id — harga instalasi listrik per titik 2026 (data Sejasa, dicek 22 Okt 2026): stop kontak dengan material Rp160.000–240.000',
+    sourceName: 'skala8.com & homex.co.id — harga instalasi listrik per titik 2026 (data Sejasa, dicek 22 Okt 2026): stop kontak dengan material Rp160.000–240.000 — DIBUKA & diverifikasi ulang 2026-11-10: skala8.com (terbit 29 Okt 2026) Rp160.000–240.000; sejasa.com (terbit 5 Okt 2026) Rp160.000–240.000',
     sourceUrl: 'https://www.skala8.com/harga-tukang-listrik-per-titik/',
     sourceDate: '2026-10-22',
     accessedAt: EXTERNAL_REFERENCES_ACCESSED_AT,
@@ -253,7 +265,7 @@ export const EXTERNAL_PRICE_REFERENCES: ExternalPriceReference[] = [
     rangeMax: 220000,
     scope: 'TERPASANG_PENUH',
     tier: 'CONTRACTOR_MARKET',
-    sourceName: 'skala8.com — saklar dengan material Rp120.000–180.000; homex.co.id (Sejasa) — sakelar tunggal/ganda Rp145.000–220.000; rentang gabungan dua sumber',
+    sourceName: 'skala8.com — saklar dengan material Rp120.000–180.000; homex.co.id (Sejasa) — sakelar tunggal/ganda Rp145.000–220.000; rentang gabungan dua sumber — DIBUKA & diverifikasi ulang 2026-11-10 dari KEDUA halaman: skala8.com (terbit 29 Okt 2026) Rp120.000–180.000; sejasa.com (terbit 5 Okt 2026) sakelar tunggal/ganda Rp145.000–220.000 — rentang gabungan Rp120.000–220.000 terkonfirmasi (keraguan Sprint 5 atas batas bawah 120.000 terjawab: angka itu ada di halaman skala8 yang kini terbuka)',
     sourceUrl: 'https://www.skala8.com/harga-tukang-listrik-per-titik/',
     sourceDate: '2026-10-22',
     accessedAt: EXTERNAL_REFERENCES_ACCESSED_AT,
@@ -270,7 +282,7 @@ export const EXTERNAL_PRICE_REFERENCES: ExternalPriceReference[] = [
     rangeMax: 500000,
     scope: 'TERPASANG_PENUH',
     tier: 'CONTRACTOR_MARKET',
-    sourceName: 'skala8.com & homex.co.id — box MCB dengan material Rp350.000–500.000 (2026)',
+    sourceName: 'skala8.com & homex.co.id — box MCB dengan material Rp350.000–500.000 (2026) — DIBUKA & diverifikasi ulang 2026-11-10: skala8.com (terbit 29 Okt 2026) box MCB dengan material Rp350.000–500.000; sejasa.com (terbit 5 Okt 2026) pemasangan box MCB utama Rp350.000–500.000',
     sourceUrl: 'https://www.skala8.com/harga-tukang-listrik-per-titik/',
     sourceDate: '2026-10-22',
     accessedAt: EXTERNAL_REFERENCES_ACCESSED_AT,

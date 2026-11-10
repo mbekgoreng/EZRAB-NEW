@@ -7,20 +7,25 @@
  *      --outfile=/home/hatch/workspace/.ded-sprint5-bundles/dedPriceReferenceRefresh.cjs
  *      && node /home/hatch/workspace/.ded-sprint5-bundles/dedPriceReferenceRefresh.cjs
  *
- * KONTEKS JUJUR: upaya riset ulang Sprint 5 (2026-11-10) TIDAK
- * menghasilkan satu pun verifikasi halaman-sumber: perkakas
- * browser.open gagal total (layanan browser error pada 4 domain
- * independen), sehingga menurut aturan program — hanya halaman yang
- * benar-benar dibuka yang boleh menjadi bukti — TIDAK ADA referensi
- * yang ter-refresh. Konsekuensinya terpin di sini:
- * - Semua 13 record historis UTUH (harga, sumber, tanggal tak berubah).
+ * KONTEKS JUJUR: upaya riset ulang Sprint 5 (2026-11-10) sempat
+ * BLOCKED total — perkakas browser.open gagal pada 4 domain
+ * independen sehingga tidak ada verifikasi yang sah. RETRY FIXALL
+ * (2026-11-10, grant owner "perbaiki semua") berhasil membuka SEMUA
+ * halaman inti (homex, builder.id, amanahbaja, jasatukang, workshop,
+ * skliving, skala8, sejasa, soloalumunium): ke-13 famili terverifikasi
+ * dari halaman terbuka. Hasil yang terpin di sini:
+ * - 12 nilai rekomendasi TERKONFIRMASI tanpa perubahan; sourceName
+ *   setiap famili kini memuat catatan verifikasi terbukanya.
+ * - 1 koreksi rentang berbasis bukti: listplank rangeMin
+ *   50.000 → 55.000 (angka lama = harga material, bukan terpasang).
  * - accessedAt TIDAK diperpanjang artifisial: tetap 2026-11-10 dengan
- *   sourceDate 2026-10-22.
+ *   sourceDate 2026-10-22 (tanggal data pada sumber).
  * - Klasifikasi kesegaran dari tanggal AKTUAL: FRESH sampai 2026-12-10,
  *   STALE sesudahnya; daftar revalidasi memuat 13 record terkurasi.
  * - Provenans basis Jakarta tetap null; tier OFFICIAL_SSH_HSPK tetap
  *   kosong; layanan kanonis tidak mengubah resolver.
- * Lihat docs/audits/DED_SPRINT_5_PRICE_REFERENCE_REFRESH.md.
+ * Lihat docs/audits/DED_SPRINT_5_PRICE_REFERENCE_REFRESH.md (keadaan
+ * BLOCKED awal) dan docs/audits/EZRAB_FIXALL_2026-11-10.md (hasil retry).
  */
 import {
   EXTERNAL_PRICE_REFERENCES, EXTERNAL_REFERENCES_ACCESSED_AT, findExternalReference,
@@ -37,7 +42,7 @@ function check(name: string, cond: boolean, detail = '') {
   else { failed++; console.log(`  FAIL ${name}${detail ? ' — ' + detail : ''}`); }
 }
 
-console.log('== D-a: record historis terpreservasi persis (refresh BLOCKED, bukan diganti) ==');
+console.log('== D-a: record terpreservasi + terverifikasi ulang dari halaman terbuka (retry FIXALL) ==');
 check('D-a1 tetap 13 famili terkurasi', EXTERNAL_PRICE_REFERENCES.length === 13);
 check('D-a2 accessedAt TIDAK diperpanjang artifisial (tetap 2026-11-10)',
   EXTERNAL_REFERENCES_ACCESSED_AT === '2026-11-10'
@@ -51,6 +56,11 @@ check('D-a4 harga rekomendasi historis utuh (spot-check 3 famili)',
 check('D-a5 setiap record mempertahankan URL + nama sumber aslinya',
   EXTERNAL_PRICE_REFERENCES.every((r) => typeof r.sourceUrl === 'string' && r.sourceUrl.length > 0
     && typeof r.sourceName === 'string' && r.sourceName.length > 0));
+check('D-a6 koreksi listplank berbasis bukti halaman terbuka: rangeMin 55.000 (bukan 50.000 harga material)',
+  EXTERNAL_PRICE_REFERENCES.find((r) => r.id === 'ext-listplank-kalsiboard')?.rangeMin === 55000
+  && EXTERNAL_PRICE_REFERENCES.find((r) => r.id === 'ext-listplank-kalsiboard')?.recommendedPrice === 65000);
+check('D-a7 semua famili memuat catatan verifikasi terbuka 2026-11-10 pada sourceName',
+  EXTERNAL_PRICE_REFERENCES.every((r) => r.sourceName.includes('2026-11-10')));
 
 console.log('== D-b: kesegaran berbasis tanggal AKTUAL ==');
 const ext = listCanonicalReferences().filter((r) => r.origin === 'EXTERNAL_CURATED');
