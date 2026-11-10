@@ -8,6 +8,18 @@
 import {
   FullAiOutput, FullAiItem, FullAiQuantityDetail, FullAiPriceDetail,
 } from './types';
+import { isSaneEstimate } from '../ded-ai-estimate/pricing';
+import { classifyQuantity } from '../ded-ai-estimate/priceCompletion';
+import { referenceSpecConflict, EXTERNAL_PRICE_REFERENCES } from '../ded-ai-estimate/externalPriceReferences';
+import type { DedAiItem } from '../ded-ai-estimate/types';
+
+const VALID_QUANTITY_CLASS = [
+  'DRAWING_EXTRACTED', 'USER_PROVIDED', 'CALCULATED_FROM_VERIFIED_INPUT',
+  'ESTIMATED_FROM_CONTEXT', 'MISSING', 'IMPLAUSIBLE_FRAGMENT',
+  'EXPLICIT_ZERO', 'NEEDS_REVIEW',
+];
+const VALID_APPROVAL_STATUS = ['PENDING', 'APPROVED', 'REJECTED', 'NOT_REQUIRED'];
+const VALID_VERIFICATION_STATUS = ['VERIFIED', 'UNVERIFIED', 'NEEDS_VERIFICATION'];
 
 export interface ValidationResult {
   valid: boolean;
@@ -16,7 +28,10 @@ export interface ValidationResult {
 }
 
 const VALID_PROVENANCE = ['EXPLICIT', 'DERIVED', 'ASSUMPTION', 'NEEDS_CONFIRMATION', 'UNRESOLVED', 'USER_INPUT'];
-const VALID_PRICE_SOURCE = ['VERIFIED_SOURCE', 'USER_INPUT', 'AI_ESTIMATE', 'UNRESOLVED'];
+// AHSP_2026 ditambahkan (HARDENING 2026-11-10): adapter kanonis memang
+// menghasilkan sumber itu — daftar lama yang tidak memuatnya membuat
+// nilai sah dari adapter terlihat tidak valid oleh validator ini.
+const VALID_PRICE_SOURCE = ['VERIFIED_SOURCE', 'USER_INPUT', 'AI_ESTIMATE', 'UNRESOLVED', 'AHSP_2026'];
 const VALID_CONFIDENCE = ['HIGH', 'MEDIUM', 'LOW'];
 
 export function validateQuantityDetail(q: any, itemName: string): ValidationResult {
@@ -55,6 +70,19 @@ export function validateQuantityDetail(q: any, itemName: string): ValidationResu
     errors.push(`${itemName}: confidence "${q.confidence}" tidak valid`);
   }
 
+  // SPRINT 4 (paritas, PERINGATAN saja): fragmen kuantitas tak fisik
+  // (pelat dak mikro, listplank < 1 m') dikenali diskriminator BERSAMA
+  // pipeline standar (classifyQuantity) — validator standar
+  // mengklasifikasikannya IMPLAUSIBLE_FRAGMENT; di sini cukup
+  // peringatan karena pengisian/penahanannya adalah wewenang pass
+  // penyelesaian (completeFullAiQuantities), bukan validator.
+  if (typeof q.value === 'number' && Number.isFinite(q.value) && q.value > 0 && typeof q.unit === 'string') {
+    const cls = classifyQuantity({ name: itemName, units: q.unit, quantity: q.value } as Pick<DedAiItem, 'name' | 'units' | 'quantity'>);
+    if (cls === 'IMPLAUSIBLE_FRAGMENT') {
+      warnings.push(`${itemName}: kuantitas ${q.value} ${q.unit} terklasifikasi IMPLAUSIBLE_FRAGMENT oleh diskriminator bersama — kemungkinan fragmen salah-baca spesifikasi, perlu tinjauan`);
+    }
+  }
+
   return { valid: errors.length === 0, errors, warnings };
 }
 
@@ -91,6 +119,24 @@ export function validatePriceDetail(p: any, qUnit: string, itemName: string): Va
   // Jangan klaim VERIFIED_SOURCE tanpa ahspCode
   if (p.source === 'VERIFIED_SOURCE' && !p.ahspCode) {
     warnings.push(`${itemName}: diklaim VERIFIED_SOURCE tapi tanpa kode AHSP`);
+  }
+
+  // SPRINT 4 (paritas): klaim kanonis AHSP_2026 juga wajib membawa
+  // kode — adapter kanonis hanya menghasilkannya bersama kode
+  // terverifikasi; tanpa kode, klaimnya tidak dapat ditelusur.
+  if (p.source === 'AHSP_2026' && !p.ahspCode) {
+    warnings.push(`${itemName}: diklaim AHSP_2026 tapi tanpa kode AHSP`);
+  }
+
+  // SPRINT 4 (paritas, PERINGATAN saja): kewajaran harga estimasi AI
+  // memakai ambang BERSAMA isSaneEstimate pipeline standar
+  // (Rp100 .. Rp50 miliar per satuan). Validator standar MENOLAK harga
+  // di luar pita itu di lapisan konversinya; di jalur Full AI keputusan
+  // itu berdampak pada finalisasi sehingga di sini hanya peringatan —
+  // penolakan kerasnya dicatat sebagai perbedaan yang DITUNDA di
+  // dokumen paritas Sprint 4 (perlu keputusan owner).
+  if (p.source === 'AI_ESTIMATE' && p.unitPrice != null && !isSaneEstimate(p.unitPrice)) {
+    warnings.push(`${itemName}: harga estimasi AI Rp${p.unitPrice} di luar pita kewajaran bersama (isSaneEstimate) — perlu tinjauan`);
   }
 
   return { valid: errors.length === 0, errors, warnings };
@@ -161,6 +207,62 @@ export function clearAiProposal<T extends {
   return { ...item, aiProposedSubtotal: undefined, subtotalDiscrepancy: undefined };
 }
 
+/**
+ * SPRINT 4 (paritas): konsistensi blok penyelesaian terstruktur pada
+ * item Full AI (DedPriceCompletion / DedQuantityAudit bersama). Semua
+ * temuan berupa PERINGATAN — blok adalah metadata penyelesaian;
+ * menegakkannya sebagai error akan mengubah perilaku finalisasi item
+ * yang sah (pagar laporan Hardening I-P2-6), jadi validator hanya
+ * menandai ketidakkonsistenan agar terlihat:
+ * - enum blok (kelas kuantitas, status verifikasi/persetujuan) sah;
+ * - harga terisi dari referensi: recommendedPrice blok == harga item;
+ * - blok yang menunjuk referensi terkurasi tidak boleh konflik
+ *   spesifikasi dengan nama item (referenceSpecConflict bersama —
+ *   pertahanan kedua di samping penjaga findExternalReference).
+ */
+export function validateFullAiCompletionBlocks(raw: any, itemName: string): ValidationResult {
+  const warnings: string[] = [];
+  const pc = raw?.price?.priceCompletion ?? raw?.priceCompletion;
+  const qa = raw?.quantity?.quantityAudit ?? raw?.quantityAudit;
+
+  if (pc) {
+    if (pc.userApprovalStatus && !VALID_APPROVAL_STATUS.includes(pc.userApprovalStatus)) {
+      warnings.push(`${itemName}: priceCompletion.userApprovalStatus "${pc.userApprovalStatus}" tidak valid`);
+    }
+    if (pc.verificationStatus && !VALID_VERIFICATION_STATUS.includes(pc.verificationStatus)) {
+      warnings.push(`${itemName}: priceCompletion.verificationStatus "${pc.verificationStatus}" tidak valid`);
+    }
+    if (pc.referenceId && raw?.price?.filledFromExternalRef) {
+      if (pc.recommendedPrice != null && raw.price.unitPrice != null && pc.recommendedPrice !== raw.price.unitPrice) {
+        warnings.push(`${itemName}: recommendedPrice blok penyelesaian (${pc.recommendedPrice}) tidak sama dengan harga item (${raw.price.unitPrice})`);
+      }
+      const ref = EXTERNAL_PRICE_REFERENCES.find((r) => r.id === pc.referenceId);
+      if (ref) {
+        const conflict = referenceSpecConflict(itemName, ref);
+        if (conflict) {
+          warnings.push(`${itemName}: referensi blok penyelesaian (${ref.id}) konflik spesifikasi dengan item: ${conflict}`);
+        }
+      }
+    }
+  }
+  if (qa) {
+    if (qa.classification && !VALID_QUANTITY_CLASS.includes(qa.classification)) {
+      warnings.push(`${itemName}: quantityAudit.classification "${qa.classification}" bukan kelas DedQuantityClass yang sah`);
+    }
+    if (qa.userApprovalStatus && !VALID_APPROVAL_STATUS.includes(qa.userApprovalStatus)) {
+      warnings.push(`${itemName}: quantityAudit.userApprovalStatus "${qa.userApprovalStatus}" tidak valid`);
+    }
+    if (qa.verificationStatus && !VALID_VERIFICATION_STATUS.includes(qa.verificationStatus)) {
+      warnings.push(`${itemName}: quantityAudit.verificationStatus "${qa.verificationStatus}" tidak valid`);
+    }
+    // Isian konteks tidak pernah boleh terklasifikasi fakta gambar.
+    if (qa.method === 'plan-context-estimate' && qa.classification === 'DRAWING_EXTRACTED') {
+      warnings.push(`${itemName}: isian konteks terklasifikasi DRAWING_EXTRACTED — isian konteks wajib ESTIMATED_FROM_CONTEXT`);
+    }
+  }
+  return { valid: true, errors: [], warnings };
+}
+
 export function validateFullAiItem(raw: any, index: number): ValidationResult {
   const errors: string[] = [];
   const warnings: string[] = [];
@@ -182,6 +284,11 @@ export function validateFullAiItem(raw: any, index: number): ValidationResult {
   const pResult = validatePriceDetail(raw.price, qUnit, name);
   errors.push(...pResult.errors);
   warnings.push(...pResult.warnings);
+
+  // Blok penyelesaian terstruktur (bila item membawanya — mis. hasil
+  // tersimpan yang divalidasi ulang): konsistensi metadata saja.
+  const cResult = validateFullAiCompletionBlocks(raw, name);
+  warnings.push(...cResult.warnings);
 
   return { valid: errors.length === 0, errors, warnings };
 }

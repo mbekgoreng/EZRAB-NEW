@@ -25,6 +25,13 @@ export type FullAiProvenance =
 export type DedEstimationPolicy = 'FULL_AI' | 'DATABASE';
 
 import type { CanonicalDedMatch } from '../ded-canonical/canonicalDedPricing';
+import type {
+  DedWorkflowUsage, DedPriceCompletion, DedQuantityAudit,
+} from '../ded-ai-estimate/types';
+
+// SPRINT 4 (paritas DED Full AI): blok metadata penyelesaian memakai
+// ULANG tipe pipeline standar — tidak ada model duplikat di jalur ini.
+export type { DedPriceCompletion, DedQuantityAudit };
 
 export type FullAiPriceSource =
   | 'AHSP_2026'          // Harga kanonis EZRAB (SE DJBK 47/2026, biaya langsung) — SATU-SATUNYA nilai yang berarti "terverifikasi database" untuk hasil baru; hanya diproduksi lewat resolveDedPriceWithCanonical
@@ -44,6 +51,16 @@ export interface FullAiQuantityDetail {
   confidence: 'HIGH' | 'MEDIUM' | 'LOW';
   assumptions?: string[];     // Asumsi yang digunakan
   notes?: string;             // Catatan ketidakpastian
+  /**
+   * SPRINT 4 (paritas): blok audit kuantitas bersama pipeline standar
+   * (DedQuantityAudit — klasifikasi 8 kelas DedQuantityClass, nilai
+   * asli/usulan, metode, status verifikasi & persetujuan). Diisi
+   * completeFullAiQuantities lewat classifyQuantityProvenance /
+   * buildQuantityAudit bersama. Opsional & aditif: hasil lama tanpa
+   * blok ini tetap terbaca. Cerminan blok yang sama juga disimpan di
+   * FullAiItem.quantityAudit (bentuk item standar).
+   */
+  quantityAudit?: DedQuantityAudit;
 }
 
 export interface FullAiPriceDetail {
@@ -56,6 +73,20 @@ export interface FullAiPriceDetail {
   notes?: string;
   /** Hasil resolusi kanonis terakhir (status, kandidat review, alasan). */
   ahspMatch?: CanonicalDedMatch;
+  /** HARDENING 2026-11-10: true bila harga diisi dari referensi pasar eksternal terkurasi (FULL_AI). */
+  filledFromExternalRef?: boolean;
+  /**
+   * SPRINT 4 (paritas): blok penyelesaian harga TERSTRUKTUR — tipe
+   * DedPriceCompletion yang sama dengan pipeline standar (klasifikasi,
+   * sourceKind via priceSourceKindFor, status verifikasi, status
+   * persetujuan, harga asli/usulan, sumber + URL + tanggal, wilayah,
+   * cakupan, penanda basi, riwayat). Diisi bila harga dilengkapi dari
+   * referensi eksternal, atau sebagai penanda NEEDS_VERIFICATION bila
+   * referensi gugur karena konflik spesifikasi. Catatan string `notes`
+   * dipertahankan untuk kompatibilitas (mapper finalisasi membacanya).
+   * Cerminan blok yang sama juga disimpan di FullAiItem.priceCompletion.
+   */
+  priceCompletion?: DedPriceCompletion;
 }
 
 export type FullAiExclusionReason =
@@ -88,6 +119,19 @@ export interface FullAiItem {
   status: 'READY' | 'NEEDS_CONFIRMATION' | 'UNRESOLVED' | 'EXCLUDED';
   exclusionReason: FullAiExclusionReason; // Alasan spesifik tidak masuk total
   sourcePages?: number[];
+  /**
+   * SPRINT 4 (paritas): cerminan item-level blok penyelesaian harga —
+   * objek yang sama dengan price.priceCompletion, pada posisi yang
+   * sama dengan DedAiItem.priceCompletion pipeline standar, agar
+   * konsumen bersama tidak perlu tahu bentuk bersarang Full AI.
+   */
+  priceCompletion?: DedPriceCompletion;
+  /**
+   * SPRINT 4 (paritas): cerminan item-level blok audit kuantitas —
+   * objek yang sama dengan quantity.quantityAudit, sejajar dengan
+   * DedAiItem.quantityAudit pipeline standar.
+   */
+  quantityAudit?: DedQuantityAudit;
 }
 
 export interface FullAiProjectInfo {
@@ -131,6 +175,8 @@ export interface FullAiOutput {
     message: string;
     retryable: boolean;
   };
+  /** HARDENING 2026-11-10 (Tahap 6): metadata usage workflow untuk kesiapan Unified Credits — bukan tagihan. */
+  usage?: DedWorkflowUsage;
   provenance: {
     /** Provider yang BENAR-BENAR melayani respons (dari gateway); null = respons tidak membawa identitas — jangan ditebak. */
     provider: string | null;

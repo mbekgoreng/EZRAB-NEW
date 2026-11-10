@@ -8,7 +8,10 @@ import React, { useState } from 'react';
 import { ChevronDown, ChevronRight, AlertTriangle, CheckCircle2, HelpCircle, XCircle } from 'lucide-react';
 import { FullAiOutput, FullAiItem } from './types';
 import { resolveCanonicalCode, getDedPriceSourceLabel, DED_PRICE_SOURCE_LABELS } from '../ded-canonical/canonicalDedPricing';
-import { resolveFullAiItemStatus } from './service';
+import {
+  resolveFullAiItemStatus, acceptFullAiCompletion, rejectFullAiCompletion,
+  fullAiPriceCompletionOf, fullAiQuantityAuditOf,
+} from './service';
 import { verifySubtotal, clearAiProposal } from './validator';
 
 interface Props {
@@ -54,6 +57,17 @@ function ItemCard({ item, onUpdate }: { item: FullAiItem; onUpdate: (updated: Fu
   const [editPrice, setEditPrice] = useState(item.price.unitPrice?.toString() || '');
   const q = item.quantity;
   const p = item.price;
+  // SPRINT 4 (paritas): blok penyelesaian terstruktur bersama pipeline
+  // standar (DedPriceCompletion / DedQuantityAudit).
+  const pc = fullAiPriceCompletionOf(item);
+  const qa = fullAiQuantityAuditOf(item);
+  const hasPendingCompletion = Boolean(
+    (pc && pc.referenceId) || qa?.method === 'plan-context-estimate'
+  );
+  const completionApproved = Boolean(
+    (pc?.userApprovalStatus === 'APPROVED' || qa?.userApprovalStatus === 'APPROVED')
+    && hasPendingCompletion
+  );
   const prov = PROVENANCE_LABEL[q.provenance] || PROVENANCE_LABEL.UNRESOLVED;
   const priceSrc = getDedPriceSourceLabel(p.source);
   const isEdited = q.provenance === 'USER_INPUT' || p.source === 'USER_INPUT';
@@ -78,6 +92,10 @@ function ItemCard({ item, onUpdate }: { item: FullAiItem; onUpdate: (updated: Fu
       ahspCode: resolved.matchedCode,
       notes: `AHSP kanonis ${resolved.matchedCode} (${resolved.sourceDocument}, biaya langsung) — dikonfirmasi pengguna dari kandidat review.`,
       ahspMatch: resolved,
+      // Harga menjadi kanonis: blok penyelesaian referensi eksternal
+      // (SPRINT 4) tidak lagi menjelaskan harga ini — dicabut.
+      filledFromExternalRef: undefined,
+      priceCompletion: undefined,
     };
     const { subtotal, verified } = verifySubtotal(item.quantity.value, newPrice.unitPrice);
     const { status, exclusionReason } = resolveFullAiItemStatus(
@@ -89,6 +107,7 @@ function ItemCard({ item, onUpdate }: { item: FullAiItem; onUpdate: (updated: Fu
     onUpdate(clearAiProposal({
       ...item,
       price: newPrice,
+      priceCompletion: undefined,
       subtotal: includeInTotal ? subtotal : null,
       subtotalVerified: verified && includeInTotal,
       status: includeInTotal ? 'READY' : status,
@@ -159,6 +178,75 @@ function ItemCard({ item, onUpdate }: { item: FullAiItem; onUpdate: (updated: Fu
           {q.notes && <div style={{ marginBottom: 6 }}><strong>Catatan:</strong> {q.notes}</div>}
 
           {p.notes && <div style={{ marginBottom: 6 }}><strong>Catatan harga:</strong> {p.notes}</div>}
+
+          {/* SPRINT 4 (paritas): blok penyelesaian harga terstruktur —
+              bentuk yang sama dengan DedAiResultView pipeline standar. */}
+          {pc && (
+            <div style={{ marginBottom: 6, background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 6, padding: '6px 8px' }}>
+              <strong>Penyelesaian AI:</strong> klasifikasi <b>{pc.classification}</b>
+              {pc.sourceKind ? <> · jenis sumber {pc.sourceKind}</> : null}
+              {' '}· verifikasi {pc.verificationStatus ?? 'UNVERIFIED'} · persetujuan {pc.userApprovalStatus ?? '—'}
+              {pc.rangeMin != null && pc.rangeMax != null
+                ? <> · rentang referensi {fmtRp(pc.rangeMin)}–{fmtRp(pc.rangeMax)}/{pc.unit}</>
+                : null}
+              {' '}· cakupan {pc.scope === 'TERPASANG_PENUH' ? 'terpasang penuh' : pc.scope === 'MATERIAL_SAJA' ? 'material saja' : 'tidak dinyatakan'}
+              {pc.region ? <> · wilayah {pc.region}</> : null}
+              {pc.sourceName
+                ? <><br />Sumber: {pc.sourceUrl
+                  ? <a href={pc.sourceUrl} target="_blank" rel="noreferrer">{pc.sourceName}</a>
+                  : pc.sourceName}
+                  {pc.sourceDate ? <> (data {pc.sourceDate}, diambil {pc.accessedAt})</> : null}</>
+                : null}
+              {pc.specAssumption ? <><br />Asumsi spek: {pc.specAssumption}</> : null}
+              {pc.quantityBasis ? <><br />Dasar kuantitas: {pc.quantityBasis}</> : null}
+              {pc.method ? <><br />Metode: {pc.method}</> : null}
+              {pc.sourceStale ? <><br /><b style={{ color: '#d97706' }}>Sumber BASI</b> (melewati masa segar 30 hari) — keyakinan diturunkan.</> : null}
+              {pc.originalUnitPrice != null || pc.originalQuantity != null
+                ? <><br />Nilai asli sebelum penyelesaian: {pc.originalQuantity != null ? `kuantitas ${pc.originalQuantity} ${q.unit}` : ''}{pc.originalUnitPrice != null ? ` · harga ${fmtRp(pc.originalUnitPrice)}/${pc.unit}` : ' · harga kosong'}</>
+                : null}
+              {pc.history && pc.history.length > 0
+                ? <><br />Riwayat: {pc.history.map((h) => `${fmtRp(h.unitPrice)} (${h.classification}, ${h.at})`).join(' → ')}</>
+                : null}
+            </div>
+          )}
+
+          {/* SPRINT 4 (paritas): blok audit kuantitas bersama (8 kelas). */}
+          {qa && (
+            <div style={{ marginBottom: 6, background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 6, padding: '6px 8px' }}>
+              <strong>Audit Kuantitas:</strong> kelas <b>{qa.classification}</b> · metode {qa.method} · keyakinan {qa.confidence} · verifikasi {qa.verificationStatus} · persetujuan {qa.userApprovalStatus}
+              {qa.formula ? <><br />Dasar: {qa.formula}</> : null}
+              {qa.originalQuantity != null && qa.originalQuantity !== qa.proposedQuantity
+                ? <><br />Kuantitas asli: {qa.originalQuantity} {qa.unit} → usulan {qa.proposedQuantity != null ? qa.proposedQuantity : '—'} {qa.unit}</>
+                : null}
+              {qa.assumptions ? <><br />Asumsi: {qa.assumptions}</> : null}
+            </div>
+          )}
+
+          {/* SPRINT 4 (paritas): persetujuan tercatat — setara
+              acceptCompletion/rejectCompletion pipeline standar.
+              Terima = menerima nilai usulan; status verifikasi TIDAK
+              berubah dan referensi pasar TIDAK menjadi AHSP resmi.
+              Tolak memulihkan nilai asli & mencabut blok isian. */}
+          {hasPendingCompletion && (
+            <div style={{ marginBottom: 6, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+              {completionApproved ? (
+                <span style={{ fontSize: 12, color: '#16a34a', fontWeight: 600 }}>✓ Penyelesaian diterima pengguna — termasuk total berlabel estimasi (verifikasi tidak berubah).</span>
+              ) : (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onUpdate(acceptFullAiCompletion(item)); }}
+                  style={{ fontSize: 12, padding: '4px 12px', borderRadius: 6, border: '1px solid #16a34a', background: '#F0FDF4', color: '#15803d', cursor: 'pointer' }}
+                >
+                  Terima penyelesaian ini
+                </button>
+              )}
+              <button
+                onClick={(e) => { e.stopPropagation(); onUpdate(rejectFullAiCompletion(item)); }}
+                style={{ fontSize: 12, padding: '4px 12px', borderRadius: 6, border: '1px solid #d1d5db', background: '#fff', cursor: 'pointer' }}
+              >
+                Tolak penyelesaian — kembalikan seperti semula
+              </button>
+            </div>
+          )}
 
           {item.subtotalDiscrepancy && (
             <div style={{ marginBottom: 6, color: '#92400E', background: '#FFFBEB', padding: '6px 8px', borderRadius: 6 }}>
@@ -292,13 +380,20 @@ function ItemCard({ item, onUpdate }: { item: FullAiItem; onUpdate: (updated: Fu
                   const includeInTotal = newStatus === 'READY' && newSubtotal != null && newSubtotal > 0;
 
                   // Edit kuantitas/harga → usulan AI lama basi, dibersihkan.
+                  // SPRINT 4: blok penyelesaian/audit isian AI juga dicabut
+                  // — nilai ketikan user adalah USER_PROVIDED, bukan lagi
+                  // isian penyelesaian (setara edit pipeline standar yang
+                  // mencabut quantityAudit isian).
                   onUpdate(clearAiProposal({
                     ...item,
+                    priceCompletion: undefined,
+                    quantityAudit: undefined,
                     quantity: {
                       ...item.quantity,
                       value: validQty,
                       // Provenance asli dipertahankan di notes, tapi status jadi USER_INPUT
                       provenance: 'USER_INPUT' as any,
+                      quantityAudit: undefined,
                       notes: `${item.quantity.notes || ''} [Diedit user: nilai asli ${item.quantity.value} ${item.quantity.unit} (${item.quantity.provenance})]`.trim(),
                     },
                     price: {
@@ -311,6 +406,8 @@ function ItemCard({ item, onUpdate }: { item: FullAiItem; onUpdate: (updated: Fu
                       // harga yang bukan lagi harga kanonis).
                       ahspCode: undefined,
                       ahspMatch: undefined,
+                      filledFromExternalRef: undefined,
+                      priceCompletion: undefined,
                       notes: validPrice != null
                         ? `${item.price.notes || ''} [Diedit user: harga asli ${item.price.unitPrice} (${item.price.source})]`.trim()
                         : item.price.notes,

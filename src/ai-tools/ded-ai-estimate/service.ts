@@ -12,7 +12,7 @@
  * melewati gerbang kebijakan + komposisi FULL adapter tersebut.
  */
 
-import { aiToolsProviderClient, AiToolsResult, balancedJsonEnd } from '../providerClient';
+import { aiToolsProviderClient, AiToolsResult, AiToolsUsage, balancedJsonEnd } from '../providerClient';
 import { waitForMinimum, minDelayFor } from '../aiResponseTiming';
 import { buildFastPrompt, DedFastOutput, DedFastPromptInput } from './prompts/fast';
 import { buildDetailPrompt, DedDetailOutput, DedDetailPromptInput } from './prompts/detail';
@@ -20,6 +20,8 @@ import { parseDedPdf, DedParsedDocument } from './parser';
 import { attemptQuantityFromDimensionString, parseDimensionsString } from './quantity';
 import { evaluateAssumptionBasis, type AssumptionBasisKind } from './assumptionBasis';
 import { applyQuantityReasonablenessReview } from './reasonableness';
+import { completeDedBatch, derivePlanContext } from './priceCompletion';
+import { buildDedUsageFromStandard } from './usageMetadata';
 import { resolveDedPriceForPolicy } from './pricing';
 import { matchDedItemToAhsp, resolveDedPriceWithCanonical } from '../ded-canonical/canonicalDedPricing';
 import { DedAiCalculator } from './calculator';
@@ -389,8 +391,8 @@ export function classifyPassOutcome(parsedAi: unknown, parseFailed: boolean): De
 }
 
 export type DedPassExecution =
-  | { kind: 'PROVIDER_ERROR'; aiError: Extract<AiToolsResult, { success: false }>; retries: number }
-  | { kind: 'OUTCOME'; outcome: DedPassOutcome; retries: number };
+  | { kind: 'PROVIDER_ERROR'; aiError: Extract<AiToolsResult, { success: false }>; retries: number; provider: string | null; model: string | null; requestId: string | null; usage: AiToolsUsage | null }
+  | { kind: 'OUTCOME'; outcome: DedPassOutcome; retries: number; provider: string | null; model: string | null; requestId: string | null; usage: AiToolsUsage | null };
 
 /** Sprint 3.1: batas percobaan ulang per pass untuk outcome MALFORMED. */
 export const DED_PASS_MAX_MALFORMED_RETRIES = 1;
@@ -421,8 +423,21 @@ export async function executeDedPassAttempt(
   for (;;) {
     const aiResult = await callAi();
     if (!aiResult.success) {
-      return { kind: 'PROVIDER_ERROR', aiError: aiResult, retries };
+      // Hasil error gateway tidak membawa identitas provider/model —
+      // null jujur (bukan identitas percobaan sebelumnya).
+      return { kind: 'PROVIDER_ERROR', aiError: aiResult, retries, provider: null, model: null, requestId: null, usage: null };
     }
+    // SPRINT 4 (Tugas E/F): identitas AKTUAL dari respons gateway pada
+    // percobaan ini ditangkap aditif untuk jejak pass & metadata usage.
+    // Hanya percobaan FINAL yang dicatat (ia yang menentukan outcome).
+    // SPRINT 5 (X3 + plumbing X1/X2): requestId gateway & usage
+    // ternormalisasi percobaan final kini ikut ditangkap. requestId
+    // kosong ('' dari jalur Node adapter) dinormalkan menjadi null —
+    // korelasi yang tidak ada dinyatakan tidak ada, bukan string kosong.
+    const attemptProvider = aiResult.provider ?? null;
+    const attemptModel = aiResult.model ?? null;
+    const attemptRequestId = typeof aiResult.requestId === 'string' && aiResult.requestId !== '' ? aiResult.requestId : null;
+    const attemptUsage: AiToolsUsage | null = aiResult.usage ?? null;
     let parsedAi: DedFastOutput | DedDetailOutput | null = null;
     let parseFailed = false;
     if (aiResult.structured != null) {
@@ -437,7 +452,7 @@ export async function executeDedPassAttempt(
       retries++;
       continue;
     }
-    return { kind: 'OUTCOME', outcome, retries };
+    return { kind: 'OUTCOME', outcome, retries, provider: attemptProvider, model: attemptModel, requestId: attemptRequestId, usage: attemptUsage };
   }
 }
 
@@ -828,6 +843,9 @@ export class DedAiEstimateService {
   }
 
   private async run(options: DedAiServiceOptions): Promise<DedAiOutputEnvelope> {
+    // SPRINT 4 (Tugas E): penangkapan waktu operasi secara aditif untuk
+    // metadata usage (startedAt/finishedAt) — tidak mengubah alur.
+    const runStartedAt = new Date().toISOString();
     const { projectType, mode } = options;
     const jobId = `dedai-${Date.now()}`;
     const notify = (stage: string, label: string, percent: number, message: string, extra?: { pagesRead?: number; totalPages?: number }) => {
@@ -1007,6 +1025,12 @@ export class DedAiEstimateService {
         })
       );
       passTrace.retryCount = execution.retries;
+      // SPRINT 4: identitas aktual percobaan final (null bila provider error).
+      passTrace.provider = execution.provider;
+      passTrace.model = execution.model;
+      // SPRINT 5 (X3): korelasi requestId + usage attempt final per pass.
+      passTrace.requestId = execution.requestId;
+      passTrace.usage = execution.usage;
 
       if (execution.kind === 'PROVIDER_ERROR') {
         lastAiError = execution.aiError;
@@ -1075,6 +1099,21 @@ export class DedAiEstimateService {
     // evaluator (bukan bukti independen bagi sumbu skala total-item).
     applyQuantityReasonablenessReview(items, { projectType });
 
+    // === Lapisan penyelesaian Full AI (mandat owner 2026-11-10) ===
+    // Mode FULL_AI saja: lubang harga dilengkapi dari referensi pasar
+    // eksternal terkurasi dan lubang kuantitas dari jalur estimasi
+    // kuantitas DED (asumsi berlabel dari konteks denah), di antara
+    // konversi dan kalkulator — subtotal tetap dihitung mesin kanonis.
+    // Mode DATABASE tidak pernah melewati lapisan ini (dipertahankan
+    // persis seperti sebelumnya). Harga kanonis/manual tidak ditimpa.
+    let completionReport: import('./types').DedCompletionReport | undefined;
+    let finalItems = items;
+    if (policy === 'FULL_AI') {
+      const completed = completeDedBatch(items, derivePlanContext(items), { policy });
+      finalItems = completed.items;
+      completionReport = completed.report;
+    }
+
     const output = DedAiCalculator.buildOutput({
       jobId,
       projectType,
@@ -1083,8 +1122,9 @@ export class DedAiEstimateService {
       projectName: options.projectName || 'Proyek DED AI',
       fileName: options.fileName,
       pageCount: parsed.pages.length,
-      items,
+      items: finalItems,
     });
+    if (completionReport) output.completionReport = completionReport;
 
     // === FASE P0: cakupan 12 divisi + jejak analisis ===
     // Coverage dihitung dari item yang sama yang masuk output (diklasifikasi
@@ -1151,6 +1191,7 @@ export class DedAiEstimateService {
       totalPages: parsed.pages.length,
       selectedPageCount: pageSummaries.length,
       skippedPageCount: budgetSkippedCount,
+
       // Anggaran per pass (Sprint 3 B1); total terkirim dihitung dari
       // jejak halaman aktual (halaman SKIPPED_BUDGET sentChars = 0).
       totalCharsBudget: DED_PASS_REQUEST_BUDGET_CHARS,
@@ -1159,6 +1200,17 @@ export class DedAiEstimateService {
       passes: passTraces,
       warnings: traceWarnings,
     };
+
+    // HARDENING Tahap 6: catatan usage workflow (metadata kesiapan
+    // Unified Credits — bukan tagihan; lihat usageMetadata.ts).
+    output.usage = buildDedUsageFromStandard(output, {
+      projectId: options.projectId,
+      workspaceId: options.workspaceId,
+      actorUserId: options.actorUserId,
+      startedAt: runStartedAt,
+      finishedAt: new Date().toISOString(),
+      fileName: options.fileName,
+    });
 
     if (output.coverage.itemsFullyResolved === 0 && output.coverage.totalItems > 0) {
       return {

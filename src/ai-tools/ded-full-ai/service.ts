@@ -20,6 +20,18 @@ import {
   matchDedItemToAhsp, resolveDedPriceWithCanonical,
   type CanonicalDedMatch,
 } from '../ded-canonical/canonicalDedPricing';
+import {
+  findExternalReference, findConflictingReference,
+  type ExternalPriceReference,
+} from '../ded-ai-estimate/externalPriceReferences';
+import {
+  classifyQuantity, estimateMissingQuantity, derivePlanContext,
+  priceSourceKindFor, buildQuantityAudit,
+  type QuantityFillTrace,
+} from '../ded-ai-estimate/priceCompletion';
+import { referenceIsStale } from '../ded-ai-estimate/priceResearchCache';
+import { buildDedUsageFromFullAi } from '../ded-ai-estimate/usageMetadata';
+import type { DedAiItem, DedPriceCompletion } from '../ded-ai-estimate/types';
 
 // Batas karakter dengan strategi chunking yang transparan
 const MAX_TOTAL_CHARS = 60000;  // Lebih besar dari pipeline lama (15000)
@@ -176,6 +188,8 @@ export class FullAiDedService {
   }
 
   private async runExecute(options: FullAiServiceOptions): Promise<FullAiOutput> {
+    // SPRINT 4 (Tugas E): penangkapan waktu operasi aditif untuk metadata usage.
+    const runStartedAt = new Date().toISOString();
     const { mode, projectType } = options;
     // Kebijakan harga (default FULL_AI = perilaku lama).
     const policy: DedEstimationPolicy = options.policy ?? 'FULL_AI';
@@ -372,6 +386,13 @@ export class FullAiDedService {
             notes: decision.notes,
           };
         }
+        // Penyelesaian harga referensi eksternal TIDAK lagi inline di
+        // sini: sesudah semua item terbentuk, completeFullAiPrices
+        // (SPRINT 4, di bawah) mengisinya dengan blok DedPriceCompletion
+        // TERSTRUKTUR yang sama dengan pipeline standar — satu jalur
+        // yang dapat diuji, bukan logika tertanam di loop konversi.
+        // Mode FULL_AI saja; kanonis/USER_INPUT tidak pernah disentuh
+        // karena harganya tidak pernah null di titik ini bila terisi.
         const { subtotal, verified: subtotalComputed } = verifySubtotal(
           typeof q.value === 'number' ? q.value : null,
           finalPrice.unitPrice
@@ -448,6 +469,37 @@ export class FullAiDedService {
         }
       }
 
+      // SPRINT 4 (paritas harga): penyelesaian harga referensi
+      // eksternal dengan blok DedPriceCompletion terstruktur — jalur
+      // yang sama dengan completeDedItem pipeline standar (referensi
+      // bersama, penjaga konflik spesifikasi yang sama, klasifikasi
+      // basi yang sama). Berjalan SEBELUM pass kuantitas agar isian
+      // kuantitas dapat menempelkan quantityBasis ke blok harga.
+      // Mode FULL_AI saja.
+      if (policy === 'FULL_AI') {
+        const filledPrices = completeFullAiPrices(items);
+        if (filledPrices > 0) {
+          warnings.push(
+            `${filledPrices} harga dilengkapi dari referensi pasar eksternal terkurasi (estimasi AI berlabel sumber & blok penyelesaian terstruktur — bukan harga resmi AHSP, perlu tinjauan pengguna).`
+          );
+        }
+      }
+
+      // HARDENING Tahap 4 (paritas pipeline): estimasi kuantitas
+      // konteks-denah yang sama dengan pipeline standar, memakai
+      // layanan BERSAMA (derivePlanContext / classifyQuantity /
+      // estimateMissingQuantity dari ded-ai-estimate/priceCompletion)
+      // — bukan implementasi kedua. Mode FULL_AI saja; DATABASE tidak
+      // pernah dilengkapi diam-diam.
+      if (policy === 'FULL_AI') {
+        const filledQty = completeFullAiQuantities(items);
+        if (filledQty > 0) {
+          warnings.push(
+            `${filledQty} kuantitas dilengkapi dari konteks denah (estimasi berlabel ASSUMPTION — bukan fakta gambar, perlu tinjauan pengguna).`
+          );
+        }
+      }
+
       // Tahap 5: Hitung total & ringkasan
       notify('FINALIZE', 90, 'Menyusun hasil akhir...');
       const grandTotal = items
@@ -495,10 +547,34 @@ export class FullAiDedService {
 
       notify('DONE', 100, 'Analisis selesai');
 
+      const actualProviderModel = resolveActualProviderModel(aiResult);
       return {
         success: true,
         mode,
         policy,
+        // HARDENING Tahap 6: metadata usage workflow (bukan tagihan).
+        usage: buildDedUsageFromFullAi(
+          {
+            provenance: actualProviderModel,
+            items,
+            isPartial: summary.excludedFromTotal > 0,
+            warnings,
+            fileName: options.fileName,
+            productId,
+            // SPRINT 5 (X3 + plumbing X1/X2): requestId & usage attempt
+            // final dari AiToolsSuccess diteruskan apa adanya; string
+            // kosong (jalur Node) → null, usage absen → null.
+            requestId: typeof aiResult.requestId === 'string' && aiResult.requestId !== '' ? aiResult.requestId : null,
+            inputTokens: aiResult.usage?.inputTokens ?? null,
+            outputTokens: aiResult.usage?.outputTokens ?? null,
+            cachedTokens: aiResult.usage?.cachedTokens ?? null,
+          },
+          {
+            workflowId: `fullai-${Date.now()}`, policy,
+            startedAt: runStartedAt,
+            finishedAt: new Date().toISOString(),
+          },
+        ),
         projectInfo: {
           projectType,
           buildingFunction: parsedAi.projectInfo?.buildingFunction || undefined,
@@ -524,7 +600,7 @@ export class FullAiDedService {
         // F4 (3.1): identitas AKTUAL dari respons gateway — null bila
         // respons tidak membawanya. Bukan lagi hardcode per mode.
         provenance: {
-          ...resolveActualProviderModel(aiResult),
+          ...actualProviderModel,
           timeoutLimitMs: FULL_AI_TIMEOUT_MS[mode],
           timestamp: new Date().toISOString(),
           documentPages: pages.length,
@@ -593,6 +669,420 @@ export class FullAiDedService {
  *   menul-kan estimasi: menul-kan di sini membuat adapter tidak punya
  *   fallback dan analisis Database gagal total (NO_CALCULABLE_ITEMS).
  */
+/**
+ * HARDENING Tahap 4 — Paritas kuantitas ded-full-ai dengan pipeline
+ * standar. Item Full AI diadaptasi ke bentuk minimal DedAiItem lalu
+ * diproses layanan BERSAMA pipeline standar:
+ * `derivePlanContext` (konteks denah), `classifyQuantity`
+ * (diskriminator MISSING/IMPLAUSIBLE_FRAGMENT/EXPLICIT_ZERO/PRESENT),
+ * dan `estimateMissingQuantity` (aturan estimasi konteks yang sama).
+ * Isian selalu: provenance ASSUMPTION + formula + daftar asumsi +
+ * catatan nilai asli — tidak pernah menyamar sebagai fakta gambar.
+ * Nol eksplisit yang disengaja TIDAK diisi (sama seperti standar).
+ * Subtotal dihitung ulang lewat verifySubtotal dan status lewat
+ * resolveFullAiItemStatus — aturan yang sama dengan loop utama.
+ * Mengembalikan jumlah item yang kuantitasnya dilengkapi.
+ *
+ * SPRINT 4: setiap item yang melewati fungsi ini juga membawa blok
+ * audit kuantitas bersama (DedQuantityAudit, klasifikasi 8 kelas
+ * DedQuantityClass lewat classifyQuantityProvenance/buildQuantityAudit)
+ * — isian konteks terklasifikasi ESTIMATED_FROM_CONTEXT dengan jejak
+ * isian lengkap, bukan kosakata provenans terpisah.
+ */
+/** Adaptasi satu item Full AI ke bentuk minimal DedAiItem untuk
+ *  layanan BERSAMA pipeline standar (klasifikasi & audit kuantitas).
+ *  Pemetaan provenans disengaja: EXPLICIT (fakta DED versi Full AI)
+ *  → DED_EXPLICIT; selain itu kosakata Full AI dipetakan 1:1 dan
+ *  sisanya UNRESOLVED — tidak ada kelas yang dikarang di jalur ini. */
+function adaptFullAiItemForQuantityServices(it: FullAiItem): DedAiItem {
+  return {
+    name: it.name,
+    units: it.quantity.unit,
+    quantity: it.quantity.value,
+    quantitySource: it.quantity.provenance === 'USER_INPUT'
+      ? 'USER_INPUT'
+      : it.quantity.provenance === 'ASSUMPTION'
+        ? 'ASSUMPTION'
+        : it.quantity.provenance === 'DERIVED'
+          ? 'DERIVED'
+          : it.quantity.provenance === 'EXPLICIT'
+            ? 'DED_EXPLICIT'
+            : 'UNRESOLVED',
+    quantityFormula: it.quantity.formula,
+    quantityNote: it.quantity.notes,
+    priceSource: 'UNRESOLVED',
+  } as DedAiItem;
+}
+
+export function completeFullAiQuantities(items: FullAiItem[]): number {
+  const asDed: DedAiItem[] = items.map(adaptFullAiItemForQuantityServices);
+  const ctx = derivePlanContext(asDed);
+  let filled = 0;
+  items.forEach((it, idx) => {
+    const cls = classifyQuantity(asDed[idx]);
+    if (cls !== 'MISSING' && cls !== 'IMPLAUSIBLE_FRAGMENT') {
+      // SPRINT 4: item yang tidak diisi pun membawa blok audit bersama
+      // (klasifikasi 8 kelas atas keadaannya sendiri — fakta gambar
+      // DRAWING_EXTRACTED, nol EXPLICIT_ZERO, dst.) agar kosakata
+      // provenans Full AI tidak lagi terpisah dari pipeline standar.
+      const audit = buildQuantityAudit(asDed[idx]);
+      it.quantity = { ...it.quantity, quantityAudit: audit };
+      it.quantityAudit = audit;
+      return;
+    }
+    const est = estimateMissingQuantity(asDed[idx], ctx);
+    if (!est) {
+      const audit = buildQuantityAudit(asDed[idx]);
+      it.quantity = { ...it.quantity, quantityAudit: audit };
+      it.quantityAudit = audit;
+      return;
+    }
+    const original = it.quantity.value;
+    it.quantity = {
+      ...it.quantity,
+      value: est.quantity,
+      formula: est.formula,
+      provenance: 'ASSUMPTION',
+      confidence: 'MEDIUM',
+      assumptions: [...(it.quantity.assumptions ?? []), est.basis],
+      notes: [it.quantity.notes, `Kuantitas dilengkapi dari konteks denah (nilai asli: ${original == null ? 'kosong' : original}). Estimasi — bukan fakta gambar.`]
+        .filter(Boolean)
+        .join(' '),
+    };
+    // SPRINT 4: audit isian dibangun dari item hasil adaptasi SESUDAH
+    // pengisian + jejak isian (QuantityFillTrace) lewat helper bersama
+    // buildQuantityAudit — klasifikasinya ESTIMATED_FROM_CONTEXT
+    // (provenans ASSUMPTION), TIDAK PERNAH DRAWING_EXTRACTED, dengan
+    // nilai asli tercatat dan persetujuan PENDING.
+    const fillTrace: QuantityFillTrace = { estimate: est, ctx, originalQuantity: original };
+    const audit = buildQuantityAudit(adaptFullAiItemForQuantityServices(it), fillTrace);
+    it.quantity = { ...it.quantity, quantityAudit: audit };
+    it.quantityAudit = audit;
+    // Bila item juga membawa blok penyelesaian harga, dasar kuantitas
+    // ditempelkan ke blok itu (quantityBasis — paritas markQuantityBasis
+    // pipeline standar). Blok harga TIDAK dibuat hanya karena kuantitas
+    // terisi: blok harga hanya lahir dari penyelesaian harga.
+    const pc = it.price.priceCompletion ?? it.priceCompletion;
+    if (pc && !pc.quantityBasis) {
+      const withBasis = { ...pc, quantityBasis: est.formula };
+      it.price = { ...it.price, priceCompletion: withBasis };
+      it.priceCompletion = withBasis;
+    }
+    const { subtotal } = verifySubtotal(it.quantity.value, it.price.unitPrice);
+    const { status, exclusionReason } = resolveFullAiItemStatus(
+      { value: it.quantity.value, unit: it.quantity.unit, provenance: it.quantity.provenance },
+      { unitPrice: it.price.unitPrice, unit: it.price.unit, source: it.price.source },
+    );
+    const include = status === 'READY' && subtotal != null && subtotal > 0;
+    it.subtotal = include ? subtotal : null;
+    it.subtotalVerified = include;
+    it.status = include ? 'READY' : status;
+    it.exclusionReason = include ? null : exclusionReason;
+    filled++;
+  });
+  return filled;
+}
+
+// ---------------------------------------------------------------------------
+// SPRINT 4 — Paritas penyelesaian harga ded-full-ai dengan pipeline standar
+// ---------------------------------------------------------------------------
+
+/**
+ * Bangun blok DedPriceCompletion untuk isian referensi eksternal —
+ * semantik yang sama dengan applyReference di priceCompletion.ts
+ * pipeline standar: referensi segar → MARKET_REFERENCE; referensi basi
+ * → AI_ESTIMATE berpenanda sourceStale + keyakinan LOW; sourceKind
+ * diturunkan priceSourceKindFor (tier SUPPLIER_MANUFACTURER →
+ * VERIFIED_SUPPLIER, CONTRACTOR_MARKET → MARKET_REFERENCE); status
+ * verifikasi UNVERIFIED (referensi pasar BUKAN AHSP resmi); persetujuan
+ * PENDING (tidak pernah disetujui diam-diam); harga asli tercatat agar
+ * penolakan dapat memulihkan.
+ */
+export function buildFullAiPriceCompletion(
+  ref: ExternalPriceReference,
+  opts: {
+    originalUnitPrice: number | null;
+    originalQuantity?: number | null;
+    now?: Date;
+    ahspRelated?: boolean;
+  },
+): DedPriceCompletion {
+  const now = opts.now ?? new Date();
+  const stale = referenceIsStale(ref, now);
+  const classification = stale ? ('AI_ESTIMATE' as const) : ('MARKET_REFERENCE' as const);
+  return {
+    classification,
+    sourceKind: priceSourceKindFor(classification, ref.tier),
+    verificationStatus: 'UNVERIFIED',
+    userApprovalStatus: 'PENDING',
+    recommendedPrice: ref.recommendedPrice,
+    rangeMin: ref.rangeMin,
+    rangeMax: ref.rangeMax,
+    unit: ref.unit,
+    scope: ref.scope,
+    sourceName: ref.sourceName,
+    sourceUrl: ref.sourceUrl,
+    sourceDate: ref.sourceDate,
+    accessedAt: ref.accessedAt,
+    region: ref.region,
+    specAssumption: ref.specAssumption,
+    confidence: stale ? 'LOW' : ref.confidence,
+    method: 'fallback referensi eksternal terkurasi (hierarki tingkat 3–5) — jalur ded-full-ai',
+    ahspRelated: opts.ahspRelated ?? false,
+    referenceId: ref.id,
+    sourceStale: stale || undefined,
+    originalUnitPrice: opts.originalUnitPrice,
+    originalQuantity: opts.originalQuantity ?? null,
+    history: [],
+  };
+}
+
+/**
+ * Blok penanda konflik spesifikasi — cermin blok NEEDS_VERIFICATION
+ * completeDedItem pipeline standar: harga TIDAK dipaksa terisi, tetapi
+ * alasan gugurnya referensi tercatat terstruktur (bukan hilang diam-
+ * diam seperti perilaku Full AI sebelum Sprint 4).
+ */
+export function buildFullAiConflictPriceCompletion(
+  ref: ExternalPriceReference,
+  reason: string,
+  opts: {
+    originalUnitPrice: number | null;
+    originalQuantity?: number | null;
+    unit: string;
+    now?: Date;
+    ahspRelated?: boolean;
+  },
+): DedPriceCompletion {
+  const nowIso = (opts.now ?? new Date()).toISOString().slice(0, 10);
+  return {
+    classification: 'PRICE_UNRESOLVED',
+    sourceKind: 'UNRESOLVED',
+    verificationStatus: 'NEEDS_VERIFICATION',
+    userApprovalStatus: 'NOT_REQUIRED',
+    recommendedPrice: null,
+    rangeMin: null,
+    rangeMax: null,
+    unit: opts.unit,
+    scope: 'TIDAK_DINYATAKAN',
+    accessedAt: nowIso,
+    confidence: 'LOW',
+    method: `referensi ${ref.id} ditolak: ${reason} — harga dibiarkan kosong menunggu verifikasi spesifikasi`,
+    ahspRelated: opts.ahspRelated ?? false,
+    referenceId: ref.id,
+    specAssumption: ref.specAssumption,
+    originalUnitPrice: opts.originalUnitPrice,
+    originalQuantity: opts.originalQuantity ?? null,
+    history: [],
+  };
+}
+
+/** Catatan harga string untuk isian referensi (dipertahankan dari
+ *  perilaku Hardening: mapper finalisasi RAB membaca price.notes). */
+function externalFillNote(ref: ExternalPriceReference, stale: boolean): string {
+  const staleNote = stale
+    ? ' PERINGATAN: referensi ini BASI (tanggal riset melewati masa segar 30 hari) — perlakukan sebagai estimasi AI berkeyakinan rendah.'
+    : '';
+  return `Estimasi AI dari referensi pasar eksternal: ${ref.sourceName} (${ref.sourceUrl}), data ${ref.sourceDate}, diambil ${ref.accessedAt}; rentang Rp${ref.rangeMin.toLocaleString('id-ID')}–${ref.rangeMax.toLocaleString('id-ID')}/${ref.unit}, cakupan ${ref.scope === 'TERPASANG_PENUH' ? 'terpasang penuh' : 'material saja'}. Asumsi spek: ${ref.specAssumption} Bukan harga resmi AHSP.${staleNote}`;
+}
+
+/**
+ * Terapkan SATU referensi eksternal ke item Full AI: harga terisi
+ * sebagai AI_ESTIMATE (field source Full AI tidak berubah kosakatanya)
+ * + blok DedPriceCompletion terstruktur di price.priceCompletion DAN
+ * cerminannya di item.priceCompletion + penanda filledFromExternalRef.
+ * Subtotal/status dihitung ulang dengan aturan loop utama yang sama.
+ * Mengembalikan item BARU; item masukan tidak diubah.
+ */
+export function applyFullAiExternalReference(
+  item: FullAiItem,
+  ref: ExternalPriceReference,
+  opts: { now?: Date } = {},
+): FullAiItem {
+  const now = opts.now ?? new Date();
+  const stale = referenceIsStale(ref, now);
+  const completion = buildFullAiPriceCompletion(ref, {
+    originalUnitPrice: item.price.unitPrice,
+    originalQuantity: item.quantity.value,
+    now,
+    ahspRelated: Boolean(item.price.ahspCode || item.price.ahspMatch),
+  });
+  const price = {
+    ...item.price,
+    unitPrice: ref.recommendedPrice,
+    unit: ref.unit,
+    source: 'AI_ESTIMATE' as const,
+    region: ref.region,
+    period: ref.accessedAt,
+    notes: externalFillNote(ref, stale),
+    filledFromExternalRef: true,
+    priceCompletion: completion,
+  };
+  const { subtotal } = verifySubtotal(item.quantity.value, price.unitPrice);
+  const { status, exclusionReason } = resolveFullAiItemStatus(
+    { value: item.quantity.value, unit: item.quantity.unit, provenance: item.quantity.provenance },
+    { unitPrice: price.unitPrice, unit: price.unit, source: price.source },
+  );
+  const include = status === 'READY' && subtotal != null && subtotal > 0;
+  return {
+    ...item,
+    price,
+    priceCompletion: completion,
+    subtotal: include ? subtotal : null,
+    subtotalVerified: include,
+    status: include ? 'READY' : status,
+    exclusionReason: include ? null : exclusionReason,
+  };
+}
+
+/**
+ * Pass penyelesaian harga Full AI (SPRINT 4) — padanan completeDedItem
+ * untuk jalur ini, berjalan atas item yang sudah terbentuk:
+ * - hanya item berharga kosong & bukan USER_INPUT yang dilengkapi;
+ * - pencocokan memakai findExternalReference BERSAMA (penjaga konflik
+ *   referenceSpecConflict di dalamnya — jalur yang sama dengan standar);
+ * - referensi yang gugur konflik TIDAK mengisi harga, tetapi item
+ *   membawa blok NEEDS_VERIFICATION lewat findConflictingReference
+ *   bersama (paritas Tahap 2 pipeline standar);
+ * - harga kanonis AHSP / manual tidak pernah disentuh (tidak kosong).
+ * Mengembalikan jumlah harga yang terisi (blok konflik tidak dihitung).
+ */
+export function completeFullAiPrices(items: FullAiItem[], opts: { now?: Date } = {}): number {
+  let filled = 0;
+  for (let i = 0; i < items.length; i++) {
+    const it = items[i];
+    if (it.price.unitPrice != null || it.price.source === 'USER_INPUT') continue;
+    const ref = findExternalReference(it.name, it.quantity.unit);
+    if (ref) {
+      items[i] = applyFullAiExternalReference(it, ref, opts);
+      filled++;
+      continue;
+    }
+    const conflict = findConflictingReference(it.name, it.quantity.unit);
+    if (conflict) {
+      const completion = buildFullAiConflictPriceCompletion(conflict.ref, conflict.reason, {
+        originalUnitPrice: it.price.unitPrice,
+        originalQuantity: it.quantity.value,
+        unit: it.quantity.unit,
+        now: opts.now,
+        ahspRelated: Boolean(it.price.ahspCode || it.price.ahspMatch),
+      });
+      items[i] = {
+        ...it,
+        price: { ...it.price, priceCompletion: completion },
+        priceCompletion: completion,
+      };
+    }
+  }
+  return filled;
+}
+
+/** Blok penyelesaian harga efektif item (bersarang atau cerminan item). */
+export function fullAiPriceCompletionOf(item: FullAiItem): DedPriceCompletion | undefined {
+  return item.price.priceCompletion ?? item.priceCompletion;
+}
+
+/** Blok audit kuantitas efektif item (bersarang atau cerminan item). */
+export function fullAiQuantityAuditOf(item: FullAiItem) {
+  return item.quantity.quantityAudit ?? item.quantityAudit;
+}
+
+/**
+ * Terima penyelesaian Full AI (SPRINT 4) — padanan acceptCompletion
+ * pipeline standar: aksi pengguna EKSPLISIT yang menandai blok harga &
+ * audit kuantitas APPROVED. Nilai usulan diterima apa adanya; status
+ * VERIFIKASI tidak berubah (referensi pasar tidak menjadi AHSP resmi,
+ * estimasi konteks tidak menjadi fakta gambar) dan sumber harga item
+ * tidak berubah. Tanpa blok penyelesaian, item dikembalikan apa adanya.
+ */
+export function acceptFullAiCompletion(item: FullAiItem): FullAiItem {
+  const pc = fullAiPriceCompletionOf(item);
+  const qa = fullAiQuantityAuditOf(item);
+  if (!pc && !qa) return item;
+  const nextPc = pc ? { ...pc, userApprovalStatus: 'APPROVED' as const } : undefined;
+  const nextQa = qa ? { ...qa, userApprovalStatus: 'APPROVED' as const } : undefined;
+  return {
+    ...item,
+    price: nextPc ? { ...item.price, priceCompletion: nextPc } : item.price,
+    priceCompletion: nextPc,
+    quantity: nextQa ? { ...item.quantity, quantityAudit: nextQa } : item.quantity,
+    quantityAudit: nextQa,
+  };
+}
+
+/**
+ * Tolak penyelesaian Full AI (SPRINT 4) — padanan rejectCompletion
+ * pipeline standar: pulihkan nilai asli & cabut blok isian.
+ * - Isian harga (penanda filledFromExternalRef / referenceId pada blok):
+ *   harga kembali ke originalUnitPrice blok (isian jalur ini selalu
+ *   dari kosong → null, sumber kembali UNRESOLVED), blok dicabut.
+ * - Isian kuantitas (metode audit 'plan-context-estimate'): kuantitas
+ *   kembali ke originalQuantity audit, provenans kembali UNRESOLVED,
+ *   blok audit dicabut.
+ * - Blok konflik NEEDS_VERIFICATION (harga tidak pernah terisi):
+ *   menolaknya hanya mencabut blok penanda; harga tidak berubah.
+ * Adaptasi yang disengaja dari standar: rejectCompletion standar hanya
+ * berjalan bila priceCompletion ada (isian kuantitas standar selalu
+ * menempelkan blok harga lewat quantityBasis); di jalur Full AI isian
+ * kuantitas dapat berdiri sendiri, jadi penolakan di sini berjalan
+ * bila SALAH SATU blok ada. Subtotal/status dihitung ulang sesudahnya.
+ */
+export function rejectFullAiCompletion(item: FullAiItem): FullAiItem {
+  const pc = fullAiPriceCompletionOf(item);
+  const qa = fullAiQuantityAuditOf(item);
+  if (!pc && !qa) return item;
+  const hadPriceFill = Boolean(
+    item.price.filledFromExternalRef || (pc && pc.referenceId && pc.recommendedPrice != null),
+  );
+  const hadQuantityFill = qa?.method === 'plan-context-estimate';
+  const hadConflictBlock = Boolean(pc && pc.verificationStatus === 'NEEDS_VERIFICATION' && !hadPriceFill);
+  if (!hadPriceFill && !hadQuantityFill && !hadConflictBlock) return item;
+
+  let price = item.price;
+  let quantity = item.quantity;
+  if (hadPriceFill && pc) {
+    const restored = pc.originalUnitPrice ?? null;
+    price = {
+      ...price,
+      unitPrice: restored,
+      source: restored != null ? price.source : ('UNRESOLVED' as const),
+      notes: 'Penyelesaian AI ditolak pengguna — harga dikembalikan ke keadaan sebelum penyelesaian.',
+      filledFromExternalRef: undefined,
+      priceCompletion: undefined,
+    };
+  } else if (hadConflictBlock) {
+    price = { ...price, priceCompletion: undefined };
+  }
+  if (hadQuantityFill && qa) {
+    quantity = {
+      ...quantity,
+      value: qa.originalQuantity ?? null,
+      provenance: 'UNRESOLVED' as const,
+      quantityAudit: undefined,
+    };
+  }
+  const next: FullAiItem = {
+    ...item,
+    price,
+    quantity,
+    priceCompletion: hadPriceFill || hadConflictBlock ? undefined : item.priceCompletion,
+    quantityAudit: hadQuantityFill ? undefined : item.quantityAudit,
+  };
+  const { subtotal } = verifySubtotal(next.quantity.value, next.price.unitPrice);
+  const { status, exclusionReason } = resolveFullAiItemStatus(
+    { value: next.quantity.value, unit: next.quantity.unit, provenance: next.quantity.provenance },
+    { unitPrice: next.price.unitPrice, unit: next.price.unit, source: next.price.source },
+  );
+  const include = status === 'READY' && subtotal != null && subtotal > 0;
+  return {
+    ...next,
+    subtotal: include ? subtotal : null,
+    subtotalVerified: include,
+    status: include ? 'READY' : status,
+    exclusionReason: include ? null : exclusionReason,
+  };
+}
+
 export function applyFullAiPricePolicy(
   policy: DedEstimationPolicy | undefined,
   price: any

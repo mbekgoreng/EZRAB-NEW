@@ -55,12 +55,121 @@ export type DedAiQuantitySource =
   | 'UNRESOLVED';    // Nilai atau satuan belum dapat dipastikan
 
 import type { CanonicalDedMatch } from '../ded-canonical/canonicalDedPricing';
+import type { AiToolsUsage } from '../providerClient';
 
 export type DedAiPriceSource =
   | 'AI_ESTIMATE'  // Estimasi dari model AI — perlu verifikasi, bukan harga resmi
   | 'AHSP_2026'    // Harga kanonis EZRAB (SE DJBK 47/2026, biaya langsung) — AKTIF sejak adapter ded-canonical; hanya diproduksi lewat resolveDedPriceWithCanonical
   | 'USER_INPUT'   // Dimasukkan/diubah oleh pengguna
   | 'UNRESOLVED';  // Harga belum tersedia — bukan Rp0
+
+/**
+ * Klasifikasi provenans harga untuk lapisan penyelesaian (owner
+ * 2026-11-10, master prompt "AI Auto Price Completion"). Memperluas —
+ * bukan menggantikan — `priceSource`: harga isian tetap disimpan sebagai
+ * AI_ESTIMATE pada `priceSource` (kosakata lama), sedangkan blok
+ * `priceCompletion` membawa klasifikasi rinci + bukti sumbernya.
+ */
+export type DedPriceClassification =
+  | 'OFFICIAL_AHSP_VERIFIED'
+  | 'OFFICIAL_REGIONAL_REFERENCE'
+  | 'MARKET_REFERENCE'
+  | 'AI_ESTIMATE'
+  | 'MANUAL_PRICE'
+  | 'PRICE_UNRESOLVED';
+
+/**
+ * Jenis sumber harga dalam kosakata master prompt Unified Credits
+ * (2026-11-10) — padanan `DedPriceClassification` yang ada:
+ * OFFICIAL_AHSP_VERIFIED→OFFICIAL_AHSP, OFFICIAL_REGIONAL_REFERENCE→
+ * OFFICIAL_SSH_HSPK, MARKET_REFERENCE→VERIFIED_SUPPLIER (tier
+ * SUPPLIER_MANUFACTURER: daftar harga supplier/manufaktur yang benar-
+ * benar diambil & dicatat) atau MARKET_REFERENCE (tier kontraktor),
+ * AI_ESTIMATE→AI_ESTIMATE, MANUAL_PRICE→USER_MANUAL,
+ * PRICE_UNRESOLVED→UNRESOLVED. Dipetakan oleh
+ * `priceSourceKindFor` di priceCompletion.ts — klasifikasi lama tetap
+ * sumber kebenaran; field ini turunan, bukan saingan.
+ */
+export type DedPriceSourceKind =
+  | 'OFFICIAL_AHSP'
+  | 'OFFICIAL_SSH_HSPK'
+  | 'VERIFIED_SUPPLIER'
+  | 'MARKET_REFERENCE'
+  | 'AI_ESTIMATE'
+  | 'USER_MANUAL'
+  | 'UNRESOLVED';
+
+export interface DedPriceHistoryEntry {
+  unitPrice: number | null;
+  classification: DedPriceClassification;
+  at: string; // ISO date
+  note: string;
+}
+
+/**
+ * Blok penyelesaian harga terstruktur (per item). Diisi lapisan
+ * penyelesaian (priceCompletion.ts) di mode FULL_AI, atau dicatat sebagai
+ * penanda klasifikasi untuk harga yang sudah ada. Tidak pernah menimpa
+ * harga kanonis AHSP / harga manual terverifikasi.
+ */
+export interface DedPriceCompletion {
+  classification: DedPriceClassification;
+  /** Turunan klasifikasi dalam kosakata Unified Credits (lihat DedPriceSourceKind). */
+  sourceKind?: DedPriceSourceKind;
+  /**
+   * Status verifikasi harga: VERIFIED hanya untuk harga kanonis AHSP
+   * terverifikasi; NEEDS_VERIFICATION bila ada konflik spesifikasi/
+   * cakupan yang harus dilihat manusia; selain itu UNVERIFIED.
+   */
+  verificationStatus?: 'VERIFIED' | 'UNVERIFIED' | 'NEEDS_VERIFICATION';
+  /** Status persetujuan user atas isian penyelesaian (default PENDING untuk isian AI). */
+  userApprovalStatus?: 'PENDING' | 'APPROVED' | 'REJECTED' | 'NOT_REQUIRED';
+  /** Harga rekomendasi yang diterapkan (Rp per satuan item). */
+  recommendedPrice: number | null;
+  rangeMin: number | null;
+  rangeMax: number | null;
+  unit: string;
+  /** Cakupan harga: terpasang penuh atau material saja. */
+  scope: 'TERPASANG_PENUH' | 'MATERIAL_SAJA' | 'TIDAK_DINYATAKAN';
+  sourceName?: string;
+  sourceUrl?: string;
+  /** Tanggal publikasi/data sumber (bila dinyatakan sumbernya). */
+  sourceDate?: string;
+  /** Tanggal referensi diambil/diteliti. */
+  accessedAt: string;
+  region?: string;
+  specAssumption?: string;
+  confidence: 'HIGH' | 'MEDIUM' | 'LOW';
+  method: string;
+  /** true bila item punya kaitan AHSP (kode/match) — isian tetap non-AHSP. */
+  ahspRelated: boolean;
+  /** Id referensi eksternal yang dipakai (untuk idempotensi). */
+  referenceId?: string;
+  /** true bila referensi sudah melewati masa segarnya saat diterapkan. */
+  sourceStale?: boolean;
+  /** Dasar pengisian kuantitas (bila kuantitas juga dilengkapi jalur DED). */
+  quantityBasis?: string;
+  /** Nilai sebelum penyelesaian — agar penolakan pengguna bisa memulihkan. */
+  originalUnitPrice?: number | null;
+  originalQuantity?: number | null;
+  /** Riwayat penggantian harga (kebijakan penggantian transparan). */
+  history: DedPriceHistoryEntry[];
+}
+
+/** Laporan satu putaran penyelesaian batch (untuk panel ringkasan UI). */
+export interface DedCompletionReport {
+  scanned: number;
+  filledMarketReference: number;
+  filledAiEstimate: number;
+  quantityFilled: number;
+  officialPreserved: number;
+  existingKept: number;
+  needsQuantity: number;
+  needsClarification: number;
+  unresolved: number;
+  failures: number;
+  generatedAt: string;
+}
 
 export interface DedAiItem {
   id: string;
@@ -104,6 +213,19 @@ export interface DedAiItem {
   quantityReview?: DedQuantityReview;
   unitPrice: number | null;
   priceSource: DedAiPriceSource;
+  /**
+   * Blok penyelesaian harga terstruktur (lapisan penyelesaian Full AI,
+   * priceCompletion.ts) — klasifikasi provenans rinci + bukti sumber.
+   * Opsional: item lama/hasil mode DATABASE tidak membawanya.
+   */
+  priceCompletion?: DedPriceCompletion;
+  /**
+   * HARDENING 2026-11-10 (Tahap 1): blok audit kuantitas — klasifikasi
+   * eksplisit + jejak estimasi (nilai asli/usulan, metode, dasar,
+   * persetujuan). Opsional: hanya item yang melewati lapisan
+   * penyelesaian atau dibangun eksplisit yang membawanya.
+   */
+  quantityAudit?: DedQuantityAudit;
   /** Kode AHSP kanonis yang terverifikasi (hanya bila priceSource AHSP_2026). */
   ahspCode?: string;
   /** Hasil resolusi kanonis terakhir (status, kandidat review, alasan) — tersimpan bersama item agar review bisa dilanjutkan tanpa analisis ulang. */
@@ -190,6 +312,199 @@ export interface DedQuantityReview {
   scaleReasonCode?: string | null;
 }
 
+/**
+ * HARDENING 2026-11-10 (Tahap 1) — Klasifikasi kuantitas eksplisit
+ * (kosakata master prompt DED Final Hardening). SATU kelas per item,
+ * dengan urutan precedence yang didokumentasikan di
+ * `classifyQuantityProvenance` (priceCompletion.ts):
+ * keadaan (MISSING / EXPLICIT_ZERO / IMPLAUSIBLE_FRAGMENT) → penanda
+ * kewajaran (NEEDS_REVIEW) → asal-usul (DRAWING_EXTRACTED /
+ * USER_PROVIDED / CALCULATED_FROM_VERIFIED_INPUT /
+ * ESTIMATED_FROM_CONTEXT). Kuantitas hasil AI TIDAK PERNAH naik kelas
+ * menjadi DRAWING_EXTRACTED.
+ */
+export type DedQuantityClass =
+  | 'DRAWING_EXTRACTED'
+  | 'USER_PROVIDED'
+  | 'CALCULATED_FROM_VERIFIED_INPUT'
+  | 'ESTIMATED_FROM_CONTEXT'
+  | 'MISSING'
+  | 'IMPLAUSIBLE_FRAGMENT'
+  | 'EXPLICIT_ZERO'
+  | 'NEEDS_REVIEW';
+
+/**
+ * Blok audit kuantitas per item: nilai asli vs usulan, metode, variabel
+ * input, rumus/dasar, asumsi, keyakinan, status verifikasi, status
+ * persetujuan user. Diisi lapisan penyelesaian (priceCompletion.ts)
+ * untuk item yang kuantitasnya dilengkapi/diklasifikasi di sana, dan
+ * dapat dibangun untuk item mana pun lewat `buildQuantityAudit`.
+ */
+export interface DedQuantityAudit {
+  classification: DedQuantityClass;
+  /** Kuantitas sebelum penyelesaian (null = memang hilang). */
+  originalQuantity: number | null;
+  /** Kuantitas yang berlaku/usulan sesudah penyelesaian. */
+  proposedQuantity: number | null;
+  unit: string;
+  /** Metode pengisian/penurunan (mis. 'plan-context-estimate', 'drawing-explicit'). */
+  method: string;
+  /** Variabel konteks yang dipakai metode (nama + nilai), bila ada. */
+  inputs: Array<{ name: string; value: number | null }>;
+  /** Rumus/dasar terbaca (sama dengan quantityFormula bila ada). */
+  formula?: string;
+  /** Asumsi yang dipakai (dasar estimasi), bila ada. */
+  assumptions?: string;
+  confidence: 'HIGH' | 'MEDIUM' | 'LOW';
+  verificationStatus: 'VERIFIED' | 'UNVERIFIED' | 'NEEDS_VERIFICATION';
+  /** Persetujuan user: wajib PENDING untuk estimasi konteks; NOT_REQUIRED untuk fakta gambar/user/hitungan terverifikasi. */
+  userApprovalStatus: 'PENDING' | 'APPROVED' | 'REJECTED' | 'NOT_REQUIRED';
+}
+
+/**
+ * HARDENING 2026-11-10 (Tahap 6) — Metadata usage satu workflow DED
+ * (satu batch analisis = satu workflow terlacak), selaras kosakata
+ * Unified Credits (api/_lib/featureBillingMatrix.js: fitur
+ * 'ded-ai/simple|medium|complex' = AI_METERED FLAT_DRAFT;
+ * 'ded-ai/full-ai' = AI_METERED TOKEN). Field yang tidak dilaporkan
+ * sumbernya (mis. token dari gateway) bernilai null — tidak ditebak.
+ * Operasi deterministik (hitung kuantitas, hitung ulang kanonis,
+ * lookup AHSP, ambil referensi cache, tampil provenans, tinjau user)
+ * TIDAK tercatat sebagai operasi berbayar di sini.
+ */
+/**
+ * SPRINT 4 (Tugas E) — Alasan eksplisit bukti usage hilang. Dipakai
+ * sebagai field, BUKAN tebakan: bila sebuah angka null, field ini
+ * menyatakan MENGAPA ia null agar konsumen lifecycle (recordEvidence)
+ * tidak perlu menebak apakah bukti memang tidak ada atau hilang di
+ * tengah jalan.
+ * - GATEWAY_DOES_NOT_REPORT_TOKENS: panggilan terkirim, tetapi respons
+ *   yang sampai ke klien (AiToolsSuccess di providerClient) tidak
+ *   membawa field usage/token apa pun — lihat audit observabilitas
+ *   docs/audits/EZRAB_AI_PROVIDER_USAGE_OBSERVABILITY.md.
+ * - PROVIDER_COST_NOT_REPORTED: tidak ada jalur biaya provider aktual
+ *   ke klien; biaya TIDAK PERNAH diturunkan dari ID model.
+ * - CALL_NOT_SENT: panggilan tidak pernah dikirim (dilewati anggaran /
+ *   tidak didukung) — tidak ada usage yang mungkin ada.
+ */
+export type DedMissingEvidenceReason =
+  | 'GATEWAY_DOES_NOT_REPORT_TOKENS'
+  | 'PROVIDER_COST_NOT_REPORTED'
+  | 'CALL_NOT_SENT';
+
+/**
+ * SPRINT 4 (Tugas E) — Catatan SATU panggilan model di dalam workflow,
+ * berbentuk bukti (evidence) yang kelak dapat diserahkan ke langkah
+ * recordEvidence pada lifecycle Unified Credits
+ * (createOperation → reserve → execute → recordEvidence → settle |
+ * release; kontrak Sprint 3 di api/_lib/aiMetering.js menerima bukti
+ * per panggilan { provider, model, usage: { tokensIn, tokensOut,
+ * tokensCached } }). Record ini TIDAK menagih apa pun hari ini.
+ *
+ * Kejujuran: token per panggilan null selama gateway tidak
+ * melaporkannya ke klien; `attempts`/`retries` dihitung dari eksekusi
+ * pipeline yang nyata (bukan dari riwayat failover gateway — riwayat
+ * itu tidak diteruskan ke klien, lihat audit Tugas F).
+ */
+export interface DedUsageCallRecord {
+  /** Identitas panggilan di dalam workflow: 'pass-<index>' | 'full-ai-main'. */
+  callId: string;
+  kind: 'PASS' | 'FULL_AI_MAIN';
+  /** Label pass (clusterLabel) atau nama berkas (Full AI). */
+  label: string;
+  /** Nama berkas sumber bila diketahui; null = pipeline tidak mencatatnya per panggilan. */
+  sourceFile: string | null;
+  /** Halaman yang dicakup panggilan ini (pass); [] untuk Full AI (dokumen utuh per panggilan). */
+  pages: number[];
+  /** Produk gateway yang DIMINTA (DED_AI_FAST / DED_AI_DETAIL) — bukan identitas provider penagih. */
+  productId: string | null;
+  /** Provider yang DIMINTA menurut registri produk; pipeline DED tidak membacanya — null jujur. */
+  requestedProvider: string | null;
+  /** Model yang DIMINTA menurut registri produk; pipeline DED tidak membacanya — null jujur. */
+  requestedModel: string | null;
+  /** Provider AKTUAL dari respons gateway bila diteruskan klien; null = tidak diteruskan/tidak ada. */
+  provider: string | null;
+  /** Model AKTUAL dari respons gateway bila diteruskan klien; null = tidak diteruskan/tidak ada. */
+  model: string | null;
+  /**
+   * SPRINT 5 (X3): requestId gateway untuk panggilan AKTUAL ini
+   * (AiToolsSuccess.requestId percobaan final) — kunci korelasi persis
+   * ke catatan meter/log gateway. Opsional & aditif: catatan lama
+   * tanpa field ini tetap sah. null = gateway/klien tidak
+   * menyediakannya (jalur Node adapter mengembalikan '' → dinormalkan
+   * null); TIDAK PERNAH difabrikasi atau dibagi antar panggilan.
+   */
+  requestId?: string | null;
+  /** Jumlah percobaan eksekusi panggilan ini di lapisan pipeline (1 + retries). */
+  attempts: number;
+  /** Retry yang dilakukan lapisan pipeline untuk panggilan ini (retry MALFORMED terbatas). */
+  retries: number;
+  /** Sukses/gagal per panggilan (kosakata status pass pipeline; Full AI: SUCCESS | ERROR). */
+  status: string;
+  errorCode: string | null;
+  inputTokens: number | null;
+  outputTokens: number | null;
+  cachedTokens: number | null;
+  /** Alasan token panggilan ini null; null hanya bila token benar-benar tercatat. */
+  missingEvidenceReason: DedMissingEvidenceReason | null;
+  /** Pipeline tidak menangkap waktu per panggilan hari ini — null jujur (waktu operasi ada di DedWorkflowUsage). */
+  startedAt: string | null;
+  finishedAt: string | null;
+}
+
+export interface DedWorkflowUsage {
+  workflowId: string;
+  featureKey: string;
+  pipeline: 'STANDARD' | 'FULL_AI';
+  policy: DedEstimationPolicy;
+  projectId?: string;
+  workspaceId?: string;
+  actorUserId?: string;
+  /** Identitas AKTUAL dari gateway; null = tidak dilaporkan. */
+  provider: string | null;
+  model: string | null;
+  /** Panggilan model yang benar-benar dikirim (pass terkirim; bukan yang dilewati anggaran). */
+  modelCalls: number;
+  inputTokens: number | null;
+  outputTokens: number | null;
+  cachedTokens: number | null;
+  /** Pengisian harga dari referensi eksternal terkurasi (deterministik lokal — bukan panggilan berbayar). */
+  externalResearchApplications: number;
+  /** Hit cache riset pada workflow ini; null = tidak terinstrumentasi. */
+  cacheHits: number | null;
+  /** Biaya provider aktual (Rp) bila dilaporkan; null = tidak tersedia. */
+  providerCostIdr: number | null;
+  status: 'SUCCESS' | 'PARTIAL' | 'FAILED';
+  retries: number;
+  errors: string[];
+  generatedAt: string;
+  // --- SPRINT 4 (Tugas E): kelengkapan bukti untuk lifecycle masa depan.
+  // Semua field ADITIF & opsional agar catatan lama tetap terbaca;
+  // builder usageMetadata selalu mengisinya.
+  /** Provider yang DIMINTA (registri produk); tidak dibaca pipeline — null jujur. */
+  requestedProvider?: string | null;
+  /** Model yang DIMINTA (registri produk); tidak dibaca pipeline — null jujur. */
+  requestedModel?: string | null;
+  /** Bukti per panggilan model dalam workflow ini (satu entri per pass / panggilan Full AI). */
+  calls?: DedUsageCallRecord[];
+  /** Alasan token workflow null; terisi PERSIS bila inputTokens/outputTokens/cachedTokens null. */
+  missingEvidenceReason?: DedMissingEvidenceReason | null;
+  /** Alasan biaya provider null; terisi PERSIS bila providerCostIdr null. */
+  providerCostMissingReason?: DedMissingEvidenceReason | null;
+  /**
+   * Versi kebijakan tarif yang TERIKAT pada catatan ini. Hari ini null:
+   * pricingPolicy v1.1 (api/_lib/pricingPolicy.js, LOCKED_OWNER) ada di
+   * sisi server, tetapi tidak ada per-panggilan/per-workflow yang
+   * mengikat versi itu ke metadata DED — mengklaimnya akan mengarang
+   * ikatan yang tidak ada.
+   */
+  pricingPolicyVersion?: string | null;
+  /** Waktu mulai operasi (ISO) bila service menangkapnya; null = tidak tersedia. */
+  startedAt?: string | null;
+  /** Waktu selesai operasi (ISO) bila service menangkapnya; null = tidak tersedia. */
+  finishedAt?: string | null;
+}
+
 export interface DedAiCategorySummary {
   category: string;
   subtotal: number;
@@ -215,6 +530,12 @@ export interface DedAiOutput {
    * null bila tidak satu pun item membawa usulan. Bukan total resmi.
    */
   aiProposedGrandTotal?: number | null;
+  /**
+   * Laporan lapisan penyelesaian harga/kuantitas (mode FULL_AI; diisi
+   * service sesudah konversi item, sebelum kalkulator). Opsional agar
+   * konstruktor lama tidak berubah.
+   */
+  completionReport?: DedCompletionReport;
   /**
    * Bila aiProposedGrandTotal ada dan berbeda dari grandTotal terverifikasi,
    * berisi penjelasan selisihnya. GrandTotal aplikasi yang dipakai.
@@ -249,6 +570,13 @@ export interface DedAiOutput {
    * BANGUNAN/GEDUNG; opsional agar konsumen lama tidak berubah).
    */
   divisionCoverage?: DedDivisionCoverage[];
+  /**
+   * HARDENING 2026-11-10 (Tahap 6): metadata usage satu workflow DED
+   * untuk kesiapan Unified Credits — dibangun usageMetadata.ts dari
+   * jejak analisis + laporan penyelesaian. BUKAN tagihan: tidak ada
+   * potongan kredit yang diaktifkan oleh field ini.
+   */
+  usage?: DedWorkflowUsage;
   /**
    * FASE P0: jejak analisis per halaman & per pass — tidak ada halaman
    * yang hilang diam-diam karena budget/kegagalan pass.
@@ -367,6 +695,23 @@ export interface DedPassTraceEntry {
    */
   retryCount?: number;
   errorCode?: string;
+  /**
+   * SPRINT 4 (Tugas E/F): identitas AKTUAL provider/model dari respons
+   * gateway (AiToolsSuccess.provider/model) untuk percobaan FINAL pass
+   * ini, ditangkap aditif di executeDedPassAttempt. null = respons
+   * tidak membawanya / pass gagal di lapisan provider. Sebelumnya
+   * identitas ini dibuang — pass hanya menyimpan productId yang diminta.
+   */
+  provider?: string | null;
+  model?: string | null;
+  /**
+   * SPRINT 5 (X3 + plumbing X1/X2): requestId gateway percobaan FINAL
+   * pass ini (korelasi ke meter/log gateway) dan usage ternormalisasi
+   * attempt final bila gateway melaporkannya lewat AiToolsSuccess.
+   * Keduanya aditif; null = tidak dilaporkan — bukan nol, bukan tebakan.
+   */
+  requestId?: string | null;
+  usage?: AiToolsUsage | null;
   itemCount: number;
   /** FINAL REVIEW (Tugas A) — nama file sumber pada hasil gabungan multi-file. */
   sourceFile?: string;
@@ -402,4 +747,8 @@ export interface DedAiServiceOptions {
   policy?: DedEstimationPolicy;
   projectName?: string;
   onProgress?: (event: DedAiProgressEvent) => void;
+  /** HARDENING Tahap 6: konteks identitas untuk metadata usage (opsional; diteruskan apa adanya ke DedWorkflowUsage). */
+  projectId?: string;
+  workspaceId?: string;
+  actorUserId?: string;
 }

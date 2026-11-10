@@ -208,7 +208,11 @@ export class PdfPageService {
         (Math as any).sumPrecise = (arr: number[]) => arr.reduce((a, b) => a + b, 0);
       }
 
-      const pdfjs = await import('pdfjs-dist');
+      // Build LEGACY wajib di Node juga: build modern pdfjs-dist
+      // memanggil Uint8Array.prototype.toHex (belum ada di Node < 25)
+      // di worker pada setiap getDocument() → seluruh pemuatan PDF
+      // gagal. Lihat src/lib/pdfjsSetup.ts & docs/audits/DED_PDFJS_COMPATIBILITY_FIX.md.
+      const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
       const cleanUint8 = new Uint8Array(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength));
       const loadingTask = pdfjs.getDocument({
         data: cleanUint8,
