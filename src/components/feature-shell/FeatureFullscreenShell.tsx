@@ -46,7 +46,12 @@ interface FeatureFullscreenShellProps {
   children: React.ReactNode;
 }
 
-const FsFooterContext = createContext<HTMLElement | null>(null);
+/**
+ * Konteks node footer bersama: dipakai FeatureFullscreenShell (lama) dan
+ * FeaturePageShell (pola app-shell ter-ACC owner 2026-11-10) agar
+ * FsFooterPortal yang sama bekerja di kedua kerangka tanpa sub-view berubah.
+ */
+export const FsFooterContext = createContext<HTMLElement | null>(null);
 
 /**
  * Render aksi sub-view ke bar aksi shell. Di luar shell: render di tempat

@@ -495,7 +495,10 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
           display: 'flex',
           flexDirection: 'column',
           minWidth: 0,
-          overflowY: 'auto',
+          // DED Estimate AI + AI Document (pola app shell, ACC owner
+          // 2026-11-10): halaman TIDAK scroll — scroll dikunci di sini dan
+          // kedua fitur mengurus scroll internalnya sendiri.
+          overflowY: (activeMenu === 'ded-ai' || activeMenu === 'dokumen-ai') ? 'hidden' : 'auto',
           paddingBottom: isNarrowMobile ? 'calc(96px + var(--ezrab-safe-bottom, 0px))' : '0px',
         }}
       >
@@ -665,11 +668,11 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
             </Suspense>
           </main>
         ) : activeMenu === 'ded-ai' ? (
-          <main style={{ minHeight: 'calc(100vh - 64px)', background: 'var(--ez-color-background)' }}>
+          <main style={{ flex: '1 1 auto', minHeight: 0, display: 'flex', flexDirection: 'column', background: 'var(--ez-color-background)' }}>
             <DedAiEstimateView onNavigateToTab={(tab) => setActiveMenu(tab)} />
           </main>
         ) : activeMenu === 'dokumen-ai' ? (
-          <main style={{ minHeight: 'calc(100vh - 64px)', background: 'var(--ez-color-background)' }}>
+          <main style={{ flex: '1 1 auto', minHeight: 0, display: 'flex', flexDirection: 'column', background: 'var(--ez-color-background)' }}>
             <DokumenAiView onNavigateToMenu={(menu) => setActiveMenu(menu)} />
           </main>
         ) : activeMenu === 'kredit-ai' ? (

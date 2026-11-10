@@ -22,17 +22,16 @@
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { FolderOpen, ScanSearch, History, Sparkles, LayoutTemplate, ClipboardCheck, Lock, FileText } from 'lucide-react';
-import {
-  FeatureFullscreenShell, FsChip, FsStep,
-} from '../../components/feature-shell/FeatureFullscreenShell';
+import { FsChip } from '../../components/feature-shell/FeatureFullscreenShell';
+import { FeaturePageShell } from '../../components/feature-shell/FeaturePageShell';
 import { useCreditSimulation } from '../../ai-credits/useCreditSimulation';
 import { aiFeatureLockedMessage, planAllowsAiFeature } from '../../ai-credits/featureGate';
 import type { DraftVersion } from './store';
 import type { ContextField } from './types';
 
 export type { DraftVersion };
-import { DocLibrary } from './components/DocLibrary';
-import { DocAnalyzer } from './components/DocAnalyzer';
+import { DocLibrary, type AfterAnalysisChoice } from './components/DocLibrary';
+import { DocAnalyzer, type AnaTab } from './components/DocAnalyzer';
 import { DocCreator } from './components/DocCreator';
 import { DocHistory } from './components/DocHistory';
 import { useI18n } from '../../i18n/I18nContext';
@@ -215,6 +214,11 @@ export const DokumenAiView: React.FC<DokumenAiViewProps> = ({ onAnalysisActiveCh
   const { t } = useI18n();
   const [tab, setTab] = useState<Tab>('buat-ai');
   const [activeDoc, setActiveDoc] = useState<DocRecord | null>(null);
+  // Panel Pengaturan Dokumen (pola app shell 2026-11-10): mode analisis
+  // pertama + tujuan sesudah analisis, dipilih dari Dokumen Saya dan
+  // diteruskan ke workspace analisis / navigasi.
+  const [analyzerInitialTab, setAnalyzerInitialTab] = useState<AnaTab>('summary');
+  const [afterAnalysis, setAfterAnalysis] = useState<AfterAnalysisChoice>('hasil');
 
   const [docs, setDocs] = useState<DocRecord[]>(() => readLS<DocRecord[]>(LS_DOCS, []));
   const [history, setHistory] = useState<HistoryEntry[]>(() => readLS<HistoryEntry[]>(LS_HISTORY, []));
@@ -295,41 +299,21 @@ export const DokumenAiView: React.FC<DokumenAiViewProps> = ({ onAnalysisActiveCh
     setTab('analyze');
   };
 
-  // ---- Kerangka layar-penuh (mockup ter-ACC owner 2026-11-08) ----
-  // Shell hanya membingkai Studio: tab, state, dan komponen di dalamnya
-  // tidak berubah. Stepper memetakan tahap NYATA dokumen: Dokumen Saya
-  // (unggah) → status ekstraksi dokumen aktif → workspace Analisis.
-  // Pada tab Studio/Riwayat stepper disembunyikan (bukan alur analisis).
-  const handleExit = () => {
-    if (onNavigateToMenu) onNavigateToMenu('dashboard');
-    else setTab('library');
+  // ---- Kerangka halaman di dalam workspace (pola app shell, mockup
+  // ter-ACC owner 2026-11-10): fitur TIDAK lagi menutupi workspace —
+  // sidebar + topbar tetap terlihat, halaman tidak scroll. Shell hanya
+  // membingkai Studio: tab, state, dan komponen di dalamnya tidak
+  // berubah. Header memuat chip tab aktif + chip status dokumen
+  // (pengganti stepper shell lama sesuai mockup ter-ACC).
+  const TAB_LABELS: Record<Tab, string> = {
+    'buat-ai': 'Buat dengan AI',
+    template: 'Gunakan Template',
+    periksa: 'Edit & Periksa',
+    library: t('ai.doc.tab_library'),
+    analyze: t('ai.doc.tab_analyze'),
+    history: t('ai.doc.tab_history'),
   };
-
-  const docSteps: FsStep[] | undefined =
-    tab === 'library' || tab === 'analyze'
-      ? [
-          {
-            label: 'Unggah Dokumen',
-            state: tab === 'library' ? 'active' : 'done',
-            onClick: () => setTab('library'),
-          },
-          {
-            label: 'Proses Ekstraksi',
-            state: !activeDoc
-              ? 'upcoming'
-              : activeDoc.status === 'processing'
-                ? 'active'
-                : activeDoc.status === 'failed'
-                  ? 'upcoming'
-                  : 'done',
-          },
-          {
-            label: 'Hasil Analisis',
-            state: tab === 'analyze' ? 'active' : 'upcoming',
-            onClick: activeDoc ? () => setTab('analyze') : undefined,
-          },
-        ]
-      : undefined;
+  const docTabChip = <FsChip kind="plain">Tab: {TAB_LABELS[tab]}</FsChip>;
 
   const docContextText = activeDoc
     ? `${activeDoc.fileName}${activeDoc.pages ? ` · ${activeDoc.pages} halaman` : ''} · ${formatBytes(activeDoc.sizeBytes)}`
@@ -359,15 +343,14 @@ export const DokumenAiView: React.FC<DokumenAiViewProps> = ({ onAnalysisActiveCh
   ) : undefined;
 
   return (
-    <FeatureFullscreenShell
+    <FeaturePageShell
       title="Document AI"
-      icon={<FileText size={18} />}
+      subtitle={t('ai.doc.lib.sub')}
+      icon={<FileText size={20} />}
       contextLabel={activeDoc ? 'Dokumen:' : undefined}
       contextText={docContextText}
-      chips={docStatusChip}
+      chips={<>{docTabChip}{docStatusChip}</>}
       creditText={`Kredit AI: ${creditBalance.total.toLocaleString('id-ID')}`}
-      onBack={handleExit}
-      steps={docSteps}
     >
     <div className="docai-shell" data-tutorial="dokumenai-main">
       <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '8px 12px 0' }}>
@@ -436,10 +419,20 @@ export const DokumenAiView: React.FC<DokumenAiViewProps> = ({ onAnalysisActiveCh
         ) : (
           <>
         {tab === 'library' && (
-          <DocLibrary docs={docs} onUpsertDoc={upsertDoc} onRemoveDoc={removeDoc} onAnalyze={openAnalyze} />
+          <DocLibrary
+            docs={docs}
+            onUpsertDoc={upsertDoc}
+            onRemoveDoc={removeDoc}
+            onAnalyze={openAnalyze}
+            initialMode={analyzerInitialTab}
+            onInitialModeChange={setAnalyzerInitialTab}
+            afterAnalysis={afterAnalysis}
+            onAfterAnalysisChange={setAfterAnalysis}
+            onContinueToDed={onNavigateToMenu ? () => onNavigateToMenu('ded-ai') : undefined}
+          />
         )}
         {tab === 'analyze' && activeDoc && (
-          <DocAnalyzer doc={activeDoc} docs={docs} onBack={() => setTab('library')} onAddHistory={addHistory} />
+          <DocAnalyzer doc={activeDoc} docs={docs} onBack={() => setTab('library')} onAddHistory={addHistory} initialTab={analyzerInitialTab} />
         )}
         {STUDIO_TABS.includes(tab) && (
           <DocCreator
@@ -455,7 +448,7 @@ export const DokumenAiView: React.FC<DokumenAiViewProps> = ({ onAnalysisActiveCh
         )}
       </div>
     </div>
-    </FeatureFullscreenShell>
+    </FeaturePageShell>
   );
 };
 

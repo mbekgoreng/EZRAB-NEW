@@ -35,7 +35,7 @@ import { CreditEstimateBadge } from '../../../ai-credits/components/CreditEstima
 /** Mode yang didukung service cabang ini. */
 type SvcMode = 'SUMMARY' | 'QA' | 'EXTRACT' | 'COMPARE' | 'CHAT';
 
-type AnaTab = 'summary' | 'qa' | 'extract' | 'compare' | 'checklist';
+export type AnaTab = 'summary' | 'qa' | 'extract' | 'compare' | 'checklist';
 
 /** Kategori estimasi kredit per tab analisis (simulasi). */
 const TAB_CREDIT_CATEGORY: Record<AnaTab, 'simple' | 'complex'> = {
@@ -46,7 +46,7 @@ const TAB_CREDIT_CATEGORY: Record<AnaTab, 'simple' | 'complex'> = {
   checklist: 'complex',
 };
 
-const getTabs = (
+export const getTabs = (
   t: (key: string) => string,
 ): Array<{ id: AnaTab; label: string; icon: any }> => [
   { id: 'summary', label: t('ai.doc.ana.tab_summary'), icon: BookOpen },
@@ -89,10 +89,13 @@ export const DocAnalyzer: React.FC<{
   docs: DocRecord[];
   onBack: () => void;
   onAddHistory: (e: Omit<HistoryEntry, 'id' | 'at'>) => void;
-}> = ({ doc, docs, onBack, onAddHistory }) => {
+  /** Mode analisis pertama yang dipilih dari panel Pengaturan Dokumen
+      (Dokumen Saya, pola app shell 2026-11-10). Default: Ringkasan. */
+  initialTab?: AnaTab;
+}> = ({ doc, docs, onBack, onAddHistory, initialTab }) => {
   const { t } = useI18n();
   const TABS = getTabs(t);
-  const [tab, setTab] = useState<AnaTab>('summary');
+  const [tab, setTab] = useState<AnaTab>(initialTab ?? 'summary');
   const [pageIdx, setPageIdx] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);

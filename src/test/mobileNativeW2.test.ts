@@ -141,10 +141,16 @@ check('MobileResourceLibrary mempertahankan aksi Detail (compare)', mRes.include
 /* --- 1 & 8 & 9. Terkunci: DED/DocAI, Game Space, Menu, Pengaturan ------------- */
 const ded = read('src/ai-tools/ded-ai-estimate/view.tsx');
 const docai = read('src/ai-tools/document-ai/view.tsx');
-check('DED AI tetap di dalam FeatureFullscreenShell', ded.includes('FeatureFullscreenShell'));
-check('AI Document tetap di dalam FeatureFullscreenShell', docai.includes('FeatureFullscreenShell'));
-const fsCss = read('src/components/feature-shell/feature-shell.css');
-check('shell fullscreen punya perlakuan HP (<=700px, konteks disembunyikan)', fsCss.includes('@media (max-width: 700px)') && fsCss.includes('.fs-ctx'));
+// Pola shell BERUBAH atas keputusan owner 2026-11-10 (mockup ter-ACC):
+// DED AI + AI Document TIDAK lagi memakai FeatureFullscreenShell — keduanya
+// halaman biasa di dalam workspace via FeaturePageShell (sidebar + topbar
+// tetap terlihat, halaman tidak scroll). Penguncian W2 lama digantikan.
+check('DED AI memakai FeaturePageShell (bukan fullscreen, ACC 2026-11-10)', ded.includes('FeaturePageShell') && !ded.includes('<FeatureFullscreenShell'));
+check('AI Document memakai FeaturePageShell (bukan fullscreen, ACC 2026-11-10)', docai.includes('FeaturePageShell') && !docai.includes('<FeatureFullscreenShell'));
+const fpCss = read('src/components/feature-shell/feature-page-shell.css');
+check('shell halaman punya perlakuan HP (<=700px, konteks disembunyikan)', fpCss.includes('@media (max-width: 700px)') && fpCss.includes('.fp-ctx'));
+const wsView = read('src/components/dashboard/WorkspaceView.tsx');
+check('WorkspaceView mengunci scroll halaman untuk ded-ai/dokumen-ai', wsView.includes("activeMenu === 'ded-ai'") && wsView.includes("activeMenu === 'dokumen-ai'") && wsView.includes("'hidden'"));
 const dedCss = read('src/ai-tools/ded-ai-estimate/dedAi.css');
 check('konten DED runtuh satu kolom di HP (<=560px)', dedCss.includes('@media (max-width: 560px)') && dedCss.includes('.dedai-actions'));
 const docCss = read('src/ai-tools/document-ai/document-ai.css');

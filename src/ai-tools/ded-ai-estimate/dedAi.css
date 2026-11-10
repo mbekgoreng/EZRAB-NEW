@@ -174,3 +174,65 @@
   .dedai-actions-primary { grid-template-columns: 1fr; }
   .dedai-cta { flex-direction: column; }
 }
+
+/* ===== Pola app shell (ACC owner 2026-11-10): Input DED — kotak upload
+   besar di tengah + SATU panel Pengaturan di pinggir kanan, tombol Mulai
+   Analisis menempel di bawah panel. Halaman tidak scroll; kolom utama dan
+   panel bergeser di wilayah internalnya masing-masing. ===== */
+.fp-shell .dedai.dedai-input { overflow: hidden; }
+.dedai-input-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 348px;
+  gap: 18px;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+}
+.dedai-input-main { min-height: 0; overflow-y: auto; padding-right: 2px; }
+.dedai-input-main .dedai-card:last-child { margin-bottom: 2px; }
+/* Dropzone tumbuh mengisi kartu upload agar terasa sebagai kotak besar. */
+.dedai-input-main .dedai-drop { padding: 48px 20px; }
+.dedai-settings {
+  background: var(--ez-color-surface);
+  border: 1px solid var(--ez-color-border-soft);
+  border-radius: var(--ez-radius-card);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.045);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+.dedai-settings-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 18px 18px 4px; }
+.dedai-settings-head { margin-bottom: 2px; }
+.dedai-settings-head h2 { font-size: 16px; font-weight: 800; margin: 0 0 4px; display: flex; align-items: center; gap: 10px; }
+.dedai-settings-head h2 .ico { width: 34px; height: 34px; border-radius: var(--ez-radius-control); background: var(--ez-color-primary-soft); display: flex; align-items: center; justify-content: center; color: var(--ez-color-primary); flex-shrink: 0; }
+.dedai-settings-head p { font-size: 12.5px; color: var(--ez-color-text-muted); margin: 0; }
+.dedai-set-sec { padding: 14px 0 16px; border-bottom: 1px solid var(--ez-color-border-soft); }
+.dedai-set-sec:last-child { border-bottom: none; }
+.dedai-set-sec h3 {
+  font-size: 11.5px; letter-spacing: 0.06em; text-transform: uppercase;
+  font-weight: 800; color: var(--ez-color-text-muted);
+  display: flex; align-items: center; gap: 7px; margin: 0 0 10px;
+}
+.dedai-set-sub { font-size: 12.5px; color: var(--ez-color-text-muted); line-height: 1.55; margin: 0 0 12px; }
+.dedai-set-sec .hint { font-size: 12px; color: var(--ez-color-text-faint); margin-top: 8px; line-height: 1.5; }
+.dedai-settings-foot {
+  flex: 0 0 auto;
+  border-top: 1px solid var(--ez-color-border-soft);
+  padding: 14px 18px 16px;
+  background: var(--ez-color-surface);
+}
+.dedai-settings-meta { font-size: 12px; color: var(--ez-color-text-muted); font-weight: 600; margin-bottom: 10px; line-height: 1.5; }
+.dedai-settings-foot .dedai-cta { margin-top: 0; }
+.dedai-settings-foot .dedai-btn { width: 100%; }
+.dedai-settings-hint { text-align: center; color: var(--ez-color-text-muted); font-size: 12.5px; margin: 10px 0 0; line-height: 1.5; }
+
+/* Layar lebih sempit: bertumpuk rapi — panel di bawah upload, seluruh
+   wilayah input bergeser internal (halaman tetap tidak scroll). */
+@media (max-width: 1100px) {
+  .fp-shell .dedai.dedai-input { overflow-y: auto; }
+  .dedai-input-layout { grid-template-columns: 1fr; flex: none; }
+  .dedai-input-main { overflow: visible; }
+  .dedai-settings { overflow: visible; }
+  .dedai-settings-scroll { overflow: visible; }
+}

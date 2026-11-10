@@ -25,9 +25,8 @@ import { notificationBus } from '../../notifications/notificationBus';
 import { useProject } from '../../context/ProjectContext';
 import { useI18n } from '../../i18n/I18nContext';
 import { Building2 } from 'lucide-react';
-import {
-  FeatureFullscreenShell, FsChip, FsStep,
-} from '../../components/feature-shell/FeatureFullscreenShell';
+import { FsChip, FsStep } from '../../components/feature-shell/FeatureFullscreenShell';
+import { FeaturePageShell } from '../../components/feature-shell/FeaturePageShell';
 import { useCreditSimulation } from '../../ai-credits/useCreditSimulation';
 
 interface Props {
@@ -596,33 +595,37 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
     }
   };
 
-  // ---- Kerangka layar-penuh (mockup ter-ACC owner 2026-11-08) ----
-  // Shell hanya membingkai: ketiga sub-view di bawah tidak berubah logika,
-  // state, maupun servicenya. "Kembali ke Workspace" memakai jalur navigasi
-  // yang sudah ada (onNavigateToTab ke menu dashboard).
-  const handleExit = () => {
-    if (onNavigateToTab) onNavigateToTab('dashboard');
-    else if (screen !== 'input') setScreen('input');
-  };
-
+  // ---- Kerangka halaman di dalam workspace (pola app shell, mockup
+  // ter-ACC owner 2026-11-10): fitur TIDAK lagi menutupi workspace —
+  // sidebar + topbar tetap terlihat, halaman tidak scroll. Shell hanya
+  // membingkai: ketiga sub-view di bawah tidak berubah logika, state,
+  // maupun servicenya. Label tahap mengikuti mockup ter-ACC
+  // (Input / Progress / Hasil).
   const shellSteps: FsStep[] =
     screen === 'input'
       ? [
-          { label: 'Upload DED', state: 'active' },
-          { label: 'Analisis', state: 'upcoming' },
-          { label: 'Hasil', state: 'upcoming' },
+          { label: t('ai.ded.input.step_1'), state: 'active' },
+          { label: t('ai.ded.input.step_2'), state: 'upcoming' },
+          { label: t('ai.ded.input.step_3'), state: 'upcoming' },
         ]
       : screen === 'progress'
         ? [
-            { label: 'Upload DED', state: 'done', onClick: handleBack },
-            { label: 'Analisis', state: 'active' },
-            { label: 'Hasil', state: 'upcoming' },
+            { label: t('ai.ded.input.step_1'), state: 'done', onClick: handleBack },
+            { label: t('ai.ded.input.step_2'), state: 'active' },
+            { label: t('ai.ded.input.step_3'), state: 'upcoming' },
           ]
         : [
-            { label: 'Upload DED', state: 'done', onClick: () => setScreen('input') },
-            { label: 'Analisis', state: 'done' },
-            { label: 'Hasil', state: 'active' },
+            { label: t('ai.ded.input.step_1'), state: 'done', onClick: () => setScreen('input') },
+            { label: t('ai.ded.input.step_2'), state: 'done' },
+            { label: t('ai.ded.input.step_3'), state: 'active' },
           ];
+
+  const shellStepsNote =
+    screen === 'input'
+      ? 'Langkah 1 dari 3 — belum ada proses yang berjalan'
+      : screen === 'progress'
+        ? 'Langkah 2 dari 3 — analisis sedang berjalan'
+        : 'Langkah 3 dari 3 — tinjau hasil sebelum disimpan';
 
   const isFullAiResult = screen === 'result' && !!fullAiOutput;
   const shellChips = isFullAiResult ? (
@@ -735,18 +738,19 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
   }
 
   return (
-    <FeatureFullscreenShell
-      title="DED Estimate AI"
-      icon={<Building2 size={18} />}
+    <FeaturePageShell
+      title={`DED → ${t('ai.ded.input.head_title_post')}`}
+      subtitle={t('ai.ded.input.head_sub')}
+      icon={<Building2 size={20} />}
       contextLabel="Proyek aktif:"
       contextText={shellContextText}
       chips={shellChips}
       creditText={`Kredit AI: ${creditBalance.total.toLocaleString('id-ID')}`}
-      onBack={handleExit}
       steps={shellSteps}
+      stepsNote={shellStepsNote}
     >
       {screenContent}
-    </FeatureFullscreenShell>
+    </FeaturePageShell>
   );
 };
 
