@@ -5,13 +5,11 @@ import '../../styles/boot-screen.css';
  * Layar muat bermerek — fallback Suspense untuk chunk berat (workspace).
  * Visualnya identik dengan layar "ezrab-boot" di index.html yang tampil
  * sebelum bundle awal selesai dimuat, supaya transisi muat terasa satu
- * kesatuan: navy, wordmark EZRAB, bar muat beranimasi.
+ * kesatuan: navy, logo EZRAB asli, bar muat beranimasi.
  */
 export const BootScreen: React.FC<{ message?: string }> = ({ message }) => (
   <div className="ezrab-boot" role="status" aria-label="Memuat EZRAB">
-    <div className="ezrab-boot-mark">
-      <b>EZ</b>RAB
-    </div>
+    <img className="ezrab-boot-logo" src="/images/ezrab-logo.png" alt="EZRAB" />
     <div className="ezrab-boot-tag">{message ?? 'RAB & Estimasi Konstruksi'}</div>
     <div className="ezrab-boot-bar">
       <i />
@@ -44,9 +42,7 @@ export class ChunkErrorBoundary extends React.Component<
     if (this.state.hasError) {
       return (
         <div className="ezrab-boot" role="alert" aria-label="Gagal memuat EZRAB">
-          <div className="ezrab-boot-mark">
-            <b>EZ</b>RAB
-          </div>
+          <img className="ezrab-boot-logo" src="/images/ezrab-logo.png" alt="EZRAB" />
           <div className="ezrab-boot-tag">
             Sebagian aplikasi gagal dimuat. Periksa koneksi kamu, lalu coba lagi.
           </div>

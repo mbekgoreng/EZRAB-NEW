@@ -4,8 +4,7 @@
    tersedia untuk fallback Suspense/error di dalam aplikasi (mis. saat
    chunk workspace diunduh), konsisten dengan layar muat awal. */
 .ezrab-boot{position:fixed;inset:0;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:radial-gradient(120% 90% at 50% 0%,#12263F 0%,#0A2540 55%,#071A30 100%);color:#fff;font-family:'Plus Jakarta Sans',system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif}
-.ezrab-boot-mark{font-size:34px;font-weight:800;letter-spacing:.04em;line-height:1}
-.ezrab-boot-mark b{color:#38BDF8;font-weight:800}
+.ezrab-boot-logo{display:block;height:40px;width:auto;filter:brightness(0) invert(1)}
 .ezrab-boot-tag{font-size:13px;color:#B9C9DE;letter-spacing:.02em}
 .ezrab-boot-bar{width:148px;height:3px;border-radius:999px;background:rgba(255,255,255,.14);overflow:hidden}
 .ezrab-boot-bar i{display:block;height:100%;width:40%;border-radius:999px;background:#2563EB;animation:ezrab-boot-slide 1.1s ease-in-out infinite}
