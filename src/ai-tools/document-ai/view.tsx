@@ -313,7 +313,10 @@ export const DokumenAiView: React.FC<DokumenAiViewProps> = ({ onAnalysisActiveCh
     analyze: t('ai.doc.tab_analyze'),
     history: t('ai.doc.tab_history'),
   };
-  const docTabChip = <FsChip kind="plain">Tab: {TAB_LABELS[tab]}</FsChip>;
+  /* Chip indikator tab aktif di header shell. Teks TANPA awalan "Tab:"
+     (owner 2026-11-10: label lama terbaca seperti label debug) — fungsinya
+     sama, tab aktif juga terlihat pada bar tab di bawahnya. */
+  const docTabChip = <FsChip kind="plain">{TAB_LABELS[tab]}</FsChip>;
 
   const docContextText = activeDoc
     ? `${activeDoc.fileName}${activeDoc.pages ? ` · ${activeDoc.pages} halaman` : ''} · ${formatBytes(activeDoc.sizeBytes)}`

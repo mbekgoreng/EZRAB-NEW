@@ -733,3 +733,82 @@
   .docai-settings { overflow: visible; }
   .docai-settings-scroll { overflow: visible; }
 }
+
+/* =========================================================================
+   HP (owner 2026-11-10 19:04): bar tab & sub-navigasi Studio lebih simple.
+   Sebelumnya .docai-tabs satu baris overflow-x sehingga tombol ketiga
+   ("Edit & Periksa") terpotong menyisakan huruf "E", dan chip sub-view
+   membungkus acak. Kini: tab membungkus sebagai grid rata (label boleh
+   dua baris pendek, tidak ada yang terpotong), pemisah menjadi garis
+   penuh, dan sub-navigasi menjadi grid 2 kolom sama lebar. Desktop tidak
+   berubah.
+   ========================================================================= */
+@media (max-width: 767px) {
+  .docai-tabs {
+    flex-wrap: wrap;
+    overflow-x: visible;
+    gap: 4px;
+    padding: 5px;
+    margin-bottom: 14px;
+  }
+  .docai-tabbtn {
+    flex: 1 1 30%;
+    justify-content: center;
+    padding: 9px 6px;
+    font-size: 12.5px;
+    gap: 6px;
+    white-space: normal;
+    text-align: center;
+    line-height: 1.25;
+  }
+  .docai-tabsep {
+    flex: 1 1 100%;
+    width: auto;
+    height: 1px;
+    margin: 3px 2px;
+  }
+  .docai-subnav {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .docai-subbtn {
+    justify-content: center;
+    padding: 9px 8px;
+    font-size: 12.5px;
+    gap: 6px;
+    white-space: normal;
+    text-align: center;
+    line-height: 1.25;
+  }
+}
+
+/* =========================================================================
+   Layar PENDEK (owner 2026-11-10 19:15): keadaan awal Dokumen AI muat
+   satu viewport lewat KOMPRESI — pola yang sama dengan DED. Kartu awal
+   dipadatkan, ikon dekoratif diperkecil, paragraf pembuka diringkas,
+   baris petunjuk di kepala halaman yang isinya mengulang subjudul shell
+   disembunyikan pada mode kompak, area instruksi lebih pendek (tetap
+   bisa diperbesar manual — resize: vertical dipertahankan). Tidak ada
+   fungsi yang dibuang. Blok kembar: feature-page-shell.css.
+   ========================================================================= */
+@media (max-height: 880px) {
+  .fp-shell .docai-shell > div:first-child { padding-top: 2px !important; }
+  .docai-tabs { margin-bottom: 10px; }
+  .docai-subnav { margin-bottom: 8px; }
+  .docai-pagehead { margin-bottom: 8px; }
+  .docai-pagehead h2 { font-size: 18px; }
+  .docai-pagehead p { margin-top: 2px; }
+  .docai-pagehead .docai-hint { display: none; }
+  .docai-edempty { padding: 16px 20px; }
+  .docai-edempty > svg { width: 22px; height: 22px; }
+  .docai-empty h3 { margin: 6px 0 4px; font-size: 15px; }
+  .docai-empty p { margin-bottom: 10px; }
+  .docai-edform { margin-top: 10px; }
+  .docai-modeline { margin-bottom: 10px; }
+  .docai-modeline button { padding: 6px 10px; }
+  .docai-step { margin-bottom: 6px; }
+  .docai-edform .docai-textarea { height: 78px; min-height: 60px; }
+  .docai-select { padding: 8px 11px; }
+  .docai-xlink { margin-top: 10px; padding: 10px 14px; }
+}

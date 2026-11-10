@@ -1861,7 +1861,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
           value={input}
           onChange={(e) => { setInput(e.target.value); autoresize(); updateSlashState(e.target.value, e.target.selectionStart); }}
           onKeyDown={onKey}
-          placeholder={listening ? 'Mendengarkan…' : 'Ketik pesan atau perintah, misalnya /template'}
+          placeholder={listening ? 'Mendengarkan…' : 'Ketik pesan atau perintah…'}
           rows={1}
           disabled={busy}
           aria-expanded={slashOpen}
