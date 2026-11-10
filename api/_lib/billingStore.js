@@ -27,6 +27,19 @@
  *   UNIQUE parsial FREE_ONCE, billing_orders.order_id) + penanda
  *   granted_at/last_order_id sebagai pagar idempotensi order. RPC tetap
  *   merupakan langkah pengerasan sebelum uang nyata berskala besar.
+ * - SPRINT 3 (Tugas 1, 2026-11-10): withLedger kini diserialisasi PER AKUN
+ *   di dalam satu proses (rantai promise per accountId: load → domain →
+ *   flush berjalan utuh sebelum pemanggil berikutnya untuk akun yang sama
+ *   memuat snapshot), flush divalidasi SEBELUM menulis (invarian batch +
+ *   konflik kunci idempotensi + tabrakan FREE_ONCE terhadap baris yang
+ *   terpersisten di luar snapshot), dan kegagalan di tengah flush memicu
+ *   KOMPENSASI best-effort (hapus sisipan + pulihkan baris yang diubah).
+ *   Ini membuktikan atomisitas IN-PROCESS untuk adapter ini — BUKAN
+ *   konkurensi terdistribusi: dua instance serverless terpisah TIDAK
+ *   berbagi rantai ini, dan kompensasi PostgREST bukan transaksi DB.
+ *   Kontrak otoritatif lintas-instance tetap RPC SQL transaksional
+ *   (migration 20261110, F-6/F-10 diperbaiki Sprint 3, NOT RUNTIME
+ *   VERIFIED sampai diuji di PostgreSQL disposable).
  * - Hasil idempotency NON-grant (reserve/settle) tidak direkonstruksi dari
  *   DB saat hidrasi — yang direkonstruksi hanya hasil GRANT (dari entri
  *   ledger GRANT + batch-nya) dan penanda EXPIRATION sweep, karena hanya
@@ -291,15 +304,161 @@ function findIdempotencyKeyFor(store, predicate) {
   return null;
 }
 
+function ledgerError(code, message) {
+  const err = new Error(message);
+  err.code = code;
+  return err;
+}
+
+/**
+ * Sprint 3 — validasi pra-flush + deteksi konflik terhadap keadaan
+ * terpersisten TERKINI (bukan hanya snapshot). Berjalan SEBELUM satu pun
+ * penulisan, sehingga konflik yang dapat diprediksi tidak pernah
+ * meninggalkan keadaan parsial:
+ * - setiap batch memenuhi invarian granted = remaining+reserved+consumed
+ *   +expired dengan seluruh kolom integer aman non-negatif;
+ * - tidak ada dua entri BARU yang memakai kunci idempotensi yang sama;
+ * - tidak ada entri BARU yang kuncinya sudah terpersisten di luar snapshot
+ *   (penulis lain / snapshot basi) → UNIQUE_VIOLATION sebelum menulis;
+ * - tidak ada batch FREE_ONCE BARU bila akun sudah punya batch FREE_ONCE
+ *   terpersisten di luar snapshot → UNIQUE_VIOLATION sebelum menulis.
+ */
+async function preflightFlush(repo, snapshot) {
+  const { store } = snapshot;
+  for (const batch of store.batches.values()) {
+    const parts = [batch.grantedAmount, batch.remainingAmount, batch.reservedAmount, batch.consumedAmount, batch.expiredAmount];
+    if (!parts.every((v) => Number.isSafeInteger(v) && v >= 0)
+      || batch.grantedAmount !== batch.remainingAmount + batch.reservedAmount + batch.consumedAmount + batch.expiredAmount) {
+      throw ledgerError('LEDGER_INVARIANT_VIOLATION', `batch invariant violated: ${batch.id}`);
+    }
+  }
+  const newEntries = store.ledger.filter((e) => !snapshot.persistedEntryIds.has(e.id));
+  const seenKeys = new Set();
+  for (const e of newEntries) {
+    if (e.idempotencyKey == null) continue;
+    const k = `${e.accountId}::${e.idempotencyKey}`;
+    if (seenKeys.has(k)) throw ledgerError('UNIQUE_VIOLATION', `duplicate ledger key within flush: ${e.idempotencyKey}`);
+    seenKeys.add(k);
+  }
+  if (typeof repo.loadLedgerRows !== 'function') return;
+  const accountIds = new Set([
+    ...[...store.batches.values()].map((b) => b.accountId),
+    ...[...store.operations.values()].map((o) => o.accountId),
+    ...[...store.reviews].map((r) => r.accountId),
+    ...newEntries.map((e) => e.accountId),
+  ]);
+  // CAS berbasis konten (optimistic concurrency tanpa kolom versi):
+  // entitas PERSISTED yang akan DIUBAH flush ini harus masih persis sama
+  // dengan keadaan saat snapshot dimuat. Bila penulis lain mengubahnya
+  // lebih dulu, snapshot ini basi → batalkan SEBELUM menulis
+  // (LEDGER_CONFLICT), jangan timpa hasil penulis lain secara buta.
+  const sortAllocs = (op) => {
+    const c = JSON.parse(JSON.stringify(op));
+    if (Array.isArray(c.allocations)) c.allocations.sort((x, y) => String(x.batchId).localeCompare(String(y.batchId)));
+    return JSON.stringify(c);
+  };
+  const changedBatches = [...store.batches.values()].filter(
+    (b) => snapshot.persistedBatchIds.has(b.id)
+      && snapshot.originals.get(`batch:${b.id}`) !== JSON.stringify(b)
+  );
+  const changedOps = [...store.operations.values()].filter(
+    (o) => snapshot.persistedOperationIds.has(o.id)
+      && snapshot.originals.get(`op:${o.id}`) !== JSON.stringify(o)
+  );
+  const changedReviews = store.reviews.filter(
+    (r) => snapshot.persistedReviewIds.has(r.id)
+      && snapshot.originals.get(`review:${r.id}`) !== JSON.stringify(r)
+  );
+  for (const accountId of accountIds) {
+    const rows = await repo.loadLedgerRows(accountId);
+    if (changedBatches.length || changedOps.length || changedReviews.length) {
+      const curBatches = new Map((rows.batchRows || []).map((r) => {
+        const d = batchRowToDomain(r);
+        return [d.id, JSON.stringify(d)];
+      }));
+      const allocByOp = new Map();
+      for (const a of rows.allocationRows || []) {
+        if (!allocByOp.has(a.operation_id)) allocByOp.set(a.operation_id, []);
+        allocByOp.get(a.operation_id).push(a);
+      }
+      const curOps = new Map((rows.operationRows || []).map((r) => {
+        const d = operationRowToDomain(r, allocByOp.get(r.id) || []);
+        return [d.id, sortAllocs(d)];
+      }));
+      const curReviews = new Map((rows.reviewRows || []).map((r) => {
+        const d = reviewRowToDomain(r);
+        return [d.id, JSON.stringify(d)];
+      }));
+      for (const b of changedBatches) {
+        if (b.accountId !== accountId) continue;
+        if (curBatches.get(b.id) !== snapshot.originals.get(`batch:${b.id}`)) {
+          throw ledgerError('LEDGER_CONFLICT', `stale snapshot: batch changed since load: ${b.id}`);
+        }
+      }
+      for (const o of changedOps) {
+        if (o.accountId !== accountId) continue;
+        const original = snapshot.originals.get(`op:${o.id}`);
+        if (curOps.get(o.id) !== sortAllocs(JSON.parse(original))) {
+          throw ledgerError('LEDGER_CONFLICT', `stale snapshot: operation changed since load: ${o.id}`);
+        }
+      }
+      for (const r of changedReviews) {
+        if (r.accountId !== accountId) continue;
+        if (curReviews.get(r.id) !== snapshot.originals.get(`review:${r.id}`)) {
+          throw ledgerError('LEDGER_CONFLICT', `stale snapshot: review changed since load: ${r.id}`);
+        }
+      }
+    }
+    const persistedEntryKeys = new Set(
+      (rows.entryRows || [])
+        .filter((r) => r.idempotency_key != null && !snapshot.persistedEntryIds.has(r.id))
+        .map((r) => `${r.account_id}::${r.idempotency_key}`)
+    );
+    for (const e of newEntries) {
+      if (e.accountId !== accountId || e.idempotencyKey == null) continue;
+      if (persistedEntryKeys.has(`${e.accountId}::${e.idempotencyKey}`)) {
+        throw ledgerError('UNIQUE_VIOLATION', `ledger key already persisted outside snapshot: ${e.idempotencyKey}`);
+      }
+    }
+    const persistedFreeOnce = (rows.batchRows || []).some(
+      (r) => r.type === 'FREE_ONCE' && !snapshot.persistedBatchIds.has(r.id)
+    );
+    if (persistedFreeOnce) {
+      const newFreeOnce = [...store.batches.values()].some(
+        (b) => b.accountId === accountId && b.type === 'FREE_ONCE' && !snapshot.persistedBatchIds.has(b.id)
+      );
+      if (newFreeOnce) {
+        throw ledgerError('UNIQUE_VIOLATION', 'FREE_ONCE already persisted outside snapshot');
+      }
+    }
+  }
+}
+
 /**
  * Flush perbedaan store ke repository. Mengembalikan idMap untuk id batch
  * yang baru dibuat (id domain sementara → id DB), agar pemanggil dapat
  * memperbaiki referensi pada hasil operasi.
+ *
+ * Sprint 3: flush berjalan dalam dua fase — (1) preflight (tanpa menulis),
+ * (2) penulisan terkompensasi: setiap sisipan/pembaruan dicatat; bila satu
+ * langkah gagal, sisipan dihapus dan pembaruan dipulihkan best-effort
+ * (bila repository menyediakan metode hapus), lalu error asli dilempar
+ * ulang. Kompensasi BUKAN transaksi DB — lihat header file.
  */
 export async function flushLedgerSnapshot(repo, snapshot) {
+  await preflightFlush(repo, snapshot);
   const { store, ctx } = snapshot;
   const idMap = new Map();
   const remap = (id) => (id != null && idMap.has(id) ? idMap.get(id) : id);
+  const insertedBatchIds = [];
+  const updatedBatchRows = []; // { id, row } keadaan sebelum (bentuk row)
+  const insertedOperationIds = [];
+  const updatedOperationRows = [];
+  const insertedAllocationIds = [];
+  const insertedEntryIds = [];
+  const insertedReviewIds = [];
+  const updatedReviewRows = [];
+  try {
 
   // 1) Batch: sisipkan yang baru, perbarui yang berubah.
   for (const batch of store.batches.values()) {
@@ -308,7 +467,9 @@ export async function flushLedgerSnapshot(repo, snapshot) {
       const inserted = await repo.insertBatchRow(row);
       idMap.set(batch.id, inserted.id);
       snapshot.persistedBatchIds.add(inserted.id);
+      insertedBatchIds.push(inserted.id);
     } else if (snapshot.originals.get(`batch:${batch.id}`) !== JSON.stringify(batch)) {
+      updatedBatchRows.push({ id: batch.id, row: batchDomainToRow(JSON.parse(snapshot.originals.get(`batch:${batch.id}`)), ctx) });
       await repo.updateBatchRow(batch.id, row);
     }
   }
@@ -340,18 +501,21 @@ export async function flushLedgerSnapshot(repo, snapshot) {
       const oldId = op.id;
       op.id = inserted.id;
       idMap.set(oldId, inserted.id);
+      insertedOperationIds.push(inserted.id);
       store.operations.delete(oldId);
       store.operations.set(op.id, op);
       for (const alloc of op.allocations || []) {
-        await repo.insertAllocationRow({
+        const allocInserted = await repo.insertAllocationRow({
           operation_id: op.id,
           batch_id: remap(alloc.batchId),
           account_id: op.accountId,
           amount: alloc.amount,
         });
+        if (allocInserted && allocInserted.id) insertedAllocationIds.push(allocInserted.id);
       }
       snapshot.persistedOperationIds.add(op.id);
     } else {
+      updatedOperationRows.push({ id: op.id, row: operationDomainToRow(JSON.parse(snapshot.originals.get(`op:${op.id}`)), ctx, key) });
       await repo.updateOperationRow(op.id, row);
     }
   }
@@ -365,6 +529,7 @@ export async function flushLedgerSnapshot(repo, snapshot) {
     );
     const inserted = await repo.insertEntryRow(row);
     snapshot.persistedEntryIds.add(inserted.id);
+    insertedEntryIds.push(inserted.id);
   }
 
   // 4) Review: sisipkan yang baru, perbarui yang berubah.
@@ -384,29 +549,96 @@ export async function flushLedgerSnapshot(repo, snapshot) {
       const inserted = await repo.insertReviewRow(row);
       review.id = inserted.id;
       snapshot.persistedReviewIds.add(review.id);
+      insertedReviewIds.push(inserted.id);
     } else {
+      updatedReviewRows.push({ id: review.id, row: reviewDomainToRow(JSON.parse(snapshot.originals.get(`review:${review.id}`)), ctx, key) });
       await repo.updateReviewRow(review.id, row);
     }
   }
 
   return idMap;
+  } catch (err) {
+    // Kompensasi best-effort (urutan terbalik dari penulisan). Kegagalan
+    // kompensasi ditelan agar error ASLI yang sampai ke pemanggil; keadaan
+    // sesudah kegagalan ganda adalah wilayah rekonsiliasi / RPC DB.
+    const attempt = async (fn) => { try { await fn(); } catch { /* best-effort */ } };
+    for (const id of [...insertedReviewIds].reverse()) {
+      if (typeof repo.deleteReviewRow === 'function') await attempt(() => repo.deleteReviewRow(id));
+      snapshot.persistedReviewIds.delete(id);
+    }
+    for (const u of [...updatedReviewRows].reverse()) await attempt(() => repo.updateReviewRow(u.id, u.row));
+    for (const id of [...insertedEntryIds].reverse()) {
+      if (typeof repo.deleteEntryRow === 'function') await attempt(() => repo.deleteEntryRow(id));
+      snapshot.persistedEntryIds.delete(id);
+    }
+    for (const id of [...insertedAllocationIds].reverse()) {
+      if (typeof repo.deleteAllocationRow === 'function') await attempt(() => repo.deleteAllocationRow(id));
+    }
+    for (const id of [...insertedOperationIds].reverse()) {
+      if (typeof repo.deleteOperationRow === 'function') await attempt(() => repo.deleteOperationRow(id));
+      snapshot.persistedOperationIds.delete(id);
+    }
+    for (const u of [...updatedOperationRows].reverse()) await attempt(() => repo.updateOperationRow(u.id, u.row));
+    for (const u of [...updatedBatchRows].reverse()) await attempt(() => repo.updateBatchRow(u.id, u.row));
+    for (const id of [...insertedBatchIds].reverse()) {
+      if (typeof repo.deleteBatchRow === 'function') await attempt(() => repo.deleteBatchRow(id));
+      snapshot.persistedBatchIds.delete(id);
+    }
+    throw err;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Sprint 3 — serialisasi per-akun IN-PROCESS untuk withLedger.
+// Rantai promise per accountId: pendaftar berikutnya menunggu pemegang
+// sebelumnya selesai (load + domain + flush) sebelum memuat snapshotnya
+// sendiri, sehingga snapshot tidak pernah basi di dalam satu proses.
+// Akuisisi berjalan sinkron pada saat withLedger dipanggil (sebelum await
+// pertama), jadi urutan antrean = urutan pemanggilan — deterministik.
+// BATAS JUJUR: kunci ini TIDAK re-entrant (fn domain sinkron dan tidak
+// boleh memanggil withLedger akun yang sama) dan TIDAK lintas proses /
+// lintas instance serverless — lihat header file.
+// ---------------------------------------------------------------------------
+const ledgerAccountChains = new Map();
+
+function acquireLedgerAccount(accountId) {
+  const key = String(accountId);
+  const previous = ledgerAccountChains.get(key) || Promise.resolve();
+  let release;
+  const current = new Promise((resolve) => { release = resolve; });
+  const chain = previous.then(() => current);
+  ledgerAccountChains.set(key, chain);
+  return {
+    ready: previous,
+    release() {
+      release();
+      if (ledgerAccountChains.get(key) === chain) ledgerAccountChains.delete(key);
+    },
+  };
 }
 
 /**
  * Jalankan fungsi domain ledger di atas store terhidrasi lalu flush.
  * Mengembalikan hasil fungsi domain (dengan id batch hasil grant sudah
  * diperbaiki mengikuti idMap).
+ * Sprint 3: seluruh siklus dibungkus serialisasi per-akun (di atas).
  */
 export async function withLedger(repo, accountId, ctx, fn) {
-  const snapshot = await loadLedgerSnapshot(repo, accountId, ctx);
-  const ledger = createCreditLedger(snapshot.store);
-  const result = fn(ledger);
-  const idMap = await flushLedgerSnapshot(repo, snapshot);
-  if (result && typeof result === 'object' && idMap.size > 0) {
-    if (result.batch && idMap.has(result.batch.id)) result.batch.id = idMap.get(result.batch.id);
-    if (result.batchId && idMap.has(result.batchId)) result.batchId = idMap.get(result.batchId);
+  const lock = acquireLedgerAccount(accountId);
+  await lock.ready;
+  try {
+    const snapshot = await loadLedgerSnapshot(repo, accountId, ctx);
+    const ledger = createCreditLedger(snapshot.store);
+    const result = fn(ledger);
+    const idMap = await flushLedgerSnapshot(repo, snapshot);
+    if (result && typeof result === 'object' && idMap.size > 0) {
+      if (result.batch && idMap.has(result.batch.id)) result.batch.id = idMap.get(result.batch.id);
+      if (result.batchId && idMap.has(result.batchId)) result.batchId = idMap.get(result.batchId);
+    }
+    return result;
+  } finally {
+    lock.release();
   }
-  return result;
 }
 
 // ---------------------------------------------------------------------------
@@ -619,6 +851,34 @@ export class SupabaseBillingRepository {
     if (error) throw new Error('review_update_failed');
     return data;
   }
+
+  // Sprint 3: metode hapus HANYA untuk kompensasi flush yang gagal
+  // (menghapus baris yang baru saja disisipkan flush yang sama) — bukan
+  // API penghapusan ledger umum; jurnal tetap append-only secara desain.
+  async deleteBatchRow(id) {
+    const { error } = await this.client.from('credit_batches').delete().eq('id', id);
+    if (error) throw new Error('batch_delete_failed');
+  }
+
+  async deleteEntryRow(id) {
+    const { error } = await this.client.from('credit_batch_ledger').delete().eq('id', id);
+    if (error) throw new Error('entry_delete_failed');
+  }
+
+  async deleteOperationRow(id) {
+    const { error } = await this.client.from('credit_usage_operations').delete().eq('id', id);
+    if (error) throw new Error('operation_delete_failed');
+  }
+
+  async deleteAllocationRow(id) {
+    const { error } = await this.client.from('credit_reservation_allocations').delete().eq('id', id);
+    if (error) throw new Error('allocation_delete_failed');
+  }
+
+  async deleteReviewRow(id) {
+    const { error } = await this.client.from('credit_settlement_reviews').delete().eq('id', id);
+    if (error) throw new Error('review_delete_failed');
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -810,6 +1070,27 @@ export class InMemoryBillingRepository {
     const next = { ...cur, ...row, id };
     this.reviewRows.set(id, next);
     return next;
+  }
+
+  // Sprint 3: pasangan hapus untuk kompensasi flush (lihat Supabase repo).
+  async deleteBatchRow(id) {
+    this.batchRows.delete(id);
+  }
+
+  async deleteEntryRow(id) {
+    this.entryRows = this.entryRows.filter((e) => e.id !== id);
+  }
+
+  async deleteOperationRow(id) {
+    this.operationRows.delete(id);
+  }
+
+  async deleteAllocationRow(id) {
+    this.allocationRows = this.allocationRows.filter((a) => a.id !== id);
+  }
+
+  async deleteReviewRow(id) {
+    this.reviewRows.delete(id);
   }
 }
 
