@@ -8,11 +8,14 @@ import React, { useMemo, useState } from 'react';
 import {
   CheckCircle2, AlertTriangle, XCircle, MinusCircle, Pencil, ChevronDown,
   ChevronUp, Save, FolderCheck, Table2, FileSpreadsheet, FileJson,
-  ArrowLeft, Info, Check, X,
+  ArrowLeft, Info, Check, X, Sparkles, Undo2,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
-import { DedAiItem, DedAiOutput } from './types';
+import { DedAiItem, DedAiOutput, DedCompletionReport } from './types';
 import { DedAiCalculator, applyUnitChange, clearStaleProposal } from './calculator';
+import {
+  completeDedBatch, completeDedItem, derivePlanContext, rejectCompletion, acceptCompletion,
+} from './priceCompletion';
 import { resolveCanonicalCode } from '../ded-canonical/canonicalDedPricing';
 import { groupByWbs, WbsGroup } from './wbsClassifier';
 import { useI18n } from '../../i18n/I18nContext';
@@ -90,6 +93,9 @@ export const DedAiResultView: React.FC<Props> = ({
   const [wbsExpanded, setWbsExpanded] = useState<Set<string>>(new Set());
   const [showWbs, setShowWbs] = useState(false);
   const [confirmError, setConfirmError] = useState<Record<string, string>>({});
+  const [completionReport, setCompletionReport] = useState<DedCompletionReport | null>(
+    output.completionReport ?? null,
+  );
 
   // WBS grouping — dihitung dari items aktual, tidak mengubah data
   const wbsData = useMemo(
@@ -152,6 +158,11 @@ export const DedAiResultView: React.FC<Props> = ({
           ...base,
           name: newName,
           quantity,
+          // HARDENING Tahap 1: angka ketikan user adalah USER_PROVIDED —
+          // label ASSUMPTION/AI lama tidak boleh bertahan atasnya, dan
+          // blok audit kuantitas isian AI dicabut (sudah tidak berlaku).
+          quantitySource: quantity != null ? ('USER_INPUT' as const) : base.quantitySource,
+          quantityAudit: undefined,
           units: newUnits,
           quantityFormula: quantity != null
             ? `${t('ai.ded.result.formula_manual_a')} ${fmtQty(quantity)} ${newUnits}`
@@ -211,6 +222,9 @@ export const DedAiResultView: React.FC<Props> = ({
         return {
           ...it,
           quantity,
+          // Sama seperti edit per item: isian massal = USER_PROVIDED.
+          quantitySource: 'USER_INPUT' as const,
+          quantityAudit: undefined,
           quantityFormula: `${t('ai.ded.result.formula_input_a')} ${fmtQty(quantity)} ${it.units}`,
           provenance: [...it.provenance, 'bulk-fill'],
           // Kuantitas berubah → usulan AI lama basi.
@@ -222,6 +236,36 @@ export const DedAiResultView: React.FC<Props> = ({
     });
     setBulkFill(false);
     setBulkVals({});
+  };
+
+  // ---- Lapisan penyelesaian AI (mode FULL_AI saja) ----
+  // Batch: satu item gagal tidak menghentikan sisanya (completeDedBatch
+  // menangkap kegagalan per item dan melaporkannya). Per item: tombol di
+  // baris detail. Tolak: memulihkan keadaan sebelum penyelesaian.
+  const policy = output.policy ?? 'FULL_AI';
+  const gapCount = withStatus.filter(({ status }) => status === 'blocked' || status === 'no-price').length;
+  const runBatchCompletion = () => {
+    setItems((prev) => {
+      const res = completeDedBatch(prev, derivePlanContext(prev), { policy });
+      setCompletionReport(res.report);
+      return DedAiCalculator.finalizeItems(res.items);
+    });
+  };
+  const runItemCompletion = (id: string) => {
+    setItems((prev) => {
+      const ctx = derivePlanContext(prev);
+      const updated = prev.map((it) => (it.id === id ? completeDedItem(it, ctx, { policy }).item : it));
+      return DedAiCalculator.finalizeItems(updated);
+    });
+  };
+  const runRejectCompletion = (id: string) => {
+    setItems((prev) => DedAiCalculator.finalizeItems(prev.map((it) => (it.id === id ? rejectCompletion(it) : it))));
+  };
+  // HARDENING Tahap 5: terima adalah AKSI eksplisit yang tercatat
+  // (userApprovalStatus APPROVED), bukan lagi teks pasif "biarkan
+  // terpasang". Nilai tidak berubah — hanya status persetujuannya.
+  const runAcceptCompletion = (id: string) => {
+    setItems((prev) => prev.map((it) => (it.id === id ? acceptCompletion(it) : it)));
   };
 
   const handleFinalize = async () => {
@@ -303,7 +347,6 @@ export const DedAiResultView: React.FC<Props> = ({
 
       {/* ---- Banner kebijakan harga (Full AI vs Database) ---- */}
       {(() => {
-        const policy = output.policy ?? 'FULL_AI';
         const aiCount = items.filter((it) => it.priceSource === 'AI_ESTIMATE').length;
         const canonCount = items.filter((it) => it.priceSource === 'AHSP_2026').length;
         const reviewCount = items.filter((it) => it.ahspMatch?.status === 'NEEDS_REVIEW').length;
@@ -512,6 +555,34 @@ export const DedAiResultView: React.FC<Props> = ({
       </div>
 
 
+      {/* ---- Panel penyelesaian AI (mode FULL_AI) ---- */}
+      {policy === 'FULL_AI' && (gapCount > 0 || completionReport) && (
+        <div className="aic-card" style={{ margin: '0 0 16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+            <div>
+              <div className="aic-k">Penyelesaian Harga & Kuantitas AI</div>
+              <div style={{ fontSize: 12, color: 'var(--ez-color-text-faint)', marginTop: 2 }}>
+                Harga kosong dilengkapi dari referensi pasar eksternal berlabel sumber; kuantitas kosong dari asumsi denah berlabel. Harga AHSP resmi & harga manual tidak pernah ditimpa.
+              </div>
+            </div>
+            {gapCount > 0 && (
+              <button className="dedai-btn primary" onClick={runBatchCompletion}>
+                <Sparkles size={15} /> Lengkapi Harga AI ({gapCount} item)
+              </button>
+            )}
+          </div>
+          {completionReport && (
+            <div style={{ fontSize: 12.5, marginTop: 8, lineHeight: 1.7 }}>
+              Dipindai <b>{completionReport.scanned}</b> · terisi referensi pasar <b>{completionReport.filledMarketReference}</b> ·
+              terisi estimasi AI <b>{completionReport.filledAiEstimate}</b> · kuantitas dilengkapi <b>{completionReport.quantityFilled}</b> ·
+              resmi dipertahankan <b>{completionReport.officialPreserved}</b> · sudah ada dipertahankan <b>{completionReport.existingKept}</b> ·
+              butuh kuantitas <b>{completionReport.needsQuantity}</b> · belum terpecahkan <b>{completionReport.unresolved}</b>
+              {completionReport.failures > 0 ? <> · gagal diproses <b>{completionReport.failures}</b> (batch tetap lanjut)</> : null}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ---- Filter ---- */}
       <div className="dedai-filters">
         {filters.map((f) => (
@@ -669,6 +740,61 @@ export const DedAiResultView: React.FC<Props> = ({
                             </div>
                           )}
                           {it.priceAssumptionNote && <div className="dl-row"><span className="dl-k">{t('ai.ded.result.detail_price_note')}</span><span>{it.priceAssumptionNote}</span></div>}
+                          {it.priceCompletion && (
+                            <div className="dl-row"><span className="dl-k">Penyelesaian AI</span><span>
+                              Klasifikasi: <b>{it.priceCompletion.classification}</b> · keyakinan {it.priceCompletion.confidence}
+                              {it.priceCompletion.rangeMin != null && it.priceCompletion.rangeMax != null
+                                ? <> · rentang referensi {fmtRp(it.priceCompletion.rangeMin)}–{fmtRp(it.priceCompletion.rangeMax)}/{it.priceCompletion.unit}</>
+                                : null}
+                              {' '}· cakupan {it.priceCompletion.scope === 'TERPASANG_PENUH' ? 'terpasang penuh' : it.priceCompletion.scope === 'MATERIAL_SAJA' ? 'material saja' : 'tidak dinyatakan'}
+                              {it.priceCompletion.region ? <> · wilayah {it.priceCompletion.region}</> : null}
+                              {it.priceCompletion.sourceName
+                                ? <><br />Sumber: {it.priceCompletion.sourceUrl
+                                  ? <a href={it.priceCompletion.sourceUrl} target="_blank" rel="noreferrer">{it.priceCompletion.sourceName}</a>
+                                  : it.priceCompletion.sourceName}
+                                  {it.priceCompletion.sourceDate ? <> (data {it.priceCompletion.sourceDate}, diambil {it.priceCompletion.accessedAt})</> : null}</>
+                                : null}
+                              {it.priceCompletion.specAssumption ? <><br />Asumsi spek: {it.priceCompletion.specAssumption}</> : null}
+                              {it.priceCompletion.quantityBasis ? <><br />Dasar kuantitas: {it.priceCompletion.quantityBasis}</> : null}
+                              {it.priceCompletion.sourceKind ? <><br />Jenis sumber: {it.priceCompletion.sourceKind} · verifikasi: {it.priceCompletion.verificationStatus ?? 'UNVERIFIED'} · persetujuan: {it.priceCompletion.userApprovalStatus ?? '—'}</> : null}
+                              {it.priceCompletion.method ? <><br />Metode: {it.priceCompletion.method}</> : null}
+                              {it.priceCompletion.sourceStale ? <><br /><b style={{ color: 'var(--ez-color-warning)' }}>Sumber BASI</b> (melewati masa segar 30 hari) — keyakinan diturunkan.</> : null}
+                              {it.priceCompletion.originalUnitPrice != null || it.priceCompletion.originalQuantity != null
+                                ? <><br />Nilai asli sebelum penyelesaian: {it.priceCompletion.originalQuantity != null ? `kuantitas ${fmtQty(it.priceCompletion.originalQuantity)} ${it.units}` : ''}{it.priceCompletion.originalUnitPrice != null ? ` · harga ${fmtRp(it.priceCompletion.originalUnitPrice)}/${it.units}` : ''}</>
+                                : null}
+                              {it.priceCompletion.history && it.priceCompletion.history.length > 0
+                                ? <><br />Riwayat: {it.priceCompletion.history.map((h) => `${fmtRp(h.unitPrice)} (${h.classification}, ${h.at})`).join(' → ')}</>
+                                : null}
+                            </span></div>
+                          )}
+                          {it.quantityAudit && (
+                            <div className="dl-row"><span className="dl-k">Audit Kuantitas</span><span>
+                              Kelas: <b>{it.quantityAudit.classification}</b> · metode {it.quantityAudit.method} · keyakinan {it.quantityAudit.confidence} · verifikasi {it.quantityAudit.verificationStatus} · persetujuan {it.quantityAudit.userApprovalStatus}
+                              {it.quantityAudit.formula ? <><br />Dasar: {it.quantityAudit.formula}</> : null}
+                              {it.quantityAudit.originalQuantity != null && it.quantityAudit.originalQuantity !== it.quantityAudit.proposedQuantity
+                                ? <><br />Kuantitas asli: {fmtQty(it.quantityAudit.originalQuantity)} {it.quantityAudit.unit} → usulan {it.quantityAudit.proposedQuantity != null ? fmtQty(it.quantityAudit.proposedQuantity) : '—'} {it.quantityAudit.unit}</>
+                                : null}
+                            </span></div>
+                          )}
+                          {policy === 'FULL_AI' && (status === 'blocked' || status === 'no-price') && !it.priceCompletion && (
+                            <div className="dl-row"><span className="dl-k">Penyelesaian AI</span><span>
+                              <button className="dedai-btn ghost" style={{ padding: '2px 10px', fontSize: 11 }} onClick={() => runItemCompletion(it.id)}>
+                                <Sparkles size={12} /> Lengkapi item ini dengan AI
+                              </button>
+                            </span></div>
+                          )}
+                          {it.priceCompletion && (it.priceCompletion.classification === 'MARKET_REFERENCE' || it.priceCompletion.classification === 'AI_ESTIMATE') && (
+                            <div className="dl-row"><span className="dl-k">Penyelesaian AI</span><span>
+                              {it.priceCompletion.userApprovalStatus === 'APPROVED'
+                                ? <span style={{ fontSize: 11, color: 'var(--ez-color-success)', fontWeight: 600 }}>✓ Diterima pengguna — termasuk total berlabel estimasi.</span>
+                                : <button className="dedai-btn ghost" style={{ padding: '2px 10px', fontSize: 11 }} onClick={() => runAcceptCompletion(it.id)}>
+                                  <Check size={12} /> Terima penyelesaian ini
+                                </button>}
+                              <button className="dedai-btn ghost" style={{ padding: '2px 10px', fontSize: 11, marginLeft: 8 }} onClick={() => runRejectCompletion(it.id)}>
+                                <Undo2 size={12} /> Tolak penyelesaian — kembalikan seperti semula
+                              </button>
+                            </span></div>
+                          )}
                           {it.sourceEvidence && <div className="dl-row"><span className="dl-k">{t('ai.ded.result.detail_proof')}</span><span>{it.sourceEvidence}</span></div>}
                           <div className="dl-row"><span className="dl-k">{t('ai.ded.result.detail_pages')}</span><span>{it.sourcePages.length ? it.sourcePages.map((p) => `${t('ai.ded.result.page_abbr')}${p}${t('ai.ded.result.page_abbr_suffix')}`).join(', ') : '—'}</span></div>
                           {status === 'blocked' && <div className="dl-row"><span className="dl-k">{t('ai.ded.result.detail_reason')}</span><span style={{ color: 'var(--ez-color-danger)', fontWeight: 600 }}>{t('ai.ded.result.reason_blocked')}</span></div>}

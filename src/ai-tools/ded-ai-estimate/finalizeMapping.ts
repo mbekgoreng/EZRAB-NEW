@@ -81,14 +81,25 @@ export function mapDedAiItemToRabInput(
     };
   }
   if (item.priceSource === 'AI_ESTIMATE') {
+    // Blok penyelesaian (bila ada) diringkas ke penjelasan persisten:
+    // klasifikasi + sumber + tanggal tetap terbaca di baris RAB, bukan
+    // hanya di layar hasil DED.
+    const c = item.priceCompletion;
+    const completionSummary = c
+      ? ` [Penyelesaian AI: klasifikasi ${c.classification}` +
+        `${c.sourceName ? `; sumber ${c.sourceName}` : ''}` +
+        `${c.sourceUrl ? ` (${c.sourceUrl})` : ''}` +
+        `${c.sourceDate ? `; data ${c.sourceDate}` : ''}` +
+        `; diambil ${c.accessedAt}; keyakinan ${c.confidence}]`
+      : '';
     return {
       ...common,
       priceSourceKind: 'EZRAB_ASSUMPTION',
       priceSourceLabel: 'Estimasi AI',
       priceSourceExplanation: baseExplanation(
         policy,
-        item.priceAssumptionNote ||
-          'Estimasi AI — perkiraan, bukan harga database AHSP EZRAB.'
+        (item.priceAssumptionNote ||
+          'Estimasi AI — perkiraan, bukan harga database AHSP EZRAB.') + completionSummary
       ),
       verificationStatus: 'NEEDS_VERIFICATION',
     };

@@ -136,22 +136,35 @@ export function validateQuantity(
   }
   const shape = shapeForUnit(item.units);
 
-  // REGRESSION FIX Type 36: elemen struktural dengan satuan salah → TOLAK
-  // Contoh: "Kolom Praktis" dengan 0.15 m' (seharusnya 0.81 m³)
-  // Cek nama DAN kategori untuk mengurangi false negative
-  const textToCheck = `${item.name || ''} ${item.category || ''}`;
-  if (textToCheck.trim()) {
-    if (requiresVolumeUnit(textToCheck) && shape !== 'VOLUME') {
+  // PERBAIKAN RANTAI SUBTOTAL (owner 2026-11-10; kasus baris 6/8/33 tabel
+  // DED-nya): cek kebutuhan bentuk HANYA atas NAMA ITEM, dan hanya untuk
+  // satuan kontinu (VOLUME/AREA/LENGTH):
+  // - Kategori adalah label kelompok generik ("Pekerjaan Tanah &
+  //   Pondasi") — memakainya membuat SEMUA item sekategori wajib m3,
+  //   termasuk cerucuk dalam m' yang sah (baris 6: subtotal null).
+  // - Satuan hitung (unit/buah/set/titik) adalah cacah diskret — item
+  //   yang terbuat dari pasangan bata tetapi dihitung per unit (bak
+  //   kontrol, baris 33) bukan pelanggaran bentuk luas.
+  // - "Lantai kerja" adalah cor beton (volume, m3) — kata "lantai" pada
+  //   nama itu bukan pekerjaan luas (baris 8: subtotal null).
+  const itemNameOnly = (item.name || '').trim();
+  if (itemNameOnly && (shape === 'VOLUME' || shape === 'AREA' || shape === 'LENGTH')) {
+    if (requiresVolumeUnit(itemNameOnly) && shape !== 'VOLUME') {
       return {
         ok: false,
-        reason: `"${item.name || item.category}" adalah elemen volume tetapi satuannya "${item.units}" (${shape}). ` +
+        reason: `"${item.name}" adalah elemen volume tetapi satuannya "${item.units}" (${shape}). ` +
           `Seharusnya dalam m³. Data ini tidak valid dan tidak masuk total.`,
       };
     }
-    if (requiresAreaUnit(textToCheck) && shape !== 'AREA') {
+    const lantaiKerja = /lantai\s*kerja/i.test(itemNameOnly);
+    // Plint/skirting dipasang mengikuti keliling (m') — bukan pekerjaan
+    // luas, meski bahannya keramik/lantai (kasus baris 22 tabel owner:
+    // "Plint Keramik" dalam m' ditolak sebagai elemen luas).
+    const plintLinear = /plint|skirting/i.test(itemNameOnly);
+    if (!lantaiKerja && !plintLinear && requiresAreaUnit(itemNameOnly) && shape !== 'AREA') {
       return {
         ok: false,
-        reason: `"${item.name || item.category}" adalah elemen luas tetapi satuannya "${item.units}" (${shape}). ` +
+        reason: `"${item.name}" adalah elemen luas tetapi satuannya "${item.units}" (${shape}). ` +
           `Seharusnya dalam m². Data ini tidak valid dan tidak masuk total.`,
       };
     }
