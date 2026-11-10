@@ -14,12 +14,12 @@ import { NotificationProvider } from './notifications/NotificationContext';
 import {
   OnboardingTour,
   migrateLegacyOnboardingFlag,
-  shouldShowOnboarding,
   useOnboardingTour,
 } from './components/onboarding/OnboardingTour';
 import { OnboardingProvider } from './components/onboarding/OnboardingContext';
 import { ToastProvider } from './components/onboarding/Toast';
 import { OnboardingOrchestrator, openDashboardTour } from './components/onboarding/OnboardingOrchestrator';
+import { shouldScheduleAutoTour } from './components/onboarding/autoTourTrigger';
 import { FeatureTutorialPlayer } from './components/onboarding/tutorials/FeatureTutorialPlayer';
 import { WelcomeSlotGuard } from './components/onboarding/tutorials/WelcomeSlotGuard';
 import { isAppPath, isSafeInternalReturnTo, navigateTo, parseWorkspaceRoute, paths, routeForMenu, routeLabel } from './routing/routes';
@@ -202,6 +202,17 @@ export const App: React.FC = () => {
   const [tourPending, setTourPending] = useState(false);
   /** welcome otomatis hanya ditampilkan sekali per sesi, saat masuk workspace */
   const autoTourShownRef = useRef(false);
+  /**
+   * Workspace sungguh tampil (gerbang lolos + chunk termuat), dilaporkan
+   * WorkspaceShell. Pop-up tutorial otomatis menunggu sinyal ini — bukan
+   * sekadar URL /app/* — agar tidak muncul di atas layar kunci/boot dan
+   * flag selesai tidak ter-set sebelum dashboard terlihat.
+   */
+  const [workspaceReady, setWorkspaceReady] = useState(false);
+  const handleWorkspaceReadyChange = useCallback(
+    (ready: boolean) => setWorkspaceReady(ready),
+    []
+  );
 
   useEffect(() => {
     if (location.pathname === paths.app()) navigateTo(paths.dashboard(), { replace: true });
@@ -229,15 +240,30 @@ export const App: React.FC = () => {
     migrateLegacyOnboardingFlag(); // idempoten: pengguna lama tidak ditanya ulang
   }, []);
 
-  // Welcome otomatis HANYA di dalam workspace (/app/*), bukan di landing page.
-  // Mencakup alur landing -> klik Masuk -> dashboard (tanpa reboot).
+  // Welcome otomatis HANYA di dalam workspace (/app/*), bukan di landing page,
+  // dan hanya setelah workspace sungguh tampil (workspaceReady). Mencakup
+  // alur landing -> klik Masuk -> dashboard (tanpa reboot) serta deep-link /
+  // refresh langsung di /app/*. Ref sesi dikunci saat pop-up BENAR-BENAR
+  // tampil (di dalam timer), bukan saat dijadwalkan — pembatalan timer oleh
+  // cleanup (keluar workspace <900 ms, render ulang) tidak lagi membuang
+  // satu-satunya kesempatan sesi ini; penjadwalan ulang aman karena flag
+  // selesai hanya ter-set saat pengguna menutup/menyelesaikan tur.
   useEffect(() => {
-    if (!booted || !isWorkspace || autoTourShownRef.current) return;
-    if (!shouldShowOnboarding()) return;
-    autoTourShownRef.current = true;
-    const t = window.setTimeout(() => setTourPending(true), 900);
+    if (
+      !shouldScheduleAutoTour({
+        booted,
+        isWorkspace,
+        workspaceReady,
+        autoShownThisSession: autoTourShownRef.current,
+      })
+    )
+      return;
+    const t = window.setTimeout(() => {
+      autoTourShownRef.current = true;
+      setTourPending(true);
+    }, 900);
     return () => window.clearTimeout(t);
-  }, [booted, isWorkspace]);
+  }, [booted, isWorkspace, workspaceReady]);
 
   const handleTourClose = useCallback((completed: boolean) => {
     setTourPending(false);
@@ -343,6 +369,7 @@ export const App: React.FC = () => {
             route={workspaceRoute}
             onBackToLanding={handleReturnToLanding}
             onNavigateMenu={(menu, projectId) => navigateTo(routeForMenu(menu, projectId))}
+            onReadyChange={handleWorkspaceReadyChange}
           />
         </Suspense>
       </ChunkErrorBoundary>
