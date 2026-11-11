@@ -147,6 +147,24 @@ export const UnifiedBreadcrumb: React.FC<UnifiedBreadcrumbProps> = ({
         </>
       )}
 
+      {/* Case A3: DED AI Estimate — permukaan DED KANONIS (konsolidasi
+          2026-11-11; sebelumnya menu ini jatuh ke breadcrumb generik). */}
+      {activeMenu === 'ded-ai' && (
+        <>
+          <ChevronRight size={13} color="#94A3B8" />
+          <button
+            onClick={() => onNavigate('ded-ai')}
+            style={crumbLinkStyle}
+            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--ez-color-primary)')}
+            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ez-color-text-muted)')}
+          >
+            DED AI Estimate
+          </button>
+          <ChevronRight size={13} color="#94A3B8" />
+          <span style={activeLeafStyle}>Analisis DED</span>
+        </>
+      )}
+
       {/* Case B: Proyek List View */}
       {activeMenu === 'proyek' && (
         <>

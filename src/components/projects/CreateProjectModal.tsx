@@ -10,6 +10,13 @@ import {
 } from 'lucide-react';
 import { BuildingType, Project } from '../../types';
 import { useI18n } from '../../i18n/I18nContext';
+import {
+  extractProjectCreationIntent,
+  decideMagicAiProjectAction,
+  claimMagicAiSubmission,
+  bindMagicAiSubmission,
+} from '../../ai-tools/ezrab-ai/projectCreationIntent';
+import { structuredAiError } from '../../ai-tools/ezrab-ai/aiErrorCodes';
 
 export type KickoffMethod = 'select' | 'magic_ai' | 'manual' | 'volume_calculation' | 'template';
 
@@ -19,6 +26,12 @@ interface CreateProjectModalProps {
   onCreateProject: (projectData: Partial<Project>) => Project;
   onNavigateToTab: (tab: string, projectId?: string | null) => void;
   onOpenMagicAiWithPrompt?: (prompt: string, projectId: string, projectName: string) => void;
+  /**
+   * Proyek aktif saat ini (untuk keputusan pembuatan Magic AI §5.3):
+   * bila ada, prompt Magic AI secara default dilanjutkan ke proyek
+   * aktif — tidak diam-diam membuat proyek baru.
+   */
+  activeProject?: { id: string; name: string } | null;
 }
 
 export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
@@ -27,6 +40,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
   onCreateProject,
   onNavigateToTab,
   onOpenMagicAiWithPrompt,
+  activeProject,
 }) => {
   const { t } = useI18n();
   const [activeStep, setActiveStep] = useState<KickoffMethod>('select');
@@ -43,6 +57,10 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
 
   // Magic AI Form State
   const [aiPrompt, setAiPrompt] = useState('');
+  // Keputusan proyek aktif untuk Magic AI (§5.3): tampilkan pilihan
+  // lanjut-proyek-aktif vs buat-baru sebelum membuat apa pun.
+  const [magicAskChoice, setMagicAskChoice] = useState(false);
+  const [magicError, setMagicError] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
@@ -57,6 +75,8 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
     setManualEstimatedBudget('');
     setAiPrompt('');
     setIsSubmitting(false);
+    setMagicAskChoice(false);
+    setMagicError(null);
   };
 
   const handleClose = () => {
@@ -92,22 +112,56 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
     onNavigateToTab('rab-estimasi', newProj.id);
   };
 
-  // Launch Magic AI Project Pathway
-  const handleMagicAiSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!aiPrompt.trim()) return;
-
-    setIsSubmitting(true);
-    const newProj = onCreateProject({
-      name: aiPrompt.length > 36 ? aiPrompt.substring(0, 36) + '...' : aiPrompt,
-      client: 'Klien AI',
-      clientName: 'Klien AI',
-      location: 'Indonesia',
-      buildingType: 'Rumah Tinggal',
+  /** Buat proyek BARU dari metadata hasil ekstraksi intent (idempoten). */
+  const proceedMagicCreate = (aiPrompt: string) => {
+    const prompt = aiPrompt;
+    // Idempotensi: submit ganda/retry atas prompt yang sama dalam TTL
+    // memakai ulang proyek yang sudah dibuat, tidak membuat duplikat.
+    const claim = claimMagicAiSubmission(prompt);
+    if (claim.duplicate && claim.projectId) {
+      handleClose();
+      if (onOpenMagicAiWithPrompt) {
+        // R1: teruskan ID proyek yang sudah terikat ke submit ini.
+        onOpenMagicAiWithPrompt(
+          prompt,
+          claim.projectId,
+          activeProject?.id === claim.projectId ? activeProject.name : prompt,
+        );
+      } else {
+        onNavigateToTab('magic-ai', claim.projectId);
+      }
+      return;
+    }
+    const intent = extractProjectCreationIntent(prompt);
+    // Hanya field yang BENAR-BENAR diketahui dari prompt yang ditulis.
+    // Field tak diketahui dibiarkan kosong agar default aman kanonis
+    // createProject yang berlaku — tidak ada "Klien AI", lokasi, atau
+    // tipe bangunan yang dikarang di jalur Magic AI.
+    const data: Partial<Project> = {
       creationMethod: 'magic_ai',
       status: 'draft',
-    });
+    };
+    const name = intent.explicitName ?? intent.descriptiveName;
+    if (name) data.name = name;
+    if (intent.buildingType) data.buildingType = intent.buildingType;
+    if (intent.location) data.location = intent.location;
+    if (intent.clientName) {
+      data.client = intent.clientName;
+      data.clientName = intent.clientName;
+    }
+    if (intent.landAreaM2 != null) data.landArea = intent.landAreaM2;
+    if (intent.buildingAreaM2 != null) data.buildingArea = intent.buildingAreaM2;
+    if (intent.floors != null) data.floorCount = intent.floors;
 
+    let newProj: Project;
+    try {
+      newProj = onCreateProject(data);
+    } catch {
+      setMagicError(structuredAiError('PROJECT_CREATION_FAILED').message);
+      setIsSubmitting(false);
+      return;
+    }
+    bindMagicAiSubmission(claim.key, newProj.id);
     handleClose();
     if (onOpenMagicAiWithPrompt) {
       // R1: teruskan ID + nama proyek BARU ke handler — handler tidak boleh
@@ -116,6 +170,38 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
     } else {
       onNavigateToTab('magic-ai', newProj.id);
     }
+  };
+
+  /** Lanjutkan prompt ke proyek AKTIF (tanpa membuat proyek baru). */
+  const proceedMagicReuseActive = () => {
+    if (!activeProject) return;
+    handleClose();
+    if (onOpenMagicAiWithPrompt) {
+      onOpenMagicAiWithPrompt(aiPrompt.trim(), activeProject.id, activeProject.name);
+    } else {
+      onNavigateToTab('magic-ai', activeProject.id);
+    }
+  };
+
+  // Launch Magic AI Project Pathway
+  const handleMagicAiSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!aiPrompt.trim() || isSubmitting) return;
+    setMagicError(null);
+    const intent = extractProjectCreationIntent(aiPrompt);
+    const action = decideMagicAiProjectAction({
+      hasActiveProject: !!activeProject,
+      explicitNewProject: intent.explicitNewProject,
+    });
+    if (action === 'ask') {
+      // Ada proyek aktif & prompt tidak eksplisit meminta proyek baru:
+      // tanya dulu — pilihan yang ditonjolkan adalah memakai ulang
+      // proyek aktif (default §5.3), bukan membuat proyek baru diam-diam.
+      setMagicAskChoice(true);
+      return;
+    }
+    setIsSubmitting(true);
+    proceedMagicCreate(aiPrompt.trim());
   };
 
   // Launch Volume Calculation Pathway
@@ -704,6 +790,39 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                 }}
               />
             </div>
+
+            {magicError && (
+              <div role="alert" style={{ background: '#FEF2F2', border: '1px solid #FECACA', color: '#991B1B', padding: '10px 12px', borderRadius: '8px', fontSize: '12.5px', lineHeight: 1.45 }}>
+                {magicError}
+              </div>
+            )}
+
+            {magicAskChoice && activeProject && (
+              <div style={{ background: 'var(--ez-color-surface-secondary)', border: '1px solid var(--ez-color-border-line)', padding: '12px', borderRadius: '8px' }}>
+                <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-body)', margin: '0 0 4px', lineHeight: 1.5 }}>
+                  Anda memiliki proyek aktif: <strong>{activeProject.name}</strong>
+                </p>
+                <p style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)', margin: '0 0 10px', lineHeight: 1.45 }}>
+                  Prompt ini dilanjutkan ke proyek aktif, atau buat proyek baru?
+                </p>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    onClick={proceedMagicReuseActive}
+                    style={{ padding: '8px 14px', borderRadius: '8px', background: 'var(--ez-color-primary)', color: '#FFFFFF', border: 'none', fontSize: '12.5px', fontWeight: 650, cursor: 'pointer' }}
+                  >
+                    Lanjutkan di proyek aktif
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setMagicAskChoice(false); setIsSubmitting(true); proceedMagicCreate(aiPrompt.trim()); }}
+                    style={{ padding: '8px 14px', borderRadius: '8px', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-body)', border: '1px solid var(--ez-color-border-line)', fontSize: '12.5px', fontWeight: 600, cursor: 'pointer' }}
+                  >
+                    Buat proyek baru
+                  </button>
+                </div>
+              </div>
+            )}
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
               <button

@@ -42,7 +42,11 @@ import { executeIntent, continueRabNeeds, continueRabFinalize, hasActiveRabNeeds
 import { getLastDirectRab } from './directRab';
 import { classifyRequest, minDelayFor, statusTextFor, waitForMinimum, waitForRabMinimum, rabMinDelayMs, activityForRequest, createRequestCoordinator, isAbortError, type AiActivity } from '../aiResponseTiming';
 import { mapDirectRabPushItems } from './directRabPush';
+import { detectHandoffNeed, HANDOFF_CHOICE_CHAT, HANDOFF_CHOICE_STAY } from './magicHandoff';
+import { structuredAiError, logAiDiagnostic, type AiErrorCode } from './aiErrorCodes';
+import { buildFinalizationKey } from '../ded-ai-estimate/finalizationKey';
 import { getLastUniversalDraft, setLastUniversalDraft, looksLikeUniversalRevision, reviseUniversalDraft, buildPushPreview, formatPushPreviewMessage, buildPushPayload, dedupePushPayload, validateTransfer, draftReadiness } from './universalRab';
+import { saveDraft, loadDraft, markTransferred } from './draftPersistence';
 import { looksLikeNeedsAnswer } from './rabNeeds';
 import { notificationBus } from '../../notifications/notificationBus';
 import { navigateTo, paths, routeForMenu } from '../../routing/routes';
@@ -275,7 +279,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
 
   /* ---- FASE 5A: project grounding + conversation persistence ---- */
   const {
-    currentProject, projectRabItems, bulkAddRabItems,
+    currentProject, projectRabItems, bulkAddRabItems, getLastBulkAddOutcome,
     updateRabItemFull, updateRabItemUnitPrice, deleteRabItem, bulkDeleteRabItems,
     createVersionSnapshot, saveStatus,
   } = useProject();
@@ -370,6 +374,81 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       /* honest degradation: in-memory only */
     }
   };
+
+  /* ---- Persistensi draft tahan-refresh (Final Hardening §2) ----
+   * Singleton modul universalRab tetap cache kerja; draftPersistence
+   * adalah lapisan simpan di bawahnya (kunci ezrab_prod_ai_drafts).
+   * Autosave dipanggil pada titik commit draft (balasan asisten
+   * terkirim / receipt transfer), BUKAN per render/keystroke; modul
+   * persistensi sendiri idempoten (isi sama → tanpa tulis ulang), jadi
+   * frekuensi tulis = 1 per perubahan draft yang benar-benar terjadi.
+   * Kegagalan simpan TIDAK memblokir alur: peringatan non-blokir
+   * (sekali per draft+versi+error) + log diagnostik terstruktur, dan
+   * TIDAK PERNAH diklaim tersimpan. */
+  const draftUpdatedAtRef = useRef<string | null>(null);
+  const draftWarnedRef = useRef<Set<string>>(new Set());
+  const persistActiveDraft = (
+    stage: string,
+    savedBy: 'autosave' | 'manual' | 'transfer' = 'autosave',
+  ): void => {
+    const d = getLastUniversalDraft();
+    if (!d || !effProject) return;
+    const res = saveDraft({
+      draft: d,
+      projectId: effProject.id,
+      conversationId: convIdRef.current,
+      workflowStage: stage,
+      savedBy,
+      expectedUpdatedAt: draftUpdatedAtRef.current,
+    });
+    if (res.ok) {
+      draftUpdatedAtRef.current = res.updatedAt;
+      return;
+    }
+    const err = structuredAiError('DRAFT_PERSISTENCE_FAILED');
+    logAiDiagnostic({
+      correlation_id: err.correlationId,
+      conversation_id: convIdRef.current,
+      project_id: effProject.id,
+      draft_id: d.id,
+      operation: `draft-persist:${stage}:${res.error}`,
+      error_code: err.code,
+      retry_count: 0,
+    });
+    const warnKey = `${d.id}:${d.version}:${res.error}`;
+    if (!draftWarnedRef.current.has(warnKey)) {
+      draftWarnedRef.current.add(warnKey);
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: 'assistant',
+          content: `⚠️ ${err.message} (Kode: ${res.error})`,
+          ts: Date.now(),
+          isError: true,
+        },
+      ]);
+    }
+  };
+
+  // Pulihkan draft proyek aktif dari penyimpanan lokal saat singleton
+  // kosong (mis. sesudah refresh) — jalur lama tanpa record persisten
+  // tidak berubah (draft tetap in-memory seperti sebelumnya).
+  useEffect(() => {
+    if (!effProject || getLastUniversalDraft()) return;
+    const loaded = loadDraft(effProject.id);
+    if (!loaded.ok) return;
+    setLastUniversalDraft(loaded.draft);
+    draftUpdatedAtRef.current = loaded.meta.updatedAt;
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: 'assistant',
+        content: `Draft RAB "${loaded.draft.title}" (versi ${loaded.draft.version}) dipulihkan dari penyimpanan lokal proyek ini — sesi sebelumnya berakhir sebelum draft selesai. Lanjutkan revisi atau buka preview transfer dari draft yang sama.`,
+        ts: Date.now(),
+      },
+    ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [effProject?.id]);
 
   /* ---- Asisten AI: operasi spreadsheet (pratinjau → konfirmasi → eksekusi) ----
    * Tool propose_* hanya membuat plan dari snapshot; eksekusi berjalan di
@@ -680,6 +759,16 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     // draft yang sedang diketik pengguna.
     const echo = opts?.echo !== false;
     if ((!msg && !attached) || busy) return;
+    // Handoff lanjutan (§7): pada presentasi Magic AI, sinyal
+    // kompleksitas nyata memunculkan TAWARAN (tidak memaksa) untuk
+    // melanjutkan di tampilan Chat AI — state percakapan yang sama.
+    if (presentationMode === 'magic' && !handoffOfferedRef.current && msg) {
+      const need = detectHandoffNeed(msg);
+      if (need.needed && need.reason) {
+        handoffOfferedRef.current = true;
+        setHandoffOffer(need.reason);
+      }
+    }
     // Timing terpusat: minimum dihitung SEJAK kirim ditekan (bukan sejak
     // provider selesai) — lihat aiResponseTiming.ts.
     const timingStart = Date.now();
@@ -786,6 +875,10 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       if (!(await gateWait(content))) return false;
       setMessages((prev) => [...prev, { role: 'assistant', content, ts: Date.now(), actions }]);
       persistMessage('assistant', content);
+      // §2 autosave: balasan terkirim = titik commit draft (dibuat/
+      // direvisi lewat jalur deterministik sebelum balasan ini);
+      // idempoten di lapisan persistensi → tanpa tulis bila tak berubah.
+      persistActiveDraft('autosave');
       return true;
     };
     /* ---- D1: koreksi pra-pilih pada kartu pilihan RAB bertipe ----
@@ -819,6 +912,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         const acts = subRes.actions && subRes.actions.length > 0 ? subRes.actions : undefined;
         setMessages((prev) => [...prev, { role: 'assistant', content: subRes.message, ts: Date.now(), actions: acts }]);
         persistMessage('assistant', subRes.message);
+        persistActiveDraft('autosave');
         setAwaitingSubtype(false);
         setBusy(false);
         return;
@@ -838,6 +932,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         const acts = matRes.actions && matRes.actions.length > 0 ? matRes.actions : undefined;
         setMessages((prev) => [...prev, { role: 'assistant', content: matRes.message, ts: Date.now(), actions: acts }]);
         persistMessage('assistant', matRes.message);
+        persistActiveDraft('autosave');
         setAwaitingMaterial(matRes.awaitRabMaterial === true);
         setBusy(false);
         return;
@@ -1088,6 +1183,11 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         })),
         mode,
         projectSnapshot,
+        // §8 (2026-11-11): sinyal submit yang SAMA yang menggerbangi
+        // timing kini diteruskan ke lapisan fetch providerClient —
+        // abort (unmount) membatalkan HTTP yang sedang berjalan, bukan
+        // hanya penantian tampil. Controller tidak dibuat ulang di sini.
+        signal: submitAbort.signal,
       } as any);
       const res = timingActivity === 'rab'
         ? await waitForRabMinimum(timingStart, sendPromise, submitAbort.signal, (r: any) => r?.reply ?? '')
@@ -1191,6 +1291,16 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
    * draft TIDAK disentuh). Mode default 'chat'; entry sekali-pakai dari
    * resolver mengisi banner + (bila ada prompt) prefill input. */
   const [aiEntryContext, setAiEntryContext] = useState<EzrabAiEntryContext | null>(null);
+  /* ---- Arsitektur AI Terpadu (Opsi A, 2026-11-11): mode presentasi.
+   * 'magic' HANYA mengubah presentasi (label header + banner) —
+   * percakapan, unifiedConversationStore, draft, dan asosiasi proyek di
+   * bawahnya TETAP mesin kanonis yang sama. Karena satu mesin,
+   * "handoff" Magic AI ↔ Chat AI adalah ganti presentasi di atas state
+   * yang sama: tanpa draft baru, tanpa duplikasi item, tanpa restart. */
+  const [presentationMode, setPresentationMode] = useState<'chat' | 'magic'>('chat');
+  const [enteredViaMagic, setEnteredViaMagic] = useState(false);
+  const [handoffOffer, setHandoffOffer] = useState<string | null>(null);
+  const handoffOfferedRef = useRef(false);
   const mountConsumeRef = useRef(false);
   // Timer kedaluwarsa banner: konteks yang ditampilkan harus ikut hilang
   // saat entry kedaluwarsa, bukan menempel selamanya di view ter-mount.
@@ -1206,6 +1316,12 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     const ezEntry = consumePendingEzrabAiEntry();
     if (ezEntry) {
       setAiEntryContext(ezEntry);
+      if (ezEntry.mode === 'rab-generator') {
+        // Entry "Mulai dengan AI" (Magic AI) → presentasi Magic AI di
+        // atas percakapan kanonis yang sama.
+        setPresentationMode('magic');
+        setEnteredViaMagic(true);
+      }
       clearBannerTimer();
       const remaining = peeked ? ezrabAiEntryRemainingMs(peeked.createdAt) : 60_000;
       if (remaining > 0) {
@@ -1285,6 +1401,89 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     });
   };
 
+  /* ---------- Transfer spreadsheet terverifikasi (§12 rekonstruksi) ----------
+   * Penyisipan item RAB ke Spreadsheet adalah operasi DETERMINISTIK:
+   * tidak lewat request percakapan AI, tidak membawa riwayat chat.
+   * Payload terstruktur minimal dari mapper ditujukan ke project_id
+   * EKSPLISIT (bukan menebak proyek aktif di store). Sukses hanya
+   * diklaim sesudah outcome store membuktikan jumlah tersisip per
+   * batch terkendali; kegagalan parsial dilaporkan dengan hitungan
+   * akurat dan TANPA kwitansi transfer (retry aman lewat dedupe). */
+  const insertRabItemsVerified = (
+    items: Array<{ description: string; volume: number; unit: string }>,
+    projectId: string,
+    logCtx: { draftId: string; operation: string; finalizationKey?: string },
+  ): {
+    records: Array<{ id?: string; priceStatus?: string }>;
+    inserted: number;
+    total: number;
+    verified: boolean;
+    duplicateBlocked: boolean;
+    errorCode: AiErrorCode | null;
+  } => {
+    // Kunci finalisasi berlaku untuk KESELURUHAN set (satu panggilan) —
+    // membagi set berkunci ke beberapa batch akan membakar kunci di
+    // batch pertama dan memblokir sisanya sebagai "duplikat".
+    const BATCH = logCtx.finalizationKey ? Math.max(items.length, 1) : 100;
+    const records: Array<{ id?: string; priceStatus?: string }> = [];
+    let inserted = 0;
+    const startedAt = Date.now();
+    for (let i = 0; i < items.length; i += BATCH) {
+      const batch = items.slice(i, i + BATCH);
+      let added: Array<{ id?: string; priceStatus?: string }>;
+      try {
+        added = bulkAddRabItems(
+          batch as never,
+          projectId,
+          logCtx.finalizationKey ? { finalizationKey: logCtx.finalizationKey } : undefined,
+        ) as unknown as Array<{
+          id?: string;
+          priceStatus?: string;
+        }>;
+      } catch {
+        const err = structuredAiError('SPREADSHEET_TRANSFER_FAILED');
+        logAiDiagnostic({
+          correlation_id: err.correlationId,
+          project_id: projectId,
+          draft_id: logCtx.draftId,
+          operation: logCtx.operation,
+          error_code: err.code,
+          duration_ms: Date.now() - startedAt,
+          retry_count: 0,
+        });
+        return { records, inserted, total: items.length, verified: false, duplicateBlocked: false, errorCode: err.code };
+      }
+      const outcome = typeof getLastBulkAddOutcome === 'function' ? getLastBulkAddOutcome() : null;
+      if (outcome?.duplicate) {
+        // Set identik sudah pernah diterapkan ke proyek ini (kunci
+        // finalisasi store): keadaan tujuan SUDAH tercapai — bukan
+        // kegagalan, tetapi juga bukan penyisipan baru. Dilaporkan
+        // sebagai duplikat yang diblokir, bukan sukses baru.
+        return { records, inserted, total: items.length, verified: true, duplicateBlocked: true, errorCode: null };
+      }
+      const proven = outcome ? outcome.insertedCount : added.length;
+      inserted += proven;
+      records.push(...added);
+      if (
+        (outcome && (outcome.projectMissing || outcome.insertedCount !== batch.length)) ||
+        added.length !== batch.length
+      ) {
+        const err = structuredAiError('SPREADSHEET_PERSISTENCE_UNVERIFIED');
+        logAiDiagnostic({
+          correlation_id: err.correlationId,
+          project_id: projectId,
+          draft_id: logCtx.draftId,
+          operation: logCtx.operation,
+          error_code: err.code,
+          duration_ms: Date.now() - startedAt,
+          retry_count: 0,
+        });
+        return { records, inserted, total: items.length, verified: false, duplicateBlocked: false, errorCode: err.code };
+      }
+    }
+    return { records, inserted, total: items.length, verified: inserted === items.length, duplicateBlocked: false, errorCode: null };
+  };
+
   /* ---------- P0 Command Center: action button handler ---------- */
   /**
    * Push hasil RAB langsung (directRab) ke Spreadsheet RAB proyek aktif.
@@ -1303,7 +1502,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       return;
     }
     if (!effProject) {
-      appendMsg('Tidak ada proyek aktif. Buat atau buka proyek dulu di menu Proyek, lalu klik "Push ke Spreadsheet RAB" lagi.', undefined, true);
+      appendMsg(`Tidak ada proyek aktif. Buat atau buka proyek dulu di menu Proyek, lalu klik "Push ke Spreadsheet RAB" lagi. (Kode: ${structuredAiError('ACTIVE_PROJECT_NOT_FOUND').code})`, undefined, true);
       return;
     }
     const existingCodes = new Set(
@@ -1323,21 +1522,41 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       ]);
       return;
     }
-    try {
-      const added = bulkAddRabItems(newItems);
+    // Transfer terverifikasi (§12): tujuan proyek EKSPLISIT + outcome
+    // store dibaca balik sebelum klaim sukses diucapkan.
+    const res = insertRabItemsVerified(newItems, effProject.id, {
+      draftId: `direct-${r.displayLabel}`,
+      operation: 'push-direct-rab',
+      finalizationKey: buildFinalizationKey(effProject.id, newItems as never),
+    });
+    if (res.duplicateBlocked && res.inserted === 0) {
       appendMsg(
-        `✅ ${added.length} item RAB ${r.displayLabel} (${r.floors} lantai) berhasil di-push ke Spreadsheet RAB proyek "${effProject.name}".` +
-          (dupCount > 0 ? ` ${dupCount} item dilewati karena sudah ada.` : '') +
-          // Pesan jujur pasca-perbaikan 2026-10-27: harga ikut ter-push
-          // sesuai statusnya (bukan lagi "tidak ikut ter-push" ala S10).
-          // Estimasi tampil "Perlu verifikasi" di spreadsheet — bukan
-          // harga resmi; yang belum berharga tetap "Harga belum diisi".
-          ` Harga ikut ter-push: ${added.filter((a) => a.priceStatus === 'PRICE_RESOLVED').length} resmi AHSP, ${added.filter((a) => a.priceStatus === 'PRICE_ESTIMATED').length} estimasi (perlu verifikasi, bukan harga resmi), ${added.filter((a) => a.priceStatus === 'PRICE_UNRESOLVED').length} belum berharga.`,
-        [{ label: 'Buka Spreadsheet RAB', action: { kind: 'navigate', menu: 'rab-estimasi' } }]
+        `${structuredAiError('DUPLICATE_TRANSFER_BLOCKED').message} Hasil RAB ${r.displayLabel} ini sudah ada di Spreadsheet RAB proyek "${effProject.name}". (Kode: DUPLICATE_TRANSFER_BLOCKED)`,
+        [{ label: 'Buka Spreadsheet RAB', action: { kind: 'navigate', menu: 'rab-estimasi' } }],
       );
-    } catch (e) {
-      appendMsg(`Gagal mem-push ke Spreadsheet RAB: ${(e as Error).message}`, undefined, true);
+      return;
     }
+    if (!res.verified) {
+      appendMsg(
+        res.inserted > 0
+          ? `Transfer parsial: ${res.inserted} dari ${res.total} item terverifikasi masuk ke Spreadsheet RAB proyek "${effProject.name}" — sisanya belum. Klik "Push ke Spreadsheet RAB" lagi untuk melanjutkan; item yang sudah masuk tidak akan digandakan. (Kode: ${res.errorCode})`
+          : `${structuredAiError(res.errorCode ?? 'SPREADSHEET_TRANSFER_FAILED').message} (Kode: ${res.errorCode})`,
+        undefined,
+        true,
+      );
+      return;
+    }
+    const added = res.records;
+    appendMsg(
+      `✅ ${added.length} item RAB ${r.displayLabel} (${r.floors} lantai) berhasil di-push ke Spreadsheet RAB proyek "${effProject.name}" (terverifikasi tersimpan).` +
+        (dupCount > 0 ? ` ${dupCount} item dilewati karena sudah ada.` : '') +
+        // Pesan jujur pasca-perbaikan 2026-10-27: harga ikut ter-push
+        // sesuai statusnya (bukan lagi "tidak ikut ter-push" ala S10).
+        // Estimasi tampil "Perlu verifikasi" di spreadsheet — bukan
+        // harga resmi; yang belum berharga tetap "Harga belum diisi".
+        ` Harga ikut ter-push: ${added.filter((a) => a.priceStatus === 'PRICE_RESOLVED').length} resmi AHSP, ${added.filter((a) => a.priceStatus === 'PRICE_ESTIMATED').length} estimasi (perlu verifikasi, bukan harga resmi), ${added.filter((a) => a.priceStatus === 'PRICE_UNRESOLVED').length} belum berharga.`,
+      [{ label: 'Buka Spreadsheet RAB', action: { kind: 'navigate', menu: 'rab-estimasi' } }]
+    );
   };
 
   /* ---------- Universal Direct RAB: preview transfer + konfirmasi ---------- */
@@ -1386,11 +1605,11 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       return;
     }
     if (!effProject) {
-      appendMsg('Tidak ada proyek aktif. Buat atau buka proyek dulu di menu Proyek, lalu klik "Push ke Spreadsheet" lagi.', undefined, true);
+      appendMsg(`Tidak ada proyek aktif. Buat atau buka proyek dulu di menu Proyek, lalu klik "Push ke Spreadsheet" lagi. (Kode: ${structuredAiError('ACTIVE_PROJECT_NOT_FOUND').code})`, undefined, true);
       return;
     }
     if (d.lastTransfer && d.lastTransfer.projectId === effProject.id && d.lastTransfer.version === d.version) {
-      appendMsg(`Draft "${d.title}" versi ${d.version} sudah ditransfer ke proyek "${effProject.name}" (${d.lastTransfer.pushed} item) — tidak ada penulisan ganda.`, [
+      appendMsg(`Draft "${d.title}" versi ${d.version} sudah ditransfer ke proyek "${effProject.name}" (${d.lastTransfer.pushed} item) — tidak ada penulisan ganda. (Kode: ${structuredAiError('DUPLICATE_TRANSFER_BLOCKED').code})`, [
         { label: 'Buka Spreadsheet RAB', action: { kind: 'navigate', menu: 'rab-estimasi' } },
       ]);
       return;
@@ -1417,19 +1636,56 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       ]);
       return;
     }
-    try {
-      const added = bulkAddRabItems(newItems);
-      d.lastTransfer = { projectId: effProject.id, version: d.version, pushed: added.length, skipped: dupCount, at: new Date().toISOString() };
+    // Transfer terverifikasi (§12): tujuan proyek EKSPLISIT + outcome
+    // store dibaca balik. Kwitansi transfer (lastTransfer) HANYA dicatat
+    // bila seluruh payload terverifikasi tersimpan — kegagalan parsial
+    // tidak menandai draft sebagai sudah ditransfer.
+    const res = insertRabItemsVerified(newItems, effProject.id, {
+      draftId: `universal-v${d.version}`,
+      operation: 'push-universal-rab',
+      finalizationKey: buildFinalizationKey(effProject.id, newItems as never),
+    });
+    if (res.duplicateBlocked && res.inserted === 0) {
+      // Keadaan tujuan sudah tercapai dari transfer sebelumnya —
+      // catat kwitansi agar alur berikutnya konsisten, laporkan jujur
+      // sebagai duplikat yang diblokir (bukan penyisipan baru).
+      d.lastTransfer = { projectId: effProject.id, version: d.version, pushed: 0, skipped: dupCount + res.total, at: new Date().toISOString() };
       setLastUniversalDraft(d);
+      // §2/§4: receipt nyata (keadaan tujuan sudah tercapai) ikut
+      // dipersistenkan agar status transferred bertahan lintas refresh.
+      persistActiveDraft('transferred', 'transfer');
+      markTransferred(effProject.id, d.lastTransfer);
       appendMsg(
-        `✅ ${added.length} item draft "${d.title}" (versi ${d.version}) berhasil di-push ke Spreadsheet RAB proyek "${effProject.name}".` +
-          (dupCount > 0 ? ` ${dupCount} item dilewati karena sudah ada.` : '') +
-          ' Status harga dipertahankan per item (RESMI AHSP / HARGA DATABASE / HARGA MANUAL / BELUM TERSEDIA) — tidak ada yang diam-diam berubah menjadi resmi.',
-        [{ label: 'Buka Spreadsheet RAB', action: { kind: 'navigate', menu: 'rab-estimasi' } }]
+        `${structuredAiError('DUPLICATE_TRANSFER_BLOCKED').message} Draft "${d.title}" versi ${d.version} sudah tersimpan di Spreadsheet RAB proyek "${effProject.name}". (Kode: DUPLICATE_TRANSFER_BLOCKED)`,
+        [{ label: 'Buka Spreadsheet RAB', action: { kind: 'navigate', menu: 'rab-estimasi' } }],
       );
-    } catch (e) {
-      appendMsg(`Gagal mem-push ke Spreadsheet RAB: ${(e as Error).message} — draft tetap tersimpan dan bisa dicoba lagi.`, undefined, true);
+      return;
     }
+    if (!res.verified) {
+      appendMsg(
+        res.inserted > 0
+          ? `Transfer parsial: ${res.inserted} dari ${res.total} item terverifikasi masuk ke Spreadsheet RAB proyek "${effProject.name}" — sisanya belum dan draft belum ditandai selesai. Klik "Push ke Spreadsheet" lagi untuk melanjutkan; item yang sudah masuk tidak akan digandakan. (Kode: ${res.errorCode})`
+          : `${structuredAiError(res.errorCode ?? 'SPREADSHEET_TRANSFER_FAILED').message} Draft tetap tersimpan dan bisa dicoba lagi. (Kode: ${res.errorCode})`,
+        undefined,
+        true,
+      );
+      return;
+    }
+    const added = res.records;
+    const unresolvedCount = payload.filter((p) => p.priceStatus === 'PRICE_UNRESOLVED').length;
+    d.lastTransfer = { projectId: effProject.id, version: d.version, pushed: added.length, skipped: dupCount, at: new Date().toISOString() };
+    setLastUniversalDraft(d);
+    // §2/§4: HANYA sesudah outcome terverifikasi sukses — persistenkan
+    // receipt (draftId+versi terikat di lastTransfer) + status transferred.
+    persistActiveDraft('transferred', 'transfer');
+    markTransferred(effProject.id, d.lastTransfer);
+    appendMsg(
+      `✅ ${added.length} item draft "${d.title}" (versi ${d.version}) berhasil di-push ke Spreadsheet RAB proyek "${effProject.name}" (terverifikasi tersimpan).` +
+        (dupCount > 0 ? ` ${dupCount} item dilewati karena sudah ada.` : '') +
+        (unresolvedCount > 0 ? ` ${unresolvedCount} item belum berharga — masuk berlabel BELUM TERSEDIA, bukan Rp0.` : '') +
+        ' Status harga dipertahankan per item (RESMI AHSP / HARGA DATABASE / HARGA MANUAL / BELUM TERSEDIA) — tidak ada yang diam-diam berubah menjadi resmi.',
+      [{ label: 'Buka Spreadsheet RAB', action: { kind: 'navigate', menu: 'rab-estimasi' } }]
+    );
   };
 
   /* Coba Lagi (2026-10-23): kirim ulang prompt AI terakhir lewat jalur
@@ -1444,6 +1700,18 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   };
 
   const handleActionButton = (btn: ChatActionButton) => {
+    // §2 (hardening): tombol aksi registry adalah titik commit draft juga
+    // (draft universal lahir dari executeIntent di cabang-cabang intent
+    // di bawah, yang tidak melewati postAssistant) — autosave sekali di
+    // akhir handler lewat finally, meniru pola cabang-cabang submit.
+    try {
+      handleActionButtonInner(btn);
+    } finally {
+      persistActiveDraft('autosave');
+    }
+  };
+
+  const handleActionButtonInner = (btn: ChatActionButton) => {
     if (btn.action.kind === 'push-rab') {
       pushDirectRabToSpreadsheet();
     } else if (btn.action.kind === 'push-universal') {
@@ -1957,7 +2225,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
           />
         </div>
         <div className="ezchat2-title">
-          <div className="ezchat2-name">Ezrab Chat AI <span className="ezchat2-ver">V 01.00</span></div>
+          <div className="ezchat2-name">{presentationMode === 'magic' ? 'EZRAB Magic AI' : 'Ezrab Chat AI'} <span className="ezchat2-ver">V 01.00</span></div>
         </div>
         <div className="ezchat2-actions">
           {/* Saldo kredit AI (simulasi) — selalu terlihat di header chat;
@@ -2035,6 +2303,65 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       </div>{/* /.ezchat2-headerwrap */}
 
       <div className="ezchat2-main">
+      {presentationMode === 'magic' && (
+        <div
+          className="ezchat2-magicbar"
+          role="note"
+          style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', padding: '8px 14px', background: 'var(--ez-color-surface-secondary, #EEF2FF)', borderBottom: '1px solid var(--ez-color-border-line, #E2E8F0)', fontSize: '12px', color: 'var(--ez-color-text-body, #334155)' }}
+        >
+          <span>
+            Mode <strong>EZRAB Magic AI</strong> — workflow generasi proyek. Percakapan, draft, dan proyek Anda sama dengan EZRAB Chat AI.
+          </span>
+          <button
+            type="button"
+            onClick={() => setPresentationMode('chat')}
+            style={{ marginLeft: 'auto', padding: '4px 10px', borderRadius: '6px', border: '1px solid var(--ez-color-border-line, #E2E8F0)', background: 'var(--ez-color-surface, #fff)', fontSize: '11.5px', fontWeight: 600, cursor: 'pointer' }}
+          >
+            Buka tampilan Chat AI
+          </button>
+        </div>
+      )}
+      {presentationMode === 'chat' && enteredViaMagic && (
+        <div
+          className="ezchat2-magicbar"
+          role="note"
+          style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 14px', background: 'var(--ez-color-surface-secondary, #EEF2FF)', borderBottom: '1px solid var(--ez-color-border-line, #E2E8F0)', fontSize: '12px', color: 'var(--ez-color-text-body, #334155)' }}
+        >
+          <span>Anda masuk lewat EZRAB Magic AI — percakapan dan draft proyek tetap sama di kedua tampilan.</span>
+          <button
+            type="button"
+            onClick={() => setPresentationMode('magic')}
+            style={{ marginLeft: 'auto', padding: '4px 10px', borderRadius: '6px', border: '1px solid var(--ez-color-border-line, #E2E8F0)', background: 'var(--ez-color-surface, #fff)', fontSize: '11.5px', fontWeight: 600, cursor: 'pointer' }}
+          >
+            Kembali ke mode Magic AI
+          </button>
+        </div>
+      )}
+      {handoffOffer && presentationMode === 'magic' && (
+        <div
+          className="ezchat2-handoff"
+          role="note"
+          style={{ margin: '10px 14px 0', padding: '10px 12px', borderRadius: '8px', background: '#FFFBEB', border: '1px solid #FDE68A', fontSize: '12.5px', color: '#92400E', lineHeight: 1.5 }}
+        >
+          <p style={{ margin: '0 0 8px' }}>{handoffOffer}</p>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              onClick={() => { setPresentationMode('chat'); setHandoffOffer(null); }}
+              style={{ padding: '6px 12px', borderRadius: '6px', background: 'var(--ez-color-primary, #2563EB)', color: '#fff', border: 'none', fontSize: '12px', fontWeight: 650, cursor: 'pointer' }}
+            >
+              {HANDOFF_CHOICE_CHAT}
+            </button>
+            <button
+              type="button"
+              onClick={() => setHandoffOffer(null)}
+              style={{ padding: '6px 12px', borderRadius: '6px', background: '#fff', color: '#92400E', border: '1px solid #FDE68A', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
+            >
+              {HANDOFF_CHOICE_STAY}
+            </button>
+          </div>
+        </div>
+      )}
       {/* ===== Header ===== */}
 
 

@@ -35,6 +35,7 @@ import { DocumentViewer } from './DocumentViewer';
 import { useProject } from '../../context/ProjectContext';
 import { useCurrency } from '../../context/CurrencyContext';
 import { mapMagicAiItemToRabInput } from '../../ai-tools/ded-ai-estimate/finalizeMapping';
+import { buildFinalizationKey } from '../../ai-tools/ded-ai-estimate/finalizationKey';
 import { csvRow } from '../../lib/csv';
 
 export interface DedAnalysisDashboardProps {
@@ -66,7 +67,7 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
   onCommitSuccess,
   onOpenRabDetail,
 }) => {
-  const { createRabItemDirect, bulkAddRabItems } = useProject();
+  const { createRabItemDirect, bulkAddRabItems, getLastBulkAddOutcome } = useProject();
   const { formatDisplay } = useCurrency();
 
   // Mode: FAST (Gemini 3.5 Flash-Lite) vs DETAIL (Gemini 3.8 Flash)
@@ -415,15 +416,33 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
       const itemsToAdd = mapped.filter((m): m is NonNullable<typeof m> => m !== null);
       const heldCount = mapped.length - itemsToAdd.length;
 
+      let addedCount = itemsToAdd.length;
+      let duplicateBlocked = false;
       if (itemsToAdd.length > 0) {
         if (bulkAddRabItems) {
-          bulkAddRabItems(itemsToAdd as any);
+          // Konsolidasi DED (rekonstruksi 2026-11-11): permukaan warisan
+          // ini memakai kunci finalisasi deterministik yang SAMA dengan
+          // permukaan kanonis ded-ai — commit ulang hasil identik ke
+          // proyek yang sama terblokir sebagai duplikat, bukan baris
+          // ganda. Hasil hitungan pipeline ini TIDAK diubah.
+          if (currentProject?.id) {
+            const finalizationKey = buildFinalizationKey(currentProject.id, itemsToAdd as any);
+            const added = bulkAddRabItems(itemsToAdd as any, currentProject.id, { finalizationKey });
+            const outcome = typeof getLastBulkAddOutcome === 'function' ? getLastBulkAddOutcome() : null;
+            duplicateBlocked = !!outcome?.duplicate;
+            addedCount = duplicateBlocked ? 0 : (added?.length ?? itemsToAdd.length);
+          } else {
+            bulkAddRabItems(itemsToAdd as any);
+          }
         } else if (createRabItemDirect) {
           itemsToAdd.forEach((item) => createRabItemDirect(item as any));
         }
       }
 
-      setCommitReport({ added: itemsToAdd.length, held: heldCount });
+      setCommitReport({ added: addedCount, held: heldCount });
+      if (duplicateBlocked) {
+        setStatusMessage('Finalisasi ini sudah pernah disimpan ke proyek ini — transfer duplikat diblokir, tidak ada baris ganda.');
+      }
       if (itemsToAdd.length > 0) {
         setCommittedSuccess(true);
         if (onCommitSuccess) {

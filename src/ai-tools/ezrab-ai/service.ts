@@ -16,6 +16,27 @@ import { scanToolCalls } from './toolCallParser';
 const MAX_HISTORY_MESSAGES = 20;
 
 /**
+ * Anggaran karakter riwayat (rekonstruksi Fase F, 2026-11-11).
+ * Gateway menolak prompt > 20.000 karakter sebagai PAYLOAD_TOO_LARGE
+ * (api/_lib/security.js). Pesan draft/preview RAB yang dihasilkan
+ * jalur deterministik bisa belasan ribu karakter; tanpa anggaran ini,
+ * riwayat yang dikirim ulang pada panggilan AI berikutnya menembus
+ * batas itu dan mematikan langkah lanjutan (akar insiden "konfirmasi
+ * gagal oversized — spreadsheet tetap kosong": generasi & preview
+ * bersifat lokal-deterministik, yang gagal justru putaran AI-nya).
+ * Pesan terpotong DITANDAI eksplisit — tidak diam-diam; draft kanonis
+ * tetap utuh di mesin lokal, bukan di riwayat prompt.
+ */
+const HISTORY_TOTAL_BUDGET = 12_000;
+const HISTORY_MESSAGE_CAP = 3_000;
+const HISTORY_LAST_MESSAGE_CAP = 6_000;
+
+function truncateForContext(s: string, cap: number): string {
+  if (s.length <= cap) return s;
+  return `${s.slice(0, cap)}\n…[dipotong demi batas konteks — isi lengkap tetap tersimpan di aplikasi]`;
+}
+
+/**
  * Satu kunci idempotensi per operasi kirim pengguna. Gateway menghormati
  * header Idempotency-Key (replay idempoten, TTL 120 dtk, hanya respons
  * sukses, ter-scope pemanggil): percobaan ulang untuk operasi yang SAMA
@@ -31,10 +52,19 @@ function newIdempotencyKey(): string {
 export class EzrabAiService {
   public async send(request: EzrabAiRequest): Promise<EzrabAiResponse> {
     const history = (request.messages || []).slice(-MAX_HISTORY_MESSAGES);
+    // Rangkai riwayat dari pesan TERBARU dengan anggaran karakter:
+    // pesan lama yang tidak muat dibuang, pesan raksasa dipotong
+    // berpenanda. Pesan terakhir (permintaan berjalan) selalu ikut.
     const lines: string[] = [];
-    for (const m of history) {
-      if (m.role === 'user') lines.push(`PENGGUNA: ${m.content}`);
-      else lines.push(`EZRAB AI: ${m.content}`);
+    let usedChars = 0;
+    for (let i = history.length - 1; i >= 0; i--) {
+      const m = history[i];
+      const isLast = i === history.length - 1;
+      const cap = isLast ? HISTORY_LAST_MESSAGE_CAP : HISTORY_MESSAGE_CAP;
+      const line = `${m.role === 'user' ? 'PENGGUNA: ' : 'EZRAB AI: '}${truncateForContext(m.content ?? '', cap)}`;
+      if (!isLast && usedChars + line.length > HISTORY_TOTAL_BUDGET) break;
+      lines.unshift(line);
+      usedChars += line.length;
     }
     // Project snapshot: prefer the structured snapshot (drives tools),
     // fall back to the legacy free-text projectSummary.
@@ -48,7 +78,9 @@ export class EzrabAiService {
     // Scope read-only project tools to this request's snapshot; always clear after.
     setActiveProjectSnapshot(snapshot);
 
-    const lastUser = history.length ? history[history.length - 1].content : '';
+    const lastUser = history.length
+      ? truncateForContext(history[history.length - 1].content ?? '', HISTORY_LAST_MESSAGE_CAP)
+      : '';
     // SEC (sisa P2 kategori E/F): riwayat percakapan + konteks proyek
     // adalah DATA, bukan instruksi. Keduanya dibungkus blok berlabel
     // eksplisit agar teks di dalamnya (nama proyek, teks tempelan, riwayat
@@ -88,6 +120,7 @@ Kemudian lanjutkan jawabanmu. ${RESPONSE_LANGUAGE_RULE}`;
       maxTokens: request.maxTokens ?? 3000,
       timeoutMs: request.timeoutMs ?? 90000,
       idempotencyKey,
+      signal: request.signal,
     });
 
     if (!result.success) {

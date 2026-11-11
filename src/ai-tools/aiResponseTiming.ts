@@ -8,19 +8,20 @@
  * di tiap komponen.
  *
  * Aturan:
- * - Simple  → minimum 1 detik (teks singkat, satu pertanyaan/tindakan).
- * - Medium  → minimum 2 detik (beberapa detail / >1 instruksi).
- * - Complex → minimum 3 detik (prompt panjang, pembacaan DED, analisis
- *   dokumen, multi-langkah).
+ * - Simple  → minimum 2 detik (teks singkat, satu pertanyaan/tindakan).
+ * - Medium  → minimum 2,5 detik (beberapa detail / >1 instruksi).
+ * - Complex → minimum 4 detik (prompt panjang, pembacaan DED, analisis
+ *   dokumen, multi-langkah). Rentang direktif 2026-11-11 §11: pendek
+ *   ≈2 dtk, kontekstual 2–3 dtk, kompleks 3–5 dtk.
  * - RAB     → minimum 5–10 detik, tergantung banyak/tidaknya hasil
  *   (perintah owner 2026-10-27): hasil pendek ≈ 5 detik, hasil besar
  *   (tabel RAB panjang) ≈ 10 detik, di antaranya diskalakan dari
- *   panjang teks hasil. RAB menggantikan complex 3 detik — bukan
+ *   panjang teks hasil. RAB menggantikan complex 4 detik — bukan
  *   ditambahkan di atasnya.
  * - Durasi adalah MINIMUM pengalaman pemrosesan, bukan maksimum: timer
  *   dihitung SEJAK permintaan dikirim dan berjalan PARALEL dengan provider.
  *   Provider 5 detik → hasil tampil pada 5 detik (bukan 6–8). Provider
- *   300 ms → hasil tampil setelah sisa minimum (1–3 detik).
+ *   300 ms → hasil tampil setelah sisa minimum (2–4 detik).
  * - Navigasi menu biasa, kalkulasi deterministik non-AI, dan transfer data
  *   (push ke spreadsheet) TIDAK memakai kebijakan ini — hanya permintaan
  *   yang benar-benar lewat Chat AI / Assistant AI.
@@ -30,10 +31,19 @@
 export type AiRequestComplexity = 'simple' | 'medium' | 'complex';
 export type AiActivity = 'chat' | 'rab' | 'ded' | 'document';
 
+/**
+ * Durasi persepsi minimum (direktif rekonstruksi 2026-11-11 §11,
+ * menggantikan angka 1/2/3 detik spesifikasi 2026-10-27):
+ * respons pendek ≈2 dtk; kontekstual normal 2–3 dtk; penalaran
+ * kompleks 3–5 dtk. Proses dokumen/RAB nyata memakai durasi operasi
+ * sebenarnya (waitForMinimum tidak pernah menambah tunda di atas
+ * durasi aktual). Skala khusus hasil RAB (5–10 dtk, keputusan owner
+ * 2026-10-27) TIDAK berubah — lihat rabMinDelayMs di bawah.
+ */
 export const AI_MIN_DELAY_MS: Record<AiRequestComplexity, number> = {
-  simple: 1000,
-  medium: 2000,
-  complex: 3000,
+  simple: 2000,
+  medium: 2500,
+  complex: 4000,
 };
 
 /** Pola intent generatif/analitis: "buatkan RAB …", "analisis DED …". */

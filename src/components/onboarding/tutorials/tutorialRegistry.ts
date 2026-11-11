@@ -127,7 +127,10 @@ const TUTORIALS: Record<string, FeatureTutorial> = {
     description: 'Pelajari cara memberi instruksi yang jelas ke Magic AI dan meninjau hasilnya sebelum menyimpan.',
     category: 'ai',
     route: paths.magicAi(),
-    menuId: 'magic-ai',
+    // Konsolidasi 2026-11-11: tidak ada item sidebar 'magic-ai' — rute
+    // ini membuka keluarga DED yang item sidebarnya 'ded-ai'
+    // (Sidebar matchMenu mencakup magic-ai/ded-rab).
+    menuId: 'ded-ai',
     version: 2,
     available: true,
     steps: [

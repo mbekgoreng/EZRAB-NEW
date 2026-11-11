@@ -30,6 +30,19 @@ export interface AiToolsRequest {
    *  ditentukan pemanggil. Jalur non-gateway (adapter Node) tidak
    *  terpengaruh. */
   idempotencyKey?: string;
+  /**
+   * FINAL HARDENING §8 (2026-11-11) — sinyal pembatalan MILIK PEMANGGIL
+   * (AbortSignal dari AbortController view), diteruskan apa adanya —
+   * klien TIDAK membuat controller pengganti untuknya. Jalur browser:
+   * sinyal ini dihubungkan ke controller timeout internal sehingga
+   * abort pemanggil membatalkan fetch gateway yang sedang berjalan.
+   * Jalur Node: adapter server tidak menerima AbortSignal — sinyal
+   * diabaikan di sana (batas terdokumentasi di
+   * bukti/timing-cancellation.md). Gateway serverless juga tidak
+   * meneruskan disconnect klien ke fetch provider; abort di sini
+   * menghentikan MENUNGGU di klien, bukan pekerjaan provider.
+   */
+  signal?: AbortSignal;
 }
 
 /**
@@ -375,8 +388,18 @@ export class AiToolsProviderClient {
     }
 
     // Browser path
+    // §8: sinyal pemanggil yang sudah dibatalkan sebelum kirim → gagal
+    // segera sebagai pembatalan, tanpa menyentuh jaringan sama sekali.
+    if (request.signal?.aborted) {
+      return aiToolsError('MODEL_TIMEOUT', `${stage}:http`, 'Permintaan dibatalkan sebelum dikirim.', { retryable: true });
+    }
+    const controller = new AbortController();
+    // §8: hubungkan sinyal pemanggil ke controller internal (timeout
+    // tetap milik klien). Listener dilepas sesudah fetch selesai agar
+    // tidak menumpuk pada sinyal yang dipakai ulang pemanggil.
+    const onCallerAbort = () => controller.abort();
+    request.signal?.addEventListener('abort', onCallerAbort, { once: true });
     try {
-      const controller = new AbortController();
       const timeoutMs = Math.min(request.timeoutMs ?? 90000, MAX_TIMEOUT_MS);
       const timer = globalThis.setTimeout(() => controller.abort(), timeoutMs + 1000);
       const resp = await fetch('/api/ai/tools/execute', {
@@ -402,6 +425,7 @@ export class AiToolsProviderClient {
         }),
       });
       globalThis.clearTimeout(timer);
+      request.signal?.removeEventListener('abort', onCallerAbort);
 
       if (!resp.ok) {
         /* Phase 3: jangan bocorkan raw JSON / detail internal ke user.
@@ -462,6 +486,7 @@ export class AiToolsProviderClient {
           : undefined,
       };
     } catch (err: any) {
+      request.signal?.removeEventListener('abort', onCallerAbort);
       const code = err?.name === 'AbortError' ? 'MODEL_TIMEOUT' : this.classifyError(err);
       return aiToolsError(code, `${stage}:http`, this.friendly(err, code), { retryable: true });
     }

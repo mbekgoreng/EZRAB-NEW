@@ -47,6 +47,30 @@ export const MagicAiSuperView: React.FC<MagicAiSuperViewProps> = ({
   onOpenRabDetail,
 }) => {
   return (
+    <>
+      {/* Konsolidasi DED (rekonstruksi 2026-11-11): permukaan ini adalah
+          jalur WARISAN analisis DED (pipeline vision ded-rab-v3) dan
+          dipertahankan untuk kemampuan uniknya (pembacaan gambar
+          halaman, sintesis lintas halaman, penampil dokumen). Permukaan
+          DED KANONIS adalah DED AI Estimate (menu ded-ai) — terhubung
+          AHSP kanonis + finalisasi idempoten. */}
+      <div
+        role="note"
+        style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', padding: '8px 16px', background: '#FFFBEB', borderBottom: '1px solid #FDE68A', fontSize: '12px', color: '#92400E' }}
+      >
+        <span>
+          <strong>Permukaan DED warisan.</strong> Permukaan DED utama EZRAB adalah <strong>DED AI Estimate</strong> (terhubung AHSP kanonis). Halaman ini tetap tersedia untuk pembacaan vision dokumen.
+        </span>
+        {onNavigateToTab && (
+          <button
+            type="button"
+            onClick={() => onNavigateToTab('ded-ai')}
+            style={{ marginLeft: 'auto', padding: '4px 10px', borderRadius: '6px', border: '1px solid #FDE68A', background: '#fff', color: '#92400E', fontSize: '11.5px', fontWeight: 650, cursor: 'pointer' }}
+          >
+            Buka DED AI Estimate
+          </button>
+        )}
+      </div>
     <DedAnalysisDashboard
       currentProject={currentProject}
       projects={projects}
@@ -66,6 +90,7 @@ export const MagicAiSuperView: React.FC<MagicAiSuperViewProps> = ({
         }
       }}
     />
+    </>
   );
 };
 

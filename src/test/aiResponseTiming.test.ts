@@ -54,38 +54,40 @@ const read = (rel: string): string => readFileSync(`${process.cwd()}/${rel}`, 'u
 async function main(): Promise<void> {
   console.log('aiResponseTiming.test');
 
-  // §8.1 — prompt sederhana menunggu minimum 1 detik (provider cepat).
-  await check('1. simple: provider 0ms -> tampil >= 1000ms', async () => {
+  // §8.1 — prompt sederhana menunggu minimum ±2 detik (provider cepat).
+  // (Angka diperbarui direktif 2026-11-11 §11: pendek ≈2 dtk.)
+  await check('1. simple: provider 0ms -> tampil >= 2000ms', async () => {
     const t0 = Date.now();
     const out = await waitForMinimum(t0, minDelayFor('simple'), Promise.resolve('ok'));
     const el = Date.now() - t0;
     assert(out === 'ok', 'hasil harus diteruskan');
-    assert(el >= 950 && el < 2200, `elapsed=${el}ms`);
+    assert(el >= 1950 && el < 3200, `elapsed=${el}ms`);
   });
 
-  // §8.2 — prompt kompleks menunggu minimum 3 detik (provider cepat).
-  await check('2. complex: provider 0ms -> tampil >= 3000ms', async () => {
+  // §8.2 — prompt kompleks menunggu minimum 4 detik (rentang 3–5 dtk).
+  await check('2. complex: provider 0ms -> tampil >= 4000ms', async () => {
     const t0 = Date.now();
     await waitForMinimum(t0, minDelayFor('complex'), Promise.resolve('ok'));
     const el = Date.now() - t0;
-    assert(el >= 2950 && el < 4200, `elapsed=${el}ms`);
+    assert(el >= 3950 && el < 5200, `elapsed=${el}ms`);
   });
 
-  // §8.3 — provider lebih lambat dari minimum: tidak ada delay tambahan.
-  await check('3. provider 1200ms + min 1000ms -> tampil ~1200ms (bukan ~2200)', async () => {
+  // §8.3 — provider 1200ms + min 2000ms: tampil tepat di minimum 2000ms
+  // (menunggu SISA minimum saja — bukan minimum + durasi provider).
+  await check('3. provider 1200ms + min 2000ms -> tampil ~2000ms (bukan ~3200)', async () => {
     const t0 = Date.now();
     const slow = sleep(1200).then(() => 'slow');
     await waitForMinimum(t0, minDelayFor('simple'), slow);
     const el = Date.now() - t0;
-    assert(el >= 1150 && el < 2000, `elapsed=${el}ms`);
+    assert(el >= 1950 && el < 2600, `elapsed=${el}ms`);
   });
 
   // §8.4 — provider lebih cepat: hasil menunggu sisa minimum.
-  await check('4. medium: provider 0ms -> tampil >= 2000ms', async () => {
+  await check('4. medium: provider 0ms -> tampil >= 2500ms', async () => {
     const t0 = Date.now();
     await waitForMinimum(t0, minDelayFor('medium'), Promise.resolve('ok'));
     const el = Date.now() - t0;
-    assert(el >= 1950 && el < 3200, `elapsed=${el}ms`);
+    assert(el >= 2450 && el < 3700, `elapsed=${el}ms`);
   });
 
   // §8.5 — Chat AI dan Assistant AI memakai kebijakan yang sama.
@@ -93,7 +95,7 @@ async function main(): Promise<void> {
     assert(classifyRequest('halo') === 'simple', 'sapaan = simple');
     assert(classifyRequest('buatkan rab rumah type 70') === 'complex', 'buat RAB = complex');
     assert(classifyRequest('tolong analisis DED gedung ini') === 'complex', 'analisis DED = complex');
-    assert(minDelayFor('simple') === 1000 && minDelayFor('medium') === 2000 && minDelayFor('complex') === 3000, '1/2/3 detik');
+    assert(minDelayFor('simple') === 2000 && minDelayFor('medium') === 2500 && minDelayFor('complex') === 4000, '2/2,5/4 detik (direktif 2026-11-11 §11)');
     assert(statusTextFor('simple', 'chat') === 'EZRAB sedang berpikir…', 'status chat simple');
     assert(statusTextFor('complex', 'chat') === 'EZRAB sedang menganalisis permintaan…', 'status chat complex');
     assert(statusTextFor('complex', 'rab') === 'EZRAB sedang menyiapkan RAB…', 'status RAB');

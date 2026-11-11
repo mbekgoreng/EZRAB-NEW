@@ -38,6 +38,10 @@ export interface EzrabAiRequest {
    *  satu kunci acak baru untuk operasi ini; percobaan ulang operasi yang
    *  sama meneruskan kunci yang sama. */
   idempotencyKey?: string;
+  /** FINAL HARDENING §8 (2026-11-11): AbortSignal milik pemanggil (view),
+   *  diteruskan apa adanya ke aiToolsProviderClient.execute — service
+   *  tidak membuat controller sendiri untuk sinyal ini. */
+  signal?: AbortSignal;
 }
 
 export interface EzrabAiResponse {

@@ -1000,13 +1000,12 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
           return newProj;
         }}
         onNavigateToTab={(tab, projId) => setActiveMenu(tab, projId)}
+        activeProject={currentProject ? { id: currentProject.id, name: currentProject.name } : null}
         onOpenMagicAiWithPrompt={(prompt, projectId, projectName) => {
-          // Fase 1: kartu Magic AI di CreateProjectModal TIDAK lagi membuka
-          // RabGeneratorModal langsung — generatornya adalah chat dengan
-          // mode rab-generator (prefill prompt, universal direct RAB).
-          // R1: pakai ID + nama proyek BARU yang diteruskan modal — JANGAN
-          // currentProject dari closure render sebelum pembuatan (itu proyek
-          // aktif lama; draft akan ter-push ke proyek yang salah).
+          // Opsi A (2026-11-11): "Mulai dengan AI" (Magic AI) membuka
+          // percakapan KANONIS mode rab-generator; keputusan proyek +
+          // metadata + idempotensi di modal (projectCreationIntent).
+          // R1: pakai ID terusan modal, bukan currentProject closure.
           openEzrabAI({ mode: 'rab-generator', prompt, projectId: projectId ?? null, projectName, source: 'create-project' });
         }}
       />

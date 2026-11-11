@@ -92,6 +92,13 @@ export const CATEGORY_LABELS: Record<ProjectCategory, string> = {
 
 export type IntakeStage = 'identity' | 'concept' | 'facilities' | 'site' | 'technical' | 'preview';
 
+/** Satu alokasi luas eksplisit dari pengguna (tujuan + luas + teks asli). */
+export interface AreaAllocation {
+  purpose: string;
+  areaM2: number;
+  original: string;
+}
+
 export interface ProjectIntakeContext {
   intent: 'CREATE_RAB';
   category: ProjectCategory | null;
@@ -115,6 +122,13 @@ export interface ProjectIntakeContext {
   facilities: string[];
   /** Kondisi lahan eksisting yang disebut pengguna (teks apa adanya). */
   siteConditions: string[];
+  /**
+   * Alokasi luas EKSPLISIT per tujuan yang disebut pengguna
+   * (mis. "150 m² full tanaman hias") — §9 direktif rekonstruksi
+   * 2026-11-11: sisa luas TIDAK boleh dianggap milik satu fasilitas;
+   * ia tetap "belum teralokasi spesifik" sampai pengguna merincinya.
+   */
+  allocations: AreaAllocation[];
   materialPreference: string | null;
   qualityPreference: string | null;
   budgetText: string | null;
@@ -148,6 +162,7 @@ export const emptyProjectIntake = (): ProjectIntakeContext => ({
   conceptLabel: null,
   facilities: [],
   siteConditions: [],
+  allocations: [],
   materialPreference: null,
   qualityPreference: null,
   budgetText: null,
@@ -216,6 +231,62 @@ export function parseAreaMentionM2(text: string): { valueM2: number; original: s
     .filter((c) => !cancelled.includes(c.valueM2))
     .sort((a, b) => a.pos - b.pos);
   if (!live.length) return null;
+  const last = live[live.length - 1];
+  return { valueM2: last.valueM2, original: last.original };
+}
+
+/**
+ * Luas TOTAL yang berlaku untuk konteks intake pada satu giliran —
+ * perbaikan §9 (2026-11-11): penyebutan luas yang merupakan ALOKASI
+ * per tujuan ("150m2 full tanaman hias") TIDAK boleh menang sebagai
+ * luas total lahan. Aturan:
+ * 1. Kandidat = semua penyebutan luas, dikurangi yang dibatalkan
+ *    ("bukan …") dan dikurangi penyebutan yang terpakai sebagai
+ *    alokasi pada giliran ini (multiset per nilai).
+ * 2. Penyebutan berjangkar lahan/total ("lahan 400m2", "total luas
+ *    400 m²") menang atas kandidat lain.
+ * 3. Selain itu kemunculan terakhir menang (semantik koreksi lama).
+ * Mengembalikan null bila giliran ini hanya memuat alokasi — luas
+ * total dari giliran sebelumnya TIDAK ditimpa alokasi.
+ */
+export function resolveTotalAreaMention(
+  text: string,
+  allocations: AreaAllocation[],
+): { valueM2: number; original: string } | null {
+  const t = (text || '').toLowerCase();
+  const cancelled = cancelledAreaValues(t);
+  const candidates: Array<{ pos: number; valueM2: number; original: string }> = [];
+  for (const h of findAreaUnitMentions(t)) {
+    candidates.push({ pos: h.span[0], valueM2: h.valueM2, original: h.original });
+  }
+  for (const m of t.matchAll(PLAIN_AREA_RE)) {
+    const v = parseAreaNumber(m[1]);
+    if (v == null || v <= 0) continue;
+    candidates.push({ pos: m.index ?? 0, valueM2: Math.round(v * 100) / 100, original: `${m[1]} m²` });
+  }
+  const allocValues = allocations.map((a) => a.areaM2);
+  const live = candidates
+    .filter((c) => !cancelled.includes(c.valueM2))
+    .sort((a, b) => a.pos - b.pos)
+    .filter((c) => {
+      const i = allocValues.indexOf(c.valueM2);
+      if (i === -1) return true;
+      allocValues.splice(i, 1);
+      return false;
+    });
+  if (!live.length) return null;
+  const anchored = t.match(
+    /(?:lahan|tanah|total(?:\s+luas)?|luas\s+(?:lahan|tanah|area)|area)\s*(?:seluas\s+)?([\d.,]+)\s*(m2|m²|meter persegi|hektar|hektare|ha\b|are\b)/,
+  );
+  if (anchored) {
+    const av = parseAreaNumber(anchored[1]);
+    if (av != null) {
+      const factor = anchored[2] === 'are' ? 100 : anchored[2].startsWith('h') ? 10000 : 1;
+      const target = Math.round(av * factor * 100) / 100;
+      const hit = live.find((c) => c.valueM2 === target);
+      if (hit) return hit;
+    }
+  }
   const last = live[live.length - 1];
   return { valueM2: last.valueM2, original: last.original };
 }
@@ -309,6 +380,7 @@ export const LANDSCAPE_CONCEPTS: LandscapeConcept[] = [
     templateNote: null,
     facilities: [
       F('jogging-track', 'Jogging track', /\bjogging\b/),
+      F('danau', 'Danau kecil/buatan', /\bdanau\b/),
       F('pedestrian', 'Jalur pedestrian', /\b(pedestrian|pejalan kaki|jalur pejalan)\b/),
       F('lawn', 'Area rumput & tanaman', /\b(rumput|lawn|area hijau|tanaman)\b/),
       F('playground', 'Playground / taman bermain anak', /\b(playground|taman bermain|bermain anak|area bermain)\b/),
@@ -331,6 +403,7 @@ export const LANDSCAPE_CONCEPTS: LandscapeConcept[] = [
       F('entrance', 'Landscape gerbang masuk', /\b(gerbang|entrance|pintu masuk)\b/),
       F('communal-park', 'Taman komunal', /\b(taman komunal|komunal|taman bersama)\b/),
       F('water-feature', 'Fitur air', /\b(fitur air|water ?feature|kolam|air mancur)\b/),
+      F('danau', 'Danau kecil/buatan', /\bdanau\b/),
       F('lighting', 'Penerangan', /\b(penerangan|lampu|pencahayaan)\b/),
       F('drainage', 'Drainase', /\b(drainase|saluran)\b/),
       F('seating', 'Tempat duduk luar', /\b(tempat duduk|area duduk|bangku|gazebo)\b/),
@@ -380,6 +453,7 @@ export const LANDSCAPE_CONCEPTS: LandscapeConcept[] = [
       'Katalog EZRAB belum punya template khusus ruang terbuka hijau — pratinjau memakai template taman kota terdekat dan keterbatasannya dinyatakan di sini.',
     facilities: [
       F('lawn', 'Area rumput & vegetasi', /\b(rumput|vegetasi|tanaman|penghijauan)\b/),
+      F('danau', 'Danau kecil/buatan', /\bdanau\b/),
       F('pedestrian', 'Jalur pedestrian', /\b(pedestrian|pejalan kaki|jalur)\b/),
       F('trees', 'Pohon peneduh', /\b(pohon|peneduh)\b/),
       F('lighting', 'Penerangan', /\b(penerangan|lampu)\b/),
@@ -513,11 +587,49 @@ function fmtNum(v: number): string {
  * tidak null menimpa; koreksi eksplisit selalu menang karena ekstraksi
  * berjalan pada teks giliran ini saja).
  */
+/* ------------------------------------------------------------------ */
+/* Alokasi luas eksplisit (§9 direktif 2026-11-11). Dua bentuk frasa:  */
+/* "150m2 full tanaman hias" dan "tanaman hias seluas 150 m2". Hanya   */
+/* penyebutan yang MENYEBUT TUJUANNYA yang menjadi alokasi — luas     */
+/* total lahan tidak pernah terbaca sebagai alokasi, dan sisa luas    */
+/* tidak pernah dianggap milik satu fasilitas.                         */
+/* ------------------------------------------------------------------ */
+
+const ALLOCATION_PURPOSE_RE =
+  '(tanaman(?:\\s+hias)?|penghijauan|rumput|jogging(?:\\s+track)?|air\\s+mancur|danau(?:\\s+kecil)?|kolam(?:\\s+renang)?|parkir|playground|taman\\s+bermain|pedestrian|hardscape|plaza|area\\s+duduk|pohon\\s+peneduh)';
+
+export function parseAreaAllocations(text: string): AreaAllocation[] {
+  const raw = text || '';
+  const out: AreaAllocation[] = [];
+  const push = (purposeRaw: string, numUnit: string) => {
+    const hit = parseAreaUnitM2(numUnit) ?? (() => {
+      const m = numUnit.match(/([\d.,]+)\s*(?:m2|m²|meter persegi)/i);
+      return m ? { valueM2: parseAreaNumber(m[1]), original: numUnit } : null;
+    })();
+    if (!hit || hit.valueM2 == null) return;
+    let purpose = purposeRaw.toLowerCase().replace(/\s+/g, ' ').trim();
+    if (purpose === 'jogging') purpose = 'jogging track';
+    if (out.some((a) => a.purpose === purpose && a.areaM2 === hit.valueM2)) return;
+    out.push({ purpose, areaM2: hit.valueM2, original: `${numUnit.trim()} ${purposeRaw.trim()}` });
+  };
+  const reA = new RegExp(
+    `([\\d.,]+\\s*(?:m2|m²|meter persegi|hektar|hektare|ha\\b|are\\b))\\s+(?:full\\s+|untuk\\s+|buat\\s+|jadi\\s+|sebagai\\s+)?${ALLOCATION_PURPOSE_RE}`,
+    'gi',
+  );
+  for (const m of raw.matchAll(reA)) push(m[2], m[1]);
+  const reB = new RegExp(
+    `${ALLOCATION_PURPOSE_RE}\\s+(?:seluas\\s+|sebesar\\s+)?([\\d.,]+\\s*(?:m2|m²|meter persegi|hektar|hektare|ha\\b|are\\b))`,
+    'gi',
+  );
+  for (const m of raw.matchAll(reB)) push(m[1], m[2]);
+  return out;
+}
+
 export function extractProjectContext(text: string, base?: ProjectIntakeContext): ProjectIntakeContext {
   const raw = (text || '').trim();
   const t = ` ${raw.toLowerCase().replace(/\s+/g, ' ')} `;
   const ctx: ProjectIntakeContext = base
-    ? { ...base, facilities: [...base.facilities], siteConditions: [...base.siteConditions] }
+    ? { ...base, facilities: [...base.facilities], siteConditions: [...base.siteConditions], allocations: [...base.allocations] }
     : emptyProjectIntake();
 
   // --- Kategori ---
@@ -546,17 +658,20 @@ export function extractProjectContext(text: string, base?: ProjectIntakeContext)
   const neutral = neutralizeAreaUnits(raw);
   const needs: RabNeeds = extractRabNeeds(neutral);
   const spec = extractUniversalSpec(neutral);
-  const effectiveArea = parseAreaMentionM2(raw);
+  // Alokasi giliran ini dihitung DULU: luas yang disebut sebagai
+  // alokasi per tujuan bukan kandidat luas total (§9, 2026-11-11).
+  const turnAllocations = parseAreaAllocations(raw);
+  const effectiveArea = resolveTotalAreaMention(raw, turnAllocations);
   if (effectiveArea) {
     // Penyebutan luas pada konteks intake adalah LUAS LAHAN/area proyek
     // (untuk landscape: luas area pekerjaan) — dicatat sebagai lahan
     // dengan nilai asli dipertahankan.
     ctx.landAreaM2 = effectiveArea.valueM2;
     ctx.landAreaOriginal = effectiveArea.original;
-  } else if (areaHit) {
+  } else if (areaHit && !turnAllocations.some((a) => a.areaM2 === areaHit.valueM2)) {
     ctx.landAreaM2 = areaHit.valueM2;
     ctx.landAreaOriginal = areaHit.original;
-  } else if (needs.landAreaM2 != null) {
+  } else if (needs.landAreaM2 != null && turnAllocations.length === 0) {
     ctx.landAreaM2 = needs.landAreaM2;
     ctx.landAreaOriginal = `${fmtNum(needs.landAreaM2)} m²`;
   }
@@ -601,6 +716,13 @@ export function extractProjectContext(text: string, base?: ProjectIntakeContext)
     for (const f of detectFacilities(raw, ctx.conceptId)) {
       if (!ctx.facilities.includes(f.id)) ctx.facilities.push(f.id);
     }
+    // Alokasi luas eksplisit per tujuan (§9): dicatat apa adanya;
+    // sisa luas TIDAK dialihkan ke fasilitas mana pun secara diam-diam.
+    for (const a of turnAllocations) {
+      if (!ctx.allocations.some((x) => x.purpose === a.purpose && x.areaM2 === a.areaM2)) {
+        ctx.allocations.push(a);
+      }
+    }
   }
 
   // --- Kondisi lahan eksisting (disebut apa adanya). Frasa kondisi
@@ -610,6 +732,7 @@ export function extractProjectContext(text: string, base?: ProjectIntakeContext)
   // seperti "ada bangunan eksisting") tidak terbaca sebagai cakupan
   // pekerjaan baru saat konteks diserahkan ke mesin kanonis. ---
   const SITE_PATTERNS: Array<{ re: RegExp; label: string }> = [
+    { re: /\b(lahan datar|tanah datar|lahan rata|tanah rata|kondisi datar)\b/, label: 'lahan datar' },
     { re: /\b(lahan kosong|tanah kosong|lahan masih kosong)\b/, label: 'lahan kosong' },
     { re: /\b(sudah (ada|berdiri) bangunan|ada bangunan eksisting|bangunan eksisting)\b/, label: 'ada bangunan eksisting' },
     { re: /\b(berkontur|kontur miring|lahan miring|lereng)\b/, label: 'lahan berkontur/miring' },
@@ -676,6 +799,22 @@ export function refreshContextFacts(ctx: ProjectIntakeContext): void {
   if (ctx.floors != null) known.push(`Jumlah lantai: ${ctx.floors}`);
   if (ctx.conceptLabel) known.push(`Konsep: ${ctx.conceptLabel}`);
   if (ctx.facilities.length) known.push(`Fasilitas: ${ctx.facilities.map(facilityLabel).join(', ')}`);
+  for (const a of ctx.allocations) {
+    known.push(`Alokasi: ${a.purpose} ${fmtNum(a.areaM2)} m² (eksplisit dari pengguna)`);
+  }
+  if (ctx.landAreaM2 != null && ctx.allocations.length > 0) {
+    const allocated = ctx.allocations.reduce((s, a) => s + a.areaM2, 0);
+    const rest = ctx.landAreaM2 - allocated;
+    if (rest > 0) {
+      known.push(
+        `Sisa ${fmtNum(rest)} m² belum teralokasi spesifik — untuk fasilitas lain yang disebut, belum ada ukuran per fasilitas (tidak diasumsikan)`,
+      );
+    } else if (rest < 0) {
+      known.push(
+        `PERINGATAN: total alokasi ${fmtNum(allocated)} m² melebihi luas lahan ${fmtNum(ctx.landAreaM2)} m² — ada alokasi yang tumpang tindih`,
+      );
+    }
+  }
   if (ctx.location) known.push(`Lokasi: ${ctx.location}`);
   if (ctx.siteConditions.length) known.push(`Kondisi lahan: ${ctx.siteConditions.join(', ')}`);
   if (ctx.qualityPreference) known.push(`Kualitas yang disebut: ${ctx.qualityPreference} (belum dirinci)`);
@@ -689,6 +828,12 @@ export function refreshContextFacts(ctx: ProjectIntakeContext): void {
     if (!ctx.conceptId) missing.push('konsep landscape');
     if (ctx.conceptId && ctx.facilities.length === 0) missing.push('fasilitas yang dibutuhkan');
     if (ctx.landAreaM2 == null) missing.push('total luas area');
+    if (
+      ctx.landAreaM2 != null &&
+      ctx.allocations.reduce((s, a) => s + a.areaM2, 0) > ctx.landAreaM2
+    ) {
+      missing.push('klarifikasi alokasi yang tumpang tindih (total alokasi melebihi luas lahan)');
+    }
     if (ctx.siteConditions.length === 0) missing.push('kondisi lahan eksisting');
     if (!ctx.qualityPreference && !ctx.materialPreference) missing.push('preferensi material/kualitas');
   } else if (ctx.category) {
