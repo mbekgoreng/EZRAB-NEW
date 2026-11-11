@@ -230,7 +230,7 @@ const PATTERNS: Pattern[] = [
   // lingkungan sepanjang 500 meter") — kategori teridentifikasi, jadi
   // ringkasan/intake yang menanganinya, BUKAN "Perintah tidak dikenali"
   // (Universal Intake 2026-11-10). HARUS sebelum CREATE_RAB_CLARIFY.
-  { intent: 'CREATE_RAB_SUMMARY', re: /\b(ingin|mau|pengen|hendak)\s+(membuat|buat|bikin|membangun)\b[^.]{0,60}\b(drainase|saluran|jalan|jembatan|irigasi|gedung|kantor|sekolah|rumah sakit|taman|landscape|lanskap|pagar|pondasi|renovasi|instalasi|plumbing|hvac|dinding penahan|gorong)\b/ },
+  { intent: 'CREATE_RAB_SUMMARY', re: /\b(ingin|mau|pengen|hendak)\s+(membuat|buat|bikin|membangun|bangun|dibangun|dibuat|merenovasi|renovasi)\b[^.]{0,60}\b(drainase|saluran|jalan|jembatan|irigasi|gedung|kantor|sekolah|rumah sakit|rumah|hunian|kandang|peternakan|kolam renang|kolam|villa|gudang|bangunan|taman|landscape|lanskap|pagar|pondasi|renovasi|instalasi|plumbing|hvac|dinding penahan|gorong)\b/ },
   { intent: 'CREATE_RAB_SUMMARY', re: /\b(buatkan|buatin|bikin|buat)\b.*\brab\b.*\b(ded|gambar kerja)\b/ },
   // Landscape/taman & ruang publik (Conversational Intelligence Upgrade,
   // master prompt owner 2026-11-10): permintaan RAB landscape yang sudah
@@ -243,6 +243,23 @@ const PATTERNS: Pattern[] = [
   { intent: 'CREATE_RAB_SUMMARY', re: /\brab\b.*\b(landscape|lanskap)\b/ },
   { intent: 'CREATE_RAB_SUMMARY', re: /\b(buatkan|buatin|bikin|buat)\b.*\b(taman kota|taman publik|taman umum|ruang terbuka hijau)\b/ },
   { intent: 'CREATE_RAB_SUMMARY', re: /\b(buatkan|buatin|bikin|buat)\b.*\btaman\b.*\b(hektar|ha\b|m2|m²|meter persegi|surabaya|jakarta|bandung|semarang|medan|makassar|denpasar|yogyakarta|malang|bogor|depok|bekasi|tangerang|palembang|pekanbaru|batam|samarinda|balikpapan|pontianak|manado|solo|surakarta|jogja)\b/ },
+  // Gelombang A Fase 2 (2026-11-11): pesan pertama dengan SINYAL PROYEK
+  // terbaca tidak boleh jatuh ke menu generik/UNKNOWN hanya karena verba
+  // atau sinonimnya di luar daftar lama. Kategori non-katalog & sinonim
+  // (kandang/peternakan/lembu, warehouse, hunian, kolam renang) + verba
+  // perlu/minta/hitungkan/perbaikan → jalur percakapan kontekstual
+  // (CREATE_RAB_SUMMARY → gerbang intake universal). Umum, bukan
+  // hardcode contoh: pola = verba RAB × keluarga kategori.
+  { intent: 'CREATE_RAB_SUMMARY', re: /\b(buatkan|buatin|bikin|buat|tolong|minta|perlu|ingin|mau|pengen|hendak|hitungkan|hitung)\b[^.]{0,40}\brab\b[^.]{0,60}\b(kandang|peternakan|lembu|warehouse|kolam renang|jembatan|gudang)\b/ },
+  { intent: 'CREATE_RAB_SUMMARY', re: /\brab\b[^.]{0,60}\b(kandang|peternakan|warehouse|kolam renang)\b/ },
+  { intent: 'CREATE_RAB_SUMMARY', re: /\b(buatkan|buatin|bikin|buat)\b.*\brab\b.*\b(hunian)\b/ },
+  { intent: 'CREATE_RAB_SUMMARY', re: /\brab\b.*\b(perbaikan|renovasi)\b.*\b(dapur|kamar mandi|toilet|atap|rumah)\b/ },
+  { intent: 'CREATE_RAB_SUMMARY', re: /\b(perlu|minta|tolong)\b[^.]{0,30}\brab\b[^.]{0,60}\b(jembatan|drainase|pagar|kolam|jalan|gedung|kantor|sekolah)\b/ },
+  // Gelombang B (2026-11-11): verba "hitungkan/hitung + estimasi" tanpa
+  // kata "rab" ("Hitungkan estimasi pembangunan gudang baja 20 × 40")
+  // adalah permintaan estimasi yang sama — sebelumnya UNKNOWN padahal
+  // kategori + ukurannya lengkap dan mesin katalog bisa menyusunnya.
+  { intent: 'CREATE_RAB_SUMMARY', re: /\b(hitungkan|hitung|estimasikan)\b[^.]{0,30}\b(estimasi|perhitungan)\b[^.]{0,60}\b(gudang|kandang|peternakan|jembatan|gedung|kantor|sekolah|kolam renang|warehouse|jalan|drainase|rumah|villa)\b/ },
   // "buatkan rab" tanpa objek spesifik -> tanya balik (jangan tumpahkan daftar
   // template). Pola spesifik (rumah/dll) sudah tertangkap di atas; pola umum
   // ini HARUS tetap setelahnya. \brab\b tidak menangkap "rabat beton".

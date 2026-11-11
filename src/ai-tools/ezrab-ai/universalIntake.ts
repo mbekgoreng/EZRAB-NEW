@@ -43,6 +43,7 @@ import { extractUniversalSpec } from './universalRab';
 import { extractProjectContext, parseAreaMentionM2 } from './projectIntake';
 import { detectSubtypeFromText } from './rabSubtypes';
 import { RabTemplateService } from '../../services/rabTemplateService';
+import { conceptualWbsLines } from './conceptualWbs';
 
 /* ------------------------------------------------------------------ */
 /* Provenans fakta (§6)                                                */
@@ -105,10 +106,14 @@ export const SUBCATEGORIES: SubcategoryDef[] = [
   S('renovasi', 'building', 'Renovasi / rehabilitasi / restorasi', /\b(renovasi|rehabilitasi|restorasi|retrofit|perkuatan)\b/, ['RENOVASI_MAINTENANCE'], ['renovasi', 'restorasi', 'retrofit', 'perkuatan'], ['renovasi']),
   S('sekolah', 'building', 'Sekolah & fasilitas pendidikan', /\b(sekolah|madrasah|kampus|universitas|gedung kuliah|fasilitas pendidikan)\b/, ['PENDIDIKAN'], ['sekolah', 'pendidikan', 'kampus', 'madrasah'], ['gedung']),
   S('kesehatan', 'building', 'Rumah sakit & fasilitas kesehatan', /\b(rumah sakit|klinik|puskesmas|fasilitas kesehatan|rumah bersalin)\b/, ['KESEHATAN'], ['klinik', 'puskesmas', 'medis', 'laboratorium'], ['gedung']),
-  S('hotel', 'building', 'Hotel & hospitality', /\b(hotel|ballroom|kondotel)\b/, ['HOTEL_HOSPITALITY'], ['hotel', 'ballroom', 'villa'], ['gedung']),
+  S('hotel', 'building', 'Hotel & hospitality', /\b(hotel|ballroom|kondotel|villa)\b/, ['HOTEL_HOSPITALITY'], ['hotel', 'ballroom', 'villa'], ['gedung']),
   S('kantor', 'building', 'Gedung perkantoran', /\b(kantor|perkantoran|office|gedung kantor)\b/, ['GEDUNG', 'BANGUNAN_TINGGI'], ['perkantoran', 'kantor', 'co-working', 'menara kantor'], ['gedung']),
   S('komersial', 'building', 'Bangunan komersial', /\b(mall|pasar modern|minimarket|restoran|showroom|pertokoan|ruko|kafe|toko)\b/, ['GEDUNG', 'BANGUNAN_TINGGI', 'HOTEL_HOSPITALITY'], ['pasar modern', 'showroom', 'retail', 'minimarket'], ['gedung']),
-  S('gudang-industri', 'building', 'Gudang & bangunan industri', /\b(gudang|pabrik|workshop|cold storage|bengkel|industri)\b/, ['INDUSTRI', 'GEDUNG'], ['gudang', 'pabrik', 'workshop', 'cold storage'], ['gedung']),
+  S('gudang-industri', 'building', 'Gudang & bangunan industri', /\b(gudang|pabrik|workshop|warehouse|cold storage|bengkel|industri)\b/, ['INDUSTRI', 'GEDUNG'], ['gudang', 'pabrik', 'workshop', 'cold storage'], ['gedung']),
+  // Agrikultur/peternakan (Gelombang A Fase 6): sebelumnya TIDAK ada di
+  // taksonomi intake padahal scope-engine punya templatenya — pesan
+  // kandang jatuh ke menu generik (S1). Katalog: PERTANIAN_PERKEBUNAN.
+  S('kandang', 'specialized', 'Kandang & peternakan', /\b(kandang|peternakan)\b/, ['PERTANIAN_PERKEBUNAN'], ['kandang'], ['pertanian']),
   S('bangunan-publik', 'building', 'Bangunan publik', /\b(masjid|musholla|mushola|gereja|tempat ibadah|aula|gedung serbaguna|balai|gedung pemerintah|perpustakaan|asrama)\b/, ['GEDUNG'], ['serbaguna', 'fasilitas umum', 'asrama'], ['gedung']),
   S('apartemen', 'building', 'Apartemen & hunian bertingkat', /\b(apartemen|rumah susun|rusun)\b/, ['BANGUNAN_TINGGI'], ['apartemen', 'rumah susun', 'kondotel'], ['gedung']),
   S('rumah', 'building', 'Rumah tinggal', /\b(rumah tinggal|rumah|hunian)\b/, ['RUMAH_TINGGAL'], ['rumah'], ['gedung'], 'house'),
@@ -375,7 +380,7 @@ export function parseAnchoredLinear(
 export function parseCountMentions(text: string): Array<{ value: number; unit: string; original: string }> {
   const t = (text || '').toLowerCase();
   const out: Array<{ value: number; unit: string; original: string }> = [];
-  for (const m of t.matchAll(/(\d+(?:[.,]\d+)?)\s*(titik|unit|set|buah)\b/g)) {
+  for (const m of t.matchAll(/(\d+(?:[.,]\d+)?)\s*(titik|unit|set|buah|ekor)\b/g)) {
     const v = parseAreaNumber(m[1]);
     if (v == null || v <= 0) continue;
     out.push({ value: v, unit: m[2], original: `${m[1]} ${m[2]}` });
@@ -411,6 +416,249 @@ export interface ScopeItem {
   status: FactStatus;
 }
 
+/* ------------------------------------------------------------------ */
+/* Budget terstruktur (Gelombang A Fase 3) — budget adalah KONTEKS     */
+/* persisten, bukan string sesaat: jumlah + JENIS batas + teks asli.   */
+/* "maksimal/mentok" = MAXIMUM (batas atas, bukan target paksa);       */
+/* "sekitar/kisaran" = ESTIMATED; "target" = TARGET; tanpa kualifier   */
+/* = UNSPECIFIED. Koreksi budget = koreksi field tunggal: nilai lama   */
+/* masuk budgetHistory, konteks lain tidak disentuh.                   */
+/* ------------------------------------------------------------------ */
+
+export type BudgetKind = 'MAXIMUM' | 'ESTIMATED' | 'TARGET' | 'UNSPECIFIED';
+
+/* Cakupan budget (Wave C, menutup celah T29): budget yang dinyatakan  */
+/* "sudah termasuk peralatan dan instalasi air" TIDAK setara dengan    */
+/* budget konstruksi murni — cakupannya adalah konteks terstruktur     */
+/* tersendiri agar total RAB tidak dibandingkan mentah terhadap angka  */
+/* yang cakupannya berbeda. Field boolean|null persis skema master     */
+/* prompt §5 (includesTax/includesEquipment/includesLabor): null =     */
+/* tidak pernah dinyatakan pengguna, TIDAK ditebak.                    */
+
+export interface BudgetCoverage {
+  includesEquipment: boolean | null;
+  includesLabor: boolean | null;
+  includesTax: boolean | null;
+  includesUtilities: boolean | null;
+  /** Frasa utilitas spesifik apa adanya ("instalasi air", "instalasi listrik"). */
+  notes: string[];
+}
+
+export const emptyBudgetCoverage = (): BudgetCoverage => ({
+  includesEquipment: null,
+  includesLabor: null,
+  includesTax: null,
+  includesUtilities: null,
+  notes: [],
+});
+
+export function budgetCoverageHasData(c: BudgetCoverage | null | undefined): boolean {
+  return !!c && (c.includesEquipment != null || c.includesLabor != null || c.includesTax != null || c.includesUtilities != null || c.notes.length > 0);
+}
+
+/** Gabung dua cakupan: field non-null dari `over` menang; notes digabung. */
+export function mergeBudgetCoverage(base: BudgetCoverage | null, over: BudgetCoverage | null): BudgetCoverage | null {
+  if (!budgetCoverageHasData(base)) return budgetCoverageHasData(over) ? over : null;
+  if (!budgetCoverageHasData(over)) return base;
+  const notes = [...(base?.notes ?? [])];
+  for (const n of over?.notes ?? []) if (!notes.includes(n)) notes.push(n);
+  return {
+    includesEquipment: over?.includesEquipment ?? base?.includesEquipment ?? null,
+    includesLabor: over?.includesLabor ?? base?.includesLabor ?? null,
+    includesTax: over?.includesTax ?? base?.includesTax ?? null,
+    includesUtilities: over?.includesUtilities ?? base?.includesUtilities ?? null,
+    notes,
+  };
+}
+
+const COVERAGE_COMPONENT_LABELS: Array<{ key: 'includesEquipment' | 'includesLabor' | 'includesTax' | 'includesUtilities'; included: string; excluded: string }> = [
+  { key: 'includesEquipment', included: 'termasuk peralatan', excluded: 'peralatan belum termasuk' },
+  { key: 'includesLabor', included: 'termasuk upah/tenaga kerja', excluded: 'upah/tenaga kerja belum termasuk' },
+  { key: 'includesTax', included: 'termasuk pajak', excluded: 'pajak belum termasuk' },
+  { key: 'includesUtilities', included: 'termasuk utilitas/instalasi', excluded: 'utilitas/instalasi belum termasuk' },
+];
+
+/** Deskripsi cakupan satu baris untuk ringkasan/brief ("termasuk peralatan; pajak belum termasuk"). */
+export function describeBudgetCoverage(c: BudgetCoverage | null | undefined): string {
+  if (!budgetCoverageHasData(c)) return '';
+  const parts: string[] = [];
+  for (const comp of COVERAGE_COMPONENT_LABELS) {
+    const v = c?.[comp.key];
+    if (v === true) parts.push(comp.included);
+    else if (v === false) parts.push(comp.excluded);
+  }
+  const notes = (c?.notes ?? []).filter((n) => !parts.some((p) => p.includes(n)));
+  if (notes.length) parts.push(`termasuk ${notes.join(', ')}`);
+  return parts.join('; ');
+}
+
+const COVERAGE_COMPONENT_PATTERNS: Array<{ key: 'includesEquipment' | 'includesLabor' | 'includesTax' | 'includesUtilities'; re: RegExp }> = [
+  { key: 'includesEquipment', re: /\b(peralatan|perlengkapan|alat kerja|equipment)\b/ },
+  { key: 'includesLabor', re: /\b(upah|tenaga kerja|buruh|tukang|ongkos kerja)\b/ },
+  { key: 'includesTax', re: /\b(pajak|ppn|pph)\b/ },
+  { key: 'includesUtilities', re: /\b(instalasi air|air bersih|instalasi listrik|instalasi|utilitas|sanitasi|plumbing|listrik)\b/ },
+];
+
+/**
+ * Parse cakupan budget dari frasa natural ("sudah termasuk peralatan
+ * dan instalasi air", "belum termasuk pajak", "di luar upah", "harga
+ * sudah termasuk ppn"). Teks dipecah per klausa; polaritas klausa
+ * (termasuk vs belum/di luar) berlaku bagi komponen di klausa itu dan
+ * diwarisi klausa rangkaian berikutnya ("…termasuk A dan B"). Tanpa
+ * penanda polaritas eksplisit, komponen TIDAK dicatat — cakupan tidak
+ * ditebak dari sekadar penyebutan komponen.
+ */
+export function parseBudgetCoverage(text: string): BudgetCoverage | null {
+  const t = ` ${(text || '').toLowerCase().replace(/\s+/g, ' ')} `;
+  const cov = emptyBudgetCoverage();
+  let found = false;
+  let polarity: boolean | null = null;
+  const clauses = t.split(/\s*(?:,|;|\bdan\b|\bserta\b|\bplus\b|\+)\s*/);
+  for (const clause of clauses) {
+    const hasComponent = COVERAGE_COMPONENT_PATTERNS.some((c) => c.re.test(clause));
+    // "di luar" hanya penanda eksklusi bila klausanya memuat komponen
+    // cakupan — "di luar ruangan" (outdoor) bukan pernyataan budget.
+    const exclMatch = /\b(belum termasuk|tidak termasuk|tak termasuk|nggak termasuk|belum meliputi|tidak meliputi|exclude|excluding)\b/.test(clause)
+      || (/\bdi luar\b/.test(clause) && hasComponent);
+    const inclMatch = !exclMatch && /\b(sudah termasuk|termasuk|sudah meliputi|meliputi|sudah dengan|include|including)\b/.test(clause);
+    if (exclMatch) polarity = false;
+    else if (inclMatch) polarity = true;
+    if (polarity == null || !hasComponent) continue;
+    for (const comp of COVERAGE_COMPONENT_PATTERNS) {
+      const m = clause.match(comp.re);
+      if (!m) continue;
+      cov[comp.key] = polarity;
+      found = true;
+      // Frasa utilitas spesifik disimpan apa adanya agar ringkasan
+      // menyebut persis yang dikatakan pengguna ("instalasi air").
+      if (comp.key === 'includesUtilities' && /^(instalasi|air bersih|sanitasi|plumbing)/.test(m[1]) && !cov.notes.includes(m[1])) {
+        cov.notes.push(m[1]);
+      }
+    }
+  }
+  return found ? cov : null;
+}
+
+export interface BudgetContext {
+  amount: number;
+  kind: BudgetKind;
+  original: string;
+  /** Cakupan budget terstruktur (Wave C) — null = tidak pernah dinyatakan. */
+  coverage: BudgetCoverage | null;
+}
+
+export const BUDGET_KIND_LABELS: Record<BudgetKind, string> = {
+  MAXIMUM: 'batas maksimum (bukan target paksa)',
+  ESTIMATED: 'perkiraan/kisaran',
+  TARGET: 'target anggaran',
+  UNSPECIFIED: 'disebut tanpa kualifier batas',
+};
+
+const BUDGET_UNIT_FACTORS: Record<string, number> = {
+  miliar: 1_000_000_000, milyar: 1_000_000_000, jt: 1_000_000, juta: 1_000_000, rb: 1_000, ribu: 1_000,
+};
+
+/** Parse SATU penyebutan budget dari teks (yang terakhir & tidak dibatalkan koreksi "bukan X"). */
+export function parseBudgetMention(text: string): BudgetContext | null {
+  const t = ` ${(text || '').toLowerCase().replace(/\s+/g, ' ')} `;
+  const cancelled = new Set<number>();
+  for (const m of t.matchAll(/\bbukan\s+(?:rp\.?\s*)?(\d[\d.]*(?:,\d+)?)\s*(miliar|milyar|jt|juta|rb|ribu)?\b/g)) {
+    const v = parseAreaNumber(m[1]);
+    if (v != null) cancelled.add(Math.round(v * (BUDGET_UNIT_FACTORS[m[2] ?? ''] ?? 1)));
+  }
+  let last: BudgetContext | null = null;
+  // Kata sisipan wajar antara kata kunci budget dan angkanya ("budget
+  // menjadi 400 juta", "anggaran saya 100 juta", "dana sebesar 2 miliar")
+  // tidak boleh menggagalkan pembacaan — tanpa sisipan ini koreksi
+  // budget yang paling umum justru tidak terbaca (Gelombang B, T23/I04).
+  const re = /(?:anggaran|budget|dana|biaya|maks(?:imal)?|mentok)\s*(?:maksimal|maks|mentok)?\s*(?:sekitar|kisaran|kira-kira)?\s*(?:rp\.?\s*)?(?:\s*(?:menjadi|sebesar|senilai|adalah|saya|ke))*\s*(\d[\d.]*(?:,\d+)?)\s*(miliar|milyar|jt|juta|rb|ribu)\b/g;
+  for (const m of t.matchAll(re)) {
+    const v = parseAreaNumber(m[1]);
+    if (v == null || v <= 0) continue;
+    const amount = Math.round(v * (BUDGET_UNIT_FACTORS[m[2]] ?? 1));
+    if (cancelled.has(amount)) continue;
+    const start = m.index ?? 0;
+    const windowBefore = t.slice(Math.max(0, start - 30), start + m[0].length);
+    let kind: BudgetKind = 'UNSPECIFIED';
+    if (/\b(maksimal|maks|mentok|paling banyak)\b/.test(windowBefore) || /\b(budget|anggaran|dana)\s+(maksimal|maks|mentok)\b/.test(t.slice(start, start + 40))) kind = 'MAXIMUM';
+    else if (/\b(sekitar|kisaran|kira-kira)\b/.test(windowBefore)) kind = 'ESTIMATED';
+    else if (/\btarget\b/.test(windowBefore)) kind = 'TARGET';
+    last = { amount, kind, original: m[0].trim(), coverage: parseBudgetCoverage(text) };
+  }
+  if (last) return last;
+  // Bentuk Rp penuh tanpa satuan ("budget Rp275.000.000").
+  for (const m of t.matchAll(/(?:anggaran|budget|dana)\s*(?:maksimal|maks|mentok|sekitar|kisaran)?\s*(?:\s*(?:menjadi|sebesar|senilai|adalah|saya|ke))*\s*rp\.?\s*(\d{1,3}(?:\.\d{3})+|\d{7,})\b/g)) {
+    const v = parseAreaNumber(m[1]);
+    if (v == null || v <= 0 || cancelled.has(Math.round(v))) continue;
+    const windowBefore = t.slice(Math.max(0, (m.index ?? 0) - 30), (m.index ?? 0) + m[0].length);
+    const kind: BudgetKind = /\b(maksimal|maks|mentok)\b/.test(windowBefore) ? 'MAXIMUM' : /\b(sekitar|kisaran)\b/.test(windowBefore) ? 'ESTIMATED' : 'UNSPECIFIED';
+    last = { amount: Math.round(v), kind, original: m[0].trim(), coverage: parseBudgetCoverage(text) };
+  }
+  return last;
+}
+
+/* ------------------------------------------------------------------ */
+/* Fungsi per lantai (Wave C, menutup celah T24) — penugasan fungsi    */
+/* per lantai ("lantai pertama untuk kantor, lantai kedua untuk       */
+/* ruang rapat") adalah konteks terstruktur persisten, bukan teks      */
+/* lewat. Satu lantai = satu fungsi kini; penyebutan ulang lantai      */
+/* yang sama (termasuk koreksi "bukan X, tapi Y") menimpa HANYA        */
+/* lantai itu. "lantai atas" dipetakan ke lantai teratas hanya bila    */
+/* jumlah lantai diketahui — tidak dikarang.                           */
+/* ------------------------------------------------------------------ */
+
+export interface FloorFunctionAssignment {
+  /** Nomor lantai 1-based (lantai dasar/pertama = 1). */
+  floor: number;
+  /** Frasa lantai apa adanya ("lantai pertama", "lantai 2", "lantai atas"). */
+  floorLabel: string;
+  /** Fungsi apa adanya dari teks ("ruang rapat"). */
+  functionLabel: string;
+}
+
+const FLOOR_ORDINAL_WORDS: Record<string, number> = {
+  pertama: 1, satu: 1, kedua: 2, dua: 2, ketiga: 3, tiga: 3,
+  keempat: 4, empat: 4, kelima: 5, lima: 5, keenam: 6, enam: 6, dasar: 1,
+};
+
+const FLOOR_TOKEN_SRC = 'pertama|kedua|ketiga|keempat|kelima|keenam|satu|dua|tiga|empat|lima|enam|dasar|atas|\\d+';
+
+function cleanFloorFunctionLabel(raw: string): string {
+  return raw.replace(/\s+/g, ' ').replace(/[\s.]+$/g, '').replace(/\s+saja$/g, '').trim();
+}
+
+/** Parse penugasan fungsi per lantai dari SATU pesan (umum, bukan naskah tetap). */
+export function parseFloorFunctionAssignments(text: string, knownFloors?: number | null): FloorFunctionAssignment[] {
+  const t = ` ${(text || '').toLowerCase().replace(/\s+/g, ' ')} `;
+  const out: FloorFunctionAssignment[] = [];
+  const upsert = (token: string, fnRaw: string) => {
+    const fn = cleanFloorFunctionLabel(fnRaw);
+    if (!fn || fn.length < 2) return;
+    if (/\bm(?:2|²)\b|meter persegi/.test(fn)) return; // itu luas, bukan fungsi
+    let floor: number | null = null;
+    if (token === 'atas') {
+      if (knownFloors == null || knownFloors < 1) return; // lantai teratas tak diketahui — tidak dikarang
+      floor = knownFloors;
+    } else if (/^\d+$/.test(token)) floor = Number(token);
+    else floor = FLOOR_ORDINAL_WORDS[token] ?? null;
+    if (floor == null || floor < 1) return;
+    const entry: FloorFunctionAssignment = { floor, floorLabel: `lantai ${token}`, functionLabel: fn };
+    const idx = out.findIndex((a) => a.floor === floor);
+    if (idx >= 0) out[idx] = entry;
+    else out.push(entry);
+  };
+  // Koreksi eksplisit per lantai: "lantai 2 bukan ruang rapat, tapi ruang arsip".
+  for (const m of t.matchAll(new RegExp(`\\blantai\\s+(${FLOOR_TOKEN_SRC})\\s+bukan\\s+[^,.;]+?,\\s*(?:tapi|melainkan)\\s+([a-z][a-z0-9 /&]{1,36}?)(?=\\s*(?:,|\\.|;|$))`, 'g'))) {
+    upsert(m[1], m[2]);
+  }
+  // Penugasan: "lantai pertama untuk kantor", "lantai 2: ruang rapat",
+  // "lantai kedua difungsikan sebagai ruang rapat", "lantai 1 adalah lobi".
+  for (const m of t.matchAll(new RegExp(`\\blantai\\s+(${FLOOR_TOKEN_SRC})\\s*(?::|=|\\s+adalah|\\s+(?:untuk|dipakai untuk|difungsikan sebagai|berfungsi sebagai|digunakan untuk|dijadikan|sebagai))\\s+([a-z][a-z0-9 /&]{1,40}?)(?=\\s*(?:,|\\.|;|\\bdan\\s+lantai\\b|\\blantai\\s|$))`, 'g'))) {
+    upsert(m[1], m[2]);
+  }
+  return out;
+}
+
 export interface UniversalIntakeContext {
   intent: 'CREATE_RAB';
   primary: SubcategoryDef | null;
@@ -422,6 +670,8 @@ export interface UniversalIntakeContext {
   landAreaOriginal: string | null;
   buildingAreaM2: number | null;
   floors: number | null;
+  /** Fungsi per lantai terstruktur (Wave C) — satu entri per lantai yang ditugaskan pengguna. */
+  floorFunctions: FloorFunctionAssignment[];
   dimensionsText: string | null;
   lengthM: number | null;
   lengthOriginal: string | null;
@@ -441,6 +691,16 @@ export interface UniversalIntakeContext {
   materialPreference: string | null;
   qualityPreference: string | null;
   budgetText: string | null;
+  /** Budget terstruktur persisten (Fase 3) — budgetText adalah tampilannya. */
+  budget: BudgetContext | null;
+  /** Nilai budget SEBELUMNYA (riwayat koreksi; nilai kini hanya di `budget`). */
+  budgetHistory: BudgetContext[];
+  /** Riwayat koreksi field tunggal: field lain tidak ikut berubah. */
+  corrections: Array<{ key: string; from: string; to: string }>;
+  /** Jawaban terstruktur atas pertanyaan kategori (kandang-type, warehouse-system, bridge-type…). */
+  answers: Record<string, string>;
+  /** Bagian renovasi bernama yang disebut (dapur, kamar mandi, atap…) — scope gabungan terstruktur. */
+  renovationScopes: string[];
   /** true = pembangunan baru; false = eksisting/renovasi atas yang ada; null = belum jelas. */
   isNewConstruction: boolean | null;
   /** Cakupan renovasi yang dipilih ("seluruh bangunan", "lantai 1", teks bebas). */
@@ -470,6 +730,7 @@ export const emptyUniversalIntake = (): UniversalIntakeContext => ({
   landAreaOriginal: null,
   buildingAreaM2: null,
   floors: null,
+  floorFunctions: [],
   dimensionsText: null,
   lengthM: null,
   lengthOriginal: null,
@@ -486,6 +747,11 @@ export const emptyUniversalIntake = (): UniversalIntakeContext => ({
   materialPreference: null,
   qualityPreference: null,
   budgetText: null,
+  budget: null,
+  budgetHistory: [],
+  corrections: [],
+  answers: {},
+  renovationScopes: [],
   isNewConstruction: null,
   renovationScope: null,
   drainageType: null,
@@ -501,6 +767,15 @@ export const emptyUniversalIntake = (): UniversalIntakeContext => ({
 });
 
 const fmtNum = (v: number): string => v.toLocaleString('id-ID', { maximumFractionDigits: 2 });
+
+const BUDGET_COVERAGE_SPEC_PREFIX = 'cakupan budget: ';
+
+/** Cermin cakupan budget pada technicalSpecs — satu entri, selalu sinkron dengan field terstruktur. */
+function syncBudgetCoverageMirror(ctx: UniversalIntakeContext): void {
+  const desc = describeBudgetCoverage(ctx.budget?.coverage);
+  ctx.technicalSpecs = ctx.technicalSpecs.filter((s) => !s.startsWith(BUDGET_COVERAGE_SPEC_PREFIX));
+  if (desc) ctx.technicalSpecs.push(`${BUDGET_COVERAGE_SPEC_PREFIX}${desc}`);
+}
 
 /**
  * Ekstrak konteks universal dari SATU pesan, digabung ke `base` bila
@@ -521,6 +796,11 @@ export function extractUniversalContext(text: string, base?: UniversalIntakeCont
         technicalSpecs: [...base.technicalSpecs],
         counts: [...base.counts],
         askedKeys: [...base.askedKeys],
+        budgetHistory: [...base.budgetHistory],
+        corrections: [...base.corrections],
+        answers: { ...base.answers },
+        renovationScopes: [...base.renovationScopes],
+        floorFunctions: base.floorFunctions.map((a) => ({ ...a })),
       }
     : emptyUniversalIntake();
 
@@ -566,7 +846,102 @@ export function extractUniversalContext(text: string, base?: UniversalIntakeCont
   }
   if (shared.qualityPreference) ctx.qualityPreference = shared.qualityPreference;
   if (shared.materialPreference) ctx.materialPreference = shared.materialPreference;
+  // Kondisi tapak yang frasanya tidak ditangkap pola bersama persis:
+  // "akses jalan terbatas" (kata benda menyela pola "akses terbatas"),
+  // "daerah berbukit", dan kendala okupasi "bangunan tetap digunakan"
+  // selama renovasi — ketiganya kendala nyata yang memengaruhi metode
+  // kerja, jadi wajib lestari sebagai kondisi tapak (Gelombang B).
+  if (/\bakses\b[^.]{0,24}\b(terbatas|sempit|sulit)\b/.test(t) && !ctx.siteConditions.includes('akses terbatas')) {
+    ctx.siteConditions.push('akses terbatas');
+  }
+  if (/\b(berbukit|perbukitan)\b/.test(t) && !ctx.siteConditions.includes('lahan berbukit')) {
+    ctx.siteConditions.push('lahan berbukit');
+  }
+  if (/\btetap\s+(digunakan|beroperasi|berjalan)\b/.test(t) && !ctx.siteConditions.includes('bangunan tetap digunakan selama pekerjaan')) {
+    ctx.siteConditions.push('bangunan tetap digunakan selama pekerjaan');
+  }
+  // Revisi/preferensi kualitas yang diucapkan sebagai sifat spek/desain
+  // ("spesifikasinya dibuat lebih ekonomis", "desainnya sederhana",
+  // "buat yang simple aja") — pola bersama hanya menangkap bentuk
+  // "gunakan kualitas X". Nilai dicatat apa adanya sebagai preferensi,
+  // rinciannya tidak ditebak (Gelombang B, T01/T23/T24).
+  const qualityRevision =
+    t.match(/\b(?:spesifikasinya|spesifikasi|spek|desainnya|desain)\s+(?:dibuat\s+|diubah\s+|menjadi\s+)?(?:lebih\s+)?(ekonomis|sederhana|standar|standard|premium|mewah|menengah|minimalis)\b/)
+    ?? t.match(/\blebih\s+(ekonomis|sederhana)\b/)
+    ?? t.match(/\byang\s+(simple|sederhana)\s+aja\b/);
+  if (qualityRevision) {
+    ctx.qualityPreference = qualityRevision[1] === 'simple' ? 'sederhana' : qualityRevision[1];
+  }
   if (shared.budgetText) ctx.budgetText = shared.budgetText;
+
+  // --- Budget terstruktur (Fase 3): parse giliran ini menimpa field
+  // budget SAJA; nilai lama masuk riwayat, konteks lain utuh. ---
+  const prevBudget = ctx.budget;
+  const budgetParsed = parseBudgetMention(raw);
+  if (budgetParsed) {
+    if (prevBudget && prevBudget.amount !== budgetParsed.amount) {
+      ctx.budgetHistory.push(prevBudget);
+      ctx.corrections.push({
+        key: 'budget',
+        from: `Rp${fmtNum(prevBudget.amount)} (${prevBudget.kind})`,
+        to: `Rp${fmtNum(budgetParsed.amount)} (${budgetParsed.kind})`,
+      });
+    }
+    // Cakupan yang sudah dinyatakan pada budget sebelumnya diwarisi
+    // koreksi jumlah — koreksi angka tidak menghapus cakupan (Wave C).
+    ctx.budget = { ...budgetParsed, coverage: mergeBudgetCoverage(prevBudget?.coverage ?? null, budgetParsed.coverage) };
+    ctx.budgetText = `Rp${fmtNum(budgetParsed.amount)} — ${BUDGET_KIND_LABELS[budgetParsed.kind]}`;
+  }
+
+  // --- Cakupan budget (Wave C): frasa inklusi/eksklusi pada giliran
+  // ini menimpa HANYA komponen cakupan yang disebut — jumlah, jenis
+  // budget, dan konteks lain tidak disentuh. Berlaku juga pada giliran
+  // koreksi cakupan murni tanpa angka ("budgetnya belum termasuk
+  // pajak"). Tanpa budget yang ada, cakupan tidak menempel ke apa pun
+  // dan tidak dikarang menjadi budget baru. ---
+  const coverageParsed = parseBudgetCoverage(raw);
+  if (coverageParsed && ctx.budget) {
+    const beforeDesc = describeBudgetCoverage(ctx.budget.coverage);
+    const mergedCoverage = mergeBudgetCoverage(ctx.budget.coverage, coverageParsed);
+    ctx.budget = { ...ctx.budget, coverage: mergedCoverage };
+    const afterDesc = describeBudgetCoverage(mergedCoverage);
+    if (prevBudget && beforeDesc !== afterDesc && !ctx.corrections.some((c) => c.key === 'budgetCoverage' && c.to === afterDesc)) {
+      ctx.corrections.push({ key: 'budgetCoverage', from: `Cakupan budget: ${beforeDesc || 'belum dinyatakan'}`, to: afterDesc });
+    }
+  }
+  if (ctx.budget) syncBudgetCoverageMirror(ctx);
+
+  // --- Jawaban terstruktur atas pertanyaan kategori yang menggantung ---
+  if (base) {
+    if (base.askedKeys.includes('kandang-type')) {
+      if (/\btertutup\b/.test(t)) ctx.answers['kandang-type'] = 'tertutup';
+      else if (/\bterbuka\b/.test(t)) ctx.answers['kandang-type'] = 'terbuka';
+      else if (/\bsemi\b/.test(t)) ctx.answers['kandang-type'] = 'semi terbuka';
+    }
+    if (base.askedKeys.includes('warehouse-system')) {
+      if (/\bportal frame\b/.test(t)) ctx.answers['warehouse-system'] = 'portal frame';
+      else if (/\btruss|rangka ruang|space frame\b/.test(t)) ctx.answers['warehouse-system'] = 'truss/rangka ruang';
+    }
+    if (base.askedKeys.includes('bridge-type')) {
+      const bt = t.match(/\b(beton|baja|kayu|bailey|komposit)\b/);
+      if (bt) ctx.answers['bridge-type'] = bt[1];
+    }
+  }
+  if (/\bportal frame\b/.test(t)) ctx.answers['warehouse-system'] = 'portal frame';
+  else if (/\btruss\b/.test(t) && ctx.primary?.id === 'gudang-industri') ctx.answers['warehouse-system'] = 'truss/rangka ruang';
+  if (ctx.primary?.id === 'kandang') {
+    if (/\bkandang tertutup\b/.test(t)) ctx.answers['kandang-type'] = 'tertutup';
+    else if (/\bkandang terbuka\b/.test(t)) ctx.answers['kandang-type'] = 'terbuka';
+  }
+
+  // --- Scope renovasi bernama (gabungan terstruktur per bagian) ---
+  if (/\b(renovasi|perbaikan|rehab)\b/.test(t) || ctx.primary?.id === 'renovasi') {
+    for (const part of ['dapur', 'kamar mandi', 'toilet', 'atap', 'fasad', 'lantai', 'plafon', 'kamar tidur', 'teras', 'dinding']) {
+      if (new RegExp(`\\b${part}\\b`).test(t) && !ctx.renovationScopes.includes(part)) {
+        ctx.renovationScopes.push(part);
+      }
+    }
+  }
 
   // --- Dimensi dari parser kebutuhan bersama ---
   const needs = extractRabNeeds(raw);
@@ -574,24 +949,71 @@ export function extractUniversalContext(text: string, base?: UniversalIntakeCont
   const areaMention = parseAreaMentionM2(raw);
   // "Luas bangunannya …" secara eksplisit adalah luas BANGUNAN (Contoh F).
   const buildingAreaMention = /luas bangunan/.test(t) ? areaMention : null;
+  // T02 (Fase 3): luas yang berjangkar ke TANAH/LAHAN ("tanah 120 m2",
+  // "luas tanah 120 m²", "di lahan 120 m2") TIDAK BOLEH menjadi luas
+  // bangunan — nilai yang sama dari parser kebutuhan ditolak sebagai
+  // luas bangunan dan dicatat sebagai luas lahan.
+  const landAnchored = /\b(tanah|lahan)\b[^.]{0,24}\d/.test(t) || /\bluas (tanah|lahan)\b/.test(t);
   if (buildingAreaMention) {
     ctx.buildingAreaM2 = buildingAreaMention.valueM2;
-  } else if (needs.buildingArea != null) {
+  } else if (needs.buildingArea != null && !(landAnchored && areaMention != null && needs.buildingArea === areaMention.valueM2)) {
     ctx.buildingAreaM2 = needs.buildingArea;
-  } else if (spec.footprintM2 != null && (ctx.primary?.family === 'building' || ctx.primary?.family === 'mep')) {
+  } else if (spec.footprintM2 != null && !landAnchored && (ctx.primary?.family === 'building' || ctx.primary?.family === 'mep')) {
     ctx.buildingAreaM2 = spec.footprintM2;
   }
-  if (areaMention && !buildingAreaMention && ctx.primary?.family !== 'building') {
+  if (areaMention && !buildingAreaMention && landAnchored) {
+    ctx.landAreaM2 = areaMention.valueM2;
+    ctx.landAreaOriginal = areaMention.original;
+  } else if (areaMention && !buildingAreaMention && ctx.primary?.family !== 'building') {
     ctx.landAreaM2 = areaMention.valueM2;
     ctx.landAreaOriginal = areaMention.original;
   } else if (needs.landAreaM2 != null) {
     ctx.landAreaM2 = needs.landAreaM2;
     ctx.landAreaOriginal = `${fmtNum(needs.landAreaM2)} m²`;
   }
-  if (needs.floors != null) ctx.floors = needs.floors;
+  if (needs.floors != null) {
+    // Penjaga luas-per-lantai (Gelombang B, T24): pada frasa "luas
+    // setiap lantai 200 m²" parser kebutuhan membaca "lantai 200"
+    // sebagai JUMLAH lantai 200 — padahal 200 adalah LUAS per lantai.
+    // Bila satu-satunya bukti lantai pada giliran ini adalah frasa luas
+    // itu (angka sesudah "lantai" diikuti satuan luas) dan tidak ada
+    // frasa jumlah lantai eksplisit ("2 lantai", "dua lantai", "lantai
+    // dua"), nilai lantai giliran ini tidak menimpa konteks.
+    const areaPerFloorPhrase =
+      /\blantai\s+\d+(?:[.,]\d+)?\s*(?:m(?:2|²)|meter persegi)(?![a-z0-9])/.test(t);
+    const explicitFloorPhrase =
+      /\b\d+\s*lantai\b/.test(t)
+      || /\b(satu|dua|tiga|empat|lima|enam|tujuh|delapan|sembilan|sepuluh)\s+lantai\b/.test(t)
+      || /\blantai\s+(satu|dua|tiga|empat|lima|enam|tujuh|delapan|sembilan|sepuluh)\b/.test(t);
+    if (!(areaPerFloorPhrase && !explicitFloorPhrase)) ctx.floors = needs.floors;
+  }
+
+  // --- Fungsi per lantai (Wave C): penugasan dari giliran ini
+  // digabung PER LANTAI — lantai lain tidak disentuh; penugasan ulang
+  // lantai yang sama adalah koreksi field tunggal lantai itu. Cermin
+  // technicalSpecs dipertahankan sinkron per lantai. ---
+  for (const a of parseFloorFunctionAssignments(raw, ctx.floors)) {
+    const prevFn = ctx.floorFunctions.find((x) => x.floor === a.floor);
+    if (prevFn && prevFn.functionLabel !== a.functionLabel && !ctx.corrections.some((c) => c.key === `floorFunction-${a.floor}` && c.to === a.functionLabel)) {
+      ctx.corrections.push({ key: `floorFunction-${a.floor}`, from: `Fungsi lantai ${a.floor}: ${prevFn.functionLabel}`, to: a.functionLabel });
+    }
+    ctx.floorFunctions = [...ctx.floorFunctions.filter((x) => x.floor !== a.floor), a].sort((x, y) => x.floor - y.floor);
+    const specPrefix = `fungsi lantai ${a.floor}: `;
+    ctx.technicalSpecs = [...ctx.technicalSpecs.filter((s) => !s.startsWith(specPrefix)), `${specPrefix}${a.functionLabel}`];
+  }
   const len = needs.landLength ?? needs.buildingLength;
   const wid = needs.landWidth ?? needs.buildingWidth;
   if (len && wid) ctx.dimensionsText = `${fmtNum(len)} × ${fmtNum(wid)} m`;
+  if (!ctx.dimensionsText) {
+    // Bentuk lisan "12 kali 30 meter" (Fase 3): dimensi yang sama dengan
+    // "12 x 30" — parser kebutuhan hanya membaca bentuk x/×.
+    const kali = t.match(/(\d+(?:[.,]\d+)?)\s*kali\s*(\d+(?:[.,]\d+)?)\s*(?:meter|m)\b/);
+    if (kali) {
+      const a = parseAreaNumber(kali[1]);
+      const b = parseAreaNumber(kali[2]);
+      if (a != null && b != null && a > 0 && b > 0) ctx.dimensionsText = `${fmtNum(a)} × ${fmtNum(b)} m`;
+    }
+  }
 
   // --- Linear: panjang pekerjaan (jalan/saluran/jembatan/pagar) ---
   const anchoredLen = parseAnchoredLinear(raw, ['sepanjang', 'panjang']);
@@ -706,6 +1128,24 @@ export function extractUniversalContext(text: string, base?: UniversalIntakeCont
     ctx.forceGenerate = true;
   }
 
+  // --- Riwayat koreksi field tunggal (Fase 3): mengubah satu field
+  // TIDAK mereset konteks lain; nilai lama tercatat sebagai riwayat,
+  // dibedakan dari nilai kini. ---
+  if (base) {
+    const track = (key: string, label: string, before: number | null, after: number | null, unit: string) => {
+      if (before != null && after != null && before !== after && !ctx.corrections.some((c) => c.key === key && c.to === `${fmtNum(after)} ${unit}`)) {
+        ctx.corrections.push({ key, from: `${label} ${fmtNum(before)} ${unit}`, to: `${fmtNum(after)} ${unit}` });
+      }
+    };
+    track('length', 'Panjang', base.lengthM, ctx.lengthM, 'm');
+    track('width', 'Lebar', base.widthM, ctx.widthM, 'm');
+    track('span', 'Bentang', base.spanM, ctx.spanM, 'm');
+    track('height', 'Tinggi', base.heightM, ctx.heightM, 'm');
+    track('landArea', 'Luas lahan', base.landAreaM2, ctx.landAreaM2, 'm²');
+    track('buildingArea', 'Luas bangunan', base.buildingAreaM2, ctx.buildingAreaM2, 'm²');
+    track('floors', 'Lantai', base.floors, ctx.floors, 'lantai');
+  }
+
   ctx.combinedText = base?.combinedText ? `${base.combinedText} ${raw}` : raw;
   refreshUniversalFacts(ctx);
   return ctx;
@@ -759,6 +1199,9 @@ export function refreshUniversalFacts(ctx: UniversalIntakeContext): void {
   if (ctx.buildingAreaM2 != null) push('buildingArea', 'Luas bangunan', `${fmtNum(ctx.buildingAreaM2)} m²`, 'USER_CONFIRMED');
   if (ctx.dimensionsText) push('dimensions', 'Dimensi', ctx.dimensionsText, 'USER_CONFIRMED');
   if (ctx.floors != null) push('floors', 'Jumlah lantai', `${ctx.floors}`, 'USER_CONFIRMED');
+  for (const a of ctx.floorFunctions) {
+    push(`floorFunction-${a.floor}`, 'Fungsi per lantai', `Lantai ${a.floor} (${a.floorLabel}): ${a.functionLabel}`, 'USER_CONFIRMED');
+  }
   if (ctx.lengthM != null) {
     const derived = ctx.lengthOriginal != null && /(km|kilometer)/.test(ctx.lengthOriginal);
     push('length', 'Panjang pekerjaan', `${fmtNum(ctx.lengthM)} m${derived ? ` (dari "${ctx.lengthOriginal}")` : ''}`, derived ? 'SYSTEM_DERIVED' : 'USER_CONFIRMED');
@@ -780,6 +1223,18 @@ export function refreshUniversalFacts(ctx: UniversalIntakeContext): void {
   if (ctx.materialPreference) push('material', 'Material disebut', ctx.materialPreference, 'USER_PREFERENCE');
   if (ctx.qualityPreference) push('quality', 'Kualitas disebut (belum dirinci)', ctx.qualityPreference, 'USER_PREFERENCE');
   if (ctx.budgetText) push('budget', 'Anggaran disebut', ctx.budgetText, 'USER_CONFIRMED');
+  if (budgetCoverageHasData(ctx.budget?.coverage)) {
+    push('budgetCoverage', 'Cakupan budget', describeBudgetCoverage(ctx.budget?.coverage), 'USER_CONFIRMED');
+  }
+  for (const [k, v] of Object.entries(ctx.answers)) {
+    push(`answer-${k}`, 'Jawaban kategori', `${k}: ${v}`, 'USER_CONFIRMED');
+  }
+  if (ctx.renovationScopes.length) {
+    push('renovationScopes', 'Bagian renovasi (gabungan)', ctx.renovationScopes.join(', '), 'USER_CONFIRMED');
+  }
+  for (const c of ctx.corrections) {
+    push(`correction-${c.key}-${c.to}`, 'Riwayat koreksi', `${c.from} → ${c.to} (nilai lama bukan nilai kini)`, 'SYSTEM_DERIVED');
+  }
   ctx.facts = facts;
 
   ctx.suggestedPackages = universalSuggestedPackages(ctx);
@@ -851,6 +1306,37 @@ function questionDefsFor(ctx: UniversalIntakeContext): IntakeQuestion[] {
     });
   }
 
+  // --- Pertanyaan khas kategori non-katalog/khusus (Fase 4/6) ---
+  if (p.id === 'kandang') {
+    add({
+      key: 'kandang-size', stage: 'PROJECT_DIMENSIONS', critical: true,
+      missingLabel: 'ukuran kandang (dimensi/luas)',
+      isSatisfied: (c) => c.dimensionsText != null || c.buildingAreaM2 != null || c.landAreaM2 != null,
+      prompt: () => 'Berapa **ukuran kandangnya** — dimensinya (mis. 10 × 25 m) atau luasnya?',
+    });
+    add({
+      key: 'kandang-type', stage: 'TECHNICAL_REQUIREMENTS', critical: true,
+      missingLabel: 'tipe kandang (terbuka/tertutup)',
+      isSatisfied: (c) => c.answers['kandang-type'] != null,
+      prompt: () => 'Kandangnya mau model **terbuka** (postal/umpak, sisi terbuka) atau **tertutup** (closed house)? Itu menentukan struktur, sekat, dan ventilasinya.',
+      options: [
+        { id: 'kandang-terbuka', label: 'Kandang terbuka' },
+        { id: 'kandang-tertutup', label: 'Kandang tertutup' },
+      ],
+    });
+  }
+  if (p.id === 'gudang-industri') {
+    add({
+      key: 'warehouse-system', stage: 'TECHNICAL_REQUIREMENTS', critical: false,
+      missingLabel: 'sistem struktur gudang (portal frame/truss)',
+      isSatisfied: (c) => c.answers['warehouse-system'] != null,
+      prompt: () => 'Untuk gudangnya, sistem strukturnya mau **portal frame** (kolom + rafter baja WF) atau **truss/rangka ruang**? Dan berapa **clear height** (tinggi bersih di dalam)-nya? Sebutkan yang sudah ditentukan saja.',
+      options: [
+        { id: 'wh-portal', label: 'Portal frame baja WF' },
+        { id: 'wh-truss', label: 'Truss / rangka ruang' },
+      ],
+    });
+  }
   switch (p.family) {
     case 'building':
       if (p.id === 'bangunan-umum') {
@@ -909,6 +1395,18 @@ function questionDefsFor(ctx: UniversalIntakeContext): IntakeQuestion[] {
           missingLabel: 'lebar jembatan',
           isSatisfied: (c) => c.widthM != null,
           prompt: () => 'Berapa lebar jembatannya? Bila belum ditentukan, jawab "itu aja".',
+        });
+        add({
+          key: 'bridge-type', stage: 'TECHNICAL_REQUIREMENTS', critical: true,
+          missingLabel: 'tipe konstruksi jembatan (beton/baja/kayu)',
+          isSatisfied: (c) => c.answers['bridge-type'] != null || c.materialPreference != null
+            || /\b(beton|baja|kayu|bailey)\b/.test(c.combinedText.toLowerCase()),
+          prompt: () => 'Jembatannya mau konstruksi **beton**, **baja**, atau **kayu**? Pilihan itu menentukan struktur atas dan pondasinya — kita bahas teknisnya dari situ.',
+          options: [
+            { id: 'bridge-beton', label: 'Beton' },
+            { id: 'bridge-baja', label: 'Baja' },
+            { id: 'bridge-kayu', label: 'Kayu' },
+          ],
         });
       } else if (p.id === 'drainase') {
         add({
@@ -1106,6 +1604,39 @@ export function buildUniversalBriefLines(ctx: UniversalIntakeContext): string[] 
     lines.push('**Preferensi Anda**');
     for (const f of prefFacts) lines.push(`• ${f.label}: ${f.value}`);
   }
+  if (ctx.budget) {
+    lines.push('');
+    lines.push('**Anggaran (konteks persisten)**');
+    lines.push(`• Budget: Rp${fmtNum(ctx.budget.amount)} — ${BUDGET_KIND_LABELS[ctx.budget.kind]}${ctx.budget.kind === 'MAXIMUM' ? '; budget dipakai sebagai pembanding batas, bukan target yang dipaksa habis' : ''}`);
+    const covDesc = describeBudgetCoverage(ctx.budget.coverage);
+    if (covDesc) {
+      lines.push(`• Cakupan budget: ${covDesc} — total RAB dibandingkan terhadap budget DENGAN cakupan ini, bukan terhadap biaya konstruksi murni.`);
+    }
+    for (const h of ctx.budgetHistory) {
+      lines.push(`• Riwayat: sebelumnya Rp${fmtNum(h.amount)} (${h.kind}) — bukan nilai kini`);
+    }
+  }
+  if (ctx.floorFunctions.length) {
+    lines.push('');
+    lines.push('**Fungsi per lantai**');
+    for (const a of ctx.floorFunctions) lines.push(`• Lantai ${a.floor}: ${a.functionLabel}`);
+  }
+  if (ctx.corrections.length) {
+    lines.push('');
+    lines.push('**Riwayat koreksi (nilai lama bukan nilai kini)**');
+    for (const c of ctx.corrections) lines.push(`• ${c.from} → ${c.to}`);
+  }
+  const answerFacts = ctx.facts.filter((f) => f.key.startsWith('answer-'));
+  if (answerFacts.length) {
+    lines.push('');
+    lines.push('**Jawaban kategori**');
+    for (const f of answerFacts) lines.push(`• ${f.value}`);
+  }
+  if (ctx.renovationScopes.length) {
+    lines.push('');
+    lines.push(`**Bagian renovasi (scope gabungan):** ${ctx.renovationScopes.join(', ')}`);
+  }
+  lines.push(...conceptualWbsLines(ctx.primary?.id));
   if (ctx.suggestedPackages.length) {
     lines.push('');
     lines.push('**Paket pekerjaan yang DISARANKAN** (saran struktur saja — belum terkonfirmasi, susunan final mengikuti template katalog saat generate):');

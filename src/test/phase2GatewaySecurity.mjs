@@ -118,9 +118,13 @@ test('validation: prompt/input aliases + advanced mode', () => {
   const { errors, input } = validateAiInput({ prompt: 'halo', capabilityMode: 'advanced' });
   eq(errors.length, 0); eq(input.message, 'halo'); eq(input.mode, 'advanced');
 });
-test('validation: systemPrompt capped at 8000 chars', () => {
-  const { input } = validateAiInput({ message: 'hi', systemPrompt: 'y'.repeat(9000) });
-  eq(input.systemPrompt.length, 8000);
+test('validation: systemPrompt 9000 chars preserved intact (Wave D1: silent 8000 cap removed by owner directive 2026-11-12)', () => {
+  const { errors, input } = validateAiInput({ message: 'hi', systemPrompt: 'y'.repeat(9000) });
+  eq(errors.length, 0); eq(input.systemPrompt.length, 9000);
+});
+test('validation: systemPrompt beyond 16000 rejected explicitly, never silently truncated (Wave D1)', () => {
+  const { errors, errorCode, input } = validateAiInput({ message: 'hi', systemPrompt: 'y'.repeat(16001) });
+  ok(errors.length > 0, 'expected errors'); eq(errorCode, 'PAYLOAD_TOO_LARGE'); eq(input.systemPrompt, '');
 });
 
 // --- body ---

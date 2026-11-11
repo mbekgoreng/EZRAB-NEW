@@ -382,7 +382,7 @@ export const EZRAB_AI_TOOLS: EzrabAiToolDef[] = [
           }
           return (
             `Tidak ada template RAB maupun item AHSP yang cocok dengan kata kunci "${q}". ` +
-            'Coba kata kunci lain (mis. "perkerasan", "jalan", "paving blok"), atau jelaskan pekerjaan yang dimaksud — misalnya jenis jalan dan dimensinya — agar draf RAB bisa disusun dari item AHSP yang ditemukan.'
+            'Coba kata kunci lain sesuai pekerjaan yang dimaksud (mis. nama bangunannya seperti "gudang" atau "kandang", atau jenis pekerjaannya seperti "drainase", "pagar", "perkerasan"), atau jelaskan pekerjaan beserta ukurannya agar draf RAB bisa disusun dari item AHSP yang ditemukan.'
           );
         }
         return scored.map((s, i) => {

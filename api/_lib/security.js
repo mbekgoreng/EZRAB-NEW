@@ -185,6 +185,14 @@ function clampNum(v, min, max, dflt) {
   return Math.min(Math.max(n, min), max);
 }
 
+// Batas prompt sistem klien yang diterima gateway (Wave D1, direktif owner
+// 2026-11-12). Prompt kanonis EZRAB v2.0.0 = 14.800 karakter dan WAJIB lolos
+// utuh byte-for-byte; melebihi batas ini = penolakan eksplisit
+// (PAYLOAD_TOO_LARGE), BUKAN pemotongan diam-diam seperti perilaku
+// slice(0, 8000) sebelumnya. Batas body 4 MiB di readJsonBody tidak berubah
+// dan tetap menjadi plafon ukuran permintaan yang sebenarnya.
+const MAX_SYSTEM_PROMPT_CHARS = 16000;
+
 export function validateAiInput(body) {
   const errors = [];
   // Sprint 1 (Workstream C): klasifikasi kegagalan validasi agar respons 400
@@ -206,7 +214,21 @@ export function validateAiInput(body) {
   const mode = rawMode === 'advanced' || rawMode === 'vision' ? rawMode : 'fast';
   const temperature = clampNum(body.temperature, 0, 1, 0.3);
   const maxTokens = Math.round(clampNum(body.maxTokens, 100, 8000, 4000));
-  const systemPrompt = String(body.systemPrompt || '').slice(0, 8000);
+  // systemPrompt: string kosong/hilang/null tetap didukung sebagai ''
+  // (perilaku lama). Non-string ditolak eksplisit (INVALID_REQUEST) —
+  // koersi String() lama menghasilkan sampah seperti "[object Object]"
+  // sebagai prompt sistem. String sah diteruskan UTUH tanpa slice/trim;
+  // kebijakan server tetap didahulukan nanti oleh composeSystemPrompt.
+  let systemPrompt = '';
+  if (body.systemPrompt !== undefined && body.systemPrompt !== null) {
+    if (typeof body.systemPrompt !== 'string') {
+      fail('systemPrompt harus berupa teks', 'invalid');
+    } else if (body.systemPrompt.length > MAX_SYSTEM_PROMPT_CHARS) {
+      fail('systemPrompt maksimal 16000 karakter', 'size');
+    } else {
+      systemPrompt = body.systemPrompt;
+    }
+  }
   const jsonMode = Boolean(body.jsonMode);
   // Media (vision): base64 murni atau data URL. Batas 3,5 juta karakter
   // (~2,6 MB biner) agar tetap di bawah limit body Vercel.

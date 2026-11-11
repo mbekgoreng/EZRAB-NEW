@@ -77,6 +77,7 @@ import type { RabItem } from '../../types';
 import { extractRabNeeds, stripLandPhrases, detectNeedsFunction, isNegatedAt } from './rabNeeds';
 import { understandProject, assessBuildingMissingInfo, summarizeUnderstanding } from './buildingTypology';
 import { formatRupiah } from '../../engine/formulaEngine';
+import { filterItemsByRelevance } from './relevanceGate';
 
 /* ------------------------------------------------------------------ */
 /* Cakupan                                                             */
@@ -421,7 +422,7 @@ const BUILDING_TYPE_FAMILIES: Array<{ words: string[]; family: string }> = [
   { words: ['rumah sakit'], family: 'rumah sakit' },
   { words: ['klinik'], family: 'klinik' },
   { words: ['hotel'], family: 'hotel' },
-  { words: ['gudang'], family: 'gudang' },
+  { words: ['gudang', 'warehouse'], family: 'gudang' },
   { words: ['masjid'], family: 'masjid' },
   { words: ['puskesmas'], family: 'puskesmas' },
   { words: ['pasar'], family: 'pasar' },
@@ -567,6 +568,11 @@ export function scoreTemplate(
   // disebut pengguna yang boleh berbobot nama.
   const rawLower = (spec.rawText || '').toLowerCase();
   const nameKeywords = new Set<string>();
+  // Sinonim lintas bahasa (Fase 5): "warehouse" adalah gudang — kata
+  // nama template katalog memakai "gudang", jadi sinonimnya ikut
+  // berbobot nama agar template gudang tidak kalah oleh template
+  // kantor yang hanya cocok di deskripsi.
+  if (rawLower.includes('warehouse')) nameKeywords.add('gudang');
   for (const kw of [...spec.materialKeywords, ...spec.extraKeywords]) {
     if (kw) nameKeywords.add(kw.toLowerCase());
   }
@@ -1113,6 +1119,53 @@ function fmtNum(v: number): string {
  * sudah menentukan template secara eksplisit (dipakai tes & revisi
  * varian); tanpa itu, template skor tertinggi yang dipakai.
  */
+/**
+ * Pemetaan part cakupan → id proyek gerbang relevansi (Gelombang E).
+ * Hanya keluarga yang terkalibrasi terhadap kosakata katalog nyata
+ * yang dihubungkan (nol item template kategorinya sendiri tertolak
+ * pada matriks 180 template × item). Keluarga lain mengembalikan
+ * null = part tidak digerbang pada gelombang ini:
+ *  - scope komponen (struktur, atap, finishing, mep, sanitasi):
+ *    cakupan komponen lintas-proyek — konfliknya diatur pemilihan
+ *    kategori template, bukan gerbang proyek;
+ *  - demolisi: itemnya memang menyebut kategori yang dibongkar;
+ *  - olahraga non-kolam (lapangan/futsal/track) & pertanian
+ *    non-kandang: dukungan katalognya campuran dan belum terkalibrasi
+ *    per subkategori — status BELUM, bukan dipaksakan.
+ * Pemilihan SUBTIPE jalan tidak disentuh pemetaan ini (protected
+ * flow owner) — scope jalan selalu dipetakan ke id keluarga 'jalan'.
+ */
+export function gateProjectIdFor(scope: ScopeGroup, rawText: string): string | null {
+  switch (scope.id) {
+    case 'gedung':
+      return /gudang|warehouse/i.test(rawText) ? 'gudang-industri' : 'gedung';
+    case 'pertanian':
+      return /\b(kandang|peternakan)\b/i.test(rawText) ? 'kandang' : null;
+    case 'olahraga':
+      return /\bkolam\b/i.test(rawText) ? 'kolam' : null;
+    case 'jalan':
+      return 'jalan';
+    case 'drainase':
+      return 'drainase';
+    case 'irigasi':
+      return 'irigasi';
+    case 'lanskap':
+      return /\b(pagar|gerbang)\b/i.test(rawText) ? 'pagar-gerbang' : 'lanskap';
+    case 'jembatan':
+      return 'jembatan';
+    case 'pondasi':
+      return 'pondasi';
+    case 'renovasi':
+      return 'renovasi';
+    case 'pelabuhan':
+      return 'pelabuhan';
+    case 'tanah':
+      return 'pekerjaan-tanah';
+    default:
+      return null;
+  }
+}
+
 export function buildUniversalDraft(rawText: string, forcedTemplateId?: string): BuildResult {
   const spec = extractUniversalSpec(rawText);
   // Finalisasi §4 (2026-11-08): dimensi fisik tidak valid (nol/negatif)
@@ -1335,6 +1388,36 @@ export function buildUniversalDraft(rawText: string, forcedTemplateId?: string):
       warnings.push(
         `[${scope.label}] ${priceSummary.unpricedCount} item belum ada harga — total bersifat PARSIAL.`
       );
+    }
+    // GERBANG RELEVANSI (Fase 5; dikalibrasi Gelombang E — aturan
+    // eksplisit di relevanceGate.ts): item yang konflik kategori keras
+    // (jalan/paving/geobag pada proyek gudang, interior hunian pada
+    // proyek kandang/jalan/kolam, sistem aspal pada landscape, dst.)
+    // atau hanya cocok kata lemah TIDAK masuk BOQ terkonfirmasi —
+    // dibuang dari part & dicatat sebagai warning transparan. Cakupan
+    // yang diminta eksplisit (ada di spec.scopes) tidak disaring.
+    // Pemetaan part → id proyek gerbang: hanya keluarga yang sudah
+    // terkalibrasi terhadap katalog yang dihubungkan; scope komponen
+    // (struktur/atap/finishing/mep/sanitasi) & demolisi sengaja belum
+    // digerbang (lihat status kalibrasi di relevanceGate.ts).
+    const gateProjectId = gateProjectIdFor(scope, spec.rawText);
+    if (gateProjectId != null) {
+      const filtered = filterItemsByRelevance(
+        generation.items,
+        gateProjectId,
+        spec.scopes.map((s) => s.id),
+      );
+      if (filtered.notes.length > 0) {
+        generation.items = filtered.kept;
+        for (const n of filtered.notes) warnings.push(`[Gerbang relevansi] ${n}.`);
+        if (generation.items.length === 0) {
+          return {
+            kind: 'needs-spec',
+            reason: `Semua item template "${template.name}" gugur di gerbang relevansi untuk proyek ini — tidak ada item yang sejalan kategorinya.`,
+            missing: ['cakupan/template yang sejalan dengan kategori proyek (item manual non-AHSP berlabel jujur tetap dapat disusun lewat RAB & Estimasi)'],
+          };
+        }
+      }
     }
     const part: DraftPart = {
       scope,

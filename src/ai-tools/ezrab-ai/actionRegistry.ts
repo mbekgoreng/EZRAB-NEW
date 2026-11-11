@@ -1028,7 +1028,15 @@ export function universalIntakeGate(raw: string, fromClarify = false): ActionRes
         if (ctx.lengthM == null) return null;
       } else {
         // Jembatan: subtipe dikenal + bentang belum ada → tanya bentang.
-        if (!sub) return null;
+        if (!sub) {
+          // Gelombang A Fase 6 (S5): jembatan TANPA subtipe pun masuk
+          // percakapan kontekstual (tanya bentang → tipe konstruksi →
+          // brief) — sebelumnya gate menolak dan universalResultFor
+          // menjawab needs-spec terminal "kirim ulang permintaan
+          // lengkap", membunuh diskusi teknis. Hanya bila bentang
+          // SUDAH ada gate melepas ke jalur cepat draft.
+          if (ctx.spanM != null || ctx.lengthM != null) return null;
+        }
         if (ctx.spanM != null || ctx.lengthM != null) return null;
       }
     }
@@ -1144,6 +1152,7 @@ export function tryContinueUniversalContext(text: string): ActionResult | null {
     secondaryCount: ctx.secondary.length, scopeCount: ctx.scopeConfirmed.length,
     drainageType: ctx.drainageType, renovationScope: ctx.renovationScope,
     isNew: ctx.isNewConstruction, span: ctx.spanM,
+    budgetAmount: ctx.budget?.amount ?? null, answersCount: Object.keys(ctx.answers).length,
   };
   const merged = extractUniversalContext(text, ctx);
   universalCtx = merged;
@@ -1163,6 +1172,12 @@ export function tryContinueUniversalContext(text: string): ActionResult | null {
   if (merged.renovationScope !== before.renovationScope && merged.renovationScope) changes.push(`Cakupan renovasi: ${merged.renovationScope}`);
   if (merged.isNewConstruction !== before.isNew && merged.isNewConstruction != null) {
     changes.push(`Status: ${merged.isNewConstruction ? 'pembangunan baru' : 'eksisting'}`);
+  }
+  if (merged.budget?.amount != null && merged.budget.amount !== before.budgetAmount) {
+    changes.push(`Budget: Rp${numID(merged.budget.amount)} (${merged.budget.kind}) — data lainnya tetap`);
+  }
+  if (Object.keys(merged.answers).length > before.answersCount) {
+    changes.push(`Jawaban kategori: ${Object.entries(merged.answers).map(([k, v]) => `${k}=${v}`).join(', ')}`);
   }
   if (merged.secondary.length > before.secondaryCount) {
     changes.push(`Disiplin tambahan: ${merged.secondary.slice(before.secondaryCount).map((d) => d.label).join(', ')}`);
@@ -1194,6 +1209,13 @@ export function applyUniversalOption(param: string): ActionResult {
     'renov-l1': () => { ctx.renovationScope = 'lantai 1'; },
     'renov-l2': () => { ctx.renovationScope = 'lantai 2'; },
     'renov-part': () => { ctx.renovationScope = 'bagian tertentu'; },
+    'kandang-terbuka': () => { ctx.answers['kandang-type'] = 'terbuka'; },
+    'kandang-tertutup': () => { ctx.answers['kandang-type'] = 'tertutup'; },
+    'wh-portal': () => { ctx.answers['warehouse-system'] = 'portal frame'; },
+    'wh-truss': () => { ctx.answers['warehouse-system'] = 'truss/rangka ruang'; },
+    'bridge-beton': () => { ctx.answers['bridge-type'] = 'beton'; },
+    'bridge-baja': () => { ctx.answers['bridge-type'] = 'baja'; },
+    'bridge-kayu': () => { ctx.answers['bridge-type'] = 'kayu'; },
     'drain-uditch': () => { ctx.drainageType = 'U-Ditch Pracetak'; },
     'drain-batu': () => { ctx.drainageType = 'Pasangan Batu Kali'; },
     'drain-culvert': () => { ctx.drainageType = 'Gorong-gorong / Box Culvert'; },
