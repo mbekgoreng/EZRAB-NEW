@@ -45,7 +45,7 @@ import {
   type UniversalDraft,
   type UniversalDraftItem,
 } from '../ai-tools/ezrab-ai/universalRab';
-import { executeIntent, type ChatActionContext } from '../ai-tools/ezrab-ai/actionRegistry';
+import { executeIntent, tryContinueUniversalContext, clearUniversalContext, type ChatActionContext } from '../ai-tools/ezrab-ai/actionRegistry';
 import { createRabItemRecord } from '../engine/rab/rabItemFactory';
 
 // Mock localStorage for Node test environment (pola templateCatalog180.test.ts)
@@ -422,12 +422,23 @@ test('factory: provenance diteruskan ke record; PRICE_UNRESOLVED tetap menolkan 
 
 console.log('== 5. Registry wiring ==');
 
-test('CREATE_RAB_SUMMARY jalan beton → draft + tombol push-universal', () => {
-  const res = executeIntent('CREATE_RAB_SUMMARY', undefined, ctxFor('Buat RAB jalan beton sepanjang 1 km'));
+test('CREATE_RAB_SUMMARY jalan beton → (Universal Intake §5B: lebar ditanyakan) → brief → draft + tombol push-universal', () => {
+  // Pin lama ("draft langsung") digantikan perilaku yang diperintah-
+  // kan master prompt Universal Intake owner 2026-11-10 Contoh B:
+  // panjang tercatat, lebar DITANYAKAN sebelum draft disusun. Wiring
+  // registry yang dijaga tes ini (draft kanonis + push-universal +
+  // tanpa konfirmasi langsung) diverifikasi di ujung alur barunya.
+  clearUniversalContext();
+  const ask = executeIntent('CREATE_RAB_SUMMARY', undefined, ctxFor('Buat RAB jalan beton sepanjang 1 km'));
+  assert.equal(ask.ok, true);
+  assert.ok(ask.message.includes('lebar jalan'), 'lebar ditanyakan dulu (Contoh B)');
+  const brief = tryContinueUniversalContext('lebarnya 5 meter');
+  assert.ok(brief.message.includes('Brief proyek'), 'brief tampil sebelum generate');
+  const res = tryContinueUniversalContext('itu aja');
   assert.equal(res.ok, true);
   assert.ok(res.message.includes('| No |'), 'pesan memuat tabel markdown');
-  assert.ok(res.actions?.some((a) => a.action.kind === 'push-universal'), 'tombol push-universal ada');
-  assert.ok(res.actions?.some((a) => a.action.kind === 'push-universal-confirm') === false, 'konfirmasi TIDAK langsung tampil (preview dulu)');
+  assert.ok(res.actions?.some((a: { action: { kind: string } }) => a.action.kind === 'push-universal'), 'tombol push-universal ada');
+  assert.ok(res.actions?.some((a: { action: { kind: string } }) => a.action.kind === 'push-universal-confirm') === false, 'konfirmasi TIDAK langsung tampil (preview dulu)');
 });
 
 test('CREATE_RAB_SUMMARY rumah → ringkasan, TANPA tombol push-universal (jalur rumah utuh)', () => {

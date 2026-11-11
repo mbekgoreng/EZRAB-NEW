@@ -38,7 +38,7 @@ import { renderMarkdown, markdownToPlainText } from './markdown';
 import { routeIntent, localGreeting, HELP_TEXT } from './intentRouter';
 import { extractSlashToken, filterSlashEntries, NAV_BY_ID, resolveNavCommand, type NavEntry } from './navRegistry';
 import { consumePendingAiEntry, requestAiEntry, consumePendingEzrabAiEntry, peekPendingEzrabAiEntry, ezrabAiEntryRemainingMs, openEzrabAI, type EzrabAiEntryContext } from '../aiNavigation';
-import { executeIntent, continueRabNeeds, continueRabFinalize, hasActiveRabNeeds, continueRabChoice, tryContinueRabSubtype, tryContinueRabMaterial, getLastRabDesignPrompt, ChatActionContext, ChatActionButton } from './actionRegistry';
+import { executeIntent, continueRabNeeds, continueRabFinalize, hasActiveRabNeeds, continueRabChoice, tryContinueRabSubtype, tryContinueRabMaterial, tryContinueProjectContext, tryContinueUniversalContext, getLastRabDesignPrompt, ChatActionContext, ChatActionButton } from './actionRegistry';
 import { getLastDirectRab } from './directRab';
 import { classifyRequest, minDelayFor, statusTextFor, waitForMinimum, waitForRabMinimum, rabMinDelayMs, activityForRequest, createRequestCoordinator, isAbortError, type AiActivity } from '../aiResponseTiming';
 import { mapDirectRabPushItems } from './directRabPush';
@@ -252,6 +252,10 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   /** Gerbang klarifikasi material (2026-11-10): menunggu jawaban bahan
    *  ("Bahan rangka & penutup atapnya apa?") sebelum draft disusun */
   const [awaitingMaterial, setAwaitingMaterial] = useState(false);
+  /** Intake konteks proyek (Conversational Intelligence 2026-11-10):
+   *  menunggu jawaban konsep/fasilitas/kondisi pada percakapan
+   *  landscape — konteks proyek terstruktur hidup di actionRegistry */
+  const [awaitingConcept, setAwaitingConcept] = useState(false);
   /** Klarifikasi topik (2026-10-23): menunggu query lanjutan atas kartu
    *  klarifikasi — nilai = mode ('ahsp' | 'harga-material' | 'harga-upah'
    *  | 'harga-alat' | 'template'); null = tidak menunggu. */
@@ -840,6 +844,26 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       }
       setAwaitingMaterial(false);
     }
+    /* ---- Intake konteks proyek (Conversational Intelligence 2026-11-10):
+     * jawaban atas pertanyaan konsep/fasilitas/kondisi landscape ----
+     * Selama intake aktif, jawaban teks bebas (konsep disebut, fasilitas
+     * ditambah, lokasi/koreksi luas disebut, afirmasi "itu aja") digabung
+     * ke konteks proyek terstruktur lewat tryContinueProjectContext —
+     * BUKAN dilempar ke AI dan BUKAN me-restart alur. Pesan yang bukan
+     * jawaban (perintah baru) menggugurkan status menunggu di registry
+     * (hasil null) dan diproses normal di bawah. */
+    if (!forcedAi && awaitingConcept) {
+      const ctxRes = tryContinueProjectContext(msg) ?? tryContinueUniversalContext(msg);
+      if (ctxRes) {
+        const acts = ctxRes.actions && ctxRes.actions.length > 0 ? ctxRes.actions : undefined;
+        setMessages((prev) => [...prev, { role: 'assistant', content: ctxRes.message, ts: Date.now(), actions: acts }]);
+        persistMessage('assistant', ctxRes.message);
+        setAwaitingConcept(ctxRes.awaitProjectConcept === true);
+        setBusy(false);
+        return;
+      }
+      setAwaitingConcept(false);
+    }
     /* ---- Chat-to-RAB Fase 2: jawaban atas "Lengkapi kebutuhan" ----
      * Bila chat sedang menunggu kelengkapan dan pesan ini berbentuk jawaban
      * (lantai/dimensi/kamar), gabungkan ke ringkasan — jangan lempar ke AI. */
@@ -1010,6 +1034,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
           if (res.awaitRabChoice) setAwaitingChoice(true);
           if (res.awaitRabSubtype) setAwaitingSubtype(true);
           if (res.awaitRabMaterial) setAwaitingMaterial(true);
+          if (res.awaitProjectConcept) setAwaitingConcept(true);
           if (res.awaitClarify) setAwaitingClarify(res.awaitClarify);
           // Action buttons — attached to the assistant message
           const entryActions = res.actions && res.actions.length > 0 ? res.actions : undefined;
@@ -1510,6 +1535,26 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       setMessages((prev) => [...prev, entry]);
       persistMessage('assistant', res.message);
       setAwaitingMaterial(res.awaitRabMaterial === true);
+    } else if (btn.action.intent === 'RAB_CONCEPT_SELECT' || btn.action.intent === 'RAB_PROJECT_PREVIEW'
+      || btn.action.intent === 'RAB_INTAKE_OPTION' || btn.action.intent === 'RAB_INTAKE_GENERATE') {
+      // Intake konteks proyek (2026-11-10): klik konsep → pertanyaan
+      // fasilitas konsep itu; klik "Susun pratinjau RAB" → pratinjau
+      // terstruktur; klik "Susun draft RAB" pada pratinjau → draft
+      // kanonis dari konteks. Lokal penuh lewat registry; status
+      // menunggu mengikuti awaitProjectConcept pada hasil (draft final
+      // menutup status menunggu).
+      const res = executeIntent(btn.action.intent as never, btn.action.param, {
+        navigate: (menu: string) => navigateChat(menu),
+        currentMenu,
+        activeProject,
+        projects,
+        projectTotal: projectSnapshot ? projectSnapshot.totalDirect : projectTotal,
+        projectItems: projectSnapshot?.items ?? null,
+      });
+      const entry: ChatEntry = { role: 'assistant', content: res.message, ts: Date.now(), actions: res.actions };
+      setMessages((prev) => [...prev, entry]);
+      persistMessage('assistant', res.message);
+      setAwaitingConcept(res.awaitProjectConcept === true);
     } else if (btn.action.intent === 'RAB_FULL_AI') {
       // Klik "Full AI" pada kartu jalur = persetujuan pengguna. Kontrak baru:
       // registry lebih dulu mencoba komposisi deterministik dari kebutuhan

@@ -19,6 +19,17 @@ import {
 import {
   RabMaterialGroup, materialGroupForScope, classifyMaterialText, formatMaterialKnownLine,
 } from './rabMaterialClarify';
+import {
+  ProjectIntakeContext, extractProjectContext, isLandscapeFamily,
+  landscapeConceptById, LANDSCAPE_CONCEPT_CHOICES, facilityLabel,
+  landscapeWorkPackages, landscapeCatalogStatus, refreshContextFacts,
+} from './projectIntake';
+import {
+  UniversalIntakeContext, SubcategoryDef, classifyUniversal,
+  extractUniversalContext, refreshUniversalFacts, selectNextQuestion,
+  buildUniversalBriefLines, coverageFor, parseScopeRemoval, matchRemovable,
+  subcategoryById,
+} from './universalIntake';
 import { RabTemplateService } from '../../services/rabTemplateService';
 import { listUnifiedTemplates } from '../../services/rabTemplateCatalogAdapter';
 import { officialAhspRepository } from '../../data/nationalCostDatabase/officialAhspRepository';
@@ -110,6 +121,9 @@ export interface ActionResult {
   awaitRabSubtype?: boolean;
   /** Chat menunggu jawaban klarifikasi material (gerbang bahan sebelum draft) */
   awaitRabMaterial?: boolean;
+  /** Chat menunggu jawaban intake konteks proyek (konsep/fasilitas/kondisi
+   * landscape — Conversational Intelligence Upgrade 2026-11-10) */
+  awaitProjectConcept?: boolean;
   /** Chat menunggu query lanjutan klarifikasi topik (nilai = mode-nya) */
   awaitClarify?: string;
   /** Prompt Full AI yang disusun dari kebutuhan terkumpul (dijalankan view) */
@@ -369,6 +383,841 @@ function materialUntemplatedResult(rawText: string, group: RabMaterialGroup, mat
       { label: 'Mulai manual', action: { kind: 'navigate', menu: 'rab-estimasi' } as const },
     ],
   };
+}
+
+/* ------------------------------------------------------------------ */
+/* INTAKE KONTEKS PROYEK PERCAKAPAN (Conversational Intelligence       */
+/* Upgrade — master prompt owner 2026-11-10).                          */
+/*                                                                     */
+/* Lapisan di atas alur yang ada, BUKAN sistem paralel: konteks        */
+/* proyek terstruktur (projectIntake.ts) bertahan antar-pesan; untuk   */
+/* keluarga LANDSCAPE/taman, asisten melanjutkan percakapan secara     */
+/* natural — satu pertanyaan paling relevan pada satu waktu (konsep →  */
+/* fasilitas per konsep → kondisi lahan → pratinjau) — alih-alih menu  */
+/* generik 4 jalur atau draft langsung. Kategori lain TIDAK diambil    */
+/* alih di sini: rumah tetap ringkasan kebutuhan, jalan/drainase/      */
+/* jembatan tetap klarifikasi subtipe, atap/pondasi tetap gerbang      */
+/* material, sisanya draft universal — gerbang ini mengembalikan null  */
+/* untuk semuanya. Pembangkitan akhir tetap buildUniversalDraft        */
+/* (mesin kanonis katalog) lewat universalResultFor.                   */
+/* ------------------------------------------------------------------ */
+let projectCtx: ProjectIntakeContext | null = null;
+
+/* Konteks intake UNIVERSAL (universalIntake.ts) — sesi percakapan
+ * lintas kategori; state module-level yang sama polanya dengan
+ * projectCtx, hidup berdampingan (satu topik hanya dimiliki satu
+ * gerbang pada satu waktu — gerbang yang mengambil alih membersihkan
+ * state gerbang lain). */
+let universalCtx: UniversalIntakeContext | null = null;
+
+export function getUniversalContextState(): UniversalIntakeContext | null {
+  return universalCtx;
+}
+
+export function clearUniversalContext(): void {
+  universalCtx = null;
+}
+
+export function getProjectContextState(): ProjectIntakeContext | null {
+  return projectCtx;
+}
+
+export function clearProjectContext(): void {
+  projectCtx = null;
+}
+
+const numID = (v: number): string => v.toLocaleString('id-ID', { maximumFractionDigits: 2 });
+
+/** Kalimat pembuka yang mengakui SEMUA yang sudah diketahui (§3 prompt). */
+function intakeKnownIntro(ctx: ProjectIntakeContext, whatLabel: string): string {
+  const bits: string[] = [];
+  if (ctx.landAreaM2 != null) {
+    bits.push(
+      `lahan seluas ${ctx.landAreaOriginal && !ctx.landAreaOriginal.includes('m²') ? `${ctx.landAreaOriginal} (${numID(ctx.landAreaM2)} m²)` : `${numID(ctx.landAreaM2)} m²`}`
+    );
+  }
+  if (ctx.location) bits.push(`di ${ctx.location}`);
+  if (ctx.facilities.length) bits.push(`dengan ${ctx.facilities.map(facilityLabel).join(', ').toLowerCase()}`);
+  return `Siap! Kita buat RAB ${whatLabel}${bits.length ? ` untuk ${bits.join(', ')}` : ''}.`;
+}
+
+/** Pertanyaan konsep landscape (kartu pilihan §3 + teks bebas). */
+function landscapeConceptQuestion(ctx: ProjectIntakeContext): ActionResult {
+  projectCtx = ctx;
+  const lines: string[] = [
+    intakeKnownIntro(ctx, 'landscape'),
+    '',
+    'Sebelum menyusun perhitungan, saya ingin memahami konsep landscape yang akan dibangun agar item pekerjaan dan volumenya sesuai kebutuhan.',
+    '',
+    '**Landscape seperti apa yang ingin Anda buat?**',
+    '',
+    'Pilih lewat tombol di bawah, atau tulis konsepnya langsung (mis. "taman kota" / "landscape resort").',
+  ];
+  return {
+    ok: true,
+    message: lines.join('\n'),
+    awaitProjectConcept: true,
+    actions: [
+      ...LANDSCAPE_CONCEPT_CHOICES.map((c) => ({
+        label: c.label,
+        action: { kind: 'intent', intent: 'RAB_CONCEPT_SELECT', param: c.id } as const,
+      })),
+      { label: 'Mulai manual', action: { kind: 'navigate', menu: 'rab-estimasi' } as const },
+    ],
+  };
+}
+
+/** Pertanyaan fasilitas sesuai konsep terpilih (saran kontekstual §3). */
+function landscapeFacilitiesQuestion(ctx: ProjectIntakeContext): ActionResult {
+  ctx.stage = 'facilities';
+  projectCtx = ctx;
+  const concept = landscapeConceptById(ctx.conceptId);
+  const lines: string[] = [
+    `Konsepnya **${ctx.conceptLabel}** — tercatat. Yang sudah diketahui sejauh ini: ${ctx.knownInformation.join(' · ')}.`,
+    '',
+    `**Fasilitas apa saja yang dibutuhkan di ${ctx.conceptLabel?.toLowerCase()} ini?**`,
+    '',
+    'Sebutkan saja yang memang dibutuhkan — bisa beberapa sekaligus, mis. "jogging track, playground, dan area parkir". ' +
+      'Saran yang lazim untuk konsep ini ada di bawah; saran BUKAN berarti semuanya wajib ada. ' +
+      'Bila tidak ada fasilitas khusus, jawab **"itu aja"**.',
+  ];
+  if (concept) {
+    lines.push('', `Saran fasilitas ${concept.label.toLowerCase()}: ${concept.facilities.map((f) => f.label.toLowerCase()).join(', ')}.`);
+  }
+  return {
+    ok: true,
+    message: lines.join('\n'),
+    awaitProjectConcept: true,
+    actions: [
+      { label: 'Susun pratinjau RAB', action: { kind: 'intent', intent: 'RAB_PROJECT_PREVIEW' } as const },
+      { label: 'Mulai manual', action: { kind: 'navigate', menu: 'rab-estimasi' } as const },
+    ],
+  };
+}
+
+/** Pertanyaan kondisi lahan (tahap site §4) — satu pertanyaan, boleh dilewati. */
+function landscapeSiteQuestion(ctx: ProjectIntakeContext, ackChanges?: string[]): ActionResult {
+  ctx.stage = 'site';
+  projectCtx = ctx;
+  const lines: string[] = [
+    // Bila giliran ini membawa perubahan yang diakui (koreksi luas,
+    // fasilitas baru), pengakuan itu adalah baris pertama — pola
+    // "Siap, saya perbarui: …" ringkasan spek lama, bukan baris
+    // "tercatat" generik yang menelan kabar perubahannya.
+    ...(ackChanges?.length
+      ? [`Siap, saya perbarui: ${ackChanges.join('; ')}.`]
+      : []),
+    ctx.facilities.length
+      ? `Fasilitas tercatat: ${ctx.facilities.map(facilityLabel).join(', ')}.`
+      : `Konsep tercatat: ${ctx.conceptLabel ?? 'landscape'} — fasilitas khusus belum ada yang disebut, tidak apa-apa.`,
+    '',
+    '**Bagaimana kondisi lahan eksistingnya?** Misalnya: lahan kosong, ada bangunan yang perlu dibongkar, lahan miring/berkontur, atau rawan genangan. ' +
+      'Kondisi ini memengaruhi pekerjaan persiapan dan tanah. Bila tidak ada catatan khusus, jawab **"itu aja"** untuk lanjut ke pratinjau.',
+  ];
+  return {
+    ok: true,
+    message: lines.join('\n'),
+    awaitProjectConcept: true,
+    actions: [
+      { label: 'Susun pratinjau RAB', action: { kind: 'intent', intent: 'RAB_PROJECT_PREVIEW' } as const },
+      { label: 'Mulai manual', action: { kind: 'navigate', menu: 'rab-estimasi' } as const },
+    ],
+  };
+}
+
+/**
+ * PRATINJAU terstruktur (§8 prompt): ditampilkan SEBELUM RAB di-commit
+ * ke proyek. Paket pekerjaan = saran yang mengikuti fasilitas
+ * terkonfirmasi; referensi harga = template katalog NYATA; yang tidak
+ * didukung data dinyatakan tak teresolusi — TIDAK ada angka karangan.
+ */
+export function projectPreviewResult(ctx: ProjectIntakeContext): ActionResult {
+  refreshContextFacts(ctx);
+  ctx.stage = 'preview';
+  projectCtx = ctx;
+  const status = landscapeCatalogStatus(ctx);
+  const lines: string[] = [];
+  lines.push('**Pratinjau RAB — sebelum disusun final, periksa dulu ringkasan ini:**');
+  lines.push('');
+  lines.push('**Ringkasan proyek**');
+  if (ctx.categoryLabel) lines.push(`• Kategori: ${ctx.categoryLabel}`);
+  if (ctx.landAreaM2 != null) {
+    lines.push(
+      `• Total luas: ${numID(ctx.landAreaM2)} m²${ctx.landAreaOriginal && !ctx.landAreaOriginal.includes('m²') ? ` (dari "${ctx.landAreaOriginal}")` : ''}`
+    );
+  }
+  if (ctx.conceptLabel) lines.push(`• Konsep: ${ctx.conceptLabel}`);
+  if (ctx.location) lines.push(`• Lokasi: ${ctx.location}`);
+  if (ctx.facilities.length) lines.push(`• Fasilitas terkonfirmasi: ${ctx.facilities.map(facilityLabel).join(', ')}`);
+  if (ctx.siteConditions.length) lines.push(`• Kondisi lahan: ${ctx.siteConditions.join(', ')}`);
+  lines.push('');
+  lines.push('**Paket pekerjaan yang disarankan** (mengikuti fasilitas terkonfirmasi; yang bertanda "saran" belum tentu dibutuhkan — koreksi bila tidak sesuai):');
+  landscapeWorkPackages(ctx).forEach((p, i) => {
+    lines.push(
+      `${i + 1}. ${p.name}${p.basedOn.length ? ` — dari fasilitas: ${p.basedOn.map(facilityLabel).join(', ')}` : p.suggestionOnly ? ' — saran' : ' — dasar umum'}`
+    );
+  });
+  lines.push('');
+  lines.push('**Info volume yang dibutuhkan**');
+  if (ctx.landAreaM2 != null) {
+    lines.push(`• Luas total area (${numID(ctx.landAreaM2)} m²) menjadi basis volume pekerjaan berbasis luas pada template.`);
+  }
+  lines.push('• Rincian volume per fasilitas (panjang jogging track, luas playground, jumlah titik lampu, dst.) belum dirinci — pada draft, nilainya mengikuti parameter template dan dinyatakan sebagai asumsi yang bisa direvisi, bukan diukur dari gambar.');
+  lines.push('');
+  lines.push('**Referensi harga yang tersedia**');
+  if (status.conceptTemplateName) {
+    lines.push(`• Template katalog untuk konsep ini: "${status.conceptTemplateName}" — harga itemnya dari data katalog/AHSP EZRAB lewat engine template, bukan karangan.`);
+  }
+  lines.push(`• Katalog LANDSCAPE_SITE saat ini berisi ${status.availableTemplateNames.length} template: ${status.availableTemplateNames.join('; ')}.`);
+  if (status.note) lines.push(`• Catatan jujur: ${status.note}`);
+  lines.push('');
+  lines.push('**Item yang belum teresolusi**');
+  if (ctx.missingInformation.length) {
+    lines.push(`• Masih belum jelas: ${ctx.missingInformation.join('; ')} — bagian ini ditandai perlu konfirmasi pada draft, tidak diisi angka tebakan.`);
+  } else {
+    lines.push('• Tidak ada kekurangan inti. Harga per item tetap mengikuti status provenans pada draft (resmi/estimasi/belum tersedia).');
+  }
+  lines.push('');
+  lines.push('**Asumsi yang memerlukan persetujuan**');
+  lines.push('• Susunan item & volume awal mengikuti template katalog terpilih; parameter default template (mis. luas hardscape, jumlah pohon) dinyatakan terbuka di dalam draft dan bisa direvisi lewat chat.');
+  if (!ctx.siteConditions.length) lines.push('• Kondisi lahan dianggap standar (tidak ada catatan khusus dari Anda).');
+  if (ctx.qualityPreference) lines.push(`• Kualitas "${ctx.qualityPreference}" yang Anda sebut belum dirinci ke spesifikasi material — draft tidak mengarang spesifikasi premium; rincian material perlu Anda tentukan.`);
+  lines.push('');
+  lines.push(
+    'Klik **"Susun draft RAB"** untuk menyusun draft dari konteks ini memakai engine katalog EZRAB (tabel item + total parsial sesuai provenans harga), ' +
+      'atau koreksi/tambah dulu lewat chat — konteksnya tidak hilang.'
+  );
+  return {
+    ok: true,
+    message: lines.join('\n'),
+    awaitProjectConcept: true,
+    actions: [
+      { label: 'Susun draft RAB', action: { kind: 'intent', intent: 'RAB_PROJECT_PREVIEW', param: 'generate' } as const },
+      { label: 'Mulai manual', action: { kind: 'navigate', menu: 'rab-estimasi' } as const },
+    ],
+  };
+}
+
+/**
+ * Susun draft akhir dari konteks intake yang matang: teks gabungan
+ * seluruh giliran diserahkan ke jalur universal (mesin kanonis).
+ * Konteks dibersihkan HANYA bila draft benar-benar tersusun — konteks
+ * yang gagal disusun tetap hidup agar pengguna bisa melengkapi.
+ */
+function generateFromProjectContext(ctx: ProjectIntakeContext): ActionResult {
+  const status = landscapeCatalogStatus(ctx);
+  // Teks mesin: gabungan giliran + FAKTA TERSTRUKTUR yang sudah
+  // terkonfirmasi dinyatakan ulang dalam bentuk yang dikenali mesin
+  // kanonis. Ini BUKAN informasi baru — nilai luas adalah konversi
+  // satuan dari teks pengguna sendiri ("1 hektar" tidak terbaca parser
+  // luas mana pun di lapisan universal; tanpa pernyataan ulang ini,
+  // konteks yang sudah benar di intake gugur di langkah terakhir).
+  const facts: string[] = [];
+  if (ctx.landAreaM2 != null) facts.push(`luas ${ctx.landAreaM2} m2`);
+  if (ctx.location) facts.push(`di ${ctx.location}`);
+  const text = facts.length ? `${ctx.combinedText} (${facts.join(', ')})` : ctx.combinedText;
+  const res = status.conceptTemplateId
+    ? universalResultFor(text, status.conceptTemplateId)
+    : universalResultFor(text);
+  if (!res) {
+    return {
+      ok: true,
+      message:
+        'Draft belum bisa disusun dari konteks ini — mesin katalog membutuhkan basis ukuran yang terukur. ' +
+        'Konteks proyek Anda tetap tersimpan; tambahkan ukurannya (mis. total luas area) lalu minta susun lagi.',
+      awaitProjectConcept: true,
+      actions: [
+        { label: 'Mulai manual', action: { kind: 'navigate', menu: 'rab-estimasi' } as const },
+      ],
+    };
+  }
+  // Hasil needs-spec dari universal = draft tidak tersusun; konteks tetap.
+  if (!res.actions?.some((a) => a.action.kind === 'push-universal')) {
+    return { ...res, awaitProjectConcept: true };
+  }
+  projectCtx = null;
+  const note = status.note ? `\n\nCatatan pemetaan template: ${status.note}` : '';
+  return { ...res, message: res.message + note };
+}
+
+/**
+ * Langkah berikutnya dari keadaan konteks (satu pertanyaan pada satu
+ * waktu). `askedFacilities`/`askedSite` menandai pertanyaan yang SUDAH
+ * diajukan pada giliran-giliran sebelumnya: pertanyaan tidak diulang
+ * hanya karena jawabannya belum lengkap — alur maju ke pratinjau
+ * dengan kekurangan dinyatakan di sana (missingInformation). Tanpa
+ * penanda ini, jawaban parsial (mis. koreksi luas saat pertanyaan
+ * kondisi lahan menggantung) akan menembak ulang pertanyaan yang sama.
+ */
+function intakeNextStep(
+  ctx: ProjectIntakeContext,
+  opts?: { ackChanges?: string[]; askedFacilities?: boolean; askedSite?: boolean }
+): ActionResult {
+  refreshContextFacts(ctx);
+  // "Langsung buatkan" (skenario H): jangan menahan pengguna di
+  // pertanyaan — langsung pratinjau berlabel jujur.
+  if (ctx.forceGenerate) return projectPreviewResult(ctx);
+  if (!ctx.conceptId) {
+    if (opts?.ackChanges?.length) {
+      const res = landscapeConceptQuestion(ctx);
+      return { ...res, message: `Siap, saya perbarui: ${opts.ackChanges.join('; ')}.\n\n${res.message}` };
+    }
+    return landscapeConceptQuestion(ctx);
+  }
+  if (ctx.facilities.length === 0 && !opts?.askedFacilities) {
+    return landscapeFacilitiesQuestion(ctx);
+  }
+  // Kondisi lahan hanya ditanya bila pertanyaan fasilitas baru saja
+  // dijawab dengan fasilitas (askedFacilities dari tahap 'site' berarti
+  // pertanyaan fasilitas SUDAH pernah diajukan DAN dijawab — tahap
+  // 'facilities' murni berarti giliran ini masih berupa jawaban
+  // fasilitas yang pertanyaannya diajukan tepat sebelumnya; keduanya
+  // sah untuk maju ke site). Bila alur tiba di sini lewat jalur lain
+  // (mis. pratinjau sudah tampil), jangan mundur bertanya lagi.
+  if (ctx.siteConditions.length === 0 && !opts?.askedSite && ctx.stage !== 'preview') {
+    return landscapeSiteQuestion(ctx, opts?.ackChanges);
+  }
+  const preview = projectPreviewResult(ctx);
+  if (opts?.ackChanges?.length) {
+    // Pengakuan pembaruan WAJIB tampil juga saat langkah berikutnya
+    // adalah pratinjau — pola ringkasan spek lama ("Siap, saya
+    // perbarui: …") tidak boleh hilang hanya karena tahap berubah.
+    return { ...preview, message: `Siap, saya perbarui: ${opts.ackChanges.join('; ')}.\n\n${preview.message}` };
+  }
+  return preview;
+}
+
+/**
+ * Titik masuk gerbang konteks proyek pada CREATE_RAB_SUMMARY.
+ * Mengembalikan ActionResult bila pesan ini milik alur intake landscape;
+ * null bila bukan urusannya (pemanggil melanjutkan alur lama persis).
+ * Dipanggil SEBELUM universalResultFor agar draft tidak mendahului
+ * percakapan (kasus owner: kategori+luas sudah jelas tetapi draft
+ * langsung disusun dari angka yang salah baca).
+ */
+export function projectIntakeGate(raw: string): ActionResult | null {
+  const extracted = extractProjectContext(raw, projectCtx ?? undefined);
+  if (!isLandscapeFamily(extracted.category)) {
+    // Bukan keluarga landscape: hanya perbarui konteks bila memang
+    // sedang ada konteks landscape aktif? Tidak — topik berganti,
+    // konteks lama gugur agar tidak bocor antar-topik.
+    if (projectCtx && extracted.category) projectCtx = null;
+    return null;
+  }
+  // Permintaan dengan dokumen DED eksplisit tetap milik workflow DED
+  // (skenario I) — jangan ditahan intake teks.
+  if (/\b(ded|gambar kerja)\b/i.test(raw) && /\b(ini|unggah|upload|lampirkan|berikut)\b/i.test(raw)) {
+    return null;
+  }
+  projectCtx = extracted;
+  universalCtx = null; // topik diambil alih gerbang landscape
+  // Konsep dipilih lewat tombol pada giliran SEBELUM konteks ini ada di
+  // registry? Tidak — tombol konsep ditangani RAB_CONCEPT_SELECT. Di
+  // sini murni teks: konsep bisa ikut terbaca dari teks yang sama.
+  return intakeNextStep(extracted);
+}
+
+/**
+ * Jawaban teks selama intake landscape aktif: gabungkan ke konteks
+ * (multi-detail diekstrak semua; koreksi menimpa kolomnya saja), lalu
+ * lanjutkan ke pertanyaan relevan berikutnya. Mengembalikan null bila
+ * tidak ada konteks aktif atau teksnya perintah baru yang jelas
+ * (pemanggil memproses normal; konteks gugur seperti pola gerbang lain).
+ */
+export function tryContinueProjectContext(text: string): ActionResult | null {
+  const ctx = projectCtx;
+  if (!ctx) return null;
+  const t = (text || '').toLowerCase();
+
+  // "Gunakan material premium" & sejenisnya (skenario G): penyebutan
+  // kualitas/material tanpa rincian — ditangani SEBELUM ekstraksi
+  // gabungan agar tidak tertelan sebagai jawaban fasilitas/kondisi
+  // (ekstraktor fasilitas akan salah membaca kata dari daftar saran
+  // sebagai fasilitas terkonfirmasi). Kualitas dicatat apa adanya dan
+  // spesifikasinya DITANYAKAN — tidak pernah dikarang. Hanya frasa
+  // penggunaan yang jelas yang memicu cabang ini ("gunakan/pakai …
+  // premium", "material premium") — kata sifat liar tidak.
+  const qualityTurn = /\b(gunakan|pakai|memakai|menggunakan|pilih)\b[^.]{0,24}\b(premium|high[ -]?end|mewah|standar|standard|ekonomis)\b/.test(t)
+    || /\bmaterial\s+(premium|mewah|high[ -]?end)\b/.test(t)
+    || /\bkualitas\s+(premium|mewah|tinggi)\b/.test(t);
+  if (qualityTurn) {
+    const q = extractProjectContext(text, ctx);
+    // Parser material lama menangkap kata kualitas itu sendiri sebagai
+    // nama material ("material premium" → materialPreference
+    // "premium") — kata kualitas BUKAN nama material; kosongkan agar
+    // ringkasan konteks tidak menampilkan material karangan.
+    if (q.materialPreference && /^(premium|mewah|standar|standard|ekonomis|menengah|high[ -]?end|sederhana)$/.test(q.materialPreference)) {
+      q.materialPreference = null;
+      refreshContextFacts(q);
+    }
+    projectCtx = q;
+    const qualLabel = q.qualityPreference ?? 'premium';
+    // materialPreference yang isinya HANYA kata kualitas itu sendiri
+    // ("material premium" → parser menangkap "premium" sebagai nama
+    // material) BUKAN rincian material — perlakukan sebagai belum
+    // dirinci, supaya spesifikasinya tetap ditanyakan (skenario G).
+    const materialDetailed =
+      q.materialPreference != null &&
+      !/^(premium|mewah|standar|standard|ekonomis|menengah|high[ -]?end|sederhana)$/.test(q.materialPreference);
+    if (!materialDetailed) {
+      return {
+        ok: true,
+        message:
+          `Siap — kualitas **${qualLabel}** saya catat, tetapi saya tidak menebak spesifikasinya. ` +
+          'Material atau bagian apa yang dimaksud? Misalnya jenis rumput/tanaman, material perkerasan pedestrian, atau lampu taman — ' +
+          `sebutkan yang dimaksud. Konteks proyek Anda sejauh ini tetap: ${q.knownInformation.join(' · ')}.`,
+        awaitProjectConcept: true,
+        actions: [
+          { label: 'Lewati — susun pratinjau', action: { kind: 'intent', intent: 'RAB_PROJECT_PREVIEW' } as const },
+          { label: 'Mulai manual', action: { kind: 'navigate', menu: 'rab-estimasi' } as const },
+        ],
+      };
+    }
+    return intakeNextStep(q, { askedFacilities: true, askedSite: true });
+  }
+
+  // Afirmasi owner 2026-11-06: "itu aja"/"oke" = eksekusi langkah
+  // tertunda — di intake ini artinya: lewati pertanyaan saat ini menuju
+  // pratinjau (bukan pertanyaan ulang, bukan ringkasan basa-basi).
+  if (isRabFinalizeText(text)) {
+    if (ctx.stage === 'concept') {
+      ctx.conceptId = ctx.conceptId ?? 'custom';
+      ctx.conceptLabel = ctx.conceptLabel ?? 'Konsep custom';
+    }
+    return projectPreviewResult(ctx);
+  }
+
+  // Perintah baru yang jelas (navigasi / RAB topik lain / pencarian)
+  // menggugurkan konteks — sama seperti gerbang subtipe/material.
+  if (/\b(buka|bukain|tampilkan|cari|carikan)\b/.test(t) || /\brab\b.*\b(rumah|jalan|drainase|jembatan|gedung)\b/.test(t)) {
+    projectCtx = null;
+    return null;
+  }
+
+  const beforeStage = ctx.stage;
+  const before = {
+    land: ctx.landAreaM2, concept: ctx.conceptId, facCount: ctx.facilities.length,
+    loc: ctx.location, siteCount: ctx.siteConditions.length, quality: ctx.qualityPreference,
+  };
+  const merged = extractProjectContext(text, ctx);
+  projectCtx = merged;
+
+  const changes: string[] = [];
+  if (merged.landAreaM2 !== before.land && merged.landAreaM2 != null) {
+    changes.push(`Total luas: ${numID(merged.landAreaM2)} m²${merged.landAreaOriginal && !merged.landAreaOriginal.includes('m²') ? ` (dari "${merged.landAreaOriginal}")` : ''} — data lainnya tetap`);
+  }
+  if (merged.conceptId !== before.concept && merged.conceptLabel) changes.push(`Konsep: ${merged.conceptLabel}`);
+  if (merged.facilities.length > before.facCount) {
+    changes.push(`Fasilitas: ${merged.facilities.map(facilityLabel).join(', ')}`);
+  }
+  if (merged.location !== before.loc && merged.location) changes.push(`Lokasi: ${merged.location}`);
+  if (merged.siteConditions.length > before.siteCount) changes.push(`Kondisi lahan: ${merged.siteConditions.join(', ')}`);
+
+  // "Gunakan material premium" (skenario G): kualitas disebut tanpa
+  // rincian → tanyakan spesifikasinya; JANGAN mengarang spek.
+  if (merged.qualityPreference && merged.qualityPreference !== before.quality && !merged.materialPreference) {
+    return {
+      ok: true,
+      message:
+        `Siap — kualitas **${merged.qualityPreference}** saya catat, tetapi saya tidak menebak spesifikasinya. ` +
+        'Material atau bagian apa yang dimaksud premium? Misalnya jenis rumput/tanaman, material perkerasan pedestrian, atau lampu taman — ' +
+        'sebutkan yang dimaksud, dan konteks proyek Anda sejauh ini tetap: ' +
+        `${merged.knownInformation.join(' · ')}.`,
+      awaitProjectConcept: true,
+      actions: [
+        { label: 'Lewati — susun pratinjau', action: { kind: 'intent', intent: 'RAB_PROJECT_PREVIEW' } as const },
+        { label: 'Mulai manual', action: { kind: 'navigate', menu: 'rab-estimasi' } as const },
+      ],
+    };
+  }
+
+  return intakeNextStep(merged, {
+    ackChanges: changes.length ? changes : undefined,
+    askedFacilities: beforeStage === 'facilities' || beforeStage === 'site',
+    askedSite: beforeStage === 'site',
+  });
+}
+
+/* ------------------------------------------------------------------ */
+/* INTAKE UNIVERSAL (Universal Conversational Project Intake           */
+/* 2026-11-10) — gerbang percakapan lintas kategori di atas             */
+/* universalIntake.ts. Pola yang sama dengan gerbang landscape:         */
+/* konteks terstruktur bertahan antar-pesan, SATU pertanyaan kritis     */
+/* per giliran, brief transparan (§8) sebelum generate, generate        */
+/* lewat universalResultFor (mesin kanonis). Gerbang ini mengambil      */
+/* alih HANYA: proyek multi-disiplin, kategori yang fakta kritisnya     */
+/* hilang (alur lama akan menyusun draft dari default template /        */
+/* menolak buntu / memberi menu generik), dan kategori teridentifikasi  */
+/* yang jatuh ke menu generik. Alur terlindungi TIDAK disentuh: rumah   */
+/* tinggal (ringkasan kebutuhan), landscape murni (gerbang landscape),  */
+/* atap/pondasi (gerbang material), subtipe jalan/drainase/jembatan     */
+/* yang belum dikenal (klarifikasi subtipe).                            */
+/* ------------------------------------------------------------------ */
+
+/** Baris pengakuan fakta yang sudah diketahui (gaya Contoh §5 prompt). */
+function universalKnownLine(ctx: UniversalIntakeContext): string | null {
+  const bits = ctx.facts
+    .filter((f) =>
+      ['USER_CONFIRMED', 'SYSTEM_DERIVED'].includes(f.status) &&
+      !['category', 'family'].includes(f.key) &&
+      // Cakupan yang labelnya sama dengan kategori utama sudah disebut
+      // di kalimat pembuka — jangan diulang.
+      !(f.key.startsWith('scope-') && f.value === ctx.primary?.label)
+    )
+    .map((f) => `${f.label.toLowerCase()} ${f.value}`);
+  return bits.length ? `Saya sudah mencatat: ${bits.join(' · ')}.` : null;
+}
+
+function universalIntro(ctx: UniversalIntakeContext): string {
+  const primary = ctx.primary?.label ?? 'pekerjaan ini';
+  const secondary = ctx.secondary.length
+    ? ` beserta ${ctx.secondary.map((d) => d.label.toLowerCase()).join(', ')}`
+    : '';
+  return `Siap! Kita buat RAB **${primary}**${secondary}.`;
+}
+
+const UNIVERSAL_STEP_ACTIONS = (extra: ChatActionButton[] = []): ChatActionButton[] => [
+  ...extra,
+  { label: 'Susun brief sekarang', action: { kind: 'intent', intent: 'RAB_INTAKE_OPTION', param: 'review' } as const },
+  { label: 'Mulai manual', action: { kind: 'navigate', menu: 'rab-estimasi' } as const },
+];
+
+/** Tampilkan pertanyaan berikutnya dari konteks universal. */
+function universalQuestionResult(ctx: UniversalIntakeContext, ackChanges?: string[]): ActionResult | null {
+  const q = selectNextQuestion(ctx);
+  if (!q) return null;
+  if (!ctx.askedKeys.includes(q.key)) ctx.askedKeys.push(q.key);
+  universalCtx = ctx;
+  const lines: string[] = [];
+  if (ackChanges?.length) lines.push(`Siap, saya perbarui: ${ackChanges.join('; ')}.`);
+  else lines.push(universalIntro(ctx));
+  const known = universalKnownLine(ctx);
+  if (known && !ackChanges?.length) lines.push('', known);
+  lines.push('', `**${q.prompt(ctx)}**`);
+  lines.push('', 'Jawab lewat teks bebas — sebutkan saja yang Anda tahu. Jawab **"itu aja"** untuk lewati pertanyaan ini menuju brief proyek.');
+  return {
+    ok: true,
+    message: lines.join('\n'),
+    awaitProjectConcept: true,
+    actions: UNIVERSAL_STEP_ACTIONS(
+      (q.options ?? []).map((o) => ({
+        label: o.label,
+        action: { kind: 'intent', intent: 'RAB_INTAKE_OPTION', param: o.id } as const,
+      }))
+    ),
+  };
+}
+
+/** Brief proyek universal (§8) — ditampilkan sebelum generate. */
+export function universalReviewResult(ctx: UniversalIntakeContext, ackChanges?: string[]): ActionResult {
+  refreshUniversalFacts(ctx);
+  ctx.stage = 'PROJECT_REVIEW';
+  universalCtx = ctx;
+  const lines = buildUniversalBriefLines(ctx);
+  if (ackChanges?.length) lines.unshift(`Siap, saya perbarui: ${ackChanges.join('; ')}.`, '');
+  return {
+    ok: true,
+    message: lines.join('\n'),
+    awaitProjectConcept: true,
+    actions: [
+      { label: 'Susun draft RAB', action: { kind: 'intent', intent: 'RAB_INTAKE_GENERATE' } as const },
+      { label: 'Mulai manual', action: { kind: 'navigate', menu: 'rab-estimasi' } as const },
+    ],
+  };
+}
+
+/** Langkah berikutnya dari keadaan konteks universal. */
+function universalNextStep(ctx: UniversalIntakeContext, ackChanges?: string[]): ActionResult {
+  refreshUniversalFacts(ctx);
+  if (ctx.forceGenerate) return universalReviewResult(ctx, ackChanges);
+  return universalQuestionResult(ctx, ackChanges) ?? universalReviewResult(ctx, ackChanges);
+}
+
+/**
+ * Susun draft dari brief universal yang disetujui: fakta terkonfirmasi
+ * dinyatakan ulang dalam bentuk yang dikenali mesin kanonis (nilai =
+ * konversi/ekstraksi dari teks pengguna sendiri, BUKAN angka baru),
+ * lalu diserahkan ke universalResultFor. Konteks dibersihkan hanya
+ * bila draft nyata tersusun.
+ */
+function generateFromUniversalContext(ctx: UniversalIntakeContext): ActionResult {
+  ctx.approvalStatus = 'APPROVED';
+  refreshUniversalFacts(ctx);
+  const facts: string[] = [];
+  if (ctx.buildingAreaM2 != null) facts.push(`luas bangunan ${ctx.buildingAreaM2} m2`);
+  if (ctx.landAreaM2 != null) facts.push(`luas ${ctx.landAreaM2} m2`);
+  if (ctx.lengthM != null) facts.push(`panjang ${ctx.lengthM} m`);
+  if (ctx.widthM != null) facts.push(`lebar ${ctx.widthM} m`);
+  if (ctx.spanM != null) facts.push(`bentang ${ctx.spanM} m`);
+  if (ctx.floors != null) facts.push(`${ctx.floors} lantai`);
+  if (ctx.location) facts.push(`di ${ctx.location}`);
+  const text = facts.length ? `${ctx.combinedText} (${facts.join(', ')})` : ctx.combinedText;
+  const res = universalResultFor(text);
+  if (!res) {
+    return {
+      ok: true,
+      message:
+        'Draft belum bisa disusun dari brief ini — mesin katalog membutuhkan basis ukuran yang terukur untuk disiplin utamanya. ' +
+        'Brief Anda tetap tersimpan; tambahkan ukurannya lewat chat lalu minta susun lagi, atau susun manual lewat RAB & Estimasi.',
+      awaitProjectConcept: true,
+      actions: [{ label: 'Mulai manual', action: { kind: 'navigate', menu: 'rab-estimasi' } as const }],
+    };
+  }
+  if (!res.actions?.some((a) => a.action.kind === 'push-universal')) {
+    // needs-spec / pertanyaan lanjutan dari mesin — konteks tetap hidup.
+    return { ...res, awaitProjectConcept: true };
+  }
+  universalCtx = null;
+  const gapNotes: string[] = [];
+  for (const d of [ctx.primary, ...ctx.secondary]) {
+    if (!d) continue;
+    const cov = coverageFor(d);
+    if (cov.support === 'tidak-ada') {
+      gapNotes.push(`"${d.label}" belum punya template katalog — bagian itu tidak termasuk draft ini dan tidak dikarang; susun sebagai item manual/non-AHSP bila diperlukan.`);
+    } else if (cov.support === 'sebagian') {
+      gapNotes.push(`"${d.label}" didukung sebagian — template kategori terdekat yang dipakai; periksa itemnya sebelum dipakai.`);
+    }
+  }
+  return gapNotes.length
+    ? { ...res, message: `${res.message}\n\nCatatan cakupan katalog: ${gapNotes.join(' ')}` }
+    : res;
+}
+
+/**
+ * Titik masuk gerbang intake universal pada CREATE_RAB_SUMMARY (dan,
+ * dengan `fromClarify`, pada CREATE_RAB_CLARIFY untuk kategori
+ * teridentifikasi yang jatuh ke menu generik — prinsip §1 prompt:
+ * wizard generik tidak boleh tampil bila kategori sudah dikenal).
+ * Mengembalikan null bila bukan urusannya.
+ */
+export function universalIntakeGate(raw: string, fromClarify = false): ActionResult | null {
+  const cls = classifyUniversal(raw);
+  if (!cls.primary) return null;
+  const t = (raw || '').toLowerCase();
+  // Permintaan dokumen DED eksplisit tetap milik workflow DED.
+  if (/\b(ded|gambar kerja)\b/.test(t) && /\b(ini|unggah|upload|lampirkan|berikut)\b/.test(t)) return null;
+
+  const ctx = extractUniversalContext(raw);
+  const p = ctx.primary;
+  if (!p) return null;
+
+  if (!cls.isMulti) {
+    // --- Alur terlindungi (§10/§11): jangan mencegat. ---
+    if (p.protectedFlow === 'house') return null;
+    if (p.protectedFlow === 'material-gate') return null;
+    if (p.family === 'landscape' && ['taman-kota', 'landscape-komersial', 'landscape-resort', 'landscape-perumahan', 'landscape-umum'].includes(p.id)) {
+      return null; // domain gerbang landscape
+    }
+    if (p.id === 'bangunan-umum' && (ctx.dimensionsText != null || ctx.buildingAreaM2 != null)) {
+      return null; // gedung generik berdimensi — jalur universal lama bisa menyusun
+    }
+    if (p.protectedFlow === 'subtype') {
+      const kind = p.id === 'drainase' || p.id === 'gorong-gorong' ? 'drainase' : p.id === 'jembatan' ? 'jembatan' : 'jalan';
+      const sub = detectSubtypeFromText(kind, raw);
+      if (kind === 'jalan') {
+        // Contoh B: subtipe dikenal + tepat satu ukuran kritis hilang
+        // → tanya ukuran pasangannya. Subtipe belum dikenal = domain
+        // klarifikasi subtipe; ukuran lengkap/kosong = alur lama.
+        if (!sub) return null;
+        if ((ctx.lengthM == null) === (ctx.widthM == null)) return null;
+      } else if (kind === 'drainase') {
+        // Contoh C: tipe belum dikenal + panjang ada → tanya tipenya
+        // (pilihan dari peta subtipe katalog + label konfirmasi).
+        // Tipe sudah dikenal / tanpa panjang = alur lama.
+        if (sub || ctx.drainageType) return null;
+        if (ctx.lengthM == null) return null;
+      } else {
+        // Jembatan: subtipe dikenal + bentang belum ada → tanya bentang.
+        if (!sub) return null;
+        if (ctx.spanM != null || ctx.lengthM != null) return null;
+      }
+    }
+  }
+
+  refreshUniversalFacts(ctx);
+  const renovasiNeedsIntake =
+    p.id === 'renovasi' &&
+    (ctx.renovationScope == null || (ctx.buildingAreaM2 == null && ctx.landAreaM2 == null && ctx.dimensionsText == null));
+  if (!cls.isMulti && !fromClarify && ctx.missingCritical.length === 0 && !renovasiNeedsIntake) {
+    return null; // fakta kritis lengkap — jalur cepat lama (draft langsung) dipertahankan
+  }
+  universalCtx = ctx;
+  projectCtx = null; // topik diambil alih gerbang ini
+  return universalNextStep(ctx);
+}
+
+/**
+ * Jawaban teks selama intake universal aktif: koreksi menimpa kolomnya
+ * saja, penambahan memperluas cakupan tanpa restart, penghapusan
+ * membuang cakupan terkait, afirmasi menuju brief/generate. Null bila
+ * bukan jawaban intake (perintah baru) — pemanggil memproses normal.
+ */
+export function tryContinueUniversalContext(text: string): ActionResult | null {
+  const ctx = universalCtx;
+  if (!ctx) return null;
+  const t = (text || '').toLowerCase();
+
+  // --- Penghapusan cakupan (§8: aksi hapus wajib didukung) ---
+  const removalPhrase = parseScopeRemoval(text);
+  if (removalPhrase) {
+    const target = matchRemovable(ctx, removalPhrase);
+    if (target) {
+      let removedLabel: string;
+      if ('family' in target) {
+        removedLabel = target.label;
+        ctx.secondary = ctx.secondary.filter((d) => d.id !== target.id);
+        ctx.scopeConfirmed = ctx.scopeConfirmed.filter((s) => s.subcategoryId !== target.id);
+      } else {
+        removedLabel = target.label;
+        ctx.scopeConfirmed = ctx.scopeConfirmed.filter((s) => s !== target);
+        if (target.subcategoryId) {
+          ctx.secondary = ctx.secondary.filter((d) => d.id !== target.subcategoryId);
+        }
+      }
+      if (!ctx.scopeRemoved.includes(removedLabel)) ctx.scopeRemoved.push(removedLabel);
+      if (ctx.secondary.length === 0 && ctx.primary && ctx.isMulti) ctx.isMulti = false;
+      universalCtx = ctx;
+      return universalNextStep(ctx, [`${removedLabel} dihapus dari lingkup — data lainnya tetap`]);
+    }
+    return {
+      ok: true,
+      message:
+        `Bagian "${removalPhrase}" tidak saya temukan di lingkup proyek saat ini. ` +
+        `Lingkup terkonfirmasi sekarang: ${[ctx.primary?.label, ...ctx.secondary.map((d) => d.label), ...ctx.scopeConfirmed.map((s) => s.label)].filter(Boolean).join('; ') || '—'}. ` +
+        'Sebutkan nama bagiannya persis seperti di brief untuk menghapusnya.',
+      awaitProjectConcept: true,
+      actions: UNIVERSAL_STEP_ACTIONS(),
+    };
+  }
+
+  // --- "Gunakan material premium" (pola skenario G): dicatat apa
+  // adanya, spesifikasinya DITANYAKAN — tidak dikarang. ---
+  const qualityTurn = /\b(gunakan|pakai|memakai|menggunakan|pilih)\b[^.]{0,24}\b(premium|high[ -]?end|mewah|standar|standard|ekonomis)\b/.test(t)
+    || /\bmaterial\s+(premium|mewah|high[ -]?end)\b/.test(t)
+    || /\bkualitas\s+(premium|mewah|tinggi)\b/.test(t);
+  if (qualityTurn) {
+    const q = extractUniversalContext(text, ctx);
+    if (q.materialPreference && /^(premium|mewah|standar|standard|ekonomis|menengah|high[ -]?end|sederhana)$/.test(q.materialPreference)) {
+      q.materialPreference = null;
+    }
+    universalCtx = q;
+    const materialDetailed =
+      q.materialPreference != null &&
+      !/^(premium|mewah|standar|standard|ekonomis|menengah|high[ -]?end|sederhana)$/.test(q.materialPreference);
+    if (!materialDetailed) {
+      refreshUniversalFacts(q);
+      return {
+        ok: true,
+        message:
+          `Siap — kualitas **${q.qualityPreference ?? 'premium'}** saya catat, tetapi saya tidak menebak spesifikasinya. ` +
+          'Material atau bagian apa yang dimaksud? Sebutkan rinciannya — konteks proyek Anda sejauh ini tetap: ' +
+          `${q.facts.filter((f) => f.status === 'USER_CONFIRMED').map((f) => `${f.label.toLowerCase()} ${f.value}`).join(' · ') || '—'}.`,
+        awaitProjectConcept: true,
+        actions: UNIVERSAL_STEP_ACTIONS(),
+      };
+    }
+    return universalNextStep(q, [`Kualitas: ${q.qualityPreference ?? 'tercatat'}`]);
+  }
+
+  // --- Afirmasi owner: di brief = setujui & generate; di pertanyaan
+  // = lewati ke brief (langkah tertunda yang dieksekusi). ---
+  if (isRabFinalizeText(text)) {
+    if (ctx.stage === 'PROJECT_REVIEW' || ctx.approvalStatus === 'APPROVED') {
+      return generateFromUniversalContext(ctx);
+    }
+    return universalReviewResult(ctx);
+  }
+  if (/\b(susun|buatkan|generate)\b[^.]{0,20}\b(draft|rab)\b/.test(t) && ctx.stage === 'PROJECT_REVIEW') {
+    return generateFromUniversalContext(ctx);
+  }
+
+  // --- Perintah baru yang jelas menggugurkan konteks (pola gerbang lain) ---
+  if (/\b(buka|bukain|tampilkan|cari|carikan)\b/.test(t) || (/\bbuatkan\b[^.]{0,30}\brab\b/.test(t) && classifyUniversal(text).primary?.id !== ctx.primary?.id)) {
+    universalCtx = null;
+    return null;
+  }
+
+  // --- Gabung jawaban ke konteks (multi-fakta diekstrak semua) ---
+  const before = {
+    buildingArea: ctx.buildingAreaM2, landArea: ctx.landAreaM2, length: ctx.lengthM,
+    width: ctx.widthM, floors: ctx.floors, location: ctx.location,
+    secondaryCount: ctx.secondary.length, scopeCount: ctx.scopeConfirmed.length,
+    drainageType: ctx.drainageType, renovationScope: ctx.renovationScope,
+    isNew: ctx.isNewConstruction, span: ctx.spanM,
+  };
+  const merged = extractUniversalContext(text, ctx);
+  universalCtx = merged;
+  const changes: string[] = [];
+  if (merged.buildingAreaM2 !== before.buildingArea && merged.buildingAreaM2 != null) {
+    changes.push(`Luas bangunan: ${numID(merged.buildingAreaM2)} m² — data lainnya tetap`);
+  }
+  if (merged.landAreaM2 !== before.landArea && merged.landAreaM2 != null) {
+    changes.push(`Luas area: ${numID(merged.landAreaM2)} m² — data lainnya tetap`);
+  }
+  if (merged.lengthM !== before.length && merged.lengthM != null) changes.push(`Panjang: ${numID(merged.lengthM)} m`);
+  if (merged.widthM !== before.width && merged.widthM != null) changes.push(`Lebar: ${numID(merged.widthM)} m`);
+  if (merged.spanM !== before.span && merged.spanM != null) changes.push(`Bentang: ${numID(merged.spanM)} m`);
+  if (merged.floors !== before.floors && merged.floors != null) changes.push(`Jumlah lantai: ${merged.floors}`);
+  if (merged.location !== before.location && merged.location) changes.push(`Lokasi: ${merged.location}`);
+  if (merged.drainageType !== before.drainageType && merged.drainageType) changes.push(`Tipe drainase: ${merged.drainageType}`);
+  if (merged.renovationScope !== before.renovationScope && merged.renovationScope) changes.push(`Cakupan renovasi: ${merged.renovationScope}`);
+  if (merged.isNewConstruction !== before.isNew && merged.isNewConstruction != null) {
+    changes.push(`Status: ${merged.isNewConstruction ? 'pembangunan baru' : 'eksisting'}`);
+  }
+  if (merged.secondary.length > before.secondaryCount) {
+    changes.push(`Disiplin tambahan: ${merged.secondary.slice(before.secondaryCount).map((d) => d.label).join(', ')}`);
+  } else if (merged.scopeConfirmed.length > before.scopeCount) {
+    changes.push(`Cakupan: ${merged.scopeConfirmed.slice(before.scopeCount).map((s) => s.label).join(', ')}`);
+  }
+
+  // Kualitas baru disebut tanpa rincian material → tanyakan (pola G).
+  if (merged.qualityPreference && !merged.materialPreference && /premium|mewah|high/.test(t) && !qualityTurn) {
+    return universalNextStep(merged, changes.length ? changes : undefined);
+  }
+  return universalNextStep(merged, changes.length ? changes : undefined);
+}
+
+/** Terapkan pilihan tombol pada pertanyaan intake universal. */
+export function applyUniversalOption(param: string): ActionResult {
+  const ctx = universalCtx;
+  if (!ctx) {
+    return {
+      ok: false,
+      message: 'Konteks intake sudah tidak aktif. Tulis ulang kebutuhannya, misalnya "buatkan rab gedung kantor 3 lantai".',
+    };
+  }
+  if (param === 'review') return universalReviewResult(ctx);
+  const applies: Record<string, () => void> = {
+    'new': () => { ctx.isNewConstruction = true; },
+    'existing': () => { ctx.isNewConstruction = false; },
+    'renov-all': () => { ctx.renovationScope = 'seluruh bangunan'; },
+    'renov-l1': () => { ctx.renovationScope = 'lantai 1'; },
+    'renov-l2': () => { ctx.renovationScope = 'lantai 2'; },
+    'renov-part': () => { ctx.renovationScope = 'bagian tertentu'; },
+    'drain-uditch': () => { ctx.drainageType = 'U-Ditch Pracetak'; },
+    'drain-batu': () => { ctx.drainageType = 'Pasangan Batu Kali'; },
+    'drain-culvert': () => { ctx.drainageType = 'Gorong-gorong / Box Culvert'; },
+    'drain-beton-terbuka': () => { ctx.drainageType = 'Saluran beton terbuka'; },
+  };
+  const apply = applies[param];
+  if (!apply) {
+    return { ok: false, message: 'Pilihan itu tidak dikenal. Pilih lewat tombol yang tersedia atau tulis jawabannya.' };
+  }
+  apply();
+  universalCtx = ctx;
+  return universalNextStep(ctx);
+}
+
+/** Generate dari brief universal (klik "Susun draft RAB"). */
+export function generateUniversalFromBrief(): ActionResult {
+  const ctx = universalCtx;
+  if (!ctx) {
+    return {
+      ok: false,
+      message: 'Brief proyek sudah tidak aktif. Tulis ulang kebutuhannya, misalnya "buatkan rab jalan beton 2 km".',
+    };
+  }
+  return generateFromUniversalContext(ctx);
 }
 
 /** Susun draft dari permintaan yang gerbangnya sudah terjawab (klik tombol). */
@@ -1141,7 +1990,27 @@ export function executeIntent(
         ],
       };
 
-    case 'CREATE_RAB_CLARIFY':
+    case 'CREATE_RAB_CLARIFY': {
+      // Permintaan dengan dokumen DED eksplisit (skenario I master
+      // prompt): "ini gambar DED-nya, buatkan RAB" menyebut DED sebagai
+      // OBJEK permintaan — workflow yang benar adalah DED Estimate AI,
+      // bukan menu generik 4 jalur. Router memang mengklasifikasikan
+      // kalimat ini ke sini (ded disebut sebagai objek, bukan jalur
+      // spesifik), jadi penjagaannya di registry: frasa kepemilikan
+      // dokumen ("ini gambar ded-nya", "sudah ada ded", lampiran)
+      // diarahkan ke ringkasan jalur DED. Menu generik di bawah tetap
+      // untuk "buatkan rab" yang benar-benar tanpa objek (skenario B).
+      const rawClarify = ctx.rawText ?? param ?? '';
+      if (/\b(ded|gambar kerja)\b/i.test(rawClarify) && /\b(ini|itu|ada|sudah|berikut|lampiran|terlampir|punya)\b/i.test(rawClarify)) {
+        return rabSummaryResult(rawClarify);
+      }
+      // Intake universal (2026-11-10): kategori yang TERIDENTIFIKASI
+      // tidak pernah dibalas menu generik (prinsip §1 master prompt) —
+      // gerbang mengambil alih di sini bila klasifikasinya jelas dan
+      // bukan alur terlindungi; "buatkan rab" tanpa objek mengembalikan
+      // null dari gerbang dan menu di bawah tetap tampil (skenario B).
+      const uniClarify = universalIntakeGate(rawClarify, true);
+      if (uniClarify) return uniClarify;
       // "buatkan rab" tanpa objek: tanya balik + tombol jalur, JANGAN
       // menumpahkan daftar template ke chat. Lokal penuh, tanpa kredit AI.
       return {
@@ -1160,6 +2029,7 @@ export function executeIntent(
           { label: 'Manual / kosong', action: { kind: 'navigate', menu: 'rab-estimasi' } },
         ],
       };
+    }
 
     case 'CREATE_RAB_DIRECT': {
       const raw = ctx.rawText ?? param ?? '';
@@ -1268,10 +2138,26 @@ export function executeIntent(
     }
 
     case 'CREATE_RAB_SUMMARY': {
+      // Gerbang intake konteks proyek (Conversational Intelligence
+      // Upgrade 2026-11-10): keluarga LANDSCAPE/taman masuk percakapan
+      // intake terstruktur (konsep → fasilitas → pratinjau) SEBELUM
+      // draft universal dicoba — kategori+atribut yang sudah diberikan
+      // tidak pernah dibalas menu generik atau draft dari angka yang
+      // salah baca. Kategori lain: gerbang mengembalikan null dan alur
+      // di bawah berjalan persis seperti sebelumnya.
+      const rawSummary = ctx.rawText ?? param ?? '';
+      // Intake universal didahulukan HANYA untuk: proyek multi-
+      // disiplin (yang bisa dibajak gerbang landscape — kasus sekolah
+      // + taman + pagar + drainase) dan kategori non-landscape yang
+      // fakta kritisnya hilang. Untuk landscape murni & alur
+      // terlindungi gerbang ini mengembalikan null.
+      const uniRes = universalIntakeGate(rawSummary);
+      if (uniRes) return uniRes;
+      const intakeRes = projectIntakeGate(rawSummary);
+      if (intakeRes) return intakeRes;
       // Universal (2026-10-26): permintaan non-rumah yang terukur langsung
       // dicoba menjadi draft katalog; rumah tetap ringkasan dulu (desain
       // owner) karena jalur rumah (typed/spec/workspace) yang memilikinya.
-      const rawSummary = ctx.rawText ?? param ?? '';
       const needsSummary = extractRabNeeds(stripLandPhrases(rawSummary));
       if (needsSummary.kind !== 'rumah') {
         const uniSummary = universalResultFor(rawSummary);
@@ -1279,6 +2165,63 @@ export function executeIntent(
       }
       // Fase 2: ringkasan kebutuhan dulu — TIDAK membuka wizard/studio.
       return rabSummaryResult(rawSummary);
+    }
+
+    case 'RAB_CONCEPT_SELECT': {
+      // Klik pilihan konsep pada pertanyaan intake landscape. param =
+      // id konsep dari peta projectIntake ('custom' = konsep bebas
+      // pengguna — fasilitasnya ditangkap dari teks, bukan daftar).
+      const ctxIntake = projectCtx;
+      if (!ctxIntake) {
+        return {
+          ok: false,
+          message:
+            'Konteks pertanyaan konsep sudah tidak aktif. Tulis ulang kebutuhannya, misalnya "buatkan rab landscape 1 hektar".',
+        };
+      }
+      if (param === 'custom') {
+        ctxIntake.conceptId = 'custom';
+        ctxIntake.conceptLabel = 'Konsep custom';
+      } else {
+        const concept = landscapeConceptById(param ?? null);
+        if (!concept) {
+          return { ok: false, message: 'Pilihan konsep itu tidak dikenal. Pilih lewat tombol konsep yang tersedia atau tulis konsepnya.' };
+        }
+        ctxIntake.conceptId = concept.id;
+        ctxIntake.conceptLabel = concept.label;
+      }
+      refreshContextFacts(ctxIntake);
+      projectCtx = ctxIntake;
+      return landscapeFacilitiesQuestion(ctxIntake);
+    }
+
+    case 'RAB_PROJECT_PREVIEW': {
+      // Klik "Susun pratinjau RAB" → pratinjau terstruktur (§8). Klik
+      // "Susun draft RAB" pada pratinjau (param 'generate') → draft
+      // kanonis dari konteks gabungan (buildUniversalDraft lewat
+      // universalResultFor), template konsep dipaksakan bila ada.
+      const ctxIntake = projectCtx;
+      if (!ctxIntake) {
+        return {
+          ok: false,
+          message:
+            'Konteks proyek sudah tidak aktif. Tulis ulang kebutuhannya, misalnya "buatkan rab landscape 1 hektar".',
+        };
+      }
+      if (param === 'generate') return generateFromProjectContext(ctxIntake);
+      return projectPreviewResult(ctxIntake);
+    }
+
+    case 'RAB_INTAKE_OPTION': {
+      // Klik pilihan pada pertanyaan intake universal (tipe drainase,
+      // cakupan renovasi, baru/eksisting, atau "Susun brief sekarang").
+      return applyUniversalOption(param ?? '');
+    }
+
+    case 'RAB_INTAKE_GENERATE': {
+      // Klik "Susun draft RAB" pada brief universal = persetujuan
+      // pengguna atas brief (prinsip §9) → generate mesin kanonis.
+      return generateUniversalFromBrief();
     }
 
     case 'RAB_SUBTYPE_SELECT': {

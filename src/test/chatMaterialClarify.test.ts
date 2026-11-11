@@ -175,12 +175,19 @@ describe('Gerbang klarifikasi material (owner 2026-11-10)', () => {
     expect(res.message).not.toContain('| No |');
   });
 
-  it('(e) jalan TIDAK berubah dari baseline: "jalan beton 1 km" tetap draft universal langsung', () => {
+  it('(e) jalan TIDAK masuk gerbang MATERIAL; sejak Universal Intake (prompt owner 2026-11-10 §5B) lebarnya ditanyakan dulu', () => {
+    // Pin lama ("draft universal langsung") digantikan perilaku yang
+    // diperintahkan master prompt Universal Intake: "jalan beton
+    // sepanjang 2 km" → panjang tercatat, LEBAR DITANYAKAN (Contoh B).
+    // Yang dijaga tes ini tetap: gerbang material tidak menyentuhnya
+    // (awaitRabMaterial falsy) — yang mengambil alih adalah gerbang
+    // intake universal, bukan gerbang material.
     const res = executeIntent('CREATE_RAB_SUMMARY', undefined, ctxFor('Buat RAB jalan beton sepanjang 1 km'));
     expect(res.ok).toBe(true);
     expect(res.awaitRabMaterial).toBeFalsy();
-    expect(res.message).toContain('| No |');
-    expect(res.message).toContain('Jalan Beton Semen (Rigid Pavement)');
+    expect(res.awaitProjectConcept).toBe(true);
+    expect(res.message).toContain('lebar jalan');
+    expect(res.message).not.toContain('| No |');
   });
 
   it('(e2) rumah TIDAK masuk gerbang material: ringkasan kebutuhan seperti biasa', () => {

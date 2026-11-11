@@ -37,6 +37,10 @@ export type ChatIntent =
   | 'CREATE_RAB_SUMMARY'
   | 'RAB_SUBTYPE_SELECT'
   | 'RAB_MATERIAL_SELECT'
+  | 'RAB_CONCEPT_SELECT'
+  | 'RAB_PROJECT_PREVIEW'
+  | 'RAB_INTAKE_OPTION'
+  | 'RAB_INTAKE_GENERATE'
   | 'RAB_PATH_TEMPLATE'
   | 'RAB_FULL_AI'
   | 'RAB_NEEDS_REFINE'
@@ -142,6 +146,12 @@ const PATTERNS: Pattern[] = [
   // 2026-10-23). Kata "template" telanjang tetap CLARIFY_TOPIC karena
   // deteksi klarifikasi berjalan sebelum pola.
   { intent: 'OPEN_TEMPLATE', re: /\b(buka|bukain|bukakan|tampilkan|tampilin|lihat|liatin|ke)\b.*\btemplate\b/ },
+  // "Gunakan/pakai template RAB" = permintaan eksplisit memakai template
+  // (skenario J master prompt Conversational Intelligence 2026-11-10) —
+  // kata kerja PENGGUNAAN, bukan navigasi: tetap menuju alur template
+  // (OPEN_TEMPLATE membuka katalog template), bukan menu generik dan
+  // bukan klarifikasi topik.
+  { intent: 'OPEN_TEMPLATE', re: /\b(gunakan|pakai|memakai|menggunakan|pilih)\b.*\btemplate\b/ },
   // Penjaga laporan: "lihat laporan proyek" adalah LAPORAN, bukan daftar
   // proyek — tanpa lookahead ini pola proyek yang rakus (.*proyek) menelan
   // frasa laporan lebih dulu (audit routing 2026-10-23).
@@ -215,8 +225,24 @@ const PATTERNS: Pattern[] = [
   // MEP, lanskap, demolisi, dan bangunan khusus. Tetap SETELAH pola spesifik
   // di atas dan SEBELUM pola CLARIFY umum; actionRegistry memutuskan
   // apakah draft universal bisa dibuat atau tetap ringkasan kebutuhan.
-  { intent: 'CREATE_RAB_SUMMARY', re: /\b(buatkan|buatin|bikin|buat)\b.*\brab\b.*\b(irigasi|pondasi|struktur|atap|finishing|mekanikal|elektrikal|plumbing|mep|lanskap|pagar|pembongkaran|demolisi|sekolah|rumah sakit|klinik|puskesmas|pelabuhan|dermaga|olahraga|lapangan|pertanian|beton|trotoar|kanstin|kolom|balok|sloof|genteng|keramik|plafon|sanitasi|bendung|bendungan|embung)\b/ },
+  { intent: 'CREATE_RAB_SUMMARY', re: /\b(buatkan|buatin|bikin|buat)\b.*\brab\b.*\b(irigasi|pondasi|struktur|atap|finishing|mekanikal|elektrikal|plumbing|mep|lanskap|pagar|pembongkaran|demolisi|sekolah|rumah sakit|klinik|puskesmas|pelabuhan|dermaga|olahraga|lapangan|pertanian|beton|trotoar|kanstin|kolom|balok|sloof|genteng|keramik|plafon|sanitasi|bendung|bendungan|embung|dinding penahan|tembok penahan|turap|retaining|waterproofing|hvac|lift|eskalator|fasad|interior|gorong|u-?ditch|hotel|mall|apartemen|gudang|pabrik)\b/ },
+  // Frasa keinginan tanpa kata "rab" ("Saya ingin membuat drainase
+  // lingkungan sepanjang 500 meter") — kategori teridentifikasi, jadi
+  // ringkasan/intake yang menanganinya, BUKAN "Perintah tidak dikenali"
+  // (Universal Intake 2026-11-10). HARUS sebelum CREATE_RAB_CLARIFY.
+  { intent: 'CREATE_RAB_SUMMARY', re: /\b(ingin|mau|pengen|hendak)\s+(membuat|buat|bikin|membangun)\b[^.]{0,60}\b(drainase|saluran|jalan|jembatan|irigasi|gedung|kantor|sekolah|rumah sakit|taman|landscape|lanskap|pagar|pondasi|renovasi|instalasi|plumbing|hvac|dinding penahan|gorong)\b/ },
   { intent: 'CREATE_RAB_SUMMARY', re: /\b(buatkan|buatin|bikin|buat)\b.*\brab\b.*\b(ded|gambar kerja)\b/ },
+  // Landscape/taman & ruang publik (Conversational Intelligence Upgrade,
+  // master prompt owner 2026-11-10): permintaan RAB landscape yang sudah
+  // menyebut kategori TIDAK PERNAH jatuh ke menu generik CREATE_RAB_CLARIFY
+  // di bawah — ia masuk jalur intake percakapan (konteks proyek terstruktur
+  // + pertanyaan konsep), ditangani executeIntent CREATE_RAB_SUMMARY lewat
+  // gerbang konteks proyek di actionRegistry. Pola "rab"-dulu juga ditangkap
+  // ("rab landscape 1 hektar dong") agar tidak tertelan pola jalan/umum.
+  { intent: 'CREATE_RAB_SUMMARY', re: /\b(buatkan|buatin|bikin|buat)\b.*\brab\b.*\b(landscape|lanskap)\b/ },
+  { intent: 'CREATE_RAB_SUMMARY', re: /\brab\b.*\b(landscape|lanskap)\b/ },
+  { intent: 'CREATE_RAB_SUMMARY', re: /\b(buatkan|buatin|bikin|buat)\b.*\b(taman kota|taman publik|taman umum|ruang terbuka hijau)\b/ },
+  { intent: 'CREATE_RAB_SUMMARY', re: /\b(buatkan|buatin|bikin|buat)\b.*\btaman\b.*\b(hektar|ha\b|m2|m²|meter persegi|surabaya|jakarta|bandung|semarang|medan|makassar|denpasar|yogyakarta|malang|bogor|depok|bekasi|tangerang|palembang|pekanbaru|batam|samarinda|balikpapan|pontianak|manado|solo|surakarta|jogja)\b/ },
   // "buatkan rab" tanpa objek spesifik -> tanya balik (jangan tumpahkan daftar
   // template). Pola spesifik (rumah/dll) sudah tertangkap di atas; pola umum
   // ini HARUS tetap setelahnya. \brab\b tidak menangkap "rabat beton".
