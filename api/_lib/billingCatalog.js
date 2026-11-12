@@ -10,17 +10,20 @@
  *   v1.2): starter Rp54.999/5.000 kredit per bulan, professional
  *   Rp79.999/10.000, business Rp159.999/30.000. (Brief menyebutnya "Pro"/
  *   "Advanced"; id kanonis repo adalah 'professional'/'business'.)
- * - Top-up: TOPUP_OFFER di src/ai-credits/config.ts (Fase 1: Rp5.000 →
- *   3.000 kredit dasar + bonus 20% = 600, total 3.600).
+ * - Top-up: TOPUP_OFFERS di src/ai-credits/config.ts — 4 tier Spec v1.0
+ *   §7.2 yang diratifikasi keputusan K6 (Gelombang 2, 2026-11-13):
+ *   500/Rp5.000, 1.500/Rp10.000, 4.000/Rp25.000, 10.000/Rp50.000.
+ *   Tanpa bonus: kredit yang dibeli adalah kredit yang diterima.
+ *   Top-up tidak kedaluwarsa (Spec §7.2). Penawaran interim Fase 1
+ *   (Rp5.000 → 3.600 kredit, topup-3600) SUDAH DIHAPUS oleh K6.
  *
  * Tes `billingCatalogDrift` membandingkan file ini terhadap kedua sumber
  * frontend itu dan GAGAL bila ada yang bergeser — perubahan harga wajib
  * mengubah sumber kanonis dan katalog ini bersama-sama, secara sadar.
  *
- * CATATAN KEPUTUSAN: harga top-up final adalah keputusan owner yang DITUNDA
- * (register D8 / Spec O-10, menunggu kalibrasi biaya). Entri top-up di sini
- * memakai penawaran Fase 1 yang SUDAH ADA — bukan harga baru karangan —
- * dan ditandai priceStatus agar tidak diklaim sebagai harga final.
+ * CATATAN KEPUTUSAN: harga top-up final diratifikasi owner lewat K6
+ * (Gelombang 2, 2026-11-13) dari Spec v1.0 §7.2 — status D8 yang semula
+ * menunda harga final kini tertutup oleh ratifikasi ini.
  */
 
 /** Paket langganan yang dapat dibeli (Free tidak dijual — ia grant awal). */
@@ -54,16 +57,43 @@ export const SUBSCRIPTION_CATALOG = Object.freeze({
   }),
 });
 
-/** Penawaran top-up sekali bayar (Fase 1 — harga final menunggu D8). */
+/**
+ * Penawaran top-up sekali bayar — 4 tier Spec v1.0 §7.2 (ratifikasi K6).
+ * `credits` = kredit yang diterima pembeli (tanpa bonus terpisah);
+ * top-up tidak kedaluwarsa. `priceStatus` menandai ratifikasi Spec.
+ */
 export const TOPUP_CATALOG = Object.freeze({
-  'topup-3600': Object.freeze({
+  'topup-500': Object.freeze({
     kind: 'TOP_UP',
-    itemId: 'topup-3600',
-    displayName: 'Top-up Kredit AI',
+    itemId: 'topup-500',
+    displayName: 'Top-up 500 Kredit AI',
     priceIdr: 5000,
-    baseCredits: 3000,
-    bonusCredits: 600,
-    priceStatus: 'PHASE1_OFFER_PENDING_D8',
+    credits: 500,
+    priceStatus: 'SPEC_V1_0_RATIFIED_K6',
+  }),
+  'topup-1500': Object.freeze({
+    kind: 'TOP_UP',
+    itemId: 'topup-1500',
+    displayName: 'Top-up 1.500 Kredit AI',
+    priceIdr: 10000,
+    credits: 1500,
+    priceStatus: 'SPEC_V1_0_RATIFIED_K6',
+  }),
+  'topup-4000': Object.freeze({
+    kind: 'TOP_UP',
+    itemId: 'topup-4000',
+    displayName: 'Top-up 4.000 Kredit AI',
+    priceIdr: 25000,
+    credits: 4000,
+    priceStatus: 'SPEC_V1_0_RATIFIED_K6',
+  }),
+  'topup-10000': Object.freeze({
+    kind: 'TOP_UP',
+    itemId: 'topup-10000',
+    displayName: 'Top-up 10.000 Kredit AI',
+    priceIdr: 50000,
+    credits: 10000,
+    priceStatus: 'SPEC_V1_0_RATIFIED_K6',
   }),
 });
 

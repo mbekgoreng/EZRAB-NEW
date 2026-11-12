@@ -110,7 +110,12 @@ async function main(): Promise<void> {
   // §8.6 — wizard dibuka SETELAH balasan (asersi urutan sumber).
   await check('6. wizard setelah balasan: urutan kode di view.tsx', () => {
     const view = read('src/ai-tools/ezrab-ai/view.tsx');
-    const postIdx = view.indexOf('await postAssistant(reply, entryActions)');
+    // PIN DIPERBARUI TERBUKA (Adaptive Questionnaire, direktif owner
+    // 2026-11-12): panggilan postAssistant mendapat argumen ketiga
+    // opsional (payload kuesioner); urutan balasan → setTimeout → buka
+    // wizard yang diasersi TIDAK berubah — hanya literal yang dicari
+    // yang mengikuti tanda tangan baru.
+    const postIdx = view.indexOf('await postAssistant(reply, entryActions,');
     const timerIdx = view.indexOf('setTimeout(() => {', postIdx);
     const wizIdx = view.indexOf('setRabWizardOpen(true)', timerIdx);
     assert(postIdx > 0 && timerIdx > postIdx && wizIdx > timerIdx, 'urutan: balasan -> setTimeout -> buka wizard');

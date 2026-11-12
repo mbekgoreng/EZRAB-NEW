@@ -22,7 +22,7 @@ import React, { useRef, useState, useEffect, useLayoutEffect, useCallback, Suspe
 import {
   Send, Sparkles, Loader2, RotateCcw,
   Copy, Check, Mic, Paperclip, X, Plus, FileText,
-  History, Trash2, MoreVertical, Gamepad2,
+  History, Trash2, MoreVertical, Gamepad2, Brain, Pencil, Save, ListChecks,
 } from 'lucide-react';
 import { ezrabAiService } from './service';
 import {
@@ -38,16 +38,95 @@ import { renderMarkdown, markdownToPlainText } from './markdown';
 import { routeIntent, localGreeting, HELP_TEXT } from './intentRouter';
 import { extractSlashToken, filterSlashEntries, NAV_BY_ID, resolveNavCommand, type NavEntry } from './navRegistry';
 import { consumePendingAiEntry, requestAiEntry, consumePendingEzrabAiEntry, peekPendingEzrabAiEntry, ezrabAiEntryRemainingMs, openEzrabAI, type EzrabAiEntryContext } from '../aiNavigation';
-import { executeIntent, continueRabNeeds, continueRabFinalize, hasActiveRabNeeds, continueRabChoice, tryContinueRabSubtype, tryContinueRabMaterial, tryContinueProjectContext, tryContinueUniversalContext, getLastRabDesignPrompt, ChatActionContext, ChatActionButton } from './actionRegistry';
+import { executeIntent, continueRabNeeds, continueRabFinalize, hasActiveRabNeeds, continueRabChoice, tryContinueRabSubtype, tryContinueRabMaterial, tryContinueProjectContext, tryContinueUniversalContext, getLastRabDesignPrompt, submitQuestionnaireAnswers, restoreUniversalContext, getUniversalContextState, ChatActionContext, ChatActionButton } from './actionRegistry';
+import { QuestionnaireCard } from './questionnaireCard';
+import type { QuestionnairePayload } from './questionnaire';
+import type { QuestionnaireAnswerRecord } from './universalIntake';
 import { getLastDirectRab } from './directRab';
-import { classifyRequest, minDelayFor, statusTextFor, waitForMinimum, waitForRabMinimum, rabMinDelayMs, activityForRequest, createRequestCoordinator, isAbortError, type AiActivity } from '../aiResponseTiming';
+import { classifyRequest, minDelayFor, statusTextFor, waitForMinimum, waitForRabMinimum, rabMinDelayMs, activityForRequest, isAbortError, type AiActivity } from '../aiResponseTiming';
+import {
+  beginExecution, finishExecution, cancelExecution, getExecution, getActiveExecution,
+  subscribeExecution, releaseConversation,
+  type AiExecutionHandle, type AiExecutionRecord,
+} from './executionRuntime';
 import { mapDirectRabPushItems } from './directRabPush';
 import { detectHandoffNeed, HANDOFF_CHOICE_CHAT, HANDOFF_CHOICE_STAY } from './magicHandoff';
 import { structuredAiError, logAiDiagnostic, type AiErrorCode } from './aiErrorCodes';
 import { buildFinalizationKey } from '../ded-ai-estimate/finalizationKey';
-import { getLastUniversalDraft, setLastUniversalDraft, looksLikeUniversalRevision, reviseUniversalDraft, buildPushPreview, formatPushPreviewMessage, buildPushPayload, dedupePushPayload, validateTransfer, draftReadiness } from './universalRab';
-import { saveDraft, loadDraft, markTransferred } from './draftPersistence';
-import { looksLikeNeedsAnswer } from './rabNeeds';
+import { getLastUniversalDraft, setLastUniversalDraft, looksLikeUniversalRevision, buildPushPreview, formatPushPreviewMessage, buildPushPayload, dedupePushPayload, validateTransfer, draftReadiness, effectiveItems } from './universalRab';
+import { saveDraft, loadDraft, markTransferred, saveIntakeContext, loadIntakeContext, peekPersistedDraft, shouldRestoreIntakeSnapshot } from './draftPersistence';
+/* GATE 3 (5C) — revisi immutable: pratinjau di atas klon + aktivasi
+ * atomik+idempotent sesudah konfirmasi eksplisit. Mesin revisi
+ * (reviseUniversalDraft) TIDAK lagi dipanggil langsung dari view —
+ * ia berjalan di dalam buildRevisionPreview pada klon draft. */
+import {
+  activateRevision,
+  buildRevisionPreview,
+  compareStoredVersions,
+  formatRevisionPreviewMessage,
+  formatVersionHistoryMessage,
+  isAffirmativeConfirmation,
+  isNegativeConfirmation,
+  type RevisionPreview,
+} from './draftRevision';
+import { formatRupiah } from './budgetFeasibility';
+/* FASE 7 — gerbang kualitas respons: verifikasi jawaban LLM sebelum
+ * ditampilkan (modul murni, tanpa fetch/provider). */
+import { checkResponseQuality, buildQualityGateEvidence, formatQualityGateNotice } from './responseQualityGate';
+/* GATE 4 (5D) — integrasi DED/QTO: konsumsi lampiran DED, umpan
+ * balik berlabel, koreksi QTO + revisi spek DED via pratinjau dan
+ * konfirmasi eksplisit (pola Gate 3), dan seksi DED/QTO ke builder
+ * kanonis (plumbing Fase 5 yang sebelumnya tidak punya pemanggil). */
+import {
+  loadDedAttachment,
+  saveDedAttachment,
+  attachmentToDedOutput,
+  dedSpecsFromAttachment,
+  sanitizeDedSpecs,
+  dimsFromIntakeContext,
+  reconcileDedQto,
+  detectDedSpecConflicts,
+  pendingQtoCorrections,
+  proposeQtoCorrections,
+  applyQtoCorrection,
+  rejectQtoCorrection,
+  resolveQtoDims,
+  patchDedQtoChecksAfterDecision,
+  buildDedSpecRevisionPreview,
+  applyDedSpecRevision,
+  parseDedSpecRevisionCommand,
+  formatDedSpecRevisionPreviewMessage,
+  resolveDedItemPrices,
+  formatDedFeedbackLines,
+  buildDedQtoDraftInfo,
+  DED_DIMENSION_KEYS,
+  type DedAttachment,
+  type DedPriceReview,
+  type DedSpecRevisionPreview,
+  type QtoCorrectionProposal,
+} from './dedQtoIntegration';
+import { buildDedSection } from './dedUnderstanding';
+import { buildQtoSection } from './qtoBridge';
+import {
+  extractMemoryCandidates,
+  extractSpecMemories,
+  ingestMemoryCandidates,
+  retrieveMemories,
+  formatMemorySection,
+  formatPreferenceLines,
+  applyPersonalizationGate,
+  getPreferences,
+  setPreference,
+  listMemories,
+  deleteMemory,
+  correctMemory,
+  getMemoryReport,
+  MEMORY_HONEST_LABEL,
+  type MemoryRecord,
+  type MemoryScope,
+  type UserPreferences,
+} from './memory';
+import { looksLikeNeedsAnswer, parseFloorsMention } from './rabNeeds';
 import { notificationBus } from '../../notifications/notificationBus';
 import { navigateTo, paths, routeForMenu } from '../../routing/routes';
 import { EZRABMascotLucu } from '../../components/mascot/EZRABMascotLucu';
@@ -63,6 +142,31 @@ import {
 } from './operations';
 import { buildProjectSnapshot, ProjectSnapshot, snapshotAllItems } from './projectContext';
 import { unifiedConversationStore } from '../../services/ai/conversation/unifiedConversationStore';
+/* FASE 3 — orkestrasi agen (agentOrchestrator.ts): objektif + rencana
+ * multi-langkah + approval gate + follow-up. Dipakai lewat API-nya;
+ * tidak ada runtime eksekusi kedua (executionRuntime tetap pemilik
+ * eksekusi LLM). */
+import {
+  deriveObjective,
+  formatObjectiveSection,
+  buildPlanForObjective,
+  savePlan,
+  loadActivePlanForProject,
+  approveStep,
+  denyStep,
+  retryStep,
+  applyRegistryOutcomeToStep,
+  markTransferStepCompleted,
+  markQuestionnaireStepCompleted,
+  replanForNewObjective,
+  getPendingFollowUps,
+  formatFollowUpMessage,
+  type TaskPlan,
+} from './agentOrchestrator';
+/* FASE 5 — registry tool kanonis: eksekusi langkah rencana yang
+ * disetujui berjalan lewat registry (bukan jalur lama); receipt
+ * transfer dicatat ke trail audit registry. */
+import { runPlanStepWithRegistry, PLAN_STEP_TOOL_MAP, recordTransferReceipt } from './toolRegistry';
 import './ezrab-ai-chat.css';
 import './markdown.css';
 import '../../ai-credits/ai-credits.css';
@@ -97,6 +201,11 @@ interface ChatEntry {
   actions?: ChatActionButton[];
   /** Plan operasi Asisten AI yang menunggu/sudah dikonfirmasi pada pesan ini. */
   planId?: string;
+  /** Kuesioner spesifikasi adaptif yang dirender sebagai kartu interaktif
+   * pada pesan ini (Adaptive Questionnaire 2026-11-12). */
+  questionnaire?: QuestionnairePayload;
+  /** Kartu kuesioner pada pesan ini sudah pernah dikirim (ringkasan + Ubah). */
+  questionnaireSubmitted?: boolean;
 }
 
 /** Kontrol konfirmasi plan operasi Asisten AI (pratinjau → konfirmasi manusia). */
@@ -193,6 +302,41 @@ const fmtHistoryDate = (ts: number) => {
   return new Date(ts).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
 };
 
+/* ---- CHAT-08 (GELOMBANG PERBAIKI SEMUA, 2026-11-13): wajah kegagalan AI ----
+ * Kegagalan provider sebelumnya tampil sebagai satu kalimat generik tanpa
+ * penyebab, tanpa panduan, tanpa jalan lanjut. Formatter murni ini
+ * menyusun wajah kegagalan yang jujur + dapat ditindaklanjuti:
+ *  - baris pertama = pesan layanan apa adanya (lapisan transport yang
+ *    menyebut apa yang terjadi — TIDAK diganti/dikarang ulang);
+ *  - lalu panduan yang benar-benar bisa dilakukan pengguna, dipilih dari
+ *    kode error bila ada (konteks/validasi → persingkat/rumuskan ulang;
+ *    selebihnya → Coba Lagi);
+ *  - tombol "Coba Lagi" sudah ada di bawah gelembung error (render
+ *    m.isError && m.fromAi) — panduan menunjuk ke tombol itu, bukan
+ *    menciptakan jalur retry baru (lifecycle tidak disentuh).
+ * Tanpa emoji (aturan 0-emoji permukaan brand). Pesan mentah teknis
+ * (mis. "Failed to fetch" dari Error mentah) dinormalisasi ke kalimat
+ * Indonesia yang setara maknanya — bukan penyebab yang dikarang. */
+function formatAiFailureMessage(serviceMessage: string, errorCode?: string | null): string {
+  let base = (serviceMessage || '').trim();
+  if (!base) base = 'Layanan AI gagal memproses permintaan.';
+  else if (/failed to fetch|networkerror|load failed|econnrefused|econnreset/i.test(base)) {
+    base = 'Tidak dapat terhubung ke layanan AI. Periksa koneksi internet Anda.';
+  } else if (/timed out|timeout/i.test(base)) {
+    base = 'Layanan AI tidak merespons tepat waktu.';
+  }
+  // Kode yang penyebabnya ada di ISI permintaan (bukan di layanan):
+  // retry buta tidak membantu — pengguna harus mengubah pesannya dulu.
+  const shortenFirst = new Set([
+    'CONTEXT_BUDGET_EXCEEDED', 'PAYLOAD_TOO_LARGE', 'AI_BAD_REQUEST',
+    'INVALID_REQUEST', 'CONTENT_REJECTED',
+  ]).has(errorCode ?? '');
+  const retryLine = shortenFirst
+    ? 'Coba persingkat atau rumuskan ulang pesan Anda, lalu ketuk tombol "Coba Lagi" di bawah pesan ini.'
+    : 'Ketuk tombol "Coba Lagi" di bawah pesan ini untuk mengirim ulang pertanyaan Anda. Bila terus gagal, coba persingkat pesan atau mulai percakapan baru.';
+  return `${base}\n\n${retryLine}\nPesan dan draft Anda tetap tersimpan — tidak ada data yang hilang.`;
+}
+
 interface EzrabAiViewProps {
   /** Navigate to a workspace menu (injected by WorkspaceView) */
   onNavigate?: (menu: string) => void;
@@ -213,10 +357,18 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   // Timing terpusat (spesifikasi 2026-10-27): teks status pemrosesan
-  // mengikuti klasifikasi permintaan; timer dibersihkan saat unmount.
+  // mengikuti klasifikasi permintaan.
   const [thinkingText, setThinkingText] = useState('EZRAB sedang berpikir…');
-  const timingCoordinatorRef = useRef(createRequestCoordinator());
-  const submitAbortRef = useRef<AbortController | null>(null);
+  // Eksekusi AI persisten (lifecycle fix 2026-11-12): kepemilikan request
+  // hidup di executionRuntime (modul), BUKAN di komponen ini — navigasi
+  // (unmount) tidak lagi membatalkan pekerjaan AI yang sedang berjalan.
+  // `activeExec` = eksekusi yang sedang berjalan pada percakapan aktif
+  // (null bila tidak ada); dipakai untuk indikator busy + tombol Berhenti.
+  const [activeExec, setActiveExec] = useState<AiExecutionRecord | null>(null);
+  // Penanda terputus (jaminan reload §8): pesan pengguna terakhir tanpa
+  // balasan + tidak ada eksekusi hidup = request terputus; tampil sebagai
+  // banner dengan aksi Coba Lagi manual (tidak pernah auto-resubmit).
+  const [interruptedPrompt, setInterruptedPrompt] = useState<string | null>(null);
 
   const [mode, setMode] = useState<'fast' | 'advanced'>('fast');
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
@@ -272,6 +424,19 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
    *  (diisi tepat sebelum service.send — bukan pada jawaban lokal
    *  registry). Target tombol "Coba Lagi" pada pesan error AI. */
   const lastAiPromptRef = useRef<string | null>(null);
+  /** F-6B (GELOMBANG PERBAIKI SEMUA): id store dari pesan error AI
+   *  terakhir yang dipersist (LLM !success / catch). Dipakai retry
+   *  untuk menggantikan record tersimpan itu dengan hasil retry —
+   *  tanpa ini error lama bangkit lagi sesudah reload di samping
+   *  balasan sukses. Hanya error pipeline AI yang dilacak (error
+   *  lokal registry/push tidak pernah masuk ke sini). */
+  const lastAiErrorMessageIdRef = useRef<string | null>(null);
+  /** F-6B: id entry error tersimpan yang sedang digantikan oleh satu
+   *  percobaan retry. Diisi di cabang echo=false submit, dikonsumsi
+   *  (sekali pakai) oleh persistMessage asisten pertama sesudahnya,
+   *  dan selalu dibersihkan di awal submit — tidak pernah bocor ke
+   *  pengiriman yang tidak terkait. */
+  const retryReplacesMessageIdRef = useRef<string | null>(null);
   // P0 Command Center: wizard & design studio overlays
   const [rabWizardOpen, setRabWizardOpen] = useState(false);
   const [designStudioOpen, setDesignStudioOpen] = useState(false);
@@ -285,6 +450,11 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   } = useProject();
   // Prefer live context; fall back to props (keeps standalone usage working).
   const effProject = currentProject ?? activeProject;
+  // GATE 1 (5A) — SELURUH ChatActionContext untuk executeIntent memakai
+  // effProject sebagai activeProject (bukan prop activeProject mentah):
+  // prop itu null pada mount yang mengandalkan currentProject dari
+  // konteks workspace — registry yang menerima null tidak dapat mengikat
+  // konteks intake/draft ke proyek (snapshot registry tidak tersimpan).
   const projectSnapshot: ProjectSnapshot | null = buildProjectSnapshot(
     effProject ? { id: effProject.id, name: effProject.name, costSummary: (effProject as unknown as { costSummary?: Record<string, unknown> }).costSummary } : null,
     projectRabItems as unknown as Array<Record<string, unknown>>,
@@ -305,6 +475,51 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   /** Panel dropdown riwayat dari tombol "Riwayat" di header. */
   const [historyOpen, setHistoryOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+
+  /* ---- FASE 2 — Kontrol memori pengguna (panel Memori) ---- *
+   * Lihat memori relevan yang tersimpan, koreksi memori yang salah,
+   * hapus memori, nonaktifkan personalisasi opsional. Label jujur:
+   * memori lokal per-perangkat — belum lintas-perangkat. */
+  const [memoryOpen, setMemoryOpen] = useState(false);
+  const [memoryItems, setMemoryItems] = useState<MemoryRecord[]>([]);
+  const [memoryPrefs, setMemoryPrefs] = useState<UserPreferences>(() => getPreferences(null));
+  const [memoryEditingId, setMemoryEditingId] = useState<string | null>(null);
+  const [memoryEditingText, setMemoryEditingText] = useState('');
+  const refreshMemoryPanel = useCallback(() => {
+    if (!effProject) {
+      setMemoryItems([]);
+      return;
+    }
+    const scope: MemoryScope = { userId: null, projectId: effProject.id, conversationId: convIdRef.current ?? null };
+    // Histori ikut ditampilkan (superseded berlabel 'digantikan') agar
+    // koreksi spek terlihat jejaknya — bukan hanya nilai current.
+    const listed = listMemories(scope, { statuses: ['current', 'contradictory', 'superseded'] });
+    setMemoryItems(listed.ok ? listed.value : []);
+    setMemoryPrefs(getPreferences(null));
+  }, [effProject?.id]);
+
+  /* ---- FASE 3 — Rencana tugas agen (panel Rencana) ---- *
+   * Rencana multi-langkah per proyek/percakapan (agentOrchestrator):
+   * dipersist di storage lokal, selamat dari navigasi & reload.
+   * Follow-up disajikan SEKALI saat kembali (banner di dalam chat),
+   * bukan toast berulang. */
+  const [agentPlan, setAgentPlan] = useState<TaskPlan | null>(null);
+  const [planOpen, setPlanOpen] = useState(false);
+  const [followUpBanner, setFollowUpBanner] = useState<string | null>(null);
+  const agentPlanRef = useRef<TaskPlan | null>(null);
+  const updateAgentPlan = useCallback((mutate: (p: TaskPlan) => TaskPlan) => {
+    const prev = agentPlanRef.current;
+    if (!prev) return;
+    const next = mutate(prev);
+    agentPlanRef.current = next;
+    setAgentPlan(next);
+    try { savePlan(next); } catch { /* persistensi rencana tidak boleh menggagalkan chat */ }
+  }, []);
+  const setAgentPlanTracked = useCallback((plan: TaskPlan | null) => {
+    agentPlanRef.current = plan;
+    setAgentPlan(plan);
+    if (plan) { try { savePlan(plan); } catch { /* abaikan */ } }
+  }, []);
 
   const refreshHistory = useCallback(() => {
     try {
@@ -330,9 +545,33 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   // Segarkan daftar saat percakapan siap, saat jumlah pesan berubah, dan
   // saat store berubah (pesan masuk dari permukaan AI lain).
   useEffect(() => { refreshHistory(); }, [refreshHistory, conversationReady, messages.length]);
-  // Bersihkan timer pemrosesan AI saat view dilepas: submit yang sedang
-  // menunggu minimum tidak boleh menampilkan hasil basi setelah unmount.
-  useEffect(() => () => { submitAbortRef.current?.abort(); }, []);
+
+  /* FASE 2 — muat daftar memori saat panel Memori dibuka; Escape menutup. */
+  useEffect(() => {
+    if (!memoryOpen) return undefined;
+    refreshMemoryPanel();
+    const onEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') setMemoryOpen(false); };
+    window.addEventListener('keydown', onEsc);
+    return () => window.removeEventListener('keydown', onEsc);
+  }, [memoryOpen, refreshMemoryPanel]);
+  // Berlangganan eksekusi persisten (lifecycle fix 2026-11-12): cleanup
+  // efek ini HANYA unsubscribe — TIDAK PERNAH meng-abort eksekusi.
+  // Navigasi (unmount) bukan pembatalan; pekerjaan AI terus berjalan di
+  // executionRuntime dan statusnya dibaca lagi saat view ter-mount kembali.
+  useEffect(() => {
+    if (!conversationReady || !activeConvId) return;
+    // Keadaan dibaca dari registry saat notifikasi tiba (bukan dari
+    // snapshot notifikasi): notifikasi dari record lama yang sudah
+    // digantikan tidak boleh mematikan indikator eksekusi yang baru.
+    return subscribeExecution(activeConvId, () => {
+      const current = getActiveExecution(activeConvId);
+      setActiveExec(current);
+      // Sinkronkan indikator sibuk dengan eksekusi runtime: kembali ke
+      // Chat AI di tengah generasi menampilkan status generating, bukan
+      // formulir menganggur di atas request yang berjalan.
+      setBusy(current !== null);
+    });
+  }, [conversationReady, activeConvId]);
   useEffect(() => {
     try {
       return unifiedConversationStore.subscribe(() => refreshHistory());
@@ -362,16 +601,94 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeProjectId]);
 
-  const persistMessage = (role: 'user' | 'assistant', content: string) => {
+  /* FASE 3 — pulihkan rencana tugas saat kembali (AGT-12): rencana
+   * aktif proyek dimuat dari storage; bila ada pekerjaan belum selesai
+   * dan follow-up belum pernah disajikan untuk rencana ini, tampilkan
+   * banner kelanjutan SEKALI di dalam chat (bukan toast). */
+  useEffect(() => {
+    if (!conversationReady || !effProject) return;
+    try {
+      const plan = loadActivePlanForProject(effProject.id, convIdRef.current ?? null);
+      if (!plan) { setAgentPlanTracked(null); return; }
+      agentPlanRef.current = plan;
+      setAgentPlan(plan);
+      const pending = getPendingFollowUps(plan);
+      if (pending.length > 0 && !plan.followUpShownAt) {
+        const msg = formatFollowUpMessage(plan);
+        if (msg) setFollowUpBanner(msg);
+        // followUpShownAt HANYA ditandai saat pengguna menutup/membuka
+        // banner (lihat tombol di bawah) — bukan saat mount. Remount
+        // karena navigasi tidak boleh menghabiskan jatah tampil banner;
+        // banner tetap muncul lagi sesudah reload sampai ditutup.
+      }
+    } catch {
+      /* rencana gagal dimuat ≠ chat gagal */
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conversationReady, storeProjectId]);
+
+  // Penanda INTERRUPTED (jaminan reload §8, lifecycle fix 2026-11-12):
+  // percakapan aktif yang berakhir pada pesan pengguna tanpa balasan DAN
+  // tanpa eksekusi hidup di runtime = request terakhir terputus (reload /
+  // crash / penutupan di tengah generasi). Banner muncul dengan aksi Coba
+  // Lagi manual — TIDAK PERNAH auto-resubmit (request yang berpotensi
+  // berbayar tidak boleh diduplikasi diam-diam sesudah pemulihan).
+  // GATE 1 (5A) — derivasi dibaca dari riwayat TERSIMPAN (store), bukan
+  // dari state pesan komponen: catatan pemulihan (draft/intake) yang
+  // ditambahkan view sesudah reload adalah anotasi EFEMERAL (tidak
+  // dipersist) — bila dibaca dari state, catatan itu menjadi "pesan
+  // terakhir" dan MENUTUPI permintaan yang terputus (banner tidak pernah
+  // tampil padahal prompt pengguna belum berbalas). Store adalah sumber
+  // kebenaran "apakah pesan pengguna terakhir sudah berbalas".
+  useEffect(() => {
+    if (!conversationReady || busy || activeExec) {
+      setInterruptedPrompt(null);
+      return;
+    }
+    let lastStored: { role: string; content: string } | null = null;
+    try {
+      const conv = unifiedConversationStore.getOrCreateActiveConversation(storeProjectId);
+      const msgs = conv.messages ?? [];
+      lastStored = msgs.length ? msgs[msgs.length - 1] : null;
+    } catch {
+      lastStored = null;
+    }
+    setInterruptedPrompt(lastStored && lastStored.role === 'user' ? lastStored.content : null);
+  }, [conversationReady, messages, busy, activeExec]);
+
+  /* F-6B (GELOMBANG PERBAIKI SEMUA): mengembalikan id pesan tersimpan
+   * (dipakai pelacak error AI di atas) dan — bila satu retry sedang
+   * menggantikan error lama — MENULIS ULANG record tersimpan itu lewat
+   * updateMessage yang sudah ada di store, BUKAN append baru. Desain:
+   * retry adalah pengganti percobaan yang gagal (tampilan SUDAH
+   * menghapus error lama sejak lama); store kini mengikuti tampilan,
+   * sehingga sesudah reload tidak ada lagi error hantu di samping
+   * balasan sukses. Riwayat sukses TIDAK PERNAH disentuh: hanya entry
+   * error AI terakhir yang diganti, dan hanya isinya (id/urutan/
+   * pesan lain utuh). Bila record asal sudah tidak ada (ganti
+   * percakapan/proyek di tengah jalan), jatuh ke append biasa. */
+  const persistMessage = (role: 'user' | 'assistant', content: string): string | null => {
     try {
       const convId = convIdRef.current;
-      if (!convId) return;
-      unifiedConversationStore.appendMessage(convId, storeProjectId, {
+      if (!convId) return null;
+      if (role === 'assistant' && retryReplacesMessageIdRef.current) {
+        const replacesId = retryReplacesMessageIdRef.current;
+        retryReplacesMessageIdRef.current = null;
+        try {
+          unifiedConversationStore.updateMessage(convId, storeProjectId, replacesId, { content });
+          return replacesId;
+        } catch {
+          /* record asal hilang — append biasa di bawah */
+        }
+      }
+      const stored = unifiedConversationStore.appendMessage(convId, storeProjectId, {
         role,
         content,
       });
+      return stored?.id ?? null;
     } catch {
       /* honest degradation: in-memory only */
+      return null;
     }
   };
 
@@ -387,11 +704,27 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
    * TIDAK PERNAH diklaim tersimpan. */
   const draftUpdatedAtRef = useRef<string | null>(null);
   const draftWarnedRef = useRef<Set<string>>(new Set());
+  /* GATE 3 (5C) — pratinjau revisi yang MENUNGGU konfirmasi eksplisit.
+   * Hidup di memori sesi saja (TIDAK dipersist): reload membatalkan
+   * pratinjau yang menunggu — versi aktif + riwayat pulih utuh, dan
+   * tombol pratinjau lama menjawab jujur bahwa pratinjau sudah tidak
+   * aktif. Konfirmasi harus berasal dari sesi yang melihat pratinjau. */
+  const pendingRevisionRef = useRef<RevisionPreview | null>(null);
+  /* GATE 4 (5D) — pratinjau revisi spek DED yang MENUNGGU konfirmasi
+   * eksplisit (peta id → pratinjau, memori sesi saja — seperti
+   * pendingRevisionRef Gate 3, reload membatalkan pratinjau yang
+   * menunggu) + penjaga konsumsi lampiran DED per sesi (agar pesan
+   * umpan balik DED tidak terposting dua kali bila efek berjalan
+   * ulang; penjaga antar-mount adalah `consumedAt` di lampiran). */
+  const pendingDedSpecRevisionsRef = useRef<Map<string, DedSpecRevisionPreview>>(new Map());
+  const dedConsumeAttemptedRef = useRef<Set<string>>(new Set());
   const persistActiveDraft = (
     stage: string,
     savedBy: 'autosave' | 'manual' | 'transfer' = 'autosave',
   ): void => {
-    const d = getLastUniversalDraft();
+    // FASE 2 (ARS-06): singleton draft dibaca TERIKAT proyek aktif —
+    // draft proyek lain tidak boleh ter-autosave ke proyek ini.
+    const d = getLastUniversalDraft(effProject?.id);
     if (!d || !effProject) return;
     const res = saveDraft({
       draft: d,
@@ -403,6 +736,15 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     });
     if (res.ok) {
       draftUpdatedAtRef.current = res.updatedAt;
+      // FASE 3 — draft nyata tersimpan → langkah generate-draft rencana
+      // ditandai sukses (bukan diklaim dari teks pesan). Langkah
+      // transfer tetap menunggu persetujuan eksplisit pengguna.
+      updateAgentPlan((p) => ({
+        ...p,
+        steps: p.steps.map((s) => (s.kind === 'generate-draft' && s.status !== 'succeeded'
+          ? { ...s, status: 'succeeded' as const, result: `Draft tersimpan: ${d.title} (v${d.version}).`, completedAt: new Date().toISOString() }
+          : s)),
+      }));
       return;
     }
     const err = structuredAiError('DRAFT_PERSISTENCE_FAILED');
@@ -430,25 +772,228 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     }
   };
 
+  /* F9-PERSIST-1 (gelombang perbaikan 2026-11-12) — markTransferred
+   * menulis ulang record dengan updatedAt BARU (T2); nilai baliknya
+   * WAJIB disinkronkan ke draftUpdatedAtRef. Versi lama mengabaikan
+   * nilai balik di kedua situs transfer, sehingga ref tetap T1 dan
+   * semua autosave berikutnya gagal DRAFT_VERSION_CONFLICT sampai
+   * remount. Satu-satunya pemanggil markTransferred di view adalah
+   * kedua situs transfer di bawah — keduanya lewat helper ini.
+   * Desain: sinkronisasi ref (bukan satu jalur tulis) — status
+   * 'transferred' sudah ikut dipersistenkan persistActiveDraft lewat
+   * deriveStatus (receipt ada di objek draft), jadi markTransferred
+   * hanya menambah transisi status eksplisit + savedCount; melipatnya
+   * ke saveDraft akan menyentuh lapisan persistensi bersama + pin-nya.
+   * Bila markTransferred gagal, ref TIDAK berubah — benar, karena
+   * record pun tidak berubah. Guard optimistic-concurrency TIDAK
+   * disentuh. */
+  const syncTransferredMark = (receipt: Parameters<typeof markTransferred>[1]): void => {
+    if (!effProject) return;
+    const res = markTransferred(effProject.id, receipt);
+    if (res.ok) draftUpdatedAtRef.current = res.updatedAt;
+  };
+
+  /* ---- GATE 3 (5C) — aktivasi pratinjau revisi yang menunggu ----
+   * Dipakai bersama oleh konfirmasi teks (cabang submit) dan tombol
+   * "Aktifkan revisi" (handleActionButtonInner). Mengembalikan pesan +
+   * tombol untuk ditampilkan pemanggil dengan mekanismenya sendiri.
+   * Efek samping: membersihkan pending pada sukses/stale/sudah-aktif
+   * (pratinjau itu mati); MEMPERTAHANKAN pending pada gagal-simpan
+   * (pengguna boleh coba lagi); memperbarui draftUpdatedAtRef pada
+   * sukses agar autosave berikutnya tidak kena konflik versi basi. */
+  const runRevisionActivation = (
+    pending: RevisionPreview,
+  ): { message: string; actions?: ChatActionButton[] } => {
+    if (!effProject) {
+      return { message: 'Tidak ada proyek aktif — revisi tidak dapat diaktifkan.' };
+    }
+    const res = activateRevision(effProject.id, pending);
+    if (res.ok) {
+      pendingRevisionRef.current = null;
+      draftUpdatedAtRef.current = res.updatedAt;
+      if (!res.alreadyActivated) {
+        return {
+          message:
+            `✅ ${res.message}\n\n` +
+            `Perubahan: ${pending.changes.join('; ')}.\n` +
+            `Total estimasi: ${formatRupiah(pending.before.estimatedTotal)} → ${formatRupiah(pending.after.estimatedTotal)}.\n` +
+            `Bandingkan versi lama dengan yang baru lewat perintah "bandingkan versi ${pending.baseVersion} dan ${pending.targetVersion}".`,
+          actions: [
+            { label: 'Push ke Spreadsheet', action: { kind: 'push-universal' } },
+            { label: 'Riwayat versi', action: { kind: 'revision-history' } },
+            { label: 'Buka Spreadsheet RAB', action: { kind: 'navigate', menu: 'rab-estimasi' } },
+          ],
+        };
+      }
+      return { message: `ℹ️ ${res.message}` };
+    }
+    if (res.stale) {
+      pendingRevisionRef.current = null;
+      return { message: `⚠️ ${res.message}` };
+    }
+    return { message: `⚠️ ${res.message}` };
+  };
+
+  /* Pesan asisten lokal (di luar submit — untuk tombol aksi revisi). */
+  const appendLocalAssistant = (content: string, actions?: ChatActionButton[]): void => {
+    setMessages((prev) => [...prev, { role: 'assistant', content, ts: Date.now(), actions }]);
+    persistMessage('assistant', content);
+  };
+
   // Pulihkan draft proyek aktif dari penyimpanan lokal saat singleton
   // kosong (mis. sesudah refresh) — jalur lama tanpa record persisten
   // tidak berubah (draft tetap in-memory seperti sebelumnya).
   useEffect(() => {
-    if (!effProject || getLastUniversalDraft()) return;
+    if (!effProject || getLastUniversalDraft(effProject.id)) return;
     const loaded = loadDraft(effProject.id);
     if (!loaded.ok) return;
-    setLastUniversalDraft(loaded.draft);
+    setLastUniversalDraft(loaded.draft, effProject.id);
     draftUpdatedAtRef.current = loaded.meta.updatedAt;
+    // GATE 3 (5C): riwayat versi ikut pulih bersama versi aktif.
+    const historyNote = (loaded.meta.versionHistory?.length ?? 0) > 0
+      ? ` Riwayat versi: ${loaded.meta.versionHistory!.length} versi tersimpan utuh — ketik "riwayat versi" untuk melihatnya.`
+      : '';
+    // GATE 4 (5D): rekonsiliasi DED/QTO ikut pulih bersama draft.
+    const dedNote = loaded.draft.dedQto
+      ? ` Data DED (${loaded.draft.dedQto.attachmentRef.fileName ?? loaded.draft.dedQto.attachmentRef.projectName}) + rekonsiliasi QTO pulih bersama draft — ${loaded.draft.dedQto.summary.mismatch} mismatch, ${loaded.draft.dedQto.decisions.length} keputusan koreksi tersimpan.`
+      : '';
     setMessages((prev) => [
       ...prev,
       {
         role: 'assistant',
-        content: `Draft RAB "${loaded.draft.title}" (versi ${loaded.draft.version}) dipulihkan dari penyimpanan lokal proyek ini — sesi sebelumnya berakhir sebelum draft selesai. Lanjutkan revisi atau buka preview transfer dari draft yang sama.`,
+        content: `Draft RAB "${loaded.draft.title}" (versi ${loaded.draft.version}) dipulihkan dari penyimpanan lokal proyek ini — sesi sebelumnya berakhir sebelum draft selesai. Lanjutkan revisi atau buka preview transfer dari draft yang sama.${historyNote}${dedNote}`,
         ts: Date.now(),
       },
     ]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [effProject?.id]);
+
+  /* ---- Persistensi konteks intake universal (Adaptive Questionnaire
+   * 2026-11-12): snapshot konteks kanonis (termasuk keadaan kuesioner)
+   * disimpan lewat lapisan persistensi yang sama dengan draft, agar
+   * intake yang BELUM sampai generate pun selamat dari muat ulang.
+   * Lapisan persistensi idempoten (isi sama → tanpa tulis ulang). ---- */
+  useEffect(() => {
+    if (!effProject) return;
+    const ictx = getUniversalContextState();
+    if (!ictx) return;
+    saveIntakeContext(effProject.id, ictx);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages, effProject?.id]);
+
+  /* ---- Pemulihan konteks intake sesudah muat ulang: hanya bila
+   * singleton kosong dan snapshot proyek ini lebih baru dari record
+   * draft-nya (draft = tahap sesudah intake; record draft yang lebih
+   * baru ditangani efek pemulihan draft di atas).
+   * GATE 1 (5A) — PENGECUALIAN TAUTAN: snapshot yang MENGHASILKAN draft
+   * yang tersimpan (generatedDraftId === draftId record) adalah konteks
+   * draft itu sendiri — dipulihkan BERSAMA draft, bukan ditindih penjaga
+   * "draft lebih baru". Snapshot tak-terkait yang lebih tua dari draft
+   * tetap tidak dipulihkan (perilaku lama). Konteks pasca-draft
+   * dipulihkan sebagai konteks proyek DORMAN (tersedia untuk builder
+   * kanonis & revisi) TANPA mengaktifkan status menunggu lanjutan
+   * percakapan — agar pesan berikutnya masuk jalur revisi draft, bukan
+   * mengulang brief. ---- */
+  const intakeRestoredForRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!effProject) return;
+    if (getUniversalContextState()) return;
+    if (intakeRestoredForRef.current.has(effProject.id)) return;
+    intakeRestoredForRef.current.add(effProject.id);
+    const loaded = loadIntakeContext(effProject.id);
+    if (!loaded.ok) return;
+    const draftRec = peekPersistedDraft(effProject.id);
+    const linkedToDraft =
+      !!loaded.generatedDraftId && !!draftRec && draftRec.draftId === loaded.generatedDraftId;
+    if (!shouldRestoreIntakeSnapshot(loaded, draftRec)) return;
+    restoreUniversalContext(loaded.ctx, effProject.id);
+    if (!loaded.generatedDraftId) setAwaitingConcept(true);
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: 'assistant',
+        content: linkedToDraft
+          ? `Konteks proyek ${loaded.ctx.primary?.label ?? 'ini'} dipulihkan bersama draftnya dari sesi sebelumnya — spesifikasi, jawaban kuesioner, dan riwayat budget tetap berlaku untuk pertanyaan lanjutan dan revisi draft.`
+          : `Konteks proyek ${loaded.ctx.primary?.label ?? 'ini'} dipulihkan dari sesi sebelumnya — spesifikasi dan jawaban kuesioner yang sudah Anda berikan tetap berlaku. Lanjutkan lewat chat seperti biasa.`,
+        ts: Date.now(),
+      },
+    ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [effProject?.id]);
+
+  /* ---- GATE 4 (5D) — konsumsi lampiran DED ----
+   * Dijalankan sesudah percakapan siap (efek ini dideklarasikan
+   * SESUDAH efek pemulihan intake di atas, sehingga konteks snapshot
+   * sudah pulih saat dimensi dibaca) + saat entry AI tiba selagi view
+   * ter-mount. Satu lampiran dikonsumsi SEKALI (penjaga `consumedAt`
+   * di storage + `dedConsumeAttemptedRef` per sesi): spek DED masuk
+   * konteks intake hidup (bila ada — TANPA konteks hidup, spek
+   * menunggu di lampiran dan digabung saat draft disusun lewat
+   * universalResultFor; tidak ada konteks yang dibuat diam-diam
+   * hanya untuk DED), konflik + rekonsiliasi QTO dihitung vs dimensi
+   * user saat ini, harga item tanpa harga di-resolver (kanonis,
+   * lokal), lalu pesan umpan balik berlabel diposting + tombol
+   * koreksi QTO yang menunggu. Kegagalan konsumsi (lampiran rusak,
+   * resolver gagal) tidak pernah menggagalkan chat — pesan tetap
+   * diposting dengan bagian yang berhasil, atau dilewati jujur. */
+  const consumeDedAttachment = useCallback(() => {
+    if (!effProject || !conversationReady) return;
+    let att: DedAttachment | null = null;
+    try {
+      att = loadDedAttachment(effProject.id);
+    } catch {
+      return;
+    }
+    if (!att || att.consumedAt) return;
+    const attemptKey = `${effProject.id}:${att.jobId}:${att.receivedAt}`;
+    if (dedConsumeAttemptedRef.current.has(attemptKey)) return;
+    dedConsumeAttemptedRef.current.add(attemptKey);
+    const liveCtx = getUniversalContextState();
+    const understanding = dedSpecsFromAttachment(att);
+    const dedSpecs = sanitizeDedSpecs(understanding.specs);
+    if (liveCtx) {
+      liveCtx.dedSpecs = dedSpecs;
+    }
+    const dims = dimsFromIntakeContext(liveCtx);
+    const conflicts = detectDedSpecConflicts(dedSpecs, {
+      lengthM: dims.lengthM,
+      widthM: dims.widthM,
+      heightM: dims.heightM,
+      buildingAreaM2: dims.buildingAreaM2,
+    });
+    const { checks } = reconcileDedQto(att, dims);
+    const proposals = pendingQtoCorrections(att, checks);
+    let priceReview: { reviews: DedPriceReview[]; unreviewedCount: number } = { reviews: [], unreviewedCount: 0 };
+    try {
+      priceReview = resolveDedItemPrices(att);
+    } catch {
+      /* harga tetap unresolved — pesan tetap diposting */
+    }
+    // Tandai dikonsumsi SEBELUM memposting (idempotensi sesi +
+    // antar-mount); gagal simpan tidak menggagalkan pesan (penjaga
+    // ref sesi tetap mencegah duplikasi di sesi ini).
+    saveDedAttachment({ ...att, consumedAt: new Date().toISOString() });
+    const actions: ChatActionButton[] = [];
+    for (const p of proposals) {
+      actions.push(
+        { label: `Terima koreksi QTO: ${p.description}`, action: { kind: 'qto-correction-confirm', correctionId: p.id } },
+        { label: `Tolak koreksi QTO: ${p.description}`, action: { kind: 'qto-correction-reject', correctionId: p.id } },
+      );
+    }
+    appendLocalAssistant(
+      formatDedFeedbackLines({ attachment: att, understanding, userDims: dims, conflicts, checks, proposals, priceReview }).join('\n'),
+      actions.length > 0 ? actions : undefined,
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [effProject, conversationReady]);
+  useEffect(() => {
+    consumeDedAttachment();
+  }, [consumeDedAttachment]);
+  useEffect(() => {
+    const onEntry = () => consumeDedAttachment();
+    window.addEventListener('ezrab:ai-entry', onEntry);
+    return () => window.removeEventListener('ezrab:ai-entry', onEntry);
+  }, [consumeDedAttachment]);
 
   /* ---- Asisten AI: operasi spreadsheet (pratinjau → konfirmasi → eksekusi) ----
    * Tool propose_* hanya membuat plan dari snapshot; eksekusi berjalan di
@@ -745,6 +1290,9 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     try {
       const wasActive = convIdRef.current === id;
       unifiedConversationStore.deleteConversation(id, storeProjectId);
+      // Lepas record eksekusi percakapan yang dihapus (menolak bila ada
+      // eksekusi yang masih berjalan — recordnya dipertahankan).
+      releaseConversation(id);
       if (wasActive) newChat();
       else refreshHistory();
     } catch {
@@ -759,11 +1307,43 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     // draft yang sedang diketik pengguna.
     const echo = opts?.echo !== false;
     if ((!msg && !attached) || busy) return;
+    // F-6B: penanda penggantian error milik SATU percobaan retry —
+    // dibersihkan di awal setiap pengiriman agar tidak pernah bocor ke
+    // pengiriman yang tidak terkait; cabang echo=false di bawah
+    // mengisinya kembali bila pengiriman ini memang sebuah retry.
+    retryReplacesMessageIdRef.current = null;
+    // FASE 2 — ekstraksi memori deterministik di AWAL submit (sebelum
+    // cabang routing apa pun): koreksi/budget/preferensi/keputusan
+    // eksplisit dari pesan ini terekam sebagai memori — termasuk bila
+    // pesan ditangani jalur revisi deterministik atau jawaban lokal
+    // (yang tidak pernah mencapai service.send). Deterministik saja
+    // (tanpa LLM, tanpa karangan); gagal memori ≠ gagal kirim.
+    // Idempoten: kirim ulang ("Coba Lagi") dengan nilai sama hanya
+    // menyegarkan lastAccessedAt record yang sama.
+    try {
+      if (msg && effProject) {
+        const memoryScope: MemoryScope = { userId: null, projectId: effProject.id, conversationId: convIdRef.current ?? null };
+        const candidates = extractMemoryCandidates(msg, memoryScope, null);
+        if (candidates.length > 0) {
+          ingestMemoryCandidates(candidates, memoryScope, 'pesan pengguna (Chat AI)');
+        }
+      }
+    } catch {
+      /* ekstraksi memori tidak boleh menggagalkan kirim */
+    }
     // Handoff lanjutan (§7): pada presentasi Magic AI, sinyal
     // kompleksitas nyata memunculkan TAWARAN (tidak memaksa) untuk
     // melanjutkan di tampilan Chat AI — state percakapan yang sama.
     if (presentationMode === 'magic' && !handoffOfferedRef.current && msg) {
-      const need = detectHandoffNeed(msg);
+      // F3-R2: teruskan opts ke detectHandoffNeed — lantai dari
+      // penyebutan di pesan ini (parseFloorsMention, lapisan bersama)
+      // dengan konteks intake yang hidup sebagai fallback, dan jumlah
+      // lampiran sesi ini (slot lampiran tunggal: 0/1).
+      const handoffCtx = getUniversalContextState();
+      const need = detectHandoffNeed(msg, {
+        floors: parseFloorsMention(msg) ?? handoffCtx?.floors ?? null,
+        attachmentCount: attached ? 1 : 0,
+      });
       if (need.needed && need.reason) {
         handoffOfferedRef.current = true;
         setHandoffOffer(need.reason);
@@ -772,9 +1352,38 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     // Timing terpusat: minimum dihitung SEJAK kirim ditekan (bukan sejak
     // provider selesai) — lihat aiResponseTiming.ts.
     const timingStart = Date.now();
-    const timingRequestId = timingCoordinatorRef.current.next();
-    const submitAbort = new AbortController();
-    submitAbortRef.current = submitAbort;
+    // Eksekusi persisten (lifecycle fix 2026-11-12): eksekusi dibuat LAZY
+    // — hanya saat pekerjaan yang butuh kelangsungan benar-benar dimulai
+    // (gateWait / pengiriman AI). Return awal (mis. dialog kredit) tidak
+    // membuat eksekusi. Signal & token keaktualan milik runtime, bukan
+    // komponen: cleanup unmount TIDAK PERNAH meng-abort-nya.
+    let exec: AiExecutionHandle | null = null;
+    let cancelNoted = false;
+    const ensureExec = (): AiExecutionHandle => {
+      if (!exec) {
+        const convId = convIdRef.current
+          ?? unifiedConversationStore.getOrCreateActiveConversation(storeProjectId).id;
+        exec = beginExecution(convId, storeProjectId);
+      }
+      return exec;
+    };
+    const endExec = (outcome: 'completed' | 'failed' = 'completed', error?: string) => {
+      if (!exec) return;
+      finishExecution(exec.record.requestId, outcome, error);
+      exec = null;
+    };
+    // Penanda pembatalan eksplisit (satu kali per submit): bila pengguna
+    // menekan Berhenti, catat "Permintaan dibatalkan." sebagai pesan
+    // asisten (riwayat tetap jujur) — bukan diam seperti abort lama.
+    const noteCancelledIfNeeded = () => {
+      if (!exec || cancelNoted) return;
+      const rec = getExecution(exec.record.requestId);
+      if (rec?.status !== 'cancelled') return;
+      cancelNoted = true;
+      const text = 'Permintaan dibatalkan.';
+      setMessages((prev) => [...prev, { role: 'assistant', content: text, ts: Date.now() }]);
+      persistMessage('assistant', text);
+    };
     /* Full AI (klik tombol di kartu jalur): pesan ini prompt terkumpul yang
      * memang harus diproses pipeline AI — router lokal dilewati, tetapi
      * gerbang kredit & pencatatan pemakaian tetap berlaku persis seperti
@@ -791,7 +1400,29 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     const navEarly = forcedAi ? null : resolveNavCommand(msg);
     const navHit = navEarly && navEarly.mode !== 'none' ? navEarly : null;
     // --- AI Credits: intent lokal tidak memanggil AI → tanpa biaya ---
+    // FASE 3 — objektif + rencana tugas (agentOrchestrator): diturunkan
+    // dari pesan + intent deterministik; rencana dipersist per proyek/
+    // percakapan. Gagal rencana ≠ gagal kirim.
+    let objectiveSectionForSend: string | undefined;
     const preRouted = routeIntent(msg);
+    try {
+      if (msg && effProject) {
+        const objective = deriveObjective(msg, preRouted.intent);
+        objectiveSectionForSend = formatObjectiveSection(objective);
+        const existing = loadActivePlanForProject(effProject.id, convIdRef.current ?? null);
+        if (!existing) {
+          setAgentPlanTracked(buildPlanForObjective(objective, { userId: null, projectId: effProject.id, conversationId: convIdRef.current ?? null }));
+        } else if (existing.objective.goal !== objective.goal) {
+          // Arah berubah: replan aman — langkah sukses dipertahankan
+          // oleh replanForNewObjective; bila batas iterasi tercapai,
+          // rencana lama dipertahankan apa adanya.
+          const replanned = replanForNewObjective(existing, objective);
+          if (replanned.ok) setAgentPlanTracked(replanned.plan);
+        }
+      }
+    } catch {
+      /* rencana gagal ≠ kirim gagal */
+    }
     const needsAi = forcedAi || (!(preRouted.localOnly && preRouted.intent !== 'UNKNOWN') && !preRouted.needsClarification);
     // Gerbang saldo memakai estimasi reservation berbasis token
     // (riwayat + pesan ini + tunjangan token keluar) — bukan tarif flat.
@@ -831,9 +1462,23 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       // dipersistensikan ulang. Tampilan dibersihkan dari entry error
       // asisten terakhir — percobaan ini menggantikannya.
       const cleaned = [...messages];
+      let removedAiError = false;
       for (let i = cleaned.length - 1; i >= 0; i--) {
-        if (cleaned[i].role === 'assistant' && cleaned[i].isError) { cleaned.splice(i, 1); break; }
+        if (cleaned[i].role === 'assistant' && cleaned[i].isError) {
+          removedAiError = cleaned[i].fromAi === true;
+          cleaned.splice(i, 1);
+          break;
+        }
       }
+      // F-6B: bila yang dibersihkan adalah error pipeline AI, balasan
+      // retry ini juga MENGGANTIKAN record tersimpannya (bukan menambah
+      // entry baru di samping error lama) — persistMessage asisten
+      // pertama sesudah ini memakai id tersebut. Error lokal
+      // registry/push tidak pernah diganti (bukan milik jalur retry).
+      if (removedAiError && lastAiErrorMessageIdRef.current) {
+        retryReplacesMessageIdRef.current = lastAiErrorMessageIdRef.current;
+      }
+      lastAiErrorMessageIdRef.current = null;
       setMessages(cleaned);
       next = [...cleaned, entry];
     }
@@ -853,32 +1498,53 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     const timingMinDelay = minDelayFor(timingComplexity);
     setThinkingText(statusTextFor(timingComplexity, timingActivity));
     // Gerbang penampil hasil: menunggu sisa minimum (paralel dengan
-    // provider, bukan sesudahnya); false = dibatalkan (unmount) atau
+    // provider, bukan sesudahnya); false = dibatalkan eksplisit atau
     // disalip permintaan yang lebih baru → hasil TIDAK ditampilkan.
+    // Signal milik runtime: navigasi TIDAK membatalkan gerbang ini.
     // RAB (owner 2026-10-27): minimum 5–10 detik dari BESARNYA HASIL,
     // bukan dari prompt — jadi gateWait menerima teks balasan dan
     // menghitung rabMinDelayMs dari situ. Non-RAB tetap 1/2/3 detik.
     const gateWait = async (resultText?: string): Promise<boolean> => {
+      const h = ensureExec();
       try {
         const minMs = timingActivity === 'rab' ? rabMinDelayMs(resultText ?? '') : timingMinDelay;
-        await waitForMinimum(timingStart, minMs, Promise.resolve(), submitAbort.signal);
+        await waitForMinimum(timingStart, minMs, Promise.resolve(), h.signal);
       } catch (e) {
         if (isAbortError(e)) return false;
         throw e;
       }
-      return timingCoordinatorRef.current.isLatest(timingRequestId);
+      return h.isCurrent();
     };
     // Satu-satunya jalan menampilkan balasan asisten di cabang-cabang
     // lokal/revisi di bawah (LLM memakai gerbang langsung karena
     // entrinya membawa field tambahan fromAi/model/creditsUsed).
-    const postAssistant = async (content: string, actions?: ChatActionButton[]): Promise<boolean> => {
-      if (!(await gateWait(content))) return false;
-      setMessages((prev) => [...prev, { role: 'assistant', content, ts: Date.now(), actions }]);
+    const postAssistant = async (content: string, actions?: ChatActionButton[], questionnaire?: QuestionnairePayload): Promise<boolean> => {
+      if (!(await gateWait(content))) {
+        // Gerbang gagal: bila penyebabnya pembatalan eksplisit pengguna,
+        // catat penandanya; bila disalip permintaan baru, diam (perilaku
+        // lama). Apa pun itu, eksekusi ini berakhir di sini (finish pada
+        // record 'cancelled' adalah no-op yang aman).
+        noteCancelledIfNeeded();
+        endExec();
+        return false;
+      }
+      setMessages((prev) => [...prev, { role: 'assistant', content, ts: Date.now(), actions, questionnaire }]);
       persistMessage('assistant', content);
+      // FASE 3 — kartu kuesioner ditampilkan → langkah pengumpulan spek
+      // rencana berjalan (menunggu jawaban pengguna, bukan sukses).
+      if (questionnaire) {
+        updateAgentPlan((p) => ({
+          ...p,
+          steps: p.steps.map((s) => (s.kind === 'collect-specs-questionnaire' && s.status !== 'succeeded'
+            ? { ...s, status: 'running' as const, result: 'Kuesioner ditampilkan — menunggu jawaban Anda.', startedAt: s.startedAt ?? new Date().toISOString() }
+            : s)),
+        }));
+      }
       // §2 autosave: balasan terkirim = titik commit draft (dibuat/
       // direvisi lewat jalur deterministik sebelum balasan ini);
       // idempoten di lapisan persistensi → tanpa tulis bila tak berubah.
       persistActiveDraft('autosave');
+      endExec();
       return true;
     };
     /* ---- D1: koreksi pra-pilih pada kartu pilihan RAB bertipe ----
@@ -951,8 +1617,14 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       const ctxRes = tryContinueProjectContext(msg) ?? tryContinueUniversalContext(msg);
       if (ctxRes) {
         const acts = ctxRes.actions && ctxRes.actions.length > 0 ? ctxRes.actions : undefined;
-        setMessages((prev) => [...prev, { role: 'assistant', content: ctxRes.message, ts: Date.now(), actions: acts }]);
+        setMessages((prev) => [...prev, { role: 'assistant', content: ctxRes.message, ts: Date.now(), actions: acts, questionnaire: ctxRes.questionnaire }]);
         persistMessage('assistant', ctxRes.message);
+        // GATE 1 (5A) — titik commit draft: generate via afirmasi di
+        // cabang ini membangun draft di registry; tanpa autosave di sini
+        // draft hanya hidup in-memory dan hilang saat reload (cabang
+        // subtipe/material di bawah sudah memanggilnya — cabang ini
+        // yang tertinggal). Idempoten di lapisan persistensi.
+        persistActiveDraft('autosave');
         setAwaitingConcept(ctxRes.awaitProjectConcept === true);
         setBusy(false);
         return;
@@ -1026,7 +1698,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
             navigate: (menu: string) => navigateChat(menu),
             rawText: msg,
             currentMenu,
-            activeProject,
+            activeProject: effProject,
             projects,
             projectTotal: projectSnapshot ? projectSnapshot.totalDirect : projectTotal,
             projectItems: projectSnapshot?.items ?? null,
@@ -1075,22 +1747,117 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       }
       return;
     }
-    /* ---- Revisi draft universal (2026-10-26) ----
+    /* ---- GATE 3 (5C) — riwayat & perbandingan versi (perintah teks) ----
+     * Lokal penuh, tanpa AI/kredit. Ditempatkan SEBELUM cabang revisi
+     * karena "bandingkan versi …" bukan revisi (tidak mengubah draft). */
+    if (!forcedAi && effProject) {
+      const compareM = msg.match(/bandingkan versi\s*(\d+)\s*(?:dan|dengan|vs\.?|sama)\s*(?:versi\s*)?(\d+)/i);
+      if (compareM) {
+        await postAssistant(compareStoredVersions(effProject.id, Number(compareM[1]), Number(compareM[2])));
+        setBusy(false);
+        return;
+      }
+      if (/^\s*(riwayat versi|lihat riwayat|riwayat revisi)\s*[?.!]*\s*$/i.test(msg)) {
+        await postAssistant(formatVersionHistoryMessage(effProject.id));
+        setBusy(false);
+        return;
+      }
+    }
+    /* ---- GATE 4 (5D) — revisi spek DED (pratinjau + konfirmasi) ----
+     * Perintah deterministik: "ubah panjang DED jadi 12 m" /
+     * "panjang DED seharusnya 12 m". Ditempatkan SEBELUM cabang revisi
+     * Gate 3 karena pola ini juga cocok dengan
+     * looksLikeUniversalRevision — revisi spek DED BUKAN revisi draft
+     * (nilai DED asli tetap tersimpan; yang berubah adalah jawaban
+     * user yang menimpa spek DED). Pratinjau disimpan di
+     * pendingDedSpecRevisionsRef (memori sesi saja); konfirmasi lewat
+     * tombol ded-spec-confirm/reject. Tanpa DED terlampir / tanpa spek
+     * DED untuk kunci itu: dijawab jujur, tidak ada yang berubah. */
+    if (!forcedAi && effProject) {
+      const dedRev = parseDedSpecRevisionCommand(msg);
+      if (dedRev) {
+        const liveCtx = getUniversalContextState();
+        const att = loadDedAttachment(effProject.id);
+        const dedSpecs = (liveCtx?.dedSpecs?.length ?? 0) > 0
+          ? liveCtx!.dedSpecs
+          : att
+            ? sanitizeDedSpecs(dedSpecsFromAttachment(att).specs)
+            : [];
+        const built = buildDedSpecRevisionPreview(dedSpecs, dedRev.key, dedRev.value);
+        if (!built.ok || !built.preview) {
+          await postAssistant(built.message);
+          setBusy(false);
+          return;
+        }
+        pendingDedSpecRevisionsRef.current.set(built.preview.id, built.preview);
+        await postAssistant(formatDedSpecRevisionPreviewMessage(built.preview), [
+          { label: 'Konfirmasi revisi spek DED', action: { kind: 'ded-spec-confirm', previewId: built.preview.id } },
+          { label: 'Batalkan revisi spek DED', action: { kind: 'ded-spec-reject', previewId: built.preview.id } },
+        ]);
+        setBusy(false);
+        return;
+      }
+    }
+    /* ---- GATE 3 (5C) — konfirmasi / batal pratinjau revisi yang menunggu ----
+     * Afirmasi singkat ("ya", "aktifkan") = konfirmasi eksplisit aktivasi;
+     * penolakan singkat ("tidak", "batal") = buang pratinjau. Pesan lain
+     * saat pratinjau menunggu DITANGANI cabang revisi di bawah (ditolak
+     * jujur — putuskan dulu pratinjau yang menunggu). */
+    if (!forcedAi && pendingRevisionRef.current) {
+      const pending = pendingRevisionRef.current;
+      if (isAffirmativeConfirmation(msg)) {
+        const res = runRevisionActivation(pending);
+        await postAssistant(res.message, res.actions);
+        setBusy(false);
+        return;
+      }
+      if (isNegativeConfirmation(msg)) {
+        pendingRevisionRef.current = null;
+        await postAssistant(
+          `Revisi dibatalkan — versi aktif tetap versi ${pending.baseVersion}, tidak berubah. Pratinjau dibuang.`,
+        );
+        setBusy(false);
+        return;
+      }
+    }
+    /* ---- Revisi draft universal (2026-10-26; GATE 3 / 5C 2026-11-12) ----
      * Bila draft universal aktif dan pesan ini perintah revisi (bukan
-     * permintaan RAB baru / navigasi), terapkan revisi lokal tanpa AI
-     * dan tanpa kredit. Revisi yang tidak dikenali jatuh ke routing
-     * normal di bawah (tidak ditelan). */
-    if (!forcedAi && getLastUniversalDraft() && looksLikeUniversalRevision(msg)) {
-      const draftRev = getLastUniversalDraft()!;
-      const rev = reviseUniversalDraft(draftRev, msg);
-      if (rev) {
-        const acts: ChatActionButton[] | undefined = rev.changed
-          ? [
-              { label: 'Push ke Spreadsheet', action: { kind: 'push-universal' } },
-              { label: 'Buka Spreadsheet RAB', action: { kind: 'navigate', menu: 'rab-estimasi' } },
-            ]
-          : undefined;
-        await postAssistant(rev.message, acts);
+     * permintaan RAB baru / navigasi), buat PRATINJAU revisi lokal tanpa
+     * AI dan tanpa kredit — revisi TIDAK langsung diterapkan. Draft aktif
+     * tidak berubah sampai pengguna mengaktifkan pratinjau secara
+     * eksplisit (tombol "Aktifkan revisi" / teks "ya"). Revisi yang
+     * tidak dikenali jatuh ke routing normal di bawah (tidak ditelan).
+     * Revisi baru saat satu pratinjau menunggu DITOLAK jujur (putuskan
+     * dulu) — pratinjau tidak pernah ditimpa diam-diam. */
+    if (!forcedAi && getLastUniversalDraft(effProject?.id) && looksLikeUniversalRevision(msg)) {
+      const draftRev = getLastUniversalDraft(effProject?.id)!;
+      if (pendingRevisionRef.current) {
+        const p = pendingRevisionRef.current;
+        await postAssistant(
+          `Masih ada pratinjau revisi yang menunggu konfirmasi (versi ${p.baseVersion} → ${p.targetVersion}: ${p.changes.join('; ')}). ` +
+            `Aktifkan atau batalkan dulu sebelum meminta revisi baru — pratinjau tidak ditimpa diam-diam.`,
+          [
+            { label: `Aktifkan revisi (versi ${p.targetVersion})`, action: { kind: 'revision-confirm' } },
+            { label: 'Batalkan revisi', action: { kind: 'revision-cancel' } },
+          ],
+        );
+        setBusy(false);
+        return;
+      }
+      const outcome = buildRevisionPreview(draftRev, msg, effProject?.id ?? null);
+      if (outcome.kind === 'unrecognized') {
+        // Bukan revisi yang dikenali — jatuh ke routing normal di bawah.
+      } else if (outcome.kind === 'clarification' || outcome.kind === 'rejected') {
+        await postAssistant(outcome.message);
+        setBusy(false);
+        return;
+      } else {
+        pendingRevisionRef.current = outcome.preview;
+        await postAssistant(formatRevisionPreviewMessage(outcome.preview), [
+          { label: `Aktifkan revisi (versi ${outcome.preview.targetVersion})`, action: { kind: 'revision-confirm' } },
+          { label: 'Batalkan revisi', action: { kind: 'revision-cancel' } },
+          { label: 'Riwayat versi', action: { kind: 'revision-history' } },
+        ]);
         setBusy(false);
         return;
       }
@@ -1103,7 +1870,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
           navigate: (menu: string) => navigateChat(menu),
           rawText: msg,
           currentMenu,
-          activeProject,
+          activeProject: effProject,
           projects,
           // FASE 5A/5B: use the deterministic direct total from the live RAB snapshot
           // (same source as get_project_total tool), not the stored grand total.
@@ -1133,7 +1900,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
           if (res.awaitClarify) setAwaitingClarify(res.awaitClarify);
           // Action buttons — attached to the assistant message
           const entryActions = res.actions && res.actions.length > 0 ? res.actions : undefined;
-          const delivered = await postAssistant(reply, entryActions);
+          const delivered = await postAssistant(reply, entryActions, res.questionnaire);
           // Wizard/panel SETELAH respons terlihat (commit terpisah),
           // bukan seketika bersamaan dengan kirim — urutan Send →
           // Processing → AI Response → Action/Wizard. Bila pengiriman
@@ -1166,12 +1933,77 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     // Disimpan `content` (bukan `msg` mentah) supaya "Coba Lagi" ikut
     // mengirim ulang blok lampiran teks — tanpanya retry kehilangan konteks.
     lastAiPromptRef.current = content;
+    // Eksekusi persisten (lifecycle fix 2026-11-12): signal milik runtime
+    // — navigasi tidak meng-abort fetch yang sedang berjalan; hasil yang
+    // tiba sesudah navigasi tetap ditulis ke store dan terlihat saat kembali.
+    const llmExec = ensureExec();
     try {
       // Provider berjalan PARALEL dengan timer minimum (dihitung sejak
       // kirim): hasil cepat menunggu sisa minimum, hasil lambat tidak
       // ditambah delay. RAB: minimum 5–10 detik dari besarnya hasil
       // (waitForRabMinimum), bukan 3 detik complex.
       const planIdsBeforeSend = new Set(listPendingPlans().map((p) => p.id));
+      // FASE 1 — konteks terstruktur ke builder kanonis: intake + draft
+      // aktif + ringkasan percakapan tersimpan (per conversationId).
+      // Alur revisi pasca-generate TIDAK diubah: konteks intake tetap
+      // dikosongkan sesudah draft nyata tersusun (keputusan owner terbuka).
+      const intakeCtxForSend = getUniversalContextState();
+      const activeDraftForSend = getLastUniversalDraft(effProject?.id);
+      // GATE 4 (5D) — seksi DED/QTO ke builder kanonis (plumbing Fase 5
+      // yang sebelumnya tidak punya pemanggil produksi): bila ada DED
+      // terlampir di proyek ini, dedSection selalu dikirim (spek +
+      // data hilang); qtoSection hanya bila dimensi user tersedia
+      // (tanpa dimensi, semua check CANNOT_CHECK — tidak berguna di
+      // prompt). Kegagalan apa pun tidak pernah menggagalkan kirim.
+      let dedSectionForSend: string | undefined;
+      let qtoSectionForSend: string | undefined;
+      try {
+        const attForSend = effProject ? loadDedAttachment(effProject.id) : null;
+        if (attForSend) {
+          dedSectionForSend = buildDedSection(attachmentToDedOutput(attForSend));
+          const dimsForSend = dimsFromIntakeContext(intakeCtxForSend);
+          const hasDimsForSend =
+            dimsForSend.lengthM != null || dimsForSend.widthM != null ||
+            dimsForSend.buildingAreaM2 != null || dimsForSend.depthM != null;
+          if (hasDimsForSend) {
+            qtoSectionForSend = buildQtoSection(reconcileDedQto(attForSend, dimsForSend).checks);
+          }
+        }
+      } catch {
+        dedSectionForSend = undefined;
+        qtoSectionForSend = undefined;
+      }
+      const storedSummaryForSend = convIdRef.current
+        ? unifiedConversationStore.getConversationSummary(convIdRef.current, storeProjectId)
+        : null;
+      // FASE 2 — memori terstruktur ke builder kanonis: spek v2
+      // terkonfirmasi dari konteks intake ikut diekstrak sebagai memori
+      // proyek (ASSUMPTION tetap user-assumption), lalu retrieval
+      // ter-skop proyek + gerbang personalisasi. Ekstraksi pesan sudah
+      // dilakukan di awal submit (semua jalur); di sini hanya retrieval
+      // + spek. Kegagalan memori TIDAK PERNAH menggagalkan kirim.
+      let memorySectionForSend: string | undefined;
+      let memoryReportForSend: ReturnType<typeof retrieveMemories>['report'] | undefined;
+      try {
+        if (effProject) {
+          const memoryScope: MemoryScope = { userId: null, projectId: effProject.id, conversationId: convIdRef.current ?? null };
+          const specCands = extractSpecMemories(intakeCtxForSend?.structuredSpecs ?? [], memoryScope, null);
+          if (specCands.length > 0) {
+            ingestMemoryCandidates(specCands, memoryScope, 'structuredSpecs v2 (Chat AI)');
+          }
+          const prefsForSend = getPreferences(null);
+          const retrieved = retrieveMemories(memoryScope, msg);
+          const gated = applyPersonalizationGate(retrieved.selected, prefsForSend);
+          const prefLines = formatPreferenceLines(prefsForSend);
+          const memText = formatMemorySection(gated);
+          const combined = [...prefLines, ...(memText ? [memText] : [])].join('\n');
+          memorySectionForSend = combined || undefined;
+          memoryReportForSend = retrieved.report;
+        }
+      } catch {
+        memorySectionForSend = undefined;
+        memoryReportForSend = undefined;
+      }
       const sendPromise = ezrabAiService.send({
         // F3: the attachment block belongs ONLY to the message just sent
         // (the last entry in `next`). Older messages must keep their
@@ -1182,20 +2014,50 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
           content: idx === next.length - 1 ? content : m.content,
         })),
         mode,
+        projectId: effProject?.id,
+        conversationId: convIdRef.current ?? undefined,
+        userId: null, // tanpa identitas hari ini (AUTH_ENABLED=false) — dinyatakan, bukan dikarang
         projectSnapshot,
-        // §8 (2026-11-11): sinyal submit yang SAMA yang menggerbangi
-        // timing kini diteruskan ke lapisan fetch providerClient —
-        // abort (unmount) membatalkan HTTP yang sedang berjalan, bukan
-        // hanya penantian tampil. Controller tidak dibuat ulang di sini.
-        signal: submitAbort.signal,
+        intakeContext: intakeCtxForSend ?? undefined,
+        draftSummary: activeDraftForSend
+          ? {
+              title: activeDraftForSend.title,
+              version: activeDraftForSend.version,
+              partCount: activeDraftForSend.parts.length,
+              itemCount: effectiveItems(activeDraftForSend).length,
+              warnings: activeDraftForSend.warnings?.slice(0, 3),
+            }
+          : undefined,
+        storedSummary: storedSummaryForSend ?? undefined,
+        memorySection: memorySectionForSend ?? undefined,
+        memoryReport: memoryReportForSend ?? undefined,
+        objectiveSection: objectiveSectionForSend ?? undefined,
+        // GATE 4 (5D): seksi DED/QTO dari lampiran DED proyek ini
+        // (plumbing Fase 5 — sebelumnya tidak pernah diisi pemanggil
+        // produksi; tanpa lampiran, keduanya undefined = perilaku lama).
+        dedSection: dedSectionForSend ?? undefined,
+        qtoSection: qtoSectionForSend ?? undefined,
+        // GATE 1 (5A) — satu kunci idempotensi per pengiriman, dipakai
+        // BERSAMA oleh record eksekusi runtime dan panggilan provider
+        // (sebelumnya service membuat kunci baru sendiri, sehingga kunci
+        // di record runtime tidak pernah sampai ke provider). Retry
+        // sesudah INTERRUPTED membuat eksekusi BARU dengan kunci baru —
+        // retry memang permintaan baru (yang lama sudah mati); duplikasi
+        // dicegah oleh tanpa-auto-resubmit + satu record draft per proyek.
+        idempotencyKey: llmExec.record.idempotencyKey,
+        // §8 (2026-11-11): sinyal yang menggerbangi timing kini diteruskan
+        // ke lapisan fetch providerClient. Sejak lifecycle fix, sinyal ini
+        // milik executionRuntime — hanya pembatalan eksplisit pengguna
+        // (tombol Berhenti) yang meng-abort-nya, bukan unmount.
+        signal: llmExec.signal,
       } as any);
       const res = timingActivity === 'rab'
-        ? await waitForRabMinimum(timingStart, sendPromise, submitAbort.signal, (r: any) => r?.reply ?? '')
-        : await waitForMinimum(timingStart, timingMinDelay, sendPromise, submitAbort.signal);
+        ? await waitForRabMinimum(timingStart, sendPromise, llmExec.signal, (r: any) => r?.reply ?? '')
+        : await waitForMinimum(timingStart, timingMinDelay, sendPromise, llmExec.signal);
       // Hasil basi (disalip permintaan baru) tidak ditampilkan dan
       // tidak didebit — minimum sudah terpenuhi oleh gerbang
       // di atas, jadi di sini hanya cek keaslian.
-      if (!timingCoordinatorRef.current.isLatest(timingRequestId)) return;
+      if (!llmExec.isCurrent()) { endExec(); return; }
       // --- AI Credits: settlement SIMULASI berbasis token (Amendemen v1.1) ---
       // FASE 1 RECOVERY (P1-2): debit HANYA bila send() sukses tegas
       // (res.success === true) — kegagalan gateway/HTTP/timeout/respons
@@ -1224,6 +2086,64 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       // lampirkan kartu konfirmasinya ke balon jawaban (plan pertama) dan
       // sebagai entry tersendiri untuk plan tambahan apa pun.
       const newPlans = listPendingPlans().filter((p) => !planIdsBeforeSend.has(p.id));
+      // FASE 7 — Gerbang kualitas respons: verifikasi jawaban LLM
+      // SEBELUM ditampilkan, memakai bukti dari state yang sudah ada
+      // (draft aktif, konteks intake, snapshot proyek, hasil tool
+      // respons ini). Hanya prosa LLM murni yang digerbangi — bila
+      // model memanggil tool, jawabannya adalah output tool
+      // deterministik (bukan klaim model) sehingga gate dilewati.
+      // Bila gate gagal, jawaban DITAHAN dan diganti pesan jujur yang
+      // menyebut aturan yang dilanggar — TIDAK PERNAH diperbaiki
+      // diam-diam dengan mengarang. Penahanan dilakukan dengan
+      // mengganti ISI res.reply (bukan argumen di situs panggilan),
+      // agar teks panggilan persistMessage('assistant', res.reply)
+      // tetap utuh — pin aiCancellationPropagation #5 memeriksa
+      // literal itu sesudah cek llmExec.isCurrent(). Metering di
+      // atas (baris ~1954) sudah memakai reply asli sebelum blok
+      // ini, sehingga debit kredit tetap atas jawaban asli.
+      // Fail-open: pengecualian gate menampilkan jawaban apa adanya
+      // + mencatat error (gate adalah lapisan kualitas, bukan batas
+      // keamanan — crash gate tidak boleh memblokir chat). Debit
+      // kredit TIDAK dibatalkan oleh penahanan: panggilan provider
+      // sudah terjadi (simulasi).
+      let heldReplyNotice: string | null = null;
+      if (res.success && !(res.toolCalls && res.toolCalls.length > 0)) {
+        try {
+          const gateEvidence = buildQualityGateEvidence({
+            draft: activeDraftForSend ?? null,
+            intake: intakeCtxForSend ?? null,
+            snapshot: projectSnapshot ?? null,
+            toolResults: res.toolResults ?? [],
+            projectId: effProject?.id ?? null,
+          });
+          const verdict = checkResponseQuality(res.reply ?? '', gateEvidence);
+          try {
+            console.info('[response-quality-gate]', JSON.stringify({
+              passed: verdict.passed,
+              checked: verdict.checked,
+              notApplicable: verdict.notApplicable,
+              violations: verdict.violations.map((v) => v.check),
+            }));
+          } catch {
+            /* logging tidak boleh menggagalkan tampil */
+          }
+          if (!verdict.passed) {
+            heldReplyNotice = formatQualityGateNotice(verdict);
+            res.reply = heldReplyNotice;
+          }
+        } catch (gateErr) {
+          try { console.warn('[response-quality-gate] fail-open:', gateErr); } catch { /* abaikan */ }
+        }
+      }
+      // CHAT-08: bila pengiriman gagal, wajah kegagalannya bukan lagi
+      // satu kalimat generik — pesan layanan dipertahankan sebagai
+      // baris pertama, ditambah panduan + rujukan tombol Coba Lagi
+      // (formatAiFailureMessage). Dilakukan dengan mengganti res.reply
+      // seperti pola quality-gate di atas, agar teks panggilan
+      // persistMessage('assistant', res.reply) tetap utuh.
+      if (!res.success) {
+        res.reply = formatAiFailureMessage(res.reply, (res as any).errorCode ?? null);
+      }
       const assistantEntry: ChatEntry = {
         role: 'assistant',
         content: res.reply,
@@ -1235,32 +2155,53 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         planId: newPlans[0]?.id,
       };
       setMessages((prev) => [...prev, assistantEntry]);
-      persistMessage('assistant', res.reply);
+      const persistedReplyId = persistMessage('assistant', res.reply);
+      // F-6B: lacak id store error AI ini agar retry dapat menggantikan
+      // record tersimpannya; sukses membersihkan pelacak (tidak ada
+      // error yang menunggu diganti).
+      lastAiErrorMessageIdRef.current = res.success ? null : persistedReplyId;
       for (const extra of newPlans.slice(1)) {
         setMessages((prev) => [...prev, { role: 'assistant', content: extra.previewText, ts: Date.now(), planId: extra.id }]);
         persistMessage('assistant', extra.previewText);
       }
       notificationBus.publish({
-        type: res.success ? 'success' : 'error',
-        title: res.success ? 'Ezrab AI selesai menjawab' : 'Ezrab AI gagal menjawab',
+        type: heldReplyNotice ? 'error' : res.success ? 'success' : 'error',
+        title: heldReplyNotice
+          ? 'Jawaban AI ditahan — tidak lolos pemeriksaan kualitas'
+          : res.success ? 'Ezrab AI selesai menjawab' : 'Ezrab AI gagal menjawab',
         message: msg.length > 90 ? `${msg.slice(0, 90)}…` : msg,
         link: 'ezrab-ai',
       });
+      endExec(res.success ? 'completed' : 'failed', res.success ? undefined : (res.reply ?? 'AI gagal menjawab'));
     } catch (err: any) {
-      // Pembatalan (unmount): diam, tanpa pesan basi. Error provider
-      // tetap menunggu sisa minimum sebelum ditampilkan — dan tidak
-      // pernah membuka wizard (cabang ini tidak punya aksi wizard).
-      if (isAbortError(err)) return;
-      if (!(await gateWait())) return;
-      const errMsg = err?.message || 'Ups! Ada gangguan. Coba lagi ya 🥺';
+      // Pembatalan EKSPLISIT pengguna (tombol Berhenti): catat penandanya,
+      // bukan diam seperti abort-unmount lama. Error provider tetap
+      // menunggu sisa minimum sebelum ditampilkan — dan tidak pernah
+      // membuka wizard (cabang ini tidak punya aksi wizard).
+      if (isAbortError(err)) {
+        noteCancelledIfNeeded();
+        endExec();
+        return;
+      }
+      if (!(await gateWait())) { noteCancelledIfNeeded(); endExec(); return; }
+      // CHAT-08: wajah kegagalan yang sama seperti cabang !success —
+      // pesan error dipertahankan + panduan (tanpa emoji).
+      const errMsg = formatAiFailureMessage(err?.message ?? '', (err as any)?.code ?? (err as any)?.errorCode ?? null);
       setMessages((prev) => [...prev, { role: 'assistant', content: errMsg, isError: true, fromAi: true, ts: Date.now() }]);
+      const persistedErrId = persistMessage('assistant', errMsg);
+      // F-6B: lacak id store error ini agar retry dapat menggantikannya.
+      lastAiErrorMessageIdRef.current = persistedErrId;
       notificationBus.publish({
         type: 'error',
         title: 'Ezrab AI mengalami gangguan',
         message: errMsg.length > 140 ? `${errMsg.slice(0, 140)}…` : errMsg,
         link: 'ezrab-ai',
       });
+      endExec('failed', errMsg);
     } finally {
+      // Jaring pengaman: eksekusi selalu ditutup (idempotent) agar tidak
+      // ada record 'generating' yang menggantung sesudah submit selesai.
+      endExec();
       setBusy(false);
     }
   };
@@ -1571,7 +2512,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       setMessages((prev) => [...prev, entry]);
       persistMessage('assistant', content);
     };
-    const d = getLastUniversalDraft();
+    const d = getLastUniversalDraft(effProject?.id);
     if (!d) {
       appendMsg('Tidak ada draft RAB universal yang aktif untuk di-push. Buat dulu dengan perintah seperti "buatkan RAB jalan paving 300 m2" atau "buatkan RAB drainase U-Ditch 500 m".', undefined, true);
       return;
@@ -1599,7 +2540,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       setMessages((prev) => [...prev, entry]);
       persistMessage('assistant', content);
     };
-    const d = getLastUniversalDraft();
+    const d = getLastUniversalDraft(effProject?.id);
     if (!d) {
       appendMsg('Tidak ada draft RAB universal yang aktif untuk di-push.', undefined, true);
       return;
@@ -1650,11 +2591,16 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       // catat kwitansi agar alur berikutnya konsisten, laporkan jujur
       // sebagai duplikat yang diblokir (bukan penyisipan baru).
       d.lastTransfer = { projectId: effProject.id, version: d.version, pushed: 0, skipped: dupCount + res.total, at: new Date().toISOString() };
-      setLastUniversalDraft(d);
+      setLastUniversalDraft(d, effProject.id);
       // §2/§4: receipt nyata (keadaan tujuan sudah tercapai) ikut
       // dipersistenkan agar status transferred bertahan lintas refresh.
       persistActiveDraft('transferred', 'transfer');
-      markTransferred(effProject.id, d.lastTransfer);
+      syncTransferredMark(d.lastTransfer);
+      // FASE 5 — receipt ikut tercatat di trail audit registry tool.
+      recordTransferReceipt({ projectId: effProject.id, draftVersion: d.version, draftTitle: d.title, pushed: 0, skipped: dupCount + res.total, conversationId: convIdRef.current ?? null });
+      // FASE 6 — keadaan tujuan sudah tercapai = langkah transfer-draft
+      // rencana selesai (ditandai dari outcome nyata, bukan teks pesan).
+      updateAgentPlan((p) => markTransferStepCompleted(p, `Draft "${d.title}" v${d.version} sudah tersimpan di Spreadsheet RAB (transfer terverifikasi sebelumnya — tidak ada penulisan ganda).`));
       appendMsg(
         `${structuredAiError('DUPLICATE_TRANSFER_BLOCKED').message} Draft "${d.title}" versi ${d.version} sudah tersimpan di Spreadsheet RAB proyek "${effProject.name}". (Kode: DUPLICATE_TRANSFER_BLOCKED)`,
         [{ label: 'Buka Spreadsheet RAB', action: { kind: 'navigate', menu: 'rab-estimasi' } }],
@@ -1674,11 +2620,16 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     const added = res.records;
     const unresolvedCount = payload.filter((p) => p.priceStatus === 'PRICE_UNRESOLVED').length;
     d.lastTransfer = { projectId: effProject.id, version: d.version, pushed: added.length, skipped: dupCount, at: new Date().toISOString() };
-    setLastUniversalDraft(d);
+    setLastUniversalDraft(d, effProject.id);
     // §2/§4: HANYA sesudah outcome terverifikasi sukses — persistenkan
     // receipt (draftId+versi terikat di lastTransfer) + status transferred.
     persistActiveDraft('transferred', 'transfer');
-    markTransferred(effProject.id, d.lastTransfer);
+    syncTransferredMark(d.lastTransfer);
+    // FASE 5 — receipt ikut tercatat di trail audit registry tool.
+    recordTransferReceipt({ projectId: effProject.id, draftVersion: d.version, draftTitle: d.title, pushed: added.length, skipped: dupCount, conversationId: convIdRef.current ?? null });
+    // FASE 6 — transfer terverifikasi = langkah transfer-draft rencana
+    // selesai (ditandai dari outcome nyata, bukan teks pesan).
+    updateAgentPlan((p) => markTransferStepCompleted(p, `Draft "${d.title}" v${d.version} dipindahkan ke Spreadsheet RAB (${added.length} item terverifikasi).`));
     appendMsg(
       `✅ ${added.length} item draft "${d.title}" (versi ${d.version}) berhasil di-push ke Spreadsheet RAB proyek "${effProject.name}" (terverifikasi tersimpan).` +
         (dupCount > 0 ? ` ${dupCount} item dilewati karena sudah ada.` : '') +
@@ -1691,12 +2642,32 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   /* Coba Lagi (2026-10-23): kirim ulang prompt AI terakhir lewat jalur
    * submit yang sama, dengan bendera paksa-AI (prompt-nya memang untuk
    * pipeline AI) dan echo=false (tanpa gelembung user duplikat; entry
-   * error lama dibuang oleh submit sebelum mencoba lagi). */
+   * error lama dibuang oleh submit sebelum mencoba lagi).
+   * Lifecycle fix 2026-11-12: lastAiPromptRef hilang saat unmount — bila
+   * ref kosong, pulihkan dari pesan pengguna terakhir di riwayat yang
+   * terpersisten (tombol Coba Lagi & banner interrupted harus bekerja
+   * sesudah kembali dari menu lain / muat ulang). */
+  const getRetryPrompt = (): string | null => {
+    if (lastAiPromptRef.current) return lastAiPromptRef.current;
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role === 'user' && messages[i].content.trim()) return messages[i].content;
+    }
+    return null;
+  };
   const retryLastAi = () => {
-    const prompt = lastAiPromptRef.current;
+    const prompt = getRetryPrompt();
     if (!prompt || busy) return;
     forceAiRef.current = true;
     void submit(prompt, { echo: false });
+  };
+
+  /* Berhenti (lifecycle fix 2026-11-12): pembatalan EKSPLISIT satu-satunya
+   * yang boleh menghentikan request aktif — navigasi tidak pernah
+   * memanggil ini. Menargetkan eksekusi aktif percakapan ini saja. */
+  const stopActiveExecution = () => {
+    const rec = activeExec ?? (activeConvId ? getActiveExecution(activeConvId) : null);
+    if (!rec) return;
+    cancelExecution(rec.requestId);
   };
 
   const handleActionButton = (btn: ChatActionButton) => {
@@ -1711,6 +2682,44 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     }
   };
 
+  /* ---- Kuesioner spesifikasi adaptif (2026-11-12): kirim jawaban kartu
+   * ke registry (konteks kanonis yang sama), tampilkan hasil (brief
+   * tinjauan / kartu ulang bila validasi menolak), tandai kartu asal
+   * sebagai terkirim. Titik commit yang sama dengan tombol aksi:
+   * autosave draft + snapshot konteks intake diperbarui oleh efek
+   * persistensi di bawah. ---- */
+  const handleQuestionnaireSubmit = (entryIndex: number, answers: Record<string, QuestionnaireAnswerRecord>) => {
+    const res = submitQuestionnaireAnswers(answers);
+    // Hasil yang membawa payload kuesioner lagi = validasi menolak
+    // kiriman (kartu ditampilkan ulang) — kartu asal BELUM terkirim.
+    // Hasil tanpa payload (brief tinjauan) = kiriman berhasil.
+    if (!res.questionnaire) {
+      setMessages((prev) =>
+        prev.map((m, i) => (i === entryIndex ? { ...m, questionnaireSubmitted: true } : m)),
+      );
+    }
+    // GELOMBANG PERBAIKI SEMUA (temuan Fase 6 §11.5): jawaban kuesioner
+    // yang DITERIMA (ok + tanpa kartu tanya-ulang) menandai langkah
+    // pengumpulan spek rencana menjadi `succeeded` — sebelumnya langkah
+    // itu tetap `running` selamanya. Penolakan validasi (kartu
+    // ditampilkan ulang) dan konteks-hilang (ok:false) TIDAK menandai:
+    // tidak ada spek yang terkumpul pada kedua kasus itu.
+    if (res.ok && !res.questionnaire) {
+      updateAgentPlan((p) => markQuestionnaireStepCompleted(p, 'Kuesioner spesifikasi dijawab — spek terkumpul.'));
+    }
+    const entry: ChatEntry = {
+      role: 'assistant',
+      content: res.message,
+      ts: Date.now(),
+      actions: res.actions,
+      questionnaire: res.questionnaire,
+    };
+    setMessages((prev) => [...prev, entry]);
+    persistMessage('assistant', res.message);
+    setAwaitingConcept(res.awaitProjectConcept === true);
+    persistActiveDraft('autosave');
+  };
+
   const handleActionButtonInner = (btn: ChatActionButton) => {
     if (btn.action.kind === 'push-rab') {
       pushDirectRabToSpreadsheet();
@@ -1718,6 +2727,147 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       pushUniversalToSpreadsheetPreview();
     } else if (btn.action.kind === 'push-universal-confirm') {
       pushUniversalToSpreadsheet();
+    } else if (btn.action.kind === 'revision-confirm') {
+      // GATE 3 (5C) — tombol = konfirmasi eksplisit aktivasi pratinjau.
+      // Pratinjau hidup di memori sesi; tombol pada pesan lama (sesudah
+      // reload / sesudah pratinjau diputuskan) menjawab jujur.
+      const pending = pendingRevisionRef.current;
+      if (!pending) {
+        appendLocalAssistant(
+          'Pratinjau revisi ini sudah tidak aktif (sudah diaktifkan/dibatalkan, atau sesi dimuat ulang). Kirim ulang permintaan revisi bila masih diperlukan — versi aktif tidak berubah.',
+        );
+      } else {
+        const res = runRevisionActivation(pending);
+        appendLocalAssistant(res.message, res.actions);
+      }
+    } else if (btn.action.kind === 'revision-cancel') {
+      const pending = pendingRevisionRef.current;
+      if (!pending) {
+        appendLocalAssistant('Tidak ada pratinjau revisi yang menunggu — tidak ada yang dibatalkan. Versi aktif tidak berubah.');
+      } else {
+        pendingRevisionRef.current = null;
+        appendLocalAssistant(
+          `Revisi dibatalkan — versi aktif tetap versi ${pending.baseVersion}, tidak berubah. Pratinjau dibuang.`,
+        );
+      }
+    } else if (btn.action.kind === 'revision-history') {
+      appendLocalAssistant(
+        effProject
+          ? formatVersionHistoryMessage(effProject.id)
+          : 'Tidak ada proyek aktif — riwayat versi tidak dapat ditampilkan.',
+      );
+    } else if (btn.action.kind === 'qto-correction-confirm' || btn.action.kind === 'qto-correction-reject') {
+      // GATE 4 (5D) — konfirmasi/penolakan koreksi QTO HANYA via tombol
+      // (bukan afirmasi teks — bila banyak usulan menunggu, afirmasi
+      // teks ambigu). Check direkomputasi segar dari lampiran + dimensi
+      // saat ini; usulan yang sudah diputuskan / tidak ditemukan
+      // dijawab jujur. Draft aktif yang membawa dedQto diperbarui
+      // (checks + decisions segar) + dipersisten — total RAB kanonis
+      // TIDAK berubah (dedQto adalah lapisan validasi, bukan isi RAB).
+      const confirm = btn.action.kind === 'qto-correction-confirm';
+      // Tangkap id ke const lokal — narrowing union hilang di dalam
+      // closure `.find(...)` bila dibaca langsung dari btn.action.
+      const correctionId = btn.action.correctionId;
+      if (!effProject) {
+        appendLocalAssistant('Tidak ada proyek aktif — koreksi QTO tidak dapat diputuskan.');
+      } else {
+        const att = loadDedAttachment(effProject.id);
+        if (!att) {
+          appendLocalAssistant('Lampiran DED proyek ini sudah tidak ada — koreksi QTO tidak dapat diputuskan. Kirim ulang DED dari halaman DED AI bila masih diperlukan.');
+        } else {
+          // Dimensi efektif (F9-QTO-1): dims TERSIMPAN di dedQto
+          // diutamakan, dimensi hidup hanya fallback — usulan yang
+          // tampil dihitung dari dims tersimpan, jadi handler wajib
+          // mereproduksi rekonsiliasi yang sama untuk menemukannya.
+          // Dimensi hidup sesudah generate/remount kosong ATAU milik
+          // konteks lain (mis. snapshot multi-gedung ter-link membawa
+          // lengthM: 50 jalan akses tanpa lebar/kedalaman); urutan lama
+          // (hidup dulu) membuat rekomputasi CANNOT_CHECK dan tombol
+          // Terima menjawab "sudah tidak menunggu". Bila keduanya
+          // kosong, pakai checks tersimpan draft (usulan milik
+          // rekonsiliasi itu) — bukan mengarang dimensi.
+          const activeDraftForQto = getLastUniversalDraft(effProject.id);
+          const resolvedDims = resolveQtoDims(
+            dimsFromIntakeContext(getUniversalContextState()),
+            activeDraftForQto?.dedQto ?? null,
+          );
+          const { checks } = resolvedDims
+            ? reconcileDedQto(att, resolvedDims)
+            : { checks: activeDraftForQto?.dedQto?.checks ?? [] };
+          const proposal = pendingQtoCorrections(att, checks).find((p) => p.id === correctionId);
+          if (!proposal) {
+            appendLocalAssistant(
+              'Usulan koreksi QTO ini sudah tidak menunggu (sudah diputuskan, atau lampiran DED berubah sejak usulan dibuat). Tidak ada yang berubah.',
+            );
+          } else {
+            const updated = confirm
+              ? applyQtoCorrection(att, proposal, checks)
+              : rejectQtoCorrection(att, proposal);
+            if (!updated.ok) {
+              appendLocalAssistant(`⚠️ ${updated.message} — tidak ada yang berubah.`);
+            } else {
+              saveDedAttachment(updated.attachment);
+              // Segarkan dedQto pada draft aktif (bila ada) + persist:
+              // rekomputasi penuh bila dims tersedia; bila tidak, patch
+              // checks tersimpan (item terkonfirmasi → OK, eksak menurut
+              // konstruksi proposal) + decisions segar. Total RAB
+              // kanonis TIDAK berubah (dedQto adalah lapisan validasi).
+              const activeDraft = getLastUniversalDraft(effProject.id);
+              if (activeDraft?.dedQto) {
+                const decision = updated.attachment.decisions.find(
+                  (d) => d.itemId === proposal.itemId && d.correctedQuantity === proposal.expectedQuantity,
+                );
+                const freshChecks = resolvedDims
+                  ? reconcileDedQto(updated.attachment, resolvedDims).checks
+                  : decision
+                    ? patchDedQtoChecksAfterDecision(activeDraft.dedQto.checks, decision)
+                    : activeDraft.dedQto.checks;
+                const nextDraft = {
+                  ...activeDraft,
+                  dedQto: buildDedQtoDraftInfo(updated.attachment, freshChecks, resolvedDims ?? activeDraft.dedQto.dims),
+                };
+                setLastUniversalDraft(nextDraft, effProject.id);
+                persistActiveDraft('autosave');
+              }
+              appendLocalAssistant(
+                confirm
+                  ? `✅ ${updated.message}\n\nKuantitas terkoreksi tercatat sebagai kuantitas Anda (sumber: USER_INPUT); nilai DED asli (${proposal.dedQuantity} ${proposal.dedUnit}) tetap tersimpan di keputusan koreksi dan dapat dibuktikan.`
+                  : `ℹ️ ${updated.message}\n\nNilai DED dipertahankan — tidak ada yang berubah pada data DED.`,
+              );
+            }
+          }
+        }
+      }
+    } else if (btn.action.kind === 'ded-spec-confirm' || btn.action.kind === 'ded-spec-reject') {
+      // GATE 4 (5D) — konfirmasi/penolakan revisi spek DED. Pratinjau
+      // hidup di memori sesi; tombol pada pesan lama (sesudah reload /
+      // sesudah diputuskan) menjawab jujur. Konfirmasi: jawaban user
+      // dicatat di konteks intake (restoreUniversalContext → derive
+      // mengeluarkan spek CONFIRMED bersumber 'percakapan' dengan
+      // supersedes 'ded-spec:<key>'); ctx.dedSpecs TIDAK DIUBAH.
+      const confirm = btn.action.kind === 'ded-spec-confirm';
+      const preview = pendingDedSpecRevisionsRef.current.get(btn.action.previewId);
+      if (!preview) {
+        appendLocalAssistant('Pratinjau revisi spek DED ini sudah tidak aktif (sudah diputuskan, atau sesi dimuat ulang). Spek DED tidak berubah.');
+      } else {
+        pendingDedSpecRevisionsRef.current.delete(btn.action.previewId);
+        if (!confirm) {
+          appendLocalAssistant(
+            `Revisi spek DED dibatalkan — ${preview.label} tetap ${preview.oldValue}${preview.oldUnit ? ` ${preview.oldUnit}` : ''} (DED). Tidak ada yang berubah.`,
+          );
+        } else {
+          const liveCtx = getUniversalContextState();
+          if (!liveCtx || !effProject) {
+            appendLocalAssistant('Konteks intake proyek ini sudah tidak aktif — revisi spek DED tidak dapat diterapkan. Mulai percakapan proyek ini lagi, lalu kirim ulang perintah revisi.');
+          } else {
+            const next = applyDedSpecRevision(liveCtx, preview);
+            restoreUniversalContext(next, effProject.id);
+            appendLocalAssistant(
+              `✅ Revisi spek DED diterapkan: ${preview.label} ${preview.oldValue}${preview.oldUnit ? ` ${preview.oldUnit}` : ''} (DED) → **${preview.newValue}${preview.newUnit ? ` ${preview.newUnit}` : ''} (Anda)**.\n\nNilai DED asli tetap tersimpan di data DED (tidak ditimpa). Spek ini sekarang bersumber dari Anda ("percakapan") dan akan dipakai draft berikutnya.`,
+            );
+          }
+        }
+      }
     } else if (btn.action.kind === 'navigate') {
       // Navigasi meninggalkan alur chat — status menunggu subtipe gugur.
       setAwaitingSubtype(false);
@@ -1759,7 +2909,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         navigate: (menu: string) => navigateChat(menu),
         rawText: btn.action.param,
         currentMenu,
-        activeProject,
+        activeProject: effProject,
         projects,
         projectTotal: projectSnapshot ? projectSnapshot.totalDirect : projectTotal,
         projectItems: projectSnapshot?.items ?? null,
@@ -1777,7 +2927,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       const res = executeIntent(btn.action.intent as never, btn.action.param, {
         navigate: (menu: string) => navigateChat(menu),
         currentMenu,
-        activeProject,
+        activeProject: effProject,
         projects,
         projectTotal: projectSnapshot ? projectSnapshot.totalDirect : projectTotal,
         projectItems: projectSnapshot?.items ?? null,
@@ -1794,7 +2944,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       const res = executeIntent('RAB_MATERIAL_SELECT', btn.action.param, {
         navigate: (menu: string) => navigateChat(menu),
         currentMenu,
-        activeProject,
+        activeProject: effProject,
         projects,
         projectTotal: projectSnapshot ? projectSnapshot.totalDirect : projectTotal,
         projectItems: projectSnapshot?.items ?? null,
@@ -1814,12 +2964,12 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       const res = executeIntent(btn.action.intent as never, btn.action.param, {
         navigate: (menu: string) => navigateChat(menu),
         currentMenu,
-        activeProject,
+        activeProject: effProject,
         projects,
         projectTotal: projectSnapshot ? projectSnapshot.totalDirect : projectTotal,
         projectItems: projectSnapshot?.items ?? null,
       });
-      const entry: ChatEntry = { role: 'assistant', content: res.message, ts: Date.now(), actions: res.actions };
+      const entry: ChatEntry = { role: 'assistant', content: res.message, ts: Date.now(), actions: res.actions, questionnaire: res.questionnaire };
       setMessages((prev) => [...prev, entry]);
       persistMessage('assistant', res.message);
       setAwaitingConcept(res.awaitProjectConcept === true);
@@ -1838,7 +2988,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       const res = executeIntent('RAB_FULL_AI', btn.action.param, {
         navigate: (menu: string) => navigateChat(menu),
         currentMenu,
-        activeProject,
+        activeProject: effProject,
         projects,
         projectTotal: projectSnapshot ? projectSnapshot.totalDirect : projectTotal,
         projectItems: projectSnapshot?.items ?? null,
@@ -1864,7 +3014,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       const res = executeIntent('CLARIFY_PICK', btn.action.param, {
         navigate: (menu: string) => navigateChat(menu),
         currentMenu,
-        activeProject,
+        activeProject: effProject,
         projects,
         projectTotal: projectSnapshot ? projectSnapshot.totalDirect : projectTotal,
         projectItems: projectSnapshot?.items ?? null,
@@ -1884,7 +3034,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       const res = executeIntent('RAB_NEEDS_REFINE', undefined, {
         navigate: (menu: string) => navigateChat(menu),
         currentMenu,
-        activeProject,
+        activeProject: effProject,
         projects,
         projectTotal: projectSnapshot ? projectSnapshot.totalDirect : projectTotal,
         projectItems: projectSnapshot?.items ?? null,
@@ -1994,7 +3144,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     if (!Ctor) {
       setMessages((prev) => [...prev, {
         role: 'assistant', ts: Date.now(), isError: true,
-        content: '🎤 Browser ini tidak mendukung voice input. Coba buka di Chrome Android/desktop ya.',
+        content: 'Browser ini tidak mendukung voice input. Coba buka di Chrome Android/desktop ya.',
       }]);
       return;
     }
@@ -2027,12 +3177,12 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       if (err === 'not-allowed' || err === 'service-not-allowed') {
         setMessages((prev) => [...prev, {
           role: 'assistant', ts: Date.now(), isError: true,
-          content: '🎤 Izin mikrofon ditolak. Izinkan akses mic di pengaturan browser ya.',
+          content: 'Izin mikrofon ditolak. Izinkan akses mic di pengaturan browser ya.',
         }]);
       } else if (err !== 'aborted' && err !== 'no-speech') {
         setMessages((prev) => [...prev, {
           role: 'assistant', ts: Date.now(), isError: true,
-          content: '🎤 Voice input gagal. Coba ketik manual ya.',
+          content: 'Voice input gagal. Coba ketik manual ya.',
         }]);
       }
     };
@@ -2163,7 +3313,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         <div className="ezchat2-atterr" role="alert">{attachError}</div>
       )}
       {listening && (
-        <div className="ezchat2-listening"><span className="ezdot busy pulse" /> Mendengarkan… bicara sekarang 🎤</div>
+        <div className="ezchat2-listening"><span className="ezdot busy pulse" /> Mendengarkan… bicara sekarang</div>
       )}
       <div className="ezchat2-pill">
         {/* Tombol lampirkan file DIHAPUS (owner 2026-10-27): tidak ada
@@ -2273,6 +3423,18 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
                 </button>
                 <button
                   role="menuitem"
+                  onClick={() => { setMenuOpen(false); setHistoryOpen(false); setMemoryOpen(true); }}
+                >
+                  <Brain size={14} /> Memori tersimpan
+                </button>
+                <button
+                  role="menuitem"
+                  onClick={() => { setMenuOpen(false); setHistoryOpen(false); setPlanOpen(true); }}
+                >
+                  <ListChecks size={14} /> Rencana tugas
+                </button>
+                <button
+                  role="menuitem"
                   onClick={() => reloadChat()}
                 >
                   <RotateCcw size={14} /> Muat Ulang
@@ -2297,6 +3459,252 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
           <div className="ezchat2-hist-panel" role="dialog" aria-label="Riwayat percakapan">
             {historyHead}
             {historyList}
+          </div>
+        </>
+      )}
+      {memoryOpen && (
+        <>
+          <div className="ezchat2-hist-veil" onClick={() => setMemoryOpen(false)} />
+          <div className="ezchat2-hist-panel" role="dialog" aria-label="Memori tersimpan">
+            <div className="ezhist-head">
+              <h3 className="ezhist-heading">Memori Tersimpan</h3>
+              <button className="ezhist-newbtn" onClick={() => setMemoryOpen(false)}>Tutup</button>
+            </div>
+            <p style={{ fontSize: '12px', color: 'var(--ez-color-text-body, #475569)', margin: '4px 0 10px' }}>
+              {MEMORY_HONEST_LABEL} Memori yang dihapus tidak muncul lagi di jawaban berikutnya.
+            </p>
+            <label style={{ display: 'flex', gap: '8px', alignItems: 'center', fontSize: '13px', marginBottom: '8px' }}>
+              <input
+                type="checkbox"
+                checked={memoryPrefs.personalizationEnabled}
+                onChange={(e) => {
+                  const res = setPreference(null, 'personalizationEnabled', e.target.checked);
+                  if (res.ok) setMemoryPrefs(res.value);
+                }}
+              />
+              Personalisasi aktif (pakai preferensi saya di jawaban AI)
+            </label>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '10px', fontSize: '12px' }}>
+              <label>Presentasi RAB:{' '}
+                <select
+                  value={memoryPrefs.rabPresentation}
+                  onChange={(e) => {
+                    const res = setPreference(null, 'rabPresentation', e.target.value as UserPreferences['rabPresentation']);
+                    if (res.ok) setMemoryPrefs(res.value);
+                  }}
+                >
+                  <option value="ringkas">Ringkas</option>
+                  <option value="rinci">Rinci</option>
+                </select>
+              </label>
+              <label>Gaya workflow:{' '}
+                <select
+                  value={memoryPrefs.workflowStyle}
+                  onChange={(e) => {
+                    const res = setPreference(null, 'workflowStyle', e.target.value as UserPreferences['workflowStyle']);
+                    if (res.ok) setMemoryPrefs(res.value);
+                  }}
+                >
+                  <option value="bertahap">Bertahap</option>
+                  <option value="langsung">Langsung</option>
+                </select>
+              </label>
+              <label>Level detail:{' '}
+                <select
+                  value={memoryPrefs.detailLevel}
+                  onChange={(e) => {
+                    const res = setPreference(null, 'detailLevel', e.target.value as UserPreferences['detailLevel']);
+                    if (res.ok) setMemoryPrefs(res.value);
+                  }}
+                >
+                  <option value="ringkas">Ringkas</option>
+                  <option value="sedang">Sedang</option>
+                  <option value="rinci">Rinci</option>
+                </select>
+              </label>
+            </div>
+            {memoryItems.length === 0 ? (
+              <p className="ezhist-empty">Belum ada memori tersimpan untuk proyek ini.</p>
+            ) : (
+              <div className="ezhist-list">
+                {memoryItems.map((m) => (
+                  <div key={m.memoryId} className="ezhist-row" style={{ alignItems: 'flex-start' }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: '13px', fontWeight: 600 }}>
+                        [{m.layer} · {m.quality}]{m.status === 'contradictory' ? ' ⚠️ KONFLIK — perlu ditanyakan' : ''}{m.status === 'superseded' ? ' · digantikan' : ''}
+                      </div>
+                      {memoryEditingId === m.memoryId ? (
+                        <div style={{ display: 'flex', gap: '6px', marginTop: '4px' }}>
+                          <input
+                            value={memoryEditingText}
+                            onChange={(e) => setMemoryEditingText(e.target.value)}
+                            style={{ flex: 1, minWidth: 0 }}
+                            aria-label="Koreksi memori"
+                          />
+                          <button
+                            title="Simpan koreksi"
+                            onClick={() => {
+                              if (!effProject) return;
+                              const res = correctMemory(m.memoryId, memoryEditingText, { userId: null, projectId: effProject.id, conversationId: convIdRef.current ?? null });
+                              if (res.ok) { setMemoryEditingId(null); refreshMemoryPanel(); }
+                            }}
+                          >
+                            <Save size={14} />
+                          </button>
+                        </div>
+                      ) : (
+                        <div style={{ fontSize: '13px', wordBreak: 'break-word' }}>{m.content}</div>
+                      )}
+                      <div style={{ fontSize: '11px', color: 'var(--ez-color-text-body, #64748b)' }}>
+                        {m.provenance} • {new Date(m.updatedAt).toLocaleDateString('id-ID')}
+                      </div>
+                    </div>
+                    <button
+                      title="Koreksi memori"
+                      onClick={() => { setMemoryEditingId(m.memoryId); setMemoryEditingText(m.content); }}
+                    >
+                      <Pencil size={14} />
+                    </button>
+                    <button
+                      className="ezhist-del"
+                      title="Hapus memori"
+                      onClick={() => {
+                        if (!effProject) return;
+                        deleteMemory(m.memoryId, { userId: null, projectId: effProject.id, conversationId: convIdRef.current ?? null });
+                        refreshMemoryPanel();
+                      }}
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </>
+      )}
+      {planOpen && (
+        <>
+          <div className="ezchat2-hist-veil" onClick={() => setPlanOpen(false)} />
+          <div className="ezchat2-hist-panel" role="dialog" aria-label="Rencana tugas">
+            <div className="ezhist-head">
+              <h3 className="ezhist-heading">Rencana Tugas</h3>
+              <button className="ezhist-newbtn" onClick={() => setPlanOpen(false)}>Tutup</button>
+            </div>
+            {!agentPlan ? (
+              <p className="ezhist-empty">Belum ada rencana tugas untuk proyek ini. Kirim permintaan (mis. "buatkan RAB kandang sapi 20 ekor") dan rencana multi-langkah akan terbentuk di sini.</p>
+            ) : (
+              <>
+                <p style={{ fontSize: '12px', color: 'var(--ez-color-text-body, #475569)', margin: '4px 0 10px' }}>
+                  {agentPlan.objective.goalText} Rencana tersimpan lokal per-perangkat dan selamat dari navigasi maupun reload.
+                </p>
+                <div className="ezhist-list">
+                  {agentPlan.steps.map((s) => (
+                    <div key={s.id} className="ezhist-row" style={{ alignItems: 'flex-start' }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: '13px', fontWeight: 600 }}>
+                          {s.status === 'succeeded' ? '✓ ' : s.status === 'partially-succeeded' ? '◐ ' : s.status === 'failed' ? '✗ ' : s.status === 'awaiting-approval' ? '⏸ ' : s.status === 'blocked' ? '■ ' : s.status === 'cancelled' ? '— ' : s.status === 'running' ? '… ' : '○ '}
+                          {s.description}
+                        </div>
+                        <div style={{ fontSize: '11px', color: 'var(--ez-color-text-body, #64748b)' }}>
+                          {s.tool} · {s.consequence === 'consequential' ? 'konsekwensial — butuh persetujuan Anda' : s.consequence === 'draft' ? 'draft' : 'baca-saja'}
+                          {s.error ? ` · Gagal: ${s.error}` : ''}
+                          {s.result && s.status !== 'succeeded' ? ` · ${s.result}` : ''}
+                        </div>
+                        <div style={{ fontSize: '11px', color: 'var(--ez-color-text-body, #64748b)' }} title={s.selectionReason}>
+                          Alasan tool: {s.selectionReason}
+                        </div>
+                        {s.status === 'awaiting-approval' && (
+                          <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
+                            <button
+                              onClick={async () => {
+                                const r = approveStep(agentPlan, s.id, 'user');
+                                if (!r.ok) return;
+                                setAgentPlanTracked(r.plan);
+                                // FASE 5 — persetujuan membuka gate DAN
+                                // eksekusi langkah berjalan lewat registry
+                                // kanonis (bukan jalur lama). Hanya langkah
+                                // yang punya runner registry yang
+                                // dieksekusi di sini; langkah pemahaman/
+                                // tampilan UI tetap hanya membuka gate.
+                                // Transfer draft TETAP lewat tombol
+                                // push-rab — registry hanya memeriksa
+                                // kesiapan (readiness), tidak menulis.
+                                if (!effProject || !PLAN_STEP_TOOL_MAP[s.kind]) return;
+                                try {
+                                  const activeDraft = getLastUniversalDraft(effProject.id);
+                                  const exec = await runPlanStepWithRegistry(
+                                    s.kind,
+                                    { projectId: effProject.id, conversationId: convIdRef.current ?? null, planId: agentPlan.planId, stepId: s.id },
+                                    {
+                                      rawText: agentPlan.objective.sourceText,
+                                      draft: activeDraft,
+                                      draftVersion: activeDraft?.version,
+                                      structuredSpecs: activeDraft?.structuredSpecs ?? [],
+                                    },
+                                    { actor: 'user', approval: { actor: 'user', approvedAt: new Date().toISOString() }, channel: 'chat-ai' },
+                                  );
+                                  const text = exec.ok
+                                    ? `Langkah "${s.description}" dijalankan lewat registry: ${exec.output ?? 'selesai.'}`
+                                    : `Langkah "${s.description}" tidak dapat dijalankan lewat registry: ${exec.error ?? 'gagal.'}`;
+                                  setMessages((prev) => [...prev, { role: 'assistant', content: text, ts: Date.now() }]);
+                                  // FASE 6 — hasil eksekusi registry
+                                  // disinkronkan ke status langkah di
+                                  // panel (bukan hanya pesan chat):
+                                  // selesai / selesai-sebagian / gagal /
+                                  // terhenti + alasan. Status terminal
+                                  // registry saja yang dipetakan; hasil
+                                  // non-terminal (mis. awaiting-approval)
+                                  // tidak mengubah langkah. Untuk
+                                  // transfer-draft, sukses berarti
+                                  // kesiapan terverifikasi — langkah
+                                  // tetap 'ready' kecuali draft SUDAH
+                                  // benar-benar ditransfer (dibaca ulang
+                                  // dari singleton sesudah await).
+                                  if (exec.record.status === 'succeeded' || exec.record.status === 'partially-succeeded' || exec.record.status === 'failed' || exec.record.status === 'blocked') {
+                                    const freshDraft = getLastUniversalDraft(effProject.id);
+                                    const transferCompleted = !!(freshDraft?.lastTransfer && freshDraft.lastTransfer.version === freshDraft.version && freshDraft.lastTransfer.projectId === effProject.id);
+                                    updateAgentPlan((p) => applyRegistryOutcomeToStep(p, s.id, {
+                                      status: exec.record.status as 'succeeded' | 'partially-succeeded' | 'failed' | 'blocked',
+                                      message: exec.ok ? (exec.output ?? 'selesai.') : (exec.error ?? 'gagal.'),
+                                      transferCompleted,
+                                    }).plan);
+                                  }
+                                } catch {
+                                  /* kegagalan registry tidak boleh merusak rencana yang sudah disetujui */
+                                }
+                              }}
+                            >
+                              Setujui
+                            </button>
+                            <button
+                              onClick={() => {
+                                const r = denyStep(agentPlan, s.id, 'user');
+                                if (r.ok) setAgentPlanTracked(r.plan);
+                              }}
+                            >
+                              Tolak
+                            </button>
+                          </div>
+                        )}
+                        {s.status === 'failed' && (
+                          <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
+                            <button
+                              onClick={() => {
+                                const r = retryStep(agentPlan, s.id);
+                                if (r.ok) setAgentPlanTracked(r.plan);
+                              }}
+                            >
+                              Coba lagi langkah ini
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         </>
       )}
@@ -2426,6 +3834,15 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
                         ))}
                       </div>
                     )}
+                    {/* Kuesioner spesifikasi adaptif (2026-11-12): kartu
+                        interaktif di dalam pesan yang sama */}
+                    {m.questionnaire && (
+                      <QuestionnaireCard
+                        payload={m.questionnaire}
+                        submitted={m.questionnaireSubmitted === true}
+                        onSubmit={(answers) => handleQuestionnaireSubmit(i, answers)}
+                      />
+                    )}
                     {/* Asisten AI: kartu konfirmasi operasi spreadsheet */}
                     {m.planId && (
                       <PlanControls
@@ -2453,7 +3870,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
                   {/* Coba Lagi: hanya pada entry error dari pipeline AI
                       yang menjadi pesan terakhir dan masih ada prompt
                       terakhir untuk dikirim ulang. */}
-                  {m.isError && m.fromAi && i === messages.length - 1 && lastAiPromptRef.current && (
+                  {m.isError && m.fromAi && i === messages.length - 1 && getRetryPrompt() && (
                     <button
                       onClick={retryLastAi}
                       disabled={busy}
@@ -2478,12 +3895,88 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
                 <div className="ezchat2-bubble ai typing">
                   <span className="tdot" /><span className="tdot" /><span className="tdot" />
                   <span className="ezchat2-thinking">{thinkingText}</span>
+                  {/* Berhenti — pembatalan EKSPLISIT satu-satunya (lifecycle
+                      fix 2026-11-12). Navigasi tidak pernah membatalkan;
+                      tombol ini menghentikan request aktif ini saja. */}
+                  <button
+                    type="button"
+                    onClick={stopActiveExecution}
+                    disabled={!activeExec}
+                    title="Hentikan jawaban ini"
+                    aria-label="Hentikan jawaban AI"
+                    style={{
+                      marginLeft: 8, padding: '4px 10px', borderRadius: 999,
+                      border: '1px solid #FCA5A5', background: '#FEF2F2', color: '#991B1B',
+                      fontWeight: 600, fontSize: 12, cursor: !activeExec ? 'default' : 'pointer',
+                      opacity: !activeExec ? 0.5 : 1, flexShrink: 0,
+                    }}>
+                    Berhenti
+                  </button>
                 </div>
               </div>
             )}
           </div>
         )}
       </div>
+
+      {/* ===== Banner follow-up proaktif FASE 3 (AGT-12) =====
+          Pekerjaan belum selesai dari rencana tugas, disajikan SEKALI
+          saat pengguna kembali — di dalam chat, bukan toast. */}
+      {followUpBanner && (
+        <div role="status" style={{
+          margin: '0 16px 8px', padding: '10px 14px', borderRadius: 10,
+          border: '1px solid #2563EB', background: '#EFF6FF', color: '#1E40AF',
+          fontSize: 13, whiteSpace: 'pre-line',
+        }}>
+          {followUpBanner}
+          <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
+            <button
+              type="button"
+              onClick={() => {
+                setFollowUpBanner(null);
+                updateAgentPlan((p) => ({ ...p, followUpShownAt: new Date().toISOString() }));
+                setPlanOpen(true);
+              }}
+              style={{ padding: '6px 12px', borderRadius: 8, border: '1px solid #2563EB', background: '#FFF', color: '#1E40AF', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}
+            >
+              Lihat rencana
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setFollowUpBanner(null);
+                updateAgentPlan((p) => ({ ...p, followUpShownAt: new Date().toISOString() }));
+              }}
+              style={{ padding: '6px 12px', borderRadius: 8, border: '1px solid #CBD5E1', background: '#FFF', color: '#334155', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}
+            >
+              Tutup
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ===== Banner INTERRUPTED (jaminan reload §8) =====
+          Tampil bila percakapan berakhir pada pesan pengguna tanpa balasan
+          dan tanpa eksekusi hidup. Aksi manual Coba Lagi — tidak pernah
+          auto-resubmit (request berbayar tidak boleh diduplikasi diam-diam). */}
+      {interruptedPrompt && !busy && (
+        <div role="status" style={{
+          margin: '0 16px 8px', padding: '10px 14px', borderRadius: 10,
+          border: '1px solid #F59E0B', background: '#FFFBEB', color: '#92400E',
+          fontSize: 13, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
+        }}>
+          <span>Permintaan terakhir terputus sebelum selesai (halaman dimuat ulang atau ditutup saat AI sedang menjawab).</span>
+          <button
+            type="button"
+            onClick={retryLastAi}
+            style={{
+              padding: '6px 12px', borderRadius: 8, border: '1px solid #D97706',
+              background: '#FFF', color: '#92400E', fontWeight: 700, fontSize: 13, cursor: 'pointer',
+            }}>
+            Coba Lagi
+          </button>
+        </div>
+      )}
 
       {/* ===== Composer di bawah (hanya saat sudah ada percakapan) ===== */}
       {messages.length > 0 && composer(false)}

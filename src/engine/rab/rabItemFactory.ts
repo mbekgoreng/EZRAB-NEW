@@ -160,6 +160,13 @@ export function createRabItemRecord(
     ...(effectivePriceSourceKind ? { priceSourceKind: effectivePriceSourceKind } : {}),
     ...(itemData.priceSourceLabel ? { priceSourceLabel: itemData.priceSourceLabel } : {}),
     ...(itemData.priceSourceExplanation ? { priceSourceExplanation: itemData.priceSourceExplanation } : {}),
+    // Basis biaya harga satuan (§17.1, Gelombang 2 2026-11-13): penanda
+    // ini adalah SATU-SATUNYA bukti pengecualian O&P di engine — bila
+    // tidak diteruskan di sini, penanda dari produsen mana pun (gerbang
+    // template 'HSP', DED/QTO/chat 'DIRECT_COST') HILANG saat kreasi
+    // item. Sumbu harga, bukan sumbu provenance: TIDAK diturunkan bila
+    // klaim OFFICIAL_AHSP ditolak di atas (nilai harga tidak berubah).
+    ...(itemData.priceCostBasis ? { priceCostBasis: itemData.priceCostBasis } : {}),
     ...(itemData.priceSourceName !== undefined ? { priceSourceName: itemData.priceSourceName } : {}),
     ...(itemData.priceSourceSupplier !== undefined ? { priceSourceSupplier: itemData.priceSourceSupplier } : {}),
     ...(itemData.priceSourceDate !== undefined ? { priceSourceDate: itemData.priceSourceDate } : {}),

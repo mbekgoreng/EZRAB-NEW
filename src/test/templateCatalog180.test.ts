@@ -2,7 +2,9 @@
  * EZRAB — KATALOG TEMPLATE RAB 180 — FULL-CATALOG TEST SUITE (Fase J)
  *
  * Mengiterasi SELURUH 180 template resmi bawaan dan memverifikasi:
- *  1. Jumlah tepat 180, 52 ID legacy utuh, tanpa ID duplikat.
+ *  1. Jumlah tepat 183, 52 ID legacy utuh, tanpa ID duplikat.
+ *     (180 + 3 varian katalog baru keputusan owner 2026-11-12 03:41:
+ *     FND-FOOT-PLAT, ROOF-CONCRETE-DECK, INFRA-ROAD-MACADAM.)
  *  2. Distribusi per kategori sesuai tabel final Katalog 180.
  *  3. Struktur valid: parameter, komponen, satuan, level detail
  *     (setiap template baru memiliki tier COMPREHENSIVE nyata).
@@ -40,7 +42,7 @@ const LEGACY_IDS = ["BLD-APARTMENT-MIDRISE","BLD-BOUTIQUE-VILLA","BLD-EDU-CAMPUS
 
 const EXPECTED_CATEGORY_COUNTS: Record<string, number> = {
   RUMAH_TINGGAL: 18,
-  JALAN_TRANSPORTASI: 10,
+  JALAN_TRANSPORTASI: 11, // +INFRA-ROAD-MACADAM (keputusan katalog owner 2026-11-12 03:41)
   SDA_IRIGASI: 10,
   PERKERASAN: 7,
   GEDUNG: 8,
@@ -53,13 +55,13 @@ const EXPECTED_CATEGORY_COUNTS: Record<string, number> = {
   LANDSCAPE_SITE: 6,
   MEP_SYSTEM: 9,
   RENOVASI_MAINTENANCE: 8,
-  PONDASI_GEOTEKNIK: 7,
+  PONDASI_GEOTEKNIK: 8, // +FND-FOOT-PLAT (keputusan katalog owner 2026-11-12 03:41)
   JEMBATAN_STRUKTUR: 7,
   DRAINASE_SANITASI: 7,
   PEKERJAAN_TANAH: 6,
   STRUKTUR_BETON_BAJA: 7,
   FINISHING_INTERIOR: 6,
-  ATAP_WATERPROOFING: 5,
+  ATAP_WATERPROOFING: 6, // +ROOF-CONCRETE-DECK (keputusan katalog owner 2026-11-12 03:41)
   PERTANIAN_PERKEBUNAN: 5,
   PELABUHAN_PESISIR: 5,
   FASILITAS_OLAHRAGA: 5,
@@ -78,7 +80,7 @@ const VALID_WORK_GROUPS = new Set([
   '17. PEKERJAAN PEMBONGKARAN'
 ]);
 
-// Kosakata satuan katalog yang terverifikasi (pindai menyeluruh 180 template:
+// Kosakata satuan katalog yang terverifikasi (pindai menyeluruh 183 template:
 // tepat 14 satuan distinct — daftar ini mengunci kosakata tersebut).
 const VALID_UNITS = new Set([
   'm', 'm1', 'm2', 'm3', 'kg', 'ton', 'unit', 'buah', 'titik', 'btg', 'tgl',
@@ -127,14 +129,14 @@ async function runCatalog180Tests() {
   // GROUP 1: JUMLAH, ID LEGACY, TANPA DUPLIKAT
   // -----------------------------------------------------------------------
   console.log('--- TEST GROUP 1: Catalog Count, Legacy IDs, Uniqueness ---');
-  assert.strictEqual(officials.length, 180, `Expected exactly 180 official templates, got ${officials.length}`);
+  assert.strictEqual(officials.length, 183, `Expected exactly 183 official templates, got ${officials.length}`);
   const ids = officials.map(t => t.id);
-  assert.strictEqual(new Set(ids).size, 180, 'Duplicate template IDs detected');
+  assert.strictEqual(new Set(ids).size, 183, 'Duplicate template IDs detected');
   for (const legacyId of LEGACY_IDS) {
     assert.ok(ids.includes(legacyId), `Legacy template missing: ${legacyId}`);
   }
   assert.strictEqual(LEGACY_IDS.length, 52);
-  console.log('  ✓ PASSED: 180 official templates, all 52 legacy IDs preserved, no duplicates');
+  console.log('  ✓ PASSED: 183 official templates, all 52 legacy IDs preserved, no duplicates');
 
   // -----------------------------------------------------------------------
   // GROUP 2: DISTRIBUSI KATEGORI
@@ -194,7 +196,7 @@ async function runCatalog180Tests() {
   // -----------------------------------------------------------------------
   console.log('\n--- TEST GROUP 4: New Templates — Comprehensive Tier & Honesty Metadata ---');
   const newTemplates = officials.filter(t => !LEGACY_IDS.includes(t.id));
-  assert.strictEqual(newTemplates.length, 128, `Expected 128 new templates, got ${newTemplates.length}`);
+  assert.strictEqual(newTemplates.length, 131, `Expected 131 new templates, got ${newTemplates.length}`);
   for (const t of newTemplates) {
     assert.ok(t.components.length >= 6, `${t.id}: new template too thin (${t.components.length} components)`);
     assert.ok(t.components.some(c => c.detailLevel === 'STANDARD'), `${t.id}: no STANDARD component`);
@@ -203,7 +205,7 @@ async function runCatalog180Tests() {
     assert.ok(Array.isArray(t.assumptions) && t.assumptions!.length > 0, `${t.id}: assumptions missing`);
     assert.ok(Array.isArray(t.exclusions) && t.exclusions!.length > 0, `${t.id}: exclusions missing`);
   }
-  console.log('  ✓ PASSED: All 128 new templates carry STANDARD + COMPREHENSIVE tiers, assumptions & exclusions');
+  console.log('  ✓ PASSED: All 131 new templates carry STANDARD + COMPREHENSIVE tiers, assumptions & exclusions');
 
   // -----------------------------------------------------------------------
   // GROUP 5: GENERATE SELURUH KATALOG — VOLUME AMAN + TRACEABILITY LENGKAP

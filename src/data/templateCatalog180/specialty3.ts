@@ -3,7 +3,7 @@
  * FASILITAS_OLAHRAGA (5 baru), DEMOLISI_REKONSTRUKSI (5 baru).
  */
 import { RabTemplate } from '../../types/rabTemplate';
-import { G, num, comp, tpl } from './builders';
+import { G, num, sel, comp, tpl } from './builders';
 
 const ASUMSI = [
   'Nilai default parameter adalah asumsi awal berlabel untuk estimasi, bukan data pengukuran lapangan.',
@@ -279,14 +279,31 @@ export const SPECIALTY_TEMPLATES_C: RabTemplate[] = [
     icon: 'Beef',
     parameters: [
       num('barn_area', 'Luas Kandang', 320, { min: 100, max: 2000, unit: 'm²' }),
-      num('num_animals', 'Kapasitas Ternak (Ekor Sapi Setara)', 60, { min: 10, max: 500, unit: 'ekor', group: 'specifications' })
+      num('num_animals', 'Kapasitas Ternak (Ekor Sapi Setara)', 60, { min: 10, max: 500, unit: 'ekor', group: 'specifications' }),
+      // Varian penutup atap (keputusan katalog owner 2026-11-12 03:41):
+      // Spandek & Galvalum memakai padanan resmi AHSP 3.1.3.8 "atap
+      // metal menerus tebal 0,4 mm" (Rp135.600/m² FULL, resolver);
+      // Asbes = 3.1.2.1 "atap serat semen gelombang" (Rp94.294/m²
+      // FULL); Genteng = 3.1.1.2 "genteng kodok glazur" (Rp189.956/m²
+      // FULL). Kode G.190 lama DIHAPUS — di master Bina Marga itu
+      // "Landasan Elastomerik Karet Sintetis", bukan atap, dan harga
+      // Rp215.375-nya tidak bersumber resmi mana pun.
+      sel('roof_material', 'Material Penutup Atap', [
+        { label: 'Spandek', value: 'spandek' },
+        { label: 'Galvalum', value: 'galvalum' },
+        { label: 'Asbes (serat semen gelombang)', value: 'asbes' },
+        { label: 'Genteng keramik', value: 'genteng' },
+      ], 'spandek')
     ],
     components: [
       comp('prep', 'Pembersihan & Pengupasan Lahan Kandang', G.PERSIAPAN, 'm2', 'barn_area * 1.3', ['barn_area'], { code: 'A.1.01.a.1' }),
       comp('pondasi', 'Pondasi Batu Belah Kolom & Sloof Kandang', G.PONDASI, 'm3', 'barn_area * 0.09', ['barn_area'], { code: '2.2.2.1.4' }),
       comp('kolom-beton', 'Beton Kolom & Balok Kandang fc 15 MPa', G.STRUKTUR, 'm3', 'barn_area * 0.05', ['barn_area'], { code: '2.2.1.4.3', price: 1355000 }),
       comp('rangka-atap', 'Rangka Atap Seng Baja Ringan Kandang', G.ATAP, 'm2', 'barn_area * 1.15', ['barn_area'], { code: '2.1.1.1' }),
-      comp('atap', 'Penutup Atap Spandek Kandang', G.ATAP, 'm2', 'barn_area * 1.18', ['barn_area'], { code: 'G.190', price: 215375 }),
+      comp('atap-spandek', 'Penutup Atap Spandek Kandang', G.ATAP, 'm2', 'barn_area * 1.18', ['barn_area'], { code: '3.1.3.8', condition: "roof_material === 'spandek'" }),
+      comp('atap-galvalum', 'Penutup Atap Galvalum Kandang', G.ATAP, 'm2', 'barn_area * 1.18', ['barn_area'], { code: '3.1.3.8', condition: "roof_material === 'galvalum'" }),
+      comp('atap-asbes', 'Penutup Atap Asbes Kandang', G.ATAP, 'm2', 'barn_area * 1.18', ['barn_area'], { code: '3.1.2.1', condition: "roof_material === 'asbes'" }),
+      comp('atap-genteng', 'Penutup Atap Genteng Kandang', G.ATAP, 'm2', 'barn_area * 1.18', ['barn_area'], { code: '3.1.1.2', condition: "roof_material === 'genteng'" }),
       comp('lantai', 'Lantai Beton Kandang Miring Drainase (Pasangan Lantai Beton 5 cm + Screed)', G.LANTAI, 'm2', 'barn_area * 0.92', ['barn_area'], { code: '3.10.10' }),
       comp('drain-limbah', 'Saluran Drainase Limbah Kandang (Pemasangan U-Ditch Kecil Sebagian)', G.DRAINASE, 'm1', 'barn_area * 0.24', ['barn_area'], { code: '8.1.1.1', price: 465000, level: 'PROFESSIONAL' }),
       comp('pagar-kandang', 'Pagar Pembatas Kandang Besi Pipa & Kayu (Paket per m)', G.DINDING, 'm1', 'barn_area * 0.42', ['barn_area'], { price: 385000, level: 'PROFESSIONAL', priceNote: 'Referensi pagar kandang pipa galvanis + rel kayu per meter.' }),
@@ -308,7 +325,16 @@ export const SPECIALTY_TEMPLATES_C: RabTemplate[] = [
     icon: 'Package',
     parameters: [
       num('warehouse_area', 'Luas Gudang Hasil', 240, { min: 60, max: 1500, unit: 'm²' }),
-      num('drying_area', 'Luas Lantai Jemur', 600, { min: 100, max: 5000, unit: 'm²' })
+      num('drying_area', 'Luas Lantai Jemur', 600, { min: 100, max: 5000, unit: 'm²' }),
+      // Varian penutup atap gudang (keputusan katalog owner 2026-11-12
+      // 03:41) — Spandek & Galvalum memakai padanan resmi AHSP 3.1.3.8
+      // "atap metal menerus tebal 0,4 mm" (Rp135.600/m² FULL, resolver).
+      // Kode G.190 lama DIHAPUS (bukan atap; harga Rp215.375 tak
+      // bersumber resmi).
+      sel('roof_material', 'Material Penutup Atap', [
+        { label: 'Spandek', value: 'spandek' },
+        { label: 'Galvalum', value: 'galvalum' },
+      ], 'spandek')
     ],
     components: [
       comp('prep', 'Pembersihan & Pengupasan Tapak Fasilitas', G.PERSIAPAN, 'm2', '(warehouse_area + drying_area) * 1.15', ['warehouse_area', 'drying_area'], { code: 'A.1.01.a.1' }),
@@ -316,7 +342,8 @@ export const SPECIALTY_TEMPLATES_C: RabTemplate[] = [
       comp('lantai-gudang', 'Lantai Beton Gudang 5 cm + Plester Keras', G.LANTAI, 'm2', 'warehouse_area', ['warehouse_area'], { code: '3.10.10' }),
       comp('dinding', 'Dinding Bata Gudang Plester 2 Muka', G.DINDING, 'm2', 'warehouse_area * 0.62', ['warehouse_area'], { code: '3.7.1', price: 260714 }),
       comp('rangka-atap', 'Rangka Atap Baja Ringan Gudang', G.ATAP, 'm2', 'warehouse_area * 1.12', ['warehouse_area'], { code: '2.1.1.2' }),
-      comp('atap', 'Penutup Atap Spandek Gudang', G.ATAP, 'm2', 'warehouse_area * 1.14', ['warehouse_area'], { code: 'G.190', price: 215375 }),
+      comp('atap-spandek', 'Penutup Atap Spandek Gudang', G.ATAP, 'm2', 'warehouse_area * 1.14', ['warehouse_area'], { code: '3.1.3.8', condition: "roof_material === 'spandek'" }),
+      comp('atap-galvalum', 'Penutup Atap Galvalum Gudang', G.ATAP, 'm2', 'warehouse_area * 1.14', ['warehouse_area'], { code: '3.1.3.8', condition: "roof_material === 'galvalum'" }),
       comp('lantai-jemur', 'Lantai Jemur Beton (Pelat 10 cm setara Beton fc 10 MPa)', G.PERKERASAN, 'm3', 'drying_area * 0.1', ['drying_area'], { code: '2.2.1.4.2', price: 1125500 }),
       comp('drain-jemur', 'Drainase Keliling Lantai Jemur (Bak Kontrol & Saluran Kecil)', G.DRAINASE, 'buah', 'drying_area / 150', ['drying_area'], { code: '6.3.1', level: 'COMPREHENSIVE' }),
       comp('pintu-gudang', 'Pintu Geser Baja Gudang (Paket per Unit)', G.KUSEN, 'unit', '2', [], { price: 6850000, level: 'PROFESSIONAL', priceNote: 'Referensi pintu geser plat baja gudang hasil (jumlah acuan 2).' }),

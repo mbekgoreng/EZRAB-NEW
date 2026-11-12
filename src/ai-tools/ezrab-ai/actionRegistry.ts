@@ -28,8 +28,30 @@ import {
   UniversalIntakeContext, SubcategoryDef, classifyUniversal,
   extractUniversalContext, refreshUniversalFacts, selectNextQuestion,
   buildUniversalBriefLines, coverageFor, parseScopeRemoval, matchRemovable,
-  subcategoryById,
+  subcategoryById, parseAnchoredLinear,
 } from './universalIntake';
+import {
+  loadDedAttachment,
+  dedSpecsFromAttachment,
+  sanitizeDedSpecs,
+  dimsFromIntakeContext,
+  reconcileDedQto,
+  buildDedQtoDraftInfo,
+  pendingQtoCorrections,
+  mergeDedSpecsIntoSpecs,
+  type DedAttachment,
+  type DedQtoDraftInfo,
+} from './dedQtoIntegration';
+import type { QtoUserDimensions } from './qtoBridge';
+import {
+  QuestionnairePayload, QuestionnaireValidationError,
+  presentQuestionnaire, applyQuestionnaireAnswers, skipPendingQuestionnaire,
+  questionnaireBriefLines, questionnaireGeneratePhrases, questionnaireTextLines,
+  selectQuestionnaireQuestions, deriveStructuredSpecs,
+} from './questionnaire';
+import type { StructuredSpec } from './structuredSpec';
+import type { BuildingModel } from './multiBuilding';
+import type { QuestionnaireAnswerRecord } from './universalIntake';
 import { RabTemplateService } from '../../services/rabTemplateService';
 import { listUnifiedTemplates } from '../../services/rabTemplateCatalogAdapter';
 import { officialAhspRepository } from '../../data/nationalCostDatabase/officialAhspRepository';
@@ -44,7 +66,8 @@ import { evaluateCalculation } from './calcIntent';
 import { findGamesMentioned, buildGameInfoAnswer } from '../../game-space/catalog';
 import { buildDirectRab, displayTemplateBasisName, findDirectTemplate, formatDirectRabMessage, matchDirectRegion } from './directRab';
 import { buildSpecRab, buildSpecRabFromNeeds } from './specRab';
-import { buildUniversalDraft, formatUniversalDraftMessage, extractUniversalSpec } from './universalRab';
+import { buildUniversalDraft, formatUniversalDraftMessage, extractUniversalSpec, getLastUniversalDraft } from './universalRab';
+import { saveIntakeContext, clearIntakeContext } from './draftPersistence';
 import { captureFeedback } from './constructionFeedback';
 
 export interface ChatActionContext {
@@ -94,7 +117,22 @@ export interface ChatActionButton {
     | { kind: 'intent'; intent: string; param?: string }
     | { kind: 'push-rab' }
     | { kind: 'push-universal' }
-    | { kind: 'push-universal-confirm' };
+    | { kind: 'push-universal-confirm' }
+    /* GATE 3 (5C) — revisi immutable: konfirmasi / batal pratinjau revisi
+     * yang menunggu, dan tampilkan riwayat versi. */
+    | { kind: 'revision-confirm' }
+    | { kind: 'revision-cancel' }
+    | { kind: 'revision-history' }
+    /* GATE 4 (5D) — integrasi DED/QTO: konfirmasi / tolak SATU usulan
+     * koreksi QTO (correctionId = `qto:<itemId>`), dan konfirmasi /
+     * tolak SATU pratinjau revisi spek DED (previewId dari
+     * buildDedSpecRevisionPreview). Keputusan per item — tombol tidak
+     * pernah menerapkan koreksi lain; usulan yang sudah diputuskan
+     * dijawab jujur (bukan diterapkan dua kali). */
+    | { kind: 'qto-correction-confirm'; correctionId: string }
+    | { kind: 'qto-correction-reject'; correctionId: string }
+    | { kind: 'ded-spec-confirm'; previewId: string }
+    | { kind: 'ded-spec-reject'; previewId: string };
 }
 
 export interface ActionResult {
@@ -124,6 +162,10 @@ export interface ActionResult {
   /** Chat menunggu jawaban intake konteks proyek (konsep/fasilitas/kondisi
    * landscape — Conversational Intelligence Upgrade 2026-11-10) */
   awaitProjectConcept?: boolean;
+  /** Kuesioner spesifikasi adaptif yang harus dirender sebagai kartu
+   * interaktif pada pesan ini (Adaptive Questionnaire 2026-11-12).
+   * Teks pesannya sendiri memuat salinan terbaca kuesioner yang sama. */
+  questionnaire?: QuestionnairePayload;
   /** Chat menunggu query lanjutan klarifikasi topik (nilai = mode-nya) */
   awaitClarify?: string;
   /** Prompt Full AI yang disusun dari kebutuhan terkumpul (dijalankan view) */
@@ -305,6 +347,9 @@ export function tryContinueRabSubtype(text: string): ActionResult | null {
 interface PendingRabMaterial {
   rawText: string;
   group: RabMaterialGroup;
+  /** GATE 4 (5D): proyek pemilik permintaan — agar draft susulan (sesudah
+   *  jawaban bahan) tetap membawa lampiran DED proyek ini. */
+  projectId?: string | null;
 }
 
 let pendingMaterialGate: PendingRabMaterial | null = null;
@@ -314,8 +359,8 @@ export function getPendingRabMaterial(): PendingRabMaterial | null {
 }
 
 /** Pertanyaan klarifikasi material (tombol bahan nyata dari katalog). */
-function materialQuestionResult(rawText: string, group: RabMaterialGroup): ActionResult {
-  pendingMaterialGate = { rawText, group };
+function materialQuestionResult(rawText: string, group: RabMaterialGroup, projectId?: string | null): ActionResult {
+  pendingMaterialGate = { rawText, group, projectId: projectId ?? null };
   const known = formatMaterialKnownLine(extractUniversalSpec(rawText));
   const lines: string[] = [
     `Siap — sebelum saya susun draft RAB ${group.workLabel}-nya, bahannya perlu jelas dulu: ` +
@@ -367,8 +412,8 @@ function buildMaterialFullAiPrompt(rawText: string, group: RabMaterialGroup, mat
  * menampilkan pertanyaan lagi; sesi kebutuhan rumah dibersihkan agar
  * klik Full AI jatuh ke fallback prompt (bukan komposisi basi).
  */
-function materialUntemplatedResult(rawText: string, group: RabMaterialGroup, materialLabel: string): ActionResult {
-  pendingMaterialGate = { rawText, group };
+function materialUntemplatedResult(rawText: string, group: RabMaterialGroup, materialLabel: string, projectId?: string | null): ActionResult {
+  pendingMaterialGate = { rawText, group, projectId: projectId ?? null };
   lastRabNeeds = null;
   return {
     ok: true,
@@ -416,6 +461,54 @@ export function getUniversalContextState(): UniversalIntakeContext | null {
 
 export function clearUniversalContext(): void {
   universalCtx = null;
+}
+
+/* ------------------------------------------------------------------ */
+/* GATE 1 (5A, 2026-11-12) — persistensi snapshot intake DI TINGKAT    */
+/* REGISTRY. Alasan: registry adalah pemilik siklus hidup konteks —    */
+/* ia yang membersihkan singleton secara sinkron di dalam generate     */
+/* (dulu: efek simpan view yang berjalan sesudah render selalu         */
+/* menemukan singleton null dan tidak menyimpan apa-apa). Karena itu   */
+/* titik-titik commit registry menyimpan snapshotnya SENDIRI,          */
+/* sinkron, sebelum singleton dibersihkan — efek view tetap ada        */
+/* sebagai cadangan per-giliran, bukan sebagai satu-satunya mekanisme. */
+/* Kegagalan simpan TIDAK PERNAH menggagalkan alur (generate/           */
+/* jawaban tetap berjalan; state memori tetap utuh) — kegagalan hanya   */
+/* dicatat lewat nilai balik untuk observabilitas tes. Tanpa           */
+/* projectId (tes / jalur lama) tidak ada penyimpanan: snapshot        */
+/* SELALU terikat proyek (pelajaran ARS-06).                           */
+/* ------------------------------------------------------------------ */
+
+/** Simpan snapshot konteks ini sekarang; false bila tak tersimpan. */
+function persistIntakeSnapshotNow(
+  ctx: UniversalIntakeContext,
+  generatedDraftId?: string | null,
+): boolean {
+  const projectId = ctx.projectId ?? null;
+  if (!projectId) return false;
+  try {
+    const res =
+      generatedDraftId == null
+        ? saveIntakeContext(projectId, ctx)
+        : saveIntakeContext(projectId, ctx, {
+            generatedDraftId,
+            generatedAt: new Date().toISOString(),
+          });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+/** Hapus snapshot tersimpan konteks yang sengaja digugurkan (topik ditinggalkan). */
+function dropPersistedIntakeSnapshot(ctx: UniversalIntakeContext | null): void {
+  const projectId = ctx?.projectId ?? null;
+  if (!projectId) return;
+  try {
+    clearIntakeContext(projectId);
+  } catch {
+    /* penghapusan gagal ≠ alur gagal */
+  }
 }
 
 export function getProjectContextState(): ProjectIntakeContext | null {
@@ -604,7 +697,7 @@ export function projectPreviewResult(ctx: ProjectIntakeContext): ActionResult {
  * Konteks dibersihkan HANYA bila draft benar-benar tersusun — konteks
  * yang gagal disusun tetap hidup agar pengguna bisa melengkapi.
  */
-function generateFromProjectContext(ctx: ProjectIntakeContext): ActionResult {
+function generateFromProjectContext(ctx: ProjectIntakeContext, projectId?: string | null): ActionResult {
   const status = landscapeCatalogStatus(ctx);
   // Teks mesin: gabungan giliran + FAKTA TERSTRUKTUR yang sudah
   // terkonfirmasi dinyatakan ulang dalam bentuk yang dikenali mesin
@@ -616,9 +709,11 @@ function generateFromProjectContext(ctx: ProjectIntakeContext): ActionResult {
   if (ctx.landAreaM2 != null) facts.push(`luas ${ctx.landAreaM2} m2`);
   if (ctx.location) facts.push(`di ${ctx.location}`);
   const text = facts.length ? `${ctx.combinedText} (${facts.join(', ')})` : ctx.combinedText;
+  // FASE 5 (ARS-06) — projectId pemanggil diteruskan agar draft terikat
+  // ke proyek yang benar (bila tidak diteruskan, perilaku lama).
   const res = status.conceptTemplateId
-    ? universalResultFor(text, status.conceptTemplateId)
-    : universalResultFor(text);
+    ? universalResultFor(text, status.conceptTemplateId, undefined, { projectId: projectId ?? null })
+    : universalResultFor(text, undefined, undefined, { projectId: projectId ?? null });
   if (!res) {
     return {
       ok: true,
@@ -710,6 +805,10 @@ export function projectIntakeGate(raw: string): ActionResult | null {
     return null;
   }
   projectCtx = extracted;
+  // GATE 1 (5A) — topik diambil alih gerbang landscape: snapshot intake
+  // universal yang digantikan ikut digugurkan (alasan sama dengan
+  // cabang perintah-baru di tryContinueUniversalContext).
+  dropPersistedIntakeSnapshot(universalCtx);
   universalCtx = null; // topik diambil alih gerbang landscape
   // Konsep dipilih lewat tombol pada giliran SEBELUM konteks ini ada di
   // registry? Tidak — tombol konsep ditangani RAB_CONCEPT_SELECT. Di
@@ -908,12 +1007,90 @@ function universalQuestionResult(ctx: UniversalIntakeContext, ackChanges?: strin
   };
 }
 
+/**
+ * Langkah kuesioner adaptif (Adaptive Questionnaire 2026-11-12):
+ * sesudah pertanyaan kritis percakapan habis dan SEBELUM brief,
+ * spesifikasi material/kapasitas/fasilitas yang berdampak material
+ * dikumpulkan lewat satu kartu kuesioner tergrup. Mengembalikan null
+ * bila tidak ada yang perlu ditanyakan (sudah lengkap / sudah
+ * terkirim) — alur lanjut ke brief seperti biasa.
+ */
+function questionnaireStepResult(ctx: UniversalIntakeContext, ackChanges?: string[]): ActionResult | null {
+  if (ctx.questionnaire.status === 'submitted') return null;
+  const qs = presentQuestionnaire(ctx);
+  if (!qs) return null;
+  universalCtx = ctx;
+  const lines: string[] = [];
+  if (ackChanges?.length) lines.push(`Siap, saya perbarui: ${ackChanges.join('; ')}.`);
+  else lines.push(universalIntro(ctx));
+  const known = universalKnownLine(ctx);
+  if (known && !ackChanges?.length) lines.push('', known);
+  lines.push('');
+  lines.push(...questionnaireTextLines(qs));
+  return {
+    ok: true,
+    message: lines.join('\n'),
+    awaitProjectConcept: true,
+    questionnaire: { questions: qs },
+    actions: UNIVERSAL_STEP_ACTIONS(),
+  };
+}
+
+/**
+ * Kiriman kuesioner dari kartu interaktif (dipanggil view). Jawaban
+ * diterapkan ke konteks kanonis lalu brief tinjauan ditampilkan —
+ * generate tetap menunggu konfirmasi eksplisit di brief.
+ */
+export function submitQuestionnaireAnswers(
+  submitted: Record<string, QuestionnaireAnswerRecord>,
+): ActionResult {
+  const ctx = universalCtx;
+  if (!ctx) {
+    return {
+      ok: false,
+      message: 'Konteks proyek sudah tidak aktif, jadi kuesioner tidak bisa dikirim. Tulis ulang kebutuhannya, misalnya "buatkan rab kandang sapi 17 x 9 m".',
+    };
+  }
+  let res;
+  try {
+    res = applyQuestionnaireAnswers(ctx, submitted);
+  } catch (e) {
+    if (e instanceof QuestionnaireValidationError) {
+      return {
+        ok: true,
+        message: `Kuesioner belum terkirim: ${e.message}. Konteks proyek Anda tidak berubah — periksa lagi jawaban pada kartunya.`,
+        awaitProjectConcept: true,
+        questionnaire: { questions: selectQuestionnaireQuestions(ctx) },
+      };
+    }
+    throw e;
+  }
+  universalCtx = ctx;
+  refreshUniversalFacts(ctx);
+  const ack: string[] = [];
+  if (res.appliedLabels.length) ack.push(`spesifikasi terkonfirmasi — ${res.appliedLabels.join('; ')}`);
+  if (res.changedLabels.length) ack.push(`diperbarui — ${res.changedLabels.join('; ')}`);
+  if (res.skippedLabels.length) ack.push(`belum ditentukan — ${res.skippedLabels.join('; ')}`);
+  return universalReviewResult(ctx, ack.length ? ack : undefined);
+}
+
+/** Pulihkan konteks universal dari snapshot persistensi (muat ulang). */
+export function restoreUniversalContext(ctx: UniversalIntakeContext, projectId?: string | null): void {
+  // FASE 5 (ARS-06) — pemulihan per proyek menandai konteks dengan
+  // projectId pemiliknya (bila diteruskan pemanggil), agar generate
+  // berikutnya mengikat draft ke proyek yang benar.
+  if (projectId) ctx.projectId = projectId;
+  universalCtx = ctx;
+  projectCtx = null;
+}
+
 /** Brief proyek universal (§8) — ditampilkan sebelum generate. */
 export function universalReviewResult(ctx: UniversalIntakeContext, ackChanges?: string[]): ActionResult {
   refreshUniversalFacts(ctx);
   ctx.stage = 'PROJECT_REVIEW';
   universalCtx = ctx;
   const lines = buildUniversalBriefLines(ctx);
+  lines.push(...questionnaireBriefLines(ctx));
   if (ackChanges?.length) lines.unshift(`Siap, saya perbarui: ${ackChanges.join('; ')}.`, '');
   return {
     ok: true,
@@ -930,7 +1107,11 @@ export function universalReviewResult(ctx: UniversalIntakeContext, ackChanges?: 
 function universalNextStep(ctx: UniversalIntakeContext, ackChanges?: string[]): ActionResult {
   refreshUniversalFacts(ctx);
   if (ctx.forceGenerate) return universalReviewResult(ctx, ackChanges);
-  return universalQuestionResult(ctx, ackChanges) ?? universalReviewResult(ctx, ackChanges);
+  return (
+    universalQuestionResult(ctx, ackChanges) ??
+    questionnaireStepResult(ctx, ackChanges) ??
+    universalReviewResult(ctx, ackChanges)
+  );
 }
 
 /**
@@ -951,8 +1132,29 @@ function generateFromUniversalContext(ctx: UniversalIntakeContext): ActionResult
   if (ctx.spanM != null) facts.push(`bentang ${ctx.spanM} m`);
   if (ctx.floors != null) facts.push(`${ctx.floors} lantai`);
   if (ctx.location) facts.push(`di ${ctx.location}`);
+  // Jawaban kuesioner TERKONFIRMASI dinyatakan ulang dengan pola yang
+  // sama (kata-kata pengguna sendiri dari kartu kuesioner) lewat frasa
+  // generate per definisi — frasa itu disusun agar terbaca sebagai
+  // ATRIBUT proyek utama, bukan scope mandiri (label cakupan mentah
+  // TIDAK dilampirkan: kata seperti "drainase"/"saluran" pada label
+  // fasilitas kandang akan dideteksi pembangun draf sebagai scope
+  // sipil terpisah yang menuntut panjangnya sendiri).
+  for (const phrase of questionnaireGeneratePhrases(ctx)) facts.push(phrase);
   const text = facts.length ? `${ctx.combinedText} (${facts.join(', ')})` : ctx.combinedText;
-  const res = universalResultFor(text);
+  // Fase 2 Bagian B: spek terstruktur (Bagian A) + cap budget terkini
+  // diteruskan ke pembangun draft agar rantai spek → RAB berjalan.
+  // CATATAN INTEGRASI: deriveStructuredSpecs berasal dari Bagian A —
+  // bila berkas itu belum mendarat, impor di atas gagal dimuat.
+  const specs = deriveStructuredSpecs(ctx);
+  // FASE 5 (ARS-06) — projectId konteks diteruskan agar draft yang
+  // dibangun terikat ke proyek pemilik konteks.
+  // GATE 2 (5B) — model gedung konteks diteruskan apa adanya: konteks
+  // yang dibangun multi-giliran (gedung disebut di pesan berbeda)
+  // membawa model yang TIDAK dapat diparse ulang dari satu teks —
+  // tanpa ini draft dari brief kehilangan gedung kedua dst.
+  // GATE 4 (5D) — dimensi konteks diteruskan untuk rekonsiliasi QTO
+  // DED (otoritatif multi-giliran; jalur cepat memakai dimsFromRawText).
+  const res = universalResultFor(text, undefined, undefined, { structuredSpecs: specs, budgetCapOverride: ctx.budget?.amount ?? null, projectId: ctx.projectId ?? null, buildings: ctx.buildings, dedQtoDims: dimsFromIntakeContext(ctx) });
   if (!res) {
     return {
       ok: true,
@@ -967,6 +1169,16 @@ function generateFromUniversalContext(ctx: UniversalIntakeContext): ActionResult
     // needs-spec / pertanyaan lanjutan dari mesin — konteks tetap hidup.
     return { ...res, awaitProjectConcept: true };
   }
+  // GATE 1 (5A) — SIMPAN DULU, BARU BERSIHKAN: konteks final yang
+  // disetujui (APPROVED + jawaban kuesioner + budgetHistory + koreksi +
+  // bangunan per bangunan) dipertahankan sebagai snapshot terakhir,
+  // ditautkan ke draft yang baru dihasilkan — SEBELUM singleton
+  // dibersihkan, karena sesudah baris ini tidak ada lagi yang dapat
+  // menyimpan konteks final (efek simpan view hanya berjalan sesudah
+  // render, saat singleton sudah null). Singleton tetap dibersihkan
+  // (perilaku sesi yang dipin tes); yang dipertahankan adalah
+  // SNAPSHOT-nya untuk pemulihan.
+  persistIntakeSnapshotNow(ctx, getLastUniversalDraft()?.id ?? null);
   universalCtx = null;
   const gapNotes: string[] = [];
   for (const d of [ctx.primary, ...ctx.secondary]) {
@@ -984,13 +1196,32 @@ function generateFromUniversalContext(ctx: UniversalIntakeContext): ActionResult
 }
 
 /**
+ * FASE 4 (CHAT-05, 2026-11-12) — Penjaga hijack mesin rumah parametrik.
+ * `buildSpecRab` membangun RAB dari mesin parametrik RUMAH; tanpa penjaga
+ * ini ia mengklaim pesan apa pun yang terukur, termasuk yang primernya
+ * kategori lain ("Buatkan RAB kolam renang di halaman rumah 10 x 5 m"
+ * → RAB awal Rumah Tipe 45 — E2E Fase 4 run 2/4). `classifyUniversal`
+ * sudah tahu primernya (kolam, mandiri — bukan subordinat rumah); penjaga
+ * ini hanya menegakkannya di dispatch: bila primer terklasifikasi dan
+ * BUKAN 'rumah', specRab dilewati dan jalur katalog universal yang
+ * menangani (atau ringkasan jujur bila tak ada template). Primer null
+ * (tak terklasifikasi) = perilaku lama, specRab tetap dicoba. Pesan
+ * rumah sejati ("rumah dengan kolam renang" → primer rumah) tidak
+ * terpengaruh.
+ */
+export function specRabHijackGuard(raw: string): boolean {
+  const primaryId = classifyUniversal(raw).primary?.id ?? null;
+  return primaryId !== null && primaryId !== 'rumah';
+}
+
+/**
  * Titik masuk gerbang intake universal pada CREATE_RAB_SUMMARY (dan,
  * dengan `fromClarify`, pada CREATE_RAB_CLARIFY untuk kategori
  * teridentifikasi yang jatuh ke menu generik — prinsip §1 prompt:
  * wizard generik tidak boleh tampil bila kategori sudah dikenal).
  * Mengembalikan null bila bukan urusannya.
  */
-export function universalIntakeGate(raw: string, fromClarify = false): ActionResult | null {
+export function universalIntakeGate(raw: string, fromClarify = false, projectId?: string | null): ActionResult | null {
   const cls = classifyUniversal(raw);
   if (!cls.primary) return null;
   const t = (raw || '').toLowerCase();
@@ -1000,6 +1231,16 @@ export function universalIntakeGate(raw: string, fromClarify = false): ActionRes
   const ctx = extractUniversalContext(raw);
   const p = ctx.primary;
   if (!p) return null;
+  // GATE 4 (5D) — spek DED lampiran ikut ke konteks (snapshot jalur
+  // cepat + konsistensi pemulihan): hanya bila ada lampiran proyek
+  // ini; gagal muat tidak pernah menggagalkan gate. Tanpa lampiran
+  // (kasus semua tes lama) perilaku IDENTIK — ctx.dedSpecs tetap [].
+  if (projectId) {
+    try {
+      const att = loadDedAttachment(projectId);
+      if (att) ctx.dedSpecs = sanitizeDedSpecs(dedSpecsFromAttachment(att).specs);
+    } catch { /* lampiran rusak/tak terbaca — konteks jalan tanpa DED */ }
+  }
 
   if (!cls.isMulti) {
     // --- Alur terlindungi (§10/§11): jangan mencegat. ---
@@ -1047,8 +1288,23 @@ export function universalIntakeGate(raw: string, fromClarify = false): ActionRes
     p.id === 'renovasi' &&
     (ctx.renovationScope == null || (ctx.buildingAreaM2 == null && ctx.landAreaM2 == null && ctx.dimensionsText == null));
   if (!cls.isMulti && !fromClarify && ctx.missingCritical.length === 0 && !renovasiNeedsIntake) {
+    // GATE 1 (5A) — jalur cepat: fakta kritis lengkap, draft langsung.
+    // Alur TIDAK dicegat (perilaku lama dipertahankan: tanpa pertanyaan,
+    // tanpa singleton sesi), TETAPI konteks yang baru diekstrak ini
+    // adalah konteks yang akan menghasilkan draft — simpan snapshotnya
+    // sekarang agar auto-draft meninggalkan jejak yang dapat dipulihkan
+    // (dulu: konteks tidak pernah dibuat → snapshot tidak pernah ada).
+    // Relasi ke draft ditautkan pemanggil (CREATE_RAB_SUMMARY) sesudah
+    // draft tersusun; bila builder ternyata butuh spesifikasi, snapshot
+    // tanpa tautan ini tetap menjadi titik pulih intake yang sah.
+    if (projectId) ctx.projectId = projectId;
+    persistIntakeSnapshotNow(ctx);
     return null; // fakta kritis lengkap — jalur cepat lama (draft langsung) dipertahankan
   }
+  // GATE 1 (5A) — cap konteks dengan proyek pemiliknya (ARS-06):
+  // konteks FRESH sebelumnya tidak pernah membawa projectId, sehingga
+  // draft dari intake fresh dibangun tanpa ikatan proyek.
+  if (projectId) ctx.projectId = projectId;
   universalCtx = ctx;
   projectCtx = null; // topik diambil alih gerbang ini
   return universalNextStep(ctx);
@@ -1130,6 +1386,14 @@ export function tryContinueUniversalContext(text: string): ActionResult | null {
   // --- Afirmasi owner: di brief = setujui & generate; di pertanyaan
   // = lewati ke brief (langkah tertunda yang dieksekusi). ---
   if (isRabFinalizeText(text)) {
+    // Kuesioner masih tertampil: langkah tertunda yang dieksekusi
+    // adalah penyelesaian kuesioner (yang belum dijawab = belum
+    // ditentukan) menuju brief — brief belum pernah ditinjau pengguna,
+    // jadi afirmasi TIDAK melompat langsung ke generate.
+    if (ctx.questionnaire.status === 'presented') {
+      skipPendingQuestionnaire(ctx);
+      return universalReviewResult(ctx, ['kuesioner dilewati — spesifikasi yang belum dijawab tercatat belum ditentukan']);
+    }
     if (ctx.stage === 'PROJECT_REVIEW' || ctx.approvalStatus === 'APPROVED') {
       return generateFromUniversalContext(ctx);
     }
@@ -1141,6 +1405,10 @@ export function tryContinueUniversalContext(text: string): ActionResult | null {
 
   // --- Perintah baru yang jelas menggugurkan konteks (pola gerbang lain) ---
   if (/\b(buka|bukain|tampilkan|cari|carikan)\b/.test(t) || (/\bbuatkan\b[^.]{0,30}\brab\b/.test(t) && classifyUniversal(text).primary?.id !== ctx.primary?.id)) {
+    // GATE 1 (5A) — topik sengaja ditinggalkan: snapshot tersimpan ikut
+    // digugurkan agar reload tidak membangkitkan konteks yang sudah
+    // ditinggalkan pengguna (keterbatasan v1 kuesioner §9.8).
+    dropPersistedIntakeSnapshot(ctx);
     universalCtx = null;
     return null;
   }
@@ -1201,7 +1469,13 @@ export function applyUniversalOption(param: string): ActionResult {
       message: 'Konteks intake sudah tidak aktif. Tulis ulang kebutuhannya, misalnya "buatkan rab gedung kantor 3 lantai".',
     };
   }
-  if (param === 'review') return universalReviewResult(ctx);
+  if (param === 'review') {
+    // "Susun brief sekarang" saat kuesioner masih tertampil = pengguna
+    // memilih lewati kuesioner — pertanyaan tertampil ditandai belum
+    // ditentukan secara jujur, bukan dijawab.
+    skipPendingQuestionnaire(ctx);
+    return universalReviewResult(ctx);
+  }
   const applies: Record<string, () => void> = {
     'new': () => { ctx.isNewConstruction = true; },
     'existing': () => { ctx.isNewConstruction = false; },
@@ -1244,7 +1518,9 @@ export function generateUniversalFromBrief(): ActionResult {
 
 /** Susun draft dari permintaan yang gerbangnya sudah terjawab (klik tombol). */
 function materialAnsweredDraft(pending: PendingRabMaterial, templateId: string, note: string): ActionResult {
-  const res = universalResultFor(pending.rawText, templateId, note);
+  // GATE 4 (5D): projectId pending diteruskan — draft susulan tetap
+  // membawa lampiran DED proyek ini.
+  const res = universalResultFor(pending.rawText, templateId, note, { projectId: pending.projectId ?? null });
   return res ?? { ok: false, message: 'Draft belum bisa disusun dari pilihan bahan itu.' };
 }
 
@@ -1260,14 +1536,14 @@ const MATERIAL_ASSUME_NOTE =
  * null (draft berjalan seperti biasa); tanpa template → jawaban jujur;
  * belum disebut → pertanyaan klarifikasi.
  */
-function materialGateResult(raw: string, draft: { parts: { scope: { id: string } }[] }): ActionResult | null {
+function materialGateResult(raw: string, draft: { parts: { scope: { id: string } }[] }, projectId?: string | null): ActionResult | null {
   if (draft.parts.length !== 1) return null;
   const group = materialGroupForScope(draft.parts[0].scope.id);
   if (!group) return null;
   const cls = classifyMaterialText(group, raw);
   if (cls.kind === 'option') return null;
-  if (cls.kind === 'untemplated') return materialUntemplatedResult(raw, group, cls.material.label);
-  return materialQuestionResult(raw, group);
+  if (cls.kind === 'untemplated') return materialUntemplatedResult(raw, group, cls.material.label, projectId);
+  return materialQuestionResult(raw, group, projectId);
 }
 
 /**
@@ -1289,13 +1565,13 @@ export function tryContinueRabMaterial(text: string): ActionResult | null {
     );
   }
   if (cls.kind === 'untemplated') {
-    return materialUntemplatedResult(pending.rawText, pending.group, cls.material.label);
+    return materialUntemplatedResult(pending.rawText, pending.group, cls.material.label, pending.projectId ?? null);
   }
   // Aturan afirmasi owner 2026-11-06: "itu aja"/"oke" = eksekusi langkah
   // tertunda (susun draft), BUKAN pertanyaan ulang — dengan asumsi terbuka.
   if (isRabFinalizeText(text)) {
     pendingMaterialGate = null;
-    return universalResultFor(pending.rawText, undefined, MATERIAL_ASSUME_NOTE);
+    return universalResultFor(pending.rawText, undefined, MATERIAL_ASSUME_NOTE, { projectId: pending.projectId ?? null });
   }
   return null;
 }
@@ -1572,15 +1848,70 @@ function directRabTableResult(built: BuiltRab): ActionResult {
  * (target revisi chat dan tombol Push); pertanyaan ambiguitas membawa
  * tombol pilih template; kekurangan data membawa SATU pertanyaan inti.
  */
-function universalResultFor(raw: string, forcedTemplateId?: string, materialNote?: string): ActionResult | null {
-  const res = buildUniversalDraft(raw, forcedTemplateId);
+/**
+ * GATE 4 (5D) — dimensi QTO dari teks mentah (jalur cepat, tanpa
+ * konteks intake hidup): spek kanonis (panjang/lebar/luas/tinggi/
+ * tebal) + kedalaman dari parser anchor yang SAMA dengan intake
+ * (parseAnchoredLinear). Tebal: spec.thicknessCm → meter. Tanpa
+ * kedalaman/tebal, item volume tidak dapat dibandingkan (CANNOT_CHECK
+ * — jujur, bukan ditebak).
+ */
+function dimsFromRawText(raw: string): QtoUserDimensions {
+  const spec = extractUniversalSpec(raw);
+  const depth = parseAnchoredLinear(raw, ['kedalaman', 'kedalaman saluran', 'dalam']);
+  return {
+    lengthM: spec.lengthM ?? spec.buildingLengthM ?? null,
+    widthM: spec.widthM ?? spec.buildingWidthM ?? null,
+    depthM: depth ? depth.valueM : null,
+    heightM: spec.heightM ?? null,
+    buildingAreaM2: spec.areaM2 ?? null,
+    landAreaM2: spec.landAreaM2 ?? null,
+    thicknessM: spec.thicknessCm != null ? spec.thicknessCm / 100 : null,
+    floors: spec.floors ?? null,
+  };
+}
+
+function universalResultFor(raw: string, forcedTemplateId?: string, materialNote?: string, opts?: { structuredSpecs?: StructuredSpec[]; budgetCapOverride?: number | null; projectId?: string | null; buildings?: BuildingModel[]; dedQtoDims?: QtoUserDimensions }): ActionResult | null {
+  // GATE 4 (5D) — DED lampiran: spek DED digabung ke spek draft
+  // (spek user menang per kunci — mergeDedSpecsIntoSpecs) +
+  // rekonsiliasi QTO dihitung untuk draft + tombol koreksi QTO yang
+  // masih menunggu. Dibungkus try/catch: kegagalan DED apa pun tidak
+  // pernah menggagalkan draft (draft tersusun tanpa DED). Tanpa
+  // lampiran, mergedSpecs/dedQto identik dengan perilaku lama.
+  let attachment: DedAttachment | null = null;
+  let dedQto: DedQtoDraftInfo | undefined;
+  let qtoActions: ChatActionButton[] = [];
+  let mergedSpecs = opts?.structuredSpecs;
+  try {
+    attachment = opts?.projectId ? loadDedAttachment(opts.projectId) : null;
+    if (attachment) {
+      const dedSpecs = dedSpecsFromAttachment(attachment).specs;
+      mergedSpecs = mergeDedSpecsIntoSpecs(opts?.structuredSpecs ?? [], dedSpecs).merged;
+      const dims = opts?.dedQtoDims ?? dimsFromRawText(raw);
+      const { checks } = reconcileDedQto(attachment, dims);
+      dedQto = buildDedQtoDraftInfo(attachment, checks, dims);
+      for (const p of pendingQtoCorrections(attachment, checks)) {
+        qtoActions.push(
+          { label: `Terima koreksi QTO: ${p.description}`, action: { kind: 'qto-correction-confirm', correctionId: p.id } },
+          { label: `Tolak koreksi QTO: ${p.description}`, action: { kind: 'qto-correction-reject', correctionId: p.id } },
+        );
+      }
+    }
+  } catch { /* DED gagal — draft tetap jalan tanpa DED */ }
+  const res = buildUniversalDraft(raw, forcedTemplateId, {
+    structuredSpecs: mergedSpecs,
+    budgetCapOverride: opts?.budgetCapOverride,
+    projectId: opts?.projectId,
+    buildings: opts?.buildings,
+    dedQto,
+  });
   // Gerbang klarifikasi material (owner 2026-11-10): draft SATU cakupan
   // berpeta bahan (atap/pondasi) yang bahannya BELUM disebut tidak
   // langsung ditampilkan — pengguna ditanya balik dulu. Hanya berjalan
   // pada jalur tanpa template paksa: jawaban gerbang (klik opsi) datang
   // lewat forcedTemplateId, dan lewati-afirmasi datang dengan materialNote.
   if (!forcedTemplateId && !materialNote && res.kind === 'draft') {
-    const gate = materialGateResult(raw, res.draft);
+    const gate = materialGateResult(raw, res.draft, opts?.projectId ?? null);
     if (gate) return gate;
   }
   // Integrasi feedback (audit jalur produksi P0 §3): permintaan yang
@@ -1616,6 +1947,9 @@ function universalResultFor(raw: string, forcedTemplateId?: string, materialNote
       actions: [
         { label: 'Push ke Spreadsheet', action: { kind: 'push-universal' } },
         { label: 'Buka Spreadsheet RAB', action: { kind: 'navigate', menu: 'rab-estimasi' } },
+        // GATE 4 (5D): tombol koreksi QTO yang masih menunggu (bila ada
+        // DED terlampir + MISMATCH belum diputuskan).
+        ...qtoActions,
       ],
     };
   }
@@ -2031,7 +2365,7 @@ export function executeIntent(
       // gerbang mengambil alih di sini bila klasifikasinya jelas dan
       // bukan alur terlindungi; "buatkan rab" tanpa objek mengembalikan
       // null dari gerbang dan menu di bawah tetap tampil (skenario B).
-      const uniClarify = universalIntakeGate(rawClarify, true);
+      const uniClarify = universalIntakeGate(rawClarify, true, ctx.activeProject?.id ?? null);
       if (uniClarify) return uniClarify;
       // "buatkan rab" tanpa objek: tanya balik + tombol jalur, JANGAN
       // menumpahkan daftar template ke chat. Lokal penuh, tanpa kredit AI.
@@ -2113,7 +2447,11 @@ export function executeIntent(
       // dari spesifikasi (specRab) dengan daftar asumsi terbuka. Bila
       // spesifikasi tidak terukur/di luar dukungan, jatuh jujur ke
       // ringkasan kebutuhan (tidak memaksa hasil karangan).
-      const specBuilt = buildSpecRab(raw);
+      // FASE 4 (CHAT-05): specRab adalah mesin RUMAH — jangan biarkan ia
+      // mengklaim pesan yang primernya kategori lain (lihat
+      // specRabHijackGuard). Bila penjaga aktif, langsung ke cakupan
+      // universal di bawah.
+      const specBuilt = specRabHijackGuard(raw) ? null : buildSpecRab(raw);
       if (specBuilt) {
         return {
           ok: true,
@@ -2128,7 +2466,9 @@ export function executeIntent(
       // Cakupan universal (2026-10-26): teks DIRECT yang bukan rumah
       // bertipe/spek bebas dicoba lewat katalog template 180 sebelum
       // jatuh ke ringkasan kebutuhan.
-      const uniDirect = universalResultFor(raw);
+      // GATE 4 (5D): projectId diteruskan agar lampiran DED proyek ini
+      // ikut (spek DED + rekonsiliasi QTO di universalResultFor).
+      const uniDirect = universalResultFor(raw, undefined, undefined, { projectId: ctx.activeProject?.id ?? null });
       if (uniDirect) return uniDirect;
       return rabSummaryResult(raw);
     }
@@ -2173,7 +2513,7 @@ export function executeIntent(
       // + taman + pagar + drainase) dan kategori non-landscape yang
       // fakta kritisnya hilang. Untuk landscape murni & alur
       // terlindungi gerbang ini mengembalikan null.
-      const uniRes = universalIntakeGate(rawSummary);
+      const uniRes = universalIntakeGate(rawSummary, false, ctx.activeProject?.id ?? null);
       if (uniRes) return uniRes;
       const intakeRes = projectIntakeGate(rawSummary);
       if (intakeRes) return intakeRes;
@@ -2182,8 +2522,34 @@ export function executeIntent(
       // owner) karena jalur rumah (typed/spec/workspace) yang memilikinya.
       const needsSummary = extractRabNeeds(stripLandPhrases(rawSummary));
       if (needsSummary.kind !== 'rumah') {
-        const uniSummary = universalResultFor(rawSummary);
-        if (uniSummary) return uniSummary;
+        // GATE 4 (5D): projectId diteruskan agar lampiran DED proyek
+        // ini ikut (spek DED + rekonsiliasi QTO + tombol koreksi).
+        const uniSummary = universalResultFor(rawSummary, undefined, undefined, { projectId: ctx.activeProject?.id ?? null });
+        if (uniSummary) {
+          // GATE 1 (5A) — jalur cepat menghasilkan draft: tautkan snapshot
+          // intake (yang sudah disimpan gerbang sebelum draft) ke draft
+          // yang baru tersusun, agar pemulihan sesudah reload memulihkan
+          // konteks draft ini BERSAMA draftnya. Konteks diekstrak ulang
+          // dari teks yang sama — deterministik, identik dengan yang
+          // disimpan gerbang.
+          if (uniSummary.actions?.some((a) => a.action.kind === 'push-universal')) {
+            const draftNow = getLastUniversalDraft();
+            const pid = ctx.activeProject?.id ?? null;
+            if (draftNow && pid) {
+              const fastCtx = extractUniversalContext(rawSummary);
+              fastCtx.projectId = pid;
+              // GATE 4 (5D): snapshot tautan ini MENIMPA snapshot gerbang
+              // — spek DED harus ikut digabung lagi, atau konteks pulih
+              // pasca-reload kehilangan seksi DED di brief.
+              try {
+                const att = loadDedAttachment(pid);
+                if (att) fastCtx.dedSpecs = sanitizeDedSpecs(dedSpecsFromAttachment(att).specs);
+              } catch { /* lampiran rusak — snapshot jalan tanpa DED */ }
+              persistIntakeSnapshotNow(fastCtx, draftNow.id);
+            }
+          }
+          return uniSummary;
+        }
       }
       // Fase 2: ringkasan kebutuhan dulu — TIDAK membuka wizard/studio.
       return rabSummaryResult(rawSummary);
@@ -2230,7 +2596,7 @@ export function executeIntent(
             'Konteks proyek sudah tidak aktif. Tulis ulang kebutuhannya, misalnya "buatkan rab landscape 1 hektar".',
         };
       }
-      if (param === 'generate') return generateFromProjectContext(ctxIntake);
+      if (param === 'generate') return generateFromProjectContext(ctxIntake, ctx.activeProject?.id ?? null);
       return projectPreviewResult(ctxIntake);
     }
 
@@ -2281,12 +2647,12 @@ export function executeIntent(
         };
       }
       if (param === 'reask') {
-        return materialQuestionResult(pending.rawText, pending.group);
+        return materialQuestionResult(pending.rawText, pending.group, pending.projectId ?? null);
       }
       if (param === 'assume') {
         pendingMaterialGate = null;
         return (
-          universalResultFor(pending.rawText, undefined, MATERIAL_ASSUME_NOTE) ?? {
+          universalResultFor(pending.rawText, undefined, MATERIAL_ASSUME_NOTE, { projectId: pending.projectId ?? null }) ?? {
             ok: false,
             message: 'Draft belum bisa disusun saat ini.',
           }
@@ -2414,7 +2780,8 @@ export function executeIntent(
       if (nUniversal) {
         const syntheticUniversal = syntheticUniversalRawText(nUniversal);
         if (syntheticUniversal) {
-          const uni = universalResultFor(syntheticUniversal);
+          // GATE 4 (5D): projectId diteruskan (lampiran DED ikut).
+          const uni = universalResultFor(syntheticUniversal, undefined, undefined, { projectId: ctx.activeProject?.id ?? null });
           if (uni) return uni;
         }
       }

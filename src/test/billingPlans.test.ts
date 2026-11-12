@@ -198,6 +198,24 @@ check('matriks: kredit Free tampil "100 (sekali)", bukan sel credits bulanan',
   matrixSrc.includes("free: T('100 (sekali)')"));
 check('ketentuan transparan memuat aturan Free v1.2 (100 sekali, chat saja, tanpa top-up)',
   matrixSrc.includes('100 kredit AI sekali di awal') && matrixSrc.includes('top-up tidak tersedia untuk paket Free'));
+check('K8: bullet Starter bebas frasa "Semua kategori" (Starter = Cipta Karya saja, plans.ts)',
+  (() => {
+    const m = blocksSrc.match(/starter: \[([^\]]*)\]/);
+    return !!m && !m[1].includes('Semua kategori') && m[1].includes('AHSP Cipta Karya penuh');
+  })());
+check('K8: bullet Professional & Business TETAP "Semua kategori" (mereka = 4 domain)',
+  (() => {
+    const pro = blocksSrc.match(/professional: \[([^\]]*)\]/);
+    const biz = blocksSrc.match(/business: \[([^\]]*)\]/);
+    return !!pro && !!biz && pro[1].includes('Semua kategori AHSP 2026') && biz[1].includes('Semua kategori AHSP 2026');
+  })());
+check('K8: matriks SDA/Bina Marga/SMKK Starter = N (tidak tersedia)',
+  matrixSrc.includes("label: 'AHSP Sumber Daya Air', values: { free: N, starter: N")
+  && matrixSrc.includes("label: 'AHSP Bina Marga', values: { free: N, starter: N")
+  && matrixSrc.includes("label: 'AHSP SMKK', values: { free: N, starter: N"));
+check('K8: matriks Cipta Karya Starter tetap Y; SDA/BM/SMKK Pro & Business tetap Y',
+  matrixSrc.includes("label: 'AHSP Cipta Karya', values: { free: Y, starter: Y")
+  && matrixSrc.includes("starter: N, professional: Y, business: Y")); 
 
 console.log('=== Permukaan 3: tab Paket & Billing Pengaturan jujur ===');
 const settingsSrc = read('src/components/settings/UnifiedSettingsView.tsx');

@@ -1,8 +1,11 @@
 import { MasterBuildingTemplate, BuildingCategory } from './schema/types';
 import { HOUSE_TYPE_36_SINGLE_FLOOR_TEMPLATE } from './templates/houseType36Template';
 import { HOUSE_TYPE_45_SINGLE_FLOOR_TEMPLATE } from './templates/houseType45Template';
+import { HOUSE_TYPE_54_SINGLE_FLOOR_TEMPLATE } from './templates/houseType54Template';
+import { HOUSE_TYPE_60_SINGLE_FLOOR_TEMPLATE } from './templates/houseType60Template';
 import { HOUSE_TYPE_70_SINGLE_FLOOR_TEMPLATE } from './templates/houseType70Template';
 import { HOUSE_TYPE_36_TWO_FLOOR_TEMPLATE } from './templates/houseType36TwoFloorTemplate';
+import { HOUSE_TYPE_90_TWO_FLOOR_TEMPLATE } from './templates/houseType90Template';
 import { SHOPHOUSE_2_FLOOR_TEMPLATE } from './templates/shophouse2FloorTemplate';
 import { CONCRETE_ROAD_TEMPLATE } from './templates/concreteRoadTemplate';
 import { UDITCH_DRAINAGE_TEMPLATE } from './templates/uDitchDrainageTemplate';
@@ -18,8 +21,14 @@ class MasterBuildingTemplateRegistry {
   constructor() {
     this.registerTemplate(HOUSE_TYPE_36_SINGLE_FLOOR_TEMPLATE);
     this.registerTemplate(HOUSE_TYPE_45_SINGLE_FLOOR_TEMPLATE);
+    // GELOMBANG 2 §17.11 (2026-11-13): T54/T60/T90 sudah ada di
+    // HouseTypeCatalog + konfigurasi rumah RabTemplateService — baru
+    // sekarang terdaftar di master registry (7 → 10 template).
+    this.registerTemplate(HOUSE_TYPE_54_SINGLE_FLOOR_TEMPLATE);
+    this.registerTemplate(HOUSE_TYPE_60_SINGLE_FLOOR_TEMPLATE);
     this.registerTemplate(HOUSE_TYPE_70_SINGLE_FLOOR_TEMPLATE);
     this.registerTemplate(HOUSE_TYPE_36_TWO_FLOOR_TEMPLATE);
+    this.registerTemplate(HOUSE_TYPE_90_TWO_FLOOR_TEMPLATE);
     this.registerTemplate(SHOPHOUSE_2_FLOOR_TEMPLATE);
     this.registerTemplate(CONCRETE_ROAD_TEMPLATE);
     this.registerTemplate(UDITCH_DRAINAGE_TEMPLATE);

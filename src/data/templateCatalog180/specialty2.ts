@@ -242,6 +242,35 @@ export const SPECIALTY_TEMPLATES_B: RabTemplate[] = [
   }),
 
   tpl({
+    id: 'ROOF-CONCRETE-DECK',
+    name: 'Dak Beton Atap + Waterproofing (Plat Beton Bertulang)',
+    category: 'ATAP_WATERPROOFING',
+    subcategory: 'Dak Beton',
+    description: 'Atap dak beton bertulang untuk gedung/hunian: bekisting plat, penulangan slab, pengecoran plat fc 15 MPa, waterproofing membran bakar, dan screed proteksi. Alternatif atap miring bila pengguna meminta dak beton.',
+    badge: 'Dak Beton',
+    icon: 'Layers',
+    parameters: [
+      num('roof_area', 'Luas Dak Atap', 260, { min: 40, max: 3000, unit: 'm²' }),
+      num('slab_thickness_m', 'Tebal Plat Dak', 0.12, { min: 0.1, max: 0.2, unit: 'm', group: 'specifications' })
+    ],
+    components: [
+      // Varian katalog baru (keputusan owner 2026-11-12 03:41).
+      // Bekisting plat 2.2.1.3.5 & tulangan slab 2.2.1.1.1 FULL;
+      // beton 2.2.1.4.3 PARTIAL (fallback Rp1.355.000 mengikuti pola
+      // mapan FND-*) & membran 3.4.1 PARTIAL (fallback Rp207.102
+      // mengikuti pola ROOF-WP-DECK-AUDIT) → MARKET_REFERENCE.
+      comp('bekisting', 'Bekisting Plat Dak Beton', G.ATAP, 'm2', 'roof_area', ['roof_area'], { code: '2.2.1.3.5' }),
+      comp('besi', 'Penulangan Plat Dak (Tulangan Slab)', G.STRUKTUR, 'kg', 'roof_area * slab_thickness_m * 110', ['roof_area', 'slab_thickness_m'], { code: '2.2.1.1.1' }),
+      comp('beton', 'Beton Plat Dak fc 15 MPa', G.STRUKTUR, 'm3', 'roof_area * slab_thickness_m', ['roof_area', 'slab_thickness_m'], { code: '2.2.1.4.3', price: 1355000 }),
+      comp('membran', 'Waterproofing Membran Bakar Dak', G.ATAP, 'm2', 'roof_area * 1.08', ['roof_area'], { code: '3.4.1', price: 207102, priceNote: 'Komposisi resolver PARTIAL — fallback diselaraskan komposisi kanonis membran bakar.' }),
+      comp('screed', 'Screed Proteksi di Atas Membran Dak', G.ATAP, 'm2', 'roof_area * 0.55', ['roof_area'], { code: '3.10.14', price: 95000, level: 'PROFESSIONAL', priceNote: 'Hanya pada zona dak dengan lalu lintas pemeliharaan.' }),
+      comp('flood-test', 'Uji Rendam (Flood Test) Dak & Laporan per Zona', G.KHUSUS, 'unit', 'Math.ceil(roof_area / 450)', ['roof_area'], { price: 2500000, level: 'COMPREHENSIVE', priceNote: 'Referensi flood test 48 jam + dokumentasi per zona (sama seperti ROOF-WP-DECK-AUDIT).' })
+    ],
+    assumptions: [...ASUMSI, 'Tebal plat 12 cm & rasio tulangan 110 kg/m³ adalah asumsi awal — desain struktur final menentukan tebal & penulangan sebenarnya.'],
+    exclusions: [...EKSKLUSI, 'Tidak termasuk balok/kolom pendukung dak, talang & drainase dak, dan finishing lantai dak (keramik/decking).']
+  }),
+
+  tpl({
     id: 'ROOF-GREEN-GARDEN',
     name: 'Atap Hijau (Green Roof) & Roof Garden',
     category: 'ATAP_WATERPROOFING',

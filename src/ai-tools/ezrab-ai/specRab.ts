@@ -41,6 +41,7 @@ import {
   setLastDirectRab,
 } from './directRab';
 import type { DirectRabResult } from './directRab';
+import { applyRelevanceGateToDirectCalc } from './directRabGate';
 
 /* ------------------------------------------------------------------ */
 /* Parser spesifikasi bebas                                            */
@@ -320,6 +321,14 @@ function buildFromFreeSpec(spec: FreeSpec, rawText: string): DirectRabResult | n
   }
   if (!calc.items || calc.items.length === 0) return null;
 
+  // GATE 5 (5E) — gerbang relevansi ditegakkan pada jalur spek bebas
+  // (sama seperti buildDirectRab; jalur kebutuhan memanggil fungsi ini
+  // dengan rawText '' sehingga tanpa cakupan eksplisit — RAB rumah
+  // dari kebutuhan tidak pernah meminta cakupan jalan secara eksplisit
+  // lewat teks). Lihat directRabGate.ts.
+  const gated = applyRelevanceGateToDirectCalc(calc, rawText);
+  calc = gated.calc;
+
   /* ---- Daftar asumsi transparan (aturan owner) ---- */
   const assumptions: string[] = [];
   assumptions.push(
@@ -386,6 +395,7 @@ function buildFromFreeSpec(spec: FreeSpec, rawText: string): DirectRabResult | n
       `Indeks harga regional untuk "${spec.location}" tidak ditemukan — memakai indeks DKI Jakarta.`
     );
   }
+  for (const n of gated.notes) warnings.push(n);
 
   const displayLabel = spec.dims
     ? `Rumah ${fmtNum(spec.dims.p)}×${fmtNum(spec.dims.l)} m`

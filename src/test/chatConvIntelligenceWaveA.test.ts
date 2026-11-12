@@ -18,6 +18,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import {
   executeIntent, tryContinueUniversalContext,
   getUniversalContextState, clearUniversalContext, clearProjectContext,
+  submitQuestionnaireAnswers,
 } from '../ai-tools/ezrab-ai/actionRegistry';
 import { routeIntent } from '../ai-tools/ezrab-ai/intentRouter';
 import {
@@ -188,9 +189,18 @@ describe('Fase 6 — kategori non-katalog & workflow kontekstual', () => {
     start('buatkan rab kandang sapi budget 275jt lebar 10 x 25 m buat yang simple aja');
     const cont = tryContinueUniversalContext('kandang terbuka');
     expect(getUniversalContextState()?.answers['kandang-type']).toBe('terbuka');
-    expect(cont!.message).toContain('Brief proyek');
-    expect(cont!.message).toContain('WBS konseptual');
-    expect(cont!.message).toContain('275');
+    // PIN DIPERBARUI TERBUKA (Adaptive Questionnaire, direktif owner
+    // 2026-11-12 §6): sesudah jawaban kategori terakhir, alur kini
+    // menyisipkan langkah KUESIONER spesifikasi (kapasitas/atap/lantai/
+    // fasilitas kandang memang belum diketahui di skenario ini) sebelum
+    // brief — bukan lagi langsung brief. Asersi brief asli dipertahankan
+    // persis, dijalankan pada hasil kirim kuesioner (semua dilewati =
+    // "Belum ditentukan").
+    expect(cont!.questionnaire).toBeDefined();
+    const brief = submitQuestionnaireAnswers({});
+    expect(brief.message).toContain('Brief proyek');
+    expect(brief.message).toContain('WBS konseptual');
+    expect(brief.message).toContain('275');
   });
 
   it('rekomendasi workflow TIDAK tampil sebagai 4 metode pada respons pertama bersinyal', () => {

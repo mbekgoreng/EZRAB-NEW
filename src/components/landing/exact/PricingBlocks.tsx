@@ -23,7 +23,7 @@ const formatNum = (n: number) => n.toLocaleString('id-ID');
 
 const PLAN_BULLETS: Record<PlanId, string[]> = {
   free: ['1 proyek aktif', 'AHSP Cipta Karya penuh', '100 kredit AI sekali — hanya untuk Chat AI', 'Ekspor PDF 15×/bulan · Excel 1×/bulan'],
-  starter: ['7 proyek aktif', 'Semua kategori AHSP 2026', 'RAB AI, Chat AI & Dokumen AI (terbatas)', 'Ekspor PDF 50× · Excel 30× per siklus'],
+  starter: ['7 proyek aktif', 'AHSP Cipta Karya penuh', 'RAB AI, Chat AI & Dokumen AI (terbatas)', 'Ekspor PDF 50× · Excel 30× per siklus'],
   professional: ['25 proyek aktif', 'Semua kategori AHSP 2026', 'Custom Instructions di Chat AI', 'Role Team hingga 6 seat · Ekspor tanpa batas'],
   business: ['Proyek tanpa batas', 'Semua kategori AHSP 2026', 'Kredit AI terbesar', 'Role Team hingga 10 seat · Ekspor tanpa batas'],
 };

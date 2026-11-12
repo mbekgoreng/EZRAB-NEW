@@ -47,7 +47,6 @@ import { QuickActionDialogueRenderer } from './QuickActionDialogueRenderer';
 import { QuickActionFollowUpSuggestions } from './QuickActionFollowUpSuggestions';
 import { quickActionService } from '../../services/quickActionService';
 import { QUICK_ACTIONS_LIST } from '../../data/quickActionContracts';
-import { aiApiClient } from '../../services/aiApiClient';
 import { coAssistantService, resolveClientWizardStep } from '../../services/coAssistantService';
 import { isAbortError } from '../../ai-tools/aiResponseTiming';
 import aiLogoAsset from '../../assets/ezrab-co-assistant-logo.jpg';
@@ -668,12 +667,22 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
   // =========================================================================
   // INTERACTIVE WIZARD ACTION HANDLERS
   // =========================================================================
+  // FASE 5 (ARS-04) — wizard berjalan 100% client-side: jawaban dihitung
+  // LANGSUNG oleh resolveClientWizardStep, tanpa panggilan ke endpoint
+  // /api/assistant/wizard/* yang tidak pernah ada.
   const handleWizardAnswer = async (sessionId: string, choiceId?: string, parameters?: Record<string, any>) => {
     if (!sessionId) return;
     setIsGenerating(true);
     setThinkingStep('Memproses pilihan wizard...');
     try {
-      const wizardResp = await aiApiClient.answerWizard(sessionId, choiceId, parameters);
+      const activeSession = sessions.find((s) => s.id === (activeSessionId || s.id));
+      const lastWizMsg = activeSession?.messages.filter((m) => !!m.wizardResponse).pop();
+      const wizardResp = resolveClientWizardStep(sessionId, choiceId, parameters, lastWizMsg?.wizardResponse, {
+        ppnEnabled: (currentProject as any)?.ppnEnabled === true,
+        ppnPercent: (currentProject as any)?.ppnPercent,
+        pphEnabled: (currentProject as any)?.pphEnabled === true,
+        pphPercent: (currentProject as any)?.pphPercent,
+      });
       const aiMsg: ChatMessage = {
         id: `ai-wiz-${Date.now()}`,
         sender: 'assistant',
@@ -689,98 +698,92 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
         )
       );
     } catch (err: any) {
-      console.warn('Wizard answer error, using fallback:', err);
-      try {
-        const activeSession = sessions.find((s) => s.id === (activeSessionId || s.id));
-        const lastWizMsg = activeSession?.messages.filter((m) => !!m.wizardResponse).pop();
-        const fallbackResp = resolveClientWizardStep(sessionId, choiceId, parameters, lastWizMsg?.wizardResponse, {
-          ppnEnabled: (currentProject as any)?.ppnEnabled === true,
-          ppnPercent: (currentProject as any)?.ppnPercent,
-          pphEnabled: (currentProject as any)?.pphEnabled === true,
-          pphPercent: (currentProject as any)?.pphPercent,
-        });
-        const aiMsg: ChatMessage = {
-          id: `ai-wiz-${Date.now()}`,
-          sender: 'assistant',
-          content: fallbackResp.message || '',
-          timestamp: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
-          wizardResponse: fallbackResp,
-        };
-        setSessions((prev) =>
-          prev.map((s) =>
-            s.id === (activeSessionId || s.id)
-              ? { ...s, updatedAt: Date.now(), messages: [...s.messages, aiMsg] }
-              : s
-          )
-        );
-      } catch (fallbackErr) {
-        console.error('Wizard fallback error:', fallbackErr);
-      }
+      console.error('Wizard answer error:', err);
     } finally {
       setIsGenerating(false);
     }
   };
 
+  // FASE 5 (ARS-04) — tidak ada state server untuk dimundurkan: tampilkan
+  // ulang wizardResponse sebelumnya dari riwayat pesan sesi aktif.
   const handleWizardGoBack = async (sessionId: string) => {
     if (!sessionId) return;
     setIsGenerating(true);
     try {
-      const wizardResp = await aiApiClient.goBackWizard(sessionId);
+      const activeSession = sessions.find((s) => s.id === (activeSessionId || s.id));
+      const wizMsgs = activeSession?.messages.filter((m) => !!m.wizardResponse) ?? [];
+      const prev = wizMsgs[wizMsgs.length - 2]?.wizardResponse;
       const aiMsg: ChatMessage = {
         id: `ai-wiz-${Date.now()}`,
         sender: 'assistant',
-        content: wizardResp.message || '',
+        content: prev?.message || 'Wizard sudah di langkah pertama — belum ada langkah sebelumnya.',
         timestamp: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
-        wizardResponse: wizardResp,
+        wizardResponse: prev,
       };
-      setSessions((prev) =>
-        prev.map((s) =>
+      setSessions((prevSessions) =>
+        prevSessions.map((s) =>
           s.id === (activeSessionId || s.id)
             ? { ...s, updatedAt: Date.now(), messages: [...s.messages, aiMsg] }
             : s
         )
       );
-    } catch (err: any) {
-      console.warn('Wizard goBack error:', err);
     } finally {
       setIsGenerating(false);
     }
   };
 
+  // FASE 5 (ARS-04) — pembatalan murni lokal (tidak ada sesi server).
   const handleWizardCancel = async (sessionId: string) => {
     if (!sessionId) return;
-    try {
-      await aiApiClient.cancelWizard(sessionId);
-      const aiMsg: ChatMessage = {
-        id: `ai-wiz-${Date.now()}`,
-        sender: 'assistant',
-        content: 'Pembuatan RAB interaktif telah dibatalkan.',
-        timestamp: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
-      };
-      setSessions((prev) =>
-        prev.map((s) =>
-          s.id === (activeSessionId || s.id)
-            ? { ...s, updatedAt: Date.now(), messages: [...s.messages, aiMsg] }
-            : s
-        )
-      );
-    } catch (err: any) {
-      console.warn('Wizard cancel error:', err);
-    }
+    void sessionId;
+    const aiMsg: ChatMessage = {
+      id: `ai-wiz-${Date.now()}`,
+      sender: 'assistant',
+      content: 'Pembuatan RAB interaktif telah dibatalkan.',
+      timestamp: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+    };
+    setSessions((prev) =>
+      prev.map((s) =>
+        s.id === (activeSessionId || s.id)
+          ? { ...s, updatedAt: Date.now(), messages: [...s.messages, aiMsg] }
+          : s
+      )
+    );
   };
 
+  // FASE 5 (ARS-04) — konfirmasi memakai calculatedItems dari pesan
+  // wizard terakhir (langkah RAB_PREVIEW) via onAddRabItemDirect yang
+  // sudah ada; bila belum sampai pratinjau RAB, gagal JUJUR.
   const handleWizardConfirm = async (sessionId: string) => {
-    const prjId = currentProject?.id || 'PRJ-TROPIS-MODERN-01';
+    void sessionId;
     setIsGenerating(true);
     try {
-      const result = await aiApiClient.confirmWizard(sessionId, prjId);
-      if (result.items && Array.isArray(result.items) && onAddRabItemDirect) {
-        result.items.forEach((item: any) => onAddRabItemDirect(item));
+      const activeSession = sessions.find((s) => s.id === (activeSessionId || s.id));
+      const lastWizMsg = activeSession?.messages.filter((m) => !!m.wizardResponse).pop();
+      const items = lastWizMsg?.wizardResponse?.calculatedItems;
+      if (!Array.isArray(items) || items.length === 0) {
+        const errMsg: ChatMessage = {
+          id: `ai-wiz-err-${Date.now()}`,
+          sender: 'assistant',
+          content: 'Wizard belum sampai ke pratinjau RAB, jadi belum ada item yang bisa diterapkan ke spreadsheet.',
+          timestamp: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+        };
+        setSessions((prev) =>
+          prev.map((s) =>
+            s.id === (activeSessionId || s.id)
+              ? { ...s, updatedAt: Date.now(), messages: [...s.messages, errMsg] }
+              : s
+          )
+        );
+        return;
+      }
+      if (onAddRabItemDirect) {
+        items.forEach((item: any) => onAddRabItemDirect(item));
       }
       const aiMsg: ChatMessage = {
         id: `ai-wiz-${Date.now()}`,
         sender: 'assistant',
-        content: `✅ **Berhasil Menerapkan RAB!**\n\nSebanyak **${result.addedItemsCount} item pekerjaan** telah dimasukkan ke spreadsheet proyek. Anda dapat memeriksa rincian item, volume, dan harga satuan di lembar kerja RAB.`,
+        content: `✅ **Berhasil Menerapkan RAB!**\n\nSebanyak **${items.length} item pekerjaan** telah dimasukkan ke spreadsheet proyek. Anda dapat memeriksa rincian item, volume, dan harga satuan di lembar kerja RAB.`,
         timestamp: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
       };
       setSessions((prev) =>
@@ -790,7 +793,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
             : s
         )
       );
-      showToast(`✓ ${result.addedItemsCount} item RAB berhasil diterapkan ke proyek.`);
+      showToast(`✓ ${items.length} item RAB berhasil diterapkan ke proyek.`);
     } catch (err: any) {
       console.warn('Wizard confirm error:', err);
     } finally {

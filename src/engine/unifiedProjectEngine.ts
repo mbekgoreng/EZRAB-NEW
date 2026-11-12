@@ -15,6 +15,63 @@ import { SafeDecimalEngine } from './safeDecimalEngine';
 import { loadVersioned } from './storage/hardenedStorage';
 import { exportItemAmount } from '../export/priceIntegrity';
 
+/**
+ * Basis biaya harga satuan item — SATU-SATUNYA penentu pengecualian O&P
+ * (§17.1 opsi b, grant gelombang 2 2026-11-13).
+ *
+ * - 'HSP': harga SUDAH Harga Satuan Pekerjaan / DHSP, yaitu Biaya Langsung
+ *   + overhead & profit ±10% dari SE DJBK No. 47/SE/Dk/2026 (mis. Galvalum
+ *   3.1.3.8 Rp135.600; makadam F.46 Rp1.723.874,06). O&P rekap TIDAK boleh
+ *   dikenakan lagi — itu markup ganda.
+ * - 'DIRECT_COST': harga adalah Biaya Langsung D = A+B+C (mis. 3.1.3.8
+ *   Rp123.274 lewat gerbang kanonis DED). O&P rekap TETAP berlaku.
+ *
+ * Field ini ADITIF dan opsional (`priceCostBasis?` pada `RabItem`,
+ * `src/types/index.ts`) — ditandai di produsen (gerbang resmi template
+ * 'HSP'; DED/QTO/chat add_item/demo-gen 'DIRECT_COST') dan diteruskan
+ * `rabItemFactory` + `buildPushPayload` + `normalizeSections`.
+ * Penanda ini BERBEDA dari `priceBasis` rantai spek
+ * (`ItemPriceBasis`: AHSP_RESMI/DATABASE/dst. — label ketertelusuran,
+ * bukan basis biaya), karena itu namanya dibedakan.
+ */
+export type RabPriceCostBasis = 'HSP' | 'DIRECT_COST';
+
+/** Medan minimal yang dibaca predikat basis. */
+export interface PriceCostBasisLike {
+  priceCostBasis?: RabPriceCostBasis;
+}
+
+/**
+ * Apakah harga item ini SUDAH mengandung overhead & profit (basis HSP/DHSP)?
+ *
+ * DISTINGSI KRITIS (§17.1): pengecualian dikunci pada BASIS HARGA, BUKAN
+ * pada kode AHSP semata — `priceSourceKind === 'OFFICIAL_AHSP'` saja TIDAK
+ * cukup, karena lima jalur berbeda menempelkan kind itu dengan basis yang
+ * berbeda (survei produsen 2026-11-13):
+ *
+ *   jalur template (hspPrice)      → HSP,    label 'Harga Resmi AHSP 2026'
+ *   jalur DED (comp.unitPrice)     → DIRECT, label 'AHSP Kanonis (SE 47/2026)'
+ *   Premium Demo (gerbang DED)     → DIRECT, label 'AHSP 2026 — SE DJBK…'
+ *   QTO (komposisi)                → DIRECT, label 'RESMI AHSP'
+ *   chat add_item (priced.unitPrice) → DIRECT, tanpa label
+ *
+ * Aturan (fail-closed ke arah MENAGIH O&P — item tanpa penanda 'HSP'
+ * yang eksplisit tetap kena O&P, tidak pernah dibebaskan diam-diam):
+ *   1. `priceCostBasis === 'DIRECT_COST'` → false.
+ *   2. `priceCostBasis === 'HSP'` → true.
+ *   3. Tanpa penanda → false. Label/kind TIDAK PERNAH menjadi bukti
+ *      basis: jembatan transisional kind+label (Blok A) DIHAPUS setelah
+ *      semua produsen menandai `priceCostBasis` secara eksplisit
+ *      (Gelombang 2 threading 2026-11-13) — label 'Harga Resmi AHSP
+ *      2026' tanpa penanda 'HSP' tidak lagi membebaskan apa pun.
+ */
+export function isHspPricedItem(item: PriceCostBasisLike | null | undefined): boolean {
+  if (!item) return false;
+  if (item.priceCostBasis === 'DIRECT_COST') return false;
+  if (item.priceCostBasis === 'HSP') return true;
+  return false;
+}
+
 export class UnifiedProjectEngine {
   /**
    * Recalculates Project Cost Summary from a list of RAB items
@@ -45,8 +102,22 @@ export class UnifiedProjectEngine {
     const contingencyPercent = currentSummary?.contingencyPercent ?? 0;
     const directorMarkupPercent = currentSummary?.directorMarkupPercent ?? 0;
 
-    const overheadAmount = Math.round(directCost * (overheadPercent / 100));
-    const profitAmount = Math.round(directCost * (profitPercent / 100));
+    /* PENGECUALIAN O&P §17.1 opsi (b): item ber-basis HSP/DHSP (harganya
+     * SUDAH mengandung overhead & profit ±10% dari SE DJBK 47/2026)
+     * dikeluarkan dari BASIS overhead & profit rekap — bukan dari
+     * directCost (nilai item tetap masuk total apa adanya). Basis O&P
+     * = directCost − jumlah item HSP. Kontingensi & markup direksi
+     * BUKAN O&P sehingga tetap memakai directCost penuh; PPN/PPh tetap
+     * memakai subtotal (harga HSP mengandung O&P, bukan pajak). Proyek
+     * 0%/0% tidak berubah (basis apa pun × 0% = 0); proyek O&P
+     * terkonfigurasi berhenti menagih O&P dua kali atas item DHSP. */
+    const hspExemptDirect = pricedItems.reduce(
+      (acc, itm) => acc + (isHspPricedItem(itm as unknown as PriceCostBasisLike) ? (itm.amount || 0) : 0),
+      0
+    );
+    const overheadProfitBase = directCost - hspExemptDirect;
+    const overheadAmount = Math.round(overheadProfitBase * (overheadPercent / 100));
+    const profitAmount = Math.round(overheadProfitBase * (profitPercent / 100));
     const contingencyAmount = Math.round(directCost * (contingencyPercent / 100));
     const directorMarkupTotal = Math.round(directCost * (directorMarkupPercent / 100));
 
@@ -203,6 +274,7 @@ export class UnifiedProjectEngine {
           // ekspor via cast, seperti yang sudah dilakukan pdfExporter.
           ...((it as any).priceStatus ? { priceStatus: (it as any).priceStatus } : {}),
           ...((it as any).priceSourceKind ? { priceSourceKind: (it as any).priceSourceKind } : {}),
+          ...((it as any).priceCostBasis ? { priceCostBasis: (it as any).priceCostBasis } : {}),
           ...((it as any).priceSourceLabel ? { priceSourceLabel: (it as any).priceSourceLabel } : {}),
           ...((it as any).priceSourceExplanation ? { priceSourceExplanation: (it as any).priceSourceExplanation } : {}),
           ...((it as any).priceSourceName !== undefined ? { priceSourceName: (it as any).priceSourceName } : {}),
@@ -257,11 +329,35 @@ export class UnifiedProjectEngine {
      *   ATAU salinan ringkasan dari recalculate sebelumnya); persen dari
      *   proyek, PPh default 0. Basis pajak proporsional seperti mesin
      *   utama (item sudah-termasuk-pajak dikeluarkan). */
+    /* Pengecualian O&P §17.1 opsi (b) — sama seperti mesin utama di atas:
+     * basis overhead & profit = directCost − jumlah item ber-basis HSP.
+     * Seksi tanpa item (subtotal tersimpan, tanpa rincian per item) tidak
+     * bisa dibuktikan ber-basis HSP sehingga tetap masuk basis penuh
+     * (fail-closed ke arah menagih O&P). Item PRICE_UNRESOLVED
+     * menyumbang 0 lewat exportItemAmount, jadi tidak perlu disaring
+     * terpisah di sini. */
+    const hspExemptDirect = sections.reduce((sum, s) => {
+      if (s.items && s.items.length > 0) {
+        return (
+          sum +
+          s.items.reduce(
+            (a, it) =>
+              a +
+              (isHspPricedItem(it as unknown as PriceCostBasisLike)
+                ? (exportItemAmount(it as any) ?? 0)
+                : 0),
+            0
+          )
+        );
+      }
+      return sum;
+    }, 0);
+    const overheadProfitBase = directCost - hspExemptDirect;
     const overheadPercent = typeof pj?.overheadPercent === 'number' ? pj.overheadPercent : 0;
-    const overheadAmount = Math.round(directCost * (overheadPercent / 100));
+    const overheadAmount = Math.round(overheadProfitBase * (overheadPercent / 100));
 
     const profitPercent = typeof cost.profitPercent === 'number' ? cost.profitPercent : 0;
-    const profitAmount = Math.round(directCost * (profitPercent / 100));
+    const profitAmount = Math.round(overheadProfitBase * (profitPercent / 100));
 
     const subtotalBeforeTax = directCost + overheadAmount + profitAmount;
 

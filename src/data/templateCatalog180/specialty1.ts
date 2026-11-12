@@ -77,6 +77,35 @@ export const SPECIALTY_TEMPLATES_A: RabTemplate[] = [
   }),
 
   tpl({
+    id: 'FND-FOOT-PLAT',
+    name: 'Pondasi Foot Plat / Telapak (Titik Kolom)',
+    category: 'PONDASI_GEOTEKNIK',
+    subcategory: 'Foot Plat',
+    description: 'Pondasi telapak dangkal per titik kolom: galian, bekisting telapak, penulangan, dan pengecoran beton fc 15 MPa. Untuk gedung 1–2 lantai di tanah cukup keras. Ukuran telapak & jumlah titik mengikuti gambar struktur; template memakai asumsi awal berlabel.',
+    badge: 'Foot Plat',
+    icon: 'Square',
+    parameters: [
+      num('num_footings', 'Jumlah Titik Foot Plat', 24, { min: 4, max: 300, group: 'specifications' }),
+      num('footing_size_m', 'Ukuran Sisi Telapak', 1.2, { min: 0.8, max: 3, unit: 'm', group: 'specifications' }),
+      num('footing_thickness_m', 'Tebal Telapak', 0.3, { min: 0.2, max: 0.6, unit: 'm', group: 'specifications' })
+    ],
+    components: [
+      // Varian katalog baru (keputusan owner 2026-11-12 03:41). Semua
+      // kode AHSP terverifikasi lolos gerbang resolver (FULL) kecuali
+      // beton 2.2.1.4.3 (PARTIAL 7/8 — fallback Rp1.355.000 mengikuti
+      // pola mapan FND-BORED-PILE/FND-DRIVEN-PILE → MARKET_REFERENCE).
+      comp('prep', 'Pembersihan & Pengupasan Platform Foot Plat', G.PERSIAPAN, 'm2', 'num_footings * 4', ['num_footings'], { code: 'C.37' }),
+      comp('galian', 'Galian Tanah Foot Plat', G.TANAH, 'm3', 'num_footings * footing_size_m * footing_size_m * 0.5', ['num_footings', 'footing_size_m'], { code: '1.2.1.1.2' }),
+      comp('bekisting', 'Bekisting Telapak Foot Plat', G.PONDASI, 'm2', 'num_footings * 4 * footing_size_m * footing_thickness_m', ['num_footings', 'footing_size_m', 'footing_thickness_m'], { code: '2.2.1.3.1' }),
+      comp('besi', 'Penulangan Foot Plat (Tulangan Slab setara)', G.PONDASI, 'kg', 'num_footings * footing_size_m * footing_size_m * footing_thickness_m * 110', ['num_footings', 'footing_size_m', 'footing_thickness_m'], { code: '2.2.1.1.1' }),
+      comp('beton', 'Beton Foot Plat fc 15 MPa', G.PONDASI, 'm3', 'num_footings * footing_size_m * footing_size_m * footing_thickness_m', ['num_footings', 'footing_size_m', 'footing_thickness_m'], { code: '2.2.1.4.3', price: 1355000 }),
+      comp('lantai-kerja', 'Beton Mutu Rendah fc 7,5 Lantai Kerja Foot Plat', G.PONDASI, 'm3', 'num_footings * footing_size_m * footing_size_m * 0.05', ['num_footings', 'footing_size_m'], { code: '2.2.1.4.1', price: 928002, level: 'COMPREHENSIVE', priceNote: 'Lantai kerja 5 cm di bawah telapak; angka fallback sama seperti FND-RAFT-BASEMENT/FND-SUMURAN-CAISSON.' })
+    ],
+    assumptions: [...ASUMSI, 'Ukuran telapak 1,2×1,2×0,3 m & jumlah titik adalah asumsi awal — desain struktur final (daya dukung tanah) menentukan dimensi sebenarnya.'],
+    exclusions: [...EKSKLUSI, 'Tidak termasuk sloof, kolom pedestal di atas telapak, dan urugan kembali penuh.']
+  }),
+
+  tpl({
     id: 'FND-RAFT-BASEMENT',
     name: 'Raft Foundation + Basement 1 Lantai (Struktur Bawah)',
     category: 'PONDASI_GEOTEKNIK',

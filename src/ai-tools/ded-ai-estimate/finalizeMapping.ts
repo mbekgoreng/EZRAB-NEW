@@ -24,6 +24,9 @@
  * - verificationStatus: 'VERIFIED' HANYA untuk kanonis tervalidasi;
  *   estimasi AI dan manual → 'NEEDS_VERIFICATION' (bukan verifikasi
  *   independen, dan bukan pula klaim kanonis).
+ * - priceCostBasis: 'DIRECT_COST' HANYA untuk cabang AHSP_2026
+ *   (harga = Biaya Langsung gerbang kanonis); cabang lain tidak
+ *   ditandai (basis tidak terbukti → fail-closed, O&P tetap ditagih).
  * - ahspCode HANYA diteruskan bila priceSource benar-benar AHSP_2026
  *   (kecocokan tervalidasi). Fallback AI tidak pernah membawa kode AHSP,
  *   meski itemnya punya ahspMatch NEEDS_REVIEW/INCOMPLETE.
@@ -36,7 +39,7 @@ import type { DedAiItem, DedEstimationPolicy } from './types';
 import type { FullAiItem } from '../ded-full-ai/types';
 import type { AiEstimateWorkItem } from '../../ai-estimate/types';
 import { honestVolume } from '../../engine/honestVolume';
-import type { VerificationStatus } from '../../types';
+import type { RabItem, VerificationStatus } from '../../types';
 
 export interface DedFinalizeRabInput {
   description: string;
@@ -48,6 +51,16 @@ export interface DedFinalizeRabInput {
   priceSourceKind?: 'OFFICIAL_AHSP' | 'MARKET_REFERENCE' | 'EZRAB_ASSUMPTION' | 'UNRESOLVED';
   priceSourceLabel: string;
   priceSourceExplanation: string;
+  /**
+   * Basis biaya harga satuan (§17.1, Gelombang 2 2026-11-13). Jalur DED
+   * memakai unitPrice Biaya Langsung gerbang kanonis (comp.unitPrice —
+   * total DHSP TIDAK PERNAH dipakai sebagai harga transfer, keputusan
+   * owner 2026-10-27), sehingga cabang AHSP_2026 ditandai 'DIRECT_COST'.
+   * Cabang estimasi AI / manual / warisan TIDAK ditandai: harganya bukan
+   * komposisi Biaya Langsung yang terbukti — absen = fail-closed, O&P
+   * tetap ditagih (perilaku lama).
+   */
+  priceCostBasis?: RabItem['priceCostBasis'];
   verificationStatus: VerificationStatus;
 }
 
@@ -73,6 +86,9 @@ export function mapDedAiItemToRabInput(
       ahspCode: item.ahspCode,
       priceSourceKind: 'OFFICIAL_AHSP',
       priceSourceLabel: 'AHSP Kanonis (SE 47/2026)',
+      // Harga dari gerbang kanonis DED = Biaya Langsung (comp.unitPrice),
+      // bukan DHSP — O&P rekap tetap berlaku (§17.1).
+      priceCostBasis: 'DIRECT_COST',
       priceSourceExplanation: baseExplanation(
         policy,
         item.priceAssumptionNote || `AHSP kanonis ${item.ahspCode} — harga tervalidasi database EZRAB.`
@@ -184,6 +200,9 @@ export function mapFullAiItemToRabInput(
       ahspCode: item.price.ahspCode,
       priceSourceKind: 'OFFICIAL_AHSP',
       priceSourceLabel: 'AHSP Kanonis (SE 47/2026)',
+      // Harga dari gerbang kanonis DED = Biaya Langsung (comp.unitPrice),
+      // bukan DHSP — O&P rekap tetap berlaku (§17.1).
+      priceCostBasis: 'DIRECT_COST',
       priceSourceExplanation: baseExplanation(
         policy,
         item.price.notes || `AHSP kanonis ${item.price.ahspCode} — harga tervalidasi database EZRAB.`

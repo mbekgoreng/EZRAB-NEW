@@ -107,7 +107,14 @@ describe('parser spesifikasi bebas', () => {
   });
 
   it('luas bangunan + luas lahan eksplisit: lahan BUKAN luas bangunan', () => {
-    const s = parseFreeSpec('buatkan rab rumah luas bangunan 50 m2 luas lahan 90 m2')!;
+    // DIPERBARUI TERBUKA (Gelombang 2 §17.11, 2026-11-13): teks ditambah
+    // '2 lantai' agar tetap mencapai parser bebas — sejak T54/T60
+    // terdaftar, tangga tipe 1 lantai lengkap sehingga teks luas-saja
+    // tanpa lantai kini dirutekan ke jalur direct lewat fallback tipe
+    // terdekat R1 (bukan lagi jatuh ke spek bebas karena tipe terdekat
+    // belum terdaftar). Fallback R1 hanya berlaku tanpa penyebutan
+    // lantai; substansi tes (pemisahan lahan/bangunan) TIDAK berubah.
+    const s = parseFreeSpec('buatkan rab rumah luas bangunan 50 m2 2 lantai luas lahan 90 m2')!;
     expect(s.areaSource).toBe('explicit');
     expect(s.explicitBuildingArea).toBe(50);
     expect(s.totalArea).toBe(50);
@@ -120,18 +127,32 @@ describe('parser spesifikasi bebas', () => {
     expect(parseFreeSpec('buatkan rab rumah luas lahan 90 m2')).toBeNull();
   });
 
-  it('type yang BELUM terdaftar (54) menjadi basis luas konvensi tipe', () => {
-    const s = parseFreeSpec('buatkan rab rumah type 54')!;
+  it('type yang BELUM terdaftar (100, 2 lantai) menjadi basis luas konvensi tipe', () => {
+    // DIPERBARUI TERBUKA (Gelombang 2 §17.11, 2026-11-13): type 54 kini
+    // TERDAFTAR di master registry (lihat regresi di bawah) — contoh
+    // tipe belum terdaftar diganti type 100 (punya templateId di
+    // HouseTypeCatalog tetapi belum ada template master-nya). '2 lantai'
+    // WAJIB: tanpa penyebutan lantai, fallback tipe terdekat R1 akan
+    // menangkap teks lewat luas 100 m² (basis T70) dan merutekannya ke
+    // jalur direct — konvensi tipe hanya teruji bila lantai disebut.
+    const s = parseFreeSpec('buatkan rab rumah type 100 2 lantai')!;
     expect(s.areaSource).toBe('type');
-    expect(s.typeNumber).toBe(54);
-    expect(s.footprintArea).toBe(54);
-    expect(s.totalArea).toBe(54);
+    expect(s.typeNumber).toBe(100);
+    expect(s.footprintArea).toBe(100);
+    expect(s.totalArea).toBe(200);
   });
 
   it('regresi: type TERDAFTAR ditolak parser bebas (milik jalur kartu pilihan)', () => {
     expect(parseFreeSpec('buatkan rab rumah type 45')).toBeNull();
     expect(parseFreeSpec('buatkan saya rab rumah type 70 2 lantai')).toBeNull();
     expect(buildSpecRab('buatkan rab rumah type 45')).toBeNull();
+    // Gelombang 2 §17.11 (2026-11-13): 54/60/90 kini terdaftar di master
+    // registry — parser bebas menolak ketiganya (milik jalur direct).
+    expect(parseFreeSpec('buatkan rab rumah type 54')).toBeNull();
+    expect(parseFreeSpec('buatkan rab rumah type 60')).toBeNull();
+    expect(parseFreeSpec('buatkan rab rumah type 90 2 lantai')).toBeNull();
+    expect(buildSpecRab('buatkan rab rumah type 54')).toBeNull();
+    expect(buildSpecRab('buatkan rab rumah type 90 2 lantai')).toBeNull();
   });
 
   it('tanpa spek / bukan rumah → null', () => {
@@ -214,7 +235,13 @@ describe('generate RAB spesifikasi bebas', () => {
   });
 
   it('luas bangunan eksplisit + KT/KM disebut: tanpa asumsi default kamar', () => {
-    const r = buildSpecRab('buatkan rab rumah luas bangunan 50 m2, 3 kamar tidur, 2 kamar mandi')!;
+    // DIPERBARUI TERBUKA (Gelombang 2 §17.11, 2026-11-13): teks ditambah
+    // '2 lantai' agar tetap mencapai jalur spek bebas (lihat komentar
+    // pada tes 'luas bangunan + luas lahan eksplisit' — teks luas-saja
+    // tanpa lantai kini dirutekan ke direct lewat fallback R1).
+    // Substansi tes (KT/KM eksplisit → tanpa asumsi default kamar;
+    // dimensi diturunkan proporsi 1:2) TIDAK berubah.
+    const r = buildSpecRab('buatkan rab rumah luas bangunan 50 m2 2 lantai, 3 kamar tidur, 2 kamar mandi')!;
     expect(r.totalArea).toBe(50);
     expect(r.assumptions.some((a) => a.includes('luas TOTAL seluruh lantai'))).toBe(true);
     expect(r.assumptions.some((a) => a.includes('mengikuti default basis template'))).toBe(false);
@@ -222,11 +249,15 @@ describe('generate RAB spesifikasi bebas', () => {
     expect(r.assumptions.some((a) => a.includes('proporsi 1 : 2'))).toBe(true);
   });
 
-  it('type 54 (belum terdaftar) ter-generate dengan asumsi konvensi tipe', () => {
-    const r = buildSpecRab('buatkan rab rumah type 54')!;
+  it('type 100 2 lantai (belum terdaftar) ter-generate dengan asumsi konvensi tipe', () => {
+    // DIPERBARUI TERBUKA (Gelombang 2 §17.11, 2026-11-13): type 54 kini
+    // TERDAFTAR — contoh tipe belum terdaftar diganti type 100 2 lantai
+    // ('2 lantai' wajib agar lolos dari fallback R1 — lihat komentar
+    // pada tes parser 'type yang BELUM terdaftar (100, 2 lantai)').
+    const r = buildSpecRab('buatkan rab rumah type 100 2 lantai')!;
     expect(r).not.toBeNull();
     expect(r.calc.items.length).toBeGreaterThanOrEqual(15);
-    expect(r.assumptions.some((a) => a.includes('Type 54 belum memiliki template terdaftar'))).toBe(true);
+    expect(r.assumptions.some((a) => a.includes('Type 100 belum memiliki template terdaftar'))).toBe(true);
   });
 
   it('3 lantai → null (di luar model engine; pemanggil jatuh ke ringkasan)', () => {

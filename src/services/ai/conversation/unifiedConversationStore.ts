@@ -13,6 +13,11 @@
 
 import { ProjectIsolationError } from '../../unifiedProjectContext';
 import { safeSetJSON } from '../../../utils/safeStorage';
+import {
+  buildExtractiveSummary,
+  type ConversationSummary,
+} from '../../../ai-tools/ezrab-ai/conversationSummary';
+import { deleteMemoriesForConversation } from '../../../ai-tools/ezrab-ai/memory';
 import type {
   AIConversation,
   AIMessage,
@@ -205,6 +210,14 @@ export class UnifiedConversationStore {
     }
 
     this.conversations.delete(conversationId);
+    // FASE 2 — penghapusan menyebar ke memori: memori percakapan dari
+    // conversationId ini dihapus dari store memori (bukan hanya dari
+    // daftar percakapan) agar tidak muncul lagi lewat retrieval.
+    try {
+      deleteMemoriesForConversation(conversationId, validProjectId, null);
+    } catch {
+      /* purge memori tidak boleh menggagalkan hapus percakapan */
+    }
     if (this.activeConversationByProject.get(validProjectId) === conversationId) {
       this.activeConversationByProject.delete(validProjectId);
       try {
@@ -322,6 +335,19 @@ export class UnifiedConversationStore {
 
     conv.messages.push(newMsg);
     conv.updatedAt = Date.now();
+    // FASE 1 — ringkasan percakapan: diperbarui deterministik saat
+    // percakapan memanjang (≥12 pesan, tiap kelipatan 5) agar builder
+    // kanonis dapat menggantikan riwayat mentah panjang dengan ringkasan
+    // tanpa kehilangan fakta proyek (fakta datang dari state terstruktur).
+    if (conv.messages.length >= 12 && conv.messages.length % 5 === 0) {
+      try {
+        conv.summary = buildExtractiveSummary(
+          conv.messages.map((m) => ({ role: m.role, content: m.content })),
+        );
+      } catch {
+        /* ringkasan gagal ≠ pesan gagal tersimpan */
+      }
+    }
     this.saveToStorage();
 
     this.emit({
@@ -334,6 +360,33 @@ export class UnifiedConversationStore {
     });
 
     return { ...newMsg };
+  }
+
+  /**
+   * FASE 1 — Ringkasan percakapan tersimpan (per conversationId).
+   * Mengembalikan ringkasan bila ada, null bila belum dibuat.
+   */
+  public getConversationSummary(conversationId: string, projectId: string): ConversationSummary | null {
+    const validProjectId = this.validateProjectId(projectId);
+    const conv = this.conversations.get(conversationId);
+    if (!conv || conv.projectId !== validProjectId) return null;
+    return conv.summary ?? null;
+  }
+
+  /**
+   * FASE 1 — Hitung ulang ringkasan ekstraktif dari pesan kini dan
+   * simpan bersama percakapan. Deterministik; tidak memakai LLM.
+   */
+  public refreshConversationSummary(conversationId: string, projectId: string): ConversationSummary | null {
+    const validProjectId = this.validateProjectId(projectId);
+    const conv = this.conversations.get(conversationId);
+    if (!conv || conv.projectId !== validProjectId) return null;
+    conv.summary = buildExtractiveSummary(
+      conv.messages.map((m) => ({ role: m.role, content: m.content })),
+    );
+    conv.updatedAt = Date.now();
+    this.saveToStorage();
+    return { ...conv.summary };
   }
 
   public updateMessage(
@@ -387,6 +440,13 @@ export class UnifiedConversationStore {
     }
 
     conv.messages = [];
+    conv.summary = undefined; // ringkasan mengikuti pesan — pesan habis = ringkasan basi
+    // FASE 2 — pesan habis ⇒ memori percakapan turunan pesan ikut dihapus.
+    try {
+      deleteMemoriesForConversation(conversationId, validProjectId, null);
+    } catch {
+      /* purge memori tidak boleh menggagalkan hapus pesan */
+    }
     conv.updatedAt = Date.now();
     this.saveToStorage();
 

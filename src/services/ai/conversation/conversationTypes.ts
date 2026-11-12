@@ -75,6 +75,18 @@ export interface AIConversation {
   title: string;
   messages: AIMessage[];
   activeMode?: 'chat' | 'ded-rab' | 'dokumen-ai';
+  /**
+   * Ringkasan percakapan EKSTRAKTIF & DETERMINISTIK (Fase 1 — Canonical
+   * Context Intelligence): disimpan per conversationId, diperbarui saat
+   * percakapan memanjang. Dipakai builder kanonis sebagai pengganti
+   * riwayat mentah yang panjang. Ringkasan TIDAK membawa fakta proyek —
+   * fakta selalu datang dari state terstruktur (speks/intake/draft).
+   */
+  summary?: {
+    text: string;
+    messageCount: number;
+    updatedAt: string;
+  };
   createdAt: number;
   updatedAt: number;
 }

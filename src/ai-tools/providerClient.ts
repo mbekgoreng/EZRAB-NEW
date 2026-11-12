@@ -446,7 +446,22 @@ export class AiToolsProviderClient {
           retryable: mapped.retryable,
         });
       }
-      const json = await resp.json();
+      let json: any;
+      try {
+        json = await resp.json();
+      } catch {
+        // GATE 6 (5F) — body sukses yang bukan JSON adalah kegagalan FORMAT
+        // transport, bukan penolakan provider: tanpa cabang ini, SyntaxError
+        // jatuh ke catch umum dan dipetakan ke MODEL_ERROR dengan pesan
+        // "Penyedia layanan AI menolak permintaan atau terjadi kesalahan
+        // otentikasi" — tuduhan yang keliru untuk body yang rusak. Konvensi
+        // yang sama dengan klien DED (copilotMagicF5: 200 non-JSON →
+        // MALFORMED_JSON). Retryable: kerusakan body di perbatasan gateway
+        // bersifat transien (proxy/gateway glitch).
+        return aiToolsError('MALFORMED_JSON', `${stage}:http`, 'Respons layanan AI tidak dapat dibaca (format tidak valid). Silakan coba lagi.', {
+          retryable: true,
+        });
+      }
       if (!json || json.success === false) {
         return aiToolsError(
           json?.errorCode || 'MODEL_ERROR',

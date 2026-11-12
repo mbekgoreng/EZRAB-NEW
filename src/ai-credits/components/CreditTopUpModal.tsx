@@ -6,10 +6,18 @@
  * terpasang; bila tidak, status "payment gateway not connected"
  * ditampilkan apa adanya. Kredit dari jalur online diberikan SERVER
  * dari webhook terverifikasi — callback Snap di sini hanya umpan balik.
+ *
+ * Tier mengikuti penawaran kanonis Spec v1.0 §7.2 (K6): 4 pilihan,
+ * tanpa bonus, tidak kedaluwarsa. Penawaran interim Fase 1 tunggal
+ * (Rp5.000 → 3.600) sudah dihapus.
+ *
+ * B11: tombol simulasi HANYA tampil bila sumber saldo adalah simulasi
+ * (mode demo). Bila saldo berasal dari server, top-up simulasi tidak
+ * boleh mengubah angka yang tampil sebagai saldo server.
  */
 import React, { useState } from 'react';
 import { X, Info, CheckCircle2 } from 'lucide-react';
-import { TOPUP_OFFER } from '../config';
+import { TOPUP_OFFERS, topUpOfferFor } from '../config';
 import { formatRupiah, formatCredits } from '../format';
 import { useCreditSimulation } from '../useCreditSimulation';
 import { useAuth } from '../../auth/AuthContext';
@@ -21,15 +29,18 @@ interface Props {
 }
 
 export const CreditTopUpModal: React.FC<Props> = ({ onClose, workspaceId }) => {
-  const { topUp, balance } = useCreditSimulation();
+  const { topUp, balance, source, refresh } = useCreditSimulation();
   const auth = useAuth();
   const [done, setDone] = useState(false);
   const [onlineBusy, setOnlineBusy] = useState(false);
   const [onlineNote, setOnlineNote] = useState<string | null>(null);
+  const [selectedItemId, setSelectedItemId] = useState<string>(TOPUP_OFFERS[0].itemId);
   const onlineConfigured = isOnlinePaymentConfigured();
+  const selected = topUpOfferFor(selectedItemId) ?? TOPUP_OFFERS[0];
+  const simulationMode = source === 'simulation';
 
   const handleSimulate = () => {
-    topUp(); // mock — hanya menambah saldo simulasi
+    topUp(selected.itemId); // mock — hanya menambah saldo simulasi
     setDone(true);
   };
 
@@ -50,10 +61,12 @@ export const CreditTopUpModal: React.FC<Props> = ({ onClose, workspaceId }) => {
         accessToken: token,
         workspaceId,
         kind: 'TOP_UP',
-        itemId: 'topup-3600',
+        itemId: selected.itemId,
         callbacks: {
-          onSuccess: () =>
-            setOnlineNote('Pembayaran diterima Midtrans. Kredit masuk ke saldo server setelah notifikasi terverifikasi diproses — bukan dari halaman ini.'),
+          onSuccess: () => {
+            setOnlineNote('Pembayaran diterima Midtrans. Kredit masuk ke saldo server setelah notifikasi terverifikasi diproses — bukan dari halaman ini.');
+            refresh();
+          },
           onPending: () =>
             setOnlineNote('Pembayaran menunggu penyelesaian. Kredit masuk setelah Midtrans mengonfirmasi pembayaran ke server.'),
           onError: () => setOnlineNote('Pembayaran gagal atau ditolak. Tidak ada kredit yang diberikan.'),
@@ -81,7 +94,7 @@ export const CreditTopUpModal: React.FC<Props> = ({ onClose, workspaceId }) => {
             <X size={16} />
           </button>
         </div>
-        <p className="aic-sub">Tambah saldo kredit untuk memakai fitur AI.</p>
+        <p className="aic-sub">Tambah saldo kredit untuk memakai fitur AI. Kredit top-up tidak kedaluwarsa.</p>
 
         {balance.plan === 'free' ? (
           <>
@@ -100,20 +113,39 @@ export const CreditTopUpModal: React.FC<Props> = ({ onClose, workspaceId }) => {
           </>
         ) : !done ? (
           <>
-            <div className="aic-offer">
-              <div className="aic-offer-row"><span>Harga</span><strong>{formatRupiah(TOPUP_OFFER.priceIdr)}</strong></div>
-              <div className="aic-offer-row"><span>Kredit dasar</span><span>{formatCredits(TOPUP_OFFER.baseCredits)}</span></div>
-              <div className="aic-offer-row"><span>Bonus 20%</span><span>+ {formatCredits(TOPUP_OFFER.bonusCredits)}</span></div>
-              <div className="aic-offer-row total"><span>Total diterima</span><span>{formatCredits(TOPUP_OFFER.totalCredits)}</span></div>
+            <div className="aic-offer" role="radiogroup" aria-label="Pilih paket top-up">
+              {TOPUP_OFFERS.map((tier) => (
+                <label
+                  key={tier.itemId}
+                  className="aic-offer-row"
+                  style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}
+                >
+                  <input
+                    type="radio"
+                    name="topup-tier"
+                    value={tier.itemId}
+                    checked={selectedItemId === tier.itemId}
+                    onChange={() => setSelectedItemId(tier.itemId)}
+                  />
+                  <span>{formatCredits(tier.credits)}</span>
+                  <strong style={{ marginLeft: 'auto' }}>{formatRupiah(tier.priceIdr)}</strong>
+                </label>
+              ))}
+              <div className="aic-offer-row total">
+                <span>Total diterima</span>
+                <span>{formatCredits(selected.credits)} · tidak kedaluwarsa</span>
+              </div>
             </div>
-            <div className="aic-sim-banner">
-              <Info size={15} style={{ flexShrink: 0, marginTop: 2 }} />
-              <span>
-                <strong>Mode simulasi.</strong> Pembayaran sungguhan belum aktif pada fase
-                frontend ini — tombol di bawah hanya menambah saldo simulasi untuk
-                demonstrasi, bukan transaksi nyata.
-              </span>
-            </div>
+            {simulationMode && (
+              <div className="aic-sim-banner">
+                <Info size={15} style={{ flexShrink: 0, marginTop: 2 }} />
+                <span>
+                  <strong>Mode simulasi.</strong> Pembayaran sungguhan belum aktif pada fase
+                  frontend ini — tombol di bawah hanya menambah saldo simulasi untuk
+                  demonstrasi, bukan transaksi nyata.
+                </span>
+              </div>
+            )}
             <div className="aic-offer" style={{ marginTop: 10 }}>
               <div className="aic-offer-row">
                 <span>Pembayaran online (Midtrans)</span>
@@ -141,9 +173,11 @@ export const CreditTopUpModal: React.FC<Props> = ({ onClose, workspaceId }) => {
                   {onlineBusy ? 'Memproses…' : 'Bayar Online (Midtrans)'}
                 </button>
               )}
-              <button type="button" className="aic-btn-primary" onClick={handleSimulate}>
-                Simulasikan Top-up
-              </button>
+              {simulationMode && (
+                <button type="button" className="aic-btn-primary" onClick={handleSimulate}>
+                  Simulasikan Top-up
+                </button>
+              )}
             </div>
           </>
         ) : (
@@ -153,7 +187,7 @@ export const CreditTopUpModal: React.FC<Props> = ({ onClose, workspaceId }) => {
               <div>
                 <div style={{ fontWeight: 800 }}>Simulasi top-up dicatat</div>
                 <div style={{ fontSize: 13, color: 'var(--ez-color-text-faint)' }}>
-                  +{formatCredits(TOPUP_OFFER.totalCredits)} ditambahkan ke saldo simulasi.
+                  +{formatCredits(selected.credits)} ditambahkan ke saldo simulasi.
                   Bukan pembayaran nyata.
                 </div>
               </div>

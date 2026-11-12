@@ -683,6 +683,10 @@ export async function executePlan(plan: ChangePlan, host: OperationHost): Promis
               ahspCode: a.code, unitPrice: a.unitPrice,
               priceStatus: a.priceResolved ? 'PRICE_RESOLVED' : 'PRICE_UNRESOLVED',
               priceSourceKind: a.priceResolved ? 'OFFICIAL_AHSP' : 'UNRESOLVED',
+              // §17.1: harga dari resolver = comp.unitPrice (Biaya
+              // Langsung), bukan DHSP — O&P rekap tetap berlaku. Hanya
+              // bila harga ter-resolve; item tanpa harga tidak ber-basis.
+              ...(a.priceResolved ? { priceCostBasis: 'DIRECT_COST' as const } : {}),
               ahspMappingStatus: 'VERIFIED',
             };
         const id = host.applyAdd(data);

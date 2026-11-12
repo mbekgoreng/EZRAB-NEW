@@ -8,7 +8,7 @@ import React, { useMemo, useState } from 'react';
 import {
   CheckCircle2, AlertTriangle, XCircle, MinusCircle, Pencil, ChevronDown,
   ChevronUp, Save, FolderCheck, Table2, FileSpreadsheet, FileJson,
-  ArrowLeft, Info, Check, X, Sparkles, Undo2,
+  ArrowLeft, Info, Check, X, Sparkles, Undo2, MessageSquare,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { DedAiItem, DedAiOutput, DedCompletionReport, DedOutputPrefs, DEFAULT_DED_OUTPUT_PREFS } from './types';
@@ -68,6 +68,15 @@ interface Props {
   onSaveDraft: (items: DedAiItem[]) => void;
   onFinalize: (items: DedAiItem[]) => Promise<{ ok: boolean; message: string }>;
   onOpenSpreadsheet: () => void;
+  /**
+   * GATE 4 (5D) — kirim hasil DED ini ke Chat AI (permukaan UI yang
+   * ditunda Overhaul Fase 5 ke Fase 9; 5D MEMBUTUHKANNYA karena tanpa
+   * permukaan ini tidak ada alur DED→Chat AI di browser sama sekali —
+   * hanya record memori teks). Opsional: tombol hanya tampil bila
+   * pemanggil menyediakan handler. Item yang dikirim adalah item
+   * SAAT INI (sesudah edit pengguna di layar ini), seperti onSaveDraft.
+   */
+  onSendToChat?: (items: DedAiItem[]) => void;
   draftSaved: boolean;
   finalized: boolean;
   /** Estimasi kredit simulasi yang disetujui (dari input view). */
@@ -81,7 +90,7 @@ interface Props {
 }
 
 export const DedAiResultView: React.FC<Props> = ({
-  output, onBackToInput, onSaveDraft, onFinalize, onOpenSpreadsheet, draftSaved, finalized,
+  output, onBackToInput, onSaveDraft, onFinalize, onOpenSpreadsheet, onSendToChat, draftSaved, finalized,
   creditEstimate, outputPrefs,
 }) => {
   const prefs = outputPrefs ?? DEFAULT_DED_OUTPUT_PREFS;
@@ -922,6 +931,12 @@ export const DedAiResultView: React.FC<Props> = ({
               <button className="dedai-btn ghost" onClick={() => onSaveDraft(items)}>
                 <Save size={16} /> {draftSaved ? t('ai.ded.result.act_saved_draft') : t('ai.ded.result.act_save_draft')}
               </button>
+              {/* GATE 4 (5D) — kirim DED ke Chat AI (lampirkan + navigasi). */}
+              {onSendToChat && (
+                <button className="dedai-btn ghost" onClick={() => onSendToChat(items)}>
+                  <MessageSquare size={16} /> Kirim ke Chat AI
+                </button>
+              )}
               <button className="dedai-btn ghost" onClick={onBackToInput}>
                 <ArrowLeft size={16} /> {t('ai.ded.result.act_back_input')}
               </button>

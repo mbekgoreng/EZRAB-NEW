@@ -958,6 +958,19 @@ export interface RabItem {
   priceSourceLabel?: string;
   /** Explanation of price provenance (e.g. assumption ID, basis). */
   priceSourceExplanation?: string;
+  /**
+   * Basis biaya harga satuan — SATU-SATUNYA penentu pengecualian O&P
+   * (§17.1 opsi b, Gelombang 2 2026-11-13). 'HSP' = harga SUDAH Harga
+   * Satuan Pekerjaan/DHSP (mengandung overhead & profit SE DJBK
+   * No. 47/SE/Dk/2026; hanya gerbang resmi template yang menghasilkan
+   * basis ini) — O&P rekap tidak dikenakan lagi. 'DIRECT_COST' = harga
+   * adalah Biaya Langsung D = A+B+C (gerbang kanonis DED, QTO, chat
+   * add_item, generator Premium Demo) — O&P rekap tetap berlaku.
+   * Absen = basis tidak terbukti → fail-closed, O&P tetap ditagih.
+   * BERBEDA dari `priceBasis` rantai spek (label ketertelusuran, bukan
+   * basis biaya) — namanya sengaja dibedakan.
+   */
+  priceCostBasis?: 'HSP' | 'DIRECT_COST';
   /** Katalog 180: status pemetaan AHSP terhadap katalog kanonis 2026 (diisi generator template). */
   ahspMappingStatus?: 'VERIFIED' | 'MAPPED_UNPRICED' | 'UNIT_MISMATCH' | 'NEEDS_MAPPING' | 'NOT_APPLICABLE';
   /** Katalog 180: nama sumber harga — dokumen resmi (OFFICIAL_AHSP) atau pemasok katalog material (MARKET_REFERENCE); null bila tak tercatat. */

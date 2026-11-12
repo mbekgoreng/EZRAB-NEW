@@ -21,11 +21,14 @@ import type { PlanId } from '../../../billing/plans';
  *   itu: Free = 100 kredit AI SEKALI per akun (bukan per bulan; habis =
  *   habis), dan fitur AI Free hanya Chat AI. Landing kini menampilkan
  *   ketentuan amendemen ini, selaras dengan plans.ts.
- * - Entitlement di plans.ts (keputusan owner O-1..O-13, Okt 2026) belum
- *   diselaraskan ke Spec v1.0 (mis. AHSP Starter di plans.ts masih
- *   Cipta Karya saja; spec: semua kategori untuk paket berbayar).
- *   Penyelarasan plans.ts adalah pekerjaan billing terpisah dengan grant
- *   tersendiri — matriks tampilan di sini mengikuti Spec v1.0.
+ * - (DISELESAIKAN oleh keputusan K8 / Gelombang 2, 2026-11-13 — copy
+ *   diselaraskan ke kode, bukan sebaliknya) plans.ts menetapkan AHSP
+ *   Starter = Cipta Karya saja (entitlement kanonis owner-approved);
+ *   Spec v1.0 §3 semula menjanjikan semua kategori untuk paket berbayar.
+ *   Matriks tampilan di sini kini mengikuti plans.ts: Starter hanya
+ *   Cipta Karya (SDA/Bina Marga/SMKK = tidak tersedia), selaras dengan
+ *   kartu harga. Gating runtime ahspDomains tetap belum ada (di luar
+ *   penyelarasan copy ini).
  */
 
 export type PricingCell =
@@ -105,9 +108,9 @@ export const PRICING_CATEGORIES: PricingCategory[] = [
     note: 'Harga yang belum tersedia tetap ditahan sebagai belum tersedia — tidak pernah ditampilkan sebagai harga resmi atau diganti angka karangan, di semua paket.',
     rows: [
       { label: 'AHSP Cipta Karya', values: { free: Y, starter: Y, professional: Y, business: Y } },
-      { label: 'AHSP Sumber Daya Air', values: { free: N, starter: Y, professional: Y, business: Y } },
-      { label: 'AHSP Bina Marga', values: { free: N, starter: Y, professional: Y, business: Y } },
-      { label: 'AHSP SMKK', values: { free: N, starter: Y, professional: Y, business: Y } },
+      { label: 'AHSP Sumber Daya Air', values: { free: N, starter: N, professional: Y, business: Y } },
+      { label: 'AHSP Bina Marga', values: { free: N, starter: N, professional: Y, business: Y } },
+      { label: 'AHSP SMKK', values: { free: N, starter: N, professional: Y, business: Y } },
       { label: 'Item Manual / Non-AHSP', values: { free: Y, starter: Y, professional: Y, business: Y } },
     ],
   },

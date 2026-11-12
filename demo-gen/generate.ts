@@ -102,6 +102,9 @@ function tryComplete(base: RabItem, code: string, spec: DemoSpecItem): boolean {
   base.priceStatus = 'PRICE_RESOLVED';
   const allOfficial = used.every((u) => u.completion.official);
   base.priceSourceKind = allOfficial ? 'OFFICIAL_AHSP' : 'MARKET_REFERENCE';
+  // §17.1: harga = comp.unitPrice (Biaya Langsung) + penyelesaian
+  // komponen — BUKAN DHSP — sehingga O&P rekap tetap berlaku.
+  base.priceCostBasis = 'DIRECT_COST';
   base.priceSourceLabel = allOfficial
     ? 'AHSP 2026 — SE DJBK No. 47/SE/Dk/2026'
     : 'AHSP 2026 + pelengkap harga pasar (dataset demo)';
@@ -203,6 +206,10 @@ const rows: GenRow[] = ALL.map((spec, idx) => {
     base.priceStatus = 'PRICE_RESOLVED';
     base.priceSourceKind = 'OFFICIAL_AHSP';
     base.priceSourceLabel = 'AHSP 2026 — SE DJBK No. 47/SE/Dk/2026';
+    // §17.1: harga = unitPrice Biaya Langsung gerbang kanonis
+    // (verdict.unitPrice == comp.unitPrice; generator TIDAK PERNAH
+    // membaca hspPrice) — O&P rekap tetap berlaku.
+    base.priceCostBasis = 'DIRECT_COST';
     base.priceSourceName = cat.sourceDocument;
     base.priceSourceExplanation =
       `Kode ${cat.code} terverifikasi di katalog resmi AHSP 2026 (${cat.sourceDocument}); ` +

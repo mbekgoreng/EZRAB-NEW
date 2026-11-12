@@ -51,7 +51,7 @@ for (const key of aiKeys) {
   check(`${key}: metering tercatat`, decision.chargeable === true && (decision as any).metering === entry?.metering);
 }
 check('chat-ai/fast TOKEN WIRED_SIMULATION', classifyFeature('chat-ai/fast')?.metering === 'TOKEN' && classifyFeature('chat-ai/fast')?.integrationStatus === 'WIRED_SIMULATION');
-check('ded-ai/medium FLAT_DRAFT PARTIAL', classifyFeature('ded-ai/medium')?.metering === 'FLAT_DRAFT' && classifyFeature('ded-ai/medium')?.integrationStatus === 'WIRED_SIMULATION_PARTIAL');
+check('ded-ai/medium FLAT_DRAFT PARTIAL (K7: flat = plafon RESERVASI; settle tetap token)', classifyFeature('ded-ai/medium')?.metering === 'FLAT_DRAFT' && classifyFeature('ded-ai/medium')?.integrationStatus === 'WIRED_SIMULATION_PARTIAL');
 check('ai-document/analysis FLAT_DRAFT PARTIAL', classifyFeature('ai-document/analysis')?.metering === 'FLAT_DRAFT' && classifyFeature('ai-document/analysis')?.integrationStatus === 'WIRED_SIMULATION_PARTIAL');
 check('ded-ai/revision NOT_WIRED (tarif yatim)', classifyFeature('ded-ai/revision')?.integrationStatus === 'NOT_WIRED');
 check('semua entri punya note', Object.values(FEATURE_BILLING_MATRIX).every((e: any) => typeof e.note === 'string' && e.note.length > 0));

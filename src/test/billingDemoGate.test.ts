@@ -69,8 +69,8 @@ check('starter: 5.000', mockGetBalance().total === 5_000);
 
 console.log('=== Ganti paket membersihkan bucket top-up/bonus paket sebelumnya ===');
 mockReset();
-mockTopUp();
-check('starter sesudah top-up: total 8.600', mockGetBalance().total === 8_600);
+mockTopUp('topup-1500');
+check('starter sesudah top-up 1.500: total 6.500', mockGetBalance().total === 6_500);
 mockSetPlan('pro');
 const bPro = mockGetBalance();
 check('pro sesudah pindah: topup 0 & bonus 0', bPro.topup === 0 && bPro.bonus === 0);
@@ -88,9 +88,9 @@ check('top-up free: ledger tidak bertambah', mockGetLedger().length === ledgerBe
 
 console.log('=== Top-up paket berbayar tetap berfungsi (simulasi) ===');
 mockReset();
-const resStarter = mockTopUp();
+const resStarter = mockTopUp('topup-1500');
 check("top-up starter: status 'simulated'", resStarter.status === 'simulated');
-check('top-up starter: +3.600 (3.000 + bonus 600)', mockGetBalance().total === 8_600);
+check('top-up starter K6: +1.500 (tier Spec, tanpa bonus)', mockGetBalance().total === 6_500 && resStarter.bonusCredits === 0);
 
 console.log('=== WS-B: gerbang fitur ditegakkan DI LAPISAN DEBIT (bukan hanya UI) ===');
 mockReset();

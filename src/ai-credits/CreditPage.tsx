@@ -7,7 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Plus, RotateCcw, Activity, Wallet, Repeat, PiggyBank, Gift } from 'lucide-react';
 import './ai-credits.css';
 import { useCreditSimulation } from './useCreditSimulation';
-import { CREDIT_CONFIG_NOTE, FEATURE_LABELS, FREE_INITIAL_CREDITS, PLAN_CREDITS, TOPUP_OFFER } from './config';
+import { CREDIT_CONFIG_NOTE, FEATURE_LABELS, FREE_INITIAL_CREDITS, PLAN_CREDITS, TOPUP_OFFERS } from './config';
 import { formatCredits, formatRupiah } from './format';
 import type { CreditPlan } from './types';
 import { CreditTopUpModal } from './components/CreditTopUpModal';
@@ -111,7 +111,7 @@ interface Props {
 }
 
 export const CreditPage: React.FC<Props> = ({ onBack }) => {
-  const { balance, ledger, topUp, setPlan, reset } = useCreditSimulation();
+  const { balance, ledger, topUp, setPlan, reset, source } = useCreditSimulation();
   const [topUpOpen, setTopUpOpen] = useState(false);
 
   const planLabel = balance.plan === 'free' ? 'Gratis' : balance.plan === 'starter' ? 'Starter' : balance.plan === 'business' ? 'Business' : 'Pro';
@@ -128,12 +128,41 @@ export const CreditPage: React.FC<Props> = ({ onBack }) => {
           <ArrowLeft size={15} /> Kembali
         </button>
         <h2>Kredit AI</h2>
-        <p>
-          Saldo dan riwayat pemakaian fitur AI. Seluruh angka di halaman ini adalah{' '}
-          <strong>simulasi frontend</strong> — bukan penagihan nyata.
-        </p>
+        {source === 'server' && (
+          <p>
+            Saldo dan riwayat pemakaian fitur AI dari <strong>server</strong> (ledger
+            kredit akun Anda).
+          </p>
+        )}
+        {source === 'simulation' && (
+          <p>
+            Saldo dan riwayat pemakaian fitur AI. Seluruh angka di halaman ini adalah{' '}
+            <strong>simulasi frontend</strong> — bukan penagihan nyata.
+          </p>
+        )}
+        {source === 'unavailable' && (
+          <p>
+            <strong>Saldo server belum terhubung.</strong> Backend kredit belum dapat
+            dijangkau — tidak ada angka saldo yang ditampilkan sampai server menjawab.
+          </p>
+        )}
       </div>
 
+      {source === 'unavailable' ? (
+        <>
+          <div className="aic-card">
+            <div className="aic-k">Saldo tidak tersedia</div>
+            <div style={{ fontSize: 13, color: 'var(--ez-color-text-faint)', lineHeight: 1.6, marginTop: 8 }}>
+              Anda masuk dengan akun nyata, tetapi saldo server belum dapat dibaca
+              (backend kredit belum aktif atau jaringan gagal). Angka simulasi tidak
+              ditampilkan sebagai pengganti. Coba lagi nanti, atau hubungi pengelola
+              bila masalah berlanjut.
+            </div>
+          </div>
+          <UsageMeterSection />
+        </>
+      ) : (
+        <>
       <CreditLowBalanceNotice />
 
       <div className="aic-cards">
@@ -142,7 +171,7 @@ export const CreditPage: React.FC<Props> = ({ onBack }) => {
             <span className="aic-ic"><Wallet size={16} /></span> Saldo tersedia
           </div>
           <div className="aic-v">{balance.total.toLocaleString('id-ID')}</div>
-          <div className="aic-s">kredit · paket {planLabel}</div>
+          <div className="aic-s">kredit · paket {planLabel}{source === 'simulation' ? ' · simulasi' : ''}</div>
           <div style={{ marginTop: 14 }}>
             <button type="button" className="aic-btn-hero" onClick={() => setTopUpOpen(true)}>
               <Plus size={15} /> Top-up Kredit
@@ -161,15 +190,24 @@ export const CreditPage: React.FC<Props> = ({ onBack }) => {
             <span className="aic-ic"><PiggyBank size={16} /></span> Kredit top-up
           </div>
           <div className="aic-v">{balance.topup.toLocaleString('id-ID')}</div>
-          <div className="aic-s">dari pembelian simulasi</div>
+          <div className="aic-s">{source === 'simulation' ? 'dari pembelian simulasi' : 'tidak kedaluwarsa'}</div>
         </div>
         <div className="aic-card tone-purple">
           <div className="aic-k">
             <span className="aic-ic"><Gift size={16} /></span> Kredit bonus
           </div>
           <div className="aic-v">{balance.bonus.toLocaleString('id-ID')}</div>
-          <div className="aic-s">bonus 20% tiap top-up</div>
+          <div className="aic-s">{source === 'simulation' ? 'bonus simulasi' : 'bonus promo'}</div>
         </div>
+        {source === 'server' && (
+          <div className="aic-card">
+            <div className="aic-k">
+              <span className="aic-ic"><Gift size={16} /></span> Kredit awal (Free-once)
+            </div>
+            <div className="aic-v">{(balance.freeOnce ?? 0).toLocaleString('id-ID')}</div>
+            <div className="aic-s">100 kredit sekali per akun · tidak kedaluwarsa</div>
+          </div>
+        )}
       </div>
 
       <div className="aic-card">
@@ -182,29 +220,32 @@ export const CreditPage: React.FC<Props> = ({ onBack }) => {
               : `${formatCredits(PLAN_CREDITS[balance.plan as 'starter' | 'pro' | 'business'])} per periode.`}
           </span>
         </div>
-        <div className="aic-plan-row" style={{ marginTop: 12 }}>
-          <span style={{ fontSize: 12.5, color: 'var(--ez-color-text-faint)' }}>Simulasi ganti paket:</span>
-          {(['free', 'starter', 'pro', 'business'] as CreditPlan[]).map((p) => (
+        {source === 'simulation' && (
+          <div className="aic-plan-row" style={{ marginTop: 12 }}>
+            <span style={{ fontSize: 12.5, color: 'var(--ez-color-text-faint)' }}>Simulasi ganti paket:</span>
+            {(['free', 'starter', 'pro', 'business'] as CreditPlan[]).map((p) => (
+              <button
+                key={p}
+                type="button"
+                className={`aic-plan-btn${balance.plan === p ? ' active' : ''}`}
+                onClick={() => setPlan(p)}
+              >
+                {p === 'free' ? 'Gratis' : p === 'starter' ? 'Starter' : p === 'business' ? 'Business' : 'Pro'}
+              </button>
+            ))}
             <button
-              key={p}
               type="button"
-              className={`aic-plan-btn${balance.plan === p ? ' active' : ''}`}
-              onClick={() => setPlan(p)}
+              className="aic-plan-btn"
+              onClick={() => { if (window.confirm('Reset seluruh simulasi kredit ke awal?')) reset(); }}
+              title="Reset simulasi"
             >
-              {p === 'free' ? 'Gratis' : p === 'starter' ? 'Starter' : p === 'business' ? 'Business' : 'Pro'}
+              <RotateCcw size={13} /> Reset
             </button>
-          ))}
-          <button
-            type="button"
-            className="aic-plan-btn"
-            onClick={() => { if (window.confirm('Reset seluruh simulasi kredit ke awal?')) reset(); }}
-            title="Reset simulasi"
-          >
-            <RotateCcw size={13} /> Reset
-          </button>
-        </div>
+          </div>
+        )}
         <div style={{ fontSize: 12, color: 'var(--ez-color-text-faint)', marginTop: 10 }}>
-          Penawaran top-up: {formatRupiah(TOPUP_OFFER.priceIdr)} → {formatCredits(TOPUP_OFFER.totalCredits)} (dasar {formatCredits(TOPUP_OFFER.baseCredits)} + bonus 20%).
+          Paket top-up (tidak kedaluwarsa):{' '}
+          {TOPUP_OFFERS.map((t) => `${formatRupiah(t.priceIdr)} → ${formatCredits(t.credits)}`).join(' · ')}.
         </div>
       </div>
 
@@ -222,6 +263,8 @@ export const CreditPage: React.FC<Props> = ({ onBack }) => {
         {Object.keys(FEATURE_LABELS).filter((f) => f !== 'topup' && f !== 'other').map((f) => FEATURE_LABELS[f as keyof typeof FEATURE_LABELS]).join(', ')}.
         Masa berlaku kredit langganan belum ditentukan pada fase ini.
       </div>
+        </>
+      )}
 
       {topUpOpen && <CreditTopUpModal onClose={() => setTopUpOpen(false)} />}
     </div>

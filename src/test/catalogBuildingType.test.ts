@@ -11,7 +11,9 @@
  *     ke label tipenya sendiri; kategori lama PERSIS seperti ternary
  *     historis (regresi), termasuk UTILITAS/CUSTOM/TEMPLATE_SAYA yang
  *     memang selalu 'Custom'.
- *  2. Katalog tetap 180 template resmi dan 52 ID legacy utuh; setiap
+ *  2. Katalog tetap 183 template resmi dan 52 ID legacy utuh; setiap
+ *     (180 + 3 varian katalog baru keputusan owner 2026-11-12 03:41:
+ *     FND-FOOT-PLAT, ROOF-CONCRETE-DECK, INFRA-ROAD-MACADAM.)
  *     template kategori baru terpetakan ke tipe spesifik (bukan 'Custom').
  *  3. Simulasi jalur apply: satu template per kategori baru di-generate
  *     (item RAB nyata dihasilkan) dan buildingType yang akan dicatat ke
@@ -63,13 +65,13 @@ const NEW_CATEGORIES: Record<string, BuildingType> = {
 
 // Jumlah template per kategori baru sesuai tabel distribusi final Fase C laporan.
 const NEW_CATEGORY_COUNTS: Record<string, number> = {
-  PONDASI_GEOTEKNIK: 7,
+  PONDASI_GEOTEKNIK: 8, // +FND-FOOT-PLAT (keputusan katalog owner 2026-11-12 03:41)
   JEMBATAN_STRUKTUR: 7,
   DRAINASE_SANITASI: 7,
   PEKERJAAN_TANAH: 6,
   STRUKTUR_BETON_BAJA: 7,
   FINISHING_INTERIOR: 6,
-  ATAP_WATERPROOFING: 5,
+  ATAP_WATERPROOFING: 6, // +ROOF-CONCRETE-DECK (keputusan katalog owner 2026-11-12 03:41)
   PERTANIAN_PERKEBUNAN: 5,
   PELABUHAN_PESISIR: 5,
   FASILITAS_OLAHRAGA: 5,
@@ -115,9 +117,9 @@ function run() {
   console.log('\n=== TEST GROUP 3: Katalog 180 utuh + kategori baru terpetakan ===');
   const svc = RabTemplateService.getInstance();
   const officials = svc.getAllTemplates().filter(t => t.metadata.source === 'EZRAB_OFFICIAL');
-  assert.strictEqual(officials.length, 180, `expected 180 official templates, got ${officials.length}`);
+  assert.strictEqual(officials.length, 183, `expected 183 official templates, got ${officials.length}`);
   const ids = new Set(officials.map(t => t.id));
-  assert.strictEqual(ids.size, 180, 'duplicate template IDs found');
+  assert.strictEqual(ids.size, 183, 'duplicate template IDs found');
   for (const legacyId of ['HOUSE-T36-1FL', 'HOUSE-T70-1FL', 'INFRA-ROAD-RIGID', 'SDA-DRAIN-UDITCH', 'MEP-COMPLETE-PKG']) {
     assert.ok(ids.has(legacyId), `legacy template ${legacyId} missing`);
   }
@@ -132,7 +134,7 @@ function run() {
       );
     }
   }
-  console.log('  ✓ PASSED: 180 template, ID unik, distribusi kategori baru sesuai, semua terpetakan spesifik');
+  console.log('  ✓ PASSED: 183 template, ID unik, distribusi kategori baru sesuai, semua terpetakan spesifik');
 
   console.log('\n=== TEST GROUP 4: Simulasi jalur apply per kategori baru ===');
   for (const cat of Object.keys(NEW_CATEGORIES)) {

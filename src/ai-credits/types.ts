@@ -22,11 +22,32 @@ export interface CreditBalance {
   subscription: number;
   topup: number;
   bonus: number;
+  /**
+   * Kredit awal Free-once (100, sekali per akun — Amendemen v1.2).
+   * Bucket terpisah di ledger server; TIDAK pernah dilebur ke top-up
+   * (identitas sumber batch dipertahankan). Simulasi lama tidak
+   * memisahkannya (Free 100 masuk `subscription`) sehingga field ini
+   * opsional: undefined = tidak diketahui / tidak berlaku.
+   */
+  freeOnce?: number;
   plan: CreditPlan;
   /** ISO date — akhir masa berlaku kredit langganan (bila ada aturan). */
   validUntil: string | null;
   currency: 'CREDIT';
 }
+
+/**
+ * Sumber saldo yang sedang ditampilkan (B11/D14, Gelombang 2):
+ * - 'server': saldo dari endpoint /api/credits/balance (ledger batch
+ *   gen-2) — sumber kebenaran untuk akun nyata.
+ * - 'simulation': simulasi frontend localStorage (mode demo — TANPA sesi
+ *   nyata). Ditampilkan HANYA dengan label simulasi yang eksplisit.
+ * - 'unavailable': akun nyata ADA tetapi server tidak menjawab saldo
+ *   (backend belum aktif / jaringan gagal). UI WAJIB menampilkan
+ *   "belum terhubung" dan TIDAK menampilkan angka simulasi sebagai
+ *   pengganti — angka simulasi yang disamarkan adalah klaim palsu.
+ */
+export type BalanceSource = 'server' | 'simulation' | 'unavailable';
 
 /** Rentang estimasi pemakaian untuk satu aksi AI. */
 export interface UsageEstimate {

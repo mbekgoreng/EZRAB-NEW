@@ -341,6 +341,60 @@ export class RabTemplateService {
       metadata: { source: 'EZRAB_OFFICIAL', version: '2.1.0', createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-09-25T00:00:00Z' }
     });
 
+    this.officialTemplates.set('INFRA-ROAD-MACADAM', {
+      id: 'INFRA-ROAD-MACADAM',
+      name: 'Jalan Lapis Penetrasi Makadam (Lapen)',
+      category: 'JALAN_TRANSPORTASI',
+      subcategory: 'Perkerasan Makadam',
+      description: 'Pembangunan jalan lapis penetrasi makadam (lapen) t=15 cm di atas lapis pondasi agregat, standar Bina Marga. Komponen makadam memakai kode resmi F.46 ↔ 6.7.(1) (harga lapangan Rp1.723.874,06/m³ — catatan: komposisi record kanonisnya hanya 4 item peralatan, lihat asumsi).',
+      badge: 'Bina Marga',
+      icon: 'Milestone',
+      supportedDetailLevels: ['STANDARD', 'PROFESSIONAL', 'COMPREHENSIVE'],
+      defaultDetailLevel: 'PROFESSIONAL',
+      parameters: [
+        { id: 'road_length', key: 'road_length', label: 'Panjang Jalan', type: 'NUMBER', unit: 'm', required: true, defaultValue: 1000, min: 10, max: 50000, group: 'dimensions' },
+        { id: 'road_width', key: 'road_width', label: 'Lebar Perkerasan', type: 'NUMBER', unit: 'm', required: true, defaultValue: 6.0, min: 2.5, max: 25, group: 'dimensions' },
+        { id: 'macadam_thickness_m', key: 'macadam_thickness_m', label: 'Tebal Lapisan Makadam', type: 'NUMBER', unit: 'm', required: true, defaultValue: 0.15, min: 0.1, max: 0.25, group: 'specifications' },
+        { id: 'shoulder_width', key: 'shoulder_width', label: 'Lebar Bahu Jalan Kiri & Kanan', type: 'NUMBER', unit: 'm', required: false, defaultValue: 1.0, min: 0.5, max: 3.0, group: 'dimensions' },
+        { id: 'has_drainage', key: 'has_drainage', label: 'Drainase Samping (U-Ditch)', type: 'BOOLEAN', required: false, defaultValue: true, group: 'specifications' }
+      ],
+      components: [
+        { id: 'c-clearing', name: 'Pembersihan & Pengupasan Lahan Badan Jalan (Clearing & Grubbing)', category: '01. PEKERJAAN PERSIAPAN', unit: 'm2', calculationRule: 'road_length * (road_width + (shoulder_width * 2) + 2)', variables: ['road_length', 'road_width', 'shoulder_width'], ahspCode: 'A.2.2.1.9', unitPrice: 8500, detailLevel: 'STANDARD' },
+        { id: 'c-subgrade', name: 'Penyiapan Badan Jalan Subgrade Nilai CBR Min 6%', category: '02. PEKERJAAN TANAH', unit: 'm2', calculationRule: 'road_length * road_width', variables: ['road_length', 'road_width'], ahspCode: 'BM.5.1.2', unitPrice: 18500, detailLevel: 'STANDARD' },
+        { id: 'c-lpb', name: 'Hamparan Lapis Pondasi Bawah Agregat Kelas B (LPB) t=15 cm', category: '03. PEKERJAAN PONDASI', unit: 'm3', calculationRule: 'road_length * (road_width + 0.4) * 0.15', variables: ['road_length', 'road_width'], ahspCode: 'BM.5.1.2', unitPrice: 380000, detailLevel: 'STANDARD' },
+        // Varian katalog baru (keputusan owner 2026-11-12 03:41): kode
+        // F.46 TANPA harga inline — gerbang resolver mengembalikan
+        // harga lapangan resmi Rp1.723.874,06/m³ (OFFICIAL_AHSP).
+        // CATATAN JUJUR: record kanonis F.46 (master Bina Marga
+        // p.916, VERIFIED_PRICE_MATCHED_PDF) komposisinya hanya 4
+        // item peralatan (jumlah komponen Rp126.039); harga lapangan
+        // yang dipakai adalah field unitPrice record itu, bukan
+        // jumlah komponennya. Bila owner menilai basis ini tidak
+        // cukup, item ini tetap bisa diturunkan ke NEEDS_MANUAL_PRICE.
+        { id: 'c-macadam', name: 'Lapis Penetrasi Makadam (Lapen) t=15 cm — AHSP Bina Marga F.46', category: '13. PEKERJAAN PERKERASAN', unit: 'm3', calculationRule: 'road_length * road_width * macadam_thickness_m', variables: ['road_length', 'road_width', 'macadam_thickness_m'], ahspCode: 'F.46', detailLevel: 'STANDARD' },
+        { id: 'c-shoulder', name: 'Bahu Jalan Agregat Kelas S Dipadatkan', category: '13. PEKERJAAN PERKERASAN', unit: 'm3', calculationRule: 'road_length * (shoulder_width * 2) * 0.15', variables: ['road_length', 'shoulder_width'], ahspCode: 'BM.5.1.2', unitPrice: 380000, detailLevel: 'STANDARD' },
+        // Professional additions
+        { id: 'c-kerb-macadam', name: 'Kanstin Beton Pembatas Tepi K-250 15x30x40 cm', category: '13. PEKERJAAN PERKERASAN', unit: 'm1', calculationRule: 'road_length * 2', variables: ['road_length'], ahspCode: 'A.4.4.3.8', unitPrice: 95000, detailLevel: 'PROFESSIONAL' },
+        { id: 'c-drain-macadam', name: 'Saluran Drainase Samping Saluran Terbuka Pasangan Batu', category: '14. PEKERJAAN DRAINASE', unit: 'm1', calculationRule: 'road_length * 2', variables: ['road_length'], ahspCode: 'SDA.2.1.2', unitPrice: 185000, detailLevel: 'PROFESSIONAL' },
+        // Comprehensive additions
+        { id: 'c-marka-macadam', name: 'Marka Jalan Garis Putih Termoplastik 12 cm', category: '13. PEKERJAAN PERKERASAN', unit: 'm1', calculationRule: 'road_length', variables: ['road_length'], ahspCode: 'BM.6.1.4', unitPrice: 35000, detailLevel: 'COMPREHENSIVE', isOptional: true },
+        { id: 'c-pju-macadam', name: 'Penerangan Jalan Umum (PJU) Solar Cell per 50 m', category: '11. PEKERJAAN ELEKTRIKAL', unit: 'titik', calculationRule: 'Math.ceil(road_length / 50)', variables: ['road_length'], ahspCode: 'A.6.1.2.1', unitPrice: 4500000, detailLevel: 'COMPREHENSIVE', isOptional: true },
+        { id: 'c-guardrail-macadam', name: 'Pagar Pengaman Jalan (Guardrail W-Beam Galvanis)', category: '16. PEKERJAAN KHUSUS', unit: 'm1', calculationRule: 'road_length * 0.2', variables: ['road_length'], ahspCode: 'BM.6.1.5', unitPrice: 485000, detailLevel: 'COMPREHENSIVE', isOptional: true }
+      ],
+      // Template baru wajib membawa metadata kejujuran (aturan Grup 4
+      // Katalog 180): asumsi berlabel + eksklusi + formulaVersion.
+      assumptions: [
+        'Tebal lapisan makadam 15 cm & lebar bahu 1,0 m adalah asumsi awal berlabel — desain perkerasan final (CBR tanah dasar, beban lalu lintas) menentukan tebal sebenarnya.',
+        'Harga lapangan F.46 (Rp1.723.874,06/m³) adalah field unitPrice record kanonis Bina Marga p.916 (VERIFIED_PRICE_MATCHED_PDF); komposisi record itu hanya 4 item peralatan — lihat deskripsi template.',
+      ],
+      exclusions: [
+        'Tidak termasuk penyelidikan tanah & desain perkerasan oleh konsultan.',
+        'Tidak termasuk penanganan tanah lunak (perbaikan tanah dasar, geotekstil) di luar asumsi.',
+      ],
+      formulaVersion: '1.0',
+      metadata: { source: 'EZRAB_OFFICIAL', version: '2.1.0', author: 'Bina Marga Division', createdAt: '2026-11-12T00:00:00Z', updatedAt: '2026-11-12T00:00:00Z' }
+    });
+
     // -----------------------------------------------------------------------
     // C. PERKERASAN (PAVING & TROTOAR)
     // -----------------------------------------------------------------------
@@ -1799,6 +1853,7 @@ export class RabTemplateService {
         priceSourceKind: resolution.kind,
         priceSourceLabel: resolution.label,
         priceSourceExplanation: resolution.explanation,
+        ...(resolution.priceCostBasis ? { priceCostBasis: resolution.priceCostBasis } : {}),
         priceSourceName: resolution.sourceName,
         priceSourceSupplier: resolution.sourceSupplier,
         priceSourceDate: resolution.sourceDate,
@@ -1846,6 +1901,13 @@ export class RabTemplateService {
     sourceRegion: string | null;
     mappingStatus: AhspMappingStatus;
     splits?: { labor: number; material: number; equipment: number };
+    /**
+     * Basis biaya harga satuan (§17.1, Gelombang 2 2026-11-13). Hanya
+     * cabang OFFICIAL_AHSP yang mengisinya ('HSP' — harga DHSP sudah
+     * mengandung O&P); cabang lain membiarkannya kosong (basis tidak
+     * terbukti → fail-closed, O&P tetap ditagih).
+     */
+    priceCostBasis?: 'HSP' | 'DIRECT_COST';
   } {
     let mappingStatus: AhspMappingStatus = comp.ahspCode ? 'NEEDS_MAPPING' : 'NOT_APPLICABLE';
 
@@ -1870,6 +1932,9 @@ export class RabTemplateService {
                 sourceDate: null,
                 sourceRegion: null,
                 mappingStatus: 'VERIFIED',
+                // §17.1: harga ini DHSP (sudah mengandung O&P) — tandai
+                // basisnya agar engine rekap membebaskannya dari O&P.
+                priceCostBasis: 'HSP',
                 splits: {
                   labor: composition.labor.subtotalPerUnit,
                   material: composition.material.subtotalPerUnit,

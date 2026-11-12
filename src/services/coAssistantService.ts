@@ -13,7 +13,15 @@
  */
 import { RabItem, Project, UserRole, QTOItem } from '../types';
 import type { ActionProposal } from './aiApiClient';
-import { buildReadOnlyProjectContext } from './aiProjectContext';
+import { buildCanonicalContext } from '../ai-tools/ezrab-ai/canonicalContext';
+import {
+  retrieveMemories,
+  formatMemorySection,
+  formatPreferenceLines,
+  applyPersonalizationGate,
+  getPreferences,
+} from '../ai-tools/ezrab-ai/memory';
+import { buildProjectSnapshot } from '../ai-tools/ezrab-ai/projectContext';
 import { getCurrentSupabaseUser } from './supabaseClient';
 import { HOUSE_TYPE_CATALOG } from '../data/houseTypeCatalog';
 import { getRegionalFactor, REGIONAL_WIZARD_OPTIONS } from '../data/regionalCostFactors';
@@ -21,6 +29,8 @@ import { unifiedConversationStore } from './ai/conversation/unifiedConversationS
 import { notificationBus } from '../notifications/notificationBus';
 import { aiToolsProviderClient } from '../ai-tools/providerClient';
 import { RESPONSE_LANGUAGE_RULE, RESPONSE_FORMAT_RULE } from '../ai-tools/ezrab-ai/prompt';
+import { scanToolCalls } from '../ai-tools/ezrab-ai/toolCallParser';
+import { executeTool, getCopilotToolListText } from '../ai-tools/ezrab-ai/toolRegistry';
 
 /**
  * System prompt jalur server Co-Assistant (Magic AI & Assistant FullView).
@@ -28,17 +38,25 @@ import { RESPONSE_LANGUAGE_RULE, RESPONSE_FORMAT_RULE } from '../ai-tools/ezrab-
  * aturan bahasa yang ditempel di akhir prompt pengguna — sehingga kontrak
  * format & kejujuran Chat AI tidak berlaku di sini. Kini memakai kontrak
  * BERSAMA yang sama (RESPONSE_LANGUAGE_RULE + RESPONSE_FORMAT_RULE dari
- * prompt.ts, satu sumber dengan EZRAB_AI_SYSTEM_PROMPT) DITAMBAH batasan
- * jalur ini: co-assistant tidak punya perangkat tool-calling Chat AI, jadi
- * model tidak boleh berpura-pura memanggil tool.
+ * prompt.ts, satu sumber dengan EZRAB_AI_SYSTEM_PROMPT).
+ *
+ * FASE 5 (ARS-03): Copilot kini BERBAGI registry tool kanonis dengan
+ * Chat AI — subset READ-ONLY yang sama (daftar ditempel di prompt oleh
+ * pemanggil lewat toolRegistry.getCopilotToolListText, dan panggilan
+ * model dieksekusi lewat executeTool). Batasan lama "tidak punya
+ * perangkat tool-calling" DICABUT untuk subset itu; tool tulis
+ * (propose_… dan transfer) TETAP tidak ada di jalur ini (diblokir registry
+ * per kanal) — perubahan RAB diarahkan ke Chat AI.
  */
 const CO_ASSISTANT_SYSTEM_PROMPT = `Kamu adalah EZRAB AI — asisten konstruksi & estimasi biaya dari EZRAB, tampil sebagai Co-Assistant (Magic AI) di dalam aplikasi EZRAB.
 
 ${RESPONSE_LANGUAGE_RULE}
 
 BATASAN JALUR INI
-- Kamu menjawab dari KONTEKS PROYEK yang diberikan pada prompt (hanya-baca) dan pengetahuan umum konstruksi. Kamu TIDAK memiliki akses tool di jalur ini: jangan berpura-pura memanggil tool, jangan menulis panggilan tool/JSON sebagai jawaban, dan jangan mengklaim sudah memeriksa database bila datanya tidak ada di konteks.
-- Bila angka yang diminta tidak ada di konteks, katakan tidak tersedia apa adanya dan arahkan ke menu/fitur EZRAB yang relevan.
+- Kamu menjawab dari KONTEKS PROYEK yang diberikan pada prompt (hanya-baca) dan pengetahuan umum konstruksi.
+- Kamu BOLEH memanggil tool read-only yang terdaftar di prompt (cari AHSP/harga, hitung QTO, data proyek) dengan format JSON {"tool":"<nama_alat>","args":{...}} — hasil tool deterministik menjadi jawaban; JANGAN menghitung ulang angka tool dan JANGAN mengarang angka bila tool menyatakan tidak tersedia.
+- Kamu TIDAK BOLEH mengusulkan perubahan/hapus/tambah item lewat tool (tidak ada tool tulis di jalur ini — registry memblokirnya) — arahkan pengguna ke Chat AI untuk perubahan RAB.
+- Bila angka yang diminta tidak ada di konteks dan tidak ada tool yang dapat mengambilnya, katakan tidak tersedia apa adanya dan arahkan ke menu/fitur EZRAB yang relevan.
 
 ${RESPONSE_FORMAT_RULE}`;
 import { classifyRequest, minDelayFor, statusTextFor, waitForMinimum, waitForRabMinimum, activityForRequest } from '../ai-tools/aiResponseTiming';
@@ -360,21 +378,90 @@ class CoAssistantService {
     // Mulai sini, gagal server = pesan error yang sama seperti Chat AI
     // (isError), TANPA fallback lokal diam-diam — supaya outage server
     // terlihat, bukan tersamar sebagai jawaban AI.
-    const projectContext = request.currentProject && !isConversational && !isAutomaticRab
-      ? buildReadOnlyProjectContext({
-          project: request.currentProject,
-          rabItems: request.projectRabItems || [],
-          question: trimmedMessage,
-        })
-      : undefined;
-    const contextBlock = projectContext
-      ? `KONTEKS PROYEK AKTIF (hanya-baca, dari data proyek):\n${JSON.stringify(projectContext).slice(0, 8000)}\n\n`
-      : '';
+    // FASE 1 — Copilot memakai BUILDER KANONIS yang sama dengan Chat AI
+    // (ARS-03 ditutup pada lapis konteks): prompt sendiri + potongan
+    // konteks 8.000 karakter DIGANTI dataBlock kanonis. Fakta proyek
+    // dari snapshot terstruktur yang sama; riwayat dari store percakapan
+    // yang sama; anggaran, dedupe, dan ringkasan yang sama. Yang tetap
+    // berbeda by design: system prompt jalur ini (tanpa tool-calling)
+    // dan gerbang intent (percakapan santai / RAB otomatis tanpa konteks
+    // proyek — perilaku lama dipertahankan).
+    const copilotSnapshot =
+      request.currentProject && !isConversational && !isAutomaticRab
+        ? buildProjectSnapshot(
+            {
+              id: request.currentProject.id,
+              name: request.currentProject.name,
+              costSummary: (request.currentProject as unknown as { costSummary?: Record<string, unknown> }).costSummary,
+            },
+            (request.projectRabItems ?? []) as unknown as Array<Record<string, unknown>>,
+          )
+        : null;
+    let copilotHistory: Array<{ role: 'user' | 'assistant'; content: string }> = [];
+    try {
+      if (conversationIdToSend && request.currentProject?.id) {
+        const conv = unifiedConversationStore.getConversation(conversationIdToSend, request.currentProject.id);
+        copilotHistory = (conv?.messages ?? []).map((m) => ({
+          role: (m.role === 'assistant' ? 'assistant' : 'user') as 'user' | 'assistant',
+          content: m.content ?? '',
+        }));
+      }
+    } catch {
+      copilotHistory = []; // store tak terbaca → konteks kosong yang jujur, bukan tebakan
+    }
+    const copilotStoredSummary =
+      conversationIdToSend && request.currentProject?.id
+        ? unifiedConversationStore.getConversationSummary(conversationIdToSend, request.currentProject.id)
+        : null;
+    // FASE 2 — memori terstruktur ikut ke builder kanonis (sama seperti
+    // Chat AI): retrieval ter-skop proyek + gerbang personalisasi.
+    // Gagal memori ≠ gagal kirim.
+    let copilotMemorySection: string | undefined;
+    let copilotMemoryReport: ReturnType<typeof retrieveMemories>['report'] | undefined;
+    try {
+      if (request.currentProject?.id) {
+        const prefs = getPreferences(this.currentUserId);
+        const retrieved = retrieveMemories(
+          { userId: this.currentUserId, projectId: request.currentProject.id, conversationId: conversationIdToSend ?? null },
+          trimmedMessage,
+        );
+        const gated = applyPersonalizationGate(retrieved.selected, prefs);
+        const combined = [...formatPreferenceLines(prefs), formatMemorySection(gated)].filter(Boolean).join('\n');
+        copilotMemorySection = combined || undefined;
+        copilotMemoryReport = retrieved.report;
+      }
+    } catch {
+      copilotMemorySection = undefined;
+      copilotMemoryReport = undefined;
+    }
+    // FASE 5 (ARS-03) — Copilot memakai DAFTAR TOOL yang sama dengan
+    // Chat AI (subset read-only registry). Panjang seksi alat dicadangkan
+    // dari anggaran kanonis agar prompt rakitan tetap ≤ 16.000 karakter.
+    const copilotToolListText = getCopilotToolListText();
+    const copilotToolSection = `ALAT YANG TERSEDIA (read-only — panggil dengan format JSON {"tool":"<nama_alat>","args":{...}}):\n${copilotToolListText}`;
+    const copilotBuilt = buildCanonicalContext({
+      userId: this.currentUserId,
+      projectId: request.currentProject?.id ?? copilotSnapshot?.projectId ?? null,
+      conversationId: conversationIdToSend ?? null,
+      messages: copilotHistory.length > 0
+        ? copilotHistory
+        : [{ role: 'user', content: trimmedMessage }],
+      projectSnapshot: copilotSnapshot,
+      storedSummary: copilotStoredSummary,
+      memorySection: copilotMemorySection ?? null,
+      memoryReport: copilotMemoryReport ?? null,
+      reservedChars: RESPONSE_LANGUAGE_RULE.length + 2 + copilotToolSection.length + 2,
+    });
+    try {
+      console.info('[canonical-context]', JSON.stringify({ ...copilotBuilt.report, channel: 'copilot' }));
+    } catch {
+      /* logging tidak boleh menggagalkan kirim */
+    }
     const result = await aiToolsProviderClient.execute({
       productId: 'EZRAB_AI',
       mode: 'fast',
       systemPrompt: CO_ASSISTANT_SYSTEM_PROMPT,
-      prompt: `${contextBlock}PERTANYAAN PENGGUNA: ${trimmedMessage}\n\n${RESPONSE_LANGUAGE_RULE}`,
+      prompt: `${copilotBuilt.dataBlock}\n\n${copilotToolSection}\n\n${RESPONSE_LANGUAGE_RULE}`,
       jsonMode: false,
       temperature: 0.4,
       maxTokens: 3000,
@@ -397,10 +484,40 @@ class CoAssistantService {
       };
     }
 
+    // FASE 5 (ARS-03) — panggilan tool model dieksekusi lewat registry
+    // kanonis YANG SAMA dengan Chat AI (executeTool: validasi skema +
+    // permission + scope proyek + idempotensi + trail audit). Output
+    // deterministik menjadi jawaban; tool tulis diblokir registry per
+    // kanal (Copilot tidak punya permukaan konfirmasi pratinjau).
+    let copilotReplyText = result.content;
+    try {
+      const scan = scanToolCalls(result.content);
+      if (scan.calls.length > 0) {
+        const outputs: string[] = [];
+        for (const call of scan.calls) {
+          const exec = await executeTool({
+            toolName: call.toolName,
+            args: call.args,
+            projectId: request.currentProject?.id ?? copilotSnapshot?.projectId ?? null,
+            conversationId: conversationIdToSend ?? null,
+            actor: 'model',
+            channel: 'copilot',
+            projectSnapshot: copilotSnapshot,
+          });
+          outputs.push(exec.output ?? exec.error ?? `Alat ${call.toolName} gagal tanpa pesan.`);
+        }
+        copilotReplyText = outputs.join('\n\n');
+      } else if (scan.malformed) {
+        copilotReplyText = scan.cleanText || result.content;
+      }
+    } catch {
+      copilotReplyText = result.content;
+    }
+
     const aiMsg: CoAssistantMessage = {
       id: `ai-${Date.now()}`,
       role: 'ai',
-      text: result.content,
+      text: copilotReplyText,
       timestamp: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
       intent: intent ?? undefined,
       source: 'server',

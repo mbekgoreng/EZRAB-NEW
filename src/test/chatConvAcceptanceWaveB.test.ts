@@ -24,6 +24,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import {
   executeIntent, tryContinueUniversalContext,
   getUniversalContextState, clearUniversalContext, clearProjectContext,
+  submitQuestionnaireAnswers,
 } from '../ai-tools/ezrab-ai/actionRegistry';
 import { routeIntent } from '../ai-tools/ezrab-ai/intentRouter';
 import {
@@ -571,7 +572,14 @@ describe('CASE G — kontinuitas Magic↔Chat [klasifikasi: PARTIAL-bukti-store;
     start('buatkan rab kandang sapi budget 275jt lebar 10 x 25 m buat yang simple aja');
     expect(getUniversalContextState()?.primary?.id).toBe('kandang');
     const cont = tryContinueUniversalContext('kandang terbuka');
-    expect(cont!.message).toContain('Brief proyek');
+    // PIN DIPERBARUI TERBUKA (Adaptive Questionnaire, direktif owner
+    // 2026-11-12 §6): jawaban "terbuka" kini membuka langkah kuesioner
+    // spesifikasi kandang sebelum brief (spek material memang belum
+    // diketahui). Inti G4 — konteks yang sama lintas mode — tidak
+    // berubah; asersi brief dijalankan pada hasil kirim kuesioner.
+    expect(cont!.questionnaire).toBeDefined();
+    const brief = submitQuestionnaireAnswers({});
+    expect(brief.message).toContain('Brief proyek');
     expect(getUniversalContextState()?.answers['kandang-type']).toBe('terbuka');
   });
 });

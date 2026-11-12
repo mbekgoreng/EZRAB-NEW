@@ -28,6 +28,18 @@
  *    item timbunan/pemadatan "badan jalan" adalah pekerjaan tanah yang
  *    sah lintas kategori (template Jalan Usaha Tani di kategori
  *    pertanian & template Timbunan Badan Jalan di pekerjaan tanah).
+ *  - Frasa "rabat beton" BUKAN tanda tangan jalan bila deskripsi
+ *    menyebut "lantai kerja" (kalibrasi GATE 5 / 5E, 2026-11-12):
+ *    "Rabat Beton Lantai Kerja Tebal 5 cm" adalah lapisan kerja
+ *    lantai yang sah pada RAB rumah parametrik (satu-satunya false
+ *    positive gerbang atas 200 item 8 RAB rumah — probe Overhaul
+ *    Fase 5 ARS-05, direproduksi 5E). Bukti panen katalog 183
+ *    template (1.716 item PROFESSIONAL): satu-satunya item "rabat
+ *    beton" jalan yang asli — "Jalan Inspeksi Rabat Beton Sempit
+ *    Sepanjang Tanggul" (SDA-RIVER-NORMALIZATION, COMPREHENSIVE) —
+ *    TIDAK menyebut "lantai kerja", jadi tetap tertolak; pengecualian
+ *    ini tidak membuka jalan bagi kontaminan jalan yang sesungguhnya
+ *    (diuji 5E-01/5E-02).
  *  - Proyek landscape TIDAK menolak keluarga paving/kanstin/trotoar:
  *    item itu pekerjaan hardscape taman yang sah (template Taman
  *    Kawasan & Hardscape katalog sendiri memuatnya). Yang ditolak
@@ -75,6 +87,29 @@ const BUILDING_SYSTEM_ITEM_RE =
 
 /** Item penunjang kawasan jalan yang pada draft gudang terbukti liar. */
 const ROAD_SITE_ITEM_RE = /\b(direksi keet|direksikeet)\b/;
+
+/**
+ * Kalibrasi 5E: "rabat beton lantai kerja" = lapisan kerja lantai
+ * (item sah rumah/bangunan), bukan perkerasan jalan. Bila deskripsi
+ * menyebut "lantai kerja", frasa "rabat beton" dihapus dari teks uji
+ * SEBELUM tanda tangan jalan diperiksa — sehingga item lantai kerja
+ * lolos sementara item jalan "rabat beton" yang sesungguhnya (tanpa
+ * frasa "lantai kerja") tetap tertangkap. Lihat keputusan kalibrasi
+ * di kepala berkas.
+ */
+function scrubLantaiKerjaRabat(d: string): string {
+  return d.includes('lantai kerja') ? d.replace(/rabat beton/g, ' ') : d;
+}
+
+/** ROAD_ITEM_RE dengan pengecualian "lantai kerja" (kalibrasi 5E). */
+function matchesRoadSignature(d: string): boolean {
+  return ROAD_ITEM_RE.test(scrubLantaiKerjaRabat(d));
+}
+
+/** ROAD_HARD_RE dengan pengecualian "lantai kerja" (kalibrasi 5E). */
+function matchesRoadHardSignature(d: string): boolean {
+  return ROAD_HARD_RE.test(scrubLantaiKerjaRabat(d));
+}
 
 /** Kategori proyek bangunan (konflik dengan item jalan). */
 const BUILDING_PROJECT_IDS = new Set([
@@ -169,7 +204,7 @@ export function classifyItemRelevance(
 
   // --- Konflik kategori keras: item jalan pada proyek bangunan. ---
   const isBuildingProject = projectId != null && BUILDING_PROJECT_IDS.has(projectId);
-  if (isBuildingProject && !explicit.has('jalan') && ROAD_ITEM_RE.test(d)) {
+  if (isBuildingProject && !explicit.has('jalan') && matchesRoadSignature(d)) {
     return {
       level: 'REJECTED',
       reason: `Item jalan/perkerasan pada proyek bangunan (${projectId}) tanpa permintaan eksplisit atas cakupan jalan — konflik kategori.`,
@@ -187,13 +222,13 @@ export function classifyItemRelevance(
   // --- Kalibrasi Gelombang E: konflik keras per keluarga proyek
   // pekerjaan luar/tapak (aturan umum per keluarga tanda tangan item,
   // bukan per skenario; cakupan eksplisit pengguna selalu menang). ---
-  if (projectId != null && REJECT_ROAD_PROJECT_IDS.has(projectId) && !explicit.has('jalan') && ROAD_ITEM_RE.test(d)) {
+  if (projectId != null && REJECT_ROAD_PROJECT_IDS.has(projectId) && !explicit.has('jalan') && matchesRoadSignature(d)) {
     return {
       level: 'REJECTED',
       reason: `Item jalan/perkerasan pada proyek ${projectId} tanpa permintaan eksplisit atas cakupan jalan — konflik kategori.`,
     };
   }
-  if (projectId != null && LANDSCAPE_PROJECT_IDS.has(projectId) && !explicit.has('jalan') && ROAD_HARD_RE.test(d)) {
+  if (projectId != null && LANDSCAPE_PROJECT_IDS.has(projectId) && !explicit.has('jalan') && matchesRoadHardSignature(d)) {
     return {
       level: 'REJECTED',
       reason: `Item sistem aspal jalan pada proyek landscape (${projectId}) tanpa permintaan eksplisit atas cakupan jalan — konflik kategori (paving/kanstin hardscape taman tidak termasuk yang ditolak).`,
@@ -237,7 +272,7 @@ export function classifyItemRelevance(
   if (projectId === 'kolam' && /\b(kolam|sirkulasi|water ?feature)\b/.test(d)) {
     return { level: 'HIGH', reason: 'Item menyebut pekerjaan inti kolam & sirkulasinya.' };
   }
-  if (projectId != null && ROAD_PROJECT_IDS.has(projectId) && (ROAD_ITEM_RE.test(d) || /\bjalan\b/.test(d))) {
+  if (projectId != null && ROAD_PROJECT_IDS.has(projectId) && (matchesRoadSignature(d) || /\bjalan\b/.test(d))) {
     return { level: 'HIGH', reason: 'Item menyebut pekerjaan inti jalan/perkerasan.' };
   }
   if ((projectId === 'drainase' || projectId === 'gorong-gorong') && /\b(drainase|u-ditch|uditch|saluran|gorong|manhole|culvert)\b/.test(d)) {

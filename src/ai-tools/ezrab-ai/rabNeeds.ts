@@ -250,13 +250,20 @@ export function parseFloorsMention(text: string): number | null {
   // bukan jumlah lantai walau kata "lantai" berdiri di dekatnya
   // ("gudang satu lantai 12 x 25 m": yang disebut lantai adalah "satu";
   // 12 dan 25 adalah dimensi).
-  const dimMatch = t.match(/(\d+(?:[.,]\d+)?)\s*[x×]\s*(\d+(?:[.,]\d+)?)/);
+  // FASE 4 (CHAT-03, 2026-11-12): SEMUA kemunculan "A x B" dilindungi,
+  // bukan hanya yang pertama — teks multi-gedung membawa DUA dimensi
+  // ("gedung A 3 lantai 20 x 12 m dan gedung B 2 lantai 15 x 10 m"):
+  // dengan match() tunggal, "15" dari "15 x 10" tidak terlindungi lalu
+  // pola "lantai <angka>" memungutnya sebagai 15 lantai (draft UI
+  // E2E Fase 4 run 4: "luas 240 m², 15 lantai"). Dengan matchAll,
+  // "15" tertolak sebagai lantai; kandidat terakhir yang sah adalah 2.
   const dimNumSpans: Array<[number, number]> = [];
-  if (dimMatch && dimMatch.index != null) {
-    const aStart = dimMatch.index;
-    const aEnd = aStart + dimMatch[1].length;
-    const bStart = dimMatch.index + dimMatch[0].length - dimMatch[2].length;
-    dimNumSpans.push([aStart, aEnd], [bStart, bStart + dimMatch[2].length]);
+  for (const dm of t.matchAll(/(\d+(?:[.,]\d+)?)\s*[x×]\s*(\d+(?:[.,]\d+)?)/g)) {
+    if (dm.index == null) continue;
+    const aStart = dm.index;
+    const aEnd = aStart + dm[1].length;
+    const bStart = dm.index + dm[0].length - dm[2].length;
+    dimNumSpans.push([aStart, aEnd], [bStart, bStart + dm[2].length]);
   }
   const inDimSpan = (start: number, len: number) =>
     dimNumSpans.some(([s, e]) => start >= s && start + len <= e);
@@ -343,7 +350,11 @@ export function parseFloorsMention(text: string): number | null {
  */
 export function isNegatedAt(text: string, index: number): boolean {
   const before = text.slice(Math.max(0, index - 16), index);
-  return /\b(?:bukan|jangan|tidak|tak)\s*$/.test(before);
+  // Fase 2 Bagian B (audit §3): 'tanpa' adalah negasi — "jalan tanpa
+  // drainase" tidak boleh memicu scope drainase. 'eksisting' SENGAJA
+  // tidak ditambahkan ke negasi global (ditangani suppression
+  // deterministik di specChain, bukan deteksi teks).
+  return /\b(?:bukan|jangan|tidak|tak|tanpa)\s*$/.test(before);
 }
 
 /** Kategori pekerjaan linear (panjang adalah kebutuhan utamanya). */

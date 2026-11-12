@@ -12,6 +12,13 @@
  * - DETERMINISTIC_FREE: operasi deterministik/lokal — selalu gratis
  *   (credits 0), selamanya bukan kandidat metering.
  *
+ * CATATAN K7 (Gelombang 2): kolom `metering` adalah basis ESTIMASI
+ * RESERVASI (dipakai aiMetering.estimateReservationCredits), BUKAN
+ * dasar settle. Settle di boundary SELALU token-metered v1.1 dari
+ * usage aktual; FLAT_DRAFT hanya berarti "estimasi reservasi memakai
+ * target flat draft sebagai plafon" — flat tidak pernah menjadi
+ * tagihan final.
+ *
  * integrationStatus JUJUR terhadap keadaan kode saat matriks ini ditulis:
  * - WIRED_SIMULATION: jalur kredit simulasi tersambung untuk fitur ini.
  * - WIRED_SIMULATION_PARTIAL: tersambung SEBAGIAN (mis. hasil consume
@@ -49,9 +56,17 @@ export const FEATURE_BILLING_MATRIX = Object.freeze({
   'magic-ai-rab': aiMetered('TOKEN', 'NOT_WIRED', 'Bypass penuh: Magic AI RAB belum melewati gerbang kredit apa pun.'),
 
   // --- DED AI ---------------------------------------------------------------
-  'ded-ai/simple': aiMetered('FLAT_DRAFT', 'WIRED_SIMULATION_PARTIAL', 'Tarif flat draft; hasil consume diabaikan pemanggil — penegakan belum penuh.'),
-  'ded-ai/medium': aiMetered('FLAT_DRAFT', 'WIRED_SIMULATION_PARTIAL', 'Tarif flat draft; hasil consume diabaikan pemanggil — penegakan belum penuh.'),
-  'ded-ai/complex': aiMetered('FLAT_DRAFT', 'WIRED_SIMULATION_PARTIAL', 'Tarif flat draft; hasil consume diabaikan pemanggil — penegakan belum penuh.'),
+  // K7 (Gelombang 2): kolom `metering` di sini adalah basis ESTIMASI
+  // RESERVASI (dipakai aiMetering.estimateReservationCredits) — flat
+  // 500/650/800 TETAP menjadi plafon reservasi per run. Dasar SETTLE
+  // adalah token-metered v1.1 dari usage aktual (boundary.settleCredits
+  // + creditPricing.finalizeCredits); flat TIDAK PERNAH menjadi tagihan
+  // final. Mengubah kolom ini ke TOKEN akan mematahkan estimasi
+  // reservasi DED (TOKEN menuntut serverEstimate yang tidak dimiliki
+  // adapter DED) — jangan diubah tanpa mengubah estimateReservationCredits.
+  'ded-ai/simple': aiMetered('FLAT_DRAFT', 'WIRED_SIMULATION_PARTIAL', 'Estimasi reservasi flat 500 (plafon per run); settle token v1.1 (K7); hasil consume simulasi diabaikan pemanggil — penegakan belum penuh.'),
+  'ded-ai/medium': aiMetered('FLAT_DRAFT', 'WIRED_SIMULATION_PARTIAL', 'Estimasi reservasi flat 650 (plafon per run); settle token v1.1 (K7); hasil consume simulasi diabaikan pemanggil — penegakan belum penuh.'),
+  'ded-ai/complex': aiMetered('FLAT_DRAFT', 'WIRED_SIMULATION_PARTIAL', 'Estimasi reservasi flat 800 (plafon per run); settle token v1.1 (K7); hasil consume simulasi diabaikan pemanggil — penegakan belum penuh.'),
   'ded-ai/full-ai': aiMetered('TOKEN', 'NOT_WIRED', 'DED Full AI belum tersambung ke metering token.'),
   'ded-ai/revision': aiMetered('TOKEN', 'NOT_WIRED', 'Tarif yatim: ada di draft tarif tetapi tidak ada jalur penagihan yang memakainya.'),
 

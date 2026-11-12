@@ -124,23 +124,34 @@ async function main(): Promise<void> {
   await check('4. rantai view → service → providerClient meneruskan sinyal yang sama', () => {
     const view = read('src/ai-tools/ezrab-ai/view.tsx');
     const service = read('src/ai-tools/ezrab-ai/service.ts');
-    assert(view.includes('signal: submitAbort.signal'), 'view meneruskan submitAbort.signal ke ezrabAiService.send');
+    // PIN DIPERBARUI TERBUKA (lifecycle fix 2026-11-12): sinyal kini milik
+    // executionRuntime (modul), bukan komponen — `signal: llmExec.signal`
+    // menggantikan `signal: submitAbort.signal`. Rantai ke bawah tidak
+    // berubah: service tetap meneruskan request.signal ke providerClient.
+    assert(view.includes('signal: llmExec.signal'), 'view meneruskan llmExec.signal (runtime) ke ezrabAiService.send');
+    assert(!view.includes('signal: submitAbort.signal'), 'submitAbort.signal tidak lagi dipakai');
     assert(service.includes('signal: request.signal'), 'service meneruskan request.signal ke providerClient.execute');
   });
 
   await check('5. state tidak korup sesudah cancel: view membersihkan busy & tidak menyimpan pesan parsial', () => {
     const view = read('src/ai-tools/ezrab-ai/view.tsx');
-    // Cabang abort: diam, tanpa pesan error/basi.
-    assert(view.includes('if (isAbortError(err)) return;'), 'cabang catch: abort → return diam-diam');
+    // PIN DIPERBARUI TERBUKA (lifecycle fix 2026-11-12): cabang abort tidak
+    // lagi diam — pembatalan EKSPLISIT dicatat sebagai "Permintaan
+    // dibatalkan." (noteCancelledIfNeeded) lalu eksekusi ditutup. Abort
+    // karena unmount tidak ada lagi (cleanup abort dihapus).
+    assert(view.includes('noteCancelledIfNeeded()'), 'cabang catch: abort → penanda cancelled');
+    assert(view.includes("Permintaan dibatalkan."), 'teks penanda cancelled ada');
     // Loading selalu dibersihkan di finally pada jalur submit.
     const submitSection = view.slice(view.indexOf('const sendPromise = ezrabAiService.send'));
-    assert(submitSection.includes('} finally {\n      setBusy(false);'), 'finally setBusy(false) pada jalur pengiriman LLM');
+    assert(submitSection.includes('} finally {'), 'finally ada pada jalur pengiriman LLM');
+    assert(submitSection.includes('setBusy(false);'), 'finally setBusy(false) pada jalur pengiriman LLM');
     // persistMessage untuk balasan asisten hanya muncul SEBELUM cabang
-    // catch pada blok yang sama dan SETELAH cek isLatest — pesan dari
-    // permintaan yang dibatalkan/disalip tidak pernah dipersist.
-    const idxLatest = submitSection.indexOf('isLatest(timingRequestId)');
+    // catch pada blok yang sama dan SETELAH cek keaslian — pesan dari
+    // permintaan yang dibatalkan/disalip tidak pernah dipersist. Cek
+    // keaslian kini lewat handle runtime (llmExec.isCurrent()).
+    const idxLatest = submitSection.indexOf('llmExec.isCurrent()');
     const idxPersist = submitSection.indexOf("persistMessage('assistant', res.reply)");
-    assert(idxLatest !== -1 && idxPersist > idxLatest, 'persistMessage sesudah cek isLatest');
+    assert(idxLatest !== -1 && idxPersist > idxLatest, 'persistMessage sesudah cek isCurrent');
   });
 
   console.log(`\naiCancellationPropagation: ${passed} passed, ${failed} failed`);

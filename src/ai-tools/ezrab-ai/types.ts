@@ -34,6 +34,40 @@ export interface EzrabAiRequest {
   /** Structured active-project snapshot (drives read-only project tools). */
   projectSnapshot?: import('./projectContext').ProjectSnapshot | null;
   mode?: 'fast' | 'advanced';
+  /** Scope kanonis Fase 1 — builder menolak snapshot lintas proyek. */
+  projectId?: string;
+  conversationId?: string;
+  /** userId bila ada; hari ini null (tanpa identitas — AUTH_ENABLED=false). */
+  userId?: string | null;
+  /** Konteks intake kanonis proyek (state terstruktur — sumber fakta). */
+  intakeContext?: import('./universalIntake').UniversalIntakeContext | null;
+  /** Spek terstruktur v2 (bila tidak ikut intakeContext). */
+  structuredSpecs?: import('./structuredSpec').StructuredSpec[] | null;
+  /** Ringkasan draft aktif proyek (judul/versi/jumlah — bukan isi penuh). */
+  draftSummary?: import('./canonicalContext').CanonicalDraftSummary | null;
+  /** Ringkasan percakapan tersimpan per conversationId (dari store). */
+  storedSummary?: import('./conversationSummary').ConversationSummary | null;
+  /**
+   * FASE 2 — seksi MEMORI terstruktur (sudah diformat + di-retrieval
+   * lewat memory.ts). Null = tidak ada memori / personalisasi nonaktif.
+   */
+  memorySection?: string | null;
+  /** Laporan retrieval memori pemanggil (observabilitas per lapis). */
+  memoryReport?: import('./canonicalContext').CanonicalContextReport['retrieval']['memory'];
+  /**
+   * FASE 3 — seksi OBJEKTIF TUGAS (sudah diformat oleh
+   * agentOrchestrator.formatObjectiveSection). Null = tanpa objektif.
+   */
+  objectiveSection?: string | null;
+  /**
+   * FASE 5 — seksi PEMAHAMAN DED (sudah diformat oleh
+   * dedUnderstanding.buildDedSection) dan PEMERIKSAAN QTO (sudah
+   * diformat oleh qtoBridge.buildQtoSection). Null = tanpa hasil
+   * DED/QTO yang di-wire ke permintaan ini. Builder hanya menempelkan
+   * dengan cap sendiri, di dalam blok DATA.
+   */
+  dedSection?: string | null;
+  qtoSection?: string | null;
   /** Kunci idempotensi operasi kirim ini. Bila kosong, service membuat
    *  satu kunci acak baru untuk operasi ini; percobaan ulang operasi yang
    *  sama meneruskan kunci yang sama. */

@@ -38,6 +38,7 @@ import {
   executeIntent, tryContinueProjectContext, tryContinueUniversalContext,
   getProjectContextState, clearProjectContext,
   getUniversalContextState, clearUniversalContext,
+  submitQuestionnaireAnswers,
 } from '../ai-tools/ezrab-ai/actionRegistry';
 import { routeIntent } from '../ai-tools/ezrab-ai/intentRouter';
 import {
@@ -90,10 +91,18 @@ describe('Universal Intake — Skenario §5 master prompt', () => {
     expect(lenFact?.status).toBe('SYSTEM_DERIVED');
     expect(lenFact?.value).toContain('2 km');
 
-    const brief = tryContinueUniversalContext('lebarnya 5 meter');
-    expect(brief).not.toBeNull();
-    expect(brief!.message).toContain('Siap, saya perbarui: Lebar: 5 m');
-    expect(brief!.message).toContain('Brief proyek');
+    const jawabLebar = tryContinueUniversalContext('lebarnya 5 meter');
+    expect(jawabLebar).not.toBeNull();
+    expect(jawabLebar!.message).toContain('Siap, saya perbarui: Lebar: 5 m');
+    // PIN DIPERBARUI TERBUKA (Adaptive Questionnaire, direktif owner
+    // 2026-11-12 §6): jawaban lebar kini membuka langkah kuesioner
+    // spesifikasi jalan (kelas lalu lintas/tanah dasar/drainase samping
+    // belum diketahui; perkerasan sudah dari "jalan beton") sebelum
+    // brief. Asersi brief & afirmasi→draft asli dipertahankan persis
+    // pada hasil kirim kuesioner (semua dilewati).
+    expect(jawabLebar!.questionnaire).toBeDefined();
+    const brief = submitQuestionnaireAnswers({});
+    expect(brief.message).toContain('Brief proyek');
     expect(hasPush(brief as never)).toBe(false);
 
     const draft = tryContinueUniversalContext('itu aja');
@@ -118,7 +127,14 @@ describe('Universal Intake — Skenario §5 master prompt', () => {
     expect(ctx?.lengthM).toBe(500);
 
     const picked = executeIntent('RAB_INTAKE_OPTION', 'drain-uditch', ctxFor('u-ditch'));
-    expect(picked.message).toContain('Brief proyek');
+    // PIN DIPERBARUI TERBUKA (Adaptive Questionnaire, direktif owner
+    // 2026-11-12 §6): pilihan tipe kini membuka langkah kuesioner
+    // drainase (arah aliran/tujuan buang + penutup saluran belum
+    // diketahui) sebelum brief. Asersi brief asli dipertahankan pada
+    // hasil kirim kuesioner (semua dilewati).
+    expect(picked.questionnaire).toBeDefined();
+    const briefC = submitQuestionnaireAnswers({});
+    expect(briefC.message).toContain('Brief proyek');
     expect(getUniversalContextState()?.drainageType).toBe('U-Ditch Pracetak');
     const draft = executeIntent('RAB_INTAKE_GENERATE', undefined, ctxFor('susun'));
     expect(hasPush(draft as never)).toBe(true);
@@ -135,7 +151,14 @@ describe('Universal Intake — Skenario §5 master prompt', () => {
     expect(ctx?.floors).toBe(2);
     expect(ctx?.renovationScope).toBeNull();
 
-    const brief = executeIntent('RAB_INTAKE_OPTION', 'renov-all', ctxFor('seluruh bangunan'));
+    const pickedRenov = executeIntent('RAB_INTAKE_OPTION', 'renov-all', ctxFor('seluruh bangunan'));
+    // PIN DIPERBARUI TERBUKA (Adaptive Questionnaire, direktif owner
+    // 2026-11-12 §6): pilihan cakupan renovasi kini membuka langkah
+    // kuesioner renovasi (kondisi eksisting/grade/MEP belum diketahui)
+    // sebelum brief. Asersi brief asli dipertahankan pada hasil kirim
+    // kuesioner (semua dilewati).
+    expect(pickedRenov.questionnaire).toBeDefined();
+    const brief = submitQuestionnaireAnswers({});
     expect(brief.message).toContain('Brief proyek');
     expect(getUniversalContextState()?.renovationScope).toBe('seluruh bangunan');
   });

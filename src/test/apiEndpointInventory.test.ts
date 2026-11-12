@@ -27,7 +27,7 @@
  * TIDAK ADA di server (frontend memanggil, dapat 404 — lihat laporan audit):
  *   - /api/ai/actions/confirm            (aiApiClient.confirmAction — dead code, tak dipanggil)
  *   - /api/ai/conversations              (aiApiClient.getConversations — dead code, tak dipanggil)
- *   - /api/assistant/wizard/*            (5 method — deprecated, 404 ditangkap caller -> resolver client-side)
+ *   - /api/assistant/wizard/*            (5 method — FASE 5 ARS-04: DITUTUP — aiApiClient melempar WIZARD_SERVER_NOT_IMPLEMENTED sebelum fetch, 0 pemanggil; wizard 100% client-side via resolveClientWizardStep)
  *   - /api/projects/:id/ded-analyses     (3 pola — fallback diam-diam ke Supabase/localStorage)
  *   - /api/ai/receipt/scan               (gagal jujur client-side; butuh dukungan vision di gateway tim Security)
  *

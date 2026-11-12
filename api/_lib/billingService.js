@@ -174,9 +174,9 @@ export function createBillingService(deps = {}) {
     const account = await getOrCreateAccount(authz.workspaceId, auth.user.id);
     const now = nowFn();
     const orderId = newOrderId(kind, now);
-    const creditsSnapshot = item.kind === 'SUBSCRIPTION'
-      ? item.credits
-      : item.baseCredits + item.bonusCredits;
+    // K6: top-up memakai `credits` tunggal (tanpa bonus terpisah) —
+    // snapshot kredit = jumlah yang akan di-grant webhook.
+    const creditsSnapshot = item.credits;
     await repo.insertOrder({
       order_id: orderId,
       workspace_id: authz.workspaceId,
@@ -310,26 +310,19 @@ export function createBillingService(deps = {}) {
           })
         );
       } else {
-        grantResult = await withLedger(repo, order.account_id, ctx, (ledger) => {
-          const topUp = ledger.grantTopUp({
+        // K6: top-up = SATU grant sebesar item.credits (tier Spec §7.2,
+        // tanpa bonus terpisah). Batch BONUS terpisah dari penawaran
+        // interim Fase 1 sudah tidak diterbitkan lagi.
+        grantResult = await withLedger(repo, order.account_id, ctx, (ledger) =>
+          ledger.grantTopUp({
             accountId: order.account_id,
-            amount: item.baseCredits,
+            amount: item.credits,
             paymentRef: order.order_id,
             idempotencyKey: order.order_id,
             actor: 'midtrans-webhook',
             now: paidAt,
-          });
-          if (!topUp.ok || !(item.bonusCredits > 0)) return topUp;
-          const bonus = ledger.grantBonus({
-            accountId: order.account_id,
-            amount: item.bonusCredits,
-            campaignRef: item.itemId,
-            idempotencyKey: `${order.order_id}:bonus`,
-            actor: 'midtrans-webhook',
-            now: paidAt,
-          });
-          return bonus.ok ? topUp : bonus;
-        });
+          })
+        );
       }
       if (!grantResult || !grantResult.ok) {
         await recordEvent(order, notification, event, 'GRANT_FAILED');

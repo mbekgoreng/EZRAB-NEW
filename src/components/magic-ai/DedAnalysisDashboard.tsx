@@ -271,10 +271,17 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
   };
 
   // Derive the 4-step progress states
+  // SEC-04 (GELOMBANG PERBAIKI SEMUA): klaim statis terfabrikasi
+  // DIHAPUS — durasi tahap tetap yang dikarang, jumlah halaman tetap
+  // (itu metadata BERKAS CONTOH, bukan berkas pengguna), dan klaim
+  // validasi/verifikasi statis atas volume, HSP, dan RAB (tidak ada
+  // deteksi anomali di jalur ini). Yang tampil kini hanya data nyata
+  // hasil pipeline: totalPagesRead, durasi eksekusi (sudah dilaporkan
+  // di log), dan hitungan status/stats item.
   const steps: StepInfo[] = useMemo(() => {
     if (!isAnalyzing && !outputResult) {
       return [
-        { id: 'READING_DED', number: '01', title: 'Membaca DED', subtitle: 'Ekstraksi gambar & teks', status: 'WAITING', detail: '32 halaman gambar kerja' },
+        { id: 'READING_DED', number: '01', title: 'Membaca DED', subtitle: 'Ekstraksi gambar & teks', status: 'WAITING', detail: 'Belum ada dokumen dibaca' },
         { id: 'IDENTIFY_WORK', number: '02', title: 'Mengenali Pekerjaan', subtitle: 'Identifikasi item & kategori', status: 'WAITING', detail: 'Struktur, arsitektur, dan MEP' },
         { id: 'CALCULATE_ESTIMATE', number: '03', title: 'Menghitung Estimasi', subtitle: 'Volume & harga awal', status: 'WAITING', detail: 'Perhitungan kuantitas & tarif' },
         { id: 'BUILD_RAB', number: '04', title: 'Menyusun RAB', subtitle: 'Validasi & finalisasi', status: 'WAITING', detail: 'Sanity check deterministik' },
@@ -283,15 +290,26 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
 
     if (outputResult) {
       const itemsCount = outputResult.stats?.totalItems ?? outputResult.workItems.length;
+      const st = outputResult.stats;
+      // Hitungan verifikasi NYATA dari hasil pipeline (quantitySanityGate
+      // memberi setiap item status VALID/WARNING/UNRESOLVED/BLOCKED).
+      const validCount = outputResult.workItems.filter((i) => i.status === 'VALID').length;
+      const reviewCount = outputResult.workItems.filter((i) => i.status === 'WARNING' || i.status === 'UNRESOLVED').length;
+      const blockedCount = outputResult.workItems.filter((i) => i.status === 'BLOCKED').length;
+      const pagesDetail =
+        outputResult.totalPagesRead > 0
+          ? `${outputResult.totalPagesRead} halaman gambar kerja berhasil dibaca`
+          : 'Gambar kerja berhasil dibaca';
       return [
-        { id: 'READING_DED', number: '01', title: 'Membaca DED', subtitle: 'Ekstraksi gambar & teks', status: 'SUCCESS', duration: '12s', detail: `${outputResult.totalPagesRead || 32} halaman gambar kerja berhasil dibaca` },
-        { id: 'IDENTIFY_WORK', number: '02', title: 'Mengenali Pekerjaan', subtitle: 'Identifikasi item & kategori', status: 'SUCCESS', duration: '18s', detail: `${itemsCount} pekerjaan teridentifikasi` },
-        { id: 'CALCULATE_ESTIMATE', number: '03', title: 'Menghitung Estimasi', subtitle: 'Volume & harga awal', status: 'SUCCESS', duration: '24s', detail: 'Volume & HSP deterministik tervalidasi' },
-        { id: 'BUILD_RAB', number: '04', title: 'Menyusun RAB', subtitle: 'Validasi & finalisasi', status: 'SUCCESS', duration: '6s', detail: 'RAB terverifikasi tanpa anomali harga' },
+        { id: 'READING_DED', number: '01', title: 'Membaca DED', subtitle: 'Ekstraksi gambar & teks', status: 'SUCCESS', detail: pagesDetail },
+        { id: 'IDENTIFY_WORK', number: '02', title: 'Mengenali Pekerjaan', subtitle: 'Identifikasi item & kategori', status: 'SUCCESS', detail: `${itemsCount} pekerjaan teridentifikasi` },
+        { id: 'CALCULATE_ESTIMATE', number: '03', title: 'Menghitung Estimasi', subtitle: 'Volume & harga awal', status: 'SUCCESS', detail: `${itemsCount} pekerjaan dihitung · ${st?.unresolvedItems ?? 0} belum terpecahkan · ${st?.blockedItems ?? 0} tertahan dari total` },
+        { id: 'BUILD_RAB', number: '04', title: 'Menyusun RAB', subtitle: 'Validasi & finalisasi', status: 'SUCCESS', detail: `Valid ${validCount} · Perlu tinjauan ${reviewCount} · Tertahan ${blockedCount}` },
       ];
     }
 
-    // Active analyzing state
+    // Active analyzing state — durasi yang tampil hanya elapsed nyata
+    // (timer); tidak ada lagi durasi tahap tetap yang dikarang.
     const p = analysisProgress;
     return [
       {
@@ -300,8 +318,8 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
         title: 'Membaca DED',
         subtitle: 'Ekstraksi gambar & teks',
         status: p >= 35 ? 'SUCCESS' : 'PROCESSING',
-        duration: p >= 35 ? '12s' : `${elapsedSeconds}s`,
-        detail: 'Memproses 32 halaman gambar kerja',
+        duration: p >= 35 ? undefined : `${elapsedSeconds}s`,
+        detail: 'Memproses halaman gambar kerja',
       },
       {
         id: 'IDENTIFY_WORK',
@@ -309,7 +327,7 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
         title: 'Mengenali Pekerjaan',
         subtitle: 'Identifikasi item & kategori',
         status: p >= 65 ? 'SUCCESS' : p >= 35 ? 'PROCESSING' : 'WAITING',
-        duration: p >= 65 ? '18s' : p >= 35 ? `${elapsedSeconds}s` : undefined,
+        duration: p >= 35 && p < 65 ? `${elapsedSeconds}s` : undefined,
         detail: 'Mengidentifikasi struktur, arsitektur, dan MEP',
       },
       {
@@ -318,7 +336,7 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
         title: 'Menghitung Estimasi',
         subtitle: 'Volume & harga awal',
         status: p >= 85 ? 'SUCCESS' : p >= 65 ? 'PROCESSING' : 'WAITING',
-        duration: p >= 85 ? '24s' : p >= 65 ? `${elapsedSeconds}s` : undefined,
+        duration: p >= 65 && p < 85 ? `${elapsedSeconds}s` : undefined,
         detail: 'Estimasi volume dan harga satuan awal',
       },
       {
@@ -327,7 +345,7 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
         title: 'Menyusun RAB',
         subtitle: 'Validasi & finalisasi',
         status: p >= 100 ? 'SUCCESS' : p >= 85 ? 'PROCESSING' : 'WAITING',
-        duration: p >= 100 ? '6s' : undefined,
+        duration: p >= 85 && p < 100 ? `${elapsedSeconds}s` : undefined,
         detail: 'Validasi, sanity check, dan finalisasi',
       },
     ];
@@ -677,14 +695,28 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
               <div className="text-[13.5px] font-bold text-[var(--ez-color-text-primary)] truncate">
                 {selectedFile ? selectedFile.name : 'Belum ada dokumen DED dipilih'}
               </div>
+              {/* SEC-04: meta di bawah ini dulu statis — ukuran, jumlah
+                  halaman, dan deskripsi isi BERKAS CONTOH ditampilkan
+                  untuk berkas apa pun bahkan saat belum ada berkas.
+                  Kini: ukuran dari File nyata, halaman dari
+                  totalPagesRead hasil analisis (bila sudah ada), dan
+                  tanpa klaim isi dokumen yang tidak diketahui. */}
               <div className="text-[12px] text-[#64748B] flex items-center gap-1.5 deddash-x8">
-                <span>
-                  {selectedFile ? `${(selectedFile.size / (1024 * 1024)).toFixed(2)} MB` : '3.01 MB'}
-                </span>
-                <span>•</span>
-                <span>32 halaman</span>
-                <span>•</span>
-                <span className="truncate">Gambar kerja rumah tinggal 1 lantai</span>
+                {selectedFile ? (
+                  <>
+                    <span>{`${(selectedFile.size / (1024 * 1024)).toFixed(2)} MB`}</span>
+                    <span>•</span>
+                    <span>
+                      {outputResult && outputResult.totalPagesRead > 0
+                        ? `${outputResult.totalPagesRead} halaman`
+                        : 'Jumlah halaman belum dihitung'}
+                    </span>
+                    <span>•</span>
+                    <span className="truncate">Dokumen PDF</span>
+                  </>
+                ) : (
+                  <span>Pilih berkas PDF DED untuk dianalisis</span>
+                )}
               </div>
             </div>
           </div>
@@ -768,10 +800,15 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
         <div className="grid grid-cols-1 items-start deddash-x13">
           {/* LEFT COLUMN: DOCUMENT PREVIEW (~60% => col-span-7) */}
           <div className="space-y-4 deddash-x14">
+            {/* SEC-04: totalPages dulu hardcoded 32 (metadata berkas
+                contoh). Kini jumlah nyata hasil analisis bila sudah ada;
+                32 tersisa hanya sebagai placeholder pra-muat viewer
+                (default DocumentViewer sendiri; viewer menggantinya
+                dengan pdfDoc.numPages nyata begitu PDF termuat). */}
             <DocumentViewer
               file={selectedFile}
               fileBuffer={fileBuffer}
-              totalPages={32}
+              totalPages={outputResult && outputResult.totalPagesRead > 0 ? outputResult.totalPagesRead : 32}
               currentPage={activePage}
               onPageChange={(p) => setActivePage(p)}
               logs={executionLogs}
@@ -902,9 +939,14 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
                       Analisis DED Selesai
                     </h2>
                   </div>
+                  {/* SEC-04: jumlah halaman dan blocker di sini dulu memakai
+                      nilai tetap yang dikarang (fallback halaman + nol
+                      hardcoded). Halaman = totalPagesRead nyata (bila 0,
+                      akui tidak tercatat); blocker = stats.blockedItems
+                      nyata. */}
                   <p className="text-[13px] text-[#64748B] mt-1 font-normal">
-                    {outputResult.totalPagesRead || 32} halaman dianalisis • {outputResult.stats?.totalItems ?? outputResult.workItems.length} pekerjaan
-                    teridentifikasi • 0 blocker kritis
+                    {outputResult.totalPagesRead > 0 ? `${outputResult.totalPagesRead} halaman dianalisis` : 'Jumlah halaman tidak tercatat'} • {outputResult.stats?.totalItems ?? outputResult.workItems.length} pekerjaan
+                    teridentifikasi • {outputResult.stats?.blockedItems ?? outputResult.workItems.filter((i) => i.status === 'BLOCKED').length} item tertahan
                   </p>
                 </div>
 

@@ -248,6 +248,12 @@ export class RabAdapter {
       priceSourceKind: prov.kind,
       priceSourceLabel: prov.label,
       priceSourceExplanation: prov.explanation,
+      // §17.1: unitCost/amount di sini adalah Biaya Langsung hasil
+      // komposisi komponen (directCost) — BUKAN DHSP — sehingga O&P
+      // rekap tetap berlaku. Penanda ini dokumentatif (perilaku sudah
+      // benar lewat fail-closed), tetapi eksplisit lebih aman daripada
+      // mengandalkan ketiadaan penanda.
+      priceCostBasis: 'DIRECT_COST',
     };
 
     return {

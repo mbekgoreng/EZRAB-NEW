@@ -20,7 +20,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { RabItem, Project, UserRole, QTOItem } from '../../types';
-import { aiApiClient, ActionProposal } from '../../services/aiApiClient';
+import { ActionProposal } from '../../services/aiApiClient';
 import { coAssistantService, CoAssistantMessage, resolveClientWizardStep } from '../../services/coAssistantService';
 import { isAbortError } from '../../ai-tools/aiResponseTiming';
 import { quickActionService } from '../../services/quickActionService';
@@ -587,11 +587,21 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
     }
   };
 
+  // FASE 5 (ARS-04) — wizard berjalan 100% client-side: jawaban dihitung
+  // LANGSUNG oleh resolveClientWizardStep, tanpa panggilan ke endpoint
+  // /api/assistant/wizard/* yang tidak pernah ada (aiApiClient wizard
+  // kini melempar sebelum fetch — tidak lagi dipanggil dari sini).
   const handleWizardAnswer = async (sessionId: string, choiceId?: string, parameters?: Record<string, any>) => {
     setIsThinking(true);
     setThinkingStep('Memproses spesifikasi wizard...');
     try {
-      const wizardResp = await aiApiClient.answerWizard(sessionId, choiceId, parameters);
+      const lastWizMsg = [...messages].reverse().find((m) => !!m.wizardResponse);
+      const wizardResp = resolveClientWizardStep(sessionId, choiceId, parameters, lastWizMsg?.wizardResponse, {
+        ppnEnabled: (currentProject as any)?.ppnEnabled === true,
+        ppnPercent: (currentProject as any)?.ppnPercent,
+        pphEnabled: (currentProject as any)?.pphEnabled === true,
+        pphPercent: (currentProject as any)?.pphPercent,
+      });
       const aiMsg: CoAssistantMessage = {
         id: `ai-wiz-${Date.now()}`,
         role: 'ai',
@@ -601,84 +611,90 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
       };
       setMessages((prev) => [...prev, aiMsg]);
     } catch (err: any) {
-      console.warn('Wizard answer error, using fallback:', err);
-      try {
-        const lastWizMsg = [...messages].reverse().find((m) => !!m.wizardResponse);
-        const fallbackResp = resolveClientWizardStep(sessionId, choiceId, parameters, lastWizMsg?.wizardResponse, {
-          ppnEnabled: (currentProject as any)?.ppnEnabled === true,
-          ppnPercent: (currentProject as any)?.ppnPercent,
-          pphEnabled: (currentProject as any)?.pphEnabled === true,
-          pphPercent: (currentProject as any)?.pphPercent,
-        });
-        const aiMsg: CoAssistantMessage = {
+      const errMsg: CoAssistantMessage = {
+        id: `ai-wiz-err-${Date.now()}`,
+        role: 'ai',
+        text: 'Terjadi kendala pada wizard: ' + (err.message || 'Gagal memproses'),
+        timestamp: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+        isError: true
+      };
+      setMessages((prev) => [...prev, errMsg]);
+    } finally {
+      setIsThinking(false);
+    }
+  };
+
+  // FASE 5 (ARS-04) — tidak ada state server untuk dimundurkan: tampilkan
+  // ulang wizardResponse sebelumnya dari riwayat pesan.
+  const handleWizardGoBack = async (sessionId: string) => {
+    setIsThinking(true);
+    try {
+      void sessionId;
+      const wizMsgs = [...messages].reverse().filter((m) => !!m.wizardResponse);
+      const prev = wizMsgs[1]?.wizardResponse;
+      if (!prev) {
+        const infoMsg: CoAssistantMessage = {
           id: `ai-wiz-${Date.now()}`,
           role: 'ai',
-          text: fallbackResp.message || '',
-          timestamp: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
-          wizardResponse: fallbackResp
+          text: 'Wizard sudah di langkah pertama — belum ada langkah sebelumnya.',
+          timestamp: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
         };
-        setMessages((prev) => [...prev, aiMsg]);
-      } catch (fallbackErr) {
+        setMessages((prevMsgs) => [...prevMsgs, infoMsg]);
+        return;
+      }
+      const aiMsg: CoAssistantMessage = {
+        id: `ai-wiz-${Date.now()}`,
+        role: 'ai',
+        text: prev.message || '',
+        timestamp: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+        wizardResponse: prev
+      };
+      setMessages((prevMsgs) => [...prevMsgs, aiMsg]);
+    } finally {
+      setIsThinking(false);
+    }
+  };
+
+  // FASE 5 (ARS-04) — pembatalan murni lokal (tidak ada sesi server);
+  // pesan pembatalan tetap ditampilkan seperti sebelumnya.
+  const handleWizardCancel = async (sessionId: string) => {
+    void sessionId;
+    const aiMsg: CoAssistantMessage = {
+      id: `ai-wiz-${Date.now()}`,
+      role: 'ai',
+      text: 'Pembuatan RAB interaktif telah dibatalkan.',
+      timestamp: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+    };
+    setMessages((prev) => [...prev, aiMsg]);
+  };
+
+  // FASE 5 (ARS-04) — konfirmasi memakai calculatedItems dari pesan
+  // wizard terakhir (langkah RAB_PREVIEW) via onAddRabItemDirect yang
+  // sudah ada; bila wizard belum sampai pratinjau RAB, gagal JUJUR.
+  const handleWizardConfirm = async (sessionId: string) => {
+    void sessionId;
+    setIsThinking(true);
+    try {
+      const lastWizMsg = [...messages].reverse().find((m) => !!m.wizardResponse);
+      const items = lastWizMsg?.wizardResponse?.calculatedItems;
+      if (!Array.isArray(items) || items.length === 0) {
         const errMsg: CoAssistantMessage = {
           id: `ai-wiz-err-${Date.now()}`,
           role: 'ai',
-          text: 'Terjadi kendala pada wizard: ' + (err.message || 'Gagal memproses'),
+          text: 'Wizard belum sampai ke pratinjau RAB, jadi belum ada item yang bisa diterapkan ke spreadsheet.',
           timestamp: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
           isError: true
         };
         setMessages((prev) => [...prev, errMsg]);
+        return;
       }
-    } finally {
-      setIsThinking(false);
-    }
-  };
-
-  const handleWizardGoBack = async (sessionId: string) => {
-    setIsThinking(true);
-    try {
-      const wizardResp = await aiApiClient.goBackWizard(sessionId);
-      const aiMsg: CoAssistantMessage = {
-        id: `ai-wiz-${Date.now()}`,
-        role: 'ai',
-        text: wizardResp.message || '',
-        timestamp: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
-        wizardResponse: wizardResp
-      };
-      setMessages((prev) => [...prev, aiMsg]);
-    } catch (err: any) {
-      console.warn('Wizard goBack error:', err);
-    } finally {
-      setIsThinking(false);
-    }
-  };
-
-  const handleWizardCancel = async (sessionId: string) => {
-    try {
-      await aiApiClient.cancelWizard(sessionId);
-      const aiMsg: CoAssistantMessage = {
-        id: `ai-wiz-${Date.now()}`,
-        role: 'ai',
-        text: 'Pembuatan RAB interaktif telah dibatalkan.',
-        timestamp: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
-      };
-      setMessages((prev) => [...prev, aiMsg]);
-    } catch (err: any) {
-      console.warn('Wizard cancel error:', err);
-    }
-  };
-
-  const handleWizardConfirm = async (sessionId: string) => {
-    const prjId = currentProject?.id || 'PRJ-TROPIS-MODERN-01';
-    setIsThinking(true);
-    try {
-      const result = await aiApiClient.confirmWizard(sessionId, prjId);
-      if (result.items && Array.isArray(result.items) && onAddRabItemDirect) {
-        result.items.forEach((item: any) => onAddRabItemDirect(item));
+      if (onAddRabItemDirect) {
+        items.forEach((item: any) => onAddRabItemDirect(item));
       }
       const aiMsg: CoAssistantMessage = {
         id: `ai-wiz-${Date.now()}`,
         role: 'ai',
-        text: `✅ **Berhasil Menerapkan RAB!**\n\nSebanyak **${result.addedItemsCount} item pekerjaan** telah dimasukkan ke spreadsheet proyek. Anda dapat memeriksa rincian item, volume, dan harga satuan di lembar kerja RAB.`,
+        text: `✅ **Berhasil Menerapkan RAB!**\n\nSebanyak **${items.length} item pekerjaan** telah dimasukkan ke spreadsheet proyek. Anda dapat memeriksa rincian item, volume, dan harga satuan di lembar kerja RAB.`,
         timestamp: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
       };
       setMessages((prev) => [...prev, aiMsg]);

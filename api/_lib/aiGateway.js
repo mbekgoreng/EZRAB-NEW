@@ -19,6 +19,11 @@
  *  - Sequential provider failover per mode (lihat executeAI); percobaan per
  *    provider dibatasi anggaran (1 awal + maks 1 ulang setelah gagal) dan
  *    adapter OpenAI-compatible tahan terhadap respons SSE
+ *  - Disconnect-abort (ARS-08, Gelombang 2 Blok D): handleAiRequest mengamati
+ *    disconnect klien via `res 'close'` dan membatalkan rantai failover yang
+ *    sedang berjalan (abort fetch provider in-flight + hentikan leg
+ *    berikutnya) lewat AbortSignal yang diteruskan ke executeAI. Tanpa
+ *    disconnect, perilaku identik seperti sebelumnya.
  *  - Structured, secret-free usage logging: requestId, ACTUAL provider/model
  *    that answered (no silent-substitution mystery), duration, prompt length/hash,
  *    per-attempt outcomes, client IP hash, auth mode
@@ -256,7 +261,26 @@ async function readFailureBody(r) {
   return '';
 }
 
-async function callGemini(key, model, message, systemPrompt, temperature, maxTokens, jsonMode, media) {
+/**
+ * ARS-08 (Gelombang 2 Blok D): kaitkan sinyal abort eksternal (disconnect
+ * klien, dari handleAiRequest) ke controller timeout per-attempt. Bila
+ * sinyal menyala, fetch provider yang sedang berjalan dibatalkan — tanpa
+ * menunggu timeout 55 dtk. Mengembalikan fungsi pembersih (hapus listener);
+ * tanpa sinyal eksternal ini no-op dan perilaku attempt identik seperti
+ * sebelumnya (timeout 55 dtk tidak berubah).
+ */
+function linkExternalAbort(signal, ctl) {
+  if (!signal || typeof signal.addEventListener !== 'function') return () => {};
+  if (signal.aborted) {
+    ctl.abort();
+    return () => {};
+  }
+  const onAbort = () => ctl.abort();
+  signal.addEventListener('abort', onAbort, { once: true });
+  return () => signal.removeEventListener('abort', onAbort);
+}
+
+async function callGemini(key, model, message, systemPrompt, temperature, maxTokens, jsonMode, media, signal) {
   const contents = [];
   if (systemPrompt) {
     contents.push({ role: 'user', parts: [{ text: '[SYSTEM]\n' + systemPrompt }] });
@@ -273,6 +297,8 @@ async function callGemini(key, model, message, systemPrompt, temperature, maxTok
   contents.push({ role: 'user', parts });
   const ctl = new AbortController();
   const t = setTimeout(() => ctl.abort(), ATTEMPT_TIMEOUT_MS);
+  const unlinkExternalAbort = linkExternalAbort(signal, ctl);
+  const cleanupAttempt = () => { clearTimeout(t); unlinkExternalAbort(); };
   const started = Date.now();
   try {
     const r = await fetch(GEMINI_BASE + '/models/' + model + ':generateContent?key=' + key, {
@@ -287,7 +313,7 @@ async function callGemini(key, model, message, systemPrompt, temperature, maxTok
       }),
       signal: ctl.signal,
     });
-    clearTimeout(t);
+    cleanupAttempt();
     if (!r.ok) return { ok: false, provider: 'gemini', model, ms: Date.now() - started, error: 'Gemini ' + r.status, errorClass: classifyHttpFailure(r.status, await readFailureBody(r)) };
     const d = await r.json();
     const text = (((d.candidates || [])[0] || {}).content?.parts || []).map((p) => p.text || '').join('') || '';
@@ -316,12 +342,15 @@ async function callGemini(key, model, message, systemPrompt, temperature, maxTok
     if (!text) return { ok: false, provider: 'gemini', model, ms: Date.now() - started, error: 'Empty', errorClass: 'empty', usage };
     return { ok: true, content: text, model, provider: 'gemini', ms: Date.now() - started, usage };
   } catch (e) {
-    clearTimeout(t);
-    return { ok: false, provider: 'gemini', model, ms: Date.now() - started, error: String((e && e.message) || e), errorClass: 'network' };
+    cleanupAttempt();
+    // ARS-08: fetch yang dibatalkan karena klien pergi diklasifikasikan
+    // 'aborted' (bukan 'network') agar jejak attempt membedakan disconnect
+    // dari kegagalan jaringan/timeout biasa (timeout 55 dtk tetap 'network').
+    return { ok: false, provider: 'gemini', model, ms: Date.now() - started, error: String((e && e.message) || e), errorClass: signal && signal.aborted ? 'aborted' : 'network' };
   }
 }
 
-async function callOAI(base, key, model, provider, message, systemPrompt, temperature, maxTokens, jsonMode, media) {
+async function callOAI(base, key, model, provider, message, systemPrompt, temperature, maxTokens, jsonMode, media, signal) {
   const messages = [];
   if (systemPrompt) messages.push({ role: 'system', content: systemPrompt });
   // Vision via OpenAI-compatible image_url. PDF tidak didukung chat-completions
@@ -338,6 +367,8 @@ async function callOAI(base, key, model, provider, message, systemPrompt, temper
   messages.push({ role: 'user', content: userContent });
   const ctl = new AbortController();
   const t = setTimeout(() => ctl.abort(), ATTEMPT_TIMEOUT_MS);
+  const unlinkExternalAbort = linkExternalAbort(signal, ctl);
+  const cleanupAttempt = () => { clearTimeout(t); unlinkExternalAbort(); };
   const started = Date.now();
   try {
     const r = await fetch(base + '/chat/completions', {
@@ -353,7 +384,7 @@ async function callOAI(base, key, model, provider, message, systemPrompt, temper
       ),
       signal: ctl.signal,
     });
-    clearTimeout(t);
+    cleanupAttempt();
     if (!r.ok) return { ok: false, provider, model, ms: Date.now() - started, error: provider + ' ' + r.status, errorClass: classifyHttpFailure(r.status, await readFailureBody(r)) };
     // Baca body sebagai TEKS terlebih dahulu. r.json() langsung meledak pada
     // respons SSE ("Unexpected token 'd', "data: {..." is not valid JSON") —
@@ -402,17 +433,26 @@ async function callOAI(base, key, model, provider, message, systemPrompt, temper
     if (!text) return { ok: false, provider, model, ms: Date.now() - started, error: 'Empty', errorClass: 'empty', usage };
     return { ok: true, content: text, model, provider, ms: Date.now() - started, usage };
   } catch (e) {
-    clearTimeout(t);
-    return { ok: false, provider, model, ms: Date.now() - started, error: String((e && e.message) || e), errorClass: 'network' };
+    cleanupAttempt();
+    // ARS-08: fetch yang dibatalkan karena klien pergi diklasifikasikan
+    // 'aborted' (bukan 'network') — lihat callGemini.
+    return { ok: false, provider, model, ms: Date.now() - started, error: String((e && e.message) || e), errorClass: signal && signal.aborted ? 'aborted' : 'network' };
   }
 }
 
 /**
  * Sequential failover. onAttempt (optional) receives each attempt outcome —
  * used for structured logging so the ACTUAL model/provider is always traceable.
+ * o.signal (optional AbortSignal, ARS-08): bila menyala, fetch provider yang
+ * sedang berjalan dibatalkan dan leg berikutnya tidak dimulai; executeAI
+ * mengembalikan { ok:false, errorCode:'CLIENT_DISCONNECTED', aborted:true }.
+ * Tanpa sinyal, perilaku identik seperti sebelumnya.
  */
 export async function executeAI(o, onAttempt) {
   const requestId = o.requestId || newRequestId();
+  // ARS-08: sinyal disconnect klien (dari handleAiRequest) — null untuk
+  // semua pemanggil lama, sehingga jalur tanpa disconnect tidak berubah.
+  const signal = o.signal || null;
   // SECURITY: the system prompt sent to the provider ALWAYS starts with the
   // server-owned policy; the client's prompt is appended after it and can
   // never override it. See composeSystemPrompt().
@@ -446,15 +486,15 @@ export async function executeAI(o, onAttempt) {
   // Setiap attempt ditandai provider+model sejak awal agar loop dapat
   // menerapkan anggaran percobaan per provider dan log tetap akurat.
   const attempts = [];
-  const geminiCall = (k, model) => ({ provider: 'gemini', model, run: () => callGemini(k, model, message, systemPrompt, temperature, maxTokens, jsonMode, media) });
-  const zyrouterCall = () => ({ provider: 'zyrouter', model: ADVANCED_MODEL, run: () => callOAI(ZYROUTER_BASE, zk, ADVANCED_MODEL, 'zyrouter', message, systemPrompt, temperature, maxTokens, jsonMode, media) });
-  const atriaCall = (k) => ({ provider: 'atria', model: ATRIA_MODEL, run: () => callOAI(ATRIA_BASE, k, ATRIA_MODEL, 'atria', message, systemPrompt, temperature, maxTokens, jsonMode, media) });
-  const dahlCall = (k) => ({ provider: 'dahl', model: DAHL_MODEL, run: () => callOAI(DAHL_BASE, k, DAHL_MODEL, 'dahl', message, systemPrompt, temperature, maxTokens, jsonMode, media) });
-  const geminiOaiCall = (k) => ({ provider: 'gemini-oai', model: GEMINI_OAI_MODEL, run: () => callOAI(GEMINI_OAI_BASE, k, GEMINI_OAI_MODEL, 'gemini-oai', message, systemPrompt, temperature, maxTokens, jsonMode, media) });
-  const riverTextCall = (k) => ({ provider: 'river-text', model: RIVER_TEXT_MODEL, run: () => callOAI(RIVER_BASE, k, RIVER_TEXT_MODEL, 'river-text', message, systemPrompt, temperature, maxTokens, jsonMode, media) });
-  const riverVisionCall = (k) => ({ provider: 'river-vision', model: RIVER_VISION_MODEL, run: () => callOAI(RIVER_BASE, k, RIVER_VISION_MODEL, 'river-vision', message, systemPrompt, temperature, maxTokens, jsonMode, media) });
-  const atmoCall = (k, model) => ({ provider: 'atmorouter', model, run: () => callOAI(ATMO_BASE, k, model, 'atmorouter', message, systemPrompt, temperature, maxTokens, jsonMode, media) });
-  const crownCall = (k, model) => ({ provider: 'crown', model, run: () => callOAI(CROWN_BASE, k, model, 'crown', message, systemPrompt, temperature, maxTokens, jsonMode, media) });
+  const geminiCall = (k, model) => ({ provider: 'gemini', model, run: () => callGemini(k, model, message, systemPrompt, temperature, maxTokens, jsonMode, media, signal) });
+  const zyrouterCall = () => ({ provider: 'zyrouter', model: ADVANCED_MODEL, run: () => callOAI(ZYROUTER_BASE, zk, ADVANCED_MODEL, 'zyrouter', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal) });
+  const atriaCall = (k) => ({ provider: 'atria', model: ATRIA_MODEL, run: () => callOAI(ATRIA_BASE, k, ATRIA_MODEL, 'atria', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal) });
+  const dahlCall = (k) => ({ provider: 'dahl', model: DAHL_MODEL, run: () => callOAI(DAHL_BASE, k, DAHL_MODEL, 'dahl', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal) });
+  const geminiOaiCall = (k) => ({ provider: 'gemini-oai', model: GEMINI_OAI_MODEL, run: () => callOAI(GEMINI_OAI_BASE, k, GEMINI_OAI_MODEL, 'gemini-oai', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal) });
+  const riverTextCall = (k) => ({ provider: 'river-text', model: RIVER_TEXT_MODEL, run: () => callOAI(RIVER_BASE, k, RIVER_TEXT_MODEL, 'river-text', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal) });
+  const riverVisionCall = (k) => ({ provider: 'river-vision', model: RIVER_VISION_MODEL, run: () => callOAI(RIVER_BASE, k, RIVER_VISION_MODEL, 'river-vision', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal) });
+  const atmoCall = (k, model) => ({ provider: 'atmorouter', model, run: () => callOAI(ATMO_BASE, k, model, 'atmorouter', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal) });
+  const crownCall = (k, model) => ({ provider: 'crown', model, run: () => callOAI(CROWN_BASE, k, model, 'crown', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal) });
   // Crown hanya untuk teks: bila ada gambar/PDF, Crown dilewati total
   // (image_url ditolak gateway Crown) — vision tetap ke rantai lamanya.
   const crownTextAttempts = (!hasImage && !hasPdf)
@@ -543,6 +583,14 @@ export async function executeAI(o, onAttempt) {
   const providerAttempts = new Map();
   const providerFailures = new Map();
   for (const a of attempts) {
+    // ARS-08: klien sudah pergi sebelum leg ini dimulai — jangan mulai leg
+    // baru (termasuk leg PERTAMA bila disconnect terjadi selama auth/body).
+    // Entri sintetis 'gateway' mencatat alasan rantai berhenti, sejajar
+    // dengan pola budget waktu di bawah.
+    if (signal && signal.aborted) {
+      outcomes.push({ provider: 'gateway', model: null, ok: false, ms: Date.now() - chainStart, error: 'client disconnected', errorClass: 'aborted' });
+      break;
+    }
     if (outcomes.length > 0 && Date.now() - chainStart > CHAIN_BUDGET_MS) {
       outcomes.push({ provider: 'gateway', model: null, ok: false, ms: Date.now() - chainStart, error: 'chain time budget exceeded (100s)' });
       break;
@@ -575,7 +623,18 @@ export async function executeAI(o, onAttempt) {
     if (typeof onAttempt === 'function') {
       try { onAttempt(outcomes[outcomes.length - 1]); } catch { /* never break on logging */ }
     }
+    // ARS-08: disconnect selama attempt ini berjalan — jangan failover ke
+    // leg berikutnya, walau attempt ini gagal (atau sukses — tak ada yang
+    // membaca jawabannya). Penolakan policy/client_error di atas tetap
+    // mengembalikan kode spesifiknya; handler memeriksa sinyal secara
+    // independen dan tetap tidak menulis respons ke socket yang mati.
+    if (signal && signal.aborted) break;
     if (r.ok) return { ok: true, content: r.content, model: r.model, provider: r.provider, requestId, attempts: outcomes, usage: r.usage || null };
+  }
+  // ARS-08: rantai dihentikan karena klien pergi — kode yang bisa dibedakan
+  // dari kegagalan provider (bukan 502 generik di hilir).
+  if (signal && signal.aborted) {
+    return { ok: false, errorCode: 'CLIENT_DISCONNECTED', aborted: true, error: 'Client disconnected', requestId, attempts: outcomes };
   }
   return {
     ok: false,
@@ -713,6 +772,24 @@ export function sanitizeAttemptForClient(a) {
 export async function handleAiRequest(req, res, opts = {}) {
   const started = Date.now();
   const requestId = newRequestId();
+
+  // ARS-08 (Gelombang 2 Blok D): amati disconnect klien — bila klien pergi
+  // di tengah rantai failover, batalkan fetch provider yang sedang berjalan
+  // dan jangan mulai leg berikutnya (token/biaya tak terbuang untuk jawaban
+  // yang tak dibaca). Sinyal yang dipakai adalah `res 'close'` + guard
+  // `!res.writableFinished` — BUKAN `req 'close'`: `req 'close'` menyala
+  // saat body selesai dibaca (terbukti harness Gate 6 §8 — dan diuji ulang
+  // di gatewayDisconnectAbort.test.ts H5), jadi mengikat abort ke sana akan
+  // membatalkan SETIAP request normal. `res 'close'` dengan respons belum
+  // selesai = koneksi putus sebelum jawaban terkirim. Listener dilepas
+  // sesudah executeAI kembali; tanpa disconnect, sinyal tidak pernah menyala
+  // dan perilaku identik seperti sebelumnya. Guard `typeof res.on` menjaga
+  // pemanggil bermock res tanpa EventEmitter (suite Gate 6).
+  const disconnectCtl = new AbortController();
+  const onResClose = () => {
+    if (!res.writableFinished) disconnectCtl.abort();
+  };
+  if (res && typeof res.on === 'function') res.on('close', onResClose);
 
   // 1. CORS (allowlist; not a substitute for auth)
   if (!applyCors(req, res)) {
@@ -872,8 +949,12 @@ export async function handleAiRequest(req, res, opts = {}) {
     message: input.message,
     systemPrompt: input.systemPrompt,
     clientPayload: body,
-    execute: () => executeAI({ ...input, mode, requestId }, (a) => attemptLog.push(a)),
+    execute: () => executeAI({ ...input, mode, requestId, signal: disconnectCtl.signal }, (a) => attemptLog.push(a)),
   });
+  // Rantai selesai (atau dibatalkan) — lepas pengamat disconnect. Respons
+  // normal yang ditulis sesudah ini tidak boleh memicu abort.
+  if (res && typeof res.off === 'function') res.off('close', onResClose);
+  else if (res && typeof res.removeListener === 'function') res.removeListener('close', onResClose);
   if (chatFastOutcome.metered && !chatFastOutcome.result) {
     // Gerbang menyala dan operasi Chat FAST ditolak SEBELUM provider
     // berjalan (atau replay terminal tanpa hasil baru): jawab dengan
@@ -902,6 +983,23 @@ export async function handleAiRequest(req, res, opts = {}) {
   }
   const r = chatFastOutcome.result;
   const durationMs = Date.now() - started;
+
+  // ARS-08: klien sudah pergi — jangan tulis respons ke socket yang mati,
+  // jangan simpan replay idempotensi (tak ada respons yang terkirim untuk
+  // di-replay), dan jangan catat sebagai kegagalan provider biasa. Event
+  // log khusus membawa jejak attempt agar abort tetap dapat diobservasi.
+  if (disconnectCtl.signal.aborted || (r && r.aborted)) {
+    logAiUsage({
+      requestId,
+      event: 'client_disconnected',
+      mode,
+      durationMs,
+      ipHash: ipHash(req),
+      userId: auth.user ? auth.user.id : null,
+      attempts: attemptLog,
+    });
+    return;
+  }
 
   // 6b. Usage meter (Phase 3) — best-effort, tidak pernah menggagalkan request.
   // Feature dipetakan dari productId agar konsisten dengan tarif kredit.

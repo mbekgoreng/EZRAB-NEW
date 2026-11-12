@@ -34,6 +34,7 @@ import {
   resolveProvinceFromLocation,
   resolveRegionIndex,
 } from '../../data/indonesiaRegions';
+import { applyRelevanceGateToDirectCalc } from './directRabGate';
 
 export interface DirectRabResult {
   houseType: number;
@@ -269,6 +270,16 @@ export function buildDirectRab(rawText: string, needsOverride?: RabNeeds): Direc
   }
   if (!calc.items || calc.items.length === 0) return null;
 
+  // GATE 5 (5E) — gerbang relevansi ditegakkan pada jalur parametrik
+  // (penutup ARS-05): item jalan/perkerasan pada RAB rumah tanpa
+  // permintaan eksplisit atas cakupan jalan dikeluarkan, dan total
+  // dihitung ulang dari item yang tersisa memakai rumus engine yang
+  // sama (lihat directRabGate.ts). Pada data rumah nyata saat ini 0
+  // item yang gugur (matriks kalibrasi 5E: 0/200) — total tidak
+  // berubah; gerbang adalah penegakan + jaring pengaman.
+  const gated = applyRelevanceGateToDirectCalc(calc, text);
+  calc = gated.calc;
+
   const warnings: string[] = [];
   if (floors > 1) {
     warnings.push(
@@ -289,6 +300,7 @@ export function buildDirectRab(rawText: string, needsOverride?: RabNeeds): Direc
       `Luas ${totalArea} m² tidak sama persis dengan tipe katalog — dipakai basis template Tipe ${match.areaFallback!.basisArea} (terdekat)${scaledFootprint ? ` dengan denah diskalakan ${scaledFootprint} menjaga proporsi template` : ''}; periksa kembali di spreadsheet.`
     );
   }
+  for (const n of gated.notes) warnings.push(n);
 
   const result: DirectRabResult = {
     houseType: found.item.area,

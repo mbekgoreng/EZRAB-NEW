@@ -1,6 +1,14 @@
 import type { ReadOnlyProjectContext } from './aiProjectContext';
 import { getSupabaseAccessToken } from './supabaseClient';
 
+/**
+ * FASE 5 (ARS-04) — the `/api/assistant/wizard/*` server endpoints were
+ * never implemented. The wizard methods below throw this synchronously
+ * (no network call) so the dead path is closed, not merely deprecated.
+ */
+export const WIZARD_SERVER_NOT_IMPLEMENTED =
+  'Wizard server tidak tersedia: endpoint /api/assistant/wizard/* tidak pernah dibuat. Wizard berjalan 100% di perangkat (client-side resolver).';
+
 export interface ChatApiRequest {
   message: string;
   projectId?: string;
@@ -162,6 +170,11 @@ export function sanitizeResponseText(rawText: string, isError = false): string {
  * - E: Error response (success: false, error: { code, message, retryable })
  * - F: Mock response / fallback
  * - G: Empty or malformed response (null, undefined, non-object, HTML error)
+ *   — fallback DEFENSIF bagi pemanggil langsung saja: sendMessage kini
+ *   menolak badan 200 non-objek dengan AiApiError INVALID_RESPONSE
+ *   SEBELUM normalisasi (O-6B, GELOMBANG PERBAIKI SEMUA), sehingga tidak
+ *   ada lagi jalur produksi yang mengubah kegagalan transport menjadi
+ *   balasan ramah non-error.
  */
 export function normalizeAiResponse(
   payload: unknown,
@@ -374,6 +387,23 @@ export class AiApiClient {
     }
 
     const data = await response.json().catch(() => null);
+    // O-6B (GELOMBANG PERBAIKI SEMUA): kontrak transport /api/ai/chat
+    // adalah objek JSON. Badan 200 yang bukan objek — null (badan bukan
+    // JSON, mis. halaman error HTML dari proxy) atau JSON non-objek
+    // (string/angka/array) — adalah kegagalan transport, BUKAN jawaban:
+    // lempar error jujur yang dapat dicoba ulang, jangan teruskan ke
+    // normalizer sebagai balasan ramah non-error. Perilaku untuk payload
+    // objek yang valid tidak berubah; semantik normalizeAiResponse
+    // sendiri tidak diubah (dipin TEST 8 (G) aiApiClient.test.ts dan
+    // 6U-27 Gate 6 — varian G di bawah kini hanya fallback defensif
+    // bagi pemanggil langsung).
+    if (!data || typeof data !== 'object' || Array.isArray(data)) {
+      throw new AiApiError(
+        'INVALID_RESPONSE',
+        true,
+        getFriendlyErrorMessage('INVALID_RESPONSE')
+      );
+    }
     const normalized = normalizeAiResponse(data);
     if (normalized.isError) {
       throw new AiApiError(
@@ -426,81 +456,67 @@ export class AiApiClient {
   /**
    * Start an interactive assistant wizard session.
    *
-   * @deprecated SERVER ENDPOINT NEVER IMPLEMENTED (`/api/assistant/wizard/*`
-   * does not exist). The canonical wizard runs 100% client-side via
-   * `resolveClientWizardStep()` in coAssistantService.ts (see callers in
-   * EzrabAiAssistantFullView / EzrabCoAssistantChatbox, which catch the 404
-   * and use the local resolver). Kept for backward-compat; do not call in
+   * @deprecated FASE 5 (ARS-04) — SERVER ENDPOINT NEVER IMPLEMENTED
+   * (`/api/assistant/wizard/*` does not exist) and the call is now
+   * CLOSED: this method throws synchronously BEFORE any fetch, so no
+   * caller can reach the dead endpoint anymore. The canonical wizard
+   * runs 100% client-side via `resolveClientWizardStep()` in
+   * coAssistantService.ts. Kept for backward-compat; do not call in
    * new code. If a server wizard is ever built, remove this notice.
    */
   public async startWizard(projectId: string, conversationId?: string, initialQuery?: string): Promise<any> {
-    const headers = await this.getHeaders(projectId);
-    const response = await fetch('/api/assistant/wizard/start', {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ projectId, conversationId, initialQuery })
-    });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const json = await response.json();
-    return json.wizardResponse;
+    void projectId;
+    void conversationId;
+    void initialQuery;
+    throw new Error(WIZARD_SERVER_NOT_IMPLEMENTED);
   }
 
   /**
    * Submit an answer or choice to the wizard session.
    *
-   * @deprecated See startWizard: server endpoint never implemented; callers
-   * fall back to the client-side wizard resolver on 404.
+   * @deprecated FASE 5 (ARS-04) — see startWizard. Throws synchronously;
+   * callers must use the client-side wizard resolver instead.
    */
   public async answerWizard(sessionId: string, choiceId?: string, parameters?: Record<string, any>): Promise<any> {
-    const headers = await this.getHeaders();
-    const response = await fetch(`/api/assistant/wizard/${encodeURIComponent(sessionId)}/answer`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ choiceId, parameters })
-    });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const json = await response.json();
-    return json.wizardResponse;
+    void sessionId;
+    void choiceId;
+    void parameters;
+    throw new Error(WIZARD_SERVER_NOT_IMPLEMENTED);
   }
 
   /**
-   * Go back to the previous wizard step
+   * Go back to the previous wizard step.
+   *
+   * @deprecated FASE 5 (ARS-04) — see startWizard. Throws synchronously;
+   * callers re-display the previous wizardResponse from message history.
    */
   public async goBackWizard(sessionId: string): Promise<any> {
-    const headers = await this.getHeaders();
-    const response = await fetch(`/api/assistant/wizard/${encodeURIComponent(sessionId)}/back`, {
-      method: 'POST',
-      headers
-    });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const json = await response.json();
-    return json.wizardResponse;
+    void sessionId;
+    throw new Error(WIZARD_SERVER_NOT_IMPLEMENTED);
   }
 
   /**
-   * Cancel the wizard session
+   * Cancel the wizard session.
+   *
+   * @deprecated FASE 5 (ARS-04) — see startWizard. Throws synchronously;
+   * cancellation is purely local (a message) — no server state exists.
    */
   public async cancelWizard(sessionId: string): Promise<any> {
-    const headers = await this.getHeaders();
-    const response = await fetch(`/api/assistant/wizard/${encodeURIComponent(sessionId)}/cancel`, {
-      method: 'POST',
-      headers
-    });
-    return response.json();
+    void sessionId;
+    throw new Error(WIZARD_SERVER_NOT_IMPLEMENTED);
   }
 
   /**
-   * Confirm and apply the calculated wizard RAB items to the project
+   * Confirm and apply the calculated wizard RAB items to the project.
+   *
+   * @deprecated FASE 5 (ARS-04) — see startWizard. Throws synchronously;
+   * confirmation is done client-side via `onAddRabItemDirect` from the
+   * last wizard message's `calculatedItems`.
    */
   public async confirmWizard(sessionId: string, projectId: string): Promise<any> {
-    const headers = await this.getHeaders(projectId);
-    const response = await fetch(`/api/assistant/wizard/${encodeURIComponent(sessionId)}/confirm`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ projectId })
-    });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    return response.json();
+    void sessionId;
+    void projectId;
+    throw new Error(WIZARD_SERVER_NOT_IMPLEMENTED);
   }
 }
 

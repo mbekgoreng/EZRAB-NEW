@@ -22,7 +22,9 @@ import { DedAiResultView } from './DedAiResultView';
 import { fullAiDedService, FULL_AI_TIMEOUT_MS } from '../ded-full-ai/service';
 import { FullAiOutput, FullAiItem } from '../ded-full-ai/types';
 import { FullAiResultView } from '../ded-full-ai/FullAiResultView';
-import { consumePendingAiEntry } from '../aiNavigation';
+import { consumePendingAiEntry, goToAi } from '../aiNavigation';
+import { recordDedUnderstandingToMemory } from '../ezrab-ai/dedUnderstanding';
+import { attachDedToProject } from '../ezrab-ai/dedQtoIntegration';
 import { notificationBus } from '../../notifications/notificationBus';
 import { useProject } from '../../context/ProjectContext';
 import { useI18n } from '../../i18n/I18nContext';
@@ -88,7 +90,7 @@ const initialStages = (t: (key: string) => string): DedAiStage[] =>
 
 export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
   const { t } = useI18n();
-  const { projects, createProject, bulkAddRabItems, getLastBulkAddOutcome, setCurrentProjectId } = useProject();
+  const { projects, createProject, bulkAddRabItems, getLastBulkAddOutcome, setCurrentProjectId, currentProjectId } = useProject();
   // Saldo kredit simulasi (store bersama mockAdapter — angka yang sama
   // dengan yang dilihat InputView) untuk chip Kredit AI di bar atas shell.
   const { balance: creditBalance } = useCreditSimulation();
@@ -469,6 +471,16 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
       setStatusLine(t('ai.ded.status_done'));
       setResult(merged);
       setResultReady(true);
+      // FASE 5 — hasil DED di-wire ke memori proyek Fase 2 (satu record
+      // 'ded:understanding') agar Chat AI/Copilot melihat spek + data
+      // hilang lewat retrieval memori biasa — tanpa menyatukan dua
+      // pipeline DED (ARS-02). Hanya bila analisis ditargetkan ke
+      // proyek; kegagalan perekaman TIDAK menggagalkan hasil analisis.
+      try {
+        if (sess.targetProjectId) {
+          recordDedUnderstandingToMemory({ userId: null, projectId: sess.targetProjectId, conversationId: null }, merged);
+        }
+      } catch { /* perekaman memori tidak boleh menggagalkan analisis */ }
       notificationBus.publish({
         type: 'success',
         title: t('ai.ded.title_done'),
@@ -522,6 +534,43 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
   };
 
   const handleDeleteDraft = (id: string) => persistDrafts(drafts.filter((d) => d.id !== id));
+
+  /* GATE 4 (5D) — kirim hasil DED ke Chat AI: lampirkan snapshot DED
+   * ke proyek target (session.targetProjectId bila sesi ini ditargetkan,
+   * bila tidak proyek aktif workspace — draft yang dimuat tidak membawa
+   * targetProjectId sendiri), lalu navigasi ke Chat AI lewat kontrak
+   * navigasi kanonis (goToAi 'chat_agent'). Tanpa proyek target:
+   * pesan jujur, TANPA membuat proyek diam-diam. Gagal lampir: pesan
+   * jujur, TANPA navigasi (Chat AI tidak boleh menerima DED setengah). */
+  const handleSendToChat = (items: DedAiItem[]) => {
+    if (!result) return;
+    const projectId = session.targetProjectId ?? currentProjectId ?? null;
+    if (!projectId) {
+      // State `error` hanya dirender layar progress — di layar hasil,
+      // kegagalan disampaikan lewat notifikasi (pola sukses analisis).
+      notificationBus.publish({
+        type: 'error',
+        title: 'DED tidak terkirim ke Chat AI',
+        message: 'Pilih proyek dulu (pilih proyek di halaman input DED, atau jadikan satu proyek sebagai proyek aktif).',
+      });
+      return;
+    }
+    const output: DedAiOutput = { ...result, items };
+    const attached = attachDedToProject(projectId, output);
+    if (!attached.ok) {
+      notificationBus.publish({
+        type: 'error',
+        title: 'DED tidak terkirim ke Chat AI',
+        message: attached.message,
+      });
+      return;
+    }
+    goToAi('chat_agent', {
+      projectId,
+      contextLabel: `DED ${output.fileName ?? output.projectName}`,
+      sourceMenu: 'ded-ai',
+    });
+  };
 
   const handleFinalize = async (items: DedAiItem[]): Promise<{ ok: boolean; message: string }> => {
     // FASE DED-FIX TASK 3: hanya item yang lolos validasi kuantitas (stage CALCULATED,
@@ -792,6 +841,7 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
           onSaveDraft={handleSaveDraft}
           onFinalize={handleFinalize}
           onOpenSpreadsheet={handleOpenSpreadsheet}
+          onSendToChat={handleSendToChat}
           draftSaved={draftSaved}
           finalized={finalized}
           creditEstimate={session.creditEstimate}

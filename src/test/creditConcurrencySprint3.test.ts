@@ -267,23 +267,21 @@ console.log('=== Tes 6: expiry + reservasi konkuren → hasil serial yang sah ==
 }
 
 // =======================================================================
-console.log('=== Tes 7: grant webhook duplikat konkuren (top-up + bonus pendamping) ===');
+console.log('=== Tes 7: grant webhook duplikat konkuren (top-up tier tunggal, K6) ===');
 {
   const repo = new InMemoryBillingRepository();
   const acct = 's3-t7';
-  // Meniru persis cabang top-up billingService.handleNotification.
+  // Meniru persis cabang top-up billingService.handleNotification (K6:
+  // SATU grant sebesar item.credits, tanpa bonus pendamping).
   const webhookGrant = () => withLedger(repo as any, acct, CTX, (l: any) => {
-    const top: any = l.grantTopUp({ accountId: acct, amount: 3000, paymentRef: 'order-1', idempotencyKey: 'order-1', actor: 'midtrans-webhook', now: T0 });
-    if (!top.ok) return top;
-    const bon: any = l.grantBonus({ accountId: acct, amount: 600, campaignRef: 'topup-3600', idempotencyKey: 'order-1:bonus', actor: 'midtrans-webhook', now: T0 });
-    return bon.ok ? top : bon;
+    return l.grantTopUp({ accountId: acct, amount: 1500, paymentRef: 'order-1', idempotencyKey: 'order-1', actor: 'midtrans-webhook', now: T0 });
   });
   const [w1, w2]: any[] = await Promise.all([webhookGrant(), webhookGrant()]);
   const s = await stateOf(repo, acct);
   check('webhook pertama grant, kedua replay', w1.ok === true && w2.ok === true && w2.duplicate === true);
-  check('tepat 2 batch (1 top-up 3000 + 1 bonus 600), 2 entri GRANT',
-    s.batches.length === 2 && s.entries.filter((e: any) => e.kind === 'GRANT').length === 2);
-  check('total saldo 3600 (tidak dobel)', s.batches.reduce((a: number, b: any) => a + b.remainingAmount, 0) === 3600);
+  check('tepat 1 batch (top-up 1500), 1 entri GRANT',
+    s.batches.length === 1 && s.entries.filter((e: any) => e.kind === 'GRANT').length === 1);
+  check('total saldo 1500 (tidak dobel)', s.batches.reduce((a: number, b: any) => a + b.remainingAmount, 0) === 1500);
   check('invarian + rekonsiliasi', invariantOk(s.batches) && (await healthy(repo, acct)));
 }
 

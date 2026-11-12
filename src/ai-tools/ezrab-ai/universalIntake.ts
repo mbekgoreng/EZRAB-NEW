@@ -44,6 +44,29 @@ import { extractProjectContext, parseAreaMentionM2 } from './projectIntake';
 import { detectSubtypeFromText } from './rabSubtypes';
 import { RabTemplateService } from '../../services/rabTemplateService';
 import { conceptualWbsLines } from './conceptualWbs';
+/**
+ * Impor NILAI dari questionnaire.ts AMAN (tanpa siklus runtime):
+ * questionnaire.ts hanya mengimpor `./universalIntake` sebagai
+ * `import type` (dihapus saat kompilasi) dan tidak punya impor runtime
+ * lain — jadi tidak ada siklus nilai universalIntake ↔ questionnaire.
+ * structuredSpec.ts sendiri tidak mengimpor apa pun.
+ */
+import { deriveStructuredSpecs } from './questionnaire';
+import { validateStructuredSpecs } from './structuredSpec';
+import { isValidDedSpec } from './structuredSpec';
+import type { StructuredSpec } from './structuredSpec';
+/**
+ * Impor NILAI dari dedQtoIntegration AMAN (tanpa siklus runtime):
+ * dedQtoIntegration hanya mengimpor `./universalIntake` sebagai
+ * `import type` (dihapus saat kompilasi); impor runtime-nya
+ * (dedUnderstanding, qtoBridge, structuredSpec,
+ * constructionDomainRetrieval) tidak mengimpor universalIntake —
+ * rantai dedUnderstanding → memory → canonicalContext memakai
+ * `import type` untuk UniversalIntakeContext.
+ */
+import { detectDedSpecConflicts, dimsFromIntakeContext } from './dedQtoIntegration';
+import { applyBuildingsToContext, buildingSummaryLines, cloneBuildings } from './multiBuilding';
+import type { BuildingModel } from './multiBuilding';
 
 /* ------------------------------------------------------------------ */
 /* Provenans fakta (§6)                                                */
@@ -240,6 +263,7 @@ export interface Classification {
 /** Prioritas disiplin untuk memilih primer pada proyek gabungan. */
 const PRIMARY_PRIORITY: Record<string, number> = {
   renovasi: 0, sekolah: 1, kesehatan: 1, hotel: 1, kantor: 1, komersial: 1,
+  kandang: 1,
   'gudang-industri': 1, 'bangunan-publik': 1, apartemen: 1, 'bangunan-umum': 2,
   jembatan: 3, drainase: 3, irigasi: 3, bendung: 3, 'gorong-gorong': 3,
   'jalan-tol': 4, 'jalan-aspal': 4, 'jalan-beton': 4, 'jalan-lingkungan': 4, jalan: 4,
@@ -289,6 +313,24 @@ export function classifyUniversal(text: string): Classification {
       .filter((d) => d.family === 'mep')
       .sort((a, b) => idxOf(a) - idxOf(b))[0];
     if (mepFirst && idxOf(mepFirst) < idxOf(primary)) primary = mepFirst;
+  }
+  // FASE 4 (CHAT-05 + E-T1) — objek-pertama: bila disiplin landscape
+  // (kolam / taman / playground) disebut SEBELUM bangunan yang menjadi
+  // primer, landscape itulah objek proyeknya dan bangunan hanya konteks
+  // lokasi ("kolam renang di halaman rumah", "taman di depan rumah").
+  // Sebaliknya "rumah dengan kolam renang" tetap primer rumah (kolam
+  // disebut sesudah rumah = cakupan tambahan, bukan subordinat yang
+  // hilang). Aturan ini HANYA mempromosikan bila landscape muncul
+  // lebih dulu di teks — urutan prioritas lain tidak berubah.
+  if (primary.family === 'building') {
+    const idxOf = (d: SubcategoryDef): number => {
+      const i = t.search(d.detect);
+      return i < 0 ? Number.MAX_SAFE_INTEGER : i;
+    };
+    const landscapeFirst = matches
+      .filter((d) => d.family === 'landscape')
+      .sort((a, b) => idxOf(a) - idxOf(b) || (PRIMARY_PRIORITY[a.id] ?? 9) - (PRIMARY_PRIORITY[b.id] ?? 9))[0];
+    if (landscapeFirst && idxOf(landscapeFirst) < idxOf(primary)) primary = landscapeFirst;
   }
   const secondary = sorted.filter((d) => d.id !== primary.id && disciplineOf(d) !== disciplineOf(primary));
   return { primary, secondary, matches, isMulti };
@@ -597,6 +639,47 @@ export function parseBudgetMention(text: string): BudgetContext | null {
   return last;
 }
 
+/**
+ * FASE 4 (CHAT-02) — SEMUA penyebutan budget pada satu teks, berurutan
+ * posisi. `parseBudgetMention` hanya mengembalikan yang TERAKHIR, jadi
+ * revisi dalam satu pesan ("anggaran 300 juta anggaran 250 juta")
+ * kehilangan nilai sebelumnya; pemanggil memakai daftar ini untuk
+ * mengisi `budgetHistory` (nilai lama) + koreksi, selaras semantik
+ * last-match rantai spek Fase 2.
+ */
+export function parseAllBudgetMentions(text: string): BudgetContext[] {
+  const t = ` ${(text || '').toLowerCase().replace(/\s+/g, ' ')} `;
+  const cancelled = new Set<number>();
+  for (const m of t.matchAll(/\bbukan\s+(?:rp\.?\s*)?(\d[\d.]*(?:,\d+)?)\s*(miliar|milyar|jt|juta|rb|ribu)?\b/g)) {
+    const v = parseAreaNumber(m[1]);
+    if (v != null) cancelled.add(Math.round(v * (BUDGET_UNIT_FACTORS[m[2] ?? ''] ?? 1)));
+  }
+  const found: Array<{ ctx: BudgetContext; index: number }> = [];
+  const re = /(?:anggaran|budget|dana|biaya|maks(?:imal)?|mentok)\s*(?:maksimal|maks|mentok)?\s*(?:sekitar|kisaran|kira-kira)?\s*(?:rp\.?\s*)?(?:\s*(?:menjadi|sebesar|senilai|adalah|saya|ke))*\s*(\d[\d.]*(?:,\d+)?)\s*(miliar|milyar|jt|juta|rb|ribu)\b/g;
+  for (const m of t.matchAll(re)) {
+    const v = parseAreaNumber(m[1]);
+    if (v == null || v <= 0) continue;
+    const amount = Math.round(v * (BUDGET_UNIT_FACTORS[m[2]] ?? 1));
+    if (cancelled.has(amount)) continue;
+    const start = m.index ?? 0;
+    const windowBefore = t.slice(Math.max(0, start - 30), start + m[0].length);
+    let kind: BudgetKind = 'UNSPECIFIED';
+    if (/\b(maksimal|maks|mentok|paling banyak)\b/.test(windowBefore) || /\b(budget|anggaran|dana)\s+(maksimal|maks|mentok)\b/.test(t.slice(start, start + 40))) kind = 'MAXIMUM';
+    else if (/\b(sekitar|kisaran|kira-kira)\b/.test(windowBefore)) kind = 'ESTIMATED';
+    else if (/\btarget\b/.test(windowBefore)) kind = 'TARGET';
+    found.push({ ctx: { amount, kind, original: m[0].trim(), coverage: parseBudgetCoverage(text) }, index: start });
+  }
+  for (const m of t.matchAll(/(?:anggaran|budget|dana)\s*(?:maksimal|maks|mentok|sekitar|kisaran)?\s*(?:\s*(?:menjadi|sebesar|senilai|adalah|saya|ke))*\s*rp\.?\s*(\d{1,3}(?:\.\d{3})+|\d{7,})\b/g)) {
+    const v = parseAreaNumber(m[1]);
+    if (v == null || v <= 0 || cancelled.has(Math.round(v))) continue;
+    const windowBefore = t.slice(Math.max(0, (m.index ?? 0) - 30), (m.index ?? 0) + m[0].length);
+    const kind: BudgetKind = /\b(maksimal|maks|mentok)\b/.test(windowBefore) ? 'MAXIMUM' : /\b(sekitar|kisaran)\b/.test(windowBefore) ? 'ESTIMATED' : 'UNSPECIFIED';
+    found.push({ ctx: { amount: Math.round(v), kind, original: m[0].trim(), coverage: parseBudgetCoverage(text) }, index: m.index ?? 0 });
+  }
+  found.sort((a, b) => a.index - b.index);
+  return found.map((f) => f.ctx);
+}
+
 /* ------------------------------------------------------------------ */
 /* Fungsi per lantai (Wave C, menutup celah T24) — penugasan fungsi    */
 /* per lantai ("lantai pertama untuk kantor, lantai kedua untuk       */
@@ -659,8 +742,48 @@ export function parseFloorFunctionAssignments(text: string, knownFloors?: number
   return out;
 }
 
+/* ------------------------------------------------------------------ */
+/* Keadaan kuesioner adaptif (Adaptive Questionnaire 2026-11-12).      */
+/* State ini hidup DI DALAM konteks kanonis — bukan store kedua.       */
+/* Definisi pertanyaannya sendiri tinggal di questionnaire.ts; di sini */
+/* hanya RECORD jawaban & status presentasinya (JSON murni, aman       */
+/* diserialisasi untuk persistensi).                                   */
+/* ------------------------------------------------------------------ */
+
+export type QuestionnaireAnswerStatus = 'answered' | 'skipped';
+
+export interface QuestionnaireAnswerRecord {
+  /** Id opsi terpilih (single: maks 1; multi: banyak; text: kosong). */
+  selectedIds: string[];
+  /** Jawaban khusus / teks bebas pengguna (apa adanya). */
+  customText: string | null;
+  status: QuestionnaireAnswerStatus;
+}
+
+export interface QuestionnaireState {
+  status: 'not-presented' | 'presented' | 'submitted';
+  /** Kunci pertanyaan yang sudah pernah DITAMPILKAN — tidak ditampilkan ulang. */
+  presentedKeys: string[];
+  answers: Record<string, QuestionnaireAnswerRecord>;
+  submittedAt: string | null;
+}
+
+export const emptyQuestionnaireState = (): QuestionnaireState => ({
+  status: 'not-presented',
+  presentedKeys: [],
+  answers: {},
+  submittedAt: null,
+});
+
 export interface UniversalIntakeContext {
   intent: 'CREATE_RAB';
+  /**
+   * FASE 5 (ARS-06) — proyek pemilik konteks ini. Dipakai generate agar
+   * draft yang dibangun terikat ke proyek yang benar; dipersistensikan
+   * lewat serialize (medan ikut `...rest`) dan dipulihkan lewat
+   * rehydrate. null = konteks belum terikat proyek (jalur lama).
+   */
+  projectId?: string | null;
   primary: SubcategoryDef | null;
   secondary: SubcategoryDef[];
   isMulti: boolean;
@@ -672,6 +795,14 @@ export interface UniversalIntakeContext {
   floors: number | null;
   /** Fungsi per lantai terstruktur (Wave C) — satu entri per lantai yang ditugaskan pengguna. */
   floorFunctions: FloorFunctionAssignment[];
+  /**
+   * FASE 4 — Bangunan per bangunan (CHAT-03): tiap bangunan menyimpan
+   * identitas, jumlah lantai, fungsi per lantai, dan dimensinya
+   * sendiri. `floors` tunggal (di atas) tetap dipertahankan sebagai
+   * lantai bangunan UTAMA agar perilaku lama tidak berubah; kebenaran
+   * per bangunan ada di sini. Kosong = proyek bangunan tunggal.
+   */
+  buildings: BuildingModel[];
   dimensionsText: string | null;
   lengthM: number | null;
   lengthOriginal: string | null;
@@ -699,6 +830,28 @@ export interface UniversalIntakeContext {
   corrections: Array<{ key: string; from: string; to: string }>;
   /** Jawaban terstruktur atas pertanyaan kategori (kandang-type, warehouse-system, bridge-type…). */
   answers: Record<string, string>;
+  /** Keadaan kuesioner adaptif (pertanyaan spesifikasi tergrup) — lihat questionnaire.ts. */
+  questionnaire: QuestionnaireState;
+  /**
+   * Spesifikasi terstruktur v2 (Rantai Spek → RAB, Fase 2 A) — model
+   * baca hasil `deriveStructuredSpecs(ctx)`; sumber kanonis tetap
+   * questionnaire.answers + answers + budget. Serialisasi TIDAK
+   * memakai medan ini apa adanya: serialize menderivasi ulang agar
+   * jawaban kanonis selalu menang atas salinan basi.
+   */
+  structuredSpecs: StructuredSpec[];
+  /**
+   * Spek hasil ekstraksi DED kanonis (GATE 4 / 5D — INTEGRASI DED/QTO).
+   * Sumber kanonis spek DED (seperti questionnaire.answers untuk spek
+   * kuesioner): `deriveStructuredSpecs` aturan (g) menggabungkannya
+   * ke structuredSpecs untuk kunci yang belum tercakup jawaban user.
+   * HANYA berisi spek bersumber 'DED' (kunci ded-*, divalidasi
+   * isValidDedSpec saat rehidrasi); nilai DED asli TIDAK PERNAH
+   * ditimpa di sini — revisi user yang dikonfirmasi dicatat di
+   * `answers` (derive aturan (c) menang + `supersedes`). Diserialisasi
+   * lewat spread `rest` (data JSON polos) seperti `buildings`.
+   */
+  dedSpecs: StructuredSpec[];
   /** Bagian renovasi bernama yang disebut (dapur, kamar mandi, atap…) — scope gabungan terstruktur. */
   renovationScopes: string[];
   /** true = pembangunan baru; false = eksisting/renovasi atas yang ada; null = belum jelas. */
@@ -721,6 +874,7 @@ export interface UniversalIntakeContext {
 
 export const emptyUniversalIntake = (): UniversalIntakeContext => ({
   intent: 'CREATE_RAB',
+  projectId: null,
   primary: null,
   secondary: [],
   isMulti: false,
@@ -731,6 +885,7 @@ export const emptyUniversalIntake = (): UniversalIntakeContext => ({
   buildingAreaM2: null,
   floors: null,
   floorFunctions: [],
+  buildings: [],
   dimensionsText: null,
   lengthM: null,
   lengthOriginal: null,
@@ -751,6 +906,9 @@ export const emptyUniversalIntake = (): UniversalIntakeContext => ({
   budgetHistory: [],
   corrections: [],
   answers: {},
+  questionnaire: emptyQuestionnaireState(),
+  structuredSpecs: [],
+  dedSpecs: [],
   renovationScopes: [],
   isNewConstruction: null,
   renovationScope: null,
@@ -799,8 +957,29 @@ export function extractUniversalContext(text: string, base?: UniversalIntakeCont
         budgetHistory: [...base.budgetHistory],
         corrections: [...base.corrections],
         answers: { ...base.answers },
+        structuredSpecs: (base.structuredSpecs ?? []).map((s) => ({
+          ...s,
+          value: Array.isArray(s.value) ? [...s.value] : s.value,
+        })),
+        // GATE 4 (5D): spek DED ikut terklon (sumber kanonisnya).
+        dedSpecs: (base.dedSpecs ?? []).map((s) => ({
+          ...s,
+          value: Array.isArray(s.value) ? [...s.value] : s.value,
+        })),
+        questionnaire: {
+          status: base.questionnaire?.status ?? 'not-presented',
+          presentedKeys: [...(base.questionnaire?.presentedKeys ?? [])],
+          answers: Object.fromEntries(
+            Object.entries(base.questionnaire?.answers ?? {}).map(([k, v]) => [
+              k,
+              { selectedIds: [...v.selectedIds], customText: v.customText, status: v.status },
+            ]),
+          ),
+          submittedAt: base.questionnaire?.submittedAt ?? null,
+        },
         renovationScopes: [...base.renovationScopes],
         floorFunctions: base.floorFunctions.map((a) => ({ ...a })),
+        buildings: cloneBuildings(base.buildings),
       }
     : emptyUniversalIntake();
 
@@ -812,6 +991,11 @@ export function extractUniversalContext(text: string, base?: UniversalIntakeCont
     ctx.primary = cls.primary;
     ctx.isMulti = cls.isMulti;
   }
+  // FASE 4 (CHAT-03) — bangunan per bangunan: pola multi-gedung pada
+  // teks ini digabung (upsert per id) ke ctx.buildings; revisi satu
+  // bangunan tidak menyentuh bangunan lain. Bila tidak ada pola,
+  // konteks tidak berubah.
+  applyBuildingsToContext(ctx, raw);
   const knownIds = new Set([
     ...(ctx.primary ? [ctx.primary.id] : []),
     ...ctx.secondary.map((s) => s.id),
@@ -891,6 +1075,23 @@ export function extractUniversalContext(text: string, base?: UniversalIntakeCont
     // koreksi jumlah — koreksi angka tidak menghapus cakupan (Wave C).
     ctx.budget = { ...budgetParsed, coverage: mergeBudgetCoverage(prevBudget?.coverage ?? null, budgetParsed.coverage) };
     ctx.budgetText = `Rp${fmtNum(budgetParsed.amount)} — ${BUDGET_KIND_LABELS[budgetParsed.kind]}`;
+    // FASE 4 (CHAT-02) — revisi DALAM satu pesan: penyebutan budget
+    // sebelum yang terakhir menjadi riwayat (bukan hilang). Tanpa ini
+    // "anggaran 300 juta anggaran 250 juta" hanya menyimpan 250 jt dan
+    // cap basi 300 jt tidak terlacak di konteks percakapan.
+    const mentions = parseAllBudgetMentions(raw);
+    if (mentions.length > 1) {
+      for (const m of mentions.slice(0, -1)) {
+        if (m.amount === budgetParsed.amount) continue;
+        if (ctx.budgetHistory.some((h) => h.amount === m.amount)) continue;
+        ctx.budgetHistory.push(m);
+        ctx.corrections.push({
+          key: 'budget',
+          from: `Rp${fmtNum(m.amount)} (${m.kind})`,
+          to: `Rp${fmtNum(budgetParsed.amount)} (${budgetParsed.kind})`,
+        });
+      }
+    }
   }
 
   // --- Cakupan budget (Wave C): frasa inklusi/eksklusi pada giliran
@@ -1147,6 +1348,13 @@ export function extractUniversalContext(text: string, base?: UniversalIntakeCont
   }
 
   ctx.combinedText = base?.combinedText ? `${base.combinedText} ${raw}` : raw;
+  // FASE 4 (CHAT-03) — sinkronisasi akhir: bila ada model multi-gedung,
+  // `floors` tunggal (warisan) adalah lantai bangunan UTAMA (pertama),
+  // bukan penyebutan "N lantai" TERAKHIR pada teks ("gedung A 3 lantai
+  // dan gedung B 2 lantai" sebelumnya runtuh jadi 2).
+  if (ctx.buildings.length > 0 && ctx.buildings[0].floors != null) {
+    ctx.floors = ctx.buildings[0].floors;
+  }
   refreshUniversalFacts(ctx);
   return ctx;
 }
@@ -1197,10 +1405,37 @@ export function refreshUniversalFacts(ctx: UniversalIntakeContext): void {
     push('landArea', 'Luas lahan/area', `${fmtNum(ctx.landAreaM2)} m²${derived ? ` (dari "${ctx.landAreaOriginal}")` : ''}`, derived ? 'SYSTEM_DERIVED' : 'USER_CONFIRMED');
   }
   if (ctx.buildingAreaM2 != null) push('buildingArea', 'Luas bangunan', `${fmtNum(ctx.buildingAreaM2)} m²`, 'USER_CONFIRMED');
-  if (ctx.dimensionsText) push('dimensions', 'Dimensi', ctx.dimensionsText, 'USER_CONFIRMED');
+  if (ctx.dimensionsText) {
+    // Adaptive Questionnaire (direktif owner 2026-11-12 §6): dimensi
+    // "17 × 9 m" dinyatakan lengkap dengan luas tapaknya (±153 m²)
+    // agar pengguna melihat hasil kalinya tanpa harus menghitung —
+    // angka adalah perkalian deterministik dari dua sisi yang pengguna
+    // sebutkan sendiri, bukan tebakan. Disebut "tapak" (bukan luas
+    // bangunan) karena pada bangunan bertingkat luas tapak ≠ luas
+    // bangunan total.
+    let dimValue = ctx.dimensionsText;
+    const dm = ctx.dimensionsText.match(/^([\d.,]+) × ([\d.,]+) m$/);
+    if (dm) {
+      const a = parseAreaNumber(dm[1]);
+      const b = parseAreaNumber(dm[2]);
+      if (a != null && b != null && a > 0 && b > 0) {
+        dimValue = `${ctx.dimensionsText} (tapak ±${fmtNum(Math.round(a * b * 100) / 100)} m²)`;
+      }
+    }
+    push('dimensions', 'Dimensi', dimValue, 'USER_CONFIRMED');
+  }
   if (ctx.floors != null) push('floors', 'Jumlah lantai', `${ctx.floors}`, 'USER_CONFIRMED');
   for (const a of ctx.floorFunctions) {
     push(`floorFunction-${a.floor}`, 'Fungsi per lantai', `Lantai ${a.floor} (${a.floorLabel}): ${a.functionLabel}`, 'USER_CONFIRMED');
+  }
+  // FASE 4 (CHAT-03) — bangunan per bangunan: satu fakta per bangunan
+  // (lantai + fungsi per lantai bangunan itu), bukan satu angka runtuh.
+  for (const b of ctx.buildings ?? []) {
+    const bits: string[] = [b.floors != null ? `${b.floors} lantai` : 'jumlah lantai belum diketahui'];
+    if (b.floorFunctions.length) bits.push(b.floorFunctions.map((f) => `Lt${f.floor}: ${f.functionLabel}`).join(', '));
+    if (b.lengthM != null && b.widthM != null) bits.push(`${b.lengthM} m × ${b.widthM} m`);
+    if (b.buildingAreaM2 != null) bits.push(`luas ${b.buildingAreaM2} m²`);
+    push(`building-${b.id}`, `Bangunan ${b.label}`, bits.join('; '), 'USER_CONFIRMED');
   }
   if (ctx.lengthM != null) {
     const derived = ctx.lengthOriginal != null && /(km|kilometer)/.test(ctx.lengthOriginal);
@@ -1586,6 +1821,46 @@ export function buildUniversalBriefLines(ctx: UniversalIntakeContext): string[] 
       lines.push(`• ${f.label}: ${f.value}${f.status === 'SYSTEM_DERIVED' ? ' — konversi satuan sistem, nilai asli dipertahankan' : ''}`);
     }
   }
+  // GATE 2 (5B): bangunan per gedung — fakta per gedung hidup di
+  // ctx.facts dengan kunci `building-<id>` (refreshUniversalFacts)
+  // tetapi filter dimFacts di atas tidak menampilkannya; brief
+  // menampilkan model gedung langsung agar kedua gedung terlihat
+  // terpisah sebelum generate (bukti E2E Gate 2).
+  if (ctx.buildings.length) {
+    lines.push('');
+    lines.push('**Bangunan (per bangunan)**');
+    // buildingSummaryLines[0] adalah headernya sendiri (sudah dipunyai
+    // brief di atas) dan baris sisanya SUDAH berbullet — jangan
+    // dibullet ulang (verifikasi visual E2E Gate 2: bullet ganda
+    // "• • Gedung A" + header duplikat).
+    for (const line of buildingSummaryLines(ctx.buildings).slice(1)) lines.push(line);
+  }
+  // GATE 4 (5D): spek dari DED — label [DED]/[ASUMSI] terbedakan dari
+  // dimensi terkonfirmasi user di atas; konflik DED vs user (>10%)
+  // ditampilkan dengan kedua angka (tidak dipilih diam-diam).
+  if ((ctx.dedSpecs ?? []).length > 0) {
+    lines.push('');
+    lines.push('**Data dari DED**');
+    for (const s of ctx.dedSpecs) {
+      const tag = s.status === 'ASSUMPTION' ? '[ASUMSI]' : '[DED]';
+      const val = typeof s.value === 'number' ? fmtNum(s.value) : String(s.value ?? '—');
+      lines.push(`• ${tag} ${s.label}: ${val}${s.unit ? ` ${s.unit}` : ''}${s.status === 'ASSUMPTION' ? ' — asumsi, belum dikonfirmasi' : ''}${s.provenance ? ` — ${s.provenance}` : ''}`);
+    }
+    // Dimensi user lewat dimsFromIntakeContext (fallback gedung
+    // tunggal — dimensi "gedung 12 x 8 m" hidup di ctx.buildings[0],
+    // bukan di medan tingkat proyek; tanpa fallback konflik tidak
+    // pernah terdeteksi di brief).
+    const userDims = dimsFromIntakeContext(ctx);
+    const conflicts = detectDedSpecConflicts(ctx.dedSpecs, {
+      lengthM: userDims.lengthM,
+      widthM: userDims.widthM,
+      heightM: userDims.heightM,
+      buildingAreaM2: userDims.buildingAreaM2,
+    });
+    for (const c of conflicts) {
+      lines.push(`• [KONFLIK] ${c.label}: DED ${fmtNum(c.dedValue)}${c.dedUnit ? ` ${c.dedUnit}` : ''} vs Anda ${fmtNum(c.userValue)} ${c.userUnit} (selisih ${(c.diffRatio * 100).toFixed(0)}%) — perlu keputusan Anda.`);
+    }
+  }
   if (ctx.scopeConfirmed.length) {
     lines.push('');
     lines.push('**Cakupan terkonfirmasi**');
@@ -1687,6 +1962,100 @@ export function parseScopeRemoval(text: string): string | null {
   const t = (text || '').toLowerCase();
   const m = t.match(/\b(?:hapus|hilangkan|tidak jadi|nggak jadi|batalkan|hilangkan saja|buang)\s+(?:pekerjaan\s+|bagian\s+)?([a-z0-9 &/]{3,40}?)(?=\s*(?:,|\.|$|nya\b|itu\b|saja\b|ya\b))/);
   return m ? m[1].trim() : null;
+}
+
+/* ------------------------------------------------------------------ */
+/* Serialisasi konteks untuk persistensi (Adaptive Questionnaire       */
+/* 2026-11-12) — dipakai lapisan persistensi (draftPersistence) agar   */
+/* konteks intake (termasuk keadaan kuesioner) selamat dari muat       */
+/* ulang. SubcategoryDef memuat RegExp sehingga TIDAK diserialisasi;   */
+/* hanya id-nya yang disimpan dan def direhidrasi dari taksonomi.      */
+/* Fail-closed: id tak dikenal / bentuk tak sah → null, tanpa migrasi  */
+/* tebakan. Fakta turunan (facts/missing/unresolved) tidak disimpan —  */
+/* dihitung ulang oleh refreshUniversalFacts saat rehidrasi.           */
+/* ------------------------------------------------------------------ */
+
+export const INTAKE_CONTEXT_SERIAL_VERSION = 2;
+
+/**
+ * Versi serial yang DITERIMA rehidrasi: 1 (migrasi — lihat
+ * rehydrate) dan 2 (saat ini). Versi lain → null (fail-closed).
+ */
+export type IntakeContextSerialVersion = 1 | typeof INTAKE_CONTEXT_SERIAL_VERSION;
+
+export interface SerializedUniversalIntakeContext {
+  version: IntakeContextSerialVersion;
+  primaryId: string | null;
+  secondaryIds: string[];
+  /** Spek terstruktur v2 (diderivasi saat serialize; v1 tidak punya). */
+  structuredSpecs?: StructuredSpec[];
+  data: Record<string, unknown>;
+}
+
+export function serializeUniversalIntakeContext(ctx: UniversalIntakeContext): SerializedUniversalIntakeContext {
+  const { primary, secondary, facts, suggestedPackages, missingCritical, unresolved, structuredSpecs, ...rest } =
+    ctx as unknown as Record<string, unknown> & UniversalIntakeContext;
+  void primary; void secondary; void facts; void suggestedPackages; void missingCritical; void unresolved;
+  // Medan konteks `structuredSpecs` SENGAJA dibuang dari `data`:
+  // yang disimpan adalah hasil derivasi segar dari jawaban kanonis
+  // (jawaban menang atas salinan basi), di medan top-level.
+  void structuredSpecs;
+  return {
+    version: INTAKE_CONTEXT_SERIAL_VERSION,
+    primaryId: ctx.primary?.id ?? null,
+    secondaryIds: ctx.secondary.map((d) => d.id),
+    structuredSpecs: JSON.parse(JSON.stringify(deriveStructuredSpecs(ctx))) as StructuredSpec[],
+    data: JSON.parse(JSON.stringify(rest)) as Record<string, unknown>,
+  };
+}
+
+export function rehydrateUniversalIntakeContext(
+  raw: SerializedUniversalIntakeContext | null | undefined,
+): UniversalIntakeContext | null {
+  if (!raw || typeof raw !== 'object') return null;
+  if (raw.version !== 1 && raw.version !== INTAKE_CONTEXT_SERIAL_VERSION) return null;
+  if (!raw.data || typeof raw.data !== 'object' || Array.isArray(raw.data)) return null;
+  const primary = raw.primaryId == null ? null : subcategoryById(raw.primaryId);
+  if (raw.primaryId != null && !primary) return null; // id tak dikenal — fail-closed
+  const secondary: SubcategoryDef[] = [];
+  for (const id of raw.secondaryIds ?? []) {
+    const def = subcategoryById(id);
+    if (!def) return null;
+    secondary.push(def);
+  }
+  const data = raw.data as Partial<UniversalIntakeContext>;
+  if (data.intent !== undefined && data.intent !== 'CREATE_RAB') return null;
+  const ctx: UniversalIntakeContext = {
+    ...emptyUniversalIntake(),
+    ...(data as UniversalIntakeContext),
+    primary,
+    secondary,
+    questionnaire: {
+      ...emptyQuestionnaireState(),
+      ...(data.questionnaire ?? {}),
+      presentedKeys: [...(data.questionnaire?.presentedKeys ?? [])],
+      answers: { ...(data.questionnaire?.answers ?? {}) },
+    },
+  };
+  // --- Spek terstruktur v2 ---
+  // v2 + structuredSpecs ADA: pakai bila VALID; bila TIDAK valid,
+  // buang medan itu (set []) dan konteks TETAP HIDUP — jawaban kanonis
+  // utuh di data, dan jalur draft menderivasi ulang dari jawaban.
+  // v2 TANPA structuredSpecs, dan v1 (MIGRASI): derivasi dari jawaban
+  // (sumber kanonis) — konteks hasil migrasi diperlakukan sebagai v2
+  // pada penyimpanan berikutnya (serialize selalu menulis v2).
+  // Validasi lain (primaryId/secondaryIds/intent) TIDAK berubah.
+  if (raw.version === INTAKE_CONTEXT_SERIAL_VERSION && raw.structuredSpecs !== undefined) {
+    ctx.structuredSpecs = validateStructuredSpecs(raw.structuredSpecs) ?? [];
+  } else {
+    ctx.structuredSpecs = deriveStructuredSpecs(ctx);
+  }
+  // GATE 4 (5D) — spek DED: hanya entri sah bersumber 'DED' yang
+  // dipertahankan; entri rusak dibuang PER ENTRI (bukan fail-closed
+  // seluruh konteks — jawaban kanonis + spek DED yang sah tetap hidup).
+  ctx.dedSpecs = (ctx.dedSpecs ?? []).filter((s) => isValidDedSpec(s));
+  refreshUniversalFacts(ctx);
+  return ctx;
 }
 
 /** Cocokkan frasa hapus ke subkategori/butir cakupan pada konteks. */

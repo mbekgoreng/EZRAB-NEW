@@ -45,7 +45,7 @@ import {
   type UniversalDraft,
   type UniversalDraftItem,
 } from '../ai-tools/ezrab-ai/universalRab';
-import { executeIntent, tryContinueUniversalContext, clearUniversalContext, type ChatActionContext } from '../ai-tools/ezrab-ai/actionRegistry';
+import { executeIntent, tryContinueUniversalContext, clearUniversalContext, submitQuestionnaireAnswers, type ChatActionContext } from '../ai-tools/ezrab-ai/actionRegistry';
 import { createRabItemRecord } from '../engine/rab/rabItemFactory';
 
 // Mock localStorage for Node test environment (pola templateCatalog180.test.ts)
@@ -428,11 +428,19 @@ test('CREATE_RAB_SUMMARY jalan beton → (Universal Intake §5B: lebar ditanyaka
   // panjang tercatat, lebar DITANYAKAN sebelum draft disusun. Wiring
   // registry yang dijaga tes ini (draft kanonis + push-universal +
   // tanpa konfirmasi langsung) diverifikasi di ujung alur barunya.
+  // PIN DIPERBARUI TERBUKA (Adaptive Questionnaire, direktif owner
+  // 2026-11-12 §6): jawaban lebar kini membuka langkah kuesioner
+  // spesifikasi jalan sebelum brief (kelas lalu lintas/tanah dasar/
+  // drainase samping belum diketahui). Wiring yang dijaga tes ini
+  // tidak berubah; asersi brief dijalankan pada hasil kirim kuesioner
+  // (semua dilewati = "Belum ditentukan").
   clearUniversalContext();
   const ask = executeIntent('CREATE_RAB_SUMMARY', undefined, ctxFor('Buat RAB jalan beton sepanjang 1 km'));
   assert.equal(ask.ok, true);
   assert.ok(ask.message.includes('lebar jalan'), 'lebar ditanyakan dulu (Contoh B)');
-  const brief = tryContinueUniversalContext('lebarnya 5 meter');
+  const jawabLebar = tryContinueUniversalContext('lebarnya 5 meter');
+  assert.ok(jawabLebar && jawabLebar.questionnaire, 'kuesioner jalan tampil sesudah jawaban lebar');
+  const brief = submitQuestionnaireAnswers({});
   assert.ok(brief.message.includes('Brief proyek'), 'brief tampil sebelum generate');
   const res = tryContinueUniversalContext('itu aja');
   assert.equal(res.ok, true);

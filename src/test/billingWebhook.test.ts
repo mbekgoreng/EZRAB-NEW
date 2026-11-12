@@ -124,29 +124,29 @@ console.log('=== Langganan: settlement → grant sekali; replay aman ===');
   check('dua batch langganan aktif (5.000 + 5.000)', bal.subscriptionAvailable === 10000);
 }
 
-console.log('=== Top-up: grant dasar + bonus, replay aman ===');
+console.log('=== Top-up: grant tunggal tier Spec (K6), replay aman ===');
 {
   clock = T0;
   const { repo, service } = setup();
-  const co: any = await service.checkout({ auth: OWNER, workspaceId: 'ws-1', kind: 'TOP_UP', itemId: 'topup-3600' });
+  const co: any = await service.checkout({ auth: OWNER, workspaceId: 'ws-1', kind: 'TOP_UP', itemId: 'topup-1500' });
   const account = await repo.getBillingAccountByWorkspace('ws-1');
-  const r1: any = await service.handleNotification(notify(co.orderId, '5000.00', 'settlement'));
+  const r1: any = await service.handleNotification(notify(co.orderId, '10000.00', 'settlement'));
   check('settlement top-up → granted', r1.granted === true);
   let bal = await balanceOf(repo, account!.id, clock);
-  check('topupAvailable = 3.000', bal.topupAvailable === 3000);
-  check('bonusAvailable = 600 (batch terpisah)', bal.bonusAvailable === 600);
-  const r2: any = await service.handleNotification(notify(co.orderId, '5000.00', 'settlement'));
+  check('topupAvailable = 1.500 (tier penuh, tanpa bonus terpisah)', bal.topupAvailable === 1500);
+  check('bonusAvailable = 0 (K6: tier Spec tanpa bonus)', bal.bonusAvailable === 0);
+  const r2: any = await service.handleNotification(notify(co.orderId, '10000.00', 'settlement'));
   check('replay top-up → duplicate', r2.duplicate === true);
   bal = await balanceOf(repo, account!.id, clock);
-  check('saldo top-up tidak ganda', bal.topupAvailable === 3000 && bal.bonusAvailable === 600);
-  check('entri GRANT berbayar = 2 (top-up + bonus)', (await paidGrantEntries(repo, account!.id)).length === 2);
+  check('saldo top-up tidak ganda', bal.topupAvailable === 1500 && bal.bonusAvailable === 0);
+  check('entri GRANT berbayar = 1 (top-up saja)', (await paidGrantEntries(repo, account!.id)).length === 1);
 
   console.log('=== Refund sesudah lunas: tercatat, saldo TIDAK berubah ===');
-  const rr: any = await service.handleNotification(notify(co.orderId, '5000.00', 'refund'));
+  const rr: any = await service.handleNotification(notify(co.orderId, '10000.00', 'refund'));
   check('refund tercatat (refundRecorded)', rr.ok === true && rr.refundRecorded === true);
   check('order menjadi REFUNDED', (await repo.getOrderByOrderId(co.orderId))?.status === 'REFUNDED');
   bal = await balanceOf(repo, account!.id, clock);
-  check('saldo TIDAK ditarik oleh refund (PENDING_LEGAL_REVIEW)', bal.topupAvailable === 3000 && bal.bonusAvailable === 600);
+  check('saldo TIDAK ditarik oleh refund (PENDING_LEGAL_REVIEW)', bal.topupAvailable === 1500 && bal.bonusAvailable === 0);
   const events = await repo.listPaymentEventsByOrder(co.orderId);
   check('peristiwa refund terjurnal', events.some((e: any) => e.processing_result === 'RECORDED_REFUND'));
 }

@@ -17,12 +17,14 @@ interface Props {
 }
 
 export const CreditBalance: React.FC<Props> = ({ compact, onOpenCreditPage, showTopUp = true }) => {
-  const { balance } = useCreditSimulation();
+  const { balance, source } = useCreditSimulation();
   const [topUpOpen, setTopUpOpen] = useState(false);
 
-  const low = balance.total < LOW_BALANCE_THRESHOLD;
-  const critical = balance.total <= 0;
+  const unavailable = source === 'unavailable';
+  const low = !unavailable && balance.total < LOW_BALANCE_THRESHOLD;
+  const critical = !unavailable && balance.total <= 0;
   const cls = `aic-balance${compact ? ' compact' : ''}${critical ? ' is-critical' : low ? ' is-low' : ''}`;
+  const sourceLabel = source === 'server' ? 'server' : source === 'simulation' ? 'simulasi' : 'belum terhubung';
 
   return (
     <>
@@ -31,19 +33,27 @@ export const CreditBalance: React.FC<Props> = ({ compact, onOpenCreditPage, show
         className={cls}
         onClick={onOpenCreditPage}
         disabled={!onOpenCreditPage}
-        title={`Saldo kredit AI (simulasi): ${balance.total.toLocaleString('id-ID')} kredit.${onOpenCreditPage ? ' Klik untuk rincian.' : ''}`}
-        aria-label={`Saldo kredit AI ${balance.total} kredit, paket ${balance.plan}`}
+        title={
+          unavailable
+            ? 'Saldo kredit AI belum terhubung — server belum menjawab.'
+            : `Saldo kredit AI (${sourceLabel}): ${balance.total.toLocaleString('id-ID')} kredit.${onOpenCreditPage ? ' Klik untuk rincian.' : ''}`
+        }
+        aria-label={
+          unavailable
+            ? 'Saldo kredit AI belum terhubung'
+            : `Saldo kredit AI ${balance.total} kredit, paket ${balance.plan}`
+        }
         style={!onOpenCreditPage ? { cursor: 'default' } : undefined}
       >
         <span className="aic-coin"><Coins size={12} /></span>
-        <span className="aic-amount">{formatCreditsShort(balance.total)}</span>
-        {!compact && <span className="aic-plan">{balance.plan}</span>}
+        <span className="aic-amount">{unavailable ? '—' : formatCreditsShort(balance.total)}</span>
+        {!compact && <span className="aic-plan">{unavailable ? 'belum terhubung' : balance.plan}</span>}
         {showTopUp && (
           <span
             role="button"
             tabIndex={0}
             aria-label="Top-up kredit"
-            title="Top-up kredit (simulasi)"
+            title={source === 'simulation' ? 'Top-up kredit (simulasi)' : 'Top-up kredit'}
             onClick={(e) => { e.stopPropagation(); setTopUpOpen(true); }}
             onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); setTopUpOpen(true); } }}
             style={{ display: 'inline-flex', color: 'var(--ez-color-primary, #2563eb)' }}

@@ -2,7 +2,7 @@
  * Katalog 180 — HOTEL_HOSPITALITY (+4), KESEHATAN (+4), PENDIDIKAN (+4), INDUSTRI (+5).
  */
 import { RabTemplate } from '../../types/rabTemplate';
-import { G, num, comp, tpl, ASUMSI_BANGUNAN, EKSKLUSI_BANGUNAN } from './builders';
+import { G, num, sel, comp, tpl, ASUMSI_BANGUNAN, EKSKLUSI_BANGUNAN } from './builders';
 
 export const BUILDING_TEMPLATES_B: RabTemplate[] = [
   // =======================================================================
@@ -563,7 +563,25 @@ export const BUILDING_TEMPLATES_B: RabTemplate[] = [
       num('warehouse_area', 'Luas Area Gudang', 5000, { min: 1500, max: 30000, unit: 'm²' }),
       num('num_docks', 'Jumlah Pintu Dock', 8, { min: 2, max: 40, group: 'specifications' }),
       num('clear_height', 'Tinggi Bersih Gudang', 10, { min: 7, max: 14, unit: 'm', group: 'specifications' }),
-      num('office_area', 'Luas Kantor Mezzanine', 400, { min: 100, max: 2000, unit: 'm²' })
+      num('office_area', 'Luas Kantor Mezzanine', 400, { min: 100, max: 2000, unit: 'm²' }),
+      // Varian penutup atap & lantai (keputusan katalog owner
+      // 2026-11-12 03:41): Spandek & Galvalum memakai padanan resmi
+      // AHSP 3.1.3.8 "atap metal menerus tebal 0,4 mm" (Rp135.600/m²
+      // FULL); Zincalume = 3.1.3.1 "seng gelombang" (Rp90.145/m²
+      // FULL, mengikuti preseden ROOF-METAL-STANDING); UPVC tetap
+      // 3.1.3.5 (Rp340.681/m² FULL). Paving lantai = 7.1.1.1
+      // "paving block 6 cm" (Rp146.808/m² FULL).
+      sel('roof_material', 'Material Penutup Atap', [
+        { label: 'UPVC', value: 'upvc' },
+        { label: 'Spandek', value: 'spandek' },
+        { label: 'Galvalum', value: 'galvalum' },
+        { label: 'Zincalume', value: 'zincalume' },
+      ], 'upvc'),
+      sel('floor_type', 'Jenis Lantai Gudang', [
+        { label: 'Floor hardener', value: 'hardener' },
+        { label: 'Paving block', value: 'paving' },
+        { label: 'Beton biasa', value: 'beton' },
+      ], 'hardener')
     ],
     components: [
       comp('prep', 'Pembersihan & Pengupasan Lahan', G.PERSIAPAN, 'm2', 'warehouse_area * 1.3', ['warehouse_area'], { code: 'C.37' }),
@@ -572,9 +590,13 @@ export const BUILDING_TEMPLATES_B: RabTemplate[] = [
       comp('beton', 'Beton Slab Gudang & Struktur fc 15 MPa', G.STRUKTUR, 'm3', 'warehouse_area * 0.23', ['warehouse_area'], { code: '2.2.1.4.3', price: 1355000 }),
       comp('besi', 'Penulangan BjTP dia. ≥ 12 mm', G.STRUKTUR, 'kg', 'warehouse_area * 12', ['warehouse_area'], { code: '2.2.1.1.4' }),
       comp('baja', 'Struktur Baja Portal Gudang (Pabrikasi & Ereksi)', G.STRUKTUR, 'kg', 'warehouse_area * (22 + clear_height)', ['warehouse_area', 'clear_height'], { code: '2.3.1.1', price: 39800, priceNote: 'Berat baja proporsional terhadap tinggi bersih (asumsi rekayasa dinyatakan).' }),
-      comp('hardener', 'Floor Hardener Slab Gudang (Superflat dasar)', G.LANTAI, 'm2', 'warehouse_area * 0.98', ['warehouse_area'], { code: '3.9.9.9' }),
+      comp('hardener', 'Floor Hardener Slab Gudang (Superflat dasar)', G.LANTAI, 'm2', 'warehouse_area * 0.98', ['warehouse_area'], { code: '3.9.9.9', condition: "floor_type === 'hardener'" }),
+      comp('paving', 'Lantai Paving Block Gudang 6 cm', G.LANTAI, 'm2', 'warehouse_area * 0.98', ['warehouse_area'], { code: '7.1.1.1', condition: "floor_type === 'paving'" }),
       comp('dinding-metal', 'Dinding Metal Cladding Keliling Gudang', G.DINDING, 'm2', 'warehouse_area * 0.62 * clear_height / 10', ['warehouse_area', 'clear_height'], { price: 385000, level: 'PROFESSIONAL', priceNote: 'Referensi cladding metal sheet + rangka terpasang.' }),
-      comp('atap', 'Penutup Atap UPVC Atap Gudang', G.ATAP, 'm2', 'warehouse_area * 1.06', ['warehouse_area'], { code: '3.1.3.5', level: 'PROFESSIONAL' }),
+      comp('atap-upvc', 'Penutup Atap UPVC Atap Gudang', G.ATAP, 'm2', 'warehouse_area * 1.06', ['warehouse_area'], { code: '3.1.3.5', level: 'PROFESSIONAL', condition: "roof_material === 'upvc'" }),
+      comp('atap-spandek', 'Penutup Atap Spandek Gudang', G.ATAP, 'm2', 'warehouse_area * 1.06', ['warehouse_area'], { code: '3.1.3.8', level: 'PROFESSIONAL', condition: "roof_material === 'spandek'" }),
+      comp('atap-galvalum', 'Penutup Atap Galvalum Gudang', G.ATAP, 'm2', 'warehouse_area * 1.06', ['warehouse_area'], { code: '3.1.3.8', level: 'PROFESSIONAL', condition: "roof_material === 'galvalum'" }),
+      comp('atap-zincalume', 'Penutup Atap Zincalume Gudang', G.ATAP, 'm2', 'warehouse_area * 1.06', ['warehouse_area'], { code: '3.1.3.1', level: 'PROFESSIONAL', condition: "roof_material === 'zincalume'" }),
       comp('insulasi', 'Foam Insulasi Atap Gudang', G.ATAP, 'm2', 'warehouse_area * 1.06', ['warehouse_area'], { code: '3.2.3', level: 'COMPREHENSIVE' }),
       comp('dock-door', 'Pintu Dock Sectional + Leveler per Pintu', G.KUSEN, 'unit', 'num_docks', ['num_docks'], { price: 68500000, level: 'PROFESSIONAL', priceNote: 'Referensi paket pintu sectional insulated + dock leveler + seal terpasang.' }),
       comp('sprinkler', 'Sprinkler Head Upright Area Gudang', G.MEKANIKAL, 'unit', 'warehouse_area / 9', ['warehouse_area'], { code: '5.6.2.2', level: 'PROFESSIONAL' }),

@@ -8,23 +8,29 @@ import type { MasterBuildingTemplate } from '../data/buildingTemplates/schema/ty
 // template) + volume dipatok 1 + cap VERIFIED/'AHSP 2026' palsu.
 // Perilaku baru: harga + volume dari ParametricVolumeEngine, dengan koreksi
 // kode template ke padanan resmi 2026 (plesteran → 3.7.4, keramik KM →
-// 3.9.8.9, jalan → C.37/E.1/E.11). Mencakup KETUJUH template di dropdown.
+// 3.9.8.9, jalan → C.37/E.1/E.11). Mencakup KESEPULUH template di dropdown
+// (GELOMBANG 2 §17.11, 2026-11-13: T54/T60/T90 ditambahkan ke master
+// registry — 7 → 10; hitungan katalog gabungan 183 TIDAK berubah karena
+// registry ini berbeda dari katalog RabTemplateService).
 describe('templatePickerPricing — semua template', () => {
   const all = masterBuildingTemplateRegistry.getAllTemplates();
   const byId = (id: string) =>
     all.find((t) => t.id === id) as MasterBuildingTemplate;
 
-  it('dropdown berisi 7 template', () => {
-    expect(all.length).toBe(7);
+  it('dropdown berisi 10 template', () => {
+    expect(all.length).toBe(10);
   });
 
-  // Kelima template rumah/ruko BERBAGI daftar kerja HOUSE_TYPE_36_WORK_ITEMS
+  // KEDELAPAN template rumah/ruko BERBAGI daftar kerja HOUSE_TYPE_36_WORK_ITEMS
   // (hanya parameter yang berbeda) — jadi ekspektasi harga/volume sama.
   const houseIds = [
     'template-house-type-36-single-floor',
     'template-house-type-45-single-floor',
+    'template-house-type-54-single-floor',
+    'template-house-type-60-single-floor',
     'template-house-type-70-single-floor',
     'template-house-type-36-two-floor',
+    'template-house-type-90-two-floor',
     'template-shophouse-2-floor',
   ];
   for (const id of houseIds) {

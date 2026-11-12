@@ -1,10 +1,11 @@
 // Suite: Katalog server billing TIDAK boleh bergeser dari definisi kanonis
-// frontend (src/billing/plans.ts) dan penawaran top-up Fase 1
-// (src/ai-credits/config.ts TOPUP_OFFER). Bila harga berubah, kedua sisi
-// wajib diubah bersama secara sadar — suite ini yang meneriakannya.
+// frontend (src/billing/plans.ts) dan paket top-up Spec v1.0 §7.2
+// (src/ai-credits/config.ts TOPUP_OFFERS, ratifikasi K6). Bila harga
+// berubah, kedua sisi wajib diubah bersama secara sadar — suite ini yang
+// meneriakannya.
 // Jalankan dari root repo: npx --yes tsx src/test/billingCatalogDrift.test.ts
 import { PLAN_DEFINITIONS } from '../billing/plans';
-import { TOPUP_OFFER } from '../ai-credits/config';
+import { TOPUP_OFFERS } from '../ai-credits/config';
 import { SUBSCRIPTION_CATALOG, TOPUP_CATALOG, getCatalogItem } from '../../api/_lib/billingCatalog.js';
 
 let pass = 0;
@@ -28,14 +29,18 @@ check('free TIDAK dijual', getCatalogItem('SUBSCRIPTION', 'free') === null);
 check('item asing ditolak', getCatalogItem('SUBSCRIPTION', 'platinum') === null);
 check('kind asing ditolak', getCatalogItem('VOUCHER', 'starter') === null);
 
-console.log('=== Katalog top-up server vs TOPUP_OFFER ===');
-const top = TOPUP_CATALOG['topup-3600'];
-check('topup-3600 ada', Boolean(top));
-check(`harga sama (${TOPUP_OFFER.priceIdr})`, top?.priceIdr === TOPUP_OFFER.priceIdr);
-check(`kredit dasar sama (${TOPUP_OFFER.baseCredits})`, top?.baseCredits === TOPUP_OFFER.baseCredits);
-check(`bonus sama (${TOPUP_OFFER.bonusCredits})`, top?.bonusCredits === TOPUP_OFFER.bonusCredits);
-check('total konsisten (dasar + bonus)', (top?.baseCredits ?? 0) + (top?.bonusCredits ?? 0) === TOPUP_OFFER.totalCredits);
-check('harga top-up ditandai menunggu keputusan D8', top?.priceStatus === 'PHASE1_OFFER_PENDING_D8');
+console.log('=== Katalog top-up server vs TOPUP_OFFERS (K6, Spec §7.2) ===');
+check('tepat 4 tier top-up', Object.keys(TOPUP_CATALOG).length === 4 && TOPUP_OFFERS.length === 4);
+for (const tier of TOPUP_OFFERS) {
+  const item = (TOPUP_CATALOG as Record<string, any>)[tier.itemId];
+  check(`${tier.itemId}: item katalog ada`, Boolean(item));
+  check(`${tier.itemId}: harga sama (${tier.priceIdr})`, item?.priceIdr === tier.priceIdr);
+  check(`${tier.itemId}: kredit sama (${tier.credits})`, item?.credits === tier.credits);
+  check(`${tier.itemId}: ditandai ratifikasi K6`, item?.priceStatus === 'SPEC_V1_0_RATIFIED_K6');
+  check(`${tier.itemId}: tanpa bonus terpisah`, item?.bonusCredits === undefined && item?.baseCredits === undefined);
+}
+check('penawaran interim topup-3600 SUDAH DIHAPUS', getCatalogItem('TOP_UP', 'topup-3600') === null);
+check('item top-up asing ditolak', getCatalogItem('TOP_UP', 'topup-99999') === null);
 
 console.log(`\nHasil: ${pass} PASS, ${fail} FAIL`);
 if (fail > 0) process.exit(1);

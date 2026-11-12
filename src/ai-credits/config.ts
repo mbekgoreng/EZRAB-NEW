@@ -52,18 +52,32 @@ export const FREE_INITIAL_CREDITS = ((): number => {
   return allowance.kind === 'initial' ? allowance.credits : 0;
 })();
 
-/** Satu-satunya paket top-up yang didukung di Fase 1. */
-export const TOPUP_OFFER = {
-  priceIdr: 5_000,
-  baseCredits: 3_000,
-  bonusRate: 0.2,
-  get bonusCredits() {
-    return Math.round(this.baseCredits * this.bonusRate);
-  },
-  get totalCredits() {
-    return this.baseCredits + this.bonusCredits;
-  },
-};
+/**
+ * Paket top-up KANONIS (Spec Billing v1.0 §7.2, diratifikasi keputusan K6
+ * Gelombang 2, 2026-11-13 — menggantikan penawaran interim Fase 1 tunggal
+ * Rp5.000 → 3.600 kredit yang SUDAH DIHAPUS). Empat tier, tanpa bonus:
+ * kredit yang dibeli adalah kredit yang diterima, dan top-up TIDAK
+ * kedaluwarsa (Spec §7.2). `itemId` adalah kunci katalog server
+ * (api/_lib/billingCatalog.js TOPUP_CATALOG) — tes billingCatalogDrift
+ * mengunci keselarasan kedua sisi.
+ */
+export interface TopUpTier {
+  itemId: string;
+  priceIdr: number;
+  credits: number;
+}
+
+export const TOPUP_OFFERS: readonly TopUpTier[] = Object.freeze([
+  Object.freeze({ itemId: 'topup-500', priceIdr: 5_000, credits: 500 }),
+  Object.freeze({ itemId: 'topup-1500', priceIdr: 10_000, credits: 1_500 }),
+  Object.freeze({ itemId: 'topup-4000', priceIdr: 25_000, credits: 4_000 }),
+  Object.freeze({ itemId: 'topup-10000', priceIdr: 50_000, credits: 10_000 }),
+]);
+
+/** Ambil satu tier berdasarkan itemId katalog; null bila tidak dikenal (tidak pernah menebak). */
+export function topUpOfferFor(itemId: string): TopUpTier | null {
+  return TOPUP_OFFERS.find((t) => t.itemId === itemId) ?? null;
+}
 
 /** Tarif pemakaian (rentang/target — tidak pernah ditampilkan sebagai angka pasti). */
 export const TARIFFS: Record<string, UsageEstimate> = {

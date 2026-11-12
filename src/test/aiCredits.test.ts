@@ -5,7 +5,8 @@
 import { describe, it, expect } from 'vitest';
 import {
   PLAN_CREDITS,
-  TOPUP_OFFER,
+  TOPUP_OFFERS,
+  topUpOfferFor,
   TARIFFS,
   tariffFor,
   LOW_BALANCE_THRESHOLD,
@@ -32,11 +33,15 @@ describe('ai-credits config', () => {
     expect(PLAN_CREDITS.business).toBe(30_000);
   });
 
-  it('2. top-up Rp5.000 → 3.000 + 600 bonus = 3.600', () => {
-    expect(TOPUP_OFFER.priceIdr).toBe(5_000);
-    expect(TOPUP_OFFER.baseCredits).toBe(3_000);
-    expect(TOPUP_OFFER.bonusCredits).toBe(600);
-    expect(TOPUP_OFFER.totalCredits).toBe(3_600);
+  it('2. K6: 4 tier top-up Spec §7.2 (500/1.500/4.000/10.000 = Rp5rb/10rb/25rb/50rb), tanpa bonus', () => {
+    expect(TOPUP_OFFERS.length).toBe(4);
+    expect(TOPUP_OFFERS[0]).toEqual({ itemId: 'topup-500', priceIdr: 5_000, credits: 500 });
+    expect(TOPUP_OFFERS[1]).toEqual({ itemId: 'topup-1500', priceIdr: 10_000, credits: 1_500 });
+    expect(TOPUP_OFFERS[2]).toEqual({ itemId: 'topup-4000', priceIdr: 25_000, credits: 4_000 });
+    expect(TOPUP_OFFERS[3]).toEqual({ itemId: 'topup-10000', priceIdr: 50_000, credits: 10_000 });
+    expect(topUpOfferFor('topup-4000')?.credits).toBe(4_000);
+    expect(topUpOfferFor('topup-3600')).toBe(null); // penawaran interim sudah dihapus
+    expect(topUpOfferFor('tidak-ada')).toBe(null);
   });
 
   it('3. tarif chat FAST 5-20, ADVANCED 20-50', () => {
@@ -108,25 +113,49 @@ describe('ai-credits mockAdapter (SIMULASI)', () => {
     expect(mockGetLedger().length).toBe(0);
   });
 
-  it('11. top-up simulasi menambah 3.600 (3.000 topup + 600 bonus)', () => {
+  it('11. top-up simulasi per tier K6 (tanpa bonus; itemId tak dikenal ditolak)', () => {
     mockReset();
-    const res = mockTopUp();
+    const res = mockTopUp('topup-1500');
     expect(res.simulated).toBe(true);
-    expect(res.totalCredits).toBe(3_600);
+    expect(res.totalCredits).toBe(1_500);
+    expect(res.bonusCredits).toBe(0);
     const b = mockGetBalance();
-    expect(b.topup).toBe(3_000);
-    expect(b.bonus).toBe(600);
-    expect(b.total).toBe(8_600);
+    expect(b.topup).toBe(1_500);
+    expect(b.bonus).toBe(0);
+    expect(b.total).toBe(6_500);
+    // Default tanpa argumen = tier terkecil.
+    mockReset();
+    expect(mockTopUp().totalCredits).toBe(500);
+    // ItemId tak dikenal: gagal tanpa mengubah state.
+    mockReset();
+    const bad = mockTopUp('topup-3600');
+    expect(bad.status).toBe('failed');
+    expect(mockGetBalance().total).toBe(5_000);
   });
 
-  it('12. urutan pakai: bonus → topup → langganan', () => {
+  it('12. K5: urutan pakai kanonis server — langganan → bonus → top-up', () => {
     mockReset();
-    mockTopUp(); // bonus 600, topup 3000
+    mockTopUp('topup-1500'); // topup 1500, bonus 0
     mockConsume('chat-ai', 1_000, 'test');
     const b = mockGetBalance();
-    expect(b.bonus).toBe(0); // 600 habis dulu
-    expect(b.topup).toBe(2_600); // sisa 400 dari topup
-    expect(b.subscription).toBe(5_000); // belum tersentuh
+    expect(b.subscription).toBe(4_000); // langganan dipakai DULU (kanonis server)
+    expect(b.topup).toBe(1_500); // belum tersentuh
+    expect(b.bonus).toBe(0);
+  });
+
+  it('12b. K5: sesudah langganan habis, top-up yang dipakai berikutnya', () => {
+    mockReset();
+    mockTopUp('topup-500'); // topup 500
+    mockConsume('chat-ai', 5_000, 'habiskan langganan');
+    const mid = mockGetBalance();
+    expect(mid.subscription).toBe(0);
+    expect(mid.topup).toBe(500);
+    mockConsume('chat-ai', 200, 'pakai top-up');
+    expect(mockGetBalance().topup).toBe(300);
+    // Catatan: bucket bonus tidak lagi terisi lewat mock (tier Spec tanpa
+    // bonus) — urutan bonus-di-tengah hanya teruji di server
+    // (creditAllocation.resolveAllocationOrder). Yang dipin di sini
+    // adalah ujung-ujungnya: langganan dulu, top-up terakhir.
   });
 
   it('13. ganti paket mengubah jatah langganan', () => {

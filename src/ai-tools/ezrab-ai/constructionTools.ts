@@ -90,12 +90,17 @@ export function toolGenerateWorkScope(input: { knowledgeId: string }): { label: 
   return { label: CONCEPTUAL_WBS_LABEL, scope: [...record.conceptualWbs] };
 }
 
-/* CreateRabDraft — wrapper buildUniversalDraft (katalog template resmi). */
-export function toolCreateRabDraft(input: { text: string }): BuildResult {
+/* CreateRabDraft — wrapper buildUniversalDraft (katalog template resmi).
+ * GELOMBANG PERBAIKI SEMUA (ARS-06 warisan): draft diikat ke projectId
+ * mengikuti pola registry build_universal_draft (toolRegistry.ts) —
+ * projectId non-string menjadi null (ikatan null seperti sebelumnya).
+ * Hanya pengikatan yang berubah; hasil build draft tidak berubah. */
+export function toolCreateRabDraft(input: { text: string; projectId?: string | null }): BuildResult {
   if (!input || typeof input.text !== 'string' || !input.text.trim()) {
     throw new Error('CreateRabDraft: input.text wajib string tidak kosong');
   }
-  return buildUniversalDraft(input.text);
+  const projectId = typeof input.projectId === 'string' ? input.projectId : null;
+  return buildUniversalDraft(input.text, undefined, { projectId });
 }
 
 /* ValidateRabDraft — wrapper draftReadiness (guard transfer yang sama). */
@@ -203,7 +208,7 @@ export const CONSTRUCTION_TOOL_REGISTRY: ToolRegistryEntry[] = [
   { name: 'SearchAHSP', availability: 'AVAILABLE', inputSchema: '{ query: string, unit?: string }', outputSchema: 'ChatSearchResult (resolver AHSP resmi)', backing: 'chatSearch.searchChatAhsp' },
   { name: 'SearchAvailableCalculators', availability: 'AVAILABLE', inputSchema: '{ keyword?: string }', outputSchema: 'Array<{ id, name, category, primaryUnit }>', backing: 'calculatorCore calculatorRegistry.list()' },
   { name: 'GenerateWorkScope', availability: 'AVAILABLE', inputSchema: '{ knowledgeId: string }', outputSchema: '{ label: "conceptual work breakdown, not a verified BOQ", scope: string[] }', backing: 'constructionKnowledge.conceptualWbs' },
-  { name: 'CreateRabDraft', availability: 'AVAILABLE', inputSchema: '{ text: string }', outputSchema: 'BuildResult (draft | needs-spec | unsupported)', backing: 'universalRab.buildUniversalDraft' },
+  { name: 'CreateRabDraft', availability: 'AVAILABLE', inputSchema: '{ text: string, projectId?: string }', outputSchema: 'BuildResult (draft | needs-spec | unsupported)', backing: 'universalRab.buildUniversalDraft' },
   { name: 'ValidateRabDraft', availability: 'AVAILABLE', inputSchema: '{ draft: UniversalDraft }', outputSchema: 'DraftReadiness (READY | NEEDS_SPEC | BLOCKED)', backing: 'universalRab.draftReadiness' },
   { name: 'ValidatePriceProvenance', availability: 'AVAILABLE', inputSchema: '{ item: RabItem }', outputSchema: '{ label, detail } status harga tampil', backing: 'universalRab.displayPriceStatus' },
   { name: 'ResolveUnitPrice', availability: 'AVAILABLE', inputSchema: '{ query: string, unit?: string }', outputSchema: 'ChatSearchResult — resolusi harga satuan lewat resolver yang sama dengan SearchAHSP (satu-satunya jalur harga yang sah)', backing: 'chatSearch.searchChatAhsp (resolver resmi; tidak ada jalur harga kedua)' },

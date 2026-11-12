@@ -95,7 +95,7 @@ console.log('=== Penolakan katalog & otorisasi ===');
 console.log('=== Resolusi workspace bila tidak diberikan ===');
 {
   const { service } = setup();
-  const r: any = await service.checkout({ auth: OWNER, workspaceId: undefined, kind: 'TOP_UP', itemId: 'topup-3600' });
+  const r: any = await service.checkout({ auth: OWNER, workspaceId: undefined, kind: 'TOP_UP', itemId: 'topup-500' });
   check('satu keanggotaan aktif → ter-resolve & checkout jalan', r.ok === true && r.amountIdr === 5000);
 }
 {
@@ -103,12 +103,12 @@ console.log('=== Resolusi workspace bila tidak diberikan ===');
   repo.seedMembership('ws-1', 'user-owner', 'SUPER_ADMIN');
   repo.seedMembership('ws-2', 'user-owner', 'SUPER_ADMIN');
   const service = createBillingService({ repo, midtransConfig: MID_CFG, fetchImpl: okFetch([]), now: () => 1 });
-  const r: any = await service.checkout({ auth: OWNER, workspaceId: undefined, kind: 'TOP_UP', itemId: 'topup-3600' });
+  const r: any = await service.checkout({ auth: OWNER, workspaceId: undefined, kind: 'TOP_UP', itemId: 'topup-500' });
   check('dua keanggotaan → WORKSPACE_AMBIGUOUS', r.ok === false && r.errorCode === 'WORKSPACE_AMBIGUOUS');
 }
 {
   const { service } = setup();
-  const r: any = await service.checkout({ auth: STRANGER, workspaceId: undefined, kind: 'TOP_UP', itemId: 'topup-3600' });
+  const r: any = await service.checkout({ auth: STRANGER, workspaceId: undefined, kind: 'TOP_UP', itemId: 'topup-500' });
   check('nol keanggotaan → NOT_A_MEMBER', r.ok === false && r.errorCode === 'NOT_A_MEMBER');
 }
 

@@ -22,7 +22,7 @@ import type {
   LedgerEntry,
   TopUpStatus,
 } from './types';
-import { FREE_INITIAL_CREDITS, PLAN_CREDITS, TOPUP_OFFER } from './config';
+import { FREE_INITIAL_CREDITS, PLAN_CREDITS, TOPUP_OFFERS, topUpOfferFor } from './config';
 import { planAllowsAiFeature } from './featureGate';
 
 const nowIso = () => new Date().toISOString();
@@ -123,9 +123,12 @@ export function mockConsume(
   }
   const total = state.subscription + state.topup + state.bonus;
   if (credits > total) return false;
-  // Kurangi dengan urutan: bonus → topup → langganan.
+  // Urutan konsumsi KANONIS server (Phase 5.1 Policy Lock,
+  // api/_lib/creditAllocation.js — K5 Gelombang 2): langganan →
+  // bonus → top-up. Urutan lama (bonus → topup → langganan)
+  // berlawanan dengan server dan sudah diganti.
   let rest = credits;
-  for (const k of ['bonus', 'topup', 'subscription'] as const) {
+  for (const k of ['subscription', 'bonus', 'topup'] as const) {
     const take = Math.min(state[k], rest);
     state[k] -= take;
     rest -= take;
@@ -153,12 +156,20 @@ export function mockConsume(
  * Top-up TIDAK tersedia untuk paket Free (kebijakan billing) — pada paket
  * Free fungsi ini menolak tanpa mengubah state dan melaporkan status
  * 'failed'; permukaan UI (modal top-up) menampilkan alasannya ke pengguna.
+ *
+ * Tier mengikuti penawaran kanonis Spec v1.0 §7.2 (K6): `itemId` wajib
+ * salah satu dari TOPUP_OFFERS; itemId tak dikenal ditolak tanpa mengubah
+ * state (tidak pernah menebak tier). Tanpa argumen → tier terkecil
+ * (topup-500), agar pemanggil lama tetap bermakna.
+ * Tier Spec tanpa bonus: seluruh kredit masuk bucket top-up
+ * (bonusCredits selalu 0 — bukan penawaran interim 3.000+600 lagi).
  */
-export function mockTopUp(): TopUpStatus {
-  if (state.plan === 'free') {
+export function mockTopUp(itemId: string = TOPUP_OFFERS[0].itemId): TopUpStatus {
+  const offer = topUpOfferFor(itemId);
+  if (!offer) {
     return {
       topUpId: '',
-      amountIdr: TOPUP_OFFER.priceIdr,
+      amountIdr: 0,
       baseCredits: 0,
       bonusCredits: 0,
       totalCredits: 0,
@@ -166,24 +177,34 @@ export function mockTopUp(): TopUpStatus {
       simulated: true,
     };
   }
-  state.topup += TOPUP_OFFER.baseCredits;
-  state.bonus += TOPUP_OFFER.bonusCredits;
+  if (state.plan === 'free') {
+    return {
+      topUpId: '',
+      amountIdr: offer.priceIdr,
+      baseCredits: 0,
+      bonusCredits: 0,
+      totalCredits: 0,
+      status: 'failed',
+      simulated: true,
+    };
+  }
+  state.topup += offer.credits;
   const id = nextId('topup');
   state.ledger.unshift({
     id,
     at: nowIso(),
     feature: 'topup',
-    description: `Top-up simulasi Rp${TOPUP_OFFER.priceIdr.toLocaleString('id-ID')} → ${TOPUP_OFFER.totalCredits.toLocaleString('id-ID')} kredit`,
-    credits: TOPUP_OFFER.totalCredits,
+    description: `Top-up simulasi Rp${offer.priceIdr.toLocaleString('id-ID')} → ${offer.credits.toLocaleString('id-ID')} kredit`,
+    credits: offer.credits,
     status: 'simulated',
   });
   notify();
   return {
     topUpId: id,
-    amountIdr: TOPUP_OFFER.priceIdr,
-    baseCredits: TOPUP_OFFER.baseCredits,
-    bonusCredits: TOPUP_OFFER.bonusCredits,
-    totalCredits: TOPUP_OFFER.totalCredits,
+    amountIdr: offer.priceIdr,
+    baseCredits: offer.credits,
+    bonusCredits: 0,
+    totalCredits: offer.credits,
     status: 'simulated',
     simulated: true,
   };

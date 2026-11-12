@@ -55,7 +55,7 @@ describe('creditPricing (EZRAB draft)', () => {
     expect(estimateCredits('fitur-aneh').ok).toBe(false);
   });
 
-  it('8. finalize tidak pernah melebihi approvedMax', () => {
+  it('8. finalize tidak pernah melebihi approvedMax (K7: settle token, dibatasi plafon)', () => {
     const f = finalizeCredits(
       'ded-ai/complex',
       { inputTokens: 1000, outputTokens: 500 },
@@ -63,13 +63,48 @@ describe('creditPricing (EZRAB draft)', () => {
       600 // user setujui maks 600
     );
     expect(f.ok).toBe(true);
+    // Metered v1.1: (1000 + 500×3)/200 = 12,5 → 13 kredit — BUKAN flat 800.
+    expect(f.creditsCharged).toBe(13);
+    expect(f.policy).toBe('token-metered-v1.1');
     expect(f.creditsCharged <= 600).toBe(true);
   });
 
-  it('9. finalize tanpa approvedMax pakai tarif max', () => {
+  it('9. finalize tanpa usage → TIDAK menagih (K7: ke review, bukan flat)', () => {
     const f = finalizeCredits('chat-ai/fast', null, { status: 'USAGE_UNAVAILABLE' }, null);
-    expect(f.creditsCharged).toBe(20);
+    expect(f.ok).toBe(false);
+    expect(f.error).toBe('USAGE_UNAVAILABLE');
+    expect((f as any).requiresReview).toBe(true);
+    expect(f.creditsCharged).toBe(null);
     expect(f.usage.status).toBe('USAGE_UNAVAILABLE');
+  });
+
+  it('9b. K7: DED kompleks pemakaian kecil ditagih metered, bukan flat 800', () => {
+    // (2000 + 1000×3)/200 = 25 kredit — jauh di bawah plafon 800.
+    const f = finalizeCredits(
+      'ded-ai/complex',
+      { inputTokens: 2000, outputTokens: 1000 },
+      { status: 'UNDETERMINED', reason: 'x' },
+      null,
+    );
+    expect(f.ok).toBe(true);
+    expect(f.creditsCharged).toBe(25);
+    expect(f.requiresReview).toBe(false);
+    expect(f.overageCredits).toBe(0);
+  });
+
+  it('9c. K7: metered melebihi plafon → tagih plafon + overage ke review (tanpa auto-debit)', () => {
+    // (100000 + 50000×3)/200 = 1250 kredit > plafon simple 500.
+    const f = finalizeCredits(
+      'ded-ai/simple',
+      { inputTokens: 100000, outputTokens: 50000 },
+      { status: 'UNDETERMINED', reason: 'x' },
+      null,
+    );
+    expect(f.ok).toBe(true);
+    expect(f.creditsCharged).toBe(500);
+    expect(f.meteredCredits).toBe(1250);
+    expect(f.requiresReview).toBe(true);
+    expect(f.overageCredits).toBe(750);
   });
 });
 
@@ -87,6 +122,8 @@ describe('usageMeter', () => {
     expect(r.entry.tokens_in).toBe(1200);
     expect(r.entry.tokens_cached).toBe(200); // cached tercatat terpisah, tidak double-count
     expect(r.entry.cost_status).toBe('UNDETERMINED'); // tarif belum dikonfigurasi
+    // K7: settle token-metered, bukan flat max 20 — (1000 fresh + 200 cached + 300×3)/200 = 10,5 → 11.
+    expect(r.entry.credits_charged).toBe(11);
     // prompt tidak disimpan
     expect(r.entry.prompt).toBe(undefined);
   });
@@ -122,6 +159,8 @@ describe('usageMeter', () => {
     expect(r.entry.tokens_in).toBe(null);
     expect(r.entry.cost_status).toBe('USAGE_UNAVAILABLE');
     expect(r.entry.attempts).toBe(2);
+    // K7: tanpa usage → tidak ada tagihan (bukan flat 20).
+    expect(r.entry.credits_charged).toBe(null);
   });
 
   it('13. kegagalan provider tercatat jujur (bukan sukses)', async () => {
