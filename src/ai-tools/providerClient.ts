@@ -9,6 +9,12 @@
 import { getModelTarget } from './aiModelRegistry';
 import { aiToolsError, AIToolsStructuredError, AIToolsErrorCode } from './types';
 import { aiGatewayAuthHeaders } from './aiGatewayAuth';
+import {
+  withTimeout,
+  isAiTimeoutError,
+  AI_GATEWAY_AUTH_TIMEOUT_MS,
+  AI_GATEWAY_AUTH_TIMEOUT_MESSAGE,
+} from './withTimeout';
 
 export type { AIProductId } from './aiModelRegistry';
 
@@ -311,6 +317,19 @@ export function scanLongestParseableJson(text: string): unknown {
   return best;
 }
 
+/**
+ * MAGIC-AI-FIX (2026-11-13) — pemetaan timeout resolusi auth pra-fetch
+ * menjadi structured error MODEL_TIMEOUT dengan pesan banner yang presis.
+ * Pure + exported untuk tes. Pemanggil (modal) menampilkan `message` ini
+ * sebagai banner TERLIHAT; identitas TIDAK PERNAH di-downgrade diam-diam
+ * ke tanpa-header.
+ */
+export function authTimeoutResult(stage: string): AIToolsStructuredError {
+  return aiToolsError('MODEL_TIMEOUT', `${stage}:auth`, AI_GATEWAY_AUTH_TIMEOUT_MESSAGE, {
+    retryable: true,
+  });
+}
+
 export class AiToolsProviderClient {
   public async execute<T = unknown>(request: AiToolsRequest): Promise<AiToolsResult<T>> {
     const target = getModelTarget(request.productId);
@@ -401,13 +420,34 @@ export class AiToolsProviderClient {
     request.signal?.addEventListener('abort', onCallerAbort, { once: true });
     try {
       const timeoutMs = Math.min(request.timeoutMs ?? 90000, MAX_TIMEOUT_MS);
+      // MAGIC-AI-FIX (2026-11-13): aiGatewayAuthHeaders() dulunya di-await
+      // di dalam literal headers fetch — DI LUAR jangkauan AbortController —
+      // sehingga getSession()/signInAnonymously() yang menggantung membuat
+      // spinner berputar selamanya tanpa banner (timer 91 dtk hanya
+      // meng-abort fetch yang sudah berjalan). Sekarang diselesaikan DULU
+      // dengan batas 10 detik; timeout → structured error MODEL_TIMEOUT
+      // dengan pesan presis (bukan downgrade diam-diam ke tanpa-header).
+      let authHeaders: Record<string, string>;
+      try {
+        authHeaders = await withTimeout(
+          aiGatewayAuthHeaders(),
+          AI_GATEWAY_AUTH_TIMEOUT_MS,
+          AI_GATEWAY_AUTH_TIMEOUT_MESSAGE,
+        );
+      } catch (err) {
+        if (isAiTimeoutError(err)) {
+          request.signal?.removeEventListener('abort', onCallerAbort);
+          return authTimeoutResult(stage);
+        }
+        throw err;
+      }
       const timer = globalThis.setTimeout(() => controller.abort(), timeoutMs + 1000);
       const resp = await fetch('/api/ai/tools/execute', {
         method: 'POST',
         signal: controller.signal,
         headers: {
           'Content-Type': 'application/json',
-          ...(await aiGatewayAuthHeaders()),
+          ...authHeaders,
           ...(request.idempotencyKey ? { 'Idempotency-Key': request.idempotencyKey } : {}),
         },
         body: JSON.stringify({

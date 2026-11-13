@@ -40,6 +40,11 @@ import {
 } from './customAhspStore';
 import { honestVolume } from '../../engine/honestVolume';
 import {
+  withTimeout,
+  AI_PROVIDER_IMPORT_TIMEOUT_MS,
+  AI_PROVIDER_IMPORT_TIMEOUT_MESSAGE,
+} from '../../ai-tools/withTimeout';
+import {
   sumManualComponents,
   MANUAL_COMPONENT_KINDS,
   type ManualComponentRow,
@@ -300,6 +305,11 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
       setAiPrompt('');
       setAiGeneratedItem(null);
       setAiIsEditingPreview(false);
+      // MAGIC-AI-FIX (2026-11-13): reset juga flag generasi + konfirmasi
+      // harga-nol — tanpanya, satu generasi yang menggantung meracuni semua
+      // pembukaan modal berikutnya (tombol tampil spinner/disabled selamanya).
+      setAiIsGenerating(false);
+      setAiNullPriceConfirmed(false);
 
       setSelectedTemplateItemIds(new Set());
       const list = masterBuildingTemplateRegistry.getAllTemplates();
@@ -594,7 +604,14 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
     setAiIsGenerating(true);
 
     try {
-      const { AiToolsProviderClient, scanLongestParseableJson } = await import('../../ai-tools/providerClient');
+      // MAGIC-AI-FIX (2026-11-13): dynamic import chunk tanpa timeout ikut
+      // menggantungkan spinner selamanya bila koneksi stall — dibatasi
+      // 15 detik; timeout → throw → banner terlihat via catch di bawah.
+      const { AiToolsProviderClient, scanLongestParseableJson } = await withTimeout(
+        import('../../ai-tools/providerClient'),
+        AI_PROVIDER_IMPORT_TIMEOUT_MS,
+        AI_PROVIDER_IMPORT_TIMEOUT_MESSAGE,
+      );
       const client = new AiToolsProviderClient();
 
       const systemPrompt = `Anda adalah estimator konstruksi Indonesia. Analisis permintaan pekerjaan dan kembalikan JSON:
@@ -2029,6 +2046,7 @@ Jika harga tidak pasti, unitPrice = null. Jangan mengarang harga. Jika volume ti
 
               <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                 <button
+                  type="button"
                   onClick={handleGenerateAiItem}
                   disabled={aiIsGenerating || !aiPrompt.trim()}
                   style={{
@@ -2041,6 +2059,11 @@ Jika harga tidak pasti, unitPrice = null. Jangan mengarang harga. Jika volume ti
                     fontSize: '12.5px',
                     fontWeight: 750,
                     cursor: aiIsGenerating || !aiPrompt.trim() ? 'not-allowed' : 'pointer',
+                    // MAGIC-AI-FIX (2026-11-13): penanda visual disabled —
+                    // sebelumnya gradien tetap menyala penuh saat disabled
+                    // (satu-satunya isyarat adalah kursor), selaras tombol
+                    // "Tambahkan" (opacity 0.55).
+                    opacity: aiIsGenerating || !aiPrompt.trim() ? 0.55 : 1,
                     display: 'flex',
                     alignItems: 'center',
                     gap: '6px',
