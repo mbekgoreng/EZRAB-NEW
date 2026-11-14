@@ -59,7 +59,7 @@ import { buildLaporanKurvaS } from '../../lib/kurvaSHonesty';
 import { loadProgressHistory, recordProgressSnapshot } from '../../lib/progressHistory';
 import type { ProgressHistoryEntry } from '../../lib/progressHistory';
 import { buildGanttTasks, formatScheduleDuration, resolveHonestCompany } from '../../lib/scheduleHonesty';
-import { MASTER_AHSP_DATABASE } from '../../data/indonesianAHSP';
+import { buildReportAhspDetails, type AhspDetailViewItem } from '../../engine/ahsp/reportAhspDetail';
 
 import { useProject } from '../../context/ProjectContext';
 import { TutorialHelpButton } from '../onboarding/tutorials/TutorialHelpButton';
@@ -309,184 +309,14 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
     return boqData.reduce((sum, cat) => sum + cat.items.reduce((cSum: number, it: any) => cSum + (it.amount ?? 0), 0), 0);
   }, [boqData]);
 
-  // Standardized AHSP Item interface for LaporanView
-  // NOTE: price/total boleh null (harga komponen belum tersedia) — JANGAN
-  // fallback ke 0; render menampilkan label "Harga belum diisi".
-  interface AhspDetailViewItem {
-    id: string;
-    code: string;
-    category: string;
-    name: string;
-    unit: string;
-    regulationSource?: string;
-    overheadPct: number;
-    materials: Array<{ code: string; name: string; unit: string; coeff: number; price: number | null; total: number | null }>;
-    labors: Array<{ code: string; name: string; unit: string; coeff: number; price: number | null; total: number | null }>;
-    equipments: Array<{ code: string; name: string; unit: string; coeff: number; price: number | null; total: number | null }>;
-  }
-
-  // Master & Project AHSP List
+  // D-73 (Batch F): daftar Analisa dibangun modul murni
+  // engine/ahsp/reportAhspDetail (populasi kanonis = baris RAB proyek
+  // berkode, SATU aturan dengan EstimatorAhspView). Builder lama di sini
+  // mendedup per kode lalu menambahkan 39 item master legacy Permen 2022
+  // (155 vs 154) — keduanya dihapus; tipe AhspDetailViewItem ikut pindah
+  // ke modul tersebut.
   const allAhspItems: AhspDetailViewItem[] = useMemo(() => {
-    const list: AhspDetailViewItem[] = [];
-    const seenCodes = new Set<string>();
-
-    // 1. Process items from current project RAB if they have snapshot or match master
-    if (initialRabItems && initialRabItems.length > 0) {
-      initialRabItems.forEach((rItem) => {
-        const itemCode = rItem.ahspCode || rItem.code;
-        if (itemCode && !seenCodes.has(itemCode)) {
-          seenCodes.add(itemCode);
-          // Check if snapshot exists
-          if (rItem.ahspSnapshot) {
-            const snap = rItem.ahspSnapshot;
-            list.push({
-              id: snap.ahspId || `rab-${rItem.id}`,
-              code: snap.code || itemCode,
-              category: rItem.category || 'Pekerjaan Proyek',
-              name: snap.name || rItem.description,
-              unit: snap.unit || rItem.unit || 'm²',
-              regulationSource: snap.sourceDocument || 'Permen PUPR No. 1/PRT/M/2022',
-              overheadPct: rItem.overheadPercent ?? 10,
-              materials: (snap.materialComponents || []).map((m) => ({
-                code: m.code || 'M.00',
-                name: m.name,
-                unit: m.unit,
-                coeff: m.coefficient || 0,
-                // null = harga belum tersedia: teruskan apa adanya, JANGAN jadi 0.
-                price: m.unitPrice ?? null,
-                total: m.total ?? (m.unitPrice != null ? (m.coefficient || 0) * m.unitPrice : null),
-              })),
-              labors: (snap.laborComponents || []).map((l) => ({
-                code: l.code || 'L.00',
-                name: l.name,
-                unit: l.unit,
-                coeff: l.coefficient || 0,
-                price: l.unitPrice ?? null,
-                total: l.total ?? (l.unitPrice != null ? (l.coefficient || 0) * l.unitPrice : null),
-              })),
-              equipments: (snap.equipmentComponents || []).map((e) => ({
-                code: e.code || 'E.00',
-                name: e.name,
-                unit: e.unit,
-                coeff: e.coefficient || 0,
-                price: e.unitPrice ?? null,
-                total: e.total ?? (e.unitPrice != null ? (e.coefficient || 0) * e.unitPrice : null),
-              })),
-            });
-            return;
-          }
-
-          // Check if master database has matching code or description
-          const matchedMaster = MASTER_AHSP_DATABASE.find(
-            (m) => m.code.toLowerCase() === itemCode.toLowerCase() || m.name.toLowerCase() === rItem.description.toLowerCase()
-          );
-          if (matchedMaster) {
-            list.push({
-              id: matchedMaster.id,
-              code: matchedMaster.code,
-              category: matchedMaster.category,
-              name: matchedMaster.name,
-              unit: matchedMaster.unit,
-              regulationSource: matchedMaster.regulationSource,
-              overheadPct: 10,
-              materials: (matchedMaster.materialComponents || []).map((m) => ({
-                code: m.code,
-                name: m.name,
-                unit: m.unit,
-                coeff: m.coefficient,
-                price: m.unitPrice,
-                total: m.total,
-              })),
-              labors: (matchedMaster.laborComponents || []).map((l) => ({
-                code: l.code,
-                name: l.name,
-                unit: l.unit,
-                coeff: l.coefficient,
-                price: l.unitPrice,
-                total: l.total,
-              })),
-              equipments: (matchedMaster.equipmentComponents || []).map((e) => ({
-                code: e.code,
-                name: e.name,
-                unit: e.unit,
-                coeff: e.coefficient,
-                price: e.unitPrice,
-                total: e.total,
-              })),
-            });
-            return;
-          }
-
-          // Tanpa komponen langsung: pakai HANYA harga komponen yang terekam
-          // di item. Sebelumnya kekurangan itu ditambal pecahan karangan
-          // 60/30/10 dari unitPrice — fabrikasi yang dihapus; komponen yang
-          // tidak terekam tampil sebagai seksi kosong yang jujur.
-          const matPrice = rItem.materialPrice ?? 0;
-          const labPrice = rItem.laborPrice ?? 0;
-          const eqPrice = rItem.equipmentPrice ?? 0;
-          list.push({
-            id: `proj-${rItem.id}`,
-            code: itemCode,
-            category: rItem.category || 'Pekerjaan Proyek',
-            name: rItem.description,
-            unit: rItem.unit || 'ls',
-            regulationSource: 'Analisa Harga Satuan Proyek',
-            overheadPct: rItem.overheadPercent ?? 10,
-            materials: matPrice > 0 ? [
-              { code: 'M.PROJ', name: `Bahan Utama & Pendukung (${rItem.description})`, unit: rItem.unit || 'unit', coeff: 1.0, price: matPrice, total: matPrice }
-            ] : [],
-            labors: labPrice > 0 ? [
-              { code: 'L.PROJ', name: `Tenaga Kerja Konstruksi & Tukang`, unit: 'OH', coeff: 1.0, price: labPrice, total: labPrice }
-            ] : [],
-            equipments: eqPrice > 0 ? [
-              { code: 'E.PROJ', name: `Alat Kerja & Operasional`, unit: 'Ls', coeff: 1.0, price: eqPrice, total: eqPrice }
-            ] : [],
-          });
-        }
-      });
-    }
-
-    // 2. Add all items from MASTER_AHSP_DATABASE (197 items)
-    MASTER_AHSP_DATABASE.forEach((item) => {
-      if (!seenCodes.has(item.code)) {
-        seenCodes.add(item.code);
-        list.push({
-          id: item.id,
-          code: item.code,
-          category: item.category,
-          name: item.name,
-          unit: item.unit,
-          regulationSource: item.regulationSource,
-          overheadPct: 10,
-          materials: (item.materialComponents || []).map((m) => ({
-            code: m.code,
-            name: m.name,
-            unit: m.unit,
-            coeff: m.coefficient,
-            price: m.unitPrice,
-            total: m.total,
-          })),
-          labors: (item.laborComponents || []).map((l) => ({
-            code: l.code,
-            name: l.name,
-            unit: l.unit,
-            coeff: l.coefficient,
-            price: l.unitPrice,
-            total: l.total,
-          })),
-          equipments: (item.equipmentComponents || []).map((e) => ({
-            code: e.code,
-            name: e.name,
-            unit: e.unit,
-            coeff: e.coefficient,
-            price: e.unitPrice,
-            total: e.total,
-          })),
-        });
-      }
-    });
-
-    return list;
+    return buildReportAhspDetails(initialRabItems);
   }, [initialRabItems]);
 
   // Unique categories for filter pills
@@ -607,6 +437,18 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [isExportPackageModalOpen, setIsExportPackageModalOpen] = useState(false);
 
+  // D-74 (Batch F): toast ekspor Laporan — pola yang sama dengan
+  // RabEstimasiView (pesan + auto-dismiss 3,2 dtk). Sebelumnya ekspor
+  // Laporan diam (PDF), memakai alert() pemblokir (Excel), atau
+  // memanggil onToast yang tidak pernah diteruskan (modal paket).
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => {
+      setToastMessage((prev) => (prev === msg ? null : prev));
+    }, 3200);
+  };
+
   const handleExportPdf = async () => {
     if (isExportingPdf) return;
     setIsExportingPdf(true);
@@ -687,9 +529,12 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
         leadEstimatorName: branding.leadEstimatorName,
         directorName: branding.directorName,
       });
+      // D-74: toast sukses HANYA setelah ekspor benar-benar berhasil
+      // (pola P0-B yang sama dengan ekspor spreadsheet).
+      showToast('Dokumen PDF Laporan berhasil dibuat dan diunduh!');
     } catch (err: any) {
       console.error('[LaporanView PDF Error]:', err);
-      alert('Gagal membuat PDF. ' + (err?.message || 'Silakan periksa data proyek.'));
+      showToast('Gagal membuat PDF. ' + (err?.message || 'Silakan periksa data proyek.'));
     } finally {
       setIsExportingPdf(false);
     }
@@ -800,12 +645,14 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                   includeCashflow: true,
                 });
 
-                alert(settingsOverride
+                // D-74: toast (bukan alert() pemblokir) — pola yang sama
+                // dengan ekspor spreadsheet.
+                showToast(settingsOverride
                   ? 'Workbook Excel (.xlsx) sesuai Pengaturan Laporan berhasil di-generate & diunduh!'
                   : 'Workbook Excel (.xlsx) 16-Sheets berhasil di-generate & diunduh!');
               } catch (err) {
                 console.error(err);
-                alert('Gagal mengunduh berkas Excel.');
+                showToast('Gagal mengunduh berkas Excel.');
               }
   };
 
@@ -943,7 +790,35 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
             rabItems: projectRabItems,
             items: projectRabItems,
           } as any}
+          onToast={showToast}
         />
+      )}
+
+      {/* D-74: toast ekspor (di trailingModals agar tampil di cabang
+          desktop MAUPUN mobile — keduanya memakai trailingModals). */}
+      {toastMessage && (
+        <div
+          className="ez-toast"
+          style={{
+            position: 'fixed',
+            bottom: '48px',
+            right: '24px',
+            background: '#0F172A',
+            color: '#FFFFFF',
+            padding: '10px 18px',
+            borderRadius: 'var(--ez-radius-control)',
+            fontSize: '12.5px',
+            fontWeight: 650,
+            boxShadow: '0 10px 20px -3px rgba(0,0,0,0.3)',
+            zIndex: 300,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+          }}
+        >
+          <Check size={16} color="#10B981" />
+          <span>{toastMessage}</span>
+        </div>
       )}
 
     </>

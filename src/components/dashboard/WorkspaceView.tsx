@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState, Suspense, lazy } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState, Suspense, lazy } from 'react';
 import {
   LayoutDashboard,
   FolderGit2,
@@ -38,6 +38,8 @@ import {
 } from 'lucide-react';
 import { Project, RabItem } from '../../types';
 import { useRole } from '../../auth/RoleContext';
+import { useAuth } from '../../auth/AuthContext';
+import { logoutAll } from '../../auth/logoutAll';
 import { EzrabAiView } from '../../ai-tools/ezrab-ai/view';
 // Chat-to-RAB Workspace (Fase 3): lazy agar three.js/studio tidak memuat awal.
 const ChatToRabWorkspaceLazy = lazy(() =>
@@ -72,10 +74,13 @@ import { PricesExplorerView } from '../database/PricesExplorerView';
 import { ResourceLibraryView } from '../resources/ResourceLibraryView';
 import { DashboardViewSwitcher } from './DashboardViewSwitcher';
 import { PricingSection } from '../landing/PricingSection';
-import { EzrabAiAssistantFullView } from '../copilot/EzrabAiAssistantFullView';
 import { EzrabCoAssistantChatbox, ChatboxDisplayMode } from '../copilot/EzrabCoAssistantChatbox';
 import { EzrabCoAssistantLauncher } from '../copilot/EzrabCoAssistantLauncher';
 import { coAssistantService } from '../../services/coAssistantService';
+import {
+  applyWasteToItems,
+  adjustmentsToNewProjectConfig,
+} from '../../services/templateApplyQuote';
 
 import { Bot, MessageSquare } from 'lucide-react';
 import {
@@ -208,7 +213,11 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
    * diturunkan dari sesi role nyata: sesi aktif berkemampuan edit-estimate
    * -> ESTIMATOR (dapat menerapkan proposal, sama seperti alur demo yang
    * sah); tanpa sesi/kemampuan -> CLIENT (privilese terendah). */
-  const { activeRole, hasCapability } = useRole();
+  const { activeRole, hasCapability, logoutRole } = useRole();
+  // D-32 (Batch G2, OD-01(a)): keluar sidebar & menu akun diseragamkan
+  // lewat logoutAll — sesi Supabase diperlukan di sini agar alur keluar
+  // sidebar sama persis dengan TopBar.
+  const { session: supabaseSession, signOut: signOutAuth } = useAuth();
   const coAssistantUserRole = activeRole && hasCapability('edit-estimate') ? 'ESTIMATOR' : 'CLIENT';
 
   // Mobile Navigation & Viewport State
@@ -234,23 +243,47 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // D-15 (Batch G2): .pf-main adalah wadah scroll workspace (overflowY
+  // auto; .pf-frame 100vh + .pf-panel overflow hidden), BUKAN window.
+  // Tanpa reset scroll, menu baru dibuka di posisi scroll menu lama dan
+  // H1-nya bisa terpotong di bawah TopBar sticky (z-40). Reset dilakukan
+  // di setiap pergantian menu — baik lewat klik (setActiveMenu) maupun
+  // lewat URL (efek sinkronisasi route di bawah, termasuk deep link &
+  // back/forward; browser tidak memulihkan scroll div kustom ini).
+  const mainScrollRef = useRef<HTMLDivElement>(null);
+  const resetMainScroll = useCallback(() => {
+    mainScrollRef.current?.scrollTo({ top: 0 });
+    if (typeof window !== 'undefined') window.scrollTo(0, 0);
+  }, []);
+
   // Browser URL is authoritative for module and project context. The menu remains a
   // presentation state only; every user navigation is mirrored into browser history.
   const setActiveMenu = useCallback((menu: string, projectId: string | null = currentProjectId) => {
     setActiveMenuState(menu);
     setMobileDrawerOpen(false);
+    resetMainScroll();
     onNavigateMenu(menu, projectId);
-  }, [currentProjectId, onNavigateMenu]);
+  }, [currentProjectId, onNavigateMenu, resetMainScroll]);
 
   const routeProject = route.projectId ? projects.find((project) => project.id === route.projectId) : undefined;
   const hasRouteError = route.status === 'not-found' || (route.scope === 'project' && !routeProject);
 
+  // Menu terakhir yang disinkron dari route — dipakai agar reset scroll
+  // efek route hanya terjadi saat MENU berubah, bukan saat data proyek
+  // berubah (recalc RAB membuat ulang objek proyek; tanpa guard ini
+  // scroll akan meloncat ke atas setiap kali item RAB diedit).
+  const prevRouteMenuRef = useRef(route.menu);
+
   useEffect(() => {
     setActiveMenuState(route.menu);
+    if (prevRouteMenuRef.current !== route.menu) {
+      prevRouteMenuRef.current = route.menu;
+      resetMainScroll();
+    }
     if (route.scope === 'project' && routeProject && route.projectId !== currentProjectId) {
       setCurrentProjectId(routeProject.id);
     }
-  }, [currentProjectId, route.menu, route.projectId, route.scope, routeProject, setCurrentProjectId]);
+  }, [currentProjectId, route.menu, route.projectId, route.scope, routeProject, setCurrentProjectId, resetMainScroll]);
 
   // User activity log
   const [activities, setActivities] = useState<Array<{ text: string; time: string; type: string }>>(() => {
@@ -390,6 +423,27 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
     if (onBackToLanding) onBackToLanding();
   };
 
+  // D-32 (Batch G2, OD-01(a) — satu alur keluar): tombol "Keluar" di
+  // sidebar dulunya hanya memanggil onBackToLanding (navigasi polos,
+  // sesi gerbang tetap hidup) sementara tombol keluar menu akun TopBar
+  // mengakhiri semua sesi lewat logoutAll. Kini keduanya memakai
+  // logoutAll yang sama; navigasi tetap milik handleWorkspaceLogout.
+  // Klik logo sidebar tetap navigasi polos (bukan keluar) — hanya
+  // tombol "Keluar" yang memakai handler ini.
+  const handleExitWorkspace = useCallback(() => {
+    void (async () => {
+      const result = await logoutAll({
+        logoutRole,
+        hasSupabaseSession: !!supabaseSession,
+        signOutSupabase: signOutAuth,
+      });
+      if (!result.allAttemptedOk) {
+        console.warn('[logout] partial failure:', result.errors);
+      }
+      handleWorkspaceLogout();
+    })();
+  }, [logoutRole, supabaseSession, signOutAuth]);
+
   const handleProjectCreated = (newProj: Project) => {
     setActivities((prev) => [
       { text: `Proyek baru "${newProj.name}" (${newProj.creationMethod || 'manual'}) telah dibuat`, time: 'Baru saja', type: 'create' },
@@ -478,6 +532,7 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
         projects={projects}
         currentProject={currentProject}
         onBackToLanding={onBackToLanding}
+        onExitWorkspace={handleExitWorkspace}
         onOpenSettingsTab={(tab) => {
           setPengaturanActiveTab(tab);
           setActiveMenu('pengaturan');
@@ -490,6 +545,7 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
          ========================================================================= */}
       <div
         className="pf-main"
+        ref={mainScrollRef}
         style={{
           flexGrow: 1,
           display: 'flex',
@@ -789,9 +845,18 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
               currentProject={currentProject}
               projects={projects}
               onNavigateToTab={(tab, projId) => setActiveMenu(tab, projId)}
-              onApplyTemplate={(template, params, targetProjectId, newProjectMeta, detailLevel, selectedOptionalIds) => {
+              onApplyTemplate={(template, params, targetProjectId, newProjectMeta, detailLevel, selectedOptionalIds, adjustments) => {
                 const tplService = RabTemplateService.getInstance();
                 let effectiveProjectId = targetProjectId;
+                // D-29 (carry-through, OD-06 opsi (a)): penyesuaian yang
+                // dikutip konfigurator DITERAPKAN ke proyek yang dibuat.
+                // Proyek BARU dibuat dengan konfigurasi dari penyesuaian
+                // (overhead/profit/PPN yang sama dengan kuotasi); proyek
+                // yang sudah ada TIDAK diubah konfigurasinya — kuotasi
+                // untuk target itu sudah memakai konfigurasinya sendiri.
+                const newProjectConfig = adjustments
+                  ? adjustmentsToNewProjectConfig(adjustments)
+                  : null;
                 if (!effectiveProjectId) {
                   const newProj = createProject({
                     name: newProjectMeta?.name || template.name,
@@ -800,6 +865,14 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
                     landArea: (newProjectMeta?.buildingArea || 100) * 2,
                     floorCount: newProjectMeta?.floorCount || 1,
                     status: 'draft',
+                    ...(newProjectConfig
+                      ? {
+                          overheadPercent: newProjectConfig.overheadPercent,
+                          profitPercent: newProjectConfig.profitPercent,
+                          ppnEnabled: newProjectConfig.ppnEnabled,
+                          ppnPercent: newProjectConfig.taxPercent,
+                        }
+                      : {}),
                   });
                   effectiveProjectId = newProj.id;
                 }
@@ -813,7 +886,13 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
                   selectedOptionalIds || []
                 );
                 if (result.items && result.items.length > 0) {
-                  bulkAddRabItems(result.items, effectiveProjectId);
+                  // D-29: waste dibakar ke volume item non-HSP dengan
+                  // FUNGSI YANG SAMA dengan kuotasi konfigurator — item
+                  // yang masuk RAB adalah item yang dikutip.
+                  const itemsToAdd = adjustments
+                    ? applyWasteToItems(result.items, adjustments.wastePercent).items
+                    : result.items;
+                  bulkAddRabItems(itemsToAdd, effectiveProjectId);
                 }
                 setActiveMenu('rab-estimasi', effectiveProjectId);
               }}
@@ -967,16 +1046,20 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
                 setProjectFilter(filter);
                 setActiveMenu('proyek', null);
               }}
-              onOpenMagicAi={(mode?: 'chat' | 'ded-rab') => {
+              onOpenMagicAi={(mode?: 'chat' | 'ded-rab', prompt?: string) => {
                 // Fase 1: semua pintu dashboard lewat resolver. DED eksplisit
                 // (kartu Upload DED) → ded-ai; generik → chat ezrab-ai.
                 // Catatan: ini mengubah tujuan DED dashboard dari SuperView
                 // (magic-ai) ke DedAiEstimateView (ded-ai) — dua permukaan
                 // DED belum digabung, route /app/magic-ai tetap SuperView.
+                // D-30 (Batch G2): prompt diteruskan ke openEzrabAI sebagai
+                // prefill (initialPrompt — TIDAK autosend), sehingga tombol
+                // "Lihat Analisis" membawa konteks analisisnya, bukan chat
+                // kosong.
                 if (mode === 'ded-rab') {
                   openEzrabAI({ mode: 'ded', projectId: currentProjectId, projectName: currentProject?.name, source: 'dashboard' });
                 } else {
-                  openEzrabAI({ mode: 'chat', projectId: currentProjectId, projectName: currentProject?.name, source: 'dashboard' });
+                  openEzrabAI({ mode: 'chat', prompt, projectId: currentProjectId, projectName: currentProject?.name, source: 'dashboard' });
                 }
               }}
               onOpenSubscription={() => setActiveMenu('subscription')}

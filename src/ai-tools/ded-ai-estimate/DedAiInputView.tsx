@@ -37,6 +37,7 @@ import {
 import { DedAiMode, DedAiProjectType, DedEstimationPolicy, DedOutputPrefs, DEFAULT_DED_OUTPUT_PREFS } from './types';
 import type { DedRabAiMode } from './dedMode';
 import { DED_MODE_CARDS, resolveDedAiMode, withDedMode } from './dedModeUi';
+import { savePersistedDedMode } from './dedModePersistence';
 import { probeDedPdf, resolvePageScope } from './parser';
 import { useI18n } from '../../i18n/I18nContext';
 import './dedAi.css';
@@ -150,6 +151,14 @@ export const DedAiInputView: React.FC<Props> = ({
   // (mesin menang — modeFromLegacy); sesi baru membawa dedMode EZRAB_AI
   // dari view (default C2). Kedalaman (mode) tetap sub-pilihan terpisah.
   const [dedMode, setDedMode] = useState<DedRabAiMode>(() => resolveDedAiMode(initialSession));
+  // D-45 (Batch E): pilihan mode dipersist ke localStorage
+  // (`ezrab_dedai_mode`) — sesi baru sesudah reload memakai mode
+  // terakhir yang dipilih, bukan selalu default EZRAB AI. Tepat dua
+  // mode tetap berlaku; nilai divalidasi di lapisan persistensi.
+  const changeDedMode = (next: DedRabAiMode) => {
+    setDedMode(next);
+    savePersistedDedMode(next);
+  };
   const [targetProjectId, setTargetProjectId] = useState<string | null>(initialSession.targetProjectId);
   const [useExisting, setUseExisting] = useState(initialSession.targetProjectId !== null);
   // Perbaikan final: sinkronkan prefill deskripsi dari entry DED yang tiba
@@ -408,7 +417,7 @@ export const DedAiInputView: React.FC<Props> = ({
                       role="radio"
                       aria-checked={selected}
                       className={`dedai-modecard ${card.accent}${selected ? ' selected' : ''}`}
-                      onClick={() => setDedMode(card.mode)}
+                      onClick={() => changeDedMode(card.mode)}
                     >
                       <span className="dedai-modecard-top">
                         <span className="dedai-modecard-ico">

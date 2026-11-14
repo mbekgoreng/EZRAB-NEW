@@ -90,14 +90,16 @@ export class AHSPCalculationEngine {
     const materialComponents = cloneCategory(masterItem.materialComponents, 'MATERIAL', 'mat');
     const equipmentComponents = cloneCategory(masterItem.equipmentComponents, 'EQUIPMENT', 'eqp');
 
-    const totalLabor = laborComponents.reduce((sum, c) => SafeDecimalEngine.safeAdd(sum, c.total, 2), 0);
-    const totalMaterial = materialComponents.reduce((sum, c) => SafeDecimalEngine.safeAdd(sum, c.total, 2), 0);
-    const totalEquipment = equipmentComponents.reduce((sum, c) => SafeDecimalEngine.safeAdd(sum, c.total, 2), 0);
+    // D-39/NEW-09: safeAdd variadik tanpa parameter decimals — trailing
+    // `, 2` lama dijumlahkan harfiah (+Rp2/baris komponen). Total komponen
+    // sudah 2 desimal (safeMultiply(..., 2)), jadi penjumlahan polos eksak.
+    const totalLabor = laborComponents.reduce((sum, c) => SafeDecimalEngine.safeAdd(sum, c.total), 0);
+    const totalMaterial = materialComponents.reduce((sum, c) => SafeDecimalEngine.safeAdd(sum, c.total), 0);
+    const totalEquipment = equipmentComponents.reduce((sum, c) => SafeDecimalEngine.safeAdd(sum, c.total), 0);
 
     const calculatedUnitPrice = SafeDecimalEngine.safeAdd(
-      SafeDecimalEngine.safeAdd(totalMaterial, totalLabor, 2),
-      totalEquipment,
-      2
+      SafeDecimalEngine.safeAdd(totalMaterial, totalLabor),
+      totalEquipment
     );
 
     return {
@@ -136,14 +138,13 @@ export class AHSPCalculationEngine {
     const material = (snapshot.materialComponents || []).map(recalcComp);
     const equipment = (snapshot.equipmentComponents || []).map(recalcComp);
 
-    const totalLabor = labor.reduce((sum, c) => SafeDecimalEngine.safeAdd(sum, c.total, 2), 0);
-    const totalMaterial = material.reduce((sum, c) => SafeDecimalEngine.safeAdd(sum, c.total, 2), 0);
-    const totalEquipment = equipment.reduce((sum, c) => SafeDecimalEngine.safeAdd(sum, c.total, 2), 0);
+    const totalLabor = labor.reduce((sum, c) => SafeDecimalEngine.safeAdd(sum, c.total), 0);
+    const totalMaterial = material.reduce((sum, c) => SafeDecimalEngine.safeAdd(sum, c.total), 0);
+    const totalEquipment = equipment.reduce((sum, c) => SafeDecimalEngine.safeAdd(sum, c.total), 0);
 
     const unitPrice = SafeDecimalEngine.safeAdd(
-      SafeDecimalEngine.safeAdd(totalMaterial, totalLabor, 2),
-      totalEquipment,
-      2
+      SafeDecimalEngine.safeAdd(totalMaterial, totalLabor),
+      totalEquipment
     );
 
     return {
@@ -168,9 +169,9 @@ export class AHSPCalculationEngine {
 
     if (snapshot) {
       const refreshed = this.recalculateSnapshot(snapshot);
-      const materialCost = refreshed.materialComponents.reduce((sum, c) => SafeDecimalEngine.safeAdd(sum, c.total, 2), 0);
-      const laborCost = refreshed.laborComponents.reduce((sum, c) => SafeDecimalEngine.safeAdd(sum, c.total, 2), 0);
-      const equipmentCost = refreshed.equipmentComponents.reduce((sum, c) => SafeDecimalEngine.safeAdd(sum, c.total, 2), 0);
+      const materialCost = refreshed.materialComponents.reduce((sum, c) => SafeDecimalEngine.safeAdd(sum, c.total), 0);
+      const laborCost = refreshed.laborComponents.reduce((sum, c) => SafeDecimalEngine.safeAdd(sum, c.total), 0);
+      const equipmentCost = refreshed.equipmentComponents.reduce((sum, c) => SafeDecimalEngine.safeAdd(sum, c.total), 0);
       const unitPrice = refreshed.unitPrice;
       const totalPrice = SafeDecimalEngine.safeMultiply(safeVolume, unitPrice, 0);
 

@@ -13,11 +13,15 @@
   transition-delay:var(--d,0ms)}
 .split-host.mrv-on .mw {opacity:1; transform:none; filter:none}
 
-/* ---------- Reveal blok (fade + rise + unblur) ---------- */
-.mrv {opacity:0; transform:translateY(32px); filter:blur(5px);
-  transition:opacity .9s ease, transform .95s cubic-bezier(.22,1,.36,1), filter .9s ease;
+/* ---------- Reveal blok (fade + rise) ----------
+   D-06/D-08(e) (Batch G1): offset awal 32px → 12px dan blur DIHAPUS.
+   Offset besar membuat klik awal meleset (target masih 32px di bawah
+   posisi akhirnya selama ~1 detik); blur 5px membuat teks hero tampak
+   kabur sesaat — keduanya tanpa nilai tambah yang sepadan. */
+.mrv {opacity:0; transform:translateY(12px);
+  transition:opacity .6s ease, transform .65s cubic-bezier(.22,1,.36,1);
   transition-delay:var(--d,0ms)}
-.mrv.mrv-on {opacity:1; transform:none; filter:none}
+.mrv.mrv-on {opacity:1; transform:none}
 
 /* ---------- Teks gradien mengalir (span .bl di judul seksi) ---------- */
 html .ezai-scope h2 .bl {background-size:100% 230%; animation:blShimmer 5.5s ease-in-out infinite}
@@ -31,8 +35,9 @@ html .ezai-scope h2 .bl {background-size:100% 230%; animation:blShimmer 5.5s eas
 [data-tilt].tilting::after {opacity:1}
 .ezai-scope [data-tilt].rv-on {transition:transform .25s ease, box-shadow .3s ease}
 
-/* ---------- Magnetic button ---------- */
-[data-magnetic] {transition:transform .3s cubic-bezier(.22,1,.36,1)}
+/* ---------- Magnetic button: DIHAPUS (D-06, Batch G1) ----------
+   Aturan [data-magnetic] dihapus bersama helper-nya di motionEnhancer.ts:
+   tidak ada lagi elemen yang memakai atribut itu. */
 
 /* ---------- Kilau menyapu tombol utama ---------- */
 .ch-cta-primary, .ezai-scope .cta-box .btn {position:relative; overflow:hidden}
@@ -56,7 +61,7 @@ html .ezai-scope h2 .bl {background-size:100% 230%; animation:blShimmer 5.5s eas
 
 /* ---------- Matikan semua gerak bila diminta ---------- */
 @media (prefers-reduced-motion: reduce) {
-  .mw, .mrv, [data-tilt], [data-magnetic] {transition:none !important}
+  .mw, .mrv, [data-tilt] {transition:none !important}
   .split-host .mw, .mrv {opacity:1 !important; transform:none !important; filter:none !important}
   .ez-nav-dark, html .ezai-scope h2 .bl,
   .ezai-scope .mascot-cta.motion-sway, .ezai-scope .mascot-hero.motion-sway {animation:none !important}

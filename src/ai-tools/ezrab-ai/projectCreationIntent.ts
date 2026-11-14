@@ -295,6 +295,38 @@ export function decideMagicAiProjectAction(input: MagicAiProjectDecisionInput): 
 }
 
 /* ------------------------------------------------------------------ */
+/* Keputusan pembuatan proyek Volume Calculation (D-28, Batch F)       */
+/* ------------------------------------------------------------------ */
+
+export type VolumeCalcProjectAction = 'create' | 'reuse-active' | 'ask';
+
+export interface VolumeCalcProjectDecisionInput {
+  hasActiveProject: boolean;
+  /** Pilihan eksplisit pengguna dari dialog tanya (bila sudah memilih). */
+  userChoice?: 'reuse' | 'new' | null;
+}
+
+/**
+ * D-28 — cermin `decideMagicAiProjectAction` untuk jalur Volume
+ * Calculation. Sebelumnya klik kartu Volume langsung memanggil
+ * `onCreateProject` ("Proyek Volume QTO Baru", tanpa nama/konfirmasi)
+ * — klik iseng meninggalkan proyek liar. Kini:
+ * - Pengguna memilih eksplisit → hormati.
+ * - Tidak ada proyek aktif → 'create' (tetap lewat langkah penamaan +
+ *   konfirmasi di modal — helper ini TIDAK membuat proyek, hanya
+ *   memutuskan cabang; pembuatan selalu butuh nama dari pengguna).
+ * - Ada proyek aktif & belum jelas → TANYA (default yang ditonjolkan UI
+ *   adalah memakai ulang proyek aktif — kalkulasi menempel ke proyek
+ *   yang sudah ada, konteks QTO pengguna terjaga).
+ */
+export function decideVolumeCalcProjectAction(input: VolumeCalcProjectDecisionInput): VolumeCalcProjectAction {
+  if (input.userChoice === 'reuse') return 'reuse-active';
+  if (input.userChoice === 'new') return 'create';
+  if (!input.hasActiveProject) return 'create';
+  return 'ask';
+}
+
+/* ------------------------------------------------------------------ */
 /* Idempotensi submit Magic AI (§5.5)                                  */
 /* ------------------------------------------------------------------ */
 

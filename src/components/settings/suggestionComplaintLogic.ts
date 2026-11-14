@@ -131,24 +131,39 @@ export function validateReportDraft(draft: ReportDraft): ReportValidation {
  * Identitas pelapor dari sesi yang sudah ada — aplikasi tidak pernah meminta
  * pengguna mengetik ulang email yang sudah diketahuinya, dan tidak ada
  * identitas yang di-hardcode.
- *  - 'account'   : sesi Supabase terverifikasi (email akun).
- *  - 'demo-role' : sesi peran demo EZRAB (nama peran aktif).
- *  - 'none'      : tidak ada sesi — formulir tidak dapat digunakan dan
- *                  pengguna diarahkan ke alur masuk yang sudah ada.
+ *  - 'account'     : sesi Supabase terverifikasi (email akun).
+ *  - 'demo-role'   : sesi peran demo EZRAB (nama peran aktif).
+ *  - 'access-gate' : sesi gerbang kode akses (D-83, Batch G2) — pengguna
+ *                    sudah melewati gerbang workspace tetapi tidak punya
+ *                    email akun maupun peran aktif. Label jujurnya
+ *                    'Pengunjung demo': ia BUKAN akun terverifikasi dan
+ *                    tidak boleh dilabeli nama/email siapa pun.
+ *  - 'none'        : tidak ada sesi — formulir tidak dapat digunakan.
+ *
+ * Sesi gerbang tidak dapat dideteksi klien tanpa panggilan server
+ * (cookie HttpOnly; TIDAK ADA flag klien yang bisa dipercaya — flag
+ * seperti itu bisa dipalsukan dari devtools). Karena itu `gateSession`
+ * adalah input EKSPLISIT dari pemanggil yang MENJAMIN invarian mount:
+ * komponen ini hanya di-mount di dalam workspace yang sudah melewati
+ * gerbang (tab help Pengaturan). Default false agar fungsi murni ini
+ * tetap jujur bila dipanggil tanpa jaminan itu.
  */
 export type ReporterIdentity =
   | { kind: 'account'; label: string }
   | { kind: 'demo-role'; label: string }
+  | { kind: 'access-gate'; label: string }
   | { kind: 'none' };
 
 export function resolveReporterIdentity(input: {
   accountEmail?: string | null;
   roleName?: string | null;
+  gateSession?: boolean;
 }): ReporterIdentity {
   const email = (input.accountEmail ?? '').trim();
   if (email) return { kind: 'account', label: email };
   const role = (input.roleName ?? '').trim();
   if (role) return { kind: 'demo-role', label: role };
+  if (input.gateSession === true) return { kind: 'access-gate', label: 'Pengunjung demo' };
   return { kind: 'none' };
 }
 

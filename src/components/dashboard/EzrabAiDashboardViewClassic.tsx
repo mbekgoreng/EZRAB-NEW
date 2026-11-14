@@ -17,7 +17,7 @@ import { Project } from '../../types';
 import { useProject } from '../../context/ProjectContext';
 import { useI18n } from '../../i18n';
 import { useCurrency } from '../../context/CurrencyContext';
-import { countUnpricedRabItems, unpricedInsightText } from '../../lib/dashboardInsight';
+import { countUnpricedRabItems, unpricedInsightText, unpricedAnalysisPrompt } from '../../lib/dashboardInsight';
 import { EZRABMascotLucu } from '../mascot/EZRABMascotLucu';
 
 interface EzrabAiDashboardViewClassicProps {
@@ -26,7 +26,7 @@ interface EzrabAiDashboardViewClassicProps {
   onSelectProject: (projectId: string, menu?: string) => void;
   onNavigateToTab: (tab: string, projectId?: string | null) => void;
   onNavigateToProjects?: (filter: string) => void;
-  onOpenMagicAi: (mode?: 'chat' | 'ded-rab') => void;
+  onOpenMagicAi: (mode?: 'chat' | 'ded-rab', prompt?: string) => void;
   onOpenSubscription: () => void;
   onResetData?: () => void;
   onOpenOnboarding?: () => void;
@@ -1084,7 +1084,9 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
           <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: '20px' }}>
             <button
               type="button"
-              onClick={() => onOpenMagicAi()}
+              // D-30 (Batch G2): bawa konteks analisis ke Chat AI sebagai
+              // prefill (tidak autosend) — lihat EzrabAiDashboardView.
+              onClick={() => onOpenMagicAi('chat', unpricedAnalysisPrompt(unpricedCount, lang))}
               style={{
                 height: '34px',
                 padding: '0 14px',
@@ -1144,7 +1146,8 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
       {/* =========================================================================
           5. BOTTOM: AKTIVITAS TERBARU
          ========================================================================= */}
-      <section style={{ paddingBottom: '24px' }}>
+      {/* D-36 (Batch G2): padding bawah 96px — lihat EzrabAiDashboardView. */}
+      <section style={{ paddingBottom: '96px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0 14px 0' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 750, color: 'var(--ez-color-text-primary)', margin: 0 }}>
             {t('dash.aktivitas_terbaru')}

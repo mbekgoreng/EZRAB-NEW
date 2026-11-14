@@ -3,18 +3,30 @@
  *
  * - Target: CSS selector yang stabil (mis. `[data-tour="sidebar-rab"]`).
  * - Jika target tidak ditemukan / tersembunyi: langkah dilewati otomatis
- *   (tidak memblokir aplikasi, tidak crash).
+ *   (tidak memblokir aplikasi, tidak crash). D-16 (Batch G2): lewati
+ *   mengikuti ARAH navigasi — mundur dari langkah yang targetnya hilang
+ *   kembali ke langkah sebelumnya, bukan meloncat maju. Bila langkah
+ *   menyatakan `expandSubmenu`, submenu sidebar dibuka dulu (event
+ *   ezrab:expand-sidebar-submenu) dan resolusi dicoba ulang setelah
+ *   render — target di submenu tertutup tidak lagi dilewati diam-diam.
  * - Tooltip diposisikan ulang saat scroll/resize.
  * - Aksesibilitas: fokus keyboard, Escape menutup, hormati prefers-reduced-motion.
  * - Semua listener dibersihkan saat unmount.
  */
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useI18n } from '../../i18n';
+import { expandSidebarSubmenu, type SidebarSubmenuId } from './sidebarSubmenuEvents';
 
 export interface SpotlightStep {
   /** CSS selector target yang stabil */
   target: string;
   title: string;
   body: string;
+  /**
+   * D-16 (Batch G2): submenu sidebar yang harus dibuka sebelum langkah
+   * ini disorot (target di dalamnya tidak ada di DOM saat tertutup).
+   */
+  expandSubmenu?: SidebarSubmenuId;
 }
 
 interface SpotlightProps {
@@ -32,6 +44,16 @@ interface SpotlightProps {
   onStepChange?: (index: number) => void;
   /** diminta saat user klik Lanjut/Kembali dalam controlled mode */
   onRequestIndex?: (index: number) => void;
+  /**
+   * D-86 (Batch G2): bila false, target yang hilang TIDAK memicu
+   * auto-skip — tooltip fallback (tengah viewport, tanpa highlight)
+   * yang tampil. Dipakai controlled mode saat parent sudah menunggu
+   * target sendiri (waitForSelector) & menangani skip searah
+   * navigasi (FeatureTutorialPlayer.goToStep); tanpa gate ini
+   * Spotlight akan menimpa keputusan skip parent. Default true
+   * (perilaku lama, dipakai DashboardTour uncontrolled).
+   */
+  autoSkipMissing?: boolean;
 }
 
 interface Rect {
@@ -66,7 +88,8 @@ function prefersReducedMotion(): boolean {
   }
 }
 
-export function Spotlight({ steps, startAt = 0, index: controlledIndex, onDone, onSkip, onStepChange, onRequestIndex }: SpotlightProps) {
+export function Spotlight({ steps, startAt = 0, index: controlledIndex, onDone, onSkip, onStepChange, onRequestIndex, autoSkipMissing = true }: SpotlightProps) {
+  const { t } = useI18n();
   const [internalIndex, setInternalIndex] = useState(startAt);
   const controlled = typeof controlledIndex === 'number';
   const index = controlled ? (controlledIndex as number) : internalIndex;
@@ -77,6 +100,15 @@ export function Spotlight({ steps, startAt = 0, index: controlledIndex, onDone, 
   const isLast = index >= steps.length - 1;
 
   const step = steps[index];
+
+  // D-16 (Batch G2): arah navigasi terakhir — skip target hilang
+  // mengikuti arah ini (mundur → langkah sebelumnya, bukan meloncat
+  // maju). Diatur oleh next()/back(); default maju.
+  const navDirectionRef = useRef<1 | -1>(1);
+  // Timer retry setelah expand submenu + penanda percobaan per indeks
+  // (satu kali expand per langkah — mencegah loop dispatch).
+  const expandRetryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const expandTriedRef = useRef<{ index: number; submenu: SidebarSubmenuId } | null>(null);
 
   /** Minta pindah langkah: via parent dalam controlled mode, internal jika tidak. */
   const requestIndex = useCallback(
@@ -90,21 +122,68 @@ export function Spotlight({ steps, startAt = 0, index: controlledIndex, onDone, 
     [controlled, index, onRequestIndex]
   );
 
-  // Cari target; jika tidak ada, lewati langkah ini
+  /**
+   * D-16 (Batch G2): lewati langkah yang targetnya hilang, mengikuti
+   * arah navigasi. Maju: ke langkah berikut (atau selesai bila
+   * terakhir). Mundur: ke langkah sebelumnya; di langkah pertama tidak
+   * ada yang bisa dimunduri — kartu fallback (overlay penuh tanpa
+   * highlight) yang tampil, bukan lompatan maju.
+   */
+  const skipMissing = useCallback(() => {
+    // D-86: controlled mode dengan parent yang menangani skip sendiri
+    // (autoSkipMissing=false) — jangan menimpa keputusan parent;
+    // tampilkan kartu fallback saja.
+    if (!autoSkipMissing) {
+      setRect(null);
+      return;
+    }
+    const dir = navDirectionRef.current;
+    if (dir < 0) {
+      if (index > 0) requestIndex((i) => i - 1);
+      else setRect(null);
+    } else if (index >= steps.length - 1) {
+      onDone();
+    } else {
+      requestIndex((i) => i + 1);
+    }
+  }, [index, steps.length, onDone, requestIndex, autoSkipMissing]);
+
+  // Cari target; jika tidak ada, coba buka submenu dulu (bila langkah
+  // menyatakannya), lalu lewati searah navigasi.
   const resolveTarget = useCallback(() => {
     if (!step) return;
     const r = getTargetRect(step.target);
     if (!r) {
-      // Target hilang → lanjut ke langkah berikut, atau selesai jika terakhir
-      if (index >= steps.length - 1) onDone();
-      else requestIndex((i) => i + 1);
+      // Target di submenu tertutup: buka submenu, coba lagi setelah
+      // React render ulang (±200 ms). Sekali per langkah.
+      if (step.expandSubmenu) {
+        const tried = expandTriedRef.current;
+        if (!tried || tried.index !== index || tried.submenu !== step.expandSubmenu) {
+          expandTriedRef.current = { index, submenu: step.expandSubmenu };
+          expandSidebarSubmenu(step.expandSubmenu);
+          if (expandRetryTimerRef.current) clearTimeout(expandRetryTimerRef.current);
+          expandRetryTimerRef.current = setTimeout(() => {
+            const retryRect = getTargetRect(step.target);
+            if (retryRect) setRect(retryRect);
+            else skipMissing();
+          }, 200);
+          return;
+        }
+      }
+      skipMissing();
       return;
     }
     setRect(r);
-  }, [step, index, steps.length, onDone, requestIndex]);
+  }, [step, index, skipMissing]);
 
   useLayoutEffect(() => {
     resolveTarget();
+    return () => {
+      if (expandRetryTimerRef.current) {
+        clearTimeout(expandRetryTimerRef.current);
+        expandRetryTimerRef.current = null;
+      }
+    };
   }, [resolveTarget]);
 
   // Posisikan ulang saat scroll / resize
@@ -116,9 +195,8 @@ export function Spotlight({ steps, startAt = 0, index: controlledIndex, onDone, 
         if (step) {
           const r = getTargetRect(step.target);
           if (r) setRect(r);
-          // jika target hilang saat tour berjalan, lewati
-          else if (index < steps.length - 1) requestIndex((i) => i + 1);
-          else onDone();
+          // jika target hilang saat tour berjalan, lewati searah navigasi
+          else skipMissing();
         }
       });
     };
@@ -129,15 +207,20 @@ export function Spotlight({ steps, startAt = 0, index: controlledIndex, onDone, 
       window.removeEventListener('resize', update);
       cancelAnimationFrame(raf);
     };
-  }, [step, index, steps.length, onDone, requestIndex]);
+  }, [step, skipMissing]);
 
-  // Posisikan tooltip di bawah/atas target, jaga dalam viewport
+  // Posisikan tooltip di bawah/atas target, jaga dalam viewport.
+  // Tanpa target (kartu fallback): tengahkan di viewport — sebelumnya
+  // tooltip jatuh di sudut kiri-atas (posisi awal 0,0).
   useLayoutEffect(() => {
-    if (!rect) return;
     const vw = window.innerWidth;
     const vh = window.innerHeight;
     const tw = Math.min(320, vw - 32);
     const th = tooltipRef.current?.offsetHeight ?? 180;
+    if (!rect) {
+      setTooltipPos({ top: Math.max(16, (vh - th) / 2), left: Math.max(16, (vw - tw) / 2) });
+      return;
+    }
     let top = rect.top + rect.height + 12;
     if (top + th > vh - 16) top = rect.top - th - 12;
     // Pengaman: tooltip tidak boleh keluar viewport atas/bawah
@@ -191,11 +274,15 @@ export function Spotlight({ steps, startAt = 0, index: controlledIndex, onDone, 
   }, [onSkip]);
 
   const next = useCallback(() => {
+    navDirectionRef.current = 1;
     if (isLast) onDone();
     else requestIndex((i) => i + 1);
   }, [isLast, onDone, requestIndex]);
 
-  const back = useCallback(() => requestIndex((i) => Math.max(0, i - 1)), [requestIndex]);
+  const back = useCallback(() => {
+    navDirectionRef.current = -1;
+    requestIndex((i) => Math.max(0, i - 1));
+  }, [requestIndex]);
 
   if (!step) return null;
 
@@ -205,7 +292,7 @@ export function Spotlight({ steps, startAt = 0, index: controlledIndex, onDone, 
     <div
       role="dialog"
       aria-modal="true"
-      aria-label={`Panduan langkah ${index + 1} dari ${steps.length}: ${step.title}`}
+      aria-label={`${t('tour.panduan')} ${index + 1}/${steps.length}: ${step.title}`}
       style={{ position: 'fixed', inset: 0, zIndex: 9995, pointerEvents: 'auto' }}
     >
       {/* Overlay gelap dengan lubang highlight via box-shadow */}
@@ -250,7 +337,7 @@ export function Spotlight({ steps, startAt = 0, index: controlledIndex, onDone, 
         }}
       >
         <p style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', color: 'var(--ez-color-primary)', margin: '0 0 6px' }}>
-          LANGKAH {index + 1} / {steps.length}
+          {t('tour.langkah')} {index + 1} / {steps.length}
         </p>
         <h3 style={{ fontSize: 15, fontWeight: 800, color: 'var(--ezrab-text, #111827)', margin: '0 0 6px' }}>
           {step.title}
@@ -263,7 +350,7 @@ export function Spotlight({ steps, startAt = 0, index: controlledIndex, onDone, 
             onClick={onSkip}
             style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--ez-color-text-muted)', background: 'transparent', border: 'none', cursor: 'pointer', padding: '8px 4px' }}
           >
-            Lewati
+            {t('common.lewati')}
           </button>
           <div style={{ display: 'flex', gap: 8 }}>
             {index > 0 && (
@@ -272,7 +359,7 @@ export function Spotlight({ steps, startAt = 0, index: controlledIndex, onDone, 
                 className="ezrab-button-secondary"
                 style={{ height: 36, padding: '0 14px', fontSize: 12.5 }}
               >
-                Kembali
+                {t('common.kembali')}
               </button>
             )}
             <button
@@ -280,7 +367,7 @@ export function Spotlight({ steps, startAt = 0, index: controlledIndex, onDone, 
               className="ezrab-button-primary"
               style={{ height: 36, padding: '0 16px', fontSize: 12.5 }}
             >
-              {isLast ? 'Selesai' : 'Lanjut'}
+              {isLast ? t('common.selesai') : t('common.lanjut')}
             </button>
           </div>
         </div>

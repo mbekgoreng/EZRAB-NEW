@@ -14,7 +14,12 @@ export type ExportPresetId =
   /* P6 (FULL REPAIR 2026-11-13, P5-O6): preset workbook RAB 5 sheet
    * (snapshot beku — builder di fiveSheetPreset.ts). Anggotanya kini
    * resmi: mesin + modal tidak lagi memakai cast untuk ID ini. */
-  | 'FIVE_SHEET_RAB';
+  | 'FIVE_SHEET_RAB'
+  /* D-75 (Batch F): preset rekap saja — Ringkasan Eksekutif +
+   * Rekapitulasi RAB (2 lembar 16-sheet), untuk tombol "Ekspor Rekap".
+   * Berbeda dengan FIVE_SHEET_RAB (jalur snapshot beku terpisah),
+   * preset ini memakai mesin 16-sheet biasa dengan pilihan lembar. */
+  | 'RECAP_ONLY';
 
 export type ExportSheetKey =
   | 'validation'
@@ -320,6 +325,19 @@ export const EXPORT_PRESETS: Record<ExportPresetId, PresetMeta> = {
     badge: 'Snapshot Beku',
     description: 'Workbook RAB 5 sheet dari snapshot beku: Ringkasan, RAB Detail, AHSP project-bound, Detail Volume, dan Sumber & Asumsi.',
     sheets: [],
+    recommendedAudience: 'all',
+  },
+  /* D-75 (Batch F): rekap saja — persis 2 lembar: Ringkasan Eksekutif
+   * (03) + Rekapitulasi RAB (04). Lembar Rekap mandiri: rumus lintas
+   * sheet ke 05_RAB_Detail hanya ditulis bila Detail ikut dipilih
+   * (excelExportEngine.ts), jadi workbook 2 lembar tetap valid dengan
+   * nilai statis + formula internal. */
+  RECAP_ONLY: {
+    id: 'RECAP_ONLY',
+    name: '9. Rekap Saja',
+    badge: 'Rekap',
+    description: 'Hanya Ringkasan Eksekutif + Rekapitulasi RAB — rekap untuk dibagikan tanpa rincian item per baris.',
+    sheets: ['estimateSummary', 'rabRecap'],
     recommendedAudience: 'all',
   },
 };

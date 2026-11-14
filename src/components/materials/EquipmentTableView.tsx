@@ -92,7 +92,7 @@ export const EquipmentTableView: React.FC<EquipmentTableViewProps> = ({
               Sewa / Jam
             </th>
             <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Sewa / Hari (7 Jam)
+              Sewa / Hari (8 Jam)
             </th>
             <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               BBM (L/jam)

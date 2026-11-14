@@ -214,6 +214,15 @@ export class CostCompositionEngine {
       const coefDec = new Decimal(c.coefficient || 0);
       const totalQtyDec = coefDec.times(baseQuantity);
 
+      // D-62 (Batch B): a component label must NEVER render the raw string
+      // "undefined". The adapter now maps real names, but the warning path
+      // must not depend on that — fall back to the code, then to an explicit
+      // "unnamed component" label (data incomplete, not fabricated).
+      const displayName =
+        (typeof c.itemName === 'string' && c.itemName.trim()) ||
+        (typeof c.itemCode === 'string' && c.itemCode.trim()) ||
+        'Komponen tanpa nama (data tidak lengkap)';
+
       // Price Resolution
       const priceRes = this.priceResolver.resolve(
         {
@@ -262,10 +271,10 @@ export class CostCompositionEngine {
           priceStatus = 'RESOLVED';
           fallbackExplanation = fb.explanation;
           warnings.push(
-            `Price for ${type} "${c.itemName}" from ${fb.sourceLabel}: ${fb.explanation}`
+            `Price for ${type} "${displayName}" from ${fb.sourceLabel}: ${fb.explanation}`
           );
         } else {
-          warnings.push(`Price not found for ${type} component "${c.itemName}" (${c.itemCode || 'no code'}). Marked UNRESOLVED - subtotal incomplete.`);
+          warnings.push(`Price not found for ${type} component "${displayName}" (${c.itemCode || 'no code'}). Marked UNRESOLVED - subtotal incomplete.`);
           (this as any)._hasUnresolvedPrices = true;
         }
       }
@@ -281,7 +290,7 @@ export class CostCompositionEngine {
         id: c.id,
         type,
         itemCode: c.itemCode,
-        itemName: c.itemName,
+        itemName: displayName,
         unit: c.unit,
         coefficient: c.coefficient,
         unitPrice,

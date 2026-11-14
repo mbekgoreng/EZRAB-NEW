@@ -115,7 +115,11 @@ export const ExactWorkflow: React.FC = () => {
             Semua proses estimasi dan perhitungan proyek terhubung dalam satu alur kerja yang efisien.
           </p>
 
-          <a href="#demo" className="ez-wf-cta-link">
+          {/* D-04: dulu href="#demo" — tidak ada elemen id="demo" di mana
+              pun, tautan mati. "Jelajahi Alur" kini menunjuk ke demo
+              pertama di bawah (DED Estimate AI, id="ded"); scroll-nya
+              ditangani efek hash-scroll App.tsx bila dimuat segar. */}
+          <a href="#ded" className="ez-wf-cta-link">
             <span>Jelajahi Alur</span>
             <ArrowRight size={16} className="ez-wf-cta-arrow" />
           </a>
@@ -295,9 +299,13 @@ export const ExactWorkflow: React.FC = () => {
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '8px',
-                background: 'transparent',
-                border: '1px solid rgba(255,255,255,0.25)',
-                color: '#e8eefb',
+                // D-08(a): dulu teks #e8eefb di atas latar transparan
+                // (rasio 1,09:1 di atas #F5F8FC — nyaris tak terbaca).
+                // Kini tombol solid biru pekat, putih di atas #1D4ED8
+                // ≈ 6,7:1 (lolos WCAG AA).
+                background: '#1D4ED8',
+                border: '1px solid #1D4ED8',
+                color: '#ffffff',
                 borderRadius: '999px',
                 padding: '11px 26px',
                 fontSize: '14px',

@@ -33,10 +33,10 @@ import {
 import { Project, RabItem } from '../../types';
 import { RabTemplateService } from '../../services/rabTemplateService';
 import type { GlobalEstimationSettings } from './GlobalEstimationSettingsModal';
-import { templatePreviewTax } from '../../services/templatePreviewTax';
+import { buildTemplateApplicationQuote } from '../../services/templateApplyQuote';
+import { resolveProjectCostConfig } from '../../engine/projectCostConfig';
 import { MaterialLibraryService } from '../../services/materialLibraryService';
 import { formatRupiah, formatNumberId } from '../../engine/formulaEngine';
-import { SafeDecimalEngine } from '../../engine/safeDecimalEngine';
 
 export interface UniversalTemplateConfiguratorProps {
   template: RabTemplate;
@@ -50,7 +50,14 @@ export interface UniversalTemplateConfiguratorProps {
     targetProjectId?: string,
     newProjectMeta?: { name: string; buildingArea: number; floorCount: number },
     detailLevel?: DetailLevel,
-    selectedOptionalItemIds?: string[]
+    selectedOptionalItemIds?: string[],
+    /**
+     * D-29: penyesuaian estimasi global yang dipakai kuotasi — DITERUSKAN
+     * ke penerapan agar proyek yang dibuat memakai konfigurasi yang sama
+     * (proyek baru) dan waste yang sama (semua target). Tanpa ini, kuotasi
+     * dan proyek yang dibuat menyimpang Rp273.315.000 pada template contoh.
+     */
+    adjustments?: GlobalEstimationSettings
   ) => void;
   /** Pengaturan Estimasi Global dari katalog — diterapkan pada total konfigurator. */
   globalSettings?: GlobalEstimationSettings;
@@ -152,41 +159,33 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
     }
   }, [tplService, template, paramValues, targetMode, currentProject, selectedProjectId, detailLevel, selectedOptionalIds]);
 
+  // D-29: proyek tujuan kuotasi — proyek BARU memakai penyesuaian global
+  // sebagai konfigurasinya; proyek yang sudah ada memakai konfigurasinya
+  // sendiri (kuotasi TIDAK mengubah konfigurasi proyek yang sudah ada).
+  const targetProjectForQuote = useMemo(() => {
+    if (targetMode === 'CURRENT') return currentProject;
+    if (targetMode === 'EXISTING') {
+      return projects.find((p) => p.id === selectedProjectId) ?? null;
+    }
+    return null;
+  }, [targetMode, currentProject, projects, selectedProjectId]);
+
+  const targetQuoteConfig = useMemo(
+    () => (targetProjectForQuote ? resolveProjectCostConfig(targetProjectForQuote) : null),
+    [targetProjectForQuote]
+  );
+
   // Penyesuaian Pengaturan Estimasi Global atas total konfigurator.
-  // Doktrin anti-markup-ganda: overhead/profit/waste HANYA diterapkan pada
-  // subtotal NON-RESMI (harga resmi DHSP sudah termasuk overhead & profit).
-  // PPN diterapkan pada total keseluruhan + penyesuaian. Item yang diterapkan
-  // ke RAB tetap membawa harga dasar — overhead/PPN final proyek diatur di
-  // Pengaturan RAB proyek (Rekapitulasi).
+  // D-29: kuotasi dihitung lewat MESIN KANONIS dengan konfigurasi efektif
+  // (templateApplyQuote — implementasi yang SAMA dengan penerapan di
+  // WorkspaceView), BUKAN tangga paralel. Waste dibakar ke volume item
+  // non-HSP; overhead/profit/PPN mengikuti konfigurasi efektif. Doktrin
+  // anti-markup-ganda dipertahankan: item HSP dikecualikan dari waste
+  // dan dari basis O&P (§17.1).
   const globalAdjustment = useMemo(() => {
     if (!previewResult || !globalSettings) return null;
-    let officialSubtotal = 0;
-    let nonOfficialSubtotal = 0;
-    for (const item of previewResult.items) {
-      if (item.unitPrice == null) continue;
-      const amt = SafeDecimalEngine.safeMultiply(item.volume, item.unitPrice, 0);
-      if ((item as any).priceSourceKind === 'OFFICIAL_AHSP') {
-        officialSubtotal = SafeDecimalEngine.safeAdd(officialSubtotal, amt);
-      } else {
-        nonOfficialSubtotal = SafeDecimalEngine.safeAdd(nonOfficialSubtotal, amt);
-      }
-    }
-    const waste = Math.round(nonOfficialSubtotal * (globalSettings.wastePercent / 100));
-    const overhead = Math.round(nonOfficialSubtotal * (globalSettings.overheadPercent / 100));
-    const profit = Math.round((nonOfficialSubtotal + overhead) * (globalSettings.profitPercent / 100));
-    const taxBase = previewResult.totalEstimate + waste + overhead + profit;
-    /* Pajak opt-in preview template: hanya bila taxEnabled === true. */
-    const tax = templatePreviewTax(taxBase, globalSettings);
-    return {
-      officialSubtotal,
-      nonOfficialSubtotal,
-      waste,
-      overhead,
-      profit,
-      tax,
-      adjustedTotal: taxBase + tax
-    };
-  }, [previewResult, globalSettings]);
+    return buildTemplateApplicationQuote(previewResult.items, globalSettings, targetQuoteConfig);
+  }, [previewResult, globalSettings, targetQuoteConfig]);
 
   // Dynamic Item Counts for each Detail Level (live evaluation)
   const detailLevelCounts = useMemo(() => {
@@ -200,14 +199,20 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
     levels.forEach((lvl) => {
       try {
         const res = tplService.generateRabFromTemplate(template, paramValues, undefined, lvl, selectedOptionalIds);
-        counts[lvl] = { count: res.items.length, total: res.totalEstimate };
+        // D-29: total per level adalah kuotasi yang disesuaikan (sama
+        // seperti kuotasi utama) — bukan total dasar yang menguap saat
+        // diterapkan.
+        const quote = globalSettings
+          ? buildTemplateApplicationQuote(res.items, globalSettings, targetQuoteConfig)
+          : null;
+        counts[lvl] = { count: res.items.length, total: quote ? quote.adjustedTotal : res.totalEstimate };
       } catch {
         counts[lvl] = { count: 0, total: 0 };
       }
     });
 
     return counts;
-  }, [tplService, template, paramValues, selectedOptionalIds]);
+  }, [tplService, template, paramValues, selectedOptionalIds, globalSettings, targetQuoteConfig]);
 
   // Parameter Grouping (dynamically groups by p.group or assigns fallback)
   const groupedParameters = useMemo(() => {
@@ -276,7 +281,8 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
         currentProject.id,
         undefined,
         detailLevel,
-        selectedOptionalIds
+        selectedOptionalIds,
+        globalSettings
       );
     } else if (targetMode === 'EXISTING' && selectedProjectId) {
       onConfirmApply(
@@ -285,7 +291,8 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
         selectedProjectId,
         undefined,
         detailLevel,
-        selectedOptionalIds
+        selectedOptionalIds,
+        globalSettings
       );
     } else {
       const area = Number(paramValues['building_area'] || paramValues['paving_area'] || paramValues['road_length'] || 100);
@@ -300,7 +307,8 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
           floorCount: floors,
         },
         detailLevel,
-        selectedOptionalIds
+        selectedOptionalIds,
+        globalSettings
       );
     }
     onClose();
@@ -1159,26 +1167,35 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--ez-color-text-muted)' }}>
                     <span>Waste material ({globalSettings.wastePercent}%):</span>
-                    <span style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>{formatRupiah(globalAdjustment.waste)}</span>
+                    <span style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>{formatRupiah(globalAdjustment.wasteAmount)}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--ez-color-text-muted)' }}>
-                    <span>Overhead ({globalSettings.overheadPercent}%):</span>
-                    <span style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>{formatRupiah(globalAdjustment.overhead)}</span>
+                    <span>Overhead ({globalAdjustment.effectiveConfig.overheadPercent}%):</span>
+                    <span style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>{formatRupiah(globalAdjustment.summary.overheadAmount)}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--ez-color-text-muted)' }}>
-                    <span>Profit ({globalSettings.profitPercent}%):</span>
-                    <span style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>{formatRupiah(globalAdjustment.profit)}</span>
+                    <span>Profit ({globalAdjustment.effectiveConfig.profitPercent}%):</span>
+                    <span style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>{formatRupiah(globalAdjustment.summary.profitAmount)}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--ez-color-text-muted)' }}>
-                    <span>PPN ({globalSettings.taxPercent}%):</span>
-                    <span style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>{formatRupiah(globalAdjustment.tax)}</span>
+                    <span>PPN ({globalAdjustment.effectiveConfig.taxPercent}%):</span>
+                    <span style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>{formatRupiah(globalAdjustment.summary.taxAmount)}</span>
                   </div>
+                  {(globalAdjustment.summary.pphAmount ?? 0) > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--ez-color-text-muted)' }}>
+                      <span>PPh ({globalAdjustment.effectiveConfig.pphPercent}%):</span>
+                      <span style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>{formatRupiah(globalAdjustment.summary.pphAmount ?? 0)}</span>
+                    </div>
+                  )}
                   <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--ez-color-border-line)', paddingTop: '6px', color: 'var(--ez-color-text-primary)' }}>
                     <span style={{ fontWeight: 800 }}>Total + Penyesuaian Global:</span>
                     <span style={{ fontWeight: 800 }}>{formatRupiah(globalAdjustment.adjustedTotal)}</span>
                   </div>
                   <div style={{ color: 'var(--ez-color-text-muted)', fontSize: '11px', lineHeight: 1.5 }}>
-                    Subtotal resmi ({formatRupiah(globalAdjustment.officialSubtotal)}) dikecualikan dari markup. Saat template diterapkan, item masuk RAB dengan harga dasar; overhead/PPN final mengikuti Pengaturan RAB proyek.
+                    Subtotal resmi ({formatRupiah(globalAdjustment.officialSubtotal)}) dikecualikan dari waste &amp; markup. Waste sudah termasuk dalam volume item non-resmi
+                    {targetProjectForQuote
+                      ? '; overhead/profit/PPN mengikuti Pengaturan proyek tujuan.'
+                      : '; proyek baru dibuat dengan overhead/profit/PPN ini — total di atas sama dengan grand total proyek yang dibuat.'}
                   </div>
                 </div>
               )}

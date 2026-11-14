@@ -5,15 +5,35 @@ import { useCurrency } from '../../context/CurrencyContext';
 interface SpreadsheetFooterProps {
   groupsCount: number;
   totalItemsCount: number;
+  /**
+   * D-38 (Batch F): jumlah item yang SEDANG DITAMPILKAN (sesudah filter /
+   * pencarian). Bila tidak diisi, diasumsikan sama dengan total (tidak
+   * ada filter aktif) — perilaku lama dipertahankan untuk pemanggil lain.
+   */
+  filteredItemsCount?: number;
   /** Jumlah amount item terharga — biaya langsung saja (PPN & grand total ada di Rekapitulasi). */
   totalRab: number;
   onAddGroup: () => void;
   isSaving?: boolean;
 }
 
+/**
+ * D-38 (Batch F) — teks jumlah item yang jujur terhadap filter:
+ * "Menampilkan semua N item" HANYA bila yang tampil == total; bila filter /
+ * pencarian aktif (tampil < total), "Menampilkan X dari N item". Aturan
+ * berbasis panjang semata: filter yang mencocokkan semua item tetap
+ * menampilkan "semua" — benar, karena memang semua sedang ditampilkan.
+ */
+export function footerItemCountText(filteredCount: number, totalCount: number): string {
+  const shown = Math.max(0, Math.min(filteredCount, totalCount));
+  if (shown === totalCount) return `Menampilkan semua ${totalCount} item`;
+  return `Menampilkan ${shown} dari ${totalCount} item`;
+}
+
 export const SpreadsheetFooter: React.FC<SpreadsheetFooterProps> = ({
   groupsCount,
   totalItemsCount,
+  filteredItemsCount,
   totalRab,
   onAddGroup,
   isSaving = false,
@@ -95,8 +115,9 @@ export const SpreadsheetFooter: React.FC<SpreadsheetFooterProps> = ({
       {/* 2. Item Count & Autosave Status Bar
           F1a: kontrol pagination lama dihapus — kontrol tersebut tidak
           pernah memotong daftar (semua baris selalu dirender) dan
-          totalPages selalu 1. Yang ditampilkan sekarang jumlah item yang
-          jujur: seluruh item memang sedang ditampilkan. */}
+          totalPages selalu 1. D-38 (Batch F): klaim "semua" hanya benar
+          bila tidak ada filter/pencarian aktif — bila ada, teksnya
+          "Menampilkan X dari N item" (lihat footerItemCountText). */}
       <div
         style={{
           display: 'flex',
@@ -109,7 +130,7 @@ export const SpreadsheetFooter: React.FC<SpreadsheetFooterProps> = ({
           gap: '10px',
         }}
       >
-        <span>Menampilkan semua {totalItemsCount} item</span>
+        <span>{footerItemCountText(filteredItemsCount ?? totalItemsCount, totalItemsCount)}</span>
 
         {/* Right: Autosave status indicator */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>

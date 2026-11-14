@@ -9,6 +9,7 @@ import {
   FileSpreadsheet,
 } from "lucide-react";
 import { Project, RabItem } from "../../types";
+import { resolveProjectFormConfig } from "../../engine/projectCostConfig";
 
 interface EstimatorSettingsViewProps {
   currentProject: Project | null;
@@ -22,23 +23,27 @@ export const EstimatorSettingsView: React.FC<EstimatorSettingsViewProps> = ({
   onUpdateSettings,
   onOpenExportModal,
 }) => {
+  // D-77/NEW-08: nilai awal dari resolver kanonis (field proyek →
+  // costSummary → default) — sama dengan Rekapitulasi. Bentuk lama
+  // `(field) ?? 0` menampilkan 0 untuk proyek yang konfigurasinya hanya
+  // hidup di costSummary, lalu Save menimpa nilai itu dengan 0.
   const [overheadPercent, setOverheadPercent] = useState<number>(
-    (currentProject as any)?.overheadPercent ?? 0
+    () => resolveProjectFormConfig(currentProject).overheadPercent
   );
   const [ppnPercent, setPpnPercent] = useState<number>(
-    (currentProject as any)?.ppnPercent ?? 11
+    () => resolveProjectFormConfig(currentProject).ppnPercent
   );
   /* Pajak OPT-IN (owner 2026-10-27): default MATI — Rekap tidak pernah
    * menambah PPN/PPh kecuali dicentang di sini. pphPercent default 0
    * (tidak ada tarif PPh tunggal yang dikarang). */
   const [ppnEnabled, setPpnEnabled] = useState<boolean>(
-    (currentProject as any)?.ppnEnabled === true
+    () => resolveProjectFormConfig(currentProject).ppnEnabled
   );
   const [pphEnabled, setPphEnabled] = useState<boolean>(
-    (currentProject as any)?.pphEnabled === true
+    () => resolveProjectFormConfig(currentProject).pphEnabled
   );
   const [pphPercent, setPphPercent] = useState<number>(
-    (currentProject as any)?.pphPercent ?? 0
+    () => resolveProjectFormConfig(currentProject).pphPercent
   );
   const [selectedRegion, setSelectedRegion] = useState<string>(
     (currentProject as any)?.region || ""

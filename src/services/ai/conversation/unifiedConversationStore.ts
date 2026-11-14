@@ -12,7 +12,7 @@
  */
 
 import { ProjectIsolationError } from '../../unifiedProjectContext';
-import { safeSetJSON } from '../../../utils/safeStorage';
+import { safeSetJSON, type StorageResult } from '../../../utils/safeStorage';
 import {
   buildExtractiveSummary,
   type ConversationSummary,
@@ -35,6 +35,14 @@ export class UnifiedConversationStore {
   private activeConversationByProject: Map<string, string> = new Map();
   private listeners: Set<AIConversationListener> = new Set();
   private initialized = false;
+  /**
+   * NEW-02 (Batch E): hasil tulis storage TERAKHIR. `saveToStorage`
+   * tidak pernah melempar (gagal tulis hanya di-warn), sehingga
+   * pemanggil tidak dapat membedakan "tersimpan" dari "gagal simpan"
+   * tanpa kanal ini. null = belum ada upaya tulis di lingkungan ini
+   * (mis. non-browser) — BUKAN kegagalan.
+   */
+  private lastSaveResult: StorageResult | null = null;
 
   private constructor() {
     this.loadFromStorage();
@@ -459,6 +467,15 @@ export class UnifiedConversationStore {
     });
   }
 
+  /**
+   * NEW-02 (Batch E): hasil tulis storage terakhir — dibaca pemanggil
+   * tepat sesudah mutasi (append/update) untuk membedakan persist yang
+   * sukses dari yang gagal. null bila belum ada upaya tulis.
+   */
+  public getLastSaveResult(): StorageResult | null {
+    return this.lastSaveResult;
+  }
+
   // ===========================================================================
   // PERSISTENCE & LEGACY MIGRATION
   // ===========================================================================
@@ -468,11 +485,13 @@ export class UnifiedConversationStore {
       if (typeof window === 'undefined') return;
       const serializable = Array.from(this.conversations.values());
       const result = safeSetJSON(UNIFIED_CONVERSATIONS_KEY, serializable);
+      this.lastSaveResult = result;
       if (!result.ok) {
         // Honest failure: keep in-memory data, warn (do NOT delete old data).
         console.warn('[UnifiedConversationStore] Save failed:', result.reason, result.message);
       }
     } catch (err) {
+      this.lastSaveResult = { ok: false, reason: 'UNKNOWN', message: 'Penyimpanan gagal. Perubahan tidak tersimpan.' };
       console.warn('[UnifiedConversationStore] Failed to save conversations to localStorage:', err);
     }
   }

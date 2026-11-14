@@ -111,19 +111,34 @@ export const TopBar: React.FC<TopBarProps> = ({
   breadcrumb,
 }) => {
 const { t, lang, setLang } = useI18n();
-  const { activeRole, logoutRole } = useRole();
+  const { activeRole, logoutRole, hasCapability } = useRole();
   const { session: supabaseSession, signOut: signOutAuth } = useAuth();
   const [currentUser, setCurrentUser] = useState(() => ClientUserManagementService.getCurrentUser());
+  // D-83 (Batch G2; handoff G1 L4): tanpa sesi Supabase DAN tanpa peran
+  // aktif, sesi ini tidak punya identitas terverifikasi — biasanya hanya
+  // gerbang kode akses. Rekaman lokal getCurrentUser() (seed SUPER_ADMIN)
+  // BUKAN identitas user dan tidak boleh tampil sebagai nama/email/badge
+  // orang. Sesi tamu dilabeli jujur di semua titik render (tombol profil,
+  // header dropdown, badge peran).
+  const isGuestSession = !supabaseSession && !activeRole;
+  const displayUser = isGuestSession
+    ? { name: 'Tamu', email: 'Sesi demo — gerbang kode akses', avatar: '' as string | undefined, role: null as typeof currentUser.role | null }
+    : currentUser;
   // Audit 2026-11-03: foto stok eksternal (Unsplash) tidak ditampilkan sebagai
   // avatar siapa pun — avatar kosong/stok dirender sebagai inisial nama.
   const avatarSrc =
-    currentUser.avatar && !/unsplash\.com|picsum\.photos/.test(currentUser.avatar)
-      ? currentUser.avatar
+    displayUser.avatar && !/unsplash\.com|picsum\.photos/.test(displayUser.avatar)
+      ? displayUser.avatar
       : '';
   const userInitials = (() => {
-    const parts = String(currentUser.name || '').replace(/,.*$/, '').trim().split(/\s+/).filter(Boolean);
+    const parts = String(displayUser.name || '').replace(/,.*$/, '').trim().split(/\s+/).filter(Boolean);
     return (((parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '')).toUpperCase() || '?');
   })();
+  // D-33/D-34 (Batch G2): kapabilitas yang sama dengan gerbang tab
+  // Pengaturan (UnifiedSettingsView.isTabAllowed) — menu Tim/Keamanan
+  // dinonaktifkan bila kapabilitasnya tidak ada, bukan diarahkan diam-diam.
+  const canManageUsers = hasCapability('manage-users');
+  const canManageSecurity = hasCapability('manage-security');
   const [helpOpen, setHelpOpen] = useState(false);
   const [shortcutOpen, setShortcutOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -890,7 +905,11 @@ onFocus={(e) => {
                     // sama dengan tombol "Ulangi Tutorial" di Pengaturan).
                     { label: 'Panduan Penggunaan EZRAB', icon: BookOpen, action: () => { setHelpOpen(false); window.dispatchEvent(new CustomEvent(ONBOARDING_OPEN_EVENT)); } },
                     // FAQ → bagian FAQ nyata di halaman publik /fitur.
-                    { label: 'Pusat Bantuan & FAQ', icon: LifeBuoy, action: () => { setHelpOpen(false); navigateTo('/fitur'); window.setTimeout(() => { document.getElementById('faq')?.scrollIntoView({ behavior: 'smooth' }); }, 250); } },
+                    // D-35: dulu navigate + setTimeout 250 ms tetap —
+                    // diam-diam gagal bila chunk lazy /fitur belum
+                    // termuat. Kini navigasi membawa hash; efek
+                    // hash-scroll App.tsx mengulang sampai #faq ada.
+                    { label: 'Pusat Bantuan & FAQ', icon: LifeBuoy, action: () => { setHelpOpen(false); navigateTo('/fitur#faq'); } },
                     { label: 'Shortcut Keyboard (⌘ K)', icon: Keyboard, action: () => { setHelpOpen(false); setShortcutOpen(true); } },
                     // Item dukungan teknis DIHAPUS (F6): tidak ada kanal
                     // support nyata di konfigurasi — item itu hanya melempar
@@ -994,7 +1013,7 @@ onFocus={(e) => {
             {avatarSrc ? (
               <img
                 src={avatarSrc}
-                alt={currentUser.name}
+                alt={displayUser.name}
                 style={{
                   width: isNarrowMobile ? '28px' : '30px',
                   height: isNarrowMobile ? '28px' : '30px',
@@ -1006,7 +1025,7 @@ onFocus={(e) => {
               />
             ) : (
               <div
-                aria-label={currentUser.name}
+                aria-label={displayUser.name}
                 style={{
                   width: isNarrowMobile ? '28px' : '30px',
                   height: isNarrowMobile ? '28px' : '30px',
@@ -1029,10 +1048,14 @@ onFocus={(e) => {
             {!isNarrowMobile && (
               <div style={{ textAlign: 'left', lineHeight: 1.25 }}>
                 <div style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>
-                  {currentUser.name.split(',')[0]}
+                  {displayUser.name.split(',')[0]}
                 </div>
 <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <span>{activeRole ? activeRole.name : 'Super Admin'}</span>
+                  {/* NEW-04: tanpa peran aktif, sesi ini tidak punya
+                      identitas terverifikasi (biasanya hanya gerbang
+                      kode akses) — jangan dilabeli 'Super Admin'.
+                      'Tamu' adalah label jujurnya. */}
+                  <span>{activeRole ? activeRole.name : 'Tamu'}</span>
                 </div>
               </div>
             )}
@@ -1067,7 +1090,7 @@ onFocus={(e) => {
                   {avatarSrc ? (
                     <img
                       src={avatarSrc}
-                      alt={currentUser.name}
+                      alt={displayUser.name}
                       style={{
                         width: '44px',
                         height: '44px',
@@ -1079,7 +1102,7 @@ onFocus={(e) => {
                     />
                   ) : (
                     <div
-                      aria-label={currentUser.name}
+                      aria-label={displayUser.name}
                       style={{
                         width: '44px',
                         height: '44px',
@@ -1102,13 +1125,28 @@ onFocus={(e) => {
                   )}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: '13.5px', fontWeight: 800, color: 'var(--ez-color-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {currentUser.name}
+                      {displayUser.name}
                     </div>
                     <div style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: '1px' }}>
-                      {currentUser.email}
+                      {displayUser.email}
                     </div>
                     <div style={{ marginTop: '6px', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                      {renderRoleBadge(currentUser.role)}
+                      {/* D-83 (Batch G2): sesi tamu tidak membawa badge
+                          peran seed (SUPER_ADMIN) — pill netral 'Tamu'. */}
+                      {displayUser.role ? (
+                        renderRoleBadge(displayUser.role)
+                      ) : (
+                        <span
+                          style={{
+                            display: 'inline-flex', alignItems: 'center',
+                            fontSize: '10px', fontWeight: 800, letterSpacing: '0.04em',
+                            color: 'var(--ez-color-text-muted)', background: 'var(--ez-color-surface-tertiary)',
+                            border: '1px solid var(--ez-color-border-line)', padding: '3px 8px', borderRadius: '999px',
+                          }}
+                        >
+                          Tamu
+                        </span>
+                      )}
                       {activeRole && (
                         <span
                           title={`${t('settings.role_aktif')}: ${activeRole.name}`}
@@ -1149,7 +1187,7 @@ color: 'var(--ez-hue-violet-text)', background: 'var(--ez-hue-violet-bg)',
 
               {/* Menu Links */}
               <div style={{ padding: '6px' }}>
-                {[
+                {([
                   {
                     label: t('nav.menu_profil'),
                     icon: User,
@@ -1169,6 +1207,14 @@ color: 'var(--ez-hue-violet-text)', background: 'var(--ez-hue-violet-bg)',
                   {
                     label: t('nav.menu_tim'),
                     icon: Users,
+                    // D-33 (Batch G2): dinonaktifkan bila kapabilitas
+                    // manage-users tidak ada — jangan mengiklankan tab
+                    // yang tidak bisa dibuka (dulu: redirect diam-diam
+                    // ke Profil). Hanya peran Tim yang punya kapabilitas
+                    // ini (NEW-07 — sengaja tidak diberikan ke peran
+                    // demo default; lihat UnifiedSettingsView).
+                    disabled: !canManageUsers,
+                    disabledHint: t('nav.butuh_peran_tim'),
                     action: () => {
                       setProfileOpen(false);
                       onNavigate('pengaturan', 'users');
@@ -1185,17 +1231,31 @@ color: 'var(--ez-hue-violet-text)', background: 'var(--ez-hue-violet-bg)',
                   {
                     label: t('nav.menu_keamanan'),
                     icon: Shield,
+                    // D-34 (Batch G2): sama seperti menu_tim, untuk
+                    // kapabilitas manage-security.
+                    disabled: !canManageSecurity,
+                    disabledHint: t('nav.butuh_peran_tim'),
                     action: () => {
                       setProfileOpen(false);
                       onNavigate('pengaturan', 'security');
                     },
                   },
-                ].map((item) => {
+                ] as Array<{
+                  label: string;
+                  icon: React.ComponentType<{ size?: number; color?: string }>;
+                  disabled?: boolean;
+                  disabledHint?: string;
+                  action: () => void;
+                }>).map((item) => {
                   const Icon = item.icon;
+                  const itemDisabled = item.disabled === true;
                   return (
                     <button
                       key={item.label}
-                      onClick={item.action}
+                      onClick={itemDisabled ? undefined : item.action}
+                      disabled={itemDisabled}
+                      title={itemDisabled ? item.disabledHint : undefined}
+                      aria-disabled={itemDisabled || undefined}
                       style={{
                         width: '100%',
                         height: '36px',
@@ -1209,11 +1269,13 @@ color: 'var(--ez-hue-violet-text)', background: 'var(--ez-hue-violet-bg)',
                         color: 'var(--ez-color-text-body)',
                         fontSize: '12.5px',
                         fontWeight: 500,
-                        cursor: 'pointer',
+                        cursor: itemDisabled ? 'not-allowed' : 'pointer',
+                        opacity: itemDisabled ? 0.55 : 1,
                         textAlign: 'left',
                         transition: 'background 0.12s ease',
                       }}
                       onMouseEnter={(e) => {
+                        if (itemDisabled) return;
                         e.currentTarget.style.background = 'var(--ez-color-surface-secondary)';
                         e.currentTarget.style.color = 'var(--ez-color-primary)';
                       }}
@@ -1226,7 +1288,7 @@ color: 'var(--ez-hue-violet-text)', background: 'var(--ez-hue-violet-bg)',
                         <Icon size={15} color="var(--ez-color-text-muted)" />
                         <span>{item.label}</span>
                       </div>
-                      <ChevronRight size={13} color="var(--ez-color-border-strong)" />
+                      {!itemDisabled && <ChevronRight size={13} color="var(--ez-color-border-strong)" />}
                     </button>
                   );
                 })}
@@ -1448,9 +1510,12 @@ color: 'var(--ez-hue-violet-text)', background: 'var(--ez-hue-violet-bg)',
                   }}
                 >
 <LogOut size={15} color="var(--ez-color-danger-strong)" />
-                  {/* Login dinonaktifkan (AUTH_ENABLED=false): tombol ini tidak
-                      mengakhiri sesi apa pun — ia hanya kembali ke landing.
-                      Label disesuaikan dengan perilaku sebenarnya (F6). */}
+                  {/* NEW-03: komentar lama ("tidak mengakhiri sesi apa
+                      pun") SALAH sejak R2 — tombol ini memanggil
+                      logoutAll: mengakhiri peran + sesi Supabase +
+                      cookie gerbang + kunci transien, lalu kembali
+                      ke landing. Kembali tanpa sesi berarti gerbang
+                      terkunci lagi. */}
                   <span>{{ id: 'Kembali ke Beranda', en: 'Back to Home', zh: '返回首页', ms: 'Kembali ke Laman Utama' }[lang]}</span>
                 </button>
               </div>

@@ -19,6 +19,7 @@ export const EzrabEyesMascot: React.FC<EzrabEyesMascotProps> = ({
   enableFloating = true,
   enableBlink = true,
   onClick,
+  ariaLabel,
   className,
   style,
 }) => {
@@ -32,6 +33,7 @@ export const EzrabEyesMascot: React.FC<EzrabEyesMascotProps> = ({
       enableFloat={enableFloating}
       enableBlink={enableBlink}
       onClick={onClick}
+      ariaLabel={ariaLabel}
       className={className}
       style={style}
     />

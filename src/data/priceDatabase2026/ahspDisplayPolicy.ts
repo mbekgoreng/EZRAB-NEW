@@ -48,15 +48,70 @@ export interface FinalizableComposition {
 /**
  * Biaya Langsung (D) untuk dipakai sebagai harga kerja.
  * - Item berkomponen: D = unitPrice resolver (jumlah subtotal A+B+C yang resolved).
- * - Item tanpa komponen tapi ber-DHSP resmi: pakai harga resmi sebagai referensi.
+ * - Item berkomponen yang TIDAK ADA komponennya berharga (unitPrice null):
+ *   D = harga DHSP resmi bila ada (D-57, Batch B — OD-16 opsi (a)). DHSP
+ *   adalah harga satuan resmi yang diterbitkan (Daftar Harga Satuan
+ *   Pekerjaan); menyembunyikannya membuat badge "Harga lengkap" berbohong
+ *   (badge FULL via DHSP, harga tampil null, finalisasi diblokir).
+ *   Basisnya DITANDAI lewat `getAhspDirectPriceBasis` — pemakai wajib
+ *   menampilkan label "DHSP resmi" bila basisnya DHSP.
+ * - Item tanpa komponen: DHSP resmi dulu, lalu unitPrice baked item.
  * - Selain itu: null (harga belum tersedia).
+ *
+ * INVARIAN (diuji di d57DhspDirectPrice): item ber-badge FULL selalu punya
+ * harga tampil non-null — badge, harga kartu, dialog, dan `canFinalizeAhsp`
+ * memakai kriteria "ada harga" yang sama.
  */
 export function getAhspDirectPrice(
   comp: FinalizableComposition | null | undefined
 ): number | null {
   if (!comp) return null;
-  if (comp.totalComponents > 0) return comp.unitPrice;
-  return comp.officialDhspPrice ?? null;
+  if (comp.totalComponents === 0) {
+    // Item tanpa komponen: DHSP resmi adalah otoritas pertama; harga baked
+    // item (yang sudah masuk ke comp.unitPrice lewat resolver) adalah
+    // fallback — sebelumnya item seperti ini menampilkan null meski harga
+    // baked-nya ada (cabang lain dari D-57 yang sama).
+    if (comp.officialDhspPrice !== null && comp.officialDhspPrice !== undefined && comp.officialDhspPrice > 0) {
+      return comp.officialDhspPrice;
+    }
+    return comp.unitPrice !== null && comp.unitPrice !== undefined && comp.unitPrice > 0 ? comp.unitPrice : null;
+  }
+  if (comp.unitPrice !== null && comp.unitPrice !== undefined && comp.unitPrice > 0) {
+    return comp.unitPrice;
+  }
+  // Tidak ada harga komponen sama sekali — DHSP resmi adalah satu-satunya
+  // harga resmi yang tersedia. Untuk item PARSIAL (unitPrice > 0) cabang
+  // ini tidak tercapai: D parsial tetap jumlah komponen ter-resolve.
+  if (comp.officialDhspPrice !== null && comp.officialDhspPrice !== undefined && comp.officialDhspPrice > 0) {
+    return comp.officialDhspPrice;
+  }
+  return null;
+}
+
+/**
+ * Basis harga yang dikembalikan `getAhspDirectPrice` — untuk label tampilan.
+ * 'COMPONENTS' = jumlah subtotal komponen ter-resolve (atau harga baked item
+ * untuk item tanpa komponen); 'DHSP' = Daftar Harga Satuan Pekerjaan resmi;
+ * null = tidak ada harga. Pemakai yang menampilkan harga DARI FUNGSI INI
+ * wajib menampilkan label basisnya bila DHSP ("DHSP resmi").
+ */
+export function getAhspDirectPriceBasis(
+  comp: FinalizableComposition | null | undefined
+): 'COMPONENTS' | 'DHSP' | null {
+  if (!comp) return null;
+  if (comp.totalComponents === 0) {
+    if (comp.officialDhspPrice !== null && comp.officialDhspPrice !== undefined && comp.officialDhspPrice > 0) {
+      return 'DHSP';
+    }
+    return comp.unitPrice !== null && comp.unitPrice !== undefined && comp.unitPrice > 0 ? 'COMPONENTS' : null;
+  }
+  if (comp.unitPrice !== null && comp.unitPrice !== undefined && comp.unitPrice > 0) {
+    return 'COMPONENTS';
+  }
+  if (comp.officialDhspPrice !== null && comp.officialDhspPrice !== undefined && comp.officialDhspPrice > 0) {
+    return 'DHSP';
+  }
+  return null;
 }
 
 /**

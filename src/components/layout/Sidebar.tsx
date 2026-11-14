@@ -37,6 +37,7 @@ import { Project } from '../../types';
 import { useI18n } from '../../i18n';
 import { RabTemplateService } from '../../services/rabTemplateService';
 import { useCreditSimulation } from '../../ai-credits/useCreditSimulation';
+import { EXPAND_SIDEBAR_SUBMENU_EVENT, type SidebarSubmenuId } from '../onboarding/sidebarSubmenuEvents';
 
 export interface SidebarProps {
   activeMenu: string;
@@ -51,6 +52,13 @@ export interface SidebarProps {
   projects: Project[];
   currentProject: Project | null;
   onBackToLanding?: () => void;
+  /**
+   * D-32 (Batch G2, OD-01(a)): keluar workspace lewat alur terpusat
+   * logoutAll (milik WorkspaceView). Bila tidak diisi, tombol Keluar
+   * mundur ke onBackToLanding. Klik logo tetap memakai onBackToLanding
+   * (navigasi polos, bukan keluar).
+   */
+  onExitWorkspace?: () => void;
   onOpenSettingsTab?: (tab: string) => void;
   /** Buka modal Buat Proyek Baru (dimiliki WorkspaceView). */
   onCreateProject?: () => void;
@@ -80,6 +88,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   projects,
   currentProject,
   onBackToLanding,
+  onExitWorkspace,
   onOpenSettingsTab,
   onCreateProject,
 }) => {
@@ -217,6 +226,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
     setDatabaseSubmenuOpen(isDatabaseActive);
     setRabSubmenuOpen(isRabActive);
   }, [isDatabaseActive, isRabActive]);
+
+  // D-16 / D-86 (Batch G2): tur terpandu meminta submenu dibuka sebelum
+  // menyorot target di dalamnya (target di submenu tertutup tidak ada di
+  // DOM → langkah dilewati). Event ini tidak memicu efek akordeon di
+  // atas (isRabActive/isDatabaseActive tidak berubah selama tur), jadi
+  // submenu tetap terbuka sampai navigasi berikutnya.
+  useEffect(() => {
+    const onExpand = (event: Event) => {
+      const which = (event as CustomEvent<SidebarSubmenuId>).detail;
+      if (which === 'rab') setRabSubmenuOpen(true);
+      if (which === 'database') setDatabaseSubmenuOpen(true);
+    };
+    window.addEventListener(EXPAND_SIDEBAR_SUBMENU_EVENT, onExpand);
+    return () => window.removeEventListener(EXPAND_SIDEBAR_SUBMENU_EVENT, onExpand);
+  }, []);
 
   // Counts for Project Statuses
   const totalProjects = projects.length;
@@ -878,6 +902,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             )}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
               <div
+                data-tour="menu-rab"
                 style={{
                   height: '36px',
                   display: 'flex',
@@ -1075,6 +1100,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 {item.id === 'template-rab' && (
                   <div key="database-expandable-group" style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                     <div
+                      data-tour="menu-database"
                       style={{
                         height: '36px',
                         display: 'flex',
@@ -1248,7 +1274,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 }
                 if (isMobile) onCloseMobileDrawer();
               }}
-              onMouseEnter={(e) => handleMouseEnterItem(e, t('nav.tutorial'), 'tutorial')}
+              onMouseEnter={(e) => handleMouseEnterItem(e, t('nav.tutorial_ezrab'), 'tutorial')}
               onMouseLeave={handleMouseLeaveItem}
               aria-label={t('nav.tutorial_ezrab')}
               style={{
@@ -1274,7 +1300,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 size={17}
                 color={hoveredItemId === 'tutorial' ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)'}
               />
-              {(!railMode) && <span>{t('nav.tutorial')}</span>}
+              {(!railMode) && <span>{t('nav.tutorial_ezrab')}</span>}
             </button>
           </nav>
         </div>
@@ -1385,9 +1411,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <button
             type="button"
             onClick={() => {
-              // Tanpa confirm: confirm browser auto-dismiss di pengujian membuat
-              // tombol ini tampak mati; keluar ke beranda tidak menghapus data.
-              if (onBackToLanding) onBackToLanding();
+              // D-32 (Batch G2, OD-01(a)): keluar lewat alur terpusat
+              // logoutAll (onExitWorkspace) bila tersedia; tanpa confirm —
+              // confirm browser auto-dismiss di pengujian membuat tombol
+              // ini tampak mati; keluar ke beranda tidak menghapus data.
+              // Fallback ke onBackToLanding bila prop tidak diisi.
+              if (onExitWorkspace) onExitWorkspace();
+              else if (onBackToLanding) onBackToLanding();
             }}
             onMouseEnter={(e) => handleMouseEnterItem(e, t('nav.back_landing'), 'logout')}
             onMouseLeave={handleMouseLeaveItem}

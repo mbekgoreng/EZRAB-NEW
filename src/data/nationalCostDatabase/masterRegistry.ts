@@ -9,6 +9,7 @@ import { OFFICIAL_AHSP_SOURCES } from './sources';
 import { AHSP_2026_CANONICAL } from './ahsp2026Canonical.generated';
 import { BINA_MARGA_2026_MASTER } from './binaMarga2026Master.generated';
 import { OFFICIAL_SMKK_2026_ITEMS } from './officialSmkk2026';
+import { resolveBinaMargaUnit } from './binaMargaUnitResolution';
 import { AHSPItem } from '../../types';
 
 /**
@@ -67,7 +68,17 @@ function mapBinaMargaToNational(item: import('./binaMarga2026Master.generated').
     codeNormalized: item.codeNormalized,
     standardCode: item.standardCode,
     name: item.name,
+    // D-55 narrowing (2026-11-14): `unit` KEMBALI ke nilai mentah master
+    // (semantik pra-G2). G2 menimpa `unit` dengan satuan hasil-resolver
+    // di lapisan pemetaan bersama — bocor ke resolusi harga: G.166
+    // "Meter Panjang" menjadi "m'" lalu ter-resolve OFFICIAL_AHSP
+    // (s2 173/186 + costPolicyEngine 5/6; bukti biseksi laporan 08
+    // §8.3). Satuan TAMPIL yang sudah diperbaiki tinggal di
+    // `unitDisplay` — dibaca HANYA oleh lapisan tampilan (kartu/dialog
+    // AHSP Explorer); TIDAK ADA jalur resolusi harga yang membacanya.
+    // unitRaw mempertahankan nilai mentah (sudah ada sejak G2).
     unit: item.unit,
+    unitDisplay: resolveBinaMargaUnit(item.unit, item.standardCode),
     unitRaw: item.unit,
     domain: 'BINA_MARGA' as const,
     category: 'BINA_MARGA',

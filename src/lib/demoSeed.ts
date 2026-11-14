@@ -12,14 +12,23 @@
  * - Proyek yang cache-nya sudah cocok dikembalikan apa adanya.
  * - Proyek basi dibangun ulang dari item dengan persen ringkasan EKSISTING
  *   (overhead/profit/kontingensi/markup dipertahankan) dan perlakuan pajak
- *   EKSISTING (pajak hanya diterapkan bila ringkasan lama memang memuat
- *   taxAmount > 0 — rekonsiliasi tidak pernah mengubah perlakuan pajak
- *   sebuah proyek). Item PRICE_UNRESOLVED tidak masuk directCost, selaras
- *   mesin kanonis. Record item tidak pernah diubah.
+ *   dari FLAG proyek (NEW-11, Batch C): pajak diterapkan bila flag-nya ON;
+ *   bila flag belum pernah disetel (data lama sebelum kebijakan opt-in),
+ *   ringkasan lama dipakai sebagai bukti perlakuan pajak. Item
+ *   PRICE_UNRESOLVED tidak masuk directCost, selaras mesin kanonis.
+ *   Record item tidak pernah diubah.
+ *
+ * BATAS (residu, bukan cakupan Batch C): tangga mini di sini tidak mengenal
+ * pengecualian item HSP dari basis O&P (§17.1), basis kena pajak
+ * proporsional (item taxIncluded), dan PPh dihitung atas subtotal penuh —
+ * untuk proyek dengan item-item itu, hasil rebuild bisa sedikit menyimpang
+ * dari mesin kanonis sampai ada mutasi dalam aplikasi yang menghitung
+ * ulang lewat mesin. Delegasi penuh ke mesin kanonis adalah tindak lanjut
+ * yang direkomendasikan.
  */
 export function reconcileProjectSummaries(
   projects: Project[],
-  items: Array<{ projectId?: string; amount?: number | null; priceStatus?: string }>
+  items: Array<{ projectId?: string; amount?: number | null; priceStatus?: string; taxIncludedPpn?: boolean; taxIncludedPph?: boolean }>
 ): { projects: Project[]; changedIds: string[] } {
   const itemsByProject = new Map<string, typeof items>();
   for (const item of items) {
@@ -39,11 +48,27 @@ export function reconcileProjectSummaries(
       0
     );
     const cs = project.costSummary;
+    // NEW-11: cache yang "konsisten sendiri" tetapi bertentangan dengan
+    // flag pajak proyek tetap dianggap BASI — kalau tidak, kerusakan yang
+    // ditimbulkan aturan lama (flag ON + taxAmount 0 + total direct-only
+    // yang tersimpan rapi) tidak pernah diperbaiki. Pengecualian: proyek
+    // yang SEMUA itemnya sudah termasuk pajak itu memang sah berpajak 0
+    // walau flag-nya ON, jadi hanya proyek dengan minimal satu item kena
+    // pajak yang ditandai basi. (Input minimal tanpa flag taxIncluded
+    // diperlakukan sebagai kena pajak — tidak bisa membuktikan sebaliknya.)
+    const hasTaxablePpnItem = projectItems.some((i) => i.taxIncludedPpn !== true);
+    const hasTaxablePphItem = projectItems.some((i) => i.taxIncludedPph !== true);
+    const ppnFlag = (project as any).ppnEnabled;
+    const pphFlag = (project as any).pphEnabled;
+    const taxInconsistent =
+      (ppnFlag === true && (cs?.taxAmount ?? 0) === 0 && directCost > 0 && hasTaxablePpnItem) ||
+      (pphFlag === true && (cs?.pphAmount ?? 0) === 0 && directCost > 0 && hasTaxablePphItem);
     if (
       cs &&
       cs.directCost === directCost &&
       project.totalRab === cs.grandTotal &&
-      project.itemsCount === projectItems.length
+      project.itemsCount === projectItems.length &&
+      !taxInconsistent
     ) {
       return project;
     }
@@ -64,16 +89,29 @@ export function reconcileProjectSummaries(
     const contingencyPercent = cs?.contingencyPercent ?? 0;
     const directorMarkupPercent = cs?.directorMarkupPercent ?? 0;
     const taxPercent = (project as any).ppnPercent ?? cs?.taxPercent ?? 11;
+    const pphPercent = (project as any).pphPercent ?? cs?.pphPercent ?? 0;
     const overheadAmount = Math.round((directCost * overheadPercent) / 100);
     const profitAmount = Math.round((directCost * profitPercent) / 100);
     const contingencyAmount = Math.round((directCost * contingencyPercent) / 100);
     const directorMarkupTotal = Math.round((directCost * directorMarkupPercent) / 100);
     const subtotalBeforeTax =
       directCost + overheadAmount + profitAmount + contingencyAmount + directorMarkupTotal;
-    // Perlakuan pajak dipertahankan dari ringkasan lama: hanya proyek yang
-    // ringkasannya memang memuat pajak yang dihitung ulang pajaknya.
-    const taxAmount = (cs?.taxAmount ?? 0) > 0 ? Math.round((subtotalBeforeTax * taxPercent) / 100) : 0;
-    const grandTotal = subtotalBeforeTax + taxAmount;
+    // NEW-11: perlakuan pajak dibaca dari FLAG proyek — aturan lama hanya
+    // melihat ringkasan lama (`taxAmount > 0`), sehingga proyek dengan
+    // flag ON tetapi ringkasan lama 0 dibangun ulang sebagai direct-only
+    // (pajaknya hilang diam-diam setelah reload). Flag eksplisit OFF
+    // dihormati (pajak 0); flag yang belum pernah disetel (data lama
+    // sebelum kebijakan opt-in) jatuh ke ringkasan lama agar rekonsiliasi
+    // tidak mengubah perlakuan pajak yang tidak diketahuinya. PPh
+    // diperlakukan sama — aturan lama bahkan tidak menghitungnya sama
+    // sekali sehingga rebuild membuang PPh dari grand total.
+    const ppnApplies =
+      ppnFlag === true ? true : ppnFlag === false ? false : (cs?.taxAmount ?? 0) > 0;
+    const pphApplies =
+      pphFlag === true ? true : pphFlag === false ? false : (cs?.pphAmount ?? 0) > 0;
+    const taxAmount = ppnApplies ? Math.round((subtotalBeforeTax * taxPercent) / 100) : 0;
+    const pphAmount = pphApplies ? Math.round((subtotalBeforeTax * pphPercent) / 100) : 0;
+    const grandTotal = subtotalBeforeTax + taxAmount + pphAmount;
 
     changedIds.push(project.id);
     return {
@@ -95,6 +133,8 @@ export function reconcileProjectSummaries(
         subtotalBeforeTax,
         taxPercent,
         taxAmount,
+        pphPercent,
+        pphAmount,
         grandTotal,
       },
     };

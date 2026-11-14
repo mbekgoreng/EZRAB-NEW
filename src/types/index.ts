@@ -545,6 +545,16 @@ export interface Project {
   reviewerName?: string;
   status: ProjectStatus;
   currentVersion?: string;
+  /**
+   * D-43 (Batch A, 2026-11-14) — penunjuk versi estimasi AKTIF proyek ini
+   * (id EstimateVersion yang snapshot-nya sama dengan state RAB saat ini).
+   * Ditulis saat revisi dibuat (revisi baru menjadi aktif) dan saat
+   * aktivasi/restore berhasil. Absen (proyek lama / belum ada revisi) =
+   * versi aktif efektif adalah baseline (bila belum ada versi tersimpan)
+   * atau versi terakhir (bila sudah ada) — lihat
+   * `activeEstimateVersionId` di ProjectContext.
+   */
+  activeEstimateVersionId?: string | null;
   notes?: string;
   companyId?: string;
   coverImage?: string;
@@ -578,6 +588,14 @@ export interface Project {
   consultantName?: string;        // Nama Konsultan Supervisi
   contractorName?: string;        // Nama Kontraktor Pelaksana
   budgetYear?: number;            // Tahun Anggaran
+  /**
+   * D-85 (Batch G2): anggaran perkiraan yang diisi user saat membuat
+   * proyek (input "Estimasi Anggaran" di CreateProjectModal). BUKAN
+   * total RAB terhitung — tidak pernah dibaca sebagai NILAI ESTIMASI
+   * (daftar proyek memakai total kanonis dari item RAB). Disimpan agar
+   * input user tidak hilang; tampilan anggaran adalah pekerjaan terpisah.
+   */
+  estimatedBudget?: number;       // Anggaran perkiraan saat pembuatan (bukan total RAB)
   province?: string;              // Provinsi
   cityRegency?: string;           // Kabupaten / Kota
   district?: string;              // Kecamatan (dari database wilayah, lib data/wilayah)
@@ -850,6 +868,29 @@ export interface QTOItem {
   uraian: string; // e.g. "Pekerjaan Bowplank & Pengukuran"
   quantity: number;
   unit: string;
+  /**
+   * D-67 (Batch A, 2026-11-14) — harga tersimpan dari kalkulator pada saat
+   * item dibuat / dihitung ulang. Sebelumnya QTOItem TIDAK punya field
+   * harga sama sekali, sehingga sinkronisasi rekap → RAB tidak pernah bisa
+   * membawa harga kalkulator dan selalu jatuh ke sentinel Rp0
+   * (PRICE_UNRESOLVED). Field-field ini HANYA diisi bila rincian harga
+   * kalkulator lengkap (tidak parsial) — rincian parsial TIDAK PERNAH
+   * disimpan sebagai harga (harga satuan dari total parsial adalah angka
+   * semu). Item lama (tanpa field ini) diperlakukan sebagai "belum
+   * memiliki harga", sama seperti perilaku sebelumnya.
+   */
+  /** Harga satuan tersimpan (Rp per `priceUnit`). null/undefined = belum ada harga — BUKAN Rp0. */
+  unitPrice?: number | null;
+  /** Total biaya kalkulator yang menjadi dasar unitPrice (unitPrice × quantity pada saat disimpan). */
+  totalCost?: number | null;
+  /** Status harga tersimpan: RESOLVED (semua komponen dari sumber nyata) atau ESTIMATED (ada baris estimasi kalkulator) / MANUAL. */
+  priceStatus?: PriceStatus;
+  /** Satuan yang dipakai unitPrice tersimpan — wajib cocok dengan `unit` saat transfer, bila tidak cocok transfer ditolak. */
+  priceUnit?: string;
+  /** Jejak dasar harga tersimpan (mis. "Grand total kalkulator Rp2.872.250 / 42,4 m") — diteruskan ke catatan item RAB saat sinkronisasi. */
+  priceNotes?: string;
+  /** Peringatan provenance harga (lintas-wilayah, INDEX_ONLY, dst.) dari kalkulator — diteruskan ke item RAB saat sinkronisasi. */
+  priceValidationWarnings?: string[];
   parameterSnapshot?: Record<string, any>;
   formulaSnapshot?: string;
   status: QTOItemStatus;

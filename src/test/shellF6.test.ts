@@ -69,9 +69,18 @@ check('chatbox: tanpa EZRABMascot3D', !chatbox.includes('EZRABMascot3D'));
 check('chatbox: tanpa mascot-ezrab-new', !chatbox.includes('mascot-ezrab-new'));
 check('chatbox: memakai EZRABMascotLucu', chatbox.includes('EZRABMascotLucu'));
 
-const fullView = read('components/copilot/EzrabAiAssistantFullView.tsx');
-check('full view: tanpa mascot-ezrab-new', !fullView.includes('mascot-ezrab-new'));
-check('full view: memakai EZRABMascotLucu', fullView.includes('EZRABMascotLucu'));
+/* NEW-01 (Batch E): EzrabAiAssistantFullView DIHAPUS — permukaan mati
+ * yang membawa model percakapan kedua + salinan bug D-50. Kedua cek
+ * maskot lama diganti pin penghapusan (file tidak ada, tidak diimpor).
+ * Detail verifikasi: src/test/new01DeadConversationModel.test.ts. */
+check(
+  'full view terhapus (NEW-01)',
+  !existsSync(resolve(SRC, 'components/copilot/EzrabAiAssistantFullView.tsx')),
+);
+check(
+  'full view tidak diimpor WorkspaceView (NEW-01)',
+  !workspaceView.includes('EzrabAiAssistantFullView'),
+);
 
 const chatAiView = read('ai-tools/ezrab-ai/view.tsx');
 check('chat AI: tanpa EZRABMascot3D', !chatAiView.includes('EZRABMascot3D'));

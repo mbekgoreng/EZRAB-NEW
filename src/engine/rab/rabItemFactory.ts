@@ -243,3 +243,55 @@ export function createRabItemRecord(
       : {}),
   };
 }
+
+/**
+ * D-40 (Batch F) — himpunan provenance yang WAJIB selamat saat duplikasi.
+ *
+ * Factory adalah allowlist: field yang tidak diteruskan pemanggil hilang
+ * senyap. Jalur duplikat baris (`handleDuplicateItem`) dulu hanya
+ * meneruskan `priceStatus` — `verificationStatus` + seluruh provenance
+ * hilang, sehingga salinan item NEEDS_VERIFICATION/ESTIMATED diam-diam
+ * naik kelas menjadi VERIFIED (flag "⚠ Perlu verifikasi" hilang).
+ *
+ * INVARIAN: provenance selamat saat duplikat — ESTIMATED tetap ESTIMATED,
+ * NEEDS_VERIFICATION tetap NEEDS_VERIFICATION, kind/label sumber tidak
+ * berubah. Semua jalur duplikat (menu baris, massal, form SmartAdd)
+ * WAJIB menyebarkan helper ini. Aturan G1 factory tetap berlaku di
+ * atasnya: klaim VERIFIED atas identitas UNSAFE tetap diturunkan
+ * (penurunan, bukan peningkatan — invarian tidak dilanggar).
+ *
+ * SENGAJA DIKECUALIKAN (identitas, bukan provenance):
+ * - `qtoItemId` / `calculationRunId` / `calculatorId`: salinan BUKAN
+ *   produk run kalkulasi sumber; menyalinnya akan menautkan salinan
+ *   secara palsu ke item QTO sumber.
+ * - `wbsCode` / `wbsNodeId` / `wbsMappingStatus` / `wbsSuggestedNodeId`:
+ *   pemetaan WBS adalah identitas per baris; salinan mulai belum
+ *   terpetakan dan dipetakan ulang pada siklusnya sendiri (factory
+ *   tidak pernah menurunkan `wbsCode` — lihat S6 di atas).
+ * - `priceStatus` bukan bagian helper ini: pemanggil sudah meneruskannya
+ *   sendiri (Fase 4A) di semua jalur duplikat.
+ */
+export function cloneProvenance(item: RabItem): Partial<RabItem> {
+  return {
+    ...(item.verificationStatus ? { verificationStatus: item.verificationStatus } : {}),
+    ...(item.priceSourceKind ? { priceSourceKind: item.priceSourceKind } : {}),
+    ...(item.priceSourceLabel ? { priceSourceLabel: item.priceSourceLabel } : {}),
+    ...(item.priceSourceExplanation ? { priceSourceExplanation: item.priceSourceExplanation } : {}),
+    ...(item.priceCostBasis ? { priceCostBasis: item.priceCostBasis } : {}),
+    ...(item.priceSourceName !== undefined ? { priceSourceName: item.priceSourceName } : {}),
+    ...(item.priceSourceSupplier !== undefined ? { priceSourceSupplier: item.priceSourceSupplier } : {}),
+    ...(item.priceSourceDate !== undefined ? { priceSourceDate: item.priceSourceDate } : {}),
+    ...(item.priceSourceRegion !== undefined ? { priceSourceRegion: item.priceSourceRegion } : {}),
+    ...(item.ahspMappingStatus ? { ahspMappingStatus: item.ahspMappingStatus } : {}),
+    ...(item.verificationDate ? { verificationDate: item.verificationDate } : {}),
+    ...(item.userDecisionStatus ? { userDecisionStatus: item.userDecisionStatus } : {}),
+    ...(item.calculationFormula ? { calculationFormula: item.calculationFormula } : {}),
+    ...(item.isPartial ? { isPartial: true } : {}),
+    ...(typeof item.unresolvedComponentCount === 'number'
+      ? { unresolvedComponentCount: item.unresolvedComponentCount }
+      : {}),
+    ...(item.priceValidationWarnings && item.priceValidationWarnings.length > 0
+      ? { priceValidationWarnings: [...item.priceValidationWarnings] }
+      : {}),
+  };
+}

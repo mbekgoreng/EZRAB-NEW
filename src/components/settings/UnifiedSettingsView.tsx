@@ -88,11 +88,13 @@ const APP_VERSION = '2.0.0';
 const APP_BUILD = 'Production';
 import { settingsAuditService, SettingsAuditEntry, SettingsCategory, SettingsScope } from '../../services/settingsAuditService';
 import { computeProjectInfoTotal } from '../../services/projectInfoTotal';
+import { resolveProjectFormConfig } from '../../engine/projectCostConfig';
 import { BrowserNotifyControl } from '../../notifications/BrowserNotifyControl';
 import { formatCurrencyIDR } from '../../calculations/decimalEngine';
 import { useCreditSimulation } from '../../ai-credits/useCreditSimulation';
 import { CREDIT_PLAN_TO_PLAN_ID } from '../../ai-credits/config';
 import { getPlanDefinition } from '../../billing/plans';
+import { MaterialDatabaseService } from '../../domain/material/materialDatabaseService';
 
 export type SettingsTabId =
   // Level 1: Account
@@ -160,7 +162,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
   onNavigateTab,
   onLogout,
 }) => {
-  const { currentProject, projects, setCurrentProjectId, updateProject, refreshProjectTotals } = useProject();
+  const { currentProject, projects, allRabItems, setCurrentProjectId, updateProject, refreshProjectTotals } = useProject();
   const { t, lang, setLang } = useI18n();
   const { activeRole, logoutRole, hasCapability } = useRole();
   const { session: supabaseSession, signOut: signOutAuth } = useAuth();
@@ -216,6 +218,16 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
   const [addUserModalOpen, setAddUserModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
+  // D-80 (Batch G2): jumlah material dibaca LANGSUNG dari layanan yang
+  // sama dengan KPI Resources (MaterialDatabaseService.getAllMaterials)
+  // — label hardcode "6.164" sudah basi (jumlah live 9.202). Memo
+  // sekali per mount; impor spreadsheet memicu remount view ini lewat
+  // navigasi, jadi angka tidak basi antar-kunjungan.
+  const liveMaterialCount = useMemo(
+    () => MaterialDatabaseService.getInstance().getAllMaterials().length,
+    [],
+  );
+
   // Users List State
   const [usersList, setUsersList] = useState<WorkspaceMember[]>(() => ClientUserManagementService.getUsers());
   const currentUser = ClientUserManagementService.getCurrentUser();
@@ -229,6 +241,11 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
       setActiveTab(resolved);
       if (resolved.startsWith('project-')) {
         setScope('PROJECT');
+      } else {
+        // D-33/D-34 (Batch G2): tab global (mis. users/security dari menu
+        // TopBar) selalu dibuka dalam scope GLOBAL agar nav kiri dan
+        // panel kanan selaras — tanpa redirect tab (lihat restrictedTab).
+        setScope('GLOBAL');
       }
     }
   }, [initialTab]);
@@ -359,9 +376,14 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
   const [projLocation, setProjLocation] = useState(activeProject?.location || '');
   const [projBuildingType, setProjBuildingType] = useState(activeProject?.buildingType || 'Rumah Tinggal');
   const [projBuildingArea, setProjBuildingArea] = useState(activeProject?.buildingArea || 120);
-  const [projOverhead, setProjOverhead] = useState((activeProject as any)?.overheadPercent ?? 0);
-  const [projProfit, setProjProfit] = useState((activeProject as any)?.profitPercent ?? 0);
-  const [projPpn, setProjPpn] = useState((activeProject as any)?.ppnPercent ?? 11);
+  // D-77/NEW-08: nilai awal form proyek dari resolver kanonis (field proyek
+  // → costSummary → default mesin) — SAMA dengan yang dibaca Rekapitulasi.
+  // Bentuk lama `(field) ?? 0` menghilangkan profit 5% demo (yang hanya
+  // hidup di costSummary) sehingga Save polos menulis profitPercent: 0 dan
+  // menjatuhkan total emas Rp1.089.879.733 → Rp1.040.339.744.
+  const [projOverhead, setProjOverhead] = useState(() => resolveProjectFormConfig(activeProject).overheadPercent);
+  const [projProfit, setProjProfit] = useState(() => resolveProjectFormConfig(activeProject).profitPercent);
+  const [projPpn, setProjPpn] = useState(() => resolveProjectFormConfig(activeProject).ppnPercent);
   const [projRounding, setProjRounding] = useState((activeProject as any)?.roundingScheme || 'RIBUAN');
   const [projWaste, setProjWaste] = useState((activeProject as any)?.wastePercent ?? 5);
   const [projVolumeDecimals, setProjVolumeDecimals] = useState(2);
@@ -381,22 +403,25 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
   const [projContractorName, setProjContractorName] = useState(activeProject?.contractorName || '');
   const [projBudgetYear, setProjBudgetYear] = useState(activeProject?.budgetYear || new Date().getFullYear());
   /* Pajak opt-in (sinkron dengan EstimatorSettingsView + Rekap): */
-  const [projPpnEnabled, setProjPpnEnabled] = useState((activeProject as any)?.ppnEnabled === true);
-  const [projPphEnabled, setProjPphEnabled] = useState((activeProject as any)?.pphEnabled === true);
-  const [projPph, setProjPph] = useState((activeProject as any)?.pphPercent ?? 0);
+  const [projPpnEnabled, setProjPpnEnabled] = useState(() => resolveProjectFormConfig(activeProject).ppnEnabled);
+  const [projPphEnabled, setProjPphEnabled] = useState(() => resolveProjectFormConfig(activeProject).pphEnabled);
+  const [projPph, setProjPph] = useState(() => resolveProjectFormConfig(activeProject).pphPercent);
 
   // Sync project form when activeProject changes
   useEffect(() => {
     if (activeProject) {
+      // D-77/NEW-08: sinkronisasi memakai resolver kanonis yang sama dengan
+      // nilai awal (lihat catatan di atas) — bukan `field ?? 0`.
+      const formCfg = resolveProjectFormConfig(activeProject);
       setProjName(activeProject.name || '');
       setProjNumber(activeProject.projectNumber || 'PROJ-2026-001');
       setProjClient(activeProject.clientName || '');
       setProjLocation(activeProject.location || '');
       setProjBuildingType(activeProject.buildingType || 'Rumah Tinggal');
       setProjBuildingArea(activeProject.buildingArea || 120);
-      setProjOverhead((activeProject as any)?.overheadPercent ?? 0);
-      setProjProfit((activeProject as any)?.profitPercent ?? 0);
-      setProjPpn((activeProject as any)?.ppnPercent ?? 11);
+      setProjOverhead(formCfg.overheadPercent);
+      setProjProfit(formCfg.profitPercent);
+      setProjPpn(formCfg.ppnPercent);
       setProjRounding((activeProject as any)?.roundingScheme || 'RIBUAN');
       setProjWaste((activeProject as any)?.wastePercent ?? 5);
       setProjStartDate(activeProject.startDate || '2026-04-01');
@@ -410,9 +435,9 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
       setProjConsultantName(activeProject.consultantName || '');
       setProjContractorName(activeProject.contractorName || '');
       setProjBudgetYear(activeProject.budgetYear || new Date().getFullYear());
-      setProjPpnEnabled((activeProject as any)?.ppnEnabled === true);
-      setProjPphEnabled((activeProject as any)?.pphEnabled === true);
-      setProjPph((activeProject as any)?.pphPercent ?? 0);
+      setProjPpnEnabled(formCfg.ppnEnabled);
+      setProjPphEnabled(formCfg.pphEnabled);
+      setProjPph(formCfg.pphPercent);
     }
   }, [activeProject]);
 
@@ -615,7 +640,15 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
    * Pembatasan menu yang jelas-jelas sensitif untuk sesi role demo:
    * - 'users' & 'roles'  → butuh capability 'manage-users'
    * - 'security'         → butuh capability 'manage-security'
-   * Tanpa sesi role aktif, tidak ada pembatasan (perilaku existing).
+   * Tanpa sesi role aktif, resolveCapability mengembalikan false —
+   * jadi tab ini JUGA tertutup untuk sesi gerbang-kode-akses saja
+   * (komentar lama "tidak ada pembatasan" SALAH; diperbaiki D-33/D-34
+   * Batch G2). Kapabilitas TIDAK diberikan ke peran demo default
+   * (NEW-07): manajemen pengguna/tim adalah mutasi sensitif yang tidak
+   * pantas dibuka untuk semua pengguna demo mode showcase. Yang
+   * diperbaiki adalah KEJUJURAN tampilannya: menu dinonaktifkan di
+   * TopBar dan tab yang dibuka langsung menampilkan panel penjelasan
+   * di tempat — tidak pernah redirect diam-diam ke Profil.
    */
   const isTabAllowed = (tabId: SettingsTabId): boolean => {
     if (tabId === 'users' || tabId === 'roles') return hasCapability('manage-users');
@@ -627,15 +660,16 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
     .map((g) => ({ ...g, items: g.items.filter((item) => isTabAllowed(item.id)) }))
     .filter((g) => g.items.length > 0);
 
-  // Jika tab aktif tidak diizinkan untuk role saat ini (mis. via pencarian),
-  // alihkan ke tab profil yang selalu tersedia.
-  useEffect(() => {
-    if (!isTabAllowed(activeTab)) {
-      setActiveTab('profile');
-      if (scope === 'PROJECT') setScope('GLOBAL');
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, hasCapability]);
+  // D-33/D-34 (Batch G2): TIDAK ADA LAGI redirect diam-diam ke Profil
+  // bila tab aktif tidak diizinkan. Tab tetap terpilih dan panel kanan
+  // menampilkan penjelasan "tidak tersedia untuk sesi ini" + kapabilitas
+  // yang diperlukan (lihat blok restricted di panel konten). Redirect
+  // lama membuat menu TopBar "Manajemen Pengguna & Tim" / "Keamanan
+  // Akun" tampak membuka Pengaturan generik.
+  const restrictedTab = !isTabAllowed(activeTab)
+    ? globalNavGroups.flatMap((g) => g.items).find((item) => item.id === activeTab)
+    : undefined;
+  const restrictedCapability = activeTab === 'security' ? 'manage-security' : 'manage-users';
 
   // Grouped Navigation for Level 3 (Project Scope)
   const projectNavItems = [
@@ -643,7 +677,10 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
     { id: 'project-estimator' as SettingsTabId, label: 'Estimator & Pajak Proyek', icon: Coins },
     { id: 'project-ded' as SettingsTabId, label: 'DED & Waste Factor', icon: Calculator },
     { id: 'project-documents' as SettingsTabId, label: 'Dokumen & Surat', icon: FileText },
-    { id: 'project-schedule' as SettingsTabId, label: 'Jadwal & Kalender Proyek', icon: Calendar },
+    // D-78 (Batch G2, OD-20(a)): label jujur — bagian ini hanya berisi
+    // dua field tanggal, bukan kalender hari kerja. Tanpa membangun
+    // kalender (di luar otorisasi OD-20(a)).
+    { id: 'project-schedule' as SettingsTabId, label: 'Tanggal Proyek', icon: Calendar },
     { id: 'project-cost' as SettingsTabId, label: 'Cost Code & Baseline', icon: TrendingUp },
   ];
 
@@ -1086,6 +1123,42 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
           }}
         >
           {/* ===================================================================
+              D-33/D-34 (Batch G2): TAB TERBATAS — ditampilkan DI TEMPAT
+              bila tab aktif memerlukan kapabilitas yang tidak dimiliki
+              sesi ini. Menggantikan redirect diam-diam ke Profil.
+             =================================================================== */}
+          {restrictedTab && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div>
+                <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 4px' }}>
+                  {restrictedTab.label}
+                </h3>
+                <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
+                  Bagian ini tidak tersedia untuk sesi Anda saat ini.
+                </p>
+              </div>
+              <div
+                style={{
+                  background: 'var(--ez-hue-amber-bg)',
+                  border: '1px solid var(--ez-hue-amber-border)',
+                  borderRadius: '12px',
+                  padding: '16px 18px',
+                  fontSize: '13px',
+                  lineHeight: 1.6,
+                  color: 'var(--ez-color-text-body)',
+                }}
+              >
+                <div style={{ fontWeight: 700, marginBottom: '4px' }}>
+                  Memerlukan kapabilitas “{restrictedCapability}”
+                </div>
+                <div>
+                  Kapabilitas ini hanya dimiliki peran Tim. Masuk dengan PIN peran Tim untuk membuka bagian ini.
+                  Peran demo default sengaja tidak diberi akses manajemen pengguna &amp; keamanan.
+                </div>
+              </div>
+            </div>
+          )}
+          {/* ===================================================================
               GLOBAL SCOPE: 1. AKUN (PROFIL)
              =================================================================== */}
           {activeTab === 'profile' && (
@@ -1485,7 +1558,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
           {/* ===================================================================
               GLOBAL SCOPE: 1. AKUN (KEAMANAN)
              =================================================================== */}
-          {activeTab === 'security' && (
+          {activeTab === 'security' && isTabAllowed('security') && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
                 <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 4px' }}>
@@ -1631,7 +1704,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
           {/* ===================================================================
               GLOBAL SCOPE: 2. WORKSPACE (TIM & ANGGOTA)
              =================================================================== */}
-          {activeTab === 'users' && (
+          {activeTab === 'users' && isTabAllowed('users') && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
                 <div>
@@ -1761,7 +1834,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
           {/* ===================================================================
               GLOBAL SCOPE: 2. WORKSPACE (ROLE & HAK AKSES)
              =================================================================== */}
-          {activeTab === 'roles' && (
+          {activeTab === 'roles' && isTabAllowed('roles') && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
                 <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 4px' }}>
@@ -1894,7 +1967,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 </span>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
                   {[
-                    { label: 'Database Material (6.164)', icon: Package, tab: 'database-material' },
+                    { label: `Database Material (${liveMaterialCount.toLocaleString('id-ID')})`, icon: Package, tab: 'database-material' },
                     { label: 'Database AHSP PUPR', icon: Database, tab: 'ahsp-2026' },
                     { label: 'Database Upah Tenaga Kerja', icon: HardHat, tab: 'database-upah' },
                     { label: 'Database Peralatan Berat', icon: Truck, tab: 'database-alat' },
@@ -1936,10 +2009,16 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
                 <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 4px' }}>
-                  Standar Estimator & Parameter RAB (Default Workspace)
+                  Standar Estimator & Parameter RAB (Acuan Workspace)
                 </h3>
+                {/* D-77: nilai-nilai ini HANYA acuan — terverifikasi tidak
+                    disimpan dan tidak dibaca jalur mana pun (proyek baru
+                    selalu 0%/0% per keputusan owner 2026-11-08; tiap proyek
+                    memakai pengaturannya sendiri di tab Proyek). Label lama
+                    "saat membuat proyek baru" menyiratkan nilai ini menjadi
+                    default proyek baru, padahal tidak pernah diterapkan. */}
                 <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
-                  Nilai acuan persentase margin overhead, tarif pajak PPN, dan pembulatan saat membuat proyek baru.
+                  Nilai acuan persentase margin overhead, tarif pajak PPN, dan pembulatan — referensi workspace saja, tidak diterapkan otomatis ke proyek mana pun.
                 </p>
               </div>
 
@@ -2036,6 +2115,15 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   >
                     <option value={2}>2 Angka di Belakang Koma (0.00)</option>
                   </select>
+                  {/* D-81 (Batch G2): jelaskan MENGAPA kontrol ini
+                      nonaktif — tanpa penjelasan, select yang tampak
+                      normal ini terlihat rusak. Gaya nonaktif berasal
+                      dari aturan :disabled global (G1 D-11); select
+                      ini tidak menimpa opacity-nya. Presisi per proyek
+                      diatur di tab "DED & Waste Factor Proyek". */}
+                  <span style={{ fontSize: '11px', color: '#94A3B8', marginTop: '2px', display: 'block' }}>
+                    Presisi global dikunci di 2 desimal — ubah per proyek di tab DED &amp; Waste Factor Proyek.
+                  </span>
                 </div>
               </div>
             </div>
@@ -2206,8 +2294,19 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                       <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <span style={{ fontSize: '14.5px', fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>Audit EZRAB AI Engine</span>
-                          <span style={{ fontSize: '11px', fontWeight: 750, color: 'var(--ez-hue-green-text)', background: 'var(--ez-hue-green-bg-deep)', border: '1px solid #86EFAC', padding: '2px 8px', borderRadius: 'var(--ez-radius-pill)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                            <CheckCircle2 size={12} />
+                          {/* D-82 (Batch G2): warna badge mengikuti HASIL
+                              AUDIT — bukan hijau permanen. Sebelum audit,
+                              badge netral abu-abu + tanpa ikon centang
+                              (centang hijau di samping "Belum diperiksa"
+                              mengklaim sukses yang belum teruji). */}
+                          <span style={{
+                            fontSize: '11px', fontWeight: 750,
+                            color: aiAuditResult == null ? 'var(--ez-color-text-muted)' : aiAuditResult.connected ? 'var(--ez-hue-green-text)' : 'var(--ez-color-danger-strong)',
+                            background: aiAuditResult == null ? 'var(--ez-color-surface-tertiary)' : aiAuditResult.connected ? 'var(--ez-hue-green-bg-deep)' : 'var(--ez-hue-red-bg)',
+                            border: `1px solid ${aiAuditResult == null ? 'var(--ez-color-border-line)' : aiAuditResult.connected ? '#86EFAC' : 'var(--ez-color-danger)'}`,
+                            padding: '2px 8px', borderRadius: 'var(--ez-radius-pill)', display: 'inline-flex', alignItems: 'center', gap: '4px',
+                          }}>
+                            {aiAuditResult?.connected ? <CheckCircle2 size={12} /> : null}
                             {aiAuditResult == null ? 'Belum diperiksa' : aiAuditResult.connected ? 'Terhubung & Aktif' : 'Tidak Terhubung'}
                           </span>
                         </div>
@@ -2246,8 +2345,11 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', marginTop: '14px', marginBottom: '16px' }}>
                     <div style={{ padding: '12px', borderRadius: '10px', background: 'var(--ez-color-surface-secondary)', border: '1px solid #EEF1F6' }}>
                       <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>Status Engine Cluster</div>
-                      <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--ez-hue-green-text)', marginTop: '4px' }}>
-                        Aktif & Siap Operasi
+                      {/* D-82 (Batch G2): status mengikuti hasil audit —
+                          "Aktif & Siap Operasi" hardcode mengklaim sukses
+                          sebelum audit apa pun dijalankan. */}
+                      <div style={{ fontSize: '14px', fontWeight: 800, color: aiAuditResult == null ? 'var(--ez-color-text-muted)' : aiAuditResult.connected ? 'var(--ez-hue-green-text)' : 'var(--ez-color-danger-strong)', marginTop: '4px' }}>
+                        {aiAuditResult == null ? 'Belum diperiksa' : aiAuditResult.connected ? 'Aktif & Siap Operasi' : 'Tidak terhubung'}
                       </div>
                       <div style={{ fontSize: '10.5px', color: '#94A3B8', marginTop: '2px' }}>Server Isolation Guard</div>
                     </div>
@@ -2273,7 +2375,12 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                       <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--ez-color-text-primary)', marginTop: '4px' }}>
                         {aiAuditResult?.latencyMs ? `${aiAuditResult.latencyMs} ms` : '—'}
                       </div>
-                      <div style={{ fontSize: '10.5px', color: 'var(--ez-hue-green-text)', marginTop: '2px' }}>● Sangat Cepat & Stabil</div>
+                      {/* D-82 (Batch G2): tanpa pengukuran, tidak ada
+                          klaim kecepatan. "Sangat Cepat & Stabil" hardcode
+                          muncul bahkan saat latensi belum pernah diukur. */}
+                      <div style={{ fontSize: '10.5px', color: aiAuditResult?.latencyMs ? 'var(--ez-hue-green-text)' : '#94A3B8', marginTop: '2px' }}>
+                        {aiAuditResult?.latencyMs ? '● Terukur saat audit terakhir' : 'Belum diukur'}
+                      </div>
                     </div>
                   </div>
 
@@ -2287,7 +2394,13 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                       <li><strong>Isolasi Server-Side:</strong> Seluruh kredensial dan infrastruktur AI terisolasi di lingkungan server (<em>Server-Side Isolation Guard</em>) tanpa eksposur ke browser client.</li>
                       <li><strong>Abstraksi Penuh:</strong> Komunikasi client ke server menggunakan identitas resmi <em>EZRAB AI 1.3</em>, <em>EZRAB AI Pro</em>, dan <em>EZRAB Vision</em>.</li>
                       <li><strong>Multimodal Terpadu:</strong> Dukungan penuh pengenalan visual gambar teknis, format PDF vektor, dan dokumen pindaian beresolusi tinggi.</li>
-                      <li><strong>Audit Terakhir:</strong> {aiAuditResult?.lastChecked || 'Baru saja'} — {aiAuditResult?.message || 'Semua engine operasional.'}</li>
+                      {/* D-82 (Batch G2): fallback lama MENGARANG sukses
+                          ("Baru saja — Semua engine operasional.") saat
+                          aiAuditResult null. Kini jujur: belum pernah
+                          diaudit. */}
+                      <li><strong>Audit Terakhir:</strong> {aiAuditResult == null
+                        ? 'Belum pernah diaudit — jalankan Uji Koneksi untuk memeriksa engine.'
+                        : `${aiAuditResult.lastChecked ?? '—'} — ${aiAuditResult.message ?? '—'}`}</li>
                     </ul>
                   </div>
                 </div>
@@ -2568,8 +2681,14 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   dihitung lagi). Bila proyek belum punya item, tampil
                   jujur "Belum ada item RAB", bukan Rp0. */}
               {(() => {
-                const sections: any[] = (activeProject as any)?.sections || [];
-                const items: any[] = sections.flatMap((s: any) => s?.items || []);
+                // D-76 (Batch G2): item RAB disimpan FLAT di allRabItems
+                // (per projectId) — BUKAN di sections[].items proyek
+                // (selalu kosong; itulah sebabnya proyek demo 213 item
+                // diklaim "Belum ada item RAB"). Cabang `!info` kini
+                // hanya tercapai proyek yang BENAR-BENAR kosong.
+                const items: any[] = (allRabItems || []).filter(
+                  (i: any) => i?.projectId === activeProject?.id,
+                );
                 /* Rumus dihitung helper bersama (services/projectInfoTotal)
                  * agar kartu ini, Rekapitulasi, dan mesin memakai satu
                  * aturan pajak yang sama dan bisa diuji tanpa React. */
@@ -2598,7 +2717,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                           {formatCurrencyIDR(total)}
                         </div>
                         <div style={{ fontSize: '11.5px', color: '#94A3B8', marginTop: '2px' }}>
-                          Dari {items.length} item · biaya langsung + overhead {ohPct}%{ppn > 0 ? ` + PPN` : ''}{pph > 0 ? ` + PPh` : ''} — sama seperti Rekapitulasi. Nilai tersimpan tetap IDR.
+                          Dari {items.length} item · biaya langsung + overhead {ohPct}%{info.profit > 0 ? ` + profit ${info.profitPercent}%` : ''}{ppn > 0 ? ` + PPN` : ''}{pph > 0 ? ` + PPh` : ''} — sama seperti Rekapitulasi. Nilai tersimpan tetap IDR.
                         </div>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -2829,10 +2948,10 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
                 <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 4px' }}>
-                  Jadwal & Kalender Kerja Proyek
+                  Tanggal Proyek
                 </h3>
                 <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
-                  Tanggal mulai pelaksanaan, target serah terima, dan kalender hari kerja proyek.
+                  Tanggal mulai pelaksanaan dan target serah terima proyek.
                 </p>
               </div>
 
@@ -2870,20 +2989,26 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   Cost Code & Baseline Anggaran Proyek
                 </h3>
                 <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
-                  Batas pagu anggaran yang disetujui untuk pemantauan deviasi biaya aktual.
+                  Pagu anggaran baseline untuk pemantauan deviasi biaya aktual.
                 </p>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
                 <div>
                   <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Pagu Anggaran Baseline (Rp)</label>
+                  {/* D-79: nilai lama Rp450.000.000 adalah literal hardcoded
+                      dengan caption palsu ("disetujui direksi") — bukan data
+                      proyek mana pun. Kini jujur kosong sampai ada fitur
+                      penetapan pagu yang sesungguhnya (tidak diisi otomatis
+                      dari grand total: pagu adalah keputusan manajemen,
+                      bukan turunan RAB). */}
                   <input
                     type="text"
-                    defaultValue={formatCurrencyIDR(450000000)}
+                    defaultValue="Belum ditetapkan"
                     disabled
                     style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', background: 'var(--ez-color-surface-secondary)', fontWeight: 700 }}
                   />
-                  <span style={{ fontSize: '11px', color: '#94A3B8', marginTop: '2px', display: 'block' }}>Diambil dari Grand Total RAB yang disetujui direksi</span>
+                  <span style={{ fontSize: '11px', color: '#94A3B8', marginTop: '2px', display: 'block' }}>Belum ada pagu anggaran yang ditetapkan untuk proyek ini.</span>
                 </div>
               </div>
             </div>

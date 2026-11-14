@@ -2,9 +2,11 @@
  * EZRAB Chat — Premium Response Rendering Engine (renderer sentral).
  *
  * Satu-satunya renderer markdown untuk permukaan chat AI EZRAB:
- * Ezrab Chat AI (view.tsx), Magic AI / Co-Assistant (EzrabCoAssistantChatbox),
- * dan EzrabAiAssistantFullView. Permukaan lain (AI Document) memakai jalur
+ * Ezrab Chat AI (view.tsx) dan Magic AI / Co-Assistant
+ * (EzrabCoAssistantChatbox). Permukaan lain (AI Document) memakai jalur
  * dokumennya sendiri (markdownHtml.ts) dan TIDAK melewati file ini.
+ * (EzrabAiAssistantFullView dihapus Batch E / NEW-01 — permukaan itu
+ * tidak pernah dirender dan membawa model percakapan kedua.)
  *
  * Arsitektur (parser-aware, BUKAN strip membabi buta):
  *   teks model → parser blok (heading/tabel/list/quote/fence/math block)
@@ -37,7 +39,7 @@
  */
 import React from 'react';
 // CATATAN: gaya .md-* ada di ./markdown.css dan diimpor oleh komponen
-// permukaan (view.tsx, EzrabCoAssistantChatbox, EzrabAiAssistantFullView)
+// permukaan (view.tsx, EzrabCoAssistantChatbox)
 // — BUKAN di sini, agar modul renderer ini tetap dapat diimpor harness
 // tes node (tsx/vitest) yang tidak memproses impor CSS.
 

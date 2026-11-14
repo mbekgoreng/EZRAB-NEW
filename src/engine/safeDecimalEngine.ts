@@ -42,6 +42,14 @@ export class SafeDecimalEngine {
    * sanitize) — this mirrors the pre-existing runtime behaviour; callers
    * that need to distinguish PRICE_MISSING must check for null themselves
    * instead of relying on the sum.
+   *
+   * PERANGKAP API (D-39/NEW-09, 2026-11-14): fungsi ini VARIADIK — ia
+   * menjumlahkan SEMUA argumen dan TIDAK PUNYA parameter decimals (berbeda
+   * dengan `safeMultiply(a, b, decimals)`). Argumen ketiga yang dimaksudkan
+   * sebagai "2 desimal" dijumlahkan harfiah sebagai Rp2 ke total.
+   * Enam belas situs pernah salah memakai bentuk itu (+Rp2 per panggilan;
+   * drawer 7.550→7.558, DED +Rp2/item). Bila pembulatan 2 desimal memang
+   * dibutuhkan, bungkus hasilnya: `safeRound(safeAdd(a, b), 2)`.
    */
   public static safeAdd(...numbers: (number | null | undefined)[]): number {
     let totalScaled = 0;

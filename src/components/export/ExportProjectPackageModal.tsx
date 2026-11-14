@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
   X,
   Download,
@@ -44,6 +44,14 @@ interface ExportProjectPackageModalProps {
   company?: Company;
   workspaceId?: string;
   onToast?: (message: string) => void;
+  /**
+   * D-75 (Batch F): preset awal saat modal DIBUKA — tergantung tombol
+   * yang membukanya ("Ekspor Rekap" → 'RECAP_ONLY'; tanpa prop →
+   * 'COMPLETE_PACKAGE'). Diterapkan pada transisi buka (bukan saat
+   * modal sudah terbuka), sehingga pilihan pengguna di dalam modal
+   * tidak tertimpa selama modal terbuka.
+   */
+  initialPreset?: ExportPresetId;
 }
 
 export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps> = ({
@@ -53,6 +61,7 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
   company,
   workspaceId,
   onToast,
+  initialPreset,
 }) => {
   const [selectedPreset, setSelectedPreset] = useState<ExportPresetId>('COMPLETE_PACKAGE');
   const [exportFormat, setExportFormat] = useState<ExportFormat>('excel');
@@ -161,6 +170,23 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
       });
     }
   }, [isOpen, workspaceId]);
+
+  // D-75 (Batch F): terapkan initialPreset pada TRANSISI buka saja.
+  // Modal ini tetap ter-mount saat tertutup (isOpen mengontrol render),
+  // jadi initializer useState tidak cukup — tanpa efek ini, membuka
+  // "Ekspor Rekap" sesudah paket lengkap akan tetap menampilkan
+  // COMPLETE_PACKAGE. Guard ref mencegah reset saat pengguna mengubah
+  // preset di dalam modal yang sudah terbuka.
+  const prevIsOpenRef = useRef(false);
+  useEffect(() => {
+    if (isOpen && !prevIsOpenRef.current) {
+      handleSelectPreset(initialPreset ?? 'COMPLETE_PACKAGE');
+    }
+    prevIsOpenRef.current = isOpen;
+    // handleSelectPreset sengaja tidak di deps: efek ini hanya soal
+    // transisi buka, dan guard ref mencegah pemicu ulang.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, initialPreset]);
 
   const effectiveCompany: Company = useMemo(() => {
     // P0-B: rantai fallback memakai data branding/profil nyata. Jika tidak ada,

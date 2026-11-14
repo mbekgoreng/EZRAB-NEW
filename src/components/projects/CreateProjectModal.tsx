@@ -13,6 +13,7 @@ import { useI18n } from '../../i18n/I18nContext';
 import {
   extractProjectCreationIntent,
   decideMagicAiProjectAction,
+  decideVolumeCalcProjectAction,
   claimMagicAiSubmission,
   bindMagicAiSubmission,
 } from '../../ai-tools/ezrab-ai/projectCreationIntent';
@@ -62,6 +63,13 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
   const [magicAskChoice, setMagicAskChoice] = useState(false);
   const [magicError, setMagicError] = useState<string | null>(null);
 
+  // Volume Calculation Form State (D-28, Batch F): klik kartu Volume
+  // TIDAK LAGI membuat proyek diam-diam — pengguna menamai proyeknya
+  // (atau memakai ulang proyek aktif) sebelum ada proyek yang dibuat.
+  const [volumeName, setVolumeName] = useState('');
+  const [volumeAskChoice, setVolumeAskChoice] = useState(false);
+  const [volumeError, setVolumeError] = useState<string | null>(null);
+
   if (!isOpen) return null;
 
   const resetForm = () => {
@@ -77,6 +85,9 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
     setIsSubmitting(false);
     setMagicAskChoice(false);
     setMagicError(null);
+    setVolumeName('');
+    setVolumeAskChoice(false);
+    setVolumeError(null);
   };
 
   const handleClose = () => {
@@ -102,7 +113,13 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
       buildingType: manualBuildingType,
       buildingArea: areaNumber,
       floorCount: floorsNumber,
-      totalRab: budgetNumber,
+      // D-85 (Batch G2): anggaran perkiraan disimpan sebagai
+      // estimatedBudget — BUKAN totalRab. Menulis budget ke totalRab
+      // membuat proyek kosong tampil seolah sudah punya nilai RAB
+      // terhitung (salah satu dari 3 penulis cache totalRab yang
+      // semantiknya bertabrakan). totalRab proyek baru tetap 0 sampai
+      // mesin kanonis menghitungnya dari item RAB.
+      estimatedBudget: budgetNumber,
       creationMethod: 'manual',
       status: 'draft',
     });
@@ -204,18 +221,50 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
     proceedMagicCreate(aiPrompt.trim());
   };
 
-  // Launch Volume Calculation Pathway
+  // Launch Volume Calculation Pathway (D-28, Batch F): klik kartu HANYA
+  // membuka langkah penamaan/pilihan — TIDAK membuat proyek. Pembuatan
+  // terjadi di handleVolumeSubmit (sesudah pengguna menamai proyek dan
+  // menekan konfirmasi) atau tidak sama sekali bila pengguna memilih
+  // memakai ulang proyek aktif / membatalkan. Pola ask-nya mencerminkan
+  // Magic AI (§5.3): bila ada proyek aktif, pilihan yang ditonjolkan
+  // adalah memakai ulang proyek aktif (konteks QTO terjaga), bukan
+  // membuat proyek baru diam-diam.
   const handleVolumeCalcPathway = () => {
-    const newProj = onCreateProject({
-      name: 'Proyek Volume QTO Baru',
-      client: 'Klien Proyek',
-      clientName: 'Klien Proyek',
-      location: 'Indonesia',
-      buildingType: 'Rumah Tinggal',
-      creationMethod: 'volume_calculation',
-      status: 'draft',
-    });
+    const action = decideVolumeCalcProjectAction({ hasActiveProject: !!activeProject });
+    setVolumeAskChoice(action === 'ask');
+    setVolumeError(null);
+    setActiveStep('volume_calculation');
+  };
 
+  /** Lanjutkan kalkulasi volume ke proyek AKTIF (tanpa membuat proyek baru). */
+  const proceedVolumeReuseActive = () => {
+    if (!activeProject) return;
+    handleClose();
+    onNavigateToTab('qto-vc', activeProject.id);
+  };
+
+  // Buat proyek volume BARU dari nama yang dimasukkan pengguna.
+  const handleVolumeSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!volumeName.trim() || isSubmitting) return;
+    setVolumeError(null);
+    setIsSubmitting(true);
+    let newProj;
+    try {
+      newProj = onCreateProject({
+        name: volumeName.trim(),
+        client: 'Klien Proyek',
+        clientName: 'Klien Proyek',
+        location: 'Indonesia',
+        buildingType: 'Rumah Tinggal',
+        creationMethod: 'volume_calculation',
+        status: 'draft',
+      });
+    } catch {
+      setVolumeError(structuredAiError('PROJECT_CREATION_FAILED').message);
+      setIsSubmitting(false);
+      return;
+    }
     handleClose();
     onNavigateToTab('qto-vc', newProj.id);
   };
@@ -289,11 +338,13 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                 {activeStep === 'select' && t('proj.create.title_select')}
                 {activeStep === 'manual' && t('proj.create.title_manual')}
                 {activeStep === 'magic_ai' && t('proj.create.title_ai')}
+                {activeStep === 'volume_calculation' && t('proj.create.title_volume')}
               </h2>
               <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: '2px 0 0 0' }}>
                 {activeStep === 'select' && t('proj.create.sub_select')}
                 {activeStep === 'manual' && t('proj.create.sub_manual')}
                 {activeStep === 'magic_ai' && t('proj.create.sub_ai')}
+                {activeStep === 'volume_calculation' && t('proj.create.sub_volume')}
               </p>
             </div>
           </div>
@@ -863,6 +914,117 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                 <Sparkles size={14} />
                 <span>{isSubmitting ? t('proj.create.preparing') : t('proj.create.process_ai')}</span>
               </button>
+            </div>
+          </form>
+        )}
+
+        {/* =========================================================================
+            STEP 2C: VOLUME CALCULATION FORM (D-28, Batch F)
+            Klik kartu Volume membuka langkah ini — proyek BARU dibuat hanya
+            sesudah pengguna menamai + menekan "Buat & Buka Kalkulator".
+            Bila ada proyek aktif, pengguna ditawari memakai ulang proyek
+            aktif (tanpa membuat proyek baru). Batal/kembali = tidak ada
+            proyek yang dibuat.
+           ========================================================================= */}
+        {activeStep === 'volume_calculation' && (
+          <form onSubmit={handleVolumeSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            {volumeAskChoice && activeProject && (
+              <div style={{ background: 'var(--ez-color-surface-secondary)', border: '1px solid var(--ez-color-border-line)', padding: '12px', borderRadius: '8px' }}>
+                <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-body)', margin: '0 0 4px', lineHeight: 1.5 }}>
+                  Anda memiliki proyek aktif: <strong>{activeProject.name}</strong>
+                </p>
+                <p style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)', margin: '0 0 10px', lineHeight: 1.45 }}>
+                  Hitung volume di proyek aktif, atau buat proyek baru?
+                </p>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    onClick={proceedVolumeReuseActive}
+                    style={{ padding: '8px 14px', borderRadius: '8px', background: 'var(--ez-color-primary)', color: '#FFFFFF', border: 'none', fontSize: '12.5px', fontWeight: 650, cursor: 'pointer' }}
+                  >
+                    Hitung di proyek aktif
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setVolumeAskChoice(false)}
+                    style={{ padding: '8px 14px', borderRadius: '8px', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-body)', border: '1px solid var(--ez-color-border-line)', fontSize: '12.5px', fontWeight: 600, cursor: 'pointer' }}
+                  >
+                    Buat proyek baru
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {(!volumeAskChoice || !activeProject) && (
+              <div>
+                <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: '5px' }}>
+                  {t('proj.create.f_name')}
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder={t('proj.create.f_name_ph')}
+                  value={volumeName}
+                  onChange={(e) => setVolumeName(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '9px 12px',
+                    borderRadius: '8px',
+                    border: '1px solid var(--ez-hue-slate-border)',
+                    fontSize: '13px',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+            )}
+
+            {volumeError && (
+              <div role="alert" style={{ background: '#FEF2F2', border: '1px solid #FECACA', color: '#991B1B', padding: '10px 12px', borderRadius: '8px', fontSize: '12.5px', lineHeight: 1.45 }}>
+                {volumeError}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
+              <button
+                type="button"
+                onClick={() => setActiveStep('select')}
+                style={{
+                  padding: '9px 16px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--ez-color-border-line)',
+                  background: 'var(--ez-color-surface)',
+                  color: 'var(--ez-color-text-muted)',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                {t('proj.create.back_btn')}
+              </button>
+              {(!volumeAskChoice || !activeProject) && (
+                <button
+                  type="submit"
+                  disabled={isSubmitting || !volumeName.trim()}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '9px 20px',
+                    borderRadius: '8px',
+                    background: 'var(--ez-color-primary)',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    fontSize: '13px',
+                    fontWeight: 650,
+                    cursor: isSubmitting ? 'wait' : 'pointer',
+                    opacity: !volumeName.trim() ? 0.6 : 1,
+                  }}
+                >
+                  <Calculator size={14} />
+                  <span>{isSubmitting ? t('proj.create.saving') : 'Buat & Buka Kalkulator'}</span>
+                </button>
+              )}
             </div>
           </form>
         )}

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   Plus,
   Sparkles,
@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { Project } from '../../types';
 import { useProject } from '../../context/ProjectContext';
+import { computeProjectInfoTotal } from '../../services/projectInfoTotal';
 import { useI18n } from '../../i18n/I18nContext';
 import { DeleteProjectModal } from './DeleteProjectModal';
 import emptyBlueprintImg from '../../assets/proyek-empty-blueprint.png';
@@ -66,7 +67,15 @@ const getProgress = (p: Project): number => {
   return 0; // jujur: tidak ada data progres → 0, bukan angka tebakan
 };
 
-const getRabValue = (p: Project): number => p.totalRab || p.costSummary?.grandTotal || 0;
+// D-85 (Batch G2): TIDAK ADA LAGI getRabValue dari cache tersimpan.
+// Nilai "NILAI ESTIMASI" dihitung LANGSUNG dari item RAB + mesin
+// kanonis (computeProjectInfoTotal — total yang sama dengan
+// Rekapitulasi & Settings) lewat memo listRabValues di dalam komponen.
+// Cache `totalRab` punya 3 penulis dengan semantik berbeda (anggaran
+// saat pembuatan, grand total kanonis, reconciler) sehingga satu
+// proyek bisa tampil dengan nilai berbeda di permukaan berbeda.
+// Proyek kosong → 0 → dirender sebagai label "belum ada nilai",
+// bukan Rp0 (lihat pemakaian `val` di baris tabel).
 
 const isOverdue = (p: Project): boolean => {
   const s = getStatusKey(p);
@@ -209,7 +218,7 @@ export const AllProjectsView: React.FC<AllProjectsViewProps> = ({
   onNavigateToTab,
   onOpenProject,
 }) => {
-  const { deleteProject, backupProjectData, updateProject } = useProject();
+  const { deleteProject, backupProjectData, updateProject, allRabItems } = useProject();
   const { t } = useI18n();
   const STATUS_META = getStatusMeta(t);
   const [searchQuery, setSearchQuery] = useState('');
@@ -227,8 +236,33 @@ export const AllProjectsView: React.FC<AllProjectsViewProps> = ({
   const PAGE_SIZE = 8;
 
   /* ---------- metrics (data aktual, tanpa angka karangan) ---------- */
+  // D-85 (Batch G2): SATU aturan nilai estimasi — total kanonis dari
+  // item RAB nyata per proyek (sama dengan Rekapitulasi). Dihitung
+  // sekali per perubahan projects/allRabItems; dipakai total portofolio,
+  // urut "nilai", dan nilai per baris.
+  const listRabValues = useMemo(() => {
+    const byProject = new Map<string, typeof allRabItems>();
+    for (const item of allRabItems || []) {
+      // Item tanpa projectId tidak dimiliki proyek mana pun — lewati
+      // (tidak bisa berkontribusi ke nilai proyek mana pun).
+      if (!item.projectId) continue;
+      const list = byProject.get(item.projectId) ?? [];
+      list.push(item);
+      byProject.set(item.projectId, list);
+    }
+    const values = new Map<string, number>();
+    for (const p of projects) {
+      const info = computeProjectInfoTotal(byProject.get(p.id) ?? [], p as any);
+      values.set(p.id, info?.total ?? 0);
+    }
+    return values;
+  }, [projects, allRabItems]);
+  const getListRabValue = useCallback(
+    (p: Project): number => listRabValues.get(p.id) ?? 0,
+    [listRabValues],
+  );
   const totalProjects = projects.length;
-  const totalRab = projects.reduce((a, p) => a + getRabValue(p), 0);
+  const totalRab = projects.reduce((a, p) => a + getListRabValue(p), 0);
   const countBy: Record<StatusKey, number> = {
     berjalan: 0, draft: 0, selesai: 0, arsip: 0,
   };
@@ -268,7 +302,7 @@ export const AllProjectsView: React.FC<AllProjectsViewProps> = ({
     list = [...list].sort((a, b) => {
       switch (sortBy) {
         case 'nama': return a.name.localeCompare(b.name, 'id');
-        case 'nilai': return getRabValue(b) - getRabValue(a);
+        case 'nilai': return getListRabValue(b) - getListRabValue(a);
         case 'progres': return getProgress(b) - getProgress(a);
         case 'tenggat':
           return (a.targetDate || '9999').localeCompare(b.targetDate || '9999');
@@ -278,7 +312,7 @@ export const AllProjectsView: React.FC<AllProjectsViewProps> = ({
       }
     });
     return list;
-  }, [projects, searchQuery, statusFilter, clientFilter, locationFilter, sortBy]);
+  }, [projects, searchQuery, statusFilter, clientFilter, locationFilter, sortBy, getListRabValue]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, pageCount - 1);
@@ -575,7 +609,7 @@ export const AllProjectsView: React.FC<AllProjectsViewProps> = ({
                       const meta = STATUS_META[sk];
                       const overdue = isOverdue(p);
                       const prog = getProgress(p);
-                      const val = getRabValue(p);
+                      const val = getListRabValue(p);
                       return (
                         <tr
                           key={p.id}

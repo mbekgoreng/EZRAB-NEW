@@ -16,7 +16,6 @@ import {
   DedOutputPrefs, DEFAULT_DED_OUTPUT_PREFS,
 } from './types';
 import {
-  DEFAULT_DED_RAB_AI_MODE,
   depthModeFromFullAi,
   modeFromLegacy,
   modeLabel,
@@ -26,6 +25,7 @@ import {
   type DedRabAiMode,
 } from './dedMode';
 import { buildFullAiAttachmentOutput, resolveDedAiMode } from './dedModeUi';
+import { loadPersistedDedMode } from './dedModePersistence';
 import { probeDedPdf, resolvePageScope } from './parser';
 import { DedAiInputView, DedAiSession, DedLastRunSummary } from './DedAiInputView';
 import { DedAiProgressView, DedAiStage, getStageDefs, ProgressSummary } from './DedAiProgressView';
@@ -122,12 +122,17 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
   // dengan yang dilihat InputView) untuk chip Kredit AI di bar atas shell.
   const { balance: creditBalance } = useCreditSimulation();
   const [screen, setScreen] = useState<Screen>('input');
-  const [session, setSession] = useState<DedAiSession>({
-    files: [], description: '', projectName: '',
-    // DUAL MODE (§3, C2): sesi baru default EZRAB AI MODE; policy/fullAi
-    // diturunkan dari mode (bukan default lama FULL_AI).
-    projectType: 'BANGUNAN', mode: 'FAST', dedMode: DEFAULT_DED_RAB_AI_MODE,
-    policy: policyForMode(DEFAULT_DED_RAB_AI_MODE), fullAi: false, targetProjectId: null,
+  // D-45 (Batch E): sesi baru memakai mode DED terakhir yang dipilih
+  // pengguna (localStorage `ezrab_dedai_mode`), bukan selalu default
+  // C2 — policy/fullAi diturunkan dari mode yang dipulihkan (C1).
+  // Tanpa nilai tersimpan → default EZRAB AI MODE seperti sebelumnya.
+  const [session, setSession] = useState<DedAiSession>(() => {
+    const persistedMode = loadPersistedDedMode();
+    return {
+      files: [], description: '', projectName: '',
+      projectType: 'BANGUNAN', mode: 'FAST', dedMode: persistedMode,
+      policy: policyForMode(persistedMode), fullAi: persistedMode === 'FULL_AI', targetProjectId: null,
+    };
   });
   const [stages, setStages] = useState<DedAiStage[]>(() => initialStages(t));
   const [percent, setPercent] = useState(0);

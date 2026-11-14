@@ -25,6 +25,7 @@ import { coAssistantService, CoAssistantMessage, resolveClientWizardStep } from 
 import { isAbortError } from '../../ai-tools/aiResponseTiming';
 import { quickActionService } from '../../services/quickActionService';
 import { QUICK_ACTIONS_LIST, QUICK_ACTION_CONTRACTS } from '../../data/quickActionContracts';
+import { composeQuickActionSend, type QuickActionSendRequest } from '../../services/ai/quickActionToken';
 import { AssistantWizardRenderer } from './AssistantWizardRenderer';
 import { QuickActionDialogueRenderer } from './QuickActionDialogueRenderer';
 import { QuickActionFollowUpSuggestions } from './QuickActionFollowUpSuggestions';
@@ -200,6 +201,19 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
   const [isProjectDropdownOpen, setIsProjectDropdownOpen] = useState(false);
   const [contextChipVisible, setContextChipVisible] = useState(true);
   const [appliedProposalIds, setAppliedProposalIds] = useState<Set<string>>(new Set());
+  /**
+   * D-50 (Batch E): Quick Action yang menunggu konfirmasi. Klik tombol
+   * Quick Action HANYA mengisi state ini (dialog terbuka) — pengiriman
+   * ke AI hanya terjadi sesudah pengguna menekan "Kirim" di dialog.
+   * Batal = tidak ada yang dikirim, tidak ada yang dipersist.
+   */
+  const [pendingQuickAction, setPendingQuickAction] = useState<(QuickActionSendRequest & { title: string }) | null>(null);
+  useEffect(() => {
+    if (!pendingQuickAction) return undefined;
+    const onEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') setPendingQuickAction(null); };
+    window.addEventListener('keydown', onEsc);
+    return () => window.removeEventListener('keydown', onEsc);
+  }, [pendingQuickAction]);
 
   // i18n (hook aman tanpa provider — default bahasa Indonesia)
   const { lang, t } = useI18n();
@@ -712,7 +726,28 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
     }
   };
 
-  const handleQuickActionClick = async (actionId: string, title: string, initialPrompt: string) => {
+  /* D-50 (Batch E): klik Quick Action HANYA membuka dialog konfirmasi —
+   * TIDAK PERNAH auto-send. Aksi harus memetakan ke kontrak internal
+   * yang valid (composeQuickActionSend mengembalikan null bila tidak —
+   * klik itu diabaikan, bukan dikirim mentah). Dialog menampilkan aksi
+   * yang dituju + konteks proyek + catatan pemakaian kredit AI; kirim
+   * hanya terjadi di handleConfirmQuickAction sesudah pengguna menekan
+   * "Kirim". Flag `requiresConfirmation` kontrak kini tersubsumsi: SEMUA
+   * aksi cepat dikonfirmasi, karena semuanya dapat memakai kredit AI. */
+  const handleQuickActionClick = (actionId: string, title: string, initialPrompt: string) => {
+    if (isThinking || isSendingRef.current) return;
+    const composed = composeQuickActionSend(actionId, initialPrompt);
+    if (!composed) {
+      console.warn('[quick-action] aksi tidak valid, tidak dikirim:', actionId);
+      return;
+    }
+    setPendingQuickAction({ ...composed, title });
+  };
+
+  const handleConfirmQuickAction = async () => {
+    const pending = pendingQuickAction;
+    if (!pending) return;
+    setPendingQuickAction(null);
     if (isThinking || isSendingRef.current) return;
     isSendingRef.current = true;
     stopGenerationRef.current = false;
@@ -720,18 +755,21 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
     const userMsg: CoAssistantMessage = {
       id: `user-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       role: 'user',
-      text: title,
+      text: pending.title,
       timestamp: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
     };
 
     setMessages((prev) => [...prev, userMsg]);
     sendAbortRef.current = new AbortController();
     setIsThinking(true);
-    setThinkingStep(`Menyiapkan ${title}...`);
+    setThinkingStep(`Menyiapkan ${pending.title}...`);
 
     try {
+      // D-50: prompt manusia saja di `message`; id aksi terstruktur di
+      // `quickActionId` — token internal tidak pernah masuk konten.
       const result = await coAssistantService.sendMessage({
-        message: `[QUICK_ACTION_TRIGGER:${actionId}] ${initialPrompt}`,
+        message: pending.message,
+        quickActionId: pending.quickActionId,
         currentProject,
         projectRabItems,
         projectQtoItems,
@@ -1957,6 +1995,71 @@ backgroundColor: isListening ? '#EF4444' : 'var(--ez-color-surface)',
           EZRAB AI Co Assistant • Mengikuti izin dan keamanan akun Anda
         </div>
       </div>
+
+      {/* ===== D-50: Konfirmasi Quick Action (klik tidak pernah auto-send) ===== */}
+      {pendingQuickAction && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Konfirmasi tindakan cepat"
+          onClick={() => setPendingQuickAction(null)}
+          style={{
+            position: 'absolute', inset: 0, zIndex: 50,
+            background: 'rgba(15, 23, 42, 0.55)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: '100%', maxWidth: 340,
+              background: 'var(--ez-color-surface)', borderRadius: 16, padding: 16,
+              boxShadow: '0 16px 48px rgba(15, 23, 42, 0.25)',
+            }}
+          >
+            <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>
+              {pendingQuickAction.contract.label}
+            </div>
+            <p style={{ fontSize: 13, color: 'var(--ez-color-text-body)', margin: '6px 0 0', lineHeight: 1.5 }}>
+              {pendingQuickAction.contract.description}
+            </p>
+            <div style={{ marginTop: 12, fontSize: 12.5, color: 'var(--ez-color-text-body)', lineHeight: 1.5 }}>
+              <div><strong>Proyek:</strong> {currentProject?.name ?? 'Tanpa proyek aktif'}</div>
+              <div style={{ marginTop: 4 }}><strong>Permintaan:</strong> {pendingQuickAction.message}</div>
+              {pendingQuickAction.contract.riskLevel !== 'READ_ONLY' && (
+                <div style={{ marginTop: 6, color: '#B45309' }}>
+                  Aksi ini dapat mengubah data proyek — periksa hasilnya sebelum diterapkan.
+                </div>
+              )}
+            </div>
+            <p style={{ fontSize: 12, color: 'var(--ez-color-text-muted)', margin: '10px 0 0' }}>
+              Permintaan ini dikirim ke AI dan dapat memakai kredit AI.
+            </p>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 14 }}>
+              <button
+                type="button"
+                onClick={() => setPendingQuickAction(null)}
+                style={{
+                  padding: '8px 14px', borderRadius: 10, border: '1px solid #CBD5E1',
+                  background: '#FFF', color: '#334155', fontWeight: 700, fontSize: 13, cursor: 'pointer',
+                }}
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleConfirmQuickAction()}
+                style={{
+                  padding: '8px 14px', borderRadius: 10, border: 'none',
+                  background: '#2563EB', color: '#FFF', fontWeight: 700, fontSize: 13, cursor: 'pointer',
+                }}
+              >
+                Kirim
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style>{`
         @keyframes bounceDot {

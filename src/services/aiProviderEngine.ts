@@ -84,7 +84,13 @@ export interface AIProvider {
   chat: (
     prompt: string,
     context: FullProjectAIContext,
-    onThinkingStep?: (step: string) => void
+    onThinkingStep?: (step: string) => void,
+    /**
+     * D-50 (Batch E): Quick Action terstruktur. Bila diisi dengan id aksi
+     * yang valid, router memakai id ini — prompt tidak perlu (dan tidak
+     * boleh) membawa token internal `[QUICK_ACTION_TRIGGER:…]`.
+     */
+    options?: { quickActionId?: string }
   ) => Promise<AiResponseResult>;
 }
 
@@ -200,7 +206,8 @@ export class MockAiProvider implements AIProvider {
   async chat(
     prompt: string,
     context: FullProjectAIContext,
-    onThinkingStep?: (step: string) => void
+    onThinkingStep?: (step: string) => void,
+    options?: { quickActionId?: string }
   ): Promise<AiResponseResult> {
     const p = prompt.trim().toLowerCase();
     const rawNoPunct = p.replace(/[?!.,]/g, '').trim();
@@ -464,9 +471,20 @@ export class MockAiProvider implements AIProvider {
 
     // =========================================================================
     // 0.1 QUICK ACTION INTERACTIVE DIALOGUE TRIGGER (MOCK/CLIENT FALLBACK)
+    // D-50 (Batch E): id aksi terstruktur (options.quickActionId) MENANG
+    // atas token legacy — jalur baru tidak pernah mengirim token di
+    // dalam prompt. Regex token dipertahankan hanya sebagai fallback
+    // bagi pemanggil lama, lalu pencocokan teks prompt manusia.
     // =========================================================================
+    const structuredActionId = options?.quickActionId
+      ? options.quickActionId.toUpperCase()
+      : null;
     const quickActionMatch = prompt.match(/^\[QUICK_ACTION_TRIGGER:([A-Z_]+)\]/i);
-    let matchedActionId = quickActionMatch ? quickActionMatch[1].toUpperCase() : null;
+    let matchedActionId = structuredActionId && QUICK_ACTION_CONTRACTS[structuredActionId]
+      ? structuredActionId
+      : quickActionMatch
+        ? quickActionMatch[1].toUpperCase()
+        : null;
     if (!matchedActionId) {
       if (normalizedText.startsWith('bantu saya melakukan audit rab') || normalizedText === 'audit rab') matchedActionId = 'AUDIT_RAB';
       else if (normalizedText.startsWith('bantu saya menghitung volume') || normalizedText === 'hitung volume') matchedActionId = 'HITUNG_VOLUME';

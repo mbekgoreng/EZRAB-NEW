@@ -288,8 +288,11 @@ const project: Project = {
   status: 'draft',
   isDemo: true,
   // Bidang konfigurasi finansial proyek (dibaca mesin dari FIELD proyek —
-  // R-02/R-03): jangan sampai hilang saat regenerasi.
-  ...( { ppnEnabled: true, overheadPercent: 5 } as object),
+  // R-02/R-03): jangan sampai hilang saat regenerasi. D-77 (Batch C):
+  // profitPercent 5% WAJIB di field proyek juga — sebelumnya hanya hidup
+  // di costSummary sehingga Settings membaca 0% dan Save polos bisa
+  // menimpa total emas (NEW-08).
+  ...( { ppnEnabled: true, overheadPercent: 5, profitPercent: 5 } as object),
   notes:
     'DATA DEMONSTRASI — bukan dokumen konstruksi. Kuantitas dari asumsi geometri contoh. ' +
     'Harga: mayoritas dari katalog resmi AHSP 2026 lewat resolver kanonis; sebagian kecil ' +

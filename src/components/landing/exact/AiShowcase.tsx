@@ -7,6 +7,7 @@ import mascotFullbody from '../../../assets/mascot-ezrab-fullbody.png';
 import mascotSitting from '../../../assets/mascot-ezrab-sitting.png';
 import { FaqAccordion } from '../../../faq/FaqAccordion';
 import { getFeaturedFaqs } from '../../../faq/faqData';
+import { navigateTo } from '../../../routing/routes';
 
 interface AiShowcaseProps {
   onOpenAuth: (tab?: 'masuk' | 'daftar') => void;
@@ -129,7 +130,12 @@ export const AiShowcase: React.FC<AiShowcaseProps> = ({ onOpenAuth, onOpenDemo, 
       <div className="rrow" style={{animationDelay: '6.6s'}}><span style={{flex: '1'}}>Plesteran 1:4 (3.7.4)</span><span className="rv">192,40 m²</span><span className="chip ok">AHSP Resmi</span></div>
       <div className="rrow" style={{animationDelay: '7.4s'}}><span style={{flex: '1'}}>Keramik lantai 40×40</span><span className="rv">84,00 m²</span><span className="chip ai">Estimasi AI</span></div>
       <div className="rrow" style={{animationDelay: '8.2s'}}><span style={{flex: '1'}}>Cat tembok interior</span><span className="rv">210,50 m²</span><span className="chip ai">Estimasi AI</span></div>
-      <button className="btn ctaglow" style={{width: '100%', justifyContent: 'center', marginTop: '4px'}}>Masukkan ke RAB Proyek</button>
+      {/* D-05: dulu <button> tanpa onClick — tampak aktif tapi tidak
+          berbuat apa-apa. Tidak ada alur nyata yang bermakna dari
+          ilustrasi landing ini (tanpa konteks proyek; demo terkunci
+          kode), jadi tombol diganti krom mockup non-interaktif:
+          <span> ber-aria-hidden, bukan <button>, kursor default. */}
+      <span className="btn ctaglow mock-btn" aria-hidden="true" style={{width: '100%', justifyContent: 'center', marginTop: '4px'}}>Masukkan ke RAB Proyek</span>
       <p style={{fontSize: '11px', color: '#8498AF', marginTop: '9px', lineHeight: '1.5'}}>Item yang belum ada harga resminya ditahan & diberi label — tidak pernah masuk sebagai Rp0.</p>
       </div>
       <div className="ring ringDed"></div>
@@ -210,14 +216,15 @@ export const AiShowcase: React.FC<AiShowcaseProps> = ({ onOpenAuth, onOpenDemo, 
       <div className="chk" style={{animationDelay: '3s'}}><span className="ck">✓</span><span>Template surat resmi siap pakai</span></div>
       <div className="chk" style={{animationDelay: '3.8s'}}><span className="ck">✓</span><span>Setiap angka berlabel sumbernya</span></div>
       <p style={{fontSize: '11.5px', color: '#8498AF', lineHeight: '1.55'}}>Seluruh isi tetap bisa Anda edit sebelum diunduh atau dikirim.</p>
-      <button className="btn dlGlow" style={{justifyContent: 'center', marginTop: 'auto', width: '100%'}}>Unduh PDF</button>
+      {/* D-05: sama seperti di atas — krom mockup, bukan tombol. */}
+      <span className="btn dlGlow mock-btn" aria-hidden="true" style={{justifyContent: 'center', marginTop: 'auto', width: '100%'}}>Unduh PDF</span>
       </div>
       <div className="ring ringDoc"></div>
       <div className="cur curDoc"><svg width="20" height="20" viewBox="0 0 24 24"><path d="M5 3 L19 12 L12.5 13.5 L9.5 20 Z" fill="#0A2540" stroke="#fff" strokeWidth="1.6"/></svg></div>
       </div></div>
       <div className="demo-note">Ilustrasi animasi cara kerja EZRAB.</div></div></div>
       <div className="half2">
-      <div className="mini"><img className="mini-img" src={logoImg} alt="" /><h3>Smart RAB</h3><p>Ceritakan proyek Anda di chat — mis. "rumah 2 lantai 120 m²" — dan draf RAB tersusun dari kode AHSP resmi, siap Anda periksa item per item.</p></div>
+      <div className="mini" id="smart-rab"><img className="mini-img" src={logoImg} alt="" /><h3>Smart RAB</h3><p>Ceritakan proyek Anda di chat — mis. "rumah 2 lantai 120 m²" — dan draf RAB tersusun dari kode AHSP resmi, siap Anda periksa item per item.</p></div>
       <div className="mini"><img className="mini-img" src={mascotImg} alt="" /><h3>Co Assistant</h3><p>Asisten pendamping di setiap halaman: audit RAB, periksa Kurva S, jelaskan item, hitung ulang — tanpa berpindah menu.</p></div>
       </div></div></section>
 
@@ -268,10 +275,12 @@ export const AiShowcase: React.FC<AiShowcaseProps> = ({ onOpenAuth, onOpenDemo, 
       <div className="center"><span className="eyebrow"> Mesin Estimasi Lengkap</span>
       <h2 style={{fontSize: '32px'}}>AI-nya bintang utama. <span className="bl">Mesin di baliknya tetap lengkap.</span></h2></div>
       <div className="bento">
-      <div className="tile"><div className="motif"><div className="keys"><i></i><i></i><i></i><i></i><i className="hot"></i><i></i><i></i><i></i><i></i></div></div><b>Kalkulator Volume</b><p>190 kalkulator pekerjaan konstruksi terstandarisasi SNI.</p></div>
-      <div className="tile"><div className="motif col2"><i className="brow" style={{width: '72%'}}></i><i className="brow" style={{width: '54%', animationDelay: '.5s'}}></i><i className="brow" style={{width: '64%', animationDelay: '1s'}}></i></div><b>AHSP 2026</b><p>Database analisa harga satuan resmi, selalu jadi rujukan harga.</p></div>
-      <div className="tile"><div className="motif"><div className="sgrid"><i></i><i></i><i></i><i></i><i></i><i className="hl"></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div><b>Spreadsheet RAB</b><p>Susun dan edit RAB seperti spreadsheet yang Anda kenal.</p></div>
-      <div className="tile"><div className="motif"><svg width="120" height="44" viewBox="0 0 120 44"><path className="scurve" d="M6 38 C 40 36, 52 30, 66 20 S 100 6, 114 5" stroke="#2563EB" strokeWidth="3" fill="none" strokeLinecap="round"/><line x1="6" y1="40" x2="114" y2="40" stroke="#D7E3F2" strokeWidth="2"/></svg></div><b>Kurva S & Jadwal</b><p>Pantau rencana vs realisasi proyek dalam satu grafik.</p></div>
+      {/* D-07: tiap tile punya id sendiri — tautan footer Produk kini
+          menunjuk ke tile yang sesuai, bukan semuanya ke #perkakas. */}
+      <div className="tile" id="kalkulator-volume"><div className="motif"><div className="keys"><i></i><i></i><i></i><i></i><i className="hot"></i><i></i><i></i><i></i><i></i></div></div><b>Kalkulator Volume</b><p>190 kalkulator pekerjaan konstruksi terstandarisasi SNI.</p></div>
+      <div className="tile" id="ahsp-2026"><div className="motif col2"><i className="brow" style={{width: '72%'}}></i><i className="brow" style={{width: '54%', animationDelay: '.5s'}}></i><i className="brow" style={{width: '64%', animationDelay: '1s'}}></i></div><b>AHSP 2026</b><p>Database analisa harga satuan resmi, selalu jadi rujukan harga.</p></div>
+      <div className="tile" id="spreadsheet-rab"><div className="motif"><div className="sgrid"><i></i><i></i><i></i><i></i><i></i><i className="hl"></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div><b>Spreadsheet RAB</b><p>Susun dan edit RAB seperti spreadsheet yang Anda kenal.</p></div>
+      <div className="tile" id="kurva-s"><div className="motif"><svg width="120" height="44" viewBox="0 0 120 44"><path className="scurve" d="M6 38 C 40 36, 52 30, 66 20 S 100 6, 114 5" stroke="#2563EB" strokeWidth="3" fill="none" strokeLinecap="round"/><line x1="6" y1="40" x2="114" y2="40" stroke="#D7E3F2" strokeWidth="2"/></svg></div><b>Kurva S & Jadwal</b><p>Pantau rencana vs realisasi proyek dalam satu grafik.</p></div>
       <div className="tile"><div className="motif"><div className="sheet">↓ PDF</div></div><b>Ekspor Excel & PDF</b><p>Hasil akhir siap dibagikan ke klien dan tim lapangan.</p></div>
       </div></div></section>
 
@@ -299,15 +308,16 @@ export const AiShowcase: React.FC<AiShowcaseProps> = ({ onOpenAuth, onOpenDemo, 
       <div className="center" style={{marginTop: '26px'}}><button type="button" className="btn" onClick={() => onOpenFaq?.()}>Lihat Semua Pertanyaan</button></div>
       <div className="cta-box" style={{marginTop: '132px'}}><img className="mascot-cta" src={mascotSitting} alt="Maskot EZRAB" /><span className="eyebrow" style={{background: 'rgba(255,255,255,.14)', borderColor: 'rgba(255,255,255,.3)', color: '#DCEBFF'}}> Mulai Sekarang</span>
       <h2>Rasakan estimator<br/>yang bekerja dengan AI.</h2>
-      <p className="sub" style={{margin: '0 auto 30px', color: '#C9DCF7'}}>Masuk sebagai peran demo dan coba DED Estimate AI, Chat AI, dan AI Document — tanpa kartu kredit.</p>
+      <p className="sub" style={{margin: '0 auto 30px', color: '#C9DCF7'}}>Demo dibuka dengan kode akses selama masa pratinjau — coba DED Estimate AI, Chat AI, dan AI Document tanpa kartu kredit.</p>
       <div style={{display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap'}}><button className="btn" style={{background: '#fff', color: '#1E40AF'}} onClick={onOpenDemo}>Coba Masuk sebagai Demo</button><button className="btn ghost" onClick={() => onOpenAuth('daftar')}>Daftar Gratis</button></div></div>
       </div></section>
       <footer className="ezai-footer"><div className="wrap"><div className="fgrid">
       <div><div style={{display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px'}}><img src={logoImg} alt="Logo EZRAB" style={{width: '38px', height: '38px', borderRadius: '9px', objectFit: 'cover'}} /><b style={{margin: '0', fontSize: '16px'}}>EZRAB</b></div>
-      <p style={{fontSize: '13.5px', lineHeight: '1.65', color: '#8498AF', maxWidth: '300px'}}>Workspace estimasi konstruksi bertenaga AI — dari gambar kerja sampai RAB dan dokumen, dalam satu tempat.</p></div>
-      <div><b>Fitur AI</b><a href="#ded">DED Estimate AI</a><a href="#chat">Ezrab Chat AI</a><a href="#dokumen">AI Document</a><a href="#dokumen">Smart RAB</a></div>
-      <div><b>Produk</b><a href="#perkakas">Kalkulator Volume</a><a href="#perkakas">AHSP 2026</a><a href="#perkakas">Spreadsheet RAB</a><a href="#perkakas">Kurva S</a></div>
-      <div><b>Perusahaan</b><a href="#harga">Harga</a><a href="#faq">Sering Ditanyakan</a><button type="button" onClick={() => onOpenAuth('masuk')}>Masuk</button><button type="button" onClick={() => onOpenAuth('daftar')}>Daftar</button></div>
+      <p style={{fontSize: '13.5px', lineHeight: '1.65', color: '#5F7694', maxWidth: '300px'}}>Workspace estimasi konstruksi bertenaga AI — dari gambar kerja sampai RAB dan dokumen, dalam satu tempat.</p></div>
+      <div><b>Fitur AI</b><a href="#ded">DED Estimate AI</a><a href="#chat">Ezrab Chat AI</a><a href="#dokumen">AI Document</a><a href="#smart-rab">Smart RAB</a></div>
+      <div><b>Produk</b><a href="#kalkulator-volume">Kalkulator Volume</a><a href="#ahsp-2026">AHSP 2026</a><a href="#spreadsheet-rab">Spreadsheet RAB</a><a href="#kurva-s">Kurva S</a></div>
+      <div><b>Perusahaan</b><a href="#harga">Harga</a><a href="#faq">Sering Ditanyakan</a><a href="/privacy" onClick={(e) => { e.preventDefault(); navigateTo('/privacy'); window.scrollTo({ top: 0 }); }}>Privacy Policy</a><a href="/terms" onClick={(e) => { e.preventDefault(); navigateTo('/terms'); window.scrollTo({ top: 0 }); }}>Terms of Service</a><button type="button" onClick={() => onOpenAuth('masuk')}>Masuk</button>
+      <button type="button" onClick={() => onOpenAuth('daftar')}>Daftar</button></div>
       </div>
       <div className="fbot"><span>© 2026 EZRAB — YF ARCH. Seluruh hak cipta dilindungi.</span><span>ezrab.site</span></div>
       </div></footer>

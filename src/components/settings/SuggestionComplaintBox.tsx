@@ -11,7 +11,6 @@ import React, { useState } from 'react';
 import { AlertCircle, Inbox, Info, Lock, MapPin, Paperclip, Send } from 'lucide-react';
 import { useAuth } from '../../auth/AuthContext';
 import { useRole } from '../../auth/RoleContext';
-import { navigateTo } from '../../routing/routes';
 import {
   DESCRIPTION_MAX_LENGTH,
   EMPTY_REPORT_DRAFT,
@@ -70,9 +69,18 @@ function FieldError({ id, message }: { id: string; message?: string }) {
 export const SuggestionComplaintBox: React.FC = () => {
   const { user, loading: authLoading } = useAuth();
   const { activeRole } = useRole();
+  // D-83 (Batch G2): gateSession: true — INVARIAN MOUNT: komponen ini
+  // hanya di-mount di tab help UnifiedSettingsView, di dalam workspace
+  // yang hanya bisa dimasuki lewat gerbang kode akses (produksi) atau
+  // tanpa gerbang (dev). Sesi gerbang diakui sebagai identitas
+  // 'Pengunjung demo' — sebelumnya pengguna yang sudah masuk lewat
+  // gerbang ditolak formulir dan diarahkan ke /masuk yang login
+  // emailnya dinonaktifkan (jalan buntu). Bila komponen ini suatu hari
+  // di-mount di luar workspace, invarian ini HARUS ditinjau ulang.
   const identity = resolveReporterIdentity({
     accountEmail: user?.email ?? null,
     roleName: activeRole?.name ?? null,
+    gateSession: true,
   });
 
   const [open, setOpen] = useState(false);
@@ -190,6 +198,12 @@ export const SuggestionComplaintBox: React.FC = () => {
               Memeriksa sesi masuk Anda…
             </p>
           ) : !signedIn ? (
+            // Cabang defensif: dengan gateSession: true di atas, cabang
+            // ini tidak terjangkau dalam praktik (komponen hanya hidup
+            // di dalam workspace). Dipertahankan sebagai pengaman bila
+            // invarian mount berubah — TANPA tombol ke /masuk (D-83):
+            // login email di sana dinonaktifkan (mode demoOnly), jadi
+            // tombol itu adalah jalan buntu.
             <div
               style={{
                 padding: '14px',
@@ -202,35 +216,18 @@ export const SuggestionComplaintBox: React.FC = () => {
                 <Lock size={15} style={{ color: 'var(--ez-color-text-muted)', flexShrink: 0, marginTop: '1px' }} />
                 <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-slate)', margin: 0, lineHeight: 1.55 }}>
                   Fitur ini tersedia untuk pengguna yang sudah masuk, agar setiap laporan terhubung ke
-                  akun yang jelas. Laporan anonim tidak didukung. Masuk dulu untuk membuat laporan.
+                  akun yang jelas. Laporan anonim tidak didukung. Sesi Anda saat ini tidak dikenali —
+                  muat ulang halaman atau masuk kembali lewat gerbang workspace.
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={() => navigateTo('/masuk')}
-                style={{
-                  marginTop: '12px',
-                  height: '36px',
-                  padding: '0 16px',
-                  borderRadius: '999px',
-                  border: '1px solid var(--ez-color-border-strong)',
-                  background: 'var(--ez-color-surface)',
-                  color: 'var(--ez-color-primary)',
-                  fontSize: '12.5px',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  fontFamily: 'inherit',
-                }}
-              >
-                Masuk untuk Membuat Laporan
-              </button>
             </div>
           ) : (
             <>
               <p style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', margin: '0 0 14px', lineHeight: 1.5 }}>
                 Melapor sebagai{' '}
                 <strong style={{ color: 'var(--ez-color-text-primary)' }}>{identity.label}</strong>
-                {identity.kind === 'demo-role' ? ' (sesi peran demo)' : ''} — identitas diambil dari sesi
+                {identity.kind === 'demo-role' ? ' (sesi peran demo)' : ''}
+                {identity.kind === 'access-gate' ? ' (sesi gerbang kode akses)' : ''} — identitas diambil dari sesi
                 masuk Anda, jadi Anda tidak perlu mengetik ulang email.
               </p>
 

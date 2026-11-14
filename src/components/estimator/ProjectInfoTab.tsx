@@ -203,6 +203,11 @@ export const ProjectInfoTab: React.FC<ProjectInfoTabProps> = ({ currentProject, 
       unitPrice: it.unitPrice ?? null,
       taxIncludedPpn: it.taxIncludedPpn,
       taxIncludedPph: it.taxIncludedPph,
+      // D-24: teruskan status harga + basis biaya agar mesin kanonis bisa
+      // mengecualikan item UNRESOLVED dan membebaskan item HSP dari O&P
+      // (§17.1) — tanpa ini kartu menyimpang dari Rekapitulasi.
+      priceStatus: it.priceStatus ?? null,
+      priceCostBasis: it.priceCostBasis ?? null,
     })),
     currentProject as any,
   );
@@ -372,7 +377,7 @@ export const ProjectInfoTab: React.FC<ProjectInfoTabProps> = ({ currentProject, 
               {formatCurrencyIDR(info.total)}
             </div>
             <div style={{ fontSize: '11.5px', color: '#94A3B8', marginTop: '2px' }}>
-              Dari {info.itemCount} item · biaya langsung + overhead {info.overheadPercent}%
+              Dari {info.itemCount} item · biaya langsung + overhead {info.overheadPercent}%{info.profit > 0 ? ` + profit ${info.profitPercent}%` : ''}
               {info.ppn > 0 ? ' + PPN' : ''}{info.pph > 0 ? ' + PPh' : ''} — sama seperti Rekapitulasi. Nilai tersimpan tetap IDR.
             </div>
           </div>

@@ -39,6 +39,7 @@ import {
   type CustomAhspRecord,
 } from './customAhspStore';
 import { honestVolume } from '../../engine/honestVolume';
+import { cloneProvenance } from '../../engine/rab/rabItemFactory';
 import {
   withTimeout,
   AI_PROVIDER_IMPORT_TIMEOUT_MS,
@@ -1339,10 +1340,15 @@ Jika harga tidak pasti, unitPrice = null. Jangan mengarang harga. Jika volume ti
         totalPrice: amount,
         volumeSource: selectedDuplicateItem.volumeSource || 'MANUAL',
         ahspCode: selectedDuplicateItem.ahspCode,
-        verificationStatus: selectedDuplicateItem.verificationStatus || 'VERIFIED',
         // Fase 4A: warisi status harga agar duplikat item tanpa harga
         // tidak berubah menjadi "resolved" diam-diam.
         priceStatus: selectedDuplicateItem.priceStatus,
+        // D-40 (Batch F): warisi SELURUH provenance lewat helper bersama.
+        // Fallback lama `|| 'VERIFIED'` dihapus: ia menaikkan kelas
+        // item tanpa status verifikasi menjadi VERIFIED — untuk item
+        // tanpa harga, factory sendiri yang menentukan
+        // NEEDS_VERIFICATION (aturan factory, bukan karangan form).
+        ...cloneProvenance(selectedDuplicateItem),
       });
       onClose();
     } catch (err: any) {

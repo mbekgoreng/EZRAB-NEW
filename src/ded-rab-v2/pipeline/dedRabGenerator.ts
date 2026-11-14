@@ -113,7 +113,10 @@ export class DedRabGenerator {
         status = 'READY';
         statusReason = 'Siap masuk RAB resmi';
         totalAmount = SafeDecimalEngine.safeMultiply(q.value as number, pr.unitPrice as number, 2);
-        grandTotal = SafeDecimalEngine.safeAdd(grandTotal, totalAmount, 2);
+        // D-39/NEW-09: safeAdd variadik tanpa parameter decimals — trailing
+        // `, 2` lama dijumlahkan harfiah (+Rp2 per item READY, sehingga grand
+        // total DED kelebihan Rp2 × jumlah item). totalAmount sudah 2 desimal.
+        grandTotal = SafeDecimalEngine.safeAdd(grandTotal, totalAmount);
         readyCount++;
       }
 

@@ -79,6 +79,11 @@ import {
 } from '../../engine/constructionCalculators/componentPriceResolution';
 import type { RegionalPriceSource } from '../../engine/constructionCalculators/regionalPrices';
 import { useScopeBasedCost } from '../../hooks/useScopeBasedCost';
+// D-61 + D-71 (Batch D): breakdown row units/labels come from the explicit
+// map in breakdownRowMeta — the old inline substring guesser mislabeled
+// counts as 'm' and lengths as 'kg' (see that module's header).
+import { getBreakdownRowUnit, formatBreakdownLabel } from '../../lib/breakdownRowMeta';
+import { largestRemainderRound, isApportionableTotal } from '../../engine/displayRounding';
 import { PriceContext } from '../../engine/pricing/contracts/types';
 // PHASE 6A: Weir forensic cost pipeline
 import { WeirCostService } from '../../engine/weir/weirCostService';
@@ -688,8 +693,8 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
   // `inputs` dibiarkan pada nilai terakhirnya, tetapi hasil utama
   // menampilkan "Perlu dilengkapi" dan tombol Simpan/kirim nonaktif.
   // Entri dihapus (state dikosongkan) setiap kali `inputs` diganti dari
-  // luar (ganti kalkulator, muat item edit, tempel Excel) agar tampilan
-  // kembali tersinkron dari `inputs`.
+  // luar (ganti kalkulator, muat item edit, tempel Excel, reset — D-72)
+  // agar tampilan kembali tersinkron dari `inputs`.
   const [inputText, setInputText] = useState<Record<string, string>>({});
 
   // Track if inputs have changed from default
@@ -851,9 +856,29 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
       return;
     }
     try {
+      // D-67 (Batch A): harga kalkulator ikut disimpan DI QTOItem agar jalur
+      // rekap "Sinkronkan ke RAB" membawa harga yang sama dengan jalur
+      // kalkulator. Hanya bila rincian lengkap (tidak ada baris unresolved)
+      // dan grand total > 0 — rincian parsial TIDAK PERNAH disimpan sebagai
+      // harga (ProjectContext menegakkan gerbang yang sama).
+      const hasCompletePrice =
+        priceBreakdown.unresolvedRowCount === 0 &&
+        priceBreakdown.grandTotal > 0 &&
+        calculationResult.primaryQuantity > 0;
       const { qto, run } = executeCalculationAndSave(selectedCalcId, inputs, {
         targetQtoId: editingQtoId || undefined,
         autoSyncRab: false,
+        ...(hasCompletePrice
+          ? {
+              unitPrice: priceBreakdown.grandTotal / calculationResult.primaryQuantity,
+              calculatorPriceStatus:
+                priceBreakdown.priceStatus === 'REFERENCE_ESTIMATE'
+                  ? 'PRICE_ESTIMATED'
+                  : 'PRICE_RESOLVED',
+              calculatorTotalCost: priceBreakdown.grandTotal,
+              priceNotes: `Harga kalkulator ${selectedCalcId}: grand total ${formatRupiah(priceBreakdown.grandTotal)} / ${formatNumberId(calculationResult.primaryQuantity, 2)} ${calculationResult.primaryUnit}`,
+            }
+          : {}),
         // ONE-PASS Task C: teruskan integritas rincian AKTUAL agar jalur
         // existingMapping di ProjectContext dapat menyebarkan status
         // parsial/lengkap baru ke item RAB tertaut (sebelumnya jalur
@@ -910,6 +935,14 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
         targetQtoId: editingQtoId || undefined,
         autoSyncRab: true,
         unitPrice: unitPrice,
+        // D-67 (Batch A): harga yang sama juga tersimpan DI QTOItem (agar
+        // sinkronisasi ulang dari rekap menemukan harga yang sama).
+        calculatorPriceStatus:
+          priceBreakdown.priceStatus === 'REFERENCE_ESTIMATE'
+            ? 'PRICE_ESTIMATED'
+            : 'PRICE_RESOLVED',
+        calculatorTotalCost: priceBreakdown.grandTotal,
+        priceNotes: `Harga kalkulator ${selectedCalcId}: grand total ${formatRupiah(priceBreakdown.grandTotal)} / ${formatNumberId(calculationResult.primaryQuantity, 2)} ${calculationResult.primaryUnit}`,
         priceIntegrity: {
           isPartial: false,
           unresolvedComponentCount: 0,
@@ -938,6 +971,12 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
       initial[p.id] = p.defaultValue;
     });
     setInputs(initial);
+    // D-72 (Batch D): reset juga mengosongkan `inputText` — tanpa ini kotak
+    // isian menampilkan nilai lama (mis. P=6) sementara hasil memakai nilai
+    // default (P=3 → 0,90 m³). Semua jalur penggantian `inputs` lain (ganti
+    // kalkulator, muat edit, tempel Excel) sudah mengosongkannya; reset
+    // adalah satu-satunya yang lupa.
+    setInputText({});
     setShowResetConfirm(false);
     showToast('Parameter kalkulator direset ke nilai standar.', 'info');
   };
@@ -1249,6 +1288,23 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
         : estimatedRowCount > 0 ? 'REFERENCE_ESTIMATE'
           : 'RESOLVED';
 
+    // D-54 (Batch G2, OD-03(a)): jumlah TAMPIL per baris di-apportion ke
+    // grand total (largest-remainder) agar Σ baris yang ditampilkan di
+    // tabel rincian persis sama dengan total yang ditampilkan di panel
+    // harga (sebelumnya bisa meleset ±Rp1 karena tiap baris dibulatkan
+    // sendiri). HANYA tampilan: grandTotal & jumlahHarga mentah TIDAK
+    // berubah (sinkron RAB/QTO memakai nilai mentah). Guard: semua baris
+    // berharga (tanpa UNRESOLVED — baris '—' tidak bisa dijumlah) dan
+    // total memang jumlah baris-baris itu (guard numerik).
+    const displayJumlahHarga = new Map<string, number>();
+    if (unresolvedRowCount === 0 && structuredRows.length > 0) {
+      const raws = structuredRows.map((r) => r.jumlahHarga ?? 0);
+      if (isApportionableTotal(raws, finalGrandTotal)) {
+        const apportioned = largestRemainderRound(raws, finalGrandTotal);
+        structuredRows.forEach((r, i) => displayJumlahHarga.set(r.key, apportioned[i]));
+      }
+    }
+
     return {
       laborRows: finalLaborRows,
       subtotalLabor: finalSubtotalLabor,
@@ -1258,6 +1314,8 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
       subtotalEquipment,
       /** Semua baris komponen (untuk tabel rincian provenance di UI). */
       allRows: structuredRows,
+      /** Jumlah tampil per baris (D-54) — key = row.key. Kosong bila guard gagal. */
+      displayJumlahHarga,
       grandTotal: finalGrandTotal,
       priceStatus,
       fabricatedRowCount,
@@ -2722,21 +2780,13 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                       </thead>
                       <tbody>
                         {Object.entries(calculationResult.breakdown).map(([key, val], idx) => {
-                          const label = key
-                            .replace(/([A-Z])/g, ' $1')
-                            .replace(/^./, (str) => str.toUpperCase())
-                            .replace('Set', ' 1 Set')
-                            .replace('M2', ' (m²)')
-                            .replace('M3', ' (m³)')
-                            .replace('Kg', ' (kg)')
-                            .replace('M$', ' (m\')');
-
-                          let unit = '';
-                          if (key.toLowerCase().includes('m3') || key.toLowerCase().includes('cor') || key.toLowerCase().includes('galian') || key.toLowerCase().includes('pondasi')) unit = 'm³';
-                          else if (key.toLowerCase().includes('m2') || key.toLowerCase().includes('luas') || key.toLowerCase().includes('bekisting') || key.toLowerCase().includes('dinding')) unit = 'm²';
-                          else if (key.toLowerCase().includes('kg') || key.toLowerCase().includes('besi') || key.toLowerCase().includes('kawat') || key.toLowerCase().includes('berat')) unit = 'kg';
-                          else if (key.toLowerCase().includes('panjang') || key.toLowerCase().includes('keliling') || key.toLowerCase().includes('m')) unit = 'm';
-                          else if (key.toLowerCase().includes('jumlah') || key.toLowerCase().includes('batang') || key.toLowerCase().includes('titik') || key.toLowerCase().includes('set')) unit = 'unit';
+                          // D-61 + D-71 (Batch D): label & satuan dari
+                          // pemetaan eksplisit (breakdownRowMeta) — tebak
+                          // substring inline yang lama salah urutan dan
+                          // melabeli jumlah sebagai 'm' serta panjang
+                          // besi sebagai 'kg'.
+                          const label = formatBreakdownLabel(key);
+                          const unit = getBreakdownRowUnit(key);
 
                           return (
                             <tr
@@ -2820,7 +2870,10 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                         borderRadius: 'var(--ez-radius-pill)',
                       }}
                     >
-                      {scopeCost.lineItems.length} Sub-Pekerjaan AHSP
+                      {/* D-63 (Batch B): pill menunjukkan cakupan pemetaan — jumlah
+                          sub-pekerjaan yang terpetakan ke AHSP resmi dari total
+                          scope bendung — bukan klaim seluruh scope terpetakan. */}
+                      {scopeCost.lineItems.length} dari {scopeCost.totalScopeItems} Sub-Pekerjaan AHSP
                     </span>
                   </div>
 
@@ -2842,15 +2895,33 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                         <span>Grand Total (Resmi):</span>
                         <span style={{ color: 'var(--ez-hue-green-text-deep)', fontFamily: 'monospace' }}>{formatRupiah(scopeCost.summary.grandTotal)}</span>
                       </div>
+                      {/* D-63 (Batch B): total di atas hanya mencakup sub-pekerjaan
+                          yang terpetakan — scope tanpa padanan AHSP BM tidak
+                          termasuk dan wajib diungkapkan, bukan disembunyikan. */}
+                      {scopeCost.unmappedWorkItems.length > 0 && (
+                        <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', lineHeight: 1.4, marginTop: '2px' }}>
+                          Total di atas hanya mencakup {scopeCost.lineItems.length} dari {scopeCost.totalScopeItems} sub-pekerjaan.
+                          Belum terpetakan ke AHSP Bina Marga (tanpa padanan di master BM 2026): {scopeCost.unmappedWorkItems.join(', ')}.
+                        </div>
+                      )}
                     </div>
                   )}
 
                   {(scopeCost.status === 'PRICE_MISSING' || scopeCost.status === 'PARTIAL') && (
                     <div style={{ fontSize: '11.5px', color: 'var(--ez-hue-amber-text-dark)' }}>
                       <p style={{ margin: '0 0 6px 0', lineHeight: 1.4 }}>
-                        Struktur pekerjaan dipecah menjadi <strong>{scopeCost.lineItems.length} item AHSP resmi</strong>.
+                        {/* D-63 (Batch B): hitungan jujur — hanya sub-pekerjaan yang
+                            terpetakan ke item BM yang benar yang disebut "AHSP resmi";
+                            scope tanpa padanan diungkapkan di bawah, bukan dihitung. */}
+                        Struktur pekerjaan dipecah menjadi <strong>{scopeCost.totalScopeItems} sub-pekerjaan</strong>,{' '}
+                        <strong>{scopeCost.lineItems.length} di antaranya terpetakan ke AHSP resmi Bina Marga 2026</strong>.
                         Namun data harga HSD (Upah/Bahan/Alat) untuk wilayah <em>{priceContext.location}</em> belum lengkap di database nasional.
                       </p>
+                      {scopeCost.unmappedWorkItems.length > 0 && (
+                        <p style={{ margin: '0 0 6px 0', lineHeight: 1.4 }}>
+                          Belum terpetakan ke AHSP Bina Marga (tanpa padanan di master BM 2026): {scopeCost.unmappedWorkItems.join(', ')}.
+                        </p>
+                      )}
                       {scopeCost.missingPrices.length > 0 && (
                         <div style={{ background: 'var(--ez-hue-amber-bg-deep)', padding: '6px 8px', borderRadius: 'var(--ez-radius-pill)', fontSize: '10.5px' }}>
                           <span style={{ fontWeight: 700 }}>Komponen belum ada harga: </span>
@@ -2865,7 +2936,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
 
                   {scopeCost.status === 'AHSP_MISSING' && (
                     <div style={{ fontSize: '11.5px', color: '#7F1D1D' }}>
-                      Beberapa scope pekerjaan belum memiliki nomor koefisien AHSP resmi pada registri Lampiran II/III/IV.
+                      Beberapa scope pekerjaan belum memiliki padanan AHSP resmi pada registri Bina Marga (Lampiran V SE DJBK No. 47/SE/Dk/2026).
                     </div>
                   )}
                 </div>
@@ -2981,7 +3052,10 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                                 )}
                               </td>
                               <td style={{ padding: '5px 6px', textAlign: 'right', fontFamily: 'monospace', whiteSpace: 'nowrap' }}>
-                                {row.jumlahHarga != null ? formatRupiah(row.jumlahHarga) : '—'}
+                                {/* D-54 (Batch G2): jumlah tampil hasil
+                                    apportion ke grand total (bila guard
+                                    lolos); tanpa itu, jumlah mentah. */}
+                                {row.jumlahHarga != null ? formatRupiah(priceBreakdown.displayJumlahHarga?.get(row.key) ?? row.jumlahHarga) : '—'}
                               </td>
                               <td className="ezrab-prov-cell" style={{ padding: '5px 0 5px 6px', minWidth: '120px' }}>
                                 <div style={{ fontWeight: 700, color: 'var(--ez-color-text-slate)' }}>{row.provenanceLabel ?? row.provenance ?? ''}</div>

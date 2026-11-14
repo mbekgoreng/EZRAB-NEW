@@ -165,7 +165,9 @@ export class CostPolicyEngine {
         hasMissingPrice = true;
         for (const w of composition.warnings) {
           const match = w.match(/Price not found for (\w+) component "([^"]+)"/);
-          if (match) {
+          // D-62 (Batch B): never surface the literal string "undefined" as
+          // a component name — skip a match that carries no real name.
+          if (match && match[2] && match[2] !== 'undefined') {
             missingPrices.push({
               itemName: wi.name,
               componentName: match[2],

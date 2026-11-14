@@ -15,6 +15,7 @@ import {
   ProjectVersionSnapshot,
   EstimateVersion,
   EstimateScenario,
+  PriceStatus,
   QTOSourceType,
   QTOItemStatus,
   VolumeSourceType,
@@ -24,11 +25,19 @@ import {
 import { CONSTRUCTION_CALCULATORS, getCalculatorById } from '../engine/constructionCalculators/registry';
 import { SafeDecimalEngine } from '../engine/safeDecimalEngine';
 import { createRabItemRecord } from '../engine/rab/rabItemFactory';
-import { resolveQtoSyncPrice, resolveQtoSyncCode } from '../lib/qtoSyncPricing';
+import { resolveQtoSyncCode, decideQtoSyncPrice } from '../lib/qtoSyncPricing';
 import { applyRecalcPriceIntegrity } from '../lib/qtoRecalcIntegrity';
+import {
+  createRevision,
+  activateVersion,
+  resolveEffectiveActiveVersionId,
+  baselineVersionId,
+  BASELINE_AUTHOR,
+  BASELINE_DESCRIPTION,
+  BASELINE_REVISION_NOTES,
+} from '../engine/estimateVersioning';
 import { checkAhspIdentitySafety, canonicalAhspCodeExists } from '../data/priceDatabase2026/ahspDisplayPolicy';
 import { normalizeName, normalizeUnit } from '../data/priceDatabase2026/normalize';
-import { resolvePriceStatus } from '../engine/pricing/priceStatus';
 import { UnifiedProjectEngine } from '../engine/unifiedProjectEngine';
 import { clearLogoutInProgress, isLogoutInProgress } from '../auth/sessionBoundary';
 import { projectPriceEngine } from '../engine/pricing/projectPriceEngine';
@@ -265,6 +274,9 @@ interface ProjectContextType {
     unit: string;
     category?: string;
     notes?: string;
+    /** D-67 (Batch A): harga manual opsional — disimpan sebagai PRICE_MANUAL. */
+    unitPrice?: number;
+    priceStatus?: PriceStatus;
   }) => QTOItem;
   deleteQtoItem: (qtoItemId: string) => { success: boolean; message?: string; affectedRabCount?: number };
   checkQtoDependencies: (qtoItemId: string) => { rabItems: RabItem[]; canDeleteSafely: boolean };
@@ -293,6 +305,12 @@ interface ProjectContextType {
         unresolvedComponentCount: number;
         priceValidationWarnings?: string[];
       };
+      /** D-67 (Batch A): status harga kalkulator untuk harga tersimpan QTO. */
+      calculatorPriceStatus?: PriceStatus;
+      /** D-67 (Batch A): grand total kalkulator (Rp) yang menjadi dasar unitPrice. */
+      calculatorTotalCost?: number;
+      /** D-67 (Batch A): jejak dasar harga tersimpan. */
+      priceNotes?: string;
     }
   ) => { run: CalculationRun; qto: QTOItem; updatedRabItem?: RabItem };
 
@@ -367,8 +385,15 @@ interface ProjectContextType {
   // 8. Version History, Scenarios & Autosave State
   estimateVersions: EstimateVersion[];
   projectEstimateVersions: EstimateVersion[];
+  /**
+   * D-43 (Batch A): id versi estimasi AKTIF proyek aktif (efektif) — versi
+   * yang snapshot-nya sama dengan state RAB saat ini. Stored pointer di
+   * Project.activeEstimateVersionId; bila belum pernah diset, baseline
+   * virtual (belum ada versi tersimpan) atau versi terakhir (proyek lama).
+   */
+  activeEstimateVersionId: string | null;
   createEstimateVersion: (label: string, description: string, revisionNotes?: string, targetProjectId?: string) => EstimateVersion;
-  restoreEstimateVersion: (versionId: string) => { success: boolean; message: string };
+  restoreEstimateVersion: (versionId: string, expectedActiveVersionId?: string) => { success: boolean; message: string };
   updateEstimateVersionNotes: (versionId: string, notes: string) => void;
   applyScenarioToActiveProject: (scenario: EstimateScenario) => void;
   projectVersions: ProjectVersionSnapshot[];
@@ -519,8 +544,12 @@ const DEFAULT_FLAGSHIP_PROJECT: Project = {
   // field jatuh ke fallback 10 dan PPN opt-in butuh flag). Tanpa kedua
   // field ini, ekspor PDF/Rekap/kalkulasi ulang mengubah total proyek
   // (843.305.479 / tanpa PPN) tanpa tindakan pengguna apa pun.
+  // D-77 (Batch C): profitPercent 5% JUGA di field — sebelumnya hanya
+  // hidup di costSummary (computeSeedCostSummary default 5/5), pola
+  // summary-only yang sama dengan demo premium (NEW-08).
   ppnEnabled: true,
   overheadPercent: 5,
+  profitPercent: 5,
   name: 'Rumah Tinggal 2 Lantai',
   client: 'Ir. Hendra Kusuma',
   clientName: 'Ir. Hendra Kusuma',
@@ -1097,20 +1126,28 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (!activePid) return [];
     const list = estimateVersions.filter((v) => v.projectId === activePid);
     if (list.length === 0 && projectRabItems.length > 0) {
+      // D-43/D-41 (Batch A): baseline virtual HANYA untuk tampilan sebelum
+      // revisi pertama dibuat — begitu revisi pertama dibuat,
+      // createEstimateVersion mem-persist baseline ASLI (v1.0) lewat engine
+      // dan memo ini tidak lagi mensintesis apa pun. Stempel memakai waktu
+      // pembuatan proyek yang sebenarnya, bukan lagi hardcode 2026-09-01.
       const total = projectRabItems.reduce(
         (acc, i) => acc + (i.amount ?? i.totalPrice ?? i.volume * (i.unitPrice ?? 0)),
         0
       );
       return [
         {
-          id: `ver-${activePid}-baseline`,
+          id: baselineVersionId(activePid),
           projectId: activePid,
           versionNumber: 'v1.0',
           label: 'v1.0 - Baseline Awal',
-          timestamp: '2026-09-01T08:30:00.000Z',
-          author: 'Lead Estimator (EZRAB)',
-          description: 'Baseline Master Anggaran Proyek Hasil QTO & AHSP Standar',
-          revisionNotes: 'Versi dasar terverifikasi, mengacu pada analisa harga satuan dasar SNI/PUPR.',
+          timestamp: currentProject?.createdAt ?? new Date().toISOString(),
+          // D-41 (Batch F): label memakai konstanta engine yang sama
+          // dengan baseline persisten — tidak ada lagi literal ganda
+          // yang bisa melenceng (penulis + catatan kini jujur: sistem).
+          author: BASELINE_AUTHOR,
+          description: BASELINE_DESCRIPTION,
+          revisionNotes: BASELINE_REVISION_NOTES,
           costBefore: total,
           costAfter: total,
           difference: 0,
@@ -1122,7 +1159,25 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       ];
     }
     return list;
-  }, [estimateVersions, activePid, projectRabItems]);
+  }, [estimateVersions, activePid, projectRabItems, currentProject]);
+
+  // D-43 (Batch A): versi estimasi AKTIF yang efektif untuk proyek aktif.
+  // Pointer tersimpan (Project.activeEstimateVersionId) menang bila masih
+  // menunjuk versi yang ada; proyek lama tanpa pointer memakai versi
+  // terakhir; sebelum ada versi tersimpan, baseline virtual-lah yang aktif.
+  const activeEstimateVersionId = useMemo(() => {
+    if (!activePid) return null;
+    const storedList = estimateVersions.filter((v) => v.projectId === activePid);
+    const emptyFallback =
+      storedList.length === 0 && projectRabItems.length > 0
+        ? baselineVersionId(activePid)
+        : null;
+    return resolveEffectiveActiveVersionId(
+      storedList,
+      currentProject?.activeEstimateVersionId ?? null,
+      emptyFallback
+    );
+  }, [estimateVersions, activePid, currentProject, projectRabItems.length]);
 
   // Dynamic Kurva S calculated from RAB items & Schedule Tasks
   const projectKurvaSData = useMemo(() => {
@@ -1396,6 +1451,17 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
           unresolvedComponentCount: number;
           priceValidationWarnings?: string[];
         };
+        /**
+         * D-67 (Batch A): status harga kalkulator (dari priceBreakdown UI:
+         * RESOLVED → PRICE_RESOLVED, REFERENCE_ESTIMATE → PRICE_ESTIMATED).
+         * Disimpan bersama unitPrice di QTOItem agar sinkronisasi rekap →
+         * RAB membawa provenance yang sama dengan yang dilihat user.
+         */
+        calculatorPriceStatus?: PriceStatus;
+        /** D-67: grand total kalkulator (Rp) yang menjadi dasar unitPrice. */
+        calculatorTotalCost?: number;
+        /** D-67: jejak dasar harga (mis. "Grand total kalkulator Rp… / … m"). */
+        priceNotes?: string;
       }
     ): { run: CalculationRun; qto: QTOItem; updatedRabItem?: RabItem } => {
       if (!currentProjectId) {
@@ -1447,6 +1513,54 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
       setCalculationRuns((prev) => [...prev, newRun]);
 
+      // D-67 (Batch A): harga kalkulator disimpan DI QTOItem agar jalur
+      // rekap "Sinkronkan ke RAB" membawa harga yang sama dengan jalur
+      // kalkulator "Tambahkan & Sinkron ke RAB". Gerbang penyimpanan sama
+      // ketatnya dengan gerbang sinkron Fase 9: harga HANYA disimpan bila
+      // (a) unitPrice finite & > 0 dan (b) pemanggil menyatakan rincian
+      // TIDAK parsial (isPartial === false, eksplisit). Tanpa pernyataan
+      // itu (priceIntegrity tidak dibawa / parsial), TIDAK ADA harga yang
+      // disimpan — harga satuan dari total parsial adalah angka semu dan
+      // tidak boleh menjadi harga tercatat.
+      const canStorePrice =
+        options?.unitPrice !== undefined &&
+        Number.isFinite(options.unitPrice) &&
+        options.unitPrice > 0 &&
+        options?.priceIntegrity?.isPartial === false;
+      const storedPriceFields: Pick<
+        QTOItem,
+        'unitPrice' | 'totalCost' | 'priceStatus' | 'priceUnit' | 'priceNotes' | 'priceValidationWarnings'
+      > = canStorePrice
+        ? {
+            unitPrice: options!.unitPrice as number,
+            totalCost:
+              options!.calculatorTotalCost ??
+              (options!.unitPrice as number) * result.primaryQuantity,
+            priceStatus: options!.calculatorPriceStatus ?? 'PRICE_RESOLVED',
+            priceUnit: result.primaryUnit,
+            ...(options!.priceNotes ? { priceNotes: options!.priceNotes } : {}),
+            ...(options!.priceIntegrity?.priceValidationWarnings?.length
+              ? { priceValidationWarnings: [...options!.priceIntegrity.priceValidationWarnings] }
+              : {}),
+          }
+        : {};
+      // Bila harga TIDAK bisa disimpan, field harga lama (dari hitungan
+      // sebelumnya) WAJIB dibersihkan — harga basi untuk dasar hitung yang
+      // baru sama berbahayanya dengan harga karangan.
+      const clearedPriceFields: Pick<
+        QTOItem,
+        'unitPrice' | 'totalCost' | 'priceStatus' | 'priceUnit' | 'priceNotes' | 'priceValidationWarnings'
+      > = canStorePrice
+        ? {}
+        : {
+            unitPrice: undefined,
+            totalCost: undefined,
+            priceStatus: undefined,
+            priceUnit: undefined,
+            priceNotes: undefined,
+            priceValidationWarnings: undefined,
+          };
+
       // B. Create or Update QTO Item
       let qtoToReturn: QTOItem;
       const targetQtoId = options?.targetQtoId;
@@ -1464,6 +1578,10 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
           status: 'CALCULATED',
           source: 'CALCULATOR',
           updatedAt: new Date().toISOString(),
+          // D-67: segarkan harga tersimpan dari hitungan BARU — atau
+          // bersihkan bila hitungan baru tidak membawa harga lengkap.
+          ...clearedPriceFields,
+          ...storedPriceFields,
         };
         setQtoItems((prev) => prev.map((q) => (q.id === existingQto.id ? updatedQto : q)));
         qtoToReturn = updatedQto;
@@ -1490,6 +1608,8 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
           notes: options?.notes,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
+          // D-67: harga kalkulator (bila rincian lengkap) ikut tersimpan.
+          ...storedPriceFields,
         };
         setQtoItems((prev) => [...prev, newQto]);
         qtoToReturn = newQto;
@@ -1632,16 +1752,20 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       if (existingMap) {
         const existingRab = allRabItems.find((r) => r.id === existingMap.rabItemId);
         if (existingRab) {
-          const unitPrice = customUnitPrice !== undefined ? customUnitPrice : existingRab.unitPrice;
-          // Bug fix (audit 2026-10-18): sinkronkan priceStatus saat harga berubah.
-          // Sebelumnya status tidak dihitung ulang → UNRESOLVED dengan harga valid.
-          // ONE-PASS Task E: harga pemanggil di sini menghasilkan
-          // PRICE_RESOLVED (bukan PRICE_MANUAL) — batasan klasifikasi yang
-          // sama dengan resolveQtoSyncPrice; lihat dokumentasi presisinya
-          // di src/lib/qtoSyncPricing.ts (menunggu keputusan owner).
-          const priceStatus = customUnitPrice !== undefined
-            ? resolvePriceStatus(customUnitPrice)
-            : existingRab.priceStatus;
+          // D-67 (Batch A): keputusan harga sinkron-ulang lewat SATU titik
+          // (decideQtoSyncPrice). Harga pemanggil menang; item RAB yang
+          // sudah berharga (termasuk harga manual user) TIDAK PERNAH
+          // ditimpa; item PRICE_UNRESOLVED "disembuhkan" oleh harga
+          // tersimpan QTO bila ada (kasus retry sesudah rekalkulasi
+          // lengkap); tanpa harga apa pun, status lama dipertahankan.
+          // (Bug audit 2026-10-18 — status tidak dihitung ulang saat harga
+          // berubah — tetap tercakup: keputusan mengembalikan status baru
+          // bersama harganya. Klasifikasi PRICE_RESOLVED vs PRICE_MANUAL
+          // untuk harga pemanggil tetap seperti sebelumnya; lihat
+          // src/lib/qtoSyncPricing.ts.)
+          const decision = decideQtoSyncPrice({ customUnitPrice, qto, existingRab });
+          const unitPrice = decision.unitPrice;
+          const priceStatus = decision.priceStatus;
           const newAhspCode = ahspCode || existingRab.ahspCode || '';
           // Identity safety: periksa bila ahspCode berubah/diset
           let ahspIdentityStatus = existingRab.ahspIdentityStatus;
@@ -1656,12 +1780,19 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
             volume: qto.quantity,
             unitPrice,
             priceStatus,
-            verificationStatus: priceStatus === 'PRICE_UNRESOLVED' ? 'NEEDS_VERIFICATION' : existingRab.verificationStatus,
+            verificationStatus: decision.verificationStatus,
             amount: unitPrice == null ? null : SafeDecimalEngine.safeMultiply(qto.quantity, unitPrice, 0),
             category: targetSectionName || existingRab.category,
             code: ahspCode || existingRab.code,
             ahspCode: newAhspCode,
             ...(ahspIdentityStatus ? { ahspIdentityStatus, ahspIdentityReason } : {}),
+            // Jejak harga tersimpan ikut saat item "disembuhkan" dari QTO.
+            ...(decision.source === 'QTO_STORED' && decision.notes
+              ? { notes: decision.notes }
+              : {}),
+            ...(decision.priceValidationWarnings?.length
+              ? { priceValidationWarnings: decision.priceValidationWarnings }
+              : {}),
           };
           setAllRabItems((prev) => {
             const next = prev.map((r) => (r.id === existingRab.id ? updatedRab : r));
@@ -1674,9 +1805,12 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
       // P1 PRICE-1 fix (2026-10-09): JANGAN PERNAH mengarang harga fallback.
       // Sebelumnya: harga default Rp125.000 + kode 'AHSP.2026.01' palsu.
-      // Sekarang: tanpa harga dari pemanggil => item PRICE_UNRESOLVED,
-      // amount 0, NEEDS_VERIFICATION. Pengguna wajib mengisi harga nyata.
-      const priceRes = resolveQtoSyncPrice(customUnitPrice);
+      // D-67 (Batch A): tanpa harga dari pemanggil, harga TERSIMPAN QTO
+      // (dari kalkulator, rincian lengkap) kini ditransfer — status
+      // provenance-nya dipertahankan. Baru bila tidak ada harga apa pun,
+      // item menjadi PRICE_UNRESOLVED, amount 0, NEEDS_VERIFICATION.
+      // Pengguna wajib mengisi harga nyata.
+      const priceRes = decideQtoSyncPrice({ customUnitPrice, qto });
       const unitPrice = priceRes.unitPrice;
       const rabId = `RAB-${Date.now().toString().slice(-6)}`;
       const syncAhspCode = ahspCode || qto.kode;
@@ -1703,6 +1837,9 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
           ahspIdentityStatus: (syncIdCheck.safe ? 'SAFE' : 'UNSAFE') as 'SAFE' | 'UNSAFE',
           ahspIdentityReason: syncIdCheck.safe ? undefined : syncIdCheck.reason,
         } : {}),
+        ...(priceRes.priceValidationWarnings?.length
+          ? { priceValidationWarnings: priceRes.priceValidationWarnings }
+          : {}),
         volumeSource: qto.source === 'CALCULATOR' ? 'CALCULATOR' : 'MANUAL',
         qtoItemId: qto.id,
         calculationRunId: qto.calculationRunId,
@@ -1743,25 +1880,47 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       unit: string;
       category?: string;
       notes?: string;
+      /** D-67 (Batch A): harga manual opsional — disimpan sebagai harga tersimpan (PRICE_MANUAL) agar sinkronisasi membawanya ke RAB. */
+      unitPrice?: number;
+      priceStatus?: PriceStatus;
     }): QTOItem => {
       if (!currentProjectId) {
         throw new Error('Tidak ada proyek aktif.');
       }
 
       const newQtoId = `QTO-MANUAL-${Date.now().toString().slice(-6)}`;
+      const manualUnit = data.unit || 'm³';
+      const manualPrice =
+        data.unitPrice !== undefined && Number.isFinite(data.unitPrice) && data.unitPrice >= 0
+          ? data.unitPrice
+          : undefined;
       const newQto: QTOItem = {
         id: newQtoId,
         projectId: currentProjectId,
         kode: data.kode || `MANUAL.${(projectQtoItems.length + 1).toString().padStart(2, '0')}`,
         uraian: data.uraian,
         quantity: Number(data.quantity) || 0,
-        unit: data.unit || 'm³',
+        unit: manualUnit,
         category: data.category || 'Pekerjaan Utama',
         status: 'MANUAL',
         source: 'MANUAL',
+        // D-66 (Batch B): tandai eksplisit — label sumber memeriksa
+        // calculatorId, dan item manual tanpa tanda ini dulu tampil
+        // sebagai "Volume Calculator".
+        calculatorId: 'MANUAL',
         notes: data.notes,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+        // D-67: harga manual yang diberikan eksplisit ikut tersimpan
+        // (status MANUAL, bukan RESOLVED — asal harganya jujur).
+        ...(manualPrice !== undefined
+          ? {
+              unitPrice: manualPrice,
+              totalCost: manualPrice * (Number(data.quantity) || 0),
+              priceStatus: data.priceStatus ?? 'PRICE_MANUAL',
+              priceUnit: manualUnit,
+            }
+          : {}),
       };
 
       setQtoItems((prev) => [...prev, newQto]);
@@ -2555,86 +2714,97 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   );
 
   // 14. Estimate Version Control & Scenario Engine Handlers
+  // D-43 (Batch A): seluruh logika identitas revisi hidup di engine murni
+  // src/engine/estimateVersioning.ts. Wrapper di sini hanya mengikat engine
+  // ke state React + persistensi localStorage + penunjuk versi aktif.
   const createEstimateVersion = useCallback(
     (label: string, description: string, revisionNotes?: string, targetProjectId?: string): EstimateVersion => {
       const pid = targetProjectId || currentProjectId || (projects.length > 0 ? projects[0].id : '');
+      const targetProject = projects.find((p) => p.id === pid);
       const currentItems = allRabItems.filter((i) => i.projectId === pid);
-      const currentCost = currentItems.reduce(
-        (sum, i) => sum + (i.amount ?? i.totalPrice ?? i.volume * (i.unitPrice ?? 0)),
-        0
+      const existingForProject = estimateVersions.filter((v) => v.projectId === pid);
+
+      // Engine: materialisasi baseline v1.0 bila daftar masih kosong, lalu
+      // revisi BARU bernomor dari maksimum yang ada — revisi pertama TIDAK
+      // PERNAH lagi menjadi v1.0 dan TIDAK PERNAH menimpa baseline.
+      const result = createRevision(
+        existingForProject,
+        pid,
+        currentItems,
+        { label, description, revisionNotes },
+        { baselineTimestamp: targetProject?.createdAt }
       );
 
-      const existingForProject = estimateVersions.filter((v) => v.projectId === pid);
-      const prevVersion =
-        existingForProject.length > 0 ? existingForProject[existingForProject.length - 1] : null;
-      const prevCost = prevVersion ? prevVersion.costAfter : currentCost;
-      const diff = currentCost - prevCost;
-      const pct = prevCost > 0 ? (diff / prevCost) * 100 : 0;
-
-      const verNum = `v${(existingForProject.length + 1).toFixed(1)}`;
-      const newVer: EstimateVersion = {
-        id: `ver-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-        projectId: pid,
-        versionNumber: verNum,
-        label: label.startsWith('v') ? label : `${verNum} - ${label}`,
-        timestamp: new Date().toISOString(),
-        author: 'Lead Estimator (EZRAB)',
-        description: description || `Revisi Estimasi Anggaran ${verNum}`,
-        revisionNotes: revisionNotes || '',
-        costBefore: prevCost,
-        costAfter: currentCost,
-        difference: diff,
-        percentageDiff: parseFloat(pct.toFixed(2)),
-        rabItemsSnapshot: JSON.parse(JSON.stringify(currentItems)),
-        itemsCount: currentItems.length,
-        isBaseline: existingForProject.length === 0,
-      };
-
-      setEstimateVersions((prev) => [...prev, newVer]);
-      return newVer;
+      setEstimateVersions((prev) => [
+        ...prev.filter((v) => v.projectId !== pid),
+        ...result.versions,
+      ]);
+      // Revisi baru memotret state live, jadi ia menjadi versi aktif.
+      updateProject(pid, { activeEstimateVersionId: result.created.id });
+      return result.created;
     },
-    [currentProjectId, projects, allRabItems, estimateVersions]
+    [currentProjectId, projects, allRabItems, estimateVersions, updateProject]
   );
 
   const restoreEstimateVersion = useCallback(
-    (versionId: string): { success: boolean; message: string } => {
-      const targetVersion =
-        estimateVersions.find((v) => v.id === versionId) ||
-        projectEstimateVersions.find((v) => v.id === versionId);
+    (versionId: string, expectedActiveVersionId?: string): { success: boolean; message: string } => {
+      // Baseline virtual (belum ada versi tersimpan) SELALU sama dengan
+      // state live — memulihkannya adalah no-op sukses, bukan kegagalan.
+      if (versionId === baselineVersionId(activePid)) {
+        const storedForActive = estimateVersions.filter((v) => v.projectId === activePid);
+        if (storedForActive.length === 0) {
+          return { success: true, message: 'Versi v1.0 sudah aktif.' };
+        }
+      }
 
+      const targetVersion = estimateVersions.find((v) => v.id === versionId);
       if (!targetVersion) {
         return { success: false, message: 'Versi estimasi tidak ditemukan' };
       }
 
       const targetPid = targetVersion.projectId;
-
-      // 1. Auto-create backup before restore
-      createEstimateVersion(
-        'Backup Otomatis Sebelum Restore',
-        `Backup otomatis sebelum pemulihan ke versi ${targetVersion.versionNumber} (${targetVersion.label})`,
-        'Dibuat otomatis oleh EZRAB Safety Recovery Engine.'
+      const versionsForProject = estimateVersions.filter((v) => v.projectId === targetPid);
+      const currentItems = allRabItems.filter((i) => i.projectId === targetPid);
+      const targetProject = projects.find((p) => p.id === targetPid);
+      const effectiveActive = resolveEffectiveActiveVersionId(
+        versionsForProject,
+        targetProject?.activeEstimateVersionId ?? null
       );
 
-      // 2. Replace project's RAB items with snapshot
-      const restoredItems = targetVersion.rabItemsSnapshot.map((item: RabItem, idx: number) => ({
-        ...item,
-        id: item.id || `rab-restored-${Date.now()}-${idx}`,
-        projectId: targetPid,
-      }));
+      // Engine memvalidasi SEMUANYA dulu (target ada, tidak basi, snapshot
+      // valid) dan mengembalikan state input TANPA PERUBAHAN bila gagal —
+      // aktivasi yang gagal TIDAK PERNAH mengubah versi aktif maupun item.
+      const result = activateVersion(
+        { versions: versionsForProject, currentItems, activeVersionId: effectiveActive },
+        versionId,
+        { expectedActiveVersionId }
+      );
 
+      if (!result.success) {
+        return { success: false, message: result.message };
+      }
+      if (result.alreadyActive) {
+        return { success: true, message: result.message };
+      }
+
+      // Sukses: terapkan hasil engine secara utuh (backup + item pulih +
+      // penunjuk aktif pindah). Riwayat tidak pernah dihapus — backup
+      // ditambahkan, versi lama utuh.
+      setEstimateVersions((prev) => [
+        ...prev.filter((v) => v.projectId !== targetPid),
+        ...result.versions,
+      ]);
       setAllRabItems((prev) => {
         const otherProjectItems = prev.filter((i) => i.projectId !== targetPid);
-        const combined = [...otherProjectItems, ...restoredItems];
+        const combined = [...otherProjectItems, ...result.items];
         recalculateProjectSummary(targetPid, combined);
         return combined;
       });
+      updateProject(targetPid, { activeEstimateVersionId: result.activeVersionId });
 
-      return {
-        success: true,
-        message: `Berhasil memulihkan estimasi ke versi ${targetVersion.versionNumber} (${targetVersion.label})`,
-      };
+      return { success: true, message: result.message };
     },
-    [estimateVersions, projectEstimateVersions, createEstimateVersion, recalculateProjectSummary]
+    [estimateVersions, allRabItems, projects, activePid, recalculateProjectSummary, updateProject]
   );
 
   const updateEstimateVersionNotes = useCallback((versionId: string, notes: string) => {
@@ -2648,17 +2818,49 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const pid = currentProjectId || (projects.length > 0 ? projects[0].id : '');
       if (!pid || !scenario.items || scenario.items.length === 0) return;
 
-      // Create a version snapshot before applying scenario
-      createEstimateVersion(
-        `Penerapan ${scenario.name}`,
-        `Adopsi Value Engineering dari Skenario: ${scenario.name} (${scenario.description})`,
-        `Target: ${scenario.targetObjective}`
-      );
-
+      // D-43 (Batch A): penerapan skenario kini jujur dalam dua versi.
+      // Sebelumnya SATU versi berlabel "Penerapan <Skenario>" dibuat SEBELUM
+      // item diterapkan — snapshot-nya adalah state PRA-terapan sementara
+      // labelnya mengklaim hasil terapan, dan penunjuk aktif menunjuk
+      // snapshot yang tidak sama dengan state live. Sekarang: (1) backup
+      // state pra-terapan, lalu (2) versi "Penerapan ..." yang memotret
+      // item SETELAH diterapkan — dan penunjuk aktif pindah ke versi (2).
+      const targetProject = projects.find((p) => p.id === pid);
+      const currentItems = allRabItems.filter((i) => i.projectId === pid);
+      const existingForProject = estimateVersions.filter((v) => v.projectId === pid);
       const clonedItems = scenario.items.map((item) => ({
         ...item,
         projectId: pid,
       }));
+
+      const backup = createRevision(
+        existingForProject,
+        pid,
+        currentItems,
+        {
+          label: 'Backup Otomatis Sebelum Skenario',
+          description: `Backup otomatis sebelum penerapan skenario ${scenario.name}`,
+          revisionNotes: 'Dibuat otomatis oleh EZRAB Safety Recovery Engine.',
+        },
+        { baselineTimestamp: targetProject?.createdAt }
+      );
+      const applied = createRevision(
+        backup.versions,
+        pid,
+        clonedItems,
+        {
+          label: `Penerapan ${scenario.name}`,
+          description: `Adopsi Value Engineering dari Skenario: ${scenario.name} (${scenario.description})`,
+          revisionNotes: `Target: ${scenario.targetObjective}`,
+        },
+        { baselineTimestamp: targetProject?.createdAt }
+      );
+
+      setEstimateVersions((prev) => [
+        ...prev.filter((v) => v.projectId !== pid),
+        ...applied.versions,
+      ]);
+      updateProject(pid, { activeEstimateVersionId: applied.created.id });
 
       setAllRabItems((prev) => {
         const otherProjectItems = prev.filter((i) => i.projectId !== pid);
@@ -2667,7 +2869,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
         return combined;
       });
     },
-    [currentProjectId, projects, createEstimateVersion, recalculateProjectSummary]
+    [currentProjectId, projects, allRabItems, estimateVersions, recalculateProjectSummary, updateProject]
   );
 
   // 15. Load Realistic Construction Template on Demand
@@ -2782,6 +2984,8 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
           unit: 'm³',
           status: 'VERIFIED',
           source: 'MANUAL',
+          // D-66 (Batch B): tandai eksplisit agar label sumber benar.
+          calculatorId: 'MANUAL',
           category: 'Pekerjaan Struktur',
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
@@ -3051,6 +3255,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       resetProjectPriceOverride,
       estimateVersions,
       projectEstimateVersions,
+      activeEstimateVersionId,
       createEstimateVersion,
       restoreEstimateVersion,
       updateEstimateVersionNotes,
@@ -3121,6 +3326,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       resetProjectPriceOverride,
       estimateVersions,
       projectEstimateVersions,
+      activeEstimateVersionId,
       createEstimateVersion,
       restoreEstimateVersion,
       updateEstimateVersionNotes,

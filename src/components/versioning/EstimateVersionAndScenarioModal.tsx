@@ -38,6 +38,8 @@ import {
 import {
   VersionAndScenarioEngine,
 } from '../../engine/versionAndScenarioEngine';
+import { nextVersionNumber } from '../../engine/estimateVersioning';
+import { resolveProjectCostConfig } from '../../engine/projectCostConfig';
 import { formatCurrencyIDR } from '../../calculations/decimalEngine';
 
 interface EstimateVersionAndScenarioModalProps {
@@ -46,8 +48,23 @@ interface EstimateVersionAndScenarioModalProps {
   currentProject: Project | null;
   currentRabItems: RabItem[];
   versions: EstimateVersion[];
+  /**
+   * NEW-10 (Batch A): id versi AKTIF (dari ProjectContext). Badge
+   * "CURRENT ACTIVE" + visibilitas tombol Pulihkan mengikuti penunjuk ini,
+   * BUKAN posisi indeks — dulu `vIdx === 0` dianggap latest, padahal versi
+   * ditambahkan kronologis (indeks 0 = baseline tertua), sehingga badge +
+   * tombol Pulihkan terbalik begitu ada ≥2 versi.
+   */
+  activeVersionId: string | null;
   onCreateVersion: (label: string, description: string, notes?: string) => void;
-  onRestoreVersion: (version: EstimateVersion) => void;
+  /**
+   * D-43: mengembalikan hasil aktivasi (untuk pesan gagal) dan menerima id
+   * versi aktif yang teramati pemanggil sebagai guard anti-basi.
+   */
+  onRestoreVersion: (
+    version: EstimateVersion,
+    expectedActiveVersionId?: string | null
+  ) => { success: boolean; message: string } | void;
   onApplyScenarioToSpreadsheet: (scenario: EstimateScenario) => void;
 }
 
@@ -57,6 +74,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
   currentProject,
   currentRabItems,
   versions,
+  activeVersionId,
   onCreateVersion,
   onRestoreVersion,
   onApplyScenarioToSpreadsheet,
@@ -77,12 +95,22 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
   const [diffSearchQuery, setDiffSearchQuery] = useState('');
 
   // Scenarios State
+  // D-42: skenario dibangun dari SNAPSHOT BASELINE v1.0 yang sesungguhnya
+  // (Batch A: versions[0]/isBaseline), BUKAN dari item live — dan dengan
+  // konfigurasi biaya proyek yang sebenarnya (bukan markup ×1.15).
+  // Rantai fallback: versi berlabel baseline → versi pertama (kronologis
+  // tertua) → item live (bila belum ada versi tersimpan).
   const scenarios = useMemo(() => {
+    const baselineItems =
+      versions.find((v) => v.isBaseline)?.rabItemsSnapshot ??
+      versions[0]?.rabItemsSnapshot ??
+      currentRabItems;
     return VersionAndScenarioEngine.generateDefaultScenarios(
       currentProject?.id || 'DEFAULT',
-      currentRabItems
+      baselineItems,
+      resolveProjectCostConfig(currentProject)
     );
-  }, [currentProject?.id, currentRabItems]);
+  }, [currentProject, currentRabItems, versions]);
 
   const [selectedScenarioCode, setSelectedScenarioCode] = useState<EstimateScenario['code']>('SCENARIO_A');
 
@@ -129,7 +157,8 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
   const handleCreateRevisionSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newRevDesc.trim()) return;
-    const label = newRevLabel.trim() || `v${(versions.length + 1).toFixed(1)}`;
+    // Nomor versi sistem (dari maksimum yang ada) — bukan dari panjang daftar.
+    const label = newRevLabel.trim() || nextVersionNumber(versions);
     onCreateVersion(label, newRevDesc.trim(), newRevNotes.trim());
     setIsCreatingRevision(false);
     setNewRevLabel('');
@@ -380,7 +409,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                         type="text"
                         value={newRevLabel}
                         onChange={(e) => setNewRevLabel(e.target.value)}
-                        placeholder={`v${(versions.length + 1).toFixed(1)}`}
+                        placeholder={nextVersionNumber(versions)}
                         style={{
                           width: '100%',
                           padding: '6px 8px',
@@ -476,7 +505,12 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                   </div>
                 ) : (
                   versions.map((ver, vIdx) => {
-                    const isLatest = vIdx === 0;
+                    // NEW-10 (Batch A): "CURRENT ACTIVE" ditentukan penunjuk
+                    // versi aktif (id), BUKAN posisi. Versi ditambahkan
+                    // kronologis (terlama dulu) — indeks 0 adalah baseline,
+                    // bukan versi terbaru. Tombol Pulihkan tampil untuk
+                    // semua versi KECUALI yang aktif.
+                    const isActive = activeVersionId !== null && ver.id === activeVersionId;
 
                     return (
                       <div
@@ -484,8 +518,8 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                         style={{
                           padding: '14px 18px',
                           borderRadius: 'var(--ez-radius-control)',
-                          background: isLatest ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
-                          border: isLatest ? '1px solid var(--ez-hue-blue-border)' : '1px solid var(--ez-color-border-line)',
+                          background: isActive ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
+                          border: isActive ? '1px solid var(--ez-hue-blue-border)' : '1px solid var(--ez-color-border-line)',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'space-between',
@@ -507,7 +541,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                               flexShrink: 0,
                             }}
                           >
-                            {ver.versionNumber || `v1.${versions.length - vIdx}`}
+                            {ver.versionNumber || `v${vIdx + 1}.0`}
                           </div>
 
                           <div>
@@ -515,7 +549,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                               <span style={{ fontSize: '13.5px', fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>
                                 {ver.description || ver.label || 'Snapshot Estimasi'}
                               </span>
-                              {isLatest && (
+                              {isActive && (
                                 <span
                                   style={{
                                     fontSize: '10px',
@@ -592,12 +626,18 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                             )}
                           </div>
 
-                          {!isLatest && (
+                          {!isActive && (
                             <button
                               onClick={() => {
                                 if (window.confirm(`Pulihkan estimasi ke versi "${ver.description}"? State saat ini akan otomatis dicadangkan.`)) {
-                                  onRestoreVersion(ver);
-                                  onClose();
+                                  // D-43: teruskan id aktif teramati sebagai
+                                  // guard anti-basi; modal hanya menutup bila
+                                  // aktivasi berhasil (pesan gagal tampil
+                                  // lewat toast pemanggil).
+                                  const res = onRestoreVersion(ver, activeVersionId);
+                                  if (!res || res.success) {
+                                    onClose();
+                                  }
                                 }
                               }}
                               style={{

@@ -43,6 +43,12 @@ export const CONSTRUCTION_CALCULATORS: ConstructionCalculatorSpec[] = [
       // I10 = 2 * (P + L + 2 * C) -> Perimeter Bowplank
       const perimeter = SafeDecimalEngine.safeRound(2 * (P + L + 2 * C), 2);
       // I11 = (I10 / R + 1) * (H + 0.3) * 1.05 -> Panjang Kayu Patok
+      // D-59 (Batch D): Master Excel I11 has NO rounding — (42.4/2 + 1) =
+      // 22.2 stakes, which cannot be installed. The runtime applies
+      // Math.ceil (23 stakes) — physically correct, but the printed
+      // formula used to omit the ceil, so it evaluated to 30.30 while
+      // the code displayed 31.40. The formula text below now shows the
+      // ceil explicitly (see step 2 + technical note).
       const jmlPatok = Math.ceil(perimeter / R) + 1;
       const panjangPatok = SafeDecimalEngine.safeRound(jmlPatok * (H + 0.3) * 1.05, 2);
       // I12 = I10 * 1.05 -> Panjang Papan
@@ -51,9 +57,25 @@ export const CONSTRUCTION_CALCULATORS: ConstructionCalculatorSpec[] = [
       const panjangSkur = SafeDecimalEngine.safeRound((0.5 * H * 2) * (perimeter / R) / 2 * 1.05, 2);
 
       // Material breakdown:
-      // Kayu Balok 5/7 (m3) = 0.0045 * (I11 + I13)
+      // D-60 (Batch D): both volume conversions are now documented as
+      // formula steps (5 & 6) — they used to be hidden. Coefficient
+      // sources, reconciled:
+      // Kayu Balok 5/7 (m3) = 0.0045 * (I11 + I13) — the coefficient is
+      // the MASTER EXCEL value itself (H49 = 0.0045*(I11+I13)), base =
+      // total patok + skur length. The materials list used to show 0.012
+      // here, contradicting both the code and the Excel spec — corrected
+      // to 0.0045 below. (Pure 5/7 section geometry would be 0.0035 m2/m;
+      // the spec's 0.0045 evidently bundles cutting/waste allowance —
+      // flagged to the owner in the repair log, value NOT changed.)
       const volKayuBalok = SafeDecimalEngine.safeRound(0.0045 * (panjangPatok + panjangSkur), 4);
-      // Papan Kayu 3/20 (m3) = I12 * 0.006 (or standard coeff 0.007 m3 per m')
+      // Papan Kayu 3/20 (m3) = perimeter * 0.007 m3 per m' of perimeter
+      // — the IMPLEMENTED coefficient (code + materials list agree).
+      // Master Excel H50 is I12*D50, but the D50 cell value is not
+      // recorded anywhere in the repo, so the 0.007/m' value is kept as
+      // implemented and flagged to the owner (pure 3/20 section geometry
+      // would give I12 * 0.006 = 0.27, not 0.30). The old comment
+      // ("I12 * 0.006 (or standard coeff 0.007)") contradicted the code
+      // and is replaced by this note.
       const volKayuPapan = SafeDecimalEngine.safeRound(perimeter * 0.007, 4);
       // Paku 5-7 cm (kg) = perimeter * 0.02
       const beratPaku = SafeDecimalEngine.safeRound(perimeter * 0.02, 2);
@@ -86,7 +108,7 @@ export const CONSTRUCTION_CALCULATORS: ConstructionCalculatorSpec[] = [
             stepNumber: 2,
             code: 'I11',
             description: 'Kebutuhan Kayu Usuk / Patok (5/7)',
-            formulaText: `(${perimeter} / ${R} + 1) × (${H} + 0.30) × 105%`,
+            formulaText: `(⌈${perimeter} / ${R}⌉ + 1) × (${H} + 0.30) × 105% = ${jmlPatok} × ${(H + 0.3).toFixed(2)} × 105%`,
             calculatedValue: panjangPatok,
             unit: 'm\'',
           },
@@ -106,9 +128,25 @@ export const CONSTRUCTION_CALCULATORS: ConstructionCalculatorSpec[] = [
             calculatedValue: panjangSkur,
             unit: 'm\'',
           },
+          {
+            stepNumber: 5,
+            code: 'H49',
+            description: 'Volume Kayu Balok 5/7 (Patok + Skur)',
+            formulaText: `0.0045 × (${panjangPatok} + ${panjangSkur})`,
+            calculatedValue: volKayuBalok,
+            unit: 'm³',
+          },
+          {
+            stepNumber: 6,
+            code: 'H50',
+            description: 'Volume Kayu Papan 3/20',
+            formulaText: `${perimeter} × 0.007`,
+            calculatedValue: volKayuPapan,
+            unit: 'm³',
+          },
         ],
         materials: [
-          { name: 'Kayu Balok 5/7 (Meranti/Borneo)', quantity: volKayuBalok, unit: 'm³', coefficient: 0.012 },
+          { name: 'Kayu Balok 5/7 (Meranti/Borneo)', quantity: volKayuBalok, unit: 'm³', coefficient: 0.0045 },
           { name: 'Kayu Papan 3/20 (Meranti/Borneo)', quantity: volKayuPapan, unit: 'm³', coefficient: 0.007 },
           { name: 'Paku 5 cm - 10 cm', quantity: beratPaku, unit: 'kg', coefficient: 0.02 },
         ],
@@ -121,6 +159,7 @@ export const CONSTRUCTION_CALCULATORS: ConstructionCalculatorSpec[] = [
         technicalNotes: [
           'Papan bowplank dipasang waterpass rata pada level rencana +0.00 atau elevasi benchmark proyek.',
           'Patok kayu ditancapkan kokoh ke tanah minimal sedalam 30 cm untuk kestabilan benang tarikan as.',
+          'Penyimpangan dari Master Excel (terdokumentasi, D-59): rumus Excel I11 menghitung (keliling / R + 1) tanpa pembulatan — untuk input standar hasilnya 22,2 patok. Runtime memakai ⌈keliling / R⌉ + 1 = 23 patok karena patok pecahan tidak dapat dipasang; langkah rumus 2 menampilkan pembulatan ini.',
         ],
       };
     },

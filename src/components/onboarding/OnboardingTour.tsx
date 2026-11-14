@@ -16,8 +16,9 @@
  *   const { open, closeTour } = useOnboardingTour();
  *   <OnboardingTour open={open} onClose={closeTour} />
  */
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { EZRABMascotLucu } from '../mascot/EZRABMascotLucu';
+import { useI18n } from '../../i18n';
 
 export const ONBOARDING_FLAG = 'ezrab_onboarding_done_v1';
 export const ONBOARDING_OPEN_EVENT = 'ezrab:open-onboarding';
@@ -158,34 +159,41 @@ function FeatureIcon({ kind }: { kind: 'rab' | 'ai' | 'db' }) {
 
 /* ---------------- konten langkah ---------------- */
 
-const FEATURES = [
-  {
-    kind: 'rab' as const,
-    title: 'RAB & Estimasi',
-    desc: 'Susun Rencana Anggaran Biaya proyek lengkap dengan volume, harga satuan, dan rekap otomatis.',
-  },
-  {
-    kind: 'ai' as const,
-    title: 'AI Estimator',
-    desc: 'Asisten AI membantu menghitung volume, menganalisis gambar kerja (DED), dan menyusun dokumen.',
-  },
-  {
-    kind: 'db' as const,
-    title: 'Database AHSP 2026',
-    desc: 'Analisa Harga Satuan Pekerjaan 2026 siap pakai — akurat dan selalu terbarui.',
-  },
-];
+// D-25 (Batch G2): isi langkah berasal dari kamus i18n (`onboarding.*`)
+// agar tur mengikuti bahasa aktif. Builder dipakai di dalam komponen
+// dengan useMemo agar identitas array stabil antar-render.
+function buildFeatures(t: (key: string) => string) {
+  return [
+    {
+      kind: 'rab' as const,
+      title: t('onboarding.feat_rab_title'),
+      desc: t('onboarding.feat_rab_desc'),
+    },
+    {
+      kind: 'ai' as const,
+      title: t('onboarding.feat_ai_title'),
+      desc: t('onboarding.feat_ai_desc'),
+    },
+    {
+      kind: 'db' as const,
+      title: t('onboarding.feat_db_title'),
+      desc: t('onboarding.feat_db_desc'),
+    },
+  ];
+}
 
-const START_STEPS = [
-  {
-    title: 'Buat proyek baru',
-    desc: 'Beri nama proyek, pilih jenis pekerjaan, dan mulai susun RAB dari template.',
-  },
-  {
-    title: 'Buka dashboard',
-    desc: 'Lihat ringkasan semua proyek, progres pekerjaan, dan aktivitas terbaru Anda.',
-  },
-];
+function buildStartSteps(t: (key: string) => string) {
+  return [
+    {
+      title: t('onboarding.start_new_title'),
+      desc: t('onboarding.start_new_desc'),
+    },
+    {
+      title: t('onboarding.start_dash_title'),
+      desc: t('onboarding.start_dash_desc'),
+    },
+  ];
+}
 
 /* ---------------- komponen ---------------- */
 
@@ -200,9 +208,12 @@ interface OnboardingTourProps {
 }
 
 export function OnboardingTour({ open, onClose }: OnboardingTourProps) {
+  const { t } = useI18n();
   const [step, setStep] = useState(0);
   const totalSteps = 3;
   const isLast = step === totalSteps - 1;
+  const features = useMemo(() => buildFeatures(t), [t]);
+  const startSteps = useMemo(() => buildStartSteps(t), [t]);
 
   // Reset ke langkah pertama setiap tur dibuka
   useEffect(() => {
@@ -242,7 +253,7 @@ export function OnboardingTour({ open, onClose }: OnboardingTourProps) {
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Panduan awal EZRAB"
+      aria-label={t('onboarding.welcome_aria')}
       style={{
         position: 'fixed',
         inset: 0,
@@ -302,7 +313,7 @@ export function OnboardingTour({ open, onClose }: OnboardingTourProps) {
             onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ezrab-surface-soft, var(--ez-hue-slate-bg))')}
             onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
           >
-            Lewati
+            {t('common.lewati')}
           </button>
         </div>
 
@@ -322,7 +333,7 @@ export function OnboardingTour({ open, onClose }: OnboardingTourProps) {
                   margin: '0 0 10px',
                 }}
               >
-                Selamat datang di EZRAB!
+                {t('onboarding.welcome_title')}
               </h2>
               <p
                 style={{
@@ -332,9 +343,7 @@ export function OnboardingTour({ open, onClose }: OnboardingTourProps) {
                   margin: 0,
                 }}
               >
-                EZRAB adalah aplikasi penyusun <strong style={{ color: 'var(--ezrab-text, #111827)' }}>RAB &amp; estimasi
-                biaya konstruksi</strong> yang cepat, akurat, dan mudah dipakai — dari perencanaan sampai rekap anggaran
-                proyek Anda.
+                {t('onboarding.welcome_body_a')}<strong style={{ color: 'var(--ezrab-text, #111827)' }}>{t('onboarding.welcome_body_strong')}</strong>{t('onboarding.welcome_body_b')}
               </p>
             </div>
           )}
@@ -350,7 +359,7 @@ export function OnboardingTour({ open, onClose }: OnboardingTourProps) {
                   margin: '0 0 6px',
                 }}
               >
-                Semua kebutuhan estimasi, satu tempat
+                {t('onboarding.features_title')}
               </h2>
               <p
                 style={{
@@ -360,10 +369,10 @@ export function OnboardingTour({ open, onClose }: OnboardingTourProps) {
                   lineHeight: 1.6,
                 }}
               >
-                Tiga hal utama yang bisa Anda lakukan di EZRAB:
+                {t('onboarding.features_intro')}
               </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {FEATURES.map((f) => (
+                {features.map((f) => (
                   <div
                     key={f.title}
                     style={{
@@ -422,7 +431,7 @@ export function OnboardingTour({ open, onClose }: OnboardingTourProps) {
                   margin: '0 0 6px',
                 }}
               >
-                Mulai dalam hitungan detik
+                {t('onboarding.start_title')}
               </h2>
               <p
                 style={{
@@ -432,10 +441,10 @@ export function OnboardingTour({ open, onClose }: OnboardingTourProps) {
                   lineHeight: 1.6,
                 }}
               >
-                Tidak perlu pengaturan rumit. Pilih salah satu untuk mulai:
+                {t('onboarding.start_intro')}
               </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
-                {START_STEPS.map((s, i) => (
+                {startSteps.map((s, i) => (
                   <div
                     key={s.title}
                     style={{
@@ -491,7 +500,7 @@ export function OnboardingTour({ open, onClose }: OnboardingTourProps) {
                   textAlign: 'center',
                 }}
               >
-                Panduan ini bisa dibuka lagi kapan saja dari menu Pengaturan.
+                {t('onboarding.start_note')}
               </p>
             </div>
           )}
@@ -513,7 +522,7 @@ export function OnboardingTour({ open, onClose }: OnboardingTourProps) {
               className="ezrab-button-secondary"
               style={{ height: 44, padding: '0 20px', minWidth: 110 }}
             >
-              Kembali
+              {t('common.kembali')}
             </button>
           ) : (
             <span />
@@ -523,7 +532,7 @@ export function OnboardingTour({ open, onClose }: OnboardingTourProps) {
             className="ezrab-button-primary"
             style={{ height: 44, padding: '0 24px', minWidth: 140 }}
           >
-            {isLast ? 'Mulai Sekarang' : 'Lanjut'}
+            {isLast ? t('onboarding.mulai_sekarang') : t('common.lanjut')}
           </button>
         </div>
       </div>

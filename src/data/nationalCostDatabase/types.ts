@@ -87,6 +87,15 @@ export interface NationalAHSPItem {
   unit: string;                  // e.g. "m2", "m3", "m'", "buah", "ls", "kg", "unit", "jam"
   /** Unit exactly as printed in the source, before unit normalization (§13). */
   unitRaw?: string;
+  /**
+   * Satuan TAMPIL Bina Marga (D-55, dipersempit 2026-11-14): hasil
+   * `resolveBinaMargaUnit` — satuan kanonis bila unit master adalah
+   * fragmen deskripsi, verbatim bila sudah valid, "—" bila tanpa
+   * padanan. Hanya diisi pada item BINA_MARGA dari masterRegistry.
+   * DISPLAY ONLY: tidak ada jalur resolusi harga yang boleh membaca
+   * field ini — resolusi memakai `unit` (verbatim master, pra-G2).
+   */
+  unitDisplay?: string;
   domain: AHSPDomain;
   subDomain?: string;            // e.g. "Pekerjaan Tanah", "Bendung", "Irigasi", "Aspal"
   category: string;              // e.g. "PEKERJAAN TANAH", "DIVISI 5 - ..."

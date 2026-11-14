@@ -34,6 +34,16 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { useProject } from '../../context/ProjectContext';
+import { decideQtoSyncPrice } from '../../lib/qtoSyncPricing';
+import { isManualQtoItem, qtoItemSourceLabel, countDistinctCalculators } from '../../lib/qtoItemSource';
+// D-70 (Batch D): real filter model for the QTO table — the Filter button
+// used to open Column Settings; it now toggles a filter panel.
+import {
+  applyQtoTableFilter,
+  countActiveQtoFilters,
+  DEFAULT_QTO_TABLE_FILTER,
+  type QtoTableFilter,
+} from '../../lib/qtoTableFilter';
 import { CONSTRUCTION_CALCULATORS, getCalculatorById } from '../../engine/constructionCalculators/registry';
 import { QTOItem } from '../../types';
 import {
@@ -43,6 +53,17 @@ import {
 import { formatNumberId, formatRupiah } from '../../engine/formulaEngine';
 import bowplankImg from '../../assets/bowplank-technical.jpg';
 import foundationImg from '../../assets/volume-foundation.jpg';
+
+/**
+ * D-69 (Batch G2): label status QTO untuk tampilan — SATU pemetaan yang
+ * dipakai badge & baris detail. Konstanta mentah ('SYNCED_TO_RAB')
+ * tidak pernah dirender ke UI. Header grup ('Terhubung RAB' /
+ * 'Belum Terhubung RAB') sengaja memakai wording berbeda karena
+ * konteksnya grup, bukan satu item — bukan bagian dari pemetaan ini.
+ */
+export function qtoStatusLabel(status: string | null | undefined): string {
+  return status === 'SYNCED_TO_RAB' ? 'Terhubung' : 'Terhitung';
+}
 
 /**
  * Ilustrasi teknis per jenis pekerjaan — HANYA untuk kalkulator yang memang
@@ -71,6 +92,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
     currentProjectId,
     projectQtoItems,
     projectCalculationRuns,
+    projectMappings,
     deleteQtoItem,
     syncQtoToRabSpreadsheet,
     createManualQtoItem,
@@ -80,6 +102,13 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategoryTab, setActiveCategoryTab] = useState<'semua' | 'struktur' | 'arsitektur' | 'mep' | 'lainnya'>('semua');
   const [groupBy, setGroupBy] = useState<'kategori' | 'calculator' | 'satuan' | 'status'>('kategori');
+
+  // D-70 (Batch D): filter panel state (status / source / calculator).
+  // Independent from search + category tabs; all three compose in
+  // `filteredQtoItems` below.
+  const [filterPanelOpen, setFilterPanelOpen] = useState(false);
+  const [qtoFilter, setQtoFilter] = useState<QtoTableFilter>(DEFAULT_QTO_TABLE_FILTER);
+  const activeFilterCount = countActiveQtoFilters(qtoFilter);
   
   // Selected Item for Detail Panel
   const [selectedQtoId, setSelectedQtoId] = useState<string | null>(null);
@@ -95,6 +124,21 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
   const [manualModalOpen, setManualModalOpen] = useState(false);
   const [imageViewerOpen, setImageViewerOpen] = useState(false);
   const [columnsModalOpen, setColumnsModalOpen] = useState(false);
+
+  // D-68 (Batch A): konfirmasi hapus item QTO memakai dialog in-app (pola
+  // modal konfirmasi yang sama dengan reset kalkulator) — BUKAN native
+  // confirm() yang diabaikan sebagian browser/WebView sehingga tombol
+  // tampak no-op. Item yang menunggu konfirmasi disimpan di state; Batal
+  // hanya menutup dialog tanpa menyentuh data.
+  const [pendingDeleteQto, setPendingDeleteQto] = useState<QTOItem | null>(null);
+  // D-67 (Batch A): peringatan sebelum sinkronisasi item TANPA harga —
+  // sinkronisasi tetap boleh lanjut (item menjadi PRICE_UNRESOLVED, bukan
+  // Rp0 yang terlihat valid), tetapi user harus menyetujuinya eksplisit.
+  const [pendingUnpricedSync, setPendingUnpricedSync] = useState<
+    | { kind: 'single'; item: QTOItem; reason: string }
+    | { kind: 'bulk'; total: number; unpriced: number }
+    | null
+  >(null);
 
   // Manual Form State
   const [manualKode, setManualKode] = useState('');
@@ -142,7 +186,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
 
   // Filtered QTO items
   const filteredQtoItems = useMemo(() => {
-    return projectQtoItems.filter((item) => {
+    const base = projectQtoItems.filter((item) => {
       // Category tab filter
       if (activeCategoryTab !== 'semua') {
         const cat = getCategoryOfItem(item);
@@ -164,7 +208,22 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
       }
       return true;
     });
-  }, [projectQtoItems, activeCategoryTab, searchQuery]);
+    // D-70: filter panel (status / source / calculator) composes on top
+    // of the category tab + search.
+    return applyQtoTableFilter(base, qtoFilter);
+  }, [projectQtoItems, activeCategoryTab, searchQuery, qtoFilter]);
+
+  // Calculator options for the D-70 filter panel: only calculators
+  // actually present in this project's QTO items.
+  const filterCalculatorOptions = useMemo(() => {
+    const ids = new Set<string>();
+    projectQtoItems.forEach((item) => {
+      if (item.calculatorId && item.calculatorId !== 'MANUAL') ids.add(item.calculatorId);
+    });
+    return Array.from(ids)
+      .map((id) => ({ id, label: getCalculatorById(id)?.shortName || id }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }, [projectQtoItems]);
 
   // Grouped QTO items
   const groupedQtoItems = useMemo(() => {
@@ -241,9 +300,11 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
     });
     return Array.from(map.entries()).sort((a, b) => b[1] - a[1]);
   }, [projectQtoItems]);
-  const distinctCalculators = new Set(
-    projectQtoItems.filter((i) => i.calculatorId !== 'MANUAL').map((i) => i.calculatorId)
-  ).size;
+  // D-65 (Batch D): distinct REAL calculators — manual items (incl.
+  // legacy ones with undefined calculatorId) are excluded via
+  // isManualQtoItem; the old `calculatorId !== 'MANUAL'` filter let
+  // `undefined` enter the Set as a phantom calculator.
+  const distinctCalculators = countDistinctCalculators(projectQtoItems);
   // "% Terverifikasi" hanya menghitung status VERIFIED yang nyata — status
   // CALCULATED (baru terhitung) BUKAN terverifikasi.
   const verifiedPercentage =
@@ -255,7 +316,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
 
   // Bulk actions untuk checkbox terpilih — benar-benar memanggil engine sync
   // yang selama ini hanya diimpor tapi tidak pernah dipakai di view ini.
-  const handleBulkSyncToRab = () => {
+  const performBulkSyncToRab = () => {
     let ok = 0;
     let failed = 0;
     selectedItemIds.forEach((id) => {
@@ -269,6 +330,67 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
     if (ok > 0) showToast(`${ok} item QTO berhasil disinkronkan ke RAB.`);
     if (failed > 0) showToast(`${failed} item gagal disinkronkan (data tidak lengkap / proyek tidak aktif).`, 'info');
     setSelectedItemIds([]);
+  };
+
+  const handleBulkSyncToRab = () => {
+    // D-67 (Batch A): bila ada item terpilih tanpa harga yang bisa
+    // ditransfer, minta persetujuan eksplisit dulu lewat SATU dialog
+    // (bukan per item) — item-item itu akan menjadi PRICE_UNRESOLVED.
+    const selected = projectQtoItems.filter((q) => selectedItemIds.includes(q.id));
+    const unpriced = selected.filter(
+      (q) => !decideQtoSyncPrice({ qto: q }).transferred
+    ).length;
+    if (unpriced > 0) {
+      setPendingUnpricedSync({ kind: 'bulk', total: selected.length, unpriced });
+      return;
+    }
+    performBulkSyncToRab();
+  };
+
+  // D-67 (Batch A): sinkronisasi satu baris — item berharga langsung
+  // disinkronkan; item tanpa harga meminta persetujuan eksplisit dulu.
+  const handleRowSyncClick = (item: QTOItem) => {
+    const decision = decideQtoSyncPrice({ qto: item });
+    if (!decision.transferred) {
+      setPendingUnpricedSync({
+        kind: 'single',
+        item,
+        reason: decision.reason ?? 'Item QTO belum memiliki harga tersimpan dari kalkulator.',
+      });
+      return;
+    }
+    try {
+      syncQtoToRabSpreadsheet(item.id);
+      showToast(`Item "${item.uraian}" disinkronkan ke RAB.`);
+    } catch (err: any) {
+      showToast(err?.message || 'Gagal menyinkronkan item ke RAB.', 'info');
+    }
+  };
+
+  const performUnpricedSync = () => {
+    if (!pendingUnpricedSync) return;
+    if (pendingUnpricedSync.kind === 'single') {
+      try {
+        syncQtoToRabSpreadsheet(pendingUnpricedSync.item.id);
+        showToast(`Item "${pendingUnpricedSync.item.uraian}" disinkronkan ke RAB tanpa harga (isi harga satuan nyata di spreadsheet).`);
+      } catch (err: any) {
+        showToast(err?.message || 'Gagal menyinkronkan item ke RAB.', 'info');
+      }
+    } else {
+      performBulkSyncToRab();
+    }
+    setPendingUnpricedSync(null);
+  };
+
+  // D-68 (Batch A): eksekusi hapus SESUDAH dialog in-app dikonfirmasi.
+  const handleConfirmDeleteQto = () => {
+    if (!pendingDeleteQto) return;
+    const deletedId = pendingDeleteQto.id;
+    deleteQtoItem(deletedId);
+    if (selectedQtoId === deletedId) setSelectedQtoId(null);
+    setSelectedItemIds((prev) => prev.filter((id) => id !== deletedId));
+    setPendingDeleteQto(null);
+    showToast('Item QTO berhasil dihapus.');
   };
 
   const handleBulkDelete = () => {
@@ -501,14 +623,19 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
             <span>Tambah Manual</span>
           </button>
 
+          {/* D-70 (Batch D): Filter now toggles the real filter panel
+              below the toolbar — it used to open Column Settings (the
+              same handler as the Columns button). The badge shows how
+              many filters are active. */}
           <button
-            onClick={() => setColumnsModalOpen(true)}
+            onClick={() => setFilterPanelOpen((v) => !v)}
+            aria-expanded={filterPanelOpen}
             style={{
               height: '36px',
               padding: '0 14px',
               borderRadius: 'var(--ez-radius-control)',
-              background: 'var(--ez-color-surface)',
-              border: '1px solid var(--ez-color-border-line)',
+              background: activeFilterCount > 0 ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
+              border: activeFilterCount > 0 ? '1px solid var(--ez-color-primary)' : '1px solid var(--ez-color-border-line)',
               color: 'var(--ez-color-text-body)',
               fontSize: '12.5px',
               fontWeight: 600,
@@ -518,8 +645,22 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
               gap: '6px',
             }}
           >
-            <Filter size={14} color="#64748B" />
+            <Filter size={14} color={activeFilterCount > 0 ? 'var(--ez-color-primary)' : '#64748B'} />
             <span>Filter</span>
+            {activeFilterCount > 0 && (
+              <span
+                style={{
+                  fontSize: '10.5px',
+                  fontWeight: 700,
+                  background: 'var(--ez-color-primary)',
+                  color: '#ffffff',
+                  padding: '1px 6px',
+                  borderRadius: 'var(--ez-radius-pill)',
+                }}
+              >
+                {activeFilterCount}
+              </span>
+            )}
           </button>
         </div>
       </div>
@@ -784,6 +925,77 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
         </div>
       </div>
 
+      {/* 5b. Filter Panel (D-70, Batch D) — dibuka tombol "Filter" di
+          header; memfilter tabel berdasarkan status, sumber, dan
+          kalkulator, di atas tab kategori + pencarian. */}
+      {filterPanelOpen && (
+        <div
+          className="ezrab-qto-filter-panel"
+          style={{
+            background: 'var(--ez-color-surface)',
+            borderRadius: 'var(--ez-radius-card)',
+            border: '1px solid #EEF1F6',
+            padding: '14px 20px',
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'flex-end',
+            gap: '12px',
+            boxShadow: CARD_SHADOW,
+          }}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-warm)' }}>Status</label>
+            <select
+              value={qtoFilter.status}
+              onChange={(e) => setQtoFilter((f) => ({ ...f, status: e.target.value as QtoTableFilter['status'] }))}
+              style={{ height: '34px', padding: '0 10px', borderRadius: '8px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-strong)', background: 'var(--ez-color-surface)', outline: 'none', cursor: 'pointer' }}
+            >
+              <option value="semua">Semua status</option>
+              <option value="SYNCED_TO_RAB">Terhubung RAB</option>
+              <option value="BELUM_SYNC">Belum terhubung RAB</option>
+              <option value="VERIFIED">Terverifikasi</option>
+              <option value="CALCULATED">Dihitung</option>
+              <option value="DRAFT">Draf</option>
+            </select>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-warm)' }}>Sumber</label>
+            <select
+              value={qtoFilter.source}
+              onChange={(e) => setQtoFilter((f) => ({ ...f, source: e.target.value as QtoTableFilter['source'] }))}
+              style={{ height: '34px', padding: '0 10px', borderRadius: '8px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-strong)', background: 'var(--ez-color-surface)', outline: 'none', cursor: 'pointer' }}
+            >
+              <option value="semua">Semua sumber</option>
+              <option value="CALCULATOR">Volume Calculator</option>
+              <option value="MANUAL">Input Manual</option>
+            </select>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-warm)' }}>Calculator</label>
+            <select
+              value={qtoFilter.calculatorId}
+              onChange={(e) => setQtoFilter((f) => ({ ...f, calculatorId: e.target.value }))}
+              style={{ height: '34px', padding: '0 10px', borderRadius: '8px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-strong)', background: 'var(--ez-color-surface)', outline: 'none', cursor: 'pointer' }}
+            >
+              <option value="semua">Semua calculator</option>
+              {filterCalculatorOptions.map((opt) => (
+                <option key={opt.id} value={opt.id}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
+          <button
+            onClick={() => setQtoFilter(DEFAULT_QTO_TABLE_FILTER)}
+            disabled={activeFilterCount === 0}
+            style={{ height: '34px', padding: '0 14px', borderRadius: '8px', background: 'var(--ez-color-surface)', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12px', fontWeight: 600, color: activeFilterCount === 0 ? 'var(--ez-color-text-muted)' : 'var(--ez-color-text-body)', cursor: activeFilterCount === 0 ? 'default' : 'pointer' }}
+          >
+            Hapus filter
+          </button>
+          <span style={{ fontSize: '12px', color: 'var(--ez-color-text-warm)', paddingBottom: '8px' }}>
+            Menampilkan {filteredQtoItems.length} dari {projectQtoItems.length} item
+          </span>
+        </div>
+      )}
+
       {/* Bulk Action Bar — muncul hanya saat ada item tercentang */}
       {selectedItemIds.length > 0 && (
         <div
@@ -1040,7 +1252,10 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
                                 {/* Calculator */}
                                 {visibleColumns.calculator && (
                                   <td style={{ padding: '10px 14px', color: 'var(--ez-color-text-body)', fontWeight: 500 }}>
-                                    {item.calculatorId === 'MANUAL' ? (
+                                    {/* D-66 (Batch B): label sumber via helper — item manual
+                                        (termasuk item lama tanpa calculatorId) tampil "Manual",
+                                        bukan kosong atau "Volume Calculator". */}
+                                    {isManualQtoItem(item) ? (
                                       <span style={{ color: 'var(--ez-hue-amber-text-deep)', fontStyle: 'italic' }}>Manual</span>
                                     ) : (
                                       item.calculatorId
@@ -1123,14 +1338,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
                                 {/* Action Menu */}
                                 <td style={{ padding: '10px 12px', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
                                   <button
-                                    onClick={() => {
-                                      try {
-                                        syncQtoToRabSpreadsheet(item.id);
-                                        showToast(`Item "${item.uraian}" disinkronkan ke RAB.`);
-                                      } catch (err: any) {
-                                        showToast(err?.message || 'Gagal menyinkronkan item ke RAB.', 'info');
-                                      }
-                                    }}
+                                    onClick={() => handleRowSyncClick(item)}
                                     title="Sinkronkan ke RAB"
                                     style={{
                                       width: '26px',
@@ -1150,10 +1358,11 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
                                   </button>
                                   <button
                                     onClick={() => {
-                                      if (confirm(`Hapus item QTO ${item.uraian}?`)) {
-                                        deleteQtoItem(item.id);
-                                        showToast('Item QTO berhasil dihapus.');
-                                      }
+                                      // D-68 (Batch A): buka dialog konfirmasi
+                                      // in-app — dialog native sebelumnya
+                                      // tidak pernah terlihat di browser
+                                      // audit sehingga hapus tampak no-op.
+                                      setPendingDeleteQto(item);
                                     }}
                                     title="Hapus Item"
                                     style={{
@@ -1260,7 +1469,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
                     borderRadius: 'var(--ez-radius-pill)',
                   }}
                 >
-                  {activeSelectedItem.status === 'SYNCED_TO_RAB' ? '✓ Terhubung' : 'Terhitung'}
+                  {activeSelectedItem.status === 'SYNCED_TO_RAB' ? `✓ ${qtoStatusLabel(activeSelectedItem.status)}` : qtoStatusLabel(activeSelectedItem.status)}
                 </span>
               </div>
               <h2 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '2px 0 0' }}>
@@ -1342,7 +1551,9 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ color: 'var(--ez-color-text-warm)' }}>Sumber:</span>
                   <span style={{ fontWeight: 600, color: 'var(--ez-color-text-body)' }}>
-                    {activeSelectedItem.calculatorId === 'MANUAL' ? 'Input Manual' : 'Volume Calculator'}
+                    {/* D-66 (Batch B): helper — item manual tampil "Input Manual"
+                        walau calculatorId tidak terset (item lama). */}
+                    {qtoItemSourceLabel(activeSelectedItem)}
                   </span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -1369,7 +1580,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ color: 'var(--ez-color-text-warm)' }}>Status:</span>
-                  <span style={{ color: 'var(--ez-color-text-body)' }}>{activeSelectedItem.status}</span>
+                  <span style={{ color: 'var(--ez-color-text-body)' }}>{qtoStatusLabel(activeSelectedItem.status)}</span>
                 </div>
               </div>
             </div>
@@ -1397,34 +1608,39 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
               </div>
             </div>
 
-            {/* Button: Lihat di Volume Calculator */}
-            <div style={{ borderTop: '1px solid #EEF1F6', paddingTop: '12px' }}>
-              <button
-                onClick={() => {
-                  onNavigateToCalculator?.(activeSelectedItem.calculatorId, activeSelectedItem.id);
-                }}
-                style={{
-                  width: '100%',
-                  height: '38px',
-                  borderRadius: 'var(--ez-radius-control)',
-                  background: 'var(--ez-hue-blue-bg)',
-                  border: '1px solid var(--ez-hue-blue-border)',
-                  color: 'var(--ez-color-primary-hover)',
-                  fontSize: '12.5px',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '6px',
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                <Ruler size={14} />
-                <span>Lihat di Volume Calculator</span>
-                <ChevronRight size={14} />
-              </button>
-            </div>
+            {/* Button: Lihat di Volume Calculator — D-66 (Batch B): hanya untuk
+                item kalkulator. Item manual tidak punya kalkulator untuk
+                dibuka (tombol ini dulu menavigasi ke kalkulator 'MANUAL'
+                yang tidak ada). */}
+            {!isManualQtoItem(activeSelectedItem) && (
+              <div style={{ borderTop: '1px solid #EEF1F6', paddingTop: '12px' }}>
+                <button
+                  onClick={() => {
+                    onNavigateToCalculator?.(activeSelectedItem.calculatorId, activeSelectedItem.id);
+                  }}
+                  style={{
+                    width: '100%',
+                    height: '38px',
+                    borderRadius: 'var(--ez-radius-control)',
+                    background: 'var(--ez-hue-blue-bg)',
+                    border: '1px solid var(--ez-hue-blue-border)',
+                    color: 'var(--ez-color-primary-hover)',
+                    fontSize: '12.5px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  <Ruler size={14} />
+                  <span>Lihat di Volume Calculator</span>
+                  <ChevronRight size={14} />
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -1799,6 +2015,181 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
             >
               Terapkan
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* D-68 (Batch A): DIALOG KONFIRMASI HAPUS ITEM QTO (in-app).
+          Menggantikan native confirm() — dialog ini selalu tampil di semua
+          browser. Menampilkan item yang akan dihapus + jumlah item RAB
+          tertaut (yang akan dialihkan ke sumber manual, bukan dihapus). */}
+      {pendingDeleteQto && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(15,23,42,0.6)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 100000,
+          }}
+        >
+          <div
+            style={{
+              background: 'var(--ez-color-surface)',
+              borderRadius: '20px',
+              padding: '24px',
+              maxWidth: '420px',
+              width: '90%',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
+              border: '1px solid #EEF1F6',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: 'var(--ez-radius-control)', background: 'var(--ez-hue-rose-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#EF4444' }}>
+                <Trash2 size={20} />
+              </div>
+              <div>
+                <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                  Hapus item QTO?
+                </h3>
+                <p style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', margin: '2px 0 0' }}>
+                  “{pendingDeleteQto.uraian}” ({pendingDeleteQto.quantity} {pendingDeleteQto.unit}) akan dihapus dari QTO.
+                  {(() => {
+                    const linked = projectMappings.filter((m) => m.qtoItemId === pendingDeleteQto.id).length;
+                    return linked > 0
+                      ? ` ${linked} item RAB tertaut akan dialihkan ke sumber manual (tidak ikut terhapus).`
+                      : '';
+                  })()}
+                </p>
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
+              <button
+                onClick={() => setPendingDeleteQto(null)}
+                style={{
+                  height: '36px',
+                  padding: '0 16px',
+                  borderRadius: '8px',
+                  background: 'var(--ez-color-surface-tertiary)',
+                  border: '1px solid var(--ez-hue-slate-border)',
+                  color: 'var(--ez-color-text-slate)',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleConfirmDeleteQto}
+                style={{
+                  height: '36px',
+                  padding: '0 16px',
+                  borderRadius: '8px',
+                  background: '#EF4444',
+                  border: 'none',
+                  color: '#FFFFFF',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                Hapus Item
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* D-67 (Batch A): DIALOG PERINGATAN SINKRONISASI TANPA HARGA (in-app).
+          Sinkronisasi item tanpa harga tersimpan TIDAK diblokir total —
+          item boleh menjadi PRICE_UNRESOLVED (bukan Rp0 yang terlihat
+          valid) — tetapi user harus menyetujuinya eksplisit SETELAH membaca
+          alasannya. */}
+      {pendingUnpricedSync && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(15,23,42,0.6)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 100000,
+          }}
+        >
+          <div
+            style={{
+              background: 'var(--ez-color-surface)',
+              borderRadius: '20px',
+              padding: '24px',
+              maxWidth: '440px',
+              width: '90%',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
+              border: '1px solid #EEF1F6',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: 'var(--ez-radius-control)', background: 'var(--ez-pastel-cream)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ez-hue-amber-text)' }}>
+                <AlertCircle size={20} />
+              </div>
+              <div>
+                <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                  {pendingUnpricedSync.kind === 'single'
+                    ? 'Item ini belum memiliki harga'
+                    : `${pendingUnpricedSync.unpriced} dari ${pendingUnpricedSync.total} item belum memiliki harga`}
+                </h3>
+                <p style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', margin: '2px 0 0' }}>
+                  {pendingUnpricedSync.kind === 'single'
+                    ? `${pendingUnpricedSync.reason} Item RAB akan dibuat tanpa harga (“Harga belum diisi”, bukan Rp0) — isi harga satuan nyata di spreadsheet sesudah sinkronisasi.`
+                    : 'Item-item tanpa harga akan dibuat sebagai “Harga belum diisi” (bukan Rp0) — isi harga satuan nyata di spreadsheet sesudah sinkronisasi.'}
+                </p>
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
+              <button
+                onClick={() => setPendingUnpricedSync(null)}
+                style={{
+                  height: '36px',
+                  padding: '0 16px',
+                  borderRadius: '8px',
+                  background: 'var(--ez-color-surface-tertiary)',
+                  border: '1px solid var(--ez-hue-slate-border)',
+                  color: 'var(--ez-color-text-slate)',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Batal
+              </button>
+              <button
+                onClick={performUnpricedSync}
+                style={{
+                  height: '36px',
+                  padding: '0 16px',
+                  borderRadius: '8px',
+                  background: 'var(--ez-color-primary)',
+                  border: 'none',
+                  color: '#FFFFFF',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                Tetap Sinkronkan
+              </button>
+            </div>
           </div>
         </div>
       )}

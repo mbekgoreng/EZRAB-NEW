@@ -423,6 +423,7 @@ export const routeLabel = (route: WorkspaceRoute) => {
     proyek: 'Proyek',
     'manajemen-proyek': 'Manajemen Proyek',
     'rab-estimasi': 'RAB & Estimasi',
+    'rab-informasi-proyek': 'Informasi Proyek',
     'rab-spreadsheet': 'RAB Spreadsheet',
     'rab-rekapitulasi': 'Rekapitulasi RAB',
     'rab-analisa-harga': 'Analisa Harga',
@@ -437,6 +438,7 @@ export const routeLabel = (route: WorkspaceRoute) => {
     'database-material': 'Material & Harga',
     'database-upah': 'Standar Upah',
     'database-alat': 'Tarif Peralatan',
+    'harga-proyek': 'Harga Proyek',
     suppliers: 'Supplier & Vendor',
     'dokumen-tender': 'Dokumen Proyek',
     'keuangan-proyek': 'Keuangan Proyek',
@@ -449,6 +451,10 @@ export const routeLabel = (route: WorkspaceRoute) => {
     'magic-ai': 'EZRAB Magic AI',
     'ai-assistant': 'EZRAB AI Copilot',
     'ezrab-ai': 'EZRAB AI',
+    // D-17 (Batch G1): 'desain-rab' juga tanpa label — menu live
+    // (routeForMenu + WorkspaceView ChatToRabWorkspace) yang luput
+    // dari audit; judul tab-nya "EZRAB — EZRAB" sebelum ini.
+    'desain-rab': 'Desain RAB',
     'ded-ai': 'DED AI Estimate',
     'dokumen-ai': 'Dokumen AI',
     'kredit-ai': 'Kredit AI',

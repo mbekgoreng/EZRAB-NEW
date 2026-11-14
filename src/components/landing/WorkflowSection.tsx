@@ -30,7 +30,10 @@ export const WorkflowSection: React.FC = () => {
   ];
 
   return (
-    <section id="workflow" style={{ padding: '100px 0', background: 'var(--ezrab-surface)', borderTop: '1px solid var(--ezrab-border)', borderBottom: '1px solid var(--ezrab-border)' }}>
+    // NEW-05: dulu id="workflow" — duplikat dengan AboutWorkflowSection
+    // (yang kanonis: dirujuk scrollToSection AboutPage). Komponen ini
+    // tanpa importer; id diganti sesuai isinya (arsitektur deterministik).
+    <section id="workflow-arsitektur" style={{ padding: '100px 0', background: 'var(--ezrab-surface)', borderTop: '1px solid var(--ezrab-border)', borderBottom: '1px solid var(--ezrab-border)' }}>
       <div className="ezrab-container">
         <div style={{ textAlign: 'center', marginBottom: '64px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <div className="ezrab-section-tag">

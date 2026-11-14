@@ -42,6 +42,9 @@ import { NationalAHSPItem } from '../../data/nationalCostDatabase/types';
 import { formatCurrencyIDR } from '../../calculations/decimalEngine';
 import { exportProjectToExcel } from '../../export/excelExportEngine';
 import { exportItemAmount } from '../../export/priceIntegrity';
+import type { ExportPresetId } from '../../export/types';
+import { cloneProvenance } from '../../engine/rab/rabItemFactory';
+import { countVerifiedAhspLinks } from '../../engine/ahsp/ahspCounting';
 import { useProject } from '../../context/ProjectContext';
 import { openEzrabAI } from '../../ai-tools/aiNavigation';
 import { ProjectHistory } from '../../lib/projectHistory';
@@ -147,6 +150,7 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
     createVersionSnapshot,
     saveStatus,
     projectEstimateVersions,
+    activeEstimateVersionId,
     createEstimateVersion,
     restoreEstimateVersion,
     applyScenarioToActiveProject,
@@ -232,6 +236,23 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
   const [importAhspModalOpen, setImportAhspModalOpen] = useState(false);
   const [isVersionModalOpen, setIsVersionModalOpen] = useState(false);
   const [isExportPackageModalOpen, setIsExportPackageModalOpen] = useState(false);
+  // D-84 (Batch A): konfirmasi hapus massal memakai dialog in-app (pola
+  // modal konfirmasi yang sama dengan reset kalkulator / gerbang DED) —
+  // BUKAN native confirm() yang diabaikan sebagian browser/WebView
+  // sehingga tombol tampak no-op. Dialog menangkap jumlah terpilih pada
+  // saat dibuka, agar hitungan tidak berubah selama dialog terbuka.
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
+  const [bulkDeleteCount, setBulkDeleteCount] = useState(0);
+  // D-37 (Batch F): konfirmasi hapus SATU item memakai pola dialog in-app
+  // yang sama — item yang akan dihapus ditangkap saat dialog dibuka.
+  const [pendingDeleteItem, setPendingDeleteItem] = useState<RabItem | null>(null);
+  // D-75 (Batch F): preset awal modal ekspor — tergantung tombol yang
+  // membukanya ("Ekspor Rekap" → RECAP_ONLY; sisanya → COMPLETE_PACKAGE).
+  const [exportModalInitialPreset, setExportModalInitialPreset] = useState<ExportPresetId>('COMPLETE_PACKAGE');
+  const openExportModal = (preset: ExportPresetId = 'COMPLETE_PACKAGE') => {
+    setExportModalInitialPreset(preset);
+    setIsExportPackageModalOpen(true);
+  };
   const [isShortcutsModalOpen, setIsShortcutsModalOpen] = useState(false);
   const [inspectorDrawerOpen, setInspectorDrawerOpen] = useState(false);
   const [inspectorItem, setInspectorItem] = useState<RabItem | null>(null);
@@ -677,7 +698,12 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
   }, [projectRabItems]);
 
   const totalItemsCount = projectRabItems.length;
-  const ahspLinkedCount = projectRabItems.filter((i) => i.ahspCode && i.ahspCode.trim() !== '').length;
+  // D-44 (Batch F): "dari N AHSP" menghitung HANYA tautan AHSP
+  // terverifikasi (aturan kanonis di engine/ahsp/ahspCounting) — baris
+  // kalkulator yang hanya membawa kode saran template legacy TIDAK
+  // terhitung. Aturan lama (string ahspCode tak kosong) menghitung
+  // 2 CALCULATOR + 1 AHSP sebagai "3 AHSP".
+  const ahspLinkedCount = countVerifiedAhspLinks(projectRabItems);
 
   // ---------------------------------------------------------------------------
   // UNDO / REDO HISTORY ENGINE — terisolasi per proyek (P0-A fix).
@@ -849,12 +875,28 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
       // Fase 4A: warisi status harga agar duplikat item tanpa harga
       // tidak berubah menjadi "resolved" diam-diam.
       priceStatus: item.priceStatus,
+      // D-40 (Batch F): warisi SELURUH provenance — tanpa ini salinan
+      // item NEEDS_VERIFICATION/ESTIMATED diam-diam naik kelas menjadi
+      // VERIFIED (flag "⚠ Perlu verifikasi" hilang). Jalur duplikat
+      // massal memakai handler ini juga, jadi ikut terperbaiki.
+      ...cloneProvenance(item),
     });
     showToast('Item berhasil diduplikasi');
   };
 
+  // D-37 (Batch F): hapus satu item WAJIB konfirmasi dulu (dialog in-app,
+  // pola yang sama dengan hapus massal D-84). Mutasi hanya terjadi di
+  // konfirmasi dialog; Undo (Ctrl+Z) tetap tersedia lewat history engine.
   const handleDeleteItem = (itemId: string) => {
-    deleteRabItem(itemId);
+    const item = projectRabItems.find((i) => i.id === itemId);
+    if (!item) return;
+    setPendingDeleteItem(item);
+  };
+
+  const handleConfirmDeleteItem = () => {
+    if (!pendingDeleteItem) return;
+    deleteRabItem(pendingDeleteItem.id);
+    setPendingDeleteItem(null);
     showToast('Item berhasil dihapus');
   };
 
@@ -1072,7 +1114,7 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
           onImportAhsp={() => handleOpenSmartAdd('ahsp')}
           onImportExcel={() => setImportExcelModalOpen(true)}
           onOpenVersionsAndScenarios={() => setIsVersionModalOpen(true)}
-          onExport={() => setIsExportPackageModalOpen(true)}
+          onExport={() => openExportModal()}
           latestVersionLabel={latestVersionNumber}
         />
 
@@ -1180,7 +1222,7 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
               onOpenDocumentReview={() => setIsDocumentReviewModalOpen(true)}
               onRefreshData={handleRefreshData}
               onImportExcel={() => setImportExcelModalOpen(true)}
-              onExportPackage={() => setIsExportPackageModalOpen(true)}
+              onExportPackage={() => openExportModal()}
               onValidateIntegrity={handleValidateIntegrity}
               onRecalculateTotals={handleRecalculateTotals}
               onResetView={handleResetView}
@@ -1239,6 +1281,7 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
             <SpreadsheetFooter
               groupsCount={groupedWbsCategories.length}
               totalItemsCount={totalItemsCount}
+              filteredItemsCount={filteredItems.length}
               totalRab={totalRabNominal}
               onAddGroup={() => {
                 setNewGroupName('');
@@ -1257,13 +1300,16 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
             <MobileRekapRab
               currentProject={currentProject}
               items={projectRabItems}
-              onOpenExportModal={() => setIsExportPackageModalOpen(true)}
+              onOpenExportModal={() => openExportModal()}
             />
           ) : (
             <EstimatorRekapitulasiView
               currentProject={currentProject}
               items={projectRabItems}
-              onOpenExportModal={() => setIsExportPackageModalOpen(true)}
+              // D-75 (Batch F): tombol "Ekspor Rekap" membuka modal dengan
+              // preset RECAP_ONLY (Ringkasan + Rekapitulasi saja), bukan
+              // paket lengkap 15 lembar.
+              onOpenExportModal={() => openExportModal('RECAP_ONLY')}
             />
           ))}
 
@@ -1294,7 +1340,7 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
           <EstimatorKurvaSView
             currentProject={currentProject}
             items={projectRabItems}
-            onOpenExportModal={() => setIsExportPackageModalOpen(true)}
+            onOpenExportModal={() => openExportModal()}
           />
         )}
 
@@ -1316,7 +1362,7 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
         {activeEstimatorTab === 'pengaturan' && (
           <EstimatorSettingsView
             currentProject={currentProject}
-            onOpenExportModal={() => setIsExportPackageModalOpen(true)}
+            onOpenExportModal={() => openExportModal()}
             onUpdateSettings={(st) => {
               if (currentProject) {
                 updateProject(currentProject.id, st);
@@ -1338,12 +1384,12 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
         selectedCount={selectedItemIds.size}
         onClearSelection={() => setSelectedItemIds(new Set())}
         onBulkDelete={() => {
-          const count = selectedItemIds.size;
-          // FASE F: konfirmasi sebelum hapus massal (aksi destruktif).
-          if (!window.confirm(`Hapus ${count} item pekerjaan yang dipilih? Tindakan ini tidak dapat dibatalkan.`)) return;
-          bulkDeleteRabItems(Array.from(selectedItemIds));
-          setSelectedItemIds(new Set());
-          showToast('Item terpilih berhasil dihapus');
+          // D-84 (Batch A): buka dialog konfirmasi in-app. Dialog native
+          // sebelumnya tidak pernah terlihat di browser audit (auto-dismiss)
+          // sehingga hapus massal tampak no-op.
+          if (selectedItemIds.size === 0) return;
+          setBulkDeleteCount(selectedItemIds.size);
+          setShowBulkDeleteConfirm(true);
         }}
         onBulkDuplicate={() => {
           selectedItemIds.forEach((id) => handleDuplicateItem(id));
@@ -1359,6 +1405,179 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
         }}
         categories={wbsTargetCategories}
       />
+
+      {/* D-84 (Batch A): DIALOG KONFIRMASI HAPUS MASSAL (in-app).
+          Menggantikan native window.confirm() — dialog ini selalu tampil di
+          semua browser. Hanya item terpilih yang dihapus; baris lain dan
+          struktur kelompok WBS tidak disentuh (bulkDeleteRabItems memfilter
+          berdasarkan id set). Penghapusan tetap bisa diurungkan lewat
+          Undo (Ctrl+Z) karena riwayat spreadsheet mencatat state sebelum
+          hapus — teks lama "tidak dapat dibatalkan" adalah salah. */}
+      {showBulkDeleteConfirm && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(15,23,42,0.6)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 100000,
+          }}
+        >
+          <div
+            style={{
+              background: 'var(--ez-color-surface)',
+              borderRadius: '20px',
+              padding: '24px',
+              maxWidth: '420px',
+              width: '90%',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
+              border: '1px solid #EEF1F6',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: 'var(--ez-radius-control)', background: 'var(--ez-hue-rose-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#EF4444' }}>
+                <Trash2 size={20} />
+              </div>
+              <div>
+                <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                  Hapus {bulkDeleteCount} item pekerjaan?
+                </h3>
+                <p style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', margin: '2px 0 0' }}>
+                  {bulkDeleteCount} item terpilih akan dihapus dari spreadsheet. Baris lain dan kelompok WBS tidak berubah. Dapat diurungkan dengan Undo (Ctrl+Z).
+                </p>
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
+              <button
+                onClick={() => setShowBulkDeleteConfirm(false)}
+                style={{
+                  height: '36px',
+                  padding: '0 16px',
+                  borderRadius: '8px',
+                  background: 'var(--ez-color-surface-tertiary)',
+                  border: '1px solid var(--ez-hue-slate-border)',
+                  color: 'var(--ez-color-text-slate)',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Batal
+              </button>
+              <button
+                onClick={() => {
+                  bulkDeleteRabItems(Array.from(selectedItemIds));
+                  setSelectedItemIds(new Set());
+                  setShowBulkDeleteConfirm(false);
+                  showToast(`${bulkDeleteCount} item terpilih berhasil dihapus`);
+                }}
+                style={{
+                  height: '36px',
+                  padding: '0 16px',
+                  borderRadius: '8px',
+                  background: '#EF4444',
+                  border: 'none',
+                  color: '#FFFFFF',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                Hapus {bulkDeleteCount} Item
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* D-37 (Batch F): DIALOG KONFIRMASI HAPUS SATU ITEM (in-app).
+          Pola yang sama dengan hapus massal D-84: menu baris "Hapus Item"
+          hanya membuka dialog; mutasi terjadi di konfirmasi. Penghapusan
+          tetap bisa diurungkan lewat Undo (Ctrl+Z) karena riwayat
+          spreadsheet mencatat state sebelum hapus. */}
+      {pendingDeleteItem && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(15,23,42,0.6)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 100000,
+          }}
+        >
+          <div
+            style={{
+              background: 'var(--ez-color-surface)',
+              borderRadius: '20px',
+              padding: '24px',
+              maxWidth: '420px',
+              width: '90%',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
+              border: '1px solid #EEF1F6',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: 'var(--ez-radius-control)', background: 'var(--ez-hue-rose-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#EF4444' }}>
+                <Trash2 size={20} />
+              </div>
+              <div>
+                <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                  Hapus item ini?
+                </h3>
+                <p style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', margin: '2px 0 0' }}>
+                  {pendingDeleteItem.description} akan dihapus dari spreadsheet. Baris lain dan kelompok WBS tidak berubah. Dapat diurungkan dengan Undo (Ctrl+Z).
+                </p>
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
+              <button
+                onClick={() => setPendingDeleteItem(null)}
+                style={{
+                  height: '36px',
+                  padding: '0 16px',
+                  borderRadius: '8px',
+                  background: 'var(--ez-color-surface-tertiary)',
+                  border: '1px solid var(--ez-hue-slate-border)',
+                  color: 'var(--ez-color-text-slate)',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleConfirmDeleteItem}
+                style={{
+                  height: '36px',
+                  padding: '0 16px',
+                  borderRadius: '8px',
+                  background: '#EF4444',
+                  border: 'none',
+                  color: '#FFFFFF',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                Hapus Item
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* =====================================================================
           MODALS & DRAWERS
@@ -1567,15 +1786,17 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
         currentProject={currentProject}
         currentRabItems={projectRabItems}
         versions={projectEstimateVersions}
+        activeVersionId={activeEstimateVersionId}
         onCreateVersion={(label, desc, notes) => {
           createEstimateVersion(label, desc, notes);
           showToast('Revisi baru "' + label + '" berhasil disimpan');
         }}
-        onRestoreVersion={(ver) => {
-          const res = restoreEstimateVersion(ver.id);
-          if (res.success) {
-            showToast(res.message);
-          }
+        onRestoreVersion={(ver, expectedActiveVersionId) => {
+          // D-43: teruskan id aktif teramati (guard anti-basi) dan
+          // tampilkan pesan KEGAGALAN juga — aktivasi gagal tidak boleh diam.
+          const res = restoreEstimateVersion(ver.id, expectedActiveVersionId ?? undefined);
+          showToast(res.message);
+          return res;
         }}
         onApplyScenarioToSpreadsheet={(scenario) => {
           applyScenarioToActiveProject(scenario);
@@ -1587,6 +1808,7 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
       {currentProject && (
         <ExportProjectPackageModal
           isOpen={isExportPackageModalOpen}
+          initialPreset={exportModalInitialPreset}
           onClose={() => setIsExportPackageModalOpen(false)}
           currentProject={{
             ...currentProject,

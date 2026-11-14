@@ -12,7 +12,37 @@ import {
 import { Project, RabItem } from "../../types";
 import { formatCurrencyIDR, formatNumberID } from "../../calculations/decimalEngine";
 import { officialAhspRepository } from "../../data/nationalCostDatabase/officialAhspRepository";
-import { resolveAhspItemDisplay } from "./ahspItemDisplay";
+import { resolveAhspItemDisplay, type AhspItemDisplay } from "./ahspItemDisplay";
+import { getProjectAhspRows } from "../../engine/ahsp/ahspCounting";
+
+/**
+ * A3 residual (2026-11-15) — satuan TAMPIL satu baris RAB.
+ *
+ * Baris RAB (`RabItem`) TIDAK membawa `unitDisplay` — field itu hanya ada
+ * di `NationalAHSPItem` registry (D-55 narrowing) — jadi adopsi harfiah
+ * `item.unitDisplay ?? item.unit` di sini bukan hanya no-op, tapi error
+ * tipe. Satuan tampil diambil dari item resmi yang SUDAH di-resolve
+ * untuk kartu ini (`matchOfficial`, dari `resolveAhspItemDisplay`):
+ * bila baris cocok dengan item resmi Bina Marga DAN satuan tersimpan
+ * baris sama dengan satuan mentah item resmi, tampilkan `unitDisplay`
+ * (satuan kanonis hasil-resolver, mis. "m'" untuk G.166); selain itu
+ * tampilkan satuan baris apa adanya.
+ *
+ * Guard kesetaraan satuan mencegah salah label bila satuan baris sudah
+ * diedit user (atau item berasal dari dataset lama): satuan tampil
+ * tidak boleh berbeda dari satuan tersimpan baris.
+ *
+ * DISPLAY ONLY: nilai ini hanya mengalir ke dua node teks JSX kartu
+ * (baris meta + sufiks "/ satuan" pada HSP). Tidak ada jalur resolusi
+ * harga, payload sinkron, atau nilai tersimpan yang membacanya —
+ * resolusi harga tetap memakai `unit` mentah via `resolveAhspItemDisplay`.
+ */
+export function displayUnitForRow(item: RabItem, matchOfficial: AhspItemDisplay["matchOfficial"]): string {
+  if (matchOfficial && matchOfficial.unit === item.unit && matchOfficial.unitDisplay) {
+    return matchOfficial.unitDisplay;
+  }
+  return item.unit;
+}
 
 interface EstimatorAhspViewProps {
   currentProject: Project | null;
@@ -33,9 +63,15 @@ export const EstimatorAhspView: React.FC<EstimatorAhspViewProps> = ({
     setExpandedAhspIds((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  // Extract unique AHSP items from project RAB
+  // Extract unique AHSP items from project RAB.
+  // D-73 (Batch F): populasi kanonis — SATU aturan hitung yang dipakai
+  // bersama LaporanView (engine/ahsp/ahspCounting): baris RAB berkode,
+  // satu baris = satu analisa. Aturannya tidak berubah di sini (filter
+  // yang sama dipindahkan ke helper), yang berubah adalah Laporan yang
+  // kini memakai aturan yang sama (tanpa dedup kode + tanpa tambahan
+  // master legacy).
   const projectAhspList = useMemo(() => {
-    return items.filter((it) => it.code || it.ahspCode || it.ahspSnapshot);
+    return getProjectAhspRows(items);
   }, [items]);
 
   // "Terhubung" yang JUJUR: hanya item yang kodenya benar-benar cocok dengan
@@ -152,6 +188,10 @@ export const EstimatorAhspView: React.FC<EstimatorAhspViewProps> = ({
             const isExpanded = !!expandedAhspIds[item.id];
             const { snap, code, matchOfficial, resolvedOfficial, unitPrice, storedPrice, catalogPrice, statusBadge, isStale, materials, labors, equipments } =
               resolveAhspItemDisplay(item);
+            // A3 (2026-11-15): satuan TAMPIL kartu — display-only, lihat
+            // displayUnitForRow. Dipakai di baris meta + sufiks HSP agar
+            // keduanya konsisten; harga/resolusi tidak membaca nilai ini.
+            const displayUnit = displayUnitForRow(item, matchOfficial);
 
             return (
               <div
@@ -214,7 +254,7 @@ export const EstimatorAhspView: React.FC<EstimatorAhspViewProps> = ({
                         {item.description}
                       </div>
                       <div className="ezrab-ahsp-meta" style={{ fontSize: "11.5px", color: "#64748B", marginTop: "2px" }}>
-                        Kategori: {item.category} • Satuan: <strong>{item.unit || "—"}</strong> • Sumber:{" "}
+                        Kategori: {item.category} • Satuan: <strong>{displayUnit || "—"}</strong> • Sumber:{" "}
                         {snap?.sourceDocument || (matchOfficial ? "Database AHSP Resmi EZRAB" : "Belum terhubung ke AHSP resmi")}
                       </div>
                       <div className="ezrab-ahsp-badgerow" style={{ fontSize: "11.5px", marginTop: "3px", display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap" }}>
@@ -245,7 +285,7 @@ export const EstimatorAhspView: React.FC<EstimatorAhspViewProps> = ({
                     <div style={{ textAlign: "right" }}>
                       <span style={{ fontSize: "11px", color: "#64748B", display: "block" }}>Harga Satuan (HSP)</span>
                       <span style={{ fontSize: "15px", fontWeight: 800, color: "var(--ez-color-text-primary)", fontVariantNumeric: "tabular-nums" }}>
-                        {formatCurrencyIDR(unitPrice)} <span style={{ fontSize: "11.5px", color: "#64748B" }}>/ {item.unit}</span>
+                        {formatCurrencyIDR(unitPrice)} <span style={{ fontSize: "11.5px", color: "#64748B" }}>/ {displayUnit}</span>
                       </span>
                     </div>
 

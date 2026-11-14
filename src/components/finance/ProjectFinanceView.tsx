@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { Project, RabItem, Company } from '../../types';
 import { ProjectFinanceRepository } from '../../domain/finance/repository';
+import { canonicalDirectCost } from '../../engine/projectCostConfig';
 import { Termin, Invoice, Payment, Expense } from '../../domain/finance/types';
 import { FinanceOverviewTab } from './FinanceOverviewTab';
 import { TerminManagementTab } from './TerminManagementTab';
@@ -86,8 +87,10 @@ export const ProjectFinanceView: React.FC<ProjectFinanceViewProps> = ({
   }, [initialTab]);
 
   // Derive Contract Value and Estimated RAB Cost
+  // D-23: jumlah kanonis (Σ amount per-baris, UNRESOLVED dikecualikan) —
+  // BUKAN Σ volume×harga mentah (menyimpang Rp2 dari directCost mesin).
   const totalProjectRab = useMemo(() => {
-    return rabItems.reduce((acc, item) => acc + (Number(item.volume) || 0) * (Number(item.unitPrice) || 0), 0);
+    return canonicalDirectCost(rabItems);
   }, [rabItems]);
 
   const contractValueFromProject = useMemo(() => {

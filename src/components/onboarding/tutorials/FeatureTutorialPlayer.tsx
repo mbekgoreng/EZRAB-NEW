@@ -23,6 +23,7 @@ import {
   type FeatureTutorial,
 } from './tutorialRegistry';
 import { claimTutorialSlot, releaseTutorialSlot } from './tutorialCoordinator';
+import { expandSidebarSubmenu } from '../sidebarSubmenuEvents';
 import { navigateTo } from '../../../routing/routes';
 
 function isMobileViewport(): boolean {
@@ -88,6 +89,11 @@ export function FeatureTutorialPlayer() {
   /** token untuk membatalkan navigasi yang sudah basi (tutup/pindah langkah). */
   const navToken = useRef(0);
   const handleDoneRef = useRef<() => void>(() => {});
+  // D-86/D-16 (Batch G2): indeks langkah terkini untuk goToStep —
+  // goToStep adalah useCallback([]) jadi tidak bisa membaca stepIndex
+  // langsung; arah skip (maju/mundur) diturunkan dari perbandingan
+  // rawIndex vs ref ini.
+  const stepIndexRef = useRef(0);
 
   const closePlayer = useCallback((markSkipped: boolean) => {
     const t = tutorialRef.current;
@@ -122,6 +128,10 @@ export function FeatureTutorialPlayer() {
     handleDoneRef.current = handleDone;
   }, [handleDone]);
 
+  useEffect(() => {
+    stepIndexRef.current = stepIndex;
+  }, [stepIndex]);
+
   const handleSkip = useCallback(() => closePlayer(true), [closePlayer]);
   const handleClose = useCallback(() => closePlayer(false), [closePlayer]);
 
@@ -130,9 +140,22 @@ export function FeatureTutorialPlayer() {
    * menarget halaman lain. Menunggu target muncul sebelum menampilkan
    * langkah; jika target tak kunjung ada, lewati ke langkah berikut
    * (tidak macet, tidak menutup tutorial diam-diam).
+   *
+   * D-86/D-16 (Batch G2) — dua perubahan:
+   * 1. Langkah dengan `expandSubmenu` membuka submenu sidebar dulu
+   *    (target di dalam submenu tertutup tidak ada di DOM; tanpa ini
+   *    langkah 1 tutorial AHSP selalu auto-skip → "terbuka di 2/5").
+   * 2. Skip mengikuti ARAH: mundur yang menemui target hilang
+   *    melanjutkan ke langkah sebelumnya (bukan maju lagi — itulah
+   *    yang membuat tombol "Kembali" terasa macet); di langkah 0
+   *    langkah tetap ditampilkan dengan kartu fallback Spotlight.
    */
   const goToStep = useCallback((rawIndex: number) => {
     const token = ++navToken.current;
+    // Arah diturunkan dari indeks terkini (bukan dari pemanggil —
+    // Spotlight controlled mode & tombol mobile sama-sama memanggil
+    // goToStep dengan indeks absolut).
+    const direction: 1 | -1 = rawIndex >= stepIndexRef.current ? 1 : -1;
 
     const attempt = (startIndex: number) => {
       if (navToken.current !== token) return;
@@ -142,6 +165,11 @@ export function FeatureTutorialPlayer() {
       let i = Math.max(0, Math.min(total - 1, startIndex));
       const step = tut.steps[i];
       if (!step) return;
+
+      // D-86: buka submenu yang menampung target SEBELUM menunggu
+      // selector — event disinkronkan dengan state Sidebar; polling
+      // waitForSelector (4,5 dtk) memberi waktu render.
+      if (step.expandSubmenu) expandSidebarSubmenu(step.expandSubmenu);
 
       let pathname = '/';
       try {
@@ -161,8 +189,19 @@ export function FeatureTutorialPlayer() {
             setStepIndex(i);
             return;
           }
-          // Target tetap tidak ada setelah navigasi → lewati langkah ini.
-          if (i >= tut.steps.length - 1) {
+          // Target tetap tidak ada setelah navigasi → lewati langkah
+          // ini MENGIKUTI ARAH perjalanan user.
+          if (direction < 0) {
+            if (i <= 0) {
+              // Langkah pertama saat mundur: tampilkan dengan kartu
+              // fallback (Spotlight menengahkan tooltip bila target
+              // null) — jangan melompat maju & jangan menutup.
+              setNavigating(false);
+              setStepIndex(0);
+            } else {
+              attempt(i - 1);
+            }
+          } else if (i >= tut.steps.length - 1) {
             handleDoneRef.current();
           } else {
             attempt(i + 1);
@@ -431,10 +470,13 @@ export function FeatureTutorialPlayer() {
 
   // --- Desktop: Spotlight (controlled index; navigasi ditangani goToStep) ---
   // Langkah tanpa target spesifik fallback ke area dashboard utama.
+  // expandSubmenu diteruskan agar Spotlight juga bisa retry-buka
+  // submenu bila target hilang di tengah tur (scroll/resize).
   const spotlightSteps = tutorial.steps.map((s) => ({
     target: s.target ?? '[data-tour="dashboard"]',
     title: s.title,
     body: s.body,
+    expandSubmenu: s.expandSubmenu,
   }));
   return (
     <div>
@@ -447,6 +489,10 @@ export function FeatureTutorialPlayer() {
           onDone={handleDone}
           onSkip={handleSkip}
           onStepChange={setStepIndex}
+          // D-86: player sudah menunggu target (waitForSelector) &
+          // menangani skip searah navigasi di goToStep — Spotlight
+          // tidak boleh auto-skip sendiri & menimpa keputusan itu.
+          autoSkipMissing={false}
         />
       )}
       {/* Header tutorial mengambang: judul + progres + tutup */}

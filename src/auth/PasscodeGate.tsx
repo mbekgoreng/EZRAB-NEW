@@ -5,6 +5,7 @@ import {
   submitAccessCode,
   sanitizeNextPath,
 } from './passcode';
+import { navigateTo } from '../routing/routes';
 
 /**
  * Gerbang kode sementara untuk seluruh workspace (/app/*).
@@ -76,6 +77,12 @@ export const PasscodeGate: React.FC<{
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (submitting) return;
+    // D-13: kode kosong BUKAN "kode salah" — jangan panggil server,
+    // beri pesan yang jujur soal apa yang kurang.
+    if (!code.trim()) {
+      setError('Masukkan kode akses terlebih dahulu.');
+      return;
+    }
     setSubmitting(true);
     const result = await submitAccessCode(code);
     setSubmitting(false);
@@ -260,6 +267,36 @@ export const PasscodeGate: React.FC<{
           <ShieldAlert size={12} />
           <span>Kunci sementara — sesi berlaku 12 jam, lalu kode diperlukan lagi.</span>
         </div>
+        <p
+          style={{
+            margin: 0,
+            fontSize: '11px',
+            color: 'var(--ezrab-text-muted, #64748b)',
+            textAlign: 'center',
+            lineHeight: 1.5,
+          }}
+        >
+          Belum punya kode? Kode akses diberikan oleh owner EZRAB.
+        </p>
+        {/* D-13: jalan keluar — sebelumnya satu-satunya cara pergi
+            adalah tombol Back browser. */}
+        <button
+          type="button"
+          onClick={() => navigateTo('/')}
+          style={{
+            background: 'none',
+            border: 'none',
+            padding: '4px 8px',
+            fontSize: '13px',
+            fontWeight: 700,
+            color: 'var(--ezrab-blue, #2563eb)',
+            cursor: 'pointer',
+            textDecoration: 'underline',
+            textUnderlineOffset: '3px',
+          }}
+        >
+          ← Kembali ke Beranda
+        </button>
       </form>
     </div>
   );

@@ -17,6 +17,7 @@ import {
   FIVE_SHEET_PRESET_ID,
   buildFiveSheetWorkbook,
   freezeRabSnapshot,
+  wbsTraceText,
   type RabExportSnapshot,
 } from './fiveSheetPreset';
 import {
@@ -528,6 +529,10 @@ export async function exportRABToProfessionalExcel(
        * sebelum pembangunan cover 16-sheet, jadi nilai ini tidak
        * terpakai di runtime. */
       FIVE_SHEET_RAB: 'RENCANA ANGGARAN BIAYA — PAKET 5 SHEET',
+      /* D-75 (Batch F): judul cover bila preset rekap dipanggil dengan
+       * cover ikut dipilih (lewat modal, cover tidak termasuk — preset
+       * ini hanya Ringkasan + Rekapitulasi). */
+      RECAP_ONLY: 'REKAPITULASI RENCANA ANGGARAN BIAYA (RAB)',
     };
     const mainDocTitle = docTitleMap[preset] || 'DOKUMEN ESTIMASI PROYEK';
 
@@ -960,20 +965,23 @@ export async function exportRABToProfessionalExcel(
       { width: 22 }, // Jumlah
       { width: 10 }, // Bobot %
       { width: 14 }, // Sumber / Keterangan
+      // P5-O3 (Batch F): artefak WBS kini dipakai di Sheet 2 legacy —
+      // kolom yang sama dengan kolom M preset 5 sheet.
+      { width: 42 }, // Traceabilitas WBS
     ];
 
-    wsDetail.mergeCells('A2:I2');
+    wsDetail.mergeCells('A2:J2');
     wsDetail.getCell('A2').value = 'RINCIAN RENCANA ANGGARAN BIAYA (RAB) DETAIL';
     wsDetail.getCell('A2').font = FONT_HIERARCHY.SECTION_TITLE;
 
-    wsDetail.mergeCells('A3:I3');
+    wsDetail.mergeCells('A3:J3');
     wsDetail.getCell('A3').value = `Proyek: ${project.name} • Lokasi: ${project.location || 'Belum diisi'} • Versi: ${project.currentVersion || 'Rev 00'}`;
     wsDetail.getCell('A3').font = FONT_HIERARCHY.DOC_SUBTITLE;
 
     const dHead = wsDetail.getRow(5);
-    dHead.values = ['NO', 'KODE', 'URAIAN PEKERJAAN', 'VOLUME', 'SAT', 'HARGA SATUAN (RP)', 'JUMLAH HARGA (RP)', 'BOBOT (%)', 'SUMBER'];
+    dHead.values = ['NO', 'KODE', 'URAIAN PEKERJAAN', 'VOLUME', 'SAT', 'HARGA SATUAN (RP)', 'JUMLAH HARGA (RP)', 'BOBOT (%)', 'SUMBER', 'TRACEABILITAS WBS'];
     dHead.height = 24;
-    for (let c = 1; c <= 9; c++) {
+    for (let c = 1; c <= 10; c++) {
       const cell = dHead.getCell(c);
       cell.font = FONT_HIERARCHY.TABLE_HEADER;
       cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: EXCEL_COLORS.NAVY_DARK } };
@@ -984,9 +992,9 @@ export async function exportRABToProfessionalExcel(
     normalizedSections.forEach((sec, secIdx) => {
       // Section Header Row
       const sHRow = wsDetail.getRow(detailCurRow);
-      sHRow.values = [sec.code, '', sec.name.toUpperCase(), '', '', '', '', '', ''];
+      sHRow.values = [sec.code, '', sec.name.toUpperCase(), '', '', '', '', '', '', ''];
       sHRow.height = 22;
-      for (let c = 1; c <= 9; c++) {
+      for (let c = 1; c <= 10; c++) {
         const cell = sHRow.getCell(c);
         cell.font = FONT_HIERARCHY.WBS_HEADER;
         cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: EXCEL_COLORS.BG_SECTION } };
@@ -1039,8 +1047,12 @@ export async function exportRABToProfessionalExcel(
         // jangan biarkan Rp0 terlihat seperti harga resmi.
         // Price Fallback Layer: tampilkan label sumber harga.
         iRow.getCell(9).value = buildExcelSourceText(itm as any);
+        // P5-O3 (Batch F): traceabilitas WBS — teks yang sama dengan
+        // kolom M preset 5 sheet (wbsTraceText: hanya menampilkan field
+        // tersimpan, tidak pernah mengklasifikasi ulang).
+        iRow.getCell(10).value = wbsTraceText(itm as any);
 
-        for (let c = 1; c <= 9; c++) {
+        for (let c = 1; c <= 10; c++) {
           iRow.getCell(c).border = { bottom: BORDER_THIN_LIGHT };
           iRow.getCell(c).font = FONT_HIERARCHY.BODY;
         }
@@ -1064,7 +1076,7 @@ export async function exportRABToProfessionalExcel(
       subRow.getCell(7).numFmt = NUMBER_FORMATS.CURRENCY;
       subRow.getCell(7).font = FONT_HIERARCHY.SUBTOTAL;
 
-      for (let c = 1; c <= 9; c++) {
+      for (let c = 1; c <= 10; c++) {
         subRow.getCell(c).border = { top: BORDER_THIN_MEDIUM, bottom: BORDER_THIN_MEDIUM };
         subRow.getCell(c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: EXCEL_COLORS.BG_LIGHT } };
       }
@@ -1107,12 +1119,12 @@ export async function exportRABToProfessionalExcel(
         wsDetail.getCell(`H${r}`).numFmt = NUMBER_FORMATS.PERCENT;
         wsDetail.getCell(`H${r}`).font = FONT_HIERARCHY.GRAND_TOTAL;
 
-        for (let c = 1; c <= 9; c++) {
+        for (let c = 1; c <= 10; c++) {
           wsDetail.getCell(r, c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: EXCEL_COLORS.BG_SUBTLE_BLUE } };
           wsDetail.getCell(r, c).border = { top: BORDER_THIN_MEDIUM, bottom: BORDER_DOUBLE_DARK };
         }
       } else {
-        for (let c = 1; c <= 9; c++) {
+        for (let c = 1; c <= 10; c++) {
           wsDetail.getCell(r, c).border = { bottom: BORDER_THIN_LIGHT };
         }
       }

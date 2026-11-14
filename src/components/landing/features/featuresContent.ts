@@ -3,6 +3,7 @@
  * Semua klaim angka merujuk pada implementasi yang terverifikasi.
  * Jangan menambah angka/klaim baru tanpa verifikasi di codebase.
  */
+import { AHSP_ACTIVE_ITEM_COUNT_FORMATTED } from '../../../data/ahspPublicCounts';
 
 export interface EcosystemModule {
   id: string;
@@ -21,7 +22,7 @@ export const ECOSYSTEM_MODULES: EcosystemModule[] = [
   { id: 'ded-ai', name: 'DED → RAB AI', desc: 'AI membaca gambar kerja dan mengusulkan draft item pekerjaan.', tier: 'ai', status: 'live' },
   { id: 'chat-ai', name: 'AI Chat', desc: 'Asisten percakapan untuk pertanyaan estimasi dan navigasi fitur.', tier: 'ai', status: 'live' },
   { id: 'dokumen-ai', name: 'Dokumen AI', desc: 'Analisis dan penyusunan dokumen proyek berbantuan AI.', tier: 'ai', status: 'live' },
-  { id: 'ahsp', name: 'AHSP 2026', desc: '5.792 item analisa harga satuan resmi sebagai acuan.', tier: 'data', status: 'live' },
+  { id: 'ahsp', name: 'AHSP 2026', desc: `${AHSP_ACTIVE_ITEM_COUNT_FORMATTED} item analisa harga satuan resmi sebagai acuan.`, tier: 'data', status: 'live' },
   { id: 'harga', name: 'Database Harga', desc: 'Harga material, upah, dan alat milik Anda sendiri.', tier: 'data', status: 'live' },
   { id: 'template', name: 'Template RAB', desc: 'Mulai dari template siap pakai per sektor konstruksi.', tier: 'data', status: 'live' },
   { id: 'kurva-s', name: 'Kurva S', desc: 'Progres fisik tertimbang bobot nilai, rencana vs aktual.', tier: 'output', status: 'live' },
@@ -123,8 +124,8 @@ export const AUDIENCES: Audience[] = [
 
 export const START_STEPS = [
   { no: '1', title: 'Kenali kebutuhan Anda', desc: 'Jelajahi halaman ini dan tentukan modul yang relevan dengan pekerjaan Anda.' },
-  { no: '2', title: 'Mulai EZRAB', desc: 'Buka aplikasi — Anda langsung masuk ke workspace.' },
-  { no: '3', title: 'Buat proyek pertama', desc: 'Ikuti tutorial terpandu; checklist proyek pertama memandu langkah demi langkah.' },
+  { no: '2', title: 'Mulai EZRAB', desc: 'Minta akses demo — workspace dibuka dengan kode akses selama masa pratinjau.' },
+  { no: '3', title: 'Buat proyek pertama', desc: 'Setelah akses diberikan, tutorial terpandu di dalam workspace dan checklist proyek pertama memandu langkah demi langkah.' },
   { no: '4', title: 'Masukkan data atau dokumen', desc: 'Gunakan kalkulator, template, atau DED AI sesuai kebutuhan.' },
   { no: '5', title: 'Tinjau hasil', desc: 'Periksa sumber data, satuan, dan harga setiap angka penting.' },
   { no: '6', title: 'Simpan & export', desc: 'Export laporan ke Excel atau PDF saat RAB sudah final.' },

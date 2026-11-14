@@ -4,7 +4,11 @@
  * 
  * Complies with:
  * - Permen PUPR No. 1 Tahun 2022 & Standar DJBK 2026
- * - UU Ketenagakerjaan & Standar Jam Kerja Konstruksi (7 Jam/Hari = 1 OH)
+ * - UU Ketenagakerjaan & Standar Jam Kerja Konstruksi (jam kerja per
+ *   baris: workHoursPerDay — 7 jam untuk pekerja lapangan, 8 jam untuk
+ *   staf; OJ = OH / workHoursPerDay baris itu. D-19 Batch G2: jangan
+ *   lagi mengklaim "7 Jam/Hari = 1 OH" secara umum — 66 dari 85 baris
+ *   master dihitung pada 8 jam.)
  * - 38 Indonesian Provinces with Regional Wage Index (UMR/UMK 2026)
  * - SKK Konstruksi (Jenjang 1 - Jenjang 9) & BNSP / Kemnaker Standards
  * - ISO/TR 14107 & Standardized Construction Labor Classifications
@@ -58,7 +62,7 @@ export interface LaborRateRecord {
   skillLevel: LaborSkillLevel;
   workerType?: 'DIRECT_LABOR' | 'INDIRECT_LABOR' | 'STAFF' | 'SUBCONTRACTOR';
   skkLevel?: string;                 // e.g. 'SKK Jenjang 2 (Tukang Pasang Bata)'
-  unit: 'OH' | 'OJ' | 'Bulan' | 'Hari' | 'Shift'; // OH = Orang Hari (7 Jam), OJ = Orang Jam
+  unit: 'OH' | 'OJ' | 'Bulan' | 'Hari' | 'Shift'; // OH = Orang Hari (jam/hari per baris, lihat workHoursPerDay), OJ = Orang Jam
   basePriceOH: number;               // Standar Acuan Nasional / DKI Jakarta (Rp/OH)
   basePriceOJ: number;               // Standar per Orang Jam (Rp/OJ)
   minWage?: number;                  // Batas bawah upah pasar

@@ -27,6 +27,14 @@ export interface TutorialStep {
    */
   route?: string;
   /**
+   * D-86/D-16 (Batch G2): submenu sidebar yang harus dibuka sebelum
+   * target disorot — target di dalam submenu tertutup (RAB / Database)
+   * tidak ada di DOM sampai submenu dibuka, dan tanpa ini player
+   * auto-skip langkahnya. Player dispatch event yang sama dengan
+   * Spotlight (lihat sidebarSubmenuEvents.ts).
+   */
+  expandSubmenu?: 'rab' | 'database';
+  /**
    * Tab pengaturan yang harus aktif (khusus route /app/settings,
    * mis. 'help' untuk langkah yang menarget [data-tutorial-center]).
    */
@@ -274,35 +282,47 @@ const TUTORIALS: Record<string, FeatureTutorial> = {
     category: 'data',
     route: paths.ahsp(),
     menuId: 'ahsp-2026',
-    version: 2,
+    // D-86 (Batch G2): versi naik karena langkah dirombak — tutorial
+    // lama yang "selesai" di langkah 2/5 tidak dianggap selesai lagi.
+    version: 3,
     available: true,
     steps: [
       {
+        // D-86: langkah 1 SELALU dimulai di halaman AHSP — player
+        // navigasi ke route ini dulu, buka submenu Database, lalu
+        // menyorot entri menu AHSP. Tanpa route + expandSubmenu,
+        // target tersembunyi di submenu tertutup dan player
+        // auto-skip ke langkah 2 (bug audit: "terbuka di 2/5").
         target: '[data-tour="menu-ahsp-2026"]',
+        route: paths.ahsp(),
+        expandSubmenu: 'database',
         title: 'Buka Database AHSP',
         body: 'AHSP (Analisa Harga Satuan Pekerjaan) 2026 adalah acuan resmi untuk harga satuan. Buka melalui menu Data & Referensi di sidebar.',
       },
       {
-        target: '[data-tour="dashboard"]',
-        route: paths.dashboard(),
+        // D-86: langkah 2–5 dulu salah rute ke dashboard dengan
+        // target [data-tour="dashboard"] — tidak pernah menyorot
+        // halaman AHSP. Kini memakai anchor nyata di AhspExplorerView.
+        target: '[data-tutorial="ahsp-search"]',
+        route: paths.ahsp(),
         title: 'Cari Kode atau Nama',
         body: 'Cari berdasarkan kode pekerjaan atau kata kunci nama pekerjaan. Gunakan kata kunci spesifik untuk hasil yang tepat.',
       },
       {
-        target: '[data-tour="dashboard"]',
-        route: paths.dashboard(),
+        target: '[data-tutorial="ahsp-domain"]',
+        route: paths.ahsp(),
         title: 'Pilih Domain yang Tepat',
         body: 'AHSP terbagi per domain (mis. Cipta Karya, SDA, Bina Marga). Pastikan domain sesuai dengan jenis pekerjaanmu.',
       },
       {
-        target: '[data-tour="dashboard"]',
-        route: paths.dashboard(),
+        target: '[data-tutorial="ahsp-card"]',
+        route: paths.ahsp(),
         title: 'Baca Koefisien',
         body: 'Setiap item AHSP memiliki koefisien material, upah, dan alat. Koefisien menunjukkan kebutuhan per satuan pekerjaan.',
       },
       {
-        target: '[data-tour="dashboard"]',
-        route: paths.dashboard(),
+        target: '[data-tutorial="ahsp-price"]',
+        route: paths.ahsp(),
         title: 'Periksa Harga & Sumber',
         body: 'Periksa harga setiap komponen dan sumber datanya. Tidak semua item memiliki harga lengkap — item tanpa harga akan ditandai dengan jelas.',
       },

@@ -35,6 +35,7 @@ import {
   ExpenseCategory,
 } from '../domain/finance/types';
 import { Project, RabItem, RABSection } from '../types';
+import { canonicalDirectCost, canonicalItemAmount } from '../engine/projectCostConfig';
 
 export interface CashFlowOptions {
   granularity?: FinancialGranularity;
@@ -97,10 +98,12 @@ export class FinancialAnalyticsService {
     }
 
     // 2. Resolve Total Budget / RAB
-    const totalRabFromItems = rabItems.reduce(
-      (sum, item) => sum + (Number(item.volume) || 0) * (Number(item.unitPrice) || 0),
-      0
-    );
+    // D-23: pakai jumlah kanonis (Σ amount per-baris, UNRESOLVED
+    // dikecualikan) — BUKAN Σ volume×harga mentah. Hitung-ulang mentah
+    // membulatkan sekali di akhir dan menyimpang Rp2 dari directCost
+    // mesin pada proyek demo (892.612.395 vs 892.612.393). Hipotesis
+    // trailing-2 safeAdd RULED OUT: jalur ini tidak pernah memakai safeAdd.
+    const totalRabFromItems = canonicalDirectCost(rabItems);
     const totalBudget = totalRabFromItems > 0
       ? totalRabFromItems
       : (project?.costSummary?.directCost || project?.costSummary?.grandTotal || (isContractAvailable ? contractValue : 0));
@@ -283,7 +286,8 @@ export class FinancialAnalyticsService {
       });
 
       // Deterministic Forecast Outflow: Kurva-S remaining planned cost distribution
-      const totalBudget = rabItems.reduce((s, i) => s + (Number(i.volume) || 0) * (Number(i.unitPrice) || 0), 0);
+      // D-23: jumlah kanonis (Σ amount per-baris, UNRESOLVED dikecualikan).
+      const totalBudget = canonicalDirectCost(rabItems);
       const remainingBudget = Math.max(0, totalBudget - totalActualOut);
 
       // Generate future forecast periods (next 3 to 6 periods)
@@ -386,7 +390,9 @@ export class FinancialAnalyticsService {
     rabItems.forEach((item) => {
       const nameLower = ((item as any).name || item.description || '').toLowerCase();
       const catLower = (item.category || '').toLowerCase();
-      const amount = (Number(item.volume) || 0) * (Number(item.unitPrice) || 0);
+      // D-23: jumlah kanonis per item (amount tersimpan; UNRESOLVED → 0)
+      // agar anggaran per kelompok berjumlah tepat ke directCost mesin.
+      const amount = canonicalItemAmount(item);
 
       let targetGroup = 'lainnya';
       if (nameLower.includes('persiapan') || catLower.includes('persiapan') || nameLower.includes('pembersihan') || nameLower.includes('direksi')) {
@@ -581,10 +587,8 @@ export class FinancialAnalyticsService {
       isContractAvailable = true;
     }
 
-    const totalBudget = rabItems.reduce(
-      (sum, item) => sum + (Number(item.volume) || 0) * (Number(item.unitPrice) || 0),
-      0
-    );
+    // D-23: jumlah kanonis (Σ amount per-baris, UNRESOLVED dikecualikan).
+    const totalBudget = canonicalDirectCost(rabItems);
 
     const actualCost = expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
     const committedCost = actualCost;
@@ -910,10 +914,8 @@ export class FinancialAnalyticsService {
     rabItems: RabItem[] = [],
     project: Project | null = null
   ): FinancialAlert[] {
-    const totalRabFromItems = rabItems.reduce(
-      (sum, item) => sum + (Number(item.volume) || 0) * (Number(item.unitPrice) || 0),
-      0
-    );
+    // D-23: jumlah kanonis (Σ amount per-baris, UNRESOLVED dikecualikan).
+    const totalRabFromItems = canonicalDirectCost(rabItems);
     const expenses = this.repo.getExpenseList();
     const actualCost = expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
     const payableOutstanding = expenses

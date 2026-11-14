@@ -47,5 +47,7 @@ export interface EZRABMascotProps {
   className?: string;
   style?: React.CSSProperties;
   onClick?: () => void;
+  /** Nama aksesibel maskot saat ia punya aksi (D-27). */
+  ariaLabel?: string;
   onHoverChange?: (isHovered: boolean) => void;
 }

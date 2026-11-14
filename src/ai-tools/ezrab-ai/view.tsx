@@ -34,6 +34,18 @@ import {
   type TextAttachment,
 } from './textAttachment';
 import { debitChatCreditOnSuccess } from './chatCreditDebit';
+/* Batch E — persistensi UI chat (D-46 draft, D-47 mode, D-49 versi),
+ * diagnostik persist (NEW-02), dan strip token Quick Action (D-50). */
+import {
+  EZRAB_CHAT_AI_VERSION,
+  clearChatDraft,
+  loadChatAiMode,
+  loadChatDraft,
+  saveChatAiMode,
+  saveChatDraft,
+} from './chatUiPersistence';
+import { reportPersistFailure, reportPersistSaveFailure } from './persistDiagnostics';
+import { stripQuickActionToken } from '../../services/ai/quickActionToken';
 
 import { renderMarkdown, markdownToPlainText } from './markdown';
 import { routeIntent, localGreeting, HELP_TEXT } from './intentRouter';
@@ -381,7 +393,14 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   // banner dengan aksi Coba Lagi manual (tidak pernah auto-resubmit).
   const [interruptedPrompt, setInterruptedPrompt] = useState<string | null>(null);
 
-  const [mode, setMode] = useState<'fast' | 'advanced'>('fast');
+  // D-47 (Batch E): Mode AI dipersist ke localStorage (`ezrab_chat_ai_mode`)
+  // dan dipulihkan saat mount — pilihan Mendalam tidak lagi reset ke
+  // Cepat sesudah reload. Nilai tak dikenal → default 'fast'.
+  const [mode, setMode] = useState<'fast' | 'advanced'>(() => loadChatAiMode());
+  const changeChatMode = (next: 'fast' | 'advanced') => {
+    setMode(next);
+    saveChatAiMode(next);
+  };
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
   /* Lampiran file TEKS (2026-10-26): isi dibaca via File.text() dan dikirim
    * sebagai blok konteks ke AI. Jalur lampiran gambar lama dihapus — model
@@ -479,6 +498,56 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   // True setelah percakapan tersimpan selesai di-restore — entry AI baru
   // diproses setelah ini agar tidak menimpa riwayat (stale closure).
   const [conversationReady, setConversationReady] = useState(false);
+  /* NEW-02 (Batch E): kegagalan persist terakhir yang terlihat pengguna.
+   * null = tidak ada kegagalan (atau sudah pulih sesudah persist sukses).
+   * Pesan tampil sebagai banner peringatan di dalam chat — kegagalan
+   * persist TIDAK PERNAH lagi diam-diam terlihat seperti sukses. */
+  const [persistError, setPersistError] = useState<string | null>(null);
+  /* D-46 (Batch E): draft composer tahan navigasi. Draft disimpan per
+   * percakapan (debounce 300 md + flush saat unmount), dipulihkan saat
+   * percakapan aktif berubah, dihapus saat pesan terkirim. Cermin ref
+   * dipakai flush unmount (closure cleanup tidak melihat state terbaru)
+   * dan guard pulih (jangan menimpa ketikan yang sudah ada). */
+  const inputRef = useRef('');
+  const storeProjectIdRef = useRef(storeProjectId);
+  const draftSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => { inputRef.current = input; }, [input]);
+  useEffect(() => { storeProjectIdRef.current = storeProjectId; }, [storeProjectId]);
+  const saveDraftSoon = useCallback((text: string) => {
+    // Tangkap convId + projectId SAAT dijadwalkan: bila pengguna pindah
+    // percakapan dalam 300 md, timer tidak boleh menyimpan draft
+    // percakapan lama di bawah kunci percakapan baru.
+    const convId = convIdRef.current;
+    const pid = storeProjectIdRef.current;
+    if (draftSaveTimerRef.current) clearTimeout(draftSaveTimerRef.current);
+    draftSaveTimerRef.current = setTimeout(() => {
+      draftSaveTimerRef.current = null;
+      if (convId) saveChatDraft(convId, pid, text);
+    }, 300);
+  }, []);
+  const clearDraftNow = useCallback(() => {
+    if (draftSaveTimerRef.current) {
+      clearTimeout(draftSaveTimerRef.current);
+      draftSaveTimerRef.current = null;
+    }
+    if (convIdRef.current) clearChatDraft(convIdRef.current);
+  }, []);
+  // Pulihkan draft percakapan aktif (mount + ganti percakapan). Hanya
+  // bila kotak input masih kosong — tidak menimpa ketikan/prefill.
+  useEffect(() => {
+    if (!conversationReady || !activeConvId) return;
+    const draft = loadChatDraft(activeConvId, storeProjectId);
+    if (draft && !inputRef.current) setInput(draft);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conversationReady, activeConvId, storeProjectId]);
+  // Flush saat unmount (navigasi): ketikan <300 md terakhir ikut tersimpan.
+  useEffect(() => () => {
+    if (draftSaveTimerRef.current) clearTimeout(draftSaveTimerRef.current);
+    if (inputRef.current && convIdRef.current) {
+      saveChatDraft(convIdRef.current, storeProjectIdRef.current, inputRef.current);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   /* ---- Riwayat Percakapan (daftar kompak di mode awal + panel header) ---- */
   interface HistoryItem { id: string; title: string; updatedAt: number; messageCount: number }
@@ -486,6 +555,28 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   /** Panel dropdown riwayat dari tombol "Riwayat" di header. */
   const [historyOpen, setHistoryOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  /**
+   * D-48 (Batch E): percakapan yang menunggu konfirmasi hapus. Tombol
+   * tong sampah HANYA mengisi state ini (dialog terbuka) — mutasi hapus
+   * hanya terjadi sesudah pengguna menekan "Hapus" di dialog. Batal =
+   * tidak ada yang dihapus. Pola dialog in-app yang sama dengan Batch A
+   * (D-68/D-84) — bukan window.confirm.
+   */
+  const [pendingDeleteConv, setPendingDeleteConv] = useState<HistoryItem | null>(null);
+  useEffect(() => {
+    if (!pendingDeleteConv) return undefined;
+    const onEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') setPendingDeleteConv(null); };
+    window.addEventListener('keydown', onEsc);
+    return () => window.removeEventListener('keydown', onEsc);
+  }, [pendingDeleteConv]);
+  /** D-49 (Batch E): panel Tentang/version dari judul header. */
+  const [aboutOpen, setAboutOpen] = useState(false);
+  useEffect(() => {
+    if (!aboutOpen) return undefined;
+    const onEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') setAboutOpen(false); };
+    window.addEventListener('keydown', onEsc);
+    return () => window.removeEventListener('keydown', onEsc);
+  }, [aboutOpen]);
 
   /* ---- FASE 2 — Kontrol memori pengguna (panel Memori) ---- *
    * Lihat memori relevan yang tersimpan, koreksi memori yang salah,
@@ -547,7 +638,10 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         return {
           id: c.id,
           title: placeholder
-            ? (firstUser ? firstUser.content.slice(0, 60) : 'Percakapan baru')
+            // D-50 (defence in depth): judul turunan dari pesan pertama
+            // tidak pernah menampilkan token routing internal — pesan
+            // lama yang tersimpan bersama token tetap tampil bersih.
+            ? (firstUser ? stripQuickActionToken(firstUser.content).slice(0, 60) : 'Percakapan baru')
             : rawTitle,
           updatedAt: c.updatedAt,
           messageCount: (c.messages ?? []).length,
@@ -606,7 +700,9 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         .filter((m) => m.role === 'user' || m.role === 'assistant')
         .map((m) => ({
           role: m.role as 'user' | 'assistant',
-          content: m.content,
+          // D-50: gelembung tidak pernah menampilkan token routing
+          // internal dari pesan lama yang tersimpan bersama token.
+          content: stripQuickActionToken(m.content),
           ts: m.createdAt ? Date.parse(m.createdAt) || Date.now() : Date.now(),
         }));
       setMessages(restored);
@@ -669,7 +765,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     } catch {
       lastStored = null;
     }
-    setInterruptedPrompt(lastStored && lastStored.role === 'user' ? lastStored.content : null);
+    setInterruptedPrompt(lastStored && lastStored.role === 'user' ? stripQuickActionToken(lastStored.content) : null);
   }, [conversationReady, messages, busy, activeExec]);
 
   /* F-6B (GELOMBANG PERBAIKI SEMUA): mengembalikan id pesan tersimpan
@@ -684,6 +780,24 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
    * pesan lain utuh). Bila record asal sudah tidak ada (ganti
    * percakapan/proyek di tengah jalan), jatuh ke append biasa. */
   const persistMessage = (role: 'user' | 'assistant', content: string): string | null => {
+    // NEW-02 (Batch E): kegagalan persist WAJIB terlihat — log
+    // terstruktur + banner di UI. Sebelumnya catch-all mengembalikan
+    // null tanpa jejak apa pun, sehingga pesan yang gagal tersimpan
+    // terlihat persis seperti yang sukses (mekanisme D-51 yang paling
+    // mungkin). Dua kanal kegagalan: (1) throw (mis. isolasi proyek
+    // dari convIdRef basi) → catch di bawah; (2) gagal tulis storage
+    // (kuota) yang TIDAK melempar → periksa getLastSaveResult()
+    // sesudah tiap mutasi. Sukses membersihkan banner sebelumnya.
+    const checkSave = (convId: string): void => {
+      const saveResult = unifiedConversationStore.getLastSaveResult();
+      if (saveResult && !saveResult.ok) {
+        setPersistError(reportPersistSaveFailure(saveResult, {
+          role, conversationId: convId, projectId: storeProjectId, operation: 'appendMessage',
+        }));
+      } else {
+        setPersistError(null);
+      }
+    };
     try {
       const convId = convIdRef.current;
       if (!convId) return null;
@@ -692,6 +806,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         retryReplacesMessageIdRef.current = null;
         try {
           unifiedConversationStore.updateMessage(convId, storeProjectId, replacesId, { content });
+          checkSave(convId);
           return replacesId;
         } catch {
           /* record asal hilang — append biasa di bawah */
@@ -701,9 +816,12 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         role,
         content,
       });
+      checkSave(convId);
       return stored?.id ?? null;
-    } catch {
-      /* honest degradation: in-memory only */
+    } catch (err) {
+      setPersistError(reportPersistFailure(err, {
+        role, conversationId: convIdRef.current, projectId: storeProjectId, operation: 'appendMessage',
+      }));
       return null;
     }
   };
@@ -1363,7 +1481,9 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         .filter((m) => m.role === 'user' || m.role === 'assistant')
         .map((m) => ({
           role: m.role as 'user' | 'assistant',
-          content: m.content,
+          // D-50: gelembung tidak pernah menampilkan token routing
+          // internal dari pesan lama yang tersimpan bersama token.
+          content: stripQuickActionToken(m.content),
           ts: m.createdAt ? Date.parse(m.createdAt) || Date.now() : Date.now(),
         }));
       setMessages(restored);
@@ -1397,7 +1517,9 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         .filter((m) => m.role === 'user' || m.role === 'assistant')
         .map((m) => ({
           role: m.role as 'user' | 'assistant',
-          content: m.content,
+          // D-50: gelembung tidak pernah menampilkan token routing
+          // internal dari pesan lama yang tersimpan bersama token.
+          content: stripQuickActionToken(m.content),
           ts: m.createdAt ? Date.parse(m.createdAt) || Date.now() : Date.now(),
         }));
       setMessages(restored);
@@ -1407,6 +1529,9 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   };
 
   const deleteHistoryItem = (id: string) => {
+    // D-48: mutasi hapus TIDAK BERUBAH — yang berubah hanya pemanggilnya
+    // (tombol tong sampah kini membuka dialog konfirmasi dulu; fungsi
+    // ini hanya dipanggil dari tombol "Hapus" dialog). Guard busy tetap.
     if (busy) return;
     try {
       const wasActive = convIdRef.current === id;
@@ -1567,6 +1692,10 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       ? (msg ? `${msg}\n\n${buildTextAttachmentBlock(att)}` : buildTextAttachmentBlock(att))
       : msg;
     if (echo) setInput('');
+    // D-46: pesan terkirim → draft percakapan ini dihapus (tidak bangkit
+    // lagi sesudah navigasi). Cabang echo=false (Coba Lagi) TIDAK
+    // menghapus draft yang sedang diketik pengguna.
+    if (echo) clearDraftNow();
     if (att) { setAttached(null); setAttachError(null); }
     autoresize();
     const entry: ChatEntry = {
@@ -2452,6 +2581,9 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       submit(text);
     } else if (!input.trim()) {
       setInput(injectedPrompt.text);
+      // D-46: prefill ikut tersimpan sebagai draft — navigasi sebelum
+      // mengirim tidak menghilangkan prompt titipan.
+      saveDraftSoon(injectedPrompt.text);
       setInjectedPrompt(null);
       requestAnimationFrame(() => autoresize());
     }
@@ -3423,7 +3555,8 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
             </button>
             <button
               className="ezhist-del"
-              onClick={() => deleteHistoryItem(h.id)}
+              onClick={() => setPendingDeleteConv(h)}
+              disabled={busy}
               title="Hapus percakapan"
             >
               <Trash2 size={14} />
@@ -3498,7 +3631,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         <textarea
           ref={taRef}
           value={input}
-          onChange={(e) => { setInput(e.target.value); autoresize(); updateSlashState(e.target.value, e.target.selectionStart); }}
+          onChange={(e) => { setInput(e.target.value); autoresize(); updateSlashState(e.target.value, e.target.selectionStart); saveDraftSoon(e.target.value); }}
           onKeyDown={onKey}
           placeholder={listening ? 'Mendengarkan…' : 'Ketik pesan atau perintah…'}
           rows={1}
@@ -3551,7 +3684,19 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
           />
         </div>
         <div className="ezchat2-title">
-          <div className="ezchat2-name">{presentationMode === 'magic' ? 'EZRAB Magic AI' : 'Ezrab Chat AI'} <span className="ezchat2-ver">V 01.00</span></div>
+          {/* D-49 (Batch E, OD-18 opsi (a)): judul header adalah tombol
+              yang membuka panel Tentang/version — bukan lagi div statis
+              tanpa aksi. Label 'V 01.00' dipertahankan (satu sumber di
+              chatUiPersistence.EZRAB_CHAT_AI_VERSION). */}
+          <button
+            type="button"
+            className="ezchat2-name ezchat2-namebtn"
+            onClick={() => setAboutOpen(true)}
+            title="Tentang Ezrab Chat AI"
+            aria-label="Tentang Ezrab Chat AI"
+          >
+            {presentationMode === 'magic' ? 'EZRAB Magic AI' : 'Ezrab Chat AI'} <span className="ezchat2-ver">V {EZRAB_CHAT_AI_VERSION}</span>
+          </button>
         </div>
         <div className="ezchat2-actions">
           {/* Saldo kredit AI (simulasi) — selalu terlihat di header chat;
@@ -3563,7 +3708,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
           <select
             className="ezchat2-modesel"
             value={mode}
-            onChange={(e) => setMode(e.target.value as 'fast' | 'advanced')}
+            onChange={(e) => changeChatMode(e.target.value as 'fast' | 'advanced')}
             title="Mode AI"
             aria-label="Mode AI"
             disabled={busy}
@@ -4196,6 +4341,36 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         </div>
       )}
 
+      {/* ===== Banner kegagalan persist (NEW-02, Batch E) =====
+          Pesan yang gagal tersimpan ke riwayat tampil di sini — tidak
+          pernah diam-diam terlihat seperti sukses. Banner hilang sendiri
+          sesudah satu persist berhasil, atau ditutup manual. */}
+      {persistError && (
+        <div role="alert" style={{
+          margin: '0 16px 8px', padding: '10px 14px', borderRadius: 10,
+          border: '1px solid #DC2626', background: '#FEF2F2', color: '#991B1B',
+          fontSize: 13, whiteSpace: 'pre-line',
+        }}>
+          {persistError}
+          <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
+            <button
+              type="button"
+              onClick={() => { setPersistError(null); reloadChat(); }}
+              style={{ padding: '6px 12px', borderRadius: 8, border: '1px solid #DC2626', background: '#FFF', color: '#991B1B', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}
+            >
+              Muat Ulang
+            </button>
+            <button
+              type="button"
+              onClick={() => setPersistError(null)}
+              style={{ padding: '6px 12px', borderRadius: 8, border: '1px solid #CBD5E1', background: '#FFF', color: '#334155', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}
+            >
+              Tutup
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ===== Banner INTERRUPTED (jaminan reload §8) =====
           Tampil bila percakapan berakhir pada pesan pengguna tanpa balasan
           dan tanpa eksekusi hidup. Aksi manual Coba Lagi — tidak pernah
@@ -4245,6 +4420,57 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
               <button type="button" className="aic-btn-primary" onClick={() => creditConfirm.pending()}>
                 Tetap kirim
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* ===== Dialog konfirmasi hapus percakapan (D-48, Batch E) =====
+          Pola dialog in-app yang sama dengan Batch A (D-68/D-84).
+          Mutasi hapus hanya berjalan dari tombol "Hapus" di sini. */}
+      {pendingDeleteConv && (
+        <div className="aic-modal-veil" onClick={() => setPendingDeleteConv(null)} role="dialog" aria-modal="true" aria-label="Konfirmasi hapus percakapan">
+          <div className="aic-modal aic" onClick={(e) => e.stopPropagation()}>
+            <h3>Hapus percakapan ini?</h3>
+            <p className="aic-sub">
+              Percakapan <strong>{pendingDeleteConv.title}</strong> ({pendingDeleteConv.messageCount} pesan)
+              akan dihapus permanen beserta memori yang dipelajari dari percakapan ini.
+              Tindakan ini tidak dapat dibatalkan. Percakapan lain tidak berubah.
+            </p>
+            <div className="aic-modal-actions">
+              <button type="button" className="aic-btn-ghost" onClick={() => setPendingDeleteConv(null)}>Batal</button>
+              <button
+                type="button"
+                className="aic-btn-primary"
+                onClick={() => { const id = pendingDeleteConv.id; setPendingDeleteConv(null); deleteHistoryItem(id); }}
+              >
+                Hapus
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== Panel Tentang/version (D-49, Batch E — OD-18 opsi (a)) =====
+          Dibuka dari judul header. Menampilkan info versi + mode nyata
+          saat ini + konteks proyek — tanpa angka yang dikarang. */}
+      {aboutOpen && (
+        <div className="aic-modal-veil" onClick={() => setAboutOpen(false)} role="dialog" aria-modal="true" aria-label="Tentang Ezrab Chat AI">
+          <div className="aic-modal aic" onClick={(e) => e.stopPropagation()}>
+            <h3>{presentationMode === 'magic' ? 'EZRAB Magic AI' : 'Ezrab Chat AI'}</h3>
+            <p className="aic-sub">
+              Asisten AI EZRAB untuk estimasi RAB, AHSP 2026, dan analisis proyek.
+            </p>
+            <div className="aic-confirm-list">
+              <div className="row"><span>Versi</span><strong>V {EZRAB_CHAT_AI_VERSION}</strong></div>
+              <div className="row"><span>Mode AI</span><strong>{mode === 'fast' ? 'Cepat' : 'Mendalam'}</strong></div>
+              <div className="row"><span>Proyek aktif</span><strong>{effProject?.name ?? 'Tanpa proyek aktif'}</strong></div>
+              <div className="row"><span>Percakapan tersimpan</span><strong>{historyItems.length} percakapan</strong></div>
+            </div>
+            <p className="aic-sub">
+              Percakapan tersimpan lokal di perangkat ini.
+            </p>
+            <div className="aic-modal-actions">
+              <button type="button" className="aic-btn-primary" onClick={() => setAboutOpen(false)}>Tutup</button>
             </div>
           </div>
         </div>

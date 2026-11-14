@@ -10,7 +10,9 @@ interface DashboardViewSwitcherProps {
   onSelectProject: (projectId: string, menu?: string) => void;
   onNavigateToTab: (tab: string, projId?: string | null) => void;
   onNavigateToProjects?: (filter: string) => void;
-  onOpenMagicAi: (mode?: 'chat' | 'ded-rab') => void;
+  // D-30 (Batch G2): prompt opsional diteruskan ke Chat AI sebagai prefill
+  // (initialPrompt — tidak autosend), mis. konteks analisis "Lihat Analisis".
+  onOpenMagicAi: (mode?: 'chat' | 'ded-rab', prompt?: string) => void;
   onOpenSubscription: () => void;
   onResetData?: () => void;
   onOpenOnboarding?: () => void;

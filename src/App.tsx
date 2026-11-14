@@ -15,6 +15,7 @@ import { shouldScheduleAutoTour } from './components/onboarding/autoTourTrigger'
 import { FeatureTutorialPlayer } from './components/onboarding/tutorials/FeatureTutorialPlayer';
 import { WelcomeSlotGuard } from './components/onboarding/tutorials/WelcomeSlotGuard';
 import { isAppPath, isSafeInternalReturnTo, navigateTo, parseWorkspaceRoute, paths, routeForMenu, routeLabel } from './routing/routes';
+import { scrollToHashTarget } from './routing/scrollToHash';
 import { useBrowserLocation } from './routing/useBrowserLocation';
 import { resolveAuthMode, resolveLoginUi, type AuthMode } from './auth/authMode';
 import { PasscodeGate } from './auth/PasscodeGate';
@@ -253,6 +254,16 @@ export const App: React.FC = () => {
   useEffect(() => {
     if (location.pathname === paths.app()) navigateTo(paths.dashboard(), { replace: true });
   }, [location.pathname]);
+
+  // D-04/D-35 — hash-scroll pasca-mount: pada fresh load (`/#harga`,
+  // `/fitur#faq`, deep-link apa pun), scroll anchor bawaan browser
+  // berjalan sebelum React me-mount section target, sehingga pengguna
+  // mendarat di hero. Efek ini mengulang sampai elemen ada (maks.
+  // ~3 detik), jadi halaman lazy pun terkejar. Tanpa hash → no-op.
+  useEffect(() => {
+    if (!location.hash || location.hash.length < 2) return;
+    return scrollToHashTarget(location.hash);
+  }, [location.pathname, location.hash]);
 
   useEffect(() => {
     if (isBlogHost) document.title = 'Blog EZRAB';

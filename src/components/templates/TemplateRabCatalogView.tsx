@@ -69,7 +69,9 @@ interface TemplateRabCatalogViewProps {
     targetProjectId?: string,
     newProjectMeta?: { name: string; buildingArea: number; floorCount: number },
     detailLevel?: DetailLevel,
-    selectedOptionalItemIds?: string[]
+    selectedOptionalItemIds?: string[],
+    /** D-29: penyesuaian estimasi global dari konfigurator — diteruskan ke WorkspaceView. */
+    adjustments?: GlobalEstimationSettings
   ) => void;
 }
 
@@ -381,7 +383,8 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
     targetProjectId?: string,
     newProjectMeta?: { name: string; buildingArea: number; floorCount: number },
     detailLevel?: DetailLevel,
-    selectedOptionalItemIds?: string[]
+    selectedOptionalItemIds?: string[],
+    adjustments?: GlobalEstimationSettings
   ) => {
     recordTemplateUsage(tpl.id);
     if (onApplyTemplate) {
@@ -397,7 +400,8 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
         targetProjectId,
         newProjectMeta,
         detailLevel || globalDetailLevel,
-        selectedOptionalItemIds
+        selectedOptionalItemIds,
+        adjustments
       );
       const result = getLastTemplateApplyResult();
       if (result && result.seq === dedupeSeq) {

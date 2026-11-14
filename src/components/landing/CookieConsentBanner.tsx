@@ -23,9 +23,32 @@ export const CookieConsentBanner: React.FC = () => {
 
   useEffect(() => {
     if (getCookieConsent() !== null) return;
-    // Jeda singkat agar banner tidak berkedip bersama muatan pertama.
-    const timer = window.setTimeout(() => setVisible(true), 800);
-    return () => window.clearTimeout(timer);
+    // D-06: dulu banner muncul otomatis setelah 800 ms sebagai overlay
+    // fixed — tepat saat klik pertama, dan audit membuktikan ia pernah
+    // menutupi CTA "Mulai Gratis". Kini banner tampil pada INTERAKSI
+    // PERTAMA pengguna (klik/scroll/ketik — sesudah klik itu mendarat)
+    // atau setelah 8 detik bila tidak ada interaksi sama sekali.
+    let shown = false;
+    let timer: number | undefined;
+    const show = () => {
+      if (shown) return;
+      shown = true;
+      window.clearTimeout(timer);
+      window.removeEventListener('pointerdown', show);
+      window.removeEventListener('keydown', show);
+      window.removeEventListener('scroll', show);
+      setVisible(true);
+    };
+    timer = window.setTimeout(show, 8000);
+    window.addEventListener('pointerdown', show);
+    window.addEventListener('keydown', show);
+    window.addEventListener('scroll', show, { passive: true });
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener('pointerdown', show);
+      window.removeEventListener('keydown', show);
+      window.removeEventListener('scroll', show);
+    };
   }, []);
 
   if (!visible) return null;

@@ -7,6 +7,22 @@
   padding: 0;
 }
 
+/* D-11 (Batch G1) — Pola disabled global: kontrol nonaktif harus
+   tampak nonaktif di mana pun. Spesifisitas sengaja RENDAH (bare
+   :disabled) agar aturan komponen yang lebih spesifik — dan gaya
+   inline — tetap menang bila suatu permukaan memang merancang
+   keadaan nonaktifnya sendiri. */
+:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+button:disabled:hover,
+input:disabled:hover,
+select:disabled:hover,
+textarea:disabled:hover {
+  transform: none;
+}
+
 html {
   scroll-behavior: smooth;
   font-size: 16px;

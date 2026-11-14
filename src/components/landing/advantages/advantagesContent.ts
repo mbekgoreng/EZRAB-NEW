@@ -3,6 +3,7 @@
  * Semua klaim merujuk pada kemampuan aktual aplikasi. Tanpa statistik fiktif,
  * tanpa testimoni, tanpa persentase penghematan.
  */
+import { AHSP_ACTIVE_ITEM_COUNT_FORMATTED } from '../../../data/ahspPublicCounts';
 
 export interface WorkflowStep {
   no: string;
@@ -66,7 +67,7 @@ export const PRICE_CATEGORIES: PriceCategory[] = [
     color: '#1D4ED8',
     bg: '#EFF6FF',
     border: '#BFDBFE',
-    example: 'AHSP 2026 · 5.792 item master',
+    example: `AHSP 2026 · ${AHSP_ACTIVE_ITEM_COUNT_FORMATTED} item master`,
   },
   {
     name: 'Referensi Pasar',

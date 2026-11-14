@@ -344,7 +344,10 @@ export const MobileMenuSheet: React.FC<MobileMenuSheetProps> = ({
   const { t } = useI18n();
   const { activeRole } = useRole();
   const { balance } = useCreditSimulation();
-  const roleName = activeRole ? activeRole.name : 'Super Admin';
+  // NEW-04: tanpa peran aktif, sesi ini tidak punya identitas
+  // terverifikasi (biasanya hanya gerbang kode akses) — 'Tamu',
+  // bukan 'Super Admin'.
+  const roleName = activeRole ? activeRole.name : 'Tamu';
   const planLabel = CREDIT_PLAN_LABELS[balance.plan] || balance.plan;
 
   const isActive = (id: string): boolean => {
@@ -446,14 +449,25 @@ export const MobileHomeV3: React.FC<MobileHomeV3Props> = ({
   const [aiQuery, setAiQuery] = useState('');
 
   const now = new Date();
-  const roleName = activeRole ? activeRole.name : 'Super Admin';
+  // NEW-04: tanpa peran aktif, sesi ini tidak punya identitas
+  // terverifikasi (biasanya hanya gerbang kode akses) — 'Tamu',
+  // bukan 'Super Admin'.
+  const roleName = activeRole ? activeRole.name : 'Tamu';
   // Sapaan hero maksimal lebar 86%: kata sapaan (≤ "Selamat malam", 13
   // karakter) + ", " dijamin muat satu baris; hanya NAMA yang terpotong
   // ellipsis — nama peran kustom yang panjang tidak lagi membungkus dan
   // menabrak chip di bawahnya.
   const greetingWord = greetingForHour(now.getHours());
   const totalProjects = projects.length;
-  const totalItems = projects.reduce((acc, p) => acc + ((p as unknown as { totalItems?: number }).totalItems || 0), 0);
+  // NEW-12 (browser regression 2026-11-14): field jumlah item
+  // kanonis di Project adalah `itemsCount` — cache turunan yang
+  // dipelihara ProjectContext + reconcileProjectSummaries (seed demo
+  // 213). `totalItems` hanya ada di ProjectVersion, TIDAK PERNAH di
+  // Project — baca lama lewat cast selalu undefined → 0, sehingga
+  // kartu ringkasan mobile menampilkan "0 ITEM RAB" walau proyek
+  // aktif punya 213 item. Selaras dengan stat sebelahnya yang
+  // mempercayai cache turunan `totalRab`.
+  const totalItems = projects.reduce((acc, p) => acc + (p.itemsCount || 0), 0);
   const totalRab = projects.reduce((acc, p) => acc + (p.totalRab || 0), 0);
   const activeCount = projects.filter((p) => p.status === 'in_progress').length;
   const doneCount = projects.filter((p) => p.status === 'completed' || p.status === 'approved' || p.status === 'COMPLETED').length;

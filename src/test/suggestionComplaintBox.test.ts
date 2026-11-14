@@ -139,8 +139,17 @@ check('label akun = email sesi', resolveReporterIdentity({ accountEmail: 'a@b.id
 check('tanpa akun → peran demo', resolveReporterIdentity({ accountEmail: null, roleName: 'Estimator' }).kind === 'demo-role');
 check('tanpa keduanya → none', resolveReporterIdentity({ accountEmail: null, roleName: null }).kind === 'none');
 check('string kosong/whitespace → none', resolveReporterIdentity({ accountEmail: '  ', roleName: '' }).kind === 'none');
+// D-83 (Batch G2): sesi gerbang kode akses diakui sebagai identitas tamu.
+check('gateSession → access-gate', resolveReporterIdentity({ accountEmail: null, roleName: null, gateSession: true }).kind === 'access-gate');
+check("label access-gate = 'Pengunjung demo'", resolveReporterIdentity({ accountEmail: null, roleName: null, gateSession: true }).label === 'Pengunjung demo');
+check('akun tetap menang atas gateSession', resolveReporterIdentity({ accountEmail: 'a@b.id', gateSession: true }).kind === 'account');
+check('peran demo tetap menang atas gateSession', resolveReporterIdentity({ roleName: 'Estimator', gateSession: true }).kind === 'demo-role');
+check('gateSession eksplisit false → none', resolveReporterIdentity({ accountEmail: null, roleName: null, gateSession: false }).kind === 'none');
 check('komponen memakai useAuth + useRole yang sudah ada', box.includes('useAuth()') && box.includes('useRole()'));
-check('pengguna belum masuk diarahkan ke alur masuk yang ada (/masuk)', box.includes("navigateTo('/masuk')"));
+check('komponen menegaskan invarian mount gateSession: true', box.includes('gateSession: true'));
+check('komponen TIDAK lagi mengarahkan ke /masuk (login email dinonaktifkan = jalan buntu)', !box.includes("navigateTo('/masuk')"));
+check('tidak ada tombol "Masuk untuk Membuat Laporan" lagi', !box.includes('Masuk untuk Membuat Laporan'));
+check('sufiks identitas gerbang ditampilkan', box.includes('(sesi gerbang kode akses)'));
 check('keadaan belum masuk dijelaskan (laporan anonim tidak didukung)', box.includes('Laporan anonim tidak didukung'));
 
 console.log('=== AKSESIBILITAS & LAMPIRAN JUJUR ===');

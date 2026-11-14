@@ -378,7 +378,14 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
           </div>
           {adjustedRate.pricePerMonth > 0 && (
             <div style={{ fontSize: '11px', color: 'var(--ez-hue-green-text)', marginTop: '2px' }}>
-              Sewa Bulanan (200 jam): <strong>Rp {adjustedRate.pricePerMonth.toLocaleString('id-ID')}</strong>
+              {/* D-20 (Batch G2): label bulanan mengikuti BASIS tarif —
+                  tersimpan = 160 jam / 20 hari kerja; fallback ×25 hari =
+                  200 jam, ditandai "estimasi". Label lama "(200 jam)"
+                  salah untuk 10 item yang tarif bulanannya tersimpan. */}
+              {adjustedRate.monthlyBasis === 'stored'
+                ? 'Sewa Bulanan (160 jam · 20 hari kerja): '
+                : 'Sewa Bulanan (200 jam · 25 hari kerja, estimasi): '}
+              <strong>Rp {adjustedRate.pricePerMonth.toLocaleString('id-ID')}</strong>
             </div>
           )}
           <div style={{ fontSize: '10.5px', color: '#4ADE80', marginTop: '6px', borderTop: '1px solid var(--ez-hue-green-bg)', paddingTop: '6px' }}>

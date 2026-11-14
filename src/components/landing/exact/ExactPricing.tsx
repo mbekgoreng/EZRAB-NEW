@@ -227,8 +227,11 @@ export const ExactPricing: React.FC<ExactPricingProps> = ({ onSelectPlan }) => {
     }, 500);
   };
 
+  // NEW-05: dulu id="harga" — duplikat dengan section harga landing
+  // (AiShowcase, yang kanonis). Komponen ini tanpa importer (NEW-06);
+  // id diganti agar tidak pernah bertabrakan bila suatu saat dipakai lagi.
   return (
-    <section id="harga" className="ez-pricing-section" ref={sectionRef}>
+    <section id="harga-exact" className="ez-pricing-section" ref={sectionRef}>
       {/* Background blueprint grid & radial glow behind Pro card */}
       <div className="ez-pricing-bg-grid" aria-hidden="true" />
       <div className="ez-pricing-bg-glow" aria-hidden="true" />

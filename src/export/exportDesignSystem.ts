@@ -156,6 +156,8 @@ export function generateExportFileName(
      * EZRAB_RAB-5SHEET_… sendiri), jadi nilai ini tidak terpakai di
      * runtime; ada agar Record<ExportPresetId, …> tetap lengkap. */
     FIVE_SHEET_RAB: 'RAB-5SHEET',
+    /* D-75 (Batch F): nama berkas rekap saja. */
+    RECAP_ONLY: 'REKAP',
   };
   const prefix = prefixMap[preset] || 'DOKUMEN';
   return `EZRAB_${prefix}_${cleanProject}_${cleanRev}_${today}.xlsx`;

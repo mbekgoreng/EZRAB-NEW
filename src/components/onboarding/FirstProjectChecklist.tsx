@@ -13,6 +13,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useOnboarding } from './OnboardingContext';
 import { useProject } from '../../context/ProjectContext';
 import { useBrowserLocation } from '../../routing/useBrowserLocation';
+import { useI18n } from '../../i18n';
 
 const CHECKLIST_KEY = 'ezrab_checklist_dismissed';
 const CHECKLIST_MINIMIZED_KEY = 'ezrab_checklist_minimized';
@@ -32,6 +33,7 @@ function isDismissed(): boolean {
 }
 
 export function FirstProjectChecklist() {
+  const { t } = useI18n();
   const { hasSeenFeatureTour, markFeatureTourSeen } = useOnboarding();
   const { projects } = useProject();
   const location = useBrowserLocation();
@@ -43,49 +45,51 @@ export function FirstProjectChecklist() {
     } catch {
       /* abaikan */
     }
-    // Belum ada preferensi tersimpan: di viewport mobile mulai minimized agar
-    // kartu tidak menutupi konten/composer (pill tetap terlihat + bisa dibuka).
-    // Desktop mempertahankan perilaku lama (expanded). Preferensi user yang
-    // tersimpan selalu menang atas default ini.
-    return typeof window !== 'undefined' && window.innerWidth < 768;
+    // D-36 (Batch G2): tanpa preferensi tersimpan, checklist mulai
+    // MINIMIZED di semua viewport (dulu hanya mobile). Kartu expanded
+    // (±300px, fixed bottom-right z-9000) menutupi tombol "Lihat Semua"
+    // di seksi terakhir dashboard saat scroll mentok. Pill 44px tetap
+    // terlihat dan satu klik membukanya; preferensi user yang tersimpan
+    // selalu menang atas default ini.
+    return true;
   });
 
   const hasProjects = projects.length > 0;
   const onProjectsPage = location.pathname.includes('/projects') || location.pathname.includes('/app/projects');
   const onDashboard = location.pathname === '/app/dashboard' || location.pathname === '/app';
 
-  // Deteksi aktivitas nyata
+  // Deteksi aktivitas nyata — label lewat i18n (D-25, Batch G2).
   const items: ChecklistItem[] = useMemo(() => {
     const dashboardSeen = hasSeenFeatureTour('dashboard-tour');
     return [
       {
         id: 'kenal-dashboard',
-        label: 'Mengenal dashboard',
+        label: t('checklist.item_dashboard'),
         done: dashboardSeen || onDashboard,
       },
       {
         id: 'buka-proyek',
-        label: 'Membuka halaman Proyek',
+        label: t('checklist.item_proyek'),
         done: onProjectsPage || hasProjects,
       },
       {
         id: 'buat-proyek',
-        label: 'Membuat proyek pertama',
+        label: t('checklist.item_buat'),
         // HANYA true jika proyek benar-benar tersimpan (bukan sekadar klik)
         done: hasProjects,
       },
       {
         id: 'buka-workspace',
-        label: 'Membuka workspace proyek',
+        label: t('checklist.item_workspace'),
         done: hasProjects && location.pathname.includes('/app/projects/'),
       },
       {
         id: 'tinjau-rab',
-        label: 'Meninjau RAB atau memulai estimasi',
+        label: t('checklist.item_rab'),
         done: hasSeenFeatureTour('rab-tour') || location.pathname.includes('/estimate') || location.pathname.includes('/rab'),
       },
     ];
-  }, [hasSeenFeatureTour, hasProjects, onProjectsPage, onDashboard, location.pathname]);
+  }, [hasSeenFeatureTour, hasProjects, onProjectsPage, onDashboard, location.pathname, t]);
 
   const doneCount = items.filter((i) => i.done).length;
   const allDone = doneCount === items.length;
@@ -129,8 +133,8 @@ export function FirstProjectChecklist() {
       <div data-tour="checklist" className="ez-checklist-fab">
         <button
           onClick={handleToggleMinimize}
-          aria-label={`Buka checklist (${doneCount} dari ${items.length} selesai)`}
-          title="Buka checklist"
+          aria-label={`${t('checklist.buka')} (${doneCount}/${items.length} ${t('checklist.selesai')})`}
+          title={t('checklist.buka')}
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -164,7 +168,7 @@ export function FirstProjectChecklist() {
           >
             {doneCount}/{items.length}
           </span>
-          {showCompact ? 'Progres Kamu' : 'Mulai dengan EZRAB'}
+          {showCompact ? t('checklist.progres_kamu') : t('checklist.mulai_dengan')}
         </button>
       </div>
     );
@@ -196,23 +200,23 @@ export function FirstProjectChecklist() {
       >
         <div>
           <p style={{ fontSize: 13, fontWeight: 800, margin: 0 }}>
-            {showCompact ? 'Progres Kamu' : 'Mulai dengan EZRAB'}
+            {showCompact ? t('checklist.progres_kamu') : t('checklist.mulai_dengan')}
           </p>
           <p style={{ fontSize: 11, margin: '2px 0 0', opacity: 0.9 }}>
-            {doneCount}/{items.length} selesai
+            {doneCount}/{items.length} {t('checklist.selesai')}
           </p>
         </div>
         <div style={{ display: 'flex', gap: 4 }}>
           <button
             onClick={handleToggleMinimize}
-            aria-label={minimized ? 'Buka checklist' : 'Minimalkan checklist'}
+            aria-label={minimized ? t('checklist.buka') : t('checklist.minimalkan')}
             style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 8, color: '#fff', width: 28, height: 28, cursor: 'pointer', fontSize: 14 }}
           >
             {minimized ? '+' : '−'}
           </button>
           <button
             onClick={handleDismiss}
-            aria-label="Tutup checklist"
+            aria-label={t('checklist.tutup')}
             style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 8, color: '#fff', width: 28, height: 28, cursor: 'pointer', fontSize: 12 }}
           >
             ✕

@@ -9,6 +9,14 @@ import {
 } from './featuresContent';
 import { FaqAccordion } from '../../../faq/FaqAccordion';
 import { getFaqsByIds, FAQ_FITUR_IDS } from '../../../faq/faqData';
+// D-02: harga paket di halaman ini WAJIB dari plans.ts (kanonis) —
+// string harga hardcode pernah menampilkan Starter Rp 59.999 (salah;
+// kanonis Rp 54.999). D-31: jumlah AHSP dari konstanta publik yang
+// dipin tes terhadap dataset kanonis.
+import { getPlanDefinition } from '../../../billing/plans';
+import { AHSP_ACTIVE_ITEM_COUNT_FORMATTED } from '../../../data/ahspPublicCounts';
+
+const formatPlanPriceIdr = (n: number) => 'Rp ' + n.toLocaleString('id-ID');
 
 /* ---------- B — Mengapa EZRAB: pernyataan editorial ---------- */
 export const WhySection: React.FC = () => (
@@ -48,7 +56,7 @@ export const AhspSection: React.FC = () => (
       <div className="fp-card">
         <h3 className="fp-card-title">Acuan resmi</h3>
         <p className="fp-card-desc">
-          Library AHSP 2026 — 5.792 item analisa harga satuan (Cipta Karya, SDA, Bina Marga) —
+          Library AHSP 2026 — {AHSP_ACTIVE_ITEM_COUNT_FORMATTED} item analisa harga satuan (Cipta Karya, SDA, Bina Marga) —
           terintegrasi langsung dengan penyusunan RAB Anda.
         </p>
       </div>
@@ -221,7 +229,7 @@ export const WayfindingSection: React.FC<{
     {
       icon: Tag,
       title: 'Lihat Harga',
-      desc: 'Free untuk mencoba · Starter Rp 59.999/bln · Pro Rp 79.999/bln.',
+      desc: `Free untuk mencoba · Starter ${formatPlanPriceIdr(getPlanDefinition('starter').monthlyPriceIdr)}/bln · Pro ${formatPlanPriceIdr(getPlanDefinition('professional').monthlyPriceIdr)}/bln.`,
       action: onOpenPricing,
       cta: 'Bandingkan paket',
     },
@@ -255,7 +263,7 @@ export const WayfindingSection: React.FC<{
         <button type="button" className="fp-btn-primary fp-btn-lg" onClick={onOpenWorkspace}>
           Mulai Menggunakan EZRAB <ArrowRight size={16} />
         </button>
-        <p className="fp-wayfind-note">Tanpa kartu kredit · Mode demo langsung bisa dicoba</p>
+        <p className="fp-wayfind-note">Tanpa kartu kredit · Demo dibuka dengan kode akses selama masa pratinjau</p>
       </div>
     </div>
   );

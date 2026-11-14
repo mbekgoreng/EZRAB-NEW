@@ -31,6 +31,11 @@ import { aiToolsProviderClient } from '../ai-tools/providerClient';
 import { RESPONSE_LANGUAGE_RULE, RESPONSE_FORMAT_RULE } from '../ai-tools/ezrab-ai/prompt';
 import { scanToolCalls } from '../ai-tools/ezrab-ai/toolCallParser';
 import { executeTool, getCopilotToolListText } from '../ai-tools/ezrab-ai/toolRegistry';
+import {
+  quickActionContextLine,
+  resolveQuickActionContract,
+  stripQuickActionToken,
+} from './ai/quickActionToken';
 
 /**
  * System prompt jalur server Co-Assistant (Magic AI & Assistant FullView).
@@ -88,6 +93,13 @@ export interface CoAssistantMessage {
 
 export interface CoAssistantContextRequest {
   message: string;
+  /**
+   * D-50 (Batch E): Quick Action terstruktur — id aksi internal
+   * (mis. 'HITUNG_VOLUME') yang dibawa DI LUAR `message`. `message`
+   * hanya berisi prompt manusia; token routing internal
+   * `[QUICK_ACTION_TRIGGER:…]` TIDAK PERNAH ada di dalamnya.
+   */
+  quickActionId?: string;
   currentProject: Project | null;
   projectRabItems?: RabItem[];
   projectQtoItems?: QTOItem[];
@@ -245,8 +257,13 @@ class CoAssistantService {
     if (!trimmed) {
       throw new Error('Pesan tidak boleh kosong.');
     }
-    const activity = activityForRequest(trimmed);
-    const complexity = classifyRequest(trimmed, activity);
+    // D-50: klasifikasi memakai prompt manusia (tanpa token internal).
+    const clean = stripQuickActionToken(trimmed);
+    if (!clean) {
+      throw new Error('Pesan tidak boleh kosong.');
+    }
+    const activity = activityForRequest(clean);
+    const complexity = classifyRequest(clean, activity);
     request.onThinking?.(statusTextFor(complexity, activity));
     const startedAt = Date.now();
     // RAB (owner 2026-10-27): 5–10 detik dari besarnya hasil, bukan 3 detik.
@@ -261,6 +278,18 @@ class CoAssistantService {
     if (!trimmedMessage) {
       throw new Error('Pesan tidak boleh kosong.');
     }
+    // D-50 (Batch E): token routing internal TIDAK PERNAH masuk konten
+    // yang dipersist/ditampilkan. Jalur baru mengirim `quickActionId`
+    // terstruktur; bila pemanggil lama masih mengirim token di pesan,
+    // strip di sini (defence in depth) — seluruh pemakaian di bawah
+    // memakai `cleanMessage`, bukan `trimmedMessage`.
+    const cleanMessage = stripQuickActionToken(trimmedMessage);
+    if (!cleanMessage) {
+      throw new Error('Pesan tidak boleh kosong.');
+    }
+    const quickActionContract = request.quickActionId
+      ? resolveQuickActionContract(request.quickActionId)
+      : null;
 
     await this.syncUserIsolation();
 
@@ -273,12 +302,12 @@ class CoAssistantService {
       this.activeConversationId = conv.id;
 
       const alreadyHasUserMsg = conv.messages.some(
-        (m) => m.role === 'user' && m.content === trimmedMessage && Date.now() - new Date(m.createdAt).getTime() < 3000
+        (m) => m.role === 'user' && m.content === cleanMessage && Date.now() - new Date(m.createdAt).getTime() < 3000
       );
       if (!alreadyHasUserMsg) {
         unifiedConversationStore.appendMessage(conv.id, pId, {
           role: 'user',
-          content: trimmedMessage,
+          content: cleanMessage,
         });
       }
     }
@@ -287,7 +316,7 @@ class CoAssistantService {
     const role: UserRole = request.userRole || 'ESTIMATOR';
     const isClient = role === 'CLIENT';
 
-    const normalizedLower = trimmedMessage.toLowerCase();
+    const normalizedLower = cleanMessage.toLowerCase();
 
     // === PERINTAH EKPLISIT (slash commands) ===
     // Format: /perintah [argumen]
@@ -296,7 +325,7 @@ class CoAssistantService {
     //        /ubah 2 volume 10
     //        /cari pondasi
     //        /help
-    const slashMatch = trimmedMessage.match(/^\/(\w+)\s*(.*)$/);
+    const slashMatch = cleanMessage.match(/^\/(\w+)\s*(.*)$/);
     if (slashMatch) {
       const cmd = slashMatch[1].toLowerCase();
       const args = slashMatch[2].trim();
@@ -305,7 +334,7 @@ class CoAssistantService {
     }
 
     // === DETEKSI INTENT DENGAN POLA REGEX (lebih presisi dari includes) ===
-    const intent = this.detectIntent(normalizedLower, trimmedMessage);
+    const intent = this.detectIntent(normalizedLower, cleanMessage);
 
     const isConversational = intent === 'CONVERSATIONAL';
     const isAutomaticRab = intent === 'CREATE_RAB' || intent === 'RAB_QUERY';
@@ -423,7 +452,7 @@ class CoAssistantService {
         const prefs = getPreferences(this.currentUserId);
         const retrieved = retrieveMemories(
           { userId: this.currentUserId, projectId: request.currentProject.id, conversationId: conversationIdToSend ?? null },
-          trimmedMessage,
+          cleanMessage,
         );
         const gated = applyPersonalizationGate(retrieved.selected, prefs);
         const combined = [...formatPreferenceLines(prefs), formatMemorySection(gated)].filter(Boolean).join('\n');
@@ -445,7 +474,7 @@ class CoAssistantService {
       conversationId: conversationIdToSend ?? null,
       messages: copilotHistory.length > 0
         ? copilotHistory
-        : [{ role: 'user', content: trimmedMessage }],
+        : [{ role: 'user', content: cleanMessage }],
       projectSnapshot: copilotSnapshot,
       storedSummary: copilotStoredSummary,
       memorySection: copilotMemorySection ?? null,
@@ -457,11 +486,17 @@ class CoAssistantService {
     } catch {
       /* logging tidak boleh menggagalkan kirim */
     }
+    // D-50: id aksi terstruktur diteruskan ke provider sebagai konteks
+    // sistem (bukan di dalam pesan pengguna) — router tetap menerima
+    // id aksi, sementara pesan yang dipersist/ditampilkan tetap bersih.
+    const quickActionSection = quickActionContract
+      ? `\n\n${quickActionContextLine(quickActionContract)}`
+      : '';
     const result = await aiToolsProviderClient.execute({
       productId: 'EZRAB_AI',
       mode: 'fast',
       systemPrompt: CO_ASSISTANT_SYSTEM_PROMPT,
-      prompt: `${copilotBuilt.dataBlock}\n\n${copilotToolSection}\n\n${RESPONSE_LANGUAGE_RULE}`,
+      prompt: `${copilotBuilt.dataBlock}\n\n${copilotToolSection}${quickActionSection}\n\n${RESPONSE_LANGUAGE_RULE}`,
       jsonMode: false,
       temperature: 0.4,
       maxTokens: 3000,

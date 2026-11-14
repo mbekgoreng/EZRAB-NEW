@@ -19,6 +19,11 @@
 .ezai-scope .chip.ok {background:#DCF5E8;color:#0B7A4B}
 .ezai-scope .btn {display:inline-flex;align-items:center;gap:8px;background:#2563EB;color:#fff;font-weight:700;font-size:14.5px;padding:13px 24px;border-radius:12px;border:none;cursor:pointer}
 .ezai-scope .btn.ghost {background:transparent;border:1.5px solid rgba(157,180,210,.4);color:#E6EEF9}
+/* D-05 (Batch G1): krom tombol mockup di dalam ilustrasi simulasi —
+   span ber-aria-hidden, BUKAN tombol. Tanpa kursor pointer & tanpa
+   efek hover, agar tidak tampak bisa diklik. */
+.ezai-scope span.btn {cursor:default}
+.ezai-scope span.btn:hover {transform:none;box-shadow:none}
 .ezai-scope .ic {width:44px;height:44px;border-radius:12px;background:#E4EDFF;color:#1E40AF;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
 .ezai-scope .ic svg {width:22px;height:22px}
 .ezai-scope svg.icn {width:1.15em;height:1.15em;display:inline-block;vertical-align:-.18em}
@@ -106,7 +111,7 @@
 .ezai-scope .ezai-footer {border-top:1px solid #E2EAF3;padding:52px 0 38px;background:#FFFFFF}
 .ezai-scope .fgrid {display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:32px}
 .ezai-scope .ezai-footer b {color:#0D2036;font-size:14px;display:block;margin-bottom:14px}
-.ezai-scope .ezai-footer a {display:block;color:#8498AF;font-size:13.5px;text-decoration:none;margin-bottom:9px}
+.ezai-scope .ezai-footer a {display:block;color:#5F7694;font-size:13.5px;text-decoration:none;margin-bottom:9px}
 .ezai-scope .fbot {display:flex;justify-content:space-between;gap:16px;margin-top:40px;padding-top:22px;border-top:1px solid #E8EFF7;font-size:12.5px;color:#5F7694}
 @media(max-width:900px) {
 .ezai-scope .pillars, .ezai-scope .bento, .ezai-scope .honest, .ezai-scope .plans {grid-template-columns:1fr 1fr}
@@ -323,9 +328,11 @@
 .ezai-scope .mascot-cta {width:94px;top:-82px;right:16px}
 }
 /* Animasi transisi teks & gambar: elemen muncul berjenjang (fade + naik) saat masuk viewport; kelas .rv/.rv-on dipasang AiShowcase via IntersectionObserver (nama .rv-on dipilih agar tidak bertabrakan dengan kelas .on status online) */
-.ezai-scope .rv {opacity:0;transform:translateY(26px);transition:opacity .65s ease,transform .65s cubic-bezier(.21,.8,.28,1)}
+/* D-06 (Batch G1): offset reveal diperkecil 26px → 12px agar klik
+   awal tidak meleset dari target yang masih bergerak naik. */
+.ezai-scope .rv {opacity:0;transform:translateY(12px);transition:opacity .65s ease,transform .65s cubic-bezier(.21,.8,.28,1)}
 .ezai-scope .rv.rv-on {opacity:1;transform:none}
-.ezai-scope .win.rv {transform:translateY(30px) scale(.985)}
+.ezai-scope .win.rv {transform:translateY(12px) scale(.985)}
 .ezai-scope .win.rv.rv-on {transform:none}
 .ezai-scope .plan.rv-on:hover, .ezai-scope .pillar.rv-on:hover, .ezai-scope .tile.rv-on:hover, .ezai-scope .hcard.rv-on:hover {transform:translateY(-4px)}
 .ezai-scope .btn {transition:transform .25s ease,box-shadow .25s ease,background .25s ease}
@@ -338,7 +345,10 @@
 .ezai-scope .btn:hover, .ezai-scope .plan.rv-on:hover, .ezai-scope .pillar.rv-on:hover, .ezai-scope .tile.rv-on:hover, .ezai-scope .hcard.rv-on:hover {transform:none}
 }
 .ezai-scope .eyebrow {background:none!important;border:none!important;border-radius:0!important;padding:0!important}
-.ezai-scope .ezai-footer button{background:none;border:none;padding:0;font:inherit;color:#8498AF;cursor:pointer;text-align:left;font-size:13.5px}
+/* D-08(c/d) (Batch G1): teks footer #8498AF (2,96:1) → #5F7694
+   (4,66:1, lolos WCAG AA); tombol footer dibuat block + margin seperti
+   tautan — dulu dua tombol inline tanpa spasi merapat jadi "MasukDaftar". */
+.ezai-scope .ezai-footer button{background:none;border:none;padding:0;font:inherit;color:#5F7694;cursor:pointer;text-align:left;font-size:13.5px;display:block;margin-bottom:9px}
 .ezai-scope .ezai-footer button:hover{color:#1E40AF}
 
 /* ===== Perbandingan fitur paket (Spec Billing v1.0 §3) + ketentuan transparan ===== */

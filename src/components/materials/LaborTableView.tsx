@@ -185,7 +185,12 @@ export const LaborTableView: React.FC<LaborTableViewProps> = ({
                         >
                           {lab.code}
                         </span>
-                        <span style={{ fontSize: '10.5px', color: 'var(--ez-color-text-faint)' }}>• 7 Jam/Hari</span>
+                        {/* D-19 (Batch G2): jam/hari per BARIS — data
+                            master memang campuran (19 baris 7 jam, 66
+                            baris 8 jam) dan OJ dihitung dari
+                            workHoursPerDay baris itu. Label hardcode
+                            "7 Jam/Hari" salah untuk 66 baris. */}
+                        <span style={{ fontSize: '10.5px', color: 'var(--ez-color-text-faint)' }}>• {lab.workHoursPerDay} Jam/Hari</span>
                       </div>
                     </div>
                   </div>
@@ -287,7 +292,7 @@ export const LaborTableView: React.FC<LaborTableViewProps> = ({
                   <div style={{ fontWeight: 700, color: 'var(--ez-color-primary)', fontSize: '12px' }}>
                     Rp {adjustedRate.priceOJ.toLocaleString('id-ID')}
                   </div>
-                  <div style={{ fontSize: '10px', color: 'var(--ez-color-text-faint)' }}>1 OJ (OH/7)</div>
+                  <div style={{ fontSize: '10px', color: 'var(--ez-color-text-faint)' }}>1 OJ (OH/{lab.workHoursPerDay})</div>
                 </td>
 
                 {/* Wilayah Acuan */}

@@ -8,55 +8,69 @@
  * Mobile: jika viewport sempit (<768px), tampil sebagai kartu panduan
  * sederhana (bottom sheet) alih-alih spotlight.
  */
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Spotlight, SpotlightStep } from './Spotlight';
 import { useOnboarding } from './OnboardingContext';
+import { useI18n } from '../../i18n';
 import { paths } from '../../routing/routes';
 
 const TOUR_FLAG = 'dashboard-tour';
 
-const STEPS: SpotlightStep[] = [
-  {
-    target: '[data-tour="dashboard"]',
-    title: 'Selamat datang di Dashboard EZRAB',
-    body: 'Di sini kamu dapat melihat ringkasan aktivitas dan mengakses workspace utama untuk mengelola proyek konstruksi.',
-  },
-  {
-    target: '[data-tour="sidebar"]',
-    title: 'Navigasi EZRAB',
-    body: 'Gunakan navigasi ini untuk berpindah antara proyek, estimasi, AI, QTO, AHSP, laporan, dan fitur lain yang tersedia.',
-  },
-  {
-    target: '[data-tour="menu-proyek"]',
-    title: 'Kelola Proyek',
-    body: 'Mulai dengan membuat proyek baru atau membuka proyek yang sudah ada dari daftar proyek. Informasi proyek menjadi dasar pengelolaan estimasi dan pekerjaan selanjutnya.',
-  },
-  {
-    target: '[data-tour="menu-ded-ai"]',
-    title: 'Buat Estimasi dengan AI',
-    body: 'Gunakan AI (Ezrab Chat, DED ke RAB, Dokumen AI) untuk membantu memulai penyusunan estimasi. Selalu tinjau hasil sebelum menerapkannya ke proyek.',
-  },
-  {
-    target: '[data-tour="menu-rab-spreadsheet"]',
-    title: 'Susun Rencana Anggaran Biaya',
-    body: 'Periksa item pekerjaan, volume, analisis harga satuan, harga, dan total biaya berdasarkan data yang tersedia.',
-  },
-  {
-    target: '[data-tour="menu-qto"]',
-    title: 'Periksa Volume dan AHSP',
-    body: 'QTO membantu meninjau kuantitas pekerjaan, sedangkan AHSP digunakan untuk memeriksa analisis harga satuan yang relevan.',
-  },
-  {
-    target: '[data-tour="help"]',
-    title: 'Tutorial Bisa Dibuka Kembali',
-    body: 'Kamu dapat membuka kembali panduan EZRAB kapan saja melalui menu bantuan atau kontrol tutorial yang tersedia.',
-  },
-  {
-    target: '[data-tour="dashboard"]',
-    title: 'Siap Memulai Proyek',
-    body: 'Sekarang kamu sudah mengenal navigasi utama EZRAB. Mulailah dengan membuat proyek pertamamu.',
-  },
-];
+/**
+ * D-25 (Batch G2): judul & isi langkah berasal dari kamus i18n
+ * (`tour.step*_title` / `tour.step*_body`) agar tur mengikuti bahasa
+ * aktif. Target selector tetap konstan.
+ *
+ * D-16 (Batch G2): langkah 5 menarget `[data-tour=
+ * "menu-rab-spreadsheet"]` di dalam submenu RAB (tertutup default) —
+ * `expandSubmenu: 'rab'` meminta Spotlight membuka submenu itu dulu
+ * sebelum menyorot; tanpa ini langkah 4 melompat ke 6.
+ */
+function buildSteps(t: (key: string) => string): SpotlightStep[] {
+  return [
+    {
+      target: '[data-tour="dashboard"]',
+      title: t('tour.step1_title'),
+      body: t('tour.step1_body'),
+    },
+    {
+      target: '[data-tour="sidebar"]',
+      title: t('tour.step2_title'),
+      body: t('tour.step2_body'),
+    },
+    {
+      target: '[data-tour="menu-proyek"]',
+      title: t('tour.step3_title'),
+      body: t('tour.step3_body'),
+    },
+    {
+      target: '[data-tour="menu-ded-ai"]',
+      title: t('tour.step4_title'),
+      body: t('tour.step4_body'),
+    },
+    {
+      target: '[data-tour="menu-rab-spreadsheet"]',
+      title: t('tour.step5_title'),
+      body: t('tour.step5_body'),
+      expandSubmenu: 'rab',
+    },
+    {
+      target: '[data-tour="menu-qto"]',
+      title: t('tour.step6_title'),
+      body: t('tour.step6_body'),
+    },
+    {
+      target: '[data-tour="help"]',
+      title: t('tour.step7_title'),
+      body: t('tour.step7_body'),
+    },
+    {
+      target: '[data-tour="dashboard"]',
+      title: t('tour.step8_title'),
+      body: t('tour.step8_body'),
+    },
+  ];
+}
 
 function isMobileViewport(): boolean {
   try {
@@ -72,9 +86,15 @@ interface DashboardTourProps {
 }
 
 export function DashboardTour({ onDone }: DashboardTourProps) {
+  const { t } = useI18n();
   const { markFeatureTourSeen, goToFeature } = useOnboarding();
   const [isMobile, setIsMobile] = useState(isMobileViewport);
   const [stepIndex, setStepIndex] = useState(0);
+
+  // Memo: identitas array langkah harus stabil — Spotlight menjalankan
+  // resolveTarget setiap kali identitas steps berubah; array baru tiap
+  // render akan memicu loop setRect → render → resolveTarget.
+  const steps = useMemo(() => buildSteps(t), [t]);
 
   useEffect(() => {
     const onResize = () => setIsMobile(isMobileViewport());
@@ -100,16 +120,16 @@ export function DashboardTour({ onDone }: DashboardTourProps) {
     setTimeout(() => goToFeature('/app/projects'), 100);
   }, [markFeatureTourSeen, onDone, goToFeature]);
 
-  const isLastStep = stepIndex === STEPS.length - 1;
+  const isLastStep = stepIndex === steps.length - 1;
 
   // Mobile: tampilkan sebagai kartu bottom sheet sederhana
   if (isMobile) {
-    const step = STEPS[stepIndex];
+    const step = steps[stepIndex];
     return (
       <div
         role="dialog"
         aria-modal="true"
-        aria-label={`Panduan ${stepIndex + 1} dari ${STEPS.length}`}
+        aria-label={`${t('tour.panduan')} ${stepIndex + 1}/${steps.length}`}
         style={{
           position: 'fixed',
           inset: 0,
@@ -136,7 +156,7 @@ export function DashboardTour({ onDone }: DashboardTourProps) {
         >
           <div style={{ width: 40, height: 4, borderRadius: 9999, background: 'var(--ez-color-border-line)', margin: '0 auto 16px' }} />
           <p style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', color: 'var(--ez-color-primary)', margin: '0 0 6px' }}>
-            LANGKAH {stepIndex + 1} / {STEPS.length}
+            {t('tour.langkah')} {stepIndex + 1} / {steps.length}
           </p>
           <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--ezrab-text, #111827)', margin: '0 0 8px' }}>
             {step.title}
@@ -149,7 +169,7 @@ export function DashboardTour({ onDone }: DashboardTourProps) {
               onClick={handleSkip}
               style={{ flex: 1, height: 48, borderRadius: 12, border: '1px solid var(--ez-color-border-line)', background: 'transparent', fontSize: 14, fontWeight: 700, color: 'var(--ez-color-text-muted)', cursor: 'pointer' }}
             >
-              Lewati
+              {t('common.lewati')}
             </button>
             {stepIndex > 0 && (
               <button
@@ -157,7 +177,7 @@ export function DashboardTour({ onDone }: DashboardTourProps) {
                 className="ezrab-button-secondary"
                 style={{ flex: 1, height: 48, fontSize: 14 }}
               >
-                Kembali
+                {t('common.kembali')}
               </button>
             )}
             {isLastStep ? (
@@ -166,7 +186,7 @@ export function DashboardTour({ onDone }: DashboardTourProps) {
                 className="ezrab-button-primary"
                 style={{ flex: 2, height: 48, fontSize: 14 }}
               >
-                Mulai Membuat Proyek
+                {t('tour.mulai_proyek')}
               </button>
             ) : (
               <button
@@ -174,7 +194,7 @@ export function DashboardTour({ onDone }: DashboardTourProps) {
                 className="ezrab-button-primary"
                 style={{ flex: 2, height: 48, fontSize: 14 }}
               >
-                Lanjut
+                {t('common.lanjut')}
               </button>
             )}
           </div>
@@ -187,7 +207,7 @@ export function DashboardTour({ onDone }: DashboardTourProps) {
   return (
     <div>
       <Spotlight
-        steps={STEPS}
+        steps={steps}
         startAt={0}
         onDone={handleDone}
         onSkip={handleSkip}
@@ -210,7 +230,7 @@ export function DashboardTour({ onDone }: DashboardTourProps) {
             boxShadow: '0 8px 24px rgba(37, 99, 235, 0.4)',
           }}
         >
-          Mulai Membuat Proyek
+          {t('tour.mulai_proyek')}
         </button>
       )}
     </div>

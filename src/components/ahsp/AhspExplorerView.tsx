@@ -39,9 +39,10 @@ import { priceResolver2026 } from '../../data/priceDatabase2026/resolver';
 import { OFFICIAL_CK_2026_DHSP_MAP } from '../../data/nationalCostDatabase/officialCiptaKaryaDhsp2026';
 import { OFFICIAL_BM_2026_DHSP_MAP } from '../../data/nationalCostDatabase/officialBinaMargaDhsp2026';
 import { CANONICAL_RESOURCE_INDEX } from '../../data/priceDatabase2026/resourceIndex.generated';
-import { getAhspDirectPrice, canFinalizeAhsp, ahspCompletenessNote } from '../../data/priceDatabase2026/ahspDisplayPolicy';
+import { getAhspDirectPrice, getAhspDirectPriceBasis, canFinalizeAhsp, ahspCompletenessNote } from '../../data/priceDatabase2026/ahspDisplayPolicy';
 import { applyMarketOverlay, type AugmentedComponent } from '../../engine/pricing/market/ahspMarketOverlay';
 import { marketReviewStore } from '../../engine/pricing/market/reviewStore';
+import { largestRemainderRound, isApportionableTotal } from '../../engine/displayRounding';
 
 /**
  * Resolusi harga untuk kartu/filter/urut (F-04): SAMA dengan modal detail —
@@ -104,6 +105,18 @@ const DOMAIN_SHORT_LABEL: Record<string, string> = {
 export function domainShortLabel(domain: AHSPDomain | 'ALL'): string {
   if (domain === 'ALL') return 'Semua Bidang';
   return DOMAIN_SHORT_LABEL[domain] || String(domain);
+}
+
+/**
+ * D-55 narrowing (2026-11-14): satuan TAMPIL satu item katalog.
+ * Item Bina Marga membawa `unitDisplay` (satuan kanonis hasil-resolver
+ * — fragmen deskripsi master sudah diperbaiki di sana); item lain
+ * memakai `unit` apa adanya. HANYA untuk render kartu/dialog — jalur
+ * fungsional (tambah-ke-RAB) memakai `unit` mentah agar satuan yang
+ * tersimpan sama dengan satuan resolusi harga.
+ */
+function displayUnit(item: NationalAHSPItem): string {
+  return item.unitDisplay ?? item.unit;
 }
 
 const DOMAIN_COLOR_MAP: Record<string, { bg: string; text: string; border: string }> = {
@@ -382,6 +395,29 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ routeParams,
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedAhspComposition, marketTick]);
 
+  // D-54 (Batch G2, OD-03(a)): subtotal tampil tiap baris komponen dialog
+  // di-apportion ke total D (unitPrice) agar Σ baris yang ditampilkan
+  // persis sama dengan total yang ditampilkan — mekanisme ±Rp1 yang sama
+  // seperti mini-bar kartu. Map keyed by identitas objek komponen (urutan
+  // render: labor, material, equipment). HANYA bila semua baris punya
+  // subtotal (tanpa '—') dan total D memang jumlah baris-baris itu
+  // (guard numerik — gagal untuk basis DHSP). Bila guard gagal, map
+  // kosong dan renderCompRow memakai Math.round biasa.
+  const dialogApportionedSubtotals = useMemo(() => {
+    const map = new Map<object, number>();
+    const aug = selectedAhspAugmented;
+    if (!aug || aug.unitPrice == null || aug.unitPrice <= 0) return map;
+    const rows = [...aug.labor.components, ...aug.material.components, ...aug.equipment.components];
+    if (rows.length === 0) return map;
+    const raws = rows.map((r) => r.subtotalPerUnit);
+    if (raws.some((v) => v == null)) return map;
+    const numericRaws = raws as number[];
+    if (!isApportionableTotal(numericRaws, aug.unitPrice)) return map;
+    const apportioned = largestRemainderRound(numericRaws, aug.unitPrice);
+    rows.forEach((r, i) => map.set(r, apportioned[i]));
+    return map;
+  }, [selectedAhspAugmented]);
+
   const addToRabComposition = useMemo(() => {
     if (!addToRabModalItem) return null;
     return priceResolver2026.resolveAhspUnitPrice(addToRabModalItem);
@@ -400,11 +436,41 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ routeParams,
     setCurrentPage(1);
   };
 
-  // Handle Copy Code
+  // D-56 (Batch G2): "Reset Semua Filter" benar-benar mereset SEMUA —
+  // reset lama hanya membersihkan search/kategori/metode/status,
+  // sehingga filter bidang (domain) & filter status harga tertinggal
+  // dan URL tetap membawa ?domain=BINA_MARGA. Urutan & ukuran halaman
+  // BUKAN filter — tidak ikut direset. Dipakai tombol di bar filter
+  // (saat hasil ada) dan tombol di empty state (saat hasil kosong).
+  const handleResetAllFilters = () => {
+    setSearchQuery('');
+    setSelectedCategory('ALL');
+    setSelectedMethod('ALL');
+    setSelectedStatus('ALL');
+    setSelectedDomain('ALL');
+    setPriceStatusFilter('ALL');
+    setCurrentPage(1);
+  };
+
+  const hasActiveFilters =
+    searchQuery !== '' ||
+    selectedDomain !== 'ALL' ||
+    selectedCategory !== 'ALL' ||
+    selectedMethod !== 'ALL' ||
+    selectedStatus !== 'ALL' ||
+    priceStatusFilter !== 'ALL';
+
+  // Handle Copy Code — D-58 (Batch G2): kode kosong tidak pernah
+  // disalin dan tidak pernah memunculkan toast sukses.
   const handleCopyCode = (code: string) => {
-    navigator.clipboard.writeText(code);
-    setCopiedCode(code);
-    showToast(`Kode analisa ${code} disalin ke clipboard!`);
+    const clean = (code ?? '').trim();
+    if (!clean) {
+      showToast('Item ini belum memiliki kode analisa.');
+      return;
+    }
+    navigator.clipboard.writeText(clean);
+    setCopiedCode(clean);
+    showToast(`Kode analisa ${clean} disalin ke clipboard!`);
     setTimeout(() => setCopiedCode(null), 2000);
   };
 
@@ -495,7 +561,10 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ routeParams,
   const renderCompRow = (
     r: AugmentedComponent,
     badge: { label: string; bg: string; fg: string },
-    key: number
+    key: number,
+    // D-54 (Batch G2): subtotal tampil hasil apportion (bila ada) —
+    // menggantikan Math.round(r.subtotalPerUnit) agar Σ baris == total D.
+    displaySubtotal?: number | null,
   ) => {
     const price = r.unitPrice ?? r.marketUnitPrice;
     const hasPrice = price !== null && price > 0;
@@ -534,7 +603,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ routeParams,
           )}
         </td>
         <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700, color: r.subtotalPerUnit !== null ? 'var(--ez-color-text)' : '#94A3B8' }}>
-          {r.subtotalPerUnit !== null ? Math.round(r.subtotalPerUnit).toLocaleString('id-ID') : '—'}
+          {r.subtotalPerUnit !== null ? (displaySubtotal ?? Math.round(r.subtotalPerUnit)).toLocaleString('id-ID') : '—'}
         </td>
       </tr>
     );
@@ -738,6 +807,9 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ routeParams,
          ========================================================================= */}
       <div
         className="ezdb-anim"
+        // D-86 (Batch G2): jangkar tutorial — tab filter bidang
+        // (langkah "Pilih Domain yang Tepat" menyorotnya).
+        data-tutorial="ahsp-domain"
         style={{
           display: 'flex',
           flexWrap: 'wrap',
@@ -1040,6 +1112,9 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ routeParams,
           <Search size={18} color="var(--ez-color-text-muted)" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }} />
           <input
             type="text"
+            // D-86 (Batch G2): jangkar tutorial — kolom pencarian
+            // (langkah "Cari Kode atau Nama" menyorotnya).
+            data-tutorial="ahsp-search"
             placeholder="Cari kode (misal: A.1.01.a.1, P.01), nama pekerjaan, pipa HDPE, galian, hebel..."
             value={searchQuery}
             onChange={(e) => {
@@ -1211,6 +1286,31 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ routeParams,
               <option value="priceDesc">Urutkan: Harga Tertinggi</option>
             </select>
           </div>
+
+          {/* D-56 (Batch G2): reset di bar filter — sebelumnya reset
+              hanya ada di empty state, jadi pengguna yang hasil
+              pencariannya menyempit tidak punya jalan keluar yang
+              terlihat. Hanya tampil bila ada filter aktif. */}
+          {hasActiveFilters && (
+            <button
+              type="button"
+              onClick={handleResetAllFilters}
+              style={{
+                height: '42px',
+                padding: '0 14px',
+                borderRadius: 'var(--ez-radius-control)',
+                border: '1px solid var(--ez-color-border-line)',
+                background: 'var(--ez-color-surface)',
+                color: 'var(--ez-color-text-body)',
+                fontSize: '12.5px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                flexShrink: 0,
+              }}
+            >
+              Reset Semua Filter
+            </button>
+          )}
         </div>
       </div>
 
@@ -1286,12 +1386,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ routeParams,
             Coba gunakan kata kunci lain, pilih domain berbeda, atau kosongkan filter kategori.
           </p>
           <button
-            onClick={() => {
-              setSearchQuery('');
-              setSelectedCategory('ALL');
-              setSelectedMethod('ALL');
-              setSelectedStatus('ALL');
-            }}
+            onClick={handleResetAllFilters}
             style={{
               marginTop: '8px',
               padding: '8px 18px',
@@ -1317,20 +1412,52 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ routeParams,
             animation: 'ezdb-rise 0.6s 0.21s both',
           }}
         >
-          {paginatedItems.map((item) => {
+          {paginatedItems.map((item, cardIndex) => {
             const composition = resolveWithMarket(item);
             const laborTotal = composition.labor.subtotalPerUnit || (item.totalLabor ?? 0);
             const materialTotal = composition.material.subtotalPerUnit || (item.totalMaterial ?? 0);
             const equipTotal = composition.equipment.subtotalPerUnit || (item.totalEquipment ?? 0);
             // Harga tampil = Biaya Langsung (D); E dinonaktifkan.
-            const hspPrice = getAhspDirectPrice(composition) ?? item.unitPrice;
+            // D-57 (Batch B): bila D berasal dari DHSP resmi (bukan jumlah
+            // komponen), kartu wajib menandai basisnya — harga DHSP tidak
+            // boleh tampil seolah-olah hasil analisa komponen.
+            const directPrice = getAhspDirectPrice(composition);
+            const hspPrice = directPrice ?? item.unitPrice;
+            const priceBasis = directPrice !== null && directPrice > 0 ? getAhspDirectPriceBasis(composition) : null;
             const pricingStatus = (hspPrice && hspPrice > 0 && item.domain === 'SMKK') ? 'FULL' : composition.pricingStatus;
+            // D-54 (Batch G2, OD-03(a) largest-remainder): subtotal tampil
+            // ketiga seksi di-apportion ke HSP agar Σ tampilannya persis
+            // sama dengan HSP tampilannya (sebelumnya ±Rp1 pada 242 kartu
+            // BM karena tiap seksi dibulatkan sendiri). HANYA bila:
+            // (a) HSP > 0, (b) basis BUKAN DHSP (HSP DHSP bukan jumlah
+            // komponen), (c) HSP memang jumlah ketiga seksi ini (guard
+            // numerik), (d) ketiga seksi tampil numerik (bukan '—').
+            // Nilai mentah & HSP tidak berubah; apportion di IDR sebelum
+            // konversi mata uang tampil (fmt). Di mata uang asing,
+            // invarian tidak dijamin (konversi membulatkan ulang) —
+            // keterbatasan yang dicatat di log Batch G2.
+            const sectionsNumeric =
+              (laborTotal > 0 || composition.labor.components.length === 0) &&
+              (materialTotal > 0 || composition.material.components.length === 0) &&
+              (equipTotal > 0 || composition.equipment.components.length === 0);
+            const sectionTotals = [laborTotal, materialTotal, equipTotal];
+            const canApportionSections =
+              sectionsNumeric &&
+              hspPrice != null && hspPrice > 0 &&
+              priceBasis !== 'DHSP' &&
+              isApportionableTotal(sectionTotals, hspPrice);
+            const [dispLabor, dispMaterial, dispEquip] = canApportionSections
+              ? largestRemainderRound(sectionTotals, hspPrice as number)
+              : sectionTotals;
 
             const domainColor = DOMAIN_COLOR_MAP[item.domain] || { bg: 'var(--ez-color-surface-tertiary)', text: '#475569', border: 'var(--ez-color-border)' };
 
             return (
               <div
                 key={item.id}
+                // D-86 (Batch G2): jangkar tutorial — kartu pertama di
+                // halaman hasil (langkah "Baca Koefisien" menyorotnya).
+                data-tutorial={cardIndex === 0 ? 'ahsp-card' : undefined}
                 style={{
                   background: 'var(--ez-color-surface)',
                   borderRadius: 'var(--ez-radius-card)',
@@ -1348,6 +1475,11 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ routeParams,
                 <div>
                   {/* Top Bar: Code & Domain Tag */}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginBottom: '12px' }}>
+                    {/* D-58 (Batch G2): pill salin kode HANYA bila kode
+                        ada. 2 item berkode kosong (SDA-000810, BM-000007)
+                        dulu merender pill kosong yang menyalin "" +
+                        toast sukses palsu. */}
+                    {item.code && item.code.trim() !== '' ? (
                     <button
                       onClick={() => handleCopyCode(item.code)}
                       title="Klik untuk menyalin kode analisa"
@@ -1369,6 +1501,19 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ routeParams,
                       <span>{item.code}</span>
                       {copiedCode === item.code ? <Check size={12} color="var(--ez-hue-green-text-bright)" /> : <Copy size={12} color="var(--ez-color-text-muted)" />}
                     </button>
+                    ) : (
+                      <span
+                        title="Item ini belum memiliki kode analisa"
+                        style={{
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          color: 'var(--ez-color-text-muted)',
+                          fontStyle: 'italic',
+                        }}
+                      >
+                        Kode tidak tersedia
+                      </span>
+                    )}
 
                     <span
                       style={{
@@ -1411,7 +1556,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ routeParams,
                   {/* Metadata Row: Satuan & Status */}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px', marginBottom: '10px' }}>
                     <span style={{ color: 'var(--ez-color-text-muted)' }}>
-                      Satuan: <strong style={{ color: 'var(--ez-color-text-primary)', fontWeight: 700 }}>{item.unit || '—'}</strong>
+                      Satuan: <strong style={{ color: 'var(--ez-color-text-primary)', fontWeight: 700 }}>{displayUnit(item) || '—'}</strong>
                     </span>
 
                     {pricingStatus === 'FULL' && (
@@ -1444,15 +1589,25 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ routeParams,
                       color: 'var(--ez-color-text-muted)',
                     }}
                   >
-                    <span>Tenaga Kerja: <strong style={{ color: laborTotal > 0 ? 'var(--ez-color-text)' : '#94A3B8' }}>{laborTotal > 0 ? fmt(laborTotal) : (composition.labor.components.length > 0 ? '—' : '0')}</strong></span>
-                    <span>Material: <strong style={{ color: materialTotal > 0 ? 'var(--ez-color-text)' : '#94A3B8' }}>{materialTotal > 0 ? fmt(materialTotal) : (composition.material.components.length > 0 ? '—' : '0')}</strong></span>
-                    <span>Peralatan: <strong style={{ color: equipTotal > 0 ? 'var(--ez-color-text)' : '#94A3B8' }}>{equipTotal > 0 ? fmt(equipTotal) : (composition.equipment.components.length > 0 ? '—' : '0')}</strong></span>
+                    <span>Tenaga Kerja: <strong style={{ color: laborTotal > 0 ? 'var(--ez-color-text)' : '#94A3B8' }}>{laborTotal > 0 ? fmt(dispLabor) : (composition.labor.components.length > 0 ? '—' : '0')}</strong></span>
+                    <span>Material: <strong style={{ color: materialTotal > 0 ? 'var(--ez-color-text)' : '#94A3B8' }}>{materialTotal > 0 ? fmt(dispMaterial) : (composition.material.components.length > 0 ? '—' : '0')}</strong></span>
+                    <span>Peralatan: <strong style={{ color: equipTotal > 0 ? 'var(--ez-color-text)' : '#94A3B8' }}>{equipTotal > 0 ? fmt(dispEquip) : (composition.equipment.components.length > 0 ? '—' : '0')}</strong></span>
                   </div>
                 </div>
 
                 {/* Bottom Section: Total Unit Price & Action Buttons */}
                 <div>
                   <div
+                    // W86 (browser regression, D-86 residual): jangkar
+                    // tutorial langkah 5 ("Periksa Harga & Sumber")
+                    // HARUS di kontainer baris HSP ini — bukan di
+                    // cabang harga — karena kontainer ini dirender
+                    // untuk SEMUA kartu pertama, termasuk yang tidak
+                    // berharga (kartu pertama default, Pondasi Tiang
+                    // Bor ∅ 180 cm SDA, tidak berharga → anchor lama
+                    // di cabang `hspPrice > 0` tidak pernah ada dan
+                    // tur berakhir setelah langkah 4).
+                    data-tutorial={cardIndex === 0 ? 'ahsp-price' : undefined}
                     style={{
                       display: 'flex',
                       alignItems: 'baseline',
@@ -1464,8 +1619,14 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ routeParams,
                   >
                     <span style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>Harga Satuan (HSP):</span>
                     {hspPrice !== null && hspPrice > 0 ? (
-                      <div style={{ fontSize: '17px', fontWeight: 800, color: pricingStatus === 'FULL' ? 'var(--ez-hue-green-text)' : 'var(--ez-hue-amber-text-deep)' }}>
-                        {fmt(hspPrice)}{pricingStatus === 'PARTIAL' ? '*' : ''} <span style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>/ {item.unit}</span>
+                      <div
+                        style={{ fontSize: '17px', fontWeight: 800, color: pricingStatus === 'FULL' ? 'var(--ez-hue-green-text)' : 'var(--ez-hue-amber-text-deep)' }}>
+                        {fmt(hspPrice)}{pricingStatus === 'PARTIAL' ? '*' : ''} <span style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>/ {displayUnit(item)}</span>
+                        {priceBasis === 'DHSP' && (
+                          <span title="Harga dari Daftar Harga Satuan Pekerjaan resmi (bukan jumlah komponen analisa)" style={{ display: 'inline-block', marginLeft: '6px', fontSize: '10px', fontWeight: 800, padding: '2px 6px', borderRadius: 'var(--ez-radius-pill)', background: 'var(--ez-pastel-mint)', color: 'var(--ez-hue-green-text)', verticalAlign: 'middle' }}>
+                            DHSP resmi
+                          </span>
+                        )}
                       </div>
                     ) : (
                       <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ez-color-text-muted)', fontStyle: 'italic' }}>
@@ -1727,7 +1888,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ routeParams,
                   {selectedAhsp.name}
                 </h3>
                 <div style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', marginTop: '4px' }}>
-                  Satuan Pekerjaan: <strong>1 {selectedAhsp.unit}</strong> · Kategori: <strong>{selectedAhsp.category}</strong>
+                  Satuan Pekerjaan: <strong>1 {displayUnit(selectedAhsp)}</strong> · Kategori: <strong>{selectedAhsp.category}</strong>
                 </div>
               </div>
 
@@ -1788,7 +1949,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ routeParams,
                         </td>
                       </tr>
                       {selectedAhspAugmented!.labor.components.map((r, i) =>
-                        renderCompRow(r, { label: 'TENAGA', bg: 'var(--ez-pastel-sky)', fg: 'var(--ez-hue-blue-text-deep)' }, i)
+                        renderCompRow(r, { label: 'TENAGA', bg: 'var(--ez-pastel-sky)', fg: 'var(--ez-hue-blue-text-deep)' }, i, dialogApportionedSubtotals.get(r))
                       )}
                     </>
                   )}
@@ -1802,7 +1963,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ routeParams,
                         </td>
                       </tr>
                       {selectedAhspAugmented!.material.components.map((r, i) =>
-                        renderCompRow(r, { label: 'BAHAN', bg: 'var(--ez-pastel-cream)', fg: 'var(--ez-hue-amber-text)' }, i)
+                        renderCompRow(r, { label: 'BAHAN', bg: 'var(--ez-pastel-cream)', fg: 'var(--ez-hue-amber-text)' }, i, dialogApportionedSubtotals.get(r))
                       )}
                     </>
                   )}
@@ -1816,7 +1977,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ routeParams,
                         </td>
                       </tr>
                       {selectedAhspAugmented!.equipment.components.map((r, i) =>
-                        renderCompRow(r, { label: 'ALAT', bg: 'var(--ez-hue-purple-bg-deep)', fg: 'var(--ez-hue-violet-text)' }, i)
+                        renderCompRow(r, { label: 'ALAT', bg: 'var(--ez-hue-purple-bg-deep)', fg: 'var(--ez-hue-violet-text)' }, i, dialogApportionedSubtotals.get(r))
                       )}
                     </>
                   )}
@@ -1857,10 +2018,13 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ routeParams,
                         const comp = selectedAhspAugmented;
                         // Total = Biaya Langsung (D). Untuk item tanpa komponen tapi
                         // ber-DHSP resmi, pakai harga resmi sebagai referensi.
+                        // D-57 (Batch B): item berkomponen tanpa harga komponen
+                        // memakai DHSP yang sama — basisnya ditandai.
                         const dPrice = getAhspDirectPrice(comp);
+                        const dBasis = getAhspDirectPriceBasis(comp);
                         const isFull = comp?.pricingStatus === 'FULL' || selectedAhsp?.domain === 'SMKK';
                         return isFull && dPrice !== null && dPrice > 0
-                          ? fmt(dPrice)
+                          ? (<>{fmt(dPrice)}{dBasis === 'DHSP' && (<span title="Harga dari Daftar Harga Satuan Pekerjaan resmi (bukan jumlah komponen analisa)" style={{ display: 'inline-block', marginLeft: '8px', fontSize: '10px', fontWeight: 800, padding: '2px 6px', borderRadius: 'var(--ez-radius-pill)', background: 'var(--ez-pastel-mint)', color: 'var(--ez-hue-green-text)', verticalAlign: 'middle' }}>DHSP resmi</span>)}</>)
                           : 'Harga belum tersedia';
                       })()}
                     </td>

@@ -101,6 +101,26 @@ export type MaterialDatabaseTab =
   | 'REGIONS'
   | 'QUALITY_COVERAGE';
 
+/**
+ * D-21 (Batch G2): judul halaman mengikuti TAB AKTIF (bukan hardcode
+ * "Material & Harga" untuk semua tab). Label sama dengan label menu
+ * sidebar Database (nav.material / nav.upah / nav.alat /
+ * nav.harga_proyek) agar halaman yang dibuka sesuai dengan yang diklik.
+ * BRANDS/SUPPLIERS/REGIONS/QUALITY_COVERAGE saat ini tidak punya tab
+ * di view ini — judulnya disediakan agar map total atas tipenya
+ * (tipe tidak boleh bocor ke UI sebagai undefined).
+ */
+export const MATERIAL_DATABASE_TAB_TITLES: Record<MaterialDatabaseTab, string> = {
+  MATERIALS: 'Material & Harga',
+  LABOR: 'Upah',
+  EQUIPMENT: 'Peralatan',
+  PROJECT_PRICE: 'Harga Proyek',
+  BRANDS: 'Merek',
+  SUPPLIERS: 'Pemasok',
+  REGIONS: 'Wilayah',
+  QUALITY_COVERAGE: 'Cakupan Kualitas',
+};
+
 interface MaterialDatabaseViewProps {
   initialTab?: MaterialDatabaseTab;
   onNavigateToTab?: (tab: string) => void;
@@ -626,12 +646,12 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', color: 'var(--ez-color-text-muted)', marginBottom: '4px' }}>
               <span>Database</span>
               <ChevronRight size={12} color="var(--ez-color-text-faint)" />
-              <span style={{ fontWeight: 600, color: 'var(--ez-color-text-primary)' }}>Material & Harga</span>
+              <span style={{ fontWeight: 600, color: 'var(--ez-color-text-primary)' }}>{MATERIAL_DATABASE_TAB_TITLES[activeCategoryTab]}</span>
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
               <h1 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0, letterSpacing: '-0.3px', fontFamily: "'Plus Jakarta Sans', 'Inter', system-ui, sans-serif" }}>
-                Material & Harga
+                {MATERIAL_DATABASE_TAB_TITLES[activeCategoryTab]}
               </h1>
               <span
                 style={{
@@ -692,13 +712,13 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                     cursor: 'pointer',
                   }}
                 >
+                  {/* D-18 (Batch G2): satu sumber wilayah — "Indonesia"
+                      (nasional) + 38 provinsi dari INDONESIA_38_PROVINCES.
+                      Opsi hardcode provinsi di sini DULU menduplikasi
+                      entri yang sama dari daftar 38 (Jawa Barat, DKI
+                      Jakarta, Jawa Timur, Jawa Tengah, Banten, Bali
+                      tampil dua kali). */}
                   <option value="Indonesia">Indonesia</option>
-                  <option value="Jawa Barat">Jawa Barat</option>
-                  <option value="DKI Jakarta">DKI Jakarta</option>
-                  <option value="Jawa Timur">Jawa Timur</option>
-                  <option value="Jawa Tengah">Jawa Tengah</option>
-                  <option value="Banten">Banten</option>
-                  <option value="Bali">Bali</option>
                   {INDONESIA_38_PROVINCES.map((p) => (
                     <option key={p.code} value={p.name}>
                       {p.name}
@@ -1506,12 +1526,9 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                   cursor: 'pointer',
                 }}
               >
+                {/* D-18 (Batch G2): satu sumber wilayah — lihat komentar
+                    pada select filter di atas. */}
                 <option value="Indonesia">Indonesia</option>
-                <option value="Jawa Barat">Jawa Barat</option>
-                <option value="DKI Jakarta">DKI Jakarta</option>
-                <option value="Jawa Timur">Jawa Timur</option>
-                <option value="Jawa Tengah">Jawa Tengah</option>
-                <option value="Banten">Banten</option>
                 {INDONESIA_38_PROVINCES.map((p) => (
                   <option key={p.code} value={p.name}>
                     {p.name}

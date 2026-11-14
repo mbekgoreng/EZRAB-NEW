@@ -426,3 +426,55 @@
    miring, plus kedip dan lapisan ekspresi. */
 .sac2-card .mate--ezrab { --hx: 0; --hy: 0; }
 .sac2-card .mate--ezrab.is-blinking .ezrab-idle, .sac2-card .mate--ezrab.is-blinking .ezrab-nosy { opacity: 0; }
+
+/* ============================================================
+   D-11 (Batch G1) — Keadaan nonaktif HARUS tampak nonaktif.
+   Sebelumnya berkas ini punya NOL aturan :disabled: di /daftar
+   (seluruh form dikunci gerbang Status A) tombol & field tampak
+   persis seperti keadaan aktif, termasuk efek hover lift.
+   Aturan di bawah diletakkan di akhir berkas agar mengalahkan
+   aturan :hover di atas (spesifisitas setara/lebih tinggi +
+   urutan kemudian). Mencakup tombol Google /masuk juga.
+   ============================================================ */
+.sac2-card .primary-btn:disabled,
+.sac2-card .google-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.sac2-card .primary-btn:disabled:hover {
+  background: #0f172a;
+  transform: none;
+  box-shadow: none;
+}
+.sac2-card .google-btn:disabled:hover {
+  background: #f1f5f9;
+  transform: none;
+  box-shadow: none;
+}
+.sac2-card .text-input:disabled {
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+.sac2-card .text-input:disabled::placeholder {
+  color: #cbd5e1;
+}
+.sac2-card .eye-btn:disabled,
+.sac2-card .forgot-btn:disabled,
+.sac2-card .signup-link:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.sac2-card .eye-btn:disabled:hover,
+.sac2-card .forgot-btn:disabled:hover {
+  color: #94a3b8;
+  background-color: transparent;
+}
+.sac2-card .custom-check:disabled + .check-box {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.sac2-card .remember-label:has(.custom-check:disabled) {
+  opacity: 0.55;
+  cursor: not-allowed;
+}

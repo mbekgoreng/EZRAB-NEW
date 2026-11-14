@@ -29,6 +29,10 @@ import { SafeDecimalEngine } from '../../engine/safeDecimalEngine';
 import { honestVolume } from '../../engine/honestVolume';
 import { officialAhspRepository } from '../../data/nationalCostDatabase/officialAhspRepository';
 import { getPriceDatabase } from '../../data/indonesianPrices';
+import {
+  buildDrawerComponents,
+  isMarketDrawerPrice,
+} from '../../engine/ahsp/drawerPriceResolution';
 
 export interface WorkItemInspectorDrawerProps {
   isOpen: boolean;
@@ -170,48 +174,16 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
     const matchedNationalItem = matchedNational ?? matchedByDesc;
 
     const priceDb = getPriceDatabase();
-    const resolvePrice = (name: string, fallback: number) => {
-      const match = priceDb.find((p) => p.name.toLowerCase().includes(name.toLowerCase()));
-      return match && match.price > 0 ? match.price : fallback;
-    };
 
     if (matchedNationalItem) {
-      const mats: AHSPComponent[] = (matchedNationalItem.materialComponents || []).map((c, i) => ({
-        id: `mat-${Date.now()}-${i}`,
-        code: c.code || `MAT-${i + 1}`,
-        name: c.name || 'Bahan',
-        unit: c.unit || 'satuan',
-        coefficient: c.coefficient || 1,
-        unitPrice: resolvePrice(c.name, c.unitPrice || 0),
-        total: SafeDecimalEngine.safeMultiply(c.coefficient || 1, resolvePrice(c.name, c.unitPrice || 0), 2),
-        resourceType: 'MATERIAL',
-      }));
-
-      const labs: AHSPComponent[] = (matchedNationalItem.laborComponents || []).map((c, i) => ({
-        id: `lab-${Date.now()}-${i}`,
-        code: c.code || `LAB-${i + 1}`,
-        name: c.name || 'Tenaga',
-        unit: c.unit || 'OH',
-        coefficient: c.coefficient || 1,
-        unitPrice: resolvePrice(c.name, c.unitPrice || 0),
-        total: SafeDecimalEngine.safeMultiply(c.coefficient || 1, resolvePrice(c.name, c.unitPrice || 0), 2),
-        resourceType: 'LABOR',
-      }));
-
-      const eqps: AHSPComponent[] = (matchedNationalItem.equipmentComponents || []).map((c, i) => ({
-        id: `eqp-${Date.now()}-${i}`,
-        code: c.code || `EQP-${i + 1}`,
-        name: c.name || 'Alat',
-        unit: c.unit || 'jam',
-        coefficient: c.coefficient || 1,
-        unitPrice: resolvePrice(c.name, c.unitPrice || 0),
-        total: SafeDecimalEngine.safeMultiply(c.coefficient || 1, resolvePrice(c.name, c.unitPrice || 0), 2),
-        resourceType: 'EQUIPMENT',
-      }));
-
-      setMaterials(mats);
-      setLabors(labs);
-      setEquipments(eqps);
+      // D-52 (Batch B): canonical-first price resolution. Component prices
+      // come from the canonical AHSP record (same identity + source as the
+      // catalog); market wages are a LABELED fallback only when the
+      // canonical component has no price — never a silent override.
+      const canonicalSourceLabel = matchedNationalItem.sourceDocument || 'SE DJBK No. 47/SE/Dk/2026';
+      setMaterials(buildDrawerComponents(matchedNationalItem.materialComponents, 'MATERIAL', priceDb, canonicalSourceLabel));
+      setLabors(buildDrawerComponents(matchedNationalItem.laborComponents, 'LABOR', priceDb, canonicalSourceLabel));
+      setEquipments(buildDrawerComponents(matchedNationalItem.equipmentComponents, 'EQUIPMENT', priceDb, canonicalSourceLabel));
     } else {
       // 3. Fallback: Create structured default components based on unitPrice
       const basePrice = initialData.unitPrice > 0 ? initialData.unitPrice : 100000;
@@ -266,23 +238,33 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
   // CALCULATIONS: Direct Cost, Markups & Final Unit Price
   // ---------------------------------------------------------------------------
   const totalMaterial = useMemo(
-    () => materials.reduce((sum, item) => SafeDecimalEngine.safeAdd(sum, item.total, 2), 0),
+    // D-39: safeAdd TIDAK punya parameter decimals — trailing `, 2` lama
+    // dijumlahkan harfiah (+Rp2/baris). Total komponen sudah 2 desimal
+    // (safeMultiply(..., 2)), jadi penjumlahan polos sudah eksak.
+    () => materials.reduce((sum, item) => SafeDecimalEngine.safeAdd(sum, item.total), 0),
     [materials]
   );
 
   const totalLabor = useMemo(
-    () => labors.reduce((sum, item) => SafeDecimalEngine.safeAdd(sum, item.total, 2), 0),
+    () => labors.reduce((sum, item) => SafeDecimalEngine.safeAdd(sum, item.total), 0),
     [labors]
   );
 
   const totalEquipment = useMemo(
-    () => equipments.reduce((sum, item) => SafeDecimalEngine.safeAdd(sum, item.total, 2), 0),
+    () => equipments.reduce((sum, item) => SafeDecimalEngine.safeAdd(sum, item.total), 0),
     [equipments]
   );
 
   const directCost = useMemo(
-    () => SafeDecimalEngine.safeAdd(SafeDecimalEngine.safeAdd(totalMaterial, totalLabor, 2), totalEquipment, 2),
+    () => SafeDecimalEngine.safeAdd(SafeDecimalEngine.safeAdd(totalMaterial, totalLabor), totalEquipment),
     [totalMaterial, totalLabor, totalEquipment]
+  );
+
+  // D-52 (Batch B): komponen yang harganya berasal dari referensi pasar
+  // (bukan AHSP resmi) — wajib diungkapkan di ringkasan sebelum menyimpan.
+  const marketPricedComponents = useMemo(
+    () => [...materials, ...labors, ...equipments].filter((c) => isMarketDrawerPrice(c.priceSource)),
+    [materials, labors, equipments]
   );
 
   const overheadNominal = useMemo(
@@ -903,6 +885,12 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
                             onChange={(e) => handleUpdateComponent('MATERIAL', idx, 'name', e.target.value)}
                             style={{ width: '100%', border: 'none', background: 'transparent', fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-primary)' }}
                           />
+                          {/* D-52 (Batch B): harga referensi pasar wajib berlabel — bukan AHSP resmi. */}
+                          {isMarketDrawerPrice(m.priceSource) && (
+                            <span title={m.priceSource} style={{ display: 'inline-block', marginTop: '2px', fontSize: '9.5px', fontWeight: 800, padding: '1px 6px', borderRadius: 'var(--ez-radius-pill)', background: '#FEF3C7', color: '#92400E' }}>
+                              Referensi pasar
+                            </span>
+                          )}
                         </td>
                         <td style={{ padding: '4px 6px', textAlign: 'center' }}>
                           <input
@@ -1014,6 +1002,12 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
                             onChange={(e) => handleUpdateComponent('LABOR', idx, 'name', e.target.value)}
                             style={{ width: '100%', border: 'none', background: 'transparent', fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-primary)' }}
                           />
+                          {/* D-52 (Batch B): harga referensi pasar wajib berlabel — bukan AHSP resmi. */}
+                          {isMarketDrawerPrice(l.priceSource) && (
+                            <span title={l.priceSource} style={{ display: 'inline-block', marginTop: '2px', fontSize: '9.5px', fontWeight: 800, padding: '1px 6px', borderRadius: 'var(--ez-radius-pill)', background: '#FEF3C7', color: '#92400E' }}>
+                              Referensi pasar
+                            </span>
+                          )}
                         </td>
                         <td style={{ padding: '4px 6px', textAlign: 'center' }}>
                           <input
@@ -1132,6 +1126,12 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
                               onChange={(eVal) => handleUpdateComponent('EQUIPMENT', idx, 'name', eVal.target.value)}
                               style={{ width: '100%', border: 'none', background: 'transparent', fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-primary)' }}
                             />
+                            {/* D-52 (Batch B): harga referensi pasar wajib berlabel — bukan AHSP resmi. */}
+                            {isMarketDrawerPrice(e.priceSource) && (
+                              <span title={e.priceSource} style={{ display: 'inline-block', marginTop: '2px', fontSize: '9.5px', fontWeight: 800, padding: '1px 6px', borderRadius: 'var(--ez-radius-pill)', background: '#FEF3C7', color: '#92400E' }}>
+                                Referensi pasar
+                              </span>
+                            )}
                           </td>
                           <td style={{ padding: '4px 6px', textAlign: 'center' }}>
                             <input
@@ -1421,6 +1421,13 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
                       {formatCurrencyIDR(calculatedUnitPrice)}
                     </span>
                   </div>
+                  {/* D-52 (Batch B): pengungkapan harga referensi pasar. */}
+                  {marketPricedComponents.length > 0 && (
+                    <div style={{ fontSize: '11.5px', color: '#92400E', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: '6px', padding: '8px 10px', marginTop: '8px', lineHeight: 1.5 }}>
+                      Perhatian: {marketPricedComponents.length} komponen memakai harga {marketPricedComponents[0].priceSource}
+                      {' '}karena komponen tersebut tidak memiliki harga AHSP resmi. Harga referensi pasar BUKAN harga AHSP resmi — verifikasi sebelum menyimpan.
+                    </div>
+                  )}
                   {/* P0 (2026-10-26): definisi harga di sini BERBEDA dari spreadsheet.
                       Harga final ini = biaya langsung + overhead + profit yang diatur
                       di panel ini. Spreadsheet RAB memakai biaya langsung saja

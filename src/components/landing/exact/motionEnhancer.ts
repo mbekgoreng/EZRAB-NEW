@@ -8,9 +8,15 @@ import '../../../styles/landing-motion.css';
  *   clip:text) dibungkus utuh agar clip-nya tidak rusak.
  * - reveal blok .mrv/.mrv-on via IntersectionObserver ([data-reveal]
  *   + selektor otomatis hero/workflow/footer).
- * - tilt 3D + glare mengikuti kursor pada kartu (plan/tile/hcard),
- *   aktif hanya SETELAH kartu selesai reveal (.rv-on).
- * - magnetic hover pada tombol CTA utama.
+ * - tilt 3D + glare mengikuti kursor pada kartu NON-interaktif
+ *   (tile/hcard), aktif hanya SETELAH kartu selesai reveal (.rv-on).
+ *   Kartu harga (.plan) SENGAJA tidak di-tilt: tilt menggeser tombol
+ *   CTA di dalamnya di antara mousedown–mouseup sehingga klik pertama
+ *   bisa hilang (D-06, Batch G1).
+ * - TIDAK ADA magnetic pada tombol: magnetic menggeser tombol CTA
+ *   hingga ±10px mengikuti kursor — mekanisme paling jelas untuk klik
+ *   pertama yang "tidak jalan" (D-06). Dihapus Batch G1; kilau hover
+ *   (CSS) tetap ada sebagai umpan balik visual.
  * - parallax ringan stage hero mengikuti scroll.
  * - kelas .motion-sway pada maskot (bob + sway).
  * Menghormati prefers-reduced-motion: semua dilewati, konten tampil
@@ -142,34 +148,18 @@ export function enhanceLandingMotion(root: HTMLElement): () => void {
       el.removeEventListener('mouseleave', onLeave);
     });
   };
+  // D-06: .plan DIKELUARKAN — kartu harga berisi tombol CTA; tilt
+  // menggeser tombol di bawah kursor di antara mousedown dan mouseup.
   root
-    .querySelectorAll<HTMLElement>('.ezai-scope .plan, .ezai-scope .tile, .ezai-scope .hcard')
+    .querySelectorAll<HTMLElement>('.ezai-scope .tile, .ezai-scope .hcard')
     .forEach((el) => addTilt(el));
 
-  /* ---------- magnetic ---------- */
-  const addMagnetic = (el: HTMLElement) => {
-    if (el.dataset.magneticDone) return;
-    el.dataset.magneticDone = '1';
-    el.setAttribute('data-magnetic', '');
-    const onMove = (e: MouseEvent) => {
-      const r = el.getBoundingClientRect();
-      const dx = (e.clientX - (r.left + r.width / 2)) / r.width;
-      const dy = (e.clientY - (r.top + r.height / 2)) / r.height;
-      el.style.transform = `translate(${(dx * 10).toFixed(1)}px, ${(dy * 8).toFixed(1)}px)`;
-    };
-    const onLeave = () => {
-      el.style.transform = '';
-    };
-    el.addEventListener('mousemove', onMove);
-    el.addEventListener('mouseleave', onLeave);
-    cleanups.push(() => {
-      el.removeEventListener('mousemove', onMove);
-      el.removeEventListener('mouseleave', onLeave);
-    });
-  };
-  root
-    .querySelectorAll<HTMLElement>('.ch-cta-primary, .ezai-scope .cta-box .btn')
-    .forEach(addMagnetic);
+  /* ---------- magnetic: DIHAPUS (D-06, Batch G1) ----------
+     Magnetic menggeser tombol CTA utama hingga ±10px mengikuti kursor,
+     sehingga mouseup bisa mendarat di luar tombol yang ditekan saat
+     mousedown — klik pertama hilang tanpa jejak. Tidak ada pengganti:
+     tombol CTA tidak boleh bergerak di bawah kursor. Kilau hover CSS
+     (.ch-cta-primary::after) tetap memberi umpan balik visual. */
 
   /* ---------- maskot sway ---------- */
   root

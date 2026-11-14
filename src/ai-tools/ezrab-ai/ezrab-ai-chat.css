@@ -32,6 +32,10 @@
 .ezchat2-mascot { width: 44px; height: 44px; flex-shrink: 0; border-radius: 50%; background: radial-gradient(circle at 50% 35%, var(--ez-color-info-soft), var(--ez-color-primary-soft)); border: 1.5px solid var(--ez-color-primary-soft); overflow: hidden; }
 .ezchat2-title { min-width: 0; }
 .ezchat2-name { font-size: 17px; font-weight: 800; background: linear-gradient(135deg,var(--ez-color-primary-hover),var(--ez-color-primary) 60%,var(--ez-color-primary)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+/* D-49 (Batch E): judul header adalah <button> — reset chrome tombol
+   bawaan tanpa menyentuh gradasi teks; fokus keyboard tetap terlihat. */
+button.ezchat2-name { border: 0; padding: 0; margin: 0; cursor: pointer; font: inherit; text-align: left; appearance: none; -webkit-appearance: none; }
+button.ezchat2-name:focus-visible { outline: 2px solid var(--ez-color-primary); outline-offset: 3px; border-radius: 6px; }
 .ezchat2-ver { font-size: 11px; font-weight: 700; letter-spacing: 0.04em; -webkit-text-fill-color: var(--ez-color-text-muted); color: var(--ez-color-text-muted); vertical-align: 2px; }
 .ezdot { width: 8px; height: 8px; border-radius: 50%; background: var(--ez-color-success); box-shadow: 0 0 0 3px rgba(5,150,105,.15); flex-shrink: 0; }
 .ezdot.busy { background: var(--ez-color-warning); box-shadow: 0 0 0 3px rgba(245,158,11,.18); }

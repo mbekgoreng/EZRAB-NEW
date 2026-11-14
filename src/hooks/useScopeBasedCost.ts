@@ -47,6 +47,17 @@ export interface ScopeCostHookResult {
   missingPrices: { itemName: string; componentName: string; type: string }[];
   /** Missing AHSP details. */
   missingAHSPs: { workItem: string; ahspCode?: string }[];
+  /**
+   * D-63 (Batch B) — mapping coverage. `lineItems` counts only the work
+   * items that resolved to a real BM AHSP item; the scope breakdown may
+   * contain more work items whose scope has no BM master equivalent
+   * (formwork, soil disposal, dewatering, cofferdam, SMKK). The banner
+   * must show "N dari M" and name the unmapped ones — never claim the
+   * resolved count is the whole scope.
+   */
+  totalScopeItems: number;
+  /** Names of scope work items with no AHSP code (honest unmapped state). */
+  unmappedWorkItems: string[];
   /** Audit trail strings. */
   auditTrail: string[];
   /** Error message if something went wrong. */
@@ -105,6 +116,8 @@ export function computeScopeBasedCost(
       lineItems: [],
       missingPrices: [],
       missingAHSPs: [],
+      totalScopeItems: 0,
+      unmappedWorkItems: [],
       auditTrail: [],
     };
   }
@@ -126,6 +139,13 @@ export function computeScopeBasedCost(
             : costResult.status === 'PARTIAL' ? 'PARTIAL'
               : 'ERROR';
 
+    // D-63: coverage counts come from the scope breakdown (all work items),
+    // not from the engine result (resolved items only).
+    const allScopeWorkItems = scopeResult.scopes.flatMap((s) => s.workItems);
+    const unmappedWorkItems = allScopeWorkItems
+      .filter((w) => !w.ahspCode)
+      .map((w) => w.name);
+
     return {
       hasMapping: true,
       costResult,
@@ -143,6 +163,8 @@ export function computeScopeBasedCost(
       })),
       missingPrices: costResult.missingPrices,
       missingAHSPs: costResult.missingAHSPs,
+      totalScopeItems: allScopeWorkItems.length,
+      unmappedWorkItems,
       auditTrail: costResult.auditTrail,
     };
   } catch (err: any) {
@@ -154,6 +176,8 @@ export function computeScopeBasedCost(
       lineItems: [],
       missingPrices: [],
       missingAHSPs: [],
+      totalScopeItems: 0,
+      unmappedWorkItems: [],
       auditTrail: [],
       error: err.message || 'Unknown error in scope-based cost calculation',
     };

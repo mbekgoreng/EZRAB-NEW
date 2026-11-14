@@ -92,7 +92,7 @@ export interface EquipmentRecord {
   purchasePrice?: number;     // Harga Beli Unit Baru (Rp)
   rentalPricePerHour: number; // Tarif sewa per jam (Rp/jam)
   rentalPricePerDay: number;  // Standar 8 jam shift (Rp/hari)
-  rentalPricePerMonth?: number; // Tarif bulanan (200 jam minimum)
+  rentalPricePerMonth?: number; // Tarif bulanan TERSIMPAN (basis 160 jam / 20 hari kerja — terverifikasi: 4 item persis 160 jam/jam, sisanya ~157-159 jam akibat pembulatan; E.16 150 jam & E.23 242,9 jam adalah anomali data, dicatat di log Batch G2). Bila kosong, getAdjustedRate memakai fallback × 25 hari dari tarif harian (= 200 jam) — kedua basis dibedakan lewat monthlyBasis agar label tidak berbohong (D-20).
   
   // Fuel & Operating
   fuelType: 'SOLAR_INDUSTRI' | 'DEXLITE' | 'BENSIN' | 'LISTRIK' | 'MANUAL';
@@ -1476,6 +1476,11 @@ export class EquipmentDatabaseService {
 
   /**
    * Calculates regional adjusted rental rate across 38 Indonesian provinces.
+   *
+   * D-20 (Batch G2): `monthlyBasis` membedakan tarif bulanan TERSIMPAN
+   * (basis 160 jam / 20 hari kerja) dari fallback × 25 hari tarif harian
+   * (= 200 jam) — label inspector wajib memakai basis yang benar.
+   * Perhitungan TIDAK berubah.
    */
   public getAdjustedRate(codeOrId: string, provinceName?: string): {
     pricePerHour: number;
@@ -1483,10 +1488,11 @@ export class EquipmentDatabaseService {
     pricePerMonth: number;
     factor: number;
     province: string;
+    monthlyBasis: 'stored' | 'fallback';
   } {
     const item = this.getEquipmentById(codeOrId);
     if (!item) {
-      return { pricePerHour: 0, pricePerDay: 0, pricePerMonth: 0, factor: 1.0, province: provinceName || 'Nasional' };
+      return { pricePerHour: 0, pricePerDay: 0, pricePerMonth: 0, factor: 1.0, province: provinceName || 'Nasional', monthlyBasis: 'fallback' };
     }
 
     const factorMap: Record<string, number> = {
@@ -1533,6 +1539,7 @@ export class EquipmentDatabaseService {
     const factor = provinceName && factorMap[provinceName] ? factorMap[provinceName] : 1.0;
     const adjustedHour = Math.round((item.rentalPricePerHour * factor) / 1000) * 1000;
     const adjustedDay = Math.round((item.rentalPricePerDay * factor) / 5000) * 5000;
+    const monthlyBasis: 'stored' | 'fallback' = item.rentalPricePerMonth ? 'stored' : 'fallback';
     const monthlyBase = item.rentalPricePerMonth || item.rentalPricePerDay * 25;
     const adjustedMonth = Math.round((monthlyBase * factor) / 100000) * 100000;
 
@@ -1542,6 +1549,7 @@ export class EquipmentDatabaseService {
       pricePerMonth: adjustedMonth,
       factor,
       province: provinceName || 'DKI Jakarta / Acuan Standar 2026',
+      monthlyBasis,
     };
   }
 

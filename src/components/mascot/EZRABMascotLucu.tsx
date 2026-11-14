@@ -10,6 +10,12 @@ export interface EZRABMascotLucuProps {
   enableBlink?: boolean;
   interactive?: boolean;
   onClick?: () => void;
+  /**
+   * Nama aksesibel maskot saat ia punya aksi (onClick). Tanpa ini,
+   * tombol memakai label baku 'Maskot EZRAB'. Diabaikan bila maskot
+   * dekoratif (tanpa onClick) — lihat D-27.
+   */
+  ariaLabel?: string;
   style?: React.CSSProperties;
 }
 
@@ -27,6 +33,7 @@ export const EZRABMascotLucu: React.FC<EZRABMascotLucuProps> = ({
   enableBlink = true,
   interactive = true,
   onClick,
+  ariaLabel,
   style = {},
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -210,6 +217,24 @@ export const EZRABMascotLucu: React.FC<EZRABMascotLucuProps> = ({
     onClick?.();
   }, [isClickExpressing, onClick]);
 
+  // D-27: maskot HANYA menjadi tombol bila benar-benar punya aksi
+  // (onClick). Tanpa aksi — kasus hero dashboard — ia dekoratif:
+  // tanpa role/tabIndex, disembunyikan dari teknologi asistif, dan
+  // tidak menghentikan Tab. Klik mouse tetap memicu animasi pantul
+  // (pesona visual), tapi itu bukan aksi dan tidak diumumkan sebagai
+  // tombol. Dengan aksi: nama aksesibel + dukungan keyboard.
+  const hasAction = typeof onClick === 'function';
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (!hasAction) return;
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        handleClick();
+      }
+    },
+    [hasAction, handleClick]
+  );
+
   // Computed visual parameters
   const w = width ?? size;
   const h = height ?? size;
@@ -224,8 +249,14 @@ export const EZRABMascotLucu: React.FC<EZRABMascotLucuProps> = ({
       ref={containerRef}
       className={`ezrab-mascot-lucu-container ${className}`}
       onClick={handleClick}
-      role="button"
-      tabIndex={0}
+      {...(hasAction
+        ? {
+            role: 'button',
+            tabIndex: 0,
+            'aria-label': ariaLabel ?? 'Maskot EZRAB',
+            onKeyDown: handleKeyDown,
+          }
+        : { 'aria-hidden': true })}
       style={{
         position: 'relative',
         width: typeof w === 'number' ? `${w}px` : w,

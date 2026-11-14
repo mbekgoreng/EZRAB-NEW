@@ -81,7 +81,10 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ onSelectPlan }) 
 
   return (
     <section
-      id="harga"
+      // NEW-05: dulu id="harga" — duplikat dengan section harga
+      // landing (AiShowcase, yang kanonis) dan ExactPricing (mati).
+      // Versi in-app ini memakai id sendiri.
+      id="harga-paket"
       style={{
         padding: '100px 0',
         background: '#f8fafc',

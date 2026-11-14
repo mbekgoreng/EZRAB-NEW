@@ -39,6 +39,7 @@ import { ProjectFinanceRepository } from '../../../domain/finance/repository';
 import { LocalDocumentRepository } from '../../../document-engine/repository';
 import { DOCUMENT_REGISTRY } from '../../../document-engine/registry';
 import { SafeDecimalEngine } from '../../../engine/safeDecimalEngine';
+import { canonicalDirectCost } from '../../../engine/projectCostConfig';
 import { ezrabCoreQto } from '../../../ded-rab-v2/qto/ezrabCoreQto';
 import { ahspMatcher } from '../../../ded-rab-v2/ahsp/ahspMatcher';
 import { ahspPriceResolver } from '../../../ded-rab-v2/ahsp/ahspPriceResolver';
@@ -1199,7 +1200,8 @@ export class AIToolRegistry {
       execute: async (_input, context) => {
         const repo = new ProjectFinanceRepository(context.projectId);
         const contractVal = (context.project as any)?.contractValue || (context.project as any)?.contractAmount || 0;
-        const totalRab = (context.rabItems || []).reduce((acc, i) => acc + (i.amount || (i.volume * (i.unitPrice || 0))), 0);
+        // D-23: jumlah kanonis (Σ amount per-baris, UNRESOLVED dikecualikan).
+        const totalRab = canonicalDirectCost(context.rabItems || []);
         const summary = repo.calculateFinanceSummary(contractVal, totalRab);
 
         return {

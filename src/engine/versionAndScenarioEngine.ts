@@ -1,6 +1,7 @@
-import { RabItem, EstimateVersion, VersionDiffItem, EstimateScenario } from '../types';
+import { RabItem, EstimateVersion, VersionDiffItem, EstimateScenario, ProjectCostSummary } from '../types';
 import { exportItemAmount } from '../export/priceIntegrity';
 import { formatCurrencyIDR } from '../calculations/decimalEngine';
+import { UnifiedProjectEngine } from './unifiedProjectEngine';
 
 export class VersionAndScenarioEngine {
   /**
@@ -151,14 +152,39 @@ export class VersionAndScenarioEngine {
   }
 
   /**
-   * Generates default Value Engineering Scenarios based on baseline items
+   * Generates default Value Engineering Scenarios based on baseline items.
+   *
+   * D-42: semua total dihitung lewat MESIN KANONIS dengan konfigurasi
+   * proyek yang sebenarnya — BUKAN markup hardcoded ×1.15 (5% overhead +
+   * 10% profit) yang mengabaikan konfigurasi proyek (proyek 0%/0% ikut
+   * ditandai 15% di atas estimasi aslinya: baseline 5.756.900 vs v1.0
+   * 5.006.000). Baseline memakai konfigurasi proyek apa adanya; skenario
+   * A/B/C memakai margin yang dimodelkan eksplisit (5/10, 4/10, 3/8 —
+   * sudah tercantum di field dan deskripsinya) dengan perlakuan pajak
+   * proyek, sehingga delta antar-skenario adalah apel-ke-apel.
+   *
+   * @param projectConfig konfigurasi biaya proyek (dari
+   *   resolveProjectCostConfig). Bila tidak diberikan, default 0%/0%
+   *   tanpa pajak — panggilan lama 2 argumen tetap bekerja.
    */
   public static generateDefaultScenarios(
     projectId: string,
-    baselineItems: RabItem[]
+    baselineItems: RabItem[],
+    projectConfig?: Partial<ProjectCostSummary>
   ): EstimateScenario[] {
-    const baselineDirect = baselineItems.reduce((acc, i) => acc + (exportItemAmount(i as any) ?? 0), 0);
-    const baselineTotal = Math.round(baselineDirect * 1.15); // +5% overhead +10% profit
+    const config: Partial<ProjectCostSummary> = {
+      overheadPercent: projectConfig?.overheadPercent ?? 0,
+      profitPercent: projectConfig?.profitPercent ?? 0,
+      taxPercent: projectConfig?.taxPercent ?? 11,
+      contingencyPercent: projectConfig?.contingencyPercent ?? 0,
+      directorMarkupPercent: projectConfig?.directorMarkupPercent ?? 0,
+      ppnEnabled: projectConfig?.ppnEnabled === true,
+      pphEnabled: projectConfig?.pphEnabled === true,
+      pphPercent: projectConfig?.pphPercent ?? 0,
+    };
+    const baselineSummary = UnifiedProjectEngine.recalculateCostSummary(baselineItems, config);
+    const baselineDirect = baselineSummary.directCost;
+    const baselineTotal = baselineSummary.grandTotal;
 
     // 1. BASELINE SCENARIO
     const baselineScenario: EstimateScenario = {
@@ -169,8 +195,8 @@ export class VersionAndScenarioEngine {
       description: 'Estimasi standar acuan awal yang telah disetujui tanpa modifikasi spesifikasi atau diskon.',
       targetObjective: 'Menjaga kepatuhan 100% terhadap spesifikasi teknis dan RAB awal',
       isBaseline: true,
-      overheadPercent: 5,
-      profitPercent: 10,
+      overheadPercent: baselineSummary.overheadPercent,
+      profitPercent: baselineSummary.profitPercent,
       items: baselineItems.map((it) => ({ ...it })),
       totalDirectCost: baselineDirect,
       totalRab: baselineTotal,
@@ -196,8 +222,15 @@ export class VersionAndScenarioEngine {
         totalPrice: newAmount,
       };
     });
-    const scenADirect = scenarioAItems.reduce((acc, i) => acc + (exportItemAmount(i as any) ?? 0), 0);
-    const scenATotal = Math.round(scenADirect * 1.15);
+    // D-42: total lewat mesin kanonis dengan margin yang dimodelkan
+    // skenario ini (5/10) + perlakuan pajak proyek.
+    const scenASummary = UnifiedProjectEngine.recalculateCostSummary(scenarioAItems, {
+      ...config,
+      overheadPercent: 5,
+      profitPercent: 10,
+    });
+    const scenADirect = scenASummary.directCost;
+    const scenATotal = scenASummary.grandTotal;
 
     const scenarioA: EstimateScenario = {
       id: `scen-${projectId}-a`,
@@ -234,8 +267,15 @@ export class VersionAndScenarioEngine {
         totalPrice: newAmount,
       };
     });
-    const scenBDirect = scenarioBItems.reduce((acc, i) => acc + (exportItemAmount(i as any) ?? 0), 0);
-    const scenBTotal = Math.round(scenBDirect * 1.14); // 4% overhead 10% profit
+    // D-42: total lewat mesin kanonis dengan margin yang dimodelkan
+    // skenario ini (4/10) + perlakuan pajak proyek.
+    const scenBSummary = UnifiedProjectEngine.recalculateCostSummary(scenarioBItems, {
+      ...config,
+      overheadPercent: 4,
+      profitPercent: 10,
+    });
+    const scenBDirect = scenBSummary.directCost;
+    const scenBTotal = scenBSummary.grandTotal;
 
     const scenarioB: EstimateScenario = {
       id: `scen-${projectId}-b`,
@@ -268,8 +308,15 @@ export class VersionAndScenarioEngine {
         totalPrice: newAmount,
       };
     });
-    const scenCDirect = scenarioCItems.reduce((acc, i) => acc + (exportItemAmount(i as any) ?? 0), 0);
-    const scenCTotal = Math.round(scenCDirect * 1.11); // 3% overhead 8% profit
+    // D-42: total lewat mesin kanonis dengan margin yang dimodelkan
+    // skenario ini (3/8) + perlakuan pajak proyek.
+    const scenCSummary = UnifiedProjectEngine.recalculateCostSummary(scenarioCItems, {
+      ...config,
+      overheadPercent: 3,
+      profitPercent: 8,
+    });
+    const scenCDirect = scenCSummary.directCost;
+    const scenCTotal = scenCSummary.grandTotal;
 
     const scenarioC: EstimateScenario = {
       id: `scen-${projectId}-c`,

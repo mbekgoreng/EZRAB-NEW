@@ -10,6 +10,7 @@
  */
 import type { Project, RabItem } from "../../types";
 import { recalculateCostSummary } from "../../engine/unifiedProjectEngine";
+import { resolveProjectCostConfig } from "../../engine/projectCostConfig";
 
 export interface RekapCategoryRow {
   no: number;
@@ -75,28 +76,15 @@ export function computeRekapSummary(items: RabItem[], currentProject: Project | 
   // sebelumnya menghitung tangga sendiri dan TIDAK PERNAH membaca
   // profitPercent, sehingga totalnya lebih kecil dari total kanonis untuk
   // proyek yang sama (terverifikasi pada proyek demo premium:
-  // Rp1.040.339.744 di sini vs Rp1.089.879.733 kanonis). Resolusi konfigurasi
-  // meniru projectContext: overhead dari field proyek, profit dari field
-  // proyek lalu costSummary, pajak dari field proyek/costSummary; pajak
-  // hanya bila flag proyek aktif (opt-in).
-  const proj: any = currentProject as any;
-  const cs: any = proj?.costSummary ?? {};
-  const ppnEnabled = proj?.ppnEnabled === true;
-  const pphEnabled = proj?.pphEnabled === true;
-  const summary = recalculateCostSummary(items as never, {
-    overheadPercent:
-      typeof proj?.overheadPercent === "number" ? proj.overheadPercent : typeof cs.overheadPercent === "number" ? cs.overheadPercent : undefined,
-    profitPercent:
-      typeof proj?.profitPercent === "number" ? proj.profitPercent : typeof cs.profitPercent === "number" ? cs.profitPercent : undefined,
-    taxPercent:
-      typeof proj?.ppnPercent === "number" ? proj.ppnPercent : typeof cs.taxPercent === "number" ? cs.taxPercent : undefined,
-    contingencyPercent: typeof cs.contingencyPercent === "number" ? cs.contingencyPercent : undefined,
-    directorMarkupPercent: typeof cs.directorMarkupPercent === "number" ? cs.directorMarkupPercent : undefined,
-    ppnEnabled,
-    pphEnabled,
-    pphPercent:
-      typeof proj?.pphPercent === "number" ? proj.pphPercent : typeof cs.pphPercent === "number" ? cs.pphPercent : 0,
-  } as never);
+  // Rp1.040.339.744 di sini vs Rp1.089.879.733 kanonis).
+  // Batch C (D-77): resolusi konfigurasi memakai SATU resolver kanonis
+  // (field proyek → costSummary → default mesin) — aturan yang sama persis
+  // dengan inline lama di sini, kini dibagi dengan kartu Info Proyek,
+  // Settings, skenario, dan rekonsiliasi agar tidak bisa drift lagi.
+  const config = resolveProjectCostConfig(currentProject);
+  const ppnEnabled = config.ppnEnabled;
+  const pphEnabled = config.pphEnabled;
+  const summary = recalculateCostSummary(items as never, config as never);
 
   return {
     categoryList: categories,
