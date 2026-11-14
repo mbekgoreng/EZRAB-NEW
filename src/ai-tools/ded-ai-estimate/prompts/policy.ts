@@ -29,9 +29,22 @@
  * Sprint 1 (Workstream A): teks dirapatkan (aturan & frasa kunci tidak
  * berubah) agar prompt sistem rakitan muat dalam anggaran gateway; lihat
  * wbsContext.ts.
+ *
+ * Program DED-RAB AI Dual Mode (directive §5, G-PR-1): cabang FULL_AI di
+ * bawah TIDAK LAGI berisi teks inline — keduanya mendelegasikan ke master
+ * prompt di `ded-full-ai/masterPrompt.ts` (satu-satunya sumber instruksi
+ * FULL AI). Cabang DATABASE tidak berubah dan tidak memakai modul master.
  */
 
-export type DedPromptPricingPolicy = 'FULL_AI' | 'DATABASE';
+import type { DedEstimationPolicy } from '../dedMode';
+import { fullAiEngineSection, fullAiStandardEngineSection } from '../../ded-full-ai/masterPrompt';
+
+/**
+ * Alias prompt atas policy kanonis (Dual Mode W1, G-ST-3): dulu
+ * definisi ketiga yang terduplikasi; kini alias dari dedMode.ts.
+ * Nilai string TIDAK berubah; importer (fast.ts/detail.ts) tak berubah.
+ */
+export type DedPromptPricingPolicy = DedEstimationPolicy;
 
 export function normalizePromptPolicy(
   policy: DedPromptPricingPolicy | undefined
@@ -55,10 +68,9 @@ export function standardPricingPolicySection(
 - Beri aplikasi bahan pencocokan selengkap mungkin: deskripsi teknis (material, mutu, campuran, ukuran), dimensi bersatuan, spesifikasi, satuan konsisten, dasar hitung (quantityFormula), asumsi, info hilang (di specification, awali "DATA HILANG: ...").
 - estimatedUnitPrice BUKAN harga database — hanya fallback berlabel "Estimasi AI", dipakai HANYA bila item tak ditemukan di database; bila cocok, harga kanonis selalu menang. Jangan menyebutnya harga AHSP/resmi. Subtotal/total resmi dihitung aplikasi; item tanpa harga kanonis valid tetap null, tidak pernah Rp0.`;
   }
-  return `KEBIJAKAN HARGA — FULL AI (estimasi murni AI, wajib dipatuhi):
-- Semua harga yang kamu tulis adalah ESTIMASI AI, bukan data resmi AHSP EZRAB. Jangan mengklaimnya sebagai data resmi AHSP; jangan menulis kode AHSP kecuali tertulis eksplisit di DED (ragu → kosongkan).
-- Hitung proposedSubtotal = quantity × estimatedUnitPrice per item (null bila salah satu null) dan proposedGrandTotal = jumlah semua proposedSubtotal.
-- Total usulanmu DISIMPAN terpisah untuk perbandingan: aplikasi menghitung ulang total secara deterministik dan menandai selisihnya; total aplikasi yang dipakai, bukan totalmu.`;
+  // Dual Mode §5 (G-PR-1): instruksi FULL_AI berasal dari master prompt,
+  // bukan teks inline di sini.
+  return fullAiStandardEngineSection();
 }
 
 /**
@@ -75,9 +87,7 @@ export function fullAiPricingPolicySection(
 - Beri aplikasi bahan pencocokan selengkap mungkin: deskripsi teknis detail, dimensi, spesifikasi (mutu, campuran, ukuran, material), satuan konsisten, dasar hitung kuantitas (formula), asumsi, info hilang (tulis di assumptions).
 - Field price BUKAN harga database — hanya fallback berlabel "Estimasi AI", dipakai HANYA bila item tak ditemukan di database; bila cocok, harga kanonis selalu menang. Jangan menyebutnya harga AHSP/resmi. Subtotal/total resmi dihitung aplikasi; item tanpa harga kanonis valid tetap null, tidak pernah Rp0.`;
   }
-  return `KEBIJAKAN HARGA — FULL AI (estimasi murni AI, wajib dipatuhi):
-- Semua harga yang kamu tulis adalah ESTIMASI AI, bukan data resmi AHSP EZRAB — jangan mengklaimnya sebagai data resmi; jangan menulis kode AHSP kecuali tertulis eksplisit di DED (ragu → kosongkan).
-- Bila relevan, uraikan singkat kebutuhan material, tenaga kerja, dan peralatan per item (estimasi AI, bukan komposisi AHSP resmi).
-- Hitung proposedSubtotal = qty × price per item (null bila salah satu null) dan proposedGrandTotal = jumlah semua proposedSubtotal.
-- Total usulanmu DISIMPAN terpisah: aplikasi menghitung ulang subtotal/total secara deterministik dan menandai selisihnya; total aplikasi yang dipakai.`;
+  // Dual Mode §5 (G-PR-1): instruksi FULL_AI berasal dari master prompt,
+  // bukan teks inline di sini.
+  return fullAiEngineSection();
 }

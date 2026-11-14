@@ -18,6 +18,14 @@ import {
 } from './priceCompletion';
 import { resolveCanonicalCode } from '../ded-canonical/canonicalDedPricing';
 import { groupByWbs, WbsGroup } from './wbsClassifier';
+// W6 (§8): chip + penjelasan provenance dari SATU tabel kanonis
+// (dedProvenance.ts) — estimasi AI dibedakan visual dari data terverifikasi.
+import { provenanceBadgeForDedSource, provenanceExplanationForDedSource } from './dedProvenance';
+// F3-1 (gelombang perbaikan 2026-11-14): banner "Mode:" memakai mode
+// kanonis mesin-menang (modeFromLegacy), bukan policy mentah — lihat
+// `resultMode` di bawah. dedMode.ts tanpa impor `src` (tanpa risiko
+// impor siklik).
+import { modeFromLegacy } from './dedMode';
 import { useI18n } from '../../i18n/I18nContext';
 import { FsFooterPortal } from '../../components/feature-shell/FeatureFullscreenShell';
 import './dedAi.css';
@@ -259,6 +267,21 @@ export const DedAiResultView: React.FC<Props> = ({
   // menangkap kegagalan per item dan melaporkannya). Per item: tombol di
   // baris detail. Tolak: memulihkan keadaan sebelum penyelesaian.
   const policy = output.policy ?? 'FULL_AI';
+  // F3-1 (gelombang perbaikan 2026-11-14): MODE KANONIS untuk banner
+  // "Mode:" — mesin-menang via modeFromLegacy, konsisten dengan chip
+  // shell (view.tsx:887, resolveDedAiMode). View ini selalu menampilkan
+  // hasil MESIN STANDAR (mesin Full AI ditangani FullAiResultView —
+  // view.tsx:943), sehingga fullAi=false dan modenya EZRAB_AI; policy
+  // mentah TIDAK lagi menentukan label mode. Sebelumnya, draft legacy
+  // hibrida (mesin standar + policy FULL_AI — justru default lama)
+  // salah berlabel "FULL AI MODE" di banner padahal chip shell bilang
+  // "EZRAB AI". Lari kanonis baru tidak berubah: EZRAB_AI ↔ DATABASE
+  // selalu berpasangan. Policy mentah di atas tetap dipakai
+  // penyelesaian harga (completeDedBatch/completeDedItem) — bukan
+  // label mode. Policy diteruskan ke modeFromLegacy agar bila aturan
+  // migrasi di dedMode.ts kelak memakainya, view ini ikut (pola yang
+  // sama dengan modeFromPolicy di dataSourcePolicy.ts).
+  const resultMode = modeFromLegacy({ policy, fullAi: false });
   const gapCount = withStatus.filter(({ status }) => status === 'blocked' || status === 'no-price').length;
   const runBatchCompletion = () => {
     setItems((prev) => {
@@ -400,7 +423,8 @@ export const DedAiResultView: React.FC<Props> = ({
         </div>
       )}
 
-      {/* ---- Banner kebijakan harga (Full AI vs Database) ---- */}
+      {/* ---- Banner mode kanonis (F3-1: cabang pada resultMode — mode
+           kanonis mesin-menang — bukan policy mentah) ---- */}
       {(() => {
         const aiCount = items.filter((it) => it.priceSource === 'AI_ESTIMATE').length;
         const canonCount = items.filter((it) => it.priceSource === 'AHSP_2026').length;
@@ -410,15 +434,15 @@ export const DedAiResultView: React.FC<Props> = ({
         const canonNote = canonCount > 0 ? ` ${canonCount} item memakai harga AHSP kanonis (SE 47/2026, biaya langsung).` : '';
         const reviewNote = reviewCount > 0 ? ` ${reviewCount} item menunggu konfirmasi padanan AHSP.` : '';
         const incompleteNote = incompleteCount > 0 ? ` ${incompleteCount} item AHSP-nya belum lengkap komponennya.` : '';
-        return policy === 'FULL_AI' ? (
+        return resultMode === 'FULL_AI' ? (
           <div className="dedai-notice">
             <AlertTriangle size={15} style={{ flexShrink: 0, marginTop: 2 }} />
-            <span><b>Mode: Estimasi Full AI.</b> {aiCount} item memakai harga estimasi AI (AI_ESTIMATE) — bukan harga resmi AHSP.{canonNote}{reviewNote}{incompleteNote} Periksa dan validasi sebelum RAB dipakai untuk pengadaan, tender, atau kontrak.{excluded > 0 ? ` Total di bawah mengecualikan ${excluded} item yang belum lengkap.` : ''}</span>
+            <span><b>Mode: FULL AI MODE.</b> {aiCount} item memakai harga estimasi AI (AI_ESTIMATE) — bukan harga resmi AHSP.{canonNote}{reviewNote}{incompleteNote} Periksa dan validasi sebelum RAB dipakai untuk pengadaan, tender, atau kontrak.{excluded > 0 ? ` Total di bawah mengecualikan ${excluded} item yang belum lengkap.` : ''}</span>
           </div>
         ) : (
           <div className="dedai-notice blue">
             <AlertTriangle size={15} style={{ flexShrink: 0, marginTop: 2 }} />
-            <span><b>Mode: Estimasi Database EZRAB.</b> Harga diutamakan dari AHSP kanonis — {canonCount} item teratasi dari AHSP kanonis, {aiCount} item memakai estimasi AI berlabel sebagai fallback karena tidak ada di database (bukan harga database), {excluded} item belum lengkap / tanpa harga.{reviewNote}{incompleteNote} Total di bawah bersifat <b>parsial</b> sampai harga yang hilang dilengkapi (mis. lewat AHSP picker setelah push ke spreadsheet).</span>
+            <span><b>Mode: EZRAB AI MODE.</b> Harga diutamakan dari AHSP kanonis — {canonCount} item teratasi dari AHSP kanonis, {aiCount} item memakai estimasi AI berlabel sebagai fallback karena tidak ada di database (bukan harga database), {excluded} item belum lengkap / tanpa harga.{reviewNote}{incompleteNote} Total di bawah bersifat <b>parsial</b> sampai harga yang hilang dilengkapi (mis. lewat AHSP picker setelah push ke spreadsheet).</span>
           </div>
         );
       })()}
@@ -725,6 +749,10 @@ export const DedAiResultView: React.FC<Props> = ({
             {filtered.map(({ it, status }, i) => {
               const isEditing = editing === it.id;
               const isOpen = expanded === it.id;
+              // W6 (§8): chip provenance harga — estimasi AI (kuning)
+              // dibedakan visual dari AHSP kanonis (hijau) & input user
+              // (ungu) pada baris yang masih tertutup sekalipun.
+              const provBadge = provenanceBadgeForDedSource(it.priceSource);
               return (
                 <React.Fragment key={it.id}>
                   <tr>
@@ -752,6 +780,13 @@ export const DedAiResultView: React.FC<Props> = ({
                     <td><span className="dedai-num">{fmtRp(it.subtotal)}</span></td>
                     <td>
                       <span className={`dedai-badge ${status}`}>{statusMeta[status].icon}{statusMeta[status].label}</span>
+                      <br />
+                      <span
+                        title={provenanceExplanationForDedSource(it.priceSource)}
+                        style={{ display: 'inline-block', marginTop: 4, fontSize: 10.5, fontWeight: 700, padding: '1px 7px', borderRadius: 999, background: provBadge.bg, color: provBadge.fg }}
+                      >
+                        {provBadge.text}
+                      </span>
                     </td>
                     <td>
                       <div className="dedai-row-actions">
@@ -777,6 +812,14 @@ export const DedAiResultView: React.FC<Props> = ({
                         <div className="dedai-detail">
                           <div className="dl-row"><span className="dl-k">{t('ai.ded.result.detail_basis')}</span><span>{it.quantityFormula || '—'}</span></div>
                           {prefs.priceAnalysis && <div className="dl-row"><span className="dl-k">{t('ai.ded.result.detail_source')}</span><span><code>{it.quantitySource}</code> · <code>{it.priceSource}</code>{it.ahspCode ? <> · <code>AHSP {it.ahspCode}</code></> : null}</span></div>}
+                          {/* W6 (§8): baris provenance eksplisit — chip +
+                              penjelasan jujur apa arti sumber harga ini
+                              (asumsi rinci tetap di baris catatan harga /
+                              blok penyelesaian di bawah). */}
+                          {prefs.priceAnalysis && <div className="dl-row"><span className="dl-k">Provenans harga</span><span>
+                            <span style={{ display: 'inline-block', fontSize: 10.5, fontWeight: 700, padding: '1px 7px', borderRadius: 999, background: provBadge.bg, color: provBadge.fg, marginRight: 6 }}>{provBadge.text}</span>
+                            {provenanceExplanationForDedSource(it.priceSource)}
+                          </span></div>}
                           {prefs.priceAnalysis && it.ahspMatch && it.ahspMatch.status !== 'RESOLVED' && it.ahspMatch.status !== 'NEEDS_REVIEW' && (
                             <div className="dl-row"><span className="dl-k">AHSP</span><span style={{ color: 'var(--ez-color-text-muted)' }}>{it.ahspMatch.reason}{it.ahspMatch.matchedCode ? ` (kode: ${it.ahspMatch.matchedCode})` : ''}</span></div>
                           )}

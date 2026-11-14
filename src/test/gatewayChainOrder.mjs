@@ -1,21 +1,38 @@
 /**
  * gatewayChainOrder.mjs — urutan rantai provider per mode di executeAI.
  * Fetch di-stub per host; tidak ada panggilan jaringan nyata, tidak ada key asli.
- * Urutan target (user 2026-10-25: Crown = provider UTAMA untuk teks):
- *  - chat     : Crown MiniMax M2.7 -> Crown DeepSeek V4 Flash -> Gemini native
- *               -> Atmo ag/gemini-3.8-flash-high -> Atmo cx/gpt-6-luna
- *               -> ZyRouter -> ekor cadangan terakhir
+ * Urutan target (user 2026-10-25: Crown = provider UTAMA untuk teks;
+ * user 2026-11-13: WeizeRouter menjadi kaki PERTAMA chat+advanced,
+ * ArxPay deepseek-v4.1-flash kaki KEDUA):
+ *  - chat     : WeizeRouter weizerouter-v2 -> WeizeRouter kimi-k2.7
+ *               -> WeizeRouter kimi-k2.6 -> ArxPay deepseek-v4.1-flash
+ *               -> Crown MiniMax M2.7 -> Crown DeepSeek V4 Flash
+ *               -> Gemini native -> Atmo ag/gemini-3.8-flash-high
+ *               -> Atmo cx/gpt-6-luna -> ZyRouter -> ekor cadangan terakhir
  *               (Dahl -> River vision -> River teks -> Gemini-OAI -> Atria 1 key)
- *  - advanced : Crown MiniMax M2.7 -> Crown DeepSeek V4 Flash -> Gemini native
+ *  - advanced : WeizeRouter gpt-6-luna -> WeizeRouter muse-spark-1.3-contributor
+ *               -> ArxPay deepseek-v4.1-flash -> Crown MiniMax M2.7
+ *               -> Crown DeepSeek V4 Flash -> Gemini native
  *               -> Atmo ag/gemini-3.8-flash-high -> Atmo cx/gpt-6-luna -> ZyRouter
- *  - fast     : Crown MiniMax M2.7 -> Crown DeepSeek V4 Flash -> Gemini native
+ *  - ded      : SAMA dengan advanced, kecuali model WeizeRouter pertama
+ *               adalah wz/gpt-6-luna (user 2026-11-13, khusus DED RAB AI):
+ *               WeizeRouter wz/gpt-6-luna -> WeizeRouter wz/deepseek-v4.1-flash
+ *               -> ArxPay -> Crown x2 -> Gemini -> Atmo x2 -> ZyRouter.
+ *               DED_AI_DETAIL dipetakan ke 'ded' di api/ai/tools/execute.js.
+ *  - fast     : TIDAK BERUBAH (ArxPay/WeizeRouter tidak masuk fast):
+ *               Crown MiniMax M2.7 -> Crown DeepSeek V4 Flash -> Gemini native
  *               -> River vision (DeepSeek V4.1)
  *               -> Atmo atmo/deepseek-v4.1-flash -> Atmo ali/deepseek-v4.1-flash
  *               -> ZyRouter -> ekor chat (perbaikan 2026-10-27: fast mati
  *               total bila Gemini native gagal; kini selamat lewat ZyRouter)
- *  - vision   : TIDAK BERUBAH (Crown tidak support image_url):
+ *  - vision   : TIDAK BERUBAH (Crown, ArxPay, dan WeizeRouter tidak support image_url):
  *               Gemini native -> River vision -> Atmo ag/gemini-3.8-flash-high
  *               -> ZyRouter
+ *  - tanpa key WeizeRouter/ArxPay: rantai chat/advanced kembali ke urutan lama
+ *    (Crown pertama) — fail-closed, dibuktikan skenario 8.
+ *  - batas percobaan per provider: tiap model berbeda 1 kesempatan, minimal 2
+ *    (WeizeRouter chat 3 model → batas 3; kalau tidak, kimi-k2.6 tidak pernah
+ *    jalan — dibuktikan skenario 1b/2/3 yang memuat ketiga model WeizeRouter).
  */
 import assert from 'node:assert';
 
@@ -27,10 +44,12 @@ process.env.GEMINI_OAI_KEY_1 = 'dummy-gok';
 process.env.ZYROUTER_API_KEY = 'dummy-zyrouter';
 process.env.ATMO_API_KEY = 'dummy-atmo';
 process.env.CROWN_API_KEY = 'dummy-crown';
+process.env.ARXPAY_API_KEY = 'dummy-arxpay';
+process.env.WEIZEROUTER_API_KEY = 'dummy-weize';
 
 // behavior per host key: 'ok' | 'fail' (diubah per skenario)
 const behavior = {};
-const HOSTS = ['gemini', 'river', 'dahl', 'atria', 'geminiOai', 'zyrouter', 'atmo', 'crown'];
+const HOSTS = ['gemini', 'river', 'dahl', 'atria', 'geminiOai', 'zyrouter', 'atmo', 'crown', 'arxpay', 'weizerouter'];
 function setAll(v) { for (const h of HOSTS) behavior[h] = v; }
 setAll('fail');
 
@@ -43,6 +62,8 @@ function hostOf(url) {
   if (url.includes('api.zyrouter.com')) return 'zyrouter';
   if (url.includes('atmorouter.dev')) return 'atmo';
   if (url.includes('crown.ai.id')) return 'crown';
+  if (url.includes('arxpay.my.id')) return 'arxpay';
+  if (url.includes('weizerouter.web.id')) return 'weizerouter';
   return 'unknown';
 }
 
@@ -76,21 +97,57 @@ function check(name, fn) {
 }
 const seq = (r) => r.attempts.map((a) => `${a.provider}:${a.model}`);
 
-// --- 1. Chat: Crown utama menjawab — tidak sampai ke Gemini/Atmo
+// --- 1. Chat: WeizeRouter utama menjawab — tidak sampai ke ArxPay/Crown/Gemini/Atmo
+setAll('fail'); behavior.weizerouter = 'ok';
+{
+  const r = await executeAI({ message: 'halo', mode: 'chat' });
+  check('chat weize-first: ok via weizerouter', () => assert.equal(r.ok, true));
+  check('chat weize-first: provider weizerouter model weizerouter-v2', () => {
+    assert.equal(r.provider, 'weizerouter');
+    assert.equal(r.model, 'weizerouter-v2');
+  });
+  check('chat weize-first: hanya 1 attempt', () => assert.deepEqual(seq(r), [
+    'weizerouter:weizerouter-v2',
+  ]));
+}
+
+// --- 1b. Chat: WeizeRouter + ArxPay gagal, Crown menyelamatkan
+//      (ketiga model WeizeRouter TERCATAT — bukti batas percobaan 3 bekerja)
 setAll('fail'); behavior.crown = 'ok';
 {
   const r = await executeAI({ message: 'halo', mode: 'chat' });
-  check('chat crown-first: ok via crown', () => assert.equal(r.ok, true));
-  check('chat crown-first: provider crown model MiniMaxAI/MiniMax-M2.7', () => {
+  check('chat weize+arxpay-fail crown-menjawab: ok via crown', () => assert.equal(r.ok, true));
+  check('chat weize+arxpay-fail crown-menjawab: provider crown model MiniMaxAI/MiniMax-M2.7', () => {
     assert.equal(r.provider, 'crown');
     assert.equal(r.model, 'MiniMaxAI/MiniMax-M2.7');
   });
-  check('chat crown-first: hanya 1 attempt', () => assert.deepEqual(seq(r), [
+  check('chat weize+arxpay-fail crown-menjawab: urutan attempts', () => assert.deepEqual(seq(r), [
+    'weizerouter:weizerouter-v2',
+    'weizerouter:kimi-k2.7',
+    'weizerouter:kimi-k2.6',
+    'arxpay:deepseek-v4.1-flash',
     'crown:MiniMaxAI/MiniMax-M2.7',
   ]));
 }
 
-// --- 2. Chat: fallback bekerja — Crown + Gemini gagal, AtmoRouter ag menyelamatkan
+// --- 1c. Chat: WeizeRouter gagal, ArxPay menjawab sebagai kaki kedua
+setAll('fail'); behavior.arxpay = 'ok';
+{
+  const r = await executeAI({ message: 'halo', mode: 'chat' });
+  check('chat arxpay-second: ok via arxpay', () => assert.equal(r.ok, true));
+  check('chat arxpay-second: provider arxpay model deepseek-v4.1-flash', () => {
+    assert.equal(r.provider, 'arxpay');
+    assert.equal(r.model, 'deepseek-v4.1-flash');
+  });
+  check('chat arxpay-second: urutan attempts', () => assert.deepEqual(seq(r), [
+    'weizerouter:weizerouter-v2',
+    'weizerouter:kimi-k2.7',
+    'weizerouter:kimi-k2.6',
+    'arxpay:deepseek-v4.1-flash',
+  ]));
+}
+
+// --- 2. Chat: fallback bekerja — WeizeRouter + ArxPay + Crown + Gemini gagal, AtmoRouter ag menyelamatkan
 setAll('fail'); behavior.atmo = 'ok';
 {
   const r = await executeAI({ message: 'halo', mode: 'chat' });
@@ -100,6 +157,10 @@ setAll('fail'); behavior.atmo = 'ok';
     assert.equal(r.model, 'ag/gemini-3.8-flash-high');
   });
   check('chat fallback: urutan attempts sebelum sukses', () => assert.deepEqual(seq(r), [
+    'weizerouter:weizerouter-v2',
+    'weizerouter:kimi-k2.7',
+    'weizerouter:kimi-k2.6',
+    'arxpay:deepseek-v4.1-flash',
     'crown:MiniMaxAI/MiniMax-M2.7',
     'crown:deepseek-ai/DeepSeek-V4-Flash-0731',
     'gemini:gemini-3.5-flash-lite',
@@ -113,6 +174,10 @@ setAll('fail');
   const r = await executeAI({ message: 'halo', mode: 'chat' });
   check('chat all-fail: ok=false', () => assert.equal(r.ok, false));
   check('chat all-fail: urutan rantai penuh', () => assert.deepEqual(seq(r), [
+    'weizerouter:weizerouter-v2',
+    'weizerouter:kimi-k2.7',
+    'weizerouter:kimi-k2.6',
+    'arxpay:deepseek-v4.1-flash',
     'crown:MiniMaxAI/MiniMax-M2.7',
     'crown:deepseek-ai/DeepSeek-V4-Flash-0731',
     'gemini:gemini-3.5-flash-lite',
@@ -127,11 +192,14 @@ setAll('fail');
   ]));
 }
 
-// --- 4. Advanced (baru): Crown -> Gemini -> Atmo ag -> Atmo cx -> ZyRouter
+// --- 4. Advanced (baru): WeizeRouter gpt-6-luna -> WeizeRouter muse-spark -> ArxPay -> Crown -> Gemini -> Atmo ag -> Atmo cx -> ZyRouter
 setAll('fail');
 {
   const r = await executeAI({ message: 'halo', mode: 'advanced' });
   check('advanced: urutan baru', () => assert.deepEqual(seq(r), [
+    'weizerouter:gpt-6-luna',
+    'weizerouter:muse-spark-1.3-contributor',
+    'arxpay:deepseek-v4.1-flash',
     'crown:MiniMaxAI/MiniMax-M2.7',
     'crown:deepseek-ai/DeepSeek-V4-Flash-0731',
     'gemini:gemini-3.5-flash-lite',
@@ -141,7 +209,24 @@ setAll('fail');
   ]));
 }
 
-// --- 5. Advanced fallback bekerja: Crown + Gemini gagal, Atmo ag menjawab
+// --- 4b. DED (baru): sama dengan advanced, kecuali WeizeRouter pertama wz/gpt-6-luna
+setAll('fail');
+{
+  const r = await executeAI({ message: 'halo', mode: 'ded' });
+  check('ded: urutan baru', () => assert.deepEqual(seq(r), [
+    'weizerouter:wz/gpt-6-luna',
+    'weizerouter:wz/deepseek-v4.1-flash',
+    'arxpay:deepseek-v4.1-flash',
+    'crown:MiniMaxAI/MiniMax-M2.7',
+    'crown:deepseek-ai/DeepSeek-V4-Flash-0731',
+    'gemini:gemini-3.5-flash-lite',
+    'atmorouter:ag/gemini-3.8-flash-high',
+    'atmorouter:cx/gpt-6-luna',
+    'zyrouter:geminiflash-3.8',
+  ]));
+}
+
+// --- 5. Advanced fallback bekerja: WeizeRouter + ArxPay + Crown + Gemini gagal, Atmo ag menjawab
 setAll('fail'); behavior.atmo = 'ok';
 {
   const r = await executeAI({ message: 'halo', mode: 'advanced' });
@@ -150,6 +235,36 @@ setAll('fail'); behavior.atmo = 'ok';
     assert.equal(r.provider, 'atmorouter');
     assert.equal(r.model, 'ag/gemini-3.8-flash-high');
   });
+}
+
+// --- 5b. Advanced: WeizeRouter gagal, ArxPay menjawab sebagai kaki kedua
+setAll('fail'); behavior.arxpay = 'ok';
+{
+  const r = await executeAI({ message: 'halo', mode: 'advanced' });
+  check('advanced arxpay-second: ok via arxpay', () => assert.equal(r.ok, true));
+  check('advanced arxpay-second: provider arxpay model deepseek-v4.1-flash', () => {
+    assert.equal(r.provider, 'arxpay');
+    assert.equal(r.model, 'deepseek-v4.1-flash');
+  });
+  check('advanced arxpay-second: urutan attempts', () => assert.deepEqual(seq(r), [
+    'weizerouter:gpt-6-luna',
+    'weizerouter:muse-spark-1.3-contributor',
+    'arxpay:deepseek-v4.1-flash',
+  ]));
+}
+
+// --- 5c. DED: WeizeRouter menjawab sebagai kaki pertama dengan wz/gpt-6-luna
+setAll('fail'); behavior.weizerouter = 'ok';
+{
+  const r = await executeAI({ message: 'halo', mode: 'ded' });
+  check('ded weize-first: ok via weizerouter', () => assert.equal(r.ok, true));
+  check('ded weize-first: provider weizerouter model wz/gpt-6-luna', () => {
+    assert.equal(r.provider, 'weizerouter');
+    assert.equal(r.model, 'wz/gpt-6-luna');
+  });
+  check('ded weize-first: hanya 1 attempt', () => assert.deepEqual(seq(r), [
+    'weizerouter:wz/gpt-6-luna',
+  ]));
 }
 
 // --- 6. Fast: Crown -> Gemini -> River vision -> Atmo atmo -> Atmo ali
@@ -185,7 +300,7 @@ setAll('fail'); behavior.zyrouter = 'ok';
   });
 }
 
-// --- 7. Vision (TIDAK BERUBAH): Crown tidak boleh muncul di rantai vision
+// --- 7. Vision (TIDAK BERUBAH): Crown, ArxPay, dan WeizeRouter tidak boleh muncul di rantai vision
 setAll('fail');
 {
   const r = await executeAI({
@@ -199,6 +314,30 @@ setAll('fail');
     'zyrouter:geminiflash-3.8',
   ]));
   check('vision: tanpa crown', () => assert.equal(seq(r).some((s) => s.startsWith('crown:')), false));
+  check('vision: tanpa arxpay', () => assert.equal(seq(r).some((s) => s.startsWith('arxpay:')), false));
+  check('vision: tanpa weizerouter', () => assert.equal(seq(r).some((s) => s.startsWith('weizerouter:')), false));
+}
+
+// --- 8. Tanpa key WeizeRouter/ArxPay: rantai chat kembali ke urutan lama (Crown pertama).
+//      Skenario terakhir — key tidak dipulihkan sesudah ini.
+delete process.env.ARXPAY_API_KEY;
+delete process.env.WEIZEROUTER_API_KEY;
+setAll('fail');
+{
+  const r = await executeAI({ message: 'halo', mode: 'chat' });
+  check('chat tanpa-key-weize/arxpay: urutan lama', () => assert.deepEqual(seq(r), [
+    'crown:MiniMaxAI/MiniMax-M2.7',
+    'crown:deepseek-ai/DeepSeek-V4-Flash-0731',
+    'gemini:gemini-3.5-flash-lite',
+    'atmorouter:ag/gemini-3.8-flash-high',
+    'atmorouter:cx/gpt-6-luna',
+    'zyrouter:geminiflash-3.8',
+    'dahl:deepseek-ai/DeepSeek-V4-Flash-0731',
+    'river-vision:deepseek-ai/DeepSeek-V4.1-Flash',
+    'river-text:nvidia/NVIDIA-Nemotron-3.5-Super-VL-120B-A12B-NVFP4',
+    'gemini-oai:gemini-3.8-flash',
+    'atria:Atria-Dawn-Preview',
+  ]));
 }
 
 console.log(`\ngatewayChainOrder: ${passed} passed, ${failed} failed`);

@@ -57,8 +57,10 @@ export class DedInventoryEngine {
     workItems: DedWorkItem[],
     memory?: DedDocumentMemory
   ): CanonicalWorkInventoryItem[] {
+    // G2 (Rule 24): tag NO_VERIFIED_ITEMS — kondisi fail-closed yang sama
+    // seperti HARD FAIL pipeline; kalimat manusia utuh, perilaku sama.
     if (!workItems || workItems.length === 0) {
-      throw new Error('[DedInventoryEngine] HARD FAIL: Ekstraksi AI dokumen tidak menghasilkan item pekerjaan konstruksi yang valid.');
+      throw new Error('[DedInventoryEngine] HARD FAIL [NO_VERIFIED_ITEMS]: Ekstraksi AI dokumen tidak menghasilkan item pekerjaan konstruksi yang valid.');
     }
 
     return workItems.map((item, idx) => {

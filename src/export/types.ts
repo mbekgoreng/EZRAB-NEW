@@ -10,7 +10,11 @@ export type ExportPresetId =
   | 'BOQ_MC0'
   | 'TENDER_PACKAGE'
   | 'COMPLETE_PACKAGE'
-  | 'CUSTOM';
+  | 'CUSTOM'
+  /* P6 (FULL REPAIR 2026-11-13, P5-O6): preset workbook RAB 5 sheet
+   * (snapshot beku — builder di fiveSheetPreset.ts). Anggotanya kini
+   * resmi: mesin + modal tidak lagi memakai cast untuk ID ini. */
+  | 'FIVE_SHEET_RAB';
 
 export type ExportSheetKey =
   | 'validation'
@@ -305,5 +309,17 @@ export const EXPORT_PRESETS: Record<ExportPresetId, PresetMeta> = {
     description: 'Pilih sendiri dokumen dan lembar kerja spesifik sesuai kebutuhan pengajuan Anda.',
     sheets: ['cover', 'rabRecap', 'rabDetail'],
     recommendedAudience: 'internal',
+  },
+  /* P6 (P5-O6): preset 5 sheet TIDAK memakai kunci lembar 16-sheet —
+   * `sheets: []` adalah pernyataan jujur itu (mesin mencegat preset
+   * ini sebelum pemilihan sheet). Kartu grid memilih preset ini +
+   * mengaktifkan jalur 5 sheet di modal (lihat handleSelectPreset). */
+  FIVE_SHEET_RAB: {
+    id: 'FIVE_SHEET_RAB',
+    name: '8. Paket RAB 5 Sheet',
+    badge: 'Snapshot Beku',
+    description: 'Workbook RAB 5 sheet dari snapshot beku: Ringkasan, RAB Detail, AHSP project-bound, Detail Volume, dan Sumber & Asumsi.',
+    sheets: [],
+    recommendedAudience: 'all',
   },
 };

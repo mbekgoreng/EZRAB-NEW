@@ -239,7 +239,14 @@ test('harga tidak ditemukan: jembatan punya item unpriced, status PARSIAL, "Harg
   assert.equal(t.status, 'PARSIAL');
   const msg = formatUniversalDraftMessage(d);
   assert.ok(msg.includes('Harga belum tersedia'));
-  assert.ok(!msg.includes('Rp0'), 'tidak boleh ada Rp0 untuk item tanpa harga');
+  // P6-B merender penjelasan sumber harga apa adanya; kalimat
+  // kejujuran "bukan Rp0" di penjelasan item tanpa harga BOLEH
+  // muncul. Yang tetap dilarang: Rp0 sebagai HARGA tampil — setiap
+  // kemunculan 'Rp0' harus berada dalam frasa 'bukan Rp0'.
+  const rp0Total = msg.split('Rp0').length - 1;
+  const rp0Honest = (msg.match(/bukan Rp0/g) ?? []).length;
+  assert.equal(rp0Total, rp0Honest, 'tidak boleh ada Rp0 untuk item tanpa harga di luar frasa "bukan Rp0"');
+  assert.ok(!/\|\s*Rp\s*0\s*\|/.test(msg), 'tidak ada sel harga Rp0 di tabel');
 });
 
 test('total hanya menjumlah item berharga: estimatedTotal = Σ volume × harga item berharga', () => {

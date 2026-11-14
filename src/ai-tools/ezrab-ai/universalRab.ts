@@ -73,7 +73,7 @@
 
 import { RabTemplateService } from '../../services/rabTemplateService';
 import type { RabTemplate, TemplateCategory, GeneratedTemplateRabResult } from '../../types/rabTemplate';
-import type { StructuredSpec } from './structuredSpec';
+import type { StructuredSpec, SpecStatus } from './structuredSpec';
 import {
   resolveDeterministicPick,
   suppressedScopes,
@@ -88,8 +88,14 @@ import {
   deriveRoofSpecFromText,
   traceItemReasons,
   formatItemReasonSummary,
+  buildWbsForDraft,
+  validateWbsCompleteness,
+  traceItemSpecs,
+  formatWbsCompletenessLines,
 } from './specChain';
-import type { ChainValidation } from './specChain';
+import type { ChainValidation, ItemSpecTrace, WbsCompletenessReport } from './specChain';
+import { resolveWbsMapping } from './wbsArtifact';
+import type { WbsArtifact, WbsMappingStatus } from './wbsArtifact';
 import { assessBudgetFeasibility, formatBudgetFeasibilityLine } from './budgetFeasibility';
 import { detectTechnicalConflicts, formatConflictLines } from './technicalConflicts';
 import { parseBuildingsFromText, buildingSummaryLines, upsertBuilding } from './multiBuilding';
@@ -112,7 +118,7 @@ import type {
  * impor ini aman dari siklus runtime. */
 import { formatDedQtoDraftLines } from './dedQtoIntegration';
 import type { DedQtoDraftInfo } from './dedQtoIntegration';
-import type { RabItem } from '../../types';
+import type { RabItem, UserDecisionStatus, VerificationStatus } from '../../types';
 import { extractRabNeeds, stripLandPhrases, detectNeedsFunction, isNegatedAt } from './rabNeeds';
 import { understandProject, assessBuildingMissingInfo, summarizeUnderstanding } from './buildingTypology';
 import { formatRupiah } from '../../engine/formulaEngine';
@@ -915,6 +921,26 @@ export interface UniversalDraft {
   structuredSpecs?: StructuredSpec[];
   /** Laporan validasi rantai spesifikasi → RAB (hanya bila spek ada). */
   chainValidation?: ChainValidation;
+  /**
+   * P3D (FULL REPAIR 2026-11-13) — artefak WBS eksplisit (node paket
+   * pekerjaan ber-ID stabil `wbs:<scopeId>`, dibangun dari spek +
+   * template via `buildWbsForDraft`) + laporan kelengkapan WBS/spek
+   * (via `validateWbsCompleteness`). LAPISAN VALIDASI — tidak
+   * mengubah total/isi RAB; data JSON polos.
+   *
+   * P6 (menutup P3D-O1): kedua field ini DIPASANG OTOMATIS oleh
+   * `buildUniversalDraft` (via `rebuildWbsAttachment`) dan DIBAWA
+   * `draftPersistence` (record + fingerprint artefak, pola `dedQto`)
+   * — draft in-memory vs seed v1 tetap byte-identik (invariansi
+   * revisi P4-(d) hijau). Revisi membangun ulang keduanya pada
+   * kandidat dengan `previousArtifact` artefak lama (P3D-O2,
+   * `draftRevision.makePreview`), sehingga pengecualian/catatan
+   * user pada node WBS bertahan lintas revisi. Pemanggil yang
+   * mengubah parts di luar jalur-jalur itu wajib memanggil
+   * `rebuildWbsAttachment` agar artefak + laporan tidak basi.
+   */
+  wbsArtifact?: WbsArtifact;
+  wbsCompleteness?: WbsCompletenessReport;
   /** Pilihan template ambigu (close-call / material tak tersedia). */
   ambiguousPicks?: Array<{ scope: string; chosen: string; candidates: string[]; reason: string }>;
   /** Model per-bangunan (FASE 4, CHAT-03): diparse dari teks mentah
@@ -939,6 +965,15 @@ export type DraftItem = RabItem & {
   /** GATE 2 (5B) — seksi asal item (pola penanda yang sama dengan __partScope). */
   __buildingId?: string | null;
   __sectionKind?: 'building' | 'shared-works' | 'project';
+  /**
+   * P3D — penelusuran spek → item (HANYA diisi `traceDraftItems`;
+   * `effectiveItems` TIDAK menghitungnya agar panggilan panas tidak
+   * membayar biaya penelusuran): kunci spek sumber, status spek
+   * terburuknya, dan ID node WBS pemilik item ini.
+   */
+  __specKeys?: string[];
+  __specStatus?: SpecStatus | null;
+  __wbsNodeId?: string;
 };
 
 export function itemKey(it: { description: string; unit: string }): string {
@@ -977,6 +1012,69 @@ export function effectiveItems(draft: UniversalDraft): DraftItem[] {
     }
   }
   return out;
+}
+
+/**
+ * P3D — item efektif + penelusuran spek → item (`__specKeys`,
+ * `__specStatus`, `__wbsNodeId` diisi dari `traceItemSpecs`).
+ * Dipisah dari `effectiveItems` agar panggilan panas (total, pesan,
+ * transfer) tidak membayar biaya penelusuran. Tanpa spek terstruktur,
+ * semua item bertraceSource 'TEMPLATE' (specKeys kosong — jujur,
+ * bukan dikarang). Mengembalikan array BARU (item efektif tidak
+ * diubah).
+ */
+export function traceDraftItems(draft: UniversalDraft): DraftItem[] {
+  const items = effectiveItems(draft);
+  const traces = new Map(
+    traceItemSpecs(draft, draft.structuredSpecs ?? []).map((t) => [t.itemId, t]),
+  );
+  return items.map((it) => {
+    const t = traces.get(it.id);
+    if (!t) return it;
+    return { ...it, __specKeys: t.specKeys, __specStatus: t.specStatus, __wbsNodeId: t.wbsNodeId };
+  });
+}
+
+/** P3D — baris penelusuran mentah (dipakai tes + calon wiring pratinjau). */
+export function draftItemSpecTraces(draft: UniversalDraft): ItemSpecTrace[] {
+  return traceItemSpecs(draft, draft.structuredSpecs ?? []);
+}
+
+/**
+ * P3D — baris pesan kelengkapan WBS/spek untuk pratinjau (lapisan
+ * logika). Memakai `draft.wbsCompleteness` bila pemanggil memasangnya
+ * secara eksplisit (sejak P6 selalu terpasang oleh
+ * `buildUniversalDraft` + dibangun ulang tiap revisi); bila absen
+ * (draft lama pra-P6), dihitung on-demand dari draft + spek
+ * (deterministik). Dirender panel Review draft (`DraftReviewPanel`).
+ */
+export function wbsCompletenessLines(draft: UniversalDraft): string[] {
+  const report = draft.wbsCompleteness
+    ?? validateWbsCompleteness(draft, draft.structuredSpecs ?? [], draft.wbsArtifact ?? null);
+  return formatWbsCompletenessLines(report);
+}
+
+/**
+ * P6 (menutup P3D-O1/O2) — pasang (ulang) artefak WBS + laporan
+ * kelengkapan pada draft IN-PLACE (draft yang diteruskan adalah klon
+ * milik pemanggil: draft baru di `buildUniversalDraft`, kandidat di
+ * `buildRevisionPreview`, salinan kerja di `draftReview`). Artefak
+ * dibangun dari parts + spek draft saat ini; `previousArtifact`
+ * (artefak versi sebelumnya — bila ada) diteruskan agar pengecualian
+ * node + catatan user (`by: 'user'`) bertahan lintas regenerasi
+ * (kontrak P3D §8). Laporan dihitung dari artefak segar itu.
+ * Deterministik kecuali `checkedAt` laporan (stempel waktu hitung).
+ */
+export function rebuildWbsAttachment(
+  draft: UniversalDraft,
+  previousArtifact?: WbsArtifact | null,
+): void {
+  const specs = draft.structuredSpecs ?? [];
+  const artifact = buildWbsForDraft(draft, specs, {
+    previousArtifact: previousArtifact ?? draft.wbsArtifact ?? null,
+  });
+  draft.wbsArtifact = artifact;
+  draft.wbsCompleteness = validateWbsCompleteness(draft, specs, artifact);
 }
 
 /**
@@ -1104,7 +1202,25 @@ export interface DraftTotals {
   status: 'PARSIAL' | 'ESTIMASI' | 'LENGKAP';
 }
 
-/** Total dihitung dari item efektif — aritmetika deterministik, bukan LLM. */
+/**
+ * Total dihitung dari item efektif — aritmetika deterministik, bukan LLM.
+ *
+ * KONTRAK KESETARAAN P3B (B-11, 2026-11-13 — dibuktikan
+ * `src/test/p3bCanonicalCalculation.test.ts`, BUKAN disatukan lewat kode):
+ * `estimatedTotal` di sini adalah BIAYA LANGSUNG (Σ volume × harga satuan
+ * item berharga, dikelompokkan per sumber harga) — kaki yang SAMA PERSIS
+ * dengan `directCost` engine kanonis `UnifiedProjectEngine.
+ * recalculateCostSummary` pada item yang sama (termasuk: item
+ * PRICE_UNRESOLVED dikecualikan di kedua sisi; item HSP tetap masuk biaya
+ * langsung di kedua sisi; item legacy tanpa priceStatus resolved di kedua
+ * sisi; round-trip draft nyata preview → transfer → engine: selisih Rp0).
+ * Tangga O&P/pajak/kontingensi/markup HANYA ada di engine kanonis — JANGAN
+ * tambahkan ke fungsi ini tanpa keputusan owner (draft tidak membawa
+ * konfigurasi O&P/pajak proyek target; selisih preview vs grand total
+ * proyek terkonfigurasi dicatat sebagai temuan terbuka P3B-O2). Fungsi ini
+ * juga TIDAK diganti engine: engine tidak menghitung ember sumber harga +
+ * status PARSIAL/ESTIMASI/LENGKAP yang menjadi isi pratinjau.
+ */
 export function computeTotals(draft: UniversalDraft): DraftTotals {
   return totalsFromItems(effectiveItems(draft));
 }
@@ -2043,6 +2159,30 @@ function buildDraftPart(
   return { kind: 'part', part };
 }
 
+/**
+ * Bangun draft RAB dari katalog 183 template (jalur UNIVERSAL).
+ *
+ * ROUTING DUA ENGINE RAB — ATURAN YANG DITEMUKAN (P3B, 2026-11-13; JANGAN
+ * satukan kedua engine tanpa keputusan owner — B-02/§E 2.2). Keputusan
+ * routing BUKAN di sini melainkan di `actionRegistry.ts` (titik kanonis:
+ * `CREATE_RAB_DIRECT` :2390 dan `RAB_FULL_AI` :2730):
+ *   1. Rumah BERTIPE terdaftar (`findDirectTemplate`) → PARAMETRIK
+ *      (`buildDirectRab`, parametricVolumeEngine); luas eksak langsung
+ *      jadi tabel, luas fallback → kartu pilihan (klik "Pakai Template"
+ *      → `GENERATE_RAB_TEMPLATE` → parametrik; "Pakai AI Full" → (4)).
+ *   2. Rumah SPEK BEBAS tanpa tipe terdaftar → PARAMETRIK
+ *      (`buildSpecRab`), KECUALI `specRabHijackGuard` aktif (primer
+ *      terklasifikasi BUKAN 'rumah' — mis. kolam/jalan) → lanjut ke (3).
+ *   3. Selain rumah → UNIVERSAL (fungsi ini, katalog 183 template).
+ *   4. `RAB_FULL_AI`: coba parametrik dulu (kartu pending → teks mentah
+ *      → needs rumah terakhir), lalu universal dari needs terakhir,
+ *      lalu fallback LLM.
+ * Kedua jalur memakai TANGGA KEUANGAN BERBEDA (temuan P3B-O3):
+ * parametrik O&P 5/5 + pajak 11% selalu (default engine); universal
+ * menampilkan biaya langsung saja di pratinjau, tangga kanonis (O&P 0/0,
+ * pajak opt-in) baru berlaku pasca-transfer. Dipin di
+ * `src/test/p3bCanonicalCalculation.test.ts` §4.
+ */
 export function buildUniversalDraft(rawText: string, forcedTemplateId?: string, opts?: { structuredSpecs?: StructuredSpec[]; budgetCapOverride?: number | null; projectId?: string | null; buildings?: BuildingModel[]; dedQto?: DedQtoDraftInfo }): BuildResult {
   const spec = extractUniversalSpec(rawText);
   // Fase 2 Bagian B: spek terstruktur (Bagian A) + override cap.
@@ -2517,6 +2657,12 @@ export function buildUniversalDraft(rawText: string, forcedTemplateId?: string, 
   if (hasSpecs) {
     draft.chainValidation = validateDraftChain(draft, structuredSpecs);
   }
+  // P6 (menutup P3D-O1) — artefak WBS + laporan kelengkapan DIPASANG
+  // di sini: draftPersistence kini membawa kedua field (record +
+  // fingerprint artefak, pola dedQto), sehingga draft in-memory vs
+  // seed v1 tetap byte-identik (P4-(d)). Sebelum P6, hook ini sengaja
+  // dilepas karena persistence menggugurkan field tak dikenal.
+  rebuildWbsAttachment(draft);
   const totals = computeTotals(draft);
   draft.versions.push({
     n: 1,
@@ -2777,7 +2923,12 @@ export function formatUniversalDraftMessage(draft: UniversalDraft): string {
       const amt = !valid ? '—' : formatRupiah(it.volume * (it.unitPrice as number));
       if (valid) subtotal += it.volume * (it.unitPrice as number);
       else groupUnpriced++;
-      lines.push(`| ${no} | ${it.description} | ${fmtNum(it.volume)} | ${it.unit} | ${price} | ${amt} |`);
+      // P6 (A, EF-06): kode AHSP tiap item tampil di tabel — ditempel
+      // pada sel Uraian agar header tabel (dipin banyak suite) tidak
+      // berubah. Item tanpa kode tampil tanpa sufiks (jujur: belum
+      // terpetakan), bukan kode karangan.
+      const ahspSuffix = it.ahspCode ? ` (AHSP: ${it.ahspCode})` : '';
+      lines.push(`| ${no} | ${it.description}${ahspSuffix} | ${fmtNum(it.volume)} | ${it.unit} | ${price} | ${amt} |`);
     }
     lines.push(`Subtotal ${groupName}: **${formatRupiah(subtotal)}**${groupUnpriced > 0 ? ` (parsial — ${groupUnpriced} item belum berharga)` : ''}`);
     lines.push('');
@@ -2831,11 +2982,21 @@ export function formatUniversalDraftMessage(draft: UniversalDraft): string {
       dno++;
       const eff = effByKey.get(itemKey(it)) ?? it;
       const st = displayPriceStatus(eff);
-      lines.push(`• ${dno}. ${it.description} — AHSP: ${it.ahspCode || '—'} · ${st.label} · ${st.detail} · ${traceFor(part, it)}`);
+      // P6 (B, E5): penjelasan sumber harga (priceSourceExplanation)
+      // dirender di chat — selama ini hanya tersimpan di data. Bila
+      // penjelasannya sama dengan detail status (kasus HARGA MANUAL —
+      // detailnya memang penjelasan itu), tidak diulang.
+      const expl = (eff.priceSourceExplanation ?? '').trim();
+      const explSuffix = expl && expl !== st.detail ? ` · Sumber: ${expl}` : '';
+      lines.push(`• ${dno}. ${it.description} — AHSP: ${it.ahspCode || '—'} · ${st.label} · ${st.detail} · ${traceFor(part, it)}${explSuffix}`);
     }
   }
   lines.push('');
   lines.push('Draft ini belum mengubah Spreadsheet apa pun. Klik **Push ke Spreadsheet** untuk meninjau preview transfer, lalu konfirmasi bila sudah sesuai.');
+  // P6 (D): pintu masuk panel Review — pemeriksaan per item (edit,
+  // remap AHSP, harga manual, putusan asumsi, banding revisi) hidup
+  // di sana, bukan di pesan ini.
+  lines.push('Tinjau tiap item sebelum transfer: buka menu ⋯ di atas → **Review draft** (edit uraian/volume, ubah kode AHSP, tetapkan harga manual, setujui/tolak asumsi, dan bandingkan revisi).');
   return lines.join('\n');
 }
 
@@ -3370,8 +3531,143 @@ export interface UniversalPushItem {
   priceSourceDate?: string | null;
   priceSourceRegion?: string | null;
   ahspMappingStatus?: RabItem['ahspMappingStatus'];
+  /** P6 (E, K-A6): pencatatan keputusan review — diteruskan apa adanya
+   * dari item draft bila terisi (lihat P6-O1 untuk rantai hilir). */
+  verificationDate?: string | null;
+  userDecisionStatus?: UserDecisionStatus | null;
+  /**
+   * S2 (§2 FINAL INTEGRITY REPAIR) — status verifikasi harga, eksplisit
+   * dari draft bila ada (aksi verifikasi review), bila tidak diturunkan
+   * jujur dari status transfer (lihat transferVerificationStatus).
+   * Tanpa field ini factory memberi default VERIFIED untuk SEMUA item
+   * berharga — verifikasi resmi yang disimpulkan dari sekadar adanya
+   * angka harga.
+   */
+  verificationStatus?: VerificationStatus;
+  /**
+   * S6 (§6 FINAL INTEGRITY REPAIR, menutup P3D-O4) — traceabilitas WBS,
+   * dihitung `buildPushPayload` dari pemetaan tervalidasi
+   * (`resolveWbsMapping`, wbsArtifact.ts): kode WBS item bila ada kode
+   * asli yang tervalidasi (BUKAN nomor urut / kode AHSP), ID node
+   * artefak `wbs:<scope>` bila keanggotaan tervalidasi, status asosiasi
+   * eksplisit (CONFIRMED/PROVISIONAL/UNMAPPED — selalu terisi, bahkan
+   * UNMAPPED, agar tidak tertukar dengan data legacy tanpa status),
+   * + saran heuristik bila PROVISIONAL (tidak pernah tampil sebagai
+   * terverifikasi). Diteruskan factory → normalizeSections → snapshot
+   * ekspor → kolom M Sheet 2 (P5-O3).
+   */
+  wbsCode?: string;
+  wbsNodeId?: string;
+  wbsMappingStatus?: WbsMappingStatus;
+  wbsSuggestedNodeId?: string;
   category: string;
   volumeSource: 'AI_GENERATED';
+}
+
+/**
+ * Input minimal untuk kontrak status transfer (§2). Dipakai helper murni
+ * di bawah agar aturan dapat dites tanpa membangun draft penuh.
+ */
+export interface TransferPriceInput {
+  priceStatus?: string | null;
+  unitPrice?: number | null;
+  priceSourceKind?: string | null;
+  ahspMappingStatus?: string | null;
+  verificationStatus?: string | null;
+  verificationDate?: string | null;
+}
+
+/**
+ * Apakah klaim PRICE_RESOLVED didukung bukti (S2, §2)?
+ *
+ * Bukti yang diakui (salah satu cukup — kosakata yang SUDAH ADA):
+ * - `priceSourceKind` OFFICIAL_AHSP / MARKET_REFERENCE — tier harga yang
+ *   memang diperlakukan repo sebagai resolved (gerbang kanonis / katalog
+ *   resmi untuk OFFICIAL; referensi pasar untuk MARKET — lihat probe
+ *   draft nyata: 40/40 item berharga hasil generasi membawa salah satu
+ *   kind ini beserta labelnya);
+ * - `ahspMappingStatus` VERIFIED — pemetaan AHSP terverifikasi;
+ * - verifikasi eksplisit user (`verificationStatus` VERIFIED +
+ *   `verificationDate` terisi — stempel aksi "Verifikasi harga" di
+ *   review, BUKAN dari edit biasa).
+ *
+ * Yang BUKAN bukti: sekadar adanya angka harga, label bebas, kind
+ * EZRAB_ASSUMPTION/UNRESOLVED, atau persetujuan user atas asumsi
+ * (DISETUJUI tidak mengubah estimasi menjadi harga resmi AHSP).
+ */
+export function hasResolvedPriceEvidence(it: TransferPriceInput): boolean {
+  if (it.priceSourceKind === 'OFFICIAL_AHSP' || it.priceSourceKind === 'MARKET_REFERENCE') return true;
+  if (it.ahspMappingStatus === 'VERIFIED') return true;
+  if (it.verificationStatus === 'VERIFIED' && !!it.verificationDate) return true;
+  return false;
+}
+
+/**
+ * Kontrak status harga saat transfer (S2, §2 — menutup P6-O2).
+ *
+ * Payload lama melipat SEMUA item berharga non-manual ke PRICE_RESOLVED,
+ * sehingga estimasi AI yang sudah diputuskan user tampil sebagai harga
+ * resmi di spreadsheet. Aturan baru mempertahankan provenance draft:
+ * - harga tidak valid (null/NaN/UNRESOLVED) → PRICE_UNRESOLVED;
+ * - PRICE_MANUAL → PRICE_MANUAL; PRICE_ESTIMATED → PRICE_ESTIMATED;
+ * - PRICE_RESOLVED HANYA bila ada bukti (hasResolvedPriceEvidence) —
+ *   klaim tanpa bukti diturunkan ke PRICE_ESTIMATED (plafon jujur);
+ * - status hilang/tak dikenal + harga valid → PRICE_ESTIMATED (harga
+ *   tetap masuk total seperti RESOLVED — yang berubah hanya labelnya);
+ * - sentinel 0: unitPrice 0 TANPA status eksplisit adalah sentinel
+ *   "belum tersedia" (kontrak factory), bukan harga Rp0 yang valid →
+ *   PRICE_UNRESOLVED. Nol DENGAN status eksplisit (RESOLVED/MANUAL/
+ *   ESTIMATED) tetap harga nyata menurut kontrak yang sama.
+ *
+ * Total TIDAK berubah oleh aturan ini: recalculateCostSummary hanya
+ * mengecualikan PRICE_UNRESOLVED — ESTIMATED dan RESOLVED sama-sama
+ * masuk total. Satu-satunya perpindahan keluar total adalah sentinel 0
+ * tanpa status (yang memang bukan harga).
+ */
+export function transferPriceStatus(it: TransferPriceInput): UniversalPushItem['priceStatus'] {
+  if (!isPriceValidForTotal(it)) return 'PRICE_UNRESOLVED';
+  if (
+    it.unitPrice === 0 &&
+    it.priceStatus !== 'PRICE_RESOLVED' &&
+    it.priceStatus !== 'PRICE_MANUAL' &&
+    it.priceStatus !== 'PRICE_ESTIMATED'
+  ) {
+    return 'PRICE_UNRESOLVED';
+  }
+  if (it.priceStatus === 'PRICE_MANUAL') return 'PRICE_MANUAL';
+  if (it.priceStatus === 'PRICE_ESTIMATED') return 'PRICE_ESTIMATED';
+  if (it.priceStatus === 'PRICE_RESOLVED') {
+    return hasResolvedPriceEvidence(it) ? 'PRICE_RESOLVED' : 'PRICE_ESTIMATED';
+  }
+  return 'PRICE_ESTIMATED';
+}
+
+/**
+ * Status verifikasi yang dibawa payload transfer (S2, §2).
+ *
+ * - PRICE_UNRESOLVED → NEEDS_VERIFICATION, selalu (item tanpa harga
+ *   tidak pernah terverifikasi — klaim VERIFIED apa pun diturunkan
+ *   fail-closed);
+ * - status eksplisit draft dipertahankan apa adanya (VERIFIED hanya tiba
+ *   lewat aksi verifikasi eksplisit user di review; NEEDS_VERIFICATION
+ *   lewat edit/remap) — termasuk VERIFIED pada item ESTIMATED: user
+ *   boleh memverifikasi harga estimasi, tetapi status harganya TETAP
+ *   ESTIMATED (sumbu berbeda — persetujuan/verifikasi tidak mengubah
+ *   asumsi menjadi harga resmi AHSP);
+ * - tanpa status eksplisit (generasi template tidak pernah mengisinya):
+ *   JANGAN simpulkan VERIFIED dari sekadar adanya angka harga — hanya
+ *   klaim RESOLVED yang berbukti yang terverifikasi; estimasi, manual,
+ *   dan klaim tanpa bukti perlu verifikasi (selaras preseden P1:
+ *   estimasi/model → NEEDS_VERIFICATION; P6: manual → NEEDS_VERIFICATION).
+ */
+export function transferVerificationStatus(
+  it: TransferPriceInput,
+  priceStatus: UniversalPushItem['priceStatus'],
+): VerificationStatus {
+  if (priceStatus === 'PRICE_UNRESOLVED') return 'NEEDS_VERIFICATION';
+  if (it.verificationStatus) return it.verificationStatus as VerificationStatus;
+  if (priceStatus === 'PRICE_RESOLVED') return 'VERIFIED';
+  return 'NEEDS_VERIFICATION';
 }
 
 export interface UniversalPushPreview {
@@ -3462,6 +3758,20 @@ export function buildPushPreview(draft: UniversalDraft): UniversalPushPreview {
  * - basis biaya `priceCostBasis` (§17.1) diteruskan seperti kind, dengan
  *   pengecualian manual yang sama: harga manual menggantikan harga asal
  *   sehingga basis asalnya tidak lagi berlaku.
+ * - S2 (§2, menutup P6-O2): status harga TIDAK LAGI dilipat ke
+ *   PRICE_RESOLVED — transferPriceStatus mempertahankan ESTIMATED/
+ *   MANUAL/UNRESOLVED dan hanya mempertahankan RESOLVED bila ada bukti
+ *   (tanpa bukti → ESTIMATED). Status verifikasi dibawa eksplisit
+ *   (transferVerificationStatus) agar factory tidak memberi default
+ *   VERIFIED dari sekadar adanya angka harga. unitPrice hanya dibawa
+ *   bila status AKHIR berharga (sentinel 0 tanpa status → UNRESOLVED
+ *   tanpa unitPrice).
+ * - S6 (§6, menutup P3D-O4): traceabilitas WBS dibawa eksplisit —
+ *   `resolveWbsMapping` per item dari scope pemilik part + artefak
+ *   draft (keanggotaan node divalidasi, bukan dipercaya buta).
+ *   `wbsCode` hanya bila ada kode asli tervalidasi; nomor urut
+ *   generasi ('1'..'11') TIDAK PERNAH menjadi wbsCode. Kontrak harga
+ *   S2 di atas TIDAK diubah di sini.
  */
 export function buildPushPayload(draft: UniversalDraft): UniversalPushItem[] {
   const readiness = draftReadiness(draft);
@@ -3477,11 +3787,37 @@ export function buildPushPayload(draft: UniversalDraft): UniversalPushItem[] {
   // deskripsi tidak berubah.
   const isMultiSection = (draft.buildings?.length ?? 0) >= 2
     && draft.parts.some((p) => p.sectionKind === 'building');
+  // S6 (§6, P3D-O4): pemetaan WBS per item — scope pemilik dari part
+  // (ID scope, bukan label `__partScope`; skema ID efektif
+  // `templateId::id` yang SAMA dengan `effectiveItems` +
+  // `buildWbsForDraft`), divalidasi terhadap artefak draft. Draft
+  // legacy tanpa artefak terpasang dibangunkan on-demand (deterministik
+  // — jalur yang sama dengan `rebuildWbsAttachment`). Transfer bukan
+  // panggilan panas, jadi biaya penelusuran ini dapat diterima.
+  const wbsArtifact = draft.wbsArtifact ?? buildWbsForDraft(draft, draft.structuredSpecs ?? []);
+  const ownerScopeByItemId = new Map<string, string>();
+  for (const part of draft.parts) {
+    for (const g of part.generation.items) {
+      if (part.removedKeys.includes(itemKey(g))) continue;
+      ownerScopeByItemId.set(`${part.template.id}::${g.id}`, part.scope.id);
+    }
+  }
   return effectiveItems(draft).map((it) => {
-    let priceStatus: UniversalPushItem['priceStatus'];
-    if (!isPriceValidForTotal(it)) priceStatus = 'PRICE_UNRESOLVED';
-    else if (it.priceStatus === 'PRICE_MANUAL') priceStatus = 'PRICE_MANUAL';
-    else priceStatus = 'PRICE_RESOLVED';
+    // S2 (§2): status transfer dari kontrak transferPriceStatus — JANGAN
+    // pernah melipat ke PRICE_RESOLVED di sini (P6-O2).
+    const priceStatus = transferPriceStatus(it);
+    const verificationStatus = transferVerificationStatus(it, priceStatus);
+    // S6 (§6): pemetaan WBS tervalidasi — `wbsCode` hanya dari kode asli
+    // tervalidasi; `__wbsNodeId` draft TIDAK dipakai di sini (itu milik
+    // `traceDraftItems`, dipertahankan apa adanya di jalurnya).
+    const wbs = resolveWbsMapping({
+      itemId: it.id,
+      description: it.description,
+      wbsCode: it.wbsCode,
+      templateCode: it.code,
+      ownerScopeId: ownerScopeByItemId.get(it.id),
+      artifact: wbsArtifact,
+    });
     const sectionPrefix = !isMultiSection
       ? ''
       : it.__buildingId
@@ -3495,8 +3831,14 @@ export function buildPushPayload(draft: UniversalDraft): UniversalPushItem[] {
       unit: it.unit,
       code: it.code || it.ahspCode || '',
       ...(it.ahspCode ? { ahspCode: it.ahspCode } : {}),
-      ...(isPriceValidForTotal(it) ? { unitPrice: it.unitPrice as number } : {}),
+      // S2: unitPrice digating STATUS AKHIR, bukan validitas mentah —
+      // sentinel 0 tanpa status lolos isPriceValidForTotal (0 finite)
+      // tetapi status akhirnya UNRESOLVED dan tidak boleh membawa harga.
+      ...(priceStatus !== 'PRICE_UNRESOLVED' ? { unitPrice: it.unitPrice as number } : {}),
       priceStatus,
+      // S2: status verifikasi eksplisit — tanpa ini factory memberi
+      // default VERIFIED untuk semua item berharga.
+      verificationStatus,
       // Manual: kind lama sengaja TIDAK diteruskan (lihat komentar guard).
       ...(it.priceStatus === 'PRICE_MANUAL'
         ? {}
@@ -3516,6 +3858,19 @@ export function buildPushPayload(draft: UniversalDraft): UniversalPushItem[] {
       ...(it.priceSourceDate !== undefined ? { priceSourceDate: it.priceSourceDate } : {}),
       ...(it.priceSourceRegion !== undefined ? { priceSourceRegion: it.priceSourceRegion } : {}),
       ...(it.ahspMappingStatus ? { ahspMappingStatus: it.ahspMappingStatus } : {}),
+      // P6 (E, K-A6): keputusan review diteruskan apa adanya bila
+      // terisi — tanpa ini putusan approve/reject + tanggal verifikasi
+      // hilang saat transfer (catatan rantai hilir: factory +
+      // normalizeSections belum meneruskannya ke RABItem — P6-O1).
+      ...(it.verificationDate ? { verificationDate: it.verificationDate } : {}),
+      ...(it.userDecisionStatus ? { userDecisionStatus: it.userDecisionStatus } : {}),
+      // S6 (§6, P3D-O4): traceabilitas WBS — status SELALU dibawa
+      // (bahkan UNMAPPED) agar tidak tertukar dengan data legacy tanpa
+      // status; kode/node/saran hanya bila resolver mengisinya.
+      ...(wbs.wbsCode ? { wbsCode: wbs.wbsCode } : {}),
+      ...(wbs.wbsNodeId ? { wbsNodeId: wbs.wbsNodeId } : {}),
+      wbsMappingStatus: wbs.status,
+      ...(wbs.suggestedNodeId ? { wbsSuggestedNodeId: wbs.suggestedNodeId } : {}),
       category: it.category || 'Lainnya',
       volumeSource: 'AI_GENERATED',
     };

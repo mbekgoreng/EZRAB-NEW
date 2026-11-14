@@ -229,10 +229,14 @@ describe('PHASE 9.1 [3] — BACA DENAH VISION & AMBIGUITY HANDLING', () => {
 
 describe('PHASE 9.1 [4] — BACA NOTA OCR & ARITHMETIC VALIDATION', () => {
   it('should flag UNREADABLE items and calculation discrepancy on damaged receipts', async () => {
+    // G2: opt-in mock eksplisit (__allowMockFallback) — lihat catatan yang
+    // sama di phase9ConstructionAi: sejak P0 d705426, tanpa flag ini
+    // analyzeReceipt gagal jujur bila endpoint tak terjangkau.
     const res = await analyzeReceipt({
       projectId: 'PRJ-REC-01',
       fileName: 'nota_rusak_buram.jpg',
       fileData: 'dummy',
+      __allowMockFallback: true,
     });
 
     assert.strictEqual(res.success, true);

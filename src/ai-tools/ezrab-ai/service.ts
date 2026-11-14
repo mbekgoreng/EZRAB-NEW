@@ -10,6 +10,7 @@ import { EZRAB_AI_SYSTEM_PROMPT } from './prompt';
 import { getToolListText } from './tools';
 import { ProjectSnapshot } from './projectContext';
 import { executeTool } from './toolRegistry';
+import type { ExecutionStage } from './executionRuntime';
 import {
   assembleChatPrompt,
   buildCanonicalContext,
@@ -32,8 +33,63 @@ function newIdempotencyKey(): string {
   return `ezrab-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
 }
 
+/**
+ * P2 — tahap eksekusi untuk SATU tool call yang benar-benar dijalankan.
+ * Pemetaan ini jujur karena setiap tool call adalah event nyata (model
+ * memanggilnya, registry mengeksekusinya); tool yang tidak masuk peta
+ * (baca proyek, propose_*, pengetahuan) memakai 'running-tools' generik
+ * — tidak pernah diklaim sebagai tahap yang lebih spesifik. Tidak ada
+ * pemetaan ke 'menyusun WBS' / 'menghitung biaya': tidak ada tool yang
+ * melakukan keduanya sebagai satu event bernama.
+ */
+export function stageForToolCall(toolName: string): ExecutionStage {
+  switch (toolName) {
+    case 'cari_ahsp':
+      return 'mapping-ahsp';
+    case 'cari_harga':
+      return 'checking-prices';
+    case 'hitung_qto':
+    case 'volume_persegi':
+    case 'luas_dinding':
+    case 'subtotal':
+    case 'persentase_level':
+      return 'calculating-quantities';
+    case 'cari_template_rab':
+      return 'identifying-items';
+    default:
+      return 'running-tools';
+  }
+}
+
+/**
+ * P2 — callback tahap per kirim. EzrabAiRequest (types.ts, di luar
+ * cakupan P2) tidak mendeklarasikannya — dibaca lewat cast di send(),
+ * dan view meneruskannya di dalam argumen `as any` yang sudah ada.
+ * Callback TIDAK PERNAH boleh melempar ke send(): setiap emisi
+ * dibungkus try/catch di bawah.
+ */
+export type ExecutionStageCallback = (stage: ExecutionStage) => void;
+
 export class EzrabAiService {
   public async send(request: EzrabAiRequest): Promise<EzrabAiResponse> {
+    // P2 — emisi tahap dari event nyata alur kirim ini (bukan timer):
+    // 'preparing' saat konteks mulai dirakit; 'reading-documents' bila
+    // seksi DED/QTO ikut dalam kirim; 'contacting-model' sebelum fetch
+    // provider; satu tahap per tool call yang dieksekusi. Selama satu
+    // fetch non-streaming TIDAK ADA event antar-token — tahap tidak
+    // berpura-pura maju di dalam fetch itu. Validasi (quality gate)
+    // dipancarkan view, bukan di sini (gate hidup di view).
+    const onStage = (request as unknown as { onStage?: ExecutionStageCallback }).onStage;
+    const emit = (stage: ExecutionStage): void => {
+      if (!onStage) return;
+      try {
+        onStage(stage);
+      } catch {
+        /* emisi tahap tidak boleh menggagalkan kirim */
+      }
+    };
+    emit('preparing');
+    if (request.dedSection || request.qtoSection) emit('reading-documents');
     // FASE 1 (Canonical Context Intelligence): perakitan konteks TIDAK
     // lagi di sini — satu builder kanonis (canonicalContext.ts) dipakai
     // jalur ini DAN Copilot. Anggaran total, dedupe pesan terakhir,
@@ -96,6 +152,11 @@ export class EzrabAiService {
     // bukan sekali untuk seluruh kirim (agar tool kedua tidak kehilangan
     // snapshot bila tool pertama membersihkannya).
     const idempotencyKey = request.idempotencyKey ?? newIdempotencyKey();
+    // P2: sinyal yang sudah aborted sebelum fetch → gagal cepat sebagai
+    // AbortError (view mengenalinya via isAbortError) TANPA memanggil
+    // provider — tidak ada biaya untuk permintaan yang sudah dibatalkan.
+    emit('contacting-model');
+    request.signal?.throwIfAborted();
     const result = await aiToolsProviderClient.execute<unknown>({
       productId: 'EZRAB_AI',
       mode: request.mode ?? 'fast',
@@ -129,6 +190,14 @@ export class EzrabAiService {
       if (scan.calls.length > 0) {
         const outputs: string[] = [];
         for (const call of scan.calls) {
+          // P2: pembatalan menghentikan LANGKAH BERIKUTNYA — cek sebelum
+          // SETIAP tool call (bukan hanya sebelum fetch): abort yang
+          // tiba sesudah provider merespons (jendela antara fetch dan
+          // loop) melempar AbortError di sini, sehingga tidak ada tool
+          // yang dieksekusi sesudah cancel dan tidak ada output tool
+          // yang ditulis sebagai jawaban.
+          request.signal?.throwIfAborted();
+          emit(stageForToolCall(call.toolName));
           toolCalls.push({ toolName: call.toolName, args: call.args });
           // FASE 5 — panggilan tool model TIDAK lagi langsung ke runTool:
           // lewat registry kanonis (validasi skema + permission +

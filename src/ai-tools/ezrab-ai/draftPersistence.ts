@@ -46,7 +46,10 @@ import {
 } from './universalIntake';
 /* Type-only: rantai spek→RAB Fase 2 (tanpa sisi runtime — specChain
    diimpor bernilai oleh universalRab; di sini hanya tipenya). */
-import type { ChainValidation } from './specChain';
+import type { ChainValidation, WbsCompletenessReport } from './specChain';
+/* Type-only: artefak WBS eksplisit (P3D; wbsArtifact tidak mengimpor
+   modul ini — impor tipe aman dari siklus). */
+import type { WbsArtifact } from './wbsArtifact';
 import type { BuildingModel } from './multiBuilding';
 import type { StructuredSpec } from './structuredSpec';
 /* Type-only: snapshot versi revisi immutable (Gate 3 / 5C) — impor nilai
@@ -144,6 +147,19 @@ export interface PersistedDraftRecord {
    * QTO terbaru yang berlaku.
    */
   dedQto?: DedQtoDraftInfo | null;
+  /**
+   * P6 (FULL REPAIR 2026-11-13 — menutup P3D-O1): artefak WBS eksplisit
+   * + laporan kelengkapan WBS/spek draft ini (P3D). Opsional — record
+   * lama tanpa field ini tetap terbaca; DRAFT_SCHEMA_VERSION tetap 1
+   * (preseden yang sama dengan dedQto Gate 4). Disalin dari draft
+   * (bukan dari record lama) — artefak terbaru yang berlaku. Tanpa
+   * threading ini, `buildUniversalDraft` tidak boleh memasang kedua
+   * field (draft in-memory vs seed v1 tidak byte-identik — invariansi
+   * revisi P4-(d) pecah); dengan threading ini, hook auto-attach di
+   * `buildUniversalDraft` dipasang kembali (P6) dan P4-(d) tetap hijau.
+   */
+  wbsArtifact?: WbsArtifact | null;
+  wbsCompleteness?: WbsCompletenessReport | null;
 }
 
 type DraftMap = Record<string, PersistedDraftRecord>;
@@ -227,7 +243,17 @@ function deriveStatus(draft: UniversalDraft, projectId: string): PersistedDraftR
  * GATE 4 (5D): dedQto MASUK dengan alasan yang sama — keputusan
  * koreksi QTO mengubah rekonsiliasi TANPA mengubah parts; tanpa
  * dedQto di sidik, autosave akan menganggap draft tidak berubah dan
- * kehilangan keputusan terbaru. */
+ * kehilangan keputusan terbaru.
+ * P6: wbsArtifact MASUK dengan alasan yang sama — keputusan review
+ * WBS (pengecualian node + catatan user) hidup DI DALAM artefak dan
+ * mengubah artefak TANPA mengubah parts; tanpa artefak di sidik,
+ * autosave akan menganggap draft tidak berubah dan kehilangan
+ * keputusan terbaru. wbsCompleteness SENGAJA TIDAK masuk: laporan
+ * itu murni turunan dari parts + spek + artefak (seperti
+ * chainValidation) DAN membawa `checkedAt` non-deterministik —
+ * memasukkannya akan memecahkan dedupe + menginvalidasi binding
+ * approval transfer (G1) pada tiap validasi ulang tanpa perubahan
+ * makna. */
 function draftFingerprint(draft: UniversalDraft): string {
   return JSON.stringify({
     id: draft.id,
@@ -235,12 +261,129 @@ function draftFingerprint(draft: UniversalDraft): string {
     parts: draft.parts,
     buildings: draft.buildings ?? null,
     dedQto: draft.dedQto ?? null,
+    wbsArtifact: draft.wbsArtifact ?? null,
     assumptions: draft.assumptions,
     warnings: draft.warnings,
     changes: draft.changes,
     versions: draft.versions,
     lastTransfer: draft.lastTransfer,
   });
+}
+
+/* ================================================================== */
+/* G1 (K-04, Audit Fase 0 Skill Engine 2026-11-13) — pengikatan        */
+/* approval transfer ke versi + hash draft yang DITINJAU di pratinjau. */
+/*                                                                     */
+/* Pola yang SUDAH ADA di repo, bukan mekanisme baru:                  */
+/*  - sidik isi = draftFingerprint di atas (dipakai autosave);         */
+/*  - stateHash + TTL 10 menit = ChangePlan (operations.ts:161,283,    */
+/*    637–639: executePlan membatalkan bila hash berubah / proyek      */
+/*    berganti / pratinjau kedaluwarsa);                               */
+/*  - guard versi = RevisionPreview {baseVersion, baseUpdatedAt}       */
+/*    (draftRevision.ts:114–116,652–692).                              */
+/*                                                                     */
+/* Kedua fungsi di bawah MURNI (tanpa tulis apa pun): pembuat binding  */
+/* dipanggil saat pratinjau dibuat (view.tsx), pemeriksa dipanggil     */
+/* handler konfirmasi SEBELUM validateTransfer/payload/tulis. Cakupan  */
+/* sidik = cakupan draftFingerprint: `spec`/`title` TIDAK ikut —      */
+/* keduanya tidak mengubah payload transfer (payload dibangun dari    */
+/* parts); bila suatu saat spec memengaruhi payload secara independen, */
+/* sidik harus diperluas dulu.                                         */
+/* ================================================================== */
+
+/** TTL approval transfer — 10 menit, SAMA dengan PLAN_TTL_MS
+ * (operations.ts:283). Pratinjau yang lebih tua dari ini wajib dibuat
+ * ulang agar angka yang ditampilkan selalu data terbaru. */
+export const TRANSFER_APPROVAL_TTL_MS = 10 * 60 * 1000;
+
+/** Approval transfer yang terikat pada SATU keadaan draft: yang
+ * ditinjau pengguna di pratinjau. Disimpan di memori sesi saja
+ * (pendingTransferApprovalRef di view.tsx, pola pendingRevisionRef
+ * Gate 3) — TIDAK dipersist; reload membatalkan approval. */
+export interface TransferApprovalBinding {
+  draftId: string;
+  projectId: string;
+  version: number;
+  /** draftFingerprint(draft) saat pratinjau dibuat. */
+  fingerprint: string;
+  /** Date.now() saat pratinjau dibuat (dasar TTL). */
+  createdAt: number;
+}
+
+export type TransferApprovalCheck =
+  | { ok: true }
+  | {
+      ok: false;
+      reason: 'NO_BINDING' | 'DRAFT_CHANGED' | 'PROJECT_CHANGED' | 'EXPIRED';
+      message: string;
+    };
+
+export function createTransferApprovalBinding(
+  draft: UniversalDraft,
+  projectId: string,
+  now: number = Date.now(),
+): TransferApprovalBinding {
+  return {
+    draftId: draft.id,
+    projectId,
+    version: draft.version,
+    fingerprint: draftFingerprint(draft),
+    createdAt: now,
+  };
+}
+
+/**
+ * Periksa apakah konfirmasi transfer masih berlaku untuk draft AKTIF
+ * saat klik. Urutan cek meniru executePlan (operations.ts:631–639):
+ * kedaluwarsa → proyek berganti → isi berubah. Murni: tidak membaca
+ * storage, tidak menulis apa pun, tidak mengubah draft/binding.
+ */
+export function checkTransferApprovalBinding(
+  binding: TransferApprovalBinding | null,
+  draft: UniversalDraft | null,
+  projectId: string,
+  now: number = Date.now(),
+): TransferApprovalCheck {
+  if (!binding) {
+    return {
+      ok: false,
+      reason: 'NO_BINDING',
+      message:
+        'Tidak ada pratinjau transfer yang aktif di sesi ini (pratinjau sudah dipakai, kedaluwarsa, atau sesi dimuat ulang).',
+    };
+  }
+  if (now > binding.createdAt + TRANSFER_APPROVAL_TTL_MS) {
+    return {
+      ok: false,
+      reason: 'EXPIRED',
+      message:
+        'Pratinjau transfer kedaluwarsa (lebih dari 10 menit). Buat pratinjau baru agar angka yang ditampilkan selalu data terbaru.',
+    };
+  }
+  if (projectId !== binding.projectId) {
+    return {
+      ok: false,
+      reason: 'PROJECT_CHANGED',
+      message:
+        'Proyek aktif sudah berganti sejak pratinjau dibuat — transfer DIBATALKAN agar tidak menyentuh proyek yang salah.',
+    };
+  }
+  // Sidik SUDAH memuat id + versi, jadi cek eksplisit di bawah adalah
+  // sabuk-pengaman yang meniru guard baseVersion revisi — ketiganya
+  // bermuara ke satu pesan yang sama.
+  if (
+    !draft ||
+    draft.id !== binding.draftId ||
+    draft.version !== binding.version ||
+    draftFingerprint(draft) !== binding.fingerprint
+  ) {
+    return {
+      ok: false,
+      reason: 'DRAFT_CHANGED',
+      message: 'Draft berubah sesudah pratinjau — tinjau ulang sebelum transfer.',
+    };
+  }
+  return { ok: true };
 }
 
 /**
@@ -316,6 +459,11 @@ export function buildPersistedRecord(
     // GATE 4 (5D): rekonsiliasi DED/QTO disalin dari draft (keputusan
     // terbaru yang berlaku); absen = draft tanpa DED terlampir.
     ...(draft.dedQto ? { dedQto: draft.dedQto } : {}),
+    // P6 (P3D-O1): artefak WBS + laporan kelengkapan disalin dari
+    // draft (keputusan terbaru yang berlaku); absen = draft lama
+    // tanpa artefak (record tetap terbaca; UI menghitung on-demand).
+    ...(draft.wbsArtifact ? { wbsArtifact: draft.wbsArtifact } : {}),
+    ...(draft.wbsCompleteness ? { wbsCompleteness: draft.wbsCompleteness } : {}),
   };
 }
 
@@ -360,6 +508,10 @@ export function saveDraft(input: SaveDraftInput): SaveDraftResult {
         // tanpa ini, draft ber-DED tidak pernah ter-dedup (sidik lama
         // selalu null vs sidik baru berisi dedQto).
         dedQto: existing.dedQto ?? undefined,
+        // P6 (P3D-O1): wbsArtifact WAJIB ikut dengan alasan yang sama
+        // (draftFingerprint memuatnya; wbsCompleteness TIDAK masuk
+        // sidik — lihat dok draftFingerprint).
+        wbsArtifact: existing.wbsArtifact ?? undefined,
         assumptions: existing.assumptions,
         warnings: existing.warnings,
         changes: existing.changes,
@@ -433,6 +585,17 @@ export function loadDraft(projectId: string): LoadDraftResult {
     // GATE 4 (5D) — rekonsiliasi DED/QTO: dipulihkan apa adanya bila
     // record membawanya (bentuk divalidasi ringan: checks array).
     ...(record.dedQto && Array.isArray(record.dedQto.checks) ? { dedQto: record.dedQto } : {}),
+    // P6 (P3D-O1) — artefak WBS + laporan kelengkapan: dipulihkan apa
+    // adanya bila record membawanya (bentuk divalidasi ringan:
+    // artefak punya nodes array; laporan punya status). Record lama
+    // tanpa field ini tetap terbaca (field absen = on-demand).
+    ...(record.wbsArtifact && Array.isArray(record.wbsArtifact.nodes)
+      ? { wbsArtifact: record.wbsArtifact }
+      : {}),
+    ...(record.wbsCompleteness &&
+    (record.wbsCompleteness.status === 'LENGKAP' || record.wbsCompleteness.status === 'BELUM_LENGKAP')
+      ? { wbsCompleteness: record.wbsCompleteness }
+      : {}),
   };
   return {
     ok: true,

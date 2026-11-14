@@ -321,7 +321,13 @@ export const GOLDEN_TEST_VECTORS: GoldenTestVector[] = [
     category: 'normal',
     sheet: 'Atap Baja Ringan',
     workbookHash: MASTER_WORKBOOK_SHA256,
-    inputs: { P: 12.0, L: 8.0, overhang: 0.8, sudutKemiringan: 30 },
+    // G2 (2026-11-14): input vektor memakai NAMA SKEMA kalkulator produksi
+    // (constructionCalculators/registry.ts) — nama lama (P/L/overhang/
+    // sudutKemiringan) bukan parameter skema sehingga adapter menolaknya
+    // dan vektor BLOCKED (NaN). Skenario fisik & nilai ekspektasi TIDAK
+    // berubah: Pb=12, Lb=8, overstek=0.8, sudut=30; rumus pelana kalkulator
+    // 2×(Lb/2+O)/cos×(Pb+2O) identik matematis dengan catatan vektor.
+    inputs: { Pb: 12.0, Lb: 8.0, overstek: 0.8, sudut: 30 },
     expectedPrimaryQuantity: 150.76,
     primaryUnit: 'm²',
     sourceCell: 'I8',
@@ -340,7 +346,10 @@ export const GOLDEN_TEST_VECTORS: GoldenTestVector[] = [
     category: 'normal',
     sheet: 'Plesteran & Acian',
     workbookHash: MASTER_WORKBOOK_SHA256,
-    inputs: { luasDinding: 105.0, duaSisi: 1 },
+    // G2 (2026-11-14): 'duaSisi' bukan parameter skema (skema: sisiPlester
+    // 1/2, default 2). Vektor ini menguji plesteran 2 sisi — ditulis
+    // eksplisit sebagai sisiPlester: 2; nilai ekspektasi 210 tidak berubah.
+    inputs: { luasDinding: 105.0, sisiPlester: 2 },
     expectedPrimaryQuantity: 210.00,
     primaryUnit: 'm²',
     sourceCell: 'N9',
@@ -359,7 +368,11 @@ export const GOLDEN_TEST_VECTORS: GoldenTestVector[] = [
     category: 'normal',
     sheet: 'Penutup Lantai',
     workbookHash: MASTER_WORKBOOK_SHA256,
-    inputs: { P: 10.0, L: 8.0, tipeUbin: 1 },
+    // G2 (2026-11-14): 'tipeUbin' bukan parameter skema (skema: P, L,
+    // pjgPlint, ukuranUbin, waste) — dan tipe ubin tidak memengaruhi luas
+    // (primaryQuantity = P×L). Param tak dikenal itu dihapus; ekspektasi
+    // 80 tidak berubah.
+    inputs: { P: 10.0, L: 8.0 },
     expectedPrimaryQuantity: 80.00,
     primaryUnit: 'm²',
     sourceCell: 'N9',
@@ -397,7 +410,11 @@ export const GOLDEN_TEST_VECTORS: GoldenTestVector[] = [
     category: 'normal',
     sheet: 'Plafon',
     workbookHash: MASTER_WORKBOOK_SHA256,
-    inputs: { P: 10.0, L: 8.0, tipePlafon: 1 },
+    // G2 (2026-11-14): 'tipePlafon' bukan parameter skema (skema: P, L,
+    // tipeRangka — tipe RANGKA, konsep berbeda dari tipe plafon) — dan
+    // tidak memengaruhi luas (primaryQuantity = P×L). Param tak dikenal
+    // itu dihapus; ekspektasi 80 tidak berubah.
+    inputs: { P: 10.0, L: 8.0 },
     expectedPrimaryQuantity: 80.00,
     primaryUnit: 'm²',
     sourceCell: 'J8',

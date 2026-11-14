@@ -428,6 +428,13 @@ export function localGreeting(): string {
   return GREETING_RESPONSES[Math.floor(Math.random() * GREETING_RESPONSES.length)];
 }
 
+/**
+ * Teks bantuan /help — dijaga RINGKAS (< 1200 karakter, dipin
+ * chatAiContextAware #19): perintah yang namanya sudah menjelaskan
+ * diri tidak diberi deskripsi (deskripsi hanya bila menambah arti di
+ * luar nama perintah); daftar lengkap selalu tersedia lewat "/" di
+ * composer. Semua perintah tetap tercantum — tidak ada yang dihapus.
+ */
 export const HELP_TEXT = `Perintah yang tersedia:
 
 🧭 Navigasi:
@@ -441,32 +448,32 @@ export const HELP_TEXT = `Perintah yang tersedia:
 /dashboard — Kembali ke dashboard
 /game — Buka EZRAB Game Space 🎮
 
-🧭 Navigasi lanjutan (Command Router — ketik "/" di composer untuk daftar lengkap):
+🧭 Navigasi lanjutan (ketik "/" di composer untuk daftar lengkap):
 /beranda — Kembali ke Beranda
-/proyek-draft — Proyek Draft
+/proyek-draft
 /proyek-aktif — Proyek Sedang Dikerjakan
-/proyek-selesai — Proyek Selesai
-/proyek-arsip — Proyek Arsip
+/proyek-selesai
+/proyek-arsip
 /kalkulator — Kalkulator Volume
-/jadwal — Jadwal
-/jadwal-manajemen — Jadwal & Manajemen
-/spreadsheet — Spreadsheet RAB
-/rekap-rab — Rekapitulasi RAB
-/analisa-harga — Analisa Harga RAB
-/kurva-s — Kurva S & Jadwal
+/jadwal
+/jadwal-manajemen
+/spreadsheet
+/rekap-rab
+/analisa-harga
+/kurva-s
 /catatan — Catatan Estimasi
-/pengaturan-rab — Pengaturan RAB
+/pengaturan-rab
 /chat-ai — Kembali ke Chat AI
-/dokumen-ai — AI Document
-/dokumen-proyek — Dokumen Proyek
+/dokumen-ai
+/dokumen-proyek
 /database — Database (Material & Harga)
 /material — Material & Harga
-/upah — Upah
-/alat — Peralatan
-/harga-proyek — Harga Proyek
-/laporan — Laporan
+/upah
+/alat
+/harga-proyek
+/laporan
 /keuangan — Keuangan Proyek
-/pengaturan — Pengaturan
+/pengaturan
 /tutorial — Buka Tutorial
 
 🔍 Pencarian:

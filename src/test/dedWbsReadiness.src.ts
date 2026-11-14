@@ -67,8 +67,14 @@ const fastBdm = createFastSystemPrompt({ projectType: 'BENDUNGAN', pricingPolicy
 check('prompt FAST: tipe BENDUNGAN sampai ke prompt', fastBdm.includes('"BENDUNGAN"'));
 check('prompt FAST BENDUNGAN/DATABASE: fallback Estimasi AI, tanpa tabel harga',
   fastBdm.includes('Estimasi AI') && !fastBdm.includes('HARGA JAKARTA 2026'));
-check('prompt FAST BENDUNGAN/FULL_AI: tabel harga tetap dari kebijakan (bukan tipe)',
-  createFastSystemPrompt({ projectType: 'BENDUNGAN', pricingPolicy: 'FULL_AI' }).includes('Rp120.000'));
+// W3 (Dual Mode §5/§7, G-IS-4, C3 — PERUBAHAN PERILAKU YANG DIMAKSUD):
+// referensi harga jalan inline DIHAPUS dari prompt FULL AI. Pin lama
+// (FULL_AI mengandung 'Rp120.000') diganti dengan kekuatan SAMA: perilaku
+// tetap berasal dari KEBIJAKAN (bukan tipe) — FULL_AI mewajibkan estimasi
+// + membawa master prompt, dan tetap TANPA data harga internal.
+check('prompt FAST BENDUNGAN/FULL_AI: kewajiban estimasi + master prompt dari kebijakan (bukan tipe)',
+  (() => { const s = createFastSystemPrompt({ projectType: 'BENDUNGAN', pricingPolicy: 'FULL_AI' });
+    return s.includes('WAJIB isi estimatedUnitPrice') && s.includes('MASTER PROMPT FULL AI v') && !s.includes('Rp120.000'); })());
 const detIrg = createDetailSystemPrompt({ projectType: 'IRIGASI', pricingPolicy: 'DATABASE' });
 check('prompt DETAIL: tipe IRIGASI sampai ke prompt + spesifikasi WBS', detIrg.includes('"IRIGASI"') && detIrg.includes('SPESIFIKASI KLASIFIKASI & WBS'));
 check('prompt Full AI: tipe BENDUNGAN sampai ke prompt',

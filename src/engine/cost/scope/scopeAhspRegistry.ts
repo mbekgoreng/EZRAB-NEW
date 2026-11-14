@@ -16,6 +16,19 @@
  * - Fallback codes are provided for cases where the primary code is
  *   UNREADABLE or not available.
  * - The registry is versioned per AHSP edition.
+ *
+ * ⚠️ PERINGATAN G1 (2026-11-14) — KODE-KODE DI BAWAH INI SALAH UNTUK BINA
+ * MARGA dan JANGAN dipakai sebagai acuan tanpa remap. Registry ini ditulis
+ * dengan skema nomor karangan (3.1.x = beton, 3.2.x = tulangan, 3.3.x =
+ * bekisting) yang TIDAK PERNAH cocok Lampiran V BM 2026 — di BM, Divisi
+ * 3.1 = Galian (3.1.(5) = "Galian Struktur 2-4 M", terbukti dari data
+ * pra-strip a506967). Akibatnya 6 dari 12 kode bendung ter-resolve ke item
+ * yang SALAH (beton dihargai sebagai galian/pasangan batu/gorong-gorong)
+ * dan 6 sisanya tidak ada di master sama sekali. Remap ke kode BM
+ * terverifikasi BUTUH keputusan engineering (konversi K->fc', grade
+ * tulangan, pita kedalaman galian; bekisting + buang tanah tidak ada di
+ * master BM; SMKK domain terpisah). Detail + tabel salah-peta: LAPORAN-G1
+ * §9–§10 + tes canary di src/test/useScopeBasedCost.test.ts.
  */
 
 export interface ScopeMapping {

@@ -20,8 +20,14 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'METHOD_NOT_ALLOWED' });
   }
   const auth = await authenticateRequest(req);
-  if (!auth.allow) {
-    return res.status(auth.status || 401).json({ error: auth.errorCode || 'AUTH_REQUIRED' });
+  // S7 (2026-11-13): authenticateRequest mengembalikan { ok, method, user }
+  // — BUKAN { allow, status, errorCode } (itu bentuk evaluateCreditAccess).
+  // Kode lama membaca auth.allow yang tidak pernah ada, sehingga SEMUA
+  // panggilan — termasuk yang terautentikasi — ditolak 401 dan endpoint
+  // ini mati total. Pagar yang dimaksud komentar F4 di atas adalah pagar
+  // yang sama seperti handler lain: tolak hanya bila auth gagal.
+  if (!auth.ok) {
+    return res.status(401).json({ error: 'AUTH_REQUIRED' });
   }
   const rl = rateLimit(req, { limit: 30, keyPrefix: 'rl-market' });
   if (!rl.allowed) {

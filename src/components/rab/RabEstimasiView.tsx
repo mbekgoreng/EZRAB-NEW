@@ -1373,6 +1373,7 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
           onClose={() => setSmartAddModalOpen(false)}
           initialMode={smartAddInitialMode}
           currentProjectId={currentProjectId || currentProject?.id || (allProjects.length > 0 ? allProjects[0].id : null)}
+          currentProjectName={currentProject?.name ?? (allProjects.length > 0 ? allProjects[0].name : null)}
           activeCategory={smartAddCategoryContext}
           customCategories={currentProject?.customWbsGroups ?? []}
           existingItems={projectRabItems}

@@ -370,9 +370,15 @@ export class DedRabPipeline {
       });
 
       // 2. HARD-FAIL PRODUCTION ASSERTION (Phase 2): Real AI output must exist
+      // G2 (Rule 24): kode NO_VERIFIED_ITEMS ditambahkan agar hasil kosong
+      // tahap discovery teridentifikasi sama seperti blok Rule 24 di bawah
+      // (:771) — tanpanya, throw ini memotong blok itu dan error yang
+      // sampai ke pemanggil tidak memuat penanda Rule 24. Perilaku TIDAK
+      // berubah (tetap throw → fail-closed); hanya teks error yang
+      // mendapat tag kode, kalimat manusianya utuh.
       if (!discoveredItems || discoveredItems.length === 0) {
         throw new Error(
-          '[DedRabPipeline] HARD FAIL: Ekstraksi AI dokumen tidak menghasilkan item pekerjaan konstruksi yang valid.'
+          '[DedRabPipeline] HARD FAIL [NO_VERIFIED_ITEMS]: Ekstraksi AI dokumen tidak menghasilkan item pekerjaan konstruksi yang valid.'
         );
       }
 

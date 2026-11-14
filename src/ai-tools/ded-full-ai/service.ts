@@ -6,6 +6,14 @@
  * prompt dan validasi yang berbeda.
  *
  * Alur: Upload → Parse → Prompt → AI → Validate → Verify → Output
+ *
+ * W4 (§6 directive DED-RAB AI Dual Mode, 2026-11-13): `runExecute`
+ * distrukturkan menjadi 7 tahap eksplisit DI ATAS infrastruktur yang
+ * ada (tanpa engine kedua) — jejaknya dilampirkan ke keluaran
+ * (`pipelineStages`) dan Tahap 7 menjalankan audit QC single-pass
+ * (`qualityControl.ts`). Tahap 2–4 adalah penalaran model di dalam
+ * satu panggilan AI, bukan pass terpisah; QC tanpa loop revisi
+ * (revisionIterations selalu 0).
  */
 import { aiToolsProviderClient } from '../providerClient';
 import { waitForMinimum, minDelayFor } from '../aiResponseTiming';
@@ -15,11 +23,18 @@ import { buildFullAiPrompt } from './prompts';
 import { validateFullAiItem, verifySubtotal, describeProposedDiscrepancy } from './validator';
 import {
   FullAiOutput, FullAiItem, FullAiServiceOptions, FullAiSummary, DedEstimationPolicy, FullAiPriceSource,
+  type FullAiStageTraceEntry,
 } from './types';
 import {
   matchDedItemToAhsp, resolveDedPriceWithCanonical,
-  type CanonicalDedMatch,
+  type CanonicalDedMatch, type DedItemForMatch,
+  type DedPriceFallback, type DedPriceDecision,
 } from '../ded-canonical/canonicalDedPricing';
+import {
+  resolveDedRabAiMode, modeFromPolicy,
+  canUseCanonicalCatalog, canUseExternalPriceReferences,
+} from './dataSourcePolicy';
+import type { DedRabAiMode } from '../ded-ai-estimate/dedMode';
 import {
   findExternalReference, findConflictingReference,
   type ExternalPriceReference,
@@ -31,6 +46,9 @@ import {
 } from '../ded-ai-estimate/priceCompletion';
 import { referenceIsStale } from '../ded-ai-estimate/priceResearchCache';
 import { buildDedUsageFromFullAi } from '../ded-ai-estimate/usageMetadata';
+import {
+  computeFullAiGrandTotal, runFullAiQualityControl,
+} from './qualityControl';
 import type { DedAiItem, DedPriceCompletion } from '../ded-ai-estimate/types';
 
 // Batas karakter dengan strategi chunking yang transparan
@@ -193,10 +211,26 @@ export class FullAiDedService {
     const { mode, projectType } = options;
     // Kebijakan harga (default FULL_AI = perilaku lama).
     const policy: DedEstimationPolicy = options.policy ?? 'FULL_AI';
+    // Mode dual DED-RAB (§7, C3): mode eksplisit menang, bila absen
+    // diturunkan dari policy. Mode inilah yang menggerbang akses katalog
+    // AHSP/harga internal di bawah (bukan policy mentah).
+    const rabMode: DedRabAiMode = resolveDedRabAiMode(options.rabMode, policy);
     const notify = options.onProgress || (() => {});
 
+    // W4 (§6): jejak 7 tahap pipeline — dicatat menurut urutan eksekusi
+    // nyata dan dilampirkan ke keluaran (field pipelineStages). Tahap
+    // 2–4 dicatat sesudah respons model diterima (penalaran model-side).
+    const stageTrace: FullAiStageTraceEntry[] = [];
+    const markStage = (
+      stage: FullAiStageTraceEntry['stage'],
+      status: FullAiStageTraceEntry['status'],
+      detail: string,
+    ) => {
+      stageTrace.push({ stage, status, detail });
+    };
+
     try {
-      // Tahap 1: Parse dokumen
+      // §6 Tahap 1 — Document Intelligence: parse dokumen
       notify('PARSE', 10, 'Membaca dokumen DED...');
       const parsed = await parseDedPdf(options.buffer, options.fileName, { withImages: false });
 
@@ -228,12 +262,18 @@ export class FullAiDedService {
       }
       notify('PARSE', 25, `Dokumen dibaca: ${pages.length} halaman`);
 
-      // Tahap 2: Siapkan teks dengan seleksi halaman berprioritas (F4 3.4/3.6)
+      // §6 Tahap 1 (lanjutan): siapkan teks dengan seleksi halaman berprioritas (F4 3.4/3.6)
       const doc = buildDocumentText(
         pages.map((p: any) => ({ page: p.page, text: p.text || '', pageType: p.pageType }))
       );
       const docText = doc.text;
       const totalChars = doc.totalChars;
+      markStage(
+        'DOCUMENT_INTELLIGENCE',
+        'done',
+        `${pages.length} halaman dibaca; ${doc.includedPages.length} halaman terkirim ke model (${totalChars.toLocaleString('id-ID')} karakter)` +
+          (doc.truncated ? '; sebagian halaman terpotong/kosong (lihat warnings).' : '.'),
+      );
 
       const warnings: string[] = [];
       if (pageScopeApplied) {
@@ -271,7 +311,8 @@ export class FullAiDedService {
         );
       }
 
-      // Tahap 3: Panggil AI
+      // §6 Tahap 2–4 (model-side): SATU panggilan AI — Scope+WBS,
+      // Construction Method Reasoning, AI AHSP Generation.
       notify('ANALYZE', 40, `Menganalisis DED dengan AI (${mode})...`);
       const { system, prompt } = buildFullAiPrompt({
         projectType,
@@ -299,7 +340,8 @@ export class FullAiDedService {
         });
       }
 
-      // Tahap 4: Parse & validasi
+      // Parse & validasi respons model (normalisasi + validateFullAiItem
+      // + resolusi kanonis per item).
       notify('VALIDATE', 70, 'Memvalidasi hasil AI...');
       let parsedAi: any;
       try {
@@ -339,12 +381,25 @@ export class FullAiDedService {
             unitPrice: isFlatPrice ? raw.price : null,
             unit: raw.priceUnit || raw.unit || '',
             source: raw.priceSource || 'AI_ESTIMATE',
+            // REKONSILIASI: stempel region/period default untuk harga flat.
+            // `region` di sini METADATA PASSTHROUGH semata — tidak ada satu
+            // pun keputusan yang membacanya: applyFullAiPricePolicy hanya
+            // membaca source; resolveFullAiItemPrice meneruskannya apa
+            // adanya (FULL_AI) atau menimpanya 'Nasional' untuk kanonis
+            // (EZRAB_AI); adapter tidak menerima region; validator dan
+            // completeFullAiPrices tidak membacanya; tidak ada pembaca
+            // item.price.region di luar service.ts. Jadi stempel ini
+            // TIDAK menggerakkan resolusi/asumsi harga di mode mana pun
+            // (termasuk FULL AI) — dibiarkan apa adanya, bukan asumsi
+            // Jakarta yang memengaruhi angka.
             region: 'Jakarta',
             period: '2026',
           },
         };
 
-        const validation = validateFullAiItem(normalized, i);
+        // §7 (G-IS-6): validator menerima mode agar di FULL_AI ia tidak
+        // memeriksa blok penyelesaian terhadap referensi internal.
+        const validation = validateFullAiItem(normalized, i, { rabMode });
 
         // F4 (3.7): peringatan validator SELALU diteruskan; error validator
         // dikumpulkan ke allErrors dan WAJIB muncul di hasil akhir (dulu
@@ -357,17 +412,21 @@ export class FullAiDedService {
         }
 
         const q = normalized.quantity || {};
-        // Gerbang kebijakan harga (service layer): harga diteruskan ke
-        // adapter — kanonis RESOLVED menang; bila tidak ada di database,
-        // estimasi AI dipakai sebagai fallback berlabel jelas (keputusan
-        // owner 2026-10-27 malam). Item tanpa harga tetap tampil dengan
-        // exclusionReason PRICE_UNRESOLVED di bawah.
-        const p = applyFullAiPricePolicy(policy, normalized.price || {});
-        // Resolusi kanonis (adapter ded-canonical): klaim VERIFIED tidak
-        // lagi dipercaya begitu saja. Harga kanonis dipakai bila
-        // terverifikasi (kedua mode); klaim gagal turun jadi estimasi AI
-        // (kedua mode, berlabel perkiraan). Harga USER_INPUT tidak
-        // pernah ditimpa.
+        // Gerbang kebijakan harga (§7, G-IS-2 — kini gerbang NYATA, bukan
+        // no-op): di mode FULL_AI klaim harga database yang tak dapat
+        // dikonfirmasi tanpa katalog diturunkan jadi estimasi AI; di mode
+        // EZRAB_AI harga diteruskan ke adapter — kanonis RESOLVED menang;
+        // bila tidak ada di database, estimasi AI dipakai sebagai fallback
+        // berlabel jelas (keputusan owner 2026-10-27 malam). Item tanpa
+        // harga tetap tampil dengan exclusionReason PRICE_UNRESOLVED di bawah.
+        const p = applyFullAiPricePolicy(policy, normalized.price || {}, rabMode);
+        // Resolusi harga (§7, G-IS-1): HANYA di mode EZRAB_AI adapter
+        // kanonis dipanggil (klaim VERIFIED tidak dipercaya begitu saja;
+        // klaim gagal turun jadi estimasi AI berlabel perkiraan). Di mode
+        // FULL_AI adapter TIDAK dipanggil sama sekali — estimasi AI
+        // dipertahankan apa adanya. Harga USER_INPUT tidak pernah ditimpa
+        // di mode mana pun. Logika ini tinggal di resolveFullAiItemPrice
+        // (di bawah) agar gerbangnya dapat dibuktikan dengan spy.
         let finalPrice: {
           unitPrice: number | null; unit: string; source: FullAiPriceSource;
           region?: string; period?: string; ahspCode?: string; notes?: string;
@@ -381,32 +440,27 @@ export class FullAiDedService {
             region: p.region, period: p.period, ahspCode: p.ahspCode, notes: p.notes,
           };
         } else {
-          const claimedCode = typeof normalized.price?.ahspCode === 'string'
-            ? normalized.price.ahspCode
-            : undefined;
-          const match = matchDedItemToAhsp({
+          const resolved = resolveFullAiItemPrice({
+            rabMode,
+            policy,
             name: String(raw.name || ''),
-            unit: String(q.unit || ''),
-            specification: typeof raw.description === 'string' ? raw.description : undefined,
-            claimedAhspCode: claimedCode,
+            quantityUnit: String(q.unit || ''),
+            description: typeof raw.description === 'string' ? raw.description : undefined,
+            claimedAhspCode: typeof normalized.price?.ahspCode === 'string'
+              ? normalized.price.ahspCode
+              : undefined,
+            price: {
+              unitPrice: typeof p.unitPrice === 'number' ? p.unitPrice : null,
+              unit: String(p.unit || q.unit || ''),
+              source: p.source || 'UNRESOLVED',
+              region: p.region,
+              period: p.period,
+              notes: p.notes,
+              ahspCode: p.ahspCode,
+            },
           });
-          ahspMatch = match;
-          const decision = resolveDedPriceWithCanonical(policy, match, {
-            unitPrice: typeof p.unitPrice === 'number' ? p.unitPrice : null,
-            source: p.source || 'UNRESOLVED',
-            unit: String(p.unit || q.unit || ''),
-            notes: p.notes,
-            ahspCode: p.ahspCode,
-          });
-          finalPrice = {
-            unitPrice: decision.unitPrice,
-            unit: decision.unit || String(q.unit || ''),
-            source: decision.source,
-            region: decision.source === 'AHSP_2026' ? 'Nasional' : p.region,
-            period: decision.source === 'AHSP_2026' ? '2026' : p.period,
-            ahspCode: decision.ahspCode,
-            notes: decision.notes,
-          };
+          finalPrice = resolved.finalPrice;
+          ahspMatch = resolved.ahspMatch;
         }
         // Penyelesaian harga referensi eksternal TIDAK lagi inline di
         // sini: sesudah semua item terbentuk, completeFullAiPrices
@@ -491,6 +545,24 @@ export class FullAiDedService {
         }
       }
 
+      // §6 Tahap 2–4 — jejak model-side (DICATAT sesudah respons model
+      // diterima; bukti terukur dari respons itu, BUKAN pass terpisah):
+      markStage(
+        'SCOPE_WBS',
+        'done',
+        `Model-side dalam satu panggilan AI: ${items.filter((it) => it.wbsCode).length} dari ${items.length} item membawa kode WBS; ringkasan cakupan ${parsedAi.projectInfo?.scopeSummary ? 'tersedia' : 'tidak diberikan'}.`,
+      );
+      markStage(
+        'METHOD_REASONING',
+        'done',
+        `Model-side dalam satu panggilan AI: ${items.filter((it) => it.description).length} item berdeskripsi, ${items.filter((it) => (it.quantity.assumptions || []).length > 0).length} item berasumsi, ${items.filter((it) => it.quantity.formula).length} item berumus.`,
+      );
+      markStage(
+        'AI_AHSP_GENERATION',
+        'done',
+        `Model-side dalam satu panggilan AI + resolusi kanonis per item: ${items.filter((it) => it.price.ahspMatch).length} item melewati resolusi kanonis, ${items.filter((it) => it.price.source === 'AHSP_2026').length} item berharga kanonis AHSP_2026.`,
+      );
+
       // SPRINT 4 (paritas harga): penyelesaian harga referensi
       // eksternal dengan blok DedPriceCompletion terstruktur — jalur
       // yang sama dengan completeDedItem pipeline standar (referensi
@@ -499,7 +571,10 @@ export class FullAiDedService {
       // kuantitas dapat menempelkan quantityBasis ke blok harga.
       // Mode FULL_AI saja.
       if (policy === 'FULL_AI') {
-        const filledPrices = completeFullAiPrices(items);
+        // §7 (G-IS-5): di mode FULL_AI completeFullAiPrices TIDAK memakai
+        // externalPriceReferences — gerbangnya hidup di dalam fungsi itu
+        // (dataSourcePolicy); di sini mode hanya diteruskan.
+        const filledPrices = completeFullAiPrices(items, { rabMode });
         if (filledPrices > 0) {
           warnings.push(
             `${filledPrices} harga dilengkapi dari referensi pasar eksternal terkurasi (estimasi AI berlabel sumber & blok penyelesaian terstruktur — bukan harga resmi AHSP, perlu tinjauan pengguna).`
@@ -522,11 +597,43 @@ export class FullAiDedService {
         }
       }
 
-      // Tahap 5: Hitung total & ringkasan
+      // §6 Tahap 5–6 — jejak pass penyelesaian (dihitung dari keadaan
+      // item sesudah pass; pemanggilan completion di atas tidak diubah):
+      markStage(
+        'AI_PRICING',
+        policy === 'FULL_AI' ? 'done' : 'skipped',
+        policy === 'FULL_AI'
+          ? `Pass penyelesaian harga: ${items.filter((it) => it.price.filledFromExternalRef).length} item membawa harga isian referensi eksternal (filledFromExternalRef).`
+          : 'Dilewati: penyelesaian harga hanya berjalan pada policy FULL_AI.',
+      );
+      markStage(
+        'QUANTITY_VOLUME',
+        policy === 'FULL_AI' ? 'done' : 'skipped',
+        policy === 'FULL_AI'
+          ? `Pass penyelesaian kuantitas: ${items.filter((it) => (it.quantityAudit?.method ?? it.quantity.quantityAudit?.method) === 'plan-context-estimate').length} kuantitas dilengkapi dari konteks denah.`
+          : 'Dilewati: penyelesaian kuantitas hanya berjalan pada policy FULL_AI.',
+      );
+
+      // §6 Tahap 7 — Quality Control: audit single-pass atas item final.
+      // TANPA loop revisi otomatis (revisionIterations QC selalu 0); isu
+      // dipertahankan sebagai warning/unresolved yang terlihat.
+      const qualityControl = runFullAiQualityControl(items, {
+        projectType,
+        scopeSummary: parsedAi.projectInfo?.scopeSummary,
+        documentPages: pages.length,
+      });
+      markStage(
+        'QUALITY_CONTROL',
+        'done',
+        `Audit single-pass: ${qualityControl.checks.filter((c) => c.passed).length}/${qualityControl.checks.length} pemeriksaan lolos, ${qualityControl.unresolvedIssueCount} isu dipertahankan terlihat, 0 iterasi revisi.`,
+      );
+      warnings.push(...qualityControl.warnings);
+
+      // Total: jumlah subtotal terverifikasi — rumus diekstrak ke
+      // computeFullAiGrandTotal (semantik persis penjumlahan inline lama;
+      // kesetaraan vs engine kanonis dibuktikan suite W4, G-SP-1).
       notify('FINALIZE', 90, 'Menyusun hasil akhir...');
-      const grandTotal = items
-        .filter((it) => it.subtotal != null && it.subtotal > 0)
-        .reduce((sum, it) => sum + (it.subtotal || 0), 0);
+      const { grandTotal } = computeFullAiGrandTotal(items);
 
       const summary: FullAiSummary = {
         totalItems: items.length,
@@ -593,6 +700,9 @@ export class FullAiDedService {
           },
           {
             workflowId: `fullai-${Date.now()}`, policy,
+            // G-UI-4 (Dual Mode §3): kompleksitas pilihan user (DETAIL)
+            // diteruskan ke catatan usage; absen → null (bukan default).
+            complexity: options.complexity,
             startedAt: runStartedAt,
             finishedAt: new Date().toISOString(),
           },
@@ -612,6 +722,8 @@ export class FullAiDedService {
         aiProposedGrandTotal,
         grandTotalNote,
         summary,
+        pipelineStages: stageTrace,
+        qualityControl,
         // F4 (3.7): error validator per item WAJIB tampil di hasil akhir;
         // peringatan model dinormalisasi (string utuh ≠ peringatan per karakter).
         warnings: [
@@ -968,8 +1080,18 @@ export function applyFullAiExternalReference(
  *   bersama (paritas Tahap 2 pipeline standar);
  * - harga kanonis AHSP / manual tidak pernah disentuh (tidak kosong).
  * Mengembalikan jumlah harga yang terisi (blok konflik tidak dihitung).
+ *
+ * §7 (G-IS-5, C3): bila `opts.rabMode` adalah FULL_AI, fungsi ini TIDAK
+ * memakai referensi internal sama sekali — mengembalikan 0 dan item
+ * dibiarkan apa adanya. Tanpa rabMode, perilaku lama dipertahankan.
  */
-export function completeFullAiPrices(items: FullAiItem[], opts: { now?: Date } = {}): number {
+export function completeFullAiPrices(
+  items: FullAiItem[],
+  opts: { now?: Date; rabMode?: DedRabAiMode } = {},
+): number {
+  if (opts.rabMode !== undefined && !canUseExternalPriceReferences(opts.rabMode)) {
+    return 0;
+  }
   let filled = 0;
   for (let i = 0; i < items.length; i++) {
     const it = items[i];
@@ -1105,15 +1227,153 @@ export function rejectFullAiCompletion(item: FullAiItem): FullAiItem {
   };
 }
 
+/**
+ * Gerbang kebijakan harga mesin Full AI (§7, G-IS-2) — kini gerbang NYATA,
+ * bukan lagi no-op pass-through.
+ *
+ * - EZRAB_AI: harga diteruskan apa adanya; adapter kanonis yang memutuskan
+ *   (kanonis RESOLVED menang, klaim gagal turun jadi estimasi AI).
+ *   Perilaku lama persis, termasuk untuk pemanggil 2-argumen lama.
+ * - FULL_AI: klaim harga database (AHSP_2026 / VERIFIED_SOURCE) TIDAK
+ *   dapat dikonfirmasi tanpa katalog — diturunkan jadi AI_ESTIMATE,
+ *   kode AHSP dicabut, angka model dipertahankan (angka model tetap
+ *   angka model, hanya labelnya yang jujur), dengan catatan alasannya.
+ *   USER_INPUT / AI_ESTIMATE / UNRESOLVED diteruskan apa adanya.
+ *
+ * Tidak pernah memutasi objek harga masukan: bila menurunkan klaim,
+ * mengembalikan objek BARU. Mode eksplisit menang; bila absen, diturunkan
+ * dari policy (DATABASE → EZRAB_AI, selain itu FULL_AI).
+ */
 export function applyFullAiPricePolicy(
   policy: DedEstimationPolicy | undefined,
-  price: any
+  price: any,
+  rabMode?: DedRabAiMode,
 ): any {
-  // Keputusan harga kini sepenuhnya di adapter (resolveDedPriceWithCanonical);
-  // gerbang dipertahankan sebagai titik lewat agar pemanggil lama & tes
-  // tetap memiliki satu tempat kebijakan yang eksplisit.
-  void policy;
+  const mode = rabMode ?? modeFromPolicy(policy);
+  if (canUseCanonicalCatalog(mode)) return price;
+  if (price == null || typeof price !== 'object') return price;
+  if (price.source === 'AHSP_2026' || price.source === 'VERIFIED_SOURCE') {
+    return {
+      ...price,
+      source: 'AI_ESTIMATE',
+      ahspCode: undefined,
+      notes: [
+        price.notes,
+        'Klaim harga database tidak dikonfirmasi di mode Full AI (tanpa akses katalog AHSP) — diperlakukan sebagai estimasi AI.',
+      ]
+        .filter(Boolean)
+        .join(' '),
+    };
+  }
   return price;
+}
+
+/**
+ * Resolusi harga satu item Full AI (§7, G-IS-1) — SATU-SATUNYA tempat
+ * runExecute mencapai adapter kanonis. Dipisah dari loop agar gerbangnya
+ * dapat dibuktikan dengan spy pada boundary (suite w5FullAiIsolation):
+ * `deps` memungkinkan penyuntikan resolver tiruan; defaultnya adapter
+ * kanonis yang sesungguhnya.
+ *
+ * - EZRAB_AI: perilaku lama persis — matchDedItemToAhsp lalu
+ *   resolveDedPriceWithCanonical; kanonis RESOLVED menang atas estimasi AI.
+ * - FULL_AI: adapter TIDAK dipanggil sama sekali (deps tidak disentuh) —
+ *   estimasi AI dipertahankan; klaim kanonis yang lolos gerbang (pertahanan
+ *   kedua) dinormalisasi jadi AI_ESTIMATE; kode AHSP dicabut karena tak
+ *   dapat dikonfirmasi; ahspMatch undefined (tidak ada kandidat review).
+ *
+ * USER_INPUT tidak masuk ke sini — loop menanganinya sebelum memanggil
+ * fungsi ini dan tidak pernah ditimpa di mode mana pun.
+ */
+export interface FullAiCanonicalDeps {
+  matchItem?: (input: DedItemForMatch) => CanonicalDedMatch;
+  resolvePrice?: (
+    policy: DedEstimationPolicy,
+    match: CanonicalDedMatch,
+    fallback: DedPriceFallback,
+  ) => DedPriceDecision;
+}
+
+export function resolveFullAiItemPrice(args: {
+  rabMode: DedRabAiMode;
+  policy: DedEstimationPolicy;
+  name: string;
+  quantityUnit: string;
+  description?: string;
+  claimedAhspCode?: string;
+  price: {
+    unitPrice: number | null;
+    unit: string;
+    source: string;
+    region?: string;
+    period?: string;
+    notes?: string;
+    ahspCode?: string;
+  };
+  deps?: FullAiCanonicalDeps;
+}): {
+  finalPrice: {
+    unitPrice: number | null;
+    unit: string;
+    source: FullAiPriceSource;
+    region?: string;
+    period?: string;
+    ahspCode?: string;
+    notes?: string;
+  };
+  ahspMatch?: CanonicalDedMatch;
+} {
+  const { rabMode, policy, price } = args;
+  if (!canUseCanonicalCatalog(rabMode)) {
+    // FULL_AI: tanpa adapter — estimasi AI dipertahankan apa adanya.
+    // Pertahanan kedua bila klaim kanonis lolos gerbang harga: labelnya
+    // dinormalisasi jadi AI_ESTIMATE (angka tetap angka model).
+    const source: FullAiPriceSource =
+      price.source === 'AHSP_2026' || price.source === 'VERIFIED_SOURCE'
+        ? 'AI_ESTIMATE'
+        : price.source === 'AI_ESTIMATE' || price.source === 'UNRESOLVED'
+          ? price.source
+          : 'UNRESOLVED';
+    return {
+      finalPrice: {
+        unitPrice: price.unitPrice,
+        unit: price.unit,
+        source,
+        region: price.region,
+        period: price.period,
+        ahspCode: undefined,
+        notes: price.notes,
+      },
+      ahspMatch: undefined,
+    };
+  }
+  const matchItem = args.deps?.matchItem ?? matchDedItemToAhsp;
+  const resolvePrice = args.deps?.resolvePrice ?? resolveDedPriceWithCanonical;
+  const match = matchItem({
+    name: args.name,
+    unit: args.quantityUnit,
+    specification: args.description,
+    claimedAhspCode: args.claimedAhspCode,
+  });
+  const decision = resolvePrice(policy, match, {
+    unitPrice: price.unitPrice,
+    source: price.source,
+    unit: price.unit,
+    notes: price.notes,
+    ahspCode: price.ahspCode,
+  });
+  return {
+    finalPrice: {
+      unitPrice: decision.unitPrice,
+      unit: decision.unit || args.quantityUnit,
+      source: decision.source,
+      region: decision.source === 'AHSP_2026' ? 'Nasional' : price.region,
+      period: decision.source === 'AHSP_2026' ? '2026' : price.period,
+      ahspCode: decision.ahspCode,
+      notes: decision.notes,
+    },
+    ahspMatch: match,
+  };
 }
 
 /**

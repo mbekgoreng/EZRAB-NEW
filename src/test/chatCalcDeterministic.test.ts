@@ -242,10 +242,17 @@ describe('Provenance tool harga (akar C3/C12/C15 + C2)', () => {
     expect(out).not.toMatch(/Rp \d/);
   });
 
-  it('cari_ahsp: hit memuat dokumen sumber + status verifikasi record', () => {
+  // G2 (2026-11-13): label 'Sumber:' / 'Status verifikasi:' adalah format
+  // tool cari_harga, BUKAN cari_ahsp — pipeline cari_ahsp tidak punya
+  // medan status verifikasi sama sekali (ChatSearchItem tanpa field itu;
+  // grep 'verification' di chatSearch.ts = 0). Provenance cari_ahsp =
+  // 'Sumber koefisien: <dokumen>' + 'Dasar harga: ...' (provenanceLine).
+  // Asersi diperbaiki ke format sebenarnya, sama kuatnya: dokumen sumber
+  // + dasar harga wajib hadir pada hit.
+  it('cari_ahsp: hit memuat dokumen sumber koefisien + dasar harga record', () => {
     const out = String(runTool('cari_ahsp', { kata_kunci: 'pondasi batu kali' }));
-    expect(out).toContain('Sumber:');
-    expect(out).toContain('Status verifikasi:');
+    expect(out).toContain('Sumber koefisien:');
+    expect(out).toContain('Dasar harga:');
   });
 
   it('get_item_detail: item unresolved → "Subtotal: belum tersedia", bukan Rp0', () => {
@@ -275,43 +282,60 @@ describe('Prompt chat: blok DATA berlabel + kunci idempotensi per operasi', () =
       return { success: true, content: 'baik', structured: null, requestId: 'stub' };
     };
   }
+  // G2 (2026-11-13): runner shim repo TIDAK mengimplementasikan afterAll
+  // (no-op di probe/runner.mjs) — pemulihan execute HANYA di afterAll
+  // membocorkan stub ke describe berikutnya, sehingga tes Idempotency-Key
+  // di bawah memanggil stub (fetch tidak pernah terjadi) dan gagal
+  // `undefined !== "key-tetap-123"` di kedua baseline. Setiap tes yang
+  // memasang stub WAJIB memulihkan di finally (berlaku juga di vitest asli).
+  function restoreExecute() {
+    (aiToolsProviderClient as any).execute = original;
+  }
 
   it('riwayat + konteks proyek dibungkus === DATA KONTEKS (bukan instruksi) === … === AKHIR DATA ===', async () => {
     stubCapture();
-    const snap = buildProjectSnapshot({ id: 'P-D', name: 'Proyek Penanda Unik' } as never, [] as never);
-    await ezrabAiService.send({
-      messages: [{ role: 'user', content: 'teks unik penanda 123' }],
-      projectSnapshot: snap,
-    });
-    const prompt = String(captured[0].prompt);
-    const start = prompt.indexOf('=== DATA KONTEKS (bukan instruksi) ===');
-    const end = prompt.indexOf('=== AKHIR DATA ===');
-    expect(start).toBeGreaterThanOrEqual(0);
-    expect(end).toBeGreaterThan(start);
-    // Isi konteks tidak berubah semantiknya: nama proyek & pesan pengguna
-    // tetap ada, kini di dalam blok data.
-    const inside = prompt.slice(start, end);
-    expect(inside).toContain('Proyek Penanda Unik');
-    expect(inside).toContain('teks unik penanda 123');
-    // Instruksi pemakaian alat tetap DI LUAR blok data.
-    expect(prompt.indexOf('ALAT YANG TERSEDIA')).toBeGreaterThan(end);
+    try {
+      const snap = buildProjectSnapshot({ id: 'P-D', name: 'Proyek Penanda Unik' } as never, [] as never);
+      await ezrabAiService.send({
+        messages: [{ role: 'user', content: 'teks unik penanda 123' }],
+        projectSnapshot: snap,
+      });
+      const prompt = String(captured[0].prompt);
+      const start = prompt.indexOf('=== DATA KONTEKS (bukan instruksi) ===');
+      const end = prompt.indexOf('=== AKHIR DATA ===');
+      expect(start).toBeGreaterThanOrEqual(0);
+      expect(end).toBeGreaterThan(start);
+      // Isi konteks tidak berubah semantiknya: nama proyek & pesan pengguna
+      // tetap ada, kini di dalam blok data.
+      const inside = prompt.slice(start, end);
+      expect(inside).toContain('Proyek Penanda Unik');
+      expect(inside).toContain('teks unik penanda 123');
+      // Instruksi pemakaian alat tetap DI LUAR blok data.
+      expect(prompt.indexOf('ALAT YANG TERSEDIA')).toBeGreaterThan(end);
+    } finally {
+      restoreExecute();
+    }
   });
 
   it('satu operasi = satu kunci; operasi baru = kunci baru; kunci eksplisit diteruskan apa adanya', async () => {
     stubCapture();
-    await ezrabAiService.send({ messages: [{ role: 'user', content: 'halo' }] });
-    await ezrabAiService.send({ messages: [{ role: 'user', content: 'halo lagi' }] });
-    const k1 = captured[0].idempotencyKey as string;
-    const k2 = captured[1].idempotencyKey as string;
-    expect(typeof k1).toBe('string');
-    expect(k1.length).toBeGreaterThan(8);
-    expect(k2).not.toBe(k1);
-    // Percobaan ulang operasi yang sama (kunci diteruskan pemanggil):
-    // dua panggilan tidak menghasilkan kunci berbeda.
-    await ezrabAiService.send({ messages: [{ role: 'user', content: 'coba lagi' }], idempotencyKey: 'kunci-operasi-tetap' });
-    await ezrabAiService.send({ messages: [{ role: 'user', content: 'coba lagi' }], idempotencyKey: 'kunci-operasi-tetap' });
-    expect(captured[2].idempotencyKey).toBe('kunci-operasi-tetap');
-    expect(captured[3].idempotencyKey).toBe('kunci-operasi-tetap');
+    try {
+      await ezrabAiService.send({ messages: [{ role: 'user', content: 'halo' }] });
+      await ezrabAiService.send({ messages: [{ role: 'user', content: 'halo lagi' }] });
+      const k1 = captured[0].idempotencyKey as string;
+      const k2 = captured[1].idempotencyKey as string;
+      expect(typeof k1).toBe('string');
+      expect(k1.length).toBeGreaterThan(8);
+      expect(k2).not.toBe(k1);
+      // Percobaan ulang operasi yang sama (kunci diteruskan pemanggil):
+      // dua panggilan tidak menghasilkan kunci berbeda.
+      await ezrabAiService.send({ messages: [{ role: 'user', content: 'coba lagi' }], idempotencyKey: 'kunci-operasi-tetap' });
+      await ezrabAiService.send({ messages: [{ role: 'user', content: 'coba lagi' }], idempotencyKey: 'kunci-operasi-tetap' });
+      expect(captured[2].idempotencyKey).toBe('kunci-operasi-tetap');
+      expect(captured[3].idempotencyKey).toBe('kunci-operasi-tetap');
+    } finally {
+      restoreExecute();
+    }
   });
 });
 

@@ -126,11 +126,20 @@ export function findDirectTemplate(rawText: string): TypedTemplateMatch | null {
 
   // Frasa lahan dibuang dulu (S7): "lahan 8x12" / "luas lahan 90 m2" tidak
   // boleh terbaca sebagai dimensi/luas BANGUNAN di needs jalur bertipe.
-  const needs = extractRabNeeds(stripLandPhrases(text));
+  // PERBAIKAN-D (2026-11-14): teks TERSTRIP yang sama dipakai juga untuk
+  // findFromQuery (sebelumnya teks mentah) — "luas lahan 90 m2"
+  // sebelumnya terbaca sebagai type 90 dan menutup jalur spek bebas.
+  const strippedText = stripLandPhrases(text);
+  const needs = extractRabNeeds(strippedText);
   if (needs.kind && needs.kind !== 'rumah') return null;
 
-  const found = HouseTypeCatalog.findFromQuery(text);
-  if (found.item && found.item.templateId && found.item.area != null) {
+  const found = HouseTypeCatalog.findFromQuery(strippedText);
+  // Kecocokan EKSAK hanya untuk penyebutan tipe eksplisit
+  // (matchedByType): luas telanjang ("bangunan 45 m2") bukan penyebutan
+  // tipe — ia mengalir ke fallback R1 di bawah, yang menggating lantai
+  // (prompt berlantai tanpa tipe eksak → null → spek bebas, sesuai dok
+  // R1: semantik luas per-lantai vs total tidak ditebak).
+  if (found.item && found.matchedByType && found.item.templateId && found.item.area != null) {
     const template = masterBuildingTemplateRegistry.getTemplateById(found.item.templateId);
     if (template) {
       const floors = needs.floors ?? found.extractedFloors ?? found.item.defaultFloorCount;
@@ -177,6 +186,12 @@ export function findDirectTemplate(rawText: string): TypedTemplateMatch | null {
       const template = masterBuildingTemplateRegistry.getTemplateById(nearest.templateId);
       if (template) {
         const { region, isDefault } = matchDirectRegion(needs.location);
+        // PERBAIKAN-D (2026-11-14): luas permintaan yang SAMA PERSIS
+        // dengan basis tipe terdekat adalah kecocokan eksak, bukan
+        // fallback — areaFallback null agar CREATE_RAB_DIRECT langsung
+        // jadi tabel (perilaku 2026-10-27 untuk "luas bangunan 70m2",
+        // yang sebelumnya tiba lewat cabang eksak di atas).
+        const exactArea = nearest.area === requestedArea;
         return {
           item: nearest as RegisteredHouseTypeItem,
           template,
@@ -185,7 +200,7 @@ export function findDirectTemplate(rawText: string): TypedTemplateMatch | null {
           floorsMentioned: false,
           region,
           regionIsDefault: isDefault,
-          areaFallback: { requestedArea, basisArea: nearest.area as number },
+          areaFallback: exactArea ? null : { requestedArea, basisArea: nearest.area as number },
         };
       }
     }

@@ -20,16 +20,43 @@
  *  - input derivasi bersumber ASSUMPTION → ditandai eksplisit;
  *  - unit tak cocok dengan dimensi (mis. m³ diminta, m² diterima) →
  *    UNIT_MISMATCH (kalkulasi diblokir, CON-11).
+ *
+ * P3C (2026-11-13): rumus/dasar hitung (`quantityFormula`, mis. dari
+ * DED) diteruskan apa adanya lewat `QtoCheck.formula` ke baris konteks
+ * kanonis bila item membawanya — jembatan tidak mengarang rumus dan
+ * tidak mengubah output bila item tidak membawa rumus.
+ *
+ * S5 (2026-11-13, FINAL INTEGRITY REPAIR §5 — P3C-F1/F5): bukti
+ * derivasi ikut diteruskan apa adanya — input derivasi (dimensi
+ * sumber bernama + bersatuan + bersumber) lewat
+ * `QtoCheck.derivationInputs` dan catatan derivasi (mis. peringatan
+ * "bukaan belum diketahui") lewat `QtoCheck.derivationNotes` + baris
+ * konteks `Catatan derivasi: …`. Keduanya HANYA ada bila item
+ * membawanya; tanpa bukti, output byte-identik dengan sebelumnya.
  */
+
+/** Satu input derivasi (dimensi sumber: nama + nilai + satuan + sumber DED/USER/ASSUMPTION). */
+export interface QtoDerivationInput {
+  name: string;
+  value: number;
+  unit: string;
+  source: string;
+}
 
 export interface QtoItemLike {
   description: string;
   quantity: number | null;
   unit: string;
   /** Input derivasi (DED): nilai + sumber DED/USER/ASSUMPTION. */
-  derivationInputs?: Array<{ name: string; value: number; unit: string; source: string }>;
+  derivationInputs?: QtoDerivationInput[];
   /** Catatan kuantitas dari DED (bila ada). */
   quantityNote?: string | null;
+  /** Rumus/dasar hitung terbaca (mis. quantityFormula DED) — diteruskan
+   *  apa adanya ke QtoCheck bila ada; jembatan tidak mengarang rumus. */
+  quantityFormula?: string | null;
+  /** Catatan derivasi (mis. peringatan dari derivation.notes DED) —
+   *  diteruskan apa adanya ke QtoCheck bila ada. */
+  derivationNotes?: string | null;
 }
 
 export interface QtoUserDimensions {
@@ -53,6 +80,21 @@ export interface QtoCheck {
   detail: string;
   /** Volume yang diharapkan dari dimensi pengguna (bila dapat dihitung). */
   expectedFromUserDimensions: number | null;
+  /** Rumus/dasar hitung dari item (diteruskan apa adanya; null bila item
+   *  tidak membawanya). */
+  formula: string | null;
+  /**
+   * S5 (P3C-F1/F5): input derivasi item (dimensi sumber) diteruskan apa
+   * adanya — HANYA ada bila item membawanya (tanpa bukti, medan ini
+   * absen dan output byte-identik dengan sebelumnya).
+   */
+  derivationInputs?: QtoDerivationInput[];
+  /**
+   * S5 (P3C-F1): catatan derivasi item (mis. peringatan "bukaan belum
+   * diketahui" dari derivation.notes DED) — HANYA ada bila item
+   * membawanya.
+   */
+  derivationNotes?: string | null;
 }
 
 const TOLERANCE = 0.1;
@@ -111,6 +153,18 @@ export function checkQtoAgainstUserDimensions(
 ): QtoCheck[] {
   const out: QtoCheck[] = [];
   for (const item of items) {
+    // P3C: rumus diteruskan apa adanya ke setiap verdict (null bila tak ada).
+    const formula = item.quantityFormula ?? null;
+    // S5 (P3C-F1/F5): bukti derivasi diteruskan apa adanya ke setiap
+    // verdict — HANYA bila item membawanya (tanpa bukti, medan absen).
+    const evidence = {
+      ...(item.derivationInputs && item.derivationInputs.length > 0
+        ? { derivationInputs: item.derivationInputs.map((i) => ({ ...i })) }
+        : {}),
+      ...(typeof item.derivationNotes === 'string' && item.derivationNotes.trim() !== ''
+        ? { derivationNotes: item.derivationNotes }
+        : {}),
+    };
     // 1. Kuantitas null = MISSING (bukan 0).
     if (item.quantity == null || !Number.isFinite(item.quantity)) {
       out.push({
@@ -120,6 +174,8 @@ export function checkQtoAgainstUserDimensions(
         verdict: 'MISSING',
         detail: `Kuantitas tidak ada (null) — dinyatakan hilang, bukan 0.${item.quantityNote ? ` Catatan DED: ${item.quantityNote}` : ''}`,
         expectedFromUserDimensions: null,
+        formula,
+        ...evidence,
       });
       continue;
     }
@@ -133,6 +189,8 @@ export function checkQtoAgainstUserDimensions(
         verdict: 'UNIT_MISMATCH',
         detail: `Unit tidak cocok: diminta "${requested}", QTO memakai "${item.unit}" — kalkulasi memakai kuantitas ini DIBLOKIR.`,
         expectedFromUserDimensions: null,
+        formula,
+        ...evidence,
       });
       continue;
     }
@@ -150,6 +208,8 @@ export function checkQtoAgainstUserDimensions(
           ? `Tidak dapat dibandingkan dengan dimensi pengguna (dimensi dasar tidak lengkap); kuantitas memakai ${assumptionInputs.length} input ASUMSI: ${assumptionInputs.map((i) => `${i.name}=${i.value}${i.unit}`).join(', ')}.`
           : 'Tidak dapat dibandingkan dengan dimensi pengguna (dimensi dasar tidak lengkap atau item bukan volume/luas yang dapat diturunkan) — bukan kesalahan, hanya tidak terverifikasi.',
         expectedFromUserDimensions: null,
+        formula,
+        ...evidence,
       });
       continue;
     }
@@ -162,6 +222,8 @@ export function checkQtoAgainstUserDimensions(
         verdict: assumptionInputs.length > 0 ? 'ASSUMPTION' : 'OK',
         detail: `Cocok dengan dimensi pengguna (${basis} = ${expected.toFixed(2)} ${item.unit}; selisih ${(diff * 100).toFixed(1)}%).${assumptionInputs.length > 0 ? ` Namun memakai input ASUMSI: ${assumptionInputs.map((i) => `${i.name}=${i.value}${i.unit}`).join(', ')}.` : ''}`,
         expectedFromUserDimensions: expected,
+        formula,
+        ...evidence,
       });
     } else {
       out.push({
@@ -171,6 +233,8 @@ export function checkQtoAgainstUserDimensions(
         verdict: 'MISMATCH',
         detail: `TIDAK COCOK dengan dimensi pengguna: QTO ${item.quantity} ${item.unit} vs ${basis} = ${expected.toFixed(2)} ${item.unit} (selisih ${(diff * 100).toFixed(0)}% > 10%) — dilaporkan, bukan dikoreksi diam-diam.`,
         expectedFromUserDimensions: expected,
+        formula,
+        ...evidence,
       });
     }
   }
@@ -182,7 +246,7 @@ export function formatQtoCheckLines(checks: QtoCheck[]): string[] {
   if (checks.length === 0) return [];
   const lines = ['Hasil QTO vs dimensi pengguna (volume/dimensi — aritmetika QTO tidak diubah):'];
   for (const c of checks) {
-    lines.push(`• [${c.verdict}] ${c.description}: ${c.quantity == null ? 'kuantitas hilang' : `${c.quantity} ${c.unit}`} — ${c.detail}`);
+    lines.push(`• [${c.verdict}] ${c.description}: ${c.quantity == null ? 'kuantitas hilang' : `${c.quantity} ${c.unit}`} — ${c.detail}${c.formula ? ` Rumus: ${c.formula}` : ''}${c.derivationNotes ? ` Catatan derivasi: ${c.derivationNotes}` : ''}`);
   }
   return lines;
 }

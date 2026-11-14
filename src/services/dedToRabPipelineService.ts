@@ -2100,8 +2100,13 @@ export class DedToRabPipelineService {
         description: row.description,
         volume: row.volume,
         unit: row.unit,
-        unitPrice: row.unitPrice,
-        amount: row.amount,
+        // G2: normalisasi undefined -> null (cermin calculateMutationDiff
+        // :2046-2047). RabItem.unitPrice/amount bertipe `number | null`
+        // (Phase 2J: null = harga belum tersedia, BUKAN Rp0) — undefined
+        // di luar tipe dan pecah di ekspor; null adalah penanda jujur
+        // item tak berharga. TIDAK dikoersi ke 0.
+        unitPrice: row.unitPrice ?? null,
+        amount: row.amount ?? null,
         ahspCode: row.ahspCode,
         category: row.category,
         notes: `DED Source: ${row.evidence?.sourceName || 'DED'} (Confidence: ${row.confidence})`,

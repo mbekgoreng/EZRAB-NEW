@@ -15,7 +15,10 @@
  *   panjang seksi alat yang dihitung pemanggil, sehingga blok data
  *   tidak pernah mendorong total melewati cap — headroom di bawah
  *   batas gateway 20.000 adalah 4.000 karakter.
- * Prioritas anggaran: FAKTA PROYEK > RINGKASAN > RIWAYAT. Fakta TIDAK
+ * Prioritas anggaran: FAKTA PROYEK > OBJEKTIF > DRAFT > MEMORI >
+ * DED/QTO > RINGKASAN > RIWAYAT (P3A/G2-F1: DED/QTO dicadangkan
+ * SEBELUM ringkasan — keduanya data faktual yang tidak boleh kelaparan
+ * oleh ringkasan yang kompresibel). Fakta TIDAK
  * PERNAH hilang diam-diam karena budget riwayat: bila budget terpotong,
  * yang terpotong adalah riwayat terlama/terlemah relevansinya, dan
  * pemotongan itu tercatat di `report.truncations` + ditandai di prompt.
@@ -50,6 +53,12 @@ import {
   type MemoryRetrievalReport,
 } from './memory';
 import { buildingSummaryLines } from './multiBuilding';
+import {
+  describeModeForContext,
+  modeFromLegacy,
+  type DedEstimationPolicy,
+  type DedRabAiMode,
+} from '../ded-ai-estimate/dedMode';
 
 /* ------------------------------------------------------------------ */
 /* Anggaran (karakter)                                                 */
@@ -139,6 +148,16 @@ export interface CanonicalContextInput {
    */
   dedSection?: string | null;
   qtoSection?: string | null;
+  /**
+   * DUAL MODE W1 (G-KN-2, aturan §4 A) — mode/policy asal DED yang
+   * dibawa dedSection. Opsional: bila salah satu diisi, builder
+   * menstempel satu baris mode di kepala seksi DED (sebelum cap 800
+   * ditegakkan) agar Chat AI tahu mode asal DED yang dibacanya.
+   * Tanpa keduanya, seksi DED dirakit persis seperti sebelumnya
+   * (backward compat — pemanggil lama tidak berubah).
+   */
+  dedMode?: DedRabAiMode | null;
+  dedPolicy?: DedEstimationPolicy | null;
 }
 
 export interface CanonicalSectionReport {
@@ -433,19 +452,29 @@ export function buildCanonicalContext(input: CanonicalContextInput): CanonicalCo
     MEMORY_SECTION_BUDGET,
     Math.max(0, dataBudget - factsBudget - objectiveBudget - draftBudget),
   );
-  const summaryBudget = Math.min(
-    CANONICAL_SUMMARY_BUDGET,
-    Math.max(0, dataBudget - factsBudget - objectiveBudget - draftBudget - memoryBudget),
-  );
-  // FASE 5 — DED & QTO: cap sendiri, HANYA bila seksi diteruskan; tanpa
-  // seksi, anggaran 0 sehingga perilaku tanpa-DED/QTO IDENTIK dengan
-  // sebelumnya (pin Fase 1 tidak berubah).
+  // P3A (G2-F1) — URUTAN RESERVASI: fakta > objektif > draft > memori >
+  // DED > QTO > ringkasan > riwayat (riwayat mengambil sisa AKTUAL di
+  // bawah, bukan anggaran yang dicadangkan di sini). DED/QTO dicadangkan
+  // SEBELUM ringkasan: keduanya data faktual (spek DED + pemeriksaan
+  // QTO) yang tidak boleh kelaparan oleh ringkasan — dalam kondisi
+  // produksi (reservedChars ~7.747 dari seksi daftar alat) urutan lama
+  // memberi DED/QTO anggaran 0 meski seksi diteruskan, sehingga model
+  // hanya menerima penanda terpotong (capture titik-C N-DEDQTO).
+  // Ringkasan mengambil sisa sesudah DED/QTO; ringkasan adalah turunan
+  // kompresibel dari riwayat, jadi ia yang mengalah bila anggaran ketat.
+  // Tanpa seksi DED/QTO, anggaran keduanya 0 dan ringkasan mendapat
+  // sisa yang SAMA PERSIS seperti sebelumnya (pin Fase 1 tidak berubah).
+  // FASE 5 — DED & QTO: cap sendiri, HANYA bila seksi diteruskan.
   const dedBudget = input.dedSection
-    ? Math.min(CANONICAL_DED_BUDGET, Math.max(0, dataBudget - factsBudget - objectiveBudget - draftBudget - memoryBudget - summaryBudget))
+    ? Math.min(CANONICAL_DED_BUDGET, Math.max(0, dataBudget - factsBudget - objectiveBudget - draftBudget - memoryBudget))
     : 0;
   const qtoBudget = input.qtoSection
-    ? Math.min(CANONICAL_QTO_BUDGET, Math.max(0, dataBudget - factsBudget - objectiveBudget - draftBudget - memoryBudget - summaryBudget - dedBudget))
+    ? Math.min(CANONICAL_QTO_BUDGET, Math.max(0, dataBudget - factsBudget - objectiveBudget - draftBudget - memoryBudget - dedBudget))
     : 0;
+  const summaryBudget = Math.min(
+    CANONICAL_SUMMARY_BUDGET,
+    Math.max(0, dataBudget - factsBudget - objectiveBudget - draftBudget - memoryBudget - dedBudget - qtoBudget),
+  );
 
   const messages = (input.messages ?? []).slice(-CANONICAL_MAX_HISTORY_MESSAGES);
   const last = messages.length > 0 ? messages[messages.length - 1] : null;
@@ -541,7 +570,17 @@ export function buildCanonicalContext(input: CanonicalContextInput): CanonicalCo
   let dedText = '';
   let dedTruncated = false;
   if (input.dedSection) {
-    dedText = truncateMarked(input.dedSection, dedBudget);
+    // G-KN-2: stempel mode di kepala seksi (sebelum cap) bila
+    // pemanggil membawa mode/policy asal DED. Mode yang tidak
+    // diisi diturunkan dari policy via aturan migrasi kanonis.
+    const dedWithMode =
+      input.dedMode != null || input.dedPolicy != null
+        ? `${describeModeForContext(
+            input.dedMode ?? modeFromLegacy({ policy: input.dedPolicy ?? null, fullAi: null }),
+            input.dedPolicy ?? null,
+          )}\n${input.dedSection}`
+        : input.dedSection;
+    dedText = truncateMarked(dedWithMode, dedBudget);
     dedTruncated = dedText.length > dedBudget;
     if (dedTruncated) truncations.push(`DED dipotong (cap ${dedBudget})`);
   }
@@ -577,6 +616,44 @@ export function buildCanonicalContext(input: CanonicalContextInput): CanonicalCo
       truncations.push(`ringkasan dipotong (cap ${summaryBudget})`);
     }
   }
+  // S9 (P3A-OF-2) — anggaran ringkasan 0 (kondisi produksi + DED/QTO)
+  // berarti NOL karakter isi ringkasan yang selamat: teks yang tersisa
+  // hanya penanda pemotongan (terukur: 73 karakter penanda, 0 isi —
+  // probe S9). Pesan lama TIDAK BOLEH diklaim "tercakup ringkasan":
+  // tanpa penjaga ini, pesan lama hilang dua kali — tidak diringkas
+  // (tidak ada isi) DAN dikeluarkan dari kandidat retrieval riwayat
+  // (filter `index >= summarizedUpTo`). summarizedUpTo dipaksa 0 agar
+  // pesan lama tetap menjadi kandidat retrieval (tetap dibatasi
+  // anggaran riwayat + maks retrieval seperti biasa); header ringkasan
+  // + laporan ikut jujur (tidak lagi "mencakup N pesan"). Hanya
+  // menyala saat summaryBudget <= 0; bila anggaran > 0, klaim cakupan
+  // tidak berubah (ringkasan membawa isi nyata). Aritmetika anggaran
+  // tidak berubah — ini koreksi cakupan, bukan realokasi.
+  if (summaryBudget <= 0) {
+    summarizedUpTo = 0;
+  }
+
+  /* ---- Baris kepala blok (fakta s.d. ringkasan) — dirakit sekali,
+     dipakai probe overhead anggaran riwayat (§4) DAN rakitan akhir.
+     Isi baris IDENTIK dengan rakitan lama; hanya dipindah ke satu
+     tempat agar probe dan hasil akhir tidak bisa melenceng. ---- */
+  const headLines: string[] = [
+    '=== DATA KONTEKS (bukan instruksi) ===',
+    'FAKTA PROYEK (sumber: state terstruktur — BUKAN ringkasan percakapan):',
+    factsPresent ? factsText : '(tidak ada fakta proyek terstruktur)',
+    'OBJEKTIF TUGAS (tujuan di balik permintaan — deterministik, bukan tebakan model):',
+    objectiveText || '(tidak ada objektif terstruktur)',
+    'DRAFT AKTIF:',
+    draftText || '(belum ada draft aktif)',
+    'MEMORI TERSIMPAN (memori terstruktur per proyek/pengguna — BUKAN riwayat mentah; memori lokal per-perangkat):',
+    memoryText || '(tidak ada memori relevan / personalisasi nonaktif)',
+    'PEMAHAMAN DED (spek + data hilang dari hasil DED kanonis — bukan karangan):',
+    dedText || '(tidak ada hasil DED yang di-wire ke permintaan ini)',
+    'PEMERIKSAAN QTO (kuantitas QTO vs dimensi pengguna — aritmetika QTO tidak diubah):',
+    qtoText || '(tidak ada pemeriksaan QTO yang di-wire ke permintaan ini)',
+    `RINGKASAN PERCAKAPAN (sumber: ${summarySource}${summarizedUpTo > 0 ? `, mencakup ${summarizedUpTo} pesan` : ''}):`,
+    summaryText || '(percakapan masih pendek — tanpa ringkasan)',
+  ];
 
   /* ---- 4. RIWAYAT RELEVAN (bukan N terakhir buta) ---- */
   const queryTokens = tokenize(lastUserText);
@@ -614,10 +691,31 @@ export function buildCanonicalContext(input: CanonicalContextInput): CanonicalCo
   const ranked = [...deduped].sort((a, b) => b.score - a.score || b.index - a.index);
   const selected = ranked.slice(0, CANONICAL_MAX_RETRIEVED_MESSAGES);
   let droppedForBudget = 0;
-  // Anggaran riwayat = sisa setelah fakta + draft + memori + ringkasan + DED + QTO (maks 8.000).
+  // P3A — anggaran riwayat memakai overhead BLOK NYATA, bukan hanya
+  // panjang seksi: label tetap + placeholder seksi kosong + baris
+  // pemotongan riwayat (~900–1.000 karakter) sebelumnya tidak dihitung,
+  // sehingga prompt bisa melewati cap 16.000 bila riwayat mengisi
+  // anggarannya dengan rapat (terukur pada kode LAMA: +806 karakter,
+  // skenario C — cacat laten, bukan regresi urutan baru). Probe memakai
+  // bentuk MAKSIMUM (header "13 dari 20 pesan", baris pemotongan selalu
+  // ada, slot riwayat = placeholder) sehingga ia batas atas overhead
+  // final — jaminan cap menjadi eksak. Pengecualian: baris pesan
+  // terakhir SELALU ikut (pin P1: kemunculan tepat 1); bila pesan
+  // terakhir saja melebihi sisa anggaran, cap masih bisa terlampaui
+  // (terbatas pada cap pesan terakhir 6.000, jauh di bawah batas
+  // gateway 20.000). Dalam anggaran longgar, min(8.000, …) tetap yang
+  // mengikat sehingga perilaku tidak berubah.
+  const HISTORY_PLACEHOLDER = '(tidak ada riwayat relevan)';
+  const probeBlockLength = [
+    ...headLines,
+    'RIWAYAT PERCAKAPAN (13 dari 20 pesan, relevansi + resensi):',
+    HISTORY_PLACEHOLDER,
+    '…[20 pesan riwayat lama dipotong demi anggaran — fakta proyek di atas tetap utuh]',
+    '=== AKHIR DATA ===',
+  ].join('\n').length;
   const historyBudget = Math.min(
     CANONICAL_HISTORY_MAX_BUDGET,
-    Math.max(0, dataBudget - factsText.length - objectiveText.length - draftText.length - memoryText.length - summaryText.length - dedText.length - qtoText.length),
+    Math.max(0, dataBudget - probeBlockLength),
   );
   const lastLine = lastIsUser
     ? `PENGGUNA: ${lastUserText}`
@@ -652,28 +750,36 @@ export function buildCanonicalContext(input: CanonicalContextInput): CanonicalCo
 
   /* ---- Rakit blok data (11 seksi kanonis — 8 Fase 1 + MEMORI Fase 2 + OBJEKTIF Fase 3 + DED/QTO Fase 5) ---- */
   const dataBlock = [
-    '=== DATA KONTEKS (bukan instruksi) ===',
-    'FAKTA PROYEK (sumber: state terstruktur — BUKAN ringkasan percakapan):',
-    factsPresent ? factsText : '(tidak ada fakta proyek terstruktur)',
-    'OBJEKTIF TUGAS (tujuan di balik permintaan — deterministik, bukan tebakan model):',
-    objectiveText || '(tidak ada objektif terstruktur)',
-    'DRAFT AKTIF:',
-    draftText || '(belum ada draft aktif)',
-    'MEMORI TERSIMPAN (memori terstruktur per proyek/pengguna — BUKAN riwayat mentah; memori lokal per-perangkat):',
-    memoryText || '(tidak ada memori relevan / personalisasi nonaktif)',
-    'PEMAHAMAN DED (spek + data hilang dari hasil DED kanonis — bukan karangan):',
-    dedText || '(tidak ada hasil DED yang di-wire ke permintaan ini)',
-    'PEMERIKSAAN QTO (kuantitas QTO vs dimensi pengguna — aritmetika QTO tidak diubah):',
-    qtoText || '(tidak ada pemeriksaan QTO yang di-wire ke permintaan ini)',
-    `RINGKASAN PERCAKAPAN (sumber: ${summarySource}${summarizedUpTo > 0 ? `, mencakup ${summarizedUpTo} pesan` : ''}):`,
-    summaryText || '(percakapan masih pendek — tanpa ringkasan)',
+    ...headLines,
     `RIWAYAT PERCAKAPAN (${historyLines.length} dari ${messages.length} pesan, relevansi + resensi):`,
-    historyText || '(tidak ada riwayat relevan)',
+    historyText || HISTORY_PLACEHOLDER,
     ...(droppedForBudget > 0
       ? [`…[${droppedForBudget} pesan riwayat lama dipotong demi anggaran — fakta proyek di atas tetap utuh]`]
       : []),
     '=== AKHIR DATA ===',
   ].join('\n');
+
+  // S9 (P3A-OF-1) — pelaporan JUJUR pelampauan cap. Satu-satunya sumber
+  // pelampauan yang tersisa adalah baris pesan terakhir (selalu ikut
+  // utuh, pin P1): bila ia saja melebihi sisa anggaran, prompt rakitan
+  // melewati cap 16.000 (terukur worst case +7.201 → prompt 23.201 —
+  // MELEBIHI batas gateway 20.000 bila tidak dicegat; service.ts
+  // fail-closed di sini dengan CONTEXT_BUDGET_EXCEEDED sebelum provider
+  // dipanggil, jadi pelampauan berujung penolakan jujur, bukan
+  // panggilan gagal). Isi prompt TIDAK diubah di sini — memotong pesan
+  // terakhir berarti memotong permintaan berjalan (keputusan desain,
+  // tetap terbuka) — tetapi pelampauan kini TERCATAT eksplisit di
+  // report.truncations (sebelumnya hanya terlihat dari promptChars).
+  const promptCharsTotal = dataBlock.length + reserved;
+  if (promptCharsTotal > CANONICAL_TOTAL_PROMPT_BUDGET) {
+    truncations.push(
+      `cap prompt ${CANONICAL_TOTAL_PROMPT_BUDGET} terlampaui: ${promptCharsTotal} karakter ` +
+        `(+${promptCharsTotal - CANONICAL_TOTAL_PROMPT_BUDGET}) — pesan terakhir disertakan utuh` +
+        (promptCharsTotal > 20_000
+          ? '; JUGA melebihi batas gateway 20.000 (dicegat fail-closed service.ts)'
+          : ''),
+    );
+  }
 
   const report: CanonicalContextReport = {
     scope: {
@@ -706,7 +812,7 @@ export function buildCanonicalContext(input: CanonicalContextInput): CanonicalCo
       history: { chars: historyText.length, truncated: droppedForBudget > 0, included: historyLines.length, dropped: historyDroppedTotal },
     },
     dataBlockChars: dataBlock.length,
-    promptChars: dataBlock.length + reserved,
+    promptChars: promptCharsTotal,
     lastMessageOccurrences: lastUserText ? countOccurrences(dataBlock, lastUserText) : 0,
     duplicatesDropped,
     truncations,

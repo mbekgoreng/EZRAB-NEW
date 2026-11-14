@@ -13,7 +13,9 @@
  *   engine dipertahankan, daftar asumsi transparan (termasuk aturan owner
  *   "Asumsi: 1 lantai (tidak disebutkan)"), indeks wilayah mengubah harga
  *   secara konsisten (Jawa Barat = 0,95 × DKI Jakarta).
- * - Registry: type terdaftar → kartu pilihan (tanpa tabel); klik semantik
+ * - Registry: tipe terdaftar EKSAK → tabel langsung (kartu pilihan
+ *   diganti perbaikan 2026-10-27); kartu pilihan hanya untuk basis
+ *   fallback luas (R1 — tanpa tipe, luas ≠ tipe katalog); klik semantik
  *   GENERATE_RAB_TEMPLATE → tabel seperti jalur lama; spek bebas → tabel
  *   langsung TANPA pilihan template.
  * - Payload push: bentuk baris kompatibel dengan push-rab existing
@@ -194,12 +196,29 @@ describe('generate RAB spesifikasi bebas', () => {
     // (bouwplank, keramik 40x40, rangka atap, genteng metal); 6 kode lain
     // tetap PRICE_UNAVAILABLE (termasuk plesteran 1:4 dan kloset, yang
     // kandidat pemetaannya DITOLAK karena identitas berbeda).
+    // PEMBARUAN PERBAIKAN-D (2026-11-14): hitungan 6 -> 1. Kelima item
+    // yang kini berharga mendapat harganya secara SAH, bukan karangan:
+    // sloof/kolom/ring balok (3) lewat entri komposit pasar BENCHMARK
+    // perintah owner 2026-10-27 (A.4.1.1.28/35/36, source
+    // MARKET_ESTIMATE_2026, berlabel (est.) di pesan); plesteran 1:4 +
+    // keramik KM 20x20 (2) lewat koreksi kode 9cdfa9c (2026-10-26) ke
+    // padanan resmi OFFICIAL 3.7.4 / 3.9.8.9. Profil 24-berharga
+    // (22 benchmark + 2 official) + kloset kosong JUGA dipin suite
+    // G2B-3.03 (chatPerbaikanSemuaG2B). Satu-satunya yang tetap tak
+    // berharga adalah kloset (A.5.1.1.2 — kandidat A.5.1.1.1 monoblok
+    // DITOLAK WS-1 karena identitas berbeda) — dipin eksplisit di bawah
+    // agar hitungan tidak sekadar angka tanpa identitas.
     // Aseri diikat ke kontrak engine (status + daftar item tak berharga),
     // bukan ke redaksi kalimat lapisan pesan yang sedang dikerjakan
     // jalur paralel di ezrab-ai/*.
     const r = buildSpecRab('buatkan rab rumah 5x10')!;
     expect(r.generation.totalStatus).toBe('INCOMPLETE');
-    expect(r.generation.unpricedItemCount).toBe(6);
+    expect(r.generation.unpricedItemCount).toBe(1);
+    const unpriced = r.calc.items.filter(
+      (it) => !(typeof it.unitPrice === 'number' && it.unitPrice > 0),
+    );
+    expect(unpriced.length).toBe(1);
+    expect(unpriced[0]?.name).toContain('Kloset');
     const msg = formatDirectRabMessage(r);
     expect(msg).toContain('| No | Uraian | Volume | Satuan | Harga Satuan | Jumlah |');
     expect(msg).toContain('Status total: **INCOMPLETE**');
@@ -315,7 +334,17 @@ describe('remediasi S7 — lahan vs bangunan', () => {
   });
 
   it('"lahan 90 m2, bangunan 45 m2": keduanya terpisah benar', () => {
-    const s = parseFreeSpec('buatkan rab rumah, lahan 90 m2, bangunan 45 m2')!;
+    // DIPERBARUI TERBUKA (Perbaikan D, 2026-11-14): teks ditambah
+    // '2 lantai' — pola yang sama dengan pembaruan Gelombang 2 §17.11
+    // pada tes 'luas bangunan + luas lahan eksplisit' (tes ini satu
+    // saudara yang belum diperbarui): teks luas-saja tanpa lantai kini
+    // dirutekan ke jalur direct lewat fallback R1, sehingga pemisahan
+    // lahan/bangunan HANYA teruji lewat spek bebas bila lantai disebut
+    // (cabang eksak findDirectTemplate kini hanya untuk penyebutan tipe
+    // eksplisit — luas telanjang + lantai disebut jatuh ke spek bebas,
+    // sesuai dok R1). Substansi tes (pemisahan lahan/bangunan) TIDAK
+    // berubah; luas eksplisit tetap dibaca sebagai TOTAL (45 m²).
+    const s = parseFreeSpec('buatkan rab rumah, lahan 90 m2, bangunan 45 m2 2 lantai')!;
     expect(s.landAreaM2).toBe(90);
     expect(s.explicitBuildingArea).toBe(45);
     expect(s.totalArea).toBe(45);
@@ -355,56 +384,71 @@ describe('remediasi S7 — lahan vs bangunan', () => {
 });
 
 describe('remediasi D1 — kartu pilihan berlabel + koreksi pra-pilih', () => {
-  it('kartu type 45 polos: Luas bangunan eksplisit + label Asumsi untuk lantai & KT/KM default', () => {
-    const ctx = { ...mockCtx, rawText: 'buatkan rab rumah type 45' } as never;
+  // DIPERBARUI TERBUKA (Perbaikan D, 2026-11-14): kartu pilihan HANYA
+  // bertahan untuk basis fallback-luas sejak perbaikan exact-match
+  // 2026-10-27 (commit e14a1cd — permintaan bertipe terdaftar langsung
+  // jadi tabel, lihat commandCenter 5a). Seed ketiga tes diganti dari
+  // 'type 45' (eksak → tabel) ke 'luas bangunan 75 m2' (fallback R1 →
+  // kartu basis Type 70 terdekat — pola yang sama dengan S12 di
+  // commandCenter). Substansi D1 TIDAK berubah: label asal per baris,
+  // KT/KM default template, koreksi pra-pilih, kedua jalur generate.
+  // Satu pengecualian sengaja: baris 'Luas bangunan' kartu TIDAK
+  // diasersi — untuk basis fallback kartu menampilkan LUAS BASIS
+  // (70 m²) berlabel 'Dari Anda' padahal pengguna menyebut 75 m²
+  // (mesin sendiri benar memakai 75 m² — dipin S12 + tes koreksi di
+  // bawah). Tampilan kartu itu dicatat sebagai observasi OBS-D1 untuk
+  // koordinator, bukan dipin sebagai perilaku benar.
+  it('kartu fallback 75 m² polos: label Asumsi untuk lantai & KT/KM default template', () => {
+    const ctx = { ...mockCtx, rawText: 'buatkan rab rumah luas bangunan 75 m2' } as never;
     const res = executeIntent('CREATE_RAB_DIRECT', undefined, ctx);
     expect(res.awaitRabChoice).toBe(true);
-    expect(res.message).toContain('Luas bangunan: 45 m² — Dari Anda');
+    expect(res.message).toContain('Rumah Type 70');
     expect(res.message).toContain('Jumlah lantai: 1 lantai — Asumsi');
-    expect(res.message).toContain('Kamar tidur: 2 — Asumsi (default template)');
-    expect(res.message).toContain('Kamar mandi: 1 — Asumsi (default template)');
+    expect(res.message).toContain('Kamar tidur: 3 — Asumsi (default template)');
+    expect(res.message).toContain('Kamar mandi: 2 — Asumsi (default template)');
     expect(res.message).toContain('Koreksi langsung di chat');
     expect(res.message).not.toContain('Luas lahan');
   });
 
-  it('kartu type 45 + lahan + Bogor: lahan & lokasi berlabel Dari Anda sebagai nilai berbeda', () => {
-    const ctx = { ...mockCtx, rawText: 'buatkan rab rumah type 45 luas lahan 90 m2 di Bogor' } as never;
+  it('kartu fallback 75 m² + lahan + Bogor: lahan & lokasi berlabel Dari Anda sebagai nilai berbeda', () => {
+    const ctx = { ...mockCtx, rawText: 'buatkan rab rumah luas bangunan 75 m2 luas lahan 90 m2 di Bogor' } as never;
     const res = executeIntent('CREATE_RAB_DIRECT', undefined, ctx);
-    expect(res.message).toContain('Luas bangunan: 45 m² — Dari Anda');
+    expect(res.awaitRabChoice).toBe(true);
+    expect(res.message).toContain('Rumah Type 70');
     expect(res.message).toContain('Luas lahan: 90 m² — Dari Anda');
     expect(res.message).toContain('belum memengaruhi hitungan RAB');
     expect(res.message).toContain('Lokasi: Bogor — Dari Anda → indeks harga Jawa Barat');
   });
 
   it('koreksi "2 lantai, 3 kamar tidur" memperbarui kartu; kedua jalur memakai spek terkoreksi', () => {
-    const ctx = { ...mockCtx, rawText: 'buatkan rab rumah type 45 di Bogor' } as never;
+    const ctx = { ...mockCtx, rawText: 'buatkan rab rumah luas bangunan 75 m2 di Bogor' } as never;
     executeIntent('CREATE_RAB_DIRECT', undefined, ctx);
     const corr = continueRabChoice('2 lantai, 3 kamar tidur');
     expect(corr.awaitRabChoice).toBe(true);
     expect(corr.message).toContain('kartu pilihan saya perbarui');
     expect(corr.message).toContain('Jumlah lantai: 2 lantai — Dari Anda');
     expect(corr.message).toContain('Kamar tidur: 3 — Dari Anda');
-    expect(corr.message).toContain('Kamar mandi: 1 — Asumsi (default template)');
-    expect(corr.message).toContain('Luas bangunan: 45 m² per lantai (total ±90 m²)');
+    expect(corr.message).toContain('Kamar mandi: 2 — Asumsi (default template)');
     expect(getPendingRabChoice()?.floors).toBe(2);
-    // Jalur Template: generate memakai lantai terkoreksi, pending terkonsumsi.
-    const gen = executeIntent('GENERATE_RAB_TEMPLATE', 'buatkan rab rumah type 45 di Bogor', mockCtx as never);
-    expect(gen.message).toContain('Rumah Type 45 (2 lantai, luas total ±90 m²)');
+    // Jalur Template: generate memakai lantai terkoreksi + LUAS
+    // PERMINTAAN (75 m² — bukan luas basis 70 m²), pending terkonsumsi.
+    const gen = executeIntent('GENERATE_RAB_TEMPLATE', 'buatkan rab rumah luas bangunan 75 m2 di Bogor', mockCtx as never);
+    expect(gen.message).toContain('Rumah Type 70 (2 lantai, luas total ±75 m²)');
     expect(getPendingRabChoice()).toBeNull();
     // Jalur AI Full (kontrak baru 2026-10-23): tombol membawa intent
     // RAB_FULL_AI + param teks mentah; spek terkoreksi mengalir lewat
     // pendingChoice.needs yang dikonsumsi case RAB_FULL_AI — hasil kliknya
-    // adalah tabel terkoreksi (2 lantai, ±90 m²), BUKAN prompt LLM.
+    // adalah tabel terkoreksi (2 lantai, ±75 m²), BUKAN prompt LLM.
     executeIntent('CREATE_RAB_DIRECT', undefined, ctx);
     const corr2 = continueRabChoice('2 lantai, 3 kamar tidur');
     const ai = corr2.actions![1];
     if (ai.action.kind !== 'intent') throw new Error('Expected intent action for Pakai AI Full');
     expect(ai.label).toBe('Pakai AI Full');
     expect(ai.action.intent).toBe('RAB_FULL_AI');
-    expect(ai.action.param).toBe('buatkan rab rumah type 45 di Bogor');
+    expect(ai.action.param).toBe('buatkan rab rumah luas bangunan 75 m2 di Bogor');
     const full = executeIntent('RAB_FULL_AI', ai.action.param, mockCtx as never);
     expect(full.fullAiPrompt).toBeUndefined();
-    expect(full.message).toContain('Rumah Type 45 (2 lantai, luas total ±90 m²)');
+    expect(full.message).toContain('Rumah Type 70 (2 lantai, luas total ±75 m²)');
     expect(full.actions?.some((a) => a.action.kind === 'push-rab')).toBe(true);
     expect(getLastDirectRab()?.floors).toBe(2);
     expect(getPendingRabChoice()).toBeNull();
@@ -412,16 +456,33 @@ describe('remediasi D1 — kartu pilihan berlabel + koreksi pra-pilih', () => {
 });
 
 describe('registry — pilihan template vs spek bebas', () => {
-  it('type 45 + lahan + wilayah → kartu pilihan berisi ringkasan spek, TANPA tabel', () => {
-    const ctx = { ...mockCtx, rawText: 'buatkan rab rumah type 45 luas lahan 90 m2 di Bogor' } as never;
+  // DIPERBARUI TERBUKA (Perbaikan D, 2026-11-14): seperti D1 di atas —
+  // kartu pilihan hanya untuk basis fallback (e14a1cd, 2026-10-27).
+  // Tes kartu diganti seed-nya ke 'luas bangunan 75 m2' (fallback R1 →
+  // Type 70); perilaku eksak 'type 45' dipin tes baru di bawah
+  // (langsung tabel — cermin commandCenter 5a).
+  it('fallback 75 m² + lahan + wilayah → kartu pilihan berisi ringkasan spek, TANPA tabel', () => {
+    const ctx = { ...mockCtx, rawText: 'buatkan rab rumah luas bangunan 75 m2 luas lahan 90 m2 di Bogor' } as never;
     const res = executeIntent('CREATE_RAB_DIRECT', undefined, ctx);
     expect(res.ok).toBe(true);
+    expect(res.awaitRabChoice).toBe(true);
     expect(res.message).not.toContain('| No | Uraian |');
-    expect(res.message).toContain('Rumah Type 45');
+    expect(res.message).toContain('Rumah Type 70');
     expect(res.message).toContain('Luas lahan: 90 m²');
     expect(res.message).toContain('Jawa Barat');
     const labels = (res.actions ?? []).map((a) => a.label);
     expect(labels).toEqual(['Pakai Template', 'Pakai AI Full']);
+  });
+
+  it('type 45 eksak → LANGSUNG tabel + Push (kartu pilihan diganti 2026-10-27)', () => {
+    const ctx = { ...mockCtx, rawText: 'buatkan rab rumah type 45' } as never;
+    const res = executeIntent('CREATE_RAB_DIRECT', undefined, ctx);
+    expect(res.ok).toBe(true);
+    expect(res.awaitRabChoice).toBeFalsy();
+    expect(res.message).toContain('| No | Uraian | Volume | Satuan | Harga Satuan | Jumlah |');
+    expect(res.message).toContain('Rumah Type 45 (1 lantai, luas total ±45 m²)');
+    const labels = (res.actions ?? []).map((a) => a.label);
+    expect(labels).toEqual(['Push ke Spreadsheet RAB', 'Buka Spreadsheet RAB', 'Buka Workspace Desain & RAB']);
   });
 
   it('klik semantik "Pakai Template" (GENERATE_RAB_TEMPLATE) → tabel + Push, sama seperti jalur lama', () => {

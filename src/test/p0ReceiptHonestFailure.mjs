@@ -1,6 +1,11 @@
 /**
  * P0 data-integrity — receipt OCR honest failure (no network).
- * Run: node src/test/p0ReceiptHonestFailure.mjs
+ * Run: npx tsx src/test/p0ReceiptHonestFailure.mjs
+ * (BUKAN plain `node`: impor TS tanpa ekstensi di rantai ini —
+ * mis. '../domain/finance/repository' dari aiReceiptIntelligence.ts —
+ * hanya ter-resolve oleh tsx; dukungan TS native node membutuhkan
+ * ekstensi eksplisit dan gagal ERR_MODULE_NOT_FOUND. Modul targetnya
+ * ADA — src/domain/finance/repository.ts — yang gagal hanya resolver.)
  *
  * Regression test: when /api/ai/receipt/scan is unavailable, analyzeReceipt
  * MUST fail honestly instead of fabricating supplier names, prices, and

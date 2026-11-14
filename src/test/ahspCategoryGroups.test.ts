@@ -112,7 +112,19 @@ describe('groupAhspCategories', () => {
 });
 
 describe('groupAhspCategories — katalog resmi', () => {
-  it('4 domain resmi ada, CUSTOM kosong, total 5732, tanpa tabrakan nama kategori antar domain', () => {
+  // JUMLAH KANONIS (dibuktikan dari source, perbaikan pin 2026-11-14):
+  // backing ALL_OFFICIAL_AHSP_ITEMS = 5.742; karantina = 17 entri
+  // (ahspQuarantine.ts — 10 Cipta Karya + 7 Bina Marga E.2–E.8, semuanya
+  // ada di backing); aktif = 5.742 − 17 = 5.725.
+  // Per-domain aktif: CK 2.849, BM 1.130 (= 1.137 backing − 7 karantina),
+  // SDA 1.556, SMKK 190. Pin lama (total 5.732, BM 1.137) SALAH SEJAK
+  // DITULIS: pin BM memakai jumlah backing master (komentar
+  // masterRegistry.ts "1137 items"), bukan jumlah aktif — 7 item korup
+  // E.2–E.8 sudah dikarantina 70 menit sebelum pin ditulis (e324e17
+  // 02:19 → pin 7c9ef1e 03:29, 2026-10-27) dan kelima berkas data
+  // byte-identik sejak itu. Kode repository + groupAhspCategories BENAR
+  // (kontrak: aktif = backing − karantina); yang diperbaiki hanya pin.
+  it('4 domain resmi ada, CUSTOM kosong, total 5725, tanpa tabrakan nama kategori antar domain', () => {
     const items = officialAhspRepository.getActiveOfficialAhsp();
     const groups = groupAhspCategories(items);
     expect(groups.map((g) => g.domain)).toEqual([
@@ -121,10 +133,10 @@ describe('groupAhspCategories — katalog resmi', () => {
       'SUMBER_DAYA_AIR',
       'SMKK',
     ]);
-    expect(groups.reduce((sum, g) => sum + g.total, 0)).toBe(5732);
+    expect(groups.reduce((sum, g) => sum + g.total, 0)).toBe(5725);
     const totals = new Map(groups.map((g) => [g.domain, g.total]));
     expect(totals.get('CIPTA_KARYA')).toBe(2849);
-    expect(totals.get('BINA_MARGA')).toBe(1137);
+    expect(totals.get('BINA_MARGA')).toBe(1130);
     expect(totals.get('SUMBER_DAYA_AIR')).toBe(1556);
     expect(totals.get('SMKK')).toBe(190);
     // Bukti kunci `domain::category` aman: tidak ada nama kategori yang

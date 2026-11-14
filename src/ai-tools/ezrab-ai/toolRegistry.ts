@@ -514,6 +514,40 @@ function proposeOutputValidator(output: string): { ok: boolean; error?: string }
   return { ok: true };
 }
 
+/**
+ * S5 (§5 P3C-F5) — Unit yang diminta untuk `check_qto`, digabung dari
+ * dua sumber dengan aturan yang SAMA seperti alur QTO kanonis
+ * (`reconcileDedQto` di dedQtoIntegration.ts):
+ *  1. argumen eksplisit `requestedUnitByDescription` (menang bila konflik);
+ *  2. `derivation.resultUnit` per item — mengisi deskripsi yang tidak
+ *     tercakup argumen eksplisit (sumber yang sama dengan alur kanonis).
+ * Entri bukan-string / kosong diabaikan (fail-closed: tanpa unit yang
+ * diminta yang sah, gerbang tidak mengada-ada). Tanpa peta, gerbang
+ * tidak aktif — sama seperti alur kanonis tanpa resultUnit. TIDAK ADA
+ * konversi satuan di sini: gerbang hanya membandingkan, jembatan yang
+ * memblokir (UNIT_MISMATCH) bila tidak cocok.
+ */
+function resolveQtoRequestedUnits(
+  items: Array<Record<string, unknown>>,
+  explicit: unknown,
+): Record<string, string> {
+  const out: Record<string, string> = {};
+  if (explicit && typeof explicit === 'object' && !Array.isArray(explicit)) {
+    for (const [k, v] of Object.entries(explicit as Record<string, unknown>)) {
+      if (typeof v === 'string' && v.trim() !== '') out[k] = v;
+    }
+  }
+  for (const it of items) {
+    const desc = typeof it.description === 'string' ? it.description : '';
+    if (!desc || out[desc]) continue;
+    const d = it.derivation as { resultUnit?: unknown } | undefined;
+    if (d && typeof d.resultUnit === 'string' && d.resultUnit.trim() !== '') {
+      out[desc] = d.resultUnit;
+    }
+  }
+  return out;
+}
+
 const CHAT_TOOL_SCHEMAS: Record<string, { permission: ToolPermission; requiresProject: boolean; schema: ToolInputSchema; channels?: ToolChannel[] }> = {
   subtotal: {
     permission: 'read-only', requiresProject: false,
@@ -834,7 +868,7 @@ const NATIVE_TOOL_DEFINITIONS: ToolDefinition[] = [
   },
   {
     name: 'check_qto',
-    description: 'Membandingkan kuantitas QTO/DED dengan dimensi pengguna (toleransi 10%): OK / MISMATCH / MISSING (null, bukan 0) / ASSUMPTION / UNIT_MISMATCH / CANNOT_CHECK. Ketidakcocokan DILAPORKAN, bukan dikoreksi diam-diam; aritmetika QTO tidak diubah.',
+    description: 'Membandingkan kuantitas QTO/DED dengan dimensi pengguna (toleransi 10%): OK / MISMATCH / MISSING (null, bukan 0) / ASSUMPTION / UNIT_MISMATCH / CANNOT_CHECK. Ketidakcocokan DILAPORKAN, bukan dikoreksi diam-diam; aritmetika QTO tidak diubah. Gerbang unit (CON-11, sama seperti alur QTO kanonis): requestedUnitByDescription (argumen opsional) atau derivation.resultUnit per item yang berbeda dari unit item → UNIT_MISMATCH (kalkulasi DIBLOKIR, tanpa konversi diam-diam).',
     permission: 'read-only',
     sideEffect: 'none',
     idempotent: true,
@@ -843,14 +877,24 @@ const NATIVE_TOOL_DEFINITIONS: ToolDefinition[] = [
     requiresProject: false,
     recordToMemory: true,
     channels: [...READ_ONLY_CHANNELS, 'test'],
-    inputSchema: { fields: [S('items', 'array', true), S('dimensions', 'object', true)] },
+    inputSchema: { fields: [S('items', 'array', true), S('dimensions', 'object', true), S('requestedUnitByDescription', 'object')] },
     invoke: (args) => {
       const items = args.items as Parameters<typeof checkQtoAgainstUserDimensions>[0];
       const dims = args.dimensions as Parameters<typeof checkQtoAgainstUserDimensions>[1];
       if (!items.every((it) => it && typeof it === 'object' && typeof (it as { description?: unknown }).description === 'string' && typeof (it as { unit?: unknown }).unit === 'string')) {
         return 'ERROR: tiap item QTO wajib {description: string, quantity: number|null, unit: string}.';
       }
-      const checks = checkQtoAgainstUserDimensions(items, dims);
+      // S5 (P3C-F5): gerbang unit yang SAMA dengan alur QTO kanonis —
+      // teruskan requestedUnitByDescription eksplisit + resultUnit
+      // derivasi per item ke jembatan. Tanpa peta, panggilan identik
+      // dengan sebelumnya (gerbang tidak aktif).
+      const requestedUnitByDescription = resolveQtoRequestedUnits(
+        items as unknown as Array<Record<string, unknown>>,
+        args.requestedUnitByDescription,
+      );
+      const checks = Object.keys(requestedUnitByDescription).length > 0
+        ? checkQtoAgainstUserDimensions(items, dims, { requestedUnitByDescription })
+        : checkQtoAgainstUserDimensions(items, dims);
       const bad = checks.filter((c) => c.verdict === 'MISMATCH' || c.verdict === 'MISSING' || c.verdict === 'UNIT_MISMATCH').length;
       return {
         output: formatQtoCheckLines(checks).join('\n') || 'Tidak ada item QTO untuk diperiksa.',

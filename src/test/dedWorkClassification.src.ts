@@ -89,7 +89,11 @@ for (const [label, sys] of prompts) {
     check(`${label}: fallback Estimasi AI tetap ada`, sys.includes('Estimasi AI'));
   }
 }
-check('FAST/FULL_AI: tabel harga lama tetap ada', prompts[0][1].includes('Rp120.000'));
+// W3 (Dual Mode §5/§7, G-IS-4, C3 — PERUBAHAN PERILAKU YANG DIMAKSUD):
+// referensi harga jalan inline DIHAPUS dari prompt FULL AI. Pin lama
+// ('Rp120.000' ada) diganti dengan kekuatan SAMA: kewajiban estimasi +
+// master prompt tetap ada, data harga internal tidak ada.
+check('FAST/FULL_AI: kewajiban estimasi + master prompt, tanpa tabel harga internal', prompts[0][1].includes('WAJIB isi estimatedUnitPrice') && prompts[0][1].includes('MASTER PROMPT FULL AI v') && !prompts[0][1].includes('Rp120.000'));
 check('FAST/FULL_AI: field usulan tetap ada', prompts[0][1].includes('proposedSubtotal'));
 check('FAST/DATABASE: larangan field usulan tetap ada', prompts[1][1].includes('JANGAN mengeluarkan field proposedSubtotal'));
 check('DETAIL/DATABASE: larangan field usulan tetap ada', prompts[3][1].includes('JANGAN mengeluarkan field proposedSubtotal'));

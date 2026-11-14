@@ -60,10 +60,20 @@ export interface TemplatePickerItemPricing {
 
 function fallbackPricing(item: TemplateWorkItem): TemplatePickerItemPricing {
   const baked = item.ahspCandidates?.[0]?.unitPriceEstimate ?? null;
+  // S9 (P1 temuan #1 / B-05 jalur template): harga baked adalah estimasi
+  // yang ditempel di template TANPA verifikasi terhadap katalog resmi —
+  // ia TIDAK PERNAH PRICE_RESOLVED. Kontrak P1/S2: RESOLVED menuntut
+  // bukti (kind OFFICIAL_AHSP/MARKET_REFERENCE atau mapping VERIFIED);
+  // estimasi baked tidak membawa bukti apa pun → PRICE_ESTIMATED.
+  // Praktis tak terjangkau hari ini (0 kemunculan unitPriceEstimate di
+  // seluruh data template master — terverifikasi ulang S9), tetapi
+  // klasifikasinya kini benar bila suatu template kelak mengisinya.
+  // priceKind tetap 'UNAVAILABLE' + engineOk false: mesin gagal, ini
+  // bukan hasil hitung mesin — yang berubah hanya statusnya.
   return {
     volume: 1,
     unitPrice: baked,
-    priceStatus: baked == null ? 'PRICE_UNRESOLVED' : 'PRICE_RESOLVED',
+    priceStatus: baked == null ? 'PRICE_UNRESOLVED' : 'PRICE_ESTIMATED',
     priceKind: 'UNAVAILABLE',
     engineOk: false,
   };

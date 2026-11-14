@@ -4,16 +4,24 @@
  *
  * Tata letak pola app shell (mockup ter-ACC owner 2026-11-10): keadaan awal
  * = kotak upload besar di tengah + SATU panel Pengaturan di pinggir kanan
- * (kebijakan harga, simpan hasil ke, jenis proyek, mode AI, kompleksitas &
+ * (simpan hasil ke, jenis proyek, preferensi output, kompleksitas &
  * estimasi kredit, deskripsi opsional) dengan tombol Mulai Analisis
  * menempel di bawah panel. Judul + stepper kini disediakan shell halaman
  * (FeaturePageShell) — blok head/steps internal lama dihapus agar tidak
  * ganda. Semua state, handler, dan gerbang kredit TIDAK berubah.
  *
+ * DUAL MODE (§3 directive, 2026-11-13): pemilih mode adalah PERSIS DUA
+ * kartu — EZRAB AI MODE (referensi AHSP) atau FULL AI MODE (mandiri) —
+ * di kartu Konfigurasi Analisis; radio Kebijakan Harga + checkbox mesin
+ * lama dihapus (G-UI-1/G-UI-2). Kedalaman Cepat/Mendalam tetap sebagai
+ * sub-pilihan di kedua mode. Policy/fullAi di level service TETAP ADA
+ * (backward compat) dan diturunkan dari mode yang dipilih.
+ *
  * REDESIGN PREMIUM ONE-SCREEN (ter-ACC owner 2026-11-10 21:21, mockup D6):
- * kolom tengah kini memuat kartu Konfigurasi Analisis kompak (Mode AI,
- * Kompleksitas — hanya aktif pada DETAIL, Cakupan dokumen, mesin Full AI,
- * ringkasan ekstraksi) dan strip Pratinjau Hasil dari keadaan nyata;
+ * kolom tengah kini memuat kartu Konfigurasi Analisis kompak (Mode
+ * Analisis dua kartu + Kedalaman, Kompleksitas — hanya aktif pada DETAIL,
+ * Cakupan dokumen, ringkasan ekstraksi) dan strip Pratinjau Hasil dari
+ * keadaan nyata;
  * panel kanan memuat Preferensi Output. Tiga elemen USULAN BARU yang ikut
  * ter-ACC dibangun sebagai fitur nyata: cakupan halaman (diteruskan ke
  * service dan diterapkan di lapisan ekstraksi), preferensi output
@@ -23,10 +31,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   UploadCloud, FileText, X, Zap, Brain, FolderOpen, PlusCircle,
-  AlertTriangle, History, Trash2, RotateCcw, Scale, Lock,
-  Settings2, Sparkles,
+  AlertTriangle, History, Trash2, RotateCcw, Lock,
+  Settings2, Sparkles, Database, Check,
 } from 'lucide-react';
 import { DedAiMode, DedAiProjectType, DedEstimationPolicy, DedOutputPrefs, DEFAULT_DED_OUTPUT_PREFS } from './types';
+import type { DedRabAiMode } from './dedMode';
+import { DED_MODE_CARDS, resolveDedAiMode, withDedMode } from './dedModeUi';
 import { probeDedPdf, resolvePageScope } from './parser';
 import { useI18n } from '../../i18n/I18nContext';
 import './dedAi.css';
@@ -56,11 +66,19 @@ export interface DedAiSession {
   projectName: string;
   projectType: DedAiProjectType;
   mode: DedAiMode;
-  /** Kebijakan harga: FULL_AI (default, perilaku lama) atau DATABASE (ketat). */
+  /**
+   * DUAL MODE (§3, G-UI-1): mode kanonis sesi ini — SATU-SATUNYA pemilih
+   * mode user-facing, tersimpan di STATE WORKFLOW (bukan hanya state UI).
+   * `policy`/`fullAi` di bawah DITURUNKAN dari mode ini saat analisis
+   * dimulai (policyForMode/engineForMode, C1) dan dipertahankan hanya
+   * untuk kompatibilitas service + sesi/draft lama.
+   */
+  dedMode?: DedRabAiMode;
+  /** Kebijakan harga — DITURUNKAN dari `dedMode` (C1); jangan diisi manual. */
   policy?: DedEstimationPolicy;
   /** null = buat proyek baru saat finalisasi; string = pakai proyek existing */
   targetProjectId: string | null;
-  /** true = gunakan pipeline Full AI (terisolasi), false = pipeline lama */
+  /** true = pipeline Full AI — DITURUNKAN dari `dedMode` (C1); jangan diisi manual. */
   fullAi?: boolean;
   /** Estimasi kredit simulasi yang disetujui user (kategori dipilih user). */
   creditEstimate?: { category: string; credits: number };
@@ -127,8 +145,11 @@ export const DedAiInputView: React.FC<Props> = ({
   const [projectName, setProjectName] = useState(initialSession.projectName);
   const [projectType, setProjectType] = useState<DedAiProjectType>(initialSession.projectType);
   const [mode, setMode] = useState<DedAiMode>(initialSession.mode);
-  const [policy, setPolicy] = useState<DedEstimationPolicy>(initialSession.policy ?? 'FULL_AI');
-  const [fullAi, setFullAi] = useState(initialSession.fullAi ?? false);
+  // DUAL MODE (§3, G-UI-1): SATU pemilih mode — dua kartu (EZRAB AI /
+  // Full AI). Sesi lama tanpa dedMode dimigrasikan dari {policy, fullAi}
+  // (mesin menang — modeFromLegacy); sesi baru membawa dedMode EZRAB_AI
+  // dari view (default C2). Kedalaman (mode) tetap sub-pilihan terpisah.
+  const [dedMode, setDedMode] = useState<DedRabAiMode>(() => resolveDedAiMode(initialSession));
   const [targetProjectId, setTargetProjectId] = useState<string | null>(initialSession.targetProjectId);
   const [useExisting, setUseExisting] = useState(initialSession.targetProjectId !== null);
   // Perbaikan final: sinkronkan prefill deskripsi dari entry DED yang tiba
@@ -268,22 +289,23 @@ export const DedAiInputView: React.FC<Props> = ({
       const p = fileProbe[f.id];
       if (p && p !== 'error') filePageCounts[f.id] = p.pages;
     }
-    onStart({
+    // DUAL MODE (§3): policy/fullAi DITURUNKAN dari kartu mode yang
+    // dipilih — tidak ada state policy/mesin terpisah yang bisa basi
+    // (ganti mode tidak membocorkan konfigurasi eksekusi lama).
+    onStart(withDedMode({
       files: validFiles,
       description: description.trim(),
       projectName: name,
       projectType,
       mode,
-      policy,
       targetProjectId: chosenProjectId,
-      fullAi,
       creditEstimate: { category: complexityLabel(complexity), credits: dedTarget },
       // F-E2: sertakan nilai mentahnya juga (satu field aditif).
       complexity,
       pageScope: scopeKind === 'SELECTED' ? { kind: 'SELECTED', spec: scopeSpec.trim() } : { kind: 'ALL' },
       filePageCounts,
       outputPrefs,
-    });
+    }, dedMode));
   };
 
   const complexityActive = COMPLEXITY_OPTIONS.find((o) => o.value === complexity);
@@ -367,8 +389,48 @@ export const DedAiInputView: React.FC<Props> = ({
 
           {/* ---- Konfigurasi analisis kompak (mockup D6) ---- */}
           <div className="dedai-card dedai-cfgcard">
+            {/* DUAL MODE (§3, G-UI-1): PERSIS DUA kartu mode — EZRAB AI
+                (referensi AHSP) atau Full AI (mandiri). Kedalaman
+                Cepat/Mendalam adalah sub-pilihan di bawahnya, berlaku
+                untuk kedua mode (bukan mode ketiga). */}
+            <div className="dedai-modesec">
+              <div className="dedai-modesec-head">
+                <span className="dedai-cfglbl">Mode Analisis</span>
+                <span className="dedai-cfghint">Pilih satu — menentukan mesin &amp; sumber harga.</span>
+              </div>
+              <div className="dedai-modecards" role="radiogroup" aria-label="Mode analisis DED">
+                {DED_MODE_CARDS.map((card) => {
+                  const selected = dedMode === card.mode;
+                  return (
+                    <button
+                      type="button"
+                      key={card.mode}
+                      role="radio"
+                      aria-checked={selected}
+                      className={`dedai-modecard ${card.accent}${selected ? ' selected' : ''}`}
+                      onClick={() => setDedMode(card.mode)}
+                    >
+                      <span className="dedai-modecard-top">
+                        <span className="dedai-modecard-ico">
+                          {card.mode === 'EZRAB_AI' ? <Database size={17} /> : <Sparkles size={17} />}
+                        </span>
+                        <span className="dedai-modecard-title">{card.title}</span>
+                        {selected && (
+                          <span className="dedai-modecard-check" aria-hidden="true"><Check size={13} /></span>
+                        )}
+                      </span>
+                      <span className="dedai-modecard-sub">{card.subtitle}</span>
+                      <ul className="dedai-modecard-list">
+                        {card.bullets.map((b) => <li key={b}>{b}</li>)}
+                      </ul>
+                      <span className="dedai-modecard-note">{card.note}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
             <div className="dedai-cfgrow">
-              <span className="dedai-cfglbl">Mode AI</span>
+              <span className="dedai-cfglbl">Kedalaman</span>
               <div className="dedai-seg dedai-cfgseg">
                 <button className={mode === 'FAST' ? 'active' : ''} onClick={() => setMode('FAST')}>
                   <Zap size={14} /> {t('ai.ded.input.mode_fast')}
@@ -428,22 +490,6 @@ export const DedAiInputView: React.FC<Props> = ({
               ) : (
                 <span className="dedai-cfghint">Seluruh halaman setiap berkas dianalisis.</span>
               )}
-            </div>
-            <div className="dedai-cfgrow">
-              <span className="dedai-cfglbl">Mesin</span>
-              <label className="dedai-cfgcheck">
-                <input
-                  type="checkbox"
-                  checked={fullAi}
-                  onChange={(e) => setFullAi(e.target.checked)}
-                />
-                <span>Full AI Estimate (eksperimental)</span>
-              </label>
-              <span className="dedai-cfghint">
-                {fullAi
-                  ? 'AI sebagai mesin estimasi utama. Hasil tidak di-recalculate pipeline lama.'
-                  : 'Gunakan pipeline standar.'}
-              </span>
             </div>
             <div className="dedai-cfgrow last">
               <span className="dedai-cfglbl">Yang diekstrak</span>
@@ -515,30 +561,10 @@ export const DedAiInputView: React.FC<Props> = ({
               <p>Atur sekali sebelum analisis dimulai</p>
             </div>
 
-            {/* ---- Kebijakan harga: Full AI vs Database (pilihan di awal) ---- */}
-            <section className="dedai-set-sec">
-              <h3><Scale size={14} /> Kebijakan Harga</h3>
-              <p className="dedai-set-sub">Pilih dulu bagaimana harga ditentukan — dikunci ke hasil estimasi dan ditegakkan di service, bukan sekadar tampilan.</p>
-              <div className="dedai-seg" style={{ marginBottom: 12 }}>
-                <button className={policy === 'FULL_AI' ? 'active' : ''} onClick={() => setPolicy('FULL_AI')}>
-                  Estimasi Full AI
-                </button>
-                <button className={policy === 'DATABASE' ? 'active' : ''} onClick={() => setPolicy('DATABASE')}>
-                  Estimasi Database EZRAB
-                </button>
-              </div>
-              {policy === 'FULL_AI' ? (
-                <div className="dedai-notice">
-                  <AlertTriangle size={15} style={{ flexShrink: 0, marginTop: 2 }} />
-                  <span><b>Estimasi awal dengan harga estimasi AI</b> saat harga terverifikasi tidak tersedia. Harga estimasi AI <b>bukan harga resmi AHSP</b> maupun penawaran pasar terverifikasi — validasi sebelum RAB dipakai untuk pengadaan, tender, atau kontrak.</span>
-                </div>
-              ) : (
-                <div className="dedai-notice blue">
-                  <AlertTriangle size={15} style={{ flexShrink: 0, marginTop: 2 }} />
-                  <span><b>Hanya harga terverifikasi / input pengguna.</b> Estimasi harga AI ditolak — item tanpa harga terverifikasi tetap <b>belum tersedia</b> dan total bisa <b>parsial</b> sampai dilengkapi. Mesin DED standar tidak mengkueri master AHSP; lengkapi harga lewat AHSP picker setelah hasil di-push ke spreadsheet.</span>
-                </div>
-              )}
-            </section>
+            {/* DUAL MODE (§3, G-UI-1): seksi Kebijakan Harga lama DIHAPUS —
+                kebijakan harga kini diturunkan dari kartu mode di kolom
+                tengah (EZRAB AI → Database EZRAB, Full AI → estimasi AI);
+                catatan keterbukaannya pindah ke kartu masing-masing. */}
 
             {/* ---- Simpan hasil ke: proyek baru / existing ---- */}
             <section className="dedai-set-sec">

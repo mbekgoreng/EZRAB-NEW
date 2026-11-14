@@ -116,13 +116,24 @@ test('isValidVolume: aturan domain', () => {
   eq(isValidVolume(NaN), false, 'NaN invalid');
   eq(isValidVolume(undefined), false, 'undefined invalid');
 });
-test('tidak ada pola || 1 tersisa di 5 file target', () => {
+test('tidak ada pola || 1 tersisa di 6 file target', () => {
+  // Entri Magic AI: marker lama 'volume: honestVolume(it.quantity)' di
+  // DedAnalysisDashboard.tsx ditulis Fase 4A (59237f4) saat pemetaan
+  // volume masih inline di komponen. Sejak D-02 (33373d5, 2026-10-31,
+  // persetujuan owner) pemetaan finalisasi pindah ke mapper kanonis
+  // mapMagicAiItemToRabInput (finalizeMapping.ts) dan dashboard hanya
+  // mendelegasikan (handleCommitToProject) — honestVolume TETAP dipakai,
+  // di mapper (:303 'volume: honestVolume(item.quantity)'). Pin di bawah
+  // memin rantai itu (delegasi komponen + honestVolume di mapper) dan
+  // pindai || 1 kini mencakup 6 berkas, bukan 5 — lebih kuat dari pin
+  // lama yang mengasumsikan pemetaan inline.
   const targets = [
     ['src/components/document/DedRabWorkflowView.tsx', 'volume: honestVolume(it.volume)'],
     ['src/components/estimator/SmartAddWorkItemModal.tsx', 'honestVolume(item.volume)'],
     ['src/components/import/IntelligentExcelImportModal.tsx', 'volume: honestVolume(item.volume)'],
     ['src/components/inspector/WorkItemInspectorDrawer.tsx', 'honestVolume(initialData?.volume)'],
-    ['src/components/magic-ai/DedAnalysisDashboard.tsx', 'volume: honestVolume(it.quantity)'],
+    ['src/components/magic-ai/DedAnalysisDashboard.tsx', 'mapMagicAiItemToRabInput(it)'],
+    ['src/ai-tools/ded-ai-estimate/finalizeMapping.ts', 'volume: honestVolume(item.quantity)'],
   ];
   for (const [f, marker] of targets) {
     const src = readFileSync(`${P}/${f}`, 'utf8');

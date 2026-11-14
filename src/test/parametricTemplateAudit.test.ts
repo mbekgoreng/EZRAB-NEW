@@ -9,10 +9,14 @@
  *      konsisten dengan harga item.
  * B.3  Kandidat pemetaan benchmark: 4 diterapkan karena identitas +
  *      spesifikasi + satuan TERBUKTI sama (bouwplank, keramik 40x40,
- *      rangka atap, genteng metal); 2 DITOLAK (plesteran 1:4 vs 1:5;
- *      kloset jongkok/duduk standar vs duduk monoblok) dan tetap
- *      PRICE_UNAVAILABLE. Semua harga hasil pemetaan adalah tier
- *      BENCHMARK (indikatif), BUKAN harga AHSP resmi.
+ *      rangka atap, genteng metal); 1 TETAP DITOLAK (kloset
+ *      jongkok/duduk standar vs duduk monoblok) dan tetap
+ *      PRICE_UNAVAILABLE. Plesteran 1:4 semula ditolak sebagai pemetaan
+ *      BENCHMARK ke 1:5, tetapi sejak komit 9cdfa9c (2026-10-26) memakai
+ *      padanan RESMI 2026 3.7.4 (1SP:4PP 15 mm, OFFICIAL @ 51.622).
+ *      Semua harga hasil pemetaan benchmark adalah tier BENCHMARK
+ *      (indikatif), BUKAN harga AHSP resmi; 3.7.4/3.9.8.9 dan kode jalan
+ *      C.37/E.1/E.11 adalah tier OFFICIAL dari master resmi 2026.
  * B.4a Luas kamar mandi dibaca dari data spaces template aktif
  *      (S6a): T36 = 2,25 m² (tetap), T45/T70 = 3,0 m² (terkoreksi);
  *      invarian lantai: qty(07.02) + qty(07.03) == luas bangunan
@@ -132,16 +136,46 @@ describe('B.2 — audit semua template parametrik jalur spek bebas/direct', () =
     }
   });
 
-  it('jalan beton: seluruh harga tetap PRICE_UNAVAILABLE (fallback datar tidak hidup lagi)', () => {
+  it('jalan beton: 3 item OFFICIAL Bina Marga + 2 tetap PRICE_UNAVAILABLE (tanpa harga karangan)', () => {
+    // PERUBAHAN EKSPETAKSI (G1, 2026-11-14): komit 9cdfa9c (2026-10-26)
+    // mengoreksi kode jalan ke padanan resmi Bina Marga 2026 — BM.3.4.1.1
+    // -> C.37, BM.5.1.1.1 -> E.1, BM.5.3.1.1 -> E.11 — "ketiganya VERIFIED
+    // di master Bina Marga" (pesan komit). Harga di bawah adalah harga
+    // resmi binaMarga2026Master.generated.ts (VERIFIED, MATCH_PDF):
+    // C.37 = 17.648,16 -> 17.648; E.1 = 570.185,84 -> 570.186 (pembulatan
+    // ke rupiah terdekat — BUKAN 570.185 terpotong di berkas DHSP);
+    // E.11 = 2.071.748,38 -> 2.071.748. Wiremesh (BM.5.3.1.5) + sealant
+    // sambungan (BM.5.3.1.8) tetap tak berharga dengan sengaja — tanpa
+    // item mandiri padanan di master — sehingga total tetap INCOMPLETE
+    // dan prinsip "tanpa harga karangan" dipertahankan.
     const r = parametricVolumeEngine.generateRABFromTemplate({
       templateId: 'template-concrete-road-rigid-pavement',
       parameters: {},
       region: 'DKI Jakarta',
     });
-    expect(r.workItems.length).toBeGreaterThan(0);
-    expect(r.workItems.every((w) => w.priceStatus === 'PRICE_UNAVAILABLE')).toBe(true);
-    expect(r.totalDirectCost).toBe(0);
+    expect(r.workItems.length).toBe(5);
+    const official: Array<[string, string, number, number]> = [
+      // wbs, kode BM, harga satuan resmi, total
+      ['01.01', 'C.37', 17648, 70592000],
+      ['02.01', 'E.1', 570186, 256583700],
+      ['03.01', 'E.11', 2071748, 1243048800],
+    ];
+    for (const [wbs, code, price, total] of official) {
+      const w = r.workItems.find((x) => x.wbsCode === wbs)!;
+      expect(w.ahspCode, wbs).toBe(code);
+      expect(w.priceStatus, wbs).toBe('OFFICIAL');
+      expect(w.unitPrice, wbs).toBe(price);
+      expect(w.totalPrice, wbs).toBe(total);
+      expect(w.isPriceFabricated, wbs).toBe(false);
+    }
+    const unpriced = r.workItems.filter((w) => w.priceStatus === 'PRICE_UNAVAILABLE');
+    expect(unpriced.map((w) => w.wbsCode).sort()).toEqual(['03.02', '03.03']);
+    expect(unpriced.map((w) => w.ahspCode).sort()).toEqual(['BM.5.3.1.5', 'BM.5.3.1.8']);
+    expect(r.unpricedItemCount).toBe(2);
+    expect(r.totalDirectCost).toBe(1570224500);
+    expect(r.totalRabCost).toBe(1917244115);
     expect(r.totalStatus).toBe('INCOMPLETE');
+    expect(r.isReadyForSpreadsheet).toBe(false);
   });
 
   it('U-Ditch: semua item berharga BENCHMARK, total INDICATIVE (bukan resmi)', () => {
@@ -185,17 +219,31 @@ describe('B.3 — kandidat pemetaan benchmark: diterapkan hanya yang identitasny
     }
   });
 
-  it('2 kandidat DITOLAK: plesteran 1:4 != 1:5 dan kloset jongkok/standar != duduk monoblok', () => {
+  it('plesteran kini RESMI 3.7.4 (1:4 persis) + kloset tetap DITOLAK (jongkok/standar != duduk monoblok)', () => {
+    // PERUBAHAN EKSPETAKSI (G1, 2026-11-14): separuh plesteran dari
+    // penolakan semula DIGANTIKAN pemetaan resmi — komit 9cdfa9c
+    // (2026-10-26) mengoreksi A.4.4.2.4 -> 3.7.4, "Pemasangan 1 m2
+    // plesteran 1SP : 4PP tebal 15 mm" (VERIFIED, Lampiran VI p.390).
+    // Penolakan semula hanya menolak pemetaan BENCHMARK ke plesteran
+    // 1:5 (A.4.4.2.2) karena campuran berbeda — dan penolakan itu tetap
+    // berlaku (kode kini 3.7.4, bukan A.4.4.2.2). Pemetaan resmi 3.7.4
+    // spesifikasinya PERSIS 1:4, jadi memenuhi syarat identitas yang
+    // sama yang dipakai keempat pemetaan yang diterapkan. Separuh
+    // kloset TIDAK berubah: A.5.1.1.2 tetap PRICE_UNAVAILABLE.
     const r = gen5x10();
     const plesteran = r.workItems.find((x) => x.wbsCode === '06.01')!;
-    expect(plesteran.ahspCode).toBe('A.4.4.2.4'); // kode asli dipertahankan
-    expect(plesteran.ahspCode).not.toBe('A.4.4.2.2');
-    expect(plesteran.priceStatus).toBe('PRICE_UNAVAILABLE');
+    expect(plesteran.ahspCode).toBe('3.7.4');
+    expect(plesteran.ahspCode).not.toBe('A.4.4.2.2'); // tetap bukan 1:5
+    expect(plesteran.ahspName).toContain('1SP : 4PP');
+    expect(plesteran.priceStatus).toBe('OFFICIAL');
+    expect(plesteran.unitPrice).toBe(51622);
+    expect(plesteran.isPriceFabricated).toBe(false);
 
     const kloset = r.workItems.find((x) => x.wbsCode === '12.01')!;
     expect(kloset.ahspCode).toBe('A.5.1.1.2'); // kode asli dipertahankan
     expect(kloset.ahspCode).not.toBe('A.5.1.1.1');
     expect(kloset.priceStatus).toBe('PRICE_UNAVAILABLE');
+    expect(kloset.unitPrice).toBe(0);
   });
 
   it('resolver: kode lama yang tak terpetakan tetap PRICE_UNAVAILABLE (tidak diam-diam dialihkan)', () => {

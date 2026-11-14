@@ -42,8 +42,12 @@ export type DedAiMode = 'FAST' | 'DETAIL';
  *   prompts/policy.ts); gerbang ini + adapter yang menegakkannya.
  * Default: 'FULL_AI' (mempertahankan perilaku lama bila pengguna tidak
  * memilih; mode DATABASE adalah opt-in eksplisit).
+ *
+ * SUMBER KANONIS (Dual Mode W1, G-ST-3): tipe ini hidup di
+ * ./dedMode.ts — definisi di sini hanya re-export agar importer lama
+ * (`from './types'`) tidak berubah. Nilai string TIDAK berubah.
  */
-export type DedEstimationPolicy = 'FULL_AI' | 'DATABASE';
+export type { DedEstimationPolicy };
 
 /**
  * Preferensi Output (USULAN BARU ter-ACC owner 2026-11-10, mockup D6):
@@ -83,6 +87,7 @@ export type DedAiQuantitySource =
 
 import type { CanonicalDedMatch } from '../ded-canonical/canonicalDedPricing';
 import type { AiToolsUsage } from '../providerClient';
+import type { DedEstimationPolicy } from './dedMode';
 
 export type DedAiPriceSource =
   | 'AI_ESTIMATE'  // Estimasi dari model AI — perlu verifikasi, bukan harga resmi
@@ -488,7 +493,9 @@ export interface DedWorkflowUsage {
    * sampai ke service. Ketiadaan dibuat EKSPLISIT di sini agar
    * featureKey hasil default lama (DETAIL tanpa kompleksitas →
    * 'ded-ai/medium') tidak pernah terbaca sebagai pilihan user.
-   * Pipeline FULL_AI tidak punya masukan kompleksitas → selalu null.
+   * G-UI-4 (Dual Mode §3): kompleksitas kini diteruskan ke pipeline
+   * FULL_AI juga (DETAIL → pilihan user; FAST/absen → null) — baris
+   * lama "FULL_AI selalu null" tidak lagi berlaku.
    */
   complexity?: 'simple' | 'medium' | 'complex' | null;
   pipeline: 'STANDARD' | 'FULL_AI';

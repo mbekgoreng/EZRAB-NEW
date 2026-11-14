@@ -34,10 +34,18 @@ check('2.1 DATABASE meneruskan estimasi wajar sebagai fallback (keputusan owner 
 check('2.2 DATABASE + harga hilang → tetap UNRESOLVED null (bukan Rp0)', resolveDedPriceForPolicy('DATABASE', null).unitPrice === null);
 const dbFull = applyFullAiPricePolicy('DATABASE', { unitPrice: 1150000, unit: 'm3', source: 'AI_ESTIMATE' });
 check('2.3 FullAI DATABASE meneruskan AI_ESTIMATE sebagai fallback (adapter yang memutuskan)', dbFull.unitPrice === 1150000 && dbFull.source === 'AI_ESTIMATE');
+// 2026-11-13 (Dual Mode, keputusan koordinator: MESIN-MENANG): pemanggil 2-argumen
+// tanpa rabMode eksplisit jatuh ke mode mesin (FULL_AI) — klaim VERIFIED_SOURCE
+// diturunkan ke AI_ESTIMATE. Pass-through DATABASE dipin via 3-argumen
+// rabMode 'EZRAB_AI' (pola W5 B8/B9).
 const dbVerified = applyFullAiPricePolicy('DATABASE', { unitPrice: 1150000, unit: 'm3', source: 'VERIFIED_SOURCE', ahspCode: '3.7.4' });
-check('2.4 FullAI DATABASE meloloskan VERIFIED_SOURCE ber-ahspCode', dbVerified.unitPrice === 1150000 && dbVerified.source === 'VERIFIED_SOURCE');
+check('2.4 FullAI 2-argumen tanpa rabMode menurunkan VERIFIED_SOURCE ber-ahspCode ke AI_ESTIMATE (mesin-menang)', dbVerified.unitPrice === 1150000 && dbVerified.source === 'AI_ESTIMATE' && dbVerified.ahspCode === undefined);
 const dbVerifiedNoCode = applyFullAiPricePolicy('DATABASE', { unitPrice: 1150000, unit: 'm3', source: 'VERIFIED_SOURCE' });
-check('2.5 FullAI DATABASE gerbang meneruskan klaim VERIFIED tanpa ahspCode (adapter yang menurunkannya jadi AI_ESTIMATE)', dbVerifiedNoCode.unitPrice === 1150000 && dbVerifiedNoCode.source === 'VERIFIED_SOURCE');
+check('2.5 FullAI 2-argumen tanpa rabMode menurunkan klaim VERIFIED tanpa ahspCode ke AI_ESTIMATE', dbVerifiedNoCode.unitPrice === 1150000 && dbVerifiedNoCode.source === 'AI_ESTIMATE');
+const dbVerifiedEzrab = applyFullAiPricePolicy('DATABASE', { unitPrice: 1150000, unit: 'm3', source: 'VERIFIED_SOURCE', ahspCode: '3.7.4' }, 'EZRAB_AI');
+check('2.4b FullAI DATABASE + rabMode EZRAB_AI meloloskan VERIFIED_SOURCE ber-ahspCode', dbVerifiedEzrab.unitPrice === 1150000 && dbVerifiedEzrab.source === 'VERIFIED_SOURCE' && dbVerifiedEzrab.ahspCode === '3.7.4');
+const dbVerifiedNoCodeEzrab = applyFullAiPricePolicy('DATABASE', { unitPrice: 1150000, unit: 'm3', source: 'VERIFIED_SOURCE' }, 'EZRAB_AI');
+check('2.5b FullAI DATABASE + rabMode EZRAB_AI meneruskan klaim VERIFIED tanpa ahspCode (adapter yang menurunkannya jadi AI_ESTIMATE)', dbVerifiedNoCodeEzrab.unitPrice === 1150000 && dbVerifiedNoCodeEzrab.source === 'VERIFIED_SOURCE');
 const dbUser = applyFullAiPricePolicy('DATABASE', { unitPrice: 900000, unit: 'm3', source: 'USER_INPUT' });
 check('2.6 FullAI DATABASE meloloskan USER_INPUT', dbUser.unitPrice === 900000 && dbUser.source === 'USER_INPUT');
 const fullAiPass = applyFullAiPricePolicy('FULL_AI', { unitPrice: 1150000, unit: 'm3', source: 'AI_ESTIMATE' });

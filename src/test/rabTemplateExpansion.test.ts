@@ -43,21 +43,29 @@ async function runUniversalTemplateRabTests() {
   // TEST GROUP 1: EXISTING HOUSE TYPES REGRESSION (Type 36 s/d Type 300)
   // -------------------------------------------------------------------------
   console.log('--- TEST GROUP 1: Existing House Types Regression (Type 36 - 300) ---');
+  // TOTAL DIREBASE 2026-11-14 (Grant 1 owner, commit e1fb942 2026-10-31):
+  // c-plester 78.000 -> 56.784 (AHSP 2026 kanonis 3.7.4). Pin lama ditulis
+  // sebelum Grant 1; total baru dibuktikan dari engine kanonis dengan
+  // rekonstruksi eksak 14/14: pin_lama == total_baru +
+  // round(vol_plester x 78.000) - round(vol_plester x 56.784).
+  // Tidak ada item/volume/rumus lain yang berubah (jumlah item tetap
+  // 26/28; sum(amount) == totalEstimate di semua tipe). Bila harga
+  // c-plester berubah lagi, pin-pin ini WAJIB direbase ulang.
   const houseTypes = [
-    { id: 'HOUSE-T36-1FL', area: 36, floors: 1, expectedTotal: 122988600, expectedItems: 26 },
-    { id: 'HOUSE-T36-2FL', area: 36, floors: 2, expectedTotal: 152311600, expectedItems: 28 },
-    { id: 'HOUSE-T45-1FL', area: 45, floors: 1, expectedTotal: 150664360, expectedItems: 26 },
-    { id: 'HOUSE-T54-1FL', area: 54, floors: 1, expectedTotal: 179058780, expectedItems: 26 },
-    { id: 'HOUSE-T60-1FL', area: 60, floors: 1, expectedTotal: 200680160, expectedItems: 26 },
-    { id: 'HOUSE-T70-1FL', area: 70, floors: 1, expectedTotal: 231220740, expectedItems: 26 },
-    { id: 'HOUSE-T90-2FL', area: 90, floors: 2, expectedTotal: 339429900, expectedItems: 28 },
-    { id: 'HOUSE-T100-2FL', area: 100, floors: 2, expectedTotal: 377028000, expectedItems: 28 },
-    { id: 'HOUSE-T120-2FL', area: 120, floors: 2, expectedTotal: 445242440, expectedItems: 28 },
-    { id: 'HOUSE-T150-2FL', area: 150, floors: 2, expectedTotal: 552460580, expectedItems: 28 },
-    { id: 'HOUSE-T180-2FL', area: 180, floors: 2, expectedTotal: 654743140, expectedItems: 28 },
-    { id: 'HOUSE-T200-2FL', area: 200, floors: 2, expectedTotal: 726593940, expectedItems: 28 },
-    { id: 'HOUSE-T250-2FL', area: 250, floors: 2, expectedTotal: 898449500, expectedItems: 28 },
-    { id: 'HOUSE-T300-2FL', area: 300, floors: 2, expectedTotal: 1072322760, expectedItems: 28 }
+    { id: 'HOUSE-T36-1FL', area: 36, floors: 1, expectedTotal: 119627986, expectedItems: 26 },
+    { id: 'HOUSE-T36-2FL', area: 36, floors: 2, expectedTotal: 148950986, expectedItems: 28 },
+    { id: 'HOUSE-T45-1FL', area: 45, floors: 1, expectedTotal: 146463592, expectedItems: 26 },
+    { id: 'HOUSE-T54-1FL', area: 54, floors: 1, expectedTotal: 174017858, expectedItems: 26 },
+    { id: 'HOUSE-T60-1FL', area: 60, floors: 1, expectedTotal: 195079136, expectedItems: 26 },
+    { id: 'HOUSE-T70-1FL', area: 70, floors: 1, expectedTotal: 224686212, expectedItems: 26 },
+    { id: 'HOUSE-T90-2FL', area: 90, floors: 2, expectedTotal: 331028364, expectedItems: 28 },
+    { id: 'HOUSE-T100-2FL', area: 100, floors: 2, expectedTotal: 367692960, expectedItems: 28 },
+    { id: 'HOUSE-T120-2FL', area: 120, floors: 2, expectedTotal: 434040392, expectedItems: 28 },
+    { id: 'HOUSE-T150-2FL', area: 150, floors: 2, expectedTotal: 538458020, expectedItems: 28 },
+    { id: 'HOUSE-T180-2FL', area: 180, floors: 2, expectedTotal: 637940068, expectedItems: 28 },
+    { id: 'HOUSE-T200-2FL', area: 200, floors: 2, expectedTotal: 707923860, expectedItems: 28 },
+    { id: 'HOUSE-T250-2FL', area: 250, floors: 2, expectedTotal: 875111900, expectedItems: 28 },
+    { id: 'HOUSE-T300-2FL', area: 300, floors: 2, expectedTotal: 1044317640, expectedItems: 28 }
   ];
 
   for (const ht of houseTypes) {

@@ -305,6 +305,17 @@ describe('EZRAB PHASE A — DEEP DOMAIN AUDIT TEST SUITE', () => {
     });
 
     test('5.2 Only approved items with volume > 0 are converted to official RAB items', () => {
+      // ITEM-1 adalah item DED yang REALISTIS: convertToOfficialRabItems
+      // sengaja merevalidasi tiap item lewat mesin 13-gate
+      // (dedRabValidationGate — STRICT FAIL-CLOSED §21), sehingga fixture
+      // wajib membawa medan kanonis DedWorkItem: quantity top-level (gate
+      // 7 membaca item.quantity, bukan qto.quantity), sourcePages +
+      // evidenceIds (gate 9), dan priceSource AI_ESTIMATE (jalur RAB READY
+      // RULE gerbang untuk item estimasi AI). Tanpa ketiganya ITEM-1
+      // ditolak gerbang dan properti yang diuji tes ini (filter
+      // approved + volume > 0) tidak dapat teramati. ITEM-2/ITEM-3
+      // sengaja tetap minimal: keduanya wajib TEREKSKLUSI (ITEM-2 tidak
+      // disetujui; ITEM-3 volume 0) — asersi di bawah tidak berubah.
       const items: any[] = [
         {
           id: 'ITEM-1',
@@ -312,8 +323,11 @@ describe('EZRAB PHASE A — DEEP DOMAIN AUDIT TEST SUITE', () => {
           category: 'WALL',
           unit: 'm2',
           userApproved: true,
+          quantity: 150,
+          sourcePages: [1],
+          evidenceIds: ['EV-1'],
           qto: { quantity: 150, status: 'CALCULATED' },
-          price: { unitPrice: 145000, totalPrice: 21750000 },
+          price: { unitPrice: 145000, totalPrice: 21750000, priceSource: 'AI_ESTIMATE' },
         },
         {
           id: 'ITEM-2',
@@ -352,7 +366,11 @@ describe('EZRAB PHASE A — DEEP DOMAIN AUDIT TEST SUITE', () => {
       const bowplank = CoreCalculatorRegistry.get('BOWPLANK');
       assert.ok(bowplank, 'Bowplank calculator is registered');
 
-      const res = bowplank.calculate({ panjang_bangunan: 10, lebar_bangunan: 8 });
+      // G2: input memakai NAMA SKEMA BOWPLANK (P = Panjang Lahan/Bangunan,
+      // L = Lebar Lahan/Bangunan; C/H/R default) — nama panjang
+      // 'panjang_bangunan'/'lebar_bangunan' tidak pernah ada di skema
+      // (tidak ada komit yang memakainya) sehingga adapter menolaknya.
+      const res = bowplank.calculate({ P: 10, L: 8 });
       assert.ok(res.primaryQuantity > 0);
       assert.strictEqual(isNaN(res.primaryQuantity), false);
     });

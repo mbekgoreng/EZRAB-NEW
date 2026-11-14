@@ -233,8 +233,18 @@ export function appendOperationRecord(rec: OperationRecord): void {
 
 export function listOperationRecords(projectId?: string): OperationRecord[] {
   const log = loadLog();
-  const rows = projectId ? log.filter((r) => r.projectId === projectId) : [...log];
-  return rows.sort((a, b) => b.ts - a.ts);
+  // Urutan array log = urutan sisipan (append + round-trip JSON + trim dari
+  // depan semuanya mempertahankannya). Tiebreak indeks sisipan MENURUN:
+  // dua record dalam milidetik yang sama harus mengurutkan yang TERAKHIR
+  // disisipkan lebih dulu — tanpa ini, sort stabil mempertahankan record
+  // LAMA di depan dan getLastUndoableRecord mengembalikan operasi yang
+  // salah (flake RV2-FINDING-5: undo menarget record F20, bukan operasi
+  // terakhir). Urutan ts-berbeda tidak berubah; tidak ada perubahan skema.
+  const rows = log
+    .map((r, i) => ({ r, i }))
+    .filter(({ r }) => !projectId || r.projectId === projectId);
+  rows.sort((a, b) => (b.r.ts - a.r.ts) || (b.i - a.i));
+  return rows.map(({ r }) => r);
 }
 
 export function getLastUndoableRecord(projectId: string): OperationRecord | null {

@@ -74,7 +74,17 @@ export function isHspPricedItem(item: PriceCostBasisLike | null | undefined): bo
 
 export class UnifiedProjectEngine {
   /**
-   * Recalculates Project Cost Summary from a list of RAB items
+   * Recalculates Project Cost Summary from a list of RAB items.
+   *
+   * MESIN KANONIS (P3B, 2026-11-13): tangga uang SATU-SATUNYA yang sah untuk
+   * total proyek — dipakai ProjectContext untuk SEMUA tulis, Rekapitulasi
+   * (lewat computeRekapSummary), Laporan, ekspor, dan konteks AI. Kaki
+   * `directCost`-nya dipin SETARA PERSIS dengan `estimatedTotal` pratinjau
+   * draft (`computeTotals`, universalRab.ts) pada item yang sama — lihat
+   * `src/test/p3bCanonicalCalculation.test.ts`. Mesin parametrik rumah
+   * (parametricVolumeEngine) adalah jalur TERPISAH dengan tangga sendiri
+   * (O&P 5/5 + pajak 11% selalu) — penyatuan kedua tangga butuh keputusan
+   * owner (temuan terbuka P3B-O3); jangan samakan default di sini.
    */
   static recalculateCostSummary(
     items: RabItem[],
@@ -278,7 +288,37 @@ export class UnifiedProjectEngine {
           ...((it as any).priceSourceLabel ? { priceSourceLabel: (it as any).priceSourceLabel } : {}),
           ...((it as any).priceSourceExplanation ? { priceSourceExplanation: (it as any).priceSourceExplanation } : {}),
           ...((it as any).priceSourceName !== undefined ? { priceSourceName: (it as any).priceSourceName } : {}),
+          // S2 (§2): metadata sumber pasar diteruskan — sebelumnya dibuang
+          // di sini padahal factory sudah membawanya dan mesin ekspor
+          // membacanya (excelExportEngine: pemasok + tanggal berlaku +
+          // wilayah di teks sumber). Tanpa ini provenance transfer tidak
+          // lengkap sampai ekspor.
+          ...((it as any).priceSourceSupplier !== undefined ? { priceSourceSupplier: (it as any).priceSourceSupplier } : {}),
+          ...((it as any).priceSourceDate !== undefined ? { priceSourceDate: (it as any).priceSourceDate } : {}),
+          ...((it as any).priceSourceRegion !== undefined ? { priceSourceRegion: (it as any).priceSourceRegion } : {}),
           ...((it as any).ahspMappingStatus ? { ahspMappingStatus: (it as any).ahspMappingStatus } : {}),
+          // S4 (§4, menutup P6-O1): keputusan review diteruskan — tanpa
+          // ini Sheet 5 menampilkan 'tidak tercatat' walau factory sudah
+          // membawanya (jalur ekspor nyata: normalizeSections →
+          // freezeRabSnapshot → Sheet 5). Tanpa nilai = field absen.
+          ...((it as any).verificationDate ? { verificationDate: (it as any).verificationDate } : {}),
+          ...((it as any).userDecisionStatus ? { userDecisionStatus: (it as any).userDecisionStatus } : {}),
+          // F2 (lanjutan §5): rumus kuantitas diteruskan ke Sheet 4
+          // (volumeFormulaOf) — tanpa ini rumus berhenti di record RAB.
+          ...((it as any).calculationFormula ? { calculationFormula: (it as any).calculationFormula } : {}),
+          // S6 (§6, P5-O3): traceabilitas WBS diteruskan ke seksi ekspor
+          // — tanpa ini Sheet 2 tidak bisa menampilkan hierarki WBS
+          // (jalur ekspor nyata: normalizeSections → freezeRabSnapshot
+          // → Sheet 2 kolom M). Field runtime (di luar tipe RABItem)
+          // dibaca jalur ekspor via cast, seperti priceStatus.
+          // Tanpa nilai = field absen. Catatan batas (pola S4-O3):
+          // seksi TERSIMPAN dikembalikan apa adanya (early return di
+          // atas) tanpa pemetaan ini — hanya rekonstruksi dari rabItems
+          // yang meneruskannya.
+          ...((it as any).wbsCode ? { wbsCode: (it as any).wbsCode } : {}),
+          ...((it as any).wbsNodeId ? { wbsNodeId: (it as any).wbsNodeId } : {}),
+          ...((it as any).wbsMappingStatus ? { wbsMappingStatus: (it as any).wbsMappingStatus } : {}),
+          ...((it as any).wbsSuggestedNodeId ? { wbsSuggestedNodeId: (it as any).wbsSuggestedNodeId } : {}),
         })),
       });
       secIdx++;

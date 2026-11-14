@@ -24,6 +24,13 @@ import type {
 } from '../ded-ai-estimate/types';
 import type { StructuredSpec, SpecStatus } from './structuredSpec';
 import { SPEC_KEY_META } from './structuredSpec';
+import {
+  describeModeForContext,
+  modeFromLegacy,
+  normalizePolicy,
+  type DedEstimationPolicy,
+  type DedRabAiMode,
+} from '../ded-ai-estimate/dedMode';
 
 export interface DedUnderstandingResult {
   /** Spek terstruktur hasil ekstraksi DED (siap digabung ke structuredSpecs). */
@@ -41,6 +48,15 @@ export interface DedUnderstandingResult {
   };
   /** Divisi yang datanya tidak cukup (dari divisionCoverage DED). */
   insufficientDivisions: string[];
+  /**
+   * Kebijakan harga + mode kanonis asal DED (Dual Mode W1, G-KN-2,
+   * aturan §4 A). Opsional: hasil ekstraksi lama / pemanggil yang
+   * membangun DedUnderstandingResult manual tidak wajib mengisinya
+   * (tanpa keduanya, formatDedUnderstandingLines tidak menambah
+   * baris mode — format lama dipertahankan).
+   */
+  policy?: DedEstimationPolicy;
+  dedMode?: DedRabAiMode;
 }
 
 const DED_SOURCE = 'DED' as const;
@@ -175,14 +191,38 @@ export function extractSpecsFromDedOutput(
     .filter((d) => d.status === 'INSUFFICIENT_DATA')
     .map((d) => `${d.divisionCode} ${d.divisionName}`.trim());
 
-  return { specs, missingData, coverage, insufficientDivisions };
+  // Dual Mode W1 (G-KN-2): mode/policy asal dibawa bersama hasil
+  // ekstraksi agar formatDedUnderstandingLines + pemanggil lain
+  // (buildDedSection → canonicalContext.dedSection) sadar mode.
+  // Output di sini selalu DedAiOutput mesin standar (fullAi=false).
+  const policy = normalizePolicy(output.policy);
+  return {
+    specs,
+    missingData,
+    coverage,
+    insufficientDivisions,
+    policy,
+    dedMode: modeFromLegacy({ policy, fullAi: false }),
+  };
 }
 
 /** Baris pemahaman DED untuk jawaban / konteks kanonis. */
 export function formatDedUnderstandingLines(result: DedUnderstandingResult): string[] {
-  const lines: string[] = [
+  const lines: string[] = [];
+  // Dual Mode W1 (G-KN-1/G-KN-2, aturan §4 A): seksi DED menyatakan
+  // mode asalnya di baris pertama — hasil tanpa mode/policy tetap
+  // diformat seperti sebelumnya (tanpa baris mode).
+  if (result.dedMode != null || result.policy != null) {
+    lines.push(
+      describeModeForContext(
+        result.dedMode ?? modeFromLegacy({ policy: result.policy ?? null, fullAi: false }),
+        result.policy ?? null,
+      ),
+    );
+  }
+  lines.push(
     `Pemahaman DED: ${result.coverage.itemsFullyResolved}/${result.coverage.totalItems} item ter-resolver penuh${result.coverage.partial ? ' (HASIL PARSIAL)' : ''}.`,
-  ];
+  );
   for (const s of result.specs) {
     lines.push(`• Spek dari DED [${s.status}] ${s.label}: ${s.value}${s.unit ? ` ${s.unit}` : ''}.`);
   }

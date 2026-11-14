@@ -294,6 +294,25 @@ export function classifyUniversal(text: string): Classification {
     return d.id;
   };
   const disciplines = new Set(matches.map(disciplineOf));
+  // G2 (F8 buildingTypology): komponen bangunan — famili 'specialized'
+  // kecuali kandang (pondasi, struktur/atap, waterproofing, struktur
+  // baja/beton, fasad, interior, finishing, pintu-jendela, dsb.) —
+  // adalah BAGIAN dari bangunan, bukan disiplin terpisah. Bila ada
+  // disiplin bangunan di antara matches, komponen tidak menambah
+  // disiplin: 'gudang + atap baja ringan' adalah satu bangunan (atap
+  // ada di conceptualWbs gudang; roofSystem adalah field bangunan di
+  // buildingTypology), bukan proyek multi-disiplin. Tanpa ini,
+  // universalIntakeGate mencegat permintaan gudang yang sudah lengkap
+  // dan menanyakan pembangunan-baru-vs-renovasi alih-alih menyusun
+  // draft. Preseden: pengecualian 'rumah + renovasi' di bawah.
+  // 'secondary' sengaja TIDAK diubah — ia informatif (cakupan yang
+  // disebut), sedangkan isMulti adalah sakelar perilaku gerbang.
+  const hasBuildingDiscipline = matches.some((d) => d.family === 'building' || d.id === 'kandang');
+  if (hasBuildingDiscipline) {
+    for (const d of matches) {
+      if (d.family === 'specialized' && d.id !== 'kandang') disciplines.delete(disciplineOf(d));
+    }
+  }
   // 'rumah' + 'renovasi' bukan multi — renovasi adalah cara pengerjaan
   // atas rumah itu (primer renovasi, rumah konteksnya).
   const isMulti = disciplines.size >= 2 && !(disciplines.size === 2 && disciplines.has('rumah') && disciplines.has('renovasi'));

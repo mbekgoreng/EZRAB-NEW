@@ -422,7 +422,13 @@ test('D3: pesan draft memuat template terpilih, status kesiapan, pemisah subtota
   assert.ok(msg.includes('Total referensi pasar'));
   assert.ok(msg.includes('Total terverifikasi'));
   assert.ok(msg.includes('bukan harga yang dihitung atau diverifikasi AI per item'), 'ESTIMASI tidak menyiratkan verifikasi AI per item');
-  assert.ok(!msg.includes('Rp0'), 'tidak ada literal Rp0 di pesan draft');
+  // P6-B: penjelasan sumber harga dirender apa adanya — frasa
+  // kejujuran "bukan Rp0" boleh muncul; Rp0 sebagai harga tampil
+  // tetap dilarang (lihat universalRab.test.ts).
+  const rp0Total = msg.split('Rp0').length - 1;
+  const rp0Honest = (msg.match(/bukan Rp0/g) ?? []).length;
+  assert.equal(rp0Total, rp0Honest, 'tidak ada literal Rp0 di pesan draft di luar frasa "bukan Rp0"');
+  assert.ok(!/\|\s*Rp\s*0\s*\|/.test(msg), 'tidak ada sel harga Rp0 di tabel');
 });
 
 test('D3: draft blokir menampilkan alasan blokir di pesan (bukan sekadar catatan)', () => {

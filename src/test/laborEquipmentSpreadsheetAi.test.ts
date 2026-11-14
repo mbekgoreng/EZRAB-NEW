@@ -67,7 +67,17 @@ test('Labor & Equipment Database, Spreadsheet Repository, & AI Integration Suite
     // Query Tukang Batu
     const laborResponse = await defaultAiProvider.chat('Berapa upah tukang batu di Jawa Timur?', mockContext as any);
     assert.ok(laborResponse.content.includes('Tukang Batu') || laborResponse.content.includes('Rp'));
-    assert.ok((laborResponse as any).proposals && (laborResponse as any).proposals.length > 0, 'Should propose adding to RAB');
+    // G2: pertanyaan harga upah MURNI sengaja TIDAK memicu proposal tambah
+    // RAB — cabang upah di aiProviderEngine hanya mengusulkan bila ada kata
+    // tambah eksplisit (isExplicitAddRequest: tambah/tambahkan/masukkan/
+    // input), dan perilaku itu DIPIN phaseC §6.1 ('"pekerja" query does NOT
+    // accidentally generate ADD_RAB_ITEM proposal'). Asersi proposal diuji
+    // lewat prompt tambah eksplisit di bawah; asersi tanpa-proposal di sini
+    // memperkuat pin phaseC.
+    assert.ok(!(laborResponse as any).proposals || (laborResponse as any).proposals.length === 0, 'Pure labor price question must NOT auto-propose adding to RAB');
+    const laborAddResponse = await defaultAiProvider.chat('Tambahkan upah tukang batu ke RAB', mockContext as any);
+    assert.ok(laborAddResponse.content.includes('Tukang Batu') || laborAddResponse.content.includes('Rp'));
+    assert.ok((laborAddResponse as any).proposals && (laborAddResponse as any).proposals.length > 0, 'Should propose adding to RAB');
 
     // Query Excavator
     const equipResponse = await defaultAiProvider.chat('Berapa harga sewa excavator per jam?', mockContext as any);

@@ -363,6 +363,14 @@ export class HouseTypeCatalog {
     item?: HouseTypeCatalogItem;
     extractedArea?: number;
     extractedFloors?: number;
+    /**
+     * true bila angka berasal dari penyebutan TIPE eksplisit
+     * ("type"/"tipe"/"t300"); false bila hanya luas telanjang ("45 m2",
+     * "200 meter") — luas telanjang BUKAN penyebutan tipe dan hanya
+     * menjadi angka untuk fallback R1 (findDirectTemplate). Dipakai
+     * pemanggil untuk membedakan kecocokan eksak tipe dari luas.
+     */
+    matchedByType?: boolean;
   } {
     const q = query.toLowerCase();
 
@@ -377,29 +385,53 @@ export class HouseTypeCatalog {
     }
 
     // Match numeric type patterns: "type 300", "tipe 300", "t300", "t-300", "300 m2", "300 meter"
-    const typeMatch = q.match(/(?:type|tipe|t)\s*[-_]?\s*(\d+)/i) || q.match(/(\d+)\s*(?:m2|meter|m²)\b/i);
+    // PERBAIKAN-D (2026-11-14): pola `t` telanjang lama
+    // `(?:type|tipe|t)\s*[-_]?\s*(\d+)` menangkap "KT 2" (singkatan
+    // "kamar tidur" + jumlah) sebagai type 2 — lalu fallback R1
+    // merutekan teks spek bebas ("3 KT 2 KM ukuran 7x11") ke template
+    // terdekat dengan requestedArea 2 m². Bentuk `t` telanjang kini
+    // wajib menempel pada angka (t300, t-300 — sesuai contoh di atas)
+    // dengan word boundary, sehingga huruf 't' di akhir "KT" tidak
+    // pernah cocok; "type"/"tipe" tetap boleh berjarak dari angka.
+    const typeMatch = q.match(/(?:type|tipe)\s*[-_]?\s*(\d+)|\bt[-_]?(\d+)/i);
     let extractedArea: number | undefined = undefined;
+    let matchedByType = false;
 
     if (typeMatch) {
-      extractedArea = parseInt(typeMatch[1], 10);
+      extractedArea = parseInt(typeMatch[1] ?? typeMatch[2], 10);
+      matchedByType = true;
       // Find matching item by area
       if (extractedArea === 36 && extractedFloors === 2) {
         const item = HOUSE_TYPE_CATALOG.find((h) => h.id === 'house_t36_2fl');
-        if (item) return { item, extractedArea, extractedFloors };
+        if (item) return { item, extractedArea, extractedFloors, matchedByType };
       }
       const item = HOUSE_TYPE_CATALOG.find((h) => h.area === extractedArea);
       if (item) {
-        return { item, extractedArea, extractedFloors };
+        return { item, extractedArea, extractedFloors, matchedByType };
+      }
+    }
+
+    // Luas telanjang ("300 m2", "200 meter") — BUKAN penyebutan tipe:
+    // hanya angka luas untuk fallback R1, TIDAK mengembalikan item.
+    // (Sebelumnya pola ini ikut mengembalikan item bila angkanya sama
+    // dengan luas tipe terdaftar, sehingga "bangunan 45 m2" — bahkan
+    // dengan lantai disebut — selalu menang sebagai type 45 dan
+    // menutup jalur spek bebas, bertentangan dengan dok R1 bahwa
+    // prompt berlantai tanpa tipe eksak tidak ditebak semantiknya.)
+    if (!typeMatch) {
+      const areaMatch = q.match(/(\d+)\s*(?:m2|meter|m²)\b/i);
+      if (areaMatch) {
+        extractedArea = parseInt(areaMatch[1], 10);
       }
     }
 
     // Check custom
     if (q.includes('custom') || q.includes('khusus')) {
       const item = HOUSE_TYPE_CATALOG.find((h) => h.id === 'house_custom');
-      return { item, extractedArea, extractedFloors };
+      return { item, extractedArea, extractedFloors, matchedByType };
     }
 
-    return { extractedArea, extractedFloors };
+    return { extractedArea, extractedFloors, matchedByType };
   }
 
   /**

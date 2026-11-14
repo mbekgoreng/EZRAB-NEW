@@ -101,8 +101,14 @@ check('footer: tanpa sosial linkedin generik', !footer.includes('https://linkedi
 check('footer: ada tautan /privacy', footer.includes('/privacy'));
 check('footer: ada tautan /terms', footer.includes('/terms'));
 check('footer: FAQ menuju /fitur#faq', footer.includes('/fitur#faq'));
-check('footer: #fitur dipertahankan', footer.includes('href="#fitur"'));
-check('footer: #harga dipertahankan', footer.includes('href="#harga"'));
+// Sejak 1b1d18f (2026-10-30, audit F3) jangkar polos '#fitur'/'#harga'
+// SENGAJA diganti bentuk root-relative '/#fitur'/'/#harga' + handler
+// goHomeSection: href '#fitur' polos mati dari halaman selain beranda
+// (section target tidak ada di sana). Pin memin bentuk baru beserta
+// handler navigasinya — properti "footer menaut ke section Fitur/Harga"
+// utuh, bentuknya kini benar lintas-halaman.
+check('footer: #fitur dipertahankan', footer.includes('href="/#fitur"') && footer.includes("goHomeSection('fitur')"));
+check('footer: #harga dipertahankan', footer.includes('href="/#harga"') && footer.includes("goHomeSection('harga')"));
 
 /* ---------- 5. Route publik & file yatim ---------- */
 const app = read('App.tsx');

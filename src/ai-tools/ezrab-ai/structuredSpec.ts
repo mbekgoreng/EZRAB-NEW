@@ -224,3 +224,38 @@ export function isValidDedSpec(entry: unknown): entry is StructuredSpec {
   if ((entry as { source?: unknown }).source !== 'DED') return false;
   return validateStructuredSpecs([entry]) !== null;
 }
+
+/* ------------------------------------------------------------------ */
+/* P3D (FULL REPAIR 2026-11-13) — spek terbaru + predikat belum terjawab */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Spek terbaru per kunci — SATU-SATUNYA aturan dedup spek untuk
+ * artefak WBS, penelusuran spek→item, dan cek kelengkapan (P3D):
+ * revisi/koreksi pengguna menambahkan entri BARU di akhir array
+ * (pola `supersedes`), sehingga entri TERAKHIR per kunci yang menang.
+ * Urutan kunci hasil = urutan kemunculan pertama (deterministik).
+ * TIDAK mengubah array masukan; entri dikembalikan apa adanya (bukan
+ * kopian dalam — sama seperti `validateStructuredSpecs`).
+ */
+export function latestSpecsByKey(specs: StructuredSpec[]): StructuredSpec[] {
+  const byKey = new Map<string, StructuredSpec>();
+  for (const s of specs) byKey.set(s.key, s);
+  return [...byKey.values()];
+}
+
+/**
+ * Spek belum terjawab: status UNRESOLVED, atau tanpa nilai (null /
+ * string kosong / array kosong). Dipakai cek kelengkapan P3D —
+ * spek seperti ini TIDAK BOLEH membuat draft berlabel "lengkap".
+ * (Cermin predikat `isUndecided` di specChain, tanpa aturan frasa
+ * "belum ditentukan" — predikat ini hanya soal status + nilai.)
+ */
+export function isSpecUnresolved(spec: StructuredSpec): boolean {
+  if (spec.status === 'UNRESOLVED') return true;
+  const v = spec.value;
+  if (v == null) return true;
+  if (typeof v === 'string') return v.trim() === '';
+  if (Array.isArray(v)) return v.length === 0;
+  return false;
+}

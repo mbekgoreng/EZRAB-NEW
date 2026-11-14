@@ -31,6 +31,7 @@ import {
   EXPORT_PRESETS,
 } from '../../export/types';
 import { exportRABToProfessionalExcel } from '../../export/excelExportEngine';
+import { FIVE_SHEET_PRESET_ID } from '../../export/fiveSheetPreset';
 import { exportProjectToPDF } from '../../export/pdfExporter';
 import { generateExportFileName } from '../../export/exportDesignSystem';
 import { brandingClient, WorkspaceBranding } from '../../services/brandingClient';
@@ -62,6 +63,11 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
 
   // Form toggles
   const [useLiveFormulas, setUseLiveFormulas] = useState(true);
+  // P5: preset RAB 5 Sheet — workbook terpisah (Ringkasan + RAB Detail +
+  // AHSP project-bound + Detail Volume + Sumber & Asumsi) dari snapshot
+  // beku. Hanya berlaku untuk Excel; pilihan lembar 16-sheet diabaikan
+  // bila toggle ini aktif.
+  const [useFiveSheetPreset, setUseFiveSheetPreset] = useState(false);
   // P0-B: signature fields start EMPTY — never pre-fill with fabricated names.
   // The branding modal effect above fills these from real branding when available.
   // approvedByName uses the project's real client when known.
@@ -83,6 +89,12 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
   // When preset changes, update selected sheets
   const handleSelectPreset = (presetId: ExportPresetId) => {
     setSelectedPreset(presetId);
+    /* P6 (P5-O6): kartu preset 5 sheet adalah pintu masuk yang sama
+     * dengan toggle di bawah grid — memilih kartu mengaktifkan jalur
+     * 5 sheet; memilih preset lain mematikannya. Tanpa sinkronisasi
+     * ini kartu baru akan menjadi kartu mati (sheets [] → tombol
+     * ekspor nonaktif). */
+    setUseFiveSheetPreset(presetId === 'FIVE_SHEET_RAB');
     if (presetId === 'CUSTOM') return;
 
     const preset = EXPORT_PRESETS[presetId];
@@ -196,7 +208,8 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
 
   // Execute Export
   const handleExecuteExport = async () => {
-    if (activeSheetCount === 0) {
+    // P5: preset 5 sheet tidak memakai pilihan lembar 16-sheet.
+    if (activeSheetCount === 0 && !useFiveSheetPreset) {
       onToast?.('Pilih minimal satu lembar kerja untuk diexport.');
       return;
     }
@@ -221,7 +234,15 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
       };
 
       if (exportFormat === 'excel' || exportFormat === 'both') {
-        await exportRABToProfessionalExcel(currentProject, effectiveCompany, exportOptions);
+        // P6 (P5-O6): 'FIVE_SHEET_RAB' kini anggota ExportPresetId —
+        // cast P5 dihapus; nilai diteruskan apa adanya.
+        await exportRABToProfessionalExcel(
+          currentProject,
+          effectiveCompany,
+          useFiveSheetPreset
+            ? { ...exportOptions, preset: FIVE_SHEET_PRESET_ID }
+            : exportOptions
+        );
       }
 
       if (exportFormat === 'pdf' || exportFormat === 'both') {
@@ -483,6 +504,37 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                 );
               })}
             </div>
+          </div>
+
+          {/* P5: PRESET RAB 5 SHEET (workbook terpisah dari snapshot beku) */}
+          <div>
+            <button
+              type="button"
+              onClick={() => setUseFiveSheetPreset((v) => !v)}
+              style={{
+                width: '100%',
+                textAlign: 'left',
+                padding: '12px 14px',
+                borderRadius: '10px',
+                background: useFiveSheetPreset ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
+                border: useFiveSheetPreset ? '2px solid #2563EB' : '1px solid var(--ez-color-border-line)',
+                cursor: 'pointer',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '4px',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '13px', fontWeight: 750, color: 'var(--ez-color-text-primary)' }}>
+                  Paket RAB 5 Sheet (snapshot beku)
+                </span>
+                {useFiveSheetPreset && <Check size={14} color="var(--ez-hue-blue-text)" strokeWidth={3} />}
+              </div>
+              <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', lineHeight: 1.4 }}>
+                Ringkasan + RAB Detail + AHSP project-bound + Detail Volume + Sumber &amp; Asumsi.
+                Hanya berlaku untuk Excel; pilihan lembar 16-sheet di atas diabaikan bila aktif.
+              </div>
+            </button>
           </div>
 
           {/* SECTION B: FORMAT & TARGET AUDIENCE */}
@@ -1034,7 +1086,10 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
             <button
               type="button"
               onClick={handleExecuteExport}
-              disabled={isExporting || activeSheetCount === 0}
+              /* P6 (P5-O6): preset 5 sheet tidak memakai lembar 16-sheet
+               * (sheets []) — tombol tetap aktif bila jalur 5 sheet
+               * dipilih, selaras dengan guard di handleExecuteExport. */
+              disabled={isExporting || (activeSheetCount === 0 && !useFiveSheetPreset)}
               style={{
                 height: '38px',
                 padding: '0 20px',

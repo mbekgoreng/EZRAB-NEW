@@ -19,6 +19,18 @@
  *  3. Teks: status stepper dipersingkat; disclaimer Full AI DIPADATKAN
  *     tetapi makna hukumnya utuh (bukan harga resmi AHSP; validasi
  *     sebelum pengadaan/tender/kontrak); notice Database utuh.
+ *     PERBAIKAN F (2026-11-14): seksi Kebijakan Harga dihapus program
+ *     Dual Mode (W2 G-UI-1) — kedua catatan keterbukaan pindah ke
+ *     `DED_MODE_CARDS[].note` di dedModeUi.ts dan tetap dirender
+ *     InputView via `{card.note}`. Redaksi kartu EZRAB BUKAN sekadar
+ *     pindahan: dua frasa notice lama ("Hanya harga terverifikasi /
+ *     input pengguna", "tidak mengkueri master AHSP") sudah TIDAK
+ *     BENAR sejak keputusan owner 2026-10-27 (f68030f: DATABASE memakai
+ *     estimasi AI sebagai fallback berlabel bila kanonis gagal, dan
+ *     mencoba AHSP kanonis dulu lewat adapter ded-canonical) — teks
+ *     notice lama tidak pernah diperbarui sesudah keputusan itu, jadi
+ *     mengembalikannya berarti mengembalikan klaim yang salah. Pin
+ *     di bawah mematok redaksi baru yang faktual + rendernya.
  *  4. Dokumen AI: blok max-height di document-ai.css — kartu awal 16px,
  *     kepala halaman padat, area instruksi 78px, petunjuk ganda sembunyi.
  *
@@ -41,6 +53,11 @@ const dedCss = read('src/ai-tools/ded-ai-estimate/dedAi.css');
 const docCss = read('src/ai-tools/document-ai/document-ai.css');
 const dedView = read('src/ai-tools/ded-ai-estimate/view.tsx');
 const dedInput = read('src/ai-tools/ded-ai-estimate/DedAiInputView.tsx');
+// PERBAIKAN F: catatan keterbukaan harga kini hidup di kartu mode
+// (dedModeUi.ts, W2 G-UI-1), bukan inline di InputView; gerbang
+// kebijakan harga hidup di service layer (pricing.ts).
+const modeCards = read('src/ai-tools/ded-ai-estimate/dedModeUi.ts');
+const dedPricing = read('src/ai-tools/ded-ai-estimate/pricing.ts');
 
 let pass = 0;
 let fail = 0;
@@ -97,11 +114,53 @@ check('baris konfigurasi analisis terpasang di TSX (Mode/Kompleksitas/Cakupan)',
 
 /* 3 — Teks dipersingkat, makna utuh ------------------------------------------ */
 check('status stepper dipersingkat', dedView.includes("'Langkah 1 dari 3'") && !dedView.includes('belum ada proses yang berjalan'));
-check('disclaimer Full AI: makna hukum utuh',
-  dedInput.includes('bukan harga resmi AHSP') && dedInput.includes('pengadaan, tender, atau kontrak'));
-check('notice Database: makna utuh',
-  dedInput.includes('Hanya harga terverifikasi / input pengguna') && dedInput.includes('tidak mengkueri master AHSP'));
-check('sub kebijakan dipadatkan', dedInput.includes('dikunci ke hasil estimasi dan ditegakkan di service, bukan sekadar tampilan'));
+// PERBAIKAN F (F-1): pin lama mematok disclaimer di InputView inline —
+// teks itu pindah ke kartu FULL_AI (dedModeUi.ts) oleh W2 G-UI-1, isi
+// hukumnya utuh (sama seperti E-2 di dedPremiumOneScreen). Cek baru:
+// 2 frasa di sumbernya + 2 penanda render di InputView (LEBIH KUAT
+// dari pin lama: gagal bila disclaimer dihapus, kalimat validasinya
+// dipotong, ATAU InputView berhenti merender catatan kartu).
+check('disclaimer Full AI: makna hukum utuh (di kartu Full AI, dirender InputView)',
+  modeCards.includes('bukan harga resmi AHSP') && modeCards.includes('pengadaan, tender, atau kontrak')
+  && dedInput.includes('dedai-modecard-note') && dedInput.includes('{card.note}'));
+// PERBAIKAN F (F-2): pin lama mematok dua frasa notice Database yang
+// TIDAK LAGI BENAR sejak keputusan owner 2026-10-27 (f68030f):
+// "Estimasi harga AI ditolak" dibatalkan — DATABASE memakai estimasi AI
+// sebagai fallback berlabel bila kanonis gagal (dipin
+// dedEstimationPolicy 2.1 + pricing.ts); "tidak mengkueri master AHSP"
+// dibatalkan — DATABASE mencoba AHSP kanonis DULU lewat adapter
+// ded-canonical (service.ts:242-246, canonicalDedPricing +
+// officialAhspRepository). Teks notice lama tidak pernah diperbarui
+// sesudah f68030f, jadi mengembalikan kedua frasa itu berarti
+// mengembalikan klaim yang salah ke user. Setiap klaim BENAR dari
+// notice lama bertahan di catatan kartu EZRAB (item tanpa harga
+// terverifikasi tetap belum tersedia; total bisa parsial; dilengkapi
+// lewat AHSP picker sesudah push ke spreadsheet) + koreksi faktualnya
+// (harga mengacu database AHSP EZRAB). Cek baru mematok redaksi baru
+// yang faktual (4 frasa di sumbernya + 2 penanda render) — LEBIH KUAT
+// dari pin lama (2 substring di 1 berkas).
+check('notice Database: makna utuh (di kartu EZRAB, dirender InputView)',
+  modeCards.includes('Harga mengacu pada database AHSP EZRAB')
+  && modeCards.includes('item tanpa harga terverifikasi tetap belum tersedia')
+  && modeCards.includes('total bisa parsial')
+  && modeCards.includes('AHSP picker')
+  && dedInput.includes('dedai-modecard-note') && dedInput.includes('{card.note}'));
+// PERBAIKAN F (F-3): pin lama mematok sub-teks seksi Kebijakan Harga
+// ("dikunci ke hasil estimasi dan ditegakkan di service...") yang
+// dihapus beserta seksinya oleh W2 G-UI-1 — tidak ada lagi pemilih
+// kebijakan di UI (pemilih mode legacy DILARANG dikembalikan; policy
+// kini DITURUNKAN dari kartu mode). Substansinya — kebijakan ditegakkan
+// di service layer, bukan sekadar tampilan — tetap benar dan kini
+// dipin di lapisan tempat ia hidup: gerbang service (pricing.ts,
+// "service layer, bukan instruksi UI", bercabang pada DATABASE) +
+// turunan policy dari mode (dedModeUi.ts `policyForMode(mode)`) +
+// InputView menerapkannya saat Mulai (`withDedMode(`). 4 syarat di
+// 3 berkas — LEBIH KUAT dari pin lama (1 substring klaim tampilan).
+check('kebijakan harga ditegakkan di service, bukan sekadar tampilan (diturunkan dari kartu mode)',
+  dedPricing.includes('service layer, bukan instruksi UI')
+  && dedPricing.includes("if (effective === 'DATABASE')")
+  && modeCards.includes('policy: policyForMode(mode)')
+  && dedInput.includes('withDedMode('));
 
 /* 4 — Dokumen AI kompak ------------------------------------------------------- */
 const docH = docCss.indexOf('@media (max-height: 880px)');

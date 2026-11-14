@@ -118,6 +118,20 @@ export class AHSPRepository {
       };
 
       this.masterDefinitionsByCode.set(normCode, def);
+      // G1 (2026-11-14): index BM letter codes ALSO under their dotted
+      // display code (C.37, E.1). BM codeNormalized is dotless (c37), so a
+      // dotted query normalized to "C.37" never matched the primary key
+      // "C37" — all 1137 BM items were unresolvable by their real codes
+      // via this repository (phase2AhspEngine FAIL). This mirrors the
+      // production officialAhspRepository, which indexes by display `code`.
+      // First-wins guard: an existing key is never overwritten, so no
+      // lookup that worked before can change its result (verified on
+      // current data: 1137 second keys, 0 collisions with primary keys,
+      // 0 shared by more than one item).
+      const displayKey = AHSPNormalizationEngine.normalizeCode(item.code);
+      if (displayKey && displayKey !== normCode && !this.masterDefinitionsByCode.has(displayKey)) {
+        this.masterDefinitionsByCode.set(displayKey, def);
+      }
       this.masterList.push(def);
     }
   }
@@ -149,12 +163,17 @@ export class AHSPRepository {
    * Get ALL master definitions matching a normalized code.
    * Use this to detect ambiguous codes (multiple variants sharing one code).
    * Project overrides are NOT included; check projectId separately.
+   * Matches EITHER the normalized code or the normalized display code, so
+   * ambiguity detection works for dotted BM queries too (G1, 2026-11-14 —
+   * mirrors the dual-key indexing in initializeAuthoritativeDatasets).
    */
   public getAllByCode(code: string): AHSPDefinition[] {
     const normCode = AHSPNormalizationEngine.normalizeCode(code);
     if (!normCode) return [];
     return this.masterList.filter(
-      def => AHSPNormalizationEngine.normalizeCode(def.codeNormalized || def.code) === normCode
+      def =>
+        AHSPNormalizationEngine.normalizeCode(def.codeNormalized || def.code) === normCode ||
+        AHSPNormalizationEngine.normalizeCode(def.code) === normCode
     );
   }
 

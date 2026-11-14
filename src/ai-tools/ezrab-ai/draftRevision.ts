@@ -22,9 +22,13 @@
  *    penolakan / tidak-dikenali (jatuh ke routing normal).
  *  - `activateRevision` adalah SATU-SATUNYA penulis versi baru:
  *    cek kunci idempotensi → cek baseVersion + baseUpdatedAt (stale) →
- *    seed snapshot versi lama bila perlu → append snapshot versi baru →
- *    SATU tulis `saveVersioned` → singleton diperbarui HANYA sesudah
- *    tulis sukses. Gagal di titik mana pun = versi aktif utuh.
+ *    cek urutan versi kandidat → cek kesiapan kandidat (P4-guard CD-7:
+ *    kandidat BLOCKED ditolak dengan kode DRAFT_NOT_READY, memakai
+ *    `draftReadiness` yang sama dengan guard transfer — bar yang sama,
+ *    NEEDS_SPEC tetap boleh aktif) → seed snapshot versi lama bila
+ *    perlu → append snapshot versi baru → SATU tulis `saveVersioned` →
+ *    singleton diperbarui HANYA sesudah tulis sukses. Gagal di titik
+ *    mana pun = versi aktif utuh.
  *  - Kunci aktivasi memakai `deriveIdempotencyKey` toolRegistry yang
  *    sama dengan registry tool (pola deterministik yang ada — bukan
  *    skema kedua).
@@ -44,6 +48,7 @@ import {
 import {
   computeSectionTotals,
   computeTotals,
+  draftReadiness,
   effectiveItems,
   getLastUniversalDraft,
   getLastUniversalDraftProjectId,
@@ -54,6 +59,7 @@ import {
   reviseUniversalDraft,
   setLastUniversalDraft,
   snapshotVersion,
+  rebuildWbsAttachment,
   type DraftItem,
   type UniversalDraft,
 } from './universalRab';
@@ -256,6 +262,14 @@ function makePreview(
   changes: string[],
   baseUpdatedAt: string | null,
 ): RevisionPreview {
+  // P6 (P3D-O2): kandidat dibangun ulang artefak + laporan WBS-nya
+  // dari parts terbarunya, dengan artefak versi aktif sebagai
+  // previousArtifact — pengecualian node + catatan user bertahan
+  // lintas revisi (kontrak P3D §8). Satu situs ini melayani KETIGA
+  // jalur pratinjau (budget-only, hapus-unresolved, umum) karena
+  // ketiganya bermuara ke makePreview. Kandidat adalah klon milik
+  // pratinjau — draft aktif tidak tersentuh.
+  rebuildWbsAttachment(candidate, active.wbsArtifact ?? null);
   const diff = diffDrafts(active, candidate);
   return {
     requestText: normalizeRequest(rawText),
@@ -694,6 +708,27 @@ export function activateRevision(
       ok: false,
       error: 'DRAFT_VERSION_CONFLICT',
       message: `Kandidat revisi berversi ${preview.candidate.version}, bukan ${preview.baseVersion + 1} yang diharapkan — aktivasi dibatalkan. Versi aktif tidak berubah.`,
+    };
+  }
+  // P4-guard (CD-7, 2026-11-13): kandidat yang BLOCKED tidak boleh
+  // diaktifkan — bar yang SAMA dengan guard transfer (buildPushPayload /
+  // validateTransfer): hanya BLOCKED yang ditolak; NEEDS_SPEC (mis.
+  // item belum berharga / pemetaan AHSP belum lengkap) tetap boleh
+  // diaktifkan karena label parsialnya sudah jujur. Dievaluasi LANGSUNG
+  // dari kandidat saat ini via draftReadiness yang sama (bukan status
+  // tersimpan yang bisa basi, dan bukan logika kesiapan baru). Guard
+  // ini berjalan SEBELUM penulisan apa pun — penolakan tidak menyentuh
+  // revisi aktif, riwayat, singleton, maupun storage. Penempatan di
+  // sini (di dalam activateRevision, bukan di UI) membuatnya tidak
+  // dapat dilewati jalur mana pun yang mengaktifkan revisi.
+  const readiness = draftReadiness(preview.candidate);
+  if (readiness.status === 'BLOCKED') {
+    return {
+      ok: false,
+      error: 'DRAFT_NOT_READY',
+      message:
+        `Revisi ini belum dapat diaktifkan — kandidat versi ${preview.targetVersion} diblokir kesiapannya: ${readiness.blockedReasons.join('; ')}. ` +
+        `Lengkapi spesifikasinya lewat revisi, lalu kirim ulang. Versi aktif (v${preview.baseVersion}) tidak berubah.`,
     };
   }
 

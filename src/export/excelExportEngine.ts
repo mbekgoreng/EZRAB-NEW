@@ -14,6 +14,12 @@ import {
 } from './types';
 import { extractConversionTrail } from './conversionTrail';
 import {
+  FIVE_SHEET_PRESET_ID,
+  buildFiveSheetWorkbook,
+  freezeRabSnapshot,
+  type RabExportSnapshot,
+} from './fiveSheetPreset';
+import {
   isExportPriceValid,
   exportItemAmount,
   summarizeExportSections,
@@ -28,6 +34,7 @@ import {
   BORDER_THIN_MEDIUM,
   BORDER_MEDIUM_DARK,
   BORDER_DOUBLE_DARK,
+  sanitizeFileName,
   terbilangIndo,
   generateExportFileName,
   applyPrintSetup,
@@ -51,6 +58,20 @@ export interface ExcelExportOptions {
   includeProgress?: boolean;
   includeNotes?: boolean;
   useLiveFormulas?: boolean;
+  /**
+   * P5: preset workbook. `'FIVE_SHEET_RAB'` membangun preset RAB 5 sheet
+   * dari snapshot beku (lihat `fiveSheetPreset.ts`); nilai lain memakai
+   * jalur 16-sheet yang ada. P6 (P5-O6): kini bertipe `ExportPresetId`
+   * (ID preset resmi anggota union) — cast di mesin + modal dihapus.
+   */
+  preset?: ExportPresetId;
+  /**
+   * P5: snapshot beku yang sudah dibuat pemanggil (via
+   * `freezeRabSnapshot`). Bila diisi, ekspor memakai snapshot ini
+   * (bukan membekukan ulang dari state live) — dipakai untuk
+   * idempotensi byte + pengujian pembekuan.
+   */
+  snapshot?: RabExportSnapshot;
 }
 
 /**
@@ -95,6 +116,119 @@ function shouldIncludeSheet(
 }
 
 /**
+ * P5 determinisme byte (perbaikan flaky "byte identik atas snapshot yang
+ * sama", p5FiveSheetExport [9]): ExcelJS/JSZip menulis stempel waktu
+ * wall-clock (format DOS, granularitas 2 detik) ke SETIAP entri ZIP —
+ * header lokal maupun direktori pusat — sehingga dua ekspor atas snapshot
+ * yang sama berbeda byte bila melewati batas jendela 2 detik (terbukti
+ * probe fix-b: 10 ekspor → 5 buffer berbeda; seluruh 40 byte yang beda
+ * adalah byte medan waktu-DOS; `docProps/core.xml` identik — pin
+ * `wb.created`/`wb.modified` jalur snapshot BUKAN penyebabnya).
+ *
+ * Helper ini menimpa medan tanggal/waktu-DOS semua entri ZIP ke tanggal
+ * workbook (`wb.created`: waktu beku snapshot di jalur snapshot — jadi
+ * deterministik; waktu ekspor di jalur non-snapshot — metadata jujur
+ * seperti semula). Hanya metadata stempel yang berubah: panjang buffer,
+ * CRC, isi terkompresi, dan seluruh nilai/rumus/label sheet TIDAK berubah.
+ * Fail-open: bila struktur ZIP tak dikenali (mis. deskriptor data, jumlah
+ * entri pusat ≠ lokal), buffer dikembalikan apa adanya — perilaku lama,
+ * tanpa risiko korupsi. Murni Uint8Array/DataView (aman browser + Node,
+ * tanpa dependensi baru).
+ */
+function pinZipEntryTimestamps(buffer: Uint8Array<ArrayBuffer>, date: Date | undefined): Uint8Array<ArrayBuffer> {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) return buffer;
+  const year = date.getUTCFullYear();
+  if (year < 1980 || year > 2107) return buffer;
+  const dosTime = ((date.getUTCHours() << 11) | (date.getUTCMinutes() << 5) | Math.floor(date.getUTCSeconds() / 2)) & 0xffff;
+  const dosDate = (((year - 1980) << 9) | ((date.getUTCMonth() + 1) << 5) | date.getUTCDate()) & 0xffff;
+
+  const out = new Uint8Array(buffer);
+  const view = new DataView(out.buffer, out.byteOffset, out.byteLength);
+  const sig = (off: number, a: number, b: number, c: number, d: number): boolean =>
+    out[off] === a && out[off + 1] === b && out[off + 2] === c && out[off + 3] === d;
+
+  // 1) Header lokal PK\x03\x04 — jalan berurutan dari offset 0.
+  //    Tata letak: flag +6, waktu-DOS +10, tanggal-DOS +12,
+  //    ukuran terkompresi +18, panjang nama +26, panjang extra +28.
+  let offset = 0;
+  let localCount = 0;
+  while (offset + 30 <= out.length && sig(offset, 0x50, 0x4b, 0x03, 0x04)) {
+    const flags = view.getUint16(offset + 6, true);
+    // Bit 3 = deskriptor data (ukuran tidak ada di header lokal) — struktur
+    // yang tidak bisa dijalani aman: kembalikan buffer apa adanya.
+    if ((flags & 0x08) !== 0) return buffer;
+    const nameLen = view.getUint16(offset + 26, true);
+    const extraLen = view.getUint16(offset + 28, true);
+    const compressedSize = view.getUint32(offset + 18, true);
+    view.setUint16(offset + 10, dosTime, true);
+    view.setUint16(offset + 12, dosDate, true);
+    localCount++;
+    offset += 30 + nameLen + extraLen + compressedSize;
+    if (offset > out.length) return buffer;
+  }
+  if (localCount === 0) return buffer;
+
+  // 2) Direktori pusat PK\x01\x02 — mulai dari offset akhir jalan lokal.
+  //    Tata letak: waktu-DOS +12, tanggal-DOS +14, panjang nama +28,
+  //    panjang extra +30, panjang komentar +32.
+  let centralCount = 0;
+  while (offset + 46 <= out.length && sig(offset, 0x50, 0x4b, 0x01, 0x02)) {
+    const nameLen = view.getUint16(offset + 28, true);
+    const extraLen = view.getUint16(offset + 30, true);
+    const commentLen = view.getUint16(offset + 32, true);
+    view.setUint16(offset + 12, dosTime, true);
+    view.setUint16(offset + 14, dosDate, true);
+    centralCount++;
+    offset += 46 + nameLen + extraLen + commentLen;
+    if (offset > out.length) return buffer;
+  }
+  // Konsistensi: jumlah entri pusat harus sama dengan entri lokal; bila
+  // tidak, struktur tak seperti perkiraan — kembalikan buffer asli.
+  if (centralCount !== localCount) return buffer;
+  return out;
+}
+
+/**
+ * P5: finalisasi workbook bersama jalur 16-sheet & preset 5 sheet —
+ * kode tail lama yang dipindah verbatim ke helper agar kedua jalur
+ * memakai penulisan buffer / penamaan / pemicu unduh yang sama.
+ * Nama berkas preset 5 sheet: EZRAB_RAB-5SHEET_<Proyek>_<Rev>_<Tanggal>.xlsx
+ * (prefixMap `generateExportFileName` tidak mengenal ID preset baru).
+ */
+async function finalizeWorkbook(
+  wb: ExcelJS.Workbook,
+  preset: ExportPresetId,
+  project: Project
+): Promise<Blob> {
+  const rawBuffer = await wb.xlsx.writeBuffer();
+  // P5 determinisme byte: pin stempel entri ZIP ke tanggal workbook
+  // (lihat pinZipEntryTimestamps) — hanya metadata stempel yang berubah.
+  // RV-FINDING-1: Buffer ExcelJS bukan Uint8Array dalam tiping proyek ini,
+  // jadi dinormalisasi ke Uint8Array<ArrayBuffer> (juga menjamin backing
+  // ArrayBuffer yang dituntut BlobPart). Salinan sekali, isi byte sama.
+  const buffer = pinZipEntryTimestamps(new Uint8Array(rawBuffer), wb.created);
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+
+  const today = new Date().toISOString().substring(0, 10);
+  const fileName =
+    preset === FIVE_SHEET_PRESET_ID
+      ? `EZRAB_RAB-5SHEET_${sanitizeFileName(project.name || 'Proyek')}_${sanitizeFileName(project.currentVersion || 'Rev00')}_${today}.xlsx`
+      : generateExportFileName(
+          preset,
+          project.name,
+          project.currentVersion,
+          today
+        );
+
+  // Trigger download if running in browser
+  if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+    saveAs(blob, fileName);
+  }
+
+  return blob;
+}
+
+/**
  * Master Enterprise Excel Export Engine
  * Generates presentation-ready, editorial-standard construction workbooks.
  */
@@ -104,7 +238,9 @@ export async function exportRABToProfessionalExcel(
   userOptions?: Partial<ExportPackageOptions> | Partial<ExcelExportOptions>
 ): Promise<Blob> {
   const options = userOptions || {};
-  const preset: ExportPresetId = (options as any).preset || 'COMPLETE_PACKAGE';
+  /* P6 (P5-O6): kedua bentuk opsi kini membawa preset: ExportPresetId,
+   * jadi tidak ada lagi cast any untuk membaca preset. */
+  const preset: ExportPresetId = options.preset || 'COMPLETE_PACKAGE';
   const useLiveFormulas = options.useLiveFormulas !== false;
 
   const wb = new ExcelJS.Workbook();
@@ -127,6 +263,37 @@ export async function exportRABToProfessionalExcel(
   // tanpa harga + per-bucket (resmi/pasar/manual/lainnya).
   const exportSummary = summarizeExportSections(normalizedSections as any);
   const exportPartialNote = exportTotalNote(exportSummary);
+
+  // =========================================================================
+  // P5: PRESET RAB 5 SHEET — cabang lebih awal, sebelum pembangunan 16-sheet.
+  // Snapshot dibekukan di sini (atau dipakai snapshot pemanggil), lalu
+  // builder preset membaca SNAPSHOT SAJA — bukan state live. Jalur
+  // 16-sheet di bawah tidak tersentuh preset ini.
+  // =========================================================================
+  if (preset === FIVE_SHEET_PRESET_ID) {
+    const providedSnapshot = (options as Partial<ExcelExportOptions>).snapshot;
+    const snapshot =
+      providedSnapshot ??
+      freezeRabSnapshot(project, normalizedSections, costSummary, exportSummary, {
+        actor: 'demo/anonim',
+      });
+    // Determinisme byte: tanggal workbook mengikuti snapshot (bukan jam
+    // ekspor), sehingga ekspor ulang atas snapshot yang sama menghasilkan
+    // byte yang sama.
+    wb.created = new Date(snapshot.createdAt);
+    wb.modified = new Date(snapshot.createdAt);
+    buildFiveSheetWorkbook(wb, snapshot, company, {
+      useLiveFormulas,
+      sourceText: buildExcelSourceText,
+      projectMeta: {
+        location: project.location,
+        clientName: project.clientName,
+        buildingType: project.buildingType as string | undefined,
+        buildingArea: project.buildingArea,
+      },
+    });
+    return finalizeWorkbook(wb, preset, project);
+  }
 
   const taxPercent = costSummary.taxPercent ?? 11;
   // Batch 4 (addendum A5): PPh figures come from the canonical computed summary.
@@ -357,6 +524,10 @@ export async function exportRABToProfessionalExcel(
       TENDER_PACKAGE: 'DOKUMEN PENAWARAN TENDER KONSTRUKSI',
       COMPLETE_PACKAGE: 'COMPLETE PROJECT ESTIMATE PACKAGE',
       CUSTOM: 'DOKUMEN ANGGARAN & KUANTITAS PROYEK',
+      /* P6 (P5-O6): entri kelengkapan tipe — jalur 5 sheet bercabang
+       * sebelum pembangunan cover 16-sheet, jadi nilai ini tidak
+       * terpakai di runtime. */
+      FIVE_SHEET_RAB: 'RENCANA ANGGARAN BIAYA — PAKET 5 SHEET',
     };
     const mainDocTitle = docTitleMap[preset] || 'DOKUMEN ESTIMASI PROYEK';
 
@@ -2079,24 +2250,10 @@ export async function exportRABToProfessionalExcel(
   }
 
   // =========================================================================
-  // FILE DOWNLOAD TRIGGER
+  // FILE DOWNLOAD TRIGGER (P5: dipindah ke finalizeWorkbook bersama —
+  // perilaku jalur 16-sheet tidak berubah)
   // =========================================================================
-  const buffer = await wb.xlsx.writeBuffer();
-  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-
-  const fileName = generateExportFileName(
-    preset,
-    project.name,
-    project.currentVersion,
-    new Date().toISOString().substring(0, 10)
-  );
-
-  // Trigger download if running in browser
-  if (typeof window !== 'undefined' && typeof document !== 'undefined') {
-    saveAs(blob, fileName);
-  }
-
-  return blob;
+  return finalizeWorkbook(wb, preset, project);
 }
 
 export const exportProjectToExcel = exportRABToProfessionalExcel;

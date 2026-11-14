@@ -11,9 +11,13 @@
  *  - WorkspaceView mengunci scroll halaman hanya untuk menu ded-ai dan
  *    dokumen-ai; <main> kedua menu menjadi kolom flex setinggi sisa viewport.
  *  - Keadaan awal DED (DedAiInputView): kotak upload besar + SATU panel
- *    .dedai-settings (Kebijakan Harga, Simpan Hasil Ke, Jenis Proyek, Mode AI,
+ *    .dedai-settings (Simpan Hasil Ke, Jenis Proyek, Preferensi Output,
  *    Kompleksitas & Estimasi Kredit) dengan tombol Mulai Analisis menempel
- *    di kaki panel (.dedai-settings-foot). Tarif kompleksitas tetap dari
+ *    di kaki panel (.dedai-settings-foot). Pemilih mode kini seksi "Mode
+ *    Analisis" (PERSIS DUA kartu) di kolom tengah dan Kebijakan Harga
+ *    diturunkan dari kartu mode (program Dual Mode W2 G-UI-1, 2026-11-13;
+ *    label "Mode AI" lama menamai baris kedalaman FAST/DETAIL, kini
+ *    "Kedalaman"). Tarif kompleksitas tetap dari
  *    ai-credits/config (tariffFor) — tidak di-hardcode ulang.
  *  - Keadaan awal AI Document (DocLibrary): dropzone besar + panel
  *    .docai-settings (Mode Analisis Pertama dari getTabs DocAnalyzer, Jenis
@@ -68,7 +72,15 @@ check('DED input: SATU panel Pengaturan (dedai-settings)', dedInput.includes('de
 check('DED input: seksi Kebijakan Harga', dedInput.includes('Kebijakan Harga'));
 check('DED input: seksi Simpan Hasil Ke', dedInput.includes('Simpan Hasil Ke'));
 check('DED input: seksi Jenis Proyek (7 chip dari PROJECT_TYPE_OPTIONS)', dedInput.includes('PROJECT_TYPE_OPTIONS'));
-check('DED input: seksi Mode AI', dedInput.includes('Mode AI'));
+// PERBAIKAN E (2026-11-14): pin lama `dedInput.includes('Mode AI')`
+// kedaluwarsa — label "Mode AI" (HEAD:371) menamai baris kedalaman
+// FAST/DETAIL, yang program Dual Mode (W2 G-UI-1) beri label akurat
+// "Kedalaman"; pemilih mode kini seksi "Mode Analisis" dengan PERSIS DUA
+// kartu (DED_MODE_CARDS, dirender sebagai radiogroup .dedai-modecards).
+// Pin baru memeriksa pemilih mode yang sebenarnya — lebih kuat
+// (3 syarat: label + sumber kartu + wadah render, bukan 1 substring).
+check('DED input: seksi Mode Analisis (dua kartu mode)',
+  dedInput.includes('Mode Analisis') && dedInput.includes('DED_MODE_CARDS') && dedInput.includes('dedai-modecards'));
 check('DED input: seksi Kompleksitas & Estimasi Kredit', dedInput.includes('Kompleksitas & Estimasi Kredit'));
 check('DED input: tarif dari ai-credits/config (tariffFor, tanpa hardcode ulang)', dedInput.includes('tariffFor'));
 check('DED input: CTA menempel di kaki panel (dedai-settings-foot)', dedInput.includes('dedai-settings-foot') && dedInput.includes("t('ai.ded.input.cta')"));

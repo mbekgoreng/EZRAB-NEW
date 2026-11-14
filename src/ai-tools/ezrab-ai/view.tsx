@@ -23,6 +23,7 @@ import {
   Send, Sparkles, Loader2, RotateCcw,
   Copy, Check, Mic, Paperclip, X, Plus, FileText,
   History, Trash2, MoreVertical, Gamepad2, Brain, Pencil, Save, ListChecks,
+  ClipboardList,
 } from 'lucide-react';
 import { ezrabAiService } from './service';
 import {
@@ -46,15 +47,16 @@ import { getLastDirectRab } from './directRab';
 import { classifyRequest, minDelayFor, statusTextFor, waitForMinimum, waitForRabMinimum, rabMinDelayMs, activityForRequest, isAbortError, type AiActivity } from '../aiResponseTiming';
 import {
   beginExecution, finishExecution, cancelExecution, getExecution, getActiveExecution,
-  subscribeExecution, releaseConversation,
-  type AiExecutionHandle, type AiExecutionRecord,
+  subscribeExecution, releaseConversation, emitExecutionStage, reportedExecutionStage,
+  EXECUTION_STAGE_LABELS,
+  type AiExecutionHandle, type AiExecutionRecord, type ExecutionStage,
 } from './executionRuntime';
 import { mapDirectRabPushItems } from './directRabPush';
 import { detectHandoffNeed, HANDOFF_CHOICE_CHAT, HANDOFF_CHOICE_STAY } from './magicHandoff';
 import { structuredAiError, logAiDiagnostic, type AiErrorCode } from './aiErrorCodes';
 import { buildFinalizationKey } from '../ded-ai-estimate/finalizationKey';
 import { getLastUniversalDraft, setLastUniversalDraft, looksLikeUniversalRevision, buildPushPreview, formatPushPreviewMessage, buildPushPayload, dedupePushPayload, validateTransfer, draftReadiness, effectiveItems } from './universalRab';
-import { saveDraft, loadDraft, markTransferred, saveIntakeContext, loadIntakeContext, peekPersistedDraft, shouldRestoreIntakeSnapshot } from './draftPersistence';
+import { saveDraft, loadDraft, markTransferred, saveIntakeContext, loadIntakeContext, peekPersistedDraft, shouldRestoreIntakeSnapshot, createTransferApprovalBinding, checkTransferApprovalBinding, type TransferApprovalBinding } from './draftPersistence';
 /* GATE 3 (5C) — revisi immutable: pratinjau di atas klon + aktivasi
  * atomik+idempotent sesudah konfirmasi eksplisit. Mesin revisi
  * (reviseUniversalDraft) TIDAK lagi dipanggil langsung dari view —
@@ -107,6 +109,10 @@ import {
 } from './dedQtoIntegration';
 import { buildDedSection } from './dedUnderstanding';
 import { buildQtoSection } from './qtoBridge';
+/* P6 — panel Review draft + logika resolve MISSING (EF-09). */
+import { DraftReviewPanel } from './DraftReviewPanel';
+import { resolveMissingDimensions } from './draftReview';
+import type { QtoUserDimensions } from './qtoBridge';
 import {
   extractMemoryCandidates,
   extractSpecMemories,
@@ -365,6 +371,11 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   // `activeExec` = eksekusi yang sedang berjalan pada percakapan aktif
   // (null bila tidak ada); dipakai untuk indikator busy + tombol Berhenti.
   const [activeExec, setActiveExec] = useState<AiExecutionRecord | null>(null);
+  // S9 — tahap yang DILAPORKAN gelembung thinking diturunkan dari LOG
+  // EVENT (stageHistory) lewat reportedExecutionStage, bukan dari field
+  // `stage` mentah: yang tampil adalah tahap yang benar-benar
+  // dipancarkan; null bila belum ada event (tanpa tahap karangan).
+  const reportedActiveStage = reportedExecutionStage(activeExec);
   // Penanda terputus (jaminan reload §8): pesan pengguna terakhir tanpa
   // balasan + tidak ada eksekusi hidup = request terputus; tampil sebagai
   // banner dengan aksi Coba Lagi manual (tidak pernah auto-resubmit).
@@ -505,6 +516,11 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
    * bukan toast berulang. */
   const [agentPlan, setAgentPlan] = useState<TaskPlan | null>(null);
   const [planOpen, setPlanOpen] = useState(false);
+  /* P6 — panel Review draft: dibuka dari menu ⋯. reviewTick memaksa
+   * render ulang sesudah aksi panel (singleton draft dibaca segar
+   * tiap render, tetapi React tidak tahu singleton berubah). */
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [, setReviewTick] = useState(0);
   const [followUpBanner, setFollowUpBanner] = useState<string | null>(null);
   const agentPlanRef = useRef<TaskPlan | null>(null);
   const updateAgentPlan = useCallback((mutate: (p: TaskPlan) => TaskPlan) => {
@@ -710,6 +726,23 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
    * tombol pratinjau lama menjawab jujur bahwa pratinjau sudah tidak
    * aktif. Konfirmasi harus berasal dari sesi yang melihat pratinjau. */
   const pendingRevisionRef = useRef<RevisionPreview | null>(null);
+  /* G1 (K-04, Audit Fase 0 Skill Engine) — approval transfer yang
+   * MENUNGGU konfirmasi eksplisit, TERIKAT pada draft yang ditinjau
+   * di pratinjau (draftId + versi + sidik isi + TTL 10 menit; pola
+   * ChangePlan.stateHash operations.ts + guard revisi
+   * draftRevision.ts). Hidup di memori sesi saja (TIDAK dipersist):
+   * reload membatalkan approval yang menunggu — tombol konfirmasi
+   * pada pesan lama menjawab jujur bahwa pratinjau sudah tidak
+   * aktif, seperti pendingRevisionRef Gate 3 di atas.
+   * Binding TIDAK dibawa lewat payload action: union ChatActionButton
+   * (actionRegistry.ts) tidak punya field untuk
+   * 'push-universal-confirm', dan satu slot ref ini adalah pola yang
+   * sama dengan konfirmasi revisi — tombol hanya memicu pengecekan
+   * ulang terhadap draft aktif saat klik. Satu slot = pratinjau
+   * terbaru yang menang; pratinjau tanpa tombol konfirmasi (BLOCKED
+   * / tanpa proyek) mengosongkan slot agar tidak ada approval usang
+   * yang tertinggal. */
+  const pendingTransferApprovalRef = useRef<TransferApprovalBinding | null>(null);
   /* GATE 4 (5D) — pratinjau revisi spek DED yang MENUNGGU konfirmasi
    * eksplisit (peta id → pratinjau, memori sesi saja — seperti
    * pendingRevisionRef Gate 3, reload membatalkan pratinjau yang
@@ -838,6 +871,94 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   const appendLocalAssistant = (content: string, actions?: ChatActionButton[]): void => {
     setMessages((prev) => [...prev, { role: 'assistant', content, ts: Date.now(), actions }]);
     persistMessage('assistant', content);
+  };
+
+  /* ---- P6 — handler panel Review draft ----
+   * Setiap aksi panel MENGUBAH draft + BERTAHAN: singleton diganti
+   * lalu `persistActiveDraft` menulis record (pola keputusan koreksi
+   * QTO Gate 4). Pesan chat TIDAK dikirim per edit kecil (panel
+   * menampilkan notifikasi hasilnya; perubahan tercatat di
+   * `draft.changes`) — pengecualian: aktivasi revisi + banding versi
+   * tetap masuk chat karena keduanya adalah peristiwa alur revisi.
+   * Edit mengubah sidik draft sehingga binding approval transfer G1
+   * yang tertunda menjadi tidak berlaku (pengguna wajib pratinjau
+   * ulang — benar) dan pratinjau revisi tertunda menjadi stale lewat
+   * baseUpdatedAt (aktivasi menolak dengan pesan yang jelas). */
+  const handleApplyReviewDraft = (next: Parameters<typeof setLastUniversalDraft>[0], message: string): void => {
+    if (!effProject || !next) return;
+    setLastUniversalDraft(next, effProject.id);
+    persistActiveDraft('review-edit', 'manual');
+    setReviewTick((t) => t + 1);
+    void message;
+  };
+
+  const handleResolveMissingFromPanel = (
+    itemId: string,
+    dims: QtoUserDimensions,
+  ): { ok: boolean; message: string } => {
+    if (!effProject) {
+      return { ok: false, message: 'Tidak ada proyek aktif — dimensi tidak dapat dilengkapi.' };
+    }
+    const att = loadDedAttachment(effProject.id);
+    if (!att) {
+      return { ok: false, message: 'Lampiran DED proyek ini sudah tidak ada — kirim ulang DED dari halaman DED AI bila masih diperlukan.' };
+    }
+    // Checks segar dari lampiran + dimensi gabungan (tersimpan + isian
+    // panel) — usulan MISSING yang tampil dihitung dari rekonsiliasi
+    // yang sama, jadi handler wajib mereproduksinya (pola F9-QTO-1).
+    const { checks } = reconcileDedQto(att, dims);
+    const res = resolveMissingDimensions(att, itemId, dims, checks);
+    if (!res.ok) return { ok: false, message: res.message };
+    if (!res.alreadyApplied) {
+      saveDedAttachment(res.attachment);
+      // Segarkan dedQto pada draft aktif + persist (pola handler
+      // koreksi QTO): checks dihitung ulang dari lampiran terbaru.
+      const activeDraft = getLastUniversalDraft(effProject.id);
+      if (activeDraft?.dedQto) {
+        const freshChecks = reconcileDedQto(res.attachment, dims).checks;
+        const nextDraft = {
+          ...activeDraft,
+          dedQto: buildDedQtoDraftInfo(res.attachment, freshChecks, dims),
+        };
+        setLastUniversalDraft(nextDraft, effProject.id);
+        persistActiveDraft('review-missing', 'manual');
+      }
+    }
+    setReviewTick((t) => t + 1);
+    return { ok: true, message: res.message };
+  };
+
+  const handleActivateRevisionFromPanel = (): void => {
+    const pending = pendingRevisionRef.current;
+    if (!pending) return;
+    const res = runRevisionActivation(pending);
+    appendLocalAssistant(res.message, res.actions);
+    setReviewTick((t) => t + 1);
+  };
+
+  const handleCancelRevisionFromPanel = (): void => {
+    const pending = pendingRevisionRef.current;
+    if (!pending) return;
+    pendingRevisionRef.current = null;
+    appendLocalAssistant(
+      `Revisi dibatalkan — versi aktif tetap versi ${pending.baseVersion}, tidak berubah. Pratinjau dibuang.`,
+    );
+    setReviewTick((t) => t + 1);
+  };
+
+  const handleCompareVersionsFromPanel = (versionA: number, versionB: number): void => {
+    if (!effProject) return;
+    appendLocalAssistant(compareStoredVersions(effProject.id, versionA, versionB));
+  };
+
+  const openReviewPanel = (): void => {
+    setMenuOpen(false);
+    const d = getLastUniversalDraft(effProject?.id);
+    if (!d) {
+      appendLocalAssistant('Belum ada draft RAB aktif untuk ditinjau — susun draft dulu lewat chat (mis. "buatkan RAB rumah 120 m²"), lalu buka Review draft.');
+      return;
+    }
+    setReviewOpen(true);
   };
 
   // Pulihkan draft proyek aktif dari penyimpanan lokal saat singleton
@@ -2050,6 +2171,13 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         // milik executionRuntime — hanya pembatalan eksplisit pengguna
         // (tombol Berhenti) yang meng-abort-nya, bukan unmount.
         signal: llmExec.signal,
+        // P2 (2026-11-13): tahap eksekusi nyata dari service (konteks →
+        // model → tool call) diteruskan ke record runtime eksekusi ini —
+        // gelembung thinking menampilkannya lewat langganan yang sudah
+        // ada (tanpa langganan baru). Emisi sesudah cancel adalah no-op
+        // di runtime (record terminal), jadi tidak ada tahap yang
+        // tercatat sesudah pembatalan.
+        onStage: (stage: ExecutionStage) => { emitExecutionStage(llmExec.record.requestId, stage); },
       } as any);
       const res = timingActivity === 'rab'
         ? await waitForRabMinimum(timingStart, sendPromise, llmExec.signal, (r: any) => r?.reply ?? '')
@@ -2057,7 +2185,16 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       // Hasil basi (disalip permintaan baru) tidak ditampilkan dan
       // tidak didebit — minimum sudah terpenuhi oleh gerbang
       // di atas, jadi di sini hanya cek keaslian.
-      if (!llmExec.isCurrent()) { endExec(); return; }
+      // S8 (2026-11-13, ARS-08): isCurrent() kini false JUGA untuk
+      // eksekusi yang dibatalkan (bukan hanya disalip) — tanpa ini,
+      // cancel yang tiba sesudah minimum berlalu (jendela umum tombol
+      // Berhenti: provider masih berjalan, waitForMinimum sudah tidak
+      // mendengarkan sinyal) lolos ke bawah dan menampilkan pesan
+      // GAGAL untuk pembatalan pengguna. Bedakan keduanya: pembatalan
+      // eksplisit dicatat jujur sebagai "Permintaan dibatalkan."
+      // (noteCancelledIfNeeded no-op bila status bukan cancelled),
+      // eksekusi yang disalip tetap diam seperti sebelumnya.
+      if (!llmExec.isCurrent()) { noteCancelledIfNeeded(); endExec(); return; }
       // --- AI Credits: settlement SIMULASI berbasis token (Amendemen v1.1) ---
       // FASE 1 RECOVERY (P1-2): debit HANYA bila send() sukses tegas
       // (res.success === true) — kegagalan gateway/HTTP/timeout/respons
@@ -2108,6 +2245,10 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       // sudah terjadi (simulasi).
       let heldReplyNotice: string | null = null;
       if (res.success && !(res.toolCalls && res.toolCalls.length > 0)) {
+        // P2: 'validating' dipancarkan HANYA bila gate benar-benar
+        // berjalan (prosa LLM murni — jawaban tool deterministik
+        // melewati gate, jadi tidak pernah diklaim tervalidasi).
+        emitExecutionStage(llmExec.record.requestId, 'validating');
         try {
           const gateEvidence = buildQualityGateEvidence({
             draft: activeDraftForSend ?? null,
@@ -2172,6 +2313,14 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         message: msg.length > 90 ? `${msg.slice(0, 90)}…` : msg,
         link: 'ezrab-ai',
       });
+      // P2: 'awaiting-review' HANYA bila pengiriman ini benar-benar
+      // menghasilkan rencana operasi yang menunggu konfirmasi pengguna
+      // (kartu plan terlampir) — jawaban teks biasa bukan review, dan
+      // tidak pernah diklaim demikian. finishExecution('completed')
+      // mempertahankan tahap ini (lihat executionRuntime).
+      if (res.success && newPlans.length > 0) {
+        emitExecutionStage(llmExec.record.requestId, 'awaiting-review');
+      }
       endExec(res.success ? 'completed' : 'failed', res.success ? undefined : (res.reply ?? 'AI gagal menjawab'));
     } catch (err: any) {
       // Pembatalan EKSPLISIT pengguna (tombol Berhenti): catat penandanya,
@@ -2519,6 +2668,14 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     }
     const preview = buildPushPreview(d);
     const readiness = draftReadiness(d);
+    // G1 (K-04): ikat approval pada draft yang DITINJAU di pratinjau
+    // ini — handler konfirmasi menolak bila versi/sidik draft aktif
+    // saat klik berbeda. Tanpa tombol konfirmasi (BLOCKED / tanpa
+    // proyek), slot dikosongkan: tidak ada approval yang tertunda.
+    pendingTransferApprovalRef.current =
+      effProject && readiness.status !== 'BLOCKED'
+        ? createTransferApprovalBinding(d, effProject.id)
+        : null;
     const previewActions: ChatActionButton[] = [
       ...(effProject && readiness.status !== 'BLOCKED' ? [{ label: 'Konfirmasi Transfer', action: { kind: 'push-universal-confirm' as const } }] : []),
       { label: 'Buka Spreadsheet RAB', action: { kind: 'navigate', menu: 'rab-estimasi' } },
@@ -2553,6 +2710,21 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       appendMsg(`Draft "${d.title}" versi ${d.version} sudah ditransfer ke proyek "${effProject.name}" (${d.lastTransfer.pushed} item) — tidak ada penulisan ganda. (Kode: ${structuredAiError('DUPLICATE_TRANSFER_BLOCKED').code})`, [
         { label: 'Buka Spreadsheet RAB', action: { kind: 'navigate', menu: 'rab-estimasi' } },
       ]);
+      return;
+    }
+    // G1 (K-04) — pengikatan approval transfer: konfirmasi hanya
+    // berlaku untuk draft yang DITINJAU di pratinjau (versi + sidik
+    // isi + TTL 10 menit, pola ChangePlan operations.ts). Draft yang
+    // berubah sesudah pratinjau MEMBATALKAN approval. Cek ini terjadi
+    // SEBELUM validateTransfer/payload/tulis apa pun — penolakan
+    // tidak menyentuh draft maupun spreadsheet (satu-satunya tulisan
+    // adalah pesan penolakan di chat, sama seperti jalur penolakan
+    // lain di handler ini). Approval yang ditolak hangus: pratinjau
+    // baru wajib dibuat sebelum konfirmasi berikutnya.
+    const approval = checkTransferApprovalBinding(pendingTransferApprovalRef.current, d, effProject.id);
+    if (!approval.ok) {
+      pendingTransferApprovalRef.current = null;
+      appendMsg(`${approval.message} Tidak ada item yang ditransfer — buat pratinjau baru lewat "Push ke Spreadsheet", lalu konfirmasi dari pratinjau itu.`, undefined, true);
       return;
     }
     // Guard transfer (hardening): draft BLOCKED ditolak dengan pesan ramah
@@ -2592,6 +2764,8 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       // sebagai duplikat yang diblokir (bukan penyisipan baru).
       d.lastTransfer = { projectId: effProject.id, version: d.version, pushed: 0, skipped: dupCount + res.total, at: new Date().toISOString() };
       setLastUniversalDraft(d, effProject.id);
+      // G1: approval sekali pakai — keadaan tujuan sudah tercapai.
+      pendingTransferApprovalRef.current = null;
       // §2/§4: receipt nyata (keadaan tujuan sudah tercapai) ikut
       // dipersistenkan agar status transferred bertahan lintas refresh.
       persistActiveDraft('transferred', 'transfer');
@@ -2621,6 +2795,8 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     const unresolvedCount = payload.filter((p) => p.priceStatus === 'PRICE_UNRESOLVED').length;
     d.lastTransfer = { projectId: effProject.id, version: d.version, pushed: added.length, skipped: dupCount, at: new Date().toISOString() };
     setLastUniversalDraft(d, effProject.id);
+    // G1: approval sekali pakai — sudah dipakai untuk transfer ini.
+    pendingTransferApprovalRef.current = null;
     // §2/§4: HANYA sesudah outcome terverifikasi sukses — persistenkan
     // receipt (draftId+versi terikat di lastTransfer) + status transferred.
     persistActiveDraft('transferred', 'transfer');
@@ -3435,6 +3611,12 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
                 </button>
                 <button
                   role="menuitem"
+                  onClick={openReviewPanel}
+                >
+                  <ClipboardList size={14} /> Review draft
+                </button>
+                <button
+                  role="menuitem"
                   onClick={() => reloadChat()}
                 >
                   <RotateCcw size={14} /> Muat Ulang
@@ -3708,6 +3890,58 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
           </div>
         </>
       )}
+      {/* P6 — panel Review draft (overlay sendiri, lebih lebar dari panel
+          riwayat/memori karena memuat tabel item; gaya inline agar tidak
+          menyentuh lembar gaya bersama). Draft + lampiran DED dibaca
+          segar tiap render; reviewTick memaksa render ulang sesudah
+          aksi panel. */}
+      {reviewOpen && (() => {
+        const d = getLastUniversalDraft(effProject?.id);
+        if (!d || !effProject) return null;
+        let att: DedAttachment | null = null;
+        try {
+          att = loadDedAttachment(effProject.id);
+        } catch {
+          att = null;
+        }
+        return (
+          <>
+            <div className="ezchat2-hist-veil" onClick={() => setReviewOpen(false)} />
+            <div
+              role="dialog"
+              aria-label="Review draft"
+              style={{
+                position: 'absolute',
+                top: 'calc(100% + 4px)',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                zIndex: 60,
+                width: 'min(980px, calc(100vw - 24px))',
+                maxHeight: 'min(82dvh, 760px)',
+                overflowY: 'auto',
+                background: 'var(--ez-color-surface, #FFFFFF)',
+                border: '1px solid var(--ez-color-border-soft, #E2E8F0)',
+                borderRadius: 16,
+                boxShadow: '0 24px 48px -16px rgba(15,23,42,.28)',
+                padding: 16,
+              }}
+            >
+              <DraftReviewPanel
+                draft={d}
+                projectId={effProject.id}
+                dedAttachment={att}
+                pendingRevision={pendingRevisionRef.current}
+                onApplyDraft={handleApplyReviewDraft}
+                onResolveMissing={handleResolveMissingFromPanel}
+                onActivateRevision={handleActivateRevisionFromPanel}
+                onCancelRevision={handleCancelRevisionFromPanel}
+                onCompareVersions={handleCompareVersionsFromPanel}
+                onClose={() => setReviewOpen(false)}
+              />
+            </div>
+          </>
+        );
+      })()}
       </div>{/* /.ezchat2-headerwrap */}
 
       <div className="ezchat2-main">
@@ -3894,7 +4128,14 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
                 <img src={MASCOT_PNG} alt="Ezrab" className="ezchat2-avatar thinking" />
                 <div className="ezchat2-bubble ai typing">
                   <span className="tdot" /><span className="tdot" /><span className="tdot" />
-                  <span className="ezchat2-thinking">{thinkingText}</span>
+                  {/* P2: bila eksekusi runtime sudah melewati 'preparing',
+                      tampilkan label TAHAP NYATA terakhir (dari event
+                      eksekusi — S9: diturunkan dari stageHistory lewat
+                      reportedExecutionStage); sebelum itu — termasuk
+                      seluruh cabang jawaban lokal deterministik yang
+                      sinkron dan tidak punya event tahap — teks status
+                      klasifikasi lama tetap dipakai (tanpa tahap karangan). */}
+                  <span className="ezchat2-thinking">{reportedActiveStage && reportedActiveStage !== 'preparing' ? EXECUTION_STAGE_LABELS[reportedActiveStage] : thinkingText}</span>
                   {/* Berhenti — pembatalan EKSPLISIT satu-satunya (lifecycle
                       fix 2026-11-12). Navigasi tidak pernah membatalkan;
                       tombol ini menghentikan request aktif ini saja. */}

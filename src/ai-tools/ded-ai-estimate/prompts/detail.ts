@@ -28,10 +28,15 @@ export function createDetailSystemPrompt(ctx: { projectType: string; pricingPoli
   // kontrak (identitas → kebijakan → aturan wajib + skema → interpretasi)
   // tidak pernah dipotong; konteks WBS terpilih per tipe proyek dirakit
   // terakhir oleh wbsContext dalam anggaran 7.900 karakter.
+  // Dual Mode §5 (G-PR-1/G-IS-4): instruksi FULL_AI TIDAK ADA lagi inline
+  // di kontrak ini — semuanya berasal dari master prompt via
+  // standardPricingPolicySection (policy.ts → ded-full-ai/masterPrompt.ts),
+  // termasuk kewajiban estimasi harga TANPA referensi harga jalan inline.
+  // Yang tersisa di sini hanyalah teks cabang DATABASE.
   const contract = `Kamu adalah estimator DED (DED AI Estimate — mode DETAIL). Tugasmu: analisis mendalam gambar kerja DED proyek tipe "${projectType}" dan susun daftar pekerjaan dengan kuantitas + estimasi harga satuan yang dapat dipertanggungjawabkan.
 
 ${standardPricingPolicySection(policy)}
-${policy === 'FULL_AI' ? `FIELD TAMBAHAN MODE FULL_AI: "proposedSubtotal" per workItem & "proposedGrandTotal" di tingkat atas (usulanmu; null bila quantity/harga null). Kuantitas hanya dihitung dari dasar terstruktur: derivation ber-satuan eksplisit, jadwal unit tertulis, atau "dimensionUnitAssumption"; angka telanjang menjadi Perlu Input.` : `MODE DATABASE: JANGAN mengeluarkan field proposedSubtotal atau proposedGrandTotal — total resmi dihitung aplikasi dari data tervalidasi.`}
+${policy === 'DATABASE' ? `MODE DATABASE: JANGAN mengeluarkan field proposedSubtotal atau proposedGrandTotal — total resmi dihitung aplikasi dari data tervalidasi.` : ''}
 
 ATURAN WAJIB:
 - Keluarkan JSON MURNI (tanpa teks lain, tanpa markdown).
@@ -68,12 +73,10 @@ PENALARAN DIMENSI, AMBIGUITAS & DUPLIKAT (wajib, mode DETAIL):
 
 ATURAN KUANTITAS & HARGA:
 - quantity = null SAAT TIDAK ADA dasar yang dapat kamu yakini. BUKAN 0.
-${policy === 'FULL_AI' ? `- estimatedUnitPrice: WAJIB untuk semua item umum; null HANYA untuk item sangat kustom. Referensi 2026: lapis aus Rp120-180rb/m2, lapen Rp100-150rb/m2, sirtu Rp200-300rb/m3, urugan tanah Rp50-100rb/m3, gorong-gorong pelat Rp15-25jt/unit, buis beton Rp8-15jt/unit. Semua harga = AI_ESTIMATE (bukan harga resmi AHSP/database).
-- unitPriceNote WAJIB berisi dasar estimasi; tanpa dasar, estimasi tak ditempel.
-- Subtotal/total resmi dihitung aplikasi secara deterministik; yang kamu hitung hanya proposedSubtotal/proposedGrandTotal sebagai usulan.` : `- estimatedUnitPrice HANYA kandidat fallback (mode DATABASE — tidak ada tabel harga pasar di mode ini): isi bila ada perkiraan masuk akal dari DED/spesifikasi, boleh null bila tak ada dasar. TIDAK ADA kewajiban mengisi harga untuk semua item.
-- Harga final ditentukan aplikasi: kanonis bila item cocok database, estimasi AI berlabel bila tidak. Perkiraanmu BUKAN harga resmi dan BUKAN harga database. JANGAN menghitung subtotal/total resmi — aplikasi yang menghitung dari data tervalidasi.`}
+${policy === 'DATABASE' ? `- estimatedUnitPrice HANYA kandidat fallback (mode DATABASE — tidak ada tabel harga pasar di mode ini): isi bila ada perkiraan masuk akal dari DED/spesifikasi, boleh null bila tak ada dasar. TIDAK ADA kewajiban mengisi harga untuk semua item.
+- Harga final ditentukan aplikasi: kanonis bila item cocok database, estimasi AI berlabel bila tidak. Perkiraanmu BUKAN harga resmi dan BUKAN harga database. JANGAN menghitung subtotal/total resmi — aplikasi yang menghitung dari data tervalidasi.` : ''}
 - KOLOM: quantity = TOTAL VOLUME semua kolom (m³), BUKAN panjang. BENAR: 12 kolom @ 0.15×0.15×3m → 0.81, units "m3". SALAH: 0.15, units "m'".
-- DINDING: kurangi bukaan (pintu/jendela) ~15-20% dari luas bruto. Pintu/jendela: quantity = jumlah total unit, bukan dimensi per daun.
+- DINDING: netto = bruto − bukaan EKSPLISIT; tak diketahui → JANGAN % default: laporkan BRUTO, minta konfirmasi user. Pintu/jendela: quantity = total unit.
 
 ATURAN KHUSUS PROYEK JALAN:
 - STATIONING: "STA 0+000"–"STA 1+595" = panjang 1595 m (mis. STA P. 0+004 ke STA P. 1+595 → ≈1591 m). LEBAR jalan dicari di potongan melintang (tipikal 4-7 m jalan kabupaten).

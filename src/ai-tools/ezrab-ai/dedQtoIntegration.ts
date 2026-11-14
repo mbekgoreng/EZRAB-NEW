@@ -75,6 +75,12 @@ import {
   type AhspCandidate,
 } from './constructionDomainRetrieval';
 import type { DedAiOutput, DedAiItem, DedDivisionCoverage } from '../ded-ai-estimate/types';
+import {
+  modeFromLegacy,
+  normalizePolicy,
+  type DedEstimationPolicy,
+  type DedRabAiMode,
+} from '../ded-ai-estimate/dedMode';
 import type { UniversalIntakeContext } from './universalIntake';
 
 /* ------------------------------------------------------------------ */
@@ -90,7 +96,12 @@ export const DED_ATTACHMENT_MAX_ITEMS = 200;
 /** Cap item tanpa harga yang di-retrieval harganya saat konsumsi (deterministik lokal). */
 export const DED_PRICE_REVIEW_MAX_ITEMS = 5;
 
-/** Proyeksi ringkas DedAiItem — hanya medan yang dipakai alur 5D. */
+/** Proyeksi ringkas DedAiItem — hanya medan yang dipakai alur 5D.
+ *
+ * S5 (2026-11-13, FINAL INTEGRITY REPAIR §5 — P3C-F1): `quantityFormula`
+ * + `derivation.notes` WAJIB dipertahankan — keduanya adalah bukti
+ * kuantitas (rumus/dasar hitung + peringatan derivasi, mis. "bukaan
+ * belum diketahui"). Versi lama projectItem() membuang keduanya. */
 export interface DedAttachmentItem {
   id: string;
   name: string;
@@ -99,6 +110,8 @@ export interface DedAttachmentItem {
   quantity: number | null;
   quantitySource: string;
   quantityNote?: string | null;
+  /** Rumus/dasar hitung terbaca (DedAiItem.quantityFormula) — bukti kuantitas. */
+  quantityFormula?: string | null;
   unitPrice: number | null;
   priceSource: string;
   ahspCode?: string;
@@ -111,6 +124,9 @@ export interface DedAttachmentItem {
     result: number | null;
     resultUnit: string;
     validationStatus: string;
+    /** Catatan derivasi (DedAiItem.derivation.notes) — tempat peringatan
+     *  derivasi tinggal (mis. "bukaan belum diketahui"). */
+    notes?: string | null;
   };
 }
 
@@ -136,6 +152,18 @@ export interface DedAttachment {
   projectName: string;
   projectType: string;
   mode: string;
+  /**
+   * Kebijakan harga asal DED (Dual Mode W1, G-ST-1) — tersimpan agar
+   * Chat AI tahu mode asal lampiran ini. Opsional: lampiran lama
+   * tanpa field ini dibaca sebagai FULL_AI (perilaku hardcode lama).
+   */
+  policy?: DedEstimationPolicy;
+  /**
+   * Mode kanonis asal DED (C1) — diturunkan dari policy + mesin
+   * standar saat lampir (lampiran hanya menerima DedAiOutput mesin
+   * standar). Opsional seperti policy (lampiran lama tak punya).
+   */
+  dedMode?: DedRabAiMode;
   projectId: string;
   receivedAt: string;
   /** Kapan Chat AI mengonsumsi lampiran ini (null = belum dikonsumsi). */
@@ -205,6 +233,12 @@ function projectItem(item: DedAiItem): DedAttachmentItem {
     quantity: typeof item.quantity === 'number' && Number.isFinite(item.quantity) ? item.quantity : null,
     quantitySource: String(item.quantitySource ?? 'UNRESOLVED'),
     quantityNote: item.quantityNote ?? null,
+    // S5 (P3C-F1): rumus + catatan derivasi adalah bukti kuantitas —
+    // diteruskan apa adanya bila ada (string tak kosong); tanpa bukti,
+    // medan absen (tidak dikarang, tidak ada default).
+    ...(typeof item.quantityFormula === 'string' && item.quantityFormula.trim() !== ''
+      ? { quantityFormula: item.quantityFormula }
+      : {}),
     unitPrice: typeof item.unitPrice === 'number' && Number.isFinite(item.unitPrice) ? item.unitPrice : null,
     priceSource: String(item.priceSource ?? 'UNRESOLVED'),
     ahspCode: item.ahspCode,
@@ -223,6 +257,9 @@ function projectItem(item: DedAiItem): DedAttachmentItem {
           result: item.derivation.result ?? null,
           resultUnit: String(item.derivation.resultUnit ?? ''),
           validationStatus: String(item.derivation.validationStatus ?? ''),
+          ...(typeof item.derivation.notes === 'string' && item.derivation.notes.trim() !== ''
+            ? { notes: item.derivation.notes }
+            : {}),
         }
       : undefined,
   };
@@ -253,6 +290,11 @@ export function attachDedToProject(
     projectName: String(output.projectName ?? ''),
     projectType: String(output.projectType ?? ''),
     mode: String(output.mode ?? ''),
+    // G-ST-1: mode/policy ASAL diteruskan — lampiran hanya menerima
+    // DedAiOutput mesin standar, jadi fullAi=false (mode diturunkan
+    // dari policy; hibrida lama tetap membawa policy aslinya).
+    policy: normalizePolicy(output.policy),
+    dedMode: modeFromLegacy({ policy: normalizePolicy(output.policy), fullAi: false }),
     projectId,
     receivedAt: new Date().toISOString(),
     consumedAt: null,
@@ -361,7 +403,11 @@ export function attachmentToDedOutput(attachment: DedAttachment): DedAiOutput {
     jobId: attachment.jobId,
     projectType: attachment.projectType as DedAiOutput['projectType'],
     mode: attachment.mode as DedAiOutput['mode'],
-    policy: 'FULL_AI',
+    // G-ST-1: teruskan policy ASAL yang tersimpan di lampiran —
+    // hardcode 'FULL_AI' lama membuat DED DATABASE terbaca sebagai
+    // FULL_AI di Chat AI. Lampiran lama tanpa policy → FULL_AI
+    // (perilaku lama, bukan tebakan baru).
+    policy: normalizePolicy(attachment.policy),
     projectName: attachment.projectName,
     fileName: attachment.fileName ?? undefined,
     pageCount: 0,
@@ -426,7 +472,11 @@ export function dimsFromIntakeContext(ctx: UniversalIntakeContext | null | undef
   };
 }
 
-/** Item DED → bentuk QtoItemLike untuk jembatan kanonis. */
+/** Item DED → bentuk QtoItemLike untuk jembatan kanonis.
+ *
+ * S5 (P3C-F1): rumus + catatan derivasi diteruskan ke jembatan —
+ * passthrough P3C (`QtoCheck.formula`) kini terisi dari jalur DED,
+ * dan catatan derivasi (peringatan) ikut terbawa ke QtoCheck. */
 export function dedItemsAsQto(attachment: DedAttachment): QtoItemLike[] {
   return attachment.items.map((it) => ({
     description: it.name,
@@ -439,6 +489,8 @@ export function dedItemsAsQto(attachment: DedAttachment): QtoItemLike[] {
       source: i.source,
     })),
     quantityNote: it.quantityNote ?? null,
+    quantityFormula: it.quantityFormula ?? null,
+    derivationNotes: it.derivation?.notes ?? null,
   }));
 }
 

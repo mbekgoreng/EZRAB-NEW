@@ -142,11 +142,22 @@ absent('Manajemen: label Gantt hilang', mgmt, 'Gantt');
 present('Manajemen: deviasi dari pekan beraktual terakhir', mgmt, 'actualSeries');
 
 // ── 11. Estimator Kurva S ───────────────────────────────────────────────────
+// PERUBAHAN LOKASI CEK (G1, 2026-11-14): komit 99de892 (2026-11-10, Gelombang
+// Native 2) mengekstrak seluruh state + derivasi Kurva S VERBATIM dari view
+// ke hook src/components/estimator/useKurvaSModel.ts (agar MobileKurvaS
+// membaca model yang sama persis) — `buildLaporanKurvaS` dan kunci
+// `ezrab_estimator_kurva_weeks_` kini tinggal di hook itu, BUKAN lagi di
+// berkas view. Cek lama yang membaca berkas view menjadi basi lokasi, bukan
+// substansi. Pin baru LEBIH KUAT: kedua jarum di modulnya + wiring view ke
+// hook (impor + pemakaian useKurvaSModel + totalWeeks dari model).
 const estKurva = read('components/estimator/EstimatorKurvaSView.tsx');
-present('EstKurvaS: memakai buildLaporanKurvaS', estKurva, 'buildLaporanKurvaS');
+const kurvaModel = read('components/estimator/useKurvaSModel.ts');
+present('EstKurvaS: memakai buildLaporanKurvaS', kurvaModel, 'buildLaporanKurvaS');
 absent('EstKurvaS: sintesis indeks kategori hilang', estKurva, 'catCount');
-present('EstKurvaS: totalWeeks persisten per proyek', estKurva, 'ezrab_estimator_kurva_weeks_');
+present('EstKurvaS: totalWeeks persisten per proyek', kurvaModel, 'ezrab_estimator_kurva_weeks_');
 present('EstKurvaS: baris realisasi kumulatif ada', estKurva, 'Bobot Realisasi Kumulatif');
+present('EstKurvaS: view memakai useKurvaSModel', estKurva, 'useKurvaSModel(currentProject, items)');
+present('EstKurvaS: view membaca totalWeeks dari model', estKurva, 'totalWeeks,');
 
 // ── 12. Notes / AHSP / Settings estimator ───────────────────────────────────
 const notes = read('components/estimator/EstimatorNotesView.tsx');

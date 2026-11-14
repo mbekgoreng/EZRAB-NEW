@@ -151,6 +151,11 @@ export function generateExportFileName(
     TENDER_PACKAGE: 'TENDER-PACKAGE',
     COMPLETE_PACKAGE: 'COMPLETE-PROJECT',
     CUSTOM: 'DOKUMEN-PROYEK',
+    /* P6 (P5-O6): entri kelengkapan tipe — jalur 5 sheet tidak pernah
+     * memanggil generateExportFileName (finalizeWorkbook memberi nama
+     * EZRAB_RAB-5SHEET_… sendiri), jadi nilai ini tidak terpakai di
+     * runtime; ada agar Record<ExportPresetId, …> tetap lengkap. */
+    FIVE_SHEET_RAB: 'RAB-5SHEET',
   };
   const prefix = prefixMap[preset] || 'DOKUMEN';
   return `EZRAB_${prefix}_${cleanProject}_${cleanRev}_${today}.xlsx`;

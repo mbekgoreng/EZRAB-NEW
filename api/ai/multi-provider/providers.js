@@ -36,6 +36,20 @@ export default async function handler(req, res) {
       break;
     }
   }
+  for (let i = 0; i <= 4; i++) {
+    const k = i === 0 ? process.env.ARXPAY_API_KEY : process.env['ARXPAY_API_KEY_' + i];
+    if ((k || '').trim()) {
+      providers.push({ id: 'arxpay', label: 'ArxPay', models: ['deepseek-v4.1-flash'], available: true });
+      break;
+    }
+  }
+  for (let i = 0; i <= 4; i++) {
+    const k = i === 0 ? process.env.WEIZEROUTER_API_KEY : process.env['WEIZEROUTER_API_KEY_' + i];
+    if ((k || '').trim()) {
+      providers.push({ id: 'weizerouter', label: 'WeizeRouter', models: ['weizerouter-v2', 'kimi-k2.7', 'kimi-k2.6', 'gpt-6-luna', 'wz/gpt-6-luna', 'wz/deepseek-v4.1-flash', 'muse-spark-1.3-contributor'], available: true });
+      break;
+    }
+  }
   for (let i = 1; i <= 14; i++) {
     if ((process.env['ATRIA_API_KEY_' + i] || '').trim()) {
       providers.push({ id: 'atria', label: 'Atria', models: ['Atria-Dawn-Preview'], available: true });

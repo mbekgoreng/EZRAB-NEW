@@ -40,6 +40,10 @@ const fullTypes = read('src/ai-tools/ded-full-ai/types.ts');
 const fullService = read('src/ai-tools/ded-full-ai/service.ts');
 const parserSrc = read('src/ai-tools/ded-ai-estimate/parser.ts');
 const input = read('src/ai-tools/ded-ai-estimate/DedAiInputView.tsx');
+// PERBAIKAN E (2026-11-14): sumber kartu mode — catatan keterbukaan harga
+// (dulu inline di InputView, seksi Kebijakan Harga) kini hidup di sini
+// sebagai DED_MODE_CARDS[].note (W2 G-UI-1).
+const modeCards = read('src/ai-tools/ded-ai-estimate/dedModeUi.ts');
 const view = read('src/ai-tools/ded-ai-estimate/view.tsx');
 const result = read('src/ai-tools/ded-ai-estimate/DedAiResultView.tsx');
 const dedCss = read('src/ai-tools/ded-ai-estimate/dedAi.css');
@@ -121,8 +125,21 @@ check('baris berkas: halaman nyata + lencana teks terbaca',
 check('baris berkas: aksi ganti berkas ada', input.includes('startReplace') && input.includes('Ganti berkas'));
 check('catatan peninjauan di bawah CTA (spec)',
   input.includes('Estimasi dapat ditinjau dan divalidasi sebelum disimpan ke proyek.'));
-check('disclaimer harga AI bukan AHSP tetap utuh di panel',
-  input.includes('bukan harga resmi AHSP'));
+// PERBAIKAN E (2026-11-14): pin lama memeriksa string di DedAiInputView —
+// kedaluwarsa LOKASI. Program Dual Mode (W2 G-UI-1) menghapus seksi
+// Kebijakan Harga dan memindahkan catatan keterbukaannya ke kartu mode
+// masing-masing (dedModeUi.ts: DED_MODE_CARDS[].note); kartu Full AI
+// membawa disclaimer utuh ("bukan harga resmi AHSP … pengadaan, tender,
+// atau kontrak") dan InputView merendernya ({card.note}). Pin baru
+// memeriksa teks DI SUMBERNYA + rendernya di InputView — lebih kuat
+// (teks 2 frasa + render 2 penanda, bukan 1 substring di 1 berkas).
+// Sengaja TIDAK mengembalikan disclaimer mentah ke panel: di EZRAB AI
+// MODE harga mengacu database AHSP, sehingga disclaimer blanket di panel
+// salah faktual untuk mode itu; penempatan per-kartu adalah pengungkapan
+// yang benar per mode. Dijaga juga oleh w2DedModeUi cek 1i.
+check('disclaimer harga AI bukan AHSP tetap utuh di kartu Full AI (dirender InputView)',
+  modeCards.includes('bukan harga resmi AHSP') && modeCards.includes('pengadaan, tender, atau kontrak')
+  && input.includes('dedai-modecard-note') && input.includes('{card.note}'));
 
 console.log(`\ndedPremiumOneScreen: ${pass} lulus, ${fail} gagal`);
 if (fail > 0) process.exit(1);

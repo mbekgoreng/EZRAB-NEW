@@ -66,10 +66,23 @@ console.log('\n[2] routeIntent → OPEN_GAME_SPACE');
     assert.equal(r.needsClarification, false);
   }),
 );
+// Probe "normal chat still goes to AI" memakai pertanyaan KONSEPTUAL
+// (bukan hitungan): sejak 30b268e (2026-10-23, "routing intent
+// diperluas") hitungan konstruksi yang polanya terparse PENUH dirutekan
+// ke CALCULATE deterministik lokal (intentRouter langkah 4, Fase 4 QA
+// kategori B) — tanpa LLM/kredit — sehingga probe lama 'hitung volume
+// beton 10x8x0.12' kini benar CALCULATE, bukan UNKNOWN. Maksud tes ini
+// (obrolan biasa tidak dibajak router game) dipertahankan dengan probe
+// konseptual, DITAMBAH pin perilaku CALCULATE yang disengaja itu.
 test('normal chat still goes to AI', () => {
-  const r = routeIntent('hitung volume beton 10x8x0.12');
+  const r = routeIntent('apa itu beton bertulang?');
   assert.equal(r.intent, 'UNKNOWN');
   assert.equal(r.localOnly, false);
+});
+test('fully-parseable calculation routes to local CALCULATE (30b268e)', () => {
+  const r = routeIntent('hitung volume beton 10x8x0.12');
+  assert.equal(r.intent, 'CALCULATE');
+  assert.equal(r.localOnly, true, 'deterministic local evaluator, no AI provider');
 });
 test('other commands unaffected', () => {
   assert.equal(routeIntent('/rab').intent, 'OPEN_RAB');

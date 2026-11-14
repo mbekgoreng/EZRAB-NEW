@@ -10,13 +10,20 @@
  * dan klaim OFFICIAL_AHSP hanya sah bila genuine terverifikasi.
  *
  * PEMETAAN PROVENANCE (konseptual brief -> nilai aktual kode):
- * Union aktual `PriceSourceKind` (src/types/index.ts:927):
+ * Union aktual `RabItem['priceSourceKind']` (src/types/index.ts:1037):
  *   'OFFICIAL_AHSP' | 'MARKET_REFERENCE' | 'EZRAB_ASSUMPTION' | 'UNRESOLVED'
- * - PRICE_MANUAL (konsep) -> TIDAK ada kind khusus. Representasi jujur di
- *   codebase: priceSourceKind TIDAK diisi + priceSourceLabel 'Input User' +
- *   verificationStatus 'NEEDS_VERIFICATION' (konvensi finalizeMapping
- *   mapDedAiItemToRabInput cabang USER_INPUT); sumbu terpisah priceStatus
- *   punya nilai 'PRICE_MANUAL' sendiri.
+ *   | 'USER_MANUAL'
+ * - PRICE_MANUAL (konsep) -> kind 'USER_MANUAL' + priceStatus 'PRICE_MANUAL'
+ *   + priceSourceLabel 'Input User' + verificationStatus
+ *   'NEEDS_VERIFICATION'. Kind aditif 'USER_MANUAL' ditambahkan program
+ *   DED-RAB AI Dual Mode (LAPORAN-AKHIR:242: "klaim manual → PRICE_MANUAL +
+ *   USER_MANUAL + NEEDS_VERIFICATION"; berkas baru dedProvenance.ts +
+ *   finalizeMapping cabang USER_INPUT + types/index.ts:1037) dan
+ *   terverifikasi E2E (F6-08: PRICE_MANUAL/USER_MANUAL). SEBELUM program
+ *   itu, representasi jujurnya adalah kind TIDAK diisi — Kasus 8 di bawah
+ *   diperbarui G1 (2026-11-14) ke representasi baru yang LEBIH EKSPLISIT
+ *   (kind bernama, bukan absen); substansinya sama: harga manual tidak
+ *   pernah memperoleh kind RESMI apa pun.
  * - MARKET_REFERENCE (konsep) -> 'MARKET_REFERENCE' (persis ada di union).
  * - UNRESOLVED (konsep) -> 'UNRESOLVED' (+ priceStatus 'PRICE_UNRESOLVED'
  *   bila harga memang belum ada).
@@ -126,14 +133,16 @@ const manualMapped = mapDedAiItemToRabInput(mkItem({
   name: 'Pekerjaan khusus manual', category: 'Khusus', units: 'ls',
   quantity: 1, quantitySource: 'MANUAL', unitPrice: 1500000, priceSource: 'USER_INPUT',
 }), 'DATABASE');
-check('Kasus 8 (mapper): harga manual -> kind TIDAK diisi (tidak ada PRICE_MANUAL di union), label "Input User"',
-  manualMapped !== null && manualMapped.priceSourceKind === undefined && manualMapped.priceSourceLabel === 'Input User');
+check('Kasus 8 (mapper): harga manual -> kind USER_MANUAL + PRICE_MANUAL, label "Input User"',
+  manualMapped !== null && manualMapped.priceSourceKind === 'USER_MANUAL' && manualMapped.priceSourceLabel === 'Input User' &&
+  (manualMapped as any).priceStatus === 'PRICE_MANUAL');
 check('Kasus 8 (mapper): harga manual -> NEEDS_VERIFICATION, tanpa ahspCode',
   manualMapped?.verificationStatus === 'NEEDS_VERIFICATION' && manualMapped?.ahspCode === undefined);
 const manualRec = manualMapped ? createRabItemRecord({ ...manualMapped } as never, P, {}) : null;
-check('Kasus 8 (factory): record manual tanpa kode tidak memperoleh identitas/kind resmi apa pun',
-  manualRec !== null && (manualRec as any).priceSourceKind === undefined &&
-  (manualRec as any).ahspIdentityStatus === undefined && manualRec.unitPrice === 1500000);
+check('Kasus 8 (factory): record manual tanpa kode -> kind USER_MANUAL dipertahankan, tanpa identitas/kind resmi',
+  manualRec !== null && (manualRec as any).priceSourceKind === 'USER_MANUAL' &&
+  (manualRec as any).ahspIdentityStatus === undefined && manualRec.unitPrice === 1500000 &&
+  (manualRec as any).priceStatus === 'PRICE_MANUAL');
 // Kasus 8b: sumbu priceStatus PRICE_MANUAL mempertahankan harga (paralel rabExportIntegrity #10).
 const manualStatus = createRabItemRecord({
   description: 'Item harga manual pengguna', volume: 10, unit: 'm3', unitPrice: 1000000, priceStatus: 'PRICE_MANUAL',

@@ -107,19 +107,27 @@ check('Selisih berbeda = string penjelasan', (describeProposedDiscrepancy(300000
 check('Selisih tak bisa dibanding = null', describeProposedDiscrepancy(null, 250000) === null && describeProposedDiscrepancy(300000, null) === null);
 
 console.log('=== Prompt kondisional per mode (perbaikan audit P1) ===');
+// W3 (Dual Mode §5/§7, G-IS-4, C3 — PERUBAHAN PERILAKU YANG DIMAKSUD):
+// tabel harga Jakarta + referensi harga jalan inline DIHAPUS dari prompt
+// FULL AI — mode ini mandiri, tanpa data harga internal EZRAB. Tiga pin
+// lama yang menegaskan tabel itu ADA di FULL_AI diperbarui di bawah dengan
+// kekuatan SAMA: kewajiban mengisi harga TETAP dipin (WAJIB …), dan
+// ketidakhadiran data harga internal kini JUGA dipin (negasi). Bukan
+// pelemahan: setiap pin lama (2 konjungsi) diganti pin baru (2–3 konjungsi
+// termasuk negasi data internal).
 // Tabel harga pasar + perintah wajib HANYA di FULL_AI; DATABASE bersih darinya.
 check('FAST DATABASE tanpa tabel Rp120.000', !fastDb.includes('Rp120.000'));
 check('FAST DATABASE tanpa perintah WAJIB isi harga', !fastDb.includes('WAJIB isi estimatedUnitPrice'));
 check('FAST DATABASE menyatakan tanpa tabel harga pasar', fastDb.includes('TIDAK ADA tabel harga pasar'));
-check('FAST FULL_AI mempertahankan tabel + WAJIB', fastFull.includes('Rp120.000') && fastFull.includes('WAJIB isi estimatedUnitPrice'));
+check('FAST FULL_AI WAJIB estimasi TANPA tabel harga internal (G-IS-4)', fastFull.includes('WAJIB isi estimatedUnitPrice') && !fastFull.includes('Rp120.000') && !fastFull.includes('AC-WC Rp'));
 check('DETAIL DATABASE tanpa referensi Rp120-180rb', !detDb.includes('Rp120-180rb'));
 check('DETAIL DATABASE tanpa perintah WAJIB diisi semua', !detDb.includes('WAJIB diisi untuk semua item'));
-check('DETAIL FULL_AI mempertahankan referensi', detFull.includes('Rp120-180rb'));
+check('DETAIL FULL_AI WAJIB estimasi TANPA referensi harga internal (G-IS-4)', detFull.includes('WAJIB isi estimatedUnitPrice') && !detFull.includes('Rp120-180rb') && !detFull.includes('lapis aus Rp'));
 check('FullAI DATABASE tanpa tabel HARGA JAKARTA 2026', !fullAiDb.includes('HARGA JAKARTA 2026'));
 check('FullAI DATABASE tanpa item referensi Galian tanah', !fullAiDb.includes('Galian tanah biasa'));
 check('FullAI DATABASE tanpa perintah WAJIB isi unitPrice', !fullAiDb.includes('WAJIB isi unitPrice'));
 check('FullAI DATABASE menyatakan tanpa tabel referensi', fullAiDb.includes('tidak ada tabel referensi harga'));
-check('FullAI FULL_AI mempertahankan tabel + WAJIB', fullAiFull.includes('HARGA JAKARTA 2026') && fullAiFull.includes('WAJIB isi unitPrice'));
+check('FullAI FULL_AI WAJIB isi unitPrice TANPA tabel Jakarta (G-IS-4)', fullAiFull.includes('WAJIB isi unitPrice') && !fullAiFull.includes('HARGA JAKARTA 2026') && !fullAiFull.includes('Galian tanah biasa'));
 
 console.log(`\n=== HASIL: ${pass} PASS, ${fail} FAIL ===`);
 if (fail > 0) process.exit(1);

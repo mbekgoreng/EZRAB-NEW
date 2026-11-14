@@ -51,7 +51,16 @@ test('Lookup AHSP 2.1.(1) from official dataset', () => {
   const item = BINA_MARGA_AHSP_2026_OFFICIAL.find((i) => i.code === 'B.1' || (i as any).standardCode === '2.1.(1)');
   assertTrue(!!item, 'Item 2.1.(1) should exist');
   assertEqual(item!.name, 'Galian untuk Selokan Drainase dan Saluran Air');
-  assertEqual(item!.unit, 'm3');
+  // PERUBAHAN PIN (G1, 2026-11-14): 'm3' -> 'Meter Kubik'. Master Bina Marga
+  // menyimpan satuan VERBATIM Bahasa Indonesia dari Lampiran V ("Meter
+  // Kubik", "Meter Persegi", ...) — bukan singkatan 'm3'. Normalisasi satuan
+  // adalah tugas lapis mesin (UnitEngine.normalizeUnit di
+  // costCompositionEngine, yang menyamakan 'm3' dan 'Meter Kubik'), bukan
+  // dataset. Pin lama mengasumsikan bentuk ternormalisasi yang tidak pernah
+  // ada di data ini.
+  assertEqual(item!.unit, 'Meter Kubik');
+  assertEqual(item!.code, 'B.1');
+  assertEqual((item as any).standardCode, '2.1.(1)');
   assertTrue(item!.laborComponents.length > 0, 'Should have labor components');
 });
 
@@ -65,7 +74,13 @@ test('Calculate cost for drainage excavation with real AHSP', () => {
   );
 
   assertEqual(result.lineItems.length, 1, 'Should have 1 line item');
-  assertEqual(result.lineItems[0].ahspCode, '2.1.(1)');
+  // PERUBAHAN PIN (G1, 2026-11-14): line item melaporkan kode KANONIS item
+  // yang ter-resolve ('B.1'), bukan bentuk query ('2.1.(1)'). Query tetap
+  // memakai standardCode — membuktikan lookup standardCode (perbaikan G1 di
+  // CostPolicyEngine) — tetapi identitas yang dilaporkan harus kode kanonis,
+  // konsisten dengan semua line item lain (ahspCode: ahspDef.code).
+  assertEqual(result.lineItems[0].ahspCode, 'B.1');
+  assertEqual(result.lineItems[0].ahspName, 'Galian untuk Selokan Drainase dan Saluran Air');
   assertTrue(result.lineItems[0].composition.status === 'PRICE_MISSING' || result.lineItems[0].composition.status === 'COMPLETE', 'Status should be PRICE_MISSING or COMPLETE');
   assertTrue(result.auditTrail.some((s) => s.includes('COMPOSED:')), 'Should have audit trail');
 });

@@ -67,8 +67,17 @@ assert(subtotal === 3291335, `Subtotal 177.91 kg x Rp 18.500 = Rp 3.291.335 [got
 console.log('\n--- TEST GROUP 2: AHSP RESOLUTION & SPECIFICATION INTEGRITY ---');
 
 // Official catalog size check
+// PERUBAHAN PIN (G1, 2026-11-14): 5.768 -> 5.742. 5.742 adalah backing
+// kanonis AHSP 2026 hari ini (CK 2.859 + BM 1.137 + SDA 1.556 + SMKK 190),
+// terverifikasi independen oleh probe verifikator-ulang RV-C1 dan probe G1;
+// 5.768 adalah angka pra-pembersihan dataset yang tidak lagi cocok dengan
+// data kanonis mana pun. Pin aktif ditambahkan: 5.725 = 5.742 − 17 record
+// karantina (10 Cipta Karya + 7 Bina Marga E.2–E.8, komit e324e17),
+// konsisten dengan pin ahspCategoryGroups (pekerja C, terverifikasi RV).
 const allOfficial = officialAhspRepository.getAllOfficialAhsp();
-assert(allOfficial.length === 5768, `Official AHSP repository contains 5,768 records [got ${allOfficial.length}]`);
+assert(allOfficial.length === 5742, `Official AHSP repository contains 5,742 records [got ${allOfficial.length}]`);
+const activeOfficial = officialAhspRepository.getActiveOfficialAhsp();
+assert(activeOfficial.length === 5725, `Active AHSP repository contains 5,725 records (5,742 minus 17 quarantined) [got ${activeOfficial.length}]`);
 
 // Pondasi lookup
 const pondasiAhsp = tools.findAhsp('Pemasangan Pondasi Batu Belah 1:4', 'Batu Belah Campuran 1SP:4PP', 'm³');

@@ -2466,9 +2466,19 @@ export function executeIntent(
       // Cakupan universal (2026-10-26): teks DIRECT yang bukan rumah
       // bertipe/spek bebas dicoba lewat katalog template 180 sebelum
       // jatuh ke ringkasan kebutuhan.
+      // PERBAIKAN-D (2026-11-14): RUMAH dikecualikan dari langkah ini —
+      // routing kanonis P3B: "Selain rumah → UNIVERSAL". Rumah tanpa
+      // spek terukur jatuh ke ringkasan kebutuhan (rabSummaryResult),
+      // bukan ke klarifikasi tipologi universal (yang sebelumnya
+      // menelan teks ini dan melewatkan state kebutuhan sesi).
+      // Konsisten dengan CREATE_RAB_SUMMARY yang sudah menggating
+      // universal pada kind !== 'rumah'.
       // GATE 4 (5D): projectId diteruskan agar lampiran DED proyek ini
       // ikut (spek DED + rekonsiliasi QTO di universalResultFor).
-      const uniDirect = universalResultFor(raw, undefined, undefined, { projectId: ctx.activeProject?.id ?? null });
+      const directKind = extractRabNeeds(stripLandPhrases(raw)).kind;
+      const uniDirect = directKind === 'rumah'
+        ? null
+        : universalResultFor(raw, undefined, undefined, { projectId: ctx.activeProject?.id ?? null });
       if (uniDirect) return uniDirect;
       return rabSummaryResult(raw);
     }

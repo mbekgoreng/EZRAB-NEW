@@ -11,6 +11,8 @@ import {
 import { isSaneEstimate } from '../ded-ai-estimate/pricing';
 import { classifyQuantity } from '../ded-ai-estimate/priceCompletion';
 import { referenceSpecConflict, EXTERNAL_PRICE_REFERENCES } from '../ded-ai-estimate/externalPriceReferences';
+import { canUseExternalPriceReferences } from './dataSourcePolicy';
+import type { DedRabAiMode } from '../ded-ai-estimate/dedMode';
 import type { DedAiItem } from '../ded-ai-estimate/types';
 
 const VALID_QUANTITY_CLASS = [
@@ -135,6 +137,11 @@ export function validatePriceDetail(p: any, qUnit: string, itemName: string): Va
   // itu berdampak pada finalisasi sehingga di sini hanya peringatan —
   // penolakan kerasnya dicatat sebagai perbedaan yang DITUNDA di
   // dokumen paritas Sprint 4 (perlu keputusan owner).
+  // §7 (G-IS-6, C3 — D7): pita ini DIPERTAHANKAN di kedua mode, termasuk
+  // FULL_AI. isSaneEstimate adalah PITA KEWAJARAN — dua ambang angka
+  // (Rp100–Rp50 M) — bukan katalog harga dan bukan akses ke data
+  // internal apa pun; ia tidak membaca AHSP, referensi pasar, atau
+  // harga komponen. Ia hanya menandai angka yang tidak masuk akal.
   if (p.source === 'AI_ESTIMATE' && p.unitPrice != null && !isSaneEstimate(p.unitPrice)) {
     warnings.push(`${itemName}: harga estimasi AI Rp${p.unitPrice} di luar pita kewajaran bersama (isSaneEstimate) — perlu tinjauan`);
   }
@@ -219,8 +226,21 @@ export function clearAiProposal<T extends {
  * - blok yang menunjuk referensi terkurasi tidak boleh konflik
  *   spesifikasi dengan nama item (referenceSpecConflict bersama —
  *   pertahanan kedua di samping penjaga findExternalReference).
+ *
+ * §7 (G-IS-6, C3 — D8): pemeriksaan konflik spesifikasi terhadap
+ * EXTERNAL_PRICE_REFERENCES hanya berjalan bila mode mengizinkannya.
+ * Di mode FULL_AI pemeriksaan itu DILEWATI (tanpa lookup referensi
+ * sama sekali); pemeriksaan enum + konsistensi recommendedPrice tetap
+ * berjalan di kedua mode karena itu konsistensi internal blok, bukan
+ * akses katalog. Tanpa rabMode, perilaku lama dipertahankan (pemeriksaan
+ * berjalan) agar pemanggil lama & tes lama tidak berubah; runExecute
+ * selalu meneruskan rabMode eksplisit.
  */
-export function validateFullAiCompletionBlocks(raw: any, itemName: string): ValidationResult {
+export function validateFullAiCompletionBlocks(
+  raw: any,
+  itemName: string,
+  opts?: { rabMode?: DedRabAiMode },
+): ValidationResult {
   const warnings: string[] = [];
   const pc = raw?.price?.priceCompletion ?? raw?.priceCompletion;
   const qa = raw?.quantity?.quantityAudit ?? raw?.quantityAudit;
@@ -236,11 +256,15 @@ export function validateFullAiCompletionBlocks(raw: any, itemName: string): Vali
       if (pc.recommendedPrice != null && raw.price.unitPrice != null && pc.recommendedPrice !== raw.price.unitPrice) {
         warnings.push(`${itemName}: recommendedPrice blok penyelesaian (${pc.recommendedPrice}) tidak sama dengan harga item (${raw.price.unitPrice})`);
       }
-      const ref = EXTERNAL_PRICE_REFERENCES.find((r) => r.id === pc.referenceId);
-      if (ref) {
-        const conflict = referenceSpecConflict(itemName, ref);
-        if (conflict) {
-          warnings.push(`${itemName}: referensi blok penyelesaian (${ref.id}) konflik spesifikasi dengan item: ${conflict}`);
+      // §7 (G-IS-6): lookup referensi internal HANYA di mode yang
+      // mengizinkan; di FULL_AI blok ini dilewati total.
+      if (opts?.rabMode === undefined || canUseExternalPriceReferences(opts.rabMode)) {
+        const ref = EXTERNAL_PRICE_REFERENCES.find((r) => r.id === pc.referenceId);
+        if (ref) {
+          const conflict = referenceSpecConflict(itemName, ref);
+          if (conflict) {
+            warnings.push(`${itemName}: referensi blok penyelesaian (${ref.id}) konflik spesifikasi dengan item: ${conflict}`);
+          }
         }
       }
     }
@@ -263,7 +287,11 @@ export function validateFullAiCompletionBlocks(raw: any, itemName: string): Vali
   return { valid: true, errors: [], warnings };
 }
 
-export function validateFullAiItem(raw: any, index: number): ValidationResult {
+export function validateFullAiItem(
+  raw: any,
+  index: number,
+  opts?: { rabMode?: DedRabAiMode },
+): ValidationResult {
   const errors: string[] = [];
   const warnings: string[] = [];
   const name = raw?.name || `Item ${index + 1}`;
@@ -287,7 +315,9 @@ export function validateFullAiItem(raw: any, index: number): ValidationResult {
 
   // Blok penyelesaian terstruktur (bila item membawanya — mis. hasil
   // tersimpan yang divalidasi ulang): konsistensi metadata saja.
-  const cResult = validateFullAiCompletionBlocks(raw, name);
+  // Mode diteruskan agar pemeriksaan referensi internal (§7 G-IS-6)
+  // tunduk pada gerbang yang sama.
+  const cResult = validateFullAiCompletionBlocks(raw, name, opts);
   warnings.push(...cResult.warnings);
 
   return { valid: errors.length === 0, errors, warnings };

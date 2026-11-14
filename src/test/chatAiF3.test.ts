@@ -7,7 +7,7 @@
  * service-level guarantee that raw tool-call JSON / empty replies never
  * reach the user.
  */
-import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, vi, afterAll } from 'vitest';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { scanToolCalls, MAX_TOOL_CALLS } from '../ai-tools/ezrab-ai/toolCallParser';
@@ -148,9 +148,17 @@ describe('extractJson — prose brackets cannot hijack the payload', () => {
 
 describe('providerClient browser path — EMPTY_RESPONSE on empty success', () => {
   const realFetch = globalThis.fetch;
-  beforeAll(() => {
-    (globalThis as any).window = (globalThis as any).window ?? {};
-  });
+  // G2: setup `window` di SINI (badan describe), bukan di beforeAll.
+  // providerClient memilih jalur browser per panggilan bila `window`
+  // terdefinisi; beforeAll di runner shim verifikasi (runner-bat.mjs)
+  // adalah noop, sehingga setup lama tidak pernah jalan dan ketiga tes
+  // ini jatuh ke jalur Node (adapter offline 'Offline test fallback
+  // response'). Badan describe dieksekusi saat koleksi di vitest asli
+  // MAUPUN shim — sebelum tes pertama blok ini berjalan — jadi
+  // semantiknya identik dengan beforeAll di kedua runner. afterAll
+  // dipertahankan untuk kebersihan di vitest asli (noop di shim;
+  // tiap suite jalan di prosesnya sendiri sehingga tidak bocor).
+  (globalThis as any).window = (globalThis as any).window ?? {};
   afterAll(() => {
     delete (globalThis as any).window;
     globalThis.fetch = realFetch;

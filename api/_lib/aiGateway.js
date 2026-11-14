@@ -53,6 +53,30 @@ const GEMINI_OAI_BASE = 'https://generativelanguage.googleapis.com/v1beta/openai
 const RIVER_BASE = 'https://api.river.ai/v1';
 const ATMO_BASE = 'https://atmorouter.dev/v1';
 const CROWN_BASE = 'https://crown.ai.id/v1';
+const ARXPAY_BASE = 'https://arxpay.my.id/v1';
+// ArxPay (user 2026-11-13): relay OpenAI-compatible untuk deepseek-v4.1-flash,
+// kaki KEDUA rantai 'chat' + 'advanced' (Chat AI & generate RAB) — pertama
+// saat dipasang 2026-11-13, digeser ke kedua saat WeizeRouter naik ke pertama.
+// Key: ARXPAY_API_KEY (+ opsional ARXPAY_API_KEY_1..4), diisi owner MANUAL di env.
+// Tanpa key, kaki ini kosong dan rantai kembali seperti semula (fail-closed).
+// Text-only seperti Crown: dilewati bila ada gambar/PDF.
+const ARXPAY_MODEL = 'deepseek-v4.1-flash';
+const WEIZEROUTER_BASE = 'https://weizerouter.web.id/v1';
+// WeizeRouter (user 2026-11-13): relay OpenAI-compatible, kaki PERTAMA
+// rantai 'chat' + 'advanced' (di depan ArxPay; awalnya kedua, naik ke
+// pertama atas perintah user 2026-11-13). Chat AI Cepat memakai
+// 3 model berurutan (weizerouter-v2 → kimi-k2.7 → kimi-k2.6); Mendalam memakai
+// 2 model (gpt-6-luna → muse-spark-1.3-contributor).
+// Key: WEIZEROUTER_API_KEY (+ opsional WEIZEROUTER_API_KEY_1..4), diisi owner
+// MANUAL di env (Preview + Production). Tanpa key, kaki ini kosong dan rantai
+// kembali seperti semula (fail-closed). Text-only seperti Crown/ArxPay:
+// dilewati bila ada gambar/PDF.
+const WEIZEROUTER_CHAT_MODELS = ['weizerouter-v2', 'kimi-k2.7', 'kimi-k2.6'];
+const WEIZEROUTER_ADVANCED_MODELS = ['gpt-6-luna', 'muse-spark-1.3-contributor'];
+// DED detail (user 2026-11-13): model WeizeRouter untuk DED RAB AI adalah
+// wz/gpt-6-luna (bukan gpt-6-luna seperti Chat AI Mendalam), fallback kedua
+// wz/deepseek-v4.1-flash (bukan muse-spark-1.3-contributor).
+const WEIZEROUTER_DED_MODELS = ['wz/gpt-6-luna', 'wz/deepseek-v4.1-flash'];
 // Crown (user 2026-10-25): provider UTAMA untuk AI teks (chat/advanced/fast).
 // Teruji langsung 2026-10-25 via /v1/chat/completions — kedua model menjawab.
 // Vision TIDAK support di Crown (image_url ditolak 400 upstream_error), jadi
@@ -240,9 +264,10 @@ function stripThinkBlocks(content) {
 // - 'client_error' (400 lain): permintaan yang sama akan gagal identik di
 //   semua provider — rantai berhenti (kode AI_BAD_REQUEST).
 // - 'auth' (401/403): kredensial mati — dicatat untuk observabilitas;
-//   pembatasan percobaan per provider yang sudah ada (maks 2 try sesudah
-//   gagal) menahan pemborosan, TANPA memblokir rotasi key lain milik
-//   provider yang sama (key bernomor vs polos adalah key berbeda).
+//   pembatasan percobaan per provider yang sudah ada (tiap model 1
+//   kesempatan, minimal 2) menahan pemborosan, TANPA memblokir rotasi
+//   key lain milik provider yang sama (key bernomor vs polos adalah
+//   key berbeda).
 // - 'rate' (429), 'server' (5xx), 'network', 'empty', 'bad_response':
 //   failover seperti sebelumnya.
 // ---------------------------------------------------------------------------
@@ -482,6 +507,10 @@ export async function executeAI(o, onAttempt) {
   // hasil rotasi; key yang sempat tampil di chat 2026-10-25 tidak dipakai).
   // Tanpa key ini, rantai Crown kosong dan perilaku kembali seperti semula.
   const crownKeys = [...new Set([String(process.env.CROWN_API_KEY || '').trim(), ...envKeys('CROWN_API_KEY', 4)].filter(Boolean))];
+  // ArxPay: satu key utama (ARXPAY_API_KEY) + opsional ARXPAY_API_KEY_1..4.
+  const arxpayKeys = [...new Set([String(process.env.ARXPAY_API_KEY || '').trim(), ...envKeys('ARXPAY_API_KEY', 4)].filter(Boolean))];
+  // WeizeRouter: satu key utama (WEIZEROUTER_API_KEY) + opsional WEIZEROUTER_API_KEY_1..4.
+  const weizeKeys = [...new Set([String(process.env.WEIZEROUTER_API_KEY || '').trim(), ...envKeys('WEIZEROUTER_API_KEY', 4)].filter(Boolean))];
 
   // Setiap attempt ditandai provider+model sejak awal agar loop dapat
   // menerapkan anggaran percobaan per provider dan log tetap akurat.
@@ -495,10 +524,27 @@ export async function executeAI(o, onAttempt) {
   const riverVisionCall = (k) => ({ provider: 'river-vision', model: RIVER_VISION_MODEL, run: () => callOAI(RIVER_BASE, k, RIVER_VISION_MODEL, 'river-vision', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal) });
   const atmoCall = (k, model) => ({ provider: 'atmorouter', model, run: () => callOAI(ATMO_BASE, k, model, 'atmorouter', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal) });
   const crownCall = (k, model) => ({ provider: 'crown', model, run: () => callOAI(CROWN_BASE, k, model, 'crown', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal) });
+  const arxpayCall = (k) => ({ provider: 'arxpay', model: ARXPAY_MODEL, run: () => callOAI(ARXPAY_BASE, k, ARXPAY_MODEL, 'arxpay', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal) });
+  const weizeCall = (k, model) => ({ provider: 'weizerouter', model, run: () => callOAI(WEIZEROUTER_BASE, k, model, 'weizerouter', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal) });
   // Crown hanya untuk teks: bila ada gambar/PDF, Crown dilewati total
   // (image_url ditolak gateway Crown) — vision tetap ke rantai lamanya.
   const crownTextAttempts = (!hasImage && !hasPdf)
     ? [...crownKeys.map((k) => crownCall(k, CROWN_CHAT_MODEL)), ...crownKeys.map((k) => crownCall(k, CROWN_CHAT_FALLBACK_MODEL))]
+    : [];
+  // ArxPay hanya untuk teks (seperti Crown): bila ada gambar/PDF, dilewati total.
+  const arxpayTextAttempts = (!hasImage && !hasPdf)
+    ? arxpayKeys.map((k) => arxpayCall(k))
+    : [];
+  // WeizeRouter hanya untuk teks (seperti Crown/ArxPay). Urutan model =
+  // urutan user; pola Crown (semua key untuk model 1 dulu, lalu model 2).
+  const weizeChatTextAttempts = (!hasImage && !hasPdf)
+    ? WEIZEROUTER_CHAT_MODELS.flatMap((m) => weizeKeys.map((k) => weizeCall(k, m)))
+    : [];
+  const weizeAdvancedTextAttempts = (!hasImage && !hasPdf)
+    ? WEIZEROUTER_ADVANCED_MODELS.flatMap((m) => weizeKeys.map((k) => weizeCall(k, m)))
+    : [];
+  const weizeDedTextAttempts = (!hasImage && !hasPdf)
+    ? WEIZEROUTER_DED_MODELS.flatMap((m) => weizeKeys.map((k) => weizeCall(k, m)))
     : [];
 
   if (mode === 'vision') {
@@ -512,19 +558,29 @@ export async function executeAI(o, onAttempt) {
     if (hasPdf && gk.length === 0) {
       return { ok: false, error: 'Vision PDF membutuhkan GEMINI_API_KEY_* — tidak ada key Gemini terkonfigurasi', requestId, attempts: [] };
     }
-  } else if (mode === 'advanced') {
-    // Advanced (urutan user 2026-10-25): Crown MiniMax M2.7 -> Crown
+  } else if (mode === 'advanced' || mode === 'ded') {
+    // Advanced (Chat AI Mendalam) + DED detail — rantai sama kecuali model
+    // WeizeRouter pertama: 'advanced' pakai gpt-6-luna, 'ded' pakai
+    // wz/gpt-6-luna (user 2026-11-13). Urutan: WeizeRouter ->
+    // ArxPay deepseek-v4.1-flash -> Crown MiniMax M2.7 -> Crown
     // DeepSeek V4 Flash -> Gemini native -> AtmoRouter ag/gemini-3.8-flash-high
     // -> AtmoRouter cx/gpt-6-luna -> ZyRouter.
+    attempts.push(...(mode === 'ded' ? weizeDedTextAttempts : weizeAdvancedTextAttempts));
+    attempts.push(...arxpayTextAttempts);
     attempts.push(...crownTextAttempts);
     gk.forEach((k) => attempts.push(geminiCall(k, FAST_MODEL)));
     atmoKeys.forEach((k) => attempts.push(atmoCall(k, ATMO_ADVANCED_MODEL)));
     atmoKeys.forEach((k) => attempts.push(atmoCall(k, ATMO_ADVANCED_FALLBACK_MODEL)));
     if (zk) attempts.push(zyrouterCall());
   } else if (mode === 'chat') {
-    // Chat AI (urutan owner 2026-10-25): Crown MiniMax M2.7 -> Crown
-    // DeepSeek V4 Flash -> Gemini native -> AtmoRouter ag/gemini-3.8-flash-high
-    // -> AtmoRouter cx/gpt-6-luna -> ZyRouter Gemini 3.8 (+ ekor generik).
+    // Chat AI (urutan owner 2026-10-25, WeizeRouter di depan sejak 2026-11-13):
+    // WeizeRouter weizerouter-v2 -> WeizeRouter kimi-k2.7 ->
+    // WeizeRouter kimi-k2.6 -> ArxPay deepseek-v4.1-flash -> Crown MiniMax M2.7
+    // -> Crown DeepSeek V4 Flash -> Gemini native -> AtmoRouter
+    // ag/gemini-3.8-flash-high -> AtmoRouter cx/gpt-6-luna -> ZyRouter
+    // Gemini 3.8 (+ ekor generik).
+    attempts.push(...weizeChatTextAttempts);
+    attempts.push(...arxpayTextAttempts);
     attempts.push(...crownTextAttempts);
     gk.forEach((k) => attempts.push(geminiCall(k, FAST_MODEL)));
     atmoKeys.forEach((k) => attempts.push(atmoCall(k, ATMO_ADVANCED_MODEL)));
@@ -582,6 +638,17 @@ export async function executeAI(o, onAttempt) {
   // terbuang di provider yang sedang rate-limit) dan mempercepat failover.
   const providerAttempts = new Map();
   const providerFailures = new Map();
+  // Batas percobaan per provider: tiap model berbeda mendapat 1 kesempatan,
+  // minimal 2 (rotasi key). Sebelum WeizeRouter (2026-11-13) batasnya
+  // hardcode 2 — semua provider lama punya ≤2 model sehingga perilaku
+  // mereka TIDAK berubah; WeizeRouter chat (3 model) mendapat batas 3,
+  // kalau tidak model ketiganya tidak pernah jalan.
+  const providerModelCaps = new Map();
+  for (const a of attempts) {
+    if (!providerModelCaps.has(a.provider)) providerModelCaps.set(a.provider, new Set());
+    providerModelCaps.get(a.provider).add(a.model);
+  }
+  const providerAttemptCap = (p) => Math.max(2, (providerModelCaps.get(p) || new Set()).size);
   for (const a of attempts) {
     // ARS-08: klien sudah pergi sebelum leg ini dimulai — jangan mulai leg
     // baru (termasuk leg PERTAMA bila disconnect terjadi selama auth/body).
@@ -597,7 +664,7 @@ export async function executeAI(o, onAttempt) {
     }
     const tries = providerAttempts.get(a.provider) || 0;
     const fails = providerFailures.get(a.provider) || 0;
-    if (fails > 0 && tries >= 2) continue;
+    if (fails > 0 && tries >= providerAttemptCap(a.provider)) continue;
     providerAttempts.set(a.provider, tries + 1);
     const r = await a.run();
     if (!r.ok) providerFailures.set(a.provider, fails + 1);
@@ -687,7 +754,7 @@ function idempotencyStore(scopeKey, body) {
 
 /**
  * Full request pipeline for AI endpoints. opts:
- *  - productIdToMode(pid): map product id -> 'fast' | 'advanced' (for tools/execute compat)
+ *  - productIdToMode(pid): map product id -> 'chat' | 'advanced' | 'ded' | 'fast' (for tools/execute compat)
  *  - meteringContext: konteks akun billing terautentikasi untuk adapter
  *    Chat FAST (objek, atau fungsi ({auth,input,mode,requestId}) -> objek);
  *    hanya dibaca saat gerbang AI_METERING_ENABLED menyala.

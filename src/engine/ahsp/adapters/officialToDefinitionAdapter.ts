@@ -85,7 +85,13 @@ export function adaptOfficialToDefinition(item: OfficialAHSPItem): AdapterResult
     totalEquipmentCoefficient,
     provenance: buildProvenance(item),
     aliases: [item.codeNormalized],
-    notes: `readability=${item.readability}; analisaPage=${item.analisaPage}; numberFormat=${item.numberFormat}; warnings=[${item.warnings.join('; ')}]`,
+    // G1 (2026-11-14): warnings dijaga null-safe. Interface OfficialAHSPItem
+    // mendeklarasikan `warnings: string[]`, tetapi objek runtime dari
+    // BINA_MARGA_AHSP_2026_OFFICIAL (binaMarga2026Master) TIDAK membawa field
+    // itu — adapter crash (TypeError .join of undefined) pada SETIAP lookup
+    // yang berhasil dari dataset ini. Sebelum perbaikan lookup standardCode
+    // G1, crash ini tersembunyi karena lookup selalu AHSP_MISSING.
+    notes: `readability=${item.readability}; analisaPage=${item.analisaPage}; numberFormat=${item.numberFormat}; warnings=[${(item.warnings ?? []).join('; ')}]`,
   };
 
   const warning = item.readability === 'DEGRADED'

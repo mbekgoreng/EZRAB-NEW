@@ -37,6 +37,14 @@ export interface AiToolsRequest {
    *  terpengaruh. */
   idempotencyKey?: string;
   /**
+   * G3 (2026-11-13, K-10) — id proyek aktif pemanggil, dikirim apa adanya
+   * di body gateway (jalur browser). Server saat ini belum membaca field
+   * ini; klien mengirimnya agar konteks proyek tersedia bila server
+   * diaktifkan nanti. Opsional — absen bila tanpa proyek aktif, dan
+   * body tidak memuat kunci `projectId` sama sekali dalam kasus itu.
+   */
+  projectId?: string;
+  /**
    * FINAL HARDENING §8 (2026-11-11) — sinyal pembatalan MILIK PEMANGGIL
    * (AbortSignal dari AbortController view), diteruskan apa adanya —
    * klien TIDAK membuat controller pengganti untuknya. Jalur browser:
@@ -452,6 +460,9 @@ export class AiToolsProviderClient {
         },
         body: JSON.stringify({
           productId: request.productId,
+          // G3 (K-10): projectId hanya bila ada — tanpa proyek aktif,
+          // kunci ini absen dari body (jalur lama tidak berubah).
+          ...(request.projectId ? { projectId: request.projectId } : {}),
           prompt: request.prompt,
           systemPrompt: request.systemPrompt,
           jsonMode: Boolean(request.jsonMode),

@@ -112,6 +112,16 @@ export class CostPolicyEngine {
     for (const item of ahspItems) {
       ahspByCode.set(item.codeNormalized, item);
       ahspByCode.set(item.code, item);
+      // G1 (2026-11-14): ALSO index by standardCode — the parenthesized BM
+      // form printed in the document (e.g. 2.1.(1) for B.1). The engine's
+      // own inferAHSPCode() speaks standardCodes, and callers pass them,
+      // but lookup only knew letter codes — so every standardCode query
+      // silently fell through to AHSP_MISSING with 0 line items. The
+      // adapter attaches standardCode at runtime (binaMarga2026Adapter)
+      // though OfficialAHSPItem doesn't declare it. Purely additive: no
+      // existing code/codeNormalized key is changed or removed.
+      const stdCode = (item as unknown as { standardCode?: string }).standardCode;
+      if (stdCode) ahspByCode.set(stdCode, item);
     }
 
     for (const wi of workItems) {

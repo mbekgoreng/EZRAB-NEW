@@ -172,6 +172,35 @@ export interface EzrabAiEntryContext {
   /** Referensi DED (mis. nama file/label) untuk mode 'ded'. */
   dedRef?: string;
   source?: EzrabAiEntrySource;
+  /* ---- P0 FULL REPAIR (2026-11-13): konteks handoff spreadsheet ----
+   * Perluasan ADITIF — semua medan opsional; pemanggil lama + view
+   * tujuan yang tidak membacanya tidak berubah perilakunya. Medan ini
+   * dibawa entry mode (pendingEzrabAiEntry) dan dibaca view Chat AI
+   * sebagai konteks banner; prompt prefill tetap lewat entry klasik
+   * (initialPrompt) seperti sebelumnya.
+   *
+   * conversationId: percakapan AKTIF proyek saat handoff — identitas
+   * untuk verifikasi, BUKAN instruksi membuat percakapan baru (Chat AI
+   * memulihkan percakapan aktif proyek yang sama saat mount).
+   *
+   * projectContext: ringkasan konteks G3 (maks 8 item, maks 2.000
+   * karakter, pemotongan berpenanda) — data terpisah, TIDAK dimasukkan
+   * ke prompt prefill; pipeline kanonis membangun konteksnya sendiri
+   * dari store proyek.
+   *
+   * draftId/draftVersion/draftUpdatedAt: identitas draft tersimpan
+   * proyek (bila ada) — Chat AI melanjutkan draft yang SAMA. BUKAN
+   * approval: binding G1 dibuat segar di pratinjau Chat AI berikutnya.
+   */
+  conversationId?: string | null;
+  projectContext?: string | null;
+  projectItemCount?: number;
+  draftId?: string | null;
+  draftVersion?: number | null;
+  draftUpdatedAt?: string | null;
+  /** Asal handoff ('spreadsheet') — membedakan entry handoff dari
+   *  entry pintu masuk biasa. */
+  handoffSource?: 'spreadsheet';
 }
 
 /** Tujuan klasik untuk setiap mode unifikasi. */

@@ -279,10 +279,38 @@ describe('C11 — "ganti semua harga kosong jadi Rp1" → tidak ada jalur ekseku
   it('intent permintaan itu UNKNOWN (jatuh ke pipeline AI; tidak ada aksi deterministik yang menjalankannya)', () => {
     expect(routeIntent('ganti semua harga kosong menjadi Rp1 agar RAB lolos').intent).toBe('UNKNOWN');
   });
-  it('seluruh tool chat bersifat baca/hitung — tidak ada tool mutasi harga', () => {
+  it('seluruh tool chat bersifat baca/hitung atau pratinjau-terjaga — tidak ada tool eksekusi mutasi harga', () => {
     const names = EZRAB_AI_TOOLS.map((t) => t.name);
     expect(names).toEqual(expect.arrayContaining(['cari_harga', 'cari_ahsp', 'get_unresolved_items']));
-    for (const n of names) expect(n).not.toMatch(/set|update|isi|ganti|ubah|delete|hapus/i);
+    // G2: guard nama ini ditulis 30b268e (2026-10-23), SEBELUM tool
+    // propose_* ditambahkan 93c4069 (2026-10-30, "operasi spreadsheet
+    // bahasa alami berjaga konfirmasi"). Kelima tool propose_* HANYA
+    // membangun pratinjau (build*Plan → previewText; eksekusi BUKAN
+    // tool chat melainkan executePlan() lewat tombol Konfirmasi pengguna
+    // di operations.ts) + terjaga capability edit-estimate & dataset
+    // guard — jadi TIDAK ada jalur eksekusi pemalsuan lewat tool chat,
+    // sesuai judul C11. Guard dipertahankan sama-kuat dengan bentuk
+    // baru: (a) nama mutasi langsung tetap dilarang untuk tool
+    // non-propose; (b) himpunan propose_* dipin persis (5 tool) agar
+    // tool mutasi baru tak bisa menyelinap di balik prefiks; (c) tiap
+    // tool propose_* wajib menyatakan PRATINJAU + Konfirmasi.
+    const MUTATION = /set|update|isi|ganti|ubah|delete|hapus/i;
+    const propose = EZRAB_AI_TOOLS.filter((t) => t.name.startsWith('propose_'));
+    expect(propose.map((t) => t.name).sort()).toEqual([
+      'propose_add_item',
+      'propose_delete_items',
+      'propose_undo_last',
+      'propose_update_quantity',
+      'propose_update_unit_price',
+    ]);
+    for (const t of propose) {
+      expect(t.description).toContain('PRATINJAU');
+      expect(t.description).toContain('Konfirmasi');
+    }
+    for (const t of EZRAB_AI_TOOLS) {
+      if (t.name.startsWith('propose_')) continue;
+      expect(t.name).not.toMatch(MUTATION);
+    }
   });
 });
 
@@ -312,8 +340,14 @@ describe('C13 — cegah asumsi tercampur resmi pada output/ekspor', () => {
 
 describe('C14 — total vs rincian: tangga rekonsiliasi deterministik', () => {
   it('snapshot: rincian Rp790jt + OH/profit/PPN terurai penuh dan rekonsiliasi persis', () => {
+    // G2: fixture dilengkapi flag kebijakan pajak opt-in. Tes ini ditulis
+    // 30b268e (2026-10-23), SEBELUM PPN-PPh opt-in 7a58cc6 (2026-10-27):
+    // kini pajak default MATI tanpa ppnEnabled:true di level proyek
+    // (projectContext.ts: "tanpa flag, pajak default MATI"), dan
+    // overheadPercent dibaca snapshot dari level proyek (bukan
+    // costSummary). Nilai ekspektasi TIDAK berubah — tangga yang sama.
     const snap = buildProjectSnapshot(
-      { id: 'P-C14', name: 'Proyek Uji', costSummary: { overheadPercent: 5, profitPercent: 5, taxPercent: 11 } },
+      { id: 'P-C14', name: 'Proyek Uji', ppnEnabled: true, overheadPercent: 5, costSummary: { overheadPercent: 5, profitPercent: 5, taxPercent: 11 } },
       [
         { id: '1', code: 'A.1', description: 'Persiapan', unit: 'ls', volume: 1, unitPrice: 500000000, totalPrice: 500000000, priceStatus: 'PRICE_RESOLVED' },
         { id: '2', code: 'A.2', description: 'Tanah', unit: 'm3', volume: 100, unitPrice: 2900000, totalPrice: 290000000, priceStatus: 'PRICE_RESOLVED' },

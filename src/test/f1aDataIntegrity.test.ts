@@ -287,9 +287,28 @@ const rekapSource = readFileSync(
   resolve(__dirname, '../components/estimator/EstimatorRekapitulasiView.tsx'),
   'utf8'
 );
+// PERUBAHAN LOKASI CEK (G1, 2026-11-14): komit 99de892 (2026-11-10, paket
+// rilis mobile) mengekstrak perhitungan rekap VERBATIM dari useMemo view
+// ke modul murni src/components/estimator/rekapSummary.ts (agar dipakai
+// ulang MobileRekapRab) "TANPA mengubah satu pun rumus/aturan" — kunci
+// grup `item.sectionName || item.category` kini tinggal di sana
+// (rekapSummary.ts:49, berkomentar F1a), BUKAN lagi di berkas view. Cek
+// lama yang membaca berkas view menjadi basi lokasi, bukan substansi.
+// Pin baru LEBIH KUAT: kunci grup di modulnya + wiring view ke modul itu
+// (impor + pemakaian computeRekapSummary) — keduanya harus ada agar
+// rekap yang dirender benar memakai kunci yang sama dengan spreadsheet.
+const rekapSummarySource = readFileSync(
+  resolve(__dirname, '../components/estimator/rekapSummary.ts'),
+  'utf8'
+);
 check(
   'Rekap: kunci grup sectionName || category (sama dengan spreadsheet)',
-  rekapSource.includes('item.sectionName || item.category')
+  rekapSummarySource.includes('item.sectionName || item.category')
+);
+check(
+  'Rekap: view memakai computeRekapSummary dari modul rekapSummary',
+  rekapSource.includes('computeRekapSummary') &&
+    rekapSource.includes('from "./rekapSummary"')
 );
 check('Rekap: tidak ada literal "(10%)"', !rekapSource.includes('(10%)'));
 check('Rekap: tidak ada literal "(PPN 11%)"', !rekapSource.includes('(PPN 11%)'));

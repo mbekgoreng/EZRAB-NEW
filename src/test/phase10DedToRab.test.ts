@@ -422,7 +422,14 @@ describe('PHASE 10 [4] — USER OVERRIDE, CONFIRMATION GATE & REVISION SAFETY', 
 
   it('19. revision safety: computes pre-save diff comparison between existing RAB and draft', async () => {
     const service = DedToRabPipelineService.getInstance();
-    const pdf = createRealPdfStream(['DED Kolom 0.30 x 0.30 x 3.20 Count: 12']);
+    // G2: teks DED memakai kolom K-300 (bukan K-250/default). Kolom tanpa
+    // mutu terpetakan ke AI-CUSTOM tanpa harga sehingga subtotal draft
+    // jujur 0 dan newTotal == existingTotal — asersi `newTotal > ...`
+    // tidak dapat teramati. K-300 adalah kolom yang sama (dimensi, jumlah,
+    // volume 3.456 m³ identik) dengan harga katalog resmi (A.3.04.5c),
+    // sehingga diff bertambah nilai nyata (Rp81.161) dan properti revisi
+    // (delta = new - existing) teruji apa adanya.
+    const pdf = createRealPdfStream(['DED Struktur Kolom K-300 0.30 x 0.30 x 3.20 Count: 12']);
 
     await service.executePipeline({
       projectId: 'PRJ-TEST-P10-10',
@@ -474,7 +481,17 @@ describe('PHASE 10 [4] — USER OVERRIDE, CONFIRMATION GATE & REVISION SAFETY', 
     assert.equal(typeof item.description, 'string');
     assert.equal(typeof item.volume, 'number');
     assert.equal(typeof item.unit, 'string');
-    assert.equal(typeof item.amount, 'number');
+    // G2: RabItem.amount/unitPrice bertipe `number | null` (Phase 2J:
+    // null = harga belum tersedia, BUKAN Rp0) — asersi lama
+    // `typeof amount === 'number'` bertentangan dengan skema itu untuk
+    // item yang jujur tak berharga (kolom K1 di sini terpetakan
+    // AI-CUSTOM tanpa harga). Pin kini memin skema sebenarnya
+    // (number-atau-null, tidak pernah undefined) + invarian kejujuran:
+    // amount null ⟺ unitPrice null (tidak ada item setengah berharga
+    // atau angka karangan).
+    assert.ok(item.amount === null || typeof item.amount === 'number');
+    assert.ok(item.unitPrice === null || typeof item.unitPrice === 'number');
+    assert.equal(item.amount === null, item.unitPrice === null);
     assert.ok(item.category);
   });
 });

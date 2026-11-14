@@ -5,7 +5,6 @@
  * dengan output terstruktur yang dapat divalidasi.
  */
 
-import { formatPriceReferenceForPrompt } from './jakartaPrices';
 import { fullAiPricingPolicySection, normalizePromptPolicy, type DedPromptPricingPolicy } from '../ded-ai-estimate/prompts/policy';
 import { buildDedSystemPrompt } from '../ded-ai-estimate/prompts/wbsContext';
 
@@ -26,14 +25,13 @@ export function buildFullAiSystemPrompt(projectType: string, mode: 'FAST' | 'ADV
        dari dimensi yang jelas, dan estimasi yang kurang jelas dengan asumsi.`;
 
   const policy = normalizePromptPolicy(pricingPolicy);
-  // Tabel referensi harga Jakarta HANYA untuk mode FULL_AI. Mode DATABASE
-  // tidak menerima tabel ini sama sekali (bukan disembunyikan di balik
-  // klaim override) — harga resmi hanya dari database kanonis aplikasi.
-  // Sprint 1 (Workstream A): tabel adalah konteks opsional di PALING AKHIR
-  // prompt (dipotong lebih dulu bila anggaran ketat); kontrak di bawah tidak
-  // pernah dipotong dan konteks WBS terpilih per tipe dirakit oleh
-  // wbsContext dalam anggaran 7.900 karakter.
-  const priceRef = policy === 'FULL_AI' ? formatPriceReferenceForPrompt() : '';
+  // Dual Mode §5/§7 (G-PR-1/G-IS-4): tabel referensi harga Jakarta SUDAH
+  // TIDAK disisipkan di prompt FULL AI — mode ini mandiri (estimasi dari
+  // pengetahuan model sendiri, tanpa data harga internal EZRAB). Instruksi
+  // FULL_AI berasal dari master prompt (masterPrompt.ts) lewat
+  // fullAiPricingPolicySection; kontrak di bawah tidak pernah dipotong dan
+  // konteks WBS terpilih per tipe dirakit oleh wbsContext dalam anggaran
+  // 7.900 karakter.
 
   const contract = `Kamu adalah Quantity Surveyor AI senior untuk proyek konstruksi tipe "${projectType}".
 ${depth}
@@ -55,7 +53,7 @@ ATURAN:
 METODOLOGI ESTIMASI STANDAR:
 - Pondasi batu kali: volume = panjang × luas penampang rata-rata (detail potongan)
 - Kolom: jumlah dari denah × penampang × tinggi (dari potongan); Sloof/Ringbalk: panjang dari denah × penampang
-- Dinding: (keliling × tinggi) + dinding dalam − bukaan; bukaan tak jelas → estimasi 10-15% (ASSUMPTION)
+- Dinding: (keliling × tinggi) + dinding dalam − bukaan EKSPLISIT DED; tak jelas → JANGAN pakai persentase default: laporkan luas BRUTO, provenance ASSUMPTION, tulis di assumptions perlu konfirmasi dimensi user.
 - Plester/Aci: 2× luas dinding netto
 - Pembesian: dari detail (jumlah × panjang × berat jenis) + begel; tak lengkap → 150-200 kg/m³ beton
 - Atap: luas denah / cos(sudut); tak ada → 30° (ASSUMPTION)
@@ -63,13 +61,9 @@ METODOLOGI ESTIMASI STANDAR:
 
 DUPLIKAT & KONFLIK (wajib): pekerjaan yang sama di beberapa halaman = SATU item, jangan digandakan; lingkup tumpang tindih dipisahkan agar tak dihitung dua kali. Gambar/spesifikasi bertentangan: sebutkan kedua versi di assumptions, pilih satu dengan alasan, turunkan keyakinan — jangan menggabungkan angka bertentangan diam-diam. Bedakan fakta DED (EXPLICIT/DERIVED) dari estimasi (ASSUMPTION); angka tanpa dasar tidak disajikan sebagai fakta pasti.
 
-${policy === 'FULL_AI' ? `ATURAN HARGA:
-- WAJIB isi unitPrice untuk SEMUA item standar menggunakan tabel referensi harga Jakarta di akhir prompt ini
-- source: "AI_ESTIMATE", region: "Jakarta", period: "2026"
-- Item tak ada di referensi → pakai yang paling dekat, jelaskan di notes
-- unitPrice = null HANYA untuk item yang benar-benar tidak ada acuan sama sekali` : `ATURAN HARGA FALLBACK (MODE DATABASE — tidak ada tabel referensi harga di mode ini):
+${policy === 'DATABASE' ? `ATURAN HARGA FALLBACK (MODE DATABASE — tidak ada tabel referensi harga di mode ini):
 - Field price HANYA kandidat fallback: isi bila ada perkiraan masuk akal, boleh null bila tak ada dasar; TIDAK ADA kewajiban mengisi harga semua item, TIDAK ADA tabel referensi yang harus diikuti.
-- Perkiraanmu BUKAN harga resmi dan BUKAN harga database: sumber harga final ditentukan aplikasi — kanonis bila cocok, estimasi AI berlabel bila tak ada di database. Jangan menyebutnya harga AHSP/resmi.`}
+- Perkiraanmu BUKAN harga resmi dan BUKAN harga database: sumber harga final ditentukan aplikasi — kanonis bila cocok, estimasi AI berlabel bila tak ada di database. Jangan menyebutnya harga AHSP/resmi.` : ''}
 
 STRUKTUR OUTPUT:
 {
@@ -82,16 +76,15 @@ STRUKTUR OUTPUT:
 }
 
 ATURAN JSON (WAJIB DIPATUHI):
-${policy === 'FULL_AI' ? `- Tambah "proposedSubtotal" per item (qty × price, null bila salah satunya null) dan "proposedGrandTotal" tingkat atas; JANGAN tambah field lain.` : `- Hanya field di atas; JANGAN tambah field lain dan JANGAN mengeluarkan proposedSubtotal/proposedGrandTotal — total resmi dihitung aplikasi dari data tervalidasi.`}
+${policy === 'DATABASE' ? `- Hanya field di atas; JANGAN tambah field lain dan JANGAN mengeluarkan proposedSubtotal/proposedGrandTotal — total resmi dihitung aplikasi dari data tervalidasi.` : ''}
 - "qty" dan "price" = angka saja (contoh: 9.6 / 85000), bukan object; tanpa koma (85000, bukan 85,000)
 - "provenance": salah satu dari EXPLICIT, DERIVED, ASSUMPTION
 - "priceSource": selalu "AI_ESTIMATE"
 - Tak bisa estimasi qty → "qty": null; tak bisa estimasi harga → "price": null
 - Target: MINIMAL 15 item untuk rumah tinggal; setiap item HARUS punya qty dan price (kecuali benar-benar tidak mungkin)
-${policy === 'FULL_AI' ? `- proposedSubtotal/proposedGrandTotal = USULAN AI; total terverifikasi dihitung aplikasi.` : `- Jangan hitung subtotal/total resmi — aplikasi yang menghitung dari data tervalidasi.`}`;
+${policy === 'DATABASE' ? `- Jangan hitung subtotal/total resmi — aplikasi yang menghitung dari data tervalidasi.` : ''}`;
   return buildDedSystemPrompt(contract, projectType, {
     engine: 'fullai',
-    optionalTail: priceRef || undefined,
   });
 }
 

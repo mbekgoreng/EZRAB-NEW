@@ -350,7 +350,14 @@ describe('PHASE 11 [3] — AI CUSTOM ITEM FALLBACK & PROVENANCE', () => {
     assert.equal(priceRes.valueSourceType, 'AI_ESTIMATE');
     assert.equal(priceRes.priceSource, 'PRICE_NOT_FOUND');
 
-    const officialPrice = dedToRabPipelineService.resolvePrice('A.4.1.1.5', []);
+    // G2: kode resmi memakai '3.7.4' (AHSP 2026 kanonis — Grant 1,
+    // e1fb942; resolvePrice -> OFFICIAL_AHSP). Kode lama 'A.4.1.1.5'
+    // HANYA ada di tampilan AHSP legacy (indonesianAHSP.ts) dan sengaja
+    // BUKAN resmi (§2/§14: legacy-price-as-official dilarang) sehingga
+    // resolvePrice benar mengembalikan PRICE_NOT_FOUND/isOfficial=false
+    // untuknya. Maksud tes (kontras AI-CUSTOM vs resmi) dipertahankan;
+    // yang berubah hanya fixture ke kode yang memang resmi hari ini.
+    const officialPrice = dedToRabPipelineService.resolvePrice('3.7.4', []);
     assert.equal(officialPrice.isOfficial, true);
     assert.notEqual(officialPrice.valueSourceType, 'AI_ESTIMATE');
   });

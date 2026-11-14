@@ -28,9 +28,12 @@
  * sini; harga hanya dibaca dari item hasil generate.
  */
 
-import type { StructuredSpec } from './structuredSpec';
-import { SPEC_KEY_META } from './structuredSpec';
+import type { StructuredSpec, SpecStatus } from './structuredSpec';
+import { SPEC_KEY_META, latestSpecsByKey, isSpecUnresolved } from './structuredSpec';
 import { classifyItemRelevance } from './relevanceGate';
+/* P3D — artefak WBS (wbsArtifact TIDAK mengimpor specChain: aman). */
+import { buildWbsArtifact, wbsNodeId, scopeForSpecKey, SCOPE_LABELS } from './wbsArtifact';
+import type { WbsArtifact, BuildWbsArtifactInput, WbsPartInput } from './wbsArtifact';
 
 /* ------------------------------------------------------------------ */
 /* Bentuk struktural minimal (cermin tipe universalRab — tanpa impor)  */
@@ -1366,4 +1369,551 @@ export function validateDraftChain(
     foreignItems,
     materialMismatches,
   };
+}
+
+/* ------------------------------------------------------------------ */
+/* P3D (FULL REPAIR 2026-11-13) — WBS eksplisit + kelengkapan spek    */
+/*                                                                     */
+/* Lapisan VALIDASI di atas `validateDraftChain` (yang TIDAK diubah    */
+/* bentuknya — suite lama tidak tersentuh): artefak WBS dibangun dari  */
+/* draft + spek (`buildWbsForDraft`), tiap item ditelusur ke spek      */
+/* sumbernya (`traceItemSpecs`), lalu `validateWbsCompleteness`        */
+/* memeriksa: tiap node WBS punya ≥1 item ATAU pengecualian eksplisit; */
+/* field wajib hilang; duplikat; konflik spek. Status LENGKAP hanya    */
+/* bila SEMUA cek lolos — draft tak lengkap TIDAK PERNAH berlabel      */
+/* "lengkap"/"terverifikasi" (`isVerified` false). Pesan berbahasa     */
+/* Indonesia, menyebut item + field + apa yang harus dilengkapi.       */
+/*                                                                     */
+/* Semua fungsi memakai `latestSpecsByKey` (revisi menambahkan entri   */
+/* baru; entri terakhir menang) — KECUALI `detectSpecConflicts` yang   */
+/* sengaja memakai array mentah (konflik HIDUP di entri ganda).        */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Bangun artefak WBS untuk satu draft (adaptor tipis di atas
+ * `buildWbsArtifact`: memetakan part draft → `WbsPartInput` dengan ID
+ * item FINAL `templateId::id` — skema yang SAMA dengan
+ * `effectiveItems` universalRab — dan menghitung supresi dari spek
+ * bila pemanggil tidak memberikannya. `subcategoryId` default =
+ * familyId spek (`conceptualWbsFor` mengembalikan null untuk id yang
+ * tak punya WBS konseptual — aman).
+ */
+export function buildWbsForDraft(
+  draft: ChainDraftLike,
+  specs: StructuredSpec[],
+  opts?: {
+    subcategoryId?: string | null;
+    familyId?: string | null;
+    suppressedScopeIds?: string[];
+    previousArtifact?: WbsArtifact | null;
+  },
+): WbsArtifact {
+  const parts: WbsPartInput[] = draft.parts.map((part) => ({
+    scopeId: part.scope.id,
+    scopeLabel: part.scope.label,
+    templateId: part.template.id,
+    templateName: part.template.name,
+    items: part.generation.items
+      .filter((it) => !part.removedKeys.includes(itemKeyLocal(it)))
+      .map((it) => ({ id: `${part.template.id}::${it.id}`, description: it.description, unit: it.unit })),
+  }));
+  const familyId = opts?.familyId ?? familyIdFromSpecs(specs);
+  const input: BuildWbsArtifactInput = {
+    specs,
+    parts,
+    familyId,
+    subcategoryId: opts?.subcategoryId ?? familyId,
+    suppressedScopeIds:
+      opts?.suppressedScopeIds ?? [...suppressedScopes(specs, familyId)],
+    previousArtifact: opts?.previousArtifact ?? null,
+  };
+  return buildWbsArtifact(input);
+}
+
+/* ------------------------------------------------------------------ */
+/* traceItemSpecs — spek → item → volume → AHSP/harga → biaya          */
+/*                                                                     */
+/* Satu baris per item efektif: kunci spek SUMBER (material yang       */
+/* cocok/diganti + dimensi/jumlah yang dipakai parameternya — aturan   */
+/* yang SAMA dengan `validateDraftChain` butir (3)/(4), bukan aturan   */
+/* kedua), status spek TERBURUK di antaranya (UNRESOLVED > ASSUMPTION  */
+/* > RECOMMENDATION > CONFIRMED), basis volume (dari                  */
+/* `computeVolumeBasis`), basis harga (dari `priceBasisForItem`), dan  */
+/* ID node WBS (`wbs:<scopeId>`). Item tanpa tautan spek JUJUR         */
+/* dicatat `traceSource: 'TEMPLATE'` + `specKeys: []` — TIDAK         */
+/* dikarang tautannya. Biaya per item = volume × unitPrice (efektif)   */
+/* dan dibaca pemanggil dari itemnya, bukan dihitung ulang di sini.    */
+/* ------------------------------------------------------------------ */
+
+export interface ItemSpecTrace {
+  /** ID efektif (`templateId::id` — sama seperti `effectiveItems`). */
+  itemId: string;
+  description: string;
+  partScope: string;
+  partTemplate: string;
+  /** Kunci spek sumber (kosong = murni dari template). */
+  specKeys: string[];
+  /** Status spek terburuk di antara specKeys (null bila tak ada). */
+  specStatus: SpecStatus | null;
+  /** 'SPESIFIK' bila ≥1 spek tertaut, 'TEMPLATE' bila tidak ada. */
+  traceSource: 'SPESIFIK' | 'TEMPLATE';
+  volumeBasis: 'USER_DIMENSION' | 'ASSUMPTION';
+  priceBasis: ItemPriceBasis;
+  /** ID node WBS pemilik item ini (`wbs:<scopeId>`). */
+  wbsNodeId: string;
+}
+
+const SPEC_STATUS_RANK: Record<SpecStatus, number> = {
+  UNRESOLVED: 0,
+  ASSUMPTION: 1,
+  RECOMMENDATION: 2,
+  CONFIRMED: 3,
+};
+
+export function worstSpecStatus(specs: StructuredSpec[]): SpecStatus | null {
+  if (specs.length === 0) return null;
+  let worst = specs[0];
+  for (const s of specs) {
+    if (SPEC_STATUS_RANK[s.status] < SPEC_STATUS_RANK[worst.status]) worst = s;
+  }
+  return worst.status;
+}
+
+export function traceItemSpecs(
+  draft: ChainDraftLike,
+  specs: StructuredSpec[],
+): ItemSpecTrace[] {
+  const latest = latestSpecsByKey(specs);
+  const basisById = new Map(
+    computeVolumeBasis(draft, latest).map((b) => [b.itemId, b]),
+  );
+  const out: ItemSpecTrace[] = [];
+  for (const part of draft.parts) {
+    // GATE 2 (5B): part gedung memakai speknya sendiri (pola yang
+    // sama dengan computeVolumeBasis).
+    const partSpec = part.spec ?? draft.spec;
+    for (const it of part.generation.items) {
+      if (part.removedKeys.includes(itemKeyLocal(it))) continue;
+      const linked: StructuredSpec[] = [];
+      for (const s of latest) {
+        // (a) Spek material: MATCHED/SUBSTITUTED pada item ini.
+        if (requestedMaterialForSpec(s)) {
+          const st = materialStatusForItem(it.description, [s], part.scope.id);
+          if (st.status === 'MATCHED' || st.status === 'SUBSTITUTED') {
+            linked.push(s);
+            continue;
+          }
+        }
+        // (b) Spek dimensi/jumlah: nilainya dipakai parameter part ini
+        // atau sama dengan dimensi draft (aturan validateDraftChain (4)).
+        if (s.kind === 'count' || s.kind === 'dimension') {
+          const num = specNumber(s);
+          if (num == null) continue;
+          let used = false;
+          for (const p of part.template.parameters ?? []) {
+            if (p.type !== 'NUMBER') continue;
+            const kind = classifyParamLocal(p.key, p.label);
+            if (s.kind === 'count' && kind !== 'count') continue;
+            if (s.kind === 'dimension' && !['area', 'length', 'width', 'span', 'height', 'volume', 'thickness'].includes(kind)) continue;
+            const v = part.evaluatedParams[p.key];
+            if (typeof v === 'number' && Math.abs(v - num) < 0.01) { used = true; break; }
+          }
+          if (!used && s.kind === 'dimension') {
+            const dims: Array<number | null | undefined> = [
+              partSpec.areaM2, partSpec.lengthM, partSpec.widthM,
+              partSpec.spanM, partSpec.heightM, partSpec.volumeM3,
+              partSpec.thicknessCm,
+            ];
+            used = dims.some((v) => v != null && Math.abs(v - num) < 0.01);
+          }
+          if (used) linked.push(s);
+        }
+      }
+      const manual = part.manualPrices[itemKeyLocal(it)];
+      const eff: ChainDraftItemLike = manual
+        ? { ...it, unitPrice: manual.unitPrice, priceStatus: 'PRICE_MANUAL' }
+        : it;
+      const basis = basisById.get(it.id);
+      out.push({
+        itemId: `${part.template.id}::${it.id}`,
+        description: it.description,
+        partScope: part.scope.label,
+        partTemplate: part.template.name,
+        specKeys: linked.map((s) => s.key),
+        specStatus: worstSpecStatus(linked),
+        traceSource: linked.length > 0 ? 'SPESIFIK' : 'TEMPLATE',
+        volumeBasis: basis?.basis ?? 'ASSUMPTION',
+        priceBasis: priceBasisForItem(eff),
+        wbsNodeId: wbsNodeId(part.scope.id),
+      });
+    }
+  }
+  return out;
+}
+
+/* ------------------------------------------------------------------ */
+/* detectMissingRequiredSpecs — field wajib hilang (ditampilkan       */
+/* sebagai hilang, TIDAK PERNAH diisi diam-diam).                      */
+/*                                                                     */
+/* "Wajib" = yang memengaruhi item/volume/harga — DUA sumber, keduanya */
+/* berasal dari data yang ADA (bukan aturan karangan):                 */
+/* (a) parameter NUMBER template yang jenisnya berdimensi (panjang/    */
+/*     lebar/luas/tebal/lantai/tinggi/volume/jumlah) DAN nilainya      */
+/*     tidak berasal dari pengguna (specValueForKind null) DAN         */
+/*     template tidak punya defaultValue — tanpa ketiganya, volume     */
+/*     item pemakai parameter itu tidak punya dasar sama sekali;       */
+/* (b) spek yang SUDAH ADA tapi belum terjawab (UNRESOLVED / tanpa     */
+/*     nilai) dan memengaruhi draft: spek material (MATERIAL_SPEC_MAP) */
+/*     + spek dimensi/jumlah + road-drainage (mengubah has_drainage).  */
+/*     Spek scope/kualitas/kondisi lain yang dilewati TIDAK masuk      */
+/*     sini (hanya tercatat di `unresolvedSpecKeys` laporan) —         */
+/*     dilewatinya pertanyaan opsional bukan field wajib hilang.       */
+/* ------------------------------------------------------------------ */
+
+export interface MissingRequiredField {
+  scopeId: string;
+  scopeLabel: string;
+  templateId: string;
+  templateName: string;
+  /** Nama field yang hilang (label parameter / label spek). */
+  field: string;
+  specKey?: string;
+  /** Item yang volumenya memakai field ini (maks 3 nama). */
+  items: string[];
+  message: string;
+}
+
+export function detectMissingRequiredSpecs(
+  draft: ChainDraftLike,
+  specs: StructuredSpec[],
+): MissingRequiredField[] {
+  const latest = latestSpecsByKey(specs);
+  const out: MissingRequiredField[] = [];
+
+  /* (a) Parameter template tanpa nilai pengguna dan tanpa default. */
+  for (const part of draft.parts) {
+    const partSpec = part.spec ?? draft.spec;
+    const effective = part.generation.items.filter(
+      (it) => !part.removedKeys.includes(itemKeyLocal(it)),
+    );
+    for (const p of part.template.parameters ?? []) {
+      if (p.type !== 'NUMBER') continue;
+      const kind = classifyParamLocal(p.key, p.label);
+      if (kind === 'other') continue;
+      if (specValueForKind(partSpec, kind) != null) continue;
+      if (p.defaultValue != null) continue;
+      const affected = (part.template.components ?? [])
+        .filter((c) => (c.variables ?? []).includes(p.key))
+        .map((c) => c.name)
+        .filter((name) => effective.some((it) => it.description === name));
+      const shown = affected.slice(0, 3);
+      out.push({
+        scopeId: part.scope.id,
+        scopeLabel: part.scope.label,
+        templateId: part.template.id,
+        templateName: part.template.name,
+        field: p.label || p.key,
+        items: shown,
+        message:
+          `Template "${part.template.name}" (paket ${part.scope.label}) membutuhkan "${p.label || p.key}" — ` +
+          `nilainya belum ada dari jawaban Anda dan template tidak punya nilai default` +
+          (shown.length > 0
+            ? `; volume item ${shown.map((n) => `"${n}"`).join(', ')}${affected.length > 3 ? ` (+${affected.length - 3} lainnya)` : ''} tidak punya dasar. Lengkapi dimensi ini sebelum transfer.`
+            : `. Lengkapi dimensi ini sebelum transfer.`),
+      });
+    }
+  }
+
+  /* (b) Spek berpengaruh yang sudah ada tapi belum terjawab. */
+  for (const s of latest) {
+    if (!isSpecUnresolved(s)) continue;
+    const isMaterial = s.key in MATERIAL_SPEC_MAP;
+    const isDimCount = s.kind === 'count' || s.kind === 'dimension';
+    const isDrainage = s.key === 'road-drainage';
+    if (!isMaterial && !isDimCount && !isDrainage) continue;
+    const scopeId = scopeForSpecKey(s.key);
+    const scopeLabel = scopeId ? (SCOPE_LABELS[scopeId] ?? scopeId) : 'proyek';
+    const part = scopeId ? draft.parts.find((p) => p.scope.id === scopeId) : undefined;
+    const what = isMaterial
+      ? 'agar materialnya sesuai permintaan Anda, bukan default template'
+      : isDimCount
+        ? 'agar volumenya memakai ukuran Anda, bukan default template'
+        : 'agar drainase pendamping diputuskan secara eksplisit (baru / tanpa / eksisting)';
+    out.push({
+      scopeId: scopeId ?? '',
+      scopeLabel,
+      templateId: part?.template.id ?? '',
+      templateName: part?.template.name ?? '',
+      field: s.label || s.key,
+      specKey: s.key,
+      items: [],
+      message:
+        `Spesifikasi "${s.label || s.key}"${scopeId ? ` (paket ${scopeLabel})` : ''} belum dijawab — ` +
+        `draft memakai default template. Lengkapi jawaban ini ${what}.`,
+    });
+  }
+  return out;
+}
+
+/* ------------------------------------------------------------------ */
+/* detectDuplicateItems — uraian+satuan sama dalam SATU part.          */
+/*                                                                     */
+/* Kelompok = satu part (scope + template + seksi): item yang sama di  */
+/* part BERBEDA bukan duplikat (paket berbeda / seksi gedung berbeda   */
+/* pada draft multi-gedung). Kunci = itemKey (deskripsi ternormalisasi */
+/* + satuan) — kunci yang sama dengan removedKeys/manualPrices.        */
+/* ------------------------------------------------------------------ */
+
+export interface DuplicateItem {
+  description: string;
+  unit: string;
+  scopeId: string;
+  scopeLabel: string;
+  templateName: string;
+  count: number;
+  itemIds: string[];
+  message: string;
+}
+
+export function detectDuplicateItems(draft: ChainDraftLike): DuplicateItem[] {
+  const out: DuplicateItem[] = [];
+  for (const part of draft.parts) {
+    const groups = new Map<string, ChainDraftItemLike[]>();
+    for (const it of part.generation.items) {
+      if (part.removedKeys.includes(itemKeyLocal(it))) continue;
+      const list = groups.get(itemKeyLocal(it)) ?? [];
+      list.push(it);
+      groups.set(itemKeyLocal(it), list);
+    }
+    for (const [, items] of groups) {
+      if (items.length < 2) continue;
+      const first = items[0];
+      out.push({
+        description: first.description,
+        unit: first.unit,
+        scopeId: part.scope.id,
+        scopeLabel: part.scope.label,
+        templateName: part.template.name,
+        count: items.length,
+        itemIds: items.map((it) => `${part.template.id}::${it.id}`),
+        message:
+          `Item "${first.description}" (satuan ${first.unit}) muncul ${items.length} kali dalam paket ${part.scope.label} ` +
+          `(template "${part.template.name}") — hapus salah satunya sebelum transfer agar tidak terhitung ganda.`,
+      });
+    }
+  }
+  return out;
+}
+
+/* ------------------------------------------------------------------ */
+/* detectSpecConflicts — spek yang bertentangan.                       */
+/*                                                                     */
+/* DUA jenis (keduanya dari data yang ADA):                            */
+/* - NILAI_GANDA: kunci yang sama dijawab CONFIRMED ≥2 kali dengan     */
+/*   nilai berbeda, tanpa rantai supersedes yang menyelesaikannya      */
+/*   (entri TERAKHIR tanpa `supersedes` = belum ada revisi yang        */
+/*   memenangkan satu nilai; bila entri terakhir membawa supersedes,   */
+/*   koreksi dianggap sudah menyelesaikan konflik — aturan             */
+/*   `latestSpecsByKey` yang menang). Hanya CONFIRMED yang dihitung:   */
+/*   asumsi/rekomendasi sistem bukan jawaban pengguna yang              */
+/*   bertentangan.                                                     */
+/* - DIMENSI_BERTENTANGAN: dimensi DED (ded-length/width/height/area/ */
+/*   volume) vs dimensi draft yang sama — selisih >1% (min 0,01).      */
+/*   Material UNAVAILABLE TIDAK dideteksi ulang di sini (sudah ada di  */
+/*   `validateDraftChain().ambiguousPicks`).                           */
+/*                                                                     */
+/* CATATAN: fungsi ini memakai array spek MENTAH (bukan dedup) —       */
+/* konflik HIDUP di entri ganda; dedup akan menyembunyikannya.         */
+/* ------------------------------------------------------------------ */
+
+export interface SpecConflict {
+  kind: 'NILAI_GANDA' | 'DIMENSI_BERTENTANGAN';
+  specKey: string;
+  label: string;
+  message: string;
+}
+
+const DED_DIMENSION_DRAFT_KEY: Readonly<Record<string, keyof ChainDraftLike['spec']>> = {
+  'ded-length': 'lengthM',
+  'ded-width': 'widthM',
+  'ded-height': 'heightM',
+  'ded-area': 'areaM2',
+  'ded-volume': 'volumeM3',
+};
+
+export function detectSpecConflicts(
+  draft: ChainDraftLike,
+  specs: StructuredSpec[],
+): SpecConflict[] {
+  const out: SpecConflict[] = [];
+  const byKey = new Map<string, StructuredSpec[]>();
+  for (const s of specs) {
+    const list = byKey.get(s.key) ?? [];
+    list.push(s);
+    byKey.set(s.key, list);
+  }
+  for (const [key, entries] of byKey) {
+    const confirmed = entries.filter((s) => s.status === 'CONFIRMED');
+    if (confirmed.length < 2) continue;
+    const values = new Set(confirmed.map((s) => norm(specText(s))));
+    if (values.size < 2) continue;
+    const last = entries[entries.length - 1];
+    if (last.supersedes != null) continue; // rantai revisi sudah menyelesaikan
+    const label = confirmed[0].label || key;
+    out.push({
+      kind: 'NILAI_GANDA',
+      specKey: key,
+      label,
+      message:
+        `Spesifikasi "${label}" dijawab berbeda ${confirmed.length} kali (${[...values].map((v) => `"${v}"`).join(' vs ')}) ` +
+        `tanpa koreksi yang memenangkan satu nilai — tentukan jawaban yang benar sebelum transfer.`,
+    });
+  }
+  const latest = latestSpecsByKey(specs);
+  for (const s of latest) {
+    const draftKey = DED_DIMENSION_DRAFT_KEY[s.key];
+    if (!draftKey) continue;
+    const num = specNumber(s);
+    const draftVal = draft.spec[draftKey];
+    if (num == null || draftVal == null) continue;
+    // P3D — nilai spek draft bertipe string | number: samakan ke number
+    // dengan Number() (identik dengan koersi implisit aritmetika JS).
+    const draftNum = Number(draftVal);
+    const tol = Math.max(0.01, Math.abs(draftNum) * 0.01);
+    if (Math.abs(num - draftNum) <= tol) continue;
+    out.push({
+      kind: 'DIMENSI_BERTENTANGAN',
+      specKey: s.key,
+      label: s.label || s.key,
+      message:
+        `Dimensi "${s.label || s.key}" dari DED (${num}) bertentangan dengan dimensi draft (${draftVal}) — ` +
+        `samakan nilai yang benar sebelum transfer; volume saat ini memakai dimensi draft.`,
+    });
+  }
+  return out;
+}
+
+/* ------------------------------------------------------------------ */
+/* validateWbsCompleteness — gerbang kelengkapan sebelum pratinjau/    */
+/* transfer (pola `validateDraftChain`: satu fungsi, hasil terstruktur  */
+/* + pesan siap tampil).                                               */
+/*                                                                     */
+/* Status LENGKAP HANYA bila SEMUA cek lolos: tak ada node WBS KOSONG; */
+/* tak ada spek UNRESOLVED (apa pun kuncinya — spek yang belum          */
+/* terjawab berarti draft belum terverifikasi penuh); tak ada field     */
+/* wajib hilang; tak ada duplikat; tak ada konflik spek. Bila satu     */
+/* saja gagal → BELUM_LENGKAP + `isVerified: false`. Node              */
+/* DIKECUALIKAN (dengan alasan) dan node TERCAKUP (via klasifikasi)    */
+/* TIDAK menggagalkan — keputusannya tercatat / pekerjaannya ada.      */
+/*                                                                     */
+/* `artifact` boleh null — bila null, artefak dibangun dari draft +    */
+/* spek di sini (satu panggilan untuk pemanggil yang tidak menyimpan    */
+/* artefak).                                                           */
+/* ------------------------------------------------------------------ */
+
+export interface WbsCompletenessReport {
+  status: 'LENGKAP' | 'BELUM_LENGKAP';
+  /** True HANYA bila status LENGKAP — gerbang label "terverifikasi". */
+  isVerified: boolean;
+  nodesTotal: number;
+  /** Node LENGKAP + TERCAKUP + DIKECUALIKAN (bukan KOSONG). */
+  nodesCovered: number;
+  nodesEmpty: Array<{ nodeId: string; scopeId: string; label: string; message: string }>;
+  nodesExcluded: Array<{ nodeId: string; label: string; reason: string }>;
+  /** Kunci spek (terbaru per kunci) yang belum terjawab. */
+  unresolvedSpecKeys: string[];
+  missingFields: MissingRequiredField[];
+  duplicates: DuplicateItem[];
+  conflicts: SpecConflict[];
+  /** Semua pesan (Bahasa Indonesia) — siap tampil di pratinjau. */
+  issues: string[];
+  checkedAt: string;
+}
+
+export function validateWbsCompleteness(
+  draft: ChainDraftLike,
+  specs: StructuredSpec[],
+  artifact?: WbsArtifact | null,
+): WbsCompletenessReport {
+  const wbs = artifact ?? buildWbsForDraft(draft, specs);
+  const latest = latestSpecsByKey(specs);
+  const unresolved = latest.filter(isSpecUnresolved);
+
+  const nodesEmpty = wbs.nodes
+    .filter((n) => n.status === 'KOSONG')
+    .map((n) => ({
+      nodeId: n.id,
+      scopeId: n.scopeId,
+      label: n.label,
+      message:
+        `Paket "${n.label}" belum punya item — tambahkan item pekerjaan ini, ` +
+        `atau kecualikan paket ini dengan alasan bila memang tidak dikerjakan.`,
+    }));
+  const nodesExcluded = wbs.nodes
+    .filter((n) => n.status === 'DIKECUALIKAN')
+    .map((n) => ({
+      nodeId: n.id,
+      label: n.label,
+      reason: n.exclusion?.reason ?? 'Dikecualikan.',
+    }));
+  const missingFields = detectMissingRequiredSpecs(draft, specs);
+  const duplicates = detectDuplicateItems(draft);
+  const conflicts = detectSpecConflicts(draft, specs);
+
+  const issues: string[] = [];
+  for (const e of nodesEmpty) issues.push(e.message);
+  for (const s of unresolved) {
+    issues.push(
+      `Spesifikasi "${s.label || s.key}" belum terjawab (status ${s.status}) — ` +
+      `jawab pertanyaan ini agar draft terverifikasi penuh.`,
+    );
+  }
+  for (const m of missingFields) issues.push(m.message);
+  for (const d of duplicates) issues.push(d.message);
+  for (const c of conflicts) issues.push(c.message);
+
+  const isComplete =
+    nodesEmpty.length === 0 &&
+    unresolved.length === 0 &&
+    missingFields.length === 0 &&
+    duplicates.length === 0 &&
+    conflicts.length === 0;
+
+  return {
+    status: isComplete ? 'LENGKAP' : 'BELUM_LENGKAP',
+    isVerified: isComplete,
+    nodesTotal: wbs.nodes.length,
+    nodesCovered: wbs.nodes.filter((n) => n.status !== 'KOSONG').length,
+    nodesEmpty,
+    nodesExcluded,
+    unresolvedSpecKeys: unresolved.map((s) => s.key),
+    missingFields,
+    duplicates,
+    conflicts,
+    issues,
+    checkedAt: new Date().toISOString(),
+  };
+}
+
+/**
+ * Baris pesan kelengkapan WBS untuk pratinjau (lapisan logika —
+ * wiring ke UI pratinjau adalah pekerjaan verifikator/P6; `view.tsx`
+ * di luar cakupan P3D). Maks 8 masalah ditampilkan + hitungan sisa
+ * (laporan lengkap tetap ada di `WbsCompletenessReport.issues`).
+ */
+export function formatWbsCompletenessLines(report: WbsCompletenessReport): string[] {
+  if (report.status === 'LENGKAP') {
+    return [
+      `**Kelengkapan WBS:** LENGKAP — ${report.nodesTotal} paket pekerjaan terisi, tercakup, atau dikecualikan eksplisit; tidak ada spesifikasi yang belum terjawab.`,
+    ];
+  }
+  const lines = [
+    `**Kelengkapan WBS:** BELUM LENGKAP — draft ini belum terverifikasi penuh (${report.issues.length} masalah):`,
+  ];
+  const shown = report.issues.slice(0, 8);
+  for (const i of shown) lines.push(`• ${i}`);
+  if (report.issues.length > 8) {
+    lines.push(`(+${report.issues.length - 8} masalah lainnya — lihat laporan kelengkapan.)`);
+  }
+  return lines;
 }

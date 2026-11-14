@@ -283,8 +283,11 @@ export function buildDedUsageFromFullAi(
   return {
     workflowId: ctx.workflowId,
     featureKey: 'ded-ai/full-ai',
-    // F-E2: pipeline Full AI tidak memiliki masukan kompleksitas — null eksplisit.
-    complexity: null,
+    // G-UI-4 (Dual Mode §3): kompleksitas diteruskan dari konteks
+    // service (DETAIL → pilihan user); absen → null eksplisit, sama
+    // seperti jalur standar. featureKey TETAP 'ded-ai/full-ai' —
+    // pencatatan ini metadata, BUKAN perubahan metering.
+    complexity: ctx.complexity ?? null,
     pipeline: 'FULL_AI',
     policy: ctx.policy,
     projectId: ctx.projectId,

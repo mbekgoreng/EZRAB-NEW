@@ -516,7 +516,13 @@ export class MockAiProvider implements AIProvider {
     // 0.1B MATERIAL & HARGA 2026 PRICE INTELLIGENCE (SECTIONS 50 & 68)
     // =========================================================================
     const isLaborQuery =
-      (p.includes('upah') || p.includes('gaji') || p.includes('ongkos') || p.includes('tukang') || p.includes('pekerja') || p.includes('mandor') || p.includes('kepala tukang') || p.includes('welder') || p.includes('juru ukur') || p.includes('surveyor') || p.includes('safety officer') || p.includes('hse')) &&
+      // G2: 'pekerja' WAJIB word-boundary — substring 'pekerja' juga cocok
+      // dengan 'pekerjaan' (item pekerjaan), sehingga prompt seperti
+      // 'Buatkan dokumen proyek untuk pekerjaan ini.' tersambar cabang upah
+      // 0.1B sebelum cabang dokumen 0.2 (phase7_2 tes 3–9 & 30 MERAH).
+      // Konvensi sama sudah dipakai isLaborInquiry di bawah
+      // (/\bpekerja\b/ + bukan 'pekerjaan'); dipin phaseC §6.
+      (p.includes('upah') || p.includes('gaji') || p.includes('ongkos') || p.includes('tukang') || /\bpekerja\b/.test(p) || p.includes('mandor') || p.includes('kepala tukang') || p.includes('welder') || p.includes('juru ukur') || p.includes('surveyor') || p.includes('safety officer') || p.includes('hse')) &&
       !p.includes('tagihan') && !p.includes('invoice');
 
     const isEquipQuery =

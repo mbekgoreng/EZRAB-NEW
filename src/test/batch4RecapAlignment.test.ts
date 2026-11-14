@@ -7,9 +7,17 @@
  * the Premium Demo project it displayed Rp1.040.339.744 while the canonical
  * engine (project cards, Laporan, exports, AI context) produced
  * Rp1.089.879.733 for the SAME project. The view now delegates to
- * recalculateCostSummary; this suite locks the arithmetic with independent
- * expected values and guards the source against regressing to a hand-rolled
- * ladder.
+ * recalculateCostSummary VIA computeRekapSummary (rekapSummary.ts —
+ * refactor mobile 99de892 memindahkan panggilan engine ke modul itu);
+ * this suite locks the arithmetic with independent expected values and
+ * guards the source against regressing to a hand-rolled ladder.
+ *
+ * S9 (P3B-O4): penjaga B4-REKAP-3 adalah pin 2-hop — view mengimpor &
+ * memanggil computeRekapSummary DAN rekapSummary memanggil
+ * recalculateCostSummary (pola pin P3B 3.3). Pin 1-hop lama (mencari
+ * 'recalculateCostSummary' di berkas view) basi sejak refactor 99de892
+ * dan gagal walau aritmetika 9/9 hijau; ia diganti pin 2-hop ini, bukan
+ * dilonggarkan — kedua hop diasersi, bukan satu.
  *
  * Run: bundle with esbuild and execute with node (house pattern).
  */
@@ -66,17 +74,28 @@ console.log('B4-REKAP-2: profit 0% eksplisit tidak mengarang keuntungan');
   check('grand = direct + overhead saja = 220.000.000', s.grandTotal === 220000000, `dapat ${s.grandTotal}`);
 }
 
-console.log('B4-REKAP-3: view Rekapitulasi memakai mesin kanonis (penjaga sumber)');
+console.log('B4-REKAP-3: view Rekapitulasi memakai mesin kanonis (penjaga sumber 2-hop, S9/P3B-O4)');
 {
   const here = dirname(fileURLToPath(import.meta.url));
   const src = readFileSync(
     join(here, '../components/estimator/EstimatorRekapitulasiView.tsx'),
     'utf8'
   );
+  const rekapSrc = readFileSync(
+    join(here, '../components/estimator/rekapSummary.ts'),
+    'utf8'
+  );
+  // Hop 1 — view mendelegasikan ke computeRekapSummary (bukan tangga
+  // tangan, bukan panggilan engine langsung); hop 2 — modul itu
+  // memanggil mesin kanonis recalculateCostSummary. Kedua hop diasersi
+  // dalam satu cek agar jumlah cek suite tetap 10.
+  const hop1Import = src.includes('from "./rekapSummary"');
+  const hop1Call = src.includes('computeRekapSummary(items, currentProject)');
+  const hop2 = rekapSrc.includes('recalculateCostSummary(items as never');
   check(
-    'mengimpor & memanggil recalculateCostSummary',
-    src.includes('recalculateCostSummary'),
-    'tidak ditemukan di EstimatorRekapitulasiView.tsx'
+    'view → computeRekapSummary → recalculateCostSummary (delegasi 2-hop)',
+    hop1Import && hop1Call && hop2,
+    `hop1-impor=${hop1Import} hop1-panggil=${hop1Call} hop2-engine=${hop2}`
   );
   check(
     'tidak ada lagi tangga tangan (direct * overheadPct)',

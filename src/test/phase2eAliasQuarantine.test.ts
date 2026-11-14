@@ -12,6 +12,7 @@
 declare const process: any;
 
 import { AHSP_2026_CANONICAL } from '../data/nationalCostDatabase/ahsp2026Canonical.generated';
+import { BINA_MARGA_2026_MASTER } from '../data/nationalCostDatabase/binaMarga2026Master.generated';
 import {
   CODE_ALIASES,
   FORBIDDEN_MERGES,
@@ -90,9 +91,23 @@ check('aliased pairs with dual records are identical', identityOk === identityTo
   `${identityOk}/${identityTotal} identical`);
 
 // 7. Quarantined items exist in DB (overlay, not deletion)
+// PERUBAHAN CAKUPAN (G1, 2026-11-14): peta keberadaan kini mencakup
+// KEDUA rumah data karantina — kanonis Cipta Karya (ahsp2026Canonical)
+// DAN master Bina Marga (binaMarga2026Master). Sejak komit e324e17
+// (2026-10-27, "quarantine corrupt 2026 pricing records") registry
+// memuat 7 kode Bina Marga E.2–E.8 yang rumahnya HANYA di master BM;
+// peta lama (CK saja) salah menandai ketujuhnya "missing from DB"
+// padahal record korupnya ada utuh di master BM (overlay, bukan hapus).
+// Peta byCode (CK) sengaja TIDAK diubah — seksi 1/6 adalah soal alias
+// domain CK. Cek ini kini LEBIH KUAT: 17 bukti keberadaan di 2 DB,
+// bukan 10 di 1 DB; kode yang benar-benar hilang dari kedua DB tetap GAGAL.
+const byCodeAll = new Map<string, any>([
+  ...byCode,
+  ...BINA_MARGA_2026_MASTER.map((i: any) => [String(i.code), i] as [string, any]),
+]);
 let qExist = 0;
 for (const q of QUARANTINE_REGISTRY) {
-  if (byCode.has(q.code)) qExist++;
+  if (byCodeAll.has(q.code)) qExist++;
   else check(`quarantined code exists: ${q.code}`, false, 'missing from DB');
 }
 check('all quarantined codes still in DB (recoverable)', qExist === QUARANTINE_REGISTRY.length,
@@ -118,11 +133,21 @@ for (const c of ['2.2.1.1.5a', '2.2.1.1.5b', '2.2.1.1.5c', '2.2.1.1.5d',
 }
 check('wiremesh M6-M10 variants not quarantined', true);
 
-// 10. Quarantine count matches audit (4 artifacts + 6 duplicates = 10)
+// 10. Quarantine count matches audit (4 CK artifacts + 7 BM artifacts + 6 CK duplicates = 17)
 // NOTE: 5.1.2.13/.14 were REMOVED from quarantine after Phase 2E PDF verification
 // proved they are distinct items (different materials), not duplicates.
-check('quarantine registry has 10 records', QUARANTINE_REGISTRY.length === 10,
+// PERUBAHAN PIN (G1, 2026-11-14): 10 -> 17. Komit e324e17 (2026-10-27)
+// menambahkan 7 artefak parse Bina Marga E.2–E.8 (bukti: 48 komponen
+// sentinel koef=5/harga=2/amount=3, audit P0 2026-10-26 — lihat komentar
+// di ahspQuarantine.ts). 17 = backing kanonis 5.742 − aktif 5.725,
+// konsisten dengan pin ahspCategoryGroups (pekerja C, terverifikasi RV §A-C1).
+check('quarantine registry has 17 records', QUARANTINE_REGISTRY.length === 17,
   `got ${QUARANTINE_REGISTRY.length}`);
+const bmQuarantined = QUARANTINE_REGISTRY.map((q) => q.code).filter((c) => /^E\.[2-8]$/.test(c)).sort();
+check('quarantined BM codes are exactly E.2–E.8',
+  bmQuarantined.join(',') === 'E.2,E.3,E.4,E.5,E.6,E.7,E.8', bmQuarantined.join(','));
+const ckQuarantined = QUARANTINE_REGISTRY.length - bmQuarantined.length;
+check('quarantined CK codes are exactly 10', ckQuarantined === 10, `got ${ckQuarantined}`);
 
 // Report
 const failed = checks.filter(c => !c.passed);

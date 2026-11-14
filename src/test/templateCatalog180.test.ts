@@ -322,16 +322,40 @@ async function runCatalog180Tests() {
   assert.strictEqual(r.items[0].unitPrice, 12345);
   console.log('  ✓ 7e no-code reference price stays REFERENCE (never relabeled official)');
 
-  // 7f. TIDAK ADA item legacy yang boleh berlabel OFFICIAL_AHSP.
+  // 7f. Item legacy TIDAK BOLEH berlabel OFFICIAL_AHSP — DENGAN SATU
+  // PENGECUALIAN TERCATAT: c-plester -> AHSP 2026 kanonis 3.7.4 Rp56.784
+  // (Grant 1 owner, commit e1fb942 2026-10-31; dipin
+  // smartRabAhsp2026Grant1.test.ts grup 1-2 & 5). Aturan "0 OFFICIAL"
+  // ditulis sebelum Grant 1 (commit 58318b0); Grant 1 SENGAJA membuat
+  // komponen ini resmi — label OFFICIAL-nya BENAR, bukan cacat data,
+  // dan mencabut kodenya akan memecahkan suite Grant 1 + membatalkan
+  // sebagian keputusan owner. Cek ini tetap sekuat sebelumnya:
+  // pengecualian dipin PRESIS (hanya kode 3.7.4, hanya harga 56784,
+  // maks 1 item per template, tepat 16 template rumah pemakai
+  // buildStandardHouseComponents: 14 tipe rumah + HOUSE-CUSTOM +
+  // HOUSE-TOWNHOUSE — rabTemplateService.ts:191,236,735); pelabelan
+  // OFFICIAL lain apa pun tetap GAGAL. (Perbaikan pin 2026-11-14.)
+  let grant1OfficialTemplates = 0;
   for (const legacyId of LEGACY_IDS) {
     const t = svc.getTemplateById(legacyId)!;
     const res = svc.generateRabFromTemplate(t, {}, undefined, 'COMPREHENSIVE', []);
-    assert.strictEqual(res.priceSummary!.officialCount, 0, `${legacyId}: legacy item labeled OFFICIAL_AHSP`);
+    const officialItems = res.items.filter(i => i.priceSourceKind === 'OFFICIAL_AHSP');
+    assert.strictEqual(res.priceSummary!.officialCount, officialItems.length, `${legacyId}: officialCount inconsistent with items`);
+    assert.ok(officialItems.length <= 1, `${legacyId}: >1 legacy item labeled OFFICIAL_AHSP (${officialItems.length})`);
+    for (const it of officialItems) {
+      assert.strictEqual(it.ahspCode, '3.7.4', `${legacyId}: OFFICIAL legacy item must be Grant-1 plester 3.7.4 (got ${it.ahspCode})`);
+      assert.strictEqual(it.unitPrice, 56784, `${legacyId}: Grant-1 plester price must be 56784 (got ${it.unitPrice})`);
+      assert.ok(it.description.includes('Plesteran Dinding'), `${legacyId}: OFFICIAL legacy item must be the plester item`);
+    }
+    if (officialItems.length === 1) grant1OfficialTemplates++;
     for (const tr of res.traceability) {
-      assert.notStrictEqual(tr.priceSource, 'OFFICIAL_AHSP', `${legacyId}: trace claims OFFICIAL_AHSP`);
+      if (tr.priceSource === 'OFFICIAL_AHSP') {
+        assert.strictEqual(tr.ahspCode, '3.7.4', `${legacyId}: OFFICIAL trace must be Grant-1 plester 3.7.4 (got ${tr.ahspCode})`);
+      }
     }
   }
-  console.log('  ✓ 7f all 52 legacy templates: 0 OFFICIAL labels (seed prices are references)');
+  assert.strictEqual(grant1OfficialTemplates, 16, `Expected exactly 16 legacy templates carrying Grant-1 plester OFFICIAL, got ${grant1OfficialTemplates}`);
+  console.log('  ✓ 7f legacy: only Grant-1 plester 3.7.4 OFFICIAL (16 house templates); all other legacy items non-OFFICIAL');
 
   // -----------------------------------------------------------------------
   // GROUP 8: KOMPONEN OPSIONAL & LEVEL DETAIL
@@ -374,23 +398,28 @@ async function runCatalog180Tests() {
   } as any);
   assert.ok(svc.getTemplateById(custom.id), 'Custom template must be retrievable');
   const officialsAfter = svc.getAllTemplates().filter(t => t.metadata.source === 'EZRAB_OFFICIAL');
-  assert.strictEqual(officialsAfter.length, 180, 'Custom template must not change the official 180 count');
+  // Pin 183 (bukan 180): katalog resmi 180 + 3 varian keputusan owner
+  // 2026-11-12 03:41 — sama dengan pin Grup 1 yang sudah lolos.
+  // (Perbaikan pin 2026-11-14.)
+  assert.strictEqual(officialsAfter.length, 183, 'Custom template must not change the official 183 count');
   assert.strictEqual(svc.deleteCustomTemplate(custom.id), true);
-  console.log('  ✓ PASSED: Custom template CRUD works; official count stays exactly 180');
+  console.log('  ✓ PASSED: Custom template CRUD works; official count stays exactly 183');
 
   // -----------------------------------------------------------------------
   // GROUP 10: ADAPTER FASE C (KATALOG <-> MASTER REGISTRY)
   // -----------------------------------------------------------------------
   console.log('\n--- TEST GROUP 10: Fase C Unified Adapter ---');
   const unified = listUnifiedTemplates();
-  assert.strictEqual(unified.filter(e => e.source === 'CATALOG').length, 180);
+  // Pin 183 (bukan 180): lihat catatan Grup 9 — katalog resmi kini 183
+  // template (keputusan owner 2026-11-12 03:41). (Perbaikan pin 2026-11-14.)
+  assert.strictEqual(unified.filter(e => e.source === 'CATALOG').length, 183);
   const t36 = findUnifiedTemplate('HOUSE-T36-1FL');
   assert.ok(t36 && t36.source === 'CATALOG' && t36.counterpartId, 'HOUSE-T36-1FL must link to its master-registry counterpart');
   const summary = catalogToMasterSummary(t36!.catalogTemplate!);
   assert.strictEqual(summary.status, 'summary-only');
   assert.ok(summary.workItemCount > 0 && summary.parameterNames.length > 0);
   assert.strictEqual(findUnifiedTemplate('TIDAK-ADA-ID-INI'), undefined);
-  console.log(`  ✓ PASSED: Unified list = ${unified.length} entries (180 catalog + master-only), counterparts linked`);
+  console.log(`  ✓ PASSED: Unified list = ${unified.length} entries (183 catalog + master-only), counterparts linked`);
 
   console.log('\n================================================================');
   console.log('🎉 ALL KATALOG 180 TESTS PASSED SUCCESSFULLY (10/10 GROUPS)');

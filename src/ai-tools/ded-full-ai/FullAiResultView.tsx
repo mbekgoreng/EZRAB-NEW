@@ -5,18 +5,37 @@
  * provenance, formula, asumsi, sumber harga, status verifikasi.
  */
 import React, { useState } from 'react';
-import { ChevronDown, ChevronRight, AlertTriangle, CheckCircle2, HelpCircle, XCircle } from 'lucide-react';
+import { ChevronDown, ChevronRight, AlertTriangle, CheckCircle2, HelpCircle, XCircle, MessageSquare } from 'lucide-react';
 import { FullAiOutput, FullAiItem } from './types';
 import { resolveCanonicalCode, getDedPriceSourceLabel, DED_PRICE_SOURCE_LABELS } from '../ded-canonical/canonicalDedPricing';
+import { modeFromPolicy, canConfirmCanonicalCandidate } from './dataSourcePolicy';
+import type { DedRabAiMode } from '../ded-ai-estimate/dedMode';
 import {
   resolveFullAiItemStatus, acceptFullAiCompletion, rejectFullAiCompletion,
   fullAiPriceCompletionOf, fullAiQuantityAuditOf,
 } from './service';
 import { verifySubtotal, clearAiProposal } from './validator';
+// W6 (§8): chip + penjelasan provenance harga dari SATU tabel kanonis
+// (dedProvenance.ts) — estimasi AI dibedakan visual dari data terverifikasi.
+import { provenanceBadgeForDedSource, provenanceExplanationForDedSource } from '../ded-ai-estimate/dedProvenance';
 
 interface Props {
   output: FullAiOutput;
   onFinalize: (items: FullAiItem[]) => Promise<{ ok: boolean; message: string }>;
+  /**
+   * Simpan hasil Full AI sebagai draft (Dual Mode W1, G-ST-2) —
+   * opsional agar pemakai lama tanpa handler tidak rusak; bila
+   * tidak diisi, tombol simpan tidak tampil.
+   */
+  onSaveDraft?: (items: FullAiItem[]) => void;
+  /** true bila draft sudah tersimpan (label tombol berubah). */
+  draftSaved?: boolean;
+  /**
+   * G-UI-3 (§3): kirim hasil Full AI ke Chat AI — sejajar
+   * DedAiResultView.onSendToChat. Opsional; bila tidak diisi, tombol
+   * tidak tampil.
+   */
+  onSendToChat?: (items: FullAiItem[]) => void;
   onBack: () => void;
   /**
    * true = dirender di dalam FeatureFullscreenShell: baris header internal
@@ -50,7 +69,12 @@ const STATUS_ICON: Record<string, React.ReactNode> = {
 const fmtRp = (n: number | null) =>
   n == null ? '—' : `Rp${n.toLocaleString('id-ID')}`;
 
-function ItemCard({ item, onUpdate }: { item: FullAiItem; onUpdate: (updated: FullAiItem) => void }) {
+function ItemCard({ item, onUpdate, rabMode }: {
+  item: FullAiItem;
+  onUpdate: (updated: FullAiItem) => void;
+  /** Mode dual DED-RAB (§7, G-IS-3): di FULL_AI konfirmasi kandidat AHSP ke katalog ditutup. Absen = perilaku lama (diizinkan). */
+  rabMode?: DedRabAiMode;
+}) {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editQty, setEditQty] = useState(item.quantity.value?.toString() || '');
@@ -70,13 +94,28 @@ function ItemCard({ item, onUpdate }: { item: FullAiItem; onUpdate: (updated: Fu
   );
   const prov = PROVENANCE_LABEL[q.provenance] || PROVENANCE_LABEL.UNRESOLVED;
   const priceSrc = getDedPriceSourceLabel(p.source);
+  // W6 (§8): chip provenance HARGA (terpisah dari chip provenance
+  // kuantitas `prov` di atas) — estimasi AI (kuning) dibedakan visual
+  // dari AHSP kanonis (hijau) & input user (ungu) pada kartu tertutup.
+  const priceBadge = provenanceBadgeForDedSource(p.source);
   const isEdited = q.provenance === 'USER_INPUT' || p.source === 'USER_INPUT';
   const [confirmMsg, setConfirmMsg] = useState('');
+
+  // §7 (G-IS-3): konfirmasi kandidat AHSP ke katalog HANYA di mode
+  // EZRAB_AI. Di mode FULL_AI kandidat hanya usulan AI — tombol "Pilih"
+  // disembunyikan dan handler di bawah menolak memanggil adapter.
+  const allowCanonicalConfirm = rabMode === undefined || canConfirmCanonicalCandidate(rabMode);
 
   // Konfirmasi kandidat AHSP (review): resolusi ulang lewat jalur kode
   // eksak adapter — kandidat PARTIAL / satuan tak cocok / karantina akan
   // ditolak di sini, tidak pernah langsung dipakai.
   const handleConfirmCandidate = (code: string) => {
+    // §7 (G-IS-3): pertahanan kedua — tombolnya sudah disembunyikan di
+    // mode FULL_AI, tapi handler ini pun menolak memanggil katalog.
+    if (!allowCanonicalConfirm) {
+      setConfirmMsg('Konfirmasi padanan AHSP tidak tersedia di mode Full AI — mode ini tidak mengakses katalog AHSP. Kandidat di bawah adalah usulan AI saja.');
+      return;
+    }
     const resolved = resolveCanonicalCode(code, item.quantity.unit);
     if (resolved.status !== 'RESOLVED' || resolved.unitPrice == null) {
       setConfirmMsg(`Kandidat ${code} tidak bisa dipakai: ${resolved.reason}`);
@@ -134,6 +173,12 @@ function ItemCard({ item, onUpdate }: { item: FullAiItem; onUpdate: (updated: Fu
         }}>
           {prov.label}
         </span>
+        <span title={provenanceExplanationForDedSource(p.source)} style={{
+          fontSize: 11, padding: '2px 8px', borderRadius: 10,
+          background: priceBadge.bg, color: priceBadge.fg, fontWeight: 600,
+        }}>
+          {priceBadge.text}
+        </span>
       </div>
 
       {open && (
@@ -150,6 +195,13 @@ function ItemCard({ item, onUpdate }: { item: FullAiItem; onUpdate: (updated: Fu
               <span style={{ fontSize: 11, color: priceSrc.color }}>({priceSrc.label})</span>
               {p.ahspCode ? <span style={{ fontSize: 11, color: '#6b7280' }}> · AHSP {p.ahspCode}</span> : null}
             </div>
+          </div>
+
+          {/* W6 (§8): penjelasan provenance harga eksplisit — apa arti
+              sumber harga ini (asumsi rinci tetap di blok Asumsi /
+              Catatan harga / Penyelesaian AI di bawah). */}
+          <div style={{ marginBottom: 6, fontSize: 12, color: '#6b7280' }}>
+            <strong>Provenans harga:</strong> {provenanceExplanationForDedSource(p.source)}
           </div>
 
           {q.formula && (
@@ -262,19 +314,21 @@ function ItemCard({ item, onUpdate }: { item: FullAiItem; onUpdate: (updated: Fu
 
           {item.price.ahspMatch && item.price.ahspMatch.status === 'NEEDS_REVIEW' && item.price.ahspMatch.candidates.length > 0 && (
             <div style={{ marginTop: 8, padding: 10, background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 8 }}>
-              <div style={{ fontWeight: 700, marginBottom: 4 }}>Padanan AHSP menunggu konfirmasi — pilih satu (tidak ada yang dipilih otomatis):</div>
+              <div style={{ fontWeight: 700, marginBottom: 4 }}>{allowCanonicalConfirm ? 'Padanan AHSP menunggu konfirmasi — pilih satu (tidak ada yang dipilih otomatis):' : 'Usulan padanan AHSP dari AI — belum dikonfirmasi (mode Full AI tidak mengakses katalog AHSP):'}</div>
               <div style={{ fontSize: 12, color: '#92400E', marginBottom: 6 }}>{item.price.ahspMatch.reason}</div>
               {item.price.ahspMatch.candidates.map((c) => (
                 <div key={c.code} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center', padding: '6px 0', borderTop: '1px solid #FDE68A', fontSize: 12 }}>
                   <span><b>{c.code}</b> — {c.name} ({c.unit})
                     {c.priceStatus === 'FULL' && c.canonicalPrice != null ? ` — ${fmtRp(c.canonicalPrice)}/${c.unit}` : c.priceStatus === 'PARTIAL' ? ' — komponen belum lengkap' : c.priceStatus === 'UNPRICED' ? ' — tanpa rincian komponen' : ''}
                     {!c.unitExact ? ' — satuan berbeda' : ''}</span>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleConfirmCandidate(c.code); }}
-                    style={{ fontSize: 12, padding: '4px 12px', borderRadius: 6, border: '1px solid #2563EB', background: '#EFF6FF', color: '#1D4ED8', cursor: 'pointer', flexShrink: 0 }}
-                  >
-                    Pilih
-                  </button>
+                  {allowCanonicalConfirm && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleConfirmCandidate(c.code); }}
+                      style={{ fontSize: 12, padding: '4px 12px', borderRadius: 6, border: '1px solid #2563EB', background: '#EFF6FF', color: '#1D4ED8', cursor: 'pointer', flexShrink: 0 }}
+                    >
+                      Pilih
+                    </button>
+                  )}
                 </div>
               ))}
               {confirmMsg && <div style={{ color: '#dc2626', marginTop: 6, fontSize: 12 }}>{confirmMsg}</div>}
@@ -439,10 +493,17 @@ function ItemCard({ item, onUpdate }: { item: FullAiItem; onUpdate: (updated: Fu
   );
 }
 
-export const FullAiResultView: React.FC<Props> = ({ output, onFinalize, onBack, embedded = false }) => {
+export const FullAiResultView: React.FC<Props> = ({ output, onFinalize, onSaveDraft, draftSaved = false, onSendToChat, onBack, embedded = false }) => {
   const [finalizing, setFinalizing] = useState(false);
   const [finalMsg, setFinalMsg] = useState('');
   const [items, setItems] = useState<FullAiItem[]>(output.items);
+
+  // §7 (G-IS-3): mode dual diturunkan dari policy hasil lewat
+  // modeFromPolicy (REKONSILIASI: mesin-menang — view ini selalu
+  // menampilkan hasil mesin Full AI sehingga modenya FULL_AI) dan
+  // diteruskan ke kartu item agar konfirmasi kandidat AHSP tunduk
+  // pada gerbang isolasi.
+  const rabMode = modeFromPolicy(output.policy);
 
   // Hitung ulang summary & total saat item diedit
   const handleItemUpdate = (updated: FullAiItem) => {
@@ -505,7 +566,7 @@ export const FullAiResultView: React.FC<Props> = ({ output, onFinalize, onBack, 
           <button onClick={onBack} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid #e5e7eb', cursor: 'pointer' }}>
             ← Kembali
           </button>
-          <h1 style={{ margin: 0, fontSize: 20 }}>Hasil Full AI Estimate</h1>
+          <h1 style={{ margin: 0, fontSize: 20 }}>Hasil FULL AI MODE</h1>
           <span style={{
             fontSize: 11, padding: '4px 12px', borderRadius: 12,
             background: '#7C3AED15', color: '#7C3AED', fontWeight: 700,
@@ -518,19 +579,24 @@ export const FullAiResultView: React.FC<Props> = ({ output, onFinalize, onBack, 
         </div>
       )}
 
-      {/* ---- Banner kebijakan harga (Full AI vs Database) ---- */}
+      {/* ---- Banner mode kanonis (F3-1: cabang pada rabMode — mode
+           kanonis mesin-menang, diturunkan :506 via modeFromPolicy —
+           bukan policy mentah; konsisten dengan chip shell view.tsx:887.
+           View ini selalu menampilkan hasil mesin Full AI sehingga
+           rabMode selalu FULL_AI; cabang EZRAB di bawah dipertahankan
+           agar bila aturan migrasi di dedMode.ts kelak memakai policy,
+           banner ini ikut tanpa perubahan) ---- */}
       {(() => {
-        const policy = output.policy ?? 'FULL_AI';
         const canonNote = s.itemsWithCanonicalPrice > 0 ? ` ${s.itemsWithCanonicalPrice} item memakai harga AHSP kanonis (SE 47/2026, biaya langsung).` : '';
         const reviewNote = s.itemsNeedAhspReview > 0 ? ` ${s.itemsNeedAhspReview} item menunggu konfirmasi padanan AHSP.` : '';
         const incompleteNote = s.itemsAhspIncomplete > 0 ? ` ${s.itemsAhspIncomplete} item AHSP-nya belum lengkap komponennya.` : '';
-        return policy === 'FULL_AI' ? (
+        return rabMode === 'FULL_AI' ? (
           <div style={{ padding: '12px 14px', borderRadius: 12, background: '#FFFBEB', border: '1px solid #FDE68A', fontSize: 13, lineHeight: 1.55, marginBottom: 16 }}>
-            <b>Mode: Estimasi Full AI.</b> {s.itemsWithAiPrice} item memakai harga estimasi AI (AI_ESTIMATE) — bukan harga resmi AHSP.{canonNote}{reviewNote}{incompleteNote} {s.excludedFromTotal} item dikecualikan dari total. Periksa dan validasi sebelum RAB dipakai untuk pengadaan, tender, atau kontrak.
+            <b>Mode: FULL AI MODE.</b> {s.itemsWithAiPrice} item memakai harga estimasi AI (AI_ESTIMATE) — bukan harga resmi AHSP.{canonNote}{reviewNote}{incompleteNote} {s.excludedFromTotal} item dikecualikan dari total. Periksa dan validasi sebelum RAB dipakai untuk pengadaan, tender, atau kontrak.
           </div>
         ) : (
           <div style={{ padding: '12px 14px', borderRadius: 12, background: '#EFF6FF', border: '1px solid #BFDBFE', fontSize: 13, lineHeight: 1.55, marginBottom: 16 }}>
-            <b>Mode: Estimasi Database EZRAB.</b> Estimasi harga AI ditolak di mode ini — {s.itemsWithCanonicalPrice} item teratasi dari AHSP kanonis, {s.itemsUnresolved} item belum tersedia, {s.excludedFromTotal} item dikecualikan dari total.{reviewNote}{incompleteNote} Total di bawah bersifat <b>parsial</b> sampai harga yang hilang dilengkapi.
+            <b>Mode: EZRAB AI MODE.</b> Harga diutamakan dari AHSP kanonis — {s.itemsWithCanonicalPrice} item teratasi dari AHSP kanonis, {s.itemsWithAiPrice} item memakai estimasi AI berlabel sebagai fallback karena tidak ada di database (bukan harga database), {s.itemsUnresolved} item belum tersedia, {s.excludedFromTotal} item dikecualikan dari total.{reviewNote}{incompleteNote} Total di bawah bersifat <b>parsial</b> sampai harga yang hilang dilengkapi.
           </div>
         );
       })()}
@@ -605,7 +671,7 @@ export const FullAiResultView: React.FC<Props> = ({ output, onFinalize, onBack, 
                   <strong>{groupName}</strong>
                   <span style={{ fontWeight: 700 }}>{fmtRp(groupTotal)}</span>
                 </div>
-                {items.map((it) => <ItemCard key={it.id} item={it} onUpdate={handleItemUpdate} />)}
+                {items.map((it) => <ItemCard key={it.id} item={it} onUpdate={handleItemUpdate} rabMode={rabMode} />)}
               </div>
             );
           })}
@@ -636,17 +702,43 @@ export const FullAiResultView: React.FC<Props> = ({ output, onFinalize, onBack, 
                 </div>
               )}
             </div>
-            <button
-              onClick={handleFinalize}
-              disabled={finalizing}
-              style={{
-                padding: '12px 24px', borderRadius: 8, border: 'none',
-                background: '#7C3AED', color: '#fff', fontWeight: 600, cursor: 'pointer',
-                opacity: finalizing ? 0.6 : 1,
-              }}
-            >
-              {finalizing ? 'Menyimpan…' : 'Konfirmasi & Masukkan ke RAB'}
-            </button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0 }}>
+              {onSaveDraft && (
+                <button
+                  onClick={() => onSaveDraft(items)}
+                  style={{
+                    padding: '12px 24px', borderRadius: 8, border: '1px solid #4b5563',
+                    background: 'transparent', color: '#fff', fontWeight: 600, cursor: 'pointer',
+                  }}
+                >
+                  {draftSaved ? 'Draft Tersimpan' : 'Simpan Draft'}
+                </button>
+              )}
+              {/* G-UI-3 (§3) — kirim hasil Full AI ke Chat AI (sejajar DedAiResultView). */}
+              {onSendToChat && (
+                <button
+                  onClick={() => onSendToChat(items)}
+                  style={{
+                    padding: '12px 24px', borderRadius: 8, border: '1px solid #4b5563',
+                    background: 'transparent', color: '#fff', fontWeight: 600, cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  }}
+                >
+                  <MessageSquare size={16} /> Kirim ke Chat AI
+                </button>
+              )}
+              <button
+                onClick={handleFinalize}
+                disabled={finalizing}
+                style={{
+                  padding: '12px 24px', borderRadius: 8, border: 'none',
+                  background: '#7C3AED', color: '#fff', fontWeight: 600, cursor: 'pointer',
+                  opacity: finalizing ? 0.6 : 1,
+                }}
+              >
+                {finalizing ? 'Menyimpan…' : 'Konfirmasi & Masukkan ke RAB'}
+              </button>
+            </div>
           </div>
 
           {finalMsg && (

@@ -186,10 +186,17 @@ describe('PHASE 9.2 — AI BACA NOTA (RECEIPT OCR & MASTER PRICE MATCHING)', () 
   const projectB = createMockProject('PRJ-FINANCE-02', 'Pembangunan Ruko 3 Pintu');
 
   it('should extract structured invoice data from receipt image', async () => {
+    // G2: opt-in mock eksplisit (__allowMockFallback). Sejak remediasi P0
+    // d705426 (2026-10-09, DATA-3/API-4) analyzeReceipt TANPA flag ini
+    // gagal jujur (success:false, 'Layanan OCR tidak tersedia') bila
+    // endpoint tak terjangkau — perilaku yang dipin p0ReceiptHonestFailure.
+    // Tes ini ditulis sebelum P0 itu, saat mock dikembalikan tanpa syarat.
+    // Struktur hasil OCR tetap diuji lewat jalur mock khusus-tes.
     const res = await analyzeReceipt({
       projectId: projectB.id,
       fileName: 'nota_semen_gresik.jpg',
       fileData: 'mock_image_binary',
+      __allowMockFallback: true,
     });
 
     assert.strictEqual(res.success, true);

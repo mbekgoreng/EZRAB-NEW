@@ -17,11 +17,28 @@ import {
   checkAhspIdentitySafety,
   canonicalAhspCodeExists,
 } from '../../data/priceDatabase2026/ahspDisplayPolicy';
+import {
+  isValidatedWbsCode,
+  isKnownWbsNodeId,
+  isWbsMappingStatus,
+} from '../../ai-tools/ezrab-ai/wbsArtifact';
+import type { WbsMappingStatus } from '../../ai-tools/ezrab-ai/wbsArtifact';
 
 export interface RabItemInput extends Partial<RabItem> {
   description: string;
   volume: number;
   unit: string;
+  /**
+   * S6 (§6, P3D-O4) — tautan node WBS + status asosiasi, field RUNTIME
+   * (tidak dideklarasikan di tipe `RabItem` — diteruskan sebagai field
+   * runtime mengikuti preseden `priceStatus`/`priceSourceKind` yang
+   * diteruskan `normalizeSections` ke `RABItem` lewat spread `any`).
+   * Dibaca hilir via cast; persistensi JSON membawanya utuh (tanpa
+   * allowlist — `saveVersioned` menyimpan objek apa adanya).
+   */
+  wbsNodeId?: string;
+  wbsMappingStatus?: WbsMappingStatus;
+  wbsSuggestedNodeId?: string;
 }
 
 export interface RabItemFactoryOpts {
@@ -190,6 +207,35 @@ export function createRabItemRecord(
     ...(itemData.priceValidationWarnings && itemData.priceValidationWarnings.length > 0
       ? { priceValidationWarnings: [...itemData.priceValidationWarnings] }
       : {}),
+    // S4 (§4, menutup P6-O1): keputusan review diteruskan apa adanya —
+    // factory adalah allowlist; tanpa ini verificationDate +
+    // userDecisionStatus yang dibawa buildPushPayload hilang senyap dan
+    // Sheet 5 ekspor tetap menampilkan 'tidak tercatat'. Tanpa nilai =
+    // field absen (tidak ada default karangan); hanya aksi verifikasi
+    // eksplisit yang pernah mengisi verificationDate (draftReview.ts).
+    ...(itemData.verificationDate ? { verificationDate: itemData.verificationDate } : {}),
+    ...(itemData.userDecisionStatus ? { userDecisionStatus: itemData.userDecisionStatus } : {}),
+    // F2 (lanjutan §5): rumus/dasar hitung kuantitas dari pemetaan
+    // finalisasi DED→RAB (finalizeMapping.ts) — hanya terisi bila rumus
+    // nyata ada; tanpa ini rumus berhenti di DedFinalizeRabInput dan
+    // Sheet 4 menampilkan 'Tidak tersedia'.
+    ...(itemData.calculationFormula ? { calculationFormula: itemData.calculationFormula } : {}),
+    // S6 (§6, menutup P3D-O4): traceabilitas WBS diteruskan apa adanya —
+    // factory adalah allowlist; tanpa ini `wbsCode` + tautan node yang
+    // dibawa `buildPushPayload` hilang senyap (sebelum S6, `wbsCode`
+    // hanya dipakai sebagai fallback `code` di atas dan tidak pernah
+    // tersimpan sebagai field sendiri). HANYA nilai tervalidasi yang
+    // diteruskan: `wbsCode` wajib lolos `isValidatedWbsCode` (kode
+    // numerik dotted atau kode katalog DED hidup — nomor urut '1' dan
+    // kode AHSP 'B.38' DITOLAK); node wajib `wbs:<scope dikenal>`;
+    // status wajib salah satu dari tiga literal. Factory TIDAK PERNAH
+    // menurunkan `wbsCode` dari `code` — code bisa berupa fallback
+    // AHSP/nomor urut, dan pin `dedWbsReadiness` mengunci "factory
+    // TIDAK menulis wbsCode" untuk input tanpa wbsCode eksplisit.
+    ...(isValidatedWbsCode(itemData.wbsCode) ? { wbsCode: (itemData.wbsCode as string).trim() } : {}),
+    ...(isKnownWbsNodeId(itemData.wbsNodeId) ? { wbsNodeId: itemData.wbsNodeId } : {}),
+    ...(isWbsMappingStatus(itemData.wbsMappingStatus) ? { wbsMappingStatus: itemData.wbsMappingStatus } : {}),
+    ...(isKnownWbsNodeId(itemData.wbsSuggestedNodeId) ? { wbsSuggestedNodeId: itemData.wbsSuggestedNodeId } : {}),
     verificationStatus: effectiveVerificationStatus,
     ...(ahspIdentityStatus ? { ahspIdentityStatus, ahspIdentityReason } : {}),
     ...(!ahspIdentityStatus && codelessOfficialReason

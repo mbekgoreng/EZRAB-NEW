@@ -260,10 +260,13 @@ export class IndependentReferenceEvaluator {
    * 11. Atap Baja Ringan: Luas = ((P + 2*Ov) * (L + 2*Ov)) / cos(rad(sudut))
    */
   public static evaluateAtapBajaRingan(inputs: Record<string, number>): ReferenceEvaluationResult {
-    const P = new Decimal(inputs.P ?? 12.0);
-    const L = new Decimal(inputs.L ?? 8.0);
-    const Ov = new Decimal(inputs.overhang ?? inputs.overhangPanjang ?? 0.8);
-    const sudut = inputs.sudutKemiringan ?? 30;
+    // G2: baca nama skema kalkulator (Pb/Lb/overstek/sudut) — nama lama
+    // (P/L/overhang/sudutKemiringan) dipertahankan sebagai fallback agar
+    // evaluator tetap membaca input vektor yang sama dengan kalkulator.
+    const P = new Decimal(inputs.Pb ?? inputs.P ?? 12.0);
+    const L = new Decimal(inputs.Lb ?? inputs.L ?? 8.0);
+    const Ov = new Decimal(inputs.overstek ?? inputs.overhang ?? inputs.overhangPanjang ?? 0.8);
+    const sudut = inputs.sudut ?? inputs.sudutKemiringan ?? 30;
 
     const panjangTotal = P.plus(new Decimal(2).times(Ov));
     const lebarTotal = L.plus(new Decimal(2).times(Ov));
@@ -286,7 +289,9 @@ export class IndependentReferenceEvaluator {
    */
   public static evaluatePlesteranAcian(inputs: Record<string, number>): ReferenceEvaluationResult {
     const luas = new Decimal(inputs.luasDinding ?? 105.0);
-    const faktorSisi = inputs.duaSisi === 0 ? 1 : 2;
+    // G2: baca sisiPlester (nama skema); 'duaSisi' lama dipertahankan
+    // sebagai fallback (0 -> 1 sisi, selain itu 2 sisi).
+    const faktorSisi = inputs.sisiPlester ?? (inputs.duaSisi === 0 ? 1 : 2);
 
     const total = luas.times(faktorSisi).toDecimalPlaces(2).toNumber();
 

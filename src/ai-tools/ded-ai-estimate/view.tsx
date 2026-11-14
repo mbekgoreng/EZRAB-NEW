@@ -6,7 +6,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { dedAiEstimateService, DedAiOutputEnvelope } from './service';
 import { DedAiCalculator } from './calculator';
-import { mapDedAiItemToRabInput, mapFullAiItemToRabInput } from './finalizeMapping';
+import { validateDedFinalizeBatch, validateFullAiFinalizeBatch, formatFinalizeFailures } from './dedFinalizeValidation';
 import { buildFinalizationKey, countAssumptionItems, resolveAssumptionCount } from './finalizationKey';
 import { mergeAnalysisTraces, FileTraceInput } from './analysisTrace';
 import { buildDivisionCoverage } from './divisions';
@@ -15,6 +15,17 @@ import {
   DedAiItem, DedAiMode, DedAiOutput, DedAiProjectType,
   DedOutputPrefs, DEFAULT_DED_OUTPUT_PREFS,
 } from './types';
+import {
+  DEFAULT_DED_RAB_AI_MODE,
+  depthModeFromFullAi,
+  modeFromLegacy,
+  modeLabel,
+  policyForMode,
+  resolveDraftMode,
+  type DedEstimationPolicy,
+  type DedRabAiMode,
+} from './dedMode';
+import { buildFullAiAttachmentOutput, resolveDedAiMode } from './dedModeUi';
 import { probeDedPdf, resolvePageScope } from './parser';
 import { DedAiInputView, DedAiSession, DedLastRunSummary } from './DedAiInputView';
 import { DedAiProgressView, DedAiStage, getStageDefs, ProgressSummary } from './DedAiProgressView';
@@ -46,7 +57,23 @@ interface DraftRecord {
   projectType: DedAiProjectType;
   mode: DedAiMode;
   fileNames: string[];
-  output: DedAiOutput;
+  /**
+   * Hasil standar (mesin standar). Opsional sejak Dual Mode W1
+   * (G-ST-2): draft Full AI memakai `fullAiOutput` sebagai gantinya.
+   * Draft lama selalu membawa output; draft baru membawa PERSIS SATU
+   * dari output/fullAiOutput (dipakai load untuk memilih layar hasil).
+   */
+  output?: DedAiOutput;
+  /** Hasil mesin Full AI (draft Full AI) — bentuk FullAiOutput utuh. */
+  fullAiOutput?: FullAiOutput;
+  /**
+   * Mode/policy/mesin asal (G-ST-2) — tersimpan agar load
+   * mempertahankan mode. Opsional: draft lama tanpa ketiganya
+   * diturunkan dari output.policy via resolveDraftMode (dedMode.ts).
+   */
+  policy?: DedEstimationPolicy;
+  fullAi?: boolean;
+  dedMode?: DedRabAiMode;
   /** Preferensi output saat draft disimpan (USULAN BARU ter-ACC 2026-11-10). */
   outputPrefs?: DedOutputPrefs;
 }
@@ -97,7 +124,10 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
   const [screen, setScreen] = useState<Screen>('input');
   const [session, setSession] = useState<DedAiSession>({
     files: [], description: '', projectName: '',
-    projectType: 'BANGUNAN', mode: 'FAST', policy: 'FULL_AI', targetProjectId: null,
+    // DUAL MODE (§3, C2): sesi baru default EZRAB AI MODE; policy/fullAi
+    // diturunkan dari mode (bukan default lama FULL_AI).
+    projectType: 'BANGUNAN', mode: 'FAST', dedMode: DEFAULT_DED_RAB_AI_MODE,
+    policy: policyForMode(DEFAULT_DED_RAB_AI_MODE), fullAi: false, targetProjectId: null,
   });
   const [stages, setStages] = useState<DedAiStage[]>(() => initialStages(t));
   const [percent, setPercent] = useState(0);
@@ -161,7 +191,7 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
     }));
   };
 
-  const runFullAiAnalysis = async (sess: DedAiSession) => {
+  const runFullAiAnalysis = async (sess: DedAiSession, aiMode: DedRabAiMode) => {
     try {
       markUpTo('received', 'done');
       setPercent(5);
@@ -205,7 +235,13 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
           buffer,
           projectType: sess.projectType,
           mode: sess.mode === 'FAST' ? 'FAST' : 'ADVANCED',
-          policy: sess.policy ?? 'FULL_AI',
+          // DUAL MODE (§3): policy + rabMode diturunkan dari mode kanonis
+          // (bukan field sesi mentah); rabMode eksplisit wajib (W5 §7).
+          policy: policyForMode(aiMode),
+          rabMode: aiMode,
+          // G-UI-4: kompleksitas DETAIL diteruskan ke mesin Full AI
+          // (aturan sama seperti jalur standar — FAST: undefined).
+          complexity: sess.mode === 'DETAIL' ? sess.complexity : undefined,
           pageScope: fullAiScope,
           projectName: sess.projectName,
           onProgress: (stage, pct, msg) => {
@@ -262,7 +298,7 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
       const combined: FullAiOutput = {
         success: true,
         mode: sess.mode === 'FAST' ? 'FAST' : 'ADVANCED',
-        policy: sess.policy ?? 'FULL_AI',
+        policy: policyForMode(aiMode),
         projectInfo: projectInfo || { projectType: sess.projectType, scopeSummary: '' },
         items: allItems,
         grandTotal,
@@ -306,8 +342,11 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
 
   const runAnalysis = useCallback(async (sess: DedAiSession) => {
     cancelRef.current = false;
-    if (sess.fullAi) {
-      await runFullAiAnalysis(sess);
+    // DUAL MODE (§3): dispatch pada MODE kanonis (dedMode), bukan
+    // boolean fullAi — sesi lama tanpa dedMode dimigrasikan (mesin menang).
+    const aiMode = resolveDedAiMode(sess);
+    if (aiMode === 'FULL_AI') {
+      await runFullAiAnalysis(sess, aiMode);
       return;
     }
     setError(null);
@@ -368,7 +407,7 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
           mimeType: f.file.type,
           projectType: sess.projectType,
           mode: sess.mode,
-          policy: sess.policy ?? 'FULL_AI',
+          policy: policyForMode(aiMode),
           pageScope,
           // F-E2 (keputusan owner 2026-11-10): kompleksitas pilihan user
           // diteruskan untuk run DETAIL agar kunci fitur usage tercatat
@@ -507,6 +546,7 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
 
   const handleSaveDraft = (items: DedAiItem[]) => {
     if (!result) return;
+    const policy = result.policy ?? 'FULL_AI';
     const rec: DraftRecord = {
       id: `draft-${Date.now()}`,
       createdAt: Date.now(),
@@ -515,6 +555,34 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
       mode: result.mode,
       fileNames: session.files.map((f) => f.file.name),
       output: { ...result, items },
+      // G-ST-2: mode/policy/mesin tersimpan agar load mempertahankannya.
+      policy,
+      fullAi: false,
+      dedMode: modeFromLegacy({ policy, fullAi: false }),
+      outputPrefs: session.outputPrefs,
+    };
+    persistDrafts([rec, ...drafts].slice(0, 20));
+    setDraftSaved(true);
+  };
+
+  // G-ST-2: hasil Full AI BISA disimpan sebagai draft (sebelumnya
+  // hanya hasil standar — FullAiResultView tak punya onSaveDraft).
+  // projectName/projectType diambil dari sesi (FullAiOutput tidak
+  // membawa nama proyek); mode kedalaman dipetakan ADVANCED→DETAIL.
+  const handleSaveFullAiDraft = (items: FullAiItem[]) => {
+    if (!fullAiOutput) return;
+    const policy = fullAiOutput.policy ?? 'FULL_AI';
+    const rec: DraftRecord = {
+      id: `draft-${Date.now()}`,
+      createdAt: Date.now(),
+      projectName: session.projectName,
+      projectType: session.projectType,
+      mode: depthModeFromFullAi(fullAiOutput.mode),
+      fileNames: session.files.map((f) => f.file.name),
+      fullAiOutput: { ...fullAiOutput, items },
+      policy,
+      fullAi: true,
+      dedMode: 'FULL_AI',
       outputPrefs: session.outputPrefs,
     };
     persistDrafts([rec, ...drafts].slice(0, 20));
@@ -524,11 +592,31 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
   const handleLoadDraft = (id: string) => {
     const d = drafts.find((x) => x.id === id);
     if (!d) return;
-    setResult(d.output);
-    setResultReady(true);
+    // G-ST-2: mode/policy/mesin dipulihkan dari field tersimpan
+    // (draft lama tanpa ketiganya diturunkan dari output.policy;
+    // resolveDraftMode adalah satu-satunya tempat logika ini hidup).
+    const restored = resolveDraftMode({
+      policy: d.policy ?? d.output?.policy ?? d.fullAiOutput?.policy,
+      fullAi: d.fullAi ?? (d.fullAiOutput ? true : undefined),
+      dedMode: d.dedMode,
+    });
+    if (d.fullAiOutput) {
+      setFullAiOutput(d.fullAiOutput);
+      setResult(null);
+      setResultReady(false);
+    } else if (d.output) {
+      setResult(d.output);
+      setResultReady(true);
+      // Draft standar menimpa hasil Full AI yang sedang tampil
+      // (sebelumnya fullAiOutput tidak dibersihkan — layar hasil
+      // Full AI akan menang atas draft standar yang dimuat).
+      setFullAiOutput(null);
+    } else {
+      return;
+    }
     setDraftSaved(true);
     setFinalized(false);
-    setSession((s) => ({ ...s, projectName: d.projectName, projectType: d.projectType, mode: d.mode, policy: d.output.policy ?? 'FULL_AI', files: [], outputPrefs: d.outputPrefs ?? s.outputPrefs }));
+    setSession((s) => ({ ...s, projectName: d.projectName, projectType: d.projectType, mode: d.mode, dedMode: restored.mode, policy: restored.policy, fullAi: restored.fullAi, files: [], outputPrefs: d.outputPrefs ?? s.outputPrefs }));
     setSummary((s) => ({ ...s, projectName: d.projectName, fileCount: d.fileNames.length, mode: d.mode }));
     setScreen('result');
   };
@@ -572,15 +660,64 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
     });
   };
 
+  /* G-UI-3 (§3) — kirim hasil FULL AI ke Chat AI: cermin handleSendToChat
+   * untuk mesin Full AI. Item dipetakan ke bentuk DedAiItem lampiran
+   * (dedModeUi.buildFullAiAttachmentOutput — nilai dipertahankan apa
+   * adanya, tanpa fabrikasi); tanpa proyek target: pesan jujur, TANPA
+   * membuat proyek diam-diam. Gagal lampir: pesan jujur, TANPA navigasi. */
+  const handleFullAiSendToChat = (items: FullAiItem[]) => {
+    if (!fullAiOutput) return;
+    const projectId = session.targetProjectId ?? currentProjectId ?? null;
+    if (!projectId) {
+      notificationBus.publish({
+        type: 'error',
+        title: 'DED tidak terkirim ke Chat AI',
+        message: 'Pilih proyek dulu (pilih proyek di halaman input DED, atau jadikan satu proyek sebagai proyek aktif).',
+      });
+      return;
+    }
+    const output = buildFullAiAttachmentOutput(fullAiOutput, items, {
+      projectName: session.projectName,
+      projectType: session.projectType,
+      mode: session.mode,
+      fileName: session.files.map((f) => f.file.name).join(', ') || undefined,
+    });
+    const attached = attachDedToProject(projectId, output);
+    if (!attached.ok) {
+      notificationBus.publish({
+        type: 'error',
+        title: 'DED tidak terkirim ke Chat AI',
+        message: attached.message,
+      });
+      return;
+    }
+    goToAi('chat_agent', {
+      projectId,
+      contextLabel: `DED ${output.fileName ?? output.projectName}`,
+      sourceMenu: 'ded-ai',
+    });
+  };
+
   const handleFinalize = async (items: DedAiItem[]): Promise<{ ok: boolean; message: string }> => {
     // FASE DED-FIX TASK 3: hanya item yang lolos validasi kuantitas (stage CALCULATED,
     // subtotal terhitung) yang boleh masuk RAB. Item REJECTED/UNRESOLVED tidak lolos
     // jalur finalisasi apa pun — tidak disamarkan menjadi angka.
-    const savable = items.filter((it) => it.stage === 'CALCULATED' && it.subtotal != null && it.unitPrice != null);
-    const blocked = items.length - savable.length;
-    const needsReview = savable.filter((it) => it.quantitySource === 'AI_INFERENCE' || it.quantitySource === 'ASSUMPTION').length;
+    // W4 (§9+§11): validasi-SEBELUM-sisip — SELURUH batch divalidasi dulu;
+    // bila satu item gagal dipetakan, TIDAK ADA yang disisip dan TIDAK ADA
+    // proyek yang dibuat (tanpa RAB korup sebagian, tanpa proyek kosong
+    // tertinggal). Hasil analisis + draft tetap utuh untuk diperbaiki.
+    const validation = validateDedFinalizeBatch(items, result?.policy ?? 'FULL_AI');
+    const savable = validation.savable;
+    const blocked = validation.blockedCount;
+    const needsReview = validation.needsReviewCount;
     if (savable.length === 0) {
       return { ok: false, message: t('ai.ded.finalize_none') };
+    }
+    if (!validation.ok) {
+      return {
+        ok: false,
+        message: `Finalisasi dibatalkan — ${validation.failures.length} dari ${savable.length} item tidak lolos validasi, TIDAK ADA item yang disimpan:\n${formatFinalizeFailures(validation.failures)}\nPerbaiki item tersebut lalu coba lagi.`,
+      };
     }
     try {
       let projectId = session.targetProjectId;
@@ -602,11 +739,9 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
       // Provenance lewat helper pemetaan (finalizeMapping), BUKAN string
       // `notes` — factory tidak menyimpan `notes`, dan tanpa pemetaan ini
       // baris fallback "Estimasi AI" kehilangan labelnya di spreadsheet.
-      // Item yang helpernya mengembalikan null (tanpa harga) tidak jadi baris.
-      const mappedInputs = savable.flatMap((it) => {
-        const mapped = mapDedAiItemToRabInput(it, result?.policy ?? 'FULL_AI');
-        return mapped ? [mapped] : [];
-      });
+      // Pemetaan sudah berjalan di validasi-SEBELUM-sisip di atas (semua
+      // item savable terpetakan — tidak ada yang dibuang diam-diam).
+      const mappedInputs = validation.mapped;
       // G4: kunci finalisasi deterministik (proyek + set item terkanonisasi).
       // Finalisasi logis yang sama — klik ganda, retry sesudah state UI
       // ter-reset, analisis yang sama dibuka lagi — dikenali store sebagai
@@ -646,12 +781,20 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
   useEffect(() => () => { cancelRef.current = true; }, []);
 
   const handleFullAiFinalize = async (items: FullAiItem[]): Promise<{ ok: boolean; message: string }> => {
-    const savable = items.filter(
-      (it) => it.status === 'READY' && it.subtotal != null && it.subtotal > 0 && it.price.unitPrice != null
-    );
-    const blocked = items.length - savable.length;
+    // W4 (§9+§11): validasi-SEBELUM-sisip — sama seperti jalur standar:
+    // seluruh batch divalidasi dulu; satu kegagalan membatalkan semua
+    // (tanpa RAB korup sebagian, tanpa proyek kosong tertinggal).
+    const validation = validateFullAiFinalizeBatch(items, fullAiOutput?.policy ?? 'FULL_AI');
+    const savable = validation.savable;
+    const blocked = validation.blockedCount;
     if (savable.length === 0) {
       return { ok: false, message: 'Tidak ada item yang bisa disimpan (semua belum lengkap / tanpa harga).' };
+    }
+    if (!validation.ok) {
+      return {
+        ok: false,
+        message: `Finalisasi dibatalkan — ${validation.failures.length} dari ${savable.length} item tidak lolos validasi, TIDAK ADA item yang disimpan:\n${formatFinalizeFailures(validation.failures)}\nPerbaiki item tersebut lalu coba lagi.`,
+      };
     }
     try {
       let projectId = session.targetProjectId;
@@ -672,10 +815,8 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
       }
       // Provenance lewat helper pemetaan (finalizeMapping) — alasan sama
       // seperti jalur standar di atas: `notes` tidak disimpan factory.
-      const mappedInputs = savable.flatMap((it) => {
-        const mapped = mapFullAiItemToRabInput(it, fullAiOutput?.policy ?? 'FULL_AI');
-        return mapped ? [mapped] : [];
-      });
+      // Pemetaan sudah berjalan di validasi-SEBELUM-sisip di atas.
+      const mappedInputs = validation.mapped;
       // G4: kunci finalisasi deterministik — sama seperti jalur standar.
       const finalizationKey = buildFinalizationKey(projectId, mappedInputs);
       const added = bulkAddRabItems(mappedInputs, projectId, { finalizationKey });
@@ -741,9 +882,12 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
         : 'Langkah 3 dari 3';
 
   const isFullAiResult = screen === 'result' && !!fullAiOutput;
+  // DUAL MODE (§3, G-UI-2): chip menampilkan MODE kanonis — hasil Full AI
+  // berlabuh pada outputnya sendiri; selain itu pada mode sesi.
+  const shellMode: DedRabAiMode = isFullAiResult ? 'FULL_AI' : resolveDedAiMode(session);
   const shellChips = isFullAiResult ? (
     <>
-      <FsChip>Full AI Estimate</FsChip>
+      <FsChip>Mode: {modeLabel(shellMode)}</FsChip>
       <FsChip kind="plain">
         {fullAiOutput.provenance.provider && fullAiOutput.provenance.model
           ? `${fullAiOutput.provenance.provider} / ${fullAiOutput.provenance.model}`
@@ -752,11 +896,7 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
     </>
   ) : screen !== 'input' ? (
     <>
-      <FsChip>
-        {(session.policy ?? 'FULL_AI') === 'DATABASE'
-          ? 'Mode: Estimasi Database EZRAB'
-          : 'Mode: Estimasi Full AI'}
-      </FsChip>
+      <FsChip>Mode: {modeLabel(shellMode)}</FsChip>
       <FsChip kind="plain">{session.mode === 'FAST' ? 'Cepat' : 'Mendalam'}</FsChip>
     </>
   ) : undefined;
@@ -805,6 +945,9 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
       <FullAiResultView
         output={fullAiOutput}
         onFinalize={handleFullAiFinalize}
+        onSaveDraft={handleSaveFullAiDraft}
+        draftSaved={draftSaved}
+        onSendToChat={handleFullAiSendToChat}
         onBack={() => setScreen('input')}
         embedded
       />
@@ -863,7 +1006,9 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
           projects={projects.map((p) => ({ id: p.id, name: p.name }))}
           drafts={drafts.map((d) => ({
             id: d.id, createdAt: d.createdAt, projectName: d.projectName,
-            itemCount: d.output.items.length, grandTotal: d.output.grandTotal,
+            // G-ST-2: draft Full AI membawa fullAiOutput, bukan output.
+            itemCount: d.fullAiOutput?.items.length ?? d.output?.items.length ?? 0,
+            grandTotal: d.fullAiOutput?.grandTotal ?? d.output?.grandTotal ?? 0,
           }))}
           onStart={handleStart}
           onLoadDraft={handleLoadDraft}

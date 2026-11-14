@@ -95,6 +95,44 @@ test('Hook returns valid status (PRICE_MISSING, PARTIAL, or RESOLVED)', () => {
   );
 });
 
+// G1 CANARY (2026-11-14) — identitas AHSP line item HARUS cocok dengan
+// pekerjaannya, bukan hanya "kodenya ada". Lima tes di atas lolos dengan
+// line item yang ter-resolve — tetapi 6 dari 12 kode registry bendung
+// (scopeAhspRegistry) SALAH untuk Bina Marga dan kini ter-resolve ke item
+// yang SALAH (bukti probe G1; registry ditulis a506967 dengan skema nomor
+// karangan 3.1.x = beton — padahal di Lampiran V BM 3.1.x = galian; BUKTI:
+// 3.1.(5) sudah berarti "Galian Struktur 2-4 M" SEBELUM strip a506967):
+//   Beton K-250 Pondasi (3.1.(5)) -> C.5 "Galian Struktur 2-4 M" (SALAH)
+//   Beton K-300 Tubuh (3.1.(7))   -> C.7 "Tambahan biaya galian..." (SALAH)
+//   Urugan Pasir (2.2.(1))        -> B.2 "Pasangan Batu dengan Mortar" (SALAH)
+//   Urugan Tanah (2.2.(3))        -> B.4 "Pasangan Batu ... DS-4" (SALAH)
+//   Buang Tanah (2.3.(1))         -> B.9 "Gorong-gorong Pipa Beton" (SALAH)
+//   Dewatering (2.4.(1))          -> B.79 "Bahan Drainase Porous" (SALAH)
+// Tes ini SENGAJA MERAH sampai registry di-remap ke kode BM terverifikasi
+// (butuh keputusan engineering: konversi K->fc', grade tulangan, pita
+// kedalaman galian; bekisting + buang tanah TIDAK ADA di master BM).
+// JANGAN "perbaiki" tes ini dengan melonggarkan asersi identitas —
+// melonggarkannya berarti membiarkan beton dihargai sebagai galian dan
+// ditampilkan ke user sebagai "Estimasi Biaya Resmi (CostPolicyEngine)".
+test('G1 CANARY: line item beton terpetakan ke item AHSP Beton (bukan galian)', () => {
+  const result = computeScopeBasedCost(
+    'weir.body',
+    { weirLength: 25, weirHeight: 3.5, crestWidth: 2, baseWidth: 6 },
+    priceContext,
+    'test-project'
+  );
+
+  const bodyConcrete = result.lineItems.find((li) => li.name.includes('Beton K-300 Tubuh Bendung'));
+  assertTrue(!!bodyConcrete, 'Should have body concrete line item');
+  assertTrue(bodyConcrete!.ahspName.toLowerCase().includes('beton'),
+    `Body concrete must map to a Beton AHSP item, got "${bodyConcrete!.ahspName}" (${bodyConcrete!.ahspCode})`);
+
+  const foundationConcrete = result.lineItems.find((li) => li.name.includes('Beton K-250 Pondasi'));
+  assertTrue(!!foundationConcrete, 'Should have foundation concrete line item');
+  assertTrue(foundationConcrete!.ahspName.toLowerCase().includes('beton'),
+    `Foundation concrete must map to a Beton AHSP item, got "${foundationConcrete!.ahspName}" (${foundationConcrete!.ahspCode})`);
+});
+
 test('Summary contains cost breakdown', () => {
   const result = computeScopeBasedCost(
     'weir.body',

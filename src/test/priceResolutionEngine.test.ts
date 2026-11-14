@@ -65,8 +65,22 @@ test('EZRAB Price Resolution Engine V1 Suite', async (t) => {
     assert.ok(projectPrices.some((p) => p.price === 14800));
 
     // CSV Export
+    // PERUBAHAN PIN (G1, 2026-11-14): substring mentah 'Kode,Nama
+    // Material,Kategori' TIDAK LAGI MUNCUL karena komit a73391b
+    // (2026-10-31, audit keamanan F-5.2) memindahkan ekspor ke helper
+    // CSV bersama (src/lib/csv.ts) yang SELALU mengutip sel teks +
+    // menetralisasi injeksi formula — header kini
+    // "Kode","Nama Material","Kategori",... (CSV valid; parser membaca
+    // field yang sama). Pin baru LEBIH KUAT: (a) seluruh 11 kolom header
+    // dipin berurutan (bukan 3 kolom substring), dinormalisasi dari
+    // kutipan; (b) perilaku kutip F-5.2 itu sendiri dipin — sel header
+    // harus dikutip.
     const csv = repo.exportToCsv();
-    assert.ok(csv.includes('Kode,Nama Material,Kategori'));
+    const headerLine = csv.split('\n')[0];
+    assert.ok(headerLine.startsWith('"Kode","Nama Material","Kategori"'),
+      'Header CSV harus dikutip per sel (F-5.2 anti-injeksi formula)');
+    assert.equal(headerLine.replace(/"/g, ''),
+      'Kode,Nama Material,Kategori,Subkategori,Spesifikasi,Brand,Unit,Harga,Wilayah,Sumber,Tanggal');
     assert.ok(csv.includes('Besi Beton Ulir D16 SNI'));
   });
 

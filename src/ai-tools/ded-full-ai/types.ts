@@ -17,14 +17,17 @@ export type FullAiProvenance =
 
 /**
  * Kebijakan harga DED-to-RAB — konsep yang sama dengan DedEstimationPolicy
- * mesin standar, diduplikasi di sini agar modul ini tetap terisolasi
- * (tidak mengimpor pipeline lama). FULL_AI = estimasi AI boleh dipakai
- * (perilaku lama); DATABASE = estimasi AI ditolak di service layer,
- * hanya VERIFIED_SOURCE (dengan ahspCode) dan USER_INPUT yang lolos.
+ * mesin standar. SUMBER KANONIS (Dual Mode W1, G-ST-3): tipe ini hidup
+ * di ../ded-ai-estimate/dedMode.ts — definisi duplikat di sini dihapus
+ * dan diganti re-export (nilai string TIDAK berubah; dedMode.ts tanpa
+ * impor sehingga tidak menambah ketergantungan modul ini). Dulu
+ * diduplikasi agar modul ini terisolasi; isolasi itu sudah tidak murni
+ * (modul ini sudah mengimpor tipe dari pipeline standar di bawah).
  */
-export type DedEstimationPolicy = 'FULL_AI' | 'DATABASE';
+export type { DedEstimationPolicy };
 
 import type { CanonicalDedMatch } from '../ded-canonical/canonicalDedPricing';
+import type { DedEstimationPolicy, DedRabAiMode } from '../ded-ai-estimate/dedMode';
 import type {
   DedWorkflowUsage, DedPriceCompletion, DedQuantityAudit,
 } from '../ded-ai-estimate/types';
@@ -157,6 +160,65 @@ export interface FullAiSummary {
   excludedValue?: string;     // Nilai yang dikecualikan dari total
 }
 
+/**
+ * W4 (§6 directive DED-RAB AI Dual Mode, 2026-11-13) — pipeline Full AI
+ * 7 tahap. Tahap 1, 5, 6, 7 adalah pass kode nyata di service; tahap
+ * 2–4 adalah penalaran MODEL di dalam satu panggilan AI (bukan pass
+ * terpisah) — jejaknya mencatat bukti yang terukur dari respons itu,
+ * bukan klaim pass yang tidak ada. Lihat `qualityControl.ts`
+ * (FULL_AI_PIPELINE_STAGES) untuk definisi + urutan kanonis.
+ */
+export type FullAiPipelineStageId =
+  | 'DOCUMENT_INTELLIGENCE' // 1 — parse + seleksi halaman dokumen
+  | 'SCOPE_WBS'             // 2 — cakupan + WBS (model-side)
+  | 'METHOD_REASONING'      // 3 — penalaran metode konstruksi (model-side)
+  | 'AI_AHSP_GENERATION'    // 4 — generasi AHSP AI + resolusi kanonis (model-side + adapter)
+  | 'AI_PRICING'            // 5 — penyelesaian harga AI
+  | 'QUANTITY_VOLUME'       // 6 — penyelesaian kuantitas/volume
+  | 'QUALITY_CONTROL';      // 7 — audit QC single-pass (tanpa loop revisi)
+
+/** Satu entri jejak eksekusi tahap — status eksekusi, bukan hasil QC. */
+export interface FullAiStageTraceEntry {
+  stage: FullAiPipelineStageId;
+  status: 'done' | 'skipped' | 'failed';
+  /** Bukti ringkas tahap ini (hitungan terukur, bukan klaim). */
+  detail: string;
+}
+
+/** Satu pemeriksaan QC (§6.7). */
+export interface FullAiQcCheck {
+  id: string;
+  title: string;
+  passed: boolean;
+  /** error = invarian dilanggar; warning = isu terlihat tapi hasil tetap dipakai; info = hitungan. */
+  severity: 'error' | 'warning' | 'info';
+  detail: string;
+  itemIds: string[];
+}
+
+/**
+ * Laporan Quality Control §6.7 — audit single-pass atas item final.
+ * KEJUJURAN ITERASI: pipeline ini TIDAK punya loop revisi otomatis,
+ * sehingga `revisionIterations` SELALU 0. Angka itu bukan placeholder —
+ * ia adalah klaim yang benar (0 iterasi dieksekusi) dan wajib tetap 0
+ * sampai ada loop revisi yang benar-benar diimplementasikan + dihitung.
+ * Isu tak terselesaikan dipertahankan sebagai warning/unresolved yang
+ * terlihat (di `warnings` keluaran), bukan diperbaiki diam-diam.
+ */
+export interface FullAiQualityControlReport {
+  /** Jumlah iterasi revisi yang BENAR-BENAR dieksekusi — selalu 0 (tanpa loop revisi). */
+  revisionIterations: number;
+  /** Alias eksplisit revisionIterations — jumlah pass revisi yang dieksekusi. */
+  revisionPassesExecuted: number;
+  checks: FullAiQcCheck[];
+  /** Peringatan user-facing (digabung ke `FullAiOutput.warnings`). */
+  warnings: string[];
+  /** Jumlah isu tak terselesaikan yang dipertahankan terlihat. */
+  unresolvedIssueCount: number;
+  /** true bila TIDAK ADA pemeriksaan error yang gagal. */
+  passed: boolean;
+}
+
 export interface FullAiOutput {
   success: boolean;
   mode: 'FAST' | 'ADVANCED';
@@ -170,6 +232,14 @@ export interface FullAiOutput {
   grandTotalNote?: string;    // Peringatan jika ada item yang dikecualikan
   summary: FullAiSummary;
   warnings: string[];
+  /**
+   * W4 (§6): jejak eksekusi 7 tahap pipeline — urutan eksekusi nyata
+   * (tahap 2–4 dicatat sesudah respons model diterima, dengan bukti
+   * terukur). Absen pada keluaran error / hasil lama.
+   */
+  pipelineStages?: FullAiStageTraceEntry[];
+  /** W4 (§6.7): laporan audit QC single-pass (revisionIterations selalu 0). */
+  qualityControl?: FullAiQualityControlReport;
   error?: {
     code: string;
     message: string;
@@ -197,6 +267,21 @@ export interface FullAiServiceOptions {
   mode: 'FAST' | 'ADVANCED';
   /** Kebijakan harga (default 'FULL_AI' bila tidak diisi — perilaku lama). */
   policy?: DedEstimationPolicy;
+  /**
+   * G-UI-4 (Dual Mode §3): kompleksitas pilihan user untuk lari DETAIL
+   * (diteruskan view, aturan sama seperti mesin standar — FAST:
+   * undefined). Dicatat pada metadata usage workflow; absen = tidak
+   * ada pilihan (bukan default). Bukan parameter metering.
+   */
+  complexity?: 'simple' | 'medium' | 'complex';
+  /**
+   * Mode dual DED-RAB (§7, keputusan C1/C3). Bila diisi, mode inilah yang
+   * menggerbang akses katalog AHSP/harga internal (lihat dataSourcePolicy);
+   * bila absen, diturunkan dari policy (FULL_AI → FULL_AI, DATABASE →
+   * EZRAB_AI) agar pemanggil lama tetap berperilaku seperti sebelumnya.
+   * Pemanggil baru WAJIB mengisi eksplisit.
+   */
+  rabMode?: DedRabAiMode;
   /**
    * Cakupan halaman pilihan pengguna (USULAN BARU ter-ACC owner
    * 2026-11-10): nomor halaman 1-based yang BOLEH dianalisis, diterapkan

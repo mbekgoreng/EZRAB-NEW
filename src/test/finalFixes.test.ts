@@ -109,11 +109,33 @@ check(peekPendingAiEntry() === null && peekPendingEzrabAiEntry() === null, 'T2g:
 check(ezrabAiEntryRemainingMs(Date.now() - 61_000) === 0, 'T2h: TTL habis → sisa 0 ms');
 check(ezrabAiEntryRemainingMs(10_000, 60_000) === 10_000, 'T2i: TTL sisa dihitung dari createdAt (60.000 - 50.000)');
 const chatView = readSrc('ai-tools/ezrab-ai/view.tsx');
-const switcherAt = chatView.indexOf('const switcherModes');
-const switcherBlock = switcherAt >= 0 ? chatView.slice(switcherAt, switcherAt + 2200) : '';
-for (const key of ['prompt:', 'rabItemId:', 'documentId:', 'dedRef:']) {
-  check(switcherBlock.includes(key), `T2j: switcher meneruskan konteks penuh (${key})`);
-}
+// T2j — DIPERBARUI (Perbaikan D, 2026-11-14): strip mode in-view DIHAPUS
+// sengaja sehari sesudah suite ini ditulis — commit e14a1cd (2026-10-27,
+// "Hapus strip mode + banner konteks di view.tsx (ganti mode tetap lewat
+// menu...)") menghapus `switcherModes` dari repo, sehingga pin statis lama
+// (4 kunci dalam 2200 karakter sesudah `const switcherModes`) mem-pin kode
+// yang sudah tidak ada. Penerusan konteks penuh TIDAK hilang: switcher lama
+// meneruskannya LEWAT resolver tunggal openEzrabAI (aiNavigation.ts —
+// tombol switcher memanggil openEzrabAI({ mode, prompt, rabItemId,
+// documentId, dedRef })), dan resolver itu masih hidup. Cek di bawah
+// BEHAVIORAL (lebih kuat dari substring statis): panggil openEzrabAI lalu
+// intip kedua entry yang dititipkannya (entry mode + entry klasik).
+check(!chatView.includes('const switcherModes'), 'T2j: strip mode in-view sudah dihapus (ganti mode lewat menu, e14a1cd)');
+resetEntries();
+openEzrabAI({ mode: 'chat', prompt: 'cek atap bocor', rabItemId: 'rab-1', documentId: 'doc-1', dedRef: 'DED-9', projectId: 'p1', source: 'dashboard' });
+const modeEntry = peekPendingEzrabAiEntry();
+check(modeEntry?.ctx.prompt === 'cek atap bocor', 'T2j: switcher meneruskan konteks penuh (prompt:)');
+check(modeEntry?.ctx.rabItemId === 'rab-1', 'T2j: switcher meneruskan konteks penuh (rabItemId:)');
+check(modeEntry?.ctx.documentId === 'doc-1', 'T2j: switcher meneruskan konteks penuh (documentId:)');
+check(modeEntry?.ctx.dedRef === 'DED-9', 'T2j: switcher meneruskan konteks penuh (dedRef:)');
+const classicEntry = peekPendingAiEntry();
+check(
+  classicEntry?.ctx.initialPrompt === 'cek atap bocor' &&
+  classicEntry?.ctx.rabId === 'rab-1' &&
+  classicEntry?.ctx.documentId === 'doc-1' &&
+  classicEntry?.ctx.contextLabel === 'DED-9',
+  'T2j: entry klasik memetakan keempat kunci (initialPrompt/rabId/documentId/contextLabel)',
+);
 check(chatView.includes('ezrabAiEntryRemainingMs'), 'T2k: banner chat memakai helper TTL (dibersihkan saat kedaluwarsa)');
 
 // ------------------------------------------------------- Ded / Doc (3)

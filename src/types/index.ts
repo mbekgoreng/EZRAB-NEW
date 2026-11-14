@@ -32,6 +32,18 @@ export type VerificationStatus =
   | 'LOCKED';
 
 /**
+ * P5 FULL REPAIR (K-A6, 2026-11-13) — status keputusan user atas satu item
+ * RAB / asumsi. Aditif & opsional: belum ada alur yang mengisinya
+ * (pencatatan saat user menyetujui asumsi/manual = pekerjaan lanjutan);
+ * ekspor 5 sheet menampilkan 'tidak tercatat' bila field ini kosong.
+ */
+export type UserDecisionStatus =
+  | 'BELUM_DIPUTUSKAN'
+  | 'DISETUJUI'
+  | 'DITOLAK'
+  | 'PERLU_REVISI';
+
+/**
  * Phase 2 hardening — explicit price provenance status for RAB line items.
  * A missing/unresolvable price must NEVER silently become Rp0 in totals:
  * items flagged PRICE_UNRESOLVED are excluded from cost summaries and counted
@@ -320,6 +332,18 @@ export interface RABItem {
   subSectionId?: string;
   itemNumber: string; // e.g. "1.1", "C.1.2"
   wbsNumber?: string;  // e.g. "1.1.2"
+  /**
+   * S9 (§9, S6-O5) — traceabilitas WBS (aditif, opsional): kode WBS item
+   * + tautan node artefak WBS + status asosiasi. Diisi rantai transfer
+   * (§6: buildPushPayload → factory → normalizeSections); dibaca kolom
+   * M Sheet 2 (wbsTraceText). `wbsMappingStatus` mencerminkan union
+   * `WbsMappingStatus` di wbsArtifact.ts (ditulis literal di sini agar
+   * types tidak mengimpor modul AI — hindari siklus impor).
+   */
+  wbsCode?: string;
+  wbsNodeId?: string;
+  wbsMappingStatus?: 'CONFIRMED' | 'PROVISIONAL' | 'UNMAPPED';
+  wbsSuggestedNodeId?: string;
   code: string;
   description: string;
   specification: string;
@@ -349,6 +373,17 @@ export interface RABItem {
   isAssumption?: boolean;
   assumptionNote?: string;
   verificationStatus: VerificationStatus;
+  /**
+   * P5 FULL REPAIR (K-A6): tanggal verifikasi manual item (ISO), bila
+   * pernah dicatat. Belum ada alur yang mengisinya; ekspor menampilkan
+   * 'tidak tercatat' bila kosong — JANGAN diisi karangan.
+   */
+  verificationDate?: string | null;
+  /**
+   * P5 FULL REPAIR (K-A6): status keputusan user atas item/asumsi ini,
+   * bila pernah dicatat. Belum ada alur yang mengisinya.
+   */
+  userDecisionStatus?: UserDecisionStatus | null;
   originType?: ItemOriginType;
   notes?: string;
 
@@ -936,14 +971,50 @@ export interface RabItem {
   priceValidationWarnings?: string[];
   itemNumber?: string;
   wbsCode?: string;
+  /**
+   * S9 (§9, S6-O5) — traceabilitas WBS (aditif, opsional): tautan node
+   * artefak WBS + status asosiasi + saran node heuristik. Diteruskan
+   * factory (RabItemInput) → normalizeSections → snapshot → kolom M
+   * Sheet 2. `wbsMappingStatus` mencerminkan union `WbsMappingStatus`
+   * di wbsArtifact.ts (ditulis literal di sini agar types tidak
+   * mengimpor modul AI — hindari siklus impor).
+   */
+  wbsNodeId?: string;
+  wbsMappingStatus?: 'CONFIRMED' | 'PROVISIONAL' | 'UNMAPPED';
+  wbsSuggestedNodeId?: string;
   status?: string;
   ahspCode?: string;
   isAiSuggested?: boolean;
   projectId?: string;
+  /**
+   * P6 FULL REPAIR (E, 2026-11-13) — cermin field K-A6 P5 di `RABItem`
+   * (pencatatan keputusan review): tanggal verifikasi harga eksplisit
+   * (ISO, HANYA dari aksi verifikasi eksplisit user — bukan dari edit
+   * biasa) + status keputusan user atas asumsi item ini. Aditif &
+   * opsional; diisi alur review draft (`draftReview.ts`), dibawa
+   * `buildPushPayload` ke Spreadsheet. Catatan rantai hilir: factory
+   * `createRabItemRecord` (allowlist) + `normalizeSections` belum
+   * meneruskan kedua field ini ke `RABItem` ekspor — sampai keduanya
+   * dikabel, Sheet 5 ekspor tetap menampilkan 'tidak tercatat'
+   * (temuan terbuka P6-O1).
+   */
+  verificationDate?: string | null;
+  userDecisionStatus?: UserDecisionStatus | null;
   volumeSource?: VolumeSourceType;
   qtoItemId?: string;
   calculationRunId?: string;
   calculatorId?: string;
+  /**
+   * S9 (§9, S4-O1 — koreksi premis: `RABItem` SUDAH mendeklarasikan
+   * field ini sejak HEAD; yang belum adalah `RabItem` ini). Rumus
+   * kuantitas item (mis. '10 × 0.15 × 0.3'), mengalir finalizeMapping
+   * → factory (createRabItemRecord) → normalizeSections → Sheet 4
+   * ekspor. Aditif opsional; deklarasi ini juga menutup celah tipe
+   * laten factory (itemData.calculationFormula dibaca S4 tanpa field
+   * ini di tipe). Tanpa rumus = field absen (Sheet 4 'Tidak tersedia',
+   * tanpa karangan).
+   */
+  calculationFormula?: string;
   verificationStatus?: VerificationStatus;
   manualOverrideAudit?: ManualOverrideAudit;
   ahspSnapshot?: AHSPProjectSnapshot;
@@ -952,8 +1023,18 @@ export interface RabItem {
   otherComponentsPercent?: number;
   auditTrail?: WorkItemAuditEntry[];
   notes?: string;
-  /** Price Fallback Layer: source kind for the resolved price. */
-  priceSourceKind?: 'OFFICIAL_AHSP' | 'MARKET_REFERENCE' | 'EZRAB_ASSUMPTION' | 'UNRESOLVED';
+  /**
+   * Price Fallback Layer: source kind for the resolved price.
+   * 'USER_MANUAL' (DED DUAL MODE §8, G-PV-3, 2026-11-13 — aditif):
+   * harga dimasukkan pengguna secara manual; sejajar 'USER_MANUAL' yang
+   * sudah ada di DedPriceSourceKind (ded-ai-estimate/types.ts). Sebelum
+   * anggota ini ada, harga manual finalisasi DED mendarat tanpa kind
+   * (finalizeMapping.ts) — kini berkind jujur. BUKAN bukti resolved
+   * (hasResolvedPriceEvidence hanya mengakui OFFICIAL_AHSP /
+   * MARKET_REFERENCE); ekspor mengemberkannya sebagai manual lewat
+   * priceStatus PRICE_MANUAL (priceIntegrity.bucketOf).
+   */
+  priceSourceKind?: 'OFFICIAL_AHSP' | 'MARKET_REFERENCE' | 'EZRAB_ASSUMPTION' | 'UNRESOLVED' | 'USER_MANUAL';
   /** Human-readable source label. */
   priceSourceLabel?: string;
   /** Explanation of price provenance (e.g. assumption ID, basis). */
