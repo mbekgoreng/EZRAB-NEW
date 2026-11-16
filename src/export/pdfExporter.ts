@@ -2,8 +2,12 @@ import jsPDFConstructor, * as jspdfNamespace from 'jspdf';
 import autoTableFn, * as autoTableNamespace from 'jspdf-autotable';
 import fileSaver from 'file-saver';
 const saveAs = (fileSaver as any)?.saveAs || fileSaver;
-import { Project, Company, RABSection, RabItem } from '../types';
+import { Project, Company, EstimateVersion, RABSection, RabItem } from '../types';
 import { formatRupiah, formatNumberId } from '../engine/formulaEngine';
+import {
+  effectiveProjectPricingStateForProject,
+  formatPricingBasisLabel,
+} from '../engine/pricing/projectPriceModes';
 import { terbilangIndo } from './exportDesignSystem';
 import { renderPdfWatermark } from './pdfWatermark';
 import { loadOfficialEzrabEmblem, loadOfficialEzrabLogo } from './pdfAssets';
@@ -98,6 +102,13 @@ export interface PDFExportOptions {
   subscriptionPlan?: 'free' | 'trial' | 'basic' | 'pro' | 'enterprise';
   isWatermarkRequired?: boolean;
   companyLogoUrl?: string; // Data URL or verified image
+  /**
+   * MASTER PRICING §12: daftar versi estimasi proyek (opsional).
+   * Bila disediakan, pin AHSP/harga master pada baris Basis Harga
+   * cover diambil dari versi estimasi AKTIF proyek; bila tidak,
+   * pin dibaca sebagai default legacy.
+   */
+  estimateVersions?: readonly EstimateVersion[];
   leadEstimatorName?: string;
   directorName?: string;
   clientApproverName?: string;
@@ -262,6 +273,12 @@ export async function exportProjectToPDF(
 
   // Project Identity Metadata Box (Formal Certificate Grid)
   const metaBoxY = titleY + 30;
+  // MASTER PRICING §12: Basis Harga — mode harga proyek (§10) + pin
+  // AHSP / harga master yang berlaku. Pin '(default)' = default
+  // legacy, bukan pin tercatat pada versi estimasi aktif.
+  const pricingBasisLabel = formatPricingBasisLabel(
+    effectiveProjectPricingStateForProject(project, options?.estimateVersions ?? null),
+  );
   const metaBody = [
     [{ content: 'Nama Proyek', styles: { fontStyle: 'bold', textColor: DOC_COLORS.NAVY_PRIMARY } }, `: ${project.name}`],
     [{ content: 'Lokasi Proyek', styles: { fontStyle: 'bold', textColor: DOC_COLORS.NAVY_PRIMARY } }, `: ${project.location || 'Indonesia'}`],
@@ -271,6 +288,7 @@ export async function exportProjectToPDF(
     [{ content: 'Status / Revisi', styles: { fontStyle: 'bold', textColor: DOC_COLORS.NAVY_PRIMARY } }, `: ${revisionNumber} (${(project.status || 'DRAFT').toUpperCase()})`],
     [{ content: 'Tanggal Dokumen', styles: { fontStyle: 'bold', textColor: DOC_COLORS.NAVY_PRIMARY } }, `: ${dateFormatted}`],
     [{ content: 'Penyusun (Lead Estimator)', styles: { fontStyle: 'bold', textColor: DOC_COLORS.NAVY_PRIMARY } }, `: ${options?.leadEstimatorName || company.leadEstimatorName || '-'}`],
+    [{ content: 'Basis Harga', styles: { fontStyle: 'bold', textColor: DOC_COLORS.NAVY_PRIMARY } }, `: ${pricingBasisLabel}`],
   ];
 
   safeAutoTable(doc, {

@@ -1,26 +1,258 @@
 {
-  "generatedAt": "2026-09-28T13:01:05.961Z",
+  "generatedAt": "2026-11-16T02:56:40.829Z",
   "static": {
     "totals": {
-      "CRITICAL": 227,
-      "HIGH": 131,
+      "CRITICAL": 258,
+      "HIGH": 146,
       "MEDIUM": 0
     },
     "findings": [
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/ai-tools/ded-ai-estimate/externalPriceReferences.ts",
+        "line": 44,
+        "snippet": "rangeMin: 150000,",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/ai-tools/ded-ai-estimate/externalPriceReferences.ts",
+        "line": 62,
+        "snippet": "rangeMax: 120000,",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/ai-tools/ded-ai-estimate/externalPriceReferences.ts",
+        "line": 79,
+        "snippet": "rangeMin: 45000,",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/ai-tools/ded-ai-estimate/externalPriceReferences.ts",
+        "line": 112,
+        "snippet": "recommendedPrice: 150000,",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/ai-tools/ded-ai-estimate/externalPriceReferences.ts",
+        "line": 200,
+        "snippet": "rangeMin: 150000,",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/ai-tools/ded-ai-estimate/externalPriceReferences.ts",
+        "line": 234,
+        "snippet": "rangeMin: 120000,",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/ai-tools/ded-ai-estimate/reasonableness.ts",
+        "line": 179,
+        "snippet": "upper: 50000,",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/ai-tools/ded-ai-estimate/service.ts",
+        "line": 937,
+        "snippet": "timeoutMs: mode === 'FAST' ? 120000 : 180000,",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/ai-tools/ded-full-ai/jakartaPrices.ts",
+        "line": 15,
+        "snippet": "{ name: 'Urugan tanah kembali', unit: 'm3', price: 45000, category: 'Tanah' },",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/ai-tools/ded-full-ai/jakartaPrices.ts",
+        "line": 20,
+        "snippet": "{ name: 'Beton site mix K-225', unit: 'm3', price: 1150000, category: 'Beton' },",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/ai-tools/ded-full-ai/jakartaPrices.ts",
+        "line": 29,
+        "snippet": "{ name: 'Acian semen', unit: 'm2', price: 45000, category: 'Dinding' },",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/ai-tools/ded-full-ai/jakartaPrices.ts",
+        "line": 38,
+        "snippet": "{ name: 'Reng baja ringan', unit: 'm2', price: 45000, category: 'Atap' },",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/ai-tools/ded-full-ai/jakartaPrices.ts",
+        "line": 58,
+        "snippet": "{ name: 'Plafon gypsum 9mm + rangka hollow terpasang', unit: 'm2', price: 150000, category: 'Plafon', note: 'Riset pasar 2026-11-10 (jasatukang/finoo) — menggan",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/ai-tools/ded-full-ai/jakartaPrices.ts",
+        "line": 63,
+        "snippet": "{ name: 'Pengecatan kayu/besi', unit: 'm2', price: 45000, category: 'Cat' },",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/ai-tools/ded-full-ai/service.ts",
+        "line": 44,
+        "snippet": "FAST: 120000,",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/ai-tools/document-ai/service.ts",
+        "line": 81,
+        "snippet": "timeoutMs: request.timeoutMs ?? 120000,",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/ai-tools/document-ai/service.ts",
+        "line": 424,
+        "snippet": "timeoutMs: request.timeoutMs ?? 120000,",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/ai-tools/document-ai/service.ts",
+        "line": 486,
+        "snippet": "timeoutMs: request.timeoutMs ?? 120000,",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
+        "file": "src/ai-tools/ezrab-ai/actionRegistry.ts",
+        "line": 2839,
+        "snippet": ".filter((it) => (it.unitPrice ?? 0) > 0)",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
+      },
+      {
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
+        "file": "src/ai-tools/ezrab-ai/actionRegistry.ts",
+        "line": 2840,
+        "snippet": ".sort((a, b) => (b.unitPrice ?? 0) - (a.unitPrice ?? 0))[0];",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
+      },
+      {
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
+        "file": "src/ai-tools/ezrab-ai/actionRegistry.ts",
+        "line": 2843,
+        "snippet": "extra = `\\n\\nHarga satuan tertinggi: ${byUnit.description} — ${fmtIDR(byUnit.unitPrice ?? 0)}/${byUnit.unit}.`;",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
+      },
+      {
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
+        "file": "src/ai-tools/ezrab-ai/operations.ts",
+        "line": 338,
+        "snippet": "const newItemTotal = it.priceStatus === 'PRICE_UNRESOLVED' ? 0 : newVolume * (it.unitPrice ?? 0);",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
+      },
+      {
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
+        "file": "src/ai-tools/ezrab-ai/operations.ts",
+        "line": 472,
+        "snippet": "? (cur.priceStatus === 'PRICE_UNRESOLVED' ? 0 : (b.value ?? 0) * (cur.unitPrice ?? 0))",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
+      },
+      {
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
+        "file": "src/ai-tools/ezrab-ai/projectContext.ts",
+        "line": 80,
+        "snippet": ": toNumber(it.totalPrice) || volume * (unitPrice ?? 0);",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
+      },
+      {
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
+        "file": "src/ai-tools/ezrab-ai/projectContext.ts",
+        "line": 187,
+        "snippet": "it.priceStatus === 'PRICE_UNRESOLVED' ? 'harga belum tersedia' : formatIDR(it.unitPrice ?? 0);",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/ai-tools/ezrab-ai/rabNeeds.ts",
+        "line": 459,
+        "snippet": "if (a > 0 && b > 0 && a * b > 50000) {",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
+        "file": "src/ai-tools/ezrab-ai/toolRegistry.ts",
+        "line": 1336,
+        "snippet": "const items = ctx.draftItems ?? ctx.draft?.parts.flatMap((p) => p.generation.items ?? []).map((i) => ({ description: i.description, totalPrice: i.totalPrice ?? ",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
+      },
+      {
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
+        "file": "src/ai-tools/ezrab-ai/tools.ts",
+        "line": 443,
+        "snippet": ": `${formatIDR(it.unitPrice ?? 0)}/${it.unit}`;",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
+      },
+      {
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
+        "file": "src/ai-tools/ezrab-ai/tools.ts",
+        "line": 477,
+        "snippet": "`Harga satuan: ${it.priceStatus === 'PRICE_UNRESOLVED' ? 'belum tersedia (BUKAN Rp0)' : `${formatIDR(it.unitPrice ?? 0)}/${it.unit}`}`,",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
+      },
+      {
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
+        "file": "src/ai-tools/ezrab-ai/tools.ts",
+        "line": 716,
+        "snippet": "lines.push(`${i + 1}. ${it.description} (${it.code || 'tanpa kode'}) — ${it.volume} ${it.unit} × ${formatIDR(it.unitPrice ?? 0)} = ${formatIDR(it.totalPrice)} —",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
+      },
       {
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/calculations/decimalEngine.ts",
         "line": 11,
         "snippet": "const p = new Decimal(unitPrice || 0);",
-        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
-      },
-      {
-        "severity": "CRITICAL",
-        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
-        "file": "src/components/ahsp/AhspExplorerView.tsx",
-        "line": 1611,
-        "snippet": "{formatCurrencyIDR((addToRabModalItem.unitPrice || 0) * (inputVolume || 0))}",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
@@ -44,7 +276,7 @@
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/components/copilot/EstimatingCopilotPanel.tsx",
         "line": 105,
-        "snippet": "(acc, it) => acc + (it.amount || it.totalPrice || it.volume * it.unitPrice || 0),",
+        "snippet": "(acc, it) => acc + (it.amount ?? it.totalPrice ?? it.volume * (it.unitPrice ?? 0)),",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
@@ -76,7 +308,7 @@
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/components/copilot/EstimatingCopilotPanel.tsx",
         "line": 472,
-        "snippet": "const amt = it.amount || it.totalPrice || it.volume * it.unitPrice || 0;",
+        "snippet": "const amt = it.amount ?? it.totalPrice ?? it.volume * (it.unitPrice ?? 0);",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
@@ -84,22 +316,46 @@
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/components/copilot/EstimatingCopilotPanel.tsx",
         "line": 501,
-        "snippet": "text: `📋 **Penjelasan Teknis Item Terpilih:**\\n\\n- **Kode:** \\`${selectedItem.code || selectedItem.ahspCode || 'P-01'}\\`\\n- **Pekerjaan:** **${selectedItem.des",
+        "snippet": "const _totalLabel = _isUnresolved ? 'Belum tersedia' : formatCurrencyIDR(selectedItem.amount || selectedItem.totalPrice || 0);",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price)\\s*:\\s*0\\s*[,}]",
         "file": "src/components/copilot/EzrabCoAssistantChatbox.tsx",
-        "line": 634,
+        "line": 782,
         "snippet": "unitPrice: typeof params.unitPrice === 'number' ? params.unitPrice : 0,",
         "note": "A price field is returned as a literal 0 instead of null."
       },
       {
         "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
+        "file": "src/components/database/PricesExplorerView.tsx",
+        "line": 167,
+        "snippet": "setNewItemPrice(item.price || 0);",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
+      },
+      {
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
+        "file": "src/components/database/PricesExplorerView.tsx",
+        "line": 168,
+        "snippet": "setNewItemMinPrice(item.minPrice || 0);",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
+      },
+      {
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
+        "file": "src/components/database/PricesExplorerView.tsx",
+        "line": 169,
+        "snippet": "setNewItemMaxPrice(item.maxPrice || 0);",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
+      },
+      {
+        "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price)\\s*:\\s*0\\s*[,}]",
         "file": "src/components/document/DedRabPipelineReviewView.tsx",
-        "line": 65,
+        "line": 66,
         "snippet": "unitPrice: 0,",
         "note": "A price field is returned as a literal 0 instead of null."
       },
@@ -107,7 +363,7 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/components/document/DedRabPipelineReviewView.tsx",
-        "line": 105,
+        "line": 106,
         "snippet": "unitPrice: row.unitPrice || 0,",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
@@ -115,7 +371,7 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/components/document/DedRabPipelineReviewView.tsx",
-        "line": 158,
+        "line": 181,
         "snippet": "unitPrice: r.unitPrice || 0,",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
@@ -123,63 +379,55 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/components/document/DedRabWorkflowView.tsx",
-        "line": 305,
-        "snippet": "const unitPrice = item.price?.unitPrice || 0;",
+        "line": 616,
+        "snippet": "materialPrice: it.materialPrice || 0,",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/components/document/DedRabWorkflowView.tsx",
-        "line": 748,
-        "snippet": "const itemAmount = (item.quantity || 0) * (item.price?.unitPrice || 0);",
+        "line": 617,
+        "snippet": "laborPrice: it.laborPrice || 0,",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/components/document/DedRabWorkflowView.tsx",
-        "line": 758,
-        "snippet": "unitPrice: item.price?.unitPrice || 0,",
+        "line": 618,
+        "snippet": "equipmentPrice: it.equipmentPrice || 0,",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/components/document/DedRabWorkflowView.tsx",
-        "line": 3091,
-        "snippet": ".reduce((acc, it) => acc + (it.quantity || 0) * (it.price?.unitPrice || 0), 0)",
+        "line": 619,
+        "snippet": "unitPrice: it.unitPrice || 0,",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
-        "file": "src/components/estimator/EstimatorKurvaSView.tsx",
-        "line": 35,
-        "snippet": "const amt = it.amount || (it.volume || 0) * (it.unitPrice || 0);",
+        "file": "src/components/document/DedRabWorkflowView.tsx",
+        "line": 620,
+        "snippet": "totalPrice: it.totalPrice || 0,",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
-        "file": "src/components/estimator/EstimatorRekapitulasiView.tsx",
-        "line": 30,
-        "snippet": "const amt = item.amount || (item.volume || 0) * (item.unitPrice || 0);",
-        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
-      },
-      {
-        "severity": "CRITICAL",
-        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
-        "file": "src/components/estimator/MagicAICopilotModal.tsx",
-        "line": 196,
-        "snippet": "(sum, i) => sum + (i.amount || i.totalPrice || i.volume * i.unitPrice || 0),",
+        "file": "src/components/estimator/EstimatorSpreadsheetTable.tsx",
+        "line": 562,
+        "snippet": "const itemTotal = item.amount ?? item.totalPrice ?? item.volume * (item.unitPrice ?? 0);",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/components/estimator/SmartAddWorkItemModal.tsx",
-        "line": 199,
+        "line": 687,
         "snippet": "setAhspCustomPrice(ahsp.unitPrice || 0);",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
@@ -187,39 +435,39 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/components/estimator/SmartAddWorkItemModal.tsx",
-        "line": 252,
-        "snippet": "const up = ahsp.unitPrice || 0;",
+        "line": 691,
+        "snippet": "setAhspCustomPrice(comp.unitPrice || 0);",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
-      },
-      {
-        "severity": "HIGH",
-        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
-        "file": "src/components/estimator/SmartAddWorkItemModal.tsx",
-        "line": 451,
-        "snippet": "const estPrice = item.ahspCandidates?.[0]?.unitPriceEstimate || 150000;",
-        "note": "Known fabricated price constant from the Phase 0 audit."
       },
       {
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
-        "file": "src/components/estimator/SmartAddWorkItemModal.tsx",
-        "line": 1137,
-        "snippet": "{formatCurrencyIDR(item.unitPrice || 0)}",
+        "file": "src/components/estimator/rekapSummary.ts",
+        "line": 42,
+        "snippet": "const amt = item.amount || (item.volume || 0) * (item.unitPrice || 0);",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
-        "severity": "HIGH",
-        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
-        "file": "src/components/estimator/SmartAddWorkItemModal.tsx",
-        "line": 1737,
-        "snippet": "const estPrice = item.ahspCandidates?.[0]?.unitPriceEstimate || 150000;",
-        "note": "Known fabricated price constant from the Phase 0 audit."
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
+        "file": "src/components/estimator/useKurvaSModel.ts",
+        "line": 53,
+        "snippet": "() => items.reduce((acc, it) => acc + (it.amount || (it.volume || 0) * (it.unitPrice || 0)), 0),",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
+      },
+      {
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
+        "file": "src/components/finance/KeuanganMax.tsx",
+        "line": 49,
+        "snippet": "return items.reduce((s: number, it: any) => s + (Number(it.totalPrice ?? it.subtotal ?? (it.quantity ?? 0) * (it.unitPrice ?? 0)) || 0), 0);",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/components/import/IntelligentExcelImportModal.tsx",
-        "line": 154,
+        "line": 156,
         "snippet": "unitPrice: item.unitPrice || 0,",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
@@ -227,55 +475,7 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/components/inspector/WorkItemInspectorDrawer.tsx",
-        "line": 183,
-        "snippet": "unitPrice: resolvePrice(c.name, c.unitPrice || 0),",
-        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
-      },
-      {
-        "severity": "CRITICAL",
-        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
-        "file": "src/components/inspector/WorkItemInspectorDrawer.tsx",
-        "line": 184,
-        "snippet": "total: SafeDecimalEngine.safeMultiply(c.coefficient || 1, resolvePrice(c.name, c.unitPrice || 0), 2),",
-        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
-      },
-      {
-        "severity": "CRITICAL",
-        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
-        "file": "src/components/inspector/WorkItemInspectorDrawer.tsx",
-        "line": 194,
-        "snippet": "unitPrice: resolvePrice(c.name, c.unitPrice || 0),",
-        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
-      },
-      {
-        "severity": "CRITICAL",
-        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
-        "file": "src/components/inspector/WorkItemInspectorDrawer.tsx",
-        "line": 195,
-        "snippet": "total: SafeDecimalEngine.safeMultiply(c.coefficient || 1, resolvePrice(c.name, c.unitPrice || 0), 2),",
-        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
-      },
-      {
-        "severity": "CRITICAL",
-        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
-        "file": "src/components/inspector/WorkItemInspectorDrawer.tsx",
-        "line": 205,
-        "snippet": "unitPrice: resolvePrice(c.name, c.unitPrice || 0),",
-        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
-      },
-      {
-        "severity": "CRITICAL",
-        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
-        "file": "src/components/inspector/WorkItemInspectorDrawer.tsx",
-        "line": 206,
-        "snippet": "total: SafeDecimalEngine.safeMultiply(c.coefficient || 1, resolvePrice(c.name, c.unitPrice || 0), 2),",
-        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
-      },
-      {
-        "severity": "CRITICAL",
-        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
-        "file": "src/components/inspector/WorkItemInspectorDrawer.tsx",
-        "line": 314,
+        "line": 304,
         "snippet": "const baselineUnitPrice = initialData?.unitPrice || 0;",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
@@ -283,7 +483,7 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/components/inspector/WorkItemInspectorDrawer.tsx",
-        "line": 315,
+        "line": 305,
         "snippet": "const baselineTotalItemPrice = initialData?.totalPrice || 0;",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
@@ -291,7 +491,7 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/components/inspector/WorkItemInspectorDrawer.tsx",
-        "line": 412,
+        "line": 402,
         "snippet": "total: SafeDecimalEngine.safeMultiply(c.coefficient, c.unitPrice || 0, 2),",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
@@ -299,7 +499,7 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/components/inspector/WorkItemInspectorDrawer.tsx",
-        "line": 420,
+        "line": 410,
         "snippet": "total: SafeDecimalEngine.safeMultiply(c.coefficient, c.unitPrice || 0, 2),",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
@@ -307,7 +507,7 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/components/inspector/WorkItemInspectorDrawer.tsx",
-        "line": 428,
+        "line": 418,
         "snippet": "total: SafeDecimalEngine.safeMultiply(c.coefficient, c.unitPrice || 0, 2),",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
@@ -315,32 +515,24 @@
         "severity": "HIGH",
         "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
         "file": "src/components/landing/exact/ExactReportsExport.tsx",
-        "line": 306,
+        "line": 316,
         "snippet": "equipmentPrice: 50000,",
         "note": "Known fabricated price constant from the Phase 0 audit."
       },
       {
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
-        "file": "src/components/magic-ai/DrawingReaderModal.tsx",
-        "line": 830,
-        "snippet": "{formatCurrencyIDR(item.unitPrice || 0)}",
+        "file": "src/components/materials/AddMaterialWizardModal.tsx",
+        "line": 88,
+        "snippet": "price: initialPrice?.price ?? 0,",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
-        "file": "src/components/magic-ai/MagicAiSuperView.tsx",
-        "line": 431,
-        "snippet": "return projectRabItems.reduce((acc, item) => acc + (item.volume * (item.unitPrice || 0)), 0);",
-        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
-      },
-      {
-        "severity": "CRITICAL",
-        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
-        "file": "src/components/magic-ai/MagicAiSuperView.tsx",
-        "line": 5415,
-        "snippet": "unitPrice: i.unitPrice || 0,",
+        "file": "src/components/materials/AddMaterialWizardModal.tsx",
+        "line": 135,
+        "snippet": "if (formData.price > 0 && formData.price !== (initialPrice?.price ?? 0)) {",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
@@ -363,7 +555,7 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/components/materials/MaterialDatabaseView.tsx",
-        "line": 266,
+        "line": 350,
         "snippet": "const pA = matDb.getPricesByMaterialId(a.id)[0]?.price || 0;",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
@@ -371,7 +563,7 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/components/materials/MaterialDatabaseView.tsx",
-        "line": 267,
+        "line": 351,
         "snippet": "const pB = matDb.getPricesByMaterialId(b.id)[0]?.price || 0;",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
@@ -379,7 +571,7 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/components/materials/MaterialDatabaseView.tsx",
-        "line": 272,
+        "line": 356,
         "snippet": "const pA = matDb.getPricesByMaterialId(a.id)[0]?.price || 0;",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
@@ -387,7 +579,7 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/components/materials/MaterialDatabaseView.tsx",
-        "line": 273,
+        "line": 357,
         "snippet": "const pB = matDb.getPricesByMaterialId(b.id)[0]?.price || 0;",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
@@ -395,7 +587,7 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/components/materials/MaterialDatabaseView.tsx",
-        "line": 433,
+        "line": 507,
         "snippet": "p?.price || 0,",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
@@ -403,7 +595,15 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/components/materials/MaterialDatabaseView.tsx",
-        "line": 1796,
+        "line": 542,
+        "snippet": "basePrice: prices[0]?.price || 0,",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
+      },
+      {
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
+        "file": "src/components/materials/MaterialDatabaseView.tsx",
+        "line": 582,
         "snippet": "masterPrice: item.masterPrice ?? item.basePrice ?? item.minPrice ?? 0,",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
@@ -411,7 +611,7 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/components/materials/MaterialDatabaseView.tsx",
-        "line": 1938,
+        "line": 2102,
         "snippet": "const basePrice = prices[0]?.price || 0;",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
@@ -419,7 +619,7 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/components/materials/MaterialDatabaseView.tsx",
-        "line": 2223,
+        "line": 2390,
         "snippet": "const refPrice = prices[0]?.price || 0;",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
@@ -427,7 +627,7 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/components/materials/MaterialDatabaseView.tsx",
-        "line": 2681,
+        "line": 2950,
         "snippet": "? matDb.getPricesByMaterialId(targetMaterialForProjectPrice.id)[0]?.price || 0",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
@@ -443,31 +643,15 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/components/materials/MaterialInspectorPanel.tsx",
-        "line": 516,
+        "line": 519,
         "snippet": "const basePrice = primaryPriceRec?.price || 0;",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
-      },
-      {
-        "severity": "HIGH",
-        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
-        "file": "src/components/materials/MaterialInspectorPanel.tsx",
-        "line": 521,
-        "snippet": "price: basePrice > 0 ? basePrice : 74000,",
-        "note": "Known fabricated price constant from the Phase 0 audit."
-      },
-      {
-        "severity": "HIGH",
-        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
-        "file": "src/components/materials/MaterialInspectorPanel.tsx",
-        "line": 822,
-        "snippet": "Rp {(basePrice > 0 ? basePrice : 74000).toLocaleString('id-ID')}",
-        "note": "Known fabricated price constant from the Phase 0 audit."
       },
       {
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/components/materials/PriceProvenanceModal.tsx",
-        "line": 109,
+        "line": 111,
         "snippet": "const refPrice = resolved.referencePrice || 0;",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
@@ -475,7 +659,7 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/components/materials/PriceProvenanceModal.tsx",
-        "line": 110,
+        "line": 112,
         "snippet": "const finalPrice = resolved.price || 0;",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
@@ -483,7 +667,7 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/components/materials/ProjectPriceModal.tsx",
-        "line": 101,
+        "line": 105,
         "snippet": "const basePrice = referencePrice > 0 ? referencePrice : (prices[0]?.price || 0);",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
@@ -491,7 +675,7 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/components/materials/ProjectPriceModal.tsx",
-        "line": 162,
+        "line": 166,
         "snippet": "masterPrice: prices[0]?.price || 0,",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
@@ -499,7 +683,7 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/components/materials/ProjectPriceModal.tsx",
-        "line": 218,
+        "line": 222,
         "snippet": "const masterPrice = selectedResource?.masterPrice || 0;",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
@@ -520,555 +704,147 @@
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
-        "severity": "HIGH",
-        "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
-        "file": "src/components/qto/QtoCalculatorView.tsx",
-        "line": 1003,
-        "snippet": "let defaultPrice = 0;",
-        "note": "A local \"fallback price\" variable — a price invented when data is missing."
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
+        "file": "src/components/mobile/MobileMaterialDb.tsx",
+        "line": 195,
+        "snippet": "const priceVal = override.price ?? override.projectPrice ?? 0;",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
-        "severity": "HIGH",
-        "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
-        "file": "src/components/qto/QtoCalculatorView.tsx",
-        "line": 1009,
-        "snippet": "defaultPrice = m.unitPriceEstimate;",
-        "note": "A local \"fallback price\" variable — a price invented when data is missing."
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
+        "file": "src/components/mobile/MobileMaterialDb.tsx",
+        "line": 196,
+        "snippet": "const basePriceVal = override.masterPrice ?? override.basePrice ?? override.minPrice ?? 0;",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
-        "severity": "HIGH",
-        "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
-        "file": "src/components/qto/QtoCalculatorView.tsx",
-        "line": 1013,
-        "snippet": "defaultPrice = match.price;",
-        "note": "A local \"fallback price\" variable — a price invented when data is missing."
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
+        "file": "src/components/mobile/MobileSpreadsheetRab.tsx",
+        "line": 85,
+        "snippet": ": `${formatNumberId(item.volume || 0, 2)} ${item.unit} × ${formatRupiah(item.unitPrice ?? 0)}`}",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
-        "severity": "HIGH",
-        "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/components/qto/QtoCalculatorView.tsx",
-        "line": 1015,
-        "snippet": "if (m.name.includes('Besi')) { defaultPrice = 14500; fabricatedSiteId = 'qto.material.keyword-branch'; }",
-        "note": "A local \"fallback price\" variable — a price invented when data is missing."
+        "line": 1244,
+        "snippet": "const subtotalLabor = laborRows.reduce((acc, row) => acc + (row.jumlahHarga ?? 0), 0);",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
-        "severity": "HIGH",
-        "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/components/qto/QtoCalculatorView.tsx",
-        "line": 1016,
-        "snippet": "else if (m.name.includes('Kawat')) { defaultPrice = 28000; fabricatedSiteId = 'qto.material.keyword-branch'; }",
-        "note": "A local \"fallback price\" variable — a price invented when data is missing."
+        "line": 1259,
+        "snippet": "const subtotalMaterials = materialRows.reduce((acc, row) => acc + (row.jumlahHarga ?? 0), 0);",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
-        "severity": "HIGH",
-        "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/components/qto/QtoCalculatorView.tsx",
-        "line": 1017,
-        "snippet": "else if (m.name.includes('Kayu papan')) { defaultPrice = 3200000; fabricatedSiteId = 'qto.material.keyword-branch'; }",
-        "note": "A local \"fallback price\" variable — a price invented when data is missing."
+        "line": 1274,
+        "snippet": "const subtotalEquipment = equipmentRows.reduce((acc, row) => acc + (row.jumlahHarga ?? 0), 0);",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
-        "severity": "HIGH",
-        "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/components/qto/QtoCalculatorView.tsx",
-        "line": 1018,
-        "snippet": "else if (m.name.includes('Paku')) { defaultPrice = 22000; fabricatedSiteId = 'qto.material.keyword-branch'; }",
-        "note": "A local \"fallback price\" variable — a price invented when data is missing."
+        "line": 1313,
+        "snippet": "const raws = structuredRows.map((r) => r.jumlahHarga ?? 0);",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
-        "severity": "HIGH",
-        "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
-        "file": "src/components/qto/QtoCalculatorView.tsx",
-        "line": 1019,
-        "snippet": "else if (m.name.includes('Minyak')) { defaultPrice = 18000; fabricatedSiteId = 'qto.material.keyword-branch'; }",
-        "note": "A local \"fallback price\" variable — a price invented when data is missing."
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
+        "file": "src/components/rab/RabEstimasiView.tsx",
+        "line": 552,
+        "snippet": "valA = a.amount ?? a.totalPrice ?? a.volume * (a.unitPrice ?? 0);",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
-        "severity": "HIGH",
-        "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
-        "file": "src/components/qto/QtoCalculatorView.tsx",
-        "line": 1020,
-        "snippet": "else if (m.name.includes('Semen')) { defaultPrice = 72000; fabricatedSiteId = 'qto.material.keyword-branch'; }",
-        "note": "A local \"fallback price\" variable — a price invented when data is missing."
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
+        "file": "src/components/rab/RabEstimasiView.tsx",
+        "line": 553,
+        "snippet": "valB = b.amount ?? b.totalPrice ?? b.volume * (b.unitPrice ?? 0);",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
-        "severity": "HIGH",
-        "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
-        "file": "src/components/qto/QtoCalculatorView.tsx",
-        "line": 1021,
-        "snippet": "else if (m.name.includes('Pasir beton') || m.name.includes('Pasir pasang')) { defaultPrice = 320000; fabricatedSiteId = 'qto.material.keyword-branch'; }",
-        "note": "A local \"fallback price\" variable — a price invented when data is missing."
-      },
-      {
-        "severity": "HIGH",
-        "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
-        "file": "src/components/qto/QtoCalculatorView.tsx",
-        "line": 1022,
-        "snippet": "else if (m.name.includes('Batu split')) { defaultPrice = 360000; fabricatedSiteId = 'qto.material.keyword-branch'; }",
-        "note": "A local \"fallback price\" variable — a price invented when data is missing."
-      },
-      {
-        "severity": "HIGH",
-        "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
-        "file": "src/components/qto/QtoCalculatorView.tsx",
-        "line": 1023,
-        "snippet": "else if (m.name.includes('Air')) { defaultPrice = 120; fabricatedSiteId = 'qto.material.keyword-branch'; }",
-        "note": "A local \"fallback price\" variable — a price invented when data is missing."
-      },
-      {
-        "severity": "HIGH",
-        "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
-        "file": "src/components/qto/QtoCalculatorView.tsx",
-        "line": 1024,
-        "snippet": "else if (m.name.includes('Bata Ringan')) { defaultPrice = 750000; fabricatedSiteId = 'qto.material.keyword-branch'; }",
-        "note": "A local \"fallback price\" variable — a price invented when data is missing."
-      },
-      {
-        "severity": "HIGH",
-        "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
-        "file": "src/components/qto/QtoCalculatorView.tsx",
-        "line": 1025,
-        "snippet": "else if (m.name.includes('Batu Belah')) { defaultPrice = 295000; fabricatedSiteId = 'qto.material.keyword-branch'; }",
-        "note": "A local \"fallback price\" variable — a price invented when data is missing."
-      },
-      {
-        "severity": "HIGH",
-        "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
-        "file": "src/components/qto/QtoCalculatorView.tsx",
-        "line": 1028,
-        "snippet": "defaultPrice = 38500000;",
-        "note": "A local \"fallback price\" variable — a price invented when data is missing."
-      },
-      {
-        "severity": "HIGH",
-        "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
-        "file": "src/components/qto/QtoCalculatorView.tsx",
-        "line": 1030,
-        "snippet": "else if (m.name.includes('Girder')) { defaultPrice = 45000000; }",
-        "note": "A local \"fallback price\" variable — a price invented when data is missing."
-      },
-      {
-        "severity": "HIGH",
-        "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
-        "file": "src/components/qto/QtoCalculatorView.tsx",
-        "line": 1031,
-        "snippet": "else if (m.name.includes('Sheet Pile') || m.name.includes('CCSP')) { defaultPrice = 2850000; }",
-        "note": "A local \"fallback price\" variable — a price invented when data is missing."
-      },
-      {
-        "severity": "HIGH",
-        "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
-        "file": "src/components/qto/QtoCalculatorView.tsx",
-        "line": 1032,
-        "snippet": "else if (m.name.includes('Bearing Pad')) { defaultPrice = 2500000; }",
-        "note": "A local \"fallback price\" variable — a price invented when data is missing."
-      },
-      {
-        "severity": "HIGH",
-        "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
-        "file": "src/components/qto/QtoCalculatorView.tsx",
-        "line": 1033,
-        "snippet": "else if (m.name.includes('Expansion Joint')) { defaultPrice = 1850000; }",
-        "note": "A local \"fallback price\" variable — a price invented when data is missing."
-      },
-      {
-        "severity": "HIGH",
-        "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
-        "file": "src/components/qto/QtoCalculatorView.tsx",
-        "line": 1034,
-        "snippet": "else if (m.name.includes('U-Ditch')) { defaultPrice = 850000; }",
-        "note": "A local \"fallback price\" variable — a price invented when data is missing."
-      },
-      {
-        "severity": "HIGH",
-        "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
-        "file": "src/components/qto/QtoCalculatorView.tsx",
-        "line": 1035,
-        "snippet": "else if (m.name.includes('Box Culvert')) { defaultPrice = 2200000; }",
-        "note": "A local \"fallback price\" variable — a price invented when data is missing."
-      },
-      {
-        "severity": "HIGH",
-        "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
-        "file": "src/components/qto/QtoCalculatorView.tsx",
-        "line": 1036,
-        "snippet": "else if (m.name.includes('Bronjong')) { defaultPrice = 185000; }",
-        "note": "A local \"fallback price\" variable — a price invented when data is missing."
-      },
-      {
-        "severity": "HIGH",
-        "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
-        "file": "src/components/qto/QtoCalculatorView.tsx",
-        "line": 1037,
-        "snippet": "else if (m.name.includes('Pasangan Batu') || m.name.includes('Batu Kali')) { defaultPrice = 850000; }",
-        "note": "A local \"fallback price\" variable — a price invented when data is missing."
-      },
-      {
-        "severity": "HIGH",
-        "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
-        "file": "src/components/qto/QtoCalculatorView.tsx",
-        "line": 1038,
-        "snippet": "else if (m.name.includes('Beton') && (m.name.includes('K-350') || m.name.includes('fc 30') || m.name.includes('30 MPa'))) { defaultPrice = 1450000; }",
-        "note": "A local \"fallback price\" variable — a price invented when data is missing."
-      },
-      {
-        "severity": "HIGH",
-        "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
-        "file": "src/components/qto/QtoCalculatorView.tsx",
-        "line": 1039,
-        "snippet": "else if (m.name.includes('Beton') && m.name.includes('K-300')) { defaultPrice = 1350000; }",
-        "note": "A local \"fallback price\" variable — a price invented when data is missing."
-      },
-      {
-        "severity": "HIGH",
-        "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
-        "file": "src/components/qto/QtoCalculatorView.tsx",
-        "line": 1040,
-        "snippet": "else if (m.name.includes('Beton') && m.name.includes('K-250')) { defaultPrice = 1250000; }",
-        "note": "A local \"fallback price\" variable — a price invented when data is missing."
-      },
-      {
-        "severity": "HIGH",
-        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
-        "file": "src/components/qto/QtoCalculatorView.tsx",
-        "line": 1041,
-        "snippet": "else if (m.name.includes('Beton') && (m.name.includes('K-225') || m.name.includes('Siklop'))) { defaultPrice = 1150000; }",
-        "note": "Known fabricated price constant from the Phase 0 audit."
-      },
-      {
-        "severity": "HIGH",
-        "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
-        "file": "src/components/qto/QtoCalculatorView.tsx",
-        "line": 1041,
-        "snippet": "else if (m.name.includes('Beton') && (m.name.includes('K-225') || m.name.includes('Siklop'))) { defaultPrice = 1150000; }",
-        "note": "A local \"fallback price\" variable — a price invented when data is missing."
-      },
-      {
-        "severity": "HIGH",
-        "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
-        "file": "src/components/qto/QtoCalculatorView.tsx",
-        "line": 1042,
-        "snippet": "else if (m.name.includes('Bekisting')) { defaultPrice = 185000; }",
-        "note": "A local \"fallback price\" variable — a price invented when data is missing."
-      },
-      {
-        "severity": "HIGH",
-        "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
-        "file": "src/components/qto/QtoCalculatorView.tsx",
-        "line": 1043,
-        "snippet": "else if (m.name.includes('Timbunan') || m.name.includes('Urug')) { defaultPrice = 125000; }",
-        "note": "A local \"fallback price\" variable — a price invented when data is missing."
-      },
-      {
-        "severity": "HIGH",
-        "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
-        "file": "src/components/qto/QtoCalculatorView.tsx",
-        "line": 1044,
-        "snippet": "else if (m.name.includes('Galian') || m.name.includes('Dredging')) { defaultPrice = 85000; }",
-        "note": "A local \"fallback price\" variable — a price invented when data is missing."
-      },
-      {
-        "severity": "HIGH",
-        "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
-        "file": "src/components/qto/QtoCalculatorView.tsx",
-        "line": 1045,
-        "snippet": "else if (m.name.includes('Tiang Pancang') || m.name.includes('Bored Pile')) { defaultPrice = 1200000; }",
-        "note": "A local \"fallback price\" variable — a price invented when data is missing."
-      },
-      {
-        "severity": "HIGH",
-        "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
-        "file": "src/components/qto/QtoCalculatorView.tsx",
-        "line": 1046,
-        "snippet": "else if (m.name.includes('Pipa') || m.name.includes('Pipe')) { defaultPrice = 450000; }",
-        "note": "A local \"fallback price\" variable — a price invented when data is missing."
-      },
-      {
-        "severity": "HIGH",
-        "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
-        "file": "src/components/qto/QtoCalculatorView.tsx",
-        "line": 1047,
-        "snippet": "else if (m.name.includes('Geomembran')) { defaultPrice = 85000; }",
-        "note": "A local \"fallback price\" variable — a price invented when data is missing."
-      },
-      {
-        "severity": "HIGH",
-        "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
-        "file": "src/components/qto/QtoCalculatorView.tsx",
-        "line": 1048,
-        "snippet": "else if (m.name.includes('Waterproofing')) { defaultPrice = 95000; }",
-        "note": "A local \"fallback price\" variable — a price invented when data is missing."
-      },
-      {
-        "severity": "HIGH",
-        "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
-        "file": "src/components/qto/QtoCalculatorView.tsx",
-        "line": 1049,
-        "snippet": "else if (m.name.includes('Riprap') || m.name.includes('Armor')) { defaultPrice = 380000; }",
-        "note": "A local \"fallback price\" variable — a price invented when data is missing."
-      },
-      {
-        "severity": "HIGH",
-        "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
-        "file": "src/components/qto/QtoCalculatorView.tsx",
-        "line": 1050,
-        "snippet": "else if (m.name.includes('Manhole')) { defaultPrice = 1250000; }",
-        "note": "A local \"fallback price\" variable — a price invented when data is missing."
-      },
-      {
-        "severity": "HIGH",
-        "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
-        "file": "src/components/qto/QtoCalculatorView.tsx",
-        "line": 1051,
-        "snippet": "else if (m.name.includes('Cover Plat') || m.name.includes('Cover Manhole')) { defaultPrice = 350000; }",
-        "note": "A local \"fallback price\" variable — a price invented when data is missing."
-      },
-      {
-        "severity": "HIGH",
-        "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
-        "file": "src/components/qto/QtoCalculatorView.tsx",
-        "line": 1052,
-        "snippet": "else if (m.name.includes('Plesteran') || m.name.includes('Siar')) { defaultPrice = 48000; }",
-        "note": "A local \"fallback price\" variable — a price invented when data is missing."
-      },
-      {
-        "severity": "HIGH",
-        "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
-        "file": "src/components/qto/QtoCalculatorView.tsx",
-        "line": 1053,
-        "snippet": "else if (m.name.includes('Tangki')) { defaultPrice = 15000000; }",
-        "note": "A local \"fallback price\" variable — a price invented when data is missing."
-      },
-      {
-        "severity": "HIGH",
-        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
-        "file": "src/components/qto/QtoCalculatorView.tsx",
-        "line": 1054,
-        "snippet": "else { defaultPrice = 50000; fabricatedSiteId = 'qto.material.last-resort'; }",
-        "note": "Known fabricated price constant from the Phase 0 audit."
-      },
-      {
-        "severity": "HIGH",
-        "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
-        "file": "src/components/qto/QtoCalculatorView.tsx",
-        "line": 1054,
-        "snippet": "else { defaultPrice = 50000; fabricatedSiteId = 'qto.material.last-resort'; }",
-        "note": "A local \"fallback price\" variable — a price invented when data is missing."
-      },
-      {
-        "severity": "HIGH",
-        "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
-        "file": "src/components/qto/QtoCalculatorView.tsx",
-        "line": 1058,
-        "snippet": "const unitPrice = priceOverrides[`mat_${m.name}`] ?? defaultPrice;",
-        "note": "A local \"fallback price\" variable — a price invented when data is missing."
-      },
-      {
-        "severity": "HIGH",
-        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
-        "file": "src/components/qto/QtoCalculatorView.tsx",
-        "line": 1099,
-        "snippet": "recordFabricatedTotal('qto.equipment.implicit-default', 45000, {",
-        "note": "Known fabricated price constant from the Phase 0 audit."
-      },
-      {
-        "severity": "HIGH",
-        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
-        "file": "src/components/qto/QtoCalculatorView.tsx",
-        "line": 1100,
-        "snippet": "constant: 45000,",
-        "note": "Known fabricated price constant from the Phase 0 audit."
-      },
-      {
-        "severity": "HIGH",
-        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
-        "file": "src/components/qto/QtoCalculatorView.tsx",
-        "line": 1109,
-        "snippet": "{ name: 'Alat Bantu Konstruksi & Pengadukan', quantity: 1, unit: 'ls', unitPriceEstimate: 45000 },",
-        "note": "Known fabricated price constant from the Phase 0 audit."
-      },
-      {
-        "severity": "HIGH",
-        "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
-        "file": "src/components/qto/QtoCalculatorView.tsx",
-        "line": 1111,
-        "snippet": "let defaultPrice = 0;",
-        "note": "A local \"fallback price\" variable — a price invented when data is missing."
-      },
-      {
-        "severity": "HIGH",
-        "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
-        "file": "src/components/qto/QtoCalculatorView.tsx",
-        "line": 1114,
-        "snippet": "defaultPrice = match.price;",
-        "note": "A local \"fallback price\" variable — a price invented when data is missing."
-      },
-      {
-        "severity": "HIGH",
-        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
-        "file": "src/components/qto/QtoCalculatorView.tsx",
-        "line": 1116,
-        "snippet": "defaultPrice = eq.unitPriceEstimate || 45000;",
-        "note": "Known fabricated price constant from the Phase 0 audit."
-      },
-      {
-        "severity": "HIGH",
-        "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
-        "file": "src/components/qto/QtoCalculatorView.tsx",
-        "line": 1116,
-        "snippet": "defaultPrice = eq.unitPriceEstimate || 45000;",
-        "note": "A local \"fallback price\" variable — a price invented when data is missing."
-      },
-      {
-        "severity": "HIGH",
-        "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
-        "file": "src/components/qto/QtoCalculatorView.tsx",
-        "line": 1120,
-        "snippet": "SafeDecimalEngine.safeMultiply(eq.quantity, defaultPrice),",
-        "note": "A local \"fallback price\" variable — a price invented when data is missing."
-      },
-      {
-        "severity": "HIGH",
-        "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
-        "file": "src/components/qto/QtoCalculatorView.tsx",
-        "line": 1122,
-        "snippet": "constant: defaultPrice,",
-        "note": "A local \"fallback price\" variable — a price invented when data is missing."
-      },
-      {
-        "severity": "HIGH",
-        "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
-        "file": "src/components/qto/QtoCalculatorView.tsx",
-        "line": 1132,
-        "snippet": "const unitPrice = priceOverrides[`eq_${eq.name}`] ?? defaultPrice;",
-        "note": "A local \"fallback price\" variable — a price invented when data is missing."
-      },
-      {
-        "severity": "HIGH",
-        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
-        "file": "src/components/qto/QtoCalculatorView.tsx",
-        "line": 1160,
-        "snippet": "let fallbackUnitPrice = 150000;",
-        "note": "Known fabricated price constant from the Phase 0 audit."
-      },
-      {
-        "severity": "HIGH",
-        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
-        "file": "src/components/qto/QtoCalculatorView.tsx",
-        "line": 1163,
-        "snippet": "else if (calcName.includes('urugan') || calcName.includes('fill')) fallbackUnitPrice = 120000;",
-        "note": "Known fabricated price constant from the Phase 0 audit."
-      },
-      {
-        "severity": "HIGH",
-        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
-        "file": "src/components/qto/QtoCalculatorView.tsx",
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
+        "file": "src/components/rab/RabEstimasiView.tsx",
         "line": 1172,
-        "snippet": "else if (calcName.includes('pengecatan') || calcName.includes('cat')) fallbackUnitPrice = 45000;",
-        "note": "Known fabricated price constant from the Phase 0 audit."
-      },
-      {
-        "severity": "CRITICAL",
-        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
-        "file": "src/components/rab/RabEstimasiView.tsx",
-        "line": 420,
-        "snippet": "const up = item.unitPrice || 0;",
+        "snippet": "const done = projectRabItems.filter((i) => i.priceStatus === 'PRICE_RESOLVED' || (i.unitPrice || 0) > 0).length;",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/components/rab/RabEstimasiView.tsx",
-        "line": 490,
-        "snippet": "valA = a.amount || a.totalPrice || a.volume * a.unitPrice || 0;",
+        "line": 1175,
+        "snippet": "completedItemsCount={projectRabItems.filter((i) => i.priceStatus === 'PRICE_RESOLVED' || (i.unitPrice || 0) > 0).length}",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
-        "file": "src/components/rab/RabEstimasiView.tsx",
-        "line": 491,
-        "snippet": "valB = b.amount || b.totalPrice || b.volume * b.unitPrice || 0;",
-        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
-      },
-      {
-        "severity": "CRITICAL",
-        "pattern": "(?:unitPrice|price)\\s*:\\s*0\\s*[,}]",
-        "file": "src/components/rab/RabEstimasiView.tsx",
-        "line": 769,
-        "snippet": "unitPrice: 0,",
-        "note": "A price field is returned as a literal 0 instead of null."
-      },
-      {
-        "severity": "CRITICAL",
-        "pattern": "(?:unitPrice|price)\\s*:\\s*0\\s*[,}]",
-        "file": "src/components/rab/RabEstimasiView.tsx",
-        "line": 786,
-        "snippet": "unitPrice: 0,",
-        "note": "A price field is returned as a literal 0 instead of null."
-      },
-      {
-        "severity": "CRITICAL",
-        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
-        "file": "src/components/reports/LaporanView.tsx",
-        "line": 143,
-        "snippet": "const amt = item.amount || ((item.volume || 0) * (item.unitPrice || 0)) || 0;",
+        "file": "src/components/reports/LaporanMax.tsx",
+        "line": 40,
+        "snippet": "e.total += Number(it.totalPrice ?? it.subtotal ?? (it.quantity ?? 0) * (it.unitPrice ?? 0)) || 0;",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/components/reports/LaporanView.tsx",
-        "line": 186,
-        "snippet": "amount: item.amount || ((item.volume || 0) * (item.unitPrice || 0)),",
+        "line": 501,
+        "snippet": "materialPrice: it.materialPrice ?? 0,",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/components/reports/LaporanView.tsx",
-        "line": 238,
-        "snippet": "price: m.unitPrice || 0,",
+        "line": 502,
+        "snippet": "laborPrice: it.laborPrice ?? 0,",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/components/reports/LaporanView.tsx",
-        "line": 239,
-        "snippet": "total: m.total || ((m.coefficient || 0) * (m.unitPrice || 0)),",
+        "line": 503,
+        "snippet": "equipmentPrice: it.equipmentPrice ?? 0,",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/components/reports/LaporanView.tsx",
-        "line": 246,
-        "snippet": "price: l.unitPrice || 0,",
+        "line": 592,
+        "snippet": "materialPrice: it.materialPrice ?? 0,",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/components/reports/LaporanView.tsx",
-        "line": 247,
-        "snippet": "total: l.total || ((l.coefficient || 0) * (l.unitPrice || 0)),",
+        "line": 593,
+        "snippet": "laborPrice: it.laborPrice ?? 0,",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/components/reports/LaporanView.tsx",
-        "line": 254,
-        "snippet": "price: e.unitPrice || 0,",
-        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
-      },
-      {
-        "severity": "CRITICAL",
-        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
-        "file": "src/components/reports/LaporanView.tsx",
-        "line": 255,
-        "snippet": "total: e.total || ((e.coefficient || 0) * (e.unitPrice || 0)),",
+        "line": 594,
+        "snippet": "equipmentPrice: it.equipmentPrice ?? 0,",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
@@ -1099,7 +875,7 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/components/workItems/DaftarPekerjaanView.tsx",
-        "line": 221,
+        "line": 226,
         "snippet": "valA = a.unitPrice || 0;",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
@@ -1107,111 +883,63 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/components/workItems/DaftarPekerjaanView.tsx",
-        "line": 222,
+        "line": 227,
         "snippet": "valB = b.unitPrice || 0;",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
-        "severity": "HIGH",
-        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price)\\s*:\\s*0\\s*[,}]",
         "file": "src/components/workItems/DaftarPekerjaanView.tsx",
-        "line": 538,
-        "snippet": "equipmentPrice: 120000,",
-        "note": "Known fabricated price constant from the Phase 0 audit."
+        "line": 486,
+        "snippet": "unitPrice: 0,",
+        "note": "A price field is returned as a literal 0 instead of null."
+      },
+      {
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price)\\s*:\\s*0\\s*[,}]",
+        "file": "src/components/workItems/DaftarPekerjaanView.tsx",
+        "line": 504,
+        "snippet": "unitPrice: 0,",
+        "note": "A price field is returned as a literal 0 instead of null."
+      },
+      {
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price)\\s*:\\s*0\\s*[,}]",
+        "file": "src/components/workItems/DaftarPekerjaanView.tsx",
+        "line": 522,
+        "snippet": "unitPrice: 0,",
+        "note": "A price field is returned as a literal 0 instead of null."
+      },
+      {
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price)\\s*:\\s*0\\s*[,}]",
+        "file": "src/components/workItems/DaftarPekerjaanView.tsx",
+        "line": 540,
+        "snippet": "unitPrice: 0,",
+        "note": "A price field is returned as a literal 0 instead of null."
+      },
+      {
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price)\\s*:\\s*0\\s*[,}]",
+        "file": "src/components/workItems/DaftarPekerjaanView.tsx",
+        "line": 558,
+        "snippet": "unitPrice: 0,",
+        "note": "A price field is returned as a literal 0 instead of null."
       },
       {
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/context/ProjectContext.tsx",
-        "line": 706,
-        "snippet": "(acc, i) => acc + (i.amount || i.totalPrice || i.volume * i.unitPrice || 0),",
-        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
-      },
-      {
-        "severity": "HIGH",
-        "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
-        "file": "src/context/ProjectContext.tsx",
-        "line": 1135,
-        "snippet": "const defaultPrice = customUnitPrice !== undefined ? customUnitPrice : 125000;",
-        "note": "A local \"fallback price\" variable — a price invented when data is missing."
-      },
-      {
-        "severity": "HIGH",
-        "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
-        "file": "src/context/ProjectContext.tsx",
-        "line": 1146,
-        "snippet": "unitPrice: defaultPrice,",
-        "note": "A local \"fallback price\" variable — a price invented when data is missing."
-      },
-      {
-        "severity": "HIGH",
-        "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
-        "file": "src/context/ProjectContext.tsx",
-        "line": 1147,
-        "snippet": "amount: SafeDecimalEngine.safeMultiply(qto.quantity, defaultPrice, 0),",
-        "note": "A local \"fallback price\" variable — a price invented when data is missing."
-      },
-      {
-        "severity": "CRITICAL",
-        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
-        "file": "src/context/ProjectContext.tsx",
-        "line": 1318,
-        "snippet": "const up = itemData.unitPrice || 0;",
-        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
-      },
-      {
-        "severity": "CRITICAL",
-        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
-        "file": "src/context/ProjectContext.tsx",
-        "line": 1331,
-        "snippet": "materialPrice: itemData.materialPrice || 0,",
+        "line": 1106,
+        "snippet": "(acc, i) => acc + (i.amount ?? i.totalPrice ?? i.volume * (i.unitPrice ?? 0)),",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/context/ProjectContext.tsx",
-        "line": 1332,
-        "snippet": "laborPrice: itemData.laborPrice || 0,",
-        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
-      },
-      {
-        "severity": "CRITICAL",
-        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
-        "file": "src/context/ProjectContext.tsx",
-        "line": 1333,
-        "snippet": "equipmentPrice: itemData.equipmentPrice || 0,",
-        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
-      },
-      {
-        "severity": "CRITICAL",
-        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
-        "file": "src/context/ProjectContext.tsx",
-        "line": 1378,
-        "snippet": "materialPrice: itemData.materialPrice || 0,",
-        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
-      },
-      {
-        "severity": "CRITICAL",
-        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
-        "file": "src/context/ProjectContext.tsx",
-        "line": 1379,
-        "snippet": "laborPrice: itemData.laborPrice || 0,",
-        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
-      },
-      {
-        "severity": "CRITICAL",
-        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
-        "file": "src/context/ProjectContext.tsx",
-        "line": 1380,
-        "snippet": "equipmentPrice: itemData.equipmentPrice || 0,",
-        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
-      },
-      {
-        "severity": "CRITICAL",
-        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
-        "file": "src/context/ProjectContext.tsx",
-        "line": 1653,
+        "line": 2457,
         "snippet": "const totalAmount = SafeDecimalEngine.safeMultiply(data.volume || 0, data.unitPrice || 0, 0);",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
@@ -1219,7 +947,7 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/context/ProjectContext.tsx",
-        "line": 1756,
+        "line": 2560,
         "snippet": "materialPrice: ahsp.materialPrice || 0,",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
@@ -1227,7 +955,7 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/context/ProjectContext.tsx",
-        "line": 1757,
+        "line": 2561,
         "snippet": "laborPrice: ahsp.laborPrice || 0,",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
@@ -1235,55 +963,47 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/context/ProjectContext.tsx",
-        "line": 1758,
+        "line": 2562,
         "snippet": "equipmentPrice: ahsp.equipmentPrice || 0,",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
-        "file": "src/context/ProjectContext.tsx",
-        "line": 1890,
-        "snippet": "(sum, i) => sum + (i.amount || i.totalPrice || i.volume * i.unitPrice || 0),",
-        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
-      },
-      {
-        "severity": "CRITICAL",
-        "pattern": "(?:unitPrice|price)\\s*:\\s*0\\s*[,}]",
         "file": "src/ded-rab-v2/ahsp/ahspPriceResolver.ts",
-        "line": 73,
-        "snippet": "unitPrice: 0,",
-        "note": "A price field is returned as a literal 0 instead of null."
+        "line": 90,
+        "snippet": "(i) => (i.ahspCode?.toLowerCase() === cleanCode || i.description?.toLowerCase() === item.name.toLowerCase()) && (i.unitPrice || 0) > 0",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/ded-rab-v2/ahsp/ahspPriceResolver.ts",
-        "line": 93,
-        "snippet": "(i) => i.ahspCode?.toLowerCase() === cleanCode && (i.unitPrice || 0) > 0",
+        "line": 282,
+        "snippet": "unitPrice: c.unitPrice ?? 0,",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
         "severity": "CRITICAL",
-        "pattern": "(?:unitPrice|price)\\s*:\\s*0\\s*[,}]",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/ded-rab-v2/ahsp/ahspPriceResolver.ts",
-        "line": 232,
-        "snippet": "unitPrice: 0,",
-        "note": "A price field is returned as a literal 0 instead of null."
+        "line": 293,
+        "snippet": "unitPrice: c.unitPrice ?? 0,",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
         "severity": "CRITICAL",
-        "pattern": "(?:unitPrice|price)\\s*:\\s*0\\s*[,}]",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/ded-rab-v2/ahsp/ahspPriceResolver.ts",
-        "line": 293,
-        "snippet": "unitPrice: 0,",
-        "note": "A price field is returned as a literal 0 instead of null."
+        "line": 304,
+        "snippet": "unitPrice: c.unitPrice ?? 0,",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
         "severity": "HIGH",
         "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
         "file": "src/ded-rab-v2/ai/zyrouterClient.ts",
-        "line": 318,
+        "line": 311,
         "snippet": "timeoutMs: request.timeoutMs || 45000,",
         "note": "Known fabricated price constant from the Phase 0 audit."
       },
@@ -1291,7 +1011,7 @@
         "severity": "HIGH",
         "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
         "file": "src/ded-rab-v2/ai/zyrouterClient.ts",
-        "line": 338,
+        "line": 331,
         "snippet": "timeoutMs: request.timeoutMs || 45000,",
         "note": "Known fabricated price constant from the Phase 0 audit."
       },
@@ -1299,7 +1019,7 @@
         "severity": "HIGH",
         "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
         "file": "src/ded-rab-v2/ai/zyrouterClient.ts",
-        "line": 378,
+        "line": 371,
         "snippet": "timeoutMs: request.timeoutMs || 45000,",
         "note": "Known fabricated price constant from the Phase 0 audit."
       },
@@ -1307,15 +1027,199 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/ded-rab-v2/pipeline/dedRabPipeline.ts",
-        "line": 312,
-        "snippet": "companyCatalog.map((c) => ({ code: c.code, unitPrice: c.unitPrice || 0 }))",
+        "line": 581,
+        "snippet": "companyCatalog.map((c) => ({ code: c.code, unitPrice: c.unitPrice || 0 })),",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
+      },
+      {
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
+        "file": "src/ded-rab-v2/pipeline/firstPrinciplesPipeline.ts",
+        "line": 321,
+        "snippet": "companyCatalog.map((c) => ({ code: c.code, unitPrice: c.unitPrice || 0 })),",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/ded-rab-v2/pricing/aiPriceEstimationEngine.ts",
+        "line": 420,
+        "snippet": "else if (qLower.includes('pipa')) baselinePrice = 45000;",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
+        "file": "src/ded-rab-v2/resolution/ezrabValidationComparisonEngine.ts",
+        "line": 57,
+        "snippet": "const aiUnitPrice = item.unitPrice || item.price?.unitPrice || 0;",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/ded-rab-v2/resolution/laborResolutionEngine.ts",
+        "line": 263,
+        "snippet": "return 120000;",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/ded-rab-v2/resolution/laborResolutionEngine.ts",
+        "line": 270,
+        "snippet": "return 150000;",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
+        "file": "src/ded-rab-v2/resolution/materialResolutionEngine.ts",
+        "line": 120,
+        "snippet": "const fallbackPrice = this.estimateFallbackMaterialPrice(normalized, unit);",
+        "note": "A local \"fallback price\" variable — a price invented when data is missing."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
+        "file": "src/ded-rab-v2/resolution/materialResolutionEngine.ts",
+        "line": 126,
+        "snippet": "unitPrice: fallbackPrice.price,",
+        "note": "A local \"fallback price\" variable — a price invented when data is missing."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
+        "file": "src/ded-rab-v2/resolution/materialResolutionEngine.ts",
+        "line": 129,
+        "snippet": "basis: `Estimasi material berbasis spesifikasi gambar kerja: ${fallbackPrice.reason}.`,",
+        "note": "A local \"fallback price\" variable — a price invented when data is missing."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/ded-rab-v2/resolution/materialResolutionEngine.ts",
+        "line": 198,
+        "snippet": "return { price: 45000, reason: 'Harga rata-rata profil linier material standar' };",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/ded-rab-v2/resolution/materialResolutionEngine.ts",
+        "line": 203,
+        "snippet": "return { price: 150000, reason: 'Harga rata-rata per unit komponen terpasang' };",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
+        "file": "src/ded-rab-v2/resolution/priceProviders/ezrabDatabasePriceProvider.ts",
+        "line": 29,
+        "snippet": "...comp.material.components.map((c) => ({ type: 'MATERIAL', code: c.itemCode, name: c.itemName, coefficient: c.coefficient, unit: c.unit, unitPrice: c.unitPrice",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
+      },
+      {
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
+        "file": "src/ded-rab-v2/resolution/priceProviders/ezrabDatabasePriceProvider.ts",
+        "line": 30,
+        "snippet": "...comp.labor.components.map((c) => ({ type: 'LABOR', code: c.itemCode, name: c.itemName, coefficient: c.coefficient, unit: c.unit, unitPrice: c.unitPrice, tota",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
+      },
+      {
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
+        "file": "src/ded-rab-v2/resolution/priceProviders/ezrabDatabasePriceProvider.ts",
+        "line": 31,
+        "snippet": "...comp.equipment.components.map((c) => ({ type: 'EQUIPMENT', code: c.itemCode, name: c.itemName, coefficient: c.coefficient, unit: c.unit, unitPrice: c.unitPri",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/ded-rab-v2/resolution/priceProviders/regionalPriceProvider.ts",
+        "line": 53,
+        "snippet": "laborRateDayTukang: 150000,",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/ded-rab-v2/resolution/priceProviders/regionalPriceProvider.ts",
+        "line": 54,
+        "snippet": "laborRateDayPekerja: 120000,",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/ded-rab-v2/resolution/priceProviders/regionalPriceProvider.ts",
+        "line": 147,
+        "snippet": "else if (norm.includes('jendela j3')) baseRate = 1150000;",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price)\\s*:\\s*0\\s*[,}]",
+        "file": "src/ded-rab-v2/resolution/priceResolutionEngine.ts",
+        "line": 101,
+        "snippet": "unitPrice: 0,",
+        "note": "A price field is returned as a literal 0 instead of null."
+      },
+      {
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
+        "file": "src/ded-rab-v2/resolution/selfCheckEngine.ts",
+        "line": 108,
+        "snippet": "const uPrice = cloned.unitPrice || 0;",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
+      },
+      {
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
+        "file": "src/ded-rab-v2/review/DedRabV2ReviewView.tsx",
+        "line": 295,
+        "snippet": "const unitPrice = newUnitPrice >= 0 ? newUnitPrice : (updatedItem.price?.unitPrice || 0);",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
+      },
+      {
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
+        "file": "src/ded-rab-v2/review/DedRabV2ReviewView.tsx",
+        "line": 1457,
+        "snippet": "defaultValue={editingItem.price?.unitPrice || 0}",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
+      },
+      {
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
+        "file": "src/ded-rab-v2/review/DedRabV2ReviewView.tsx",
+        "line": 1490,
+        "snippet": "const up = parseFloat((document.getElementById('edit-item-price') as HTMLInputElement)?.value) || editingItem.price?.unitPrice || 0;",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
+      },
+      {
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
+        "file": "src/ded-rab-v2/review/DedRabV2ReviewView.tsx",
+        "line": 1556,
+        "snippet": "{formatIDR(detailedAuditItem.price?.unitPrice || 0)} / {detailedAuditItem.unit}",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
+      },
+      {
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
+        "file": "src/ded-rab-v2/review/DedRabV2ReviewView.tsx",
+        "line": 1562,
+        "snippet": "Subtotal: {formatIDR(detailedAuditItem.price?.totalPrice || SafeDecimalEngine.safeMultiply(detailedAuditItem.price?.unitPrice || 0, detailedAuditItem.quantity |",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/ded-rab-v2/review/dedRabReviewService.ts",
-        "line": 104,
+        "line": 111,
         "snippet": "totalEstimatedRab += item.price?.totalPrice || 0;",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
@@ -1323,7 +1227,7 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/ded-rab-v2/review/dedRabReviewService.ts",
-        "line": 178,
+        "line": 226,
         "snippet": "companyCatalog?.map((c) => ({ code: c.code, unitPrice: c.unitPrice || 0 }))",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
@@ -1331,80 +1235,160 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/ded-rab-v2/review/dedRabReviewService.ts",
-        "line": 232,
-        "snippet": "const unitPrice = item.price?.unitPrice || 0;",
+        "line": 279,
+        "snippet": "const hasValidNumbers = (item.quantity ?? item.qto?.quantity ?? 0) > 0 && (item.price?.unitPrice ?? (item as any).unitPrice ?? 0) > 0;",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
-        "file": "src/ded-rab-v2/spreadsheet/dedSpreadsheetSync.ts",
-        "line": 60,
-        "snippet": "Value: workItems.reduce((acc, i) => acc + (i.price?.totalPrice || 0), 0),",
+        "file": "src/ded-rab-v2/review/dedRabReviewService.ts",
+        "line": 289,
+        "snippet": "const unitPrice = item.price?.unitPrice ?? (item as any).unitPrice ?? 0;",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
-        "file": "src/ded-rab-v2/spreadsheet/dedSpreadsheetSync.ts",
-        "line": 133,
-        "snippet": "UnitPrice: item.price?.unitPrice ?? 0,",
+        "file": "src/ded-rab-v2/review/dedRabReviewService.ts",
+        "line": 309,
+        "snippet": "materialPrice: item.price?.materialPrice ?? 0,",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
-        "file": "src/ded-rab-v2/spreadsheet/dedSpreadsheetSync.ts",
-        "line": 134,
-        "snippet": "TotalPrice: item.price?.totalPrice ?? 0,",
+        "file": "src/ded-rab-v2/review/dedRabReviewService.ts",
+        "line": 310,
+        "snippet": "laborPrice: item.price?.laborPrice ?? 0,",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
-        "file": "src/ded-rab-v2/spreadsheet/dedSpreadsheetSync.ts",
-        "line": 148,
-        "snippet": "UnitPrice: item.price?.unitPrice ?? 0,",
+        "file": "src/ded-rab-v2/review/dedRabReviewService.ts",
+        "line": 311,
+        "snippet": "equipmentPrice: item.price?.equipmentPrice ?? 0,",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
-        "file": "src/ded-rab-v2/spreadsheet/dedSpreadsheetSync.ts",
-        "line": 149,
-        "snippet": "TotalAmount: item.price?.totalPrice ?? 0,",
+        "file": "src/ded-rab-v2/review/dedSelfReviewEngine.ts",
+        "line": 79,
+        "snippet": "if (item.price && item.price.priceSource !== 'PRICE_NOT_FOUND' && (item.price.unitPrice || 0) > 0) {",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
-        "file": "src/document-engine/integrations/boqIntegration.ts",
-        "line": 14,
-        "snippet": "unitPrice: raw.unitPrice ?? raw.price ?? 0,",
+        "file": "src/ded-rab-v2/validation/dedRabValidationGate.ts",
+        "line": 169,
+        "snippet": "matchReasons.push(`Harga satuan estimasi AI diselesaikan: Rp ${Number(priceRes?.unitPrice || 0).toLocaleString('id-ID')} (${priceRes?.priceStatus || priceRes?.p",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
-        "file": "src/document-engine/integrations/boqIntegration.ts",
-        "line": 15,
-        "snippet": "total: raw.totalPrice ?? raw.amount ?? (raw.volume ?? 1) * (raw.unitPrice ?? 0),",
+        "file": "src/ded-rab-v2/validation/dedRabValidationGate.ts",
+        "line": 171,
+        "snippet": "matchReasons.push(`Harga satuan resmi diselesaikan: Rp ${Number(priceRes?.unitPrice || 0).toLocaleString('id-ID')} (${priceRes?.priceSource || 'OFFICIAL_AHSP'})",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
-        "file": "src/document-engine/integrations/rabIntegration.ts",
-        "line": 13,
-        "snippet": "unitPrice: raw.unitPrice ?? raw.price ?? 0,",
+        "file": "src/ded-rab-v3/agent/atomicAccCommitService.ts",
+        "line": 58,
+        "snippet": "unitPrice: item.unitPrice || 0,",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
-        "file": "src/document-engine/integrations/rabIntegration.ts",
-        "line": 14,
-        "snippet": "amount: raw.totalPrice ?? raw.amount ?? (raw.volume ?? 1) * (raw.unitPrice ?? 0),",
+        "file": "src/ded-rab-v3/agent/atomicAccCommitService.ts",
+        "line": 61,
+        "snippet": "materialPrice: item.materials.reduce((sum, m) => sum + (m.unitPrice || 0), 0),",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
+      },
+      {
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
+        "file": "src/ded-rab-v3/agent/atomicAccCommitService.ts",
+        "line": 62,
+        "snippet": "laborPrice: item.labor.reduce((sum, l) => sum + (l.unitPrice || 0), 0),",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
+      },
+      {
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
+        "file": "src/ded-rab-v3/agent/atomicAccCommitService.ts",
+        "line": 63,
+        "snippet": "equipmentPrice: item.equipment.reduce((sum, e) => sum + (e.unitPrice || 0), 0),",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
+      },
+      {
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
+        "file": "src/ded-rab-v3/agent/atomicAccCommitService.ts",
+        "line": 100,
+        "snippet": "materialPrice: it.materialPrice || 0,",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
+      },
+      {
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
+        "file": "src/ded-rab-v3/agent/atomicAccCommitService.ts",
+        "line": 101,
+        "snippet": "laborPrice: it.laborPrice || 0,",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
+      },
+      {
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
+        "file": "src/ded-rab-v3/agent/atomicAccCommitService.ts",
+        "line": 102,
+        "snippet": "equipmentPrice: it.equipmentPrice || 0,",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
+      },
+      {
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
+        "file": "src/ded-rab-v3/agent/atomicAccCommitService.ts",
+        "line": 103,
+        "snippet": "unitPrice: it.unitPrice ?? 0,",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
+      },
+      {
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
+        "file": "src/ded-rab-v3/agent/atomicAccCommitService.ts",
+        "line": 139,
+        "snippet": "unitPrice: it.unitPrice ?? 0,",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/ded-rab-v3/ai/aiProviderClient.ts",
+        "line": 241,
+        "snippet": "timeoutMs: options.timeoutMs || 45000,",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/ded-rab-v3/ai/aiProviderClient.ts",
+        "line": 282,
+        "snippet": "const timeoutMs = options.timeoutMs || 45000;",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
+        "file": "src/ded-rab-v3/review/dedSelfReviewEngine.ts",
+        "line": 176,
+        "snippet": "const total = i.price.totalPrice || 0;",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
@@ -1419,7 +1403,7 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/document-engine/templateEngine.ts",
-        "line": 110,
+        "line": 111,
         "snippet": "const val = Number(item.totalPrice ?? item.amount ?? (Number(item.volume || 0) * Number(item.unitPrice || 0)));",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
@@ -1483,15 +1467,39 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/domain/material/materialDatabaseService.ts",
-        "line": 889,
+        "line": 918,
         "snippet": "price: raw.price || 0,",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
+      },
+      {
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
+        "file": "src/engine/ahsp/reportAhspDetail.ts",
+        "line": 118,
+        "snippet": "const matPrice = rItem.materialPrice ?? 0;",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
+      },
+      {
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
+        "file": "src/engine/ahsp/reportAhspDetail.ts",
+        "line": 119,
+        "snippet": "const labPrice = rItem.laborPrice ?? 0;",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
+      },
+      {
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
+        "file": "src/engine/ahsp/reportAhspDetail.ts",
+        "line": 120,
+        "snippet": "const eqPrice = rItem.equipmentPrice ?? 0;",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
         "severity": "HIGH",
         "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
         "file": "src/engine/ahspCalculationEngine.ts",
-        "line": 24,
+        "line": 28,
         "snippet": "const resolvePrice = (compCode: string, compName: string, fallbackPrice: number, category: 'MATERIAL' | 'LABOR' | 'EQUIPMENT'): { price: number; source: string ",
         "note": "A local \"fallback price\" variable — a price invented when data is missing."
       },
@@ -1499,7 +1507,7 @@
         "severity": "HIGH",
         "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
         "file": "src/engine/ahspCalculationEngine.ts",
-        "line": 25,
+        "line": 29,
         "snippet": "if (fallbackPrice > 0) {",
         "note": "A local \"fallback price\" variable — a price invented when data is missing."
       },
@@ -1507,7 +1515,7 @@
         "severity": "HIGH",
         "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
         "file": "src/engine/ahspCalculationEngine.ts",
-        "line": 26,
+        "line": 30,
         "snippet": "return { price: fallbackPrice, source: 'PUPR AHSP 2026' };",
         "note": "A local \"fallback price\" variable — a price invented when data is missing."
       },
@@ -1515,7 +1523,7 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/engine/ahspCalculationEngine.ts",
-        "line": 45,
+        "line": 49,
         "snippet": "recordFabricatedTotal('ahspcalc.zero-as-estimate', fallbackPrice || 0, {",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
@@ -1523,7 +1531,7 @@
         "severity": "HIGH",
         "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
         "file": "src/engine/ahspCalculationEngine.ts",
-        "line": 45,
+        "line": 49,
         "snippet": "recordFabricatedTotal('ahspcalc.zero-as-estimate', fallbackPrice || 0, {",
         "note": "A local \"fallback price\" variable — a price invented when data is missing."
       },
@@ -1531,7 +1539,7 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/engine/ahspCalculationEngine.ts",
-        "line": 46,
+        "line": 50,
         "snippet": "constant: fallbackPrice || 0,",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
@@ -1539,7 +1547,7 @@
         "severity": "HIGH",
         "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
         "file": "src/engine/ahspCalculationEngine.ts",
-        "line": 46,
+        "line": 50,
         "snippet": "constant: fallbackPrice || 0,",
         "note": "A local \"fallback price\" variable — a price invented when data is missing."
       },
@@ -1547,7 +1555,7 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/engine/ahspCalculationEngine.ts",
-        "line": 52,
+        "line": 56,
         "snippet": "return { price: fallbackPrice || 0, source: 'Estimasi Standar' };",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
@@ -1555,7 +1563,7 @@
         "severity": "HIGH",
         "pattern": "fallbackPrice|defaultPrice|estimatedPrice\\s*=",
         "file": "src/engine/ahspCalculationEngine.ts",
-        "line": 52,
+        "line": 56,
         "snippet": "return { price: fallbackPrice || 0, source: 'Estimasi Standar' };",
         "note": "A local \"fallback price\" variable — a price invented when data is missing."
       },
@@ -1563,7 +1571,7 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/engine/ahspCalculationEngine.ts",
-        "line": 63,
+        "line": 67,
         "snippet": "const { price, source } = resolvePrice(comp.code || '', comp.name || '', comp.unitPrice || 0, category);",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
@@ -1608,6 +1616,54 @@
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/engine/constructionCalculators/regionalPrices.ts",
+        "line": 442,
+        "snippet": "price: 150000, unit: 'OH', kind: 'OFFICIAL_HSPK', confidence: 'VERIFIED_LIVE',",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/engine/constructionCalculators/regionalPrices.ts",
+        "line": 490,
+        "snippet": "price: 150000, unit: 'OH', kind: 'OFFICIAL_HSPK', confidence: 'VERIFIED_LIVE',",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/engine/constructionCalculators/regionalPrices.ts",
+        "line": 498,
+        "snippet": "price: 150000, unit: 'OH', kind: 'OFFICIAL_HSPK', confidence: 'VERIFIED_LIVE',",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/engine/constructionCalculators/regionalPrices.ts",
+        "line": 506,
+        "snippet": "price: 150000, unit: 'OH', kind: 'OFFICIAL_HSPK', confidence: 'VERIFIED_LIVE',",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/engine/constructionCalculators/regionalPrices.ts",
+        "line": 514,
+        "snippet": "price: 150000, unit: 'OH', kind: 'OFFICIAL_HSPK', confidence: 'VERIFIED_LIVE',",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/engine/constructionCalculators/regionalPrices.ts",
+        "line": 530,
+        "snippet": "price: 150000, unit: 'OH', kind: 'OFFICIAL_HSPK', confidence: 'VERIFIED_LIVE',",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price)\\s*:\\s*0\\s*[,}]",
         "file": "src/engine/cost/centralDeterministicCostEngine.ts",
@@ -1627,8 +1683,16 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/engine/cost/composition/costCompositionEngine.ts",
-        "line": 224,
+        "line": 250,
         "snippet": "unitPrice = priceRes.resolvedPrice?.price || 0;",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
+      },
+      {
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
+        "file": "src/engine/estimateVersioning.ts",
+        "line": 55,
+        "snippet": "(acc, i) => acc + (i.amount ?? i.totalPrice ?? i.volume * (i.unitPrice ?? 0)),",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
@@ -1654,14 +1718,6 @@
         "line": 263,
         "snippet": "unitPrice: 0,",
         "note": "A price field is returned as a literal 0 instead of null."
-      },
-      {
-        "severity": "CRITICAL",
-        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
-        "file": "src/engine/excelImportEngine.ts",
-        "line": 387,
-        "snippet": "unitPrice: unitPrice || 0,",
-        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
         "severity": "CRITICAL",
@@ -1715,39 +1771,55 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/engine/kurvaSEngine.ts",
-        "line": 219,
+        "line": 224,
         "snippet": "totalAll += (itm.totalPrice || 0);",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
-        "severity": "HIGH",
-        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/engine/parametricVolumeEngine/parametricVolumeEngine.ts",
-        "line": 240,
-        "snippet": "recordFabricatedTotal('parametric.borongan.default', Math.round(150000 * multiplier), {",
-        "note": "Known fabricated price constant from the Phase 0 audit."
+        "line": 558,
+        "snippet": "unitPrice: effectiveUnitPrice ?? 0,",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
-        "severity": "HIGH",
-        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
-        "file": "src/engine/parametricVolumeEngine/parametricVolumeEngine.ts",
-        "line": 241,
-        "snippet": "constant: 150000,",
-        "note": "Known fabricated price constant from the Phase 0 audit."
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
+        "file": "src/engine/pricing/canonical/canonicalCostEngine.ts",
+        "line": 101,
+        "snippet": "? `${comp.coefficient.toFixed(4)} ${comp.unit} × Rp ${(comp.unitPrice || 0).toLocaleString('id-ID')}/${comp.unit} = Rp ${costValue.toLocaleString('id-ID')}`",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
-        "severity": "HIGH",
-        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
-        "file": "src/engine/parametricVolumeEngine/parametricVolumeEngine.ts",
-        "line": 247,
-        "snippet": "unitPrice: Math.round(150000 * multiplier),",
-        "note": "Known fabricated price constant from the Phase 0 audit."
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price)\\s*:\\s*0\\s*[,}]",
+        "file": "src/engine/pricing/canonical/canonicalPriceResolverAdapter.ts",
+        "line": 531,
+        "snippet": "price: 0,",
+        "note": "A price field is returned as a literal 0 instead of null."
+      },
+      {
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
+        "file": "src/engine/pricing/canonical/priceSanityValidator.ts",
+        "line": 196,
+        "snippet": "price: price || 0,",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
+      },
+      {
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price)\\s*:\\s*0\\s*[,}]",
+        "file": "src/engine/pricing/canonical/priceSanityValidator.ts",
+        "line": 206,
+        "snippet": "price: 0,",
+        "note": "A price field is returned as a literal 0 instead of null."
       },
       {
         "severity": "HIGH",
         "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
         "file": "src/engine/pricing/projectPriceEngine.ts",
-        "line": 837,
+        "line": 869,
         "snippet": "const nationalRefPrice = options.fallbackReferencePrice !== undefined ? options.fallbackReferencePrice : 74000;",
         "note": "Known fabricated price constant from the Phase 0 audit."
       },
@@ -1755,7 +1827,7 @@
         "severity": "HIGH",
         "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
         "file": "src/engine/pricing/projectPriceEngine.ts",
-        "line": 841,
+        "line": 873,
         "snippet": "recordFabricatedTotal('projectprice.material.default', 74000, {",
         "note": "Known fabricated price constant from the Phase 0 audit."
       },
@@ -1763,7 +1835,7 @@
         "severity": "HIGH",
         "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
         "file": "src/engine/pricing/projectPriceEngine.ts",
-        "line": 842,
+        "line": 874,
         "snippet": "constant: 74000,",
         "note": "Known fabricated price constant from the Phase 0 audit."
       },
@@ -1771,7 +1843,7 @@
         "severity": "HIGH",
         "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
         "file": "src/engine/pricing/projectPriceEngine.ts",
-        "line": 985,
+        "line": 1017,
         "snippet": "recordFabricatedTotal('projectprice.material.default-fallback', 74000, {",
         "note": "Known fabricated price constant from the Phase 0 audit."
       },
@@ -1779,7 +1851,7 @@
         "severity": "HIGH",
         "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
         "file": "src/engine/pricing/projectPriceEngine.ts",
-        "line": 986,
+        "line": 1018,
         "snippet": "constant: 74000,",
         "note": "Known fabricated price constant from the Phase 0 audit."
       },
@@ -1787,25 +1859,57 @@
         "severity": "HIGH",
         "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
         "file": "src/engine/pricing/projectPriceEngine.ts",
-        "line": 989,
+        "line": 1021,
         "snippet": "return 74000;",
         "note": "Known fabricated price constant from the Phase 0 audit."
       },
       {
         "severity": "CRITICAL",
-        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
-        "file": "src/engine/pricing/repository/priceRepository.ts",
-        "line": 692,
-        "snippet": "p.price || 0,",
-        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
+        "pattern": "(?:unitPrice|price)\\s*:\\s*0\\s*[,}]",
+        "file": "src/engine/pricing/resolver/priceResolver.ts",
+        "line": 880,
+        "snippet": "price: 0,",
+        "note": "A price field is returned as a literal 0 instead of null."
       },
       {
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price)\\s*:\\s*0\\s*[,}]",
         "file": "src/engine/pricing/resolver/priceResolver.ts",
-        "line": 752,
+        "line": 942,
         "snippet": "price: 0,",
         "note": "A price field is returned as a literal 0 instead of null."
+      },
+      {
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
+        "file": "src/engine/pricing/sync/syncEngine.ts",
+        "line": 1067,
+        "snippet": "`canonical read after sync = Rp${(change.newPrice ?? 0).toLocaleString('id-ID')}; ${preview.items.summary.totalAffected} derived AHSP item(s) recalculated`,",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
+      },
+      {
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
+        "file": "src/engine/rab/rabItemFactory.ts",
+        "line": 145,
+        "snippet": "materialPrice: itemData.materialPrice || 0,",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
+      },
+      {
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
+        "file": "src/engine/rab/rabItemFactory.ts",
+        "line": 146,
+        "snippet": "laborPrice: itemData.laborPrice || 0,",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
+      },
+      {
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
+        "file": "src/engine/rab/rabItemFactory.ts",
+        "line": 147,
+        "snippet": "equipmentPrice: itemData.equipmentPrice || 0,",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
         "severity": "CRITICAL",
@@ -1931,39 +2035,15 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/engine/spreadsheetFormulaEngine.ts",
-        "line": 56,
-        "snippet": "else if (col === 'K') totalSum += item.unitPrice || 0;",
+        "line": 88,
+        "snippet": "else if (col === 'K') { totalSum += item.unitPrice || 0; count++; }",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/engine/spreadsheetFormulaEngine.ts",
-        "line": 57,
-        "snippet": "else if (col === 'L') totalSum += item.totalPrice || 0;",
-        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
-      },
-      {
-        "severity": "CRITICAL",
-        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
-        "file": "src/engine/spreadsheetFormulaEngine.ts",
-        "line": 76,
-        "snippet": "else if (col === 'K') totalSum += item.unitPrice || 0;",
-        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
-      },
-      {
-        "severity": "CRITICAL",
-        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
-        "file": "src/engine/spreadsheetFormulaEngine.ts",
-        "line": 77,
-        "snippet": "else if (col === 'L') totalSum += item.totalPrice || 0;",
-        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
-      },
-      {
-        "severity": "CRITICAL",
-        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
-        "file": "src/engine/spreadsheetFormulaEngine.ts",
-        "line": 97,
+        "line": 114,
         "snippet": "case 'H': return (item.materialPrice || 0).toString();",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
@@ -1971,7 +2051,7 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/engine/spreadsheetFormulaEngine.ts",
-        "line": 98,
+        "line": 115,
         "snippet": "case 'I': return (item.laborPrice || 0).toString();",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
@@ -1979,7 +2059,7 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/engine/spreadsheetFormulaEngine.ts",
-        "line": 99,
+        "line": 116,
         "snippet": "case 'J': return (item.equipmentPrice || 0).toString();",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
@@ -1987,16 +2067,8 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/engine/spreadsheetFormulaEngine.ts",
-        "line": 100,
+        "line": 117,
         "snippet": "case 'K': return (item.unitPrice || 0).toString();",
-        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
-      },
-      {
-        "severity": "CRITICAL",
-        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
-        "file": "src/engine/spreadsheetFormulaEngine.ts",
-        "line": 101,
-        "snippet": "case 'L': return (item.totalPrice || 0).toString();",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
@@ -2005,14 +2077,6 @@
         "file": "src/engine/templateEngine/AhspPriceBridge.ts",
         "line": 38,
         "snippet": "'A.4.4.3.2': { price: 45000, verified: true },",
-        "note": "Known fabricated price constant from the Phase 0 audit."
-      },
-      {
-        "severity": "HIGH",
-        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
-        "file": "src/engine/templateEngine/AhspPriceBridge.ts",
-        "line": 117,
-        "snippet": "unitPrice = Math.round(150000 * regionalMultiplier);",
         "note": "Known fabricated price constant from the Phase 0 audit."
       },
       {
@@ -2040,123 +2104,27 @@
         "note": "Known fabricated price constant from the Phase 0 audit."
       },
       {
-        "severity": "HIGH",
-        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
-        "file": "src/engine/unifiedProjectEngine.ts",
-        "line": 104,
-        "snippet": "unitPrice: 50000,",
-        "note": "Known fabricated price constant from the Phase 0 audit."
-      },
-      {
-        "severity": "HIGH",
-        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
-        "file": "src/engine/unifiedProjectEngine.ts",
-        "line": 157,
-        "snippet": "materialPrice: 1150000,",
-        "note": "Known fabricated price constant from the Phase 0 audit."
-      },
-      {
-        "severity": "HIGH",
-        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
-        "file": "src/engine/unifiedProjectEngine.ts",
-        "line": 159,
-        "snippet": "equipmentPrice: 50000,",
-        "note": "Known fabricated price constant from the Phase 0 audit."
-      },
-      {
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/engine/versionAndScenarioEngine.ts",
-        "line": 48,
-        "snippet": "const tAmount = tItem.amount || tItem.totalPrice || tItem.volume * tItem.unitPrice || 0;",
+        "line": 74,
+        "snippet": "const isPriceDiff = Math.abs((tItem.unitPrice ?? 0) - (bItem.unitPrice ?? 0)) > 1;",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/engine/versionAndScenarioEngine.ts",
-        "line": 67,
-        "snippet": "const bAmount = bItem.amount || bItem.totalPrice || bItem.volume * bItem.unitPrice || 0;",
+        "line": 341,
+        "snippet": "baseCatMap[cat] = (baseCatMap[cat] || 0) + (it.amount ?? it.totalPrice ?? it.volume * (it.unitPrice ?? 0));",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/engine/versionAndScenarioEngine.ts",
-        "line": 72,
-        "snippet": "const isPriceDiff = Math.abs((tItem.unitPrice || 0) - (bItem.unitPrice || 0)) > 1;",
-        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
-      },
-      {
-        "severity": "CRITICAL",
-        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
-        "file": "src/engine/versionAndScenarioEngine.ts",
-        "line": 114,
-        "snippet": "const bAmount = bItem.amount || bItem.totalPrice || bItem.volume * bItem.unitPrice || 0;",
-        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
-      },
-      {
-        "severity": "CRITICAL",
-        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
-        "file": "src/engine/versionAndScenarioEngine.ts",
-        "line": 131,
-        "snippet": "const baseTotal = baseItems.reduce((acc, i) => acc + (i.amount || i.totalPrice || i.volume * i.unitPrice || 0), 0);",
-        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
-      },
-      {
-        "severity": "CRITICAL",
-        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
-        "file": "src/engine/versionAndScenarioEngine.ts",
-        "line": 132,
-        "snippet": "const targetTotal = targetItems.reduce((acc, i) => acc + (i.amount || i.totalPrice || i.volume * i.unitPrice || 0), 0);",
-        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
-      },
-      {
-        "severity": "CRITICAL",
-        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
-        "file": "src/engine/versionAndScenarioEngine.ts",
-        "line": 155,
-        "snippet": "const baselineDirect = baselineItems.reduce((acc, i) => acc + (i.amount || i.totalPrice || i.volume * i.unitPrice || 0), 0);",
-        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
-      },
-      {
-        "severity": "CRITICAL",
-        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
-        "file": "src/engine/versionAndScenarioEngine.ts",
-        "line": 194,
-        "snippet": "const scenADirect = scenarioAItems.reduce((acc, i) => acc + (i.amount || i.totalPrice || 0), 0);",
-        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
-      },
-      {
-        "severity": "CRITICAL",
-        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
-        "file": "src/engine/versionAndScenarioEngine.ts",
-        "line": 232,
-        "snippet": "const scenBDirect = scenarioBItems.reduce((acc, i) => acc + (i.amount || i.totalPrice || 0), 0);",
-        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
-      },
-      {
-        "severity": "CRITICAL",
-        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
-        "file": "src/engine/versionAndScenarioEngine.ts",
-        "line": 266,
-        "snippet": "const scenCDirect = scenarioCItems.reduce((acc, i) => acc + (i.amount || i.totalPrice || 0), 0);",
-        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
-      },
-      {
-        "severity": "CRITICAL",
-        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
-        "file": "src/engine/versionAndScenarioEngine.ts",
-        "line": 306,
-        "snippet": "baseCatMap[cat] = (baseCatMap[cat] || 0) + (it.amount || it.totalPrice || it.volume * it.unitPrice || 0);",
-        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
-      },
-      {
-        "severity": "CRITICAL",
-        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
-        "file": "src/engine/versionAndScenarioEngine.ts",
-        "line": 311,
-        "snippet": "scenCatMap[cat] = (scenCatMap[cat] || 0) + (it.amount || it.totalPrice || it.volume * it.unitPrice || 0);",
+        "line": 346,
+        "snippet": "scenCatMap[cat] = (scenCatMap[cat] || 0) + (it.amount ?? it.totalPrice ?? it.volume * (it.unitPrice ?? 0));",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
@@ -2171,7 +2139,7 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/export/excelExportEngine.ts",
-        "line": 186,
+        "line": 364,
         "snippet": "const hasZeroCostItems = normalizedSections.some((sec) => sec.items.some((it) => (it.volume || 0) <= 0 || (it.unitPrice || 0) <= 0));",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
@@ -2179,31 +2147,31 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/export/excelExportEngine.ts",
-        "line": 533,
-        "snippet": "const secTotal = sec.items.reduce((s, itm) => s + (itm.totalPrice || 0), 0);",
+        "line": 739,
+        "snippet": "const secTotal = exportSummary.sections[idx]?.pricedTotal ?? sec.items.reduce((s, itm) => s + (itm.totalPrice || 0), 0);",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/export/excelExportEngine.ts",
-        "line": 623,
-        "snippet": "const secTotal = sec.items.reduce((s, itm) => s + (itm.totalPrice || 0), 0);",
+        "line": 832,
+        "snippet": "const secTotal = exportSummary.sections[idx]?.pricedTotal ?? sec.items.reduce((s, itm) => s + (itm.totalPrice || 0), 0);",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/export/excelExportEngine.ts",
-        "line": 803,
-        "snippet": "const secSubtotalVal = sec.items.reduce((s, itm) => s + (itm.totalPrice || 0), 0);",
+        "line": 1040,
+        "snippet": "const secSubtotalVal = exportSummary.sections[secIdx]?.pricedTotal ?? sec.items.reduce((s, itm) => s + (itm.totalPrice || 0), 0);",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/export/excelExportEngine.ts",
-        "line": 1229,
+        "line": 1482,
         "snippet": "r.getCell(6).value = mat.price || 0;",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
@@ -2211,7 +2179,7 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/export/excelExportEngine.ts",
-        "line": 1289,
+        "line": 1542,
         "snippet": "r.getCell(5).value = lab.price || 0;",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
@@ -2219,7 +2187,7 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/export/excelExportEngine.ts",
-        "line": 1348,
+        "line": 1601,
         "snippet": "r.getCell(5).value = eq.price || 0;",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
@@ -2227,55 +2195,55 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/export/excelExportEngine.ts",
-        "line": 1540,
-        "snippet": "const secTotal = sec.items.reduce((acc, it) => acc + (it.totalPrice || 0), 0);",
+        "line": 1794,
+        "snippet": "const secTotal = exportSummary.sections[sIdx]?.pricedTotal ?? sec.items.reduce((acc, it) => acc + (it.totalPrice || 0), 0);",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
-        "file": "src/export/excelExportEngine.ts",
-        "line": 1564,
-        "snippet": "const itmWeight = (itm.totalPrice || 0) / (directCost || 1);",
+        "file": "src/export/fiveSheetPreset.ts",
+        "line": 1000,
+        "snippet": "totalRow.getCell(9).value = `Harga satuan snapshot: Rp ${Number(snap.unitPrice || 0).toLocaleString('id-ID')}`;",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
-        "file": "src/export/excelExportEngine.ts",
-        "line": 1568,
-        "snippet": "r.getCell(4).value = itm.totalPrice || 0;",
+        "file": "src/lib/kurvaSHonesty.ts",
+        "line": 136,
+        "snippet": "const amt = it.amount || (it.volume || 0) * (it.unitPrice || 0);",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
-        "severity": "HIGH",
-        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
-        "file": "src/export/pdfExporter.ts",
-        "line": 94,
-        "snippet": "unitPrice: 50000,",
-        "note": "Known fabricated price constant from the Phase 0 audit."
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price)\\s*:\\s*0\\s*[,}]",
+        "file": "src/lib/qtoSyncPricing.ts",
+        "line": 21,
+        "snippet": "unitPrice: 0,",
+        "note": "A price field is returned as a literal 0 instead of null."
       },
       {
-        "severity": "HIGH",
-        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
-        "file": "src/export/pdfExporter.ts",
-        "line": 147,
-        "snippet": "materialPrice: 1150000,",
-        "note": "Known fabricated price constant from the Phase 0 audit."
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
+        "file": "src/lib/qtoSyncPricing.ts",
+        "line": 113,
+        "snippet": "unitPrice: existingRab.unitPrice ?? 0,",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
-        "severity": "HIGH",
-        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
-        "file": "src/export/pdfExporter.ts",
-        "line": 149,
-        "snippet": "equipmentPrice: 50000,",
-        "note": "Known fabricated price constant from the Phase 0 audit."
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
+        "file": "src/lib/qtoSyncPricing.ts",
+        "line": 146,
+        "snippet": "unitPrice: existingRab.unitPrice ?? 0,",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/services/ai/orchestration/aiOrchestrator.ts",
-        "line": 149,
+        "line": 150,
         "snippet": "'Rp ' + Math.round(it.unitPrice || 0).toLocaleString('id-ID'),",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
@@ -2283,7 +2251,7 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/services/ai/tools/aiToolRegistry.ts",
-        "line": 187,
+        "line": 868,
         "snippet": ": (item.volume || 0) * (item.unitPrice || 0);",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
@@ -2291,7 +2259,7 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/services/ai/tools/aiToolRegistry.ts",
-        "line": 234,
+        "line": 917,
         "snippet": "const amt = item.amount || (item.volume || 0) * (item.unitPrice || 0);",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
@@ -2299,7 +2267,7 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/services/ai/tools/aiToolRegistry.ts",
-        "line": 252,
+        "line": 935,
         "snippet": "amount: i.amount || (i.volume * (i.unitPrice || 0)),",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
@@ -2307,16 +2275,24 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/services/ai/tools/aiToolRegistry.ts",
-        "line": 450,
-        "snippet": "const totalRab = (context.rabItems || []).reduce((acc, i) => acc + (i.amount || (i.volume * (i.unitPrice || 0))), 0);",
+        "line": 983,
+        "snippet": "let unitPrice = input.unitPrice || 0;",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/services/ai/tools/aiToolRegistry.ts",
-        "line": 542,
-        "snippet": "let unitPrice = input.unitPrice || 0;",
+        "line": 1083,
+        "snippet": "const p = it.unitPrice || 0;",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
+      },
+      {
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
+        "file": "src/services/ai/tools/aiToolRegistry.ts",
+        "line": 1120,
+        "snippet": "const amt = it.amount || (it.volume * (it.unitPrice || 0));",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
@@ -2339,7 +2315,7 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/services/aiProviderEngine.ts",
-        "line": 686,
+        "line": 813,
         "snippet": "const totalRab = rabItems.reduce((acc, i) => acc + (i.volume * (i.unitPrice || 0)), 0);",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
@@ -2347,7 +2323,7 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/services/aiProviderEngine.ts",
-        "line": 1533,
+        "line": 1666,
         "snippet": "const subtotal = cg.items.reduce((acc, it) => acc + (it.totalPrice || 0), 0);",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
@@ -2355,7 +2331,7 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/services/aiProviderEngine.ts",
-        "line": 1768,
+        "line": 1904,
         "snippet": "formatRupiah(i.unitPrice || 0),",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
@@ -2363,7 +2339,7 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/services/aiProviderEngine.ts",
-        "line": 1917,
+        "line": 2068,
         "snippet": "content: `Pekerjaan dengan biaya terbesar pada proyek **${projectName}** adalah:\\n\\n**${topItem.description}**\\n- **Kategori**: ${topItem.category || topCategor",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
@@ -2371,7 +2347,7 @@
         "severity": "HIGH",
         "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
         "file": "src/services/aiReceiptIntelligence.ts",
-        "line": 109,
+        "line": 111,
         "snippet": "{ name: 'Upah Tukang Batu per hari', category: 'Tenaga Kerja', unit: 'hari', price: 150000 },",
         "note": "Known fabricated price constant from the Phase 0 audit."
       },
@@ -2379,7 +2355,7 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price)\\s*:\\s*0\\s*[,}]",
         "file": "src/services/aiReceiptIntelligence.ts",
-        "line": 292,
+        "line": 319,
         "snippet": "{ desc: 'UNREADABLE (Teks Tidak Terbaca)', qty: 1, unit: 'ls', price: 0, cat: 'Material', conf: 'LOW' },",
         "note": "A price field is returned as a literal 0 instead of null."
       },
@@ -2387,15 +2363,23 @@
         "severity": "HIGH",
         "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
         "file": "src/services/aiReceiptIntelligence.ts",
-        "line": 298,
+        "line": 325,
         "snippet": "{ desc: 'Besi Beton Polos Dia 10mm SNI', qty: 30, unit: 'btg', price: 74000, cat: 'Material', conf: 'HIGH' },",
         "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
+        "file": "src/services/coAssistantService.ts",
+        "line": 179,
+        "snippet": "const total = items.reduce((s, it) => s + (it.amount ?? it.totalPrice ?? (it.volume * (it.unitPrice ?? 0))), 0);",
+        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
         "severity": "HIGH",
         "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
         "file": "src/services/coAssistantService.ts",
-        "line": 961,
+        "line": 1212,
         "snippet": "unitPrice: 1150000,",
         "note": "Known fabricated price constant from the Phase 0 audit."
       },
@@ -2403,7 +2387,7 @@
         "severity": "HIGH",
         "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
         "file": "src/services/coAssistantService.ts",
-        "line": 962,
+        "line": 1213,
         "snippet": "amount: 1150000,",
         "note": "Known fabricated price constant from the Phase 0 audit."
       },
@@ -2411,7 +2395,7 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/services/dedAhspMatchingEngine.ts",
-        "line": 136,
+        "line": 138,
         "snippet": "baseUnitPrice: (off as any).unitPrice || (off as any).price || 0,",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
@@ -2419,7 +2403,7 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/services/dedToRabPipelineService.ts",
-        "line": 783,
+        "line": 794,
         "snippet": "(i) => i.ahspCode?.toLowerCase() === cleanCode && (i.unitPrice || 0) > 0",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
@@ -2427,7 +2411,7 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/services/dedToRabPipelineService.ts",
-        "line": 1516,
+        "line": 1809,
         "snippet": "const price = wi.unitPrice || 0;",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
@@ -2435,15 +2419,7 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/services/dedToRabPipelineService.ts",
-        "line": 1778,
-        "snippet": "const price = wi.unitPrice || 0;",
-        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
-      },
-      {
-        "severity": "CRITICAL",
-        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
-        "file": "src/services/dedToRabPipelineService.ts",
-        "line": 1911,
+        "line": 1939,
         "snippet": "row.amount = wi.totalPrice || 0;",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
@@ -2451,16 +2427,8 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "src/services/dedToRabPipelineService.ts",
-        "line": 1945,
-        "snippet": "const existingTotal = existingItems.reduce((acc, item) => acc + (item.volume * (item.unitPrice || 0)), 0);",
-        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
-      },
-      {
-        "severity": "CRITICAL",
-        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
-        "file": "src/services/dedToRabPipelineService.ts",
-        "line": 1951,
-        "snippet": "unitPrice: row.unitPrice || 0,",
+        "line": 1986,
+        "snippet": "const existingTotal = existingItems.reduce((acc, item) => acc + (item.volume * (item.unitPrice ?? 0)), 0);",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
@@ -2475,7 +2443,7 @@
         "severity": "HIGH",
         "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
         "file": "src/services/rabTemplateService.ts",
-        "line": 92,
+        "line": 99,
         "snippet": "'A.8.1.1.1': { code: 'A.8.1.1.1', name: 'Penanaman Rumput Taman Gajah Mini / Jepang & Tanah Subur', unit: 'm2', price: 45000 },",
         "note": "Known fabricated price constant from the Phase 0 audit."
       },
@@ -2483,7 +2451,7 @@
         "severity": "HIGH",
         "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
         "file": "src/services/rabTemplateService.ts",
-        "line": 245,
+        "line": 262,
         "snippet": "{ id: 'road_length', key: 'road_length', label: 'Panjang Jalan', type: 'NUMBER', unit: 'm', required: true, defaultValue: 1000, min: 10, max: 50000, group: 'dim",
         "note": "Known fabricated price constant from the Phase 0 audit."
       },
@@ -2491,7 +2459,7 @@
         "severity": "HIGH",
         "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
         "file": "src/services/rabTemplateService.ts",
-        "line": 280,
+        "line": 297,
         "snippet": "{ id: 'road_length', key: 'road_length', label: 'Panjang Jalan', type: 'NUMBER', unit: 'm', required: true, defaultValue: 1000, min: 10, max: 50000, group: 'dim",
         "note": "Known fabricated price constant from the Phase 0 audit."
       },
@@ -2499,7 +2467,15 @@
         "severity": "HIGH",
         "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
         "file": "src/services/rabTemplateService.ts",
-        "line": 315,
+        "line": 329,
+        "snippet": "{ id: 'road_length', key: 'road_length', label: 'Panjang Jalan', type: 'NUMBER', unit: 'm', required: true, defaultValue: 1000, min: 10, max: 50000, group: 'dim",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/services/rabTemplateService.ts",
+        "line": 386,
         "snippet": "{ id: 'paving_area', key: 'paving_area', label: 'Luas Pemasangan Paving', type: 'NUMBER', unit: 'm²', required: true, defaultValue: 600, min: 20, max: 50000, gr",
         "note": "Known fabricated price constant from the Phase 0 audit."
       },
@@ -2507,7 +2483,7 @@
         "severity": "HIGH",
         "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
         "file": "src/services/rabTemplateService.ts",
-        "line": 564,
+        "line": 635,
         "snippet": "{ id: 'warehouse_area', key: 'warehouse_area', label: 'Luas Lantai Gudang', type: 'NUMBER', unit: 'm²', required: true, defaultValue: 1200, min: 100, max: 50000",
         "note": "Known fabricated price constant from the Phase 0 audit."
       },
@@ -2515,7 +2491,7 @@
         "severity": "HIGH",
         "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
         "file": "src/services/rabTemplateService.ts",
-        "line": 712,
+        "line": 783,
         "snippet": "{ id: 'c-r-drain', name: 'Saluran Tanah Drainase Samping Saluran Terbuka', category: '05. DRAINASE', unit: 'm1', calculationRule: 'road_length * 2', variables: ",
         "note": "Known fabricated price constant from the Phase 0 audit."
       },
@@ -2523,7 +2499,7 @@
         "severity": "HIGH",
         "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
         "file": "src/services/rabTemplateService.ts",
-        "line": 757,
+        "line": 828,
         "snippet": "{ id: 'overlay_length', key: 'overlay_length', label: 'Panjang Jalan yang Direhabilitasi', type: 'NUMBER', unit: 'm', required: true, defaultValue: 1000, min: 5",
         "note": "Known fabricated price constant from the Phase 0 audit."
       },
@@ -2531,7 +2507,7 @@
         "severity": "HIGH",
         "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
         "file": "src/services/rabTemplateService.ts",
-        "line": 1139,
+        "line": 1210,
         "snippet": "{ id: 'park_area', key: 'park_area', label: 'Luas Total Area Taman', type: 'NUMBER', unit: 'm²', required: true, defaultValue: 1500, min: 100, max: 50000, group",
         "note": "Known fabricated price constant from the Phase 0 audit."
       },
@@ -2539,32 +2515,8 @@
         "severity": "HIGH",
         "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
         "file": "src/services/rabTemplateService.ts",
-        "line": 1144,
+        "line": 1215,
         "snippet": "{ id: 'c-lp-grass', name: 'Penanaman Rumput Taman Gajah Mini Komplit Tanah Humus t=10cm', category: '02. SOFTSCAPE', unit: 'm2', calculationRule: 'park_area - p",
-        "note": "Known fabricated price constant from the Phase 0 audit."
-      },
-      {
-        "severity": "CRITICAL",
-        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
-        "file": "src/services/rabTemplateService.ts",
-        "line": 1502,
-        "snippet": "const amt = SafeDecimalEngine.safeMultiply(item.volume, item.unitPrice || 0, 0);",
-        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
-      },
-      {
-        "severity": "CRITICAL",
-        "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
-        "file": "src/services/rabTemplateService.ts",
-        "line": 1629,
-        "snippet": "let unitPrice = comp.unitPrice || 0;",
-        "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
-      },
-      {
-        "severity": "HIGH",
-        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
-        "file": "src/services/rabTemplateService.ts",
-        "line": 1662,
-        "snippet": "unitPrice = 150000;",
         "note": "Known fabricated price constant from the Phase 0 audit."
       },
       {
@@ -2590,6 +2542,414 @@
         "line": 384,
         "snippet": "amount: i.amount || i.totalPrice || 0,",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/test/dedAssumptionTier.src.ts",
+        "line": 184,
+        "snippet": "estimatedUnitPrice: 150000,",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/test/dedAssumptionTier.src.ts",
+        "line": 204,
+        "snippet": "quantity: null, dimensions: '2 x 3 m', estimatedUnitPrice: 150000,",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/test/dedAssumptionTier.src.ts",
+        "line": 207,
+        "snippet": "noNoteDb.priceSource === 'AI_ESTIMATE' && noNoteDb.unitPrice === 150000, `${noNoteDb.priceSource}/${noNoteDb.unitPrice}`);",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/test/dedEstimationPolicy.src.ts",
+        "line": 24,
+        "snippet": "const dbFull = applyFullAiPricePolicy('DATABASE', { unitPrice: 1150000, unit: 'm3', source: 'AI_ESTIMATE' });",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/test/dedEstimationPolicy.src.ts",
+        "line": 25,
+        "snippet": "check('2.3 FullAI DATABASE meneruskan AI_ESTIMATE sebagai fallback (adapter yang memutuskan)', dbFull.unitPrice === 1150000 && dbFull.source === 'AI_ESTIMATE');",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/test/dedEstimationPolicy.src.ts",
+        "line": 30,
+        "snippet": "const dbVerified = applyFullAiPricePolicy('DATABASE', { unitPrice: 1150000, unit: 'm3', source: 'VERIFIED_SOURCE', ahspCode: '3.7.4' });",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/test/dedEstimationPolicy.src.ts",
+        "line": 31,
+        "snippet": "check('2.4 FullAI 2-argumen tanpa rabMode menurunkan VERIFIED_SOURCE ber-ahspCode ke AI_ESTIMATE (mesin-menang)', dbVerified.unitPrice === 1150000 && dbVerified",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/test/dedEstimationPolicy.src.ts",
+        "line": 32,
+        "snippet": "const dbVerifiedNoCode = applyFullAiPricePolicy('DATABASE', { unitPrice: 1150000, unit: 'm3', source: 'VERIFIED_SOURCE' });",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/test/dedEstimationPolicy.src.ts",
+        "line": 33,
+        "snippet": "check('2.5 FullAI 2-argumen tanpa rabMode menurunkan klaim VERIFIED tanpa ahspCode ke AI_ESTIMATE', dbVerifiedNoCode.unitPrice === 1150000 && dbVerifiedNoCode.s",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/test/dedEstimationPolicy.src.ts",
+        "line": 34,
+        "snippet": "const dbVerifiedEzrab = applyFullAiPricePolicy('DATABASE', { unitPrice: 1150000, unit: 'm3', source: 'VERIFIED_SOURCE', ahspCode: '3.7.4' }, 'EZRAB_AI');",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/test/dedEstimationPolicy.src.ts",
+        "line": 35,
+        "snippet": "check('2.4b FullAI DATABASE + rabMode EZRAB_AI meloloskan VERIFIED_SOURCE ber-ahspCode', dbVerifiedEzrab.unitPrice === 1150000 && dbVerifiedEzrab.source === 'VE",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/test/dedEstimationPolicy.src.ts",
+        "line": 36,
+        "snippet": "const dbVerifiedNoCodeEzrab = applyFullAiPricePolicy('DATABASE', { unitPrice: 1150000, unit: 'm3', source: 'VERIFIED_SOURCE' }, 'EZRAB_AI');",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/test/dedEstimationPolicy.src.ts",
+        "line": 37,
+        "snippet": "check('2.5b FullAI DATABASE + rabMode EZRAB_AI meneruskan klaim VERIFIED tanpa ahspCode (adapter yang menurunkannya jadi AI_ESTIMATE)', dbVerifiedNoCodeEzrab.un",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/test/dedEstimationPolicy.src.ts",
+        "line": 40,
+        "snippet": "const fullAiPass = applyFullAiPricePolicy('FULL_AI', { unitPrice: 1150000, unit: 'm3', source: 'AI_ESTIMATE' });",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/test/dedEstimationPolicy.src.ts",
+        "line": 41,
+        "snippet": "check('2.7 FullAI FULL_AI meneruskan estimasi apa adanya (perilaku lama)', fullAiPass.unitPrice === 1150000 && fullAiPass.source === 'AI_ESTIMATE');",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/test/dedFinalReview.src.ts",
+        "line": 24,
+        "snippet": "totalCharsBudget: 45000,",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/test/dedFinalReview.src.ts",
+        "line": 47,
+        "snippet": "warnings: ['1 halaman tidak dikirim ke model karena budget teks FAST (45000 karakter).'],",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/test/dedFinalReview.src.ts",
+        "line": 83,
+        "snippet": "check('A2.8 budget agregat = 2 × 45000', multi?.totalCharsBudget === 90000);",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/test/dedFullAiAcceptance.src.ts",
+        "line": 71,
+        "snippet": "{ no: 2, name: 'Urugan tanah kembali', category: 'Tanah', qty: 4.8, unit: 'm3', formula: '9.6 x 0.5', provenance: 'ASSUMPTION', price: 45000, priceUnit: 'm3', p",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/test/dedFullAiAcceptance.src.ts",
+        "line": 73,
+        "snippet": "{ no: 4, name: 'Beton Sloof 15x20', category: 'Struktur', qty: 1.8, unit: 'm3', formula: '30 x 0.15 x 0.2 x 2', provenance: 'DERIVED', price: 1150000, priceUnit",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/test/dedFullAiAcceptance.src.ts",
+        "line": 108,
+        "snippet": "t('price 1150000 → unitPrice 1150000', r4.normalized.price.unitPrice === 1150000);",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/test/dedFullAiFinalCheck.src.ts",
+        "line": 42,
+        "snippet": "price: { unitPrice: 1150000, unit: 'm3', source: 'AI_ESTIMATE' },",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/test/dedFullAiFinalCheck.src.ts",
+        "line": 44,
+        "snippet": "t('nested price preserved', n2.price.unitPrice === 1150000);",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "CRITICAL",
+        "pattern": "(?:unitPrice|price)\\s*:\\s*0\\s*[,}]",
+        "file": "src/test/dedFullAiFinalCheck.src.ts",
+        "line": 64,
+        "snippet": "const n6 = normalizeItem({ qty: 10, unit: 'm2', price: 0, priceUnit: 'm2', provenance: 'DERIVED' });",
+        "note": "A price field is returned as a literal 0 instead of null."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/test/dedFullAiFinalCheck.src.ts",
+        "line": 100,
+        "snippet": "const n12 = normalizeItem({ qty: 1.8, unit: 'm3', price: 1150000, priceUnit: 'm3', provenance: 'DERIVED' });",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/test/dedFullAiFinalCheck.src.ts",
+        "line": 102,
+        "snippet": "t('1.8 × 1150000 = 2070000', s12.subtotal === 2070000);",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/test/dedFullAiParity.src.ts",
+        "line": 54,
+        "snippet": "&& pc.rangeMin === 150000 && pc.rangeMax === 175000",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/test/dedFullAiQa.src.ts",
+        "line": 102,
+        "snippet": "price: { unitPrice: 50000, unit: \"m'\", source: 'AI_ESTIMATE' },",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/test/dedFullAiRegression.src.ts",
+        "line": 45,
+        "snippet": "{ unitPrice: 1150000, unit: 'm3', source: 'AI_ESTIMATE' }",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/test/dedFullAiRegression.src.ts",
+        "line": 49,
+        "snippet": "const s1 = verifySubtotal(1.8, 1150000);",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/test/dedFullAiRegression.src.ts",
+        "line": 50,
+        "snippet": "t('subtotal 1.8 × 1150000 = 2070000', s1.subtotal === 2070000);",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/test/dedFullAiRegression.src.ts",
+        "line": 56,
+        "snippet": "{ unitPrice: 1150000, unit: 'm3', source: 'AI_ESTIMATE' }",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/test/dedFullAiRegression.src.ts",
+        "line": 81,
+        "snippet": "{ unitPrice: 50000, unit: \"m'\", source: 'AI_ESTIMATE' }",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/test/dedMaterialSpec.src.ts",
+        "line": 57,
+        "snippet": "findExternalReference('Plafon Gypsum 9mm Rangka Hollow', 'm2')?.recommendedPrice === 150000);",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/test/dedMaterialSpec.src.ts",
+        "line": 184,
+        "snippet": "item.unitPrice === 150000);",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/test/dedPriceCompletion.src.ts",
+        "line": 119,
+        "snippet": "ref.rangeMin === 120000 && ref.rangeMax === 220000 && ref.recommendedPrice >= ref.rangeMin && ref.recommendedPrice <= ref.rangeMax",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/test/dedPriceCompletion.src.ts",
+        "line": 256,
+        "snippet": "rangeMin: 35000, rangeMax: 45000, scope: 'TERPASANG_PENUH', tier: 'CONTRACTOR_MARKET',",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/test/dedPromptModeSeparation.src.ts",
+        "line": 77,
+        "snippet": "items: [mkItem('1', 2, 100000, 250000), mkItem('2', 1, 50000, 50000)],",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/test/dedQuantitySafety.src.ts",
+        "line": 65,
+        "snippet": "check('T3 large infra valid passes', validateQuantity({ quantity: 50000, units: 'm3', quantitySource: 'DED_GEOMETRIC' }).ok === true);",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/test/dedQuantitySafety.src.ts",
+        "line": 75,
+        "snippet": "check('T3 finalize: valid CALCULATED', fin[0].stage === 'CALCULATED' && fin[0].subtotal === 120000, `got ${fin[0].stage}/${fin[0].subtotal}`);",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/test/fixtures/dedOwnerTable38.ts",
+        "line": 58,
+        "snippet": "estimatedUnitPrice: 45000, unitPriceNote: 'Estimasi AI urugan',",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/test/fixtures/dedOwnerTable38.ts",
+        "line": 89,
+        "snippet": "estimatedUnitPrice: 45000, unitPriceNote: 'Estimasi AI cerucuk ulin',",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/test/fixtures/dedOwnerTable38.ts",
+        "line": 269,
+        "snippet": "estimatedUnitPrice: 45000, unitPriceNote: 'Estimasi AI plint',",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/test/providerStubScenarios.ts",
+        "line": 282,
+        "snippet": "delayMs: 120000,",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/test/sprint2Integrity.src.ts",
+        "line": 320,
+        "snippet": "mkItem({ name: 'Galian tanah biasa', category: 'Pekerjaan Tanah', units: 'm3', quantity: null, quantitySource: 'UNRESOLVED', unitPrice: 50000, priceSource: 'AI_",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/test/sprint2Integrity.src.ts",
+        "line": 322,
+        "snippet": "mkItem({ name: 'Galian tanah biasa', category: 'Pekerjaan Tanah', units: 'm3', quantity: 9, quantitySource: 'UNRESOLVED', unitPrice: 50000, priceSource: 'AI_EST",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/test/sprint32Scale.src.ts",
+        "line": 83,
+        "snippet": "quantity: 150000,",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/test/sprint32Scale.src.ts",
+        "line": 85,
+        "snippet": "quantityFormula: '2 x 0,5 x 150000 m (= 150000)',",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/test/sprint3FactoryGate.src.ts",
+        "line": 75,
+        "snippet": "{ description: 'Pekerjaan manual pengguna', volume: 2, unit: 'ls', unitPrice: 150000 } as never,",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/test/sprint3FactoryGate.src.ts",
+        "line": 83,
+        "snippet": "{ description: 'Pekerjaan manual pengguna', volume: 2, unit: 'ls', unitPrice: 150000, ahspCode: '' } as never,",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "src/test/sprint3FactoryGate.src.ts",
+        "line": 111,
+        "snippet": "{ description: 'USGPM', volume: 10, unit: 'm3', unitPrice: 50000, ahspCode: '1.000' } as never,",
+        "note": "Known fabricated price constant from the Phase 0 audit."
       },
       {
         "severity": "HIGH",
@@ -2640,6 +3000,14 @@
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
       {
+        "severity": "HIGH",
+        "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
+        "file": "server/ai/aiCapabilityRouter.ts",
+        "line": 204,
+        "snippet": "timeoutMs: request.timeoutMs || 45000,",
+        "note": "Known fabricated price constant from the Phase 0 audit."
+      },
+      {
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "server/ai/tools/toolIntelligence.ts",
@@ -2651,7 +3019,7 @@
         "severity": "HIGH",
         "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
         "file": "server/api/multiProviderRoutes.ts",
-        "line": 249,
+        "line": 253,
         "snippet": "timeoutMs: typeof body.timeoutMs === 'number' ? Math.min(body.timeoutMs, 120000) : undefined,",
         "note": "Known fabricated price constant from the Phase 0 audit."
       },
@@ -2659,7 +3027,7 @@
         "severity": "HIGH",
         "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
         "file": "server/api/multiProviderRoutes.ts",
-        "line": 292,
+        "line": 319,
         "snippet": ": await chatOpenAiCompatible({ providerId: pid, modelId: model, prompt: 'Balas hanya: OK', maxTokens: 2000, timeoutMs: 45000 });",
         "note": "Known fabricated price constant from the Phase 0 audit."
       },
@@ -2691,7 +3059,7 @@
         "severity": "CRITICAL",
         "pattern": "(?:unitPrice|price|harga|rate)\\s*(?:\\|\\||\\?\\?)\\s*0\\b",
         "file": "server/repositories/supabaseProjectRabRepository.ts",
-        "line": 52,
+        "line": 54,
         "snippet": "const amount = input.volume * input.unit_price; const result = await this.requireClient().from('rab_items').insert({ ...input, project_id: project.id, workspace",
         "note": "A missing price is coerced to 0 — the exact defect that produced \"Rp 0\"."
       },
@@ -2699,7 +3067,7 @@
         "severity": "HIGH",
         "pattern": "\\b(?:50000|45000|74000|120000|150000|1150000)\\b",
         "file": "server/services/automaticRabDraftEngine.ts",
-        "line": 126,
+        "line": 150,
         "snippet": "const defaultEstimatedPrice = 150000;",
         "note": "Known fabricated price constant from the Phase 0 audit."
       },
@@ -2890,7 +3258,7 @@
       "file": "src/components/qto/QtoCalculatorView.tsx",
       "line": 899,
       "note": "Fallback terakhir Rp 50.000 untuk material apa pun. Ini sumber Rp 17.500.000 pada Weir Body.",
-      "stillPresent": true
+      "stillPresent": false
     },
     {
       "id": "qto.labor.role-default",
@@ -2908,7 +3276,7 @@
       "file": "src/components/qto/QtoCalculatorView.tsx",
       "line": 918,
       "note": "Array equipment kosong diganti satu baris \"Alat Bantu Konstruksi & Pengadukan\" Rp 45.000.",
-      "stillPresent": true
+      "stillPresent": false
     },
     {
       "id": "qto.equipment.last-resort",
@@ -2917,7 +3285,7 @@
       "file": "src/components/qto/QtoCalculatorView.tsx",
       "line": 925,
       "note": "Fallback terakhir Rp 45.000 untuk peralatan yang tidak ditemukan di master price.",
-      "stillPresent": true
+      "stillPresent": false
     },
     {
       "id": "qto.borongan.title-keyword",
@@ -2970,8 +3338,8 @@
       "severity": "HIGH",
       "file": "src/engine/parametricVolumeEngine/parametricVolumeEngine.ts",
       "line": 242,
-      "note": "Harga borongan Rp 150.000 × multiplier, dengan region default \"DKI Jakarta\".",
-      "stillPresent": true
+      "note": "Harga borongan Rp 150.000 × multiplier, dengan region default \"DKI Jakarta\". [REMEDIATED 2026-10-22 — NONAKTIF: situs panggilan fallback ini telah DIHAPUS dari parametricVolumeEngine pada remediasi integritas RAB S2; item yang kodenya tidak terpetakan kini berharga null dengan status PRICE_UNAVAILABLE/AHSP_UNRESOLVED, bukan konstanta ini. Entri katalog dipertahankan sebagai sejarah audit Phase 0 — tidak ada pemanggil aktif dan tidak boleh dihidupkan kembali sebagai sumber harga.]",
+      "stillPresent": false
     },
     {
       "id": "ahspcalc.zero-as-estimate",
@@ -2983,7 +3351,7 @@
       "stillPresent": false
     }
   ],
-  "registeredSitesResolved": 5,
+  "registeredSitesResolved": 9,
   "dynamicProof": {
     "pricedReturnsNumber": true,
     "unpricedReturnsNull": true,

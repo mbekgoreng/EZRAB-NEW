@@ -81,6 +81,56 @@ export function runAhspPricingCostTestSuite(): { success: boolean; passedCount: 
   const priceResolver = new PriceResolver(priceRepo);
   const costEngine = new CostCompositionEngine(priceResolver);
 
+  // [M-6 / R-7 — MASTER PRICING §3] The fixture's component codes
+  // (TK-001, TK-004, MT-012, MT-009) exist ONLY in the legacy PUPR 2022
+  // ingest — they have no 2026 price anywhere. Before the M-6 quarantine
+  // they leaked into the active index and this suite composed COMPLETE on
+  // 2022 prices; after the quarantine they correctly do not resolve for a
+  // 2026 query. The fixture is synthetic, so it now brings its own
+  // synthetic 2026 prices, project-scoped (the same mechanism TEST GROUP
+  // 6 uses for its override). These values are ARBITRARY TEST VALUES,
+  // not market prices — the suite asserts composition behaviour (status,
+  // component counts, cost > 0), never exact amounts. Do NOT copy the
+  // 2022 values here: that would re-introduce the leak this quarantine
+  // removed. Registered for both projects the suite composes under
+  // ('PRJ-TEST-100' direct, 'PRJ-E2E-RAB' via RabAdapter).
+  const FIXTURE_PRICES_2026: Array<{
+    code: string;
+    name: string;
+    category: 'LABOR' | 'MATERIAL';
+    unit: string;
+    price: number;
+  }> = [
+    { code: 'TK-001', name: 'Pekerja', category: 'LABOR', unit: 'OH', price: 100000 },
+    { code: 'TK-004', name: 'Tukang Kayu', category: 'LABOR', unit: 'OH', price: 150000 },
+    { code: 'MT-012', name: 'Kayu Kaso 5/7', category: 'MATERIAL', unit: 'm³', price: 3000000 },
+    { code: 'MT-009', name: 'Paku 2"-3"', category: 'MATERIAL', unit: 'kg', price: 20000 },
+  ];
+  for (const projectId of ['PRJ-TEST-100', 'PRJ-E2E-RAB']) {
+    for (const f of FIXTURE_PRICES_2026) {
+      priceRepo.setProjectPriceOverride(projectId, {
+        id: `PRC-FIXTURE-2026-${f.code}`,
+        code: f.code,
+        codeNormalized: f.code,
+        name: f.name,
+        category: f.category,
+        unit: f.unit,
+        price: f.price,
+        location: 'Test Fixture',
+        periodVersion: '2026-Q1',
+        effectiveDate: '2026-01-01',
+        priceSource: 'TEST_FIXTURE_ONLY',
+        provenance: {
+          sourceName: 'TEST_FIXTURE_ONLY',
+          location: 'Test Fixture',
+          periodVersion: '2026-Q1',
+          effectiveDate: '2026-01-01',
+          confidenceScore: 1.0,
+        },
+      });
+    }
+  }
+
   // [TEST GROUP 1] AHSP Exact-Code Resolution
   logs.push('\n[TEST GROUP 1] AHSP Exact-Code Resolution');
   {

@@ -12,6 +12,9 @@
  *      terverifikasi → priceResolver2026 (gerbang satuan internal resolver
  *      + gerbang satuan Fase 3 di sini). Tier sumber WAJIB
  *      OFFICIAL_GOVERNMENT dan status VERIFIED; selain itu BUKAN resmi.
+ *      MASTER PRICING §12: bila pemanggil memberi `pricingContext` (§10),
+ *      resolver mendahulukan harga override/snapshot proyek di langkah
+ *      ini — berlabel PROJECT_OVERRIDE / PROJECT_SNAPSHOT, bukan resmi.
  *   3. OFFICIAL_HSPK_REGIONAL — tautan HSPK pemerintah daerah
  *      (regionalPrices.ts): harga resmi PEMDA, bukan AHSP nasional.
  *      Kelas ini hanya untuk provinsi proyek yang SAMA dengan provinsi
@@ -44,6 +47,7 @@ import {
   type UnitValidation,
 } from './unitCompatibility';
 import { priceResolver2026 } from '../../data/priceDatabase2026/resolver';
+import type { ProjectPricingContext } from '../../data/priceDatabase2026/types';
 import { SafeDecimalEngine } from '../safeDecimalEngine';
 import {
   REGIONAL_PRICE_LINKS,
@@ -65,6 +69,8 @@ export type ComponentPriceProvenance =
   | 'MARKET_REFERENCE'
   | 'USER_PROVIDED'
   | 'CALCULATOR_ESTIMATE'
+  | 'PROJECT_OVERRIDE'
+  | 'PROJECT_SNAPSHOT'
   | 'UNRESOLVED';
 
 export interface ComponentPriceInput {
@@ -86,6 +92,17 @@ export interface ComponentPriceInput {
    * (regionalPriceAssumption), TIDAK diam-diam dianggap nasional.
    */
   projectProvince?: string | null;
+  /**
+   * MASTER PRICING §12 — konteks mode harga proyek (§10). Bila
+   * disediakan, langkah resmi 1a me-resolve lewat konteks ini:
+   * PROJECT_OVERRIDE → harga override proyek menang per komponen;
+   * SNAPSHOT_PRICE → harga snapshot beku menang; LIVE (atau tidak
+   * disediakan) → harga master kini. Konteks HANYA memengaruhi
+   * langkah 1a (resolver kanonis); jalur regional/pasar/estimasi
+   * tidak berubah. Harga konteks berlabel PROJECT_OVERRIDE /
+   * PROJECT_SNAPSHOT — tidak pernah diklaim sebagai harga master.
+   */
+  pricingContext?: ProjectPricingContext | null;
 }
 
 export interface ComponentPriceResult {
@@ -148,6 +165,8 @@ export const PROVENANCE_LABELS_ID: Record<ComponentPriceProvenance, string> = {
   MARKET_REFERENCE: 'Referensi Harga Pasar',
   CALCULATOR_ESTIMATE: 'Estimasi Kalkulator',
   USER_PROVIDED: 'Harga Manual Proyek',
+  PROJECT_OVERRIDE: 'Override Harga Proyek',
+  PROJECT_SNAPSHOT: 'Snapshot Harga Proyek',
   UNRESOLVED: 'Harga Belum Tersedia',
 };
 
@@ -209,6 +228,21 @@ function priced(
     explanation,
     missingReason: null,
   };
+}
+
+/**
+ * MASTER PRICING §12: the §6 resolver appends a bracketed note
+ * ([PROJECT_OVERRIDE: ...] / [SNAPSHOT_PRICE: ...]) when a project
+ * pricing context has no stored price for a component and the live
+ * master is used instead. QTO branches that format their OWN
+ * explanation (1b market, calculator estimate, unresolved) would
+ * otherwise drop that note and the fallthrough would be silent —
+ * extract it and re-attach it to the branch's explanation.
+ */
+function extractContextFallthroughNote(explanation: string | undefined): string | null {
+  if (!explanation) return null;
+  const match = explanation.match(/\[(PROJECT_OVERRIDE|SNAPSHOT_PRICE):[^\]]*\]/);
+  return match ? match[0] : null;
 }
 
 // ---------------------------------------------------------------------------
@@ -353,6 +387,11 @@ export function resolveComponentPrice(input: ComponentPriceInput): ComponentPric
   // seluruh jalur nasional/pasar katalog gagal menghasilkan harga.
   let pendingRegional: { regional: RegionalResolution; code: string } | null = null;
 
+  // MASTER PRICING §12: catatan fallthrough konteks harga proyek (§10)
+  // dari resolver 1a — diteruskan ke cabang yang memformat penjelasannya
+  // sendiri (1b/estimasi/tidak-terpecahkan) agar tidak hilang diam-diam.
+  let contextFallthroughNote: string | null = null;
+
   const applyRegionalFallback = (result: ComponentPriceResult): ComponentPriceResult => {
     if (result.unitPrice != null) return result;
     if (pendingRegional) {
@@ -424,16 +463,40 @@ export function resolveComponentPrice(input: ComponentPriceInput): ComponentPric
       pendingRegional = { regional, code: resource.code };
     }
     // 1a. Jalur RESMI: resource resmi terverifikasi lewat priceResolver2026.
+    // MASTER PRICING §12: konteks mode harga proyek (§10) diteruskan ke
+    // resolver — override/snapshot proyek menang per komponen di sini,
+    // berlabel PROJECT_OVERRIDE / PROJECT_SNAPSHOT (bukan harga master).
     if (resource.officialResourceName || resource.officialResourceCode) {
       const res = priceResolver2026.resolveResourcePrice({
         resourceName: resource.officialResourceName ?? resource.canonicalName,
         resourceCode: resource.officialResourceCode,
         resourceType: KIND_TO_RESOLVER_TYPE[input.kind],
         unit: input.unit,
+        pricingContext: input.pricingContext ?? null,
       } as Parameters<typeof priceResolver2026.resolveResourcePrice>[0]);
+
+      // §12: keep the §6 context-miss note for branches that format
+      // their own explanation (1b market, calculator estimate,
+      // unresolved) — otherwise the override/snapshot fallthrough
+      // would be silent.
+      contextFallthroughNote = extractContextFallthroughNote(res.explanation);
 
       if (res.status === 'RESOLVED' && res.price != null) {
         const gate = validateUnitCompatibility(input.unit, res.unit ?? '');
+        // Harga konteks proyek (§10): override/snapshot adalah nilai
+        // tersimpan proyek, BUKAN harga master — labelnya sendiri.
+        // (Tier-nya OFFICIAL_PROJECT + verificationStatus null, jadi
+        // cabang `isOfficial` di bawah tidak akan menangkapnya.)
+        const isContextPrice = res.source?.key === 'PROJECT_OVERRIDE' || res.source?.key === 'SNAPSHOT_PRICE';
+        if (isContextPrice && unitAllowsPricing(gate)) {
+          const unitPrice = gate.priceFactor && gate.priceFactor !== 1
+            ? Math.round(res.price * gate.priceFactor)
+            : res.price;
+          return finish(priced(input, resource.code, unitPrice,
+            res.source?.key === 'PROJECT_OVERRIDE' ? 'PROJECT_OVERRIDE' : 'PROJECT_SNAPSHOT',
+            res.resourceCode || resource.officialResourceCode || null,
+            `Harga proyek tersimpan: ${res.explanation}`, gate));
+        }
         const isOfficial = res.source?.tier === 'OFFICIAL_GOVERNMENT' && res.verificationStatus === 'VERIFIED';
         if (isOfficial && unitAllowsPricing(gate)) {
           const unitPrice = gate.priceFactor && gate.priceFactor !== 1
@@ -513,7 +576,7 @@ export function resolveComponentPrice(input: ComponentPriceInput): ComponentPric
           ? Math.round(record.price * gate.priceFactor)
           : record.price;
         return finish(priced(input, resource.code, unitPrice, 'MARKET_REFERENCE', record.id,
-          `Referensi pasar ${record.id} — ${record.name} (${record.location}, ${record.periodVersion}). Bukan harga resmi AHSP. ${gate.result === 'APPROVED_CONVERSION' ? gate.reason : ''}`, gate));
+          `Referensi pasar ${record.id} — ${record.name} (${record.location}, ${record.periodVersion}). Bukan harga resmi AHSP. ${gate.result === 'APPROVED_CONVERSION' ? gate.reason : ''}${contextFallthroughNote ? ` ${contextFallthroughNote}` : ''}`, gate));
       }
     }
   }
@@ -522,14 +585,14 @@ export function resolveComponentPrice(input: ComponentPriceInput): ComponentPric
   if (typeof input.declaredEstimate === 'number' && input.declaredEstimate > 0) {
     return finish(priced(input, resource?.code ?? input.resourceCode ?? null, input.declaredEstimate,
       'CALCULATOR_ESTIMATE', 'CALCULATOR',
-      'Estimasi bawaan spek kalkulator — bukan harga resmi AHSP dan bukan record pasar terverifikasi.', null));
+      `Estimasi bawaan spek kalkulator — bukan harga resmi AHSP dan bukan record pasar terverifikasi.${contextFallthroughNote ? ` ${contextFallthroughNote}` : ''}`, null));
   }
 
   // 3. Menyerah dengan jujur.
   return finish(unresolved(input, resource?.code ?? null, 'UNRESOLVED',
     resource ? 'NO_VERIFIED_SOURCE' : 'NO_IDENTITY',
     resource
-      ? `Identitas kanonis ${resource.code} belum memiliki sumber harga terverifikasi (resmi/pasar) yang lolos gerbang satuan.`
+      ? `Identitas kanonis ${resource.code} belum memiliki sumber harga terverifikasi (resmi/pasar) yang lolos gerbang satuan.${contextFallthroughNote ? ` ${contextFallthroughNote}` : ''}`
       : 'Komponen belum memiliki identitas kanonis terdaftar dan tidak ada sumber harga terverifikasi — harga tidak diisi (bukan Rp0).'));
 }
 

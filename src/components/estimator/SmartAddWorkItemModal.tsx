@@ -1053,6 +1053,13 @@ Jika harga tidak pasti, unitPrice = null. Jangan mengarang harga. Jika volume ti
       if (!shouldCommitModalAiResult(handle)) return;
 
       if (!result.success) {
+        // LIVE-AI-FIX (2026-11-15): detail error terstruktur (termasuk
+        // cuplikan respons mentah pada MALFORMED_JSON) dicatat ke konsol
+        // untuk diagnosis — banner hanya menampilkan `message` dan tetap
+        // bersih (tanpa cuplikan mentah).
+        if (result.details?.length) {
+          console.warn('[Magic AI] Analisis AI gagal — detail error:', result.details);
+        }
         throw new Error(result.message || 'AI tidak dapat memproses permintaan.');
       }
 

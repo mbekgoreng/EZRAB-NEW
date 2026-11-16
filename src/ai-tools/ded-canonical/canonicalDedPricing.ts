@@ -17,14 +17,37 @@
  *   sendiri sudah mengecualikan item karantina).
  *
  * ATURAN KEAMANAN (hasil kalibrasi 2026-10-27, BUKAN asumsi):
- * 1. TIDAK ADA auto-accept dari kemiripan nama. Kalibrasi membuktikan skor
- *    searchOfficialAhsp tidak diskriminatif: "plesteran dinding 1:4"
+ * 1. TIDAK ADA auto-accept dari kemiripan nama SAJA. Kalibrasi membuktikan
+ *    skor searchOfficialAhsp tidak diskriminatif: "plesteran dinding 1:4"
  *    mengembalikan "kantor sementara" (skor 85) di atas item plesteran yang
  *    benar, dan kueri fiktif masih mengembalikan skor 55. Karena itu:
  *    - Auto-RESOLVED HANYA lewat kode AHSP eksak yang terverifikasi di
- *      katalog, atau judul katalog yang SAMA PERSIS setelah normalisasi.
+ *      katalog, atau judul katalog yang SAMA PERSIS setelah normalisasi,
+ *      atau Gerbang C (pengecualian terkalibrasi di bawah — keputusan
+ *      owner 2026-11-15, opsi ii "auto-accept kandidat unik bermargin").
  *    - Semua hasil pencarian nama lainnya = NEEDS_REVIEW (kandidat
  *      ditampilkan, pengguna yang memilih) atau NO_MATCH.
+ * 1b. GERBANG C (kalibrasi 2026-11-15, 69 fixture berlabel: 10 fixture
+ *    investigasi DED + 9 kontrol + 12 tambahan + 38 baris tabel owner).
+ *    Auto-RESOLVED dari pencarian nama HANYA bila SEMUA syarat terpenuhi:
+ *    (i) top-1 unik: margin skor atas top-2 (SEMUA kandidat, bukan hanya
+ *    yang eligible) >= 15 — langkah bermakna minimal (satu kecocokan
+ *    kata kueri ekstra: +10 kata +5 kata mentah); seri ambigu bermargin
+ *    0 tertahan; (ii) top-1 eligible: komposisi FULL + satuan persis +
+ *    tanpa konflik spesifikasi (penjaga spek yang sama dengan Gerbang A);
+ *    (iii) pekerjaan UTAMA cocok: kata isi PERTAMA kueri harus SAMA
+ *    dengan token PERTAMA frasa kepala judul top-1 (3 token konten
+ *    pertama sesudah awalan katalog dibuang). Margin saja TIDAK cukup:
+ *    jebakan 1.1.2.3 ("kantor sementara" untuk plesteran/pengecatan)
+ *    bermargin 15 tetapi kata isi pertama ("plesteran"/"pengecatan")
+ *    tidak ada di frasa kepala — dan "Plafon Gypsum 9mm Rangka Hollow"
+ *    cocok "rangka plafon besi hollow" (kata "plafon" hanya token ke-2
+ *    frasa kepala; item itu hanya rangka, bukan plafon utuh). Pemisahan
+ *    terukur: 5/5 kasus baik auto-accept dengan benar, 0 auto-accept
+ *    salah pada 69 fixture, 0 dari 38 baris owner berubah (total
+ *    golden DED tidak bergerak). Harga auto-accept SELALU harga
+ *    komposisi kanonis lewat resolveCanonicalCode (verifikasi ulang
+ *    katalog/satuan/FULL/facade/konsistensi) — bukan angka lain.
  * 2. Komposisi PARTIAL DITOLAK. Kalibrasi membuktikan facade
  *    canonicalPriceResolver mengembalikan RESOLVED untuk 2.2.1.4.1 yang
  *    komposisinya PARTIAL 7/8 (komponen "Batu split 2/3" tanpa harga) —
@@ -105,6 +128,18 @@ const REVIEW_LIMIT = 6;
 /** Lantai skor searchOfficialAhsp (kalibrasi: kueri fiktif = 55, hasil nyata ≥ 70). */
 const SCORE_FLOOR = 60;
 
+/**
+ * Gerbang C — ambang margin (kalibrasi 2026-11-15, 69 fixture berlabel).
+ * 15 = satu kecocokan kata kueri ekstra (+10 kata +5 kata mentah) — langkah
+ * bermakna minimal skor searchOfficialAhsp. Kelima kasus baik terukur
+ * bermargin tepat 15; semua seri ambigu bermargin 0. Ambang lebih tinggi
+ * (≥ 20) menutup Gerbang C sepenuhnya pada himpunan ini; ambang lebih
+ * rendah tidak menambah pemisahan apa pun (kasus berikut adalah 0).
+ */
+const GATE_C_MIN_MARGIN = 15;
+/** Jendela frasa kepala judul (cermin HEAD_PHRASE_TOKENS chatSearch.ts). */
+const GATE_C_HEAD_TOKENS = 3;
+
 /** Kata generik yang diabaikan saat menilai kata kunci (bukan kata isi). */
 const GENERIC_WORDS = new Set([
   'pekerjaan', 'pemasangan', 'pembuatan', 'pengadaan', 'pasangan', 'pasang',
@@ -149,6 +184,20 @@ function stripDedName(name: string): string {
     .split(' ')
     .filter((w) => !GENERIC_WORDS.has(w))
     .join(' ');
+}
+
+/**
+ * Frasa kepala judul (Gerbang C): GATE_C_HEAD_TOKENS token konten pertama
+ * sesudah awalan katalog dibuang — nama pekerjaan UTAMA item ("lantai
+ * keramik 25x25" pada 3.9.8.10; "rangka plafon besi" pada 3.5.3.1;
+ * "kantor sementara rumah" pada 1.1.2.3). Cermin headPhraseTokens
+ * chatSearch.ts (kata generik/satuan/angka murni dibuang).
+ */
+function headPhraseTokens(title: string): string[] {
+  return stripCatalogPrefix(title)
+    .split(' ')
+    .filter((w) => w.length > 0 && !GENERIC_WORDS.has(w) && !/^\d+$/.test(w))
+    .slice(0, GATE_C_HEAD_TOKENS);
 }
 
 function normUnit(u: string | null | undefined): string {
@@ -391,7 +440,8 @@ export function resolveCanonicalCode(code: string, unit: string): CanonicalDedMa
   };
 }
 
-/** Kandidat dari pencarian nama — SELALU untuk review, tidak pernah auto-pilih. */
+/** Kandidat dari pencarian nama — untuk review; Gerbang C adalah satu-satunya
+ *  pengecualian auto-pilih (top-1 unik bermargin, lihat evaluateGateC). */
 function searchCandidates(name: string, unit: string): CanonicalCandidate[] {
   const raw = officialAhspRepository.searchOfficialAhsp(name, {
     unit: unit || undefined,
@@ -436,10 +486,45 @@ export interface DedItemForMatch {
 }
 
 /**
+ * Gerbang C — auto-accept kandidat unik bermargin (keputusan owner
+ * 2026-11-15, opsi ii; kalibrasi 2026-11-15, 69 fixture berlabel).
+ * Mengembalikan kandidat top-1 bila SEMUA syarat terpenuhi, else null
+ * (gagal tertutup: keraguan apa pun → NEEDS_REVIEW di pemanggil).
+ *
+ * Syarat (diukur, bukan asumsi):
+ * 1. Margin: top-1 unggul >= GATE_C_MIN_MARGIN atas top-2 dari SEMUA
+ *    kandidat (bukan hanya yang eligible) — pesaing yang hampir seri,
+ *    sekalipun ineligible, berarti frasa DED ambigu di antara dua
+ *    pekerjaan. Kandidat tunggal lolos margin (skor >= SCORE_FLOOR).
+ * 2. Eligible: top-1 berstatus FULL + satuan persis + tanpa konflik
+ *    spesifikasi (penjaga spek yang sama dengan Gerbang A).
+ * 3. Pekerjaan utama cocok: kata isi PERTAMA kueri SAMA DENGAN token
+ *    PERTAMA frasa kepala judul top-1. Ini yang membedakan kasus baik
+ *    dari jebakan: "plesteran" bukan token kepala "kantor sementara
+ *    rumah" (1.1.2.3), dan "plafon" hanya token ke-2 "rangka plafon
+ *    besi" (3.5.3.1 — rangka saja, bukan plafon utuh).
+ */
+function evaluateGateC(query: string, cands: CanonicalCandidate[]): CanonicalCandidate | null {
+  const top1 = cands[0];
+  if (!top1) return null;
+  const top2 = cands[1];
+  const margin = top1.score - (top2 ? top2.score : 0);
+  if (margin < GATE_C_MIN_MARGIN) return null;
+  if (top1.priceStatus !== 'FULL' || !top1.unitExact) return null;
+  if (checkSpecCompatibility(query, top1.name)) return null;
+  const firstWord = contentWords(query)[0];
+  if (!firstWord) return null;
+  if (headPhraseTokens(top1.name)[0] !== firstWord) return null;
+  return top1;
+}
+
+/**
  * Resolusi satu item DED ke AHSP kanonis.
- * - claimedAhspCode (dari model / konfirmasi user): jalur kode eksak.
- * - Tanpa kode: pencarian nama → judul persis + satuan persis + FULL saja
- *   yang auto-RESOLVED; sisanya NEEDS_REVIEW (kandidat) atau NO_MATCH.
+ * - claimedAhspCode (dari model / konfirmasi user): jalur kode eksak
+ *   (Gerbang A).
+ * - Tanpa kode: judul persis + satuan persis + FULL (Gerbang B), lalu
+ *   kandidat unik bermargin (Gerbang C); sisanya NEEDS_REVIEW (kandidat)
+ *   atau NO_MATCH.
  */
 export function matchDedItemToAhsp(input: DedItemForMatch): CanonicalDedMatch {
   const name = String(input.name || '').trim();
@@ -504,6 +589,16 @@ export function matchDedItemToAhsp(input: DedItemForMatch): CanonicalDedMatch {
   );
   if (exact.length === 1) {
     return resolveCanonicalCode(exact[0].code, unit);
+  }
+  // Gerbang C (keputusan owner 2026-11-15, opsi ii): kandidat unik
+  // bermargin. Harga SELALU lewat resolveCanonicalCode — verifikasi ulang
+  // katalog/satuan/FULL/facade/konsistensi; bila ditolak, jatuh ke review.
+  const gateC = evaluateGateC(query, cands);
+  if (gateC) {
+    const resolved = resolveCanonicalCode(gateC.code, unit);
+    if (resolved.status === 'RESOLVED') {
+      return { ...resolved, resolutionPath: ['GATE_C_UNIQUE_MARGIN', ...resolved.resolutionPath] };
+    }
   }
   if (cands.length === 0) {
     return {

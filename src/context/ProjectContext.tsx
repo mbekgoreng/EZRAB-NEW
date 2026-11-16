@@ -62,6 +62,9 @@ import {
   peekEnvelope,
   type SaveResult,
 } from '../engine/storage/hardenedStorage';
+// MASTER PRICING §10/§11 — TYPE-ONLY: a runtime import would pull the
+// 16 MB canonical module into the initial bundle.
+import type { AdoptionResult } from '../engine/pricing/projectPriceModes';
 
 export interface SourceTraceLineage {
   qto?: QTOItem;
@@ -393,6 +396,8 @@ interface ProjectContextType {
    */
   activeEstimateVersionId: string | null;
   createEstimateVersion: (label: string, description: string, revisionNotes?: string, targetProjectId?: string) => EstimateVersion;
+  /** MASTER PRICING §10/§11: persist an approved adoption (§10 `approveAdoption` result) — the full new version list + the active pointer move. Old versions and live RAB items are untouched. */
+  applyAdoptionResult: (result: AdoptionResult) => void;
   restoreEstimateVersion: (versionId: string, expectedActiveVersionId?: string) => { success: boolean; message: string };
   updateEstimateVersionNotes: (versionId: string, notes: string) => void;
   applyScenarioToActiveProject: (scenario: EstimateScenario) => void;
@@ -1272,6 +1277,12 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       location: projectData.location || 'Indonesia',
       buildingType: projectData.buildingType || 'Rumah Tinggal',
       status: projectData.status || 'draft',
+      // MASTER PRICING §10 (a) / D5 — a NEW project is born LIVE (it
+      // follows current master prices). An explicit pricingMode in
+      // projectData wins via the spread below (e.g. a restore/clone
+      // that carries its own mode). Legacy projects (no mode) read as
+      // SNAPSHOT downstream — never silently live.
+      pricingMode: 'LIVE_MASTER_PRICE',
       creationMethod: projectData.creationMethod || 'manual',
       progress: 0,
       totalRab: 0,
@@ -2746,6 +2757,23 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     [currentProjectId, projects, allRabItems, estimateVersions, updateProject]
   );
 
+  // MASTER PRICING §10/§11 — persist an approved adoption: the engine
+  // returns the FULL new version list for the project (old versions
+  // included, untouched) plus the created version; the active pointer
+  // moves to the adoption version. Mirrors createEstimateVersion's
+  // persistence pattern exactly.
+  const applyAdoptionResult = useCallback(
+    (result: AdoptionResult): void => {
+      const pid = result.project.id;
+      setEstimateVersions((prev) => [
+        ...prev.filter((v) => v.projectId !== pid),
+        ...result.versions,
+      ]);
+      updateProject(pid, { activeEstimateVersionId: result.created.id });
+    },
+    [updateProject]
+  );
+
   const restoreEstimateVersion = useCallback(
     (versionId: string, expectedActiveVersionId?: string): { success: boolean; message: string } => {
       // Baseline virtual (belum ada versi tersimpan) SELALU sama dengan
@@ -3257,6 +3285,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       projectEstimateVersions,
       activeEstimateVersionId,
       createEstimateVersion,
+      applyAdoptionResult,
       restoreEstimateVersion,
       updateEstimateVersionNotes,
       applyScenarioToActiveProject,
@@ -3328,6 +3357,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       projectEstimateVersions,
       activeEstimateVersionId,
       createEstimateVersion,
+      applyAdoptionResult,
       restoreEstimateVersion,
       updateEstimateVersionNotes,
       applyScenarioToActiveProject,

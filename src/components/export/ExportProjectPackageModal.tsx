@@ -20,7 +20,7 @@ import {
   FolderArchive,
   ArrowRight,
 } from 'lucide-react';
-import { Project, Company } from '../../types';
+import { Project, Company, EstimateVersion } from '../../types';
 import {
   ExportPresetId,
   ExportSheetKey,
@@ -52,6 +52,13 @@ interface ExportProjectPackageModalProps {
    * tidak tertimpa selama modal terbuka.
    */
   initialPreset?: ExportPresetId;
+  /**
+   * MASTER PRICING §13 (#5) — the project's estimate versions,
+   * threaded to the Excel/PDF exporters so the recorded pricing pin
+   * (from the ACTIVE version) is labelled on the export. Absent =
+   * the exporters fall back to the legacy label.
+   */
+  estimateVersions?: readonly EstimateVersion[];
 }
 
 export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps> = ({
@@ -62,6 +69,7 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
   workspaceId,
   onToast,
   initialPreset,
+  estimateVersions,
 }) => {
   const [selectedPreset, setSelectedPreset] = useState<ExportPresetId>('COMPLETE_PACKAGE');
   const [exportFormat, setExportFormat] = useState<ExportFormat>('excel');
@@ -257,6 +265,9 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
           approvedByName: signatures.approvedByName,
         },
         sheets: selectedSheets,
+        // MASTER PRICING §13 (#5): the Excel exporter reads
+        // `estimateVersions` from these options (ExcelExportOptions).
+        estimateVersions,
       };
 
       if (exportFormat === 'excel' || exportFormat === 'both') {
@@ -281,6 +292,7 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
           clientApproverName: signatures.approvedByName,
           documentNumberOverride: (currentProject as any).projectNumber,
           revisionOverride: currentProject.currentVersion,
+          estimateVersions,
         });
       }
 
@@ -314,6 +326,7 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
         clientApproverName: signatures.approvedByName,
         documentNumberOverride: (currentProject as any).projectNumber,
         revisionOverride: currentProject.currentVersion,
+        estimateVersions,
       });
       onToast?.('Dokumen PDF Resmi RAB berhasil dibuat dan diunduh!');
       onClose();

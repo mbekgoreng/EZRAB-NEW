@@ -1,93 +1,48 @@
 /**
- * EZRAB ADVANCED PRICE RESOLUTION ENGINE
+ * ARCHIVED — EZRAB ADVANCED PRICE RESOLUTION ENGINE
+ * ======================================================================
+ * MASTER PRICING §12 (D3/M-12): this class is DEAD CODE — it had no
+ * runtime consumer (only its own test suite used it). It is PRESERVED
+ * here, implementation verbatim, for reference: its tier-priority,
+ * no-Rp0, anomaly and provenance semantics were ported to the canonical
+ * resolver and are pinned by `src/test/masterPricingIntegration.test.ts`
+ * (§12, "port of phase3PriceResolutionEngine").
+ *
+ * DO NOT import this class from production code. Resolve prices through
+ * `canonicalPriceResolver` (or `priceResolver2026`). The shared types
+ * this file used to define now live in
+ * `../priceResolutionTypes.ts` (imported below).
+ *
  * Multi-tier priority (PROJECT -> CITY -> PROVINCE -> NATIONAL -> NO_PRICE)
  * Deterministic resolution, no silent Rp0 fallbacks, anomaly detection, provenance, and snapshotting.
  */
 
-import { UnitEngine, UnitConversionError } from '../../calculatorCore/unit/unitEngine';
-import { PriceNormalizationEngine } from '../normalization/priceNormalization';
+import { UnitEngine, UnitConversionError } from '../../../calculatorCore/unit/unitEngine';
+import { PriceNormalizationEngine } from '../../normalization/priceNormalization';
+import type {
+  PriceAnomaly,
+  PriceProvenance,
+  PriceRecord,
+  PriceResolutionOutput,
+  PriceResolutionQuery,
+  PriceResolutionTier,
+  PriceSnapshot,
+  ResolutionStatus,
+} from '../priceResolutionTypes';
 
-export type ResolutionStatus =
-  | 'VERIFIED'
-  | 'VALID'
-  | 'PARTIAL'
-  | 'MISSING'
-  | 'EXPIRED'
-  | 'CONFLICT'
-  | 'INVALID';
-
-export type PriceResolutionTier =
-  | 'PROJECT_SPECIFIC'
-  | 'CITY_REGENCY'
-  | 'PROVINCE'
-  | 'NATIONAL'
-  | 'NO_PRICE';
-
-export interface PriceRecord {
-  id: string;
-  resourceId: string;
-  resourceName: string;
-  price: number;
-  unit: string;
-  tier: PriceResolutionTier;
-  projectId?: string;
-  provinceId?: string;
-  cityId?: string;
-  source: string;
-  sourceDocument: string;
-  year: number;
-  month?: number;
-  effectiveDate: string;
-  validUntil?: string;
-  confidence: number;
-}
-
-export interface PriceResolutionQuery {
-  resourceId: string;
-  resourceName?: string;
-  targetUnit?: string;
-  projectId?: string;
-  provinceId?: string;
-  cityId?: string;
-  year: number;
-  month?: number;
-  priceSource?: string;
-}
-
-export interface PriceProvenance {
-  price: number;
-  unit: string;
-  source: string;
-  sourceDocument: string;
-  region: string;
-  year: number;
-  effectiveDate: string;
-  confidence: number;
-  tier: PriceResolutionTier;
-  resolutionReason: string;
-}
-
-export interface PriceAnomaly {
-  code: 'PRICE_TOO_LOW' | 'PRICE_TOO_HIGH' | 'NEGATIVE_PRICE' | 'UNIT_MISMATCH' | 'YEAR_MISMATCH' | 'EXPIRED_PRICE';
-  message: string;
-  severity: 'WARNING' | 'ERROR';
-}
-
-export interface PriceResolutionOutput {
-  status: ResolutionStatus;
-  price: number | null;
-  unit: string | null;
-  provenance: PriceProvenance | null;
-  anomalies: PriceAnomaly[];
-  explanation: string;
-}
-
-export interface PriceSnapshot {
-  snapshotId: string;
-  createdAt: string;
-  projectId?: string;
-  items: Map<string, PriceResolutionOutput>;
-}
+// Re-export the shared types so historical importers of this module
+// (none remain in production) keep resolving; the canonical home is
+// `../priceResolutionTypes.ts`.
+export type {
+  PriceAnomaly,
+  PriceProvenance,
+  PriceRecord,
+  PriceResolutionOutput,
+  PriceResolutionQuery,
+  PriceResolutionTier,
+  PriceSnapshot,
+  ResolutionStatus,
+};
 
 export class AdvancedPriceResolutionEngine {
   private priceDatabase: PriceRecord[] = [];

@@ -60,9 +60,14 @@
 
 import ExcelJS from 'exceljs';
 import { wbsNodeLabel, isWbsMappingStatus } from '../ai-tools/ezrab-ai/wbsArtifact';
-import type { Company, Project, ProjectCostSummary, RABItem, RABSection } from '../types';
+import type { Company, EstimateVersion, Project, ProjectCostSummary, RABItem, RABSection } from '../types';
 import type { ExportSectionsSummary } from './priceIntegrity';
 import { exportItemAmount, isExportPriceValid } from './priceIntegrity';
+import {
+  effectiveProjectPricingStateForProject,
+  formatPricingBasisLabel,
+  type EffectiveProjectPricingState,
+} from '../engine/pricing/projectPriceModes';
 import {
   BORDER_THIN_LIGHT,
   BORDER_THIN_MEDIUM,
@@ -176,12 +181,32 @@ export interface RabExportSnapshot {
     | 'isMixed'
   >;
   itemCount: number;
+  /**
+   * MASTER PRICING §12 — basis harga yang dibekukan bersama snapshot:
+   * mode harga proyek (§10) + pin AHSP / harga master yang berlaku.
+   * SENGAJA DI LUAR HASH (seperti createdAt/actor): hash mengikat
+   * KONTEN harga, label ini adalah konteks pembekuan — proyek yang
+   * sama diekspor ulang dengan konten sama menghasilkan hash sama
+   * walau label konteksnya dirumuskan ulang. Pin tanpa sumber
+   * tercatat dibaca sebagai default legacy (pinSource
+   * LEGACY_DEFAULT) — label tidak pernah mengklaim pin tercatat
+   * yang tidak dilihatnya.
+   */
+  pricingState: EffectiveProjectPricingState;
 }
 
 export interface FreezeSnapshotOptions {
   actor?: string;
   /** ISO; default jam pembekuan. Diinjeksikan tes untuk determinisme byte. */
   createdAt?: string;
+  /**
+   * Daftar versi estimasi proyek (opsional). Bila disediakan, pin
+   * AHSP/harga master diambil dari versi estimasi AKTIF proyek
+   * (aturan §9: activeEstimateVersionId, lalu terbaru). Bila tidak
+   * disediakan, pin dibaca sebagai default legacy — lihat
+   * `effectiveProjectPricingStateForProject`.
+   */
+  estimateVersions?: readonly EstimateVersion[];
 }
 
 /** Serialisasi kanonis deterministik: kunci objek diurutkan, array berurut. */
@@ -263,6 +288,12 @@ export function freezeRabSnapshot(
     costSummary: clonedSummary,
   });
   const itemCount = clonedSections.reduce((n, s) => n + (s.items?.length || 0), 0);
+  // MASTER PRICING §12: basis harga dibekukan sebagai konteks (di
+  // luar hash — lihat RabExportSnapshot.pricingState).
+  const pricingState = effectiveProjectPricingStateForProject(
+    project,
+    options?.estimateVersions ?? null,
+  );
   return {
     version: 1,
     preset: FIVE_SHEET_PRESET_ID,
@@ -287,6 +318,7 @@ export function freezeRabSnapshot(
       isMixed: exportSummary.isMixed,
     },
     itemCount,
+    pricingState,
   };
 }
 
@@ -582,6 +614,10 @@ function buildSummarySheet(
   kv('Preset Ekspor', 'RAB 5 Sheet (FIVE_SHEET_RAB)');
   kv('Revision ID', snapshot.revision);
   const hashRow = kv('Hash Snapshot', snapshot.snapshotHash, 'FNV-1a 64-bit atas konten kanonis snapshot (projectId, revisi, seksi, ringkasan).');
+  // MASTER PRICING §12: basis harga snapshot — mode + pin yang
+  // berlaku saat pembekuan. Pin '(default)' = default legacy, bukan
+  // pin tercatat pada versi estimasi aktif.
+  kv('Basis Harga', formatPricingBasisLabel(snapshot.pricingState), 'Mode harga proyek (§10) + versi AHSP & harga master yang berlaku.');
   kv('Jumlah Seksi (WBS)', snapshot.sections.length);
   kv('Jumlah Item RAB', snapshot.itemCount);
   kv('Waktu Pembekuan Snapshot', snapshot.createdAt);

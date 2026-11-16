@@ -32,7 +32,7 @@ import {
   createActionProposal,
   ProjectIsolationError,
 } from '../../unifiedProjectContext';
-import { priceResolver } from '../../../engine/pricing/resolver/priceResolver';
+import { canonicalPriceResolverAdapter } from '../../../engine/pricing/canonical/canonicalPriceResolverAdapter';
 import { CostDatabaseEngine, ALL_OFFICIAL_AHSP_ITEMS } from '../../../data/nationalCostDatabase/masterRegistry';
 import { officialAhspRepository } from '../../../data/nationalCostDatabase/officialAhspRepository';
 import { ProjectFinanceRepository } from '../../../domain/finance/repository';
@@ -731,7 +731,9 @@ export class AIToolRegistry {
       mutation: false,
       execute: async (input: { query: string }) => {
         const norm = constructionVocabulary.normalizeTerm(input.query);
-        const resolved = priceResolver.resolvePrice({ name: norm || input.query });
+        // MASTER PRICING §12 (D3/M-12): AI resource search resolves via
+        // the canonical pricing service, not the legacy engine resolver.
+        const resolved = canonicalPriceResolverAdapter.resolvePrice({ name: norm || input.query });
 
         return {
           success: true,
@@ -754,7 +756,7 @@ export class AIToolRegistry {
     // -------------------------------------------------------------------------
     this.registerTool({
       name: 'resolve_project_price',
-      description: 'Menyelesaikan harga resmi menggunakan hierarki 4 tingkat (Project -> Workspace -> Regional -> HSD).',
+      description: 'Menyelesaikan harga resmi lewat resolver harga kanonis (override proyek -> harga AHSP resmi 2026 -> referensi regional -> referensi nasional; gagal tertutup bila tidak ditemukan).',
       category: 'price',
       mode: 'information',
       requiresApproval: false,
@@ -765,7 +767,7 @@ export class AIToolRegistry {
           name: input.name ? constructionVocabulary.normalizeTerm(input.name) : '',
         };
 
-        const resolved = priceResolver.resolvePrice(query, {
+        const resolved = canonicalPriceResolverAdapter.resolvePrice(query, {
           projectId: context.projectId,
         });
 
@@ -1010,7 +1012,10 @@ export class AIToolRegistry {
         let sourceDetail = 'User Input';
 
         if (!unitPrice && input.ahspCode) {
-          const resolved = priceResolver.resolvePrice(input.ahspCode, {
+          // MASTER PRICING §12 (D3/M-12): AHSP-code pricing for an AI
+          // RAB-item proposal resolves via the canonical service (full
+          // AHSP composition), not the legacy engine resolver.
+          const resolved = canonicalPriceResolverAdapter.resolvePrice(input.ahspCode, {
             projectId: context.projectId,
           });
           if (resolved && resolved.price > 0) {

@@ -1,91 +1,92 @@
 {
-  "generatedAt": "2026-09-28T13:00:24.664Z",
+  "generatedAt": "2026-11-16T02:56:04.091Z",
   "canonicalAhspItems": 5801,
-  "canonicalResources": 3898,
+  "canonicalResources": 5236,
   "classification": {
-    "EQUIPMENT": 1205,
-    "LABOR": 307,
-    "MATERIAL": 2386
+    "EQUIPMENT": 1210,
+    "LABOR": 259,
+    "MATERIAL": 3767
   },
   "quality": {
-    "DEFECTIVE": 117,
-    "CLEAN": 3428,
-    "SUSPECT": 353
+    "DEFECTIVE": 115,
+    "CLEAN": 4833,
+    "SUSPECT": 288
   },
   "classificationByQuality": {
     "EQUIPMENT": {
       "DEFECTIVE": 53,
-      "CLEAN": 999,
+      "CLEAN": 1004,
       "SUSPECT": 153
     },
     "LABOR": {
-      "DEFECTIVE": 50,
-      "SUSPECT": 11,
-      "CLEAN": 246
+      "DEFECTIVE": 49,
+      "SUSPECT": 8,
+      "CLEAN": 202
     },
     "MATERIAL": {
-      "CLEAN": 2183,
-      "DEFECTIVE": 14,
-      "SUSPECT": 189
+      "CLEAN": 3627,
+      "DEFECTIVE": 13,
+      "SUSPECT": 127
     }
   },
-  "priceableResources": 3781,
+  "priceableResources": 5121,
   "unknownResources": 0,
-  "defectiveResources": 117,
-  "suspectResources": 353,
-  "cleanResources": 3428,
+  "defectiveResources": 115,
+  "suspectResources": 288,
+  "cleanResources": 4833,
   "issueHistogram": {
-    "NO_CODE": 2381,
-    "NAME_STARTS_LOWERCASE": 264,
-    "TYPE_CONTRADICTS_CODE_PREFIX": 72,
-    "NAME_STARTS_WITH_DIGIT": 61,
+    "NO_CODE": 3785,
+    "NAME_STARTS_LOWERCASE": 194,
+    "TYPE_CONTRADICTS_CODE_PREFIX": 76,
+    "NAME_STARTS_WITH_DIGIT": 71,
     "NAME_CONTAINS_SUMMARY_LINE": 57,
     "NAME_IS_A_DISTANCE_FRAGMENT": 37,
     "NAME_SUSPICIOUSLY_LONG": 18,
     "NAME_IS_A_CROSS_REFERENCE": 10,
-    "NAME_ENDS_WITH_DOT": 10,
-    "EMPTY_NAME": 7,
-    "NAME_IS_A_SPEC_FRAGMENT": 3,
+    "NO_UNIT": 7,
+    "EMPTY_NAME": 6,
+    "NAME_ENDS_WITH_DOT": 5,
     "NAME_IS_A_PLACEHOLDER": 2,
+    "NAME_IS_A_SPEC_FRAGMENT": 2,
     "NAME_IS_PARENTHETICAL_FRAGMENT": 1
   },
   "unitHistogram": {
-    "jam": 863,
-    "kg": 678,
-    "bh": 581,
-    "m": 494,
-    "m3": 330,
-    "hari": 175,
-    "OH": 137,
-    "m2": 131,
-    "OJ": 105,
-    "batang": 95,
-    "liter": 89,
-    "unit": 66,
-    "lembar": 37,
+    "bh": 1164,
+    "jam": 857,
+    "m": 810,
+    "unit": 658,
+    "kg": 445,
+    "m3": 350,
+    "m2": 184,
+    "hari": 163,
+    "OJ": 104,
+    "batang": 100,
+    "liter": 85,
+    "OH": 78,
+    "lembar": 63,
     "km": 34,
     "bh/m'": 24,
+    "pohon": 20,
     "ls": 18,
-    "set": 8,
-    "ton": 6,
+    "set": 14,
+    "rp/jam": 9,
+    "(empty)": 7,
+    "ton": 7,
     "batang/m'": 5,
+    "cm": 4,
     "kg/m'": 4,
-    "cm": 3,
+    "lot": 4,
+    "buahhari": 2,
+    "tahun": 2,
     "m3/m2": 2,
-    "mm": 2,
     "ea": 2,
-    "kg/m": 2,
-    "unit/hari": 1,
-    "paket": 1,
-    "dos": 1,
-    "lot": 1,
-    "tahun": 1
+    "kg/m": 2
   },
-  "lookAlikeNameGroups": 259,
-  "componentRows": 29320,
-  "componentDistinctKeys": 786,
-  "componentKeysBackedByResource": 786,
-  "componentRowsBackedByResource": 22026,
+  "lookAlikeNameGroups": 278,
+  "componentRows": 33011,
+  "componentDistinctKeys": 795,
+  "componentKeysBackedByResource": 795,
+  "componentRowsBackedByResource": 12870,
   "samples": {
     "unknown": [],
     "defective": [
@@ -95,6 +96,24 @@
         "unit": "jam",
         "issues": [
           "EMPTY_NAME"
+        ]
+      },
+      {
+        "code": "",
+        "name": "*) Mesin Las HDPE 800 Watt (SM) To.20.c",
+        "unit": "hari",
+        "issues": [
+          "NO_CODE",
+          "NAME_IS_A_CROSS_REFERENCE"
+        ]
+      },
+      {
+        "code": "",
+        "name": "*3 Las listrik Diesel 500 A E.25.f",
+        "unit": "jam",
+        "issues": [
+          "NO_CODE",
+          "NAME_IS_A_CROSS_REFERENCE"
         ]
       },
       {
@@ -290,24 +309,6 @@
         "code": "",
         "name": "- Jarak 2,5 km 0,0338",
         "unit": "jam",
-        "issues": [
-          "NO_CODE",
-          "NAME_IS_A_DISTANCE_FRAGMENT"
-        ]
-      },
-      {
-        "code": "",
-        "name": "- Jarak 2,5 km 0,0435",
-        "unit": "jam",
-        "issues": [
-          "NO_CODE",
-          "NAME_IS_A_DISTANCE_FRAGMENT"
-        ]
-      },
-      {
-        "code": "",
-        "name": "- Jarak 3,0",
-        "unit": "km",
         "issues": [
           "NO_CODE",
           "NAME_IS_A_DISTANCE_FRAGMENT"

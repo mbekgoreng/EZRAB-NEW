@@ -34,7 +34,15 @@ export interface AiToolsRequest {
    *  header Idempotency-Key pada panggilan gateway (jalur browser);
    *  klien TIDAK membuat/mengubah kunci — satu operasi = satu kunci,
    *  ditentukan pemanggil. Jalur non-gateway (adapter Node) tidak
-   *  terpengaruh. */
+   *  terpengaruh.
+   *
+   *  SATU pengecualian (LIVE-AI-FIX 2026-11-15): percobaan ulang JSON-only
+   *  internal memakai kunci TURUNAN (`<kunci>:json-retry-1`) — operasi
+   *  yang BERBEDA (prompt berbeda) sehingga TIDAK BOLEH me-replay respons
+   *  pertama; gateway me-replay respons sukses untuk kunci yang sama
+   *  (TTL 120 dtk, per-instance) dan respons prosa itu "sukses" di mata
+   *  gateway (tanpa validasi JSON server-side). Lihat
+   *  deriveJsonRetryIdempotencyKey. Diratifikasi owner 2026-11-15 18:39 WIB. */
   idempotencyKey?: string;
   /**
    * G3 (2026-11-13, K-10) — id proyek aktif pemanggil, dikirim apa adanya
@@ -338,8 +346,134 @@ export function authTimeoutResult(stage: string): AIToolsStructuredError {
   });
 }
 
+// ---------------------------------------------------------------------------
+// LIVE-AI-FIX (2026-11-15) — satu percobaan ulang JSON-only + cuplikan mentah
+// pada MALFORMED_JSON. Temuan uji live Preview b8c420a: submit Magic AI jalur
+// langsung gagal dengan banner 'Respons model tidak valid sebagai JSON.'
+// sesudah ±60 dtk, 0 item masuk. Penelusuran jalur instruksi JSON:
+//  - Jalur browser (yang gagal di live): modal mengirim jsonMode:true +
+//    system prompt berisi skema JSON; gateway meneruskannya ke provider
+//    sebagai flag native (callOAI: response_format {type:'json_object'},
+//    callGemini: responseMimeType 'application/json') — TETAPI gateway
+//    TIDAK memvalidasi JSON server-side dan mengembalikan
+//    {success:true, content} apa adanya. extractJson (sudah toleran:
+//    strip fence + scan span seimbang terpanjang) tidak menemukan JSON
+//    yang bisa di-parse → model live mengembalikan prosa murni (atau
+//    teks terpotong) walau flag + skema sudah diberikan.
+//  - Jalur Node: sama — adapter menyetel flag native yang sama dan
+//    mencoba JSON.parse ke structuredData; gagal parse jatuh ke
+//    extractJson yang sama.
+// Karena flag terstruktur SUDAH ada dan terbukti tidak cukup, satu-satunya
+// tuas yang tersisa di sisi klien adalah instruksi JSON-only di LEVEL
+// PROMPT (teks, di akhir prompt pengguna — efek resensi). Retry dibatasi
+// SATU kali, hanya untuk kegagalan parse jsonMode (`:parse`) — BUKAN
+// untuk kegagalan transport (`:http`, body 200 bukan JSON) dan bukan
+// untuk EMPTY_RESPONSE / timeout / error lain. Parse sukses tidak berubah.
+// ---------------------------------------------------------------------------
+
+/** Instruksi JSON-only yang ditambahkan di akhir prompt pengguna pada
+ *  SATU-SATUNYA percobaan ulang sesudah kegagalan parse. Sengaja
+ *  agnostik-skema ("satu objek JSON valid") agar berlaku untuk semua
+ *  pemanggil jsonMode — skema spesifik tetap hidup di system prompt
+ *  masing-masing. ~270 karakter: jauh di bawah batas prompt gateway
+ *  (20000 karakter) untuk prompt Magic AI; pemanggil dengan prompt
+ *  mendekati batas tetap berisiko 400 pada percobaan ulang (dicatat di
+ *  laporan — kegagalan pertama sudah terjadi, jadi hasil tidak memburuk). */
+export const JSON_ONLY_RETRY_INSTRUCTION =
+  '\n\n[FORMAT WAJIB: jawaban sebelumnya tidak dapat dibaca sebagai JSON. ' +
+  'Balas HANYA dengan satu objek JSON valid — tanpa penjelasan, tanpa kalimat pembuka, ' +
+  'tanpa teks apa pun di luar JSON, dan tanpa blok kode markdown. ' +
+  'Mulai jawaban langsung dengan karakter { dan akhiri dengan }.]';
+
+/** Catatan diagnosis yang ditambahkan ke `details` bila percobaan ulang
+ *  sudah habis dan respons tetap bukan JSON. */
+export const JSON_RETRY_EXHAUSTED_NOTE =
+  'Percobaan ulang JSON-only (1x) sudah dilakukan; respons tetap bukan JSON.';
+
+/** Panjang maksimum konten cuplikan respons mentah di detail error
+ *  MALFORMED_JSON (penanda "[dipotong]" di luar hitungan ini). */
+export const MALFORMED_JSON_SNIPPET_MAX_CHARS = 200;
+
+/**
+ * Cuplikan respons mentah untuk detail error diagnosis — whitespace
+ * diratakan (prosa berbaris baru tidak menghabiskan anggaran), dipotong
+ * pada 200 karakter dengan penanda bila terpotong. Ini OUTPUT MODEL
+ * (bukan kredensial): tidak pernah mengandung header auth / kunci —
+ * yang dicuplik hanyalah teks respons yang gagal di-parse. Pure +
+ * exported untuk tes.
+ */
+export function rawResponseSnippet(raw: string): string {
+  const text = String(raw ?? '').trim().replace(/\s+/g, ' ');
+  if (text.length <= MALFORMED_JSON_SNIPPET_MAX_CHARS) return text;
+  return `${text.slice(0, MALFORMED_JSON_SNIPPET_MAX_CHARS)}… [dipotong]`;
+}
+
+/**
+ * Error terstruktur MALFORMED_JSON untuk kegagalan parse sisi klien
+ * (`:parse`). `message` TIDAK berubah ('Respons model tidak valid
+ * sebagai JSON.') sehingga banner yang dilihat user tetap bersih;
+ * cuplikan mentah masuk ke `details` HANYA untuk diagnosis (tidak ada
+ * UI yang me-render `details`). Pure + exported untuk tes.
+ */
+export function malformedJsonParseError(
+  stage: string,
+  rawContent: string,
+  opts?: { retried?: boolean },
+): AIToolsStructuredError {
+  const details = [`Cuplikan respons mentah: ${rawResponseSnippet(rawContent)}`];
+  if (opts?.retried) details.push(JSON_RETRY_EXHAUSTED_NOTE);
+  return aiToolsError('MALFORMED_JSON', `${stage}:parse`, 'Respons model tidak valid sebagai JSON.', {
+    retryable: true,
+    details,
+  });
+}
+
+/**
+ * Kunci idempotensi untuk percobaan ulang JSON-only. WAJIB BERBEDA dari
+ * kunci percobaan pertama: gateway menyimpan respons SUKSES pertama
+ * untuk satu kunci (TTL 120 dtk, per-instance serverless) dan
+ * me-replay-nya verbatim — respons prosa itu "sukses" di mata gateway,
+ * sehingga retry dengan kunci sama akan menerima prosa YANG SAMA (bila
+ * mengenai instance yang sama) dan retry menjadi sia-sia secara flaky.
+ * Kunci turunan = kunci pemanggil + ':json-retry-1' (deterministik,
+ * bukan identitas karangan). Bila turunan melebihi batas 128 karakter
+ * gateway, kunci DIHILANGKAN (tanpa idempotensi) daripada dipotong
+ * kembali menjadi kunci asli. Pure + exported untuk tes.
+ */
+export function deriveJsonRetryIdempotencyKey(key: string | undefined): string | undefined {
+  if (!key) return undefined;
+  const derived = `${key}:json-retry-1`;
+  return derived.length <= 128 ? derived : undefined;
+}
+
+/**
+ * Membangun request percobaan ulang JSON-only: prompt asli + instruksi
+ * JSON-only yang lebih tegas, kunci idempotensi turunan. Semua field
+ * lain (temperature, maxTokens, timeoutMs, signal, mode, media,
+ * projectId) diteruskan apa adanya — retry adalah panggilan model yang
+ * sama dengan instruksi format yang lebih tegas, bukan operasi baru.
+ * Pure + exported untuk tes.
+ */
+export function buildJsonOnlyRetryRequest(request: AiToolsRequest): AiToolsRequest {
+  return {
+    ...request,
+    prompt: `${request.prompt}${JSON_ONLY_RETRY_INSTRUCTION}`,
+    idempotencyKey: deriveJsonRetryIdempotencyKey(request.idempotencyKey),
+  };
+}
+
 export class AiToolsProviderClient {
-  public async execute<T = unknown>(request: AiToolsRequest): Promise<AiToolsResult<T>> {
+  /**
+   * Satu panggilan model. LIVE-AI-FIX (2026-11-15): bila jsonMode dan
+   * respons gagal di-parse (`:parse`), execute memanggil dirinya sendiri
+   * SATU kali dengan instruksi JSON-only yang lebih tegas
+   * (buildJsonOnlyRetryRequest) lalu mengembalikan hasil percobaan kedua
+   * apa adanya. `_jsonRetryUsed` adalah flag INTERNAL pencegah retry
+   * berulang — pemanggil TIDAK PERNAH mengisinya (default false).
+   * Retry dibatalkan bila sinyal pemanggil sudah aborted. Parse sukses,
+   * non-jsonMode, dan kegagalan non-parse tidak pernah me-retry.
+   */
+  public async execute<T = unknown>(request: AiToolsRequest, _jsonRetryUsed = false): Promise<AiToolsResult<T>> {
     const target = getModelTarget(request.productId);
     const isNode = typeof window === 'undefined';
     const stage = request.productId;
@@ -377,7 +511,14 @@ export class AiToolsProviderClient {
           try {
             structured = (result.structuredData as T) ?? this.extractJson<T>(result.content);
           } catch {
-            return aiToolsError('MALFORMED_JSON', `${stage}:parse`, 'Respons model tidak valid sebagai JSON.', { retryable: true });
+            // LIVE-AI-FIX (2026-11-15): model mengembalikan teks tanpa
+            // JSON yang bisa di-parse — coba SATU kali lagi dengan
+            // instruksi JSON-only di level prompt. Retry tidak berulang
+            // (_jsonRetryUsed) dan dibatalkan bila pemanggil abort.
+            if (!_jsonRetryUsed && !request.signal?.aborted) {
+              return this.execute<T>(buildJsonOnlyRetryRequest(request), true);
+            }
+            return malformedJsonParseError(stage, result.content, { retried: _jsonRetryUsed });
           }
         }
 
@@ -534,7 +675,16 @@ export class AiToolsProviderClient {
         try {
           structured = (json.structured as T) ?? this.extractJson<T>(json.content);
         } catch {
-          return aiToolsError('MALFORMED_JSON', `${stage}:parse`, 'Respons model tidak valid sebagai JSON.', { retryable: true });
+          // LIVE-AI-FIX (2026-11-15): sama seperti jalur Node — model
+          // mengembalikan teks tanpa JSON yang bisa di-parse; coba SATU
+          // kali lagi dengan instruksi JSON-only di level prompt.
+          // (Kunci idempotensi percobaan ulang DITURUNKAN di
+          // buildJsonOnlyRetryRequest agar gateway tidak me-replay
+          // respons prosa pertama.)
+          if (!_jsonRetryUsed && !request.signal?.aborted) {
+            return this.execute<T>(buildJsonOnlyRetryRequest(request), true);
+          }
+          return malformedJsonParseError(stage, json.content, { retried: _jsonRetryUsed });
         }
       }
       // SPRINT 5 (X2): bukti usage X1 dari gateway diteruskan

@@ -28,6 +28,11 @@ import { formatCurrencyIDR } from '../../calculations/decimalEngine';
 import { SafeDecimalEngine } from '../../engine/safeDecimalEngine';
 import { honestVolume } from '../../engine/honestVolume';
 import { officialAhspRepository } from '../../data/nationalCostDatabase/officialAhspRepository';
+import { AHSP_DATABASE_VERSION } from '../../data/nationalCostDatabase/types';
+import {
+  MASTER_PRICE_VERSION,
+  DEFAULT_SNAPSHOT_PRICING_MODE,
+} from '../../data/priceDatabase2026/types';
 import { getPriceDatabase } from '../../data/indonesianPrices';
 import {
   buildDrawerComponents,
@@ -438,6 +443,11 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
       sourceDocument: 'Permen PUPR No. 1 2022 / SE DJBK 2026 (Customized)',
       isCustomModified: true,
       snapshotTimestamp: new Date().toISOString(),
+      // MASTER PRICING §3 (I-11): source-version stamp + safe default mode
+      // (SNAPSHOT_PRICE — a saved snapshot freezes values; Decision D).
+      ahspDatabaseVersion: AHSP_DATABASE_VERSION,
+      masterPriceVersion: MASTER_PRICE_VERSION,
+      pricingMode: DEFAULT_SNAPSHOT_PRICING_MODE,
     };
 
     const newAuditEntry: WorkItemAuditEntry = {

@@ -9,7 +9,7 @@ import {
   StandardWorkItem,
 } from '../engine/migration/calculatorMigrationContract';
 import { AHSPDefinition } from '../engine/ahsp/contracts/types';
-import { PriceResolutionOutput } from '../engine/pricing/resolver/advancedPriceResolutionEngine';
+import { PriceResolutionOutput } from '../engine/pricing/resolver/priceResolutionTypes';
 
 function test(name: string, fn: () => void) {
   try {

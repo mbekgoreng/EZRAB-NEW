@@ -4,7 +4,7 @@
 
 import { CentralDeterministicCostEngine, ProjectCostPolicySettings } from '../engine/cost/centralDeterministicCostEngine';
 import { AHSPDefinition } from '../engine/ahsp/contracts/types';
-import { PriceResolutionOutput } from '../engine/pricing/resolver/advancedPriceResolutionEngine';
+import { PriceResolutionOutput } from '../engine/pricing/resolver/priceResolutionTypes';
 
 function test(name: string, fn: () => void) {
   try {

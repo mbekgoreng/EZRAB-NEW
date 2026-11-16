@@ -120,6 +120,7 @@ import { formatDedQtoDraftLines } from './dedQtoIntegration';
 import type { DedQtoDraftInfo } from './dedQtoIntegration';
 import type { RabItem, UserDecisionStatus, VerificationStatus } from '../../types';
 import { extractRabNeeds, stripLandPhrases, detectNeedsFunction, isNegatedAt } from './rabNeeds';
+import { formatWorkItemTitle } from './workItemTitle';
 import { understandProject, assessBuildingMissingInfo, summarizeUnderstanding } from './buildingTypology';
 import { formatRupiah } from '../../engine/formulaEngine';
 import { filterItemsByRelevance } from './relevanceGate';
@@ -3826,7 +3827,7 @@ export function buildPushPayload(draft: UniversalDraft): UniversalPushItem[] {
           ? '[Pekerjaan Bersama] '
           : '';
     return {
-      description: `[Chat AI] ${sectionPrefix}${it.description}`,
+      description: `${sectionPrefix}${formatWorkItemTitle(it.description)}`,
       volume: it.volume,
       unit: it.unit,
       code: it.code || it.ahspCode || '',

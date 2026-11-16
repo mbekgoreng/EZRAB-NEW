@@ -72,6 +72,13 @@ export interface ResourceAuditRow {
   hasCode: boolean;
   sourceAhspCodes: string[];
   duplicateStatus?: string;
+  /**
+   * MASTER PRICING §3.1 — AHSP family the resource row was extracted from
+   * (`category` in ahsp_2026_resources.json: CIPTA_KARYA / BINA_MARGA /
+   * SDA). This is the SOURCE DOMAIN, not the MATERIAL/LABOR/EQUIPMENT
+   * category (see `classification`). Null when the master carries none.
+   */
+  sourceDomain?: string | null;
 }
 
 /**
@@ -89,6 +96,7 @@ export function classifyResource(row: {
   name?: string;
   type?: string;
   unit?: string;
+  category?: string;
   source_ahsp_codes?: string[];
   duplicate_status?: string;
 }): ResourceAuditRow {
@@ -164,6 +172,7 @@ export function classifyResource(row: {
     hasCode: !!code,
     sourceAhspCodes: row.source_ahsp_codes || [],
     duplicateStatus: row.duplicate_status,
+    sourceDomain: String(row.category || '').trim() || null,
   };
 }
 

@@ -215,6 +215,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       icon: Tag,
       match: (m: string) => m === 'harga-proyek' || m === 'project-price',
     },
+    {
+      id: 'master-pricing',
+      label: t('nav.master_pricing'),
+      icon: Coins,
+      match: (m: string) => m === 'master-pricing',
+    },
   ];
 
   const isDatabaseActive = databaseSubItems.some((sub) => sub.match(activeMenu));

@@ -37,6 +37,7 @@ import { executeIntent, continueRabChoice, getPendingRabChoice } from '../ai-too
 import { parseFreeSpec, buildSpecRab, parseLandAreaM2, parseLandDims, resolveLandAreaM2 } from '../ai-tools/ezrab-ai/specRab';
 import { extractRabNeeds } from '../ai-tools/ezrab-ai/rabNeeds';
 import { formatDirectRabMessage, getLastDirectRab } from '../ai-tools/ezrab-ai/directRab';
+import { formatWorkItemTitle } from '../ai-tools/ezrab-ai/workItemTitle';
 
 const mockCtx = {
   navigate: () => {},
@@ -289,7 +290,7 @@ describe('generate RAB spesifikasi bebas', () => {
     const payload = r.generation.workItems
       .filter((w) => Number.isFinite(w.quantity) && w.quantity > 0)
       .map((wi) => ({
-        description: `[Chat AI] ${wi.name}`,
+        description: formatWorkItemTitle(wi.name),
         volume: wi.quantity,
         unit: wi.unit,
         code: wi.ahspCode ?? wi.workItemId,
@@ -300,7 +301,8 @@ describe('generate RAB spesifikasi bebas', () => {
       }));
     expect(payload.length).toBeGreaterThanOrEqual(15);
     for (const p of payload) {
-      expect(p.description.startsWith('[Chat AI] ')).toBe(true);
+      expect(p.description.includes('[Chat AI]')).toBe(false);
+      expect(p.description.charAt(0)).toBe(p.description.charAt(0).toUpperCase());
       expect(p.volume).toBeGreaterThan(0);
       expect(p.unit.trim().length).toBeGreaterThan(0);
       expect(typeof p.code).toBe('string');

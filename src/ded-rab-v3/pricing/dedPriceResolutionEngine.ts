@@ -15,18 +15,21 @@ import {
   FullAiWorkItem,
   WorkItemPriceResult,
 } from '../types';
-import { PriceResolver } from '../../engine/pricing/resolver/priceResolver';
 import { officialAhspRepository } from '../../data/nationalCostDatabase/officialAhspRepository';
 import { SafeDecimalEngine } from '../../engine/safeDecimalEngine';
 import { canonicalPriceResolver } from '../../engine/pricing/canonical/canonicalPriceResolver';
+import { gateCanonicalUnit } from '../../engine/pricing/canonical/canonicalPriceResolverAdapter';
 
 export class DedPriceResolutionEngine {
   private static instance: DedPriceResolutionEngine;
-  private priceResolver: PriceResolver;
   private ahspRepo = officialAhspRepository;
 
   private constructor() {
-    this.priceResolver = new PriceResolver();
+    // MASTER PRICING §12 (D3/M-12): the legacy engine `PriceResolver`
+    // field was constructed here but NEVER called — all resolution in
+    // this engine already goes through `canonicalPriceResolver`
+    // (resolveItemPrice). The dead field + import are removed; no
+    // behaviour changes.
   }
 
   public static getInstance(): DedPriceResolutionEngine {
@@ -110,13 +113,22 @@ export class DedPriceResolutionEngine {
       itemType: item.ahsp?.code ? 'AHSP' : 'AUTO',
     });
 
+    // MASTER PRICING §12 (P5): the canonical answer must be usable FOR
+    // the item's unit — Steps 3/5 match by name and return the
+    // record's unit. A gated-out answer falls to PRICE_NOT_FOUND
+    // (fail-closed), never a wrong-unit price.
+    const gated =
+      canonicalRes.status === 'RESOLVED' && canonicalRes.price !== null
+        ? gateCanonicalUnit(canonicalRes, item.quantityUnit)
+        : null;
+
     let unitPrice = 0;
     let source: WorkItemPriceResult['source'] = 'PRICE_NOT_FOUND';
     let providerOrLoc = region;
     const effectiveDate = new Date().toISOString().split('T')[0];
 
-    if (canonicalRes.status === 'RESOLVED' && canonicalRes.price !== null) {
-      unitPrice = canonicalRes.price;
+    if (gated) {
+      unitPrice = gated.price;
       source = canonicalRes.source === 'PROJECT_OVERRIDE' || canonicalRes.source === 'PROJECT_PRICE_QUOTE'
         ? 'PROJECT'
         : (canonicalRes.source.startsWith('OFFICIAL') ? 'OFFICIAL' : 'REGIONAL');
@@ -128,10 +140,14 @@ export class DedPriceResolutionEngine {
         equipmentCost = canonicalRes.componentBreakdown.equipmentCost;
       }
     } else {
-      // Fail-closed: missing / invalid prices remain unpriced (never hallucinated)
+      // Fail-closed: missing / invalid / unit-gated prices remain
+      // unpriced (never hallucinated).
       unitPrice = 0;
       source = 'PRICE_NOT_FOUND';
-      providerOrLoc = canonicalRes.rejectionReason || 'Harga Tidak Ditemukan';
+      providerOrLoc =
+        canonicalRes.status === 'RESOLVED'
+          ? `UNIT_MISMATCH: harga kanonis tersedia hanya dalam satuan ${canonicalRes.unit || 'lain'} — bukan ${item.quantityUnit}`
+          : canonicalRes.rejectionReason || 'Harga Tidak Ditemukan';
     }
 
     // Compute total price using Decimal precision

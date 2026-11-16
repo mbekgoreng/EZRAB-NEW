@@ -72,7 +72,7 @@ export const paths = {
   management: () => `${APP_PREFIX}/management`,
   reports: (view?: 'rab' | 'boq' | 'recap' | 'ahsp') => `${APP_PREFIX}/reports${view && view !== 'rab' ? `/${view}` : ''}`,
   tenderDocuments: () => `${APP_PREFIX}/tender-documents`,
-  materialHarga: (type: 'material' | 'labor' | 'equipment' | 'suppliers' | 'project-price' = 'material') => `${APP_PREFIX}/resources?type=${type}`,
+  materialHarga: (type: 'material' | 'labor' | 'equipment' | 'suppliers' | 'project-price' | 'master-pricing' = 'material') => `${APP_PREFIX}/resources?type=${type}`,
   finance: (tab?: string) => `${APP_PREFIX}/finance${tab ? `?tab=${tab}` : ''}`,
   settings: (section?: string) => `${APP_PREFIX}/settings${section ? `/${section}` : ''}`,
   subscription: () => `${APP_PREFIX}/subscription`,
@@ -87,7 +87,7 @@ export const paths = {
     qto: (projectId: string, view?: 'calculator') =>
       `${projectRoot(projectId)}/qto${view ? `?view=${view}` : ''}`,
     ahsp: (projectId: string) => `${projectRoot(projectId)}/ahsp`,
-    resources: (projectId: string, type: 'material' | 'labor' | 'equipment' | 'suppliers' | 'project-price' = 'material') =>
+    resources: (projectId: string, type: 'material' | 'labor' | 'equipment' | 'suppliers' | 'project-price' | 'master-pricing' = 'material') =>
       `${projectRoot(projectId)}/resources?type=${type}`,
     schedule: (projectId: string) => `${projectRoot(projectId)}/schedule`,
     curveS: (projectId: string) => `${projectRoot(projectId)}/curve-s`,
@@ -159,6 +159,7 @@ export const routeForMenu = (menu: WorkspaceMenu, projectId?: string | null, mod
       case 'alat': return paths.materialHarga('equipment');
       case 'harga-proyek':
       case 'project-price': return paths.materialHarga('project-price');
+      case 'master-pricing': return paths.materialHarga('master-pricing');
       case 'resource-library':
       case 'suppliers': return paths.materialHarga('suppliers');
       // 'harga' = alias lama grup material di WorkspaceView.
@@ -236,6 +237,7 @@ export const routeForMenu = (menu: WorkspaceMenu, projectId?: string | null, mod
     case 'alat': return paths.project.resources(project, 'equipment');
     case 'harga-proyek':
     case 'project-price': return paths.project.resources(project, 'project-price');
+    case 'master-pricing': return paths.project.resources(project, 'master-pricing');
     case 'resource-library':
     case 'suppliers': return paths.project.resources(project, 'suppliers');
     case 'jadwal': return paths.project.schedule(project);
@@ -356,6 +358,8 @@ export const parseWorkspaceRoute = (pathname: string, search: string = ''): Work
           ? 'database-alat'
           : type === 'project-price'
           ? 'harga-proyek'
+          : type === 'master-pricing'
+          ? 'master-pricing'
           : type === 'suppliers'
           ? 'suppliers'
           : 'database-material',
@@ -393,6 +397,8 @@ export const parseWorkspaceRoute = (pathname: string, search: string = ''): Work
           ? 'suppliers'
           : type === 'project-price'
           ? 'harga-proyek'
+          : type === 'master-pricing'
+          ? 'master-pricing'
           : 'database-material',
     };
   }
@@ -439,6 +445,7 @@ export const routeLabel = (route: WorkspaceRoute) => {
     'database-upah': 'Standar Upah',
     'database-alat': 'Tarif Peralatan',
     'harga-proyek': 'Harga Proyek',
+    'master-pricing': 'Harga Master',
     suppliers: 'Supplier & Vendor',
     'dokumen-tender': 'Dokumen Proyek',
     'keuangan-proyek': 'Keuangan Proyek',

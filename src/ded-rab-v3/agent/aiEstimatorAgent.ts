@@ -191,10 +191,16 @@ export class AiEstimatorAgent {
       }
 
       // Overall item provenance
+      // MASTER PRICING §12: findPrice step 2 now resolves through the
+      // canonical service and can return OFFICIAL_AHSP (or
+      // EZRAB_DATABASE / PROJECT_PRICE) for a resource hit WITHOUT an
+      // AHSP code. Such a price is canonical, not AI-assisted — the
+      // old branch order would have mislabelled it AI_ASSISTED.
       let overallProvenance: FieldProvenanceSource = 'OFFICIAL_AHSP';
       if (pSource === 'AI_ESTIMATED' || qSource === 'AI_ESTIMATED') overallProvenance = 'AI_ESTIMATED';
       else if (pSource === 'REGIONAL_PRICE') overallProvenance = 'REGIONAL_PRICE';
-      else if (ahspCode) overallProvenance = 'OFFICIAL_AHSP';
+      else if (pSource === 'OFFICIAL_AHSP' || pSource === 'OFFICIAL_STANDARD' || ahspCode) overallProvenance = 'OFFICIAL_AHSP';
+      else if (pSource === 'EZRAB_DATABASE' || pSource === 'PROJECT_PRICE') overallProvenance = pSource;
       else overallProvenance = 'AI_ASSISTED';
 
       aiRabItems.push({

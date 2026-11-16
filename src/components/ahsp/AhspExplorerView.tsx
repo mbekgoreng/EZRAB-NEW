@@ -62,6 +62,8 @@ export function resolveWithMarket(item: NationalAHSPItem) {
   return applyMarketOverlay(comp);
 }
 import { MarketReferencePanel } from './MarketReferencePanel';
+// MASTER PRICING §11.3 — per-component detail (12 fields, 9 sync statuses).
+import { AhspComponentSyncSection } from '../masterPricing/AhspComponentDetail';
 import type { AhspUnitPriceComposition } from '../../data/priceDatabase2026/types';
 import { navigateTo, type AhspRouteParams } from '../../routing/routes';
 
@@ -2067,6 +2069,9 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ routeParams,
                   <div><strong>Status:</strong> <span style={{ color: selectedAhsp.status === 'VERIFIED' ? 'var(--ez-hue-green-text-bright)' : 'var(--ez-hue-amber-text)', fontWeight: 700 }}>{selectedAhsp.status}</span></div>
                 </div>
               </div>
+
+              {/* MASTER PRICING §11.3 — detail komponen vs harga master (12 field, status sinkronisasi). */}
+              <AhspComponentSyncSection item={selectedAhsp} composition={selectedAhspAugmented} />
             </div>
 
             {/* Modal Footer */}

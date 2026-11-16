@@ -1,60 +1,60 @@
 {
-  "generatedAt": "2026-09-28T13:00:50.422Z",
+  "generatedAt": "2026-11-16T02:56:29.212Z",
   "componentKeyCoverage": {
-    "distinctKeys": 782,
-    "pricedKeys": 71,
-    "keyCoveragePercent": 9.08,
-    "componentUses": 22026,
-    "pricedUses": 16950,
-    "useWeightedCoveragePercent": 76.95,
+    "distinctKeys": 791,
+    "pricedKeys": 121,
+    "keyCoveragePercent": 15.3,
+    "componentUses": 12870,
+    "pricedUses": 8736,
+    "useWeightedCoveragePercent": 67.88,
     "byType": {
       "material": {
-        "keys": 642,
-        "pricedKeys": 40,
-        "keyCoveragePercent": 6.23,
-        "uses": 3911,
-        "pricedUses": 1359,
-        "useWeightedCoveragePercent": 34.75
+        "keys": 651,
+        "pricedKeys": 86,
+        "keyCoveragePercent": 13.21,
+        "uses": 3920,
+        "pricedUses": 1877,
+        "useWeightedCoveragePercent": 47.88
       },
       "labor": {
-        "keys": 22,
+        "keys": 19,
         "pricedKeys": 10,
-        "keyCoveragePercent": 45.45,
-        "uses": 15474,
-        "pricedUses": 14502,
-        "useWeightedCoveragePercent": 93.72
+        "keyCoveragePercent": 52.63,
+        "uses": 6306,
+        "pricedUses": 5353,
+        "useWeightedCoveragePercent": 84.89
       },
       "equipment": {
-        "keys": 118,
-        "pricedKeys": 21,
-        "keyCoveragePercent": 17.8,
-        "uses": 2641,
-        "pricedUses": 1089,
-        "useWeightedCoveragePercent": 41.23
+        "keys": 121,
+        "pricedKeys": 25,
+        "keyCoveragePercent": 20.66,
+        "uses": 2644,
+        "pricedUses": 1506,
+        "useWeightedCoveragePercent": 56.96
       }
     }
   },
   "ahspCoverage": {
     "total": 5801,
-    "full": 1235,
-    "partial": 3488,
-    "missing": 113,
-    "noComponents": 965,
-    "fullyPricedPercent": 21.29,
-    "anyPricePercent": 81.42,
+    "full": 2182,
+    "partial": 2788,
+    "missing": 51,
+    "noComponents": 780,
+    "fullyPricedPercent": 37.61,
+    "anyPricePercent": 85.67,
     "byDomain": {
       "BINA_MARGA": {
-        "full": 1,
-        "partial": 964,
-        "missing": 19,
+        "full": 16,
+        "partial": 962,
+        "missing": 6,
         "noComponents": 179,
         "total": 1163
       },
       "CIPTA_KARYA": {
-        "full": 1205,
-        "partial": 1399,
-        "missing": 47,
-        "noComponents": 208,
+        "full": 2135,
+        "partial": 701,
+        "missing": 0,
+        "noComponents": 23,
         "total": 2859
       },
       "SMKK": {
@@ -65,18 +65,18 @@
         "total": 223
       },
       "SUMBER_DAYA_AIR": {
-        "full": 29,
+        "full": 31,
         "partial": 1125,
-        "missing": 47,
+        "missing": 45,
         "noComponents": 355,
         "total": 1556
       }
     }
   },
   "resourceQuality": {
-    "CLEAN": 3428,
-    "SUSPECT": 353,
-    "DEFECTIVE": 117
+    "CLEAN": 4833,
+    "SUSPECT": 288,
+    "DEFECTIVE": 115
   },
   "topMissingComponentKeys": [
     {
@@ -85,13 +85,6 @@
       "unit": "OJ",
       "type": "labor",
       "usageCount": 943
-    },
-    {
-      "code": "E23",
-      "name": "Water Tank Truck",
-      "unit": "jam",
-      "type": "equipment",
-      "usageCount": 244
     },
     {
       "code": "E.11",
@@ -115,30 +108,9 @@
       "usageCount": 111
     },
     {
-      "code": "E35",
-      "name": "DUMP TRUCK TRONTON 10 TON",
-      "unit": "jam",
-      "type": "equipment",
-      "usageCount": 106
-    },
-    {
-      "code": "EI311",
-      "name": "Galian Tanah Biasa",
-      "unit": "m3",
-      "type": "material",
-      "usageCount": 86
-    },
-    {
       "code": "M271",
       "name": "Tanah Humus ketebalan 20 cm",
       "unit": "m3",
-      "type": "material",
-      "usageCount": 84
-    },
-    {
-      "code": "M272",
-      "name": "Pupuk",
-      "unit": "kg",
       "type": "material",
       "usageCount": 84
     },
@@ -155,13 +127,6 @@
       "unit": "kg",
       "type": "material",
       "usageCount": 72
-    },
-    {
-      "code": "E71",
-      "name": "Mesin Bor",
-      "unit": "jam",
-      "type": "equipment",
-      "usageCount": 65
     },
     {
       "code": "M182",
@@ -199,20 +164,6 @@
       "usageCount": 42
     },
     {
-      "code": "M09",
-      "name": "Timbunan Pilihan",
-      "unit": "m3",
-      "type": "material",
-      "usageCount": 41
-    },
-    {
-      "code": "M05",
-      "name": "Fly Ash",
-      "unit": "kg",
-      "type": "material",
-      "usageCount": 40
-    },
-    {
       "code": "M.74",
       "name": "Kawat las listrik",
       "unit": "kg",
@@ -220,23 +171,9 @@
       "usageCount": 40
     },
     {
-      "code": "M91",
-      "name": "Agr 0 - 5",
-      "unit": "m3",
-      "type": "material",
-      "usageCount": 39
-    },
-    {
       "code": "M171",
       "name": "Plastizier",
       "unit": "kg",
-      "type": "material",
-      "usageCount": 38
-    },
-    {
-      "code": "M92",
-      "name": "Agr 5-10 & 10-15",
-      "unit": "m3",
       "type": "material",
       "usageCount": 38
     },
@@ -318,13 +255,6 @@
       "usageCount": 28
     },
     {
-      "code": "E19a",
-      "name": "Baby Vibratory Roller",
-      "unit": "jam",
-      "type": "equipment",
-      "usageCount": 27
-    },
-    {
       "code": "M400",
       "name": "Cable Connector 4 mm",
       "unit": "bh",
@@ -337,6 +267,13 @@
       "unit": "jam",
       "type": "equipment",
       "usageCount": 23
+    },
+    {
+      "code": "E17",
+      "name": "Tandem Roller",
+      "unit": "jam",
+      "type": "equipment",
+      "usageCount": 22
     },
     {
       "code": "M291",
@@ -409,11 +346,11 @@
       "usageCount": 19
     },
     {
-      "code": "M275c",
-      "name": "Pipa Galvanis Dia 4\" 2 mm",
-      "unit": "m",
-      "type": "material",
-      "usageCount": 19
+      "code": "E32",
+      "name": "Welding Set",
+      "unit": "jam",
+      "type": "equipment",
+      "usageCount": 18
     },
     {
       "code": "E51",
@@ -437,23 +374,9 @@
       "usageCount": 17
     },
     {
-      "code": "L.29",
-      "name": "Welding Inspector",
-      "unit": "OJ",
-      "type": "labor",
-      "usageCount": 17
-    },
-    {
       "code": "M195",
       "name": "Formworks",
       "unit": "bh/m'",
-      "type": "material",
-      "usageCount": 17
-    },
-    {
-      "code": "M.44",
-      "name": "Kawat Las (Elektroda)",
-      "unit": "kg",
       "type": "material",
       "usageCount": 17
     },
@@ -463,13 +386,6 @@
       "unit": "jam",
       "type": "equipment",
       "usageCount": 17
-    },
-    {
-      "code": "M130",
-      "name": "Triplek",
-      "unit": "lembar",
-      "type": "material",
-      "usageCount": 16
     },
     {
       "code": "M381i",
@@ -507,22 +423,8 @@
       "usageCount": 14
     },
     {
-      "code": "M60",
-      "name": "Beton fc' 15 MPa",
-      "unit": "m3",
-      "type": "material",
-      "usageCount": 14
-    },
-    {
       "code": "E03",
       "name": "Power Broom",
-      "unit": "jam",
-      "type": "equipment",
-      "usageCount": 13
-    },
-    {
-      "code": "E100",
-      "name": "Truck Crane 5 Ton",
       "unit": "jam",
       "type": "equipment",
       "usageCount": 13
@@ -556,13 +458,6 @@
       "usageCount": 12
     },
     {
-      "code": "M240h",
-      "name": "Pipa PVC AW 2 inch",
-      "unit": "m",
-      "type": "material",
-      "usageCount": 11
-    },
-    {
       "code": "M437",
       "name": "Anchor L Dia. 12 mm",
       "unit": "bh",
@@ -584,13 +479,6 @@
       "usageCount": 10
     },
     {
-      "code": "M125",
-      "name": "Perekat",
-      "unit": "kg",
-      "type": "material",
-      "usageCount": 10
-    },
-    {
       "code": "M212",
       "name": "Baut Biasa Grade A diameter M25",
       "unit": "bh",
@@ -601,13 +489,6 @@
       "code": "M223a",
       "name": "Mur dan Angkur Baut (L = 60 cm)",
       "unit": "set",
-      "type": "material",
-      "usageCount": 10
-    },
-    {
-      "code": "M265",
-      "name": "Beton f`c 10 Mpa",
-      "unit": "m3",
       "type": "material",
       "usageCount": 10
     },
@@ -689,13 +570,6 @@
       "usageCount": 9
     },
     {
-      "code": "M142",
-      "name": "Kayu Kelas 1",
-      "unit": "m3",
-      "type": "material",
-      "usageCount": 9
-    },
-    {
       "code": "M395a",
       "name": "Lampu PJU LED 150 W",
       "unit": "bh",
@@ -752,13 +626,6 @@
       "usageCount": 9
     },
     {
-      "code": "M435",
-      "name": "Gembok Anti Karat",
-      "unit": "bh",
-      "type": "material",
-      "usageCount": 9
-    },
-    {
       "code": "M436",
       "name": "Dynabolt m10 x 70mm",
       "unit": "bh",
@@ -778,88 +645,189 @@
       "unit": "jam",
       "type": "equipment",
       "usageCount": 8
+    },
+    {
+      "code": "M116",
+      "name": "Baja prategang 7 wires / Strands, 1 / 2 inci",
+      "unit": "kg",
+      "type": "material",
+      "usageCount": 8
+    },
+    {
+      "code": "M158",
+      "name": "Serat Selulosa",
+      "unit": "kg",
+      "type": "material",
+      "usageCount": 8
+    },
+    {
+      "code": "M259",
+      "name": "Curing Membrane",
+      "unit": "liter",
+      "type": "material",
+      "usageCount": 8
+    },
+    {
+      "code": "M34",
+      "name": "Glass Bead",
+      "unit": "kg",
+      "type": "material",
+      "usageCount": 8
+    },
+    {
+      "code": "M381e",
+      "name": "Tiang Penyangga (Profil U Uk. 1800 x 175 x 72 x 6 mm)",
+      "unit": "m",
+      "type": "material",
+      "usageCount": 8
+    },
+    {
+      "code": "M381f",
+      "name": "x 175 x 72 x 6 mm)",
+      "unit": "m",
+      "type": "material",
+      "usageCount": 8
+    },
+    {
+      "code": "M381g",
+      "name": "Baut, ring, mur 16 x 32",
+      "unit": "bh",
+      "type": "material",
+      "usageCount": 8
+    },
+    {
+      "code": "M381h",
+      "name": "Baut, ring, mur 16 x 35",
+      "unit": "bh",
+      "type": "material",
+      "usageCount": 8
+    },
+    {
+      "code": "M381j",
+      "name": "Sticker retroreflektif",
+      "unit": "m",
+      "type": "material",
+      "usageCount": 8
+    },
+    {
+      "code": "M395b",
+      "name": "Cell) Komplit",
+      "unit": "bh",
+      "type": "material",
+      "usageCount": 8
+    },
+    {
+      "code": "M407a",
+      "name": "Contactor Max 40A",
+      "unit": "bh",
+      "type": "material",
+      "usageCount": 8
+    },
+    {
+      "code": "M592",
+      "name": "Besi UNP 80.45.5",
+      "unit": "bh",
+      "type": "material",
+      "usageCount": 8
+    },
+    {
+      "code": "E70",
+      "name": "Hand Mixer",
+      "unit": "jam",
+      "type": "equipment",
+      "usageCount": 7
+    },
+    {
+      "code": "M117",
+      "name": "Selongsong HDPE",
+      "unit": "m",
+      "type": "material",
+      "usageCount": 7
+    },
+    {
+      "code": "M184",
+      "name": "Thermocouple",
+      "unit": "bh",
+      "type": "material",
+      "usageCount": 7
+    },
+    {
+      "code": "M209",
+      "name": "Baja untuk pelat buhul dan pelat ganjal",
+      "unit": "bh",
+      "type": "material",
+      "usageCount": 7
+    },
+    {
+      "code": "M211a",
+      "name": "M25",
+      "unit": "bh",
+      "type": "material",
+      "usageCount": 7
+    },
+    {
+      "code": "M275e",
+      "name": "Pipa Besi 2,5 inch",
+      "unit": "m",
+      "type": "material",
+      "usageCount": 7
+    },
+    {
+      "code": "M396m",
+      "name": "Kabel TR NYFGBY 4C x 6 mm2",
+      "unit": "m",
+      "type": "material",
+      "usageCount": 7
     }
   ],
   "topMissingComponentKeysByItemCount": [
     {
       "key": "equipment:(no code)|jam",
-      "itemCount": 1800
-    },
-    {
-      "key": "material:(no code)|kg",
-      "itemCount": 1088
+      "itemCount": 1735
     },
     {
       "key": "equipment:(no code)|ls",
       "itemCount": 944
     },
     {
-      "key": "labor:L03|OJ",
-      "itemCount": 943
+      "key": "material:(no code)|m3",
+      "itemCount": 460
     },
     {
-      "key": "material:(no code)|m3",
-      "itemCount": 936
+      "key": "material:(no code)|",
+      "itemCount": 338
     },
     {
       "key": "equipment:(no code)|hari",
-      "itemCount": 817
+      "itemCount": 315
+    },
+    {
+      "key": "material:(no code)|kg",
+      "itemCount": 270
     },
     {
       "key": "material:(no code)|bh",
-      "itemCount": 455
+      "itemCount": 256
     },
     {
       "key": "material:(no code)|m",
-      "itemCount": 364
+      "itemCount": 125
     },
     {
-      "key": "equipment:E23|jam",
-      "itemCount": 244
-    },
-    {
-      "key": "labor:(no code)|OH",
-      "itemCount": 156
-    },
-    {
-      "key": "equipment:E11|jam",
-      "itemCount": 135
-    },
-    {
-      "key": "material:(no code)|liter",
-      "itemCount": 122
-    },
-    {
-      "key": "equipment:E08|jam",
-      "itemCount": 116
-    },
-    {
-      "key": "equipment:E07|jam",
-      "itemCount": 111
-    },
-    {
-      "key": "material:(no code)|m2",
-      "itemCount": 107
-    },
-    {
-      "key": "equipment:E35|jam",
-      "itemCount": 106
+      "key": "material:(no code)|unit",
+      "itemCount": 101
     },
     {
       "key": "equipment:(no code)|km",
       "itemCount": 101
     },
     {
-      "key": "material:EI311|m3",
-      "itemCount": 86
-    },
-    {
       "key": "material:M271|m3",
       "itemCount": 84
     },
     {
-      "key": "material:M272|kg",
-      "itemCount": 84
+      "key": "material:(no code)|m2",
+      "itemCount": 80
     },
     {
       "key": "equipment:T34|jam",
@@ -867,62 +835,26 @@
     },
     {
       "key": "material:M23|kg",
-      "itemCount": 72
+      "itemCount": 70
     },
     {
-      "key": "labor:(no code)|OJ",
-      "itemCount": 71
-    },
-    {
-      "key": "equipment:E71|jam",
-      "itemCount": 65
+      "key": "labor:(no code)|jam",
+      "itemCount": 68
     },
     {
       "key": "material:M182|kg",
       "itemCount": 60
     },
     {
-      "key": "material:(no code)|lembar",
-      "itemCount": 54
-    },
-    {
-      "key": "material:(no code)|unit",
-      "itemCount": 52
-    },
-    {
-      "key": "equipment:E01|jam",
-      "itemCount": 51
-    },
-    {
       "key": "material:M366|batang",
       "itemCount": 48
-    },
-    {
-      "key": "equipment:E76|jam",
-      "itemCount": 44
     },
     {
       "key": "material:M186|m3",
       "itemCount": 42
     },
     {
-      "key": "material:M09|m3",
-      "itemCount": 41
-    },
-    {
       "key": "material:M74|kg",
-      "itemCount": 40
-    },
-    {
-      "key": "equipment:(no code)|m",
-      "itemCount": 40
-    },
-    {
-      "key": "material:M05|kg",
-      "itemCount": 40
-    },
-    {
-      "key": "material:M91|m3",
       "itemCount": 39
     },
     {
@@ -930,40 +862,12 @@
       "itemCount": 38
     },
     {
-      "key": "material:M92|m3",
-      "itemCount": 38
-    },
-    {
-      "key": "equipment:E11A|jam",
-      "itemCount": 36
-    },
-    {
-      "key": "equipment:E74|jam",
-      "itemCount": 36
-    },
-    {
-      "key": "material:M59|m3",
-      "itemCount": 35
+      "key": "equipment:(no code)|m",
+      "itemCount": 37
     },
     {
       "key": "equipment:(no code)|liter",
-      "itemCount": 34
-    },
-    {
-      "key": "material:M73A|lembar",
-      "itemCount": 34
-    },
-    {
-      "key": "material:M195|m2",
-      "itemCount": 33
-    },
-    {
-      "key": "equipment:E18|jam",
-      "itemCount": 33
-    },
-    {
-      "key": "material:M240E|m",
-      "itemCount": 33
+      "itemCount": 37
     },
     {
       "key": "material:(no code)|bh/m'",
@@ -978,32 +882,24 @@
       "itemCount": 30
     },
     {
-      "key": "equipment:E69|jam",
-      "itemCount": 29
-    },
-    {
       "key": "material:M275B|m",
       "itemCount": 28
     },
     {
-      "key": "equipment:E78|jam",
-      "itemCount": 28
+      "key": "equipment:(no code)|m3",
+      "itemCount": 27
     },
     {
       "key": "equipment:(no code)|kg",
       "itemCount": 27
     },
     {
+      "key": "material:M195|m2",
+      "itemCount": 27
+    },
+    {
       "key": "material:M400|bh",
       "itemCount": 27
-    },
-    {
-      "key": "equipment:E19A|jam",
-      "itemCount": 27
-    },
-    {
-      "key": "equipment:E62|jam",
-      "itemCount": 23
     },
     {
       "key": "material:M291|bh",
@@ -1018,16 +914,12 @@
       "itemCount": 22
     },
     {
+      "key": "material:M240E|m",
+      "itemCount": 22
+    },
+    {
       "key": "material:M144|m3",
       "itemCount": 21
-    },
-    {
-      "key": "equipment:E41|jam",
-      "itemCount": 21
-    },
-    {
-      "key": "material:M33|liter",
-      "itemCount": 20
     },
     {
       "key": "material:M397|m",
@@ -1038,40 +930,16 @@
       "itemCount": 20
     },
     {
-      "key": "equipment:E17A|jam",
-      "itemCount": 19
-    },
-    {
       "key": "material:M133|kg",
       "itemCount": 19
     },
     {
-      "key": "material:M275C|m",
-      "itemCount": 19
-    },
-    {
-      "key": "material:(no code)|batang",
-      "itemCount": 18
-    },
-    {
-      "key": "equipment:E51|jam",
+      "key": "material:(no code)|cm",
       "itemCount": 18
     },
     {
       "key": "material:M226|m3",
       "itemCount": 18
-    },
-    {
-      "key": "labor:L29|OJ",
-      "itemCount": 17
-    },
-    {
-      "key": "material:M44|kg",
-      "itemCount": 17
-    },
-    {
-      "key": "material:(no code)|cm",
-      "itemCount": 17
     },
     {
       "key": "equipment:T27|jam",
@@ -1082,87 +950,35 @@
       "itemCount": 17
     },
     {
-      "key": "equipment:E83|jam",
-      "itemCount": 17
-    },
-    {
-      "key": "material:M130|lembar",
-      "itemCount": 16
-    },
-    {
-      "key": "material:M66|kg",
-      "itemCount": 16
-    },
-    {
       "key": "material:M381I|bh",
       "itemCount": 16
     },
     {
-      "key": "material:M21|m3",
-      "itemCount": 15
+      "key": "material:(no code)|lot",
+      "itemCount": 16
     },
     {
-      "key": "equipment:E56|jam",
-      "itemCount": 15
-    },
-    {
-      "key": "material:M60|m3",
-      "itemCount": 14
-    },
-    {
-      "key": "equipment:E33|jam",
-      "itemCount": 14
-    },
-    {
-      "key": "equipment:E03|jam",
-      "itemCount": 13
-    },
-    {
-      "key": "equipment:E73|jam",
-      "itemCount": 13
-    },
-    {
-      "key": "equipment:E100|jam",
-      "itemCount": 13
-    },
-    {
-      "key": "equipment:E17B|jam",
+      "key": "material:(no code)|batang",
       "itemCount": 12
     },
     {
-      "key": "equipment:E27|jam",
+      "key": "material:(no code)|pohon",
       "itemCount": 12
-    },
-    {
-      "key": "equipment:E97|jam",
-      "itemCount": 12
-    },
-    {
-      "key": "material:M240H|m",
-      "itemCount": 11
     },
     {
       "key": "material:M437|bh",
       "itemCount": 11
     },
     {
-      "key": "material:M265|m3",
-      "itemCount": 10
-    },
-    {
-      "key": "equipment:E19|jam",
-      "itemCount": 10
-    },
-    {
-      "key": "equipment:E18A|jam",
-      "itemCount": 10
-    },
-    {
-      "key": "material:M125|kg",
+      "key": "material:(no code)|liter",
       "itemCount": 10
     },
     {
       "key": "material:M212|bh",
+      "itemCount": 10
+    },
+    {
+      "key": "material:M275C|m",
       "itemCount": 10
     },
     {
@@ -1180,6 +996,190 @@
     {
       "key": "material:M369C|bh",
       "itemCount": 10
+    },
+    {
+      "key": "material:M409|bh",
+      "itemCount": 10
+    },
+    {
+      "key": "material:M398G|bh",
+      "itemCount": 10
+    },
+    {
+      "key": "material:M223A|set",
+      "itemCount": 10
+    },
+    {
+      "key": "material:M100|m",
+      "itemCount": 9
+    },
+    {
+      "key": "material:M395A|bh",
+      "itemCount": 9
+    },
+    {
+      "key": "material:M408B|bh",
+      "itemCount": 9
+    },
+    {
+      "key": "material:M414|bh",
+      "itemCount": 9
+    },
+    {
+      "key": "material:M418|bh",
+      "itemCount": 9
+    },
+    {
+      "key": "material:M417|bh",
+      "itemCount": 9
+    },
+    {
+      "key": "material:M396H|m",
+      "itemCount": 9
+    },
+    {
+      "key": "material:M396G|m",
+      "itemCount": 9
+    },
+    {
+      "key": "material:M436|bh",
+      "itemCount": 9
+    },
+    {
+      "key": "equipment:(no code)|unithari",
+      "itemCount": 9
+    },
+    {
+      "key": "material:M592|bh",
+      "itemCount": 8
+    },
+    {
+      "key": "material:M158|kg",
+      "itemCount": 8
+    },
+    {
+      "key": "material:M259|liter",
+      "itemCount": 8
+    },
+    {
+      "key": "material:M116|kg",
+      "itemCount": 8
+    },
+    {
+      "key": "material:M381E|m",
+      "itemCount": 8
+    },
+    {
+      "key": "material:M381F|m",
+      "itemCount": 8
+    },
+    {
+      "key": "material:M381G|bh",
+      "itemCount": 8
+    },
+    {
+      "key": "material:M381H|bh",
+      "itemCount": 8
+    },
+    {
+      "key": "material:M381J|m",
+      "itemCount": 8
+    },
+    {
+      "key": "material:M395B|bh",
+      "itemCount": 8
+    },
+    {
+      "key": "material:M407A|bh",
+      "itemCount": 8
+    },
+    {
+      "key": "material:M184|bh",
+      "itemCount": 7
+    },
+    {
+      "key": "material:M117|m",
+      "itemCount": 7
+    },
+    {
+      "key": "material:M209|bh",
+      "itemCount": 7
+    },
+    {
+      "key": "material:M211A|bh",
+      "itemCount": 7
+    },
+    {
+      "key": "material:M275E|m",
+      "itemCount": 7
+    },
+    {
+      "key": "material:M433|m",
+      "itemCount": 7
+    },
+    {
+      "key": "material:M396M|m",
+      "itemCount": 7
+    },
+    {
+      "key": "equipment:T92|jam",
+      "itemCount": 6
+    },
+    {
+      "key": "material:M279|m3",
+      "itemCount": 6
+    },
+    {
+      "key": "material:M215A|kg",
+      "itemCount": 6
+    },
+    {
+      "key": "material:EI871B|m2",
+      "itemCount": 6
+    },
+    {
+      "key": "material:M165|m",
+      "itemCount": 6
+    },
+    {
+      "key": "material:M233|m",
+      "itemCount": 6
+    },
+    {
+      "key": "material:M267|kg",
+      "itemCount": 6
+    },
+    {
+      "key": "material:M203|liter",
+      "itemCount": 6
+    },
+    {
+      "key": "material:M120|bh",
+      "itemCount": 6
+    },
+    {
+      "key": "material:M396R|m",
+      "itemCount": 6
+    },
+    {
+      "key": "material:M396U|m",
+      "itemCount": 6
+    },
+    {
+      "key": "equipment:E78|jam",
+      "itemCount": 6
+    },
+    {
+      "key": "material:(no code)|OH",
+      "itemCount": 6
+    },
+    {
+      "key": "material:M179|m",
+      "itemCount": 5
+    },
+    {
+      "key": "material:M252|m3",
+      "itemCount": 5
     }
   ],
   "notes": [

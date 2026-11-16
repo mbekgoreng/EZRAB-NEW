@@ -74,6 +74,8 @@ export const UnifiedBreadcrumb: React.FC<UnifiedBreadcrumbProps> = ({
       case 'database-alat':
       case 'harga-proyek':
         return 'Resource Library';
+      case 'master-pricing':
+        return 'Harga Master';
       default:
         return routeLabel(route);
     }

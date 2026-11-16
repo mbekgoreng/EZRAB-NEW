@@ -22,6 +22,16 @@ export class PriceRepository {
 
   private masterPricesByCode: Map<string, PriceDefinition> = new Map();
   private masterPriceList: PriceDefinition[] = [];
+  // MASTER PRICING §3 (M-6/R-7) — QUARANTINED legacy archive. Superseded
+  // PUPR 2022 component prices live ONLY here, with sourceTier LEGACY.
+  // They are NEVER added to masterPricesByCode/masterPriceList, so no
+  // resolution path (getByCode, getAllByCode, getAllMasterPrices,
+  // queryPrices, findDuplicate) can ever return a 2022 price for a 2026
+  // query. Readable only via getLegacyPrices()/getLegacyByCode() for
+  // forensic/audit purposes. The archive PRESERVES the data (nothing is
+  // deleted) — it only removes it from the active resolution index.
+  private legacyPriceList: PriceDefinition[] = [];
+  private legacyPricesByCode: Map<string, PriceDefinition> = new Map();
   // Project-scoped price overrides: projectId -> (normalizedCode -> PriceDefinition)
   private projectScopedOverrides: Map<string, Map<string, PriceDefinition>> = new Map();
 
@@ -44,6 +54,8 @@ export class PriceRepository {
   private initializePriceDatasets(): void {
     this.masterPricesByCode.clear();
     this.masterPriceList = [];
+    this.legacyPriceList = [];
+    this.legacyPricesByCode.clear();
 
     // 1. Ingest Official HSD 2026 Items
     for (const item of OFFICIAL_HSD_2026_ITEMS) {
@@ -120,6 +132,17 @@ export class PriceRepository {
     }
 
     // 3. Ingest Component Prices from Indonesian AHSP Master Database (Labor, Materials, Equip)
+    // MASTER PRICING §3 (M-6/R-7) — QUARANTINED. This is the SUPERSEDED
+    // Permen PUPR No. 1/PRT/M/2022 baseline. Before §3 it was ingested
+    // into the ACTIVE index as sourceTier OFFICIAL (period 2022-Q1,
+    // confidence 0.95, first-write-wins per code) — so a 2022 price could
+    // shadow the correct 2026 rate for the same code AND be returned by
+    // canonicalPriceResolver STEP 5 as a "2026 national reference".
+    // The entries are now preserved ONLY in the legacy archive
+    // (legacyPriceList/legacyPricesByCode, tier LEGACY) and NEVER enter
+    // masterPricesByCode/masterPriceList. No resolution path can return
+    // them for a 2026 query. First-write-wins is kept WITHIN the archive
+    // (one entry per normalized code) so the forensic record stays stable.
     for (const ahsp of MASTER_AHSP_DATABASE) {
       const allComps = [
         ...(ahsp.laborComponents || []).map((c) => ({ ...c, cat: 'LABOR' as const })),
@@ -132,7 +155,7 @@ export class PriceRepository {
         // tidak di-ingest ke price DB — harga hilang bukan harga nol.
         if (!comp.code || comp.unitPrice == null || comp.unitPrice <= 0) continue;
         const normCode = PriceNormalizationEngine.normalizeCode(comp.code);
-        if (this.masterPricesByCode.has(normCode)) continue;
+        if (this.legacyPricesByCode.has(normCode)) continue;
 
         const def: PriceDefinition = {
           id: `PRC-AHSP-${normCode}`,
@@ -146,9 +169,9 @@ export class PriceRepository {
           periodVersion: '2022-Q1',
           effectiveDate: '2022-01-01',
           priceSource: ahsp.regulationSource || 'Permen PUPR No. 1/PRT/M/2022',
-          // ARCHIVED 2022 regulation: official provenance, but must not be
-          // presented as current 2026 AHSP (see SourceGovernanceRegistry).
-          sourceTier: 'OFFICIAL',
+          // QUARANTINED 2022 regulation: preserved for audit, tier LEGACY —
+          // must NEVER be presented as a current 2026 price (M-6/R-7).
+          sourceTier: 'LEGACY',
           provenance: {
             sourceName: ahsp.regulationSource || 'Permen PUPR No. 1/PRT/M/2022',
             location: 'Nasional',
@@ -158,8 +181,8 @@ export class PriceRepository {
           },
         };
 
-        this.masterPricesByCode.set(normCode, def);
-        this.masterPriceList.push(def);
+        this.legacyPricesByCode.set(normCode, def);
+        this.legacyPriceList.push(def);
       }
     }
 
@@ -418,6 +441,25 @@ export class PriceRepository {
 
   public getAll(): PriceDefinition[] {
     return [...this.masterPriceList];
+  }
+
+  /**
+   * MASTER PRICING §3 (M-6/R-7) — quarantined legacy archive (read-only).
+   * Superseded PUPR 2022 component prices, preserved for forensic/audit
+   * purposes ONLY. These definitions MUST NEVER be used as 2026 prices:
+   * they are excluded from every resolution path by construction (they
+   * are not in masterPricesByCode/masterPriceList). Every entry has
+   * sourceTier LEGACY and periodVersion 2022-Q1.
+   */
+  public getLegacyPrices(): PriceDefinition[] {
+    return [...this.legacyPriceList];
+  }
+
+  /** Forensic lookup in the quarantined legacy archive (never a 2026 price). */
+  public getLegacyByCode(code: string): PriceDefinition | undefined {
+    const normCode = PriceNormalizationEngine.normalizeCode(code);
+    if (!normCode) return undefined;
+    return this.legacyPricesByCode.get(normCode);
   }
 
   public getProjectPrices(projectId: string): PriceDefinition[] {

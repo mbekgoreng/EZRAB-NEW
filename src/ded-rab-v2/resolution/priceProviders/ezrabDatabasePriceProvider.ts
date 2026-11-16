@@ -7,7 +7,8 @@ import { PriceProvider, PriceSearchInput, PriceCandidate } from '../providerCont
 import { officialAhspRepository, ALL_OFFICIAL_AHSP_ITEMS } from '../../../data/nationalCostDatabase/officialAhspRepository';
 import { isQuarantined } from '../../../data/nationalCostDatabase/ahspQuarantine';
 import { priceResolver2026 } from '../../../data/priceDatabase2026/resolver';
-import { PriceResolver } from '../../../engine/pricing/resolver/priceResolver';
+import { canonicalPriceResolver } from '../../../engine/pricing/canonical/canonicalPriceResolver';
+import { gateCanonicalUnit } from '../../../engine/pricing/canonical/canonicalPriceResolverAdapter';
 import { SafeDecimalEngine } from '../../../engine/safeDecimalEngine';
 
 export class EzrabDatabasePriceProvider implements PriceProvider {
@@ -15,7 +16,7 @@ export class EzrabDatabasePriceProvider implements PriceProvider {
   public readonly priority = 2;
 
   public async search(input: PriceSearchInput): Promise<PriceCandidate | null> {
-    const { workItemName, specification, unit, ahspCode, quantity = 1 } = input;
+    const { workItemName, unit, ahspCode, quantity = 1 } = input;
     const cleanCode = (ahspCode || '').toLowerCase().trim();
     const qty = quantity !== null && quantity !== undefined && quantity > 0 ? quantity : 1;
 
@@ -79,31 +80,42 @@ export class EzrabDatabasePriceProvider implements PriceProvider {
       }
     }
 
-    // 3. Try Material Price Resolver direct lookup
+    // 3. Canonical resource lookup (MASTER PRICING §12, D3/M-12: was the
+    // engine PriceResolver over the PriceRepository index — a parallel
+    // price universe. Now the canonical service, so the master price
+    // wins with name gate + unit validation + sanity gate. The
+    // 'EZRAB_DATABASE' / 'PRICE_INTERNAL' labels name the provider
+    // priority, not the data source; the data source is named in
+    // `sourceName`.)
     try {
-      const resolver = new PriceResolver();
-      const res = resolver.resolve({
+      const res = canonicalPriceResolver.resolve({
         code: ahspCode,
         name: workItemName,
-        specification,
         unit,
       });
 
-      if (res.status === 'EXACT_MATCH' && res.resolvedPrice && res.resolvedPrice.price > 0) {
-        const uPrice = res.resolvedPrice.price;
+      // MASTER PRICING §12 (P5): the canonical answer must be usable
+      // FOR the queried unit — a gated-out answer falls through to
+      // the AI estimation step, never a wrong-unit price.
+      const gated =
+        res.status === 'RESOLVED' && res.price !== null && res.price > 0
+          ? gateCanonicalUnit(res, unit)
+          : null;
+      if (gated) {
+        const uPrice = gated.price;
         const tot = SafeDecimalEngine.safeMultiply(uPrice, qty, 2);
         return {
           unitPrice: uPrice,
           totalPrice: tot,
           priceSource: 'EZRAB_DATABASE',
           priceStatus: 'PRICE_INTERNAL',
-          sourceName: `Database Master Material EZRAB (${res.resolvedPrice.name})`,
-          materialPrice: res.resolvedPrice.category === 'MATERIAL' ? uPrice : null,
-          laborPrice: res.resolvedPrice.category === 'LABOR' ? uPrice : null,
-          equipmentPrice: res.resolvedPrice.category === 'EQUIPMENT' ? uPrice : null,
-          confidence: 0.90,
-          confidenceRating: 'HIGH',
-          assumptions: ['Menggunakan data master harga material terverifikasi EZRAB.'],
+          sourceName: `Harga Kanonis EZRAB (${res.sourceDocument || res.source})`,
+          materialPrice: res.category === 'MATERIAL' ? uPrice : null,
+          laborPrice: res.category === 'LABOR' ? uPrice : null,
+          equipmentPrice: res.category === 'EQUIPMENT' ? uPrice : null,
+          confidence: res.confidence,
+          confidenceRating: res.confidence >= 0.9 ? 'HIGH' : 'MEDIUM',
+          assumptions: ['Menggunakan harga kanonis master EZRAB 2026 (resolver terpusat).'],
         };
       }
     } catch {

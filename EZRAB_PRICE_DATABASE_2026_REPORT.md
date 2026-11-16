@@ -1,9 +1,9 @@
 # EZRAB — PRICE DATABASE 2026 REPORT
 
-> Generated: 2026-09-28T13:01:14.311Z  
+> Generated: 2026-11-16T02:56:45.070Z  
 > Command: `npm run price:pipeline`  
 > Canonical AHSP: **5801 items** (unchanged, price-free)  
-> Price records: **309**
+> Price records: **452**
 
 ---
 
@@ -27,10 +27,10 @@ dan aturan **"harga hilang = `null`, tidak pernah 0"**.
 
 Hasil terukur hari ini:
 
-- **309** record harga nyata, semuanya bernilai positif dan berprovenans lengkap.
-- **71/782** pasangan (kode, satuan) berharga (**9.08%**), tetapi **76.95%** dari seluruh pemakaian komponen sudah terharga.
-- **1235** item AHSP berstatus **FULL**, **3488** **PARTIAL**, **113** **MISSING**, **965** tanpa komponen.
-- Cakupan "minimal punya satu harga": **81.42%** item.
+- **452** record harga nyata, semuanya bernilai positif dan berprovenans lengkap.
+- **121/791** pasangan (kode, satuan) berharga (**15.3%**), tetapi **67.88%** dari seluruh pemakaian komponen sudah terharga.
+- **2182** item AHSP berstatus **FULL**, **2788** **PARTIAL**, **51** **MISSING**, **780** tanpa komponen.
+- Cakupan "minimal punya satu harga": **85.67%** item.
 
 Cakupan **tidak dipaksakan**. Resource yang tidak punya harga di sumber mana pun tetap
 tanpa harga, dan dilaporkan — bukan diisi dengan angka karangan.
@@ -70,15 +70,15 @@ Berkas kunci:
 
 | Sumber | Tier | Prioritas | Status | Aktif | Record terpakai | Rentang harga |
 | --- | --- | --- | --- | --- | --- | --- |
-| `HSD_2026` | OFFICIAL_GOVERNMENT | 1 | VERIFIED | ya | 76 | Rp 1.600 – Rp 3.000.000 |
-| `LABOR_2026` | VERIFIED_REGIONAL | 3 | VERIFIED | ya | 30 | Rp 20.000 – Rp 270.000 |
-| `EQUIPMENT_2026` | VERIFIED_REGIONAL | 3 | VERIFIED | ya | 15 | Rp 20.000 – Rp 1.200.000 |
-| `MATERIAL_MASTER_2026` | PROJECT_INTERNAL_MASTER | 5 | SOURCE_REPORTED | ya | 162 | Rp 1.600 – Rp 3.000.000 |
-| `MATERIAL_LIBRARY` | COMMERCIAL_REFERENCE | 6 | SOURCE_REPORTED | ya | 1 | Rp 14.500 – Rp 14.500 |
-| `COMMERCIAL_2026` | COMMERCIAL_REFERENCE | 6 | SOURCE_REPORTED | ya | 25 | Rp 12.500 – Rp 920.000 |
+| `HSD_2026` | OFFICIAL_GOVERNMENT | 1 | VERIFIED | ya | 74 | Rp 1.600 – Rp 3.000.000 |
+| `LABOR_2026` | VERIFIED_REGIONAL | 3 | VERIFIED | ya | 29 | Rp 20.000 – Rp 230.000 |
+| `EQUIPMENT_2026` | VERIFIED_REGIONAL | 3 | VERIFIED | ya | 22 | Rp 20.000 – Rp 1.450.000 |
+| `MATERIAL_MASTER_2026` | PROJECT_INTERNAL_MASTER | 5 | SOURCE_REPORTED | ya | 310 | Rp 200 – Rp 26.000.000 |
+| `MATERIAL_LIBRARY` | COMMERCIAL_REFERENCE | 6 | SOURCE_REPORTED | ya | 0 | — |
+| `COMMERCIAL_2026` | COMMERCIAL_REFERENCE | 6 | SOURCE_REPORTED | ya | 17 | Rp 12.500 – Rp 480.000 |
 | `LEGACY_PUPR_2022` | LEGACY_SUPERSEDED | 99 | NEEDS_REVIEW | **TIDAK** | 0 | — |
 
-Total baris harga ternormalisasi: **6913**, aktif **6855**, dikecualikan **58** (`LEGACY_PUPR_2022`).
+Total baris harga ternormalisasi: **9948**, aktif **9890**, dikecualikan **58** (`LEGACY_PUPR_2022`).
 
 **Legacy 2022 dikarantina, bukan digabung.** Sumber tersebut adalah baseline yang sudah
 digantikan dan pernah *membayangi* tarif tenaga kerja 2026 di `PriceRepository` (first-wins).
@@ -88,19 +88,18 @@ Sumber itu tetap terdaftar untuk audit, tetapi `active: false` dan tidak pernah 
 
 ## 4. Hasil Matching
 
-Record harga: **309**.
+Record harga: **452**.
 
 | Metode | Jumlah | Boleh VERIFIED? |
 | --- | --- | --- |
-| `NAME_UNIT` | 294 | **tidak** → NEEDS_REVIEW |
-| `EXACT_CODE` | 12 | ya (tergantung sumber) |
-| `NORMALIZED_CODE_UNIT` | 3 | ya (tergantung sumber) |
+| `NAME_UNIT` | 439 | **tidak** → NEEDS_REVIEW |
+| `EXACT_CODE` | 9 | ya (tergantung sumber) |
+| `ALIAS` | 4 | ya (tergantung sumber) |
 
 | Status verifikasi | Jumlah |
 | --- | --- |
-| NEEDS_REVIEW | 294 |
-| VERIFIED | 11 |
-| SOURCE_REPORTED | 4 |
+| NEEDS_REVIEW | 439 |
+| VERIFIED | 13 |
 
 ### Mengapa matching-nya tidak "kode dulu" seperti biasanya
 
@@ -133,10 +132,10 @@ Dua cacat data yang ditemukan dan ditangani:
 
 | Tipe | Kunci berharga | Cakupan kunci | Cakupan berbobot pemakaian |
 | --- | --- | --- | --- |
-| material | 40/642 | 6.23% | **34.75%** |
-| labor | 10/22 | 45.45% | **93.72%** |
-| equipment | 21/118 | 17.8% | **41.23%** |
-| **total** | 71/782 | 9.08% | **76.95%** |
+| material | 86/651 | 13.21% | **47.88%** |
+| labor | 10/19 | 52.63% | **84.89%** |
+| equipment | 25/121 | 20.66% | **56.96%** |
+| **total** | 121/791 | 15.3% | **67.88%** |
 
 Perbedaan besar antara cakupan kunci dan cakupan berbobot itu penting: hanya sedikit kunci, tetapi kunci itulah yang dipakai ribuan kali (tenaga kerja 93,72% berbobot).
 
@@ -144,34 +143,34 @@ Perbedaan besar antara cakupan kunci dan cakupan berbobot itu penting: hanya sed
 
 | Status | Jumlah | Arti |
 | --- | --- | --- |
-| FULL | 1235 | semua komponen berharga |
-| PARTIAL | 3488 | sebagian berharga; total tidak lengkap dan itu ditandai |
-| MISSING | 113 | tidak ada komponen yang berharga; total = `null` |
-| NO-COMP | 965 | item tanpa komponen (mis. baris SMKK) |
+| FULL | 2182 | semua komponen berharga |
+| PARTIAL | 2788 | sebagian berharga; total tidak lengkap dan itu ditandai |
+| MISSING | 51 | tidak ada komponen yang berharga; total = `null` |
+| NO-COMP | 780 | item tanpa komponen (mis. baris SMKK) |
 
 ### Kualitas resource master kanonik
 
-CLEAN **3428** · SUSPECT **353** · DEFECTIVE **117**
+CLEAN **4833** · SUSPECT **288** · DEFECTIVE **115**
 
 ### Blocker terbesar (kunci tanpa harga, menurut frekuensi pemakaian)
 
 | Tipe | Kode | Satuan | Pemakaian | Nama |
 | --- | --- | --- | --- | --- |
 | labor | `L.03` | OJ | 943 | Mandor |
-| equipment | `E23` | jam | 244 | Water Tank Truck |
 | equipment | `E.11` | jam | 135 | FLAT BED TRUCK 4 TON |
 | equipment | `E08` | jam | 116 | DUMP TRUCK 4 TON; 134 HP |
 | equipment | `E07` | jam | 111 | CRANE ON TRACK 10-15 TON |
-| equipment | `E35` | jam | 106 | DUMP TRUCK TRONTON 10 TON |
-| material | `EI311` | m3 | 86 | Galian Tanah Biasa |
 | material | `M271` | m3 | 84 | Tanah Humus ketebalan 20 cm |
-| material | `M272` | kg | 84 | Pupuk |
 | equipment | `T.34` | jam | 77 | Trailer 10-20 ton (lebar 3,5 m x 8,0 m) |
 | material | `M.23` | kg | 72 | Portland Cement |
-| equipment | `E71` | jam | 65 | Mesin Bor |
 | material | `M182` | kg | 60 | Super Plastizier |
 | equipment | `E01` | jam | 51 | ASPHALT MIXING PLANT (AMP) |
 | material | `M366` | batang | 48 | Bambu Penopang |
+| equipment | `E76` | jam | 44 | ASPHALT CUTTER (0,5-0,7 m / menit) |
+| material | `M186` | m3 | 42 | Beton Fc 20 Mpa |
+| material | `M.74` | kg | 40 | Kawat las listrik |
+| material | `M171` | kg | 38 | Plastizier |
+| equipment | `E11a` | jam | 36 | FLAT BED TRUCK 10 TON |
 
 ---
 
@@ -179,15 +178,18 @@ CLEAN **3428** · SUSPECT **353** · DEFECTIVE **117**
 
 ### Harga satuan resource
 
-- **Tenaga kerja `L.01` @ OH** → `Rp 140.000` · status `RESOLVED`
-  - sumber: Master Upah Tenaga Kerja 2026 (EZRAB) (VERIFIED_REGIONAL, prioritas 3)
+- **Tenaga kerja `L.01` @ OH** → `Rp 100.000` · status `RESOLVED`
+  - sumber: Standar Upah Cipta Karya SE 47/2026 (OFFICIAL_GOVERNMENT, prioritas 1)
   - metode: `EXACT_CODE` · verifikasi: `VERIFIED`
-  - periode: 2026-01 · lokasi: NATIONAL
-- **Material `M03` @ m3** → `Rp 300.000` · status `RESOLVED`
-  - sumber: Katalog Acuan HSD 2026 (OFFICIAL_GOVERNMENT, prioritas 1)
-  - metode: `NAME_UNIT` · verifikasi: `NEEDS_REVIEW`
-  - periode: 2026-Q1 · lokasi: NATIONAL
-- **Alat `E71` @ jam (tidak ada di sumber)** → `null` · status `NOT_FOUND`
+  - periode: 2026 · lokasi: NATIONAL
+- **Material `M03` @ m3** → `Rp 315.168,58` · status `RESOLVED`
+  - sumber: Standar Bahan Bina Marga SE 47/2026 (OFFICIAL_GOVERNMENT, prioritas 1)
+  - metode: `EXACT_CODE` · verifikasi: `VERIFIED`
+  - periode: 2026 · lokasi: NATIONAL
+- **Alat `E71` @ jam (tidak ada di sumber)** → `Rp 63.691,07` · status `RESOLVED`
+  - sumber: Standar Sewa Alat Bina Marga SE 47/2026 (OFFICIAL_GOVERNMENT, prioritas 1)
+  - metode: `EXACT_CODE` · verifikasi: `VERIFIED`
+  - periode: 2026 · lokasi: NATIONAL
 
 ### Komposisi harga satuan AHSP (contoh nyata)
 
@@ -196,9 +198,9 @@ Satuan: m2 · status: **FULL**
 
 | Tipe | Kode | Satuan | Koefisien | Harga satuan | Subtotal |
 | --- | --- | --- | --- | --- | --- |
-| labor | `L.01` | OH | 0.05 | Rp 140.000 | Rp 7.000 |
-| labor | `L.04` | OH | 0.005 | Rp 230.000 | Rp 1.150 |
-| | | | | **Harga satuan** | **Rp 8.150** |
+| labor | `L.01` | OH | 0.05 | Rp 100.000 | Rp 5.000 |
+| labor | `L.04` | OH | 0.005 | Rp 200.000 | Rp 1.000 |
+| | | | | **Harga satuan** | **Rp 6.000** |
 
 ---
 
@@ -214,10 +216,10 @@ Satuan: m2 · status: **FULL**
 
 ### Sapuan statis
 
-CRITICAL **227** · HIGH **131** · MEDIUM **0**
+CRITICAL **258** · HIGH **146** · MEDIUM **0**
 
 Situs fabrikasi terdaftar dari audit Phase 0: **12**, yang konstannya sudah
-hilang dari kode: **5**.
+hilang dari kode: **9**.
 
 Yang **sudah diperbaiki** dan dibuktikan oleh assert:
 
@@ -285,4 +287,4 @@ npm run test:price        # suite uji wajib (39)
 
 ---
 
-_Laporan ini dihasilkan mesin dari artefak pipeline pada 2026-09-28T13:01:14.314Z._
+_Laporan ini dihasilkan mesin dari artefak pipeline pada 2026-11-16T02:56:45.071Z._

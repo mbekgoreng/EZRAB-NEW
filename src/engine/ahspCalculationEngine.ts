@@ -1,5 +1,9 @@
 import { AHSPComponent, AHSPProjectSnapshot, RABItem } from '../types';
-import { NationalAHSPItem } from '../data/nationalCostDatabase/types';
+import { NationalAHSPItem, AHSP_DATABASE_VERSION } from '../data/nationalCostDatabase/types';
+import {
+  MASTER_PRICE_VERSION,
+  DEFAULT_SNAPSHOT_PRICING_MODE,
+} from '../data/priceDatabase2026/types';
 import { getPriceDatabase } from '../data/indonesianPrices';
 import { SafeDecimalEngine } from './safeDecimalEngine';
 // PHASE 1 (audit §16): record every fabricated price. Recording only — no value is changed.
@@ -114,7 +118,13 @@ export class AHSPCalculationEngine {
       equipmentComponents,
       unitPrice: calculatedUnitPrice,
       isCustomModified: false,
-      snapshotTimestamp: new Date().toISOString()
+      snapshotTimestamp: new Date().toISOString(),
+      // MASTER PRICING §3 (I-11): source-version stamp + safe default mode
+      // (SNAPSHOT_PRICE — a snapshot freezes values; Decision D). Model
+      // only; §10 behaviour is not implemented here.
+      ahspDatabaseVersion: AHSP_DATABASE_VERSION,
+      masterPriceVersion: MASTER_PRICE_VERSION,
+      pricingMode: DEFAULT_SNAPSHOT_PRICING_MODE,
     };
   }
 

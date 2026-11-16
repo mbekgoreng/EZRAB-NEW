@@ -15,8 +15,7 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import { projectPriceEngine } from '../../engine/pricing/projectPriceEngine';
-import { PriceResolver } from '../../engine/pricing/resolver/priceResolver';
-import { PriceRepository } from '../../engine/pricing/repository/priceRepository';
+import { canonicalPriceResolverAdapter } from '../../engine/pricing/canonical/canonicalPriceResolverAdapter';
 import { ResolvedPrice, ResolvedPriceStatus } from '../../engine/pricing/contracts/types';
 import { formatCurrencyIDR } from '../../calculations/decimalEngine';
 
@@ -43,8 +42,11 @@ export const PriceProvenanceModal: React.FC<PriceProvenanceModalProps> = ({
 }) => {
   if (!isOpen) return null;
 
-  const resolver = new PriceResolver(PriceRepository.getInstance());
-  const resolved: ResolvedPrice = resolver.resolvePrice(
+  // MASTER PRICING §12 (D3/M-12): provenance resolves via the canonical
+  // pricing service (adapter preserves the LOCKED / OVERRIDE /
+  // PROJECT_PRICE / EXPIRED / REFERENCE / NOT_FOUND semantics this
+  // modal renders). The legacy engine PriceResolver is no longer used.
+  const resolved: ResolvedPrice = canonicalPriceResolverAdapter.resolvePrice(
     { code: materialCode, name: materialName, unit },
     { projectId, revisionId }
   );

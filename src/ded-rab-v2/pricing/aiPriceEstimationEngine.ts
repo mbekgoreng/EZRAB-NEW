@@ -27,6 +27,7 @@
  */
 
 import { SafeDecimalEngine } from '../../engine/safeDecimalEngine';
+import { UnitEngine } from '../../engine/calculatorCore/unit/unitEngine';
 import {
   AiPriceEstimationRecord,
   DedPriceComponent,
@@ -203,7 +204,57 @@ export class AiPriceEstimationEngine {
   }
 
   /**
+   * MASTER PRICING §12 (guardrail AI — unit validation): a comparable
+   * reference is admissible as an estimation anchor ONLY when its unit
+   * is dimensionally compatible with the query unit. Before §12 the
+   * scan ignored units entirely: `findComparableReferences({ name:
+   * 'Pasir Pasang', unit: 'kg' })` anchored on 'Pasir pasang' @
+   * Rp200.000/m³ and `estimateResourcePrice` served Rp200.000 as a
+   * PER-KG estimate. Now:
+   *   - same normalized unit → admitted as-is;
+   *   - convertible unit (same dimension family, §7 whitelist via
+   *     UnitEngine) → price converted INTO the query unit (price per
+   *     target unit = price per source unit × how many source units
+   *     fit one target unit) and the conversion noted on the source;
+   *   - incompatible unit, unknown unit, or conversion failure →
+   *     EXCLUDED (null). The estimator then falls back to its
+   *     heuristic anchors, labelled LOW confidence — never a
+   *     wrong-unit "market reference".
+   * A query without a unit cannot be validated and keeps the old
+   * unfiltered behaviour (no unit claim is made for it).
+   */
+  private unitAdmissibleReference(
+    price: number,
+    unit: string,
+    queryUnit: string | undefined,
+  ): { price: number; unit: string; convertedFrom: string | null } | null {
+    if (!queryUnit) return { price, unit, convertedFrom: null };
+    if (!UnitEngine.areCompatible(unit, queryUnit)) return null;
+    if (UnitEngine.normalizeUnit(unit) === UnitEngine.normalizeUnit(queryUnit)) {
+      return { price, unit, convertedFrom: null };
+    }
+    try {
+      const sourceUnitsPerTargetUnit = UnitEngine.convert(1, queryUnit, unit);
+      if (!Number.isFinite(sourceUnitsPerTargetUnit) || sourceUnitsPerTargetUnit <= 0) {
+        return null;
+      }
+      return {
+        price: Math.round(price * sourceUnitsPerTargetUnit),
+        unit: queryUnit,
+        convertedFrom: unit,
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  /**
    * Find comparable known price records from the master database to anchor the estimate.
+   *
+   * MASTER PRICING §12: when the query carries a unit, only
+   * unit-compatible references are returned (see
+   * `unitAdmissibleReference`) — a per-m³ price is never returned as
+   * a per-kg anchor.
    */
   public findComparableReferences(query: ResourceEstimateQuery): Array<{
     name: string;
@@ -236,12 +287,16 @@ export class AiPriceEstimationEngine {
         if (rName.includes(t)) matchScore += 2;
       }
       if (matchScore > 0) {
+        const admissible = this.unitAdmissibleReference(rec.price, rec.unit, query.unit);
+        if (!admissible) continue;
         matches.push({
           name: rec.resourceName,
           code: rec.resourceCode,
-          price: rec.price,
-          unit: rec.unit,
-          source: rec.sourceName || 'EZRAB Master Database 2026',
+          price: admissible.price,
+          unit: admissible.unit,
+          source:
+            (rec.sourceName || 'EZRAB Master Database 2026') +
+            (admissible.convertedFrom ? ` (dikonversi ${admissible.convertedFrom} → ${admissible.unit})` : ''),
           score: matchScore,
         });
       }
@@ -257,12 +312,16 @@ export class AiPriceEstimationEngine {
           if (lName.includes(t)) matchScore += 3;
         }
         if (matchScore > 0) {
+          const admissible = this.unitAdmissibleReference(lab.price, lab.unit, query.unit);
+          if (!admissible) continue;
           matches.push({
             name: lab.name,
             code: lab.code,
-            price: lab.price,
-            unit: lab.unit,
-            source: 'SE Bina Konstruksi No. 47/SE/Dk/2026 (Upah)',
+            price: admissible.price,
+            unit: admissible.unit,
+            source:
+              'SE Bina Konstruksi No. 47/SE/Dk/2026 (Upah)' +
+              (admissible.convertedFrom ? ` (dikonversi ${admissible.convertedFrom} → ${admissible.unit})` : ''),
             score: matchScore,
           });
         }
@@ -276,12 +335,16 @@ export class AiPriceEstimationEngine {
           if (mName.includes(t)) matchScore += 2;
         }
         if (matchScore > 0) {
+          const admissible = this.unitAdmissibleReference(mat.price, mat.unit, query.unit);
+          if (!admissible) continue;
           matches.push({
             name: mat.name,
             code: mat.code,
-            price: mat.price,
-            unit: mat.unit,
-            source: 'SE Bina Konstruksi No. 47/SE/Dk/2026 (Bahan)',
+            price: admissible.price,
+            unit: admissible.unit,
+            source:
+              'SE Bina Konstruksi No. 47/SE/Dk/2026 (Bahan)' +
+              (admissible.convertedFrom ? ` (dikonversi ${admissible.convertedFrom} → ${admissible.unit})` : ''),
             score: matchScore,
           });
         }
@@ -382,15 +445,27 @@ export class AiPriceEstimationEngine {
         `Penyesuaian indeks kemahalan regional: ${regionalFactor.toFixed(2)}${query.region ? ` (${query.region})` : ''}`,
       ];
     } else {
-      // Heuristic fallback based on resource type and keywords
+      // Heuristic fallback based on resource type and keywords.
+      // MASTER PRICING §13 (#3): every anchor carries its unit
+      // explicitly (the comments said "per kg" / "per m3" all along,
+      // but the VALUE was served raw for ANY query unit — a per-m3
+      // pasir anchor served as a per-kg price). After the branch,
+      // the anchor is converted to the query unit when the two are
+      // same-dimension convertible (UnitEngine — no invented
+      // factors); when they are NOT convertible (e.g. pasir /m3 vs
+      // a kg query — needs density data that does not exist here),
+      // the anchor value is kept as-is and the basis notes it.
+      // Guessing density/conversion factors is FORBIDDEN.
       const qLower = query.name.toLowerCase();
       confidenceLevel = 'LOW';
+      let anchorUnit: string | null = null;
 
       if (query.type === 'labor' || qLower.includes('tukang') || qLower.includes('pekerja') || qLower.includes('mandor')) {
         if (qLower.includes('mandor')) baselinePrice = 210000;
         else if (qLower.includes('kepala tukang')) baselinePrice = 185000;
         else if (qLower.includes('tukang')) baselinePrice = 160000;
         else baselinePrice = 130000;
+        anchorUnit = 'OH'; // daily wage
         confidenceLevel = 'MEDIUM';
         basisItems = [
           'Estimasi berbasis standar upah tenaga kerja konstruksi 2026 regional Jawa/Nasional',
@@ -399,6 +474,7 @@ export class AiPriceEstimationEngine {
         ];
       } else if (query.type === 'equipment' || qLower.includes('sewa') || qLower.includes('alat') || qLower.includes('mesin')) {
         baselinePrice = 175000; // standard hourly light equipment
+        anchorUnit = 'jam';
         basisItems = [
           'Estimasi berbasis tarif sewa peralatan konstruksi standar 2026',
           `Spesifikasi kapasitas alat: ${query.specification || 'Kapasitas standar'}`,
@@ -406,23 +482,50 @@ export class AiPriceEstimationEngine {
         ];
       } else {
         // Material heuristics
-        if (qLower.includes('semen') || qLower.includes('portland')) baselinePrice = 1750; // per kg
-        else if (qLower.includes('pasir')) baselinePrice = 285000; // per m3
-        else if (qLower.includes('batu') || qLower.includes('split')) baselinePrice = 310000; // per m3
-        else if (qLower.includes('besi') || qLower.includes('baja')) baselinePrice = 14500; // per kg
-        else if (qLower.includes('cat')) baselinePrice = 38000; // per kg
-        else if (qLower.includes('kayu') || qLower.includes('papan') || qLower.includes('kaso')) baselinePrice = 3600000; // per m3
-        else if (qLower.includes('keramik')) baselinePrice = 95000; // per m2
-        else if (qLower.includes('bata ringan') || qLower.includes('hebel')) baselinePrice = 750000; // per m3
-        else if (qLower.includes('bata merah')) baselinePrice = 1100; // per bh
-        else if (qLower.includes('pipa')) baselinePrice = 45000; // per m
-        else baselinePrice = 100000; // generic reasonable anchor
+        if (qLower.includes('semen') || qLower.includes('portland')) { baselinePrice = 1750; anchorUnit = 'kg'; }
+        else if (qLower.includes('pasir')) { baselinePrice = 285000; anchorUnit = 'm3'; }
+        else if (qLower.includes('batu') || qLower.includes('split')) { baselinePrice = 310000; anchorUnit = 'm3'; }
+        else if (qLower.includes('besi') || qLower.includes('baja')) { baselinePrice = 14500; anchorUnit = 'kg'; }
+        else if (qLower.includes('cat')) { baselinePrice = 38000; anchorUnit = 'kg'; }
+        else if (qLower.includes('kayu') || qLower.includes('papan') || qLower.includes('kaso')) { baselinePrice = 3600000; anchorUnit = 'm3'; }
+        else if (qLower.includes('keramik')) { baselinePrice = 95000; anchorUnit = 'm2'; }
+        else if (qLower.includes('bata ringan') || qLower.includes('hebel')) { baselinePrice = 750000; anchorUnit = 'm3'; }
+        else if (qLower.includes('bata merah')) { baselinePrice = 1100; anchorUnit = 'bh'; }
+        else if (qLower.includes('pipa')) { baselinePrice = 45000; anchorUnit = 'm'; }
+        else baselinePrice = 100000; // generic reasonable anchor (no anchor unit — not converted)
 
         basisItems = [
           'Estimasi parametrik AI berdasarkan karakteristik material konstruksi umum',
           query.specification ? `Spesifikasi teknis: ${query.specification}` : 'Spesifikasi teknis standar pasar',
           `Penyesuaian indeks regional: ${regionalFactor.toFixed(2)}`,
         ];
+      }
+
+      // Same-dimension anchor conversion (heuristic branch only —
+      // the comparables branch above serves real reference prices
+      // with their own units and is untouched).
+      if (anchorUnit !== null && query.unit) {
+        const queryUnit = query.unit;
+        if (UnitEngine.normalizeUnit(queryUnit) !== UnitEngine.normalizeUnit(anchorUnit)) {
+          try {
+            const factor = UnitEngine.convert(1, queryUnit, anchorUnit);
+            if (Number.isFinite(factor) && factor > 0) {
+              const anchorPrice = baselinePrice;
+              baselinePrice = baselinePrice * factor;
+              basisItems.push(
+                `Konversi satuan jangkar heuristik: Rp ${anchorPrice.toLocaleString('id-ID')}/${anchorUnit} → Rp ${baselinePrice.toLocaleString('id-ID')}/${queryUnit} (faktor ${factor})`,
+              );
+            }
+          } catch {
+            // Not convertible (e.g. /m3 anchor vs kg query): the
+            // anchor value is kept as-is — converting would need
+            // density data that does not exist here. Noted in the
+            // basis so the estimate is auditable.
+            basisItems.push(
+              `Jangkar heuristik Rp ${baselinePrice.toLocaleString('id-ID')}/${anchorUnit} tidak dapat dikonversi ke ${queryUnit} (butuh data densitas/faktor yang tidak tersedia) — nilai jangkar dipakai apa adanya`,
+            );
+          }
+        }
       }
     }
 

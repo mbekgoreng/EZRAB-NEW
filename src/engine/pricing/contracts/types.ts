@@ -40,9 +40,13 @@ export interface PriceDefinition {
    * Provenance tier of this price record, set at ingest time.
    * 'OFFICIAL' = angka berasal dari regulasi/dokumen resmi (SE DJBK, Permen PUPR, AHSP nasional).
    * 'MARKET'   = angka seed pasar/komersial (supplier, katalog material, database upah/alat).
+   * 'LEGACY'   = harga arsip yang sudah digantikan (Permen PUPR 2022) — MASTER PRICING §3
+   *              (M-6/R-7): record LEGACY TIDAK PERNAH masuk indeks resolusi aktif dan
+   *              tidak pernah ter-resolve untuk kueri 2026. Hanya dapat dibaca lewat
+   *              getLegacyPrices()/getLegacyByCode() untuk keperluan forensik/audit.
    * Dipakai komposisi biaya agar harga pasar tidak pernah dilabeli RESMI AHSP.
    */
-  sourceTier?: 'OFFICIAL' | 'MARKET';
+  sourceTier?: 'OFFICIAL' | 'MARKET' | 'LEGACY';
 }
 
 export interface PriceContext {

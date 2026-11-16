@@ -23,6 +23,7 @@ import { useCurrency } from '../../context/CurrencyContext';
 import { CURRENCY_DEFINITIONS } from '../../services/currencyService';
 import { AddItemMode } from './SmartAddWorkItemModal';
 import { getRabItemIntegrityNotice } from './rabPriceIntegrityBadge';
+import { stripChatAiPrefix } from '../../ai-tools/ezrab-ai/workItemTitle';
 
 export interface GroupedWbsCategory {
   categoryName: string;
@@ -673,7 +674,7 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                                 />
                               ) : (
                                 <div>
-                                  <div>{item.description}</div>
+                                  <div>{stripChatAiPrefix(item.description)}</div>
                                   {/* P1 PRICE-1: tampilkan item yang butuh verifikasi */}
                                   {(item.priceStatus === 'PRICE_UNRESOLVED' || item.verificationStatus === 'NEEDS_VERIFICATION') && (
                                     <span

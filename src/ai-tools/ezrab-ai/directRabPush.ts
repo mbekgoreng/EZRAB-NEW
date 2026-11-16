@@ -17,6 +17,7 @@
  * mesin parametrik.
  */
 import type { DirectRabResult } from './directRab';
+import { formatWorkItemTitle } from './workItemTitle';
 
 export type DirectRabPushPriceStatus = 'PRICE_RESOLVED' | 'PRICE_ESTIMATED' | 'PRICE_UNRESOLVED';
 
@@ -54,7 +55,7 @@ export function mapDirectRabPushItems(r: DirectRabResult): DirectRabPushItem[] {
       const priceStatus: DirectRabPushPriceStatus =
         price == null ? 'PRICE_UNRESOLVED' : estimated ? 'PRICE_ESTIMATED' : 'PRICE_RESOLVED';
       return {
-        description: `[Chat AI] ${w.name}`,
+        description: formatWorkItemTitle(w.name),
         volume: w.quantity,
         unit: w.unit,
         code: w.ahspCode ?? w.workItemId,

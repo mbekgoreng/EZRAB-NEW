@@ -159,5 +159,15 @@ export const PRICE_SOURCES: PriceSourceConfig[] = [
   },
 ];
 
+// MASTER PRICING §13 (#6) — SEAM ONLY, NO REGISTRATION (owner decision
+// #9 still open): an SDA price source drawn from SE 12 would register
+// HERE as a new PriceSourceConfig (with its reader in normalizePrices.ts
+// and its tier/priority on the ladder above). It is NOT registered:
+// no SE 12 SDA price rows exist in the repository, and registering a
+// source without rows would be a hollow entry. When the owner decides
+// (#9) and the data arrives, add the entry + reader together — the
+// pipeline picks it up with no other change (the digest + reconciliation
+// report will show the new rows on the next `price:sync`).
+
 export const ACTIVE_SOURCES = PRICE_SOURCES.filter((s) => s.active);
 export const EXCLUDED_SOURCES = PRICE_SOURCES.filter((s) => !s.active);

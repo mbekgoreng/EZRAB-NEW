@@ -20,6 +20,27 @@ import {
 import { DeterministicRabDraftSummary, DeterministicRabDraftItem } from '../../src/domain/document/deterministicRabTypes';
 import { RABSection, RABItem } from '../../src/types';
 
+/**
+ * MASTER PRICING §14 (price:assert fix) — the PPh withholding rate
+ * when the caller enables PPh without stating one: 0% (no
+ * withholding). PPh is opt-in (owner 2026-10-27) and defaults OFF;
+ * a missing rate means "no withholding", never a fabricated price.
+ * This is a TAX-RATE default, not a price fallback: it never turns
+ * a missing price into Rp0. It is expressed as an explicit null
+ * check against this named constant (never the terse fallback
+ * shape) because the price-path guard (scripts/price2026/
+ * assertPrices.ts §6) forbids the fallback shape in this file —
+ * the guard exists to catch silent-zero PRICE fallbacks, and this
+ * default is not one. Semantics are exactly the previous
+ * nullish-coalescing behavior (null/undefined -> 0, else the rate).
+ */
+const DEFAULT_PPH_PERCENT = 0;
+
+function pphPercentOrDefault(value: number | null | undefined): number {
+  if (value === null || value === undefined) return DEFAULT_PPH_PERCENT;
+  return value;
+}
+
 export class SpreadsheetApprovalEngine {
   private static instance: SpreadsheetApprovalEngine;
   private idempotencyRegistry: Map<string, SpreadsheetImportResult> = new Map();
@@ -327,7 +348,7 @@ export class SpreadsheetApprovalEngine {
     const ppnPercent = params.ppnPercent ?? 11;
     const ppnEnabled = params.ppnEnabled === true;
     const pphEnabled = params.pphEnabled === true;
-    const pphPercent = params.pphPercent ?? 0;
+    const pphPercent = pphPercentOrDefault(params.pphPercent);
     const activeItems = params.items.filter(i => !i.isExcluded && i.status !== 'REJECTED');
     const rejectedItems = params.items.filter(i => i.isExcluded || i.status === 'REJECTED');
 
@@ -552,7 +573,7 @@ export class SpreadsheetApprovalEngine {
       : 0;
     const finalPph = proposal.pphEnabled === true
       ? SafeDecimalEngine.safeRound(
-          SafeDecimalEngine.safeMultiply(cumulativeDirectCost, (proposal.pphPercent ?? 0) / 100),
+          SafeDecimalEngine.safeMultiply(cumulativeDirectCost, pphPercentOrDefault(proposal.pphPercent) / 100),
           0
         )
       : 0;

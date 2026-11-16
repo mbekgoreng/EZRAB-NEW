@@ -21,7 +21,7 @@ import {
   QuantitySourceClassification,
   DataConfidenceTier,
 } from '../engine/calibration/forensicCalibrationEngine';
-import { PriceResolutionOutput } from '../engine/pricing/resolver/advancedPriceResolutionEngine';
+import { PriceResolutionOutput } from '../engine/pricing/resolver/priceResolutionTypes';
 import { AHSPDefinition } from '../engine/ahsp/contracts/types';
 
 function test(name: string, fn: () => void) {

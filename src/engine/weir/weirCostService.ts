@@ -26,7 +26,7 @@
 import { SafeDecimalEngine } from '../safeDecimalEngine';
 import { CentralDeterministicCostEngine, ProjectCostPolicySettings, WorkItemCostOutput } from '../cost/centralDeterministicCostEngine';
 import { AHSPDefinition } from '../ahsp/contracts/types';
-import { PriceResolutionOutput } from '../pricing/resolver/advancedPriceResolutionEngine';
+import { PriceResolutionOutput } from '../pricing/resolver/priceResolutionTypes';
 import { UnitEngine } from '../calculatorCore/unit/unitEngine';
 import { WEIR_AHSP_DATABASE, lookupWeirAhsp } from './weirAhspDatabase';
 import { WEIR_PRICE_DATABASE, lookupWeirPrice, toPriceResolutionOutput, WeirPriceEntry } from './weirPriceDatabase';

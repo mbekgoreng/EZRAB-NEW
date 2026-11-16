@@ -29,7 +29,8 @@ import {
 import { officialAhspRepository, ALL_OFFICIAL_AHSP_ITEMS } from '../../data/nationalCostDatabase/officialAhspRepository';
 import { isQuarantined } from '../../data/nationalCostDatabase/ahspQuarantine';
 import { RabItem } from '../../types';
-import { PriceResolver } from '../../engine/pricing/resolver/priceResolver';
+import { canonicalPriceResolver } from '../../engine/pricing/canonical/canonicalPriceResolver';
+import { gateCanonicalUnit } from '../../engine/pricing/canonical/canonicalPriceResolverAdapter';
 import { priceResolver2026 } from '../../data/priceDatabase2026/resolver';
 import { SafeDecimalEngine } from '../../engine/safeDecimalEngine';
 import { aiPriceEstimationEngine } from '../pricing/aiPriceEstimationEngine';
@@ -387,23 +388,36 @@ export class AhspPriceResolver {
     }
 
     // =========================================================================
-    // 5. Priority 5: External Price Discovery (PriceResolver - Exact Database Item)
+    // 5. Priority 5: Canonical Price Discovery (canonicalPriceResolver)
+    // MASTER PRICING §12 (D3/M-12): was the engine `PriceResolver`
+    // (PriceRepository index first — a parallel price universe that could
+    // disagree with the canonical master). Now the canonical service:
+    // the master price wins, and the name gate + unit validation +
+    // sanity gate apply. `priceSource`/`priceStatus` labels are kept
+    // ('EXTERNAL_DISCOVERY' / 'PRICE_EXTERNAL') — they name the pipeline
+    // priority (outside the AHSP composition path), not the data source;
+    // the data source is named honestly in `sourceDetail`.
     // =========================================================================
     try {
-      const ezrabPriceResolver = new PriceResolver();
-      const resolved = ezrabPriceResolver.resolve({
+      const resolved = canonicalPriceResolver.resolve({
         code: ahspCode || undefined,
         name: item.name,
-        specification: item.materialSpec,
         unit: item.unit,
       });
 
-      if (resolved.status === 'EXACT_MATCH' && resolved.resolvedPrice && resolved.resolvedPrice.price > 0) {
+      // MASTER PRICING §12 (P5): the canonical answer must be usable
+      // FOR the item's unit — Steps 3/5 match by name and return the
+      // record's unit. A gated-out answer falls through to Priority 6
+      // (AI estimation) or MISSING, never a wrong-unit price.
+      const gated =
+        resolved.status === 'RESOLVED' && resolved.price !== null && resolved.price > 0
+          ? gateCanonicalUnit(resolved, item.unit)
+          : null;
+      if (gated) {
         scopes.hsd2026 = true;
-        const p = resolved.resolvedPrice;
-        const uPrice = p.price;
-        const isLabor = p.category === 'LABOR' || item.name.toLowerCase().includes('upah') || item.name.toLowerCase().includes('tukang');
-        const isEquip = p.category === 'EQUIPMENT' || item.name.toLowerCase().includes('sewa') || item.name.toLowerCase().includes('alat');
+        const uPrice = gated.price;
+        const isLabor = resolved.category === 'LABOR' || item.name.toLowerCase().includes('upah') || item.name.toLowerCase().includes('tukang');
+        const isEquip = resolved.category === 'EQUIPMENT' || item.name.toLowerCase().includes('sewa') || item.name.toLowerCase().includes('alat');
         const matPrice = !isLabor && !isEquip ? uPrice : 0;
         const labPrice = isLabor ? uPrice : 0;
         const eqPrice = isEquip ? uPrice : 0;
@@ -423,9 +437,9 @@ export class AhspPriceResolver {
           subtotalEquipment: quantity !== null ? SafeDecimalEngine.safeMultiply(eqPrice, quantity, 2) : null,
           priceSource: 'EXTERNAL_DISCOVERY',
           priceStatus: 'PRICE_EXTERNAL',
-          isOfficial: p.priceSource === 'PROJECT_OVERRIDE' || p.priceSource === 'OFFICIAL_DATABASE',
+          isOfficial: resolved.source === 'PROJECT_OVERRIDE' || resolved.source.startsWith('OFFICIAL_'),
           currency: 'IDR',
-          sourceDetail: resolved.explanation || `Database Harga Material EZRAB (${p.name})`,
+          sourceDetail: `Harga kanonis (${resolved.sourceDocument || resolved.source})`,
         };
       }
     } catch {

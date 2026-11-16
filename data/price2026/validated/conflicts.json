@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-09-28T13:00:42.825Z",
-  "count": 29,
+  "generatedAt": "2026-11-16T02:57:03.877Z",
+  "count": 50,
   "conflicts": [
     {
-      "identity": "RES-000857|jam|NATIONAL|||2026-Q1",
-      "resourceId": "RES-000857",
+      "identity": "RES-000748|jam|NATIONAL|||2026-Q1",
+      "resourceId": "RES-000748",
       "resourceCode": "E13",
       "resourceName": "Motor Grader",
       "unit": "jam",
@@ -35,8 +35,8 @@
       "preferred": "HSD_2026"
     },
     {
-      "identity": "RES-001231|kg|NATIONAL|||2026-Q1",
-      "resourceId": "RES-001231",
+      "identity": "RES-001237|kg|NATIONAL|||2026-Q1",
+      "resourceId": "RES-001237",
       "resourceCode": "M57a",
       "resourceName": "Besi Beton",
       "unit": "kg",
@@ -109,8 +109,79 @@
       "preferred": "HSD_2026"
     },
     {
-      "identity": "RES-000471|jam|NATIONAL|||2026-Q1",
-      "resourceId": "RES-000471",
+      "identity": "RES-001293|OH|NATIONAL|||2026-Q1",
+      "resourceId": "RES-001293",
+      "resourceCode": "L.04",
+      "resourceName": "Mandor",
+      "unit": "OH",
+      "location": {
+        "level": "NATIONAL",
+        "provinceName": null,
+        "regencyName": null,
+        "cityName": "Jabodetabek"
+      },
+      "period": "2026-Q1",
+      "candidates": [
+        {
+          "price": 210000,
+          "sourceKey": "COMMERCIAL_2026",
+          "sourceName": "EZRAB Master Database 2026",
+          "priority": 6,
+          "tier": "COMMERCIAL_REFERENCE"
+        },
+        {
+          "price": 230000,
+          "sourceKey": "COMMERCIAL_2026",
+          "sourceName": "EZRAB Master Database 2026",
+          "priority": 6,
+          "tier": "COMMERCIAL_REFERENCE"
+        },
+        {
+          "price": 225000,
+          "sourceKey": "COMMERCIAL_2026",
+          "sourceName": "EZRAB Master Database 2026",
+          "priority": 6,
+          "tier": "COMMERCIAL_REFERENCE"
+        }
+      ],
+      "resolution": "SOURCE_PRIORITY",
+      "preferred": "COMMERCIAL_2026"
+    },
+    {
+      "identity": "RES-001294|OH|NATIONAL|||2026-Q1",
+      "resourceId": "RES-001294",
+      "resourceCode": "L.01",
+      "resourceName": "Pekerja",
+      "unit": "OH",
+      "location": {
+        "level": "NATIONAL",
+        "provinceName": null,
+        "regencyName": null,
+        "cityName": "Jabodetabek"
+      },
+      "period": "2026-Q1",
+      "candidates": [
+        {
+          "price": 150000,
+          "sourceKey": "COMMERCIAL_2026",
+          "sourceName": "EZRAB Master Database 2026",
+          "priority": 6,
+          "tier": "COMMERCIAL_REFERENCE"
+        },
+        {
+          "price": 130000,
+          "sourceKey": "COMMERCIAL_2026",
+          "sourceName": "EZRAB Master Database 2026",
+          "priority": 6,
+          "tier": "COMMERCIAL_REFERENCE"
+        }
+      ],
+      "resolution": "SOURCE_PRIORITY",
+      "preferred": "COMMERCIAL_2026"
+    },
+    {
+      "identity": "RES-000423|jam|NATIONAL|||2026-Q1",
+      "resourceId": "RES-000423",
       "resourceCode": "E10",
       "resourceName": "Excavator",
       "unit": "jam",
@@ -137,13 +208,6 @@
           "tier": "OFFICIAL_GOVERNMENT"
         },
         {
-          "price": 450000,
-          "sourceKey": "COMMERCIAL_2026",
-          "sourceName": "EZRAB Master Database 2026",
-          "priority": 6,
-          "tier": "COMMERCIAL_REFERENCE"
-        },
-        {
           "price": 285000,
           "sourceKey": "COMMERCIAL_2026",
           "sourceName": "EZRAB Master Database 2026",
@@ -155,143 +219,8 @@
       "preferred": "HSD_2026"
     },
     {
-      "identity": "RES-001286|OH|NATIONAL|||2026-Q1",
-      "resourceId": "RES-001286",
-      "resourceCode": "L.04",
-      "resourceName": "Mandor",
-      "unit": "OH",
-      "location": {
-        "level": "NATIONAL",
-        "provinceName": null,
-        "regencyName": null,
-        "cityName": "Jabodetabek"
-      },
-      "period": "2026-Q1",
-      "candidates": [
-        {
-          "price": 210000,
-          "sourceKey": "COMMERCIAL_2026",
-          "sourceName": "EZRAB Master Database 2026",
-          "priority": 6,
-          "tier": "COMMERCIAL_REFERENCE"
-        },
-        {
-          "price": 225000,
-          "sourceKey": "COMMERCIAL_2026",
-          "sourceName": "EZRAB Master Database 2026",
-          "priority": 6,
-          "tier": "COMMERCIAL_REFERENCE"
-        }
-      ],
-      "resolution": "SOURCE_PRIORITY",
-      "preferred": "COMMERCIAL_2026"
-    },
-    {
-      "identity": "RES-001287|OH|NATIONAL|||2026-Q1",
-      "resourceId": "RES-001287",
-      "resourceCode": "L.01",
-      "resourceName": "Pekerja",
-      "unit": "OH",
-      "location": {
-        "level": "NATIONAL",
-        "provinceName": null,
-        "regencyName": null,
-        "cityName": "Jabodetabek"
-      },
-      "period": "2026-Q1",
-      "candidates": [
-        {
-          "price": 150000,
-          "sourceKey": "COMMERCIAL_2026",
-          "sourceName": "EZRAB Master Database 2026",
-          "priority": 6,
-          "tier": "COMMERCIAL_REFERENCE"
-        },
-        {
-          "price": 230000,
-          "sourceKey": "COMMERCIAL_2026",
-          "sourceName": "EZRAB Master Database 2026",
-          "priority": 6,
-          "tier": "COMMERCIAL_REFERENCE"
-        },
-        {
-          "price": 130000,
-          "sourceKey": "COMMERCIAL_2026",
-          "sourceName": "EZRAB Master Database 2026",
-          "priority": 6,
-          "tier": "COMMERCIAL_REFERENCE"
-        }
-      ],
-      "resolution": "SOURCE_PRIORITY",
-      "preferred": "COMMERCIAL_2026"
-    },
-    {
-      "identity": "RES-001272|OH|NATIONAL|||2026-Q1",
-      "resourceId": "RES-001272",
-      "resourceCode": "L.03",
-      "resourceName": "Kepala Tukang",
-      "unit": "OH",
-      "location": {
-        "level": "NATIONAL",
-        "provinceName": null,
-        "regencyName": null,
-        "cityName": "Jabodetabek"
-      },
-      "period": "2026-Q1",
-      "candidates": [
-        {
-          "price": 165000,
-          "sourceKey": "COMMERCIAL_2026",
-          "sourceName": "EZRAB Master Database 2026",
-          "priority": 6,
-          "tier": "COMMERCIAL_REFERENCE"
-        },
-        {
-          "price": 185000,
-          "sourceKey": "COMMERCIAL_2026",
-          "sourceName": "EZRAB Master Database 2026",
-          "priority": 6,
-          "tier": "COMMERCIAL_REFERENCE"
-        }
-      ],
-      "resolution": "SOURCE_PRIORITY",
-      "preferred": "COMMERCIAL_2026"
-    },
-    {
-      "identity": "RES-001396|OH|NATIONAL|||2026-Q1",
-      "resourceId": "RES-001396",
-      "resourceCode": "L.02",
-      "resourceName": "Tukang Pipa",
-      "unit": "OH",
-      "location": {
-        "level": "NATIONAL",
-        "provinceName": null,
-        "regencyName": null,
-        "cityName": "Jabodetabek"
-      },
-      "period": "2026-Q1",
-      "candidates": [
-        {
-          "price": 160000,
-          "sourceKey": "COMMERCIAL_2026",
-          "sourceName": "EZRAB Master Database 2026",
-          "priority": 6,
-          "tier": "COMMERCIAL_REFERENCE"
-        },
-        {
-          "price": 170000,
-          "sourceKey": "COMMERCIAL_2026",
-          "sourceName": "EZRAB Master Database 2026",
-          "priority": 6,
-          "tier": "COMMERCIAL_REFERENCE"
-        }
-      ],
-      "resolution": "SOURCE_PRIORITY",
-      "preferred": "COMMERCIAL_2026"
-    },
-    {
-      "identity": "RES-000118|jam|NATIONAL|||2026-Q1",
-      "resourceId": "RES-000118",
+      "identity": "RES-000112|jam|NATIONAL|||2026-Q1",
+      "resourceId": "RES-000112",
       "resourceCode": "E02",
       "resourceName": "Asphalt Finisher",
       "unit": "jam",
@@ -322,8 +251,8 @@
       "preferred": "HSD_2026"
     },
     {
-      "identity": "RES-000471|jam|NATIONAL|||2026-01",
-      "resourceId": "RES-000471",
+      "identity": "RES-000423|jam|NATIONAL|||2026-01",
+      "resourceId": "RES-000423",
       "resourceCode": "E10",
       "resourceName": "Excavator",
       "unit": "jam",
@@ -348,21 +277,14 @@
           "sourceName": "Master Sewa Alat Berat 2026 (EZRAB)",
           "priority": 3,
           "tier": "VERIFIED_REGIONAL"
-        },
-        {
-          "price": 650000,
-          "sourceKey": "EQUIPMENT_2026",
-          "sourceName": "Master Sewa Alat Berat 2026 (EZRAB)",
-          "priority": 3,
-          "tier": "VERIFIED_REGIONAL"
         }
       ],
       "resolution": "SOURCE_PRIORITY",
       "preferred": "EQUIPMENT_2026"
     },
     {
-      "identity": "RES-002763|kg|NATIONAL|||2026-Q1",
-      "resourceId": "RES-002763",
+      "identity": "RES-003513|kg|NATIONAL|||2026-Q1",
+      "resourceId": "RES-003513",
       "resourceCode": "M279",
       "resourceName": "Mortar",
       "unit": "kg",
@@ -393,8 +315,8 @@
       "preferred": "HSD_2026"
     },
     {
-      "identity": "RES-003640|m3|NATIONAL|||2026-Q1",
-      "resourceId": "RES-003640",
+      "identity": "RES-004739|m3|NATIONAL|||2026-Q1",
+      "resourceId": "RES-004739",
       "resourceCode": "M16a",
       "resourceName": "Sirtu 2 / 3",
       "unit": "m3",
@@ -432,8 +354,8 @@
       "preferred": "HSD_2026"
     },
     {
-      "identity": "RES-001397|OJ|NATIONAL|||2026-Q1",
-      "resourceId": "RES-001397",
+      "identity": "RES-001403|OJ|NATIONAL|||2026-Q1",
+      "resourceId": "RES-001403",
       "resourceCode": "L.02",
       "resourceName": "Tukang",
       "unit": "OJ",
@@ -499,8 +421,8 @@
       "preferred": "HSD_2026"
     },
     {
-      "identity": "RES-002976|kg|NATIONAL|||2026-Q1",
-      "resourceId": "RES-002976",
+      "identity": "RES-003594|kg|NATIONAL|||2026-Q1",
+      "resourceId": "RES-003594",
       "resourceCode": "M12",
       "resourceName": "Semen",
       "unit": "kg",
@@ -552,8 +474,8 @@
       "preferred": "HSD_2026"
     },
     {
-      "identity": "RES-001293|OJ|NATIONAL|||2026-Q1",
-      "resourceId": "RES-001293",
+      "identity": "RES-001300|OJ|NATIONAL|||2026-Q1",
+      "resourceId": "RES-001300",
       "resourceCode": "L.01",
       "resourceName": "Pekerja",
       "unit": "OJ",
@@ -591,72 +513,8 @@
       "preferred": "HSD_2026"
     },
     {
-      "identity": "RES-001354|OJ|NATIONAL|||2026-Q1",
-      "resourceId": "RES-001354",
-      "resourceCode": "L08",
-      "resourceName": "Mekanik",
-      "unit": "OJ",
-      "location": {
-        "level": "NATIONAL",
-        "provinceName": null,
-        "regencyName": null,
-        "cityName": "Nasional / Acuan 2026"
-      },
-      "period": "2026-Q1",
-      "candidates": [
-        {
-          "price": 200000,
-          "sourceKey": "HSD_2026",
-          "sourceName": "Katalog Acuan HSD 2026",
-          "priority": 1,
-          "tier": "OFFICIAL_GOVERNMENT"
-        },
-        {
-          "price": 220000,
-          "sourceKey": "HSD_2026",
-          "sourceName": "Katalog Acuan HSD 2026",
-          "priority": 1,
-          "tier": "OFFICIAL_GOVERNMENT"
-        }
-      ],
-      "resolution": "SOURCE_PRIORITY",
-      "preferred": "HSD_2026"
-    },
-    {
-      "identity": "RES-001629|kg|NATIONAL|||2026-Q1",
-      "resourceId": "RES-001629",
-      "resourceCode": "M170",
-      "resourceName": "Air",
-      "unit": "kg",
-      "location": {
-        "level": "NATIONAL",
-        "provinceName": null,
-        "regencyName": null,
-        "cityName": "Nasional / Acuan 2026"
-      },
-      "period": "2026-Q1",
-      "candidates": [
-        {
-          "price": 28000,
-          "sourceKey": "HSD_2026",
-          "sourceName": "Katalog Acuan HSD 2026",
-          "priority": 1,
-          "tier": "OFFICIAL_GOVERNMENT"
-        },
-        {
-          "price": 30000,
-          "sourceKey": "HSD_2026",
-          "sourceName": "Katalog Acuan HSD 2026",
-          "priority": 1,
-          "tier": "OFFICIAL_GOVERNMENT"
-        }
-      ],
-      "resolution": "SOURCE_PRIORITY",
-      "preferred": "HSD_2026"
-    },
-    {
-      "identity": "RES-001397|OJ|NATIONAL|||2026-01",
-      "resourceId": "RES-001397",
+      "identity": "RES-001403|OJ|NATIONAL|||2026-01",
+      "resourceId": "RES-001403",
       "resourceCode": "L.02",
       "resourceName": "Tukang",
       "unit": "OJ",
@@ -676,28 +534,7 @@
           "tier": "VERIFIED_REGIONAL"
         },
         {
-          "price": 25714,
-          "sourceKey": "LABOR_2026",
-          "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
-          "priority": 3,
-          "tier": "VERIFIED_REGIONAL"
-        },
-        {
           "price": 25000,
-          "sourceKey": "LABOR_2026",
-          "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
-          "priority": 3,
-          "tier": "VERIFIED_REGIONAL"
-        },
-        {
-          "price": 25000,
-          "sourceKey": "LABOR_2026",
-          "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
-          "priority": 3,
-          "tier": "VERIFIED_REGIONAL"
-        },
-        {
-          "price": 33750,
           "sourceKey": "LABOR_2026",
           "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
           "priority": 3,
@@ -718,21 +555,14 @@
           "tier": "VERIFIED_REGIONAL"
         },
         {
-          "price": 25714,
-          "sourceKey": "LABOR_2026",
-          "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
-          "priority": 3,
-          "tier": "VERIFIED_REGIONAL"
-        },
-        {
-          "price": 26428,
-          "sourceKey": "LABOR_2026",
-          "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
-          "priority": 3,
-          "tier": "VERIFIED_REGIONAL"
-        },
-        {
           "price": 25000,
+          "sourceKey": "LABOR_2026",
+          "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
+          "priority": 3,
+          "tier": "VERIFIED_REGIONAL"
+        },
+        {
+          "price": 33750,
           "sourceKey": "LABOR_2026",
           "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
           "priority": 3,
@@ -753,6 +583,13 @@
           "tier": "VERIFIED_REGIONAL"
         },
         {
+          "price": 25000,
+          "sourceKey": "LABOR_2026",
+          "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
+          "priority": 3,
+          "tier": "VERIFIED_REGIONAL"
+        },
+        {
           "price": 26428,
           "sourceKey": "LABOR_2026",
           "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
@@ -764,8 +601,139 @@
       "preferred": "LABOR_2026"
     },
     {
-      "identity": "RES-001287|OH|NATIONAL|||2026-01",
-      "resourceId": "RES-001287",
+      "identity": "RES-001282|OJ|NATIONAL|||2026-01",
+      "resourceId": "RES-001282",
+      "resourceCode": "L10",
+      "resourceName": "Kepala Tukang",
+      "unit": "OJ",
+      "location": {
+        "level": "NATIONAL",
+        "provinceName": null,
+        "regencyName": null,
+        "cityName": null
+      },
+      "period": "2026-01",
+      "candidates": [
+        {
+          "price": 25714,
+          "sourceKey": "LABOR_2026",
+          "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
+          "priority": 3,
+          "tier": "VERIFIED_REGIONAL"
+        },
+        {
+          "price": 25000,
+          "sourceKey": "LABOR_2026",
+          "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
+          "priority": 3,
+          "tier": "VERIFIED_REGIONAL"
+        },
+        {
+          "price": 25714,
+          "sourceKey": "LABOR_2026",
+          "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
+          "priority": 3,
+          "tier": "VERIFIED_REGIONAL"
+        },
+        {
+          "price": 26428,
+          "sourceKey": "LABOR_2026",
+          "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
+          "priority": 3,
+          "tier": "VERIFIED_REGIONAL"
+        },
+        {
+          "price": 28571,
+          "sourceKey": "LABOR_2026",
+          "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
+          "priority": 3,
+          "tier": "VERIFIED_REGIONAL"
+        }
+      ],
+      "resolution": "SOURCE_PRIORITY",
+      "preferred": "LABOR_2026"
+    },
+    {
+      "identity": "RES-001466|OJ|NATIONAL|||2026-01",
+      "resourceId": "RES-001466",
+      "resourceCode": "L.29",
+      "resourceName": "Welding Inspector",
+      "unit": "OJ",
+      "location": {
+        "level": "NATIONAL",
+        "provinceName": null,
+        "regencyName": null,
+        "cityName": null
+      },
+      "period": "2026-01",
+      "candidates": [
+        {
+          "price": 40000,
+          "sourceKey": "LABOR_2026",
+          "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
+          "priority": 3,
+          "tier": "VERIFIED_REGIONAL"
+        },
+        {
+          "price": 33750,
+          "sourceKey": "LABOR_2026",
+          "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
+          "priority": 3,
+          "tier": "VERIFIED_REGIONAL"
+        }
+      ],
+      "resolution": "SOURCE_PRIORITY",
+      "preferred": "LABOR_2026"
+    },
+    {
+      "identity": "RES-001303|OH|NATIONAL|||2026-01",
+      "resourceId": "RES-001303",
+      "resourceCode": "L.03",
+      "resourceName": "Kepala tukang",
+      "unit": "OH",
+      "location": {
+        "level": "NATIONAL",
+        "provinceName": null,
+        "regencyName": null,
+        "cityName": null
+      },
+      "period": "2026-01",
+      "candidates": [
+        {
+          "price": 200000,
+          "sourceKey": "LABOR_2026",
+          "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
+          "priority": 3,
+          "tier": "VERIFIED_REGIONAL"
+        },
+        {
+          "price": 180000,
+          "sourceKey": "LABOR_2026",
+          "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
+          "priority": 3,
+          "tier": "VERIFIED_REGIONAL"
+        },
+        {
+          "price": 180000,
+          "sourceKey": "LABOR_2026",
+          "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
+          "priority": 3,
+          "tier": "VERIFIED_REGIONAL"
+        },
+        {
+          "price": 185000,
+          "sourceKey": "LABOR_2026",
+          "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
+          "priority": 3,
+          "tier": "VERIFIED_REGIONAL"
+        }
+      ],
+      "resolution": "SOURCE_PRIORITY",
+      "preferred": "LABOR_2026"
+    },
+    {
+      "identity": "RES-001294|OH|NATIONAL|||2026-01",
+      "resourceId": "RES-001294",
       "resourceCode": "L.01",
       "resourceName": "Pekerja",
       "unit": "OH",
@@ -777,13 +745,6 @@
       },
       "period": "2026-01",
       "candidates": [
-        {
-          "price": 175000,
-          "sourceKey": "LABOR_2026",
-          "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
-          "priority": 3,
-          "tier": "VERIFIED_REGIONAL"
-        },
         {
           "price": 155000,
           "sourceKey": "LABOR_2026",
@@ -797,106 +758,14 @@
           "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
           "priority": 3,
           "tier": "VERIFIED_REGIONAL"
-        },
-        {
-          "price": 270000,
-          "sourceKey": "LABOR_2026",
-          "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
-          "priority": 3,
-          "tier": "VERIFIED_REGIONAL"
         }
       ],
       "resolution": "SOURCE_PRIORITY",
       "preferred": "LABOR_2026"
     },
     {
-      "identity": "RES-001293|OJ|NATIONAL|||2026-01",
-      "resourceId": "RES-001293",
-      "resourceCode": "L.01",
-      "resourceName": "Pekerja",
-      "unit": "OJ",
-      "location": {
-        "level": "NATIONAL",
-        "provinceName": null,
-        "regencyName": null,
-        "cityName": null
-      },
-      "period": "2026-01",
-      "candidates": [
-        {
-          "price": 22142,
-          "sourceKey": "LABOR_2026",
-          "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
-          "priority": 3,
-          "tier": "VERIFIED_REGIONAL"
-        },
-        {
-          "price": 20000,
-          "sourceKey": "LABOR_2026",
-          "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
-          "priority": 3,
-          "tier": "VERIFIED_REGIONAL"
-        },
-        {
-          "price": 33750,
-          "sourceKey": "LABOR_2026",
-          "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
-          "priority": 3,
-          "tier": "VERIFIED_REGIONAL"
-        },
-        {
-          "price": 25000,
-          "sourceKey": "LABOR_2026",
-          "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
-          "priority": 3,
-          "tier": "VERIFIED_REGIONAL"
-        }
-      ],
-      "resolution": "SOURCE_PRIORITY",
-      "preferred": "LABOR_2026"
-    },
-    {
-      "identity": "RES-001354|OJ|NATIONAL|||2026-01",
-      "resourceId": "RES-001354",
-      "resourceCode": "L08",
-      "resourceName": "Mekanik",
-      "unit": "OJ",
-      "location": {
-        "level": "NATIONAL",
-        "provinceName": null,
-        "regencyName": null,
-        "cityName": null
-      },
-      "period": "2026-01",
-      "candidates": [
-        {
-          "price": 45000,
-          "sourceKey": "LABOR_2026",
-          "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
-          "priority": 3,
-          "tier": "VERIFIED_REGIONAL"
-        },
-        {
-          "price": 32500,
-          "sourceKey": "LABOR_2026",
-          "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
-          "priority": 3,
-          "tier": "VERIFIED_REGIONAL"
-        },
-        {
-          "price": 37500,
-          "sourceKey": "LABOR_2026",
-          "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
-          "priority": 3,
-          "tier": "VERIFIED_REGIONAL"
-        }
-      ],
-      "resolution": "SOURCE_PRIORITY",
-      "preferred": "LABOR_2026"
-    },
-    {
-      "identity": "RES-001231|kg|PROVINCE|DKI Jakarta||2026-01",
-      "resourceId": "RES-001231",
+      "identity": "RES-001237|kg|PROVINCE|DKI Jakarta||2026-01",
+      "resourceId": "RES-001237",
       "resourceCode": "M57a",
       "resourceName": "Besi Beton",
       "unit": "kg",
@@ -1417,10 +1286,10 @@
       "preferred": "MATERIAL_MASTER_2026"
     },
     {
-      "identity": "RES-002976|kg|PROVINCE|DKI Jakarta||2026-01",
-      "resourceId": "RES-002976",
-      "resourceCode": "M12",
-      "resourceName": "Semen",
+      "identity": "RES-001816|kg|PROVINCE|DKI Jakarta||2026-09",
+      "resourceId": "RES-001816",
+      "resourceCode": "M39b",
+      "resourceName": "Baja Tulangan",
       "unit": "kg",
       "location": {
         "level": "PROVINCE",
@@ -1428,66 +1297,31 @@
         "regencyName": null,
         "cityName": null
       },
-      "period": "2026-01",
+      "period": "2026-09",
       "candidates": [
         {
-          "price": 21000,
+          "price": 14250,
           "sourceKey": "MATERIAL_MASTER_2026",
           "sourceName": "Master Database Material EZRAB 2026",
           "priority": 5,
           "tier": "PROJECT_INTERNAL_MASTER"
         },
         {
-          "price": 21000,
+          "price": 16500,
           "sourceKey": "MATERIAL_MASTER_2026",
           "sourceName": "Master Database Material EZRAB 2026",
           "priority": 5,
           "tier": "PROJECT_INTERNAL_MASTER"
         },
         {
-          "price": 21000,
+          "price": 14500,
           "sourceKey": "MATERIAL_MASTER_2026",
           "sourceName": "Master Database Material EZRAB 2026",
           "priority": 5,
           "tier": "PROJECT_INTERNAL_MASTER"
         },
         {
-          "price": 21000,
-          "sourceKey": "MATERIAL_MASTER_2026",
-          "sourceName": "Master Database Material EZRAB 2026",
-          "priority": 5,
-          "tier": "PROJECT_INTERNAL_MASTER"
-        },
-        {
-          "price": 21000,
-          "sourceKey": "MATERIAL_MASTER_2026",
-          "sourceName": "Master Database Material EZRAB 2026",
-          "priority": 5,
-          "tier": "PROJECT_INTERNAL_MASTER"
-        },
-        {
-          "price": 21000,
-          "sourceKey": "MATERIAL_MASTER_2026",
-          "sourceName": "Master Database Material EZRAB 2026",
-          "priority": 5,
-          "tier": "PROJECT_INTERNAL_MASTER"
-        },
-        {
-          "price": 28350,
-          "sourceKey": "MATERIAL_MASTER_2026",
-          "sourceName": "Master Database Material EZRAB 2026",
-          "priority": 5,
-          "tier": "PROJECT_INTERNAL_MASTER"
-        },
-        {
-          "price": 21000,
-          "sourceKey": "MATERIAL_MASTER_2026",
-          "sourceName": "Master Database Material EZRAB 2026",
-          "priority": 5,
-          "tier": "PROJECT_INTERNAL_MASTER"
-        },
-        {
-          "price": 21000,
+          "price": 16000,
           "sourceKey": "MATERIAL_MASTER_2026",
           "sourceName": "Master Database Material EZRAB 2026",
           "priority": 5,
@@ -1498,8 +1332,655 @@
       "preferred": "MATERIAL_MASTER_2026"
     },
     {
-      "identity": "RES-001231|kg|PROVINCE|Nasional||2026-01",
-      "resourceId": "RES-001231",
+      "identity": "RES-003523|lembar|PROVINCE|DKI Jakarta||2026-09",
+      "resourceId": "RES-003523",
+      "resourceCode": "M73",
+      "resourceName": "Multiplek",
+      "unit": "lembar",
+      "location": {
+        "level": "PROVINCE",
+        "provinceName": "DKI Jakarta",
+        "regencyName": null,
+        "cityName": null
+      },
+      "period": "2026-09",
+      "candidates": [
+        {
+          "price": 226600,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 116700,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 152600,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 116700,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        }
+      ],
+      "resolution": "SOURCE_PRIORITY",
+      "preferred": "MATERIAL_MASTER_2026"
+    },
+    {
+      "identity": "RES-003930|m|PROVINCE|DKI Jakarta||2026-09",
+      "resourceId": "RES-003930",
+      "resourceCode": "M241",
+      "resourceName": "Pipa Baja",
+      "unit": "m",
+      "location": {
+        "level": "PROVINCE",
+        "provinceName": "DKI Jakarta",
+        "regencyName": null,
+        "cityName": null
+      },
+      "period": "2026-09",
+      "candidates": [
+        {
+          "price": 3355000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 2560000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 770000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 520000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 3115000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 2300000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 2655000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 890000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 2795000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 3350000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 2455000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 766000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 945000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 2800000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 3110000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 1055000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 2650000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 815000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 2790000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 525000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 3235000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 2450000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 650000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 940000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 2240000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 2955000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 1050000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 2565000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 810000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 3230000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 2305000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 645000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 895000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 1680000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 2950000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        }
+      ],
+      "resolution": "SOURCE_PRIORITY",
+      "preferred": "MATERIAL_MASTER_2026"
+    },
+    {
+      "identity": "RES-003966|m|PROVINCE|DKI Jakarta||2026-09",
+      "resourceId": "RES-003966",
+      "resourceCode": "M241a",
+      "resourceName": "Pipa Baja dia 50 mm",
+      "unit": "m",
+      "location": {
+        "level": "PROVINCE",
+        "provinceName": "DKI Jakarta",
+        "regencyName": null,
+        "cityName": null
+      },
+      "period": "2026-09",
+      "candidates": [
+        {
+          "price": 23100,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 94000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 13700,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        }
+      ],
+      "resolution": "SOURCE_PRIORITY",
+      "preferred": "MATERIAL_MASTER_2026"
+    },
+    {
+      "identity": "RES-001926|bh|PROVINCE|DKI Jakarta||2026-09",
+      "resourceId": "RES-001926",
+      "resourceCode": "M223",
+      "resourceName": "Baut dan Mur",
+      "unit": "bh",
+      "location": {
+        "level": "PROVINCE",
+        "provinceName": "DKI Jakarta",
+        "regencyName": null,
+        "cityName": null
+      },
+      "period": "2026-09",
+      "candidates": [
+        {
+          "price": 16100,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 20000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 22000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 15000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 20000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 10000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 19500,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 23000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        }
+      ],
+      "resolution": "SOURCE_PRIORITY",
+      "preferred": "MATERIAL_MASTER_2026"
+    },
+    {
+      "identity": "RES-001365|kg|PROVINCE|DKI Jakarta||2026-09",
+      "resourceId": "RES-001365",
+      "resourceCode": "M18",
+      "resourceName": "Paku",
+      "unit": "kg",
+      "location": {
+        "level": "PROVINCE",
+        "provinceName": "DKI Jakarta",
+        "regencyName": null,
+        "cityName": null
+      },
+      "period": "2026-09",
+      "candidates": [
+        {
+          "price": 18000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 22070,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 20000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 30090,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 20000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 15000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 39450,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 20000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 17500,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 20000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 35590,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 15000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 19000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 19460,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 20000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        }
+      ],
+      "resolution": "SOURCE_PRIORITY",
+      "preferred": "MATERIAL_MASTER_2026"
+    },
+    {
+      "identity": "RES-002185|kg|PROVINCE|DKI Jakarta||2026-09",
+      "resourceId": "RES-002185",
+      "resourceCode": "M95",
+      "resourceName": "Cat Besi",
+      "unit": "kg",
+      "location": {
+        "level": "PROVINCE",
+        "provinceName": "DKI Jakarta",
+        "regencyName": null,
+        "cityName": null
+      },
+      "period": "2026-09",
+      "candidates": [
+        {
+          "price": 62800,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 62800,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 62800,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 62800,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 62800,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 52300,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 62800,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 62800,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 49700,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 54700,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 62800,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 62800,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        }
+      ],
+      "resolution": "SOURCE_PRIORITY",
+      "preferred": "MATERIAL_MASTER_2026"
+    },
+    {
+      "identity": "RES-001237|kg|PROVINCE|Nasional||2026-01",
+      "resourceId": "RES-001237",
       "resourceCode": "M57a",
       "resourceName": "Besi Beton",
       "unit": "kg",
@@ -1530,10 +2011,10 @@
       "preferred": "MATERIAL_MASTER_2026"
     },
     {
-      "identity": "RES-002239|kg|PROVINCE|DKI Jakarta||2026-01",
-      "resourceId": "RES-002239",
-      "resourceCode": "M166",
-      "resourceName": "Epoxy",
+      "identity": "RES-003594|kg|PROVINCE|DKI Jakarta||2026-09",
+      "resourceId": "RES-003594",
+      "resourceCode": "M12",
+      "resourceName": "Semen",
       "unit": "kg",
       "location": {
         "level": "PROVINCE",
@@ -1541,129 +2022,38 @@
         "regencyName": null,
         "cityName": null
       },
-      "period": "2026-01",
+      "period": "2026-09",
       "candidates": [
         {
-          "price": 155000,
+          "price": 15800,
           "sourceKey": "MATERIAL_MASTER_2026",
           "sourceName": "Master Database Material EZRAB 2026",
           "priority": 5,
           "tier": "PROJECT_INTERNAL_MASTER"
         },
         {
-          "price": 125000,
+          "price": 1300,
           "sourceKey": "MATERIAL_MASTER_2026",
           "sourceName": "Master Database Material EZRAB 2026",
           "priority": 5,
           "tier": "PROJECT_INTERNAL_MASTER"
         },
         {
-          "price": 155000,
+          "price": 6000,
           "sourceKey": "MATERIAL_MASTER_2026",
           "sourceName": "Master Database Material EZRAB 2026",
           "priority": 5,
           "tier": "PROJECT_INTERNAL_MASTER"
         },
         {
-          "price": 125000,
+          "price": 16100,
           "sourceKey": "MATERIAL_MASTER_2026",
           "sourceName": "Master Database Material EZRAB 2026",
           "priority": 5,
           "tier": "PROJECT_INTERNAL_MASTER"
         },
         {
-          "price": 155000,
-          "sourceKey": "MATERIAL_MASTER_2026",
-          "sourceName": "Master Database Material EZRAB 2026",
-          "priority": 5,
-          "tier": "PROJECT_INTERNAL_MASTER"
-        },
-        {
-          "price": 125000,
-          "sourceKey": "MATERIAL_MASTER_2026",
-          "sourceName": "Master Database Material EZRAB 2026",
-          "priority": 5,
-          "tier": "PROJECT_INTERNAL_MASTER"
-        },
-        {
-          "price": 209250,
-          "sourceKey": "MATERIAL_MASTER_2026",
-          "sourceName": "Master Database Material EZRAB 2026",
-          "priority": 5,
-          "tier": "PROJECT_INTERNAL_MASTER"
-        },
-        {
-          "price": 125000,
-          "sourceKey": "MATERIAL_MASTER_2026",
-          "sourceName": "Master Database Material EZRAB 2026",
-          "priority": 5,
-          "tier": "PROJECT_INTERNAL_MASTER"
-        },
-        {
-          "price": 125000,
-          "sourceKey": "MATERIAL_MASTER_2026",
-          "sourceName": "Master Database Material EZRAB 2026",
-          "priority": 5,
-          "tier": "PROJECT_INTERNAL_MASTER"
-        },
-        {
-          "price": 155000,
-          "sourceKey": "MATERIAL_MASTER_2026",
-          "sourceName": "Master Database Material EZRAB 2026",
-          "priority": 5,
-          "tier": "PROJECT_INTERNAL_MASTER"
-        },
-        {
-          "price": 125000,
-          "sourceKey": "MATERIAL_MASTER_2026",
-          "sourceName": "Master Database Material EZRAB 2026",
-          "priority": 5,
-          "tier": "PROJECT_INTERNAL_MASTER"
-        },
-        {
-          "price": 125000,
-          "sourceKey": "MATERIAL_MASTER_2026",
-          "sourceName": "Master Database Material EZRAB 2026",
-          "priority": 5,
-          "tier": "PROJECT_INTERNAL_MASTER"
-        },
-        {
-          "price": 155000,
-          "sourceKey": "MATERIAL_MASTER_2026",
-          "sourceName": "Master Database Material EZRAB 2026",
-          "priority": 5,
-          "tier": "PROJECT_INTERNAL_MASTER"
-        },
-        {
-          "price": 155000,
-          "sourceKey": "MATERIAL_MASTER_2026",
-          "sourceName": "Master Database Material EZRAB 2026",
-          "priority": 5,
-          "tier": "PROJECT_INTERNAL_MASTER"
-        },
-        {
-          "price": 125000,
-          "sourceKey": "MATERIAL_MASTER_2026",
-          "sourceName": "Master Database Material EZRAB 2026",
-          "priority": 5,
-          "tier": "PROJECT_INTERNAL_MASTER"
-        },
-        {
-          "price": 155000,
-          "sourceKey": "MATERIAL_MASTER_2026",
-          "sourceName": "Master Database Material EZRAB 2026",
-          "priority": 5,
-          "tier": "PROJECT_INTERNAL_MASTER"
-        },
-        {
-          "price": 155000,
-          "sourceKey": "MATERIAL_MASTER_2026",
-          "sourceName": "Master Database Material EZRAB 2026",
-          "priority": 5,
-          "tier": "PROJECT_INTERNAL_MASTER"
-        },
-        {
-          "price": 168750,
+          "price": 7800,
           "sourceKey": "MATERIAL_MASTER_2026",
           "sourceName": "Master Database Material EZRAB 2026",
           "priority": 5,
@@ -1674,8 +2064,267 @@
       "preferred": "MATERIAL_MASTER_2026"
     },
     {
-      "identity": "RES-002976|kg|PROVINCE|Nasional||2026-01",
-      "resourceId": "RES-002976",
+      "identity": "RES-004599|kg|PROVINCE|DKI Jakarta||2026-09",
+      "resourceId": "RES-004599",
+      "resourceCode": "M94",
+      "resourceName": "Joint Sealent",
+      "unit": "kg",
+      "location": {
+        "level": "PROVINCE",
+        "provinceName": "DKI Jakarta",
+        "regencyName": null,
+        "cityName": null
+      },
+      "period": "2026-09",
+      "candidates": [
+        {
+          "price": 22000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 37300,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        }
+      ],
+      "resolution": "SOURCE_PRIORITY",
+      "preferred": "MATERIAL_MASTER_2026"
+    },
+    {
+      "identity": "RES-003309|bh|PROVINCE|DKI Jakarta||2026-09",
+      "resourceId": "RES-003309",
+      "resourceCode": "M395d",
+      "resourceName": "Lampu LED-T 250 Watt (Lengkap)",
+      "unit": "bh",
+      "location": {
+        "level": "PROVINCE",
+        "provinceName": "DKI Jakarta",
+        "regencyName": null,
+        "cityName": null
+      },
+      "period": "2026-09",
+      "candidates": [
+        {
+          "price": 27000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 34000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        }
+      ],
+      "resolution": "SOURCE_PRIORITY",
+      "preferred": "MATERIAL_MASTER_2026"
+    },
+    {
+      "identity": "RES-004484|m3|PROVINCE|DKI Jakarta||2026-09",
+      "resourceId": "RES-004484",
+      "resourceCode": "M272",
+      "resourceName": "Pupuk",
+      "unit": "m3",
+      "location": {
+        "level": "PROVINCE",
+        "provinceName": "DKI Jakarta",
+        "regencyName": null,
+        "cityName": null
+      },
+      "period": "2026-09",
+      "candidates": [
+        {
+          "price": 150000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 180000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 178000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 150000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        }
+      ],
+      "resolution": "SOURCE_PRIORITY",
+      "preferred": "MATERIAL_MASTER_2026"
+    },
+    {
+      "identity": "RES-001244|bh|PROVINCE|DKI Jakarta||2026-09",
+      "resourceId": "RES-001244",
+      "resourceCode": "M375",
+      "resourceName": "Bollard Cast iron",
+      "unit": "bh",
+      "location": {
+        "level": "PROVINCE",
+        "provinceName": "DKI Jakarta",
+        "regencyName": null,
+        "cityName": null
+      },
+      "period": "2026-09",
+      "candidates": [
+        {
+          "price": 2626500,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 1429100,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        }
+      ],
+      "resolution": "SOURCE_PRIORITY",
+      "preferred": "MATERIAL_MASTER_2026"
+    },
+    {
+      "identity": "RES-001367|m3|PROVINCE|DKI Jakarta||2026-09",
+      "resourceId": "RES-001367",
+      "resourceCode": "M01a",
+      "resourceName": "Pasir Beton",
+      "unit": "m3",
+      "location": {
+        "level": "PROVINCE",
+        "provinceName": "DKI Jakarta",
+        "regencyName": null,
+        "cityName": null
+      },
+      "period": "2026-09",
+      "candidates": [
+        {
+          "price": 422600,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 170000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 370200,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 325200,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        }
+      ],
+      "resolution": "SOURCE_PRIORITY",
+      "preferred": "MATERIAL_MASTER_2026"
+    },
+    {
+      "identity": "RES-005160|m|PROVINCE|DKI Jakarta||2026-09",
+      "resourceId": "RES-005160",
+      "resourceCode": "M439",
+      "resourceName": "aksesoris",
+      "unit": "m",
+      "location": {
+        "level": "PROVINCE",
+        "provinceName": "DKI Jakarta",
+        "regencyName": null,
+        "cityName": null
+      },
+      "period": "2026-09",
+      "candidates": [
+        {
+          "price": 5500,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 5700,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        }
+      ],
+      "resolution": "SOURCE_PRIORITY",
+      "preferred": "MATERIAL_MASTER_2026"
+    },
+    {
+      "identity": "RES-003785|m3|PROVINCE|DKI Jakarta||2026-09",
+      "resourceId": "RES-003785",
+      "resourceCode": "M01d",
+      "resourceName": "Pasir Urug",
+      "unit": "m3",
+      "location": {
+        "level": "PROVINCE",
+        "provinceName": "DKI Jakarta",
+        "regencyName": null,
+        "cityName": null
+      },
+      "period": "2026-09",
+      "candidates": [
+        {
+          "price": 120000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 254700,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 165500,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        }
+      ],
+      "resolution": "SOURCE_PRIORITY",
+      "preferred": "MATERIAL_MASTER_2026"
+    },
+    {
+      "identity": "RES-003594|kg|PROVINCE|Nasional||2026-01",
+      "resourceId": "RES-003594",
       "resourceCode": "M12",
       "resourceName": "Semen",
       "unit": "kg",
@@ -1727,10 +2376,10 @@
       "preferred": "MATERIAL_MASTER_2026"
     },
     {
-      "identity": "RES-002024|kg|PROVINCE|DKI Jakarta||2026-01",
-      "resourceId": "RES-002024",
-      "resourceCode": "M95",
-      "resourceName": "Cat Besi",
+      "identity": "RES-003513|kg|PROVINCE|DKI Jakarta||2026-09",
+      "resourceId": "RES-003513",
+      "resourceCode": "M279",
+      "resourceName": "Mortar",
       "unit": "kg",
       "location": {
         "level": "PROVINCE",
@@ -1738,66 +2387,17 @@
         "regencyName": null,
         "cityName": null
       },
-      "period": "2026-01",
+      "period": "2026-09",
       "candidates": [
         {
-          "price": 87500,
+          "price": 5070,
           "sourceKey": "MATERIAL_MASTER_2026",
           "sourceName": "Master Database Material EZRAB 2026",
           "priority": 5,
           "tier": "PROJECT_INTERNAL_MASTER"
         },
         {
-          "price": 87500,
-          "sourceKey": "MATERIAL_MASTER_2026",
-          "sourceName": "Master Database Material EZRAB 2026",
-          "priority": 5,
-          "tier": "PROJECT_INTERNAL_MASTER"
-        },
-        {
-          "price": 87500,
-          "sourceKey": "MATERIAL_MASTER_2026",
-          "sourceName": "Master Database Material EZRAB 2026",
-          "priority": 5,
-          "tier": "PROJECT_INTERNAL_MASTER"
-        },
-        {
-          "price": 87500,
-          "sourceKey": "MATERIAL_MASTER_2026",
-          "sourceName": "Master Database Material EZRAB 2026",
-          "priority": 5,
-          "tier": "PROJECT_INTERNAL_MASTER"
-        },
-        {
-          "price": 87500,
-          "sourceKey": "MATERIAL_MASTER_2026",
-          "sourceName": "Master Database Material EZRAB 2026",
-          "priority": 5,
-          "tier": "PROJECT_INTERNAL_MASTER"
-        },
-        {
-          "price": 87500,
-          "sourceKey": "MATERIAL_MASTER_2026",
-          "sourceName": "Master Database Material EZRAB 2026",
-          "priority": 5,
-          "tier": "PROJECT_INTERNAL_MASTER"
-        },
-        {
-          "price": 87500,
-          "sourceKey": "MATERIAL_MASTER_2026",
-          "sourceName": "Master Database Material EZRAB 2026",
-          "priority": 5,
-          "tier": "PROJECT_INTERNAL_MASTER"
-        },
-        {
-          "price": 118100,
-          "sourceKey": "MATERIAL_MASTER_2026",
-          "sourceName": "Master Database Material EZRAB 2026",
-          "priority": 5,
-          "tier": "PROJECT_INTERNAL_MASTER"
-        },
-        {
-          "price": 87500,
+          "price": 1850,
           "sourceKey": "MATERIAL_MASTER_2026",
           "sourceName": "Master Database Material EZRAB 2026",
           "priority": 5,
@@ -1808,28 +2408,49 @@
       "preferred": "MATERIAL_MASTER_2026"
     },
     {
-      "identity": "RES-001629|kg|PROVINCE|Nasional||2026-01",
-      "resourceId": "RES-001629",
-      "resourceCode": "M170",
-      "resourceName": "Air",
+      "identity": "RES-003882|kg|PROVINCE|DKI Jakarta||2026-09",
+      "resourceId": "RES-003882",
+      "resourceCode": "M125",
+      "resourceName": "Perekat",
       "unit": "kg",
       "location": {
         "level": "PROVINCE",
-        "provinceName": "Nasional",
+        "provinceName": "DKI Jakarta",
         "regencyName": null,
         "cityName": null
       },
-      "period": "2026-01",
+      "period": "2026-09",
       "candidates": [
         {
-          "price": 30000,
+          "price": 18000,
           "sourceKey": "MATERIAL_MASTER_2026",
           "sourceName": "Master Database Material EZRAB 2026",
           "priority": 5,
           "tier": "PROJECT_INTERNAL_MASTER"
         },
         {
-          "price": 28000,
+          "price": 36800,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 16000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 17200,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 21100,
           "sourceKey": "MATERIAL_MASTER_2026",
           "sourceName": "Master Database Material EZRAB 2026",
           "priority": 5,
@@ -1840,8 +2461,373 @@
       "preferred": "MATERIAL_MASTER_2026"
     },
     {
-      "identity": "RES-002763|kg|PROVINCE|Nasional||2026-01",
-      "resourceId": "RES-002763",
+      "identity": "RES-003763|m3|PROVINCE|DKI Jakarta||2026-09",
+      "resourceId": "RES-003763",
+      "resourceCode": "M01b",
+      "resourceName": "Pasir",
+      "unit": "m3",
+      "location": {
+        "level": "PROVINCE",
+        "provinceName": "DKI Jakarta",
+        "regencyName": null,
+        "cityName": null
+      },
+      "period": "2026-09",
+      "candidates": [
+        {
+          "price": 200000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 200000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 250000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 150000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 300000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 275000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        }
+      ],
+      "resolution": "SOURCE_PRIORITY",
+      "preferred": "MATERIAL_MASTER_2026"
+    },
+    {
+      "identity": "RES-004739|m3|PROVINCE|DKI Jakarta||2026-09",
+      "resourceId": "RES-004739",
+      "resourceCode": "M16a",
+      "resourceName": "Sirtu 2 / 3",
+      "unit": "m3",
+      "location": {
+        "level": "PROVINCE",
+        "provinceName": "DKI Jakarta",
+        "regencyName": null,
+        "cityName": null
+      },
+      "period": "2026-09",
+      "candidates": [
+        {
+          "price": 184400,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 288700,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 120000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 261800,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        }
+      ],
+      "resolution": "SOURCE_PRIORITY",
+      "preferred": "MATERIAL_MASTER_2026"
+    },
+    {
+      "identity": "RES-002767|bh|PROVINCE|DKI Jakarta||2026-09",
+      "resourceId": "RES-002767",
+      "resourceCode": "M368a",
+      "resourceName": "Homogeneous Tile 30x30x3",
+      "unit": "bh",
+      "location": {
+        "level": "PROVINCE",
+        "provinceName": "DKI Jakarta",
+        "regencyName": null,
+        "cityName": null
+      },
+      "period": "2026-09",
+      "candidates": [
+        {
+          "price": 22000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 20000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 27000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        }
+      ],
+      "resolution": "SOURCE_PRIORITY",
+      "preferred": "MATERIAL_MASTER_2026"
+    },
+    {
+      "identity": "RES-001892|m3|PROVINCE|DKI Jakarta||2026-09",
+      "resourceId": "RES-001892",
+      "resourceCode": "M02",
+      "resourceName": "Batu Kali",
+      "unit": "m3",
+      "location": {
+        "level": "PROVINCE",
+        "provinceName": "DKI Jakarta",
+        "regencyName": null,
+        "cityName": null
+      },
+      "period": "2026-09",
+      "candidates": [
+        {
+          "price": 142500,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 187400,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        }
+      ],
+      "resolution": "SOURCE_PRIORITY",
+      "preferred": "MATERIAL_MASTER_2026"
+    },
+    {
+      "identity": "RES-001233|m3|PROVINCE|DKI Jakarta||2026-09",
+      "resourceId": "RES-001233",
+      "resourceCode": "M06",
+      "resourceName": "Batu Belah",
+      "unit": "m3",
+      "location": {
+        "level": "PROVINCE",
+        "provinceName": "DKI Jakarta",
+        "regencyName": null,
+        "cityName": null
+      },
+      "period": "2026-09",
+      "candidates": [
+        {
+          "price": 286500,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 235000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 127500,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 339861,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        }
+      ],
+      "resolution": "SOURCE_PRIORITY",
+      "preferred": "MATERIAL_MASTER_2026"
+    },
+    {
+      "identity": "RES-003190|m3|PROVINCE|DKI Jakarta||2026-09",
+      "resourceId": "RES-003190",
+      "resourceCode": "M19",
+      "resourceName": "Kayu Kaso",
+      "unit": "m3",
+      "location": {
+        "level": "PROVINCE",
+        "provinceName": "DKI Jakarta",
+        "regencyName": null,
+        "cityName": null
+      },
+      "period": "2026-09",
+      "candidates": [
+        {
+          "price": 3500000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 11950000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        }
+      ],
+      "resolution": "SOURCE_PRIORITY",
+      "preferred": "MATERIAL_MASTER_2026"
+    },
+    {
+      "identity": "RES-003964|m|PROVINCE|DKI Jakarta||2026-09",
+      "resourceId": "RES-003964",
+      "resourceCode": "M241b",
+      "resourceName": "Pipa Baja dia 100 m",
+      "unit": "m",
+      "location": {
+        "level": "PROVINCE",
+        "provinceName": "DKI Jakarta",
+        "regencyName": null,
+        "cityName": null
+      },
+      "period": "2026-09",
+      "candidates": [
+        {
+          "price": 1083333.3333333333,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 49000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        }
+      ],
+      "resolution": "SOURCE_PRIORITY",
+      "preferred": "MATERIAL_MASTER_2026"
+    },
+    {
+      "identity": "RES-002007|kg|PROVINCE|DKI Jakarta||2026-09",
+      "resourceId": "RES-002007",
+      "resourceCode": "M16",
+      "resourceName": "Besi Siku",
+      "unit": "kg",
+      "location": {
+        "level": "PROVINCE",
+        "provinceName": "DKI Jakarta",
+        "regencyName": null,
+        "cityName": null
+      },
+      "period": "2026-09",
+      "candidates": [
+        {
+          "price": 15667,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 13000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 14700,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        }
+      ],
+      "resolution": "SOURCE_PRIORITY",
+      "preferred": "MATERIAL_MASTER_2026"
+    },
+    {
+      "identity": "RES-003196|m3|PROVINCE|DKI Jakarta||2026-09",
+      "resourceId": "RES-003196",
+      "resourceCode": "M142",
+      "resourceName": "Kayu Kelas 1",
+      "unit": "m3",
+      "location": {
+        "level": "PROVINCE",
+        "provinceName": "DKI Jakarta",
+        "regencyName": null,
+        "cityName": null
+      },
+      "period": "2026-09",
+      "candidates": [
+        {
+          "price": 26000000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 10214200,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 11950000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        }
+      ],
+      "resolution": "SOURCE_PRIORITY",
+      "preferred": "MATERIAL_MASTER_2026"
+    },
+    {
+      "identity": "RES-003513|kg|PROVINCE|Nasional||2026-01",
+      "resourceId": "RES-003513",
       "resourceCode": "M279",
       "resourceName": "Mortar",
       "unit": "kg",
@@ -1872,8 +2858,40 @@
       "preferred": "MATERIAL_MASTER_2026"
     },
     {
-      "identity": "RES-003640|m3|PROVINCE|Nasional||2026-01",
-      "resourceId": "RES-003640",
+      "identity": "RES-004091|m|PROVINCE|DKI Jakarta||2026-09",
+      "resourceId": "RES-004091",
+      "resourceCode": "M240h",
+      "resourceName": "Pipa PVC AW 2 inch",
+      "unit": "m",
+      "location": {
+        "level": "PROVINCE",
+        "provinceName": "DKI Jakarta",
+        "regencyName": null,
+        "cityName": null
+      },
+      "period": "2026-09",
+      "candidates": [
+        {
+          "price": 26000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 14750,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        }
+      ],
+      "resolution": "SOURCE_PRIORITY",
+      "preferred": "MATERIAL_MASTER_2026"
+    },
+    {
+      "identity": "RES-004739|m3|PROVINCE|Nasional||2026-01",
+      "resourceId": "RES-004739",
       "resourceCode": "M16a",
       "resourceName": "Sirtu 2 / 3",
       "unit": "m3",
@@ -1901,6 +2919,38 @@
         },
         {
           "price": 200000,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        }
+      ],
+      "resolution": "SOURCE_PRIORITY",
+      "preferred": "MATERIAL_MASTER_2026"
+    },
+    {
+      "identity": "RES-002912|m|PROVINCE|DKI Jakarta||2026-09",
+      "resourceId": "RES-002912",
+      "resourceCode": "M396ac",
+      "resourceName": "Kabel NYFGBY 4C - 95 mm2",
+      "unit": "m",
+      "location": {
+        "level": "PROVINCE",
+        "provinceName": "DKI Jakarta",
+        "regencyName": null,
+        "cityName": null
+      },
+      "period": "2026-09",
+      "candidates": [
+        {
+          "price": 743750,
+          "sourceKey": "MATERIAL_MASTER_2026",
+          "sourceName": "Master Database Material EZRAB 2026",
+          "priority": 5,
+          "tier": "PROJECT_INTERNAL_MASTER"
+        },
+        {
+          "price": 185000,
           "sourceKey": "MATERIAL_MASTER_2026",
           "sourceName": "Master Database Material EZRAB 2026",
           "priority": 5,

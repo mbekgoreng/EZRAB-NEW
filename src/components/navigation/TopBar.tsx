@@ -69,6 +69,7 @@ const MENU_SEARCH_INDEX: Array<{ id: string; label: string; keywords: string }> 
   { id: 'keuangan-proyek', label: 'Keuangan Proyek', keywords: 'keuangan finance kas' },
   { id: 'ahsp-2026', label: 'AHSP 2026', keywords: 'ahsp analisa harga satuan pupr' },
   { id: 'database-material', label: 'Database Material', keywords: 'material bahan harga' },
+  { id: 'master-pricing', label: 'Harga Master', keywords: 'harga master ahsp versi adopsi admin pricing' },
   { id: 'laporan', label: 'Laporan', keywords: 'laporan report boq rekap' },
   { id: 'pengaturan', label: 'Pengaturan', keywords: 'pengaturan settings setelan' },
 ];

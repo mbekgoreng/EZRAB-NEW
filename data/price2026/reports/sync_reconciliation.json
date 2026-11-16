@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-11-16T02:57:15.784Z",
+  "mode": "NO_OP",
+  "dryRun": false,
+  "digestBefore": "0mw40czeh4p",
+  "digestAfter": "0mw40czeh4p",
+  "changed": false,
+  "before": {
+    "priceRowsTotal": 9948,
+    "priceRowsActive": 9890,
+    "priceMasterRecords": 452,
+    "matchedRows": 452,
+    "unmatchedRows": 9438,
+    "componentKeysTotal": 791,
+    "componentKeysPriced": 121,
+    "ahspFull": 58,
+    "ahspPartial": 2237,
+    "ahspMissing": 2726,
+    "conflicts": 50,
+    "unresolvedKeys": 670
+  },
+  "after": {
+    "priceRowsTotal": 9948,
+    "priceRowsActive": 9890,
+    "priceMasterRecords": 452,
+    "matchedRows": 452,
+    "unmatchedRows": 9438,
+    "componentKeysTotal": 791,
+    "componentKeysPriced": 121,
+    "ahspFull": 58,
+    "ahspPartial": 2237,
+    "ahspMissing": 2726,
+    "conflicts": 50,
+    "unresolvedKeys": 670
+  },
+  "rowDiff": null,
+  "affectedAhspFamilies": [],
+  "stepsSkippedInDryRun": null,
+  "operationId": "SYN-db5032fff6c9e0a8",
+  "priceAssert": null
+}

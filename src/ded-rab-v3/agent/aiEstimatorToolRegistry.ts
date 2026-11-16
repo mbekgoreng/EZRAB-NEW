@@ -16,7 +16,8 @@ import { specificationValidator } from '../validation/specificationValidator';
 import { dedUnitSafetyGate } from '../ahsp/dedUnitSafetyGate';
 import { aiPriceEstimationEngine } from '../../ded-rab-v2/pricing/aiPriceEstimationEngine';
 import { duplicateDetector } from '../evidence/duplicateDetector';
-import { RESOURCE_PRICE_RECORDS } from '../../data/priceDatabase2026/priceMaster.generated';
+import { canonicalPriceResolver } from '../../engine/pricing/canonical/canonicalPriceResolver';
+import { gateCanonicalUnit } from '../../engine/pricing/canonical/canonicalPriceResolverAdapter';
 import { priceResolver2026 } from '../../data/priceDatabase2026/resolver';
 
 export class AiEstimatorToolRegistry {
@@ -246,22 +247,40 @@ export class AiEstimatorToolRegistry {
       }
     }
 
-    // 2. Resource/Database lookup by keyword in Master 2026 Records
-    const itemNorm = itemName.toLowerCase();
-    const tokens = itemNorm.split(/\s+/).filter((t) => t.length > 2);
-    for (const rec of RESOURCE_PRICE_RECORDS) {
-      const rName = String(rec.resourceName || (rec as any).title || '').toLowerCase();
-      if (!rName || !rec.price || rec.price <= 0) continue;
-
-      const exactMatch = rName === itemNorm;
-      const subMatch = rName.includes(itemNorm) || (rName.length >= 4 && itemNorm.includes(rName));
-      const tokenMatch = tokens.length > 0 && tokens.every((t) => rName.includes(t));
-
-      if (exactMatch || subMatch || tokenMatch) {
+    // 2. Canonical resource lookup (MASTER PRICING §12 — was a raw
+    // substring/token scan over RESOURCE_PRICE_RECORDS that returned
+    // the FIRST record matching by name, IGNORING the query unit:
+    // `findPrice('Semen Portland', unit 'm3')` returned the per-kg
+    // price Rp1.800 as if per-m³. Now the canonical service: the
+    // master price wins, with the name gate, unit validation, and the
+    // sanity gate. Source is labelled honestly from the canonical
+    // tier — official master prices are OFFICIAL_AHSP, regional
+    // standards REGIONAL_PRICE, national references EZRAB_DATABASE.
+    const canonical = canonicalPriceResolver.resolve({
+      name: itemName,
+      unit,
+      region,
+    });
+    if (canonical.status === 'RESOLVED' && canonical.price !== null && canonical.price > 0) {
+      // MASTER PRICING §12 (P5): the canonical service's Steps 3/5
+      // match by NAME and return the RECORD's unit — a per-kg price
+      // must never be served as a per-m³ price. Gated-out answers
+      // fall through to the AI estimate below (labelled AI_ESTIMATE),
+      // never to a wrong-unit "canonical" price.
+      const gated = gateCanonicalUnit(canonical, unit);
+      if (gated) {
+        const source: FieldProvenanceSource =
+          canonical.source === 'REGIONAL_STANDARDS'
+            ? 'REGIONAL_PRICE'
+            : canonical.source === 'PROJECT_OVERRIDE' || canonical.source === 'PROJECT_PRICE_QUOTE'
+              ? 'PROJECT_PRICE'
+              : canonical.source === 'EZRAB_REFERENCE'
+                ? 'EZRAB_DATABASE'
+                : 'OFFICIAL_AHSP';
         return {
-          unitPrice: rec.price,
-          source: 'REGIONAL_PRICE',
-          confidence: 'MEDIUM',
+          unitPrice: gated.price,
+          source,
+          confidence: canonical.confidence >= 0.9 ? 'HIGH' : 'MEDIUM',
         };
       }
     }

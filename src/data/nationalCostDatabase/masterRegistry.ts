@@ -3,13 +3,19 @@ import {
   AHSPDomain,
   AHSPVersionDiff,
   AHSPProjectSnapshot,
-  AHSPSourceMetadata
+  AHSPSourceMetadata,
+  AHSP_DATABASE_VERSION,
 } from './types';
+import {
+  MASTER_PRICE_VERSION,
+  DEFAULT_SNAPSHOT_PRICING_MODE,
+} from '../priceDatabase2026/types';
 import { OFFICIAL_AHSP_SOURCES } from './sources';
 import { AHSP_2026_CANONICAL } from './ahsp2026Canonical.generated';
 import { BINA_MARGA_2026_MASTER } from './binaMarga2026Master.generated';
 import { OFFICIAL_SMKK_2026_ITEMS } from './officialSmkk2026';
 import { resolveBinaMargaUnit } from './binaMargaUnitResolution';
+import { compareAhspSnapshots } from './ahspVersioning';
 import { AHSPItem } from '../../types';
 
 /**
@@ -300,25 +306,30 @@ class NationalConstructionCostDatabaseEngine {
   }
 
   /**
-   * Compare two AHSP versions (e.g. 2025 vs 2026) for audit & update assistance.
+   * Compare two AHSP database versions for one family — a REAL diff
+   * (Master Pricing §8 (b), replacing the pre-§8 stub).
    *
-   * §13 / §26 — NO INVENTION: the canonical 2026 catalog is price-free and there
-   * is no verified 2025 baseline in the repository. This helper therefore reports
-   * only what is actually known: the codes present in the requested target
-   * version. It does NOT invent removed codes, and does NOT synthesise an
-   * `oldPrice` by scaling a price that does not exist.
+   * The pre-§8 stub reported only the target version's codes as
+   * `addedCodes` with `removedCodes: []` and `revisedCodes: []`
+   * permanently empty (there was no verified baseline to diff
+   * against). It had NO callers (verified 2026-11-16), so its
+   * signature is replaced: callers pass the two item sets explicitly
+   * (version snapshots, or the live catalog), and the diff reports
+   * added / removed / revised codes + per-item field-level diffs
+   * (name, unit, baked price, coefficients, component codes/units,
+   * added/removed components) + a deterministic count summary.
+   *
+   * Items match by stable id; components match by stable id when both
+   * sides carry one, else by position within the array. The diff is
+   * deterministic: identical inputs produce identical output regardless
+   * of input order. See `compareAhspSnapshots` in ahspVersioning.ts.
    */
-  public compareVersions(domain: AHSPDomain, sourceVersion: string = '2025', targetVersion: string = '2026'): AHSPVersionDiff {
-    const targetItems = this.getAllItems().filter(i => i.domain === domain && i.version === targetVersion);
-
-    return {
-      sourceVersion,
-      targetVersion,
-      domain,
-      addedCodes: targetItems,
-      removedCodes: [],
-      revisedCodes: [],
-    };
+  public compareVersions(
+    domain: AHSPDomain,
+    source: { versionId: string; items: readonly NationalAHSPItem[] },
+    target: { versionId: string; items: readonly NationalAHSPItem[] },
+  ): AHSPVersionDiff {
+    return compareAhspSnapshots(source, target, domain);
   }
 
   /**
@@ -337,6 +348,13 @@ class NationalConstructionCostDatabaseEngine {
       equipmentComponents: JSON.parse(JSON.stringify(item.equipmentComponents)),
       unitPrice: item.unitPrice,
       snapshotTimestamp: new Date().toISOString(),
+      // MASTER PRICING §3 (I-11): stamp the source versions this snapshot
+      // was frozen against. A snapshot freezes VALUES, so its pricing mode
+      // is inherently SNAPSHOT_PRICE (Decision D) — model only; §10
+      // behaviour (adoption, mode switching) is not implemented here.
+      ahspDatabaseVersion: AHSP_DATABASE_VERSION,
+      masterPriceVersion: MASTER_PRICE_VERSION,
+      pricingMode: DEFAULT_SNAPSHOT_PRICING_MODE,
     };
   }
 

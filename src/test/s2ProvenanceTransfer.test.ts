@@ -89,6 +89,7 @@ import {
 } from '../export/fiveSheetPreset';
 import { computeRekapSummary } from '../components/estimator/rekapSummary';
 import { PREMIUM_DEMO_PROJECT, PREMIUM_DEMO_RAB_ITEMS } from '../data/premiumDemoData';
+import { formatWorkItemTitle } from '../ai-tools/ezrab-ai/workItemTitle';
 import type { Project, Company } from '../types';
 
 let passed = 0;
@@ -451,7 +452,7 @@ function testStage5(draft: UniversalDraft, ids: Record<string, string>): { paylo
   eq('payload: 12 item', payload.length, 12);
   const byId = (effId: string) => {
     const eff = effectiveItems(draft).find((i) => i.id === effId)!;
-    const p = payload.find((x) => x.description === `[Chat AI] ${eff.description}`)!;
+    const p = payload.find((x) => x.description === formatWorkItemTitle(eff.description))!;
     assert.ok(p, `payload untuk ${eff.description} ada`);
     return p;
   };
@@ -523,7 +524,7 @@ function testStage5(draft: UniversalDraft, ids: Record<string, string>): { paylo
   const records = payload.map((p, i) => createRabItemRecord(p as never, PID, { index: i }));
   const recByDesc = (effId: string) => {
     const eff = effectiveItems(draft).find((i) => i.id === effId)!;
-    return records.find((r) => r.description === `[Chat AI] ${eff.description}`)!;
+    return records.find((r) => r.description === formatWorkItemTitle(eff.description))!;
   };
   const rEst1 = recByDesc(ids.est1);
   eq('factory EST#1: PRICE_ESTIMATED bertahan', rEst1.priceStatus, 'PRICE_ESTIMATED');
@@ -610,7 +611,7 @@ function testStage6(draft: UniversalDraft, ids: Record<string, string>, records:
   eq('normalisasi: 12 item hadir (tidak ada yang hilang)', flat.length, 12);
   const normByDesc = (effId: string) => {
     const eff = effectiveItems(draft).find((i) => i.id === effId)!;
-    return flat.find((x) => x.description === `[Chat AI] ${eff.description}`)!;
+    return flat.find((x) => x.description === formatWorkItemTitle(eff.description))!;
   };
   const nEst1 = normByDesc(ids.est1);
   eq('normalisasi EST#1: PRICE_ESTIMATED bertahan', nEst1.priceStatus, 'PRICE_ESTIMATED');
@@ -669,7 +670,7 @@ async function testStage7(project: Project, sections: any[], draft: UniversalDra
   });
   const snapItems = snapshot.sections.flatMap((s) => (s.items || []) as any[]);
   eq('snapshot: 3 item PRICE_ESTIMATED', snapItems.filter((i) => i.priceStatus === 'PRICE_ESTIMATED').length, 3);
-  const descOf = (effId: string) => `[Chat AI] ${effectiveItems(draft).find((i) => i.id === effId)!.description}`;
+  const descOf = (effId: string) => formatWorkItemTitle(effectiveItems(draft).find((i) => i.id === effId)!.description);
   const snapEst1 = snapItems.find((i) => i.description === descOf(ids.est1))!;
   eq('snapshot EST#1: kind EZRAB_ASSUMPTION', snapEst1.priceSourceKind, 'EZRAB_ASSUMPTION');
   eq('snapshot EST#1: label Estimasi AI', snapEst1.priceSourceLabel, 'Estimasi AI');

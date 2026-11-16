@@ -28,6 +28,13 @@
  *   Status record VERIFIED tidak lagi ditempel sebagai bukti relevansi.
  * - Item demolisi (bongkar/pembongkaran) disaring kecuali kueri menyebut
  *   bongkar — cerminan perilaku searchOfficialAhsp.
+ * - Penalti kecocokan subordinat (temuan uji live 2026-11-15): istilah
+ *   UTAMA kueri yang hanya muncul di luar frasa kepala judul — mis.
+ *   "plesteran" pada "kantor sementara ... lantai plesteran, dinding
+ *   setengah tembok" — menandakan pekerjaan utama item itu BUKAN yang
+ *   ditanyakan; skornya dipotong (dibatasi bawah ambang relevansi
+ *   agar kueri yang HANYA punya padanan subordinat tetap menemukan
+ *   jawaban, hanya tidak pernah mengalahkan padanan kepala).
  */
 import { officialAhspRepository } from '../../data/nationalCostDatabase/officialAhspRepository';
 import { priceResolver2026 } from '../../data/priceDatabase2026/resolver';
@@ -303,6 +310,33 @@ function gradeMatchesTitle(grade: string, title: string): boolean {
   return normTitle.includes(grade);
 }
 
+/**
+ * Frasa kepala judul: 3 token konten pertama sesudah kata kerja /
+ * satuan / angka awal dihilangkan — nama pekerjaan UTAMA item
+ * ("kantor sementara rumah" pada 1.1.2.3; "plesteran 1sp 4pp" pada
+ * 3.7.4). Token di luar jendela ini adalah spesifikasi, fitur
+ * bangunan, atau klausa subordinat ("lantai plesteran, dinding
+ * setengah tembok" pada 1.1.2.3).
+ */
+const HEAD_PHRASE_TOKENS = 3;
+
+function headPhraseTokens(title: string): string[] {
+  return tokenize(title)
+    .filter((t) => !STOPWORDS.has(t) && !UNIT_TOKENS.has(t) && !/^\d+$/.test(t))
+    .slice(0, HEAD_PHRASE_TOKENS);
+}
+
+/**
+ * Penalti kecocokan subordinat (temuan uji live 2026-11-15): istilah
+ * utama kueri yang cocok token TETAPI di luar frasa kepala judul
+ * kehilangan 4 poin — item yang cocok SEMUA istilah secara subordinat
+ * (9-4=5) tetap kalah dari item yang pekerjaan utamanya cocok (6).
+ * Skor dipagari di ambang relevansi (3) agar kueri yang hanya punya
+ * padanan subordinat tetap menemukan jawaban, bukan NOT_FOUND.
+ */
+const SUBORDINATE_MATCH_PENALTY = 4;
+const RELEVANCE_FLOOR = 3;
+
 function scoreItem(
   title: string,
   terms: string[],
@@ -313,10 +347,12 @@ function scoreItem(
   const titleLower = title.toLowerCase();
   const matched: string[] = [];
   let score = 0;
+  let firstTermTokenMatched = false;
   for (let i = 0; i < terms.length; i++) {
     const t = terms[i];
     if (tokens.includes(t)) {
       matched.push(t);
+      if (i === 0) firstTermTokenMatched = true;
       // Istilah pertama = kata kerja/pekerjaan utama ("plesteran dinding",
       // "pasangan bata") — bobot ganda agar tidak kalah dari istilah objek
       // generik ("dinding") yang muncul di ratusan judul.
@@ -325,6 +361,15 @@ function scoreItem(
       // Bonus substring kecil — tidak pernah mengalahkan kecocokan token.
       score += 1;
     }
+  }
+  if (
+    firstTermTokenMatched &&
+    terms.length > 0 &&
+    !headPhraseTokens(title).includes(terms[0])
+  ) {
+    // Istilah utama hanya muncul di luar frasa kepala: pekerjaan utama
+    // item ini bukan yang ditanyakan (temuan uji live 2026-11-15).
+    score = Math.max(RELEVANCE_FLOOR, score - SUBORDINATE_MATCH_PENALTY);
   }
   if (ratio && ratioMatchesTitle(ratio.a, ratio.b, title)) score += 4;
   if (grade && gradeMatchesTitle(grade, title)) score += 4;

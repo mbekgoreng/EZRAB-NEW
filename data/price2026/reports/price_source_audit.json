@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-09-28T13:00:24.667Z",
+  "generatedAt": "2026-11-16T02:56:04.092Z",
   "totalRegisteredSources": 7,
   "activeSources": 6,
   "excludedSources": 1,
   "activeRowCount": 0,
-  "excludedRowCount": 6913,
+  "excludedRowCount": 9948,
   "sources": [
     {
       "key": "HSD_2026",
@@ -94,25 +94,25 @@
       "verificationStatus": "SOURCE_REPORTED",
       "sourceDocument": null,
       "locationLevel": "CITY",
-      "rows": 6197,
-      "rowsWithPositivePrice": 6197,
+      "rows": 9232,
+      "rowsWithPositivePrice": 9232,
       "rowsNonPositive": 0,
       "unitHistogram": {
-        "m2": 4731,
-        "kg": 395,
-        "unit": 302,
-        "pohon": 200,
-        "bh": 144,
-        "batang": 97,
-        "m3": 91,
-        "sak": 83,
-        "m¹": 51,
-        "set": 35,
-        "m": 32,
-        "tube": 18
+        "m2": 4885,
+        "unit": 1128,
+        "bh": 970,
+        "m": 739,
+        "kg": 558,
+        "pohon": 207,
+        "m3": 205,
+        "batang": 160,
+        "sak": 93,
+        "lembar": 84,
+        "m¹": 55,
+        "set": 47
       },
       "typeHistogram": {
-        "material": 6197
+        "material": 9232
       },
       "notes": "Multi-sector, multi-region material catalogue carried in the repository. Reports province + city, so it is the only source that can serve REGENCY/CITY queries. Not externally audited → SOURCE_REPORTED, never VERIFIED."
     },

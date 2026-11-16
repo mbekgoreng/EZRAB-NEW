@@ -18,7 +18,10 @@ import { CostCompositionEngine } from '../composition/costCompositionEngine';
 import { CostCompositionResult, CostCompositionInput } from '../contracts/types';
 import { AHSPDefinition } from '../../ahsp/contracts/types';
 import { PriceContext } from '../../pricing/contracts/types';
-import { PriceResolver } from '../../pricing/resolver/priceResolver';
+import {
+  CanonicalPriceResolverAdapter,
+  type PriceResolverLike,
+} from '../../pricing/canonical/canonicalPriceResolverAdapter';
 import { SafeDecimalEngine } from '../../safeDecimalEngine';
 import { resolvePolicyValue } from './costPolicyDefaults';
 import { adaptOfficialToDefinition } from '../../ahsp/adapters/officialToDefinitionAdapter';
@@ -68,10 +71,16 @@ export interface CostEngineResult {
 
 export class CostPolicyEngine {
   private compositionEngine: CostCompositionEngine;
-  private priceResolver: PriceResolver;
+  private priceResolver: PriceResolverLike;
 
-  constructor(priceResolver?: PriceResolver) {
-    this.priceResolver = priceResolver || new PriceResolver();
+  /**
+   * MASTER PRICING §12 (D3/M-12): the default resolver is now the
+   * canonical adapter (see CostCompositionEngine). An explicitly
+   * injected resolver (legacy engine or stub) still flows through to
+   * the composition engine unchanged.
+   */
+  constructor(priceResolver?: PriceResolverLike) {
+    this.priceResolver = priceResolver || new CanonicalPriceResolverAdapter();
     this.compositionEngine = new CostCompositionEngine(this.priceResolver);
   }
 

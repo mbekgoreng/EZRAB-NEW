@@ -23,6 +23,7 @@ import { externalMarketPriceProvider } from './priceProviders/externalMarketPric
 import { aiEstimatePriceProvider } from './priceProviders/aiEstimatePriceProvider';
 import { SafeDecimalEngine } from '../../engine/safeDecimalEngine';
 import { canonicalPriceResolver } from '../../engine/pricing/canonical/canonicalPriceResolver';
+import { gateCanonicalUnit } from '../../engine/pricing/canonical/canonicalPriceResolverAdapter';
 
 export class PriceResolutionEngine {
   private static instance: PriceResolutionEngine;
@@ -84,12 +85,22 @@ export class PriceResolutionEngine {
       region: input.location?.province || input.location?.city,
     });
 
-    if (canonicalRes.status === 'RESOLVED' && canonicalRes.price !== null) {
+    // MASTER PRICING §12 (P6 — same defect class as P1/P5): the canonical
+    // service returns the RECORD's unit, not the query unit, at Steps 3/5.
+    // The ungated fallback served a per-kg price as per-m3 whenever all
+    // five providers missed. Gate it: a gated-out answer falls through
+    // to the PRICE_INTERNAL "not found" return below, never a
+    // wrong-unit price.
+    const gated =
+      canonicalRes.status === 'RESOLVED' && canonicalRes.price !== null
+        ? gateCanonicalUnit(canonicalRes, input.unit)
+        : null;
+    if (gated) {
       const resolvedTotal = input.quantity !== null && input.quantity !== undefined && input.quantity > 0
-        ? SafeDecimalEngine.safeMultiply(canonicalRes.price, input.quantity, 2)
+        ? SafeDecimalEngine.safeMultiply(gated.price, input.quantity, 2)
         : 0;
       return {
-        unitPrice: canonicalRes.price,
+        unitPrice: gated.price,
         totalPrice: resolvedTotal,
         priceSource: 'EZRAB_DATABASE',
         priceStatus: 'RESOLVED',

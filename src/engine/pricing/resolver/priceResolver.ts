@@ -1,6 +1,20 @@
 /**
  * EZRAB PRICING DOMAIN — RESOLVER
  * Deterministic resolution pipeline for unit prices with context filtering.
+ *
+ * MASTER PRICING §12 (D3/M-12) — LEGACY, NO RUNTIME CONSUMERS. All
+ * production consumers were redirected to the canonical pricing service
+ * (`canonicalPriceResolver`, via `canonicalPriceResolverAdapter` where
+ * the legacy result shapes are still needed): DED v2/v3, cost engines,
+ * drawer, provenance modal, AI tool registry. This class is RETAINED
+ * only because its own test suites (`priceResolutionEngine`,
+ * `projectPriceOverride*`, `priceIntegrityUnitGate`, `ahspPricingCost`,
+ * `chatQaCatCD`) pin its behaviour directly, and because
+ * `CostCompositionEngine` / `CostPolicyEngine` still accept an injected
+ * engine resolver through the structural `PriceResolverLike` seam.
+ * NEW CODE MUST NOT import this class — resolve through
+ * `canonicalPriceResolver` (or `priceResolver2026` for AHSP/resource
+ * resolution). Do not extend this resolver; extend the canonical one.
  */
 
 import {

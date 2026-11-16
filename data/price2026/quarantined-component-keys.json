@@ -1,0 +1,160 @@
+{
+  "description": "Component keys quarantined from price matching (DB-sync Fase 2). These 14 keys are NOT resources: every one is a formula variable of the hourly equipment-cost calculation that leaked into the components of AHSP item 4.1.1.1 (CIPTA_KARYA) — single-letter codes (A, CP, D, E, F, G, I, J, K, L, M, MP, P, W), count=1 each, coefficient null, units that are prices or formula parameters (rp/jam, tahun, ton, liter, '-'). Quarantine, don't delete: the keys stay in the resource index (flagged) and stay unpriced; they are never matched to a price row. Mechanism note: ahspQuarantine.ts applies to AHSP ITEM codes, not component keys — this pipeline-local list is the correct mechanism for component keys (see phase2-sync.md §4).",
+  "keys": [
+    {
+      "confidence": "HIGH",
+      "detail": "Formula variable A (economic life, years) of the hourly-cost calculation in item 4.1.1.1, not a resource.",
+      "key": "A|tahun",
+      "looseCode": "A",
+      "name": "Umur Ekonomis",
+      "provenance": "DB-sync Fase 1 §1.1 + Fase 2 workbook/component audit: comp_rows.jsonl item 4.1.1.1, coefficient null, count=1",
+      "reason": "PARSING_ARTIFACT",
+      "sourceItem": "4.1.1.1",
+      "unit": "tahun"
+    },
+    {
+      "confidence": "HIGH",
+      "detail": "Formula variable Cp (capacity, ton) of the hourly-cost calculation in item 4.1.1.1, not a resource.",
+      "key": "CP|ton",
+      "looseCode": "CP",
+      "name": "Kapasitas",
+      "provenance": "DB-sync Fase 1 §1.1 + Fase 2 workbook/component audit: comp_rows.jsonl item 4.1.1.1, coefficient null, count=1",
+      "reason": "PARSING_ARTIFACT",
+      "sourceItem": "4.1.1.1",
+      "unit": "ton"
+    },
+    {
+      "confidence": "HIGH",
+      "detail": "Formula variable D (capital instalment factor, unit '-') of the hourly-cost calculation in item 4.1.1.1, not a resource.",
+      "key": "D|-",
+      "looseCode": "D",
+      "name": "Faktor Angsuran Modal",
+      "provenance": "DB-sync Fase 1 §1.1 + Fase 2 workbook/component audit: comp_rows.jsonl item 4.1.1.1, coefficient null, count=1",
+      "reason": "PARSING_ARTIFACT",
+      "sourceItem": "4.1.1.1",
+      "unit": "-"
+    },
+    {
+      "confidence": "HIGH",
+      "detail": "Formula variable E (capital return cost); unit rp/jam is a PRICE, not a resource unit. Item 4.1.1.1.",
+      "key": "E|rp/jam",
+      "looseCode": "E",
+      "name": "a. Biaya Pengembalian Modal",
+      "provenance": "DB-sync Fase 1 §1.1 + Fase 2 workbook/component audit: comp_rows.jsonl item 4.1.1.1, coefficient null, count=1",
+      "reason": "PARSING_ARTIFACT",
+      "sourceItem": "4.1.1.1",
+      "unit": "rp/jam"
+    },
+    {
+      "confidence": "HIGH",
+      "detail": "Formula variable F (insurance etc.); unit rp/jam is a PRICE, not a resource unit. Item 4.1.1.1.",
+      "key": "F|rp/jam",
+      "looseCode": "F",
+      "name": "b. Asuransi, dll",
+      "provenance": "DB-sync Fase 1 §1.1 + Fase 2 workbook/component audit: comp_rows.jsonl item 4.1.1.1, coefficient null, count=1",
+      "reason": "PARSING_ARTIFACT",
+      "sourceItem": "4.1.1.1",
+      "unit": "rp/jam"
+    },
+    {
+      "confidence": "HIGH",
+      "detail": "Formula line G = (E+F) (fixed cost per hour); unit rp/jam is a PRICE, not a resource unit. Item 4.1.1.1.",
+      "key": "G|rp/jam",
+      "looseCode": "G",
+      "name": "Biaya Pasti per Jam : G= (E+F)",
+      "provenance": "DB-sync Fase 1 §1.1 + Fase 2 workbook/component audit: comp_rows.jsonl item 4.1.1.1, coefficient null, count=1",
+      "reason": "PARSING_ARTIFACT",
+      "sourceItem": "4.1.1.1",
+      "unit": "rp/jam"
+    },
+    {
+      "confidence": "HIGH",
+      "detail": "Formula variable I (lubricant cost line); unit rp/jam is a PRICE, not a resource unit. Item 4.1.1.1.",
+      "key": "I|rp/jam",
+      "looseCode": "I",
+      "name": "Pelumas",
+      "provenance": "DB-sync Fase 1 §1.1 + Fase 2 workbook/component audit: comp_rows.jsonl item 4.1.1.1, coefficient null, count=1",
+      "reason": "PARSING_ARTIFACT",
+      "sourceItem": "4.1.1.1",
+      "unit": "rp/jam"
+    },
+    {
+      "confidence": "HIGH",
+      "detail": "Formula variable J (workshop cost line); unit rp/jam is a PRICE, not a resource unit. Item 4.1.1.1.",
+      "key": "J|rp/jam",
+      "looseCode": "J",
+      "name": "Biaya Bengkel",
+      "provenance": "DB-sync Fase 1 §1.1 + Fase 2 workbook/component audit: comp_rows.jsonl item 4.1.1.1, coefficient null, count=1",
+      "reason": "PARSING_ARTIFACT",
+      "sourceItem": "4.1.1.1",
+      "unit": "rp/jam"
+    },
+    {
+      "confidence": "HIGH",
+      "detail": "Formula variable K (maintenance/repair cost line); unit rp/jam is a PRICE, not a resource unit. Item 4.1.1.1.",
+      "key": "K|rp/jam",
+      "looseCode": "K",
+      "name": "Perawatan dan peraikan",
+      "provenance": "DB-sync Fase 1 §1.1 + Fase 2 workbook/component audit: comp_rows.jsonl item 4.1.1.1, coefficient null, count=1",
+      "reason": "PARSING_ARTIFACT",
+      "sourceItem": "4.1.1.1",
+      "unit": "rp/jam"
+    },
+    {
+      "confidence": "HIGH",
+      "detail": "Formula variable L (operator-assistant cost line); unit rp/jam is a PRICE, not a resource unit. Item 4.1.1.1. (Not the labor code L.01-L.04 space.)",
+      "key": "L|rp/jam",
+      "looseCode": "L",
+      "name": "Pembantu Operator",
+      "provenance": "DB-sync Fase 1 §1.1 + Fase 2 workbook/component audit: comp_rows.jsonl item 4.1.1.1, coefficient null, count=1",
+      "reason": "PARSING_ARTIFACT",
+      "sourceItem": "4.1.1.1",
+      "unit": "rp/jam"
+    },
+    {
+      "confidence": "HIGH",
+      "detail": "Formula variable M (operator cost line); unit rp/jam is a PRICE, not a resource unit. Item 4.1.1.1. (Not the material code M* space.)",
+      "key": "M|rp/jam",
+      "looseCode": "M",
+      "name": "Operator",
+      "provenance": "DB-sync Fase 1 §1.1 + Fase 2 workbook/component audit: comp_rows.jsonl item 4.1.1.1, coefficient null, count=1",
+      "reason": "PARSING_ARTIFACT",
+      "sourceItem": "4.1.1.1",
+      "unit": "rp/jam"
+    },
+    {
+      "confidence": "HIGH",
+      "detail": "Formula variable Mp (lubricant consumption, liter) of the hourly-cost calculation in item 4.1.1.1, not a priced resource row.",
+      "key": "MP|liter",
+      "looseCode": "MP",
+      "name": "Minyak Pelumas",
+      "provenance": "DB-sync Fase 1 §1.1 + Fase 2 workbook/component audit: comp_rows.jsonl item 4.1.1.1, coefficient null, count=1",
+      "reason": "PARSING_ARTIFACT",
+      "sourceItem": "4.1.1.1",
+      "unit": "liter"
+    },
+    {
+      "confidence": "HIGH",
+      "detail": "Formula variable P (operating cost per hour); unit rp/jam is a PRICE, not a resource unit. Item 4.1.1.1.",
+      "key": "P|rp/jam",
+      "looseCode": "P",
+      "name": "Biaya Operasi (per jam)",
+      "provenance": "DB-sync Fase 1 §1.1 + Fase 2 workbook/component audit: comp_rows.jsonl item 4.1.1.1, coefficient null, count=1",
+      "reason": "PARSING_ARTIFACT",
+      "sourceItem": "4.1.1.1",
+      "unit": "rp/jam"
+    },
+    {
+      "confidence": "HIGH",
+      "detail": "Formula variable W (operating hours in 1 year, name truncated 'Tahu[n]'); filed as labor so 'jam' collapsed to OJ. Item 4.1.1.1.",
+      "key": "W|OJ",
+      "looseCode": "W",
+      "name": "Jam Operasional Dalam 1 Tahu",
+      "provenance": "DB-sync Fase 1 §1.1 + Fase 2 workbook/component audit: comp_rows.jsonl item 4.1.1.1, coefficient null, count=1",
+      "reason": "PARSING_ARTIFACT",
+      "sourceItem": "4.1.1.1",
+      "unit": "OJ"
+    }
+  ],
+  "version": "2026.1"
+}

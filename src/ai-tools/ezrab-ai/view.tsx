@@ -64,6 +64,7 @@ import {
   type AiExecutionHandle, type AiExecutionRecord, type ExecutionStage,
 } from './executionRuntime';
 import { mapDirectRabPushItems } from './directRabPush';
+import { extractAhspCodesFromAnswer, parseRequestedQuantity, buildAnswerTransfer, findPrecedingUserText } from './chatAnswerTransfer';
 import { detectHandoffNeed, HANDOFF_CHOICE_CHAT, HANDOFF_CHOICE_STAY } from './magicHandoff';
 import { structuredAiError, logAiDiagnostic, type AiErrorCode } from './aiErrorCodes';
 import { buildFinalizationKey } from '../ded-ai-estimate/finalizationKey';
@@ -2781,6 +2782,104 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     );
   };
 
+  /* ---------- Live fix 2026-11-15 (workstream 3): transfer jawaban AHSP ---------- */
+  /**
+   * Push item AHSP teratas dari SATU jawaban asisten ke Spreadsheet RAB
+   * proyek aktif. Menutup temuan uji live Magic AI → 'Lanjutkan di Chat
+   * AI': jawaban model berupa teks hasil pencarian AHSP tidak punya
+   * jalur apa pun ke spreadsheet (hanya tombol salin; draft universal
+   * tidak terbentuk dari pertanyaan harga bebas).
+   *
+   * Pola sama dengan pushDirectRabToSpreadsheet di atas: konfirmasi
+   * implisit lewat klik tombol, dedup berdasarkan kode, penyisipan
+   * lewat insertRabItemsVerified yang sama. Keputusan (kode + volume +
+   * harga) seluruhnya di chatAnswerTransfer (modul murni, dites) —
+   * handler ini hanya wiring React/store:
+   * - kode dari format kanonis jawaban; harga di-resolve ulang dari
+   *   resolver resmi (bukan angka di teks jawaban);
+   * - volume dari pesan pengguna sebelumnya; tanpa volume → diblokir
+   *   dengan pesan jelas (tidak pernah dikarang);
+   * - hanya item TERATAS yang ditransfer (item jawaban adalah alternatif
+   *   berperingkat, bukan satu set RAB — varian lain dilaporkan, bukan
+   *   ikut ditransfer).
+   */
+  const pushAnswerItemsToSpreadsheet = (msgIndex: number) => {
+    const appendMsg = (content: string, actions?: ChatActionButton[], isError = false) => {
+      const entry: ChatEntry = { role: 'assistant', content, ts: Date.now(), actions, isError };
+      setMessages((prev) => [...prev, entry]);
+      persistMessage('assistant', content);
+    };
+    const msg = messages[msgIndex];
+    if (!msg) return;
+    const codes = extractAhspCodesFromAnswer(msg.content);
+    if (codes.length === 0) return;
+    if (!effProject) {
+      appendMsg(`Tidak ada proyek aktif. Buat atau buka proyek dulu di menu Proyek, lalu klik "Tambah ke Spreadsheet" lagi. (Kode: ${structuredAiError('ACTIVE_PROJECT_NOT_FOUND').code})`, undefined, true);
+      return;
+    }
+    const quantity = parseRequestedQuantity(findPrecedingUserText(messages, msgIndex));
+    if (!quantity) {
+      appendMsg(
+        `Volume belum terbaca dari pertanyaan Anda — item teratas jawaban ini adalah [${codes[0]}]. Sebutkan volumenya (mis. "10 m2") lalu klik "Tambah ke Spreadsheet" lagi. Volume tidak pernah dikarang.`,
+        undefined,
+        true,
+      );
+      return;
+    }
+    const plan = buildAnswerTransfer(codes, quantity);
+    if (plan.items.length === 0) {
+      const reasons: string[] = [];
+      if (plan.unknownCodes.length > 0) reasons.push(`kode ${plan.unknownCodes.join(', ')} tidak ditemukan di katalog AHSP 2026 resmi`);
+      if (plan.unitMismatchCodes.length > 0) reasons.push(`satuan ${plan.unitMismatchCodes.join(', ')} tidak cocok dengan volume ${quantity.volume} ${quantity.unit} (tanpa konversi diam-diam)`);
+      appendMsg(`Tidak ada item yang dapat ditransfer${reasons.length > 0 ? `: ${reasons.join('; ')}` : '.'}`, undefined, true);
+      return;
+    }
+    const existingCodes = new Set(
+      ((projectRabItems || []) as Array<{ code?: string }>).map((i) => i.code).filter(Boolean) as string[]
+    );
+    const newItems = plan.items.filter((p) => !existingCodes.has(p.code));
+    const dupCount = plan.items.length - newItems.length;
+    if (newItems.length === 0) {
+      appendMsg(`Item [${plan.topCode}] sudah ada di Spreadsheet RAB proyek "${effProject.name}" (duplikat dicegah).`, [
+        { label: 'Buka Spreadsheet RAB', action: { kind: 'navigate', menu: 'rab-estimasi' } },
+      ]);
+      return;
+    }
+    const res = insertRabItemsVerified(newItems, effProject.id, {
+      draftId: `chat-answer-${msgIndex}`,
+      operation: 'push-chat-answer-items',
+      finalizationKey: buildFinalizationKey(effProject.id, newItems as never),
+    });
+    if (res.duplicateBlocked && res.inserted === 0) {
+      appendMsg(
+        `${structuredAiError('DUPLICATE_TRANSFER_BLOCKED').message} Item [${plan.topCode}] ini sudah ada di Spreadsheet RAB proyek "${effProject.name}". (Kode: DUPLICATE_TRANSFER_BLOCKED)`,
+        [{ label: 'Buka Spreadsheet RAB', action: { kind: 'navigate', menu: 'rab-estimasi' } }],
+      );
+      return;
+    }
+    if (!res.verified) {
+      appendMsg(
+        res.inserted > 0
+          ? `Transfer parsial: ${res.inserted} dari ${res.total} item terverifikasi masuk ke Spreadsheet RAB proyek "${effProject.name}" — sisanya belum. Klik "Tambah ke Spreadsheet" lagi untuk melanjutkan; item yang sudah masuk tidak akan digandakan. (Kode: ${res.errorCode})`
+          : `${structuredAiError(res.errorCode ?? 'SPREADSHEET_TRANSFER_FAILED').message} (Kode: ${res.errorCode})`,
+        undefined,
+        true,
+      );
+      return;
+    }
+    const added = res.records;
+    const first = newItems[0];
+    appendMsg(
+      `✅ Item [${plan.topCode}] ${first.description.replace(/^\[Chat AI\] /, '')} — ${first.volume} ${first.unit} — berhasil ditambahkan ke Spreadsheet RAB proyek "${effProject.name}" (terverifikasi tersimpan).` +
+        (dupCount > 0 ? ` ${dupCount} item dilewati karena sudah ada.` : '') +
+        ` Harga ikut ter-push: ${added.filter((a) => a.priceStatus === 'PRICE_RESOLVED').length} resmi AHSP, ${added.filter((a) => a.priceStatus === 'PRICE_ESTIMATED').length} estimasi (perlu verifikasi, bukan harga resmi), ${added.filter((a) => a.priceStatus === 'PRICE_UNRESOLVED').length} belum berharga.` +
+        (plan.skippedAlternatives > 0 ? ` ${plan.skippedAlternatives} varian lain di jawaban tidak ikut — hanya item teratas yang ditransfer; bila ingin varian lain (mis. rasio 1:4), sebutkan spesifikasinya.` : '') +
+        (plan.unknownCodes.length > 0 ? ` Kode ${plan.unknownCodes.join(', ')} dilewati (tidak ditemukan di katalog).` : '') +
+        (plan.unitMismatchCodes.length > 0 ? ` Kode ${plan.unitMismatchCodes.join(', ')} dilewati (satuan tidak cocok dengan ${quantity.volume} ${quantity.unit}).` : ''),
+      [{ label: 'Buka Spreadsheet RAB', action: { kind: 'navigate', menu: 'rab-estimasi' } }]
+    );
+  };
+
   /* ---------- Universal Direct RAB: preview transfer + konfirmasi ---------- */
   /**
    * Preview transfer draft universal: hitungan dan daftar perbaikan TANPA
@@ -4244,6 +4343,21 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
                       <button className="ezchat2-copy" onClick={() => copyMsgMarkdown(i, m.content)} title="Salin sebagai Markdown (sumber)" aria-label="Salin jawaban sebagai Markdown">
                         {copiedMdIdx === i ? <Check size={13} /> : <FileText size={13} />}
                       </button>
+                      {/* Live fix 2026-11-15 (workstream 3): jawaban berisi
+                          item AHSP (format kanonis) mendapat aksi transfer
+                          eksplisit ke Spreadsheet — sebelumnya hanya ada
+                          tombol salin dan tidak ada jalur ke spreadsheet. */}
+                      {extractAhspCodesFromAnswer(m.content).length > 0 && (
+                        <button
+                          className="ezchat2-copy"
+                          onClick={() => pushAnswerItemsToSpreadsheet(i)}
+                          title="Tambah item AHSP teratas dari jawaban ini ke Spreadsheet RAB proyek aktif"
+                          aria-label="Tambah item AHSP ke Spreadsheet RAB"
+                          style={{ width: 'auto', padding: '0 10px', gap: 5, fontSize: 12, fontWeight: 600 }}
+                        >
+                          <Plus size={13} /> Tambah ke Spreadsheet
+                        </button>
+                      )}
                     </div>
                   </div>
                   {/* Coba Lagi: hanya pada entry error dari pipeline AI

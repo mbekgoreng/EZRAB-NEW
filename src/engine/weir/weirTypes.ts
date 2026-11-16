@@ -6,7 +6,7 @@
  */
 
 import { AHSPDefinition } from '../ahsp/contracts/types';
-import { PriceResolutionOutput } from '../pricing/resolver/advancedPriceResolutionEngine';
+import { PriceResolutionOutput } from '../pricing/resolver/priceResolutionTypes';
 import { WorkItemCostOutput } from '../cost/centralDeterministicCostEngine';
 
 // ── INPUTS ──────────────────────────────────────────────────────────────

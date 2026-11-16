@@ -1,88 +1,95 @@
 {
-  "generatedAt": "2026-09-28T13:00:42.825Z",
-  "aliasRules": 0,
-  "activePriceRows": 6855,
-  "matchedRows": 309,
-  "unmatchedRows": 6546,
-  "matchRate": 4.51,
+  "generatedAt": "2026-11-16T02:57:03.877Z",
+  "aliasRules": 4,
+  "hardening": {
+    "rosterAliasBindings": 34,
+    "codeMatchDisabledRows": 190,
+    "quarantinedComponentKeys": 14,
+    "rosterAliasesLoaded": 909,
+    "rosterEntriesWithAliases": 122
+  },
+  "activePriceRows": 9890,
+  "matchedRows": 452,
+  "unmatchedRows": 9438,
+  "matchRate": 4.57,
   "matchMethodHistogram": {
-    "UNMATCHED": 6546,
-    "NAME_UNIT": 294,
-    "EXACT_CODE": 12,
-    "NORMALIZED_CODE_UNIT": 3
+    "UNMATCHED": 9438,
+    "NAME_UNIT": 439,
+    "EXACT_CODE": 9,
+    "ALIAS": 4
   },
   "perSource": [
     {
       "key": "HSD_2026",
       "tier": "OFFICIAL_GOVERNMENT",
       "rows": 231,
-      "matched": 76,
-      "unmatched": 155
+      "matched": 74,
+      "unmatched": 157
     },
     {
       "key": "LABOR_2026",
       "tier": "VERIFIED_REGIONAL",
       "rows": 170,
-      "matched": 30,
-      "unmatched": 140
+      "matched": 29,
+      "unmatched": 141
     },
     {
       "key": "EQUIPMENT_2026",
       "tier": "VERIFIED_REGIONAL",
       "rows": 74,
-      "matched": 15,
-      "unmatched": 59
+      "matched": 22,
+      "unmatched": 52
     },
     {
       "key": "MATERIAL_MASTER_2026",
       "tier": "PROJECT_INTERNAL_MASTER",
-      "rows": 6197,
-      "matched": 162,
-      "unmatched": 6035
+      "rows": 9232,
+      "matched": 310,
+      "unmatched": 8922
     },
     {
       "key": "MATERIAL_LIBRARY",
       "tier": "COMMERCIAL_REFERENCE",
       "rows": 28,
-      "matched": 1,
-      "unmatched": 27
+      "matched": 0,
+      "unmatched": 28
     },
     {
       "key": "COMMERCIAL_2026",
       "tier": "COMMERCIAL_REFERENCE",
       "rows": 155,
-      "matched": 25,
-      "unmatched": 130
+      "matched": 17,
+      "unmatched": 138
     }
   ],
   "componentKeyCoverage": {
-    "distinctComponentKeys": 782,
-    "keysWithPrice": 71,
-    "coveragePercent": 9.08,
+    "distinctComponentKeys": 791,
+    "keysWithPrice": 121,
+    "coveragePercent": 15.3,
     "perType": {
       "material": {
-        "total": 642,
-        "priced": 40,
-        "coveragePercent": 6.23
+        "total": 651,
+        "priced": 86,
+        "coveragePercent": 13.21
       },
       "labor": {
-        "total": 22,
+        "total": 19,
         "priced": 10,
-        "coveragePercent": 45.45
+        "coveragePercent": 52.63
       },
       "equipment": {
-        "total": 118,
-        "priced": 21,
-        "coveragePercent": 17.8
+        "total": 121,
+        "priced": 25,
+        "coveragePercent": 20.66
       }
     }
   },
   "ahspCoverage": {
     "total": 5801,
-    "full": 1235,
-    "partial": 3488,
-    "missing": 113,
-    "noPriceableComponents": 965,
+    "full": 58,
+    "partial": 2237,
+    "missing": 2726,
+    "noPriceableComponents": 780,
     "byDomain": {
       "SMKK": {
         "full": 0,
@@ -95,27 +102,31 @@
         "missing": 402
       },
       "BINA_MARGA": {
-        "full": 1,
+        "full": 2,
         "partial": 964,
-        "missing": 198
+        "missing": 197
       },
       "CIPTA_KARYA": {
-        "full": 1205,
-        "partial": 1399,
-        "missing": 255
+        "full": 27,
+        "partial": 148,
+        "missing": 2684
       }
     }
   },
   "verification": {
-    "NEEDS_REVIEW": 294,
-    "SOURCE_REPORTED": 4,
-    "VERIFIED": 11
+    "NEEDS_REVIEW": 439,
+    "VERIFIED": 13
+  },
+  "unresolvedComponentKeys": {
+    "count": 670,
+    "quarantinedArtifact": 14,
+    "noSourcePrice": 656
   },
   "duplicates": {
-    "exactDuplicateGroups": 31,
+    "exactDuplicateGroups": 50,
     "samples": [
       {
-        "identity": "RES-001231|kg|NATIONAL|||2026-Q1|COMMERCIAL_2026",
+        "identity": "RES-001237|kg|NATIONAL|||2026-Q1|COMMERCIAL_2026",
         "count": 6,
         "ids": [
           "PRC-COMMERCIAL_2026-0cxyva6t",
@@ -127,57 +138,32 @@
         ]
       },
       {
-        "identity": "RES-000471|jam|NATIONAL|||2026-Q1|COMMERCIAL_2026",
-        "count": 2,
-        "ids": [
-          "PRC-COMMERCIAL_2026-0enbxcis",
-          "PRC-COMMERCIAL_2026-0z1w28es"
-        ]
-      },
-      {
-        "identity": "RES-001286|OH|NATIONAL|||2026-Q1|COMMERCIAL_2026",
-        "count": 2,
+        "identity": "RES-001293|OH|NATIONAL|||2026-Q1|COMMERCIAL_2026",
+        "count": 3,
         "ids": [
           "PRC-COMMERCIAL_2026-0ewot5mr",
+          "PRC-COMMERCIAL_2026-10g45knr",
           "PRC-COMMERCIAL_2026-1vnbgs4r"
         ]
       },
       {
-        "identity": "RES-001287|OH|NATIONAL|||2026-Q1|COMMERCIAL_2026",
-        "count": 3,
+        "identity": "RES-001294|OH|NATIONAL|||2026-Q1|COMMERCIAL_2026",
+        "count": 2,
         "ids": [
           "PRC-COMMERCIAL_2026-0iv8lp5r",
-          "PRC-COMMERCIAL_2026-10g45knr",
           "PRC-COMMERCIAL_2026-1gu6tuar"
         ]
       },
       {
-        "identity": "RES-001272|OH|NATIONAL|||2026-Q1|COMMERCIAL_2026",
+        "identity": "RES-000423|jam|NATIONAL|||2026-01|EQUIPMENT_2026",
         "count": 2,
-        "ids": [
-          "PRC-COMMERCIAL_2026-0pljb6cr",
-          "PRC-COMMERCIAL_2026-0sj0khlr"
-        ]
-      },
-      {
-        "identity": "RES-001396|OH|NATIONAL|||2026-Q1|COMMERCIAL_2026",
-        "count": 2,
-        "ids": [
-          "PRC-COMMERCIAL_2026-137v2ibr",
-          "PRC-COMMERCIAL_2026-165cbtkr"
-        ]
-      },
-      {
-        "identity": "RES-000471|jam|NATIONAL|||2026-01|EQUIPMENT_2026",
-        "count": 3,
         "ids": [
           "PRC-EQUIPMENT_2026-0akyorvs",
-          "PRC-EQUIPMENT_2026-0z1vai5s",
-          "PRC-EQUIPMENT_2026-1rl4d2ts"
+          "PRC-EQUIPMENT_2026-0z1vai5s"
         ]
       },
       {
-        "identity": "RES-001231|kg|NATIONAL|||2026-Q1|HSD_2026",
+        "identity": "RES-001237|kg|NATIONAL|||2026-Q1|HSD_2026",
         "count": 2,
         "ids": [
           "PRC-HSD_2026-0089lags",
@@ -185,7 +171,7 @@
         ]
       },
       {
-        "identity": "RES-002763|kg|NATIONAL|||2026-Q1|HSD_2026",
+        "identity": "RES-003513|kg|NATIONAL|||2026-Q1|HSD_2026",
         "count": 2,
         "ids": [
           "PRC-HSD_2026-057vx29s",
@@ -193,7 +179,7 @@
         ]
       },
       {
-        "identity": "RES-003640|m3|NATIONAL|||2026-Q1|HSD_2026",
+        "identity": "RES-004739|m3|NATIONAL|||2026-Q1|HSD_2026",
         "count": 3,
         "ids": [
           "PRC-HSD_2026-06h7jtgs",
@@ -202,7 +188,7 @@
         ]
       },
       {
-        "identity": "RES-001397|OJ|NATIONAL|||2026-Q1|HSD_2026",
+        "identity": "RES-001403|OJ|NATIONAL|||2026-Q1|HSD_2026",
         "count": 7,
         "ids": [
           "PRC-HSD_2026-06q2o90s",
@@ -215,7 +201,7 @@
         ]
       },
       {
-        "identity": "RES-002976|kg|NATIONAL|||2026-Q1|HSD_2026",
+        "identity": "RES-003594|kg|NATIONAL|||2026-Q1|HSD_2026",
         "count": 5,
         "ids": [
           "PRC-HSD_2026-09qb7pbs",
@@ -226,7 +212,7 @@
         ]
       },
       {
-        "identity": "RES-001293|OJ|NATIONAL|||2026-Q1|HSD_2026",
+        "identity": "RES-001300|OJ|NATIONAL|||2026-Q1|HSD_2026",
         "count": 3,
         "ids": [
           "PRC-HSD_2026-0bvfcees",
@@ -235,23 +221,7 @@
         ]
       },
       {
-        "identity": "RES-001217|liter|NATIONAL|||2026-Q1|HSD_2026",
-        "count": 2,
-        "ids": [
-          "PRC-HSD_2026-0jdp8j2v",
-          "PRC-HSD_2026-0os7m3zv"
-        ]
-      },
-      {
-        "identity": "RES-001354|OJ|NATIONAL|||2026-Q1|HSD_2026",
-        "count": 2,
-        "ids": [
-          "PRC-HSD_2026-0y4gjajs",
-          "PRC-HSD_2026-1pd41yhs"
-        ]
-      },
-      {
-        "identity": "RES-000471|jam|NATIONAL|||2026-Q1|HSD_2026",
+        "identity": "RES-000423|jam|NATIONAL|||2026-Q1|HSD_2026",
         "count": 2,
         "ids": [
           "PRC-HSD_2026-12rqckct",
@@ -259,60 +229,172 @@
         ]
       },
       {
-        "identity": "RES-001629|kg|NATIONAL|||2026-Q1|HSD_2026",
-        "count": 2,
-        "ids": [
-          "PRC-HSD_2026-1e1se1qs",
-          "PRC-HSD_2026-1ro45dps"
-        ]
-      },
-      {
-        "identity": "RES-001397|OJ|NATIONAL|||2026-01|LABOR_2026",
-        "count": 13,
+        "identity": "RES-001403|OJ|NATIONAL|||2026-01|LABOR_2026",
+        "count": 10,
         "ids": [
           "PRC-LABOR_2026-0105qp6v",
-          "PRC-LABOR_2026-012vzcpv",
-          "PRC-LABOR_2026-0639og1v",
           "PRC-LABOR_2026-0d5wxecr",
-          "PRC-LABOR_2026-0ityohfv",
           "PRC-LABOR_2026-0j4juv9v",
           "PRC-LABOR_2026-0txkm13v",
-          "PRC-LABOR_2026-0vtssitv",
-          "PRC-LABOR_2026-0yeve2ov",
           "PRC-LABOR_2026-0zkjeciv",
+          "PRC-LABOR_2026-1fc27bsv",
           "PRC-LABOR_2026-1hb9quhv",
           "PRC-LABOR_2026-1k3uxhwv",
+          "PRC-LABOR_2026-1oh6mjov",
           "PRC-LABOR_2026-1u8adz1v"
         ]
       },
       {
-        "identity": "RES-001287|OH|NATIONAL|||2026-01|LABOR_2026",
-        "count": 4,
+        "identity": "RES-001282|OJ|NATIONAL|||2026-01|LABOR_2026",
+        "count": 5,
         "ids": [
-          "PRC-LABOR_2026-0fhzxyav",
-          "PRC-LABOR_2026-1cp2g1iv",
-          "PRC-LABOR_2026-1gu6241r",
-          "PRC-LABOR_2026-1se5go4v"
+          "PRC-LABOR_2026-012vzcpv",
+          "PRC-LABOR_2026-0639og1v",
+          "PRC-LABOR_2026-0vtssitv",
+          "PRC-LABOR_2026-0yeve2ov",
+          "PRC-LABOR_2026-1ykp81hr"
         ]
       },
       {
-        "identity": "RES-001293|OJ|NATIONAL|||2026-01|LABOR_2026",
+        "identity": "RES-001466|OJ|NATIONAL|||2026-01|LABOR_2026",
+        "count": 2,
+        "ids": [
+          "PRC-LABOR_2026-0f7ku7pv",
+          "PRC-LABOR_2026-0ityohfv"
+        ]
+      },
+      {
+        "identity": "RES-001303|OH|NATIONAL|||2026-01|LABOR_2026",
         "count": 4,
         "ids": [
-          "PRC-LABOR_2026-0mn52nsv",
-          "PRC-LABOR_2026-0qs8oqbr",
-          "PRC-LABOR_2026-12c83aev",
-          "PRC-LABOR_2026-1oh6mjov"
+          "PRC-LABOR_2026-0plijg3r",
+          "PRC-LABOR_2026-0r4tcqfv",
+          "PRC-LABOR_2026-1lvq5wjv",
+          "PRC-LABOR_2026-1ogsrgev"
+        ]
+      },
+      {
+        "identity": "RES-001302|OH|NATIONAL|||2026-01|LABOR_2026",
+        "count": 2,
+        "ids": [
+          "PRC-LABOR_2026-0w571trv",
+          "PRC-LABOR_2026-137uas2r"
+        ]
+      },
+      {
+        "identity": "RES-001294|OH|NATIONAL|||2026-01|LABOR_2026",
+        "count": 2,
+        "ids": [
+          "PRC-LABOR_2026-1cp2g1iv",
+          "PRC-LABOR_2026-1gu6241r"
+        ]
+      },
+      {
+        "identity": "RES-001237|kg|PROVINCE|DKI Jakarta||2026-01|MATERIAL_MASTER_2026",
+        "count": 72,
+        "ids": [
+          "PRC-MATERIAL_MASTER_2026-002w2741j",
+          "PRC-MATERIAL_MASTER_2026-018y5ro1j",
+          "PRC-MATERIAL_MASTER_2026-023wywl1j",
+          "PRC-MATERIAL_MASTER_2026-02yvs1i1j",
+          "PRC-MATERIAL_MASTER_2026-03tul6f1j",
+          "PRC-MATERIAL_MASTER_2026-04359xe1j",
+          "PRC-MATERIAL_MASTER_2026-04y432b1j",
+          "PRC-MATERIAL_MASTER_2026-05t2w781j",
+          "PRC-MATERIAL_MASTER_2026-06o1pc51j",
+          "PRC-MATERIAL_MASTER_2026-07u3swp1j",
+          "PRC-MATERIAL_MASTER_2026-08p2m1m1j",
+          "PRC-MATERIAL_MASTER_2026-09k1f6j1j",
+          "PRC-MATERIAL_MASTER_2026-0af08bg1j",
+          "PRC-MATERIAL_MASTER_2026-0b8y4hp1j",
+          "PRC-MATERIAL_MASTER_2026-0c3wxmm1j",
+          "PRC-MATERIAL_MASTER_2026-0cyvqrj1j",
+          "PRC-MATERIAL_MASTER_2026-0gz4yht1j",
+          "PRC-MATERIAL_MASTER_2026-0hu3rmq1j",
+          "PRC-MATERIAL_MASTER_2026-0ip2krn1j",
+          "PRC-MATERIAL_MASTER_2026-0jk1dwk1j",
+          "PRC-MATERIAL_MASTER_2026-0kq3hh41j",
+          "PRC-MATERIAL_MASTER_2026-0ll2am11j",
+          "PRC-MATERIAL_MASTER_2026-0mg13qy1j",
+          "PRC-MATERIAL_MASTER_2026-0nazwvv1j",
+          "PRC-MATERIAL_MASTER_2026-0o4xt241j",
+          "PRC-MATERIAL_MASTER_2026-0ozwm711j",
+          "PRC-MATERIAL_MASTER_2026-0puvfby1j",
+          "PRC-MATERIAL_MASTER_2026-0rb94m51j",
+          "PRC-MATERIAL_MASTER_2026-0s67xr21j",
+          "PRC-MATERIAL_MASTER_2026-0t16qvz1j",
+          "PRC-MATERIAL_MASTER_2026-0tw5k0w1j",
+          "PRC-MATERIAL_MASTER_2026-0uq3g751j",
+          "PRC-MATERIAL_MASTER_2026-0vl29c21j",
+          "PRC-MATERIAL_MASTER_2026-0wg12gz1j",
+          "PRC-MATERIAL_MASTER_2026-0xm361j1j",
+          "PRC-MATERIAL_MASTER_2026-0yh1z6g1j",
+          "PRC-MATERIAL_MASTER_2026-0zc0sbd1j",
+          "PRC-MATERIAL_MASTER_2026-106zlga1j",
+          "PRC-MATERIAL_MASTER_2026-110xhmj1j",
+          "PRC-MATERIAL_MASTER_2026-11vwarg1j",
+          "PRC-MATERIAL_MASTER_2026-12qv3wd1j",
+          "PRC-MATERIAL_MASTER_2026-1478t6k1j",
+          "PRC-MATERIAL_MASTER_2026-1527mbh1j",
+          "PRC-MATERIAL_MASTER_2026-15x6fge1j",
+          "PRC-MATERIAL_MASTER_2026-16s58lb1j",
+          "PRC-MATERIAL_MASTER_2026-17m34rk1j",
+          "PRC-MATERIAL_MASTER_2026-18h1xwh1j",
+          "PRC-MATERIAL_MASTER_2026-19c0r1e1j",
+          "PRC-MATERIAL_MASTER_2026-1ai2uly1j",
+          "PRC-MATERIAL_MASTER_2026-1bd1nqv1j",
+          "PRC-MATERIAL_MASTER_2026-1c80gvs1j",
+          "PRC-MATERIAL_MASTER_2026-1d2za0p1j",
+          "PRC-MATERIAL_MASTER_2026-1dwx66y1j",
+          "PRC-MATERIAL_MASTER_2026-1ervzbv1j",
+          "PRC-MATERIAL_MASTER_2026-1fmusgs1j",
+          "PRC-MATERIAL_MASTER_2026-1h38hqz1j",
+          "PRC-MATERIAL_MASTER_2026-1hy7avw1j",
+          "PRC-MATERIAL_MASTER_2026-1it640t1j",
+          "PRC-MATERIAL_MASTER_2026-1jo4x5q1j",
+          "PRC-MATERIAL_MASTER_2026-1ki2tbz1j",
+          "PRC-MATERIAL_MASTER_2026-1ld1mgw1j",
+          "PRC-MATERIAL_MASTER_2026-1m80flt1j",
+          "PRC-MATERIAL_MASTER_2026-1ne2j6d1j",
+          "PRC-MATERIAL_MASTER_2026-1o91cba1j",
+          "PRC-MATERIAL_MASTER_2026-1p405g71j",
+          "PRC-MATERIAL_MASTER_2026-1pyyyl41j",
+          "PRC-MATERIAL_MASTER_2026-1tz86be1j",
+          "PRC-MATERIAL_MASTER_2026-1uu6zgb1j",
+          "PRC-MATERIAL_MASTER_2026-1vp5sl81j",
+          "PRC-MATERIAL_MASTER_2026-1wk4lq51j",
+          "PRC-MATERIAL_MASTER_2026-1xe2hwe1j",
+          "PRC-MATERIAL_MASTER_2026-1y91b1b1j"
+        ]
+      },
+      {
+        "identity": "RES-001816|kg|PROVINCE|DKI Jakarta||2026-09|MATERIAL_MASTER_2026",
+        "count": 4,
+        "ids": [
+          "PRC-MATERIAL_MASTER_2026-00pqbn61n",
+          "PRC-MATERIAL_MASTER_2026-0k6vncm1n",
+          "PRC-MATERIAL_MASTER_2026-0x2vbx11n",
+          "PRC-MATERIAL_MASTER_2026-1muup1v1n"
+        ]
+      },
+      {
+        "identity": "RES-003523|lembar|PROVINCE|DKI Jakarta||2026-09|MATERIAL_MASTER_2026",
+        "count": 4,
+        "ids": [
+          "PRC-MATERIAL_MASTER_2026-01q6dsb1r",
+          "PRC-MATERIAL_MASTER_2026-1kdi2r51r",
+          "PRC-MATERIAL_MASTER_2026-1mgupyi1r",
+          "PRC-MATERIAL_MASTER_2026-1ynxsk21r"
         ]
       }
     ]
   },
   "conflicts": {
-    "conflictGroups": 29,
+    "conflictGroups": 50,
     "samples": [
       {
-        "identity": "RES-000857|jam|NATIONAL|||2026-Q1",
-        "resourceId": "RES-000857",
+        "identity": "RES-000748|jam|NATIONAL|||2026-Q1",
+        "resourceId": "RES-000748",
         "resourceCode": "E13",
         "resourceName": "Motor Grader",
         "unit": "jam",
@@ -343,8 +425,8 @@
         "preferred": "HSD_2026"
       },
       {
-        "identity": "RES-001231|kg|NATIONAL|||2026-Q1",
-        "resourceId": "RES-001231",
+        "identity": "RES-001237|kg|NATIONAL|||2026-Q1",
+        "resourceId": "RES-001237",
         "resourceCode": "M57a",
         "resourceName": "Besi Beton",
         "unit": "kg",
@@ -417,8 +499,79 @@
         "preferred": "HSD_2026"
       },
       {
-        "identity": "RES-000471|jam|NATIONAL|||2026-Q1",
-        "resourceId": "RES-000471",
+        "identity": "RES-001293|OH|NATIONAL|||2026-Q1",
+        "resourceId": "RES-001293",
+        "resourceCode": "L.04",
+        "resourceName": "Mandor",
+        "unit": "OH",
+        "location": {
+          "level": "NATIONAL",
+          "provinceName": null,
+          "regencyName": null,
+          "cityName": "Jabodetabek"
+        },
+        "period": "2026-Q1",
+        "candidates": [
+          {
+            "price": 210000,
+            "sourceKey": "COMMERCIAL_2026",
+            "sourceName": "EZRAB Master Database 2026",
+            "priority": 6,
+            "tier": "COMMERCIAL_REFERENCE"
+          },
+          {
+            "price": 230000,
+            "sourceKey": "COMMERCIAL_2026",
+            "sourceName": "EZRAB Master Database 2026",
+            "priority": 6,
+            "tier": "COMMERCIAL_REFERENCE"
+          },
+          {
+            "price": 225000,
+            "sourceKey": "COMMERCIAL_2026",
+            "sourceName": "EZRAB Master Database 2026",
+            "priority": 6,
+            "tier": "COMMERCIAL_REFERENCE"
+          }
+        ],
+        "resolution": "SOURCE_PRIORITY",
+        "preferred": "COMMERCIAL_2026"
+      },
+      {
+        "identity": "RES-001294|OH|NATIONAL|||2026-Q1",
+        "resourceId": "RES-001294",
+        "resourceCode": "L.01",
+        "resourceName": "Pekerja",
+        "unit": "OH",
+        "location": {
+          "level": "NATIONAL",
+          "provinceName": null,
+          "regencyName": null,
+          "cityName": "Jabodetabek"
+        },
+        "period": "2026-Q1",
+        "candidates": [
+          {
+            "price": 150000,
+            "sourceKey": "COMMERCIAL_2026",
+            "sourceName": "EZRAB Master Database 2026",
+            "priority": 6,
+            "tier": "COMMERCIAL_REFERENCE"
+          },
+          {
+            "price": 130000,
+            "sourceKey": "COMMERCIAL_2026",
+            "sourceName": "EZRAB Master Database 2026",
+            "priority": 6,
+            "tier": "COMMERCIAL_REFERENCE"
+          }
+        ],
+        "resolution": "SOURCE_PRIORITY",
+        "preferred": "COMMERCIAL_2026"
+      },
+      {
+        "identity": "RES-000423|jam|NATIONAL|||2026-Q1",
+        "resourceId": "RES-000423",
         "resourceCode": "E10",
         "resourceName": "Excavator",
         "unit": "jam",
@@ -445,13 +598,6 @@
             "tier": "OFFICIAL_GOVERNMENT"
           },
           {
-            "price": 450000,
-            "sourceKey": "COMMERCIAL_2026",
-            "sourceName": "EZRAB Master Database 2026",
-            "priority": 6,
-            "tier": "COMMERCIAL_REFERENCE"
-          },
-          {
             "price": 285000,
             "sourceKey": "COMMERCIAL_2026",
             "sourceName": "EZRAB Master Database 2026",
@@ -463,143 +609,8 @@
         "preferred": "HSD_2026"
       },
       {
-        "identity": "RES-001286|OH|NATIONAL|||2026-Q1",
-        "resourceId": "RES-001286",
-        "resourceCode": "L.04",
-        "resourceName": "Mandor",
-        "unit": "OH",
-        "location": {
-          "level": "NATIONAL",
-          "provinceName": null,
-          "regencyName": null,
-          "cityName": "Jabodetabek"
-        },
-        "period": "2026-Q1",
-        "candidates": [
-          {
-            "price": 210000,
-            "sourceKey": "COMMERCIAL_2026",
-            "sourceName": "EZRAB Master Database 2026",
-            "priority": 6,
-            "tier": "COMMERCIAL_REFERENCE"
-          },
-          {
-            "price": 225000,
-            "sourceKey": "COMMERCIAL_2026",
-            "sourceName": "EZRAB Master Database 2026",
-            "priority": 6,
-            "tier": "COMMERCIAL_REFERENCE"
-          }
-        ],
-        "resolution": "SOURCE_PRIORITY",
-        "preferred": "COMMERCIAL_2026"
-      },
-      {
-        "identity": "RES-001287|OH|NATIONAL|||2026-Q1",
-        "resourceId": "RES-001287",
-        "resourceCode": "L.01",
-        "resourceName": "Pekerja",
-        "unit": "OH",
-        "location": {
-          "level": "NATIONAL",
-          "provinceName": null,
-          "regencyName": null,
-          "cityName": "Jabodetabek"
-        },
-        "period": "2026-Q1",
-        "candidates": [
-          {
-            "price": 150000,
-            "sourceKey": "COMMERCIAL_2026",
-            "sourceName": "EZRAB Master Database 2026",
-            "priority": 6,
-            "tier": "COMMERCIAL_REFERENCE"
-          },
-          {
-            "price": 230000,
-            "sourceKey": "COMMERCIAL_2026",
-            "sourceName": "EZRAB Master Database 2026",
-            "priority": 6,
-            "tier": "COMMERCIAL_REFERENCE"
-          },
-          {
-            "price": 130000,
-            "sourceKey": "COMMERCIAL_2026",
-            "sourceName": "EZRAB Master Database 2026",
-            "priority": 6,
-            "tier": "COMMERCIAL_REFERENCE"
-          }
-        ],
-        "resolution": "SOURCE_PRIORITY",
-        "preferred": "COMMERCIAL_2026"
-      },
-      {
-        "identity": "RES-001272|OH|NATIONAL|||2026-Q1",
-        "resourceId": "RES-001272",
-        "resourceCode": "L.03",
-        "resourceName": "Kepala Tukang",
-        "unit": "OH",
-        "location": {
-          "level": "NATIONAL",
-          "provinceName": null,
-          "regencyName": null,
-          "cityName": "Jabodetabek"
-        },
-        "period": "2026-Q1",
-        "candidates": [
-          {
-            "price": 165000,
-            "sourceKey": "COMMERCIAL_2026",
-            "sourceName": "EZRAB Master Database 2026",
-            "priority": 6,
-            "tier": "COMMERCIAL_REFERENCE"
-          },
-          {
-            "price": 185000,
-            "sourceKey": "COMMERCIAL_2026",
-            "sourceName": "EZRAB Master Database 2026",
-            "priority": 6,
-            "tier": "COMMERCIAL_REFERENCE"
-          }
-        ],
-        "resolution": "SOURCE_PRIORITY",
-        "preferred": "COMMERCIAL_2026"
-      },
-      {
-        "identity": "RES-001396|OH|NATIONAL|||2026-Q1",
-        "resourceId": "RES-001396",
-        "resourceCode": "L.02",
-        "resourceName": "Tukang Pipa",
-        "unit": "OH",
-        "location": {
-          "level": "NATIONAL",
-          "provinceName": null,
-          "regencyName": null,
-          "cityName": "Jabodetabek"
-        },
-        "period": "2026-Q1",
-        "candidates": [
-          {
-            "price": 160000,
-            "sourceKey": "COMMERCIAL_2026",
-            "sourceName": "EZRAB Master Database 2026",
-            "priority": 6,
-            "tier": "COMMERCIAL_REFERENCE"
-          },
-          {
-            "price": 170000,
-            "sourceKey": "COMMERCIAL_2026",
-            "sourceName": "EZRAB Master Database 2026",
-            "priority": 6,
-            "tier": "COMMERCIAL_REFERENCE"
-          }
-        ],
-        "resolution": "SOURCE_PRIORITY",
-        "preferred": "COMMERCIAL_2026"
-      },
-      {
-        "identity": "RES-000118|jam|NATIONAL|||2026-Q1",
-        "resourceId": "RES-000118",
+        "identity": "RES-000112|jam|NATIONAL|||2026-Q1",
+        "resourceId": "RES-000112",
         "resourceCode": "E02",
         "resourceName": "Asphalt Finisher",
         "unit": "jam",
@@ -630,8 +641,8 @@
         "preferred": "HSD_2026"
       },
       {
-        "identity": "RES-000471|jam|NATIONAL|||2026-01",
-        "resourceId": "RES-000471",
+        "identity": "RES-000423|jam|NATIONAL|||2026-01",
+        "resourceId": "RES-000423",
         "resourceCode": "E10",
         "resourceName": "Excavator",
         "unit": "jam",
@@ -656,21 +667,14 @@
             "sourceName": "Master Sewa Alat Berat 2026 (EZRAB)",
             "priority": 3,
             "tier": "VERIFIED_REGIONAL"
-          },
-          {
-            "price": 650000,
-            "sourceKey": "EQUIPMENT_2026",
-            "sourceName": "Master Sewa Alat Berat 2026 (EZRAB)",
-            "priority": 3,
-            "tier": "VERIFIED_REGIONAL"
           }
         ],
         "resolution": "SOURCE_PRIORITY",
         "preferred": "EQUIPMENT_2026"
       },
       {
-        "identity": "RES-002763|kg|NATIONAL|||2026-Q1",
-        "resourceId": "RES-002763",
+        "identity": "RES-003513|kg|NATIONAL|||2026-Q1",
+        "resourceId": "RES-003513",
         "resourceCode": "M279",
         "resourceName": "Mortar",
         "unit": "kg",
@@ -701,8 +705,8 @@
         "preferred": "HSD_2026"
       },
       {
-        "identity": "RES-003640|m3|NATIONAL|||2026-Q1",
-        "resourceId": "RES-003640",
+        "identity": "RES-004739|m3|NATIONAL|||2026-Q1",
+        "resourceId": "RES-004739",
         "resourceCode": "M16a",
         "resourceName": "Sirtu 2 / 3",
         "unit": "m3",
@@ -740,8 +744,8 @@
         "preferred": "HSD_2026"
       },
       {
-        "identity": "RES-001397|OJ|NATIONAL|||2026-Q1",
-        "resourceId": "RES-001397",
+        "identity": "RES-001403|OJ|NATIONAL|||2026-Q1",
+        "resourceId": "RES-001403",
         "resourceCode": "L.02",
         "resourceName": "Tukang",
         "unit": "OJ",
@@ -807,8 +811,8 @@
         "preferred": "HSD_2026"
       },
       {
-        "identity": "RES-002976|kg|NATIONAL|||2026-Q1",
-        "resourceId": "RES-002976",
+        "identity": "RES-003594|kg|NATIONAL|||2026-Q1",
+        "resourceId": "RES-003594",
         "resourceCode": "M12",
         "resourceName": "Semen",
         "unit": "kg",
@@ -860,8 +864,8 @@
         "preferred": "HSD_2026"
       },
       {
-        "identity": "RES-001293|OJ|NATIONAL|||2026-Q1",
-        "resourceId": "RES-001293",
+        "identity": "RES-001300|OJ|NATIONAL|||2026-Q1",
+        "resourceId": "RES-001300",
         "resourceCode": "L.01",
         "resourceName": "Pekerja",
         "unit": "OJ",
@@ -899,72 +903,8 @@
         "preferred": "HSD_2026"
       },
       {
-        "identity": "RES-001354|OJ|NATIONAL|||2026-Q1",
-        "resourceId": "RES-001354",
-        "resourceCode": "L08",
-        "resourceName": "Mekanik",
-        "unit": "OJ",
-        "location": {
-          "level": "NATIONAL",
-          "provinceName": null,
-          "regencyName": null,
-          "cityName": "Nasional / Acuan 2026"
-        },
-        "period": "2026-Q1",
-        "candidates": [
-          {
-            "price": 200000,
-            "sourceKey": "HSD_2026",
-            "sourceName": "Katalog Acuan HSD 2026",
-            "priority": 1,
-            "tier": "OFFICIAL_GOVERNMENT"
-          },
-          {
-            "price": 220000,
-            "sourceKey": "HSD_2026",
-            "sourceName": "Katalog Acuan HSD 2026",
-            "priority": 1,
-            "tier": "OFFICIAL_GOVERNMENT"
-          }
-        ],
-        "resolution": "SOURCE_PRIORITY",
-        "preferred": "HSD_2026"
-      },
-      {
-        "identity": "RES-001629|kg|NATIONAL|||2026-Q1",
-        "resourceId": "RES-001629",
-        "resourceCode": "M170",
-        "resourceName": "Air",
-        "unit": "kg",
-        "location": {
-          "level": "NATIONAL",
-          "provinceName": null,
-          "regencyName": null,
-          "cityName": "Nasional / Acuan 2026"
-        },
-        "period": "2026-Q1",
-        "candidates": [
-          {
-            "price": 28000,
-            "sourceKey": "HSD_2026",
-            "sourceName": "Katalog Acuan HSD 2026",
-            "priority": 1,
-            "tier": "OFFICIAL_GOVERNMENT"
-          },
-          {
-            "price": 30000,
-            "sourceKey": "HSD_2026",
-            "sourceName": "Katalog Acuan HSD 2026",
-            "priority": 1,
-            "tier": "OFFICIAL_GOVERNMENT"
-          }
-        ],
-        "resolution": "SOURCE_PRIORITY",
-        "preferred": "HSD_2026"
-      },
-      {
-        "identity": "RES-001397|OJ|NATIONAL|||2026-01",
-        "resourceId": "RES-001397",
+        "identity": "RES-001403|OJ|NATIONAL|||2026-01",
+        "resourceId": "RES-001403",
         "resourceCode": "L.02",
         "resourceName": "Tukang",
         "unit": "OJ",
@@ -984,28 +924,7 @@
             "tier": "VERIFIED_REGIONAL"
           },
           {
-            "price": 25714,
-            "sourceKey": "LABOR_2026",
-            "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
-            "priority": 3,
-            "tier": "VERIFIED_REGIONAL"
-          },
-          {
             "price": 25000,
-            "sourceKey": "LABOR_2026",
-            "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
-            "priority": 3,
-            "tier": "VERIFIED_REGIONAL"
-          },
-          {
-            "price": 25000,
-            "sourceKey": "LABOR_2026",
-            "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
-            "priority": 3,
-            "tier": "VERIFIED_REGIONAL"
-          },
-          {
-            "price": 33750,
             "sourceKey": "LABOR_2026",
             "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
             "priority": 3,
@@ -1026,21 +945,14 @@
             "tier": "VERIFIED_REGIONAL"
           },
           {
-            "price": 25714,
-            "sourceKey": "LABOR_2026",
-            "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
-            "priority": 3,
-            "tier": "VERIFIED_REGIONAL"
-          },
-          {
-            "price": 26428,
-            "sourceKey": "LABOR_2026",
-            "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
-            "priority": 3,
-            "tier": "VERIFIED_REGIONAL"
-          },
-          {
             "price": 25000,
+            "sourceKey": "LABOR_2026",
+            "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
+            "priority": 3,
+            "tier": "VERIFIED_REGIONAL"
+          },
+          {
+            "price": 33750,
             "sourceKey": "LABOR_2026",
             "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
             "priority": 3,
@@ -1061,6 +973,13 @@
             "tier": "VERIFIED_REGIONAL"
           },
           {
+            "price": 25000,
+            "sourceKey": "LABOR_2026",
+            "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
+            "priority": 3,
+            "tier": "VERIFIED_REGIONAL"
+          },
+          {
             "price": 26428,
             "sourceKey": "LABOR_2026",
             "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
@@ -1072,8 +991,139 @@
         "preferred": "LABOR_2026"
       },
       {
-        "identity": "RES-001287|OH|NATIONAL|||2026-01",
-        "resourceId": "RES-001287",
+        "identity": "RES-001282|OJ|NATIONAL|||2026-01",
+        "resourceId": "RES-001282",
+        "resourceCode": "L10",
+        "resourceName": "Kepala Tukang",
+        "unit": "OJ",
+        "location": {
+          "level": "NATIONAL",
+          "provinceName": null,
+          "regencyName": null,
+          "cityName": null
+        },
+        "period": "2026-01",
+        "candidates": [
+          {
+            "price": 25714,
+            "sourceKey": "LABOR_2026",
+            "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
+            "priority": 3,
+            "tier": "VERIFIED_REGIONAL"
+          },
+          {
+            "price": 25000,
+            "sourceKey": "LABOR_2026",
+            "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
+            "priority": 3,
+            "tier": "VERIFIED_REGIONAL"
+          },
+          {
+            "price": 25714,
+            "sourceKey": "LABOR_2026",
+            "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
+            "priority": 3,
+            "tier": "VERIFIED_REGIONAL"
+          },
+          {
+            "price": 26428,
+            "sourceKey": "LABOR_2026",
+            "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
+            "priority": 3,
+            "tier": "VERIFIED_REGIONAL"
+          },
+          {
+            "price": 28571,
+            "sourceKey": "LABOR_2026",
+            "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
+            "priority": 3,
+            "tier": "VERIFIED_REGIONAL"
+          }
+        ],
+        "resolution": "SOURCE_PRIORITY",
+        "preferred": "LABOR_2026"
+      },
+      {
+        "identity": "RES-001466|OJ|NATIONAL|||2026-01",
+        "resourceId": "RES-001466",
+        "resourceCode": "L.29",
+        "resourceName": "Welding Inspector",
+        "unit": "OJ",
+        "location": {
+          "level": "NATIONAL",
+          "provinceName": null,
+          "regencyName": null,
+          "cityName": null
+        },
+        "period": "2026-01",
+        "candidates": [
+          {
+            "price": 40000,
+            "sourceKey": "LABOR_2026",
+            "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
+            "priority": 3,
+            "tier": "VERIFIED_REGIONAL"
+          },
+          {
+            "price": 33750,
+            "sourceKey": "LABOR_2026",
+            "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
+            "priority": 3,
+            "tier": "VERIFIED_REGIONAL"
+          }
+        ],
+        "resolution": "SOURCE_PRIORITY",
+        "preferred": "LABOR_2026"
+      },
+      {
+        "identity": "RES-001303|OH|NATIONAL|||2026-01",
+        "resourceId": "RES-001303",
+        "resourceCode": "L.03",
+        "resourceName": "Kepala tukang",
+        "unit": "OH",
+        "location": {
+          "level": "NATIONAL",
+          "provinceName": null,
+          "regencyName": null,
+          "cityName": null
+        },
+        "period": "2026-01",
+        "candidates": [
+          {
+            "price": 200000,
+            "sourceKey": "LABOR_2026",
+            "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
+            "priority": 3,
+            "tier": "VERIFIED_REGIONAL"
+          },
+          {
+            "price": 180000,
+            "sourceKey": "LABOR_2026",
+            "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
+            "priority": 3,
+            "tier": "VERIFIED_REGIONAL"
+          },
+          {
+            "price": 180000,
+            "sourceKey": "LABOR_2026",
+            "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
+            "priority": 3,
+            "tier": "VERIFIED_REGIONAL"
+          },
+          {
+            "price": 185000,
+            "sourceKey": "LABOR_2026",
+            "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
+            "priority": 3,
+            "tier": "VERIFIED_REGIONAL"
+          }
+        ],
+        "resolution": "SOURCE_PRIORITY",
+        "preferred": "LABOR_2026"
+      },
+      {
+        "identity": "RES-001294|OH|NATIONAL|||2026-01",
+        "resourceId": "RES-001294",
         "resourceCode": "L.01",
         "resourceName": "Pekerja",
         "unit": "OH",
@@ -1085,13 +1135,6 @@
         },
         "period": "2026-01",
         "candidates": [
-          {
-            "price": 175000,
-            "sourceKey": "LABOR_2026",
-            "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
-            "priority": 3,
-            "tier": "VERIFIED_REGIONAL"
-          },
           {
             "price": 155000,
             "sourceKey": "LABOR_2026",
@@ -1105,103 +1148,645 @@
             "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
             "priority": 3,
             "tier": "VERIFIED_REGIONAL"
-          },
-          {
-            "price": 270000,
-            "sourceKey": "LABOR_2026",
-            "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
-            "priority": 3,
-            "tier": "VERIFIED_REGIONAL"
           }
         ],
         "resolution": "SOURCE_PRIORITY",
         "preferred": "LABOR_2026"
       },
       {
-        "identity": "RES-001293|OJ|NATIONAL|||2026-01",
-        "resourceId": "RES-001293",
-        "resourceCode": "L.01",
-        "resourceName": "Pekerja",
-        "unit": "OJ",
+        "identity": "RES-001237|kg|PROVINCE|DKI Jakarta||2026-01",
+        "resourceId": "RES-001237",
+        "resourceCode": "M57a",
+        "resourceName": "Besi Beton",
+        "unit": "kg",
         "location": {
-          "level": "NATIONAL",
-          "provinceName": null,
+          "level": "PROVINCE",
+          "provinceName": "DKI Jakarta",
           "regencyName": null,
           "cityName": null
         },
         "period": "2026-01",
         "candidates": [
           {
-            "price": 22142,
-            "sourceKey": "LABOR_2026",
-            "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
-            "priority": 3,
-            "tier": "VERIFIED_REGIONAL"
+            "price": 13500,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
           },
           {
-            "price": 20000,
-            "sourceKey": "LABOR_2026",
-            "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
-            "priority": 3,
-            "tier": "VERIFIED_REGIONAL"
+            "price": 18950,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
           },
           {
-            "price": 33750,
-            "sourceKey": "LABOR_2026",
-            "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
-            "priority": 3,
-            "tier": "VERIFIED_REGIONAL"
+            "price": 14000,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
           },
           {
-            "price": 25000,
-            "sourceKey": "LABOR_2026",
-            "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
-            "priority": 3,
-            "tier": "VERIFIED_REGIONAL"
+            "price": 14000,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 14500,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 13500,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 13500,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 13500,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 14000,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 14000,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 14000,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 14500,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 14500,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 18250,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 13500,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 13500,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 13500,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 13500,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 13500,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 14000,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 14000,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 14000,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 14500,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 14500,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 13500,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 18250,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 13500,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 18950,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 14000,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 14500,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 14500,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 13500,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 13500,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 14000,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 14000,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 14000,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 14500,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 14500,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 13500,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 13500,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 18250,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 14000,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 18950,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 14500,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 14500,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 13500,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 13500,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 14000,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 14000,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 14000,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 14500,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 14500,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 13500,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 13500,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 13500,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 14000,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 14000,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 19600,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 14500,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 13500,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 13500,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 14000,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 14000,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 14000,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 14000,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 14500,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 14000,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 14000,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 14500,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 19600,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 13500,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 13500,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
           }
         ],
         "resolution": "SOURCE_PRIORITY",
-        "preferred": "LABOR_2026"
+        "preferred": "MATERIAL_MASTER_2026"
       },
       {
-        "identity": "RES-001354|OJ|NATIONAL|||2026-01",
-        "resourceId": "RES-001354",
-        "resourceCode": "L08",
-        "resourceName": "Mekanik",
-        "unit": "OJ",
+        "identity": "RES-001816|kg|PROVINCE|DKI Jakarta||2026-09",
+        "resourceId": "RES-001816",
+        "resourceCode": "M39b",
+        "resourceName": "Baja Tulangan",
+        "unit": "kg",
         "location": {
-          "level": "NATIONAL",
-          "provinceName": null,
+          "level": "PROVINCE",
+          "provinceName": "DKI Jakarta",
           "regencyName": null,
           "cityName": null
         },
-        "period": "2026-01",
+        "period": "2026-09",
         "candidates": [
           {
-            "price": 45000,
-            "sourceKey": "LABOR_2026",
-            "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
-            "priority": 3,
-            "tier": "VERIFIED_REGIONAL"
+            "price": 14250,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
           },
           {
-            "price": 32500,
-            "sourceKey": "LABOR_2026",
-            "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
-            "priority": 3,
-            "tier": "VERIFIED_REGIONAL"
+            "price": 16500,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
           },
           {
-            "price": 37500,
-            "sourceKey": "LABOR_2026",
-            "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
-            "priority": 3,
-            "tier": "VERIFIED_REGIONAL"
+            "price": 14500,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 16000,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
           }
         ],
         "resolution": "SOURCE_PRIORITY",
-        "preferred": "LABOR_2026"
+        "preferred": "MATERIAL_MASTER_2026"
+      },
+      {
+        "identity": "RES-003523|lembar|PROVINCE|DKI Jakarta||2026-09",
+        "resourceId": "RES-003523",
+        "resourceCode": "M73",
+        "resourceName": "Multiplek",
+        "unit": "lembar",
+        "location": {
+          "level": "PROVINCE",
+          "provinceName": "DKI Jakarta",
+          "regencyName": null,
+          "cityName": null
+        },
+        "period": "2026-09",
+        "candidates": [
+          {
+            "price": 226600,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 116700,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 152600,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          },
+          {
+            "price": 116700,
+            "sourceKey": "MATERIAL_MASTER_2026",
+            "sourceName": "Master Database Material EZRAB 2026",
+            "priority": 5,
+            "tier": "PROJECT_INTERNAL_MASTER"
+          }
+        ],
+        "resolution": "SOURCE_PRIORITY",
+        "preferred": "MATERIAL_MASTER_2026"
       }
     ]
+  },
+  "canonicalModel": {
+    "entities": 5236,
+    "active": 5121,
+    "inactive": 115,
+    "byCategory": {
+      "EQUIPMENT": 1210,
+      "LABOR": 259,
+      "MATERIAL": 3767
+    },
+    "canonicalNameSource": {
+      "RESOURCE_MASTER": 5230,
+      "COMPONENT_USAGE": 6,
+      "NONE": 0
+    },
+    "entitiesWithAliases": 27,
+    "aliasesAttached": 36,
+    "keyRepresentatives": 791,
+    "specificationAvailable": 0,
+    "descriptionAvailable": 0
   }
 }

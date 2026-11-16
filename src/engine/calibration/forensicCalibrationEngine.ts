@@ -18,7 +18,7 @@ import { UnitDimensionalValidator } from './unitDimensionalValidator';
 import { CanonicalResourceRegistry } from './canonicalResourceRegistry';
 import { ProjectCostPolicySettings, WorkItemCostOutput } from '../cost/centralDeterministicCostEngine';
 import { AHSPDefinition, AHSPComponentDefinition } from '../ahsp/contracts/types';
-import { PriceResolutionOutput } from '../pricing/resolver/advancedPriceResolutionEngine';
+import { PriceResolutionOutput } from '../pricing/resolver/priceResolutionTypes';
 import { WeirBodyMigratedCalculator, WeirBodyInputs } from '../migration/migratedCalculators';
 import { CentralDeterministicCostEngine } from '../cost/centralDeterministicCostEngine';
 

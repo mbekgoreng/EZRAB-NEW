@@ -110,6 +110,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
     projectQtoItems,
     projectScheduleTasks,
     projectKurvaSData,
+    projectEstimateVersions,
   } = useProject();
 
   const activeProject = currentProject || contextProjects[0] || {
@@ -791,6 +792,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
             items: projectRabItems,
           } as any}
           onToast={showToast}
+          estimateVersions={projectEstimateVersions}
         />
       )}
 

@@ -74,6 +74,7 @@ import {
 } from '../ai-tools/ezrab-ai/dedQtoIntegration';
 import { excludeWbsNode } from '../ai-tools/ezrab-ai/wbsArtifact';
 import { wbsCompletenessLines } from '../ai-tools/ezrab-ai/universalRab';
+import { formatWorkItemTitle } from '../ai-tools/ezrab-ai/workItemTitle';
 import { EXPORT_PRESETS } from '../export/types';
 import { officialAhspRepository } from '../data/nationalCostDatabase/officialAhspRepository';
 
@@ -645,11 +646,11 @@ describe('P6 §E — pencatatan keputusan user', () => {
     if (!verified.ok) throw new Error(verified.message);
     const payload = buildPushPayload(verified.draft);
     const itemDesc = effectiveItems(verified.draft).find((i) => i.id === itemId)!.description;
-    // Payload mengawali uraian dengan '[Chat AI] ' — cocokkan lewat
-    // putusan (unik di draft ini) + akhir uraian.
+    // Uraian payload = judul ternormalisasi (tanpa awalan '[Chat AI] ') —
+    // cocokkan lewat putusan (unik di draft ini) + akhir uraian.
     const row = payload.find((p) => p.userDecisionStatus === 'DITOLAK');
     expect(row).toBeDefined();
-    expect(row!.description.endsWith(itemDesc)).toBe(true);
+    expect(row!.description.endsWith(formatWorkItemTitle(itemDesc))).toBe(true);
     expect(row!.userDecisionStatus).toBe('DITOLAK');
     expect(row!.verificationDate).toBe('2026-11-13T11:00:00.000Z');
   });

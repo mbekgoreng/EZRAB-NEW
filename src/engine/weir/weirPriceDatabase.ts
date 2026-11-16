@@ -15,7 +15,7 @@
  *   - If a price is not in this database, status = PRICE_NOT_FOUND.
  */
 
-import { PriceResolutionOutput } from '../pricing/resolver/advancedPriceResolutionEngine';
+import { PriceResolutionOutput } from '../pricing/resolver/priceResolutionTypes';
 
 export interface WeirPriceEntry {
   code: string;

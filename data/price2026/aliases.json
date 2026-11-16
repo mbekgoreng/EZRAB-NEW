@@ -1,5 +1,54 @@
 {
-  "version": "2026.1",
-  "description": "Explicit, auditable resource→price-source alias table (PHASE 13). Every rule is a human decision with a stated reason. Fuzzy matching is NEVER used to create a rule.",
-  "rules": []
+  "description": "Explicit, auditable resource→price-source alias table (PHASE 13). Every rule is a human decision with a stated reason. Fuzzy matching is NEVER used to create a rule. Wave 1 (DB-sync Fase 2): HSD generic aggregates + geotextile, each proven against the Bina Marga workbook (backups/excel-ahsp-bina-marga-2026/AHSP 2026 Bina Marga.xlsx, sheet 'Upah Bahan'). Deliberately NOT aliased (see phase2-sync.md §2): HSD M-015 Batu pecah (spans M91/M92/M93 — no single-key identity), HSD M-024 Geotextile woven (M23 is non-woven), HSD M-008 Kerikil beton (no single key), L03|OJ Mandor (runtime OJ-twin already resolves it; the only pipeline Mandor row already binds L04|OJ).",
+  "rules": [
+    {
+      "id": "DBSYNC2-HSD-001",
+      "reason": "Workbook BM 'Upah Bahan' baris 888 melabeli M91 'Agregate Halus'; Agr 0-5 (fraksi 0-5 mm) adalah agregat halus. HSD M-010 Rp230.000/m3.",
+      "resourceLooseCode": "M91",
+      "resourceNameContains": "Agr 0 - 5",
+      "resourceType": "material",
+      "resourceUnit": "m3",
+      "sourceCode": "M-010",
+      "sourceKey": "HSD_2026",
+      "sourceName": "Agregat halus",
+      "sourceUnit": "m3"
+    },
+    {
+      "id": "DBSYNC2-HSD-002",
+      "reason": "Workbook BM 'Upah Bahan' baris 896 melabeli M92 'Agregate Kasar'; Agr 5-10 & 10-15 adalah agregat kasar. HSD M-009 Rp300.000/m3.",
+      "resourceLooseCode": "M92",
+      "resourceNameContains": "Agr 5-10",
+      "resourceType": "material",
+      "resourceUnit": "m3",
+      "sourceCode": "M-009",
+      "sourceKey": "HSD_2026",
+      "sourceName": "Agregat kasar",
+      "sourceUnit": "m3"
+    },
+    {
+      "id": "DBSYNC2-HSD-003",
+      "reason": "Workbook BM 'Upah Bahan' baris 81 melabeli M09 'Borrow Pit' (= tanah timbunan galian pinjam). CAVEAT: key bernama 'Timbunan Pilihan' (selected grade); ikatan ini memakai label Borrow Pit sebagai identitas generik — tinjau bila owner membedakan timbunan biasa vs pilihan. HSD M-016 Rp100.000/m3.",
+      "resourceLooseCode": "M09",
+      "resourceNameContains": "Timbunan Pilihan",
+      "resourceType": "material",
+      "resourceUnit": "m3",
+      "sourceCode": "M-016",
+      "sourceKey": "HSD_2026",
+      "sourceName": "Tanah timbunan",
+      "sourceUnit": "m3"
+    },
+    {
+      "id": "DBSYNC2-HSD-004",
+      "reason": "Workbook BM 'Upah Bahan' baris 267-268: M23 = 'Geotekstil Filter' = 'Geotextile Non Woven Kelas 2' (satu baris, dua ejaan). HSD M-025 Rp22.000/m2. M-024 woven TIDAK di-alias: woven bukan filter non-woven.",
+      "resourceLooseCode": "M23",
+      "resourceNameContains": "Geotekstil Filter",
+      "resourceType": "material",
+      "resourceUnit": "m2",
+      "sourceCode": "M-025",
+      "sourceKey": "HSD_2026",
+      "sourceName": "Geotextile non-woven",
+      "sourceUnit": "m2"
+    }
+  ],
+  "version": "2026.1"
 }

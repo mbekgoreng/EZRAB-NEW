@@ -1,3 +1,10 @@
+// MASTER PRICING §3 (I-11): pricing-mode vocabulary lives in the pricing
+// domain; imported as a TYPE only (erased at compile — no runtime cycle).
+import type {
+  ProjectPriceSnapshotMap,
+  ProjectPricingMode,
+} from '../data/priceDatabase2026/types';
+
 export type UserRole = 'SUPER_ADMIN' | 'ESTIMATOR' | 'DIREKSI' | 'CLIENT' | 'EDITOR';
 
 export type ProjectStatus = 
@@ -254,6 +261,15 @@ export interface AHSPProjectSnapshot {
   sourceDocument?: string;
   isCustomModified?: boolean;
   snapshotTimestamp?: string;
+  /**
+   * MASTER PRICING §3 (I-11) — source versions this snapshot was frozen
+   * against (see the twin interface in nationalCostDatabase/types.ts).
+   * Optional: pre-§3 snapshots have no stamp; absent pricingMode reads as
+   * SNAPSHOT_PRICE (Decision D). Model only — §10 behaviour is separate.
+   */
+  ahspDatabaseVersion?: string;
+  masterPriceVersion?: string;
+  pricingMode?: ProjectPricingMode;
 }
 
 export type ItemCalculationStatus = 
@@ -555,6 +571,20 @@ export interface Project {
    * `activeEstimateVersionId` di ProjectContext.
    */
   activeEstimateVersionId?: string | null;
+  /**
+   * MASTER PRICING §10 (a) / D5 — the project's pricing policy.
+   * - `LIVE_MASTER_PRICE`: the project resolves current master prices
+   *   (default for NEW projects, stamped by `createProject`).
+   * - `SNAPSHOT_PRICE`: the project keeps its frozen prices; global
+   *   updates never move it except through explicit adoption (§10 (d)).
+   * - `PROJECT_OVERRIDE`: project-specific override prices win per
+   *   component; the rest follows the pinned snapshot (§10 (e)).
+   * Absent (legacy project) reads as SNAPSHOT_PRICE (Decision D —
+   * `resolveEffectiveProjectPricingMode`); never assigned LIVE by a
+   * reader. Written by §10's `setProjectPricingMode` (+ §11 UI);
+   * `ProjectContext.createProject` stamps LIVE for new projects.
+   */
+  pricingMode?: ProjectPricingMode;
   notes?: string;
   companyId?: string;
   coverImage?: string;
@@ -1266,6 +1296,26 @@ export interface EstimateVersion {
   rabItemsSnapshot: RabItem[];
   itemsCount: number;
   isBaseline?: boolean;
+  /**
+   * MASTER PRICING §3 (I-11) — source versions the frozen RAB values were
+   * computed against + the pricing mode in force. Versions are immutable
+   * snapshots, so new versions default to pricingMode SNAPSHOT_PRICE
+   * (Decision D). Optional: versions written before §3 have no stamp.
+   * Model only — §10 adoption behaviour is separate.
+   */
+  ahspDatabaseVersion?: string;
+  masterPriceVersion?: string;
+  pricingMode?: ProjectPricingMode;
+  /**
+   * MASTER PRICING §13 (#4) — per-component frozen prices captured
+   * at pin/adoption time (see ProjectPriceSnapshotMap). Absent on
+   * versions written before the capture exists (capture at adoption
+   * approval is §14 work) — QTO SNAPSHOT mode falls through to live
+   * resolution with a labelled note until then. NEVER derived from
+   * rabItemsSnapshot (per-item totals cannot be decomposed into
+   * per-component prices).
+   */
+  componentPriceSnapshot?: ProjectPriceSnapshotMap | null;
 }
 
 export interface VersionDiffItem {

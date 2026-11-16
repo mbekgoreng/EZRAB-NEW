@@ -169,6 +169,46 @@ export interface CanonicalResource {
   duplicate_status: 'unique' | 'possible_duplicate' | 'exact_duplicate' | 'conflict';
 }
 
+/**
+ * MASTER PRICING §8 — one field-level change inside a revised AHSP item.
+ *
+ * `path` locates the change deterministically, e.g. `name`, `unit`,
+ * `unitPrice`, `laborComponents[1].code`, `materialComponents[0].coefficient`.
+ * Component positions are SOURCE-side indices (the diff matches components
+ * by stable id when both sides carry one, else by position within the
+ * same array — see compareAhspSnapshots in ahspVersioning.ts).
+ */
+export interface AhspItemFieldChange {
+  path: string;
+  /** Short field name (the last segment of `path`). */
+  field: string;
+  oldValue: unknown;
+  newValue: unknown;
+}
+
+/** Field-level diff for one item present in both versions with differences. */
+export interface AhspItemFieldDiff {
+  id: string;
+  code: string;
+  name: string;
+  /** Sorted by `path` (deterministic). */
+  changes: AhspItemFieldChange[];
+}
+
+/** Deterministic count summary of a version diff. */
+export interface AhspVersionDiffSummary {
+  added: number;
+  removed: number;
+  revised: number;
+  unchanged: number;
+  totalSource: number;
+  totalTarget: number;
+  /** Total field-level changes across all revised items. */
+  fieldChanges: number;
+  /** Added + removed components + component field changes across revised items. */
+  componentChanges: number;
+}
+
 export interface AHSPVersionDiff {
   sourceVersion: string;
   targetVersion: string;
@@ -178,11 +218,31 @@ export interface AHSPVersionDiff {
   revisedCodes: {
     code: string;
     name: string;
-    oldPrice: number;
-    newPrice: number;
+    /** Baked item unitPrice (null = no baked price — NOT Rp0). */
+    oldPrice: number | null;
+    /** Baked item unitPrice (null = no baked price — NOT Rp0). */
+    newPrice: number | null;
     diffNote: string;
   }[];
+  /**
+   * MASTER PRICING §8 — field-level diff per revised item (added by §8;
+   * the pre-§8 stub returned empty removed/revised arrays and no field
+   * detail at all). Sorted by (code, id); changes sorted by path.
+   */
+  fieldDiffs: AhspItemFieldDiff[];
+  /** MASTER PRICING §8 — deterministic count summary. */
+  summary: AhspVersionDiffSummary;
 }
+
+/**
+ * Version of the EZRAB AHSP database (the canonical AHSP 2026 catalog as
+ * carried by masterRegistry). `2026.1` is the FIRST versioned baseline,
+ * established by Master Pricing §3 (2026-11-16) for the catalog as
+ * generated 2026-10-20 — a label for the current dataset state, not a
+ * claim about an external versioning scheme. §8 (AHSP versioning) governs
+ * how this value advances (clone → new version → publish).
+ */
+export const AHSP_DATABASE_VERSION = '2026.1';
 
 export interface AHSPProjectSnapshot {
   ahspId: string;
@@ -197,4 +257,16 @@ export interface AHSPProjectSnapshot {
   /** Null = harga item belum tersedia (PRICE_MISSING). Bukan 0. */
   unitPrice: number | null;
   snapshotTimestamp: string;
+  /**
+   * MASTER PRICING §3 (I-11) — source versions this snapshot was frozen
+   * against. A snapshot freezes VALUES; these fields record WHICH database
+   * versions produced them, so §10.2 explicit adoption can distinguish
+   * "adopt newer prices" from "manual price edit". Optional: snapshots
+   * written before §3 have no version stamp and are read as the pre-§3
+   * baseline (pricingMode absent ⇒ SNAPSHOT_PRICE — Decision D).
+   */
+  ahspDatabaseVersion?: string;
+  masterPriceVersion?: string;
+  /** Pricing mode in force when the snapshot was taken (model only — §10 behaviour is not implemented in §3). */
+  pricingMode?: import('../../data/priceDatabase2026/types').ProjectPricingMode;
 }

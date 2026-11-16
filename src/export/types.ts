@@ -2,6 +2,9 @@
  * EZRAB Professional Project Export System - Type Definitions
  */
 
+// Type-only import (erased at compile — no runtime cycle).
+import type { EstimateVersion } from '../types';
+
 export type ExportPresetId = 
   | 'RAB'
   | 'BOQ'
@@ -76,6 +79,14 @@ export interface ExportPackageOptions {
   customBrandColor?: string;
   // Granular sheet toggles
   sheets: Record<ExportSheetKey, boolean>;
+  /**
+   * MASTER PRICING §13 (#5) — the project's estimate versions, so the
+   * exporters can label the recorded pricing pin (AHSP/master versions
+   * from the ACTIVE version) instead of the legacy default. Threaded
+   * by the export modal from the project's version list; absent =
+   * the legacy label (honest — no pin was seen).
+   */
+  estimateVersions?: readonly EstimateVersion[];
 }
 
 export const ALL_EXPORT_SHEETS: ExportSheetMeta[] = [

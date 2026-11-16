@@ -19,6 +19,20 @@
  *   - Enforces Engineering Magnitude Bounds via PriceSanityValidator.
  *   - Any absurd price (e.g. rebar @ 3.8M/kg, girder @ 280M for residential)
  *     is rejected as 'INVALID'.
+ *
+ * MASTER PRICING §6 (b) + §10 — project pricing modes (this wrapper is
+ * the mode dispatch for DED/project queries; the lower resolver only
+ * carries the context parameter):
+ *   - LIVE_MASTER_PRICE (default): the historical flow below, unchanged.
+ *   - SNAPSHOT_PRICE: the query is answered from the supplied snapshot
+ *     map first (Step 0); a miss falls through to the live flow with a
+ *     path note, and the snapshot context is passed down so AHSP
+ *     compositions price their components from the snapshot. Project
+ *     overrides (Step 1) do NOT run under SNAPSHOT — a snapshot is a
+ *     frozen record, not a live project state.
+ *   - PROJECT_OVERRIDE: Step 1 (ProjectPriceEngine) as before, with the
+ *     mode recorded on the result. Without a projectId there is no
+ *     override to consult, so the flow falls through to live (noted).
  */
 
 import { canonicalUnitRegistry } from './canonicalUnitRegistry';
@@ -27,6 +41,14 @@ import { sourceGovernanceRegistry } from './sourceRegistry';
 import { projectPriceEngine } from '../projectPriceEngine';
 import { officialAhspRepository } from '../../../data/nationalCostDatabase/officialAhspRepository';
 import { priceResolver2026 } from '../../../data/priceDatabase2026/resolver';
+import { lookupContextPrice, resolvePricingMode } from '../../../data/priceDatabase2026/centralResolution';
+import type {
+  ComponentPriceMapRef,
+  PriceSourceTier,
+  ProjectPricingMode,
+  ResourceType,
+} from '../../../data/priceDatabase2026/types';
+import type { PriceCategory } from '../contracts/types';
 import { PriceRepository } from '../repository/priceRepository';
 import { PriceNormalizationEngine } from '../normalization/priceNormalization';
 
@@ -41,6 +63,24 @@ export interface CanonicalPriceQuery {
   region?: string;
   period?: string; // e.g. '2026'
   itemType?: 'RESOURCE' | 'AHSP' | 'AUTO';
+  /** MASTER PRICING §6 (b) + §10 — project pricing mode. Absent = LIVE. */
+  pricingMode?: ProjectPricingMode;
+  /** SNAPSHOT_PRICE only: the frozen price map to answer from. */
+  snapshotRef?: ComponentPriceMapRef;
+  /**
+   * MASTER PRICING §15 (#8) — record-exclusion seam for staged
+   * re-preview (price REMOVAL preview), threaded to the Step-2 lower
+   * resolver calls (AHSP composition + resource resolution). Absent =
+   * the historical path, unchanged. LIMITATION (documented, not
+   * hidden): Steps 3/5 (regional / national benchmarks) read
+   * `PriceRepository`, whose records carry different ids than the
+   * lower resolver's index, so they are NOT exclusion-aware — a
+   * removal preview over a benchmark-resolved component still needs a
+   * PriceRepository-side exclusion (out of scope for this seam; the
+   * §9 repricer, the actual staged re-preview consumer, works on
+   * lower-resolver compositions, where the seam is complete).
+   */
+  excludeRecordIds?: ReadonlySet<string>;
 }
 
 export interface CanonicalPriceResult {
@@ -55,12 +95,92 @@ export interface CanonicalPriceResult {
   resolutionPath: string[];
   rejectionReason?: string;
   anomalyReason?: string;
+  /** MASTER PRICING §6 (b) — the mode this query ran under. */
+  pricingMode?: ProjectPricingMode;
+  /**
+   * MASTER PRICING §12 — provenance tier of the winning record, in the
+   * PriceDefinition vocabulary ('OFFICIAL' | 'MARKET' | 'LEGACY').
+   * Lets downstream consumers (cost composition provenance, DED) tell a
+   * market reference from an official price WITHOUT re-reading the
+   * repository. Undefined for project/snapshot answers (not master
+   * records) and for MISSING/INVALID results.
+   */
+  sourceTier?: 'OFFICIAL' | 'MARKET' | 'LEGACY';
+  /**
+   * MASTER PRICING §12 — category of what resolved. AHSP items report
+   * 'AHSP'; resource hits report the winning record's category.
+   * Undefined when the winning path carries no category (project
+   * override/quote without a category on the query, MISSING/INVALID).
+   */
+  category?: 'MATERIAL' | 'LABOR' | 'EQUIPMENT' | 'AHSP';
   componentBreakdown?: {
     materialCost: number;
     laborCost: number;
     equipmentCost: number;
     overheadProfitCost: number;
   };
+}
+
+/**
+ * MASTER PRICING §12 — map a priceDatabase2026 source tier to the
+ * PriceDefinition tier vocabulary. Government/regional official tiers
+ * are OFFICIAL; commercial and user/project-provided tiers are MARKET
+ * (verified but not official — labelling them RESMI AHSP would be the
+ * exact mislabelling the provenance tier exists to prevent); superseded
+ * records are LEGACY (they never resolve, but the mapping is total).
+ */
+function mapSourceTierToPriceTier(
+  tier: PriceSourceTier | undefined | null,
+): 'OFFICIAL' | 'MARKET' | 'LEGACY' | undefined {
+  if (!tier) return undefined;
+  if (tier === 'OFFICIAL_GOVERNMENT' || tier === 'OFFICIAL_PROJECT' || tier === 'VERIFIED_REGIONAL') {
+    return 'OFFICIAL';
+  }
+  if (tier === 'LEGACY_SUPERSEDED') return 'LEGACY';
+  return 'MARKET';
+}
+
+/** MASTER PRICING §12 — winning-record resource type → result category. */
+function mapResourceTypeToCategory(
+  resourceType: ResourceType | undefined | null,
+): 'MATERIAL' | 'LABOR' | 'EQUIPMENT' | undefined {
+  if (resourceType === 'material') return 'MATERIAL';
+  if (resourceType === 'labor') return 'LABOR';
+  if (resourceType === 'equipment') return 'EQUIPMENT';
+  return undefined;
+}
+
+/**
+ * MASTER PRICING §12 — PriceDefinition category → result category.
+ * SMKK/OTHER have no result-category equivalent and map to undefined
+ * (the caller falls back to its own derivation).
+ */
+function mapPriceCategoryToResultCategory(
+  category: PriceCategory | undefined | null,
+): 'MATERIAL' | 'LABOR' | 'EQUIPMENT' | undefined {
+  if (category === 'MATERIAL' || category === 'LABOR' || category === 'EQUIPMENT') {
+    return category;
+  }
+  return undefined;
+}
+
+/**
+ * MASTER PRICING §12 — the query's own category, when it names one of
+ * the four result categories. Used for project/snapshot answers, where
+ * the winning path carries no record category of its own.
+ */
+function mapQueryCategoryToResultCategory(
+  category: string | undefined,
+): 'MATERIAL' | 'LABOR' | 'EQUIPMENT' | 'AHSP' | undefined {
+  if (
+    category === 'MATERIAL' ||
+    category === 'LABOR' ||
+    category === 'EQUIPMENT' ||
+    category === 'AHSP'
+  ) {
+    return category;
+  }
+  return undefined;
 }
 
 export class CanonicalPriceResolver {
@@ -89,6 +209,16 @@ export class CanonicalPriceResolver {
     const region = query.region || 'NATIONAL';
     const period = query.period || '2026';
     const resolutionPath: string[] = [];
+    // MASTER PRICING §6 (b) + §10 — the requested mode, recorded on
+    // every result. Absent = LIVE_MASTER_PRICE (historical behaviour).
+    const pricingMode = resolvePricingMode({ pricingMode: query.pricingMode });
+    // Context passed DOWN to the lower resolver (AHSP compositions +
+    // resource resolution). Only SNAPSHOT carries a map; PROJECT_OVERRIDE
+    // is served by ProjectPriceEngine at Step 1, not by a map.
+    const pricingContext =
+      pricingMode === 'SNAPSHOT_PRICE'
+        ? { pricingMode, snapshotRef: query.snapshotRef ?? null }
+        : null;
 
     if (!rawName && !rawCode) {
       return {
@@ -101,6 +231,7 @@ export class CanonicalPriceResolver {
         confidence: 0,
         resolutionPath: ['EMPTY_QUERY_REJECTED'],
         rejectionReason: 'Kueri kode atau nama kosong.',
+        pricingMode,
       };
     }
 
@@ -109,9 +240,60 @@ export class CanonicalPriceResolver {
     const lookupKey = normCode || normName;
 
     // =========================================================================
-    // STEP 1: PROJECT PRICE (Active Project Override / Project Quote)
+    // STEP 0: SNAPSHOT PRICE (MASTER PRICING §6 (b) + §10)
+    // A frozen project snapshot answers first. A miss falls through to the
+    // live flow with a path note (and the snapshot context still travels
+    // down, so an AHSP composition prices its components from the
+    // snapshot). Snapshot prices pass the same sanity gate as overrides.
     // =========================================================================
-    if (projectId) {
+    if (pricingMode === 'SNAPSHOT_PRICE') {
+      const snapshotPrice = lookupContextPrice(query.snapshotRef, rawCode, rawName, rawUnit);
+      if (snapshotPrice !== null) {
+        const effectiveUnit = rawUnit || 'unit';
+        const sanity = priceSanityValidator.validatePrice(rawName, snapshotPrice, effectiveUnit);
+        if (sanity.status === 'PRICE_INVALID') {
+          resolutionPath.push(`PRICE_SANITY_REJECTED_ON_SNAPSHOT: ${sanity.rejectionReason}`);
+          return {
+            status: 'INVALID',
+            price: null,
+            unit: effectiveUnit,
+            source: 'SNAPSHOT_PRICE',
+            sourceDocument: query.snapshotRef?.label || 'Project Snapshot',
+            region,
+            period,
+            confidence: 0,
+            resolutionPath,
+            pricingMode,
+            rejectionReason: sanity.rejectionReason,
+            anomalyReason: `Harga snapshot Rp ${snapshotPrice.toLocaleString('id-ID')}/${effectiveUnit} tidak wajar secara engineering.`,
+          };
+        }
+        resolutionPath.push(`SNAPSHOT_PRICE_RESOLVED: Rp ${snapshotPrice}/${effectiveUnit}`);
+        return {
+          status: 'RESOLVED',
+          price: snapshotPrice,
+          unit: effectiveUnit,
+          source: 'SNAPSHOT_PRICE',
+          sourceDocument: query.snapshotRef?.label || 'Project Snapshot',
+          region,
+          period,
+          confidence: 1.0,
+          resolutionPath,
+          pricingMode,
+          category: mapQueryCategoryToResultCategory(query.category),
+        };
+      }
+      resolutionPath.push(`SNAPSHOT_MISS_FALL_THROUGH_TO_LIVE: ${lookupKey}@${rawUnit || '?'}`);
+    }
+
+    // =========================================================================
+    // STEP 1: PROJECT PRICE (Active Project Override / Project Quote)
+    // Skipped under SNAPSHOT_PRICE (a frozen record, not live state).
+    // =========================================================================
+    if (pricingMode === 'PROJECT_OVERRIDE' && !projectId) {
+      resolutionPath.push('PROJECT_OVERRIDE_NO_PROJECT_ID_FALL_THROUGH_TO_LIVE');
+    }
+    if (projectId && pricingMode !== 'SNAPSHOT_PRICE') {
       // 1A. Check Active Override First
       const override = projectPriceEngine.getProjectOverride(projectId, lookupKey);
       if (override && override.active) {
@@ -132,6 +314,7 @@ export class CanonicalPriceResolver {
             period,
             confidence: 0,
             resolutionPath,
+            pricingMode,
             rejectionReason: sanity.rejectionReason,
             anomalyReason: `Harga override Rp ${override.price.toLocaleString('id-ID')}/${effectiveUnit} tidak wajar secara engineering.`,
           };
@@ -148,6 +331,8 @@ export class CanonicalPriceResolver {
           period,
           confidence: 1.0,
           resolutionPath,
+          pricingMode,
+          category: mapQueryCategoryToResultCategory(query.category),
         };
       }
 
@@ -169,6 +354,7 @@ export class CanonicalPriceResolver {
             period,
             confidence: 0,
             resolutionPath,
+            pricingMode,
             rejectionReason: sanity.rejectionReason,
           };
         }
@@ -184,6 +370,8 @@ export class CanonicalPriceResolver {
           period,
           confidence: 0.98,
           resolutionPath,
+          pricingMode,
+          category: mapQueryCategoryToResultCategory(query.category),
         };
       }
     }
@@ -210,7 +398,15 @@ export class CanonicalPriceResolver {
 
       if (officialAhsp) {
         resolutionPath.push(`OFFICIAL_AHSP_EXACT_CODE: ${officialAhsp.code} (${officialAhsp.name})`);
-        const priceComp = priceResolver2026.resolveAhspUnitPrice(officialAhsp);
+        // MASTER PRICING §6 (b): under SNAPSHOT the composition prices
+        // its components from the snapshot map (context travels down);
+        // under LIVE/OVERRIDE pricingContext is null (default behaviour).
+        // MASTER PRICING §15 (#8): the exclusion seam threads through
+        // to the composition (absent = the historical call, unchanged).
+        const priceComp = priceResolver2026.resolveAhspUnitPrice(officialAhsp, {
+          pricingContext,
+          excludeRecordIds: query.excludeRecordIds,
+        });
         // Keputusan owner 2026-10-27: jalur transfer DED → RAB memakai BIAYA
         // LANGSUNG (priceComp.unitPrice = jumlah komponen), BUKAN total DHSP
         // (priceComp.hspPrice / officialDhspPrice). Total DHSP sudah mengandung
@@ -237,6 +433,7 @@ export class CanonicalPriceResolver {
               period: '2026',
               confidence: 0,
               resolutionPath,
+              pricingMode,
               rejectionReason: sanity.rejectionReason,
               anomalyReason: `AHSP ${officialAhsp.code} menghasilkan harga Rp ${resolvedPrice.toLocaleString('id-ID')}/${effectiveUnit} di luar batas engineering.`,
             };
@@ -253,6 +450,9 @@ export class CanonicalPriceResolver {
             period: '2026',
             confidence: 0.95,
             resolutionPath,
+            pricingMode,
+            sourceTier: 'OFFICIAL',
+            category: 'AHSP',
             componentBreakdown: {
               materialCost: priceComp.material?.subtotalPerUnit || 0,
               laborCost: priceComp.labor?.subtotalPerUnit || 0,
@@ -271,6 +471,12 @@ export class CanonicalPriceResolver {
       unit: rawUnit || undefined,
       location: region !== 'NATIONAL' ? { provinceName: region } : undefined,
       period: { year: 2026 },
+      // MASTER PRICING §6 (b): under SNAPSHOT the lower resolver answers
+      // from the snapshot map; under LIVE/OVERRIDE this is null.
+      pricingContext,
+      // MASTER PRICING §15 (#8): the exclusion seam threads through
+      // (absent = the historical call, unchanged).
+      excludeRecordIds: query.excludeRecordIds,
     });
 
     if (resourceRes && resourceRes.price !== null && resourceRes.price > 0) {
@@ -292,6 +498,7 @@ export class CanonicalPriceResolver {
           period: '2026',
           confidence: 0,
           resolutionPath,
+          pricingMode,
           rejectionReason: sanity.rejectionReason,
         };
       }
@@ -306,6 +513,9 @@ export class CanonicalPriceResolver {
         period: '2026',
         confidence: sourceTier === 'OFFICIAL_GOVERNMENT' ? 0.95 : 0.85,
         resolutionPath,
+        pricingMode,
+        sourceTier: mapSourceTierToPriceTier(resourceRes.source?.tier),
+        category: mapResourceTypeToCategory(resourceRes.resourceType),
       };
     }
 
@@ -337,6 +547,7 @@ export class CanonicalPriceResolver {
             period,
             confidence: 0,
             resolutionPath,
+            pricingMode,
             rejectionReason: sanity.rejectionReason,
           };
         }
@@ -351,6 +562,9 @@ export class CanonicalPriceResolver {
           period,
           confidence: 0.90,
           resolutionPath,
+          pricingMode,
+          sourceTier: regionalMatch.sourceTier,
+          category: mapPriceCategoryToResultCategory(regionalMatch.category),
         };
       }
     }
@@ -403,6 +617,7 @@ export class CanonicalPriceResolver {
           period,
           confidence: 0,
           resolutionPath,
+          pricingMode,
           rejectionReason: sanity.rejectionReason,
         };
       }
@@ -417,6 +632,9 @@ export class CanonicalPriceResolver {
         period,
         confidence: 0.85,
         resolutionPath,
+        pricingMode,
+        sourceTier: masterHit.sourceTier,
+        category: mapPriceCategoryToResultCategory(masterHit.category),
       };
     }
 
@@ -433,6 +651,7 @@ export class CanonicalPriceResolver {
       period,
       confidence: 0,
       resolutionPath,
+      pricingMode,
       rejectionReason: `Harga tidak ditemukan dalam database resmi, regional, maupun referensi untuk "${rawName}".`,
     };
   }

@@ -12,7 +12,10 @@ import {
   CostComponentType,
 } from '../contracts/types';
 import { AHSPComponentDefinition } from '../../ahsp/contracts/types';
-import { PriceResolver } from '../../pricing/resolver/priceResolver';
+import {
+  CanonicalPriceResolverAdapter,
+  type PriceResolverLike,
+} from '../../pricing/canonical/canonicalPriceResolverAdapter';
 import {
   resolveWithFallback,
   PRICE_SOURCE_LABELS,
@@ -26,9 +29,18 @@ import { PrecisionEngine } from '../../calculatorCore/precision/precisionEngine'
 import { FormulaProvenance, ExecutionTraceStep } from '../../calculatorCore/contracts/types';
 
 export class CostCompositionEngine {
-  private priceResolver: PriceResolver;
+  private priceResolver: PriceResolverLike;
 
-  constructor(priceResolver: PriceResolver = new PriceResolver()) {
+  /**
+   * MASTER PRICING §12 (D3/M-12): Tier-1 component prices now resolve
+   * through the CANONICAL pricing service
+   * (`CanonicalPriceResolverAdapter` → `canonicalPriceResolver` →
+   * `priceResolver2026`), not the legacy engine `PriceResolver` /
+   * `PriceRepository` index. The injected seam stays structural
+   * (`PriceResolverLike`): existing callers/tests that inject a real or
+   * stub engine resolver keep working; the DEFAULT is canonical.
+   */
+  constructor(priceResolver: PriceResolverLike = new CanonicalPriceResolverAdapter()) {
     this.priceResolver = priceResolver;
   }
 
@@ -223,7 +235,12 @@ export class CostCompositionEngine {
         (typeof c.itemCode === 'string' && c.itemCode.trim()) ||
         'Komponen tanpa nama (data tidak lengkap)';
 
-      // Price Resolution
+      // Price Resolution — MASTER PRICING §12 (D3/M-12): Tier 1 is the
+      // CANONICAL pricing service by default (adapter → canonical
+      // resolver → priceResolver2026), so a valid canonical master price
+      // always wins over any stale repository price. The injected
+      // resolver seam (`PriceResolverLike`) still allows tests to stub
+      // this tier.
       const priceRes = this.priceResolver.resolve(
         {
           code: c.itemCode,

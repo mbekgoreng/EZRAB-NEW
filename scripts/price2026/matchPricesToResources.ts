@@ -32,6 +32,22 @@
  *   4. NAME_UNIT             strict fuzzy name + unit, unambiguous → NEEDS_REVIEW
  *
  * Per the brief, a NAME_UNIT binding is NEVER promoted to VERIFIED.
+ *
+ * DB-sync Fase 2 hardening (pipeline-local, see matcherHardening.ts):
+ * roster aliases as name candidates (a), code matching disabled for
+ * EQUIPMENT_2026 + COMMERCIAL_2026 (b), spec-number rule (c), token-boundary
+ * containment (d). Quarantined component keys (data/price2026/
+ * quarantined-component-keys.json) are never matched and never priced.
+ * Unresolved keys are published with explicit reasons to
+ * data/price2026/validated/unresolved_component_keys.json.
+ *
+ * MASTER PRICING §3 (M-1/M-3): the matcher also emits the canonical-entity
+ * fields (§3.1) on every resource row (buildCanonicalEntityRows), stamps
+ * every matched price record with version=1/status=ACTIVE (§3.3), and
+ * publishes the component-key → representative-entity map
+ * (COMPONENT_KEY_REPRESENTATIVES) that buildSourceIdentityRegistry.ts
+ * consumes. Matching itself is UNCHANGED: same rules, same counts
+ * (5.236 rows / 791 keys / 452 records), 0 price-value changes.
  */
 
 import * as fs from 'fs';
@@ -46,22 +62,33 @@ import {
   normalizeName,
   normalizeUnit,
   normalizeUnitForType,
-  nameSimilarity,
-  nameBindingScore,
   nameTokens,
-  tokenEquivalent,
   NAME_COMPATIBLE_THRESHOLD,
   NAME_ONLY_THRESHOLD,
   sha1Like,
   type ResourceAuditRow,
 } from './core';
+import {
+  CODE_MATCH_DISABLED_SOURCES,
+  extractSpecTokens,
+  isDeniedRosterAlias,
+  pipelineNameCompatible,
+  pipelineNameTokens,
+  pipelineNormalizeName,
+  pipelineStrictNameMatch,
+  specSetsCompatible,
+} from './matcherHardening';
+import { LaborDatabaseService } from '../../src/domain/labor/laborDatabaseService';
+import { EquipmentDatabaseService } from '../../src/domain/equipment/equipmentDatabaseService';
 import { readAllSourceRows } from './normalizePrices';
 import { PRICE_SOURCES } from './sources.config';
 import {
   TRUSTED_MATCH_METHODS,
+  type ResourceClassification,
   type ResourcePriceRecord,
   type PriceMatchMethod,
   type PriceVerificationStatus,
+  type ResourceRowQuality,
 } from '../../src/data/priceDatabase2026/types';
 
 const ROOT = process.cwd();
@@ -91,6 +118,71 @@ function loadAliases(): AliasRule[] {
   const p = path.join(ROOT, 'data', 'price2026', 'aliases.json');
   if (!fs.existsSync(p)) return [];
   return (JSON.parse(fs.readFileSync(p, 'utf8')).rules || []) as AliasRule[];
+}
+
+// ===========================================================================
+// quarantined component keys (DB-sync Fase 2)
+// ===========================================================================
+
+/**
+ * Component keys that are proven parsing artifacts, never resources.
+ * NOTE: ahspQuarantine.ts applies to AHSP ITEM codes, not component keys —
+ * this pipeline-local list is the correct mechanism for component keys.
+ * Quarantined keys stay in the resource index (flagged) and stay unpriced.
+ */
+interface QuarantinedComponentKey {
+  key: string;
+  looseCode: string;
+  unit: string;
+  name: string;
+  reason: string;
+  detail: string;
+  provenance: string;
+  sourceItem?: string;
+  confidence: string;
+}
+
+function loadQuarantinedComponentKeys(): Map<string, QuarantinedComponentKey> {
+  const p = path.join(ROOT, 'data', 'price2026', 'quarantined-component-keys.json');
+  const out = new Map<string, QuarantinedComponentKey>();
+  if (!fs.existsSync(p)) return out;
+  const parsed = JSON.parse(fs.readFileSync(p, 'utf8'));
+  for (const k of (parsed.keys || []) as QuarantinedComponentKey[]) {
+    if (k.key) out.set(k.key, k);
+  }
+  return out;
+}
+
+// ===========================================================================
+// roster aliases (DB-sync Fase 2, rule a)
+// ===========================================================================
+
+/**
+ * aliases[] from the labor/equipment rosters, keyed by pipeline source +
+ * roster code. Read from the SAME services the normalizer reads, so codes
+ * always agree with the emitted rows. Aliases are roster DATA (alternative
+ * names authored with the role), not guesses — but two proven-misleading
+ * aliases are denylisted in matcherHardening.ts and filtered out here.
+ */
+function loadRosterAliases(): Map<string, string[]> {
+  const map = new Map<string, string[]>();
+  for (const l of LaborDatabaseService.getInstance().getAllLabor() as any[]) {
+    if (l.code && Array.isArray(l.aliases) && l.aliases.length > 0) {
+      map.set(
+        `LABOR_2026|${normalizeCode(l.code)}`,
+        l.aliases.filter((a: string) => a && !isDeniedRosterAlias(a))
+      );
+    }
+  }
+  for (const e of EquipmentDatabaseService.getInstance().getAllEquipment() as any[]) {
+    if (e.code && Array.isArray(e.aliases) && e.aliases.length > 0) {
+      map.set(
+        `EQUIPMENT_2026|${normalizeCode(e.code)}`,
+        e.aliases.filter((a: string) => a && !isDeniedRosterAlias(a))
+      );
+    }
+  }
+  return map;
 }
 
 // ===========================================================================
@@ -127,6 +219,14 @@ interface ComponentKey {
   tokens: string[];
   /** false when every observed label was an extraction artefact (never name-match these). */
   cleanName: boolean;
+  /** Dictionary-applied normalized name + tokens (pipeline-local hardening). */
+  pipeNormName: string;
+  pipeTokens: string[];
+  /** Normalized spec tokens of the chosen name (rule c). */
+  specTokens: string[];
+  /** True when the key is quarantined (never matched, never priced). */
+  quarantined: boolean;
+  quarantineReason?: string;
 }
 
 function qualityRank(q: string): number {
@@ -175,7 +275,7 @@ function isCleanComponentName(name: string): boolean {
   return true;
 }
 
-function buildComponentKeys(): ComponentKey[] {
+function buildComponentKeys(quarantined: Map<string, QuarantinedComponentKey>): ComponentKey[] {
   interface Acc {
     key: string;
     looseCode: string;
@@ -230,6 +330,7 @@ function buildComponentKeys(): ComponentKey[] {
       );
     const chosen = ranked[0];
     const name = chosen ? chosen.name : '';
+    const q = quarantined.get(e.key);
     out.push({
       key: e.key,
       looseCode: e.looseCode,
@@ -241,6 +342,11 @@ function buildComponentKeys(): ComponentKey[] {
       normName: normalizeName(name),
       tokens: nameTokens(name),
       cleanName: !!chosen?.clean,
+      pipeNormName: pipelineNormalizeName(name),
+      pipeTokens: pipelineNameTokens(name),
+      specTokens: extractSpecTokens(name),
+      quarantined: !!q,
+      quarantineReason: q ? `${q.reason}: ${q.detail}` : undefined,
     });
   }
   return out.sort((a, b) => b.count - a.count || a.key.localeCompare(b.key));
@@ -288,48 +394,54 @@ function typeCompatible(componentType: string, priceType: string): boolean {
 }
 
 /**
- * Strict fuzzy name rule for a NAME-ONLY binding.
- *
- * Containment is allowed when the shorter name carries at least two significant
- * tokens, OR when it is a single token that is also the FIRST token of the longer
- * name ("Pekerja" vs "Pekerja / Buruh Konstruksi"). That single-token relaxation is
- * what lets clean canonical names bind to verbose source names — but it is still
- * subject to unit + type gating and to a uniqueness requirement, and every such
- * binding is marked NEEDS_REVIEW.
- *
- * Falls back to token-ratio similarity, which the caller gates at NAME_ONLY_THRESHOLD
- * (0.6) so a two-token name must agree on BOTH tokens.
+ * Strict fuzzy name rule — PIPELINE-LOCAL hardened version
+ * (`pipelineStrictNameMatch` in matcherHardening.ts). The old implementation
+ * used String.includes containment and scored `amp` ⊂ `stamper` 0.90; it is
+ * intentionally no longer used here. See matcherHardening.ts rule (d).
  */
-function strictNameMatch(aNorm: string, aTokens: string[], bNorm: string, bTokens: string[]): number {
-  if (!aNorm || !bNorm) return 0;
-  if (aNorm === bNorm) return 1;
-  const short = aNorm.length <= bNorm.length ? { n: aNorm, t: aTokens } : { n: bNorm, t: bTokens };
-  const long = aNorm.length <= bNorm.length ? bNorm : aNorm;
-  const longTokens = aNorm.length <= bNorm.length ? bTokens : aTokens;
-  if (short.t.length >= 2 && long.includes(short.n)) return 0.92;
-  if (
-    short.t.length === 1 &&
-    short.t[0].length >= 4 &&
-    longTokens.length > 0 &&
-    tokenEquivalent(longTokens[0], short.t[0])
-  ) {
-    return 0.88;
-  }
-  return nameBindingScore(aNorm, bNorm);
-}
 
-/** Pick the best candidate by name similarity to the source row. */
+/**
+ * Pick the best candidate by pipeline-local name compatibility to the source
+ * row — primary name first, then each roster alias (rule a). Token-boundary
+ * only (pipelineNameCompatible); a spec conflict scores 0 for that name.
+ */
 function pickByComponent(
   candidates: ComponentKey[],
-  sourceName: string
-): { k: ComponentKey; sim: number } | null {
+  sourceName: string,
+  aliasNames: string[]
+): { k: ComponentKey; sim: number; viaAlias: string | null } | null {
   if (candidates.length === 0) return null;
-  const scored = candidates
-    .map((k) => ({ k, sim: nameSimilarity(sourceName, k.name) }))
-    .sort((a, b) => b.sim - a.sim || b.k.count - a.k.count || a.k.key.localeCompare(b.k.key));
-  const best = scored[0];
   const anyNameKnown = candidates.some((k) => !!k.name);
-  if (!anyNameKnown || !sourceName) return { k: best.k, sim: 0 };
+  // Without a source name (or without any known candidate name) there is
+  // nothing to score against: keep the original behaviour — the highest-count
+  // candidate wins, reported with sim 0. Aliases must not influence the pick
+  // when the row itself carries no name.
+  if (!anyNameKnown || !sourceName) {
+    const best = [...candidates].sort(
+      (a, b) => b.count - a.count || a.key.localeCompare(b.key)
+    )[0];
+    return { k: best, sim: 0, viaAlias: null };
+  }
+  const names: Array<{ name: string; alias: string | null }> = [
+    { name: sourceName, alias: null },
+    ...aliasNames.map((a) => ({ name: a, alias: a })),
+  ];
+  let best: { k: ComponentKey; sim: number; viaAlias: string | null } | null = null;
+  for (const k of candidates) {
+    for (const { name, alias } of names) {
+      if (!name) continue;
+      const sim = pipelineNameCompatible(name, k.name);
+      if (
+        !best ||
+        sim > best.sim ||
+        (sim === best.sim &&
+          (k.count > best.k.count || (k.count === best.k.count && k.key < best.k.key)))
+      ) {
+        best = { k, sim, viaAlias: alias };
+      }
+    }
+  }
+  if (!best) return null;
   if (best.sim >= NAME_COMPATIBLE_THRESHOLD) return best;
   return null;
 }
@@ -339,9 +451,13 @@ function tryMatch(
   idx: ReturnType<typeof buildIndexes>,
   cidx: ComponentIndex,
   componentKeys: ComponentKey[],
-  aliases: AliasRule[]
+  aliases: AliasRule[],
+  rosterAliases: Map<string, string[]>
 ): MatchOutcome {
   const notes: string[] = [];
+  // Roster aliases for this row (rule a), denylist already applied at load.
+  const aliasNames =
+    rosterAliases.get(`${row.sourceKey}|${normalizeCode(row.resourceCode)}`) || [];
 
   // ---- 1. ALIAS ------------------------------------------------------------
   for (const a of aliases) {
@@ -363,6 +479,7 @@ function tryMatch(
             normalizeName(k.name).includes(normalizeName(a.resourceNameContains)))
       );
     if (!target) continue;
+    if (target.quarantined) continue;
     if (a.resourceUnit && target.unit !== normalizeUnit(a.resourceUnit)) continue;
     if (a.resourceType && target.type.toLowerCase() !== a.resourceType.toLowerCase()) continue;
 
@@ -370,51 +487,87 @@ function tryMatch(
   }
 
   // ---- 2. EXACT_CODE -------------------------------------------------------
+  // Rule (b): EQUIPMENT_2026 + COMMERCIAL_2026 run their own numbering
+  // schemes — code matching is disabled for them (name matching still applies).
   if (row.resourceCode) {
-    const nc = normalizeCode(row.resourceCode);
-    const candidates = (cidx.byNormCode.get(nc) || []).filter(
-      (k) => k.unit === row.unit && typeCompatible(k.type, row.resourceType)
-    );
-    const pick = pickByComponent(candidates, row.resourceName);
-    if (pick) {
-      return {
-        method: 'EXACT_CODE',
-        componentKey: pick.k,
-        confidence: 0.98,
-        notes: [`nameSimilarity=${pick.sim.toFixed(2)}`, `componentKey=${pick.k.key}`],
-      };
+    if (CODE_MATCH_DISABLED_SOURCES.has(row.sourceKey)) {
+      notes.push(`CODE_MATCH_DISABLED:${row.sourceKey}`);
+    } else {
+      const nc = normalizeCode(row.resourceCode);
+      const candidates = (cidx.byNormCode.get(nc) || []).filter(
+        (k) => k.unit === row.unit && typeCompatible(k.type, row.resourceType) && !k.quarantined
+      );
+      const pick = pickByComponent(candidates, row.resourceName, aliasNames);
+      if (pick) {
+        return {
+          method: 'EXACT_CODE',
+          componentKey: pick.k,
+          confidence: 0.98,
+          notes: [
+            `nameSimilarity=${pick.sim.toFixed(2)}`,
+            `componentKey=${pick.k.key}`,
+            ...(pick.viaAlias ? [`aliasName=${pick.viaAlias}`] : []),
+          ],
+        };
+      }
+      if (candidates.length > 0) notes.push(`EXACT_CODE_REJECTED_NAME_MISMATCH:${candidates.length}`);
     }
-    if (candidates.length > 0) notes.push(`EXACT_CODE_REJECTED_NAME_MISMATCH:${candidates.length}`);
   }
 
   // ---- 3. NORMALIZED_CODE_UNIT --------------------------------------------
   if (row.resourceCode) {
-    const lc = looseCode(row.resourceCode);
-    const candidates = (cidx.byLooseCode.get(lc) || []).filter(
-      (k) => k.unit === row.unit && typeCompatible(k.type, row.resourceType)
-    );
-    const pick = pickByComponent(candidates, row.resourceName);
-    if (pick) {
-      return {
-        method: 'NORMALIZED_CODE_UNIT',
-        componentKey: pick.k,
-        confidence: 0.9,
-        notes: [`nameSimilarity=${pick.sim.toFixed(2)}`, `componentKey=${pick.k.key}`],
-      };
+    if (!CODE_MATCH_DISABLED_SOURCES.has(row.sourceKey)) {
+      const lc = looseCode(row.resourceCode);
+      const candidates = (cidx.byLooseCode.get(lc) || []).filter(
+        (k) => k.unit === row.unit && typeCompatible(k.type, row.resourceType) && !k.quarantined
+      );
+      const pick = pickByComponent(candidates, row.resourceName, aliasNames);
+      if (pick) {
+        return {
+          method: 'NORMALIZED_CODE_UNIT',
+          componentKey: pick.k,
+          confidence: 0.9,
+          notes: [
+            `nameSimilarity=${pick.sim.toFixed(2)}`,
+            `componentKey=${pick.k.key}`,
+            ...(pick.viaAlias ? [`aliasName=${pick.viaAlias}`] : []),
+          ],
+        };
+      }
+      if (candidates.length > 0) notes.push(`NORMALIZED_CODE_REJECTED_NAME_MISMATCH:${candidates.length}`);
     }
-    if (candidates.length > 0) notes.push(`NORMALIZED_CODE_REJECTED_NAME_MISMATCH:${candidates.length}`);
   }
 
   // ---- 4. NAME_UNIT (unambiguous best; candidate only) --------------------
   if (row.resourceName) {
-    const rowNorm = normalizeName(row.resourceName);
-    const rowTokens = nameTokens(row.resourceName);
-    const scored: { k: ComponentKey; sim: number }[] = [];
+    const rowNorm = pipelineNormalizeName(row.resourceName);
+    const rowTokens = pipelineNameTokens(row.resourceName);
+    const rowSpec = extractSpecTokens(row.resourceName);
+    // Each roster alias is scored as an additional candidate name (rule a).
+    const aliasForms = aliasNames.map((a) => ({
+      alias: a,
+      norm: pipelineNormalizeName(a),
+      tokens: pipelineNameTokens(a),
+      spec: extractSpecTokens(a),
+    }));
+    const scored: { k: ComponentKey; sim: number; viaAlias: string | null }[] = [];
     for (const k of componentKeys) {
-      if (k.unit !== row.unit || !k.normName || !k.cleanName) continue;
+      if (k.unit !== row.unit || !k.normName || !k.cleanName || k.quarantined) continue;
       if (!typeCompatible(k.type, row.resourceType)) continue;
-      const sim = strictNameMatch(rowNorm, rowTokens, k.normName, k.tokens);
-      if (sim > 0) scored.push({ k, sim });
+      let bestSim = pipelineStrictNameMatch(rowNorm, rowTokens, k.pipeNormName, k.pipeTokens, rowSpec, k.specTokens);
+      let viaAlias: string | null = null;
+      for (const af of aliasForms) {
+        if (!af.norm) continue;
+        // An alias may not override a spec conflict carried by the primary
+        // name: the row's own specs still bind.
+        if (!specSetsCompatible(rowSpec, k.specTokens)) continue;
+        const sim = pipelineStrictNameMatch(af.norm, af.tokens, k.pipeNormName, k.pipeTokens, af.spec, k.specTokens);
+        if (sim > bestSim) {
+          bestSim = sim;
+          viaAlias = af.alias;
+        }
+      }
+      if (bestSim > 0) scored.push({ k, sim: bestSim, viaAlias });
     }
     scored.sort((a, b) => b.sim - a.sim || b.k.count - a.k.count || a.k.key.localeCompare(b.k.key));
     if (scored.length > 0) {
@@ -438,7 +591,11 @@ function tryMatch(
           method: 'NAME_UNIT',
           componentKey: top.k,
           confidence: top.sim,
-          notes: [`nameSimilarity=${top.sim.toFixed(2)}`, 'name+unit candidate — NEEDS_REVIEW'],
+          notes: [
+            `nameSimilarity=${top.sim.toFixed(2)}`,
+            'name+unit candidate — NEEDS_REVIEW',
+            ...(top.viaAlias ? [`aliasName=${top.viaAlias}`] : []),
+          ],
         };
       }
       notes.push(`NAME_UNIT_AMBIGUOUS:${scored.length}`);
@@ -452,7 +609,14 @@ function tryMatch(
 // main
 // ===========================================================================
 
-function main() {
+/**
+ * MASTER PRICING §13 (dry-run): with `dryRun` the full match is still
+ * computed from the CURRENT sources, but NONE of the 7 writes happen
+ * (5 validated JSONs + the 2 generated TS modules) — the summary plus
+ * a machine-readable `__SYNC_DRY_RUN_JSON__<json>` line are printed
+ * instead, so the orchestrator can report what WOULD change.
+ */
+function main(dryRun = false) {
   fs.mkdirSync(VALIDATED_DIR, { recursive: true });
   fs.mkdirSync(SRC_DIR, { recursive: true });
 
@@ -461,7 +625,9 @@ function main() {
     index: i,
   }));
   const idx = buildIndexes(resources);
-  const componentKeys = buildComponentKeys();
+  const quarantined = loadQuarantinedComponentKeys();
+  const rosterAliases = loadRosterAliases();
+  const componentKeys = buildComponentKeys(quarantined);
   const cidx = buildComponentIndex(componentKeys);
   const aliases = loadAliases();
   const rows = readAllSourceRows().filter((r) => SOURCE.get(r.sourceKey)?.active);
@@ -474,7 +640,7 @@ function main() {
   const pricedComponentKeys = new Set<string>();
 
   for (const row of rows) {
-    const outcome = tryMatch(row, idx, cidx, componentKeys, aliases);
+    const outcome = tryMatch(row, idx, cidx, componentKeys, aliases, rosterAliases);
     methodCount.set(outcome.method, (methodCount.get(outcome.method) || 0) + 1);
 
     if (!outcome.componentKey) {
@@ -500,6 +666,12 @@ function main() {
       matchConfidence: outcome.confidence,
       verificationStatus: status,
       notes: [...row.notes, ...outcome.notes],
+      // MASTER PRICING §3.3 — price identity versioning. Every record the
+      // pipeline emits is v1/ACTIVE of its identity; a future §4 price
+      // change supersedes (never overwrites) it. effectiveTo stays null
+      // (open-ended) — it is already filled by the normalizer's PricePeriod.
+      version: 1,
+      status: 'ACTIVE',
     });
 
     pricedComponentKeys.add(k.key);
@@ -592,9 +764,85 @@ function main() {
   const verification: Record<string, number> = {};
   for (const r of matched) verification[r.verificationStatus] = (verification[r.verificationStatus] || 0) + 1;
 
+  // ---- hardening stats (DB-sync Fase 2) ------------------------------------
+  const hasNote = (r: ResourcePriceRecord, prefix: string) => r.notes.some((n) => n.startsWith(prefix));
+  const hardening = {
+    rosterAliasBindings: matched.filter((r) => hasNote(r, 'aliasName=')).length,
+    codeMatchDisabledRows:
+      matched.filter((r) => hasNote(r, 'CODE_MATCH_DISABLED')).length +
+      unmatched.filter((r) => hasNote(r, 'CODE_MATCH_DISABLED')).length,
+    quarantinedComponentKeys: componentKeys.filter((k) => k.quarantined).length,
+    rosterAliasesLoaded: [...rosterAliases.values()].reduce((n, l) => n + l.length, 0),
+    rosterEntriesWithAliases: rosterAliases.size,
+  };
+
+  // ---- unresolved component keys (explicitly labelled, never priced) --------
+  // A key with no price is a DATA gap, not a zero price: it is published here
+  // with its reason so the DB-sync audit test can assert that no record
+  // fabricates a price for it.
+  const unresolvedKeys = componentKeys
+    .filter((k) => !pricedComponentKeys.has(k.key))
+    .map((k) => ({
+      key: k.key,
+      code: k.code,
+      unit: k.unit,
+      name: k.name,
+      type: k.type,
+      count: k.count,
+      reason: k.quarantined ? 'QUARANTINED_ARTIFACT' : 'NO_SOURCE_PRICE',
+      detail: k.quarantined
+        ? k.quarantineReason || 'quarantined artifact key'
+        : 'No pipeline price source binds this key — needs new price data (owner). No fabricated price is assigned.',
+    }));
+
+  // ---- MASTER PRICING §3.1 — verified aliases per canonical entity --------
+  // An alias enters the canonical entity ONLY when it is verified by
+  // construction — never by name-guessing:
+  //   (a) a roster alias the matcher actually USED to bind a price row
+  //       (note `aliasName=<alias>` on a matched record) — the alias named
+  //       the same entity the component key represents;
+  //   (b) an explicit alias-rule source name (aliases.json) — a human
+  //       decision with workbook evidence, attached to the rule target's
+  //       representative resource.
+  // Component-usage alternative labels are NOT aliases (observed, not
+  // approved) and stay out; §5 decides whether any of them is promoted.
+  const aliasesByResourceId = new Map<string, Set<string>>();
+  const attachAlias = (resourceId: string | null | undefined, alias: string) => {
+    if (!resourceId || !resourceId.startsWith('RES-0')) return; // RES-KEY-* is not a canonical entity
+    if (!alias || !alias.trim()) return;
+    if (!aliasesByResourceId.has(resourceId)) aliasesByResourceId.set(resourceId, new Set());
+    aliasesByResourceId.get(resourceId)!.add(alias.trim());
+  };
+  for (const r of matched) {
+    for (const n of r.notes) {
+      if (n.startsWith('aliasName=')) attachAlias(r.resourceId, n.slice('aliasName='.length));
+    }
+  }
+  for (const a of aliases) {
+    if (!a.resourceLooseCode || !a.sourceName) continue;
+    const key = `${looseCode(a.resourceLooseCode)}|${normalizeUnit(a.resourceUnit || '')}`;
+    // The rule targets a key; the representative resource of that key is
+    // the canonical entity the alias names. (resourceUnit is required on
+    // all current rules; a rule without one cannot resolve a key.)
+    const rep = a.resourceUnit ? idx.byLooseCodeUnit.get(key)?.representative : undefined;
+    attachAlias(rep?.resourceId, a.sourceName);
+  }
+
+  // MASTER PRICING §3.1 — canonical entity rows (built once: the same rows
+  // feed match_report.canonicalModel AND the emitted resource index).
+  const generatedAt = new Date().toISOString();
+  const canonical = buildCanonicalEntityRows(
+    resources,
+    componentKeys,
+    idx,
+    aliasesByResourceId,
+    generatedAt
+  );
+
   const matchReport = {
-    generatedAt: new Date().toISOString(),
+    generatedAt,
     aliasRules: aliases.length,
+    hardening,
     activePriceRows: rows.length,
     matchedRows: matched.length,
     unmatchedRows: unmatched.length,
@@ -622,17 +870,27 @@ function main() {
       byDomain: Object.fromEntries(byDomain),
     },
     verification,
+    unresolvedComponentKeys: {
+      count: unresolvedKeys.length,
+      quarantinedArtifact: unresolvedKeys.filter((k) => k.reason === 'QUARANTINED_ARTIFACT').length,
+      noSourcePrice: unresolvedKeys.filter((k) => k.reason === 'NO_SOURCE_PRICE').length,
+    },
     duplicates: { exactDuplicateGroups: exactDuplicates.length, samples: exactDuplicates.slice(0, 20) },
     conflicts: { conflictGroups: conflicts.length, samples: conflicts.slice(0, 20) },
+    // MASTER PRICING §3.1 — canonical entity model (M-1).
+    canonicalModel: canonical.stats,
   };
 
-  fs.writeFileSync(path.join(VALIDATED_DIR, 'price_master.json'), JSON.stringify({ generatedAt: matchReport.generatedAt, count: matched.length, records: matched }, null, 2));
-  fs.writeFileSync(path.join(VALIDATED_DIR, 'match_report.json'), JSON.stringify(matchReport, null, 2));
-  fs.writeFileSync(path.join(VALIDATED_DIR, 'unmatched_price_rows.json'), JSON.stringify({ count: unmatched.length, records: unmatched.slice(0, 3000) }, null, 2));
-  fs.writeFileSync(path.join(VALIDATED_DIR, 'conflicts.json'), JSON.stringify({ generatedAt: matchReport.generatedAt, count: conflicts.length, conflicts }, null, 2));
+  if (!dryRun) {
+    fs.writeFileSync(path.join(VALIDATED_DIR, 'price_master.json'), JSON.stringify({ generatedAt: matchReport.generatedAt, count: matched.length, records: matched }, null, 2));
+    fs.writeFileSync(path.join(VALIDATED_DIR, 'match_report.json'), JSON.stringify(matchReport, null, 2));
+    fs.writeFileSync(path.join(VALIDATED_DIR, 'unmatched_price_rows.json'), JSON.stringify({ count: unmatched.length, records: unmatched.slice(0, 3000) }, null, 2));
+    fs.writeFileSync(path.join(VALIDATED_DIR, 'conflicts.json'), JSON.stringify({ generatedAt: matchReport.generatedAt, count: conflicts.length, conflicts }, null, 2));
+    fs.writeFileSync(path.join(VALIDATED_DIR, 'unresolved_component_keys.json'), JSON.stringify({ generatedAt: matchReport.generatedAt, count: unresolvedKeys.length, keys: unresolvedKeys }, null, 2));
 
-  emitPriceMaster(matched);
-  emitResourceIndex(resources, componentKeys);
+    emitPriceMaster(matched);
+    emitResourceIndex(canonical.rows, componentKeys, canonical.keyRepresentatives);
+  }
 
   console.log('=== PHASE 12 — RESOURCE MATCHING ===');
   console.log('active price rows      :', rows.length);
@@ -641,11 +899,25 @@ function main() {
   console.log('match methods          :', JSON.stringify(matchReport.matchMethodHistogram));
   console.log('verification           :', JSON.stringify(verification));
   console.log('');
+  console.log('=== HARDENING (DB-sync Fase 2) ===');
+  console.log('alias rules            :', aliases.length);
+  console.log('roster alias bindings  :', hardening.rosterAliasBindings);
+  console.log('code-match disabled rows:', hardening.codeMatchDisabledRows, '(EQUIPMENT_2026 + COMMERCIAL_2026)');
+  console.log('quarantined keys       :', hardening.quarantinedComponentKeys, '(never matched, never priced)');
+  console.log('unresolved keys        :', unresolvedKeys.length, `(${matchReport.unresolvedComponentKeys.quarantinedArtifact} quarantined artifact, ${matchReport.unresolvedComponentKeys.noSourcePrice} no source price)`);
+  console.log('');
   console.log('=== COVERAGE ===');
   console.log('distinct component keys:', componentKeys.length, '| with price:', pricedComponentKeys.size, `(${matchReport.componentKeyCoverage.coveragePercent}%)`);
   for (const [t, v] of Object.entries(matchReport.componentKeyCoverage.perType)) {
     console.log(`  ${t.padEnd(10)} ${v.priced}/${v.total} (${(v as any).coveragePercent}%)`);
   }
+  console.log('');
+  console.log('=== CANONICAL MODEL §3.1 (M-1) ===');
+  console.log('entities               :', canonical.stats.entities);
+  console.log('active / inactive      :', `${canonical.stats.active} / ${canonical.stats.inactive} (inactive = DEFECTIVE quality)`);
+  console.log('canonicalName source   :', JSON.stringify(canonical.stats.canonicalNameSource));
+  console.log('entities with aliases  :', canonical.stats.entitiesWithAliases, `(${canonical.stats.aliasesAttached} aliases attached)`);
+  console.log('key representatives    :', canonical.stats.keyRepresentatives);
   console.log('');
   console.log('=== AHSP PRICING STATUS ===');
   console.log('FULL    :', full);
@@ -657,8 +929,28 @@ function main() {
   console.log('exact duplicate groups :', exactDuplicates.length);
   console.log('conflict groups        :', conflicts.length);
   console.log('');
-  console.log('Wrote: data/price2026/validated/{price_master,match_report,unmatched_price_rows,conflicts}.json');
-  console.log('Wrote: src/data/priceDatabase2026/{priceMaster,resourceIndex}.generated.ts');
+  if (dryRun) {
+    console.log('DRY RUN — no files written.');
+    console.log(
+      `__SYNC_DRY_RUN_JSON__${JSON.stringify({
+        stage: 'match',
+        activePriceRows: rows.length,
+        matchedRows: matched.length,
+        unmatchedRows: unmatched.length,
+        matchRate: matchReport.matchRate,
+        componentKeyCoverage: matchReport.componentKeyCoverage,
+        ahspCoverage: matchReport.ahspCoverage,
+        verification,
+        unresolvedKeys: unresolvedKeys.length,
+        exactDuplicateGroups: exactDuplicates.length,
+        conflictGroups: conflicts.length,
+        canonicalEntities: canonical.stats.entities,
+      })}`
+    );
+  } else {
+    console.log('Wrote: data/price2026/validated/{price_master,match_report,unmatched_price_rows,conflicts,unresolved_component_keys}.json');
+    console.log('Wrote: src/data/priceDatabase2026/{priceMaster,resourceIndex}.generated.ts');
+  }
 }
 
 // ===========================================================================
@@ -697,18 +989,11 @@ export const RESOURCE_PRICE_RECORD_COUNT = ${records.length};
   );
 }
 
-function emitResourceIndex(resources: ResourceEntry[], componentKeys: ComponentKey[]) {
-  const rows = resources.map((r) => ({
-    resourceId: r.resourceId,
-    code: r.code,
-    name: r.name,
-    unit: r.unit,
-    unitRaw: r.rawUnit,
-    type: r.classification.toLowerCase(),
-    quality: r.quality,
-    issues: r.issues,
-    sourceAhspCodes: r.sourceAhspCodes,
-  }));
+function emitResourceIndex(
+  rows: CanonicalEntityRow[],
+  componentKeys: ComponentKey[],
+  keyRepresentatives: Array<{ key: string; resourceId: string }>
+) {
   const chunks: string[] = [];
   const n = Math.ceil(rows.length / CHUNK);
   for (let i = 0; i < n; i++) {
@@ -729,6 +1014,8 @@ function emitResourceIndex(resources: ResourceEntry[], componentKeys: ComponentK
           type: k.type,
           count: k.count,
           cleanName: k.cleanName,
+          quarantined: k.quarantined,
+          quarantineReason: k.quarantineReason,
         }))
       )};`
     );
@@ -744,10 +1031,17 @@ function emitResourceIndex(resources: ResourceEntry[], componentKeys: ComponentK
  * actually need pricing. This is a READ-ONLY projection — the canonical resource
  * master itself is not modified.
  *
+ * MASTER PRICING §3.1 (M-1): each row is a CANONICAL ENTITY (RES-xxx is the
+ * stable id — never replaced). The §3.1 fields (canonicalName, category,
+ * specification, primaryUnit, aliases, description, active, createdAt,
+ * updatedAt, recordSource) are emitted by buildCanonicalEntityRows() in the
+ * matcher. specification/description are null: the canonical master carries
+ * no such field, and §3 never invents one.
+ *
  * resource rows: ${rows.length}   component keys: ${componentKeys.length}
  */
 
-import type { ResourceRowQuality } from './types';
+import type { ResourceClassification, ResourceRowQuality } from './types';
 
 export interface CanonicalResourceRow {
   resourceId: string;
@@ -759,6 +1053,34 @@ export interface CanonicalResourceRow {
   quality: ResourceRowQuality;
   issues: string[];
   sourceAhspCodes: string[];
+  // --- MASTER PRICING §3.1 — canonical entity identity (M-1) ---
+  /** Best available canonical label: resource-master name, else the clean component-usage name for the same key, else ''. */
+  canonicalName: string;
+  /** Where canonicalName came from. NONE = no usable label exists anywhere. */
+  nameSource: 'RESOURCE_MASTER' | 'COMPONENT_USAGE' | 'NONE';
+  /** MATERIAL | LABOR | EQUIPMENT | UNKNOWN (from the master's declared type; UNKNOWN is routed to NEEDS_REVIEW). */
+  category: ResourceClassification;
+  /** Technical specification. null: the canonical master carries no spec field (§3 never invents one). */
+  specification: string | null;
+  /** Spec tokens DERIVED from canonicalName (extractSpecTokens) — a matching aid, not source data. */
+  specTokens: string[];
+  /** Primary unit (normalized). */
+  primaryUnit: string;
+  /** VERIFIED aliases only (matcher-used roster aliases + explicit alias rules). Never name-guessed. */
+  aliases: string[];
+  /** Description. null: the canonical master carries no description field. */
+  description: string | null;
+  /** false = DEFECTIVE quality (proven polluted row, never priced). */
+  active: boolean;
+  /** Index-publication timestamps (this pipeline run). Per-row source timestamps do not exist in the canonical master. */
+  createdAt: string;
+  updatedAt: string;
+  /** Record owner/source: the canonical resource dataset this row was published from. */
+  recordSource: string;
+  /** Source document of the canonical resource dataset. */
+  sourceDocument: string;
+  /** AHSP family the row was extracted from (CIPTA_KARYA / BINA_MARGA / SDA) — the SOURCE DOMAIN, not the category. */
+  sourceDomain: string | null;
 }
 
 export interface ComponentKeyRow {
@@ -769,6 +1091,14 @@ export interface ComponentKeyRow {
   type: string;
   count: number;
   cleanName: boolean;
+  quarantined: boolean;
+  quarantineReason?: string;
+}
+
+/** Which canonical entity (representative RES-xxx) a component key resolves to. Single source of truth, computed once by the matcher. */
+export interface ComponentKeyRepresentative {
+  key: string;
+  resourceId: string;
 }
 
 ${chunks.join('\n\n')}
@@ -782,8 +1112,158 @@ export const CANONICAL_RESOURCE_INDEX_COUNT = ${rows.length};
 export const COMPONENT_KEYS: ComponentKeyRow[] = [${keySpread}];
 
 export const COMPONENT_KEY_COUNT = ${componentKeys.length};
+
+export const COMPONENT_KEY_REPRESENTATIVES: ComponentKeyRepresentative[] = ${JSON.stringify(keyRepresentatives)};
 `
   );
 }
 
-main();
+// ===========================================================================
+// MASTER PRICING §3.1 — canonical entity enrichment (M-1)
+// ===========================================================================
+
+/** Enriched canonical entity row (mirrors the emitted CanonicalResourceRow). */
+interface CanonicalEntityRow {
+  resourceId: string;
+  code: string;
+  name: string;
+  unit: string;
+  unitRaw: string;
+  type: string;
+  quality: ResourceRowQuality;
+  issues: string[];
+  sourceAhspCodes: string[];
+  canonicalName: string;
+  nameSource: 'RESOURCE_MASTER' | 'COMPONENT_USAGE' | 'NONE';
+  category: ResourceClassification;
+  specification: string | null;
+  specTokens: string[];
+  primaryUnit: string;
+  aliases: string[];
+  description: string | null;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+  recordSource: string;
+  sourceDocument: string;
+  sourceDomain: string | null;
+}
+
+interface CanonicalEntityBuild {
+  rows: CanonicalEntityRow[];
+  keyRepresentatives: Array<{ key: string; resourceId: string }>;
+  stats: {
+    entities: number;
+    active: number;
+    inactive: number;
+    byCategory: Record<string, number>;
+    canonicalNameSource: Record<string, number>;
+    entitiesWithAliases: number;
+    aliasesAttached: number;
+    keyRepresentatives: number;
+    specificationAvailable: number;
+    descriptionAvailable: number;
+  };
+}
+
+/**
+ * Enrich every audited resource row with its §3.1 canonical-entity fields.
+ * RES-xxx stays the stable id; nothing here renames, merges, or reprices
+ * anything. Fields with no source data are null — never guessed.
+ */
+function buildCanonicalEntityRows(
+  resources: ResourceEntry[],
+  componentKeys: ComponentKey[],
+  idx: ReturnType<typeof buildIndexes>,
+  aliasesByResourceId: Map<string, Set<string>>,
+  generatedAt: string
+): CanonicalEntityBuild {
+  const keyNameByKey = new Map(componentKeys.map((k) => [k.key, k.name]));
+  const keyRepresentatives = [...idx.byLooseCodeUnit.values()]
+    .map((g) => ({ key: g.key, resourceId: g.representative.resourceId }))
+    .sort((a, b) => a.key.localeCompare(b.key));
+
+  const nameSourceCount: Record<string, number> = { RESOURCE_MASTER: 0, COMPONENT_USAGE: 0, NONE: 0 };
+  const categoryCount: Record<string, number> = {};
+  let active = 0;
+  let entitiesWithAliases = 0;
+  let aliasesAttached = 0;
+
+  const rows: CanonicalEntityRow[] = resources.map((r) => {
+    const key = r.code ? `${looseCode(r.code)}|${r.unit}` : '';
+    const keyName = key ? keyNameByKey.get(key) || '' : '';
+    let canonicalName = r.name;
+    let nameSource: CanonicalEntityRow['nameSource'] = 'RESOURCE_MASTER';
+    if (!canonicalName && keyName) {
+      canonicalName = keyName;
+      nameSource = 'COMPONENT_USAGE';
+    }
+    if (!canonicalName) nameSource = 'NONE';
+    nameSourceCount[nameSource]++;
+
+    const isActive = r.quality !== 'DEFECTIVE';
+    if (isActive) active++;
+
+    const aliases = [...(aliasesByResourceId.get(r.resourceId) || [])].sort();
+    if (aliases.length > 0) {
+      entitiesWithAliases++;
+      aliasesAttached += aliases.length;
+    }
+    categoryCount[r.classification] = (categoryCount[r.classification] || 0) + 1;
+
+    return {
+      resourceId: r.resourceId,
+      code: r.code,
+      name: r.name,
+      unit: r.unit,
+      unitRaw: r.rawUnit,
+      type: r.classification.toLowerCase(),
+      quality: r.quality,
+      issues: r.issues,
+      sourceAhspCodes: r.sourceAhspCodes,
+      canonicalName,
+      nameSource,
+      category: r.classification,
+      // No specification/description field exists in the canonical resource
+      // master (ahsp_2026_resources.json carries only resource_id/code/name/
+      // type/unit/category/source_ahsp_codes/duplicate_status). null is the
+      // honest value — a spec is NEVER derived by guessing from the name.
+      // specTokens (below) is the only derived spec signal, labelled derived.
+      specification: null,
+      specTokens: extractSpecTokens(canonicalName),
+      primaryUnit: r.unit,
+      aliases,
+      description: null,
+      // DEFECTIVE rows are proven polluted (empty name / summary-line leak /
+      // fragment) and are never priced — they are inactive entities.
+      active: isActive,
+      // Per-row source timestamps do not exist in the canonical master;
+      // createdAt/updatedAt record the INDEX publication (this pipeline
+      // run), not a source publication date.
+      createdAt: generatedAt,
+      updatedAt: generatedAt,
+      recordSource: 'AHSP_2026_CANONICAL_RESOURCES',
+      sourceDocument: 'SE DJBK No. 47/SE/Dk/2026',
+      sourceDomain: r.sourceDomain ?? null,
+    };
+  });
+
+  return {
+    rows,
+    keyRepresentatives,
+    stats: {
+      entities: rows.length,
+      active,
+      inactive: rows.length - active,
+      byCategory: categoryCount,
+      canonicalNameSource: nameSourceCount,
+      entitiesWithAliases,
+      aliasesAttached,
+      keyRepresentatives: keyRepresentatives.length,
+      specificationAvailable: 0, // no source field — see note above
+      descriptionAvailable: 0,
+    },
+  };
+}
+
+main(process.argv.includes('--dry-run'));

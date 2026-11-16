@@ -32,6 +32,13 @@
  * src/test/d43EstimateVersioning.test.ts).
  */
 import type { EstimateVersion, RabItem } from '../types';
+import { AHSP_DATABASE_VERSION } from '../data/nationalCostDatabase/types';
+import {
+  MASTER_PRICE_VERSION,
+  DEFAULT_SNAPSHOT_PRICING_MODE,
+  isValidProjectPricingMode,
+} from '../data/priceDatabase2026/types';
+import type { ProjectPricingMode } from '../data/priceDatabase2026/types';
 
 /** Canonical baseline identity — the same text the old virtual baseline showed. */
 export const BASELINE_VERSION_NUMBER = 'v1.0';
@@ -132,6 +139,13 @@ export function buildBaselineVersion(
     rabItemsSnapshot: cloneItems(items),
     itemsCount: items.length,
     isBaseline: true,
+    // MASTER PRICING §3 (I-11): source-version stamp + safe default mode.
+    // A version is an immutable snapshot of frozen values, so its pricing
+    // mode is SNAPSHOT_PRICE (Decision D). Model only; §10 behaviour is
+    // not implemented here.
+    ahspDatabaseVersion: AHSP_DATABASE_VERSION,
+    masterPriceVersion: MASTER_PRICE_VERSION,
+    pricingMode: DEFAULT_SNAPSHOT_PRICING_MODE,
   };
 }
 
@@ -158,6 +172,20 @@ export interface CreateRevisionInput {
   label: string;
   description: string;
   revisionNotes?: string;
+  /**
+   * MASTER PRICING §10 (d) — source-version stamps for the created
+   * revision. When omitted, the revision stamps the CURRENT constants
+   * (`AHSP_DATABASE_VERSION` + `MASTER_PRICE_VERSION` +
+   * `SNAPSHOT_PRICE`) — the §3 behaviour, unchanged. §10 adoption
+   * passes the ADOPTED versions here so the new revision pins exactly
+   * what its frozen values were priced against. An explicitly invalid
+   * `pricingMode` (or an empty version string) throws (fail-closed).
+   */
+  versionStamps?: {
+    ahspDatabaseVersion?: string;
+    masterPriceVersion?: string;
+    pricingMode?: ProjectPricingMode;
+  };
 }
 
 export interface CreateRevisionResult {
@@ -186,6 +214,23 @@ export function createRevision(
   const prevCost = prev ? prev.costAfter : currentCost;
   const diff = currentCost - prevCost;
   const pct = prevCost > 0 ? (diff / prevCost) * 100 : 0;
+
+  // MASTER PRICING §10 (d) — adoption stamps the ADOPTED versions on
+  // the new revision; anything else keeps the §3 defaults. An invalid
+  // stamp throws here (fail-closed) rather than writing a revision
+  // whose provenance lies about what it was priced against.
+  const stamps = input.versionStamps;
+  if (stamps?.pricingMode !== undefined && !isValidProjectPricingMode(stamps.pricingMode)) {
+    throw new Error(
+      `Invalid pricingMode ${JSON.stringify(stamps.pricingMode)} for revision — refusing to stamp it`,
+    );
+  }
+  if (stamps?.ahspDatabaseVersion !== undefined && stamps.ahspDatabaseVersion.trim() === '') {
+    throw new Error('ahspDatabaseVersion stamp must not be an empty string');
+  }
+  if (stamps?.masterPriceVersion !== undefined && stamps.masterPriceVersion.trim() === '') {
+    throw new Error('masterPriceVersion stamp must not be an empty string');
+  }
 
   const verNum = nextVersionNumber(ensured.versions);
   const assignedMajor = parseVersionNumber(verNum) ?? 0;
@@ -216,6 +261,13 @@ export function createRevision(
     rabItemsSnapshot: cloneItems(items),
     itemsCount: items.length,
     isBaseline: false,
+    // MASTER PRICING §3 (I-11) + §10 (d): source-version stamp + safe
+    // default mode (SNAPSHOT_PRICE — Decision D). §10 adoption
+    // overrides the stamps with the ADOPTED versions (validated above);
+    // every other caller keeps the §3 defaults.
+    ahspDatabaseVersion: stamps?.ahspDatabaseVersion ?? AHSP_DATABASE_VERSION,
+    masterPriceVersion: stamps?.masterPriceVersion ?? MASTER_PRICE_VERSION,
+    pricingMode: stamps?.pricingMode ?? DEFAULT_SNAPSHOT_PRICING_MODE,
   };
 
   return {

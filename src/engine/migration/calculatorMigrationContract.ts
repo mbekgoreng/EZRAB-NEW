@@ -18,7 +18,7 @@
 import { SafeDecimalEngine } from '../safeDecimalEngine';
 import { AHSPDefinition } from '../ahsp/contracts/types';
 import { CentralDeterministicCostEngine, ProjectCostPolicySettings, WorkItemCostOutput } from '../cost/centralDeterministicCostEngine';
-import { PriceResolutionOutput } from '../pricing/resolver/advancedPriceResolutionEngine';
+import { PriceResolutionOutput } from '../pricing/resolver/priceResolutionTypes';
 
 export type PricingEngineVersion = 'legacy' | 'v2';
 

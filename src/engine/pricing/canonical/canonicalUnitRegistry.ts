@@ -144,7 +144,40 @@ export const CANONICAL_UNITS: Record<string, CanonicalUnitDefinition> = {
     canonicalSymbol: 'OJ',
     dimension: 'LABOR_TIME',
     aliases: ['OJ', 'oj', 'org/jam', 'orangjam', 'orang-jam', 'manhour'],
-    description: 'Orang-Jam (Standar jam kerja tenaga kerja)',
+    // MASTER PRICING §7 — OJ IS A HOMONYM (§5 §8). The label denotes a
+    // DAY in canonical AHSP components (coefficients proven daily-scale)
+    // and in the HSD source (all 13 labor records OJ at daily prices,
+    // no OH labor records at all), and an HOUR in the LABOR source
+    // (OJ = OH / workHoursPerDay, documented per record) and in the BM
+    // OJ twins (hourly rates relabelled OJ). The two meanings are
+    // separated explicitly as OJ_DAY / OJ_HOUR below; the bare `OJ`
+    // symbol keeps normalizing to itself (resolver behavior unchanged)
+    // and its basis is classified per query/record from documented
+    // evidence (see `OJ_BASIS_DEFINITIONS` + centralResolution
+    // `classifyOjQueryBasis` / `classifyOjRecordBasis`). Never assume.
+    description:
+      'Orang-Jam — HOMONIM (§7): hari di komponen AHSP kanonis & HSD, jam di LABOR & twin BM. Basis per bukti, lihat OJ_DAY/OJ_HOUR.',
+  },
+  // MASTER PRICING §7 — the two OJ meanings as DISTINCT canonical
+  // symbols. No source data uses these labels; they exist so the basis
+  // separation is explicit in the single dimension authority instead of
+  // implicit in resolver comments. Both are LABOR_TIME, so
+  // areDimensionallyCompatible(OJ_DAY, OH) is true — the documented
+  // 1:1 daily identity (§7.1 transfer) — while OJ_HOUR is the hourly
+  // scale that converts to OH only via a documented work-hours basis.
+  OJ_DAY: {
+    canonicalSymbol: 'OJ_DAY',
+    dimension: 'LABOR_TIME',
+    aliases: ['oj_day', 'oj-day', 'oj_hari', 'oj-hari'],
+    description:
+      'OJ-hari: satu hari kerja (§5 §8 — komponen AHSP kanonis; HSD: seluruh upah OJ pada harga harian, tanpa record OH). Identik skala dengan OH (faktor 1:1).',
+  },
+  OJ_HOUR: {
+    canonicalSymbol: 'OJ_HOUR',
+    dimension: 'LABOR_TIME',
+    aliases: ['oj_hour', 'oj-hour', 'oj_jam', 'oj-jam'],
+    description:
+      'OJ-jam: satu jam kerja (LABOR: OJ = OH / workHoursPerDay, terdokumentasi per record; twin BM: tarif jam direlabel OJ). Ke OH hanya via workHoursPerDay terdokumentasi.',
   },
 
   // Equipment Time
@@ -365,3 +398,33 @@ export class CanonicalUnitRegistry {
 }
 
 export const canonicalUnitRegistry = CanonicalUnitRegistry.getInstance();
+
+// ===========================================================================
+// MASTER PRICING §7 — OJ BASIS DEFINITIONS (the homonym, documented)
+// ===========================================================================
+
+/**
+ * The documented basis of each OJ meaning. `evidence` is the proof that
+ * authorizes treating a value as that basis; `convertsToOh` states the
+ * ONLY sound OH conversion for it. A value whose evidence matches
+ * neither entry is OJ_UNDOCUMENTED and never converts on basis alone.
+ */
+export const OJ_BASIS_DEFINITIONS = {
+  OJ_DAY: {
+    basis: 'OJ_DAY' as const,
+    meaning: 'satu hari kerja (day)',
+    evidence:
+      '§5 §8: koefisien OJ komponen AHSP kanonis terbukti skala harian; HSD 2026: 13 record upah SELURUHNYA OJ pada harga harian (Rp120–220 rb) tanpa satu pun record OH — OJ ADALAH satuan hari HSD; CK Tukang batu OH Rp145.000 ≈ HSD Tukang OJ Rp140–160.000 (peran sama, harga sama, label beda).',
+    convertsToOh: 'factor 1 (identitas harian OJ-hari ≡ OH-hari, §7.1) — hanya untuk kueri OJ native (raw unit OJ).',
+  },
+  OJ_HOUR: {
+    basis: 'OJ_HOUR' as const,
+    meaning: 'satu jam kerja (hour)',
+    evidence:
+      'LABOR: OJ = OH / workHoursPerDay, terdokumentasi per record (workHoursPerDay=7/8); twin BM: tarif jam direlabel OJ oleh konstruksi resolver (§6).',
+    convertsToOh: 'factor workHoursPerDay (×N) — hanya bila record mendokumentasikan workHoursPerDay; tanpa catatan, tidak pernah konversi.',
+  },
+} as const;
+
+/** The OJ basis symbols the registry separates explicitly. */
+export type OjBasisSymbol = keyof typeof OJ_BASIS_DEFINITIONS;

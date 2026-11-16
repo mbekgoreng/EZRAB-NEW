@@ -18,6 +18,7 @@
 import React from 'react';
 import { Plus, ChevronDown, ChevronUp, ClipboardList } from 'lucide-react';
 import type { RabItem } from '../../types';
+import { stripChatAiPrefix } from '../../ai-tools/ezrab-ai/workItemTitle';
 import type { GroupedWbsCategory } from '../estimator/EstimatorSpreadsheetTable';
 import type { AddItemMode } from '../estimator/SmartAddWorkItemModal';
 import { exportItemAmount } from '../../export/priceIntegrity';
@@ -92,7 +93,7 @@ export const MobileSpreadsheetRab: React.FC<MobileSpreadsheetRabProps> = ({
                       >
                         <span className="mnw-sheet-item-main">
                           <span className="mnw-sheet-item-name">
-                            {idx + 1}. {item.description}
+                            {idx + 1}. {stripChatAiPrefix(item.description)}
                           </span>
                           <span className="mnw-sheet-item-meta">
                             {amount === null

@@ -77,6 +77,13 @@ import {
   type ComponentPriceStatus,
   type ComponentPriceProvenance,
 } from '../../engine/constructionCalculators/componentPriceResolution';
+import {
+  buildOverrideRefForProject,
+  buildProjectPricingContext,
+  buildSnapshotRefFromProject,
+  resolveEffectiveProjectPricingMode,
+} from '../../engine/pricing/projectPriceModes';
+import { projectPriceEngine } from '../../engine/pricing/projectPriceEngine';
 import type { RegionalPriceSource } from '../../engine/constructionCalculators/regionalPrices';
 import { useScopeBasedCost } from '../../hooks/useScopeBasedCost';
 // D-61 + D-71 (Batch D): breakdown row units/labels come from the explicit
@@ -531,6 +538,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
     setCurrentProjectId,
     projectQtoItems,
     projectCalculationRuns,
+    projectEstimateVersions,
     executeCalculationAndSave,
     syncQtoToRabSpreadsheet,
     deleteQtoItem,
@@ -543,6 +551,16 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
       setCurrentProjectId(projects[0].id);
     }
   }, [currentProjectId, projects, setCurrentProjectId]);
+
+  // MASTER PRICING §13 (#7) — re-run the price breakdown when project
+  // overrides change: the engine notifies on every override mutation,
+  // and the memo below depends on this version counter, so an
+  // override edit re-prices the QTO rows without a remount.
+  const [overrideVersion, setOverrideVersion] = useState(0);
+  useEffect(
+    () => projectPriceEngine.subscribe(() => setOverrideVersion((v) => v + 1)),
+    [],
+  );
 
   // Active Calculator & Domain Selector (Default: BOWPLANK in BUILDING)
   const [selectedCalcId, setSelectedCalcId] = useState<string>(initialCalcId || 'BOWPLANK');
@@ -1180,6 +1198,28 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
     // MARKET_REFERENCE (tautan registry terverifikasi + gerbang satuan) →
     // CALCULATOR_ESTIMATE → UNRESOLVED (null, berlabel — bukan Rp0).
     const projectProvince = effectiveProject?.province ?? null;
+    // MASTER PRICING §12 + §14 need #2: QTO prices resolve under the
+    // project's pricing mode (§10). OVERRIDE → project overrides win
+    // per component; SNAPSHOT → the ACTIVE estimate version's
+    // captured component-price map wins (captured at adoption
+    // approval — §14; versions without a map fall through to live
+    // master prices with the §6 fallthrough note in the
+    // explanation). LIVE → current master. Absent mode reads as
+    // SNAPSHOT (Decision D, §10 rule — never LIVE).
+    const { mode: effectivePricingMode } = resolveEffectiveProjectPricingMode(
+      effectiveProject?.pricingMode ?? null,
+    );
+    const pricingContext = buildProjectPricingContext({
+      mode: effectivePricingMode,
+      snapshotRef:
+        effectivePricingMode === 'SNAPSHOT_PRICE' && effectiveProject
+          ? buildSnapshotRefFromProject(effectiveProject, projectEstimateVersions)
+          : null,
+      overrideRef:
+        effectivePricingMode === 'PROJECT_OVERRIDE' && effectiveProject
+          ? buildOverrideRefForProject(effectiveProject.id)
+          : null,
+    });
     const toRow = (
       keyPrefix: string,
       name: string,
@@ -1191,13 +1231,13 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
       satuan: r.unit,
       hargaSatuan: r.unitPrice,
       jumlahHarga: r.subtotal,
-      isOverridden: r.provenance === 'USER_PROVIDED',
+      isOverridden: r.provenance === 'USER_PROVIDED' || r.provenance === 'PROJECT_OVERRIDE',
       priceSource:
         r.provenance === 'OFFICIAL_HSPK_REGIONAL'
           ? 'HSPK_REGIONAL'
-          : r.provenance === 'OFFICIAL_AHSP_2026' || r.provenance === 'MARKET_REFERENCE'
+          : r.provenance === 'OFFICIAL_AHSP_2026' || r.provenance === 'MARKET_REFERENCE' || r.provenance === 'PROJECT_SNAPSHOT'
             ? 'MASTER_DB'
-            : r.provenance === 'USER_PROVIDED'
+            : r.provenance === 'USER_PROVIDED' || r.provenance === 'PROJECT_OVERRIDE'
               ? 'OVERRIDE'
               : r.provenance === 'CALCULATOR_ESTIMATE'
                 ? 'CALCULATOR_ESTIMATE'
@@ -1229,6 +1269,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
         resourceCode: l.resourceCode,
         declaredEstimate: l.rateEstimate,
         projectProvince,
+        pricingContext,
       })),
     );
     const subtotalLabor = laborRows.reduce((acc, row) => acc + (row.jumlahHarga ?? 0), 0);
@@ -1243,6 +1284,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
         resourceCode: m.resourceCode,
         declaredEstimate: m.unitPriceEstimate,
         projectProvince,
+        pricingContext,
       })),
     );
     const subtotalMaterials = materialRows.reduce((acc, row) => acc + (row.jumlahHarga ?? 0), 0);
@@ -1257,6 +1299,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
         resourceCode: eq.resourceCode,
         declaredEstimate: eq.unitPriceEstimate,
         projectProvince,
+        pricingContext,
       })),
     );
     const subtotalEquipment = equipmentRows.reduce((acc, row) => acc + (row.jumlahHarga ?? 0), 0);
@@ -1327,7 +1370,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
       unitMismatchRowCount,
       ambiguousRowCount,
     };
-  }, [calculationResult, activeSpec, selectedCalcId, effectiveProject?.province]);
+  }, [calculationResult, activeSpec, selectedCalcId, effectiveProject?.province, effectiveProject?.pricingMode, effectiveProject?.id, projectEstimateVersions, overrideVersion]);
 
   // Empty State if No Project Available
   if (!effectiveProject) {

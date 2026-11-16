@@ -1,11 +1,15 @@
 import ExcelJS from 'exceljs';
 import fileSaver from 'file-saver';
 const saveAs = (fileSaver as any)?.saveAs || fileSaver;
-import { Project, Company, RABSection, RABItem } from '../types';
+import { Project, Company, EstimateVersion, RABSection, RABItem } from '../types';
 import { MASTER_AHSP_DATABASE } from '../data/indonesianAHSP';
 import { getPriceDatabase } from '../data/indonesianPrices';
 import { generateKurvaSData, generateCashFlowData } from '../engine/kurvaSEngine';
 import { UnifiedProjectEngine } from '../engine/unifiedProjectEngine';
+import {
+  effectiveProjectPricingStateForProject,
+  formatPricingBasisLabel,
+} from '../engine/pricing/projectPriceModes';
 import {
   ExportPackageOptions,
   ExportPresetId,
@@ -73,6 +77,13 @@ export interface ExcelExportOptions {
    * idempotensi byte + pengujian pembekuan.
    */
   snapshot?: RabExportSnapshot;
+  /**
+   * MASTER PRICING §12: daftar versi estimasi proyek (opsional).
+   * Bila disediakan, pin AHSP/harga master pada label Basis Harga
+   * (cover 16-sheet + snapshot 5-sheet) diambil dari versi estimasi
+   * AKTIF proyek; bila tidak, pin dibaca sebagai default legacy.
+   */
+  estimateVersions?: readonly EstimateVersion[];
 }
 
 /**
@@ -277,6 +288,7 @@ export async function exportRABToProfessionalExcel(
       providedSnapshot ??
       freezeRabSnapshot(project, normalizedSections, costSummary, exportSummary, {
         actor: 'demo/anonim',
+        estimateVersions: (options as Partial<ExcelExportOptions>).estimateVersions,
       });
     // Determinisme byte: tanggal workbook mengikuti snapshot (bukan jam
     // ekspor), sehingga ekspor ulang atas snapshot yang sama menghasilkan
@@ -570,6 +582,21 @@ export async function exportRABToProfessionalExcel(
     wsCover.mergeCells('D16:E16');
     wsCover.getCell('D16').value = `${project.currentVersion || 'Rev 00'} • ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`;
     wsCover.getCell('D16').font = { name: FONT_FAMILY, size: 10.5, bold: true, color: { argb: EXCEL_COLORS.NAVY_DARK } };
+
+    // MASTER PRICING §12: Basis Harga — mode harga proyek (§10) + pin
+    // AHSP / harga master yang berlaku. Pin '(default)' = default
+    // legacy, bukan pin tercatat pada versi estimasi aktif.
+    const pricingState = effectiveProjectPricingStateForProject(
+      project,
+      (options as Partial<ExcelExportOptions>).estimateVersions ?? null,
+    );
+    wsCover.getCell('B17').value = 'BASIS HARGA';
+    wsCover.getCell('B17').font = { name: FONT_FAMILY, size: 8.5, bold: true, color: { argb: EXCEL_COLORS.SLATE_MUTED } };
+    wsCover.mergeCells('B18:E18');
+    wsCover.getCell('B18').value = formatPricingBasisLabel(pricingState);
+    wsCover.getCell('B18').font = { name: FONT_FAMILY, size: 10.5, bold: true, color: { argb: EXCEL_COLORS.NAVY_DARK } };
+    wsCover.getCell('B18').alignment = { wrapText: true };
+    wsCover.getRow(18).height = 28;
 
     // Executive Cost Card (ONLY for non-MC0 packages)
     if (!isBoqMc0Only) {

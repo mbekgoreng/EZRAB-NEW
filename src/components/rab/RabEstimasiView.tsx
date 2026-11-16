@@ -1817,6 +1817,7 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
           } as any}
           company={DEFAULT_COMPANY}
           onToast={showToast}
+          estimateVersions={projectEstimateVersions}
         />
       )}
 

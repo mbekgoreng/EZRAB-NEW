@@ -75,6 +75,7 @@ import {
 import { summarizeExportSections } from '../export/priceIntegrity';
 import { computeRekapSummary } from '../components/estimator/rekapSummary';
 import { PREMIUM_DEMO_PROJECT, PREMIUM_DEMO_RAB_ITEMS } from '../data/premiumDemoData';
+import { formatWorkItemTitle } from '../ai-tools/ezrab-ai/workItemTitle';
 import type { Project, Company, RabItem } from '../types';
 
 let passed = 0;
@@ -356,7 +357,7 @@ function testTransfer(draft: UniversalDraft): void {
   gen[2].wbsCode = 'BGN-03'; // wbsCode eksplisit dari jalur lain
   const mutatedPayload = buildPushPayload(mutated);
   const effMut = effectiveItems(mutated);
-  const byDesc = (d: string) => mutatedPayload.find((p) => p.description === `[Chat AI] ${d}`)!;
+  const byDesc = (d: string) => mutatedPayload.find((p) => p.description === formatWorkItemTitle(d))!;
   eq("mutasi: code '01.01' → wbsCode '01.01'", byDesc(effMut[0].description).wbsCode, '01.01');
   eq("mutasi: code 'B.38' → tanpa wbsCode", byDesc(effMut[1].description).wbsCode, undefined);
   eq("mutasi: wbsCode eksplisit 'BGN-03' → wbsCode 'BGN-03'", byDesc(effMut[2].description).wbsCode, 'BGN-03');
@@ -465,7 +466,9 @@ function testNormalize(draft: UniversalDraft): { project: Project; sections: any
   const sections = UnifiedProjectEngine.normalizeSections(project, all as never);
   const flat = sections.flatMap((s) => (s.items || []) as any[]);
   eq('normalisasi: 12 item hadir (8 transfer + 4 sintetis)', flat.length, 12);
-  const byDesc = (d: string) => flat.find((x) => x.description === d || x.description === `[Chat AI] ${d}`)!;
+  // flat berisi 8 item transfer (uraian ternormalisasi) + 4 item sintetis
+  // (uraian mentah apa adanya) — cocokkan keduanya.
+  const byDesc = (d: string) => flat.find((x) => x.description === d || x.description === formatWorkItemTitle(d))!;
 
   const eff0 = effectiveItems(draft)[0];
   const n0 = byDesc(eff0.description);

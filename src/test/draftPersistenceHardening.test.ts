@@ -45,6 +45,7 @@ import { createRabItemRecord } from '../engine/rab/rabItemFactory';
 import { UnifiedProjectEngine } from '../engine/unifiedProjectEngine';
 import { EzrabAiService } from '../ai-tools/ezrab-ai/service';
 import { aiToolsProviderClient } from '../ai-tools/providerClient';
+import { formatWorkItemTitle } from '../ai-tools/ezrab-ai/workItemTitle';
 import type { RabItem } from '../types';
 
 /* ---------------- localStorage shim (dengan penghitung tulis) ------- */
@@ -242,7 +243,7 @@ describe('§2/§4 provenans tak-teresolusi round-trip', () => {
     expect(isPriceValidForTotal(restoredFirst)).toBe(false);
 
     const payload = buildPushPayload(loaded.draft);
-    const payloadFirst = payload.find((p) => p.description === `[Chat AI] ${first.description}`)!;
+    const payloadFirst = payload.find((p) => p.description === formatWorkItemTitle(first.description))!;
     expect(payloadFirst.priceStatus).toBe('PRICE_UNRESOLVED');
     expect('unitPrice' in payloadFirst).toBe(false);
 

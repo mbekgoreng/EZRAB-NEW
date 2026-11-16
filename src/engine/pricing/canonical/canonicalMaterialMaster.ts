@@ -4,6 +4,26 @@
  * Phase 3: Standardized Material Identity Registry with Specification Disambiguation.
  * Prevents conflating materials with different specifications (e.g. Kaca 5mm != Kaca 8mm,
  * Besi Polos != Besi Ulir, Gypsum 9mm != GRC 4mm).
+ *
+ * MASTER PRICING §3 — DECISION I-5 (2026-11-16): FROZEN AS A SPECIFICATION-ONLY
+ * REGISTRY. MAT-CANON-xxx is NOT a pricing identity scheme and must never become
+ * a fourth ID scheme next to RES-xxx (canonical), PRC-xxx (price records), and
+ * the source ids (HSD-2026-*, MAT-*, KP-*). Reasons, from the module's contents:
+ *   (1) No entry carries an AHSP code, a RES-xxx link, or a source record id —
+ *       no proven binding to any canonical entity exists, so nothing here can
+ *       enter the §3.2 source identity registry (which admits only verified
+ *       bindings; minting RES links by name-matching would fabricate identity).
+ *   (2) `standardPriceRange` (min/reference/max) is an unsourced reference
+ *       range, not a price: the values are attributed to SE DJBK 47/2026 but
+ *       ranges do not appear in the SE as prices. They must never feed price
+ *       resolution; their provenance needs owner verification (§5).
+ *   (3) The registry has ZERO consumers in the repo (2026-11-16) — its
+ *       spec-disambiguation value (Kaca 5mm != 8mm) is real but currently
+ *       unused by any pricing path.
+ * The aliases/specifications here may enter the registry ONLY through a
+ * future owner-verified RES binding (§5 reconciliation) — never by
+ * name-matching in this phase. Do not add new MAT-CANON entries as a way
+ * to create identities; new canonical entities are RES-xxx rows.
  */
 
 export interface CanonicalMaterialDefinition {

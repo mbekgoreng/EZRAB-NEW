@@ -27,8 +27,7 @@ import {
   PriceSearchResult,
   PriceDefinition,
 } from '../../engine/pricing/contracts/types';
-import { PriceResolver } from '../../engine/pricing/resolver/priceResolver';
-import { PriceRepository } from '../../engine/pricing/repository/priceRepository';
+import { canonicalPriceResolverAdapter } from '../../engine/pricing/canonical/canonicalPriceResolverAdapter';
 import { projectPriceEngine } from '../../engine/pricing/projectPriceEngine';
 import { laborDatabaseService } from '../../domain/labor/laborDatabaseService';
 import { MaterialDatabaseService } from '../../domain/material/materialDatabaseService';
@@ -89,8 +88,13 @@ export const PriceResolutionDrawer: React.FC<PriceResolutionDrawerProps> = ({
 
   // Search runner across all sources
   const performSearch = (searchTerm: string) => {
-    const resolver = new PriceResolver();
-    const result = resolver.resolve({
+    // MASTER PRICING §12 (D3/M-12): the FIRST candidate is now the
+    // canonical master price (adapter → canonical resolver), not the
+    // legacy engine resolver's PriceRepository candidates. The domain
+    // services below (material/labor/equipment) still contribute
+    // ALTERNATIVE candidates the estimator may choose explicitly —
+    // they never silently outrank the canonical price.
+    const result = canonicalPriceResolverAdapter.resolve({
       name: searchTerm,
       specification: itemSpecification,
       brand: itemBrand,
@@ -101,7 +105,7 @@ export const PriceResolutionDrawer: React.FC<PriceResolutionDrawerProps> = ({
 
     const candidatesList: PriceCandidate[] = [];
 
-    // 1. Existing resolver candidates
+    // 1. Canonical resolver candidate (first — the authoritative price)
     if (result.priceCandidates && result.priceCandidates.length > 0) {
       candidatesList.push(...result.priceCandidates);
     }

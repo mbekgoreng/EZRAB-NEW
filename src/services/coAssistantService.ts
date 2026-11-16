@@ -32,8 +32,11 @@ import { RESPONSE_LANGUAGE_RULE, RESPONSE_FORMAT_RULE } from '../ai-tools/ezrab-
 import { scanToolCalls } from '../ai-tools/ezrab-ai/toolCallParser';
 import { executeTool, getCopilotToolListText } from '../ai-tools/ezrab-ai/toolRegistry';
 import {
+  buildLocalQuickActionDialogue,
+  deriveFollowUpSuggestions,
   quickActionContextLine,
   resolveQuickActionContract,
+  resolveQuickActionFromSuggestion,
   stripQuickActionToken,
 } from './ai/quickActionToken';
 
@@ -356,6 +359,38 @@ class CoAssistantService {
       };
     }
 
+    // D-50 (perbaikan uji AI live 2026-11-15): klik chip saran lanjutan
+    // mengirim label saran sebagai pesan (chatbox: onSelectSuggestion →
+    // handleSendMessage). Bila pesan itu PERSIS label sebuah Quick Action
+    // dan pengiriman ini BELUM membawa quickActionId terstruktur, buka
+    // DIALOG aksi itu (QuickActionDialogueRenderer) LANGSUNG — TANPA
+    // panggilan gateway (tanpa kredit AI, tanpa auto-send ke AI).
+    // Ditempatkan sesudah gerbang proyek agar AUDIT/KURVA_S/PROGRESS/
+    // DED tanpa proyek tetap mendapat pesan gerbang yang sama seperti
+    // jalur Quick Action terkonfirmasi. Pesan yang sudah membawa
+    // quickActionId (klik grid Quick Action yang dikonfirmasi) TIDAK
+    // pernah dicegat — jalurnya ke gateway tidak berubah.
+    if (!quickActionContract) {
+      const suggestionContract = resolveQuickActionFromSuggestion(cleanMessage);
+      if (suggestionContract) {
+        const dialogue = buildLocalQuickActionDialogue(suggestionContract);
+        const qaMsg: CoAssistantMessage = {
+          id: `ai-qa-${Date.now()}`,
+          role: 'ai',
+          text: dialogue.message,
+          timestamp: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+          intent: suggestionContract.intent,
+          quickActionResponse: dialogue,
+          source: 'local-fallback',
+        };
+        this.syncAiResponseToStore(request.currentProject?.id, qaMsg);
+        return {
+          message: qaMsg,
+          conversationId: this.activeConversationId,
+        };
+      }
+    }
+
     // Detect Document Package Wizard request — pakai intent yang sudah terdeteksi
     const isDocumentPackageRequest = intent === 'DOCUMENT';
 
@@ -555,6 +590,19 @@ class CoAssistantService {
       text: copilotReplyText,
       timestamp: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
       intent: intent ?? undefined,
+      // D-50 (perbaikan uji AI live 2026-11-15): balasan gateway live
+      // tidak pernah membawa followUpSuggestions — server tidak
+      // mengirimnya — sehingga chip Quick Action tidak pernah muncul.
+      // Tempel saran kontekstual di sisi klien (label kontrak, mis.
+      // 'Hitung Volume' untuk konteks volume), BUKAN token mentah
+      // [QUICK_ACTION_TRIGGER:…] — token tidak pernah masuk saran
+      // maupun teks pesan. Aksi yang baru saja dijalankan tidak
+      // disarankan ulang (exclude = quickActionId permintaan ini).
+      followUpSuggestions: deriveFollowUpSuggestions(
+        cleanMessage,
+        copilotReplyText,
+        quickActionContract?.actionId,
+      ),
       source: 'server',
     };
     this.syncAiResponseToStore(request.currentProject?.id, aiMsg);

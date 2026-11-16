@@ -65,6 +65,11 @@ const AhspExplorerViewLazy = lazy(() =>
 const MobileAhspExplorerLazy = lazy(() =>
   import('../mobile/MobileAhspExplorer').then(m => ({ default: m.MobileAhspExplorer })),
 );
+// MASTER PRICING §11: konsol admin harga master & AHSP — lazy karena
+// menarik katalog kanonis ±19 MB (sama seperti penjelajah AHSP).
+const MasterPricingAdminViewLazy = lazy(() =>
+  import('../masterPricing/MasterPricingAdminView').then(m => ({ default: m.MasterPricingAdminView })),
+);
 import { DaftarPekerjaanView } from '../workItems/DaftarPekerjaanView';
 import { QtoCalculatorView } from '../qto/QtoCalculatorView';
 import { QtoRekapVolumeView } from '../qto/QtoRekapVolumeView';
@@ -964,6 +969,12 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
         ) : (activeMenu === 'harga-proyek' || activeMenu === 'project-price') ? (
           <main style={{ padding: 0, minHeight: 'calc(100vh - 64px)' }}>
             <MaterialDatabaseView initialTab="PROJECT_PRICE" onNavigateToTab={(tab) => setActiveMenu(tab)} />
+          </main>
+        ) : (activeMenu === 'master-pricing') ? (
+          <main style={{ padding: 0, minHeight: 'calc(100vh - 64px)' }}>
+            <Suspense fallback={<div style={{ padding: 24 }}>Memuat konsol harga master…</div>}>
+              <MasterPricingAdminViewLazy />
+            </Suspense>
           </main>
         ) : (activeMenu === 'resource-library' || activeMenu === 'suppliers') ? (
           <main style={{ padding: 0, background: 'var(--ez-color-background)', minHeight: 'calc(100vh - 64px)' }}>

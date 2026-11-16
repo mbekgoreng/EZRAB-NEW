@@ -18,7 +18,7 @@
 
 import { SafeDecimalEngine } from '../safeDecimalEngine';
 import { AHSPComponentDefinition, AHSPDefinition } from '../ahsp/contracts/types';
-import { PriceResolutionOutput } from '../pricing/resolver/advancedPriceResolutionEngine';
+import { PriceResolutionOutput } from '../pricing/resolver/priceResolutionTypes';
 import { UnitEngine } from '../calculatorCore/unit/unitEngine';
 
 export interface ProjectCostPolicySettings {

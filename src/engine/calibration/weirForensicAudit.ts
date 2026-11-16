@@ -14,7 +14,7 @@ import { SafeDecimalEngine } from '../safeDecimalEngine';
 import { WeirBodyMigratedCalculator, WeirBodyInputs } from '../migration/migratedCalculators';
 import { CentralDeterministicCostEngine, ProjectCostPolicySettings, WorkItemCostOutput } from '../cost/centralDeterministicCostEngine';
 import { AHSPDefinition } from '../ahsp/contracts/types';
-import { PriceResolutionOutput } from '../pricing/resolver/advancedPriceResolutionEngine';
+import { PriceResolutionOutput } from '../pricing/resolver/priceResolutionTypes';
 import { ConstructionScopeValidator, ScopeValidationResult } from './constructionScopeValidator';
 
 export interface WeirForensicStepTrace {

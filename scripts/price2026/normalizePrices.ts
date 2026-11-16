@@ -21,7 +21,9 @@ import { LaborDatabaseService } from '../../src/domain/labor/laborDatabaseServic
 import { EquipmentDatabaseService } from '../../src/domain/equipment/equipmentDatabaseService';
 import { normalizeUnit, sha1Like, stableStringify } from './core';
 import { PRICE_SOURCES } from './sources.config';
+import { MASTER_PRICE_TYPE_VALUES } from '../../src/engine/pricing/admin/masterPriceRecord';
 import type {
+  MasterPriceType,
   ResourcePriceRecord,
   ResourceType,
   PriceLocation,
@@ -88,6 +90,38 @@ function locationKey(loc: PriceLocation): string {
   return [loc.level, loc.provinceName || '', loc.regencyName || ''].join('~').replace(/\s+/g, '');
 }
 
+// ---------------------------------------------------------------------------
+// MASTER PRICING §5 — pipeline stamping of §4.2 fields (§4 open item #2)
+// ---------------------------------------------------------------------------
+
+/**
+ * Guard a source price-type value against the §4.2 vocabulary
+ * (MASTER_PRICE_TYPE_VALUES — the single source of truth, owned by
+ * src/engine/pricing/admin/masterPriceRecord.ts). A value outside the
+ * vocabulary is NOT coerced: it stamps null (a drift signal for the
+ * audit, never a silent re-label). Observed 2026-11-16: the material
+ * service emits RETAIL on 3 price rows — in the vocabulary since §6
+ * decision (j), so those rows stamp RETAIL. RETAIL never reaches
+ * priceMaster today (0/452 matched records carry it — the 3 rows are
+ * unmatched), but the guard holds generally.
+ */
+function toMasterPriceType(value: unknown): MasterPriceType | null {
+  if (typeof value !== 'string') return null;
+  return (MASTER_PRICE_TYPE_VALUES as readonly string[]).includes(value)
+    ? (value as MasterPriceType)
+    : null;
+}
+
+/**
+ * Guard a source specification string: a non-blank value is carried
+ * verbatim as the record's specContext; blank/missing stamps null.
+ * A spec is never derived from the resource name.
+ */
+function toSpecContext(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  return value.trim() ? value : null;
+}
+
 function makeRow(args: {
   sourceKey: string;
   resourceType: ResourceType;
@@ -102,6 +136,21 @@ function makeRow(args: {
   verificationStatus?: PriceVerificationStatus;
   notes?: string[];
   unitConversionFactor?: number | null;
+  /** MASTER PRICING §3.2 — the source dataset's own stable record id (HSD-2026-nnn, MAT-xxxx, LAB-xxx, EQP-xxx, KP-xxx). Null when the source has none. NOT part of the PRC id. */
+  sourceRecordId?: string | null;
+  /**
+   * MASTER PRICING §5 — the source price row's own price type, stamped
+   * directly at match time (no longer recovered from the `priceType=`
+   * note by derivePriceType — the note is kept as an audit trail).
+   * Vocabulary-guarded by toMasterPriceType (unknown → null).
+   */
+  priceType?: string | null;
+  /**
+   * MASTER PRICING §5 — the source material's `specification` field,
+   * carried as the record's spec context. Null when the source carries
+   * no specification for this row. Never derived from the name.
+   */
+  specContext?: string | null;
 }): ResourcePriceRecord | null {
   const cfg = SOURCE.get(args.sourceKey);
   if (!cfg) throw new Error(`Unknown price source: ${args.sourceKey}`);
@@ -139,6 +188,12 @@ function makeRow(args: {
     matchMethod: 'UNMATCHED',
     matchConfidence: 0,
     notes: args.notes || [],
+    sourceRecordId: args.sourceRecordId ?? null,
+    // MASTER PRICING §5 — §4.2 fields stamped directly at row creation
+    // and carried verbatim through match (the matcher spreads `...row`).
+    // Neither field is part of the PRC id or the dedup identity.
+    priceType: toMasterPriceType(args.priceType),
+    specContext: toSpecContext(args.specContext),
   };
 }
 
@@ -168,6 +223,9 @@ function readHsd(): ResourcePriceRecord[] {
       period: periodFromVersion(item.periodVersion, item.lastUpdated),
       supplier: item.supplier ?? null,
       notes: item.specification ? [String(item.specification)] : [],
+      sourceRecordId: String(item.id || '') || null,
+      // §5: the HSD catalog states its own specification — carried verbatim.
+      specContext: item.specification != null ? String(item.specification) : null,
     });
     if (row) out.push(row);
   }
@@ -192,6 +250,7 @@ function readLabor(): ResourcePriceRecord[] {
         `skillLevel=${l.skillLevel || 'n/a'}`,
         `workHoursPerDay=${l.workHoursPerDay ?? 'n/a'}`,
       ],
+      sourceRecordId: String(l.id || '') || null,
     };
     // Emit BOTH units so the canonical unit (OH or jam) matches without an
     // implicit conversion. OJ is per person-hour; OH is per person-day.
@@ -222,6 +281,7 @@ function readEquipment(): ResourcePriceRecord[] {
         `capacity=${e.capacity || 'n/a'}`,
         `fuelPerHour=${e.fuelConsumptionLiterPerHour ?? 'n/a'}`,
       ],
+      sourceRecordId: String(e.id || '') || null,
     };
     const hourly = makeRow({ ...base, unitRaw: 'jam', price: Number(e.rentalPricePerHour) });
     if (hourly) out.push(hourly);
@@ -264,6 +324,11 @@ function readMaterialMaster(): ResourcePriceRecord[] {
           `priceType=${p.priceType || 'n/a'}`,
           `tier=${p.priceTier || 'n/a'}`,
         ],
+        sourceRecordId: String(m.id || '') || null,
+        // §5: stamp the price row's own type + the material's specification
+        // directly (the `priceType=` note above is kept as an audit trail).
+        priceType: p.priceType != null ? String(p.priceType) : null,
+        specContext: m.specification != null ? String(m.specification) : null,
       });
       if (row) out.push(row);
     }
@@ -288,6 +353,9 @@ function readMaterialLibrary(): ResourcePriceRecord[] {
       period: periodFromVersion(undefined, info.effectiveDate),
       supplier: info.supplier ?? null,
       notes: [m.brand ? `brand=${m.brand}` : ''],
+      sourceRecordId: String(m.id || '') || null,
+      // §5: the seed catalog states its own specification — carried verbatim.
+      specContext: m.specification != null ? String(m.specification) : null,
     });
     if (row) out.push(row);
   }
@@ -308,6 +376,9 @@ function readCommercial(): ResourcePriceRecord[] {
       period: periodFromVersion(item.periodVersion, item.lastUpdated),
       supplier: item.supplier ?? null,
       notes: [item.specification ? String(item.specification) : '', item.brand ? `brand=${item.brand}` : ''],
+      sourceRecordId: String(item.id || '') || null,
+      // §5: the commercial catalog states its own specification — carried verbatim.
+      specContext: item.specification != null ? String(item.specification) : null,
     });
     if (row) out.push(row);
   }
@@ -389,31 +460,43 @@ export function activeRowDigest(rows: ResourcePriceRecord[]): string {
   return sha1Like(stableStringify(active.map((r) => [r.id, r.price, r.unit, r.verificationStatus])));
 }
 
-/** Written to data/price2026/normalized/price_rows.json by `npm run price:normalize`. */
-export function runNormalizeCli(): void {
+/**
+ * Written to data/price2026/normalized/price_rows.json by `npm run price:normalize`.
+ *
+ * MASTER PRICING §13 (dry-run): with `{ dryRun: true }` the rows are
+ * still read + deduplicated + digested from the CURRENT sources, but
+ * NOTHING is written — the summary plus a machine-readable
+ * `__SYNC_DRY_RUN_JSON__<json>` line (stage, counts, digest) are
+ * printed instead. The orchestrator (`scripts/price2026/syncPipeline.ts`)
+ * uses the dry-run digest to decide whether a sync is needed at all.
+ */
+export function runNormalizeCli(options: { dryRun?: boolean } = {}): void {
   const rows = readAllSourceRows();
   const active = rows.filter((r) => SOURCE.get(r.sourceKey)?.active);
   const bySource = new Map<string, number>();
   for (const r of rows) bySource.set(r.sourceKey, (bySource.get(r.sourceKey) || 0) + 1);
+  const digest = activeRowDigest(rows);
 
-  const outDir = path.join(process.cwd(), 'data', 'price2026', 'normalized');
-  fs.mkdirSync(outDir, { recursive: true });
-  fs.writeFileSync(
-    path.join(outDir, 'price_rows.json'),
-    JSON.stringify(
-      {
-        generatedAt: new Date().toISOString(),
-        totalRows: rows.length,
-        activeRows: active.length,
-        excludedRows: rows.length - active.length,
-        digest: activeRowDigest(rows),
-        bySource: Object.fromEntries([...bySource.entries()].sort()),
-        rows,
-      },
-      null,
-      2
-    )
-  );
+  if (!options.dryRun) {
+    const outDir = path.join(process.cwd(), 'data', 'price2026', 'normalized');
+    fs.mkdirSync(outDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(outDir, 'price_rows.json'),
+      JSON.stringify(
+        {
+          generatedAt: new Date().toISOString(),
+          totalRows: rows.length,
+          activeRows: active.length,
+          excludedRows: rows.length - active.length,
+          digest,
+          bySource: Object.fromEntries([...bySource.entries()].sort()),
+          rows,
+        },
+        null,
+        2
+      )
+    );
+  }
 
   console.log('=== PHASE 10/11 — NORMALIZED PRICE ROWS ===');
   console.log('total rows    :', rows.length);
@@ -423,9 +506,23 @@ export function runNormalizeCli(): void {
     const cfg = SOURCE.get(k)!;
     console.log(`  ${cfg.active ? 'ACTIVE ' : 'EXCLUDE'} ${k.padEnd(22)} ${String(v).padStart(6)}`);
   }
-  console.log('digest        :', activeRowDigest(rows));
-  console.log('Wrote: data/price2026/normalized/price_rows.json');
+  console.log('digest        :', digest);
+  if (options.dryRun) {
+    console.log('DRY RUN — no files written.');
+    console.log(
+      `__SYNC_DRY_RUN_JSON__${JSON.stringify({
+        stage: 'normalize',
+        totalRows: rows.length,
+        activeRows: active.length,
+        excludedRows: rows.length - active.length,
+        digest,
+        bySource: Object.fromEntries([...bySource.entries()].sort()),
+      })}`
+    );
+  } else {
+    console.log('Wrote: data/price2026/normalized/price_rows.json');
+  }
 }
 
 const isMain = (process.argv[1] || '').replace(/\\/g, '/').endsWith('normalizePrices.ts');
-if (isMain) runNormalizeCli();
+if (isMain) runNormalizeCli({ dryRun: process.argv.includes('--dry-run') });
