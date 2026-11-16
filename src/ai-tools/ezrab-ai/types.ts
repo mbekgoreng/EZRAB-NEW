@@ -88,4 +88,13 @@ export interface EzrabAiResponse {
   errorCode?: string;
   toolCalls?: EzrabAiToolCall[];
   toolResults?: EzrabAiToolResult[];
+  /**
+   * D-50 (perbaikan verifikasi live 2026-11-16): saran langkah lanjutan
+   * kontekstual yang ditempel service dari pesan pengguna terakhir +
+   * balasan final — balasan gateway live tidak pernah mengirimnya.
+   * Isinya label kontrak Quick Action (mis. 'Hitung Volume'), BUKAN
+   * token routing internal. Undefined = konteks tanpa saran (perilaku
+   * lama dipertahankan); cabang gagal tidak pernah membawa saran.
+   */
+  followUpSuggestions?: string[];
 }

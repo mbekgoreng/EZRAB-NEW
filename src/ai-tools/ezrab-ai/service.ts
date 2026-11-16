@@ -19,6 +19,10 @@ import {
 import { EzrabAiRequest, EzrabAiResponse, EzrabAiToolCall, EzrabAiToolResult } from './types';
 import { aiToolsError } from '../types';
 import { scanToolCalls } from './toolCallParser';
+/* D-50 (perbaikan verifikasi live 2026-11-16): derivasi saran lanjutan
+ * — fungsi murni yang SAMA dengan jalur Copilot (coAssistantService),
+ * dipakai ulang tanpa duplikasi logika pemicu. */
+import { deriveFollowUpSuggestions } from '../../services/ai/quickActionToken';
 
 /**
  * Satu kunci idempotensi per operasi kirim pengguna. Gateway menghormati
@@ -244,6 +248,23 @@ export class EzrabAiService {
         errorCode: 'EMPTY_RESPONSE',
       };
     }
+    // D-50 (perbaikan verifikasi live 2026-11-16): balasan gateway live
+    // tidak pernah membawa followUpSuggestions — saran ditempel di sisi
+    // klien dari pesan pengguna terakhir + balasan FINAL (prosa LLM
+    // murni ATAU output tool deterministik — keduanya dapat memuat
+    // konteks volume). Pemicu tunggal yang sama dengan Copilot
+    // (coAssistantService memakai deriveFollowUpSuggestions yang sama).
+    // Cabang gagal di atas sengaja tanpa saran: tidak ada balasan yang
+    // bisa ditindaklanjuti. Tanpa excludeActionId: jalur ini tidak
+    // pernah menjalankan Quick Action terstruktur (grid Quick Action
+    // berjalan lewat coAssistantService, bukan service ini).
+    const lastUserMessage = [...(request.messages ?? [])]
+      .reverse()
+      .find((m) => m.role === 'user');
+    const followUpSuggestions = deriveFollowUpSuggestions(
+      lastUserMessage?.content ?? '',
+      reply,
+    );
     return {
       success: true,
       reply,
@@ -251,6 +272,7 @@ export class EzrabAiService {
       requestId: result.requestId,
       toolCalls: toolCalls.length ? toolCalls : undefined,
       toolResults: toolResults.length ? toolResults : undefined,
+      followUpSuggestions,
     };
   }
 }

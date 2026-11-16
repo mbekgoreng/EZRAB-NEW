@@ -45,7 +45,20 @@ import {
   saveChatDraft,
 } from './chatUiPersistence';
 import { reportPersistFailure, reportPersistSaveFailure } from './persistDiagnostics';
-import { stripQuickActionToken } from '../../services/ai/quickActionToken';
+import {
+  stripQuickActionToken,
+  resolveQuickActionFromSuggestion,
+  buildLocalQuickActionDialogue,
+} from '../../services/ai/quickActionToken';
+/* D-50 (perbaikan verifikasi live 2026-11-16): chip saran lanjutan +
+ * dialog Quick Action lokal di Chat AI utama — komponen & service yang
+ * SAMA dengan Copilot (EzrabCoAssistantChatbox), dipakai ulang. */
+import { QuickActionFollowUpSuggestions } from '../../components/copilot/QuickActionFollowUpSuggestions';
+import {
+  QuickActionDialogueRenderer,
+  type QuickActionDialogueData,
+} from '../../components/copilot/QuickActionDialogueRenderer';
+import { quickActionService } from '../../services/quickActionService';
 
 import { renderMarkdown, markdownToPlainText } from './markdown';
 import { routeIntent, localGreeting, HELP_TEXT } from './intentRouter';
@@ -225,6 +238,18 @@ interface ChatEntry {
   questionnaire?: QuestionnairePayload;
   /** Kartu kuesioner pada pesan ini sudah pernah dikirim (ringkasan + Ubah). */
   questionnaireSubmitted?: boolean;
+  /** D-50 (16 Nov 2026): saran langkah lanjutan dari service.send
+   *  (label kontrak Quick Action, mis. 'Hitung Volume') — dirender
+   *  sebagai chip di bawah balon asisten. EFEMERAL SESI, tidak
+   *  dipersist (seperti creditsUsed): restore dari store tidak
+   *  membawanya, dan itu disengaja — saran berlaku untuk balasan
+   *  yang baru saja tampil. */
+  followUpSuggestions?: string[];
+  /** D-50 (16 Nov 2026): dialog Quick Action lokal (klik chip saran)
+   *  yang dirender sebagai kartu interaktif pada pesan ini. EFEMERAL
+   *  SESI: store hanya menyimpan teks pesannya (tanpa payload
+   *  dialog); reload menampilkan teksnya saja, dialog tidak bangkit. */
+  quickActionResponse?: QuickActionDialogueData;
 }
 
 /** Kontrol konfirmasi plan operasi Asisten AI (pratinjau → konfirmasi manusia). */
@@ -375,6 +400,10 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   const [messages, setMessages] = useState<ChatEntry[]>([]);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
+  // D-50 (16 Nov 2026): pemrosesan langkah dialog Quick Action lokal
+  // (pilihan/konfirmasi) — terpisah dari `busy` (pengiriman AI) agar
+  // dialog dapat diproses tanpa menyalakan indikator thinking chat.
+  const [qaBusy, setQaBusy] = useState(false);
   // Timing terpusat (spesifikasi 2026-10-27): teks status pemrosesan
   // mengikuti klasifikasi permintaan.
   const [thinkingText, setThinkingText] = useState('EZRAB sedang berpikir…');
@@ -1559,6 +1588,59 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     // pengiriman yang tidak terkait; cabang echo=false di bawah
     // mengisinya kembali bila pengiriman ini memang sebuah retry.
     retryReplacesMessageIdRef.current = null;
+    /* Full AI (klik tombol di kartu jalur): pesan ini prompt terkumpul yang
+     * memang harus diproses pipeline AI — router lokal dilewati, tetapi
+     * gerbang kredit & pencatatan pemakaian tetap berlaku persis seperti
+     * pesan AI biasa. Bendera sekali-pakai; dialog konfirmasi kredit
+     * memasangnya lagi sebelum memanggil ulang submit. Dikonsumsi di
+     * AWAL submit (sebelum intersepsi Quick Action D-50 di bawah) agar
+     * intersepsi itu juga menghormatinya — prompt Full AI tidak pernah
+     * dibajak dialog lokal. */
+    const forcedAi = forceAiRef.current;
+    forceAiRef.current = false;
+    // D-50 (perbaikan verifikasi live 2026-11-16): pesan yang PERSIS
+    // label sebuah Quick Action yang aktif — klik chip saran lanjutan,
+    // atau diketik manual — membuka DIALOG aksi itu secara LOKAL,
+    // TANPA panggilan gateway dan TANPA debit kredit. Cerminan
+    // intersepsi coAssistantService untuk Copilot
+    // (coAssistantService.ts:365-393); jalur Chat AI utama tidak
+    // pernah memilikinya, sehingga klik chip sebelumnya terkirim
+    // sebagai pesan teks biasa ke AI (memakai kredit). Ditempatkan di
+    // AWAL submit — sebelum ekstraksi memori, gerbang kredit, dan
+    // routing — karena dialog lokal bukan permintaan AI.
+    // Pengecualian: (a) cabang echo=false (Coba Lagi) TIDAK dicegat —
+    // retry adalah pengiriman ulang ke pipeline AI atas kegagalan AI;
+    // (b) pesan ber-lampiran TIDAK dicegat — lampiran adalah konteks
+    // kirim AI yang akan hilang bila dialog lokal mengambil alih;
+    // (c) prompt Full AI (forcedAi) TIDAK dicegat — pengguna secara
+    // eksplisit meminta pipeline AI (aturan yang sama dengan router
+    // lokal lain di bawah).
+    // Perilaku kirim biasa dipertahankan: composer + draft dibersihkan
+    // (seperti pengiriman lain dan seperti Copilot), pesan pengguna +
+    // pesan dialog dipersist ke store (pesan terakhir tersimpan tetap
+    // asisten — tidak memicu banner INTERRUPTED).
+    if (echo && !attached && !forcedAi) {
+      const suggestionContract = resolveQuickActionFromSuggestion(msg);
+      if (suggestionContract) {
+        const dialogue = buildLocalQuickActionDialogue(suggestionContract);
+        setInput('');
+        clearDraftNow();
+        closeSlash();
+        autoresize();
+        const userEntry: ChatEntry = { role: 'user', content: msg, ts: Date.now() };
+        setMessages((prev) => [...prev, userEntry]);
+        persistMessage('user', userEntry.content);
+        const dialogueEntry: ChatEntry = {
+          role: 'assistant',
+          content: dialogue.message,
+          ts: Date.now(),
+          quickActionResponse: dialogue,
+        };
+        setMessages((prev) => [...prev, dialogueEntry]);
+        persistMessage('assistant', dialogue.message);
+        return;
+      }
+    }
     // FASE 2 — ekstraksi memori deterministik di AWAL submit (sebelum
     // cabang routing apa pun): koreksi/budget/preferensi/keputusan
     // eksplisit dari pesan ini terekam sebagai memori — termasuk bila
@@ -1631,13 +1713,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       setMessages((prev) => [...prev, { role: 'assistant', content: text, ts: Date.now() }]);
       persistMessage('assistant', text);
     };
-    /* Full AI (klik tombol di kartu jalur): pesan ini prompt terkumpul yang
-     * memang harus diproses pipeline AI — router lokal dilewati, tetapi
-     * gerbang kredit & pencatatan pemakaian tetap berlaku persis seperti
-     * pesan AI biasa. Bendera sekali-pakai; dialog konfirmasi kredit
-     * memasangnya lagi sebelum memanggil ulang submit. */
-    const forcedAi = forceAiRef.current;
-    forceAiRef.current = false;
+    // (forcedAi dikonsumsi di awal submit — lihat intersepsi D-50 di atas.)
     closeSlash();
     /* Command Router (2026-10-26): resolver navigasi deterministik.
      * TIDAK PERNAH membajak prompt Full AI (forcedAi). Hasil non-'none'
@@ -2424,6 +2500,14 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         ts: Date.now(),
         creditsUsed: res.success && charged ? simUsed : undefined,
         planId: newPlans[0]?.id,
+        // D-50 (16 Nov 2026): saran lanjutan dari service.send —
+        // ditempel LANGSUNG ke entry (tanpa salin/serialisasi ulang
+        // sebelum render; persistMessage di bawah hanya menyimpan
+        // teks ke store). Ditahan bila gate kualitas mengganti reply
+        // dengan notice: teks yang tampil tidak lagi memuat konteks
+        // yang memicu saran. Cabang gagal tidak membawa saran
+        // (service hanya menempel di jalur sukses).
+        followUpSuggestions: heldReplyNotice ? undefined : res.followUpSuggestions,
       };
       setMessages((prev) => [...prev, assistantEntry]);
       const persistedReplyId = persistMessage('assistant', res.reply);
@@ -2482,6 +2566,135 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       // ada record 'generating' yang menggantung sesudah submit selesai.
       endExec();
       setBusy(false);
+    }
+  };
+
+  /* D-50 (perbaikan verifikasi live 2026-11-16): klik chip saran
+   * lanjutan mengirim label sebagai pesan lewat submit() — intersepsi
+   * Quick Action di awal submit membuka dialog lokal tanpa panggilan
+   * AI (label yang memetakan kontrak); label tanpa kontrak terkirim
+   * sebagai pesan biasa. Pola yang sama dengan Copilot
+   * (onSelectSuggestion → handleSendMessage). */
+  const handleSelectSuggestion = (suggestion: string): void => {
+    void submit(suggestion);
+  };
+
+  /* D-50 (16 Nov 2026): progres dialog Quick Action lokal di Chat AI
+   * utama — cerminan handler EzrabCoAssistantChatbox
+   * (handleQuickActionAnswer/GoBack/Cancel/Confirm), memakai
+   * quickActionService yang sama. Langkah dialog (gema pilihan +
+   * respons lanjutan) EFEMERAL — TIDAK dipersist ke store, seperti
+   * Copilot: gema pilihan adalah pesan pengguna tanpa balasan AI,
+   * dan bila dipersist, reload akan memicu banner INTERRUPTED palsu
+   * ("Coba Lagi" untuk gema pilihan). Hanya pesan PEMBUKA dialog
+   * yang dipersist (lewat intersepsi submit di atas). */
+  const handleQuickActionAnswer = async (
+    sessionId: string,
+    choiceId?: string,
+    parameters?: Record<string, any>,
+    textAnswer?: string,
+  ): Promise<void> => {
+    setQaBusy(true);
+    try {
+      if (choiceId) {
+        setMessages((prev) => [...prev, {
+          role: 'user', content: choiceId.replace(/_/g, ' '), ts: Date.now(),
+        }]);
+      }
+      const resp = await quickActionService.answerStep(sessionId, choiceId, parameters, textAnswer);
+      // Sesi lokal (qa_local_*) tidak punya riwayat langkah di server —
+      // tombol Kembali pada respons fallback tidak punya tujuan (dan
+      // endpoint /api/ai/quick-action tidak ada di repo ini), jadi
+      // matikan canGoBack agar tidak ada tombol mati. Sesi server
+      // (bila kelak ada) tidak diubah.
+      const data: QuickActionDialogueData = sessionId.startsWith('qa_local_')
+        ? { ...resp, canGoBack: false }
+        : resp;
+      setMessages((prev) => [...prev, {
+        role: 'assistant',
+        content: data.message || '',
+        ts: Date.now(),
+        quickActionResponse: data,
+        followUpSuggestions: data.followUpSuggestions,
+      }]);
+    } catch (err: any) {
+      setMessages((prev) => [...prev, {
+        role: 'assistant',
+        content: 'Terjadi kendala pada dialog: ' + (err?.message || 'Gagal memproses'),
+        isError: true,
+        ts: Date.now(),
+      }]);
+    } finally {
+      setQaBusy(false);
+    }
+  };
+
+  const handleQuickActionGoBack = async (sessionId: string): Promise<void> => {
+    // Sesi lokal tidak pernah menampilkan tombol Kembali (canGoBack
+    // dimatikan saat respons ditempel — lihat handleQuickActionAnswer)
+    // sehingga cabang ini hanya untuk sesi server bila kelak ada.
+    if (sessionId.startsWith('qa_local_')) return;
+    setQaBusy(true);
+    try {
+      const resp = await quickActionService.goBack(sessionId);
+      setMessages((prev) => [...prev, {
+        role: 'assistant', content: resp.message || '', ts: Date.now(),
+        quickActionResponse: resp,
+      }]);
+    } catch (err) {
+      console.warn('[Chat AI] QuickAction goBack error:', err);
+    } finally {
+      setQaBusy(false);
+    }
+  };
+
+  const handleQuickActionCancel = async (sessionId: string): Promise<void> => {
+    // Sesi LOKAL (qa_local_*) dibuat di klien oleh
+    // buildLocalQuickActionDialogue — server tidak pernah mengenalnya
+    // dan endpoint /api/ai/quick-action tidak ada di repo ini, jadi
+    // jangan buang satu fetch yang pasti gagal: tandai CANCELLED di
+    // tempat (renderer menampilkan status batal). Sesi server memakai
+    // quickActionService seperti Copilot.
+    if (sessionId.startsWith('qa_local_')) {
+      setMessages((prev) => prev.map((m) =>
+        m.quickActionResponse?.sessionId === sessionId
+          ? { ...m, quickActionResponse: { ...m.quickActionResponse, currentState: 'CANCELLED' } }
+          : m,
+      ));
+      return;
+    }
+    try {
+      const resp = await quickActionService.cancelSession(sessionId);
+      setMessages((prev) => [...prev, {
+        role: 'assistant',
+        content: resp.message || 'Sesi tindakan telah dibatalkan.',
+        ts: Date.now(),
+        followUpSuggestions: resp.followUpSuggestions,
+      }]);
+    } catch (err) {
+      console.warn('[Chat AI] QuickAction cancel error:', err);
+    }
+  };
+
+  const handleQuickActionConfirm = async (sessionId: string): Promise<void> => {
+    setQaBusy(true);
+    try {
+      const resp = await quickActionService.confirmSession(sessionId);
+      setMessages((prev) => [...prev, {
+        role: 'assistant',
+        content: resp.message,
+        ts: Date.now(),
+        followUpSuggestions: resp.followUpSuggestions,
+      }]);
+    } catch (err: any) {
+      setMessages((prev) => [...prev, {
+        role: 'assistant',
+        content: 'Gagal mengonfirmasi tindakan: ' + (err?.message || 'Terjadi kesalahan'),
+        isError: true,
+        ts: Date.now(),
+      }]);
+    } finally {
+      setQaBusy(false);
     }
   };
 
@@ -4328,6 +4541,27 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
                         busy={busyPlanId === m.planId}
                         onConfirm={handleConfirmPlan}
                         onCancel={handleCancelPlan}
+                      />
+                    )}
+                    {/* D-50 (16 Nov 2026): dialog Quick Action lokal
+                        (klik chip saran) + chip saran lanjutan dari
+                        service — cerminan render EzrabCoAssistantChatbox.
+                        Dialog & chip efemeral sesi (tidak dipersist). */}
+                    {m.quickActionResponse && (
+                      <QuickActionDialogueRenderer
+                        data={m.quickActionResponse}
+                        onAnswer={handleQuickActionAnswer}
+                        onGoBack={handleQuickActionGoBack}
+                        onCancel={handleQuickActionCancel}
+                        onConfirm={handleQuickActionConfirm}
+                        isLoading={qaBusy}
+                      />
+                    )}
+                    {m.followUpSuggestions && m.followUpSuggestions.length > 0 && (
+                      <QuickActionFollowUpSuggestions
+                        suggestions={m.followUpSuggestions}
+                        onSelectSuggestion={handleSelectSuggestion}
+                        disabled={busy || qaBusy}
                       />
                     )}
                     <div className="ezchat2-meta">

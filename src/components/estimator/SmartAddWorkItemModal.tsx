@@ -50,6 +50,7 @@ import {
   MANUAL_COMPONENT_KINDS,
   type ManualComponentRow,
 } from './manualComponentPricing';
+import { enrichMagicAiSuggestion } from './magicAiSuggestion';
 import {
   buildSpreadsheetHandoffPayload,
   createSpreadsheetHandoffGuard,
@@ -113,6 +114,53 @@ export interface AiGeneratedItemState {
   /** null = AI has no price — requires explicit confirmation to save. */
   unitPrice: number | null;
   notes: string;
+  /**
+   * FAIL-2 (2026-11-16): provenance harga TER-RESOLVE dari katalog AHSP
+   * resmi — HANYA diisi `enrichMagicAiSuggestion` (magicAiSuggestion.ts)
+   * bila saran berhasil dipadankan ke item katalog dan harganya
+   * di-resolve ulang oleh resolver resmi. TIDAK PERNAH berasal dari
+   * angka model. Bila field ini ada, `unitPrice` adalah harga resolver
+   * (bukan estimasi model) dan `buildAiSuggestedRabItem` memakai
+   * provenance ini apa adanya — termasuk PRICE_RESOLVED + VERIFIED
+   * untuk komposisi FULL, selaras jalur (b) Chat AI. Bila field ini
+   * TIDAK ada, perilaku P1 persis seperti semula (harga → ESTIMATED /
+   * EZRAB_ASSUMPTION, tidak pernah RESOLVED).
+   * Edit pratinjau yang mengubah identitas/harga item (deskripsi,
+   * satuan, harga ketikan) MENCABUT field ini (lihat
+   * `dropResolvedPrice`) — harga ter-resolve tidak berlaku lagi untuk
+   * nilai yang sudah diubah user. Edit volume mempertahankannya (harga
+   * per satuan tidak berubah).
+   */
+  resolvedPrice?: ResolvedAiPriceProvenance;
+}
+
+/**
+ * Provenance harga ter-resolve dari resolver resmi untuk satu saran AI.
+ * Bentuknya = `ModelPriceProvenance` + `ahspCode` (kode katalog yang
+ * dipadankan — tanpa kode, klaim OFFICIAL_AHSP tidak sah dan akan
+ * diturunkan factory; lihat rabItemFactory G1/Sprint 3.1).
+ */
+export interface ResolvedAiPriceProvenance {
+  ahspCode: string;
+  priceStatus: NonNullable<RabItem['priceStatus']>;
+  priceSourceKind: NonNullable<RabItem['priceSourceKind']>;
+  priceSourceLabel: string;
+  priceSourceExplanation: string;
+  verificationStatus: NonNullable<RabItem['verificationStatus']>;
+}
+
+/**
+ * FAIL-2: cabut provenance ter-resolve dari saran (salinan baru — item
+ * asal tidak dimutasi). Dipakai handler edit pratinjau: begitu user
+ * mengubah deskripsi/satuan/harga, harga resolver tidak lagi berlaku
+ * untuk item tersebut dan payload kembali ke klasifikasi P1 (plafon
+ * jujur ESTIMATED untuk harga ketikan, UNRESOLVED untuk harga kosong).
+ */
+export function dropResolvedPrice(item: AiGeneratedItemState): AiGeneratedItemState {
+  if (!item.resolvedPrice) return item;
+  const next = { ...item };
+  delete next.resolvedPrice;
+  return next;
 }
 
 export function mapAiGeneratedItem(
@@ -298,12 +346,20 @@ export function classifyModelPriceProvenance(
  *   0 untuk UNRESOLVED, tetapi total mengecualikannya — di luar P1.)
  * - Item tanpa kode AHSP tetap dapat disimpan sebagai non-AHSP/manual:
  *   ahspCode '' dipertahankan apa adanya, TIDAK dikarang kodenya.
+ * - FAIL-2 (2026-11-16): bila item membawa `resolvedPrice` (harga
+ *   di-resolve dari katalog resmi oleh enrichMagicAiSuggestion),
+ *   provenance itu dipakai APA ADANYA — termasuk PRICE_RESOLVED +
+ *   OFFICIAL_AHSP + VERIFIED untuk komposisi FULL — dan ahspCode diisi
+ *   kode katalog yang dipadankan, volumeSource 'AI_GENERATED' (selaras
+ *   jalur (b) Chat AI). TANPA `resolvedPrice`, perilaku P1 persis
+ *   seperti semula: harga → ESTIMATED + EZRAB_ASSUMPTION, tidak pernah
+ *   RESOLVED; ahspCode ''; volumeSource 'CALCULATOR'.
  */
 export function buildAiSuggestedRabItem(
   item: AiGeneratedItemState,
   existingItemCount: number
 ): Omit<RabItem, 'id'> {
-  const provenance = classifyModelPriceProvenance(item.unitPrice);
+  const provenance = item.resolvedPrice ?? classifyModelPriceProvenance(item.unitPrice);
   // Amount dari harga null tetap null — tidak pernah Math.round(v * null) = 0.
   const amount =
     item.unitPrice == null
@@ -320,8 +376,8 @@ export function buildAiSuggestedRabItem(
     unitPrice: item.unitPrice,
     amount,
     totalPrice: amount,
-    volumeSource: 'CALCULATOR',
-    ahspCode: '',
+    volumeSource: item.resolvedPrice ? 'AI_GENERATED' : 'CALCULATOR',
+    ahspCode: item.resolvedPrice?.ahspCode ?? '',
     verificationStatus: provenance.verificationStatus,
     priceStatus: provenance.priceStatus,
     priceSourceKind: provenance.priceSourceKind,
@@ -336,12 +392,36 @@ export function buildAiSuggestedRabItem(
  * Harga saran AI tidak pernah terverifikasi di jalur ini, sehingga total
  * pratinjau SELALU parsial: memakai estimasi belum terverifikasi, atau
  * belum dapat dihitung sama sekali bila harga tidak ada.
+ * FAIL-2 (2026-11-16): pengecualian untuk harga TER-RESOLVE (komposisi
+ * FULL dari resolver resmi) — totalnya memakai harga terverifikasi,
+ * sehingga bukan parsial dan catatannya menyebut kode AHSP-nya. Harga
+ * ter-resolve PARSIAL tetap PARSIAL (label dari provenance). TANPA
+ * `resolvedPrice`, kedua cabang lama persis seperti semula.
  */
 export function aiSuggestedTotalNote(item: AiGeneratedItemState): string {
+  if (item.resolvedPrice?.priceStatus === 'PRICE_RESOLVED') {
+    return `Harga resmi AHSP 2026 (${item.resolvedPrice.ahspCode}) — total memakai harga terverifikasi dari komposisi AHSP.`;
+  }
+  if (item.resolvedPrice?.priceStatus === 'PRICE_ESTIMATED') {
+    return `TOTAL PARSIAL — ${item.resolvedPrice.priceSourceLabel}; total memakai harga parsial yang belum lengkap.`;
+  }
   if (item.unitPrice == null) {
     return 'TOTAL PARSIAL — harga belum tersedia; total belum dapat dihitung dan item tidak termasuk dalam total.';
   }
   return 'TOTAL PARSIAL — total memakai harga estimasi AI yang belum terverifikasi (bukan harga resmi AHSP).';
+}
+
+/**
+ * Teks sel "Harga Satuan" pratinjau AI. Harga ter-resolve FULL ditandai
+ * "(AHSP 2026)" — BUKAN "(est.)", karena bukan estimasi; harga parsial
+ * dan harga model/ketikan tetap "(est.)"; tanpa harga → "Belum ada harga".
+ */
+export function aiSuggestedPriceDisplay(item: AiGeneratedItemState): string {
+  if (item.unitPrice == null) return 'Belum ada harga';
+  if (item.resolvedPrice?.priceStatus === 'PRICE_RESOLVED') {
+    return `${formatCurrencyIDR(item.unitPrice)} (AHSP 2026)`;
+  }
+  return `${formatCurrencyIDR(item.unitPrice)} (est.)`;
 }
 
 // ============================================================================
@@ -1020,6 +1100,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
   "unitPrice": number|null,
   "notes": "catatan spesifikasi"
 }
+Jika permintaan menyebut angka + satuan (mis. "10 m2"), isi volume dengan angka itu SAJA (10) dan unit dengan satuannya (m2). volume HARUS angka murni tanpa satuan dan tanpa teks.
 Jika harga tidak pasti, unitPrice = null. Jangan mengarang harga. Jika volume tidak dapat ditentukan dari permintaan, volume = null. Jangan mengarang volume.`;
 
       // G3 (K-10): kirim projectId + ringkasan konteks proyek (jumlah item
@@ -1079,11 +1160,28 @@ Jika harga tidak pasti, unitPrice = null. Jangan mengarang harga. Jika volume ti
       // (pratinjau sebelumnya) TIDAK dihapus oleh pembatalan; koreksi =
       // generasi baru.
       if (!shouldCommitModalAiResult(handle)) return;
-      const item = mapAiGeneratedItem(parsed, {
-        fallbackDescription: prompt,
-        category: targetCategory,
-        code: `AI.${(existingItems.length + 1).toString().padStart(2, '0')}`,
-      });
+      // FAIL-2 (2026-11-16): saran mentah model DIPERKAYA secara
+      // deterministik SEBELUM ditampilkan — kuantitas dibaca dari prompt
+      // ("10 m2" tidak lagi hilang), item dipadankan ke katalog AHSP
+      // resmi, dan harga di-resolve ulang dari resolver resmi (angka
+      // model DIBUANG, bukan dipakai sebagai harga). Tanpa padanan,
+      // saran kembali dengan volume prompt + harga null yang jujur —
+      // tidak pernah item rusak. Jalur (b) "Lanjutkan di Chat AI" tidak
+      // tersentuh (mesin yang sama, dipakai ulang di sini).
+      const enriched = enrichMagicAiSuggestion(
+        mapAiGeneratedItem(parsed, {
+          fallbackDescription: prompt,
+          category: targetCategory,
+          code: `AI.${(existingItems.length + 1).toString().padStart(2, '0')}`,
+        }),
+        prompt,
+      );
+      if (enriched.matchedCode) {
+        console.info(
+          `[Magic AI] Saran dipadankan ke AHSP ${enriched.matchedCode} — harga dari resolver resmi.`,
+        );
+      }
+      const item = enriched.item;
       setAiNullPriceConfirmed(false);
       setAiGeneratedItem(item);
       // P2: pratinjau disajikan = 'awaiting-review'; hasil disimpan di
@@ -2699,7 +2797,7 @@ Jika harga tidak pasti, unitPrice = null. Jangan mengarang harga. Jika volume ti
                       <input
                         type="text"
                         value={aiGeneratedItem.description}
-                        onChange={(e) => setAiGeneratedItem({ ...aiGeneratedItem, description: e.target.value })}
+                        onChange={(e) => setAiGeneratedItem(dropResolvedPrice({ ...aiGeneratedItem, description: e.target.value }))}
                         style={{ height: '34px', padding: '0 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12.5px' }}
                       />
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
@@ -2717,7 +2815,7 @@ Jika harga tidak pasti, unitPrice = null. Jangan mengarang harga. Jika volume ti
                         <input
                           type="text"
                           value={aiGeneratedItem.unit}
-                          onChange={(e) => setAiGeneratedItem({ ...aiGeneratedItem, unit: e.target.value })}
+                          onChange={(e) => setAiGeneratedItem(dropResolvedPrice({ ...aiGeneratedItem, unit: e.target.value }))}
                           style={{ height: '34px', padding: '0 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12px' }}
                         />
                         <input
@@ -2727,7 +2825,9 @@ Jika harga tidak pasti, unitPrice = null. Jangan mengarang harga. Jika volume ti
                           onChange={(e) => {
                             const raw = e.target.value.trim();
                             const v = raw === '' ? NaN : parseFloat(raw);
-                            setAiGeneratedItem({ ...aiGeneratedItem, unitPrice: Number.isFinite(v) ? v : null });
+                            // FAIL-2: harga ketikan bukan lagi harga
+                            // ter-resolve — cabut provenance-nya.
+                            setAiGeneratedItem(dropResolvedPrice({ ...aiGeneratedItem, unitPrice: Number.isFinite(v) ? v : null }));
                             setAiNullPriceConfirmed(false);
                           }}
                           style={{ height: '34px', padding: '0 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12px' }}
@@ -2767,8 +2867,9 @@ Jika harga tidak pasti, unitPrice = null. Jangan mengarang harga. Jika volume ti
                     <div>
                       <div style={{ fontSize: '10.5px', color: 'var(--ez-color-text-muted)' }}>Harga Satuan (Ref)</div>
                       <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>
-                        {/* P1 (B-05): harga model selalu estimasi — tandai "(est.)" seperti picker template. */}
-                        {aiGeneratedItem.unitPrice !== null ? `${formatCurrencyIDR(aiGeneratedItem.unitPrice)} (est.)` : 'Belum ada harga'}
+                        {/* P1 (B-05): harga model selalu estimasi — tandai "(est.)" seperti picker template.
+                            FAIL-2: harga ter-resolve FULL ditandai "(AHSP 2026)" — bukan estimasi. */}
+                        {aiSuggestedPriceDisplay(aiGeneratedItem)}
                       </div>
                     </div>
                     <div>
@@ -2783,7 +2884,9 @@ Jika harga tidak pasti, unitPrice = null. Jangan mengarang harga. Jika volume ti
 
                   {/* P1 (B-05): total pratinjau SELALU parsial di jalur ini — harga
                       saran AI belum terverifikasi, atau belum ada sama sekali.
-                      Pola label mengikuti exportTotalNote ("TOTAL PARSIAL — ..."). */}
+                      Pola label mengikuti exportTotalNote ("TOTAL PARSIAL — ...").
+                      FAIL-2: kecuali harga TER-RESOLVE (komposisi FULL dari
+                      resolver resmi) — catatannya menyebut harga resmi AHSP. */}
                   <div style={{ fontSize: '11.5px', fontWeight: 650, color: '#92400E', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: '8px', padding: '8px 10px', marginBottom: '12px', lineHeight: '1.45' }}>
                     {aiSuggestedTotalNote(aiGeneratedItem)}
                   </div>
