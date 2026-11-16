@@ -43,6 +43,7 @@ import { Building2 } from 'lucide-react';
 import { FsChip, FsStep } from '../../components/feature-shell/FeatureFullscreenShell';
 import { FeaturePageShell } from '../../components/feature-shell/FeaturePageShell';
 import { useCreditSimulation } from '../../ai-credits/useCreditSimulation';
+import { maskAiModelName, maskAiProviderName } from '../../services/aiModelMasking';
 
 interface Props {
   onNavigateToTab?: (tab: string) => void;
@@ -894,9 +895,11 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
     <>
       <FsChip>Mode: {modeLabel(shellMode)}</FsChip>
       <FsChip kind="plain">
+        {/* Masking (defense-in-depth): server already masks provenance, but
+            stored/legacy results may still carry raw provider/model names. */}
         {fullAiOutput.provenance.provider && fullAiOutput.provenance.model
-          ? `${fullAiOutput.provenance.provider} / ${fullAiOutput.provenance.model}`
-          : fullAiOutput.provenance.model || 'Model tidak diketahui'}
+          ? `${maskAiProviderName(fullAiOutput.provenance.provider)} / ${maskAiModelName(fullAiOutput.provenance.model)}`
+          : fullAiOutput.provenance.model ? maskAiModelName(fullAiOutput.provenance.model) : 'Model tidak diketahui'}
       </FsChip>
     </>
   ) : screen !== 'input' ? (

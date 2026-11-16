@@ -777,10 +777,11 @@ async function runGateway(): Promise<void> {
     const body = JSON.parse(res.body);
     assert(body.success === true, 'success true');
     assert(body.content === STUB_VALID_CONTENT, 'content verbatim dari stub provider');
-    assert(body.provider === 'crown', `provider aktual: ${body.provider}`);
-    assert(body.model === 'MiniMaxAI/MiniMax-M2.7', `model aktual kaki pertama: ${body.model}`);
+    assert(body.provider === 'ezrab', `provider disamarkan: ${body.provider}`);
+    assert(body.model === 'Ezrab-flash-v1', `model mode chat -> alias flash: ${body.model}`);
     assert(body.usageStatus === 'measured' && body.usage?.totalTokens === 160, 'usage measured');
-    assert(Array.isArray(body.attempts) && body.attempts.length === 1 && body.attempts[0].ok === true, 'attempts: 1 sukses');
+    assert(!('attempts' in body), 'attempts[] TIDAK dikirim ke klien (masking 2026-11-16)');
+    assert(!JSON.stringify(body).includes('crown') && !JSON.stringify(body).includes('MiniMax'), 'nama asli tidak ada di body');
     assert(providerCalls() - mark === 1, 'tepat 1 panggilan provider stub');
   });
   await check('6G-02 STUB (f) provider 5xx semua kaki: rantai 2 attempt errorClass server → 502 ke klien', async () => {
@@ -814,7 +815,10 @@ async function runGateway(): Promise<void> {
     await executeHandler(req, res);
     assert(res.statusCode === 200, `status HTTP ${res.statusCode} (bukan 429)`);
     const body = JSON.parse(res.body);
-    assert(body.attempts.length === 2 && body.attempts[0].errorClass === 'rate', 'riwayat attempt mencatat 429 yang tersamarkan');
+    // MASKING (2026-11-16): riwayat attempt TIDAK LAGI dikirim ke klien —
+    // failover tetap tersamarkan menjadi sukses 200, tanpa jejak attempt.
+    assert(!('attempts' in body), 'attempts[] tidak dikirim ke klien');
+    assert(body.model === 'Ezrab-flash-v1' && body.provider === 'ezrab', 'identitas termasking');
   });
   await check('6G-04 STUB (b) provider invalid JSON semua kaki: bad_response → failover → 502', async () => {
     setProviderKeys({ crown: true });

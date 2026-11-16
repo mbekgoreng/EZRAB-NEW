@@ -345,16 +345,16 @@ async function main(): Promise<void> {
   const c3 = postRaw(gwPort, gatewayBody(), '10.99.7.3');
   const r3 = await c3.done;
   const b3 = JSON.parse(r3.body);
-  await check('H3a no-disconnect failover: 200 + provider gemini model gemini-3.5-flash-lite', () => {
+  await check('H3a no-disconnect failover: 200 + provider/model TERMASKING', () => {
     assert.equal(r3.status, 200, `status ${r3.status}`);
     assert.equal(b3.success, true);
-    assert.equal(b3.provider, 'gemini');
-    assert.equal(b3.model, 'gemini-3.5-flash-lite');
+    assert.equal(b3.provider, 'ezrab');
+    assert.equal(b3.model, 'Ezrab-flash-v1');
   });
-  await check('H3b no-disconnect failover: attempts [crown server, crown server, gemini ok]', () => {
-    assert.equal(Array.isArray(b3.attempts), true);
-    assert.equal(b3.attempts.length, 3, `attempts: ${b3.attempts.length}`);
-    assert.deepEqual(b3.attempts.map((a: any) => `${a.provider}:${a.ok ? 'ok' : a.errorClass}`), ['crown:server', 'crown:server', 'gemini:ok']);
+  await check('H3b no-disconnect failover: attempts[] TIDAK dikirim ke klien (masking 2026-11-16)', () => {
+    assert.equal('attempts' in b3, false);
+    assert.equal(JSON.stringify(b3).includes('gemini-3.5-flash-lite'), false);
+    assert.equal(JSON.stringify(b3).includes('crown'), false);
   });
   await check('H3c no-disconnect failover: 3 panggilan provider stub', () => assert.equal(calls(), 3, `attempt: ${calls()}`));
   await check('H3d no-disconnect failover: TANPA abort palsu (event client_disconnected tidak bertambah)', () => {
@@ -371,14 +371,14 @@ async function main(): Promise<void> {
   const c4 = postRaw(gwPort, gatewayBody(), '10.99.7.4');
   const r4 = await c4.done;
   const b4 = JSON.parse(r4.body);
-  await check('H4a no-disconnect sukses: 200 + provider crown model MiniMax M2.7', () => {
+  await check('H4a no-disconnect sukses: 200 + provider/model TERMASKING', () => {
     assert.equal(r4.status, 200, `status ${r4.status}`);
     assert.equal(b4.success, true);
-    assert.equal(b4.provider, 'crown');
-    assert.equal(b4.model, 'MiniMaxAI/MiniMax-M2.7');
+    assert.equal(b4.provider, 'ezrab');
+    assert.equal(b4.model, 'Ezrab-flash-v1');
   });
-  await check('H4b no-disconnect sukses: tepat 1 attempt, 1 panggilan stub', () => {
-    assert.equal(b4.attempts.length, 1);
+  await check('H4b no-disconnect sukses: attempts[] tidak dikirim; tepat 1 panggilan stub', () => {
+    assert.equal('attempts' in b4, false);
     assert.equal(calls(), 1, `attempt: ${calls()}`);
   });
 

@@ -467,11 +467,11 @@ console.log('=== Level HTTP (handleAiRequest + fetch stub deterministik) ===');
   const resOff: any = mockRes();
   await handleAiRequest(mockReq(chatBody) as any, resOff, chatOpts);
   check('HTTP gate OFF: 200 success', resOff.statusCode === 200 && resOff.body.success === true);
-  check('HTTP gate OFF: content/provider/model/mode sama dengan jalur asli',
-    resOff.body.content === 'HALO-DARI-GEMINI' && resOff.body.provider === 'gemini'
-    && resOff.body.model === 'gemini-3.5-flash-lite' && resOff.body.mode === 'chat');
-  check('HTTP gate OFF: struktur respons persis {success,content,model,provider,mode,requestId,durationMs,usage,usageStatus,attempts}',
-    JSON.stringify(Object.keys(resOff.body).sort()) === JSON.stringify(['attempts', 'content', 'durationMs', 'mode', 'model', 'provider', 'requestId', 'success', 'usage', 'usageStatus']));
+  check('HTTP gate OFF: content/mode sama; provider/model TERMASKING (alias, bukan nama asli)',
+    resOff.body.content === 'HALO-DARI-GEMINI' && resOff.body.provider === 'ezrab'
+    && resOff.body.model === 'Ezrab-flash-v1' && resOff.body.mode === 'chat');
+  check('HTTP gate OFF: struktur respons persis {success,content,model,provider,mode,requestId,durationMs,usage,usageStatus} (tanpa attempts)',
+    JSON.stringify(Object.keys(resOff.body).sort()) === JSON.stringify(['content', 'durationMs', 'mode', 'model', 'provider', 'requestId', 'success', 'usage', 'usageStatus']));
   check('HTTP gate OFF: provider dipanggil sekali', fetchCalls.length === 1);
   {
     const contents = fetchCalls[0].body.contents;
@@ -486,8 +486,8 @@ console.log('=== Level HTTP (handleAiRequest + fetch stub deterministik) ===');
     fetchCalls.length = 0;
     const r: any = mockRes();
     await handleAiRequest(mockReq(chatBody) as any, r, chatOpts);
-    check(`HTTP gate "${v}": tetap 200 dengan content/provider/model sama`,
-      r.statusCode === 200 && r.body.content === 'HALO-DARI-GEMINI' && r.body.provider === 'gemini' && r.body.model === 'gemini-3.5-flash-lite');
+    check(`HTTP gate "${v}": tetap 200 dengan content sama + provider/model termasking`,
+      r.statusCode === 200 && r.body.content === 'HALO-DARI-GEMINI' && r.body.provider === 'ezrab' && r.body.model === 'Ezrab-flash-v1');
   }
   // --- Gerbang menyala tanpa konteks/boundary: fail-closed, provider tak jalan ---
   process.env.AI_METERING_ENABLED = 'true';

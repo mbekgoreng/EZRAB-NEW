@@ -59,6 +59,7 @@ import { draftFormat, toEditorHtml, toPlainText } from '../richText';
 import { markdownToHtml } from '../markdownHtml';
 import { useProject } from '../../../context/ProjectContext';
 import { useI18n } from '../../../i18n/I18nContext';
+import { maskAiModelName } from '../../../services/aiModelMasking';
 
 const DocEditor = lazy(() => import('./DocEditor'));
 
@@ -532,7 +533,9 @@ export const DocCreator: React.FC<{
           (res.truncated
             ? ' Sebagian isi sumber dipotong karena batas karakter saat dikirim ke AI — periksa kelengkapan hasil terjemahan.'
             : '') +
-          (res.model ? ` Model: ${res.model}.` : ''),
+          // Masking (defense-in-depth): res.model may still carry a raw name
+          // from stored/legacy responses — never render it verbatim.
+          (res.model ? ` Model: ${maskAiModelName(res.model)}.` : ''),
       );
       onAddHistory({
         type: 'draft',

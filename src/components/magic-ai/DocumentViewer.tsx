@@ -14,6 +14,7 @@ import {
   Clock,
   Download,
 } from 'lucide-react';
+import { EZRAB_MODEL_FLASH } from '../../services/aiModelMasking';
 
 export interface DocumentViewerProps {
   file: File | null;
@@ -528,7 +529,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
               <div className="flex items-center gap-2">
                 <Terminal size={14} className="text-[#38BDF8]" />
                 <span className="font-bold text-white">AI ESTIMATE LOG CONSOLE</span>
-                <span>• Kernel: Gemini Vision Multi-Stage</span>
+                <span>• Kernel: {EZRAB_MODEL_FLASH}</span>
               </div>
               <span className="text-[#64748B]">{logs.length} entri terekam</span>
             </div>

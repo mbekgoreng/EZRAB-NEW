@@ -49,6 +49,7 @@ import { DedAiSplitAnalysisView } from './DedAiSplitAnalysisView';
 import { dedAnalysisPersistenceService } from '../../services/dedAnalysisPersistenceService';
 import { dedRabReviewService } from '../../ded-rab-v2/review/dedRabReviewService';
 import { dedSpreadsheetSync } from '../../ded-rab-v2/spreadsheet/dedSpreadsheetSync';
+import { EZRAB_MODEL_FLASH, EZRAB_MODEL_PRO } from '../../services/aiModelMasking';
 import { honestVolume } from '../../engine/honestVolume';
 
 export function deriveProjectNameFromFileName(fileName?: string): string {
@@ -1786,7 +1787,7 @@ padding: '9px 18px', borderRadius: 'var(--ez-radius-control)', border: 'none', f
                   cursor: 'pointer',
                 }}
               >
-                ⚡ Cepat (Gemini Flash Lite)
+                ⚡ Cepat ({EZRAB_MODEL_FLASH})
               </button>
               <button
                 type="button"
@@ -1802,7 +1803,7 @@ padding: '9px 18px', borderRadius: 'var(--ez-radius-control)', border: 'none', f
                   cursor: 'pointer',
                 }}
               >
-                🔎 Mendalam (Gemini Flash 3.8)
+                🔎 Mendalam ({EZRAB_MODEL_PRO})
               </button>
             </div>
           </div>

@@ -16,7 +16,7 @@ import {
 } from './aiProviderTypes';
 import { aiCostRouter } from './aiCostRouter';
 import { aiProviderRegistry } from './aiProviderRegistry';
-import { maskAiModelName, maskAiProviderName, sanitizeEvidenceBasis } from './aiModelMasking';
+import { maskAiModelName, maskAiProviderName, sanitizeEvidenceBasis, EZRAB_MODEL_FLASH, EZRAB_MODEL_PRO, EZRAB_PROVIDER_DISPLAY } from './aiModelMasking';
 import { aiGatewayAuthHeaders } from '../ai-tools/aiGatewayAuth';
 
 export interface AIExecutionRequest {
@@ -342,12 +342,15 @@ export class AIProviderRouter {
           );
         }
 
+        // Defense-in-depth: mask the server-supplied assistant label too, so a
+        // raw model name can never reach the UI even if the server ever sends one.
         const assistant =
-          payload.assistant ||
-          (mode === 'vision' ? 'EZRAB Vision' : mode === 'advanced' ? 'EZRAB AI Pro' : 'EZRAB AI 1.3');
+          payload.assistant
+            ? maskAiModelName(payload.assistant)
+            : (mode === 'advanced' ? EZRAB_MODEL_PRO : EZRAB_MODEL_FLASH);
 
         const maskedRoute: SelectedModelRoute = {
-          providerId: 'EZRAB Cloud Engine',
+          providerId: EZRAB_PROVIDER_DISPLAY,
           modelId: assistant,
           qualityTier: mode === 'advanced' ? 'PREMIUM' : 'CHEAP',
           keyAlias: 'ezrab-neural-key',
@@ -379,10 +382,10 @@ export class AIProviderRouter {
           sourceType: (request.sourceType as any) || 'text',
           status: 'INFERRED',
           confidence: 'LOW',
-          extractorProvider: 'EZRAB Cloud Engine',
+          extractorProvider: EZRAB_PROVIDER_DISPLAY,
           extractorModel: assistant,
           calculatorEngine: 'EZRAB_DETERMINISTIC_ENGINE',
-          basis: `Dihasilkan oleh EZRAB Cloud Engine (${assistant}) dari respons provider — belum diverifikasi oleh sistem`,
+          basis: `Dihasilkan oleh ${EZRAB_PROVIDER_DISPLAY} (${assistant}) dari respons provider — belum diverifikasi oleh sistem`,
           ...payload.evidence,
         };
 
@@ -415,14 +418,14 @@ export class AIProviderRouter {
           success: false,
           content: `Gagal memproses permintaan AI: ${safeMessage}`,
           route: {
-            providerId: 'EZRAB Cloud Engine',
-            modelId: 'EZRAB AI Pro',
+            providerId: EZRAB_PROVIDER_DISPLAY,
+            modelId: EZRAB_MODEL_PRO,
             qualityTier: 'CHEAP',
             keyAlias: 'ezrab-neural-key',
             capabilities: ['TEXT'],
             costEstimate: {
               providerId: 'ezrab_core',
-              modelId: 'EZRAB AI Pro',
+              modelId: EZRAB_MODEL_PRO,
               qualityTier: 'CHEAP',
               estimatedInputTokens: 0,
               estimatedOutputTokens: 0,
@@ -647,11 +650,13 @@ export class AIProviderRouter {
 
     // STRICT CAPABILITY VALIDATION (client-side pre-check, enforced again server-side):
     // Never allow raw image/PDF to Atria, Mercury or zrouter text models without VISION.
+    // Masking: the thrown message can reach the UI (PriceResolutionDrawer error
+    // banner), so it must carry masked identities only — never raw model/provider ids.
     if (request.imageDataBase64 && !route.capabilities.includes('VISION')) {
-      throw new Error(`INCOMPATIBLE_PROVIDER: Model ${route.modelId} (${route.providerId}) does not support VISION/IMAGE inputs.`);
+      throw new Error(`INCOMPATIBLE_PROVIDER: Model ${maskAiModelName(route.modelId)} (${maskAiProviderName(route.providerId)}) does not support VISION/IMAGE inputs.`);
     }
     if (request.pdfDataBase64 && !route.capabilities.includes('PDF')) {
-      throw new Error(`INCOMPATIBLE_PROVIDER: Model ${route.modelId} (${route.providerId}) does not support PDF inputs.`);
+      throw new Error(`INCOMPATIBLE_PROVIDER: Model ${maskAiModelName(route.modelId)} (${maskAiProviderName(route.providerId)}) does not support PDF inputs.`);
     }
 
     const jsonMode = [

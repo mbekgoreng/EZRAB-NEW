@@ -7,6 +7,7 @@ import { ReceiptText } from 'lucide-react';
 import type { AiFeature, LedgerEntry } from '../types';
 import { FEATURE_LABELS } from '../config';
 import { formatDateTime } from '../format';
+import { maskAiModelName } from '../../services/aiModelMasking';
 
 interface Props {
   entries: LedgerEntry[];
@@ -94,7 +95,9 @@ export const CreditUsageHistory: React.FC<Props> = ({ entries }) => {
                 <tr key={e.id}>
                   <td style={{ whiteSpace: 'nowrap' }}>{formatDateTime(e.at)}</td>
                   <td>{FEATURE_LABELS[e.feature]}</td>
-                  <td>{e.model ?? '—'}</td>
+                  {/* Masking (defense-in-depth): ledger entries may carry a raw
+                      model name or a mode label — both map to the two aliases. */}
+                  <td>{e.model ? maskAiModelName(e.model) : '—'}</td>
                   <td>{e.description}</td>
                   <td className={e.credits < 0 ? 'aic-neg' : 'aic-pos'}>
                     {e.credits > 0 ? '+' : ''}{e.credits.toLocaleString('id-ID')}

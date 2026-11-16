@@ -5,6 +5,10 @@
  * 2026-10-31, F6) no longer exact key COUNTS: counts told an anonymous
  * caller exactly how much provider quota sits behind each provider.
  * The only consumer (UnifiedSettingsView) reads `status`, not counts.
+ * MASKING (2026-11-16): field `providers` dan `modes` DIHAPUS dari
+ * respons — keduanya membocorkan nama provider/model asli ke PUBLIK
+ * anonim (endpoint ini sengaja publik, tanpa auth). Respons kini hanya
+ * { success, status, time }; satu-satunya konsumen hanya membaca status.
  */
 import { applyCors, rateLimit } from '../_lib/security.js';
 
@@ -36,8 +40,6 @@ export default async function handler(req, res) {
   return res.status(200).json({
     success: true,
     status: anyKeys ? 'ready' : 'no_keys',
-    providers: { gemini: gemini > 0, zyrouter, atria: atria > 0, dahl: dahl > 0, gemini_oai: geminiOai > 0, river: river > 0 },
-    modes: { chat: 'gemini-3.5-flash-lite (Gemini)', fast: 'gemini-3.5-flash-lite (Gemini)', advanced: 'gemini-3.5-flash-lite (Gemini)' },
     time: new Date().toISOString(),
   });
 }

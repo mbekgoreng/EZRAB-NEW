@@ -26,6 +26,7 @@ import {
   ClipboardList,
 } from 'lucide-react';
 import { ezrabAiService } from './service';
+import { maskAiModelName } from '../../services/aiModelMasking';
 import {
   TEXT_ATTACHMENT_ACCEPT,
   buildTextAttachmentBlock,
@@ -4565,7 +4566,9 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
                       />
                     )}
                     <div className="ezchat2-meta">
-                      {m.model && <span className="ezchat2-model"><Sparkles size={11} /> {m.model}</span>}
+                      {/* Masking (defense-in-depth): m.model is dormant today
+                          (service never sets it) but the render path is live. */}
+                      {m.model && <span className="ezchat2-model"><Sparkles size={11} /> {maskAiModelName(m.model)}</span>}
                       {m.creditsUsed !== undefined && (
                         <span className="ezchat2-model" title="Pemakaian simulasi frontend — bukan penagihan nyata">
                           ⚡ {m.creditsUsed} kredit (simulasi)

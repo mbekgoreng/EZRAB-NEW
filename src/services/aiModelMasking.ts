@@ -1,11 +1,16 @@
 /**
  * EZRAB — AI PROVIDER ABSTRACTION & FRONTEND INFORMATION HIDING
  *
- * CANONICAL PUBLIC EZRAB IDENTITIES:
- * 1. EZRAB AI 1.3  - Capability: QUICK    (Simple questions, lightweight reasoning, fast assistance)
- * 2. EZRAB AI Pro  - Capability: ADVANCED (Complex reasoning, construction analysis, DED -> RAB, document understanding)
- * 3. EZRAB Vision  - Capability: VISION   (Document/image understanding, DED page analysis)
- * 4. EZRAB Core    - Capability: INTERNAL (AI orchestration, tools, RAG, intent, rules, deterministic engines)
+ * SATU-SATUNYA SUMBER KEBENARAN alias tampil (program masking 2026-11-16,
+ * keputusan owner/koordinator — jangan hardcode alias di tempat lain, impor
+ * dari modul ini):
+ * 1. Ezrab-flash-v1 — CEPAT: chat, fast, vision (scan DED, baca denah/nota/PDF)
+ * 2. Ezrab-pro      — MENDALAM: advanced, ded (DED -> RAB mendalam, reasoning kompleks)
+ * Provider tampil: 'ezrab' (netral).
+ *
+ * Konstanta identitas lama (EZRAB AI 1.3 / EZRAB AI Pro / EZRAB Vision /
+ * EZRAB Core) dipertahankan sebagai alias agar pemanggil lama tidak pecah —
+ * nilainya sudah dua alias di atas (vision & core melebur ke alias cepat).
  *
  * CRITICAL RULE:
  * Production EZRAB must NEVER expose real AI provider/model identities
@@ -13,20 +18,30 @@
  * to normal frontend users.
  */
 
-export const EZRAB_AI_1_3 = 'EZRAB AI 1.3';
-export const EZRAB_AI_PRO = 'EZRAB AI Pro';
-export const EZRAB_VISION = 'EZRAB Vision';
-export const EZRAB_CORE = 'EZRAB Core';
+export const EZRAB_MODEL_FLASH = 'Ezrab-flash-v1';
+export const EZRAB_MODEL_PRO = 'Ezrab-pro';
+export const EZRAB_PROVIDER_DISPLAY = 'ezrab';
+
+// Legacy identity constants — kept for backward compatibility; all resolve to
+// the two owner aliases above (vision & core collapse to the fast alias).
+export const EZRAB_AI_1_3 = EZRAB_MODEL_FLASH;
+export const EZRAB_AI_PRO = EZRAB_MODEL_PRO;
+export const EZRAB_VISION = EZRAB_MODEL_FLASH;
+export const EZRAB_CORE = EZRAB_MODEL_FLASH;
 
 // Backward compatibility aliases
-export const EZRAB_MODEL_FLASH = EZRAB_AI_1_3;
 export const EZRAB_MODEL_VISION = EZRAB_VISION;
-export const EZRAB_MODEL_THINKING = EZRAB_AI_PRO;
-export const EZRAB_PROVIDER_DISPLAY = 'EZRAB Cloud Engine';
+export const EZRAB_MODEL_THINKING = EZRAB_MODEL_PRO;
 
 /**
  * Masks any raw model name, task routing type, or vendor model ID
  * into the official proprietary EZRAB public AI identities.
+ *
+ * Output is ALWAYS one of the two owner aliases: 'Ezrab-flash-v1'
+ * (fast/chat/vision) or 'Ezrab-pro' (advanced/ded). Legacy brand labels
+ * ('EZRAB AI 1.3', 'EZRAB AI Pro', 'EZRAB Vision', 'EZRAB Core') and mode
+ * labels ('FAST', 'ADVANCED', 'CHAT') map to the same two aliases, so
+ * stored/legacy values are covered too.
  */
 export function maskAiModelName(rawModelOrTask?: string): string {
   if (!rawModelOrTask) return EZRAB_AI_1_3;
@@ -110,13 +125,9 @@ export function maskAiModelName(rawModelOrTask?: string): string {
 
 /**
  * Masks third-party provider/vendor names into the proprietary EZRAB provider name.
+ * Always returns the neutral display value 'ezrab' — no vendor name ever leaks.
  */
 export function maskAiProviderName(rawProvider?: string): string {
-  if (!rawProvider) return EZRAB_PROVIDER_DISPLAY;
-  const str = String(rawProvider).toLowerCase().trim();
-  if (str === 'ezrab_core' || str === 'ezrab core' || str === 'deterministic') {
-    return EZRAB_CORE;
-  }
   return EZRAB_PROVIDER_DISPLAY;
 }
 

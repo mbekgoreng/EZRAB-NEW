@@ -14,6 +14,7 @@ import { CreditTopUpModal } from './components/CreditTopUpModal';
 import { CreditUsageHistory } from './components/CreditUsageHistory';
 import { CreditUsageSummary } from './components/CreditUsageSummary';
 import { CreditLowBalanceNotice } from './components/CreditLowBalanceNotice';
+import { maskAiModelName } from '../services/aiModelMasking';
 
 /**
  * Seksi Usage Meter (Phase 3): riwayat pemakaian AI aktual dari backend.
@@ -86,7 +87,9 @@ const UsageMeterSection: React.FC = () => {
               <div>
                 <div style={{ fontWeight: 700 }}>{u.feature || 'AI'}</div>
                 <div style={{ color: 'var(--ez-color-text-faint)', fontSize: 11.5 }}>
-                  {u.model || '?'} · {u.tokens_in != null ? `${u.tokens_in} in / ${u.tokens_out} out` : 'token tidak tersedia'}
+                  {/* Masking (defense-in-depth): u.model comes from the backend
+                      usage endpoint; mask here so a raw name never renders. */}
+                  {u.model ? maskAiModelName(u.model) : '?'} · {u.tokens_in != null ? `${u.tokens_in} in / ${u.tokens_out} out` : 'token tidak tersedia'}
                 </div>
               </div>
               <div style={{ textAlign: 'right' }}>

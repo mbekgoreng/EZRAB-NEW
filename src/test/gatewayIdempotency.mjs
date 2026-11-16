@@ -115,5 +115,25 @@ await test('5: kunci sama dari identitas berbeda (IP lain) -> TIDAK menerima rep
   ok(r.body.requestId !== firstRequestId, 'requestId identitas lain harus berbeda');
 });
 
+await test('6: replay menyajikan body TERMASKING (masking sebelum simpan cache)', async () => {
+  // MASKING (2026-11-16): masking diterapkan saat responseBody
+  // dibangun, SEBELUM idempotencyStore — replay hanya bisa menyajikan
+  // body yang sudah termasking. Bukti perilaku: request baru dengan
+  // kunci baru, lalu replay dengan kunci yang sama — kedua body harus
+  // sama-sama tanpa nama asli.
+  const h = { 'idempotency-key': 'idem-key-mask' };
+  const r1 = mockRes();
+  await handleAiRequest(mockReq({ headers: h, body }), r1);
+  eq(r1.statusCode, 200, 'respons pertama');
+  const r2 = mockRes();
+  await handleAiRequest(mockReq({ headers: h, body }), r2);
+  eq(r2.statusCode, 200, 'respons replay');
+  eq(r2.body.requestId, r1.body.requestId, 'replay = body tersimpan yang sama');
+  eq(r2.body.model, 'Ezrab-flash-v1', 'replay: model alias flash');
+  eq(r2.body.provider, 'ezrab', 'replay: provider netral');
+  ok(!('attempts' in r2.body), 'replay: tanpa attempts[]');
+  ok(!JSON.stringify(r2.body).includes('gemini'), 'replay: tanpa nama asli');
+});
+
 console.log(failures === 0 ? '\nGATEWAY IDEMPOTENCY DONE (semua cek lulus)' : `\n${failures} FAIL`);
 process.exit(failures ? 1 : 0);

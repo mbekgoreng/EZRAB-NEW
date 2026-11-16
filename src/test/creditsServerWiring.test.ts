@@ -102,7 +102,7 @@ console.log('=== Riwayat usage dari operasi ledger ===');
   check('status SETTLED → actual', usage[0]?.status === 'actual');
   check('credits_charged = settled 20', usage[0]?.credits_charged === 20);
   check('token dari usageEvidence', usage[0]?.tokens_in === 1000 && usage[0]?.tokens_out === 500);
-  check('model dari usageEvidence', usage[0]?.model === 'test-model');
+  check('model dari usageEvidence DISAMARKAN via fitur chat-ai/fast', usage[0]?.model === 'Ezrab-flash-v1');
   check('cost_status jujur UNDETERMINED', usage[0]?.cost_status === 'UNDETERMINED');
   const bal = await svc.readBatchBalance(repo, account.id, T0 + 20);
   check('saldo berkurang tepat 20 → 80', bal.total === 80);

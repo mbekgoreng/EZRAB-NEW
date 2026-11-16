@@ -29,6 +29,7 @@
 import { authorizeWorkspaceAccess } from './billingAuthorization.js';
 import { loadLedgerSnapshot, withLedger } from './billingStore.js';
 import { createCreditLedger } from './creditLedger.js';
+import { maskUsageHistoryModel } from './modelMasking.js';
 
 function fail(status, errorCode) {
   return { ok: false, status, error: errorCode, errorCode };
@@ -116,6 +117,12 @@ export async function readBatchBalance(repo, accountId, now) {
  * credits_charged, status, cost_status }.
  * status: SETTLED → 'actual'; RELEASED → 'failed'; selain itu 'pending'
  * (UI melabelinya "Menunggu rekonsiliasi").
+ * MASKING (2026-11-16): `model` yang dikembalikan ke klien adalah ALIAS
+ * tampil (Ezrab-flash-v1 / Ezrab-pro) via maskUsageHistoryModel —
+ * dipetakan dari kunci fitur operasi dulu, fallback peta balik nama
+ * model (lihat api/_lib/modelMasking.js). Nama model ASLI tetap
+ * tersimpan di ledger (usageEvidence) untuk debugging/audit — hanya
+ * respons API ini yang disamarkan.
  */
 export async function readUsageHistory(repo, accountId, limit = 20) {
   const snapshot = await loadLedgerSnapshot(repo, accountId, {});
@@ -128,7 +135,7 @@ export async function readUsageHistory(repo, accountId, limit = 20) {
     return {
       id: o.id,
       feature: o.feature || null,
-      model: ev?.model ?? null,
+      model: maskUsageHistoryModel({ feature: o.feature, model: ev?.model ?? null }),
       tokens_in: ev?.inputTokens ?? null,
       tokens_out: ev?.outputTokens ?? null,
       credits_charged: o.settledCredits ?? o.actualCredits ?? null,

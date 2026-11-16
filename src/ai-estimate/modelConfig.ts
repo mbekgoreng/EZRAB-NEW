@@ -2,12 +2,16 @@
  * EZRAB AI ESTIMATE 2.0 — Centralized Model Configuration
  *
  * Single source of truth for AI Estimate analysis modes:
- * - FAST   : Gemini 3.5 Flash-Lite (Speed + Preliminary Estimate)
- * - DETAIL : Gemini 3.8 Flash (Depth + Completeness + Traceability)
+ * - FAST   : Ezrab-flash-v1 (Speed + Preliminary Estimate)
+ * - DETAIL : Ezrab-pro (Depth + Completeness + Traceability)
  *
+ * Display names are the owner aliases from aiModelMasking — NEVER raw
+ * vendor/model names. `modelId` stays the internal routing key.
  * In browser: capability modes 'quick' and 'advanced' are used with server routing.
  * In server/node: exact model IDs are configured here.
  */
+
+import { EZRAB_MODEL_FLASH, EZRAB_MODEL_PRO } from '../services/aiModelMasking';
 
 export type AiEstimateAnalysisMode = 'FAST' | 'DETAIL';
 
@@ -36,7 +40,7 @@ export const AI_ESTIMATE_MODELS: Record<AiEstimateAnalysisMode, AiEstimateModelC
     id: 'FAST',
     title: 'Estimasi Cepat',
     subtitle: 'Analisis awal untuk mendapatkan gambaran biaya proyek dengan cepat.',
-    modelName: 'Gemini 3.5 Flash-Lite',
+    modelName: EZRAB_MODEL_FLASH,
     modelId: 'gemini-3.5-flash-lite',
     capabilityMode: 'quick',
     description: 'Analisis ringkas untuk mendapatkan WBS pekerjaan dan estimasi biaya pendahuluan.',
@@ -54,7 +58,7 @@ export const AI_ESTIMATE_MODELS: Record<AiEstimateAnalysisMode, AiEstimateModelC
     id: 'DETAIL',
     title: 'Estimasi Detail',
     subtitle: 'Analisis DED lebih mendalam dengan pemeriksaan dimensi dan konsistensi.',
-    modelName: 'Gemini 3.8 Flash',
+    modelName: EZRAB_MODEL_PRO,
     modelId: 'gemini-3.8-flash',
     capabilityMode: 'advanced',
     description: 'Analisis multi-halaman lengkap dengan rekonstruksi dimensi, cross-check gambar, dan penelusuran audit.',

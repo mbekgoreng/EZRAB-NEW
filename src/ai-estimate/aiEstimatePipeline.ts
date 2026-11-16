@@ -2,8 +2,8 @@
  * EZRAB AI ESTIMATE 2.0 — Main Pipeline
  *
  * Single architecture with dual mode:
- * - FAST   : Gemini 3.5 Flash-Lite (Speed + Preliminary Estimate)
- * - DETAIL : Gemini 3.8 Flash (Depth + Completeness + Traceability)
+ * - FAST   : Ezrab-flash-v1 (Speed + Preliminary Estimate)
+ * - DETAIL : Ezrab-pro (Depth + Completeness + Traceability)
  *
  * CRITICAL PRINCIPLES:
  * 1. AI ESTIMATE IS NOT AHSP. All prices are labelled AI_ESTIMATE.
@@ -48,6 +48,7 @@ import { duplicateDetector } from '../ded-rab-v3/evidence/duplicateDetector';
 import { dedQuantityReasoningEngine } from '../ded-rab-v3/reasoning/dedQuantityReasoningEngine';
 import { PdfPageService } from '../ded-rab-v2/ingestion/pdfPageService';
 import { aiProviderClient } from '../ded-rab-v3/ai/aiProviderClient';
+import { EZRAB_MODEL_PRO } from '../services/aiModelMasking';
 
 export interface AiEstimatePipelineOptions {
   projectId: string;
@@ -440,7 +441,7 @@ export class AiEstimatePipeline {
     const { projectId, projectName, rawPages, totalPages, region, notify } = args;
 
     // STEP 1: Membaca gambar (All sheets thorough analysis)
-    notify('READING_PAGES', 'Membaca gambar', 10, `Menganalisis visual seluruh ${totalPages} lembar DED dengan Gemini 3.8 Flash...`, { totalPages });
+    notify('READING_PAGES', 'Membaca gambar', 10, `Menganalisis visual seluruh ${totalPages} lembar DED dengan ${EZRAB_MODEL_PRO}...`, { totalPages });
 
     const context: DedContextMemory = dedDocumentReader.createEmptyContext(projectId, projectName, totalPages);
 

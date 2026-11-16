@@ -14,7 +14,7 @@ import { defaultAiProvider } from '../services/aiProviderEngine';
 import { FullProjectAIContext } from '../services/aiContextService';
 
 describe('EZRAB AI Model Masking & Chatbox Fallback Suite', () => {
-  it('1. Correctly masks general fast chat models to ezrab-1.2-flash', () => {
+  it('1. Correctly masks general fast chat models to Ezrab-flash-v1', () => {
     assert.strictEqual(maskAiModelName('ali/deepseek-v4.1-flash'), EZRAB_MODEL_FLASH);
     assert.strictEqual(maskAiModelName('deepseek-v4.1-flash'), EZRAB_MODEL_FLASH);
     assert.strictEqual(maskAiModelName('qwen3.8-flash'), EZRAB_MODEL_FLASH);
@@ -24,7 +24,7 @@ describe('EZRAB AI Model Masking & Chatbox Fallback Suite', () => {
     assert.strictEqual(maskAiModelName('ezrab-1.2-flash'), EZRAB_MODEL_FLASH);
   });
 
-  it('2. Correctly masks vision and drawing models to ezrab-1.0-vision-flash', () => {
+  it('2. Correctly masks vision and drawing models to Ezrab-flash-v1 (vision collapses to the fast alias)', () => {
     assert.strictEqual(maskAiModelName('gemini-2.0-flash'), EZRAB_MODEL_VISION);
     assert.strictEqual(maskAiModelName('gemini-3.8-flash'), EZRAB_MODEL_VISION);
     assert.strictEqual(maskAiModelName('geminiflash-3.8'), EZRAB_MODEL_VISION);
@@ -37,7 +37,7 @@ describe('EZRAB AI Model Masking & Chatbox Fallback Suite', () => {
     assert.strictEqual(maskAiModelName('ezrab-1.0-vision-flash'), EZRAB_MODEL_VISION);
   });
 
-  it('3. Correctly masks reasoning and thinking models to ezrabsuper-v1.5-thinking', () => {
+  it('3. Correctly masks reasoning and thinking models to Ezrab-pro', () => {
     assert.strictEqual(maskAiModelName('mercury-2.5'), EZRAB_MODEL_THINKING);
     assert.strictEqual(maskAiModelName('claude-opus-4.6-thinking'), EZRAB_MODEL_THINKING);
     assert.strictEqual(maskAiModelName('deepseek-r1'), EZRAB_MODEL_THINKING);
@@ -47,7 +47,7 @@ describe('EZRAB AI Model Masking & Chatbox Fallback Suite', () => {
     assert.strictEqual(maskAiModelName('ezrabsuper-v1.5-thinking'), EZRAB_MODEL_THINKING);
   });
 
-  it('4. Masks third-party provider names to EZRAB Cloud Engine', () => {
+  it('4. Masks third-party provider names to ezrab', () => {
     assert.strictEqual(maskAiProviderName('gemini'), EZRAB_PROVIDER_DISPLAY);
     assert.strictEqual(maskAiProviderName('vleee'), EZRAB_PROVIDER_DISPLAY);
     assert.strictEqual(maskAiProviderName('zrouter'), EZRAB_PROVIDER_DISPLAY);
@@ -56,13 +56,13 @@ describe('EZRAB AI Model Masking & Chatbox Fallback Suite', () => {
     assert.strictEqual(maskAiProviderName('atria'), EZRAB_PROVIDER_DISPLAY);
     assert.strictEqual(maskAiProviderName('openai'), EZRAB_PROVIDER_DISPLAY);
     assert.strictEqual(maskAiProviderName('deepseek'), EZRAB_PROVIDER_DISPLAY);
-    assert.strictEqual(maskAiProviderName('ezrab_core'), 'EZRAB Core');
+    assert.strictEqual(maskAiProviderName('ezrab_core'), EZRAB_PROVIDER_DISPLAY);
   });
 
   it('5. Sanitizes evidence basis to hide raw vendor names and key aliases', () => {
     const rawBasis = 'Extracted via vleee (ali/deepseek-v4.1-flash) [Key: vleee-key-1]';
     const sanitized = sanitizeEvidenceBasis(rawBasis, 'ali/deepseek-v4.1-flash');
-    assert.strictEqual(sanitized, 'Diverifikasi melalui EZRAB Cloud Engine (EZRAB AI 1.3)');
+    assert.strictEqual(sanitized, 'Diverifikasi melalui ezrab (Ezrab-flash-v1)');
     assert.strictEqual(sanitized.includes('vleee'), false);
     assert.strictEqual(sanitized.includes('deepseek'), false);
     assert.strictEqual(sanitized.includes('Key:'), false);

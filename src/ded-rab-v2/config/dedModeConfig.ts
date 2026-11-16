@@ -166,6 +166,7 @@ export const DED_MODE_METADATA: Record<DedProcessingMode, DedModeMetadata> = {
 };
 
 import { getModelTarget } from '../../ai-tools/aiModelRegistry';
+import { maskAiModelName, EZRAB_MODEL_FLASH, EZRAB_MODEL_PRO } from '../../services/aiModelMasking';
 
 function getEnv(name: string, fallback: string): string {
   if (typeof process !== 'undefined' && process.env && process.env[name]) {
@@ -175,19 +176,26 @@ function getEnv(name: string, fallback: string): string {
 }
 
 /**
- * Display label derived from the ACTUAL resolved model id, so the label can
- * never drift from the model the registry picked (incl. env overrides).
+ * Display label for the resolved model — ALWAYS an owner alias, never the
+ * raw model id (program masking 2026-11-16). The alias follows the MODE:
+ * ADVANCED/DETAIL -> Ezrab-pro, anything else -> masked fast alias. The old
+ * fallback returned the raw id verbatim; that path is now closed.
  */
-function labelForModel(model: string): string {
-  if (/deepseek/i.test(model)) return 'DeepSeek V4.1 Flash';
-  if (/flash-lite/i.test(model)) return 'Gemini 3.5 Flash Lite';
-  if (/gemini/i.test(model)) return 'Gemini Flash 3.8';
-  return model;
+function labelForModel(model: string, mode?: DedProcessingMode): string {
+  if (mode === 'ADVANCED' || mode === 'DETAIL') return EZRAB_MODEL_PRO;
+  return maskAiModelName(model);
 }
 
 /**
  * Resolves the provider and model IDs for a given mode.
  * SERVER-SIDE ONLY - NEVER EXPOSE TO CLIENT BROWSER.
+ *
+ * NOTE (program masking 2026-11-16): klaim di atas TIDAK BENAR di HEAD ini —
+ * file ini TER-BUNDLE ke klien (DedRabWorkflowView.tsx mengimpor
+ * dedRabPipeline langsung), sehingga seluruh ID model/provider mentah di sini
+ * terlihat di tab Sources browser. Masking hanya menutup yang DIRENDER
+ * (modelLabel kini alias); scrub bundle penuh = refactor terpisah (lihat
+ * evidence/implementation-client.md, bagian Residual).
  *
  * SINGLE SOURCE OF TRUTH: FAST and DETAIL/ADVANCED delegate to the central
  * aiModelRegistry (productId DED_AI_FAST / DED_AI_DETAIL). This config used
@@ -215,7 +223,7 @@ export function getDedModel(mode: DedProcessingMode): {
       return {
         provider: target.provider,
         model: target.model,
-        modelLabel: labelForModel(target.model),
+        modelLabel: labelForModel(target.model, 'FAST'),
         visionModel: target.model,
         textModel: target.model,
         reasoningLevel: 'low',
@@ -228,7 +236,7 @@ export function getDedModel(mode: DedProcessingMode): {
       return {
         provider: 'vleee',
         model: visionModel,
-        modelLabel: 'EZRAB Standard Vision',
+        modelLabel: EZRAB_MODEL_FLASH,
         visionModel,
         textModel,
         reasoningLevel: 'medium',
@@ -243,7 +251,7 @@ export function getDedModel(mode: DedProcessingMode): {
       return {
         provider: target.provider,
         model: target.model,
-        modelLabel: labelForModel(target.model),
+        modelLabel: labelForModel(target.model, mode),
         visionModel: target.model,
         textModel: target.model,
         reasoningLevel: 'medium',

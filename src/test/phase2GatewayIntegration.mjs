@@ -72,7 +72,7 @@ await test('empty message -> 400, no AI call', async () => {
   eq(fetchCalls, 0, 'AI must not be invoked on validation failure');
 });
 
-await test('valid request (degraded mode) -> 200 with traceable provider/model', async () => {
+await test('valid request (degraded mode) -> 200 with masked provider/model', async () => {
   delete process.env.AI_GATEWAY_TOKEN;
   fetchCalls = 0;
   const res = mockRes();
@@ -80,8 +80,11 @@ await test('valid request (degraded mode) -> 200 with traceable provider/model',
   eq(res.statusCode, 200);
   eq(res.body.success, true);
   eq(res.body.content, 'halo dari AI');
-  ok(res.body.provider === 'gemini', 'actual provider recorded');
-  ok(res.body.model === 'gemini-3.5-flash-lite', 'actual model recorded');
+  // MASKING (2026-11-16): nama asli tidak pernah keluar; alias per mode.
+  ok(res.body.provider === 'ezrab', 'provider disamarkan');
+  ok(res.body.model === 'Ezrab-flash-v1', 'model mode fast -> alias flash');
+  ok(!('attempts' in res.body), 'attempts[] tidak dikirim');
+  ok(!JSON.stringify(res.body).includes('gemini'), 'nama asli tidak ada di body');
   ok(typeof res.body.requestId === 'string' && res.body.requestId.startsWith('req_'), 'requestId');
   ok(typeof res.body.durationMs === 'number', 'durationMs');
   ok(res.headers['x-ratelimit-limit'], 'rate-limit headers present');

@@ -24,6 +24,7 @@ import {
   GoogleSheetsSyncResult,
 } from '../types';
 import { exportItemAmount } from '../../export/priceIntegrity';
+import { EZRAB_PROVIDER_DISPLAY } from '../../services/aiModelMasking';
 
 export class DedSpreadsheetSync {
   private static instance: DedSpreadsheetSync;
@@ -61,7 +62,7 @@ export class DedSpreadsheetSync {
       },
       {
         Field: 'Pipeline Version',
-        Value: 'EZRAB DED -> RAB V2 (ZyRouter + Gemini Flash)',
+        Value: `EZRAB DED -> RAB V2 (${EZRAB_PROVIDER_DISPLAY})`,
       },
       {
         Field: 'Sync Timestamp',

@@ -37,6 +37,7 @@ import { useCurrency } from '../../context/CurrencyContext';
 import { mapMagicAiItemToRabInput } from '../../ai-tools/ded-ai-estimate/finalizeMapping';
 import { buildFinalizationKey } from '../../ai-tools/ded-ai-estimate/finalizationKey';
 import { csvRow } from '../../lib/csv';
+import { EZRAB_MODEL_FLASH, EZRAB_MODEL_PRO } from '../../services/aiModelMasking';
 
 export interface DedAnalysisDashboardProps {
   currentProject?: Project | null;
@@ -642,7 +643,7 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
                 <Zap size={13} className={selectedMode === 'FAST' ? 'text-[var(--ez-hue-blue-text)]' : ''} />
                 <span>Estimasi Cepat</span>
                 <span className="text-[10px] font-mono text-[#64748B] bg-[var(--ez-hue-slate-bg)] px-1.5 rounded border border-[var(--ez-color-border-line)] deddash-x4">
-                  Gemini 3.5 Flash-Lite
+                  {EZRAB_MODEL_FLASH}
                 </span>
               </button>
               <button
@@ -658,7 +659,7 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
                 <Sliders size={13} className={selectedMode === 'DETAIL' ? 'text-[var(--ez-hue-blue-text)]' : ''} />
                 <span>Estimasi Detail</span>
                 <span className="text-[10px] font-mono text-[#64748B] bg-[var(--ez-hue-slate-bg)] px-1.5 rounded border border-[var(--ez-color-border-line)] deddash-x4">
-                  Gemini 3.8 Flash
+                  {EZRAB_MODEL_PRO}
                 </span>
               </button>
             </div>

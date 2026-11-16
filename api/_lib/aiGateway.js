@@ -44,6 +44,7 @@ import {
   sha256hex,
 } from './security.js';
 import { runChatFastWithMetering } from './chatFastMetering.js';
+import { EZRAB_PROVIDER_DISPLAY, modelAliasForMode } from './modelMasking.js';
 
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta';
 const ZYROUTER_BASE = 'https://api.zyrouter.com/v1';
@@ -828,7 +829,12 @@ export function sanitizeUsageForClient(raw) {
     // null, agar klien menerima satu bentuk kanonik untuk tanpa-bukti.
     return { usage: null, usageStatus: 'missing' };
   }
-  usage.source = typeof raw.source === 'string' ? raw.source : null;
+  // MASKING (2026-11-16): `usage.source` TIDAK diteruskan ke klien.
+  // Nilai lamanya ('gemini_usageMetadata' / 'oai_usage') membedakan
+  // kelas provider yang melayani — kebocoran identitas halus. Tidak ada
+  // logika klien yang memakai field ini (providerClient hanya
+  // meneruskannya; tanpa field, normalisasinya menghasilkan null), jadi
+  // field ini dihapus, bukan diganti nilai netral.
   return { usage, usageStatus: allZero ? 'measured_zero' : 'measured' };
 }
 
@@ -836,8 +842,13 @@ export function sanitizeAttemptForClient(a) {
   if (!a || typeof a !== 'object') return null;
   const { usage, usageStatus } = sanitizeUsageForClient(a.usage ?? null);
   const out = {
-    provider: typeof a.provider === 'string' ? a.provider : null,
-    model: typeof a.model === 'string' ? a.model : null,
+    // MASKING (2026-11-16): identitas attempt asli tidak pernah keluar.
+    // Provider selalu nilai netral; model selalu null — alias per-mode
+    // hanya bisa diturunkan dari mode request, yang tidak dimiliki satu
+    // attempt. (Sejak masking, attempts[] tidak lagi dikirim di respons;
+    // helper ini dipertahankan sebagai utilitas client-safe + untuk tes.)
+    provider: EZRAB_PROVIDER_DISPLAY,
+    model: null,
     ok: a.ok === true,
     ms: typeof a.ms === 'number' && Number.isFinite(a.ms) ? a.ms : null,
     usage,
@@ -1140,23 +1151,31 @@ export async function handleAiRequest(req, res, opts = {}) {
   if (r.ok) {
     // SPRINT 5 (X1): bukti yang SUDAH dihitung gateway kini MELEWATI
     // batas HTTP secara aditif — `usage` adalah usage attempt FINAL
-    // (yang melayani), `attempts` adalah riwayat failover lengkap
-    // dalam skema client-safe di atas (usage attempt gagal yang
-    // terukur tetap terlihat per attempt, TIDAK diagregasi ke usage
-    // final). Klien lama yang tak membaca field baru tak terpengaruh.
-    // Usage yang hilang tetap null + usageStatus 'missing' — bukan nol.
+    // (yang melayani). Usage yang hilang tetap null + usageStatus
+    // 'missing' — bukan nol.
+    // MASKING (2026-11-16): nama model/provider ASLI tidak pernah keluar
+    // ke klien. `model` = alias tampil per mode rantai, `provider` =
+    // nilai netral 'ezrab' (api/_lib/modelMasking.js). `attempts[]`
+    // DIHAPUS dari respons — riwayat failover lengkap adalah peta
+    // provider/model asli; satu-satunya konsumennya, providerClient,
+    // hanya meneruskannya tanpa ada pembaca hilir di src/ (terverifikasi
+    // 2026-11-16), dan kodenya sudah menangani ketidakhadiran field
+    // (attempts: undefined). Bukti per-attempt tetap hidup server-side
+    // di `attemptLog` (log + usage meter) — tidak ada yang hilang untuk
+    // debugging. Masking terjadi DI SINI, sebelum responseBody disimpan
+    // ke cache replay idempotensi di bawah — replay hanya bisa
+    // menyajikan body yang sudah termasking.
     const finalUsage = sanitizeUsageForClient(r.usage ?? null);
     const responseBody = {
       success: true,
       content: r.content,
-      model: r.model,
-      provider: r.provider,
+      model: modelAliasForMode(mode),
+      provider: EZRAB_PROVIDER_DISPLAY,
       mode,
       requestId,
       durationMs,
       usage: finalUsage.usage,
       usageStatus: finalUsage.usageStatus,
-      attempts: (Array.isArray(r.attempts) ? r.attempts : []).map(sanitizeAttemptForClient).filter(Boolean),
     };
     if (idemScope) idempotencyStore(idemScope, responseBody);
     return res.status(200).json(responseBody);

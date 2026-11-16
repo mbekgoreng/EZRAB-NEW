@@ -64,7 +64,7 @@ const geminiWith = (text, usageMetadata) => ({
 
 const body = { message: 'analisis dokumen ini', mode: 'fast' };
 
-await test('G1: usage Gemini valid selamat melewati batas HTTP (X1)', async () => {
+await test('G1: usage Gemini valid selamat melewati batas HTTP (X1) — termasking', async () => {
   geminiPayload = geminiWith('hasil analisis', { promptTokenCount: 1200, candidatesTokenCount: 300, totalTokenCount: 1500, cachedContentTokenCount: 200 });
   const r = mockRes();
   await handleAiRequest(mockReq({ body }), r);
@@ -73,12 +73,15 @@ await test('G1: usage Gemini valid selamat melewati batas HTTP (X1)', async () =
   eq(r.body.usage.outputTokens, 300, 'outputTokens');
   eq(r.body.usage.totalTokens, 1500, 'totalTokens');
   eq(r.body.usage.cachedTokens, 200, 'cachedTokens terbedakan');
-  eq(r.body.usage.source, 'gemini_usageMetadata', 'source');
+  // MASKING (2026-11-16): usage.source dihapus (membocorkan kelas
+  // provider), attempts[] dihapus, provider/model disamarkan.
+  ok(!('source' in r.body.usage), 'usage.source TIDAK diteruskan ke klien');
   eq(r.body.usageStatus, 'measured', 'usageStatus');
-  eq(r.body.attempts.length, 1, 'satu attempt');
-  eq(r.body.attempts[0].usage.inputTokens, 1200, 'attempt usage');
+  ok(!('attempts' in r.body), 'attempts[] TIDAK dikirim ke klien');
   eq(r.body.content, 'hasil analisis', 'field lama utuh');
-  eq(r.body.provider, 'gemini', 'provider lama utuh');
+  eq(r.body.provider, 'ezrab', 'provider disamarkan');
+  eq(r.body.model, 'Ezrab-flash-v1', 'model mode fast -> alias flash');
+  ok(!JSON.stringify(r.body).includes('gemini'), 'nama model/provider asli tidak ada di body');
 });
 
 await test('G2: nol terukur eksplisit != usage hilang (X4 state 1 vs 3)', async () => {
@@ -96,11 +99,17 @@ await test('G2: nol terukur eksplisit != usage hilang (X4 state 1 vs 3)', async 
   eq(r2.body.usageStatus, 'missing', 'status missing');
 });
 
-await test('G3: respons kosong DENGAN usage -> attempt gagal terpelihara, failover sukses tidak diagregasi (X4 state 6)', async () => {
+await test('G3: respons kosong DENGAN usage -> failover sukses, usage final = attempt sukses SAJA (X4 state 6)', async () => {
   // Attempt Gemini pertama: HTTP 200, teks kosong, usage terukur.
   // Attempt kedua (key sama dicoba ulang oleh rantai? tidak — rantai
   // pindah provider; di sini key Gemini kedua tidak ada, jadi stub
   // dibuat bergantian: panggilan fetch pertama kosong, kedua sukses).
+  // MASKING (2026-11-16): bukti per-attempt (usage attempt gagal +
+  // errorClass) TIDAK LAGI melewati batas HTTP — attempts[] dihapus
+  // dari respons. Bukti itu tetap hidup server-side di attemptLog
+  // (log + usage meter). Yang diuji di sini: usage final tetap hanya
+  // dari attempt sukses (tidak diagregasi), dan tidak ada field
+  // attempts di body.
   let call = 0;
   globalThis.fetch = async () => {
     call++;
@@ -115,12 +124,7 @@ await test('G3: respons kosong DENGAN usage -> attempt gagal terpelihara, failov
   eq(r.statusCode, 200, 'status');
   eq(r.body.content, 'sukses kedua', 'konten dari attempt final');
   eq(r.body.usage.inputTokens, 700, 'usage final = attempt sukses SAJA (bukan 500+700)');
-  ok(r.body.attempts.length >= 2, 'riwayat attempt >= 2');
-  const failedAttempt = r.body.attempts.find((a) => !a.ok);
-  ok(failedAttempt, 'attempt gagal ada di riwayat');
-  eq(failedAttempt.usage.inputTokens, 500, 'usage attempt GAGAL terpelihara per attempt');
-  eq(failedAttempt.errorClass, 'empty', 'errorClass attempt gagal');
-  ok(!('error' in failedAttempt), 'teks error mentah TIDAK terekspos');
+  ok(!('attempts' in r.body), 'riwayat attempt TIDAK dikirim ke klien');
 });
 
 await test('G4: field sensitif tidak pernah terekspos di respons', async () => {
@@ -130,7 +134,8 @@ await test('G4: field sensitif tidak pernah terekspos di respons', async () => {
   const wire = JSON.stringify(r.body);
   ok(!wire.includes('dummy-sprint5-key'), 'API key tidak bocor');
   ok(!/authorization/i.test(wire), 'header otorisasi tidak bocor');
-  ok(!('error' in (r.body.attempts[0] || {})), 'attempt tanpa field error mentah');
+  ok(!('attempts' in r.body), 'attempts[] tidak dikirim');
+  ok(!wire.includes('gemini-3.5-flash-lite'), 'nama model asli tidak bocor');
 });
 
 await test('G5: sanitizeUsageForClient — malformed tidak menjadi token karangan', async () => {
@@ -149,12 +154,27 @@ await test('G5: sanitizeUsageForClient — malformed tidak menjadi token karanga
   eq(zeros.usage.cachedTokens, undefined, 'field absen tidak difabrikasi');
 });
 
-await test('G6: sanitizeAttemptForClient membuang teks error mentah', async () => {
+await test('G6: sanitizeAttemptForClient membuang teks error mentah + menyamarkan identitas', async () => {
   const a = sanitizeAttemptForClient({ provider: 'atmorouter', model: 'm1', ok: false, ms: 120, error: 'fetch https://x?key=SECRET gagal', errorClass: 'network', usage: null });
   eq(a.errorClass, 'network', 'errorClass dipertahankan');
   ok(!('error' in a), 'error mentah dibuang');
   ok(!JSON.stringify(a).includes('SECRET'), 'tidak ada secret di attempt tersanitasi');
+  // MASKING (2026-11-16): provider asli -> nilai netral, model -> null.
+  eq(a.provider, 'ezrab', 'provider disamarkan');
+  eq(a.model, null, 'model asli tidak diteruskan');
+  ok(!JSON.stringify(a).includes('atmorouter'), 'nama provider asli tidak ada');
   eq(sanitizeAttemptForClient(null), null, 'attempt null -> null');
+});
+
+await test('G7: mode advanced -> alias Ezrab-pro (masking per-mode)', async () => {
+  geminiPayload = geminiWith('mendalam', { promptTokenCount: 10, candidatesTokenCount: 5, totalTokenCount: 15 });
+  const r = mockRes();
+  await handleAiRequest(mockReq({ body: { message: 'analisis mendalam', mode: 'advanced' } }), r);
+  eq(r.statusCode, 200, 'status');
+  eq(r.body.model, 'Ezrab-pro', 'model mode advanced -> alias pro');
+  eq(r.body.provider, 'ezrab', 'provider disamarkan');
+  eq(r.body.mode, 'advanced', 'mode dipertahankan');
+  ok(!JSON.stringify(r.body).includes('gemini'), 'nama asli tidak ada di body');
 });
 
 console.log(failures === 0 ? '\nSEMUA LULUS' : `\n${failures} GAGAL`);

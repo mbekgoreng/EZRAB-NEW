@@ -43,10 +43,10 @@ describe('EZRAB DED -> RAB 3-Mode Pipeline Integration Test Suite', () => {
     const detailTarget = getModelTarget('DED_AI_DETAIL');
     assert.equal(fast.provider, fastTarget.provider); // river
     assert.equal(fast.model, fastTarget.model); // deepseek-ai/DeepSeek-V4.1-Flash
-    assert.equal(fast.modelLabel, 'DeepSeek V4.1 Flash');
+    assert.equal(fast.modelLabel, 'Ezrab-flash-v1');
     assert.equal(advanced.provider, detailTarget.provider); // zyrouter
     assert.equal(advanced.model, detailTarget.model); // geminiflash-3.8
-    assert.equal(advanced.modelLabel, 'Gemini Flash 3.8');
+    assert.equal(advanced.modelLabel, 'Ezrab-pro');
     assert.notEqual(fast.provider, advanced.provider);
     assert.equal(fast.enablePriceResolution, true);
     assert.equal(advanced.enablePriceResolution, true);
