@@ -226,8 +226,8 @@ await test('d1: maskUsageHistoryModel — kunci fitur operasi (primer)', async (
     ['ded-ai/medium', null, EZRAB_MODEL_PRO],
     ['ded-ai/complex', null, EZRAB_MODEL_PRO],
     ['ded-ai/full-ai', null, EZRAB_MODEL_PRO],
-    ['ai-document/analysis', null, EZRAB_MODEL_FLASH],
-    ['ai-document/translate', 'deepseek-v4.1-flash', EZRAB_MODEL_FLASH],
+    ['ai-document/analysis', null, EZRAB_MODEL_PRO],
+    ['ai-document/translate', 'deepseek-v4.1-flash', EZRAB_MODEL_PRO],
   ];
   for (const [feature, model, expected] of cases) {
     eq(maskUsageHistoryModel({ feature, model }), expected, `feature ${feature} (model ${model})`);

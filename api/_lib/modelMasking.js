@@ -39,8 +39,9 @@ export function modelAliasForMode(mode) {
  *    - 'ded-ai/simple'           -> Ezrab-flash-v1 (DED FAST -> mode 'fast';
  *                                   usageMetadata.ts:107 memetakan FAST ke simple)
  *    - 'ded-ai/medium|complex|full-ai' -> Ezrab-pro (DED DETAIL -> mode 'ded')
- *    - 'ai-document/*'           -> Ezrab-flash-v1 (Document AI via mode 'fast';
- *                                   kunci nyata 'ai-document/analysis')
+ *    - 'ai-document/*'           -> Ezrab-pro (Document AI via mode 'advanced'
+ *                                   sejak 2026-11-16 — WeizeRouter gpt-6-luna
+ *                                   pertama; kunci nyata 'ai-document/analysis')
  *    Kunci bare legacy 'ded-ai'/'ai-document' AMBIGU (LEGACY_AMBIGUOUS_FEATURE_KEYS
  *    di aiMetering.js) — TIDAK dipetakan di sini, jatuh ke fallback nama model.
  * 2. Fallback peta balik nama model (hanya bila fitur absen/tak dikenal —
@@ -81,7 +82,7 @@ export function maskUsageHistoryModel({ feature, model } = {}) {
   if (f === 'chat-ai/fast') return EZRAB_MODEL_FLASH;
   if (f === 'ded-ai/simple') return EZRAB_MODEL_FLASH;
   if (f === 'ded-ai/medium' || f === 'ded-ai/complex' || f === 'ded-ai/full-ai') return EZRAB_MODEL_PRO;
-  if (f.startsWith('ai-document/')) return EZRAB_MODEL_FLASH;
+  if (f.startsWith('ai-document/')) return EZRAB_MODEL_PRO;
   const m = typeof model === 'string' ? model : '';
   if (!m) return null;
   if (PRO_ONLY_MODELS.has(m)) return EZRAB_MODEL_PRO;

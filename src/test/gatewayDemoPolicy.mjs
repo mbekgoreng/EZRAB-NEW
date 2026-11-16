@@ -61,6 +61,7 @@ global.fetch = async () => {
 // Same product routing as api/ai/tools/execute.js
 const productIdToMode = (pid, requestedMode) => {
   if (pid === 'DED_AI_DETAIL') return 'ded';
+  if (pid === 'DOKUMEN_AI') return 'advanced';
   if (pid === 'EZRAB_AI') return requestedMode === 'advanced' ? 'advanced' : 'chat';
   return 'fast';
 };

@@ -12,15 +12,17 @@
  *     -> AtmoRouter cx/gpt-6-luna -> ZyRouter geminiflash-3.8 (+ ekor generik)
  *   EZRAB_AI mode 'advanced' (Mendalam)       -> rantai 'advanced' (kepala sama)
  * - DED_AI_DETAIL                             -> 'ded' (rantai advanced, model WeizeRouter wz/gpt-6-luna — user 2026-11-13)
- * - DED_AI_FAST, DOKUMEN_AI, lainnya          -> 'fast'
+ * - DOKUMEN_AI                                -> 'advanced' (WeizeRouter gpt-6-luna pertama — user 2026-11-16)
+ * - DED_AI_FAST, lainnya                      -> 'fast'
  *     Gemini native -> River DeepSeek V4.1 -> AtmoRouter DeepSeek flash
  *     -> ZyRouter + ekor chat (perbaikan 2026-10-27: fast sebelumnya mati
  *     bila Gemini native gagal dan Crown/River/Atmo tak punya key)
  */
 import { handleAiRequest } from '../../_lib/aiGateway.js';
 
-function productIdToMode(pid, requestedMode) {
+export function productIdToMode(pid, requestedMode) {
   if (pid === 'DED_AI_DETAIL') return 'ded';
+  if (pid === 'DOKUMEN_AI') return 'advanced';
   if (pid === 'EZRAB_AI') return requestedMode === 'advanced' ? 'advanced' : 'chat';
   return 'fast';
 }
