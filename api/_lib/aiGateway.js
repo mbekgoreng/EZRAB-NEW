@@ -63,10 +63,12 @@ const ARXPAY_BASE = 'https://arxpay.my.id/v1';
 const ARXPAY_MODEL = 'deepseek-v4.1-flash';
 const WEIZEROUTER_BASE = 'https://weizerouter.web.id/v1';
 // WeizeRouter (user 2026-11-13): relay OpenAI-compatible, kaki PERTAMA
-// rantai 'chat' + 'advanced' (di depan ArxPay; awalnya kedua, naik ke
-// pertama atas perintah user 2026-11-13). Chat AI Cepat memakai
-// 3 model berurutan (weizerouter-v2 → kimi-k2.7 → kimi-k2.6); Mendalam memakai
-// 2 model (gpt-6-luna → muse-spark-1.3-contributor).
+// rantai 'chat' + 'advanced' + 'ded' + 'fast' (di depan ArxPay; awalnya
+// kedua, naik ke pertama atas perintah user 2026-11-13; 'fast' menyusul
+// 2026-11-16). Chat AI Cepat memakai 3 model berurutan (weizerouter-v2 →
+// kimi-k2.7 → kimi-k2.6); Mendalam memakai 2 model (gpt-6-luna →
+// muse-spark-1.3-contributor); 'fast' memakai 1 model (weizerouter-v2 saja,
+// perintah user 2026-11-16).
 // Key: WEIZEROUTER_API_KEY (+ opsional WEIZEROUTER_API_KEY_1..4), diisi owner
 // MANUAL di env (Preview + Production). Tanpa key, kaki ini kosong dan rantai
 // kembali seperti semula (fail-closed). Text-only seperti Crown/ArxPay:
@@ -77,6 +79,10 @@ const WEIZEROUTER_ADVANCED_MODELS = ['gpt-6-luna', 'muse-spark-1.3-contributor']
 // wz/gpt-6-luna (bukan gpt-6-luna seperti Chat AI Mendalam), fallback kedua
 // wz/deepseek-v4.1-flash (bukan muse-spark-1.3-contributor).
 const WEIZEROUTER_DED_MODELS = ['wz/gpt-6-luna', 'wz/deepseek-v4.1-flash'];
+// Fast (user 2026-11-16): WeizeRouter weizerouter-v2 menjadi kaki PERTAMA
+// mode 'fast' (DED Cepat + Document AI + tools) — sebelumnya fast tidak
+// memakai WeizeRouter sama sekali. Hanya 1 model (bukan 3 seperti chat).
+const WEIZEROUTER_FAST_MODELS = ['weizerouter-v2'];
 // Crown (user 2026-10-25): provider UTAMA untuk AI teks (chat/advanced/fast).
 // Teruji langsung 2026-10-25 via /v1/chat/completions — kedua model menjawab.
 // Vision TIDAK support di Crown (image_url ditolak 400 upstream_error), jadi
@@ -546,6 +552,9 @@ export async function executeAI(o, onAttempt) {
   const weizeDedTextAttempts = (!hasImage && !hasPdf)
     ? WEIZEROUTER_DED_MODELS.flatMap((m) => weizeKeys.map((k) => weizeCall(k, m)))
     : [];
+  const weizeFastTextAttempts = (!hasImage && !hasPdf)
+    ? WEIZEROUTER_FAST_MODELS.flatMap((m) => weizeKeys.map((k) => weizeCall(k, m)))
+    : [];
 
   if (mode === 'vision') {
     // Vision (urutan user 2026-10-21): Gemini native dulu (inlineData
@@ -596,7 +605,8 @@ export async function executeAI(o, onAttempt) {
     gok.forEach((k) => attempts.push(geminiOaiCall(k)));
     if (ak.length > 0) attempts.push(atriaCall(ak[0]));
   } else {
-    // Fast (urutan user 2026-10-25): Crown MiniMax M2.7 -> Crown
+    // Fast (urutan user 2026-10-25, WeizeRouter pertama sejak 2026-11-16):
+    // WeizeRouter weizerouter-v2 -> Crown MiniMax M2.7 -> Crown
     // DeepSeek V4 Flash -> Gemini native -> River DeepSeek V4.1 -> AtmoRouter
     // atmo/deepseek-v4.1-flash -> ali/deepseek-v4.1-flash.
     // Ekor cadangan (perbaikan 2026-10-27, DED_AI_FAST MODEL_ERROR di
@@ -605,6 +615,7 @@ export async function executeAI(o, onAttempt) {
     // Gemini-OAI -> Atria). Sebelumnya fast MATI TOTAL bila Gemini native
     // gagal sementara Crown/River/Atmo tak punya key di Vercel — padahal
     // chat selamat lewat ZyRouter. DOKUMEN_AI ikut memakai rantai ini.
+    attempts.push(...weizeFastTextAttempts);
     attempts.push(...crownTextAttempts);
     gk.forEach((k) => attempts.push(geminiCall(k, FAST_MODEL)));
     rk.forEach((k) => attempts.push(riverVisionCall(k)));

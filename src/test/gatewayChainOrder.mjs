@@ -19,8 +19,10 @@
  *               WeizeRouter wz/gpt-6-luna -> WeizeRouter wz/deepseek-v4.1-flash
  *               -> ArxPay -> Crown x2 -> Gemini -> Atmo x2 -> ZyRouter.
  *               DED_AI_DETAIL dipetakan ke 'ded' di api/ai/tools/execute.js.
- *  - fast     : TIDAK BERUBAH (ArxPay/WeizeRouter tidak masuk fast):
- *               Crown MiniMax M2.7 -> Crown DeepSeek V4 Flash -> Gemini native
+ *  - fast     : WeizeRouter weizerouter-v2 PERTAMA (user 2026-11-16;
+ *               sebelumnya fast tidak memakai WeizeRouter sama sekali):
+ *               WeizeRouter weizerouter-v2 -> Crown MiniMax M2.7
+ *               -> Crown DeepSeek V4 Flash -> Gemini native
  *               -> River vision (DeepSeek V4.1)
  *               -> Atmo atmo/deepseek-v4.1-flash -> Atmo ali/deepseek-v4.1-flash
  *               -> ZyRouter -> ekor chat (perbaikan 2026-10-27: fast mati
@@ -28,8 +30,8 @@
  *  - vision   : TIDAK BERUBAH (Crown, ArxPay, dan WeizeRouter tidak support image_url):
  *               Gemini native -> River vision -> Atmo ag/gemini-3.8-flash-high
  *               -> ZyRouter
- *  - tanpa key WeizeRouter/ArxPay: rantai chat/advanced kembali ke urutan lama
- *    (Crown pertama) — fail-closed, dibuktikan skenario 8.
+ *  - tanpa key WeizeRouter/ArxPay: rantai chat/advanced/fast kembali ke
+ *    urutan lama (Crown pertama) — fail-closed, dibuktikan skenario 8.
  *  - batas percobaan per provider: tiap model berbeda 1 kesempatan, minimal 2
  *    (WeizeRouter chat 3 model → batas 3; kalau tidak, kimi-k2.6 tidak pernah
  *    jalan — dibuktikan skenario 1b/2/3 yang memuat ketiga model WeizeRouter).
@@ -267,12 +269,14 @@ setAll('fail'); behavior.weizerouter = 'ok';
   ]));
 }
 
-// --- 6. Fast: Crown -> Gemini -> River vision -> Atmo atmo -> Atmo ali
-//      -> ZyRouter -> ekor chat (perbaikan 2026-10-27)
+// --- 6. Fast: WeizeRouter weizerouter-v2 -> Crown -> Gemini -> River vision
+//      -> Atmo atmo -> Atmo ali -> ZyRouter -> ekor chat (perbaikan 2026-10-27;
+//      WeizeRouter pertama atas perintah user 2026-11-16)
 setAll('fail');
 {
   const r = await executeAI({ message: 'halo', mode: 'fast' });
   check('fast: urutan baru + ekor', () => assert.deepEqual(seq(r), [
+    'weizerouter:weizerouter-v2',
     'crown:MiniMaxAI/MiniMax-M2.7',
     'crown:deepseek-ai/DeepSeek-V4-Flash-0731',
     'gemini:gemini-3.5-flash-lite',
@@ -298,6 +302,20 @@ setAll('fail'); behavior.zyrouter = 'ok';
     assert.equal(r.provider, 'zyrouter');
     assert.equal(r.model, 'geminiflash-3.8');
   });
+}
+
+// --- 6c. Fast: WeizeRouter menjawab sebagai kaki pertama dengan weizerouter-v2
+setAll('fail'); behavior.weizerouter = 'ok';
+{
+  const r = await executeAI({ message: 'halo', mode: 'fast' });
+  check('fast weize-first: ok via weizerouter', () => assert.equal(r.ok, true));
+  check('fast weize-first: provider weizerouter model weizerouter-v2', () => {
+    assert.equal(r.provider, 'weizerouter');
+    assert.equal(r.model, 'weizerouter-v2');
+  });
+  check('fast weize-first: hanya 1 attempt', () => assert.deepEqual(seq(r), [
+    'weizerouter:weizerouter-v2',
+  ]));
 }
 
 // --- 7. Vision (TIDAK BERUBAH): Crown, ArxPay, dan WeizeRouter tidak boleh muncul di rantai vision
@@ -331,6 +349,21 @@ setAll('fail');
     'gemini:gemini-3.5-flash-lite',
     'atmorouter:ag/gemini-3.8-flash-high',
     'atmorouter:cx/gpt-6-luna',
+    'zyrouter:geminiflash-3.8',
+    'dahl:deepseek-ai/DeepSeek-V4-Flash-0731',
+    'river-vision:deepseek-ai/DeepSeek-V4.1-Flash',
+    'river-text:nvidia/NVIDIA-Nemotron-3.5-Super-VL-120B-A12B-NVFP4',
+    'gemini-oai:gemini-3.8-flash',
+    'atria:Atria-Dawn-Preview',
+  ]));
+  const rf = await executeAI({ message: 'halo', mode: 'fast' });
+  check('fast tanpa-key-weize: urutan lama (Crown pertama)', () => assert.deepEqual(seq(rf), [
+    'crown:MiniMaxAI/MiniMax-M2.7',
+    'crown:deepseek-ai/DeepSeek-V4-Flash-0731',
+    'gemini:gemini-3.5-flash-lite',
+    'river-vision:deepseek-ai/DeepSeek-V4.1-Flash',
+    'atmorouter:atmo/deepseek-v4.1-flash',
+    'atmorouter:ali/deepseek-v4.1-flash',
     'zyrouter:geminiflash-3.8',
     'dahl:deepseek-ai/DeepSeek-V4-Flash-0731',
     'river-vision:deepseek-ai/DeepSeek-V4.1-Flash',
