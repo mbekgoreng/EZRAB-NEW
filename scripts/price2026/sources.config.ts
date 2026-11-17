@@ -134,6 +134,25 @@ export const PRICE_SOURCES: PriceSourceConfig[] = [
     locationLevel: 'NATIONAL',
     notes: 'Branded commercial reference prices (keramik, cat, sanitary, …).',
   },
+  {
+    key: 'MARKET_2026',
+    label: 'Riset Harga Pasar Marketplace 2026',
+    origin: 'src/data/marketPrices2026.ts',
+    tier: 'COMMERCIAL_REFERENCE',
+    priority: 6,
+    verificationStatus: 'SOURCE_REPORTED',
+    sourceName: 'Riset Harga Pasar EZRAB 2026 (Tokopedia / Shopee / Bukalapak)',
+    sourceDocument: null,
+    sourceUrl: null,
+    sourceType: 'MARKET_REFERENCE',
+    active: true,
+    locationLevel: 'NATIONAL',
+    notes:
+      'Median harga penawaran marketplace Indonesia, riset 16 Nov 2026. ' +
+      'MARKET_REFERENCE, bukan harga resmi AHSP. Provenance per penawaran ' +
+      '(penjual + URL + tanggal) tinggal di file input per sourceRecordId ' +
+      '(MKT-xxx) + laporan adopsi; record hanya membawa supplier + sourceRecordId.',
+  },
 
   // ---------------------------------------------------------------------------
   // AUDITED BUT EXCLUDED

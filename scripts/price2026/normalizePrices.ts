@@ -14,6 +14,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { OFFICIAL_HSD_2026_ITEMS } from '../../src/data/nationalCostDatabase/officialHSD2026';import { MASTER_PRICE_ITEMS } from '../../src/data/indonesianPrices';
+import { MARKET_PRICE_ITEMS, MARKET_COMPONENT_ITEMS } from '../../src/data/marketPrices2026';
 import { MASTER_AHSP_DATABASE } from '../../src/data/indonesianAHSP';
 import { MaterialLibraryService } from '../../src/services/materialLibraryService';
 import { MaterialDatabaseService } from '../../src/domain/material/materialDatabaseService';
@@ -151,6 +152,13 @@ function makeRow(args: {
    * no specification for this row. Never derived from the name.
    */
   specContext?: string | null;
+  /**
+   * MARKET_2026 (pipeline-spec §8.4, opsi b) — per-source retrieval date,
+   * overriding the module RETRIEVED_AT constant for this row only. Only
+   * the market reader passes it ('2026-11-16', the research date); every
+   * other source keeps the 2026-09-28 stamp.
+   */
+  retrievedAt?: string;
 }): ResourcePriceRecord | null {
   const cfg = SOURCE.get(args.sourceKey);
   if (!cfg) throw new Error(`Unknown price source: ${args.sourceKey}`);
@@ -183,7 +191,7 @@ function makeRow(args: {
     sourceDocument: cfg.sourceDocument,
     sourceUrl: cfg.sourceUrl,
     supplier: args.supplier ?? null,
-    retrievedAt: RETRIEVED_AT,
+    retrievedAt: args.retrievedAt || RETRIEVED_AT,
     verificationStatus: args.verificationStatus || cfg.verificationStatus,
     matchMethod: 'UNMATCHED',
     matchConfidence: 0,
@@ -385,6 +393,52 @@ function readCommercial(): ResourcePriceRecord[] {
   return out;
 }
 
+/**
+ * MARKET_2026 — riset harga pasar marketplace Indonesia (16 Nov 2026).
+ * Mirrors readCommercial(): one row per input item, MARKET_REFERENCE,
+ * SOURCE_REPORTED (from the source config). The row's `retrievedAt` is
+ * the item's own research date (makeRow override, market reader only):
+ * '2026-11-16' for the main array, '2026-11-17' for the COMPONENT rows
+ * and the MIXED_AVG rows derived from them. The per-offer provenance
+ * (seller + URL + price + date) stays in the input module, linked via
+ * sourceRecordId (MKT-xxx).
+ *
+ * COMPONENT rows (MARKET_COMPONENT_ITEMS, kind 'COMPONENT') are tagged
+ * with a `kind=COMPONENT` note: the matcher emits them as standalone
+ * COMPONENT_REF records (mixed-item decomposition, owner rule 17 Nov
+ * 2026) instead of binding them to a canonical component.
+ */
+function readMarket(): ResourcePriceRecord[] {
+  const out: ResourcePriceRecord[] = [];
+  const pushItem = (item: any, isComponent: boolean) => {
+    const row = makeRow({
+      sourceKey: 'MARKET_2026',
+      resourceType: 'material',
+      code: String(item.code || ''),
+      name: String(item.name || ''),
+      unitRaw: String(item.unit || ''),
+      price: Number(item.price),
+      location: nationalLocation(item.location || 'Nasional'),
+      period: periodFromVersion(item.periodVersion, item.lastUpdated),
+      supplier: item.supplier ?? null,
+      notes: [
+        item.specification ? String(item.specification) : '',
+        `basis=${item.basis || 'MEDIAN'}: ${item.basisNote || ''}`,
+        `offers=${Array.isArray(item.offers) ? item.offers.length : 0}`,
+        ...(isComponent ? ['kind=COMPONENT'] : []),
+      ],
+      sourceRecordId: String(item.id || '') || null,
+      priceType: 'MARKET_REFERENCE', // in the §4.2 MasterPriceType vocabulary
+      specContext: item.specification != null ? String(item.specification) : null,
+      retrievedAt: String(item.lastUpdated || '2026-11-16'),
+    });
+    if (row) out.push(row);
+  };
+  for (const item of MARKET_PRICE_ITEMS as any[]) pushItem(item, false);
+  for (const item of MARKET_COMPONENT_ITEMS as any[]) pushItem(item, true);
+  return out;
+}
+
 /** Legacy 2022 baseline — AUDITED, EXCLUDED from the active database. */
 function readLegacy(): ResourcePriceRecord[] {
   const out: ResourcePriceRecord[] = [];
@@ -431,6 +485,7 @@ export function readAllSourceRows(): ResourcePriceRecord[] {
   rows.push(...readMaterialMaster());
   rows.push(...readMaterialLibrary());
   rows.push(...readCommercial());
+  rows.push(...readMarket());
   rows.push(...readLegacy());
 
   // deterministic ordering

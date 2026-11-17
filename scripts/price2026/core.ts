@@ -186,5 +186,7 @@ export const MATCH_METHOD_RANK: Record<PriceMatchMethod, number> = {
   NORMALIZED_CODE_UNIT: 3,
   ALIAS: 4,
   NAME_UNIT: 5,
+  NAME_KEY: 6,
+  COMPONENT_REF: 7,
   UNMATCHED: 99,
 };

@@ -274,6 +274,8 @@ export type PriceMatchMethod =
   | 'NORMALIZED_CODE_UNIT' // 3. dot/case-insensitive code + same unit
   | 'ALIAS' // 4. explicit, auditable alias entry
   | 'NAME_UNIT' // 5. normalized name + unit — CANDIDATE ONLY → NEEDS_REVIEW
+  | 'NAME_KEY' // 6. exact normalized name + unit, code-less canonical component (MARKET_2026 only) — CANDIDATE ONLY → NEEDS_REVIEW
+  | 'COMPONENT_REF' // 7. standalone component reference price for mixed-item decomposition (MARKET_2026 kind=COMPONENT only) — CANDIDATE ONLY → NEEDS_REVIEW
   | 'UNMATCHED'; // never bound
 
 /** Methods that may produce a VERIFIED row. */
