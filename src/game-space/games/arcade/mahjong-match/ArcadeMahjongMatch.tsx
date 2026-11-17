@@ -78,6 +78,19 @@ const TIME_LIMIT = 300;
 const Z_OFF = 7;
 const BX = (LW - COLS * TILE_W) / 2;
 const BY = 158;
+/**
+ * Tinggi konten logis (px): papan ubin berakhir di y = 158+6*56 = 494,
+ * pesan di y = 540 (+teks). Dipakai skala tinggi-sadar agar di kanvas
+ * landscape (HP diputar) papan tetap muat penuh — di portrait nilai
+ * ini tidak pernah membatasi (lebar yang membatasi), sehingga
+ * tampilan portrait sama persis seperti sebelumnya.
+ */
+const LH_CONTENT = 560;
+/** Skala gambar + offset pusatkan horizontal (lihat Arcade2048). */
+function viewScale(w: number, h: number): { s: number; ox: number } {
+  const s = Math.min(w / LW, h / LH_CONTENT);
+  return { s, ox: Math.max(0, (w / s - LW) / 2) };
+}
 
 function tilePos(t: Tile): { x: number; y: number } {
   return { x: BX + t.x * TILE_W - t.z * Z_OFF, y: BY + t.y * TILE_H - t.z * Z_OFF };
@@ -177,11 +190,12 @@ export default function ArcadeMahjongMatch({ onExit }: { onExit: () => void }): 
       const { x, y } = tilePos(t);
       const mat = MATERIALS[t.kind];
       api.sfx.pop(1 + Math.min(0.5, run.score / 3000));
-      api.particles.spawn(x + TILE_W / 2, y + TILE_H / 2, {
+      const { s: vs, ox: vox } = viewScale(api.W, api.H);
+      api.particles.spawn((x + TILE_W / 2 + vox) * vs, (y + TILE_H / 2) * vs, {
         count: 18, colors: [mat.color, '#ffffff', '#ffd166'],
         speed: [60, 240], gravity: 200, life: [0.4, 0.8], size: [2.5, 5.5], shape: 'rect', rotation: true,
       });
-      api.scores.add(x + TILE_W / 2, y - 8, '+100', { color: mat.color, size: 16 });
+      api.scores.add((x + TILE_W / 2 + vox) * vs, (y - 8) * vs, '+100', { color: mat.color, size: 16 });
       if (isCleared(run.tiles)) return finishGame(true);
       if (isDeadlocked(run.tiles)) {
         if (isStuck(run.tiles, run.shuffles)) {
@@ -244,8 +258,8 @@ export default function ArcadeMahjongMatch({ onExit }: { onExit: () => void }): 
     setMuted(api.sfx.muted);
 
     const toLogical = (px: number, py: number): { x: number; y: number } => {
-      const s = api.W / LW;
-      return { x: px / s, y: py / s };
+      const { s, ox } = viewScale(api.W, api.H);
+      return { x: px / s - ox, y: py / s };
     };
 
     api.input.onDown = (p) => {
@@ -289,12 +303,14 @@ export default function ArcadeMahjongMatch({ onExit }: { onExit: () => void }): 
     api.setRender(() => {
       const run = runRef.current;
       const { ctx } = api;
-      const s = api.W / LW;
+      const { s, ox } = viewScale(api.W, api.H);
       const lh = api.H / s;
+      const lw = api.W / s;
       const t = performance.now() / 1000;
       ctx.save();
       ctx.scale(s, s);
-      drawDepot(ctx, t, lh, api.reducedMotion);
+      ctx.translate(ox, 0);
+      drawDepot(ctx, t, lh, api.reducedMotion, lw, ox);
       if (run) {
         // render lapis bawah dulu
         const sorted = run.tiles.filter((x) => x.alive).sort((a, b) => a.z - b.z);
@@ -461,17 +477,18 @@ export default function ArcadeMahjongMatch({ onExit }: { onExit: () => void }): 
   );
 }
 
-function drawDepot(ctx: CanvasRenderingContext2D, t: number, lh: number, rm: boolean): void {
+function drawDepot(ctx: CanvasRenderingContext2D, t: number, lh: number, rm: boolean, lw: number, ox: number): void {
   const g = ctx.createLinearGradient(0, 0, 0, lh);
   g.addColorStop(0, '#1a2338');
   g.addColorStop(1, '#0c1220');
   ctx.fillStyle = g;
-  ctx.fillRect(0, 0, LW, lh);
+  // latar menutupi seluruh kanvas (di landscape ada ruang kiri-kanan papan)
+  ctx.fillRect(-ox, 0, lw, lh);
   // rak gudang: garis horizontal samar
   ctx.strokeStyle = 'rgba(140,170,220,0.07)';
   ctx.lineWidth = 1;
   for (let gy = 90; gy < lh; gy += 40) {
-    ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(LW, gy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-ox, gy); ctx.lineTo(lw - ox, gy); ctx.stroke();
   }
   ctx.fillStyle = '#fff';
   ctx.font = `900 14px ${FONT}`;

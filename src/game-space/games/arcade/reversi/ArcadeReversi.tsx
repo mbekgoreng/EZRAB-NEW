@@ -63,8 +63,14 @@ export default function ArcadeReversi({ onExit }: { onExit: () => void }): React
     });
   };
 
-  const cellSize = (W: number): number => (W - BOARD_PAD * 2) / N;
-  const boardTop = (H: number): number => (H - N * cellSize(390)) / 2 + 10;
+  // Sel dibatasi lebar DAN tinggi agar papan 8×8 tetap muat penuh di
+  // kanvas landscape (HP diputar). Di portrait batas tinggi tidak
+  // pernah aktif — (671−40)/8 = 78,9 > 42,25 — sehingga nilai sama
+  // persis seperti sebelumnya; papan dipusatkan horizontal (di
+  // portrait (374−338)/2 = 18 = BOARD_PAD, identik).
+  const cellSize = (W: number, H: number): number => Math.min((W - BOARD_PAD * 2) / N, (H - 40) / N);
+  const boardTop = (H: number, cs: number): number => (H - N * cs) / 2 + 10;
+  const boardLeft = (W: number, cs: number): number => (W - N * cs) / 2;
 
   const doAiTurn = (): void => {
     const api = apiRef.current;
@@ -161,9 +167,9 @@ export default function ArcadeReversi({ onExit }: { onExit: () => void }): React
       const { ctx } = api;
       const W = api.W; const H = api.H;
       const t = fxRef.current.t;
-      const cs = cellSize(W);
-      const bt = boardTop(H);
-      const bx = BOARD_PAD;
+      const cs = cellSize(W, H);
+      const bt = boardTop(H, cs);
+      const bx = boardLeft(W, cs);
 
       // latar kayu + felt
       const bg = ctx.createLinearGradient(0, 0, 0, H);
@@ -291,9 +297,10 @@ export default function ArcadeReversi({ onExit }: { onExit: () => void }): React
 
     api.input.onMove = (p) => {
       if (screenRef.current !== 'play') { hoverRef.current = null; return; }
-      const cs = cellSize(api.W);
-      const bt = boardTop(api.H);
-      const c = Math.floor((p.x - BOARD_PAD) / cs);
+      const cs = cellSize(api.W, api.H);
+      const bt = boardTop(api.H, cs);
+      const bx = boardLeft(api.W, cs);
+      const c = Math.floor((p.x - bx) / cs);
       const r = Math.floor((p.y - bt) / cs);
       hoverRef.current = r >= 0 && r < N && c >= 0 && c < N ? { r, c } : null;
     };
@@ -306,9 +313,10 @@ export default function ArcadeReversi({ onExit }: { onExit: () => void }): React
       }
       if (screenRef.current !== 'play') return;
       const W = api.W; const H = api.H;
-      const cs = cellSize(W);
-      const bt = boardTop(H);
-      const c = Math.floor((p.x - BOARD_PAD) / cs);
+      const cs = cellSize(W, H);
+      const bt = boardTop(H, cs);
+      const bx = boardLeft(W, cs);
+      const c = Math.floor((p.x - bx) / cs);
       const r = Math.floor((p.y - bt) / cs);
       if (r >= 0 && r < N && c >= 0 && c < N) tryPlayerMove(r, c);
     };

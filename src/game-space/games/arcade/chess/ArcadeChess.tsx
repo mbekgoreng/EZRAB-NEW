@@ -293,7 +293,7 @@ export default function ArcadeChess({ onExit }: { onExit: () => void }): React.J
           display: 'grid',
           gridTemplateColumns: '18px 1fr',
           gridTemplateRows: '1fr 18px',
-          width: 'min(94vw, 418px)', aspectRatio: '418 / 418',
+          width: 'min(100%, 418px)', aspectRatio: '418 / 418',
           background: '#2c3a5e', borderRadius: 14, padding: 6, gap: 4,
           boxShadow: '0 18px 44px rgba(0,0,0,0.5)',
           touchAction: 'manipulation', boxSizing: 'border-box',

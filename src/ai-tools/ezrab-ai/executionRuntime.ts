@@ -103,7 +103,7 @@ export type ExecutionStage =
 export const EXECUTION_STAGE_LABELS: Record<ExecutionStage, string> = {
   preparing: 'Menyiapkan input…',
   'reading-documents': 'Membaca dokumen…',
-  'contacting-model': 'Menghubungi model…',
+  'contacting-model': 'Menyusun jawaban…',
   'identifying-items': 'Mengidentifikasi pekerjaan…',
   'calculating-quantities': 'Menghitung kuantitas…',
   'mapping-ahsp': 'Memetakan AHSP…',

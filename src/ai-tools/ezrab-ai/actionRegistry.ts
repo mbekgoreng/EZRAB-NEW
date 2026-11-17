@@ -2727,11 +2727,19 @@ export function executeIntent(
           '• Desain Rumah AI — dari deskripsi teks menjadi spesifikasi & daftar pekerjaan\n' +
           '• Estimasi dari DED — unggah gambar kerja, draft estimasinya disusun otomatis\n' +
           templateLine + '\n\n' +
+          'PERINTAH LANGSUNG DARI CHAT\n' +
+          '• Kelola proyek: buat, ganti nama, duplikat, arsipkan, hapus — hapus selalu minta konfirmasi dulu\n' +
+          '• Ubah item RAB: tambah, hapus, ubah volume/harga, batalkan — selalu lewat pratinjau + tombol Konfirmasi\n' +
+          '• QTO: buat item volume dan sinkronkan ke RAB\n' +
+          '• Jalankan DED & ringkas dokumen: analisis gambar kerja yang sudah diunggah, atau ringkas dokumen dari chat\n' +
+          '• Ekspor Excel/PDF, buat revisi, cek & top-up kredit (simulasi), atur overhead/profit/PPN proyek\n' +
+          '• Ketik / untuk melihat semua perintah\n\n' +
           'DATA & HITUNGAN YANG BISA DIPERCAYA\n' +
           ahspLine + '\n' +
           '• Database harga material, upah, dan peralatan 2026\n' +
           '• Volume & subtotal dihitung engine deterministik; harga yang belum ada data resminya ditandai jelas, tidak pernah dikarang\n' +
           '• Tanya langsung di sini: total proyek, item termahal/termurah, cari AHSP\n\n' +
+          'Yang belum bisa dari chat: mengubah harga master/database material — itu kewenangan admin.\n\n' +
           'Coba salah satu:',
         actions: [
           { label: 'Buat RAB', action: { kind: 'intent', intent: 'CREATE_RAB_CLARIFY' } },

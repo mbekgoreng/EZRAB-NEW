@@ -365,7 +365,11 @@ export default function ArcadeTetris({ onExit }: { onExit: () => void }): React.
       const btnH = 74;
       const availW = W - 20;
       const availH = H - hudH - btnH - 16;
-      const cs = Math.max(14, Math.floor(Math.min(availW / COLS, availH / ROWS)));
+      // Lantai sel 8 (bukan 14): di kanvas landscape pendek (HP diputar),
+      // sel harus boleh mengecil agar sumur 10×20 tetap muat penuh —
+      // kontrolnya tombol, bukan ketuk sel, jadi sel kecil tetap bisa
+      // dimainkan. Di portrait nilainya sama seperti sebelumnya (≥14).
+      const cs = Math.max(8, Math.floor(Math.min(availW / COLS, availH / ROWS)));
       const bw = cs * COLS; const bh = cs * ROWS;
       const bx = Math.round((W - bw) / 2);
       const by = Math.round(hudH + (availH - bh) / 2);

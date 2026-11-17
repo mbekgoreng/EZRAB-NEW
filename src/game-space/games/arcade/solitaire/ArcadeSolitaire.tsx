@@ -49,6 +49,19 @@ function movableCards(st: SolState): Set<number> {
 
 const SLUG = 'solitaire';
 const LW = 390;
+/**
+ * Tinggi konten logis (px): kolom tableau terpanjang (13 kartu terbuka)
+ * berakhir di y = 108+12*23+68 = 452. Dipakai skala tinggi-sadar agar
+ * di kanvas landscape (HP diputar) tableau tetap muat penuh — di
+ * portrait nilai ini tidak pernah membatasi (lebar yang membatasi),
+ * sehingga tampilan portrait sama persis seperti sebelumnya.
+ */
+const LH_CONTENT = 470;
+/** Skala gambar + offset pusatkan horizontal (lihat Arcade2048). */
+function viewScale(w: number, h: number): { s: number; ox: number } {
+  const s = Math.min(w / LW, h / LH_CONTENT);
+  return { s, ox: Math.max(0, (w / s - LW) / 2) };
+}
 const FONT = `'Plus Jakarta Sans', 'Inter', system-ui, sans-serif`;
 const TAU = Math.PI * 2;
 
@@ -482,8 +495,8 @@ export default function ArcadeSolitaire({ onExit }: { onExit: () => void }): Rea
     pushHud();
 
     const toGame = (p: { x: number; y: number }): { x: number; y: number } => {
-      const s = api.W / LW;
-      return { x: p.x / s, y: p.y / s };
+      const { s, ox } = viewScale(api.W, api.H);
+      return { x: p.x / s - ox, y: p.y / s };
     };
 
     api.input.onDown = (p) => {
@@ -605,7 +618,8 @@ export default function ArcadeSolitaire({ onExit }: { onExit: () => void }): Rea
       if (done) {
         afterMove(true, kind);
         // partikel debu kecil di titik drop
-        api.particles.spawn(g.x * (api.W / LW), g.y * (api.W / LW), {
+        const { s: vs, ox: vox } = viewScale(api.W, api.H);
+        api.particles.spawn((g.x + vox) * vs, g.y * vs, {
           count: 6, colors: ['#ffffff', '#dbeafe'],
           speed: [40, 140], life: [0.25, 0.5], size: [2, 4],
         });
@@ -637,10 +651,12 @@ export default function ArcadeSolitaire({ onExit }: { onExit: () => void }): Rea
       const st = stRef.current;
       if (!st) return;
       const { ctx } = api;
-      const s = api.W / LW;
+      const { s, ox } = viewScale(api.W, api.H);
       const lh = api.H / s;
+      const lw = api.W / s;
       ctx.save();
       ctx.scale(s, s);
+      ctx.translate(ox, 0);
 
       // felt hijau proyek berlapis
       const bg = ctx.createLinearGradient(0, 0, 0, lh);
@@ -648,7 +664,7 @@ export default function ArcadeSolitaire({ onExit }: { onExit: () => void }): Rea
       bg.addColorStop(0.6, '#185c3d');
       bg.addColorStop(1, '#124a31');
       ctx.fillStyle = bg;
-      ctx.fillRect(0, 0, LW, lh);
+      ctx.fillRect(-ox, 0, lw, lh);
       // tekstur felt: titik halus
       ctx.fillStyle = 'rgba(255,255,255,0.03)';
       for (let i = 0; i < 90; i += 1) {
@@ -656,12 +672,13 @@ export default function ArcadeSolitaire({ onExit }: { onExit: () => void }): Rea
         const py = (i * 97) % lh;
         ctx.fillRect(px, py, 2, 2);
       }
-      // vignette
-      const vg = ctx.createRadialGradient(LW / 2, lh / 2, lh * 0.3, LW / 2, lh / 2, lh * 0.75);
+      // vignette (dipusatkan ke seluruh kanvas — di portrait ox=0 dan
+      // lw=LW sehingga sama persis seperti sebelumnya)
+      const vg = ctx.createRadialGradient(lw / 2 - ox, lh / 2, lh * 0.3, lw / 2 - ox, lh / 2, lh * 0.75);
       vg.addColorStop(0, 'rgba(0,0,0,0)');
       vg.addColorStop(1, 'rgba(0,0,0,0.28)');
       ctx.fillStyle = vg;
-      ctx.fillRect(0, 0, LW, lh);
+      ctx.fillRect(-ox, 0, lw, lh);
 
       const d = dragRef.current;
       const dragIds = new Set((d?.cards ?? []).map((c) => c.id));

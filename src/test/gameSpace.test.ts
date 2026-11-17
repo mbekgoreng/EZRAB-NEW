@@ -1,5 +1,6 @@
 /**
- * EZRAB Game Space — command detection + Build Challenge logic tests.
+ * EZRAB Game Space — command detection + Build Challenge logic tests
+ * + stage sizing / orientation tests.
  * Run: npx tsx src/test/gameSpace.test.ts
  *
  * Covers the mandatory test items that don't need a browser:
@@ -8,6 +9,9 @@
  *  - placement rules (valid + every invalid reason)
  *  - scoring: +100 valid, -25 invalid (floor 0), speed bonus
  *  - level completion, multi-level flow, win state
+ *  - stage specs: portrait games swap to landscape on compact
+ *    landscape containers (phone rotation), locked games don't,
+ *    tablet/desktop/landscape/square specs unchanged; stageBox math
  */
 
 import { strict as assert } from 'node:assert';
@@ -19,6 +23,10 @@ import {
   LEVELS, createGameState, tryPlace, canPlace, levelTargetMet,
   remainingTargets, levelBonus, resetForLevel, createBoard,
 } from '../game-space/games/build-challenge/logic';
+import {
+  STAGE_PORTRAIT, LAND_MILD, SQUARE, COMPACT_SHORT_SIDE,
+  PORTRAIT_LOCKED_IDS, specForGame, effectiveStageSpec, stageBox,
+} from '../game-space/stage';
 
 let passed = 0;
 let failed = 0;
@@ -274,6 +282,76 @@ test('3 levels defined with sane targets', () => {
     assert.ok(total > 0, `level ${l.id} has targets`);
     assert.ok(l.parSec > 0, `level ${l.id} has par time`);
   });
+});
+
+/* ================= 5. Stage sizing / orientation ================= */
+console.log('\n[5] stage (orientation)');
+test('portrait spec swaps w/h on compact landscape container (phone rotated)', () => {
+  const eff = effectiveStageSpec(STAGE_PORTRAIT, 617, 344, false);
+  assert.deepEqual(eff, { w: 700, h: 390, max: 1.3 });
+  assert.notEqual(eff, STAGE_PORTRAIT);
+});
+test('portrait spec unchanged on portrait container', () => {
+  assert.equal(effectiveStageSpec(STAGE_PORTRAIT, 374, 671, false), STAGE_PORTRAIT);
+});
+test('portrait spec unchanged on desktop landscape (short side >= 520)', () => {
+  assert.equal(effectiveStageSpec(STAGE_PORTRAIT, 1200, 800, false), STAGE_PORTRAIT);
+  assert.equal(effectiveStageSpec(STAGE_PORTRAIT, 1024, 768, false), STAGE_PORTRAIT);
+});
+test('compact boundary: short side 520 does not swap, 519 swaps', () => {
+  assert.equal(effectiveStageSpec(STAGE_PORTRAIT, 800, COMPACT_SHORT_SIDE, false), STAGE_PORTRAIT);
+  assert.deepEqual(
+    effectiveStageSpec(STAGE_PORTRAIT, 800, COMPACT_SHORT_SIDE - 1, false),
+    { w: 700, h: 390, max: 1.3 },
+  );
+});
+test('square container does not swap', () => {
+  assert.equal(effectiveStageSpec(STAGE_PORTRAIT, 500, 500, false), STAGE_PORTRAIT);
+});
+test('landscape and square specs never swap', () => {
+  assert.equal(effectiveStageSpec(LAND_MILD, 617, 344, false), LAND_MILD);
+  assert.equal(effectiveStageSpec(SQUARE, 617, 344, false), SQUARE);
+});
+test('locked game never swaps', () => {
+  assert.equal(effectiveStageSpec(STAGE_PORTRAIT, 617, 344, true), STAGE_PORTRAIT);
+});
+test('stageBox fits portrait spec into portrait container', () => {
+  assert.deepEqual(stageBox(STAGE_PORTRAIT, 374, 671), { w: 373, h: 671 });
+});
+test('stageBox fits swapped spec into landscape container', () => {
+  assert.deepEqual(stageBox({ w: 700, h: 390, max: 1.3 }, 617, 344), { w: 617, h: 343 });
+});
+test('stageBox respects max scale', () => {
+  assert.deepEqual(stageBox(STAGE_PORTRAIT, 2000, 2000), { w: 507, h: 910 });
+});
+test('stageBox never below 1px', () => {
+  assert.deepEqual(stageBox(STAGE_PORTRAIT, 1, 1), { w: 1, h: 1 });
+});
+test('specForGame: known landscape game + unknown id falls back to portrait', () => {
+  assert.deepEqual(specForGame('arcade-archery'), { w: 1000, h: 700, max: 2 });
+  assert.equal(specForGame('game-tak-ada'), STAGE_PORTRAIT);
+});
+test('PORTRAIT_LOCKED_IDS: 12 entries, all real game ids, all portrait-spec', () => {
+  // ID runtime: konstruksi apa adanya, arcade berawalan 'arcade-'
+  // (GameSpaceOverlay.tsx:133) — katalog menyimpan slug telanjang.
+  const runtimeIds = new Set(
+    ALL_GAMES.map((g) => (g.cat === 'arcade' ? `arcade-${g.id}` : g.id)),
+  );
+  assert.equal(PORTRAIT_LOCKED_IDS.size, 12);
+  for (const id of PORTRAIT_LOCKED_IDS) {
+    assert.ok(runtimeIds.has(id), `${id} is a real game id`);
+    const spec = specForGame(id);
+    assert.ok(spec.w < spec.h, `${id} resolves to a portrait spec`);
+  }
+});
+test('orientation-fixed canvas games are NOT locked', () => {
+  for (const id of [
+    'arcade-2048', 'arcade-asteroids', 'arcade-doodle-jump', 'arcade-frogger',
+    'arcade-mahjong-match', 'arcade-memory-card', 'arcade-number-guessing',
+    'arcade-reversi', 'arcade-solitaire', 'arcade-tetris', 'arcade-video-poker',
+  ]) {
+    assert.ok(!PORTRAIT_LOCKED_IDS.has(id), `${id} follows orientation`);
+  }
 });
 
 /* ================= summary ================= */

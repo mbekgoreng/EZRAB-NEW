@@ -20,6 +20,19 @@ preloadCardSuits();
 
 const SLUG = 'video-poker';
 const LW = 390;
+/**
+ * Tinggi konten logis (px): pesan hasil di y = 330+96+52 = 478 (+teks).
+ * Dipakai skala tinggi-sadar agar di kanvas landscape (HP diputar)
+ * kartu tetap muat penuh — di portrait nilai ini tidak pernah
+ * membatasi (lebar yang membatasi), sehingga tampilan portrait sama
+ * persis seperti sebelumnya.
+ */
+const LH_CONTENT = 500;
+/** Skala gambar + offset pusatkan horizontal (lihat Arcade2048). */
+function viewScale(w: number, h: number): { s: number; ox: number } {
+  const s = Math.min(w / LW, h / LH_CONTENT);
+  return { s, ox: Math.max(0, (w / s - LW) / 2) };
+}
 const FONT = `'Plus Jakarta Sans', 'Inter', system-ui, sans-serif`;
 const TAU = Math.PI * 2;
 
@@ -193,13 +206,14 @@ export default function ArcadeVideoPoker({ onExit }: { onExit: () => void }): Re
       const prev = getJson<number>(maxWinKey, 0);
       if (run.st.lastWin > prev) setJson(maxWinKey, run.st.lastWin);
       api.sfx.chime(res.pay >= 25 ? 5 : 3);
+      const { s: vs, ox: vox } = viewScale(api.W, api.H);
       for (let k = 0; k < 3; k += 1) {
-        api.particles.spawn(CARD_X0 + (CARD_W + 6) * (1 + k), CARD_Y + 20, {
+        api.particles.spawn((CARD_X0 + (CARD_W + 6) * (1 + k) + vox) * vs, (CARD_Y + 20) * vs, {
           count: 22, colors: ['#ffd166', '#fbbf24', '#fff7d6', '#f59e0b'],
           speed: [80, 300], gravity: 420, life: [0.6, 1.4], size: [2.5, 6], shape: 'circle',
         });
       }
-      api.scores.add(195, CARD_Y - 24, `+${run.st.lastWin}`, { color: '#ffd166', size: 22 });
+      api.scores.add((195 + vox) * vs, (CARD_Y - 24) * vs, `+${run.st.lastWin}`, { color: '#ffd166', size: 22 });
       if (res.key === 'royal') {
         api.shake.add(0.5);
         for (let k = 0; k < 4; k += 1) {
@@ -237,8 +251,8 @@ export default function ArcadeVideoPoker({ onExit }: { onExit: () => void }): Re
     setMuted(api.sfx.muted);
 
     const toLogical = (px: number, py: number): { x: number; y: number } => {
-      const s = api.W / LW;
-      return { x: px / s, y: py / s };
+      const { s, ox } = viewScale(api.W, api.H);
+      return { x: px / s - ox, y: py / s };
     };
 
     api.input.onDown = (p) => {
@@ -268,12 +282,14 @@ export default function ArcadeVideoPoker({ onExit }: { onExit: () => void }): Re
     api.setRender(() => {
       const run = runRef.current;
       const { ctx } = api;
-      const s = api.W / LW;
+      const { s, ox } = viewScale(api.W, api.H);
       const lh = api.H / s;
+      const lw = api.W / s;
       const t = performance.now() / 1000;
       ctx.save();
       ctx.scale(s, s);
-      drawTable(ctx, t, lh, api.reducedMotion);
+      ctx.translate(ox, 0);
+      drawTable(ctx, t, lh, api.reducedMotion, lw, ox);
       if (run) {
         drawPaytable(ctx, run.st.lastName || '', t);
         const rm = api.reducedMotion;
@@ -435,20 +451,25 @@ export default function ArcadeVideoPoker({ onExit }: { onExit: () => void }): Re
   );
 }
 
-function drawTable(ctx: CanvasRenderingContext2D, t: number, lh: number, rm: boolean): void {
+function drawTable(ctx: CanvasRenderingContext2D, t: number, lh: number, rm: boolean, lw: number, ox: number): void {
   // meja kayu + felt hijau berlapis
   const wood = ctx.createLinearGradient(0, 0, 0, lh);
   wood.addColorStop(0, '#4a2f1d');
   wood.addColorStop(1, '#2c1c10');
   ctx.fillStyle = wood;
-  ctx.fillRect(0, 0, LW, lh);
+  // kayu menutupi seluruh kanvas (di landscape ada ruang kiri-kanan meja)
+  ctx.fillRect(-ox, 0, lw, lh);
   const felt = ctx.createRadialGradient(195, lh * 0.55, 40, 195, lh * 0.55, 300);
   felt.addColorStop(0, '#1f7a4d');
   felt.addColorStop(1, '#0f4d2e');
   ctx.fillStyle = felt;
   ctx.beginPath();
-  if (typeof ctx.roundRect === 'function') ctx.roundRect(14, 70, LW - 28, lh - 180, 40);
-  else ctx.rect(14, 70, LW - 28, lh - 180);
+  // felt selalu menutupi kartu (di landscape lh mengecil; tanpa batas
+  // bawah ini kartu keluar dari felt). Di portrait nilainya sama
+  // seperti sebelumnya (lh - 180 yang lebih besar).
+  const feltH = Math.max(lh - 180, CARD_Y + CARD_H + 40 - 70);
+  if (typeof ctx.roundRect === 'function') ctx.roundRect(14, 70, LW - 28, feltH, 40);
+  else ctx.rect(14, 70, LW - 28, feltH);
   ctx.fill();
   ctx.strokeStyle = '#8b5a2b';
   ctx.lineWidth = 6;

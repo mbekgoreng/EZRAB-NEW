@@ -123,5 +123,27 @@ check('WorkspaceView: pf-main overflow hidden hanya untuk ded-ai/dokumen-ai', ws
 check('WorkspaceView: main ded-ai kolom flex setinggi sisa viewport', ws.includes("activeMenu === 'ded-ai'") && ws.includes("flex: '1 1 auto', minHeight: 0, display: 'flex', flexDirection: 'column'"));
 check('WorkspaceView: main dokumen-ai kolom flex setinggi sisa viewport', ws.includes("activeMenu === 'dokumen-ai'") && ws.includes('<DokumenAiView'));
 
+/* --- 5. HP: <main> terkunci dikecualikan dari aturan min-height mobile ------- */
+/* Regresi 2026-11-17 (laporan owner: DED + Dokumen AI tidak bisa scroll ke
+   bawah di HP): workspace-mobile-fixes.css memberi SEMUA .pf-main main
+   min-height calc(100dvh - 64px) !important — menimpa inline minHeight: 0
+   kedua <main> app shell, membuat <main> lebih tinggi dari frame sementara
+   .pf-main overflow hidden, sehingga bawah halaman terpotong dan wilayah
+   scroll internal tidak pernah aktif. */
+check('WorkspaceView: main ded-ai membawa kelas pf-main-locked', ws.includes('<main className="pf-main-locked"') && ws.includes('<DedAiEstimateView'));
+check('WorkspaceView: PERSIS DUA <main> pf-main-locked (ded-ai + dokumen-ai)', (ws.match(/<main className="pf-main-locked"/g) ?? []).length === 2);
+const mobCss = read('src/styles/workspace-mobile-fixes.css');
+check('CSS HP: aturan min-height main mengecualikan .pf-main-locked', mobCss.includes('.pf-main main:not(.pf-main-locked)') && mobCss.includes('min-height: calc(100dvh - 64px) !important;'));
+check('CSS HP: tidak ada lagi aturan .pf-main main tanpa pengecualian', !/\.pf-main main \{/.test(mobCss));
+check('CSS HP: aturan padding-bottom main mengecualikan .pf-main-locked', mobCss.includes('padding-bottom: calc(120px + var(--ezrab-safe-bottom, 0px)) !important;'));
+
+/* --- 6. Wrapper transisi menu: min-height 0 (rantai flex app shell) -------- */
+/* Regresi 2026-11-17 (ditemukan lewat Playwright 390x844): .ezr-menu-enter
+   adalah flex item .pf-main TANPA minHeight — min-height:auto (= konten)
+   menahannya setinggi <main> (2977px), sehingga <main> DED/Dokumen AI ikut
+   setinggi konten, wilayah scroll internal tidak pernah aktif, dan tombol
+   Mulai Analisis jatuh di luar viewport (y=2907). */
+check('WorkspaceView: wrapper ezr-menu-enter membawa minHeight 0', ws.includes('className="ezr-menu-enter"') && ws.includes("minHeight: 0, display: 'flex', flexDirection: 'column'")); 
+
 console.log(`\ndedDocPageShell: ${pass} PASS / ${fail} FAIL`);
 if (fail > 0) process.exit(1);

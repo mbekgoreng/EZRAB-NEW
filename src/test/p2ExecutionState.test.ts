@@ -136,6 +136,11 @@ describe('P2-A — tahap eksekusi runtime mengikuti event nyata', () => {
       expect(label).not.toContain('%');
     }
     expect(EXECUTION_STAGE_LABELS['calculating-quantities']).toBe('Menghitung kuantitas…');
+    // Owner 2026-11-17: label loading tidak boleh menyebut "model".
+    expect(EXECUTION_STAGE_LABELS['contacting-model']).toBe('Menyusun jawaban…');
+    for (const label of Object.values(EXECUTION_STAGE_LABELS)) {
+      expect(label.toLowerCase()).not.toContain('model');
+    }
   });
 
   it('langganan remount menerima record terkini (tahap selamat dari unmount)', () => {

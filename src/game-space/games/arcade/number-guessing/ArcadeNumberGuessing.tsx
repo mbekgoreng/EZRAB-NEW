@@ -21,6 +21,14 @@ const FONT = `'Plus Jakarta Sans', 'Inter', system-ui, sans-serif`;
 const TAU = Math.PI * 2;
 const LW = 480;
 const LH = 360; // kanvas adegan (panel DOM di bawahnya)
+/** Skala gambar + offset pusatkan horizontal (lihat Arcade2048).
+ *  LH_CONTENT = LH (360): di portrait lebar yang membatasi (s =
+ *  W/LW, ox = 0 — identik seperti sebelumnya); di kanvas landscape
+ *  (HP diputar) tinggi yang membatasi agar adegan tetap muat penuh. */
+function viewScale(w: number, h: number): { s: number; ox: number } {
+  const s = Math.min(w / LW, h / LH);
+  return { s, ox: Math.max(0, (w / s - LW) / 2) };
+}
 const ARCADE =
   typeof window !== 'undefined' &&
   new URLSearchParams(window.location.search).has('arcade');
@@ -153,7 +161,8 @@ export default function ArcadeNumberGuessing({ onExit }: { onExit: () => void })
       fxRef.current.confettiT = 2.2;
       sfx.chime(5, 523);
       if (api && !api.reducedMotion) {
-        api.particles.spawn(LW / 2, 120, {
+        const { s: vs, ox: vox } = viewScale(api.W, api.H);
+        api.particles.spawn((LW / 2 + vox) * vs, 120 * vs, {
           count: 60, colors: ['#4ade80', '#fde68a', '#f472b6', '#67e8f9', '#fff'],
           speed: [100, 420], life: [0.6, 1.6], size: [2, 6], shape: 'rect', rotation: true,
         });
@@ -198,7 +207,8 @@ export default function ArcadeNumberGuessing({ onExit }: { onExit: () => void })
       if (fx.shakeMsg > 0) fx.shakeMsg -= dt;
       // debu site ambient
       if (!api.reducedMotion && Math.random() < dt * 3) {
-        api.particles.spawn(Math.random() * LW, LH - 30, {
+        const { s: vs, ox: vox } = viewScale(api.W, api.H);
+        api.particles.spawn((Math.random() * LW + vox) * vs, (LH - 30) * vs, {
           count: 1, colors: ['rgba(214,188,150,0.7)'], speed: [10, 40], life: [0.8, 1.6], size: [2, 5],
         });
       }
@@ -206,15 +216,17 @@ export default function ArcadeNumberGuessing({ onExit }: { onExit: () => void })
 
     api.setRender(() => {
       const { ctx } = api;
-      const s = api.W / LW;
+      const { s, ox } = viewScale(api.W, api.H);
       const lh = api.H / s;
+      const lw = api.W / s;
       const t = fxRef.current.t;
       ctx.save();
       ctx.scale(s, s);
-      drawScene(ctx, t, fxRef.current, guessesRef.current, screenRef.current, lh);
+      ctx.translate(ox, 0);
+      drawScene(ctx, t, fxRef.current, guessesRef.current, screenRef.current, lh, lw, ox);
       if (screenRef.current === 'ready') {
         ctx.save();
-        ctx.fillStyle = 'rgba(2,6,23,0.6)'; ctx.fillRect(0, 0, LW, lh);
+        ctx.fillStyle = 'rgba(2,6,23,0.6)'; ctx.fillRect(-ox, 0, lw, lh);
         ctx.textAlign = 'center';
         ctx.fillStyle = '#fff'; ctx.font = `900 28px ${FONT}`;
         ctx.shadowColor = '#f59e0b'; ctx.shadowBlur = 16;
@@ -500,26 +512,27 @@ function drawScene(
   ctx: CanvasRenderingContext2D, t: number,
   fx: { t: number; pourT: number; confettiT: number; revealed: number },
   guesses: { g: number; heat: Heat }[],
-  screen: string, lh: number,
+  screen: string, lh: number, lw: number, ox: number,
 ): void {
   const last: Heat | null = guesses.length > 0 ? guesses[guesses.length - 1].heat : null;
-  // langit senja site
+  // langit senja site (menutupi seluruh kanvas — di landscape ada ruang
+  // di kiri-kanan adegan)
   const bg = ctx.createLinearGradient(0, 0, 0, lh);
   bg.addColorStop(0, '#312e81'); bg.addColorStop(0.55, '#7c3aed'); bg.addColorStop(0.8, '#f59e0b'); bg.addColorStop(1, '#fbbf24');
-  ctx.fillStyle = bg; ctx.fillRect(0, 0, LW, lh);
+  ctx.fillStyle = bg; ctx.fillRect(-ox, 0, lw, lh);
   // cahaya panas/dingin di belakang molen
   if (last) {
     const hc = last === 'tepat' ? '#4ade80' : last === 'panas' ? '#ef4444' : last === 'hangat' ? '#f59e0b' : last === 'dingin' ? '#38bdf8' : '#818cf8';
     const glow = ctx.createRadialGradient(LW / 2, 200, 20, LW / 2, 200, 220);
     glow.addColorStop(0, hexA(hc, 0.5)); glow.addColorStop(1, hexA(hc, 0));
-    ctx.fillStyle = glow; ctx.fillRect(0, 0, LW, lh);
+    ctx.fillStyle = glow; ctx.fillRect(-ox, 0, lw, lh);
   }
   // tanah
   const gy = lh - 60;
   const gr = ctx.createLinearGradient(0, gy, 0, lh);
   gr.addColorStop(0, '#8a6a48'); gr.addColorStop(1, '#5d442e');
-  ctx.fillStyle = gr; ctx.fillRect(0, gy, LW, gy + 60 > lh ? lh - gy : 60);
-  ctx.fillRect(0, gy, LW, lh - gy);
+  ctx.fillStyle = gr; ctx.fillRect(-ox, gy, lw, gy + 60 > lh ? lh - gy : 60);
+  ctx.fillRect(-ox, gy, lw, lh - gy);
 
   drawMixerTruck(ctx, t, gy, fx.pourT);
 

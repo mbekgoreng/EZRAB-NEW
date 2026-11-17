@@ -96,8 +96,15 @@
     min-height: 0 !important;
   }
   /* <main> tiap menu masih minHeight calc(100vh - 64px): di HP ganti ke dvh
-     supaya tidak ada ruang scroll mati saat address bar tampil. */
-  .pf-main main {
+     supaya tidak ada ruang scroll mati saat address bar tampil.
+     KECUALI .pf-main-locked (DED + Dokumen AI, pola app shell): <main>
+     keduanya adalah kolom flex min-height:0 setinggi sisa viewport —
+     min-height 100dvh di sini MENIMPA inline minHeight:0 (!important),
+     membuat <main> lebih tinggi dari frame sementara .pf-main overflow
+     hidden, sehingga bawah halaman terpotong dan wilayah scroll internal
+     tidak pernah aktif (laporan owner 2026-11-17: tidak bisa scroll ke
+     bawah di kedua menu). */
+  .pf-main main:not(.pf-main-locked) {
     min-height: calc(100dvh - 64px) !important;
   }
 
@@ -658,7 +665,7 @@
     padding: 0 12px !important;
     font-size: 12.5px !important;
   }
-  .pf-main main {
+  .pf-main main:not(.pf-main-locked) {
     padding-bottom: calc(120px + var(--ezrab-safe-bottom, 0px)) !important;
   }
 

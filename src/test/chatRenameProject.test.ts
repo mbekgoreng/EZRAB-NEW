@@ -151,10 +151,10 @@ function makeCtx(over: Partial<ChatActionContext> = {}): { ctx: ChatActionContex
   assert(EZRAB_AI_SYSTEM_PROMPT.includes('JANGAN PERNAH mengklaim perubahan semacam itu sudah terjadi'), '16: prompt melarang klaim perubahan tanpa tool');
   assert(EZRAB_AI_SYSTEM_PROMPT.includes('ubah nama proyek menjadi <nama baru>'), '16: prompt mengarahkan ke perintah chat yang berlaku');
 }
-// 17. Versi prompt naik (perubahan prompt wajib tercatat; 2.2.0 =
-// aturan 28 hitungan dari dimensi, 2026-11-17)
+// 17. Versi prompt naik (perubahan prompt wajib tercatat; 2.3.0 =
+// aturan 29 daftar kemampuan resmi, 2026-11-17)
 {
-  assert(EZRAB_AI_PROMPT_VERSION === '2.2.0', '17: EZRAB_AI_PROMPT_VERSION = 2.2.0');
+  assert(EZRAB_AI_PROMPT_VERSION === '2.3.0', '17: EZRAB_AI_PROMPT_VERSION = 2.3.0');
 }
 
 console.log(`chatRenameProject: ${passed} passed, ${failed} failed`);

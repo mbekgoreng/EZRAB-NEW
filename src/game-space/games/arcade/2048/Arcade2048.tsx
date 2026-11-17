@@ -23,6 +23,24 @@ const BOARD_M = 12;
 const BOARD_S = LW - BOARD_M * 2;
 const GAPV = 10;
 const CELL = (BOARD_S - GAPV * (N - 1)) / N;
+/**
+ * Tinggi konten logis (px): bingkai papan berakhir di y = 118+366+8 =
+ * 492; +8 margin bayangan. Dipakai skala tinggi-sadar agar di kanvas
+ * landscape (HP diputar) papan tetap muat penuh — di portrait
+ * nilainya tidak pernah membatasi (lebar yang membatasi), sehingga
+ * tampilan portrait sama persis seperti sebelumnya.
+ */
+const LH_CONTENT = 500;
+/**
+ * Skala gambar + offset pusatkan horizontal. Di kanvas portrait
+ * (lebar membatasi): s = W/LW dan ox = 0 — identik dengan sebelumnya.
+ * Di kanvas landscape (tinggi membatasi): s = H/LH_CONTENT dan konten
+ * 390-lebar dipusatkan (ox > 0) agar papan tidak menempel di kiri.
+ */
+function viewScale(w: number, h: number): { s: number; ox: number } {
+  const s = Math.min(w / LW, h / LH_CONTENT);
+  return { s, ox: Math.max(0, (w / s - LW) / 2) };
+}
 
 const A2TEST =
   typeof window !== 'undefined' &&
@@ -229,17 +247,18 @@ export default function Arcade2048({ onExit }: { onExit: () => void }): React.JS
     }
     const t = animTRef.current;
     // animasi: sel gabungan + sel spawn
+    const { s: vs, ox: vox } = viewScale(api.W, api.H);
     for (let mi = 0; mi < res.mergedCells.length; mi += 1) {
       const m = res.mergedCells[mi];
       animRef.current.push({ key: `${m.r},${m.c}`, bornAt: t, kind: 'merge', tier: m.tier });
       const cx = BOARD_M + m.c * (CELL + GAPV) + CELL / 2;
       const cy = boardTop() + m.r * (CELL + GAPV) + CELL / 2;
       if (mi === 0 && res.gained > 0) {
-        api.scores.add(cx * (api.W / LW), cy * (api.W / LW), `+${res.gained}`, {
+        api.scores.add((cx + vox) * vs, cy * vs, `+${res.gained}`, {
           color: '#ffd166', size: 20,
         });
       }
-      api.particles.spawn(cx * (api.W / LW), cy * (api.W / LW), {
+      api.particles.spawn((cx + vox) * vs, cy * vs, {
         count: m.tier >= 5 ? 22 : 10,
         colors: [TIER_COLORS[Math.min(MAX_TIER - 1, m.tier - 1)], '#ffffff', '#ffd166'],
         speed: [80, 260], life: [0.35, 0.7], size: [2.5, 5.5], shape: 'rect', rotation: true,
@@ -311,8 +330,8 @@ export default function Arcade2048({ onExit }: { onExit: () => void }): React.JS
     pushHud();
 
     const toGame = (p: { x: number; y: number }): { x: number; y: number } => {
-      const s = api.W / LW;
-      return { x: p.x / s, y: p.y / s };
+      const { s, ox } = viewScale(api.W, api.H);
+      return { x: p.x / s - ox, y: p.y / s };
     };
     let swipeStart: { x: number; y: number } | null = null;
 
@@ -373,19 +392,22 @@ export default function Arcade2048({ onExit }: { onExit: () => void }): React.JS
       const st = stRef.current;
       if (!st) return;
       const { ctx } = api;
-      const s = api.W / LW;
+      const { s, ox } = viewScale(api.W, api.H);
       const lh = api.H / s;
+      const lw = api.W / s;
       const t = animTRef.current;
       ctx.save();
       ctx.scale(s, s);
+      ctx.translate(ox, 0);
 
-      // latar: beton + blueprint grid
+      // latar: beton + blueprint grid (menutupi seluruh kanvas, bukan
+      // hanya area konten — di landscape ada ruang di kiri-kanan papan)
       const bg = ctx.createLinearGradient(0, 0, 0, lh);
       bg.addColorStop(0, '#3a4356');
       bg.addColorStop(0.55, '#2b3242');
       bg.addColorStop(1, '#1f2530');
       ctx.fillStyle = bg;
-      ctx.fillRect(0, 0, LW, lh);
+      ctx.fillRect(-ox, 0, lw, lh);
       ctx.strokeStyle = 'rgba(147,197,253,0.07)';
       ctx.lineWidth = 1;
       for (let gx = 0; gx < LW; gx += 26) {

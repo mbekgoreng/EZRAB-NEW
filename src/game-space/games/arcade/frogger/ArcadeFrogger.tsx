@@ -67,6 +67,20 @@ let GY = 148;
 function layoutGY(lh: number): void {
   GY = Math.max(56, Math.round((lh - BOARD_H) / 2));
 }
+/**
+ * Tinggi konten logis (px): papan 462 + margin atas-bawah 56+56
+ * (lantai GY). Dipakai skala tinggi-sadar agar di kanvas landscape
+ * (HP diputar) seluruh papan (rumah baris 0 s.d. start baris
+ * terakhir) tetap muat — di portrait nilai ini tidak pernah
+ * membatasi (lebar yang membatasi), sehingga tampilan portrait sama
+ * persis seperti sebelumnya.
+ */
+const LH_CONTENT = BOARD_H + 112;
+/** Skala gambar + offset pusatkan horizontal (lihat Arcade2048). */
+function viewScale(w: number, h: number): { s: number; ox: number } {
+  const s = Math.min(w / LW, h / LH_CONTENT);
+  return { s, ox: Math.max(0, (w / s - LW) / 2) };
+}
 
 /** Jenis kendaraan proyek prosedural (bukan emoji), bergilir per lajur/kendaraan. */
 const VEHICLE_KINDS = ['molen', 'beko', 'pickup', 'molen'] as const;
@@ -203,11 +217,11 @@ export default function ArcadeFrogger({ onExit }: { onExit: () => void }): React
     api.pushHud = (h) => setHud(h as Hud);
     setMuted(api.sfx.muted);
     for (const u of [vehMolenUrl, vehBekoUrl, vehPickupUrl, charTukangUrl, objHouseUrl]) void loadSprite(u);
-    api.onResize((_w, h) => layoutGY(h / (api.W / LW)));
+    api.onResize((_w, h) => layoutGY(h / viewScale(api.W, h).s));
 
     const toLogical = (px: number, py: number): { x: number; y: number } => {
-      const s = api.W / LW;
-      return { x: px / s, y: py / s };
+      const { s, ox } = viewScale(api.W, api.H);
+      return { x: px / s - ox, y: py / s };
     };
 
     api.input.onDown = (p) => {
@@ -260,13 +274,15 @@ export default function ArcadeFrogger({ onExit }: { onExit: () => void }): React
     api.setRender(() => {
       const run = runRef.current;
       const { ctx } = api;
-      const s = api.W / LW;
+      const { s, ox } = viewScale(api.W, api.H);
       const lh = api.H / s;
+      const lw = api.W / s;
       layoutGY(lh);
       const t = performance.now() / 1000;
       ctx.save();
       ctx.scale(s, s);
-      drawBackdrop(ctx, lh);
+      ctx.translate(ox, 0);
+      drawBackdrop(ctx, lh, lw, ox);
       if (run) {
         drawLanes(ctx, run.g, t, api.reducedMotion);
         drawHomes(ctx, run.g, t, api.reducedMotion);
@@ -394,24 +410,26 @@ function cellXY(cx: number, cy: number): { x: number; y: number } {
   return { x: GX + cx * CELL, y: GY + cy * CELL };
 }
 
-function drawBackdrop(ctx: CanvasRenderingContext2D, lh: number): void {
+function drawBackdrop(ctx: CanvasRenderingContext2D, lh: number, lw: number, ox: number): void {
   const g = ctx.createLinearGradient(0, 0, 0, lh);
   g.addColorStop(0, '#2a422c');
   g.addColorStop(1, '#16281a');
   ctx.fillStyle = g;
-  ctx.fillRect(0, 0, LW, lh);
+  // latar + strip menutupi seluruh kanvas (di landscape ada ruang
+  // di kiri-kanan papan)
+  ctx.fillRect(-ox, 0, lw, lh);
   // tanah proyek membingkai papan (atas papan = halaman pos rumah, bawah = basecamp):
   // strip di luar papan TIDAK lagi hitam polos
   const fg = ctx.createLinearGradient(0, 0, 0, GY);
   fg.addColorStop(0, '#5d4a30');
   fg.addColorStop(1, '#6e583a');
   ctx.fillStyle = fg;
-  ctx.fillRect(0, 0, LW, GY);
+  ctx.fillRect(-ox, 0, lw, GY);
   ctx.fillStyle = '#5d4a30';
-  ctx.fillRect(0, GY + BOARD_H, LW, Math.max(0, lh - GY - BOARD_H));
+  ctx.fillRect(-ox, GY + BOARD_H, lw, Math.max(0, lh - GY - BOARD_H));
   ctx.fillStyle = 'rgba(255,255,255,0.16)';
-  ctx.fillRect(0, GY - 3, LW, 3);
-  ctx.fillRect(0, GY + BOARD_H, LW, 3);
+  ctx.fillRect(-ox, GY - 3, lw, 3);
+  ctx.fillRect(-ox, GY + BOARD_H, lw, 3);
 }
 
 function drawLanes(ctx: CanvasRenderingContext2D, g: Game, t: number, rm: boolean): void {

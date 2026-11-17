@@ -641,7 +641,13 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
         {/* =========================================================================
             MAIN VIEW (PROYEK, DAFTAR PEKERJAAN, MAGIC AI, QTO, OR DASHBOARD)
            ========================================================================= */}
-        <div key={activeMenu} className="ezr-menu-enter" style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+        {/* minHeight: 0 WAJIB: wrapper ini adalah flex item dari .pf-main.
+            Tanpa itu, min-height:auto (= ukuran konten) menahan wrapper
+            setinggi konten <main> (terukur 2977px di HP), sehingga rantai
+            flex app shell DED + Dokumen AI putus — <main> ikut setinggi
+            konten, wilayah scroll internal tidak pernah aktif, dan bawah
+            halaman terpotong oleh .pf-main overflow hidden. */}
+        <div key={activeMenu} className="ezr-menu-enter" style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
         {hasRouteError ? (
           <main style={{ padding: '48px 24px', background: 'var(--ez-color-background)', minHeight: 'calc(100vh - 64px)', display: 'grid', placeItems: 'center' }}>
             <section style={{ maxWidth: '480px', textAlign: 'center', background: 'var(--ez-color-surface)', border: '1px solid var(--ez-color-border)', borderRadius: '22px', padding: '32px' }}>
@@ -729,11 +735,11 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
             </Suspense>
           </main>
         ) : activeMenu === 'ded-ai' ? (
-          <main style={{ flex: '1 1 auto', minHeight: 0, display: 'flex', flexDirection: 'column', background: 'var(--ez-color-background)' }}>
+          <main className="pf-main-locked" style={{ flex: '1 1 auto', minHeight: 0, display: 'flex', flexDirection: 'column', background: 'var(--ez-color-background)' }}>
             <DedAiEstimateView onNavigateToTab={(tab) => setActiveMenu(tab)} />
           </main>
         ) : activeMenu === 'dokumen-ai' ? (
-          <main style={{ flex: '1 1 auto', minHeight: 0, display: 'flex', flexDirection: 'column', background: 'var(--ez-color-background)' }}>
+          <main className="pf-main-locked" style={{ flex: '1 1 auto', minHeight: 0, display: 'flex', flexDirection: 'column', background: 'var(--ez-color-background)' }}>
             <DokumenAiView onNavigateToMenu={(menu) => setActiveMenu(menu)} />
           </main>
         ) : activeMenu === 'kredit-ai' ? (

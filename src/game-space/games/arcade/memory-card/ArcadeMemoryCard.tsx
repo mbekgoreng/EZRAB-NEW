@@ -28,6 +28,19 @@ const MEMORY_SLUGS: Record<string, MaterialSlug> = {
 
 const SLUG = 'memory-card';
 const LW = 390;
+/**
+ * Tinggi konten logis (px): grid kartu berakhir di y ≈ 597 (4x4:
+ * y=179 + totalH 418). Dipakai skala tinggi-sadar agar di kanvas
+ * landscape (HP diputar) grid tetap muat penuh — di portrait nilai
+ * ini tidak pernah membatasi (lebar yang membatasi), sehingga
+ * tampilan portrait sama persis seperti sebelumnya.
+ */
+const LH_CONTENT = 600;
+/** Skala gambar + offset pusatkan horizontal (lihat Arcade2048). */
+function viewScale(w: number, h: number): { s: number; ox: number } {
+  const s = Math.min(w / LW, h / LH_CONTENT);
+  return { s, ox: Math.max(0, (w / s - LW) / 2) };
+}
 const FONT = `'Plus Jakarta Sans', 'Inter', system-ui, sans-serif`;
 const TAU = Math.PI * 2;
 
@@ -144,13 +157,14 @@ export default function ArcadeMemoryCard({ onExit }: { onExit: () => void }): Re
       const cx = x + run.grid.cw / 2;
       const cy = y + run.grid.ch / 2;
       const mat = materialById(run.mem.deck[i]);
-      api.particles.spawn(cx, cy, {
+      const { s: vs, ox: vox } = viewScale(api.W, api.H);
+      api.particles.spawn((cx + vox) * vs, cy * vs, {
         count: 16, colors: [mat.color, '#ffffff', '#ffd166'],
         speed: [60, 240], gravity: 200, life: [0.4, 0.8], size: [2.5, 5.5],
         shape: 'rect', rotation: true,
       });
       api.scores.add(
-        cx, cy - 20,
+        (cx + vox) * vs, cy * vs - 20,
         res.bonus > 0 ? `KOMBO x${res.streak} +${res.bonus}` : `+${mat.name}`,
         { color: res.bonus > 0 ? '#f59e0b' : mat.color, size: res.bonus > 0 ? 16 : 15 },
       );
@@ -197,8 +211,8 @@ export default function ArcadeMemoryCard({ onExit }: { onExit: () => void }): Re
     setMuted(api.sfx.muted);
 
     const toLogical = (px: number, py: number): { x: number; y: number } => {
-      const s = api.W / LW;
-      return { x: px / s, y: py / s };
+      const { s, ox } = viewScale(api.W, api.H);
+      return { x: px / s - ox, y: py / s };
     };
 
     api.input.onDown = (p) => {
@@ -254,18 +268,20 @@ export default function ArcadeMemoryCard({ onExit }: { onExit: () => void }): Re
     api.setRender(() => {
       const run = runRef.current;
       const { ctx } = api;
-      const s = api.W / LW;
+      const { s, ox } = viewScale(api.W, api.H);
       const lh = api.H / s;
+      const lw = api.W / s;
       const t = performance.now() / 1000;
       ctx.save();
       ctx.scale(s, s);
+      ctx.translate(ox, 0);
 
       // latar gudang: gradien + blueprint grid
       const sky = ctx.createLinearGradient(0, 0, 0, lh);
       sky.addColorStop(0, '#131c33');
       sky.addColorStop(1, '#0b1122');
       ctx.fillStyle = sky;
-      ctx.fillRect(0, 0, LW, lh);
+      ctx.fillRect(-ox, 0, lw, lh);
       ctx.strokeStyle = 'rgba(120,160,220,0.07)';
       ctx.lineWidth = 1;
       for (let gx = 0; gx < LW; gx += 26) {

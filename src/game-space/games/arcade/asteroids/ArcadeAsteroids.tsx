@@ -14,6 +14,16 @@ import { drawShooterSprite, preloadShooterSprites } from '../../../shared/shoote
 
 preloadShooterSprites();
 
+/** Skala gambar + offset pusatkan horizontal (lihat Arcade2048).
+ *  LH_CONTENT = LH (620, tinggi dunia logis dari logic.ts): di
+ *  portrait lebar yang membatasi (s = W/LW, ox = 0 — identik seperti
+ *  sebelumnya); di kanvas landscape (HP diputar) tinggi yang
+ *  membatasi agar seluruh dunia 390×620 tetap muat. */
+function viewScale(w: number, h: number): { s: number; ox: number } {
+  const s = Math.min(w / LW, h / LH);
+  return { s, ox: Math.max(0, (w / s - LW) / 2) };
+}
+
 const SLUG = 'asteroids';
 const FONT = `'Plus Jakarta Sans', 'Inter', system-ui, sans-serif`;
 const TAU = Math.PI * 2;
@@ -272,7 +282,8 @@ export default function ArcadeAsteroids({ onExit }: { onExit: () => void }): Rea
     pushHudFor(stRef.current);
 
     const explode = (x: number, y: number, big: boolean): void => {
-      api.particles.spawn(x, y, {
+      const { s: vs, ox: vox } = viewScale(api.W, api.H);
+      api.particles.spawn((x + vox) * vs, y * vs, {
         count: big ? 26 : 14,
         colors: ['#fde68a', '#fb923c', '#e2e8f0', '#94a3b8'],
         speed: [80, 340], life: [0.5, 1.1], size: [2, 6], shape: 'rect', rotation: true,
@@ -282,6 +293,7 @@ export default function ArcadeAsteroids({ onExit }: { onExit: () => void }): Rea
     api.setUpdate((dt) => {
       const st = stRef.current;
       if (!st || screenRef.current !== 'play') return;
+      const { s: vs, ox: vox } = viewScale(api.W, api.H);
       const fx = fxRef.current;
       fx.t += dt;
       if (fx.levelMsg > 0) fx.levelMsg -= dt;
@@ -295,12 +307,12 @@ export default function ArcadeAsteroids({ onExit }: { onExit: () => void }): Rea
       for (const r of ev.rockHit) {
         explode(r.x, r.y, r.r > 30);
         api.sfx.pop(r.r > 30 ? 0.7 : 1.1);
-        api.scores.add(r.x, r.y - 10, `+${rockScore(r.r)}`, { color: '#fde68a', size: 18 });
+        api.scores.add((r.x + vox) * vs, r.y * vs - 10, `+${rockScore(r.r)}`, { color: '#fde68a', size: 18 });
       }
       for (const sc of ev.saucerHit) {
         explode(sc.x, sc.y, true);
         api.sfx.chime(3);
-        api.scores.add(sc.x, sc.y - 14, '+200', { color: '#f0abfc', size: 20 });
+        api.scores.add((sc.x + vox) * vs, sc.y * vs - 14, '+200', { color: '#f0abfc', size: 20 });
       }
       if (ev.shipDied) {
         const s = st.ship;
@@ -327,16 +339,18 @@ export default function ArcadeAsteroids({ onExit }: { onExit: () => void }): Rea
       const st = stRef.current;
       if (!st) return;
       const { ctx } = api;
-      const s = api.W / LW;
+      const { s, ox } = viewScale(api.W, api.H);
       const lh = api.H / s;
+      const lw = api.W / s;
       const t = fxRef.current.t;
       ctx.save();
       ctx.scale(s, s);
+      ctx.translate(ox, 0);
 
       // latar: site konstruksi saat senja
       const bg = ctx.createLinearGradient(0, 0, 0, lh);
       bg.addColorStop(0, '#1e1b4b'); bg.addColorStop(0.45, '#7c2d5a'); bg.addColorStop(0.72, '#ea7a3c'); bg.addColorStop(1, '#fbbf24');
-      ctx.fillStyle = bg; ctx.fillRect(0, 0, LW, lh);
+      ctx.fillStyle = bg; ctx.fillRect(-ox, 0, lw, lh);
       // matahari terbenam
       ctx.fillStyle = 'rgba(255,237,180,0.9)';
       ctx.beginPath(); ctx.arc(300, lh - 170, 30, 0, TAU); ctx.fill();
@@ -363,12 +377,12 @@ export default function ArcadeAsteroids({ onExit }: { onExit: () => void }): Rea
       const gy = lh - 60;
       const gr = ctx.createLinearGradient(0, gy, 0, lh);
       gr.addColorStop(0, '#8a6a48'); gr.addColorStop(1, '#5d442e');
-      ctx.fillStyle = gr; ctx.fillRect(0, gy, LW, lh - gy);
+      ctx.fillStyle = gr; ctx.fillRect(-ox, gy, lw, lh - gy);
       ctx.fillStyle = 'rgba(60,40,24,0.5)';
       for (let px = 10; px < LW; px += 46) ctx.fillRect(px, gy + 18, 20, 5);
       // pagar site
       ctx.strokeStyle = 'rgba(120,90,60,0.9)'; ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.moveTo(0, gy - 26); ctx.lineTo(LW, gy - 26); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-ox, gy - 26); ctx.lineTo(lw - ox, gy - 26); ctx.stroke();
       for (let px = 20; px < LW; px += 60) {
         ctx.beginPath(); ctx.moveTo(px, gy - 26); ctx.lineTo(px, gy); ctx.stroke();
       }
@@ -413,7 +427,7 @@ export default function ArcadeAsteroids({ onExit }: { onExit: () => void }): Rea
         drawDrone(ctx, shp.x, shp.y, shp.angle, shp.thrusting, t, shp.invuln > 0 && screenRef.current === 'play');
         if (shp.thrusting && Math.random() < 0.6) {
           api.particles.spawn(
-            shp.x - Math.cos(shp.angle) * SHIP_R, shp.y - Math.sin(shp.angle) * SHIP_R,
+            (shp.x - Math.cos(shp.angle) * SHIP_R + ox) * s, (shp.y - Math.sin(shp.angle) * SHIP_R) * s,
             { count: 2, colors: ['#fdba74', '#fde68a'], speed: [40, 140], life: [0.25, 0.5], size: [2, 4] },
           );
         }
@@ -456,7 +470,7 @@ export default function ArcadeAsteroids({ onExit }: { onExit: () => void }): Rea
 
       if (screenRef.current === 'ready') {
         ctx.save();
-        ctx.fillStyle = 'rgba(2,6,23,0.55)'; ctx.fillRect(0, 0, LW, lh);
+        ctx.fillStyle = 'rgba(2,6,23,0.55)'; ctx.fillRect(-ox, 0, lw, lh);
         ctx.textAlign = 'center';
         ctx.fillStyle = '#fff'; ctx.font = `900 30px ${FONT}`;
         ctx.shadowColor = '#f59e0b'; ctx.shadowBlur = 18;
@@ -494,10 +508,10 @@ export default function ArcadeAsteroids({ onExit }: { onExit: () => void }): Rea
       if (screenRef.current !== 'play') return;
       if (!isTouch) return;
       // tombol sentuh (koordinat sudah CSS px; konversi ke ruang logis)
-      const sx = api.W / LW;
+      const { s: sx, ox } = viewScale(api.W, api.H);
       const ly = p.y / sx;
       const by = (api.H / sx) - 52;
-      const hit = (cx: number): boolean => Math.hypot(p.x / sx - cx, ly - by) < 34;
+      const hit = (cx: number): boolean => Math.hypot(p.x / sx - ox - cx, ly - by) < 34;
       if (hit(46)) touchRef.current.left = true;
       else if (hit(122)) touchRef.current.right = true;
       else if (hit(LW - 122)) touchRef.current.thrust = true;

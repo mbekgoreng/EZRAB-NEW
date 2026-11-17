@@ -60,6 +60,12 @@ export default function ArcadeDoodleJump({ onExit }: { onExit: () => void }): Re
 
     const s: S = { w: createWorld((Date.now() % 100000) | 0), camY: 0, squash: 0, tilt: 0 };
     let touchSide = 0; // -1 kiri, 1 kanan, 0 lepas
+    // Ikut orientasi: viewH dunia ditangkap saat reset() (api.H saat
+    // itu). Tanpa ini, putar HP di tengah permainan membuat kamera
+    // (target = py − viewH*0.55) memakai tinggi portrait yang basi —
+    // pemain terdorong keluar atas layar landscape. Perbarui viewH
+    // tiap resize; kamera mengikutinya dalam beberapa frame.
+    api.onResize((_w, h) => { s.w.viewH = h; });
 
     const push = (): void => {
       const zp = zoneFor(s.w.score);

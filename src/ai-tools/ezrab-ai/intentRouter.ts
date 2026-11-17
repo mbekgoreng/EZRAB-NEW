@@ -225,6 +225,12 @@ const PATTERNS: Pattern[] = [
   { intent: 'CAPABILITIES', re: /\bapa\b.*\b(bisa|dapat|mampu)\b.*\b(kamu|ezrab)\b.*\b(bantu|membantu|dibantu)\b/ },
   { intent: 'CAPABILITIES', re: /\bapa saja\b.*\b(kamu|ezrab)\b.*\b(bantu|membantu|fitur|kemampuan)\b/ },
   { intent: 'CAPABILITIES', re: /\b(bisa|dapat)\s+(bantu|membantu)\s+apa\b/ },
+  // Bentuk "-mu" ("kelebihanmu apa saja", "apa kelebihanmu", "fiturmu apa
+  // aja"): akhiran -mu adalah penanda rujukan ke AI — pola lama gagal
+  // karena \bkelebihan\b tidak cocok dengan "kelebihanmu" dan "apa"
+  // datang sesudahnya. Pertanyaan teknis ("apa kelebihan beton
+  // pracetak?") tidak punya akhiran -mu sehingga tetap lolos ke LLM.
+  { intent: 'CAPABILITIES', re: /\b(kelebihanmu|keunggulanmu|kemampuanmu|fiturmu)\b/ },
   { intent: 'CAPABILITIES', re: /\b(apa|sebutkan|jelaskan|tampilkan)\b.*\b(fitur|kemampuan|keunggulan|kelebihan)\b.*\b(kamu|ezrab|aplikasi ini)\b/ },
   { intent: 'CAPABILITIES', re: /\b(fitur|kemampuan|keunggulan|kelebihan)\b.*\b(ezrab|kamu)\b/ },
   { intent: 'CAPABILITIES', re: /\bezrab\b.*\b(bisa|fitur|keunggulan|kelebihan)\b/ },
