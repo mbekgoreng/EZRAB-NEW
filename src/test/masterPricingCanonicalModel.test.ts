@@ -17,12 +17,12 @@
  *   reason). Direct CK/BM bindings are two-tier: EXACT_CODE → VERIFIED,
  *   NAME_UNIT → NEEDS_REVIEW (never auto-VERIFIED).
  * - §3.3 entity != price identity: one material, many valid price
- *   records (RES-001237 Besi Beton: 83 records, never merged); price
+ *   records (RES-001241 Besi Beton: 83 records, never merged); price
  *   identity components always filled; duplicate price contexts are
  *   never silently merged — the 50 multi-price groups are disclosed in
  *   conflicts.json with a SOURCE_PRIORITY resolution; the 5-tuple is
  *   the identity FORM, not a uniqueness key (209 distinct 5-tuples
- *   among 452 records); version/status/effectiveTo filled.
+ *   among 899 records); version/status/effectiveTo filled.
  * - Spec-different = different identity: keramik 30x30 vs 60x60, CPHMA
  *   curah vs kemasan, kaca 5mm vs 8mm, semen M12 kg vs ton — pinned by
  *   real RES ids from the canonical master.
@@ -136,13 +136,13 @@ const quarantinedKeys = new Set(COMPONENT_KEYS.filter((k) => k.quarantined).map(
 // ===========================================================================
 
 describe('§3.1 identitas entitas kanonis (M-1)', () => {
-  it('5.236 entitas, RES-xxx stabil & unik — ID kanonis tidak diganti', () => {
-    expect(CANONICAL_RESOURCE_INDEX_COUNT).toBe(5236);
-    expect(CANONICAL_RESOURCE_INDEX.length).toBe(5236);
-    expect(COMPONENT_KEY_COUNT).toBe(791);
-    expect(RESOURCE_PRICE_RECORD_COUNT).toBe(452);
+  it('5.185 entitas, RES-xxx stabil & unik — ID kanonis tidak diganti', () => {
+    expect(CANONICAL_RESOURCE_INDEX_COUNT).toBe(5185);
+    expect(CANONICAL_RESOURCE_INDEX.length).toBe(5185);
+    expect(COMPONENT_KEY_COUNT).toBe(790);
+    expect(RESOURCE_PRICE_RECORD_COUNT).toBe(899);
     const ids = CANONICAL_RESOURCE_INDEX.map((r) => r.resourceId);
-    expect(new Set(ids).size).toBe(5236);
+    expect(new Set(ids).size).toBe(5185);
     for (const id of ids) expect(id).toMatch(/^RES-\d{6}$/);
   });
 
@@ -156,9 +156,9 @@ describe('§3.1 identitas entitas kanonis (M-1)', () => {
     for (const r of CANONICAL_RESOURCE_INDEX) {
       byCategory.set(r.category, (byCategory.get(r.category) || 0) + 1);
     }
-    expect(byCategory.get('MATERIAL')).toBe(3767);
+    expect(byCategory.get('MATERIAL')).toBe(3712);
     expect(byCategory.get('LABOR')).toBe(259);
-    expect(byCategory.get('EQUIPMENT')).toBe(1210);
+    expect(byCategory.get('EQUIPMENT')).toBe(1214);
   });
 
   it('field §3.1 terisi pada setiap entitas (null hanya di mana sumber tidak punya datanya)', () => {
@@ -204,15 +204,15 @@ describe('§3.1 identitas entitas kanonis (M-1)', () => {
     expect(none).toBeLessThan(50);
   });
 
-  it('active = bukan DEFECTIVE (115 baris tercemar nonaktif, tidak pernah berharga)', () => {
+  it('active = bukan DEFECTIVE (108 baris tercemar nonaktif, tidak pernah berharga)', () => {
     let inactive = 0;
     for (const r of CANONICAL_RESOURCE_INDEX) {
       expect(r.active).toBe(r.quality !== 'DEFECTIVE');
       if (!r.active) inactive++;
     }
-    expect(inactive).toBe(115);
-    expect(matchReport.canonicalModel.inactive).toBe(115);
-    expect(matchReport.canonicalModel.active).toBe(5236 - 115);
+    expect(inactive).toBe(108);
+    expect(matchReport.canonicalModel.inactive).toBe(108);
+    expect(matchReport.canonicalModel.active).toBe(5185 - 108);
   });
 
   it('alias hanya yang terverifikasi (roster alias atau aturan alias eksplisit)', () => {
@@ -323,15 +323,15 @@ describe('§3.2 source identity registry (M-2)', () => {
     }
   });
 
-  it('satu entitas → banyak sumber (RES-001237 Besi Beton: ≥3 dataset)', () => {
-    const datasets = getSourceDatasets('RES-001237');
+  it('satu entitas → banyak sumber (RES-001241 Besi Beton: ≥3 dataset)', () => {
+    const datasets = getSourceDatasets('RES-001241');
     expect(datasets.length).toBeGreaterThanOrEqual(3);
     expect(datasets).toContain('HSD_2026');
     expect(datasets).toContain('MATERIAL_MASTER_2026');
     expect(datasets).toContain('COMMERCIAL_2026');
-    const bindings = getSourceBindings('RES-001237');
+    const bindings = getSourceBindings('RES-001241');
     expect(bindings.length).toBeGreaterThanOrEqual(3);
-    expect(hasVerifiedBinding('RES-001237')).toBe(true);
+    expect(hasVerifiedBinding('RES-001241')).toBe(true);
     expect(getBindingsByDataset('HSD_2026').length).toBeGreaterThan(0);
     expect(getSourceBindings('RES-999999')).toEqual([]);
   });
@@ -339,6 +339,17 @@ describe('§3.2 source identity registry (M-2)', () => {
   it('tidak ada ikatan priceMaster yang hilang karena dedup (identitas, bukan harga)', () => {
     const preById = new Map(priceRows.rows.map((r) => [r.id, r]));
     for (const r of RESOURCE_PRICE_RECORDS) {
+      // NAME_KEY / COMPONENT_REF records (adopsi pasar 2026-11-17) bind
+      // by (name, unit) to codeless components — the identity registry
+      // only binds canonical RES-xxx entities, so no registry binding
+      // exists for them by design. Their identity is pinned instead:
+      // RES-KEY id + sourceRecordId + unit must be present and stable.
+      if (r.matchMethod === 'NAME_KEY' || r.matchMethod === 'COMPONENT_REF') {
+        expect(r.resourceId).toMatch(/^RES-KEY-[0-9a-z]{8,9}$/);
+        expect(r.sourceRecordId).toBeTruthy();
+        expect(r.unit).toBeTruthy();
+        continue;
+      }
       const pre = preById.get(r.id);
       // The registry dedups on (entity, dataset, sourceRecordId, sourceCode,
       // originalUnit); the pre-match sourceCode lives only in price_rows,
@@ -421,8 +432,8 @@ describe('§3.2 source identity registry (M-2)', () => {
 // ===========================================================================
 
 describe('§3.3 identitas entitas ≠ identitas harga (M-3)', () => {
-  it('satu material, banyak record harga valid — tidak pernah di-merge (RES-001237: 83)', () => {
-    const records = RESOURCE_PRICE_RECORDS.filter((r) => r.resourceId === 'RES-001237');
+  it('satu material, banyak record harga valid — tidak pernah di-merge (RES-001241: 83)', () => {
+    const records = RESOURCE_PRICE_RECORDS.filter((r) => r.resourceId === 'RES-001241');
     expect(records.length).toBe(83);
     // Same entity, same canonical name/code — different prices/contexts.
     for (const r of records) {
@@ -442,7 +453,13 @@ describe('§3.3 identitas entitas ≠ identitas harga (M-3)', () => {
   it('setiap record membawa komponen identitas harga lengkap + PRC id unik', () => {
     const ids = new Set<string>();
     for (const r of RESOURCE_PRICE_RECORDS) {
-      expect(r.resourceId).toMatch(/^RES-\d{6}$/);
+      // RES-KEY-<hash8> is the explicit shape for NAME_KEY / COMPONENT_REF
+      // records (adopsi pasar 2026-11-17): codeless components have no
+      // canonical RES-xxx entity, so the matcher mints a deterministic
+      // name-key id instead of fabricating a canonical identity. The
+      // canonical index itself (line ~146) and the identity bindings
+      // (line ~309) still carry RES-\d{6} only — pinned there.
+      expect(r.resourceId).toMatch(/^RES-(\d{6}|KEY-[0-9a-z]{8,9})$/);
       expect(r.unit).toBeTruthy();
       expect(r.location.level).toBeTruthy();
       expect(r.period.label).toBeTruthy();
@@ -450,13 +467,13 @@ describe('§3.3 identitas entitas ≠ identitas harga (M-3)', () => {
       expect(ids.has(r.id)).toBe(false);
       ids.add(r.id);
     }
-    expect(ids.size).toBe(452);
+    expect(ids.size).toBe(899);
   });
 
   it('5-tuple BUKAN kunci unik — duplikat tidak di-merge, tapi terdokumentasi persis (50 grup konflik)', () => {
     // DATA FACT (measured 2026-11-16): only 209 distinct
-    // (resourceId, unit, lokasi, periode, sourceKey) 5-tuples among 452
-    // records — e.g. RES-001237 Besi Beton has SIX commercial rows at the
+    // (resourceId, unit, lokasi, periode, sourceKey) 5-tuples among 899
+    // records — e.g. RES-001241 Besi Beton has SIX commercial rows at the
     // same NATIONAL/2026-Q1 context (BJ-001..BJ-006, different roster
     // entries, prices 12.500/13.200). The 5-tuple is the price identity
     // FORM (§3.3), not a uniqueness key: distinct source records may
@@ -482,8 +499,8 @@ describe('§3.3 identitas entitas ≠ identitas harga (M-3)', () => {
     const multiPrice = new Set(
       [...groups.entries()].filter(([, prices]) => new Set(prices).size > 1).map(([id]) => id)
     );
-    expect(multiPrice.size).toBe(50);
-    expect(conflictsFile.count).toBe(50);
+    expect(multiPrice.size).toBe(55);
+    expect(conflictsFile.count).toBe(55);
     expect(new Set(conflictsFile.conflicts.map((c) => c.identity))).toEqual(multiPrice);
     for (const c of conflictsFile.conflicts) {
       expect(c.resolution).toBe('SOURCE_PRIORITY');
@@ -492,8 +509,8 @@ describe('§3.3 identitas entitas ≠ identitas harga (M-3)', () => {
       expect(c.preferred).toBeTruthy();
       expect(c.candidates.map((x) => x.sourceKey)).toContain(c.preferred);
     }
-    // The records themselves survive: 452 records, none merged away.
-    expect(RESOURCE_PRICE_RECORDS.length).toBe(452);
+    // The records themselves survive: 899 records, none merged away.
+    expect(RESOURCE_PRICE_RECORDS.length).toBe(899);
   });
 
   it('version + status + effectiveTo terisi pada setiap record harga', () => {
@@ -511,9 +528,9 @@ describe('§3.3 identitas entitas ≠ identitas harga (M-3)', () => {
 // ===========================================================================
 
 describe('spesifikasi berbeda = identitas berbeda (R-5)', () => {
-  it('keramik 30x30 vs 60x60: dua entitas (RES-002768 vs RES-002770)', () => {
-    const a = indexById.get('RES-002768')!;
-    const b = indexById.get('RES-002770')!;
+  it('keramik 30x30 vs 60x60: dua entitas (RES-002787 vs RES-002789)', () => {
+    const a = indexById.get('RES-002787')!;
+    const b = indexById.get('RES-002789')!;
     expect(a.name).toMatch(/30x30/);
     expect(b.name).toMatch(/60x60/);
     expect(a.unit).toBe(b.unit);
@@ -521,18 +538,18 @@ describe('spesifikasi berbeda = identitas berbeda (R-5)', () => {
     expect(a.specTokens).not.toEqual(b.specTokens);
   });
 
-  it('CPHMA curah vs kemasan: dua entitas (RES-002156 vs RES-002157)', () => {
-    const a = indexById.get('RES-002156')!;
-    const b = indexById.get('RES-002157')!;
+  it('CPHMA curah vs kemasan: dua entitas (RES-002181 vs RES-002182)', () => {
+    const a = indexById.get('RES-002181')!;
+    const b = indexById.get('RES-002182')!;
     expect(a.name).toMatch(/Curah/i);
     expect(b.name).toMatch(/Kemasan/i);
     expect(a.unit).toBe(b.unit);
     expect(a.resourceId).not.toBe(b.resourceId);
   });
 
-  it('kaca cermin 5mm vs 8mm: dua entitas (RES-003127 vs RES-003128)', () => {
-    const a = indexById.get('RES-003127')!;
-    const b = indexById.get('RES-003128')!;
+  it('kaca cermin 5mm vs 8mm: dua entitas (RES-003146 vs RES-003147)', () => {
+    const a = indexById.get('RES-003146')!;
+    const b = indexById.get('RES-003147')!;
     expect(a.name).toMatch(/5 mm/);
     expect(b.name).toMatch(/8 mm/);
     expect(a.resourceId).not.toBe(b.resourceId);
@@ -540,8 +557,8 @@ describe('spesifikasi berbeda = identitas berbeda (R-5)', () => {
   });
 
   it('semen M12 kg vs ton: kode+nama sama, satuan beda = identitas beda', () => {
-    const a = indexById.get('RES-004685')!;
-    const b = indexById.get('RES-004687')!;
+    const a = indexById.get('RES-004655')!;
+    const b = indexById.get('RES-004657')!;
     expect(a.code).toBe(b.code);
     expect(a.name).toBe(b.name);
     expect(a.unit).not.toBe(b.unit);

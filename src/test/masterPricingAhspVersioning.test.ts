@@ -204,10 +204,30 @@ function cloneItems<T>(items: readonly T[]): T[] {
 }
 
 // Pinned v2026.1 content checksums (measured 2026-11-16, extraction run).
+// v2026.1 is the FROZEN baseline: these pins never move. The live catalog
+// drifted from v2026.1 by the sanctioned Ronde 2 cleanup (17 Nov 2026) and
+// was re-extracted + published as v2026.2 for CK + SDA (see below).
 const PINNED_CHECKSUMS: Record<AhspFamily, string> = {
   CIPTA_KARYA: 'e0b539f134f8d64c',
   BINA_MARGA: '08082e878d4f0e90',
   SUMBER_DAYA_AIR: '1c4794f9ec5dc3e1',
+  SMKK: 'e77bbc73b1fea331',
+};
+// Active versions after the Ronde 2 publish (17 Nov 2026): CK + SDA moved
+// to v2026.2; BM + SMKK stay on v2026.1 (their live catalogs are unchanged).
+const ACTIVE_VERSIONS: Record<AhspFamily, string> = {
+  CIPTA_KARYA: '2026.2',
+  BINA_MARGA: '2026.1',
+  SUMBER_DAYA_AIR: '2026.2',
+  SMKK: '2026.1',
+};
+// Pinned ACTIVE content checksums (measured 17 Nov 2026, post-Ronde-2 live
+// catalog: CK changed again by the sub-header coefficient revert, SDA by the
+// Ronde 2 cleanup; BM + SMKK equal their v2026.1 pins).
+const PINNED_ACTIVE_CHECKSUMS: Record<AhspFamily, string> = {
+  CIPTA_KARYA: '0281ba316496e839',
+  BINA_MARGA: '08082e878d4f0e90',
+  SUMBER_DAYA_AIR: 'b43fd8a665fbdb54',
   SMKK: 'e77bbc73b1fea331',
 };
 const PINNED_COUNTS: Record<AhspFamily, number> = {
@@ -259,16 +279,22 @@ describe('§8 (a) versioned snapshots + v2026.1 as-is', () => {
     }
   });
 
-  it('v2026.1 is byte-equivalent to the live runtime catalog (as-is proof)', { timeout: 30000 }, () => {
+  it('the ACTIVE snapshot is byte-equivalent to the live runtime catalog (as-is proof)', { timeout: 30000 }, () => {
+    // Ronde 2 (17 Nov 2026): the as-is proof follows the ACTIVE version per
+    // family (CK + SDA v2026.2, BM + SMKK v2026.1). v2026.1 stays frozen —
+    // proven by the stored-checksum test above, which reads the v2026.1
+    // snapshots and pins them to the 2026-11-16 values.
     for (const family of AHSP_FAMILIES) {
-      const snap = readSnapshot(family);
+      const activeVersion = ACTIVE_VERSIONS[family];
+      const snap = readSnapshot(family, activeVersion);
       const live = ALL_OFFICIAL_AHSP_ITEMS.filter((i) => i.domain === family);
       expect(live.length).toBe(snap.items.length);
       expect(computeAhspContentChecksum(live)).toBe(snap.meta.contentChecksum);
+      expect(snap.meta.contentChecksum).toBe(PINNED_ACTIVE_CHECKSUMS[family]);
       // And the diff of live-vs-snapshot is empty.
       const diff = compareAhspSnapshots(
-        { versionId: '2026.1', items: live },
-        { versionId: '2026.1', items: snap.items },
+        { versionId: activeVersion, items: live },
+        { versionId: activeVersion, items: snap.items },
         family,
       );
       expect(diff.summary).toEqual({
@@ -285,7 +311,9 @@ describe('§8 (a) versioned snapshots + v2026.1 as-is', () => {
   });
 
   it('spot-check: real items are deep-equal between snapshot and runtime catalog', () => {
-    const ck = readSnapshot('CIPTA_KARYA');
+    // CK spot-check reads the ACTIVE snapshot (v2026.2 post-Ronde-2);
+    // BM + SMKK still read v2026.1 (unchanged families).
+    const ck = readSnapshot('CIPTA_KARYA', '2026.2');
     const item1141 = ck.items.find((i) => i.code === '1.1.4.1');
     expect(item1141).toBeDefined();
     const live1141 = ALL_OFFICIAL_AHSP_ITEMS.find((i) => i.code === '1.1.4.1');
@@ -311,64 +339,99 @@ describe('§8 (a) versioned snapshots + v2026.1 as-is', () => {
     }
   });
 
-  it('the active pointer is 2026.1 for every family (generated module + JSON agree)', () => {
+  it('the active pointer is 2026.2 for CK+SDA, 2026.1 for BM+SMKK (generated module + JSON agree)', () => {
+    // AHSP_DATABASE_VERSION + AHSP_BASELINE_VERSION_ID are the BASELINE
+    // constants — they stay 2026.1. Only the per-family ACTIVE pointer moved.
     expect(AHSP_DATABASE_VERSION).toBe('2026.1');
     expect(AHSP_BASELINE_VERSION_ID).toBe('2026.1');
     for (const family of AHSP_FAMILIES) {
-      expect(ACTIVE_AHSP_VERSIONS[family]).toBe('2026.1');
+      expect(ACTIVE_AHSP_VERSIONS[family]).toBe(ACTIVE_VERSIONS[family]);
     }
     const pointer = readJson<{ active: Record<string, string>; records: AhspVersionRecord[] }>(
       `${AHSP_VERSIONS_DIR}/active-versions.json`,
     );
     expect(pointer.active).toEqual({ ...ACTIVE_AHSP_VERSIONS });
-    expect(pointer.records).toHaveLength(4);
+    expect(pointer.records).toHaveLength(6);
     for (const rec of pointer.records) {
-      expect(rec.status).toBe('ACTIVE');
-      expect(rec.contentChecksum).toBe(PINNED_CHECKSUMS[rec.family]);
+      const isActive = rec.versionId === ACTIVE_VERSIONS[rec.family];
+      expect(rec.status).toBe(isActive ? 'ACTIVE' : 'SUPERSEDED');
+      expect(rec.contentChecksum).toBe(
+        isActive ? PINNED_ACTIVE_CHECKSUMS[rec.family] : PINNED_CHECKSUMS[rec.family],
+      );
       expect(rec.itemCount).toBe(PINNED_COUNTS[rec.family]);
-      expect(rec.snapshotPath).toBe(snapshotPathFor(rec.family, '2026.1'));
+      expect(rec.snapshotPath).toBe(snapshotPathFor(rec.family, rec.versionId));
     }
-    expect(AHSP_VERSION_RECORDS).toHaveLength(4);
+    expect(AHSP_VERSION_RECORDS).toHaveLength(6);
     for (const rec of AHSP_VERSION_RECORDS) {
-      const snap = readSnapshot(rec.family);
+      const snap = readSnapshot(rec.family, rec.versionId);
       expect(rec.contentChecksum).toBe(snap.meta.contentChecksum);
       expect(rec.itemCount).toBe(snap.meta.itemCount);
     }
   });
 
-  it('buildRegistryState from the generated pointer module yields the baseline state', () => {
+  it('buildRegistryState from the generated pointer module yields the post-Ronde-2 state', () => {
     const history = parseVersionHistoryJsonl(
       fs.readFileSync(path.join(VERSIONS_DIR, 'ahsp_version_history.jsonl'), 'utf8'),
     );
     expect(history.errors).toEqual([]);
     const state = buildRegistryState([...AHSP_VERSION_RECORDS], history.entries);
     for (const family of AHSP_FAMILIES) {
-      expect(getActiveVersion(state, family)).toBe('2026.1');
-      expect(listVersions(state, family)).toHaveLength(1);
+      expect(getActiveVersion(state, family)).toBe(ACTIVE_VERSIONS[family]);
+      const expectedVersions =
+        family === 'CIPTA_KARYA' || family === 'SUMBER_DAYA_AIR' ? 2 : 1;
+      expect(listVersions(state, family)).toHaveLength(expectedVersions);
     }
-    expect(state.history).toHaveLength(4);
+    expect(state.history).toHaveLength(10);
   });
 
-  it('the version history trail parses clean: HEADER + 4 BASELINE entries', () => {
+  it('the version history trail parses clean: HEADER + 4 BASELINE + 6 Ronde-2 entries', () => {
     const text = fs.readFileSync(path.join(VERSIONS_DIR, 'ahsp_version_history.jsonl'), 'utf8');
     const parsed = parseVersionHistoryJsonl(text);
     expect(parsed.errors).toEqual([]);
     expect(parsed.header).not.toBeNull();
     expect(parsed.header!.schemaVersion).toBe(1);
+    // The header records the active versions AT BASELINE CREATION (all
+    // 2026.1) — it is never rewritten on publish.
     expect(parsed.header!.activeVersions).toEqual({
       CIPTA_KARYA: '2026.1',
       BINA_MARGA: '2026.1',
       SUMBER_DAYA_AIR: '2026.1',
       SMKK: '2026.1',
     });
-    expect(parsed.entries).toHaveLength(4);
-    for (const entry of parsed.entries) {
+    expect(parsed.entries).toHaveLength(10);
+    for (const entry of parsed.entries.slice(0, 4)) {
       expect(entry.operation).toBe('BASELINE');
       expect(entry.versionId).toBe('2026.1');
       expect(entry.previousVersionId).toBeNull();
       expect(entry.publicationStatus).toBe('BASELINE');
       expect(entry.contentChecksum).toBe(PINNED_CHECKSUMS[entry.family as AhspFamily]);
     }
+    // Ronde 2 (17 Nov 2026): CK first, then SDA — each CLONE -> DRAFT_UPDATE
+    // -> PUBLISH. The CLONE carries the v2026.1 checksum; DRAFT_UPDATE and
+    // PUBLISH carry the new live checksum.
+    const expectedR2: Array<{
+      family: AhspFamily;
+      operation: string;
+      publicationStatus: string;
+      checksum: string;
+    }> = [
+      { family: 'CIPTA_KARYA', operation: 'CLONE', publicationStatus: 'DRAFT', checksum: PINNED_CHECKSUMS.CIPTA_KARYA },
+      { family: 'CIPTA_KARYA', operation: 'DRAFT_UPDATE', publicationStatus: 'DRAFT', checksum: PINNED_ACTIVE_CHECKSUMS.CIPTA_KARYA },
+      { family: 'CIPTA_KARYA', operation: 'PUBLISH', publicationStatus: 'PUBLISHED', checksum: PINNED_ACTIVE_CHECKSUMS.CIPTA_KARYA },
+      { family: 'SUMBER_DAYA_AIR', operation: 'CLONE', publicationStatus: 'DRAFT', checksum: PINNED_CHECKSUMS.SUMBER_DAYA_AIR },
+      { family: 'SUMBER_DAYA_AIR', operation: 'DRAFT_UPDATE', publicationStatus: 'DRAFT', checksum: PINNED_ACTIVE_CHECKSUMS.SUMBER_DAYA_AIR },
+      { family: 'SUMBER_DAYA_AIR', operation: 'PUBLISH', publicationStatus: 'PUBLISHED', checksum: PINNED_ACTIVE_CHECKSUMS.SUMBER_DAYA_AIR },
+    ];
+    parsed.entries.slice(4).forEach((entry, i) => {
+      expect(entry.family).toBe(expectedR2[i].family);
+      expect(entry.operation).toBe(expectedR2[i].operation);
+      expect(entry.versionId).toBe('2026.2');
+      expect(entry.previousVersionId).toBe('2026.1');
+      expect(entry.baseVersionId).toBe('2026.1');
+      expect(entry.publicationStatus).toBe(expectedR2[i].publicationStatus);
+      expect(entry.contentChecksum).toBe(expectedR2[i].checksum);
+      expect(entry.previousContentChecksum).toBe(PINNED_CHECKSUMS[entry.family as AhspFamily]);
+    });
     expect(validateVersionHistoryEntries(parsed.entries).valid).toBe(true);
   });
 });
@@ -1590,31 +1653,39 @@ describe('operator CLI end-to-end (temp dir)', () => {
           encoding: 'utf8',
           env: { ...process.env, NODE_OPTIONS: '--max-old-space-size=2048' },
         });
-      const out1 = run(['--clone', 'CIPTA_KARYA', '2026.1', '2026.2', '--reason', 'CLI test clone of CK baseline']);
-      expect(out1).toMatch(/cloned CIPTA_KARYA 2026.1 → 2026.2 \(DRAFT/);
+      // Scratch version bumped to 2026.3: the real 2026.2 exists since the
+      // Ronde 2 publish (17 Nov 2026), and the temp dir is a copy of the
+      // real registry. The temp copy starts at the real post-publish
+      // pointer (CK 2026.2); the clone still copies the v2026.1 baseline,
+      // so its checksum is still the v2026.1 pin.
+      const out1 = run(['--clone', 'CIPTA_KARYA', '2026.1', '2026.3', '--reason', 'CLI test clone of CK baseline']);
+      expect(out1).toMatch(/cloned CIPTA_KARYA 2026.1 → 2026.3 \(DRAFT/);
       const pointerAfterClone = JSON.parse(fs.readFileSync(path.join(tmp, 'active-versions.json'), 'utf8')) as {
         active: Record<string, string>;
         records: AhspVersionRecord[];
       };
-      expect(pointerAfterClone.active.CIPTA_KARYA).toBe('2026.1');
-      const draft = pointerAfterClone.records.find((r) => r.family === 'CIPTA_KARYA' && r.versionId === '2026.2');
+      expect(pointerAfterClone.active.CIPTA_KARYA).toBe('2026.2');
+      const draft = pointerAfterClone.records.find((r) => r.family === 'CIPTA_KARYA' && r.versionId === '2026.3');
       expect(draft).toBeDefined();
       expect(draft!.status).toBe('DRAFT');
       expect(draft!.contentChecksum).toBe(PINNED_CHECKSUMS.CIPTA_KARYA);
       const cloneFile = JSON.parse(
-        fs.readFileSync(path.join(tmp, 'CIPTA_KARYA', '2026.2.json'), 'utf8'),
+        fs.readFileSync(path.join(tmp, 'CIPTA_KARYA', '2026.3.json'), 'utf8'),
       ) as AhspVersionSnapshot;
       expect(cloneFile.meta.contentChecksum).toBe(PINNED_CHECKSUMS.CIPTA_KARYA);
       expect(cloneFile.meta.contentProvenance).toBe('CLONE_AS_IS');
-      const out2 = run(['--publish', 'CIPTA_KARYA', '2026.2', '--reason', 'CLI test publish of the CK clone']);
-      expect(out2).toMatch(/published CIPTA_KARYA 2026.2/);
+      const out2 = run(['--publish', 'CIPTA_KARYA', '2026.3', '--reason', 'CLI test publish of the CK clone']);
+      expect(out2).toMatch(/published CIPTA_KARYA 2026.3/);
       const pointerAfterPublish = JSON.parse(fs.readFileSync(path.join(tmp, 'active-versions.json'), 'utf8')) as {
         active: Record<string, string>;
         records: AhspVersionRecord[];
       };
-      expect(pointerAfterPublish.active.CIPTA_KARYA).toBe('2026.2');
+      expect(pointerAfterPublish.active.CIPTA_KARYA).toBe('2026.3');
       expect(
         pointerAfterPublish.records.find((r) => r.family === 'CIPTA_KARYA' && r.versionId === '2026.1')!.status,
+      ).toBe('SUPERSEDED');
+      expect(
+        pointerAfterPublish.records.find((r) => r.family === 'CIPTA_KARYA' && r.versionId === '2026.2')!.status,
       ).toBe('SUPERSEDED');
       const trail = parseVersionHistoryJsonl(
         fs.readFileSync(path.join(tmp, 'ahsp_version_history.jsonl'), 'utf8'),
@@ -1625,13 +1696,23 @@ describe('operator CLI end-to-end (temp dir)', () => {
         'BASELINE',
         'BASELINE',
         'BASELINE',
+        // Ronde 2 publish (CK, then SDA) — present in the copied registry.
+        'CLONE',
+        'DRAFT_UPDATE',
+        'PUBLISH',
+        'CLONE',
+        'DRAFT_UPDATE',
+        'PUBLISH',
+        // This test's own temp clone + publish.
         'CLONE',
         'PUBLISH',
       ]);
-      // --new-version with an unchanged catalog is refused (no pointless version).
+      // --new-version with an unchanged catalog is refused (no pointless
+      // version). Base is the real ACTIVE 2026.2, whose content IS the
+      // live catalog — so the regeneration is identical and refused.
       expect(() =>
         run([
-          '--new-version', 'CIPTA_KARYA', '2026.3', '--from', '2026.2',
+          '--new-version', 'CIPTA_KARYA', '2026.4', '--from', '2026.2',
           '--reason', 'CLI test new version with unchanged content',
           '--provenance', 'PIPELINE_REGENERATED',
         ]),
@@ -1639,13 +1720,13 @@ describe('operator CLI end-to-end (temp dir)', () => {
       // --new-version with PIPELINE_REGENERATED for frozen BM is refused (R-2).
       expect(() =>
         run([
-          '--new-version', 'BINA_MARGA', '2026.2', '--from', '2026.1',
+          '--new-version', 'BINA_MARGA', '2026.3', '--from', '2026.1',
           '--reason', 'CLI test pipeline regeneration for frozen BM',
           '--provenance', 'PIPELINE_REGENERATED',
         ]),
       ).toThrow(/PIPELINE_REGENERATED is impossible/);
       // The real registry is untouched by all of this.
-      expect(ACTIVE_AHSP_VERSIONS.CIPTA_KARYA).toBe('2026.1');
+      expect(ACTIVE_AHSP_VERSIONS.CIPTA_KARYA).toBe('2026.2');
     } finally {
       fs.rmSync(tmp, { recursive: true, force: true });
     }

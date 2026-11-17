@@ -266,8 +266,16 @@ function testStage1(): { draft: UniversalDraft; ids: Record<string, string> } {
   const official = items.filter((i) => i.priceSourceKind === 'OFFICIAL_AHSP');
   const market = items.filter((i) => i.priceSourceKind === 'MARKET_REFERENCE');
   const unpriced = items.filter((i) => i.priceStatus === 'PRICE_UNRESOLVED');
-  eq('4 item resmi OFFICIAL_AHSP', official.length, 4);
-  eq('6 item pasar MARKET_REFERENCE', market.length, 6);
+  // RE-BASELINE 2026-11-17 (ratifikasi owner 17 Nov 12:33 "gaskan"):
+  // 3 item berpindah kind MARKET → OFFICIAL karena komposisinya kini
+  // FULL berkat adopsi pasar ronde 1 (terverifikasi substansi via probe
+  // resolver R2): 2× Beton fc 15 MPa (2.2.1.4.3 — Abutment + Lantai
+  // Kendaraan) via MKT-R012 'Batu split 2/3' Rp162/kg (same-unit), dan
+  // Bekisting (2.2.1.3.8) via MKT-R021 'Paku 12 cm' Rp23.000/kg.
+  // Total item 11 + 1 UNRESOLVED tidak berubah; grand Premium tidak
+  // bergerak. Ronde 2 tidak menggeser hitungan ini lebih lanjut.
+  eq('7 item resmi OFFICIAL_AHSP', official.length, 7);
+  eq('3 item pasar MARKET_REFERENCE', market.length, 3);
   eq('1 item UNRESOLVED', unpriced.length, 1);
   check('semua item berharga hasil generasi membawa bukti RESOLVED (kind resmi/pasar)',
     items.filter((i) => i.priceStatus === 'PRICE_RESOLVED').every((i) => hasResolvedPriceEvidence(i as any)));
@@ -533,7 +541,15 @@ function testStage5(draft: UniversalDraft, ids: Record<string, string>): { paylo
   check('factory EST#1: explanation bertahan',
     (rEst1.priceSourceExplanation || '').includes('belum terverifikasi terhadap database AHSP EZRAB'));
   eq('factory EST#1: VERIFIED bertahan (identitas AHSP SAFE)', rEst1.verificationStatus, 'VERIFIED');
-  eq('factory EST#1: amount = volume × harga', rEst1.amount, rEst1.volume * rEst1.unitPrice);
+  // RE-BASELINE 2026-11-17 (ratifikasi owner 17 Nov 12:33 "gaskan"):
+  // factory (createRabItemRecord) membulatkan amount ke rupiah utuh.
+  // EST#1 kini memakai harga DHSP resmi item 2.2.1.4.3 (Rp1.278.955 —
+  // item ini berpindah kind MARKET → OFFICIAL di adopsi ronde 1, lihat
+  // catatan di [1]) sehingga volume×harga eksak = 49,83 × 1.278.955 =
+  // Rp63.730.327,65 dan amount terbulat = Rp63.730.328. Selisih Rp0,35
+  // adalah kelas pembulatan, bukan kesalahan — asersi membandingkan
+  // terhadap produk terbulat, sesuai perilaku factory.
+  eq('factory EST#1: amount = volume × harga', rEst1.amount, Math.round(rEst1.volume * rEst1.unitPrice));
   const rEst2 = recByDesc(ids.est2);
   eq('factory EST#2: PRICE_ESTIMATED bertahan', rEst2.priceStatus, 'PRICE_ESTIMATED');
   eq('factory EST#2: NEEDS_VERIFICATION bertahan', rEst2.verificationStatus, 'NEEDS_VERIFICATION');

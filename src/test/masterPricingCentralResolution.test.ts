@@ -38,7 +38,7 @@
  *   and FLAG (M12|kg resolves with an explicit marker).
  * - (j) RETAIL in the price-type vocabulary (guard list + derive +
  *   pipeline stamp + SQL CHECK): 3 verified-retailer rows stamp
- *   RETAIL; 0/452 priceMaster records carry it.
+ *   RETAIL; 0/899 priceMaster records carry it.
  * - (k) Layering: the runtime resolver imports NO spec-token function
  *   (the §5.3 hierarchy stays pipeline-local); the name gate uses
  *   nameSimilarity at the pipeline threshold. Measured limitation:
@@ -534,10 +534,32 @@ describe('(c) konversi satuan dimensi + OJ↔OH', () => {
     expect(r.explanation).toContain('[kg]');
   });
 
-  it('resolver: konversi liter→m³ air (M.21 Rp550.000); M170 kini Rp50.000 via strip (§7)', () => {
-    // M.21 'Air Bersih' still converts from the liter record
-    // (Rp550/m³ × 1000 — no bulk 'Air Bersih' record exists).
-    expect(q('M.21', 'Air Bersih', 'material', 'm3').price).toBe(550000);
+  it('resolver: M.21 Air Bersih kini Rp7.500/m³ via record pasar langsung; konversi liter→m³ tetap jadi fallback', () => {
+    // Adopsi pasar 2026-11-17: a bulk 'Air Bersih' record now exists
+    // (MARKET_2026 R032 'Air bersih (air tanah)' Rp7.500/m³, DIRECT
+    // median bersumber) — the same-unit-first rule serves it directly,
+    // so the §6 (c) liter→m³ conversion (Rp550/liter × 1000 =
+    // Rp550.000/m³) no longer wins for M.21. The conversion itself is
+    // preserved as fallback: excluding the market record restores it.
+    const direct = q('M.21', 'Air Bersih', 'material', 'm3');
+    expect(direct.price).toBe(7500);
+    expect(direct.unitConversion).toBeNull();
+    expect(direct.source?.key).toBe('MARKET_2026');
+    // The key record serves both the code path and the bare-name path
+    // (its NAME_KEY companion is keyed under the 'Air bersih (air
+    // tanah)' variant name). Excluding the key record restores the
+    // §6 (c) conversion — the fallback is preserved, not deleted.
+    const converted = priceResolver2026.resolveResourcePrice({
+      resourceCode: 'M.21',
+      resourceName: 'Air Bersih',
+      resourceType: 'material',
+      unit: 'm3',
+      excludeRecordIds: new Set([direct.recordId!]),
+    });
+    expect(converted.price).toBe(550000);
+    expect(converted.unitConversion?.fromUnit).toBe('liter');
+    expect(converted.unitConversion?.toUnit).toBe('m3');
+    expect(converted.unitConversion?.factor).toBe(1000);
     // §6 pinned M170 'Air' @m3 = Rp200.000 (liter conversion) and
     // flagged the §7 question: CK's own bulk 'Air (m3)' record is
     // Rp50.000/m³ but never bound, because the redundant `(m3)` token
@@ -612,7 +634,7 @@ describe('(e) field §6.3: canonicalEntityId / originalAhspSourcePrice / priceDi
 
   it('canonicalEntityId = resourceId bila terikat priceMaster; null bila CK/BM langsung', () => {
     const bound = q('M57A', 'Besi Beton', 'material', 'ton');
-    expect(bound.canonicalEntityId).toBe('RES-001237');
+    expect(bound.canonicalEntityId).toBe('RES-001241');
     const direct = q('M09', 'Pasir Pasang', 'material', 'm3');
     expect(direct.canonicalEntityId).toBeNull();
   });
@@ -681,8 +703,8 @@ describe('(e) field §6.3: canonicalEntityId / originalAhspSourcePrice / priceDi
 // ===========================================================================
 
 describe('(f) recordCount = indeks aktual', () => {
-  it('recordCount == 4.489 (452 priceMaster + 3.323 CK + 694 BM + 20 OJ twin)', () => {
-    expect(priceResolver2026.recordCount).toBe(4489);
+  it('recordCount == 4.936 (899 priceMaster + 3.323 CK + 694 BM + 20 OJ twin)', () => {
+    expect(priceResolver2026.recordCount).toBe(4936);
   });
 });
 
@@ -945,11 +967,11 @@ describe('(j) keputusan RETAIL: channel akuisisi asli, bukan re-label', () => {
     expect(retail.map((r) => r.price).sort((a, b) => a - b)).toEqual([36000, 76000, 142000]);
   });
 
-  it('0/452 record priceMaster membawa RETAIL (ketiga baris belum match)', () => {
+  it('0/899 record priceMaster membawa RETAIL (ketiga baris belum match)', () => {
     const master = readJson<{ records: Array<{ priceType: string | null }> }>(
       'data/price2026/validated/price_master.json'
     );
-    expect(master.records.length).toBe(452);
+    expect(master.records.length).toBe(899);
     expect(master.records.filter((r) => r.priceType === 'RETAIL').length).toBe(0);
   });
 
@@ -1104,7 +1126,9 @@ describe('§14.2 propagasi harga: satu perubahan → semua komponen ter-link', (
     };
     const live = priceResolver2026.resolveAhspUnitPrice(sda);
     expect(live.pricingStatus).toBe('FULL');
-    expect(live.unitPrice).toBe(965000);
+    // 422.500 = M.21 Air Bersih 7.500 (pasar langsung, adopsi 2026-11-17;
+    // dulu 550.000 via konversi liter→m³) + L.03 165.000 + E.05 250.000.
+    expect(live.unitPrice).toBe(422500);
     const ov = priceResolver2026.resolveAhspUnitPrice(sda, {
       pricingContext: {
         pricingMode: 'PROJECT_OVERRIDE',

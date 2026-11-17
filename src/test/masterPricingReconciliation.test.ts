@@ -24,7 +24,7 @@
  *   stay null + labelled.
  * - §5.2 master→AHSP: 0 master-only resources in the index sense (every
  *   resource traces to ≥1 AHSP item); the 12,735 unreferenced price rows
- *   are REPORTED, not bulk-imported — priceMaster is still exactly 452
+ *   are REPORTED, not bulk-imported — priceMaster is still exactly 566
  *   records. No AHSP code is fabricated: every verified binding targets a
  *   key from the audited 791-key set.
  * - Duplicates (audit §9.2, reproduced with the real primitives): 273
@@ -36,8 +36,8 @@
  *   unresolved-labelled. M293/M09/E07-E11/L.05-L.06 are decided (with the
  *   decided price pinned); M170/SDA-gap/CK-units stay open; the BM & SMKK
  *   generators stay BLOCKED (documented, not faked).
- * - Conflicts: the 50 pipeline groups == conflicts.json (set equality);
- *   48/50 stay ambiguous WITHIN the preferred source (flagged, alternatives
+ * - Conflicts: the 53 pipeline groups == conflicts.json (set equality);
+ *   51/53 stay ambiguous WITHIN the preferred source (flagged, alternatives
  *   returned — the §4 finding is preserved, not overridden); the audit 159
  *   groups are decided 130 / review 29 in the decisions file.
  *
@@ -273,9 +273,9 @@ describe('§5.4 classification', () => {
 
   it('all 33,011 rows are classified (runner output)', () => {
     const c = RECON.classification54.byCategory;
-    expect(c.MATERIAL).toBe(10457);
+    expect(c.MATERIAL).toBe(10454);
     expect(c.LABOR).toBe(15985);
-    expect(c.EQUIPMENT).toBe(6559);
+    expect(c.EQUIPMENT).toBe(6562);
     expect(c.UNCLASSIFIED).toBe(0);
     expect(c.NEEDS_REVIEW).toBe(10);
     expect(c.MATERIAL + c.LABOR + c.EQUIPMENT + c.UNCLASSIFIED + c.NEEDS_REVIEW).toBe(33011);
@@ -292,20 +292,20 @@ describe('§5.4 classification', () => {
     }
   });
 
-  it('the 424 prefix/array contradictions are counted separately', () => {
-    expect(RECON.classification54.prefixArrayContradictions).toBe(424);
+  it('the 420 prefix/array contradictions are counted separately', () => {
+    expect(RECON.classification54.prefixArrayContradictions).toBe(420);
   });
 });
 
 /* ====================================================================== */
 describe('§5.1 AHSP → master', () => {
-  it('inputs: 5,801 items / 33,011 rows / 5,236 resources / 452 records / 791 keys', () => {
+  it('inputs: 5,801 items / 33,011 rows / 5,185 resources / 899 records / 790 keys', () => {
     expect(RECON.inputs.ahspItems).toBe(5801);
     expect(RECON.inputs.ahspComponentRows).toBe(33011);
-    expect(RECON.inputs.masterResources).toBe(5236);
-    expect(RECON.inputs.priceMasterRecords).toBe(452);
-    expect(RECON.inputs.componentKeys).toBe(791);
-    expect(RECON.inputs.keysWithPrice).toBe(121);
+    expect(RECON.inputs.masterResources).toBe(5185);
+    expect(RECON.inputs.priceMasterRecords).toBe(899);
+    expect(RECON.inputs.componentKeys).toBe(790);
+    expect(RECON.inputs.keysWithPrice).toBe(130);
   });
 
   it('0 new master entities — proven: all 12,870 coded rows are backed', () => {
@@ -324,11 +324,11 @@ describe('§5.1 AHSP → master', () => {
   });
 
   it('duplicate groups reproduce the audit §9.2 counts exactly', () => {
-    expect(RECON.duplicates.groups).toBe(273);
+    expect(RECON.duplicates.groups).toBe(270);
     expect(RECON.duplicates.byKind).toEqual({
-      TRUE_DUP: 89,
+      TRUE_DUP: 88,
       CODE_VARIANT: 61,
-      NAME_ONLY_DUP: 84,
+      NAME_ONLY_DUP: 82,
       MIXED: 39,
     });
   });
@@ -358,8 +358,8 @@ describe('§5.1 AHSP → master', () => {
     ])).toBe('CODE_VARIANT');
   });
 
-  it('all 89 TRUE_DUP merge decisions name a representative from their own members', () => {
-    expect(RECON.duplicates.trueDupMergeDecisions).toHaveLength(89);
+  it('all 88 TRUE_DUP merge decisions name a representative from their own members', () => {
+    expect(RECON.duplicates.trueDupMergeDecisions).toHaveLength(88);
     for (const d of RECON.duplicates.trueDupMergeDecisions) {
       expect(d.members.length).toBeGreaterThan(1);
       expect(d.members).toContain(d.representative);
@@ -385,10 +385,10 @@ describe('§5.2 master → AHSP', () => {
     expect(RECON.masterToAhsp52.masterOnlyResourceIds).toHaveLength(0);
   });
 
-  it('no bulk import: the 12,735 unreferenced price rows are reported, priceMaster stays 452', () => {
+  it('no bulk import: the 12,735 unreferenced price rows are reported, priceMaster stays 899', () => {
     expect(RECON.audit.unreferencedPriceRows.count).toBe(12735);
-    expect(PRICE_MASTER.count).toBe(452);
-    expect(RECORDS).toHaveLength(452);
+    expect(PRICE_MASTER.count).toBe(899);
+    expect(RECORDS).toHaveLength(899);
   });
 
   it('no fabricated AHSP codes: every verified binding targets an audited key', () => {
@@ -420,13 +420,13 @@ describe('§5.2 master → AHSP', () => {
 describe('§16.B reconciliation table', () => {
   it('the category TOTAL row carries the §5 headline numbers', () => {
     const t = RECON.table16B.byCategory.TOTAL;
-    expect(t.masterRecordsScanned).toBe(452);
+    expect(t.masterRecordsScanned).toBe(899);
     expect(t.ahspComponentsScanned).toBe(33011);
     expect(t.verifiedMatches).toBe(13);
     expect(t.newMasterRecords).toBe(0);
     expect(t.masterOnlyRecords).toBe(0);
-    expect(t.duplicateCandidates).toBe(273);
-    expect(t.unitConflicts).toBe(342);
+    expect(t.duplicateCandidates).toBe(270);
+    expect(t.unitConflicts).toBe(2);
     expect(t.priceConflicts).toBe(159);
     expect(t.missingPrices).toBe(115);
     expect(t.unresolvedRecords).toBe(115);
@@ -450,12 +450,12 @@ describe('§16.B reconciliation table', () => {
     expect(RECON.table16B.byCategory.EQUIPMENT.priceConflicts).toBe(51);
   });
 
-  it('per-family rows: BM 64 / SDA 51 missing prices, CK 0; all 342 missing-unit rows are CK', () => {
+  it('per-family rows: BM 64 / SDA 51 missing prices, CK 0; all 2 missing-unit rows are CK', () => {
     expect(RECON.table16B.byFamily.BINA_MARGA.missingPrices).toBe(64);
     expect(RECON.table16B.byFamily.SUMBER_DAYA_AIR.missingPrices).toBe(51);
     expect(RECON.table16B.byFamily.CIPTA_KARYA.missingPrices).toBe(0);
-    expect(RECON.unitConflicts.missingUnitRows).toBe(342);
-    expect(RECON.unitConflicts.missingUnitByFamily.CIPTA_KARYA).toBe(342);
+    expect(RECON.unitConflicts.missingUnitRows).toBe(2);
+    expect(RECON.unitConflicts.missingUnitByFamily.CIPTA_KARYA).toBe(2);
     expect(RECON.unitConflicts.missingUnitByFamily.BINA_MARGA).toBe(0);
     expect(RECON.unitConflicts.missingUnitByFamily.SUMBER_DAYA_AIR).toBe(0);
   });
@@ -463,9 +463,9 @@ describe('§16.B reconciliation table', () => {
   it('verified matches: 596 registry VERIFIED bindings, 13 priceMaster VERIFIED records', () => {
     expect(RECON.verifiedMatches.registryVerifiedBindings).toBe(596);
     expect(RECON.verifiedMatches.priceMasterVerifiedRecords).toBe(13);
-    expect(RECON.inputs.registryBindings).toBe(1276);
-    expect(RECON.inputs.registryEntities).toBe(267);
-    expect(RECON.inputs.registryUnbound).toBe(3188);
+    expect(RECON.inputs.registryBindings).toBe(1324);
+    expect(RECON.inputs.registryEntities).toBe(274);
+    expect(RECON.inputs.registryUnbound).toBe(3587);
   });
 });
 
@@ -525,17 +525,17 @@ describe('Fase-7 priorities (decided-with-evidence vs unresolved-labelled)', () 
 
 /* ====================================================================== */
 describe('conflicts (§4 surface preserved, §5 audit surface decided)', () => {
-  it('the 50 pipeline conflict groups recomputed from priceMaster == conflicts.json', () => {
-    expect(CONFLICTS.count).toBe(50);
-    expect(CONFLICTS.conflicts).toHaveLength(50);
+  it('the 55 pipeline conflict groups recomputed from priceMaster == conflicts.json', () => {
+    expect(CONFLICTS.count).toBe(55);
+    expect(CONFLICTS.conflicts).toHaveLength(55);
     const groups = findConflictGroups(RECORDS);
-    expect(groups.size).toBe(50);
+    expect(groups.size).toBe(55);
     expect(new Set(groups.keys())).toEqual(
       new Set(CONFLICTS.conflicts.map((g) => g.identity)),
     );
   });
 
-  it('48/50 groups stay ambiguous WITHIN the preferred source (flagged, alternatives returned)', () => {
+  it('53/55 groups stay ambiguous WITHIN the preferred source (flagged, alternatives returned)', () => {
     const groups = findConflictGroups(RECORDS);
     let ambiguous = 0;
     for (const g of CONFLICTS.conflicts) {
@@ -549,7 +549,7 @@ describe('conflicts (§4 surface preserved, §5 audit surface decided)', () => {
         expect(sel.reason).toMatch(/admin review required/);
       }
     }
-    expect(ambiguous).toBe(48);
+    expect(ambiguous).toBe(53);
   });
 
   it('the audit 159 groups: 153 cross-source, 6 intra-source', () => {

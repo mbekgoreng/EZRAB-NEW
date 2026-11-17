@@ -435,9 +435,21 @@ export function runPriceDatabaseTestSuite(): PriceTestResult {
         typeof comp.unitPrice === 'number' && comp.unitPrice < 5_000_000,
         `beton f'c 20 (2.2.1.4.5) berharga wajar, BUKAN ratusan juta (got ${comp.unitPrice})`
       );
+      // RE-BASELINE 2026-11-17 (ratifikasi owner 17 Nov 12:33 "gaskan"):
+      // item ini kini FULL 8/8 — BUKAN karena gate satuan dilonggarkan,
+      // melainkan karena adopsi ronde 1 menambahkan record SAME-UNIT
+      // MKT-R012 'Batu split 2/3' Rp162/kg sehingga komponen 1009 kg itu
+      // resolve secara sahih (1.009 × 162 = Rp163.458; total Rp1.104.833,
+      // terverifikasi aritmetika per komponen). Gate satuan tetap ditegakkan
+      // oleh probe langsung di atas (resolve per kg TIDAK BOLEH ke record
+      // satuan lain) dan asersi harga wajar di atas.
       assert(
-        comp.pricingStatus === 'PARTIAL',
-        `komponen beda satuan masuk missing -> status PARTIAL, bukan FULL (got ${comp.pricingStatus})`
+        comp.pricingStatus === 'FULL',
+        `semua 8 komponen kini resolve via same-unit -> status FULL (got ${comp.pricingStatus})`
+      );
+      assert(
+        comp.unitPrice === 1104833,
+        `beton f'c 20 (2.2.1.4.5) unitPrice ter-pin Rp1.104.833 (got ${comp.unitPrice})`
       );
     }
   }

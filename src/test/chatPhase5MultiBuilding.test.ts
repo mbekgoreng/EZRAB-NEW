@@ -210,6 +210,21 @@ async function main(): Promise<void> {
   });
 
   /* ============ 5B-06 — golden single-building ============ */
+  // RE-BASELINE 2026-11-17 (ratifikasi owner 17 Nov 12:33 "gaskan"):
+  // entri kolam + kandang di golden-single-building.json diperbarui ke
+  // nilai terverifikasi pasca-adopsi ronde 1+2 — BUKAN re-baseline buta.
+  // Penyebab (terverifikasi substansi, laporan adopsi R1 §8.1 + probe
+  // resolver R2): komposisi AHSP 2.2.1.4.1 (8/8), 2.2.1.5.11 (10/10) dan
+  // 2.2.1.4.3 (8/8) kini FULL berkat record pasar R1 MKT-R012 'Batu split
+  // 2/3' Rp162/kg (same-unit), sehingga item beton memakai harga DHSP
+  // resmi alih-alih harga referensi template. Kolam: Rp928.002 (harga
+  // sama, kind berubah) + Rp1.502.979 (dari Rp1.565.000 template); total
+  // Rp848.546.843,76 → Rp842.887.427,51 (Δ −Rp5.659.416,25 = 91,25 m³ ×
+  // Rp62.021 persis). Kandang (kegagalan TERSEMBUNYI di balik kolam —
+  // loop eq() berhenti di mismatch pertama): Beton fc 15 Rp1.355.000 →
+  // Rp1.278.955 DHSP; total Rp125.837.348,49 →
+  // Rp125.255.604,24 (Δ −Rp581.744,25 = 7,65 m³ × Rp76.045 persis).
+  // Ronde 2 tidak menggeser nilai-nilai ini lebih lanjut.
   await check('5B-06 single-building: output identik dengan sebelum gate (golden)', () => {
     const goldenPath = `${process.cwd()}/../your_files/EZRAB-PHASE5-WORKFLOW-INTEGRATION-2026-11-12/repro/golden-single-building.json`;
     const golden = JSON.parse(readFileSync(goldenPath, 'utf-8')) as Record<string, any>;

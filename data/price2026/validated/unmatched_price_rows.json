@@ -1,5 +1,5 @@
 {
-  "count": 9438,
+  "count": 9439,
   "records": [
     {
       "id": "PRC-COMMERCIAL_2026-005wwhct",
@@ -21683,6 +21683,53 @@
       ],
       "sourceRecordId": "LAB-CST-001",
       "priceType": null,
+      "specContext": null
+    },
+    {
+      "id": "PRC-MARKET_2026-10gdphe1e",
+      "resourceId": null,
+      "resourceCode": "",
+      "resourceName": "Tanah liat lempung M.08.b.3",
+      "resourceType": "material",
+      "unit": "m3",
+      "unitRaw": "m3",
+      "unitConversionFactor": null,
+      "price": 85294,
+      "currency": "IDR",
+      "location": {
+        "level": "NATIONAL",
+        "provinceName": null,
+        "regencyName": null,
+        "cityName": "Nasional"
+      },
+      "period": {
+        "year": 2026,
+        "month": 11,
+        "label": "2026-11",
+        "effectiveFrom": "2026-11-17",
+        "effectiveTo": null
+      },
+      "sourceKey": "MARKET_2026",
+      "sourceTier": "COMMERCIAL_REFERENCE",
+      "sourcePriority": 6,
+      "sourceName": "Riset Harga Pasar EZRAB 2026 (Tokopedia / Shopee / Bukalapak)",
+      "sourceType": "MARKET_REFERENCE",
+      "sourceDocument": null,
+      "sourceUrl": null,
+      "supplier": "JasaUrug.co.id Bekasi — Tanah Lempung (Rp600–850rb per dump truck 7–10 m3; titik tengah Rp725.000/8,5 m3)",
+      "retrievedAt": "2026-11-17",
+      "verificationStatus": "SOURCE_REPORTED",
+      "matchMethod": "UNMATCHED",
+      "matchConfidence": 0,
+      "notes": [
+        "",
+        "basis=MEDIAN: median dari 3 penawaran unitMatch (Rp75.000-Rp110.000/m3)",
+        "offers=3",
+        "NAME_UNIT_BELOW_THRESHOLD:0.17",
+        "NAME_KEY_DEDUP_SKIPPED:MKT-R254"
+      ],
+      "sourceRecordId": "MKT-R187",
+      "priceType": "MARKET_REFERENCE",
       "specContext": null
     },
     {
@@ -135315,51 +135362,6 @@
       "sourceRecordId": "MAT-2314",
       "priceType": "MARKET_REFERENCE",
       "specContext": "Variant | Merk: Custom | Estimasi 2026"
-    },
-    {
-      "id": "PRC-MATERIAL_MASTER_2026-0k6pm6l1j",
-      "resourceId": null,
-      "resourceCode": "MAT-5832",
-      "resourceName": "Keramik lantai 40x40 — Menengah",
-      "resourceType": "material",
-      "unit": "m2",
-      "unitRaw": "m²",
-      "unitConversionFactor": null,
-      "price": 57600,
-      "currency": "IDR",
-      "location": {
-        "level": "PROVINCE",
-        "provinceName": "DKI Jakarta",
-        "regencyName": null,
-        "cityName": null
-      },
-      "period": {
-        "year": 2026,
-        "month": 1,
-        "label": "2026-01",
-        "effectiveFrom": "2026-01-15",
-        "effectiveTo": null
-      },
-      "sourceKey": "MATERIAL_MASTER_2026",
-      "sourceTier": "PROJECT_INTERNAL_MASTER",
-      "sourcePriority": 5,
-      "sourceName": "Master Database Material EZRAB 2026",
-      "sourceType": "EZRAB_DATABASE",
-      "sourceDocument": null,
-      "sourceUrl": null,
-      "supplier": null,
-      "retrievedAt": "2026-09-28",
-      "verificationStatus": "SOURCE_REPORTED",
-      "matchMethod": "UNMATCHED",
-      "matchConfidence": 0,
-      "notes": [
-        "confidence=HIGH",
-        "priceType=MARKET_REFERENCE",
-        "tier=STANDARD"
-      ],
-      "sourceRecordId": "MAT-5832",
-      "priceType": "MARKET_REFERENCE",
-      "specContext": "Brand Variant | Merk: Habitat Gress | Estimasi 2026"
     }
   ]
 }

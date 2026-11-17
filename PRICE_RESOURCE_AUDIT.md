@@ -1,6 +1,6 @@
 # PRICE RESOURCE AUDIT
 
-Generated: 2026-11-16T02:56:04.091Z  
+Generated: 2026-11-17T06:10:36.984Z  
 Scope: canonical AHSP resource master (PHASE 2) + every price source in the repository (PHASE 6).  
 The canonical AHSP is **not modified** by this audit.
 
@@ -9,46 +9,46 @@ The canonical AHSP is **not modified** by this audit.
 | metric | value |
 |---|---:|
 | canonical AHSP items | 5801 |
-| canonical resources | 5236 |
-| — material | 3767 |
+| canonical resources | 5185 |
+| — material | 3712 |
 | — labor | 259 |
-| — equipment | 1210 |
+| — equipment | 1214 |
 | — **UNKNOWN** | **0** |
 
 ## 2. Resource row quality
 
 | quality | rows | meaning |
 |---|---:|---|
-| CLEAN | 4833 | usable |
-| SUSPECT | 288 | usable but flagged (NEEDS_REVIEW on match) |
-| **DEFECTIVE** | **115** | mis-extracted from the PDF — never priced |
+| CLEAN | 4810 | usable |
+| SUSPECT | 267 | usable but flagged (NEEDS_REVIEW on match) |
+| **DEFECTIVE** | **108** | mis-extracted from the PDF — never priced |
 
 ### 2.1 Classification × quality
 
 | classification | CLEAN | SUSPECT | DEFECTIVE |
 |---|---:|---:|---:|
-| EQUIPMENT | 1004 | 153 | 53 |
+| EQUIPMENT | 1007 | 154 | 53 |
 | LABOR | 202 | 8 | 49 |
-| MATERIAL | 3627 | 127 | 13 |
+| MATERIAL | 3601 | 105 | 6 |
 
 ### 2.2 Defect histogram
 
 | issue | rows |
 |---|---:|
-| NO_CODE | 3785 |
-| NAME_STARTS_LOWERCASE | 194 |
-| TYPE_CONTRADICTS_CODE_PREFIX | 76 |
-| NAME_STARTS_WITH_DIGIT | 71 |
+| NO_CODE | 3742 |
+| NAME_STARTS_LOWERCASE | 178 |
+| TYPE_CONTRADICTS_CODE_PREFIX | 72 |
+| NAME_STARTS_WITH_DIGIT | 66 |
 | NAME_CONTAINS_SUMMARY_LINE | 57 |
 | NAME_IS_A_DISTANCE_FRAGMENT | 37 |
 | NAME_SUSPICIOUSLY_LONG | 18 |
-| NAME_IS_A_CROSS_REFERENCE | 10 |
-| NO_UNIT | 7 |
 | EMPTY_NAME | 6 |
 | NAME_ENDS_WITH_DOT | 5 |
+| NAME_IS_A_CROSS_REFERENCE | 4 |
+| NO_UNIT | 2 |
 | NAME_IS_A_PLACEHOLDER | 2 |
-| NAME_IS_A_SPEC_FRAGMENT | 2 |
 | NAME_IS_PARENTHETICAL_FRAGMENT | 1 |
+| NAME_IS_A_SPEC_FRAGMENT | 1 |
 
 ### 2.3 Sample defective rows
 
@@ -76,15 +76,15 @@ The canonical AHSP is **not modified** by this audit.
 | `—` | jam | - Jarak 15,0 km 1,0843 | NO_CODE, NAME_IS_A_DISTANCE_FRAGMENT |
 
 > **UNKNOWN classification ⇒ NEEDS_REVIEW and no price** (PHASE 2 requirement).
-> Priceable resources (not UNKNOWN, not DEFECTIVE): **5121 / 5236** (97,8%).
+> Priceable resources (not UNKNOWN, not DEFECTIVE): **5077 / 5185** (97,9%).
 
 ## 3. Component → resource traceability
 
 | metric | value |
 |---|---:|
 | component rows in canonical AHSP | 33011 |
-| distinct (code,unit) keys | 795 |
-| keys whose code exists in the resource master | 795 (100,0%) |
+| distinct (code,unit) keys | 794 |
+| keys whose code exists in the resource master | 794 (100,0%) |
 | component rows backed by a resource | 12870 (39,0%) |
 
 ## 4. Price sources in the repository (PHASE 6)
@@ -97,6 +97,7 @@ The canonical AHSP is **not modified** by this audit.
 | `MATERIAL_MASTER_2026` | PROJECT_INTERNAL_MASTER | 5 | yes | 9232 | 9232 | m2 unit bh m | — |
 | `MATERIAL_LIBRARY` | COMMERCIAL_REFERENCE | 6 | yes | 28 | 28 | m2 unit liter batang | — |
 | `COMMERCIAL_2026` | COMMERCIAL_REFERENCE | 6 | yes | 155 | 155 | OH m2 sewa-hari kg | — |
+| `MARKET_2026` | COMMERCIAL_REFERENCE | 6 | yes | 406 | 406 | bh unit m3 kg | — |
 | `LEGACY_PUPR_2022` | LEGACY_SUPERSEDED | 99 | **NO** | 58 | 58 | OH m¹ m2 m3 | Permen PUPR No. 1/PRT/M/2022 |
 
 ### 4.1 Source notes
@@ -107,24 +108,25 @@ The canonical AHSP is **not modified** by this audit.
 - **MATERIAL_MASTER_2026** — Multi-sector, multi-region material catalogue carried in the repository. Reports province + city, so it is the only source that can serve REGENCY/CITY queries. Not externally audited → SOURCE_REPORTED, never VERIFIED.
 - **MATERIAL_LIBRARY** — Branded commercial reference prices.
 - **COMMERCIAL_2026** — Branded commercial reference prices (keramik, cat, sanitary, …).
+- **MARKET_2026** — Median harga penawaran marketplace Indonesia, riset 16 Nov 2026. MARKET_REFERENCE, bukan harga resmi AHSP. Provenance per penawaran (penjual + URL + tanggal) tinggal di file input per sourceRecordId (MKT-xxx) + laporan adopsi; record hanya membawa supplier + sourceRecordId.
 - **LEGACY_PUPR_2022** — EXCLUDED. This is the superseded 2022 baseline that was purged from AHSP. It is also the source that SHADOWS the correct 2026 labour rates inside PriceRepository (first-wins ingestion inserts L.01 with unit `oj` before the 2026 labour master is read). Retained for audit only.
 
 ## 5. Unit histogram (canonical resources)
 
 | unit | rows |
 |---|---:|
-| bh | 1164 |
-| jam | 857 |
-| m | 810 |
-| unit | 658 |
-| kg | 445 |
-| m3 | 350 |
-| m2 | 184 |
-| hari | 163 |
+| bh | 1170 |
+| jam | 854 |
+| m | 808 |
+| unit | 655 |
+| kg | 429 |
+| m3 | 331 |
+| m2 | 180 |
+| hari | 162 |
 | OJ | 104 |
-| batang | 100 |
+| batang | 101 |
 | liter | 85 |
-| OH | 78 |
+| OH | 76 |
 | lembar | 63 |
 | km | 34 |
 | bh/m' | 24 |
@@ -132,15 +134,15 @@ The canonical AHSP is **not modified** by this audit.
 | ls | 18 |
 | set | 14 |
 | rp/jam | 9 |
-| (empty) | 7 |
 | ton | 7 |
+| lot | 5 |
 | batang/m' | 5 |
-| cm | 4 |
 | kg/m' | 4 |
-| lot | 4 |
+| cm | 3 |
+| buahhari | 2 |
 
 ## 6. Look-alike resource names
 
-Groups sharing a normalized (name, unit): **278**. These are FLAGGED, never auto-merged (PHASE 17 / rule 9).
+Groups sharing a normalized (name, unit): **275**. These are FLAGGED, never auto-merged (PHASE 17 / rule 9).
 
 **END OF RESOURCE AUDIT.**

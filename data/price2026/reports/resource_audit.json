@@ -1,22 +1,22 @@
 {
-  "generatedAt": "2026-11-16T02:56:04.091Z",
+  "generatedAt": "2026-11-17T06:10:36.984Z",
   "canonicalAhspItems": 5801,
-  "canonicalResources": 5236,
+  "canonicalResources": 5185,
   "classification": {
-    "EQUIPMENT": 1210,
+    "EQUIPMENT": 1214,
     "LABOR": 259,
-    "MATERIAL": 3767
+    "MATERIAL": 3712
   },
   "quality": {
-    "DEFECTIVE": 115,
-    "CLEAN": 4833,
-    "SUSPECT": 288
+    "DEFECTIVE": 108,
+    "CLEAN": 4810,
+    "SUSPECT": 267
   },
   "classificationByQuality": {
     "EQUIPMENT": {
       "DEFECTIVE": 53,
-      "CLEAN": 1004,
-      "SUSPECT": 153
+      "CLEAN": 1007,
+      "SUSPECT": 154
     },
     "LABOR": {
       "DEFECTIVE": 49,
@@ -24,45 +24,45 @@
       "CLEAN": 202
     },
     "MATERIAL": {
-      "CLEAN": 3627,
-      "DEFECTIVE": 13,
-      "SUSPECT": 127
+      "CLEAN": 3601,
+      "DEFECTIVE": 6,
+      "SUSPECT": 105
     }
   },
-  "priceableResources": 5121,
+  "priceableResources": 5077,
   "unknownResources": 0,
-  "defectiveResources": 115,
-  "suspectResources": 288,
-  "cleanResources": 4833,
+  "defectiveResources": 108,
+  "suspectResources": 267,
+  "cleanResources": 4810,
   "issueHistogram": {
-    "NO_CODE": 3785,
-    "NAME_STARTS_LOWERCASE": 194,
-    "TYPE_CONTRADICTS_CODE_PREFIX": 76,
-    "NAME_STARTS_WITH_DIGIT": 71,
+    "NO_CODE": 3742,
+    "NAME_STARTS_LOWERCASE": 178,
+    "TYPE_CONTRADICTS_CODE_PREFIX": 72,
+    "NAME_STARTS_WITH_DIGIT": 66,
     "NAME_CONTAINS_SUMMARY_LINE": 57,
     "NAME_IS_A_DISTANCE_FRAGMENT": 37,
     "NAME_SUSPICIOUSLY_LONG": 18,
-    "NAME_IS_A_CROSS_REFERENCE": 10,
-    "NO_UNIT": 7,
     "EMPTY_NAME": 6,
     "NAME_ENDS_WITH_DOT": 5,
+    "NAME_IS_A_CROSS_REFERENCE": 4,
+    "NO_UNIT": 2,
     "NAME_IS_A_PLACEHOLDER": 2,
-    "NAME_IS_A_SPEC_FRAGMENT": 2,
-    "NAME_IS_PARENTHETICAL_FRAGMENT": 1
+    "NAME_IS_PARENTHETICAL_FRAGMENT": 1,
+    "NAME_IS_A_SPEC_FRAGMENT": 1
   },
   "unitHistogram": {
-    "bh": 1164,
-    "jam": 857,
-    "m": 810,
-    "unit": 658,
-    "kg": 445,
-    "m3": 350,
-    "m2": 184,
-    "hari": 163,
+    "bh": 1170,
+    "jam": 854,
+    "m": 808,
+    "unit": 655,
+    "kg": 429,
+    "m3": 331,
+    "m2": 180,
+    "hari": 162,
     "OJ": 104,
-    "batang": 100,
+    "batang": 101,
     "liter": 85,
-    "OH": 78,
+    "OH": 76,
     "lembar": 63,
     "km": 34,
     "bh/m'": 24,
@@ -70,22 +70,22 @@
     "ls": 18,
     "set": 14,
     "rp/jam": 9,
-    "(empty)": 7,
     "ton": 7,
+    "lot": 5,
     "batang/m'": 5,
-    "cm": 4,
     "kg/m'": 4,
-    "lot": 4,
+    "cm": 3,
     "buahhari": 2,
+    "(empty)": 2,
     "tahun": 2,
     "m3/m2": 2,
     "ea": 2,
     "kg/m": 2
   },
-  "lookAlikeNameGroups": 278,
+  "lookAlikeNameGroups": 275,
   "componentRows": 33011,
-  "componentDistinctKeys": 795,
-  "componentKeysBackedByResource": 795,
+  "componentDistinctKeys": 794,
+  "componentKeysBackedByResource": 794,
   "componentRowsBackedByResource": 12870,
   "samples": {
     "unknown": [],

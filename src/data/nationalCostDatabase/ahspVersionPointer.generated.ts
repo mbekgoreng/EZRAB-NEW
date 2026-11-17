@@ -14,12 +14,12 @@ import type {
   AhspVersionRecord,
 } from './ahspVersioning';
 
-export const AHSP_VERSION_POINTER_GENERATED_AT = "2026-11-15T22:57:24.270Z";
+export const AHSP_VERSION_POINTER_GENERATED_AT = "2026-11-17T06:38:44.335Z";
 
 export const ACTIVE_AHSP_VERSIONS: Readonly<Record<AhspFamily, string>> = {
-  "CIPTA_KARYA": "2026.1",
+  "CIPTA_KARYA": "2026.2",
   "BINA_MARGA": "2026.1",
-  "SUMBER_DAYA_AIR": "2026.1",
+  "SUMBER_DAYA_AIR": "2026.2",
   "SMKK": "2026.1"
 } as const;
 
@@ -42,7 +42,7 @@ export const AHSP_VERSION_RECORDS: readonly AhspVersionRecord[] = [
   {
     "family": "CIPTA_KARYA",
     "versionId": "2026.1",
-    "status": "ACTIVE",
+    "status": "SUPERSEDED",
     "createdFrom": null,
     "createdBy": null,
     "createdAt": "2026-11-15T22:57:08.987Z",
@@ -52,6 +52,21 @@ export const AHSP_VERSION_RECORDS: readonly AhspVersionRecord[] = [
     "snapshotPath": "data/ahsp2026/versions/CIPTA_KARYA/2026.1.json",
     "itemCount": 2859,
     "publishedAt": "2026-11-15T22:57:08.987Z",
+    "publishedBy": null
+  },
+  {
+    "family": "CIPTA_KARYA",
+    "versionId": "2026.2",
+    "status": "ACTIVE",
+    "createdFrom": "2026.1",
+    "createdBy": null,
+    "createdAt": "2026-11-17T06:38:31.336Z",
+    "reason": "Ronde 2 (17 Nov 2026): pembersihan master AHSP + adopsi 343 harga pasar + revert koefisien sub-header Media Tanam/Steger/Tutup Beton ke 0.0",
+    "contentChecksum": "0281ba316496e839",
+    "contentProvenance": "PIPELINE_REGENERATED",
+    "snapshotPath": "data/ahsp2026/versions/CIPTA_KARYA/2026.2.json",
+    "itemCount": 2859,
+    "publishedAt": "2026-11-17T06:38:35.603Z",
     "publishedBy": null
   },
   {
@@ -72,7 +87,7 @@ export const AHSP_VERSION_RECORDS: readonly AhspVersionRecord[] = [
   {
     "family": "SUMBER_DAYA_AIR",
     "versionId": "2026.1",
-    "status": "ACTIVE",
+    "status": "SUPERSEDED",
     "createdFrom": null,
     "createdBy": null,
     "createdAt": "2026-11-15T22:57:08.987Z",
@@ -82,6 +97,21 @@ export const AHSP_VERSION_RECORDS: readonly AhspVersionRecord[] = [
     "snapshotPath": "data/ahsp2026/versions/SUMBER_DAYA_AIR/2026.1.json",
     "itemCount": 1556,
     "publishedAt": "2026-11-15T22:57:08.987Z",
+    "publishedBy": null
+  },
+  {
+    "family": "SUMBER_DAYA_AIR",
+    "versionId": "2026.2",
+    "status": "ACTIVE",
+    "createdFrom": "2026.1",
+    "createdBy": null,
+    "createdAt": "2026-11-17T06:38:40.865Z",
+    "reason": "Ronde 2 (17 Nov 2026): pembersihan master AHSP + adopsi 343 harga pasar (unit-fix, rename, karantina fragmen)",
+    "contentChecksum": "b43fd8a665fbdb54",
+    "contentProvenance": "PIPELINE_REGENERATED",
+    "snapshotPath": "data/ahsp2026/versions/SUMBER_DAYA_AIR/2026.2.json",
+    "itemCount": 1556,
+    "publishedAt": "2026-11-17T06:38:44.335Z",
     "publishedBy": null
   }
 ];

@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-11-16T02:57:03.877Z",
-  "count": 670,
+  "generatedAt": "2026-11-17T06:10:47.640Z",
+  "count": 660,
   "keys": [
     {
       "key": "L03|OJ",
@@ -63,16 +63,6 @@
       "detail": "No pipeline price source binds this key — needs new price data (owner). No fabricated price is assigned."
     },
     {
-      "key": "M23|kg",
-      "code": "M.23",
-      "unit": "kg",
-      "name": "Portland Cement",
-      "type": "material",
-      "count": 72,
-      "reason": "NO_SOURCE_PRICE",
-      "detail": "No pipeline price source binds this key — needs new price data (owner). No fabricated price is assigned."
-    },
-    {
       "key": "M182|kg",
       "code": "M182",
       "unit": "kg",
@@ -123,16 +113,6 @@
       "detail": "No pipeline price source binds this key — needs new price data (owner). No fabricated price is assigned."
     },
     {
-      "key": "M74|kg",
-      "code": "M.74",
-      "unit": "kg",
-      "name": "Kawat las listrik",
-      "type": "material",
-      "count": 40,
-      "reason": "NO_SOURCE_PRICE",
-      "detail": "No pipeline price source binds this key — needs new price data (owner). No fabricated price is assigned."
-    },
-    {
       "key": "M171|kg",
       "code": "M171",
       "unit": "kg",
@@ -159,16 +139,6 @@
       "name": "Kunci Torsi (Torque Wrench)",
       "type": "equipment",
       "count": 36,
-      "reason": "NO_SOURCE_PRICE",
-      "detail": "No pipeline price source binds this key — needs new price data (owner). No fabricated price is assigned."
-    },
-    {
-      "key": "M59|m3",
-      "code": "M59",
-      "unit": "m3",
-      "name": "Beton 30 MPa",
-      "type": "material",
-      "count": 35,
       "reason": "NO_SOURCE_PRICE",
       "detail": "No pipeline price source binds this key — needs new price data (owner). No fabricated price is assigned."
     },
@@ -468,16 +438,6 @@
       "unit": "jam",
       "name": "Grouting Pump; 100 HP",
       "type": "equipment",
-      "count": 15,
-      "reason": "NO_SOURCE_PRICE",
-      "detail": "No pipeline price source binds this key — needs new price data (owner). No fabricated price is assigned."
-    },
-    {
-      "key": "M21|m3",
-      "code": "M.21",
-      "unit": "m3",
-      "name": "Air Bersih",
-      "type": "material",
       "count": 15,
       "reason": "NO_SOURCE_PRICE",
       "detail": "No pipeline price source binds this key — needs new price data (owner). No fabricated price is assigned."
@@ -1523,16 +1483,6 @@
       "detail": "No pipeline price source binds this key — needs new price data (owner). No fabricated price is assigned."
     },
     {
-      "key": "M23|m3",
-      "code": "M.23",
-      "unit": "m3",
-      "name": "PC / Portland Cement",
-      "type": "material",
-      "count": 4,
-      "reason": "NO_SOURCE_PRICE",
-      "detail": "No pipeline price source binds this key — needs new price data (owner). No fabricated price is assigned."
-    },
-    {
       "key": "M243|bh",
       "code": "M243",
       "unit": "bh",
@@ -2463,16 +2413,6 @@
       "detail": "No pipeline price source binds this key — needs new price data (owner). No fabricated price is assigned."
     },
     {
-      "key": "M35|kg",
-      "code": "M.35",
-      "unit": "kg",
-      "name": "Fly ash (Kemasan 20 kg)",
-      "type": "material",
-      "count": 2,
-      "reason": "NO_SOURCE_PRICE",
-      "detail": "No pipeline price source binds this key — needs new price data (owner). No fabricated price is assigned."
-    },
-    {
       "key": "M35A|bh",
       "code": "M35a",
       "unit": "bh",
@@ -2607,16 +2547,6 @@
       "code": "M379c",
       "unit": "m",
       "name": "Cetakan Tipe Vertical Shape",
-      "type": "material",
-      "count": 2,
-      "reason": "NO_SOURCE_PRICE",
-      "detail": "No pipeline price source binds this key — needs new price data (owner). No fabricated price is assigned."
-    },
-    {
-      "key": "M37A|m3",
-      "code": "M37a",
-      "unit": "m3",
-      "name": "Beton fc’25 MPa",
       "type": "material",
       "count": 2,
       "reason": "NO_SOURCE_PRICE",
@@ -3037,16 +2967,6 @@
       "code": "A2h",
       "unit": "bh",
       "name": "Cetakan Kereb",
-      "type": "material",
-      "count": 1,
-      "reason": "NO_SOURCE_PRICE",
-      "detail": "No pipeline price source binds this key — needs new price data (owner). No fabricated price is assigned."
-    },
-    {
-      "key": "B06|kg",
-      "code": "B.06",
-      "unit": "kg",
-      "name": "Baja tulangan Pondasi Tiang Bor",
       "type": "material",
       "count": 1,
       "reason": "NO_SOURCE_PRICE",
@@ -5583,16 +5503,6 @@
       "detail": "No pipeline price source binds this key — needs new price data (owner). No fabricated price is assigned."
     },
     {
-      "key": "M43|kg",
-      "code": "M.43",
-      "unit": "kg",
-      "name": "**2 Ijuk tebal minimum 2,5 cm",
-      "type": "material",
-      "count": 1,
-      "reason": "NO_SOURCE_PRICE",
-      "detail": "No pipeline price source binds this key — needs new price data (owner). No fabricated price is assigned."
-    },
-    {
       "key": "M430|bh",
       "code": "M430",
       "unit": "bh",
@@ -6497,16 +6407,6 @@
       "code": "M64",
       "unit": "bh",
       "name": "Paku Jalan Memantul Bulat",
-      "type": "material",
-      "count": 1,
-      "reason": "NO_SOURCE_PRICE",
-      "detail": "No pipeline price source binds this key — needs new price data (owner). No fabricated price is assigned."
-    },
-    {
-      "key": "M72|kg",
-      "code": "M.72",
-      "unit": "kg",
-      "name": "Kawat Kasa atau Kawat Kotak lebar 1 m’ Kawat tali beton / Bendrat",
       "type": "material",
       "count": 1,
       "reason": "NO_SOURCE_PRICE",

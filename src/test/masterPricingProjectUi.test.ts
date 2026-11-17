@@ -25,7 +25,7 @@
  *  - Project AB (A vol 10 + B vol 2): old Rp8.313.664.
  *    Price adoption: +Rp60.000 → Rp8.373.664.
  *    Version adoption (coef 0,6 → 0,7): +Rp100.000 → Rp8.413.664.
- *  - priceMaster counts (fase2 audit, re-pinned): 452 records —
+ *  - priceMaster counts (fase2 audit, re-pinned + adopsi pasar ronde 2 2026-11-17): 899 records —
  *    material 360 / labor 49 / equipment 43; VERIFIED 13.
  */
 
@@ -322,11 +322,13 @@ function makeComponent(partial: Partial<AHSPComponent> = {}): AHSPComponent {
   };
 }
 
-// Pinned v2026.1 content checksums (§8/§9 — re-pinned here for the sync check).
+// Pinned ACTIVE content checksums (§8/§9 — re-pinned here for the sync check).
+// Ronde 2 (17 Nov 2026): CK + SDA moved to v2026.2 (CK re-pinned again after
+// the sub-header coefficient revert); BM + SMKK still v2026.1.
 const PINNED_CHECKSUMS: Record<AhspFamily, string> = {
-  CIPTA_KARYA: 'e0b539f134f8d64c',
+  CIPTA_KARYA: '0281ba316496e839',
   BINA_MARGA: '08082e878d4f0e90',
-  SUMBER_DAYA_AIR: '1c4794f9ec5dc3e1',
+  SUMBER_DAYA_AIR: 'b43fd8a665fbdb54',
   SMKK: 'e77bbc73b1fea331',
 };
 
@@ -673,21 +675,21 @@ describe('§11.3 component detail — 12 fields from real composition', () => {
 // ---------------------------------------------------------------------------
 
 describe('§11.1 master records — real priceMaster data, no invented numbers', () => {
-  it('priceMaster counts are pinned (452: material 360 / labor 49 / equipment 43)', () => {
-    expect(RESOURCE_PRICE_RECORDS.length).toBe(452);
+  it('priceMaster counts are pinned (899: material 807 / labor 49 / equipment 43)', () => {
+    expect(RESOURCE_PRICE_RECORDS.length).toBe(899);
     const byType = (t: string): number =>
       RESOURCE_PRICE_RECORDS.filter((r) => r.resourceType === t).length;
-    expect(byType('material')).toBe(360);
+    expect(byType('material')).toBe(807);
     expect(byType('labor')).toBe(49);
     expect(byType('equipment')).toBe(43);
   });
 
   it('category filter matches the pinned counts', () => {
     const base = { query: '', verificationStatus: 'ALL', provenance: 'ALL', region: 'ALL' } as const;
-    expect(filterMasterRecords(RESOURCE_PRICE_RECORDS, { ...base, category: 'material' }).length).toBe(360);
+    expect(filterMasterRecords(RESOURCE_PRICE_RECORDS, { ...base, category: 'material' }).length).toBe(807);
     expect(filterMasterRecords(RESOURCE_PRICE_RECORDS, { ...base, category: 'labor' }).length).toBe(49);
     expect(filterMasterRecords(RESOURCE_PRICE_RECORDS, { ...base, category: 'equipment' }).length).toBe(43);
-    expect(filterMasterRecords(RESOURCE_PRICE_RECORDS, { ...base, category: 'ALL' }).length).toBe(452);
+    expect(filterMasterRecords(RESOURCE_PRICE_RECORDS, { ...base, category: 'ALL' }).length).toBe(899);
   });
 
   it('verification filter: VERIFIED is exactly 13 records', () => {
@@ -944,13 +946,14 @@ describe('§11.4 dialog content — real impact, never "Are you sure?"', () => {
 // ---------------------------------------------------------------------------
 
 describe('§11.2 registry view-model — the real §8 pointer', () => {
-  it('the live registry has 4 families, each ACTIVE on 2026.1, no drafts', () => {
+  it('the live registry has 4 families, CK+SDA ACTIVE on 2026.2, BM+SMKK on 2026.1, no drafts', () => {
     const state = buildRegistryState(AHSP_VERSION_RECORDS);
     const views = buildAhspRegistryViewModel(state);
     expect(views.length).toBe(4);
     for (const v of views) {
-      expect(v.activeVersionId).toBe('2026.1');
-      expect(v.versionCount).toBe(1);
+      const isR2 = v.family === 'CIPTA_KARYA' || v.family === 'SUMBER_DAYA_AIR';
+      expect(v.activeVersionId).toBe(isR2 ? '2026.2' : '2026.1');
+      expect(v.versionCount).toBe(isR2 ? 2 : 1);
       expect(v.draftCount).toBe(0);
       expect(v.activeRecord?.status).toBe('ACTIVE');
       expect(v.familyLabel).toBe(AHSP_FAMILY_LABELS_ID[v.family]);
@@ -966,7 +969,7 @@ describe('§11.2 registry view-model — the real §8 pointer', () => {
 });
 
 describe('§11.2 sync check — live checksum vs snapshot checksum', () => {
-  it('all four live families are SYNCED against their 2026.1 snapshots (pinned checksums)', () => {
+  it('all four live families are SYNCED against their ACTIVE snapshots (pinned checksums)', () => {
     const state = buildRegistryState(AHSP_VERSION_RECORDS);
     const views = buildAhspRegistryViewModel(state);
     for (const v of views) {

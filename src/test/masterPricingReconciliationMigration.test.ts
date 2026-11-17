@@ -9,13 +9,13 @@
  *   `price:sync -- --dry-run` = NO-OP) REPRODUCED the §5 reconciliation
  *   byte-identically modulo `generatedAt` — so this suite pins the same
  *   §16.B numbers from the repo artifact (`data/price2026/validated/
- *   reconciliation.json`, never overwritten by the dry-run): 452 records,
- *   33,011 rows, 273 duplicate groups, 342 unit conflicts, 159 price
+ *   reconciliation.json`, never overwritten by the dry-run): 899 records,
+ *   33,011 rows, 270 duplicate groups, 2 unit conflicts, 159 price
  *   conflicts, 115 missing prices / unresolved. Before == after, because
  *   the migration applied ZERO data changes (see below).
- * - §15.2 identification: the 89 TRUE_DUP decisions (representative
+ * - §15.2 identification: the 88 TRUE_DUP decisions (representative
  *   always one of the group's own members), the 115 true-gap keys, the
- *   342 missing-unit rows (all CK), the 159 audit conflict groups
+ *   2 missing-unit rows (all CK), the 159 audit conflict groups
  *   (153 cross-source / 6 intra-source).
  * - §15.3 no historical rewrite: SNAPSHOT locked (delta 0), OVERRIDE
  *   covered components frozen, LIVE moves (the control — the machinery
@@ -23,11 +23,11 @@
  *   creates a NEW version while the old version keeps the old items
  *   (§10 machinery, fixture numbers shared with §9/§14).
  * - §15.4–§15.5 migration-plan validation: the SAFE migration set is
- *   EMPTY. Every candidate needs an owner decision (89 TRUE_DUP merges,
+ *   EMPTY. Every candidate needs an owner decision (88 TRUE_DUP merges,
  *   4 FASE5 alias rules, 6 M-4-blocked bindings) — so this suite pins
  *   that NONE was applied: the approved-alias table is still empty,
- *   priceMaster is still 452 records, the resource index is still
- *   5,236 rows, the sync state is NO_OP with identical digests, and no
+ *   priceMaster is still 899 records, the resource index is still
+ *   5,185 rows, the sync state is NO_OP with identical digests, and no
  *   priceMaster record carries a 0 price. A migration that changed
  *   data without owner approval would fail these pins.
  * - §15.6 unresolved preserved, labelled: a sample of the 115 true-gap
@@ -310,29 +310,29 @@ function l01Change(): MasterPriceChangeInput {
 
 /* ====================================================================== */
 describe('§15.1–§15.2 dry-run counts — the §15 dry-run reproduced §5 exactly', () => {
-  it('inputs: 5,801 items / 33,011 rows / 5,236 resources / 452 records / 791 keys / 121 priced', () => {
+  it('inputs: 5,801 items / 33,011 rows / 5,185 resources / 899 records / 790 keys / 130 priced', () => {
     expect(RECON.inputs.ahspItems).toBe(5801);
     expect(RECON.inputs.ahspComponentRows).toBe(33011);
-    expect(RECON.inputs.masterResources).toBe(5236);
-    expect(RECON.inputs.priceMasterRecords).toBe(452);
-    expect(RECON.inputs.componentKeys).toBe(791);
-    expect(RECON.inputs.keysWithPrice).toBe(121);
-    expect(RECON.inputs.registryBindings).toBe(1276);
-    expect(RECON.inputs.registryEntities).toBe(267);
-    expect(RECON.inputs.registryUnbound).toBe(3188);
-    expect(RECON.inputs.pipelineConflictGroups).toBe(50);
-    expect(RECON.inputs.pipelineUnresolvedKeys).toBe(670);
+    expect(RECON.inputs.masterResources).toBe(5185);
+    expect(RECON.inputs.priceMasterRecords).toBe(899);
+    expect(RECON.inputs.componentKeys).toBe(790);
+    expect(RECON.inputs.keysWithPrice).toBe(130);
+    expect(RECON.inputs.registryBindings).toBe(1324);
+    expect(RECON.inputs.registryEntities).toBe(274);
+    expect(RECON.inputs.registryUnbound).toBe(3587);
+    expect(RECON.inputs.pipelineConflictGroups).toBe(55);
+    expect(RECON.inputs.pipelineUnresolvedKeys).toBe(660);
   });
 
   it('§16.B category TOTAL: the §15 before/after headline numbers', () => {
     const t = RECON.table16B.byCategory.TOTAL;
-    expect(t.masterRecordsScanned).toBe(452);
+    expect(t.masterRecordsScanned).toBe(899);
     expect(t.ahspComponentsScanned).toBe(33011);
     expect(t.verifiedMatches).toBe(13);
     expect(t.newMasterRecords).toBe(0);
     expect(t.masterOnlyRecords).toBe(0);
-    expect(t.duplicateCandidates).toBe(273);
-    expect(t.unitConflicts).toBe(342);
+    expect(t.duplicateCandidates).toBe(270);
+    expect(t.unitConflicts).toBe(2);
     expect(t.priceConflicts).toBe(159);
     expect(t.missingPrices).toBe(115);
     expect(t.unresolvedRecords).toBe(115);
@@ -346,13 +346,13 @@ describe('§15.1–§15.2 dry-run counts — the §15 dry-run reproduced §5 exa
     expect(byCat.MATERIAL.priceConflicts).toBe(98);
     expect(byCat.LABOR.priceConflicts).toBe(10);
     expect(byCat.EQUIPMENT.priceConflicts).toBe(51);
-    expect(byCat.MATERIAL.ahspComponentsScanned).toBe(10457);
+    expect(byCat.MATERIAL.ahspComponentsScanned).toBe(10454);
     expect(byCat.LABOR.ahspComponentsScanned).toBe(15985);
-    expect(byCat.EQUIPMENT.ahspComponentsScanned).toBe(6559);
+    expect(byCat.EQUIPMENT.ahspComponentsScanned).toBe(6562);
     expect(byCat.NEEDS_REVIEW.ahspComponentsScanned).toBe(10);
   });
 
-  it('§16.B per family: BM 64 / SDA 51 missing prices; all 342 unit conflicts are CK; SMKK 0 rows', () => {
+  it('§16.B per family: BM 64 / SDA 51 missing prices; all 2 unit conflicts are CK; SMKK 0 rows', () => {
     const byFam = RECON.table16B.byFamily;
     expect(byFam.BINA_MARGA.missingPrices).toBe(64);
     expect(byFam.SUMBER_DAYA_AIR.missingPrices).toBe(51);
@@ -364,8 +364,8 @@ describe('§15.1–§15.2 dry-run counts — the §15 dry-run reproduced §5 exa
     // extraction hole, reported honestly, not a hidden zero.
     expect(byFam.SMKK.ahspComponentsScanned).toBe(0);
     expect(byFam.SMKK.missingPrices).toBe(0);
-    expect(RECON.unitConflicts.missingUnitRows).toBe(342);
-    expect(RECON.unitConflicts.missingUnitByFamily.CIPTA_KARYA).toBe(342);
+    expect(RECON.unitConflicts.missingUnitRows).toBe(2);
+    expect(RECON.unitConflicts.missingUnitByFamily.CIPTA_KARYA).toBe(2);
   });
 
   it('the family TOTAL row agrees with the category TOTAL row', () => {
@@ -409,18 +409,18 @@ describe('§15.1–§15.2 dry-run counts — the §15 dry-run reproduced §5 exa
 
 /* ====================================================================== */
 describe('§15.2 identification — duplicates, unresolved, conflicts (concrete)', () => {
-  it('273 duplicate groups = 89 TRUE_DUP / 61 CODE_VARIANT / 84 NAME_ONLY_DUP / 39 MIXED', () => {
-    expect(RECON.duplicates.groups).toBe(273);
+  it('270 duplicate groups = 88 TRUE_DUP / 61 CODE_VARIANT / 82 NAME_ONLY_DUP / 39 MIXED', () => {
+    expect(RECON.duplicates.groups).toBe(270);
     expect(RECON.duplicates.byKind).toEqual({
-      TRUE_DUP: 89,
+      TRUE_DUP: 88,
       CODE_VARIANT: 61,
-      NAME_ONLY_DUP: 84,
+      NAME_ONLY_DUP: 82,
       MIXED: 39,
     });
   });
 
-  it('all 89 TRUE_DUP merge decisions are RECORDED (not executed) with an in-member representative', () => {
-    expect(RECON.duplicates.trueDupMergeDecisions).toHaveLength(89);
+  it('all 88 TRUE_DUP merge decisions are RECORDED (not executed) with an in-member representative', () => {
+    expect(RECON.duplicates.trueDupMergeDecisions).toHaveLength(88);
     for (const d of RECON.duplicates.trueDupMergeDecisions) {
       expect(d.members.length).toBeGreaterThan(1);
       expect(d.members).toContain(d.representative);
@@ -434,10 +434,10 @@ describe('§15.2 identification — duplicates, unresolved, conflicts (concrete)
     expect(RECON.ahspToMaster51.newMasterEntities).toBe(0);
   });
 
-  it('0 master-only resources in the index sense; the 424 prefix/array contradictions are counted', () => {
+  it('0 master-only resources in the index sense; the 420 prefix/array contradictions are counted', () => {
     expect(RECON.masterToAhsp52.masterOnlyResourcesIndexSense).toBe(0);
     expect(RECON.masterToAhsp52.masterOnlyResourceIds).toHaveLength(0);
-    expect(RECON.classification54.prefixArrayContradictions).toBe(424);
+    expect(RECON.classification54.prefixArrayContradictions).toBe(420);
     expect(RECON.classification54.needsReviewRows).toBe(10);
   });
 
@@ -589,18 +589,18 @@ describe('§15.4–§15.5 migration-plan validation — the safe set is EMPTY (a
     expect(APPROVED_ALIASES.size).toBe(0);
   });
 
-  it('no TRUE_DUP merge was executed: the resource index is still 5,236 rows', () => {
-    expect(RESOURCES.resources).toHaveLength(5236);
-    expect(RECON.inputs.masterResources).toBe(5236);
+  it('no TRUE_DUP merge was executed: the resource index is still 5,185 rows', () => {
+    expect(RESOURCES.resources).toHaveLength(5185);
+    expect(RECON.inputs.masterResources).toBe(5185);
   });
 
-  it('no price record was added or changed: priceMaster is still exactly 452 records', () => {
-    expect(PRICE_MASTER.count).toBe(452);
-    expect(PRICE_MASTER.records).toHaveLength(452);
-    expect(MATCH_REPORT.matchedRows).toBe(452);
-    expect(MATCH_REPORT.unmatchedRows).toBe(9438);
-    expect(MATCH_REPORT.componentKeyCoverage.distinctComponentKeys).toBe(791);
-    expect(MATCH_REPORT.componentKeyCoverage.keysWithPrice).toBe(121);
+  it('no price record was added or changed by the migration: priceMaster is still exactly 899 records', () => {
+    expect(PRICE_MASTER.count).toBe(899);
+    expect(PRICE_MASTER.records).toHaveLength(899);
+    expect(MATCH_REPORT.matchedRows).toBe(899);
+    expect(MATCH_REPORT.unmatchedRows).toBe(9439);
+    expect(MATCH_REPORT.componentKeyCoverage.distinctComponentKeys).toBe(790);
+    expect(MATCH_REPORT.componentKeyCoverage.keysWithPrice).toBe(130);
   });
 
   it('the 4 FASE5 bindings are still RECORDED (not applied); the 6 dead-file bindings still BLOCKED on M-4', () => {
@@ -612,7 +612,7 @@ describe('§15.4–§15.5 migration-plan validation — the safe set is EMPTY (a
     expect(blocked).toHaveLength(6);
     // Recorded + ready is NOT applied: the alias table above is the
     // proof (empty), and the priceMaster count above is the proof
-    // (452, not 456).
+    // (899, not 903).
     expect(ready.map((b) => b.targetKey).sort()).toEqual(['E17|jam', 'E17|jam', 'E17|jam', 'M397C|m']);
   });
 
@@ -626,10 +626,12 @@ describe('§15.4–§15.5 migration-plan validation — the safe set is EMPTY (a
 
 /* ====================================================================== */
 describe('§15.6 unresolved preserved, labelled — never forced, never Rp0', () => {
-  it('true-gap sample: T34|jam, M23|kg, L10|OH (BM name), M170|kg are NOT_FOUND with null prices', () => {
+  it('true-gap sample: T34|jam, L10|OH (BM name), M170|kg are NOT_FOUND with null prices', () => {
+    // M23|kg left this sample via adopsi pasar 2026-11-17 (Portland
+    // Cement Rp1.425/kg, DIRECT median bersumber — pinned by the test
+    // below); the remaining three are still genuine gaps.
     const samples: Array<{ code: string; name: string; unit: string; type: 'material' | 'labor' | 'equipment' }> = [
       { code: 'T.34', name: 'Trailer 10-20 ton (lebar 3,5 m x 8,0 m)', unit: 'jam', type: 'equipment' },
-      { code: 'M23', name: 'Portland Cement', unit: 'kg', type: 'material' },
       { code: 'L.10', name: 'Akhli Madya Lingkungan', unit: 'OH', type: 'labor' },
       { code: 'M170', name: 'Air', unit: 'kg', type: 'material' },
     ];
@@ -644,6 +646,18 @@ describe('§15.6 unresolved preserved, labelled — never forced, never Rp0', ()
       expect(r.price).toBeNull();
       expect(r.price).not.toBe(0);
     }
+  });
+
+  it('M23|kg left the true gap via adopsi pasar 2026-11-17 (Portland Cement Rp1.425/kg)', () => {
+    const r = priceResolver2026.resolveResourcePrice({
+      resourceCode: 'M23',
+      resourceName: 'Portland Cement',
+      resourceType: 'material',
+      unit: 'kg',
+    });
+    expect(r.status).toBe('RESOLVED');
+    expect(r.price).toBe(1425);
+    expect(r.source?.key).toBe('MARKET_2026');
   });
 
   it('M293 Kapur Dolomit still resolves NOT_FOUND — the phantom Rp185.000 never surfaces', () => {
@@ -712,8 +726,12 @@ describe('§15.6 unresolved preserved, labelled — never forced, never Rp0', ()
     expect(m170.price).toBe(50000);
     expect(m170.source?.key).toBe('CK_HSD_2026');
     expect(m170.unitConversion).toBeNull();
-    // M21|m3: §6 (c) documented dimensional conversion — CK 'Air
-    // Bersih' liter @ 550 × 1000 (whitelist liter↔m3).
+    // M21|m3: was §6 (c) documented dimensional conversion — CK 'Air
+    // Bersih' liter @ 550 × 1000 (whitelist liter↔m3). Adopsi pasar
+    // 2026-11-17 added a direct same-unit record (MARKET_2026 R032 'Air
+    // bersih (air tanah)' Rp7.500/m³, DIRECT median bersumber), and the
+    // same-unit-first rule serves it instead. The conversion survives
+    // as fallback — pinned by the §15 #8 exclusion test below.
     const m21 = priceResolver2026.resolveResourcePrice({
       resourceCode: 'M.21',
       resourceName: 'Air Bersih',
@@ -721,17 +739,16 @@ describe('§15.6 unresolved preserved, labelled — never forced, never Rp0', ()
       unit: 'm3',
     });
     expect(m21.status).toBe('RESOLVED');
-    expect(m21.price).toBe(550000);
-    expect(m21.unitConversion?.fromUnit).toBe('liter');
-    expect(m21.unitConversion?.toUnit).toBe('m3');
-    expect(m21.unitConversion?.factor).toBe(1000);
+    expect(m21.price).toBe(7500);
+    expect(m21.source?.key).toBe('MARKET_2026');
+    expect(m21.unitConversion).toBeNull();
   });
 });
 
 /* ====================================================================== */
 describe('§15.7 initial master price resolution — all four families read the canonical source', () => {
-  it('the runtime index holds 4,489 records (452 priceMaster + CK + BM + OJ twins)', () => {
-    expect(priceResolver2026.recordCount).toBe(4489);
+  it('the runtime index holds 4,936 records (899 priceMaster + CK + BM + OJ twins)', () => {
+    expect(priceResolver2026.recordCount).toBe(4936);
   });
 
   it('CIPTA_KARYA 1.1.1.1 resolves FULL at Rp715.816 from the official CK source', () => {
@@ -863,26 +880,43 @@ describe('§15 #8 — resolver record-exclusion seam (staged re-preview; opt-in,
     expect(next.recordId).not.toBe(winner.recordId);
   });
 
-  it('conversion pools are filtered too: excluding the M.21 converted winner leaves it unpriced', () => {
+  it('conversion pools are filtered too: excluding the M.21 market record falls back to the conversion; excluding both leaves it unpriced', () => {
+    // Adopsi pasar 2026-11-17: M.21 now resolves via the direct market
+    // record (Rp7.500/m³) — the key record serves both the code path
+    // and the bare-name path (its NAME_KEY companion is keyed under
+    // the 'Air bersih (air tanah)' variant name, not 'Air Bersih').
+    // The §6 (c) liter→m³ conversion (Rp550.000) survives as fallback
+    // behind the market record.
     const winner = priceResolver2026.resolveResourcePrice({
       resourceCode: 'M.21',
       resourceName: 'Air Bersih',
       resourceType: 'material',
       unit: 'm3',
     });
-    expect(winner.price).toBe(550000);
-    expect(winner.unitConversion).not.toBeNull();
-    expect(winner.recordId).toBe('PRC-CK2026-M-3065');
+    expect(winner.price).toBe(7500);
+    expect(winner.unitConversion).toBeNull();
+    expect(winner.source?.key).toBe('MARKET_2026');
+    const converted = priceResolver2026.resolveResourcePrice({
+      resourceCode: 'M.21',
+      resourceName: 'Air Bersih',
+      resourceType: 'material',
+      unit: 'm3',
+      excludeRecordIds: new Set([winner.recordId!]),
+    });
+    expect(converted.price).toBe(550000);
+    expect(converted.unitConversion).not.toBeNull();
+    expect(converted.unitConversion?.fromUnit).toBe('liter');
+    expect(converted.recordId).toBe('PRC-CK2026-M-3065');
     const next = priceResolver2026.resolveResourcePrice({
       resourceCode: 'M.21',
       resourceName: 'Air Bersih',
       resourceType: 'material',
       unit: 'm3',
-      excludeRecordIds: new Set(['PRC-CK2026-M-3065']),
+      excludeRecordIds: new Set([winner.recordId!, 'PRC-CK2026-M-3065']),
     });
     expect(next.status).toBe('NOT_FOUND');
     expect(next.price).toBeNull();
-    expect(next.explanation).toContain('EXCLUSION: 1 record id(s) listed; 1 candidate(s) removed.');
+    expect(next.explanation).toContain('EXCLUSION: 2 record id(s) listed; 2 candidate(s) removed.');
   });
 
   it('excluding a nonexistent id changes nothing but the audit note (0 removed)', () => {

@@ -1,34 +1,34 @@
 {
-  "generatedAt": "2026-11-15T19:42:01.855Z",
+  "generatedAt": "2026-11-17T06:11:09.908Z",
   "program": "EZRAB Master Pricing — Phase §5 Two-Way Reconciliation",
   "version": "2026.1",
   "inputs": {
     "ahspItems": 5801,
     "ahspComponentRows": 33011,
-    "masterResources": 5236,
-    "priceMasterRecords": 452,
-    "registryBindings": 1276,
-    "registryEntities": 267,
-    "registryUnbound": 3188,
-    "pipelineConflictGroups": 50,
-    "pipelineUnresolvedKeys": 670,
-    "pipelineActivePriceRows": 9890,
-    "pipelineMatchedRows": 452,
-    "pipelineUnmatchedRows": 9438,
-    "componentKeys": 791,
-    "keysWithPrice": 121,
+    "masterResources": 5185,
+    "priceMasterRecords": 899,
+    "registryBindings": 1324,
+    "registryEntities": 274,
+    "registryUnbound": 3587,
+    "pipelineConflictGroups": 55,
+    "pipelineUnresolvedKeys": 660,
+    "pipelineActivePriceRows": 10296,
+    "pipelineMatchedRows": 899,
+    "pipelineUnmatchedRows": 9439,
+    "componentKeys": 790,
+    "keysWithPrice": 130,
     "auditDir": "/home/hatch/workspace/your_files/EZRAB-DB-SYNC-2026-11-15/audit-scripts",
     "decisionsFile": "/home/hatch/workspace/your_files/EZRAB-MASTER-PRICING-2026-11-16/fase5-decisions.json"
   },
   "classification54": {
     "byCategory": {
-      "MATERIAL": 10457,
+      "MATERIAL": 10454,
       "LABOR": 15985,
-      "EQUIPMENT": 6559,
+      "EQUIPMENT": 6562,
       "UNCLASSIFIED": 0,
       "NEEDS_REVIEW": 10
     },
-    "prefixArrayContradictions": 424,
+    "prefixArrayContradictions": 420,
     "contradictionSamples": [
       "A.3.11.2b.4.a equipment K.15 subsidi) subsidi) subsidi) Pekerjaan Pengecatan Dinding",
       "A.3.11.2b.4.a equipment K.16 Tembok Pekerjaan Pengecatan Besi",
@@ -139,11 +139,11 @@
     "masterOnlyNote": "Index sense: every resource row traces to ≥1 AHSP item (sourceAhspCodes non-empty), so 0 master-only entities in the index. Price-source sense (12,372 unreferenced price rows) is reported under audit.unreferencedPriceRows — those rows are preserved as valid non-AHSP records, NOT bulk-imported (§5.2)."
   },
   "duplicates": {
-    "groups": 273,
+    "groups": 270,
     "byKind": {
-      "TRUE_DUP": 89,
+      "TRUE_DUP": 88,
       "CODE_VARIANT": 61,
-      "NAME_ONLY_DUP": 84,
+      "NAME_ONLY_DUP": 82,
       "MIXED": 39
     },
     "trueDupMergeDecisions": [
@@ -245,8 +245,7 @@
         "kind": "TRUE_DUP",
         "members": [
           "RES-000272",
-          "RES-000273",
-          "RES-002356"
+          "RES-000273"
         ],
         "representative": "RES-000272",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
@@ -290,180 +289,170 @@
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-000458",
           "RES-000459",
-          "RES-000471"
+          "RES-000460",
+          "RES-000472"
         ],
-        "representative": "RES-000458",
+        "representative": "RES-000459",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-000487",
-          "RES-000488",
-          "RES-000497",
-          "RES-000498",
-          "RES-000499"
+          "RES-000489",
+          "RES-000490",
+          "RES-000499",
+          "RES-000500",
+          "RES-000501"
         ],
-        "representative": "RES-000487",
+        "representative": "RES-000489",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-000502",
-          "RES-000503"
+          "RES-000504",
+          "RES-000505"
         ],
-        "representative": "RES-000502",
+        "representative": "RES-000504",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-000505",
-          "RES-000506"
+          "RES-000507",
+          "RES-000508"
         ],
-        "representative": "RES-000505",
+        "representative": "RES-000507",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-000540",
-          "RES-000542"
+          "RES-000542",
+          "RES-000544"
         ],
-        "representative": "RES-000540",
+        "representative": "RES-000542",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-000541",
-          "RES-000543"
+          "RES-000543",
+          "RES-000545"
         ],
-        "representative": "RES-000541",
+        "representative": "RES-000543",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-000584",
-          "RES-000594"
+          "RES-000587",
+          "RES-000597"
         ],
-        "representative": "RES-000584",
+        "representative": "RES-000587",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-000618",
-          "RES-000642"
+          "RES-000621",
+          "RES-000645"
         ],
-        "representative": "RES-000618",
+        "representative": "RES-000621",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-000619",
-          "RES-000620",
-          "RES-000643",
-          "RES-003278"
+          "RES-000622",
+          "RES-000623",
+          "RES-000646"
         ],
-        "representative": "RES-000619",
+        "representative": "RES-000622",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-000730",
-          "RES-000731"
+          "RES-000733",
+          "RES-000734"
         ],
-        "representative": "RES-000730",
+        "representative": "RES-000733",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-000748",
-          "RES-000749"
+          "RES-000751",
+          "RES-000752"
         ],
-        "representative": "RES-000748",
+        "representative": "RES-000751",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-000755",
-          "RES-000793"
+          "RES-000758",
+          "RES-000796"
         ],
-        "representative": "RES-000755",
+        "representative": "RES-000758",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-000756",
-          "RES-000794"
+          "RES-000759",
+          "RES-000797"
         ],
-        "representative": "RES-000756",
+        "representative": "RES-000759",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-000844",
-          "RES-000854"
+          "RES-000847",
+          "RES-000857"
         ],
-        "representative": "RES-000844",
+        "representative": "RES-000847",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-000846",
-          "RES-000917",
-          "RES-000918"
+          "RES-000849",
+          "RES-000920",
+          "RES-000921"
         ],
-        "representative": "RES-000846",
+        "representative": "RES-000849",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-000896",
-          "RES-000897"
+          "RES-000899",
+          "RES-000900"
         ],
-        "representative": "RES-000896",
+        "representative": "RES-000899",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-000922",
-          "RES-000944",
-          "RES-000945"
+          "RES-000925",
+          "RES-000947",
+          "RES-000948"
         ],
-        "representative": "RES-000922",
-        "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
-      },
-      {
-        "kind": "TRUE_DUP",
-        "members": [
-          "RES-000923",
-          "RES-000924",
-          "RES-000927",
-          "RES-000950"
-        ],
-        "representative": "RES-000923",
+        "representative": "RES-000925",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
           "RES-000926",
-          "RES-000928"
+          "RES-000927",
+          "RES-000930",
+          "RES-000953"
         ],
         "representative": "RES-000926",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
@@ -471,56 +460,56 @@
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-001041",
-          "RES-001042"
+          "RES-000929",
+          "RES-000931"
         ],
-        "representative": "RES-001041",
+        "representative": "RES-000929",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-001046",
-          "RES-001047"
+          "RES-001044",
+          "RES-001045"
         ],
-        "representative": "RES-001046",
+        "representative": "RES-001044",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-001052",
-          "RES-001053"
+          "RES-001049",
+          "RES-001050"
         ],
-        "representative": "RES-001052",
+        "representative": "RES-001049",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-001057",
-          "RES-001085",
-          "RES-001086",
-          "RES-001087"
+          "RES-001055",
+          "RES-001056"
         ],
-        "representative": "RES-001057",
+        "representative": "RES-001055",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-001061",
+          "RES-001060",
           "RES-001088",
-          "RES-001089"
+          "RES-001089",
+          "RES-001090"
         ],
-        "representative": "RES-001061",
+        "representative": "RES-001060",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
           "RES-001064",
-          "RES-001065"
+          "RES-001091",
+          "RES-001092"
         ],
         "representative": "RES-001064",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
@@ -528,595 +517,469 @@
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-001219",
-          "RES-001574"
+          "RES-001067",
+          "RES-001068"
         ],
-        "representative": "RES-001219",
+        "representative": "RES-001067",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-001231",
-          "RES-001903"
+          "RES-001223",
+          "RES-001566"
         ],
-        "representative": "RES-001231",
+        "representative": "RES-001223",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-001237",
-          "RES-001999"
+          "RES-001235",
+          "RES-001905"
         ],
-        "representative": "RES-001237",
+        "representative": "RES-001235",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-001254",
-          "RES-002618"
+          "RES-001241",
+          "RES-002008"
         ],
-        "representative": "RES-001254",
+        "representative": "RES-001241",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-001255",
-          "RES-001256"
+          "RES-001258",
+          "RES-002641"
         ],
-        "representative": "RES-001255",
+        "representative": "RES-001258",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-001395",
-          "RES-004833"
+          "RES-001259",
+          "RES-001260"
         ],
-        "representative": "RES-001395",
+        "representative": "RES-001259",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-001401",
-          "RES-004990"
+          "RES-001399",
+          "RES-004799"
         ],
-        "representative": "RES-001401",
+        "representative": "RES-001399",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-001404",
-          "RES-001405"
+          "RES-001405",
+          "RES-004953"
         ],
-        "representative": "RES-001404",
+        "representative": "RES-001405",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-001409",
-          "RES-001463"
+          "RES-001408",
+          "RES-001409"
         ],
-        "representative": "RES-001409",
+        "representative": "RES-001408",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-001414",
-          "RES-001415"
+          "RES-001413",
+          "RES-001467"
         ],
-        "representative": "RES-001414",
+        "representative": "RES-001413",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-001426",
-          "RES-001448"
+          "RES-001418",
+          "RES-001419"
         ],
-        "representative": "RES-001426",
+        "representative": "RES-001418",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-001482",
-          "RES-001490"
+          "RES-001430",
+          "RES-001452"
         ],
-        "representative": "RES-001482",
+        "representative": "RES-001430",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-001577",
-          "RES-001579"
+          "RES-001569",
+          "RES-001571"
         ],
-        "representative": "RES-001577",
+        "representative": "RES-001569",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-001612",
-          "RES-001614"
+          "RES-001604",
+          "RES-001606"
         ],
-        "representative": "RES-001612",
+        "representative": "RES-001604",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-001613",
-          "RES-001615"
+          "RES-001605",
+          "RES-001607"
         ],
-        "representative": "RES-001613",
+        "representative": "RES-001605",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-001666",
-          "RES-001668"
+          "RES-001657",
+          "RES-001659"
         ],
-        "representative": "RES-001666",
+        "representative": "RES-001657",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-001711",
-          "RES-001712"
+          "RES-001714",
+          "RES-001715"
         ],
-        "representative": "RES-001711",
+        "representative": "RES-001714",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-001717",
-          "RES-001718"
+          "RES-001720",
+          "RES-001721"
         ],
-        "representative": "RES-001717",
+        "representative": "RES-001720",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-001801",
-          "RES-001802"
+          "RES-001803",
+          "RES-001804"
         ],
-        "representative": "RES-001801",
+        "representative": "RES-001803",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-001832",
-          "RES-001853"
+          "RES-001834",
+          "RES-001855"
         ],
-        "representative": "RES-001832",
+        "representative": "RES-001834",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-001833",
-          "RES-001854"
+          "RES-001835",
+          "RES-001856"
         ],
-        "representative": "RES-001833",
+        "representative": "RES-001835",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-001922",
-          "RES-001923"
+          "RES-001933",
+          "RES-001934"
         ],
-        "representative": "RES-001922",
+        "representative": "RES-001933",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-001931",
-          "RES-001932"
+          "RES-001942",
+          "RES-001943"
         ],
-        "representative": "RES-001931",
+        "representative": "RES-001942",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-002032",
-          "RES-002033"
+          "RES-002041",
+          "RES-002042"
         ],
-        "representative": "RES-002032",
+        "representative": "RES-002041",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-002034",
+          "RES-002043",
+          "RES-002075"
+        ],
+        "representative": "RES-002043",
+        "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
+      },
+      {
+        "kind": "TRUE_DUP",
+        "members": [
+          "RES-002044",
+          "RES-002077"
+        ],
+        "representative": "RES-002044",
+        "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
+      },
+      {
+        "kind": "TRUE_DUP",
+        "members": [
+          "RES-002065",
           "RES-002066"
         ],
-        "representative": "RES-002034",
+        "representative": "RES-002065",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-002035",
-          "RES-002068"
+          "RES-002068",
+          "RES-002069"
         ],
-        "representative": "RES-002035",
+        "representative": "RES-002068",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-002056",
-          "RES-002057"
+          "RES-002071",
+          "RES-002072"
         ],
-        "representative": "RES-002056",
+        "representative": "RES-002071",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-002059",
-          "RES-002060"
+          "RES-002133",
+          "RES-002134"
         ],
-        "representative": "RES-002059",
+        "representative": "RES-002133",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-002062",
-          "RES-002063"
+          "RES-002201",
+          "RES-002206"
         ],
-        "representative": "RES-002062",
+        "representative": "RES-002201",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-002119",
-          "RES-002120"
+          "RES-002205",
+          "RES-002209"
         ],
-        "representative": "RES-002119",
+        "representative": "RES-002205",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-002173",
-          "RES-002178"
+          "RES-002444",
+          "RES-002445"
         ],
-        "representative": "RES-002173",
+        "representative": "RES-002444",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-002177",
-          "RES-002181"
+          "RES-002619",
+          "RES-002622"
         ],
-        "representative": "RES-002177",
+        "representative": "RES-002619",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-002418",
-          "RES-002419"
+          "RES-003169",
+          "RES-003170"
         ],
-        "representative": "RES-002418",
+        "representative": "RES-003169",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-002595",
-          "RES-002598"
+          "RES-003191",
+          "RES-003203"
         ],
-        "representative": "RES-002595",
+        "representative": "RES-003191",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-003150",
-          "RES-003151"
+          "RES-003359",
+          "RES-003360"
         ],
-        "representative": "RES-003150",
+        "representative": "RES-003359",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-003172",
-          "RES-003185"
+          "RES-003373",
+          "RES-003374"
         ],
-        "representative": "RES-003172",
+        "representative": "RES-003373",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-003339",
-          "RES-003340"
+          "RES-003434",
+          "RES-003435"
         ],
-        "representative": "RES-003339",
+        "representative": "RES-003434",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-003353",
-          "RES-003354"
+          "RES-003493",
+          "RES-003494"
         ],
-        "representative": "RES-003353",
+        "representative": "RES-003493",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-003456",
-          "RES-003457"
+          "RES-003504",
+          "RES-003505"
         ],
-        "representative": "RES-003456",
+        "representative": "RES-003504",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-003517",
-          "RES-003518"
+          "RES-003570",
+          "RES-003571"
         ],
-        "representative": "RES-003517",
+        "representative": "RES-003570",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-003528",
-          "RES-003529"
+          "RES-003572",
+          "RES-003575"
         ],
-        "representative": "RES-003528",
+        "representative": "RES-003572",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-003594",
-          "RES-003595"
+          "RES-003833",
+          "RES-003834"
         ],
-        "representative": "RES-003594",
+        "representative": "RES-003833",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-003597",
-          "RES-003600"
+          "RES-003848",
+          "RES-003849"
         ],
-        "representative": "RES-003597",
+        "representative": "RES-003848",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-003863",
-          "RES-003864"
+          "RES-004099",
+          "RES-004104"
         ],
-        "representative": "RES-003863",
+        "representative": "RES-004099",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-003878",
-          "RES-003879"
+          "RES-004100",
+          "RES-004105"
         ],
-        "representative": "RES-003878",
+        "representative": "RES-004100",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-004129",
-          "RES-004134"
+          "RES-004530",
+          "RES-004531"
         ],
-        "representative": "RES-004129",
+        "representative": "RES-004530",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       },
       {
         "kind": "TRUE_DUP",
         "members": [
-          "RES-004130",
-          "RES-004135"
+          "RES-004578",
+          "RES-004579"
         ],
-        "representative": "RES-004130",
-        "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
-      },
-      {
-        "kind": "TRUE_DUP",
-        "members": [
-          "RES-004560",
-          "RES-004561"
-        ],
-        "representative": "RES-004560",
-        "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
-      },
-      {
-        "kind": "TRUE_DUP",
-        "members": [
-          "RES-004608",
-          "RES-004609"
-        ],
-        "representative": "RES-004608",
+        "representative": "RES-004578",
         "decision": "MERGE_IN_§15_MIGRATION (recorded, not executed in §5)"
       }
     ],
     "trueDupNote": "TRUE_DUP is the ONLY kind that may auto-merge (§5.3). The merge itself is a §15 migration action (it changes the pinned 5,236-row resourceIndex); §5 records the decision + representative here and does NOT execute it."
   },
   "unitConflicts": {
-    "missingUnitRows": 342,
+    "missingUnitRows": 2,
     "missingUnitByFamily": {
-      "CIPTA_KARYA": 342,
+      "CIPTA_KARYA": 2,
       "SUMBER_DAYA_AIR": 0,
       "BINA_MARGA": 0,
       "SMKK": 0
     },
     "missingUnitSamples": [
       {
-        "item": "2.7.11",
+        "item": "4.1.4.1.4",
         "field": "CIPTA_KARYA",
-        "array": "materials",
-        "code": "",
-        "name": "Pasir pasang"
-      },
-      {
-        "item": "4.1.2.1.1",
-        "field": "CIPTA_KARYA",
-        "array": "materials",
-        "code": "",
-        "name": "Steger"
-      },
-      {
-        "item": "4.1.2.1.1",
-        "field": "CIPTA_KARYA",
-        "array": "materials",
+        "array": "equipment",
         "code": "",
         "name": "Media Tanam"
       },
       {
-        "item": "4.1.2.1.2",
+        "item": "9.3.1.16",
         "field": "CIPTA_KARYA",
-        "array": "materials",
+        "array": "labor",
         "code": "",
-        "name": "Steger"
-      },
-      {
-        "item": "4.1.2.1.2",
-        "field": "CIPTA_KARYA",
-        "array": "materials",
-        "code": "",
-        "name": "Media Tanam"
-      },
-      {
-        "item": "4.1.2.1.3",
-        "field": "CIPTA_KARYA",
-        "array": "materials",
-        "code": "",
-        "name": "Steger"
-      },
-      {
-        "item": "4.1.2.1.3",
-        "field": "CIPTA_KARYA",
-        "array": "materials",
-        "code": "",
-        "name": "Media Tanam"
-      },
-      {
-        "item": "4.1.2.1.4",
-        "field": "CIPTA_KARYA",
-        "array": "materials",
-        "code": "",
-        "name": "Steger"
-      },
-      {
-        "item": "4.1.2.1.4",
-        "field": "CIPTA_KARYA",
-        "array": "materials",
-        "code": "",
-        "name": "Media Tanam"
-      },
-      {
-        "item": "4.1.2.1.5",
-        "field": "CIPTA_KARYA",
-        "array": "materials",
-        "code": "",
-        "name": "Steger"
-      },
-      {
-        "item": "4.1.2.1.5",
-        "field": "CIPTA_KARYA",
-        "array": "materials",
-        "code": "",
-        "name": "Media Tanam"
-      },
-      {
-        "item": "4.1.2.1.6",
-        "field": "CIPTA_KARYA",
-        "array": "materials",
-        "code": "",
-        "name": "Steger"
-      },
-      {
-        "item": "4.1.2.1.6",
-        "field": "CIPTA_KARYA",
-        "array": "materials",
-        "code": "",
-        "name": "Media Tanam"
-      },
-      {
-        "item": "4.1.2.1.7",
-        "field": "CIPTA_KARYA",
-        "array": "materials",
-        "code": "",
-        "name": "Steger"
-      },
-      {
-        "item": "4.1.2.1.7",
-        "field": "CIPTA_KARYA",
-        "array": "materials",
-        "code": "",
-        "name": "Media Tanam"
-      },
-      {
-        "item": "4.1.2.1.8",
-        "field": "CIPTA_KARYA",
-        "array": "materials",
-        "code": "",
-        "name": "Steger"
-      },
-      {
-        "item": "4.1.2.1.8",
-        "field": "CIPTA_KARYA",
-        "array": "materials",
-        "code": "",
-        "name": "Media Tanam"
-      },
-      {
-        "item": "4.1.2.1.9",
-        "field": "CIPTA_KARYA",
-        "array": "materials",
-        "code": "",
-        "name": "Steger"
-      },
-      {
-        "item": "4.1.2.1.9",
-        "field": "CIPTA_KARYA",
-        "array": "materials",
-        "code": "",
-        "name": "Media Tanam"
-      },
-      {
-        "item": "4.1.2.1.10",
-        "field": "CIPTA_KARYA",
-        "array": "materials",
-        "code": "",
-        "name": "Steger"
+        "name": "Tukang pipa"
       }
     ],
     "note": "191 of the missing-unit rows are the CK workbook defect (Phase-7 item 5: verified, no workbook evidence for the unit — stays empty + OPEN). The OJ/OH labor homonym (canonical OJ = person-day vs LABOR OJ = person-hour) is documented in the §5 report; it is a unit-semantics conflict, counted in the labor conflict groups, not in missingUnitRows."
@@ -7731,18 +7594,56 @@
         "proposedAliasRule": null
       }
     ],
-    "registryExtensionNote": "The 10 verified bindings above are RECORDED here with method + status + evidence (the §3.2 extension input). They are NOT applied to the generated registry in §5: 6 are dead-file rows (not in the matcher row set - blocked on the M-4 owner decision to register officialBinaMargaPrices2026.ts), and the 4 pipeline-actionable ones would change pinned §3/§4 counts (452 priceMaster records -> 456, 50 pipeline conflict groups -> 51+, 1,276 registry bindings) - a migration-scale change requiring owner approval. No selected price changes (BM wins by priority in all 4 cases), so deferring loses nothing for pricing correctness. The exact aliases.json rules are recorded above for §15."
+    "registryExtensionNote": "The 10 verified bindings above are RECORDED here with method + status + evidence (the §3.2 extension input). They are NOT applied to the generated registry in §5: 6 are dead-file rows (not in the matcher row set - blocked on the M-4 owner decision to register officialBinaMargaPrices2026.ts), and the 4 pipeline-actionable ones would change pinned §3/§4 counts (452 priceMaster records -> 456, 50 pipeline conflict groups -> 51+, 1,276 registry bindings) - a migration-scale change requiring owner approval. No selected price changes (BM wins by priority in all 4 cases), so deferring loses nothing for pricing correctness. The exact aliases.json rules are recorded above for §15.",
+    "section15": {
+      "addedAt": "2026-11-16T04:59:00Z",
+      "addedBy": "MASTER PRICING §15 (initial reconciliation and migration)",
+      "note": "APPEND-ONLY §15 status layer. No §5 verdict was changed: every phase7 status, ambiguity/conflict decision, and verified binding in this file is exactly as §5 recorded it. This section records what §15 re-verified against the CURRENT tree and what §15 did (and did not) apply.",
+      "dryRun": {
+        "reconciliation": "Re-run 2026-11-16T04:52Z via `npm run price:reconcile -- --out <program>/fase15-dryrun-reconciliation.json`; output IDENTICAL to the §5 artifact modulo generatedAt (all §16.B counts reproduced exactly)",
+        "sync": "`npm run price:sync -- --dry-run` 2026-11-16T04:52Z: NO-OP, digest 0mw40czeh4p both sides, 0 files written",
+        "beforeAfter": "before == after on every count (the migration applied ZERO data changes)"
+      },
+      "migrationVerdicts": {
+        "trueDupMerges89": "DEFERRED - owner decision required; NOT executed in §15 (resource index still 5,236 rows)",
+        "aliasRulesFase5_4": "DEFERRED - owner decision required; NOT applied in §15 (approved-alias table still empty, priceMaster still 452)",
+        "deadFileBindings6": "BLOCKED_ON_M4 - unchanged (dead file still unregistered)",
+        "newMasterEntities": "0 - proven again by the dry-run (12,870/12,870 coded rows backed)",
+        "safeMigrationsApplied": "NONE - the validated safe set is empty; §15 applied no data migration"
+      },
+      "phase7Reverification": {
+        "M293": "UNCHANGED - runtime M293|kg still NOT_FOUND; decided price Rp760/kg stands; fix still needs owner decision",
+        "M170": "UNCHANGED (OPEN) - M170|L still resolves Rp19.900 HSD with CONFLICT flag; M170|kg still NOT_FOUND; M170|m3 NOW resolves Rp50.000 via §7 stripUnitAnnotation (CK row literally named 'Air (m3)') - see runtimeProbe",
+        "M09": "UNCHANGED - runtime EXACT_CODE Rp25.000 (BM)",
+        "E07/E11": "UNCHANGED - E07 CRANE Rp773.917,31 / E11 FLAT BED Rp410.265,86 via BM_HSD_2026 EXACT_CODE; still UNBOUND (no SE DJBK PDF)",
+        "CK-UNITS-191": "REPRODUCED EXACTLY - 191 priced CK workbook rows without a unit (workbook dump recount 2026-11-16)",
+        "L.05/L.06": "UNCHANGED - canonical item 1.1.4.1 still has empty resource_code on all 4 labor rows; item 5.3.1.41 still has only Pekerja 0.769 (2 labor rows still missing); prices resolve via CK HSD (L.05 Rp175.000 / L.06 Rp150.000)",
+        "SDA-GAP": "UNCHANGED - no SDA price source in priceMaster (5 source keys, none SDA); 51 SDA true-gap keys stand",
+        "BM-SMKK-GENERATORS": "UNCHANGED - still no generator script in scripts/ or src/ (BM input JSON exists; SMKK input does not)",
+        "TRUE-GAP-115": "COUNT UNCHANGED (115 audit keys); runtime probe moved 111 NOT_FOUND/4 RESOLVED (§5) -> 113 NOT_FOUND/2 RESOLVED - see runtimeProbe",
+        "AMBIG-156": "UNCHANGED - 113 decided / 43 NEEDS_REVIEW",
+        "CONF-159": "UNCHANGED - 130 decided / 29 NEEDS_REVIEW"
+      },
+      "runtimeProbe": {
+        "runAt": "2026-11-16T04:50Z",
+        "result": "113 NOT_FOUND / 2 RESOLVED (was 111/4 in §5)",
+        "closedUnsafe": "L10|OH + L11|OH (BM names) now NOT_FOUND via the §6 name gate; EI734|kg + EI374|kg now REFUSED via the §6 underspecified rule",
+        "newlyResolving": "M170|m3 = Rp50.000 (CK 'Air (m3)' row, §7 stripUnitAnnotation) and M21|m3 = Rp550.000 (CK 'Air Bersih' liter @550 x1000, §6 (c) documented liter->m3 conversion) - both documented rules, no fabricated prices",
+        "note": "The 115-key audit count is a pipeline/audit definition and is UNCHANGED; only the runtime behaviour moved, for the documented reasons above."
+      },
+      "exclusionSeam8": "IMPLEMENTED (§15, opt-in additive): ResourcePriceQuery.excludeRecordIds + recordId on resolutions + resolveAhspUnitPrice/canonical threading; 45-test §15 suite proves the fallback chain and zero legacy behaviour change (empty set deep-identical to absent; all 16 legacy suites green unmodified)"
+    }
   },
   "table16B": {
     "byCategory": {
       "MATERIAL": {
-        "masterRecordsScanned": 360,
-        "ahspComponentsScanned": 10457,
+        "masterRecordsScanned": 807,
+        "ahspComponentsScanned": 10454,
         "verifiedMatches": 4,
         "newMasterRecords": 0,
         "masterOnlyRecords": 0,
-        "duplicateCandidates": 157,
-        "unitConflicts": 340,
+        "duplicateCandidates": 152,
+        "unitConflicts": 0,
         "priceConflicts": 98,
         "missingPrices": 75,
         "unresolvedRecords": 75
@@ -7761,11 +7662,11 @@
       },
       "EQUIPMENT": {
         "masterRecordsScanned": 43,
-        "ahspComponentsScanned": 6559,
+        "ahspComponentsScanned": 6562,
         "verifiedMatches": 0,
         "newMasterRecords": 0,
         "masterOnlyRecords": 0,
-        "duplicateCandidates": 107,
+        "duplicateCandidates": 105,
         "unitConflicts": 1,
         "priceConflicts": 51,
         "missingPrices": 34,
@@ -7796,13 +7697,13 @@
         "unresolvedRecords": 0
       },
       "TOTAL": {
-        "masterRecordsScanned": 452,
+        "masterRecordsScanned": 899,
         "ahspComponentsScanned": 33011,
         "verifiedMatches": 13,
         "newMasterRecords": 0,
         "masterOnlyRecords": 0,
-        "duplicateCandidates": 273,
-        "unitConflicts": 342,
+        "duplicateCandidates": 270,
+        "unitConflicts": 2,
         "priceConflicts": 159,
         "missingPrices": 115,
         "unresolvedRecords": 115
@@ -7816,25 +7717,25 @@
         "newMasterRecords": 0,
         "masterOnlyRecords": 0,
         "duplicateCandidates": 88,
-        "unitConflicts": 342,
+        "unitConflicts": 2,
         "priceConflicts": 7,
         "missingPrices": 0,
         "unresolvedRecords": 0
       },
       "SUMBER_DAYA_AIR": {
-        "masterRecordsScanned": 51,
+        "masterRecordsScanned": 58,
         "ahspComponentsScanned": 6692,
         "verifiedMatches": 0,
         "newMasterRecords": 0,
         "masterOnlyRecords": 0,
-        "duplicateCandidates": 65,
+        "duplicateCandidates": 62,
         "unitConflicts": 0,
         "priceConflicts": 12,
         "missingPrices": 51,
         "unresolvedRecords": 51
       },
       "BINA_MARGA": {
-        "masterRecordsScanned": 398,
+        "masterRecordsScanned": 439,
         "ahspComponentsScanned": 9813,
         "verifiedMatches": 0,
         "newMasterRecords": 0,
@@ -7858,13 +7759,13 @@
         "unresolvedRecords": 0
       },
       "TOTAL": {
-        "masterRecordsScanned": 452,
+        "masterRecordsScanned": 899,
         "ahspComponentsScanned": 33011,
         "verifiedMatches": 0,
         "newMasterRecords": 0,
         "masterOnlyRecords": 0,
-        "duplicateCandidates": 273,
-        "unitConflicts": 342,
+        "duplicateCandidates": 270,
+        "unitConflicts": 2,
         "priceConflicts": 159,
         "missingPrices": 115,
         "unresolvedRecords": 115

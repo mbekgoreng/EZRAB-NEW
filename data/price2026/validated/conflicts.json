@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-11-16T02:57:03.877Z",
-  "count": 50,
+  "generatedAt": "2026-11-17T06:10:47.640Z",
+  "count": 55,
   "conflicts": [
     {
-      "identity": "RES-000748|jam|NATIONAL|||2026-Q1",
-      "resourceId": "RES-000748",
+      "identity": "RES-000751|jam|NATIONAL|||2026-Q1",
+      "resourceId": "RES-000751",
       "resourceCode": "E13",
       "resourceName": "Motor Grader",
       "unit": "jam",
@@ -35,8 +35,8 @@
       "preferred": "HSD_2026"
     },
     {
-      "identity": "RES-001237|kg|NATIONAL|||2026-Q1",
-      "resourceId": "RES-001237",
+      "identity": "RES-001241|kg|NATIONAL|||2026-Q1",
+      "resourceId": "RES-001241",
       "resourceCode": "M57a",
       "resourceName": "Besi Beton",
       "unit": "kg",
@@ -109,8 +109,8 @@
       "preferred": "HSD_2026"
     },
     {
-      "identity": "RES-001293|OH|NATIONAL|||2026-Q1",
-      "resourceId": "RES-001293",
+      "identity": "RES-001297|OH|NATIONAL|||2026-Q1",
+      "resourceId": "RES-001297",
       "resourceCode": "L.04",
       "resourceName": "Mandor",
       "unit": "OH",
@@ -148,8 +148,8 @@
       "preferred": "COMMERCIAL_2026"
     },
     {
-      "identity": "RES-001294|OH|NATIONAL|||2026-Q1",
-      "resourceId": "RES-001294",
+      "identity": "RES-001298|OH|NATIONAL|||2026-Q1",
+      "resourceId": "RES-001298",
       "resourceCode": "L.01",
       "resourceName": "Pekerja",
       "unit": "OH",
@@ -180,8 +180,8 @@
       "preferred": "COMMERCIAL_2026"
     },
     {
-      "identity": "RES-000423|jam|NATIONAL|||2026-Q1",
-      "resourceId": "RES-000423",
+      "identity": "RES-000424|jam|NATIONAL|||2026-Q1",
+      "resourceId": "RES-000424",
       "resourceCode": "E10",
       "resourceName": "Excavator",
       "unit": "jam",
@@ -251,8 +251,8 @@
       "preferred": "HSD_2026"
     },
     {
-      "identity": "RES-000423|jam|NATIONAL|||2026-01",
-      "resourceId": "RES-000423",
+      "identity": "RES-000424|jam|NATIONAL|||2026-01",
+      "resourceId": "RES-000424",
       "resourceCode": "E10",
       "resourceName": "Excavator",
       "unit": "jam",
@@ -283,8 +283,8 @@
       "preferred": "EQUIPMENT_2026"
     },
     {
-      "identity": "RES-003513|kg|NATIONAL|||2026-Q1",
-      "resourceId": "RES-003513",
+      "identity": "RES-003489|kg|NATIONAL|||2026-Q1",
+      "resourceId": "RES-003489",
       "resourceCode": "M279",
       "resourceName": "Mortar",
       "unit": "kg",
@@ -315,8 +315,8 @@
       "preferred": "HSD_2026"
     },
     {
-      "identity": "RES-004739|m3|NATIONAL|||2026-Q1",
-      "resourceId": "RES-004739",
+      "identity": "RES-004705|m3|NATIONAL|||2026-Q1",
+      "resourceId": "RES-004705",
       "resourceCode": "M16a",
       "resourceName": "Sirtu 2 / 3",
       "unit": "m3",
@@ -354,8 +354,8 @@
       "preferred": "HSD_2026"
     },
     {
-      "identity": "RES-001403|OJ|NATIONAL|||2026-Q1",
-      "resourceId": "RES-001403",
+      "identity": "RES-001407|OJ|NATIONAL|||2026-Q1",
+      "resourceId": "RES-001407",
       "resourceCode": "L.02",
       "resourceName": "Tukang",
       "unit": "OJ",
@@ -421,8 +421,8 @@
       "preferred": "HSD_2026"
     },
     {
-      "identity": "RES-003594|kg|NATIONAL|||2026-Q1",
-      "resourceId": "RES-003594",
+      "identity": "RES-003570|kg|NATIONAL|||2026-Q1",
+      "resourceId": "RES-003570",
       "resourceCode": "M12",
       "resourceName": "Semen",
       "unit": "kg",
@@ -474,8 +474,8 @@
       "preferred": "HSD_2026"
     },
     {
-      "identity": "RES-001300|OJ|NATIONAL|||2026-Q1",
-      "resourceId": "RES-001300",
+      "identity": "RES-001304|OJ|NATIONAL|||2026-Q1",
+      "resourceId": "RES-001304",
       "resourceCode": "L.01",
       "resourceName": "Pekerja",
       "unit": "OJ",
@@ -513,8 +513,8 @@
       "preferred": "HSD_2026"
     },
     {
-      "identity": "RES-001403|OJ|NATIONAL|||2026-01",
-      "resourceId": "RES-001403",
+      "identity": "RES-001407|OJ|NATIONAL|||2026-01",
+      "resourceId": "RES-001407",
       "resourceCode": "L.02",
       "resourceName": "Tukang",
       "unit": "OJ",
@@ -601,8 +601,8 @@
       "preferred": "LABOR_2026"
     },
     {
-      "identity": "RES-001282|OJ|NATIONAL|||2026-01",
-      "resourceId": "RES-001282",
+      "identity": "RES-001286|OJ|NATIONAL|||2026-01",
+      "resourceId": "RES-001286",
       "resourceCode": "L10",
       "resourceName": "Kepala Tukang",
       "unit": "OJ",
@@ -654,8 +654,8 @@
       "preferred": "LABOR_2026"
     },
     {
-      "identity": "RES-001466|OJ|NATIONAL|||2026-01",
-      "resourceId": "RES-001466",
+      "identity": "RES-001470|OJ|NATIONAL|||2026-01",
+      "resourceId": "RES-001470",
       "resourceCode": "L.29",
       "resourceName": "Welding Inspector",
       "unit": "OJ",
@@ -686,8 +686,8 @@
       "preferred": "LABOR_2026"
     },
     {
-      "identity": "RES-001303|OH|NATIONAL|||2026-01",
-      "resourceId": "RES-001303",
+      "identity": "RES-001307|OH|NATIONAL|||2026-01",
+      "resourceId": "RES-001307",
       "resourceCode": "L.03",
       "resourceName": "Kepala tukang",
       "unit": "OH",
@@ -732,8 +732,8 @@
       "preferred": "LABOR_2026"
     },
     {
-      "identity": "RES-001294|OH|NATIONAL|||2026-01",
-      "resourceId": "RES-001294",
+      "identity": "RES-001298|OH|NATIONAL|||2026-01",
+      "resourceId": "RES-001298",
       "resourceCode": "L.01",
       "resourceName": "Pekerja",
       "unit": "OH",
@@ -764,8 +764,301 @@
       "preferred": "LABOR_2026"
     },
     {
-      "identity": "RES-001237|kg|PROVINCE|DKI Jakarta||2026-01",
-      "resourceId": "RES-001237",
+      "identity": "RES-001894|m3|NATIONAL|||2026-11",
+      "resourceId": "RES-001894",
+      "resourceCode": "M02",
+      "resourceName": "Batu Kali",
+      "unit": "m3",
+      "location": {
+        "level": "NATIONAL",
+        "provinceName": null,
+        "regencyName": null,
+        "cityName": "Nasional"
+      },
+      "period": "2026-11",
+      "candidates": [
+        {
+          "price": 185000,
+          "sourceKey": "MARKET_2026",
+          "sourceName": "Riset Harga Pasar EZRAB 2026 (Tokopedia / Shopee / Bukalapak)",
+          "priority": 6,
+          "tier": "COMMERCIAL_REFERENCE"
+        },
+        {
+          "price": 185000,
+          "sourceKey": "MARKET_2026",
+          "sourceName": "Riset Harga Pasar EZRAB 2026 (Tokopedia / Shopee / Bukalapak)",
+          "priority": 6,
+          "tier": "COMMERCIAL_REFERENCE"
+        },
+        {
+          "price": 185000,
+          "sourceKey": "MARKET_2026",
+          "sourceName": "Riset Harga Pasar EZRAB 2026 (Tokopedia / Shopee / Bukalapak)",
+          "priority": 6,
+          "tier": "COMMERCIAL_REFERENCE"
+        },
+        {
+          "price": 250000,
+          "sourceKey": "MARKET_2026",
+          "sourceName": "Riset Harga Pasar EZRAB 2026 (Tokopedia / Shopee / Bukalapak)",
+          "priority": 6,
+          "tier": "COMMERCIAL_REFERENCE"
+        },
+        {
+          "price": 185000,
+          "sourceKey": "MARKET_2026",
+          "sourceName": "Riset Harga Pasar EZRAB 2026 (Tokopedia / Shopee / Bukalapak)",
+          "priority": 6,
+          "tier": "COMMERCIAL_REFERENCE"
+        },
+        {
+          "price": 250000,
+          "sourceKey": "MARKET_2026",
+          "sourceName": "Riset Harga Pasar EZRAB 2026 (Tokopedia / Shopee / Bukalapak)",
+          "priority": 6,
+          "tier": "COMMERCIAL_REFERENCE"
+        },
+        {
+          "price": 185000,
+          "sourceKey": "MARKET_2026",
+          "sourceName": "Riset Harga Pasar EZRAB 2026 (Tokopedia / Shopee / Bukalapak)",
+          "priority": 6,
+          "tier": "COMMERCIAL_REFERENCE"
+        }
+      ],
+      "resolution": "SOURCE_PRIORITY",
+      "preferred": "MARKET_2026"
+    },
+    {
+      "identity": "RES-002081|m3|NATIONAL|||2026-11",
+      "resourceId": "RES-002081",
+      "resourceCode": "M37a",
+      "resourceName": "Beton fc’25 MPa",
+      "unit": "m3",
+      "location": {
+        "level": "NATIONAL",
+        "provinceName": null,
+        "regencyName": null,
+        "cityName": "Nasional"
+      },
+      "period": "2026-11",
+      "candidates": [
+        {
+          "price": 1195000,
+          "sourceKey": "MARKET_2026",
+          "sourceName": "Riset Harga Pasar EZRAB 2026 (Tokopedia / Shopee / Bukalapak)",
+          "priority": 6,
+          "tier": "COMMERCIAL_REFERENCE"
+        },
+        {
+          "price": 1115000,
+          "sourceKey": "MARKET_2026",
+          "sourceName": "Riset Harga Pasar EZRAB 2026 (Tokopedia / Shopee / Bukalapak)",
+          "priority": 6,
+          "tier": "COMMERCIAL_REFERENCE"
+        },
+        {
+          "price": 1115000,
+          "sourceKey": "MARKET_2026",
+          "sourceName": "Riset Harga Pasar EZRAB 2026 (Tokopedia / Shopee / Bukalapak)",
+          "priority": 6,
+          "tier": "COMMERCIAL_REFERENCE"
+        },
+        {
+          "price": 1115000,
+          "sourceKey": "MARKET_2026",
+          "sourceName": "Riset Harga Pasar EZRAB 2026 (Tokopedia / Shopee / Bukalapak)",
+          "priority": 6,
+          "tier": "COMMERCIAL_REFERENCE"
+        }
+      ],
+      "resolution": "SOURCE_PRIORITY",
+      "preferred": "MARKET_2026"
+    },
+    {
+      "identity": "RES-001369|kg|NATIONAL|||2026-11",
+      "resourceId": "RES-001369",
+      "resourceCode": "M18",
+      "resourceName": "Paku",
+      "unit": "kg",
+      "location": {
+        "level": "NATIONAL",
+        "provinceName": null,
+        "regencyName": null,
+        "cityName": "Nasional"
+      },
+      "period": "2026-11",
+      "candidates": [
+        {
+          "price": 34500,
+          "sourceKey": "MARKET_2026",
+          "sourceName": "Riset Harga Pasar EZRAB 2026 (Tokopedia / Shopee / Bukalapak)",
+          "priority": 6,
+          "tier": "COMMERCIAL_REFERENCE"
+        },
+        {
+          "price": 23000,
+          "sourceKey": "MARKET_2026",
+          "sourceName": "Riset Harga Pasar EZRAB 2026 (Tokopedia / Shopee / Bukalapak)",
+          "priority": 6,
+          "tier": "COMMERCIAL_REFERENCE"
+        },
+        {
+          "price": 23000,
+          "sourceKey": "MARKET_2026",
+          "sourceName": "Riset Harga Pasar EZRAB 2026 (Tokopedia / Shopee / Bukalapak)",
+          "priority": 6,
+          "tier": "COMMERCIAL_REFERENCE"
+        },
+        {
+          "price": 23000,
+          "sourceKey": "MARKET_2026",
+          "sourceName": "Riset Harga Pasar EZRAB 2026 (Tokopedia / Shopee / Bukalapak)",
+          "priority": 6,
+          "tier": "COMMERCIAL_REFERENCE"
+        },
+        {
+          "price": 34085,
+          "sourceKey": "MARKET_2026",
+          "sourceName": "Riset Harga Pasar EZRAB 2026 (Tokopedia / Shopee / Bukalapak)",
+          "priority": 6,
+          "tier": "COMMERCIAL_REFERENCE"
+        },
+        {
+          "price": 23000,
+          "sourceKey": "MARKET_2026",
+          "sourceName": "Riset Harga Pasar EZRAB 2026 (Tokopedia / Shopee / Bukalapak)",
+          "priority": 6,
+          "tier": "COMMERCIAL_REFERENCE"
+        },
+        {
+          "price": 30000,
+          "sourceKey": "MARKET_2026",
+          "sourceName": "Riset Harga Pasar EZRAB 2026 (Tokopedia / Shopee / Bukalapak)",
+          "priority": 6,
+          "tier": "COMMERCIAL_REFERENCE"
+        },
+        {
+          "price": 23000,
+          "sourceKey": "MARKET_2026",
+          "sourceName": "Riset Harga Pasar EZRAB 2026 (Tokopedia / Shopee / Bukalapak)",
+          "priority": 6,
+          "tier": "COMMERCIAL_REFERENCE"
+        },
+        {
+          "price": 23000,
+          "sourceKey": "MARKET_2026",
+          "sourceName": "Riset Harga Pasar EZRAB 2026 (Tokopedia / Shopee / Bukalapak)",
+          "priority": 6,
+          "tier": "COMMERCIAL_REFERENCE"
+        },
+        {
+          "price": 24420,
+          "sourceKey": "MARKET_2026",
+          "sourceName": "Riset Harga Pasar EZRAB 2026 (Tokopedia / Shopee / Bukalapak)",
+          "priority": 6,
+          "tier": "COMMERCIAL_REFERENCE"
+        }
+      ],
+      "resolution": "SOURCE_PRIORITY",
+      "preferred": "MARKET_2026"
+    },
+    {
+      "identity": "RES-003733|m3|NATIONAL|||2026-11",
+      "resourceId": "RES-003733",
+      "resourceCode": "M01b",
+      "resourceName": "Pasir",
+      "unit": "m3",
+      "location": {
+        "level": "NATIONAL",
+        "provinceName": null,
+        "regencyName": null,
+        "cityName": "Nasional"
+      },
+      "period": "2026-11",
+      "candidates": [
+        {
+          "price": 240000,
+          "sourceKey": "MARKET_2026",
+          "sourceName": "Riset Harga Pasar EZRAB 2026 (Tokopedia / Shopee / Bukalapak)",
+          "priority": 6,
+          "tier": "COMMERCIAL_REFERENCE"
+        },
+        {
+          "price": 256250,
+          "sourceKey": "MARKET_2026",
+          "sourceName": "Riset Harga Pasar EZRAB 2026 (Tokopedia / Shopee / Bukalapak)",
+          "priority": 6,
+          "tier": "COMMERCIAL_REFERENCE"
+        },
+        {
+          "price": 240000,
+          "sourceKey": "MARKET_2026",
+          "sourceName": "Riset Harga Pasar EZRAB 2026 (Tokopedia / Shopee / Bukalapak)",
+          "priority": 6,
+          "tier": "COMMERCIAL_REFERENCE"
+        },
+        {
+          "price": 250000,
+          "sourceKey": "MARKET_2026",
+          "sourceName": "Riset Harga Pasar EZRAB 2026 (Tokopedia / Shopee / Bukalapak)",
+          "priority": 6,
+          "tier": "COMMERCIAL_REFERENCE"
+        },
+        {
+          "price": 240000,
+          "sourceKey": "MARKET_2026",
+          "sourceName": "Riset Harga Pasar EZRAB 2026 (Tokopedia / Shopee / Bukalapak)",
+          "priority": 6,
+          "tier": "COMMERCIAL_REFERENCE"
+        },
+        {
+          "price": 250000,
+          "sourceKey": "MARKET_2026",
+          "sourceName": "Riset Harga Pasar EZRAB 2026 (Tokopedia / Shopee / Bukalapak)",
+          "priority": 6,
+          "tier": "COMMERCIAL_REFERENCE"
+        }
+      ],
+      "resolution": "SOURCE_PRIORITY",
+      "preferred": "MARKET_2026"
+    },
+    {
+      "identity": "RES-002016|kg|NATIONAL|||2026-11",
+      "resourceId": "RES-002016",
+      "resourceCode": "M16",
+      "resourceName": "Besi Siku",
+      "unit": "kg",
+      "location": {
+        "level": "NATIONAL",
+        "provinceName": null,
+        "regencyName": null,
+        "cityName": "Nasional"
+      },
+      "period": "2026-11",
+      "candidates": [
+        {
+          "price": 15000,
+          "sourceKey": "MARKET_2026",
+          "sourceName": "Riset Harga Pasar EZRAB 2026 (Tokopedia / Shopee / Bukalapak)",
+          "priority": 6,
+          "tier": "COMMERCIAL_REFERENCE"
+        },
+        {
+          "price": 12488,
+          "sourceKey": "MARKET_2026",
+          "sourceName": "Riset Harga Pasar EZRAB 2026 (Tokopedia / Shopee / Bukalapak)",
+          "priority": 6,
+          "tier": "COMMERCIAL_REFERENCE"
+        }
+      ],
+      "resolution": "SOURCE_PRIORITY",
+      "preferred": "MARKET_2026"
+    },
+    {
+      "identity": "RES-001241|kg|PROVINCE|DKI Jakarta||2026-01",
+      "resourceId": "RES-001241",
       "resourceCode": "M57a",
       "resourceName": "Besi Beton",
       "unit": "kg",
@@ -1286,8 +1579,8 @@
       "preferred": "MATERIAL_MASTER_2026"
     },
     {
-      "identity": "RES-001816|kg|PROVINCE|DKI Jakarta||2026-09",
-      "resourceId": "RES-001816",
+      "identity": "RES-001818|kg|PROVINCE|DKI Jakarta||2026-09",
+      "resourceId": "RES-001818",
       "resourceCode": "M39b",
       "resourceName": "Baja Tulangan",
       "unit": "kg",
@@ -1332,8 +1625,8 @@
       "preferred": "MATERIAL_MASTER_2026"
     },
     {
-      "identity": "RES-003523|lembar|PROVINCE|DKI Jakarta||2026-09",
-      "resourceId": "RES-003523",
+      "identity": "RES-003499|lembar|PROVINCE|DKI Jakarta||2026-09",
+      "resourceId": "RES-003499",
       "resourceCode": "M73",
       "resourceName": "Multiplek",
       "unit": "lembar",
@@ -1378,8 +1671,8 @@
       "preferred": "MATERIAL_MASTER_2026"
     },
     {
-      "identity": "RES-003930|m|PROVINCE|DKI Jakarta||2026-09",
-      "resourceId": "RES-003930",
+      "identity": "RES-003900|m|PROVINCE|DKI Jakarta||2026-09",
+      "resourceId": "RES-003900",
       "resourceCode": "M241",
       "resourceName": "Pipa Baja",
       "unit": "m",
@@ -1641,8 +1934,8 @@
       "preferred": "MATERIAL_MASTER_2026"
     },
     {
-      "identity": "RES-003966|m|PROVINCE|DKI Jakarta||2026-09",
-      "resourceId": "RES-003966",
+      "identity": "RES-003936|m|PROVINCE|DKI Jakarta||2026-09",
+      "resourceId": "RES-003936",
       "resourceCode": "M241a",
       "resourceName": "Pipa Baja dia 50 mm",
       "unit": "m",
@@ -1680,8 +1973,8 @@
       "preferred": "MATERIAL_MASTER_2026"
     },
     {
-      "identity": "RES-001926|bh|PROVINCE|DKI Jakarta||2026-09",
-      "resourceId": "RES-001926",
+      "identity": "RES-001937|bh|PROVINCE|DKI Jakarta||2026-09",
+      "resourceId": "RES-001937",
       "resourceCode": "M223",
       "resourceName": "Baut dan Mur",
       "unit": "bh",
@@ -1754,8 +2047,8 @@
       "preferred": "MATERIAL_MASTER_2026"
     },
     {
-      "identity": "RES-001365|kg|PROVINCE|DKI Jakarta||2026-09",
-      "resourceId": "RES-001365",
+      "identity": "RES-001369|kg|PROVINCE|DKI Jakarta||2026-09",
+      "resourceId": "RES-001369",
       "resourceCode": "M18",
       "resourceName": "Paku",
       "unit": "kg",
@@ -1877,8 +2170,8 @@
       "preferred": "MATERIAL_MASTER_2026"
     },
     {
-      "identity": "RES-002185|kg|PROVINCE|DKI Jakarta||2026-09",
-      "resourceId": "RES-002185",
+      "identity": "RES-002213|kg|PROVINCE|DKI Jakarta||2026-09",
+      "resourceId": "RES-002213",
       "resourceCode": "M95",
       "resourceName": "Cat Besi",
       "unit": "kg",
@@ -1979,8 +2272,8 @@
       "preferred": "MATERIAL_MASTER_2026"
     },
     {
-      "identity": "RES-001237|kg|PROVINCE|Nasional||2026-01",
-      "resourceId": "RES-001237",
+      "identity": "RES-001241|kg|PROVINCE|Nasional||2026-01",
+      "resourceId": "RES-001241",
       "resourceCode": "M57a",
       "resourceName": "Besi Beton",
       "unit": "kg",
@@ -2011,8 +2304,8 @@
       "preferred": "MATERIAL_MASTER_2026"
     },
     {
-      "identity": "RES-003594|kg|PROVINCE|DKI Jakarta||2026-09",
-      "resourceId": "RES-003594",
+      "identity": "RES-003570|kg|PROVINCE|DKI Jakarta||2026-09",
+      "resourceId": "RES-003570",
       "resourceCode": "M12",
       "resourceName": "Semen",
       "unit": "kg",
@@ -2064,8 +2357,8 @@
       "preferred": "MATERIAL_MASTER_2026"
     },
     {
-      "identity": "RES-004599|kg|PROVINCE|DKI Jakarta||2026-09",
-      "resourceId": "RES-004599",
+      "identity": "RES-004569|kg|PROVINCE|DKI Jakarta||2026-09",
+      "resourceId": "RES-004569",
       "resourceCode": "M94",
       "resourceName": "Joint Sealent",
       "unit": "kg",
@@ -2096,8 +2389,8 @@
       "preferred": "MATERIAL_MASTER_2026"
     },
     {
-      "identity": "RES-003309|bh|PROVINCE|DKI Jakarta||2026-09",
-      "resourceId": "RES-003309",
+      "identity": "RES-003329|bh|PROVINCE|DKI Jakarta||2026-09",
+      "resourceId": "RES-003329",
       "resourceCode": "M395d",
       "resourceName": "Lampu LED-T 250 Watt (Lengkap)",
       "unit": "bh",
@@ -2128,8 +2421,8 @@
       "preferred": "MATERIAL_MASTER_2026"
     },
     {
-      "identity": "RES-004484|m3|PROVINCE|DKI Jakarta||2026-09",
-      "resourceId": "RES-004484",
+      "identity": "RES-004455|m3|PROVINCE|DKI Jakarta||2026-09",
+      "resourceId": "RES-004455",
       "resourceCode": "M272",
       "resourceName": "Pupuk",
       "unit": "m3",
@@ -2174,8 +2467,8 @@
       "preferred": "MATERIAL_MASTER_2026"
     },
     {
-      "identity": "RES-001244|bh|PROVINCE|DKI Jakarta||2026-09",
-      "resourceId": "RES-001244",
+      "identity": "RES-001248|bh|PROVINCE|DKI Jakarta||2026-09",
+      "resourceId": "RES-001248",
       "resourceCode": "M375",
       "resourceName": "Bollard Cast iron",
       "unit": "bh",
@@ -2206,8 +2499,8 @@
       "preferred": "MATERIAL_MASTER_2026"
     },
     {
-      "identity": "RES-001367|m3|PROVINCE|DKI Jakarta||2026-09",
-      "resourceId": "RES-001367",
+      "identity": "RES-001371|m3|PROVINCE|DKI Jakarta||2026-09",
+      "resourceId": "RES-001371",
       "resourceCode": "M01a",
       "resourceName": "Pasir Beton",
       "unit": "m3",
@@ -2252,8 +2545,8 @@
       "preferred": "MATERIAL_MASTER_2026"
     },
     {
-      "identity": "RES-005160|m|PROVINCE|DKI Jakarta||2026-09",
-      "resourceId": "RES-005160",
+      "identity": "RES-005126|m|PROVINCE|DKI Jakarta||2026-09",
+      "resourceId": "RES-005126",
       "resourceCode": "M439",
       "resourceName": "aksesoris",
       "unit": "m",
@@ -2284,8 +2577,8 @@
       "preferred": "MATERIAL_MASTER_2026"
     },
     {
-      "identity": "RES-003785|m3|PROVINCE|DKI Jakarta||2026-09",
-      "resourceId": "RES-003785",
+      "identity": "RES-003756|m3|PROVINCE|DKI Jakarta||2026-09",
+      "resourceId": "RES-003756",
       "resourceCode": "M01d",
       "resourceName": "Pasir Urug",
       "unit": "m3",
@@ -2323,8 +2616,8 @@
       "preferred": "MATERIAL_MASTER_2026"
     },
     {
-      "identity": "RES-003594|kg|PROVINCE|Nasional||2026-01",
-      "resourceId": "RES-003594",
+      "identity": "RES-003570|kg|PROVINCE|Nasional||2026-01",
+      "resourceId": "RES-003570",
       "resourceCode": "M12",
       "resourceName": "Semen",
       "unit": "kg",
@@ -2376,8 +2669,8 @@
       "preferred": "MATERIAL_MASTER_2026"
     },
     {
-      "identity": "RES-003513|kg|PROVINCE|DKI Jakarta||2026-09",
-      "resourceId": "RES-003513",
+      "identity": "RES-003489|kg|PROVINCE|DKI Jakarta||2026-09",
+      "resourceId": "RES-003489",
       "resourceCode": "M279",
       "resourceName": "Mortar",
       "unit": "kg",
@@ -2408,8 +2701,8 @@
       "preferred": "MATERIAL_MASTER_2026"
     },
     {
-      "identity": "RES-003882|kg|PROVINCE|DKI Jakarta||2026-09",
-      "resourceId": "RES-003882",
+      "identity": "RES-003852|kg|PROVINCE|DKI Jakarta||2026-09",
+      "resourceId": "RES-003852",
       "resourceCode": "M125",
       "resourceName": "Perekat",
       "unit": "kg",
@@ -2461,8 +2754,8 @@
       "preferred": "MATERIAL_MASTER_2026"
     },
     {
-      "identity": "RES-003763|m3|PROVINCE|DKI Jakarta||2026-09",
-      "resourceId": "RES-003763",
+      "identity": "RES-003733|m3|PROVINCE|DKI Jakarta||2026-09",
+      "resourceId": "RES-003733",
       "resourceCode": "M01b",
       "resourceName": "Pasir",
       "unit": "m3",
@@ -2521,8 +2814,8 @@
       "preferred": "MATERIAL_MASTER_2026"
     },
     {
-      "identity": "RES-004739|m3|PROVINCE|DKI Jakarta||2026-09",
-      "resourceId": "RES-004739",
+      "identity": "RES-004705|m3|PROVINCE|DKI Jakarta||2026-09",
+      "resourceId": "RES-004705",
       "resourceCode": "M16a",
       "resourceName": "Sirtu 2 / 3",
       "unit": "m3",
@@ -2567,8 +2860,8 @@
       "preferred": "MATERIAL_MASTER_2026"
     },
     {
-      "identity": "RES-002767|bh|PROVINCE|DKI Jakarta||2026-09",
-      "resourceId": "RES-002767",
+      "identity": "RES-002786|bh|PROVINCE|DKI Jakarta||2026-09",
+      "resourceId": "RES-002786",
       "resourceCode": "M368a",
       "resourceName": "Homogeneous Tile 30x30x3",
       "unit": "bh",
@@ -2606,8 +2899,8 @@
       "preferred": "MATERIAL_MASTER_2026"
     },
     {
-      "identity": "RES-001892|m3|PROVINCE|DKI Jakarta||2026-09",
-      "resourceId": "RES-001892",
+      "identity": "RES-001894|m3|PROVINCE|DKI Jakarta||2026-09",
+      "resourceId": "RES-001894",
       "resourceCode": "M02",
       "resourceName": "Batu Kali",
       "unit": "m3",
@@ -2638,8 +2931,8 @@
       "preferred": "MATERIAL_MASTER_2026"
     },
     {
-      "identity": "RES-001233|m3|PROVINCE|DKI Jakarta||2026-09",
-      "resourceId": "RES-001233",
+      "identity": "RES-001237|m3|PROVINCE|DKI Jakarta||2026-09",
+      "resourceId": "RES-001237",
       "resourceCode": "M06",
       "resourceName": "Batu Belah",
       "unit": "m3",
@@ -2684,8 +2977,8 @@
       "preferred": "MATERIAL_MASTER_2026"
     },
     {
-      "identity": "RES-003190|m3|PROVINCE|DKI Jakarta||2026-09",
-      "resourceId": "RES-003190",
+      "identity": "RES-003209|m3|PROVINCE|DKI Jakarta||2026-09",
+      "resourceId": "RES-003209",
       "resourceCode": "M19",
       "resourceName": "Kayu Kaso",
       "unit": "m3",
@@ -2716,8 +3009,8 @@
       "preferred": "MATERIAL_MASTER_2026"
     },
     {
-      "identity": "RES-003964|m|PROVINCE|DKI Jakarta||2026-09",
-      "resourceId": "RES-003964",
+      "identity": "RES-003934|m|PROVINCE|DKI Jakarta||2026-09",
+      "resourceId": "RES-003934",
       "resourceCode": "M241b",
       "resourceName": "Pipa Baja dia 100 m",
       "unit": "m",
@@ -2748,8 +3041,8 @@
       "preferred": "MATERIAL_MASTER_2026"
     },
     {
-      "identity": "RES-002007|kg|PROVINCE|DKI Jakarta||2026-09",
-      "resourceId": "RES-002007",
+      "identity": "RES-002016|kg|PROVINCE|DKI Jakarta||2026-09",
+      "resourceId": "RES-002016",
       "resourceCode": "M16",
       "resourceName": "Besi Siku",
       "unit": "kg",
@@ -2787,8 +3080,8 @@
       "preferred": "MATERIAL_MASTER_2026"
     },
     {
-      "identity": "RES-003196|m3|PROVINCE|DKI Jakarta||2026-09",
-      "resourceId": "RES-003196",
+      "identity": "RES-003216|m3|PROVINCE|DKI Jakarta||2026-09",
+      "resourceId": "RES-003216",
       "resourceCode": "M142",
       "resourceName": "Kayu Kelas 1",
       "unit": "m3",
@@ -2826,8 +3119,8 @@
       "preferred": "MATERIAL_MASTER_2026"
     },
     {
-      "identity": "RES-003513|kg|PROVINCE|Nasional||2026-01",
-      "resourceId": "RES-003513",
+      "identity": "RES-003489|kg|PROVINCE|Nasional||2026-01",
+      "resourceId": "RES-003489",
       "resourceCode": "M279",
       "resourceName": "Mortar",
       "unit": "kg",
@@ -2858,8 +3151,8 @@
       "preferred": "MATERIAL_MASTER_2026"
     },
     {
-      "identity": "RES-004091|m|PROVINCE|DKI Jakarta||2026-09",
-      "resourceId": "RES-004091",
+      "identity": "RES-004061|m|PROVINCE|DKI Jakarta||2026-09",
+      "resourceId": "RES-004061",
       "resourceCode": "M240h",
       "resourceName": "Pipa PVC AW 2 inch",
       "unit": "m",
@@ -2890,8 +3183,8 @@
       "preferred": "MATERIAL_MASTER_2026"
     },
     {
-      "identity": "RES-004739|m3|PROVINCE|Nasional||2026-01",
-      "resourceId": "RES-004739",
+      "identity": "RES-004705|m3|PROVINCE|Nasional||2026-01",
+      "resourceId": "RES-004705",
       "resourceCode": "M16a",
       "resourceName": "Sirtu 2 / 3",
       "unit": "m3",
@@ -2929,8 +3222,8 @@
       "preferred": "MATERIAL_MASTER_2026"
     },
     {
-      "identity": "RES-002912|m|PROVINCE|DKI Jakarta||2026-09",
-      "resourceId": "RES-002912",
+      "identity": "RES-002932|m|PROVINCE|DKI Jakarta||2026-09",
+      "resourceId": "RES-002932",
       "resourceCode": "M396ac",
       "resourceName": "Kabel NYFGBY 4C - 95 mm2",
       "unit": "m",

@@ -33,6 +33,37 @@
  *
  * Per the brief, a NAME_UNIT binding is NEVER promoted to VERIFIED.
  *
+ * MARKET_2026 NAME_KEY fallback (step 5, AFTER the main loop): a market row
+ * that tryMatch could not bind is retried against an index of canonical
+ * component names INCLUDING code-less components (which buildComponentKeys
+ * skips — `if (!code) continue`). An EXACT match on (runtime-normalized
+ * name, unit) emits a record with resourceId `RES-KEY-<hash>`, empty
+ * resourceCode and method NAME_KEY, always NEEDS_REVIEW. The runtime
+ * resolver finds such records through its byNameUnit/byName indexes, so
+ * code-less AHSP components become pricable without inventing a code.
+ * No component key is priced by this step (keysWithPrice does not move).
+ *
+ * Companion NAME_KEY records (step 5c): a main-loop binding names its
+ * record after the COMPONENT KEY (k.name), not the market row — so a
+ * fuzzy NAME_UNIT binding to a generic key (e.g. market row 'Paku
+ * campuran 5 cm + 7 cm' → key M18 'Paku') prices the key's coded
+ * components but NOT the code-less components that carry the market
+ * row's own name: the runtime name path looks the record up by the
+ * component's raw name. When a main-loop-bound MARKET_2026 row's
+ * normalized name differs from its key's normalized name, step 5c
+ * ALSO emits a NAME_KEY companion record named after the canonical
+ * component (exact name+unit match, same price). The key record and
+ * the companion serve different component populations; neither
+ * overwrites the other. Rows whose name already equals the key name
+ * get no companion (the key record serves them).
+ *
+ * MARKET_2026 COMPONENT rows (kind=COMPONENT, mixed-item decomposition,
+ * owner rule 17 Nov 2026) BYPASS tryMatch entirely and are emitted by the
+ * same step as standalone COMPONENT_REF records — reference prices keyed
+ * by their own name, with no canonical component binding at all. They are
+ * never fuzzy-bound to a coded key: a reference price is not a claim
+ * about any AHSP component.
+ *
  * DB-sync Fase 2 hardening (pipeline-local, see matcherHardening.ts):
  * roster aliases as name candidates (a), code matching disabled for
  * EQUIPMENT_2026 + COMMERCIAL_2026 (b), spec-number rule (c), token-boundary
@@ -80,6 +111,7 @@ import {
 } from './matcherHardening';
 import { LaborDatabaseService } from '../../src/domain/labor/laborDatabaseService';
 import { EquipmentDatabaseService } from '../../src/domain/equipment/equipmentDatabaseService';
+import { stripUnitAnnotation } from '../../src/data/priceDatabase2026/centralResolution';
 import { readAllSourceRows } from './normalizePrices';
 import { PRICE_SOURCES } from './sources.config';
 import {
@@ -149,6 +181,47 @@ function loadQuarantinedComponentKeys(): Map<string, QuarantinedComponentKey> {
   const parsed = JSON.parse(fs.readFileSync(p, 'utf8'));
   for (const k of (parsed.keys || []) as QuarantinedComponentKey[]) {
     if (k.key) out.set(k.key, k);
+  }
+  return out;
+}
+
+// ===========================================================================
+// quarantined component names (Ronde 2, V3 SS8)
+// ===========================================================================
+
+/**
+ * Component NAMES that are proven NOT materials — sub-analysis references,
+ * work descriptions, services, formula variables, unrecoverable fragments.
+ * Unlike quarantined KEYS (matched by looseCode|unit), these are matched by
+ * NAME_KEY (normNameKey(name)|normalizeUnitForType(unit, 'material')) and
+ * excluded from the NAME_KEY fallback index only: a market row can never
+ * bind to them by name, and they never produce a NAME_KEY record. The rows
+ * stay in the canonical data and stay PRICE_MISSING at runtime (the runtime
+ * resolver does NOT read this file); the gap-audit copy (audit-runtime-r2.ts)
+ * excludes them from the missing count. Q-13 is deliberately absent
+ * (R204/B.06.a.1 was recovered to a real material name by coordinator
+ * override); R192 is deliberately absent (its fragment was merged by the
+ * cleanup into the real material name 'Superplastizer M.24.b').
+ */
+interface QuarantinedComponentName {
+  key: string;
+  name: string;
+  unit: string;
+  reason: string;
+  detail: string;
+  provenance: string;
+  source: string;
+  rows: number;
+  confidence: string;
+}
+
+function loadQuarantinedComponentNames(): Map<string, QuarantinedComponentName> {
+  const p = path.join(ROOT, 'data', 'price2026', 'quarantined-component-names.json');
+  const out = new Map<string, QuarantinedComponentName>();
+  if (!fs.existsSync(p)) return out;
+  const parsed = JSON.parse(fs.readFileSync(p, 'utf8'));
+  for (const n of (parsed.names || []) as QuarantinedComponentName[]) {
+    if (n.key) out.set(n.key, n);
   }
   return out;
 }
@@ -374,6 +447,114 @@ function buildComponentIndex(componentKeys: ComponentKey[]): ComponentIndex {
     }
   }
   return { byKey, byLooseCode, byNormCode };
+}
+
+// ===========================================================================
+// NAME_KEY fallback index (MARKET_2026 only)
+// ===========================================================================
+
+/**
+ * Runtime name normalization, EXACTLY as the runtime resolver indexes
+ * names (resolver.ts normResourceName: stripUnitAnnotation + lowercase +
+ * non-word→space + collapse). The NAME_KEY fallback MUST use this — not
+ * the pipeline's normalizeName — because the emitted records are found
+ * at runtime through the resolver's byNameUnit/byName indexes, which
+ * are keyed by this normalization. stripUnitAnnotation is imported from
+ * the runtime module itself (centralResolution.ts) so the two cannot drift.
+ */
+function normNameKey(s: string): string {
+  return stripUnitAnnotation(s)
+    .toLowerCase()
+    .replace(/[^\w\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/** True when a price row is a MARKET_2026 decomposition-component row. */
+function isComponentRow(row: ResourcePriceRecord): boolean {
+  return row.sourceKey === 'MARKET_2026' && row.notes.includes('kind=COMPONENT');
+}
+
+/** One canonical-name bucket: every raw label observed for a (normName, unit). */
+interface NameKeyEntry {
+  key: string; // normName|unit
+  normName: string;
+  unit: string;
+  /** Best raw label: clean first, then most-used, then shortest (mirrors buildComponentKeys). */
+  name: string;
+  count: number;
+}
+
+/**
+ * Index of canonical MATERIAL component names INCLUDING code-less
+ * components — the population buildComponentKeys cannot see (`if (!code)
+ * continue`). Keyed by (runtime-normalized name, normalized unit).
+ * Coded components are included too: a market row that tryMatch rejected
+ * (ambiguous / below threshold) can still be rescued by an EXACT name
+ * match — the emission is a NAME_KEY record either way, never a
+ * component-key binding.
+ */
+function buildNameKeyIndex(
+  quarantinedNames: Map<string, QuarantinedComponentName> = new Map()
+): Map<string, NameKeyEntry> {
+  interface Acc {
+    unit: string;
+    count: number;
+    names: Map<string, { count: number; clean: boolean }>;
+  }
+  const map = new Map<string, Acc>();
+  for (const it of AHSP_2026_CANONICAL as any[]) {
+    for (const [type, comps] of [
+      ['labor', it.laborComponents || []],
+      ['material', it.materialComponents || []],
+      ['equipment', it.equipmentComponents || []],
+    ] as const) {
+      for (const c of comps as any[]) {
+        const code = String(c.code || '').trim();
+        // Same effective-type rule as buildComponentKeys (code prefix wins
+        // over the component array); MARKET_2026 rows are all material,
+        // so only material components can be priced by them.
+        const effectiveType = componentTypeFromCode(code) || type;
+        if (effectiveType !== 'material') continue;
+        const unit = normalizeUnitForType(String(c.unit || ''), effectiveType);
+        const rawName = String(c.name || '').replace(/\s*-\s*$/, '').trim();
+        if (!rawName) continue;
+        const norm = normNameKey(rawName);
+        if (!norm) continue;
+        const key = `${norm}|${unit}`;
+        // Quarantined names (V3 SS8): never enter the NAME_KEY index, so no
+        // market row can bind to them by name and no NAME_KEY record is ever
+        // emitted for them. The rows stay PRICE_MISSING at runtime by design.
+        if (quarantinedNames.has(key)) continue;
+        let e = map.get(key);
+        if (!e) {
+          e = { unit, count: 0, names: new Map() };
+          map.set(key, e);
+        }
+        e.count++;
+        const cur = e.names.get(rawName);
+        if (cur) cur.count++;
+        else e.names.set(rawName, { count: 1, clean: isCleanComponentName(rawName) });
+      }
+    }
+  }
+
+  const out = new Map<string, NameKeyEntry>();
+  for (const [key, e] of map) {
+    const ranked = [...e.names.entries()]
+      .map(([name, m]) => ({ name, ...m }))
+      .sort(
+        (a, b) =>
+          Number(b.clean) - Number(a.clean) ||
+          b.count - a.count ||
+          a.name.length - b.name.length ||
+          a.name.localeCompare(b.name)
+      );
+    const chosen = ranked[0];
+    const norm = key.slice(0, key.length - e.unit.length - 1);
+    out.set(key, { key, normName: norm, unit: e.unit, name: chosen ? chosen.name : '', count: e.count });
+  }
+  return out;
 }
 
 // ===========================================================================
@@ -626,6 +807,7 @@ function main(dryRun = false) {
   }));
   const idx = buildIndexes(resources);
   const quarantined = loadQuarantinedComponentKeys();
+  const quarantinedNames = loadQuarantinedComponentNames();
   const rosterAliases = loadRosterAliases();
   const componentKeys = buildComponentKeys(quarantined);
   const cidx = buildComponentIndex(componentKeys);
@@ -634,12 +816,27 @@ function main(dryRun = false) {
 
   const matched: ResourcePriceRecord[] = [];
   const unmatched: ResourcePriceRecord[] = [];
+  const componentRows: ResourcePriceRecord[] = [];
+  /** MARKET_2026 rows bound by the main loop (method + target key) — printed
+   *  with the fallback section so a dry-run review can audit every market
+   *  binding, including fuzzy NAME_UNIT ones, before the full pipeline runs. */
+  const marketMainLoopBindings: Array<{ sourceRecordId: string; method: string; componentKey: string; confidence: number }> = [];
+  /** MARKET_2026 rows bound by the main loop, with the bound key's name —
+   *  step 5c (companion NAME_KEY) needs the row + key name to detect a
+   *  name mismatch between the market row and its key. */
+  const marketMainLoopBoundRows: Array<{ row: ResourcePriceRecord; keyName: string }> = [];
   const methodCount = new Map<string, number>();
   const perSourceMatched = new Map<string, number>();
   const perSourceUnmatched = new Map<string, number>();
   const pricedComponentKeys = new Set<string>();
 
   for (const row of rows) {
+    // COMPONENT rows bypass tryMatch entirely: a decomposition reference
+    // price must never be fuzzy-bound to a coded key (see the fallback step).
+    if (isComponentRow(row)) {
+      componentRows.push(row);
+      continue;
+    }
     const outcome = tryMatch(row, idx, cidx, componentKeys, aliases, rosterAliases);
     methodCount.set(outcome.method, (methodCount.get(outcome.method) || 0) + 1);
 
@@ -652,6 +849,15 @@ function main(dryRun = false) {
     const k = outcome.componentKey;
     const g = idx.byLooseCodeUnit.get(k.key);
     const rep = g?.representative;
+    if (row.sourceKey === 'MARKET_2026') {
+      marketMainLoopBindings.push({
+        sourceRecordId: row.sourceRecordId || '',
+        method: outcome.method,
+        componentKey: k.key,
+        confidence: outcome.confidence,
+      });
+      marketMainLoopBoundRows.push({ row, keyName: k.name });
+    }
     const trusted = TRUSTED_MATCH_METHODS.includes(outcome.method);
     // PHASE 12: a name-only binding must NOT become VERIFIED.
     const status: PriceVerificationStatus = trusted ? row.verificationStatus : 'NEEDS_REVIEW';
@@ -676,6 +882,152 @@ function main(dryRun = false) {
 
     pricedComponentKeys.add(k.key);
     perSourceMatched.set(row.sourceKey, (perSourceMatched.get(row.sourceKey) || 0) + 1);
+  }
+
+  // ---- NAME_KEY / COMPONENT_REF fallback (MARKET_2026 only) ----------------
+  // Runs AFTER the main loop, on rows tryMatch could not bind (plus the
+  // COMPONENT rows, which bypass tryMatch by design — see above).
+  //   * regular market row + exact (normName, unit) hit in the name-key
+  //     index  → NAME_KEY record (RES-KEY-<hash>, resourceCode '', NEEDS_REVIEW)
+  //   * COMPONENT row (kind=COMPONENT) → COMPONENT_REF standalone record
+  //     (RES-KEY-<hash>, resourceCode '', resourceName = the item's own
+  //     name, NEEDS_REVIEW) — emitted even with NO canonical component.
+  // Emission is deduped per (normName, unit) across both methods: two rows
+  // naming the same thing at the same unit yield ONE record (the first in
+  // row order wins; the other stays unmatched with a NAME_KEY_DEDUP_SKIPPED
+  // note). NOTHING here touches pricedComponentKeys: neither method prices
+  // a component key.
+  const marketFallback = {
+    candidates: 0,
+    nameKeyEmitted: 0,
+    /** Step 5c companions (subset of nameKeyEmitted). */
+    nameKeyCompanionEmitted: 0,
+    companionDedupSkipped: 0,
+    companionNoCanonical: 0,
+    componentRefEmitted: 0,
+    dedupSkipped: 0,
+    noCanonicalComponent: 0,
+    /** MARKET_2026 rows bound by the main loop (before the fallback ran). */
+    mainLoopBindings: marketMainLoopBindings,
+    stillUnmatched: [] as Array<{ sourceRecordId: string; name: string; unit: string; price: number; reason: string }>,
+  };
+  {
+    const emittedByNameKey = new Map<string, string>(); // nameKey -> sourceRecordId of the emitted record
+    const emitStandalone = (
+      row: ResourcePriceRecord,
+      method: 'NAME_KEY' | 'COMPONENT_REF',
+      resourceName: string,
+      note: string,
+      // Step 5c companions share their row with a main-loop record, so
+      // the row's id is already taken — the companion gets a suffixed id
+      // (assert §2 requires unique record identities). Steps (a)/(b)
+      // emit from otherwise-unmatched rows, whose ids are unique already.
+      idSuffix = ''
+    ) => {
+      const key = `${normNameKey(row.resourceName)}|${row.unit}`;
+      matched.push({
+        ...row,
+        id: idSuffix ? `${row.id}${idSuffix}` : row.id,
+        resourceId: `RES-KEY-${sha1Like(key)}`,
+        resourceCode: '',
+        resourceName,
+        resourceType: 'material',
+        matchMethod: method,
+        // Exact-name evidence: NAME_KEY matched the canonical name exactly;
+        // COMPONENT_REF is keyed by its own name by construction. Either way
+        // the record is NEEDS_REVIEW — a name-only binding is never VERIFIED
+        // ('NAME_KEY' / 'COMPONENT_REF' are NOT in TRUSTED_MATCH_METHODS).
+        matchConfidence: 1,
+        verificationStatus: 'NEEDS_REVIEW',
+        notes: [...row.notes, note],
+        version: 1,
+        status: 'ACTIVE',
+      });
+      emittedByNameKey.set(key, row.sourceRecordId || row.id);
+      methodCount.set(method, (methodCount.get(method) || 0) + 1);
+      perSourceMatched.set(row.sourceKey, (perSourceMatched.get(row.sourceKey) || 0) + 1);
+      if (method === 'NAME_KEY') marketFallback.nameKeyEmitted++;
+      else marketFallback.componentRefEmitted++;
+    };
+
+    // (a) COMPONENT rows first: standalone reference prices, no canonical
+    // lookup at all (they bypassed tryMatch above for the same reason).
+    for (const row of componentRows) {
+      marketFallback.candidates++;
+      const key = `${normNameKey(row.resourceName)}|${row.unit}`;
+      const firstId = emittedByNameKey.get(key);
+      if (firstId) {
+        marketFallback.dedupSkipped++;
+        marketFallback.stillUnmatched.push({ sourceRecordId: row.sourceRecordId || '', name: row.resourceName, unit: row.unit, price: row.price, reason: `DEDUP_SKIPPED:${firstId}` });
+        methodCount.set('UNMATCHED', (methodCount.get('UNMATCHED') || 0) + 1);
+        perSourceUnmatched.set(row.sourceKey, (perSourceUnmatched.get(row.sourceKey) || 0) + 1);
+        unmatched.push({ ...row, matchMethod: 'UNMATCHED', matchConfidence: 0, notes: [...row.notes, `NAME_KEY_DEDUP_SKIPPED:${firstId}`] });
+        continue;
+      }
+      emitStandalone(row, 'COMPONENT_REF', row.resourceName, 'COMPONENT_ONLY: reference price for mixed-item decomposition (owner rule 2026-11-17); no AHSP component');
+    }
+
+    // (b) regular unmatched MARKET_2026 rows: exact name-key retry.
+    // The name-key index is shared with step (c) below. Quarantined names
+    // (V3 SS8) never enter the index, so no market row can bind to them.
+    const nameKeyIndex = buildNameKeyIndex(quarantinedNames);
+    const marketUnmatched = unmatched.filter((r) => r.sourceKey === 'MARKET_2026' && !isComponentRow(r));
+    if (marketUnmatched.length > 0) {
+      const kept: ResourcePriceRecord[] = [];
+      for (const row of unmatched) {
+        if (row.sourceKey !== 'MARKET_2026' || isComponentRow(row)) { kept.push(row); continue; }
+        marketFallback.candidates++;
+        const key = `${normNameKey(row.resourceName)}|${row.unit}`;
+        const entry = nameKeyIndex.get(key);
+        if (!entry) {
+          marketFallback.noCanonicalComponent++;
+          marketFallback.stillUnmatched.push({ sourceRecordId: row.sourceRecordId || '', name: row.resourceName, unit: row.unit, price: row.price, reason: 'NO_CANONICAL_COMPONENT' });
+          kept.push({ ...row, notes: [...row.notes, 'NAME_KEY_NO_CANONICAL_COMPONENT'] });
+          continue;
+        }
+        const firstId = emittedByNameKey.get(key);
+        if (firstId) {
+          marketFallback.dedupSkipped++;
+          marketFallback.stillUnmatched.push({ sourceRecordId: row.sourceRecordId || '', name: row.resourceName, unit: row.unit, price: row.price, reason: `DEDUP_SKIPPED:${firstId}` });
+          kept.push({ ...row, notes: [...row.notes, `NAME_KEY_DEDUP_SKIPPED:${firstId}`] });
+          continue;
+        }
+        // Convert this UNMATCHED row into a NAME_KEY match.
+        methodCount.set('UNMATCHED', (methodCount.get('UNMATCHED') || 0) - 1);
+        perSourceUnmatched.set(row.sourceKey, (perSourceUnmatched.get(row.sourceKey) || 0) - 1);
+        emitStandalone(row, 'NAME_KEY', entry.name, 'NAME_KEY: exact name+unit fallback (MARKET_2026 only)');
+      }
+      unmatched.length = 0;
+      unmatched.push(...kept);
+    }
+
+    // (c) companion NAME_KEY records for main-loop-bound MARKET_2026 rows
+    // whose name differs from their key's name (see the header comment):
+    // the main-loop record is named after the KEY, so code-less
+    // components carrying the market row's own name would still resolve
+    // to nothing. A companion record — same price, named after the
+    // canonical component — prices them. Rows whose name already equals
+    // the key name need no companion. A dedup skip or a missing
+    // canonical entry here is NOT an unmatched row (the row IS matched
+    // via the main loop), so neither touches `unmatched` or the
+    // UNMATCHED counts.
+    for (const { row, keyName } of marketMainLoopBoundRows) {
+      if (normNameKey(row.resourceName) === normNameKey(keyName)) continue;
+      marketFallback.candidates++;
+      const key = `${normNameKey(row.resourceName)}|${row.unit}`;
+      const entry = nameKeyIndex.get(key);
+      if (!entry) {
+        marketFallback.companionNoCanonical++;
+        continue;
+      }
+      const firstId = emittedByNameKey.get(key);
+      if (firstId) {
+        marketFallback.companionDedupSkipped++;
+        continue;
+      }
+      emitStandalone(row, 'NAME_KEY', entry.name, 'NAME_KEY: exact name+unit companion to main-loop key binding (MARKET_2026 only; row name differs from key name)', '-NK');
+      marketFallback.nameKeyCompanionEmitted++;
+    }
   }
 
   // ---- duplicate / conflict detection (PHASE 25/26) ------------------------
@@ -848,6 +1200,7 @@ function main(dryRun = false) {
     unmatchedRows: unmatched.length,
     matchRate: Number(((matched.length / rows.length) * 100).toFixed(2)),
     matchMethodHistogram: Object.fromEntries([...methodCount.entries()].sort((a, b) => b[1] - a[1])),
+    marketFallback,
     perSource: PRICE_SOURCES.filter((s) => s.active).map((s) => ({
       key: s.key,
       tier: s.tier,
@@ -899,6 +1252,23 @@ function main(dryRun = false) {
   console.log('match methods          :', JSON.stringify(matchReport.matchMethodHistogram));
   console.log('verification           :', JSON.stringify(verification));
   console.log('');
+  console.log('=== MARKET FALLBACK (NAME_KEY / COMPONENT_REF, MARKET_2026 only) ===');
+  console.log('candidates             :', marketFallback.candidates);
+  console.log('NAME_KEY emitted       :', marketFallback.nameKeyEmitted);
+  console.log('  of which companions  :', marketFallback.nameKeyCompanionEmitted);
+  console.log('COMPONENT_REF emitted  :', marketFallback.componentRefEmitted);
+  console.log('dedup skipped          :', marketFallback.dedupSkipped);
+  console.log('no canonical component :', marketFallback.noCanonicalComponent);
+  console.log('companion dedup skipped:', marketFallback.companionDedupSkipped);
+  console.log('companion no canonical :', marketFallback.companionNoCanonical);
+  for (const u of marketFallback.stillUnmatched) {
+    console.log(`  still unmatched: ${u.sourceRecordId || '(no id)'} | ${u.name} | ${u.unit} | Rp${u.price} | ${u.reason}`);
+  }
+  console.log('main-loop bindings     :', marketMainLoopBindings.length);
+  for (const b of marketMainLoopBindings) {
+    console.log(`  bound: ${b.sourceRecordId || '(no id)'} | ${b.method} | ${b.componentKey} | conf=${b.confidence.toFixed(2)}`);
+  }
+  console.log('');
   console.log('=== HARDENING (DB-sync Fase 2) ===');
   console.log('alias rules            :', aliases.length);
   console.log('roster alias bindings  :', hardening.rosterAliasBindings);
@@ -945,6 +1315,7 @@ function main(dryRun = false) {
         exactDuplicateGroups: exactDuplicates.length,
         conflictGroups: conflicts.length,
         canonicalEntities: canonical.stats.entities,
+        marketFallback,
       })}`
     );
   } else {

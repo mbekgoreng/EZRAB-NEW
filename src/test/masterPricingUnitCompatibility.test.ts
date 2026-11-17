@@ -40,8 +40,10 @@
  * - (6) Water: parenthetical unit annotations are stripped from name
  *   keys on both sides (`Air (m3)` → `Air`), so CK's own bulk record
  *   binds same-unit: exactly 4 rows move Rp200.000 → Rp50.000. The
- *   15 `Air Bersih` rows (Rp550.000) and the M170 @liter rows are
- *   unaffected. `pc` is never stripped (Portland Cement).
+ *   M170 @liter rows are unaffected. The 15 `Air Bersih` rows moved
+ *   Rp550.000 → Rp7.500/m³ via adopsi pasar 2026-11-17 (MARKET_2026
+ *   R032 direct record beats the §6 (c) liter→m³ conversion by the
+ *   same-unit-first rule). `pc` is never stripped (Portland Cement).
  * - (7) location/period validation: strings (and other non-objects)
  *   are rejected with a descriptive TypeError — never silently
  *   dropped (location) or silently breaking resolution (period).
@@ -539,8 +541,13 @@ describe('(6) air: token satuan dalam nama di-strip (bug normalisasi)', () => {
     expect(codeless.resourceName).toBe('Air (m3)');
   });
 
-  it('resolver: Air Bersih (Rp550.000) + Air @liter TIDAK terpengaruh strip', () => {
-    expect(q('M.21', 'Air Bersih', 'material', 'm3').price).toBe(550000);
+  it('resolver: Air Bersih (Rp7.500 pasar langsung) + Air @liter TIDAK terpengaruh strip', () => {
+    // Adopsi pasar 2026-11-17: M.21 resolves Rp7.500/m³ via the direct
+    // MARKET_2026 record (same-unit-first beats the §6 (c) liter→m³
+    // conversion Rp550.000, which survives as fallback — see the
+    // centralResolution conversion test). The strip behaviour itself is
+    // unchanged: 'Air Bersih' carries no unit token to strip.
+    expect(q('M.21', 'Air Bersih', 'material', 'm3').price).toBe(7500);
     expect(q('M170', 'Air', 'material', 'liter').price).toBe(19900);
   });
 
@@ -650,7 +657,7 @@ describe('(8) satuan kosong: flag UNIT_MISSING, jangan pernah asumsikan', () => 
     expect(withUnit.unitMissing).toBe(false);
   });
 
-  it('katalog: 342 komponen bersatuan kosong ter-flag; 3 resolve, sisanya null jujur', () => {
+  it('katalog: 2 komponen bersatuan kosong ter-flag; 2 resolve, sisanya null jujur', () => {
     let flagged = 0;
     let resolved = 0;
     const resolvedNames: string[] = [];
@@ -667,9 +674,9 @@ describe('(8) satuan kosong: flag UNIT_MISSING, jangan pernah asumsikan', () => 
         }
       }
     }
-    expect(flagged).toBe(342);
-    expect(resolved).toBe(3);
-    expect(resolvedNames.sort()).toEqual(['Pasir', 'Pasir pasang', 'Tukang pipa']);
+    expect(flagged).toBe(2);
+    expect(resolved).toBe(2);
+    expect(resolvedNames.sort()).toEqual(['Media Tanam', 'Tukang pipa']);
   });
 });
 
@@ -760,20 +767,26 @@ describe('A/B katalog §7: perubahan perilaku terukur penuh', () => {
     }
   });
 
-  it('status komposisi katalog pasca-§7: FULL 2.182 / PARTIAL 2.788 / MISSING 831', () => {
+  it('status komposisi katalog pasca-adopsi pasar ronde 2 2026-11-17: FULL 2.823 / PARTIAL 2.151 / MISSING 827', () => {
     // Resource-only A/B (Probe A): FULL 2.165 → 2.176 (+11 transfer),
     // PARTIAL 2.799 → 2.788, MISSING 57, NOCOMP 780. The composition
     // loop adds the DHSP/baked fallback (+6 FULL via hspPrice on
     // otherwise-unresolved items): 2.182 / 2.788 / 831 of 5.801.
+    // Adopsi pasar 2026-11-17 (589 baris material baru ter-resolve):
+    // FULL 2.182 → 2.358 (+176), PARTIAL 2.788 → 2.615 (−173),
+    // MISSING 831 → 828 (−3). MISSING counts the 780 NOCOMP items.
+    // Adopsi pasar ronde 2 2026-11-17 (332 record baru + perbaikan
+    // koefisien 0.0 + unit-fix): FULL 2.358 → 2.823 (+465), PARTIAL
+    // 2.615 → 2.151 (−464), MISSING 828 → 827 (−1).
     const counts = { FULL: 0, PARTIAL: 0, MISSING: 0 };
     for (const item of AHSP_2026_CANONICAL as any[]) {
       counts[priceResolver2026.resolveAhspUnitPrice(item).pricingStatus as keyof typeof counts]++;
     }
-    expect(counts).toEqual({ FULL: 2182, PARTIAL: 2788, MISSING: 831 });
+    expect(counts).toEqual({ FULL: 2823, PARTIAL: 2151, MISSING: 827 });
     expect(counts.FULL + counts.PARTIAL + counts.MISSING).toBe(5801);
   });
 
-  it('recordCount TIDAK BERUBAH (§7 tidak menambah/menghapus record)', () => {
-    expect(priceResolver2026.recordCount).toBe(4489);
+  it('recordCount 4.936 (899 priceMaster + 3.323 CK + 694 BM + 20 OJ twin; §7 tidak menambah/menghapus record)', () => {
+    expect(priceResolver2026.recordCount).toBe(4936);
   });
 });

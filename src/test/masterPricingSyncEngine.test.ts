@@ -405,6 +405,14 @@ const PINNED_CHECKSUMS: Record<AhspFamily, string> = {
   SUMBER_DAYA_AIR: '1c4794f9ec5dc3e1',
   SMKK: 'e77bbc73b1fea331',
 };
+// Pinned ACTIVE content checksums (Ronde 2 publish, 17 Nov 2026): CK + SDA
+// moved to v2026.2; BM + SMKK still v2026.1.
+const PINNED_ACTIVE_CHECKSUMS: Record<AhspFamily, string> = {
+  CIPTA_KARYA: '0281ba316496e839',
+  BINA_MARGA: '08082e878d4f0e90',
+  SUMBER_DAYA_AIR: 'b43fd8a665fbdb54',
+  SMKK: 'e77bbc73b1fea331',
+};
 
 // ===========================================================================
 // (A) §13.4 — sync history
@@ -1465,28 +1473,38 @@ describe('§13 (5) — AHSP version sync (snapshots → VersionedAhspCatalogSour
     expect(source.getVersionItems('CIPTA_KARYA', '2025.1')).toBeNull();
   });
 
-  it('the disk loader reads the REAL versions dir (read-only): 4 snapshots, pinned checksums', () => {
+  it('the disk loader reads the REAL versions dir (read-only): 6 snapshots, pinned checksums', { timeout: 30000 }, () => {
+    // Ronde 2 (17 Nov 2026): 4 v2026.1 snapshots + 2 v2026.2 (CK + SDA);
+    // 30 s timeout: 6 snapshots (~24 MB) + checksums exceed the 5 s default
+    // under parallel load. Assertions unchanged.
+    // the active pointer is 2026.2 for CK + SDA, 2026.1 for BM + SMKK.
     const loaded = loadAhspVersionSnapshots();
     expect(loaded.loaderErrors).toEqual([]);
-    expect(loaded.result.loadedCount).toBe(4);
+    expect(loaded.result.loadedCount).toBe(6);
     expect(loaded.result.failedCount).toBe(0);
     expect(loaded.activeVersions).toEqual({
-      CIPTA_KARYA: '2026.1',
+      CIPTA_KARYA: '2026.2',
       BINA_MARGA: '2026.1',
-      SUMBER_DAYA_AIR: '2026.1',
+      SUMBER_DAYA_AIR: '2026.2',
       SMKK: '2026.1',
     });
     for (const record of loaded.result.records) {
-      expect(record.contentChecksum).toBe(PINNED_CHECKSUMS[record.family]);
+      const expected =
+        record.versionId === '2026.2'
+          ? PINNED_ACTIVE_CHECKSUMS[record.family]
+          : PINNED_CHECKSUMS[record.family];
+      expect(record.contentChecksum).toBe(expected);
     }
     expect(loaded.result.contents['CIPTA_KARYA|2026.1']).toHaveLength(2859);
     expect(loaded.result.contents['BINA_MARGA|2026.1']).toHaveLength(1137);
     expect(loaded.result.contents['SUMBER_DAYA_AIR|2026.1']).toHaveLength(1556);
     expect(loaded.result.contents['SMKK|2026.1']).toHaveLength(190);
+    expect(loaded.result.contents['CIPTA_KARYA|2026.2']).toHaveLength(2859);
+    expect(loaded.result.contents['SUMBER_DAYA_AIR|2026.2']).toHaveLength(1556);
     // The records reader + registry state agree with the loader.
     const { records, errors } = readActiveVersionRecords();
     expect(errors).toEqual([]);
-    expect(records).toHaveLength(4);
+    expect(records).toHaveLength(6);
     const state = buildRegistryState(records);
     expect(state.active).toEqual(loaded.activeVersions);
   });

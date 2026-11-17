@@ -24,7 +24,7 @@
  *   codeless components are counted, not silently attributed.
  * - [A,B,C]: 37 components, 32 codeless, 4 distinct keys.
  * - Full catalog: 5.742 items / 30.265 components / 18.899 codeless /
- *   395 distinct keys. CK is 97% codeless; BM + SMKK are 100% coded.
+ *   394 distinct keys. CK is 97% codeless; BM + SMKK are 100% coded.
  * - L.01 Pekerja OH = Rp100.000 (Standar Upah Cipta Karya SE 47/2026);
  *   L.02 OH = Rp145.000; L.03|jam (BM Mandor) = Rp33.312,62.
  * - E01|kegiatan (SMKK sewa LCD) is currently UNPRICED (NOT_FOUND) —
@@ -250,11 +250,13 @@ function deepFreeze<T>(value: T): T {
   return value;
 }
 
-// Pinned v2026.1 content checksums (§8 — re-pinned here for the mirror test).
+// Pinned ACTIVE content checksums (§8 — re-pinned here for the mirror test).
+// Ronde 2 (17 Nov 2026): CK + SDA moved to v2026.2 (CK re-pinned again after
+// the sub-header coefficient revert); BM + SMKK still v2026.1.
 const PINNED_CHECKSUMS: Record<AhspFamily, string> = {
-  CIPTA_KARYA: 'e0b539f134f8d64c',
+  CIPTA_KARYA: '0281ba316496e839',
   BINA_MARGA: '08082e878d4f0e90',
-  SUMBER_DAYA_AIR: '1c4794f9ec5dc3e1',
+  SUMBER_DAYA_AIR: 'b43fd8a665fbdb54',
   SMKK: 'e77bbc73b1fea331',
 };
 
@@ -277,12 +279,12 @@ describe('§9 (g) resource index', () => {
     expect(index.byKey.get('L04|OH')).toHaveLength(1);
   });
 
-  it('indexes the full catalog: 5.742 items / 30.265 components / 18.899 codeless / 395 keys', () => {
+  it('indexes the full catalog: 5.742 items / 30.265 components / 18.899 codeless / 394 keys', () => {
     const index = buildResourceComponentIndex(ALL_OFFICIAL_AHSP_ITEMS);
     expect(index.itemCount).toBe(5742);
     expect(index.componentCount).toBe(30265);
     expect(index.codelessComponentCount).toBe(18899);
-    expect(index.distinctKeyCount).toBe(395);
+    expect(index.distinctKeyCount).toBe(394);
     // The biggest fan-outs (BM labor, all coded):
     expect(index.byKey.get('L03|jam')).toHaveLength(1012);
     expect(index.byKey.get('L01|jam')).toHaveLength(1001);
@@ -302,9 +304,9 @@ describe('§9 (g) resource index', () => {
 
 describe('§9 checksum mirror (§8 computeAhspContentChecksum)', () => {
   it.each([
-    ['CIPTA_KARYA', 'e0b539f134f8d64c'],
+    ['CIPTA_KARYA', '0281ba316496e839'],
     ['BINA_MARGA', '08082e878d4f0e90'],
-    ['SUMBER_DAYA_AIR', '1c4794f9ec5dc3e1'],
+    ['SUMBER_DAYA_AIR', 'b43fd8a665fbdb54'],
     ['SMKK', 'e77bbc73b1fea331'],
   ] as Array<[AhspFamily, string]>)(
     '%s: computeCatalogChecksum === §8 checksum === pinned value',

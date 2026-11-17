@@ -1,9 +1,9 @@
 # EZRAB — PRICE DATABASE 2026 REPORT
 
-> Generated: 2026-11-16T02:56:45.070Z  
+> Generated: 2026-11-17T06:11:08.076Z  
 > Command: `npm run price:pipeline`  
 > Canonical AHSP: **5801 items** (unchanged, price-free)  
-> Price records: **452**
+> Price records: **899**
 
 ---
 
@@ -27,10 +27,10 @@ dan aturan **"harga hilang = `null`, tidak pernah 0"**.
 
 Hasil terukur hari ini:
 
-- **452** record harga nyata, semuanya bernilai positif dan berprovenans lengkap.
-- **121/791** pasangan (kode, satuan) berharga (**15.3%**), tetapi **67.88%** dari seluruh pemakaian komponen sudah terharga.
-- **2182** item AHSP berstatus **FULL**, **2788** **PARTIAL**, **51** **MISSING**, **780** tanpa komponen.
-- Cakupan "minimal punya satu harga": **85.67%** item.
+- **899** record harga nyata, semuanya bernilai positif dan berprovenans lengkap.
+- **130/790** pasangan (kode, satuan) berharga (**16.46%**), tetapi **69.22%** dari seluruh pemakaian komponen sudah terharga.
+- **2823** item AHSP berstatus **FULL**, **2151** **PARTIAL**, **47** **MISSING**, **780** tanpa komponen.
+- Cakupan "minimal punya satu harga": **85.74%** item.
 
 Cakupan **tidak dipaksakan**. Resource yang tidak punya harga di sumber mana pun tetap
 tanpa harga, dan dilaporkan — bukan diisi dengan angka karangan.
@@ -76,9 +76,10 @@ Berkas kunci:
 | `MATERIAL_MASTER_2026` | PROJECT_INTERNAL_MASTER | 5 | SOURCE_REPORTED | ya | 310 | Rp 200 – Rp 26.000.000 |
 | `MATERIAL_LIBRARY` | COMMERCIAL_REFERENCE | 6 | SOURCE_REPORTED | ya | 0 | — |
 | `COMMERCIAL_2026` | COMMERCIAL_REFERENCE | 6 | SOURCE_REPORTED | ya | 17 | Rp 12.500 – Rp 480.000 |
+| `MARKET_2026` | COMMERCIAL_REFERENCE | 6 | SOURCE_REPORTED | ya | 447 | Rp 18 – Rp 26.400.000 |
 | `LEGACY_PUPR_2022` | LEGACY_SUPERSEDED | 99 | NEEDS_REVIEW | **TIDAK** | 0 | — |
 
-Total baris harga ternormalisasi: **9948**, aktif **9890**, dikecualikan **58** (`LEGACY_PUPR_2022`).
+Total baris harga ternormalisasi: **10354**, aktif **10296**, dikecualikan **58** (`LEGACY_PUPR_2022`).
 
 **Legacy 2022 dikarantina, bukan digabung.** Sumber tersebut adalah baseline yang sudah
 digantikan dan pernah *membayangi* tarif tenaga kerja 2026 di `PriceRepository` (first-wins).
@@ -88,18 +89,21 @@ Sumber itu tetap terdaftar untuk audit, tetapi `active: false` dan tidak pernah 
 
 ## 4. Hasil Matching
 
-Record harga: **452**.
+Record harga: **899**.
 
 | Metode | Jumlah | Boleh VERIFIED? |
 | --- | --- | --- |
-| `NAME_UNIT` | 439 | **tidak** → NEEDS_REVIEW |
-| `EXACT_CODE` | 9 | ya (tergantung sumber) |
+| `NAME_UNIT` | 481 | **tidak** → NEEDS_REVIEW |
+| `NAME_KEY` | 397 | ya (tergantung sumber) |
+| `EXACT_CODE` | 15 | ya (tergantung sumber) |
 | `ALIAS` | 4 | ya (tergantung sumber) |
+| `COMPONENT_REF` | 2 | ya (tergantung sumber) |
 
 | Status verifikasi | Jumlah |
 | --- | --- |
-| NEEDS_REVIEW | 439 |
+| NEEDS_REVIEW | 880 |
 | VERIFIED | 13 |
+| SOURCE_REPORTED | 6 |
 
 ### Mengapa matching-nya tidak "kode dulu" seperti biasanya
 
@@ -132,10 +136,10 @@ Dua cacat data yang ditemukan dan ditangani:
 
 | Tipe | Kunci berharga | Cakupan kunci | Cakupan berbobot pemakaian |
 | --- | --- | --- | --- |
-| material | 86/651 | 13.21% | **47.88%** |
+| material | 95/650 | 14.62% | **52.3%** |
 | labor | 10/19 | 52.63% | **84.89%** |
 | equipment | 25/121 | 20.66% | **56.96%** |
-| **total** | 121/791 | 15.3% | **67.88%** |
+| **total** | 130/790 | 16.46% | **69.22%** |
 
 Perbedaan besar antara cakupan kunci dan cakupan berbobot itu penting: hanya sedikit kunci, tetapi kunci itulah yang dipakai ribuan kali (tenaga kerja 93,72% berbobot).
 
@@ -143,14 +147,14 @@ Perbedaan besar antara cakupan kunci dan cakupan berbobot itu penting: hanya sed
 
 | Status | Jumlah | Arti |
 | --- | --- | --- |
-| FULL | 2182 | semua komponen berharga |
-| PARTIAL | 2788 | sebagian berharga; total tidak lengkap dan itu ditandai |
-| MISSING | 51 | tidak ada komponen yang berharga; total = `null` |
+| FULL | 2823 | semua komponen berharga |
+| PARTIAL | 2151 | sebagian berharga; total tidak lengkap dan itu ditandai |
+| MISSING | 47 | tidak ada komponen yang berharga; total = `null` |
 | NO-COMP | 780 | item tanpa komponen (mis. baris SMKK) |
 
 ### Kualitas resource master kanonik
 
-CLEAN **4833** · SUSPECT **288** · DEFECTIVE **115**
+CLEAN **4810** · SUSPECT **267** · DEFECTIVE **108**
 
 ### Blocker terbesar (kunci tanpa harga, menurut frekuensi pemakaian)
 
@@ -162,15 +166,15 @@ CLEAN **4833** · SUSPECT **288** · DEFECTIVE **115**
 | equipment | `E07` | jam | 111 | CRANE ON TRACK 10-15 TON |
 | material | `M271` | m3 | 84 | Tanah Humus ketebalan 20 cm |
 | equipment | `T.34` | jam | 77 | Trailer 10-20 ton (lebar 3,5 m x 8,0 m) |
-| material | `M.23` | kg | 72 | Portland Cement |
 | material | `M182` | kg | 60 | Super Plastizier |
 | equipment | `E01` | jam | 51 | ASPHALT MIXING PLANT (AMP) |
 | material | `M366` | batang | 48 | Bambu Penopang |
 | equipment | `E76` | jam | 44 | ASPHALT CUTTER (0,5-0,7 m / menit) |
 | material | `M186` | m3 | 42 | Beton Fc 20 Mpa |
-| material | `M.74` | kg | 40 | Kawat las listrik |
 | material | `M171` | kg | 38 | Plastizier |
 | equipment | `E11a` | jam | 36 | FLAT BED TRUCK 10 TON |
+| equipment | `E74` | jam | 36 | Kunci Torsi (Torque Wrench) |
+| material | `M73a` | lembar | 34 | Multipleks Phenolic 12 mm |
 
 ---
 
@@ -287,4 +291,4 @@ npm run test:price        # suite uji wajib (39)
 
 ---
 
-_Laporan ini dihasilkan mesin dari artefak pipeline pada 2026-11-16T02:56:45.071Z._
+_Laporan ini dihasilkan mesin dari artefak pipeline pada 2026-11-17T06:11:08.077Z._

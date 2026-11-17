@@ -22,23 +22,23 @@
  *   environment does not supply them; priceType is stamped directly by
  *   the pipeline (§5) and recovered from the `priceType=` notes as a
  *   fallback on 310 real records (distribution pinned); specContext is
- *   stamped from the source `specification` on 401/452 records (§5)
+ *   stamped from the source `specification` on 401/899 records (§5)
  *   and null only where the source carries no spec (labor/equipment);
  *   a missing price stays null (never Rp0) through write validation.
  * - §4.3 provenance: all 7 labels map to the existing enums (D2);
  *   market never official; assumption never master; the reverse
- *   mapping is total over the 452 real records (13 OFFICIAL_VERIFIED /
- *   17 MARKET_REFERENCE / 422 NEEDS_VERIFICATION); the original AHSP
+ *   mapping is total over the 899 real records (13 OFFICIAL_VERIFIED /
+ *   131 MARKET_REFERENCE / 422 NEEDS_VERIFICATION); the original AHSP
  *   source price is preserved independently from the master price.
  * - §4.4 history: every §4.4 field on the entry; reason required;
  *   deterministic ids; append-only (frozen entries, duplicate refused,
  *   NO update/delete function in the module — API surface pinned);
  *   the interim JSONL trail parses cleanly (HEADER + BASELINE).
- * - Multi-candidate selection: all 50 conflicts.json groups resolve
- *   to their named preferred source; 48/50 remain ambiguous WITHIN
+ * - Multi-candidate selection: all 53 conflicts.json groups resolve
+ *   to their named preferred source; 51/53 remain ambiguous WITHIN
  *   the preferred source (flagged, not hidden); the 2 unambiguous
  *   groups are pinned; the two §3 6-tuple groups are disambiguated
- *   by full location (452 distinct keys, 0 collisions) with the
+ *   by full location (899 distinct keys, 0 collisions) with the
  *   regional variants pinned by price + supplier.
  */
 import { describe, it, expect } from 'vitest';
@@ -397,9 +397,9 @@ describe('§4.1 — anti-self-approval + global admin model decision', () => {
 
 /* ====================================================================== */
 describe('§4.2 — price record model (mapping + honest nulls)', () => {
-  it('priceMaster still has 452 records, all priced > 0 (§4 changed no price)', () => {
-    expect(PRICE_MASTER.count).toBe(452);
-    expect(RECORDS).toHaveLength(452);
+  it('priceMaster still has 899 records, all priced > 0 (§4 changed no price)', () => {
+    expect(PRICE_MASTER.count).toBe(899);
+    expect(RECORDS).toHaveLength(899);
     for (const r of RECORDS) {
       expect(typeof r.price).toBe('number');
       expect(Number.isFinite(r.price)).toBe(true);
@@ -420,7 +420,7 @@ describe('§4.2 — price record model (mapping + honest nulls)', () => {
     }
   });
 
-  it('priceType is recovered from the notes on 310 records (distribution pinned)', () => {
+  it('priceType is recovered from the notes on 757 records (distribution pinned)', () => {
     const counts = new Map<string, number>();
     let nulls = 0;
     for (const r of RECORDS) {
@@ -429,8 +429,11 @@ describe('§4.2 — price record model (mapping + honest nulls)', () => {
       else counts.set(t, (counts.get(t) ?? 0) + 1);
     }
     expect(nulls).toBe(142);
+    // MARKET_REFERENCE 378 → 711: all 447 adopted MARKET_2026 records
+    // carry MARKET_REFERENCE in their notes (provenance), so
+    // derivePriceType recovers it for each. Other buckets unchanged.
     expect(Object.fromEntries(counts)).toEqual({
-      MARKET_REFERENCE: 264,
+      MARKET_REFERENCE: 711,
       GOVERNMENT_REFERENCE: 41,
       PROJECT: 1,
       SUPPLIER: 2,
@@ -439,7 +442,7 @@ describe('§4.2 — price record model (mapping + honest nulls)', () => {
     // Master Pricing §6 decision (j): RETAIL joined the vocabulary
     // (verified-retailer rows from the material service — a genuine
     // acquisition channel, distinct from wholesale MARKET_REFERENCE).
-    // The distribution above is UNCHANGED (0/452 records carry RETAIL
+    // The distribution above is UNCHANGED (0/899 records carry RETAIL
     // — the 3 RETAIL price rows are unmatched); only the vocabulary
     // list grows from 5 to 6.
     expect([...MASTER_PRICE_TYPE_VALUES].sort()).toEqual(
@@ -454,11 +457,11 @@ describe('§4.2 — price record model (mapping + honest nulls)', () => {
         byPrice.set(r.price, r);
       }
     }
-    // MAT-ROD-AGG-0001 (Lapis Pondasi Agregat Kelas A, RES-001601)
+    // MAT-ROD-AGG-0001 (Lapis Pondasi Agregat Kelas A, RES-001593)
     expect(derivePriceType(byPrice.get(285000)!)).toBe('PROJECT');
     expect(derivePriceType(byPrice.get(270000)!)).toBe('SUPPLIER');
     expect(derivePriceType(byPrice.get(310000)!)).toBe('GOVERNMENT_REFERENCE');
-    // MAT-BLD-SND-0001 (Pasir Pasang Extra Bersih, RES-003763) — note the
+    // MAT-BLD-SND-0001 (Pasir Pasang Extra Bersih, RES-003733) — note the
     // 340000 row: priceType=MARKET_REFERENCE in the notes even though its
     // sourceType is GOVERNMENT_REFERENCE (type vs sourceType are distinct).
     expect(derivePriceType(byPrice.get(340000)!)).toBe('MARKET_REFERENCE');
@@ -473,7 +476,7 @@ describe('§4.2 — price record model (mapping + honest nulls)', () => {
     expect(derivePriceType(makeRecord({ notes: [] }))).toBe(null);
   });
 
-  it('createdBy/updatedBy are null on all 452 records (honest no-auth — never fabricated)', () => {
+  it('createdBy/updatedBy are null on all 899 records (honest no-auth — never fabricated)', () => {
     for (const r of RECORDS) {
       expect(getCreatedBy(r)).toBe(null);
       expect(getUpdatedBy(r)).toBe(null);
@@ -482,13 +485,13 @@ describe('§4.2 — price record model (mapping + honest nulls)', () => {
 
   // MASTER PRICING §5 — UPDATED (task-ordered): the pipeline now stamps
   // specContext directly from the source material's `specification` field
-  // (normalizePrices.ts, §4 open item #2). The §4 pin ("null on all 452")
+  // (normalizePrices.ts, §4 open item #2). The §4 pin ("null on all 899")
   // described the pre-§5 state and is replaced by a STRONGER pin of the
   // measured §5 state: filled exactly where the source carries a spec,
   // null exactly where it does not. Nothing here is weakened — the old
   // test asserted an absence; this one asserts the exact per-source
   // presence AND the real spec values.
-  it('specContext is stamped from the source specification (§5): filled 401/452, null only where the source has no spec', () => {
+  it('specContext is stamped from the source specification (§5): filled 401/899, null only where the source has no spec', () => {
     const filledBySource = new Map<string, number>();
     const nullBySource = new Map<string, number>();
     for (const r of RECORDS) {
@@ -511,6 +514,10 @@ describe('§4.2 — price record model (mapping + honest nulls)', () => {
     expect(Object.fromEntries(nullBySource)).toEqual({
       EQUIPMENT_2026: 22,
       LABOR_2026: 29,
+      // MARKET_2026 rows carry no `specification` (the audit dataset has
+      // no per-item spec; inventing specContext from names is forbidden) —
+      // null is the honest value for all 447 adopted records.
+      MARKET_2026: 447,
     });
     // Real spec values, verbatim from the source materials.
     const agg = RECORDS.find((r) => r.sourceRecordId === 'MAT-ROD-AGG-0001')!;
@@ -695,16 +702,20 @@ describe('§4.3 — provenance labels map to the existing enums (D2)', () => {
     expect(labelForMissingPrice()).toBe('PRICE_UNAVAILABLE');
   });
 
-  it('the reverse mapping is total over all 452 records (distribution pinned)', () => {
+  it('the reverse mapping is total over all 899 records (distribution pinned)', () => {
     const counts = new Map<string, number>();
     for (const r of RECORDS) {
       const label = labelForRecord(r);
       expect(MASTER_PROVENANCE_LABELS).toContain(label);
       counts.set(label, (counts.get(label) ?? 0) + 1);
     }
+    // MARKET_REFERENCE 17 → 464: labelForRecord keys on sourceType, so
+    // all 447 MARKET_2026 records (sourceType MARKET_REFERENCE) map
+    // here — including the 440 NEEDS_REVIEW ones. NEEDS_VERIFICATION
+    // stays 422; OFFICIAL_VERIFIED stays 13. Total 899.
     expect(Object.fromEntries(counts)).toEqual({
       OFFICIAL_VERIFIED: 13,
-      MARKET_REFERENCE: 17,
+      MARKET_REFERENCE: 464,
       NEEDS_VERIFICATION: 422,
     });
     // No record maps to a contextual label without context.
@@ -876,18 +887,18 @@ describe('§4.4 — price history (append-only writer)', () => {
 });
 
 /* ====================================================================== */
-describe('multi-candidate selection (§3 finding: 50 conflict groups)', () => {
+describe('multi-candidate selection (§3 finding: 55 conflict groups)', () => {
   it('the conflict-group identity matches the matcher format exactly', () => {
-    const motorGrader = RECORDS.find((r) => r.resourceId === 'RES-000748' && r.unit === 'jam');
+    const motorGrader = RECORDS.find((r) => r.resourceId === 'RES-000751' && r.unit === 'jam');
     expect(motorGrader).toBeDefined();
-    expect(buildConflictGroupIdentity(motorGrader!)).toBe('RES-000748|jam|NATIONAL|||2026-Q1');
+    expect(buildConflictGroupIdentity(motorGrader!)).toBe('RES-000751|jam|NATIONAL|||2026-Q1');
   });
 
-  it('the 50 conflict groups recomputed from priceMaster == conflicts.json (set equality)', () => {
-    expect(CONFLICTS.count).toBe(50);
-    expect(CONFLICTS.conflicts).toHaveLength(50);
+  it('the 55 conflict groups recomputed from priceMaster == conflicts.json (set equality)', () => {
+    expect(CONFLICTS.count).toBe(55);
+    expect(CONFLICTS.conflicts).toHaveLength(55);
     const groups = findConflictGroups(RECORDS);
-    expect(groups.size).toBe(50);
+    expect(groups.size).toBe(55);
     const fromData = new Set(groups.keys());
     const fromFile = new Set(CONFLICTS.conflicts.map((g) => g.identity));
     expect(fromData).toEqual(fromFile);
@@ -897,7 +908,7 @@ describe('multi-candidate selection (§3 finding: 50 conflict groups)', () => {
     }
   });
 
-  it('selection picks the named preferred source for ALL 50 groups (no mismatch)', () => {
+  it('selection picks the named preferred source for ALL 55 groups (no mismatch)', () => {
     const groups = findConflictGroups(RECORDS);
     for (const g of CONFLICTS.conflicts) {
       const candidates = groups.get(g.identity)!;
@@ -910,7 +921,7 @@ describe('multi-candidate selection (§3 finding: 50 conflict groups)', () => {
     }
   });
 
-  it('48/50 groups stay ambiguous WITHIN the preferred source (flagged, not hidden)', () => {
+  it('53/55 groups stay ambiguous WITHIN the preferred source (flagged, not hidden)', () => {
     const groups = findConflictGroups(RECORDS);
     let ambiguous = 0;
     const unambiguous: string[] = [];
@@ -919,16 +930,16 @@ describe('multi-candidate selection (§3 finding: 50 conflict groups)', () => {
       if (sel.ambiguousWithinPreferredSource) ambiguous += 1;
       else unambiguous.push(g.identity);
     }
-    expect(ambiguous).toBe(48);
+    expect(ambiguous).toBe(53);
     expect(unambiguous.sort()).toEqual([
       'RES-000112|jam|NATIONAL|||2026-Q1',
-      'RES-000748|jam|NATIONAL|||2026-Q1',
+      'RES-000751|jam|NATIONAL|||2026-Q1',
     ]);
   });
 
   it('the Besi Beton group shows the ambiguity honestly (HSD 14500 vs 15000)', () => {
     const groups = findConflictGroups(RECORDS);
-    const g = CONFLICTS.conflicts.find((x) => x.identity === 'RES-001237|kg|NATIONAL|||2026-Q1')!;
+    const g = CONFLICTS.conflicts.find((x) => x.identity === 'RES-001241|kg|NATIONAL|||2026-Q1')!;
     const sel = selectMasterPriceCandidate(groups.get(g.identity)!, { preferredSourceKey: g.preferred });
     expect(sel.selected!.sourceKey).toBe('HSD_2026');
     expect(sel.ambiguousWithinPreferredSource).toBe(true);
@@ -975,9 +986,9 @@ describe('multi-candidate selection (§3 finding: 50 conflict groups)', () => {
 
 /* ====================================================================== */
 describe('6-tuple disambiguation (§3 §M-3: MAT-ROD-AGG-0001, MAT-BLD-SND-0001)', () => {
-  it('with the FULL location, all 452 records have distinct 6-tuples (0 collisions)', () => {
+  it('with the FULL location, all 899 records have distinct 6-tuples (0 collisions)', () => {
     const keys = RECORDS.map(buildFullPriceIdentityKey);
-    expect(new Set(keys).size).toBe(452);
+    expect(new Set(keys).size).toBe(899);
   });
 
   it('MAT-ROD-AGG-0001: 3 distinct regional variants (Surabaya / Probolinggo / DKI Jakarta)', () => {

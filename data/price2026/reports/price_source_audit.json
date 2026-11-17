@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-11-16T02:56:04.092Z",
-  "totalRegisteredSources": 7,
-  "activeSources": 6,
+  "generatedAt": "2026-11-17T06:10:36.985Z",
+  "totalRegisteredSources": 8,
+  "activeSources": 7,
   "excludedSources": 1,
   "activeRowCount": 0,
-  "excludedRowCount": 9948,
+  "excludedRowCount": 10354,
   "sources": [
     {
       "key": "HSD_2026",
@@ -180,6 +180,36 @@
         "equipment": 37
       },
       "notes": "Branded commercial reference prices (keramik, cat, sanitary, …)."
+    },
+    {
+      "key": "MARKET_2026",
+      "label": "Riset Harga Pasar Marketplace 2026",
+      "origin": "src/data/marketPrices2026.ts",
+      "tier": "COMMERCIAL_REFERENCE",
+      "priority": 6,
+      "active": true,
+      "verificationStatus": "SOURCE_REPORTED",
+      "sourceDocument": null,
+      "locationLevel": "NATIONAL",
+      "rows": 406,
+      "rowsWithPositivePrice": 406,
+      "rowsNonPositive": 0,
+      "unitHistogram": {
+        "bh": 118,
+        "unit": 71,
+        "m3": 71,
+        "kg": 60,
+        "m": 52,
+        "m2": 16,
+        "pohon": 12,
+        "batang": 4,
+        "liter": 1,
+        "paket": 1
+      },
+      "typeHistogram": {
+        "material": 406
+      },
+      "notes": "Median harga penawaran marketplace Indonesia, riset 16 Nov 2026. MARKET_REFERENCE, bukan harga resmi AHSP. Provenance per penawaran (penjual + URL + tanggal) tinggal di file input per sourceRecordId (MKT-xxx) + laporan adopsi; record hanya membawa supplier + sourceRecordId."
     },
     {
       "key": "LEGACY_PUPR_2022",
