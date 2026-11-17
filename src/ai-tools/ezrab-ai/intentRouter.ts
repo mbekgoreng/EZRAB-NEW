@@ -11,6 +11,16 @@ import { isGameCommand } from '../../game-space/command';
 import { isGameQuestion } from '../../game-space/catalog';
 import { evaluateCalculation } from './calcIntent';
 import { detectClarifyTopic } from './clarifyTopics';
+// Pola perintah deterministik kelompok 1–5 (2026-11-17, gap P2–P8 + P12
+// audit perintah): pola hidup di modul ./commands/* (satu sumber
+// kebenaran dengan yang dites) dan di-spread ke PATTERNS di bawah.
+// Cast `as unknown as Pattern[]` karena modul mengetikkan intent sebagai
+// string; nama intent diverifikasi runtime oleh chatCommandWiring.
+import { QTO_PATTERNS, CREATE_QTO_CLARIFICATION, SYNC_QTO_CLARIFICATION } from './commands/qtoCommands';
+import { EXPORT_CREDIT_PATTERNS } from './commands/exportCreditCommands';
+import { PROJECT_SETTINGS_PATTERNS, UPDATE_PROJECT_SETTINGS_CLARIFICATION } from './commands/projectSettingsCommands';
+import { DED_DOC_PATTERNS } from './commands/dedDocCommands';
+import { PROJECT_PATTERNS } from './commands/projectCommands';
 
 export type ChatIntent =
   | 'GREETING'
@@ -60,6 +70,26 @@ export type ChatIntent =
   | 'QUERY_PROJECT_LIST'
   | 'QUERY_MOST_EXPENSIVE_ITEMS'
   | 'QUERY_CHEAPEST_ITEMS'
+  | 'RENAME_PROJECT'
+  | 'UPDATE_ITEM_VOLUME'
+  | 'UPDATE_ITEM_PRICE'
+  | 'DELETE_ITEM'
+  | 'ADD_ITEM'
+  | 'UNDO_LAST'
+  | 'CREATE_PROJECT'
+  | 'DELETE_PROJECT'
+  | 'DELETE_PROJECT_CONFIRM'
+  | 'ARCHIVE_PROJECT'
+  | 'DUPLICATE_PROJECT'
+  | 'CREATE_QTO_ITEM'
+  | 'SYNC_QTO'
+  | 'RUN_DED_ANALYSIS'
+  | 'SUMMARIZE_DOCUMENT'
+  | 'EXPORT_PROJECT'
+  | 'CREATE_REVISION'
+  | 'CREDIT_BALANCE'
+  | 'TOPUP_CREDIT'
+  | 'UPDATE_PROJECT_SETTINGS'
   | 'UNKNOWN';
 
 export interface IntentResult {
@@ -75,6 +105,21 @@ export interface IntentResult {
 
 const norm = (s: string): string =>
   s.toLowerCase().trim().replace(/\s+/g, ' ');
+
+// Frasa kualifikator pada kata kunci AHSP ("carikan ahsp yang cocok") —
+// penanda kecocokan, bukan kata kunci. "yang pas" ditangani di sini
+// (level frasa) karena token "pas" sendiri adalah singkatan "Pasangan"
+// pada 163 judul katalog sehingga TIDAK boleh jadi stopword di
+// chatSearch.ts. Bila yang tersisa kosong, router mengembalikan
+// needsClarification (dan view mencoba fallback topik dari pesan
+// sebelumnya sebelum bertanya balik).
+const AHSP_QUALIFIER_PHRASE_RE =
+  /\byang\s+(cocok|sesuai|pas|tepat|bagus|benar|baik|ideal)\b/gi;
+
+/** Buang frasa kualifikator dari kata kunci pencarian AHSP. */
+export function cleanAhspKeyword(raw: string): string {
+  return raw.replace(AHSP_QUALIFIER_PHRASE_RE, ' ').replace(/\s+/g, ' ').trim();
+}
 
 // ---- Slash commands: deterministic ----
 const SLASH_COMMANDS: Record<string, ChatIntent> = {
@@ -108,6 +153,51 @@ interface Pattern {
 }
 
 const PATTERNS: Pattern[] = [
+  // Perintah QTO + ekspor/revisi/kredit (2026-11-17, kelompok 2 & 4):
+  // PALING ATAS, sebelum blok mutasi item RAB — "tambah item QTO …"
+  // ditelan pola ADD_ITEM, "tambah kredit 1500" ditelan ADD_ITEM, dan
+  // "tolong ekspor/buat revisi/top up …" ditelan pola HELP bila blok
+  // ini diletakkan sesudahnya. Urutan di dalam tiap modul BERARTI
+  // (mis. SYNC "semua" sebelum SYNC bernama) — jangan diurut-ulang.
+  ...(QTO_PATTERNS as unknown as Pattern[]),
+  ...(EXPORT_CREDIT_PATTERNS as unknown as Pattern[]),
+  // Mutasi item RAB deterministik (2026-11-17, gap P1 audit perintah):
+  // tambah/hapus/ubah volume/ubah harga/undo dijawab lapisan
+  // deterministik (pratinjau + Konfirmasi Eksekusi) tanpa LLM dan tanpa
+  // kredit. Diletakkan di AWAL pola, SEBELUM HELP — pola HELP menelan
+  // "tolong + kata kerja" ("tolong ubah volume…") bila tidak ada kata
+  // rab/proyek/ahsp, padahal itu perintah kerja, bukan minta daftar
+  // perintah. (GREETING berjangkar ^…$ sehingga urutan terhadapnya
+  // tidak berpengaruh.) Pola bernilai mensyaratkan struktur
+  // "jadi/menjadi/ke + angka" sehingga pertanyaan ("berapa volume
+  // plesteran?") tidak tertangkap; pola tanpa nilai dijangkar ke awal
+  // pesan (opsional "tolong") agar "cara ubah volume" tidak tertangkap.
+  // Param = ekor perintah setelah kata kerja; registry yang mem-parsing
+  // nama + nilai (routeIntent hanya memakai grup tangkap pertama).
+  { intent: 'UPDATE_ITEM_VOLUME', re: /\b(?:ubah|ubahin|ganti|gantiin|rubah)\b.*\bvolume\b\s+(.+\s+(?:jadi|menjadi|ke)\s+[\d.,]+.*)/, paramGroup: true },
+  { intent: 'UPDATE_ITEM_VOLUME', re: /\bvolume\b\s+(.+\s+(?:jadi|menjadi)\s+[\d.,]+.*)/, paramGroup: true },
+  { intent: 'UPDATE_ITEM_VOLUME', re: /^\s*(?:tolong\s+)?(?:ubah|ubahin|ganti|gantiin|rubah)\b.*\bvolume\b/ },
+  { intent: 'UPDATE_ITEM_PRICE', re: /\b(?:ubah|ubahin|ganti|gantiin|rubah)\b.*\bharga\b\s+(.+\s+(?:jadi|menjadi|ke)\s+(?:rp\s*)?[\d.,]+.*)/, paramGroup: true },
+  { intent: 'UPDATE_ITEM_PRICE', re: /\bharga\b\s+(.+\s+(?:jadi|menjadi)\s+(?:rp\s*)?[\d.,]+.*)/, paramGroup: true },
+  { intent: 'UPDATE_ITEM_PRICE', re: /^\s*(?:tolong\s+)?(?:ubah|ubahin|ganti|gantiin|rubah)\b.*\bharga\b/ },
+  // Pengaturan proyek (2026-11-17, kelompok 5): SETELAH keenam pola
+  // UPDATE_ITEM_* (pola ini juga cocok pada "ubah volume overhead jadi
+  // 10 m2" dan "ubah harga overhead jadi 10%" — kedua rute item itu
+  // harus menang) dan SEBELUM DELETE_ITEM.
+  ...(PROJECT_SETTINGS_PATTERNS as unknown as Pattern[]),
+  { intent: 'DELETE_ITEM', re: /\b(?:hapus|hapuskan|delete|buang)\b.*\b(?:item|pekerjaan)\b\s+(.+)/, paramGroup: true },
+  { intent: 'DELETE_ITEM', re: /\b(?:hapus|hapuskan|delete|buang)\b\s+(?!proyek\b)(.+)/, paramGroup: true },
+  { intent: 'DELETE_ITEM', re: /^\s*(?:tolong\s+)?(?:hapus|hapuskan|delete|buang)\b\s*(?:item|pekerjaan)?\s*$/ },
+  { intent: 'ADD_ITEM', re: /\b(?:tambah|tambahkan|tambahin|add)\b.*\bitem\b\s+(.+)/, paramGroup: true },
+  { intent: 'ADD_ITEM', re: /\b(?:tambah|tambahkan|tambahin)\b\s+(?!proyek\b|volume\b)(.+)/, paramGroup: true },
+  { intent: 'ADD_ITEM', re: /^\s*(?:tolong\s+)?(?:tambah|tambahkan|tambahin)\b\s*(?:item)?\s*$/ },
+  { intent: 'UNDO_LAST', re: /\bundo\b/ },
+  { intent: 'UNDO_LAST', re: /\b(?:batalkan|urungkan)\b(?:\s+(?:perubahan|operasi|tindakan))?(?:\s+(?:terakhir|yang terakhir|tadi|barusan))?\s*$/ },
+  // DED & AI Document (2026-11-17, kelompok 3): sesudah blok mutasi dan
+  // SEBELUM GREETING/HELP — pola HELP menelan "tolong jalankan/ringkas
+  // …" bila blok ini di bawahnya. Tidak beririsan dengan OPEN_DED_ESTIMATE
+  // / OPEN_AI_DOCUMENTS (mereka menuntut verba buka/tampilkan).
+  ...(DED_DOC_PATTERNS as unknown as Pattern[]),
   // Greeting — must come before others to avoid false positives.
   // Jangkar ^...$ dipertahankan (sapaan + perintah kerja dalam satu pesan
   // TIDAK tertelan), tetapi kini menerima "selamat pagi/siang/sore/malam"
@@ -156,7 +246,25 @@ const PATTERNS: Pattern[] = [
   // proyek — tanpa lookahead ini pola proyek yang rakus (.*proyek) menelan
   // frasa laporan lebih dulu (audit routing 2026-10-23).
   { intent: 'OPEN_PROJECTS', re: /\b(buka|bukain|tampilkan|tampilin|lihat|liatin|daftar)\b(?!.*\b(laporan|report)\b).*\bproyek\b/ },
+  // Perintah proyek (2026-11-17, kelompok 1): SEBELUM OPEN_PROJECT_CREATE
+  // — "buat proyek Rumah Baru" cocok dengan keduanya (mengandung "baru")
+  // dan nama yang disebut harus menang (membuat proyek, bukan navigasi).
+  ...(PROJECT_PATTERNS as unknown as Pattern[]),
   { intent: 'OPEN_PROJECT_CREATE', re: /\b(buat|bikin|tambah).*\bproyek\b.*\bbaru\b/ },
+  // Ganti nama proyek (2026-11-17): perintah deterministik lokal —
+  // sebelumnya jatuh UNKNOWN ke LLM, yang lalu mengklaim rename berhasil
+  // tanpa tool apa pun. Urutan: pola "menjadi/jadi/ke" dulu (nama = grup
+  // 1), lalu pola tanpa kata penghubung (lookahead mengecualikan
+  // "menjadi/jadi/ke" supaya tidak tertelan sebagai nama), lalu bentuk
+  // tanpa nama → klarifikasi. Nama diambil verbatim — "sekarang" di akhir
+  // kalimat ("...sekarang") TIDAK dipotong: itu bagian dari nama yang
+  // ditulis pengguna, dan balasan konfirmasi mengutip nama persisnya
+  // sehingga pengguna bisa mengoreksi bila bukan itu maksudnya.
+  { intent: 'RENAME_PROJECT', re: /\b(?:ubah|ubahin|ganti|gantiin|rubah|rename)\b.*\bnama\b.*\bproyek\b.*\b(?:menjadi|jadi|ke)\b\s+(.+)/, paramGroup: true },
+  { intent: 'RENAME_PROJECT', re: /\b(?:ubah|ubahin|ganti|gantiin|rubah)\b.*\bnama\b.*\bproyek\b\s+(?!menjadi\b|jadi\b|ke\b)(.+)/, paramGroup: true },
+  { intent: 'RENAME_PROJECT', re: /\brename\b.*\bproject\b.*\bto\b\s+(.+)/, paramGroup: true },
+  { intent: 'RENAME_PROJECT', re: /\b(?:ubah|ubahin|ganti|gantiin|rubah|rename)\b.*\bnama\b.*\bproyek\b\s*$/ },
+  { intent: 'RENAME_PROJECT', re: /\b(?:ubah|ubahin|ganti|gantiin|rubah|rename)\b.*\bnama\b.*\bproyek\b.*\b(?:menjadi|jadi|ke)\s*$/ },
   { intent: 'OPEN_RAB', re: /\b(buka|bukain|tampilkan|tampilin|lihat|liatin)\b.*\brab\b/ },
   { intent: 'OPEN_QTO', re: /\b(buka|bukain|tampilkan|tampilin)\b.*\bqto\b/ },
   { intent: 'OPEN_AHSP', re: /\b(buka|bukain|tampilkan|tampilin|lihat|liatin)\b.*\bahsp\b/ },
@@ -311,7 +419,7 @@ const PATTERNS: Pattern[] = [
   // UNKNOWN karena kata tengah yang dikenal hanya biaya/total/anggaran
   // (audit routing 2026-10-23).
   { intent: 'QUERY_PROJECT_TOTAL', re: /\b(berapa|total|jumlah)\b.*\b(biaya|total|anggaran|rab)\b.*\bproyek\b/ },
-  { intent: 'QUERY_PROJECT_LIST', re: /\b(daftar|list|semua)\b.*\bproyek\b/ },
+  { intent: 'QUERY_PROJECT_LIST', re: /^(?!.*\b(?:hapus|hapuskan|delete|buang)\b).*\b(daftar|list|semua)\b.*\bproyek\b/ },
   // "proyek saya apa saja?" — tanpa kata daftar/list/semua dan tanpa kata
   // kerja navigasi, sebelumnya UNKNOWN (audit routing 2026-10-23).
   { intent: 'QUERY_PROJECT_LIST', re: /\bproyek\b.*\b(apa saja|mana saja)\b/ },
@@ -380,16 +488,137 @@ export function routeIntent(rawInput: string): IntentResult {
     'CREATE_RAB_SUMMARY',
     'CREATE_RAB_CLARIFY',
   ]);
+  // Penanda perintah MASSAL (kasus C11): kelima intent mutasi item hanya
+  // menangani SATU item bernama — "ganti semua harga kosong jadi Rp1"
+  // bukan mutasi satu item dan tidak boleh mendapat jalur deterministik
+  // (tidak ada jalur eksekusi pemalsuan). Bila teks memuat penanda massal,
+  // pola mutasi dilewati agar permintaan jatuh ke UNKNOWN / jalur AI.
+  const bulkMutationFramed = /\b(semua|seluruh|setiap)\b/.test(input);
+  const MUTATION_INTENTS: ReadonlySet<string> = new Set([
+    'UPDATE_ITEM_VOLUME',
+    'UPDATE_ITEM_PRICE',
+    'DELETE_ITEM',
+    'ADD_ITEM',
+    'UNDO_LAST',
+    // Hapus proyek ikut dipagari (2026-11-17, kelompok 1): "hapus semua
+    // proyek" tidak boleh mendapat jalur deterministik. Intent lain
+    // kelompok 1–5 TIDAK masuk set ini (bukan destruktif massal —
+    // SYNC_QTO "semua" justru perilaku yang diminta).
+    'DELETE_PROJECT',
+  ]);
   for (const p of PATTERNS) {
     if (fictionFramed && RAB_CREATE_INTENTS.has(p.intent)) continue;
+    if (bulkMutationFramed && MUTATION_INTENTS.has(p.intent)) continue;
     const m = input.match(p.re);
     if (m) {
-      const param = p.paramGroup && m[1] ? m[1].trim() : undefined;
+      // Param diambil dari teks ASLI (rawInput) dengan pola yang sama
+      // dalam mode case-insensitive — supaya huruf besar/kecil yang
+      // diketik pengguna terjaga (nama proyek "Rumah Impian" tidak
+      // berubah menjadi "rumah impian"). Deteksi intent tetap memakai
+      // teks ternormalisasi; bila pencocokan ulang gagal (tidak mungkin
+      // terjadi — pola yang sama, superset case), pakai param
+      // ternormalisasi sebagai cadangan.
+      let param: string | undefined;
+      if (p.paramGroup) {
+        const rawRe = new RegExp(p.re.source, p.re.flags.includes('i') ? p.re.flags : `${p.re.flags}i`);
+        const rawM = rawInput.match(rawRe);
+        param = (rawM?.[1] ?? m[1] ?? '').trim() || undefined;
+        // SEARCH_AHSP: buang frasa kualifikator ("yang cocok") dari kata
+        // kunci — bila yang tersisa kosong, param dianggap tidak ada dan
+        // cabang klarifikasi di bawah yang berjalan (temuan live
+        // 2026-11-17: "carikan ahsp yang cocok" mencari "yang cocok"
+        // harfiah dan gagal NOT_FOUND).
+        if (p.intent === 'SEARCH_AHSP' && param) {
+          param = cleanAhspKeyword(param) || undefined;
+        }
+      }
       // SEARCH_AHSP without keyword needs clarification
       if (p.intent === 'SEARCH_AHSP' && !param) {
         return {
           intent: 'SEARCH_AHSP', confidence: 0.7, needsClarification: true,
           clarificationPrompt: 'Mau cari AHSP apa? Contoh: "cari ahsp pondasi batu kali".',
+          localOnly: true,
+        };
+      }
+      // RENAME_PROJECT without a new name needs clarification
+      if (p.intent === 'RENAME_PROJECT' && !param) {
+        return {
+          intent: 'RENAME_PROJECT', confidence: 0.7, needsClarification: true,
+          clarificationPrompt: 'Mau diganti jadi nama apa? Contoh: "ubah nama proyek menjadi Rumah Impian".',
+          localOnly: true,
+        };
+      }
+      // Mutasi item tanpa nilai/nama → klarifikasi dengan contoh
+      // (registry tidak pernah menebak nilai atau nama item).
+      if (p.intent === 'UPDATE_ITEM_VOLUME' && !param) {
+        return {
+          intent: 'UPDATE_ITEM_VOLUME', confidence: 0.7, needsClarification: true,
+          clarificationPrompt: 'Ubah volume item apa, jadi berapa? Contoh: "ubah volume plesteran jadi 25 m2".',
+          localOnly: true,
+        };
+      }
+      if (p.intent === 'UPDATE_ITEM_PRICE' && !param) {
+        return {
+          intent: 'UPDATE_ITEM_PRICE', confidence: 0.7, needsClarification: true,
+          clarificationPrompt: 'Ubah harga item apa, jadi berapa? Contoh: "ubah harga plesteran jadi Rp 50.000". Harga yang diubah adalah harga item di proyek ini, bukan harga master database.',
+          localOnly: true,
+        };
+      }
+      if (p.intent === 'DELETE_ITEM' && !param) {
+        return {
+          intent: 'DELETE_ITEM', confidence: 0.7, needsClarification: true,
+          clarificationPrompt: 'Hapus item apa? Contoh: "hapus item plesteran".',
+          localOnly: true,
+        };
+      }
+      if (p.intent === 'ADD_ITEM' && !param) {
+        return {
+          intent: 'ADD_ITEM', confidence: 0.7, needsClarification: true,
+          clarificationPrompt: 'Tambah item apa? Contoh: "tambah item plesteran 10 m2".',
+          localOnly: true,
+        };
+      }
+      // Perintah proyek/QTO/pengaturan tanpa target (2026-11-17,
+      // kelompok 1/2/5): tanya balik dengan contoh, jangan tebak.
+      if (p.intent === 'DELETE_PROJECT' && !param) {
+        return {
+          intent: 'DELETE_PROJECT', confidence: 0.7, needsClarification: true,
+          clarificationPrompt: 'Hapus proyek yang mana? Contoh: "hapus proyek ini" atau "hapus proyek Rumah Impian".',
+          localOnly: true,
+        };
+      }
+      if (p.intent === 'ARCHIVE_PROJECT' && !param) {
+        return {
+          intent: 'ARCHIVE_PROJECT', confidence: 0.7, needsClarification: true,
+          clarificationPrompt: 'Arsipkan proyek yang mana? Contoh: "arsipkan proyek ini".',
+          localOnly: true,
+        };
+      }
+      if (p.intent === 'DUPLICATE_PROJECT' && !param) {
+        return {
+          intent: 'DUPLICATE_PROJECT', confidence: 0.7, needsClarification: true,
+          clarificationPrompt: 'Duplikat proyek yang mana? Contoh: "duplikat proyek ini".',
+          localOnly: true,
+        };
+      }
+      if (p.intent === 'CREATE_QTO_ITEM' && !param) {
+        return {
+          intent: 'CREATE_QTO_ITEM', confidence: 0.7, needsClarification: true,
+          clarificationPrompt: CREATE_QTO_CLARIFICATION,
+          localOnly: true,
+        };
+      }
+      if (p.intent === 'SYNC_QTO' && !param) {
+        return {
+          intent: 'SYNC_QTO', confidence: 0.7, needsClarification: true,
+          clarificationPrompt: SYNC_QTO_CLARIFICATION,
+          localOnly: true,
+        };
+      }
+      if (p.intent === 'UPDATE_PROJECT_SETTINGS' && !param) {
+        return {
+          intent: 'UPDATE_PROJECT_SETTINGS', confidence: 0.7, needsClarification: true,
+          clarificationPrompt: UPDATE_PROJECT_SETTINGS_CLARIFICATION,
           localOnly: true,
         };
       }
@@ -447,36 +676,18 @@ export const HELP_TEXT = `Perintah yang tersedia:
 /ded — Buka DED Estimate AI
 /dashboard — Kembali ke dashboard
 /game — Buka EZRAB Game Space 🎮
-
-🧭 Navigasi lanjutan (ketik "/" di composer untuk daftar lengkap):
-/beranda — Kembali ke Beranda
-/proyek-draft
-/proyek-aktif — Proyek Sedang Dikerjakan
-/proyek-selesai
-/proyek-arsip
-/kalkulator — Kalkulator Volume
-/jadwal
-/jadwal-manajemen
-/spreadsheet
-/rekap-rab
-/analisa-harga
-/kurva-s
-/catatan — Catatan Estimasi
-/pengaturan-rab
-/chat-ai — Kembali ke Chat AI
-/dokumen-ai
-/dokumen-proyek
-/database — Database (Material & Harga)
-/material — Material & Harga
-/upah
-/alat
-/harga-proyek
-/laporan
-/keuangan — Keuangan Proyek
-/pengaturan
-/tutorial — Buka Tutorial
+(+ slash lainnya — ketik "/" di composer untuk daftar lengkap)
 
 🔍 Pencarian:
 "cari ahsp [kata kunci]" — Cari harga satuan AHSP 2026
+
+✏️ Ubah item RAB (pratinjau + konfirmasi):
+ubah volume/harga [item] jadi … · hapus item … · tambah item … · undo
+
+📁 Proyek: buat proyek [nama] · hapus/arsipkan/duplikat proyek ini
+🧮 QTO: buat item qto [uraian] [volume] [satuan] · sinkronkan qto … ke rab
+🗂️ DED & Dokumen: "jalankan analisis ded" (sesi terakhir) · "ringkas dokumen ini"
+📦 Ekspor & kredit: "ekspor ke Excel/PDF" · "buat revisi baru" · "sisa kredit saya" · "top up 500 kredit"
+⚙️ Pengaturan proyek: ubah overhead/profit/PPN/PPh jadi …% (contoh: "PPN 11%")
 
 💬 Atau tulis natural, contoh: "buka template rab", "berapa total proyek saya?"`;

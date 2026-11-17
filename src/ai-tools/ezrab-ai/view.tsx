@@ -65,7 +65,8 @@ import { renderMarkdown, markdownToPlainText } from './markdown';
 import { routeIntent, localGreeting, HELP_TEXT } from './intentRouter';
 import { extractSlashToken, filterSlashEntries, NAV_BY_ID, resolveNavCommand, type NavEntry } from './navRegistry';
 import { consumePendingAiEntry, requestAiEntry, consumePendingEzrabAiEntry, peekPendingEzrabAiEntry, ezrabAiEntryRemainingMs, openEzrabAI, type EzrabAiEntryContext } from '../aiNavigation';
-import { executeIntent, continueRabNeeds, continueRabFinalize, hasActiveRabNeeds, continueRabChoice, tryContinueRabSubtype, tryContinueRabMaterial, tryContinueProjectContext, tryContinueUniversalContext, getLastRabDesignPrompt, submitQuestionnaireAnswers, restoreUniversalContext, getUniversalContextState, ChatActionContext, ChatActionButton } from './actionRegistry';
+import { executeIntent, continueRabNeeds, continueRabFinalize, hasActiveRabNeeds, continueRabChoice, tryContinueRabSubtype, tryContinueRabMaterial, tryContinueProjectContext, tryContinueUniversalContext, getLastRabDesignPrompt, submitQuestionnaireAnswers, restoreUniversalContext, getUniversalContextState, ChatActionContext, ChatActionButton, ActionResult } from './actionRegistry';
+import { setActiveProjectSnapshot } from './tools';
 import { QuestionnaireCard } from './questionnaireCard';
 import type { QuestionnairePayload } from './questionnaire';
 import type { QuestionnaireAnswerRecord } from './universalIntake';
@@ -79,6 +80,7 @@ import {
 } from './executionRuntime';
 import { mapDirectRabPushItems } from './directRabPush';
 import { extractAhspCodesFromAnswer, parseRequestedQuantity, buildAnswerTransfer, findPrecedingUserText } from './chatAnswerTransfer';
+import { resolveAhspTopicFromHistory } from './chatSearch';
 import { detectHandoffNeed, HANDOFF_CHOICE_CHAT, HANDOFF_CHOICE_STAY } from './magicHandoff';
 import { structuredAiError, logAiDiagnostic, type AiErrorCode } from './aiErrorCodes';
 import { buildFinalizationKey } from '../ded-ai-estimate/finalizationKey';
@@ -208,6 +210,19 @@ import { estimateReservationCredits, meterTexts } from '../../ai-credits/tokenMe
 import { CreditEstimateBadge } from '../../ai-credits/components/CreditEstimateBadge';
 import { CreditBalance } from '../../ai-credits/components/CreditBalance';
 import { CreditTopUpModal } from '../../ai-credits/components/CreditTopUpModal';
+// Perintah deterministik kelompok 1–5 (2026-11-17): callback ctx view.
+import { useI18n } from '../../i18n/I18nContext';
+import { exportProjectToExcel } from '../../export/excelExporter';
+import { exportProjectToPDF } from '../../export/pdfExporter';
+import { brandingClient } from '../../services/brandingClient';
+import { resolveHonestCompany } from '../../lib/scheduleHonesty';
+import { nextVersionNumber } from '../../engine/estimateVersioning';
+import { planAllowsAiFeature, aiFeatureLockedMessage } from '../../ai-credits/featureGate';
+import { tariffFor } from '../../ai-credits/config';
+import { dokumenAiService } from '../document-ai/service';
+import { getDocFromLibrary } from './dedDocSessionHolder';
+import type { Company } from '../../types';
+import type { ProjectSettingsPatch } from './commands/projectSettingsCommands';
 
 // Game Space is lazy-loaded: three.js + game code split into their own chunk,
 // only fetched when the user opens it via the `game` command.
@@ -440,7 +455,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   const [attached, setAttached] = useState<TextAttachment | null>(null);
   const [attachError, setAttachError] = useState<string | null>(null);
   // --- AI Credits (simulasi frontend) ---
-  const { balance, consume } = useCreditSimulation();
+  const { balance, source, consume, topUp } = useCreditSimulation();
   const [creditConfirm, setCreditConfirm] = useState<{ estimate: number; pending: () => void } | null>(null);
   const [creditTopUpOpen, setCreditTopUpOpen] = useState(false);
   // Estimasi kredit LIVE berbasis token (Amendemen Spec Billing v1.1):
@@ -508,7 +523,18 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     currentProject, projectRabItems, bulkAddRabItems, getLastBulkAddOutcome,
     updateRabItemFull, updateRabItemUnitPrice, deleteRabItem, bulkDeleteRabItems,
     createVersionSnapshot, saveStatus,
+    // Rename proyek (2026-11-17): updateProject + daftar konteks untuk
+    // callback renameProject intent RENAME_PROJECT (dinamai
+    // contextProjects agar tidak bentrok dengan prop `projects`).
+    updateProject, projects: contextProjects,
+    // Perintah deterministik kelompok 1–5 (2026-11-17): callback ctx
+    // untuk intent proyek / QTO / revisi / pengaturan.
+    createProject, deleteProject, duplicateProjectData, refreshProjectTotals,
+    projectQtoItems, createManualQtoItem, syncQtoToRabSpreadsheet,
+    createEstimateVersion, estimateVersions,
   } = useProject();
+  // Suffix duplikat i18n (kelompok 1, pola DraftProjectsView).
+  const { t } = useI18n();
   // Prefer live context; fall back to props (keeps standalone usage working).
   const effProject = currentProject ?? activeProject;
   // GATE 1 (5A) — SELURUH ChatActionContext untuk executeIntent memakai
@@ -1846,7 +1872,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     // Satu-satunya jalan menampilkan balasan asisten di cabang-cabang
     // lokal/revisi di bawah (LLM memakai gerbang langsung karena
     // entrinya membawa field tambahan fromAi/model/creditsUsed).
-    const postAssistant = async (content: string, actions?: ChatActionButton[], questionnaire?: QuestionnairePayload): Promise<boolean> => {
+    const postAssistant = async (content: string, actions?: ChatActionButton[], questionnaire?: QuestionnairePayload, planId?: string): Promise<boolean> => {
       if (!(await gateWait(content))) {
         // Gerbang gagal: bila penyebabnya pembatalan eksplisit pengguna,
         // catat penandanya; bila disalip permintaan baru, diam (perilaku
@@ -1856,7 +1882,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         endExec();
         return false;
       }
-      setMessages((prev) => [...prev, { role: 'assistant', content, ts: Date.now(), actions, questionnaire }]);
+      setMessages((prev) => [...prev, { role: 'assistant', content, ts: Date.now(), actions, questionnaire, planId }]);
       persistMessage('assistant', content);
       // FASE 3 — kartu kuesioner ditampilkan → langkah pengumpulan spek
       // rencana berjalan (menunggu jawaban pengguna, bukan sukses).
@@ -2212,13 +2238,204 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
                 taxPercent: projectSnapshot.costBreakdown.taxPercent,
               }
             : null,
+          // Rename proyek (2026-11-17): callback tulis untuk intent
+          // RENAME_PROJECT — updateProject milik aplikasi (merge nama).
+          // Mengembalikan false bila id tidak ada di daftar konteks
+          // (fail-closed: registry menjawab jujur "belum berubah").
+          renameProject: (projectId: string, newName: string) => {
+            if (!contextProjects.some((p) => p.id === projectId)) return false;
+            updateProject(projectId, { name: newName });
+            return true;
+          },
+          // Perintah proyek (2026-11-17, kelompok 1): callback tulis
+          // untuk CREATE/DELETE/ARCHIVE/DUPLICATE_PROJECT.
+          createProject: (name: string) => {
+            const p = createProject({ name, status: 'draft' });
+            return { id: p.id, name: p.name };
+          },
+          deleteProject: (projectId: string) => {
+            if (!contextProjects.some((p) => p.id === projectId)) return false;
+            deleteProject(projectId);
+            return true;
+          },
+          archiveProject: (projectId: string) => {
+            // Literal TERVERIFIKASI dari CompletedProjectsView.tsx:70-76.
+            if (!contextProjects.some((p) => p.id === projectId)) return false;
+            updateProject(projectId, { status: 'archived', isArchived: true, archivedAt: new Date().toISOString() });
+            return true;
+          },
+          duplicateProject: (projectId: string) => {
+            // Pola handleDuplicateDraft, DraftProjectsView.tsx:86-99.
+            const src = contextProjects.find((p) => p.id === projectId);
+            if (!src) return null;
+            const copy = createProject({
+              name: src.name + t('proj.draft.dup_suffix'),
+              clientName: src.clientName || src.client,
+              location: src.location,
+              buildingType: src.buildingType,
+              status: 'draft',
+              totalRab: src.totalRab,
+              costSummary: src.costSummary,
+              sections: src.sections,
+            });
+            duplicateProjectData(src.id, copy.id);
+            return { id: copy.id, name: copy.name };
+          },
+          // Perintah QTO (2026-11-17, kelompok 2). Kedua fungsi konteks
+          // MELEMPAR bila tanpa proyek aktif / item tak ditemukan —
+          // tangkap menjadi null/false agar handler menjawab jujur.
+          createQtoItem: (input) => {
+            try {
+              const created = createManualQtoItem(input);
+              return { id: created.id, kode: created.kode };
+            } catch {
+              return null;
+            }
+          },
+          listQtoItems: () => projectQtoItems.map((q) => ({
+            id: q.id, uraian: q.uraian, quantity: q.quantity, unit: q.unit,
+            kode: q.kode, unitPrice: q.unitPrice ?? null, priceUnit: q.priceUnit,
+          })),
+          syncQtoItem: (qtoItemId: string) => {
+            try {
+              syncQtoToRabSpreadsheet(qtoItemId);
+              return true;
+            } catch {
+              return false;
+            }
+          },
+          // Gerbang paket DED & AI Document (2026-11-17, kelompok 3):
+          // gerbang yang sama dengan DedAiInputView / DocAnalyzer.
+          dedAiAvailable: planAllowsAiFeature(balance.plan, 'ded-ai'),
+          dedAiLockedMessage: aiFeatureLockedMessage(balance.plan, 'ded-ai'),
+          docAiAvailable: planAllowsAiFeature(balance.plan, 'ai-document'),
+          docAiLockedMessage: aiFeatureLockedMessage(balance.plan, 'ai-document'),
+          requestDocSummary: (docId, fileName) => {
+            // Ringkasan headless (async): handler sudah menjawab
+            // "memproses…", hasil diposting sebagai pesan chat di sini.
+            // Pola consume + flag partial/truncated meniru DocAnalyzer.
+            void (async () => {
+              const post = (text: string) => {
+                setMessages((prev) => [...prev, { role: 'assistant', content: text, ts: Date.now() }]);
+                persistMessage('assistant', text);
+              };
+              if (!planAllowsAiFeature(balance.plan, 'ai-document')) { post(aiFeatureLockedMessage(balance.plan, 'ai-document')); return; }
+              const doc = getDocFromLibrary(docId);
+              if (!doc) { post(`Dokumen "${fileName}" sudah tidak ada di library AI Document.`); return; }
+              try {
+                const res = await dokumenAiService.chat({ documentText: doc.text, fileName: doc.fileName, mode: 'SUMMARY' });
+                if (!res.success) { post(`Ringkasan "${fileName}" gagal (${res.errorCode ?? 'ERROR'}): ${res.message ?? 'coba lagi lewat AI Document.'}`); return; }
+                consume('ai-document', tariffFor('ai-document/simple').max, `AI Document (summary): ${fileName.slice(0, 50)}`);
+                let out = `Ringkasan "${fileName}":\n\n${res.reply ?? ''}`;
+                if (res.partial) out += '\n\n(Catatan: ringkasan ini hanya mencakup SEBAGIAN dokumen.)';
+                if (res.truncated) out += '\n\n(Catatan: sebagian teks dokumen dipotong karena batas.)';
+                post(out);
+              } catch (err) { post(`Ringkasan "${fileName}" gagal: ${err instanceof Error ? err.message : 'kesalahan tak dikenal'}. Coba lagi lewat AI Document.`); }
+            })();
+          },
+          // Ekspor, revisi & kredit (2026-11-17, kelompok 4).
+          creditBalance: balance.total,
+          creditSource: source,
+          exportProject: (format) => {
+            // Pola handleExportExcel/handleExportPdf (RabEstimasiView /
+            // LaporanView): company dari branding workspace + identitas
+            // jujur. Kedua exporter memicu unduhan sendiri (Excel: saveAs
+            // di engine; PDF: doc.save) — tidak ada kode anchor di sini.
+            // Gagal async dilaporkan sebagai pesan chat (handler sudah
+            // menjawab "sedang disiapkan").
+            const project = contextProjects.find((p) => p.id === effProject?.id);
+            if (!project) return;
+            void (async () => {
+              try {
+                const branding = await brandingClient.getBranding('ws-default-ezrab');
+                const honestCompany = resolveHonestCompany({
+                  name: branding.companyName, address: branding.address, phone: branding.phone,
+                  email: branding.email, website: branding.website, taxNumber: branding.taxNumber,
+                  directorName: branding.directorName, leadEstimatorName: branding.leadEstimatorName,
+                });
+                const company: Company = {
+                  id: 'comp-1', name: honestCompany.name, address: honestCompany.address,
+                  phone: honestCompany.phone, email: honestCompany.email, website: honestCompany.website,
+                  taxNumber: honestCompany.taxNumber, directorName: honestCompany.directorName,
+                  leadEstimatorName: honestCompany.leadEstimatorName, logo: branding.logoUrl || '',
+                  defaultOverheadPercent: 5, defaultProfitPercent: 5,
+                  defaultContingencyPercent: 0, defaultTaxPercent: 11,
+                };
+                if (format === 'pdf') await exportProjectToPDF(project, company, { subscriptionPlan: branding.subscriptionPlan });
+                else await exportProjectToExcel(project, company);
+              } catch (err) {
+                const msg = `Gagal mengekspor ${format === 'pdf' ? 'PDF' : 'Excel'}: ${err instanceof Error ? err.message : 'kesalahan tidak dikenal'}. Coba lagi lewat menu Laporan.`;
+                setMessages((prev) => [...prev, { role: 'assistant', content: msg, ts: Date.now() }]);
+                persistMessage('assistant', msg);
+              }
+            })();
+          },
+          createRevision: (label) => {
+            // Konvensi label UI: EstimateVersionAndScenarioModal.tsx:161
+            // (label.trim() || nextVersionNumber(versions)).
+            const pid = effProject?.id;
+            if (!pid) return null;
+            const versions = estimateVersions.filter((v) => v.projectId === pid);
+            const finalLabel = (label ?? '').trim() || nextVersionNumber(versions);
+            const created = createEstimateVersion(
+              finalLabel,
+              (label ?? '').trim() ? finalLabel : 'Revisi dibuat dari Chat AI',
+              'Dibuat dari Chat AI',
+              pid,
+            );
+            return { versionNumber: created.versionNumber, label: created.label };
+          },
+          topUpCredits: (itemId) => {
+            // Saldo baru dihitung deterministik (mock menambah persis
+            // offer.credits secara sinkron) karena state hook belum
+            // re-render di tick yang sama.
+            const before = balance.total;
+            const res = topUp(itemId);
+            if (res.status !== 'simulated' && res.status !== 'completed') {
+              return { ok: false, addedCredits: 0, newBalance: null,
+                reason: balance.plan === 'free' ? 'Paket Free tidak bisa top-up'
+                  : source !== 'simulation' ? 'Top-up simulasi hanya tersedia dalam mode simulasi'
+                  : 'Paket top-up tidak dikenal' };
+            }
+            return { ok: true, addedCredits: res.totalCredits, newBalance: before + res.totalCredits };
+          },
+          // Pengaturan proyek (2026-11-17, kelompok 5): partial update —
+          // patch HANYA berisi field yang disebut perintah (jangan pernah
+          // menulis field lain — aturan 0 vs belum-diatur).
+          updateProjectSettings: (projectId: string, patch: ProjectSettingsPatch) => {
+            if (!contextProjects.some((p) => p.id === projectId)) return false;
+            updateProject(projectId, patch as any); // cast: pphPercent/pphEnabled tak terdeklarasi di Project
+            refreshProjectTotals(projectId);
+            return true;
+          },
         };
         let reply: string;
         if (routed.intent === 'GREETING') reply = localGreeting();
         else if (routed.intent === 'HELP') reply = HELP_TEXT;
+        else if (routed.intent === 'SEARCH_AHSP' && routed.needsClarification) {
+          // "carikan ahsp yang cocok" tanpa kata kunci: "yang cocok"
+          // merujuk pada topik yang sedang dibahas — coba ambil dari
+          // pesan pengguna sebelumnya; bila tidak ada yang relevan,
+          // jatuh ke prompt klarifikasi biasa (temuan live 2026-11-17).
+          const prevUserText = findPrecedingUserText(messages, messages.length);
+          const topic = resolveAhspTopicFromHistory(prevUserText ? [prevUserText] : []);
+          reply = topic ? topic.message : (routed.clarificationPrompt ?? 'Mau cari AHSP apa?');
+        }
         else if (routed.needsClarification && routed.clarificationPrompt) reply = routed.clarificationPrompt;
         else {
-          const res = executeIntent(routed.intent, routed.param, ctx);
+          // Mutasi deterministik (2026-11-17): case registry membaca
+          // snapshot proyek aktif lewat getActiveProjectSnapshot() — sama
+          // seperti tool propose_*; pasang di sekitar executeIntent lalu
+          // bersihkan (pola yang sama dengan toolRegistry.executeTool).
+          // Tanpa ini snapshot selalu null di Phase-1 dan semua mutasi
+          // gagal-closed "tidak ada proyek aktif".
+          if (projectSnapshot) setActiveProjectSnapshot(projectSnapshot);
+          let res: ActionResult;
+          try {
+            res = executeIntent(routed.intent, routed.param, ctx);
+          } finally {
+            setActiveProjectSnapshot(null);
+          }
           reply = res.message;
           if (res.awaitRabNeeds) setAwaitingNeeds(true);
           if (res.awaitRabChoice) setAwaitingChoice(true);
@@ -2228,7 +2445,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
           if (res.awaitClarify) setAwaitingClarify(res.awaitClarify);
           // Action buttons — attached to the assistant message
           const entryActions = res.actions && res.actions.length > 0 ? res.actions : undefined;
-          const delivered = await postAssistant(reply, entryActions, res.questionnaire);
+          const delivered = await postAssistant(reply, entryActions, res.questionnaire, res.planId);
           // Wizard/panel SETELAH respons terlihat (commit terpisah),
           // bukan seketika bersamaan dengan kirim — urutan Send →
           // Processing → AI Response → Action/Wizard. Bila pengiriman
@@ -3663,6 +3880,27 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       setMessages((prev) => [...prev, { role: 'assistant', content: res.message, ts: Date.now() }]);
       persistMessage('assistant', res.message);
       if (res.awaitRabNeeds) setAwaitingNeeds(true);
+    } else if (btn.action.intent === 'DELETE_PROJECT_CONFIRM') {
+      // Konfirmasi hapus proyek (langkah 2, 2026-11-17, kelompok 1):
+      // param tombol = id proyek. Tanpa cabang ini tombol jatuh ke
+      // submit(label) dan tidak ada penghapusan (aman tapi tidak jalan).
+      // Ctx dibangun lokal seperti cabang tombol lain + callback
+      // deleteProject (cabang tombol tidak memakai ctx submit).
+      const res = executeIntent('DELETE_PROJECT_CONFIRM', btn.action.param, {
+        navigate: (menu: string) => navigateChat(menu),
+        currentMenu,
+        activeProject: effProject,
+        projects,
+        projectTotal: projectSnapshot ? projectSnapshot.totalDirect : projectTotal,
+        projectItems: projectSnapshot?.items ?? null,
+        deleteProject: (projectId: string) => {
+          if (!contextProjects.some((p) => p.id === projectId)) return false;
+          deleteProject(projectId);
+          return true;
+        },
+      });
+      setMessages((prev) => [...prev, { role: 'assistant', content: res.message, ts: Date.now(), actions: res.actions }]);
+      persistMessage('assistant', res.message);
     } else {
       // Fallback: kirim sebagai pesan
       submit(btn.label);

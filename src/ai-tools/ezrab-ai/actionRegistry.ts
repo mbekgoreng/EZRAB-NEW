@@ -8,7 +8,33 @@
  */
 
 import { ChatIntent } from './intentRouter';
-import { EZRAB_AI_TOOLS } from './tools';
+import { EZRAB_AI_TOOLS, getActiveProjectSnapshot } from './tools';
+import {
+  getAssistantOperationContext,
+  buildUpdateQuantityPlan,
+  buildUpdateUnitPricePlan,
+  buildDeletePlan,
+  buildAddPlan,
+  buildUndoPlan,
+  getLastUndoableRecord,
+  writesDatasetGuard,
+  resolveTargetItem,
+} from './operations';
+import { snapshotAllItems, type ProjectSnapshot } from './projectContext';
+import { parseRequestedQuantity } from './chatAnswerTransfer';
+// Handler perintah deterministik kelompok 1–5 (2026-11-17, gap P2–P8 +
+// P12 audit perintah): logika perintah hidup di ./commands/*, registry
+// hanya mendelegasikan (case di executeIntent, sesudah UNDO_LAST).
+import { handleProjectCommand } from './commands/projectCommands';
+import { handleQtoCommand, type QtoChatItem, type CreateQtoItemInput } from './commands/qtoCommands';
+import { handleDedDocCommand } from './commands/dedDocCommands';
+import {
+  handleExportCreditCommand,
+  type ExportFormat,
+  type CreatedRevision,
+  type TopUpCreditResult,
+} from './commands/exportCreditCommands';
+import { handleProjectSettingsCommand, type ProjectSettingsPatch } from './commands/projectSettingsCommands';
 import {
   RabNeeds, extractRabNeeds, missingNeeds, buildDesignPrompt, summarizeRabNeeds,
   resolveLandAreaM2, stripLandPhrases, formatLengthM,
@@ -55,7 +81,7 @@ import type { QuestionnaireAnswerRecord } from './universalIntake';
 import { RabTemplateService } from '../../services/rabTemplateService';
 import { listUnifiedTemplates } from '../../services/rabTemplateCatalogAdapter';
 import { officialAhspRepository } from '../../data/nationalCostDatabase/officialAhspRepository';
-import { searchChatAhsp, formatChatAhspResult } from './chatSearch';
+import { searchChatAhsp, formatChatAhspResult, normalizeUnit } from './chatSearch';
 import {
   EXPLAIN_AHSP_VS_ESTIMATE_TEXT,
   METHODOLOGY_MISSING_AHSP_TEXT,
@@ -102,6 +128,63 @@ export interface ChatActionContext {
     profitPercent: number;
     taxPercent: number;
   } | null;
+  /** Mengganti nama proyek (disediakan view — memanggil updateProject
+   *  milik aplikasi; mengembalikan true bila nama benar-benar diubah,
+   *  false bila proyek tidak ditemukan). Tanpa callback ini, intent
+   *  RENAME_PROJECT dijawab jujur "belum bisa" (fail-closed) — registry
+   *  tidak pernah mengklaim rename berhasil tanpa eksekusi nyata. */
+  renameProject?: (projectId: string, newName: string) => boolean;
+  /* --- Perintah deterministik kelompok 1–5 (2026-11-17) ---
+   * Pola yang sama dengan renameProject: callback disediakan view,
+   * registry fail-closed jujur tanpa callback (tidak pernah mengklaim
+   * eksekusi tanpa panggilan nyata). */
+  /** Membuat proyek baru (view → createProject); null bila gagal. */
+  createProject?: (name: string) => { id: string; name: string } | null;
+  /** Menghapus proyek (view → deleteProject, sesudah konfirmasi langkah
+   *  2); false bila proyek tidak ditemukan. */
+  deleteProject?: (projectId: string) => boolean;
+  /** Mengarsipkan proyek (view → updateProject status 'archived' +
+   *  isArchived + archivedAt, pola CompletedProjectsView). */
+  archiveProject?: (projectId: string) => boolean;
+  /** Menduplikat proyek (view → createProject + suffix + duplicateProjectData). */
+  duplicateProject?: (projectId: string) => { id: string; name: string } | null;
+  /** Membuat item QTO manual di proyek aktif (view → createManualQtoItem). */
+  createQtoItem?: (input: CreateQtoItemInput) => { id: string; kode: string } | null;
+  /** Daftar item QTO proyek aktif (view memetakan projectQtoItems;
+   *  snapshot chat tidak memuat QTO). */
+  listQtoItems?: () => QtoChatItem[];
+  /** Mensinkron SATU item QTO ke RAB (view → syncQtoToRabSpreadsheet). */
+  syncQtoItem?: (qtoItemId: string) => boolean;
+  /** Gerbang paket DED (view ← planAllowsAiFeature(plan, 'ded-ai'));
+   *  undefined = fail-closed. */
+  dedAiAvailable?: boolean;
+  /** Pesan penolakan gerbang DED (aiFeatureLockedMessage). */
+  dedAiLockedMessage?: string;
+  /** Gerbang paket AI Document (view ← planAllowsAiFeature(plan,
+   *  'ai-document')); undefined = fail-closed. */
+  docAiAvailable?: boolean;
+  /** Pesan penolakan gerbang AI Document (aiFeatureLockedMessage). */
+  docAiLockedMessage?: string;
+  /** Memicu ringkasan headless (view → dokumenAiService.chat, async;
+   *  hasil diposting view sebagai pesan chat). Tanpa callback, handler
+   *  memakai jalur handoff ke AI Document. */
+  requestDocSummary?: (docId: string, fileName: string) => void;
+  /** Mengekspor proyek aktif (view → exporter; async di view, kedua
+   *  exporter memicu unduhan sendiri). */
+  exportProject?: (format: ExportFormat) => void;
+  /** Membuat revisi baru (view → createEstimateVersion; label undefined
+   *  = konvensi UI nextVersionNumber). */
+  createRevision?: (label: string | undefined) => CreatedRevision | null;
+  /** Saldo kredit total dari hook yang sudah ter-mount; null = tak tersedia. */
+  creditBalance?: number | null;
+  /** Sumber saldo (BalanceSource dari useCreditSimulation). */
+  creditSource?: 'server' | 'simulation' | 'unavailable';
+  /** Top-up simulasi per itemId katalog (view → topUp hook / mockTopUp). */
+  topUpCredits?: (itemId: string) => TopUpCreditResult | null;
+  /** Menerapkan patch pengaturan ke proyek aktif (view → updateProject +
+   *  refreshProjectTotals; patch HANYA berisi field yang disebut
+   *  perintah — tidak pernah field lain). */
+  updateProjectSettings?: (projectId: string, patch: ProjectSettingsPatch) => boolean;
 }
 
 export interface ChatActionButton {
@@ -170,6 +253,10 @@ export interface ActionResult {
   awaitClarify?: string;
   /** Prompt Full AI yang disusun dari kebutuhan terkumpul (dijalankan view) */
   fullAiPrompt?: string;
+  /** ID plan operasi (ChangePlan) yang pratinjaunya ada pada pesan ini —
+   *  view meneruskannya ke ChatEntry.planId sehingga kartu Konfirmasi
+   *  Eksekusi ter-render (mutasi item deterministik 2026-11-17). */
+  planId?: string;
 }
 
 const MENU_LABELS: Record<string, string> = {
@@ -2223,6 +2310,163 @@ function clarifyTemplateQueryResult(query: string): ActionResult {
   };
 }
 
+/* ------------------------------------------------------------------ */
+/* Mutasi item RAB deterministik (2026-11-17, gap P1 audit perintah)    */
+/* ------------------------------------------------------------------ */
+
+/** Pesan gerbang tulis — SAMA PERSIS dengan yang dipakai tool propose_*
+ * (tools.ts) agar jawaban deterministik dan jalur LLM konsisten. */
+const WRITES_DISABLED_MESSAGE =
+  'Operasi tulis Asisten AI tidak aktif untuk sesi ini: peran aktif tidak memiliki capability edit-estimate (atau belum masuk dengan peran demo). Tidak ada perubahan yang dibuat.';
+
+type MutationGate =
+  | { ok: true; snap: ProjectSnapshot; actor: string }
+  | { ok: false; message: string };
+
+/** Gerbang bersama kelima case mutasi: snapshot proyek aktif + peran
+ * berhak tulis + pagar dataset >1.000 item — urutan dan pesannya sama
+ * dengan tool propose_* (tools.ts). Gagal di sini = tidak ada plan yang
+ * dibuat dan tidak ada klaim apa pun. */
+function requireMutationGate(): MutationGate {
+  const snap = getActiveProjectSnapshot();
+  if (!snap) {
+    return { ok: false, message: 'Tidak ada proyek aktif. Buka salah satu proyek dulu di Daftar Proyek, lalu ulangi perintahnya.' };
+  }
+  const opCtx = getAssistantOperationContext();
+  if (!opCtx?.writesEnabled) return { ok: false, message: WRITES_DISABLED_MESSAGE };
+  const guard = writesDatasetGuard(snap);
+  if (guard) return { ok: false, message: guard };
+  return { ok: true, snap, actor: opCtx.actor };
+}
+
+/** Kata pengisi pada nama item perintah — "hapus item plesteran" berarti
+ * item "plesteran", bukan item yang uraiannya memuat kata "item" (tidak
+ * ada uraian seperti itu, sehingga tanpa pembersihan ini pencocokan
+ * selalu gagal). "pekerjaan" juga pengisi ("hapus pekerjaan galian" =
+ * pekerjaan galian). Frasa lokasi "di proyek (ini)" ikut dibuang. */
+export function cleanItemName(raw: string): string {
+  return String(raw ?? '')
+    .replace(/[?.,!]+$/g, '')
+    .replace(/^(?:item|pekerjaan)(?:\s+|$)/i, '')
+    .replace(/\s+di\s+proyek(?:\s+ini)?\s*$/i, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/** Pisahkan "nama jadi nilai" ("plesteran jadi 25 m2" → nama "plesteran",
+ * nilai "25 m2"). "jadi/menjadi" dicoba dulu agar "ke" di dalam nama
+ * ("plesteran lantai ke 2 jadi 25 m2") tidak memotong terlalu dini. */
+export function splitNameAndValue(param: string): { name: string; valueText: string } | null {
+  const text = String(param ?? '').trim();
+  const m =
+    text.match(/^(.+?)\s+(?:jadi|menjadi)\s+(.+)$/i) ??
+    text.match(/^(.+?)\s+(?:ke|=)\s+(.+)$/i);
+  if (!m) return null;
+  return { name: cleanItemName(m[1]), valueText: m[2].trim() };
+}
+
+const RUPIAH_MULTIPLIERS: Record<string, number> = {
+  ribu: 1_000, rb: 1_000, k: 1_000,
+  juta: 1_000_000, jt: 1_000_000,
+  miliar: 1_000_000_000, milyar: 1_000_000_000,
+};
+
+/**
+ * Parser nominal Rupiah dari perintah ("Rp 50.000", "50000", "50 ribu",
+ * "2,5 juta", "50rb"). Format Indonesia: titik = pemisah ribuan, koma =
+ * desimal. Mengembalikan rupiah bulat (Math.round — pratinjau menampilkan
+ * nilai persisnya, jadi pembulatan tidak pernah diam-diam) atau null bila
+ * tidak terbaca. Tidak ada parser Rupiah di repo sebelum ini (grep
+ * 2026-11-17) — fungsi ini yang pertama.
+ */
+export function parseRupiahAmount(text: string): number | null {
+  const s = String(text ?? '')
+    .trim()
+    .replace(/^(rp|rupiah)\s*/i, '')
+    .replace(/\s*(ya|dong|aja|saja|tolong)[?.,!]*\s*$/i, '')
+    .trim();
+  const m = s.match(/^([\d][\d.,]*)\s*(ribu|juta|miliar|milyar|rb|jt|k)?$/i);
+  if (!m) return null;
+  const mult = RUPIAH_MULTIPLIERS[(m[2] ?? '').toLowerCase()] ?? 1;
+  const num = m[1];
+  let value: number;
+  if (num.includes(',')) {
+    // Koma = desimal; semua titik adalah pemisah ribuan.
+    value = Number(num.replace(/\./g, '').replace(',', '.'));
+  } else if (/^\d{1,3}(\.\d{3})+$/.test(num)) {
+    // Pola ribuan Indonesia murni: 50.000, 1.250.000.
+    value = Number(num.replace(/\./g, ''));
+  } else {
+    value = Number(num);
+  }
+  if (!Number.isFinite(value) || value < 0) return null;
+  return Math.round(value * mult);
+}
+
+export interface ParsedVolume { volume: number; unit: string | null }
+
+/**
+ * Nilai volume dari teks nilai ("25 m2", "25", "2,5 m3", "5 hari").
+ * parseRequestedQuantity dulu (satuan katalog); bila gagal, angka
+ * telanjang atau angka + kata satuan apa pun — kecocokan satuan terhadap
+ * item target diperiksa penelepon (satuan tak cocok ditolak, bukan
+ * dikonversi diam-diam).
+ */
+export function parseVolumeValue(valueText: string): ParsedVolume | null {
+  const s = String(valueText ?? '')
+    .trim()
+    .replace(/\s*(ya|dong|aja|saja|tolong)[?.,!]*\s*$/i, '')
+    .trim();
+  const q = parseRequestedQuantity(s);
+  if (q) return { volume: q.volume, unit: q.unit };
+  const m = s.match(/^(\d+(?:[.,]\d+)?)\s*([a-z'²³]+)?$/i);
+  if (!m) return null;
+  const volume = Number(m[1].replace(',', '.'));
+  if (!Number.isFinite(volume) || volume < 0) return null;
+  return { volume, unit: m[2] ? normalizeUnit(m[2]) : null };
+}
+
+/** Normalisasi satuan untuk perbandingan (spasi dalam "m 2" dibuang). */
+function normUnitForCompare(u: string | null | undefined): string {
+  return normalizeUnit(u).replace(/\s+/g, '');
+}
+
+/**
+ * Kecocokan satuan: sama sesudah normalisasi, atau pasangan 'm'/'m''
+ * (meter vs meter lari — dimensi sama, notasi berbeda). Yang lain
+ * (m2 vs m3, kg vs m2) TIDAK cocok — tidak pernah dikonversi diam-diam.
+ */
+export function unitsCompatible(a: string | null | undefined, b: string | null | undefined): boolean {
+  const na = normUnitForCompare(a);
+  const nb = normUnitForCompare(b);
+  if (!na || !nb) return false;
+  if (na === nb) return true;
+  return (na === 'm' && nb === "m'") || (na === "m'" && nb === 'm');
+}
+
+export interface ExtractedAddTarget { name: string; volume: number | undefined; unit: string | null }
+
+/**
+ * Pisahkan nama + volume dari ekor perintah tambah ("plesteran 10 m2" →
+ * nama "plesteran", volume 10, satuan "m2"). Kuantitas dicari di AKHIR
+ * ("30 m" untuk bouwplank ikut tertangkap — satuan 'm' telanjang diterima
+ * di sini karena kecocokannya diperiksa terhadap satuan item AHSP hasil
+ * pencarian). Tanpa kuantitas akhir → volume undefined (builder memakai 1
+ * + peringatan). Penjaga \s+ sebelum angka melindungi mutu ("beton k225"
+ * bukan volume 225).
+ */
+export function extractAddTarget(param: string): ExtractedAddTarget {
+  const s = String(param ?? '')
+    .trim()
+    .replace(/\s*(ya|dong|aja|saja|tolong)[?.,!]*\s*$/i, '')
+    .trim();
+  const m = s.match(/^(.+?)\s+(\d+(?:[.,]\d+)?)\s*(m\s*2|m²|m\s*3|m³|kg|m'|buah|unit|titik|ls|hari|oh|m)?\s*$/i);
+  if (!m) return { name: cleanItemName(s), volume: undefined, unit: null };
+  const volume = Number(m[2].replace(',', '.'));
+  if (!Number.isFinite(volume) || volume <= 0) return { name: cleanItemName(s), volume: undefined, unit: null };
+  return { name: cleanItemName(m[1]), volume, unit: m[3] ? normalizeUnit(m[3]) : null };
+}
+
 export function executeIntent(
   intent: ChatIntent,
   param: string | undefined,
@@ -2268,6 +2512,194 @@ export function executeIntent(
         message: 'Membuka Daftar Proyek — klik "Proyek Baru" untuk membuat proyek.',
         navigated: true,
       };
+
+    case 'RENAME_PROJECT': {
+      // Ganti nama proyek aktif (2026-11-17): satu-satunya jalur rename
+      // dari chat — deterministik, dieksekusi di sini lewat callback view
+      // (updateProject milik aplikasi). Balasan HANYA mengklaim berhasil
+      // bila callback mengembalikan true; tanpa proyek aktif / tanpa
+      // callback / nama tak valid → jawab jujur, tidak ada yang berubah.
+      // Sebelumnya perintah ini jatuh ke LLM yang mengklaim rename
+      // berhasil tanpa tool apa pun.
+      const newName = (param ?? '').trim();
+      if (!newName) {
+        return { ok: true, message: 'Mau diganti jadi nama apa? Contoh: "ubah nama proyek menjadi Rumah Impian".' };
+      }
+      if (newName.length > 120) {
+        return {
+          ok: false,
+          message: `Nama proyek maksimal 120 karakter — yang diminta ${newName.length} karakter. Coba nama yang lebih pendek.`,
+        };
+      }
+      if (!ctx.activeProject) {
+        return { ok: true, message: 'Tidak ada proyek aktif. Buka salah satu proyek dulu di Daftar Proyek, lalu ulangi perintahnya.' };
+      }
+      const oldName = ctx.activeProject.name;
+      if (newName === oldName) {
+        return { ok: true, message: `Nama proyek sudah "${oldName}" — tidak ada yang berubah.` };
+      }
+      if (!ctx.renameProject) {
+        return {
+          ok: false,
+          message: 'Saya belum bisa mengubah nama proyek dari chat ini. Ubah lewat Daftar Proyek (tombol edit pada proyeknya).',
+        };
+      }
+      const changed = ctx.renameProject(ctx.activeProject.id, newName);
+      if (!changed) {
+        return {
+          ok: false,
+          message: `Nama proyek belum berubah — proyek "${oldName}" tidak ditemukan di daftar aktif. Coba pilih ulang proyeknya di Daftar Proyek, lalu ulangi perintahnya.`,
+        };
+      }
+      return {
+        ok: true,
+        message: `Nama proyek diubah dari "${oldName}" menjadi "${newName}".`,
+      };
+    }
+
+    // Mutasi item RAB deterministik (2026-11-17, gap P1 audit perintah):
+    // kelima case ini membangun ChangePlan yang SAMA dengan tool propose_*
+    // (pratinjau + Konfirmasi Eksekusi) — tanpa LLM, tanpa kredit.
+    // Balasan sukses HANYA teks pratinjau + planId (view merender kartu
+    // konfirmasi); eksekusi HANYA lewat klik Konfirmasi Eksekusi.
+    // Fail-closed seperti rename: gerbang gagal / target tak ditemukan /
+    // target ambigu / AHSP tak unik / tak ada record undo → pesan jujur,
+    // TIDAK ADA plan yang dibuat, TIDAK ADA klaim sukses.
+    case 'UPDATE_ITEM_VOLUME': {
+      const gate = requireMutationGate();
+      if (!gate.ok) return { ok: false, message: gate.message };
+      const split = splitNameAndValue(param ?? '');
+      if (!split || !split.name) {
+        return { ok: true, message: 'Ubah volume item apa, jadi berapa? Contoh: "ubah volume plesteran jadi 25 m2".' };
+      }
+      const parsed = parseVolumeValue(split.valueText);
+      if (!parsed) {
+        return { ok: false, message: `Volume "${split.valueText}" tidak bisa dibaca sebagai angka. Contoh: "ubah volume ${split.name} jadi 25 m2".` };
+      }
+      // Bila satuan disebut, cocokkan dengan satuan item target SEBELUM
+      // membangun plan — satuan tak cocok ditolak, bukan dikonversi.
+      // Tanpa satuan yang disebut, builder memakai satuan item target
+      // (pratinjau menampilkannya — tidak ada tebakan diam-diam).
+      if (parsed.unit) {
+        const target = resolveTargetItem(snapshotAllItems(gate.snap), { nama: split.name });
+        if (target.kind === 'one' && !unitsCompatible(parsed.unit, target.item.unit)) {
+          return {
+            ok: false,
+            message: `Satuan yang Anda sebut (${parsed.unit}) tidak cocok dengan satuan item "${target.item.description}" (${target.item.unit}). Sebutkan volume dalam ${target.item.unit} — satuan tidak dikonversi otomatis.`,
+          };
+        }
+      }
+      const res = buildUpdateQuantityPlan(gate.snap, { nama: split.name }, parsed.volume, gate.actor);
+      if (!res.ok) return { ok: false, message: res.message };
+      return { ok: true, message: res.plan.previewText, planId: res.plan.id };
+    }
+
+    case 'UPDATE_ITEM_PRICE': {
+      const gate = requireMutationGate();
+      if (!gate.ok) return { ok: false, message: gate.message };
+      const split = splitNameAndValue(param ?? '');
+      if (!split || !split.name) {
+        return { ok: true, message: 'Ubah harga item apa, jadi berapa? Contoh: "ubah harga plesteran jadi Rp 50.000".' };
+      }
+      const price = parseRupiahAmount(split.valueText);
+      if (price === null) {
+        return { ok: false, message: `Harga "${split.valueText}" tidak bisa dibaca sebagai nominal Rupiah. Contoh: "ubah harga ${split.name} jadi Rp 50.000" atau "jadi 50 ribu".` };
+      }
+      const res = buildUpdateUnitPricePlan(gate.snap, { nama: split.name }, price, gate.actor);
+      if (!res.ok) return { ok: false, message: res.message };
+      return { ok: true, message: res.plan.previewText, planId: res.plan.id };
+    }
+
+    case 'DELETE_ITEM': {
+      const gate = requireMutationGate();
+      if (!gate.ok) return { ok: false, message: gate.message };
+      const name = cleanItemName(param ?? '');
+      if (!name) {
+        return { ok: true, message: 'Hapus item apa? Contoh: "hapus item plesteran".' };
+      }
+      const res = buildDeletePlan(gate.snap, [{ nama: name }], gate.actor);
+      if (!res.ok) return { ok: false, message: res.message };
+      return { ok: true, message: res.plan.previewText, planId: res.plan.id };
+    }
+
+    case 'ADD_ITEM': {
+      const gate = requireMutationGate();
+      if (!gate.ok) return { ok: false, message: gate.message };
+      const target = extractAddTarget(param ?? '');
+      if (!target.name) {
+        return { ok: true, message: 'Tambah item apa? Contoh: "tambah item plesteran 10 m2".' };
+      }
+      // Nama → kode AHSP hanya bila SATU hit relevan — ambigu/tidak ada
+      // dijawab jujur, kode tidak pernah ditebak.
+      const found = searchChatAhsp(target.name);
+      if (found.outcome === 'NOT_FOUND' || found.items.length === 0) {
+        return { ok: false, message: formatChatAhspResult(found) };
+      }
+      if (found.outcome !== 'FOUND_RELEVANT' || found.items.length !== 1) {
+        const lines = found.items.slice(0, 5).map((it) => `- [${it.code}] ${it.title} — ${it.unit}`).join('\n');
+        return {
+          ok: false,
+          message:
+            `Nama "${target.name}" cocok dengan ${found.items.length} item AHSP — sebutkan yang mana (pakai kode atau nama yang lebih spesifik), tidak ada yang ditambahkan:\n${lines}` +
+            (found.items.length > 5 ? `\n…dan ${found.items.length - 5} item lainnya.` : ''),
+        };
+      }
+      const ahsp = found.items[0];
+      if (target.unit && !unitsCompatible(target.unit, ahsp.unit)) {
+        return {
+          ok: false,
+          message: `Satuan yang Anda sebut (${target.unit}) tidak cocok dengan satuan item AHSP [${ahsp.code}] ${ahsp.title} (${ahsp.unit}). Sebutkan volume dalam ${ahsp.unit} — satuan tidak dikonversi otomatis.`,
+        };
+      }
+      const res = buildAddPlan(gate.snap, ahsp.code, target.volume, gate.actor);
+      if (!res.ok) return { ok: false, message: res.message };
+      return { ok: true, message: res.plan.previewText, planId: res.plan.id };
+    }
+
+    case 'UNDO_LAST': {
+      const gate = requireMutationGate();
+      if (!gate.ok) return { ok: false, message: gate.message };
+      const last = getLastUndoableRecord(gate.snap.projectId);
+      if (!last) {
+        return { ok: true, message: `Belum ada operasi Asisten AI yang tercatat untuk proyek "${gate.snap.projectName}" — tidak ada yang bisa di-undo.` };
+      }
+      const res = buildUndoPlan(gate.snap, last, gate.actor);
+      if (!res.ok) return { ok: false, message: res.message };
+      return { ok: true, message: res.plan.previewText, planId: res.plan.id };
+    }
+
+    // Perintah deterministik kelompok 1–5 (2026-11-17, gap P2–P8 + P12
+    // audit perintah): handler di ./commands/* — registry hanya
+    // mendelegasikan; tiap handler fail-closed tanpa callback/proyek.
+    case 'CREATE_PROJECT':
+    case 'DELETE_PROJECT':
+    case 'DELETE_PROJECT_CONFIRM':
+    case 'ARCHIVE_PROJECT':
+    case 'DUPLICATE_PROJECT': {
+      return handleProjectCommand(intent, param, ctx)
+        ?? { ok: false, message: 'Perintah proyek tidak dikenali.' };
+    }
+    case 'CREATE_QTO_ITEM':
+    case 'SYNC_QTO': {
+      return handleQtoCommand(intent, param, ctx)
+        ?? { ok: false, message: 'Perintah QTO tidak dikenali.' };
+    }
+    case 'RUN_DED_ANALYSIS':
+    case 'SUMMARIZE_DOCUMENT': {
+      return handleDedDocCommand(intent, param, ctx)
+        ?? { ok: false, message: 'Perintah tidak dikenali.' };
+    }
+    case 'EXPORT_PROJECT':
+    case 'CREATE_REVISION':
+    case 'CREDIT_BALANCE':
+    case 'TOPUP_CREDIT': {
+      return handleExportCreditCommand(intent, param, ctx)
+        ?? { ok: false, message: 'Perintah tidak dikenali.' };
+    }
+    case 'UPDATE_PROJECT_SETTINGS': {
+      return handleProjectSettingsCommand(intent, param, ctx)
+        ?? { ok: false, message: 'Perintah pengaturan tidak dikenali.' };
+    }
 
     case 'CAPABILITIES': {
       // Jawaban produk deterministik: keunggulan EZRAB yang nyata + tombol

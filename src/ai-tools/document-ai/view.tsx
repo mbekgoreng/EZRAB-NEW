@@ -38,6 +38,7 @@ import { useI18n } from '../../i18n/I18nContext';
 import './document-ai.css';
 import { TutorialHelpButton } from '../../components/onboarding/tutorials/TutorialHelpButton';
 import { consumePendingAiEntry } from '../aiNavigation';
+import { consumeDocAnalyzeHandoff, setActiveDocDescriptor } from '../ezrab-ai/dedDocSessionHolder';
 
 /* ------------------------------------------------------------------ */
 /* Tipe & helper bersama (dipakai komponen di ./components)            */
@@ -223,6 +224,11 @@ export const DokumenAiView: React.FC<DokumenAiViewProps> = ({ onAnalysisActiveCh
   const [docs, setDocs] = useState<DocRecord[]>(() => readLS<DocRecord[]>(LS_DOCS, []));
   const [history, setHistory] = useState<HistoryEntry[]>(() => readLS<HistoryEntry[]>(LS_HISTORY, []));
   const [drafts, setDrafts] = useState<DraftRecord[]>(() => readLS<DraftRecord[]>(LS_DRAFTS, []));
+  // Perintah Chat AI "ringkas dokumen ini" (2026-11-17, Kelompok 3):
+  // ref dokumen agar handoff dari chat menemukan dokumen terbaru tanpa
+  // membuat callback handoff bergantung pada state docs.
+  const docsRef = useRef(docs);
+  docsRef.current = docs;
   // Perbaikan final: konsumsi entry Dokumen AI. Sebelumnya view ini TIDAK
   // PERNAH mengonsumsi entry klasik — hanya projectId via URL yang bertahan,
   // sehingga documentId/prompt dari resolver tidak pernah tampil. DocCreator
@@ -250,6 +256,42 @@ export const DokumenAiView: React.FC<DokumenAiViewProps> = ({ onAnalysisActiveCh
     window.addEventListener('ezrab:ai-entry', onEntry);
     return () => window.removeEventListener('ezrab:ai-entry', onEntry);
   }, [takeDocEntry]);
+
+  // Perintah Chat AI "ringkas dokumen ini" (2026-11-17, Kelompok 3):
+  // Chat AI membaca deskriptor dokumen aktif dari holder ini (teks
+  // dokumen TIDAK disalin — dibaca dari library localStorage saat
+  // eksekusi headless, agar tidak basi).
+  useEffect(() => {
+    setActiveDocDescriptor(
+      activeDoc
+        ? { id: activeDoc.id, fileName: activeDoc.fileName, status: activeDoc.status, charCount: activeDoc.charCount, updatedAt: activeDoc.updatedAt }
+        : null,
+    );
+  }, [activeDoc]);
+
+  // Handoff ringkasan dari chat (jalur fallback bila callback headless
+  // belum ter-wiring): konsumsi sinyal saat mount — view SELALU remount
+  // saat ganti menu (WorkspaceView merender satu cabang ternary), jadi
+  // mount adalah mekanisme yang benar-benar jalan. Dokumen dibuka di
+  // tab Ringkasan; pengguna menekan tombol analisis di sana (ringkasan
+  // TIDAK berjalan otomatis — DocAnalyzer tidak punya prop auto-run).
+  const takeDocHandoff = useCallback(() => {
+    const h = consumeDocAnalyzeHandoff();
+    if (!h) return;
+    setDocEntryBanner({
+      label: 'Ringkasan dari Chat AI',
+      prompt: 'Ringkas dokumen ini',
+      documentId: h.docId,
+    });
+    const doc = docsRef.current.find((d) => d.id === h.docId);
+    if (!doc) return;
+    setActiveDoc(doc);
+    setAnalyzerInitialTab('summary');
+    setTab('analyze');
+  }, []);
+  useEffect(() => {
+    takeDocHandoff();
+  }, [takeDocHandoff]);
 
   useEffect(() => { writeLS(LS_DOCS, docs); }, [docs]);
   useEffect(() => { writeLS(LS_HISTORY, history); }, [history]);

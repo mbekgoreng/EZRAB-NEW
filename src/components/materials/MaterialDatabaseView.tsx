@@ -332,6 +332,29 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Reset ke halaman 1 saat kata kunci pencarian berubah atau pindah tab.
+  // Tanpa ini, hasil filter yang halamannya lebih sedikit dari halaman aktif
+  // tampil kosong (potongan halaman di luar jangkauan) — pencarian seolah
+  // tidak jalan di tab Upah/Peralatan.
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, activeCategoryTab]);
+
+  // Placeholder pencarian mengikuti tab aktif, supaya jelas kolom ini
+  // mencari di tab yang sedang dibuka — bukan hanya material.
+  const searchPlaceholder = useMemo(() => {
+    switch (activeCategoryTab) {
+      case 'LABOR':
+        return 'Cari tukang, mandor, profesi, kode (L.01), atau keahlian...';
+      case 'EQUIPMENT':
+        return 'Cari excavator, dump truck, kode (E.06.a), atau kapasitas...';
+      case 'PROJECT_PRICE':
+        return 'Cari kode, nama, kategori, atau spesifikasi...';
+      default:
+        return 'Cari material, kode (MAT-BLD-...), brand, produk, atau spesifikasi...';
+    }
+  }, [activeCategoryTab]);
+
   // Filtered & Sorted Materials
   const filteredMaterials = useMemo(() => {
     let result = allMaterials.filter((m) => {
@@ -1260,7 +1283,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                 <Search size={15} color="var(--ez-color-text-faint)" style={{ marginRight: '8px', flexShrink: 0 }} />
                 <input
                   type="text"
-                  placeholder="Cari material, kode (MAT-BLD-...), brand, produk, atau spesifikasi..."
+                  placeholder={searchPlaceholder}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   style={{

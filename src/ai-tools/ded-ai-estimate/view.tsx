@@ -34,6 +34,8 @@ import { fullAiDedService, FULL_AI_TIMEOUT_MS } from '../ded-full-ai/service';
 import { FullAiOutput, FullAiItem } from '../ded-full-ai/types';
 import { FullAiResultView } from '../ded-full-ai/FullAiResultView';
 import { consumePendingAiEntry, goToAi } from '../aiNavigation';
+import { consumeDedAutorun, clearDedSession, setDedSession } from '../ezrab-ai/dedDocSessionHolder';
+import { aiFeatureLockedMessage, planAllowsAiFeature } from '../../ai-credits/featureGate';
 import { recordDedUnderstandingToMemory } from '../ezrab-ai/dedUnderstanding';
 import { attachDedToProject } from '../ezrab-ai/dedQtoIntegration';
 import { notificationBus } from '../../notifications/notificationBus';
@@ -154,6 +156,10 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
   // mengonsumsi entry klasik — hanya projectId via URL yang bertahan,
   // sehingga dedRef/initialPrompt dari resolver tidak pernah tampil.
   const [dedEntryBanner, setDedEntryBanner] = useState<{ label: string; prompt?: string } | null>(null);
+  // Perintah Chat AI "jalankan analisis DED" (2026-11-17, Kelompok 3):
+  // pemberitahuan bila sinyal autorun gagal dikonsumsi (kedaluwarsa /
+  // berkas berubah / sesi hilang / gerbang paket menolak).
+  const [autorunNotice, setAutorunNotice] = useState<string | null>(null);
   const dedMountConsumeRef = useRef(false);
   const takeDedEntry = useCallback((clearOnMismatch: boolean) => {
     const entry = consumePendingAiEntry('ded_rab_ai', { clearOnMismatch });
@@ -546,7 +552,74 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
     runAnalysis(sess);
   };
 
+  // Draft sesi dari DedAiInputView (2026-11-17, perbaikan susulan
+  // perintah chat "jalankan analisis DED"): unggahan + form input
+  // dipublikasikan ke holder agar perintah chat menemukan sesi yang
+  // BELUM PERNAH dimulai (bukan hanya sesi yang pernah ditekan
+  // Jalankan). Publish HANYA memberi tahu — tidak menjalankan
+  // analisis. running=false: draft belum berjalan (gerbang "sedang
+  // berjalan" handler chat tidak terpicu oleh draft).
+  const handleDedSessionChange = useCallback((draft: DedAiSession | null) => {
+    if (draft) setDedSession(draft, false);
+    else clearDedSession();
+  }, []);
+
   const handleRetry = () => runAnalysis(session);
+
+  // Perintah Chat AI "jalankan analisis DED" (2026-11-17, Kelompok 3):
+  // konsumsi sinyal autorun saat MOUNT — view SELALU remount saat ganti
+  // menu (WorkspaceView merender satu cabang ternary per menu), jadi
+  // mount adalah mekanisme yang benar-benar jalan (bukan subscription /
+  // event). Dideklarasikan SEBELUM efek sinkronisasi sesi di bawah
+  // (efek jalan berurutan saat mount; sinkronisasi dilewati di layar
+  // input, tetapi urutan ini tetap dijaga agar konsumsi sinyal tidak
+  // pernah didahului tulisan holder lain). Sesi yang dikonsumsi bisa
+  // berupa DRAFT (belum pernah dimulai — dipublikasikan DedAiInputView
+  // lewat onSessionChange) maupun sesi yang pernah dimulai: keduanya
+  // berbentuk DedAiSession yang sama dan runAnalysis memperlakukannya
+  // sebagai sesi baru (reset progress dari sesi itu sendiri).
+  const dedAutorunRef = useRef(false);
+  useEffect(() => {
+    if (dedAutorunRef.current) return;
+    dedAutorunRef.current = true;
+    const res = consumeDedAutorun<DedAiSession>();
+    if (!res.ok) {
+      if (res.reason === 'expired') setAutorunNotice('Perintah "jalankan analisis DED" dari chat sudah kedaluwarsa (lebih dari 60 detik) — klik Jalankan Analisis untuk memulai.');
+      else if (res.reason === 'mismatch') setAutorunNotice('Berkas DED berubah sejak perintah chat diberikan — sinyal jalankan otomatis dibatalkan. Klik Jalankan Analisis untuk memulai.');
+      else if (res.reason === 'no-session' || res.reason === 'no-files') setAutorunNotice('Sesi DED dari chat tidak lagi tersedia — upload ulang PDF lalu klik Jalankan Analisis.');
+      // Mount biasa (tanpa sinyal) maupun gagal konsumsi: bebaskan
+      // referensi berkas holder. (Efek sinkronisasi dilewati di layar
+      // input — holder ditulis ulang oleh publish draft DedAiInputView
+      // pada perubahan draft berikutnya, atau oleh efek sinkronisasi
+      // begitu layar pindah ke progress/result.)
+      clearDedSession();
+      return;
+    }
+    // Pertahanan lapis kedua gerbang paket (handler chat sudah memeriksa
+    // lewat ctx, tetapi autorun melewati tombol Jalankan sehingga view
+    // WAJIB memeriksa ulang dengan data paket live sebelum menjalankan).
+    if (!planAllowsAiFeature(creditBalance.plan, 'ded-ai')) {
+      setAutorunNotice(aiFeatureLockedMessage(creditBalance.plan, 'ded-ai'));
+      clearDedSession();
+      return;
+    }
+    setSession(res.session);
+    runAnalysis(res.session);
+  }, [runAnalysis, creditBalance.plan]);
+
+  // Sinkronisasi sesi ke holder bersama (2026-11-17, Kelompok 3): Chat AI
+  // membaca holder ini untuk perintah "jalankan analisis DED".
+  // KEPEMILIKAN TERBAGI: di layar 'input', holder dimiliki DedAiInputView
+  // lewat onSessionChange (draft — lihat handleDedSessionChange); efek
+  // ini DILEWATI di sana karena sesi induk tidak memuat unggahan input
+  // dan akan menimpa draft bila ikut jalan (mis. sesudah prefill
+  // deskripsi dari entry DED). Di layar progress/result, efek ini yang
+  // memiliki holder (sesi yang sedang/sudah berjalan).
+  useEffect(() => {
+    if (screen === 'input') return;
+    setDedSession(session, screen === 'progress' && error === null);
+  }, [session, screen, error]);
+
   const handleBack = () => { cancelRef.current = true; setScreen('input'); };
   const handleSeeResult = () => { if (result) setScreen('result'); };
 
@@ -1009,6 +1082,11 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
             {dedEntryBanner.prompt ? <div style={{ marginTop: '4px', whiteSpace: 'pre-wrap' }}>{dedEntryBanner.prompt}</div> : null}
           </div>
         )}
+        {autorunNotice && (
+          <div role="note" style={{ margin: '20px 24px 0', padding: '10px 14px', borderRadius: '12px', border: '1px solid var(--ez-hue-amber-border, #F59E0B)', background: 'var(--ez-hue-amber-bg, #FFFBEB)', fontSize: '12.5px', lineHeight: 1.5 }}>
+            {autorunNotice}
+          </div>
+        )}
         <DedAiInputView
           initialSession={session}
           projects={projects.map((p) => ({ id: p.id, name: p.name }))}
@@ -1019,6 +1097,7 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
             grandTotal: d.fullAiOutput?.grandTotal ?? d.output?.grandTotal ?? 0,
           }))}
           onStart={handleStart}
+          onSessionChange={handleDedSessionChange}
           onLoadDraft={handleLoadDraft}
           onDeleteDraft={handleDeleteDraft}
           lastRunSummary={lastRunSummary}

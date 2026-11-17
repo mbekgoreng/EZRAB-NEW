@@ -106,6 +106,16 @@ const STOPWORDS = new Set([
   // bukan kata itu sendiri. Tanpa ini, "plesteran dinding campuran 1:4"
   // kalah dari item pasangan bata yang kebetulan memuat "campuran".
   'campuran',
+  // Kata sifat kualifikator ("yang cocok", "yang sesuai", ...) — penanda
+  // kecocokan, bukan identitas pekerjaan. Tanpa ini, "carikan ahsp yang
+  // cocok" mencari istilah "cocok" harfiah dan gagal dengan pesan
+  // NOT_FOUND yang menyesatkan (temuan live 2026-11-17). Terverifikasi
+  // terhadap katalog 2026-11-17: tidak satu pun kata ini menjadi identitas
+  // pekerjaan pada judul item ('sesuai'/'baik' hanya muncul di klausa
+  // subordinat). 'pas' SENGAJA tidak masuk: 'Pas.' adalah singkatan
+  // "Pasangan" pada 163 judul — frasa "yang pas" ditangani di level
+  // router (cleanAhspKeyword), bukan di sini.
+  'cocok', 'sesuai', 'tepat', 'bagus', 'benar', 'baik', 'ideal',
 ]);
 
 /** Varian ejaan sempit yang terdokumentasi (katalog memakai "closet"). */
@@ -376,6 +386,57 @@ function scoreItem(
   return { matched, score };
 }
 
+/* ------------------------------------------------------------------ */
+/* Koreksi ejaan fuzzy (temuan live 2026-11-17: "blowplank")           */
+/* ------------------------------------------------------------------ */
+
+/** Jarak edit Levenshtein (DP dua baris; dibatasi ambang agar murah). */
+function levenshtein(a: string, b: string, cap: number): number {
+  if (Math.abs(a.length - b.length) > cap) return cap + 1;
+  let prev = new Array<number>(b.length + 1);
+  let cur = new Array<number>(b.length + 1);
+  for (let j = 0; j <= b.length; j++) prev[j] = j;
+  for (let i = 1; i <= a.length; i++) {
+    cur[0] = i;
+    let rowMin = cur[0];
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a.charCodeAt(i - 1) === b.charCodeAt(j - 1) ? 0 : 1;
+      cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + cost);
+      if (cur[j] < rowMin) rowMin = cur[j];
+    }
+    if (rowMin > cap) return cap + 1;
+    [prev, cur] = [cur, prev];
+  }
+  return prev[b.length];
+}
+
+/**
+ * Cari koreksi ejaan untuk satu istilah yang TIDAK ada sebagai token judul
+ * katalog. Syarat ketat agar tidak menebak: panjang istilah ≥ 5, jarak
+ * edit ≤ 2, dan kandidat terbaik harus UNIK pada jaraknya (bila dua token
+ * sama dekatnya, tidak ada koreksi — ambigu). Mengembalikan token
+ * terkoreksi, atau null bila tidak ada koreksi yang meyakinkan.
+ */
+function findFuzzyCorrection(term: string, catalogTokens: Set<string>): string | null {
+  if (term.length < 5) return null;
+  let best: string | null = null;
+  let bestDist = 3; // ambang: ≤ 2
+  let bestCount = 0;
+  for (const cand of catalogTokens) {
+    if (Math.abs(cand.length - term.length) > 2) continue;
+    const d = levenshtein(term, cand, 2);
+    if (d < bestDist) {
+      bestDist = d;
+      best = cand;
+      bestCount = 1;
+    } else if (d === bestDist) {
+      bestCount++;
+    }
+  }
+  if (bestDist > 2 || bestCount !== 1) return null;
+  return best;
+}
+
 export function searchChatAhsp(
   rawQuery: string,
   opts?: { unit?: string },
@@ -494,9 +555,28 @@ export function searchChatAhsp(
   );
   const globalTitleTokens = new Set<string>();
   for (const s of titleTokenSets) for (const tk of s) globalTitleTokens.add(tk);
-  const nonexistentTerms = n.terms.filter((term) => !globalTitleTokens.has(term));
+
+  // 3b. Koreksi ejaan fuzzy: istilah yang tidak ada sebagai token judul
+  // dicoba dikoreksi ke token katalog terdekat (temuan live 2026-11-17:
+  // "blowplank" → "bouwplank"). Istilah kerja selanjutnya memakai hasil
+  // koreksi; `base.terms` tetap memuat istilah ASLI sebagai catatan jujur
+  // atas apa yang ditanyakan, dan koreksinya diungkap di `note` hasil.
+  const corrections: Array<{ from: string; to: string }> = [];
+  const terms: string[] = n.terms.map((term) => {
+    if (globalTitleTokens.has(term)) return term;
+    const fixed = findFuzzyCorrection(term, globalTitleTokens);
+    if (!fixed) return term;
+    corrections.push({ from: term, to: fixed });
+    return fixed;
+  });
+  const correctionNote =
+    corrections.length > 0
+      ? `Ejaan ${corrections.map((c) => `"${c.from}" dikoreksi menjadi "${c.to}"`).join('; ')} (tidak ada item dengan ejaan asal di katalog).`
+      : null;
+
+  const nonexistentTerms = terms.filter((term) => !globalTitleTokens.has(term));
   const termDf = new Map<string, number>();
-  for (const term of n.terms) {
+  for (const term of terms) {
     let c = 0;
     for (const s of titleTokenSets) if (s.has(term)) c++;
     termDf.set(term, c);
@@ -507,7 +587,7 @@ export function searchChatAhsp(
   for (const it of active as any[]) {
     const title = String(it.title ?? it.name ?? '');
     if (!n.hasDemolitionWord && DEMOLITION_RE.test(title.toLowerCase())) continue;
-    const { matched, score } = scoreItem(title, n.terms, n.ratio, n.grade);
+    const { matched, score } = scoreItem(title, terms, n.ratio, n.grade);
     if (score <= 0) continue;
     const built = buildChatItem(it, requestedUnit);
     built.matchedTerms = matched;
@@ -546,9 +626,9 @@ export function searchChatAhsp(
    * C-014 "dynabolt m10", C-013 "sekrup gypsum") lolos karena istilah
    * penopangnya diskriminan (DF rendah) atau subjeknya memang ada. */
   if (
-    n.terms.length >= 2 &&
+    terms.length >= 2 &&
     nonexistentTerms.length >= 2 &&
-    nonexistentTerms.length * 2 >= n.terms.length
+    nonexistentTerms.length * 2 >= terms.length
   ) {
     return notFound(
       nonexistentTerms.join(', '),
@@ -559,14 +639,14 @@ export function searchChatAhsp(
   }
   const topMatchedUnion = [...new Set(topAll.flatMap((it) => it.matchedTerms))];
   if (
-    n.terms.length >= 2 &&
-    nonexistentTerms.includes(n.terms[0]) &&
+    terms.length >= 2 &&
+    nonexistentTerms.includes(terms[0]) &&
     topMatchedUnion.length > 0 &&
     topMatchedUnion.every((term) => (termDf.get(term) ?? 0) > GENERIC_TERM_DF)
   ) {
     return notFound(
-      n.terms[0],
-      `Tidak ditemukan AHSP untuk "${raw}" di katalog AHSP 2026 resmi: subjek "${n.terms[0]}" ` +
+      terms[0],
+      `Tidak ditemukan AHSP untuk "${raw}" di katalog AHSP 2026 resmi: subjek "${terms[0]}" ` +
         'tidak tercantum pada judul item mana pun, dan kata lain pada pertanyaan Anda terlalu umum untuk memastikan itemnya. ' +
         'Sebutkan nama pekerjaannya dengan istilah katalog (mis. "galian tanah", "pasangan bata", "plesteran 1:4") atau kodenya.',
     );
@@ -584,7 +664,7 @@ export function searchChatAhsp(
         .join('; ');
       return notFound(
         `satuan ${requestedUnit}`,
-        `Tidak ditemukan "${n.terms.join(' ')}" dengan satuan ${requestedUnit} di katalog AHSP 2026. ` +
+        `Tidak ditemukan "${terms.join(' ')}" dengan satuan ${requestedUnit} di katalog AHSP 2026. ` +
           `Item terdekat memakai satuan berbeda: ${nearMiss}. ` +
           'Item bersatuan berbeda bukan jawaban untuk satuan yang diminta — ' +
           'tanyakan ulang dengan satuan yang sesuai, atau sebutkan pekerjaan yang dimaksud.',
@@ -597,28 +677,33 @@ export function searchChatAhsp(
   }
 
   const broad = topAll.length > 8;
-  const allMatched = answer.every((it) => it.matchedTerms.length === n.terms.length);
+  const allMatched = answer.every((it) => it.matchedTerms.length === terms.length);
   const outcome: ChatSearchOutcome = allMatched && !broad ? 'FOUND_RELEVANT' : 'FOUND_PARTIAL';
 
-  let note: string | null = null;
+  // Catatan koreksi ejaan selalu diungkap (juga pada FOUND_RELEVANT) —
+  // koreksi diam-diam adalah karangan; pengguna berhak tahu istilahnya
+  // diubah. Catatan parsial ditambahkan sesudahnya bila ada.
+  let note: string | null = correctionNote;
   if (outcome === 'FOUND_PARTIAL') {
+    let partialNote: string;
     if (broad) {
-      note =
+      partialNote =
         `Kata kunci "${raw}" terlalu umum — ${topAll.length} item cocok dengan skor tertinggi. ` +
         'Persempit dengan nama pekerjaan yang lebih spesifik (tambah jenis pekerjaan atau spesifikasinya), lalu tanya lagi.';
     } else {
       const first = answer[0];
-      const unmatched = n.terms.filter((t) => !first.matchedTerms.includes(t));
+      const unmatched = terms.filter((t) => !first.matchedTerms.includes(t));
       const matchedDesc = [
         ...(first.matchedTerms.length ? [`"${first.matchedTerms.join('", "')}"`] : []),
         ...(n.ratio ? [`rasio ${n.ratio.a}:${n.ratio.b}`] : []),
         ...(n.grade ? [`mutu ${n.grade}`] : []),
       ].join(' + ');
-      note =
+      partialNote =
         `Cocok sebagian: ${unmatched.length ? `istilah "${unmatched.join('", "')}" tidak tercantum di judul record; ` : ''}` +
         `hasil di bawah ini cocok dengan ${matchedDesc || 'sebagian istilah'}. ` +
         'Periksa judulnya sebelum memakai harganya.';
     }
+    note = note ? `${note} ${partialNote}` : partialNote;
   }
 
   return { ...base, outcome, items: answer, flaggedItems: flagged, note, notFoundMessage: null };
@@ -645,8 +730,14 @@ export function formatChatAhspResult(result: ChatSearchResult): string {
     return result.notFoundMessage ?? `Tidak ditemukan AHSP untuk "${result.rawQuery}".`;
   }
   const parts: string[] = [];
-  if (result.outcome === 'FOUND_PARTIAL' && result.note) {
-    parts.push(`Hasil cocok sebagian untuk "${result.rawQuery}":\n${result.note}`);
+  if (result.note) {
+    // Catatan (koreksi ejaan / kecocokan sebagian) selalu ditampilkan —
+    // koreksi yang disembunyikan sama dengan jawaban yang dikarang.
+    const head =
+      result.outcome === 'FOUND_PARTIAL'
+        ? `Hasil cocok sebagian untuk "${result.rawQuery}":`
+        : 'Catatan:';
+    parts.push(`${head}\n${result.note}`);
   }
   parts.push(result.items.map((it, i) => formatItemLine(it, i, result.requestedUnit)).join('\n'));
   if (result.flaggedItems.length > 0) {
@@ -657,4 +748,56 @@ export function formatChatAhspResult(result: ChatSearchResult): string {
     );
   }
   return parts.join('\n\n');
+}
+
+/* ------------------------------------------------------------------ */
+/* Fallback topik dari riwayat percakapan                               */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Kata meta permintaan — kata kerja/benda tentang PERMINTAANNYA, bukan
+ * topik pekerjaannya. Diabaikan fallback topik saja (BUKAN stopword
+ * pencarian — "penambahan tanah" sebagai kueri langsung tetap harus
+ * menemukan item A.3.02.1c). Tanpa daftar ini, "penambahan item
+ * pekerjaan blowplank..." salah diambil topiknya "penambahan" (item
+ * tanah tanggul) atau "total" (Total Pressure Cell) — keduanya item
+ * katalog sungguhan tapi bukan yang sedang dibahas.
+ */
+const TOPIC_SKIP_WORDS = new Set([
+  'penambahan', 'penambah', 'tambah', 'tambahkan', 'tambahin', 'item',
+  'daftar', 'total', 'proyek', 'jumlah', 'biaya',
+]);
+
+/**
+ * Menyelesaikan pencarian AHSP tanpa kata kunci ("carikan ahsp yang
+ * cocok") dari pesan pengguna SEBELUMNYA — "yang cocok" merujuk pada
+ * topik yang sedang dibahas, bukan kata kunci harfiah (temuan live
+ * 2026-11-17: topiknya "blowplank" dari pesan sebelumnya).
+ *
+ * `priorUserTexts` = teks pesan pengguna sebelumnya, TERBARU dulu;
+ * hanya pesan terakhir yang dipakai (topik yang sedang dibahas).
+ * Setiap istilah kontennya dicoba satu per satu sebagai kata kunci;
+ * yang pertama menghasilkan FOUND_RELEVANT dipakai. KETAT: hanya
+ * FOUND_RELEVANT yang diterima — hasil sebagian/terlalu umum lebih
+ * baik dijawab dengan pertanyaan klarifikasi daripada daftar yang
+ * mungkin salah topik. Mengembalikan null bila tidak ada topik yang
+ * relevan (penelepon memakai prompt klarifikasi biasa).
+ */
+export function resolveAhspTopicFromHistory(
+  priorUserTexts: string[],
+): { query: string; message: string } | null {
+  const last = (priorUserTexts ?? []).find((t) => t && t.trim() !== '');
+  if (!last) return null;
+  const terms = normalizeChatQuery(last).terms.filter((t) => !TOPIC_SKIP_WORDS.has(t));
+  for (const term of terms) {
+    const r = searchChatAhsp(term);
+    if (r.outcome !== 'FOUND_RELEVANT') continue;
+    return {
+      query: term,
+      message:
+        `Mencari AHSP untuk "${term}" (dari pesan sebelumnya).\n\n` +
+        formatChatAhspResult(r),
+    };
+  }
+  return null;
 }

@@ -28,7 +28,7 @@
  * (mengatur tampilan hasil & ekspor), strip pratinjau (angka nyata sesi
  * ini — "—" sebelum ada). Logika AI/harga/kredit tidak berubah.
  */
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   UploadCloud, FileText, X, Zap, Brain, FolderOpen, PlusCircle,
   AlertTriangle, History, Trash2, RotateCcw, Lock,
@@ -36,7 +36,9 @@ import {
 } from 'lucide-react';
 import { DedAiMode, DedAiProjectType, DedEstimationPolicy, DedOutputPrefs, DEFAULT_DED_OUTPUT_PREFS } from './types';
 import type { DedRabAiMode } from './dedMode';
-import { DED_MODE_CARDS, resolveDedAiMode, withDedMode } from './dedModeUi';
+import { DED_MODE_CARDS, resolveDedAiMode } from './dedModeUi';
+import { buildDedAiSession } from './dedSessionBuilder';
+import { peekDedAutorun } from '../ezrab-ai/dedDocSessionHolder';
 import { savePersistedDedMode } from './dedModePersistence';
 import { probeDedPdf, resolvePageScope } from './parser';
 import { useI18n } from '../../i18n/I18nContext';
@@ -107,6 +109,16 @@ interface Props {
   onDeleteDraft: (id: string) => void;
   /** Ringkasan analisis terakhir sesi ini untuk strip pratinjau (null = belum ada). */
   lastRunSummary?: DedLastRunSummary | null;
+  /**
+   * Publish draft sesi (2026-11-17, perintah chat "jalankan analisis
+   * DED"): dipanggil setiap kali draft berubah (berkas ditambah /
+   * dihapus / diganti, field form berubah) dengan sesi hasil builder
+   * yang SAMA dengan yang dipakai onStart; dipanggil dengan null bila
+   * draft kosong (tidak ada berkas valid). HANYA memberi tahu —
+   * TIDAK memulai analisis. Opsional: tanpa prop ini tidak ada
+   * publish (perilaku lama).
+   */
+  onSessionChange?: (draft: DedAiSession | null) => void;
 }
 
 const MAX_FILE_MB = 25;
@@ -128,6 +140,7 @@ type FileProbe = { pages: number; textChars: number } | 'error';
 
 export const DedAiInputView: React.FC<Props> = ({
   initialSession, projects, drafts, onStart, onLoadDraft, onDeleteDraft, lastRunSummary,
+  onSessionChange,
 }) => {
   const { t } = useI18n();
   const PROJECT_TYPE_OPTIONS: Array<{ value: DedAiProjectType; label: string }> = [
@@ -252,7 +265,10 @@ export const DedAiInputView: React.FC<Props> = ({
     probingRef.current.delete(id);
   };
 
-  const validFiles = files.filter((f) => !f.error);
+  // Memo: identitas stabil kecuali `files` berubah — buildSession di
+  // bawah memakai daftar ini sebagai dependensi (tanpa memo, identitas
+  // baru tiap render membuat efek publish jalan tiap render).
+  const validFiles = useMemo(() => files.filter((f) => !f.error), [files]);
 
   // Validasi cakupan halaman: sintaks rentang + (bila jumlah halaman sudah
   // terprobe) halaman terpilih harus ada di dalam dokumen.
@@ -274,6 +290,53 @@ export const DedAiInputView: React.FC<Props> = ({
 
   const canStart = validFiles.length > 0 && !scopeError;
 
+  // Perakitan sesi BERSAMA (2026-11-17): dipakai handleStart DAN
+  // publish draft di bawah — kedua jalur tidak bisa melenceng.
+  // Logika perakitan hidup di dedSessionBuilder (murni, teruji);
+  // di sini hanya memasok keadaan layar input saat ini.
+  const buildSession = useCallback(
+    (): DedAiSession =>
+      buildDedAiSession({
+        files: validFiles,
+        description,
+        projectName,
+        projectType,
+        mode,
+        dedMode,
+        useExisting,
+        targetProjectId,
+        projects,
+        complexity,
+        complexityLabel: complexityLabel(complexity),
+        creditTarget: dedTarget,
+        scopeKind,
+        scopeSpec,
+        fileProbes: fileProbe,
+        outputPrefs,
+      }),
+    [
+      validFiles, description, projectName, projectType, mode, dedMode,
+      useExisting, targetProjectId, projects, complexity, dedTarget,
+      scopeKind, scopeSpec, fileProbe, outputPrefs,
+    ],
+  );
+
+  // Publish draft sesi ke induk (perintah chat "jalankan analisis
+  // DED", 2026-11-17): setiap perubahan draft diteruskan lewat
+  // onSessionChange; draft kosong (tidak ada berkas valid) = null.
+  // HANYA memberi tahu — tidak memulai analisis.
+  // Pengecualian: saat sinyal autorun TERTUNDA, JANGAN sentuh holder
+  // — view induk akan mengonsumsi sesi holder saat mount, dan
+  // publish di sini (efek anak jalan SEBELUM efek induk) akan
+  // menimpa/menghapus sesi yang diperintahkan chat. Cek sinyal (bukan
+  // ref "sudah mount") karena StrictMode menjalankan efek dua kali
+  // di dev — ref akan lolos pada pemanggilan kedua.
+  useEffect(() => {
+    if (!onSessionChange) return;
+    if (peekDedAutorun()) return;
+    onSessionChange(validFiles.length > 0 ? buildSession() : null);
+  }, [buildSession, onSessionChange, validFiles.length]);
+
   const handleStart = () => {
     if (!canStart || !creditApproved || !dedAllowed) return;
     // --- AI Credits: catat pemakaian SIMULASI (batas target kategori) ---
@@ -288,33 +351,7 @@ export const DedAiInputView: React.FC<Props> = ({
     consume('ded-ai', dedTarget, `DED AI (${complexityLabel(complexity)}): ${validFiles.length} dokumen`, {
       jobReference: `ded-${Date.now().toString(36)}`,
     });
-    const chosenProjectId = useExisting ? targetProjectId : null;
-    const name =
-      projectName.trim() ||
-      (chosenProjectId ? projects.find((p) => p.id === chosenProjectId)?.name || '' : '') ||
-      validFiles[0].file.name.replace(/\.pdf$/i, '');
-    const filePageCounts: Record<string, number> = {};
-    for (const f of validFiles) {
-      const p = fileProbe[f.id];
-      if (p && p !== 'error') filePageCounts[f.id] = p.pages;
-    }
-    // DUAL MODE (§3): policy/fullAi DITURUNKAN dari kartu mode yang
-    // dipilih — tidak ada state policy/mesin terpisah yang bisa basi
-    // (ganti mode tidak membocorkan konfigurasi eksekusi lama).
-    onStart(withDedMode({
-      files: validFiles,
-      description: description.trim(),
-      projectName: name,
-      projectType,
-      mode,
-      targetProjectId: chosenProjectId,
-      creditEstimate: { category: complexityLabel(complexity), credits: dedTarget },
-      // F-E2: sertakan nilai mentahnya juga (satu field aditif).
-      complexity,
-      pageScope: scopeKind === 'SELECTED' ? { kind: 'SELECTED', spec: scopeSpec.trim() } : { kind: 'ALL' },
-      filePageCounts,
-      outputPrefs,
-    }, dedMode));
+    onStart(buildSession());
   };
 
   const complexityActive = COMPLEXITY_OPTIONS.find((o) => o.value === complexity);
