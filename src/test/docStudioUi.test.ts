@@ -73,14 +73,17 @@ async function main(): Promise<void> {
   check('panel DocContextPanel dirender', creatorSrc.includes('<DocContextPanel'));
   check('tidak ada lagi panggilan service langsung', !creatorSrc.includes('dokumenAiService'));
   check('tidak ada lagi mode CHAT di DocCreator', !creatorSrc.includes("mode: 'CHAT'"));
-  check('mode instruksi-pertama ada', creatorSrc.includes('Buat dengan AI — instruksi dulu'));
-  check('mode form-pertama ada', creatorSrc.includes('Form Template — template dulu'));
+  /* Re-baseline 2026-11-19 (v3): label modeline dipendekkan "Instruksi". */
+  check('mode instruksi-pertama ada', creatorSrc.includes('<Sparkles size={14} /> Instruksi'));
+  /* Re-baseline 2026-11-19 (v3): label modeline dipendekkan "Template". */
+  check('mode form-pertama ada', creatorSrc.includes('<LayoutTemplate size={14} /> Template'));
   check('jenis dokumen opsional di jalur AI', creatorSrc.includes('Otomatis — AI menentukan dari instruksi'));
   check('ekspor PDF/DOCX lama tetap ada', creatorSrc.includes('exportPaperPdf') && creatorSrc.includes('exportPaperDocx'));
 
   console.log('\n[3] Panel konteks & panel periksa:');
   const ctxSrc = read('../ai-tools/document-ai/components/DocContextPanel.tsx');
-  check('judul ringkasan konteks', ctxSrc.includes('Ringkasan informasi yang akan digunakan'));
+  /* Re-baseline 2026-11-19 (v3): judul panel dipendekkan "Data konteks". */
+  check('judul ringkasan konteks', ctxSrc.includes('Data konteks'));
   check('penanda belum tersedia', ctxSrc.includes('belum tersedia'));
   check('toggle sumber proyek/perusahaan', ctxSrc.includes("onToggleSource('project'") && ctxSrc.includes("onToggleSource('company'"));
   check('daftar perlu dilengkapi', ctxSrc.includes('Perlu dilengkapi'));

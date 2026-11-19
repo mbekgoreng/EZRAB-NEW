@@ -350,12 +350,12 @@ const handleNotificationItemClick = (item: NotificationItem) => {
       <div
         className="ezrab-topbar-row"
         style={{
-          height: isNarrowMobile ? '48px' : '54px',
+          height: isNarrowMobile ? '48px' : '46px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: isNarrowMobile ? '0 12px' : '0 20px',
-          gap: '12px',
+          padding: isNarrowMobile ? '0 12px' : '0 16px',
+          gap: '10px',
         }}
       >
       {/* =======================================================================
@@ -590,7 +590,7 @@ onFocus={(e) => {
       {/* =======================================================================
           RIGHT: NOTIFICATION + HELP + PROFILE MENU
          ======================================================================= */}
-      <div className="ezrab-topbar-right" style={{ display: 'flex', alignItems: 'center', gap: isNarrowMobile ? '6px' : '10px', flexShrink: 0 }}>
+      <div className="ezrab-topbar-right" style={{ display: 'flex', alignItems: 'center', gap: isNarrowMobile ? '6px' : '8px', flexShrink: 0 }}>
         
 {/* 0. THEME TOGGLE (terang/gelap) — di HP ringkas: tema tetap bisa
             diganti dari Pengaturan > Preferensi, TopBar HP fokus ke kredit. */}
@@ -1530,7 +1530,7 @@ color: 'var(--ez-hue-violet-text)', background: 'var(--ez-hue-violet-bg)',
           style={{
             display: 'flex',
             alignItems: 'center',
-            padding: isNarrowMobile ? '2px 12px' : '3px 20px',
+            padding: isNarrowMobile ? '2px 12px' : '3px 16px',
             borderTop: '1px solid var(--ez-color-surface-tertiary)',
             background: 'var(--ez-color-surface)',
           }}

@@ -1,18 +1,40 @@
 /* AI DOKUMEN — dashboard design language: Plus Jakarta Sans, var(--ez-color-background) shell,
    white pastel cards, 22px radius, no gradients, lucide icons, no emojis. */
-.docai-shell { max-width: 1440px; margin: 0 auto; padding: 8px 24px 48px; font-family: 'Plus Jakarta Sans','Inter',system-ui,sans-serif; color: var(--ez-color-text-primary); }
-.docai-tabs { display: flex; gap: 6px; background: var(--ez-color-surface); border: 1px solid var(--ez-color-border-soft); border-radius: var(--ez-radius-card); padding: 6px; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.045); overflow-x: auto; }
+/* Page redesign 2026-11-19: lebar penuh wilayah konten — batas 1440px lama
+   dilepas (di dalam FeaturePageShell sudah max-width: none lewat
+   .fp-shell .docai-shell). Keterbacaan diatur per permukaan (lembar A4
+   210mm, kolom compose workspace), bukan kartu sempit terpusat. */
+.docai-shell { max-width: none; margin: 0; padding: 8px 24px 48px; font-family: 'Plus Jakarta Sans','Inter',system-ui,sans-serif; color: var(--ez-color-text-primary); }
+/* Fit remediation 2026-11-19 (Child 5): flex-shrink: 0 — bar tab adalah
+   scroll container (overflow-x: auto) sehingga min-size otomatisnya 0 dan
+   kolom flex .docai-shell yang over-constrained menekannya sampai 21–36px
+   (label terpotong di atas). Bar tab TIDAK BOLEH menyusut; yang menyusut
+   adalah .docai-content (wilayah scroll). Biaya ±26px tinggi tab ditutup
+   penghematan di bawah (strip satu baris, steprow, help-row gabung tab bar). */
+.docai-tabs { display: flex; gap: 6px; background: var(--ez-color-surface); border: 1px solid var(--ez-color-border-soft); border-radius: var(--ez-radius-card); padding: 6px; margin-bottom: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.045); overflow-x: auto; flex-shrink: 0; }
 .docai-tabbtn { display: flex; align-items: center; gap: 8px; padding: 10px 18px; border: none; background: transparent; border-radius: var(--ez-radius-control); font-size: 13.5px; font-weight: 700; color: var(--ez-color-text-muted); cursor: pointer; font-family: inherit; white-space: nowrap; transition: all .18s; }
 .docai-tabbtn:hover:not(:disabled) { background: var(--ez-color-background); color: var(--ez-color-text-primary); }
-.docai-tabbtn.active { background: var(--ez-color-primary-soft); color: var(--ez-color-primary-hover); box-shadow: inset 0 0 0 1.5px var(--ez-color-primary-soft); }
+.docai-tabbtn.active { background: var(--ez-color-primary-soft); color: var(--ez-color-primary-hover); box-shadow: inset 0 0 0 1.5px var(--ez-color-primary); }
 .docai-tabbtn:disabled { opacity: .4; cursor: not-allowed; }
+/* Bar tab tunggal (owner 2026-11-19): 9 tombol dalam satu baris saat jalur
+   Studio aktif — metrik rapat agar muat di 1366px tanpa scroll horizontal
+   (ukur replika v2.1: 10 tombol overflow 150px; 'Buat' dilipat ke klik-ulang
+   tab Studio + metrik ini = muat). Tombol sub-tampilan tanpa ikon + label
+   pendek (label lengkap di tooltip) dan sedikit lebih kalem sampai aktif
+   (hierarki terbaca). */
+.docai-tabs-merged { gap: 2px; padding: 5px; }
+.docai-tabs-merged .docai-tabbtn { padding: 9px 9px; font-size: 12.5px; gap: 5px; }
+.docai-tabs-merged .docai-tabbtn svg { width: 14px; height: 14px; }
+.docai-tabs-merged .docai-tabbtn-sub { padding: 9px 6px; }
+.docai-tabbtn-sub { font-weight: 600; }
+.docai-tabbtn-sub.active { font-weight: 700; }
 .docai-content { min-height: 400px; }
 .docai-tab { animation: docFadeUp .3s ease; }
 @keyframes docFadeUp { from { opacity: 0; transform: translateY(8px); } }
 
-.docai-pagehead { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 18px; flex-wrap: wrap; }
+.docai-pagehead { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 14px; flex-wrap: wrap; }
 .docai-crumb { font-size: 11px; font-weight: 800; color: var(--ez-color-primary); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 4px; }
-.docai-pagehead h2 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -0.3px; color: var(--ez-color-text-primary); }
+.docai-pagehead h2 { margin: 0; font-size: 19px; font-weight: 800; letter-spacing: -0.3px; color: var(--ez-color-text-primary); }
 .docai-pagehead p { margin: 4px 0 0; font-size: 13.5px; color: var(--ez-color-text-muted); }
 
 .docai-btn-primary { display: inline-flex; align-items: center; gap: 8px; padding: 11px 20px; border: none; border-radius: var(--ez-radius-control); background: var(--ez-color-primary); color: #fff; font-size: 13.5px; font-weight: 700; cursor: pointer; font-family: inherit; transition: background .2s; }
@@ -21,7 +43,7 @@
 .docai-btn-ghost { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border: 1.5px solid var(--ez-color-border); border-radius: var(--ez-radius-control); background: var(--ez-color-surface); color: var(--ez-color-text-secondary); font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all .18s; }
 .docai-btn-ghost:hover { border-color: var(--ez-color-primary); color: var(--ez-color-primary-hover); }
 .docai-runbtn { width: 100%; justify-content: center; margin-top: 4px; }
-.docai-tabbtn:focus-visible, .docai-subbtn:focus-visible, .docai-catchip:focus-visible, .docai-btn-primary:focus-visible, .docai-btn-ghost:focus-visible, .docai-iconbtn:focus-visible, .docai-tmpl:focus-visible, .docai-draftitem:focus-visible, .docai-titlebtn:focus-visible { outline: 2px solid var(--ez-color-primary); outline-offset: 2px; }
+.docai-tabbtn:focus-visible, .docai-catchip:focus-visible, .docai-btn-primary:focus-visible, .docai-btn-ghost:focus-visible, .docai-iconbtn:focus-visible, .docai-tmpl:focus-visible, .docai-draftitem:focus-visible, .docai-titlebtn:focus-visible { outline: 2px solid var(--ez-color-primary); outline-offset: 2px; }
 
 .docai-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 18px; }
 .docai-stat { background: var(--ez-color-surface); border: 1px solid var(--ez-color-border-soft); border-radius: var(--ez-radius-card); padding: 16px 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.045); }
@@ -29,7 +51,10 @@
 .docai-stat-l { font-size: 12px; color: var(--ez-color-text-muted); margin-top: 2px; }
 
 .docai-card { background: var(--ez-color-surface); border: 1px solid var(--ez-color-border-soft); border-radius: var(--ez-radius-card); padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.045); }
-.docai-step { font-size: 11px; font-weight: 800; color: var(--ez-color-primary); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 10px; }
+/* V3 2026-11-19 (mockup v3 di-ACC owner): label langkah tenang — tanpa
+   huruf kapital semua, tanpa warna biru primer; nomor langkah dihapus
+   dari teksnya (DocCreator + dictionaries step_1/2/3). */
+.docai-step { font-size: 12px; font-weight: 700; color: var(--ez-color-text-muted); margin-bottom: 6px; }
 
 .docai-toolbar { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
 .docai-search { display: flex; align-items: center; gap: 8px; background: var(--ez-color-surface); border: 1.5px solid var(--ez-color-border); border-radius: var(--ez-radius-control); padding: 0 14px; flex: 1; min-width: 200px; }
@@ -133,7 +158,7 @@
 /* Buat Dokumen */
 .docai-createlayout { display: grid; grid-template-columns: 1fr 1.2fr; gap: 14px; align-items: start; }
 .docai-tmplgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.docai-tmpl { text-align: left; padding: 12px 14px; border: 1.5px solid var(--ez-color-border); border-radius: var(--ez-radius-card); background: var(--ez-color-surface); cursor: pointer; font-family: inherit; transition: all .18s; }
+.docai-tmpl { text-align: left; padding: 10px 12px; border: 1.5px solid var(--ez-color-border); border-radius: var(--ez-radius-card); background: var(--ez-color-surface); cursor: pointer; font-family: inherit; transition: all .18s; }
 .docai-tmpl:hover { border-color: var(--ez-color-primary); box-shadow: 0 4px 14px rgba(15,35,80,.08); }
 .docai-tmpl.active { border-color: var(--ez-color-primary); background: var(--ez-color-primary-soft); }
 .docai-tmpl-n { font-size: 13px; font-weight: 800; color: var(--ez-color-text-primary); }
@@ -179,9 +204,19 @@
 }
 
 /* ================= Editor Word-like (TipTap) ================= */
-.docai-edempty { max-width: 880px; margin: 0 auto; border-style: solid; border-color: var(--ez-color-border-soft); box-shadow: 0 4px 20px rgba(0,0,0,0.045); padding: 36px 28px; }
-.docai-edempty > svg { color: var(--ez-color-primary); }
-.docai-edform { max-width: 720px; margin: 18px auto 0; text-align: left; }
+/* Page redesign 2026-11-19: kartu buat-dokumen selebar wilayah konten —
+   batas 880px terpusat lama dilepas. Kartu ini menjadi permukaan workspace
+   dua kolom (lihat .docai-workspace-2col di akhir berkas). */
+/* V3 2026-11-19: hero "Mulai dokumen baru" dihapus dari DocCreator —
+   kartu kini langsung berisi form; padding atas dipadatkan agar tidak
+   ada ruang kosong di tempat hero dulu. */
+.docai-edempty { max-width: none; margin: 0; border-style: solid; border-color: var(--ez-color-border-soft); box-shadow: 0 4px 20px rgba(0,0,0,0.045); padding: 20px 28px; }
+/* Page redesign 2026-11-19: form buat-dokumen selebar kartu — batas 720px
+   terpusat lama dilepas. Batas keterbacaan field instruksi kelak adalah
+   lebar kolom .docai-col-compose (±57% wilayah konten), bukan angka
+   max-width arbitrer; sampai Child 3 merestruktur JSX (DocCreator.tsx),
+   form tetap satu kolom selebar kartu. */
+.docai-edform { max-width: none; margin: 18px 0 0; text-align: left; }
 
 .docai-edhead { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 12px; }
 .docai-edhead-main { flex: 1; min-width: 240px; }
@@ -330,10 +365,8 @@
 .docai-pagefoot { margin-top: 8mm; padding-top: 3mm; border-top: 1px solid var(--ez-color-border); font-family: 'Plus Jakarta Sans', 'Inter', sans-serif; font-size: 8.5pt; color: var(--ez-color-text-muted); display: flex; justify-content: space-between; gap: 6mm; flex-wrap: wrap; }
 
 /* Subnavigasi internal AI Document (Fase B5) */
-.docai-subnav { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 0 14px; }
-.docai-subbtn { display: inline-flex; align-items: center; gap: 7px; border: 1.5px solid var(--ez-color-border); background: var(--ez-color-surface); color: var(--ez-color-text-secondary); border-radius: 999px; padding: 7px 14px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all .18s; }
-.docai-subbtn:hover { border-color: var(--ez-color-primary); color: var(--ez-color-primary-hover); }
-.docai-subbtn.active { background: var(--ez-color-primary-soft); border-color: var(--ez-color-primary); color: var(--ez-color-primary-hover); font-weight: 700; }
+/* Aturan .docai-subnav/.docai-subbtn DIHAPUS (owner 2026-11-19: satu baris
+   tab) — tombol sub-tampilan kini memakai .docai-tabbtn di bar tab tunggal. */
 
 /* Panel identitas perusahaan */
 .docai-kop-preview { background: #fff; border: 1px solid var(--ez-color-border-soft); border-radius: 8px; padding: 10mm 12mm; box-shadow: 0 4px 20px rgba(0,0,0,0.045); }
@@ -372,7 +405,7 @@
 .docai-label { display: block; font-size: 12px; font-weight: 700; color: var(--ez-color-text-muted); margin-bottom: 5px; letter-spacing: .02em; }
 
 /* Grid field dinamis template (Fase B4) */
-.docai-fieldgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; margin-bottom: 6px; text-align: left; }
+.docai-fieldgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; margin-bottom: 6px; text-align: left; }
 @media (max-width: 720px) { .docai-fieldgrid { grid-template-columns: 1fr; } }
 .docai-fielditem { display: block; }
 
@@ -388,14 +421,18 @@
 /* ================================================================== */
 .docai-tabsep { width: 1px; align-self: stretch; background: var(--ez-color-border); margin: 2px 4px; flex-shrink: 0; }
 
-.docai-modeline { display: flex; gap: 6px; flex-wrap: wrap; background: var(--ez-color-background); border: 1px solid var(--ez-color-border-soft); border-radius: var(--ez-radius-pill); padding: 4px; margin-bottom: 16px; }
-.docai-modeline button { display: inline-flex; align-items: center; gap: 7px; flex: 1; justify-content: center; border: none; background: transparent; border-radius: var(--ez-radius-pill); padding: 8px 12px; font-family: inherit; font-size: 12.5px; font-weight: 700; color: var(--ez-color-text-muted); cursor: pointer; white-space: nowrap; transition: all .15s; }
+/* V3 2026-11-19: modeline segmen ringkas mengikuti isi (label pendek
+   "Instruksi" / "Template"), bukan dua pil selebar kolom. */
+.docai-modeline { display: inline-flex; gap: 6px; flex-wrap: wrap; background: var(--ez-color-background); border: 1px solid var(--ez-color-border-soft); border-radius: var(--ez-radius-pill); padding: 4px; margin-bottom: 16px; }
+.docai-modeline button { display: inline-flex; align-items: center; gap: 7px; flex: 0 0 auto; justify-content: center; border: none; background: transparent; border-radius: var(--ez-radius-pill); padding: 7px 14px; font-family: inherit; font-size: 12.5px; font-weight: 700; color: var(--ez-color-text-muted); cursor: pointer; white-space: nowrap; transition: all .15s; }
 .docai-modeline button:hover { color: var(--ez-color-text-primary); }
 .docai-modeline button.active { background: var(--ez-color-surface); color: var(--ez-color-primary-hover); box-shadow: 0 1px 6px rgba(15,35,80,.12), inset 0 0 0 1.5px var(--ez-color-primary-soft); }
 
 .docai-ctxpanel { border: 1.5px solid var(--ez-color-border); border-radius: var(--ez-radius-card); background: var(--ez-color-surface); padding: 14px 16px; margin: 4px 0 14px; text-align: left; }
 .docai-ctxhead { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
-.docai-ctxhead-t { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--ez-color-primary); }
+/* V3 2026-11-19: judul rel konteks pendek ("Data konteks"), tanpa huruf
+   kapital semua. */
+.docai-ctxhead-t { font-size: 13px; font-weight: 800; color: var(--ez-color-primary); }
 .docai-ctxhead-n { font-size: 12px; color: var(--ez-color-text-muted); font-weight: 600; }
 .docai-ctxsrcs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
 .docai-srctoggle { display: inline-flex; align-items: center; gap: 7px; border: 1.5px solid var(--ez-color-border); border-radius: 999px; padding: 6px 12px; font-size: 12.5px; font-weight: 700; color: var(--ez-color-text-muted); cursor: pointer; background: var(--ez-color-surface); }
@@ -489,12 +526,12 @@
 /* ================================================================== */
 
 /* Katalog template: pencarian + chip kategori + grup */
-.docai-tmplsearch { margin-bottom: 10px; }
-.docai-catchips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+.docai-tmplsearch { margin-bottom: 8px; }
+.docai-catchips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
 .docai-catchip { border: 1.5px solid var(--ez-color-border); background: var(--ez-color-surface); color: var(--ez-color-text-secondary); border-radius: 999px; padding: 6px 13px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all .15s; }
 .docai-catchip:hover { border-color: var(--ez-color-primary); color: var(--ez-color-primary-hover); }
 .docai-catchip.active { background: var(--ez-color-primary); border-color: var(--ez-color-primary); color: #fff; }
-.docai-tmplgroup { margin-bottom: 16px; }
+.docai-tmplgroup { margin-bottom: 12px; }
 .docai-tmplgroup-h { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--ez-color-primary); margin-bottom: 8px; display: flex; align-items: baseline; gap: 8px; }
 .docai-tmplgroup-h span { font-size: 11px; font-weight: 600; color: var(--ez-color-text-muted); text-transform: none; letter-spacing: 0; }
 
@@ -502,7 +539,7 @@
 .docai-tmpl.active { box-shadow: 0 0 0 3px rgba(37,99,235,.14); }
 .docai-tmpl-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
 .docai-tmpl-sel { display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: var(--ez-color-primary-hover); background: var(--ez-color-surface); border: 1px solid var(--ez-color-primary); border-radius: var(--ez-radius-pill); padding: 2px 8px; }
-.docai-tmpl-struct { margin: 8px 0 0; padding: 8px 0 0 16px; border-top: 1px dashed var(--ez-color-border-soft); font-size: 11px; line-height: 1.55; color: var(--ez-color-text-muted); text-align: left; }
+.docai-tmpl-struct { margin: 6px 0 0; padding: 6px 0 0 16px; border-top: 1px dashed var(--ez-color-border-soft); font-size: 11px; line-height: 1.55; color: var(--ez-color-text-muted); text-align: left; }
 .docai-tmpl-struct li { margin: 1px 0; }
 
 /* Panel detail template terpilih */
@@ -767,20 +804,8 @@
     height: 1px;
     margin: 3px 2px;
   }
-  .docai-subnav {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 6px;
-  }
-  .docai-subbtn {
-    justify-content: center;
-    padding: 9px 8px;
-    font-size: 12.5px;
-    gap: 6px;
-    white-space: normal;
-    text-align: center;
-    line-height: 1.25;
-  }
+  /* Aturan .docai-subnav/.docai-subbtn di breakpoint ini DIHAPUS (owner
+     2026-11-19: satu baris tab) — sub-tampilan kini memakai .docai-tabbtn. */
 }
 
 /* =========================================================================
@@ -793,23 +818,55 @@
    fungsi yang dibuang. Blok kembar: feature-page-shell.css.
    ========================================================================= */
 @media (max-height: 880px) {
-  .fp-shell .docai-shell > div:first-child { padding-top: 2px !important; }
-  .docai-tabs { margin-bottom: 10px; }
-  .docai-subnav { margin-bottom: 8px; }
-  .docai-pagehead { margin-bottom: 8px; }
+  /* Round 2 (Child 5): margin/padding dipangkas 1–2px lagi agar tombol
+     generate muat di 1366×768 Starter (ukur v2: kurang 18px). Nilai di
+     sini dan di jembatan 881–900 HARUS tetap identik. */
+  .docai-tabs { margin-bottom: 8px; }
+  .docai-pagehead { margin-bottom: 6px; }
   .docai-pagehead h2 { font-size: 18px; }
   .docai-pagehead p { margin-top: 2px; }
   .docai-pagehead .docai-hint { display: none; }
-  .docai-edempty { padding: 16px 20px; }
-  .docai-edempty > svg { width: 22px; height: 22px; }
+  .docai-edempty { padding: 12px 20px; }
   .docai-empty h3 { margin: 6px 0 4px; font-size: 15px; }
   .docai-empty p { margin-bottom: 10px; }
-  .docai-edform { margin-top: 10px; }
-  .docai-modeline { margin-bottom: 10px; }
-  .docai-modeline button { padding: 6px 10px; }
-  .docai-step { margin-bottom: 6px; }
-  .docai-edform .docai-textarea { height: 78px; min-height: 60px; }
+  .docai-edform { margin-top: 8px; }
+  .docai-modeline { margin-bottom: 8px; }
+  .docai-modeline button { padding: 5px 10px; }
+  .docai-step { margin-bottom: 5px; }
+  .docai-edform .docai-textarea { height: 120px; min-height: 100px; } /* V3 2026-11-19: textarea lega 120px, kunci 78px + tombol perluas dihapus */
   .docai-select { padding: 8px 11px; }
+  .docai-input { padding: 8px 11px; }
+  .docai-xlink { margin-top: 10px; padding: 10px 14px; }
+}
+
+/* =========================================================================
+   JEMBATAN 881–900px (fit remediation 2026-11-19, Child 5): kompresi di
+   atas mati tepat di 880px sehingga viewport 900px (1440×900) justru LEBIH
+   BURUK dari 768px — kartu 36px, textarea 124px, subtitle tampil — padahal
+   viewport hanya 132px lebih tinggi. Blok ini menduplikasi aturan kompresi
+   .docai-* untuk rentang 881–900px. Blok @media (max-height: 880px) di atas
+   DIPERTAHANKAN APA ADANYA (string-nya dijaga tes Child 2); aturan .fp-*
+   TIDAK diduplikasi di sini — feature-page-shell.css bukan berkas program
+   ini, jadi fp-head di 900px tetap tak terkompresi (±70px vs 46px) dan
+   anggaran vertikal 1440×900 sudah memperhitungkannya.
+   ========================================================================= */
+@media (min-height: 881px) and (max-height: 900px) {
+  /* Nilai identik dengan blok ≤880 di atas (lihat catatan Round 2). */
+  .docai-tabs { margin-bottom: 8px; }
+  .docai-pagehead { margin-bottom: 6px; }
+  .docai-pagehead h2 { font-size: 18px; }
+  .docai-pagehead p { margin-top: 2px; }
+  .docai-pagehead .docai-hint { display: none; }
+  .docai-edempty { padding: 12px 20px; }
+  .docai-empty h3 { margin: 6px 0 4px; font-size: 15px; }
+  .docai-empty p { margin-bottom: 10px; }
+  .docai-edform { margin-top: 8px; }
+  .docai-modeline { margin-bottom: 8px; }
+  .docai-modeline button { padding: 5px 10px; }
+  .docai-step { margin-bottom: 5px; }
+  .docai-edform .docai-textarea { height: 120px; min-height: 100px; } /* V3 2026-11-19: textarea lega 120px, kunci 78px + tombol perluas dihapus */
+  .docai-select { padding: 8px 11px; }
+  .docai-input { padding: 8px 11px; }
   .docai-xlink { margin-top: 10px; padding: 10px 14px; }
 }
 
@@ -1022,7 +1079,6 @@
      atas deklarasi width/height tetap di aturan dasar tanpa
      !important; min-height mengalahkan height bila lebih besar. */
   .docai-tabbtn { min-height: 44px; }
-  .docai-subbtn { min-height: 44px; }
   .docai-btn-primary, .docai-btn-ghost { min-height: 44px; }
   .docai-btn-ghost.docai-mini, .docai-btn-primary.docai-mini { min-height: 44px; }
   .docai-pagenav button { min-width: 44px; min-height: 44px; }
@@ -1041,11 +1097,10 @@
   .docai-menu button { min-height: 44px; }
   .docai-outline-item { min-height: 44px; }
 
-  /* --- Baris mode "Buat dengan AI": dua tombol flex:1 nowrap
-     ("Buat dengan AI — instruksi dulu" ±200px + "Form Template —
-     template dulu" ±190px = ±410px) di dalam kartu 310px — teks
-     nowrap meluber keluar tombol. Di HP teks membungkus (2 baris)
-     dan tombol boleh mengecil mengikuti wadahnya. */
+  /* --- Baris mode: tombol modeline (V3: label pendek "Instruksi" /
+     "Template", ±90px tiap tombol) tetap muat di kartu HP; aturan
+     bungkus + tinggi sentuh 44px dipertahankan sebagai jaring
+     pengaman bila label memanjang (i18n). */
   .docai-modeline button { min-height: 44px; min-width: 0; white-space: normal; text-align: center; }
 
   /* --- Lencana estimasi kredit ke depan bar tab analisis ---
@@ -1113,3 +1168,91 @@
   .docai-page { padding: 26px 18px; min-height: 560px; }
   .docai-prose { min-height: 440px; }
 }
+
+/* ================================================================== */
+/* PAGE REDESIGN 2026-11-19 (Child 2 — page structure)                 */
+/*                                                                     */
+/* KONTRAK KOLOM — Child 3 menerapkan di DocCreator.tsx (mode 'buat',  */
+/* empty state): .docai-workspace-2col membungkus dua kolom — kiri     */
+/* .docai-col-compose (mode buat, instruksi AI, pilih template/proyek, */
+/* FIELD ISIAN template, aksi generate) ±70%, kanan .docai-col-context */
+/* (DocContextPanel + detail template READ-ONLY) rel tetap 280px.     */
+/* V3 2026-11-19: rasio lama 1.15fr / 0.85fr (57,5% / 42,5%) diganti */
+/* 1fr / 280px — kolom kerja ±70%, panel konteks rel ringkas.     */
+/* Revisi Child 5: subjenis + grid field PINDAH dari kanan ke kiri,  */
+/* sebelum tombol generate — alur baca pilih → isi → generate tanpa    */
+/* zig-zag kolom. Detail template tetap kanan (read-only).             */
+/* Kolom konteks menempel (sticky) di desktop agar ringkasan konteks   */
+/* tetap terlihat saat form digulir; di ≤900px (breakpoint yang sama   */
+/* dengan .docai-analayout) kedua kolom menumpuk, konteks di bawah     */
+/* form. TIDAK ADA overflow-x hidden di sini — anak grid boleh        */
+/* mengecil (min-width: 0) mengikuti kolomnya.                         */
+/* ================================================================== */
+
+/* Baris tombol bantuan — fit remediation 2026-11-19 (Child 5): tombol "?"
+   pindah KE DALAM bar tab (ujung kanan, view.tsx) sehingga baris 38px
+   tersendiri di atas tab hilang; tombol tetap terlihat di semua tab dan
+   tidak menyusut saat tab bergeser horizontal. */
+.docai-help-row { display: inline-flex; align-items: center; margin-left: auto; padding: 0 2px; flex-shrink: 0; align-self: center; }
+
+/* Spanduk konteks masuk dari EZRAB AI (pindahan inline style view.tsx). */
+.docai-entrybanner { margin: 8px 12px 0; padding: 10px 14px; border-radius: 12px; border: 1px solid var(--ez-color-border); background: var(--ez-color-surface); font-size: 12.5px; line-height: 1.5; }
+.docai-entrybanner-prompt { margin-top: 4px; white-space: pre-wrap; }
+
+/* Peringatan kunci fitur (dipakai view.tsx + DocAnalyzer.tsx; satu-satunya
+   properti yang tetap inline di tiap situs adalah pembedanya: maxWidth
+   640px pada view, margin bawah pada analyzer). */
+.docai-lockalert { display: flex; gap: 10px; align-items: flex-start; background: var(--ez-color-danger-soft); border: 1px solid var(--ez-color-danger-soft); color: var(--ez-color-danger); border-radius: 10px; padding: 12px 14px; font-size: 13.5px; line-height: 1.55; }
+.docai-lockalert svg { flex-shrink: 0; margin-top: 2px; }
+
+/* --- Workspace dua kolom: buat dokumen (mode 'buat', empty) --- */
+.docai-workspace-2col { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 16px; align-items: start; }
+.docai-workspace-2col > * { min-width: 0; }
+.docai-col-compose { min-width: 0; }
+.docai-col-context { min-width: 0; }
+@media (min-width: 901px) {
+  .docai-col-context { position: sticky; top: 12px; }
+}
+@media (max-width: 900px) {
+  .docai-workspace-2col { grid-template-columns: 1fr; }
+}
+
+/* ================================================================== */
+/* FIT REMEDIATION 2026-11-19 (Child 5)                                */
+/*                                                                     */
+/* Sasaran: alur utama AI-first ("Buat Draf dengan AI") muat satu     */
+/* viewport di 1366×768 DAN 1440×900, tanpa mengurangi keterbacaan,   */
+/* tanpa menyembunyikan info esensial, tanpa memotong konten. Semua   */
+/* aturan di sini adalah pemadatan spasi/ukuran, bukan penghapusan    */
+/* fitur. Blok ini diletakkan PALING AKHIR agar menang atas aturan    */
+/* dasar yang berspesifisitas sama (bukan atas blok kompresi — yang   */
+/* memang harus tetap menang di ≤900px).                               */
+/* ================================================================== */
+
+/* V3 2026-11-19: hero "Mulai dokumen baru" (h3 + p) + subjudul pagehead
+   dihapus dari DocCreator — aturan .docai-edempty h3 / > p dan
+   .docai-pagehead-sub dihapus bersama markupnya. Kelas .docai-pagehead
+   sendiri tetap dipakai tab lain (DocPanels, DocHistory). */
+
+/* V3 2026-11-19: tombol Perluas/Ciutkan kolom + baris steprow dihapus —
+   aturan .docai-steprow dan .docai-textarea.is-expanded dihapus bersama
+   markupnya; textarea kini 120px secara default. */
+
+/* Textarea DI DALAM grid field (rows=2) tidak ikut terkunci 78px —
+   tingginya mengikuti rows (±67px), menghemat ±11px per baris field
+   textarea pada langkah isi template-first. */
+.docai-fieldgrid .docai-textarea { height: auto; }
+.docai-fieldgrid .docai-label { margin-bottom: 4px; }
+
+/* Margin bawah select/textarea/run di dalam form buat-dokumen: 10→6px,
+   4→0px (Round 2: 8→6px). Cakupan .docai-edform saja — permukaan lain
+   tidak berubah. */
+.docai-edform .docai-select.docai-full { margin-bottom: 6px; }
+.docai-edform .docai-textarea { margin-bottom: 6px; }
+.docai-edform .docai-runbtn { margin-top: 0; }
+
+/* Strip kunci satu baris: kalimat pertama pesan kunci + MODE DEMO selalu
+   terlihat; pesan lengkap hanya tampil bila "Detail" dibuka. Padding +
+   warna strip tetap inline di DocCreator (dijaga tes Child 3). */
+.docai-lockstrip-oneline .docai-lockstrip-short { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.docai-lockstrip-oneline .docai-lockstrip-full { margin-top: 4px; }

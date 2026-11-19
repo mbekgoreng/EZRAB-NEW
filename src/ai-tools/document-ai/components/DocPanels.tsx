@@ -137,7 +137,6 @@ export const CompanyIdentityPanel: React.FC<{ onChanged?: () => void }> = ({ onC
     <div className="docai-tab">
       <div className="docai-pagehead">
         <div>
-          <div className="docai-crumb">AI Document · Paper System</div>
           <h2><Building2 size={20} style={{ verticalAlign: -3 }} /> Identitas Perusahaan</h2>
           <p>Profil ini menjadi kop surat dokumen Anda. Tersimpan di perangkat ini (lokal), bukan di server.</p>
         </div>
@@ -387,7 +386,6 @@ export const MyTemplatesPanel: React.FC<{
     <div className="docai-tab">
       <div className="docai-pagehead">
         <div>
-          <div className="docai-crumb">AI Document · Paper System</div>
           <h2><FileText size={20} style={{ verticalAlign: -3 }} /> Template Saya</h2>
           <p>Template pribadi tersimpan di perangkat ini. Template dengan contoh isi akan membuka dokumen langsung dari contohnya; template tanpa contoh memakai AI dengan kerangka struktur Anda.</p>
         </div>
@@ -495,7 +493,6 @@ export const SavedDocsPanel: React.FC<{
     <div className="docai-tab">
       <div className="docai-pagehead">
         <div>
-          <div className="docai-crumb">AI Document · Paper System</div>
           <h2><Archive size={20} style={{ verticalAlign: -3 }} /> Dokumen Tersimpan</h2>
           <p>Semua draf di perangkat ini beserta statusnya. Mengarsipkan tidak menghapus dokumen.</p>
         </div>

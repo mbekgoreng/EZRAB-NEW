@@ -32,7 +32,7 @@ import type { ContextField } from './types';
 export type { DraftVersion };
 import { DocLibrary, type AfterAnalysisChoice } from './components/DocLibrary';
 import { DocAnalyzer, type AnaTab, type DocAnalyzerRunRequest } from './components/DocAnalyzer';
-import { DocCreator } from './components/DocCreator';
+import { DocCreator, type DocCreatorSubView } from './components/DocCreator';
 import { DocHistory } from './components/DocHistory';
 import { useI18n } from '../../i18n/I18nContext';
 import './document-ai.css';
@@ -214,6 +214,12 @@ interface DokumenAiViewProps {
 export const DokumenAiView: React.FC<DokumenAiViewProps> = ({ onAnalysisActiveChange, onNavigateToMenu }) => {
   const { t } = useI18n();
   const [tab, setTab] = useState<Tab>('buat-ai');
+  /* Bar tab tunggal (owner 2026-11-19: satu baris tab, bukan dua) — sub-tampilan
+     kreator diangkat ke sini agar tombolnya hidup di bar yang sama dengan tab
+     utama. Reset ke 'buat' ditangani efek studioPath di DocCreator (berjalan
+     saat mount + saat jalur berubah), sama seperti perilaku lama. */
+  const [creatorSubView, setCreatorSubView] = useState<DocCreatorSubView>('buat');
+  const [creatorEmpty, setCreatorEmpty] = useState(true);
   const [activeDoc, setActiveDoc] = useState<DocRecord | null>(null);
   // Panel Pengaturan Dokumen (pola app shell 2026-11-10): mode analisis
   // pertama + tujuan sesudah analisis, dipilih dari Dokumen Saya dan
@@ -371,6 +377,11 @@ export const DokumenAiView: React.FC<DokumenAiViewProps> = ({ onAnalysisActiveCh
       klik tab "Analisis Dokumen" tidak menjalankan run basi. */
   const switchTab = (next: Tab) => {
     setAnalyzerRunRequest(null);
+    /* Bar tab tunggal: klik ulang tab Studio yang sedang aktif = kembali ke
+       formulir Buat Dokumen (tombol sub-tampilan 'Buat' dilipat ke sini agar
+       9 tombol muat satu baris di 1366px — ukur replika: 10 tombol
+       overflow 150px). */
+    if (next === tab && STUDIO_TABS.includes(next)) setCreatorSubView('buat');
     setTab(next);
   };
 
@@ -431,27 +442,27 @@ export const DokumenAiView: React.FC<DokumenAiViewProps> = ({ onAnalysisActiveCh
       creditText={`Kredit AI: ${creditBalance.total.toLocaleString('id-ID')}`}
     >
     <div className="docai-shell" data-tutorial="dokumenai-main">
-      <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '8px 12px 0' }}>
-        <TutorialHelpButton tutorialId="dokumen-ai" label="Buka tutorial AI Dokumen" />
-      </div>
       {docEntryBanner && (
-        <div style={{ margin: '8px 12px 0', padding: '10px 14px', borderRadius: '12px', border: '1px solid var(--ez-color-border)', background: 'var(--ez-color-surface)', fontSize: '12.5px', lineHeight: 1.5 }}>
+        <div className="docai-entrybanner">
           <strong>Konteks Dokumen AI: {docEntryBanner.label}</strong>
           {docEntryBanner.documentId ? <div>Dokumen: {docEntryBanner.documentId}</div> : null}
-          {docEntryBanner.prompt ? <div style={{ marginTop: '4px', whiteSpace: 'pre-wrap' }}>{docEntryBanner.prompt}</div> : null}
+          {docEntryBanner.prompt ? <div className="docai-entrybanner-prompt">{docEntryBanner.prompt}</div> : null}
         </div>
       )}
-      <nav className="docai-tabs" aria-label={t('ai.doc.tab_menu_label')}>
+      <nav className={`docai-tabs ${STUDIO_TABS.includes(tab) && creatorEmpty ? 'docai-tabs-merged' : ''}`} aria-label={t('ai.doc.tab_menu_label')}>
         {[
           { id: 'buat-ai', label: 'Buat dengan AI', icon: Sparkles },
           { id: 'template', label: 'Gunakan Template', icon: LayoutTemplate },
           { id: 'periksa', label: 'Edit & Periksa', icon: ClipboardCheck },
         ].map((tabItem) => {
           const Icon = tabItem.icon;
+          /* Tooltip kembali-ke-Buat saat sub-tampilan lain sedang aktif. */
+          const backToCreate = tab === tabItem.id && creatorSubView !== 'buat';
           return (
             <button
               key={tabItem.id}
               className={`docai-tabbtn ${tab === tabItem.id ? 'active' : ''}`}
+              title={backToCreate ? 'Kembali ke Buat Dokumen' : tabItem.label}
               onClick={() => switchTab(tabItem.id as Tab)}
             >
               <Icon size={16} /> {tabItem.label}
@@ -478,20 +489,47 @@ export const DokumenAiView: React.FC<DokumenAiViewProps> = ({ onAnalysisActiveCh
             </button>
           );
         })}
+        {/* Bar tab tunggal (owner 2026-11-19): sub-tampilan kreator menyatu di
+            baris yang sama — tampil hanya di jalur Studio saat kreator kosong
+            (perilaku lama: subnav hanya dirender di mode empty). */}
+        {STUDIO_TABS.includes(tab) && creatorEmpty && (
+          <>
+            <span className="docai-tabsep" aria-hidden="true" />
+            {/* Label pendek tanpa ikon agar tombol muat satu baris di 1366px;
+                label lengkap tetap ada di tooltip. 'Buat' tidak ada di sini —
+                dilipat ke klik-ulang tab Studio aktif (lihat switchTab). */}
+            {[
+              { id: 'tersimpan', label: 'Tersimpan', full: 'Dokumen Tersimpan' },
+              { id: 'template', label: 'Template', full: 'Template Saya' },
+              { id: 'identitas', label: 'Identitas', full: 'Identitas Perusahaan' },
+            ].map((subItem) => (
+              <button
+                key={subItem.id}
+                className={`docai-tabbtn docai-tabbtn-sub ${creatorSubView === subItem.id ? 'active' : ''}`}
+                title={subItem.full}
+                onClick={() => setCreatorSubView(subItem.id as DocCreatorSubView)}
+              >
+                {subItem.label}
+              </button>
+            ))}
+          </>
+        )}
+        {/* Fit remediation 2026-11-19 (Child 5): tombol bantuan pindah ke
+            dalam bar tab (ujung kanan) — baris 38px tersendiri dihapus,
+            tombol tetap terlihat di semua tab. */}
+        <span className="docai-help-row">
+          <TutorialHelpButton tutorialId="dokumen-ai" label="Buka tutorial AI Dokumen" />
+        </span>
       </nav>
 
       <div className="docai-content">
         {docViewLockedForFree ? (
           <div
             role="alert"
-            style={{
-              display: 'flex', gap: 10, alignItems: 'flex-start',
-              background: 'var(--ez-color-danger-soft)', border: '1px solid var(--ez-color-danger-soft)', color: 'var(--ez-color-danger)',
-              borderRadius: 10, padding: '14px 16px',
-              fontSize: 14, lineHeight: 1.6, maxWidth: 640,
-            }}
+            className="docai-lockalert"
+            style={{ maxWidth: 640 }}
           >
-            <Lock size={18} style={{ flexShrink: 0, marginTop: 2 }} />
+            <Lock size={18} />
             <span>{aiFeatureLockedMessage(creditBalance.plan, 'ai-document')}</span>
           </div>
         ) : (
@@ -530,6 +568,9 @@ export const DokumenAiView: React.FC<DokumenAiViewProps> = ({ onAnalysisActiveCh
             onAddHistory={addHistory}
             onNavigateToMenu={onNavigateToMenu}
             studioPath={STUDIO_PATH[tab]}
+            subView={creatorSubView}
+            onSubViewChange={setCreatorSubView}
+            onEmptyChange={setCreatorEmpty}
           />
         )}
         {tab === 'history' && <DocHistory history={history} onRemoveHistory={removeHistory} />}

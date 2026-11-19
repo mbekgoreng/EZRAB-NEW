@@ -441,14 +441,10 @@ export const DocAnalyzer: React.FC<{
       {!docAiAllowed && (
         <div
           role="alert"
-          style={{
-            display: 'flex', gap: 10, alignItems: 'flex-start',
-            background: 'var(--ez-color-danger-soft)', border: '1px solid var(--ez-color-danger-soft)', color: 'var(--ez-color-danger)',
-            borderRadius: 10, padding: '12px 14px', margin: '0 0 12px',
-            fontSize: 13.5, lineHeight: 1.55,
-          }}
+          className="docai-lockalert"
+          style={{ margin: '0 0 12px' }}
         >
-          <Lock size={16} style={{ flexShrink: 0, marginTop: 2 }} />
+          <Lock size={16} />
           <span>{docAiLockedMsg}</span>
         </div>
       )}

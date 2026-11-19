@@ -21,7 +21,7 @@ import {
   Loader2, Save, Download, AlertTriangle, FilePlus2, Check, MoreHorizontal,
   RefreshCw, History as HistoryIcon, Focus, ListTree, FilePlus, X, CloudOff,
   Printer, LayoutTemplate, ArrowRight, Briefcase, Sparkles, ClipboardCheck,
-  Search, Eye, CheckCircle2, FileText, Lock, Building2, Languages, Archive,
+  Search, Eye, CheckCircle2, FileText, Lock, Building2, Languages,
 } from 'lucide-react';
 import { getDefaultProfile, kopHtml, listProfiles } from '../companyProfile';
 import {
@@ -118,6 +118,9 @@ function verifySaved(rec: DraftRecord, attempts = 14): Promise<boolean> {
 /** Jalur Studio yang sedang aktif di view.tsx — mengatur mode awal DocCreator. */
 export type DocStudioPath = 'ai' | 'template' | 'periksa';
 
+/** Sub-tampilan kreator — tombolnya dirender di bar tab tunggal view.tsx (owner 2026-11-19: satu baris tab, bukan dua). */
+export type DocCreatorSubView = 'buat' | 'tersimpan' | 'template' | 'identitas';
+
 export const DocCreator: React.FC<{
   drafts: DraftRecord[];
   onUpsertDraft: (d: DraftRecord) => void;
@@ -126,7 +129,13 @@ export const DocCreator: React.FC<{
   onNavigateToMenu?: (menu: string) => void;
   /** Jalur Document Studio dari view.tsx: 'ai' = instruksi-pertama, 'template' = form-pertama, 'periksa' = editor + panel periksa. */
   studioPath?: DocStudioPath;
-}> = ({ drafts, onUpsertDraft, onAddHistory, onNavigateToMenu, studioPath }) => {
+  /** Sub-tampilan aktif — state diangkat ke view.tsx agar tombolnya hidup di bar tab tunggal. */
+  subView: DocCreatorSubView;
+  /** Dipanggil saat kreator mengubah sub-tampilan sendiri (pakai template, buka draf, ganti jalur). */
+  onSubViewChange: (v: DocCreatorSubView) => void;
+  /** Dilaporkan ke view.tsx saat mode empty/editor berubah — tombol sub-tampilan hanya tampil saat empty. */
+  onEmptyChange?: (isEmpty: boolean) => void;
+}> = ({ drafts, onUpsertDraft, onAddHistory, onNavigateToMenu, studioPath, subView, onSubViewChange, onEmptyChange }) => {
   const { t } = useI18n();
   // Gerbang paket (simulasi): mode "Buat dengan AI" (generate bebas AI)
   // mengikuti entitlement aiDocuments plans.ts — tertutup untuk Free &
@@ -135,9 +144,16 @@ export const DocCreator: React.FC<{
   const { balance: creditBalance } = useCreditSimulation();
   const docAiAllowed = planAllowsAiFeature(creditBalance.plan, 'ai-document');
   const docAiLockedMsg = aiFeatureLockedMessage(creditBalance.plan, 'ai-document');
+  /* Fit remediation 2026-11-19 (Child 5): satu baris — kalimat pertama pesan
+     kunci (fitur + paket) + penanda demo dari kalimat terakhir pesan yang
+     sama. Seluruhnya diturunkan dari pesan dinamis, tanpa teks hardcode
+     (dijaga tes Child 3: creator tidak boleh mengandung literal penanda
+     demo / nama paket). Pesan lengkap tetap dirender di balik "Detail". */
+  const docAiLockedParts = docAiLockedMsg.split('. ');
+  const docAiLockedShort = `${docAiLockedParts[0]} — ${docAiLockedParts[docAiLockedParts.length - 1].split(' — ')[0]}`;
   const TEMPLATES = getTemplates(t);
-  /* Paper System (Fase B): subnavigasi + template tambahan + profil perusahaan */
-  const [subView, setSubView] = useState<'buat' | 'tersimpan' | 'template' | 'identitas'>('buat');
+  /* Paper System (Fase B): subnavigasi + template tambahan + profil perusahaan.
+     subView diangkat ke view.tsx (bar tab tunggal) — lihat props. */
   const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
   const [subtypeId, setSubtypeId] = useState('');
   const [showSample, setShowSample] = useState(false);
@@ -162,6 +178,12 @@ export const DocCreator: React.FC<{
   const [instruction, setInstruction] = useState('');
 
   const [mode, setMode] = useState<'empty' | 'editor'>('empty');
+  /* Laporkan mode empty/editor ke view.tsx — tombol sub-tampilan di bar tab
+     tunggal hanya tampil saat kreator kosong (perilaku lama: subnav hanya
+     dirender di mode empty). */
+  useEffect(() => {
+    onEmptyChange?.(mode === 'empty');
+  }, [mode, onEmptyChange]);
   const [draft, setDraft] = useState<DraftRecord | null>(null);
   const [html, setHtml] = useState('');
   const [editorKey, setEditorKey] = useState(0);
@@ -177,6 +199,9 @@ export const DocCreator: React.FC<{
      konteks yang diizinkan, dan daftar field belum tersedia dari generate. */
   const [createMode, setCreateMode] = useState<'ai' | 'form'>(studioPath === 'template' ? 'form' : 'ai');
   const [aiAutoType, setAiAutoType] = useState(true);
+  /* Fit remediation 2026-11-19 (Child 5): pesan lengkap strip kunci hanya
+     tampil bila "Detail" dibuka — default strip satu baris. */
+  const [lockDetailOpen, setLockDetailOpen] = useState(false);
   const [srcProject, setSrcProject] = useState(true);
   const [srcCompany, setSrcCompany] = useState(true);
   const [genMissing, setGenMissing] = useState<MissingFieldInfo[]>([]);
@@ -198,11 +223,12 @@ export const DocCreator: React.FC<{
   const [translating, setTranslating] = useState(false);
   const [translateInfo, setTranslateInfo] = useState<string | null>(null);
 
-  /* Jalur Studio dari view.tsx mengatur mode tampil; subnav internal tetap
-     bebas dipakai pengguna setelahnya (efek hanya berjalan saat jalur berubah). */
+  /* Jalur Studio dari view.tsx mengatur mode tampil; sub-tampilan di bar tab
+     tunggal tetap bebas dipakai pengguna setelahnya (efek hanya berjalan
+     saat jalur berubah). */
   useEffect(() => {
     if (!studioPath) return;
-    setSubView('buat');
+    onSubViewChange('buat');
     if (studioPath === 'ai') setCreateMode('ai');
     if (studioPath === 'template') setCreateMode('form');
   }, [studioPath]);
@@ -707,12 +733,12 @@ export const DocCreator: React.FC<{
         updatedAt: Date.now(),
       };
       onUpsertDraft(rec);
-      setSubView('buat');
+      onSubViewChange('buat');
       loadIntoEditor(rec);
       return;
     }
     setTemplateId(ut.id);
-    setSubView('buat');
+    onSubViewChange('buat');
     setMode('empty');
     setDraft(null);
     setHtml('');
@@ -900,21 +926,66 @@ export const DocCreator: React.FC<{
     </div>
   );
 
+  /* Fit remediation 2026-11-19 (Child 5): field isian template (subjenis +
+     grid field) tinggal di kolom COMPOSE, tepat sebelum tombol generate —
+     alur baca: pilih (kiri) → isi (kiri) → generate (kiri). Detail template
+     read-only tetap di kolom konteks. Satu situs render untuk kedua mode
+     (AI bertipe eksplisit + form); subjenis + field digabung SATU grid
+     (dulu dua grid terpisah di kolom kanan). Logika nilai tidak berubah:
+     state, handler, dan kondisi tampil yang sama seperti sebelumnya. */
+  const templateFillFields =
+    showTemplateDetail &&
+    ((baseMeta?.subtypes?.length ?? 0) > 0 || (effectiveMeta && effectiveMeta.fields.length > 0)) ? (
+      <>
+        <div className="docai-step" style={{ textAlign: 'left', marginTop: 10 }}>Isi field template</div>
+        <div className="docai-fieldgrid">
+          {baseMeta?.subtypes && baseMeta.subtypes.length > 0 && (
+            <label className="docai-fielditem">
+              <span className="docai-label">Subjenis Dokumen *</span>
+              <select
+                className="docai-select"
+                style={{ marginBottom: 0 }}
+                value={baseMeta.subtypes.some((s) => s.id === subtypeId) ? subtypeId : baseMeta.subtypes[0].id}
+                onChange={(e) => { setSubtypeId(e.target.value); setShowSample(false); }}
+              >
+                {baseMeta.subtypes.map((s) => (
+                  <option key={s.id} value={s.id}>{s.label}</option>
+                ))}
+              </select>
+            </label>
+          )}
+          {effectiveMeta && effectiveMeta.fields.map((f) => (
+            <label key={f.key} className="docai-fielditem">
+              <span className="docai-label">{f.label}{f.required ? ' *' : ''}</span>
+              {f.type === 'date' ? (
+                <input type="date" className="docai-input" style={{ marginBottom: 0 }} value={fieldValues[f.key] || ''} onChange={(e) => setFieldValues((v) => ({ ...v, [f.key]: e.target.value }))} />
+              ) : f.type === 'textarea' ? (
+                <textarea className="docai-textarea" style={{ marginBottom: 0 }} rows={2} value={fieldValues[f.key] || ''} placeholder={f.placeholder} onChange={(e) => setFieldValues((v) => ({ ...v, [f.key]: e.target.value }))} />
+              ) : f.type === 'select' ? (
+                <select className="docai-select" style={{ marginBottom: 0 }} value={fieldValues[f.key] || ''} onChange={(e) => setFieldValues((v) => ({ ...v, [f.key]: e.target.value }))}>
+                  <option value="">— Pilih —</option>
+                  {(f.options ?? []).map((o) => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
+                </select>
+              ) : (
+                <input className="docai-input" style={{ marginBottom: 0 }} value={fieldValues[f.key] || ''} placeholder={f.placeholder} onChange={(e) => setFieldValues((v) => ({ ...v, [f.key]: e.target.value }))} />
+              )}
+            </label>
+          ))}
+        </div>
+      </>
+    ) : null;
+
   /* ---------------- render: empty state ---------------- */
 
-  const subnav = (
-    <div className="docai-subnav" role="tablist" aria-label="AI Document">
-      <button className={`docai-subbtn ${subView === 'buat' ? 'active' : ''}`} onClick={() => setSubView('buat')}><FilePlus2 size={15} /> Buat Dokumen</button>
-      <button className={`docai-subbtn ${subView === 'tersimpan' ? 'active' : ''}`} onClick={() => setSubView('tersimpan')}><Archive size={15} /> Dokumen Tersimpan</button>
-      <button className={`docai-subbtn ${subView === 'template' ? 'active' : ''}`} onClick={() => setSubView('template')}><LayoutTemplate size={15} /> Template Saya</button>
-      <button className={`docai-subbtn ${subView === 'identitas' ? 'active' : ''}`} onClick={() => setSubView('identitas')}><Building2 size={15} /> Identitas Perusahaan</button>
-    </div>
-  );
+  /* Baris subnavigasi lama DIHAPUS (owner 2026-11-19: satu baris tab) —
+     keempat tombol sub-tampilan kini dirender di bar tab tunggal view.tsx
+     (state diangkat via props subView/onSubViewChange). */
 
   if (mode === 'empty' && subView === 'identitas') {
     return (
       <div>
-        {subnav}
         <CompanyIdentityPanel onChanged={() => setProfileVersion((v) => v + 1)} />
         {onNavigateToMenu && (
           <p className="docai-hint" style={{ marginTop: 14 }}>
@@ -931,7 +1002,6 @@ export const DocCreator: React.FC<{
   if (mode === 'empty' && subView === 'template') {
     return (
       <div>
-        {subnav}
         <MyTemplatesPanel
           builtinNames={[...TEMPLATES, ...EXTRA_BUILTIN_TEMPLATES].map((x) => ({ id: x.id, name: x.name }))}
           onUse={handleUseUserTemplate}
@@ -942,11 +1012,10 @@ export const DocCreator: React.FC<{
   if (mode === 'empty' && subView === 'tersimpan') {
     return (
       <div>
-        {subnav}
         <SavedDocsPanel
           drafts={drafts}
-          onCreate={() => setSubView('buat')}
-          onOpen={(d) => { setSubView('buat'); openDraft(d); }}
+          onCreate={() => onSubViewChange('buat')}
+          onOpen={(d) => { onSubViewChange('buat'); openDraft(d); }}
           onStatus={(d, st) => onUpsertDraft({ ...d, status: st, updatedAt: Date.now() })}
         />
       </div>
@@ -956,21 +1025,21 @@ export const DocCreator: React.FC<{
   if (mode === 'empty') {
     return (
       <div className="docai-tab">
-        {subnav}
-        <div className="docai-pagehead">
-          <div>
-            <div className="docai-crumb">{t('ai.doc.create.crumb')}</div>
-            <h2>{t('ai.doc.create.ed_title')}</h2>
-            <p>{t('ai.doc.create.sub')}</p>
-            <p className="docai-hint" style={{ marginTop: 2 }}>Dokumen bebas berbasis AI (surat, berita acara, laporan).</p>
-          </div>
-        </div>
-
+        {/* V3 2026-11-19 (mockup v3 di-ACC owner): subjudul halaman + hero
+            "Mulai dokumen baru" dihapus — form langsung mulai di bawah
+            tab. Judul halaman tetap di FeaturePageShell (view.tsx).
+            Catatan: pengungkapan status DRAF ikut hilang dari layar ini;
+            draf tetap berlabel DRAF di editor/riwayat. */}
         <div className="docai-empty docai-edempty">
-          <FilePlus2 size={30} />
-          <h3>{t('ai.doc.create.ed_empty_h')}</h3>
-          <p>{t('ai.doc.create.ed_empty_p')}</p>
           <div className="docai-edform">
+            {/* Workspace dua kolom (kontrak Child 2, document-ai.css;
+                revisi Child 5 — fit remediation): kiri .docai-col-compose =
+                mode buat + instruksi + pilih template/proyek + FIELD ISIAN
+                template + aksi generate; kanan .docai-col-context =
+                ringkasan konteks + detail template READ-ONLY.
+                Di ≤900px menumpuk. */}
+            <div className="docai-workspace-2col">
+            <div className="docai-col-compose">
             <div className="docai-modeline" role="tablist" aria-label="Mode buat dokumen">
               <button
                 type="button"
@@ -979,7 +1048,7 @@ export const DocCreator: React.FC<{
                 className={createMode === 'ai' ? 'active' : ''}
                 onClick={() => setCreateMode('ai')}
               >
-                <Sparkles size={14} /> Buat dengan AI — instruksi dulu
+                <Sparkles size={14} /> Instruksi
               </button>
               <button
                 type="button"
@@ -988,7 +1057,7 @@ export const DocCreator: React.FC<{
                 className={createMode === 'form' ? 'active' : ''}
                 onClick={() => setCreateMode('form')}
               >
-                <LayoutTemplate size={14} /> Form Template — template dulu
+                <LayoutTemplate size={14} /> Template
               </button>
             </div>
             {createMode === 'ai' && (
@@ -996,27 +1065,45 @@ export const DocCreator: React.FC<{
                 {!docAiAllowed && (
                   <div
                     role="alert"
+                    className="docai-lockstrip-oneline"
                     style={{
-                      display: 'flex', gap: 10, alignItems: 'flex-start',
+                      display: 'flex', gap: 8, alignItems: 'flex-start',
                       background: 'var(--ez-color-danger-soft)', border: '1px solid var(--ez-color-danger-soft)', color: 'var(--ez-color-danger)',
-                      borderRadius: 10, padding: '12px 14px', marginBottom: 12,
-                      fontSize: 13.5, lineHeight: 1.55, textAlign: 'left',
+                      borderRadius: 10, padding: '8px 10px', marginBottom: 10,
+                      fontSize: 12.5, lineHeight: 1.5, textAlign: 'left',
                     }}
                   >
-                    <Lock size={16} style={{ flexShrink: 0, marginTop: 2 }} />
-                    <span>{docAiLockedMsg}</span>
+                    <Lock size={14} style={{ flexShrink: 0, marginTop: 2 }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div className="docai-lockstrip-short">
+                        <span>{docAiLockedShort}</span>
+                        <button
+                          type="button"
+                          className="docai-linkbtn"
+                          style={{ fontSize: 12.5 }}
+                          onClick={() => setLockDetailOpen((v) => !v)}
+                          aria-expanded={lockDetailOpen}
+                        >
+                          {lockDetailOpen ? 'Sembunyikan' : 'Detail'}
+                        </button>
+                      </div>
+                      {lockDetailOpen && <div className="docai-lockstrip-full">{docAiLockedMsg}</div>}
+                    </div>
                   </div>
                 )}
-                <div className="docai-step" style={{ textAlign: 'left' }}>1 · Instruksi untuk AI</div>
+                {/* V3 2026-11-19: label langkah tenang tanpa nomor; tombol
+                    perluas/ciutkan dihapus — textarea kini 120px
+                    secara default (document-ai.css). */}
+                <div className="docai-step" style={{ textAlign: 'left' }}>Instruksi</div>
                 <textarea
                   className="docai-textarea"
                   rows={5}
                   value={instruction}
                   onChange={(e) => setInstruction(e.target.value)}
-                  placeholder="Tuliskan dokumen yang Anda butuhkan dalam Bahasa Indonesia. AI hanya memakai instruksi ini dan data pada ringkasan konteks di bawah; data yang belum tersedia ditandai [ISI: ...], tidak dikarang."
+                  placeholder="Tuliskan dokumen yang Anda butuhkan dalam Bahasa Indonesia. AI hanya memakai instruksi ini dan data pada ringkasan konteks; data yang belum tersedia ditandai [ISI: ...], tidak dikarang."
                 />
-                <div className="docai-step" style={{ textAlign: 'left', marginTop: 6 }}>
-                  2 · Jenis dokumen (opsional)
+                <div className="docai-step" style={{ textAlign: 'left', marginTop: 4 }}>
+                  Jenis dokumen
                 </div>
                 <select
                   className="docai-select docai-full"
@@ -1037,8 +1124,8 @@ export const DocCreator: React.FC<{
                     </option>
                   ))}
                 </select>
-                <div className="docai-step" style={{ textAlign: 'left', marginTop: 16 }}>
-                  3 · Proyek &amp; konteks
+                <div className="docai-step" style={{ textAlign: 'left', marginTop: 8 }}>
+                  Proyek
                 </div>
               </>
             )}
@@ -1090,7 +1177,9 @@ export const DocCreator: React.FC<{
                 <div className="docai-tmplgrid">
                   {group.entries.map((tmpl) => {
                     const active = templateId === tmpl.id;
-                    const lines = previewFor(tmpl.id);
+                    /* Fit remediation 2026-11-19 (Child 5): kartu katalog
+                       dipadatkan — maks. 3 baris struktur per kartu. */
+                    const lines = previewFor(tmpl.id).slice(0, 3);
                     return (
                       <button
                         key={tmpl.id}
@@ -1123,7 +1212,7 @@ export const DocCreator: React.FC<{
               </>
             )}
             {createMode === 'form' && (
-              <div className="docai-step" style={{ textAlign: 'left', marginTop: 16 }}>{t('ai.doc.create.step_2')}</div>
+              <div className="docai-step" style={{ textAlign: 'left', marginTop: 8 }}>{t('ai.doc.create.step_2')}</div>
             )}
             <select
               value={projectId}
@@ -1137,6 +1226,40 @@ export const DocCreator: React.FC<{
                 </option>
               ))}
             </select>
+            {createMode === 'form' && (
+              <textarea
+                className="docai-textarea"
+                rows={4}
+                value={instruction}
+                onChange={(e) => setInstruction(e.target.value)}
+                placeholder={t('ai.doc.create.instr_ph')}
+              />
+            )}
+            {/* Field isian template (subjenis + grid) — di kolom compose,
+                tepat sebelum generate (Child 5, fit remediation). */}
+            {templateFillFields}
+            <button className="docai-btn-primary docai-runbtn" onClick={() => void runGenerate(false)} disabled={busy}>
+              {busy ? (
+                <>
+                  <Loader2 size={15} className="spin" /> {t('ai.doc.create.gen_busy')}
+                </>
+              ) : createMode === 'ai' ? (
+                <>
+                  <Sparkles size={15} /> Buat Draf dengan AI
+                </>
+              ) : (
+                <>
+                  <FilePlus2 size={15} /> {t('ai.doc.create.gen')}
+                </>
+              )}
+            </button>
+            {error && (
+              <div className="docai-error">
+                <AlertTriangle size={14} /> {error}
+              </div>
+            )}
+            </div>
+            <div className="docai-col-context">
             <DocContextPanel
               fields={contextFields}
               sources={{ project: srcProject, company: srcCompany }}
@@ -1172,7 +1295,7 @@ export const DocCreator: React.FC<{
                       </li>
                     ))}
                     {availableContext.length > 8 && (
-                      <li className="docai-hint">+{availableContext.length - 8} field tersedia lainnya (lihat ringkasan konteks di atas).</li>
+                      <li className="docai-hint">+{availableContext.length - 8} field tersedia lainnya (lihat ringkasan konteks).</li>
                     )}
                   </ul>
                 )}
@@ -1209,53 +1332,11 @@ export const DocCreator: React.FC<{
                 >
                   <FileText size={13} /> Isi Manual
                 </button>
-                <span className="docai-hint" style={{ margin: 0 }}>
-                  {createMode === 'ai'
-                    ? 'AI menyusun draf dari instruksi + data konteks; field yang kosong ditandai [ISI: ...].'
-                    : 'Anda mengisi field template di bawah; tombol buat di bawah tetap memakai AI dengan data isian ini.'}
-                </span>
               </div>
             </div>
-            {baseMeta?.subtypes && baseMeta.subtypes.length > 0 && (
-              <div className="docai-fieldgrid">
-                <label className="docai-fielditem">
-                  <span className="docai-label">Subjenis Dokumen *</span>
-                  <select
-                    className="docai-select"
-                    style={{ marginBottom: 0 }}
-                    value={baseMeta.subtypes.some((s) => s.id === subtypeId) ? subtypeId : baseMeta.subtypes[0].id}
-                    onChange={(e) => { setSubtypeId(e.target.value); setShowSample(false); }}
-                  >
-                    {baseMeta.subtypes.map((s) => (
-                      <option key={s.id} value={s.id}>{s.label}</option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-            )}
-            {effectiveMeta && effectiveMeta.fields.length > 0 && (
-              <div className="docai-fieldgrid">
-                {effectiveMeta.fields.map((f) => (
-                  <label key={f.key} className="docai-fielditem">
-                    <span className="docai-label">{f.label}{f.required ? ' *' : ''}</span>
-                    {f.type === 'date' ? (
-                      <input type="date" className="docai-input" style={{ marginBottom: 0 }} value={fieldValues[f.key] || ''} onChange={(e) => setFieldValues((v) => ({ ...v, [f.key]: e.target.value }))} />
-                    ) : f.type === 'textarea' ? (
-                      <textarea className="docai-textarea" style={{ marginBottom: 0 }} rows={2} value={fieldValues[f.key] || ''} placeholder={f.placeholder} onChange={(e) => setFieldValues((v) => ({ ...v, [f.key]: e.target.value }))} />
-                    ) : f.type === 'select' ? (
-                      <select className="docai-select" style={{ marginBottom: 0 }} value={fieldValues[f.key] || ''} onChange={(e) => setFieldValues((v) => ({ ...v, [f.key]: e.target.value }))}>
-                        <option value="">— Pilih —</option>
-                        {(f.options ?? []).map((o) => (
-                          <option key={o.value} value={o.value}>{o.label}</option>
-                        ))}
-                      </select>
-                    ) : (
-                      <input className="docai-input" style={{ marginBottom: 0 }} value={fieldValues[f.key] || ''} placeholder={f.placeholder} onChange={(e) => setFieldValues((v) => ({ ...v, [f.key]: e.target.value }))} />
-                    )}
-                  </label>
-                ))}
-              </div>
-            )}
+            {/* Subjenis + grid field PINDAH ke kolom compose (templateFillFields,
+                tepat sebelum tombol generate) — Child 5, fit remediation.
+                Kolom kanan hanya detail read-only + acuan + contoh. */}
             {effectiveMeta?.reference && (
               <p className="docai-hint" style={{ textAlign: 'left' }}>
                 Acuan: {effectiveMeta.reference.sourceName}
@@ -1280,35 +1361,8 @@ export const DocCreator: React.FC<{
             )}
               </>
             )}
-            {createMode === 'form' && (
-              <textarea
-                className="docai-textarea"
-                rows={4}
-                value={instruction}
-                onChange={(e) => setInstruction(e.target.value)}
-                placeholder={t('ai.doc.create.instr_ph')}
-              />
-            )}
-            <button className="docai-btn-primary docai-runbtn" onClick={() => void runGenerate(false)} disabled={busy}>
-              {busy ? (
-                <>
-                  <Loader2 size={15} className="spin" /> {t('ai.doc.create.gen_busy')}
-                </>
-              ) : createMode === 'ai' ? (
-                <>
-                  <Sparkles size={15} /> Buat Draf dengan AI
-                </>
-              ) : (
-                <>
-                  <FilePlus2 size={15} /> {t('ai.doc.create.gen')}
-                </>
-              )}
-            </button>
-            {error && (
-              <div className="docai-error">
-                <AlertTriangle size={14} /> {error}
-              </div>
-            )}
+            </div>
+            </div>
           </div>
         </div>
 
@@ -1373,7 +1427,6 @@ export const DocCreator: React.FC<{
     <div className={`docai-tab ${focusMode ? 'docai-focusmode' : ''}`}>
       <div className="docai-edhead">
         <div className="docai-edhead-main">
-          <div className="docai-crumb">{t('ai.doc.create.crumb')} · {t('ai.doc.create.ed_title')}</div>
           <input
             className="docai-edtitle"
             value={draft?.title ?? ''}

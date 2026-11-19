@@ -376,7 +376,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 pointerEvents: mobileDrawerOpen ? 'auto' : 'none',
               }
             : {
-                width: railMode ? '72px' : '256px',
+                width: railMode ? '72px' : '196px',
                 background: 'var(--ez-color-sidebar)',
                 borderRight: '1px solid var(--ez-color-sidebar-border)',
                 display: 'flex',
@@ -692,7 +692,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 alignItems: 'center',
                 justifyContent: railMode ? 'center' : 'flex-start',
                 gap: '8px',
-                padding: railMode ? '0' : '9px 12px',
+                padding: railMode ? '0' : '8px 12px',
                 borderRadius: railMode ? '12px' : '10px',
                 border: 'none',
                 background: 'var(--ez-color-primary)',
@@ -722,7 +722,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           >
             {/* 1. BERANDA Header & Dashboard */}
             {(!railMode) && (
-              <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '6px 12px 3px 12px' }}>
+              <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '6px 10px 3px 10px' }}>
                 {t('nav.group_beranda')}
               </div>
             )}
@@ -740,11 +740,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   onMouseLeave={handleMouseLeaveItem}
                   aria-label={item.label}
                   style={{
-                    height: '36px',
+                    height: '32px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: railMode ? 'center' : 'flex-start',
-                    padding: railMode ? '0' : '0 12px',
+                    padding: railMode ? '0' : '0 10px',
                     borderRadius: '8px',
                     fontSize: '13px',
                     fontWeight: active ? 650 : 500,
@@ -754,7 +754,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     cursor: 'pointer',
                     textAlign: 'left',
                     width: '100%',
-                    gap: '12px',
+                    gap: '10px',
                     transition: 'all 0.15s ease',
                   }}
                 >
@@ -766,7 +766,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
             {/* 2. PROYEK — status filters with real counts */}
             {(!railMode) && (
-              <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '12px 12px 3px 12px' }}>
+              <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '10px 10px 2px 10px' }}>
                 {t('nav.proyek')}
               </div>
             )}
@@ -792,11 +792,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   onMouseLeave={handleMouseLeaveItem}
                   aria-label={sub.label}
                   style={{
-                    height: '36px',
+                    height: '32px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: railMode ? 'center' : 'space-between',
-                    padding: railMode ? '0' : '0 12px',
+                    padding: railMode ? '0' : '0 10px',
                     borderRadius: '8px',
                     fontSize: '13px',
                     fontWeight: isSubActive ? 650 : 500,
@@ -809,7 +809,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     transition: 'all 0.15s ease',
                   }}
                 >
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <SubIcon size={17} color={isSubActive ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)'} />
                     {(!railMode) && <span>{sub.label}</span>}
                   </span>
@@ -824,7 +824,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
             {/* 3. VOLUME & QTO */}
             {(!railMode) && (
-              <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '12px 12px 3px 12px' }}>
+              <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '10px 10px 2px 10px' }}>
                 {t('nav.group_volume_qto')}
               </div>
             )}
@@ -841,11 +841,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   onMouseLeave={handleMouseLeaveItem}
                   aria-label={sub.label}
                   style={{
-                    height: '36px',
+                    height: '32px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: railMode ? 'center' : 'flex-start',
-                    padding: railMode ? '0' : '0 12px',
+                    padding: railMode ? '0' : '0 10px',
                     borderRadius: '8px',
                     fontSize: '13px',
                     fontWeight: isSubActive ? 650 : 500,
@@ -855,7 +855,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     cursor: 'pointer',
                     textAlign: 'left',
                     width: '100%',
-                    gap: '12px',
+                    gap: '10px',
                     transition: 'all 0.15s ease',
                   }}
                 >
@@ -867,7 +867,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
             {/* 3b. JADWAL & MANAJEMEN */}
             {(!railMode) && (
-              <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '12px 12px 3px 12px' }}>
+              <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '10px 10px 2px 10px' }}>
                 {t('nav.group_jadwal')}
               </div>
             )}
@@ -878,11 +878,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
               onMouseLeave={handleMouseLeaveItem}
               aria-label={t('nav.jadwal_manajemen')}
               style={{
-                height: '36px',
+                height: '32px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: railMode ? 'center' : 'flex-start',
-                padding: railMode ? '0' : '0 12px',
+                padding: railMode ? '0' : '0 10px',
                 borderRadius: '8px',
                 fontSize: '13px',
                 fontWeight: activeMenu === 'manajemen-proyek' ? 650 : 500,
@@ -892,7 +892,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 cursor: 'pointer',
                 textAlign: 'left',
                 width: '100%',
-                gap: '12px',
+                gap: '10px',
                 transition: 'all 0.15s ease',
               }}
             >
@@ -902,7 +902,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
             {/* 4. RAB & ESTIMASI */}
             {(!railMode) && (
-              <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '12px 12px 3px 12px' }}>
+              <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '10px 10px 2px 10px' }}>
                 {t('nav.group_rab')}
               </div>
             )}
@@ -910,11 +910,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <div
                 data-tour="menu-rab"
                 style={{
-                  height: '36px',
+                  height: '32px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: railMode ? 'center' : 'space-between',
-                  padding: railMode ? '0' : '0 12px',
+                  padding: railMode ? '0' : '0 10px',
                   borderRadius: '8px',
                   fontSize: '13px',
                   fontWeight: isRabActive ? 650 : 500,
@@ -930,7 +930,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               >
                 <div
                   onClick={() => onSelectMenu('rab-spreadsheet')}
-                  style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, height: '100%' }}
+                  style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, height: '100%' }}
                 >
                   <Coins size={17} color={isRabActive ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)'} />
                   {(!railMode) && <span>{t('nav.rab_estimasi')}</span>}
@@ -1018,13 +1018,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
               return (
                 <React.Fragment key={item.id}>
                   {item.id === 'ezrab-ai' && (!railMode) && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '10px', fontWeight: 800, color: 'var(--ez-ai-text)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '12px 12px 3px 12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '10px', fontWeight: 800, color: 'var(--ez-ai-text)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '10px 10px 2px 10px' }}>
                       <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--ez-ai-chip)', flexShrink: 0 }} />
                       {t('nav.group_ai')}
                     </div>
                   )}
                   {item.id === 'template-rab' && (!railMode) && (
-                    <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '12px 12px 3px 12px' }}>
+                    <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '10px 10px 2px 10px' }}>
                       {t('nav.group_data')}
                     </div>
                   )}
@@ -1037,11 +1037,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   onMouseLeave={handleMouseLeaveItem}
                   aria-label={item.label}
                   style={{
-                    height: '36px',
+                    height: '32px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: railMode ? 'center' : 'space-between',
-                    padding: railMode ? '0' : '0 12px',
+                    padding: railMode ? '0' : '0 10px',
                     borderRadius: isAi ? '10px' : '8px',
                     fontSize: '13px',
                     fontWeight: isAi ? (active ? 700 : 600) : active ? 650 : 500,
@@ -1058,11 +1058,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     cursor: 'pointer',
                     textAlign: 'left',
                     width: '100%',
-                    gap: '12px',
+                    gap: '10px',
                     transition: 'all 0.15s ease',
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     {isAi ? (
                       <span style={{ width: '24px', height: '24px', borderRadius: '8px', background: 'var(--ez-ai-chip)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 2px 6px rgba(2, 132, 199, 0.35)' }}>
                         <IconComp size={14} color="#FFFFFF" />
@@ -1108,11 +1108,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     <div
                       data-tour="menu-database"
                       style={{
-                        height: '36px',
+                        height: '32px',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: railMode ? 'center' : 'space-between',
-                        padding: railMode ? '0' : '0 12px',
+                        padding: railMode ? '0' : '0 10px',
                         borderRadius: '8px',
                         fontSize: '13px',
                         fontWeight: isDatabaseActive ? 650 : 500,
@@ -1135,7 +1135,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         onClick={() => {
                           onSelectMenu('database-material');
                         }}
-                        style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, height: '100%' }}
+                        style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, height: '100%' }}
                       >
                         <Database size={17} color={isDatabaseActive ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)'} />
                         {(!railMode) && <span>{t('nav.database')}</span>}
@@ -1177,7 +1177,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           display: 'flex',
                           flexDirection: 'column',
                           gap: '2px',
-                          paddingLeft: '32px',
+                          paddingLeft: '22px',
                           paddingRight: '6px',
                           marginTop: '2px',
                           marginBottom: '4px',
@@ -1230,7 +1230,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
             {/* SYSTEM: Pengaturan */}
             {(!railMode) && (
-              <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '6px 12px 3px 12px' }}>
+              <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '6px 10px 3px 10px' }}>
                 {t('nav.group_lainnya')}
               </div>
             )}
@@ -1241,11 +1241,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
               onMouseLeave={handleMouseLeaveItem}
               aria-label={t('nav.pengaturan')}
               style={{
-                height: '36px',
+                height: '32px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: railMode ? 'center' : 'flex-start',
-                padding: railMode ? '0' : '0 12px',
+                padding: railMode ? '0' : '0 10px',
                 borderRadius: '8px',
                 fontSize: '13px',
                 fontWeight: activeMenu === 'pengaturan' || activeMenu === 'subscription' ? 650 : 500,
@@ -1260,7 +1260,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 cursor: 'pointer',
                 textAlign: 'left',
                 width: '100%',
-                gap: '12px',
+                gap: '10px',
                 transition: 'all 0.15s ease',
               }}
             >
@@ -1284,11 +1284,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
               onMouseLeave={handleMouseLeaveItem}
               aria-label={t('nav.tutorial_ezrab')}
               style={{
-                height: '36px',
+                height: '32px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: railMode ? 'center' : 'flex-start',
-                padding: railMode ? '0' : '0 12px',
+                padding: railMode ? '0' : '0 10px',
                 borderRadius: '8px',
                 fontSize: '13px',
                 fontWeight: 500,
@@ -1298,7 +1298,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 cursor: 'pointer',
                 textAlign: 'left',
                 width: '100%',
-                gap: '12px',
+                gap: '10px',
                 transition: 'all 0.15s ease',
               }}
             >
@@ -1318,7 +1318,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
            ========================================================================= */}
         <div
           style={{
-            padding: railMode ? '12px 8px' : '12px 12px',
+            padding: railMode ? '12px 8px' : '10px 12px',
             borderTop: '1px solid var(--ez-color-sidebar-border)',
             display: 'flex',
             flexDirection: 'column',
@@ -1365,16 +1365,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '10px',
-                padding: '8px 10px',
+                gap: '8px',
+                padding: '6px 8px',
                 borderRadius: '12px',
                 ...planStyle.box,
               }}
             >
               <div
                 style={{
-                  width: '32px',
-                  height: '32px',
+                  width: '28px',
+                  height: '28px',
                   borderRadius: '50%',
                   display: 'flex',
                   alignItems: 'center',
@@ -1431,7 +1431,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             aria-label={t('nav.back_landing')}
             style={{
               width: '100%',
-              height: '36px',
+              height: '32px',
               borderRadius: '8px',
               background: 'transparent',
               border: 'none',
@@ -1441,8 +1441,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
               display: 'flex',
               alignItems: 'center',
               justifyContent: railMode ? 'center' : 'flex-start',
-              padding: railMode ? '0' : '0 12px',
-              gap: '12px',
+              padding: railMode ? '0' : '0 10px',
+              gap: '10px',
               cursor: 'pointer',
               transition: 'all 0.15s ease',
             }}
@@ -1470,10 +1470,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
           aria-pressed={railMode}
           style={{
             position: 'fixed',
-            // 8px clear of the sidebar edge so the capsule never crowds
+            // Capsule straddles the sidebar edge (left = sidebar width
+            // − 4px: 192px expanded / 68px rail) so it never crowds
             // group-header text or item rows; bottom-anchored in the
             // sidebar's neutral empty band instead of vertical center.
-            left: railMode ? '68px' : '252px',
+            left: railMode ? '68px' : '192px',
             top: 'auto',
             bottom: '32px',
             transform: 'none',

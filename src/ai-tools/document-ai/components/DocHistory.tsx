@@ -37,7 +37,6 @@ export const DocHistory: React.FC<{
     <div className="docai-tab">
       <div className="docai-pagehead">
         <div>
-          <div className="docai-crumb">{t('ai.doc.create.crumb')}</div>
           <h2>{t('ai.doc.hist.h2')}</h2>
           <p>{t('ai.doc.hist.sub')}</p>
         </div>
