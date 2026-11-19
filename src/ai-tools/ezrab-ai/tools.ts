@@ -11,6 +11,7 @@ import { priceResolver2026 } from '../../data/priceDatabase2026/resolver';
 import { ahspChatPriceSuffix } from './ahspChatPrice';
 import { searchChatAhsp, formatChatAhspResult } from './chatSearch';
 import { searchWithOutcome, formatKnowledgeContext } from './constructionRetrieval';
+import { searchProductWithOutcome, formatProductContext } from './productRetrieval';
 import { toolCalculateQto, toolSearchAvailableCalculators } from './constructionTools';
 import { masterBuildingTemplateRegistry } from '../../data/buildingTemplates/masterTemplateRegistry';
 import { ProjectSnapshot, formatIDR, snapshotAllItems } from './projectContext';
@@ -265,6 +266,24 @@ export const EZRAB_AI_TOOLS: EzrabAiToolDef[] = [
         return formatKnowledgeContext(out.hits);
       } catch (e: any) {
         return 'ERROR: gagal mencari pengetahuan konstruksi: ' + (e?.message ?? e);
+      }
+    },
+  },
+  {
+    name: 'cari_fitur_ezrab',
+    description: 'Mencari pengetahuan PRODUK EZRAB di knowledge base internal (fitur aplikasi: Chat AI, RAB, DED, AI Document, Kalkulator Volume, Keuangan, Kurva S, Laporan, Database, peran, tema, billing — apa yang bisa/tidak bisa dari chat, menu terkait, batas jujur). Argumen: kata_kunci (wajib), maks (opsional, default 5). Setiap hasil membawa sitasi + status verifikasi dari kode. Bila tidak ada yang cocok, tool menyatakan topik di luar cakupan KB produk secara eksplisit — JANGAN mengarang fitur pengganti. Untuk pengetahuan KONSTRUKSI UMUM (fungsi bangunan, disiplin pekerjaan) gunakan cari_pengetahuan_konstruksi, bukan tool ini.',
+    invoke: (args) => {
+      const q = String(args.kata_kunci ?? args.query ?? '').trim();
+      if (!q) return 'ERROR: kata_kunci wajib diisi.';
+      const max = Math.min(10, Math.max(1, Number(args.maks ?? args.maxResults ?? 5) || 5));
+      try {
+        const out = searchProductWithOutcome(q, { maxResults: max });
+        if (out.hits.length === 0) {
+          return `Tidak ada pengetahuan produk EZRAB yang cocok untuk "${q}". ${out.negativeReason ?? ''} Jangan mengarang fitur pengganti — katakan topik ini di luar cakupan knowledge base produk terdaftar.`;
+        }
+        return formatProductContext(out.hits);
+      } catch (e: any) {
+        return 'ERROR: gagal mencari pengetahuan produk EZRAB: ' + (e?.message ?? e);
       }
     },
   },

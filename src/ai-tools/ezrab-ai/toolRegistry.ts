@@ -577,6 +577,10 @@ const CHAT_TOOL_SCHEMAS: Record<string, { permission: ToolPermission; requiresPr
     permission: 'read-only', requiresProject: false,
     schema: { fields: [S('kata_kunci', 'string', true, { aliases: ['query'] }), S('maks', 'number', false, { aliases: ['maxResults'], min: 1, max: 10 })] },
   },
+  cari_fitur_ezrab: {
+    permission: 'read-only', requiresProject: false,
+    schema: { fields: [S('kata_kunci', 'string', true, { aliases: ['query'] }), S('maks', 'number', false, { aliases: ['maxResults'], min: 1, max: 10 })] },
+  },
   hitung_qto: {
     permission: 'read-only', requiresProject: false,
     schema: { fields: [S('kalkulator', 'string', true, { aliases: ['calculatorId'] }), S('parameter', 'object', true, { aliases: ['inputs', 'params'] }), S('satuan_hasil', 'string', false, { aliases: ['expectedUnit'] })] },

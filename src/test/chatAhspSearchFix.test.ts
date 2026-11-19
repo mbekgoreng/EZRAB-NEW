@@ -129,10 +129,11 @@ function assert(cond: boolean, name: string): void {
   assert(EZRAB_AI_SYSTEM_PROMPT.includes('2×(5+10) = 30 m'), '13: prompt memuat contoh keliling bouwplank 5×10');
   assert(EZRAB_AI_SYSTEM_PROMPT.includes('JANGAN menanyakan ulang bentuk/tata letak'), '13: prompt melarang tanya balik bentuk yang tersirat');
 }
-// 14. Versi prompt naik (2.3.0 = aturan 29 daftar kemampuan resmi,
-// 2026-11-17)
+// 14. Versi prompt naik (2.5.0 = aturan 31 cari_fitur_ezrab, perintah
+// owner 2026-11-19; 2.4.0 = aturan 29(d) + aturan 30 Kurva S; 2.3.0 =
+// aturan 29, 2026-11-17)
 {
-  assert(EZRAB_AI_PROMPT_VERSION === '2.3.0', '14: EZRAB_AI_PROMPT_VERSION = 2.3.0');
+  assert(EZRAB_AI_PROMPT_VERSION === '2.5.0', '14: EZRAB_AI_PROMPT_VERSION = 2.5.0');
 }
 
 console.log(`chatAhspSearchFix: ${passed} passed, ${failed} failed`);

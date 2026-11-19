@@ -3359,7 +3359,7 @@ export function executeIntent(
       return {
         ok: true,
         message:
-          'Saya Ezrab Chat AI — asisten estimasi konstruksi yang menjawab dari data EZRAB sendiri, bukan karangan model. Ini yang bisa saya bantu:\n\n' +
+          'Saya Ezrab Chat AI — asisten estimasi konstruksi di dalam EZRAB, satu platform lengkap untuk RAB, DED, dokumen, volume, keuangan, dan jadwal. Saya menjawab dari data EZRAB sendiri, bukan karangan model. Ini yang bisa saya bantu:\n\n' +
           'MEMBUAT RAB\n' +
           '• Wizard RAB rumah — 5 langkah, RAB terbentuk dari tipe & ukuran rumah\n' +
           '• Desain Rumah AI — dari deskripsi teks menjadi spesifikasi & daftar pekerjaan\n' +
@@ -3373,6 +3373,14 @@ export function executeIntent(
           '• Ekspor Excel/PDF, buat revisi, cek & top-up kredit (simulasi), atur overhead/profit/PPN proyek\n' +
           '• Transfer draft ke spreadsheet, override harga material untuk satu proyek, dan ganti paket (simulasi)\n' +
           '• Ketik / untuk melihat semua perintah\n\n' +
+          'FITUR LENGKAP EZRAB\n' +
+          '• AI Document — susun dokumen proyek dengan AI, dari template atau instruksi\n' +
+          '• Kalkulator Volume — hitung volume tiap jenis pekerjaan\n' +
+          '• Keuangan Proyek — termin, invoice, pemasukan, pengeluaran, dan cash flow\n' +
+          '• Kurva S & Jadwal — pantau progres fisik dan jadwal pelaksanaan\n' +
+          '• Laporan & Dokumen Tender — rekapitulasi, BOQ, dan dokumen proyek\n' +
+          '• Peran pengguna — admin, estimator, direksi, editor, dan klien\n' +
+          '• Tema tampilan — terang, gelap, atau mengikuti sistem\n\n' +
           'DATA & HITUNGAN YANG BISA DIPERCAYA\n' +
           ahspLine + '\n' +
           '• Database harga material, upah, dan peralatan 2026\n' +
@@ -3385,6 +3393,25 @@ export function executeIntent(
           { label: 'Desain rumah dengan AI', action: { kind: 'intent', intent: 'START_HOUSE_DESIGN' } },
           { label: 'Estimasi dari DED', action: { kind: 'navigate', menu: 'ded-ai' } },
           { label: 'Lihat template RAB', action: { kind: 'navigate', menu: 'template-rab' } },
+        ],
+      };
+    }
+
+    case 'KURVA_S': {
+      // Jawaban produk deterministik (koreksi owner 2026-11-19): LLM
+      // pernah menjawab "tidak ada tool penjadwalan/kurva S di EZRAB" —
+      // SALAH. Fitur Kurva S & Jadwal ADA (engine kurvaSEngine.ts +
+      // EstimatorKurvaSView, menu rab-kurva-s). Chat tidak bisa
+      // membuat/mengubah jadwal — arahkan ke menu, jangan tawarkan
+      // hitungan manual sebagai pengganti fitur.
+      return {
+        ok: true,
+        message:
+          'EZRAB punya fitur Kurva S & Jadwal — kurvanya dihitung engine dari RAB proyek dan jadwalnya (tanggal mulai proyek + tugas/durasi). Kalau datanya belum lengkap, tampilannya menyebut field apa yang kurang.\n\n' +
+          'Yang belum bisa dari chat: saya tidak bisa membuat atau mengubah jadwal dari chat, jadi saya tidak bisa membuatkan kurva S dari sini. Buka menu Kurva S & Jadwal di proyeknya untuk melihat kurva S; pastikan RAB dan jadwal proyek sudah diisi.\n\n' +
+          'Lihat kurva S proyek aktif:',
+        actions: [
+          { label: 'Lihat Kurva S & Jadwal', action: { kind: 'navigate', menu: 'rab-kurva-s' } },
         ],
       };
     }

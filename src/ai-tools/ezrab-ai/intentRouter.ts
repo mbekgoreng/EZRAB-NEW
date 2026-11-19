@@ -56,6 +56,7 @@ export type ChatIntent =
   | 'RAB_NEEDS_REFINE'
   | 'OPEN_DESIGN_WORKSPACE'
   | 'CAPABILITIES'
+  | 'KURVA_S'
   | 'CALCULATE'
   | 'RAB_DATA_CHECKLIST'
   | 'CLARIFY_TOPIC'
@@ -264,6 +265,16 @@ const PATTERNS: Pattern[] = [
   { intent: 'CAPABILITIES', re: /\b(apa|sebutkan|jelaskan|tampilkan)\b.*\b(fitur|kemampuan|keunggulan|kelebihan)\b.*\b(kamu|ezrab|aplikasi ini)\b/ },
   { intent: 'CAPABILITIES', re: /\b(fitur|kemampuan|keunggulan|kelebihan)\b.*\b(ezrab|kamu)\b/ },
   { intent: 'CAPABILITIES', re: /\bezrab\b.*\b(bisa|fitur|keunggulan|kelebihan)\b/ },
+
+  // "apakah kamu bisa membuat kurva s?" -> jawaban produk deterministik
+  // (koreksi owner 2026-11-19): fitur Kurva S & Jadwal ADA di EZRAB
+  // (engine + tampilan), LLM pernah mengklaim tidak ada. Pola
+  // mensyaratkan kata kerja kemampuan/pembuatan/navigasi agar pertanyaan
+  // teori ("apa itu kurva s?") tetap lolos ke LLM. "curva" adalah ejaan
+  // yang umum dipakai pengguna.
+  { intent: 'KURVA_S', re: /\b(bisa|dapat|mampu|buat|bikin|membuat|membikin|buatkan|bikinkan|tampilkan|tampil|lihat|buka|bukain)\b.*\b(kurva|curva)\s*s\b/i },
+  { intent: 'KURVA_S', re: /\b(kurva|curva)\s*s\b.*\b(bisa|dibuat|dibikin|dibangun)\b/i },
+  { intent: 'KURVA_S', re: /^\s*(kurva|curva)\s*s\s*\??\s*$/i },
 
   // Navigation — require explicit navigation verbs to avoid aggressive matching
   // (includes informal variants: bukain, tampilin, liatin)

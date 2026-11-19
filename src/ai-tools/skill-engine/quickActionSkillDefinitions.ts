@@ -53,7 +53,8 @@ export const QUICK_ACTION_SKILL_IDS: Record<string, string> = {
 
 /**
  * Pemetaan toolName kontrak -> tool live. Setiap entri DIVERIFIKASI terhadap
- * registry live (38 tool: 24 tools.ts + 10 native + 4 unavailable).
+ * registry live (39 tool: 25 tools.ts + 10 native + 4 unavailable;
+ * 25 = 24 + cari_fitur_ezrab, 2026-11-19).
  * Izin tool live yang dipakai di sini semuanya 'read-only' (diverifikasi
  * terhadap CHAT_TOOL_SCHEMAS + NATIVE_TOOL_DEFINITIONS).
  */

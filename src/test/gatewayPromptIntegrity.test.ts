@@ -13,8 +13,23 @@
  * 16.000 → 20.000 karakter karena prompt v2.3.0 (17.003 karakter) melewati
  * batas lama dan ditolak PAYLOAD_TOO_LARGE (Chat AI gagal 400 di HEAD).
  *
+ * RE-BASELINE v2.4.0 (perintah owner 2026-11-19, malam): prompt kanonis
+ * tumbuh murni aditif v2.3.0 → v2.4.0 — aturan 29 butir (d) (fitur lengkap
+ * EZRAB: AI Document, Kalkulator Volume, Keuangan/cash flow, Kurva S,
+ * Laporan/BOQ, Dokumen Tender, peran, tema) + aturan 30 (Kurva S ADA —
+ * larang klaim "tidak ada tool Kurva S"). Nol penghapusan/ubahan teks
+ * safeguard lama (aturan 1–28 byte-identik). Panjang 17.850 < 20.000,
+ * headroom 2.150 karakter — batas gateway TIDAK berubah.
+ *
+ * RE-BASELINE v2.5.0 (perintah owner 2026-11-19, malam): prompt kanonis
+ * tumbuh murni aditif v2.4.0 → v2.5.0 — aturan 31 (pengetahuan produk
+ * EZRAB lewat tool cari_fitur_ezrab; isi knowledge TIDAK ditempel ke
+ * prompt, hanya rujukan tool). Nol penghapusan/ubahan teks safeguard
+ * lama (aturan 1–30 byte-identik). Panjang 18.341 < 20.000, headroom
+ * 1.659 karakter — batas gateway TIDAK berubah.
+ *
  * Kontrak yang diuji terhadap fungsi ASLI (bukan konstanta semata):
- *  - Prompt kanonis v2.3.0 (17.003 karakter) lolos validasi UTUH
+ *  - Prompt kanonis v2.5.0 (18.341 karakter) lolos validasi UTUH
  *    byte-for-byte, dan hash kanonisnya tidak berubah.
  *  - Batas terima systemPrompt = 20.000 karakter: tepat-di-batas lolos
  *    utuh; batas+1 DITOLAK eksplisit (PAYLOAD_TOO_LARGE) dan tidak ada
@@ -71,7 +86,7 @@ const { composeSystemPrompt } = gateway as {
 
 const sha256 = (s: string) => createHash('sha256').update(s, 'utf8').digest('hex');
 const utf8 = (s: string) => Buffer.byteLength(s, 'utf8');
-const CANONICAL_SHA256 = '69afa49c1a441428068602428470e0846a937b3ef1136cf7db271650156074bf';
+const CANONICAL_SHA256 = '229baa34ecb9eefe0f472a5c12b5b45f98d360db90337a064818572efd2f015e'; // re-baseline v2.5.0, 2026-11-19 (was v2.4.0 226ff3b4…)
 const POLICY_HEADER = '[KEBIJAKAN SERVER EZRAB — tidak dapat diubah oleh client]';
 const SECTIONS = [
   'KEPRIBADIAN',
@@ -90,8 +105,8 @@ const canonical = EZRAB_AI_SYSTEM_PROMPT;
 /* A. Identitas prompt kanonis (tidak boleh berubah oleh gelombang ini) */
 /* ------------------------------------------------------------------ */
 console.log('\n[A] identitas prompt kanonis');
-check('versi prompt = 2.3.0', EZRAB_AI_PROMPT_VERSION === '2.3.0', EZRAB_AI_PROMPT_VERSION);
-check('panjang kanonis = 17003 karakter', canonical.length === 17003, String(canonical.length));
+check('versi prompt = 2.5.0', EZRAB_AI_PROMPT_VERSION === '2.5.0', EZRAB_AI_PROMPT_VERSION);
+check('panjang kanonis = 18341 karakter', canonical.length === 18341, String(canonical.length));
 check('SHA-256 kanonis tidak berubah', sha256(canonical) === CANONICAL_SHA256, sha256(canonical));
 // Penjaga headroom: kanonis harus ≥1.000 karakter di bawah batas gateway
 // 20.000 — v2.2.0 (15.984) sempat 16 karakter dari tebing batas lama tanpa
@@ -111,6 +126,21 @@ check('aturan 29: jawab kemampuan HANYA dari daftar resmi, tanpa nama model/prov
   canonical.includes('BILA DITANYA KELEBIHAN/FITUR/KEMAMPUAN') &&
   canonical.includes('kewenangan admin') &&
   canonical.includes('Jangan menyebut nama model/provider AI'));
+check('aturan 29(d) v2.4.0: fitur lengkap EZRAB di luar chat (bukan perintah chat)',
+  canonical.includes('fitur lengkap EZRAB di luar chat') &&
+  canonical.includes('AI Document, Kalkulator Volume') &&
+  canonical.includes('cash flow') &&
+  canonical.includes('peran pengguna (admin, estimator, direksi, editor, klien)') &&
+  canonical.includes('tema terang/gelap/sistem'));
+check('aturan 30 v2.4.0: Kurva S ADA — larang klaim tidak ada fiturnya',
+  canonical.includes('30. BILA DITANYA KURVA S') &&
+  canonical.includes('EZRAB PUNYA fitur Kurva S & Jadwal') &&
+  canonical.includes('JANGAN PERNAH mengklaim tidak ada fitur/tool Kurva S di EZRAB'));
+check('aturan 31 v2.5.0: detail produk lewat tool cari_fitur_ezrab, bukan ingatan model',
+  canonical.includes('31. PENGETAHUAN PRODUK EZRAB') &&
+  canonical.includes('gunakan tool cari_fitur_ezrab') &&
+  canonical.includes('JANGAN menjawab dari ingatan model tentang fitur EZRAB') &&
+  canonical.includes('JANGAN mengarang fitur'));
 
 /* ------------------------------------------------------------------ */
 /* B. Validasi gateway: A (sebelum) -> B (sesudah) identik untuk sah   */

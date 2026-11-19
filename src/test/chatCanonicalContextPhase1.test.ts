@@ -32,7 +32,7 @@ import { aiToolsProviderClient, type AiToolsResult } from '../ai-tools/providerC
 import type { UniversalIntakeContext } from '../ai-tools/ezrab-ai/universalIntake';
 import type { StructuredSpec } from '../ai-tools/ezrab-ai/structuredSpec';
 
-const CANONICAL_SHA256 = '69afa49c1a441428068602428470e0846a937b3ef1136cf7db271650156074bf'; // re-baseline v2.3.0, FASE 1 Prompt Integrity 2026-11-19 (was v2.0.0 cff0fb36…)
+const CANONICAL_SHA256 = '229baa34ecb9eefe0f472a5c12b5b45f98d360db90337a064818572efd2f015e'; // re-baseline v2.5.0, 2026-11-19 (was v2.4.0 226ff3b4…)
 const sha256 = (s: string) => createHash('sha256').update(s, 'utf8').digest('hex');
 
 /* ------------------------------------------------------------------ */
@@ -440,8 +440,8 @@ describe('P1-09 regresi: 8 seksi kanonis tetap hadir (Wave D)', () => {
     { id: 'I05', messages: [{ role: 'user', content: 'Jelaskan perbedaan subtotal langsung dan total akhir' }], projectId: 'P-I01', name: 'Proyek I01' },
   ];
 
-  it('system prompt kanonis v2.3.0 tidak berubah (hash + 8 seksi sistem)', () => {
-    expect(EZRAB_AI_PROMPT_VERSION).toBe('2.3.0');
+  it('system prompt kanonis v2.5.0 tidak berubah (hash + 8 seksi sistem)', () => {
+    expect(EZRAB_AI_PROMPT_VERSION).toBe('2.5.0');
     expect(sha256(EZRAB_AI_SYSTEM_PROMPT)).toBe(CANONICAL_SHA256);
     for (const s of ['KEPRIBADIAN', 'BAHASA JAWABAN', 'BATASAN PENTING', 'GROUNDING DATA PROYEK', 'KEJUJURAN SUMBER & KEAMANAN DATA', 'PEMAHAMAN DOMAIN KONSTRUKSI UNIVERSAL', 'ALUR PERCAKAPAN', 'FORMAT JAWABAN']) {
       expect(EZRAB_AI_SYSTEM_PROMPT).toContain(s);
