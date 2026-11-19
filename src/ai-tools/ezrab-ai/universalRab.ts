@@ -1674,9 +1674,14 @@ export function gateProjectIdFor(scope: ScopeGroup, rawText: string): string | n
 /* cakupan atap per gedung dinilai per gedung oleh                       */
 /* computeMultiBuildingRoofSuppression (GELOMBANG 2 §17.3) dengan      */
 /* aturan agregasi yang sama — ditekan hanya bila SETIAP gedung yang   */
-/* mendapat part tercakup atap — ditambah pemeriksaan LEVEL-AWARE      */
-/* (komponen atap dihitung hanya bila benar-benar ter-generate di      */
-/* PROFESSIONAL; lihat templateDeclaresRoof).                          */
+/* mendapat part tercakup atap. KEDUA jalur memakai pemeriksaan        */
+/* LEVEL-AWARE (komponen atap dihitung hanya bila benar-benar          */
+/* ter-generate di PROFESSIONAL; lihat templateDeclaresRoof) — jalur   */
+/* single-building menyusul di C1 (Gelombang 2): sebelumnya ia         */
+/* menghitung komponen COMPREHENSIVE-opsional sebagai cakupan          */
+/* sehingga part atap mandiri ditekan padahal TIDAK SATU PUN item      */
+/* atap muncul di draft (mis. gedung kantor — BLD-OFFICE-MULTI hanya   */
+/* mendeklarasikan atap lewat waterproofing dak opsional).             */
 /* ------------------------------------------------------------------ */
 
 /** Apakah template ini mendeklarasikan komponen PEMBANGUNAN atap?
@@ -1688,8 +1693,11 @@ export function gateProjectIdFor(scope: ScopeGroup, rawText: string): string | n
  * di-generate di PROFESSIONAL tanpa pilihan opsional — komponen
  * COMPREHENSIVE-opsional (mis. waterproofing dak atap pada
  * BLD-OFFICE-MULTI) tidak pernah muncul di draft dan TIDAK BOLEH
- * dihitung sebagai cakupan atap. Default false = perilaku Gate 5
- * (jalur single-building TIDAK BERUBAH).
+ * dihitung sebagai cakupan atap. Default false = mode semua-level
+ * (diagnostik; dipin G2B-1.09) — KEDUA jalur Gate 5
+ * (computeNoSpecRoofSuppression single-building sejak C1, dan
+ * computeMultiBuildingRoofSuppression multi-gedung sejak §17.3)
+ * memakai `true`.
  */
 export function templateDeclaresRoof(
   template: RabTemplate,
@@ -1758,6 +1766,13 @@ const NO_ROOF_SUPPRESSION: NoSpecRoofSuppression = {
  * SAMA dengan buildDraftPart (forcedTemplateId diutamakan, lalu
  * pickTemplateForScope) agar keputusan pra-pemeriksaan dan part yang
  * benar-benar dibangun tidak pernah bercerita berbeda.
+ *
+ * C1 (Gelombang 2) — LEVEL-AWARE, sama dengan jalur multi-gedung:
+ * cakupan dinilai dengan templateDeclaresRoof(template, true) —
+ * hanya komponen atap yang BENAR-BENAR ter-generate di PROFESSIONAL
+ * yang dihitung. Sebelumnya (false) komponen COMPREHENSIVE-opsional
+ * ikut dihitung, sehingga mis. gedung kantor menekan part atap
+ * mandiri padahal tidak satu pun item atap muncul di draft.
  */
 export function computeNoSpecRoofSuppression(
   spec: UniversalSpec,
@@ -1775,7 +1790,10 @@ export function computeNoSpecRoofSuppression(
     }
     if (!template) template = pickTemplateForScope(spec, scope).pick?.template ?? null;
     if (!template) continue;
-    const roof = templateDeclaresRoof(template);
+    // C1: level-aware — hanya komponen atap yang benar-benar
+    // ter-generate di PROFESSIONAL yang dihitung sebagai cakupan
+    // (sama dengan computeMultiBuildingRoofSuppression).
+    const roof = templateDeclaresRoof(template, true);
     if (roof.covered && roof.componentName) {
       covering = { template, component: roof.componentName };
       break;

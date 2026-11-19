@@ -26,6 +26,15 @@ export type DokumenAiChatRequest = {
   transform?: string;
   /** Mode TRANSLATE: kode bahasa target (TranslateLanguageCode). */
   targetLanguage?: string;
+  /**
+   * Mode DRAFT — tanpa batas pemrosesan (2026-11-19): menentukan strategi
+   * paginasi bila dokumen referensi tidak muat satu panggilan.
+   * - 'create' (default): buat draf BARU dari instruksi + ringkasan
+   *   seluruh dokumen referensi (summarize-then-draft).
+   * - 'revise': revisi dokumen yang ADA — tiap potongan direvisi lalu
+   *   digabung kembali (bukan diringkas; isi penuh dipertahankan).
+   */
+  draftMode?: 'create' | 'revise';
 };
 
 /**

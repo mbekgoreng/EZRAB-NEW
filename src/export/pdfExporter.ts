@@ -15,6 +15,11 @@ import { UnifiedProjectEngine } from '../engine/unifiedProjectEngine';
 import { loadVersioned } from '../engine/storage/hardenedStorage';
 import { extractConversionTrail } from './conversionTrail';
 import { isExportPriceValid, exportItemAmount, summarizeExportSections } from './priceIntegrity';
+// D1 (2026-11-19): baris lama masih menyimpan awalan "[Chat AI] " di
+// deskripsinya; spreadsheet sudah menampilkannya bersih via helper ini
+// (stripChatAiPrefix) — ekspor memakai helper yang sama di titik baca,
+// tanpa mengubah data tersimpan.
+import { stripChatAiPrefix } from '../ai-tools/ezrab-ai/workItemTitle';
 
 /**
  * Bangun anotasi sumber harga untuk sel deskripsi item di PDF.
@@ -637,7 +642,7 @@ export async function exportProjectToPDF(
       detailRows.push([
         globalItemIndex.toString(),
         item.code || '-',
-        item.description + (item.specification ? `\nSpesifikasi: ${item.specification}` : '') +
+        stripChatAiPrefix(item.description) + (item.specification ? `\nSpesifikasi: ${item.specification}` : '') +
           buildPdfSourceAnnotations(item as any),
         item.unit || 'ls',
         item.volume.toLocaleString('id-ID', { maximumFractionDigits: 2 }),

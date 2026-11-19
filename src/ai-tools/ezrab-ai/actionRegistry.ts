@@ -81,6 +81,11 @@ import type { QuestionnaireAnswerRecord } from './universalIntake';
 import { RabTemplateService } from '../../services/rabTemplateService';
 import { listUnifiedTemplates } from '../../services/rabTemplateCatalogAdapter';
 import { officialAhspRepository } from '../../data/nationalCostDatabase/officialAhspRepository';
+import { RESOURCE_PRICE_RECORDS } from '../../data/priceDatabase2026/priceMaster.generated';
+import { priceResolver2026 } from '../../data/priceDatabase2026/resolver';
+import { CREDIT_PLAN_LABELS } from '../../ai-credits/featureGate';
+import { PLAN_CREDITS, FREE_INITIAL_CREDITS } from '../../ai-credits/config';
+import type { CreditPlan } from '../../ai-credits/types';
 import { searchChatAhsp, formatChatAhspResult, normalizeUnit } from './chatSearch';
 import {
   EXPLAIN_AHSP_VS_ESTIMATE_TEXT,
@@ -185,6 +190,59 @@ export interface ChatActionContext {
    *  refreshProjectTotals; patch HANYA berisi field yang disebut
    *  perintah — tidak pernah field lain). */
   updateProjectSettings?: (projectId: string, patch: ProjectSettingsPatch) => boolean;
+  /* --- Perintah deterministik Workstream B1 (2026-11-19, gap P2 + P6 +
+   * §K baris 42 audit perintah) — pola callback yang sama: disediakan
+   * view, registry fail-closed jujur tanpa callback. --- */
+  /** Memicu pratinjau transfer draft universal (view →
+   *  pushUniversalToSpreadsheetPreview — alur yang SAMA seperti tombol
+   *  Push, termasuk tombol Konfirmasi Transfer + pengikatan approval).
+   *  Mengembalikan true bila pratinjau ditampilkan, false bila tidak
+   *  ada draft aktif. Tanpa callback, TRANSFER_DRAFT dijawab jujur
+   *  "belum bisa". */
+  requestDraftTransferPreview?: () => boolean;
+  /** Menetapkan override harga per-proyek (view →
+   *  updateProjectPriceOverride milik aplikasi; mengembalikan true bila
+   *  override benar-benar ditulis untuk proyek itu). Dipanggil HANYA
+   *  dari SET_PROJECT_PRICE_CONFIRM (sesudah pratinjau + klik tombol
+   *  konfirmasi) — langkah 1 tidak pernah menulis. */
+  setProjectPriceOverride?: (projectId: string, input: ProjectPriceOverrideInput) => boolean;
+  /** Paket kredit aktif dari hook yang sudah ter-mount (untuk
+   *  CHANGE_PLAN — tanpa ini handler tidak bisa mendeteksi "sudah di
+   *  paket itu" dan fail-closed, karena setPlan mengatur ulang saldo
+   *  simulasi meski paketnya sama). */
+  creditPlan?: CreditPlan;
+  /** Mengganti paket simulasi (view → setPlan hook; no-op + ok:false di
+   *  luar mode simulasi — paket akun nyata tidak diganti dari chat). */
+  changeCreditPlan?: (plan: CreditPlan) => ChangePlanResult;
+}
+
+/** Input override harga per-proyek — diteruskan verbatim ke
+ *  updateProjectPriceOverride milik aplikasi (ProjectContext). */
+export interface ProjectPriceOverrideInput {
+  /** Kode resource master (tidak pernah kosong — record berkode kosong
+   *  ditolak resolver sebelum sampai ke sini). */
+  resourceCode: string;
+  /** Nama resource persis dari record master yang diresolusi. */
+  resourceName: string;
+  category: 'MATERIAL' | 'LABOR' | 'EQUIPMENT';
+  /** Satuan record master (harga proyek berlaku per satuan ini). */
+  unit: string;
+  /** Harga master pembanding (referensi delta — bukan harga berlaku). */
+  masterPrice: number;
+  /** Harga baru yang berlaku untuk satu proyek ini. */
+  projectPrice: number;
+}
+
+/** Hasil ganti paket yang dikembalikan callback view. */
+export interface ChangePlanResult {
+  /** true bila paket simulasi benar-benar berganti. */
+  ok: boolean;
+  /** Paket baru sesudah ganti (null bila gagal). */
+  plan: CreditPlan | null;
+  /** Saldo simulasi baru = jatah paket baru (null bila gagal). */
+  newBalance: number | null;
+  /** Alasan kegagalan yang jujur. */
+  reason?: string;
 }
 
 export interface ChatActionButton {
@@ -293,13 +351,54 @@ function fmtIDR(n: number): string {
 /* Chat-to-RAB (Fase 2): state ringkasan kebutuhan sesi ini.           */
 /* Wizard/studio TIDAK dibuka dari teks perintah — hanya dari klik    */
 /* tombol "Buka Workspace Desain & RAB" pada ringkasan (persetujuan).  */
+/*                                                                     */
+/* SCOPE PER-PROYEK (Workstream B1, 2026-11-19): lastRabNeeds adalah   */
+/* variabel module-level yang bertahan lintas proyek dalam satu sesi   */
+/* halaman — kebutuhan rumah proyek A diam-diam dipakai ulang bila     */
+/* pengguna pindah ke proyek B lalu mengetik "itu aja" / klik Full AI  */
+/* (finalisasi membangun draft dari kebutuhan proyek lama). Setiap     */
+/* penulisan kini mencatat proyek pemiliknya; setiap pembacaan         */
+/* perilaku (bukan getter diagnostik) melewati scopedLastRabNeeds:     */
+/* bila proyek pemilik ≠ proyek saat ini (keduanya non-null), state    */
+/* dianggap basi, DIBERSIHKAN SENDIRI, dan pembaca memperlakukannya    */
+/* sebagai "tidak ada sesi kebutuhan" — alur draft RAB yang sah (satu  */
+/* proyek yang sama dari ringkasan sampai finalisasi) tidak berubah.   */
+/* null di kedua sisi = tanpa proyek aktif — bukan ketidakcocokan.     */
 /* ------------------------------------------------------------------ */
 let lastRabNeeds: RabNeeds | null = null;
 let lastRabRaw = '';
+/** Proyek pemilik lastRabNeeds (null = ditangkap tanpa proyek aktif). */
+let lastRabNeedsProjectId: string | null = null;
 
-export function getLastRabDesignPrompt(): string | null {
+/** Tulis kebutuhan + scope proyeknya (null = hapus state + scope). */
+function setLastRabNeeds(needs: RabNeeds | null, projectId?: string | null): void {
+  lastRabNeeds = needs;
+  lastRabNeedsProjectId = needs ? (projectId ?? null) : null;
+  if (!needs) lastRabRaw = '';
+}
+
+/**
+ * Baca kebutuhan yang masih berlaku untuk proyek ini. Pemanggil lama
+ * tanpa scope (projectId undefined) mendapat perilaku lama (tanpa
+ * filter) — seluruh pemanggil produksi kini meneruskan scope.
+ */
+function scopedLastRabNeeds(projectId?: string | null): RabNeeds | null {
   if (!lastRabNeeds) return null;
-  return buildDesignPrompt(lastRabNeeds, lastRabRaw);
+  if (projectId === undefined) return lastRabNeeds;
+  const stored = lastRabNeedsProjectId;
+  if (stored !== null && projectId !== null && stored !== projectId) {
+    // Basi: kebutuhan milik proyek lain — bersihkan sendiri agar tidak
+    // dipakai ulang oleh jalur lain sesudahnya.
+    setLastRabNeeds(null);
+    return null;
+  }
+  return lastRabNeeds;
+}
+
+export function getLastRabDesignPrompt(projectId?: string | null): string | null {
+  const needs = scopedLastRabNeeds(projectId);
+  if (!needs) return null;
+  return buildDesignPrompt(needs, lastRabRaw);
 }
 
 /* ------------------------------------------------------------------ */
@@ -312,6 +411,28 @@ export function getLastRabDesignPrompt(): string | null {
 /* Full AI / Dari gambar DED.                                          */
 /* ------------------------------------------------------------------ */
 let pendingSubtypeNeeds: RabNeeds | null = null;
+/** Proyek pemilik pendingSubtypeNeeds — scope yang sama dengan
+ *  lastRabNeeds (pertanyaan subtipe proyek A tidak boleh dijawab
+ *  "hotmix" di proyek B lalu menabur kebutuhan basi ke lastRabNeeds). */
+let pendingSubtypeProjectId: string | null = null;
+
+function setPendingSubtypeNeeds(needs: RabNeeds | null, projectId?: string | null): void {
+  pendingSubtypeNeeds = needs;
+  pendingSubtypeProjectId = needs ? (projectId ?? null) : null;
+}
+
+/** Baca pertanyaan subtipe yang masih berlaku untuk proyek ini
+ *  (aturan ketidakcocokan yang sama dengan scopedLastRabNeeds). */
+function scopedPendingSubtypeNeeds(projectId?: string | null): RabNeeds | null {
+  if (!pendingSubtypeNeeds) return null;
+  if (projectId === undefined) return pendingSubtypeNeeds;
+  const stored = pendingSubtypeProjectId;
+  if (stored !== null && projectId !== null && stored !== projectId) {
+    setPendingSubtypeNeeds(null);
+    return null;
+  }
+  return pendingSubtypeNeeds;
+}
 
 export function getPendingSubtypeNeeds(): RabNeeds | null {
   return pendingSubtypeNeeds;
@@ -403,8 +524,8 @@ function pathCardResult(needs: RabNeeds): ActionResult {
  * menyebut subtipe apa pun — pemanggil (view) lalu memproses pesan
  * secara normal (perintah baru menggugurkan status menunggu).
  */
-export function tryContinueRabSubtype(text: string): ActionResult | null {
-  const pending = pendingSubtypeNeeds;
+export function tryContinueRabSubtype(text: string, projectId?: string | null): ActionResult | null {
+  const pending = scopedPendingSubtypeNeeds(projectId);
   if (!pending) return null;
   const det = detectSubtypeFromText(pending.kind, text);
   if (!det) return null;
@@ -412,8 +533,8 @@ export function tryContinueRabSubtype(text: string): ActionResult | null {
   const merged = extractRabNeeds(text, { ...pending });
   merged.subtypeId = det.id;
   merged.subtypeLabel = det.label;
-  pendingSubtypeNeeds = null;
-  lastRabNeeds = merged;
+  setPendingSubtypeNeeds(null);
+  setLastRabNeeds(merged, projectId);
   lastRabRaw = text;
   return pathCardResult(merged);
 }
@@ -501,7 +622,7 @@ function buildMaterialFullAiPrompt(rawText: string, group: RabMaterialGroup, mat
  */
 function materialUntemplatedResult(rawText: string, group: RabMaterialGroup, materialLabel: string, projectId?: string | null): ActionResult {
   pendingMaterialGate = { rawText, group, projectId: projectId ?? null };
-  lastRabNeeds = null;
+  setLastRabNeeds(null);
   return {
     ok: true,
     message:
@@ -1663,13 +1784,13 @@ export function tryContinueRabMaterial(text: string): ActionResult | null {
   return null;
 }
 
-function rabSummaryResult(raw: string, base?: RabNeeds): ActionResult {
+function rabSummaryResult(raw: string, base?: RabNeeds, projectId?: string | null): ActionResult {
   // Alur ringkasan menggantikan kartu pilihan yang mungkin menggantung.
   pendingChoice = null;
-  pendingSubtypeNeeds = null;
+  setPendingSubtypeNeeds(null);
   const needs = extractRabNeeds(raw, base);
   applySubtypeDetection(needs, raw);
-  lastRabNeeds = needs;
+  setLastRabNeeds(needs, projectId);
   if (raw) lastRabRaw = raw;
   const missing = missingNeeds(needs);
 
@@ -1763,7 +1884,7 @@ function rabSummaryResult(raw: string, base?: RabNeeds): ActionResult {
   // dulu bila belum disebut; kartu jalur hanya sesudah subtipe jelas.
   if (subtypeGroupFor(needs.kind)) {
     if (!needs.subtypeId) {
-      pendingSubtypeNeeds = needs;
+      setPendingSubtypeNeeds(needs, projectId);
       return subtypeQuestionResult(needs);
     }
     return pathCardResult(needs);
@@ -1783,14 +1904,18 @@ function rabSummaryResult(raw: string, base?: RabNeeds): ActionResult {
   };
 }
 
-/** Lanjutan "Lengkapi kebutuhan": gabungkan jawaban pengguna ke ringkasan. */
-export function continueRabNeeds(text: string): ActionResult {
-  return rabSummaryResult(text, lastRabNeeds ?? undefined);
+/** Lanjutan "Lengkapi kebutuhan": gabungkan jawaban pengguna ke ringkasan.
+ *  Basisnya HANYA kebutuhan proyek yang sama (bila sesi sebelumnya milik
+ *  proyek lain, scopedLastRabNeeds membersihkannya dan jawaban ini
+ *  memulai kebutuhan baru dari teksnya sendiri — bukan gabungan basi). */
+export function continueRabNeeds(text: string, projectId?: string | null): ActionResult {
+  return rabSummaryResult(text, scopedLastRabNeeds(projectId) ?? undefined, projectId);
 }
 
-/** Apakah ada sesi kebutuhan RAB yang aktif pada percakapan ini? */
-export function hasActiveRabNeeds(): boolean {
-  return lastRabNeeds !== null;
+/** Apakah ada sesi kebutuhan RAB yang aktif pada percakapan ini
+ *  (untuk proyek yang dimaksud — sesi proyek lain tidak dihitung)? */
+export function hasActiveRabNeeds(projectId?: string | null): boolean {
+  return scopedLastRabNeeds(projectId) !== null;
 }
 
 /* ------------------------------------------------------------------ */
@@ -1825,9 +1950,9 @@ export function isRabFinalizeText(text: string): boolean {
  * tidak ada sesi kebutuhan, atau jenisnya bukan rumah (jenis lain tetap
  * pada alur kartu jalurnya masing-masing).
  */
-export function continueRabFinalize(text: string): ActionResult | null {
+export function continueRabFinalize(text: string, projectId?: string | null): ActionResult | null {
   if (!isRabFinalizeText(text)) return null;
-  const needs = lastRabNeeds;
+  const needs = scopedLastRabNeeds(projectId);
   if (!needs || needs.kind !== 'rumah') return null;
 
   const hasAreaBasis = Boolean(needs.buildingArea || (needs.landLength && needs.landWidth));
@@ -2020,7 +2145,7 @@ function universalResultFor(raw: string, forcedTemplateId?: string, materialNote
     // rumah lama yang sudah ditinggalkan pengguna (bocor antar-topik
     // terukur: rumah → gudang → "itu aja" menghasilkan draft rumah).
     // Sesi kebutuhan hanya hidup selama topiknya rumah/kebutuhan.
-    lastRabNeeds = null;
+    setLastRabNeeds(null);
     // Catatan gerbang material (jawaban/asumsi terbuka) menjadi asumsi
     // PERTAMA draft — tercetak di bagian "Asumsi yang dipakai" dan ikut
     // terbawa ke revisi/transfer, tidak pernah hilang diam-diam.
@@ -2105,7 +2230,7 @@ function templateDefault(template: CardTemplate, key: 'bedroomCount' | 'bathroom
   return typeof d === 'number' ? d : null;
 }
 
-function choiceCardResult(p: PendingRabChoice, corrected: boolean): ActionResult {
+function choiceCardResult(p: PendingRabChoice, corrected: boolean, projectId?: string | null): ActionResult {
   const { item, template } = p.match;
   const needs = p.needs;
   const { region } = matchDirectRegion(needs.location);
@@ -2166,7 +2291,7 @@ function choiceCardResult(p: PendingRabChoice, corrected: boolean): ActionResult
     buildingArea:
       needs.buildingArea && needs.buildingArea !== p.landAreaM2 ? needs.buildingArea : item.area,
   };
-  lastRabNeeds = enriched;
+  setLastRabNeeds(enriched, projectId);
   lastRabRaw = p.rawText;
 
   return {
@@ -2186,9 +2311,9 @@ function choiceCardResult(p: PendingRabChoice, corrected: boolean): ActionResult
  * lalu render ulang kartu dengan spek terkoreksi. Konteks pilihan
  * (template + kedua jalur) tetap utuh.
  */
-export function continueRabChoice(text: string): ActionResult {
+export function continueRabChoice(text: string, projectId?: string | null): ActionResult {
   const p = pendingChoice;
-  if (!p) return rabSummaryResult(text);
+  if (!p) return rabSummaryResult(text, undefined, projectId);
   const correction = extractRabNeeds(stripLandPhrases(text));
   const merged = extractRabNeeds(stripLandPhrases(text), { ...p.needs });
   const updated: PendingRabChoice = {
@@ -2199,7 +2324,7 @@ export function continueRabChoice(text: string): ActionResult {
     landAreaM2: resolveLandAreaM2(text) ?? p.landAreaM2,
   };
   pendingChoice = updated;
-  return choiceCardResult(updated, true);
+  return choiceCardResult(updated, true, projectId);
 }
 
 /* ------------------------------------------------------------------ */
@@ -2467,6 +2592,501 @@ export function extractAddTarget(param: string): ExtractedAddTarget {
   return { name: cleanItemName(m[1]), volume, unit: m[3] ? normalizeUnit(m[3]) : null };
 }
 
+/* ------------------------------------------------------------------ */
+/* Workstream B1 (2026-11-19, gap P2 + P6 + §K baris 42 audit          */
+/* perintah): TRANSFER_DRAFT, SET_PROJECT_PRICE (+CONFIRM),            */
+/* CHANGE_PLAN. Pola rename deterministik: fail-closed, nama verbatim, */
+/* tanpa angka karangan; mutasi harga lewat pratinjau + konfirmasi     */
+/* tombol (langkah 1 tidak pernah menulis).                            */
+/* ------------------------------------------------------------------ */
+
+/** TRANSFER_DRAFT: jalankan alur push-preview yang SAMA seperti tombol
+ *  Push (callback view → pushUniversalToSpreadsheetPreview — pratinjau
+ *  + tombol Konfirmasi Transfer + pengikatan approval). Tanpa callback
+ *  atau tanpa draft aktif → jawab jujur, tidak ada klaim transfer. */
+function handleTransferDraft(ctx: ChatActionContext): ActionResult {
+  if (!ctx.requestDraftTransferPreview) {
+    return {
+      ok: false,
+      message:
+        'Saya belum bisa menampilkan pratinjau transfer dari chat ini. Buat draft dulu, lalu klik tombol "Push ke Spreadsheet" pada pesan draft.',
+    };
+  }
+  let shown: boolean;
+  try {
+    shown = ctx.requestDraftTransferPreview();
+  } catch {
+    return {
+      ok: false,
+      message: 'Pratinjau transfer gagal ditampilkan — coba klik tombol "Push ke Spreadsheet" pada pesan draft.',
+    };
+  }
+  if (!shown) {
+    return {
+      ok: true,
+      message:
+        'Tidak ada draft RAB yang aktif untuk ditransfer. Buat dulu dengan perintah seperti "buatkan RAB jalan paving 300 m2", lalu ulangi "transfer draft ke spreadsheet".',
+    };
+  }
+  return {
+    ok: true,
+    message:
+      'Pratinjau transfer draft ditampilkan di atas — periksa itemnya, lalu klik "Konfirmasi Transfer" bila sudah sesuai. Tanpa klik konfirmasi, tidak ada item yang ditulis ke spreadsheet.',
+  };
+}
+
+/* ---------------- SET_PROJECT_PRICE: resolusi nama→kode ------------- */
+
+export interface ResolvedProjectPriceTarget {
+  resourceCode: string;
+  resourceName: string;
+  category: 'MATERIAL' | 'LABOR' | 'EQUIPMENT';
+  unit: string;
+  masterPrice: number;
+  /** Bila harga master bervariasi antar-sumber: rentang + jumlah sumber
+   *  (diungkapkan di pratinjau — masterPrice hanyalah pembanding). */
+  priceRange?: { min: number; max: number; sources: number };
+}
+
+export type ProjectPriceResolution =
+  | { status: 'ok'; target: ResolvedProjectPriceTarget }
+  | { status: 'not-found'; query: string }
+  | { status: 'ambiguous'; query: string; candidates: Array<{ name: string; unit: string; code: string }> }
+  | { status: 'empty-code'; query: string; name: string; unit: string; priceText: string };
+
+const normPriceName = (s: string): string =>
+  s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().replace(/\s+/g, ' ');
+
+function priceCategoryOf(resourceType: string): 'MATERIAL' | 'LABOR' | 'EQUIPMENT' | null {
+  if (resourceType === 'material') return 'MATERIAL';
+  if (resourceType === 'labor') return 'LABOR';
+  if (resourceType === 'equipment') return 'EQUIPMENT';
+  return null;
+}
+
+/**
+ * Resolusi nama material → target override (kode + satuan + harga
+ * master pembanding). Sumber utama: RESOURCE_PRICE_RECORDS (master
+ * harga 2026 — tempat "Paku asbes" tinggal); fallback: resolver
+ * kanonis (menjangkau record CK/BM yang tidak ada di master ini).
+ *
+ * Fail-closed di tiga titik — TIDAK PERNAH menebak:
+ * - 0 kandidat → not-found (disertai saran "cari harga …" + jalur
+ *   ubah harga item RAB).
+ * - >1 kelompok (nama, satuan) berbeda, atau 1 kelompok dengan >1 kode
+ *   → ambiguous (daftar kandidat, minta spesifikasi).
+ * - record berkode kosong (resourceCode "") → empty-code: override
+ *   dikunci pada kode (PriceRepository menolak kode kosong dengan
+ *   INVALID_PRICE_CODE; semua record berkode "" berbagi satu kunci
+ *   sehingga override untuk salah satunya menimpa yang lain).
+ * Harga master pembanding: 1 harga unik → harga itu; bervariasi →
+ * harga resolver per kode+satuan BILA cocok dengan salah satu harga
+ * mentah (resolver kadang mengembalikan hasil konversi yang tidak
+ * cocok dengan record mana pun — itu tidak dipakai), bila tidak →
+ * harga record pertama kelompok (harga nyata yang tercatat) dengan
+ * rentang diungkapkan di pratinjau.
+ */
+export function resolveProjectPriceTarget(query: string): ProjectPriceResolution {
+  const q = (query ?? '').trim();
+  const nq = normPriceName(q);
+  if (!q || !nq) return { status: 'not-found', query: q };
+
+  // 1. Kode eksak ("M.23", "E13") — didahulukan atas pencocokan nama.
+  const byCode = RESOURCE_PRICE_RECORDS.filter(
+    (r) => r.resourceCode && r.resourceCode.toLowerCase() === q.toLowerCase(),
+  );
+  let pool = byCode.length > 0 ? byCode : null;
+  if (!pool) {
+    // 2. Nama: SEMUA token query harus hadir sebagai kata utuh di nama
+    // record ("paku asbes" cocok dengan "Paku asbes", bukan "Paku 5 cm").
+    const tokens = nq.split(' ');
+    const nameHits = RESOURCE_PRICE_RECORDS.filter((r) => {
+      const words = normPriceName(r.resourceName).split(' ');
+      return tokens.every((t) => words.includes(t));
+    });
+    if (nameHits.length === 0) {
+      // 3. Fallback resolver kanonis (CK/BM): jawaban tunggal otoritatif
+      // — pratinjau menampilkan nama+satuan+harga hasil resolusi
+      // sehingga pengguna bisa menangkap salah cocok sebelum konfirmasi.
+      try {
+        const res = priceResolver2026.resolveResourcePrice({ resourceName: q, resourceType: 'unknown' } as any);
+        const rec: any = (res as any)?.record ?? res;
+        const price = typeof rec?.price === 'number' ? rec.price : (res as any)?.price;
+        if (!res || (res as any).status !== 'RESOLVED' || price == null) {
+          return { status: 'not-found', query: q };
+        }
+        const code = String((res as any).resourceCode ?? '');
+        const name = String((res as any).resourceName ?? q);
+        const unit = String((res as any).unit ?? '');
+        const category = priceCategoryOf(String((res as any).resourceType ?? ''));
+        if (!code) {
+          return { status: 'empty-code', query: q, name, unit, priceText: `${fmtIDR(Math.round(Number(price)))}${unit ? `/${unit}` : ''}` };
+        }
+        if (!category || !unit) return { status: 'not-found', query: q };
+        return {
+          status: 'ok',
+          target: { resourceCode: code, resourceName: name, category, unit, masterPrice: Math.round(Number(price)) },
+        };
+      } catch {
+        return { status: 'not-found', query: q };
+      }
+    }
+    // Nama persis mengalahkan kecocokan token ("paku" = "Paku" M18,
+    // bukan 15 kelompok paku — nama yang disebut persis tidak ambigu).
+    const exact = nameHits.filter((r) => normPriceName(r.resourceName) === nq);
+    pool = exact.length > 0 ? exact : nameHits;
+  }
+
+  // Kelompokkan per (nama, satuan) — dua kelompok = ambigu.
+  const groups = new Map<string, typeof pool>();
+  for (const r of pool) {
+    const key = `${normPriceName(r.resourceName)}|${r.unit}`;
+    const g = groups.get(key) ?? [];
+    g.push(r);
+    groups.set(key, g);
+  }
+  if (groups.size > 1) {
+    const candidates = [...groups.values()]
+      .map((g) => ({
+        name: g[0].resourceName,
+        unit: g[0].unit,
+        code: g.map((x) => x.resourceCode).find((c) => c) ?? '',
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name) || a.unit.localeCompare(b.unit))
+      .slice(0, 5);
+    return { status: 'ambiguous', query: q, candidates };
+  }
+  const group = [...groups.values()][0];
+  const codes = [...new Set(group.map((r) => r.resourceCode).filter((c) => c))];
+  if (codes.length > 1) {
+    return {
+      status: 'ambiguous',
+      query: q,
+      candidates: codes.sort().map((code) => ({ name: group[0].resourceName, unit: group[0].unit, code })),
+    };
+  }
+  const prices = [...new Set(group.map((r) => r.price))].sort((a, b) => a - b);
+  const priceText =
+    prices.length === 1
+      ? `${fmtIDR(Math.round(prices[0]))}${group[0].unit ? `/${group[0].unit}` : ''}`
+      : `${fmtIDR(Math.round(prices[0]))}–${fmtIDR(Math.round(prices[prices.length - 1]))}${group[0].unit ? `/${group[0].unit}` : ''}`;
+  if (codes.length === 0) {
+    return { status: 'empty-code', query: q, name: group[0].resourceName, unit: group[0].unit, priceText };
+  }
+  const code = codes[0];
+  const category = priceCategoryOf(group[0].resourceType);
+  if (!category) return { status: 'not-found', query: q };
+  let masterPrice: number;
+  if (prices.length === 1) {
+    masterPrice = Math.round(prices[0]);
+  } else {
+    // Bervariasi: harga resolver per kode+satuan bila cocok dengan salah
+    // satu harga mentah; bila tidak, harga record pertama kelompok.
+    masterPrice = Math.round(group[0].price);
+    try {
+      const res = priceResolver2026.resolveResourcePrice({ resourceCode: code, unit: group[0].unit } as any);
+      const p = (res as any)?.price;
+      if ((res as any)?.status === 'RESOLVED' && typeof p === 'number' && prices.includes(Math.round(p))) {
+        masterPrice = Math.round(p);
+      }
+    } catch { /* resolver gagal — pakai harga record pertama */ }
+  }
+  return {
+    status: 'ok',
+    target: {
+      resourceCode: code,
+      resourceName: group[0].resourceName,
+      category,
+      unit: group[0].unit,
+      masterPrice,
+      ...(prices.length > 1
+        ? { priceRange: { min: Math.round(prices[0]), max: Math.round(prices[prices.length - 1]), sources: prices.length } }
+        : {}),
+    },
+  };
+}
+
+/** Buang frasa cakupan proyek ("untuk/di/pada/khusus/buat proyek ini",
+ *  atau "proyek ini" telanjang) dari ekor perintah harga — frasa itu
+ *  penanda intent, bukan bagian nama material/harga. */
+export function stripProjectScopePhrase(param: string): string {
+  return String(param ?? '')
+    .replace(/\s*(?:untuk|di|pada|khusus|buat)\s+proyek\s+ini\b/gi, ' ')
+    .replace(/\s*proyek\s+ini\b/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/** Pisahkan "Rp 40.000 per kg" → angka "Rp 40.000" + satuan "kg". */
+function splitPerUnit(valueText: string): { amountText: string; unit: string | null } {
+  const m = String(valueText ?? '').trim().match(/^(.+?)\s+per\s+([a-z0-9'²³/]+)\s*$/i);
+  if (!m) return { amountText: String(valueText ?? '').trim(), unit: null };
+  return { amountText: m[1].trim(), unit: normalizeUnit(m[2]) };
+}
+
+/** Payload pratinjau → konfirmasi (dibawa param tombol, JSON). */
+interface ProjectPriceConfirmPayload {
+  v: 1;
+  projectId: string;
+  code: string;
+  name: string;
+  category: 'MATERIAL' | 'LABOR' | 'EQUIPMENT';
+  unit: string;
+  masterPrice: number;
+  projectPrice: number;
+}
+
+function handleSetProjectPriceStep1(param: string | undefined, ctx: ChatActionContext): ActionResult {
+  const cleaned = stripProjectScopePhrase(param ?? '');
+  const split = splitNameAndValue(cleaned);
+  if (!split || !split.name) {
+    const nameOnly = cleanItemName(cleaned);
+    if (nameOnly) {
+      return {
+        ok: true,
+        message: `Ubah harga "${nameOnly}" jadi berapa untuk proyek ini? Contoh: "ubah harga ${nameOnly} jadi Rp 50.000 untuk proyek ini".`,
+      };
+    }
+    return {
+      ok: true,
+      message: 'Ubah harga material apa, jadi berapa, untuk proyek ini? Contoh: "ubah harga semen jadi Rp 2.000 untuk proyek ini". Ini override satu proyek, bukan mengubah harga master database.',
+    };
+  }
+  const { amountText, unit: statedUnit } = splitPerUnit(split.valueText);
+  const price = parseRupiahAmount(amountText);
+  if (price === null) {
+    return {
+      ok: false,
+      message: `Harga "${split.valueText}" tidak bisa dibaca sebagai nominal Rupiah. Contoh: "ubah harga ${split.name} jadi Rp 50.000 untuk proyek ini".`,
+    };
+  }
+  if (price <= 0) {
+    return {
+      ok: false,
+      message: 'Harga proyek harus lebih dari Rp0 — harga Rp0 bukan harga yang valid dan tidak akan diterapkan.',
+    };
+  }
+  if (!ctx.activeProject) {
+    return { ok: true, message: 'Tidak ada proyek aktif. Buka salah satu proyek dulu di Daftar Proyek, lalu ulangi perintahnya.' };
+  }
+  const res = resolveProjectPriceTarget(split.name);
+  if (res.status === 'not-found') {
+    return {
+      ok: false,
+      message:
+        `Material "${split.name}" tidak ditemukan di database harga master — saya tidak bisa menetapkan override untuk material yang tidak dikenal (tidak ada kode yang bisa dikunci). ` +
+        `Periksa namanya lewat "cari harga ${split.name}". Bila yang dimaksud adalah harga ITEM "${split.name}" di RAB proyek ini (bukan harga database), katakan "ubah harga item ${split.name} jadi ${fmtIDR(price)}".`,
+    };
+  }
+  if (res.status === 'ambiguous') {
+    const list = res.candidates
+      .map((c) => `• ${c.name} — ${c.unit}${c.code ? ` (kode ${c.code})` : ' (tanpa kode)'}`)
+      .join('\n');
+    return {
+      ok: false,
+      message:
+        `"${split.name}" cocok dengan beberapa material di database — saya tidak menebak yang mana:\n${list}\n\nSebutkan nama lengkapnya, contoh: "ubah harga ${res.candidates[0]?.name ?? split.name} jadi ${fmtIDR(price)} untuk proyek ini".`,
+    };
+  }
+  if (res.status === 'empty-code') {
+    return {
+      ok: false,
+      message:
+        `${res.name} ditemukan di database master (${res.priceText}), tetapi record-nya TIDAK PUNYA KODE — override harga proyek dikunci pada kode, dan semua record tanpa kode berbagi satu kunci, sehingga override untuk ${res.name} bisa menimpa material lain yang juga tanpa kode. ` +
+        `Karena itu saya tidak menetapkan override ini. Alternatif yang aman: ubah harga ITEM-nya langsung di RAB proyek ini ("ubah harga item ${res.name} jadi ${fmtIDR(price)}"). Harga master ${res.name} sendiri hanya bisa diubah lewat jalur admin/pipeline harga, bukan dari chat.`,
+    };
+  }
+  const target = res.target;
+  if (statedUnit && !unitsCompatible(statedUnit, target.unit)) {
+    return {
+      ok: false,
+      message: `Satuan yang Anda sebut (${statedUnit}) tidak cocok dengan satuan ${target.resourceName} di database (${target.unit}). Sebutkan harga per ${target.unit} — satuan tidak dikonversi otomatis.`,
+    };
+  }
+  const masterLine = target.priceRange
+    ? `Harga master tercatat bervariasi: ${fmtIDR(target.priceRange.min)}–${fmtIDR(target.priceRange.max)}/${target.unit} dari ${target.priceRange.sources} sumber; pembanding yang dicatat: ${fmtIDR(target.masterPrice)}/${target.unit}.`
+    : `Harga master saat ini: ${fmtIDR(target.masterPrice)}/${target.unit}.`;
+  const payload: ProjectPriceConfirmPayload = {
+    v: 1,
+    projectId: ctx.activeProject.id,
+    code: target.resourceCode,
+    name: target.resourceName,
+    category: target.category,
+    unit: target.unit,
+    masterPrice: target.masterPrice,
+    projectPrice: price,
+  };
+  return {
+    ok: true,
+    message:
+      `Siap menerapkan override harga untuk proyek "${ctx.activeProject.name}":\n\n` +
+      `• Material: ${target.resourceName} (kode ${target.resourceCode}) — per ${target.unit}\n` +
+      `• ${masterLine}\n` +
+      `• Harga baru untuk proyek ini: ${fmtIDR(price)}/${target.unit}\n\n` +
+      `Ini HANYA berlaku untuk proyek "${ctx.activeProject.name}" — harga master database TIDAK berubah, dan proyek lain tidak terpengaruh. Klik "Ya, terapkan override" untuk menerapkan.`,
+    actions: [
+      { label: 'Ya, terapkan override', action: { kind: 'intent', intent: 'SET_PROJECT_PRICE_CONFIRM', param: JSON.stringify(payload) } },
+      { label: 'Batal', action: { kind: 'navigate', menu: 'harga-proyek' } },
+    ],
+  };
+}
+
+function handleSetProjectPriceConfirm(param: string | undefined, ctx: ChatActionContext): ActionResult {
+  let payload: ProjectPriceConfirmPayload | null = null;
+  try {
+    const parsed = JSON.parse(param ?? '') as ProjectPriceConfirmPayload;
+    if (parsed && parsed.v === 1) payload = parsed;
+  } catch { /* payload rusak — ditangani di bawah */ }
+  const valid =
+    payload !== null &&
+    typeof payload.projectId === 'string' && payload.projectId &&
+    typeof payload.code === 'string' && payload.code &&
+    typeof payload.name === 'string' && payload.name &&
+    (payload.category === 'MATERIAL' || payload.category === 'LABOR' || payload.category === 'EQUIPMENT') &&
+    typeof payload.unit === 'string' && payload.unit &&
+    Number.isFinite(payload.masterPrice) && payload.masterPrice >= 0 &&
+    Number.isFinite(payload.projectPrice) && payload.projectPrice > 0;
+  if (!valid || !payload) {
+    return {
+      ok: false,
+      message: 'Pratinjau override ini sudah tidak valid (datanya rusak atau tidak lengkap). Kirim ulang perintahnya, misalnya "ubah harga semen jadi Rp 2.000 untuk proyek ini".',
+    };
+  }
+  if (!ctx.activeProject) {
+    return {
+      ok: true,
+      message: 'Tidak ada proyek aktif — override tidak diterapkan. Buka proyeknya dulu di Daftar Proyek, lalu kirim ulang perintahnya.',
+    };
+  }
+  if (ctx.activeProject.id !== payload.projectId) {
+    return {
+      ok: false,
+      message: `Proyek aktif sudah berganti sejak pratinjau dibuat — override tidak diterapkan (pratinjau ini untuk proyek lain). Kirim ulang perintahnya di proyek "${ctx.activeProject.name}".`,
+    };
+  }
+  if (!ctx.setProjectPriceOverride) {
+    return {
+      ok: false,
+      message: 'Saya belum bisa menerapkan override harga dari chat ini. Atur lewat menu Harga Proyek.',
+    };
+  }
+  let applied: boolean;
+  try {
+    applied = ctx.setProjectPriceOverride(payload.projectId, {
+      resourceCode: payload.code,
+      resourceName: payload.name,
+      category: payload.category,
+      unit: payload.unit,
+      masterPrice: payload.masterPrice,
+      projectPrice: payload.projectPrice,
+    });
+  } catch {
+    return {
+      ok: false,
+      message: 'Override belum diterapkan — terjadi kesalahan saat menyimpan. Coba lagi atau atur lewat menu Harga Proyek.',
+    };
+  }
+  if (!applied) {
+    return {
+      ok: false,
+      message: `Override belum diterapkan — proyek tidak ditemukan di daftar aktif. Coba pilih ulang proyeknya di Daftar Proyek, lalu kirim ulang perintahnya.`,
+    };
+  }
+  return {
+    ok: true,
+    message:
+      `Harga ${payload.name} (${payload.code}) untuk proyek "${ctx.activeProject.name}" kini ${fmtIDR(payload.projectPrice)}/${payload.unit} (pembanding master: ${fmtIDR(payload.masterPrice)}/${payload.unit}). ` +
+      'Hanya proyek ini yang berubah — harga master database tidak berubah, dan proyek lain tidak terpengaruh.',
+  };
+}
+
+/* ---------------- CHANGE_PLAN: ganti paket (simulasi) --------------- */
+
+const PLAN_ORDER: CreditPlan[] = ['free', 'starter', 'pro', 'business'];
+
+/** Jatah kredit paket dari definisi kanonis (config — bukan hardcode). */
+function planAllowance(plan: CreditPlan): number {
+  return plan === 'free' ? FREE_INITIAL_CREDITS : PLAN_CREDITS[plan];
+}
+
+/**
+ * Nama paket dari ekor perintah ("pro", "professional", "starter",
+ * "business"/"bisnis", "free"/"gratis"). Urutan BERARTI: "professional"
+ * dicek sebelum "pro" (kata "pro" tidak cocok dengan "professional"
+ * karena \b — tetapi pengecekan eksplisit ini menjaga niatnya jelas),
+ * dan "business" sebelum "pro" agar "pro business" tidak salah baca.
+ * null = tidak ada nama paket yang dikenali (handler menampilkan daftar).
+ */
+export function resolveCreditPlanName(text: string | undefined): CreditPlan | null {
+  const t = (text ?? '').toLowerCase();
+  if (/\bbusiness\b/.test(t) || /\bbisnis\b/.test(t)) return 'business';
+  if (/\bprofessional\b/.test(t)) return 'pro';
+  if (/\bstarter\b/.test(t)) return 'starter';
+  if (/\bfree\b/.test(t) || /\bgratis\b/.test(t)) return 'free';
+  if (/\bpro\b/.test(t)) return 'pro';
+  return null;
+}
+
+function formatPlanList(): string {
+  return PLAN_ORDER.map(
+    (p) => `• ${CREDIT_PLAN_LABELS[p]} — ${planAllowance(p).toLocaleString('id-ID')} kredit${p === 'free' ? ' (sekali, bukan per bulan)' : ' per periode'}`,
+  ).join('\n');
+}
+
+function handleChangePlan(param: string | undefined, ctx: ChatActionContext): ActionResult {
+  const plan = resolveCreditPlanName(param);
+  if (!plan) {
+    return {
+      ok: true,
+      message:
+        `Paket yang tersedia (simulasi — bukan langganan nyata):\n${formatPlanList()}\n\n` +
+        'Sebutkan paketnya, contoh: "ganti paket ke Pro". Mengganti paket mengatur ulang saldo simulasi ke jatah paket baru — top-up & bonus simulasi ikut terhapus.',
+    };
+  }
+  // Tanpa paket aktif yang diketahui, setPlan tidak boleh dipanggil:
+  // ia mengatur ulang saldo simulasi MESKIPUN paketnya sama — tanpa
+  // cek "sudah di paket itu", pergantian sia-sia menghapus top-up.
+  if (ctx.creditPlan === undefined) {
+    return {
+      ok: false,
+      message: 'Saya belum bisa melihat paket aktif saat ini, jadi saya tidak mengganti paket (ganti paket mengatur ulang saldo simulasi — tanpa tahu paket aktif, saya tidak bisa memastikan ini bukan pergantian yang sia-sia). Coba lewat menu Kredit AI.',
+    };
+  }
+  if (ctx.creditPlan === plan) {
+    return {
+      ok: true,
+      message: `Paket simulasi Anda sudah ${CREDIT_PLAN_LABELS[plan]} — tidak ada yang berubah. [SIMULASI — bukan langganan nyata.]`,
+    };
+  }
+  if (!ctx.changeCreditPlan) {
+    return {
+      ok: false,
+      message: 'Saya belum bisa mengganti paket dari chat ini. Ganti paket lewat menu Kredit AI. (Simulasi — bukan langganan nyata.)',
+    };
+  }
+  let result: ChangePlanResult;
+  try {
+    result = ctx.changeCreditPlan(plan);
+  } catch {
+    result = { ok: false, plan: null, newBalance: null, reason: 'terjadi kesalahan saat mengganti paket' };
+  }
+  if (!result.ok) {
+    const reason = result.reason ? `: ${result.reason}` : '';
+    return {
+      ok: false,
+      message: `Paket belum berganti${reason}. Paket aktif tetap ${CREDIT_PLAN_LABELS[ctx.creditPlan]}. [SIMULASI — bukan langganan nyata.]`,
+    };
+  }
+  const balanceLine =
+    result.newBalance !== null && Number.isFinite(result.newBalance)
+      ? ` Saldo simulasi kini ${result.newBalance.toLocaleString('id-ID')} kredit (jatah paket ${CREDIT_PLAN_LABELS[plan]}; top-up & bonus simulasi sebelumnya ikut terhapus karena ganti paket mengatur ulang saldo).`
+      : ' Ketik "sisa kredit saya" untuk melihat saldo terbaru.';
+  return {
+    ok: true,
+    message: `Paket simulasi diganti ke ${CREDIT_PLAN_LABELS[plan]}.${balanceLine} [SIMULASI — bukan langganan nyata; tidak ada pembayaran.]`,
+  };
+}
+
 export function executeIntent(
   intent: ChatIntent,
   param: string | undefined,
@@ -2701,6 +3321,24 @@ export function executeIntent(
         ?? { ok: false, message: 'Perintah pengaturan tidak dikenali.' };
     }
 
+    // Workstream B1 (2026-11-19, gap P2 + P6 + §K baris 42 audit
+    // perintah): transfer draft, override harga per-proyek (dua
+    // langkah — pratinjau + konfirmasi tombol; langkah 1 tidak pernah
+    // menulis), ganti paket simulasi. SET_PROJECT_PRICE_CONFIRM hanya
+    // dari tombol (tanpa pola router, seperti DELETE_PROJECT_CONFIRM).
+    case 'TRANSFER_DRAFT': {
+      return handleTransferDraft(ctx);
+    }
+    case 'SET_PROJECT_PRICE': {
+      return handleSetProjectPriceStep1(param, ctx);
+    }
+    case 'SET_PROJECT_PRICE_CONFIRM': {
+      return handleSetProjectPriceConfirm(param, ctx);
+    }
+    case 'CHANGE_PLAN': {
+      return handleChangePlan(param, ctx);
+    }
+
     case 'CAPABILITIES': {
       // Jawaban produk deterministik: keunggulan EZRAB yang nyata + tombol
       // untuk langsung mencoba. Angka template/AHSP DIHITUNG DARI SUMBER
@@ -2733,13 +3371,14 @@ export function executeIntent(
           '• QTO: buat item volume dan sinkronkan ke RAB\n' +
           '• Jalankan DED & ringkas dokumen: analisis gambar kerja yang sudah diunggah, atau ringkas dokumen dari chat\n' +
           '• Ekspor Excel/PDF, buat revisi, cek & top-up kredit (simulasi), atur overhead/profit/PPN proyek\n' +
+          '• Transfer draft ke spreadsheet, override harga material untuk satu proyek, dan ganti paket (simulasi)\n' +
           '• Ketik / untuk melihat semua perintah\n\n' +
           'DATA & HITUNGAN YANG BISA DIPERCAYA\n' +
           ahspLine + '\n' +
           '• Database harga material, upah, dan peralatan 2026\n' +
           '• Volume & subtotal dihitung engine deterministik; harga yang belum ada data resminya ditandai jelas, tidak pernah dikarang\n' +
           '• Tanya langsung di sini: total proyek, item termahal/termurah, cari AHSP\n\n' +
-          'Yang belum bisa dari chat: mengubah harga master/database material — itu kewenangan admin.\n\n' +
+          'Yang belum bisa dari chat: mengubah harga master/database material — itu kewenangan admin. Yang bisa diubah dari chat hanya override harga untuk satu proyek.\n\n' +
           'Coba salah satu:',
         actions: [
           { label: 'Buat RAB', action: { kind: 'intent', intent: 'CREATE_RAB_CLARIFY' } },
@@ -2798,7 +3437,7 @@ export function executeIntent(
       // untuk "buatkan rab" yang benar-benar tanpa objek (skenario B).
       const rawClarify = ctx.rawText ?? param ?? '';
       if (/\b(ded|gambar kerja)\b/i.test(rawClarify) && /\b(ini|itu|ada|sudah|berikut|lampiran|terlampir|punya)\b/i.test(rawClarify)) {
-        return rabSummaryResult(rawClarify);
+        return rabSummaryResult(rawClarify, undefined, ctx.activeProject?.id ?? null);
       }
       // Intake universal (2026-11-10): kategori yang TERIDENTIFIKASI
       // tidak pernah dibalas menu generik (prinsip §1 master prompt) —
@@ -2849,7 +3488,7 @@ export function executeIntent(
         const built = buildDirectRab(raw, typed.needs);
         if (built) {
           pendingChoice = null;
-          pendingSubtypeNeeds = null;
+          setPendingSubtypeNeeds(null);
           return {
             ok: true,
             message: formatDirectRabMessage(built),
@@ -2876,12 +3515,12 @@ export function executeIntent(
           floorsMentioned: typed.floorsMentioned,
           landAreaM2: resolveLandAreaM2(raw),
         };
-        pendingSubtypeNeeds = null;
-        return choiceCardResult(pendingChoice, false);
+        setPendingSubtypeNeeds(null);
+        return choiceCardResult(pendingChoice, false, ctx.activeProject?.id ?? null);
       }
       // Permintaan langsung baru menggantikan kartu yang menggantung.
       pendingChoice = null;
-      pendingSubtypeNeeds = null;
+      setPendingSubtypeNeeds(null);
       // Spesifikasi bebas TANPA tipe terdaftar (perluasan 2026-10-22):
       // tidak ada template yang bisa dipilih → langsung generate parametrik
       // dari spesifikasi (specRab) dengan daftar asumsi terbuka. Bila
@@ -2920,7 +3559,7 @@ export function executeIntent(
         ? null
         : universalResultFor(raw, undefined, undefined, { projectId: ctx.activeProject?.id ?? null });
       if (uniDirect) return uniDirect;
-      return rabSummaryResult(raw);
+      return rabSummaryResult(raw, undefined, ctx.activeProject?.id ?? null);
     }
 
     case 'GENERATE_RAB_TEMPLATE': {
@@ -2936,7 +3575,7 @@ export function executeIntent(
       const p = pendingChoice;
       const usePending = p != null && (rawParam === '' || rawParam === p.rawText);
       const built = usePending ? buildDirectRab(p.rawText, p.needs) : buildDirectRab(rawParam);
-      if (!built) return rabSummaryResult(rawParam);
+      if (!built) return rabSummaryResult(rawParam, undefined, ctx.activeProject?.id ?? null);
       if (usePending) pendingChoice = null;
       return {
         ok: true,
@@ -3002,7 +3641,7 @@ export function executeIntent(
         }
       }
       // Fase 2: ringkasan kebutuhan dulu — TIDAK membuka wizard/studio.
-      return rabSummaryResult(rawSummary);
+      return rabSummaryResult(rawSummary, undefined, ctx.activeProject?.id ?? null);
     }
 
     case 'RAB_CONCEPT_SELECT': {
@@ -3066,7 +3705,7 @@ export function executeIntent(
       // Klik tombol subtipe pada pertanyaan klarifikasi ("Jalan apa?").
       // State kebutuhan berasal dari pertanyaan yang menggantung (atau
       // ringkasan terakhir); param = id subtipe dari peta rabSubtypes.
-      const needs = pendingSubtypeNeeds ?? lastRabNeeds;
+      const needs = scopedPendingSubtypeNeeds(ctx.activeProject?.id ?? null) ?? scopedLastRabNeeds(ctx.activeProject?.id ?? null);
       const subtype = needs ? getSubtype(needs.kind, param ?? null) : null;
       if (!needs || !subtype) {
         return {
@@ -3076,8 +3715,8 @@ export function executeIntent(
         };
       }
       const merged: RabNeeds = { ...needs, subtypeId: subtype.id, subtypeLabel: subtype.label };
-      pendingSubtypeNeeds = null;
-      lastRabNeeds = merged;
+      setPendingSubtypeNeeds(null);
+      setLastRabNeeds(merged, ctx.activeProject?.id ?? null);
       return pathCardResult(merged);
     }
 
@@ -3133,7 +3772,7 @@ export function executeIntent(
       // nama template yang cocok ditampilkan di sini + kata kunci pencarian
       // diteruskan untuk diketik di katalog. Bila TIDAK ada template yang
       // cocok: jawab jujur & arahkan ke Full AI — jangan mengarang.
-      const needs = lastRabNeeds;
+      const needs = scopedLastRabNeeds(ctx.activeProject?.id ?? null);
       const subtype: RabSubtype | null = needs ? getSubtype(needs.kind, needs.subtypeId) : null;
       if (!needs || !subtype) {
         return {
@@ -3213,7 +3852,7 @@ export function executeIntent(
       // (c) Kebutuhan terakhir berupa rumah: susun teks sintetis minimal
       // dari needs dan coba komposisi sekali lagi; hanya hasil nyata
       // yang dikembalikan.
-      const n = lastRabNeeds;
+      const n = scopedLastRabNeeds(ctx.activeProject?.id ?? null);
       if (n && n.kind === 'rumah') {
         const synthetic = syntheticHouseRawText(n);
         const built = synthetic
@@ -3226,7 +3865,7 @@ export function executeIntent(
       // (jalan/drainase/jembatan/gedung/MEP/dll.) — sebelum LLM fallback.
       // Ini menutup celah komentar lama "pekerjaan infra belum punya mesin
       // parametrik": mesinnya kini katalog template 180.
-      const nUniversal = lastRabNeeds;
+      const nUniversal = scopedLastRabNeeds(ctx.activeProject?.id ?? null);
       if (nUniversal) {
         const syntheticUniversal = syntheticUniversalRawText(nUniversal);
         if (syntheticUniversal) {
@@ -3238,7 +3877,8 @@ export function executeIntent(
 
       // Fallback — perilaku lama PERSIS: prompt terkumpul diteruskan ke
       // view untuk dikirim ke pipeline Chat AI sebagai pesan.
-      const prompt = param || (lastRabNeeds ? buildFullAiPrompt(lastRabNeeds) : '');
+      const fallbackNeeds = scopedLastRabNeeds(ctx.activeProject?.id ?? null);
+      const prompt = param || (fallbackNeeds ? buildFullAiPrompt(fallbackNeeds) : '');
       return {
         ok: true,
         message: 'Menyiapkan Full AI dari kebutuhan yang terkumpul…',
@@ -3247,7 +3887,8 @@ export function executeIntent(
     }
 
     case 'RAB_NEEDS_REFINE': {
-      const missing = lastRabNeeds ? missingNeeds(lastRabNeeds) : [];
+      const refineNeeds = scopedLastRabNeeds(ctx.activeProject?.id ?? null);
+      const missing = refineNeeds ? missingNeeds(refineNeeds) : [];
       return {
         ok: true,
         message: missing.length
@@ -3273,12 +3914,12 @@ export function executeIntent(
     case 'START_RAB_WIZARD':
       // Kompatibilitas: jalur lama tidak lagi membuka wizard langsung dari
       // registry — tampilkan ringkasan kebutuhan terlebih dahulu.
-      return rabSummaryResult(ctx.rawText ?? 'buatkan rab rumah tinggal');
+      return rabSummaryResult(ctx.rawText ?? 'buatkan rab rumah tinggal', undefined, ctx.activeProject?.id ?? null);
 
     case 'START_HOUSE_DESIGN': {
       // Hanya tercapai lewat KLIK tombol (persetujuan eksplisit). Teks ketikan
       // pengguna kini diarahkan router ke CREATE_RAB_SUMMARY.
-      const designPrompt = param || getLastRabDesignPrompt() || 'Buatkan rumah 1 lantai luas bangunan 90 m², ukuran 6 × 15 m, 3 kamar tidur, 2 kamar mandi, ruang tamu, dapur, dan carport.';
+      const designPrompt = param || getLastRabDesignPrompt(ctx.activeProject?.id ?? null) || 'Buatkan rumah 1 lantai luas bangunan 90 m², ukuran 6 × 15 m, 3 kamar tidur, 2 kamar mandi, ruang tamu, dapur, dan carport.';
       return {
         ok: true,
         message: 'Membuka AI Design Studio — dari deskripsi menjadi spesifikasi, spreadsheet, lalu QTO/RAB.',

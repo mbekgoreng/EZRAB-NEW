@@ -6,6 +6,7 @@
 
 import { standardPricingPolicySection, normalizePromptPolicy, type DedPromptPricingPolicy } from './policy';
 import { buildDedSystemPrompt } from './wbsContext';
+import { renderDedPageBlocks } from '../pageSegments';
 
 export interface DedFastPromptInput {
   projectType: string;
@@ -27,7 +28,8 @@ export function createFastSystemPrompt(ctx: { projectType: string; pricingPolicy
   // ATURAN WAJIB + skema JSON → instruksi interpretasi → konteks WBS terpilih
   // (TERAKHIR, lewat wbsContext). Kontrak di bawah tidak pernah dipotong;
   // konteks dipilih per tipe proyek dan ditegakkan ke anggaran 7.900 karakter
-  // agar tidak terpotong diam-diam oleh gateway (cap 8.000).
+  // agar tetap jauh di bawah batas gateway (system prompt > 16.000 ditolak
+  // INVALID_REQUEST oleh api/_lib/security.js — bukan dipotong).
   // Dual Mode §5 (G-PR-1/G-IS-4): instruksi FULL_AI TIDAK ADA lagi inline
   // di kontrak ini — semuanya berasal dari master prompt via
   // standardPricingPolicySection (policy.ts → ded-full-ai/masterPrompt.ts),
@@ -85,9 +87,10 @@ Keluarkan JSON murni.`;
 }
 
 export function buildFastPrompt(input: DedFastPromptInput): DedFastPromptResult {
-  const pageBlock = input.pageSummaries
-    .map((p) => `--- Halaman ${p.page} (${p.title}) ---\n${p.text.slice(0, 4000)}`)
-    .join('\n');
+  // Tanpa batas pemrosesan (2026-11-19): teks halaman dikirim UTUH —
+  // halaman panjang dipecah menjadi segmen oleh pemanggil (pageSegments),
+  // bukan dipotong di sini. slice(0, 4000) lama DIHAPUS.
+  const pageBlock = renderDedPageBlocks(input.pageSummaries);
 
   const prompt = `Proyek tipe: ${input.projectType} (tipe bangunan: ${input.buildingType})
 

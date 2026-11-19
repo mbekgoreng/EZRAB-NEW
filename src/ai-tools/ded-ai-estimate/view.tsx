@@ -357,12 +357,21 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
     // DUAL MODE (§3): dispatch pada MODE kanonis (dedMode), bukan
     // boolean fullAi — sesi lama tanpa dedMode dimigrasikan (mesin menang).
     const aiMode = resolveDedAiMode(sess);
-    if (aiMode === 'FULL_AI') {
-      await runFullAiAnalysis(sess, aiMode);
-      return;
-    }
+    // Inisialisasi bersama KEDUA mode (mockup v2.3, ACC owner 2026-11-19):
+    // cabang FULL_AI sebelumnya return SEBELUM setScreen('progress')
+    // sehingga Full AI berjalan tanpa layar progress sama sekali. Init
+    // kini mendahului dispatch — jalur standar melewati pernyataan yang
+    // sama persis dalam urutan yang sama persis (netral); runFullAiAnalysis
+    // lalu menimpa tahap awalnya sendiri (received done, 5%) seperti
+    // sebelumnya, sesudah init ini.
     setError(null);
     setResult(null);
+    // Hasil mode lain dibersihkan juga: tanpa ini, hasil Full AI basi akan
+    // menang atas hasil standar yang baru (isFullAiResult + urutan cabang
+    // render) — cacat yang sama dengan yang sudah diperbaiki di
+    // handleLoadDraft untuk draft standar. Full AI mengisi ulang
+    // fullAiOutput di akhir runFullAiAnalysis.
+    setFullAiOutput(null);
     setResultReady(false);
     setDraftSaved(false);
     setFinalized(false);
@@ -375,6 +384,10 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
       totalSize, mode: sess.mode, startedAt, currentFile: sess.files[0]?.file.name,
     });
     setScreen('progress');
+    if (aiMode === 'FULL_AI') {
+      await runFullAiAnalysis(sess, aiMode);
+      return;
+    }
 
     // Tahap 1: dokumen diterima (validasi sudah di input)
     markUpTo('received', 'done');
@@ -621,7 +634,11 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
   }, [session, screen, error]);
 
   const handleBack = () => { cancelRef.current = true; setScreen('input'); };
-  const handleSeeResult = () => { if (result) setScreen('result'); };
+  // Full AI tidak pernah mengisi `result` (hasilnya di `fullAiOutput`) —
+  // tanpa cek ini tombol "Lihat Hasil Estimasi" di layar progress mati
+  // untuk Full AI pada jendela 900 mdtk sebelum auto-navigasi.
+  // Jalur standar tidak berubah: `result` tetap dicek pertama.
+  const handleSeeResult = () => { if (result || fullAiOutput) setScreen('result'); };
 
   const handleSaveDraft = (items: DedAiItem[]) => {
     if (!result) return;

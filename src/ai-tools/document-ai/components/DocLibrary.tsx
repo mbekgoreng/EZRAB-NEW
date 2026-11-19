@@ -83,9 +83,22 @@ export const DocLibrary: React.FC<{
   onAfterAnalysisChange: (c: AfterAnalysisChoice) => void;
   /** Navigasi lanjut ke DED Estimate AI (menu workspace yang sudah ada). */
   onContinueToDed?: () => void;
+  /** Pertanyaan awal mode Tanya Dokumen (diangkat ke view). */
+  initialQuestion: string;
+  onInitialQuestionChange: (q: string) => void;
+  /** Dokumen pembanding awal mode Bandingkan (diangkat ke view). */
+  initialCompareId: string;
+  onInitialCompareIdChange: (id: string) => void;
+  /**
+   * Jalankan analisis dari tombol utama: membuka workspace DENGAN
+   * auto-run satu kali. Bila tidak diberikan, tombol memakai onAnalyze
+   * (buka workspace tanpa menjalankan).
+   */
+  onRunAnalysis?: (doc: DocRecord) => void;
 }> = ({
   docs, onUpsertDoc, onRemoveDoc, onAnalyze,
   initialMode, onInitialModeChange, afterAnalysis, onAfterAnalysisChange, onContinueToDed,
+  initialQuestion, onInitialQuestionChange, initialCompareId, onInitialCompareIdChange, onRunAnalysis,
 }) => {
   const { t, lang, setLang } = useI18n();
   const [query, setQuery] = useState('');
@@ -180,9 +193,31 @@ export const DocLibrary: React.FC<{
   const modeTabs = getTabs(t);
   const activeModeLabel = modeTabs.find((m) => m.id === initialMode)?.label ?? '';
   const canAnalyze = !!selectedDoc && selectedDoc.status === 'ready' && !busy;
+  // Dokumen pembanding: yang siap dianalisis, selain dokumen terpilih.
+  const compareOptions = useMemo(
+    () => docs.filter((d) => d.status === 'ready' && d.id !== selectedDoc?.id),
+    [docs, selectedDoc?.id],
+  );
+  // Bersihkan pembanding yang tidak lagi valid (dihapus / bukan ready /
+  // menjadi dokumen terpilih).
+  useEffect(() => {
+    if (initialCompareId && !compareOptions.some((d) => d.id === initialCompareId)) {
+      onInitialCompareIdChange('');
+    }
+  }, [initialCompareId, compareOptions, onInitialCompareIdChange]);
+  // Tombol "Jalankan {Mode}" mensyaratkan masukan tiap mode: pertanyaan
+  // untuk Tanya Dokumen, pembanding untuk Bandingkan.
+  const runReady = canAnalyze
+    && (initialMode !== 'qa' || initialQuestion.trim().length > 0)
+    && (initialMode !== 'compare' || !!initialCompareId);
   const handlePrimary = () => {
-    if (!canAnalyze || !selectedDoc) return;
-    if (afterAnalysis === 'ded' && onContinueToDed) onContinueToDed();
+    if (!selectedDoc) return;
+    if (afterAnalysis === 'ded' && onContinueToDed) {
+      if (canAnalyze) onContinueToDed();
+      return;
+    }
+    if (!runReady) return;
+    if (onRunAnalysis) onRunAnalysis(selectedDoc);
     else onAnalyze(selectedDoc);
   };
 
@@ -344,24 +379,61 @@ export const DocLibrary: React.FC<{
 
             <section className="docai-set-sec">
               <h3>Mode Analisis Pertama</h3>
-              <div className="docai-modechips">
+              <div className="docai-modecards">
                 {modeTabs.map((m) => {
                   const Icon = m.icon;
                   return (
                     <button
                       key={m.id}
                       type="button"
-                      className={`docai-modechip ${initialMode === m.id ? 'active' : ''}`}
+                      className={`docai-modecard ${initialMode === m.id ? 'active' : ''}`}
                       onClick={() => onInitialModeChange(m.id)}
                       aria-pressed={initialMode === m.id}
                     >
-                      <Icon size={14} /> {m.label}
+                      <span className="docai-modecard-top"><Icon size={15} /> {m.label}</span>
+                      <span className="docai-modecard-hint">{MODE_DESCRIPTIONS[m.id]}</span>
                     </button>
                   );
                 })}
               </div>
-              <p className="docai-set-sub">{MODE_DESCRIPTIONS[initialMode]}</p>
             </section>
+
+            {initialMode === 'qa' && (
+              <section className="docai-set-sec">
+                <h3>Pertanyaan Anda</h3>
+                <input
+                  className="docai-input"
+                  style={{ marginBottom: 0 }}
+                  value={initialQuestion}
+                  onChange={(e) => onInitialQuestionChange(e.target.value)}
+                  placeholder={t('ai.doc.ana.qa_ph')}
+                  aria-label="Pertanyaan tentang dokumen"
+                />
+                <p className="docai-set-sub">Pertanyaan dikirim otomatis saat analisis dijalankan; Anda bisa bertanya lagi di workspace analisis.</p>
+              </section>
+            )}
+
+            {initialMode === 'compare' && (
+              <section className="docai-set-sec">
+                <h3>Dokumen Pembanding</h3>
+                <select
+                  value={initialCompareId}
+                  onChange={(e) => onInitialCompareIdChange(e.target.value)}
+                  className="docai-select docai-full"
+                  aria-label="Pilih dokumen pembanding"
+                >
+                  <option value="">{t('ai.doc.ana.compare_pick')}</option>
+                  {compareOptions.map((o) => <option key={o.id} value={o.id}>{o.fileName}</option>)}
+                </select>
+                <p className="docai-set-sub">Dokumen terpilih dibandingkan dengan dokumen ini — keduanya dibaca utuh.</p>
+              </section>
+            )}
+
+            {/* Draft & Terjemah BUKAN mode analisis — keduanya jalur Studio
+                (keputusan mockup v2.3 §6 / keputusan 11). */}
+            <div className="docai-routing-note">
+              Draft dan Terjemah bukan bagian dari Analisis Dokumen — keduanya adalah jalur Studio, di tab <strong>Buat dengan AI</strong> dan <strong>Edit &amp; Periksa</strong>.
+            </div>
 
             <section className="docai-set-sec">
               <h3>Jenis Dokumen</h3>
@@ -446,15 +518,21 @@ export const DocLibrary: React.FC<{
             <button
               type="button"
               className="docai-btn-primary docai-settings-cta"
-              disabled={!canAnalyze}
+              disabled={afterAnalysis === 'ded' ? !canAnalyze : !runReady}
               onClick={handlePrimary}
             >
-              <FileSearch size={17} /> Analisis Dokumen
+              <FileSearch size={17} /> {afterAnalysis === 'ded' ? 'Lanjut ke DED AI' : `${t('ai.doc.ana.run_a')} ${activeModeLabel}`}
             </button>
             <p className="docai-settings-hint">
-              {selectedDoc
-                ? `1 dokumen terpilih · mode ${activeModeLabel} · ${afterAnalysis === 'ded' ? 'lanjut ke DED Estimate AI' : 'hasil dibuka di workspace analisis'}`
-                : 'Unggah atau pilih dokumen yang siap untuk mulai.'}
+              {!selectedDoc
+                ? 'Unggah atau pilih dokumen yang siap untuk mulai.'
+                : afterAnalysis === 'ded'
+                  ? '1 dokumen terpilih · lanjut ke DED Estimate AI'
+                  : initialMode === 'qa' && !initialQuestion.trim()
+                    ? 'Tulis pertanyaan tentang dokumen ini dulu.'
+                    : initialMode === 'compare' && !initialCompareId
+                      ? t('ai.doc.ana.err_compare_first')
+                      : `1 dokumen terpilih · mode ${activeModeLabel} · hasil dibuka di workspace analisis`}
             </p>
           </div>
         </aside>

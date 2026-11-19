@@ -83,7 +83,12 @@ check('DED input: seksi Mode Analisis (dua kartu mode)',
   dedInput.includes('Mode Analisis') && dedInput.includes('DED_MODE_CARDS') && dedInput.includes('dedai-modecards'));
 check('DED input: seksi Kompleksitas & Estimasi Kredit', dedInput.includes('Kompleksitas & Estimasi Kredit'));
 check('DED input: tarif dari ai-credits/config (tariffFor, tanpa hardcode ulang)', dedInput.includes('tariffFor'));
-check('DED input: CTA menempel di kaki panel (dedai-settings-foot)', dedInput.includes('dedai-settings-foot') && dedInput.includes("t('ai.ded.input.cta')"));
+// RE-BASELINE v2.3 (2026-11-19, ACC owner 04:14): CTA pindah dari kaki panel
+// pengaturan (dedai-settings-foot) ke tombol besar lebar penuh di bawah kedua
+// kolom (dedai-v23-start) sesuai mockup v2.3 — kunci i18n yang sama dipertahankan.
+// Bukan pelemahan: pin tetap memeriksa keberadaan CTA + kunci i18n-nya, hanya
+// di penempatan baru yang disetujui owner.
+check('DED input: CTA lebar penuh v2.3 di bawah kolom (dedai-v23-start)', dedInput.includes('dedai-v23-start') && dedInput.includes("t('ai.ded.input.cta')"));
 check('DED input: CTA tidak lagi lewat FsFooterPortal (pindah ke panel)', !dedInput.includes('FsFooterPortal'));
 const dedResult = read('src/ai-tools/ded-ai-estimate/DedAiResultView.tsx');
 check('DED hasil: footer aksi tetap lewat FsFooterPortal (konteks bersama)', dedResult.includes('FsFooterPortal'));

@@ -27,6 +27,7 @@ import { matchDedItemToAhsp, resolveDedPriceWithCanonical } from '../ded-canonic
 import { DedAiCalculator } from './calculator';
 import { deriveKolomVolume, deriveDindingNetto, derivePlester, DerivationTrail } from './derivation';
 import { selectPagesWithTrace, formatPageRanges, SelectedPage } from './analysisTrace';
+import { expandPagesIntoSegments, segmentBudgetFromEmptyRequest, type DedPageSegment } from './pageSegments';
 import { buildDivisionCoverage } from './divisions';
 import { groupByWbs } from './wbsClassifier';
 import {
@@ -582,6 +583,20 @@ export function planDedPasses(
   budget: number = DED_PASS_REQUEST_BUDGET_CHARS
 ): DedPassPlanEntry[] {
   const plan: DedPassPlanEntry[] = [];
+  // Tanpa batas pemrosesan (2026-11-19): halaman boleh berupa segmen
+  // (bagian i/j) — alasan skip menyebut bagian yang tepat, bukan
+  // menyalahkan seluruh halaman.
+  const skipReason = (page: SelectedPage, chars: number): string => {
+    const seg = page as DedPageSegment;
+    const partNote =
+      typeof seg.partCount === 'number' && seg.partCount > 1
+        ? ` (bagian ${seg.partIndex} dari ${seg.partCount})`
+        : '';
+    return (
+      `Halaman ${page.page}${partNote} sendirian membutuhkan ${chars} karakter request ` +
+      `(anggaran ${budget}) — tidak dikirim agar tidak gagal PAYLOAD_TOO_LARGE.`
+    );
+  };
   for (const group of groups) {
     let current: SelectedPage[] = [];
     let currentChars = 0;
@@ -612,9 +627,7 @@ export function planDedPasses(
             label: group.label,
             pages: [page],
             requestChars: singleChars,
-            reason:
-              `Halaman ${page.page} sendirian membutuhkan ${singleChars} karakter request ` +
-              `(anggaran ${budget}) — tidak dikirim agar tidak gagal PAYLOAD_TOO_LARGE.`,
+            reason: skipReason(page, singleChars),
           });
         }
       } else {
@@ -623,9 +636,7 @@ export function planDedPasses(
           label: group.label,
           pages: [page],
           requestChars: trialChars,
-          reason:
-            `Halaman ${page.page} sendirian membutuhkan ${trialChars} karakter request ` +
-            `(anggaran ${budget}) — tidak dikirim agar tidak gagal PAYLOAD_TOO_LARGE.`,
+          reason: skipReason(page, trialChars),
         });
       }
     }
@@ -921,10 +932,12 @@ export class DedAiEstimateService {
     // Dulu: budget teks (FAST 45.000 / DETAIL 90.000 karakter) + potong
     // per halaman membuang halaman dan memotong item — daftar pekerjaan
     // hasil DED AI jadi sedikit dibanding model lain yang membaca seluruh
-    // dokumen. Sekarang: SEMUA halaman berteks dikirim utuh (tidak ada
-    // SKIPPED_BUDGET, tidak ada potong per halaman). Halaman dipilih
-    // menurut prioritas jenisnya hanya untuk urutan pass. FASE P0: jejak
-    // per halaman tetap dicatat lengkap.
+    // dokumen. Sekarang: SEMUA halaman berteks dikirim utuh — halaman
+    // panjang dipecah menjadi segmen (bukan dipotong) sebelum perencanaan
+    // pass; SKIPPED_BUDGET tinggal sebagai backstop untuk segmen yang
+    // bahkan sendirian melebihi anggaran. Halaman dipilih menurut
+    // prioritas jenisnya hanya untuk urutan pass. FASE P0: jejak per
+    // halaman tetap dicatat lengkap.
     const selection = selectPagesWithTrace(parsed.pages);
     const pageSummaries = selection.selected;
     const pageTrace = selection.trace;
@@ -966,6 +979,15 @@ export class DedAiEstimateService {
     // yang tidak dikirim adalah halaman yang sendirian sudah melebihi
     // anggaran — dan itu tercatat SKIPPED_BUDGET dengan alasan, bukan
     // hilang diam-diam.
+    //
+    // Tanpa batas pemrosesan (2026-11-19): SEBELUM perencanaan, halaman
+    // panjang dipecah menjadi SEGMENT (pageSegments) — setiap segmen
+    // diukur agar sendirian muat dalam anggaran request, sehingga
+    // halaman raksasa pun terkirim seluruhnya dalam beberapa pass,
+    // bukan dipotong (slice(0, 4000) lama sudah dihapus dari pembangun
+    // prompt). SKIPPED_BUDGET tinggal sebagai backstop untuk segmen
+    // yang bahkan sendirian melebihi anggaran (hanya mungkin bila
+    // overhead prompt mendekati anggaran).
     const pricingPolicy = options.policy ?? 'FULL_AI';
     const buildForPages = (pages: typeof pageSummaries) => mode === 'FAST'
       ? buildFastPrompt({ projectType, buildingType, pageSummaries: pages, pricingPolicy })
@@ -974,23 +996,66 @@ export class DedAiEstimateService {
       const b = buildForPages(pages);
       return b.system.length + b.prompt.length;
     };
-    const passPlan = planDedPasses(groups, measureRequest);
-    // Tautkan halaman terpilih ke pass-nya di jejak; halaman pada pass
-    // SKIPPED_BUDGET dibalik status jejaknya (UI sudah menampilkannya).
+    const segmentBudget = segmentBudgetFromEmptyRequest(
+      measureRequest([]),
+      DED_PASS_REQUEST_BUDGET_CHARS,
+    );
+    const segmentGroups = groups.map((g) => ({
+      label: g.label,
+      pages: expandPagesIntoSegments(g.pages, segmentBudget),
+    }));
+    const passPlan = planDedPasses(segmentGroups, measureRequest);
+    // Tautkan halaman terpilih ke pass-nya di jejak dan hitung Ulang
+    // sentChars dari segmen yang BENAR-BENAR dikirim — totalCharsSent
+    // harus mencerminkan karakter yang terkirim, bukan panjang penuh
+    // halaman (jejak lama meng-overstate saat ada pemotongan). Halaman
+    // yang seluruh segmennya terlewat anggaran menjadi SKIPPED_BUDGET;
+    // halaman yang hanya sebagian segmennya terkirim tetap SENT dengan
+    // sentChars parsial + alasan yang menyebut bagian yang hilang.
     const traceByPage = new Map(pageTrace.map(t => [t.page, t]));
+    const sentCharsByPage = new Map<number, number>();
+    const skippedPartsByPage = new Map<number, string[]>();
     passPlan.forEach((entry, gi) => {
       for (const s of entry.pages) {
         const t = traceByPage.get(s.page);
         if (!t) continue;
-        t.passIndex = gi;
-        t.clusterLabel = entry.label;
+        // Segmen satu halaman bisa tersebar di beberapa pass — tautkan
+        // ke pass PERTAMA yang memuat segmen halaman itu.
+        if (t.passIndex == null) {
+          t.passIndex = gi;
+          t.clusterLabel = entry.label;
+        }
         if (entry.kind === 'SKIPPED_BUDGET') {
-          t.status = 'SKIPPED_BUDGET';
-          t.sentChars = 0;
-          t.reason = entry.reason;
+          const seg = s as DedPageSegment;
+          const partLabel =
+            typeof seg.partCount === 'number' && seg.partCount > 1
+              ? `bagian ${seg.partIndex}/${seg.partCount}`
+              : 'seluruh halaman';
+          const list = skippedPartsByPage.get(s.page) ?? [];
+          list.push(partLabel);
+          skippedPartsByPage.set(s.page, list);
+        } else {
+          sentCharsByPage.set(s.page, (sentCharsByPage.get(s.page) ?? 0) + s.text.length);
         }
       }
     });
+    for (const [pageNo, skippedParts] of skippedPartsByPage) {
+      const t = traceByPage.get(pageNo);
+      if (!t) continue;
+      const sent = sentCharsByPage.get(pageNo) ?? 0;
+      t.sentChars = sent;
+      if (sent === 0) {
+        t.status = 'SKIPPED_BUDGET';
+        t.reason =
+          `Halaman tidak dapat dikirim dalam anggaran request ${DED_PASS_REQUEST_BUDGET_CHARS} karakter ` +
+          'bahkan sesudah dipecah menjadi segmen.';
+      } else {
+        t.reason =
+          `Sebagian halaman tidak terkirim (${skippedParts.join(', ')}) — melebihi anggaran request ` +
+          `bahkan sesudah dipecah menjadi segmen; ${sent.toLocaleString('id-ID')} dari ` +
+          `${t.totalChars.toLocaleString('id-ID')} karakter terkirim.`;
+      }
+    }
     const budgetSkippedCount = pageTrace.filter((t) => t.status === 'SKIPPED_BUDGET').length;
 
     const maxTokens = mode === 'FAST' ? 16000 : 24000;
@@ -999,13 +1064,30 @@ export class DedAiEstimateService {
     const passTraces: DedPassTraceEntry[] = [];
     let lastAiError: any = null;
 
-    for (let gi = 0; gi < passPlan.length; gi++) {
-      const planEntry = passPlan[gi];
+    // Tanpa batas pemrosesan (2026-11-19): antrean pass, BUKAN loop indeks
+    // tetap — pass yang keluarannya MALFORMED (sering berarti JSON
+    // terpotong plafon token keluaran) dipecah DUA dan dijalankan ulang
+    // sebagai dua pass lebih kecil (kedalaman maks 2 → maks 4 daun per
+    // pass asal), agar cakupan halaman tidak hilang begitu saja.
+    // maxTokens TIDAK dinaikkan: gateway menjepit permintaan ke 8.000
+    // token (api/_lib/security.js) sehingga menaikkan angka di sini
+    // sia-sia — pemecahan pass adalah satu-satunya penawar yang nyata.
+    const MAX_SPLIT_DEPTH = 2;
+    const passQueue: Array<{ entry: DedPassPlanEntry; depth: number }> =
+      passPlan.map((entry) => ({ entry, depth: 0 }));
+    let totalPassExecutions = passQueue.length;
+    let completedPassExecutions = 0;
+
+    while (passQueue.length > 0) {
+      const { entry: planEntry, depth } = passQueue.shift()!;
+      const passIndex = passTraces.length;
       const passTrace: DedPassTraceEntry = {
-        passIndex: gi,
+        passIndex,
         clusterLabel: planEntry.label,
         pageTypes: [...new Set(planEntry.pages.map(s => s.pageType))],
-        pages: planEntry.pages.map(s => s.page),
+        // Segmen satu halaman bisa berada di pass yang sama — dedupe
+        // nomor halaman agar daftar halaman per pass tidak berulang.
+        pages: [...new Set(planEntry.pages.map(s => s.page))],
         productId,
         mode,
         maxTokens,
@@ -1023,7 +1105,17 @@ export class DedAiEstimateService {
         passTrace.passStatus = 'SKIPPED_BUDGET';
         passTrace.reason = planEntry.reason;
         passTraces.push(passTrace);
+        completedPassExecutions++;
         continue;
+      }
+
+      if (depth > 0) {
+        // Pass pecahan: tautkan ulang halaman ke pass yang benar-benar
+        // memprosesnya (menimpa tautan ke pass induk yang malformed).
+        for (const s of planEntry.pages) {
+          const t = traceByPage.get(s.page);
+          if (t) { t.passIndex = passIndex; t.clusterLabel = planEntry.label; }
+        }
       }
 
       // Kebijakan harga DIPAKAIKAN ke prompt (sebelumnya prompt tidak
@@ -1031,9 +1123,9 @@ export class DedAiEstimateService {
       const built = buildForPages(planEntry.pages);
 
       notify('ANALYZE', mode === 'FAST' ? 'Menganalisis DED' : 'Analisis mendalam',
-        50 + Math.round((gi / passPlan.length) * 25),
-        passPlan.length > 1
-          ? `Mengirim kelompok halaman ${gi + 1}/${passPlan.length} ke model AI…`
+        50 + Math.round((completedPassExecutions / totalPassExecutions) * 25),
+        totalPassExecutions > 1
+          ? `Mengirim kelompok halaman ${completedPassExecutions + 1}/${totalPassExecutions} ke model AI…`
           : 'Mengirim prompt ke model AI untuk analisis…',
         { pagesRead: parsed.pages.length, totalPages: documentTotalPages });
 
@@ -1063,6 +1155,7 @@ export class DedAiEstimateService {
         passTrace.passStatus = 'FAILED';
         passTrace.errorCode = execution.aiError.errorCode;
         passTraces.push(passTrace);
+        completedPassExecutions++;
         continue;
       }
 
@@ -1078,7 +1171,37 @@ export class DedAiEstimateService {
       // tetapi cakupannya hilang (PARTIAL), bukan sukses.
       passTrace.passStatus = outcome.status === 'MALFORMED_RESPONSE' ? 'PARTIAL' : 'SUCCESS';
       if (outcome.errorCode) passTrace.errorCode = outcome.errorCode;
+      if (
+        outcome.status === 'MALFORMED_RESPONSE' &&
+        depth < MAX_SPLIT_DEPTH &&
+        planEntry.pages.length > 1
+      ) {
+        // Output rusak sesudah 1 percobaan ulang prompt yang sama
+        // (di dalam executeDedPassAttempt) — kemungkinan besar JSON
+        // terpotong plafon token. Pecah pass menjadi dua dan antrekan
+        // ulang; tiap anak diukur ulang (pasti muat — lebih kecil dari
+        // induk yang sudah muat). Pass induk TETAP tercatat MALFORMED
+        // (PARTIAL) sebagai jejak; anak-anak yang menyelamatkan cakupan.
+        const mid = Math.ceil(planEntry.pages.length / 2);
+        const halves = [planEntry.pages.slice(0, mid), planEntry.pages.slice(mid)];
+        halves.forEach((half, hi) => {
+          passQueue.push({
+            entry: {
+              kind: 'SEND',
+              label: `${planEntry.label} (bagian ${hi + 1}/2)`,
+              pages: half,
+              requestChars: measureRequest(half),
+            },
+            depth: depth + 1,
+          });
+        });
+        totalPassExecutions += 1; // 1 induk → 2 anak = +1 bersih
+        passTrace.reason =
+          'Keluaran model tidak dapat diuraikan sesudah percobaan ulang; pass dipecah dua ' +
+          `dan dijalankan ulang sebagai dua pass terpisah (kedalaman pecah ${depth + 1}/${MAX_SPLIT_DEPTH}).`;
+      }
       passTraces.push(passTrace);
+      completedPassExecutions++;
     }
 
     if (rawItems.length === 0) {

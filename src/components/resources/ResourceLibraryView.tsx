@@ -78,6 +78,9 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
 
   // Search & Filters
   const [search, setSearch] = useState('');
+  // Search khusus direktori supplier — toolbar utama disembunyikan di tab
+  // SUPPLIERS, jadi tab ini punya kotak pencariannya sendiri.
+  const [supplierSearch, setSupplierSearch] = useState('');
   const [selectedSubcategory, setSelectedSubcategory] = useState('Semua Kategori');
   const [selectedProvince, setSelectedProvince] = useState('Semua Wilayah');
   const [selectedSourceFilter, setSelectedSourceFilter] = useState('Semua Sumber');
@@ -295,6 +298,19 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
       },
     ];
   }, []);
+
+  // Filter direktori supplier (nama, kategori, lokasi, jenis sumber) — client-side.
+  const filteredSuppliers = useMemo(() => {
+    const q = supplierSearch.trim().toLowerCase();
+    if (!q) return suppliersDirectory;
+    return suppliersDirectory.filter(
+      (s) =>
+        s.name.toLowerCase().includes(q) ||
+        s.category.toLowerCase().includes(q) ||
+        s.location.toLowerCase().includes(q) ||
+        s.sourceType.toLowerCase().includes(q),
+    );
+  }, [suppliersDirectory, supplierSearch]);
 
   // ---------------------------------------------------------------------------
   // PRICE IMPACT CALCULATION (FOR ADOPT PRICE MODAL)
@@ -516,7 +532,7 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
           1. HEADER BAR & ACTIVE PROJECT CONTEXT
          --------------------------------------------------------------------- */}
       <div
-        className="ezdb-anim"
+        className="ezdb-anim ezdb-reslib-head"
         style={{
           animation: 'ezdb-rise 0.6s 0s both',
           background: 'var(--ez-color-surface)',
@@ -525,6 +541,8 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '12px',
           flexShrink: 0,
         }}
       >
@@ -549,7 +567,7 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
           </p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
           {/* Active Project Pill */}
           <div
             style={{
@@ -606,10 +624,11 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
+          flexWrap: 'wrap',
           flexShrink: 0,
         }}
       >
-        <div style={{ display: 'flex', gap: '20px' }}>
+        <div style={{ display: 'flex', gap: '20px', overflowX: 'auto', maxWidth: '100%' }}>
           <button
             onClick={() => setActiveTab('MATERIAL')}
             style={{
@@ -720,7 +739,7 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
          --------------------------------------------------------------------- */}
       {activeTab !== 'SUPPLIERS' && (
         <div
-          className="ezdb-anim"
+          className="ezdb-anim ezdb-reslib-toolbar"
           style={{
             animation: 'ezdb-rise 0.6s 0.16s both',
             padding: '12px 24px',
@@ -729,16 +748,18 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
+            flexWrap: 'wrap',
             gap: '12px',
             flexShrink: 0,
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, flexWrap: 'wrap' }}>
             {/* Search Input */}
-            <div style={{ position: 'relative', minWidth: '280px', flex: 1 }}>
-              <Search size={14} color="var(--ez-color-text-warm)" style={{ position: 'absolute', left: '10px', top: '10px' }} />
+            <div style={{ position: 'relative', minWidth: 'min(280px, 100%)', flex: 1 }}>
+              <Search size={14} color="var(--ez-color-text-warm)" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)' }} />
               <input
                 type="text"
+                className="ezdb-search-input"
                 placeholder={`Cari nama ${activeTab === 'MATERIAL' ? 'material, merk' : activeTab === 'LABOR' ? 'pekerja, profesi' : 'alat berat'}...`}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -840,7 +861,7 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
             </select>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
             <label
               style={{
                 height: '34px',
@@ -920,8 +941,45 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
             <div style={{ marginBottom: '14px', padding: '10px 14px', borderRadius: 'var(--ez-radius-control)', background: 'var(--ez-pastel-cream)', border: '1px solid var(--ez-hue-amber-border)', color: 'var(--ez-hue-amber-text)', fontSize: '12px', fontWeight: 600 }}>
               Direktori contoh: daftar referensi bawaan aplikasi. Entitas di bawah ini belum diverifikasi EZRAB — status, kontak, dan rating tidak diklaim sebagai hasil verifikasi.
             </div>
+            {/* Kotak pencarian direktori supplier */}
+            <div style={{ position: 'relative', maxWidth: 420, marginBottom: 14 }}>
+              <Search size={14} color="var(--ez-color-text-warm)" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)' }} />
+              <input
+                type="text"
+                className="ezdb-search-input"
+                value={supplierSearch}
+                onChange={(e) => setSupplierSearch(e.target.value)}
+                placeholder="Cari nama supplier, kategori, atau lokasi…"
+                aria-label="Cari supplier"
+                style={{ width: '100%', height: '34px', paddingLeft: '32px', paddingRight: supplierSearch ? 30 : 12, borderRadius: 'var(--ez-radius-control)', border: '1px solid #EEF1F6', fontSize: '12px', outline: 'none', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)' }}
+              />
+              {supplierSearch ? (
+                <button
+                  type="button"
+                  className="ezdb-search-clear"
+                  onClick={() => setSupplierSearch('')}
+                  aria-label="Hapus pencarian supplier"
+                  style={{ position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)', border: 0, background: 'transparent', cursor: 'pointer', color: 'var(--ez-color-text-muted)', fontSize: 16, lineHeight: 1, padding: 4 }}
+                >
+                  ×
+                </button>
+              ) : null}
+            </div>
+            {supplierSearch.trim() ? (
+              <div style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', marginBottom: 12 }}>
+                Menampilkan {filteredSuppliers.length} dari {suppliersDirectory.length} supplier
+              </div>
+            ) : null}
+            {filteredSuppliers.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '28px 20px', background: 'var(--ez-color-surface)', borderRadius: 'var(--ez-radius-card)', border: '1px dashed #EEF1F6', fontSize: '12.5px', color: 'var(--ez-color-text-muted)' }}>
+                Tidak ada supplier yang cocok dengan “{supplierSearch.trim()}”.{' '}
+                <button type="button" onClick={() => setSupplierSearch('')} style={{ border: 0, background: 'transparent', cursor: 'pointer', color: 'var(--ez-color-primary)', fontWeight: 700, fontSize: '12.5px', padding: 0 }}>
+                  Hapus pencarian
+                </button>
+              </div>
+            ) : (
           <div className="ezrab-supplier-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '16px' }}>
-            {suppliersDirectory.map((supplier) => (
+            {filteredSuppliers.map((supplier) => (
               <div
                 key={supplier.id}
                 style={{
@@ -994,6 +1052,7 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
               </div>
             ))}
           </div>
+            )}
           </div>
         ) : isNarrowMobile ? (
           // Gelombang Native 2: daftar catatan harga menjadi kartu native;

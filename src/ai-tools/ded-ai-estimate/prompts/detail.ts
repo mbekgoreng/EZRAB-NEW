@@ -7,6 +7,7 @@
 
 import { standardPricingPolicySection, normalizePromptPolicy, type DedPromptPricingPolicy } from './policy';
 import { buildDedSystemPrompt } from './wbsContext';
+import { renderDedPageBlocks } from '../pageSegments';
 
 export interface DedDetailPromptInput {
   projectType: string;
@@ -88,9 +89,10 @@ Keluarkan JSON murni.`;
 }
 
 export function buildDetailPrompt(input: DedDetailPromptInput): DedDetailPromptResult {
-  const pageBlock = input.pageSummaries
-    .map((p) => `--- Halaman ${p.page} (${p.title}) ---\n${p.text.slice(0, 4000)}`)
-    .join('\n');
+  // Tanpa batas pemrosesan (2026-11-19): teks halaman dikirim UTUH —
+  // halaman panjang dipecah menjadi segmen oleh pemanggil (pageSegments),
+  // bukan dipotong di sini. slice(0, 4000) lama DIHAPUS.
+  const pageBlock = renderDedPageBlocks(input.pageSummaries);
 
   const prompt = `Proyek tipe: ${input.projectType} (tipe bangunan: ${input.buildingType})
 

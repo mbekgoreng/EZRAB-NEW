@@ -28,9 +28,8 @@ function check(name: string, cond: boolean, detail?: string): void {
 import {
   DOC_CHUNK_TEXT_BUDGET,
   MAX_AI_REQUEST_CHARS,
-  MAX_DOC_CHUNKS,
   buildDocumentChunks,
-  condenseTextsProportionally,
+  cutAtParagraphBoundary,
   fitTextWithinRequest,
   measureAiRequestChars,
   selectChunksForQuestion,
@@ -109,11 +108,17 @@ console.log('\n[1] chunking murni: halaman, batas, cakupan');
   const fitOk = fitTextWithinRequest('s', 10, 'pendek');
   check('fitTextWithinRequest tidak memotong teks pendek', !fitOk.truncated && fitOk.text === 'pendek');
 
-  const condensed = condenseTextsProportionally(['a'.repeat(5000), 'b'.repeat(5000), 'c'.repeat(5000)], 6000);
-  check('condense proporsional ≤ anggaran', condensed.condensed
-    && condensed.texts.reduce((a, t) => a + t.length, 0) <= 6000);
-  const untouched = condenseTextsProportionally(['kecil'], 6000);
-  check('condense tidak menyentuh yang sudah muat', !untouched.condensed && untouched.texts[0] === 'kecil');
+  // Tanpa batas pemrosesan (2026-11-19): condenseTextsProportionally
+  // DIHAPUS (temuan disintesis hierarkis, bukan dipadatkan) — diganti
+  // pemotong batas paragraf untuk kutipan QA (satu-satunya potong sisa).
+  const cut1 = cutAtParagraphBoundary('Paragraf satu.\n\nParagraf dua yang panjang.', 20);
+  check('cutAtParagraphBoundary memotong pada batas paragraf',
+    cut1.cut && cut1.text === 'Paragraf satu.', JSON.stringify(cut1));
+  const cut2 = cutAtParagraphBoundary('pendek', 100);
+  check('cutAtParagraphBoundary tidak menyentuh teks pendek', !cut2.cut && cut2.text === 'pendek');
+  const cut3 = cutAtParagraphBoundary('kata1 kata2 kata3 kata4', 12);
+  check('cutAtParagraphBoundary fallback ke batas kata',
+    cut3.cut && cut3.text === 'kata1 kata2', JSON.stringify(cut3));
 }
 
 /* ------------------------------------------------------------------ */
@@ -196,15 +201,19 @@ console.log('\n[4] SUMMARY berpotongan lewat service (klien AI palsu)');
   const resFail = await svcFail.chat({ documentText: makeDoc(4, 4000), fileName: 'f.pdf', mode: 'SUMMARY' });
   check('semua potongan gagal → success:false berkode', resFail.success === false && resFail.errorCode === 'MODEL_ERROR' && !resFail.reply);
 
-  // Batas jumlah potongan: 100 halaman → potongan > 24 → diproses 24, parsial.
+  // Tanpa batas pemrosesan (2026-11-19): 100 halaman → 36 potongan,
+  // SEMUANYA diproses (batas 24 potongan lama DIHAPUS) — tidak parsial.
   const capClient = fakeClient(() => okReply('temuan'));
   const svcCap = new DokumenAiService(capClient);
   const bigDoc = makeDoc(100, 5000);
   const resCap = await svcCap.chat({ documentText: bigDoc, fileName: 'besar.pdf', mode: 'SUMMARY' });
-  check('potongan dibatasi MAX_DOC_CHUNKS dan ditandai parsial',
-    resCap.coverage?.processedChunks === MAX_DOC_CHUNKS && resCap.coverage?.partial === true
-    && (resCap.coverage?.totalChunks || 0) > MAX_DOC_CHUNKS,
+  const nCapChunks = buildDocumentChunks(splitDocumentPages(bigDoc)).length;
+  check('semua potongan diproses tanpa batas jumlah (36 potongan, tidak parsial)',
+    resCap.coverage?.processedChunks === nCapChunks && resCap.coverage?.totalChunks === nCapChunks
+    && nCapChunks > 24 && resCap.partial === false && resCap.coverage?.partial === false,
     JSON.stringify(resCap.coverage));
+  check('panggilan = semua potongan + 1 sintesis', capClient.calls.length === nCapChunks + 1,
+    `${capClient.calls.length} vs ${nCapChunks + 1}`);
   check('sintesis dari temuan besar tetap ≤ anggaran', allWithinBudget(capClient.calls));
 }
 

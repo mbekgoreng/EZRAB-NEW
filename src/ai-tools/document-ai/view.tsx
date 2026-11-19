@@ -31,7 +31,7 @@ import type { ContextField } from './types';
 
 export type { DraftVersion };
 import { DocLibrary, type AfterAnalysisChoice } from './components/DocLibrary';
-import { DocAnalyzer, type AnaTab } from './components/DocAnalyzer';
+import { DocAnalyzer, type AnaTab, type DocAnalyzerRunRequest } from './components/DocAnalyzer';
 import { DocCreator } from './components/DocCreator';
 import { DocHistory } from './components/DocHistory';
 import { useI18n } from '../../i18n/I18nContext';
@@ -220,6 +220,16 @@ export const DokumenAiView: React.FC<DokumenAiViewProps> = ({ onAnalysisActiveCh
   // diteruskan ke workspace analisis / navigasi.
   const [analyzerInitialTab, setAnalyzerInitialTab] = useState<AnaTab>('summary');
   const [afterAnalysis, setAfterAnalysis] = useState<AfterAnalysisChoice>('hasil');
+  // Masukan mode dari layar input (mockup v2.3): pertanyaan awal mode
+  // Tanya Dokumen + dokumen pembanding mode Bandingkan.
+  const [analyzerQuestion, setAnalyzerQuestion] = useState('');
+  const [analyzerCompareId, setAnalyzerCompareId] = useState('');
+  // Permintaan auto-run satu kali dari tombol "Jalankan {Mode}" di
+  // Dokumen Saya. SETIAP jalur lain yang membuka workspace analisis
+  // (tombol tab, tombol Analisis per baris, handoff chat) WAJIB
+  // mengosongkannya agar workspace tidak menjalankan run basi.
+  const [analyzerRunRequest, setAnalyzerRunRequest] = useState<DocAnalyzerRunRequest | null>(null);
+  const analyzerRunNonceRef = useRef(0);
 
   const [docs, setDocs] = useState<DocRecord[]>(() => readLS<DocRecord[]>(LS_DOCS, []));
   const [history, setHistory] = useState<HistoryEntry[]>(() => readLS<HistoryEntry[]>(LS_HISTORY, []));
@@ -287,6 +297,7 @@ export const DokumenAiView: React.FC<DokumenAiViewProps> = ({ onAnalysisActiveCh
     if (!doc) return;
     setActiveDoc(doc);
     setAnalyzerInitialTab('summary');
+    setAnalyzerRunRequest(null);
     setTab('analyze');
   }, []);
   useEffect(() => {
@@ -338,7 +349,29 @@ export const DokumenAiView: React.FC<DokumenAiViewProps> = ({ onAnalysisActiveCh
 
   const openAnalyze = (doc: DocRecord) => {
     setActiveDoc(doc);
+    setAnalyzerRunRequest(null);
     setTab('analyze');
+  };
+
+  /** Tombol "Jalankan {Mode}" di Dokumen Saya: buka workspace DENGAN
+      auto-run satu kali (mode + pertanyaan/pembanding saat diklik). */
+  const runAnalysis = (doc: DocRecord) => {
+    analyzerRunNonceRef.current += 1;
+    setActiveDoc(doc);
+    setAnalyzerRunRequest({
+      nonce: analyzerRunNonceRef.current,
+      tab: analyzerInitialTab,
+      question: analyzerQuestion.trim() || undefined,
+      compareId: analyzerCompareId || undefined,
+    });
+    setTab('analyze');
+  };
+
+  /** Pindah tab lewat bar tab — selalu mengosongkan runRequest agar
+      klik tab "Analisis Dokumen" tidak menjalankan run basi. */
+  const switchTab = (next: Tab) => {
+    setAnalyzerRunRequest(null);
+    setTab(next);
   };
 
   // ---- Kerangka halaman di dalam workspace (pola app shell, mockup
@@ -419,7 +452,7 @@ export const DokumenAiView: React.FC<DokumenAiViewProps> = ({ onAnalysisActiveCh
             <button
               key={tabItem.id}
               className={`docai-tabbtn ${tab === tabItem.id ? 'active' : ''}`}
-              onClick={() => setTab(tabItem.id as Tab)}
+              onClick={() => switchTab(tabItem.id as Tab)}
             >
               <Icon size={16} /> {tabItem.label}
             </button>
@@ -439,7 +472,7 @@ export const DokumenAiView: React.FC<DokumenAiViewProps> = ({ onAnalysisActiveCh
               className={`docai-tabbtn ${tab === tabItem.id ? 'active' : ''}`}
               disabled={disabled}
               title={disabled ? t('ai.doc.tab_analyze_disabled') : tabItem.label}
-              onClick={() => setTab(tabItem.id as Tab)}
+              onClick={() => switchTab(tabItem.id as Tab)}
             >
               <Icon size={16} /> {tabItem.label}
             </button>
@@ -453,7 +486,7 @@ export const DokumenAiView: React.FC<DokumenAiViewProps> = ({ onAnalysisActiveCh
             role="alert"
             style={{
               display: 'flex', gap: 10, alignItems: 'flex-start',
-              background: '#FDF2F2', border: '1px solid #F3C2C2', color: '#8A2A2A',
+              background: 'var(--ez-color-danger-soft)', border: '1px solid var(--ez-color-danger-soft)', color: 'var(--ez-color-danger)',
               borderRadius: 10, padding: '14px 16px',
               fontSize: 14, lineHeight: 1.6, maxWidth: 640,
             }}
@@ -474,10 +507,21 @@ export const DokumenAiView: React.FC<DokumenAiViewProps> = ({ onAnalysisActiveCh
             afterAnalysis={afterAnalysis}
             onAfterAnalysisChange={setAfterAnalysis}
             onContinueToDed={onNavigateToMenu ? () => onNavigateToMenu('ded-ai') : undefined}
+            initialQuestion={analyzerQuestion}
+            onInitialQuestionChange={setAnalyzerQuestion}
+            initialCompareId={analyzerCompareId}
+            onInitialCompareIdChange={setAnalyzerCompareId}
+            onRunAnalysis={runAnalysis}
           />
         )}
         {tab === 'analyze' && activeDoc && (
-          <DocAnalyzer doc={activeDoc} docs={docs} onBack={() => setTab('library')} onAddHistory={addHistory} initialTab={analyzerInitialTab} />
+          <DocAnalyzer
+            doc={activeDoc} docs={docs} onBack={() => setTab('library')} onAddHistory={addHistory}
+            initialTab={analyzerInitialTab}
+            initialQuestion={analyzerQuestion}
+            initialCompareId={analyzerCompareId}
+            runRequest={analyzerRunRequest}
+          />
         )}
         {STUDIO_TABS.includes(tab) && (
           <DocCreator

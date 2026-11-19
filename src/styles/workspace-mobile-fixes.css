@@ -1274,3 +1274,67 @@
     font-size: 16px !important;
   }
 }
+
+/* --- Kotak pencarian database: ramah HP (perintah owner 2026-11-19) -------- */
+/* Input pencarian baru (daftar AHSP proyek + direktori supplier): di HP
+   tingginya 44px agar mudah disentuh dan font 16px agar iOS tidak
+   auto-zoom saat fokus — pola yang sama dengan R30e. !important karena
+   kedua input memakai inline style. Lebar penuh sudah dari width: 100%
+   di JSX; tidak ada aturan lebar di sini. */
+@media (max-width: 767px) {
+  .ezdb-search-input {
+    height: 44px !important;
+    font-size: 16px !important;
+  }
+  .ezdb-search-clear {
+    min-width: 36px !important;
+    min-height: 36px !important;
+    padding: 8px !important;
+  }
+}
+
+/* =========================================================================
+   R31. Pass akhir responsif A2 (2026-11-19): kotak pencarian + toolbar
+   database di 390px (AHSP Proyek, Resource Library, Material).
+   Akar yang diperbaiki di TSX (wrap/scroll-x/min-width tabel) didampingi
+   aturan ini — !important karena targetnya memakai inline style.
+   Target sentuh 44px + font isian 16px anti-zoom iOS, pola yang sama
+   dengan R30. Desktop tidak berubah (semua aturan ≤767px).
+   ========================================================================= */
+@media (max-width: 767px) {
+  /* --- AHSP Proyek: tombol header & tombol aksi baris tabel 44px. --- */
+  .ezdb-ahsp-headactions > button { min-height: 44px !important; }
+  .ezdb-ahsp-rowact button { min-width: 44px !important; min-height: 44px !important; padding: 8px !important; }
+
+  /* --- Modal katalog AHSP: semua tombol 44px (Pilih, Muat lebih banyak,
+     Tutup); baris filter jadi dua baris — kotak cari selebar penuh,
+     pemilih domain di bawahnya selebar penuh. --- */
+  .ezdb-ahsp-catmodal button { min-height: 44px !important; }
+  .ezdb-ahsp-catfilter > div { flex: 1 1 100% !important; }
+  .ezdb-ahsp-catfilter select { width: 100% !important; font-size: 16px !important; min-height: 44px !important; }
+
+  /* --- Modal AHSP kustom: isian 16px anti-zoom iOS + tinggi 44px,
+     tombol 44px. --- */
+  .ezdb-ahsp-customform input,
+  .ezdb-ahsp-customform textarea { font-size: 16px !important; }
+  .ezdb-ahsp-customform input { min-height: 44px !important; }
+  .ezdb-ahsp-customform button { min-height: 44px !important; }
+
+  /* --- Resource Library: tombol header 44px; toolbar — keempat filter
+     16px/44px, tombol & label Import 44px. Kotak cari utama memakai
+     .ezdb-search-input (aturan di atas). --- */
+  .ezdb-reslib-head button { min-height: 44px !important; }
+  .ezdb-reslib-toolbar select { font-size: 16px !important; min-height: 44px !important; }
+  .ezdb-reslib-toolbar button,
+  .ezdb-reslib-toolbar label { min-height: 44px !important; }
+
+  /* --- Material: kotak cari 44px + font 16px; semua tombol filter-box
+     44px (Filter, Table/Compact, Columns, Export, More Filters, pil
+     sektor, hapus cari); dropdown filter 16px/44px; ikon chevron
+     dropdown dipusatkan ulang ke tinggi baru. --- */
+  .mat-search-box { height: 44px !important; }
+  .mat-search-input { font-size: 16px !important; }
+  .mat-filter-box button { min-height: 44px !important; }
+  .mat-filter-box select { font-size: 16px !important; min-height: 44px !important; }
+  .mat-filter-grid-5 > div > svg { bottom: 16px !important; }
+}

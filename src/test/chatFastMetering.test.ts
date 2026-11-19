@@ -429,6 +429,7 @@ console.log('=== Level HTTP (handleAiRequest + fetch stub deterministik) ===');
     'CROWN_API_KEY', 'ATMO_API_KEY', 'ZYROUTER_API_KEY', 'ZROUTER_API_KEY',
     'RIVER_API_KEY_1', 'DAHL_API_KEY_1', 'ATRIA_API_KEY_1', 'GEMINI_OAI_KEY_1',
     'GEMINI_API_KEY', 'GEMINI_API_KEY_2', 'GEMINI_API_KEY_3', 'GEMINI_API_KEY_4', 'GEMINI_API_KEY_5', 'GEMINI_API_KEY_6',
+    'WEIZEROUTER_API_KEY',
     'SUPABASE_URL', 'SUPABASE_ANON_KEY', 'AI_GATEWAY_TOKEN', 'AI_METERING_ENABLED', 'AI_ALLOW_ANONYMOUS',
   ];
   const savedEnv: Record<string, string | undefined> = {};
@@ -442,6 +443,9 @@ console.log('=== Level HTTP (handleAiRequest + fetch stub deterministik) ===');
     const payload = {
       candidates: [{ content: { parts: [{ text: 'HALO-DARI-GEMINI' }] } }],
       usageMetadata: usageStub,
+      // Bentuk OpenAI untuk kaki WeizeRouter (mode fast WeizeRouter-only
+      // sejak keputusan owner 2026-11-19; jalur Gemini membaca candidates).
+      choices: [{ message: { content: 'HALO-DARI-GEMINI' } }],
     };
     return {
       ok: true, status: 200, headers: { get: () => 'application/json' },
@@ -517,7 +521,13 @@ console.log('=== Level HTTP (handleAiRequest + fetch stub deterministik) ===');
   // --- Gerbang menyala: fitur lain lewat HTTP tetap tak termeter ---
   fetchCalls.length = 0;
   const resDed: any = mockRes();
+  // Mode fast WeizeRouter-only (keputusan owner 2026-11-19): key WeizeRouter
+  // dipasang HANYA untuk cek ini — bila dipasang global, kaki WeizeRouter
+  // menjadi pertama di rantai chat dan mematahkan cek bentuk prompt Gemini
+  // di atas (body OpenAI tidak punya `contents`).
+  process.env.WEIZEROUTER_API_KEY = 'dummy-weize-key';
   await handleAiRequest(mockReq({ message: 'analisis ded', productId: 'DED_AI_FAST' }) as any, resDed, { productIdToMode: () => 'fast' });
+  delete process.env.WEIZEROUTER_API_KEY;
   check('HTTP gate ON: DED_AI_FAST (mode fast) tetap 200 normal tanpa metering', resDed.statusCode === 200 && resDed.body.content === 'HALO-DARI-GEMINI');
   const resAdv: any = mockRes();
   await handleAiRequest(mockReq(chatBody) as any, resAdv, { productIdToMode: () => 'advanced' });

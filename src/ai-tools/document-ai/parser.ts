@@ -51,7 +51,11 @@ export async function parseDocument(
 
       const doc = await (pdfjs.getDocument({ data: bytes, useSystemFonts: true }) as any).promise;
       const pages: string[] = [];
-      const max = Math.min(doc.numPages, 150);
+      // Tanpa batas pemrosesan (2026-11-19): batas 150 halaman DIHAPUS —
+      // SEMUA halaman PDF dibaca. Field pagesTruncated/sourcePageCount/
+      // parsedPageCount dipertahankan (kontrak UI) dan kini selalu
+      // melaporkan dokumen utuh (pagesTruncated: false).
+      const max = doc.numPages;
       for (let p = 1; p <= max; p++) {
         const page = await (doc.getPage(p) as any);
         const tc = await page.getTextContent();
@@ -63,10 +67,6 @@ export async function parseDocument(
         // Marker halaman untuk traceability jawaban AI ke sumber.
         pages.push(`[Halaman ${p}]\n${t}`);
       }
-      // Sprint 1 (Workstream D): batas 150 halaman TIDAK lagi diam-diam —
-      // jumlah halaman sumber vs terparse diekspos agar UI wajib jujur
-      // ("dibaca N dari M halaman") dan tidak menyajikan dokumen terpotong
-      // sebagai dokumen utuh.
       return {
         fileName,
         kind: 'pdf',
@@ -74,7 +74,7 @@ export async function parseDocument(
         pages: max,
         sourcePageCount: doc.numPages,
         parsedPageCount: max,
-        pagesTruncated: doc.numPages > max,
+        pagesTruncated: false,
       };
     }
 

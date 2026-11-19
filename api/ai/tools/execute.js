@@ -6,17 +6,19 @@
  * Routing per produk (Wave-1 remediation AI-01 — sebelumnya SEMUA produk
  * selain DED_AI_DETAIL dipaksa 'fast', sehingga rantai chat tidak pernah
  * terjangkau dan toggle Cepat/Mendalam di Chat AI tidak berpengaruh).
- * Susunan rantai (F7, 2026-10-23 — mengikuti urutan prioritas owner):
+ * Susunan rantai (F7, 2026-10-23 — mengikuti urutan prioritas owner;
+ * rantai 'ded' + 'fast' WeizeRouter-only sejak keputusan owner 2026-11-19):
  * - EZRAB_AI (Chat AI): mode default           -> rantai 'chat'
- *     Gemini native (gemini-3.5-flash-lite) -> AtmoRouter ag/gemini-3.8-flash-high
- *     -> AtmoRouter cx/gpt-6-luna -> ZyRouter geminiflash-3.8 (+ ekor generik)
+ *     WeizeRouter weizerouter-v2 -> kimi-k2.7 -> kimi-k2.6 -> ArxPay
+ *     -> Crown x2 -> Gemini native -> AtmoRouter ag/cx -> ZyRouter (+ ekor)
  *   EZRAB_AI mode 'advanced' (Mendalam)       -> rantai 'advanced' (kepala sama)
- * - DED_AI_DETAIL                             -> 'ded' (rantai advanced, model WeizeRouter wz/gpt-6-luna — user 2026-11-13)
+ * - DED_AI_DETAIL                             -> 'ded' (WeizeRouter-only:
+ *     wz/gpt-6-luna -> weizerouter-v1 -> wz/gemini-3.8-flash-high
+ *     -> wz/grok-4.7 -> wz/deepseek-v4-pro)
  * - DOKUMEN_AI                                -> 'advanced' (WeizeRouter gpt-6-luna pertama — user 2026-11-16)
- * - DED_AI_FAST, lainnya                      -> 'fast'
- *     Gemini native -> River DeepSeek V4.1 -> AtmoRouter DeepSeek flash
- *     -> ZyRouter + ekor chat (perbaikan 2026-10-27: fast sebelumnya mati
- *     bila Gemini native gagal dan Crown/River/Atmo tak punya key)
+ * - DED_AI_FAST, lainnya                      -> 'fast' (WeizeRouter-only:
+ *     weizerouter-v2 -> wz/gpt-6-luna -> wz/qwen3.8-flash
+ *     -> wz/deepseek-v4-flash-0731 -> weizerouter-v1 -> wz/gemini-3.8-flash)
  */
 import { handleAiRequest } from '../../_lib/aiGateway.js';
 

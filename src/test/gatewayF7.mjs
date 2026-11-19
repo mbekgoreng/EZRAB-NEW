@@ -153,12 +153,14 @@ const httpFail = (status) => ({
 // 4. Anggaran provider: 429 tidak membakar banyak percobaan di provider sama
 // ---------------------------------------------------------------------------
 {
-  // Fast: 4 key Gemini, semuanya 429 -> hanya 2 attempt Gemini yang tercatat
+  // Chat: 4 key Gemini, semuanya 429 -> hanya 2 attempt Gemini yang tercatat
   // (1 awal + 1 ulang), lalu failover keluar dari provider itu.
+  // Mode 'chat' (fast WeizeRouter-only sejak keputusan owner 2026-11-19 —
+  // Gemini tidak lagi ada di rantai fast).
   for (let i = 1; i <= 4; i++) process.env['GEMINI_API_KEY_' + i] = 'dummy-g' + i;
   global.fetch = async () => httpFail(429);
-  const r = await executeAI({ message: 'halo', mode: 'fast' });
-  check('budget: fast all-429 ok=false', () => assert.equal(r.ok, false));
+  const r = await executeAI({ message: 'halo', mode: 'chat' });
+  check('budget: chat all-429 ok=false', () => assert.equal(r.ok, false));
   check('budget: gemini dibatasi 2 attempt walau 4 key tersedia', () =>
     assert.equal(r.attempts.filter((a) => a.provider === 'gemini').length, 2));
   for (let i = 1; i <= 4; i++) delete process.env['GEMINI_API_KEY_' + i];

@@ -40,6 +40,18 @@ import {
 /** Transport minimal yang dipakai orchestrator — DokumenAiService memenuhinya; tes menyuntikkan mock. */
 export interface DocAiTransport {
   chat(request: DokumenAiChatRequest): Promise<DokumenAiChatResponse>;
+  /**
+   * Perbandingan dua dokumen tanpa batas pemrosesan (2026-11-19).
+   * OPSIONAL agar mock transport tes lama tetap sah — bila tidak ada,
+   * orchestrator memakai fallback chat COMPARE (service kini memaginasi
+   * gabungan teks lewat map-reduce, tetapi atribusi per-dokumennya
+   * lebih lemah daripada compareDocuments).
+   */
+  compareDocuments?: (
+    a: { fileName: string; text: string },
+    b: { fileName: string; text: string },
+    opts?: { timeoutMs?: number },
+  ) => Promise<DokumenAiChatResponse>;
 }
 
 const SCOPE_EXTRACTION_PROMPT = `Ekstrak LINGKUP PEKERJAAN KONSTRUKSI dari dokumen ini. Keluarkan daftar terstruktur berisi, hanya bila benar-benar tertulis di dokumen:
@@ -221,6 +233,9 @@ export class DocumentStudioOrchestrator {
       documentText,
       fileName: docName,
       mode: 'DRAFT',
+      // Draf BARU: referensi besar diringkas seluruhnya dulu, lalu
+      // draf dibuat dari ringkasan (summarize-then-draft).
+      draftMode: 'create',
       prompt,
       timeoutMs: request.timeoutMs,
     });
@@ -302,13 +317,15 @@ export class DocumentStudioOrchestrator {
     if (!request.documentText?.trim()) {
       return fail(request.intent, 'NO_DATA', 'document', 'Tidak ada teks dokumen sumber untuk ekstraksi lingkup.');
     }
-    // Transport: mode CHAT dipakai karena template prompt mode EXTRACT pada
-    // service tidak menerima instruksi khusus; mode CHAT meneruskan prompt
-    // ini apa adanya dengan system prompt "jawab hanya dari dokumen".
+    // Tanpa batas pemrosesan (2026-11-19): mode EXTRACT kini menerima
+    // instruksi khusus pemanggil (service memakai request.prompt sebagai
+    // kepala instruksi ekstraksi, satu panggilan bila muat, map-reduce
+    // bila tidak) — jalur CHAT lama (QA retrieval, hanya potongan
+    // relevan yang dikirim) tidak lagi dipakai untuk ekstraksi lingkup.
     const res = await this.transport.chat({
       documentText: request.documentText,
       fileName: request.fileName || 'Dokumen Sumber',
-      mode: 'CHAT',
+      mode: 'EXTRACT',
       prompt: SCOPE_EXTRACTION_PROMPT,
       timeoutMs: request.timeoutMs,
     });
@@ -362,6 +379,9 @@ export class DocumentStudioOrchestrator {
       documentText: current,
       fileName: request.fileName || 'Draf Dokumen',
       mode: 'DRAFT',
+      // Revisi dokumen yang ADA: dokumen besar direvisi per potongan
+      // lalu digabung (bukan diringkas) — isi penuh dipertahankan.
+      draftMode: 'revise',
       prompt,
       timeoutMs: request.timeoutMs,
     });
@@ -502,12 +522,25 @@ export class DocumentStudioOrchestrator {
     let content = comparison.summaryText;
     let message: string | undefined;
     if (request.useAiNarrative) {
-      const res = await this.transport.chat({
-        documentText: `DOKUMEN A:\n${a}\n\nDOKUMEN B:\n${b}`,
-        fileName: request.fileName || 'Perbandingan Dokumen',
-        mode: 'COMPARE',
-        timeoutMs: request.timeoutMs,
-      });
+      // Tanpa batas pemrosesan (2026-11-19): narasi memakai
+      // compareDocuments (tiap dokumen diekstrak per potongan, lalu
+      // dibandingkan) — bukan lagi gabungan dua dokumen yang dipotong.
+      let res: DokumenAiChatResponse;
+      if (this.transport.compareDocuments) {
+        res = await this.transport.compareDocuments(
+          { fileName: request.fileName || 'Dokumen A', text: a },
+          { fileName: 'Dokumen B', text: b },
+          { timeoutMs: request.timeoutMs },
+        );
+      } else {
+        // Fallback mock transport tes (tanpa compareDocuments).
+        res = await this.transport.chat({
+          documentText: `DOKUMEN A:\n${a}\n\nDOKUMEN B:\n${b}`,
+          fileName: request.fileName || 'Perbandingan Dokumen',
+          mode: 'COMPARE',
+          timeoutMs: request.timeoutMs,
+        });
+      }
       if (res.success && (res.reply ?? '').trim()) {
         content = `${comparison.summaryText}\n\nNarasi AI (berdasarkan isi kedua dokumen):\n${res.reply!.trim()}`;
       } else {

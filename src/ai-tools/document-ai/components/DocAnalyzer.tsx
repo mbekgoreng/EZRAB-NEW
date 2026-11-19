@@ -4,24 +4,50 @@
  * bukan chat permanen. Floating assistant global sudah disembunyikan di
  * menu ini oleh WorkspaceView (single-mascot rule).
  *
- * ADAPTASI (service cabang ini belum mendukung mode CHECKLIST):
- * - Tab "Kelengkapan" dijalankan lewat mode CHAT dengan instruksi
- *   pemeriksaan kelengkapan yang dibangun di komponen.
+ * Tanpa batas pemrosesan (2026-11-19):
+ * - Tab "Kelengkapan" memakai mode CHECKLIST service yang sebenarnya
+ *   (adaptasi CHAT lama DIHAPUS).
+ * - COMPARE memakai dokumenAiService.compareDocuments — kedua dokumen
+ *   dibandingkan UTUH (per potongan, lalu reduce); anggaran 140.000
+ *   karakter dibagi dua + pemotongan per dokumen lama DIHAPUS.
  * - QA meneruskan riwayat percakapan (history) ke service agar pertanyaan
  *   lanjutan tetap kontekstual; service membatasinya ke 6 turn terakhir.
- * - Pemotongan: flag truncated diambil dari respons service. Khusus
- *   COMPARE, anggaran 140.000 karakter DIBAGI DUA per dokumen dan
- *   peringatan menyebut dokumen mana yang terpotong — bukan lagi gabungan
- *   yang terpotong dari depan hingga dokumen kedua bisa hilang diam-diam.
  * - Hasil analisis & jawaban QA dirender TERFORMAT dari markdown AI lewat
  *   markdownToHtml (escape-first) — bukan lagi teks polos mentah.
+ *
+ * Layar input/proses/hasil mockup v2.3 (ACC owner 2026-11-19):
+ * - INPUT: workspace dibuka dari Dokumen Saya; tombol "Jalankan {Mode}"
+ *   di sana (DocLibrary) membuka workspace ini DENGAN auto-run satu kali
+ *   (prop runRequest). Pertanyaan / dokumen pembanding yang dipilih di
+ *   sana diteruskan lewat initialQuestion / initialCompareId.
+ * - PROSES: selama run berjalan (di luar QA), panel menampilkan layar
+ *   proses map-reduce — spinner + % besar + progress bar + waktu jalan +
+ *   tombol Batalkan. Persen memakai kemajuan NYATA (potongan selesai /
+ *   total potongan) dari callback onProgress service; jalur panggilan
+ *   tunggal menampilkan spinner + status tanpa angka palsu.
+ *   Pembatalan bersifat level UI: run ditandai usang sehingga hasilnya
+ *   dibuang bila datang belakangan; panggilan provider yang sedang
+ *   berjalan tidak dibatalkan (service tidak punya seam AbortSignal).
+ * - HASIL: hasil disimpan PER MODE — tab mode berfungsi sekaligus sebagai
+ *   tab hasil; berpindah tab tidak lagi menghapus hasil mode lain.
+ *   Baris cakupan tampil SATU kali dari objek coverage service
+ *   (formatCoverageLine); baris cakupan yang dilekatkan service ke akhir
+ *   teks balasan dipotong (stripCoverageLine) agar tidak ganda.
+ *   Nomor halaman sumber TIDAK pernah ditambahkan UI — yang tampil hanya
+ *   referensi halaman yang ditulis model di dalam teks jawabannya.
+ * - QA tetap percakapan inline (gelembung chat + indikator sibuk), bukan
+ *   layar proses penuh — pertanyaan adalah satu panggilan retrieval,
+ *   bukan map-reduce, dan riwayat chat harus tetap terlihat.
  */
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowLeft, Loader2, Send, BookOpen, MessageCircle, Table2,
   GitCompare, ClipboardCheck, Copy, Check, AlertTriangle, ChevronLeft, ChevronRight, Lock,
+  X, FileText, Info,
 } from 'lucide-react';
-import { dokumenAiService } from '../service';
+import { dokumenAiService, formatCoverageLine, stripCoverageLine } from '../service';
+import type { DocAiProgressEvent } from '../service';
+import type { DocCoverageInfo, DokumenAiChatResponse } from '../types';
 import { markdownToHtml } from '../markdownHtml';
 import type { DocRecord, ChatMessage, HistoryEntry, HistoryType } from '../view';
 import { useI18n } from '../../../i18n/I18nContext';
@@ -33,7 +59,7 @@ import { CreditBalance } from '../../../ai-credits/components/CreditBalance';
 import { CreditEstimateBadge } from '../../../ai-credits/components/CreditEstimateBadge';
 
 /** Mode yang didukung service cabang ini. */
-type SvcMode = 'SUMMARY' | 'QA' | 'EXTRACT' | 'COMPARE' | 'CHAT';
+type SvcMode = 'SUMMARY' | 'QA' | 'EXTRACT' | 'COMPARE' | 'CHAT' | 'CHECKLIST';
 
 export type AnaTab = 'summary' | 'qa' | 'extract' | 'compare' | 'checklist';
 
@@ -56,23 +82,37 @@ export const getTabs = (
   { id: 'checklist', label: t('ai.doc.ana.tab_checklist'), icon: ClipboardCheck },
 ];
 
-/* Tab Kelengkapan memakai mode CHAT (service belum punya CHECKLIST). */
+/* Tanpa batas pemrosesan (2026-11-19): Tab Kelengkapan memakai mode
+   CHECKLIST service yang sebenarnya (adaptasi CHAT + CHECKLIST_PROMPT
+   lama DIHAPUS); MAX_DOC_CHARS (140.000) DIHAPUS — COMPARE memakai
+   compareDocuments dan membandingkan kedua dokumen secara utuh. */
 const MODE_OF: Record<AnaTab, SvcMode> = {
-  summary: 'SUMMARY', qa: 'QA', extract: 'EXTRACT', compare: 'COMPARE', checklist: 'CHAT',
+  summary: 'SUMMARY', qa: 'QA', extract: 'EXTRACT', compare: 'COMPARE', checklist: 'CHECKLIST',
 };
 
 const HISTORY_TYPE_OF: Record<AnaTab, HistoryType> = {
   summary: 'summary', qa: 'qa', extract: 'extract', compare: 'compare', checklist: 'checklist',
 };
 
-const CHECKLIST_PROMPT =
-  'Periksa kelengkapan dokumen konstruksi ini. Untuk setiap aspek ' +
-  '(identitas proyek, lingkup pekerjaan, spesifikasi teknis, gambar acuan, ' +
-  'jadwal, RAB/nilai pekerjaan, tanda tangan/pengesahan), nyatakan ADA ' +
-  '(dengan kutipan bagian dokumen) atau TIDAK DITEMUKAN. Jangan mengarang ' +
-  'informasi yang tidak ada.';
+/** Hasil satu mode analisis (disimpan per mode agar tab = tab hasil). */
+interface ModeResult {
+  /** Balasan AI — baris cakupan lampiran service SUDAH dipotong. */
+  reply: string;
+  coverage?: DocCoverageInfo;
+  truncated: boolean;
+}
 
-const MAX_DOC_CHARS = 140_000;
+/**
+ * Permintaan jalankan-satu-kali dari layar input (Dokumen Saya).
+ * `nonce` membedakan tiap klik "Jalankan {Mode}" — workspace hanya
+ * menjalankan nonce yang belum pernah dikonsumsi mount ini.
+ */
+export interface DocAnalyzerRunRequest {
+  nonce: number;
+  tab: AnaTab;
+  question?: string;
+  compareId?: string;
+}
 
 function splitPages(text: string): string[] {
   const parts = text.split(/\[Halaman (\d+)\]/g);
@@ -84,6 +124,13 @@ function splitPages(text: string): string[] {
   return out.length ? out : [text];
 }
 
+function formatElapsed(totalSec: number): string {
+  if (totalSec < 60) return `${totalSec} dtk`;
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
+  return `${m} mnt ${s} dtk`;
+}
+
 export const DocAnalyzer: React.FC<{
   doc: DocRecord;
   docs: DocRecord[];
@@ -92,25 +139,39 @@ export const DocAnalyzer: React.FC<{
   /** Mode analisis pertama yang dipilih dari panel Pengaturan Dokumen
       (Dokumen Saya, pola app shell 2026-11-10). Default: Ringkasan. */
   initialTab?: AnaTab;
-}> = ({ doc, docs, onBack, onAddHistory, initialTab }) => {
+  /** Pertanyaan awal dari layar input (mode Tanya Dokumen). */
+  initialQuestion?: string;
+  /** Dokumen pembanding awal dari layar input (mode Bandingkan). */
+  initialCompareId?: string;
+  /**
+   * Permintaan auto-run satu kali dari tombol "Jalankan {Mode}" di
+   * Dokumen Saya. null = buka workspace biasa tanpa menjalankan.
+   */
+  runRequest?: DocAnalyzerRunRequest | null;
+}> = ({ doc, docs, onBack, onAddHistory, initialTab, initialQuestion, initialCompareId, runRequest }) => {
   const { t } = useI18n();
   const TABS = getTabs(t);
   const [tab, setTab] = useState<AnaTab>(initialTab ?? 'summary');
   const [pageIdx, setPageIdx] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState('');
-  /** Catatan pemotongan yang tampil ke pengguna (umum dari service, atau spesifik per dokumen untuk COMPARE). */
-  const [truncNote, setTruncNote] = useState<string | null>(null);
-  /** Cakupan pemrosesan berpotongan dari service (Sprint 1): halaman & potongan yang benar-benar diproses. */
-  const [coverageNote, setCoverageNote] = useState<string | null>(null);
-  const [coveragePartial, setCoveragePartial] = useState(false);
+  /** Hasil per mode — berpindah tab tidak menghapus hasil mode lain. */
+  const [modeResults, setModeResults] = useState<Partial<Record<AnaTab, ModeResult>>>({});
   const [copied, setCopied] = useState(false);
+  // --- Layar proses (map-reduce) ---
+  const [progress, setProgress] = useState<DocAiProgressEvent | null>(null);
+  const [runStartedAt, setRunStartedAt] = useState<number | null>(null);
+  const [elapsedSec, setElapsedSec] = useState(0);
+  /** Token run yang sedang berjalan — Batalkan menaikkan token sehingga
+      hasil/callback run lama dibuang. */
+  const runIdRef = useRef(0);
+  /** Nonce runRequest yang sudah dikonsumsi mount ini (anti double-run). */
+  const consumedRunRef = useRef<number | null>(null);
   // QA chat
   const [chat, setChat] = useState<ChatMessage[]>([]);
-  const [question, setQuestion] = useState('');
+  const [question, setQuestion] = useState(initialQuestion ?? '');
   // Compare
-  const [compareId, setCompareId] = useState('');
+  const [compareId, setCompareId] = useState(initialCompareId ?? '');
   const others = useMemo(
     () => docs.filter((d) => d.id !== doc.id && d.status === 'ready'),
     [docs, doc.id]
@@ -126,6 +187,8 @@ export const DocAnalyzer: React.FC<{
   const docEstimate = tariffFor(`ai-document/${TAB_CREDIT_CATEGORY[tab]}`);
 
   const pages = useMemo(() => splitPages(doc.text), [doc.text]);
+  const currentResult = modeResults[tab];
+  const tabLabel = TABS.find((tb) => tb.id === tab)?.label ?? '';
 
   const scrollChat = () => setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
 
@@ -141,54 +204,95 @@ export const DocAnalyzer: React.FC<{
     });
   };
 
-  const runMode = async (
-    anaTab: AnaTab,
-    prompt?: string,
-    docTextOverride?: string,
-    fileNameOverride?: string,
-    truncNoteOverride?: string | null,
-  ) => {
-    if (!docAiAllowed) { setError(docAiLockedMsg); return; }
-    const mode = MODE_OF[anaTab];
-    const docText = docTextOverride ?? doc.text;
-    setBusy(true); setError(null); setResult(''); setTruncNote(truncNoteOverride ?? null);
-    setCoverageNote(null); setCoveragePartial(false);
-    try {
-      const res = await dokumenAiService.chat({
-        documentText: docText,
-        fileName: fileNameOverride ?? doc.fileName,
-        mode,
-        prompt: anaTab === 'checklist' ? CHECKLIST_PROMPT : prompt,
-      });
-      if (res.success) {
-        setResult(res.reply || '');
-        // Cakupan berpotongan (SUMMARY): tampilkan halaman/potongan yang
-        // benar-benar diproses; hasil SEBAGIAN tidak pernah tampil utuh.
-        if (res.coverage) {
-          const c = res.coverage;
-          setCoveragePartial(c.partial);
-          setCoverageNote(
-            `Cakupan: ${c.processedPages} dari ${c.totalPages} halaman diproses · ${c.processedChunks} potongan (${c.okChunks} berhasil${c.failedChunks ? `, ${c.failedChunks} gagal` : ''})${c.partial ? ' — hasil SEBAGIAN, tidak mencakup seluruh dokumen.' : '.'}`,
-          );
-        }
-        // Flag truncated dari service adalah sumber kebenaran pemotongan
-        // (kecuali pemanggil — COMPARE — sudah memberi catatan spesifik).
-        if (res.truncated && !truncNoteOverride) setTruncNote(t('ai.doc.ana.warn_truncated'));
-        recordHistory(anaTab, res.reply || '');
-        // --- AI Credits: catat pemakaian SIMULASI ---
-        consume('ai-document', docEstimate.max, `AI Document (${anaTab}): ${doc.fileName.slice(0, 50)}`);
-      } else {
-        setError(`${res.errorCode || 'ERROR'}: ${res.message || t('ai.doc.err_failed')}`);
-      }
-    } catch (e: any) {
-      setError(e?.message || t('ai.doc.err_unexpected'));
-    } finally {
+  /** Penanganan hasil sukses bersama runMode + runCompare. */
+  const handleSuccess = (anaTab: AnaTab, res: DokumenAiChatResponse) => {
+    // Bila service menyertakan objek coverage, balasan juga membawa baris
+    // cakupan yang dilekatkan di akhir teks (coverageLine) — potong agar
+    // cakupan tampil SATU kali saja, lewat baris cakupan UI.
+    const reply = res.coverage ? stripCoverageLine(res.reply || '') : (res.reply || '');
+    setModeResults((prev) => ({
+      ...prev,
+      [anaTab]: { reply, coverage: res.coverage, truncated: !!res.truncated },
+    }));
+    recordHistory(anaTab, reply);
+    // --- AI Credits: catat pemakaian SIMULASI (kategori mode yang dijalankan) ---
+    const estimate = tariffFor(`ai-document/${TAB_CREDIT_CATEGORY[anaTab]}`);
+    consume('ai-document', estimate.max, `AI Document (${anaTab}): ${doc.fileName.slice(0, 50)}`);
+  };
+
+  /** Hapus hasil tersimpan satu mode (dipakai saat run-nya gagal agar
+      hasil lama tidak tampil berdampingan dengan error baru). */
+  const clearModeResult = (anaTab: AnaTab) => {
+    setModeResults((prev) => {
+      if (!prev[anaTab]) return prev;
+      const next = { ...prev };
+      delete next[anaTab];
+      return next;
+    });
+  };
+
+  /** Pembatalan level UI: run ditandai usang; hasil yang datang belakangan
+      dibuang (cek runId). Panggilan provider yang sedang berjalan TIDAK
+      dibatalkan — service tidak punya seam AbortSignal. */
+  const cancelRun = () => {
+    runIdRef.current += 1;
+    setBusy(false);
+    setProgress(null);
+    setRunStartedAt(null);
+    setElapsedSec(0);
+  };
+
+  const beginRun = (): number => {
+    const myRun = runIdRef.current + 1;
+    runIdRef.current = myRun;
+    setBusy(true);
+    setError(null);
+    setProgress({ phase: 'single', done: 0, total: 0, percent: null, status: 'Menyiapkan analisis…' });
+    setRunStartedAt(Date.now());
+    setElapsedSec(0);
+    return myRun;
+  };
+
+  const endRun = (myRun: number) => {
+    if (runIdRef.current === myRun) {
       setBusy(false);
+      setProgress(null);
+      setRunStartedAt(null);
     }
   };
 
-  const askQuestion = async () => {
-    const q = question.trim();
+  const runMode = async (anaTab: AnaTab, prompt?: string) => {
+    if (!docAiAllowed) { setError(docAiLockedMsg); return; }
+    const mode = MODE_OF[anaTab];
+    const myRun = beginRun();
+    try {
+      const res = await dokumenAiService.chat(
+        {
+          documentText: doc.text,
+          fileName: doc.fileName,
+          mode,
+          prompt,
+        },
+        (ev) => { if (runIdRef.current === myRun) setProgress(ev); },
+      );
+      if (runIdRef.current !== myRun) return; // dibatalkan — buang hasil
+      if (res.success) {
+        handleSuccess(anaTab, res);
+      } else {
+        clearModeResult(anaTab);
+        setError(`${res.errorCode || 'ERROR'}: ${res.message || t('ai.doc.err_failed')}`);
+      }
+    } catch (e: any) {
+      if (runIdRef.current !== myRun) return;
+      clearModeResult(anaTab);
+      setError(e?.message || t('ai.doc.err_unexpected'));
+    } finally {
+      endRun(myRun);
+    }
+  };
+
+  const askQuestion = async (qText?: string) => {
+    const q = (qText ?? question).trim();
     if (!q || busy) return;
     if (!docAiAllowed) { setError(docAiLockedMsg); return; }
     const userMsg: ChatMessage = { role: 'user', text: q, at: Date.now() };
@@ -224,31 +328,103 @@ export const DocAnalyzer: React.FC<{
     }
   };
 
-  const runCompare = () => {
-    const other = docs.find((d) => d.id === compareId);
+  const runCompare = async (compareDocId?: string) => {
+    const other = docs.find((d) => d.id === (compareDocId ?? compareId));
     if (!other) { setError(t('ai.doc.ana.err_compare_first')); return; }
-    // Anggaran karakter DIBAGI DUA per dokumen: masing-masing dipotong ke
-    // separuh batas service, sehingga dokumen kedua tidak pernah hilang
-    // diam-diam karena dokumen pertama memenuhi seluruh anggaran.
-    const halfBudget = Math.floor(MAX_DOC_CHARS / 2);
-    const firstCut = doc.text.length > halfBudget;
-    const secondCut = other.text.length > halfBudget;
-    const combined =
-      `=== DOKUMEN 1: ${doc.fileName} ===\n${doc.text.slice(0, halfBudget)}` +
-      `\n\n=== DOKUMEN 2: ${other.fileName} ===\n${other.text.slice(0, halfBudget)}`;
-    const cutList = [
-      firstCut ? `Dokumen 1 (${doc.fileName})` : null,
-      secondCut ? `Dokumen 2 (${other.fileName})` : null,
-    ].filter(Boolean);
-    const note = cutList.length
-      ? `Anggaran analisis ${MAX_DOC_CHARS.toLocaleString('id-ID')} karakter dibagi dua per dokumen. Yang dipotong: ${cutList.join(' dan ')} — bagian akhirnya tidak ikut dibandingkan.`
-      : null;
-    runMode('compare', undefined, combined, `${doc.fileName} vs ${other.fileName}`, note);
+    if (!docAiAllowed) { setError(docAiLockedMsg); return; }
+    const myRun = beginRun();
+    try {
+      // Tanpa batas pemrosesan (2026-11-19): kedua dokumen dibandingkan
+      // UTUH lewat compareDocuments (tiap dokumen diekstrak per potongan,
+      // lalu dibandingkan) — potong 70rb karakter per dokumen + potong
+      // gabungan service lama DIHAPUS.
+      const res = await dokumenAiService.compareDocuments(
+        { fileName: doc.fileName, text: doc.text },
+        { fileName: other.fileName, text: other.text },
+        { onProgress: (ev) => { if (runIdRef.current === myRun) setProgress(ev); } },
+      );
+      if (runIdRef.current !== myRun) return; // dibatalkan — buang hasil
+      if (res.success) {
+        handleSuccess('compare', res);
+      } else {
+        clearModeResult('compare');
+        setError(`${res.errorCode || 'ERROR'}: ${res.message || t('ai.doc.err_failed')}`);
+      }
+    } catch (e: any) {
+      if (runIdRef.current !== myRun) return;
+      clearModeResult('compare');
+      setError(e?.message || t('ai.doc.err_unexpected'));
+    } finally {
+      endRun(myRun);
+    }
   };
 
-  const copyResult = () => {
-    navigator.clipboard?.writeText(result).catch(() => {});
-    setCopied(true); setTimeout(() => setCopied(false), 1500);
+  // Auto-run satu kali dari tombol "Jalankan {Mode}" di Dokumen Saya.
+  // Handoff chat / tombol tab / tombol Analisis per baris tidak membawa
+  // runRequest sehingga workspace dibuka tanpa menjalankan (perilaku lama).
+  useEffect(() => {
+    if (!runRequest || consumedRunRef.current === runRequest.nonce) return;
+    consumedRunRef.current = runRequest.nonce;
+    const reqTab = runRequest.tab;
+    setTab(reqTab);
+    setError(null);
+    if (reqTab === 'qa') {
+      const q = (runRequest.question ?? '').trim();
+      if (q) void askQuestion(q);
+    } else if (reqTab === 'compare') {
+      const cid = runRequest.compareId ?? '';
+      if (cid) {
+        setCompareId(cid);
+        void runCompare(cid);
+      }
+    } else {
+      void runMode(reqTab);
+    }
+    // Sengaja hanya bergantung pada runRequest: fungsi run dibaca dari
+    // closure mount (state awal workspace masih kosong).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [runRequest]);
+
+  // Timer waktu jalan selama run berlangsung.
+  useEffect(() => {
+    if (!busy || runStartedAt == null) return;
+    const id = window.setInterval(
+      () => setElapsedSec(Math.floor((Date.now() - runStartedAt) / 1000)),
+      500,
+    );
+    return () => window.clearInterval(id);
+  }, [busy, runStartedAt]);
+
+  const copyResult = async () => {
+    const text = modeResults[tab]?.reply ?? '';
+    if (!text) return;
+    let ok = false;
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+        ok = true;
+      }
+    } catch {
+      /* jatuh ke fallback di bawah */
+    }
+    if (!ok) {
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+      } catch {
+        ok = false;
+      }
+    }
+    if (ok) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    }
   };
 
   return (
@@ -267,7 +443,7 @@ export const DocAnalyzer: React.FC<{
           role="alert"
           style={{
             display: 'flex', gap: 10, alignItems: 'flex-start',
-            background: '#FDF2F2', border: '1px solid #F3C2C2', color: '#8A2A2A',
+            background: 'var(--ez-color-danger-soft)', border: '1px solid var(--ez-color-danger-soft)', color: 'var(--ez-color-danger)',
             borderRadius: 10, padding: '12px 14px', margin: '0 0 12px',
             fontSize: 13.5, lineHeight: 1.55,
           }}
@@ -281,18 +457,24 @@ export const DocAnalyzer: React.FC<{
         {TABS.map((tb) => {
           const Icon = tb.icon;
           return (
-            <button key={tb.id} className={tab === tb.id ? 'active' : ''} onClick={() => { setTab(tb.id); setResult(''); setError(null); setTruncNote(null); setCoverageNote(null); setCoveragePartial(false); }}>
+            <button
+              key={tb.id}
+              className={tab === tb.id ? 'active' : ''}
+              disabled={busy}
+              title={busy ? 'Analisis sedang berjalan' : tb.label}
+              onClick={() => { setTab(tb.id); setError(null); }}
+            >
               <Icon size={15} /> {tb.label}
             </button>
           );
         })}
-        <span style={{ marginLeft: 'auto', alignSelf: 'center' }}>
+        <span className="docai-anaestimate">
           <CreditEstimateBadge estimate={docEstimate} />
         </span>
       </div>
 
       <div className="docai-analayout">
-        {/* VIEWER */}
+        {/* VIEWER — Preview teks terekstrak (tetap terlihat selama proses). */}
         <div className="docai-viewer">
           <div className="docai-viewer-head">
             <span>{t('ai.doc.ana.viewer_head')}</span>
@@ -342,9 +524,42 @@ export const DocAnalyzer: React.FC<{
                   onKeyDown={(e) => { if (e.key === 'Enter') askQuestion(); }}
                   placeholder={t('ai.doc.ana.qa_ph')} disabled={busy}
                 />
-                <button onClick={askQuestion} disabled={!question.trim() || busy}><Send size={15} /></button>
+                <button onClick={() => askQuestion()} disabled={!question.trim() || busy}><Send size={15} /></button>
               </div>
             </>
+          ) : busy ? (
+            /* LAYAR PROSES — map-reduce per potongan (mockup v2.3 §6).
+               Persen dari hitungan potongan nyata; null = panggilan
+               tunggal tanpa kemajuan terukur (bar tak tentu + status). */
+            <div className="docai-progress" role="status" aria-live="polite">
+              <div className="docai-progress-head">
+                <Loader2 size={30} className="spin docai-progress-spinner" />
+                <div className="docai-progress-status">{progress?.status ?? 'Menyiapkan analisis…'}</div>
+                {progress?.percent != null && (
+                  <div className="docai-progress-pct">{progress.percent}%</div>
+                )}
+              </div>
+              <div className="docai-progress-bar">
+                {progress?.percent != null ? (
+                  <div className="docai-progress-fill" style={{ width: `${progress.percent}%` }} />
+                ) : (
+                  <div className="docai-progress-fill indet" />
+                )}
+              </div>
+              <div className="docai-progress-meta">
+                <span>Mode: <strong>{tabLabel}</strong></span>
+                <span>Waktu jalan: <strong>{formatElapsed(elapsedSec)}</strong></span>
+              </div>
+              <div className="docai-progress-file">
+                <FileText size={15} /> {doc.fileName}
+              </div>
+              <button type="button" className="docai-btn-danger-ghost" onClick={cancelRun}>
+                <X size={15} /> Batalkan
+              </button>
+              <p className="docai-hint docai-progress-note" style={{ marginTop: 0 }}>
+                Dokumen diproses per potongan (map-reduce) — tidak ada halaman yang dipotong atau dilewati.
+              </p>
+            </div>
           ) : (
             <>
               {tab === 'compare' && (
@@ -361,24 +576,33 @@ export const DocAnalyzer: React.FC<{
                 disabled={busy}
                 onClick={() => tab === 'compare' ? runCompare() : runMode(tab)}
               >
-                {busy ? <><Loader2 size={15} className="spin" /> {t('ai.doc.ana.run_busy')}</> : `${t('ai.doc.ana.run_a')} ${TABS.find((tb) => tb.id === tab)?.label}`}
+                {`${t('ai.doc.ana.run_a')} ${tabLabel}`}
               </button>
               {error && <div className="docai-error"><AlertTriangle size={14} /> {error}</div>}
-              {coverageNote && <div className={coveragePartial ? 'docai-warn' : 'docai-hint'}>{coverageNote}</div>}
-              {truncNote && <div className="docai-warn">{truncNote}</div>}
-              {result && (
+              {currentResult?.coverage && (
+                <div className={currentResult.coverage.partial ? 'docai-coverage partial' : 'docai-coverage'}>
+                  <Info size={14} /> {formatCoverageLine(currentResult.coverage)}
+                </div>
+              )}
+              {currentResult?.truncated && <div className="docai-warn">{t('ai.doc.ana.warn_truncated')}</div>}
+              {currentResult && (
                 <div className="docai-result">
                   <div className="docai-result-head">
-                    <span>{t('ai.doc.ana.result_a')} {TABS.find((tb) => tb.id === tab)?.label}</span>
+                    <span>{t('ai.doc.ana.result_a')} {tabLabel}</span>
                     <button onClick={copyResult}>{copied ? <Check size={14} /> : <Copy size={14} />} {copied ? t('ai.doc.ana.copied') : t('ai.doc.ana.copy')}</button>
                   </div>
                   <div
                     className="docai-result-body docai-md"
-                    dangerouslySetInnerHTML={{ __html: markdownToHtml(result) }}
+                    dangerouslySetInnerHTML={{ __html: markdownToHtml(currentResult.reply) }}
                   />
+                  <div className="docai-result-foot">
+                    <button type="button" className="docai-btn-ghost" onClick={onBack}>
+                      <ArrowLeft size={15} /> Kembali ke Input
+                    </button>
+                  </div>
                 </div>
               )}
-              {!result && !busy && (
+              {!currentResult && (
                 <p className="docai-hint">
                   {tab === 'summary' && t('ai.doc.ana.hint_summary')}
                   {tab === 'extract' && t('ai.doc.ana.hint_extract')}

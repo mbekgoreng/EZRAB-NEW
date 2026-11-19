@@ -4,6 +4,11 @@ const saveAs = (fileSaver as any)?.saveAs || fileSaver;
 import { Project, Company, EstimateVersion, RABSection, RABItem } from '../types';
 import { MASTER_AHSP_DATABASE } from '../data/indonesianAHSP';
 import { getPriceDatabase } from '../data/indonesianPrices';
+// D1 (2026-11-19): baris lama masih menyimpan awalan "[Chat AI] " di
+// deskripsinya; spreadsheet sudah menampilkannya bersih via helper ini
+// (stripChatAiPrefix) — ekspor memakai helper yang sama di titik baca,
+// tanpa mengubah data tersimpan.
+import { stripChatAiPrefix } from '../ai-tools/ezrab-ai/workItemTitle';
 import { generateKurvaSData, generateCashFlowData } from '../engine/kurvaSEngine';
 import { UnifiedProjectEngine } from '../engine/unifiedProjectEngine';
 import {
@@ -1034,7 +1039,7 @@ export async function exportRABToProfessionalExcel(
         const iRow = wsDetail.getRow(detailCurRow);
         iRow.getCell(1).value = itmIdx + 1;
         iRow.getCell(2).value = itm.code || `${sec.code}.${itmIdx + 1}`;
-        iRow.getCell(3).value = itm.description || (itm as any).name;
+        iRow.getCell(3).value = stripChatAiPrefix(itm.description || (itm as any).name || '');
         const numVol = Number(itm.volume) || 0;
         // P0 ekspor 2026-10-26: baris tanpa harga TIDAK ditulis Rp0.
         // Sel harga = teks 'HARGA BELUM TERSEDIA', sel jumlah = '–'
@@ -1219,7 +1224,7 @@ export async function exportRABToProfessionalExcel(
         const r = wsBoq.getRow(bqRowIdx);
         r.getCell(1).value = idx + 1;
         r.getCell(2).value = itm.code || `${sec.code}.${idx + 1}`;
-        r.getCell(3).value = itm.description || (itm as any).name;
+        r.getCell(3).value = stripChatAiPrefix(itm.description || (itm as any).name || '');
         const bqVol = Number(itm.volume) || 0;
         // Phase 2I.2: harga null ditandai eksplisit di kolom Keterangan,
         // tidak diam-diam menjadi Rp0.
@@ -1321,7 +1326,7 @@ export async function exportRABToProfessionalExcel(
         const r = wsMc0.getRow(mc0RowIdx);
         r.getCell(1).value = idx + 1;
         r.getCell(2).value = itm.code || `${sec.code}.${idx + 1}`;
-        r.getCell(3).value = itm.description || (itm as any).name;
+        r.getCell(3).value = stripChatAiPrefix(itm.description || (itm as any).name || '');
         r.getCell(4).value = itm.volume || 0;
         r.getCell(4).numFmt = NUMBER_FORMATS.QUANTITY;
         r.getCell(5).value = itm.unit;
@@ -1878,7 +1883,7 @@ export async function exportRABToProfessionalExcel(
         const itmWeight = (schedAmt ?? 0) / (directCost || 1);
         r.getCell(1).value = itmIdx + 1;
         r.getCell(2).value = itm.code || `${sec.code}.${itmIdx + 1}`;
-        r.getCell(3).value = itm.description || (itm as any).name;
+        r.getCell(3).value = stripChatAiPrefix(itm.description || (itm as any).name || '');
         if (schedAmt == null) {
           r.getCell(4).value = '–';
         } else {

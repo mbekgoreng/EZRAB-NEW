@@ -327,7 +327,7 @@
 .docai-kop-contact-inline { font-family: 'Plus Jakarta Sans', 'Inter', sans-serif; font-size: 8.5pt; color: var(--ez-color-text-muted); }
 
 /* Zona footer lembar (informasi cetak; nomor halaman asli dibuat saat cetak/ekspor) */
-.docai-pagefoot { margin-top: 8mm; padding-top: 3mm; border-top: 1px solid var(--ez-color-border); font-family: 'Plus Jakarta Sans', 'Inter', sans-serif; font-size: 8.5pt; color: var(--ez-color-text-muted); display: flex; justify-content: space-between; gap: 6mm; }
+.docai-pagefoot { margin-top: 8mm; padding-top: 3mm; border-top: 1px solid var(--ez-color-border); font-family: 'Plus Jakarta Sans', 'Inter', sans-serif; font-size: 8.5pt; color: var(--ez-color-text-muted); display: flex; justify-content: space-between; gap: 6mm; flex-wrap: wrap; }
 
 /* Subnavigasi internal AI Document (Fase B5) */
 .docai-subnav { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 0 14px; }
@@ -811,4 +811,305 @@
   .docai-edform .docai-textarea { height: 78px; min-height: 60px; }
   .docai-select { padding: 8px 11px; }
   .docai-xlink { margin-top: 10px; padding: 10px 14px; }
+}
+
+/* ================================================================== */
+/* ANALISIS DOKUMEN — layar input/proses/hasil mockup v2.3 (ACC owner */
+/* 2026-11-19). Kartu mode di panel Pengaturan Dokumen, layar proses  */
+/* map-reduce di workspace analisis, baris cakupan jujur.             */
+/* ================================================================== */
+
+/* Kartu mode analisis (panel Pengaturan Dokumen, Dokumen Saya) */
+.docai-modecards { display: flex; flex-direction: column; gap: 8px; }
+.docai-modecard {
+  display: block; width: 100%; min-height: 44px; text-align: left;
+  padding: 11px 13px; border: 1.5px solid var(--ez-color-border);
+  border-radius: var(--ez-radius-card); background: var(--ez-color-surface);
+  cursor: pointer; font-family: inherit; transition: all .15s;
+}
+.docai-modecard:hover { border-color: var(--ez-color-primary); }
+.docai-modecard.active {
+  border-color: var(--ez-color-primary); background: var(--ez-color-primary-soft);
+  box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+}
+.docai-modecard-top {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 13.5px; font-weight: 800; color: var(--ez-color-text-primary);
+}
+.docai-modecard.active .docai-modecard-top { color: var(--ez-color-primary-hover); }
+.docai-modecard-hint {
+  display: block; font-size: 12px; color: var(--ez-color-text-muted);
+  line-height: 1.55; margin-top: 3px;
+}
+
+/* Catatan routing Draft & Terjemah (jalur Studio, bukan mode analisis) */
+.docai-routing-note {
+  background: var(--ez-color-primary-soft); border: 1px solid var(--ez-color-primary-soft);
+  border-radius: var(--ez-radius-card); padding: 11px 13px; margin: 14px 0;
+  font-size: 12.5px; line-height: 1.6; color: var(--ez-color-text-secondary);
+}
+.docai-routing-note strong { color: var(--ez-color-primary-hover); }
+
+/* Layar proses map-reduce (panel workspace analisis) */
+.docai-progress { display: flex; flex-direction: column; gap: 14px; padding: 8px 0; }
+.docai-progress-head { display: flex; align-items: center; gap: 14px; }
+.docai-progress-spinner { color: var(--ez-color-primary); flex-shrink: 0; }
+.docai-progress-status {
+  flex: 1; min-width: 0; font-size: 14.5px; font-weight: 700;
+  color: var(--ez-color-text-primary); line-height: 1.5; overflow-wrap: break-word;
+}
+.docai-progress-pct {
+  font-size: 34px; font-weight: 800; letter-spacing: -1px;
+  color: var(--ez-color-primary-hover); flex-shrink: 0;
+}
+.docai-progress-bar {
+  height: 10px; border-radius: 999px; background: var(--ez-color-surface-secondary);
+  border: 1px solid var(--ez-color-border-soft); overflow: hidden;
+}
+.docai-progress-fill { height: 100%; background: var(--ez-color-primary); border-radius: 999px; transition: width .4s ease; }
+.docai-progress-fill.indet { width: 40%; animation: docaiIndet 1.4s ease-in-out infinite; }
+@keyframes docaiIndet { 0% { margin-left: -40%; } 100% { margin-left: 100%; } }
+.docai-progress-meta { display: flex; gap: 8px 18px; flex-wrap: wrap; font-size: 12.5px; color: var(--ez-color-text-muted); }
+.docai-progress-meta strong { color: var(--ez-color-text-primary); }
+.docai-progress-file {
+  display: flex; align-items: center; gap: 8px; font-size: 12.5px;
+  color: var(--ez-color-text-secondary); background: var(--ez-color-background);
+  border-radius: var(--ez-radius-control); padding: 9px 12px; word-break: break-all;
+}
+.docai-btn-danger-ghost {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 44px; padding: 11px 20px; border: 1.5px solid var(--ez-color-danger);
+  border-radius: var(--ez-radius-control); background: var(--ez-color-surface);
+  color: var(--ez-color-danger); font-size: 13.5px; font-weight: 700;
+  cursor: pointer; font-family: inherit; transition: all .18s; align-self: flex-start;
+}
+.docai-btn-danger-ghost:hover { background: var(--ez-color-danger-soft); }
+
+/* Baris cakupan jujur (dari objek coverage service) */
+.docai-coverage {
+  display: flex; align-items: flex-start; gap: 8px;
+  background: var(--ez-color-primary-soft); border: 1px solid var(--ez-color-primary-soft);
+  border-radius: var(--ez-radius-card); padding: 11px 14px; margin: 12px 0;
+  color: var(--ez-color-primary-hover); font-size: 12.5px; font-weight: 600; line-height: 1.6;
+}
+.docai-coverage.partial {
+  background: var(--ez-color-warning-soft); border-color: var(--ez-color-warning-soft);
+  color: var(--ez-color-warning);
+}
+.docai-coverage svg { flex-shrink: 0; margin-top: 2px; }
+
+/* Kaki hasil: kembali ke input */
+.docai-result-foot {
+  display: flex; gap: 8px; flex-wrap: wrap; padding: 12px 16px;
+  border-top: 1px solid var(--ez-color-border-soft); background: var(--ez-color-background);
+}
+
+/* ---- Penjaga overflow (tanpa ini, konten lebar memaksa halaman melebar) ---- */
+/* Anak grid analyzer boleh mengecil mengikuti kolom (bukan selebar konten). */
+.docai-analayout > * { min-width: 0; }
+/* Pemilih pembanding selebar panel (nama berkas panjang tidak mendorong). */
+.docai-comparepick .docai-select { width: 100%; box-sizing: border-box; }
+/* Tabel hasil ekstraksi yang lebar bergeser DI DALAM kartu hasil. */
+.docai-result-body { overflow-x: auto; }
+/* Token panjang tanpa spasi (URL/teks tempel) pecah di dalam wadahnya. */
+.docai-md { overflow-wrap: break-word; }
+.docai-msg-b { overflow-wrap: break-word; }
+.docai-viewer-body pre { overflow-wrap: break-word; }
+.docai-anatitle { min-width: 0; overflow-wrap: break-word; }
+/* Kepala hasil boleh membungkus bila label + tombol Salin tidak muat. */
+.docai-result-head { flex-wrap: wrap; }
+/* Kolom pertanyaan QA boleh mengecil mengikuti barisnya. */
+.docai-qarow input { min-width: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .docai-progress-fill.indet { animation: none; width: 100%; }
+  .docai-progress-fill { transition: none; }
+}
+
+/* ================================================================== */
+/* HP — "maksimalkan mode hp" (owner 2026-11-19 04:26). Breakpoint    */
+/* <720px sama dengan mockup. Sasaran: TIDAK ADA overflow horizontal  */
+/* di tingkat halaman pada 390px; target sentuh kontrol baru min.     */
+/* ±44px; tampilan lebih ringkas dengan tulisan minim TAPI fungsi     */
+/* sama dengan desktop (tidak satu pun aksi dihilangkan).             */
+/* ================================================================== */
+@media (max-width: 719px) {
+  /* Panel lebih lega: padding dikompres agar isi punya ruang. */
+  .docai-panel { padding: 16px; }
+  .docai-viewer-body { padding: 14px 16px; max-height: 220px; }
+  .docai-result-body { padding: 14px 16px; max-height: 360px; }
+
+  /* Tab mode (= tab hasil): target sentuh 44px; bar tab tetap bergeser
+     horizontal INTERNAL (.docai-anatabs sudah overflow-x: auto). */
+  .docai-anatabs button { min-height: 44px; padding: 12px 14px; }
+
+  /* Tombol Jalankan {Mode} di workspace: besar & mudah disentuh. */
+  .docai-panel .docai-runbtn { min-height: 48px; font-size: 14px; }
+
+  /* Tombol Salin + Kembali ke Input: target sentuh 44px. */
+  .docai-result-head button { min-height: 44px; padding: 10px 14px; }
+  .docai-result-foot .docai-btn-ghost { min-height: 44px; }
+
+  /* Tombol Jalankan {Mode} di Dokumen Saya: min. 48px. */
+  .docai-settings-cta { min-height: 48px; }
+
+  /* Masukan baru di panel pengaturan: tinggi sentuh 44px. */
+  .docai-set-sec .docai-select,
+  .docai-set-sec .docai-input,
+  .docai-comparepick .docai-select { min-height: 44px; }
+
+  /* Kartu mode: tetap menumpuk vertikal, lebih padat; hint dijepit
+     maks. 2 baris (tulisan minim, fungsi & pilihan tidak berkurang). */
+  .docai-modecard { padding: 10px 12px; }
+  .docai-modecard-hint {
+    font-size: 11.5px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* Layar proses: spinner + % di baris pertama, status pindah ke bawah
+     selebar penuh agar tidak terjepit; % sedikit dikecilkan. */
+  .docai-progress-head { flex-wrap: wrap; gap: 10px 14px; }
+  .docai-progress-spinner { order: 1; }
+  .docai-progress-pct { order: 2; margin-left: auto; font-size: 30px; }
+  .docai-progress-status { order: 3; flex-basis: 100%; font-size: 13.5px; }
+  .docai-progress-meta { gap: 6px 14px; }
+  /* Paragraf penjelas map-reduce disembunyikan di HP (info yang sama
+     sudah tersirat dari baris status potongan + baris cakupan hasil). */
+  .docai-progress-note { display: none; }
+
+  /* Baris cakupan: teks membungkus (flex + teks mengalir), font rapat. */
+  .docai-coverage { font-size: 12px; padding: 10px 12px; }
+
+  /* Catatan routing Studio: sedikit lebih rapat. */
+  .docai-routing-note { font-size: 12px; padding: 10px 12px; }
+
+  /* Tabel markdown hasil (mis. ekstraksi): sel lebih rapat; tabel yang
+     masih terlalu lebar bergeser internal di dalam kartu hasil
+     (.docai-result-body overflow-x) — halaman tidak melebar. */
+  .docai-md table { font-size: 12px; }
+  .docai-md th, .docai-md td { padding: 5px 6px; }
+
+  /* Zona upload: sub-penjelasan disembunyikan di HP (judul + lencana
+     format sudah cukup; peringatan scan tetap muncul sebagai status
+     dokumen bila berkas tanpa teks diunggah). */
+  .docai-drop-sub { display: none; }
+  .docai-drop { padding: 22px 16px; }
+}
+
+/* ===== Responsif HP — 2026-11-19 (Wave 3, perintah owner 04:26
+   "maksimalkan mode hp juga") =====
+   Melengkapi blok HP pekerja D (≤719px, di atas): blok itu sudah
+   benar — tab mode 44px, tombol Jalankan 48px, penjaga overflow
+   (.docai-analayout > * min-width 0, .docai-result-body overflow-x,
+   .docai-md overflow-wrap) — dan TIDAK diubah di sini. Blok ini
+   hanya menutup kekurangan yang ditemukan saat verifikasi: target
+   sentuh kecil yang belum tersentuh, dua flex tanpa wrap, lencana
+   estimasi kredit yang jatuh di luar layar pada bar tab analisis,
+   dan font input 16px anti-zoom iOS. Breakpoint ≤719px sama dengan
+   blok pekerja D. Semua warna memakai token — tanpa warna hardcode
+   baru — agar pass mode gelap bisa meng-override. */
+
+/* Lencana estimasi kredit di bar tab analisis (dipindah dari inline
+   style agar bisa dipindah ke depan di HP tanpa !important). */
+.docai-anaestimate { margin-left: auto; align-self: center; }
+
+@media (max-width: 719px) {
+  /* --- Target sentuh ≥44px (yang belum ditutup pekerja D) ---
+     min-width/min-height dipakai (bukan width/height) agar menang
+     atas deklarasi width/height tetap di aturan dasar tanpa
+     !important; min-height mengalahkan height bila lebih besar. */
+  .docai-tabbtn { min-height: 44px; }
+  .docai-subbtn { min-height: 44px; }
+  .docai-btn-primary, .docai-btn-ghost { min-height: 44px; }
+  .docai-btn-ghost.docai-mini, .docai-btn-primary.docai-mini { min-height: 44px; }
+  .docai-pagenav button { min-width: 44px; min-height: 44px; }
+  .docai-actions button { min-width: 44px; min-height: 44px; }
+  .docai-iconbtn { min-width: 44px; min-height: 44px; }
+  .docai-modechip { min-height: 44px; }
+  .docai-catchip { min-height: 44px; }
+  .docai-srctoggle { min-height: 44px; }
+  .docai-seg2 button { min-height: 44px; }
+  .docai-draftitem { min-height: 44px; }
+  /* Menu dropdown editor + item outline: keduanya daftar vertikal —
+     min-height 44px hanya menambah jarak antarbaris, tanpa risiko
+     susun. Toolbar editor (tombol 33px, padat horizontal) SENGAJA
+     tidak diubah: membesarkannya tanpa verifikasi visual berisiko
+     merusak editor (audit responsif §6). */
+  .docai-menu button { min-height: 44px; }
+  .docai-outline-item { min-height: 44px; }
+
+  /* --- Baris mode "Buat dengan AI": dua tombol flex:1 nowrap
+     ("Buat dengan AI — instruksi dulu" ±200px + "Form Template —
+     template dulu" ±190px = ±410px) di dalam kartu 310px — teks
+     nowrap meluber keluar tombol. Di HP teks membungkus (2 baris)
+     dan tombol boleh mengecil mengikuti wadahnya. */
+  .docai-modeline button { min-height: 44px; min-width: 0; white-space: normal; text-align: center; }
+
+  /* --- Lencana estimasi kredit ke depan bar tab analisis ---
+     Bar tab (5 tab ≈ 675px) bergeser horizontal internal; lencana
+     yang menempel di ujung kanan (margin-left: auto) jatuh di luar
+     layar 366px dan tak terlihat tanpa menggeser. Di HP lencana
+     pindah ke depan (order -1) agar biaya terlihat sebelum jalan. */
+  .docai-anaestimate { order: -1; margin-left: 0; }
+
+  /* --- Flex tanpa wrap yang tersisa --- */
+  .docai-viewer-head { flex-wrap: wrap; }
+  .docai-viewer-head > span:first-child { min-width: 0; overflow-wrap: break-word; }
+  .docai-histitem { flex-wrap: wrap; }
+  .docai-histmain { min-width: 0; overflow-wrap: break-word; }
+
+  /* --- Token panjang di kotak kosong QA (nama berkas tanpa spasi)
+     dan ikon baris berkas proses yang tidak boleh terjepit --- */
+  .docai-chat-empty { overflow-wrap: anywhere; }
+  .docai-progress-file svg { flex-shrink: 0; }
+
+  /* --- Input 16px di HP: mencegah zoom otomatis iOS saat fokus
+     (iOS memperbesar bila font input <16px). Hanya ukuran font;
+     tinggi & perilaku tidak berubah. */
+  .docai-input, .docai-select, .docai-textarea,
+  .docai-search input, .docai-qarow input { font-size: 16px; }
+}
+
+/* ===== Mode gelap — 2026-11-19 (Wave 4, perintah owner 04:15) =====
+   Cakupan: layar Document AI yang disentuh implementasi ini — input
+   (Dokumen Saya + panel Pengaturan), proses (map-reduce), hasil
+   (workspace analisis + QA + viewer). Hampir seluruh berkas ini
+   memakai token --ez-color-* / --ez-hue-* yang beradaptasi sendiri
+   lewat blok [data-theme="dark"] di ezrab-design-system.css — blok
+   ini HANYA menutup tiga warna hardcode yang pecah di dark:
+   pratinjau kop (teks token terang di atas lembar putih = tak
+   terbaca), pratinjau contoh dokumen (lembar putih menyilaukan),
+   dan garis kop biru pekat (kontras rendah di atas kertas gelap).
+   Blok v2.3 (modecard/progress/coverage) dan blok HP Wave 3 (≤719px)
+   tidak memakai warna hardcode — tidak perlu override terpisah.
+   Lembar A4 editor (.docai-page) memakai token surface sehingga
+   menjadi kertas gelap di dark — perilaku design system yang
+   disengaja, bukan cacat; teks prosa memakai token yang sama
+   sehingga tetap terbaca. Bingkai gambar kop penuh
+   (.docai-fullkop-img) sengaja tetap putih: latar gambar/logo. */
+
+[data-theme="dark"] .docai-kop-preview { background: var(--ez-color-surface); }
+
+[data-theme="dark"] .docai-samplepreview { background: var(--ez-color-surface); color: var(--ez-color-text-primary); }
+[data-theme="dark"] .docai-samplepreview th { background: var(--ez-color-surface-secondary); }
+[data-theme="dark"] .docai-samplepreview th,
+[data-theme="dark"] .docai-samplepreview td { border-color: var(--ez-color-border); }
+
+[data-theme="dark"] .docai-kop-rule { border-bottom-color: var(--ez-hue-blue-text); }
+
+/* ===== Lembar A4 di HP — 2026-11-19 (pass akhir A2) =====
+   Blok PAPER SYSTEM (Fase B1) di atas menimpa aturan ≤560px yang lebih
+   dulu (.docai-page padding 26px 18px, min-height 560px) karena posisinya
+   lebih akhir di berkas — aturan HP itu menjadi kode mati dan lembar di
+   HP memakai padding 20mm: isi hanya ±199px pada 390px (audit §4 no. 9).
+   Blok ini — diletakkan sesudah PAPER SYSTEM agar menang — mengembalikan
+   niat awal: padding ringkas (isi ±314px) + tinggi proporsional A4 pada
+   lebar HP. Font isi tetap 12pt Paper System; cetak/ekspor tidak
+   terpengaruh (media print memakai padding 0 + @page). */
+@media (max-width: 560px) {
+  .docai-page { padding: 26px 18px; min-height: 560px; }
+  .docai-prose { min-height: 440px; }
 }

@@ -13,18 +13,36 @@
  * reason while server enforcement is BLOCKED. The impact simulation is
  * a READ — it always runs for real, and its confirmation dialog is the
  * §11.4 dialog with computed numbers.
+ *
+ * MASTER PRICING §12/§13 (P10): the confirm button is WIRED to the real
+ * apply (`applyMasterPriceChange` in `engine/pricing/admin/
+ * masterPriceApply.ts`) — gate → re-resolve → validate → §4.4 audit →
+ * client-side overlay → §13 feed → resolver cache invalidation. The
+ * apply is BROWSER-LOCAL until the server exists (see that module's
+ * header): the table shows applied prices with an "admin (lokal)"
+ * marker, and the history tables below render the local §4.4 audit
+ * entries recorded by applies in this browser.
  */
 import React, { useMemo, useState } from 'react';
 import { Calculator, Database, HardHat, History, Info, Package, Search, Truck } from 'lucide-react';
 import { ALL_OFFICIAL_AHSP_ITEMS } from '../../data/nationalCostDatabase/masterRegistry';
 import { RESOURCE_PRICE_RECORDS } from '../../data/priceDatabase2026/priceMaster.generated';
 import { priceResolver2026 } from '../../data/priceDatabase2026/resolver';
+import {
+  applyAdminOverlayToRecords,
+  getAdminMasterPriceOverlayEntry,
+} from '../../data/priceDatabase2026/adminMasterPriceOverlay';
 import { getSourceBindings } from '../../data/priceDatabase2026/sourceIdentityRegistry';
 import type {
   PriceVerificationStatus,
   ResourcePriceRecord,
 } from '../../data/priceDatabase2026/types';
 import type { MasterPriceHistoryEntry } from '../../engine/pricing/admin/masterPriceHistory';
+import { currentLocalIdentity } from '../../engine/pricing/admin/masterPriceAuthorization';
+import {
+  applyMasterPriceChange,
+  loadLocalMasterPriceHistory,
+} from '../../engine/pricing/admin/masterPriceApply';
 import {
   buildHistoryRow,
   buildMasterRecordRow,
@@ -103,10 +121,25 @@ export function MasterDatabaseView({ initialTab, historyEntries }: MasterDatabas
   const [preview, setPreview] = useState<MasterPriceImpactPreview | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [collectorWarnings, setCollectorWarnings] = useState<string[]>([]);
+  // MASTER PRICING §12/§13 (P10) — the pending apply + its local audit trail.
+  const [pendingNewPrice, setPendingNewPrice] = useState<number | null>(null);
+  const [localHistory, setLocalHistory] = useState<readonly MasterPriceHistoryEntry[]>(() =>
+    loadLocalMasterPriceHistory(),
+  );
+  const [applyNotice, setApplyNotice] = useState<{ kind: 'success' | 'error'; text: string } | null>(
+    null,
+  );
+  /** Bumped after an apply so the overlay-backed record list re-reads. */
+  const [overlayTick, setOverlayTick] = useState(0);
 
   const editGate = useAdminGate('EDIT_MASTER_PRICE');
 
-  const records = useMemo(() => RESOURCE_PRICE_RECORDS, []);
+  // The generated master, with admin-applied prices overlaid (copies —
+  // the generated records are never mutated). Re-read after each apply.
+  const records = useMemo(
+    () => applyAdminOverlayToRecords(RESOURCE_PRICE_RECORDS),
+    [overlayTick],
+  );
   const index = useMemo(() => buildResourceComponentIndex(ALL_OFFICIAL_AHSP_ITEMS), []);
   const regions = useMemo(() => masterRecordRegions(records), [records]);
 
@@ -134,6 +167,24 @@ export function MasterDatabaseView({ initialTab, historyEntries }: MasterDatabas
     [records, selectedId],
   );
   const selectedRow = useMemo(() => (selected ? buildMasterRecordRow(selected) : null), [selected]);
+  /** The admin-applied overlay entry for the selected record, if one exists in this browser. */
+  const selectedOverlay = useMemo(
+    () => (selected ? getAdminMasterPriceOverlayEntry(selected.id) : null),
+    [selected, overlayTick],
+  );
+  /** The selected record's GENERATED price (before any local admin apply). */
+  const selectedGeneratedPrice = useMemo(
+    () => RESOURCE_PRICE_RECORDS.find((r) => r.id === selectedId)?.price ?? null,
+    [selectedId],
+  );
+  /** §4.4 history: server-provided entries (when the parent passes them) + local applies, newest first. */
+  const mergedHistory = useMemo(() => {
+    const byId = new Map<string, MasterPriceHistoryEntry>();
+    for (const e of [...(historyEntries ?? []), ...localHistory]) {
+      if (!byId.has(e.id)) byId.set(e.id, e);
+    }
+    return [...byId.values()].sort((a, b) => Date.parse(b.changedAt) - Date.parse(a.changedAt));
+  }, [historyEntries, localHistory]);
   const selectedBindings = useMemo(
     () => (selected?.resourceId ? getSourceBindings(selected.resourceId) : []),
     [selected],
@@ -144,12 +195,11 @@ export function MasterDatabaseView({ initialTab, historyEntries }: MasterDatabas
   );
   const selectedRefSummary = useMemo(() => summarizeLinkedReferences(selectedRefs), [selectedRefs]);
   const selectedHistory = useMemo(() => {
-    const entries = historyEntries ?? [];
     if (!selected) return [];
-    return entries
+    return mergedHistory
       .filter((e) => e.priceRecordId === selected.id || (e.resourceId !== null && e.resourceId === selected.resourceId))
       .map(buildHistoryRow);
-  }, [historyEntries, selected]);
+  }, [mergedHistory, selected]);
 
   const handleSimulate = (): void => {
     if (!selected) return;
@@ -187,6 +237,7 @@ export function MasterDatabaseView({ initialTab, historyEntries }: MasterDatabas
           catalogItems: ALL_OFFICIAL_AHSP_ITEMS,
           projects: collected.projects,
         });
+        setPendingNewPrice(newPrice);
         setPreview(computed);
         setDialogOpen(true);
       } catch (e) {
@@ -195,6 +246,53 @@ export function MasterDatabaseView({ initialTab, historyEntries }: MasterDatabas
         setComputing(false);
       }
     }, 30);
+  };
+
+  /**
+   * MASTER PRICING §12/§13 (P10) — the real apply. The dialog's
+   * confirm button is disabled while the §4 gate denies (the expected
+   * state while AUTH_ENABLED=false), AND the apply service re-checks
+   * the gate itself — a disabled button is never the only enforcement.
+   * The ORIGINAL generated record is passed (not the overlaid copy):
+   * the service re-resolves the live effective price at apply time.
+   */
+  const handleConfirmApply = (reason: string): void => {
+    if (!selected || pendingNewPrice === null) return;
+    const originalRecord =
+      RESOURCE_PRICE_RECORDS.find((r) => r.id === selected.id) ?? selected;
+    const result = applyMasterPriceChange({
+      identity: currentLocalIdentity(),
+      record: originalRecord,
+      newPrice: pendingNewPrice,
+      reason,
+      affectedAhspReferences: preview?.affectedAhspReferences ?? [],
+      affectedLivePriceProjects: preview?.affectedLivePriceProjects ?? [],
+    });
+    setDialogOpen(false);
+    setPendingNewPrice(null);
+    if (!result.ok) {
+      setApplyNotice({ kind: 'error', text: `Perubahan harga TIDAK diterapkan: ${result.reason}` });
+      return;
+    }
+    setLocalHistory(loadLocalMasterPriceHistory());
+    setOverlayTick((t) => t + 1);
+    setProposedPrice('');
+    setPreview(null);
+    const warnings =
+      result.persistenceWarnings.length > 0 ? ` ${result.persistenceWarnings.join(' ')}` : '';
+    const feedNote = result.feedEntry
+      ? ' Feed perubahan harga §13 ikut tercatat.'
+      : result.feedSkippedReason
+        ? ` ${result.feedSkippedReason}`
+        : '';
+    setApplyNotice({
+      kind: 'success',
+      text:
+        `Harga ${originalRecord.resourceName} diterapkan: ` +
+        `${formatRupiah(result.previousAmount)} → ${formatRupiah(result.newAmount)} per ${originalRecord.unit}. ` +
+        `Berlaku sebagai harga master di browser ini (proyek snapshot tidak berubah); ` +
+        `jejak audit ${result.historyEntry.id} tercatat di riwayat bawah.${feedNote}${warnings}`,
+    });
   };
 
   return (
@@ -208,6 +306,21 @@ export function MasterDatabaseView({ initialTab, historyEntries }: MasterDatabas
       </div>
 
       <AdminGateBanner operation="EDIT_MASTER_PRICE" />
+
+      {applyNotice ? (
+        <div className={`mpu-banner ${applyNotice.kind === 'success' ? 'green' : 'red'}`}>
+          <Info size={16} style={{ flexShrink: 0, marginTop: 2 }} />
+          <span style={{ flex: 1 }}>{applyNotice.text}</span>
+          <button
+            className="mpu-btn"
+            onClick={() => setApplyNotice(null)}
+            aria-label="Tutup pemberitahuan"
+            style={{ padding: '4px 10px' }}
+          >
+            Tutup
+          </button>
+        </div>
+      ) : null}
 
       <div className="mpu-grid cols-4">
         <div className="mpu-stat">
@@ -320,6 +433,7 @@ export function MasterDatabaseView({ initialTab, historyEntries }: MasterDatabas
               {shown.map((rec) => {
                 const refs = linkedAhspReferencesForKey(index, rec.resourceCode, rec.unit);
                 const label = labelForRecord(rec);
+                const overlay = getAdminMasterPriceOverlayEntry(rec.id);
                 return (
                   <tr
                     key={rec.id}
@@ -328,6 +442,7 @@ export function MasterDatabaseView({ initialTab, historyEntries }: MasterDatabas
                       setSelectedId(rec.id);
                       setProposedPrice('');
                       setSimError(null);
+                      setPendingNewPrice(null);
                     }}
                   >
                     <td>
@@ -342,6 +457,9 @@ export function MasterDatabaseView({ initialTab, historyEntries }: MasterDatabas
                     </td>
                     <td className="mpu-num">
                       <b>{formatRupiah(rec.price)}</b>
+                      {overlay ? (
+                        <div className="mpu-muted">Harga admin (lokal)</div>
+                      ) : null}
                     </td>
                     <td>{rec.location.provinceName ?? '—'}</td>
                     <td>{rec.period.label}</td>
@@ -384,7 +502,17 @@ export function MasterDatabaseView({ initialTab, historyEntries }: MasterDatabas
           <dl className="mpu-dl">
             <div>
               <dt>Harga</dt>
-              <dd>{formatRupiah(selectedRow.price)}</dd>
+              <dd>
+                {formatRupiah(selectedRow.price)}
+                {selectedOverlay && selectedGeneratedPrice !== null ? (
+                  <div className="mpu-muted">
+                    Harga master hasil generate: {formatRupiah(selectedGeneratedPrice)} · diterapkan admin
+                    menjadi {formatRupiah(selectedOverlay.price)} pada{' '}
+                    {formatDateId(selectedOverlay.changedAt)} (berlaku di browser ini; audit{' '}
+                    {selectedOverlay.historyEntryId}).
+                  </div>
+                ) : null}
+              </dd>
             </div>
             <div>
               <dt>Satuan</dt>
@@ -574,8 +702,10 @@ export function MasterDatabaseView({ initialTab, historyEntries }: MasterDatabas
           </h3>
           <div className="mpu-muted" style={{ marginBottom: 8 }}>
             Simulasi menghitung dampak NYATA dari harga efektif saat ini (hasil resolver untuk kunci ini, bukan
-            harga record ini semata) ke semua item AHSP dan proyek workspace — tanpa mengubah apa pun. Menerapkan
-            perubahan adalah aksi admin global dan saat ini tidak tersedia.
+            harga record ini semata) ke semua item AHSP dan proyek workspace — tanpa mengubah apa pun.{' '}
+            {editGate.allowed
+              ? 'Konfirmasi menerapkan harga baru sebagai harga master di browser ini (overlay lokal + jejak audit §4.4); proyek snapshot tidak berubah.'
+              : 'Menerapkan perubahan adalah aksi admin global dan saat ini tidak tersedia.'}
           </div>
           <div className="mpu-toolbar">
             <input
@@ -615,12 +745,13 @@ export function MasterDatabaseView({ initialTab, historyEntries }: MasterDatabas
 
       <div className="mpu-card">
         <h2>Riwayat harga master (§4.4)</h2>
-        {(historyEntries ?? []).length === 0 ? (
+        {mergedHistory.length === 0 ? (
           <div className="mpu-muted">
             Belum ada entri riwayat perubahan harga di sesi ini. Jejak audit interim (§4.4) tersimpan di{' '}
             <code>data/price2026/reports/master_price_history.jsonl</code> dan ditulis per regenerasi pipeline;
             tabel server <code>master_price_history</code> belum diterapkan (migrasi NOT APPLIED), sehingga belum
-            ada riwayat perubahan yang dapat ditampilkan dari server.
+            ada riwayat perubahan yang dapat ditampilkan dari server. Perubahan harga yang diterapkan admin di
+            browser ini tercatat di tabel ini (tersimpan lokal).
           </div>
         ) : (
           <div className="mpu-table-wrap">
@@ -636,7 +767,7 @@ export function MasterDatabaseView({ initialTab, historyEntries }: MasterDatabas
                 </tr>
               </thead>
               <tbody>
-                {(historyEntries ?? []).map(buildHistoryRow).map((h) => (
+                {mergedHistory.map(buildHistoryRow).map((h) => (
                   <tr key={h.id} style={{ cursor: 'default' }}>
                     <td>{formatDateId(h.changedAt)}</td>
                     <td>{h.operationLabel}</td>
@@ -658,12 +789,8 @@ export function MasterDatabaseView({ initialTab, historyEntries }: MasterDatabas
           operationLabel="Konfirmasi update harga master"
           confirmLabel="Terapkan update harga"
           confirmDisabledReason={editGate.allowed ? null : editGate.reason}
-          onConfirm={() => {
-            // Unreachable while the §4 gate denies (the button is
-            // disabled). If a future server-backed session allows it,
-            // this is where the admin apply call goes (§12/§13).
-            setDialogOpen(false);
-          }}
+          requireReason
+          onConfirm={handleConfirmApply}
           onClose={() => setDialogOpen(false)}
         />
       ) : null}

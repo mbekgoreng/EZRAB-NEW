@@ -29,7 +29,6 @@ import {
 } from '../../engine/excelImportEngine';
 import { formatCurrencyIDR } from '../../calculations/decimalEngine';
 import * as XLSX from 'xlsx';
-import { honestVolume } from '../../engine/honestVolume';
 
 interface IntelligentExcelImportModalProps {
   isOpen: boolean;
@@ -146,21 +145,12 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
   const handleExecuteImport = () => {
     if (!analysisResult) return;
 
-    const itemsToImport = analysisResult.validItems.map((item, idx) => ({
-      code: item.code || `ITEM.${idx + 1}`,
-      description: item.description,
-      category: item.groupName || '01. PEKERJAAN PERSIAPAN',
-      // Fase 4A: volume kosong/tidak valid -> 0 (jangan fabrikasi 1).
-      volume: honestVolume(item.volume),
-      unit: item.unit || 'ls',
-      unitPrice: item.unitPrice || 0,
-      amount: item.amount || item.calculatedAmount || 0,
-      totalPrice: item.amount || item.calculatedAmount || 0,
-      volumeSource: 'IMPORT',
-      notes: item.anomalies.length > 0 ? `Import Warning: ${item.anomalies.map((a) => a.message).join('; ')}` : undefined,
-    }));
-
-    const totalAmount = itemsToImport.reduce((acc, i) => acc + (i.amount || 0), 0);
+    // T20: pemetaan deterministik di engine (mapParsedRowsToImportItems) —
+    // nilai yang tidak diketahui dari file tetap null/unresolved (harga
+    // null + PRICE_UNRESOLVED), bukan angka karangan; total hanya
+    // menjumlahkan jumlah yang diketahui (sumImportTotal).
+    const itemsToImport = ExcelImportEngine.mapParsedRowsToImportItems(analysisResult.validItems);
+    const totalAmount = ExcelImportEngine.sumImportTotal(itemsToImport);
 
     onImportCompleted(itemsToImport, {
       groupsCount: analysisResult.detectedGroupsCount,
@@ -776,12 +766,12 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
                             {item.description}
                           </td>
                           <td style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 700 }}>
-                            {item.volume.toLocaleString('id-ID')}
+                            {item.volume != null ? item.volume.toLocaleString('id-ID') : '—'}
                           </td>
-                          <td style={{ padding: '6px 10px', textAlign: 'center', color: 'var(--ez-color-text-muted)' }}>{item.unit}</td>
-                          <td style={{ padding: '6px 10px', textAlign: 'right' }}>{formatCurrencyIDR(item.unitPrice)}</td>
+                          <td style={{ padding: '6px 10px', textAlign: 'center', color: 'var(--ez-color-text-muted)' }}>{item.unit || '—'}</td>
+                          <td style={{ padding: '6px 10px', textAlign: 'right' }}>{item.unitPrice != null && item.unitPrice > 0 ? formatCurrencyIDR(item.unitPrice) : 'Belum ada harga'}</td>
                           <td style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 750, color: 'var(--ez-hue-blue-text-deep)' }}>
-                            {formatCurrencyIDR(item.amount || item.calculatedAmount)}
+                            {item.amount != null ? formatCurrencyIDR(item.amount) : '—'}
                           </td>
                         </tr>
                       ))}
@@ -860,7 +850,7 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
                         <span>
                           Baris {sub.rowNumber}: <strong>{sub.description}</strong>
                         </span>
-                        <span style={{ fontWeight: 700 }}>{formatCurrencyIDR(sub.amount)}</span>
+                        <span style={{ fontWeight: 700 }}>{sub.amount != null ? formatCurrencyIDR(sub.amount) : '—'}</span>
                       </div>
                     ))}
                   </div>

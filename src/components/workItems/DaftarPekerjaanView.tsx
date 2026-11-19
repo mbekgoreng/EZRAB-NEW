@@ -188,7 +188,8 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
         if (statusFilter !== 'ALL') {
           if (statusFilter === 'BELUM_DIHITUNG' && (item.volume || 0) > 0) return false;
           if (statusFilter === 'TERHITUNG' && (item.volume || 0) === 0) return false;
-          if (statusFilter === 'AHSP_TERHUBUNG' && !item.ahspCode && item.unitPrice === 0) return false;
+          // T20: unitPrice null (harga belum diketahui) bukan AHSP-terhubung — samakan dengan definisi terhubungAhsp (ahspCode ATAU harga > 0).
+          if (statusFilter === 'AHSP_TERHUBUNG' && !item.ahspCode && !(item.unitPrice > 0)) return false;
           if (statusFilter === 'MASUK_RAB' && !item.rabItemId && item.status !== 'MASUK_RAB') return false;
         }
 

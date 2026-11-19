@@ -27,6 +27,12 @@ import { useProject } from '../../context/ProjectContext';
 import { formatCurrencyIDR } from '../../calculations/decimalEngine';
 import { SafeDecimalEngine } from '../../engine/safeDecimalEngine';
 import { honestVolume } from '../../engine/honestVolume';
+// D1 (2026-11-19): baris lama masih menyimpan awalan "[Chat AI] " di
+// deskripsinya; spreadsheet sudah menampilkannya bersih via helper ini.
+// Drawer memakai helper yang sama HANYA di titik tampil (judul + prompt
+// AI) — initialData TIDAK disentuh karena mengalir ke penyimpanan
+// (snapshot AHSP + label snapshot versi) saat user menyimpan.
+import { stripChatAiPrefix } from '../../ai-tools/ezrab-ai/workItemTitle';
 import { officialAhspRepository } from '../../data/nationalCostDatabase/officialAhspRepository';
 import { AHSP_DATABASE_VERSION } from '../../data/nationalCostDatabase/types';
 import {
@@ -614,7 +620,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
                   maxWidth: '480px',
                 }}
               >
-                {initialData.description}
+                {stripChatAiPrefix(initialData.description)}
               </h2>
             </div>
           </div>
@@ -624,7 +630,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
               <button
                 onClick={() =>
                   onAskAiWithContext(
-                    `Audit dan optimasi koefisien AHSP untuk item pekerjaan: ${initialData.code} - ${initialData.description}. Volume ${initialData.volume} ${initialData.unit}.`,
+                    `Audit dan optimasi koefisien AHSP untuk item pekerjaan: ${initialData.code} - ${stripChatAiPrefix(initialData.description)}. Volume ${initialData.volume} ${initialData.unit}.`,
                     { item: initialData, materials, labors, equipments, directCost, calculatedUnitPrice }
                   )
                 }

@@ -32,7 +32,6 @@ import {
 import {
   POLISH_PRESETS, REVIEW_CATEGORY_LABELS, groupFindingsByCategory,
 } from '../ai-tools/document-ai/components/reviewPolish';
-import { MAX_ENHANCE_SELECTION_CHARS } from '../ai-tools/document-ai/service';
 import { ENHANCE_TRANSFORMS, type ReviewFinding } from '../ai-tools/document-ai/types';
 
 const read = (rel: string) => readFileSync(fileURLToPath(new URL(rel, import.meta.url)), 'utf8');
@@ -67,14 +66,15 @@ function main(): void {
   console.log('\n[2] Enhance — alasan penolakan & validasi rentang:');
   check('teks kosong ditolak', selectionBlockReason('   ') !== null);
   check('teks normal lolos', selectionBlockReason('Satu kalimat resmi.') === null);
-  const tooLong = 'x'.repeat(MAX_ENHANCE_SELECTION_CHARS + 1);
+  // Tanpa batas pemrosesan (2026-11-19): tidak ada lagi penolakan
+  // berdasarkan panjang — seleksi panjang disunting per segmen.
   check(
-    'teks melebihi batas ditolak dengan alasan menyebut batas',
-    (selectionBlockReason(tooLong) ?? '').includes(String(MAX_ENHANCE_SELECTION_CHARS)),
+    'teks 9.001 karakter TIDAK LAGI ditolak (disunting per segmen)',
+    selectionBlockReason('x'.repeat(9001)) === null,
   );
   check(
-    'teks tepat di batas lolos',
-    selectionBlockReason('x'.repeat(MAX_ENHANCE_SELECTION_CHARS)) === null,
+    'teks 20.000 karakter TIDAK LAGI ditolak',
+    selectionBlockReason('x'.repeat(20000)) === null,
   );
   check('rentang masih sama → valid', rangeTextStillMatches('teks sama', 'teks sama') === true);
   check('rentang berubah → tidak valid', rangeTextStillMatches('teks berubah', 'teks sama') === false);
@@ -138,7 +138,10 @@ function main(): void {
   console.log('\n[5] Kontrak sumber — DocEnhance:');
   const enhSrc = read('../ai-tools/document-ai/components/DocEnhance.tsx');
   check('memakai intent ENHANCE_TEXT', enhSrc.includes("intent: 'ENHANCE_TEXT'"));
-  check('batas seleksi dari service (MAX_ENHANCE_SELECTION_CHARS)', enhSrc.includes('MAX_ENHANCE_SELECTION_CHARS'));
+  check(
+    'tidak ada lagi batas seleksi keras di UI (tanpa-batas 2026-11-19)',
+    !enhSrc.includes('MAX_ENHANCE_SELECTION_CHARS') && !enhSrc.includes('melebihi batas'),
+  );
   check('tombol ambil teks terpilih ada', enhSrc.includes('Ambil Teks Terpilih dari Editor'));
   check('catatan jujur bila belum memilih teks', enhSrc.includes('Pilih dulu teks di editor'));
   check('pratinjau dua kolom Teks Asli vs Hasil Sempurnaan', enhSrc.includes('Teks Asli') && enhSrc.includes('Hasil Sempurnaan'));

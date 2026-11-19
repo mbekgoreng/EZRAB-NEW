@@ -78,7 +78,12 @@ export const QuickActionDialogueRenderer: React.FC<QuickActionDialogueRendererPr
     return initial;
   });
 
-  const [appliedSuccess, setAppliedSuccess] = useState(false);
+  // P9.1 — tombol konfirmasi dulu langsung menampilkan "Diterapkan!"
+  // begitu diklik, SEBELUM hasil konfirmasi diketahui (klaim sukses
+  // palsu di sisi tampilan). State ini hanya mencegah klik ganda;
+  // labelnya netral ("Konfirmasi dikirim") — hasil sebenarnya
+  // disampaikan pesan balasan dari service.
+  const [confirmRequested, setConfirmRequested] = useState(false);
 
   const handleInputChange = (field: string, value: any) => {
     setFormValues(prev => ({ ...prev, [field]: value }));
@@ -274,15 +279,15 @@ export const QuickActionDialogueRenderer: React.FC<QuickActionDialogueRendererPr
             </button>
             <button
               type="button"
-              disabled={isLoading || appliedSuccess}
+              disabled={isLoading || confirmRequested}
               onClick={() => {
                 onConfirm(data.sessionId);
-                setAppliedSuccess(true);
+                setConfirmRequested(true);
               }}
               className="ezrab-wizard-btn-confirm"
             >
               <CheckCircle2 className="h-3.5 w-3.5" />
-              <span>{appliedSuccess ? 'Diterapkan!' : 'Terapkan Perubahan'}</span>
+              <span>{confirmRequested ? 'Konfirmasi dikirim' : 'Terapkan Perubahan'}</span>
             </button>
           </div>
         </div>

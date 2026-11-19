@@ -62,7 +62,11 @@ const geminiWith = (text, usageMetadata) => ({
   ...(usageMetadata !== undefined ? { usageMetadata } : {}),
 });
 
-const body = { message: 'analisis dokumen ini', mode: 'fast' };
+// Mode 'advanced' (mode 'fast' WeizeRouter-only sejak keputusan owner
+// 2026-11-19 — suite ini membuktikan usage Gemini, dan Gemini hanya ada
+// di rantai chat/advanced/vision; 'advanced' dapat dijangkau lewat body,
+// 'chat' tidak — validateAiInput meng-clamp mode tak dikenal ke 'fast').
+const body = { message: 'analisis dokumen ini', mode: 'advanced' };
 
 await test('G1: usage Gemini valid selamat melewati batas HTTP (X1) — termasking', async () => {
   geminiPayload = geminiWith('hasil analisis', { promptTokenCount: 1200, candidatesTokenCount: 300, totalTokenCount: 1500, cachedContentTokenCount: 200 });
@@ -80,7 +84,7 @@ await test('G1: usage Gemini valid selamat melewati batas HTTP (X1) — termaski
   ok(!('attempts' in r.body), 'attempts[] TIDAK dikirim ke klien');
   eq(r.body.content, 'hasil analisis', 'field lama utuh');
   eq(r.body.provider, 'ezrab', 'provider disamarkan');
-  eq(r.body.model, 'Ezrab-flash-v1', 'model mode fast -> alias flash');
+  eq(r.body.model, 'Ezrab-pro', 'model mode advanced -> alias pro');
   ok(!JSON.stringify(r.body).includes('gemini'), 'nama model/provider asli tidak ada di body');
 });
 

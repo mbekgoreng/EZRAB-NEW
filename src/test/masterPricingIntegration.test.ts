@@ -541,26 +541,30 @@ describe('§12 AI estimation guardrail — comparable unit filter (P2)', () => {
       name: 'Pasir Pasang',
       unit: 'kg',
     });
-    // The per-m3 'Pasir Pasang' record (Rp200.000) is excluded; what
-    // survives is a genuine per-kg anchor ('Pasir Beton', Rp300/kg).
+    // The per-m3 'Pasir Pasang' record (Rp240.000) is excluded; what
+    // survives is a genuine per-kg anchor — RE-BASELINED 2026-11-18
+    // (owner ratified): the adopted market price is Rp366/kg
+    // ('Pasir Beton / Pasir Pasang', AHSP v2026.2).
     expect(refs.length).toBeGreaterThan(0);
     for (const ref of refs) {
       expect(ref.unit).not.toBe('m3');
-      expect(ref.price).not.toBe(200000);
+      expect(ref.price).not.toBe(240000);
     }
     expect(refs).toContainEqual(
-      expect.objectContaining({ name: 'Pasir Beton', price: 300, unit: 'kg' }),
+      expect.objectContaining({ name: 'Pasir Beton / Pasir Pasang', price: 366, unit: 'kg' }),
     );
   });
 
   it('findComparableReferences still anchors matching units (m3 query)', () => {
+    // RE-BASELINED 2026-11-18 (owner ratified): the adopted m3 anchor
+    // price for 'Pasir Pasang' is Rp240.000/m3 (AHSP v2026.2).
     const refs = aiPriceEstimationEngine.findComparableReferences({
       name: 'Pasir Pasang',
       unit: 'm3',
     });
     expect(refs.length).toBeGreaterThan(0);
     expect(refs[0].unit).toBe('m3');
-    expect(refs[0].price).toBe(200000);
+    expect(refs[0].price).toBe(240000);
   });
 
   it('estimateResourcePrice never anchors its baseline on a wrong-unit reference', () => {

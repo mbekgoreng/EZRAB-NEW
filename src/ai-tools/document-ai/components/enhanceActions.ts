@@ -6,7 +6,6 @@
  * per transformasi hidup di ENHANCE_TRANSFORM_GUIDANCE (prompt.ts) dan
  * disusun service — modul ini TIDAK menduplikasinya.
  */
-import { MAX_ENHANCE_SELECTION_CHARS } from '../service';
 import type { EnhanceTransform } from '../types';
 
 export interface EnhanceActionDef {
@@ -34,15 +33,14 @@ export function enhanceActionLabel(transform: EnhanceTransform): string {
 }
 
 /**
- * Alasan teks terpilih tidak dapat disunting (null = boleh). Batas panjang
- * sama dengan validasi service (SELECTION_TOO_LONG) agar UI menolak lebih
- * dulu dengan pesan yang jelas, bukan menunggu error provider.
+ * Alasan teks terpilih tidak dapat disunting (null = boleh).
+ * Tanpa batas pemrosesan (2026-11-19): batas panjang DIHAPUS —
+ * seleksi sepanjang apa pun disunting per segmen oleh service
+ * (MAX_ENHANCE_SEGMENT_CHARS per segmen), bukan ditolak.
+ * Satu-satunya penolakan yang tersisa: teks kosong.
  */
 export function selectionBlockReason(text: string): string | null {
   if (!text.trim()) return 'Belum ada teks yang diambil dari editor.';
-  if (text.length > MAX_ENHANCE_SELECTION_CHARS) {
-    return `Teks terpilih ${text.length} karakter melebihi batas ${MAX_ENHANCE_SELECTION_CHARS} karakter untuk satu kali penyuntingan. Persempit pilihan teks Anda.`;
-  }
   return null;
 }
 

@@ -8,6 +8,8 @@
  *  S3 blokir SAFETY Gemini via HTTP 200 (promptFeedback) = policy, berhenti.
  *  S4 HTTP 400 non-policy = AI_BAD_REQUEST, berhenti.
  *  S5 rotasi key tetap hidup: 401 pada key bernomor -> key polos dipakai.
+ * Skenario memakai mode 'chat' (mode 'fast' WeizeRouter-only sejak
+ * keputusan owner 2026-11-19 — Gemini tidak lagi ada di rantai fast).
  */
 import assert from 'node:assert';
 
@@ -67,7 +69,7 @@ function check(name, fn) {
 
 geminiBehavior = 'policy400'; fetchCalls = 0;
 {
-  const r = await executeAI({ message: 'halo', mode: 'fast' });
+  const r = await executeAI({ message: 'halo', mode: 'chat' });
   check('S1 policy 400: ok=false + CONTENT_REJECTED', () => {
     assert.equal(r.ok, false);
     assert.equal(r.errorCode, 'CONTENT_REJECTED');
@@ -80,7 +82,7 @@ geminiBehavior = 'policy400'; fetchCalls = 0;
 
 geminiBehavior = 'rate429'; fetchCalls = 0;
 {
-  const r = await executeAI({ message: 'halo', mode: 'fast' });
+  const r = await executeAI({ message: 'halo', mode: 'chat' });
   check('S2 429: failover tetap bekerja (ok via provider berikutnya)', () => {
     assert.equal(r.ok, true);
     assert.equal(r.content, 'OK-NEXT');
@@ -90,7 +92,7 @@ geminiBehavior = 'rate429'; fetchCalls = 0;
 
 geminiBehavior = 'block200'; fetchCalls = 0;
 {
-  const r = await executeAI({ message: 'halo', mode: 'fast' });
+  const r = await executeAI({ message: 'halo', mode: 'chat' });
   check('S3 blokir 200 SAFETY: CONTENT_REJECTED, rantai berhenti', () => {
     assert.equal(r.ok, false);
     assert.equal(r.errorCode, 'CONTENT_REJECTED');
@@ -101,7 +103,7 @@ geminiBehavior = 'block200'; fetchCalls = 0;
 
 geminiBehavior = 'badrequest400'; fetchCalls = 0;
 {
-  const r = await executeAI({ message: 'halo', mode: 'fast' });
+  const r = await executeAI({ message: 'halo', mode: 'chat' });
   check('S4 400 non-policy: AI_BAD_REQUEST, rantai berhenti', () => {
     assert.equal(r.ok, false);
     assert.equal(r.errorCode, 'AI_BAD_REQUEST');
@@ -113,7 +115,7 @@ geminiBehavior = 'auth401-then-bare';
 process.env.GEMINI_API_KEY = 'dummy-bare';
 fetchCalls = 0;
 {
-  const r = await executeAI({ message: 'halo', mode: 'fast' });
+  const r = await executeAI({ message: 'halo', mode: 'chat' });
   check('S5 401 key bernomor -> key polos tetap dipakai (rotasi hidup)', () => {
     assert.equal(r.ok, true);
     assert.equal(r.content, 'OK-BARE');

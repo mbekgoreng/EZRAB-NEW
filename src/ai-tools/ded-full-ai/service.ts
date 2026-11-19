@@ -12,13 +12,18 @@
  * ada (tanpa engine kedua) — jejaknya dilampirkan ke keluaran
  * (`pipelineStages`) dan Tahap 7 menjalankan audit QC single-pass
  * (`qualityControl.ts`). Tahap 2–4 adalah penalaran model di dalam
- * satu panggilan AI, bukan pass terpisah; QC tanpa loop revisi
+ * satu panggilan AI PER KELOMPOK halaman (dokumen kecil: satu
+ * panggilan; dokumen besar: satu panggilan per kelompok — paginasi
+ * tanpa batas pemrosesan 2026-11-19, menggantikan satu panggilan
+ * dengan teks terpotong 60.000 karakter); QC tanpa loop revisi
  * (revisionIterations selalu 0).
  */
 import { aiToolsProviderClient } from '../providerClient';
 import { waitForMinimum, minDelayFor } from '../aiResponseTiming';
 import { parseDedPdf } from '../ded-ai-estimate/parser';
-import { PAGE_TYPE_PRIORITY, formatPageRanges } from '../ded-ai-estimate/analysisTrace';
+import { PAGE_TYPE_PRIORITY, formatPageRanges, type SelectedPage } from '../ded-ai-estimate/analysisTrace';
+import { planDedPasses, DED_PASS_REQUEST_BUDGET_CHARS } from '../ded-ai-estimate/service';
+import { expandPagesIntoSegments, segmentBudgetFromEmptyRequest, renderDedPageBlocks, type DedPageSegment } from '../ded-ai-estimate/pageSegments';
 import { buildFullAiPrompt } from './prompts';
 import { validateFullAiItem, verifySubtotal, describeProposedDiscrepancy } from './validator';
 import {
@@ -51,9 +56,12 @@ import {
 } from './qualityControl';
 import type { DedAiItem, DedPriceCompletion } from '../ded-ai-estimate/types';
 
-// Batas karakter dengan strategi chunking yang transparan
-const MAX_TOTAL_CHARS = 60000;  // Lebih besar dari pipeline lama (15000)
-const MAX_PAGE_CHARS = 4000;
+// Tanpa batas pemrosesan (2026-11-19): MAX_TOTAL_CHARS (60.000) dan
+// MAX_PAGE_CHARS (4.000) DIHAPUS — dokumen direncanakan menjadi
+// kelompok halaman (planFullAiDocument), satu panggilan AI per
+// kelompok, masing-masing terukur ≤ anggaran request gateway
+// (DED_PASS_REQUEST_BUDGET_CHARS dari mesin standar). Tidak ada teks
+// yang dipotong atau dilewat karena budget.
 
 /**
  * F4 (3.3): batas waktu per panggilan AI yang BENAR-BENAR diterapkan.
@@ -109,43 +117,67 @@ export function resolveActualProviderModel(result: unknown): {
   return { provider: clean(r.provider), model: clean(r.model) };
 }
 
-export interface FullAiDocumentText {
-  text: string;
-  totalChars: number;
-  /** Ada konten yang tidak terkirim/terpotong (budget, per-halaman, atau halaman kosong). */
-  truncated: boolean;
-  /** Halaman yang terkirim ke model (seleksi prioritas). */
+/** Satu kelompok halaman = satu panggilan AI. */
+export interface FullAiPageGroup {
+  /** Segmen halaman dalam kelompok ini (urutan halaman asli). */
+  pages: DedPageSegment[];
+  /** Ukuran request terukur (system + prompt) untuk kelompok ini. */
+  requestChars: number;
+}
+
+/** Segmen yang bahkan sendirian melebihi anggaran (backstop; lazimnya kosong). */
+export interface FullAiSkippedSegment {
+  page: number;
+  partIndex?: number;
+  partCount?: number;
+  reason: string;
+}
+
+export interface FullAiDocumentPlan {
+  groups: FullAiPageGroup[];
+  /** Semua halaman berteks terkirim (tidak ada yang dilewat). */
   includedPages: number[];
-  /** Halaman tidak terkirim karena budget karakter habis. */
-  skippedPages: number[];
-  /** Halaman yang teksnya dipotong pada batas per-halaman. */
-  truncatedPages: number[];
   /** Halaman tanpa lapisan teks (scan/gambar) — tidak dapat dianalisis tanpa OCR. */
   emptyTextPages: number[];
+  /** Total karakter yang dikirim (jumlah semua segmen). */
+  totalChars: number;
+  /** Segmen yang bahkan sendirian melebihi anggaran (backstop; lazimnya kosong). */
+  skippedSegments: FullAiSkippedSegment[];
 }
 
 /**
- * F4 (3.4): seleksi halaman BERPRIORITAS, menggantikan potongan sekuensial
- * lama yang berhenti di halaman pertama yang tidak muat (halaman akhir —
- * sering berisi spesifikasi/jadwal/daftar material — tidak pernah
- * dianalisis, tanpa jejak halaman mana yang hilang).
+ * Tanpa batas pemrosesan (2026-11-19) — MENGGANTIKAN buildDocumentText
+ * (budget 60.000 karakter + potong 4.000/halaman, DIHAPUS).
  *
- * Mengikuti pendekatan pipeline multi-pass (analysisTrace.PAGE_TYPE_PRIORITY):
- * halaman berisi daftar pekerjaan/spesifikasi/jadwal (denah, struktur,
- * kusen, MEP, spesifikasi, …) didahulukan dalam budget; sisanya menyusul
- * sampai budget habis. Teks yang dikirim tetap disusun menurut urutan
- * halaman asli dokumen. Setiap halaman yang terlewat/potong/kosong tercatat
- * eksplisit agar dapat diperingatkan dengan rentang halamannya.
+ * Seluruh halaman berteks direncanakan ke dalam KELOMPOK halaman
+ * (satu panggilan AI per kelompok), masing-masing terukur ≤ anggaran
+ * request gateway lewat `measure` (pembangun prompt asli). Halaman
+ * panjang dipecah menjadi segmen sebelum perencanaan (pageSegments)
+ * — tidak ada teks yang dipotong. Pengurutan prioritas jenis F4 (3.4)
+ * (denah/struktur/kusen/… didahulukan) dipertahankan agar
+ * halaman-halaman yang berkaitan mengelompok bersama; di dalam
+ * kelompok, teks disusun menurut urutan halaman asli dokumen.
+ * Fungsi murni, dapat diuji (suite F4 3.4 + noTruncationPagination).
  */
-export function buildDocumentText(
-  pages: Array<{ page: number; text: string; pageType?: string }>
-): FullAiDocumentText {
+export function planFullAiDocument(
+  pages: Array<{ page: number; title?: string; text: string; pageType?: string }>,
+  measure: (pages: SelectedPage[]) => number,
+  budget: number = DED_PASS_REQUEST_BUDGET_CHARS,
+): FullAiDocumentPlan {
   const emptyTextPages: number[] = [];
-  const withText = pages.filter((p) => {
-    if ((p.text || '').trim()) return true;
-    emptyTextPages.push(p.page);
-    return false;
-  });
+  const withText: SelectedPage[] = [];
+  for (const p of pages) {
+    if ((p.text || '').trim()) {
+      withText.push({
+        page: p.page,
+        title: p.title || `Halaman ${p.page}`,
+        text: p.text || '',
+        pageType: p.pageType || 'HALAMAN',
+      });
+    } else {
+      emptyTextPages.push(p.page);
+    }
+  }
 
   const byPriority = [...withText].sort(
     (a, b) =>
@@ -154,42 +186,88 @@ export function buildDocumentText(
       a.page - b.page
   );
 
-  const included = new Map<number, string>();
-  const skippedPages: number[] = [];
-  const truncatedPages: number[] = [];
-  let totalChars = 0;
-  let budgetExhausted = false;
+  const segmentBudget = segmentBudgetFromEmptyRequest(measure([]), budget);
+  const segments = expandPagesIntoSegments(byPriority, segmentBudget);
+  const plan = planDedPasses([{ label: 'Semua Halaman', pages: segments }], measure, budget);
 
-  for (const p of byPriority) {
-    const fullText = p.text || '';
-    const pageText = fullText.slice(0, MAX_PAGE_CHARS);
-    if (!budgetExhausted && totalChars + pageText.length > MAX_TOTAL_CHARS) {
-      budgetExhausted = true;
-    }
-    if (budgetExhausted) {
-      skippedPages.push(p.page);
+  const groups: FullAiPageGroup[] = [];
+  const skippedSegments: FullAiSkippedSegment[] = [];
+  let totalChars = 0;
+  for (const entry of plan) {
+    if (entry.kind === 'SKIPPED_BUDGET') {
+      for (const s of entry.pages) {
+        const seg = s as DedPageSegment;
+        skippedSegments.push({
+          page: s.page,
+          partIndex: seg.partIndex,
+          partCount: seg.partCount,
+          reason: entry.reason,
+        });
+      }
       continue;
     }
-    if (fullText.length > MAX_PAGE_CHARS) truncatedPages.push(p.page);
-    included.set(p.page, pageText);
-    totalChars += pageText.length;
+    // Susun kelompok menurut urutan halaman asli (bagian berurutan).
+    // Urutan tidak mengubah ukuran terukur (blok yang sama, pemisah sama).
+    const ordered = [...entry.pages].sort(
+      (a, b) =>
+        a.page - b.page ||
+        ((a as DedPageSegment).partIndex ?? 0) - ((b as DedPageSegment).partIndex ?? 0),
+    );
+    groups.push({ pages: ordered as DedPageSegment[], requestChars: entry.requestChars });
+    totalChars += entry.pages.reduce((acc, s) => acc + s.text.length, 0);
   }
 
-  const includedPages = [...included.keys()].sort((a, b) => a - b);
-  const parts = includedPages.map(
-    (n) => `--- Halaman ${n} ---\n${included.get(n)}`
+  const includedPages = [...new Set(groups.flatMap((g) => g.pages.map((s) => s.page)))].sort(
+    (a, b) => a - b,
   );
-
   return {
-    text: parts.join('\n\n'),
-    totalChars,
-    truncated:
-      skippedPages.length > 0 || truncatedPages.length > 0 || emptyTextPages.length > 0,
+    groups,
     includedPages,
-    skippedPages: skippedPages.sort((a, b) => a - b),
-    truncatedPages: truncatedPages.sort((a, b) => a - b),
     emptyTextPages: emptyTextPages.sort((a, b) => a - b),
+    totalChars,
+    skippedSegments,
   };
+}
+
+/**
+ * Dedup RAW antar-kelompok yang KONSERVATIF: hanya item yang identik
+ * penuh (nama + satuan + nilai kuantitas + harga satuan sama) yang
+ * digabung — karya yang sama terderivasi dari dua kelompok dengan
+ * angka identik. Nama+satuan sama tetapi angka BERBEDA dipertahankan
+ * keduanya (bisa jadi bagian berbeda dari pekerjaan yang sama;
+ * menggabungkannya akan menelan cakupan — pelajaran G3 pipeline
+ * standar). mergeRawItemsAcrossPasses standar TIDAK dapat dipakai:
+ * ia membaca raw.dimensions/quantityFormula (bentuk standar),
+ * sedangkan raw Full AI bersarang (quantity.value, quantity.formula)
+ * sehingga sidik dimensinya kosong dan ia akan menggabung
+ * berdasarkan nama+satuan saja.
+ */
+export function dedupFullAiRawItems(rawItems: any[]): { items: any[]; removedCount: number } {
+  const keyOf = (raw: any) => {
+    const name = String(raw?.name || '').toLowerCase().replace(/\s+/g, ' ').trim();
+    const unit = String(raw?.unit || raw?.quantity?.unit || '').toLowerCase().trim();
+    const qty =
+      raw?.quantity && typeof raw.quantity === 'object'
+        ? raw.quantity.value
+        : typeof raw?.qty === 'number'
+          ? raw.qty
+          : raw?.quantity;
+    const price = typeof raw?.price === 'number' ? raw.price : raw?.price?.unitPrice;
+    return `${name}|${unit}|${qty ?? ''}|${price ?? ''}`;
+  };
+  const seen = new Set<string>();
+  const items: any[] = [];
+  let removedCount = 0;
+  for (const raw of rawItems) {
+    const key = keyOf(raw);
+    if (seen.has(key)) {
+      removedCount++;
+      continue;
+    }
+    seen.add(key);
+    items.push(raw);
+  }
+  return { items, removedCount };
 }
 
 export { formatPageRanges };
@@ -262,17 +340,60 @@ export class FullAiDedService {
       }
       notify('PARSE', 25, `Dokumen dibaca: ${pages.length} halaman`);
 
-      // §6 Tahap 1 (lanjutan): siapkan teks dengan seleksi halaman berprioritas (F4 3.4/3.6)
-      const doc = buildDocumentText(
-        pages.map((p: any) => ({ page: p.page, text: p.text || '', pageType: p.pageType }))
+      // §6 Tahap 1 (lanjutan): rencanakan dokumen menjadi KELOMPOK
+      // halaman (tanpa batas pemrosesan 2026-11-19 — menggantikan
+      // buildDocumentText yang memotong pada 60.000 karakter total +
+      // 4.000/halaman). Setiap kelompok = satu panggilan AI, terukur
+      // ≤ anggaran request; seluruh teks terkirim, tidak ada yang dipotong.
+      const buildGroupPrompt = (segs: DedPageSegment[], groupIndex: number, groupCount: number) => {
+        const body = renderDedPageBlocks(segs);
+        const documentText =
+          groupCount <= 1
+            ? body
+            : `[Dokumen diproses dalam ${groupCount} kelompok halaman agar seluruh teks terkirim utuh — ` +
+              `ini kelompok ${groupIndex + 1} dari ${groupCount} (halaman ${formatPageRanges(
+                [...new Set(segs.map((s) => s.page))].sort((a, b) => a - b),
+              )}). ` +
+              `Susun item HANYA dari halaman-halaman di bawah ini; jangan mengarang item dari halaman lain.]\n\n${body}`;
+        return buildFullAiPrompt({
+          projectType,
+          documentText,
+          pageCount: pages.length,
+          mode,
+          pricingPolicy: policy,
+        });
+      };
+      // Pengukuran perencanaan memakai teks TANPA spanduk kelompok
+      // (jumlah kelompok belum diketahui saat perencanaan). Spanduk
+      // (±200 karakter) ditambahkan saat pemanggilan — gabungan
+      // system+prompt tetap < 20.000 dan prompt sendiri tetap jauh di
+      // bawah batas gateway 20.000 (prompt ≤ gabungan terukur 19.500),
+      // sehingga tidak mungkin gagal PAYLOAD_TOO_LARGE karena spanduk.
+      const measureFullAiRequest = (segs: SelectedPage[]) => {
+        const b = buildFullAiPrompt({
+          projectType,
+          documentText: renderDedPageBlocks(segs),
+          pageCount: pages.length,
+          mode,
+          pricingPolicy: policy,
+        });
+        return b.system.length + b.prompt.length;
+      };
+      const docPlan = planFullAiDocument(
+        pages.map((p: any) => ({ page: p.page, title: p.title, text: p.text || '', pageType: p.pageType })),
+        measureFullAiRequest,
       );
-      const docText = doc.text;
-      const totalChars = doc.totalChars;
+      const totalChars = docPlan.totalChars;
+      const groupCount = docPlan.groups.length;
       markStage(
         'DOCUMENT_INTELLIGENCE',
         'done',
-        `${pages.length} halaman dibaca; ${doc.includedPages.length} halaman terkirim ke model (${totalChars.toLocaleString('id-ID')} karakter)` +
-          (doc.truncated ? '; sebagian halaman terpotong/kosong (lihat warnings).' : '.'),
+        `${pages.length} halaman dibaca; ${docPlan.includedPages.length} halaman terkirim ke model dalam ${groupCount} kelompok ` +
+          `(${totalChars.toLocaleString('id-ID')} karakter; kelompok terbesar ${Math.max(
+            0,
+            ...docPlan.groups.map((g) => g.requestChars),
+          ).toLocaleString('id-ID')} karakter request)` +
+          (docPlan.skippedSegments.length > 0 ? '; sebagian segmen tidak dapat dikirim (lihat warnings).' : '.'),
       );
 
       const warnings: string[] = [];
@@ -281,23 +402,18 @@ export class FullAiDedService {
           `Cakupan halaman dibatasi pilihan pengguna: ${pageScopeApplied.length} dari ${documentTotalPages} halaman dianalisis (halaman ${formatPageRanges(pageScopeApplied)}). Halaman lain TIDAK dianalisis.`
         );
       }
-      if (doc.skippedPages.length > 0) {
+      if (docPlan.skippedSegments.length > 0) {
+        const skippedPages = [...new Set(docPlan.skippedSegments.map((s) => s.page))].sort((a, b) => a - b);
         warnings.push(
-          `Halaman tidak terkirim ke AI karena batas ${MAX_TOTAL_CHARS.toLocaleString('id-ID')} karakter ` +
-          `(halaman prioritas jenis didahulukan): halaman ${formatPageRanges(doc.skippedPages)}. ` +
-          `Analisis mungkin tidak mencakup seluruh DED.`
+          `${docPlan.skippedSegments.length} segmen halaman tidak dapat dikirim ke AI karena bahkan sendirian melebihi ` +
+          `anggaran request ${DED_PASS_REQUEST_BUDGET_CHARS.toLocaleString('id-ID')} karakter: halaman ${formatPageRanges(skippedPages)}. ` +
+          `Analisis tidak mencakup bagian tersebut.`
         );
       }
-      if (doc.truncatedPages.length > 0) {
+      if (docPlan.emptyTextPages.length > 0) {
         warnings.push(
-          `Teks halaman dipotong pada ${MAX_PAGE_CHARS.toLocaleString('id-ID')} karakter per halaman: ` +
-          `halaman ${formatPageRanges(doc.truncatedPages)}.`
-        );
-      }
-      if (doc.emptyTextPages.length > 0) {
-        warnings.push(
-          `${doc.emptyTextPages.length} halaman tanpa lapisan teks tidak dapat dianalisis ` +
-          `(kemungkinan hasil scan/gambar — butuh OCR): halaman ${formatPageRanges(doc.emptyTextPages)}.`
+          `${docPlan.emptyTextPages.length} halaman tanpa lapisan teks tidak dapat dianalisis ` +
+          `(kemungkinan hasil scan/gambar — butuh OCR): halaman ${formatPageRanges(docPlan.emptyTextPages)}.`
         );
       }
       if (totalChars === 0) {
@@ -311,50 +427,189 @@ export class FullAiDedService {
         );
       }
 
-      // §6 Tahap 2–4 (model-side): SATU panggilan AI — Scope+WBS,
-      // Construction Method Reasoning, AI AHSP Generation.
-      notify('ANALYZE', 40, `Menganalisis DED dengan AI (${mode})...`);
-      const { system, prompt } = buildFullAiPrompt({
-        projectType,
-        documentText: docText,
-        pageCount: pages.length,
-        mode,
-        pricingPolicy: policy,
-      });
-
+      // §6 Tahap 2–4 (model-side): SATU panggilan AI PER KELOMPOK —
+      // Scope+WBS, Construction Method Reasoning, AI AHSP Generation.
+      // Kelompok dijalankan berurutan (menghindari lonjakan paralel ke
+      // gateway). Kelompok yang keluarannya bukan JSON valid dipecah dua
+      // dan dicoba ulang (kedalaman maks 2 — penawar output terpotong
+      // plafon token, sama seperti mesin standar). Kegagalan provider
+      // pada satu kelompok TIDAK menggugurkan kelompok lain: kelompok
+      // itu dicatat gagal dan hasilnya menjadi parsial berlabel.
+      // Dokumen tanpa teks sama sekali (0 kelompok) tidak memanggil AI.
       const productId = mode === 'FAST' ? 'DED_AI_FAST' : 'DED_AI_DETAIL';
-      const aiResult = await aiToolsProviderClient.execute({
-        productId,
-        prompt,
-        systemPrompt: system,
-        jsonMode: true,
-        maxTokens: mode === 'FAST' ? 16000 : 32000,
-        timeoutMs: FULL_AI_TIMEOUT_MS[mode],
-      });
+      const MAX_GROUP_SPLIT_DEPTH = 2;
+      const groupQueue: Array<{ group: FullAiPageGroup; depth: number }> =
+        docPlan.groups.map((group) => ({ group, depth: 0 }));
+      const mergedRawItems: any[] = [];
+      const mergedWarnings: string[] = [];
+      const mergedProjectInfo: Record<string, any> = {};
+      let mergedProposedGrandTotal: number | null = null;
+      let lastAiResult: any = null;
+      let lastGroupError: { code: string; message: string } | null = null;
+      const failedGroups: Array<{ pages: number[]; code: string; message: string }> = [];
+      let totalInputTokens = 0;
+      let totalOutputTokens = 0;
+      let totalCachedTokens = 0;
+      let executedGroups = 0;
+      let totalGroupsPlanned = groupQueue.length;
 
-      if (!aiResult.success) {
+      const mergeProjectInfoFrom = (info: any) => {
+        if (!info || typeof info !== 'object') return;
+        for (const field of [
+          'buildingFunction',
+          'floorCount',
+          'mainDimensions',
+          'structuralSystem',
+          'scopeSummary',
+        ] as const) {
+          if (mergedProjectInfo[field] == null && info[field] != null && info[field] !== '') {
+            mergedProjectInfo[field] = info[field];
+          }
+        }
+        for (const field of ['missingInfo', 'ambiguities'] as const) {
+          const arr = Array.isArray(info[field]) ? info[field] : [];
+          const existing: any[] = Array.isArray(mergedProjectInfo[field])
+            ? mergedProjectInfo[field]
+            : [];
+          const seen = new Set(existing.map((v) => JSON.stringify(v)));
+          for (const v of arr) {
+            const k = JSON.stringify(v);
+            if (!seen.has(k)) {
+              seen.add(k);
+              existing.push(v);
+            }
+          }
+          if (existing.length > 0) mergedProjectInfo[field] = existing;
+        }
+      };
+
+      while (groupQueue.length > 0) {
+        const { group, depth } = groupQueue.shift()!;
+        const groupPages = [...new Set(group.pages.map((s) => s.page))].sort((a, b) => a - b);
+        const built = buildGroupPrompt(group.pages, executedGroups, totalGroupsPlanned);
+        notify(
+          'ANALYZE',
+          40 + Math.round((executedGroups / Math.max(1, totalGroupsPlanned)) * 25),
+          totalGroupsPlanned > 1
+            ? `Menganalisis DED dengan AI (${mode}) — kelompok ${executedGroups + 1}/${totalGroupsPlanned}…`
+            : `Menganalisis DED dengan AI (${mode})...`,
+        );
+        const groupAiResult = await aiToolsProviderClient.execute({
+          productId,
+          prompt: built.prompt,
+          systemPrompt: built.system,
+          jsonMode: true,
+          maxTokens: mode === 'FAST' ? 16000 : 32000,
+          timeoutMs: FULL_AI_TIMEOUT_MS[mode],
+        });
+        executedGroups++;
+        if (!groupAiResult.success) {
+          failedGroups.push({
+            pages: groupPages,
+            code: groupAiResult.errorCode || 'AI_ERROR',
+            message: groupAiResult.message || 'AI gagal memproses',
+          });
+          lastGroupError = {
+            code: groupAiResult.errorCode || 'AI_ERROR',
+            message: groupAiResult.message || 'AI gagal memproses',
+          };
+          continue;
+        }
+        lastAiResult = groupAiResult;
+        totalInputTokens += groupAiResult.usage?.inputTokens ?? 0;
+        totalOutputTokens += groupAiResult.usage?.outputTokens ?? 0;
+        totalCachedTokens += groupAiResult.usage?.cachedTokens ?? 0;
+        let parsedGroup: any;
+        try {
+          parsedGroup = aiToolsProviderClient.extractJson(groupAiResult.content);
+        } catch {
+          if (depth < MAX_GROUP_SPLIT_DEPTH && group.pages.length > 1) {
+            const mid = Math.ceil(group.pages.length / 2);
+            const halves = [group.pages.slice(0, mid), group.pages.slice(mid)];
+            for (const half of halves) {
+              groupQueue.push({
+                group: { pages: half, requestChars: measureFullAiRequest(half) },
+                depth: depth + 1,
+              });
+            }
+            totalGroupsPlanned += 1; // 1 induk → 2 anak = +1 bersih
+            warnings.push(
+              `Kelompok halaman ${formatPageRanges(groupPages)} mengembalikan keluaran bukan JSON valid; ` +
+              `kelompok dipecah dua dan dijalankan ulang.`,
+            );
+            continue;
+          }
+          failedGroups.push({
+            pages: groupPages,
+            code: 'INVALID_JSON',
+            message: 'Respons AI bukan JSON valid',
+          });
+          lastGroupError = { code: 'INVALID_JSON', message: 'Respons AI bukan JSON valid' };
+          continue;
+        }
+        const groupItems = Array.isArray(parsedGroup.items) ? parsedGroup.items : [];
+        mergedRawItems.push(...groupItems);
+        mergedWarnings.push(...normalizeAiWarnings(parsedGroup.warnings));
+        mergeProjectInfoFrom(parsedGroup.projectInfo);
+        if (
+          mergedProposedGrandTotal == null &&
+          typeof parsedGroup.proposedGrandTotal === 'number' &&
+          Number.isFinite(parsedGroup.proposedGrandTotal)
+        ) {
+          mergedProposedGrandTotal = parsedGroup.proposedGrandTotal;
+        }
+      }
+
+      if (mergedRawItems.length === 0 && failedGroups.length > 0 && lastAiResult == null) {
+        // Semua kelompok gagal — perilaku lama dipertahankan (error, bukan hasil kosong).
         return this.errorOutput(mode, policy, {
-          code: aiResult.errorCode || 'AI_ERROR',
-          message: aiResult.message || 'AI gagal memproses',
+          code: lastGroupError?.code || 'AI_ERROR',
+          message: lastGroupError?.message || 'AI gagal memproses',
           retryable: true,
         });
+      }
+      for (const fg of failedGroups) {
+        warnings.push(
+          `Kelompok halaman ${formatPageRanges(fg.pages)} gagal diproses (${fg.code}: ${fg.message}) — ` +
+          `item dari halaman tersebut tidak ada di hasil ini.`,
+        );
       }
 
       // Parse & validasi respons model (normalisasi + validateFullAiItem
       // + resolusi kanonis per item).
       notify('VALIDATE', 70, 'Memvalidasi hasil AI...');
-      let parsedAi: any;
-      try {
-        parsedAi = aiToolsProviderClient.extractJson(aiResult.content);
-      } catch {
-        return this.errorOutput(mode, policy, {
-          code: 'INVALID_JSON',
-          message: 'Respons AI bukan JSON valid',
-          retryable: true,
-        });
+      const { items: dedupedRawItems, removedCount: dedupRemoved } =
+        dedupFullAiRawItems(mergedRawItems);
+      if (dedupRemoved > 0) {
+        warnings.push(
+          `${dedupRemoved} item duplikat antar-kelompok (nama, satuan, kuantitas, dan harga identik) ` +
+          `dihapus agar tidak terhitung dua kali.`,
+        );
       }
-
-      const rawItems = Array.isArray(parsedAi.items) ? parsedAi.items : [];
+      const rawItems = dedupedRawItems;
+      // Objek gabungan dengan bentuk respons tunggal lama agar seluruh
+      // logika hilir (projectInfo, total usulan, warnings model) tidak berubah.
+      const parsedAi: any = {
+        projectInfo: mergedProjectInfo,
+        // Total usulan model hanya bermakna bila SATU kelompok (satu
+        // model melihat seluruh dokumen); bila berkelompok, total usulan
+        // diambil dari jumlah subtotal usulan item di bawah.
+        proposedGrandTotal: groupCount <= 1 ? mergedProposedGrandTotal : null,
+        warnings: mergedWarnings,
+      };
+      // aiResult untuk provenance/usage hilir: hasil panggilan TERAKHIR
+      // yang berhasil (identitas provider/model + requestId); token
+      // dijumlahkan dari SEMUA panggilan kelompok.
+      const aiResult: any = lastAiResult
+        ? {
+            ...lastAiResult,
+            usage: {
+              inputTokens: totalInputTokens || null,
+              outputTokens: totalOutputTokens || null,
+              cachedTokens: totalCachedTokens || null,
+            },
+          }
+        : { success: true, requestId: null, usage: null, provider: null, model: null };
       const items: FullAiItem[] = [];
       const allErrors: string[] = [];
 
@@ -498,7 +753,10 @@ export class FullAiDedService {
 
         items.push({
           id: `fullai-${i + 1}`,
-          no: raw.no || i + 1,
+          // Penomoran model hanya dipakai bila SATU kelompok; bila
+          // berkelompok, tiap kelompok menomori dari 1 sehingga nomor
+          // bertabrakan — dinomori ulang berurutan.
+          no: groupCount <= 1 ? raw.no || i + 1 : i + 1,
           wbsCode: raw.wbsCode || undefined,
           wbsGroup: raw.wbsGroup || undefined,
           name: String(raw.name || `Pekerjaan ${i + 1}`),
@@ -550,17 +808,17 @@ export class FullAiDedService {
       markStage(
         'SCOPE_WBS',
         'done',
-        `Model-side dalam satu panggilan AI: ${items.filter((it) => it.wbsCode).length} dari ${items.length} item membawa kode WBS; ringkasan cakupan ${parsedAi.projectInfo?.scopeSummary ? 'tersedia' : 'tidak diberikan'}.`,
+        `Model-side dalam ${executedGroups} panggilan AI (kelompok halaman): ${items.filter((it) => it.wbsCode).length} dari ${items.length} item membawa kode WBS; ringkasan cakupan ${parsedAi.projectInfo?.scopeSummary ? 'tersedia' : 'tidak diberikan'}.`,
       );
       markStage(
         'METHOD_REASONING',
         'done',
-        `Model-side dalam satu panggilan AI: ${items.filter((it) => it.description).length} item berdeskripsi, ${items.filter((it) => (it.quantity.assumptions || []).length > 0).length} item berasumsi, ${items.filter((it) => it.quantity.formula).length} item berumus.`,
+        `Model-side dalam ${executedGroups} panggilan AI (kelompok halaman): ${items.filter((it) => it.description).length} item berdeskripsi, ${items.filter((it) => (it.quantity.assumptions || []).length > 0).length} item berasumsi, ${items.filter((it) => it.quantity.formula).length} item berumus.`,
       );
       markStage(
         'AI_AHSP_GENERATION',
         'done',
-        `Model-side dalam satu panggilan AI + resolusi kanonis per item: ${items.filter((it) => it.price.ahspMatch).length} item melewati resolusi kanonis, ${items.filter((it) => it.price.source === 'AHSP_2026').length} item berharga kanonis AHSP_2026.`,
+        `Model-side dalam ${executedGroups} panggilan AI (kelompok halaman) + resolusi kanonis per item: ${items.filter((it) => it.price.ahspMatch).length} item melewati resolusi kanonis, ${items.filter((it) => it.price.source === 'AHSP_2026').length} item berharga kanonis AHSP_2026.`,
       );
 
       // SPRINT 4 (paritas harga): penyelesaian harga referensi

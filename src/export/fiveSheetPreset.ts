@@ -60,6 +60,11 @@
 
 import ExcelJS from 'exceljs';
 import { wbsNodeLabel, isWbsMappingStatus } from '../ai-tools/ezrab-ai/wbsArtifact';
+// D1 (2026-11-19): baris lama masih menyimpan awalan "[Chat AI] " di
+// deskripsinya; spreadsheet sudah menampilkannya bersih via helper ini
+// (stripChatAiPrefix) — ekspor memakai helper yang sama di titik baca,
+// tanpa mengubah data tersimpan.
+import { stripChatAiPrefix } from '../ai-tools/ezrab-ai/workItemTitle';
 import type { Company, EstimateVersion, Project, ProjectCostSummary, RABItem, RABSection } from '../types';
 import type { ExportSectionsSummary } from './priceIntegrity';
 import { exportItemAmount, isExportPriceValid } from './priceIntegrity';
@@ -724,12 +729,12 @@ function buildSummarySheet(
   const warnings: string[] = [];
   allItems.forEach((itm) => {
     if (itm.isAssumption) {
-      warnings.push(`ASUMSI [${itm.code || itm.itemNumber || itm.id} — ${itm.description || ''}]: ${itm.assumptionNote || 'tanpa catatan'}`);
+      warnings.push(`ASUMSI [${itm.code || itm.itemNumber || itm.id} — ${stripChatAiPrefix(itm.description || '')}]: ${itm.assumptionNote || 'tanpa catatan'}`);
     }
   });
   allItems.forEach((itm) => {
     if (!isExportPriceValid(itm as any)) {
-      warnings.push(`TANPA HARGA [${itm.code || itm.itemNumber || itm.id} — ${itm.description || ''}]: tidak masuk total.`);
+      warnings.push(`TANPA HARGA [${itm.code || itm.itemNumber || itm.id} — ${stripChatAiPrefix(itm.description || '')}]: tidak masuk total.`);
     }
   });
   if (warnings.length === 0) {
@@ -845,7 +850,7 @@ function buildDetailSheet(
       const amount = valid ? exportItemAmount(itm as any) : null;
       iRow.getCell(1).value = idx + 1;
       iRow.getCell(2).value = itm.wbsNumber ? `${itm.wbsNumber} / ${code}` : code;
-      iRow.getCell(3).value = itm.description || (itm as any).name || '';
+      iRow.getCell(3).value = stripChatAiPrefix(itm.description || (itm as any).name || '');
       iRow.getCell(4).value = itm.specification || '–';
       iRow.getCell(5).value = itm.unit || '';
       iRow.getCell(6).value = Number(itm.volume) || 0;
@@ -1007,10 +1012,10 @@ function buildAhspSheet(
       ws.mergeCells(`B${row}:I${row}`);
       const snap = itm.ahspSnapshot;
       ws.getCell(`B${row}`).value = snap
-        ? `${cardNo}. [${snap.code}] ${snap.name.toUpperCase()} — item ${code} ${itm.description || ''} (Satuan: 1 ${snap.unit || itm.unit || ''})`
+        ? `${cardNo}. [${snap.code}] ${snap.name.toUpperCase()} — item ${code} ${stripChatAiPrefix(itm.description || '')} (Satuan: 1 ${snap.unit || itm.unit || ''})`
         : isAhspItem(itm)
-          ? `${cardNo}. [${itm.ahspCode}] ${itm.description || ''} — item ${code} (Satuan: 1 ${itm.unit || ''})`
-          : `${cardNo}. ${itm.description || ''} — item ${code} — NON-AHSP (Satuan: 1 ${itm.unit || ''})`;
+          ? `${cardNo}. [${itm.ahspCode}] ${stripChatAiPrefix(itm.description || '')} — item ${code} (Satuan: 1 ${itm.unit || ''})`
+          : `${cardNo}. ${stripChatAiPrefix(itm.description || '')} — item ${code} — NON-AHSP (Satuan: 1 ${itm.unit || ''})`;
       ws.getCell(`B${row}`).font = FONT_HIERARCHY.WBS_HEADER;
       ws.getCell(`B${row}`).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: EXCEL_COLORS.BG_SECTION } };
       ws.getCell(`B${row}`).border = { top: BORDER_THIN_MEDIUM, bottom: BORDER_THIN_LIGHT };
@@ -1221,7 +1226,7 @@ function buildVolumeSheet(wb: ExcelJS.Workbook, snapshot: RabExportSnapshot): vo
       const r = ws.getRow(row);
       r.getCell(1).value = no;
       r.getCell(2).value = itemCode(itm, sec.code, idx);
-      r.getCell(3).value = itm.description || (itm as any).name || '';
+      r.getCell(3).value = stripChatAiPrefix(itm.description || (itm as any).name || '');
       r.getCell(4).value = measurementDescriptionOf(itm);
       r.getCell(5).value = volumeFormulaOf(itm);
       r.getCell(6).value = dimensionsOf(itm);
@@ -1295,7 +1300,7 @@ function buildSourcesSheet(
       const snap = itm.ahspSnapshot;
       r.getCell(1).value = no;
       r.getCell(2).value = itemCode(itm, sec.code, idx);
-      r.getCell(3).value = itm.description || (itm as any).name || '';
+      r.getCell(3).value = stripChatAiPrefix(itm.description || (itm as any).name || '');
       r.getCell(4).value = sourceText(itm);
       r.getCell(5).value = snap
         ? `${snap.code} — ${snap.name}${snap.version ? ` (v${snap.version})` : ''}`

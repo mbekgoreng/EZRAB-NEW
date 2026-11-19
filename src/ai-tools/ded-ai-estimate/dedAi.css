@@ -106,7 +106,7 @@
 .dedai-error { background: var(--ez-color-danger-soft); border: 1px solid var(--ez-color-danger-soft); border-radius: var(--ez-radius-card); padding: 18px; margin-top: 16px; }
 .dedai-error h4 { margin: 0 0 6px; color: var(--ez-color-danger); font-size: 14.5px; display: flex; align-items: center; gap: 8px; }
 .dedai-error p { margin: 0 0 4px; color: var(--ez-color-danger); font-size: 13px; line-height: 1.6; }
-.dedai-error code { font-size: 11px; background: var(--ez-color-danger-soft); padding: 2px 8px; border-radius: var(--ez-radius-chip); color: var(--ez-color-danger); }
+.dedai-error code { font-size: 11px; background: var(--ez-color-danger-soft); padding: 2px 8px; border-radius: var(--ez-radius-chip); color: var(--ez-color-danger); overflow-wrap: anywhere; }
 
 /* Result */
 .dedai-hero-total { background: var(--ez-color-primary-soft); border: 1px solid var(--ez-color-border-soft); border-radius: var(--ez-radius-card); padding: 22px 24px; margin-bottom: 14px; box-shadow: 0 4px 20px rgba(0,0,0,0.045); }
@@ -136,7 +136,7 @@
 .dedai-badge.blocked { background: var(--ez-color-danger-soft); color: var(--ez-color-danger); }
 .dedai-badge.no-price { background: var(--ez-color-surface-secondary); color: var(--ez-color-text-muted); }
 .dedai-num { font-variant-numeric: tabular-nums; font-weight: 700; white-space: nowrap; }
-.dedai-edit-input { width: 90px; border: 1.5px solid var(--ez-color-primary); border-radius: 8px; padding: 6px 8px; font-size: 13px; font-family: inherit; }
+.dedai-edit-input { width: 90px; border: 1.5px solid var(--ez-color-primary); border-radius: 8px; padding: 6px 8px; font-size: 13px; font-family: inherit; background: var(--ez-color-surface); color: var(--ez-color-text-primary); }
 .dedai-edit-input.name { width: 100%; min-width: 180px; }
 .dedai-row-actions { display: flex; gap: 6px; }
 .dedai-icon-btn { width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--ez-color-border); background: var(--ez-color-surface); color: var(--ez-color-text-muted); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
@@ -465,3 +465,435 @@
 @media (max-width: 720px) {
   .dedai-modecards { grid-template-columns: 1fr; }
 }
+
+/* DED Input v2.3 — mockup 2026-11-19 */
+/* Layout ter-ACC owner 2026-11-19 04:14: baris atas dua kolom (upload
+   kiri 50% + mode/konfigurasi kanan), kredit + persetujuan + tombol
+   mulai besar di bawah kedua kolom, Pengaturan/Pratinjau/Draft sebagai
+   seksi sekunder collapsible. Aturan lama seksi input di atas TIDAK
+   dihapus (dipin sejumlah tes string) — blok ini menimpa yang perlu
+   ditimpa khusus layout baru. Tanpa aturan mode gelap (pass terpisah). */
+/* Alur satu kolom: halaman bergeser vertikal (bukan dua panel dengan
+   scroll internal seperti layout D6). */
+.fp-shell .dedai.dedai-input { overflow-y: auto; }
+.dedai-input-layout { display: block; }
+/* Baris atas: dua kolom 50/50, meregang setinggi kolom tertinggi. */
+.dedai-v23-top { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: stretch; margin-bottom: 14px; }
+.dedai-v23-col { display: flex; flex-direction: column; min-width: 0; }
+.dedai-v23-label { font-size: 13px; font-weight: 800; color: var(--dd-muted); letter-spacing: .03em; margin: 0 0 8px; text-transform: uppercase; }
+/* Kartu upload mengisi kolom kiri; dropzone memanjang vertikal. */
+.dedai-input .dedai-v23-uploadcard { flex: 1; display: flex; flex-direction: column; margin-bottom: 0; }
+.dedai-v23-uploadcard .dedai-drop { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+/* Baris kecil redup: catatan scan (di bawah kotak upload) & ekspektasi
+   jujur (di bawah baris atas). */
+.dedai-v23-finenote { font-size: 12.5px; color: var(--dd-muted); margin: 10px 0 0; line-height: 1.55; }
+.dedai-v23-expect { margin: 0 0 16px; }
+/* Kartu mode bersebelahan kanan-kiri (grid 2 kolom, align-items: start):
+   kartu yang diperluas memanjang di kolomnya sendiri, kartu sebelahnya
+   tetap di tempat. Nama kelas .dedai-modecard* dipakai ulang dari D6 —
+   hanya susun kepala + chevron yang baru. */
+.dedai-v23-modecards { gap: 8px; align-items: start; }
+.dedai-v23-modecards .dedai-modecard-top { align-items: flex-start; }
+.dedai-v23-modecard-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.dedai-v23-modecard-detail { display: flex; flex-direction: column; gap: 6px; }
+.dedai-v23-chev { flex: none; width: 32px; height: 32px; border: 1px solid var(--dd-border); background: #fff; border-radius: 9px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--dd-muted); padding: 0; }
+.dedai-v23-chev:hover { border-color: #CBD5E1; color: #1D4ED8; }
+.dedai-v23-chev:focus-visible { outline: 2px solid var(--dd-blue); outline-offset: 2px; }
+.dedai-v23-chev svg { transition: transform .25s ease; }
+.dedai-v23-chev[aria-expanded="true"] svg { transform: rotate(180deg); }
+/* Kelompok konfigurasi di kolom kanan: label di atas kontrol, jarak
+   antar-baris rapat 12px. Nama kelas .dedai-cfgrow/.dedai-cfglbl/
+   .dedai-cfghint dipakai ulang (dipin tes) dengan susun vertikal. */
+.dedai-v23-cfg { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; }
+.dedai-v23-cfg .dedai-cfgrow { flex-direction: column; align-items: stretch; gap: 6px; padding: 0; border-bottom: none; }
+.dedai-v23-cfg .dedai-cfglbl { width: auto; }
+.dedai-v23-cfg .dedai-cfghint { margin-left: 0; text-align: left; max-width: none; }
+.dedai-v23-cfg .dedai-scopepick { margin-left: 0; justify-content: flex-start; flex-wrap: wrap; }
+/* Kartu kredit + CTA besar lebar penuh di bawah kedua kolom. */
+.dedai-input .dedai-v23-cta { margin-bottom: 16px; }
+.dedai-v23-meta { font-size: 12px; color: var(--dd-muted); font-weight: 600; margin: 12px 0 0; line-height: 1.5; }
+.dedai-btn.primary.dedai-v23-start { width: 100%; min-height: 56px; padding: 16px 24px; font-size: 17px; margin-top: 16px; border-radius: 12px; }
+.dedai-v23-hint { text-align: center; color: var(--dd-muted); font-size: 12.5px; margin: 10px 0 0; line-height: 1.5; }
+/* Seksi sekunder collapsible (Pengaturan / Pratinjau / Draft). */
+.dedai-v23-secondary { display: flex; flex-direction: column; gap: 12px; }
+.dedai-v23-details { background: #fff; border: 1px solid var(--dd-border); border-radius: 14px; box-shadow: 0 2px 10px rgba(20, 43, 74, 0.045); padding: 0 18px; }
+.dedai-v23-summary { display: flex; align-items: center; gap: 10px; padding: 14px 0; cursor: pointer; font-size: 14px; font-weight: 800; color: var(--dd-navy); list-style: none; }
+.dedai-v23-summary::-webkit-details-marker { display: none; }
+.dedai-v23-summary .ico { width: 27px; height: 27px; border-radius: 8px; background: #EEF4FF; color: var(--dd-blue); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.dedai-v23-summary-sub { font-size: 12px; font-weight: 600; color: var(--dd-muted); }
+.dedai-v23-summary-chev { margin-left: auto; color: var(--dd-muted); flex-shrink: 0; transition: transform .25s ease; }
+.dedai-v23-details[open] .dedai-v23-summary-chev { transform: rotate(180deg); }
+.dedai-v23-details-body { padding: 2px 0 16px; }
+.dedai-v23-details-body .dedai-preview { margin-bottom: 0; }
+/* Di bawah 720px: susun vertikal upload → mode (menumpuk) →
+   konfigurasi → tombol. */
+@media (max-width: 720px) {
+  .dedai-v23-top { grid-template-columns: 1fr; }
+  .dedai-v23-modecards { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dedai-v23-chev svg, .dedai-v23-summary-chev { transition: none; }
+}
+
+/* DED Hasil + Gerbang Review — mockup 2026-11-19 */
+/* Mockup v2.3 ter-ACC owner 2026-11-19 04:14: chip bukti kuantitas per
+   item, blok "Dasar kuantitas", panel gerbang review sebelum finalisasi
+   (dipakai DedAiResultView + FullAiResultView), dan penyesuaian HP
+   (perintah owner 04:26 "maksimalkan mode hp juga"). Tanpa aturan mode
+   gelap (pass terpisah). Warna chip persis CSS mockup. */
+/* Chip bukti kuantitas — taksonomi dari dedReviewGate.ts. */
+.dedai-qchip { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; white-space: nowrap; line-height: 1.5; }
+.dedai-qchip-claim { background: #FEF3C7; color: #92400E; }
+.dedai-qchip-deterministic { background: #DBEAFE; color: #1D4ED8; }
+.dedai-qchip-ai-estimate { background: #EDE9FE; color: #6D28D9; }
+.dedai-qchip-assumption { background: #FFEDD5; color: #C2410C; }
+.dedai-qchip-user { background: #DCFCE7; color: #15803D; }
+.dedai-qchip-unclear { background: #F1F5F9; color: #475569; border: 1px solid #E2E8F0; }
+.dedai-qchip-confirm { background: #FEF3C7; color: #92400E; border: 1px dashed #D97706; }
+/* Legenda chip di atas tabel hasil. */
+.dedai-qlegend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 14px; font-size: 12.5px; }
+.dedai-qlegend-title { font-weight: 800; color: #475569; margin-right: 2px; }
+.dedai-qlegend-note { flex-basis: 100%; color: #64748B; font-size: 12px; line-height: 1.55; margin-top: 2px; }
+/* Tabel hasil: 9 kolom sesudah kolom "Bukti kuantitas" — scroll internal
+   tetap di .dedai-table-wrap (overflow auto, aturan lama); halaman tidak
+   ikut melebar di HP. Baris bisa diklik untuk membuka detail. */
+.dedai-table { min-width: 980px; }
+.dedai-table-wrap { -webkit-overflow-scrolling: touch; }
+.dedai-row-clickable { cursor: pointer; }
+.dedai-row-clickable:hover { background: #F8FAFC; }
+/* Blok "Dasar kuantitas" di detail item. */
+.dedai-evidence { background: #F8FBFF; border: 1px solid #DBEAFE; border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; }
+.dedai-evidence-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 11.5px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: #1D4ED8; margin-bottom: 6px; }
+.dedai-evidence .dl-row { border-bottom-color: #DBEAFE; }
+.dedai-evidence .dl-row span:last-child { overflow-wrap: anywhere; word-break: break-word; min-width: 0; }
+/* Panel gerbang review — dipakai kedua result view. */
+.dedai-gate { background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 14px; padding: 16px 18px; margin: 16px 0; box-sizing: border-box; }
+.dedai-gate.complete { background: #F0FDF4; border-color: #BBF7D0; }
+.dedai-gate-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.dedai-gate-head h2 { font-size: 16px; font-weight: 800; margin: 0; color: #92400E; }
+.dedai-gate.complete .dedai-gate-head h2 { color: #15803D; }
+.dedai-gate-ico { color: #D97706; flex-shrink: 0; }
+.dedai-gate.complete .dedai-gate-ico { color: #16A34A; }
+.dedai-gate-counts { font-size: 13px; color: #78350F; margin: 0 0 10px; line-height: 1.55; overflow-wrap: break-word; }
+.dedai-gate.complete .dedai-gate-counts { color: #166534; }
+.dedai-gate-progress { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+.dedai-gate-bar { flex: 1; min-width: 120px; height: 8px; background: #FDE68A; border-radius: 999px; overflow: hidden; }
+.dedai-gate.complete .dedai-gate-bar { background: #BBF7D0; }
+.dedai-gate-fill { height: 100%; background: #D97706; border-radius: 999px; transition: width .3s ease; }
+.dedai-gate.complete .dedai-gate-fill { background: #16A34A; }
+.dedai-gate-progress-txt { font-size: 12px; font-weight: 700; color: #92400E; white-space: nowrap; }
+.dedai-gate.complete .dedai-gate-progress-txt { color: #15803D; }
+.dedai-gate-item { display: flex; align-items: flex-start; gap: 12px; background: #fff; border: 1px solid #E5EAF2; border-radius: 12px; padding: 12px 14px; margin-bottom: 8px; box-sizing: border-box; }
+.dedai-gate-label { display: flex; align-items: flex-start; gap: 10px; flex: 1; min-width: 0; cursor: pointer; min-height: 44px; }
+.dedai-gate-check { width: 24px; height: 24px; flex: none; accent-color: #2563EB; cursor: pointer; margin: 2px 0 0; }
+.dedai-gate-body { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; }
+.dedai-gate-title { font-size: 13.5px; font-weight: 700; color: #0F172A; overflow-wrap: break-word; }
+.dedai-gate-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.dedai-gate-desc { font-size: 12.5px; color: #64748B; line-height: 1.55; overflow-wrap: break-word; }
+.dedai-gate-lihat { flex: none; min-height: 44px; min-width: 72px; padding: 8px 16px; border-radius: 10px; border: 1px solid #2563EB; background: #EFF6FF; color: #1D4ED8; font-size: 13px; font-weight: 700; font-family: inherit; cursor: pointer; }
+.dedai-gate-lihat:hover { background: #DBEAFE; }
+.dedai-gate-note { font-size: 12px; color: #92400E; margin: 4px 0 0; line-height: 1.55; overflow-wrap: break-word; }
+.dedai-gate.complete .dedai-gate-note { color: #15803D; }
+/* Kartu Full AI: kepala membungkus (chip turun ke baris berikut di HP),
+   grid volume/harga menumpuk di bawah 720px, bar total menumpuk. */
+.dedai-fcard-head { padding: 10px 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-height: 44px; box-sizing: border-box; }
+.dedai-fcard-name { flex: 1; min-width: 0; font-weight: 500; overflow-wrap: break-word; }
+.dedai-fcard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+.dedai-ftotal { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+.dedai-ftotal-btns { min-width: 0; }
+/* HP (<720px, breakpoint yang sama dengan mockup): gerbang menumpuk
+   vertikal, tombol Lihat selebar kartu, bar total Full AI menumpuk —
+   tanpa horizontal overflow di tingkat halaman pada 390px (tabel
+   scroll internal di .dedai-table-wrap). Fungsi & aksi sama dengan
+   desktop; tidak ada label/aksi yang dihilangkan. */
+@media (max-width: 720px) {
+  .dedai-gate { padding: 14px 12px; }
+  .dedai-gate-head h2 { font-size: 15px; }
+  .dedai-gate-item { flex-direction: column; }
+  .dedai-gate-lihat { width: 100%; }
+  .dedai-evidence .dl-row { flex-direction: column; gap: 2px; }
+  .dedai-evidence .dl-k { min-width: 0; }
+  .dedai-qlegend-note { font-size: 11.5px; }
+  .dedai-fcard-grid { grid-template-columns: 1fr; }
+  .dedai-ftotal { flex-direction: column; align-items: stretch; }
+  .dedai-ftotal-btns { width: 100%; }
+  .dedai-ftotal-btn { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dedai-gate-fill { transition: none; }
+}
+
+/* ===== Responsif HP — 2026-11-19 (Wave 3, perintah owner 04:26
+   "maksimalkan mode hp juga") =====
+   Sasaran: tanpa overflow horizontal tingkat halaman pada 390px;
+   target sentuh ≥44px untuk kontrol interaktif; teks lebih ringkas
+   tapi fungsi sama persis dengan desktop (tidak ada aksi yang
+   dihilangkan). Lebar isi pada 390px: in-shell .fp-content 366px −
+   padding .dedai 2px = 362px; standalone 390px − padding 14px×2 =
+   362px — sama. Breakpoint ≤720px = breakpoint mockup v2.3.
+   Semua warna memakai token (--ez-color-*, --dd-*) — TANPA warna
+   hardcode baru — agar pass mode gelap sesudah ini bisa meng-override.
+   Blok Input v2.3 dan blok Hasil+Gerbang pekerja lain TIDAK diubah;
+   blok ini hanya menambah override di bawahnya. */
+
+/* --- Akar penyebab overflow .dedai #1: nama berkas di baris berkas
+   progress (.dedai-fileline) adalah satu token tanpa spasi yang tidak
+   bisa pecah — nama 55 karakter ≈ 360px + ikon/gap 19px + padding
+   kartu 48px = 427px > 390px. overflow-wrap:anywhere membuat
+   min-content item flex-nya menyusut sehingga teks pecah di dalam
+   kartu; berlaku semua lebar (tidak berbahaya di desktop). */
+.dedai-fileline { overflow-wrap: anywhere; word-break: break-word; }
+.dedai-fileline > svg { flex-shrink: 0; }
+
+/* --- Kartu Full AI: token panjang (rumus, URL sumber, kode AHSP) di
+   dalam detail kartu boleh pecah — berlaku semua lebar. */
+.dedai .fullai-item { overflow-wrap: anywhere; }
+
+/* --- Input jumlah modal Isi Cepat: font 14px di desktop (dipindah dari
+   inline style di DedAiResultView agar bisa naik ke 16px anti-zoom iOS
+   + tinggi sentuh 44px di HP lewat blok ≤720px di bawah). --- */
+.dedai-modal-input { font-size: 14px; }
+
+/* --- Grid form edit kartu Full AI: 2 kolom di desktop (dipindah dari
+   inline style agar bisa menumpuk di HP tanpa !important). */
+.dedai-fcard-editgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+
+@media (max-width: 720px) {
+  /* --- Bar aksi shell (temuan pekerja B, TERKONFIRMASI di konteks
+     shell): .fp-actionbar/.fs-actionbar memaksa .dedai-actions menjadi
+     flex nowrap + tombol flex:0 0 auto — lima tombol ≈ 755px dalam
+     actionbar 366px sehingga tombol terakhir terpotong/tidak
+     terjangkau. Di luar shell .dedai-actions adalah grid dan sudah
+     benar (1 kolom ≤560px) — perbaikan ini khusus konteks shell.
+     Spesifisitas (0,3,0)/(0,4,0) sengaja di atas aturan shell (0,2,0)
+     agar menang tanpa peduli urutan impor CSS. Hanya kelas .dedai-*
+     yang disentuh — layar lain yang memakai shell tidak berubah. */
+  .fp-shell .fp-actionbar .dedai-actions,
+  .fp-shell .fp-actionbar .dedai-actions-primary,
+  .fs-shell .fs-actionbar .dedai-actions,
+  .fs-shell .fs-actionbar .dedai-actions-primary { flex-wrap: wrap; }
+  .fp-shell .fp-actionbar .dedai-actions .dedai-btn,
+  .fp-shell .fp-actionbar .dedai-actions-primary .dedai-btn,
+  .fs-shell .fs-actionbar .dedai-actions .dedai-btn,
+  .fs-shell .fs-actionbar .dedai-actions-primary .dedai-btn {
+    flex: 1 1 auto;
+    min-height: 44px;
+  }
+
+  /* --- Target sentuh ≥44px: tombol ikon & kontrol kecil ---
+     min-width/min-height dipakai (bukan width/height) agar menang
+     atas deklarasi width/height tetap di aturan dasar tanpa
+     !important; min-height mengalahkan height bila lebih besar. */
+  .dedai-icon-btn { min-width: 44px; min-height: 44px; }
+  .dedai-v23-chev { min-width: 44px; min-height: 44px; }
+  .dedai-seg button { min-height: 44px; }
+  .dedai-chip { min-height: 44px; }
+  /* Tombol mini di detail item (AHSP "Pilih", lengkapi/terima/tolak
+     penyelesaian): padding inline 2px tetap, tinggi dipaksa 44px. */
+  .dedai-detail-btn { min-height: 44px; }
+  /* Tombol Isi Cepat + tombol-tombol modalnya (padding inline tetap). */
+  .dedai-bulk-btn, .dedai-modal-btn { min-height: 44px; }
+  /* Tombol mini kartu Full AI (Terima/Tolak/Pilih/Edit) + Simpan. */
+  .dedai-fcard-mini { min-height: 44px; }
+  .dedai-fcard-save { min-height: 44px; }
+  /* Tombol Top-up di notice saldo rendah — terlingkup .dedai agar
+     komponen ai-credits di layar lain tidak berubah. */
+  .dedai .aic-low-notice button { height: auto; min-height: 44px; }
+  /* Baris preferensi output: seluruh baris label jadi target sentuh. */
+  .dedai-prefs label { min-height: 44px; }
+
+  /* --- Baris berkas input: dua baris di HP ---
+     Satu baris tidak muat: ikon 32 + nama + tag (s.d. ±130px:
+     "Tanpa teks — mungkin scan") + 2 tombol 44px = ±286px tetap,
+     menyisakan ±40px untuk nama berkas. Baris 1 = ikon + nama
+     (elipsis, selebar penuh); baris 2 = tag + ganti + hapus. */
+  .dedai-input .dedai-file { flex-wrap: wrap; }
+  .dedai-input .dedai-file .f-info { flex: 1 1 calc(100% - 44px); }
+  .dedai-input .dedai-file .f-del,
+  .dedai-input .dedai-file .f-act,
+  .dedai-file .f-del,
+  .dedai-file .f-act { min-width: 44px; min-height: 44px; }
+
+  /* --- Header kelompok WBS: membungkus di HP ---
+     Akar penyebab overflow .dedai #2: header kelompok adalah flex
+     nowrap (chevron + kode + nama + hitungan + lencana + subtotal)
+     dengan min-content s.d. ±490px pada nama panjang + lencana
+     "bermasalah" — melebihi isi 362px. Di HP: nama membungkus,
+     subtotal tetap di kanan baris pertama; baris item ikut
+     membungkus bila nama + harganya tidak muat. */
+  .dedai-wbs-group { flex-wrap: wrap; min-height: 44px; }
+  .dedai-wbs-group-main { flex-wrap: wrap; min-width: 0; }
+  .dedai-wbs-group-total { margin-left: auto; }
+  .dedai-wbs-toggle { min-height: 44px; }
+  .dedai-wbs-item { flex-wrap: wrap; }
+  .dedai-wbs-item-name { min-width: 0; overflow-wrap: anywhere; }
+  .dedai-wbs-item-price { white-space: nowrap; }
+
+  /* --- Baris subtotal kartu Full AI: membungkus di HP ---
+     Tanpa wrap, "Subtotal: Rp… + catatan verifikasi" di kiri dan
+     "kelompok WBS + Edit" di kanan memaksa ±540px dalam kartu 310px
+     (terjepit, bukan meluber — min-content ±248px masih muat — tapi
+     tidak terbaca). Di HP: kelompok + Edit membungkus di bawah
+     subtotal bila tidak muat sebaris. */
+  .dedai-fcard-subtotal { flex-wrap: wrap; gap: 8px; }
+  .dedai-fcard-subtotal-right { flex-wrap: wrap; min-width: 0; }
+  .dedai-fcard-subtotal-right > span { min-width: 0; overflow-wrap: anywhere; }
+  /* Form edit kartu Full AI: satu kolom + input setinggi sentuh. */
+  .dedai-fcard-editgrid { grid-template-columns: 1fr; }
+  .dedai-fcard-editgrid input { min-height: 44px; font-size: 16px; }
+
+  /* --- Input 16px di HP: mencegah zoom otomatis iOS saat fokus
+     (iOS memperbesar bila font input <16px). Hanya ukuran font;
+     tinggi & perilaku tidak berubah. Input jumlah modal Isi Cepat
+     ikut naik ke tinggi sentuh 44px. */
+  .dedai-field input[type=text],
+  .dedai-field textarea,
+  .dedai-field select,
+  .dedai-scopepick input,
+  .dedai-edit-input { font-size: 16px; }
+  .dedai-modal-input { font-size: 16px; min-height: 44px; }
+}
+
+/* ===== Mode gelap — 2026-11-19 (Wave 4, perintah owner 04:15) =====
+   Cakupan: layar DED yang disentuh implementasi ini — input (layout
+   v2.3), hasil + gerbang review, progress. Aturan token
+   (--ez-color-* / --ez-hue-*) beradaptasi sendiri lewat blok
+   [data-theme="dark"] di ezrab-design-system.css; blok ini HANYA
+   menutup yang tidak terjangkau token: variabel lokal --dd-* (D6),
+   warna hardcode (D6, v2.3, Hasil+Gerbang), dan bahaya balik token
+   (latar --ez-color-success + teks putih). Blok pekerja lain (Input
+   v2.3, Hasil+Gerbang, Responsif HP) TIDAK diubah — aturan di bawah
+   menimpa lewat spesifisitas [data-theme] + kelas. Override warna di
+   sini tidak terikat lebar sehingga berlaku juga di layout HP
+   (≤720px); blok HP Wave 3 sendiri tidak memakai warna.
+   Bayangan hardcode rgba(0,0,0,0.045) sengaja tidak di-override:
+   di dark ia sekadar tak terlihat, bukan merusak keterbacaan. */
+
+/* --- Variabel lokal D6: teks navy → terang, border → gelap --- */
+[data-theme="dark"] .dedai.dedai-input {
+  --dd-navy: var(--ez-color-text-primary);
+  --dd-blue: var(--ez-hue-blue-text);
+  --dd-border: var(--ez-color-border);
+  --dd-muted: var(--ez-color-text-secondary);
+  --dd-ok: #2DD4BF;
+  --dd-warn: var(--ez-color-warning);
+}
+
+/* --- Input: ikon kartu & kepala panel --- */
+[data-theme="dark"] .dedai-input .dedai-card h2 .ico,
+[data-theme="dark"] .dedai-input .dedai-settings-head h2 .ico,
+[data-theme="dark"] .dedai-v23-summary .ico { background: var(--ez-color-primary-soft); }
+
+/* --- Input: dropzone --- */
+[data-theme="dark"] .dedai-input-main .dedai-drop { border-color: var(--ez-hue-blue-border); background: var(--ez-color-surface-secondary); }
+[data-theme="dark"] .dedai-input-main .dedai-drop:hover,
+[data-theme="dark"] .dedai-input-main .dedai-drop.over { background: var(--ez-color-primary-soft); }
+[data-theme="dark"] .dedai-drop .big-ico,
+[data-theme="dark"] .dedai-drop .fmt { background: var(--ez-color-primary-soft); }
+
+/* --- Input: baris berkas --- */
+[data-theme="dark"] .dedai-input .dedai-file { background: var(--ez-color-surface); }
+[data-theme="dark"] .dedai-input .dedai-file .f-ico { background: var(--ez-hue-rose-bg); color: var(--ez-color-danger-strong); }
+[data-theme="dark"] .dedai-file .f-tag.ok { background: var(--ez-hue-green-bg); color: var(--ez-hue-green-text); }
+[data-theme="dark"] .dedai-file .f-tag.warn { background: var(--ez-hue-amber-bg); color: var(--ez-hue-amber-text); border-color: var(--ez-hue-amber-border); }
+[data-theme="dark"] .dedai-file .f-act,
+[data-theme="dark"] .dedai-input .dedai-file .f-del { background: var(--ez-color-surface); }
+[data-theme="dark"] .dedai-input .dedai-file .f-del:hover { border-color: var(--ez-color-danger-strong); color: var(--ez-color-danger-strong); background: var(--ez-hue-rose-bg); }
+
+/* --- Input: konfigurasi & segmen --- */
+[data-theme="dark"] .dedai-cfgrow,
+[data-theme="dark"] .dedai-modesec { border-bottom-color: var(--ez-color-border-soft); }
+[data-theme="dark"] .dedai-cfghint { color: var(--ez-color-text-muted); }
+[data-theme="dark"] .dedai-cfgtext { color: var(--ez-color-text-slate); }
+[data-theme="dark"] .dedai-cfgcheck,
+[data-theme="dark"] .dedai-prefs label { color: var(--ez-color-text-body); }
+[data-theme="dark"] .dedai-input .dedai-seg { background: var(--ez-color-surface-secondary); }
+[data-theme="dark"] .dedai-input .dedai-seg button.active { background: var(--ez-color-surface); }
+[data-theme="dark"] .dedai-scopepick input { background: var(--ez-color-surface); }
+[data-theme="dark"] .dedai-scopeerr { color: var(--ez-color-danger-strong); }
+
+/* --- Input: strip pratinjau --- */
+[data-theme="dark"] .dedai-preview .pv { background: var(--ez-color-surface); }
+[data-theme="dark"] .dedai-preview .pv .v.empty { color: var(--ez-color-text-faint); }
+[data-theme="dark"] .dedai-preview .pv .s { color: var(--ez-color-text-muted); }
+
+/* --- Input: kartu mode (D6) --- */
+[data-theme="dark"] .dedai-modecard { background: var(--ez-color-surface); }
+[data-theme="dark"] .dedai-modecard:hover:not(.selected) { border-color: var(--ez-hue-blue-border); }
+[data-theme="dark"] .dedai-modecard.blue.selected { border-color: var(--ez-hue-blue-text); background: var(--ez-color-primary-soft); }
+[data-theme="dark"] .dedai-modecard.violet.selected { border-color: var(--ez-hue-violet-text); background: var(--ez-hue-violet-bg); }
+[data-theme="dark"] .dedai-modecard.blue .dedai-modecard-ico { background: var(--ez-color-primary-soft); color: var(--ez-hue-blue-text); }
+[data-theme="dark"] .dedai-modecard.violet .dedai-modecard-ico { background: var(--ez-hue-violet-bg); color: var(--ez-hue-violet-text); }
+[data-theme="dark"] .dedai-modecard-sub { color: var(--ez-color-text-slate); }
+[data-theme="dark"] .dedai-modecard-list,
+[data-theme="dark"] .dedai-modecard-note { color: var(--ez-color-text-muted); }
+[data-theme="dark"] .dedai-modecard-note { border-top-color: var(--ez-color-border); }
+
+/* --- Input v2.3: chevron & seksi sekunder --- */
+[data-theme="dark"] .dedai-v23-chev { background: var(--ez-color-surface); }
+[data-theme="dark"] .dedai-v23-chev:hover { border-color: var(--ez-color-border-strong); color: var(--ez-hue-blue-text); }
+[data-theme="dark"] .dedai-v23-details { background: var(--ez-color-surface); }
+
+/* --- Input: chip aktif & CTA. Tombol utama tetap biru pekat agar teks
+   putih terbaca (--dd-blue yang diterangkan hanya untuk teks/ikon). --- */
+[data-theme="dark"] .dedai-input .dedai-chip.active { background: var(--ez-color-primary-soft); }
+[data-theme="dark"] .dedai-settings-foot .dedai-btn.primary { background: var(--ez-color-primary); }
+[data-theme="dark"] .dedai-settings-foot .dedai-btn.primary:disabled { background: var(--ez-color-primary-soft); color: var(--ez-hue-blue-text-deep); }
+
+/* --- Bahaya balik token: --ez-color-success menjadi hijau terang di
+   dark (#34D399) — sebagai latar tombol/lencana, teks putih di atasnya
+   hanya 2,0:1. Hijau pekat emerald-700 (#047857) dipakai di dark saja
+   (teks putih 5,0:1); light tidak berubah. --- */
+[data-theme="dark"] .dedai-step.done .n { background: #047857; }
+[data-theme="dark"] .dedai-btn.success,
+[data-theme="dark"] .dedai-btn.success:hover { background: #047857; }
+
+/* --- Hasil: chip bukti kuantitas — enam warna tetap bisa dibedakan
+   (amber / biru / violet / oranye / hijau / slate), teks terang di
+   atas tint gelap. Oranye memakai orange-300 (#FDBA74): tidak ada
+   token teks oranye di design system. --- */
+[data-theme="dark"] .dedai-qchip-claim { background: var(--ez-hue-amber-bg); color: var(--ez-hue-amber-text); }
+[data-theme="dark"] .dedai-qchip-deterministic { background: var(--ez-hue-blue-bg); color: var(--ez-hue-blue-text-deep); }
+[data-theme="dark"] .dedai-qchip-ai-estimate { background: var(--ez-hue-violet-bg); color: var(--ez-hue-violet-text); }
+[data-theme="dark"] .dedai-qchip-assumption { background: var(--ez-hue-orange-bg); color: #FDBA74; }
+[data-theme="dark"] .dedai-qchip-user { background: var(--ez-hue-green-bg-deep); color: var(--ez-hue-green-text-deep); }
+[data-theme="dark"] .dedai-qchip-unclear { background: var(--ez-color-surface-tertiary); color: var(--ez-color-text-secondary); border-color: var(--ez-color-border); }
+[data-theme="dark"] .dedai-qchip-confirm { background: var(--ez-hue-amber-bg-deep); color: var(--ez-hue-amber-text); border-color: var(--ez-hue-amber-text-deep); }
+
+/* --- Hasil: legenda, hover baris, blok dasar kuantitas --- */
+[data-theme="dark"] .dedai-qlegend-title { color: var(--ez-color-text-slate); }
+[data-theme="dark"] .dedai-qlegend-note { color: var(--ez-color-text-muted); }
+[data-theme="dark"] .dedai-row-clickable:hover { background: var(--ez-color-surface-secondary); }
+[data-theme="dark"] .dedai-evidence { background: var(--ez-color-primary-soft); border-color: var(--ez-hue-blue-border); }
+[data-theme="dark"] .dedai-evidence-head { color: var(--ez-hue-blue-text-deep); }
+[data-theme="dark"] .dedai-evidence .dl-row { border-bottom-color: var(--ez-hue-blue-border); }
+
+/* --- Hasil: panel gerbang review — terkunci (amber) vs lengkap
+   (hijau) tetap bisa dibedakan di dark --- */
+[data-theme="dark"] .dedai-gate { background: var(--ez-color-warning-soft); border-color: var(--ez-hue-amber-border); }
+[data-theme="dark"] .dedai-gate.complete { background: var(--ez-color-success-soft); border-color: var(--ez-hue-green-border); }
+[data-theme="dark"] .dedai-gate-head h2 { color: var(--ez-hue-amber-text); }
+[data-theme="dark"] .dedai-gate.complete .dedai-gate-head h2 { color: var(--ez-hue-green-text); }
+[data-theme="dark"] .dedai-gate-ico { color: var(--ez-hue-amber-text-deep); }
+[data-theme="dark"] .dedai-gate.complete .dedai-gate-ico { color: var(--ez-hue-green-text-bright); }
+[data-theme="dark"] .dedai-gate-counts { color: var(--ez-hue-amber-text); }
+[data-theme="dark"] .dedai-gate.complete .dedai-gate-counts { color: var(--ez-hue-green-text-deep); }
+[data-theme="dark"] .dedai-gate-bar { background: var(--ez-hue-amber-bg-deep); }
+[data-theme="dark"] .dedai-gate.complete .dedai-gate-bar { background: var(--ez-hue-green-bg-deep); }
+[data-theme="dark"] .dedai-gate-fill { background: var(--ez-hue-amber-text-deep); }
+[data-theme="dark"] .dedai-gate.complete .dedai-gate-fill { background: var(--ez-hue-green-text-bright); }
+[data-theme="dark"] .dedai-gate-progress-txt { color: var(--ez-hue-amber-text); }
+[data-theme="dark"] .dedai-gate.complete .dedai-gate-progress-txt { color: var(--ez-hue-green-text); }
+[data-theme="dark"] .dedai-gate-item { background: var(--ez-color-surface); border-color: var(--ez-color-border); }
+[data-theme="dark"] .dedai-gate-title { color: var(--ez-color-text-primary); }
+[data-theme="dark"] .dedai-gate-desc { color: var(--ez-color-text-muted); }
+[data-theme="dark"] .dedai-gate-lihat { background: var(--ez-hue-blue-bg); color: var(--ez-hue-blue-text-deep); border-color: var(--ez-hue-blue-border); }
+[data-theme="dark"] .dedai-gate-lihat:hover { background: var(--ez-hue-blue-bg-deep); }
+[data-theme="dark"] .dedai-gate-note { color: var(--ez-hue-amber-text); }
+[data-theme="dark"] .dedai-gate.complete .dedai-gate-note { color: var(--ez-hue-green-text-deep); }
+
+/* --- Hasil Full AI: panel Grand Total memakai latar inline #111827 —
+   di dark ia menyatu dengan latar halaman sehingga batas panel hilang
+   (teks tetap terbaca, tapi panel tak lagi terbaca sebagai kartu).
+   Border token mengembalikan batasnya; latar inline tidak disentuh. --- */
+[data-theme="dark"] .dedai-ftotal { border: 1px solid var(--ez-color-border); }

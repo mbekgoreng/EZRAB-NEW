@@ -24,7 +24,7 @@ const mem = new Map<string, string>();
 };
 
 import { DocumentStudioOrchestrator, type DocAiTransport } from '../ai-tools/document-ai/orchestrator';
-import { DokumenAiService, MAX_ENHANCE_SELECTION_CHARS } from '../ai-tools/document-ai/service';
+import { DokumenAiService, MAX_ENHANCE_SEGMENT_CHARS } from '../ai-tools/document-ai/service';
 import { ENHANCE_PROMPT_VERSION, DRAFT_PROMPT_VERSION, systemForMode } from '../ai-tools/document-ai/prompt';
 import { reviewDocument, summarizeFindings } from '../ai-tools/document-ai/review';
 import {
@@ -65,11 +65,31 @@ async function main(): Promise<void> {
   const svc = new DokumenAiService();
   const rNoSel = await svc.chat({ documentText: '', fileName: 'Dokumen', mode: 'ENHANCE' });
   check('ENHANCE tanpa selection → EMPTY_SELECTION', rNoSel.success === false && rNoSel.errorCode === 'EMPTY_SELECTION');
-  const rLong = await svc.chat({
+  // Tanpa batas pemrosesan (2026-11-19): seleksi > 8.000 karakter DIBAGI
+  // menjadi segmen dan disunting — error SELECTION_TOO_LONG DIHAPUS.
+  check('MAX_ENHANCE_SEGMENT_CHARS = 8000', MAX_ENHANCE_SEGMENT_CHARS === 8000);
+  const fakeEnhance = {
+    calls: [] as Array<{ prompt: string }>,
+    execute: async (req: any) => {
+      fakeEnhance.calls.push({ prompt: req.prompt });
+      return { success: true, content: '[disunting]', structured: null, requestId: 't', provider: 'fake', model: 'fake' };
+    },
+  };
+  const svcSeg = new DokumenAiService(fakeEnhance as any);
+  const rLong = await svcSeg.chat({
     documentText: '', fileName: 'Dokumen', mode: 'ENHANCE',
-    selectionText: 'x'.repeat(MAX_ENHANCE_SELECTION_CHARS + 1), transform: 'formal',
+    selectionText: 'Kalimat penting. '.repeat(600), transform: 'formal',
   });
-  check('ENHANCE selection > 8000 → SELECTION_TOO_LONG', rLong.success === false && rLong.errorCode === 'SELECTION_TOO_LONG');
+  check(
+    'ENHANCE seleksi 10.200 karakter disunting per segmen (bukan ditolak)',
+    rLong.success === true && fakeEnhance.calls.length === 2 && rLong.reply === '[disunting][disunting]',
+    `calls=${fakeEnhance.calls.length} reply=${rLong.reply}`,
+  );
+  check(
+    'segmen ENHANCE berpenanda bagian 1/2 dan 2/2',
+    fakeEnhance.calls[0]?.prompt.includes('bagian 1 dari 2') === true &&
+      fakeEnhance.calls[1]?.prompt.includes('bagian 2 dari 2') === true,
+  );
 
   console.log('\n[2] ENHANCE_TEXT — orchestrator (mock transport):');
   const tEnh = new MockTransport(ok('Pekerjaan struktur telah diperiksa dan dinyatakan sesuai.'));

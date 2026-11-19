@@ -117,7 +117,9 @@ const SCENARIOS = {
 for (const [id, message] of Object.entries(SCENARIOS)) {
   const before = capturedBodies.length;
   try {
-    const r = await executeAI({ message, systemPrompt: 'Kamu adalah asisten EZRAB.', mode: 'fast' });
+    // Mode 'chat' (fast WeizeRouter-only sejak keputusan owner 2026-11-19 —
+    // suite ini hanya memasang key Gemini dan menangkap body Gemini).
+    const r = await executeAI({ message, systemPrompt: 'Kamu adalah asisten EZRAB.', mode: 'chat' });
     ok(r.ok, `${id}: executeAI gagal pada stub provider`);
     ok(capturedBodies.length === before + 1, `${id}: tepat satu panggilan provider tertangkap`);
     const sysText = capturedBodies[before].contents[0].parts[0].text;

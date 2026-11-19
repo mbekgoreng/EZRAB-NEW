@@ -122,6 +122,109 @@ export interface CoAssistantSendResult {
   conversationId: string | null;
 }
 
+/**
+ * P11 (audit perintah AI 2026-11-17, baris matriks 48) — KONTEKS ITEM
+ * TERPILIH. `selectedRabItem`/`selectedQtoItem` sudah dideklarasikan di
+ * CoAssistantContextRequest dan sudah diteruskan chatbox ke service,
+ * tetapi service TIDAK PERNAH membacanya — "jelaskan item ini" tidak
+ * pernah tahu baris mana yang dimaksud. Helper ini memformat item
+ * terpilih menjadi satu blok konteks faktual (hanya field nyata dari
+ * baris tersebut; harga null = "belum tersedia", BUKAN Rp0) yang
+ * ditempel ke prompt server dan dipakai jawaban deterministik
+ * ACTIVE_SELECTED_ITEM di chatbox. Rantai hulu yang masih hilang:
+ * WorkspaceView belum punya state seleksi untuk diteruskan ke mount
+ * chatbox (seleksi masih state lokal RabEstimasiView) — lihat laporan
+ * B2; helper + pembacaan di sini sudah siap begitu state itu diangkat.
+ */
+function formatRupiahOrUnavailable(value: number | null | undefined): string {
+  return value == null ? 'belum tersedia (bukan Rp0)' : `Rp${value.toLocaleString('id-ID')}`;
+}
+
+export function formatSelectedItemSection(
+  selectedRabItem?: RabItem | null,
+  selectedQtoItem?: QTOItem | null,
+): string | null {
+  const lines: string[] = [];
+  if (selectedRabItem) {
+    const amount = selectedRabItem.amount ?? selectedRabItem.totalPrice ?? null;
+    lines.push(
+      `ITEM RAB TERPILIH: "${selectedRabItem.description}"` +
+      ` | kode ${selectedRabItem.code || '-'}` +
+      (selectedRabItem.ahspCode ? ` | AHSP ${selectedRabItem.ahspCode}` : '') +
+      ` | volume ${selectedRabItem.volume} ${selectedRabItem.unit}` +
+      ` | harga satuan ${formatRupiahOrUnavailable(selectedRabItem.unitPrice)}` +
+      ` | jumlah ${formatRupiahOrUnavailable(amount)}` +
+      ` | kategori ${selectedRabItem.category || '-'}` +
+      (selectedRabItem.priceStatus ? ` | status harga ${selectedRabItem.priceStatus}` : ''),
+    );
+  }
+  if (selectedQtoItem) {
+    lines.push(
+      `ITEM QTO TERPILIH: "${selectedQtoItem.uraian}"` +
+      ` | kode ${selectedQtoItem.kode || '-'}` +
+      ` | quantity ${selectedQtoItem.quantity} ${selectedQtoItem.unit}` +
+      ` | harga satuan ${formatRupiahOrUnavailable(selectedQtoItem.unitPrice)}` +
+      (selectedQtoItem.totalCost != null ? ` | total kalkulator ${formatRupiahOrUnavailable(selectedQtoItem.totalCost)}` : '') +
+      (selectedQtoItem.priceStatus ? ` | status harga ${selectedQtoItem.priceStatus}` : ''),
+    );
+  }
+  if (lines.length === 0) return null;
+  return `ITEM TERPILIH (baris yang sedang dipilih pengguna — bila pengguna bertanya "item ini", jawab dari data ini, jangan dari item lain):\n${lines.join('\n')}`;
+}
+
+/**
+ * P11 — varian tampilan (untuk pesan chat) dari item terpilih yang
+ * sama. Satu sumber data dengan formatSelectedItemSection; bedanya
+ * hanya format (tanpa instruksi untuk model).
+ */
+export function formatSelectedItemDisplay(
+  selectedRabItem?: RabItem | null,
+  selectedQtoItem?: QTOItem | null,
+): string | null {
+  const parts: string[] = [];
+  if (selectedRabItem) {
+    const amount = selectedRabItem.amount ?? selectedRabItem.totalPrice ?? null;
+    parts.push(
+      `**${selectedRabItem.description}** — ${selectedRabItem.volume} ${selectedRabItem.unit}` +
+      ` × ${formatRupiahOrUnavailable(selectedRabItem.unitPrice)}` +
+      ` = ${formatRupiahOrUnavailable(amount)}` +
+      `\n- Kode: ${selectedRabItem.code || '-'}${selectedRabItem.ahspCode ? ` | AHSP: ${selectedRabItem.ahspCode}` : ''}` +
+      `\n- Kategori: ${selectedRabItem.category || '-'}` +
+      (selectedRabItem.priceStatus ? `\n- Status harga: ${selectedRabItem.priceStatus}` : ''),
+    );
+  }
+  if (selectedQtoItem) {
+    parts.push(
+      `**${selectedQtoItem.uraian}** — ${selectedQtoItem.quantity} ${selectedQtoItem.unit}` +
+      ` × ${formatRupiahOrUnavailable(selectedQtoItem.unitPrice)}` +
+      (selectedQtoItem.totalCost != null ? ` (total kalkulator ${formatRupiahOrUnavailable(selectedQtoItem.totalCost)})` : '') +
+      `\n- Kode: ${selectedQtoItem.kode || '-'}` +
+      (selectedQtoItem.priceStatus ? `\n- Status harga: ${selectedQtoItem.priceStatus}` : ''),
+    );
+  }
+  return parts.length > 0 ? parts.join('\n\n') : null;
+}
+
+/** Frasa deiktik "item ini" — hanya cocok bila tidak ada nama item
+ *  di antara "item" dan "ini" ("jelaskan item pondasi batu kali"
+ *  TIDAK cocok dan tetap dijawab dari snapshot seperti biasa). */
+export const DEICTIC_SELECTED_ITEM_RE =
+  /\b(item|baris)(\s+qto)?\s+ini\b|item\s+(yang\s+)?(saya\s+)?di?pilih|item\s+terpilih|^\s*jelaskan\s+ini\b/i;
+
+/**
+ * P9.5 (audit perintah AI 2026-11-17) — HANYA proposal penambahan item
+ * RAB yang boleh diterapkan sebagai baris RAB (tombol "Terapkan ke
+ * RAB" di chatbox). Proposal lain — mis. OPEN_DOCUMENT_PACKAGE_WIZARD
+ * — bukan item: menerapkannya tanpa memeriksa toolName menghasilkan
+ * baris RAB sampah (volume 1, Rp0). Bila kelak ada toolName proposal
+ * item baru, daftarkan di sini.
+ */
+export const ITEM_APPLY_PROPOSAL_TOOLS: ReadonlySet<string> = new Set(['ADD_RAB_ITEM', 'propose_add_item']);
+
+export function isItemApplyProposal(proposal: ActionProposal): boolean {
+  return ITEM_APPLY_PROPOSAL_TOOLS.has(proposal.toolName);
+}
+
 class CoAssistantService {
   private activeConversationId: string | null = null;
   private currentUserId: string | null = null;
@@ -203,20 +306,37 @@ class CoAssistantService {
     switch (cmd) {
       case 'help':
       case 'bantuan':
+        // P9.4 (audit perintah AI 2026-11-17) — /help lama mengiklankan
+        // /tambah, /hapus, /ubah yang TIDAK PERNAH diimplementasikan
+        // (handleSlashCommand hanya mengenal /help, /total, /cari).
+        // Perintah tulis TIDAK ditambahkan di sini dengan sengaja:
+        // kanal copilot memblokir tool tulis di registry
+        // (propose_* hanya di-allowlist 'chat-ai'/'orchestrator',
+        // toolRegistry.ts) dan Copilot tidak punya permukaan
+        // konfirmasi pratinjau — perubahan RAB diarahkan ke Chat AI.
         return mkMsg(
           `### 🤖 Perintah Ezrab CoAssistant\n\n` +
+          `CoAssistant adalah kanal **jawab-saja**: ia menjawab dari data proyek, tidak mengubah RAB.\n\n` +
           `**Perintah cepat:**\n` +
-          `- \`/tambah Nama | Volume | Satuan | Harga\` — tambah item RAB\n` +
-          `- \`/hapus [nomor]\` — hapus item\n` +
-          `- \`/ubah [nomor] [volume/harga] [nilai]\` — ubah item\n` +
           `- \`/cari [kata kunci]\` — cari item\n` +
           `- \`/total\` — tampilkan total RAB\n` +
           `- \`/help\` — tampilkan bantuan ini\n\n` +
-          `**Contoh natural:**\n` +
-          `- "Tambahkan pondasi batu kali 5 m3 harga 750000"\n` +
+          `**Contoh pertanyaan:**\n` +
           `- "Berapa total RAB proyek ini?"\n` +
-          `- "Hapus item nomor 3"`
+          `- "Jelaskan item pondasi batu kali"\n` +
+          `- "Item termahal apa?"\n\n` +
+          `Untuk menambah, menghapus, atau mengubah item RAB, gunakan **Ezrab Chat AI** (menu Chat AI).`
         );
+
+      // P9.4 — perintah tulis DIKENALI tapi DITOLAK dengan jujur
+      // (bukan jatuh ke LLM yang bisa berhalusinasi sukses): kanal
+      // copilot tidak punya tool tulis; arahkan ke Chat AI.
+      case 'tambah':
+        return mkMsg('Perintah `/tambah` tidak tersedia di CoAssistant — kanal ini hanya menjawab, tidak mengubah RAB. Untuk menambah item, gunakan **Ezrab Chat AI** (menu Chat AI), mis. "Tambah item bouwplank 30 m".');
+      case 'hapus':
+        return mkMsg('Perintah `/hapus` tidak tersedia di CoAssistant — kanal ini hanya menjawab, tidak mengubah RAB. Untuk menghapus item, gunakan **Ezrab Chat AI** (menu Chat AI), mis. "Hapus item plesteran".');
+      case 'ubah':
+        return mkMsg('Perintah `/ubah` tidak tersedia di CoAssistant — kanal ini hanya menjawab, tidak mengubah RAB. Untuk mengubah volume/harga item, gunakan **Ezrab Chat AI** (menu Chat AI), mis. "Ubah volume plesteran jadi 20 m2".');
 
       case 'total':
         const items = request.projectRabItems || [];
@@ -323,11 +443,13 @@ class CoAssistantService {
 
     // === PERINTAH EKPLISIT (slash commands) ===
     // Format: /perintah [argumen]
-    // Contoh: /tambah Pondasi | 5 | m3 | 750000
-    //        /hapus 3
-    //        /ubah 2 volume 10
-    //        /cari pondasi
+    // Contoh: /cari pondasi
+    //        /total
     //        /help
+    // P9.4 — /tambah, /hapus, /ubah TIDAK diimplementasikan (kanal
+    // copilot memblokir tool tulis); ketiganya dikenali di
+    // handleSlashCommand hanya untuk menjawab penolakan yang jujur
+    // + arahan ke Chat AI, bukan untuk mengeksekusi.
     const slashMatch = cleanMessage.match(/^\/(\w+)\s*(.*)$/);
     if (slashMatch) {
       const cmd = slashMatch[1].toLowerCase();
@@ -353,6 +475,23 @@ class CoAssistantService {
           id: `ai-${Date.now()}`,
           role: 'ai',
           text: 'Belum ada proyek aktif. Pilih proyek terlebih dahulu untuk menggunakan analisis berbasis data proyek.',
+          timestamp: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+        },
+        conversationId: this.activeConversationId,
+      };
+    }
+
+    // P11 — "jelaskan item ini" TANPA item terpilih: jawab deterministik
+    // yang jujur, jangan lempar ke LLM (model tidak punya baris mana
+    // pun untuk dijelaskan dan akan mengarang). Bila ADA item terpilih,
+    // pesan diteruskan ke server dengan blok konteks item terpilih
+    // (formatSelectedItemSection, ditempel ke prompt di bawah).
+    if (DEICTIC_SELECTED_ITEM_RE.test(cleanMessage) && !request.selectedRabItem && !request.selectedQtoItem) {
+      return {
+        message: {
+          id: `ai-no-selection-${Date.now()}`,
+          role: 'ai',
+          text: 'Tidak ada baris yang terpilih di Copilot saat ini, jadi saya tidak tahu item mana yang Anda maksud. Sebutkan nama itemnya — mis. "Jelaskan item pondasi batu kali" — dan saya akan menjelaskannya dari data proyek.',
           timestamp: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
         },
         conversationId: this.activeConversationId,
@@ -527,11 +666,15 @@ class CoAssistantService {
     const quickActionSection = quickActionContract
       ? `\n\n${quickActionContextLine(quickActionContract)}`
       : '';
+    // P11 — blok konteks item terpilih (bila ada) ditempel ke prompt
+    // server agar "jelaskan item ini" dijawab dari baris yang dipilih.
+    const selectedItemSection = formatSelectedItemSection(request.selectedRabItem, request.selectedQtoItem);
+    const selectedItemPromptSection = selectedItemSection ? `\n\n${selectedItemSection}` : '';
     const result = await aiToolsProviderClient.execute({
       productId: 'EZRAB_AI',
       mode: 'fast',
       systemPrompt: CO_ASSISTANT_SYSTEM_PROMPT,
-      prompt: `${copilotBuilt.dataBlock}\n\n${copilotToolSection}${quickActionSection}\n\n${RESPONSE_LANGUAGE_RULE}`,
+      prompt: `${copilotBuilt.dataBlock}\n\n${copilotToolSection}${quickActionSection}${selectedItemPromptSection}\n\n${RESPONSE_LANGUAGE_RULE}`,
       jsonMode: false,
       temperature: 0.4,
       maxTokens: 3000,
@@ -723,7 +866,7 @@ export function resolveClientWizardStep(
       wizardSessionId: sessionId,
       step: 'BASIC_PARAMETER_COLLECTION',
       title: `Spesifikasi Teknis: ${sel?.label || 'Rumah Tinggal'}`,
-      message: `Tentukan parameter teknis untuk **${sel?.label || 'Rumah Tinggal'}** di bawah ini untuk memulai kalkulasi RAB deterministik standar AHSP PUPR 2026:`,
+      message: `Tentukan parameter teknis untuk **${sel?.label || 'Rumah Tinggal'}** di bawah ini untuk memulai kalkulasi estimasi RAB template:`,
       canGoBack: true,
       canCancel: true,
       selectedTemplate: sel,
@@ -813,6 +956,15 @@ export function resolveClientWizardStep(
   const panjangPondasi = Math.round(34.0 * linearScale * 10) / 10;
   const luasDinding = Math.round(area * 2.8 * 10) / 10;
 
+  // P9.3 (audit perintah AI 2026-11-17) — HARGA WIZARD ADALAH ESTIMASI
+  // TEMPLATE, BUKAN HARGA TERVERIFIKASI. Semua unitPrice di bawah ini
+  // adalah literal hardcode (Rp18.500, Rp42.000, Rp1.850.000, …) yang
+  // TIDAK diambil dari AHSP/harga resmi dan TIDAK pernah diverifikasi —
+  // versi lama melabelinya verificationStatus 'VERIFIED', sehingga item
+  // yang diterapkan ke spreadsheet tampil sebagai harga terverifikasi.
+  // Label jujurnya 'ESTIMATED' (di permukaan RAB item non-VERIFIED
+  // dipetakan ke NEEDS_VERIFICATION). Jangan kembalikan ke VERIFIED
+  // tanpa jalur verifikasi harga nyata.
   const calculatedItems: any[] = [
     // 01. PEKERJAAN PERSIAPAN
     {
@@ -828,7 +980,7 @@ export function resolveClientWizardStep(
       amount: Math.round(area * 1.25 * 18500),
       ahspCode: 'A.2.2.1.9',
       volumeSource: 'AI_GENERATED',
-      verificationStatus: 'VERIFIED'
+      verificationStatus: 'ESTIMATED'
     },
     {
       id: `RAB-AI-${Date.now()}-2`,
@@ -843,7 +995,7 @@ export function resolveClientWizardStep(
       amount: Math.round((panjangPondasi + 8) * 42000),
       ahspCode: 'A.2.2.1.4',
       volumeSource: 'AI_GENERATED',
-      verificationStatus: 'VERIFIED'
+      verificationStatus: 'ESTIMATED'
     },
     {
       id: `RAB-AI-${Date.now()}-3`,
@@ -858,7 +1010,7 @@ export function resolveClientWizardStep(
       amount: 1850000,
       ahspCode: 'A.2.2.1.1',
       volumeSource: 'AI_GENERATED',
-      verificationStatus: 'VERIFIED'
+      verificationStatus: 'ESTIMATED'
     },
 
     // 02. PEKERJAAN TANAH DAN PONDASI
@@ -875,7 +1027,7 @@ export function resolveClientWizardStep(
       amount: Math.round(panjangPondasi * 0.8 * 0.7 * 88500),
       ahspCode: 'A.2.3.1.1',
       volumeSource: 'AI_GENERATED',
-      verificationStatus: 'VERIFIED'
+      verificationStatus: 'ESTIMATED'
     },
     {
       id: `RAB-AI-${Date.now()}-5`,
@@ -890,7 +1042,7 @@ export function resolveClientWizardStep(
       amount: Math.round(panjangPondasi * 0.8 * 0.05 * 245000),
       ahspCode: 'A.2.3.1.11',
       volumeSource: 'AI_GENERATED',
-      verificationStatus: 'VERIFIED'
+      verificationStatus: 'ESTIMATED'
     },
     {
       id: `RAB-AI-${Date.now()}-6`,
@@ -907,7 +1059,7 @@ export function resolveClientWizardStep(
       amount: Math.round(panjangPondasi * 0.45 * (foundationType === 'FOOTPLATE' ? 1250000 : 945000)),
       ahspCode: foundationType === 'FOOTPLATE' ? 'A.4.1.1.5' : 'A.3.2.1.2',
       volumeSource: 'AI_GENERATED',
-      verificationStatus: 'VERIFIED'
+      verificationStatus: 'ESTIMATED'
     },
     {
       id: `RAB-AI-${Date.now()}-7`,
@@ -922,7 +1074,7 @@ export function resolveClientWizardStep(
       amount: Math.round(panjangPondasi * 0.8 * 0.7 * 0.35 * 38000),
       ahspCode: 'A.2.3.1.9',
       volumeSource: 'AI_GENERATED',
-      verificationStatus: 'VERIFIED'
+      verificationStatus: 'ESTIMATED'
     },
 
     // 03. PEKERJAAN STRUKTUR
@@ -939,7 +1091,7 @@ export function resolveClientWizardStep(
       amount: Math.round(panjangPondasi * 0.15 * 0.20 * 4850000),
       ahspCode: 'A.4.1.1.5',
       volumeSource: 'AI_GENERATED',
-      verificationStatus: 'VERIFIED'
+      verificationStatus: 'ESTIMATED'
     },
     {
       id: `RAB-AI-${Date.now()}-9`,
@@ -954,7 +1106,7 @@ export function resolveClientWizardStep(
       amount: Math.round(14 * linearScale * (0.15 * 0.15 * 3.5) * 5100000),
       ahspCode: 'A.4.1.1.6',
       volumeSource: 'AI_GENERATED',
-      verificationStatus: 'VERIFIED'
+      verificationStatus: 'ESTIMATED'
     },
     {
       id: `RAB-AI-${Date.now()}-10`,
@@ -969,7 +1121,7 @@ export function resolveClientWizardStep(
       amount: Math.round(panjangPondasi * 0.15 * 0.15 * 4950000),
       ahspCode: 'A.4.1.1.7',
       volumeSource: 'AI_GENERATED',
-      verificationStatus: 'VERIFIED'
+      verificationStatus: 'ESTIMATED'
     },
 
     // 04. PEKERJAAN DINDING
@@ -988,7 +1140,7 @@ export function resolveClientWizardStep(
       amount: Math.round(luasDinding * (wallType === 'BATA_MERAH' ? 145000 : 138000)),
       ahspCode: wallType === 'BATA_MERAH' ? 'A.4.4.1.9' : 'A.4.4.1.20',
       volumeSource: 'AI_GENERATED',
-      verificationStatus: 'VERIFIED'
+      verificationStatus: 'ESTIMATED'
     },
     {
       id: `RAB-AI-${Date.now()}-12`,
@@ -1003,7 +1155,7 @@ export function resolveClientWizardStep(
       amount: Math.round(luasDinding * 2 * 58000),
       ahspCode: 'A.4.4.2.4',
       volumeSource: 'AI_GENERATED',
-      verificationStatus: 'VERIFIED'
+      verificationStatus: 'ESTIMATED'
     },
     {
       id: `RAB-AI-${Date.now()}-13`,
@@ -1018,7 +1170,7 @@ export function resolveClientWizardStep(
       amount: Math.round(luasDinding * 2 * 36500),
       ahspCode: 'A.4.4.2.27',
       volumeSource: 'AI_GENERATED',
-      verificationStatus: 'VERIFIED'
+      verificationStatus: 'ESTIMATED'
     },
 
     // 05. PEKERJAAN LANTAI
@@ -1035,7 +1187,7 @@ export function resolveClientWizardStep(
       amount: Math.round(area * 0.92 * 62000),
       ahspCode: 'A.4.1.1.4',
       volumeSource: 'AI_GENERATED',
-      verificationStatus: 'VERIFIED'
+      verificationStatus: 'ESTIMATED'
     },
     {
       id: `RAB-AI-${Date.now()}-15`,
@@ -1052,7 +1204,7 @@ export function resolveClientWizardStep(
       amount: Math.round(area * 0.82 * (quality === 'MENENGAH' ? 245000 : 165000)),
       ahspCode: quality === 'MENENGAH' ? 'A.4.4.3.40' : 'A.4.4.3.35',
       volumeSource: 'AI_GENERATED',
-      verificationStatus: 'VERIFIED'
+      verificationStatus: 'ESTIMATED'
     },
     {
       id: `RAB-AI-${Date.now()}-16`,
@@ -1067,7 +1219,7 @@ export function resolveClientWizardStep(
       amount: Math.round(area * 0.10 * 185000),
       ahspCode: 'A.4.4.3.42',
       volumeSource: 'AI_GENERATED',
-      verificationStatus: 'VERIFIED'
+      verificationStatus: 'ESTIMATED'
     },
 
     // 06. PEKERJAAN ATAP
@@ -1084,7 +1236,7 @@ export function resolveClientWizardStep(
       amount: Math.round(area * 1.35 * 185000),
       ahspCode: 'A.4.2.1.21',
       volumeSource: 'AI_GENERATED',
-      verificationStatus: 'VERIFIED'
+      verificationStatus: 'ESTIMATED'
     },
     {
       id: `RAB-AI-${Date.now()}-18`,
@@ -1099,7 +1251,7 @@ export function resolveClientWizardStep(
       amount: Math.round(area * 1.35 * 135000),
       ahspCode: 'A.4.5.2.32',
       volumeSource: 'AI_GENERATED',
-      verificationStatus: 'VERIFIED'
+      verificationStatus: 'ESTIMATED'
     },
     {
       id: `RAB-AI-${Date.now()}-19`,
@@ -1114,7 +1266,7 @@ export function resolveClientWizardStep(
       amount: Math.round(Math.sqrt(area) * 1.4 * 95000),
       ahspCode: 'A.4.5.2.38',
       volumeSource: 'AI_GENERATED',
-      verificationStatus: 'VERIFIED'
+      verificationStatus: 'ESTIMATED'
     },
 
     // 07. PEKERJAAN KUSEN, PINTU, DAN JENDELA
@@ -1131,7 +1283,7 @@ export function resolveClientWizardStep(
       amount: Math.round(area * 0.65 * 115000),
       ahspCode: 'A.4.6.1.1',
       volumeSource: 'AI_GENERATED',
-      verificationStatus: 'VERIFIED'
+      verificationStatus: 'ESTIMATED'
     },
     {
       id: `RAB-AI-${Date.now()}-21`,
@@ -1146,7 +1298,7 @@ export function resolveClientWizardStep(
       amount: quality === 'MENENGAH' ? 3200000 : 2450000,
       ahspCode: 'A.4.6.2.2',
       volumeSource: 'AI_GENERATED',
-      verificationStatus: 'VERIFIED'
+      verificationStatus: 'ESTIMATED'
     },
     {
       id: `RAB-AI-${Date.now()}-22`,
@@ -1161,7 +1313,7 @@ export function resolveClientWizardStep(
       amount: Math.max(2, Math.floor(area / 18)) * 1350000,
       ahspCode: 'A.4.6.2.5',
       volumeSource: 'AI_GENERATED',
-      verificationStatus: 'VERIFIED'
+      verificationStatus: 'ESTIMATED'
     },
     {
       id: `RAB-AI-${Date.now()}-23`,
@@ -1176,7 +1328,7 @@ export function resolveClientWizardStep(
       amount: Math.max(4, Math.floor(area / 9)) * 550000,
       ahspCode: 'A.4.6.2.12',
       volumeSource: 'AI_GENERATED',
-      verificationStatus: 'VERIFIED'
+      verificationStatus: 'ESTIMATED'
     },
 
     // 08. PEKERJAAN PLAFON
@@ -1193,7 +1345,7 @@ export function resolveClientWizardStep(
       amount: Math.round(area * 1.05 * 68000),
       ahspCode: 'A.4.5.1.5',
       volumeSource: 'AI_GENERATED',
-      verificationStatus: 'VERIFIED'
+      verificationStatus: 'ESTIMATED'
     },
     {
       id: `RAB-AI-${Date.now()}-25`,
@@ -1208,7 +1360,7 @@ export function resolveClientWizardStep(
       amount: Math.round(area * 58000),
       ahspCode: 'A.4.5.1.7',
       volumeSource: 'AI_GENERATED',
-      verificationStatus: 'VERIFIED'
+      verificationStatus: 'ESTIMATED'
     },
     {
       id: `RAB-AI-${Date.now()}-26`,
@@ -1223,7 +1375,7 @@ export function resolveClientWizardStep(
       amount: Math.round(Math.sqrt(area) * 4 * 1.4 * 25000),
       ahspCode: 'A.4.5.1.9',
       volumeSource: 'AI_GENERATED',
-      verificationStatus: 'VERIFIED'
+      verificationStatus: 'ESTIMATED'
     },
 
     // 09. PEKERJAAN INSTALASI LISTRIK
@@ -1240,7 +1392,7 @@ export function resolveClientWizardStep(
       amount: Math.max(8, Math.round(area * 0.35)) * 235000,
       ahspCode: 'A.8.1.1.1',
       volumeSource: 'AI_GENERATED',
-      verificationStatus: 'VERIFIED'
+      verificationStatus: 'ESTIMATED'
     },
     {
       id: `RAB-AI-${Date.now()}-28`,
@@ -1255,7 +1407,7 @@ export function resolveClientWizardStep(
       amount: Math.max(6, Math.round(area * 0.25)) * 245000,
       ahspCode: 'A.8.1.1.2',
       volumeSource: 'AI_GENERATED',
-      verificationStatus: 'VERIFIED'
+      verificationStatus: 'ESTIMATED'
     },
     {
       id: `RAB-AI-${Date.now()}-29`,
@@ -1270,7 +1422,7 @@ export function resolveClientWizardStep(
       amount: 1150000,
       ahspCode: 'A.8.1.2.3',
       volumeSource: 'AI_GENERATED',
-      verificationStatus: 'VERIFIED'
+      verificationStatus: 'ESTIMATED'
     },
 
     // 10. PEKERJAAN PLAMBING DAN SANITASI
@@ -1287,7 +1439,7 @@ export function resolveClientWizardStep(
       amount: Math.round(area * 0.65 * 48000),
       ahspCode: 'A.5.1.1.19',
       volumeSource: 'AI_GENERATED',
-      verificationStatus: 'VERIFIED'
+      verificationStatus: 'ESTIMATED'
     },
     {
       id: `RAB-AI-${Date.now()}-31`,
@@ -1302,7 +1454,7 @@ export function resolveClientWizardStep(
       amount: Math.round(area * 0.55 * 85000),
       ahspCode: 'A.5.1.1.23',
       volumeSource: 'AI_GENERATED',
-      verificationStatus: 'VERIFIED'
+      verificationStatus: 'ESTIMATED'
     },
     {
       id: `RAB-AI-${Date.now()}-32`,
@@ -1319,7 +1471,7 @@ export function resolveClientWizardStep(
       amount: quality === 'MENENGAH' ? 2950000 : 1850000,
       ahspCode: 'A.5.1.1.1',
       volumeSource: 'AI_GENERATED',
-      verificationStatus: 'VERIFIED'
+      verificationStatus: 'ESTIMATED'
     },
     {
       id: `RAB-AI-${Date.now()}-33`,
@@ -1334,7 +1486,7 @@ export function resolveClientWizardStep(
       amount: 640000,
       ahspCode: 'A.5.1.1.14',
       volumeSource: 'AI_GENERATED',
-      verificationStatus: 'VERIFIED'
+      verificationStatus: 'ESTIMATED'
     },
 
     // 11. PEKERJAAN PENGECATAN
@@ -1351,7 +1503,7 @@ export function resolveClientWizardStep(
       amount: Math.round(luasDinding * 1.5 * 36500),
       ahspCode: 'A.4.7.1.10',
       volumeSource: 'AI_GENERATED',
-      verificationStatus: 'VERIFIED'
+      verificationStatus: 'ESTIMATED'
     },
     {
       id: `RAB-AI-${Date.now()}-35`,
@@ -1366,7 +1518,7 @@ export function resolveClientWizardStep(
       amount: Math.round(luasDinding * 0.5 * 49500),
       ahspCode: 'A.4.7.1.11',
       volumeSource: 'AI_GENERATED',
-      verificationStatus: 'VERIFIED'
+      verificationStatus: 'ESTIMATED'
     },
     {
       id: `RAB-AI-${Date.now()}-36`,
@@ -1381,7 +1533,7 @@ export function resolveClientWizardStep(
       amount: Math.round(area * 32000),
       ahspCode: 'A.4.7.1.12',
       volumeSource: 'AI_GENERATED',
-      verificationStatus: 'VERIFIED'
+      verificationStatus: 'ESTIMATED'
     },
 
     // 12. PEKERJAAN EKSTERIOR DAN LINGKUNGAN
@@ -1398,7 +1550,7 @@ export function resolveClientWizardStep(
       amount: 3850000,
       ahspCode: 'A.5.1.1.30',
       volumeSource: 'AI_GENERATED',
-      verificationStatus: 'VERIFIED'
+      verificationStatus: 'ESTIMATED'
     },
     {
       id: `RAB-AI-${Date.now()}-38`,
@@ -1413,7 +1565,7 @@ export function resolveClientWizardStep(
       amount: Math.round(area * 0.35 * 85000),
       ahspCode: 'A.4.1.1.3',
       volumeSource: 'AI_GENERATED',
-      verificationStatus: 'VERIFIED'
+      verificationStatus: 'ESTIMATED'
     },
     {
       id: `RAB-AI-${Date.now()}-39`,
@@ -1428,7 +1580,7 @@ export function resolveClientWizardStep(
       amount: Math.round(Math.sqrt(area) * 4 * 0.6 * 95000),
       ahspCode: 'A.2.3.1.15',
       volumeSource: 'AI_GENERATED',
-      verificationStatus: 'VERIFIED'
+      verificationStatus: 'ESTIMATED'
     },
 
     // 13. PEKERJAAN FINISHING, PEMBERSIHAN, DAN SERAH TERIMA
@@ -1445,7 +1597,7 @@ export function resolveClientWizardStep(
       amount: 750000,
       ahspCode: 'A.2.2.1.2',
       volumeSource: 'AI_GENERATED',
-      verificationStatus: 'VERIFIED'
+      verificationStatus: 'ESTIMATED'
     },
     {
       id: `RAB-AI-${Date.now()}-41`,
@@ -1460,7 +1612,7 @@ export function resolveClientWizardStep(
       amount: 500000,
       ahspCode: 'A.8.1.3.1',
       volumeSource: 'AI_GENERATED',
-      verificationStatus: 'VERIFIED'
+      verificationStatus: 'ESTIMATED'
     },
     {
       id: `RAB-AI-${Date.now()}-42`,
@@ -1475,7 +1627,7 @@ export function resolveClientWizardStep(
       amount: 650000,
       ahspCode: 'A.1.1.1.1',
       volumeSource: 'AI_GENERATED',
-      verificationStatus: 'VERIFIED'
+      verificationStatus: 'ESTIMATED'
     }
   ];
 
@@ -1513,7 +1665,10 @@ export function resolveClientWizardStep(
     wizardSessionId: sessionId,
     step: 'RAB_PREVIEW',
     title: `Preview Estimasi RAB: ${tplName}`,
-    message: `RAB untuk **${tplName}** (Luas ${area} m²) telah berhasil dikalkulasi secara presisi dengan standar AHSP PUPR 2026. Penyesuaian Wilayah: ${regionFactor.name} (${regionFactor.percentage}% acuan). Silakan tinjau ringkasan biaya sebelum menerapkan ke spreadsheet proyek:`,
+    // P9.3 — pesan lama mengklaim "dikalkulasi secara presisi dengan
+    // standar AHSP PUPR 2026" untuk harga literal template. Jujurnya:
+    // ini estimasi template yang belum terverifikasi.
+    message: `RAB untuk **${tplName}** (Luas ${area} m²) telah dihitung sebagai **estimasi template**. Harga satuan di bawah ini adalah angka acuan template (**estimasi, belum terverifikasi** terhadap AHSP/harga resmi) — tinjau dan sesuaikan sebelum menerapkan ke spreadsheet proyek. Penyesuaian Wilayah: ${regionFactor.name} (${regionFactor.percentage}% acuan).`,
     canGoBack: true,
     canCancel: true,
     calculatedItems,

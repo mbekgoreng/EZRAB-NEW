@@ -20,8 +20,11 @@
  *      klien (src/services/aiModelMasking.ts) SEPAKAT (nilai literal sama).
  *
  * Fetch di-stub (hanya key Gemini dummy yang terpasang, jadi hanya kaki
- * Gemini native yang berjalan di semua mode); tidak ada jaringan, tidak
- * ada key asli, tidak ada panggilan AI live.
+ * Gemini native yang berjalan di semua mode — KECUALI mode fast/ded yang
+ * WeizeRouter-only sejak keputusan owner 2026-11-19: tes (a)/(b1)/(e)
+ * memasang key WeizeRouter dummy sementara + stub payload ganda
+ * candidates/choices); tidak ada jaringan, tidak ada key asli, tidak ada
+ * panggilan AI live.
  * Run: node src/test/modelMaskingClientResponse.mjs
  */
 import assert from 'node:assert';
@@ -73,6 +76,9 @@ const DENYLIST = [
   'gemini-', 'gpt-6', 'kimi-k2', 'deepseek-', 'minimax', 'atria', 'zyrouter',
   'weizerouter', 'kimi', 'arxpay', 'crown', 'river', 'dahl', 'atmo',
   'geminiflash', 'nemotron', 'deepseek',
+  // Model Crown baru (owner 2026-11-19 05:55, prioritas No.1 chat):
+  // 'glm-5' + 'zai-org' menangkap 'zai-org/GLM-5.3-Flash' bila bocor.
+  'glm-5', 'zai-org',
 ];
 function findDenied(haystackLower) {
   for (const token of DENYLIST) {
@@ -109,16 +115,31 @@ function mockRes() {
 
 // Stub Gemini: konten netral (tanpa token denylist) + usage terukur agar
 // ketiadaan usage.source bermakna (bukan karena usage null).
+// Payload GANDA: candidates+usageMetadata (jalur Gemini) dan
+// choices+usage (jalur OpenAI/WeizeRouter — mode fast/ded WeizeRouter-only
+// sejak keputusan owner 2026-11-19; kedua bentuk membawa konten + usage
+// yang sama agar asersi bersama berlaku di kedua jalur).
 let fetchCalls = 0;
 const geminiPayload = {
   candidates: [{ content: { parts: [{ text: 'STUB-OK' }] } }],
   usageMetadata: { promptTokenCount: 1200, candidatesTokenCount: 300, totalTokenCount: 1500 },
+  choices: [{ message: { content: 'STUB-OK' } }],
+  usage: { prompt_tokens: 1200, completion_tokens: 300, total_tokens: 1500 },
 };
 const geminiFetch = async () => {
   fetchCalls++;
   return { ok: true, json: async () => geminiPayload };
 };
 globalThis.fetch = geminiFetch;
+
+// Mode fast/ded WeizeRouter-only (keputusan owner 2026-11-19): key
+// WeizeRouter dummy dipasang HANYA di dalam tes yang membutuhkannya,
+// lalu dihapus — bila dipasang global, kaki WeizeRouter menjadi pertama
+// di rantai chat/advanced dan tes (c1)/(c2) kehilangan kaki Gemini.
+async function withWeizeKey(fn) {
+  process.env.WEIZEROUTER_API_KEY = 'dummy-mask-weize';
+  try { await fn(); } finally { delete process.env.WEIZEROUTER_API_KEY; }
+}
 
 // Asersi bersama untuk SATU respons klien termasking.
 function assertMaskedClientBody(r, { mode, model }) {
@@ -146,16 +167,20 @@ await test('0: denylist tidak mengenai string alias itu sendiri', async () => {
 
 // --- (a) mode fast ---
 await test('a: respons klien mode fast termasking penuh', async () => {
-  const r = mockRes();
-  await handleAiRequest(mockReq({ body: { message: 'halo', mode: 'fast' } }), r);
-  assertMaskedClientBody(r, { mode: 'fast', model: 'Ezrab-flash-v1' });
+  await withWeizeKey(async () => {
+    const r = mockRes();
+    await handleAiRequest(mockReq({ body: { message: 'halo', mode: 'fast' } }), r);
+    assertMaskedClientBody(r, { mode: 'fast', model: 'Ezrab-flash-v1' });
+  });
 });
 
 // --- (b) mode ded / advanced / chat / vision ---
 await test('b1: respons klien mode ded (via tools/execute, DED_AI_DETAIL) -> Ezrab-pro', async () => {
-  const r = mockRes();
-  await toolsExecuteHandler(mockReq({ body: { message: 'hitung rab', productId: 'DED_AI_DETAIL' } }), r);
-  assertMaskedClientBody(r, { mode: 'ded', model: 'Ezrab-pro' });
+  await withWeizeKey(async () => {
+    const r = mockRes();
+    await toolsExecuteHandler(mockReq({ body: { message: 'hitung rab', productId: 'DED_AI_DETAIL' } }), r);
+    assertMaskedClientBody(r, { mode: 'ded', model: 'Ezrab-pro' });
+  });
 });
 
 await test('b2: respons klien mode advanced -> Ezrab-pro', async () => {
@@ -179,8 +204,11 @@ await test('b4: respons klien mode vision -> Ezrab-flash-v1', async () => {
 });
 
 // --- (c) return INTERNAL executeAI tetap nama asli ---
+// Mode 'chat' (fast WeizeRouter-only sejak keputusan owner 2026-11-19 —
+// tes ini membuktikan nama internal Gemini; rantai chat masih berisi
+// Gemini dan hanya key Gemini yang terpasang di titik ini).
 await test('c1: executeAI internal tetap membawa nama asli (provider/model/attempts)', async () => {
-  const r = await executeAI({ message: 'halo', mode: 'fast' });
+  const r = await executeAI({ message: 'halo', mode: 'chat' });
   eq(r.ok, true, 'ok');
   eq(r.provider, 'gemini', 'provider internal asli');
   eq(r.model, 'gemini-3.5-flash-lite', 'model internal asli');
@@ -200,7 +228,7 @@ await test('c2: failover internal: attempts gagal + sukses tercatat nama asli', 
     return { ok: true, json: async () => geminiPayload };
   };
   try {
-    const r = await executeAI({ message: 'halo', mode: 'fast' });
+    const r = await executeAI({ message: 'halo', mode: 'chat' });
     eq(r.ok, true, 'ok sesudah failover');
     eq(r.attempts.length, 2, 'dua attempt tercatat');
     eq(r.attempts[0].ok, false, 'attempt 1 gagal');
@@ -287,6 +315,7 @@ await test('d4: modelAliasForMode — pemetaan mode ke alias', async () => {
 
 // --- (e) replay idempotency menyajikan body termasking ---
 await test('e: replay idempotency menyajikan body TERMASKING (tanpa panggil provider lagi)', async () => {
+  await withWeizeKey(async () => {
   const h = { 'idempotency-key': 'idem-key-mask-client' };
   fetchCalls = 0;
   const r1 = mockRes();
@@ -308,6 +337,7 @@ await test('e: replay idempotency menyajikan body TERMASKING (tanpa panggil prov
   ok(!('attempts' in r2.body), 'replay: tanpa attempts[]');
   ok(!('source' in r2.body.usage), 'replay: tanpa usage.source');
   assertNoRealNames(JSON.stringify(r2.body), 'body replay');
+  });
 });
 
 // --- (f) pindaian string tampil atas file display program ini ---

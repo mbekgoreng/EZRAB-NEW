@@ -994,30 +994,36 @@ describe('§14.4 historical projects — SNAPSHOT locked, OVERRIDE partial, LIVE
 // ---------------------------------------------------------------------------
 
 describe('§14.5 integrity — canonical Steps 3/5 pre-gate behavior (pinned, not changed)', () => {
-  it('Step 5 currently RESOLVES a unit-incompatible match (M.23 kg → Rp250.000/bh)', () => {
-    // §12 #1 evidence (fase13-sweep12-1.json, incompatibleSamples):
-    // a Portland Cement query in kg resolves via NATIONAL_REFERENCE_MATCH
-    // at Rp250.000 per BH — the price of a different unit applied to a kg
-    // query. The proposed gate would make this MISSING. This test pins
-    // the CURRENT behavior so the decision's effect is measurable; it
-    // does NOT implement the gate.
+  it('Step 5 resolves M.23 kg same-unit after AHSP adoption (Rp1.425/kg)', () => {
+    // RE-BASELINED 2026-11-18 (owner ratified "Terima patokan harga baru"):
+    // the AHSP price adoption (aae4535/9acf312, v2026.2) supplied a
+    // same-unit per-kg price for M.23, so the unit-incompatible
+    // resolution this test used to pin (M.23 kg → Rp250.000/bh via
+    // NATIONAL_REFERENCE_MATCH, §12 #1 evidence fase13-sweep12-1.json)
+    // no longer occurs for this item — the adoption closed this
+    // example. The §12 #1 gate question stays open for other items.
+    // This test now pins the corrected behavior.
     const r = canonicalPriceResolver.resolve({ code: 'M.23', name: 'Portland Cement', unit: 'kg' });
     expect(r.status).toBe('RESOLVED');
-    expect(r.price).toBe(250000);
-    expect(r.unit).toBe('bh');
-    expect(r.resolutionPath.join(' ')).toContain('NATIONAL_REFERENCE_MATCH');
-    expect(UnitEngine.areCompatible('kg', 'bh')).toBe(false);
+    expect(r.price).toBe(1425);
+    expect(r.unit).toBe('kg');
+    expect(r.resolutionPath.join(' ')).toContain('OFFICIAL_RESOURCE_RESOLVED');
+    expect(UnitEngine.areCompatible('kg', r.unit)).toBe(true);
   });
 
-  it('Step 5 converts a compatible unit (buah → unit, Rp460.000)', () => {
+  it('Step 5 converts a compatible unit (buah → bh, Rp453.500)', () => {
+    // RE-BASELINED 2026-11-18 (owner ratified): adopted market price
+    // for Bronjong ø3 mm is Rp453.500/bh (R044+R118, AHSP v2026.2);
+    // the resolver now returns the record's own unit 'bh' instead of
+    // converting to 'unit' — 'bh' is the same piece unit as 'buah'.
     const r = canonicalPriceResolver.resolve({
       name: 'Bronjong kawat pabrikan Uk.2x1x0,5 ø 3mm mesh 8x10',
       unit: 'buah',
     });
     expect(r.status).toBe('RESOLVED');
-    expect(r.price).toBe(460000);
-    expect(r.unit).toBe('unit');
-    expect(UnitEngine.areCompatible('buah', 'unit')).toBe(true);
+    expect(r.price).toBe(453500);
+    expect(r.unit).toBe('bh');
+    expect(UnitEngine.areCompatible('buah', 'bh')).toBe(true);
   });
 
   it('a missing resource is MISSING with a null price — never Rp0', () => {

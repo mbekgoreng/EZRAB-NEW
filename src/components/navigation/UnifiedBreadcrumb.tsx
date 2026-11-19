@@ -150,7 +150,13 @@ export const UnifiedBreadcrumb: React.FC<UnifiedBreadcrumbProps> = ({
       )}
 
       {/* Case A3: DED AI Estimate — permukaan DED KANONIS (konsolidasi
-          2026-11-11; sebelumnya menu ini jatuh ke breadcrumb generik). */}
+          2026-11-11; sebelumnya menu ini jatuh ke breadcrumb generik).
+          Case C & D di bawah WAJIB mengecualikan 'ded-ai' juga — tanpa
+          itu, kasus ini DAN kasus generik sama-sama ter-render sehingga
+          breadcrumb DED menjadi ganda ("Dashboard › DED AI Estimate ›
+          Analisis DED › [Proyek › Nama Proyek ›] DED AI Estimate",
+          ±700px; di HP daunnya jatuh jauh di luar layar — audit
+          responsif HP 2026-11-19). */}
       {activeMenu === 'ded-ai' && (
         <>
           <ChevronRight size={13} color="#94A3B8" />
@@ -185,7 +191,7 @@ export const UnifiedBreadcrumb: React.FC<UnifiedBreadcrumbProps> = ({
           2026-11-10: breadcrumb panjang terpotong tak bermakna) sehingga
           yang tampil hanya Dashboard › [Modul]. Fungsi navigasinya tetap
           ada di desktop dan lewat menu/drawer di HP. */}
-      {currentProject && activeMenu !== 'dashboard' && activeMenu !== 'proyek' && activeMenu !== 'magic-ai' && activeMenu !== 'ded-rab' && activeMenu !== 'ai-assistant' && (
+      {currentProject && activeMenu !== 'dashboard' && activeMenu !== 'proyek' && activeMenu !== 'magic-ai' && activeMenu !== 'ded-rab' && activeMenu !== 'ai-assistant' && activeMenu !== 'ded-ai' && (
         <>
           <ChevronRight size={13} color="#94A3B8" className="ez-breadcrumb-mid" />
           <button
@@ -225,7 +231,7 @@ export const UnifiedBreadcrumb: React.FC<UnifiedBreadcrumbProps> = ({
       )}
 
       {/* Case D: Global Module View without active project */}
-      {!currentProject && activeMenu !== 'dashboard' && activeMenu !== 'proyek' && activeMenu !== 'magic-ai' && activeMenu !== 'ded-rab' && activeMenu !== 'ai-assistant' && (
+      {!currentProject && activeMenu !== 'dashboard' && activeMenu !== 'proyek' && activeMenu !== 'magic-ai' && activeMenu !== 'ded-rab' && activeMenu !== 'ai-assistant' && activeMenu !== 'ded-ai' && (
         <>
           <ChevronRight size={13} color="#94A3B8" />
           <span style={activeLeafStyle}>

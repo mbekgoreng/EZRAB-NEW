@@ -157,7 +157,10 @@ async function main(): Promise<void> {
   check('DocAnalyzer: QA meneruskan history', anaSrc.includes('history: chat.map'));
   check('DocAnalyzer: COMPARE anggaran per dokumen', anaSrc.includes('halfBudget') && anaSrc.includes('slice(0, halfBudget)'));
   check('DocAnalyzer: peringatan menyebut dokumen terpotong', anaSrc.includes('Yang dipotong:'));
-  check('DocAnalyzer: hasil dirender terformat', anaSrc.includes('markdownToHtml(result)') && anaSrc.includes('markdownToHtml(m.text)'));
+  // RE-BASELINE v2.3 (2026-11-19, ACC owner 04:14): penulisan ulang DocAnalyzer
+  // ke mockup v2.3 mengganti nama variabel hasil (`result` → `currentResult.reply`);
+  // substansi pin TIDAK berubah — hasil tetap dirender terformat via markdownToHtml.
+  check('DocAnalyzer: hasil dirender terformat', anaSrc.includes('markdownToHtml(currentResult.reply)') && anaSrc.includes('markdownToHtml(m.text)'));
   check('DocAnalyzer: truncated dari respons service', anaSrc.includes('res.truncated'));
 
   console.log(`\n=== HASIL: ${passed} PASSED, ${failed} FAILED ===`);

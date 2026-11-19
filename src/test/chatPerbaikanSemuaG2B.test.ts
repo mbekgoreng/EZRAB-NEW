@@ -5,6 +5,11 @@
  * - G2B-1 (§17.3): penekanan atap tanpa-spek MULTI-GEDUNG (level-aware;
  *   tiap gedung memakai spek atapnya sendiri) + single-building tidak
  *   berubah + total kanonis tidak berubah.
+ * - C1 (Gelombang 2): LUBANG single-building Gate 5 DITUTUP — jalur
+ *   single-building kini level-aware seperti multi-gedung: template yang
+ *   hanya mendeklarasikan atap lewat komponen COMPREHENSIVE-opsional
+ *   (mis. BLD-OFFICE-MULTI) TIDAK LAGI menekan part atap mandiri.
+ *   Kandang/gudang (cakupan PROFESSIONAL nyata) tetap ditekan.
  * - G2B-2 (§17.4): derivasi spek atap jalur TERPANDU dari teks bebas
  *   (eksplisit → CONFIRMED; tanpa sebutan → default spandek berlabel
  *   asumsi; pelewatan eksplisit dihormati).
@@ -257,13 +262,65 @@ async function main(): Promise<void> {
     const svc = RabTemplateService.getInstance();
     const office = svc.getTemplateById('BLD-OFFICE-MULTI')!;
     const warehouse = svc.getTemplateById('BLD-IND-WAREHOUSE')!;
-    // Kantor: "tercakup" bila semua level dihitung (perilaku Gate 5),
-    // TIDAK tercakup bila hanya komponen yang ter-generate di
-    // PROFESSIONAL — inilah yang membuat 5E-25 tetap membangun part atap.
+    // Kantor: "tercakup" bila semua level dihitung (mode diagnostik
+    // default), TIDAK tercakup bila hanya komponen yang ter-generate di
+    // PROFESSIONAL — inilah yang membuat 5E-25 tetap membangun part atap,
+    // dan sejak C1 juga part atap single-building (C1-1..C1-3).
     eq(rab.templateDeclaresRoof(office).covered, true, 'kantor tercakup (semua level)');
     eq(rab.templateDeclaresRoof(office, true).covered, false, 'kantor TIDAK tercakup (PROFESSIONAL saja)');
     eq(rab.templateDeclaresRoof(warehouse).covered, true, 'gudang tercakup (semua level)');
     eq(rab.templateDeclaresRoof(warehouse, true).covered, true, 'gudang tercakup (PROFESSIONAL saja)');
+  });
+
+  console.log('== C1 (Gelombang 2) — lubang single-building Gate 5: penekanan level-aware ==');
+
+  await check('C1-1 unit computeNoSpecRoofSuppression: kantor TIDAK ditekan, kandang ditekan + override Galvalum', () => {
+    const office = rab.computeNoSpecRoofSuppression(
+      rab.extractUniversalSpec('buatkan RAB gedung kantor 3 lantai 15 x 10 m, atap genteng'),
+    );
+    eq(office.suppress, false, 'kantor tidak ditekan (cakupan atapnya hanya COMPREHENSIVE-opsional)');
+    eq(office.coveringTemplateId, null, 'kantor tanpa template penutup');
+    const barn = rab.computeNoSpecRoofSuppression(
+      rab.extractUniversalSpec('buatkan RAB kandang sapi terbuka 17 x 9 m kapasitas 30 ekor penutup atap Galvalum lantai beton miring'),
+    );
+    eq(barn.suppress, true, 'kandang ditekan (cakupan PROFESSIONAL nyata)');
+    eq(barn.materialOverride, { paramKey: 'roof_material', value: 'galvalum' }, 'override Galvalum');
+    eq(barn.coveringComponent, 'Penutup Atap Galvalum Kandang', 'varian Galvalum');
+  });
+
+  await check('C1-2 kantor single-building + atap genteng: part atap DIBANGUN (bukan ditekan)', () => {
+    // SEBELUM C1: part atap ditekan dengan peringatan yang mengklaim
+    // cakupan "Waterproofing Coating Membran Bakar Dak Beton Atap" —
+    // komponen COMPREHENSIVE-opsional yang TIDAK PERNAH muncul di draft
+    // PROFESSIONAL; pengguna kehilangan SELURUH pekerjaan atap yang
+    // dimintanya plus peringatan kedua yang salah ("genteng tidak
+    // ditawarkan"). Sesudah C1: part atap dibangun, tanpa klaim hantu.
+    const d = draftOf('buatkan RAB gedung kantor 3 lantai 15 x 10 m, atap genteng');
+    const atapParts = d.parts.filter((p) => p.scope.id === 'atap');
+    eq(atapParts.length, 1, 'part atap dibangun');
+    eq(atapParts[0].template.id, 'ROOF-TILE-PREMIUM', 'template atap genteng');
+    eq(d.parts.filter((p) => p.scope.id === 'gedung').length, 1, 'part gedung tetap ada');
+    const descs = rab.effectiveItems(d).map((i) => i.description);
+    assert(descs.some((x) => x === 'Penutup Atap Genteng Keramik Glazur'), 'item penutup genteng hadir di draft');
+    assert(!d.warnings.some((w) => w.includes('tidak dibangun terpisah')), 'tanpa peringatan penekanan');
+    assert(!d.warnings.some((w) => w.includes('Waterproofing')), 'tanpa klaim cakupan waterproofing hantu');
+    assert(!d.warnings.some((w) => w.includes('tidak ditawarkan')), 'tanpa klaim material tidak ditawarkan');
+  });
+
+  await check('C1-3 kantor single-building + atap genteng: total Rp614.340.001,76', () => {
+    const d = draftOf('buatkan RAB gedung kantor 3 lantai 15 x 10 m, atap genteng');
+    eqRp(rab.computeTotals(d).estimatedTotal, 614340001.76, 'total kantor + atap (biaya langsung)');
+  });
+
+  await check('C1-4 gudang single-building + atap spandek: TETAP ditekan (cakupan PROFESSIONAL nyata)', () => {
+    const d = draftOf('buatkan RAB gudang 10 x 20 m atap spandek');
+    eq(d.parts.length, 1, 'tepat 1 part (gudang saja)');
+    eq(d.parts[0].template.id, 'BLD-IND-WAREHOUSE', 'template gudang');
+    assert(
+      d.warnings.some((w) => w.includes('tidak dibangun terpisah') && w.includes('Penutup Atap & Dinding Cladding Spandek Zincalume')),
+      'peringatan penekanan Gate 5 hadir',
+    );
+    assert(!d.warnings.some((w) => w.includes('tidak ditawarkan')), 'spandek ditawarkan komponen penutup — tanpa peringatan material');
   });
 
   console.log('== G2B-2 (§17.4) — derivasi spek atap jalur terpandu ==');

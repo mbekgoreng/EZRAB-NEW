@@ -19,6 +19,9 @@ delete process.env.AI_GATEWAY_TOKEN;
 delete process.env.SUPABASE_URL;
 delete process.env.SUPABASE_SECRET_KEY;
 process.env.GEMINI_API_KEY_1 = 'dummy-idem-key';
+// Mode 'fast' WeizeRouter-only sejak keputusan owner 2026-11-19 —
+// suite ini memakai key WeizeRouter + stub payload berbentuk OpenAI.
+process.env.WEIZEROUTER_API_KEY = 'dummy-weize';
 
 let failures = 0;
 const test = async (name, fn) => {
@@ -53,7 +56,7 @@ globalThis.fetch = async () => {
   if (!upstreamOk) return { ok: false, status: 500, json: async () => ({}) };
   return {
     ok: true,
-    json: async () => ({ candidates: [{ content: { parts: [{ text: 'halo dari AI' }] } }] }),
+    json: async () => ({ choices: [{ message: { content: 'halo dari AI' } }], usage: {} }),
   };
 };
 

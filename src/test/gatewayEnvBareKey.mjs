@@ -11,6 +11,8 @@
  * Fetch di-stub per host + per key Gemini (query ?key=...): hanya key
  * 'dummy-bare' yang dijawab OK, key bernomor dijawab gagal — sehingga
  * sukses HANYA bisa berasal dari kaki key polos.
+ * Skenario memakai mode 'chat' (mode 'fast' WeizeRouter-only sejak
+ * keputusan owner 2026-11-19 — Gemini tidak lagi ada di rantai fast).
  * Run: node src/test/gatewayEnvBareKey.mjs
  */
 import assert from 'node:assert';
@@ -45,10 +47,10 @@ function check(name, fn) {
   catch (e) { failed++; console.log(`  FAIL ${name}: ${e.message}`); }
 }
 
-// --- 1. Hanya key polos: rantai fast hidup lewat Gemini native.
+// --- 1. Hanya key polos: rantai chat hidup lewat Gemini native.
 process.env.GEMINI_API_KEY = 'dummy-bare';
 {
-  const r = await executeAI({ message: 'halo', mode: 'fast' });
+  const r = await executeAI({ message: 'halo', mode: 'chat' });
   check('bare-only: ok via gemini', () => assert.equal(r.ok, true));
   check('bare-only: provider gemini model gemini-3.5-flash-lite', () => {
     assert.equal(r.provider, 'gemini');
@@ -61,7 +63,7 @@ process.env.GEMINI_API_KEY = 'dummy-bare';
 // --- 2. Key bernomor gagal + key polos menjawab: polos dipakai sesudah bernomor.
 process.env.GEMINI_API_KEY_1 = 'dummy-numbered';
 {
-  const r = await executeAI({ message: 'halo', mode: 'fast' });
+  const r = await executeAI({ message: 'halo', mode: 'chat' });
   check('numbered-fail + bare-ok: ok via gemini', () => assert.equal(r.ok, true));
   check('numbered-fail + bare-ok: 2 attempt gemini (bernomor dulu, polos kemudian)', () => {
     assert.deepEqual(r.attempts.map((a) => `${a.provider}:${a.ok}`), ['gemini:false', 'gemini:true']);
@@ -72,7 +74,7 @@ process.env.GEMINI_API_KEY_1 = 'dummy-numbered';
 delete process.env.GEMINI_API_KEY;
 delete process.env.GEMINI_API_KEY_1;
 {
-  const r = await executeAI({ message: 'halo', mode: 'fast' });
+  const r = await executeAI({ message: 'halo', mode: 'chat' });
   check('no-keys: ok=false, attempts kosong', () => {
     assert.equal(r.ok, false);
     assert.deepEqual(r.attempts, []);

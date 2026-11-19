@@ -90,6 +90,10 @@ export type ChatIntent =
   | 'CREDIT_BALANCE'
   | 'TOPUP_CREDIT'
   | 'UPDATE_PROJECT_SETTINGS'
+  | 'TRANSFER_DRAFT'
+  | 'SET_PROJECT_PRICE'
+  | 'SET_PROJECT_PRICE_CONFIRM'
+  | 'CHANGE_PLAN'
   | 'UNKNOWN';
 
 export interface IntentResult {
@@ -153,6 +157,32 @@ interface Pattern {
 }
 
 const PATTERNS: Pattern[] = [
+  // Perintah Chat AI Workstream B1 (2026-11-19, gap P2 + P6 + §K baris 42
+  // audit perintah): PALING ATAS, sebelum blok QTO/ekspor di bawah —
+  // SET_PROJECT_PRICE harus mendahului keenam pola UPDATE_ITEM_*
+  // ("ubah harga paku asbes … untuk proyek ini" cocok dengan pola
+  // tanpa-nilai UPDATE_ITEM_PRICE bila blok ini di bawahnya), dan
+  // ketiganya harus mendahului HELP ("tolong transfer draft …" /
+  // "tolong ganti paket …" ditelan HELP bila tidak).
+  // SET_PROJECT_PRICE: penanda pembeda WAJIB frasa "proyek ini" —
+  // tanpa itu perintah harga adalah UPDATE_ITEM_PRICE (harga item RAB).
+  // Penjaga settings (overhead/profit/keuntungan/ppn/pph/pajak)
+  // menjaga "ubah harga overhead … untuk proyek ini" tetap menjadi
+  // UPDATE_PROJECT_SETTINGS; penjaga (item|pekerjaan) sesudah "harga"
+  // menjaga "ubah harga item X … untuk proyek ini" tetap menjadi
+  // UPDATE_ITEM_PRICE. Param = ekor sesudah "harga" (nama + nilai +
+  // frasa cakupan — registry yang membersihkan + mem-parsingnya).
+  { intent: 'SET_PROJECT_PRICE', re: /\b(?:ubah|ubahin|ganti|gantiin|rubah|tetapkan|setel|atur)\b(?=.*\bproyek\s+ini\b)(?!.*\b(?:overhead|profit|keuntungan|ppn|pph|pajak)\b).*\bharga\b(?!\s+(?:item|pekerjaan)\b)\s+(.+)/, paramGroup: true },
+  // TRANSFER_DRAFT: alur push-preview yang sama seperti tombol Push
+  // (pratinjau + Konfirmasi Transfer) — tanpa melewati approval.
+  { intent: 'TRANSFER_DRAFT', re: /\b(?:transfer|pindahkan|pindah|kirim|push)\b.*\bdraft\b.*\bspreadsheet\b/ },
+  { intent: 'TRANSFER_DRAFT', re: /\b(?:transfer|push)\b.*\bdraft\b/ },
+  // CHANGE_PLAN: ganti paket langganan (simulasi — billing real belum
+  // ada). Bentuk bernama dulu (param = nama paket), lalu bentuk
+  // telanjang (handler menampilkan daftar paket + tanya).
+  { intent: 'CHANGE_PLAN', re: /\b(?:ganti|ubah|rubah|pindah|upgrade|downgrade)\b.*\b(?:paket|langganan)\b.*\b(?:ke|jadi|menjadi)\b\s*(.+)/, paramGroup: true },
+  { intent: 'CHANGE_PLAN', re: /\bchange\b.*\bplan\b.*\bto\b\s*(.+)/, paramGroup: true },
+  { intent: 'CHANGE_PLAN', re: /\b(?:ganti|ubah|rubah|pindah)\b.*\b(?:paket|langganan)\b/ },
   // Perintah QTO + ekspor/revisi/kredit (2026-11-17, kelompok 2 & 4):
   // PALING ATAS, sebelum blok mutasi item RAB — "tambah item QTO …"
   // ditelan pola ADD_ITEM, "tambah kredit 1500" ditelan ADD_ITEM, dan
@@ -628,6 +658,15 @@ export function routeIntent(rawInput: string): IntentResult {
           localOnly: true,
         };
       }
+      // Override harga per-proyek tanpa target (Workstream B1): tanya
+      // balik dengan contoh, jangan tebak material/harganya.
+      if (p.intent === 'SET_PROJECT_PRICE' && !param) {
+        return {
+          intent: 'SET_PROJECT_PRICE', confidence: 0.7, needsClarification: true,
+          clarificationPrompt: 'Ubah harga material apa, jadi berapa, untuk proyek ini? Contoh: "ubah harga semen jadi Rp 2.000 untuk proyek ini". Ini override satu proyek, bukan mengubah harga master database.',
+          localOnly: true,
+        };
+      }
       return { intent: p.intent, confidence: 0.85, needsClarification: false, param, localOnly: p.localOnly ?? true };
     }
   }
@@ -695,5 +734,6 @@ ubah volume/harga [item] jadi … · hapus item … · tambah item … · undo
 🗂️ DED & Dokumen: "jalankan analisis ded" (sesi terakhir) · "ringkas dokumen ini"
 📦 Ekspor & kredit: "ekspor ke Excel/PDF" · "buat revisi baru" · "sisa kredit saya" · "top up 500 kredit"
 ⚙️ Pengaturan proyek: ubah overhead/profit/PPN/PPh jadi …% (contoh: "PPN 11%")
+📤 Draft & harga proyek: "transfer draft ke spreadsheet" · "ubah harga [material] jadi … untuk proyek ini" · "ganti paket ke Pro"
 
 💬 Atau tulis natural, contoh: "buka template rab", "berapa total proyek saya?"`;

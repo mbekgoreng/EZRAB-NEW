@@ -20,7 +20,6 @@ import React, { useEffect, useState } from 'react';
 import { Sparkles, Loader2, Wand2, Check, X, RefreshCw, AlertTriangle } from 'lucide-react';
 import type { Editor } from '@tiptap/react';
 import { documentStudioOrchestrator } from '../orchestrator';
-import { MAX_ENHANCE_SELECTION_CHARS } from '../service';
 import type { EnhanceTransform } from '../types';
 import type { DraftRecord } from '../view';
 import { ENHANCE_ACTIONS, rangeTextStillMatches, selectionBlockReason } from './enhanceActions';
@@ -211,7 +210,7 @@ export const DocEnhance: React.FC<{
           <pre className="docai-enhance-capture-body">{previewText}</pre>
           {blockReason && (
             <div className="docai-warn" role="alert">
-              <AlertTriangle size={13} /> {blockReason} (batas {MAX_ENHANCE_SELECTION_CHARS} karakter)
+              <AlertTriangle size={13} /> {blockReason}
             </div>
           )}
         </div>

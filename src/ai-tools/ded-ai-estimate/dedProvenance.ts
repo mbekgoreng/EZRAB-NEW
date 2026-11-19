@@ -318,11 +318,11 @@ export interface ProvenanceBadgeProps {
 }
 
 const LABEL_BADGES: Record<DedProvenanceLabel, ProvenanceBadgeProps> = {
-  AI_GENERATED: { text: 'Dihasilkan AI', bg: '#FEF3C7', fg: '#92400E' },
-  AI_ESTIMATED: { text: 'Estimasi AI', bg: '#FEF3C7', fg: '#92400E' },
-  USER_PROVIDED: { text: 'Input User', bg: '#F3E8FF', fg: '#6B21A8' },
-  EXTERNALLY_VERIFIED: { text: 'Terverifikasi', bg: '#DCFCE7', fg: '#166534' },
-  UNRESOLVED: { text: 'Tanpa Harga', bg: '#F3F4F6', fg: '#6B7280' },
+  AI_GENERATED: { text: 'Dihasilkan AI', bg: 'var(--ez-hue-amber-bg-deep)', fg: 'var(--ez-hue-amber-text-dark)' },
+  AI_ESTIMATED: { text: 'Estimasi AI', bg: 'var(--ez-hue-amber-bg-deep)', fg: 'var(--ez-hue-amber-text-dark)' },
+  USER_PROVIDED: { text: 'Input User', bg: 'var(--ez-hue-purple-bg-deep)', fg: 'var(--ez-hue-purple-text)' },
+  EXTERNALLY_VERIFIED: { text: 'Terverifikasi', bg: 'var(--ez-hue-green-bg-deep)', fg: 'var(--ez-hue-green-text-deep)' },
+  UNRESOLVED: { text: 'Tanpa Harga', bg: 'var(--ez-color-surface-tertiary)', fg: 'var(--ez-color-text-muted)' },
 };
 
 export function provenanceBadgeForLabel(label: DedProvenanceLabel): ProvenanceBadgeProps {
@@ -338,10 +338,10 @@ export function provenanceBadgeForDedSource(
   source: DedAiPriceSource | FullAiPriceSource | string | null | undefined,
 ): ProvenanceBadgeProps {
   if (source === 'AHSP_2026') {
-    return { text: 'AHSP Kanonis', bg: '#DCFCE7', fg: '#166534' };
+    return { text: 'AHSP Kanonis', bg: 'var(--ez-hue-green-bg-deep)', fg: 'var(--ez-hue-green-text-deep)' };
   }
   if (source === 'VERIFIED_SOURCE') {
-    return { text: 'Belum terverifikasi', bg: '#F3F4F6', fg: '#6B7280' };
+    return { text: 'Belum terverifikasi', bg: 'var(--ez-color-surface-tertiary)', fg: 'var(--ez-color-text-muted)' };
   }
   return provenanceBadgeForLabel(dedSourceToLabel(source));
 }

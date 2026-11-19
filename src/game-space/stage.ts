@@ -97,6 +97,51 @@ export function specForGame(gameId: string): StageSpec {
 }
 
 /**
+ * Apakah game ini landscape-native (spesifikasi desainnya menyamping)?
+ * Sumber kebenaran orientasi per-game = STAGE_SPECS via specForGame —
+ * game yang tidak terdaftar (portrait) dan game square (w == h) bukan
+ * landscape. Dipakai prompt rotate: hanya game landscape yang
+ * menyarankan putar HP.
+ */
+export function isLandscapeGame(gameId: string): boolean {
+  const spec = specForGame(gameId);
+  return spec.w > spec.h;
+}
+
+/**
+ * Apakah prompt "putar HP" boleh tampil untuk game & ruang tersedia ini?
+ * Perintah owner 2026-11-19: "bila game landscape kasih notif rotate hpmu".
+ *
+ * Keempat syarat harus terpenuhi sekaligus:
+ * 1. Game landscape-native (spec.w > spec.h) — game portrait/square
+ *    tidak perlu diputar, dan game di PORTRAIT_LOCKED_IDS semuanya
+ *    portrait sehingga tidak pernah memicu prompt ini.
+ * 2. Ruang tersedia portrait (availH > availW) — di landscape prompt
+ *    hilang sendiri tanpa perlu ditutup.
+ * 3. Perangkat ringkas (sisi pendek < COMPACT_SHORT_SIDE) — tablet/
+ *    desktop sudah cukup lapang; ambang yang sama dengan
+ *    effectiveStageSpec.
+ * 4. Pointer kasar (layar sentuh) — membedakan HP dari jendela
+ *    desktop yang kebetulan sempit-tinggi; di desktop tidak ada HP
+ *    yang bisa diputar.
+ *
+ * Murni fungsi — GameStage mengoper nilai matchMedia
+ * '(pointer: coarse)' dari browser; diuji langsung oleh
+ * src/test/gameRotatePrompt.test.ts.
+ */
+export function shouldShowRotatePrompt(
+  spec: StageSpec,
+  availW: number,
+  availH: number,
+  coarsePointer: boolean,
+): boolean {
+  if (spec.w <= spec.h) return false;
+  if (!coarsePointer) return false;
+  if (availH <= availW) return false;
+  return Math.min(availW, availH) < COMPACT_SHORT_SIDE;
+}
+
+/**
  * Game portrait yang TIDAK ikut orientasi landscape — panggungnya tetap
  * portrait (kotak kecil terpusat, seperti sekarang) walau HP diputar.
  * Tiga alasan, dikelompokkan di dalam daftar: (1) tumpukan DOM vertikal

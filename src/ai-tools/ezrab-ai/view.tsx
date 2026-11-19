@@ -65,7 +65,7 @@ import { renderMarkdown, markdownToPlainText } from './markdown';
 import { routeIntent, localGreeting, HELP_TEXT } from './intentRouter';
 import { extractSlashToken, filterSlashEntries, NAV_BY_ID, resolveNavCommand, type NavEntry } from './navRegistry';
 import { consumePendingAiEntry, requestAiEntry, consumePendingEzrabAiEntry, peekPendingEzrabAiEntry, ezrabAiEntryRemainingMs, openEzrabAI, type EzrabAiEntryContext } from '../aiNavigation';
-import { executeIntent, continueRabNeeds, continueRabFinalize, hasActiveRabNeeds, continueRabChoice, tryContinueRabSubtype, tryContinueRabMaterial, tryContinueProjectContext, tryContinueUniversalContext, getLastRabDesignPrompt, submitQuestionnaireAnswers, restoreUniversalContext, getUniversalContextState, ChatActionContext, ChatActionButton, ActionResult } from './actionRegistry';
+import { executeIntent, continueRabNeeds, continueRabFinalize, hasActiveRabNeeds, continueRabChoice, tryContinueRabSubtype, tryContinueRabMaterial, tryContinueProjectContext, tryContinueUniversalContext, getLastRabDesignPrompt, submitQuestionnaireAnswers, restoreUniversalContext, getUniversalContextState, ChatActionContext, ChatActionButton, ActionResult, ProjectPriceOverrideInput } from './actionRegistry';
 import { setActiveProjectSnapshot } from './tools';
 import { QuestionnaireCard } from './questionnaireCard';
 import type { QuestionnairePayload } from './questionnaire';
@@ -218,7 +218,7 @@ import { brandingClient } from '../../services/brandingClient';
 import { resolveHonestCompany } from '../../lib/scheduleHonesty';
 import { nextVersionNumber } from '../../engine/estimateVersioning';
 import { planAllowsAiFeature, aiFeatureLockedMessage } from '../../ai-credits/featureGate';
-import { tariffFor } from '../../ai-credits/config';
+import { tariffFor, PLAN_CREDITS, FREE_INITIAL_CREDITS } from '../../ai-credits/config';
 import { dokumenAiService } from '../document-ai/service';
 import { getDocFromLibrary } from './dedDocSessionHolder';
 import type { Company } from '../../types';
@@ -455,7 +455,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   const [attached, setAttached] = useState<TextAttachment | null>(null);
   const [attachError, setAttachError] = useState<string | null>(null);
   // --- AI Credits (simulasi frontend) ---
-  const { balance, source, consume, topUp } = useCreditSimulation();
+  const { balance, source, consume, topUp, setPlan } = useCreditSimulation();
   const [creditConfirm, setCreditConfirm] = useState<{ estimate: number; pending: () => void } | null>(null);
   const [creditTopUpOpen, setCreditTopUpOpen] = useState(false);
   // Estimasi kredit LIVE berbasis token (Amendemen Spec Billing v1.1):
@@ -532,11 +532,24 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     createProject, deleteProject, duplicateProjectData, refreshProjectTotals,
     projectQtoItems, createManualQtoItem, syncQtoToRabSpreadsheet,
     createEstimateVersion, estimateVersions,
+    // Workstream B1 (2026-11-19, P6): override harga per-proyek.
+    updateProjectPriceOverride,
   } = useProject();
   // Suffix duplikat i18n (kelompok 1, pola DraftProjectsView).
   const { t } = useI18n();
   // Prefer live context; fall back to props (keeps standalone usage working).
   const effProject = currentProject ?? activeProject;
+  // Override harga per-proyek (Workstream B1, 2026-11-19, P6): satu
+  // fungsi dipakai ctx submit + cabang tombol konfirmasi — menolak bila
+  // proyeknya bukan proyek aktif saat ini (updateProjectPriceOverride
+  // milik konteks diam-diam no-op tanpa currentProjectId, jadi
+  // penolakan eksplisit ini yang membuat registry menjawab jujur).
+  const applyProjectPriceOverride = (projectId: string, input: ProjectPriceOverrideInput): boolean => {
+    if (!effProject || effProject.id !== projectId) return false;
+    if (!contextProjects.some((p) => p.id === projectId)) return false;
+    updateProjectPriceOverride(input.resourceCode, input.resourceName, input.category, input.unit, input.masterPrice, input.projectPrice);
+    return true;
+  };
   // GATE 1 (5A) — SELURUH ChatActionContext untuk executeIntent memakai
   // effProject sebagai activeProject (bukan prop activeProject mentah):
   // prop itu null pada mount yang mengandalkan currentProject dari
@@ -1910,7 +1923,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     if (!forcedAi && awaitingChoice) {
       if (looksLikeNeedsAnswer(msg)) {
         try {
-          const res = continueRabChoice(msg);
+          const res = continueRabChoice(msg, effProject?.id);
           const acts = res.actions && res.actions.length > 0 ? res.actions : undefined;
           await postAssistant(res.message, acts);
           if (!res.awaitRabChoice) setAwaitingChoice(false);
@@ -1927,7 +1940,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
      * ditampilkan — BUKAN dilempar ke AI. Pesan tanpa subtipe (perintah
      * baru) menggugurkan status menunggu dan diproses normal di bawah. */
     if (!forcedAi && awaitingSubtype) {
-      const subRes = tryContinueRabSubtype(msg);
+      const subRes = tryContinueRabSubtype(msg, effProject?.id);
       if (subRes) {
         const acts = subRes.actions && subRes.actions.length > 0 ? subRes.actions : undefined;
         setMessages((prev) => [...prev, { role: 'assistant', content: subRes.message, ts: Date.now(), actions: acts }]);
@@ -1992,7 +2005,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       setAwaitingNeeds(false);
       if (looksLikeNeedsAnswer(msg)) {
         try {
-          const res = continueRabNeeds(msg);
+          const res = continueRabNeeds(msg, effProject?.id);
           const acts = res.actions && res.actions.length > 0 ? res.actions : undefined;
           await postAssistant(res.message, acts);
         } finally {
@@ -2008,8 +2021,8 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
      * karena flag awaitingNeeds (yang kini juga disetel ringkasan
      * pertama) sedang tidak aktif. Perintah baru berbentuk perintah
      * tidak tertangkap looksLikeNeedsAnswer dan diproses normal. */
-    if (!forcedAi && hasActiveRabNeeds()) {
-      const fin = continueRabFinalize(msg);
+    if (!forcedAi && hasActiveRabNeeds(effProject?.id)) {
+      const fin = continueRabFinalize(msg, effProject?.id);
       if (fin) {
         try {
           const acts = fin.actions && fin.actions.length > 0 ? fin.actions : undefined;
@@ -2022,7 +2035,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       }
       if (!awaitingNeeds && looksLikeNeedsAnswer(msg)) {
         try {
-          const res = continueRabNeeds(msg);
+          const res = continueRabNeeds(msg, effProject?.id);
           const acts = res.actions && res.actions.length > 0 ? res.actions : undefined;
           await postAssistant(res.message, acts);
           if (res.awaitRabNeeds) setAwaitingNeeds(true);
@@ -2407,6 +2420,36 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
             updateProject(projectId, patch as any); // cast: pphPercent/pphEnabled tak terdeklarasi di Project
             refreshProjectTotals(projectId);
             return true;
+          },
+          // Workstream B1 (2026-11-19, P2/P6/§K): transfer draft,
+          // override harga proyek, ganti paket simulasi.
+          requestDraftTransferPreview: () => {
+            // Alur yang SAMA seperti tombol Push (pratinjau + tombol
+            // Konfirmasi Transfer + pengikatan approval) — tanpa draft
+            // aktif, kembalikan false agar handler menjawab jujur
+            // (pratinjau sendiri tidak dipanggil: pesannya duplikat).
+            if (!getLastUniversalDraft(effProject?.id)) return false;
+            pushUniversalToSpreadsheetPreview();
+            return true;
+          },
+          setProjectPriceOverride: applyProjectPriceOverride,
+          creditPlan: balance.plan,
+          changeCreditPlan: (plan) => {
+            // setPlan hook no-op di luar mode simulasi — laporkan jujur
+            // (paket akun nyata tidak diganti lewat chat). Saldo baru
+            // dihitung deterministik (mockSetPlan mengatur ulang saldo
+            // ke jatah paket baru + menghapus top-up/bonus simulasi)
+            // karena state hook belum re-render di tick yang sama.
+            if (source !== 'simulation') {
+              return {
+                ok: false, plan: null, newBalance: null,
+                reason: source === 'server'
+                  ? 'paket akun nyata tidak diganti lewat simulasi chat'
+                  : 'saldo kredit belum terhubung',
+              };
+            }
+            setPlan(plan);
+            return { ok: true, plan, newBalance: plan === 'free' ? FREE_INITIAL_CREDITS : PLAN_CREDITS[plan] };
           },
         };
         let reply: string;
@@ -3730,7 +3773,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       // navigasi AI sekali-pakai, konteks chat tetap utuh untuk kembali.
       // Pilihan pada kartu (bila ada) dianggap selesai: status koreksi tutup.
       setAwaitingChoice(false);
-      const prompt = btn.action.param ?? getLastRabDesignPrompt() ?? undefined;
+      const prompt = btn.action.param ?? getLastRabDesignPrompt(effProject?.id) ?? undefined;
       requestAiEntry('design_workspace', {
         projectId: effProject?.id ?? null,
         initialPrompt: prompt,
@@ -3898,6 +3941,23 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
           deleteProject(projectId);
           return true;
         },
+      });
+      setMessages((prev) => [...prev, { role: 'assistant', content: res.message, ts: Date.now(), actions: res.actions }]);
+      persistMessage('assistant', res.message);
+    } else if (btn.action.intent === 'SET_PROJECT_PRICE_CONFIRM') {
+      // Konfirmasi override harga proyek (langkah 2, Workstream B1):
+      // param tombol = payload JSON pratinjau. Tanpa cabang ini tombol
+      // jatuh ke submit(label) dan tidak ada override yang diterapkan.
+      // Ctx dibangun lokal seperti cabang tombol lain + callback
+      // setProjectPriceOverride (cabang tombol tidak memakai ctx submit).
+      const res = executeIntent('SET_PROJECT_PRICE_CONFIRM', btn.action.param, {
+        navigate: (menu: string) => navigateChat(menu),
+        currentMenu,
+        activeProject: effProject,
+        projects,
+        projectTotal: projectSnapshot ? projectSnapshot.totalDirect : projectTotal,
+        projectItems: projectSnapshot?.items ?? null,
+        setProjectPriceOverride: applyProjectPriceOverride,
       });
       setMessages((prev) => [...prev, { role: 'assistant', content: res.message, ts: Date.now(), actions: res.actions }]);
       persistMessage('assistant', res.message);

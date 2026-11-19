@@ -1,6 +1,19 @@
 import { QUICK_ACTION_CONTRACTS, QuickActionContract } from '../data/quickActionContracts';
 import { QuickActionDialogueData } from '../components/copilot/QuickActionDialogueRenderer';
 
+/**
+ * P9.1 (audit perintah AI 2026-11-17) — KEJUJURAN FALLBACK:
+ * Endpoint /api/ai/quick-action/* TIDAK ADA di deployment Vercel
+ * (hanya ada di server Express server/api/aiRoutes.ts, yang tidak
+ * berjalan di Preview/Produksi), dan tidak ada kode klien yang pernah
+ * memanggil startSession — semua sesi adalah qa_local_* yang tidak
+ * dikenal server. Karena itu fetch di bawah SELALU gagal dalam
+ * praktik, dan fallback di sini adalah JALUR UTAMA, bukan cadangan.
+ * Fallback lama mengklaim sukses palsu ("Permintaan Anda telah
+ * diproses." / "Perubahan berhasil diterapkan ke database proyek.")
+ * tanpa mutasi apa pun. Mulai sini fallback MENGAKU GAGAL dengan
+ * state ERROR dan TIDAK PERNAH mengklaim sukses tanpa mutasi nyata.
+ */
 export class QuickActionService {
   private baseUrl = '/api/ai';
 
@@ -69,16 +82,19 @@ export class QuickActionService {
       console.warn('[QuickActionService] API error on answerStep:', err);
     }
 
+    // P9.1 — server tidak terjangkau / menolak: AKUI GAGAL. Jangan
+    // pernah mengembalikan pesan sukses di sini: tidak ada langkah
+    // yang diproses dan tidak ada mutasi yang terjadi.
     return {
       responseType: 'quick_action_dialogue',
       actionId: 'GENERAL',
       sessionId,
-      currentState: 'RESULT_PRESENTED',
-      title: 'Hasil Tindakan',
-      message: 'Permintaan Anda telah diproses.',
+      currentState: 'ERROR',
+      title: 'Layanan Tidak Tersedia',
+      message: 'Layanan quick action tidak dapat dihubungi, jadi permintaan ini tidak diproses. Tidak ada perubahan yang terjadi — silakan coba lagi nanti atau gunakan menu terkait secara langsung.',
       collectedParameters: { ...parameters, choiceId },
       followUpSuggestions: ['Hitung Volume QTO', 'Audit RAB Proyek', 'Cari AHSP 2026'],
-      canGoBack: true,
+      canGoBack: false,
       canCancel: false
     };
   }
@@ -102,13 +118,16 @@ export class QuickActionService {
       console.warn('[QuickActionService] API error on confirmSession:', err);
     }
 
+    // P9.1 — server tidak terjangkau / menolak: AKUI GAGAL. Konfirmasi
+    // ini TIDAK menerapkan apa pun; klaim lama ("Perubahan berhasil
+    // diterapkan ke database proyek.") adalah sukses palsu.
     return {
       responseType: 'quick_action_dialogue',
       actionId: 'GENERAL',
       sessionId,
-      currentState: 'COMPLETED',
-      title: 'Tersimpan',
-      message: 'Perubahan berhasil diterapkan ke database proyek.',
+      currentState: 'ERROR',
+      title: 'Tidak Diterapkan',
+      message: 'Konfirmasi tidak dapat diproses karena layanan quick action tidak dapat dihubungi. Tidak ada perubahan yang diterapkan ke proyek — data RAB Anda tidak berubah.',
       collectedParameters: {},
       followUpSuggestions: ['Periksa Spreadsheet RAB', 'Ekspor Laporan PDF'],
       canGoBack: false,

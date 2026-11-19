@@ -21,11 +21,13 @@ export const MAX_AI_REQUEST_CHARS = 19_500;
 /** Anggaran teks dokumen murni per potongan. */
 export const DOC_CHUNK_TEXT_BUDGET = 14_000;
 
-/** Maksimum potongan yang diproses per dokumen (kontrol biaya, sekuensial). */
-export const MAX_DOC_CHUNKS = 24;
-
-/** Panjang maksimum temuan yang disimpan per potongan. */
-export const CHUNK_FINDING_MAX_CHARS = 2_600;
+/** Tanpa batas pemrosesan (2026-11-19): MAX_DOC_CHUNKS (24) DIHAPUS —
+ *  SEMUA potongan dokumen diproses (map-reduce), berapa pun jumlahnya.
+ *  Konsekuensi jujur: dokumen sangat besar = banyak panggilan AI
+ *  (sekuensial) — lihat laporan program untuk perkiraan pass/waktu. */
+/** Tanpa batas pemrosesan (2026-11-19): CHUNK_FINDING_MAX_CHARS (2.600)
+ *  DIHAPUS — temuan per potongan disimpan UTUH dan disintesis secara
+ *  hierarkis (batch reduce), bukan dipotong. */
 
 /** Ukuran pseudo-halaman untuk dokumen tanpa penanda halaman (docx/xlsx/txt). */
 const PSEUDO_PAGE_BUDGET = 4_000;
@@ -175,41 +177,34 @@ export function buildDocumentChunks(
 }
 
 /**
- * Padatkan daftar teks secara proporsional agar totalnya ≤ anggaran.
- * Deterministik: rasio yang sama untuk semua, lantai minimum per teks,
- * lalu kelebihan dipangkas dari teks terpanjang. Mengembalikan teks baru
- * + flag apakah ada yang dipadatkan.
+ * Tanpa batas pemrosesan (2026-11-19): condenseTextsProportionally
+ * DIHAPUS — temuan TIDAK LAGI dipadatkan/dipotong agar muat satu
+ * panggilan sintesis; sintesis berjalan hierarkis (batch reduce,
+ * lihat DokumenAiService.reduceBatched).
  */
-export function condenseTextsProportionally(
-  texts: string[],
-  budget: number,
-): { texts: string[]; condensed: boolean } {
-  const total = texts.reduce((a, t) => a + t.length, 0);
-  if (total <= budget) return { texts: [...texts], condensed: false };
-  if (budget <= 0) return { texts: texts.map(() => ''), condensed: true };
-  const ratio = budget / total;
-  const out = texts.map((t) => t.slice(0, Math.max(120, Math.floor(t.length * ratio))));
-  let sum = out.reduce((a, t) => a + t.length, 0);
-  while (sum > budget) {
-    let longest = -1;
-    for (let i = 0; i < out.length; i++) {
-      if (out[i].length > 120 && (longest === -1 || out[i].length > out[longest].length)) longest = i;
-    }
-    if (longest === -1) {
-      // Semua sudah di lantai minimum — pangkas keras dari belakang.
-      let excess = sum - budget;
-      for (let i = out.length - 1; i >= 0 && excess > 0; i--) {
-        const cut = Math.min(out[i].length, excess);
-        out[i] = out[i].slice(0, out[i].length - cut);
-        excess -= cut;
-      }
-      break;
-    }
-    const cut = Math.min(sum - budget, out[longest].length - 120);
-    out[longest] = out[longest].slice(0, out[longest].length - cut);
-    sum -= cut;
+
+/**
+ * Potong `text` ke `maxChars` pada batas PARAGRAF terakhir sebelum batas
+ * (fallback: batas kata, lalu potong keras). Dipakai HANYA untuk kutipan
+ * Tanya Dokumen — satu-satunya pemotongan yang tersisa di Document AI,
+ * dan selalu disertai penanda eksplisit "[…dipotong…]" di pemanggil.
+ * Mengembalikan teks + flag apakah ada pemotongan.
+ */
+export function cutAtParagraphBoundary(
+  text: string,
+  maxChars: number,
+): { text: string; cut: boolean } {
+  if (maxChars < 1) return { text: '', cut: text.length > 0 };
+  if (text.length <= maxChars) return { text, cut: false };
+  const window = text.slice(0, maxChars);
+  // Batas paragraf (baris kosong / baris baru) terakhir di jendela.
+  let cut = Math.max(window.lastIndexOf('\n\n'), window.lastIndexOf('\n'));
+  if (cut < Math.floor(maxChars / 2)) {
+    // Fallback: batas kata terakhir.
+    cut = window.lastIndexOf(' ');
   }
-  return { texts: out, condensed: true };
+  if (cut < Math.floor(maxChars / 2)) cut = maxChars;
+  return { text: text.slice(0, cut).trimEnd(), cut: true };
 }
 
 /* ------------------------------------------------------------------ */

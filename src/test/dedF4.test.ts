@@ -10,7 +10,8 @@
 import { describe, it, expect } from 'vitest';
 import { verifySubtotal } from '../ai-tools/ded-full-ai/validator';
 import {
-  buildDocumentText,
+  planFullAiDocument,
+  dedupFullAiRawItems,
   normalizeAiWarnings,
   resolveActualProviderModel,
   FULL_AI_TIMEOUT_MS,
@@ -55,8 +56,13 @@ describe('F4 3.3 — timeout disamakan dengan plafon gateway & dinyatakan terbuk
   });
 });
 
-describe('F4 3.4 — buildDocumentText: seleksi halaman berprioritas', () => {
-  it('halaman prioritas jenis didahulukan; yang terlewat tercatat, bukan hilang diam-diam', () => {
+describe('F4 3.4 — planFullAiDocument: paginasi kelompok tanpa batas (2026-11-19)', () => {
+  // Pengukuran sintetis deterministik: overhead 9.000 + 40 karakter header
+  // per halaman. Anggaran segmen = 19.500 − 9.000 − 200 = 10.300 karakter.
+  const synthMeasure = (pages: Array<{ text: string }>) =>
+    9000 + pages.reduce((a, p) => a + p.text.length + 40, 0);
+
+  it('SEMUA halaman berteks terkirim dalam kelompok — tidak ada yang terlewat karena budget', () => {
     const pages = [
       { page: 1, text: chars(4000, 's'), pageType: 'SPESIFIKASI' },
       ...Array.from({ length: 16 }, (_, i) => ({
@@ -66,32 +72,71 @@ describe('F4 3.4 — buildDocumentText: seleksi halaman berprioritas', () => {
       })),
       { page: 18, text: '', pageType: 'DENAH' },
     ];
-    const doc = buildDocumentText(pages);
-    // 15 halaman DENAH × 4000 = 60.000 pas budget; DENAH ke-16 + SPESIFIKASI terlewat.
-    expect(doc.includedPages).toEqual([2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
-    expect(doc.skippedPages).toEqual([1, 17]);
-    expect(doc.emptyTextPages).toEqual([18]);
-    expect(doc.totalChars).toBe(60_000);
-    expect(doc.truncated).toBe(true);
+    const plan = planFullAiDocument(pages, synthMeasure as any);
+    // 17 halaman × 4.000 = 68.000 karakter — MELEBIHI budget 60.000 lama,
+    // dan semuanya tetap terkirim (paginasi, bukan potong).
+    expect(plan.includedPages).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]);
+    expect(plan.emptyTextPages).toEqual([18]);
+    expect(plan.skippedSegments).toEqual([]);
+    expect(plan.totalChars).toBe(68_000);
+    expect(plan.groups.length).toBeGreaterThan(1);
+    expect(plan.groups.every((g) => g.requestChars <= 19_500)).toBe(true);
+    // Cakupan karakter eksak: jumlah segmen = jumlah teks asli.
+    const sentChars = plan.groups
+      .flatMap((g) => g.pages)
+      .reduce((a, s) => a + s.text.length, 0);
+    expect(sentChars).toBe(68_000);
+    // Prioritas jenis lestari dalam pengelompokan: SPESIFIKASI (prioritas
+    // 8) berada di kelompok TERAKHIR, sesudah semua DENAH (prioritas 0).
+    const lastGroupPages = plan.groups[plan.groups.length - 1].pages.map((s) => s.page);
+    expect(lastGroupPages).toContain(1);
+    expect(plan.groups[0].pages.map((s) => s.page)).not.toContain(1);
   });
 
-  it('teks terkirim tetap menurut urutan halaman asli dokumen', () => {
-    const doc = buildDocumentText([
-      { page: 1, text: 'isi spesifikasi', pageType: 'SPESIFIKASI' },
-      { page: 2, text: 'isi denah', pageType: 'DENAH' },
-    ]);
-    expect(doc.text.indexOf('Halaman 1')).toBeLessThan(doc.text.indexOf('Halaman 2'));
-    expect(doc.skippedPages).toEqual([]);
+  it('teks dalam kelompok tetap menurut urutan halaman asli dokumen', () => {
+    const plan = planFullAiDocument(
+      [
+        { page: 1, text: 'isi spesifikasi', pageType: 'SPESIFIKASI' },
+        { page: 2, text: 'isi denah', pageType: 'DENAH' },
+      ],
+      synthMeasure as any,
+    );
+    expect(plan.groups).toHaveLength(1);
+    expect(plan.groups[0].pages.map((s) => s.page)).toEqual([1, 2]);
+    expect(plan.skippedSegments).toEqual([]);
   });
 
-  it('halaman melebihi batas per-halaman tercatat sebagai truncatedPages', () => {
-    const doc = buildDocumentText([
-      { page: 1, text: chars(5000, 'a'), pageType: 'DENAH' },
-      { page: 2, text: chars(100, 'b'), pageType: 'STRUKTUR' },
+  it('halaman panjang dipecah menjadi segmen — partisi eksak, tanpa karakter hilang', () => {
+    const plan = planFullAiDocument(
+      [
+        { page: 1, text: chars(12000, 'a'), pageType: 'DENAH' },
+        { page: 2, text: chars(100, 'b'), pageType: 'STRUKTUR' },
+      ],
+      synthMeasure as any,
+    );
+    const page1Segments = plan.groups.flatMap((g) => g.pages).filter((s) => s.page === 1);
+    expect(page1Segments.length).toBe(2);
+    expect(page1Segments[0].partIndex).toBe(1);
+    expect(page1Segments[0].partCount).toBe(2);
+    expect(page1Segments[1].partIndex).toBe(2);
+    expect(page1Segments.map((s) => s.text.length).reduce((a, b) => a + b, 0)).toBe(12_000);
+    expect(page1Segments.map((s) => s.text).join('')).toBe(chars(12000, 'a'));
+    expect(plan.totalChars).toBe(12_100);
+    expect(plan.skippedSegments).toEqual([]);
+    expect(plan.groups.every((g) => g.requestChars <= 19_500)).toBe(true);
+  });
+
+  it('dedup antar-kelompok hanya menggabung item identik penuh', () => {
+    const { items, removedCount } = dedupFullAiRawItems([
+      { name: 'Pekerjaan Galian', unit: 'm3', qty: 10, price: 50000 },
+      { name: 'Pekerjaan Galian', unit: 'm3', qty: 10, price: 50000 },
+      { name: 'Pekerjaan Galian', unit: 'm3', qty: 25, price: 50000 },
+      { name: 'Pekerjaan Urugan', unit: 'm3', qty: 10, price: 40000 },
     ]);
-    expect(doc.truncatedPages).toEqual([1]);
-    expect(doc.totalChars).toBe(4100);
-    expect(doc.includedPages).toEqual([1, 2]);
+    expect(removedCount).toBe(1);
+    expect(items).toHaveLength(3);
+    // Nama+satuan sama tetapi kuantitas berbeda DIPERTAHANKAN keduanya.
+    expect(items.filter((i) => i.name === 'Pekerjaan Galian')).toHaveLength(2);
   });
 });
 

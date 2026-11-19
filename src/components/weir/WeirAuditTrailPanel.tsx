@@ -190,6 +190,24 @@ export const WeirAuditTrailPanel: React.FC<WeirAuditTrailPanelProps> = ({ auditT
           );
         })}
       </div>
+
+      {/* ── SCOPE DISCLAIMER ────────────────────────────────────────
+          Cakupan forensik panel ini: 14 langkah di atas menelusuri rantai
+          hitung biaya tubuh bendung dari dimensi masukan pengguna
+          (geometri → kuantitas → AHSP → harga → biaya akhir). Panel ini
+          TIDAK memverifikasi desain hidrolik/struktural bendung maupun
+          pengukuran lapangan — keduanya di luar cakupan audit ini. */}
+      <div
+        style={{
+          padding: '8px 14px',
+          borderTop: '1px solid var(--ez-color-surface-tertiary)',
+          fontSize: '9.5px',
+          lineHeight: 1.5,
+          color: 'var(--ez-color-text-muted)',
+        }}
+      >
+        Jejak ini hanya menelusuri rantai hitung biaya tubuh bendung dari dimensi masukan (geometri → kuantitas → AHSP → harga → biaya akhir); bukan verifikasi desain hidrolik/struktural maupun pengukuran lapangan.
+      </div>
     </div>
   );
 };

@@ -1270,6 +1270,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
             <div ref={searchContainerRef} style={{ flex: '1 1 220px', minWidth: 0 }}>
               <div
+                className="mat-search-box"
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -1283,6 +1284,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                 <Search size={15} color="var(--ez-color-text-faint)" style={{ marginRight: '8px', flexShrink: 0 }} />
                 <input
                   type="text"
+                  className="mat-search-input"
                   placeholder={searchPlaceholder}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -1307,7 +1309,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
             </div>
 
             {/* Right Controls: View Density, Columns, Export */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0, flexWrap: 'wrap' }}>
               {/* Toggle Filter — hanya tampil di HP (.mat-filter-toggle di CSS).
                   Di HP baris filter detail mulai tersembunyi; klik untuk membuka. */}
               <button
@@ -2003,7 +2005,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
             {isNarrowMobile ? (
               <MobileMaterialDb
                 mode="PROJECT_PRICE"
-                projectPrices={projectPrices}
+                projectPrices={paginatedProjectPrices}
                 onEditProjectPrice={handleEditProjectPrice}
                 onResetProjectPrice={handleResetProjectPrice}
               />

@@ -260,7 +260,9 @@ async function runVerificationSuite() {
   // --------------------------------------------------------------------------
   console.log('\n--- SECTION 4: MUTATION GATE, DIFF PREVIEWS & CONFIRMATION ---');
 
-  // Test 19: RECALCULATE enters TOOL_PREVIEW with requiresConfirmation: true
+  // Test 19 (P9 re-baseline 2026-11-19): RECALCULATE no longer fabricates a
+  // diff preview — it honestly reports unavailability (RESULT_PRESENTED,
+  // requiresConfirmation: false, step RECALCULATE_UNAVAILABLE).
   const recalcSession = await quickActionStateMachine.startSession({
     actionId: 'RECALCULATE',
     projectId: mockProject.id,
@@ -271,15 +273,16 @@ async function runVerificationSuite() {
     recalcSession.sessionId,
     'UPDATE_ALL_AHSP_STANDARDS'
   );
-  assert(19, 'RECALCULATE requiresConfirmation is true in TOOL_PREVIEW state', Boolean(recalcStep2.currentState === 'TOOL_PREVIEW' && recalcStep2.requiresConfirmation === true));
+  assert(19, 'RECALCULATE honestly reports unavailable (RESULT_PRESENTED, no confirmation)', Boolean(recalcStep2.currentState === 'RESULT_PRESENTED' && recalcStep2.requiresConfirmation === false && recalcStep2.step === 'RECALCULATE_UNAVAILABLE'));
 
-  // Test 20: RECALCULATE provides explicit Diff Preview (Before vs After)
+  // Test 20 (P9 re-baseline 2026-11-19): RECALCULATE must NOT fabricate a diff preview.
   const hasDiffTable = Boolean(recalcStep2.diffPreview && recalcStep2.diffPreview.length > 0);
-  assert(20, 'RECALCULATE generates diff preview comparison', hasDiffTable);
+  assert(20, 'RECALCULATE generates no fabricated diff preview', !hasDiffTable);
 
-  // Test 21: RECALCULATE confirm applies mutation and finishes session
+  // Test 21 (P9 re-baseline 2026-11-19): RECALCULATE confirm honestly refuses —
+  // no write path exists, so it must NOT claim COMPLETED.
   const recalcConfirm = await quickActionStateMachine.confirmSession(recalcSession.sessionId);
-  assert(21, 'RECALCULATE confirm transitions state to COMPLETED', recalcConfirm.currentState === 'COMPLETED');
+  assert(21, 'RECALCULATE confirm honestly refuses (ERROR / NOT_APPLIED)', Boolean(recalcConfirm.currentState === 'ERROR' && recalcConfirm.resultData?.status === 'NOT_APPLIED'));
 
   // Test 22: BUAT_LAPORAN requires confirmation before generating document
   const lapSession = await quickActionStateMachine.startSession({
@@ -294,13 +297,15 @@ async function runVerificationSuite() {
   );
   assert(22, 'BUAT_LAPORAN requires confirmation for generation', Boolean(lapStep2.requiresConfirmation === true));
 
-  // Test 23: BUAT_LAPORAN confirm successfully finishes
+  // Test 23 (P9 re-baseline 2026-11-19): BUAT_LAPORAN confirm honestly refuses —
+  // no write path exists, so it must NOT claim COMPLETED.
   const lapConfirm = await quickActionStateMachine.confirmSession(lapSession.sessionId);
-  assert(23, 'BUAT_LAPORAN confirm produces download link / confirmation', lapConfirm.currentState === 'COMPLETED');
+  assert(23, 'BUAT_LAPORAN confirm honestly refuses (ERROR / NOT_APPLIED)', Boolean(lapConfirm.currentState === 'ERROR' && lapConfirm.resultData?.status === 'NOT_APPLIED'));
 
-  // Test 24: Non-mutating action calling confirm safely completes
+  // Test 24 (P9 re-baseline 2026-11-19): confirm honestly refuses for every
+  // action (no write path exists) — including non-mutating ones.
   const nonMutConfirm = await quickActionStateMachine.confirmSession(auditResp.quickActionResponse!.sessionId);
-  assert(24, 'Non-mutating action safely completes upon confirm call', nonMutConfirm.currentState === 'COMPLETED');
+  assert(24, 'Non-mutating action confirm honestly refuses (ERROR / NOT_APPLIED)', Boolean(nonMutConfirm.currentState === 'ERROR' && nonMutConfirm.resultData?.status === 'NOT_APPLIED'));
 
   // Test 25: BANTUAN_FITUR multi-step feature walkthrough
   const bantuanSession = await quickActionStateMachine.startSession({

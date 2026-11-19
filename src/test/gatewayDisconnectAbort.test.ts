@@ -14,16 +14,17 @@
  *  - Klien memakai node:http mentah agar disconnect = destroy socket nyata.
  *
  * Rantai mode 'chat' dengan key dummy crown+gemini+zyrouter:
- *   crown MiniMax M2.7 → crown DeepSeek V4 Flash → gemini native → zyrouter.
- * Key provider lain DIHAPUS agar rantai terpin persis 4 leg.
+ *   crown GLM-5.3-Flash → crown DeepSeek V4 Flash → crown MiniMax M2.7
+ *   → gemini native → zyrouter.
+ * Key provider lain DIHAPUS agar rantai terpin persis 5 leg.
  *
  * Skenario:
  *  H1 disconnect di tengah leg-1 (crown hang 20 dtk) → 1 attempt, fetch
  *     di-abort, leg-2 TIDAK dimulai, tanpa respons tertulis, handler
  *     selesai < 8 dtk sesudah disconnect (bukan 20/55 dtk).
- *  H2 disconnect di tengah leg-3 (crown 500×2, gemini hang) → 3 attempt,
- *     leg-4 (zyrouter) TIDAK dimulai.
- *  H3 tanpa disconnect, failover normal (crown 500×2 → gemini valid) →
+ *  H2 disconnect di tengah leg-4 (crown 500×3, gemini hang) → 4 attempt,
+ *     leg-5 (zyrouter) TIDAK dimulai.
+ *  H3 tanpa disconnect, failover normal (crown 500×3 → gemini valid) →
  *     200 + provider gemini + attempts identik pra-perubahan.
  *  H4 tanpa disconnect, sukses leg-1 (crown valid) → 200 + 1 attempt.
  *  H5 PROBE: `req 'close'` menyala pada request NORMAL (saat body selesai
@@ -316,14 +317,14 @@ async function main(): Promise<void> {
   });
   await check('H1f disconnect leg-1: stub hanya menerima 1 request', () => assert.equal(stubReceived.length, 1, `stub: ${stubReceived.length}`));
 
-  // --- H2: disconnect di tengah leg-3 -------------------------------------
-  console.log('\n-- H2 disconnect di tengah leg-3 (crown 500x2, gemini hang) --');
+  // --- H2: disconnect di tengah leg-4 -------------------------------------
+  console.log('\n-- H2 disconnect di tengah leg-4 (crown 500x3, gemini hang) --');
   setStub({ crown: 'fail-500', gemini: 'hang' });
   current = freshReqState();
   const h2 = current;
   const c2 = postRaw(gwPort, gatewayBody(), '10.99.7.2');
   c2.done.catch(() => {});
-  await waitFor(() => calls() === 3, 10000, 'leg-3 (gemini hang) dimulai');
+  await waitFor(() => calls() === 4, 10000, 'leg-4 (gemini hang) dimulai');
   const tDisc2 = Date.now();
   destroyClient(c2.req);
   await waitFor(() => h2.handlerSettledAt !== null, 15000, 'handler selesai sesudah disconnect');
@@ -331,13 +332,13 @@ async function main(): Promise<void> {
   await sleep(2000);
   const h2Calls = calls();
   const h2Aborted = abortedCalls();
-  await check('H2a disconnect leg-3: tepat 3 attempt (leg-4 zyrouter TIDAK dimulai)', () => assert.equal(h2Calls, 3, `attempt: ${h2Calls}`));
-  await check('H2b disconnect leg-3: hanya fetch in-flight yang di-abort', () => assert.equal(h2Aborted, 1, `aborted: ${h2Aborted}`));
-  await check('H2c disconnect leg-3: handler selesai <8 dtk sesudah disconnect', () => assert.ok(settleMs2 < 8000, `settle ${settleMs2} ms`));
-  await check('H2d disconnect leg-3: TIDAK ada respons ditulis', () => assert.equal(h2.responseWritten, false));
+  await check('H2a disconnect leg-4: tepat 4 attempt (leg-5 zyrouter TIDAK dimulai)', () => assert.equal(h2Calls, 4, `attempt: ${h2Calls}`));
+  await check('H2b disconnect leg-4: hanya fetch in-flight yang di-abort', () => assert.equal(h2Aborted, 1, `aborted: ${h2Aborted}`));
+  await check('H2c disconnect leg-4: handler selesai <8 dtk sesudah disconnect', () => assert.ok(settleMs2 < 8000, `settle ${settleMs2} ms`));
+  await check('H2d disconnect leg-4: TIDAK ada respons ditulis', () => assert.equal(h2.responseWritten, false));
 
   // --- H3: tanpa disconnect, failover normal (regresi) ---------------------
-  console.log('\n-- H3 tanpa disconnect: failover crown 500x2 -> gemini valid --');
+  console.log('\n-- H3 tanpa disconnect: failover crown 500x3 -> gemini valid --');
   setStub({ crown: 'fail-500', gemini: 'valid' });
   current = freshReqState();
   const h3 = current;
@@ -356,7 +357,7 @@ async function main(): Promise<void> {
     assert.equal(JSON.stringify(b3).includes('gemini-3.5-flash-lite'), false);
     assert.equal(JSON.stringify(b3).includes('crown'), false);
   });
-  await check('H3c no-disconnect failover: 3 panggilan provider stub', () => assert.equal(calls(), 3, `attempt: ${calls()}`));
+  await check('H3c no-disconnect failover: 4 panggilan provider stub', () => assert.equal(calls(), 4, `attempt: ${calls()}`));
   await check('H3d no-disconnect failover: TANPA abort palsu (event client_disconnected tidak bertambah)', () => {
     assert.equal(disconnectEvents, evBeforeH3, `event bertambah ${disconnectEvents - evBeforeH3}`);
     assert.equal(abortedCalls(), 0, `fetch ter-abort: ${abortedCalls()}`);
@@ -436,7 +437,7 @@ async function main(): Promise<void> {
 
   // --- D3/D4: regresi tanpa disconnect -------------------------------------
   console.log('\n-- D3/D4 executeAI langsung: regresi tanpa disconnect --');
-  const expectedSeq = ['crown:MiniMaxAI/MiniMax-M2.7:server', 'crown:deepseek-ai/DeepSeek-V4-Flash-0731:server', 'gemini:gemini-3.5-flash-lite:ok'];
+  const expectedSeq = ['crown:zai-org/GLM-5.3-Flash:server', 'crown:deepseek-ai/DeepSeek-V4-Flash-0731:server', 'crown:MiniMaxAI/MiniMax-M2.7:server', 'gemini:gemini-3.5-flash-lite:ok'];
   const seqOf = (r: any) => r.attempts.map((a: any) => `${a.provider}:${a.model}:${a.ok ? 'ok' : a.errorClass}`);
   setStub({ crown: 'fail-500', gemini: 'valid' });
   const d3 = await gw.executeAI({ message: 'halo', mode: 'chat' });
@@ -445,7 +446,7 @@ async function main(): Promise<void> {
     assert.equal(d3.provider, 'gemini');
     assert.deepEqual(seqOf(d3), expectedSeq);
   });
-  await check('D3b tanpa sinyal: 3 panggilan provider stub', () => assert.equal(calls(), 3, `attempt: ${calls()}`));
+  await check('D3b tanpa sinyal: 4 panggilan provider stub', () => assert.equal(calls(), 4, `attempt: ${calls()}`));
   setStub({ crown: 'fail-500', gemini: 'valid' });
   const ctl4 = new AbortController(); // tidak pernah di-abort
   const d4 = await gw.executeAI({ message: 'halo', mode: 'chat', signal: ctl4.signal });
@@ -454,8 +455,8 @@ async function main(): Promise<void> {
     assert.equal(d4.provider, 'gemini');
     assert.deepEqual(seqOf(d4), seqOf(d3));
   });
-  await check('D4b sinyal ada tapi tak abort: 3 panggilan, 0 ter-abort', () => {
-    assert.equal(calls(), 3, `attempt: ${calls()}`);
+  await check('D4b sinyal ada tapi tak abort: 4 panggilan, 0 ter-abort', () => {
+    assert.equal(calls(), 4, `attempt: ${calls()}`);
     assert.equal(abortedCalls(), 0);
   });
 

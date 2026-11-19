@@ -24,6 +24,8 @@ export const ProjectAhspView: React.FC<ProjectAhspViewProps> = ({
 
   // Search in catalog modal
   const [catalogSearch, setCatalogSearch] = useState('');
+  // Search in saved project AHSP list (kotak pencarian daftar utama)
+  const [listSearch, setListSearch] = useState('');
   const [catalogDomain, setCatalogDomain] = useState<string>('ALL');
   // F-09: batas tampil bertahap (bukan potongan diam-diam 30).
   const [catalogVisibleCount, setCatalogVisibleCount] = useState(30);
@@ -65,6 +67,18 @@ export const ProjectAhspView: React.FC<ProjectAhspViewProps> = ({
   }, [catalogSearch, catalogDomain, activeAhspItems]);
   // F-09: yang dirender hanya jendela pertama; totalnya selalu ditampilkan.
   const visibleCatalog = filteredCatalog.slice(0, catalogVisibleCount);
+
+  // Filtered saved project items (kode, uraian, satuan) — client-side.
+  const filteredItems = useMemo(() => {
+    const q = listSearch.trim().toLowerCase();
+    if (!q) return items;
+    return items.filter(
+      (item) =>
+        (item.ahspCode || '').toLowerCase().includes(q) ||
+        (item.description || '').toLowerCase().includes(q) ||
+        (item.unit || '').toLowerCase().includes(q),
+    );
+  }, [items, listSearch]);
 
   const handleSelectCatalogItem = (catItem: NationalAHSPItem) => {
     if (!projectId) return;
@@ -157,7 +171,7 @@ export const ProjectAhspView: React.FC<ProjectAhspViewProps> = ({
   return (
     <div style={{ background: 'var(--ez-color-surface)', borderRadius: 'var(--ez-radius-control)', border: '1px solid var(--ez-color-border-line)', padding: 20 }}>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
+      <div className="ezdb-ahsp-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18, flexWrap: 'wrap', gap: 12 }}>
         <div>
           <h3 style={{ margin: 0, fontSize: 17, fontWeight: 750, color: 'var(--ez-color-text-primary)', display: 'flex', alignItems: 'center', gap: 8 }}>
             <Database size={20} color="var(--ez-hue-blue-text)" />
@@ -167,7 +181,7 @@ export const ProjectAhspView: React.FC<ProjectAhspViewProps> = ({
             Kompilasi AHSP spesifik untuk proyek {projectName ? `"${projectName}"` : ''} (tersimpan scoped per proyek).
           </p>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div className="ezdb-ahsp-headactions" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button
             onClick={() => setShowCatalogModal(true)}
             disabled={!projectId}
@@ -246,8 +260,46 @@ export const ProjectAhspView: React.FC<ProjectAhspViewProps> = ({
           </div>
         </div>
       ) : (
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}>
+        <div>
+          {/* Kotak pencarian daftar AHSP proyek tersimpan */}
+          <div style={{ position: 'relative', maxWidth: 420, marginBottom: 12 }}>
+            <Search size={15} color="var(--ez-color-text-faint)" style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)' }} />
+            <input
+              type="text"
+              className="ezdb-search-input"
+              value={listSearch}
+              onChange={(e) => setListSearch(e.target.value)}
+              placeholder="Cari kode, uraian, atau satuan AHSP proyek…"
+              aria-label="Cari AHSP proyek tersimpan"
+              style={{ width: '100%', height: 36, paddingLeft: 34, paddingRight: listSearch ? 32 : 12, borderRadius: 8, border: '1px solid var(--ez-hue-slate-border)', fontSize: 13, outline: 'none', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)' }}
+            />
+            {listSearch ? (
+              <button
+                type="button"
+                className="ezdb-search-clear"
+                onClick={() => setListSearch('')}
+                aria-label="Hapus pencarian"
+                style={{ position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)', border: 0, background: 'transparent', cursor: 'pointer', color: 'var(--ez-color-text-muted)', fontSize: 16, lineHeight: 1, padding: 4 }}
+              >
+                ×
+              </button>
+            ) : null}
+          </div>
+          {listSearch.trim() ? (
+            <div style={{ fontSize: 12, color: 'var(--ez-color-text-muted)', marginBottom: 10 }}>
+              Menampilkan {filteredItems.length} dari {items.length} analisa
+            </div>
+          ) : null}
+          {filteredItems.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '28px 20px', background: 'var(--ez-color-surface-secondary)', borderRadius: 10, border: '1px dashed var(--ez-hue-slate-border)', fontSize: 13, color: 'var(--ez-color-text-muted)' }}>
+              Tidak ada AHSP proyek yang cocok dengan “{listSearch.trim()}”.{' '}
+              <button type="button" onClick={() => setListSearch('')} style={{ border: 0, background: 'transparent', cursor: 'pointer', color: 'var(--ez-color-primary)', fontWeight: 700, fontSize: 13, padding: 0 }}>
+                Hapus pencarian
+              </button>
+            </div>
+          ) : (
+          <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', minWidth: 720, borderCollapse: 'collapse', fontSize: 12.5 }}>
             <thead>
               <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', color: 'var(--ez-color-text-slate)' }}>
                 <th style={{ padding: '10px 12px', textAlign: 'left' }}>No</th>
@@ -262,7 +314,7 @@ export const ProjectAhspView: React.FC<ProjectAhspViewProps> = ({
               </tr>
             </thead>
             <tbody>
-              {items.map((item, idx) => {
+              {filteredItems.map((item, idx) => {
                 const totalUnitPrice = (item.materialCost || 0) + (item.laborCost || 0) + (item.equipmentCost || 0);
                 const st = savedItemStatus(item);
                 return (
@@ -296,7 +348,7 @@ export const ProjectAhspView: React.FC<ProjectAhspViewProps> = ({
                       ) : null}
                     </td>
                     <td style={{ padding: '10px 12px', textAlign: 'center' }}>
-                      <div style={{ display: 'inline-flex', gap: 6 }}>
+                      <div className="ezdb-ahsp-rowact" style={{ display: 'inline-flex', gap: 6 }}>
                         <button
                           onClick={() => handleOpenEdit(item)}
                           style={{ border: 0, background: 'transparent', cursor: 'pointer', color: 'var(--ez-color-text-muted)', padding: 4 }}
@@ -318,6 +370,8 @@ export const ProjectAhspView: React.FC<ProjectAhspViewProps> = ({
               })}
             </tbody>
           </table>
+          </div>
+          )}
         </div>
       )}
 
@@ -335,6 +389,7 @@ export const ProjectAhspView: React.FC<ProjectAhspViewProps> = ({
           }}
         >
           <div
+            className="ezdb-ahsp-catmodal"
             style={{
               background: 'var(--ez-color-surface)',
               borderRadius: 'var(--ez-radius-control)',
@@ -353,18 +408,20 @@ export const ProjectAhspView: React.FC<ProjectAhspViewProps> = ({
               </h4>
               <button
                 onClick={() => setShowCatalogModal(false)}
-                style={{ border: 0, background: 'transparent', fontSize: 18, cursor: 'pointer', color: 'var(--ez-color-text-muted)' }}
+                aria-label="Tutup katalog"
+                style={{ border: 0, background: 'transparent', fontSize: 18, cursor: 'pointer', color: 'var(--ez-color-text-muted)', width: 44, height: 44, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}
               >
                 ✕
               </button>
             </div>
 
             {/* Filter & Search Bar */}
-            <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
-              <div style={{ position: 'relative', flex: 1 }}>
-                <Search size={15} style={{ position: 'absolute', left: 10, top: 11, color: '#94A3B8' }} />
+            <div className="ezdb-ahsp-catfilter" style={{ display: 'flex', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
+              <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
+                <Search size={15} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
                 <input
                   type="text"
+                  className="ezdb-search-input"
                   value={catalogSearch}
                   onChange={(e) => setCatalogSearch(e.target.value)}
                   placeholder="Cari kode atau nama analisa (misal: galian, beton, pasangan batu)..."
@@ -385,14 +442,14 @@ export const ProjectAhspView: React.FC<ProjectAhspViewProps> = ({
             </div>
 
             {/* Items List */}
-            <div style={{ flex: 1, overflowY: 'auto', border: '1px solid var(--ez-color-border-line)', borderRadius: 8 }}>
+            <div style={{ flex: 1, overflowY: 'auto', overflowX: 'auto', border: '1px solid var(--ez-color-border-line)', borderRadius: 8 }}>
               {filteredCatalog.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: 30, color: 'var(--ez-color-text-muted)', fontSize: 13 }}>
                   Tidak ada analisa yang sesuai dengan pencarian.
                 </div>
               ) : (
                 <>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                <table style={{ width: '100%', minWidth: 560, borderCollapse: 'collapse', fontSize: 12 }}>
                   <thead>
                     <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', position: 'sticky', top: 0 }}>
                       <th style={{ padding: '8px 10px', textAlign: 'left' }}>Kode</th>
@@ -447,7 +504,7 @@ export const ProjectAhspView: React.FC<ProjectAhspViewProps> = ({
                     })}
                   </tbody>
                 </table>
-                <div style={{ padding: '10px 12px', fontSize: 12, color: 'var(--ez-color-text-muted)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+                <div style={{ padding: '10px 12px', fontSize: 12, color: 'var(--ez-color-text-muted)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
                   <span>Menampilkan {visibleCatalog.length} dari {filteredCatalog.length} analisa</span>
                   {visibleCatalog.length < filteredCatalog.length && (
                     <button
@@ -489,11 +546,14 @@ export const ProjectAhspView: React.FC<ProjectAhspViewProps> = ({
           }}
         >
           <div
+            className="ezdb-ahsp-customform"
             style={{
               background: 'var(--ez-color-surface)',
               borderRadius: 'var(--ez-radius-control)',
               width: '100%',
               maxWidth: 520,
+              maxHeight: '90vh',
+              overflowY: 'auto',
               padding: 24,
               boxShadow: '0 20px 25px -5px rgba(0,0,0,0.2)',
             }}

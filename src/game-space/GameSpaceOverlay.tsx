@@ -8,17 +8,39 @@
  */
 
 import React, { Suspense, useEffect, useRef, useState } from 'react';
-import { X, Gamepad2, ChevronRight, ArrowLeft, Loader2 } from 'lucide-react';
+import { X, Gamepad2, ChevronRight, ArrowLeft, Loader2, RotateCw } from 'lucide-react';
 import './game-space.css';
 import { ARCADE_GAMES } from './games/arcade/manifest';
 import { CONSTRUCTION_GAMES } from './catalog';
 import {
   PORTRAIT_LOCKED_IDS,
   effectiveStageSpec,
+  shouldShowRotatePrompt,
   specForGame,
   stageBox,
   type StageSpec,
 } from './stage';
+
+/** Prompt "putar HP" untuk game landscape di HP portrait (perintah owner 2026-11-19).
+ * Sopan, non-blocking (pil kecil mengambang di atas stage, game tetap bisa
+ * dimainkan di baliknya), bisa ditutup — dan hilang sendiri begitu HP diputar. */
+const RotatePrompt: React.FC<{ onDismiss: () => void }> = ({ onDismiss }) => (
+  <div className="gs-rotate-prompt" role="status" aria-live="polite">
+    <RotateCw size={16} className="gs-rotate-prompt-icon" aria-hidden="true" />
+    <span className="gs-rotate-prompt-text">
+      Putar HP-mu ke landscape — arena game ini lebih lapang kalau HP miring.
+    </span>
+    <button
+      type="button"
+      className="gs-rotate-prompt-close"
+      onClick={onDismiss}
+      aria-label="Tutup pemberitahuan putar HP"
+      title="Tutup"
+    >
+      <X size={14} />
+    </button>
+  </div>
+);
 
 /** Pembungkus game aktif: ukur ruang, skala stage agar pas, tanpa crop. */
 const GameStage: React.FC<{ gameId: string; spec: StageSpec; children: React.ReactNode }> = ({
@@ -29,6 +51,14 @@ const GameStage: React.FC<{ gameId: string; spec: StageSpec; children: React.Rea
   const measRef = useRef<HTMLDivElement>(null);
   const locked = PORTRAIT_LOCKED_IDS.has(gameId);
   const [box, setBox] = useState({ w: spec.w, h: spec.h });
+  // Ruang tersedia + jenis pointer — dipakai keputusan prompt rotate.
+  const [avail, setAvail] = useState({ w: 0, h: 0 });
+  const [coarsePointer, setCoarsePointer] = useState(false);
+  // Prompt rotate ditutup per game: ganti game = prompt boleh muncul lagi.
+  const [rotateDismissed, setRotateDismissed] = useState(false);
+  useEffect(() => {
+    setRotateDismissed(false);
+  }, [gameId]);
   useEffect(() => {
     const el = measRef.current;
     if (!el) return;
@@ -42,6 +72,8 @@ const GameStage: React.FC<{ gameId: string; spec: StageSpec; children: React.Rea
         const eff = effectiveStageSpec(spec, w, h, locked);
         const next = stageBox(eff, w, h);
         setBox((prev) => (prev.w === next.w && prev.h === next.h ? prev : next));
+        setAvail((prev) => (prev.w === w && prev.h === h ? prev : { w, h }));
+        setCoarsePointer(window.matchMedia('(pointer: coarse)').matches);
       }
     };
     update();
@@ -49,11 +81,14 @@ const GameStage: React.FC<{ gameId: string; spec: StageSpec; children: React.Rea
     ro.observe(el);
     return () => ro.disconnect();
   }, [spec, locked]);
+  const showRotatePrompt =
+    !rotateDismissed && shouldShowRotatePrompt(spec, avail.w, avail.h, coarsePointer);
   return (
     <div ref={measRef} className="gs-stage">
       <div className="gs-stage-box" style={{ width: box.w, height: box.h }}>
         {children}
       </div>
+      {showRotatePrompt && <RotatePrompt onDismiss={() => setRotateDismissed(true)} />}
     </div>
   );
 };

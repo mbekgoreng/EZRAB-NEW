@@ -12,7 +12,7 @@
  * Field notes/reasons from §9 are shown verbatim (mixed Indonesian /
  * English as computed) — §11 localizes the chrome, never the data.
  */
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { AlertTriangle, Info, X } from 'lucide-react';
 import type { MasterPriceImpactPreview } from '../../engine/pricing/impact/masterPriceImpactPreview';
 import {
@@ -22,6 +22,7 @@ import {
   formatRupiah,
   formatRupiahDelta,
 } from '../../engine/pricing/admin/masterPricingUiLogic';
+import { MASTER_PRICE_REASON_MIN_LENGTH } from '../../engine/pricing/admin/masterPriceRecord';
 import './masterPricing.css';
 
 export interface PriceUpdateConfirmDialogProps {
@@ -30,7 +31,15 @@ export interface PriceUpdateConfirmDialogProps {
   confirmLabel?: string;
   /** When non-null, confirm is disabled with this reason (e.g. the §4 gate denial). */
   confirmDisabledReason?: string | null;
-  onConfirm: () => void;
+  /**
+   * MASTER PRICING §12/§13 (P10): when true, the dialog requires an
+   * admin reason (≥ 10 chars, §4.4 audit) before confirm is enabled,
+   * and passes it to `onConfirm`. Callers that do not write history
+   * (e.g. the AHSP Mode-A dialog) leave this unset.
+   */
+  requireReason?: boolean;
+  /** Receives the trimmed admin reason ('' when `requireReason` is unset). */
+  onConfirm: (reason: string) => void;
   onClose: () => void;
 }
 
@@ -56,14 +65,22 @@ export function PriceUpdateConfirmDialog({
   operationLabel,
   confirmLabel,
   confirmDisabledReason,
+  requireReason,
   onConfirm,
   onClose,
 }: PriceUpdateConfirmDialogProps): React.ReactElement {
+  const [reason, setReason] = useState('');
   const content = useMemo(
     () => buildPriceUpdateDialogContent(preview, operationLabel ? { operationLabel } : undefined),
     [preview, operationLabel],
   );
-  const confirmBlockedReason = content.blockedNote ?? confirmDisabledReason ?? null;
+  const reasonValid = !requireReason || reason.trim().length >= MASTER_PRICE_REASON_MIN_LENGTH;
+  const confirmBlockedReason =
+    content.blockedNote ??
+    confirmDisabledReason ??
+    (reasonValid
+      ? null
+      : `Alasan wajib diisi (minimal ${MASTER_PRICE_REASON_MIN_LENGTH} karakter) — dicatat di jejak audit §4.4.`);
   const shownItems = content.itemRows.slice(0, MAX_ITEM_ROWS);
   const shownProjects = content.projectRows.slice(0, MAX_PROJECT_ROWS);
 
@@ -322,6 +339,29 @@ export function PriceUpdateConfirmDialog({
             <br />
             Fingerprint: {content.fingerprintHash}
           </div>
+
+          {requireReason ? (
+            <div>
+              <label
+                htmlFor="mpu-apply-reason"
+                style={{ fontWeight: 700, display: 'block', marginBottom: 4 }}
+              >
+                Alasan perubahan <span className="mpu-muted">(wajib, min. {MASTER_PRICE_REASON_MIN_LENGTH} karakter)</span>
+              </label>
+              <textarea
+                id="mpu-apply-reason"
+                className="mpu-input"
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                placeholder="cth. Penyesuaian harga pasar November 2026 berdasarkan survei supplier"
+                rows={2}
+                style={{ width: '100%', resize: 'vertical' }}
+              />
+              <div className="mpu-muted" style={{ marginTop: 4 }}>
+                Alasan dicatat di jejak audit §4.4 bersama harga lama, harga baru, dan identitas admin.
+              </div>
+            </div>
+          ) : null}
         </div>
 
         <div className="mpu-dialog-foot">
@@ -339,7 +379,7 @@ export function PriceUpdateConfirmDialog({
             <button className="mpu-btn" onClick={onClose}>
               Batal
             </button>
-            <button className="mpu-btn primary" onClick={onConfirm} disabled={confirmBlockedReason !== null}>
+            <button className="mpu-btn primary" onClick={() => onConfirm(reason.trim())} disabled={confirmBlockedReason !== null}>
               {confirmLabel ?? 'Konfirmasi operasi'}
             </button>
           </div>

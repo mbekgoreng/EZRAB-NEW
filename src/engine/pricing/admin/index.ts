@@ -10,3 +10,4 @@ export * from './masterPriceRecord';
 export * from './provenanceLabels';
 export * from './masterPriceHistory';
 export * from './masterPriceSelection';
+export * from './masterPriceApply';

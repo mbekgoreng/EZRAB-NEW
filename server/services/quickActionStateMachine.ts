@@ -607,34 +607,37 @@ export class QuickActionStateMachine {
         const scope = choiceId || 'UPDATE_ALL_AHSP_STANDARDS';
         session.collectedParameters.scope = scope;
 
-        session.currentState = 'TOOL_PREVIEW';
-        session.currentStep = 'PREVIEW_CONFIRMATION';
-        session.diffPreview = [
-          { label: 'Subtotal Pekerjaan Struktur', before: 'Rp 32.100.000', after: 'Rp 34.250.000' },
-          { label: 'PPN 11%', before: 'Rp 3.531.000', after: 'Rp 3.767.500' },
-          { label: 'Grand Total Terkalkulasi', before: 'Rp 35.631.000', after: 'Rp 38.017.500' },
-        ];
-        session.followUpSuggestions = ['Terapkan ke Spreadsheet', 'Batalkan Rekalkulasi'];
+        // P9.2 (audit perintah AI 2026-11-17) — PRATINJAU FABRIKASI
+        // DIHAPUS. Versi lama menampilkan diff hardcode (Subtotal
+        // Rp32.100.000 → Rp34.250.000; Grand Total Rp35.631.000 →
+        // Rp38.017.500) yang BUKAN angka proyek mana pun, lalu
+        // confirm-nya tidak menerapkan apa pun. Sesi ini tidak
+        // memiliki akses ke data RAB proyek (rabItems tidak pernah
+        // diteruskan ke startSession oleh pemanggil mana pun) dan
+        // tidak ada mesin re-pricing AHSP yang terhubung ke dialog
+        // ini, sehingga pratinjau yang jujur TIDAK DAPAT dihitung.
+        // Jangan kembalikan angka apa pun sampai ada: (1) rabItems
+        // nyata di sesi, (2) mesin hitung-ulang deterministik, dan
+        // (3) jalur tulis di confirmSession.
+        session.currentState = 'RESULT_PRESENTED';
+        session.currentStep = 'RECALCULATE_UNAVAILABLE';
+        session.followUpSuggestions = ['Periksa Spreadsheet RAB', 'Cari AHSP 2026', 'Bantuan Fitur'];
 
         return {
           responseType: 'quick_action_dialogue',
           actionId: contract.actionId,
           actionTitle: contract.label,
           sessionId: session.sessionId,
-          currentState: 'TOOL_PREVIEW',
-          step: 'PREVIEW_CONFIRMATION',
-          title: 'Pratinjau Rekalkulasi RAB',
-          message: `Berikut pratinjau hasil rekalkulasi deterministik untuk seluruh item RAB proyek:\n\n` +
-            `• **Nilai Lama**: Rp 35.631.000\n` +
-            `• **Nilai Baru (Update AHSP PUPR 2026)**: **Rp 38.017.500**\n` +
-            `• **Selisih Penyesuaian**: +Rp 2.386.500\n\n` +
-            `⚠️ **Tindakan ini memerlukan konfirmasi Anda sebelum diterapkan ke database.**`,
-          diffPreview: session.diffPreview,
+          currentState: 'RESULT_PRESENTED',
+          step: 'RECALCULATE_UNAVAILABLE',
+          title: 'Rekalkulasi Belum Tersedia',
+          message: `Pratinjau rekalkulasi tidak dapat dihitung di sesi ini: dialog ini tidak memiliki akses ke data RAB proyek dan tidak ada mesin hitung-ulang yang terhubung.\n\n` +
+            `Tidak ada angka yang diubah. Untuk menghitung ulang total RAB, buka Spreadsheet RAB — total dihitung otomatis dari volume × harga satuan tiap baris.`,
           collectedParameters: session.collectedParameters,
           followUpSuggestions: session.followUpSuggestions,
           canGoBack: true,
           canCancel: true,
-          requiresConfirmation: true,
+          requiresConfirmation: false,
         };
       }
 
@@ -709,7 +712,9 @@ export class QuickActionStateMachine {
           sessionId: session.sessionId,
           currentState: 'RESULT_PRESENTED',
           title: contract.label,
-          message: `Permintaan ${contract.label} berhasil diproses dalam konteks proyek aktif.`,
+          // P9.2 — pesan lama ("berhasil diproses") adalah klaim sukses
+          // palsu: cabang ini tidak mengeksekusi apa pun.
+          message: `Permintaan ${contract.label} diterima, tetapi belum ada alur eksekusi untuk tindakan ini di jalur quick action — tidak ada perubahan yang dilakukan.`,
           collectedParameters: session.collectedParameters,
           followUpSuggestions: session.followUpSuggestions,
           canGoBack: true,
@@ -732,8 +737,15 @@ export class QuickActionStateMachine {
     }
 
     const contract = QUICK_ACTION_CONTRACTS[session.actionId];
-    session.currentState = 'COMPLETED';
-    session.currentStep = 'CONFIRMED_COMPLETED';
+    // P9.2 (audit perintah AI 2026-11-17) — KONFIRMASI JUJUR. Versi lama
+    // mengembalikan COMPLETED + "telah berhasil diverifikasi dan disimpan
+    // secara permanen ke database proyek" + resultData APPLIED, padahal
+    // fungsi ini TIDAK PERNAH menulis apa pun ke store mana pun (tidak
+    // ada pemanggilan rabDataService/commandEngine di sini). Sampai ada
+    // jalur tulis nyata, konfirmasi MENOLAK dengan jujur: state ERROR,
+    // status NOT_APPLIED, dan pesan yang menyatakan tidak ada perubahan.
+    session.currentState = 'ERROR';
+    session.currentStep = 'CONFIRM_NOT_APPLIED';
     session.updatedAt = new Date().toISOString();
     session.followUpSuggestions = ['Periksa Spreadsheet RAB', 'Ekspor Laporan PDF', 'Cek Kurva S'];
 
@@ -742,12 +754,12 @@ export class QuickActionStateMachine {
       actionId: contract?.actionId || session.actionId,
       actionTitle: contract?.label || session.actionId,
       sessionId: session.sessionId,
-      currentState: 'COMPLETED',
-      step: 'CONFIRMED_COMPLETED',
-      title: 'Aksi Berhasil Diterapkan',
-      message: `✅ Perubahan pada **${contract?.label || session.actionId}** telah berhasil diverifikasi dan disimpan secara permanen ke database proyek.`,
+      currentState: 'ERROR',
+      step: 'CONFIRM_NOT_APPLIED',
+      title: 'Tidak Diterapkan',
+      message: `Konfirmasi untuk **${contract?.label || session.actionId}** tidak dapat diterapkan: sesi quick action ini tidak memiliki jalur tulis ke database proyek. Tidak ada perubahan yang disimpan — gunakan Spreadsheet RAB atau Chat AI untuk mengubah data proyek.`,
       collectedParameters: session.collectedParameters,
-      resultData: { status: 'APPLIED', timestamp: new Date().toISOString() },
+      resultData: { status: 'NOT_APPLIED', reason: 'NO_WRITE_PATH', timestamp: new Date().toISOString() },
       followUpSuggestions: session.followUpSuggestions,
       canGoBack: false,
       canCancel: false,

@@ -781,18 +781,19 @@ async function runGateway(): Promise<void> {
     assert(body.model === 'Ezrab-flash-v1', `model mode chat -> alias flash: ${body.model}`);
     assert(body.usageStatus === 'measured' && body.usage?.totalTokens === 160, 'usage measured');
     assert(!('attempts' in body), 'attempts[] TIDAK dikirim ke klien (masking 2026-11-16)');
-    assert(!JSON.stringify(body).includes('crown') && !JSON.stringify(body).includes('MiniMax'), 'nama asli tidak ada di body');
+    assert(!JSON.stringify(body).includes('crown') && !JSON.stringify(body).includes('MiniMax') && !JSON.stringify(body).includes('GLM') && !JSON.stringify(body).includes('DeepSeek'), 'nama asli tidak ada di body');
     assert(providerCalls() - mark === 1, 'tepat 1 panggilan provider stub');
   });
-  await check('6G-02 STUB (f) provider 5xx semua kaki: rantai 2 attempt errorClass server → 502 ke klien', async () => {
+  await check('6G-02 STUB (f) provider 5xx semua kaki: rantai 3 attempt errorClass server → 502 ke klien', async () => {
     setProviderKeys({ crown: true });
     setStubBScenario('server-error');
     const mark = providerCalls();
     const direct = await gw.executeAI({ message: 'halo stub', mode: 'chat' });
     assert(direct.ok === false, 'executeAI gagal');
-    assert(Array.isArray(direct.attempts) && direct.attempts.length === 2, `2 attempt (dapat ${direct.attempts?.length})`);
-    assert(direct.attempts.every((a: any) => a.errorClass === 'server'), 'kedua attempt errorClass server');
-    assert(providerCalls() - mark === 2, '2 panggilan provider stub (kedua kaki Crown dicoba)');
+    assert(Array.isArray(direct.attempts) && direct.attempts.length === 3, `3 attempt (dapat ${direct.attempts?.length})`);
+    assert(direct.attempts.every((a: any) => a.errorClass === 'server'), 'ketiga attempt errorClass server');
+    assert(direct.attempts.map((a: any) => a.model).join('|') === 'zai-org/GLM-5.3-Flash|deepseek-ai/DeepSeek-V4-Flash-0731|MiniMaxAI/MiniMax-M2.7', 'ketiga model Crown urutan owner (GLM -> DeepSeek -> MiniMax)');
+    assert(providerCalls() - mark === 3, '3 panggilan provider stub (ketiga kaki Crown dicoba)');
     const req = mockReq(gatewayBody(), { ip: '10.99.6.2' });
     const res = mockRes();
     await executeHandler(req, res);
@@ -942,11 +943,12 @@ async function runGateway(): Promise<void> {
     assert(direct.ok === true, 'executeAI sukses lewat Gemini');
     assert(direct.provider === 'gemini', `provider pelayan: ${direct.provider}`);
     assert(direct.model === 'gemini-3.5-flash-lite', `model pelayan: ${direct.model}`);
-    assert(direct.attempts.length === 3, `3 attempt (dapat ${direct.attempts.length})`);
-    assert(direct.attempts[0].provider === 'crown' && direct.attempts[0].errorClass === 'server', 'attempt 1 Crown 500');
-    assert(direct.attempts[1].provider === 'crown' && direct.attempts[1].errorClass === 'server', 'attempt 2 Crown 500');
-    assert(direct.attempts[2].provider === 'gemini' && direct.attempts[2].ok === true, 'attempt 3 Gemini sukses');
-    assert(providerCalls() - mark === 3, '3 panggilan provider stub');
+    assert(direct.attempts.length === 4, `4 attempt (dapat ${direct.attempts.length})`);
+    assert(direct.attempts[0].provider === 'crown' && direct.attempts[0].model === 'zai-org/GLM-5.3-Flash' && direct.attempts[0].errorClass === 'server', 'attempt 1 Crown GLM 500');
+    assert(direct.attempts[1].provider === 'crown' && direct.attempts[1].model === 'deepseek-ai/DeepSeek-V4-Flash-0731' && direct.attempts[1].errorClass === 'server', 'attempt 2 Crown DeepSeek 500');
+    assert(direct.attempts[2].provider === 'crown' && direct.attempts[2].model === 'MiniMaxAI/MiniMax-M2.7' && direct.attempts[2].errorClass === 'server', 'attempt 3 Crown MiniMax 500');
+    assert(direct.attempts[3].provider === 'gemini' && direct.attempts[3].ok === true, 'attempt 4 Gemini sukses');
+    assert(providerCalls() - mark === 4, '4 panggilan provider stub');
   });
   await check('6G-13 STUB replay ter-scope pemanggil: kunci sama dari IP BERBEDA → provider dipanggil lagi', async () => {
     setProviderKeys({ crown: true });
@@ -974,7 +976,7 @@ async function runGateway(): Promise<void> {
     const res2 = mockRes();
     await executeHandler(req2, res2);
     assert(res2.statusCode === 200, `kedua 200 — kegagalan tidak di-cache (dapat ${res2.statusCode})`);
-    assert(providerCalls() - mark === 3, `3 panggilan provider (2 gagal + 1 sukses; dapat ${providerCalls() - mark})`);
+    assert(providerCalls() - mark === 4, `4 panggilan provider (3 gagal + 1 sukses; dapat ${providerCalls() - mark})`);
   });
 }
 

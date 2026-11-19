@@ -998,7 +998,7 @@ export const DocCreator: React.FC<{
                     role="alert"
                     style={{
                       display: 'flex', gap: 10, alignItems: 'flex-start',
-                      background: '#FDF2F2', border: '1px solid #F3C2C2', color: '#8A2A2A',
+                      background: 'var(--ez-color-danger-soft)', border: '1px solid var(--ez-color-danger-soft)', color: 'var(--ez-color-danger)',
                       borderRadius: 10, padding: '12px 14px', marginBottom: 12,
                       fontSize: 13.5, lineHeight: 1.55, textAlign: 'left',
                     }}

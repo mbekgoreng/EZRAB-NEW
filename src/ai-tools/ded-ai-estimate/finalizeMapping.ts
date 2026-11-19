@@ -70,6 +70,11 @@ import {
   type TransferPriceInput,
 } from '../ezrab-ai/universalRab';
 import { dedTransferClaim, type DedTransferClaim } from './dedProvenance';
+// D1 (2026-11-19): pemetaan kategori Magic AI → divisi WBS. Nama divisi
+// + relasi WBS→divisi diambil dari kontrak kanonis divisions.ts (bukan
+// tabel tandingan); nama kelompok fallback dari katalog WBS bangunan.
+import { DED_DIVISIONS, divisionCodeForWbs } from './divisions';
+import { getWbsCatalog } from './wbsCatalog';
 
 export interface DedFinalizeRabInput {
   description: string;
@@ -88,6 +93,19 @@ export interface DedFinalizeRabInput {
   priceStatus: PriceStatus;
   priceSourceLabel: string;
   priceSourceExplanation: string;
+  /**
+   * D1 (2026-11-19): traceabilitas WBS (hanya diisi mapper Magic AI —
+   * lihat magicAiCategoryToWbs). `wbsCode` = kode kelompok WBS katalog
+   * (BGN-*) yang lolos gerbang factory `isValidatedWbsCode`;
+   * `wbsMappingStatus` selalu 'PROVISIONAL' di jalur ini: pemetaannya
+   * turunan deterministik dari kategori yang ditetapkan pipeline AI,
+   * bukan keanggotaan artefak tervalidasi (CONFIRMED) — dan bukan pula
+   * tanpa petunjuk (UNMAPPED). Tanpa keduanya, item mendarat tanpa
+   * jejak WBS apa pun (perilaku lama, dipertahankan untuk kategori
+   * tak dikenal — fail-closed, tanpa kode karangan).
+   */
+  wbsCode?: string;
+  wbsMappingStatus?: RabItem['wbsMappingStatus'];
   /**
    * Basis biaya harga satuan (§17.1, Gelombang 2 2026-11-13). Jalur DED
    * memakai unitPrice Biaya Langsung gerbang kanonis (comp.unitPrice —
@@ -286,6 +304,119 @@ export function mapDedAiItemToRabInput(
  *   jalur AI ini nol bukan harga sah; aturan factory "nol eksplisit =
  *   resolved" berlaku untuk entri manual spreadsheet, bukan jalur ini.
  */
+/**
+ * D1 (2026-11-19) — Kategori Magic AI → kelompok WBS bangunan (BGN-*).
+ *
+ * Kategori pipeline Magic AI (AI_ESTIMATE_CATEGORIES,
+ * src/ai-estimate/types.ts — 12 kategori) sebelumnya diteruskan mentah
+ * sebagai `category` baris RAB ("Struktur", "MEP", ...) tanpa kode WBS
+ * dan tanpa nama divisi, sehingga hasil Magic AI mendarat di
+ * spreadsheet tanpa petunjuk divisi. Tabel ini memetakan tiap kategori
+ * ke kelompok WBS katalog bangunan — satu-satunya katalog yang relevan,
+ * karena ke-12 kategori pipeline memang taksonomi bangunan (Persiapan,
+ * Pondasi, Struktur, Dinding, Atap, Plafon, Lantai, Pintu & Jendela,
+ * Pengecatan, MEP, Pekerjaan Luar).
+ *
+ * Divisi (DIV-01..DIV-12) TIDAK ditulis di tabel ini — diturunkan lewat
+ * `divisionCodeForWbs` (divisions.ts, kontrak kanonis 12 divisi) agar
+ * tidak ada tabel tandingan yang bisa menyimpang. Dua kategori memang
+ * TIDAK punya divisi menurut kontrak itu, dan itu dipertahankan jujur:
+ * - 'MEP' → BGN-10 generik (kontrak membelah MEP ke DIV-10 plumbing
+ *   / DIV-11 listrik; kategori telanjang tidak bisa membedakannya —
+ *   mengklaim salah satunya adalah karangan). Nama seksi = nama
+ *   kelompok katalog ('Pekerjaan MEP').
+ * - 'Pekerjaan Luar' → BGN-11 (tidak dipetakan ke divisi mana pun).
+ *
+ * Pencocokan dinormalisasi (huruf + awalan 'Pekerjaan ' diabaikan)
+ * karena pipeline juga bisa meloloskan kategori mentah tak baku
+ * (mapCategory di aiEstimatePipeline.ts mengembalikan string mentah
+ * bila tak ada kata kunci yang cocok — mis. 'Pekerjaan Struktur').
+ * Kategori yang tetap tak dikenal mengembalikan null: mapper
+ * meneruskan kategori aslinya tanpa wbsCode (fail-closed).
+ */
+const MAGIC_AI_CATEGORY_WBS: Readonly<Record<string, string>> = {
+  'Persiapan': 'BGN-01',
+  'Pekerjaan Tanah': 'BGN-02',
+  'Pondasi': 'BGN-03',
+  'Struktur': 'BGN-04',
+  'Dinding': 'BGN-05',
+  'Atap': 'BGN-06',
+  'Plafon': 'BGN-06-C',
+  'Lantai': 'BGN-07',
+  'Pintu & Jendela': 'BGN-08',
+  'Pengecatan & Finishing': 'BGN-09',
+  'MEP': 'BGN-10',
+  'Pekerjaan Luar': 'BGN-11',
+};
+
+// Alias ejaan/varian yang tak tercakup normalisasi awalan.
+const MAGIC_AI_CATEGORY_ALIASES: Readonly<Record<string, string>> = {
+  'plafond': 'BGN-06-C',
+  'pengecatan': 'BGN-09',
+  'finishing': 'BGN-09',
+};
+
+function normalizeMagicCategory(raw: string): string {
+  return raw
+    .trim()
+    .toLowerCase()
+    .replace(/^pekerjaan\s+/, '')
+    .replace(/\s+/g, ' ');
+}
+
+const MAGIC_AI_CATEGORY_WBS_NORMALIZED: ReadonlyMap<string, string> = (() => {
+  const m = new Map<string, string>();
+  for (const [cat, code] of Object.entries(MAGIC_AI_CATEGORY_WBS)) {
+    m.set(normalizeMagicCategory(cat), code);
+  }
+  for (const [alias, code] of Object.entries(MAGIC_AI_CATEGORY_ALIASES)) {
+    m.set(alias, code);
+  }
+  return m;
+})();
+
+// Nama kelompok katalog bangunan per kode (fallback nama seksi bila
+// kelompok tidak punya divisi — 'Pekerjaan MEP', 'Pekerjaan Luar').
+const BANGUNAN_GROUP_NAMES: ReadonlyMap<string, string> = (() => {
+  const m = new Map<string, string>();
+  for (const n of getWbsCatalog('BANGUNAN')) m.set(n.code, n.name);
+  return m;
+})();
+
+export interface MagicAiWbsMapping {
+  /** Kode kelompok WBS katalog (BGN-*) — lolos isValidatedWbsCode. */
+  wbsCode: string;
+  /** Kode divisi kontrak 12 divisi, null bila kelompok tak punya divisi. */
+  divisionCode: string | null;
+  /**
+   * Nama seksi RAB: nama divisi bila ada ('Pekerjaan Struktur Beton'),
+   * bila tidak nama kelompok katalog ('Pekerjaan MEP').
+   */
+  sectionName: string;
+}
+
+/**
+ * Petakan satu kategori Magic AI ke kelompok WBS + divisi. Null bila
+ * kategori tak dikenal (mapper meneruskan kategori aslinya tanpa kode).
+ */
+export function magicAiCategoryToWbs(
+  category: string | null | undefined,
+): MagicAiWbsMapping | null {
+  if (!category || typeof category !== 'string') return null;
+  const wbsCode = MAGIC_AI_CATEGORY_WBS_NORMALIZED.get(normalizeMagicCategory(category));
+  if (!wbsCode) return null;
+  const divisionCode = divisionCodeForWbs(wbsCode);
+  const division = divisionCode
+    ? DED_DIVISIONS.find((d) => d.code === divisionCode)
+    : undefined;
+  return {
+    wbsCode,
+    divisionCode,
+    sectionName:
+      division?.name ?? BANGUNAN_GROUP_NAMES.get(wbsCode) ?? category.trim(),
+  };
+}
+
 export function mapMagicAiItemToRabInput(
   item: AiEstimateWorkItem
 ): DedFinalizeRabInput | null {
@@ -298,15 +429,21 @@ export function mapMagicAiItemToRabInput(
   // ESTIMATED → PRICE_ESTIMATED + NEEDS_VERIFICATION.
   const claim = dedTransferClaim('AI_ESTIMATE');
   const { priceStatus, verificationStatus } = applyTransferContract(claim, effectivePrice);
+  // D1 (2026-11-19): kategori → divisi WBS. `category` baris RAB
+  // menjadi nama divisi/kelompok ('Pekerjaan Struktur Beton', bukan
+  // 'Struktur' telanjang) dan item membawa `wbsCode` + status
+  // PROVISIONAL; kategori tak dikenal lolos apa adanya tanpa kode.
+  const wbs = magicAiCategoryToWbs(item.category);
   return {
     description: item.item || item.workName,
     volume: honestVolume(item.quantity),
     unit: item.unit || 'ls',
     unitPrice: effectivePrice,
-    category: item.category,
+    category: wbs ? wbs.sectionName : item.category,
     // S5 (P3C-F2): rumus nyata Magic AI diteruskan; fallback sintetis
     // pipeline (label/evidence) TIDAK naik menjadi rumus.
     ...(calculationFormula ? { calculationFormula } : {}),
+    ...(wbs ? { wbsCode: wbs.wbsCode, wbsMappingStatus: 'PROVISIONAL' as const } : {}),
     priceSourceKind: claim.priceSourceKind,
     priceStatus,
     priceSourceLabel: 'Estimasi AI',

@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { RabItem, Project, UserRole, QTOItem } from '../../types';
 import { ActionProposal } from '../../services/aiApiClient';
-import { coAssistantService, CoAssistantMessage, resolveClientWizardStep } from '../../services/coAssistantService';
+import { coAssistantService, CoAssistantMessage, resolveClientWizardStep, formatSelectedItemDisplay, isItemApplyProposal } from '../../services/coAssistantService';
 import { isAbortError } from '../../ai-tools/aiResponseTiming';
 import { quickActionService } from '../../services/quickActionService';
 import { QUICK_ACTIONS_LIST, QUICK_ACTION_CONTRACTS } from '../../data/quickActionContracts';
@@ -825,6 +825,24 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
     }
 
     try {
+      // P11 — pilihan "Item yang Sedang Dipilih" (JELASKAN_ITEM) dijawab
+      // deterministik dari baris terpilih, BUKAN lewat quickActionService
+      // yang endpoint-nya tidak ada (dulu jatuh ke fallback sukses
+      // palsu). Tanpa baris terpilih, jawab jujur bahwa tidak ada yang
+      // dipilih — jangan mengarang penjelasan item.
+      if (choiceId === 'ACTIVE_SELECTED_ITEM') {
+        const detail = formatSelectedItemDisplay(selectedRabItem, selectedQtoItem);
+        const selMsg: CoAssistantMessage = {
+          id: `ai-qa-sel-${Date.now()}`,
+          role: 'ai',
+          text: detail
+            ? `### 🔍 Item yang Sedang Dipilih\n\n${detail}`
+            : 'Tidak ada baris yang terpilih saat ini, jadi saya tidak tahu item mana yang Anda maksud. Sebutkan nama itemnya — mis. "Jelaskan item pondasi batu kali" — atau pilih "Ketik Nama Item Tertentu".',
+          timestamp: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+        };
+        setMessages((prev) => [...prev, selMsg]);
+        return;
+      }
       const resp = await quickActionService.answerStep(sessionId, choiceId, parameters, textAnswer);
       const aiMsg: CoAssistantMessage = {
         id: `ai-qa-${Date.now()}`,
@@ -912,6 +930,23 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
 
   const handleApplyProposal = (proposal: ActionProposal) => {
     if (!onAddRabItemDirect || appliedProposalIds.has(proposal.actionId)) return;
+
+    // P9.5 — tolak proposal non-item dengan pesan jelas; JANGAN jadikan
+    // baris RAB sampah (volume 1, Rp0) seperti perilaku lama.
+    if (!isItemApplyProposal(proposal)) {
+      const isDocWizard = proposal.toolName === 'OPEN_DOCUMENT_PACKAGE_WIZARD';
+      const rejectMsg: CoAssistantMessage = {
+        id: `ai-proposal-reject-${Date.now()}`,
+        role: 'ai',
+        text: isDocWizard
+          ? 'Proposal ini membuka wizard paket dokumen, bukan item RAB — jadi tidak bisa diterapkan sebagai baris RAB. Untuk membuat paket dokumen, buka menu AI Document.'
+          : `Proposal "${proposal.description || proposal.toolName}" bukan item RAB, jadi tidak bisa diterapkan sebagai baris RAB. Tombol "Terapkan ke RAB" hanya untuk proposal penambahan item.`,
+        timestamp: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+        isError: true,
+      };
+      setMessages((prev) => [...prev, rejectMsg]);
+      return;
+    }
 
     const params = proposal.parameters || {};
     onAddRabItemDirect({

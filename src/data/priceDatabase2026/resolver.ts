@@ -98,6 +98,7 @@ import type {
   LocationLevel,
   PriceFallbackKind,
   PriceLocation,
+  PriceMatchMethod,
   PricingStatus,
   ResourcePriceQuery,
   ResourcePriceRecord,
@@ -106,6 +107,10 @@ import type {
   UnitConversionApplied,
 } from './types';
 import { componentTypeFromCode, looseCode, normalizeUnit, normalizeUnitForType } from './normalize';
+import {
+  listAdminMasterPriceOverlayEntries,
+  type AdminMasterPriceOverlayEntry,
+} from './adminMasterPriceOverlay';
 
 // ---------------------------------------------------------------------------
 // helpers
@@ -492,6 +497,54 @@ export class PriceResolver2026 {
     return this.cacheVersion;
   }
 
+  /**
+   * MASTER PRICING §12/§13 (P10) — match one admin-applied overlay
+   * entry for this query (see `adminMasterPriceOverlay.ts`).
+   *
+   * Match ladder (mirrors the candidate pools below): resourceId first,
+   * then loose-code+unit, then normalized-name+unit (the codeless
+   * records, e.g. Paku asbes, can only match by name). THREE hard rules:
+   *   1. the unit must match EXACTLY (normalized) — a query in another
+   *      unit never sees the overlay price (no conversion, no silent
+   *      multiply; a unit mismatch falls through to normal resolution);
+   *   2. a code/name match never overrides a DIFFERENT canonical
+   *      entity (query resourceId present + entry resourceId present +
+   *      different ⇒ no match);
+   *   3. a §15 (#8) exclusion of the overlaid record id is honored
+   *      (the staged re-preview pretends the record does not exist).
+   * Latest `changedAt` wins when several entries match. An empty
+   * overlay returns null immediately — zero behavior change.
+   */
+  private lookupAdminOverlay(
+    query: ResourcePriceQuery,
+    unit: string,
+  ): { entry: AdminMasterPriceOverlayEntry; matchMethod: PriceMatchMethod } | null {
+    if (!unit) return null;
+    const entries = listAdminMasterPriceOverlayEntries();
+    if (entries.length === 0) return null;
+    const queryName = query.resourceName ? normResourceName(query.resourceName) : '';
+    const queryCode = query.resourceCode ? looseCode(query.resourceCode) : '';
+    let best: { entry: AdminMasterPriceOverlayEntry; matchMethod: PriceMatchMethod; changedAtMs: number } | null =
+      null;
+    for (const entry of entries) {
+      if (normalizeUnit(entry.unit) !== unit) continue;
+      if (query.excludeRecordIds?.has(entry.priceRecordId)) continue;
+      if (query.resourceId && entry.resourceId && query.resourceId !== entry.resourceId) continue;
+      let matchMethod: PriceMatchMethod | null = null;
+      if (query.resourceId && entry.resourceId && query.resourceId === entry.resourceId) {
+        matchMethod = 'EXACT_SOURCE_ID';
+      } else if (queryCode && entry.resourceCode && looseCode(entry.resourceCode) === queryCode) {
+        matchMethod = 'EXACT_CODE';
+      } else if (queryName && entry.resourceName && normResourceName(entry.resourceName) === queryName) {
+        matchMethod = 'NAME_KEY';
+      }
+      if (!matchMethod) continue;
+      const ms = Date.parse(entry.changedAt);
+      if (!best || ms >= best.changedAtMs) best = { entry, matchMethod, changedAtMs: ms };
+    }
+    return best ? { entry: best.entry, matchMethod: best.matchMethod } : null;
+  }
+
   // -------------------------------------------------------------------------
   // PHASE 14 — resolve a single resource price
   // -------------------------------------------------------------------------
@@ -621,6 +674,57 @@ export class PriceResolver2026 {
         });
       }
       contextMissed = true;
+    }
+
+    // --- MASTER PRICING §12/§13 (P10): admin-applied master price
+    //     overlay. Consulted AFTER the project context (a stored
+    //     snapshot / override price always wins — snapshot projects
+    //     never change) and BEFORE the live index: once an admin
+    //     applies a price, the overlay IS the live master price for
+    //     its key. Provenance comes from the overlaid record itself
+    //     (sourceKey/tier/priority/name/document preserved), so the
+    //     tier ladder is unchanged; the explanation names the admin
+    //     apply + its §4.4 audit id. Empty overlay = this block is a
+    //     no-op (all pre-existing pins unaffected). ---
+    const overlayMatch = this.lookupAdminOverlay(query, unit);
+    if (overlayMatch) {
+      const { entry, matchMethod } = overlayMatch;
+      return withMeta({
+        price: entry.price,
+        currency: 'IDR',
+        unit: entry.unit,
+        resourceId: entry.resourceId ?? query.resourceId ?? null,
+        // MASTER PRICING §15 (#8): the overlay answers FOR a record —
+        // its id is the record id, so exclusions can name it.
+        recordId: entry.priceRecordId,
+        resourceCode: entry.resourceCode,
+        resourceName: entry.resourceName,
+        resourceType: entry.resourceType,
+        status: 'RESOLVED',
+        requestedLocation,
+        resolvedLocation: null,
+        locationFallback: 'NONE',
+        requestedPeriod,
+        resolvedPeriod: null,
+        periodFallback: 'NONE',
+        source: {
+          key: entry.sourceKey,
+          tier: entry.sourceTier,
+          priority: entry.sourcePriority,
+          name: entry.sourceName,
+          document: entry.sourceDocument,
+          url: entry.sourceUrl,
+          supplier: entry.supplier,
+        },
+        verificationStatus: entry.verificationStatus,
+        matchMethod,
+        confidence: 1,
+        alternatives: [],
+        explanation:
+          `${entry.resourceCode || entry.resourceName} @ ${entry.unit} = Rp ${entry.price.toLocaleString('id-ID')} ` +
+          `from ADMIN-APPLIED master price (audit ${entry.historyEntryId}, ${entry.changedAt}) — ` +
+          `harga master yang diterapkan admin di browser ini; data master hasil generate tidak berubah.`,
+      });
     }
 
     // --- candidate pool: resourceId first, then looseCode+unit, then name+unit, then name --------------

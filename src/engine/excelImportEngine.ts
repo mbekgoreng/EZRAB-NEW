@@ -1,6 +1,7 @@
 import * as XLSX from 'xlsx';
-import { RabItem, VolumeSourceType } from '../types';
+import { RabItem, VolumeSourceType, type PriceStatus } from '../types';
 import { SafeDecimalEngine } from './safeDecimalEngine';
+import { honestVolume } from './honestVolume';
 
 export interface ColumnMappingConfig {
   noCol: number | null;
@@ -22,7 +23,7 @@ export interface DetectedSheetInfo {
 
 export interface ValidationAnomaly {
   rowNumber: number;
-  type: 'MISSING_PRICE' | 'MISSING_VOLUME' | 'INVALID_UNIT' | 'DUPLICATE_CODE' | 'FORMULA_ERROR' | 'MATH_MISMATCH' | 'SUSPECTED_TOTAL';
+  type: 'MISSING_PRICE' | 'MISSING_VOLUME' | 'MISSING_UNIT' | 'MISSING_DESCRIPTION' | 'INVALID_UNIT' | 'DUPLICATE_CODE' | 'FORMULA_ERROR' | 'MATH_MISMATCH' | 'SUSPECTED_TOTAL';
   severity: 'error' | 'warning' | 'info';
   message: string;
   field?: string;
@@ -35,13 +36,31 @@ export interface ParsedRabRow {
   isSubtotalOrTotal: boolean;
   isMetadataOrBlank: boolean;
   groupName?: string;
+  /** Kode dari file apa adanya; '' bila sel/kolom kode kosong (T20: tidak
+   *  pernah dikarang — kode karangan `ITEM.N` ikut terhitung sebagai
+   *  referensi AHSP karena mengandung '.'). */
   code: string;
   description: string;
-  volume: number;
+  /**
+   * T20 (Gelombang 2) — KEJUJURAN NILAI: null = TIDAK DIKETAHUI dari file
+   * (sel kosong / kolom tidak terpetakan / tidak dapat dibaca sebagai
+   * angka), BUKAN 0 dan BUKAN angka karangan. Sebelumnya volume kosong
+   * menjadi 1, satuan kosong menjadi 'ls', dan jumlah dihitung dari
+   * volume karangan itu — total impor ikut terfabrikasi. Nilai 0
+   * EKSPLISIT dari file tetap 0 (nilai file, bukan kekosongan) dan tetap
+   * dianomalikan.
+   */
+  volume: number | null;
+  /** Satuan ternormalisasi; '' bila tidak diketahui dari file (bukan 'ls'). */
   unit: string;
-  unitPrice: number;
-  amount: number;
-  calculatedAmount: number;
+  /** null = harga satuan tidak diketahui dari file (bukan Rp0 yang valid). */
+  unitPrice: number | null;
+  /** Jumlah dari file bila ada; bila tidak, hasil hitung volume × harga
+   *  bila keduanya diketahui; null bila tidak dapat ditentukan. */
+  amount: number | null;
+  /** volume × unitPrice bila keduanya > 0; null bila salah satunya tidak
+   *  diketahui/tidak valid. */
+  calculatedAmount: number | null;
   anomalies: ValidationAnomaly[];
   rawRow: any[];
 }
@@ -64,6 +83,37 @@ export interface ExcelAnalysisResult {
   subtotalRows: ParsedRabRow[];
   skippedRows: ParsedRabRow[];
   allAnomalies: ValidationAnomaly[];
+}
+
+/**
+ * T20 (Gelombang 2) — Draf item impor: satu-satunya pemetaan
+ * ParsedRabRow → item yang diserahkan ke spreadsheet (dipakai
+ * IntelligentExcelImportModal.handleExecuteImport).
+ *
+ * Batas numerik hilir (RabItem.volume / WorkItem numerik) tidak bisa
+ * null, jadi volume yang tidak diketahui menjadi 0 lewat honestVolume
+ * (pola Fase 4A) — tetapi HARGA memakai null + priceStatus eksplisit:
+ * RabItem mendukung `unitPrice: number | null` ("null = harga belum
+ * tersedia, bukan Rp0") dan factory menghormati priceStatus eksplisit.
+ * Tanpa status eksplisit, resolvePriceStatus(0) = PRICE_RESOLVED —
+ * harga yang hilang akan mendarat sebagai harga Rp0 yang "resolved".
+ */
+export interface ImportItemDraft {
+  code: string;
+  description: string;
+  category: string;
+  /** 0 bila volume tidak diketahui (batas numerik hilir; honestVolume). */
+  volume: number;
+  /** '' bila satuan tidak diketahui (bukan 'ls'). */
+  unit: string;
+  /** null = harga belum ditentukan (bukan Rp0 yang valid). */
+  unitPrice: number | null;
+  /** null = jumlah tidak dapat dihitung dari file. */
+  amount: number | null;
+  totalPrice: number | null;
+  priceStatus: PriceStatus;
+  volumeSource: VolumeSourceType;
+  notes?: string;
 }
 
 // -----------------------------------------------------------------------------
@@ -113,7 +163,9 @@ const STANDARD_INDONESIAN_UNITS: Record<string, string> = {
 };
 
 export const normalizeIndonesianUnit = (rawUnit: string): { unit: string; isValid: boolean } => {
-  if (!rawUnit) return { unit: 'ls', isValid: false };
+  // T20: satuan kosong = TIDAK DIKETAHUI ('', bukan 'ls') — 'ls' adalah
+  // satuan yang mengklaim "lumpsum" dan tidak boleh muncul dari sel kosong.
+  if (!rawUnit) return { unit: '', isValid: false };
   const clean = rawUnit.toString().trim().toLowerCase().replace(/[.,/#!$%^&*;:{}=\-_`~()]/g, '');
   if (STANDARD_INDONESIAN_UNITS[clean]) {
     return { unit: STANDARD_INDONESIAN_UNITS[clean], isValid: true };
@@ -215,11 +267,11 @@ export class ExcelImportEngine {
           isMetadataOrBlank: true,
           code: '',
           description: '(Baris Kosong)',
-          volume: 0,
+          volume: null,
           unit: '',
-          unitPrice: 0,
-          amount: 0,
-          calculatedAmount: 0,
+          unitPrice: null,
+          amount: null,
+          calculatedAmount: null,
           anomalies: [],
           rawRow: row,
         });
@@ -242,11 +294,11 @@ export class ExcelImportEngine {
           groupName: currentGroupName,
           code: codeStr,
           description: descStr,
-          volume: 0,
+          volume: null,
           unit: '',
-          unitPrice: 0,
-          amount: 0,
-          calculatedAmount: 0,
+          unitPrice: null,
+          amount: null,
+          calculatedAmount: null,
           anomalies: [],
           rawRow: row,
         });
@@ -262,11 +314,11 @@ export class ExcelImportEngine {
           groupName: currentGroupName,
           code: codeStr,
           description: descStr,
-          volume: 0,
+          volume: null,
           unit: '',
-          unitPrice: 0,
-          amount: this.parseNumeric(rawAmount),
-          calculatedAmount: 0,
+          unitPrice: null,
+          amount: this.parseNumericOrNull(rawAmount),
+          calculatedAmount: null,
           anomalies: [
             {
               rowNumber: actualRowNumber,
@@ -280,11 +332,19 @@ export class ExcelImportEngine {
         return;
       }
 
-      // Parse Regular Work Item Row
-      const volume = this.parseNumeric(rawVol);
-      const unitPrice = this.parseNumeric(rawPrice);
-      const amount = this.parseNumeric(rawAmount);
-      const calculatedAmount = Math.round(volume * unitPrice);
+      // Parse Regular Work Item Row (T20: nilai yang tidak diketahui dari
+      // file tetap null — tidak pernah diisi angka karangan).
+      const volume = this.parseNumericOrNull(rawVol);
+      const unitPrice = this.parseNumericOrNull(rawPrice);
+      const fileAmount = this.parseNumericOrNull(rawAmount);
+      // Jumlah terhitung hanya bila KEDUANYA diketahui & positif; bila salah
+      // satu kosong/tidak valid, total baris ini TIDAK DAPAT dihitung (null)
+      // — bukan 0 dan bukan hasil kali volume karangan.
+      const calculatedAmount =
+        volume != null && volume > 0 && unitPrice != null && unitPrice > 0
+          ? Math.round(volume * unitPrice)
+          : null;
+      const amount = fileAmount ?? calculatedAmount;
       const { unit: normUnit, isValid: isUnitValid } = normalizeIndonesianUnit(rawUnit);
 
       const rowAnomalies: ValidationAnomaly[] = [];
@@ -293,44 +353,59 @@ export class ExcelImportEngine {
       if (!descStr) {
         rowAnomalies.push({
           rowNumber: actualRowNumber,
-          type: 'MISSING_PRICE',
+          type: 'MISSING_DESCRIPTION',
           severity: 'error',
           message: 'Uraian pekerjaan kosong.',
           field: 'description',
         });
       }
 
-      // Anomaly: Missing volume
-      if (volume <= 0 && descStr) {
+      // Anomaly: Missing volume (null = sel/kolom kosong atau tak terbaca)
+      if ((volume == null || volume <= 0) && descStr) {
         rowAnomalies.push({
           rowNumber: actualRowNumber,
           type: 'MISSING_VOLUME',
           severity: 'warning',
-          message: 'Volume pekerjaan 0 atau belum terisi.',
+          message: volume == null
+            ? 'Volume pekerjaan belum terisi di file — dibiarkan kosong (tidak diisi otomatis).'
+            : 'Volume pekerjaan 0 atau tidak valid.',
           field: 'volume',
           rawValue: rawVol,
         });
       }
 
-      // Anomaly: Missing unit price
-      if (unitPrice <= 0 && descStr) {
+      // Anomaly: Missing unit price (null = sel/kolom kosong atau tak terbaca)
+      if ((unitPrice == null || unitPrice <= 0) && descStr) {
         rowAnomalies.push({
           rowNumber: actualRowNumber,
           type: 'MISSING_PRICE',
           severity: 'warning',
-          message: 'Harga satuan pekerjaan Rp 0 atau belum terisi.',
+          message: unitPrice == null
+            ? 'Harga satuan belum terisi di file — harga dibiarkan belum ditentukan (bukan Rp 0).'
+            : 'Harga satuan pekerjaan Rp 0 atau tidak valid.',
           field: 'unitPrice',
           rawValue: rawPrice,
         });
       }
 
-      // Anomaly: Invalid unit
-      if (!isUnitValid && rawUnit && rawUnit.toString().trim() !== '') {
+      // Anomaly: Missing unit (sel/kolom satuan kosong — bukan 'ls')
+      if (!rawUnit || rawUnit.toString().trim() === '') {
+        rowAnomalies.push({
+          rowNumber: actualRowNumber,
+          type: 'MISSING_UNIT',
+          severity: 'warning',
+          message: 'Satuan belum terisi di file — dibiarkan kosong (bukan "ls").',
+          field: 'unit',
+          rawValue: rawUnit,
+        });
+      } else if (!isUnitValid) {
+        // Anomaly: Invalid unit — dipakai apa adanya dari file (tidak ada
+        // normalisasi karangan; pesan lama "otomatis dinormalisasi" salah).
         rowAnomalies.push({
           rowNumber: actualRowNumber,
           type: 'INVALID_UNIT',
           severity: 'info',
-          message: `Satuan "${rawUnit}" tidak standar, otomatis dinormalisasi.`,
+          message: `Satuan "${rawUnit}" tidak dikenali — dipakai apa adanya dari file.`,
           field: 'unit',
           rawValue: rawUnit,
         });
@@ -351,12 +426,13 @@ export class ExcelImportEngine {
       }
 
       // Anomaly: Math mismatch between Excel amount and calculated (volume * price)
-      if (amount > 0 && calculatedAmount > 0 && Math.abs(amount - calculatedAmount) > 100) {
+      // — hanya dapat dinilai bila KEDUANYA diketahui (jumlah file + hitung).
+      if (fileAmount != null && calculatedAmount != null && Math.abs(fileAmount - calculatedAmount) > 100) {
         rowAnomalies.push({
           rowNumber: actualRowNumber,
           type: 'MATH_MISMATCH',
           severity: 'warning',
-          message: `Selisih perhitungan total: Di file Rp ${amount.toLocaleString('id-ID')} vs Kalkulasi Rp ${calculatedAmount.toLocaleString('id-ID')}`,
+          message: `Selisih perhitungan total: Di file Rp ${fileAmount.toLocaleString('id-ID')} vs Kalkulasi Rp ${calculatedAmount.toLocaleString('id-ID')}`,
           field: 'amount',
         });
       }
@@ -384,12 +460,16 @@ export class ExcelImportEngine {
         isSubtotalOrTotal: false,
         isMetadataOrBlank: false,
         groupName: currentGroupName,
-        code: codeStr || `ITEM.${actualRowNumber}`,
+        // T20: kode dibiarkan '' bila file tidak menyebutkannya. Kode
+        // karangan `ITEM.N` ikut terhitung sebagai referensi AHSP (mengandung
+        // '.') dan menggelembungkan metrik; kunci lokal ITEM.n hanya dibuat
+        // di pemetaan impor (mapParsedRowsToImportItems), bukan klaim kode.
+        code: codeStr,
         description: descStr,
-        volume: volume || 1,
-        unit: normUnit || 'ls',
-        unitPrice: unitPrice ?? null,
-        amount: amount || calculatedAmount || 0,
+        volume,
+        unit: normUnit,
+        unitPrice,
+        amount,
         calculatedAmount,
         anomalies: rowAnomalies,
         rawRow: row,
@@ -401,8 +481,15 @@ export class ExcelImportEngine {
     const subtotalRows = parsedRows.filter((r) => r.isSubtotalOrTotal);
     const skippedRows = parsedRows.filter((r) => r.isMetadataOrBlank);
 
+    // T20: kode kini murni dari file (tanpa ITEM.N karangan), jadi hitungan
+    // ini hanya menghitung kode file yang berbentuk berkode ('.' — heuristik
+    // lama, dipertahankan).
     const detectedAhspCount = validItems.filter((i) => i.code && i.code.includes('.')).length;
-    const detectedResourcesCount = validItems.length * 3; // Estimated material, labor, equipment sub-items
+    // T20: mesin ini TIDAK mendeteksi sumber daya apa pun dari lembar RAB
+    // datar — angka lama (jumlah item × 3) adalah estimasi karangan yang
+    // disajikan sebagai hitungan terdeteksi. Nilai jujur = 0 sampai ada
+    // pemetaan AHSP nyata yang menghitung komponen bahan/upah/alat.
+    const detectedResourcesCount = 0;
 
     return {
       sheetNames,
@@ -605,39 +692,56 @@ export class ExcelImportEngine {
     return isRoman || isAlphabeticGroup || isPekerjaanKeyword || isAllCaps;
   }
 
-  private static parseNumeric(val: any): number {
-    if (val === undefined || val === null || val === '') return 0;
-    if (typeof val === 'number') return isNaN(val) ? 0 : val;
+  /**
+   * T20 — parse angka yang membedakan "tidak ada nilai" (null) dari
+   * "nilai 0". Sel kosong / tidak terpetakan / teks yang bukan angka →
+   * null (bukan 0): 0 adalah nilai file yang sah (mis. harga eksplisit
+   * Rp0), sedangkan null berarti "tidak diketahui" dan wajib tetap null
+   * sampai ke pratinjau/impor. Logika format Indonesia dipertahankan
+   * persis (titik ribuan, koma desimal, awalan Rp/IDR).
+   */
+  private static parseNumericOrNull(val: any): number | null {
+    if (val === undefined || val === null || val === '') return null;
+    if (typeof val === 'number') return isNaN(val) ? null : val;
     const str = val.toString().trim();
+    if (str === '') return null;
     // Remove "Rp", "IDR", spaces, and parse Indonesian comma decimal if needed
     const cleanStr = str
       .replace(/Rp\.?/gi, '')
       .replace(/IDR/gi, '')
       .replace(/\s/g, '');
+    if (cleanStr === '') return null;
 
     // Check if Indonesian format (e.g. "1.500.000,50" -> 1500000.50)
     if (cleanStr.includes('.') && cleanStr.includes(',')) {
       const normalized = cleanStr.replace(/\./g, '').replace(',', '.');
       const num = parseFloat(normalized);
-      return isNaN(num) ? 0 : num;
+      return isNaN(num) ? null : num;
     }
 
     // Check if just dots as thousands separator (e.g. "1.500.000")
     if (/^\d{1,3}(\.\d{3})+$/.test(cleanStr)) {
       const normalized = cleanStr.replace(/\./g, '');
       const num = parseFloat(normalized);
-      return isNaN(num) ? 0 : num;
+      return isNaN(num) ? null : num;
     }
 
     // Check if comma as decimal separator (e.g. "12,5")
     if (cleanStr.includes(',') && !cleanStr.includes('.')) {
       const normalized = cleanStr.replace(',', '.');
       const num = parseFloat(normalized);
-      return isNaN(num) ? 0 : num;
+      return isNaN(num) ? null : num;
     }
 
     const num = parseFloat(cleanStr);
-    return isNaN(num) ? 0 : num;
+    return isNaN(num) ? null : num;
+  }
+
+  /** parseNumeric lama (0 untuk kekosongan) — hanya untuk pemeriksaan
+   *  boolean internal (mis. "apakah baris ini punya volume/harga" di
+   *  isGroupHeaderRow), BUKAN untuk nilai yang disimpan/ditampilkan. */
+  private static parseNumeric(val: any): number {
+    return this.parseNumericOrNull(val) ?? 0;
   }
 
   /**
@@ -652,5 +756,47 @@ export class ExcelImportEngine {
       lines.push(`${a.rowNumber},${a.type},${a.severity},${a.field || '-'},${desc},${msg}`);
     });
     return lines.join('\r\n');
+  }
+
+  /**
+   * T20 — petakan baris terurai menjadi draf item impor. Nilai yang tidak
+   * diketahui dari file TIDAK PERNAH diisi angka karangan:
+   *  - volume kosong/tidak valid → 0 (honestVolume, pola Fase 4A);
+   *  - harga kosong/0/negatif → unitPrice null + PRICE_UNRESOLVED
+   *    (bukan Rp0 yang "resolved" — resolvePriceStatus(0) adalah
+   *    PRICE_RESOLVED, jadi status eksplisit wajib menyertai);
+   *  - jumlah → angka file bila ada, bila tidak hasil hitung engine yang
+   *    sudah divalidasi (null bila tak dapat dihitung);
+   *  - kode kosong → kunci lokal `ITEM.n` (kunci tampilan/impor, BUKAN
+   *    klaim kode AHSP — kode karangan tidak pernah masuk metrik AHSP).
+   */
+  public static mapParsedRowsToImportItems(rows: ParsedRabRow[]): ImportItemDraft[] {
+    return rows.map((item, idx) => {
+      const priceKnown = item.unitPrice != null && item.unitPrice > 0;
+      return {
+        code: item.code || `ITEM.${idx + 1}`,
+        description: item.description,
+        category: item.groupName || '01. PEKERJAAN PERSIAPAN',
+        volume: honestVolume(item.volume),
+        unit: item.unit,
+        unitPrice: priceKnown ? item.unitPrice : null,
+        amount: item.amount,
+        totalPrice: item.amount,
+        priceStatus: priceKnown ? 'PRICE_RESOLVED' : 'PRICE_UNRESOLVED',
+        volumeSource: 'IMPORT' as VolumeSourceType,
+        notes: item.anomalies.length > 0 ? `Import Warning: ${item.anomalies.map((a) => a.message).join('; ')}` : undefined,
+      };
+    });
+  }
+
+  /** T20 — total impor: HANYA jumlah yang diketahui dari file/hitung
+   *  (null dikecualikan — total yang memuat baris tak-berjumlah adalah
+   *  PARSIAL, bukan total lengkap). */
+  public static sumImportTotal(items: ImportItemDraft[]): number {
+    let total = 0;
+    for (const it of items) {
+      if (it.amount != null && Number.isFinite(it.amount)) total += it.amount;
+    }
+    return total;
   }
 }

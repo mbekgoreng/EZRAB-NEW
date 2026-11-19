@@ -8,7 +8,7 @@ import React, { useMemo, useState } from 'react';
 import {
   CheckCircle2, AlertTriangle, XCircle, MinusCircle, Pencil, ChevronDown,
   ChevronUp, Save, FolderCheck, Table2, FileSpreadsheet, FileJson,
-  ArrowLeft, Info, Check, X, Sparkles, Undo2, MessageSquare,
+  ArrowLeft, Info, Check, X, Sparkles, Undo2, MessageSquare, Lock,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { DedAiItem, DedAiOutput, DedCompletionReport, DedOutputPrefs, DEFAULT_DED_OUTPUT_PREFS } from './types';
@@ -26,6 +26,14 @@ import { provenanceBadgeForDedSource, provenanceExplanationForDedSource } from '
 // `resultMode` di bawah. dedMode.ts tanpa impor `src` (tanpa risiko
 // impor siklik).
 import { modeFromLegacy } from './dedMode';
+// DED Hasil + Gerbang Review (mockup v2.3, ACC owner 2026-11-19 04:14):
+// taksonomi chip bukti kuantitas + daftar tinjau + keputusan finalisasi
+// dari SATU modul murni (dedReviewGate.ts) — dipakai kedua result view.
+import {
+  QUANTITY_EVIDENCE_LEGEND, quantityEvidenceChipFor, reviewGateItemsForDed,
+  reviewGateSummary, reviewedCount, isReviewGateComplete, canFinalizeWithGate,
+  countSavableDed,
+} from './dedReviewGate';
 import { useI18n } from '../../i18n/I18nContext';
 import { FsFooterPortal } from '../../components/feature-shell/FeatureFullscreenShell';
 import './dedAi.css';
@@ -120,6 +128,10 @@ export const DedAiResultView: React.FC<Props> = ({
   const [completionReport, setCompletionReport] = useState<DedCompletionReport | null>(
     output.completionReport ?? null,
   );
+  // Gerbang review (mockup v2.3): centang per item tinjau — state lokal
+  // view ini saja (view.tsx tidak disentuh). TIDAK ADA "tandai semua"
+  // (keputusan owner no. 3 masih terbuka — default fail-closed).
+  const [reviewed, setReviewed] = useState<Set<string>>(new Set());
 
   // WBS grouping — dihitung dari items aktual, tidak mengubah data
   const wbsData = useMemo(
@@ -158,6 +170,33 @@ export const DedAiResultView: React.FC<Props> = ({
   }, [withStatus]);
 
   const filtered = filter === 'all' ? withStatus : withStatus.filter(({ status }) => status === filter);
+
+  // ---- Gerbang review: daftar tinjau diturunkan dari items SAAT INI
+  // (edit/Pilih AHSP/penyelesaian otomatis mengubah daftar — item yang
+  // sudah terkonfirmasi keluar dari gerbang dengan sendirinya). ----
+  const gateItems = useMemo(() => reviewGateItemsForDed(items), [items]);
+  const gateSummary = useMemo(() => reviewGateSummary(gateItems), [gateItems]);
+  const gateCheckedCount = reviewedCount(gateItems, reviewed);
+  const gateComplete = isReviewGateComplete(gateItems, reviewed);
+  const savableCount = useMemo(() => countSavableDed(items), [items]);
+  const gateAllowsFinalize = canFinalizeWithGate({ gateItems, checkedIds: reviewed, savableCount });
+
+  const toggleReviewed = (id: string) => {
+    setReviewed((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+  // "Lihat" di gerbang: tampilkan semua baris, buka detail item, scroll ke barisnya.
+  const viewGateItem = (id: string) => {
+    setFilter('all');
+    setExpanded(id);
+    window.setTimeout(() => {
+      document.getElementById(`dedai-row-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 60);
+  };
 
   const startEdit = (it: DedAiItem) => {
     setEditing(it.id);
@@ -309,6 +348,19 @@ export const DedAiResultView: React.FC<Props> = ({
 
   const handleFinalize = async () => {
     if (finalizing || finalized) return;
+    // Pertahanan lapis kedua: tombol sudah disabled saat gerbang belum
+    // lengkap, tapi handler WAJIB memeriksa lagi sebelum memanggil
+    // onFinalize (disable saja tidak cukup). Validator fail-closed di
+    // handler (dedFinalizeValidation) tetap menjadi gerbang akhir.
+    if (!gateComplete) {
+      const remaining = gateItems.length - gateCheckedCount;
+      setFinalMsg({ ok: false, text: `Finalisasi terkunci: masih ada ${remaining} item yang belum ditinjau di daftar tinjau di bawah tabel.` });
+      return;
+    }
+    if (!gateAllowsFinalize) {
+      setFinalMsg({ ok: false, text: 'Tidak ada item yang bisa difinalisasi — semua item belum lengkap (tanpa kuantitas/harga).' });
+      return;
+    }
     setFinalizing(true);
     setFinalMsg(null);
     try {
@@ -515,9 +567,9 @@ export const DedAiResultView: React.FC<Props> = ({
                   {d.order}. {d.divisionName}
                 </div>
                 <div style={{ fontSize: 11.5, marginTop: 2, fontWeight: 700, color:
-                  d.status === 'IDENTIFIED' ? '#059669'
-                  : d.status === 'ASSUMPTION_REQUIRES_CONFIRMATION' ? '#D97706'
-                  : d.status === 'NOT_APPLICABLE' ? 'var(--ez-color-text-faint)' : '#DC2626' }}>
+                  d.status === 'IDENTIFIED' ? 'var(--ez-color-success)'
+                  : d.status === 'ASSUMPTION_REQUIRES_CONFIRMATION' ? 'var(--ez-hue-amber-text-deep)'
+                  : d.status === 'NOT_APPLICABLE' ? 'var(--ez-color-text-faint)' : 'var(--ez-color-danger-strong)' }}>
                   {d.status === 'IDENTIFIED' ? 'Teridentifikasi dari DED'
                     : d.status === 'ASSUMPTION_REQUIRES_CONFIRMATION' ? 'Asumsi — perlu konfirmasi'
                     : d.status === 'NOT_APPLICABLE' ? 'Tidak berlaku' : 'Data belum cukup'}
@@ -543,7 +595,7 @@ export const DedAiResultView: React.FC<Props> = ({
                 <> Halaman tanpa lapisan teks (tidak dianalisis — butuh OCR): {output.analysisTrace.pages.filter((p) => p.status === 'NO_TEXT').map((p) => `hal. ${p.page}${p.sourceFile ? ` (${p.sourceFile})` : ''}`).join(', ')}.</>
               )}
               {output.analysisTrace.warnings.map((w, i) => (
-                <div key={i} style={{ color: '#D97706', marginTop: 3 }}>⚠ {w}</div>
+                <div key={i} style={{ color: 'var(--ez-hue-amber-text-deep)', marginTop: 3 }}>⚠ {w}</div>
               ))}
             </div>
           )}
@@ -553,12 +605,13 @@ export const DedAiResultView: React.FC<Props> = ({
       {/* ---- WBS Kelompok Pekerjaan ---- */}
       <div style={{ margin: '0 0 16px' }}>
         <button
+          className="dedai-wbs-toggle"
           onClick={() => setShowWbs(!showWbs)}
           style={{
             display: 'flex', alignItems: 'center', gap: 8,
             padding: '10px 16px', borderRadius: 8,
-            border: '1px solid #e2e8f0', background: showWbs ? '#eff6ff' : '#ffffff',
-            color: '#1e40af', fontSize: 13.5, fontWeight: 700, cursor: 'pointer',
+            border: '1px solid var(--ez-color-border-line)', background: showWbs ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
+            color: 'var(--ez-hue-blue-text-deep)', fontSize: 13.5, fontWeight: 700, cursor: 'pointer',
             width: '100%', justifyContent: 'space-between',
           }}
         >
@@ -567,12 +620,13 @@ export const DedAiResultView: React.FC<Props> = ({
         </button>
 
         {showWbs && (
-          <div style={{ marginTop: 8, border: '1px solid #e2e8f0', borderRadius: 8, overflow: 'hidden' }}>
+          <div style={{ marginTop: 8, border: '1px solid var(--ez-color-border-line)', borderRadius: 8, overflow: 'hidden' }}>
             {wbsData.groups.map((g) => {
               const isOpen = wbsExpanded.has(g.node.code);
               return (
-                <div key={g.node.code} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                <div key={g.node.code} style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
                   <button
+                    className="dedai-wbs-group"
                     onClick={() => {
                       const next = new Set(wbsExpanded);
                       if (isOpen) next.delete(g.node.code);
@@ -581,36 +635,36 @@ export const DedAiResultView: React.FC<Props> = ({
                     }}
                     style={{
                       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                      width: '100%', padding: '10px 14px', background: isOpen ? '#f8fafc' : '#ffffff',
+                      width: '100%', padding: '10px 14px', background: isOpen ? 'var(--ez-color-surface-secondary)' : 'var(--ez-color-surface)',
                       border: 'none', cursor: 'pointer', fontSize: 13.5,
                     }}
                   >
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ color: '#64748b' }}>{isOpen ? '▾' : '▸'}</span>
-                      <code style={{ fontSize: 11.5, background: '#f1f5f9', padding: '2px 6px', borderRadius: 4, color: '#475569' }}>
+                    <span className="dedai-wbs-group-main" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ color: 'var(--ez-color-text-muted)' }}>{isOpen ? '▾' : '▸'}</span>
+                      <code style={{ fontSize: 11.5, background: 'var(--ez-color-surface-tertiary)', padding: '2px 6px', borderRadius: 4, color: 'var(--ez-color-text-slate)' }}>
                         {g.node.code}
                       </code>
-                      <b style={{ color: '#0f172a' }}>{g.node.name}</b>
-                      <span style={{ fontSize: 12, color: '#64748b' }}>({g.itemCount} item)</span>
+                      <b style={{ color: 'var(--ez-color-text-primary)' }}>{g.node.name}</b>
+                      <span style={{ fontSize: 12, color: 'var(--ez-color-text-muted)' }}>({g.itemCount} item)</span>
                       {g.issueCount > 0 && (
-                        <span style={{ fontSize: 11, background: '#fef3c7', color: '#92400e', padding: '2px 8px', borderRadius: 10, fontWeight: 600 }}>
+                        <span style={{ fontSize: 11, background: 'var(--ez-hue-amber-bg-deep)', color: 'var(--ez-hue-amber-text-dark)', padding: '2px 8px', borderRadius: 10, fontWeight: 600 }}>
                           {g.issueCount} bermasalah
                         </span>
                       )}
                     </span>
-                    <b style={{ color: '#1d4ed8', fontSize: 13.5 }}>{fmtRp(g.subtotal)}</b>
+                    <b className="dedai-wbs-group-total" style={{ color: 'var(--ez-color-primary-hover)', fontSize: 13.5 }}>{fmtRp(g.subtotal)}</b>
                   </button>
                   {isOpen && (
-                    <div style={{ padding: '4px 14px 10px 38px', background: '#f8fafc' }}>
+                    <div style={{ padding: '4px 14px 10px 38px', background: 'var(--ez-color-surface-secondary)' }}>
                       {g.items.map((it) => (
-                        <div key={it.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #f1f5f9', fontSize: 13 }}>
-                          <span style={{ color: '#334155' }}>
+                        <div key={it.id} className="dedai-wbs-item" style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid var(--ez-color-surface-tertiary)', fontSize: 13 }}>
+                          <span className="dedai-wbs-item-name" style={{ color: 'var(--ez-color-text-body)' }}>
                             {it.name}
-                            <span style={{ color: '#94a3b8', fontSize: 11.5, marginLeft: 6 }}>
+                            <span style={{ color: 'var(--ez-color-text-faint)', fontSize: 11.5, marginLeft: 6 }}>
                               {it.quantity != null ? `${fmtQty(it.quantity)} ${it.units}` : '—'}
                             </span>
                           </span>
-                          <span style={{ color: it.subtotal != null ? '#0f172a' : '#94a3b8', fontWeight: 600 }}>
+                          <span className="dedai-wbs-item-price" style={{ color: it.subtotal != null ? 'var(--ez-color-text-primary)' : 'var(--ez-color-text-faint)', fontWeight: 600 }}>
                             {fmtRp(it.subtotal)}
                           </span>
                         </div>
@@ -621,11 +675,11 @@ export const DedAiResultView: React.FC<Props> = ({
               );
             })}
             {wbsData.unclassified.length > 0 && (
-              <div style={{ padding: '10px 14px', background: '#fffbeb', fontSize: 12.5, color: '#92400e' }}>
+              <div style={{ padding: '10px 14px', background: 'var(--ez-hue-amber-bg)', fontSize: 12.5, color: 'var(--ez-hue-amber-text-dark)' }}>
                 ⚠️ {wbsData.unclassified.length} item tidak terkategorisasi — periksa manual.
               </div>
             )}
-            <div style={{ padding: '8px 14px', background: '#f8fafc', fontSize: 11.5, color: '#64748b' }}>
+            <div style={{ padding: '8px 14px', background: 'var(--ez-color-surface-secondary)', fontSize: 11.5, color: 'var(--ez-color-text-muted)' }}>
               Katalog WBS adalah referensi. Hanya kelompok dengan item aktual yang ditampilkan.
               Kelompok kosong tidak masuk total.
             </div>
@@ -678,15 +732,28 @@ export const DedAiResultView: React.FC<Props> = ({
         ))}
       </div>
 
+      {/* ---- Legenda bukti kuantitas (mockup v2.3 §1) — klik baris untuk
+          melihat dasar mentahnya di detail "Dasar kuantitas". ---- */}
+      <div className="dedai-qlegend" aria-label="Legenda bukti kuantitas">
+        <span className="dedai-qlegend-title">Bukti kuantitas:</span>
+        {QUANTITY_EVIDENCE_LEGEND.map((chip) => (
+          <span key={chip.kind} className={`dedai-qchip ${chip.className}`} title={chip.hint}>{chip.label}</span>
+        ))}
+        <span className="dedai-qlegend-note">“Klaim: dimensi DED” berarti model mengklaim angka ini dari gambar — bukan bukti terverifikasi. Klik baris untuk melihat dasarnya.</span>
+      </div>
+
       {/* ---- Tombol Isi Cepat untuk item tanpa kuantitas ---- */}
       {counts.blocked > 0 && (
         <div style={{ margin: '0 0 16px', padding: '12px 16px', background: 'var(--ez-color-warning-soft)', border: '1px solid var(--ez-color-warning-soft)', borderRadius: 'var(--ez-radius-card)' }}>
           <div style={{ fontSize: 13.5, color: 'var(--ez-color-warning)', marginBottom: 8 }}>
             <b>{counts.blocked} {t('ai.ded.result.bulk_text_a')}</b> {t('ai.ded.result.bulk_text_b')}
           </div>
+          {/* Latar amber-700 tetap (bukan token warning): token menjadi
+              amber-400 di mode gelap sehingga teks putih tak terbaca. */}
           <button
+            className="dedai-bulk-btn"
             onClick={() => setBulkFill(true)}
-            style={{ padding: '8px 16px', background: 'var(--ez-color-warning)', color: '#fff', border: 'none', borderRadius: 'var(--ez-radius-control)', cursor: 'pointer', fontSize: 13.5, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 8 }}
+            style={{ padding: '8px 16px', background: '#B45309', color: '#fff', border: 'none', borderRadius: 'var(--ez-radius-control)', cursor: 'pointer', fontSize: 13.5, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 8 }}
           >
             <Pencil size={14} /> {t('ai.ded.result.bulk_btn')} {counts.blocked} {t('ai.ded.result.bulk_item_suffix')}
           </button>
@@ -703,29 +770,32 @@ export const DedAiResultView: React.FC<Props> = ({
             </p>
             {withStatus.filter(({ status }) => status === 'blocked').map(({ it }) => (
               <div key={it.id} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, paddingBottom: 12, borderBottom: '1px solid var(--ez-color-surface-secondary)' }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13.5, fontWeight: 600 }}>{it.name}</div>
-                  <div style={{ fontSize: 11.5, color: 'var(--ez-color-text-muted)' }}>{it.quantityFormula || t('ai.ded.result.modal_no_qty')}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13.5, fontWeight: 600, overflowWrap: 'anywhere' }}>{it.name}</div>
+                  <div style={{ fontSize: 11.5, color: 'var(--ez-color-text-muted)', overflowWrap: 'anywhere' }}>{it.quantityFormula || t('ai.ded.result.modal_no_qty')}</div>
                 </div>
                 <input
                   type="text"
                   inputMode="decimal"
                   placeholder="0"
+                  className="dedai-modal-input"
                   value={bulkVals[it.id] || ''}
                   onChange={(e) => setBulkVals({ ...bulkVals, [it.id]: e.target.value })}
-                  style={{ width: 100, padding: '8px 12px', border: '1px solid var(--ez-color-border)', borderRadius: 'var(--ez-radius-control)', fontSize: 14, textAlign: 'right' }}
+                  style={{ width: 100, padding: '8px 12px', border: '1px solid var(--ez-color-border)', borderRadius: 'var(--ez-radius-control)', textAlign: 'right' }}
                 />
                 <span style={{ fontSize: 13, color: 'var(--ez-color-text-muted)', width: 40 }}>{it.units}</span>
               </div>
             ))}
             <div style={{ display: 'flex', gap: 12, marginTop: 16, justifyContent: 'flex-end' }}>
               <button
+                className="dedai-modal-btn"
                 onClick={() => { setBulkFill(false); setBulkVals({}); }}
                 style={{ padding: '8px 16px', background: 'var(--ez-color-surface-secondary)', border: 'none', borderRadius: 'var(--ez-radius-control)', cursor: 'pointer', fontSize: 13.5 }}
               >
                 {t('ai.ded.result.modal_batal')}
               </button>
               <button
+                className="dedai-modal-btn"
                 onClick={commitBulkFill}
                 style={{ padding: '8px 16px', background: 'var(--ez-color-primary)', color: '#fff', border: 'none', borderRadius: 'var(--ez-radius-control)', cursor: 'pointer', fontSize: 13.5, fontWeight: 600 }}
               >
@@ -741,7 +811,7 @@ export const DedAiResultView: React.FC<Props> = ({
         <table className="dedai-table">
           <thead>
             <tr>
-              <th>No</th><th>{t('ai.ded.result.th_desc')}</th><th>{t('ai.ded.result.th_volume')}</th><th>{t('ai.ded.result.th_unit')}</th>
+              <th>No</th><th>{t('ai.ded.result.th_desc')}</th><th>{t('ai.ded.result.th_volume')}</th><th>Bukti kuantitas</th><th>{t('ai.ded.result.th_unit')}</th>
               <th>{t('ai.ded.result.th_unit_price')}</th><th>{t('ai.ded.result.th_total')}</th><th>{t('ai.ded.result.th_status')}</th><th>{t('ai.ded.result.th_action')}</th>
             </tr>
           </thead>
@@ -753,9 +823,17 @@ export const DedAiResultView: React.FC<Props> = ({
               // dibedakan visual dari AHSP kanonis (hijau) & input user
               // (ungu) pada baris yang masih tertutup sekalipun.
               const provBadge = provenanceBadgeForDedSource(it.priceSource);
+              // Chip bukti KUANTITAS (mockup v2.3 §1) — taksonomi dari
+              // dedReviewGate.ts; terpisah dari chip provenans HARGA.
+              const qtyChip = quantityEvidenceChipFor(it.quantitySource);
+              const needsAhsp = it.ahspMatch?.status === 'NEEDS_REVIEW' && it.ahspMatch.candidates.length > 0;
               return (
                 <React.Fragment key={it.id}>
-                  <tr>
+                  <tr
+                    id={`dedai-row-${it.id}`}
+                    className="dedai-row-clickable"
+                    onClick={() => { if (!isEditing) setExpanded(isOpen ? null : it.id); }}
+                  >
                     <td className="dedai-num">{i + 1}</td>
                     <td style={{ minWidth: 200 }}>
                       {isEditing ? (
@@ -770,6 +848,9 @@ export const DedAiResultView: React.FC<Props> = ({
                       ) : (
                         <span className="dedai-num">{fmtQty(it.quantity)}</span>
                       )}
+                    </td>
+                    <td>
+                      <span className={`dedai-qchip ${qtyChip.className}`} title={qtyChip.hint}>{qtyChip.label}</span>
                     </td>
                     <td>
                       {isEditing ? (
@@ -787,9 +868,15 @@ export const DedAiResultView: React.FC<Props> = ({
                       >
                         {provBadge.text}
                       </span>
+                      {needsAhsp && (
+                        <>
+                          <br />
+                          <span className="dedai-qchip dedai-qchip-confirm" title="Padanan AHSP belum dikonfirmasi — pilih di detail item.">Perlu konfirmasi AHSP</span>
+                        </>
+                      )}
                     </td>
                     <td>
-                      <div className="dedai-row-actions">
+                      <div className="dedai-row-actions" onClick={(e) => e.stopPropagation()}>
                         {isEditing ? (
                           <>
                             <button className="dedai-icon-btn" onClick={() => commitEdit(it.id)} title={t('ai.ded.result.title_simpan')}><Check size={14} color="var(--ez-color-success)" /></button>
@@ -808,9 +895,41 @@ export const DedAiResultView: React.FC<Props> = ({
                   </tr>
                   {isOpen && (
                     <tr className="detail-row">
-                      <td colSpan={8}>
+                      <td colSpan={9}>
                         <div className="dedai-detail">
-                          <div className="dl-row"><span className="dl-k">{t('ai.ded.result.detail_basis')}</span><span>{it.quantityFormula || '—'}</span></div>
+                          {/* ---- Dasar kuantitas (mockup v2.3 §1): dasar
+                              MENTAH apa adanya — dimensi, rumus, jejak
+                              derivasi, catatan, bukti teks + halaman
+                              sumber bila tersimpan per item. TIDAK ADA
+                              klaim "terverifikasi" di sini; yang kosong
+                              tampil sebagai tidak tersedia, bukan dikarang. ---- */}
+                          <div className="dedai-evidence">
+                            <div className="dedai-evidence-head">
+                              Dasar kuantitas
+                              <span className={`dedai-qchip ${qtyChip.className}`} title={qtyChip.hint}>{qtyChip.label}</span>
+                            </div>
+                            {it.rawDimensions && <div className="dl-row"><span className="dl-k">Dimensi mentah</span><span>{it.rawDimensions}</span></div>}
+                            {it.quantityFormula && <div className="dl-row"><span className="dl-k">Rumus</span><span>{it.quantityFormula}</span></div>}
+                            {it.derivation && (
+                              <div className="dl-row"><span className="dl-k">Jejak hitungan</span><span>
+                                {it.derivation.formulaType}
+                                {it.derivation.inputs.length > 0 && (
+                                  <> — {it.derivation.inputs.map((inp) => `${inp.name} ${inp.value} ${inp.unit} (${inp.source})`).join(' · ')}</>
+                                )}
+                                {it.derivation.result != null && (
+                                  <> → hasil {fmtQty(it.derivation.result)} {it.derivation.resultUnit}</>
+                                )}
+                                {' '}· validasi: {it.derivation.validationStatus}
+                                {it.derivation.notes && (<><br />{it.derivation.notes}</>)}
+                              </span></div>
+                            )}
+                            {it.quantityNote && <div className="dl-row"><span className="dl-k">Catatan</span><span>{it.quantityNote}</span></div>}
+                            {it.sourceEvidence && <div className="dl-row"><span className="dl-k">Bukti teks</span><span>{it.sourceEvidence}</span></div>}
+                            <div className="dl-row"><span className="dl-k">Halaman sumber</span><span>{it.sourcePages.length ? it.sourcePages.map((p) => `${t('ai.ded.result.page_abbr')}${p}${t('ai.ded.result.page_abbr_suffix')}`).join(', ') : 'Tidak tercatat per item'}</span></div>
+                            {!it.rawDimensions && !it.quantityFormula && !it.derivation && !it.quantityNote && !it.sourceEvidence && (
+                              <div className="dl-row"><span className="dl-k">Keterangan</span><span>Tidak ada dasar kuantitas tersimpan untuk item ini.</span></div>
+                            )}
+                          </div>
                           {prefs.priceAnalysis && <div className="dl-row"><span className="dl-k">{t('ai.ded.result.detail_source')}</span><span><code>{it.quantitySource}</code> · <code>{it.priceSource}</code>{it.ahspCode ? <> · <code>AHSP {it.ahspCode}</code></> : null}</span></div>}
                           {/* W6 (§8): baris provenance eksplisit — chip +
                               penjelasan jujur apa arti sumber harga ini
@@ -833,7 +952,7 @@ export const DedAiResultView: React.FC<Props> = ({
                                     <span><b>{c.code}</b> — {c.name} ({c.unit})
                                       {c.priceStatus === 'FULL' && c.canonicalPrice != null ? ` — ${fmtRp(c.canonicalPrice)}/${c.unit}` : c.priceStatus === 'PARTIAL' ? ' — komponen belum lengkap' : c.priceStatus === 'UNPRICED' ? ' — tanpa rincian komponen' : ''}
                                       {!c.unitExact ? ' — satuan berbeda' : ''}</span>
-                                    <button className="dedai-btn ghost" style={{ padding: '2px 10px', fontSize: 11, flexShrink: 0 }} onClick={() => confirmAhspCandidate(it.id, c.code)}>Pilih</button>
+                                    <button className="dedai-btn ghost dedai-detail-btn" style={{ padding: '2px 10px', fontSize: 11, flexShrink: 0 }} onClick={() => confirmAhspCandidate(it.id, c.code)}>Pilih</button>
                                   </span>
                                 ))}
                                 {confirmError[it.id] && <span style={{ display: 'block', color: 'var(--ez-color-danger)', marginTop: 4 }}>{confirmError[it.id]}</span>}
@@ -879,7 +998,7 @@ export const DedAiResultView: React.FC<Props> = ({
                           )}
                           {policy === 'FULL_AI' && (status === 'blocked' || status === 'no-price') && !it.priceCompletion && (
                             <div className="dl-row"><span className="dl-k">Penyelesaian AI</span><span>
-                              <button className="dedai-btn ghost" style={{ padding: '2px 10px', fontSize: 11 }} onClick={() => runItemCompletion(it.id)}>
+                              <button className="dedai-btn ghost dedai-detail-btn" style={{ padding: '2px 10px', fontSize: 11 }} onClick={() => runItemCompletion(it.id)}>
                                 <Sparkles size={12} /> Lengkapi item ini dengan AI
                               </button>
                             </span></div>
@@ -888,16 +1007,14 @@ export const DedAiResultView: React.FC<Props> = ({
                             <div className="dl-row"><span className="dl-k">Penyelesaian AI</span><span>
                               {it.priceCompletion.userApprovalStatus === 'APPROVED'
                                 ? <span style={{ fontSize: 11, color: 'var(--ez-color-success)', fontWeight: 600 }}>✓ Diterima pengguna — termasuk total berlabel estimasi.</span>
-                                : <button className="dedai-btn ghost" style={{ padding: '2px 10px', fontSize: 11 }} onClick={() => runAcceptCompletion(it.id)}>
+                                : <button className="dedai-btn ghost dedai-detail-btn" style={{ padding: '2px 10px', fontSize: 11 }} onClick={() => runAcceptCompletion(it.id)}>
                                   <Check size={12} /> Terima penyelesaian ini
                                 </button>}
-                              <button className="dedai-btn ghost" style={{ padding: '2px 10px', fontSize: 11, marginLeft: 8 }} onClick={() => runRejectCompletion(it.id)}>
+                              <button className="dedai-btn ghost dedai-detail-btn" style={{ padding: '2px 10px', fontSize: 11, marginLeft: 8 }} onClick={() => runRejectCompletion(it.id)}>
                                 <Undo2 size={12} /> Tolak penyelesaian — kembalikan seperti semula
                               </button>
                             </span></div>
                           )}
-                          {prefs.priceAnalysis && it.sourceEvidence && <div className="dl-row"><span className="dl-k">{t('ai.ded.result.detail_proof')}</span><span>{it.sourceEvidence}</span></div>}
-                          <div className="dl-row"><span className="dl-k">{t('ai.ded.result.detail_pages')}</span><span>{it.sourcePages.length ? it.sourcePages.map((p) => `${t('ai.ded.result.page_abbr')}${p}${t('ai.ded.result.page_abbr_suffix')}`).join(', ') : '—'}</span></div>
                           {status === 'blocked' && <div className="dl-row"><span className="dl-k">{t('ai.ded.result.detail_reason')}</span><span style={{ color: 'var(--ez-color-danger)', fontWeight: 600 }}>{t('ai.ded.result.reason_blocked')}</span></div>}
                           {status === 'no-price' && <div className="dl-row"><span className="dl-k">{t('ai.ded.result.detail_reason')}</span><span style={{ color: 'var(--ez-color-warning)', fontWeight: 600 }}>{t('ai.ded.result.reason_no_price')}</span></div>}
                           {status === 'review' && <div className="dl-row"><span className="dl-k">{t('ai.ded.result.detail_reason')}</span><span style={{ color: 'var(--ez-color-warning)', fontWeight: 600 }}>{t('ai.ded.result.reason_review')}</span></div>}
@@ -932,13 +1049,70 @@ export const DedAiResultView: React.FC<Props> = ({
                 {unresolved.map(({ it, status }) => (
                   <div key={it.id} style={{ display: 'flex', gap: 10, alignItems: 'baseline', fontSize: 12.5, borderBottom: '1px dashed var(--ez-color-border)', paddingBottom: 6 }}>
                     <span className={`dedai-badge ${status}`}>{statusMeta[status].icon}{statusMeta[status].label}</span>
-                    <span style={{ flex: 1 }}><b>{it.name}</b> — {status === 'blocked' ? t('ai.ded.result.reason_blocked') : t('ai.ded.result.reason_no_price')}</span>
+                    <span style={{ flex: 1, minWidth: 0 }}><b>{it.name}</b> — {status === 'blocked' ? t('ai.ded.result.reason_blocked') : t('ai.ded.result.reason_no_price')}</span>
                     <span style={{ color: 'var(--ez-color-text-muted)' }}>{it.sourcePages.length ? `hal. ${it.sourcePages.join(', ')}` : ''}</span>
                   </div>
                 ))}
               </div>
             );
           })()}
+        </div>
+      )}
+
+      {/* ---- Gerbang review sebelum finalisasi (mockup v2.3 §2) ----
+          Lapisan TAMBAHAN di atas validasi fail-closed: finalisasi
+          terkunci sampai semua item tinjau dicentang satu per satu.
+          TIDAK ADA tombol "tandai semua" (keputusan owner no. 3 masih
+          terbuka — default fail-closed). Panel di luar gerbang
+          prefs.detailRab agar finalisasi selalu digerbang walau tabel
+          detail disembunyikan. ---- */}
+      {!finalized && (
+        <div className={`dedai-gate ${gateComplete ? 'complete' : 'locked'}`}>
+          <div className="dedai-gate-head">
+            {gateComplete
+              ? <CheckCircle2 size={18} className="dedai-gate-ico" />
+              : <Lock size={18} className="dedai-gate-ico" />}
+            <h2>{gateComplete ? 'Semua item sudah ditinjau' : 'Tinjau sebelum finalisasi (terkunci)'}</h2>
+          </div>
+          {gateItems.length === 0 ? (
+            <p className="dedai-gate-counts">Tidak ada item yang perlu ditinjau — finalisasi terbuka.</p>
+          ) : (
+            <>
+              <p className="dedai-gate-counts">
+                {gateSummary.total} item perlu ditinjau
+                {gateSummary.quantityCount > 0 && <> · {gateSummary.quantityCount} kuantitas estimasi</>}
+                {gateSummary.priceCount > 0 && <> · {gateSummary.priceCount} harga Estimasi AI</>}
+                {gateSummary.ahspCount > 0 && <> · {gateSummary.ahspCount} padanan AHSP</>}
+              </p>
+              <div className="dedai-gate-progress">
+                <div className="dedai-gate-bar"><div className="dedai-gate-fill" style={{ width: `${gateItems.length > 0 ? Math.round((gateCheckedCount / gateItems.length) * 100) : 0}%` }} /></div>
+                <span className="dedai-gate-progress-txt">{gateCheckedCount} dari {gateItems.length} ditinjau</span>
+              </div>
+              {gateItems.map((g) => (
+                <div className="dedai-gate-item" key={g.itemId}>
+                  <label className="dedai-gate-label">
+                    <input
+                      type="checkbox"
+                      className="dedai-gate-check"
+                      checked={reviewed.has(g.itemId)}
+                      onChange={() => toggleReviewed(g.itemId)}
+                    />
+                    <span className="dedai-gate-body">
+                      <span className="dedai-gate-title">{g.itemName}</span>
+                      <span className="dedai-gate-tags">
+                        {g.tags.map((tag) => (
+                          <span key={tag.kind} className={`dedai-qchip ${tag.chipClass}`}>{tag.label}</span>
+                        ))}
+                      </span>
+                      <span className="dedai-gate-desc">{g.description}</span>
+                    </span>
+                  </label>
+                  <button className="dedai-gate-lihat" onClick={() => viewGateItem(g.itemId)}>Lihat</button>
+                </div>
+              ))}
+              <p className="dedai-gate-note">Centang satu per satu sesudah memeriksa dasarnya di detail item. Item “Klaim: dimensi DED” dan “Input user” tidak masuk daftar ini.</p>
+            </>
+          )}
         </div>
       )}
 
@@ -963,8 +1137,13 @@ export const DedAiResultView: React.FC<Props> = ({
           )}
           <div className="fs-actions-btns">
             <div className="dedai-actions-primary">
-              <button className="dedai-btn primary" disabled={finalizing || finalized || calculableCount === 0} onClick={handleFinalize}>
-                <FolderCheck size={16} /> {finalized ? t('ai.ded.result.act_finalized') : finalizing ? t('ai.ded.result.act_finalizing') : t('ai.ded.result.act_finalize')}
+              <button
+                className="dedai-btn primary"
+                disabled={finalizing || finalized || calculableCount === 0 || !gateComplete}
+                onClick={handleFinalize}
+                title={!gateComplete && !finalized ? `Finalisasi terkunci — ${gateItems.length - gateCheckedCount} item belum ditinjau` : undefined}
+              >
+                {!gateComplete && !finalized ? <Lock size={16} /> : <FolderCheck size={16} />} {finalized ? t('ai.ded.result.act_finalized') : finalizing ? t('ai.ded.result.act_finalizing') : t('ai.ded.result.act_finalize')}
               </button>
               <button className="dedai-btn ghost" onClick={onOpenSpreadsheet}>
                 <Table2 size={16} /> {t('ai.ded.result.act_open_rab')}

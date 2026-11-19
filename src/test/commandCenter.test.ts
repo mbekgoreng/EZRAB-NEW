@@ -45,7 +45,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { routeIntent } from '../ai-tools/ezrab-ai/intentRouter';
-import { executeIntent, continueRabNeeds, tryContinueRabSubtype, buildFullAiPrompt, getPendingRabChoice } from '../ai-tools/ezrab-ai/actionRegistry';
+import { executeIntent, continueRabNeeds, tryContinueRabSubtype, buildFullAiPrompt, getPendingRabChoice, hasActiveRabNeeds, continueRabFinalize, getLastRabDesignPrompt } from '../ai-tools/ezrab-ai/actionRegistry';
 import { getLastDirectRab } from '../ai-tools/ezrab-ai/directRab';
 import { extractRabNeeds } from '../ai-tools/ezrab-ai/rabNeeds';
 import { RAB_SUBTYPE_GROUPS, findSubtypeTemplates, detectSubtypeFromText } from '../ai-tools/ezrab-ai/rabSubtypes';
@@ -513,5 +513,93 @@ describe('Full AI di chat (permintaan owner 2026-10-23)', () => {
     expect(res.message).not.toContain('| No | Uraian |');
     const kinds = (res.actions ?? []).map((a) => a.action.kind);
     expect(kinds).not.toContain('push-rab');
+  });
+});
+
+describe('Scope per-proyek lastRabNeeds (Workstream B1, 2026-11-19)', () => {
+  // Diagnosis: lastRabNeeds adalah variabel module-level yang bertahan
+  // lintas proyek dalam satu sesi halaman — kebutuhan rumah proyek A
+  // diam-diam dipakai ulang bila pengguna pindah ke proyek B lalu
+  // mengetik "itu aja" / klik Full AI (finalisasi membangun draft dari
+  // kebutuhan proyek lama). Perbaikan: setiap penulisan mencatat proyek
+  // pemiliknya; setiap pembacaan perilaku memakai scope itu — proyek
+  // pemilik ≠ proyek saat ini (keduanya non-null) → state dianggap basi,
+  // DIBERSIHKAN SENDIRI, dan pembaca memperlakukannya sebagai "tidak ada
+  // sesi kebutuhan". Alur sah (satu proyek yang sama dari ringkasan
+  // sampai finalisasi) tidak berubah; tanpa proyek aktif (null) bukan
+  // ketidakcocokan; pemanggil tanpa argumen scope mendapat perilaku lama.
+  const PROJ_A = { id: 'proj-A', name: 'Proyek A' };
+  const PROJ_B = { id: 'proj-B', name: 'Proyek B' };
+  const ctxFor = (p: { id: string; name: string } | null, rawText: string) =>
+    ({ ...mockCtx, activeProject: p, projects: p ? [p] : [], rawText }) as never;
+  const seedHouse = (p: { id: string; name: string } | null) => {
+    const res = executeIntent('CREATE_RAB_SUMMARY', undefined, ctxFor(p, 'buatkan rab rumah 2 lantai luas bangunan 120 m2'));
+    expect(res.ok).toBe(true);
+    expect(res.message).toContain('2 lantai');
+    return res;
+  };
+
+  it('L1. hasActiveRabNeeds: true untuk proyek pemilik, false untuk proyek lain, dan bacaan basi membersihkan state', () => {
+    seedHouse(PROJ_A);
+    expect(hasActiveRabNeeds('proj-A')).toBe(true);
+    expect(hasActiveRabNeeds('proj-B')).toBe(false);
+    // Self-cleaning: sesudah dibaca sebagai basi, sesi A ikut hilang.
+    expect(hasActiveRabNeeds('proj-A')).toBe(false);
+  });
+
+  it('L2. Finalisasi "itu aja" proyek lain → null (tidak ada draft dari kebutuhan basi)', () => {
+    seedHouse(PROJ_A);
+    expect(continueRabFinalize('itu aja', 'proj-B')).toBeNull();
+  });
+
+  it('L3. Finalisasi "itu aja" proyek yang sama → draft rumah nyata (alur sah tidak rusak)', () => {
+    seedHouse(PROJ_A);
+    const res = continueRabFinalize('itu aja', 'proj-A');
+    expect(res).not.toBeNull();
+    expect(res!.message).toContain('Draft RAB rumah tinggal');
+    expect(res!.message).toContain('2 lantai');
+  });
+
+  it('L4. continueRabNeeds hanya menggabung dalam proyek yang sama; proyek lain memulai dari teksnya sendiri', () => {
+    seedHouse(PROJ_A);
+    const merged = continueRabNeeds('3 kamar tidur', 'proj-A');
+    expect(merged.message).toContain('Kamar tidur: 3');
+    expect(merged.message).toContain('Data lainnya tetap sama');
+    // Proyek B: jawaban yang sama TIDAK menggabung kebutuhan A (luas
+    // 120 m² proyek A tidak ikut; bukan pesan refinement).
+    const fresh = continueRabNeeds('2 lantai', 'proj-B');
+    expect(fresh.message).not.toContain('Data lainnya tetap sama');
+    expect(fresh.message).not.toContain('120');
+  });
+
+  it('L5. getLastRabDesignPrompt: ada untuk proyek pemilik, null untuk proyek lain', () => {
+    seedHouse(PROJ_A);
+    const promptA = getLastRabDesignPrompt('proj-A');
+    expect(promptA).not.toBeNull();
+    expect(typeof promptA).toBe('string');
+    expect(getLastRabDesignPrompt('proj-B')).toBeNull();
+  });
+
+  it('L6. Tanpa proyek aktif (null): perilaku lama dipertahankan — sesi unscoped tetap bisa difinalisasi', () => {
+    seedHouse(null);
+    expect(hasActiveRabNeeds()).toBe(true);
+    expect(hasActiveRabNeeds(null)).toBe(true);
+    // Stored null = tanpa scope → bacaan ber-scope apa pun tetap boleh.
+    expect(hasActiveRabNeeds('proj-X')).toBe(true);
+    const res = continueRabFinalize('itu aja');
+    expect(res).not.toBeNull();
+    expect(res!.message).toContain('Draft RAB rumah tinggal');
+  });
+
+  it('L7. RAB_FULL_AI proyek lain tidak menyusun dari kebutuhan basi (fallback tanpa prompt); proyek pemilik tetap bisa', () => {
+    seedHouse(PROJ_A);
+    const stale = executeIntent('RAB_FULL_AI', undefined, ctxFor(PROJ_B, ''));
+    expect(stale.fullAiPrompt).toBeUndefined();
+    expect(stale.message).toBe('Menyiapkan Full AI dari kebutuhan yang terkumpul…');
+    expect(stale.message).not.toContain('| No |');
+    // Kontrol: proyek pemilik mendapat komposisi atau prompt Full AI.
+    seedHouse(PROJ_A);
+    const own = executeIntent('RAB_FULL_AI', undefined, ctxFor(PROJ_A, ''));
+    expect(own.fullAiPrompt !== undefined || own.message.includes('| No |')).toBe(true);
   });
 });

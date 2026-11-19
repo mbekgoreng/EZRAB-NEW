@@ -7,7 +7,10 @@ import { handleAiRequest } from '../../api/_lib/aiGateway.js';
 
 // Test env: dummy provider keys so the failover chain has attempts to make
 // (upstream fetch is stubbed below — no real network).
+// Mode 'fast' WeizeRouter-only sejak keputusan owner 2026-11-19 —
+// suite ini memakai key WeizeRouter + stub payload berbentuk OpenAI.
 process.env.GEMINI_API_KEY_1 = 'test-dummy-key';
+process.env.WEIZEROUTER_API_KEY = 'test-dummy-weize';
 
 let failures = 0;
 const test = async (name, fn) => {
@@ -32,13 +35,13 @@ function mockRes() {
   return res;
 }
 
-// stub upstream: Gemini answers OK for any key
+// stub upstream: WeizeRouter answers OK for any key (payload OpenAI)
 let fetchCalls = 0;
 global.fetch = async (url) => {
   fetchCalls++;
   return {
     ok: true,
-    json: async () => ({ candidates: [{ content: { parts: [{ text: 'halo dari AI' }] } }] }),
+    json: async () => ({ choices: [{ message: { content: 'halo dari AI' } }], usage: {} }),
   };
 };
 

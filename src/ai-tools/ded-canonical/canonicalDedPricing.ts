@@ -750,11 +750,11 @@ export function resolveDedPriceWithCanonical(
 // ---------------------------------------------------------------------------
 
 export const DED_PRICE_SOURCE_LABELS: Record<string, { label: string; color: string }> = {
-  AHSP_2026: { label: 'AHSP Kanonis (SE 47/2026)', color: '#16a34a' },
-  VERIFIED_SOURCE: { label: 'Belum terverifikasi independen (data lama)', color: '#6b7280' },
-  USER_INPUT: { label: 'Input User', color: '#2563EB' },
-  AI_ESTIMATE: { label: 'Estimasi AI', color: '#d97706' },
-  UNRESOLVED: { label: 'Belum Ada', color: '#6b7280' },
+  AHSP_2026: { label: 'AHSP Kanonis (SE 47/2026)', color: 'var(--ez-hue-green-text-bright)' },
+  VERIFIED_SOURCE: { label: 'Belum terverifikasi independen (data lama)', color: 'var(--ez-color-text-muted)' },
+  USER_INPUT: { label: 'Input User', color: 'var(--ez-color-primary)' },
+  AI_ESTIMATE: { label: 'Estimasi AI', color: 'var(--ez-hue-amber-text-deep)' },
+  UNRESOLVED: { label: 'Belum Ada', color: 'var(--ez-color-text-muted)' },
 };
 
 export function getDedPriceSourceLabel(source: string): { label: string; color: string } {
