@@ -967,15 +967,9 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
             { label: t('ai.ded.input.step_3'), state: 'active' },
           ];
 
-  /* Teks status stepper DIPERSINGKAT (owner 2026-11-10 19:15: stepper
-     kompak satu baris) — posisi langkah tetap jelas, frasa penjelas
-     panjang dibuang. */
-  const shellStepsNote =
-    screen === 'input'
-      ? 'Langkah 1 dari 3'
-      : screen === 'progress'
-        ? 'Langkah 2 dari 3'
-        : 'Langkah 3 dari 3';
+  /* One-screen 2026-11-19 (brief §3B): catatan posisi langkah di bawah
+     stepper DIHAPUS — redundan dengan stepper 3 langkah berlabel —
+     sehingga shell tidak lagi menerima catatan itu sebagai prop. */
 
   const isFullAiResult = screen === 'result' && !!fullAiOutput;
   // DUAL MODE (§3, G-UI-2): chip menampilkan MODE kanonis — hasil Full AI
@@ -1133,7 +1127,6 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
       chips={shellChips}
       creditText={`Kredit AI: ${creditBalance.total.toLocaleString('id-ID')}`}
       steps={shellSteps}
-      stepsNote={shellStepsNote}
     >
       {screenContent}
     </FeaturePageShell>

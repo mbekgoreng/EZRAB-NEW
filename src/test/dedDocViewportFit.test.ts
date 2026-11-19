@@ -32,7 +32,7 @@
  *     mengembalikannya berarti mengembalikan klaim yang salah. Pin
  *     di bawah mematok redaksi baru yang faktual + rendernya.
  *  4. Dokumen AI: blok max-height di document-ai.css — kartu awal 16px,
- *     kepala halaman padat, area instruksi 78px, petunjuk ganda sembunyi.
+ *     kepala halaman padat, area instruksi 120px (v3), petunjuk ganda sembunyi.
  *
  * Batas jujur: pemeriksaan ini statis (kontrak CSS/teks). Bukti visual
  * keadaan awal di dalam workspace tidak dapat diambil dari sandbox
@@ -113,7 +113,14 @@ check('baris konfigurasi analisis terpasang di TSX (Mode/Kompleksitas/Cakupan)',
   dedInput.includes('dedai-cfgrow') && dedInput.includes('dedai-cfglbl') && dedInput.includes('Cakupan'));
 
 /* 3 — Teks dipersingkat, makna utuh ------------------------------------------ */
-check('status stepper dipersingkat', dedView.includes("'Langkah 1 dari 3'") && !dedView.includes('belum ada proses yang berjalan'));
+// RE-BASELINE one-screen 2026-11-19 (brief §3B): catatan posisi langkah
+// "Langkah N dari 3" SENGAJA DIHAPUS dari view.tsx — redundan dengan
+// stepper 3 langkah berlabel di shell. Pin baru menegaskan penghapusan
+// (teks itu tidak ada, prop stepsNote tidak ada) DAN stepper tetap
+// merender 3 langkah berlabel (steps={shellSteps} + step_1).
+check('status stepper: catatan "Langkah N dari 3" dihapus, stepper 3 langkah tetap ada',
+  !dedView.includes('Langkah 1 dari 3') && !dedView.includes('stepsNote')
+  && dedView.includes('steps={shellSteps}') && dedView.includes("t('ai.ded.input.step_1')"));
 // PERBAIKAN F (F-1): pin lama mematok disclaimer di InputView inline —
 // teks itu pindah ke kartu FULL_AI (dedModeUi.ts) oleh W2 G-UI-1, isi
 // hukumnya utuh (sama seperti E-2 di dedPremiumOneScreen). Cek baru:
@@ -165,11 +172,16 @@ check('kebijakan harga ditegakkan di service, bukan sekadar tampilan (diturunkan
 /* 4 — Dokumen AI kompak ------------------------------------------------------- */
 const docH = docCss.indexOf('@media (max-height: 880px)');
 check('document-ai.css punya blok max-height 880px', docH > 0);
-check('kartu awal kompak: padding 16px 20px', ruleBody(docCss, '.docai-edempty', docH).includes('padding: 16px 20px'));
-check('kepala halaman kompak: margin 8px', ruleBody(docCss, '.docai-pagehead', docH).includes('margin-bottom: 8px'));
+/* Re-baseline 2026-11-19 (redesain AI Document, Round 2 fit remediation):
+   nilai kompresi ≤880px dipangkas 1–4px lagi agar tombol generate muat di
+   1366×768 Starter (ukur replika v2). Nilai baru ini dipin independen oleh
+   docaiFitRemediation ('padding kartu kompak ada di kedua blok' dkk). */
+check('kartu awal kompak: padding 12px 20px', ruleBody(docCss, '.docai-edempty', docH).includes('padding: 12px 20px'));
+check('kepala halaman kompak: margin 6px', ruleBody(docCss, '.docai-pagehead', docH).includes('margin-bottom: 6px'));
 check('petunjuk ganda di kepala halaman disembunyikan', ruleBody(docCss, '.docai-pagehead .docai-hint', docH).includes('display: none'));
-check('area instruksi kompak: height 78px', ruleBody(docCss, '.docai-edform .docai-textarea', docH).includes('height: 78px'));
-check('tab kompak: margin-bottom 10px', ruleBody(docCss, '.docai-tabs', docH).includes('margin-bottom: 10px'));
+/* Re-baseline 2026-11-19 (v3, mockup di-ACC owner): textarea lega 120px. */
+check('area instruksi lega: height 120px (v3)', ruleBody(docCss, '.docai-edform .docai-textarea', docH).includes('height: 120px'));
+check('tab kompak: margin-bottom 8px', ruleBody(docCss, '.docai-tabs', docH).includes('margin-bottom: 8px'));
 
 console.log(`\ndedDocViewportFit: ${pass} lulus, ${fail} gagal`);
 if (fail > 0) process.exit(1);

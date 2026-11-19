@@ -897,3 +897,205 @@
    (teks tetap terbaca, tapi panel tak lagi terbaca sebagai kartu).
    Border token mengembalikan batasnya; latar inline tidak disentuh. --- */
 [data-theme="dark"] .dedai-ftotal { border: 1px solid var(--ez-color-border); }
+
+/* ===== ONE-SCREEN 2026-11-19 — DED input satu layar (1366x768) =====
+   Blok baru untuk kelas .dedai-os-* (restrukturisasi Child 1).
+   Aturan lama di atas TIDAK diubah — blok ini hanya menambah dan
+   menimpa khusus layout baru (spesifisitas sama/lebih tinggi dan
+   urutan file lebih akhir). Warna HANYA token (--dd-* / --ez-*);
+   tanpa warna hardcode, sehingga mode gelap beradaptasi lewat
+   remap variabel yang sudah ada — tidak ada aturan mode gelap baru.
+   Tanpa animasi baru (prefers-reduced-motion dihormati).
+   Anggaran vertikal — UKURAN REPLIKA (headless Chromium, font asli),
+   BUKAN estimasi: pra-perbaikan 632,7px (sidebar default) / 602,9px
+   (rail) vs tersedia 597px worktree (TopBar 46+1) / 589px HEAD
+   (TopBar 54+1) = OVERFLOW. FIT FIX 2026-11-19 (sub mode elipsis,
+   seg nowrap, gap 6px, padding rapat, tombol 46px) menghemat 56,4px:
+   576,3px default (slack 20,7px) / 559,7px rail (slack 37,3px) /
+   576,3px 2-berkas; 1440x900: 578,3px (slack 102,7px); 1920x1080:
+   548,9px (slack 312,1px). Batas desain 585px terpenuhi di 1366x768.
+   Perincian di laporan Child 3 + laporan akhir program. */
+
+/* --- Baris atas: grid 42/58, kolom rapat --- */
+.dedai-input .dedai-os-top {
+  display: grid;
+  grid-template-columns: 42fr 58fr;
+  gap: 16px;
+  align-items: start;
+  margin-bottom: 8px;
+}
+.dedai-os-col { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+
+/* --- Label seksi + tombol info --- */
+.dedai-os-label {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; font-weight: 800; letter-spacing: .03em; text-transform: uppercase;
+  line-height: 1.2; color: var(--dd-muted); margin: 0;
+}
+.dedai-os-info {
+  width: 32px; height: 32px; flex: none; padding: 0;
+  border: 1px solid var(--dd-border); border-radius: 9px;
+  background: var(--ez-color-surface); color: var(--dd-muted);
+  display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer; font-family: inherit;
+}
+.dedai-os-info:hover { border-color: var(--dd-blue); color: var(--dd-blue); }
+.dedai-os-info:focus-visible { outline: 2px solid var(--dd-blue); outline-offset: 2px; }
+.dedai-os-sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+
+/* --- Kartu upload: rapat, dropzone TIDAK memanjang --- */
+.dedai-os-col .dedai-card { padding: 10px 16px; }
+.dedai-os-col .dedai-v23-uploadcard { flex: none; }
+.dedai-os-col .dedai-card .sub { line-height: 1.4; margin-bottom: 6px; }
+
+/* Dropzone kompak (89px saat kosong, target 88-100px): susun blok
+   tengah, badge format sebaris dengan petunjuk (br disembunyikan). */
+.dedai-input .dedai-os-drop {
+  display: block; text-align: center; flex: none;
+  padding: 8px 14px;
+}
+.dedai-input .dedai-os-drop .big-ico { width: 28px; height: 28px; margin-bottom: 4px; }
+.dedai-os-drop p { line-height: 1.2; margin: 0 0 2px; }
+.dedai-os-drop span { line-height: 1.2; }
+.dedai-os-drop br { display: none; }
+.dedai-os-drop .fmt { margin-top: 0; }
+
+/* Dropzone ramping saat berkas ada: hanya instruksi satu baris (33px). */
+.dedai-input .dedai-os-drop-slim { padding: 6px 12px; }
+.dedai-input .dedai-os-drop-slim .big-ico,
+.dedai-input .dedai-os-drop-slim span { display: none; }
+
+/* Bila berkas sudah ada, sub instruksi upload disembunyikan agar
+   daftar berkas muat tanpa mendorong halaman (peramban tanpa :has()
+   tetap menampilkan sub — halaman bergeser internal, aman). */
+.dedai-v23-uploadcard:has(.dedai-os-drop-slim) .sub { display: none; }
+
+/* Daftar berkas: maks ~2 baris (104px) + scroll internal. */
+.dedai-os-files { margin-top: 6px; gap: 8px; max-height: 104px; overflow-y: auto; min-height: 0; }
+.dedai-os-files .dedai-file { padding: 4px 10px; }
+.dedai-os-files .f-name { line-height: 1.2; }
+.dedai-os-files .f-meta { line-height: 1.2; margin-top: 0; }
+
+/* --- Tujuan proyek: kartu ringkas di kolom kiri --- */
+.dedai-os-dest {
+  background: var(--ez-color-surface);
+  border: 1px solid var(--dd-border);
+  border-radius: 14px;
+  box-shadow: var(--ez-shadow-card);
+  padding: 10px 16px;
+}
+.dedai-os-dest h3 {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 11.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
+  line-height: 1.2; color: var(--dd-muted); margin: 0 0 6px;
+}
+.dedai-os-dest .dedai-seg button { line-height: 1.2; }
+.dedai-os-dest .dedai-field { margin-bottom: 0; }
+.dedai-os-dest .dedai-field label { line-height: 1.2; margin-bottom: 5px; }
+.dedai-os-dest .dedai-field input[type=text],
+.dedai-os-dest .dedai-field select { line-height: 1.2; }
+.dedai-os-dest .dedai-field .hint { line-height: 1.2; }
+
+/* --- Kartu mode: padding rapat, teks rapat --- */
+.dedai-os-col .dedai-modecard { padding: 6px 12px; }
+.dedai-os-col .dedai-modecard-title { line-height: 1.2; }
+/* FIT FIX 2026-11-19 (Child 3): sub dipotong elipsis 1 baris — kolom
+   teks hanya ~209-237px (ikon/check/chevron + gap ~106px), sub 226-279px
+   membungkus 2 baris (+13,4px). Teks lengkap tetap tersedia via title
+   attr (TSX) + detail saat kartu di-expand. */
+.dedai-os-col .dedai-modecard-sub { line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.dedai-os-col .dedai-v23-modecard-text { gap: 0; }
+
+/* --- Konfigurasi: baris HORIZONTAL label + kontrol + petunjuk
+   (susun vertikal v2.3 terlalu tinggi untuk satu layar). Baris
+   Jenis Proyek tetap vertikal (label di atas, chip di bawah).
+   Jarak antar-baris 6px. --- */
+.dedai-os-col .dedai-v23-cfg { margin-top: 0; gap: 6px; }
+.dedai-os-col .dedai-v23-cfg .dedai-cfgrow {
+  flex-direction: row; align-items: center; gap: 12px;
+  padding: 0; border-bottom: none;
+}
+.dedai-os-col .dedai-v23-cfg .dedai-cfglbl { width: 112px; flex: none; line-height: 1.2; }
+.dedai-os-col .dedai-v23-cfg .dedai-cfghint { margin-left: auto; text-align: right; max-width: 250px; line-height: 1.35; }
+/* FIT FIX 2026-11-19 (Child 3): tombol seg tanpa wrap — seg flex:none
+   selebar max-content + tombol flex:1 berbagi rata menekan label dua kata
+   "Semua halaman" hingga membungkus (baris Cakupan 50px, bukan 35px,
+   di SEMUA lebar incl. 1920px). nowrap memaksa tombol selebar teks. */
+.dedai-os-col .dedai-v23-cfg .dedai-seg button { line-height: 1.2; white-space: nowrap; }
+.dedai-os-col .dedai-v23-cfg .dedai-scopepick { margin-left: auto; justify-content: flex-end; }
+.dedai-os-col .dedai-v23-cfg .dedai-cfgrow.last {
+  flex-direction: column; align-items: stretch; gap: 4px;
+}
+.dedai-os-col .dedai-chip { line-height: 1.2; }
+
+/* --- Kredit: blok polos di kolom kanan (bukan kartu). Paragraf .sub
+   di sini WAJIB diberi gaya (tanpa leluhur .dedai-card, aturan .sub
+   lama tidak berlaku dan teks tampil 16px default). --- */
+.dedai-os-credit h2 {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 14.5px; font-weight: 800; line-height: 1.2;
+  color: var(--dd-navy); margin: 0 0 6px;
+}
+.dedai-os-credit h2 .ico {
+  width: 24px; height: 24px; flex: none; border-radius: 8px;
+  background: var(--ez-color-primary-soft); color: var(--dd-blue);
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.dedai-os-credit .sub {
+  font-size: 12px; line-height: 1.4; color: var(--dd-muted); margin: 0 0 8px;
+}
+
+/* --- Baris ekspektasi jujur: satu baris, rapat --- */
+.dedai-os-top + .dedai-v23-expect { font-size: 12px; line-height: 1.4; margin-bottom: 8px; }
+
+/* --- Pratinjau: selalu terlihat, satu baris 4 sel --- */
+.dedai-os-preview { margin-bottom: 8px; }
+.dedai-os-preview .dedai-preview { margin-bottom: 0; }
+.dedai-os-preview .pv { padding: 6px 12px; }
+.dedai-os-preview .pv .k { line-height: 1.2; }
+.dedai-os-preview .pv .v { line-height: 1.2; }
+.dedai-os-preview .pv .s { line-height: 1.2; }
+
+/* --- Seksi sekunder collapsible: ringkasan rapat --- */
+.dedai-input-layout > .dedai-v23-details { margin-bottom: 8px; }
+.dedai-input-layout > .dedai-v23-details .dedai-v23-summary { padding: 10px 0; }
+
+/* Preferensi output: grid 2 kolom (label memakai gaya .dedai-prefs). */
+.dedai-os-prefs2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+/* --- Tombol mulai: override kompak (spesifisitas 0,4,0 mengalahkan
+   aturan v2.3 0,3,0; margin-top 16px v2.3 juga dinolkan) --- */
+.dedai-os-startwrap { margin: 0; }
+.dedai-input .dedai-btn.primary.dedai-v23-start {
+  min-height: 46px; font-size: 15px; padding: 11px 20px; margin-top: 0;
+}
+
+/* --- Tablet (721-1100px): kolom menumpuk, urutan logis dipertahankan
+   (upload, tujuan, mode, konfigurasi, kredit). --- */
+@media (max-width: 1100px) {
+  .dedai-input .dedai-os-top { grid-template-columns: 1fr; }
+  .dedai-os-col .dedai-v23-cfg .dedai-cfgrow { flex-wrap: wrap; }
+}
+
+/* --- HP (<=720px): satu kolom + target sentuh 44px pada elemen
+   interaktif baru (tombol info, label preferensi). Segmen, chip,
+   chevron mode, dan tombol berkas sudah 44px lewat blok HP lama. --- */
+@media (max-width: 720px) {
+  .dedai-os-info { min-width: 44px; min-height: 44px; }
+  .dedai-os-prefs2 { grid-template-columns: 1fr; }
+  .dedai-os-prefs2 label { min-height: 44px; }
+  .dedai-os-preview .dedai-preview-grid { grid-template-columns: 1fr 1fr; }
+  .dedai-os-col .dedai-v23-cfg .dedai-cfgrow {
+    flex-direction: column; align-items: stretch; gap: 6px;
+  }
+  .dedai-os-col .dedai-v23-cfg .dedai-cfglbl { width: auto; }
+  .dedai-os-col .dedai-v23-cfg .dedai-cfghint {
+    margin-left: 0; text-align: left; max-width: none;
+  }
+  .dedai-os-col .dedai-v23-cfg .dedai-scopepick {
+    margin-left: 0; justify-content: flex-start;
+  }
+}
