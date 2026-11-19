@@ -60,7 +60,10 @@ export const DED_MODE_CARDS: readonly DedModeCard[] = [
   {
     mode: 'EZRAB_AI',
     title: 'EZRAB AI MODE',
-    subtitle: 'Analisis cerdas dengan referensi EZRAB',
+    // Rebuild mockup 2026-11-19 (K13, ACC owner): "Analisis dengan
+    // referensi EZRAB" — satu kata ("cerdas") dihapus agar sesuai
+    // subjudul kartu mode di mockup. Dipin w2DedModeUi cek 1d.
+    subtitle: 'Analisis dengan referensi EZRAB',
     bullets: [
       'AI membaca DED',
       'Terintegrasi database AHSP EZRAB',

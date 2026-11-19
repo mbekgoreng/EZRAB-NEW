@@ -7,16 +7,28 @@
  * bukan logikanya. Gaya sama seperti dedDocViewportFit /
  * dedDocPageShell: pemeriksaan string/CSS statis, BUKAN vitest.
  *
- * Cakupan: kartu mode (2, radiogroup, chevron stopPropagation),
- * kedalaman FAST/DETAIL, kompleksitas (DETAIL-only + reset persetujuan),
+ * REBUILD MOCKUP 2026-11-19 (ACC owner 22:37): layout one-screen
+ * diganti tampilan mockup — seksi bernomor 1-4, breadcrumb DED-only,
+ * tombol kanan-bawah di dalam kartu pratinjau, Preferensi Output di
+ * dalam collapsible Deskripsi Proyek, kartu mode TANPA chevron,
+ * dropzone selalu penuh (tanpa varian slim). Pin yang berubah karena
+ * redesign dicatat dengan komentar "RE-BASELINE REBUILD 2026-11-19"
+ * di bawah; semua perilaku (state, handler, gerbang kredit) tetap
+ * dipin seperti semula. Blok ONE-SCREEN di CSS TIDAK dihapus —
+ * grid atas, kolom, dropzone, daftar berkas, dan override
+ * konfigurasi horizontal dipakai ulang oleh layout mockup.
+ *
+ * Cakupan: kartu mode (2, radiogroup, TANPA chevron), kedalaman
+ * FAST/DETAIL, kompleksitas (DETAIL-only + reset persetujuan),
  * cakupan + scopeError, jenis proyek single-select (7 chip), validasi
- * upload (5 file, 25 MB, PDF-only) + ganti/hapus, dropzone ramping,
- * gerbang tombol mulai, estimasi kredit + persetujuan, preferensi
- * output (4 checkbox + default), strip pratinjau (4 sel, keadaan
- * nyata), panel Pengaturan Tambahan, tombol info scan-note, dan blok
- * CSS ONE-SCREEN (13 kelas dedai-os-*, breakpoint 1100/720, override
- * tombol 46px). Tes fungsi murni (mis. resolvePageScope) TIDAK
- * diduplikasi di sini — sudah ada di tempat lain.
+ * upload (5 file, 25 MB, PDF-only) + ganti/hapus, dropzone penuh +
+ * tombol Pilih File, gerbang tombol mulai, estimasi kredit +
+ * persetujuan lengkap (simulasi), preferensi output (4 checkbox +
+ * default), strip pratinjau (4 sel, keadaan nyata), collapsible
+ * Deskripsi Proyek, tombol info scan-note, dan blok CSS ONE-SCREEN
+ * + REBUILD MOCKUP (13 kelas dedai-os-* + 9 kelas dedai-mk-*,
+ * breakpoint 1100/720). Tes fungsi murni (mis. resolvePageScope)
+ * TIDAK diduplikasi di sini — sudah ada di tempat lain.
  *
  * Run (repo): npx --yes tsx src/test/dedOneScreenBehavior.test.ts
  */
@@ -40,7 +52,7 @@ const check = (name: string, cond: boolean): void => {
 };
 const count = (text: string, sub: string): number => text.split(sub).length - 1;
 
-/* (a) Kartu mode: PERSIS 2, radiogroup, chevron expand tanpa memilih ---- */
+/* (a) Kartu mode: PERSIS 2, radiogroup, TANPA chevron (K9) -------------- */
 const cardsArray = modeCardsSrc.slice(
   modeCardsSrc.indexOf('DED_MODE_CARDS'),
   modeCardsSrc.indexOf('];', modeCardsSrc.indexOf('DED_MODE_CARDS')),
@@ -51,9 +63,16 @@ check('mode: PERSIS 2 kartu (EZRAB_AI + FULL_AI)',
 check('mode: radiogroup + radio + aria-checked',
   dedInput.includes('role="radiogroup"') && dedInput.includes('role="radio"')
   && dedInput.includes('aria-checked={selected}'));
-check('mode: chevron expand dengan stopPropagation (tidak memilih mode)',
-  dedInput.includes('dedai-v23-chev') && dedInput.includes('e.stopPropagation()')
-  && dedInput.includes('setExpandedModes'));
+// RE-BASELINE REBUILD 2026-11-19 (K9, ACC owner): chevron expand kartu mode
+// DIHAPUS sesuai mockup — klik badan kartu memilih mode. Pin lama
+// (dedai-v23-chev + setExpandedModes) dibalik menjadi pin ketiadaan;
+// catatan keterbukaan mode terpilih TETAP dirender statis (cek berikut).
+check('mode: chevron expand TIDAK ADA (K9 — mockup tanpa chevron)',
+  !dedInput.includes('dedai-v23-chev') && !dedInput.includes('setExpandedModes')
+  && !dedInput.includes('expandedModes') && dedInput.includes('onClick={() => changeDedMode(card.mode)}'));
+// RE-BASELINE REBUILD 2026-11-19 (K9): catatan mode terpilih kini
+// dirender STATIS di bawah kartu (filter dedMode + {card.note}) —
+// bukan lagi di dalam detail expand. Pin substrings tidak berubah.
 check('mode: render dari DED_MODE_CARDS + catatan kartu dirender',
   dedInput.includes('DED_MODE_CARDS.map') && dedInput.includes('dedai-modecard-note')
   && dedInput.includes('{card.note}'));
@@ -94,10 +113,15 @@ check('upload: handler ganti (replace) + hapus per berkas ada',
   dedInput.includes('startReplace') && dedInput.includes('onReplacePicked')
   && dedInput.includes('setFiles((p) => p.filter((x) => x.id !== f.id))'));
 
-/* (g) Dropzone ramping saat berkas ada ------------------------------------ */
-check('dropzone: kelas slim saat files.length > 0 (elemen sama)',
-  dedInput.includes('dedai-drop dedai-os-drop') && dedInput.includes('dedai-os-drop-slim')
-  && dedInput.includes('files.length > 0'));
+/* (g) Dropzone selalu penuh + tombol Pilih File (mockup) ---------------- */
+// RE-BASELINE REBUILD 2026-11-19: varian slim DIHAPUS — mockup
+// menampilkan dropzone penuh meski berkas ada. Pin lama
+// (dedai-os-drop-slim) dibalik menjadi pin ketiadaan; tombol
+// "Pilih File" (kunci pick_file) membuka pemilih yang sama.
+check('dropzone: selalu penuh (tanpa slim) + tombol Pilih File',
+  dedInput.includes('dedai-drop dedai-os-drop') && !dedInput.includes('dedai-os-drop-slim')
+  && dedInput.includes('dedai-mk-pick') && dedInput.includes("t('ai.ded.input.pick_file')")
+  && dedInput.includes("t('ai.ded.input.drop_hint_drag')"));
 
 /* (h) Gerbang tombol mulai ------------------------------------------------- */
 check('mulai: disabled kecuali canStart && creditApproved && dedAllowed',
@@ -110,8 +134,15 @@ check('kredit: estimasi memakai tariffFor per kompleksitas',
   dedInput.includes('tariffFor(`ded-ai/${complexity}`)') && dedInput.includes('aic-estimate'));
 check('kredit: checkbox persetujuan terikat creditApproved',
   dedInput.includes('checked={creditApproved}') && dedInput.includes('setCreditApproved(e.target.checked)'));
-check('kredit: label Kompleksitas & Estimasi Kredit dipertahankan',
-  dedInput.includes('Kompleksitas & Estimasi Kredit'));
+// RE-BASELINE REBUILD 2026-11-19 (K5/K6, ACC owner): judul blok kredit
+// lama dihapus — isi estimasi kini di dalam kotak .dedai-mk-est dengan
+// frasa "(maksimum simulasi)" + badge "simulasi" + teks persetujuan
+// LENGKAP ("simulasi frontend, bukan penagihan nyata"). Pin baru
+// memeriksa kotak + pengungkapan simulasinya, bukan judul lama.
+check('kredit: kotak estimasi mockup + pengungkapan simulasi (K5/K6)',
+  dedInput.includes('dedai-mk-est') && dedInput.includes('(maksimum simulasi)')
+  && dedInput.includes('aic-sim') && dedInput.includes('simulasi frontend, bukan penagihan nyata')
+  && !dedInput.includes('Kompleksitas & Estimasi Kredit'));
 
 /* (j) Preferensi output: 4 checkbox + default ----------------------------- */
 check('prefs: 4 checkbox terikat outputPrefs.*',
@@ -120,19 +151,29 @@ check('prefs: 4 checkbox terikat outputPrefs.*',
 check('prefs: default dari DEFAULT_DED_OUTPUT_PREFS, grid 2 kolom',
   dedInput.includes('DEFAULT_DED_OUTPUT_PREFS') && dedInput.includes('dedai-os-prefs2'));
 
-/* (k) Pratinjau: 4 sel keadaan nyata -------------------------------------- */
-check('pratinjau: PERSIS 4 sel .pv, selalu terlihat',
-  count(dedInput, '<div className="pv">') === 4 && dedInput.includes('dedai-os-preview'));
+/* (k) Pratinjau: 4 sel keadaan nyata + tombol kanan-bawah (K4) ------------ */
+// RE-BASELINE REBUILD 2026-11-19 (K4, ACC owner): strip pratinjau kini
+// kartu bernomor 4 (.dedai-mk-prev) dengan tombol Mulai sebaris di
+// kanan bawah (bukan full-width di bawah). Pembungkus .dedai-preview
+// WAJIB ada (aturan dasar .pv hanya berlaku di bawahnya).
+check('pratinjau: PERSIS 4 sel .pv di kartu mk-prev + tombol mk-start',
+  count(dedInput, '<div className="pv">') === 4 && dedInput.includes('dedai-mk-prev')
+  && dedInput.includes('className="dedai-preview"') && dedInput.includes('dedai-mk-start')
+  && !dedInput.includes('dedai-os-preview'));
 check('pratinjau: sel terikat stripDocs + lastRunSummary, kosong = "—"',
   dedInput.includes('stripDocs.v') && dedInput.includes('stripDocs.s')
   && dedInput.includes('lastRunSummary.items') && dedInput.includes('lastRunSummary.volumesIdentified')
   && dedInput.includes('lastRunSummary.pricesNeedVerify') && dedInput.includes("'—'"));
 
-/* (l) Pengaturan Tambahan: prefs + deskripsi ------------------------------- */
-check('pengaturan: details "Pengaturan Tambahan" memuat prefs lalu deskripsi',
-  dedInput.includes('Pengaturan Tambahan')
-  && dedInput.indexOf('Pengaturan Tambahan') < dedInput.indexOf('dedai-os-prefs2')
-  && dedInput.indexOf('dedai-os-prefs2') < dedInput.indexOf('value={description}'));
+/* (l) Collapsible Deskripsi: deskripsi + Preferensi Output (K2) ----------- */
+// RE-BASELINE REBUILD 2026-11-19 (K2, ACC owner): panel "Pengaturan
+// Tambahan" DIHAPUS — isinya pindah ke collapsible Deskripsi Proyek
+// (.dedai-mk-desc): textarea dulu, Preferensi Output di bawahnya.
+// Urutan baru: judul Deskripsi < textarea < grid prefs.
+check('deskripsi: collapsible Deskripsi memuat textarea lalu prefs (K2)',
+  dedInput.includes('dedai-mk-desc') && !dedInput.includes('Pengaturan Tambahan')
+  && dedInput.indexOf('card_desc_title') < dedInput.indexOf('value={description}')
+  && dedInput.indexOf('value={description}') < dedInput.indexOf('dedai-os-prefs2'));
 check('pengaturan: prefill deskripsi D3e utuh',
   dedInput.includes('setDescription(initialSession.description)'));
 
@@ -170,14 +211,45 @@ check('css: sub upload disembunyikan saat dropzone ramping (:has)',
 check('css: tanpa warna hardcode di blok baru (token saja)',
   !/#[0-9a-fA-F]{3}/.test(osBlock) && !/rgba?\(/.test(osBlock));
 
-/* Struktur one-screen + penghapusan §5 ------------------------------------- */
-check('struktur: grid atas + 2 kolom + dest + kredit + startwrap',
+/* (o) Blok CSS REBUILD MOCKUP 2026-11-19 ---------------------------------- */
+const mkStart = dedCss.indexOf('REBUILD MOCKUP 2026-11-19');
+const mkBlock = mkStart > 0 ? dedCss.slice(mkStart) : '';
+const MK_CLASSES = [
+  'dedai-mk-crumb', 'dedai-mk-card', 'dedai-mk-sec-h', 'dedai-mk-pick',
+  'dedai-mk-expect', 'dedai-mk-desc', 'dedai-mk-modenote', 'dedai-mk-est',
+  'dedai-mk-consent', 'dedai-mk-prev', 'dedai-mk-start',
+];
+check('css rebuild: blok REBUILD MOCKUP ada sesudah blok ONE-SCREEN',
+  mkStart > osStart && osStart > 0);
+check('css rebuild: ke-11 kelas dedai-mk-* ada di blok baru',
+  MK_CLASSES.every((c) => mkBlock.includes(`.${c}`)));
+check('css rebuild: layout kolom flex + FIT FIX + responsif HP 720',
+  mkBlock.includes('.dedai-input-layout { display: flex; flex-direction: column; }')
+  && mkBlock.includes('FIT FIX') && mkBlock.includes('@media (max-width: 720px)'));
+check('css rebuild: tombol mulai 208px kanan-bawah (bukan full-width)',
+  mkBlock.includes('.dedai-mk-start') && mkBlock.includes('flex: 0 0 208px'));
+check('css rebuild: margin trim sidebar-226 (4px) dipertahankan',
+  dedCss.includes('margin antar-seksi 8px -> 4px (4 tempat)')
+  && dedCss.includes('.dedai-os-preview { margin-bottom: 4px; }')
+  && dedCss.includes('.dedai-input-layout > .dedai-v23-details { margin-bottom: 4px; }')
+  && dedCss.includes('.dedai-os-top + .dedai-v23-expect { font-size: 12px; line-height: 1.4; margin-bottom: 4px; }'));
+
+/* Struktur mockup + penghapusan §5 ---------------------------------------- */
+// RE-BASELINE REBUILD 2026-11-19 (ACC owner): struktur one-screen
+// (dest/credit/startwrap + label "Simpan Hasil Ke"/"Mode Analisis")
+// diganti struktur mockup — seksi bernomor 1-4, breadcrumb DED-only,
+// tombol kanan-bawah. Pin lama dibalik menjadi pin ketiadaan di mana
+// strukturnya memang dihapus.
+check('struktur: grid atas + kartu mockup + seksi 1-4 + breadcrumb',
   dedInput.includes('dedai-os-top') && dedInput.includes('dedai-os-col')
-  && dedInput.includes('dedai-os-dest') && dedInput.includes('dedai-os-credit')
-  && dedInput.includes('dedai-os-startwrap') && dedInput.includes('Simpan Hasil Ke'));
-check('struktur: baris ekspektasi jujur + label Mode Analisis utuh',
+  && dedInput.includes('dedai-mk-card') && dedInput.includes('Penyimpanan Proyek')
+  && dedInput.includes('Konfigurasi Analisis') && dedInput.includes('Pratinjau Hasil')
+  && dedInput.includes('dedai-mk-crumb') && dedInput.includes('DED Estimate AI')
+  && !dedInput.includes('dedai-os-dest') && !dedInput.includes('dedai-os-credit')
+  && !dedInput.includes('dedai-os-startwrap') && !dedInput.includes('Simpan Hasil Ke'));
+check('struktur: baris ekspektasi jujur utuh + judul seksi 3 (bukan Mode Analisis)',
   dedInput.includes('dedai-v23-expect') && dedInput.includes('Ekspektasi yang jujur:')
-  && dedInput.includes('Mode Analisis'));
+  && dedInput.includes('Konfigurasi Analisis') && !dedInput.includes('Mode Analisis'));
 check('penghapusan §5: CreditBalance in-page + hint + meta + wrapper CTA hilang',
   !dedInput.includes('CreditBalance') && !dedInput.includes('dedai-v23-hint')
   && !dedInput.includes('dedai-v23-meta') && !dedInput.includes('dedai-v23-cta'));

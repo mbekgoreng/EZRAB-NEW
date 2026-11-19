@@ -947,7 +947,9 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
   // sidebar + topbar tetap terlihat, halaman tidak scroll. Shell hanya
   // membingkai: ketiga sub-view di bawah tidak berubah logika, state,
   // maupun servicenya. Label tahap mengikuti mockup ter-ACC
-  // (Input / Progress / Hasil).
+  // (Input / Analisis / Hasil — langkah 2 "Analisis" sejak rebuild
+  // mockup 2026-11-19, kamus ai.ded.input.step_2; sebelumnya
+  // "Progress").
   const shellSteps: FsStep[] =
     screen === 'input'
       ? [
@@ -1112,6 +1114,9 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
           onLoadDraft={handleLoadDraft}
           onDeleteDraft={handleDeleteDraft}
           lastRunSummary={lastRunSummary}
+          // Rebuild mockup 2026-11-19: nama proyek untuk breadcrumb
+          // DED-only (remah tengah; kosong = breadcrumb tanpa proyek).
+          breadcrumbProjectName={shellContextText}
         />
       </>
     );

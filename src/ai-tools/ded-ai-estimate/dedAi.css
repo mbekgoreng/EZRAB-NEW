@@ -1109,3 +1109,220 @@
     margin-left: 0; justify-content: flex-start;
   }
 }
+
+/* ===== REBUILD MOCKUP 2026-11-19 — DED input seperti mockup owner
+   (ACC 2026-11-19 22:37; laporan Fase 1 di
+   ~/workspace/your_files/EZRAB-DED-MOCKUP-2026-11-19/LAPORAN-MOCKUP.md).
+   Seksi bernomor 1-4, breadcrumb DED-only, Preferensi Output di dalam
+   collapsible Deskripsi Proyek, baris ekspektasi di kartu kiri, tombol
+   kanan-bawah di dalam kartu pratinjau. Blok ONE-SCREEN di atas TIDAK
+   dihapus — grid atas .dedai-os-top (42/58), kolom .dedai-os-col,
+   dropzone .dedai-os-drop, daftar berkas .dedai-os-files, override
+   konfigurasi horizontal, dan margin trim 8px ke 4px (sidebar 226px)
+   DIPAKAI ULANG di sini. Kelas baru hanya .dedai-mk-* (+ .pv-ico di
+   dalam sel pratinjau). Warna HANYA token variabel — tanpa nilai warna
+   mentah — sehingga mode gelap beradaptasi lewat remap variabel yang
+   sudah ada (pin "tanpa warna hardcode" di dedOneScreenBehavior
+   mencakup blok ini). Anggaran vertikal (replika, Chromium headless,
+   font asli): 1366x768 slack +11,2px pada mockup Fase 1; rebuild
+   menambah teks consent lengkap + badge simulasi + tag probe + catatan
+   mode + breadcrumb — diukur ulang di replika v2 (lihat LAPORAN-FASE2). */
+
+/* ---- Layout: kolom vertikal (baris atas + pratinjau + draf).
+   Menggantikan display:block v2.3 untuk halaman input ini. */
+.dedai-input-layout { display: flex; flex-direction: column; }
+
+/* ---- Breadcrumb DED-only (di dalam halaman, di bawah stepper shell).
+   FeaturePageShell tidak punya slot breadcrumb — memindahnya ke atas
+   header butuh ubah shell, di luar cakupan rebuild. */
+.dedai-mk-crumb {
+  display: flex; align-items: center; gap: 6px;
+  padding: 2px 0 6px; margin: 0;
+  font-size: 12.5px; font-weight: 600; color: var(--dd-muted);
+}
+.dedai-mk-crumb .sep { color: var(--ez-color-text-muted); }
+.dedai-mk-crumb .proj {
+  max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.dedai-mk-crumb b { color: var(--dd-navy); font-weight: 800; }
+
+/* ---- Kartu bernomor mockup (dipakai kiri, kanan, pratinjau). */
+.dedai-mk-card {
+  background: var(--ez-color-surface);
+  border: 1px solid var(--dd-border);
+  border-radius: 14px;
+  box-shadow: var(--ez-shadow-card);
+  padding: 10px 14px;
+  gap: 5px;
+  min-width: 0;
+}
+.dedai-mk-sec-h {
+  display: flex; align-items: center; gap: 8px;
+  margin: 0; font-size: 15px; font-weight: 800; color: var(--dd-navy);
+  letter-spacing: -0.01em;
+}
+.dedai-mk-sec-h .n { color: var(--dd-blue); }
+.dedai-mk-sec-h .ic { display: inline-flex; color: var(--dd-blue); }
+.dedai-mk-sec-h .sub { font-size: 13px; font-weight: 600; color: var(--dd-muted); }
+.dedai-mk-sec-h .dedai-os-info { width: 24px; height: 24px; }
+
+/* ---- Dropzone: hint 11px (mockup) + tombol Pilih File. */
+.dedai-mk-card .dedai-os-drop span { font-size: 11px; }
+.dedai-mk-pick {
+  /* display:flex + margin auto: tombol SELALU di baris sendiri di
+     tengah (seperti mockup). Versi inline-flex menempel di samping
+     hint pada viewport lebar (1440px: tombol menempel di ujung hint). */
+  display: flex; width: fit-content; margin: 3px auto 0;
+  align-items: center; gap: 6px;
+  padding: 3px 11px;
+  background: var(--ez-color-primary-soft); color: var(--ez-color-primary-hover);
+  border: none; border-radius: 999px;
+  font-family: inherit; font-size: 12px; font-weight: 700;
+  cursor: pointer;
+}
+.dedai-mk-pick:focus-visible { outline: 2px solid var(--ez-color-primary-hover); outline-offset: 2px; }
+
+/* ---- Baris ekspektasi di dalam kartu kiri (teks verbatim). */
+.dedai-mk-expect { font-size: 12px; line-height: 1.5; margin: 0; color: var(--dd-muted); }
+.dedai-mk-expect strong { color: var(--ez-color-text-secondary); }
+
+/* ---- Field di dalam kartu mockup: margin dikelola gap kartu. */
+.dedai-mk-card .dedai-field { margin-bottom: 0; }
+
+/* ---- Collapsible Deskripsi Proyek (berisi textarea + Preferensi
+   Output, K2). Tertutup default — biaya fit 0px. */
+.dedai-mk-desc {
+  border: 1px solid var(--dd-border); border-radius: 10px;
+  background: var(--ez-color-surface-secondary);
+  overflow: hidden;
+}
+.dedai-mk-desc summary {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px; cursor: pointer; list-style: none;
+  font-size: 13px; font-weight: 600; color: var(--ez-color-text-secondary);
+}
+.dedai-mk-desc summary::-webkit-details-marker { display: none; }
+.dedai-mk-desc summary .cv { margin-left: auto; color: var(--dd-muted); transition: transform 0.15s ease; }
+.dedai-mk-desc[open] summary .cv { transform: rotate(180deg); }
+.dedai-mk-desc .db { display: flex; flex-direction: column; gap: 10px; padding: 0 12px 12px; }
+.dedai-mk-desc .dedai-set-sub { margin: 0; }
+.dedai-mk-desc .ph { font-size: 12.5px; font-weight: 800; color: var(--dd-navy); margin: 2px 0 0; }
+.dedai-mk-desc .ps { font-size: 11.5px; color: var(--dd-muted); margin: 0; line-height: 1.45; }
+.dedai-mk-desc .dedai-field textarea { min-height: 64px; font-size: 12.5px; padding: 9px 12px; }
+
+/* ---- Catatan keterbukaan mode terpilih (K9): baris statis di bawah
+   kartu mode — chevron hilang, catatan hukum tetap terlihat. */
+.dedai-mk-modenote {
+  font-size: 11px; line-height: 1.45; color: var(--dd-muted);
+  margin: 0; padding-top: 6px; border-top: 1px dashed var(--dd-border);
+}
+
+/* ---- Label konfigurasi gaya mockup: title-case 13px (bukan
+   uppercase 11px gaya one-screen). */
+.dedai-mk-card .dedai-cfglbl {
+  font-size: 13px; font-weight: 800; text-transform: none;
+  letter-spacing: 0; color: var(--dd-navy);
+}
+
+/* ---- Kotak estimasi kredit + persetujuan (K5/K6). Frasa
+   "(maksimum simulasi)" + badge "simulasi" dari kode dipertahankan. */
+.dedai-mk-est {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--ez-hue-blue-bg);
+  border: 1px solid var(--ez-hue-blue-border);
+  border-radius: 12px; padding: 10px 14px;
+}
+.dedai-mk-est .ei {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; flex: none; border-radius: 50%;
+  background: var(--dd-blue); color: var(--ez-color-on-primary);
+}
+.dedai-mk-est .et { display: flex; flex-direction: column; flex: none; }
+.dedai-mk-est .el { font-size: 11.5px; font-weight: 600; color: var(--ez-color-text-secondary); line-height: 1.3; }
+.dedai-mk-est .ev { font-size: 15px; font-weight: 800; color: var(--ez-color-primary-hover); line-height: 1.3; white-space: nowrap; }
+.dedai-mk-est .aic-estimate { font-size: 11px; }
+.dedai-mk-est .dv { width: 1px; align-self: stretch; background: var(--ez-hue-blue-border); flex: none; }
+.dedai-mk-consent {
+  display: flex; gap: 8px; align-items: flex-start; flex: 1; min-width: 0;
+  font-size: 12.5px; line-height: 1.45; color: var(--ez-color-text-secondary); cursor: pointer;
+}
+.dedai-mk-consent input { margin-top: 2px; flex: none; }
+.dedai-mk-estinfo { color: var(--dd-muted); flex: none; display: inline-flex; }
+
+/* ---- Kartu pratinjau + tombol kanan-bawah (K4). Sel horizontal:
+   ikon kiri, teks kanan (D2). */
+.dedai-mk-prev { display: flex; flex-direction: column; gap: 8px; }
+.dedai-mk-prev-row { display: flex; gap: 10px; align-items: stretch; }
+.dedai-mk-prev .dedai-preview-grid { flex: 1; min-width: 0; }
+.dedai-mk-prev .pv { display: flex; align-items: center; gap: 9px; padding: 7px 10px; }
+.dedai-mk-prev .pv .k { font-size: 12px; text-transform: none; letter-spacing: 0; color: var(--dd-navy); }
+.dedai-mk-prev .pv .v { font-size: 12px; }
+.dedai-mk-prev .pv-txt { min-width: 0; display: flex; flex-direction: column; }
+.pv-ico {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; flex: none; border-radius: 8px;
+}
+.pv-ico-blue { background: var(--ez-color-primary-soft); color: var(--dd-blue); }
+.pv-ico-green { background: var(--ez-hue-green-bg); color: var(--ez-hue-green-text); }
+.pv-ico-violet { background: var(--ez-hue-violet-bg); color: var(--ez-hue-violet-text); }
+.pv-ico-amber { background: var(--ez-hue-amber-bg); color: var(--ez-hue-amber-text); }
+.dedai-mk-start {
+  flex: 0 0 208px; display: flex; align-items: center; justify-content: center;
+  gap: 8px; padding: 10px 14px; border: none; border-radius: 12px;
+  background: linear-gradient(135deg, var(--dd-blue), var(--ez-color-primary-hover));
+  font-size: 15px; font-weight: 800; cursor: pointer;
+}
+
+/* ---- Responsif rebuild: tablet menumpuk kolom (aturan .dedai-os-top
+   di blok ONE-SCREEN sudah menangani); HP menumpuk baris pratinjau +
+   kotak estimasi, target sentuh 44px. */
+@media (max-width: 720px) {
+  .dedai-mk-prev-row { flex-direction: column; }
+  .dedai-mk-prev .dedai-preview-grid { grid-template-columns: 1fr 1fr; }
+  .dedai-mk-start { flex: 1 1 auto; min-height: 48px; }
+  .dedai-mk-est { flex-wrap: wrap; }
+  .dedai-mk-est .dv { display: none; }
+  .dedai-mk-consent { flex: 1 1 100%; }
+  .dedai-mk-crumb .proj { max-width: 140px; }
+}
+
+/* ===== FIT FIX rebuild mockup (2026-11-19) — kompresi densitas.
+   Pengukuran replika v2 pertama (1366x768, 1 berkas): span 672,9px vs
+   tersedia 597px — slack -75,9px, tombol tidak terlihat penuh. Dua
+   penyebab utama: (1) sel pratinjau ~89px karena pembungkus
+   .dedai-preview hilang sehingga aturan dasar .pv tidak berlaku —
+   diperbaiki di TSX (pembungkus dikembalikan) + aturan .dedai-preview
+   di bawah; (2) komponen asli lebih gemuk dari mockup (dropzone
+   120,9px, input 40px, seg 36px). Perbaikan di bawah HANYA kompresi
+   densitas (padding/gap/ukuran font) — tidak ada konten yang dihapus.
+   Nilai diukur ulang di replika v2 sesudah perbaikan (lihat
+   LAPORAN-FASE2). */
+.dedai-mk-prev .dedai-preview { flex: 1; min-width: 0; margin-bottom: 0; }
+.dedai-mk-prev .pv .k { font-size: 11px; line-height: 1.2; }
+.dedai-mk-prev .pv .v { line-height: 1.2; }
+.dedai-mk-prev .pv .s { line-height: 1.2; }
+.dedai-mk-card { padding: 8px 14px; gap: 4px; }
+.dedai-mk-prev { gap: 6px; }
+.dedai-mk-crumb { padding: 0 0 4px; }
+.dedai-mk-sec-h { font-size: 14px; }
+.dedai-mk-card .dedai-field input[type="text"] { padding: 8px 12px; font-size: 13px; }
+.dedai-mk-card .dedai-seg button { padding: 7px 10px; font-size: 12.5px; }
+.dedai-mk-desc summary { padding: 7px 12px; }
+.dedai-mk-card .dedai-os-drop { padding: 6px 14px; }
+.dedai-mk-card .dedai-os-drop p { font-size: 13px; }
+.dedai-mk-pick { padding: 3px 11px; }
+
+/* FIT FIX ronde 2 (2026-11-19): sesudah ronde 1, span 607,8px vs
+   tersedia 597px — masih -10,8px (kartu kiri mengikat). Kompresi
+   lanjutan, tetap tanpa menghapus konten: tombol info header 24px ke
+   20px, padding dropzone 6px ke 4px, margin tombol Pilih File,
+   margin label/hint field, padding input/segmen/ringkasan Deskripsi. */
+.dedai-mk-sec-h .dedai-os-info { width: 20px; height: 20px; }
+.dedai-mk-card .dedai-os-drop { padding: 4px 14px; }
+.dedai-mk-pick { margin-top: 3px; }
+.dedai-mk-card .dedai-field label { margin-bottom: 4px; }
+.dedai-mk-card .dedai-field .hint { margin-top: 3px; }
+.dedai-mk-card .dedai-field input[type="text"] { padding: 7px 12px; }
+.dedai-mk-card .dedai-seg { padding: 4px; }
+.dedai-mk-card .dedai-seg button { padding: 6px 10px; }
+.dedai-mk-desc summary { padding: 6px 12px; }

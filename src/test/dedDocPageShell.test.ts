@@ -19,6 +19,14 @@
  *    label "Mode AI" lama menamai baris kedalaman FAST/DETAIL, kini
  *    "Kedalaman"). Tarif kompleksitas tetap dari
  *    ai-credits/config (tariffFor) — tidak di-hardcode ulang.
+ *    REBUILD MOCKUP 2026-11-19 (ACC owner 22:37): struktur di atas
+ *    diganti tampilan mockup — panel .dedai-settings DIHAPUS; seksi
+ *    bernomor 1-4 (Dokumen DED, Penyimpanan Proyek, Konfigurasi
+ *    Analisis, Pratinjau Hasil), Preferensi Output di dalam
+ *    collapsible Deskripsi Proyek, tombol Mulai kanan-bawah di
+ *    dalam kartu pratinjau (.dedai-mk-start), stepper langkah 2
+ *    "Analisis" (kamus step_2). Pin yang berubah dicatat dengan
+ *    komentar "RE-BASELINE REBUILD 2026-11-19" di bawah.
  *  - Keadaan awal AI Document (DocLibrary): dropzone besar + panel
  *    .docai-settings (Mode Analisis Pertama dari getTabs DocAnalyzer, Jenis
  *    Dokumen, Bahasa, Sesudah Analisis, ringkasan dokumen terpilih) dengan
@@ -64,31 +72,43 @@ check('FeatureFullscreenShell tetap ada (tidak dihapus)', has('src/components/fe
 const dedView = read('src/ai-tools/ded-ai-estimate/view.tsx');
 check('DED view memakai FeaturePageShell', dedView.includes('<FeaturePageShell'));
 check('DED view TIDAK memakai FeatureFullscreenShell', !dedView.includes('<FeatureFullscreenShell'));
-check('DED view meneruskan stepper Input/Progress/Hasil ke shell', dedView.includes('steps={shellSteps}') && dedView.includes("t('ai.ded.input.step_1')"));
+// RE-BASELINE REBUILD 2026-11-19 (K3, ACC owner): langkah 2 stepper kini
+// "Analisis" (kamus ai.ded.input.step_2; sebelumnya "Progress"). Label
+// hidup di kamus, bukan di view.tsx — pin memeriksa kunci step_1/step_2
+// yang diteruskan ke shell.
+check('DED view meneruskan stepper Input/Analisis/Hasil ke shell', dedView.includes('steps={shellSteps}') && dedView.includes("t('ai.ded.input.step_1')") && dedView.includes("t('ai.ded.input.step_2')"));
 const dedInput = read('src/ai-tools/ded-ai-estimate/DedAiInputView.tsx');
 check('DED input: tata letak upload + panel (dedai-input-layout)', dedInput.includes('dedai-input-layout'));
 check('DED input: dropzone besar tetap ada', dedInput.includes('dedai-drop'));
-check('DED input: SATU panel Pengaturan (dedai-settings)', dedInput.includes('dedai-settings') && dedInput.includes('Pengaturan'));
+// RE-BASELINE REBUILD 2026-11-19 (K2, ACC owner): panel .dedai-settings
+// DIHAPUS sesuai mockup — isinya pindah ke collapsible Deskripsi Proyek
+// (.dedai-mk-desc, berisi textarea + Preferensi Output). Pin lama
+// dibalik menjadi pin ketiadaan panel + keberadaan collapsible.
+check('DED input: panel Pengaturan DIHAPUS, prefs di collapsible Deskripsi (K2)', !dedInput.includes('dedai-settings') && dedInput.includes('dedai-mk-desc') && dedInput.includes('dedai-os-prefs2'));
 check('DED input: seksi Kebijakan Harga', dedInput.includes('Kebijakan Harga'));
-check('DED input: seksi Simpan Hasil Ke', dedInput.includes('Simpan Hasil Ke'));
+// RE-BASELINE REBUILD 2026-11-19 (ACC owner): "Simpan Hasil Ke" diganti
+// seksi bernomor "2. Penyimpanan Proyek" (segmen Proyek Baru/Existing
+// dipertahankan — kunci seg_new/seg_existing).
+check('DED input: seksi Penyimpanan Proyek (segmen Baru/Existing)', dedInput.includes('Penyimpanan Proyek') && dedInput.includes("t('ai.ded.input.seg_new')") && dedInput.includes("t('ai.ded.input.seg_existing')") && !dedInput.includes('Simpan Hasil Ke'));
 check('DED input: seksi Jenis Proyek (7 chip dari PROJECT_TYPE_OPTIONS)', dedInput.includes('PROJECT_TYPE_OPTIONS'));
-// PERBAIKAN E (2026-11-14): pin lama `dedInput.includes('Mode AI')`
-// kedaluwarsa — label "Mode AI" (HEAD:371) menamai baris kedalaman
-// FAST/DETAIL, yang program Dual Mode (W2 G-UI-1) beri label akurat
-// "Kedalaman"; pemilih mode kini seksi "Mode Analisis" dengan PERSIS DUA
-// kartu (DED_MODE_CARDS, dirender sebagai radiogroup .dedai-modecards).
-// Pin baru memeriksa pemilih mode yang sebenarnya — lebih kuat
-// (3 syarat: label + sumber kartu + wadah render, bukan 1 substring).
-check('DED input: seksi Mode Analisis (dua kartu mode)',
-  dedInput.includes('Mode Analisis') && dedInput.includes('DED_MODE_CARDS') && dedInput.includes('dedai-modecards'));
-check('DED input: seksi Kompleksitas & Estimasi Kredit', dedInput.includes('Kompleksitas & Estimasi Kredit'));
+// RE-BASELINE REBUILD 2026-11-19 (ACC owner): label "Mode Analisis"
+// diganti judul seksi bernomor "3. Konfigurasi Analisis" — pemilih mode
+// (PERSIS DUA kartu DED_MODE_CARDS sebagai radiogroup .dedai-modecards)
+// tidak berubah. Pin baru: judul seksi + sumber kartu + wadah render.
+check('DED input: seksi Konfigurasi Analisis (dua kartu mode)',
+  dedInput.includes('Konfigurasi Analisis') && dedInput.includes('DED_MODE_CARDS') && dedInput.includes('dedai-modecards') && !dedInput.includes('Mode Analisis'));
+// RE-BASELINE REBUILD 2026-11-19 (K5/K6, ACC owner): judul blok kredit
+// lama dihapus — isi estimasi kini di dalam kotak .dedai-mk-est dengan
+// frasa "(maksimum simulasi)" + badge "simulasi" + teks persetujuan
+// lengkap. Pin baru memeriksa kotak + pengungkapan simulasinya.
+check('DED input: kotak estimasi kredit + pengungkapan simulasi (K5/K6)', dedInput.includes('dedai-mk-est') && dedInput.includes('(maksimum simulasi)') && dedInput.includes('aic-sim') && !dedInput.includes('Kompleksitas & Estimasi Kredit'));
 check('DED input: tarif dari ai-credits/config (tariffFor, tanpa hardcode ulang)', dedInput.includes('tariffFor'));
-// RE-BASELINE v2.3 (2026-11-19, ACC owner 04:14): CTA pindah dari kaki panel
-// pengaturan (dedai-settings-foot) ke tombol besar lebar penuh di bawah kedua
-// kolom (dedai-v23-start) sesuai mockup v2.3 — kunci i18n yang sama dipertahankan.
-// Bukan pelemahan: pin tetap memeriksa keberadaan CTA + kunci i18n-nya, hanya
-// di penempatan baru yang disetujui owner.
-check('DED input: CTA lebar penuh v2.3 di bawah kolom (dedai-v23-start)', dedInput.includes('dedai-v23-start') && dedInput.includes("t('ai.ded.input.cta')"));
+// RE-BASELINE REBUILD 2026-11-19 (K4, ACC owner): CTA pindah dari tombol
+// besar lebar penuh v2.3 (dedai-v23-start) ke tombol kanan-bawah sebaris
+// pratinjau (.dedai-mk-start) sesuai mockup — kunci i18n yang sama
+// dipertahankan. Bukan pelemahan: pin tetap memeriksa keberadaan CTA +
+// kunci i18n-nya, hanya di penempatan baru yang disetujui owner.
+check('DED input: CTA kanan-bawah sebaris pratinjau (dedai-mk-start)', dedInput.includes('dedai-mk-start') && dedInput.includes("t('ai.ded.input.cta')") && !dedInput.includes('dedai-v23-start'));
 check('DED input: CTA tidak lagi lewat FsFooterPortal (pindah ke panel)', !dedInput.includes('FsFooterPortal'));
 const dedResult = read('src/ai-tools/ded-ai-estimate/DedAiResultView.tsx');
 check('DED hasil: footer aksi tetap lewat FsFooterPortal (konteks bersama)', dedResult.includes('FsFooterPortal'));

@@ -2,19 +2,25 @@
  * DED-AI Estimate — Tampilan 1: INPUT.
  * Upload multi-file (drag & drop) + deskripsi proyek + pilihan proyek + tipe + mode AI.
  *
- * LAYOUT one-screen (2026-11-19, program DED One-Screen): baris atas dua
- * kolom 42/58 — KIRI dokumen DED (dropzone kompak + daftar berkas,
- * menyusut saat berkas ada) + tujuan proyek "Simpan Hasil Ke" yang
- * selalu terlihat; KANAN kartu mode (EZRAB AI / FULL AI bersebelahan,
- * ciut default dengan chevron expand) + konfigurasi rapat di bawahnya
- * (kedalaman → kompleksitas → cakupan → jenis proyek) + blok kredit
- * (estimasi + persetujuan). Di bawah kedua kolom: catatan ekspektasi
- * jujur satu baris, strip Pratinjau Hasil yang selalu terlihat satu
- * baris, panel "Pengaturan Tambahan" collapsible (Preferensi Output +
- * Deskripsi Proyek), daftar Draft, lalu tombol Mulai Analisis DED
- * kompak lebar penuh. Catatan scan PDF jadi tombol info (tooltip).
- * Judul + stepper disediakan shell halaman (FeaturePageShell). Semua
- * state, handler, dan gerbang kredit TIDAK berubah.
+ * LAYOUT rebuild mockup (2026-11-19, ACC owner 22:37 — menggantikan
+ * one-screen 2026-11-19): breadcrumb DED-only di atas layout, lalu
+ * baris atas dua kolom 42/58 — KIRI kartu bernomor 1. Dokumen DED
+ * (dropzone kompak + daftar berkas + baris ekspektasi jujur verbatim)
+ * + 2. Penyimpanan Proyek (segmen Proyek Baru/Existing + field nama
+ * opsional + collapsible Deskripsi Proyek berisi textarea + Preferensi
+ * Output); KANAN kartu 3. Konfigurasi Analisis (dua kartu mode TANPA
+ * chevron + catatan keterbukaan mode terpilih + konfigurasi rapat +
+ * kotak estimasi kredit dengan persetujuan simulasi lengkap). Di bawah
+ * kedua kolom: kartu 4. Pratinjau Hasil (4 sel horizontal, keadaan
+ * nyata) + tombol Mulai Analisis DED di kanan bawah sebaris pratinjau;
+ * daftar Draft (bila ada) di bawah kartu pratinjau agar tombol Mulai
+ * tetap di posisi one-screen. Judul + stepper disediakan shell halaman
+ * (FeaturePageShell); stepper langkah 2 kini "Analisis" (kamus
+ * ai.ded.input.step_2). Semua state, handler, dan gerbang kredit
+ * TIDAK berubah. Grid atas .dedai-os-top (42/58), kolom .dedai-os-col,
+ * dropzone .dedai-os-drop, daftar berkas .dedai-os-files, dan margin
+ * trim 8px→4px (sidebar 226px) dipakai ulang dari blok ONE-SCREEN;
+ * kelas baru hanya .dedai-mk-* (lihat blok REBUILD MOCKUP di dedAi.css).
  *
  * DUAL MODE (§3 directive, 2026-11-13): pemilih mode adalah PERSIS DUA
  * kartu — EZRAB AI MODE (referensi AHSP) atau FULL AI MODE (mandiri).
@@ -27,6 +33,9 @@ import {
   UploadCloud, FileText, X, Zap, Brain, FolderOpen, PlusCircle,
   AlertTriangle, History, Trash2, RotateCcw, Lock, Info,
   Settings2, Sparkles, Database, Check, ChevronDown,
+  // Rebuild mockup 2026-11-19: PenLine (ringkasan Deskripsi),
+  // ListChecks/Package/ChartColumn (ikon sel pratinjau 2/3/4).
+  PenLine, ListChecks, Package, ChartColumn,
 } from 'lucide-react';
 import { DedAiMode, DedAiProjectType, DedEstimationPolicy, DedOutputPrefs, DEFAULT_DED_OUTPUT_PREFS } from './types';
 import type { DedRabAiMode } from './dedMode';
@@ -112,6 +121,13 @@ interface Props {
    * publish (perilaku lama).
    */
   onSessionChange?: (draft: DedAiSession | null) => void;
+  /**
+   * Nama proyek untuk breadcrumb DED-only (rebuild mockup 2026-11-19):
+   * diteruskan view.tsx dari konteks shell (result/summary/session).
+   * Bila kosong, breadcrumb menampilkan "Dashboard › Proyek ›
+   * DED Estimate AI" tanpa remah proyek.
+   */
+  breadcrumbProjectName?: string;
 }
 
 const MAX_FILE_MB = 25;
@@ -133,7 +149,7 @@ type FileProbe = { pages: number; textChars: number } | 'error';
 
 export const DedAiInputView: React.FC<Props> = ({
   initialSession, projects, drafts, onStart, onLoadDraft, onDeleteDraft, lastRunSummary,
-  onSessionChange,
+  onSessionChange, breadcrumbProjectName,
 }) => {
   const { t } = useI18n();
   const PROJECT_TYPE_OPTIONS: Array<{ value: DedAiProjectType; label: string }> = [
@@ -165,11 +181,12 @@ export const DedAiInputView: React.FC<Props> = ({
     setDedMode(next);
     savePersistedDedMode(next);
   };
-  // DED Input v2.3 (mockup 2026-11-19, ACC owner): kartu mode CIUT
-  // default — hanya nama + tag + chevron. Penjelasan fungsi mode
-  // (bullet + catatan verbatim dari DED_MODE_CARDS) baru tampil saat
-  // chevron kartu itu diklik; tiap kartu independen.
-  const [expandedModes, setExpandedModes] = useState<Partial<Record<DedRabAiMode, boolean>>>({});
+  // Rebuild mockup 2026-11-19 (K9, ACC owner): chevron expand kartu mode
+  // DIHAPUS — mockup tidak punya chevron. Penjelasan mode (bullets)
+  // tidak lagi dirender; catatan keterbukaan mode terpilih TETAP
+  // dirender sebagai baris statis di bawah kartu (dipin F-1/F-2
+  // dedDocViewportFit + E-2 dedPremiumOneScreen) — state expand
+  // kartu ikut dihapus.
   const [targetProjectId, setTargetProjectId] = useState<string | null>(initialSession.targetProjectId);
   const [useExisting, setUseExisting] = useState(initialSession.targetProjectId !== null);
   // Perbaikan final: sinkronkan prefill deskripsi dari entry DED yang tiba
@@ -367,18 +384,35 @@ export const DedAiInputView: React.FC<Props> = ({
 
   return (
     <div className="dedai dedai-input">
+      {/* Breadcrumb DED-only (rebuild mockup 2026-11-19): dikoreksi ke
+          "DED Estimate AI" — mockup salah tulis "Document AI". Dirender
+          di dalam halaman DED, di bawah stepper shell (FeaturePageShell
+          tidak punya slot breadcrumb — memindahnya ke atas header butuh
+          ubah shell, di luar cakupan). */}
+      <nav className="dedai-mk-crumb" aria-label="Breadcrumb">
+        <span>Dashboard</span>
+        <span className="sep" aria-hidden="true">›</span>
+        <span>Proyek</span>
+        <span className="sep" aria-hidden="true">›</span>
+        {breadcrumbProjectName ? (
+          <>
+            <span className="proj">{breadcrumbProjectName}</span>
+            <span className="sep" aria-hidden="true">›</span>
+          </>
+        ) : null}
+        <b>DED Estimate AI</b>
+      </nav>
       <div className="dedai-input-layout">
-        {/* ============ Baris atas one-screen: dokumen + tujuan (kiri 42%) +
-            mode, konfigurasi & kredit (kanan 58%) ============ */}
+        {/* ============ Baris atas mockup: seksi 1+2 (kiri 42%) +
+            seksi 3 (kanan 58%). Grid .dedai-os-top dipakai ulang. ============ */}
         <div className="dedai-os-top">
-          {/* ---- KIRI: dokumen DED + tujuan proyek ---- */}
-          <div className="dedai-os-col">
-            <p className="dedai-os-label">
-              {t('ai.ded.input.card_doc_title')}
-              {/* Catatan scan (one-screen): teks notice_a/b/c pindah ke
-                  tombol info — `title` = teks lengkap (tooltip) +
-                  span tersembunyi untuk pembaca layar (aria-describedby).
-                  Baris finenote lama di bawah kotak upload dihapus. */}
+          {/* ---- KIRI: 1. Dokumen DED + 2. Penyimpanan Proyek ---- */}
+          <div className="dedai-os-col dedai-mk-card">
+            <h2 className="dedai-mk-sec-h">
+              <span className="ic"><FileText size={17} /></span>
+              <span className="n">1.</span> {t('ai.ded.input.card_doc_title')}
+              {/* Catatan scan: tombol info + span sr-only (teks lengkap
+                  notice_a/b/c) — dipertahankan dari one-screen. */}
               <button
                 type="button"
                 className="dedai-os-info"
@@ -395,109 +429,178 @@ export const DedAiInputView: React.FC<Props> = ({
               >
                 {t('ai.ded.input.notice_a')} {t('ai.ded.input.notice_b')} {t('ai.ded.input.notice_c')}
               </span>
-            </p>
-            <div className="dedai-card dedai-v23-uploadcard">
-              <p className="sub">{t('ai.ded.input.card_doc_sub')}</p>
-              <div
-                className={`dedai-drop dedai-os-drop${dragOver ? ' over' : ''}${files.length > 0 ? ' dedai-os-drop-slim' : ''}`}
-                onClick={() => inputRef.current?.click()}
-                onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-                onDragLeave={() => setDragOver(false)}
-                onDrop={(e) => { e.preventDefault(); setDragOver(false); if (e.dataTransfer.files.length) addFiles(e.dataTransfer.files); }}
-              >
-                <div className="big-ico"><UploadCloud size={26} /></div>
-                <p>{t('ai.ded.input.drop_text')}</p>
-                <span>{t('ai.ded.input.drop_hint_a')} {MAX_FILES} {t('ai.ded.input.drop_hint_b')} {MAX_FILE_MB} {t('ai.ded.input.drop_hint_c')}</span>
-                <br /><span className="fmt">PDF</span>
-                <input
-                  ref={inputRef} type="file" accept=".pdf,application/pdf" multiple hidden
-                  onChange={(e) => { if (e.target.files?.length) addFiles(e.target.files); e.target.value = ''; }}
-                />
-              </div>
+            </h2>
+            {/* Dropzone kompak (mockup: selalu tampil penuh meski berkas
+                ada — varian slim one-screen TIDAK dipakai lagi). Teks
+                judul + hint mengikuti mockup (kamus drop_text /
+                drop_hint_drag); tombol "Pilih File" membuka pemilih
+                yang sama dengan klik dropzone. Badge format "PDF"
+                dihapus (mockup tidak punya; "PDF" sudah disebut di
+                hint). Paragraf .sub lama dihapus (mockup tidak punya). */}
+            <div
+              className={`dedai-drop dedai-os-drop${dragOver ? ' over' : ''}`}
+              onClick={() => inputRef.current?.click()}
+              onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={(e) => { e.preventDefault(); setDragOver(false); if (e.dataTransfer.files.length) addFiles(e.dataTransfer.files); }}
+            >
+              <div className="big-ico"><UploadCloud size={26} /></div>
+              <p>{t('ai.ded.input.drop_text')}</p>
+              <span>{t('ai.ded.input.drop_hint_drag')} · {t('ai.ded.input.drop_hint_a')} {MAX_FILES} {t('ai.ded.input.drop_hint_b')} {MAX_FILE_MB} {t('ai.ded.input.drop_hint_c')}</span>
+              <button type="button" className="dedai-mk-pick" onClick={(e) => { e.stopPropagation(); inputRef.current?.click(); }}>
+                <FolderOpen size={14} /> {t('ai.ded.input.pick_file')}
+              </button>
               <input
-                ref={replaceRef} type="file" accept=".pdf,application/pdf" hidden
-                onChange={onReplacePicked}
+                ref={inputRef} type="file" accept=".pdf,application/pdf" multiple hidden
+                onChange={(e) => { if (e.target.files?.length) addFiles(e.target.files); e.target.value = ''; }}
               />
-              {files.length > 0 && (
-                <div className="dedai-files dedai-os-files">
-                  {files.map((f) => {
-                    const probe = fileProbe[f.id];
-                    return (
-                      <div key={f.id} className={`dedai-file ${f.error ? 'err' : ''}`}>
-                        <div className="f-ico"><FileText size={18} /></div>
-                        <div className="f-info">
-                          <div className="f-name">{f.file.name}</div>
-                          <div className="f-meta">
-                            {probe && probe !== 'error' ? `${probe.pages} halaman · ` : ''}{fmtSize(f.file.size)}
-                          </div>
-                          {f.error && <div className="f-err"><AlertTriangle size={13} /> {f.error}</div>}
-                        </div>
-                        {!f.error && probe && probe !== 'error' && (
-                          probe.textChars > 0
-                            ? <span className="f-tag ok">Teks terbaca · siap</span>
-                            : <span className="f-tag warn">Tanpa teks — mungkin scan</span>
-                        )}
-                        {!f.error && probe === 'error' && <span className="f-tag warn">Tidak terprobe</span>}
-                        <button className="f-act" onClick={() => startReplace(f.id)} title="Ganti berkas">
-                          <RotateCcw size={14} />
-                        </button>
-                        <button className="f-del" onClick={() => setFiles((p) => p.filter((x) => x.id !== f.id))} title={t('ai.ded.input.del_file')}>
-                          <X size={15} />
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
             </div>
-            {/* ---- Simpan Hasil Ke (one-screen): pindah dari panel
-                Pengaturan ke kolom kiri — tujuan proyek selalu terlihat. ---- */}
-            <section className="dedai-os-dest">
-              <h3><FolderOpen size={14} /> Simpan Hasil Ke</h3>
-              <div className="dedai-seg" style={{ marginBottom: 10 }}>
-                <button className={!useExisting ? 'active' : ''} onClick={() => setUseExisting(false)}>
-                  <PlusCircle size={15} /> {t('ai.ded.input.seg_new')}
-                </button>
-                <button className={useExisting ? 'active' : ''} onClick={() => setUseExisting(true)} disabled={projects.length === 0}>
-                  <FolderOpen size={15} /> {t('ai.ded.input.seg_existing')}
-                </button>
+            <input
+              ref={replaceRef} type="file" accept=".pdf,application/pdf" hidden
+              onChange={onReplacePicked}
+            />
+            {files.length > 0 && (
+              <div className="dedai-files dedai-os-files">
+                {files.map((f) => {
+                  const probe = fileProbe[f.id];
+                  return (
+                    <div key={f.id} className={`dedai-file ${f.error ? 'err' : ''}`}>
+                      <div className="f-ico"><FileText size={18} /></div>
+                      <div className="f-info">
+                        <div className="f-name">{f.file.name}</div>
+                        <div className="f-meta">
+                          {probe && probe !== 'error' ? `${probe.pages} halaman · ` : ''}{fmtSize(f.file.size)}
+                        </div>
+                        {f.error && <div className="f-err"><AlertTriangle size={13} /> {f.error}</div>}
+                      </div>
+                      {/* K15 (ACC): tag probe + tombol Ganti dipertahankan
+                          (mockup hanya badge "Valid" — tag probe adalah
+                          informasi kejujuran: membedakan PDF berteks vs
+                          hasil scan). */}
+                      {!f.error && probe && probe !== 'error' && (
+                        probe.textChars > 0
+                          ? <span className="f-tag ok">Teks terbaca · siap</span>
+                          : <span className="f-tag warn">Tanpa teks — mungkin scan</span>
+                      )}
+                      {!f.error && probe === 'error' && <span className="f-tag warn">Tidak terprobe</span>}
+                      <button className="f-act" onClick={() => startReplace(f.id)} title="Ganti berkas">
+                        <RotateCcw size={14} />
+                      </button>
+                      <button className="f-del" onClick={() => setFiles((p) => p.filter((x) => x.id !== f.id))} title={t('ai.ded.input.del_file')}>
+                        <X size={15} />
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
-              {useExisting ? (
+            )}
+            {/* Ekspektasi jujur (K1): di dalam kartu kiri, sesudah baris
+                berkas — teks VERBATIM, tidak diubah. */}
+            <p className="dedai-v23-finenote dedai-v23-expect dedai-mk-expect">
+              <strong>Ekspektasi yang jujur:</strong> DED membaca lapisan teks PDF. Dimensi yang hanya hidup di garis
+              gambar tidak bisa di-take-off — kuantitas dari situ adalah perkiraan dan ditandai "Klaim" di layar hasil.
+            </p>
+            <h2 className="dedai-mk-sec-h"><span className="n">2.</span> Penyimpanan Proyek</h2>
+            <div className="dedai-seg">
+              <button className={!useExisting ? 'active' : ''} onClick={() => setUseExisting(false)}>
+                <PlusCircle size={15} /> {t('ai.ded.input.seg_new')}
+              </button>
+              <button className={useExisting ? 'active' : ''} onClick={() => setUseExisting(true)} disabled={projects.length === 0}>
+                <FolderOpen size={15} /> {t('ai.ded.input.seg_existing')}
+              </button>
+            </div>
+            {useExisting ? (
+              <div className="dedai-field">
+                <label>{t('ai.ded.input.label_pick_project')}</label>
+                <select value={targetProjectId || ''} onChange={(e) => setTargetProjectId(e.target.value || null)}>
+                  <option value="">{t('ai.ded.input.opt_pick')}</option>
+                  {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
+                {projects.length === 0 && <div className="hint">{t('ai.ded.input.hint_no_projects')}</div>}
+              </div>
+            ) : (
+              /* K7 (ACC): Nama Proyek tetap OPSIONAL + hint nama-otomatis
+                 (mockup menandai wajib "*" — itu perubahan perilaku,
+                 tidak diambil). */
+              <div className="dedai-field">
+                <label>{t('ai.ded.input.label_new_name')}</label>
+                <input
+                  type="text" value={projectName} onChange={(e) => setProjectName(e.target.value)}
+                  placeholder={t('ai.ded.input.name_ph')}
+                />
+                <div className="hint">{t('ai.ded.input.hint_name_auto')}</div>
+              </div>
+            )}
+            {/* Deskripsi Proyek collapsible (K2): panel "Pengaturan
+                Tambahan" lama DIHAPUS — isinya (Preferensi Output +
+                Deskripsi) pindah ke sini, sesuai mockup. Tertutup
+                default (biaya fit 0px). */}
+            <details className="dedai-mk-desc">
+              <summary>
+                <PenLine size={14} /> {t('ai.ded.input.card_desc_title')} {t('ai.ded.input.card_desc_optional')}
+                <ChevronDown size={15} className="cv" />
+              </summary>
+              <div className="db">
+                <p className="dedai-set-sub">{t('ai.ded.input.card_desc_sub')}</p>
                 <div className="dedai-field">
-                  <label>{t('ai.ded.input.label_pick_project')}</label>
-                  <select value={targetProjectId || ''} onChange={(e) => setTargetProjectId(e.target.value || null)}>
-                    <option value="">{t('ai.ded.input.opt_pick')}</option>
-                    {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-                  </select>
-                  {projects.length === 0 && <div className="hint">{t('ai.ded.input.hint_no_projects')}</div>}
-                </div>
-              ) : (
-                <div className="dedai-field">
-                  <label>{t('ai.ded.input.label_new_name')}</label>
-                  <input
-                    type="text" value={projectName} onChange={(e) => setProjectName(e.target.value)}
-                    placeholder={t('ai.ded.input.name_ph')}
+                  <textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder={t('ai.ded.input.desc_ph')}
                   />
-                  <div className="hint">{t('ai.ded.input.hint_name_auto')}</div>
                 </div>
-              )}
-            </section>
+                <p className="ph">Preferensi Output</p>
+                <p className="ps">Mengatur bagian yang tampil pada hasil &amp; ekspor Excel. Peringatan harga dan status item tetap selalu tampil.</p>
+                <div className="dedai-prefs dedai-os-prefs2">
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={outputPrefs.detailRab}
+                      onChange={(e) => setOutputPrefs((p) => ({ ...p, detailRab: e.target.checked }))}
+                    />
+                    <span>Detail RAB</span>
+                  </label>
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={outputPrefs.volume}
+                      onChange={(e) => setOutputPrefs((p) => ({ ...p, volume: e.target.checked }))}
+                    />
+                    <span>Volume pekerjaan</span>
+                  </label>
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={outputPrefs.priceAnalysis}
+                      onChange={(e) => setOutputPrefs((p) => ({ ...p, priceAnalysis: e.target.checked }))}
+                    />
+                    <span>Analisis harga &amp; asal-usul harga</span>
+                  </label>
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={outputPrefs.unresolvedReport}
+                      onChange={(e) => setOutputPrefs((p) => ({ ...p, unresolvedReport: e.target.checked }))}
+                    />
+                    <span>Laporan item tak teresolusi</span>
+                  </label>
+                </div>
+              </div>
+            </details>
           </div>
 
-          {/* ---- KANAN: kartu mode + konfigurasi + kredit ---- */}
-          <div className="dedai-os-col">
-            <p className="dedai-os-label">Mode Analisis</p>
+          {/* ---- KANAN: 3. Konfigurasi Analisis ---- */}
+          <div className="dedai-os-col dedai-mk-card">
+            <h2 className="dedai-mk-sec-h"><span className="ic"><Settings2 size={17} /></span><span className="n">3.</span> Konfigurasi Analisis</h2>
             {/* DUAL MODE (§3, G-UI-1): PERSIS DUA kartu mode — EZRAB AI
-                (referensi AHSP) atau Full AI (mandiri). v2.3: kartu CIUT
-                default (nama + tag + chevron); klik badan kartu memilih
-                mode, klik chevron memperluas penjelasan fungsi TANPA
-                memilih mode (stopPropagation). Isi bullet + catatan
-                verbatim dari DED_MODE_CARDS — tidak diketik ulang. */}
+                (referensi AHSP) atau Full AI (mandiri). K9 (ACC):
+                chevron expand DIHAPUS (mockup tidak punya); klik badan
+                kartu memilih mode. Kebijakan Harga tetap tidak ada
+                sebagai seksi — kebijakan harga diturunkan dari kartu
+                mode terpilih (catatan keterbukaan per-kartu). */}
             <div className="dedai-modecards dedai-v23-modecards" role="radiogroup" aria-label="Mode analisis DED">
               {DED_MODE_CARDS.map((card) => {
                 const selected = dedMode === card.mode;
-                const expanded = !!expandedModes[card.mode];
-                const detailId = `dedai-mode-detail-${card.mode}`;
                 return (
                   <div
                     key={card.mode}
@@ -522,39 +625,27 @@ export const DedAiInputView: React.FC<Props> = ({
                       {selected && (
                         <span className="dedai-modecard-check" aria-hidden="true"><Check size={13} /></span>
                       )}
-                      <button
-                        type="button"
-                        className="dedai-v23-chev"
-                        aria-expanded={expanded}
-                        aria-controls={detailId}
-                        aria-label={`Lihat fungsi ${card.title}`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setExpandedModes((prev) => ({ ...prev, [card.mode]: !prev[card.mode] }));
-                        }}
-                      >
-                        <ChevronDown size={18} />
-                      </button>
                     </span>
-                    {expanded && (
-                      <span className="dedai-v23-modecard-detail" id={detailId}>
-                        <ul className="dedai-modecard-list">
-                          {card.bullets.map((b) => <li key={b}>{b}</li>)}
-                        </ul>
-                        <span className="dedai-modecard-note">{card.note}</span>
-                      </span>
-                    )}
                   </div>
                 );
               })}
             </div>
-            {/* Kelompok konfigurasi (v2.3): tepat di bawah kartu mode,
-                berurutan, jarak antar-baris rapat (12px). Baris
-                "Yang diekstrak" lama tidak dibawa — mockup v2.3 tidak
-                memakainya (teks penjelas statis, bukan kontrol). */}
+            {/* Catatan keterbukaan mode terpilih (K9): chevron hilang,
+                tapi catatan hukum/provenance HARUS tetap terlihat —
+                dirender statis di bawah kartu (bukan di dalam detail
+                expand). Bullets penjelasan mode tidak lagi dirender
+                (bukan pengungkapan). Dipin F-1/F-2 dedDocViewportFit
+                + E-2 dedPremiumOneScreen + (a) dedOneScreenBehavior. */}
+            {DED_MODE_CARDS.filter((card) => card.mode === dedMode).map((card) => (
+              <p key={card.mode} className="dedai-modecard-note dedai-mk-modenote">{card.note}</p>
+            ))}
+            {/* Kelompok konfigurasi: baris HORIZONTAL label + kontrol +
+                petunjuk (override .dedai-os-col di blok ONE-SCREEN).
+                Label mengikuti mockup ("Kedalaman Analisis",
+                "Cakupan Halaman"). */}
             <div className="dedai-v23-cfg">
               <div className="dedai-cfgrow">
-                <span className="dedai-cfglbl">Kedalaman</span>
+                <span className="dedai-cfglbl">Kedalaman Analisis</span>
                 <div className="dedai-seg dedai-cfgseg">
                   <button className={mode === 'FAST' ? 'active' : ''} onClick={() => setMode('FAST')}>
                     <Zap size={14} /> {t('ai.ded.input.mode_fast')}
@@ -565,6 +656,9 @@ export const DedAiInputView: React.FC<Props> = ({
                 </div>
                 <span className="dedai-cfghint">{mode === 'FAST' ? t('ai.ded.input.hint_mode_fast') : t('ai.ded.input.hint_mode_detail')}</span>
               </div>
+              {/* K8 (ACC): Kompleksitas tetap DINONAKTIFKAN di luar
+                  DETAIL (mockup menampilkannya aktif — itu perubahan
+                  perilaku, tidak diambil). */}
               <div className={`dedai-cfgrow ${mode !== 'DETAIL' ? 'is-dim' : ''}`}>
                 <span className="dedai-cfglbl">Kompleksitas</span>
                 <div className="dedai-seg dedai-cfgseg" role="group" aria-label="Kompleksitas analisis DETAIL">
@@ -589,7 +683,7 @@ export const DedAiInputView: React.FC<Props> = ({
                 </span>
               </div>
               <div className="dedai-cfgrow">
-                <span className="dedai-cfglbl">Cakupan</span>
+                <span className="dedai-cfglbl">Cakupan Halaman</span>
                 <div className="dedai-seg dedai-cfgseg">
                   <button className={scopeKind === 'ALL' ? 'active' : ''} onClick={() => setScopeKind('ALL')}>
                     Semua halaman
@@ -626,48 +720,53 @@ export const DedAiInputView: React.FC<Props> = ({
                 </div>
               </div>
             </div>
-            {/* ---- Kredit (one-screen): estimasi + persetujuan pindah ke
-                kolom kanan, di bawah konfigurasi. Baris saldo in-page
-                DIHAPUS (§5.1 — duplikat chip kredit shell); hook
-                `balance` tetap dipakai (dedAllowed + notifikasi saldo
-                rendah). ---- */}
-            <div className="dedai-os-credit">
-              <h2><span className="ico"><Zap size={18} /></span> Kompleksitas & Estimasi Kredit</h2>
-              {/* Paragraf penjelas DIHAPUS (one-screen §8: informasinya
-                  sudah ada di kontrol kompleksitas tepat di atas +
-                  lencana "simulasi" + teks persetujuan). */}
-              {!dedAllowed && (
-                <div
-                  role="alert"
-                  style={{
-                    display: 'flex', gap: 10, alignItems: 'flex-start',
-                    background: 'var(--ez-color-danger-soft)', border: '1px solid var(--ez-color-danger-soft)', color: 'var(--ez-color-danger)',
-                    borderRadius: 10, padding: '12px 14px', marginBottom: 12,
-                    fontSize: 13.5, lineHeight: 1.55,
-                  }}
-                >
-                  <Lock size={16} style={{ flexShrink: 0, marginTop: 2 }} />
-                  <span>{aiFeatureLockedMessage(balance.plan, 'ded-ai')}</span>
-                </div>
-              )}
-              <div className="aic-estimate" style={{ marginBottom: 10 }}>
-                <span>Estimasi pemakaian: <strong>{dedTarget.toLocaleString('id-ID')} kredit</strong> (maksimum simulasi)</span>
-                <span className="aic-sim">simulasi</span>
+            {/* ---- Kredit: kotak estimasi + persetujuan (K5/K6, ACC) ----
+                Teks persetujuan LENGKAP kode (dengan "(simulasi)",
+                kategori, dan "Saya paham angka ini simulasi frontend,
+                bukan penagihan nyata") + frasa "(maksimum simulasi)" +
+                badge "simulasi" — pengungkapan simulasi mockup
+                (teks pendek tanpa "(simulasi)") TIDAK diambil.
+                Judul blok kredit lama dihapus —
+                isi estimasi kini di dalam kotak ini. Baris saldo
+                in-page tetap tidak ada (duplikat chip kredit shell). */}
+            {!dedAllowed && (
+              <div
+                role="alert"
+                style={{
+                  display: 'flex', gap: 10, alignItems: 'flex-start',
+                  background: 'var(--ez-color-danger-soft)', border: '1px solid var(--ez-color-danger-soft)', color: 'var(--ez-color-danger)',
+                  borderRadius: 10, padding: '12px 14px',
+                  fontSize: 13.5, lineHeight: 1.55,
+                }}
+              >
+                <Lock size={16} style={{ flexShrink: 0, marginTop: 2 }} />
+                <span>{aiFeatureLockedMessage(balance.plan, 'ded-ai')}</span>
               </div>
-              {balance.total < dedTarget && (
-                <div className="aic-low-notice" style={{ marginBottom: 10 }}>
-                  <AlertTriangle size={16} />
-                  <span>Saldo simulasi ({balance.total.toLocaleString('id-ID')}) di bawah estimasi. Anda tetap bisa lanjut setelah menyetujui, atau top-up dulu.</span>
-                  <button type="button" onClick={() => setCreditTopUpOpen(true)}>Top-up</button>
-                </div>
-              )}
-              <label style={{ display: 'flex', gap: 8, alignItems: 'flex-start', fontSize: 13, cursor: 'pointer', lineHeight: 1.5 }}>
+            )}
+            {balance.total < dedTarget && (
+              <div className="aic-low-notice">
+                <AlertTriangle size={16} />
+                <span>Saldo simulasi ({balance.total.toLocaleString('id-ID')}) di bawah estimasi. Anda tetap bisa lanjut setelah menyetujui, atau top-up dulu.</span>
+                <button type="button" onClick={() => setCreditTopUpOpen(true)}>Top-up</button>
+              </div>
+            )}
+            <div className="dedai-mk-est">
+              <span className="ei" aria-hidden="true"><Info size={14} /></span>
+              <span className="et">
+                <span className="el">Estimasi Kredit</span>
+                <span className="ev">± {dedTarget.toLocaleString('id-ID')} kredit</span>
+                <span className="aic-estimate">
+                  <span>(maksimum simulasi)</span>
+                  <span className="aic-sim">simulasi</span>
+                </span>
+              </span>
+              <span className="dv" aria-hidden="true" />
+              <label className="dedai-mk-consent">
                 <input
                   type="checkbox"
                   checked={creditApproved}
                   disabled={!dedAllowed}
                   onChange={(e) => setCreditApproved(e.target.checked)}
-                  style={{ marginTop: 3 }}
                 />
                 <span>
                   Saya menyetujui estimasi <strong>{dedTarget.toLocaleString('id-ID')} kredit (simulasi)</strong> untuk
@@ -675,119 +774,80 @@ export const DedAiInputView: React.FC<Props> = ({
                   simulasi frontend, bukan penagihan nyata.
                 </span>
               </label>
+              <span className="dedai-mk-estinfo" title="Estimasi ini simulasi frontend, bukan penagihan nyata."><Info size={15} /></span>
             </div>
           </div>
         </div>
 
-        {/* Ekspektasi jujur (v2.3): SATU baris kecil redup di bawah baris
-            atas — teks verbatim dari mockup (belum ada kunci kamus;
-            dictionaries.ts di luar cakupan tugas ini). */}
-        <p className="dedai-v23-finenote dedai-v23-expect">
-          <strong>Ekspektasi yang jujur:</strong> DED membaca lapisan teks PDF. Dimensi yang hanya hidup di garis
-          gambar tidak bisa di-take-off — kuantitas dari situ adalah perkiraan dan ditandai "Klaim" di layar hasil.
-        </p>
-
-        {/* ---- Pratinjau hasil: SELALU TERLIHAT satu baris (one-screen).
-            Keadaan NYATA sesi ini (stripDocs + lastRunSummary; "—" bila
-            kosong) — wrapper <details> + head line dihapus (§5.4),
-            kontainer .dedai-preview + grid + sel dipertahankan. ---- */}
-        <div className="dedai-os-preview">
-          <div className="dedai-preview">
-            <div className="dedai-preview-grid">
+        {/* ============ BAWAH: 4. Pratinjau Hasil + tombol (K4) ============
+            Tombol kanan-bawah sebaris pratinjau (bukan full-width).
+            Keadaan NYATA sesi ini (stripDocs + lastRunSummary; "—"
+            bila kosong). K10 (ACC): sel 1 tetap mencerminkan berkas
+            nyata (mockup menampilkan "—" untuk semua sel). */}
+        <div className="dedai-mk-card dedai-mk-prev">
+          <h2 className="dedai-mk-sec-h"><span className="ic"><ChartColumn size={17} /></span><span className="n">4.</span> Pratinjau Hasil <span className="sub">(setelah analisis)</span></h2>
+          <div className="dedai-mk-prev-row">
+            {/* Pembungkus .dedai-preview WAJIB ada: aturan dasar sel
+                (.dedai-preview .pv — padding, ukuran .k/.v/.s,
+                ellipsis .v) hanya berlaku di bawah ancestor ini.
+                Tanpa pembungkus, sel mengembang ke ~89px dan kartu
+                pratinjau meluber (replika v2: slack -75,9px). */}
+            <div className="dedai-preview">
+              <div className="dedai-preview-grid">
               <div className="pv">
-                <div className="k">Dokumen terdeteksi</div>
-                <div className={`v ${stripDocs.v === '—' ? 'empty' : ''}`}>{stripDocs.v}</div>
-                <div className="s">{stripDocs.s}</div>
+                <span className="pv-ico pv-ico-blue"><FileText size={15} /></span>
+                <div className="pv-txt">
+                  <div className="k">Dokumen Terdeteksi</div>
+                  <div className={`v ${stripDocs.v === '—' ? 'empty' : ''}`}>{stripDocs.v}</div>
+                  <div className="s">{stripDocs.s}</div>
+                </div>
               </div>
               <div className="pv">
-                <div className="k">Item pekerjaan</div>
-                <div className={`v ${lastRunSummary ? '' : 'empty'}`}>{lastRunSummary ? lastRunSummary.items.toLocaleString('id-ID') : '—'}</div>
-                <div className="s">{lastRunSummary ? 'dari analisis terakhir' : 'belum ada analisis'}</div>
+                <span className="pv-ico pv-ico-green"><ListChecks size={15} /></span>
+                <div className="pv-txt">
+                  <div className="k">Item Pekerjaan</div>
+                  <div className={`v ${lastRunSummary ? '' : 'empty'}`}>{lastRunSummary ? lastRunSummary.items.toLocaleString('id-ID') : '—'}</div>
+                  <div className="s">{lastRunSummary ? 'dari analisis terakhir' : 'Menunggu analisis'}</div>
+                </div>
               </div>
               <div className="pv">
-                <div className="k">Volume teridentifikasi</div>
-                <div className={`v ${lastRunSummary ? '' : 'empty'}`}>{lastRunSummary ? lastRunSummary.volumesIdentified.toLocaleString('id-ID') : '—'}</div>
-                <div className="s">{lastRunSummary ? 'item bervolume, analisis terakhir' : 'belum ada analisis'}</div>
+                <span className="pv-ico pv-ico-violet"><Package size={15} /></span>
+                <div className="pv-txt">
+                  <div className="k">Volume Teridentifikasi</div>
+                  <div className={`v ${lastRunSummary ? '' : 'empty'}`}>{lastRunSummary ? lastRunSummary.volumesIdentified.toLocaleString('id-ID') : '—'}</div>
+                  <div className="s">{lastRunSummary ? 'item bervolume, analisis terakhir' : 'Menunggu analisis'}</div>
+                </div>
               </div>
               <div className="pv">
-                <div className="k">Harga perlu verifikasi</div>
-                <div className={`v ${lastRunSummary ? '' : 'empty'}`}>{lastRunSummary ? lastRunSummary.pricesNeedVerify.toLocaleString('id-ID') : '—'}</div>
-                <div className="s">{lastRunSummary ? 'item analisis terakhir' : 'belum ada analisis'}</div>
+                <span className="pv-ico pv-ico-amber"><AlertTriangle size={15} /></span>
+                <div className="pv-txt">
+                  <div className="k">Harga Perlu Verifikasi</div>
+                  <div className={`v ${lastRunSummary ? '' : 'empty'}`}>{lastRunSummary ? lastRunSummary.pricesNeedVerify.toLocaleString('id-ID') : '—'}</div>
+                  <div className="s">{lastRunSummary ? 'item analisis terakhir' : 'Menunggu analisis'}</div>
+                </div>
+              </div>
               </div>
             </div>
+            {/* Sub-teks validasi inline ("— unggah berkas valid dulu")
+                tidak muat di tombol 208px — alasannya pindah ke
+                atribut title (kunci cta_hint yang sebelumnya tidak
+                terpakai). */}
+            <button
+              className="dedai-btn primary dedai-mk-start"
+              disabled={!canStart || !creditApproved || !dedAllowed}
+              onClick={handleStart}
+              title={!canStart ? t('ai.ded.input.cta_hint') : undefined}
+            >
+              <Sparkles size={17} /> {t('ai.ded.input.cta')} →
+            </button>
           </div>
         </div>
 
-        {/* ---- Panel Pengaturan Tambahan (collapsible): Preferensi Output +
-            Deskripsi Proyek. "Simpan Hasil Ke" pindah ke kolom kiri. ---- */}
-        <details className="dedai-settings dedai-v23-details">
-          <summary className="dedai-v23-summary">
-            <span className="ico"><Settings2 size={18} /></span> Pengaturan Tambahan
-            <span className="dedai-v23-summary-sub">Preferensi output · Deskripsi proyek</span>
-            <ChevronDown size={18} className="dedai-v23-summary-chev" />
-          </summary>
-          <div className="dedai-v23-details-body">
-            {/* DUAL MODE (§3, G-UI-1): seksi Kebijakan Harga lama DIHAPUS —
-                kebijakan harga kini diturunkan dari kartu mode di kolom
-                kanan (EZRAB AI → Database EZRAB, Full AI → estimasi AI);
-                catatan keterbukaannya pindah ke kartu masing-masing. */}
-
-            {/* ---- Preferensi Output (USULAN BARU ter-ACC): mengatur hasil ---- */}
-            <section className="dedai-set-sec">
-              <h3>Preferensi Output</h3>
-              <p className="dedai-set-sub">Mengatur bagian yang tampil pada hasil &amp; ekspor Excel. Peringatan harga dan status item tetap selalu tampil.</p>
-              <div className="dedai-prefs dedai-os-prefs2">
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={outputPrefs.detailRab}
-                    onChange={(e) => setOutputPrefs((p) => ({ ...p, detailRab: e.target.checked }))}
-                  />
-                  <span>Detail RAB</span>
-                </label>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={outputPrefs.volume}
-                    onChange={(e) => setOutputPrefs((p) => ({ ...p, volume: e.target.checked }))}
-                  />
-                  <span>Volume pekerjaan</span>
-                </label>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={outputPrefs.priceAnalysis}
-                    onChange={(e) => setOutputPrefs((p) => ({ ...p, priceAnalysis: e.target.checked }))}
-                  />
-                  <span>Analisis harga &amp; asal-usul harga</span>
-                </label>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={outputPrefs.unresolvedReport}
-                    onChange={(e) => setOutputPrefs((p) => ({ ...p, unresolvedReport: e.target.checked }))}
-                  />
-                  <span>Laporan item tak teresolusi</span>
-                </label>
-              </div>
-            </section>
-
-            {/* ---- Deskripsi proyek (opsional) ---- */}
-            <section className="dedai-set-sec">
-              <h3><FileText size={14} /> {t('ai.ded.input.card_desc_title')} <span style={{ fontWeight: 500, fontSize: 11.5, color: 'var(--ez-color-text-muted)' }}>{t('ai.ded.input.card_desc_optional')}</span></h3>
-              <p className="dedai-set-sub">{t('ai.ded.input.card_desc_sub')}</p>
-              <div className="dedai-field">
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder={t('ai.ded.input.desc_ph')}
-                />
-              </div>
-            </section>
-          </div>
-        </details>
-
-        {/* ---- Draft tersimpan ---- */}
+        {/* ---- Draft tersimpan (keputusan Fase 2): di BAWAH kartu
+            pratinjau — tombol Mulai tetap di posisi one-screen saat
+            draf ada; draf (seksi sekunder, tertutup default) meluas
+            ke bawah fold. Penempatan di atas kartu pratinjau DITOLAK
+            karena mendorong tombol ke bawah fold saat draf ada. ---- */}
         {drafts.length > 0 && (
           <details className="dedai-v23-details">
             <summary className="dedai-v23-summary">
@@ -818,17 +878,6 @@ export const DedAiInputView: React.FC<Props> = ({
             </div>
           </details>
         )}
-
-        {/* ---- Tombol mulai (one-screen): lebar penuh, kompak (46–48px
-            lewat CSS Child 2). Hint di bawah tombol dihapus (§5.3) —
-            umpan balik validasi tetap di sub-teks tombol, scope error,
-            dan checkbox persetujuan. ---- */}
-        <div className="dedai-os-startwrap">
-          <button className="dedai-btn primary dedai-v23-start" disabled={!canStart || !creditApproved || !dedAllowed} onClick={handleStart}>
-            <Sparkles size={17} /> {t('ai.ded.input.cta')}
-            {!canStart && <small className="dedai-cta-sub">— unggah berkas valid dulu</small>}
-          </button>
-        </div>
       </div>
       {creditTopUpOpen && <CreditTopUpModal onClose={() => setCreditTopUpOpen(false)} />}
     </div>

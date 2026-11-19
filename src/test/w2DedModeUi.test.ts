@@ -63,7 +63,10 @@ check('1c kartu = mode kanonis W1 (DED_RAB_AI_MODES)',
 const ezCard = DED_MODE_CARDS[0]!;
 const faCard = DED_MODE_CARDS[1]!;
 check('1d kartu 1 judul + subjudul persis',
-  ezCard.title === 'EZRAB AI MODE' && ezCard.subtitle === 'Analisis cerdas dengan referensi EZRAB');
+// RE-BASELINE REBUILD 2026-11-19 (K13, ACC owner): subjudul kartu EZRAB
+// "Analisis cerdas dengan referensi EZRAB" -> "Analisis dengan referensi
+// EZRAB" (satu kata "cerdas" dihapus agar sesuai mockup).
+  ezCard.title === 'EZRAB AI MODE' && ezCard.subtitle === 'Analisis dengan referensi EZRAB');
 check('1e kartu 2 judul + subjudul persis',
   faCard.title === 'FULL AI MODE' && faCard.subtitle === 'AI membangun analisis konstruksi secara mandiri');
 check('1f kartu 1 lima butir, menyebut database AHSP EZRAB',
