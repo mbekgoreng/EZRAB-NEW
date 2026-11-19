@@ -376,7 +376,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 pointerEvents: mobileDrawerOpen ? 'auto' : 'none',
               }
             : {
-                width: railMode ? '72px' : '196px',
+                width: railMode ? '72px' : '226px',
                 background: 'var(--ez-color-sidebar)',
                 borderRight: '1px solid var(--ez-color-sidebar-border)',
                 display: 'flex',
@@ -1471,10 +1471,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
           style={{
             position: 'fixed',
             // Capsule straddles the sidebar edge (left = sidebar width
-            // − 4px: 192px expanded / 68px rail) so it never crowds
+            // − 4px: 222px expanded / 68px rail) so it never crowds
             // group-header text or item rows; bottom-anchored in the
             // sidebar's neutral empty band instead of vertical center.
-            left: railMode ? '68px' : '192px',
+            // 2026-11-19: sidebar 196px -> 226px (owner: label AI tidak
+            // boleh melipat); pill mengikuti (192px -> 222px).
+            left: railMode ? '68px' : '222px',
             top: 'auto',
             bottom: '32px',
             transform: 'none',

@@ -15,9 +15,11 @@
  *     struktur tunggal itu agar tidak regresi diam-diam.)
  *  2. TIDAK ADA render grup nav ganda: tiap label grup tepat sekali,
  *     mainNavItems[0] + slice(1) saling lepas, tiap peta submenu sekali.
- *  3. Dimensi baru: lebar desktop 196px, rel 72px, drawer mobile
- *     min(84vw,290px) tidak berubah, pill toggle mengikuti lebar baru
- *     (192px / 68px), baris menu ringkas 32px.
+ *  3. Dimensi baru: lebar desktop 226px (2026-11-19: 196px -> 226px
+ *     atas perintah owner — label AI tidak boleh melipat dua baris),
+ *     rel 72px, drawer mobile min(84vw,290px) tidak berubah, pill
+ *     toggle mengikuti lebar baru (222px / 68px), baris menu ringkas
+ *     32px.
  *  4. TopBar 46px desktop, 48px HP-sempit dipertahankan, semua kontrol
  *     tetap ada (cari, tema, kurs, bahasa, notifikasi, bantuan, kredit,
  *     akun) — tanpa tombol membesar.
@@ -88,7 +90,7 @@ for (const id of destinations) {
 }
 
 /* --- 3. Dimensi sidebar baru ----------------------------------------------- */
-check("Sidebar: lebar desktop 196px (rel 72px dipertahankan)", sidebar.includes("width: railMode ? '72px' : '196px',"));
+check("Sidebar: lebar desktop 226px (rel 72px dipertahankan)", sidebar.includes("width: railMode ? '72px' : '226px',")); // 2026-11-19: 196px -> 226px, perintah owner (label AI tidak boleh melipat)
 check('Sidebar: tidak ada lagi lebar lama 256px', !sidebar.includes('256px'));
 check("Sidebar: drawer mobile min(84vw, 290px) tidak berubah", sidebar.includes("width: 'min(84vw, 290px)',"));
 check('Sidebar: tidak ada lagi baris menu 36px', !sidebar.includes("height: '36px'"));
@@ -99,7 +101,7 @@ check('Sidebar: baris 28px = chip picker + sub-item RAB + avatar billing (3)',
 check('Sidebar: padding baris nav ringkas 0 10px (10 baris)',
   count(sidebar, /padding: railMode \? '0' : '0 10px',/g) === 10);
 check('Sidebar: tidak ada lagi padding baris 0 12px', !sidebar.includes("padding: railMode ? '0' : '0 12px',"));
-check("Sidebar: pill toggle mengikuti lebar baru (192px / 68px)", sidebar.includes("left: railMode ? '68px' : '192px',"));
+check("Sidebar: pill toggle mengikuti lebar baru (222px / 68px)", sidebar.includes("left: railMode ? '68px' : '222px',")); // 2026-11-19: 192px -> 222px (lebar sidebar - 4px)
 check('Sidebar: tidak ada lagi posisi pill lama 252px', !sidebar.includes('252px'));
 check("Sidebar: tooltip rel tetap 80px (rel 72px tidak berubah)", sidebar.includes("left: '80px',"));
 

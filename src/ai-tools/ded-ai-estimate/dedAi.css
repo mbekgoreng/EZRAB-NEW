@@ -914,6 +914,12 @@
    576,3px default (slack 20,7px) / 559,7px rail (slack 37,3px) /
    576,3px 2-berkas; 1440x900: 578,3px (slack 102,7px); 1920x1080:
    548,9px (slack 312,1px). Batas desain 585px terpenuhi di 1366x768.
+   SIDEBAR 226px 2026-11-19 (owner: label AI tidak boleh melipat):
+   konten menyempit 30px -> baris ekspektasi melipat 2 baris (+16,8px),
+   slack 1366 anjlok ke 3,9px. Perbaikan: margin antar-seksi 8px -> 4px
+   (4 tempat, hemat 16px) — terukur ulang: 577,1px default/2-berkas
+   (slack 19,9px) / 562,3px di 1440x900 (slack 118,7px) / 532,9px di
+   1920x1080 (slack 328,1px). Batas desain 585px terpenuhi kembali.
    Perincian di laporan Child 3 + laporan akhir program. */
 
 /* --- Baris atas: grid 42/58, kolom rapat --- */
@@ -922,7 +928,10 @@
   grid-template-columns: 42fr 58fr;
   gap: 16px;
   align-items: start;
-  margin-bottom: 8px;
+  /* 2026-11-19 (sidebar 226px): margin antar-seksi 8px -> 4px (4 tempat)
+     untuk memulihkan slack one-screen 1366x768 sesudah baris ekspektasi
+     melipat 2 baris (konten menyempit 30px). Total hemat 16px. */
+  margin-bottom: 4px;
 }
 .dedai-os-col { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 
@@ -1048,11 +1057,12 @@
   font-size: 12px; line-height: 1.4; color: var(--dd-muted); margin: 0 0 8px;
 }
 
-/* --- Baris ekspektasi jujur: satu baris, rapat --- */
-.dedai-os-top + .dedai-v23-expect { font-size: 12px; line-height: 1.4; margin-bottom: 8px; }
+/* --- Baris ekspektasi jujur: rapat (2 baris di 1366/sidebar 226px,
+   1 baris di >=1440; teks TIDAK dipangkas — disclaimer kejujuran) --- */
+.dedai-os-top + .dedai-v23-expect { font-size: 12px; line-height: 1.4; margin-bottom: 4px; } /* 2026-11-19: 8px -> 4px, lihat .dedai-os-top */
 
 /* --- Pratinjau: selalu terlihat, satu baris 4 sel --- */
-.dedai-os-preview { margin-bottom: 8px; }
+.dedai-os-preview { margin-bottom: 4px; } /* 2026-11-19: 8px -> 4px, lihat .dedai-os-top */
 .dedai-os-preview .dedai-preview { margin-bottom: 0; }
 .dedai-os-preview .pv { padding: 6px 12px; }
 .dedai-os-preview .pv .k { line-height: 1.2; }
@@ -1060,7 +1070,7 @@
 .dedai-os-preview .pv .s { line-height: 1.2; }
 
 /* --- Seksi sekunder collapsible: ringkasan rapat --- */
-.dedai-input-layout > .dedai-v23-details { margin-bottom: 8px; }
+.dedai-input-layout > .dedai-v23-details { margin-bottom: 4px; } /* 2026-11-19: 8px -> 4px, lihat .dedai-os-top */
 .dedai-input-layout > .dedai-v23-details .dedai-v23-summary { padding: 10px 0; }
 
 /* Preferensi output: grid 2 kolom (label memakai gaya .dedai-prefs). */
