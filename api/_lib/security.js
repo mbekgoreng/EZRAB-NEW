@@ -186,12 +186,16 @@ function clampNum(v, min, max, dflt) {
 }
 
 // Batas prompt sistem klien yang diterima gateway (Wave D1, direktif owner
-// 2026-11-12). Prompt kanonis EZRAB v2.0.0 = 14.800 karakter dan WAJIB lolos
-// utuh byte-for-byte; melebihi batas ini = penolakan eksplisit
-// (PAYLOAD_TOO_LARGE), BUKAN pemotongan diam-diam seperti perilaku
-// slice(0, 8000) sebelumnya. Batas body 4 MiB di readJsonBody tidak berubah
-// dan tetap menjadi plafon ukuran permintaan yang sebenarnya.
-const MAX_SYSTEM_PROMPT_CHARS = 16000;
+// 2026-11-12; dinaikkan 16.000 → 20.000 pada re-baseline prompt v2.3.0,
+// audit integritas FASE 1, 2026-11-19). Prompt kanonis EZRAB v2.3.0 =
+// 17.003 karakter dan WAJIB lolos utuh byte-for-byte — batas lama 16.000
+// menolak prompt kanonis HEAD (4c506c5) dengan PAYLOAD_TOO_LARGE sehingga
+// Chat AI gagal 400 sebelum provider dipanggil. Batas 20.000 menyelaraskan
+// dengan batas message/prompt (20.000) dan tetap jauh di bawah plafon body
+// 4 MiB di readJsonBody; fungsi batas sebagai pelindung DoS dipertahankan.
+// Melebihi batas ini = penolakan eksplisit (PAYLOAD_TOO_LARGE), BUKAN
+// pemotongan diam-diam seperti perilaku slice(0, 8000) sebelumnya.
+const MAX_SYSTEM_PROMPT_CHARS = 20000;
 
 export function validateAiInput(body) {
   const errors = [];
@@ -224,7 +228,7 @@ export function validateAiInput(body) {
     if (typeof body.systemPrompt !== 'string') {
       fail('systemPrompt harus berupa teks', 'invalid');
     } else if (body.systemPrompt.length > MAX_SYSTEM_PROMPT_CHARS) {
-      fail('systemPrompt maksimal 16000 karakter', 'size');
+      fail('systemPrompt maksimal 20000 karakter', 'size');
     } else {
       systemPrompt = body.systemPrompt;
     }

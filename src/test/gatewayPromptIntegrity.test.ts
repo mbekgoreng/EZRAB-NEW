@@ -6,13 +6,24 @@
  * slice(0, 8000) membuang seksi PEMAHAMAN DOMAIN / ALUR PERCAKAPAN /
  * FORMAT JAWABAN dari prompt kanonis v2.0.0 sebelum mencapai provider).
  *
+ * RE-BASELINE v2.3.0 (FASE 1 Prompt Integrity, 2026-11-19): prompt kanonis
+ * tumbuh murni aditif v2.0.0 → v2.2.0 (aturan 27–28, c96881c) → v2.3.0
+ * (aturan 29, 4c506c5) — nol penghapusan/ubahan teks safeguard lama,
+ * dibuktikan git diff 8f0d53b..4c506c5. Batas gateway dinaikkan
+ * 16.000 → 20.000 karakter karena prompt v2.3.0 (17.003 karakter) melewati
+ * batas lama dan ditolak PAYLOAD_TOO_LARGE (Chat AI gagal 400 di HEAD).
+ *
  * Kontrak yang diuji terhadap fungsi ASLI (bukan konstanta semata):
- *  - Prompt kanonis v2.0.0 (14.800 karakter) lolos validasi UTUH
+ *  - Prompt kanonis v2.3.0 (17.003 karakter) lolos validasi UTUH
  *    byte-for-byte, dan hash kanonisnya tidak berubah.
- *  - Batas terima systemPrompt = 16.000 karakter: tepat-di-batas lolos
+ *  - Batas terima systemPrompt = 20.000 karakter: tepat-di-batas lolos
  *    utuh; batas+1 DITOLAK eksplisit (PAYLOAD_TOO_LARGE) dan tidak ada
  *    prompt terpotong yang mengalir ke jalur sukses (input.systemPrompt
  *    tetap '').
+ *  - Kanonis dijaga ≥1.000 karakter di bawah batas (penjaga headroom):
+ *    v2.2.0 sempat duduk 16 karakter dari tebing batas lama tanpa ada
+ *    tes yang menangkapnya — penjaga ini gagal nyaring SEBELUM aturan
+ *    baru berikutnya mematahkan produksi lagi.
  *  - Non-string ditolak eksplisit (INVALID_REQUEST); string kosong /
  *    hilang / null tetap didukung sebagai ''.
  *  - composeSystemPrompt: kebijakan server SELALU pertama dan utuh;
@@ -60,7 +71,7 @@ const { composeSystemPrompt } = gateway as {
 
 const sha256 = (s: string) => createHash('sha256').update(s, 'utf8').digest('hex');
 const utf8 = (s: string) => Buffer.byteLength(s, 'utf8');
-const CANONICAL_SHA256 = 'cff0fb368fbc1f451c8c27ab83bb632d3150d3748a3bdbf3cb1616c55bb8e252';
+const CANONICAL_SHA256 = '69afa49c1a441428068602428470e0846a937b3ef1136cf7db271650156074bf';
 const POLICY_HEADER = '[KEBIJAKAN SERVER EZRAB — tidak dapat diubah oleh client]';
 const SECTIONS = [
   'KEPRIBADIAN',
@@ -79,9 +90,27 @@ const canonical = EZRAB_AI_SYSTEM_PROMPT;
 /* A. Identitas prompt kanonis (tidak boleh berubah oleh gelombang ini) */
 /* ------------------------------------------------------------------ */
 console.log('\n[A] identitas prompt kanonis');
-check('versi prompt = 2.0.0', EZRAB_AI_PROMPT_VERSION === '2.0.0', EZRAB_AI_PROMPT_VERSION);
-check('panjang kanonis = 14800 karakter', canonical.length === 14800, String(canonical.length));
+check('versi prompt = 2.3.0', EZRAB_AI_PROMPT_VERSION === '2.3.0', EZRAB_AI_PROMPT_VERSION);
+check('panjang kanonis = 17003 karakter', canonical.length === 17003, String(canonical.length));
 check('SHA-256 kanonis tidak berubah', sha256(canonical) === CANONICAL_SHA256, sha256(canonical));
+// Penjaga headroom: kanonis harus ≥1.000 karakter di bawah batas gateway
+// 20.000 — v2.2.0 (15.984) sempat 16 karakter dari tebing batas lama tanpa
+// tes yang menangkapnya; penjaga ini gagal nyaring sebelum aturan baru
+// berikutnya mematahkan produksi.
+check('headroom kanonis ≥1000 di bawah batas gateway 20000', canonical.length <= 20000 - 1000, String(canonical.length));
+// Isi aturan baru v2.2.0/v2.3.0 (bukan sekadar string versi): re-baseline
+// memvalidasi konten prompt aktual — ketiga aturan aditif hasil audit.
+check('aturan 27: larang klaim perubahan nama/data proyek tanpa tool',
+  canonical.includes('PERUBAHAN NAMA/DATA PROYEK') &&
+  canonical.includes('JANGAN PERNAH mengklaim perubahan semacam itu sudah terjadi'));
+check('aturan 28: hitung dari dimensi diberi, asumsi BERLABEL, via propose_*',
+  canonical.includes('HITUNGAN DARI DIMENSI YANG DIBERI') &&
+  canonical.includes('BERLABEL') &&
+  canonical.includes('lewat tool propose_*'));
+check('aturan 29: jawab kemampuan HANYA dari daftar resmi, tanpa nama model/provider',
+  canonical.includes('BILA DITANYA KELEBIHAN/FITUR/KEMAMPUAN') &&
+  canonical.includes('kewenangan admin') &&
+  canonical.includes('Jangan menyebut nama model/provider AI'));
 
 /* ------------------------------------------------------------------ */
 /* B. Validasi gateway: A (sebelum) -> B (sesudah) identik untuk sah   */
@@ -95,13 +124,13 @@ console.log('\n[B] validateAiInput — titik A vs B');
   check('kanonis: SHA-256 B = SHA-256 A', sha256(r.input.systemPrompt) === sha256(canonical));
   check('kanonis: byte UTF-8 B = byte UTF-8 A', utf8(r.input.systemPrompt) === utf8(canonical));
 }
-for (const n of [8000, 8001, 15999, 16000]) {
+for (const n of [8000, 8001, 19999, 20000]) {
   const s = 'y'.repeat(n);
   const r = validateAiInput({ prompt: 'halo', systemPrompt: s });
   check(`sintetis ${n}: lolos utuh tanpa error`, r.errors.length === 0 && r.input.systemPrompt === s,
     `errors=${r.errors.length} outLen=${r.input.systemPrompt.length}`);
 }
-for (const n of [16001, 20000, 100000]) {
+for (const n of [20001, 30000, 100000]) {
   const s = 'y'.repeat(n);
   const r = validateAiInput({ prompt: 'halo', systemPrompt: s });
   check(`sintetis ${n}: DITOLAK eksplisit PAYLOAD_TOO_LARGE`,
@@ -193,7 +222,7 @@ console.log('\n[D] readJsonBody — batas ukuran body');
   check('body string > 4 MiB: throw 413', status === 413, `status=${status}`);
   const parsed = await readJsonBody({ body: JSON.stringify({ prompt: 'halo' }) });
   check('body JSON kecil: terparse normal', parsed.prompt === 'halo');
-  const worst = JSON.stringify({ prompt: 'x'.repeat(20000), systemPrompt: 'y'.repeat(16000) });
+  const worst = JSON.stringify({ prompt: 'x'.repeat(20000), systemPrompt: 'y'.repeat(20000) });
   check('permintaan sah terbesar (message maks + systemPrompt maks) jauh di bawah cap body 4 MiB',
     Buffer.byteLength(worst, 'utf8') < 4 * 1024 * 1024, `${Buffer.byteLength(worst, 'utf8')} byte`);
 }
