@@ -91,6 +91,18 @@ check('header kompak: subjudul disembunyikan', ruleBody(fpCss, '.fp-sub', fpH).i
 check('stepper kompak: padding 5px 12px', ruleBody(fpCss, '.fp-stepper', fpH).includes('padding: 5px 12px'));
 check('stepper kompak: nomor langkah 20px', ruleBody(fpCss, '.fp-step-n', fpH).includes('width: 20px'));
 check('konten kompak: padding 8px 22px 10px', ruleBody(fpCss, '.fp-content', fpH).includes('padding: 8px 22px 10px'));
+// v4 CIAMIK 2026-11-20 (ACC owner): pengecualian per-halaman DED —
+// subtitle header + padding lega kembali tampil di layar pendek
+// KHUSUS saat .dedai-input terpasang (layar input DED), di lebar
+// desktop saja. Aturan kompresi global di atas TIDAK diubah (pin-pin
+// di atas tetap mematok nilai kompresi sebagai aturan pertama).
+const fpV4 = fpCss.indexOf('@media (max-height: 880px) and (min-width: 701px)');
+check('shell v4: pengecualian DED ada sesudah blok kompresi global', fpV4 > fpH && fpH > 0);
+check('shell v4: subtitle + padding dipulihkan khusus .dedai-input',
+  fpV4 > 0 && fpCss.slice(fpV4).includes('.fp-shell:has(.dedai-input) .fp-sub')
+  && fpCss.slice(fpV4).includes('display: block')
+  && fpCss.slice(fpV4).includes('padding: 14px 22px 10px')
+  && fpCss.slice(fpV4).includes('padding: 16px 22px 20px'));
 
 /* 2 — DED kompak ------------------------------------------------------------ */
 const dedH = dedCss.indexOf('@media (max-height: 880px)');
@@ -118,9 +130,15 @@ check('baris konfigurasi analisis terpasang di TSX (Mode/Kompleksitas/Cakupan)',
 // stepper 3 langkah berlabel di shell. Pin baru menegaskan penghapusan
 // (teks itu tidak ada, prop stepsNote tidak ada) DAN stepper tetap
 // merender 3 langkah berlabel (steps={shellSteps} + step_1).
-check('status stepper: catatan "Langkah N dari 3" dihapus, stepper 3 langkah tetap ada',
+// RE-BASELINE v4 CIAMIK 2026-11-20 (ACC owner): stepper balok shell
+// TIDAK diteruskan di layar input (steps=undefined saat input) —
+// stepper ramping di dalam kolom (.mk4-stepper di InputView, 3 kunci
+// langkah) menggantikannya; stepper shell kembali penuh saat
+// analisis/hasil. Pin baru memeriksa gerbang kondisionalnya.
+check('status stepper: catatan "Langkah N dari 3" dihapus, stepper 3 langkah tetap ada (shell non-input + ramping v4 di input)',
   !dedView.includes('Langkah 1 dari 3') && !dedView.includes('stepsNote')
-  && dedView.includes('steps={shellSteps}') && dedView.includes("t('ai.ded.input.step_1')"));
+  && dedView.includes("steps={screen === 'input' ? undefined : shellSteps}") && dedView.includes("t('ai.ded.input.step_1')")
+  && dedInput.includes('mk4-stepper') && dedInput.includes("t('ai.ded.input.step_3')"));
 // PERBAIKAN F (F-1): pin lama mematok disclaimer di InputView inline —
 // teks itu pindah ke kartu FULL_AI (dedModeUi.ts) oleh W2 G-UI-1, isi
 // hukumnya utuh (sama seperti E-2 di dedPremiumOneScreen). Cek baru:

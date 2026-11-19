@@ -27,7 +27,7 @@ import {
 import { buildFullAiAttachmentOutput, resolveDedAiMode } from './dedModeUi';
 import { loadPersistedDedMode } from './dedModePersistence';
 import { probeDedPdf, resolvePageScope } from './parser';
-import { DedAiInputView, DedAiSession, DedLastRunSummary } from './DedAiInputView';
+import { DedAiInputView, DedAiSession } from './DedAiInputView';
 import { DedAiProgressView, DedAiStage, getStageDefs, ProgressSummary } from './DedAiProgressView';
 import { DedAiResultView } from './DedAiResultView';
 import { fullAiDedService, FULL_AI_TIMEOUT_MS } from '../ded-full-ai/service';
@@ -998,26 +998,9 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
   const shellContextText =
     result?.projectName || summary.projectName || session.projectName || undefined;
 
-  // Strip pratinjau hasil di layar input (USULAN BARU ter-ACC 2026-11-10):
-  // angka dari hasil NYATA terakhir pada sesi view ini — null sebelum ada
-  // analisis, tidak pernah angka contoh.
-  const lastRunSummary: DedLastRunSummary | null = fullAiOutput
-    ? {
-        items: fullAiOutput.items.length,
-        volumesIdentified: fullAiOutput.items.filter((i) => i.quantity.value != null).length,
-        pricesNeedVerify: fullAiOutput.items.filter(
-          (i) => i.price.unitPrice == null || i.price.source === 'AI_ESTIMATE',
-        ).length,
-      }
-    : result
-      ? {
-          items: result.items.length,
-          volumesIdentified: result.items.filter((i) => i.quantity != null).length,
-          pricesNeedVerify: result.items.filter(
-            (i) => i.unitPrice == null || i.priceSource === 'AI_ESTIMATE',
-          ).length,
-        }
-      : null;
+  // v4 CIAMIK 2026-11-20: ringkasan lari terakhir DIHAPUS dari layar
+  // input (tidak ada lagi kartu hasil di sana) — komputasi di sini
+  // dihapus, bukan disembunyikan.
 
   let screenContent: React.ReactNode;
   if (screen === 'progress') {
@@ -1113,10 +1096,6 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
           onSessionChange={handleDedSessionChange}
           onLoadDraft={handleLoadDraft}
           onDeleteDraft={handleDeleteDraft}
-          lastRunSummary={lastRunSummary}
-          // Rebuild mockup 2026-11-19: nama proyek untuk breadcrumb
-          // DED-only (remah tengah; kosong = breadcrumb tanpa proyek).
-          breadcrumbProjectName={shellContextText}
         />
       </>
     );
@@ -1131,7 +1110,11 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
       contextText={shellContextText}
       chips={shellChips}
       creditText={`Kredit AI: ${creditBalance.total.toLocaleString('id-ID')}`}
-      steps={shellSteps}
+      // v4 CIAMIK 2026-11-20: stepper balok shell TIDAK diteruskan di
+      // layar input — stepper ramping di dalam kolom (.mk4-stepper)
+      // menggantikannya. Stepper shell kembali penuh saat
+      // analisis/hasil.
+      steps={screen === 'input' ? undefined : shellSteps}
     >
       {screenContent}
     </FeaturePageShell>

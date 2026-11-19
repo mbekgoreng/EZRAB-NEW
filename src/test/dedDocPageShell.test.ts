@@ -27,6 +27,13 @@
  *    dalam kartu pratinjau (.dedai-mk-start), stepper langkah 2
  *    "Analisis" (kamus step_2). Pin yang berubah dicatat dengan
  *    komentar "RE-BASELINE REBUILD 2026-11-19" di bawah.
+ *    V4 CIAMIK 2026-11-20 (ACC owner 01:53): layout mockup diganti
+ *    satu kolom terpusat 880px — stepper balok shell TIDAK
+ *    diteruskan di layar input (stepper ramping .mk4-stepper di
+ *    dalam kolom), kartu hasil layar input DIHAPUS, prefs pindah ke
+ *    panel "Pengaturan lanjutan", kotak estimasi ke kartu sendiri
+ *    .mk4-est, CTA lebar penuh kolom. Pin yang berubah dicatat
+ *    dengan komentar "RE-BASELINE v4 CIAMIK 2026-11-20" di bawah.
  *  - Keadaan awal AI Document (DocLibrary): dropzone besar + panel
  *    .docai-settings (Mode Analisis Pertama dari getTabs DocAnalyzer, Jenis
  *    Dokumen, Bahasa, Sesudah Analisis, ringkasan dokumen terpilih) dengan
@@ -76,15 +83,26 @@ check('DED view TIDAK memakai FeatureFullscreenShell', !dedView.includes('<Featu
 // "Analisis" (kamus ai.ded.input.step_2; sebelumnya "Progress"). Label
 // hidup di kamus, bukan di view.tsx — pin memeriksa kunci step_1/step_2
 // yang diteruskan ke shell.
-check('DED view meneruskan stepper Input/Analisis/Hasil ke shell', dedView.includes('steps={shellSteps}') && dedView.includes("t('ai.ded.input.step_1')") && dedView.includes("t('ai.ded.input.step_2')"));
+// RE-BASELINE v4 CIAMIK 2026-11-20 (ACC owner): stepper balok shell
+// TIDAK diteruskan di layar input (steps=undefined saat input) —
+// stepper ramping di dalam kolom (.mk4-stepper di InputView)
+// menggantikannya; stepper shell kembali penuh saat analisis/hasil
+// (steps=shellSteps). Pin baru memeriksa gerbang kondisionalnya.
+check('DED view: stepper shell hanya non-input (gerbang v4)', dedView.includes("steps={screen === 'input' ? undefined : shellSteps}") && dedView.includes("t('ai.ded.input.step_1')") && dedView.includes("t('ai.ded.input.step_2')"));
 const dedInput = read('src/ai-tools/ded-ai-estimate/DedAiInputView.tsx');
+// v4 CIAMIK 2026-11-20 (ACC owner): stepper ramping di dalam kolom
+// InputView memakai 3 kunci langkah yang sama (Input/Analisis/Hasil).
+check('DED input: stepper ramping v4 di dalam kolom (mk4-stepper)', dedInput.includes('mk4-stepper') && dedInput.includes("t('ai.ded.input.step_1')") && dedInput.includes("t('ai.ded.input.step_2')") && dedInput.includes("t('ai.ded.input.step_3')"));
 check('DED input: tata letak upload + panel (dedai-input-layout)', dedInput.includes('dedai-input-layout'));
 check('DED input: dropzone besar tetap ada', dedInput.includes('dedai-drop'));
 // RE-BASELINE REBUILD 2026-11-19 (K2, ACC owner): panel .dedai-settings
 // DIHAPUS sesuai mockup — isinya pindah ke collapsible Deskripsi Proyek
 // (.dedai-mk-desc, berisi textarea + Preferensi Output). Pin lama
 // dibalik menjadi pin ketiadaan panel + keberadaan collapsible.
-check('DED input: panel Pengaturan DIHAPUS, prefs di collapsible Deskripsi (K2)', !dedInput.includes('dedai-settings') && dedInput.includes('dedai-mk-desc') && dedInput.includes('dedai-os-prefs2'));
+// RE-BASELINE v4 CIAMIK 2026-11-20 (ACC owner): collapsible Deskripsi
+// (.dedai-mk-desc) diganti panel "Pengaturan lanjutan" (.mk4-adv,
+// satu collapsible berisi 5 pengaturan); prefs tetap di dalamnya.
+check('DED input: panel Pengaturan DIHAPUS, prefs di panel lanjutan v4', !dedInput.includes('dedai-settings') && dedInput.includes('mk4-adv') && dedInput.includes('dedai-os-prefs2') && !dedInput.includes('dedai-mk-desc'));
 check('DED input: seksi Kebijakan Harga', dedInput.includes('Kebijakan Harga'));
 // RE-BASELINE REBUILD 2026-11-19 (ACC owner): "Simpan Hasil Ke" diganti
 // seksi bernomor "2. Penyimpanan Proyek" (segmen Proyek Baru/Existing
@@ -101,14 +119,21 @@ check('DED input: seksi Konfigurasi Analisis (dua kartu mode)',
 // lama dihapus — isi estimasi kini di dalam kotak .dedai-mk-est dengan
 // frasa "(maksimum simulasi)" + badge "simulasi" + teks persetujuan
 // lengkap. Pin baru memeriksa kotak + pengungkapan simulasinya.
-check('DED input: kotak estimasi kredit + pengungkapan simulasi (K5/K6)', dedInput.includes('dedai-mk-est') && dedInput.includes('(maksimum simulasi)') && dedInput.includes('aic-sim') && !dedInput.includes('Kompleksitas & Estimasi Kredit'));
+// RE-BASELINE v4 CIAMIK 2026-11-20 (ACC owner): kotak estimasi pindah
+// ke kartu sendiri .mk4-est; teks persetujuan lengkap di balik
+// "Selengkapnya" (showConsentFull).
+check('DED input: kartu estimasi kredit v4 + pengungkapan simulasi (K5/K6)', dedInput.includes('mk4-est') && dedInput.includes('(maksimum simulasi)') && dedInput.includes('aic-sim') && dedInput.includes('Selengkapnya') && !dedInput.includes('dedai-mk-est') && !dedInput.includes('Kompleksitas & Estimasi Kredit'));
 check('DED input: tarif dari ai-credits/config (tariffFor, tanpa hardcode ulang)', dedInput.includes('tariffFor'));
 // RE-BASELINE REBUILD 2026-11-19 (K4, ACC owner): CTA pindah dari tombol
 // besar lebar penuh v2.3 (dedai-v23-start) ke tombol kanan-bawah sebaris
 // pratinjau (.dedai-mk-start) sesuai mockup — kunci i18n yang sama
 // dipertahankan. Bukan pelemahan: pin tetap memeriksa keberadaan CTA +
 // kunci i18n-nya, hanya di penempatan baru yang disetujui owner.
-check('DED input: CTA kanan-bawah sebaris pratinjau (dedai-mk-start)', dedInput.includes('dedai-mk-start') && dedInput.includes("t('ai.ded.input.cta')") && !dedInput.includes('dedai-v23-start'));
+// RE-BASELINE v4 CIAMIK 2026-11-20 (ACC owner): CTA pindah dari tombol
+// kanan-bawah sebaris kartu hasil ke tombol lebar penuh kolom
+// (.mk4-col .dedai-mk-start 52px, dipin di dedOneScreenBehavior (o))
+// — kelas + kunci i18n yang sama dipertahankan.
+check('DED input: CTA lebar penuh kolom (dedai-mk-start)', dedInput.includes('dedai-mk-start') && dedInput.includes("t('ai.ded.input.cta')") && !dedInput.includes('dedai-v23-start'));
 check('DED input: CTA tidak lagi lewat FsFooterPortal (pindah ke panel)', !dedInput.includes('FsFooterPortal'));
 const dedResult = read('src/ai-tools/ded-ai-estimate/DedAiResultView.tsx');
 check('DED hasil: footer aksi tetap lewat FsFooterPortal (konteks bersama)', dedResult.includes('FsFooterPortal'));

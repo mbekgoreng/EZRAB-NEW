@@ -12,9 +12,9 @@
  *     kontrol di InputView, diteruskan view → DedAiResultView, dan
  *     menggerbang tabel/volume/rincian provenans/laporan tak teresolusi
  *     + kolom & lembar ekspor Excel.
- *  4. Strip pratinjau dari keadaan NYATA: InputView menerima
- *     lastRunSummary dari view (dihitung dari output analisis terakhir),
- *     sel dokumen dari probe berkas (probeDedPdf), nilai "—" sebelum ada.
+ *  4. v4 CIAMIK 2026-11-20: kartu hasil layar input DIHAPUS (ACC
+ *     owner) — InputView tidak lagi menerima lastRunSummary; sel
+ *     dokumen dari probe berkas (probeDedPdf) tetap di baris berkas.
  *  5. Redesign: palet spec di dedAi.css terlingkup .dedai-input, CTA
  *     berlabel "Mulai Analisis DED" (kamus id), kompleksitas hanya aktif
  *     pada mode DETAIL, baris berkas punya aksi ganti + lencana teks.
@@ -101,12 +101,17 @@ check('laporan item tak teresolusi ada & digerbang', result.includes('Laporan It
 check('ekspor Excel mematuhi preferensi (lembar tak teresolusi)',
   result.includes("'Item Tak Teresolusi'") && result.includes('Ringkasan'));
 
-/* 4 — Strip pratinjau keadaan nyata ------------------------------------------ */
-check('InputView menerima lastRunSummary', input.includes('lastRunSummary'));
-check('view menghitung lastRunSummary dari output nyata',
-  view.includes('const lastRunSummary') && view.includes('pricesNeedVerify'));
-check('view meneruskan lastRunSummary ke InputView', view.includes('lastRunSummary={lastRunSummary}'));
-check('strip pratinjau dirender di InputView', input.includes('dedai-preview-grid'));
+/* 4 — Kartu hasil layar input DIHAPUS (v4 CIAMIK 2026-11-20) ------------- */
+// RE-BASELINE v4 CIAMIK 2026-11-20 (ACC owner): strip pratinjau
+// DIHAPUS dari layar input (kembali sesudah analisis, di layar
+// hasil) — keempat pin di bawah dibalik menjadi pin ketiadaan.
+// Informasi dokumen nyata TIDAK hilang: jumlah halaman + tag
+// keterbacaan probe tetap tampil di baris berkas (cek terakhir,
+// tidak berubah).
+check('v4: InputView TANPA lastRunSummary', !input.includes('lastRunSummary'));
+check('v4: view TANPA komputasi lastRunSummary', !view.includes('const lastRunSummary') && !view.includes('pricesNeedVerify'));
+check('v4: view TIDAK meneruskan lastRunSummary ke InputView', !view.includes('lastRunSummary={lastRunSummary}'));
+check('v4: kartu hasil TIDAK dirender di InputView', !input.includes('dedai-preview-grid') && !input.includes('dedai-mk-prev') && !input.includes('Pratinjau Hasil'));
 check('sel dokumen dari probe berkas nyata', input.includes('probeDedPdf') && input.includes('halaman · '));
 
 /* 5 — Redesign premium -------------------------------------------------------- */

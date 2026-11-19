@@ -223,3 +223,22 @@
   .fp-content { padding: 8px 22px 10px; }
   .fp-actionbar { padding: 8px 22px; }
 }
+
+/* ---------- Pengecualian v4 CIAMIK DED (2026-11-20, ACC owner) -------
+   Layar input DED (satu kolom terpusat) menampilkan subtitle header +
+   padding lega MESKI di layar pendek: brief v4 menyebut "header +
+   subtitle" sebagai elemen pertama. Pengecualian ini HANYA berlaku
+   bila .dedai-input terpasang (layar input DED saja — progress/hasil
+   dan semua menu lain tetap memakai kompresi global di atas) dan
+   HANYA di lebar desktop (min-width 701px) agar clamp 2-baris
+   subtitle di HP (blok ≤700px) tetap berlaku. Aturan kompresi global
+   @media (max-height: 880px) di atas TIDAK diubah — keputusan owner
+   2026-11-10 untuk menu lain tetap berlaku. Nilai padding =
+   nilai yang terukur di replika v4 (bukan nilai dasar: head bawah
+   10px, konten 16px 22px 20px). */
+@media (max-height: 880px) and (min-width: 701px) {
+  .fp-shell:has(.dedai-input) .fp-head { padding: 14px 22px 10px; }
+  .fp-shell:has(.dedai-input) .fp-feat-txt h1 { font-size: 19px; }
+  .fp-shell:has(.dedai-input) .fp-sub { display: block; font-size: 12.5px; }
+  .fp-shell:has(.dedai-input) .fp-content { padding: 16px 22px 20px; }
+}
