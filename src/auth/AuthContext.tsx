@@ -8,10 +8,11 @@
  * Server-side, identity is re-verified from the JWT on every sensitive call.
  * Nothing here is trusted by the server on its own.
  */
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type { User, Session } from '@supabase/supabase-js';
 import { getSupabaseClient, isSupabaseAuthEnabled } from '../lib/supabase';
 import { authEmailRedirectTo } from '../components/auth/authFormShared';
+import { ensureWorkspaceBootstrap } from '../services/workspaceBootstrap';
 
 interface AuthState {
   /** false when Supabase env is not configured (legacy demo mode) */
@@ -79,6 +80,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       sub.subscription.unsubscribe();
     };
   }, [enabled]);
+
+  // Phase 2 W5 — bootstrap workspace pada sesi terautentikasi pertama.
+  // Tanpa ini pengguna baru punya akun auth + profil tetapi NOL keanggotaan
+  // workspace → semua endpoint billing menolak 403 NOT_A_MEMBER. Server yang
+  // memutuskan workspace + peran (allowlist env); klien hanya memicu.
+  // Fire-and-forget: kegagalan bootstrap TIDAK PERNAH memecahkan login —
+  // ref hanya ditandai sesudah sukses, jadi event sesi berikutnya (termasuk
+  // refresh token) mencoba lagi; endpoint billing tetap jujur sementara itu.
+  const bootstrappedUserRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!enabled || !user) return;
+    if (bootstrappedUserRef.current === user.id) return;
+    const userId = user.id;
+    ensureWorkspaceBootstrap()
+      .then((result) => {
+        if (result.ok) bootstrappedUserRef.current = userId;
+      })
+      .catch(() => {
+        /* non-blocking — percobaan berikutnya pada event sesi berikutnya */
+      });
+  }, [enabled, user]);
 
   const signIn = useCallback(async (email: string, password: string) => {
     const sb = getSupabaseClient();

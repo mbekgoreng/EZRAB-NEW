@@ -6,6 +6,21 @@
  *   POST /api/credits/webhook      — notifikasi Midtrans → grant (idempoten)
  *   GET  /api/credits/order        — status satu order milik workspace
  *   GET  /api/credits/subscription — status langganan + plan hak efektif
+ *   POST /api/credits/bootstrap    — bootstrap workspace pasca-signup
+ *                                    (Phase 2 W5, 2026-11-19 — lihat
+ *                                    api/_lib/workspaceBootstrap.js).
+ *                                    AKSI, bukan file handler baru: plafon
+ *                                    Vercel Hobby 12 fungsi SUDAH PENUH,
+ *                                    jadi endpoint baru WAJIB menumpang
+ *                                    handler dinamis yang ada.
+ *
+ * PENANGANAN ERROR (Phase 2 W5): setiap handler membungkus pemanggilan
+ * service dalam try/catch dan menjawab 500 BILLING_BACKEND_ERROR yang
+ * tersanitasi (tanpa stack, tanpa secret) bila service melempar — repo
+ * yang gagal (mis. tabel belum ada) TIDAK LAGI menjadi 500 tak tertangkap.
+ * Dispatcher default juga punya jaring pengaman yang sama. Webhook
+ * mengembalikan 5xx agar Midtrans me-retry (idempoten); checkout
+ * mengembalikan 500 jujur agar klien tidak mengira order berhasil.
  *
  * KENAPA DIGABUNG (keputusan owner D9(a), 2026-11-09): plafon Vercel Hobby
  * 12 fungsi/deployment SUDAH PENUH (11 handler + middleware). Aksi billing
@@ -29,6 +44,11 @@ import { getBillingRepository } from '../_lib/billingStore.js';
 import { getMidtransConfig } from '../_lib/midtrans.js';
 import { createBillingService } from '../_lib/billingService.js';
 import { requestedWorkspaceId } from '../_lib/billingAuthorization.js';
+import {
+  createBootstrapService,
+  getBootstrapServiceConfig,
+  getWorkspaceRepository,
+} from '../_lib/workspaceBootstrap.js';
 import {
   ensureFreeOnceGrant,
   getOrCreateBillingAccount,
@@ -59,6 +79,20 @@ function sendServiceResult(res, result) {
     errorCode: result.errorCode || result.error,
     ...(result.component ? { component: result.component } : {}),
     ...(result.message ? { message: result.message } : {}),
+  });
+}
+
+/**
+ * Respons 500 TERSANITASI untuk pengecualian tak terduga dari service —
+ * tidak pernah memuat stack, pesan error mentah, atau nilai secret.
+ * Dipakai semua handler yang memanggil service (checkout/webhook/order/
+ * subscription/bootstrap) + jaring pengaman dispatcher.
+ */
+function sendBackendError(res) {
+  return res.status(500).json({
+    success: false,
+    error: 'BILLING_BACKEND_ERROR',
+    errorCode: 'BILLING_BACKEND_ERROR',
   });
 }
 
@@ -137,12 +171,17 @@ async function checkoutHandler(req, res) {
   if (body === undefined) return;
   const auth = await authenticateRequest(req);
   const service = buildBillingService();
-  const result = await service.checkout({
-    auth,
-    workspaceId: requestedWorkspaceId(req),
-    kind: typeof body?.kind === 'string' ? body.kind : '',
-    itemId: typeof body?.itemId === 'string' ? body.itemId : '',
-  });
+  let result;
+  try {
+    result = await service.checkout({
+      auth,
+      workspaceId: requestedWorkspaceId(req),
+      kind: typeof body?.kind === 'string' ? body.kind : '',
+      itemId: typeof body?.itemId === 'string' ? body.itemId : '',
+    });
+  } catch {
+    return sendBackendError(res);
+  }
   return sendServiceResult(res, result);
 }
 
@@ -162,7 +201,14 @@ async function webhookHandler(req, res) {
   const body = await readBody(req, res);
   if (body === undefined) return;
   const service = buildBillingService();
-  const result = await service.handleNotification(body || {});
+  let result;
+  try {
+    result = await service.handleNotification(body || {});
+  } catch {
+    // 500 agar Midtrans me-retry; notifikasi yang sama aman diproses ulang
+    // (idempoten per order_id) bila backend pulih.
+    return sendBackendError(res);
+  }
   if (result.ok) {
     return res.status(200).json({
       success: true,
@@ -184,11 +230,16 @@ async function orderHandler(req, res) {
 
   const auth = await authenticateRequest(req);
   const service = buildBillingService();
-  const result = await service.getOrder({
-    auth,
-    workspaceId: requestedWorkspaceId(req),
-    orderId: typeof req.query?.orderId === 'string' ? req.query.orderId : '',
-  });
+  let result;
+  try {
+    result = await service.getOrder({
+      auth,
+      workspaceId: requestedWorkspaceId(req),
+      orderId: typeof req.query?.orderId === 'string' ? req.query.orderId : '',
+    });
+  } catch {
+    return sendBackendError(res);
+  }
   return sendServiceResult(res, result);
 }
 
@@ -202,11 +253,84 @@ async function subscriptionHandler(req, res) {
 
   const auth = await authenticateRequest(req);
   const service = buildBillingService();
-  const result = await service.getSubscriptionState({
-    auth,
-    workspaceId: requestedWorkspaceId(req),
-  });
+  let result;
+  try {
+    result = await service.getSubscriptionState({
+      auth,
+      workspaceId: requestedWorkspaceId(req),
+    });
+  } catch {
+    return sendBackendError(res);
+  }
   return sendServiceResult(res, result);
+}
+
+// ---------------------------------------------------------------------------
+// POST /api/credits/bootstrap — bootstrap workspace pasca-signup (Phase 2 W5).
+// Dipanggil klien sekali per sesi terautentikasi pertama (lihat
+// src/services/workspaceBootstrap.ts). Body DIABAIKAN TOTAL: tidak ada
+// role/workspaceId dari klien yang dipercaya — identitas HANYA dari JWT
+// terverifikasi, peran HANYA dari allowlist env server-side
+// (EZRAB_BOOTSTRAP_OWNER_EMAILS). Idempoten: pemanggilan ulang mengembalikan
+// keanggotaan yang sudah ada tanpa workspace kedua.
+// ---------------------------------------------------------------------------
+async function bootstrapHandler(req, res) {
+  if (!applyCors(req, res)) return res.status(403).json({ success: false, error: 'Origin tidak diizinkan' });
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).json({ success: false, error: 'Method not allowed' });
+
+  const workspaceRepo = getWorkspaceRepository();
+  if (!workspaceRepo) {
+    return res.status(503).json({
+      success: false,
+      error: 'BOOTSTRAP_NOT_CONFIGURED',
+      errorCode: 'BOOTSTRAP_NOT_CONFIGURED',
+      message: 'Backend bootstrap belum aktif — Supabase service belum terkonfigurasi di server.',
+    });
+  }
+
+  const auth = await authenticateRequest(req);
+  const access = evaluateCreditAccess(auth);
+  if (!access.allow) {
+    return res.status(access.status).json({ success: false, error: access.error, errorCode: access.errorCode });
+  }
+  if (!auth.user || !auth.user.id) {
+    return res.status(401).json({ success: false, error: 'AUTH_REQUIRED', errorCode: 'AUTH_REQUIRED' });
+  }
+
+  const cfg = getBootstrapServiceConfig();
+  const service = createBootstrapService({
+    workspaceRepo,
+    billingRepo: getBillingRepository(),
+    allowlist: cfg.ownerAllowlist,
+  });
+  let result;
+  try {
+    result = await service.bootstrap({
+      userId: auth.user.id,
+      email: auth.user.email ?? null,
+    });
+  } catch {
+    return sendBackendError(res);
+  }
+  if (!result.ok) {
+    return res.status(result.status || 500).json({
+      success: false,
+      error: result.error,
+      errorCode: result.errorCode || result.error,
+    });
+  }
+  return res.status(200).json({
+    success: true,
+    workspaceId: result.workspaceId,
+    role: result.role,
+    created: result.created === true,
+    billingProvisioned: result.billingProvisioned === true,
+    freeOnceGranted: result.freeOnceGranted === true,
+    ownerAllowlistConfigured: result.ownerAllowlistConfigured === true,
+    ...(result.billingNotConfigured ? { billingNotConfigured: true } : {}),
+    ...(result.billingError ? { billingError: result.billingError } : {}),
+  });
 }
 
 const ACTIONS = {
@@ -215,6 +339,7 @@ const ACTIONS = {
   webhook: webhookHandler,
   order: orderHandler,
   subscription: subscriptionHandler,
+  bootstrap: bootstrapHandler,
 };
 
 export default async function handler(req, res) {
@@ -223,5 +348,12 @@ export default async function handler(req, res) {
   if (!fn) {
     return res.status(404).json({ success: false, error: 'NOT_FOUND', message: 'Endpoint kredit tidak ditemukan.' });
   }
-  return fn(req, res);
+  try {
+    return await fn(req, res);
+  } catch {
+    // Jaring pengaman terakhir (mis. authenticateRequest melempar):
+    // 500 tersanitasi, tidak pernah crash tak tertangkap.
+    if (res.headersSent) return undefined;
+    return sendBackendError(res);
+  }
 }

@@ -122,9 +122,13 @@ test('validation: systemPrompt 9000 chars preserved intact (Wave D1: silent 8000
   const { errors, input } = validateAiInput({ message: 'hi', systemPrompt: 'y'.repeat(9000) });
   eq(errors.length, 0); eq(input.systemPrompt.length, 9000);
 });
-test('validation: systemPrompt beyond 16000 rejected explicitly, never silently truncated (Wave D1)', () => {
-  const { errors, errorCode, input } = validateAiInput({ message: 'hi', systemPrompt: 'y'.repeat(16001) });
+test('validation: systemPrompt beyond 20000 rejected explicitly, never silently truncated (Wave D1; OA11 re-baseline 16000 -> 20000)', () => {
+  const { errors, errorCode, input } = validateAiInput({ message: 'hi', systemPrompt: 'y'.repeat(20001) });
   ok(errors.length > 0, 'expected errors'); eq(errorCode, 'PAYLOAD_TOO_LARGE'); eq(input.systemPrompt, '');
+  // Batas persis 20000 tetap diterima utuh — membuktikan limitnya persis
+  // 20000 (MAX_SYSTEM_PROMPT_CHARS di security.js), bukan off-by-one.
+  const at = validateAiInput({ message: 'hi', systemPrompt: 'y'.repeat(20000) });
+  eq(at.errors.length, 0); eq(at.input.systemPrompt.length, 20000);
 });
 
 // --- body ---

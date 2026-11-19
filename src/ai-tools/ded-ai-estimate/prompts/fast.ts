@@ -28,8 +28,9 @@ export function createFastSystemPrompt(ctx: { projectType: string; pricingPolicy
   // ATURAN WAJIB + skema JSON → instruksi interpretasi → konteks WBS terpilih
   // (TERAKHIR, lewat wbsContext). Kontrak di bawah tidak pernah dipotong;
   // konteks dipilih per tipe proyek dan ditegakkan ke anggaran 7.900 karakter
-  // agar tetap jauh di bawah batas gateway (system prompt > 16.000 ditolak
-  // INVALID_REQUEST oleh api/_lib/security.js — bukan dipotong).
+  // agar tetap jauh di bawah batas gateway (system prompt > 20.000 ditolak
+  // PAYLOAD_TOO_LARGE oleh api/_lib/security.js — bukan dipotong; batas
+  // dinaikkan 16.000 → 20.000 pada re-baseline prompt v2.3.0, 2026-11-19).
   // Dual Mode §5 (G-PR-1/G-IS-4): instruksi FULL_AI TIDAK ADA lagi inline
   // di kontrak ini — semuanya berasal dari master prompt via
   // standardPricingPolicySection (policy.ts → ded-full-ai/masterPrompt.ts),

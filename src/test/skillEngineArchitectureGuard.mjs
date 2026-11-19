@@ -21,6 +21,33 @@
  *
  * Tes ini SENGAJA .mjs + tanpa impor repo: tsc tidak pernah melihatnya
  * dan ia tidak dapat merusak gerbang build apa pun.
+ *
+ * AMANDEMEN PHASE 2 W3 (2026-11-19, koordinator; HEAD 77924d5):
+ * Dua pin Fase 3 berubah karena keadaan arsitektur BERUBAH — bukan karena
+ * tesnya salah. Keduanya diperbarui SECARA SADAR di sini, dengan alasan:
+ *
+ *  A9 — Lapisan skill MENDARAT (Phase 2 W3, berkas baru di
+ *  src/ai-tools/skill-engine/ + 3 suite skillEngine*.test.ts). Pin lama
+ *  ("belum ada lapisan skill") kini salah secara faktual. Pin BARU:
+ *  lapisan skill ada di PERSIS SATU tempat — semua berkas produksi yang
+ *  menyebut SkillDefinition/skillRegistry/registerSkill harus berada di
+ *  bawah src/ai-tools/skill-engine/. Lapisan skill kedua di tempat lain
+ *  tetap gagal. (A13 memin modul entry-nya.)
+ *
+ *  A11 — Gerbang identitas DI-FLIP (8a03451, grant owner: AUTH_ENABLED
+ *  false -> true, Preview 1rcg7qi5n). Pin lama ("AUTH_ENABLED masih
+ *  false") kini basi. Pin BARU: flag true + matriks mode auth ada
+ *  (resolveAuthMode + 'real-login'/'failsafe-demo'). ALASAN ARSITEKTUR
+ *  (bukan sekadar flip ekspektasi): flip ini mengaktifkan IDENTITAS
+ *  (login Supabase nyata, userId riil) — BUKAN otorisasi. Diverifikasi
+ *  W3: tidak ada derivasi peran dari Supabase (tanpa lookup
+ *  user_metadata/app_metadata peran), peran tetap dari demo roleAccounts
+ *  atau tidak ada, gateway tetap tidak memverifikasi projectId. Maka:
+ *  model izin skill TIDAK berubah (taksonomi server + fail-closed peran
+ *  demo + jembatan tanpa-peran transisional); yang BERUBAH hanya
+ *  atribusi — metadata pemakaian + approval kini membawa userId riil
+ *  (dipin A14). Isolasi tenant (A10) tetap 0 — K-03 tetap terbuka.
+ *  Lihat src/ai-tools/skill-engine/MIGRATION-PLAN.md §6.
  */
 
 import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
@@ -149,10 +176,15 @@ function content(rel) {
   const skillHits = prodTs.filter((f) =>
     /SkillDefinition|skillRegistry|registerSkill/.test(content(f)),
   );
+  const skillOutsideEngine = skillHits.filter(
+    (f) => !f.startsWith('src/ai-tools/skill-engine/'),
+  );
   check(
-    'A9: belum ada lapisan skill kedua (SkillDefinition/skillRegistry/registerSkill = 0 di src produksi)',
-    skillHits.length === 0,
-    `ditemukan di: ${skillHits.join(', ')}`,
+    'A9: lapisan skill ada di PERSIS SATU tempat — semua berkas produksi yang menyebut SkillDefinition/skillRegistry/registerSkill harus di src/ai-tools/skill-engine/ (Phase 2 W3; lapisan skill kedua di tempat lain = gagal)',
+    skillHits.length > 0 && skillOutsideEngine.length === 0,
+    skillHits.length === 0
+      ? 'lapisan skill hilang (0 hit)'
+      : `di luar skill-engine/: ${skillOutsideEngine.join(', ')}`,
   );
 
   const tenantHits = prodTs
@@ -164,14 +196,49 @@ function content(rel) {
     `ditemukan di: ${tenantHits.join(', ')}`,
   );
 
+  const appTsx = read('src/App.tsx');
+  const authMode = read('src/auth/authMode.ts');
   check(
-    'A11: AUTH_ENABLED masih false di App.tsx (gerbang identitas belum di-flip)',
-    /const AUTH_ENABLED = false;/.test(read('src/App.tsx')),
+    'A11: gerbang identitas TER-FLIP (8a03451, grant owner) — AUTH_ENABLED=true di App.tsx + matriks mode auth ada (resolveAuthMode + real-login/failsafe-demo)',
+    /const AUTH_ENABLED = true;/.test(appTsx) &&
+      appTsx.includes('resolveAuthMode(AUTH_ENABLED)') &&
+      authMode.includes("export type AuthMode = 'open' | 'real-login' | 'failsafe-demo'") &&
+      authMode.includes('real-login') &&
+      authMode.includes('failsafe-demo'),
   );
 
   check(
     'A12: executionRuntime menegaskan "Bukan store kedua"',
     read('src/ai-tools/ezrab-ai/executionRuntime.ts').includes('Bukan store kedua'),
+  );
+
+  const skillEngineModules = [
+    'types.ts',
+    'skillRegistry.ts',
+    'skillExecutor.ts',
+    'skillRouter.ts',
+    'quickActionSkillDefinitions.ts',
+    'commandSkillDefinitions.ts',
+    'executionContext.ts',
+    'skillState.ts',
+    'usageMetadata.ts',
+    'dedIsolation.ts',
+    'index.ts',
+  ];
+  const missingModules = skillEngineModules.filter(
+    (m) => !existsSync(resolve(SRC, 'ai-tools/skill-engine', m)),
+  );
+  check(
+    'A13: modul entry Skill Engine ada (11 modul di src/ai-tools/skill-engine/)',
+    missingModules.length === 0,
+    `hilang: ${missingModules.join(', ')}`,
+  );
+
+  check(
+    'A14: kontrak identitas Skill Engine pasca-flip AUTH — ExecutionContext membawa userId, executor gagal tertutup pada peran tak terpeta (ROLE_NOT_MAPPED), metadata pemakaian mengatribusikan userId',
+    read('src/ai-tools/skill-engine/types.ts').includes('userId: string | null') &&
+      read('src/ai-tools/skill-engine/skillExecutor.ts').includes('ROLE_NOT_MAPPED') &&
+      read('src/ai-tools/skill-engine/usageMetadata.ts').includes('userId: string | null'),
   );
 }
 

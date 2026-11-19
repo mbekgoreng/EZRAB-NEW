@@ -9,12 +9,17 @@
  * ekstraktif); ia TIDAK memanggil provider dan TIDAK mengubah state.
  *
  * Prinsip anggaran (karakter sebagai proksi token; gateway menolak
- * prompt > 20.000 dan systemPrompt > 16.000 — api/_lib/security.js):
+ * prompt > 20.000 dan systemPrompt > 20.000 — api/_lib/security.js;
+ * batas systemPrompt dinaikkan 16.000 → 20.000 pada re-baseline
+ * prompt v2.3.0, 2026-11-19):
  *   TOTAL_PROMPT_BUDGET = 16.000 karakter untuk SELURUH field `prompt`
  *   (blok data + seksi alat + aturan bahasa). `reservedChars` adalah
  *   panjang seksi alat yang dihitung pemanggil, sehingga blok data
  *   tidak pernah mendorong total melewati cap — headroom di bawah
  *   batas gateway 20.000 adalah 4.000 karakter.
+ * Anggaran 16.000 ini adalah budget INTERNAL builder (field `prompt`),
+ * TERPISAH dari batas gateway systemPrompt 20.000 — kenaikan batas
+ * gateway TIDAK menaikkan anggaran ini (dan sebaliknya).
  * Prioritas anggaran: FAKTA PROYEK > OBJEKTIF > DRAFT > MEMORI >
  * DED/QTO > RINGKASAN > RIWAYAT (P3A/G2-F1: DED/QTO dicadangkan
  * SEBELUM ringkasan — keduanya data faktual yang tidak boleh kelaparan

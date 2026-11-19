@@ -42,13 +42,50 @@ export function extractBearerToken(req) {
 }
 
 /**
+ * D2 Option C (Phase 2, 2026-11-19): bounded JWT verification.
+ * `client.auth.getUser()` is a network call to the Supabase Auth API with
+ * NO timeout of its own — it runs BEFORE the provider chain (outside the
+ * 100s chain budget, but INSIDE the client's abort window), so a hung Auth
+ * API could eat the whole request window before any provider is tried.
+ * The verification is therefore raced against a 10s bound: slow-but-alive
+ * verifications (normally <1s) are untouched; a hung one fails CLOSED with
+ * the distinct reason 'verify_timeout' (visible in the auth_rejected log
+ * event, distinguishable from 'invalid_token'/'verify_error').
+ * The bound covers the whole verification step (real path = getUser call;
+ * injected test verifiers are bounded identically). `opts.timeoutMs`
+ * overrides the default for tests only — production callers pass nothing.
+ */
+const JWT_VERIFY_TIMEOUT_MS_DEFAULT = 10000;
+const VERIFY_TIMEOUT_SENTINEL = Symbol('jwt_verify_timeout');
+
+function jwtVerifyTimeoutMs(opts) {
+  const t = opts && typeof opts.timeoutMs === 'number' ? opts.timeoutMs : NaN;
+  return Number.isFinite(t) && t > 0 ? t : JWT_VERIFY_TIMEOUT_MS_DEFAULT;
+}
+
+function raceVerifyWithTimeout(promise, timeoutMs) {
+  let timer = null;
+  const timeoutPromise = new Promise((resolve) => {
+    timer = setTimeout(() => resolve(VERIFY_TIMEOUT_SENTINEL), timeoutMs);
+  });
+  // Promise.race attaches handlers to both branches, so a late rejection
+  // from the losing branch is still handled (no unhandledRejection).
+  return Promise.race([promise, timeoutPromise]).finally(() => {
+    if (timer) clearTimeout(timer);
+  });
+}
+
+/**
  * Verify a Supabase Auth JWT server-side.
  * `verifier` is injectable for tests: async (token) => { ok, user?, reason? }.
  * Never trusts client-supplied userId/role/org claims — identity comes only
- * from the verified token.
+ * from the verified token. Every return carries `ms` (verification duration,
+ * for tests and diagnostics; callers ignore it). Auth failure ALWAYS fails
+ * closed (ok:false) — including timeouts.
  */
-export async function verifySupabaseJwt(token, verifier) {
-  if (!token) return { ok: false, reason: 'missing_token' };
+export async function verifySupabaseJwt(token, verifier, opts = {}) {
+  const started = Date.now();
+  if (!token) return { ok: false, reason: 'missing_token', ms: 0 };
   const verify =
     verifier ||
     (async (t) => {
@@ -74,8 +111,13 @@ export async function verifySupabaseJwt(token, verifier) {
       }
     });
   try {
-    return await verify(token);
+    const settled = await raceVerifyWithTimeout(verify(token), jwtVerifyTimeoutMs(opts));
+    if (settled === VERIFY_TIMEOUT_SENTINEL) {
+      return { ok: false, reason: 'verify_timeout', ms: Date.now() - started };
+    }
+    const result = settled && typeof settled === 'object' ? settled : { ok: false, reason: 'verify_error' };
+    return { ...result, ms: Date.now() - started };
   } catch {
-    return { ok: false, reason: 'verify_error' };
+    return { ok: false, reason: 'verify_error', ms: Date.now() - started };
   }
 }

@@ -386,7 +386,7 @@ async function callGemini(key, model, message, systemPrompt, temperature, maxTok
       signal: ctl.signal,
     });
     cleanupAttempt();
-    if (!r.ok) return { ok: false, provider: 'gemini', model, ms: Date.now() - started, error: 'Gemini ' + r.status, errorClass: classifyHttpFailure(r.status, await readFailureBody(r)) };
+    if (!r.ok) return { ok: false, provider: 'gemini', model, ms: Date.now() - started, error: 'Gemini ' + r.status, errorClass: classifyHttpFailure(r.status, await readFailureBody(r)), errorStatus: r.status };
     const d = await r.json();
     const text = (((d.candidates || [])[0] || {}).content?.parts || []).map((p) => p.text || '').join('') || '';
     // Blokir keamanan Gemini bisa tiba sebagai HTTP 200 tanpa kandidat
@@ -461,7 +461,7 @@ async function callOAI(base, key, model, provider, message, systemPrompt, temper
       signal: ctl.signal,
     });
     cleanupAttempt();
-    if (!r.ok) return { ok: false, provider, model, ms: Date.now() - started, error: provider + ' ' + r.status, errorClass: classifyHttpFailure(r.status, await readFailureBody(r)) };
+    if (!r.ok) return { ok: false, provider, model, ms: Date.now() - started, error: provider + ' ' + r.status, errorClass: classifyHttpFailure(r.status, await readFailureBody(r)), errorStatus: r.status };
     // Baca body sebagai TEKS terlebih dahulu. r.json() langsung meledak pada
     // respons SSE ("Unexpected token 'd', "data: {..." is not valid JSON") —
     // akar kegagalan mode chat yang terlihat di log produksi 2026-10-23.
@@ -596,55 +596,59 @@ export async function executeAI(o, onAttempt) {
 
   // Setiap attempt ditandai provider+model sejak awal agar loop dapat
   // menerapkan anggaran percobaan per provider dan log tetap akurat.
+  // Phase 2 (W4, 2026-11-19): setiap attempt JUGA ditandai `keyIndex`
+  // (indeks 0-based ke daftar key provider itu — BUKAN nilai key, hanya
+  // label slot) agar aturan dead-key skip bisa membedakan key yang satu
+  // dari key lain milik provider yang sama (lihat authDeadKeySlots).
   const attempts = [];
-  const geminiCall = (k, model) => ({ provider: 'gemini', model, run: () => callGemini(k, model, message, systemPrompt, temperature, maxTokens, jsonMode, media, signal) });
-  const zyrouterCall = () => ({ provider: 'zyrouter', model: ADVANCED_MODEL, run: () => callOAI(ZYROUTER_BASE, zk, ADVANCED_MODEL, 'zyrouter', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal) });
-  const atriaCall = (k) => ({ provider: 'atria', model: ATRIA_MODEL, run: () => callOAI(ATRIA_BASE, k, ATRIA_MODEL, 'atria', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal) });
-  const dahlCall = (k) => ({ provider: 'dahl', model: DAHL_MODEL, run: () => callOAI(DAHL_BASE, k, DAHL_MODEL, 'dahl', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal) });
-  const geminiOaiCall = (k) => ({ provider: 'gemini-oai', model: GEMINI_OAI_MODEL, run: () => callOAI(GEMINI_OAI_BASE, k, GEMINI_OAI_MODEL, 'gemini-oai', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal) });
-  const riverTextCall = (k) => ({ provider: 'river-text', model: RIVER_TEXT_MODEL, run: () => callOAI(RIVER_BASE, k, RIVER_TEXT_MODEL, 'river-text', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal) });
-  const riverVisionCall = (k) => ({ provider: 'river-vision', model: RIVER_VISION_MODEL, run: () => callOAI(RIVER_BASE, k, RIVER_VISION_MODEL, 'river-vision', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal) });
-  const atmoCall = (k, model) => ({ provider: 'atmorouter', model, run: () => callOAI(ATMO_BASE, k, model, 'atmorouter', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal) });
-  const crownCall = (k, model) => ({ provider: 'crown', model, run: () => callOAI(CROWN_BASE, k, model, 'crown', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal) });
-  const arxpayCall = (k) => ({ provider: 'arxpay', model: ARXPAY_MODEL, run: () => callOAI(ARXPAY_BASE, k, ARXPAY_MODEL, 'arxpay', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal) });
-  const weizeCall = (k, model) => ({ provider: 'weizerouter', model, run: () => callOAI(WEIZEROUTER_BASE, k, model, 'weizerouter', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal) });
+  const geminiCall = (k, model, keyIndex) => ({ provider: 'gemini', model, keyIndex, run: () => callGemini(k, model, message, systemPrompt, temperature, maxTokens, jsonMode, media, signal) });
+  const zyrouterCall = () => ({ provider: 'zyrouter', model: ADVANCED_MODEL, keyIndex: 0, run: () => callOAI(ZYROUTER_BASE, zk, ADVANCED_MODEL, 'zyrouter', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal) });
+  const atriaCall = (k, keyIndex) => ({ provider: 'atria', model: ATRIA_MODEL, keyIndex, run: () => callOAI(ATRIA_BASE, k, ATRIA_MODEL, 'atria', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal) });
+  const dahlCall = (k, keyIndex) => ({ provider: 'dahl', model: DAHL_MODEL, keyIndex, run: () => callOAI(DAHL_BASE, k, DAHL_MODEL, 'dahl', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal) });
+  const geminiOaiCall = (k, keyIndex) => ({ provider: 'gemini-oai', model: GEMINI_OAI_MODEL, keyIndex, run: () => callOAI(GEMINI_OAI_BASE, k, GEMINI_OAI_MODEL, 'gemini-oai', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal) });
+  const riverTextCall = (k, keyIndex) => ({ provider: 'river-text', model: RIVER_TEXT_MODEL, keyIndex, run: () => callOAI(RIVER_BASE, k, RIVER_TEXT_MODEL, 'river-text', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal) });
+  const riverVisionCall = (k, keyIndex) => ({ provider: 'river-vision', model: RIVER_VISION_MODEL, keyIndex, run: () => callOAI(RIVER_BASE, k, RIVER_VISION_MODEL, 'river-vision', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal) });
+  const atmoCall = (k, model, keyIndex) => ({ provider: 'atmorouter', model, keyIndex, run: () => callOAI(ATMO_BASE, k, model, 'atmorouter', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal) });
+  const crownCall = (k, model, keyIndex) => ({ provider: 'crown', model, keyIndex, run: () => callOAI(CROWN_BASE, k, model, 'crown', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal) });
+  const arxpayCall = (k, keyIndex) => ({ provider: 'arxpay', model: ARXPAY_MODEL, keyIndex, run: () => callOAI(ARXPAY_BASE, k, ARXPAY_MODEL, 'arxpay', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal) });
+  const weizeCall = (k, model, keyIndex) => ({ provider: 'weizerouter', model, keyIndex, run: () => callOAI(WEIZEROUTER_BASE, k, model, 'weizerouter', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal) });
   // Crown hanya untuk teks: bila ada gambar/PDF, Crown dilewati total
   // (image_url ditolak gateway Crown) — vision tetap ke rantai lamanya.
   // Chat memakai 3 model urutan owner (GLM -> DeepSeek -> MiniMax,
   // 2026-11-19 05:55); advanced tetap 2 model MiniMax-dulu (TIDAK BERUBAH).
   // Pola sama seperti WeizeRouter: semua key untuk model 1 dulu, lalu model 2, dst.
   const crownChatTextAttempts = (!hasImage && !hasPdf)
-    ? CROWN_CHAT_MODELS.flatMap((m) => crownKeys.map((k) => crownCall(k, m)))
+    ? CROWN_CHAT_MODELS.flatMap((m) => crownKeys.map((k, i) => crownCall(k, m, i)))
     : [];
   const crownAdvancedTextAttempts = (!hasImage && !hasPdf)
-    ? CROWN_ADVANCED_MODELS.flatMap((m) => crownKeys.map((k) => crownCall(k, m)))
+    ? CROWN_ADVANCED_MODELS.flatMap((m) => crownKeys.map((k, i) => crownCall(k, m, i)))
     : [];
   // ArxPay hanya untuk teks (seperti Crown): bila ada gambar/PDF, dilewati total.
   const arxpayTextAttempts = (!hasImage && !hasPdf)
-    ? arxpayKeys.map((k) => arxpayCall(k))
+    ? arxpayKeys.map((k, i) => arxpayCall(k, i))
     : [];
   // WeizeRouter hanya untuk teks (seperti Crown/ArxPay). Urutan model =
   // urutan user; pola Crown (semua key untuk model 1 dulu, lalu model 2).
   const weizeChatTextAttempts = (!hasImage && !hasPdf)
-    ? WEIZEROUTER_CHAT_MODELS.flatMap((m) => weizeKeys.map((k) => weizeCall(k, m)))
+    ? WEIZEROUTER_CHAT_MODELS.flatMap((m) => weizeKeys.map((k, i) => weizeCall(k, m, i)))
     : [];
   const weizeAdvancedTextAttempts = (!hasImage && !hasPdf)
-    ? WEIZEROUTER_ADVANCED_MODELS.flatMap((m) => weizeKeys.map((k) => weizeCall(k, m)))
+    ? WEIZEROUTER_ADVANCED_MODELS.flatMap((m) => weizeKeys.map((k, i) => weizeCall(k, m, i)))
     : [];
   const weizeDedTextAttempts = (!hasImage && !hasPdf)
-    ? WEIZEROUTER_DED_MODELS.flatMap((m) => weizeKeys.map((k) => weizeCall(k, m)))
+    ? WEIZEROUTER_DED_MODELS.flatMap((m) => weizeKeys.map((k, i) => weizeCall(k, m, i)))
     : [];
   const weizeFastTextAttempts = (!hasImage && !hasPdf)
-    ? WEIZEROUTER_FAST_MODELS.flatMap((m) => weizeKeys.map((k) => weizeCall(k, m)))
+    ? WEIZEROUTER_FAST_MODELS.flatMap((m) => weizeKeys.map((k, i) => weizeCall(k, m, i)))
     : [];
 
   if (mode === 'vision') {
     // Vision (urutan user 2026-10-21): Gemini native dulu (inlineData
     // gambar+PDF), lalu River DeepSeek V4.1, AtmoRouter (model vision),
     // ZyRouter — ketiganya via image_url, hanya gambar; PDF butuh Gemini.
-    gk.forEach((k) => attempts.push(geminiCall(k, FAST_MODEL)));
-    if (hasImage) rk.forEach((k) => attempts.push(riverVisionCall(k)));
-    if (hasImage) atmoKeys.forEach((k) => attempts.push(atmoCall(k, ATMO_VISION_MODEL)));
+    gk.forEach((k, i) => attempts.push(geminiCall(k, FAST_MODEL, i)));
+    if (hasImage) rk.forEach((k, i) => attempts.push(riverVisionCall(k, i)));
+    if (hasImage) atmoKeys.forEach((k, i) => attempts.push(atmoCall(k, ATMO_VISION_MODEL, i)));
     if (hasImage && zk) attempts.push(zyrouterCall());
     if (hasPdf && gk.length === 0) {
       return { ok: false, error: 'Vision PDF membutuhkan GEMINI_API_KEY_* — tidak ada key Gemini terkonfigurasi', requestId, attempts: [] };
@@ -673,9 +677,9 @@ export async function executeAI(o, onAttempt) {
     attempts.push(...weizeAdvancedTextAttempts);
     attempts.push(...arxpayTextAttempts);
     attempts.push(...crownAdvancedTextAttempts);
-    gk.forEach((k) => attempts.push(geminiCall(k, FAST_MODEL)));
-    atmoKeys.forEach((k) => attempts.push(atmoCall(k, ATMO_ADVANCED_MODEL)));
-    atmoKeys.forEach((k) => attempts.push(atmoCall(k, ATMO_ADVANCED_FALLBACK_MODEL)));
+    gk.forEach((k, i) => attempts.push(geminiCall(k, FAST_MODEL, i)));
+    atmoKeys.forEach((k, i) => attempts.push(atmoCall(k, ATMO_ADVANCED_MODEL, i)));
+    atmoKeys.forEach((k, i) => attempts.push(atmoCall(k, ATMO_ADVANCED_FALLBACK_MODEL, i)));
     if (zk) attempts.push(zyrouterCall());
   } else if (mode === 'chat') {
     // Chat AI Cepat (owner 2026-11-19 05:55: Crown PRIORITAS No.1):
@@ -690,19 +694,19 @@ export async function executeAI(o, onAttempt) {
     attempts.push(...crownChatTextAttempts);
     attempts.push(...weizeChatTextAttempts);
     attempts.push(...arxpayTextAttempts);
-    gk.forEach((k) => attempts.push(geminiCall(k, FAST_MODEL)));
-    atmoKeys.forEach((k) => attempts.push(atmoCall(k, ATMO_ADVANCED_MODEL)));
-    atmoKeys.forEach((k) => attempts.push(atmoCall(k, ATMO_ADVANCED_FALLBACK_MODEL)));
+    gk.forEach((k, i) => attempts.push(geminiCall(k, FAST_MODEL, i)));
+    atmoKeys.forEach((k, i) => attempts.push(atmoCall(k, ATMO_ADVANCED_MODEL, i)));
+    atmoKeys.forEach((k, i) => attempts.push(atmoCall(k, ATMO_ADVANCED_FALLBACK_MODEL, i)));
     if (zk) attempts.push(zyrouterCall());
     // Ekor cadangan terakhir (hanya chat, di BELAKANG ZyRouter): Dahl ->
     // River DeepSeek -> River teks -> Gemini-OAI -> Atria. Atria diturunkan
     // dari rantai utama menjadi cadangan paling akhir dan hanya memakai
     // SATU key pertama (dulu: hingga 14 key dicoba satu per satu).
-    dk.forEach((k) => attempts.push(dahlCall(k)));
-    rk.forEach((k) => attempts.push(riverVisionCall(k)));
-    rk.forEach((k) => attempts.push(riverTextCall(k)));
-    gok.forEach((k) => attempts.push(geminiOaiCall(k)));
-    if (ak.length > 0) attempts.push(atriaCall(ak[0]));
+    dk.forEach((k, i) => attempts.push(dahlCall(k, i)));
+    rk.forEach((k, i) => attempts.push(riverVisionCall(k, i)));
+    rk.forEach((k, i) => attempts.push(riverTextCall(k, i)));
+    gok.forEach((k, i) => attempts.push(geminiOaiCall(k, i)));
+    if (ak.length > 0) attempts.push(atriaCall(ak[0], 0));
   } else {
     // Fast (owner 2026-11-19 02:09): WeizeRouter-ONLY — 6 model
     // WEIZEROUTER_FAST_MODELS, tanpa ArxPay/Crown/Gemini/River/Atmo/
@@ -768,6 +772,31 @@ export async function executeAI(o, onAttempt) {
   // Kunci set: 'provider:model' (satu model yang timeout tidak mematikan
   // model lain provider yang sama).
   const modelTimeouts = new Set();
+  // Phase 2 (W4, 2026-11-19) — dead-key skip, cakupan KEY (bukan provider
+  // dan bukan model): HTTP 401 berarti kredensialnya tidak sah — key itu
+  // tidak akan mendadak sah bila dicoba dengan model lain dalam request
+  // yang sama, jadi key yang baru 401 dilewati untuk sisa rantai. Tanpa
+  // ini, satu key Crown mati dicoba 3× (satu per model) dan satu key
+  // WeizeRouter mati dicoba sampai 6× dalam satu request fast/ded.
+  // BATASAN YANG DISENGAJA (jangan dilonggarkan tanpa analisis baru):
+  // - Hanya 401 yang memicu skip. 403 TIDAK: 403 bisa bermakna cakupan
+  //   model (key sah, model ini dilarang) — melewati key pada 403 dapat
+  //   membunuh key sehat untuk model lain.
+  // - Skip berlaku per REQUEST saja (Set lokal, tanpa state lintas
+  //   request): request berikutnya mencoba key itu lagi dari awal.
+  // - Rotasi key TIDAK tersentuh: skip dikunci 'provider:keyIndex', jadi
+  //   key lain milik provider yang sama tetap dicoba (key bernomor vs
+  //   polos adalah key berbeda — sejajar komentar klasifikasi 'auth').
+  // - Cap per-provider TIDAK berubah: attempt yang dilewati tidak
+  //   mengonsumsi anggaran (cek skip di bawah berjalan SEBELUM tries
+  //   dinaikkan), dan 401 tetap dihitung sebagai kegagalan provider bila
+  //   attempt-nya benar-benar berjalan. Khusus Gemini (1 model, cap 2):
+  //   slot _3.._6 tetap tidak terjangkau dalam satu request — itu
+  //   perilaku cap yang sudah didokumentasikan (laporan owner §7.5),
+  //   bukan yang diperbaiki di sini.
+  // Kunci set: 'provider:keyIndex' (keyIndex = indeks 0-based ke daftar
+  // key provider itu — label slot, BUKAN nilai key).
+  const authDeadKeySlots = new Set();
   // Batas percobaan per provider: tiap model berbeda mendapat 1 kesempatan,
   // minimal 2 (rotasi key). Sebelum WeizeRouter (2026-11-13) batasnya
   // hardcode 2 — semua provider lama punya ≤2 model sehingga perilaku
@@ -811,16 +840,21 @@ export async function executeAI(o, onAttempt) {
     // F3 (granularity model sejak 2026-11-19): model yang sudah timeout
     // sekali tidak dicoba lagi (lihat atas).
     if (modelTimeouts.has(a.provider + ':' + a.model)) continue;
+    // Phase 2 (W4): key yang sudah 401 dalam request ini tidak dicoba
+    // lagi (dengan model mana pun) — lihat authDeadKeySlots di atas.
+    // Cek berjalan sebelum tries dinaikkan: skip tidak mengonsumsi cap.
+    if (a.keyIndex !== undefined && authDeadKeySlots.has(a.provider + ':' + a.keyIndex)) continue;
     providerAttempts.set(a.provider, tries + 1);
     triedModels.add(a.model);
     const r = await a.run();
     if (!r.ok) providerFailures.set(a.provider, fails + 1);
     if (!r.ok && r.errorClass === 'timeout') modelTimeouts.add(a.provider + ':' + a.model);
+    if (!r.ok && r.errorStatus === 401 && a.keyIndex !== undefined) authDeadKeySlots.add(a.provider + ':' + a.keyIndex);
     // SPRINT 5 (X4): usage attempt GAGAL dipertahankan bila provider
     // benar-benar mengembalikannya (respons kosong/diblokir yang tetap
     // membawa usage terukur); tetap null bila provider tak mengirim
     // apa pun — tak dikenal TIDAK PERNAH diubah menjadi nol/diagregasi.
-    outcomes.push({ provider: r.provider, model: r.model, ok: r.ok, ms: r.ms, error: r.ok ? undefined : r.error, errorClass: r.ok ? undefined : r.errorClass, usage: r.usage || null });
+    outcomes.push({ provider: r.provider, model: r.model, ok: r.ok, ms: r.ms, error: r.ok ? undefined : r.error, errorClass: r.ok ? undefined : r.errorClass, errorStatus: r.ok ? undefined : (r.errorStatus ?? null), usage: r.usage || null });
     // F3 (2026-11-18): onAttempt DIPANGGIL SEBELUM early-return policy/
     // client_error di bawah. Sebelumnya, attempt yang membunuh rantai
     // tidak pernah sampai ke attemptLog server — handleAiRequest hanya
@@ -1037,7 +1071,18 @@ export async function handleAiRequest(req, res, opts = {}) {
   // 2. Authentication — Phase 3: Supabase JWT (fail-closed when configured),
   //    else static service token (fail-closed when configured), else degraded.
   //    The browser never holds a shared secret: it sends the user's own JWT.
+  //    D2 Option C (Phase 2, 2026-11-19): ukur durasi langkah auth ini —
+  //    verifikasi JWT berjalan SEBELUM rantai provider (di luar budget
+  //    rantai 100 dtk, di dalam jendela abort klien), jadi tanpa angka ini
+  //    H3 (verifikasi JWT lambat memakan jendela klien) tidak bisa
+  //    diputuskan dari log. preChainAuthMs dicatat di event auth_rejected,
+  //    ai_request, dan client_disconnected; waktu rantai = durationMs -
+  //    preChainAuthMs. Pengukuran di sini (bukan di supabaseAuth.js)
+  //    karena authenticateRequest (security.js) tidak meneruskan durasi
+  //    internalnya — dan langkah auth ini praktis didominasi getUser().
+  const authStarted = Date.now();
   const auth = await authenticateRequest(req, { jwtVerifier: opts.jwtVerifier });
+  const preChainAuthMs = Date.now() - authStarted;
   if (!auth.ok) {
     logAiUsage({
       requestId,
@@ -1045,6 +1090,7 @@ export async function handleAiRequest(req, res, opts = {}) {
       authMethod: auth.method,
       reason: auth.reason,
       ipHash: ipHash(req),
+      preChainAuthMs,
     });
     const status = auth.method === 'jwt' && auth.reason === 'missing_token' ? 401 : 401;
     return res.status(status).json({
@@ -1228,6 +1274,7 @@ export async function handleAiRequest(req, res, opts = {}) {
       event: 'client_disconnected',
       mode,
       durationMs,
+      preChainAuthMs,
       ipHash: ipHash(req),
       userId: auth.user ? auth.user.id : null,
       attempts: attemptLog,
@@ -1275,6 +1322,7 @@ export async function handleAiRequest(req, res, opts = {}) {
     provider: r.ok ? r.provider : null,
     model: r.ok ? r.model : null,
     durationMs,
+    preChainAuthMs,
     promptChars: input.message.length,
     promptHash: sha256hex(input.message).slice(0, 16),
     hasImage: Boolean(input.imageDataBase64),
