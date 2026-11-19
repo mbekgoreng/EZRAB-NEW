@@ -29,7 +29,7 @@ import { PasscodeGate } from './auth/PasscodeGate';
 // yang valid TIDAK mengunci owner dan TIDAK crash — aplikasi jatuh ke mode
 // 'failsafe-demo' (akses terbuka seperti hari ini + banner peringatan).
 // Lihat src/auth/authMode.ts untuk matriks resolusinya.
-const AUTH_ENABLED = false;
+const AUTH_ENABLED = true;
 
 // Login UI frontend-only (perintah user 2026-10-28): tombol "Masuk" /
 // "Coba Gratis" membuka halaman login /masuk & /daftar walau AUTH_ENABLED=false. Backend
