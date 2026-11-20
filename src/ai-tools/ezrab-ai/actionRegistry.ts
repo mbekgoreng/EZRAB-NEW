@@ -97,6 +97,10 @@ import { evaluateCalculation } from './calcIntent';
 import { findGamesMentioned, buildGameInfoAnswer } from '../../game-space/catalog';
 import { buildDirectRab, displayTemplateBasisName, findDirectTemplate, formatDirectRabMessage, matchDirectRegion } from './directRab';
 import { buildSpecRab, buildSpecRabFromNeeds } from './specRab';
+import { runRabIntentFlow, evaluateRabIntent, getLastRabIntentSpec, setLastRabIntentSpec, formatSpecSummaryLines, specToRabNeeds, unsupportedSpecReasons } from './rabIntentFlow';
+import type { RabTemplateRecommendation } from './rabIntentFlow';
+import { extractRabIntentSpec, mergeRabIntentSpec } from './rabIntentSpec';
+import type { RabIntentSpec } from './rabIntentSpec';
 import { buildUniversalDraft, formatUniversalDraftMessage, extractUniversalSpec, getLastUniversalDraft } from './universalRab';
 import { saveIntakeContext, clearIntakeContext } from './draftPersistence';
 import { captureFeedback } from './constructionFeedback';
@@ -1794,6 +1798,13 @@ function rabSummaryResult(raw: string, base?: RabNeeds, projectId?: string | nul
   if (raw) lastRabRaw = raw;
   const missing = missingNeeds(needs);
 
+  // INTENT-FIRST: spek kanonis mengikuti siklus state kebutuhan — giliran
+  // pertama diekstrak segar, lanjutan (base ada) digabung lewat
+  // mergeRabIntentSpec agar koreksi hanya mengubah field yang disebut.
+  const prevSpec = getLastRabIntentSpec();
+  if (base && prevSpec) setLastRabIntentSpec(mergeRabIntentSpec(prevSpec, raw));
+  else if (!base) setLastRabIntentSpec(extractRabIntentSpec(raw));
+
   /* Refinement (perbaikan overhaul 2026-11-06): bila ini lanjutan dari
    * ringkasan yang sudah tampil (base ada), jawab RINGKAS — hanya kolom
    * yang berubah + kekurangan inti — JANGAN mengulang ringkasan penuh.
@@ -1855,9 +1866,19 @@ function rabSummaryResult(raw: string, base?: RabNeeds, projectId?: string | nul
   const summary = summarizeRabNeeds(needs, missing);
 
   if (needs.kind === 'ded') {
+    // INTENT-FIRST: spek eksplisit dari pesan DED (sudah diekstrak +
+    // disimpan di atas) ditampilkan terbuka agar tidak tertimpa default
+    // DED di hilir — gambar kerja menjawab ukuran, tetapi spesifikasi
+    // yang disebut pengguna tetap berlaku.
+    const dedSpec = getLastRabIntentSpec();
+    const preserved = dedSpec ? formatSpecSummaryLines(dedSpec) : [];
     return {
       ok: true,
-      message: `${summary}\n\nUntuk dokumen DED, jalur yang tepat adalah DED Estimate AI — unggah gambar kerja di sana, bukan lewat wizard rumah.`,
+      message:
+        `${summary}\n\nUntuk dokumen DED, jalur yang tepat adalah DED Estimate AI — unggah gambar kerja di sana, bukan lewat wizard rumah.` +
+        (preserved.length > 0
+          ? `\n\nSpesifikasi dari pesan Anda yang saya catat dan tetap berlaku: ${preserved.join('; ')}.`
+          : ''),
       actions: [
         { label: 'Buka DED Estimate AI', action: { kind: 'navigate', menu: 'ded-ai' } },
         { label: 'Mulai manual', action: { kind: 'navigate', menu: 'rab-estimasi' } },
@@ -2021,6 +2042,8 @@ export interface PendingRabChoice {
   floors: number;
   floorsMentioned: boolean;
   landAreaM2: number | null;
+  /** Spek intent-first aktif (null = kartu lama pra-intent-first). */
+  spec: RabIntentSpec | null;
 }
 
 let pendingChoice: PendingRabChoice | null = null;
@@ -2230,7 +2253,7 @@ function templateDefault(template: CardTemplate, key: 'bedroomCount' | 'bathroom
   return typeof d === 'number' ? d : null;
 }
 
-function choiceCardResult(p: PendingRabChoice, corrected: boolean, projectId?: string | null): ActionResult {
+function choiceCardResult(p: PendingRabChoice, corrected: boolean, projectId?: string | null, recommendation?: RabTemplateRecommendation | null): ActionResult {
   const { item, template } = p.match;
   const needs = p.needs;
   const { region } = matchDirectRegion(needs.location);
@@ -2240,12 +2263,34 @@ function choiceCardResult(p: PendingRabChoice, corrected: boolean, projectId?: s
       ? 'Siap — kartu pilihan saya perbarui dengan koreksi Anda. Ini spek yang kini terbaca:'
       : 'Siap — permintaan Anda cocok dengan template RAB terdaftar. Ini ringkasan spek yang saya baca:'
   );
-  lines.push(`• Template: **${item.label}** (${displayTemplateBasisName(template.name, p.floors)}) — Dari Anda (tipe disebut di pesan)`);
-  lines.push(
-    `• Luas bangunan: ${p.floors > 1 ? `${item.area} m² per lantai (total ±${item.area * p.floors} m²)` : `${item.area} m²`} — Dari Anda (dari Type ${item.area})`
-  );
-  if (p.landAreaM2) {
-    lines.push(`• Luas lahan: ${p.landAreaM2} m² — Dari Anda (dicatat — belum memengaruhi hitungan RAB)`);
+  // INTENT-FIRST (2026-11-20): label asal dibedakan — "Dari Anda (tipe
+  // disebut di pesan)" hanya benar bila tipe BENAR-BENAR disebut
+  // (matchedByType). Kartu fallback R1 (luas tanpa tipe) sebelumnya
+  // mengklaim Type 70 "dari Anda" untuk permintaan "luas bangunan 86m2"
+  // yang tidak pernah menyebut tipe, dan menulis luas tipe (70 m²)
+  // sebagai "Luas bangunan — Dari Anda" padahal pengguna meminta 86 m².
+  const fallback = p.match.areaFallback;
+  if (fallback) {
+    lines.push(`• Template: **${item.label}** (${displayTemplateBasisName(template.name, p.floors)}) — basis terdekat (tipe tidak disebut di pesan)`);
+    lines.push(`• Luas bangunan: ${fallback.requestedArea} m² — Dari Anda (permintaan; template hanya basis, bukan luas tipe ${fallback.basisArea} m²)`);
+  } else {
+    lines.push(`• Template: **${item.label}** (${displayTemplateBasisName(template.name, p.floors)}) — Dari Anda (tipe disebut di pesan)`);
+    lines.push(
+      `• Luas bangunan: ${p.floors > 1 ? `${item.area} m² per lantai (total ±${item.area * p.floors} m²)` : `${item.area} m²`} — Dari Anda (dari Type ${item.area})`
+    );
+  }
+  // Luas lahan dari spek intent-first didahulukan: frasa lahan telanjang
+  // ("luas 100m2" + "luas bangunan 86m2") dibaca spek sebagai lahan,
+  // sementara resolveLandAreaM2 hanya mengenal frasa berlabel lahan.
+  const landShown = p.spec?.landAreaM2 ?? p.landAreaM2;
+  if (landShown) {
+    lines.push(`• Luas lahan: ${landShown} m² — Dari Anda (dicatat — belum memengaruhi hitungan RAB)`);
+  }
+  if (p.spec && p.spec.roofSystem.length > 0) {
+    lines.push(`• Atap: ${p.spec.roofSystem.join(', ')} — Dari Anda (dicatat — bukan parameter template)`);
+  }
+  if (p.spec && p.spec.scope.length > 0) {
+    lines.push(`• Lingkup: ${p.spec.scope.join(', ')} — Dari Anda`);
   }
   lines.push(
     `• Jumlah lantai: ${p.floors} lantai — ${p.floorsMentioned ? 'Dari Anda' : 'Asumsi (default — tidak disebutkan; koreksi bila berbeda)'}`
@@ -2274,6 +2319,25 @@ function choiceCardResult(p: PendingRabChoice, corrected: boolean, projectId?: s
   lines.push(
     'Ada yang keliru? Koreksi langsung di chat sebelum memilih — misalnya "2 lantai" atau "3 kamar tidur" — kartu ini akan saya perbarui, dan kedua pilihan di bawah memakai spek terkoreksi.'
   );
+  // INTENT-FIRST: tombol pilihan TIDAK PERNAH tampil buta — kartu membawa
+  // rekomendasi metode + alasan dari evaluasi spek (orkestrator).
+  if (recommendation) {
+    const methodLabel =
+      recommendation.method === 'template'
+        ? 'Pakai Template'
+        : recommendation.method === 'spec'
+          ? 'Susun dari spesifikasi (kustom)'
+          : recommendation.method === 'universal'
+            ? 'Pakai template katalog'
+            : recommendation.method === 'ded'
+              ? 'DED Estimate AI'
+              : 'Susun kustom';
+    lines.push('');
+    lines.push(`**Rekomendasi: ${methodLabel}** — ${recommendation.reasons.join(' ')}`);
+    if (recommendation.alternatives && recommendation.alternatives.length > 0) {
+      lines.push(`Alternatif yang dipertimbangkan: ${recommendation.alternatives.join('; ')}.`);
+    }
+  }
   lines.push('');
   lines.push(
     'Pilih cara membuat RAB-nya:\n' +
@@ -2316,12 +2380,44 @@ export function continueRabChoice(text: string, projectId?: string | null): Acti
   if (!p) return rabSummaryResult(text, undefined, projectId);
   const correction = extractRabNeeds(stripLandPhrases(text));
   const merged = extractRabNeeds(stripLandPhrases(text), { ...p.needs });
+  // INTENT-FIRST: koreksi digabung ke SPEK via mergeRabIntentSpec — hanya
+  // field yang disebut koreksi yang berubah; sisanya dipertahankan.
+  const mergedSpec = p.spec
+    ? mergeRabIntentSpec(p.spec, text)
+    : extractRabIntentSpec(`${p.rawText}\n${text}`);
+  setLastRabIntentSpec(mergedSpec);
+  // Bila koreksi menambahkan spesifikasi yang BUKAN parameter template
+  // (atap/material/struktur/pondasi/lingkup parsial), kartu pilihan tidak
+  // lagi berlaku — template tidak bisa mewakili spek terkoreksi. Alihkan
+  // ke jalur spek (dengan penjelasan) daripada menawarkan pilihan yang
+  // akan menghilangkan spesifikasi pengguna secara diam-diam.
+  const unsupported = unsupportedSpecReasons(mergedSpec);
+  if (unsupported.length > 0) {
+    const specBuilt = buildSpecRab(mergedSpec.rawText, {
+      skipTemplateGuard: true,
+      intentSpec: mergedSpec,
+    });
+    if (specBuilt) {
+      pendingChoice = null;
+      setPendingSubtypeNeeds(null);
+      const table = directRabTableResult(specBuilt);
+      return {
+        ...table,
+        message:
+          `Koreksi dicatat: ${unsupported.join('; ')} — spesifikasi itu bukan parameter template ${p.match.item.label}, ` +
+          'jadi kartu pilihan tidak lagi berlaku dan RAB dihitung dari spesifikasi Anda:\n\n' +
+          table.message,
+      };
+    }
+    // Build spek gagal — kartu tetap tampil dengan spek terkoreksi.
+  }
   const updated: PendingRabChoice = {
     ...p,
     needs: merged,
     floors: merged.floors ?? p.floors,
     floorsMentioned: p.floorsMentioned || correction.floors != null,
-    landAreaM2: resolveLandAreaM2(text) ?? p.landAreaM2,
+    landAreaM2: mergedSpec.landAreaM2 ?? p.landAreaM2,
+    spec: mergedSpec,
   };
   pendingChoice = updated;
   return choiceCardResult(updated, true, projectId);
@@ -2377,6 +2473,9 @@ function clarifyHargaQueryResult(
   const tool = EZRAB_AI_TOOLS.find((t) => t.name === 'cari_harga');
   if (!tool) return { ok: false, message: 'Pencarian harga tidak tersedia saat ini.' };
   const result = tool.invoke({ kata_kunci: query, jenis });
+  // cari_harga sinkron; penjaga tipe karena invoke tool akun (async) kini
+  // berbagi signature (Fase B) — tidak pernah terpicu untuk tool ini.
+  if (typeof result !== 'string') return { ok: false, message: 'Pencarian harga tidak tersedia saat ini.' };
   if (result.startsWith('ERROR')) return { ok: false, message: result };
   if (result.startsWith('Tidak ditemukan harga')) {
     // Belum tersedia ≠ nol: beri kesempatan mencoba nama lain dalam
@@ -3495,97 +3594,66 @@ export function executeIntent(
 
     case 'CREATE_RAB_DIRECT': {
       const raw = ctx.rawText ?? param ?? '';
-      // Desain owner 2026-10-22 (menggantikan generate-otomatis 2026-10-21
-      // untuk permintaan BERTIPE): bila teks cocok dengan TEMPLATE
-      // TERDAFTAR, JANGAN langsung generate — tampilkan kartu pilihan:
-      // ringkasan spek terbaca + "Pakai Template" (generate parametrik
-      // instan di chat, persis jalur direct lama, lewat klik eksplisit
-      // GENERATE_RAB_TEMPLATE) atau "Pakai AI Full" (intent RAB_FULL_AI —
-      // komposisi deterministik langsung di chat: tabel + Push ke
-      // Spreadsheet; LLM hanya fallback bila komposisi tak bisa dibuat).
-      const typed = findDirectTemplate(raw);
-      // Perbaikan 2026-10-27 (keluhan user: prompt "rab rumah ...
-      // luas bangunan 70m2" hanya berujung daftar template, tanpa
-      // tabel): kecocokan EKS AK (luas = tipe katalog persis, bukan
-      // fallback) LANGSUNG jadi tabel + tombol Push — tanpa kartu
-      // pilihan. Kartu pilihan dipertahankan hanya untuk basis
-      // fallback (luas permintaan ≠ tipe katalog) yang memang perlu
-      // konfirmasi pengguna, sesuai desain owner 2026-10-22.
-      if (typed && !typed.areaFallback) {
-        const built = buildDirectRab(raw, typed.needs);
-        if (built) {
-          pendingChoice = null;
-          setPendingSubtypeNeeds(null);
-          return {
-            ok: true,
-            message: formatDirectRabMessage(built),
-            actions: [
-              { label: 'Push ke Spreadsheet RAB', action: { kind: 'push-rab' } },
-              { label: 'Buka Spreadsheet RAB', action: { kind: 'navigate', menu: 'rab-estimasi' } },
-              { label: 'Buka Workspace Desain & RAB', action: { kind: 'navigate', menu: 'desain-rab' } },
-            ],
-          };
-        }
-        // Bila build gagal, jatuh ke kartu pilihan di bawah (bukan
-        // diam-diam ke ringkasan).
-      }
-      if (typed) {
-        // D1: kartu kini dibangun choiceCardResult — semua parameter
-        // berlabel Dari Anda/Asumsi, KT/KM default template DITAMPILKAN,
-        // ada baris "Luas bangunan" eksplisit, dan pengguna dapat
-        // mengoreksi lewat chat sebelum memilih (state pendingChoice).
-        pendingChoice = {
-          rawText: raw,
-          match: typed,
-          needs: { ...typed.needs },
-          floors: typed.floors,
-          floorsMentioned: typed.floorsMentioned,
-          landAreaM2: resolveLandAreaM2(raw),
-        };
-        setPendingSubtypeNeeds(null);
-        return choiceCardResult(pendingChoice, false, ctx.activeProject?.id ?? null);
-      }
-      // Permintaan langsung baru menggantikan kartu yang menggantung.
+      // INTENT-FIRST (2026-11-20): spek diekstrak DULU, template dievaluasi
+      // TERHADAP spek — bukan sebaliknya. runRabIntentFlow mengeksekusi
+      // urutan itu: ekstraksi spek → pemeriksaan DED → evaluasi template
+      // (hanya parameter yang didukung template) → rekomendasi metode →
+      // generate lewat mesin kanonis yang sama (directRab/specRab/
+      // universalRab). Perilaku lama yang dipertahankan: kecocokan
+      // eksak langsung tabel + Push (2026-10-27); basis fallback
+      // menampilkan kartu pilihan + rekomendasi (desain owner
+      // 2026-10-22); rumah tanpa spek terukur jatuh ke ringkasan
+      // kebutuhan (PERBAIKAN-D).
+      const flow = runRabIntentFlow(raw, { hijacked: specRabHijackGuard(raw) });
+      const ev = flow.evaluation;
       pendingChoice = null;
       setPendingSubtypeNeeds(null);
-      // Spesifikasi bebas TANPA tipe terdaftar (perluasan 2026-10-22):
-      // tidak ada template yang bisa dipilih → langsung generate parametrik
-      // dari spesifikasi (specRab) dengan daftar asumsi terbuka. Bila
-      // spesifikasi tidak terukur/di luar dukungan, jatuh jujur ke
-      // ringkasan kebutuhan (tidak memaksa hasil karangan).
-      // FASE 4 (CHAT-05): specRab adalah mesin RUMAH — jangan biarkan ia
-      // mengklaim pesan yang primernya kategori lain (lihat
-      // specRabHijackGuard). Bila penjaga aktif, langsung ke cakupan
-      // universal di bawah.
-      const specBuilt = specRabHijackGuard(raw) ? null : buildSpecRab(raw);
-      if (specBuilt) {
+      if (ev.route === 'ded') {
+        // Spek sudah diekstrak + disimpan oleh flow; rabSummaryResult
+        // menampilkannya sebagai spesifikasi yang tetap berlaku.
+        return rabSummaryResult(raw, undefined, ctx.activeProject?.id ?? null);
+      }
+      if (ev.route === 'clarify') {
+        // Basis terukur belum ada — tanya SATU topik (basis) saja, dan
+        // simpan state kebutuhan agar jawaban lanjutan menggabungkan
+        // (bukan mengulang) spek yang sudah disebut.
+        setLastRabNeeds(specToRabNeeds(ev.spec), ctx.activeProject?.id ?? null);
+        if (raw) lastRabRaw = raw;
         return {
           ok: true,
-          message: formatDirectRabMessage(specBuilt),
-          actions: [
-            { label: 'Push ke Spreadsheet RAB', action: { kind: 'push-rab' } },
-            { label: 'Buka Spreadsheet RAB', action: { kind: 'navigate', menu: 'rab-estimasi' } },
-            { label: 'Buka Workspace Desain & RAB', action: { kind: 'navigate', menu: 'desain-rab' } },
-          ],
+          awaitRabNeeds: true,
+          message: ev.clarification ?? 'Boleh saya tahu luas bangunan atau dimensinya?',
         };
       }
-      // Cakupan universal (2026-10-26): teks DIRECT yang bukan rumah
-      // bertipe/spek bebas dicoba lewat katalog template 180 sebelum
-      // jatuh ke ringkasan kebutuhan.
-      // PERBAIKAN-D (2026-11-14): RUMAH dikecualikan dari langkah ini —
-      // routing kanonis P3B: "Selain rumah → UNIVERSAL". Rumah tanpa
-      // spek terukur jatuh ke ringkasan kebutuhan (rabSummaryResult),
-      // bukan ke klarifikasi tipologi universal (yang sebelumnya
-      // menelan teks ini dan melewatkan state kebutuhan sesi).
-      // Konsisten dengan CREATE_RAB_SUMMARY yang sudah menggating
-      // universal pada kind !== 'rumah'.
-      // GATE 4 (5D): projectId diteruskan agar lampiran DED proyek ini
-      // ikut (spek DED + rekonsiliasi QTO di universalResultFor).
-      const directKind = extractRabNeeds(stripLandPhrases(raw)).kind;
-      const uniDirect = directKind === 'rumah'
-        ? null
-        : universalResultFor(raw, undefined, undefined, { projectId: ctx.activeProject?.id ?? null });
-      if (uniDirect) return uniDirect;
+      if (ev.templateMatch && (ev.needsCard || (ev.route === 'template' && !flow.built))) {
+        // Kartu pilihan: basis fallback (luas ≠ tipe katalog) atau
+        // kecocokan eksak yang build-nya gagal — keduanya perlu
+        // konfirmasi pengguna sebelum generate. Kartu membawa
+        // rekomendasi metode dari evaluasi spek (bukan pilihan buta).
+        pendingChoice = {
+          rawText: raw,
+          match: ev.templateMatch,
+          needs: { ...ev.templateMatch.needs },
+          floors: ev.templateMatch.floors,
+          floorsMentioned: ev.templateMatch.floorsMentioned,
+          landAreaM2: ev.spec.landAreaM2 ?? resolveLandAreaM2(raw),
+          spec: ev.spec,
+        };
+        setPendingSubtypeNeeds(null);
+        return choiceCardResult(pendingChoice, false, ctx.activeProject?.id ?? null, ev.recommendation);
+      }
+      if (flow.built) return directRabTableResult(flow.built);
+      if (ev.route === 'universal') {
+        // FASE 4 (CHAT-05): teks DIRECT non-rumah (termasuk primer
+        // non-rumah yang dijaga dari specRab, mis. kolam) ditangani
+        // katalog universal — atau ringkasan jujur bila tak ada template.
+        // GATE 4 (5D): projectId diteruskan agar lampiran DED proyek
+        // ini ikut (spek DED + rekonsiliasi QTO di universalResultFor).
+        const uniDirect = universalResultFor(raw, ev.forcedTemplateId, undefined, {
+          projectId: ctx.activeProject?.id ?? null,
+        });
+        if (uniDirect) return uniDirect;
+      }
       return rabSummaryResult(raw, undefined, ctx.activeProject?.id ?? null);
     }
 
@@ -3624,6 +3692,13 @@ export function executeIntent(
       // salah baca. Kategori lain: gerbang mengembalikan null dan alur
       // di bawah berjalan persis seperti sebelumnya.
       const rawSummary = ctx.rawText ?? param ?? '';
+      // INTENT-FIRST: permintaan DED diekstrak + diproses SEBELUM gate
+      // universal — draf template tidak boleh menelan permintaan DED
+      // (dulu "rab rumah dari gambar ded" bisa berujung draf template
+      // rumah diam-diam lewat buildUniversalDraft).
+      if (extractRabIntentSpec(rawSummary).source === 'ded') {
+        return rabSummaryResult(rawSummary, undefined, ctx.activeProject?.id ?? null);
+      }
       // Intake universal didahulukan HANYA untuk: proyek multi-
       // disiplin (yang bisa dibajak gerbang landscape — kasus sekolah
       // + taman + pagar + drainase) dan kategori non-landscape yang
@@ -3640,7 +3715,12 @@ export function executeIntent(
       if (needsSummary.kind !== 'rumah') {
         // GATE 4 (5D): projectId diteruskan agar lampiran DED proyek
         // ini ikut (spek DED + rekonsiliasi QTO + tombol koreksi).
-        const uniSummary = universalResultFor(rawSummary, undefined, undefined, { projectId: ctx.activeProject?.id ?? null });
+        // INTENT-FIRST: evaluasi spek memilih template yang paling cocok
+        // (ikatan spesifikasi khas, mis. cold-storage untuk gudang
+        // pendingin) — template paksa hanya bila satu cakupan terdeteksi
+        // dan ada alternatif imbang yang lebih cocok.
+        const forced = evaluateRabIntent(rawSummary).forcedTemplateId;
+        const uniSummary = universalResultFor(rawSummary, forced, undefined, { projectId: ctx.activeProject?.id ?? null });
         if (uniSummary) {
           // GATE 1 (5A) — jalur cepat menghasilkan draft: tautkan snapshot
           // intake (yang sudah disimpan gerbang sebelum draft) ke draft
@@ -4058,6 +4138,9 @@ export function executeIntent(
       const tool = EZRAB_AI_TOOLS.find((t) => t.name === 'cari_ahsp');
       if (!tool) return { ok: false, message: 'Pencarian AHSP tidak tersedia saat ini.' };
       const result = tool.invoke({ kata_kunci: param });
+      // cari_ahsp sinkron; penjaga tipe karena invoke tool akun (async)
+      // kini berbagi signature (Fase B) — tidak pernah terpicu di sini.
+      if (typeof result !== 'string') return { ok: false, message: 'Pencarian AHSP tidak tersedia saat ini.' };
       return { ok: !result.startsWith('ERROR'), message: result };
     }
 

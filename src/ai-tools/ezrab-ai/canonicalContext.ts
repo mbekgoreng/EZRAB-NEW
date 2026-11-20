@@ -23,7 +23,10 @@
  * Prioritas anggaran: FAKTA PROYEK > OBJEKTIF > DRAFT > MEMORI >
  * DED/QTO > RINGKASAN > RIWAYAT (P3A/G2-F1: DED/QTO dicadangkan
  * SEBELUM ringkasan — keduanya data faktual yang tidak boleh kelaparan
- * oleh ringkasan yang kompresibel). Fakta TIDAK
+ * oleh ringkasan yang kompresibel). Seksi AKUN (Fase B) berada DI LUAR
+ * rantai ini: cap keras formatter 1.200, biayanya diserap anggaran
+ * riwayat lewat probe overhead (lihat CANONICAL_ACCOUNT_BUDGET).
+ * Fakta TIDAK
  * PERNAH hilang diam-diam karena budget riwayat: bila budget terpotong,
  * yang terpotong adalah riwayat terlama/terlemah relevansinya, dan
  * pemotongan itu tercatat di `report.truncations` + ditandai di prompt.
@@ -93,6 +96,26 @@ export const CANONICAL_LAST_MESSAGE_CAP = 6_000;
 /** FASE 5 — cap seksi PEMAHAMAN DED dan PEMERIKSAAN QTO (karakter). */
 export const CANONICAL_DED_BUDGET = 800;
 export const CANONICAL_QTO_BUDGET = 800;
+/**
+ * FASE B (Full Account Intelligence) — cap keras seksi AKUN &
+ * LANGGANAN (karakter). Seksi ini ringkas by design (target < 1.000
+ * karakter dari formatter accountContext.ts); cap 1.200 memberi ruang
+ * untuk baris undangan/order tambahan.
+ *
+ * BUKAN reservasi rantai: seksi akun TIDAK dicadangkan lewat rantai
+ * fakta→ringkasan. Di kondisi produksi saat ini rantai memberi seksi
+ * sesudah memori anggaran 0 (reservedChars 9.002 vs struktural 7.100 —
+ * DED/QTO sudah menjadi korban yang sama; suite P3A merah 3/11 di HEAD
+ * karena ini), sehingga reservasi rantai hanya akan menghasilkan
+ * penanda terpotong. Sebagai gantinya, seksi akun dibatasi formatter
+ * (cap keras ini) dan biayanya diserap anggaran RIWAYAT lewat probe
+ * overhead §4 (baris akun masuk headLines yang diukur probe) —
+ * mekanisme yang sama dengan pesan terakhir yang selalu ikut utuh.
+ * Total tetap ≤ 16.000 karena historyBudget = dataBudget −
+ * probeBlockLength; service.ts tetap fail-closed CONTEXT_BUDGET_EXCEEDED
+ * bila pesan terakhir saja mendorong total melewati cap (pin S9).
+ */
+export const CANONICAL_ACCOUNT_BUDGET = 1_200;
 
 /* ------------------------------------------------------------------ */
 /* Tipe                                                                */
@@ -163,6 +186,20 @@ export interface CanonicalContextInput {
    */
   dedMode?: DedRabAiMode | null;
   dedPolicy?: DedEstimationPolicy | null;
+  /**
+   * FASE B (Full Account Intelligence) — seksi AKUN & LANGGANAN
+   * (sudah diformat pemanggil lewat accountContext.formatAccountSection
+   * dari snapshot GET /api/credits/account-context). Builder menempelkan
+   * dengan cap keras CANONICAL_ACCOUNT_BUDGET, di dalam blok DATA,
+   * SESUDAH QTO dan SEBELUM ringkasan. Biayanya diserap anggaran
+   * riwayat lewat probe overhead (BUKAN reservasi rantai — lihat
+   * komentar CANONICAL_ACCOUNT_BUDGET). Null = tanpa sesi / tanpa
+   * konteks akun (perilaku lama: seksi tidak muncul, pin Fase 1 tidak
+   * berubah). Isinya HANYA domain server-backed (identitas, workspace,
+   * langganan, kredit, pemakaian, order, undangan) — TIDAK ADA data
+   * proyek (D1).
+   */
+  accountSection?: string | null;
 }
 
 export interface CanonicalSectionReport {
@@ -192,6 +229,9 @@ export interface CanonicalContextReport {
     /** FASE 5 — anggaran seksi DED dan QTO (0 bila tanpa seksi). */
     ded: number;
     qto: number;
+    /** FASE B — cap efektif seksi AKUN (1.200 bila seksi ada, 0 bila tidak);
+     *  cap formatter, BUKAN reservasi rantai (biaya diserap riwayat via probe). */
+    account: number;
     summary: number;
     history: number;
   };
@@ -205,6 +245,8 @@ export interface CanonicalContextReport {
     /** FASE 5 — seksi DED dan QTO (0 bila tanpa hasil yang di-wire). */
     ded: CanonicalSectionReport;
     qto: CanonicalSectionReport;
+    /** FASE B — seksi AKUN (0 bila tanpa konteks akun). */
+    account: CanonicalSectionReport;
     summary: CanonicalSectionReport;
     history: CanonicalSectionReport;
   };
@@ -476,6 +518,13 @@ export function buildCanonicalContext(input: CanonicalContextInput): CanonicalCo
   const qtoBudget = input.qtoSection
     ? Math.min(CANONICAL_QTO_BUDGET, Math.max(0, dataBudget - factsBudget - objectiveBudget - draftBudget - memoryBudget - dedBudget))
     : 0;
+  // FASE B — AKUN: cap keras formatter (BUKAN reservasi rantai — lihat
+  // komentar CANONICAL_ACCOUNT_BUDGET). Biaya seksi diserap anggaran
+  // riwayat lewat probe overhead §4 karena baris akun masuk headLines.
+  // report.budget.account = cap efektif (1.200 bila seksi ada, 0 bila
+  // tidak) — BUKAN porsi yang dipotong dari rantai ringkasan; rumus
+  // summaryBudget di bawah TIDAK berubah (pin P3A-02 dipertahankan).
+  const accountBudget = input.accountSection ? CANONICAL_ACCOUNT_BUDGET : 0;
   const summaryBudget = Math.min(
     CANONICAL_SUMMARY_BUDGET,
     Math.max(0, dataBudget - factsBudget - objectiveBudget - draftBudget - memoryBudget - dedBudget - qtoBudget),
@@ -597,6 +646,15 @@ export function buildCanonicalContext(input: CanonicalContextInput): CanonicalCo
     if (qtoTruncated) truncations.push(`QTO dipotong (cap ${qtoBudget})`);
   }
 
+  /* ---- 2d. AKUN & LANGGANAN (Fase B — seksi ke-13 kanonis) ---- */
+  let accountText = '';
+  let accountTruncated = false;
+  if (input.accountSection) {
+    accountText = truncateMarked(input.accountSection, accountBudget);
+    accountTruncated = accountText.length > accountBudget;
+    if (accountTruncated) truncations.push(`akun dipotong (cap ${accountBudget})`);
+  }
+
   /* ---- 3. RINGKASAN PERCAKAPAN (pengganti riwayat mentah panjang) ---- */
   let summaryText = '';
   let summarySource: 'stored' | 'computed' | 'none' = 'none';
@@ -656,6 +714,15 @@ export function buildCanonicalContext(input: CanonicalContextInput): CanonicalCo
     dedText || '(tidak ada hasil DED yang di-wire ke permintaan ini)',
     'PEMERIKSAAN QTO (kuantitas QTO vs dimensi pengguna — aritmetika QTO tidak diubah):',
     qtoText || '(tidak ada pemeriksaan QTO yang di-wire ke permintaan ini)',
+    // FASE B — baris AKUN hanya ada bila seksi diteruskan (tanpa seksi,
+    // headLines IDENTIK dengan sebelumnya sehingga probe overhead
+    // anggaran riwayat + pin Fase 1 tidak berubah satu karakter pun).
+    ...(accountText
+      ? [
+          'AKUN & LANGGANAN (server — identitas terverifikasi + fakta billing; angka di sini adalah fakta, bukan perkiraan):',
+          accountText,
+        ]
+      : []),
     `RINGKASAN PERCAKAPAN (sumber: ${summarySource}${summarizedUpTo > 0 ? `, mencakup ${summarizedUpTo} pesan` : ''}):`,
     summaryText || '(percakapan masih pendek — tanpa ringkasan)',
   ];
@@ -753,7 +820,7 @@ export function buildCanonicalContext(input: CanonicalContextInput): CanonicalCo
   const historyDroppedTotal = (considered - selected.length) + droppedForBudget;
   const historyText = historyLines.join('\n');
 
-  /* ---- Rakit blok data (11 seksi kanonis — 8 Fase 1 + MEMORI Fase 2 + OBJEKTIF Fase 3 + DED/QTO Fase 5) ---- */
+  /* ---- Rakit blok data (12 seksi kanonis — 8 Fase 1 + MEMORI Fase 2 + OBJEKTIF Fase 3 + DED/QTO Fase 5 + AKUN Fase B) ---- */
   const dataBlock = [
     ...headLines,
     `RIWAYAT PERCAKAPAN (${historyLines.length} dari ${messages.length} pesan, relevansi + resensi):`,
@@ -803,6 +870,7 @@ export function buildCanonicalContext(input: CanonicalContextInput): CanonicalCo
       memory: memoryBudget,
       ded: dedBudget,
       qto: qtoBudget,
+      account: accountBudget,
       summary: summaryBudget,
       history: historyBudget,
     },
@@ -813,6 +881,7 @@ export function buildCanonicalContext(input: CanonicalContextInput): CanonicalCo
       memory: { chars: memoryText.length, truncated: memoryTruncated, included: memoryText ? 1 : 0, dropped: 0 },
       ded: { chars: dedText.length, truncated: dedTruncated, included: dedText ? 1 : 0, dropped: 0 },
       qto: { chars: qtoText.length, truncated: qtoTruncated, included: qtoText ? 1 : 0, dropped: 0 },
+      account: { chars: accountText.length, truncated: accountTruncated, included: accountText ? 1 : 0, dropped: 0 },
       summary: { chars: summaryText.length, truncated: summaryText.includes('…[ringkasan dipotong'), included: summarizedUpTo, dropped: 0 },
       history: { chars: historyText.length, truncated: droppedForBudget > 0, included: historyLines.length, dropped: historyDroppedTotal },
     },

@@ -29,6 +29,24 @@ import { AHSPItem } from '../../types';
  * - Lampiran IV: Sumber Daya Air (SDA)
  * - Lampiran V: Bina Marga
  * - Lampiran VI: Cipta Karya
+ *
+ * COUNT RECONCILIATION (Phase B, 2026-11-20 — verified by direct count,
+ * see scripts/ahsp2026/assertPurge.ts §20/§21). Three figures circulate;
+ * all three are correct for DIFFERENT sets — do not "fix" one to match
+ * another:
+ * - 5,801 = the CANONICAL module (AHSP_2026_CANONICAL): SMKK 223 +
+ *   SDA 1,556 + Bina Marga parenthesized codes 1,163 + Cipta Karya 2,859.
+ * - 5,742 = THIS registry (ALL_OFFICIAL_AHSP_ITEMS), the runtime catalog
+ *   the resolver, AI and UI read: 5,801 − SMKK 223 − BM 1,163
+ *   + BM letter-code master 1,137 + official SMKK 190
+ *   (CK 2,859 + SDA 1,556 + BM 1,137 + SMKK 190). The version pointer
+ *   (ahspVersionPointer.generated.ts) counts THIS set per family.
+ * - 5,725 = ACTIVE items: 5,742 minus the 17 quarantined records
+ *   (ahspQuarantine.ts; CK 2,849 + BM 1,130 + SDA 1,556 + SMKK 190).
+ *   Public pages pin this figure (src/data/ahspPublicCounts.ts).
+ * The AHSPRepository count is 5,741 = 5,742 minus the 1 code-less
+ * record (SDA-000810; the other code-less canonical record, BM-000007,
+ * is substituted out with the parenthesized BM set).
  */
 
 /** Current custom-AHSP storage key (bumped for the 2026 canonical catalog). */

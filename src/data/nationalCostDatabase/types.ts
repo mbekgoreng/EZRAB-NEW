@@ -235,12 +235,19 @@ export interface AHSPVersionDiff {
 }
 
 /**
- * Version of the EZRAB AHSP database (the canonical AHSP 2026 catalog as
- * carried by masterRegistry). `2026.1` is the FIRST versioned baseline,
- * established by Master Pricing §3 (2026-11-16) for the catalog as
- * generated 2026-10-20 — a label for the current dataset state, not a
- * claim about an external versioning scheme. §8 (AHSP versioning) governs
- * how this value advances (clone → new version → publish).
+ * FROZEN FIRST BASELINE id of the EZRAB AHSP database (== AHSP_BASELINE_VERSION_ID,
+ * ahspVersioning.ts; Master Pricing §3 I-11, §8). `2026.1` labels the runtime
+ * catalog as generated 2026-10-20 — it is NOT the current version of the
+ * database: families advance INDEPENDENTLY (per-domain versions in
+ * ACTIVE_AHSP_VERSIONS, ahspVersionPointer.generated.ts — CK/SDA are at
+ * 2026.2 while BM/SMKK remain at 2026.1), so no single value can ever be
+ * "the" current AHSP version. Do NOT bump this constant to track a
+ * publication: it is (a) the baseline-extract guard in
+ * scripts/ahsp2026/buildAhspVersionSnapshots.ts, (b) the legacy fallback
+ * for snapshots/projects written before §3 without a pin (Decision D —
+ * historical projects are never silently re-pointed), and (c) the stamp
+ * on new project snapshots (pinned by masterPricing tests). For the
+ * version a family is CURRENTLY at, read ACTIVE_AHSP_VERSIONS.
  */
 export const AHSP_DATABASE_VERSION = '2026.1';
 

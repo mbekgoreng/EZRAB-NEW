@@ -26,6 +26,18 @@ import {
   listOperationRecords,
   writesDatasetGuard,
 } from './operations';
+import {
+  readCreditBalance,
+  readSubscription,
+  readUsageHistory,
+  readInvitations,
+  readAccountSummary,
+  formatCreditBalance,
+  formatSubscription,
+  formatUsageHistory,
+  formatInvitations,
+  formatAccountSummary,
+} from './accountApiClient';
 
 /**
  * Active-project snapshot for read-only project tools.
@@ -52,7 +64,12 @@ function requireSnapshot(): ProjectSnapshot | string {
 export interface EzrabAiToolDef {
   name: string;
   description: string;
-  invoke: (args: Record<string, unknown>) => string;
+  /**
+   * Sinkron untuk tool deterministik lokal; Promise<string> untuk tool
+   * akun server (fetch jaringan). Registry menunggu keduanya
+   * (executeTool: Promise.resolve(invoke(...))).
+   */
+  invoke: (args: Record<string, unknown>) => string | Promise<string>;
 }
 
 const asNumber = (v: unknown): number | null => {
@@ -962,6 +979,38 @@ export const EZRAB_AI_TOOLS: EzrabAiToolDef[] = [
       );
     },
   },
+  // --- Tool baca domain akun server (Fase B §12.2 item 3) ---------------
+  // Read-only, tanpa argumen identitas: identitas hanya dari token sesi
+  // (lihat accountApiClient.ts). Deskripsi SENGAJA pendek — tiap kata
+  // menambah panjang prompt sistem (headroom 1.659 karakter).
+  {
+    name: 'get_credit_balance',
+    description: 'Saldo kredit AI akun dari server (live): total + rincian langganan/top-up/bonus/gratis. Tanpa argumen.',
+    invoke: async () => formatCreditBalance(await readCreditBalance()),
+  },
+  {
+    name: 'get_subscription',
+    description: 'Status langganan akun dari server (live): paket, status, masa berlaku. Tanpa argumen.',
+    invoke: async () => formatSubscription(await readSubscription()),
+  },
+  {
+    name: 'get_usage_history',
+    description: 'Riwayat pemakaian kredit AI dari server (live), terbaru dulu. Argumen: jumlah (opsional, default 10, maks 20).',
+    invoke: async (args) => {
+      const n = Math.min(20, Math.max(1, Math.floor(Number(args.jumlah ?? 10)) || 10));
+      return formatUsageHistory(await readUsageHistory(n), n);
+    },
+  },
+  {
+    name: 'list_invitations',
+    description: 'Daftar undangan tim workspace dari server (live): email, peran, status. Hanya admin workspace. Tanpa argumen.',
+    invoke: async () => formatInvitations(await readInvitations()),
+  },
+  {
+    name: 'get_account_summary',
+    description: 'Ringkasan akun dari server (live): saldo kredit + langganan + pemakaian terakhir. Tanpa argumen.',
+    invoke: async () => formatAccountSummary(await readAccountSummary()),
+  },
 ];
 
 export const EZRAB_AI_TOOL_MAP: Record<string, EzrabAiToolDef> = Object.fromEntries(
@@ -975,7 +1024,7 @@ export function getToolListText(): string {
 export function runTool(
   toolName: string,
   args: Record<string, unknown>
-): string | AIToolsStructuredError {
+): string | Promise<string> | AIToolsStructuredError {
   const tool = EZRAB_AI_TOOL_MAP[toolName];
   if (!tool) {
     return aiToolsError('INTERNAL', 'ezrab-ai:tool', `Alat tidak dikenal: ${toolName}`);

@@ -320,6 +320,22 @@ export function classifyUniversal(text: string): Classification {
     (a, b) => (PRIMARY_PRIORITY[a.id] ?? 9) - (PRIMARY_PRIORITY[b.id] ?? 9)
   );
   let primary = sorted[0];
+  // INTENT-FIRST (2026-11-20): komponen bangunan (famili 'specialized':
+  // pondasi, struktur/atap, waterproofing, fasad, interior, ...) adalah
+  // BAGIAN dari bangunan — logika G2 di atas sudah menerapkannya untuk
+  // isMulti, tetapi pemilihan PRIMER masih menempatkan komponen (prioritas
+  // 6) di atas rumah (7). Akibatnya frasa lingkup "pondasi sampai atap"
+  // membuat permintaan RUMAH terklasifikasi primer 'pondasi', dan
+  // specRabHijackGuard membajaknya dari mesin rumah. Bila ada disiplin
+  // bangunan di antara matches, primer diambil dari disiplin bangunan
+  // (komponen tetap tercatat di secondary/matches; blok objek-pertama
+  // MEP/landscape di bawah tetap dapat mempromosikan di atasnya).
+  // Tanpa disiplin bangunan perilaku tidak berubah ("buatkan rab
+  // waterproofing" tetap primer waterproofing).
+  if (hasBuildingDiscipline) {
+    const buildingFirst = sorted.find((d) => d.family === 'building' || d.id === 'kandang');
+    if (buildingFirst) primary = buildingFirst;
+  }
   // Sistem MEP yang disebut SEBAGAI objek utama kalimat ("buatkan rab
   // instalasi listrik gedung kantor") menjadi primer — gedungnya
   // konteks. Bila gedung disebut lebih dulu, gedung tetap primer.

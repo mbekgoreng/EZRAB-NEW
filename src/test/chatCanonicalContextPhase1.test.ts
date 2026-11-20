@@ -32,7 +32,7 @@ import { aiToolsProviderClient, type AiToolsResult } from '../ai-tools/providerC
 import type { UniversalIntakeContext } from '../ai-tools/ezrab-ai/universalIntake';
 import type { StructuredSpec } from '../ai-tools/ezrab-ai/structuredSpec';
 
-const CANONICAL_SHA256 = '229baa34ecb9eefe0f472a5c12b5b45f98d360db90337a064818572efd2f015e'; // re-baseline v2.5.0, 2026-11-19 (was v2.4.0 226ff3b4…)
+const CANONICAL_SHA256 = '55a6dfc4e38311627f9290e9146191ffd5a2884d0dfdf1594c04ca923b813e47'; // re-baseline 2026-11-20: aturan 32 intent-first RAB (+573 char), versi tetap 2.5.0 (was v2.5.0 229baa34…)
 const sha256 = (s: string) => createHash('sha256').update(s, 'utf8').digest('hex');
 
 /* ------------------------------------------------------------------ */

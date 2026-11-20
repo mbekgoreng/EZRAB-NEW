@@ -43,6 +43,15 @@ export interface DirectRabResult {
   totalArea: number;
   /** Fallback luas R1 (null = tipe eksak) — transparansi basis perhitungan. */
   areaFallback: { requestedArea: number; basisArea: number } | null;
+  /**
+   * Adaptasi luas intent-first (null = tidak ada): tipe disebut eksplisit
+   * TAPI luas bangunan eksplisit berbeda dari luas tipe × lantai — luas
+   * eksplisit yang dipakai (requestedArea), template hanya basis
+   * parametrik (typeArea = luas tipe × lantai yang TIDAK dipakai).
+   */
+  areaAdaptation: { requestedArea: number; typeArea: number } | null;
+  /** Asal nilai kunci hasil — mana dari Anda, mana dari template/asumsi. */
+  provenance: Array<{ label: string; value: string; source: 'user' | 'template' | 'assumption' }>;
   catalogLabel: string;
   templateName: string;
   region: string;
@@ -100,6 +109,13 @@ export interface TypedTemplateMatch {
   floors: number;
   /** true bila jumlah lantai BENAR-BENAR disebut pengguna (bukan default). */
   floorsMentioned: boolean;
+  /**
+   * true bila kecocokan berasal dari penyebutan TIPE eksplisit
+   * ("type 70"); false bila hanya fallback luas R1 (luas telanjang tanpa
+   * tipe) — pemanggil intent-first membedakan keduanya: fallback
+   * bukanlah "template yang dipilih pengguna".
+   */
+  matchedByType: boolean;
   region: string;
   regionIsDefault: boolean;
   /**
@@ -150,6 +166,7 @@ export function findDirectTemplate(rawText: string): TypedTemplateMatch | null {
         needs,
         floors,
         floorsMentioned: needs.floors != null || found.extractedFloors != null,
+        matchedByType: true,
         region,
         regionIsDefault: isDefault,
         areaFallback: null,
@@ -170,8 +187,16 @@ export function findDirectTemplate(rawText: string): TypedTemplateMatch | null {
   // Seri jarak (mis. tepat di tengah dua tipe) → basis yang LEBIH BESAR
   // (mencakup luas permintaan).
   const floorsMentioned = needs.floors != null || found.extractedFloors != null;
-  if (!floorsMentioned && found.extractedArea != null && Number.isFinite(found.extractedArea)) {
-    const requestedArea = found.extractedArea;
+  // INTENT-FIRST (2026-11-20): luas yang dicocokkan adalah luas BANGUNAN
+  // eksplisit (needs.buildingArea — kemunculan "luas bangunan" terakhir,
+  // frasa lahan sudah dibuang) — BUKAN angka telanjang pertama dari
+  // findFromQuery, yang bisa berupa luas LAHAN ("luas 100m2 luas
+  // bangunan 86m2" sebelumnya memakai 100 sebagai luas bangunan lalu
+  // jatuh ke basis Type 70). Bila tidak ada luas bangunan eksplisit,
+  // perilaku lama (angka telanjang) dipertahankan.
+  const requestedAreaRaw = needs.buildingArea ?? found.extractedArea;
+  if (!floorsMentioned && requestedAreaRaw != null && Number.isFinite(requestedAreaRaw)) {
+    const requestedArea = requestedAreaRaw;
     const candidates = HouseTypeCatalog.getAll().filter(
       (h) => h.templateId && h.area != null && h.defaultFloorCount === 1,
     );
@@ -198,6 +223,7 @@ export function findDirectTemplate(rawText: string): TypedTemplateMatch | null {
           needs,
           floors: 1,
           floorsMentioned: false,
+          matchedByType: false,
           region,
           regionIsDefault: isDefault,
           areaFallback: exactArea ? null : { requestedArea, basisArea: nearest.area as number },
@@ -242,16 +268,30 @@ export function buildDirectRab(rawText: string, needsOverride?: RabNeeds): Direc
   // needsOverride.buildingArea menang bila ada), dan denah diturunkan dari
   // default template menjaga proporsi — karena quantityRule rumah memakai
   // lebar×panjang, bukan buildingArea mentah.
+  // INTENT-FIRST (2026-11-20): luas bangunan EKSPLISIT pengguna menang
+  // atas luas tipe — "type 70, luas bangunan 120 m2" dihitung 120 m²
+  // (total), bukan 70 m². Template dipakai sebagai basis parametrik
+  // dengan denah diskalakan (pola yang sama dengan fallback R1) dan
+  // adaptasinya ditandai terbuka (areaAdaptation + peringatan).
   const isFallback = match.areaFallback != null;
+  const typeTotalArea = found.item.area * floors;
+  const explicitArea = needs.buildingArea ?? null;
+  const areaAdapted =
+    !isFallback && explicitArea != null && explicitArea !== typeTotalArea;
   const totalArea = isFallback
     ? (needsOverride?.buildingArea ?? match.areaFallback!.requestedArea)
-    : found.item.area * floors;
+    : areaAdapted
+      ? explicitArea
+      : typeTotalArea;
+  const areaAdaptation = areaAdapted
+    ? { requestedArea: explicitArea as number, typeArea: typeTotalArea }
+    : null;
   const parameters: Record<string, unknown> = {
     buildingArea: totalArea,
     floorCount: floors,
   };
   let scaledFootprint: string | null = null;
-  if (isFallback) {
+  if (isFallback || areaAdapted) {
     const wParam = template.parameters?.buildingWidth;
     const lParam = template.parameters?.buildingLength;
     const w0 = typeof wParam?.defaultValue === 'number' ? wParam.defaultValue : null;
@@ -315,13 +355,45 @@ export function buildDirectRab(rawText: string, needsOverride?: RabNeeds): Direc
       `Luas ${totalArea} m² tidak sama persis dengan tipe katalog — dipakai basis template Tipe ${match.areaFallback!.basisArea} (terdekat)${scaledFootprint ? ` dengan denah diskalakan ${scaledFootprint} menjaga proporsi template` : ''}; periksa kembali di spreadsheet.`
     );
   }
+  if (areaAdapted) {
+    warnings.push(
+      `Luas bangunan ${totalArea} m² dari permintaan dipakai sebagai luas total (bukan ${typeTotalArea} m² dari Type ${found.item.area} × ${floors} lantai) — template dipakai sebagai basis parametrik${scaledFootprint ? ` dengan denah diskalakan ${scaledFootprint} menjaga proporsi template` : ''}; periksa kembali di spreadsheet.`
+    );
+  }
   for (const n of gated.notes) warnings.push(n);
+
+  // Provenance nilai (intent-first): mana dari Anda, mana dari template.
+  const provenance: DirectRabResult['provenance'] = [
+    { label: 'Luas bangunan', value: `${totalArea} m² (total)`, source: 'user' },
+    {
+      label: 'Basis template',
+      value: displayTemplateBasisName(template.name, floors),
+      source: isFallback || areaAdapted ? 'template' : 'user',
+    },
+    {
+      label: 'Jumlah lantai',
+      value: `${floors} lantai`,
+      source: match.floorsMentioned || needsOverride?.floors != null ? 'user' : 'assumption',
+    },
+  ];
+  if (needs.bedrooms) provenance.push({ label: 'Kamar tidur', value: `${needs.bedrooms}`, source: 'user' });
+  else if (typeof template.parameters?.bedroomCount?.defaultValue === 'number') provenance.push({ label: 'Kamar tidur', value: `${template.parameters.bedroomCount.defaultValue}`, source: 'template' });
+  if (needs.bathrooms) provenance.push({ label: 'Kamar mandi', value: `${needs.bathrooms}`, source: 'user' });
+  else if (typeof template.parameters?.bathroomCount?.defaultValue === 'number') provenance.push({ label: 'Kamar mandi', value: `${template.parameters.bathroomCount.defaultValue}`, source: 'template' });
+  if (needs.landLength && needs.landWidth) provenance.push({ label: 'Dimensi bangunan', value: `${needs.landLength} × ${needs.landWidth} m`, source: 'user' });
+  provenance.push({
+    label: 'Lokasi / indeks harga',
+    value: needs.location ? `${needs.location} → ${region}` : `${region} (default)`,
+    source: needs.location ? 'user' : 'assumption',
+  });
 
   const result: DirectRabResult = {
     houseType: found.item.area,
     floors,
     totalArea,
     areaFallback: match.areaFallback,
+    areaAdaptation,
+    provenance,
     catalogLabel: found.item.label,
     templateName: template.name,
     region,
@@ -332,7 +404,9 @@ export function buildDirectRab(rawText: string, needsOverride?: RabNeeds): Direc
     sourceKind: 'template',
     displayLabel: isFallback
       ? `Rumah Type ${match.areaFallback!.basisArea} — dihitung ${totalArea} m²`
-      : `Rumah Type ${found.item.area}`,
+      : areaAdapted
+        ? `Rumah Type ${found.item.area} — dihitung ${totalArea} m²`
+        : `Rumah Type ${found.item.area}`,
     assumptions: [],
   };
   setLastDirectRab(result);
@@ -386,6 +460,18 @@ export function formatDirectRabMessage(r: DirectRabResult): string {
     );
   }
   lines.push('');
+
+  // Asal nilai (intent-first): bedakan nilai dari Anda, dari template,
+  // dan asumsi — tanpa blok ini pembaca tidak bisa tahu angka mana yang
+  // berasal dari permintaan dan mana yang dari template.
+  if (r.provenance.length > 0) {
+    lines.push('**Asal nilai** — dari Anda vs template/asumsi:');
+    for (const pv of r.provenance) {
+      const src = pv.source === 'user' ? 'dari Anda' : pv.source === 'template' ? 'template' : 'asumsi';
+      lines.push(`• ${pv.label}: ${pv.value} — ${src}`);
+    }
+    lines.push('');
+  }
 
   // Kelompokkan dari calc.items (membawa wbsCode lengkap); urutan kategori
   // mengikuti kemunculan pertama, sama seperti categoryGroups engine.

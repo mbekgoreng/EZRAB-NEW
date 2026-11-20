@@ -6,6 +6,15 @@
  *   POST /api/credits/webhook      — notifikasi Midtrans → grant (idempoten)
  *   GET  /api/credits/order        — status satu order milik workspace
  *   GET  /api/credits/subscription — status langganan + plan hak efektif
+ *   GET  /api/credits/account-context — konteks akun server-backed untuk
+ *                                    Chat AI (Fase B, 2026-11-20):
+ *                                    identitas + workspace + langganan +
+ *                                    kredit + pemakaian + order +
+ *                                    undangan. Identitas HANYA dari JWT;
+ *                                    tanpa data proyek (D1). Tanpa repo
+ *                                    billing, menjawab 200 terdegradasi
+ *                                    (identitas live, sisanya unavailable)
+ *                                    — bukan 503 seperti balance.
  *   POST /api/credits/bootstrap    — bootstrap workspace pasca-signup
  *                                    (Phase 2 W5, 2026-11-19 — lihat
  *                                    api/_lib/workspaceBootstrap.js).
@@ -39,7 +48,7 @@
  * Webhook TIDAK memakai auth pengguna: autentikasinya adalah signature
  * Midtrans yang diverifikasi di billingService sebelum apa pun diproses.
  */
-import { applyCors, authenticateRequest, evaluateCreditAccess, readJsonBody } from '../_lib/security.js';
+import { applyCors, authenticateRequest, evaluateCreditAccess, rateLimit, readJsonBody } from '../_lib/security.js';
 import { getBillingRepository } from '../_lib/billingStore.js';
 import { getMidtransConfig } from '../_lib/midtrans.js';
 import { createBillingService } from '../_lib/billingService.js';
@@ -54,6 +63,8 @@ import {
   getOrCreateBillingAccount,
   resolveWorkspaceAccess,
 } from '../_lib/billingAccountService.js';
+import { resolveAccountContext } from '../_lib/accountContextResolver.js';
+import { getInvitationRepository } from '../_lib/invitations/repository.js';
 
 function buildBillingService() {
   return createBillingService({
@@ -333,16 +344,74 @@ async function bootstrapHandler(req, res) {
   });
 }
 
+// ---------------------------------------------------------------------------
+// GET /api/credits/account-context — konteks akun server-backed untuk
+// Chat AI (Fase B, 2026-11-20). Pola auth PERSIS balance:
+// authenticateRequest + evaluateCreditAccess + resolveWorkspaceAccess
+// (di dalam resolver). Identitas HANYA dari JWT terverifikasi — body
+// DIABAIKAN TOTAL; workspaceId (bila dikirim) hanya target tak terpercaya.
+// BEDA dari balance: tanpa repo billing, handler TIDAK menjawab 503 —
+// resolver mengembalikan 200 terdegradasi (identitas live dari JWT,
+// seksi lain 'unavailable' beralasan) agar Chat AI tetap tahu siapa
+// penggunanya. BACA-SAIA: tidak ada provisioning akun di jalur ini.
+// ---------------------------------------------------------------------------
+async function accountContextHandler(req, res) {
+  if (!applyCors(req, res)) return res.status(403).json({ success: false, error: 'Origin tidak diizinkan' });
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'GET') return res.status(405).json({ success: false, error: 'Method not allowed' });
+
+  const auth = await authenticateRequest(req);
+  const access = evaluateCreditAccess(auth);
+  if (!access.allow) {
+    return res.status(access.status).json({ success: false, error: access.error, errorCode: access.errorCode });
+  }
+  // Penjaga eksplisit yang sama seperti balance (audit R-01): tanpa
+  // identitas terverifikasi, tidak ada konteks akun — jangan karang.
+  if (!auth.user || !auth.user.id) {
+    return res.status(401).json({ success: false, error: 'AUTH_REQUIRED', errorCode: 'AUTH_REQUIRED' });
+  }
+  try {
+    const context = await resolveAccountContext({
+      identity: {
+        userId: auth.user.id,
+        email: auth.user.email ?? null,
+        isAnonymous: auth.user.isAnonymous === true,
+      },
+      workspaceId: requestedWorkspaceId(req),
+      billingRepo: getBillingRepository(),
+      invitationRepo: getInvitationRepository(),
+    });
+    return res.status(200).json({ success: true, ...context });
+  } catch {
+    return sendBackendError(res);
+  }
+}
+
 const ACTIONS = {
   balance: balanceHandler,
   checkout: checkoutHandler,
   webhook: webhookHandler,
   order: orderHandler,
   subscription: subscriptionHandler,
+  'account-context': accountContextHandler,
   bootstrap: bootstrapHandler,
 };
 
 export default async function handler(req, res) {
+  // G5 (Phase B, 2026-11-20): rate limit dispatcher — 60/mnt per IP,
+  // sebelum dispatch (menutupi SEMUA aksi + aksi tak dikenal). 60 = 2×
+  // /api/market/search (30), setengah /api/ai/providers|engine-status
+  // (120); jauh di atas burst baca UI maupun volume retry webhook
+  // Midtrans, jadi webhook TIDAK dikecualikan.
+  const rl = rateLimit(req, { limit: 60, keyPrefix: 'rl-credits' });
+  if (!rl.allowed) {
+    return res.status(429).json({
+      success: false,
+      error: 'Terlalu banyak permintaan. Coba lagi sebentar.',
+      errorCode: 'RATE_LIMITED',
+      retryAfterMs: rl.resetMs,
+    });
+  }
   const action = req.query?.action;
   const fn = action ? ACTIONS[action] : undefined;
   if (!fn) {

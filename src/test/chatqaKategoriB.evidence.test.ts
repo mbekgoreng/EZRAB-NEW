@@ -79,8 +79,10 @@ describe('Bukti 3 — inventaris tool deterministik chat', () => {
     expect(names).toContain('persentase_level');
     // TIDAK ada tool: penjumlahan umum, persen-dari-nilai/PPN, konversi
     // satuan, produktivitas, pembagian segmen, selisih/persen-selisih.
+    // `sum(?!mary)`: 'summary' di get_account_summary (ringkasan akun,
+    // BUKAN tool penjumlahan — Fase B) tidak boleh ikut terhitung.
     const calcNames = names.filter((n) =>
-      /jumlah|tambah|sum|konversi|convert|ppn|pajak|tax|produktif|bagi|selisih/.test(n),
+      /jumlah|tambah|sum(?!mary)|konversi|convert|ppn|pajak|tax|produktif|bagi|selisih/.test(n),
     );
     expect(calcNames).toEqual([]);
   });

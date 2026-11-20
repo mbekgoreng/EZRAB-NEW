@@ -14,11 +14,27 @@
  * Fail-closed tetap di handler: 503 NOT_CONFIGURED bila backend
  * autentikasi/database server-side belum dikonfigurasi.
  */
+import { rateLimit } from '../_lib/security.js';
 import { defaultHandlers } from '../_lib/invitations/handler.js';
 
 const ACTIONS = new Set(Object.keys(defaultHandlers));
 
 export default async function handler(req, res) {
+  // G5 (Phase B, 2026-11-20): rate limit dispatcher — 30/mnt per IP, sama
+  // seperti /api/market/search, sebelum dispatch. Menutupi SEMUA aksi
+  // termasuk yang belum punya limit per-aksi di
+  // api/_lib/invitations/handler.js (list/revoke/resend); create/validate/
+  // redeem tetap dibatasi jendela 10-menit yang lebih ketat di handler lib
+  // (lapis kedua, bukan pengganti). Bentuk 429 mengikuti handler lib
+  // (TOO_MANY_ATTEMPTS).
+  const rl = rateLimit(req, { limit: 30, keyPrefix: 'rl-invitations' });
+  if (!rl.allowed) {
+    return res.status(429).json({
+      success: false,
+      error: 'TOO_MANY_ATTEMPTS',
+      message: 'Terlalu banyak permintaan. Coba lagi nanti.',
+    });
+  }
   const action = req.query?.action;
   if (!action || !ACTIONS.has(action)) {
     return res.status(404).json({

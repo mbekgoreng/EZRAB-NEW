@@ -12,7 +12,7 @@
  * TIDAK ada fallback memori/simulasi. Flag lama CREDITS_DB_CONFIGURED
  * tidak lagi menentukan endpoint ini.
  */
-import { applyCors, authenticateRequest, evaluateCreditAccess } from '../_lib/security.js';
+import { applyCors, authenticateRequest, evaluateCreditAccess, rateLimit, rateLimitIdentity } from '../_lib/security.js';
 import { getBillingRepository } from '../_lib/billingStore.js';
 import { requestedWorkspaceId } from '../_lib/billingAuthorization.js';
 import {
@@ -42,6 +42,19 @@ export default async function handler(req, res) {
   // Phase 5.3 (audit R-01): TIDAK ada fallback 'anonymous' — lihat balance.
   if (!auth.user || !auth.user.id) {
     return res.status(401).json({ success: false, error: 'AUTH_REQUIRED', errorCode: 'AUTH_REQUIRED' });
+  }
+  // G5 (Phase B, 2026-11-20): 30/mnt per pengguna terverifikasi (else per
+  // IP) — sama seperti /api/market/search. Sesudah auth agar kunci memakai
+  // identitas pengguna, bukan IP bersama. Kontrak 503 CREDITS_NOT_CONFIGURED
+  // di atas tidak berubah (rate limit hanya tercapai bila repo ada).
+  const rl = rateLimit(req, { limit: 30, key: 'rl-credits-usage:' + rateLimitIdentity(req, auth) });
+  if (!rl.allowed) {
+    return res.status(429).json({
+      success: false,
+      error: 'Terlalu banyak permintaan. Coba lagi sebentar.',
+      errorCode: 'RATE_LIMITED',
+      retryAfterMs: rl.resetMs,
+    });
   }
   const limit = Math.min(100, Math.max(1, parseInt(String(req.query.limit || '50'), 10) || 50));
   try {

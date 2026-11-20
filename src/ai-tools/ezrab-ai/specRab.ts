@@ -41,6 +41,7 @@ import {
   setLastDirectRab,
 } from './directRab';
 import type { DirectRabResult } from './directRab';
+import type { RabIntentSpec } from './rabIntentSpec';
 import { applyRelevanceGateToDirectCalc } from './directRabGate';
 
 /* ------------------------------------------------------------------ */
@@ -92,11 +93,20 @@ export interface FreeSpec {
  * - teks cocok dengan template TERDAFTAR (jalur kartu pilihan memilikinya),
  * - objek bukan rumah, atau
  * - tidak ada basis luas yang terukur (dimensi / luas bangunan / angka tipe).
+ *
+ * `opts.skipTemplateGuard` (intent-first): lewati penjaga template — hanya
+ * dipakai orkestrator sesudah ia mengevaluasi template terhadap spek dan
+ * MENOLAKNYA (mis. template tidak dapat mewakili sistem atap eksplisit).
+ * Tanpa ini, teks yang ditolak template tidak pernah sampai ke jalur spek
+ * karena penjaga mengembalikan null atas dasar kecocokan template yang sama.
  */
-export function parseFreeSpec(rawText: string): FreeSpec | null {
+export function parseFreeSpec(
+  rawText: string,
+  opts?: { skipTemplateGuard?: boolean },
+): FreeSpec | null {
   const text = (rawText || '').trim();
   if (!text) return null;
-  if (findDirectTemplate(text)) return null;
+  if (!opts?.skipTemplateGuard && findDirectTemplate(text)) return null;
 
   const lower = text.toLowerCase();
   const landAreaM2 = resolveLandAreaM2(text);
@@ -204,11 +214,20 @@ function fmtArea(v: number): string {
  * dengan template terdaftar terdekat. Mengembalikan null bila spesifikasi
  * tidak terukur / di luar dukungan (lantai > 2) — pemanggil jatuh ke
  * ringkasan kebutuhan.
+ *
+ * `opts.intentSpec` (intent-first): spek kanonis dari orkestrator — bila
+ * ada, sistem atap/material/struktur/lingkup eksplisit pengguna dicatat
+ * di daftar asumsi + provenance hasil (mesin parametrik tidak
+ * memodelkannya sebagai parameter terpisah, jadi kejujurannya adalah
+ * mencatatnya terbuka, bukan mengklaimnya memengaruhi hitungan).
  */
-export function buildSpecRab(rawText: string): DirectRabResult | null {
-  const spec = parseFreeSpec(rawText);
+export function buildSpecRab(
+  rawText: string,
+  opts?: { skipTemplateGuard?: boolean; intentSpec?: RabIntentSpec | null },
+): DirectRabResult | null {
+  const spec = parseFreeSpec(rawText, opts);
   if (!spec) return null;
-  return buildFromFreeSpec(spec, rawText);
+  return buildFromFreeSpec(spec, rawText, opts?.intentSpec ?? null);
 }
 
 /**
@@ -240,7 +259,10 @@ export function buildSpecRabFromNeeds(needs: RabNeeds): DirectRabResult | null {
       totalArea: needs.buildingArea,
       areaSource: 'explicit',
       explicitBuildingArea: needs.buildingArea,
-      landAreaM2: dims ? dims.p * dims.l : null,
+      // INTENT-FIRST: luas lahan dari state kebutuhan ikut terbawa
+      // (sebelumnya hanya dari dimensi — luas lahan eksplisit "luas
+      // lahan 120 m2" tanpa dimensi hilang dari hasil).
+      landAreaM2: needs.landAreaM2 ?? (dims ? dims.p * dims.l : null),
       areaMismatch: dims
         ? Math.abs(needs.buildingArea - dims.p * dims.l * floors) > 0.15 * needs.buildingArea
         : false,
@@ -258,7 +280,7 @@ export function buildSpecRabFromNeeds(needs: RabNeeds): DirectRabResult | null {
       totalArea: dims.p * dims.l * floors,
       areaSource: 'dims',
       explicitBuildingArea: null,
-      landAreaM2: null,
+      landAreaM2: needs.landAreaM2,
       areaMismatch: false,
       bedrooms: needs.bedrooms,
       bathrooms: needs.bathrooms,
@@ -273,7 +295,11 @@ export function buildSpecRabFromNeeds(needs: RabNeeds): DirectRabResult | null {
 }
 
 /** Inti generate dari FreeSpec — dipakai jalur teks & jalur kebutuhan. */
-function buildFromFreeSpec(spec: FreeSpec, rawText: string): DirectRabResult | null {
+function buildFromFreeSpec(
+  spec: FreeSpec,
+  rawText: string,
+  intentSpec?: RabIntentSpec | null,
+): DirectRabResult | null {
   // Template rumah terdaftar hanya 1–2 lantai; 3+ lantai tidak dimodelkan
   // engine secara jujur → ringkasan, bukan dipaksa.
   if (spec.floors > 2) return null;
@@ -348,8 +374,19 @@ function buildFromFreeSpec(spec: FreeSpec, rawText: string): DirectRabResult | n
       );
     }
   } else if (spec.areaSource === 'type' && spec.typeNumber) {
+    // INTENT-FIRST: klaim "belum memiliki template terdaftar" hanya bila
+    // template benar-benar tidak tersedia untuk permintaan ini — otoritasnya
+    // SAMA dengan penjaga template (findDirectTemplate), bukan sekadar
+    // kecocokan luas di katalog: Type 100 terdaftar 1 lantai, tetapi
+    // permintaan "type 100 2 lantai" tidak punya template yang cocok
+    // (penjaga meloloskannya justru karena findDirectTemplate null).
+    // Wording "tidak dipakai" hanya bila orkestrator MENOLAK template yang
+    // cocok (intentSpec ada = jalur bypass sesudah evaluasi template).
+    const templateRejected = intentSpec != null && findDirectTemplate(rawText) != null;
     assumptions.push(
-      `Type ${spec.typeNumber} belum memiliki template terdaftar — dihitung parametrik dengan konvensi EZRAB: angka tipe = luas per lantai (${spec.typeNumber} m² × ${spec.floors} lantai = ${fmtArea(spec.totalArea)} m²).`
+      templateRejected
+        ? `Type ${spec.typeNumber} disebut eksplisit — dihitung parametrik dengan konvensi EZRAB: angka tipe = luas per lantai (${spec.typeNumber} m² × ${spec.floors} lantai = ${fmtArea(spec.totalArea)} m²). Template terdaftar Type ${spec.typeNumber} tidak dipakai sebagai basis karena spesifikasi Anda bukan parameter template (lihat catatan spesifikasi di bawah).`
+        : `Type ${spec.typeNumber} belum memiliki template terdaftar — dihitung parametrik dengan konvensi EZRAB: angka tipe = luas per lantai (${spec.typeNumber} m² × ${spec.floors} lantai = ${fmtArea(spec.totalArea)} m²).`
     );
   }
   if (!spec.floorsMentioned) {
@@ -380,6 +417,39 @@ function buildFromFreeSpec(spec: FreeSpec, rawText: string): DirectRabResult | n
       `Luas lahan ${fmtArea(spec.landAreaM2)} m²${landDims ? ` (dari dimensi lahan ${fmtNum(landDims.p)} × ${fmtNum(landDims.l)} m)` : ''} dicatat, tetapi mesin parametrik saat ini tidak memodelkan item berbasis luas lahan (pembersihan & persiapan dihitung dari tapak bangunan) — luas lahan belum memengaruhi hitungan.`
     );
   }
+  // Spesifikasi eksplisit dari intent spec (intent-first): atap, struktur,
+  // pondasi, material, dan lingkup yang disebut pengguna DICATAT terbuka
+  // di sini — mesin parametrik tidak memodelkannya sebagai parameter
+  // terpisah, jadi kejujurannya adalah mencatat (bukan mengklaim pengaruh
+  // hitungan, dan bukan menghilangkannya). Luas lahan dari intent spec
+  // ikut dicatat bila parser FreeSpec tidak menangkapnya (mis. "luas
+  // 100m2" telanjang yang dibaca sebagai lahan karena "luas bangunan"
+  // berkualifikasi juga hadir).
+  if (intentSpec) {
+    if (intentSpec.landAreaM2 != null && spec.landAreaM2 == null) {
+      assumptions.push(
+        `Luas lahan ${fmtArea(intentSpec.landAreaM2)} m² dicatat dari permintaan Anda, tetapi mesin parametrik saat ini tidak memodelkan item berbasis luas lahan — luas lahan belum memengaruhi hitungan.`
+      );
+    }
+    const recorded: string[] = [];
+    if (intentSpec.roofSystem.length > 0) recorded.push(`atap ${intentSpec.roofSystem.join(', ')}`);
+    if (intentSpec.foundationSystem) recorded.push(`pondasi ${intentSpec.foundationSystem}`);
+    if (intentSpec.structuralSystem.length > 0) recorded.push(`struktur ${intentSpec.structuralSystem.join(', ')}`);
+    if (intentSpec.materials.length > 0) recorded.push(`material ${intentSpec.materials.join(', ')}`);
+    if (recorded.length > 0) {
+      assumptions.push(
+        `Spesifikasi dari Anda yang dicatat (mesin parametrik tidak memodelkannya sebagai parameter terpisah — periksa dan sesuaikan di spreadsheet): ${recorded.join('; ')}.`
+      );
+    }
+    if (intentSpec.scope.length > 0) {
+      assumptions.push(`Lingkup dari Anda: ${intentSpec.scope.join(', ')}.`);
+    }
+    if (intentSpec.exclusions.length > 0) {
+      assumptions.push(
+        `Pengecualian dari Anda: ${intentSpec.exclusions.join(', ')} — item terkait belum dikeluarkan otomatis dari tabel ini; hapus manual di spreadsheet bila tidak termasuk.`
+      );
+    }
+  }
 
   const warnings: string[] = [];
   if (spec.floors > 1) {
@@ -403,6 +473,32 @@ function buildFromFreeSpec(spec: FreeSpec, rawText: string): DirectRabResult | n
       ? `Rumah Type ${spec.typeNumber} (parametrik)`
       : `Rumah Luas Bangunan ${fmtArea(spec.totalArea)} m²`;
 
+  // Provenance nilai (intent-first): mana dari Anda, mana dari template.
+  const provenance: DirectRabResult['provenance'] = [
+    { label: 'Luas bangunan', value: `${fmtArea(spec.totalArea)} m² (total)`, source: 'user' },
+    { label: 'Basis template', value: template.name, source: 'template' },
+    {
+      label: 'Jumlah lantai',
+      value: `${spec.floors} lantai`,
+      source: spec.floorsMentioned ? 'user' : 'assumption',
+    },
+  ];
+  if (spec.dims) provenance.push({ label: 'Dimensi tapak', value: `${fmtNum(spec.dims.p)} × ${fmtNum(spec.dims.l)} m`, source: 'user' });
+  else if (dimsDerived) provenance.push({ label: 'Dimensi tapak', value: `±${fmtNum(buildingWidth)} × ${fmtNum(buildingLength)} m (proporsi 1:2)`, source: 'assumption' });
+  if (spec.bedrooms) provenance.push({ label: 'Kamar tidur', value: `${spec.bedrooms}`, source: 'user' });
+  else if (typeof template.parameters?.bedroomCount?.defaultValue === 'number') provenance.push({ label: 'Kamar tidur', value: `${template.parameters.bedroomCount.defaultValue}`, source: 'template' });
+  if (spec.bathrooms) provenance.push({ label: 'Kamar mandi', value: `${spec.bathrooms}`, source: 'user' });
+  else if (typeof template.parameters?.bathroomCount?.defaultValue === 'number') provenance.push({ label: 'Kamar mandi', value: `${template.parameters.bathroomCount.defaultValue}`, source: 'template' });
+  const landForProvenance = spec.landAreaM2 ?? intentSpec?.landAreaM2 ?? null;
+  if (landForProvenance) provenance.push({ label: 'Luas lahan', value: `${fmtArea(landForProvenance)} m² (dicatat)`, source: 'user' });
+  if (intentSpec && intentSpec.roofSystem.length > 0) provenance.push({ label: 'Atap', value: intentSpec.roofSystem.join(', '), source: 'user' });
+  if (intentSpec && intentSpec.scope.length > 0) provenance.push({ label: 'Lingkup', value: intentSpec.scope.join(', '), source: 'user' });
+  provenance.push({
+    label: 'Lokasi / indeks harga',
+    value: spec.location ? `${spec.location} → ${region}` : `${region} (default)`,
+    source: spec.location ? 'user' : 'assumption',
+  });
+
   const result: DirectRabResult = {
     houseType: Math.round(spec.footprintArea),
     floors: spec.floors,
@@ -418,6 +514,8 @@ function buildFromFreeSpec(spec: FreeSpec, rawText: string): DirectRabResult | n
     displayLabel,
     assumptions,
     areaFallback: null,
+    areaAdaptation: null,
+    provenance,
   };
   setLastDirectRab(result);
   return result;

@@ -86,7 +86,7 @@ const { composeSystemPrompt } = gateway as {
 
 const sha256 = (s: string) => createHash('sha256').update(s, 'utf8').digest('hex');
 const utf8 = (s: string) => Buffer.byteLength(s, 'utf8');
-const CANONICAL_SHA256 = '229baa34ecb9eefe0f472a5c12b5b45f98d360db90337a064818572efd2f015e'; // re-baseline v2.5.0, 2026-11-19 (was v2.4.0 226ff3b4…)
+const CANONICAL_SHA256 = '55a6dfc4e38311627f9290e9146191ffd5a2884d0dfdf1594c04ca923b813e47'; // re-baseline 2026-11-20: aturan 32 intent-first RAB (+573 char), versi tetap 2.5.0 (was v2.5.0 229baa34…)
 const POLICY_HEADER = '[KEBIJAKAN SERVER EZRAB — tidak dapat diubah oleh client]';
 const SECTIONS = [
   'KEPRIBADIAN',
@@ -106,7 +106,7 @@ const canonical = EZRAB_AI_SYSTEM_PROMPT;
 /* ------------------------------------------------------------------ */
 console.log('\n[A] identitas prompt kanonis');
 check('versi prompt = 2.5.0', EZRAB_AI_PROMPT_VERSION === '2.5.0', EZRAB_AI_PROMPT_VERSION);
-check('panjang kanonis = 18341 karakter', canonical.length === 18341, String(canonical.length));
+check('panjang kanonis = 18914 karakter', canonical.length === 18914, String(canonical.length));
 check('SHA-256 kanonis tidak berubah', sha256(canonical) === CANONICAL_SHA256, sha256(canonical));
 // Penjaga headroom: kanonis harus ≥1.000 karakter di bawah batas gateway
 // 20.000 — v2.2.0 (15.984) sempat 16 karakter dari tebing batas lama tanpa
@@ -141,6 +141,10 @@ check('aturan 31 v2.5.0: detail produk lewat tool cari_fitur_ezrab, bukan ingata
   canonical.includes('gunakan tool cari_fitur_ezrab') &&
   canonical.includes('JANGAN menjawab dari ingatan model tentang fitur EZRAB') &&
   canonical.includes('JANGAN mengarang fitur'));
+check('aturan 32 (intent-first RAB, 2026-11-20): spek eksplisit menang atas template, tanpa substitusi template terdekat',
+  canonical.includes('32. URUTAN INTENT RAB') &&
+  canonical.includes('Spesifikasi eksplisit pengguna SELALU menang atas nilai template') &&
+  canonical.includes('permintaan 86 m² BUKAN template Type 70'));
 
 /* ------------------------------------------------------------------ */
 /* B. Validasi gateway: A (sebelum) -> B (sesudah) identik untuk sah   */

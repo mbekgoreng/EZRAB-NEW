@@ -469,8 +469,9 @@ export function __resetToolRegistryForTests(): void {
 /* Registry — definisi tool                                            */
 /*                                                                     */
 /* Sumber implementasi (bukan karangan):                               */
-/*  - tools.ts: 24 tool Chat AI (kalkulator, AHSP, harga, QTO,        */
-/*    template, data proyek read-only, propose_* pratinjau tulis).     */
+/*  - tools.ts: 30 tool Chat AI (kalkulator, AHSP, harga, QTO,        */
+/*    template, data proyek read-only, propose_* pratinjau tulis,      */
+/*    + 5 tool baca akun server Fase B).                               */
 /*  - universalRab / specChain / agentOrchestrator / Fase 4: draft,    */
 /*    validasi rantai, analisis biaya, konflik teknis, kelayakan       */
 /*    budget, retrieval domain, DED reader, QTO bridge.                */
@@ -483,8 +484,8 @@ const S = (name: string, type: ToolInputFieldType, required = false, extra?: Par
 });
 
 function wrapChatTool(def: EzrabAiToolDef): ToolInvokeFn {
-  return (args) => {
-    const out = runTool(def.name, args);
+  return async (args) => {
+    const out = await runTool(def.name, args);
     return typeof out === 'string' ? out : out.message;
   };
 }
@@ -548,7 +549,7 @@ function resolveQtoRequestedUnits(
   return out;
 }
 
-const CHAT_TOOL_SCHEMAS: Record<string, { permission: ToolPermission; requiresProject: boolean; schema: ToolInputSchema; channels?: ToolChannel[] }> = {
+const CHAT_TOOL_SCHEMAS: Record<string, { permission: ToolPermission; requiresProject: boolean; schema: ToolInputSchema; channels?: ToolChannel[]; idempotent?: boolean; sideEffect?: ToolSideEffect }> = {
   subtotal: {
     permission: 'read-only', requiresProject: false,
     schema: { fields: [S('volume', 'number', true, { aliases: ['quantity'] }), S('unitPrice', 'number', true, { aliases: ['price'] }), S('unit', 'string'), S('priceUnit', 'string', false, { aliases: ['satuan_harga', 'unitPriceUnit'] })] },
@@ -654,6 +655,36 @@ const CHAT_TOOL_SCHEMAS: Record<string, { permission: ToolPermission; requiresPr
     permission: 'read-only', requiresProject: true,
     schema: { fields: [] },
   },
+  // --- Tool baca domain akun server (Fase B §12.2 item 3) ---------------
+  // Read-only, tanpa proyek, tanpa argumen identitas (identitas hanya
+  // dari token sesi — lihat accountApiClient.ts). idempotent: false
+  // SENGAJA: data live server tidak boleh diputar-ulang dari trail
+  // (saldo/langganan basi = jawaban salah); tiap panggilan fetch ulang.
+  get_credit_balance: {
+    permission: 'read-only', requiresProject: false,
+    schema: { fields: [] },
+    idempotent: false, sideEffect: 'external-call',
+  },
+  get_subscription: {
+    permission: 'read-only', requiresProject: false,
+    schema: { fields: [] },
+    idempotent: false, sideEffect: 'external-call',
+  },
+  get_usage_history: {
+    permission: 'read-only', requiresProject: false,
+    schema: { fields: [S('jumlah', 'number', false, { min: 1, max: 20 })] },
+    idempotent: false, sideEffect: 'external-call',
+  },
+  list_invitations: {
+    permission: 'read-only', requiresProject: false,
+    schema: { fields: [] },
+    idempotent: false, sideEffect: 'external-call',
+  },
+  get_account_summary: {
+    permission: 'read-only', requiresProject: false,
+    schema: { fields: [] },
+    idempotent: false, sideEffect: 'external-call',
+  },
 };
 
 function buildChatToolDefinitions(): ToolDefinition[] {
@@ -669,8 +700,8 @@ function buildChatToolDefinitions(): ToolDefinition[] {
       name: t.name,
       description: t.description,
       permission: meta.permission,
-      sideEffect: isPropose ? 'draft-preview' : 'none',
-      idempotent: true,
+      sideEffect: meta.sideEffect ?? (isPropose ? 'draft-preview' : 'none'),
+      idempotent: meta.idempotent ?? true,
       timeoutMs: 30_000,
       available: true,
       requiresProject: meta.requiresProject,

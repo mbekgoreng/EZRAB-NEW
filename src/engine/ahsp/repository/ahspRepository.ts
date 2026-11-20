@@ -5,7 +5,13 @@
  *
  * PURGE NOTE (AHSP 2026):
  *   - The repository ingests ONLY the verified canonical catalog
- *     (`ALL_OFFICIAL_AHSP_ITEMS` -> AHSP_2026_CANONICAL, 5801 items).
+ *     (`ALL_OFFICIAL_AHSP_ITEMS` from masterRegistry — the 5,742-item
+ *     RUNTIME registry, NOT the 5,801-item generated module: the registry
+ *     substitutes the Bina Marga letter-code master (1,137) for the
+ *     parenthesized BM set (1,163) and official SMKK (190) for the
+ *     canonical SMKK rows (223). Code-less records are skipped on ingest,
+ *     so the indexed count is 5,741. See the reconciliation note in
+ *     masterRegistry.ts — do not "correct" 5,742 to 5,801.)
  *   - The legacy Permen PUPR No. 1/PRT/M/2022 baseline is NO LONGER merged in
  *     (§27 — legacy may be archived but never merged into production 2026).
  *   - There is no 'UMUM' fallback category; a missing category is left empty

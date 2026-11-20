@@ -19,6 +19,7 @@ import {
 import { EzrabAiRequest, EzrabAiResponse, EzrabAiToolCall, EzrabAiToolResult } from './types';
 import { aiToolsError } from '../types';
 import { scanToolCalls } from './toolCallParser';
+import { resolveAccountSectionForSend } from './accountContext';
 /* D-50 (perbaikan verifikasi live 2026-11-16): derivasi saran lanjutan
  * — fungsi murni yang SAMA dengan jalur Copilot (coAssistantService),
  * dipakai ulang tanpa duplikasi logika pemicu. */
@@ -94,6 +95,29 @@ export class EzrabAiService {
     };
     emit('preparing');
     if (request.dedSection || request.qtoSection) emit('reading-documents');
+    // FASE B (Full Account Intelligence) — konteks akun server-backed
+    // diambil SEBELUM konteks kanonis dirakit, agar seksi AKUN masuk
+    // blok DATA dengan anggarannya sendiri. Aturan degradasi:
+    // - pemanggil sudah membawa accountSection → dipakai apa adanya
+    //   (tanpa fetch; dipakai tes + pemanggil yang sudah punya snapshot);
+    // - tanpa sesi → tanpa seksi (identitas tetap anonim, perilaku lama);
+    // - server tidak terjangkau → seksi satu baris berlabel tidak
+    //   tersedia (ACCOUNT_UNAVAILABLE_SECTION), bukan karangan.
+    // Kegagalan APA PUN di sini TIDAK PERNAH menggagalkan kirim.
+    // userId scope builder diisi dari identitas sesi terverifikasi bila
+    // pemanggil tidak mengisinya (view masih meneruskan null).
+    let accountSection: string | null = request.accountSection ?? null;
+    let accountUserId: string | null = null;
+    if (accountSection == null) {
+      try {
+        const acct = await resolveAccountSectionForSend();
+        accountSection = acct.section;
+        accountUserId = acct.userId;
+      } catch {
+        accountSection = null;
+        accountUserId = null;
+      }
+    }
     // FASE 1 (Canonical Context Intelligence): perakitan konteks TIDAK
     // lagi di sini — satu builder kanonis (canonicalContext.ts) dipakai
     // jalur ini DAN Copilot. Anggaran total, dedupe pesan terakhir,
@@ -109,7 +133,7 @@ export class EzrabAiService {
     // dari anggaran total agar prompt rakitan ≤ 16.000 karakter.
     const reservedChars = toolSectionProbe.length;
     const built = buildCanonicalContext({
-      userId: request.userId ?? null,
+      userId: request.userId ?? accountUserId,
       projectId: request.projectId ?? snapshot?.projectId ?? null,
       conversationId: request.conversationId ?? request.sessionId ?? null,
       messages: request.messages ?? [],
@@ -124,6 +148,7 @@ export class EzrabAiService {
       objectiveSection: request.objectiveSection ?? null,
       dedSection: request.dedSection ?? null,
       qtoSection: request.qtoSection ?? null,
+      accountSection: accountSection ?? null,
       reservedChars,
     });
     // Observabilitas: satu baris JSON per kirim — ukuran tiap seksi,

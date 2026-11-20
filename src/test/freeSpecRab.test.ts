@@ -509,10 +509,16 @@ describe('registry — pilihan template vs spek bebas', () => {
     expect(labels).toContain('Push ke Spreadsheet RAB');
   });
 
-  it('tanpa spek sama sekali lewat DIRECT → jatuh ke ringkasan kebutuhan', () => {
+  it('tanpa spek sama sekali lewat DIRECT → klarifikasi basis (bukan tabel, bukan ringkasan)', () => {
     const ctx = { ...mockCtx, rawText: 'buatkan rab rumah' } as never;
     const res = executeIntent('CREATE_RAB_DIRECT', undefined, ctx);
     expect(res.message).not.toContain('| No | Uraian |');
-    expect(res.message).toContain('ringkasan kebutuhan');
+    // INTENT-FIRST (2026-11-20, re-baseline perilaku): tanpa basis terukur,
+    // DIRECT menanyakan SATU data inti (luas bangunan/dimensi) lewat rute
+    // klarifikasi — bukan jatuh ke ringkasan kebutuhan (perilaku lama yang
+    // menanyakan semua kebutuhan sekaligus). State awaitRabNeeds agar
+    // jawaban lanjutan menggabungkan spek, bukan mengulang pertanyaan.
+    expect(res.awaitRabNeeds).toBe(true);
+    expect(res.message).toContain('luas bangunan');
   });
 });

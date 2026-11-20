@@ -257,6 +257,15 @@ function writePointerAndTs(
  * versions. The runtime builds its registry state from this module
  * (see buildRegistryState in ahspVersioning.ts). The pointer moves
  * ONLY via publish (Mode B) or a validated direct-edit apply (Mode A).
+ *
+ * COUNT NOTE (Phase B, 2026-11-20): each record's itemCount counts the
+ * RUNTIME registry (ALL_OFFICIAL_AHSP_ITEMS in masterRegistry.ts), NOT
+ * the generated canonical module: BM 1,137 is the letter-code master
+ * (the canonical module holds 1,163 parenthesized BM items) and SMKK
+ * 190 is the official SMKK set (the canonical module holds 223 SMKK
+ * rows). ACTIVE totals: 2,859 + 1,137 + 1,556 + 190 = 5,742 runtime
+ * items (5,801 canonical). The two totals differ BY DESIGN, not by
+ * error. See the reconciliation note in masterRegistry.ts.
  */
 import type {
   AhspFamily,

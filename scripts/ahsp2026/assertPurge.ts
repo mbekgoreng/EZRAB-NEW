@@ -15,6 +15,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { AHSP_2026_CANONICAL, AHSP_2026_CANONICAL_SUMMARY } from '../../src/data/nationalCostDatabase/ahsp2026Canonical.generated';
 import { ALL_OFFICIAL_AHSP_ITEMS, CostDatabaseEngine } from '../../src/data/nationalCostDatabase/masterRegistry';
+import { BINA_MARGA_2026_MASTER } from '../../src/data/nationalCostDatabase/binaMarga2026Master.generated';
+import { OFFICIAL_SMKK_2026_ITEMS } from '../../src/data/nationalCostDatabase/officialSmkk2026';
 import { AHSPRepository } from '../../src/engine/ahsp/repository/ahspRepository';
 
 const ROOT = process.cwd();
@@ -85,15 +87,34 @@ console.log(`  METHOD C (registry constant)    : ${methodC}`);
 console.log(`  METHOD D (CostDatabaseEngine)   : ${methodD}`);
 console.log(`  METHOD E (AHSPRepository)       : ${methodE}`);
 
-check('METHOD A == B == C (source ↔ module ↔ registry)', methodA === methodB && methodB === methodC);
-check('runtime engine count equals canonical (no legacy merge)', methodD === methodA, `${methodD} vs ${methodA}`);
+// Phase B (2026-11-20) — RECONCILED: the runtime registry is NOT the
+// canonical module. masterRegistry deliberately substitutes the Bina Marga
+// letter-code master (1,137) for the canonical parenthesized BM set (1,163)
+// and official SMKK (190) for the canonical SMKK rows (223):
+//   registry = canonical − SMKK 223 − BM 1,163 + BM master 1,137 + SMKK 190 = 5,742.
+// The old pins (A == B == C, engine == canonical, repo == canonical −
+// code-less) encoded the false assumption registry == canonical and failed
+// against the measured 5,742 / 5,741. See masterRegistry.ts.
+check('METHOD A == B (source ↔ module)', methodA === methodB, `${methodA} vs ${methodB}`);
+const expectedRegistry =
+  methodB
+  - AHSP_2026_CANONICAL.filter((i) => i.domain === 'SMKK').length
+  - AHSP_2026_CANONICAL.filter((i) => i.domain === 'BINA_MARGA').length
+  + BINA_MARGA_2026_MASTER.length
+  + OFFICIAL_SMKK_2026_ITEMS.length;
+check('METHOD C (registry) == canonical − SMKK − BM + BM master + SMKK official', methodC === expectedRegistry, `${methodC} vs ${expectedRegistry}`);
+check('registry total is 5742', methodC === 5742, String(methodC));
+check('runtime engine count equals registry (no legacy merge; no custom items in this env)', methodD === methodC, `${methodD} vs ${methodC}`);
 // The repository indexes by normalized code; records whose source prints no code
 // are intentionally un-indexed (they remain addressable by id — §25).
-const codeLess = AHSP_2026_CANONICAL.filter((i) => !i.code.trim()).length;
+// NOTE: the repository ingests the REGISTRY (5,742), not the canonical module
+// (5,801): of the 2 code-less canonical records, BM-000007 is substituted out
+// with the parenthesized BM set, so only SDA-000810 is code-less in the registry.
+const codeLessRegistry = ALL_OFFICIAL_AHSP_ITEMS.filter((i) => !i.code.trim()).length;
 check(
-  'repository count = canonical minus code-less records',
-  methodE === methodA - codeLess,
-  `${methodE} vs ${methodA} - ${codeLess}`
+  'repository count = registry minus code-less records',
+  methodE === methodC - codeLessRegistry,
+  `${methodE} vs ${methodC} - ${codeLessRegistry}`
 );
 
 check('total = 5801', methodA === 5801, String(methodA));

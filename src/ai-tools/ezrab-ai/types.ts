@@ -37,7 +37,8 @@ export interface EzrabAiRequest {
   /** Scope kanonis Fase 1 — builder menolak snapshot lintas proyek. */
   projectId?: string;
   conversationId?: string;
-  /** userId bila ada; hari ini null (tanpa identitas — AUTH_ENABLED=false). */
+  /** userId bila ada; null bila pemanggil tidak mengisinya — service mengisi
+   *  dari identitas sesi terverifikasi (konteks akun Fase B) bila ada. */
   userId?: string | null;
   /** Konteks intake kanonis proyek (state terstruktur — sumber fakta). */
   intakeContext?: import('./universalIntake').UniversalIntakeContext | null;
@@ -68,6 +69,15 @@ export interface EzrabAiRequest {
    */
   dedSection?: string | null;
   qtoSection?: string | null;
+  /**
+   * FASE B (Full Account Intelligence) — seksi AKUN & LANGGANAN yang
+   * sudah diformat pemanggil (accountContext.formatAccountSection).
+   * Bila diisi, service TIDAK memanggil endpoint account-context (hemat
+   * satu HTTP round-trip; dipakai tes + pemanggil yang sudah punya
+   * snapshot). Bila kosong, service mengambilnya sendiri dari sesi
+   * Supabase sebelum send() — tanpa sesi = tanpa seksi.
+   */
+  accountSection?: string | null;
   /** Kunci idempotensi operasi kirim ini. Bila kosong, service membuat
    *  satu kunci acak baru untuk operasi ini; percobaan ulang operasi yang
    *  sama meneruskan kunci yang sama. */

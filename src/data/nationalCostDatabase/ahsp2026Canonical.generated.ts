@@ -19,6 +19,19 @@
  * Status    : {"VERIFIED":4752,"NEEDS_REVIEW":1048,"SOURCE_DEFECT":1}
  * Total     : 5801
  *
+ * COUNT NOTE (Phase B, 2026-11-20): this module holds 5,801 items, but
+ * the RUNTIME catalog the resolver/AI/UI read (ALL_OFFICIAL_AHSP_ITEMS
+ * in masterRegistry.ts) is 5,742: masterRegistry substitutes the Bina
+ * Marga letter-code master (1,137) for this module's parenthesized BM
+ * set (1,163) and official SMKK (190) for this module's SMKK rows
+ * (223). Active items (minus 17 quarantined) = 5,725. The version
+ * pointer counts the 5,742 runtime set per family — the two totals
+ * differ BY DESIGN, not by error. See masterRegistry.ts.
+ * (This COUNT NOTE was synced by hand 2026-11-20 to match the updated
+ * generator template in scripts/ahsp2026/generateCanonicalModule.ts;
+ * the note above is reproduced verbatim by the next regeneration,
+ * which drops this parenthetical. No data changed.)
+ *
  * PRICES ARE IMPORTED from HSD (data/ahsp2026/validated/ahsp_2026_hsd_ck.json).
  * unitPrice = HSD price when matched; null when not found (never 0-fallback).
  * the price layer must still fail closed when unavailable at runtime.

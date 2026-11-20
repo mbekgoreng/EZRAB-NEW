@@ -731,15 +731,22 @@ export function extractRabNeeds(text: string, base?: RabNeeds): RabNeeds {
   // atap yang dikenal (kecocokan terpanjang menang, mis. "genteng
   // tanah liat" di atas "genteng"); frasa atap tanpa material yang
   // dikenal tetap null — tidak ditebak.
-  const roofSeg = t.match(/\batap(?:nya)?\b([^.,;]{0,40})/);
-  if (roofSeg) {
+  // INTENT-FIRST (2026-11-20): pindai SEMUA penyebutan "atap" — frasa
+  // lingkup "pondasi sampai atap." sebelumnya membayangi penyebutan
+  // atap yang sebenarnya ("atap baja wf dan campuran baja ringan")
+  // karena match() hanya mengambil kemunculan pertama. Segmen pertama
+  // yang memuat material yang dikenal yang menang.
+  for (const roofSeg of t.matchAll(/\batap(?:nya)?\b([^.,;]{0,40})/g)) {
     let foundRoof: string | null = null;
     for (const mat of ROOF_MATERIALS) {
       if (roofSeg[1].includes(mat) && (foundRoof == null || mat.length > foundRoof.length)) {
         foundRoof = mat;
       }
     }
-    if (foundRoof) n.roofMaterial = foundRoof;
+    if (foundRoof) {
+      n.roofMaterial = foundRoof;
+      break;
+    }
   }
 
   const loc = t.match(/\bdi\s+([a-z][a-z\s]{2,24}?)(?=\s*(?:,|\.|$|\d+\s*lantai|\d+\s*m\b))/);

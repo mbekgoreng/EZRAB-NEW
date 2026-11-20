@@ -1,3 +1,21 @@
+/**
+ * DEAD CODE — proven unreachable at runtime 2026-11-20 (Phase B item 6).
+ * Evidence: repo-wide grep for `ahspCalculationEngine` / `AHSPCalculationEngine`
+ * / `calculateItemCost` / `recalculateSnapshot` across src/ + api/ + scripts/ +
+ * server/ finds ZERO importers in live code (no static import, no dynamic
+ * import(), no barrel re-export). The ONLY importers are two test files:
+ * src/test/d39SafeAdd.test.ts and src/test/masterPricingCanonicalModel.test.ts
+ * (which pin its behaviour, incl. the §3 version stamp) — tests keep it
+ * exercised, they do not make it live. Do NOT revive: the canonical AHSP
+ * price path is src/engine/constructionCalculators/ahsp2026PriceIntegration.ts
+ * (+ officialAhspRepository / priceResolver2026). Do NOT delete without an
+ * owner decision — the two test suites above import it.
+ *
+ * The G6 fabrication lives here: createProjectSnapshot's no-price fallback
+ * returns `fallbackPrice || 0` labelled 'Estimasi Standar' (telemetry-recorded
+ * as 'ahspcalc.zero-as-estimate'). It is unreachable at runtime, so it cannot
+ * fabricate prices in production — but it must never be re-wired in.
+ */
 import { AHSPComponent, AHSPProjectSnapshot, RABItem } from '../types';
 import { NationalAHSPItem, AHSP_DATABASE_VERSION } from '../data/nationalCostDatabase/types';
 import {
