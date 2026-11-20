@@ -117,7 +117,7 @@ const SCENARIOS = {
 for (const [id, message] of Object.entries(SCENARIOS)) {
   const before = capturedBodies.length;
   try {
-    // Mode 'chat' (fast WeizeRouter-only sejak keputusan owner 2026-11-19 —
+    // Mode 'chat' (fast WeizeRouter-dulu + fallback Crown sejak 2026-11-20 —
     // suite ini hanya memasang key Gemini dan menangkap body Gemini).
     const r = await executeAI({ message, systemPrompt: 'Kamu adalah asisten EZRAB.', mode: 'chat' });
     ok(r.ok, `${id}: executeAI gagal pada stub provider`);

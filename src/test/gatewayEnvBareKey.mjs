@@ -11,8 +11,8 @@
  * Fetch di-stub per host + per key Gemini (query ?key=...): hanya key
  * 'dummy-bare' yang dijawab OK, key bernomor dijawab gagal — sehingga
  * sukses HANYA bisa berasal dari kaki key polos.
- * Skenario memakai mode 'chat' (mode 'fast' WeizeRouter-only sejak
- * keputusan owner 2026-11-19 — Gemini tidak lagi ada di rantai fast).
+ * Skenario memakai mode 'chat' (mode 'fast' WeizeRouter-dulu + fallback
+ * Crown sejak 2026-11-20 — Gemini tidak lagi ada di rantai fast).
  * Run: node src/test/gatewayEnvBareKey.mjs
  */
 import assert from 'node:assert';

@@ -96,7 +96,7 @@ await test('rateLimitIdentity: user id when JWT, ip otherwise', async () => {
 // --- full pipeline via handleAiRequest ---
 let fetchCalls = 0;
 // Stub ganda: candidates (jalur Gemini) + choices (jalur OpenAI/WeizeRouter).
-// Mode default 'fast' WeizeRouter-only sejak keputusan owner 2026-11-19.
+// Mode default 'fast' WeizeRouter-dulu + fallback Crown sejak 2026-11-20.
 global.fetch = async () => ({ ok: true, json: async () => ({
   candidates: [{ content: { parts: [{ text: 'ok' }] } }],
   choices: [{ message: { content: 'ok' } }],

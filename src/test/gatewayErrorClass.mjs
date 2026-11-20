@@ -8,8 +8,8 @@
  *  S3 blokir SAFETY Gemini via HTTP 200 (promptFeedback) = policy, berhenti.
  *  S4 HTTP 400 non-policy = AI_BAD_REQUEST, berhenti.
  *  S5 rotasi key tetap hidup: 401 pada key bernomor -> key polos dipakai.
- * Skenario memakai mode 'chat' (mode 'fast' WeizeRouter-only sejak
- * keputusan owner 2026-11-19 — Gemini tidak lagi ada di rantai fast).
+ * Skenario memakai mode 'chat' (mode 'fast' WeizeRouter-dulu + fallback
+ * Crown sejak 2026-11-20 — Gemini tidak lagi ada di rantai fast).
  */
 import assert from 'node:assert';
 

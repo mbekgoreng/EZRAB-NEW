@@ -21,7 +21,8 @@
  *
  * Fetch di-stub (hanya key Gemini dummy yang terpasang, jadi hanya kaki
  * Gemini native yang berjalan di semua mode — KECUALI mode fast/ded yang
- * WeizeRouter-only sejak keputusan owner 2026-11-19: tes (a)/(b1)/(e)
+ * WeizeRouter-dulu + fallback Crown (WeizeRouter-only 2026-11-19 s.d.
+ * 2026-11-20): tes (a)/(b1)/(e)
  * memasang key WeizeRouter dummy sementara + stub payload ganda
  * candidates/choices); tidak ada jaringan, tidak ada key asli, tidak ada
  * panggilan AI live.
@@ -116,8 +117,8 @@ function mockRes() {
 // Stub Gemini: konten netral (tanpa token denylist) + usage terukur agar
 // ketiadaan usage.source bermakna (bukan karena usage null).
 // Payload GANDA: candidates+usageMetadata (jalur Gemini) dan
-// choices+usage (jalur OpenAI/WeizeRouter — mode fast/ded WeizeRouter-only
-// sejak keputusan owner 2026-11-19; kedua bentuk membawa konten + usage
+// choices+usage (jalur OpenAI/WeizeRouter — mode fast/ded WeizeRouter-dulu
+// + fallback Crown sejak 2026-11-20; kedua bentuk membawa konten + usage
 // yang sama agar asersi bersama berlaku di kedua jalur).
 let fetchCalls = 0;
 const geminiPayload = {
@@ -132,7 +133,7 @@ const geminiFetch = async () => {
 };
 globalThis.fetch = geminiFetch;
 
-// Mode fast/ded WeizeRouter-only (keputusan owner 2026-11-19): key
+// Mode fast/ded (WeizeRouter-dulu + fallback Crown sejak 2026-11-20): key
 // WeizeRouter dummy dipasang HANYA di dalam tes yang membutuhkannya,
 // lalu dihapus — bila dipasang global, kaki WeizeRouter menjadi pertama
 // di rantai chat/advanced dan tes (c1)/(c2) kehilangan kaki Gemini.
@@ -204,7 +205,7 @@ await test('b4: respons klien mode vision -> Ezrab-flash-v1', async () => {
 });
 
 // --- (c) return INTERNAL executeAI tetap nama asli ---
-// Mode 'chat' (fast WeizeRouter-only sejak keputusan owner 2026-11-19 —
+// Mode 'chat' (fast WeizeRouter-dulu + fallback Crown sejak 2026-11-20 —
 // tes ini membuktikan nama internal Gemini; rantai chat masih berisi
 // Gemini dan hanya key Gemini yang terpasang di titik ini).
 await test('c1: executeAI internal tetap membawa nama asli (provider/model/attempts)', async () => {

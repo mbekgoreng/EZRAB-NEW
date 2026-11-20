@@ -443,8 +443,8 @@ console.log('=== Level HTTP (handleAiRequest + fetch stub deterministik) ===');
     const payload = {
       candidates: [{ content: { parts: [{ text: 'HALO-DARI-GEMINI' }] } }],
       usageMetadata: usageStub,
-      // Bentuk OpenAI untuk kaki WeizeRouter (mode fast WeizeRouter-only
-      // sejak keputusan owner 2026-11-19; jalur Gemini membaca candidates).
+      // Bentuk OpenAI untuk kaki WeizeRouter (mode fast WeizeRouter-dulu
+      // + fallback Crown sejak 2026-11-20; jalur Gemini membaca candidates).
       choices: [{ message: { content: 'HALO-DARI-GEMINI' } }],
     };
     return {
@@ -521,7 +521,7 @@ console.log('=== Level HTTP (handleAiRequest + fetch stub deterministik) ===');
   // --- Gerbang menyala: fitur lain lewat HTTP tetap tak termeter ---
   fetchCalls.length = 0;
   const resDed: any = mockRes();
-  // Mode fast WeizeRouter-only (keputusan owner 2026-11-19): key WeizeRouter
+  // Mode fast (WeizeRouter-dulu + fallback Crown sejak 2026-11-20): key WeizeRouter
   // dipasang HANYA untuk cek ini — bila dipasang global, kaki WeizeRouter
   // menjadi pertama di rantai chat dan mematahkan cek bentuk prompt Gemini
   // di atas (body OpenAI tidak punya `contents`).

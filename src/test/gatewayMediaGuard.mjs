@@ -2,8 +2,9 @@
  * gatewayMediaGuard.mjs — B4 (2026-11-19): penjaga media untuk rantai
  * text-only 'fast'/'ded' di executeAI (api/_lib/aiGateway.js).
  *
- * Latar: rantai fast + ded WeizeRouter-only (keputusan owner 2026-11-19
- * 02:09) dan SEMUA kakinya text-only. Bila sebuah caller melampirkan
+ * Latar: rantai fast + ded WeizeRouter-dulu + fallback Crown
+ * (WeizeRouter-only 2026-11-19 s.d. 2026-11-20; fallback Crown keputusan
+ * owner 2026-11-20 10:56) dan SEMUA kakinya text-only. Bila sebuah caller melampirkan
  * gambar/PDF ke fast/ded, semua kaki dilewati dan rantai menjadi KOSONG
  * — sebelum guard ini, hasilnya adalah kegagalan diam-diam 'No AI
  * provider keys configured' yang menyesatkan (bukan soal key sama sekali).

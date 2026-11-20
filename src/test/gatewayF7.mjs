@@ -155,7 +155,7 @@ const httpFail = (status) => ({
 {
   // Chat: 4 key Gemini, semuanya 429 -> hanya 2 attempt Gemini yang tercatat
   // (1 awal + 1 ulang), lalu failover keluar dari provider itu.
-  // Mode 'chat' (fast WeizeRouter-only sejak keputusan owner 2026-11-19 —
+  // Mode 'chat' (fast WeizeRouter-dulu + fallback Crown sejak 2026-11-20 —
   // Gemini tidak lagi ada di rantai fast).
   for (let i = 1; i <= 4; i++) process.env['GEMINI_API_KEY_' + i] = 'dummy-g' + i;
   global.fetch = async () => httpFail(429);

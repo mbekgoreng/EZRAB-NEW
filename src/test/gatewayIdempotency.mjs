@@ -19,7 +19,7 @@ delete process.env.AI_GATEWAY_TOKEN;
 delete process.env.SUPABASE_URL;
 delete process.env.SUPABASE_SECRET_KEY;
 process.env.GEMINI_API_KEY_1 = 'dummy-idem-key';
-// Mode 'fast' WeizeRouter-only sejak keputusan owner 2026-11-19 —
+// Mode 'fast' WeizeRouter-dulu + fallback Crown sejak 2026-11-20 —
 // suite ini memakai key WeizeRouter + stub payload berbentuk OpenAI.
 process.env.WEIZEROUTER_API_KEY = 'dummy-weize';
 

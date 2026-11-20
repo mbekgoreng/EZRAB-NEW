@@ -62,8 +62,8 @@ const geminiWith = (text, usageMetadata) => ({
   ...(usageMetadata !== undefined ? { usageMetadata } : {}),
 });
 
-// Mode 'advanced' (mode 'fast' WeizeRouter-only sejak keputusan owner
-// 2026-11-19 — suite ini membuktikan usage Gemini, dan Gemini hanya ada
+// Mode 'advanced' (mode 'fast' WeizeRouter-dulu + fallback Crown sejak
+// 2026-11-20 — suite ini membuktikan usage Gemini, dan Gemini hanya ada
 // di rantai chat/advanced/vision; 'advanced' dapat dijangkau lewat body,
 // 'chat' tidak — validateAiInput meng-clamp mode tak dikenal ke 'fast').
 const body = { message: 'analisis dokumen ini', mode: 'advanced' };

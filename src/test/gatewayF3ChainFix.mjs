@@ -16,8 +16,12 @@
  *  via wz/gpt-6-luna sekali upaya (±43,7 dtk).
  *
  * Yang dibuktikan suite ini (diperbarui 2026-11-19: F3-1a DIGANTIKAN
- * keputusan owner WeizeRouter-only; F3-2 diadaptasi ke skip level MODEL):
- *  F3-1a Fast WeizeRouter-only: WeizeRouter 502 -> keenam model dicoba,
+ * keputusan owner WeizeRouter-only; F3-2 diadaptasi ke skip level MODEL;
+ * catatan 2026-11-20: rantai fast/ded kini + fallback Crown — skenario
+ * suite ini TANPA key Crown sehingga urutan WeizeRouter-only tetap
+ * berlaku di sini):
+ *  F3-1a Fast WeizeRouter-only (tanpa key Crown di skenario ini):
+ *        WeizeRouter 502 -> keenam model dicoba,
  *        ArxPay TIDAK PERNAH muncul (dulu: ArxPay kaki kedua fast).
  *  F3-1b/1c CELAH LOGGING (bug nyata, DIPERTAHANKAN — perbaikan F3-1b):
  *        attempt yang membunuh rantai lewat early-return policy/client_error
@@ -152,7 +156,9 @@ function check(name, fn) {
 const seq = (r) => r.attempts.map((a) => `${a.provider}:${a.model}`);
 
 // --- F3-1a (DIGANTIKAN keputusan owner 2026-11-19 02:09): ArxPay BUKAN
-//      lagi kaki kedua fast — fast WeizeRouter-only. Weize 502 -> keenam
+//      lagi kaki kedua fast — fast WeizeRouter-only DI SKENARIO INI
+//      (tanpa key Crown; sejak 2026-11-20 rantai fast punya fallback
+//      Crown — lihat dedCrownFallback.mjs). Weize 502 -> keenam
 //      model WeizeRouter dicoba, ArxPay TIDAK PERNAH muncul walau key-nya
 //      ada (bentuk env Vercel yang hidup).
 setKeys({ weize: true, arxpay: true, gemini: 1, zyrouter: true, atria: true });

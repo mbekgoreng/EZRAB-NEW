@@ -60,15 +60,18 @@ const ARXPAY_BASE = 'https://arxpay.my.id/v1';
 // 'chat' kini di belakang Crown + WeizeRouter (keputusan owner 2026-11-19
 // 05:55, Crown menjadi prioritas No.1 Chat AI Cepat). DULU juga kaki kedua
 // 'fast' (F3 2026-11-18) dan 'ded'; sejak keputusan owner 2026-11-19 02:09
-// rantai 'fast' + 'ded' WeizeRouter-only dan ArxPay tidak lagi ada di keduanya.
+// rantai 'fast' + 'ded' WeizeRouter-dulu (WeizeRouter-only sampai 2026-11-20,
+// lalu + fallback Crown atas keputusan owner 2026-11-20 10:56) dan ArxPay
+// tidak lagi ada di keduanya.
 // Key: ARXPAY_API_KEY (+ opsional ARXPAY_API_KEY_1..4), diisi owner MANUAL di env.
 // Tanpa key, kaki ini kosong dan rantai kembali seperti semula (fail-closed).
 // Text-only seperti Crown: dilewati bila ada gambar/PDF.
 const ARXPAY_MODEL = 'deepseek-v4.1-flash';
 const WEIZEROUTER_BASE = 'https://weizerouter.web.id/v1';
 // WeizeRouter (user 2026-11-13): relay OpenAI-compatible, kaki PERTAMA
-// rantai 'advanced' dan SATU-SATUNYA provider rantai 'ded' + 'fast'
-// (keputusan owner 2026-11-19 02:09, WeizeRouter-only); di rantai 'chat'
+// rantai 'advanced' dan kaki PERTAMA rantai 'ded' + 'fast' (keputusan owner
+// 2026-11-19 02:09, WeizeRouter-only sampai 2026-11-20; sejak 2026-11-20
+// 10:56 ada fallback Crown SESUDAH semua kaki WeizeRouter di 'ded'/'fast');
 // kini di belakang Crown (keputusan owner 2026-11-19 05:55, Crown menjadi
 // prioritas No.1 Chat AI Cepat — WeizeRouter adalah kaki pertama chat sejak
 // 2026-11-13 sampai keputusan itu).
@@ -78,12 +81,14 @@ const WEIZEROUTER_BASE = 'https://weizerouter.web.id/v1';
 // (lihat WEIZEROUTER_DED_MODELS / WEIZEROUTER_FAST_MODELS).
 // Key: WEIZEROUTER_API_KEY (+ opsional WEIZEROUTER_API_KEY_1..4), diisi owner
 // MANUAL di env (Preview + Production). Tanpa key, kaki ini kosong dan rantai
-// kembali seperti semula (fail-closed) — KECUALI 'ded'/'fast' yang tanpa key
-// WeizeRouter tidak punya kaki sama sekali. Text-only seperti Crown/ArxPay:
+// kembali seperti semula (fail-closed) — 'ded'/'fast' tanpa key WeizeRouter
+// kini hanya berisi kaki fallback Crown (bila key Crown ada); tanpa key
+// Crown juga, rantai kosong. Text-only seperti Crown/ArxPay:
 // dilewati bila ada gambar/PDF.
 const WEIZEROUTER_CHAT_MODELS = ['weizerouter-v2', 'kimi-k2.7', 'kimi-k2.6'];
 const WEIZEROUTER_ADVANCED_MODELS = ['gpt-6-luna', 'muse-spark-1.3-contributor'];
-// DED detail (owner 2026-11-19 02:09): WeizeRouter-ONLY, 5 model berurutan.
+// DED detail (owner 2026-11-19 02:09): WeizeRouter PERTAMA, 5 model berurutan;
+// Crown fallback SESUDAHNYA (owner 2026-11-20 10:56 — model CROWN_CHAT_MODELS).
 // Pengali biaya (×N) dari info harga owner — INFORMATIF SAJA, tidak dipakai
 // logika rantai. ID model: 'gpt-6-luna' owner = wz/gpt-6-luna (konvensi
 // yang sudah ada sejak 2026-11-13, terbukti live); model baru memakai
@@ -96,7 +101,8 @@ const WEIZEROUTER_ADVANCED_MODELS = ['gpt-6-luna', 'muse-spark-1.3-contributor']
 // gpt-5.6-luna (×4) sebagai primary Mendalam — DIGANTIKAN tabel 02:09,
 // jangan dipakai.
 const WEIZEROUTER_DED_MODELS = ['wz/gpt-6-luna', 'weizerouter-v1', 'wz/gemini-3.8-flash-high', 'wz/grok-4.7', 'wz/deepseek-v4-pro'];
-// Fast (owner 2026-11-19 02:09): WeizeRouter-ONLY, 6 model berurutan
+// Fast (owner 2026-11-19 02:09): WeizeRouter PERTAMA, 6 model berurutan;
+// Crown fallback SESUDAHNYA (owner 2026-11-20 10:56 — model CROWN_CHAT_MODELS).
 // (pengali biaya + asumsi ID sama seperti DED di atas; weizerouter-v2
 // adalah kaki pertama fast sejak 2026-11-16, kini diikuti 5 model).
 // Urutan: weizerouter-v2 (tanpa pengali di tabel owner) → wz/gpt-6-luna
@@ -310,9 +316,10 @@ function stripThinkBlocks(content) {
 //   executeAI). F3 awalnya melewati PROVIDER (terbukti log Vercel 18 Nov:
 //   dua kaki WeizeRouter DETAIL diaborsi di 55.000/55.001 ms, total 110 dtk
 //   > budget rantai 100 dtk, sebelum ArxPay sempat dicoba) — sejak rantai
-//   'fast'/'ded' WeizeRouter-only (owner 2026-11-19), skip level provider
-//   akan mematikan SEMUA kaki tersisa dengan satu timeout, jadi granularity
-//   dipindah ke level model: model berikutnya pada provider yang sama tetap
+//   'fast'/'ded' WeizeRouter-only (owner 2026-11-19; sejak 2026-11-20
+//   ditambah fallback Crown, tapi skip level provider tetap mematikan
+//   semua kaki WeizeRouter dengan satu timeout), granularity dipindah
+//   ke level model: model berikutnya pada provider yang sama tetap
 //   dicoba (bukti 18 Nov: timeout berkorelasi dengan prompt besar /
 //   generasi lambat ±43,7 dtk, bukan outage endpoint — model lain bisa
 //   lebih cepat). Budget rantai 100 dtk tetap membatasi kerusakan worst
@@ -520,7 +527,8 @@ async function callOAI(base, key, model, provider, message, systemPrompt, temper
 
 // ---------------------------------------------------------------------------
 // B4 (2026-11-19) — MEDIA GUARD untuk rantai text-only (fast/ded).
-// Rantai 'fast' + 'ded' WeizeRouter-only dan SEMUA kakinya text-only: bila
+// Rantai 'fast' + 'ded' (WeizeRouter-dulu + fallback Crown sejak 2026-11-20)
+// SEMUA kakinya text-only: bila
 // sebuah caller melampirkan gambar/PDF, semua kaki dilewati dan rantai
 // menjadi KOSONG — sebelum guard ini, hasilnya adalah kegagalan diam-diam
 // 'No AI provider keys configured' yang menyesatkan (bukan soal key sama
@@ -540,7 +548,7 @@ function mediaGuardFailure(mode, hasImage, hasPdf, requestId) {
     errorCode: 'MEDIA_NOT_SUPPORTED_FOR_MODE',
     errorClass: 'media_unsupported',
     error:
-      `Mode '${mode}' tidak mendukung media (${mediaKind}) — rantai mode ini hanya teks (WeizeRouter-only). ` +
+      `Mode '${mode}' tidak mendukung media (${mediaKind}) — rantai mode ini hanya teks (WeizeRouter + Crown, keduanya text-only). ` +
       `Hapus ${mediaKind} dari permintaan atau gunakan mode 'vision' untuk media.`,
     requestId,
     attempts: [],
@@ -641,6 +649,24 @@ export async function executeAI(o, onAttempt) {
   const weizeFastTextAttempts = (!hasImage && !hasPdf)
     ? WEIZEROUTER_FAST_MODELS.flatMap((m) => weizeKeys.map((k, i) => weizeCall(k, m, i)))
     : [];
+  // Crown fallback untuk rantai DED ('ded' + 'fast') — owner 2026-11-20
+  // 10:56, sesudah DED gagal live 10:46 karena WeizeRouter 401: satu key
+  // mati mematikan SELURUH rantai WeizeRouter-only lewat dead-key skip
+  // (Phase 2 W4, per provider:keyIndex). Model = CROWN_CHAT_MODELS yang
+  // sama dengan rantai chat (urutan owner 2026-11-19 05:55: GLM ->
+  // DeepSeek -> MiniMax) — dipakai SESUDAH semua kaki WeizeRouter di
+  // kedua rantai; WeizeRouter TETAP pertama. Berbagi array dengan
+  // crownChatTextAttempts (gate teks + daftar model identik) — sengaja,
+  // supaya fallback DED mengikuti urutan Crown prioritas owner.
+  // Dead-key skip berlaku per provider:keyIndex: 401 WeizeRouter
+  // ('weizerouter:0') TIDAK melewati kaki Crown ('crown:0'). Cap
+  // attempt per-provider bersifat model-aware (3 model Crown -> cap 3),
+  // jadi ketiga model Crown tetap terjangkau; budget rantai 100 dtk dan
+  // timeout attempt 55 dtk berlaku seperti kaki lain (kegagalan CEPAT
+  // WeizeRouter — 401/502/429 — mencapai Crown dalam hitungan detik;
+  // kaki WeizeRouter yang MENGGANTUNG tetap memakan budget seperti
+  // sebelumnya, lihat laporan DED-Crown-Fallback 2026-11-20).
+  const crownDedTextAttempts = crownChatTextAttempts;
 
   if (mode === 'vision') {
     // Vision (urutan user 2026-10-21): Gemini native dulu (inlineData
@@ -654,8 +680,11 @@ export async function executeAI(o, onAttempt) {
       return { ok: false, error: 'Vision PDF membutuhkan GEMINI_API_KEY_* — tidak ada key Gemini terkonfigurasi', requestId, attempts: [] };
     }
   } else if (mode === 'ded') {
-    // DED detail (owner 2026-11-19 02:09): WeizeRouter-ONLY — 5 model
-    // WEIZEROUTER_DED_MODELS, tanpa ArxPay/Crown/Gemini/Atmo/ZyRouter.
+    // DED detail (owner 2026-11-19 02:09): WeizeRouter PERTAMA — 5 model
+    // WEIZEROUTER_DED_MODELS, lalu Crown fallback (owner 2026-11-20 10:56)
+    // — tanpa ArxPay/Gemini/Atmo/ZyRouter.
+    // DULU (sampai 2026-11-20) ded WeizeRouter-ONLY tanpa fallback; satu
+    // key WeizeRouter 401 mematikan seluruh rantai (gagal live 10:46).
     // DULU (sampai 2026-11-18) ded berbagi rantai advanced dengan model
     // WeizeRouter wz/gpt-6-luna + wz/deepseek-v4.1-flash di depan; cabang
     // ini dipisah dari 'advanced' agar keputusan WeizeRouter-only tidak
@@ -665,6 +694,7 @@ export async function executeAI(o, onAttempt) {
     // mediaGuardFailure di atas), SEBELUM kaki mana pun dipanggil.
     if (hasImage || hasPdf) return mediaGuardFailure(mode, hasImage, hasPdf, requestId);
     attempts.push(...weizeDedTextAttempts);
+    attempts.push(...crownDedTextAttempts);
   } else if (mode === 'advanced') {
     // Advanced (Chat AI Mendalam + Document AI) — TIDAK BERUBAH
     // (keputusan WeizeRouter-only 2026-11-19 hanya untuk 'ded' + 'fast';
@@ -708,16 +738,18 @@ export async function executeAI(o, onAttempt) {
     gok.forEach((k, i) => attempts.push(geminiOaiCall(k, i)));
     if (ak.length > 0) attempts.push(atriaCall(ak[0], 0));
   } else {
-    // Fast (owner 2026-11-19 02:09): WeizeRouter-ONLY — 6 model
-    // WEIZEROUTER_FAST_MODELS, tanpa ArxPay/Crown/Gemini/River/Atmo/
-    // ZyRouter/ekor. DULU (sampai 2026-11-18) fast memakai rantai
-    // multi-provider (WeizeRouter v2 -> ArxPay F3 -> Crown -> Gemini ->
-    // River -> Atmo -> ZyRouter -> ekor chat); F3-1a (ArxPay kaki kedua
-    // fast) DIGANTIKAN keputusan ini. Cabang else ini juga menampung
-    // mode tak dikenal — termasuk 'quick' dari aiProviderRouter (AI
-    // price search, provider engine, estimate pipeline: teks saja, aman)
-    // dan productId tak dikenal via productIdToMode default — semuanya
-    // kini WeizeRouter-only. DOKUMEN_AI TIDAK lagi memakai rantai ini
+    // Fast (owner 2026-11-19 02:09): WeizeRouter PERTAMA — 6 model
+    // WEIZEROUTER_FAST_MODELS, lalu Crown fallback (owner 2026-11-20
+    // 10:56) — tanpa ArxPay/Gemini/River/Atmo/ZyRouter/ekor. DULU (sampai
+    // 2026-11-20) fast WeizeRouter-ONLY tanpa fallback; DULU (sampai
+    // 2026-11-18) fast memakai rantai multi-provider (WeizeRouter v2 ->
+    // ArxPay F3 -> Crown -> Gemini -> River -> Atmo -> ZyRouter -> ekor
+    // chat); F3-1a (ArxPay kaki kedua fast) DIGANTIKAN keputusan ini.
+    // Cabang else ini juga menampung mode tak dikenal — termasuk 'quick'
+    // dari aiProviderRouter (AI price search, provider engine, estimate
+    // pipeline: teks saja, aman) dan productId tak dikenal via
+    // productIdToMode default — semuanya kini WeizeRouter-dulu + Crown.
+    // DOKUMEN_AI TIDAK lagi memakai rantai ini
     // (pindah ke 'advanced' 2026-11-16). Kaki WeizeRouter text-only —
     // bila ada pemanggil yang melampirkan gambar/PDF, rantai ini KOSONG
     // (tidak ada kaki tersisa); guard B4 di bawah gagal-cepat dengan
@@ -729,6 +761,7 @@ export async function executeAI(o, onAttempt) {
     // semuanya memakai rantai text-only yang sama.
     if (hasImage || hasPdf) return mediaGuardFailure(mode, hasImage, hasPdf, requestId);
     attempts.push(...weizeFastTextAttempts);
+    attempts.push(...crownDedTextAttempts);
   }
 
   if (attempts.length === 0) {
@@ -758,8 +791,9 @@ export async function executeAI(o, onAttempt) {
   // berikutnya pada provider yang sama TETAP dicoba. F3 awalnya melewati
   // PROVIDER (terbukti log Vercel 18 Nov: DETAIL mati di 2×55 dtk
   // WeizeRouter = 110 dtk > budget 100 dtk sebelum ArxPay sempat dicoba)
-  // — sejak rantai 'fast'/'ded' WeizeRouter-only, skip level provider
-  // akan mematikan SEMUA kaki tersisa dengan satu timeout. Kegagalan
+  // — sejak rantai 'fast'/'ded' WeizeRouter-only (2026-11-19; sejak
+  // 2026-11-20 ditambah fallback Crown, tapi skip level provider tetap
+  // mematikan semua kaki WeizeRouter dengan satu timeout). Kegagalan
   // CEPAT (502/401/429/dll.) tetap memakai rotasi model cap di bawah —
   // hanya timeout yang melewati model. Budget rantai 100 dtk SENGAJA
   // tidak dinaikkan: klien DED DETAIL membatalkan di 181 dtk
