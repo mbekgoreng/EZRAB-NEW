@@ -88,6 +88,65 @@ ${policy === 'DATABASE' ? `- Jangan hitung subtotal/total resmi — aplikasi yan
   });
 }
 
+export interface FullAiQuantityAssumptionItem {
+  no: number;
+  name: string;
+  unit: string;
+  category: string;
+}
+
+export interface FullAiQuantityAssumptionInput {
+  projectType: string;
+  /** Baris konteks denah yang diketahui (luas lantai, jumlah ruang, dst.) — boleh kosong. */
+  contextLines: string[];
+  items: FullAiQuantityAssumptionItem[];
+}
+
+/**
+ * Prompt pass asumsi kuantitas (keputusan owner 2026-11-20 23:18 — mode
+ * Full AI SAJA): untuk item-item yang kuantitasnya masih kosong sesudah
+ * pass estimasi konteks-denah, model diminta mengisi kuantitas ASUMSI
+ * + rumus + dasar asumsi, dari konteks proyek dan rumah tinggal tipikal.
+ * Setiap angka WAJIB punya dasar yang dinyatakan; angka harus mengikuti
+ * rumus/dasar itu. Item yang benar-benar tidak bisa diasumsikan
+ * dikembalikan qty null (tetap dikecualikan, bukan dikarang paksa).
+ * Respons kecil (satu angka+rumus+dasar per item) — pemanggil memakai
+ * maxTokens kecil; satuan TIDAK BOLEH diubah (dipertahankan aplikasi).
+ */
+export function buildFullAiQuantityAssumptionPrompt(
+  input: FullAiQuantityAssumptionInput,
+): { system: string; prompt: string } {
+  const system = `Kamu Quantity Surveyor AI senior untuk proyek konstruksi tipe "${input.projectType}".
+Tugasmu: isi kuantitas yang KOSONG pada item-item di bawah dengan ASUMSI yang masuk akal — seperti estimator manusia yang bekerja tanpa gambar lengkap. Setiap angka HARUS punya dasar yang dinyatakan (rumus + asumsi); angka harus mengikuti rumus itu.
+
+ATURAN:
+- Keluarkan JSON MURNI. Tanpa markdown, tanpa teks lain.
+- Satu entri per item, dicocokkan lewat field "no" — JANGAN ubah nomor, nama, atau satuan item.
+- "qty" = angka saja (contoh: 12.5), bukan object; tanpa koma pemisah ribuan.
+- "formula" = rumus singkat yang menghasilkan qty (contoh: "19,45 / 9" atau "30 x 0,32"); "basis" = dasar asumsi dalam satu kalimat (contoh: "satu titik penerangan per ±9 m² luas lantai").
+- Dasarkan asumsi pada konteks denah yang diketahui (bila ada) dan ukuran rumah tinggal tipikal tipe proyek ini.
+- Bila sebuah item benar-benar tidak bisa diasumsikan (bahkan dengan asumsi), beri "qty": null untuk item itu — jangan memaksa angka tanpa dasar.
+
+STRUKTUR OUTPUT:
+{ "fills": [ { "no": 1, "qty": 12.5, "formula": "25 x 0,5", "basis": "panjang dinding 25 m dari keliling denah, tebal 0,5 m" } ] }`;
+
+  const contextBlock = input.contextLines.length > 0
+    ? `KONTEKS DENAH YANG DIKETAHUI:\n${input.contextLines.map((l) => `- ${l}`).join('\n')}\n\n`
+    : '';
+  const itemLines = input.items
+    .map((it) => `- no ${it.no}: "${it.name}" (satuan: ${it.unit || '(kosong)'}; kategori: ${it.category})`)
+    .join('\n');
+  const prompt = `=== ISI KUANTITAS KOSONG DENGAN ASUMSI ===
+Proyek tipe "${input.projectType}".
+
+${contextBlock}ITEM TANPA KUANTITAS (isi qty + formula + basis untuk tiap item):
+${itemLines}
+
+Keluarkan JSON MURNI sesuai struktur output pada system prompt.`;
+
+  return { system, prompt };
+}
+
 export function buildFullAiPrompt(input: FullAiPromptInput): { system: string; prompt: string } {
   const system = buildFullAiSystemPrompt(input.projectType, input.mode, input.pricingPolicy);
 

@@ -24,7 +24,7 @@ import { parseDedPdf } from '../ded-ai-estimate/parser';
 import { PAGE_TYPE_PRIORITY, formatPageRanges, type SelectedPage } from '../ded-ai-estimate/analysisTrace';
 import { planDedPasses, DED_PASS_REQUEST_BUDGET_CHARS } from '../ded-ai-estimate/service';
 import { expandPagesIntoSegments, segmentBudgetFromEmptyRequest, renderDedPageBlocks, type DedPageSegment } from '../ded-ai-estimate/pageSegments';
-import { buildFullAiPrompt } from './prompts';
+import { buildFullAiPrompt, buildFullAiQuantityAssumptionPrompt } from './prompts';
 import { validateFullAiItem, verifySubtotal, describeProposedDiscrepancy } from './validator';
 import {
   FullAiOutput, FullAiItem, FullAiServiceOptions, FullAiSummary, DedEstimationPolicy, FullAiPriceSource,
@@ -884,6 +884,13 @@ export class FullAiDedService {
       // estimateMissingQuantity dari ded-ai-estimate/priceCompletion)
       // — bukan implementasi kedua. Mode FULL_AI saja; DATABASE tidak
       // pernah dilengkapi diam-diam.
+      // Keputusan owner 2026-11-20 23:18 (Full AI SAJA): sesudah pass
+      // konteks, item yang kuantitasnya MASIH kosong diisi asumsi AI
+      // (completeFullAiQuantitiesWithAi — satu panggilan tambahan, hanya
+      // bila ada yang kosong), lalu kuantitas vs rumus direkonsiliasi
+      // deterministik (reconcileFullAiQuantityFormulas), dan warning
+      // eksklusi yang sudah basi dibersihkan.
+      let filledQtyAi = 0;
       if (policy === 'FULL_AI') {
         const filledQty = completeFullAiQuantities(items);
         if (filledQty > 0) {
@@ -891,6 +898,32 @@ export class FullAiDedService {
             `${filledQty} kuantitas dilengkapi dari konteks denah (estimasi berlabel ASSUMPTION — bukan fakta gambar, perlu tinjauan pengguna).`
           );
         }
+        const aiFill = await completeFullAiQuantitiesWithAi(items, {
+          execute: aiToolsProviderClient.execute.bind(aiToolsProviderClient),
+          productId,
+          timeoutMs: FULL_AI_TIMEOUT_MS[mode],
+          projectType,
+        });
+        filledQtyAi = aiFill.filled;
+        if (aiFill.filled > 0) {
+          warnings.push(
+            `${aiFill.filled} kuantitas dilengkapi dari asumsi AI (estimasi berlabel ASSUMPTION — bukan fakta gambar, perlu tinjauan pengguna).`
+          );
+        }
+        if (aiFill.failed) {
+          warnings.push(
+            `Pass asumsi kuantitas AI gagal (${aiFill.failureMessage}) — ${aiFill.unfilled} item tanpa kuantitas tetap dikecualikan dari total.`
+          );
+        }
+        const correctedQty = reconcileFullAiQuantityFormulas(items);
+        if (correctedQty > 0) {
+          warnings.push(
+            `${correctedQty} kuantitas dikoreksi agar sesuai rumus yang dinyatakan (nilai asli model tercatat di catatan item).`
+          );
+        }
+        const freshWarnings = dropStaleExclusionWarnings(warnings, items);
+        warnings.length = 0;
+        warnings.push(...freshWarnings);
       }
 
       // §6 Tahap 5–6 — jejak pass penyelesaian (dihitung dari keadaan
@@ -906,7 +939,7 @@ export class FullAiDedService {
         'QUANTITY_VOLUME',
         policy === 'FULL_AI' ? 'done' : 'skipped',
         policy === 'FULL_AI'
-          ? `Pass penyelesaian kuantitas: ${items.filter((it) => (it.quantityAudit?.method ?? it.quantity.quantityAudit?.method) === 'plan-context-estimate').length} kuantitas dilengkapi dari konteks denah.`
+          ? `Pass penyelesaian kuantitas: ${items.filter((it) => (it.quantityAudit?.method ?? it.quantity.quantityAudit?.method) === 'plan-context-estimate').length} kuantitas dilengkapi dari konteks denah, ${filledQtyAi} dilengkapi dari asumsi AI.`
           : 'Dilewati: penyelesaian kuantitas hanya berjalan pada policy FULL_AI.',
       );
 
@@ -1211,6 +1244,445 @@ export function completeFullAiQuantities(items: FullAiItem[]): number {
     filled++;
   });
   return filled;
+}
+
+// ---------------------------------------------------------------------------
+// KEPUTUSAN OWNER 2026-11-20 23:18 (mode Full AI SAJA): AI boleh mengarang
+// harga maupun kuantitas, asal konsisten dengan asumsinya sendiri dan
+// tetap berlabel asumsi; AI mengerjakan semuanya. Tiga fungsi di bawah
+// ini mewujudkan keputusan itu di jalur Full AI — semuanya dipanggil
+// HANYA dari blok `policy === 'FULL_AI'` di runExecute; mode EZRAB AI
+// (DATABASE) tidak pernah menyentuhnya.
+//  - completeFullAiQuantitiesWithAi: pass asumsi AI untuk item yang
+//    kuantitasnya masih kosong sesudah pass estimasi konteks-denah
+//    (aturan konteks hanya mencakup jenis item tertentu dan butuh
+//    konteks denah — tanpa dimensi sama sekali, aturannya tidak jalan
+//    dan item dikecualikan; pass ini meminta model mengisi sisanya).
+//  - recomputeQuantityFromFormula + reconcileFullAiQuantityFormulas:
+//    cek konsistensi deterministik — angka harus mengikuti rumus/dasar
+//    yang dinyatakan. Bila tidak cocok, dipakai hasil hitung ulang dan
+//    koreksinya dicatat TERBUKA di catatan item (tidak pernah diam-diam).
+//  - dropStaleExclusionWarnings: warning "tidak masuk total" dari loop
+//    mapping menjadi basi bila pass penyelesaian mengisi itemnya (sudah
+//    terjadi sebelum ini pada isian konteks — item 22 live 23:18 membawa
+//    warning basi MISSING_QUANTITY padahal sudah masuk total); dibersihkan
+//    sesudah semua pass agar tidak menyesatkan.
+// ---------------------------------------------------------------------------
+
+/** Satuan/kata yang BOLEH muncul di antara angka dalam rumus tanpa memutus
+ *  ekspresi aritmetika. Kata lain memutus run sehingga rumus prosa (mis.
+ *  "1 unit septic tank + resapan untuk satu rumah tinggal 1 lantai")
+ *  TIDAK PERNAH salah-dievaluasi sebagai hitungan. */
+const FORMULA_UNIT_WORDS = new Set([
+  'm²', 'm2', 'm³', 'm3', "m'", 'm', 'mm', 'cm', 'km',
+  'kg', 'gr', 'g', 'ton', 'liter', 'l',
+  'titik', 'unit', 'buah', 'bh', 'pcs', 'batang', 'lembar', 'sak',
+  'drum', 'set', 'paket', 'lot', 'ls', 'per',
+]);
+
+/** Satuan hitung (count): kuantitas harus bilangan bulat; pembulatan ke
+ *  atas (ceil) diterima sebagai konsisten dengan rumus — aturan yang sama
+ *  dengan estimasi konteks (titik penerangan memakai ceil). */
+const COUNT_UNITS = new Set([
+  'titik', 'unit', 'buah', 'bh', 'pcs', 'batang', 'lembar', 'sak',
+  'drum', 'set', 'paket', 'lot', 'ls',
+]);
+
+/** Normalisasi token angka gaya Indonesia: "19,45" → 19.45;
+ *  "1.000,50" → 1000.5; "19.45" → 19.45. */
+function normalizeFormulaNumberToken(token: string): number | null {
+  let t = token;
+  const hasDot = t.includes('.');
+  const hasComma = t.includes(',');
+  if (hasDot && hasComma) t = t.replace(/\./g, '').replace(',', '.');
+  else if (hasComma) t = t.replace(',', '.');
+  const n = Number(t);
+  return Number.isFinite(n) ? n : null;
+}
+
+type FormulaToken =
+  | { kind: 'num'; value: number }
+  | { kind: 'op'; value: string }
+  | { kind: 'word'; value: string };
+
+/** Tokenisasi rumus: angka, operator (+ - * / kurung; 'x'/'×' → '*',
+ *  '÷'/':' → '/'), kata satuan, dan kata lain (pemutus run). Tanda '±'
+ *  diabaikan (penanda perkiraan, bukan operator). */
+function tokenizeFormula(text: string): FormulaToken[] {
+  const toks: FormulaToken[] = [];
+  let i = 0;
+  while (i < text.length) {
+    const ch = text[i];
+    if (ch === ' ' || ch === '\t' || ch === '\n' || ch === '±') { i++; continue; }
+    if (ch >= '0' && ch <= '9') {
+      const m = /^\d+(?:[.,]\d+)*/.exec(text.slice(i));
+      const raw = m![0];
+      const n = normalizeFormulaNumberToken(raw);
+      if (n == null) return [];
+      toks.push({ kind: 'num', value: n });
+      i += raw.length;
+      continue;
+    }
+    if (ch === '+' || ch === '-' || ch === '−' || ch === '*' || ch === '/' || ch === '(' || ch === ')') {
+      toks.push({ kind: 'op', value: ch === '−' ? '-' : ch });
+      i++;
+      continue;
+    }
+    if (ch === '×' || ch === '·') { toks.push({ kind: 'op', value: '*' }); i++; continue; }
+    if (ch === '÷' || ch === ':') { toks.push({ kind: 'op', value: '/' }); i++; continue; }
+    const wm = /^[A-Za-z²³'"/]+/.exec(text.slice(i));
+    if (wm) {
+      const w = wm[0];
+      if (w === 'x' || w === 'X') toks.push({ kind: 'op', value: '*' });
+      else toks.push({ kind: 'word', value: w.toLowerCase() });
+      i += w.length;
+      continue;
+    }
+    // Karakter lain ('.', '%', ';', dst.): pemutus run.
+    toks.push({ kind: 'word', value: '\u0000' });
+    i++;
+  }
+  return toks;
+}
+
+/** Evaluator aritmetika aman (tanpa eval): + - * / dan tanda kurung,
+ *  shunting-yard. Mengembalikan null bila ekspresi malformed, pembagian
+ *  nol, atau hasil non-finite. */
+function evaluateArithmeticTokens(tokens: Array<number | string>): number | null {
+  const out: Array<number | string> = [];
+  const ops: string[] = [];
+  const prec: Record<string, number> = { '+': 1, '-': 1, '*': 2, '/': 2 };
+  let prev: number | string | null = null;
+  for (const tok of tokens) {
+    if (typeof tok === 'number') {
+      out.push(tok);
+    } else if (tok === '(') {
+      ops.push(tok);
+    } else if (tok === ')') {
+      let found = false;
+      while (ops.length > 0) {
+        const op = ops.pop()!;
+        if (op === '(') { found = true; break; }
+        out.push(op);
+      }
+      if (!found) return null;
+    } else if (tok === '+' || tok === '-' || tok === '*' || tok === '/') {
+      // Minus unary (di awal / sesudah operator / sesudah '(') → 0 - x.
+      if (tok === '-' && (prev === null || prev === '(' || (typeof prev === 'string' && prev in prec))) {
+        out.push(0);
+      }
+      while (
+        ops.length > 0 &&
+        ops[ops.length - 1] !== '(' &&
+        prec[ops[ops.length - 1]] >= prec[tok]
+      ) {
+        out.push(ops.pop()!);
+      }
+      ops.push(tok);
+    } else {
+      return null;
+    }
+    prev = tok;
+  }
+  while (ops.length > 0) {
+    const op = ops.pop()!;
+    if (op === '(') return null;
+    out.push(op);
+  }
+  const stack: number[] = [];
+  for (const tok of out) {
+    if (typeof tok === 'number') {
+      stack.push(tok);
+      continue;
+    }
+    const b = stack.pop();
+    const a = stack.pop();
+    if (a === undefined || b === undefined) return null;
+    let r: number;
+    if (tok === '+') r = a + b;
+    else if (tok === '-') r = a - b;
+    else if (tok === '*') r = a * b;
+    else if (tok === '/') {
+      if (b === 0) return null;
+      r = a / b;
+    } else return null;
+    if (!Number.isFinite(r)) return null;
+    stack.push(r);
+  }
+  return stack.length === 1 ? stack[0] : null;
+}
+
+/**
+ * Hitung ulang kuantitas dari rumus yang dinyatakan, bila rumusnya dapat
+ * diparse sebagai aritmetika. KONSERVATIF: hanya ekspresi runtut (angka +
+ * operator, diselingi paling banyak kata satuan) yang dievaluasi; bagian
+ * sesudah '=' pertama (hasil yang dinyatakan model) tidak ikut dihitung.
+ * Rumus prosa, rentang ("150-200"), dan rumus tanpa operator menghasilkan
+ * null (tidak dievaluasi — BUKAN dianggap salah). Bila ada dua run valid
+ * dengan nilai berbeda, hasilnya ambigu → null. Hasil ≤ 0 / non-finite
+ * juga null.
+ *
+ * Contoh live (item 22, 23:18): "Luas lantai 19,45 m² ÷ ±9 m² per titik
+ * = 3 titik" → 19,45/9 ≈ 2,16 → untuk satuan hitung "titik", ceil = 3
+ * sehingga nilai 3 KONSISTEN (angka "19" yang terbaca di screenshot
+ * adalah glyph '±' yang ter-render kecil — bukan 19 m² per titik).
+ */
+export function recomputeQuantityFromFormula(formula: string | undefined | null): number | null {
+  if (!formula || typeof formula !== 'string') return null;
+  const beforeEquals = formula.split('=')[0].trim();
+  if (!beforeEquals) return null;
+  // Rumus yang seluruhnya hanya satu angka (+ satuan opsional): angka itu
+  // sendiri pernyataan kuantitasnya ("86", "80 m2").
+  const bare = /^(\d+(?:[.,]\d+)*)\s*[a-z²³'"/]*$/i.exec(beforeEquals);
+  if (bare) {
+    const n = normalizeFormulaNumberToken(bare[1]);
+    return n != null && n > 0 ? n : null;
+  }
+  const toks = tokenizeFormula(beforeEquals);
+  if (toks.length === 0) return null;
+  // Bangun run-run aritmetika: rangkaian (angka | operator | kata satuan);
+  // kata lain memutus run. Setiap run dievaluasi; bila ada dua run valid
+  // dengan nilai berbeda → ambigu → null.
+  const values: number[] = [];
+  let run: FormulaToken[] = [];
+  const flush = () => {
+    if (run.length > 0) {
+      // Buang kata satuan + operator di ujung (mis. ':' dari label "Rumus:").
+      const core = run.filter((t) => !(t.kind === 'word' && FORMULA_UNIT_WORDS.has(t.value)));
+      while (core.length > 0 && core[0].kind === 'op' && core[0].value !== '(') core.shift();
+      while (core.length > 0 && core[core.length - 1].kind === 'op' && core[core.length - 1].value !== ')') core.pop();
+      const nums = core.filter((t) => t.kind === 'num').length;
+      const hasOp = core.some((t) => t.kind === 'op' && t.value !== '(' && t.value !== ')');
+      if (nums >= 2 && hasOp) {
+        const expr = core.map((t) => (t.kind === 'num' ? t.value : (t as { value: string }).value));
+        const v = evaluateArithmeticTokens(expr as Array<number | string>);
+        if (v != null && v > 0) values.push(v);
+      }
+    }
+    run = [];
+  };
+  for (const t of toks) {
+    if (t.kind === 'word' && !FORMULA_UNIT_WORDS.has(t.value)) flush();
+    else run.push(t);
+  }
+  flush();
+  if (values.length === 0) return null;
+  const first = values[0];
+  // Dua run valid dengan nilai berbeda = ambigu (mis. "2 x 3 dan 4 x 5").
+  if (values.some((v) => Math.abs(v - first) > Math.max(0.02 * Math.abs(first), 0.05))) return null;
+  return first;
+}
+
+/**
+ * Cek konsistensi deterministik kuantitas vs rumus yang dinyatakan
+ * (keputusan owner: "asal sesuai anggapannya"). Untuk tiap item dengan
+ * kuantitas numerik > 0 dan rumus yang dapat diparse:
+ * - satuan hitung (titik/unit/buah/dst.): nilai diterima bila sama dengan
+ *   floor/round/ceil hasil hitung; bila tidak, dikoreksi ke ceil.
+ * - satuan kontinu (m²/m³/m/kg/dst.): nilai diterima dalam toleransi
+ *   max(2%, 0,05); bila tidak, dikoreksi ke hasil hitung (2 desimal).
+ * Koreksi DICATAT TERBUKA di catatan item (nilai asli model + rumus) dan
+ * subtotal/status dihitung ulang lewat helper yang sama dengan pass lain.
+ * Rumus yang tidak dapat diparse dilewati (bukan dianggap salah); nilai 0
+ * eksplisit tidak pernah diubah. Mengembalikan jumlah item yang dikoreksi.
+ */
+export function reconcileFullAiQuantityFormulas(items: FullAiItem[]): number {
+  let corrected = 0;
+  for (const it of items) {
+    const value = it.quantity?.value;
+    const formula = it.quantity?.formula;
+    if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) continue;
+    if (!formula || typeof formula !== 'string' || !formula.trim()) continue;
+    const recomputed = recomputeQuantityFromFormula(formula);
+    if (recomputed == null) continue;
+    const unitNorm = (it.quantity.unit || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    let target: number | null = null;
+    if (COUNT_UNITS.has(unitNorm)) {
+      const candidates = [Math.floor(recomputed), Math.round(recomputed), Math.ceil(recomputed)]
+        .filter((n) => n > 0);
+      if (!candidates.includes(value)) target = Math.ceil(recomputed);
+    } else {
+      const tol = Math.max(0.02 * Math.abs(recomputed), 0.05);
+      if (Math.abs(value - recomputed) > tol) target = Math.round(recomputed * 100) / 100;
+    }
+    if (target == null || target === value) continue;
+    const original = value;
+    it.quantity = {
+      ...it.quantity,
+      value: target,
+      notes: [it.quantity.notes, `Kuantitas dikoreksi dari ${original} ke ${target} ${it.quantity.unit} agar sesuai rumus yang dinyatakan (${formula}). Nilai asli model: ${original}.`]
+        .filter(Boolean)
+        .join(' '),
+    };
+    // Blok audit dibangun ulang dari keadaan terkoreksi — KECUALI isian
+    // konteks-denah yang audinya membawa jejak isian (rumus aturan
+    // konteks konsisten menurut konstruksi sehingga praktis tak pernah
+    // terkoreksi; jejak isiannya dipertahankan bila pun terjadi).
+    const method = it.quantityAudit?.method ?? it.quantity.quantityAudit?.method;
+    if (method !== 'plan-context-estimate') {
+      const audit = buildQuantityAudit(adaptFullAiItemForQuantityServices(it));
+      it.quantity = { ...it.quantity, quantityAudit: audit };
+      it.quantityAudit = audit;
+    }
+    const { subtotal } = verifySubtotal(it.quantity.value, it.price.unitPrice);
+    const { status, exclusionReason } = resolveFullAiItemStatus(
+      { value: it.quantity.value, unit: it.quantity.unit, provenance: it.quantity.provenance },
+      { unitPrice: it.price.unitPrice, unit: it.price.unit, source: it.price.source },
+    );
+    const include = status === 'READY' && subtotal != null && subtotal > 0;
+    it.subtotal = include ? subtotal : null;
+    it.subtotalVerified = include;
+    it.status = include ? 'READY' : status;
+    it.exclusionReason = include ? null : exclusionReason;
+    corrected++;
+  }
+  return corrected;
+}
+
+/**
+ * Hapus warning eksklusi "tidak masuk total" yang sudah BASI — yaitu
+ * warning untuk item yang kini masuk total sesudah pass penyelesaian.
+ * Warning dipertahankan bila ada SATU SAJA item bernama sama yang masih
+ * dikecualikan (nama duplikat). Warning lain tidak disentuh.
+ */
+export function dropStaleExclusionWarnings(warnings: string[], items: FullAiItem[]): string[] {
+  const includedByName = new Map<string, boolean>();
+  for (const it of items) {
+    const included = it.subtotal != null && it.subtotal > 0;
+    includedByName.set(it.name, (includedByName.get(it.name) ?? true) && included);
+  }
+  return warnings.filter((w) => {
+    const m = /^Item "(.+)" tidak masuk total \[[A-Z_]+\]$/.exec(w);
+    if (!m) return true;
+    return includedByName.get(m[1]) !== true;
+  });
+}
+
+export interface FullAiQuantityAssumptionDeps {
+  execute: typeof aiToolsProviderClient.execute;
+  productId: 'DED_AI_FAST' | 'DED_AI_DETAIL';
+  timeoutMs: number;
+  projectType: string;
+}
+
+export interface FullAiQuantityAssumptionResult {
+  attempted: number;
+  filled: number;
+  failed: boolean;
+  failureMessage?: string;
+  unfilled: number;
+}
+
+/**
+ * Pass asumsi kuantitas AI (keputusan owner 2026-11-20 23:18 — mode
+ * Full AI SAJA). Berjalan SESUDAH completeFullAiQuantities: untuk item
+ * yang kuantitasnya MASIH kosong (aturan konteks tidak mencakupnya /
+ * tidak ada konteks denah), SATU panggilan AI tambahan meminta model
+ * mengisi kuantitas asumsi + rumus + dasar asumsi per item. Isian selalu
+ * provenance ASSUMPTION + formula + dasar + catatan nilai asli, dengan
+ * blok audit bersama (klasifikasi ESTIMATED_FROM_CONTEXT, metode
+ * 'ai-inference-or-assumption', verifikasi UNVERIFIED, persetujuan
+ * PENDING) — tidak pernah menyamar sebagai fakta gambar. Item yang
+ * model kembalikan qty null / tanpa dasar / tanpa satuan tetap
+ * dikecualikan secara jujur. Kegagalan transport/parse TIDAK
+ * menggagalkan run: dikembalikan failed + pesan, pemanggil mencatat
+ * warning jujur. Tanpa item kosong → tanpa panggilan AI.
+ */
+export async function completeFullAiQuantitiesWithAi(
+  items: FullAiItem[],
+  deps: FullAiQuantityAssumptionDeps,
+): Promise<FullAiQuantityAssumptionResult> {
+  const missing = items.filter(
+    (it) => it.quantity?.value == null && (it.quantity?.unit || '').trim() !== '',
+  );
+  if (missing.length === 0) {
+    return { attempted: 0, filled: 0, failed: false, unfilled: 0 };
+  }
+  const ctx = derivePlanContext(items.map(adaptFullAiItemForQuantityServices));
+  const contextLines: string[] = [];
+  if (ctx.floorAreaM2 != null) contextLines.push(`Luas lantai diketahui ±${ctx.floorAreaM2} m²`);
+  if (ctx.ceilingAreaM2 != null) contextLines.push(`Luas plafon diketahui ±${ctx.ceilingAreaM2} m²`);
+  if (ctx.buildingPerimeterM != null) contextLines.push(`Keliling bangunan diketahui ±${ctx.buildingPerimeterM} m`);
+  if (ctx.roomCount != null) contextLines.push(`Jumlah ruang diketahui ${ctx.roomCount} ruang`);
+  if (ctx.doorUnits != null) contextLines.push(`Jumlah pintu diketahui ${ctx.doorUnits} unit`);
+  const built = buildFullAiQuantityAssumptionPrompt({
+    projectType: deps.projectType,
+    contextLines,
+    items: missing.map((it) => ({ no: it.no, name: it.name, unit: it.quantity.unit, category: it.category })),
+  });
+  const result = await deps.execute({
+    productId: deps.productId,
+    prompt: built.prompt,
+    systemPrompt: built.system,
+    jsonMode: true,
+    maxTokens: 4000,
+    timeoutMs: deps.timeoutMs,
+  });
+  if (!result.success) {
+    return {
+      attempted: missing.length,
+      filled: 0,
+      failed: true,
+      failureMessage: result.message || result.errorCode || 'AI gagal memproses',
+      unfilled: missing.length,
+    };
+  }
+  let parsed: any;
+  try {
+    parsed = aiToolsProviderClient.extractJson(result.content);
+  } catch {
+    return {
+      attempted: missing.length,
+      filled: 0,
+      failed: true,
+      failureMessage: 'Respons asumsi kuantitas bukan JSON valid',
+      unfilled: missing.length,
+    };
+  }
+  const fills: Array<{ no?: unknown; qty?: unknown; formula?: unknown; basis?: unknown }> =
+    Array.isArray(parsed?.fills) ? parsed.fills : [];
+  const byNo = new Map<number, FullAiItem>();
+  for (const it of missing) byNo.set(it.no, it);
+  let filled = 0;
+  for (const fill of fills) {
+    const it = byNo.get(fill?.no as number);
+    if (!it) continue;
+    const qty = fill?.qty;
+    const formula = typeof fill?.formula === 'string' ? fill.formula.trim() : '';
+    const basis = typeof fill?.basis === 'string' ? fill.basis.trim() : '';
+    // Tanpa angka positif atau tanpa dasar yang dinyatakan → tidak diisi
+    // (asumsi tanpa dasar bukan asumsi — item tetap dikecualikan jujur).
+    if (typeof qty !== 'number' || !Number.isFinite(qty) || qty <= 0) continue;
+    if (!formula && !basis) continue;
+    const original = it.quantity.value;
+    it.quantity = {
+      ...it.quantity,
+      value: qty,
+      formula: formula || basis,
+      provenance: 'ASSUMPTION',
+      confidence: 'MEDIUM',
+      assumptions: basis ? [...(it.quantity.assumptions ?? []), basis] : it.quantity.assumptions,
+      notes: [it.quantity.notes, `Kuantitas dilengkapi dari asumsi AI (nilai asli: ${original == null ? 'kosong' : original}). Estimasi — bukan fakta gambar.`]
+        .filter(Boolean)
+        .join(' '),
+    };
+    const audit = buildQuantityAudit(adaptFullAiItemForQuantityServices(it));
+    it.quantity = { ...it.quantity, quantityAudit: audit };
+    it.quantityAudit = audit;
+    const { subtotal } = verifySubtotal(it.quantity.value, it.price.unitPrice);
+    const { status, exclusionReason } = resolveFullAiItemStatus(
+      { value: it.quantity.value, unit: it.quantity.unit, provenance: it.quantity.provenance },
+      { unitPrice: it.price.unitPrice, unit: it.price.unit, source: it.price.source },
+    );
+    const include = status === 'READY' && subtotal != null && subtotal > 0;
+    it.subtotal = include ? subtotal : null;
+    it.subtotalVerified = include;
+    it.status = include ? 'READY' : status;
+    it.exclusionReason = include ? null : exclusionReason;
+    filled++;
+    byNo.delete(fill.no as number); // satu isian per item (duplikat no diabaikan)
+  }
+  return { attempted: missing.length, filled, failed: false, unfilled: missing.length - filled };
 }
 
 // ---------------------------------------------------------------------------
