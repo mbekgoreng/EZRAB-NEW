@@ -115,8 +115,8 @@ const AuthFailsafeBanner: React.FC = () => {
     >
       <span aria-hidden="true">⚠️</span>
       <span>
-        Mode demo (fail-safe): konfigurasi login (Supabase) belum lengkap — semua fitur
-        terbuka tanpa login. Aktifkan login resmi sebelum go-live publik.
+        Mode demo (fail-safe): konfigurasi login (Supabase) belum lengkap — workspace
+        tetap dilindungi kode akses. Aktifkan login resmi sebelum go-live publik.
       </span>
       <button
         type="button"

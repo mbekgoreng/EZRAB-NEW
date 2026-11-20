@@ -182,8 +182,8 @@ export const AuthNoticePage: React.FC<AuthNoticePageProps> = ({ tab, ...props })
       <strong>/masuk</strong>. Saat ini EZRAB masih dalam tahap pengujian:{' '}
       {tab === 'daftar' ? 'pendaftaran akun email' : 'login email'} belum dibuka, dan cara masuk
       yang tersedia adalah <strong>peran demo</strong> di halaman login tersebut. Tanpa akun pun
-      seluruh fitur dapat dibuka dari tombol di bawah, dan data Anda tersimpan lokal di perangkat
-      ini.
+      workspace dapat dibuka dari tombol di bawah dengan kode akses, dan data Anda tersimpan lokal
+      di perangkat ini.
     </p>
     <p style={{ margin: 0 }}>
       Akses ke area aplikasi sementara dilindungi kode akses. Bila login resmi diaktifkan nanti,
