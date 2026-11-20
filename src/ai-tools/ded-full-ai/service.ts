@@ -549,7 +549,43 @@ export class FullAiDedService {
           lastGroupError = { code: 'INVALID_JSON', message: 'Respons AI bukan JSON valid' };
           continue;
         }
-        const groupItems = Array.isArray(parsedGroup.items) ? parsedGroup.items : [];
+        const groupItems = Array.isArray(parsedGroup?.items) ? parsedGroup.items : [];
+        // RETRY BILA HASIL 0 ITEM (2026-11-20, diagnosis live Preview
+        // brxi1ux47): jawaban model yang terpotong plafon output provider
+        // (ArxPay 8000 token; Full AI Cepat meminta 16000) dapat ter-parse
+        // sebagai JSON VALID dengan items kosong — dulu langsung di-merge
+        // sebagai sukses diam-diam (0 item, tanpa percobaan ulang).
+        // Sekarang rencana kosong diperlakukan SAMA seperti JSON invalid:
+        // pecah grup dua dan jalankan ulang; bila tak bisa dipecah lagi,
+        // catat EMPTY_PLAN (bukan sukses diam-diam). Grup berisi (>=1
+        // item) tidak berubah perilakunya. projectInfo/warnings rencana
+        // kosong sengaja TIDAK di-merge (paralel dengan jalur INVALID_JSON
+        // — anak-anak menurunkan ulang dari halaman yang sama).
+        if (groupItems.length === 0) {
+          if (depth < MAX_GROUP_SPLIT_DEPTH && group.pages.length > 1) {
+            const mid = Math.ceil(group.pages.length / 2);
+            const halves = [group.pages.slice(0, mid), group.pages.slice(mid)];
+            for (const half of halves) {
+              groupQueue.push({
+                group: { pages: half, requestChars: measureFullAiRequest(half) },
+                depth: depth + 1,
+              });
+            }
+            totalGroupsPlanned += 1; // 1 induk → 2 anak = +1 bersih
+            warnings.push(
+              `Kelompok halaman ${formatPageRanges(groupPages)} mengembalikan rencana tanpa item pekerjaan; ` +
+              `kelompok dipecah dua dan dijalankan ulang.`,
+            );
+            continue;
+          }
+          failedGroups.push({
+            pages: groupPages,
+            code: 'EMPTY_PLAN',
+            message: 'Respons AI tidak menghasilkan item pekerjaan',
+          });
+          lastGroupError = { code: 'EMPTY_PLAN', message: 'Respons AI tidak menghasilkan item pekerjaan' };
+          continue;
+        }
         mergedRawItems.push(...groupItems);
         mergedWarnings.push(...normalizeAiWarnings(parsedGroup.warnings));
         mergeProjectInfoFrom(parsedGroup.projectInfo);
