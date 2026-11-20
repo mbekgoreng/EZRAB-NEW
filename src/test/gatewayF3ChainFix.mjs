@@ -17,10 +17,10 @@
  *
  * Yang dibuktikan suite ini (diperbarui 2026-11-19: F3-1a DIGANTIKAN
  * keputusan owner WeizeRouter-only; F3-2 diadaptasi ke skip level MODEL;
- * catatan 2026-11-20: rantai fast/ded kini + fallback Crown — skenario
- * suite ini TANPA key Crown sehingga urutan WeizeRouter-only tetap
- * berlaku di sini):
- *  F3-1a Fast WeizeRouter-only (tanpa key Crown di skenario ini):
+ * catatan 2026-11-20: rantai fast/ded kini + fallback Crown + ArxPay —
+ * skenario suite ini TANPA key Crown DAN ArxPay sehingga urutan
+ * WeizeRouter-only tetap berlaku di sini):
+ *  F3-1a Fast WeizeRouter-only (tanpa key Crown DAN ArxPay di skenario ini):
  *        WeizeRouter 502 -> keenam model dicoba,
  *        ArxPay TIDAK PERNAH muncul (dulu: ArxPay kaki kedua fast).
  *  F3-1b/1c CELAH LOGGING (bug nyata, DIPERTAHANKAN — perbaikan F3-1b):
@@ -157,11 +157,11 @@ const seq = (r) => r.attempts.map((a) => `${a.provider}:${a.model}`);
 
 // --- F3-1a (DIGANTIKAN keputusan owner 2026-11-19 02:09): ArxPay BUKAN
 //      lagi kaki kedua fast — fast WeizeRouter-only DI SKENARIO INI
-//      (tanpa key Crown; sejak 2026-11-20 rantai fast punya fallback
-//      Crown — lihat dedCrownFallback.mjs). Weize 502 -> keenam
-//      model WeizeRouter dicoba, ArxPay TIDAK PERNAH muncul walau key-nya
-//      ada (bentuk env Vercel yang hidup).
-setKeys({ weize: true, arxpay: true, gemini: 1, zyrouter: true, atria: true });
+//      (tanpa key Crown DAN ArxPay; sejak 2026-11-20 rantai fast punya
+//      fallback Crown + ArxPay — lihat dedCrownFallback.mjs dan
+//      dedArxpayFallback.mjs). Weize 502 -> keenam model WeizeRouter
+//      dicoba; tanpa key fallback, ArxPay TIDAK PERNAH muncul.
+setKeys({ weize: true, gemini: 1, zyrouter: true, atria: true });
 setBehavior({ weizerouter: 'fail500', arxpay: 'ok' });
 {
   const r = await executeAI({ message: 'halo', mode: 'fast' });
@@ -236,7 +236,7 @@ setBehavior({ gemini: 'fail429', zyrouter: 'ok' });
 // --- F3-2a. Timeout-skip LEVEL MODEL (DED, adaptasi 2026-11-19):
 //      wz/gpt-6-luna timeout -> weizerouter-v1 TETAP dicoba (skip level
 //      provider akan mematikan rantai satu-provider); kelima model dicoba.
-setKeys({ weize: true, arxpay: true });
+setKeys({ weize: true });
 setBehavior({ weizerouter: 'timeout', arxpay: 'ok' });
 {
   const r = await executeAI({ message: 'halo', mode: 'ded' });
@@ -262,7 +262,7 @@ setBehavior({ weizerouter: 'timeout', arxpay: 'ok' });
 }
 
 // --- F3-2b. Kontras: kegagalan CEPAT (502) tetap memakai rotasi model.
-setKeys({ weize: true, arxpay: true });
+setKeys({ weize: true });
 setBehavior({ weizerouter: 'fail500', arxpay: 'ok' });
 {
   const r = await executeAI({ message: 'halo', mode: 'ded' });
@@ -313,7 +313,7 @@ setBehavior({ weizerouter: 'timeout', arxpay: 'ok' });
 
 // --- F3-2e. Batas klasifikasi: throw BUKAN AbortError tetap 'network' dan
 //      TIDAK memicu skip — semua model tetap dicoba.
-setKeys({ weize: true, arxpay: true });
+setKeys({ weize: true });
 setBehavior({ weizerouter: 'netthrow', arxpay: 'ok' });
 {
   const r = await executeAI({ message: 'halo', mode: 'ded' });

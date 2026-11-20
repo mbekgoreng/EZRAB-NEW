@@ -22,25 +22,29 @@
  *               MENGGANTIKAN rantai advanced + F3-1a) + fallback Crown
  *               (keputusan owner 2026-11-20 10:56, sesudah DED gagal live
  *               karena WeizeRouter 401 — rantai WeizeRouter-only mati
- *               total oleh satu key 401):
+ *               total oleh satu key 401) + ArxPay TERAKHIR (keputusan
+ *               owner 2026-11-20 16:54, sesudah WeizeRouter 401 + Crown
+ *               403 live 16:28):
  *               WeizeRouter wz/gpt-6-luna -> weizerouter-v1
  *               -> wz/gemini-3.8-flash-high -> wz/grok-4.7
  *               -> wz/deepseek-v4-pro -> Crown GLM-5.3-Flash
- *               -> Crown DeepSeek V4 Flash -> Crown MiniMax M2.7.
- *               Tanpa ArxPay/Gemini/Atmo/ZyRouter. DED_AI_DETAIL
+ *               -> Crown DeepSeek V4 Flash -> Crown MiniMax M2.7
+ *               -> ArxPay deepseek-v4.1-flash.
+ *               Tanpa Gemini/Atmo/ZyRouter. DED_AI_DETAIL
  *               dipetakan ke 'ded' di api/ai/tools/execute.js. ID model
  *               baru adalah asumsi konvensi (prefix wz/) — butuh
  *               verifikasi live.
  *  - fast     : WeizeRouter PERTAMA (keputusan owner 2026-11-19 02:09,
  *               MENGGANTIKAN rantai multi-provider + F3-1a) + fallback
  *               Crown (keputusan owner 2026-11-20 10:56, sama seperti
- *               'ded'):
+ *               'ded') + ArxPay TERAKHIR (keputusan owner 2026-11-20
+ *               16:54, sama seperti 'ded'):
  *               WeizeRouter weizerouter-v2 -> wz/gpt-6-luna
  *               -> wz/qwen3.8-flash -> wz/deepseek-v4-flash-0731
  *               -> weizerouter-v1 -> wz/gemini-3.8-flash
  *               -> Crown GLM-5.3-Flash -> Crown DeepSeek V4 Flash
- *               -> Crown MiniMax M2.7. Tanpa ArxPay/Gemini/River/Atmo/
- *               ZyRouter/ekor.
+ *               -> Crown MiniMax M2.7 -> ArxPay deepseek-v4.1-flash.
+ *               Tanpa Gemini/River/Atmo/ZyRouter/ekor.
  *               Mode tak dikenal (termasuk 'quick' aiProviderRouter)
  *               juga memakai rantai ini (cabang else).
  *  - vision   : TIDAK BERUBAH (Crown, ArxPay, dan WeizeRouter tidak support image_url):
@@ -274,14 +278,16 @@ setAll('fail');
   ]));
 }
 
-// --- 4b. DED (WeizeRouter-dulu + fallback Crown; WeizeRouter-only owner
-//      2026-11-19 02:09, fallback Crown owner 2026-11-20 10:56): 5 model
-//      WeizeRouter lalu 3 model Crown, tanpa ArxPay/Gemini/Atmo/ZyRouter.
-//      Re-baseline 2026-11-20: sebelumnya hanya 5 kaki WeizeRouter.
+// --- 4b. DED (WeizeRouter-dulu + fallback Crown + ArxPay TERAKHIR;
+//      WeizeRouter-only owner 2026-11-19 02:09, fallback Crown owner
+//      2026-11-20 10:56, ArxPay TERAKHIR owner 2026-11-20 16:54): 5 model
+//      WeizeRouter lalu 3 model Crown lalu 1 ArxPay, tanpa Gemini/Atmo/
+//      ZyRouter. Re-baseline 2026-11-20 (ArxPay): sebelumnya 8 kaki
+//      (5 WeizeRouter + 3 Crown); kini 9 kaki.
 setAll('fail');
 {
   const r = await executeAI({ message: 'halo', mode: 'ded' });
-  check('ded: urutan baru WeizeRouter-dulu + Crown', () => assert.deepEqual(seq(r), [
+  check('ded: urutan baru WeizeRouter-dulu + Crown + ArxPay', () => assert.deepEqual(seq(r), [
     'weizerouter:wz/gpt-6-luna',
     'weizerouter:weizerouter-v1',
     'weizerouter:wz/gemini-3.8-flash-high',
@@ -290,13 +296,15 @@ setAll('fail');
     'crown:zai-org/GLM-5.3-Flash',
     'crown:deepseek-ai/DeepSeek-V4-Flash-0731',
     'crown:MiniMaxAI/MiniMax-M2.7',
+    'arxpay:deepseek-v4.1-flash',
   ]));
 }
 
 // --- 4c. DED, 2 key WeizeRouter: cap model-aware — kelima model tetap
 //      dicoba (model 1-2 mendapat rotasi key, model 3-5 satu kesempatan;
 //      tanpa perbaikan cap, model 4-5 tidak pernah dicoba). Lalu 3 kaki
-//      fallback Crown (1 key, cap model-aware 3). Re-baseline 2026-11-20.
+//      fallback Crown (1 key, cap model-aware 3) lalu 1 kaki ArxPay
+//      TERAKHIR (1 key, 1 model). Re-baseline 2026-11-20 (ArxPay).
 setAll('fail');
 process.env.WEIZEROUTER_API_KEY_1 = 'dummy-weize-1';
 {
@@ -312,6 +320,7 @@ process.env.WEIZEROUTER_API_KEY_1 = 'dummy-weize-1';
     'crown:zai-org/GLM-5.3-Flash',
     'crown:deepseek-ai/DeepSeek-V4-Flash-0731',
     'crown:MiniMaxAI/MiniMax-M2.7',
+    'arxpay:deepseek-v4.1-flash',
   ]));
 }
 delete process.env.WEIZEROUTER_API_KEY_1;
@@ -357,15 +366,18 @@ setAll('fail'); behavior.weizerouter = 'ok';
   ]));
 }
 
-// --- 6. Fast (WeizeRouter-dulu + fallback Crown; WeizeRouter-only owner
-//      2026-11-19 02:09, fallback Crown owner 2026-11-20 10:56): 6 model
-//      WeizeRouter lalu 3 model Crown, tanpa ArxPay/Gemini/River/Atmo/
-//      ZyRouter/ekor. F3-1a (ArxPay kaki kedua fast) DIGANTIKAN keputusan
-//      2026-11-19. Re-baseline 2026-11-20: sebelumnya hanya 6 kaki WeizeRouter.
+// --- 6. Fast (WeizeRouter-dulu + fallback Crown + ArxPay TERAKHIR;
+//      WeizeRouter-only owner 2026-11-19 02:09, fallback Crown owner
+//      2026-11-20 10:56, ArxPay TERAKHIR owner 2026-11-20 16:54): 6 model
+//      WeizeRouter lalu 3 model Crown lalu 1 ArxPay, tanpa Gemini/River/
+//      Atmo/ZyRouter/ekor. F3-1a (ArxPay kaki KEDUA fast) DIGANTIKAN
+//      keputusan 2026-11-19 — ArxPay kini kaki TERAKHIR, bukan kedua.
+//      Re-baseline 2026-11-20 (ArxPay): sebelumnya 9 kaki (6 WeizeRouter
+//      + 3 Crown); kini 10 kaki.
 setAll('fail');
 {
   const r = await executeAI({ message: 'halo', mode: 'fast' });
-  check('fast: urutan baru WeizeRouter-dulu + Crown', () => assert.deepEqual(seq(r), [
+  check('fast: urutan baru WeizeRouter-dulu + Crown + ArxPay', () => assert.deepEqual(seq(r), [
     'weizerouter:weizerouter-v2',
     'weizerouter:wz/gpt-6-luna',
     'weizerouter:wz/qwen3.8-flash',
@@ -375,13 +387,15 @@ setAll('fail');
     'crown:zai-org/GLM-5.3-Flash',
     'crown:deepseek-ai/DeepSeek-V4-Flash-0731',
     'crown:MiniMaxAI/MiniMax-M2.7',
+    'arxpay:deepseek-v4.1-flash',
   ]));
 }
 
 // --- 6b. Fast, 2 key WeizeRouter: cap model-aware — keenam model tetap
 //      dicoba (model 1-3 mendapat rotasi key, model 4-6 satu kesempatan;
 //      tanpa perbaikan cap, 3 model terakhir tidak pernah dicoba). Lalu
-//      3 kaki fallback Crown (1 key, cap model-aware 3). Re-baseline 2026-11-20.
+//      3 kaki fallback Crown (1 key, cap model-aware 3) lalu 1 kaki
+//      ArxPay TERAKHIR (1 key, 1 model). Re-baseline 2026-11-20 (ArxPay).
 setAll('fail');
 process.env.WEIZEROUTER_API_KEY_1 = 'dummy-weize-1';
 {
@@ -399,6 +413,7 @@ process.env.WEIZEROUTER_API_KEY_1 = 'dummy-weize-1';
     'crown:zai-org/GLM-5.3-Flash',
     'crown:deepseek-ai/DeepSeek-V4-Flash-0731',
     'crown:MiniMaxAI/MiniMax-M2.7',
+    'arxpay:deepseek-v4.1-flash',
   ]));
 }
 delete process.env.WEIZEROUTER_API_KEY_1;
@@ -418,12 +433,13 @@ setAll('fail'); behavior.weizerouter = 'ok';
 }
 
 // --- 6d. Mode tak dikenal 'quick' (aiProviderRouter) memakai cabang else
-//      = rantai fast yang sama (WeizeRouter-dulu + fallback Crown).
-//      Re-baseline 2026-11-20: sebelumnya hanya 6 kaki WeizeRouter.
+//      = rantai fast yang sama (WeizeRouter-dulu + fallback Crown +
+//      ArxPay TERAKHIR). Re-baseline 2026-11-20 (ArxPay): sebelumnya
+//      9 kaki; kini 10 kaki.
 setAll('fail');
 {
   const r = await executeAI({ message: 'halo', mode: 'quick' });
-  check("quick: rantai fast WeizeRouter-dulu + Crown", () => assert.deepEqual(seq(r), [
+  check("quick: rantai fast WeizeRouter-dulu + Crown + ArxPay", () => assert.deepEqual(seq(r), [
     'weizerouter:weizerouter-v2',
     'weizerouter:wz/gpt-6-luna',
     'weizerouter:wz/qwen3.8-flash',
@@ -433,6 +449,7 @@ setAll('fail');
     'crown:zai-org/GLM-5.3-Flash',
     'crown:deepseek-ai/DeepSeek-V4-Flash-0731',
     'crown:MiniMaxAI/MiniMax-M2.7',
+    'arxpay:deepseek-v4.1-flash',
   ]));
 }
 

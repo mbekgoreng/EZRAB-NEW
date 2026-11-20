@@ -62,7 +62,9 @@ const ARXPAY_BASE = 'https://arxpay.my.id/v1';
 // 'fast' (F3 2026-11-18) dan 'ded'; sejak keputusan owner 2026-11-19 02:09
 // rantai 'fast' + 'ded' WeizeRouter-dulu (WeizeRouter-only sampai 2026-11-20,
 // lalu + fallback Crown atas keputusan owner 2026-11-20 10:56) dan ArxPay
-// tidak lagi ada di keduanya.
+// tidak lagi ada di keduanya — KEMBALI sebagai kaki TERAKHIR keduanya atas
+// keputusan owner 2026-11-20 16:54 (sesudah WeizeRouter 401 + Crown 403
+// live 16:28, kedua provider menolak key).
 // Key: ARXPAY_API_KEY (+ opsional ARXPAY_API_KEY_1..4), diisi owner MANUAL di env.
 // Tanpa key, kaki ini kosong dan rantai kembali seperti semula (fail-closed).
 // Text-only seperti Crown: dilewati bila ada gambar/PDF.
@@ -82,13 +84,14 @@ const WEIZEROUTER_BASE = 'https://weizerouter.web.id/v1';
 // Key: WEIZEROUTER_API_KEY (+ opsional WEIZEROUTER_API_KEY_1..4), diisi owner
 // MANUAL di env (Preview + Production). Tanpa key, kaki ini kosong dan rantai
 // kembali seperti semula (fail-closed) — 'ded'/'fast' tanpa key WeizeRouter
-// kini hanya berisi kaki fallback Crown (bila key Crown ada); tanpa key
-// Crown juga, rantai kosong. Text-only seperti Crown/ArxPay:
-// dilewati bila ada gambar/PDF.
+// kini hanya berisi kaki fallback Crown + ArxPay (bila key masing-masing
+// ada); tanpa key Crown dan ArxPay juga, rantai kosong. Text-only seperti
+// Crown/ArxPay: dilewati bila ada gambar/PDF.
 const WEIZEROUTER_CHAT_MODELS = ['weizerouter-v2', 'kimi-k2.7', 'kimi-k2.6'];
 const WEIZEROUTER_ADVANCED_MODELS = ['gpt-6-luna', 'muse-spark-1.3-contributor'];
 // DED detail (owner 2026-11-19 02:09): WeizeRouter PERTAMA, 5 model berurutan;
-// Crown fallback SESUDAHNYA (owner 2026-11-20 10:56 — model CROWN_CHAT_MODELS).
+// Crown fallback SESUDAHNYA (owner 2026-11-20 10:56 — model CROWN_CHAT_MODELS),
+// lalu ArxPay TERAKHIR (owner 2026-11-20 16:54 — model ARXPAY_MODEL).
 // Pengali biaya (×N) dari info harga owner — INFORMATIF SAJA, tidak dipakai
 // logika rantai. ID model: 'gpt-6-luna' owner = wz/gpt-6-luna (konvensi
 // yang sudah ada sejak 2026-11-13, terbukti live); model baru memakai
@@ -102,7 +105,8 @@ const WEIZEROUTER_ADVANCED_MODELS = ['gpt-6-luna', 'muse-spark-1.3-contributor']
 // jangan dipakai.
 const WEIZEROUTER_DED_MODELS = ['wz/gpt-6-luna', 'weizerouter-v1', 'wz/gemini-3.8-flash-high', 'wz/grok-4.7', 'wz/deepseek-v4-pro'];
 // Fast (owner 2026-11-19 02:09): WeizeRouter PERTAMA, 6 model berurutan;
-// Crown fallback SESUDAHNYA (owner 2026-11-20 10:56 — model CROWN_CHAT_MODELS).
+// Crown fallback SESUDAHNYA (owner 2026-11-20 10:56 — model CROWN_CHAT_MODELS),
+// lalu ArxPay TERAKHIR (owner 2026-11-20 16:54 — model ARXPAY_MODEL).
 // (pengali biaya + asumsi ID sama seperti DED di atas; weizerouter-v2
 // adalah kaki pertama fast sejak 2026-11-16, kini diikuti 5 model).
 // Urutan: weizerouter-v2 (tanpa pengali di tabel owner) → wz/gpt-6-luna
@@ -527,8 +531,8 @@ async function callOAI(base, key, model, provider, message, systemPrompt, temper
 
 // ---------------------------------------------------------------------------
 // B4 (2026-11-19) — MEDIA GUARD untuk rantai text-only (fast/ded).
-// Rantai 'fast' + 'ded' (WeizeRouter-dulu + fallback Crown sejak 2026-11-20)
-// SEMUA kakinya text-only: bila
+// Rantai 'fast' + 'ded' (WeizeRouter-dulu + fallback Crown sejak 2026-11-20
+// + ArxPay TERAKHIR sejak 2026-11-20) SEMUA kakinya text-only: bila
 // sebuah caller melampirkan gambar/PDF, semua kaki dilewati dan rantai
 // menjadi KOSONG — sebelum guard ini, hasilnya adalah kegagalan diam-diam
 // 'No AI provider keys configured' yang menyesatkan (bukan soal key sama
@@ -548,7 +552,7 @@ function mediaGuardFailure(mode, hasImage, hasPdf, requestId) {
     errorCode: 'MEDIA_NOT_SUPPORTED_FOR_MODE',
     errorClass: 'media_unsupported',
     error:
-      `Mode '${mode}' tidak mendukung media (${mediaKind}) — rantai mode ini hanya teks (WeizeRouter + Crown, keduanya text-only). ` +
+      `Mode '${mode}' tidak mendukung media (${mediaKind}) — rantai mode ini hanya teks (WeizeRouter + Crown + ArxPay, semuanya text-only). ` +
       `Hapus ${mediaKind} dari permintaan atau gunakan mode 'vision' untuk media.`,
     requestId,
     attempts: [],
@@ -681,8 +685,9 @@ export async function executeAI(o, onAttempt) {
     }
   } else if (mode === 'ded') {
     // DED detail (owner 2026-11-19 02:09): WeizeRouter PERTAMA — 5 model
-    // WEIZEROUTER_DED_MODELS, lalu Crown fallback (owner 2026-11-20 10:56)
-    // — tanpa ArxPay/Gemini/Atmo/ZyRouter.
+    // WEIZEROUTER_DED_MODELS, lalu Crown fallback (owner 2026-11-20 10:56),
+    // lalu ArxPay TERAKHIR (owner 2026-11-20 16:54 — sesudah WeizeRouter
+    // 401 + Crown 403 live 16:28) — tanpa Gemini/Atmo/ZyRouter.
     // DULU (sampai 2026-11-20) ded WeizeRouter-ONLY tanpa fallback; satu
     // key WeizeRouter 401 mematikan seluruh rantai (gagal live 10:46).
     // DULU (sampai 2026-11-18) ded berbagi rantai advanced dengan model
@@ -695,6 +700,7 @@ export async function executeAI(o, onAttempt) {
     if (hasImage || hasPdf) return mediaGuardFailure(mode, hasImage, hasPdf, requestId);
     attempts.push(...weizeDedTextAttempts);
     attempts.push(...crownDedTextAttempts);
+    attempts.push(...arxpayTextAttempts);
   } else if (mode === 'advanced') {
     // Advanced (Chat AI Mendalam + Document AI) — TIDAK BERUBAH
     // (keputusan WeizeRouter-only 2026-11-19 hanya untuk 'ded' + 'fast';
@@ -740,7 +746,9 @@ export async function executeAI(o, onAttempt) {
   } else {
     // Fast (owner 2026-11-19 02:09): WeizeRouter PERTAMA — 6 model
     // WEIZEROUTER_FAST_MODELS, lalu Crown fallback (owner 2026-11-20
-    // 10:56) — tanpa ArxPay/Gemini/River/Atmo/ZyRouter/ekor. DULU (sampai
+    // 10:56), lalu ArxPay TERAKHIR (owner 2026-11-20 16:54 — sesudah
+    // WeizeRouter 401 + Crown 403 live 16:28) — tanpa Gemini/River/
+    // Atmo/ZyRouter/ekor. DULU (sampai
     // 2026-11-20) fast WeizeRouter-ONLY tanpa fallback; DULU (sampai
     // 2026-11-18) fast memakai rantai multi-provider (WeizeRouter v2 ->
     // ArxPay F3 -> Crown -> Gemini -> River -> Atmo -> ZyRouter -> ekor
@@ -748,7 +756,7 @@ export async function executeAI(o, onAttempt) {
     // Cabang else ini juga menampung mode tak dikenal — termasuk 'quick'
     // dari aiProviderRouter (AI price search, provider engine, estimate
     // pipeline: teks saja, aman) dan productId tak dikenal via
-    // productIdToMode default — semuanya kini WeizeRouter-dulu + Crown.
+    // productIdToMode default — semuanya kini WeizeRouter-dulu + Crown + ArxPay.
     // DOKUMEN_AI TIDAK lagi memakai rantai ini
     // (pindah ke 'advanced' 2026-11-16). Kaki WeizeRouter text-only —
     // bila ada pemanggil yang melampirkan gambar/PDF, rantai ini KOSONG
@@ -762,6 +770,7 @@ export async function executeAI(o, onAttempt) {
     if (hasImage || hasPdf) return mediaGuardFailure(mode, hasImage, hasPdf, requestId);
     attempts.push(...weizeFastTextAttempts);
     attempts.push(...crownDedTextAttempts);
+    attempts.push(...arxpayTextAttempts);
   }
 
   if (attempts.length === 0) {
