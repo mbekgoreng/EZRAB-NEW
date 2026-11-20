@@ -93,6 +93,8 @@ export interface FullAiQuantityAssumptionItem {
   name: string;
   unit: string;
   category: string;
+  /** Rumus yang sudah dinyatakan rencana untuk item ini (bila ada) — disertakan agar model mengevaluasi rumusnya sendiri, bukan mengarang dari nol. */
+  formula?: string;
 }
 
 export interface FullAiQuantityAssumptionInput {
@@ -108,10 +110,14 @@ export interface FullAiQuantityAssumptionInput {
  * pass estimasi konteks-denah, model diminta mengisi kuantitas ASUMSI
  * + rumus + dasar asumsi, dari konteks proyek dan rumah tinggal tipikal.
  * Setiap angka WAJIB punya dasar yang dinyatakan; angka harus mengikuti
- * rumus/dasar itu. Item yang benar-benar tidak bisa diasumsikan
- * dikembalikan qty null (tetap dikecualikan, bukan dikarang paksa).
- * Respons kecil (satu angka+rumus+dasar per item) — pemanggil memakai
- * maxTokens kecil; satuan TIDAK BOLEH diubah (dipertahankan aplikasi).
+ * rumus/dasar itu. Keputusan owner 2026-11-21 00:48 ("biarin AI yang
+ * mengatur"): TIDAK ADA jalan keluar null — SEMUA item WAJIB diisi; bila
+ * dokumen tanpa dimensi, model mengasumsikan dari ukuran rumah tinggal
+ * tipikal tipe proyek ini dengan dasar dinyatakan. Rumus yang sudah
+ * dinyatakan rencana disertakan per item agar model mengevaluasi
+ * rumusnya sendiri. Respons kecil (satu angka+rumus+dasar per item) —
+ * pemanggil memakai maxTokens kecil; satuan TIDAK BOLEH diubah
+ * (dipertahankan aplikasi).
  */
 export function buildFullAiQuantityAssumptionPrompt(
   input: FullAiQuantityAssumptionInput,
@@ -125,7 +131,7 @@ ATURAN:
 - "qty" = angka saja (contoh: 12.5), bukan object; tanpa koma pemisah ribuan.
 - "formula" = rumus singkat yang menghasilkan qty (contoh: "19,45 / 9" atau "30 x 0,32"); "basis" = dasar asumsi dalam satu kalimat (contoh: "satu titik penerangan per ±9 m² luas lantai").
 - Dasarkan asumsi pada konteks denah yang diketahui (bila ada) dan ukuran rumah tinggal tipikal tipe proyek ini.
-- Bila sebuah item benar-benar tidak bisa diasumsikan (bahkan dengan asumsi), beri "qty": null untuk item itu — jangan memaksa angka tanpa dasar.
+- WAJIB isi SEMUA item — TIDAK ADA "qty": null. Bila dokumen tanpa dimensi sama sekali, asumsikan dari ukuran rumah tinggal tipikal tipe proyek ini (luas lantai, keliling, jumlah ruang yang wajar) dan NYATAKAN dasar itu di "basis". Item yang rumus dari rencananya sudah tercantum di bawah: hitung qty dari rumus itu.
 
 STRUKTUR OUTPUT:
 { "fills": [ { "no": 1, "qty": 12.5, "formula": "25 x 0,5", "basis": "panjang dinding 25 m dari keliling denah, tebal 0,5 m" } ] }`;
@@ -134,7 +140,12 @@ STRUKTUR OUTPUT:
     ? `KONTEKS DENAH YANG DIKETAHUI:\n${input.contextLines.map((l) => `- ${l}`).join('\n')}\n\n`
     : '';
   const itemLines = input.items
-    .map((it) => `- no ${it.no}: "${it.name}" (satuan: ${it.unit || '(kosong)'}; kategori: ${it.category})`)
+    .map((it) => {
+      const formulaPart = it.formula && it.formula.trim()
+        ? `; rumus dari rencana: "${it.formula.trim()}"`
+        : '';
+      return `- no ${it.no}: "${it.name}" (satuan: ${it.unit || '(kosong)'}; kategori: ${it.category}${formulaPart})`;
+    })
     .join('\n');
   const prompt = `=== ISI KUANTITAS KOSONG DENGAN ASUMSI ===
 Proyek tipe "${input.projectType}".

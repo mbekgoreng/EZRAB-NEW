@@ -890,7 +890,13 @@ export class FullAiDedService {
       // bila ada yang kosong), lalu kuantitas vs rumus direkonsiliasi
       // deterministik (reconcileFullAiQuantityFormulas), dan warning
       // eksklusi yang sudah basi dibersihkan.
+      // Perluasan owner 2026-11-21 00:48 ("biarin AI yang mengatur"):
+      // sesudah pass AI, jaring pengaman deterministik
+      // (fillFullAiQuantitiesFromFormulas) mengisi item yang nilainya
+      // masih kosong tetapi rumusnya dapat dihitung — menutup keadaan
+      // live "berumus tetapi kosong" (22 item, run 00:45).
       let filledQtyAi = 0;
+      let filledQtyFormula = 0;
       if (policy === 'FULL_AI') {
         const filledQty = completeFullAiQuantities(items);
         if (filledQty > 0) {
@@ -910,9 +916,19 @@ export class FullAiDedService {
             `${aiFill.filled} kuantitas dilengkapi dari asumsi AI (estimasi berlabel ASSUMPTION — bukan fakta gambar, perlu tinjauan pengguna).`
           );
         }
-        if (aiFill.failed) {
+        const formulaFilled = fillFullAiQuantitiesFromFormulas(items);
+        filledQtyFormula = formulaFilled;
+        if (formulaFilled > 0) {
           warnings.push(
-            `Pass asumsi kuantitas AI gagal (${aiFill.failureMessage}) — ${aiFill.unfilled} item tanpa kuantitas tetap dikecualikan dari total.`
+            `${formulaFilled} kuantitas dihitung dari rumus yang dinyatakan item (estimasi berlabel ASSUMPTION — bukan fakta gambar, perlu tinjauan pengguna).`
+          );
+        }
+        if (aiFill.failed) {
+          // Hitung sisa kosong SESUDAH jaring pengaman agar angkanya
+          // jujur (jaring bisa mengisi sebagian walau pass AI gagal).
+          const stillMissing = items.filter((it) => it.quantity?.value == null).length;
+          warnings.push(
+            `Pass asumsi kuantitas AI gagal (${aiFill.failureMessage}) — ${stillMissing} item tanpa kuantitas tetap dikecualikan dari total.`
           );
         }
         const correctedQty = reconcileFullAiQuantityFormulas(items);
@@ -939,7 +955,7 @@ export class FullAiDedService {
         'QUANTITY_VOLUME',
         policy === 'FULL_AI' ? 'done' : 'skipped',
         policy === 'FULL_AI'
-          ? `Pass penyelesaian kuantitas: ${items.filter((it) => (it.quantityAudit?.method ?? it.quantity.quantityAudit?.method) === 'plan-context-estimate').length} kuantitas dilengkapi dari konteks denah, ${filledQtyAi} dilengkapi dari asumsi AI.`
+          ? `Pass penyelesaian kuantitas: ${items.filter((it) => (it.quantityAudit?.method ?? it.quantity.quantityAudit?.method) === 'plan-context-estimate').length} kuantitas dilengkapi dari konteks denah, ${filledQtyAi} dilengkapi dari asumsi AI, ${filledQtyFormula} dihitung dari rumus item.`
           : 'Dilewati: penyelesaian kuantitas hanya berjalan pada policy FULL_AI.',
       );
 
@@ -1249,15 +1265,21 @@ export function completeFullAiQuantities(items: FullAiItem[]): number {
 // ---------------------------------------------------------------------------
 // KEPUTUSAN OWNER 2026-11-20 23:18 (mode Full AI SAJA): AI boleh mengarang
 // harga maupun kuantitas, asal konsisten dengan asumsinya sendiri dan
-// tetap berlabel asumsi; AI mengerjakan semuanya. Tiga fungsi di bawah
-// ini mewujudkan keputusan itu di jalur Full AI — semuanya dipanggil
-// HANYA dari blok `policy === 'FULL_AI'` di runExecute; mode EZRAB AI
+// tetap berlabel asumsi; AI mengerjakan semuanya. Perluasan 2026-11-21
+// 00:48 ("biarin AI yang mengatur"): AI WAJIB mengisi SEMUA kuantitas —
+// jalan keluar null di prompt dihapus, rumus item disertakan, dan jaring
+// pengaman deterministik ditambahkan. Empat fungsi di bawah ini
+// mewujudkan keputusan itu di jalur Full AI — semuanya dipanggil HANYA
+// dari blok `policy === 'FULL_AI'` di runExecute; mode EZRAB AI
 // (DATABASE) tidak pernah menyentuhnya.
 //  - completeFullAiQuantitiesWithAi: pass asumsi AI untuk item yang
 //    kuantitasnya masih kosong sesudah pass estimasi konteks-denah
 //    (aturan konteks hanya mencakup jenis item tertentu dan butuh
 //    konteks denah — tanpa dimensi sama sekali, aturannya tidak jalan
 //    dan item dikecualikan; pass ini meminta model mengisi sisanya).
+//  - fillFullAiQuantitiesFromFormulas: jaring pengaman deterministik —
+//    item yang nilainya masih kosong tetapi rumusnya dapat dihitung
+//    diisi dari rumus itu (menutup keadaan live "berumus tetapi kosong").
 //  - recomputeQuantityFromFormula + reconcileFullAiQuantityFormulas:
 //    cek konsistensi deterministik — angka harus mengikuti rumus/dasar
 //    yang dinyatakan. Bila tidak cocok, dipakai hasil hitung ulang dan
@@ -1540,6 +1562,70 @@ export function reconcileFullAiQuantityFormulas(items: FullAiItem[]): number {
 }
 
 /**
+ * Jaring pengaman deterministik (keputusan owner 2026-11-21 00:48 —
+ * "biarin AI yang mengatur", mode Full AI SAJA). Berjalan SESUDAH pass
+ * asumsi AI: item yang nilainya MASIH kosong tetapi rumusnya dapat
+ * dihitung (parser konservatif yang sama dengan rekonsiliasi — hanya
+ * ekspresi runtut) DIISI dari rumus itu. Menutup langsung keadaan live
+ * 00:45 ("22 item berumus tetapi kuantitasnya kosong"): rumus sudah ada,
+ * nilainya yang kosong — dan pass AI mengembalikan 0 isian.
+ *
+ * Isian berlabel ASSUMPTION + catatan "dihitung dari rumus yang
+ * dinyatakan item" + blok audit bersama (ESTIMATED_FROM_CONTEXT,
+ * PENDING) + subtotal dihitung ulang — pola yang sama dengan isian
+ * asumsi AI. Satuan hitung (titik/unit/buah/dst.) dibulatkan ke atas
+ * (ceil), satuan kontinu dibulatkan 2 desimal — semantik yang sama
+ * dengan rekonsiliasi. Rumus yang tidak dapat diparse dilewati (item
+ * tetap dikecualikan dengan warning yang sudah ada); item tanpa satuan
+ * tidak diisi (tak bisa masuk total tanpa satuan); nilai 0 eksplisit
+ * tidak pernah diubah (konsisten dengan rekonsiliasi).
+ * Mengembalikan jumlah item yang diisi.
+ */
+export function fillFullAiQuantitiesFromFormulas(items: FullAiItem[]): number {
+  let filled = 0;
+  for (const it of items) {
+    const value = it.quantity?.value;
+    if (typeof value === 'number' && Number.isFinite(value) && value >= 0) continue;
+    if (!it.quantity?.unit || !it.quantity.unit.trim()) continue;
+    const formula = it.quantity?.formula;
+    if (!formula || typeof formula !== 'string' || !formula.trim()) continue;
+    const recomputed = recomputeQuantityFromFormula(formula);
+    if (recomputed == null) continue;
+    const unitNorm = (it.quantity.unit || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const target = COUNT_UNITS.has(unitNorm)
+      ? Math.ceil(recomputed)
+      : Math.round(recomputed * 100) / 100;
+    if (!Number.isFinite(target) || target <= 0) continue;
+    const original = it.quantity.value;
+    it.quantity = {
+      ...it.quantity,
+      value: target,
+      provenance: 'ASSUMPTION',
+      confidence: 'MEDIUM',
+      assumptions: [...(it.quantity.assumptions ?? []), `Kuantitas dihitung dari rumus yang dinyatakan item (${formula}).`],
+      notes: [it.quantity.notes, `Kuantitas dihitung dari rumus yang dinyatakan item (nilai asli: ${original == null ? 'kosong' : original}). Estimasi — bukan fakta gambar.`]
+        .filter(Boolean)
+        .join(' '),
+    };
+    const audit = buildQuantityAudit(adaptFullAiItemForQuantityServices(it));
+    it.quantity = { ...it.quantity, quantityAudit: audit };
+    it.quantityAudit = audit;
+    const { subtotal } = verifySubtotal(it.quantity.value, it.price.unitPrice);
+    const { status, exclusionReason } = resolveFullAiItemStatus(
+      { value: it.quantity.value, unit: it.quantity.unit, provenance: it.quantity.provenance },
+      { unitPrice: it.price.unitPrice, unit: it.price.unit, source: it.price.source },
+    );
+    const include = status === 'READY' && subtotal != null && subtotal > 0;
+    it.subtotal = include ? subtotal : null;
+    it.subtotalVerified = include;
+    it.status = include ? 'READY' : status;
+    it.exclusionReason = include ? null : exclusionReason;
+    filled++;
+  }
+  return filled;
+}
+
+/**
  * Hapus warning eksklusi "tidak masuk total" yang sudah BASI — yaitu
  * warning untuk item yang kini masuk total sesudah pass penyelesaian.
  * Warning dipertahankan bila ada SATU SAJA item bernama sama yang masih
@@ -1582,9 +1668,12 @@ export interface FullAiQuantityAssumptionResult {
  * provenance ASSUMPTION + formula + dasar + catatan nilai asli, dengan
  * blok audit bersama (klasifikasi ESTIMATED_FROM_CONTEXT, metode
  * 'ai-inference-or-assumption', verifikasi UNVERIFIED, persetujuan
- * PENDING) — tidak pernah menyamar sebagai fakta gambar. Item yang
- * model kembalikan qty null / tanpa dasar / tanpa satuan tetap
- * dikecualikan secara jujur. Kegagalan transport/parse TIDAK
+ * PENDING) — tidak pernah menyamar sebagai fakta gambar. Sejak
+ * keputusan owner 2026-11-21 00:48 prompt TIDAK LAGI memberi jalan
+ * keluar null (wajib isi semua) dan rumus yang sudah dimiliki item
+ * disertakan; validasi tetap menolak isian tanpa angka positif /
+ * tanpa dasar (asumsi tanpa dasar bukan asumsi) dan item tanpa satuan
+ * tetap tidak dimintakan asumsi. Kegagalan transport/parse TIDAK
  * menggagalkan run: dikembalikan failed + pesan, pemanggil mencatat
  * warning jujur. Tanpa item kosong → tanpa panggilan AI.
  */
@@ -1608,7 +1697,7 @@ export async function completeFullAiQuantitiesWithAi(
   const built = buildFullAiQuantityAssumptionPrompt({
     projectType: deps.projectType,
     contextLines,
-    items: missing.map((it) => ({ no: it.no, name: it.name, unit: it.quantity.unit, category: it.category })),
+    items: missing.map((it) => ({ no: it.no, name: it.name, unit: it.quantity.unit, category: it.category, formula: it.quantity.formula })),
   });
   const result = await deps.execute({
     productId: deps.productId,

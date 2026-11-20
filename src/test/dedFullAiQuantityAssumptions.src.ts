@@ -29,6 +29,24 @@
  *     penyelesaian (sebelum ini basi — item 22 live membawa warning
  *     MISSING_QUANTITY padahal sudah masuk total).
  *
+ * PERLUASAN 2026-11-21 00:48 ("biarin AI yang mengatur", keputusan
+ * owner sesudah run live 00:45): 54 item, 32 ada volume, 22 MASIH
+ * dikecualikan — pass asumsi mengisi 0 dari 22 (filled=0, failed=false;
+ * model memakai jalan keluar null di prompt) dan QC melaporkan "22 item
+ * berumus tetapi kuantitasnya kosong". Tiga perubahan:
+ *  4. Prompt asumsi: jalan keluar null DIHAPUS (wajib isi SEMUA item;
+ *     tanpa dimensi → asumsikan dari rumah tinggal tipikal dengan dasar
+ *     dinyatakan) + rumus yang sudah dimiliki tiap item DISERTAKAN di
+ *     baris item prompt (skenario J mengunci teksnya).
+ *  5. fillFullAiQuantitiesFromFormulas — jaring pengaman deterministik
+ *     sesudah pass AI: item yang nilainya masih kosong tetapi rumusnya
+ *     dapat dihitung diisi dari rumus itu (ASSUMPTION + catatan
+ *     "dihitung dari rumus yang dinyatakan item" + audit PENDING).
+ *     Skenario I mereplikasi keadaan live: model mengembalikan null
+ *     semua, jaring tetap mengisi yang berumus.
+ *  6. Warning gagal pass kini menghitung sisa kosong SESUDAH jaring
+ *     pengaman agar angkanya jujur.
+ *
  * CATATAN KOREKSI — contoh "tidak konsisten" dari diagnosis induk
  * (item 22: "Luas lantai 19,45 m² ÷ 19 m² per titik = 3 titik")
  * ternyata KONSISTEN: rumus aturan konteks adalah "÷ ±9 m² per titik"
@@ -44,6 +62,7 @@
  * (setiap execute() Full AI memakai minimum 3 detik.)
  */
 import { fullAiDedService, recomputeQuantityFromFormula } from '../ai-tools/ded-full-ai/service';
+import { buildFullAiQuantityAssumptionPrompt } from '../ai-tools/ded-full-ai/prompts';
 import { aiToolsProviderClient } from '../ai-tools/providerClient';
 
 let pass = 0, fail = 0;
@@ -362,8 +381,9 @@ async function main() {
     check('G2 item tetap tanpa kuantitas + dikecualikan (fail-closed)',
       outG.items[0]?.quantity?.value == null && outG.items[0]?.subtotal == null &&
       outG.items[0]?.exclusionReason === 'MISSING_QUANTITY');
-    check('G3 tanpa warning asumsi/koreksi',
-      !hasWarning(outG, 'asumsi AI') && !hasWarning(outG, 'dikoreksi'));
+    check('G3 tanpa warning asumsi/koreksi/rumus',
+      !hasWarning(outG, 'asumsi AI') && !hasWarning(outG, 'dikoreksi') &&
+      !hasWarning(outG, 'dihitung dari rumus'));
 
     // =======================================================================
     // H. Unit test parser rumus (murni, tanpa run DED).
@@ -386,6 +406,95 @@ async function main() {
       recomputeQuantityFromFormula('2 x 3 dan 4 x 5') === null);
     check('H10 rumus kosong/null -> null',
       recomputeQuantityFromFormula('') === null && recomputeQuantityFromFormula(null) === null);
+
+    // =======================================================================
+    // I. Jaring pengaman rumus (replikasi live 00:45): model mengembalikan
+    // null SEMUA, tetapi item berumus tetap terisi deterministik.
+    // =======================================================================
+    console.log('== I. Model null semua -> jaring rumus isi yang berumus ==');
+    resetMock(
+      () => ({
+        items: [
+          { no: 1, name: 'Galian tanah pondasi', category: 'Tanah', wbsGroup: 'Pekerjaan Tanah dan Pondasi',
+            qty: null, unit: 'm3', formula: '30 x 0.32', provenance: 'UNRESOLVED',
+            assumptions: '', price: 85000, priceUnit: 'm3', priceSource: 'AI_ESTIMATE' },
+          { no: 2, name: 'Cerucuk ulin 80x80x2000 mm', category: 'Pondasi', wbsGroup: 'Pekerjaan Pondasi',
+            qty: null, unit: 'batang', formula: '19,45 ÷ 9', provenance: 'UNRESOLVED',
+            assumptions: '', price: 120000, priceUnit: 'batang', priceSource: 'AI_ESTIMATE' },
+          { no: 3, name: 'Dinding bata merah', category: 'Dinding', wbsGroup: 'Pekerjaan Dinding',
+            qty: null, unit: 'm2', formula: 'luas dinding dari denah, perlu konfirmasi dimensi', provenance: 'UNRESOLVED',
+            assumptions: '', price: 95000, priceUnit: 'm2', priceSource: 'AI_ESTIMATE' },
+        ],
+        projectInfo: { scopeSummary: 'rumah 1 lantai' },
+      }),
+      () => ({ fills: [
+        { no: 1, qty: null, formula: '', basis: '' },
+        { no: 2, qty: null, formula: '', basis: '' },
+        { no: 3, qty: null, formula: '', basis: '' },
+      ] }),
+    );
+    const pdfI = buildPdf([`${M1} Pekerjaan pondasi batu kali galian tanah cerucuk dinding bata merah.`]);
+    const outI: any = await runDed(pdfI, 'i-jaring-rumus.pdf');
+    const galianI = itemByName(outI, 'Galian tanah pondasi');
+    const cerucukI = itemByName(outI, 'Cerucuk ulin 80x80x2000 mm');
+    const dindingI = itemByName(outI, 'Dinding bata merah');
+    check('I1 jaring isi dari rumus: galian 30 x 0.32 = 9.6; cerucuk ceil(19,45/9) = 3 batang',
+      galianI?.quantity?.value === 9.6 && cerucukI?.quantity?.value === 3,
+      `galian=${galianI?.quantity?.value} cerucuk=${cerucukI?.quantity?.value}`);
+    check('I2 isian jaring berlabel ASSUMPTION + catatan "dihitung dari rumus"',
+      galianI?.quantity?.provenance === 'ASSUMPTION' &&
+      (galianI?.quantity?.notes || '').includes('dihitung dari rumus yang dinyatakan item') &&
+      (galianI?.quantity?.assumptions || []).some((a: string) => a.includes('dihitung dari rumus')),
+      JSON.stringify(galianI?.quantity));
+    check('I3 subtotal ikut terhitung (9.6*85000 + 3*120000)',
+      galianI?.subtotal === 816000 && cerucukI?.subtotal === 360000 &&
+      outI.grandTotal === 816000 + 360000,
+      `galian=${galianI?.subtotal} cerucuk=${cerucukI?.subtotal} total=${outI.grandTotal}`);
+    check('I4 tepat 1 item dikecualikan (rumus prosa tidak bisa dihitung)',
+      outI.summary?.excludedFromTotal === 1,
+      `excluded=${outI.summary?.excludedFromTotal}`);
+    check('I5 warning jujur "dihitung dari rumus" tercatat; tanpa warning "asumsi AI"',
+      hasWarning(outI, 'dihitung dari rumus yang dinyatakan item') &&
+      !hasWarning(outI, 'asumsi AI'),
+      JSON.stringify(outI.warnings));
+    const fillPromptI = callPrompts.find((p) => p.includes('ISI KUANTITAS KOSONG')) || '';
+    check('I6 prompt asumsi menyertakan rumus tiap item ("30 x 0.32", "19,45 ÷ 9")',
+      fillPromptI.includes('rumus dari rencana: "30 x 0.32"') &&
+      fillPromptI.includes('rumus dari rencana: "19,45 ÷ 9"'),
+      fillPromptI);
+    check('I7 blok audit isian jaring: ESTIMATED_FROM_CONTEXT + PENDING',
+      galianI?.quantityAudit?.classification === 'ESTIMATED_FROM_CONTEXT' &&
+      galianI?.quantityAudit?.userApprovalStatus === 'PENDING',
+      JSON.stringify(galianI?.quantityAudit));
+    check('I8 item rumus prosa tetap MISSING_QUANTITY + warning eksklusi ada',
+      dindingI?.quantity?.value == null &&
+      dindingI?.exclusionReason === 'MISSING_QUANTITY' &&
+      hasWarning(outI, 'Item "Dinding bata merah" tidak masuk total'));
+
+    // =======================================================================
+    // J. Teks prompt asumsi: tanpa jalan keluar null + rumus disertakan.
+    // =======================================================================
+    console.log('== J. Teks prompt asumsi (langsung, tanpa run DED) ==');
+    const builtJ = buildFullAiQuantityAssumptionPrompt({
+      projectType: 'Rumah Tinggal',
+      contextLines: ['Luas lantai diketahui ±19,45 m²'],
+      items: [
+        { no: 6, name: 'Galian tanah pondasi', unit: 'm3', category: 'Tanah', formula: '30 x 0.32' },
+        { no: 7, name: 'Dinding bata merah', unit: 'm2', category: 'Dinding' },
+      ],
+    });
+    check('J1 system mewajibkan isi SEMUA item, tanpa kalimat jalan keluar null',
+      builtJ.system.includes('WAJIB isi SEMUA item') &&
+      !builtJ.system.includes('tidak bisa diasumsikan'),
+      builtJ.system);
+    check('J2 prompt menyertakan rumus item yang punya rumus',
+      builtJ.prompt.includes('rumus dari rencana: "30 x 0.32"'), builtJ.prompt);
+    check('J3 item tanpa rumus tidak membawa label rumus (tepat 1 kemunculan)',
+      (builtJ.prompt.match(/rumus dari rencana/g) || []).length === 1, builtJ.prompt);
+    check('J4 aturan JSON murni + jangan ubah nomor tetap ada',
+      builtJ.system.includes('JSON MURNI') && builtJ.system.includes('JANGAN ubah nomor'));
+    check('J5 instruksi hitung dari rumus tercantum disertakan',
+      builtJ.system.includes('hitung qty dari rumus itu'));
   } finally {
     // Pulihkan client asli — jangan biarkan stub bocor ke proses lain.
     (aiToolsProviderClient as any).execute = origExecute;
