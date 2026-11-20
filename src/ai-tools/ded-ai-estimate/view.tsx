@@ -28,7 +28,7 @@ import { buildFullAiAttachmentOutput, resolveDedAiMode } from './dedModeUi';
 import { loadPersistedDedMode } from './dedModePersistence';
 import { probeDedPdf, resolvePageScope } from './parser';
 import { DedAiInputView, DedAiSession } from './DedAiInputView';
-import { DedAiProgressView, DedAiStage, getStageDefs, ProgressSummary } from './DedAiProgressView';
+import { DedAiProgressView, DedAiStage, applyStageMark, getStageDefs, mapProgressStageKey, ProgressSummary } from './DedAiProgressView';
 import { DedAiResultView } from './DedAiResultView';
 import { fullAiDedService, FULL_AI_TIMEOUT_MS } from '../ded-full-ai/service';
 import { FullAiOutput, FullAiItem } from '../ded-full-ai/types';
@@ -115,8 +115,8 @@ const loadDrafts = (): DraftRecord[] => {
   } catch { return []; }
 };
 
-const initialStages = (t: (key: string) => string): DedAiStage[] =>
-  getStageDefs(t).map((d) => ({ ...d, status: 'waiting' as const }));
+const initialStages = (t: (key: string) => string, mode: DedRabAiMode = 'EZRAB_AI'): DedAiStage[] =>
+  getStageDefs(t, mode).map((d) => ({ ...d, status: 'waiting' as const }));
 
 export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
   const { t } = useI18n();
@@ -137,7 +137,7 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
       policy: policyForMode(persistedMode), fullAi: persistedMode === 'FULL_AI', targetProjectId: null,
     };
   });
-  const [stages, setStages] = useState<DedAiStage[]>(() => initialStages(t));
+  const [stages, setStages] = useState<DedAiStage[]>(() => initialStages(t, loadPersistedDedMode()));
   const [percent, setPercent] = useState(0);
   const [statusLine, setStatusLine] = useState(t('ai.ded.preparing'));
   const [fullAiOutput, setFullAiOutput] = useState<FullAiOutput | null>(null);
@@ -151,6 +151,12 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
   const [draftSaved, setDraftSaved] = useState(false);
   const [finalized, setFinalized] = useState(false);
   const cancelRef = useRef(false);
+  // Mode lari yang sedang berjalan (diferensiasi progres 2 mode, ACC
+  // 2026-11-20): markUpTo butuh mode untuk memetakan kunci tahap 6-tahap
+  // ke daftar tahap tampilan (3 tahap Full AI vs 6 tahap EZRAB AI).
+  // Diisi runAnalysis sesudah resolveDedAiMode, sebelum satu pun
+  // markUpTo dipanggil; tidak pernah dibaca di luar lari.
+  const runModeRef = useRef<DedRabAiMode>('EZRAB_AI');
 
   // Perbaikan final: konsumsi entry DED. Sebelumnya view ini TIDAK PERNAH
   // mengonsumsi entry klasik — hanya projectId via URL yang bertahan,
@@ -192,15 +198,15 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
 
   const setStage = (key: string, status: DedAiStage['status']) =>
     setStages((prev) => prev.map((s) => (s.key === key ? { ...s, status } : s)));
+  // markUpTo memakai kunci tahap 6-tahap di SEMUA situs panggil (tidak
+  // ada yang diubah); kunci dipetakan ke tahap tampilan mode berjalan
+  // (mapProgressStageKey) dan urutan diambil dari daftar mode itu —
+  // EZRAB_AI: pemetaan identitas + urutan 6 tahap (perilaku lama persis).
   const markUpTo = (key: string, status: DedAiStage['status']) => {
-    const order = getStageDefs(t).map((d) => d.key);
-    const idx = order.indexOf(key);
-    setStages((prev) => prev.map((s) => {
-      const si = order.indexOf(s.key);
-      if (si < idx) return s.status === 'waiting' ? { ...s, status: 'done' as const } : s;
-      if (si === idx) return { ...s, status };
-      return s;
-    }));
+    const mode = runModeRef.current;
+    const order = getStageDefs(t, mode).map((d) => d.key);
+    const mappedKey = mapProgressStageKey(key, mode);
+    setStages((prev) => applyStageMark(prev, order, mappedKey, status));
   };
 
   const runFullAiAnalysis = async (sess: DedAiSession, aiMode: DedRabAiMode) => {
@@ -357,6 +363,7 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
     // DUAL MODE (§3): dispatch pada MODE kanonis (dedMode), bukan
     // boolean fullAi — sesi lama tanpa dedMode dimigrasikan (mesin menang).
     const aiMode = resolveDedAiMode(sess);
+    runModeRef.current = aiMode;
     // Inisialisasi bersama KEDUA mode (mockup v2.3, ACC owner 2026-11-19):
     // cabang FULL_AI sebelumnya return SEBELUM setScreen('progress')
     // sehingga Full AI berjalan tanpa layar progress sama sekali. Init
@@ -375,7 +382,7 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
     setResultReady(false);
     setDraftSaved(false);
     setFinalized(false);
-    setStages(initialStages(t));
+    setStages(initialStages(t, aiMode));
     setPercent(2);
     const startedAt = Date.now();
     const totalSize = sess.files.reduce((a, f) => a + f.file.size, 0);
@@ -1015,6 +1022,7 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
         onBack={handleBack}
         onSeeResult={handleSeeResult}
         resultReady={resultReady}
+        dedMode={session.dedMode}
       />
     );
   } else if (screen === 'result' && fullAiOutput) {

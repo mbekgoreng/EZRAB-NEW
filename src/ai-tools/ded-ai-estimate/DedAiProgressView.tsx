@@ -1,6 +1,10 @@
 /**
  * DED-AI Estimate — Tampilan 2: PROGRESS.
- * 6 tahap berbasis status pipeline aktual + panel ringkasan. Tanpa progress palsu.
+ * Tahap berbasis status pipeline aktual + panel ringkasan. Tanpa progress palsu.
+ * Tahap dibedakan per MODE (mockup "DED progress 2 mode", ACC owner 2026-11-20):
+ * EZRAB AI = 6 tahap database; Full AI = 3 tahap ringkas (diterima → scan →
+ * AI menyusun estimasi). FAST/DETAIL adalah sub-pilihan kedalaman di kedua
+ * mode, bukan pembeda tahap.
  */
 import React from 'react';
 import {
@@ -10,6 +14,7 @@ import {
 } from 'lucide-react';
 import './dedAi.css';
 import { useI18n } from '../../i18n/I18nContext';
+import type { DedRabAiMode } from './dedMode';
 
 export type StageStatus = 'waiting' | 'active' | 'done' | 'failed';
 
@@ -40,6 +45,10 @@ interface Props {
   onBack: () => void;
   onSeeResult: () => void;
   resultReady: boolean;
+  /** Mode DED kanonis — hanya dipakai untuk kalimat penjelas per mode di
+   *  kepala tampilan. Daftar tahap sendiri dibangun pemanggil lewat
+   *  getStageDefs(t, mode). Absen → EZRAB_AI (default C2). */
+  dedMode?: DedRabAiMode;
 }
 
 const fmtSize = (b: number) =>
@@ -54,17 +63,72 @@ const fmtElapsed = (ms: number) => {
 
 export const getStageDefs = (
   t: (key: string) => string,
-): Array<{ key: string; title: string; desc: string; icon: React.ReactNode }> => [
-  { key: 'received', title: t('ai.ded.progress.stage_received_title'), desc: t('ai.ded.progress.stage_received_desc'), icon: <FileCheck size={17} /> },
-  { key: 'reading', title: t('ai.ded.progress.stage_reading_title'), desc: t('ai.ded.progress.stage_reading_desc'), icon: <BookOpen size={17} /> },
-  { key: 'extract', title: t('ai.ded.progress.stage_extract_title'), desc: t('ai.ded.progress.stage_extract_desc'), icon: <ScanSearch size={17} /> },
-  { key: 'identify', title: t('ai.ded.progress.stage_identify_title'), desc: t('ai.ded.progress.stage_identify_desc'), icon: <ListChecks size={17} /> },
-  { key: 'validate', title: t('ai.ded.progress.stage_validate_title'), desc: t('ai.ded.progress.stage_validate_desc'), icon: <ShieldCheck size={17} /> },
-  { key: 'prepare', title: t('ai.ded.progress.stage_prepare_title'), desc: t('ai.ded.progress.stage_prepare_desc'), icon: <PackageCheck size={17} /> },
-];
+  mode: DedRabAiMode = 'EZRAB_AI',
+): Array<{ key: string; title: string; desc: string; icon: React.ReactNode }> => {
+  if (mode === 'FULL_AI') {
+    // 3 tahap ringkas (mockup ACC 2026-11-20 — teks persis kamus).
+    // Tahap 1 memakai ulang kunci stage_received_* (teksnya identik).
+    return [
+      { key: 'received', title: t('ai.ded.progress.stage_received_title'), desc: t('ai.ded.progress.stage_received_desc'), icon: <FileCheck size={17} /> },
+      { key: 'scan', title: t('ai.ded.progress.stage_scan_title'), desc: t('ai.ded.progress.stage_scan_desc'), icon: <ScanSearch size={17} /> },
+      { key: 'compose', title: t('ai.ded.progress.stage_compose_title'), desc: t('ai.ded.progress.stage_compose_desc'), icon: <PackageCheck size={17} /> },
+    ];
+  }
+  // EZRAB AI: 6 tahap database — daftar ini BYTE-IDENTICAL dengan sebelum
+  // diferensiasi (jangan ubah urutan/kunci/teks tanpa ACC terpisah).
+  return [
+    { key: 'received', title: t('ai.ded.progress.stage_received_title'), desc: t('ai.ded.progress.stage_received_desc'), icon: <FileCheck size={17} /> },
+    { key: 'reading', title: t('ai.ded.progress.stage_reading_title'), desc: t('ai.ded.progress.stage_reading_desc'), icon: <BookOpen size={17} /> },
+    { key: 'extract', title: t('ai.ded.progress.stage_extract_title'), desc: t('ai.ded.progress.stage_extract_desc'), icon: <ScanSearch size={17} /> },
+    { key: 'identify', title: t('ai.ded.progress.stage_identify_title'), desc: t('ai.ded.progress.stage_identify_desc'), icon: <ListChecks size={17} /> },
+    { key: 'validate', title: t('ai.ded.progress.stage_validate_title'), desc: t('ai.ded.progress.stage_validate_desc'), icon: <ShieldCheck size={17} /> },
+    { key: 'prepare', title: t('ai.ded.progress.stage_prepare_title'), desc: t('ai.ded.progress.stage_prepare_desc'), icon: <PackageCheck size={17} /> },
+  ];
+};
+
+/**
+ * Pemetaan kunci tahap 6-tahap → tahap tampilan mode berjalan.
+ * FULL_AI: baca + ekstrak = "scan"; identifikasi + validasi + siapkan =
+ * "compose" (AI mengerjakan semuanya dalam satu tahap tampilan — tanpa
+ * tahap validasi database terpisah, sesuai mockup). EZRAB_AI: identitas.
+ * Kunci tak dikenal diteruskan apa adanya (perilaku lama dipertahankan).
+ */
+const FULL_AI_STAGE_KEY_MAP: Record<string, string> = {
+  reading: 'scan',
+  extract: 'scan',
+  identify: 'compose',
+  validate: 'compose',
+  prepare: 'compose',
+};
+
+export const mapProgressStageKey = (key: string, mode: DedRabAiMode): string => {
+  if (mode !== 'FULL_AI') return key;
+  return FULL_AI_STAGE_KEY_MAP[key] ?? key;
+};
+
+/**
+ * Inti markUpTo sebagai fungsi murni (dipindah verbatim dari view.tsx
+ * agar teruji): semua tahap SEBELUM target yang masih 'waiting' menjadi
+ * 'done'; target sendiri mendapat status baru; sisanya tidak berubah.
+ */
+export const applyStageMark = (
+  stages: DedAiStage[],
+  order: string[],
+  key: string,
+  status: StageStatus,
+): DedAiStage[] => {
+  const idx = order.indexOf(key);
+  return stages.map((s) => {
+    const si = order.indexOf(s.key);
+    if (si < idx) return s.status === 'waiting' ? { ...s, status: 'done' as const } : s;
+    if (si === idx) return { ...s, status };
+    return s;
+  });
+};
 
 export const DedAiProgressView: React.FC<Props> = ({
   stages, percent, statusLine, summary, error, onRetry, onBack, onSeeResult, resultReady,
+  dedMode = 'EZRAB_AI',
 }) => {
   const { t } = useI18n();
   const [now, setNow] = React.useState(Date.now());
@@ -78,6 +142,9 @@ export const DedAiProgressView: React.FC<Props> = ({
       <div className="dedai-head">
         <h1>{t('ai.ded.progress.head_a')} <span className="accent">{t('ai.ded.progress.head_b')}</span> {t('ai.ded.progress.head_c')}</h1>
         <p>{t('ai.ded.progress.head_sub')}</p>
+        <p style={{ fontSize: 13, opacity: 0.85, marginTop: 4 }}>
+          {t(dedMode === 'FULL_AI' ? 'ai.ded.progress.mode_note_full' : 'ai.ded.progress.mode_note_ezrab')}
+        </p>
       </div>
 
       <div className="dedai-steps">
