@@ -39,6 +39,8 @@ import {
 } from './templateCatalog';
 import { DocStudioReview } from './DocStudioReview';
 import { DocEnhance } from './DocEnhance';
+import { DocFunnel, type FunnelGenerateRequest, type FunnelGenerateResult } from './DocFunnel';
+import { formatFunnelDate } from '../funnel';
 import { documentStudioOrchestrator } from '../orchestrator';
 import { useCreditSimulation } from '../../../ai-credits/useCreditSimulation';
 import { aiFeatureLockedMessage, planAllowsAiFeature } from '../../../ai-credits/featureGate';
@@ -127,6 +129,8 @@ export const DocCreator: React.FC<{
   onAddHistory: (e: Omit<HistoryEntry, 'id' | 'at'>) => void;
   /** Navigasi silang ke menu lain (Dokumen Proyek & Tender = 'dokumen-tender'). Opsional: tanpa prop ini tautan silang tidak dirender. */
   onNavigateToMenu?: (menu: string) => void;
+  /** Buka permukaan analisis dokumen (tautan kecil langkah 1 funnel). Opsional: tanpa prop ini tautan tidak dirender. */
+  onOpenAnalysis?: () => void;
   /** Jalur Document Studio dari view.tsx: 'ai' = instruksi-pertama, 'template' = form-pertama, 'periksa' = editor + panel periksa. */
   studioPath?: DocStudioPath;
   /** Sub-tampilan aktif — state diangkat ke view.tsx agar tombolnya hidup di bar tab tunggal. */
@@ -135,7 +139,7 @@ export const DocCreator: React.FC<{
   onSubViewChange: (v: DocCreatorSubView) => void;
   /** Dilaporkan ke view.tsx saat mode empty/editor berubah — tombol sub-tampilan hanya tampil saat empty. */
   onEmptyChange?: (isEmpty: boolean) => void;
-}> = ({ drafts, onUpsertDraft, onAddHistory, onNavigateToMenu, studioPath, subView, onSubViewChange, onEmptyChange }) => {
+}> = ({ drafts, onUpsertDraft, onAddHistory, onNavigateToMenu, onOpenAnalysis, studioPath, subView, onSubViewChange, onEmptyChange }) => {
   const { t } = useI18n();
   // Gerbang paket (simulasi): mode "Buat dengan AI" (generate bebas AI)
   // mengikuti entitlement aiDocuments plans.ts — tertutup untuk Free &
@@ -223,12 +227,19 @@ export const DocCreator: React.FC<{
   const [translating, setTranslating] = useState(false);
   const [translateInfo, setTranslateInfo] = useState<string | null>(null);
 
+  /* Funnel "Mau bikin apa?" (di-ACC owner 2026-11-20): entri DEFAULT
+     pembuatan dokumen pada jalur kreasi (ai/template). Form lengkap lama
+     tetap bisa dijangkau lewat tautan di dalam funnel & di atas form lama. */
+  const [funnelActive, setFunnelActive] = useState(true);
+  const [funnelBusy, setFunnelBusy] = useState(false);
+
   /* Jalur Studio dari view.tsx mengatur mode tampil; sub-tampilan di bar tab
      tunggal tetap bebas dipakai pengguna setelahnya (efek hanya berjalan
-     saat jalur berubah). */
+     saat jalur berubah). Setiap jalur kreasi dibuka kembali pada funnel. */
   useEffect(() => {
     if (!studioPath) return;
     onSubViewChange('buat');
+    setFunnelActive(true);
     if (studioPath === 'ai') setCreateMode('ai');
     if (studioPath === 'template') setCreateMode('form');
   }, [studioPath]);
@@ -508,6 +519,85 @@ export const DocCreator: React.FC<{
       setError(e instanceof Error ? e.message : t('ai.doc.err_unexpected'));
     } finally {
       setBusy(false);
+    }
+  };
+
+  /* ---------------- generate via funnel "Mau bikin apa?" ---------------- */
+
+  /** Generate dari funnel: pengguna hanya memberi isi pokok + tanggal.
+      Template/subjenis dari langkah 2 funnel; tanggal masuk ke DATA DOKUMEN
+      (field tanggalDokumen, bila template memilikinya) DAN ke instruksi
+      (agar template tanpa field tanggal — mis. bebas — tetap menerima
+      tanggalnya). Field lain dibiarkan kosong → AI menandai [ISI: ...]
+      sesuai aturan integritas yang sama dengan form lama. Berbeda dengan
+      runGenerate, fungsi ini TIDAK beralih ke mode editor — funnel
+      menampilkan layar Selesai sendiri; draf + html disimpan di state yang
+      sama sehingga ekspor PDF/Word dan editor memakai draf yang sama. */
+  const runFunnelGenerate = async (req: FunnelGenerateRequest): Promise<FunnelGenerateResult> => {
+    if (!docAiAllowed) return { ok: false, error: docAiLockedMsg };
+    if (funnelBusy) return { ok: false, error: 'Generate sedang berjalan.' };
+    const baseMeta = TEMPLATE_META[req.choice.templateId];
+    if (!baseMeta) return { ok: false, error: `Template "${req.choice.templateId}" tidak ditemukan.` };
+    const meta = resolveTemplate(baseMeta, req.choice.subtypeId);
+    const tmplName = ALL_TEMPLATES.find((x) => x.id === req.choice.templateId)?.name ?? req.choice.label;
+    const subLabel = req.choice.subtypeId ? subtypeLabel(baseMeta, req.choice.subtypeId) : '';
+    const docName = subLabel ? `${tmplName} — ${subLabel}` : tmplName;
+    const funnelFieldValues = { tanggalDokumen: req.date };
+    const funnelContext = collectProjectContext(project ?? null, defaultProfile, {
+      templateMeta: meta,
+      sources: { project: true, company: true },
+    });
+    const funnelInstruction =
+      `${req.prompt.trim()}\n\nTanggal dokumen: ${formatFunnelDate(req.date)}.`;
+    setFunnelBusy(true);
+    try {
+      const res = await documentStudioOrchestrator.handle({
+        intent: 'CREATE_DOCUMENT',
+        instruction: funnelInstruction,
+        templateMeta: meta,
+        fieldValues: funnelFieldValues,
+        contextFields: funnelContext,
+        documentName: docName,
+        fileName: docName,
+      });
+      if (!res.success) {
+        return { ok: false, error: `${res.errorCode || 'ERROR'}: ${res.message || t('ai.doc.err_failed')}` };
+      }
+      const newHtml = markdownToHtml(res.content || '');
+      const rec: DraftRecord = {
+        id: newId('draft'),
+        templateId: req.choice.templateId,
+        templateName: docName,
+        title: `${docName} — ${project?.name || t('ai.doc.create.no_project')}`,
+        content: newHtml,
+        contentFormat: 'html',
+        projectId: project?.id,
+        projectName: project?.name,
+        status: 'draft',
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        contextSnapshot: funnelContext,
+        promptVersion: res.promptVersion,
+      };
+      setGenMissing(res.missingFields);
+      setGenTruncated(res.truncated === true);
+      loadingRef.current = true;
+      setHtml(newHtml);
+      setEditorKey((k) => k + 1);
+      await persist(rec);
+      onAddHistory({
+        type: 'draft',
+        docIds: [],
+        docNames: [],
+        title: `${t('ai.doc.create.hist_a')} ${docName}`,
+        resultPreview: (res.content || '').slice(0, 300),
+        resultFull: res.content || '',
+      });
+      return { ok: true, draft: rec, html: newHtml };
+    } catch (e: unknown) {
+      return { ok: false, error: e instanceof Error ? e.message : t('ai.doc.err_unexpected') };
+    } finally {
+      setFunnelBusy(false);
     }
   };
 
@@ -1022,6 +1112,28 @@ export const DocCreator: React.FC<{
     );
   }
 
+  /* Funnel "Mau bikin apa?" — entri default pembuatan dokumen pada jalur
+     kreasi (ai/template). Jalur 'periksa' tetap memakai form lama (pilih
+     draf untuk diperiksa); form lengkap lama tetap bisa dijangkau dari
+     funnel dan dari tautan di atas form lama. */
+  if (mode === 'empty' && subView === 'buat' && studioPath !== 'periksa' && funnelActive) {
+    return (
+      <div className="docai-tab">
+        <DocFunnel
+          onGenerate={runFunnelGenerate}
+          onExport={(kind) => void doExport(kind)}
+          onOpenInEditor={() => { if (draft) setMode('editor'); }}
+          onNavigateToMenu={onNavigateToMenu}
+          onOpenAnalysis={onOpenAnalysis}
+          onUseLegacyForm={() => setFunnelActive(false)}
+          kopHeaderHtml={kopHtml(effectiveProfile) || ''}
+          docAiAllowed={docAiAllowed}
+          docAiLockedMsg={docAiLockedMsg}
+        />
+      </div>
+    );
+  }
+
   if (mode === 'empty') {
     return (
       <div className="docai-tab">
@@ -1032,6 +1144,11 @@ export const DocCreator: React.FC<{
             draf tetap berlabel DRAF di editor/riwayat. */}
         <div className="docai-empty docai-edempty">
           <div className="docai-edform">
+            {studioPath !== 'periksa' && (
+              <button type="button" className="docai-linkbtn" onClick={() => setFunnelActive(true)}>
+                Kembali ke panduan “Mau bikin apa?”
+              </button>
+            )}
             {/* Workspace dua kolom (kontrak Child 2, document-ai.css;
                 revisi Child 5 — fit remediation): kiri .docai-col-compose =
                 mode buat + instruksi + pilih template/proyek + FIELD ISIAN

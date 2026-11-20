@@ -567,6 +567,7 @@ export const DokumenAiView: React.FC<DokumenAiViewProps> = ({ onAnalysisActiveCh
             onUpsertDraft={upsertDraft}
             onAddHistory={addHistory}
             onNavigateToMenu={onNavigateToMenu}
+            onOpenAnalysis={() => switchTab('library')}
             studioPath={STUDIO_PATH[tab]}
             subView={creatorSubView}
             onSubViewChange={setCreatorSubView}
