@@ -1138,7 +1138,7 @@ export class DedAiEstimateService {
           systemPrompt: built.system,
           jsonMode: true,
           maxTokens,
-          timeoutMs: mode === 'FAST' ? 120000 : 180000,
+          timeoutMs: 300000, // 5 menit kedua mode (owner 2026-11-20 "coba 5 menit aja"; dulu FAST 120 dtk / DETAIL 180 dtk).
         })
       );
       passTrace.retryCount = execution.retries;

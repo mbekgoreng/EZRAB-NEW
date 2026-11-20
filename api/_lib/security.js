@@ -234,6 +234,25 @@ export function validateAiInput(body) {
     }
   }
   const jsonMode = Boolean(body.jsonMode);
+  // Streaming SSE (Fase 1, 2026-11-20): flag `stream` HANYA aktif bila
+  // literal boolean true — string 'true'/1/dll. TIDAK mengaktifkan
+  // (fail-closed; field tak dikenal sebelumnya dihilangkan diam-diam,
+  // dan flag streaming tidak boleh menyala karena koersi longgar).
+  // Kombinasi yang ditolak eksplisit (INVALID_REQUEST, bukan diabaikan
+  // diam-diam): stream + jsonMode (JSON harus lengkap sebelum parse —
+  // DED/pass terstruktur tetap buffered) dan stream + media (Fase 1
+  // teks saja; vision tetap buffered sampai leg streaming vision
+  // terverifikasi terpisah). Cek kombinasi ada di bawah, sesudah media
+  // disanitasi.
+  const stream = body.stream === true;
+  // conversationId opsional (korelasi stream klien, Fase 1): diteruskan
+  // apa adanya ke event message_start bila string tak kosong; dipotong
+  // 128 karakter. Server tidak memvalidasi keberadaannya — ini label
+  // korelasi klien, bukan otorisasi.
+  let conversationId = null;
+  if (typeof body.conversationId === 'string' && body.conversationId.trim()) {
+    conversationId = body.conversationId.trim().slice(0, 128);
+  }
   // Media (vision): base64 murni atau data URL. Batas 3,5 juta karakter
   // (~2,6 MB biner) agar tetap di bawah limit body Vercel.
   const { data: imageDataBase64, mime: imageMimeType, error: imageError, errorKind: imageErrorKind } = sanitizeMedia(
@@ -252,6 +271,9 @@ export function validateAiInput(body) {
     'pdfDataBase64'
   );
   if (pdfError) fail(pdfError, pdfErrorKind);
+  // Kombinasi streaming yang ditolak (lihat komentar flag `stream` di atas).
+  if (stream && jsonMode) fail('stream tidak dapat dipakai bersama jsonMode', 'invalid');
+  if (stream && (imageDataBase64 || pdfDataBase64)) fail('stream belum mendukung media (gambar/PDF)', 'invalid');
   return {
     errors,
     errorCode,
@@ -262,6 +284,8 @@ export function validateAiInput(body) {
       maxTokens,
       systemPrompt,
       jsonMode,
+      stream,
+      conversationId,
       imageDataBase64,
       imageMimeType,
       pdfDataBase64,

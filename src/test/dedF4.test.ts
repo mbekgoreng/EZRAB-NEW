@@ -50,9 +50,11 @@ describe('F4 3.1 — provenance identitas aktual dari respons gateway', () => {
 });
 
 describe('F4 3.3 — timeout disamakan dengan plafon gateway & dinyatakan terbuka', () => {
-  it('mode Mendalam (ADVANCED) meminta tepat plafon 180 detik, bukan 240', () => {
-    expect(FULL_AI_TIMEOUT_MS.ADVANCED).toBe(180_000);
-    expect(FULL_AI_TIMEOUT_MS.FAST).toBe(120_000);
+  // Re-baseline sadar 2026-11-20 (keputusan owner "coba 5 menit aja"):
+  // plafon klien naik 180->300 dtk; kedua mode kini meminta tepat 300 dtk.
+  it('kedua mode meminta tepat plafon 300 detik (5 menit)', () => {
+    expect(FULL_AI_TIMEOUT_MS.ADVANCED).toBe(300_000);
+    expect(FULL_AI_TIMEOUT_MS.FAST).toBe(300_000);
   });
 });
 

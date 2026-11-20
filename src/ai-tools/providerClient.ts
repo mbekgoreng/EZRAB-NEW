@@ -10,6 +10,13 @@ import { getModelTarget } from './aiModelRegistry';
 import { aiToolsError, AIToolsStructuredError, AIToolsErrorCode } from './types';
 import { aiGatewayAuthHeaders } from './aiGatewayAuth';
 import {
+  createSseParser,
+  createLegStaging,
+  type StreamEvent,
+  type StreamErrorEvent,
+  type StreamMessageCompleteEvent,
+} from './ezrab-ai/streamEvents';
+import {
   withTimeout,
   isAiTimeoutError,
   AI_GATEWAY_AUTH_TIMEOUT_MS,
@@ -190,7 +197,10 @@ export interface AiToolsSuccess<T = unknown> {
 
 export type AiToolsResult<T = unknown> = AiToolsSuccess<T> | AIToolsStructuredError;
 
-const MAX_TIMEOUT_MS = 180_000;
+// Plafon timeout SEMUA permintaan AI (2026-11-20: 180->300 dtk atas
+// keputusan owner "coba 5 menit aja") — plafon fungsi Vercel 300 dtk
+// adalah dindingnya; klien meng-abort di timeoutMs + 1 dtk.
+const MAX_TIMEOUT_MS = 300_000;
 
 /**
  * Map a gateway HTTP failure onto a user-facing error (Fase 3B).
@@ -462,6 +472,74 @@ export function buildJsonOnlyRetryRequest(request: AiToolsRequest): AiToolsReque
   };
 }
 
+/**
+ * Pemetaan errorCode event `stream_error` gateway ke kode error klien.
+ * Pesan event dipakai apa adanya (gateway sudah user-safe); kode yang
+ * tidak dikenal dipetakan ke MODEL_ERROR retryable (gangguan transien).
+ * Pure + exported untuk tes.
+ */
+export function mapStreamError(
+  event: StreamErrorEvent,
+  stage: string,
+): AIToolsStructuredError {
+  const serverCode = event.errorCode;
+  let code: AIToolsErrorCode;
+  let retryable: boolean;
+  switch (serverCode) {
+    case 'CONTENT_REJECTED':
+      code = 'CONTENT_REJECTED';
+      retryable = false;
+      break;
+    case 'AI_BAD_REQUEST':
+      code = 'AI_BAD_REQUEST';
+      retryable = false;
+      break;
+    case 'MEDIA_NOT_SUPPORTED_FOR_MODE':
+      code = 'INVALID_REQUEST';
+      retryable = false;
+      break;
+    case 'AUTH_REQUIRED':
+      code = 'AUTH_REQUIRED';
+      retryable = false;
+      break;
+    case 'DEMO_RESTRICTED':
+      code = 'DEMO_RESTRICTED';
+      retryable = false;
+      break;
+    case 'PAYLOAD_TOO_LARGE':
+      code = 'PAYLOAD_TOO_LARGE';
+      retryable = false;
+      break;
+    case 'RATE_LIMITED':
+      code = 'MODEL_ERROR';
+      retryable = true;
+      break;
+    default:
+      // AI_UNAVAILABLE + kode tak dikenal = gangguan layanan (transien).
+      code = 'MODEL_ERROR';
+      retryable = event.retryable === true;
+      break;
+  }
+  return aiToolsError(code, `${stage}:stream`, event.message || 'Layanan AI gagal memproses permintaan.', {
+    retryable,
+  });
+}
+
+/**
+ * Callback streaming untuk executeStream(). onEvent menerima SEMUA event
+ * tervalidasi (urutan jaringan); onDelta hanya delta konten; onFirstChunk
+ * dipanggil SEKALI pada content_delta pertama — sinyal yang dipakai Fase 2
+ * untuk membatalkan waitForMinimum (token pertama langsung tampil).
+ * Konten parsial yang sudah disampaikan via callback adalah milik
+ * pemanggil — hasil akhir executeStream TIDAK membawa konten parsial
+ * pada kegagalan (Fase 2 menyimpannya di conversation store).
+ */
+export interface AiToolsStreamHandlers {
+  onEvent?: (event: StreamEvent) => void;
+  onDelta?: (delta: string, leg: number) => void;
+  onFirstChunk?: () => void;
+}
+
 export class AiToolsProviderClient {
   /**
    * Satu panggilan model. LIVE-AI-FIX (2026-11-15): bila jsonMode dan
@@ -705,6 +783,291 @@ export class AiToolsProviderClient {
       request.signal?.removeEventListener('abort', onCallerAbort);
       const code = err?.name === 'AbortError' ? 'MODEL_TIMEOUT' : this.classifyError(err);
       return aiToolsError(code, `${stage}:http`, this.friendly(err, code), { retryable: true });
+    }
+  }
+
+  /**
+   * Streaming inkremental (Fase 1, 2026-11-20): SATU panggilan model yang
+   * sama seperti execute(), tetapi gateway membalas SSE (flag stream:true)
+   * dan konten mengalir per delta lewat `handlers` selagi dibaca.
+   * Nilai kembali = AiToolsResult yang SAMA bentuknya dengan execute()
+   * (content = gabungan delta leg yang melayani; usage dari
+   * message_complete) sehingga pemanggil bisa memakai salah satu jalur
+   * tanpa mengubah penanganan hasil.
+   *
+   * Transport ini BROWSER-ONLY (fetch ke /api/ai/tools/execute) — tidak
+   * ada cabang Node seperti execute(): adapter server dorman tidak punya
+   * varian streaming, dan tidak ada pemanggil server-side di Fase 1.
+   *
+   * Semantik yang SAMA dengan execute(): auth header 10 dtk (timeout ->
+   * MODEL_TIMEOUT presis), timeoutMs default 90 dtk cap 300 dtk (+1 dtk
+   * grace), sinyal pemanggil di-link ke controller internal, pemetaan
+   * error HTTP via mapGatewayHttpError. SATU perbedaan yang disengaja:
+   * timer timeout mencakup SELURUH stream (sampai message_complete /
+   * stream_error / abort), bukan hanya sampai header tiba seperti di
+   * execute() — timer yang mati sesudah header tidak melindungi stream
+   * yang menggantung di tengah jalan.
+   *
+   * Batas Fase 1 (gagal-cepat di klien, tanpa panggilan jaringan):
+   * jsonMode dan media (gambar/PDF) ditolak INVALID_REQUEST — gateway
+   * juga menolak kombinasi itu dengan 400. Fallback jujur: respons 200
+   * yang BUKAN event-stream dibaca sebagai JSON utuh (proxy/deployment
+   * lama) dengan penanganan yang sama seperti execute().
+   *
+   * Kegagalan di tengah stream (jaringan putus, abort, stream terpotong
+   * tanpa message_complete) mengembalikan structured error; konten
+   * parsial yang sudah disampaikan via onDelta/onEvent TETAP milik
+   * pemanggil (Fase 2 menyimpannya di conversation store sebagai pesan
+   * gagal berparsial). Event malformed dilewati parser (tidak
+   * menggagalkan stream); delta dari messageId lain diabaikan (pencegah
+   * chunk basi/asing).
+   */
+  public async executeStream<T = unknown>(
+    request: AiToolsRequest,
+    handlers: AiToolsStreamHandlers = {},
+  ): Promise<AiToolsResult<T>> {
+    const stage = request.productId;
+    if (request.jsonMode) {
+      return aiToolsError(
+        'INVALID_REQUEST',
+        `${stage}:stream`,
+        'Streaming tidak didukung untuk permintaan JSON terstruktur.',
+        { retryable: false },
+      );
+    }
+    if (request.imageDataBase64 || request.pdfDataBase64) {
+      return aiToolsError(
+        'INVALID_REQUEST',
+        `${stage}:stream`,
+        'Streaming belum mendukung media (gambar/PDF).',
+        { retryable: false },
+      );
+    }
+    if (request.signal?.aborted) {
+      return aiToolsError('MODEL_TIMEOUT', `${stage}:stream`, 'Permintaan dibatalkan sebelum dikirim.', {
+        retryable: true,
+      });
+    }
+    const controller = new AbortController();
+    const onCallerAbort = () => controller.abort();
+    request.signal?.addEventListener('abort', onCallerAbort, { once: true });
+    const cleanupListener = () => request.signal?.removeEventListener('abort', onCallerAbort);
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      const timeoutMs = Math.min(request.timeoutMs ?? 90000, MAX_TIMEOUT_MS);
+      let authHeaders: Record<string, string>;
+      try {
+        authHeaders = await withTimeout(
+          aiGatewayAuthHeaders(),
+          AI_GATEWAY_AUTH_TIMEOUT_MS,
+          AI_GATEWAY_AUTH_TIMEOUT_MESSAGE,
+        );
+      } catch (err) {
+        if (isAiTimeoutError(err)) {
+          return authTimeoutResult(stage);
+        }
+        throw err;
+      }
+      timer = globalThis.setTimeout(() => controller.abort(), timeoutMs + 1000);
+      const resp = await fetch('/api/ai/tools/execute', {
+        method: 'POST',
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+          ...authHeaders,
+          ...(request.idempotencyKey ? { 'Idempotency-Key': request.idempotencyKey } : {}),
+        },
+        body: JSON.stringify({
+          productId: request.productId,
+          ...(request.projectId ? { projectId: request.projectId } : {}),
+          prompt: request.prompt,
+          systemPrompt: request.systemPrompt,
+          jsonMode: false,
+          temperature: request.temperature ?? 0.1,
+          maxTokens: request.maxTokens ?? 6000,
+          timeoutMs,
+          mode: request.mode,
+          stream: true,
+        }),
+      });
+
+      if (!resp.ok) {
+        let serverErrorCode = '';
+        try {
+          const errJson = await resp.json();
+          serverErrorCode = String(errJson?.errorCode || '');
+        } catch {
+          /* body bukan JSON — lanjutkan dengan pemetaan status */
+        }
+        const mapped = mapGatewayHttpError(resp.status, serverErrorCode);
+        return aiToolsError(mapped.code, `${stage}:stream`, mapped.message, {
+          retryable: mapped.retryable,
+        });
+      }
+
+      const contentType =
+        resp.headers && typeof resp.headers.get === 'function'
+          ? resp.headers.get('content-type') || ''
+          : '';
+      if (!/text\/event-stream/i.test(contentType)) {
+        // Fallback JSON utuh (bukan SSE): penanganan identik execute().
+        let json: any;
+        try {
+          json = await resp.json();
+        } catch {
+          return aiToolsError(
+            'MALFORMED_JSON',
+            `${stage}:stream`,
+            'Respons layanan AI tidak dapat dibaca (format tidak valid). Silakan coba lagi.',
+            { retryable: true },
+          );
+        }
+        if (!json || json.success === false) {
+          return aiToolsError(
+            json?.errorCode || 'MODEL_ERROR',
+            json?.stage || `${stage}:gateway`,
+            json?.message || 'Layanan AI gagal memproses permintaan.',
+            { retryable: Boolean(json?.retryable) },
+          );
+        }
+        if (typeof json.content !== 'string' || json.content.trim() === '') {
+          return aiToolsError('EMPTY_RESPONSE', `${stage}:stream`, 'Model mengembalikan respons kosong.', {
+            retryable: true,
+          });
+        }
+        const gwUsage = normalizeAiUsage(json.usage ?? null, json.usageStatus);
+        return {
+          success: true,
+          content: json.content,
+          structured: null,
+          requestId: json.requestId,
+          provider: typeof json.provider === 'string' ? json.provider : null,
+          model: typeof json.model === 'string' ? json.model : null,
+          usage: gwUsage.usage,
+          usageStatus: gwUsage.usageStatus,
+        };
+      }
+
+      // Jalur SSE: baca inkremental via ReadableStream + TextDecoder.
+      const reader = resp.body?.getReader();
+      if (!reader) {
+        return aiToolsError(
+          'MALFORMED_JSON',
+          `${stage}:stream`,
+          'Respons streaming tidak memiliki body yang dapat dibaca.',
+          { retryable: true },
+        );
+      }
+      const staging = createLegStaging();
+      let messageId: string | null = null;
+      let streamError: StreamErrorEvent | null = null;
+      // `complete` di-assign di dalam callback onEvent — TS tidak melihat
+      // assignment itu dalam control-flow analysis, sehingga `= null` akan
+      // menyempitkan tipe ke `null` (lalu `never` sesudah cek `!complete`)
+      // dan akses .usage/.requestId/.model gagal TS2339. Widening eksplisit
+      // menjaga tipe deklarasi tetap utuh (perbaikan induk 2026-11-20).
+      let complete: StreamMessageCompleteEvent | null =
+        null as StreamMessageCompleteEvent | null;
+      let firstChunkFired = false;
+      const parser = createSseParser({
+        onEvent: (event) => {
+          handlers.onEvent?.(event);
+          switch (event.type) {
+            case 'message_start':
+              messageId = event.messageId;
+              break;
+            case 'content_delta': {
+              if (messageId !== null && event.messageId !== messageId) break;
+              staging.applyDelta(event.leg, event.delta);
+              if (!firstChunkFired) {
+                firstChunkFired = true;
+                handlers.onFirstChunk?.();
+              }
+              handlers.onDelta?.(event.delta, event.leg);
+              break;
+            }
+            case 'content_reset':
+              if (messageId !== null && event.messageId !== messageId) break;
+              staging.resetLeg(event.leg);
+              break;
+            case 'content_complete':
+              if (messageId !== null && event.messageId !== messageId) break;
+              staging.completeLeg(event.leg);
+              break;
+            case 'message_complete':
+              complete = event;
+              break;
+            case 'stream_error':
+              streamError = event;
+              break;
+            default:
+              break; // leg_start, leg_failed, stage — diteruskan ke onEvent saja
+          }
+        },
+        // Event malformed dilewati (parser tidak pernah melempar); tidak
+        // ada aksi tambahan — stream jalan terus.
+        onMalformed: () => {},
+      });
+      const decoder = new TextDecoder();
+      try {
+        for (;;) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          if (value) parser.feed(decoder.decode(value, { stream: true }));
+          if (complete || streamError) break;
+        }
+        parser.feed(decoder.decode());
+        parser.finish();
+      } catch (err: any) {
+        const code = err?.name === 'AbortError' ? 'MODEL_TIMEOUT' : this.classifyError(err);
+        return aiToolsError(code, `${stage}:stream`, this.friendly(err, code), { retryable: true });
+      } finally {
+        // Reader selalu dibatalkan saat keluar loop (selesai normal,
+        // berhenti dini sesudah event terminal, maupun error) agar
+        // koneksi tidak menggantung.
+        try {
+          await reader.cancel();
+        } catch {
+          /* reader sudah selesai/tertutup — abaikan */
+        }
+      }
+      if (streamError) {
+        return mapStreamError(streamError, stage);
+      }
+      if (!complete) {
+        return aiToolsError(
+          'NETWORK_ERROR',
+          `${stage}:stream`,
+          'Aliran respons AI terputus sebelum selesai.',
+          { retryable: true },
+        );
+      }
+      const content = staging.completedContent ?? '';
+      if (!content.trim()) {
+        return aiToolsError('EMPTY_RESPONSE', `${stage}:stream`, 'Model mengembalikan respons kosong.', {
+          retryable: true,
+        });
+      }
+      const gwUsage = normalizeAiUsage(complete.usage ?? null, complete.usageStatus);
+      return {
+        success: true,
+        content,
+        structured: null,
+        requestId: complete.requestId,
+        // Nilai tampil netral gateway (cerminan EZRAB_PROVIDER_DISPLAY di
+        // api/_lib/modelMasking.js — gateway tidak pernah mengirim nilai
+        // lain; event message_complete tidak membawa field provider).
+        provider: 'ezrab',
+        model: complete.model,
+        usage: gwUsage.usage,
+        usageStatus: gwUsage.usageStatus,
+      };
+    } catch (err: any) {
+      const code = err?.name === 'AbortError' ? 'MODEL_TIMEOUT' : this.classifyError(err);
+      return aiToolsError(code, `${stage}:stream`, this.friendly(err, code), { retryable: true });
+    } finally {
+      if (timer !== undefined) globalThis.clearTimeout(timer);
+      cleanupListener();
     }
   }
 

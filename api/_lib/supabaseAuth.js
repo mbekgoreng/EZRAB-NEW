@@ -45,7 +45,7 @@ export function extractBearerToken(req) {
  * D2 Option C (Phase 2, 2026-11-19): bounded JWT verification.
  * `client.auth.getUser()` is a network call to the Supabase Auth API with
  * NO timeout of its own — it runs BEFORE the provider chain (outside the
- * 100s chain budget, but INSIDE the client's abort window), so a hung Auth
+ * 240s chain budget, but INSIDE the client's abort window), so a hung Auth
  * API could eat the whole request window before any provider is tried.
  * The verification is therefore raced against a 10s bound: slow-but-alive
  * verifications (normally <1s) are untouched; a hung one fails CLOSED with

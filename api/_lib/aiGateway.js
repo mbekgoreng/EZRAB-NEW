@@ -45,6 +45,7 @@ import {
 } from './security.js';
 import { runChatFastWithMetering } from './chatFastMetering.js';
 import { EZRAB_PROVIDER_DISPLAY, modelAliasForMode } from './modelMasking.js';
+import { createSseWriter, STREAM_HEARTBEAT_MS } from './streamEvents.js';
 
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta';
 const ZYROUTER_BASE = 'https://api.zyrouter.com/v1';
@@ -295,6 +296,127 @@ function stripThinkBlocks(content) {
 }
 
 // ---------------------------------------------------------------------------
+// STREAMING (Fase 1, 2026-11-20) — sanitizer inkremental per provider.
+//
+// Jalur buffered membersihkan teks LENGKAP (stripThinkBlocks untuk Crown,
+// stripAtmoPromoFooter untuk AtmoRouter) sebelum dikembalikan. Jalur
+// streaming tidak bisa menunggu teks lengkap — tetapi TIDAK BOLEH kurang
+// ketat: blok reasoning Crown dan footer promo Atmo tetap tidak boleh
+// sampai ke pengguna. Sanitizer menahan hanya sebanyak yang diperlukan
+// untuk memutuskan dengan aman, dan `flush()` di akhir leg menutupnya
+// dengan aturan yang sama seperti versi buffered:
+//  - Crown: teks di dalam <think>...</think> dibuang; tag boleh terbelah
+//    antar chunk (ekor yang bisa jadi awalan tag ditahan sampai chunk
+//    berikutnya / flush). Blok tak tertutup dibuang di flush.
+//  - AtmoRouter: dua baris terakhir ditahan (footer promo + garis pemisah
+//    di atasnya); di flush, stripAtmoPromoFooter diterapkan ke ekor itu.
+//  - Provider lain: pass-through.
+// Konten final leg = gabungan output push()/flush() — PERSIS yang
+// di-stream ke klien (tidak ada pembersihan kedua yang bisa membuat
+// konten final berbeda dari yang tampil).
+// ---------------------------------------------------------------------------
+function longestPrefixSuffix(text, pattern) {
+  // Panjang suffix terpanjang dari `text` yang juga prefix dari `pattern`
+  // (untuk menahan tag yang terbelah antar chunk).
+  const max = Math.min(text.length, pattern.length - 1);
+  for (let n = max; n > 0; n--) {
+    if (text.endsWith(pattern.slice(0, n))) return n;
+  }
+  return 0;
+}
+
+function createStreamSanitizer(provider) {
+  if (provider === 'crown') {
+    let buf = '';
+    let inThink = false;
+    return {
+      push(chunk) {
+        buf += chunk;
+        let out = '';
+        for (;;) {
+          if (inThink) {
+            const end = buf.indexOf('</think>');
+            if (end === -1) {
+              // Seluruh buffer masih di dalam blok think — buang semua
+              // kecuali ekor yang bisa jadi awalan tag penutup.
+              const hold = longestPrefixSuffix(buf, '</think>');
+              buf = hold > 0 ? buf.slice(buf.length - hold) : '';
+              break;
+            }
+            buf = buf.slice(end + '</think>'.length);
+            inThink = false;
+            continue;
+          }
+          const start = buf.indexOf('<think>');
+          if (start === -1) {
+            const hold = longestPrefixSuffix(buf, '<think>');
+            out += hold > 0 ? buf.slice(0, buf.length - hold) : buf;
+            buf = hold > 0 ? buf.slice(buf.length - hold) : '';
+            break;
+          }
+          out += buf.slice(0, start);
+          buf = buf.slice(start + '<think>'.length);
+          inThink = true;
+        }
+        return out;
+      },
+      flush() {
+        // Blok think tak tertutup (terpotong) dibuang — sama seperti
+        // stripThinkBlocks. Di luar blok, sisa buffer aman.
+        const rest = inThink ? '' : buf;
+        buf = '';
+        inThink = false;
+        return rest;
+      },
+    };
+  }
+  if (provider === 'atmorouter') {
+    let buf = '';
+    return {
+      push(chunk) {
+        buf += chunk;
+        // Tahan dua baris terakhir (baris berjalan + baris sebelumnya):
+        // footer promo selalu baris non-kosong terakhir, dan garis
+        // pemisah tepat di atasnya adalah bagian dari blok promo.
+        const parts = buf.split('\n');
+        if (parts.length <= 2) return '';
+        const emit = parts.slice(0, parts.length - 2).join('\n') + '\n';
+        buf = parts.slice(parts.length - 2).join('\n');
+        return emit;
+      },
+      flush() {
+        const rest = buf;
+        buf = '';
+        return stripAtmoPromoFooter(rest);
+      },
+    };
+  }
+  return { push: (chunk) => chunk, flush: () => '' };
+}
+
+/**
+ * Bangun array messages OpenAI-compatible (dipakai callOAI + callOAIStream
+ * agar kedua jalur mengirim request yang identik kecuali flag stream).
+ */
+function buildOaiMessages(message, systemPrompt, media) {
+  const messages = [];
+  if (systemPrompt) messages.push({ role: 'system', content: systemPrompt });
+  // Vision via OpenAI-compatible image_url. PDF tidak didukung chat-completions
+  // generik → hanya gambar yang diteruskan; PDF ditangani Gemini.
+  const userContent = [{ type: 'text', text: message }];
+  if (media && media.imageDataBase64) {
+    userContent.push({
+      type: 'image_url',
+      image_url: {
+        url: `data:${media.imageMimeType || 'image/png'};base64,${media.imageDataBase64}`,
+      },
+    });
+  }
+  messages.push({ role: 'user', content: userContent });
+  return messages;
+}
+
+// ---------------------------------------------------------------------------
 // Klasifikasi kegagalan attempt (audit keamanan 2026-10-31, temuan F1).
 // Kegagalan provider BUKAN satu bit:
 // - 'policy' (400 bernada kebijakan konten/keamanan): prompt yang sama
@@ -319,15 +441,15 @@ function stripThinkBlocks(content) {
 //   timeout sekali DILEWATI untuk sisa rantai (lihat modelTimeouts di
 //   executeAI). F3 awalnya melewati PROVIDER (terbukti log Vercel 18 Nov:
 //   dua kaki WeizeRouter DETAIL diaborsi di 55.000/55.001 ms, total 110 dtk
-//   > budget rantai 100 dtk, sebelum ArxPay sempat dicoba) — sejak rantai
+//   > budget rantai 100 dtk saat itu, sebelum ArxPay sempat dicoba) — sejak rantai
 //   'fast'/'ded' WeizeRouter-only (owner 2026-11-19; sejak 2026-11-20
 //   ditambah fallback Crown, tapi skip level provider tetap mematikan
 //   semua kaki WeizeRouter dengan satu timeout), granularity dipindah
 //   ke level model: model berikutnya pada provider yang sama tetap
 //   dicoba (bukti 18 Nov: timeout berkorelasi dengan prompt besar /
 //   generasi lambat ±43,7 dtk, bukan outage endpoint — model lain bisa
-//   lebih cepat). Budget rantai 100 dtk tetap membatasi kerusakan worst
-//   case (±2 timeout per rantai).
+//   lebih cepat). Budget rantai 240 dtk tetap membatasi kerusakan worst
+//   case (±5 timeout per rantai: 5 x 55 dtk = 275 dtk).
 // ---------------------------------------------------------------------------
 const POLICY_MARKERS = /safety|content[_ -]?policy|polic|prohibit|harmful|blocked|moderation|inappropriate|disallowed/i;
 function classifyHttpFailure(status, bodyText) {
@@ -438,20 +560,7 @@ async function callGemini(key, model, message, systemPrompt, temperature, maxTok
 }
 
 async function callOAI(base, key, model, provider, message, systemPrompt, temperature, maxTokens, jsonMode, media, signal) {
-  const messages = [];
-  if (systemPrompt) messages.push({ role: 'system', content: systemPrompt });
-  // Vision via OpenAI-compatible image_url. PDF tidak didukung chat-completions
-  // generik → hanya gambar yang diteruskan; PDF ditangani Gemini.
-  const userContent = [{ type: 'text', text: message }];
-  if (media && media.imageDataBase64) {
-    userContent.push({
-      type: 'image_url',
-      image_url: {
-        url: `data:${media.imageMimeType || 'image/png'};base64,${media.imageDataBase64}`,
-      },
-    });
-  }
-  messages.push({ role: 'user', content: userContent });
+  const messages = buildOaiMessages(message, systemPrompt, media);
   const ctl = new AbortController();
   const t = setTimeout(() => ctl.abort(), ATTEMPT_TIMEOUT_MS);
   const unlinkExternalAbort = linkExternalAbort(signal, ctl);
@@ -529,6 +638,216 @@ async function callOAI(base, key, model, provider, message, systemPrompt, temper
   }
 }
 
+/**
+ * callOAIStream — varian streaming dari callOAI (Fase 1, 2026-11-20).
+ * Mengirim `stream: true` + `stream_options: { include_usage: true }` dan
+ * memanggil onDelta(safeText) untuk setiap potongan konten yang lolos
+ * sanitizer, SEGERA setelah chunk provider tiba. Bentuk return SAMA
+ * dengan callOAI ({ ok, content, model, provider, ms, usage, ... }) —
+ * `content` adalah gabungan PERSIS dari semua delta yang di-emit, sehingga
+ * hasil akhir, metering, dan idempotency bekerja tanpa perubahan.
+ *
+ * TIMEOUT IDLE (keputusan desain Fase 1, berbeda dari callOAI): timer
+ * 55 dtk di-reset pada SETIAP chunk yang diterima — stream yang terus
+ * mengalir adalah stream yang hidup, bukan hang. 55 dtk TANPA chunk =
+ * timeout (errorClass 'timeout', model dilewati seperti F3). Total waktu
+ * leg tetap dibatasi abort klien (cap 300 dtk) + maxDuration fungsi
+ * 300 dtk (R1 TERJAWAB: dihormati di Hobby). Jalur buffered TIDAK
+ * berubah (timeout total 55 dtk seperti sebelumnya).
+ *
+ * Fallback jujur (§4.4 Fase 0): provider yang mengabaikan `stream: true`
+ * dan membalas JSON biasa (atau body tanpa getReader, mis. mock) dibaca
+ * utuh lalu di-emit sebagai SATU delta — kontrak event sama, tanpa klaim
+ * token real-time yang tidak terjadi. Usage dibaca dari blok usage
+ * terakhir chunk SSE (bila include_usage dihormati); tanpa usage, field
+ * token null dan settle mengarah ke REQUIRES_REVIEW (tidak difabrikasi).
+ *
+ * Kegagalan di tengah stream (jaringan putus, timeout idle, abort):
+ * mengembalikan { ok:false, ... } seperti callOAI; delta yang sudah
+ * terkirim ditangani pemanggil (executeAI memancarkan leg_failed +
+ * content_reset sehingga klien menghapus konten provisional leg itu).
+ */
+async function callOAIStream(base, key, model, provider, message, systemPrompt, temperature, maxTokens, jsonMode, media, signal, onDelta) {
+  const messages = buildOaiMessages(message, systemPrompt, media);
+  const ctl = new AbortController();
+  let timer = null;
+  const armTimer = () => {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(() => ctl.abort(), ATTEMPT_TIMEOUT_MS);
+  };
+  armTimer();
+  const unlinkExternalAbort = linkExternalAbort(signal, ctl);
+  const cleanupAttempt = () => {
+    if (timer) {
+      clearTimeout(timer);
+      timer = null;
+    }
+    unlinkExternalAbort();
+  };
+  const started = Date.now();
+  const sanitizer = createStreamSanitizer(provider);
+  let content = '';
+  let lastUsage = null;
+  const emit = (text) => {
+    if (!text) return;
+    const safe = sanitizer.push(text);
+    if (safe) {
+      content += safe;
+      onDelta(safe);
+    }
+  };
+  // Bentuk usage OpenAI-compatible dari blok usage mentah — aturan yang
+  // SAMA dengan callOAI (field hilang tetap null, tidak pernah 0).
+  const buildUsage = (u) => {
+    const details = (u && u.prompt_tokens_details) || {};
+    const compDetails = (u && u.completion_tokens_details) || {};
+    return {
+      inputTokens: typeof u?.prompt_tokens === 'number' ? u.prompt_tokens : null,
+      outputTokens: typeof u?.completion_tokens === 'number' ? u.completion_tokens : null,
+      totalTokens: typeof u?.total_tokens === 'number' ? u.total_tokens : null,
+      cachedTokens: typeof details.cached_tokens === 'number' ? details.cached_tokens : null,
+      reasoningTokens: typeof compDetails.reasoning_tokens === 'number' ? compDetails.reasoning_tokens : null,
+      source: 'oai_usage',
+    };
+  };
+  let reader = null;
+  try {
+    const r = await fetch(base + '/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + key },
+      body: JSON.stringify(
+        Object.assign(
+          { model, messages, temperature, max_tokens: maxTokens, stream: true, stream_options: { include_usage: true } },
+          jsonMode ? { response_format: { type: 'json_object' } } : {}
+        )
+      ),
+      signal: ctl.signal,
+    });
+    if (!r.ok) {
+      cleanupAttempt();
+      return { ok: false, provider, model, ms: Date.now() - started, error: provider + ' ' + r.status, errorClass: classifyHttpFailure(r.status, await readFailureBody(r)), errorStatus: r.status };
+    }
+    const contentType =
+      (r.headers && typeof r.headers.get === 'function' ? r.headers.get('content-type') : '') || '';
+    const body = r.body;
+    const isSse = /text\/event-stream/i.test(contentType);
+    if (!isSse || !body || typeof body.getReader !== 'function') {
+      // Fallback: provider membalas JSON biasa (mengabaikan stream:true)
+      // atau body tidak bisa di-stream — baca utuh, emit SATU delta.
+      let raw = '';
+      if (typeof r.text === 'function') raw = await r.text();
+      else if (typeof r.json === 'function') raw = JSON.stringify(await r.json());
+      cleanupAttempt();
+      let d = null;
+      let sseUsage = null;
+      if (/^\s*data:/.test(raw)) {
+        const parsedSse = parseSseStreamContent(raw);
+        if (!parsedSse) {
+          return { ok: false, provider, model, ms: Date.now() - started, error: provider + ' invalid stream response', errorClass: 'bad_response' };
+        }
+        d = { choices: [{ message: { content: parsedSse.content } }] };
+        sseUsage = parsedSse.usage;
+      } else {
+        try {
+          d = JSON.parse(raw);
+        } catch {
+          return { ok: false, provider, model, ms: Date.now() - started, error: provider + ' invalid response', errorClass: 'bad_response' };
+        }
+      }
+      let text = (((d.choices || [])[0] || {}).message || {}).content || '';
+      if (provider === 'atmorouter') text = stripAtmoPromoFooter(text);
+      if (provider === 'crown') text = stripThinkBlocks(text);
+      const usage = buildUsage(sseUsage || d.usage || {});
+      if (!text) return { ok: false, provider, model, ms: Date.now() - started, error: 'Empty', errorClass: 'empty', usage };
+      content = text;
+      onDelta(text);
+      return { ok: true, content, model, provider, ms: Date.now() - started, usage, streamed: false };
+    }
+    // Jalur inkremental: baca SSE chunk demi chunk.
+    reader = body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '';
+    let sawData = false;
+    let done = false;
+    const handleDataLine = (line) => {
+      if (!line.startsWith('data:')) return;
+      const payload = line.slice('data:'.length).trim();
+      if (!payload || payload === '[DONE]') return;
+      let chunk;
+      try {
+        chunk = JSON.parse(payload);
+      } catch {
+        return; // baris SSE rusak — lewati, jangan gagalkan leg
+      }
+      sawData = true;
+      const choice = (chunk.choices || [])[0] || {};
+      const delta = choice.delta || {};
+      const msg = choice.message || {};
+      if (typeof delta.content === 'string') emit(delta.content);
+      else if (typeof msg.content === 'string') emit(msg.content);
+      if (chunk.usage) lastUsage = chunk.usage;
+    };
+    while (!done) {
+      const { value, done: readerDone } = await reader.read();
+      done = readerDone;
+      if (value) {
+        armTimer();
+        buf += decoder.decode(value, { stream: true });
+      }
+      let idx;
+      while ((idx = buf.indexOf('\n')) !== -1) {
+        const line = buf.slice(0, idx).trim();
+        buf = buf.slice(idx + 1);
+        handleDataLine(line);
+      }
+    }
+    buf += decoder.decode();
+    for (const line of buf.split('\n')) handleDataLine(line.trim());
+    cleanupAttempt();
+    if (!sawData) {
+      // Header mengklaim SSE tetapi body tidak membawa satu pun baris
+      // data — respons rusak, bukan completion kosong.
+      return { ok: false, provider, model, ms: Date.now() - started, error: provider + ' invalid stream response', errorClass: 'bad_response' };
+    }
+    const tail = sanitizer.flush();
+    if (tail) {
+      content += tail;
+      onDelta(tail);
+    }
+    const usage = buildUsage(lastUsage || {});
+    if (!content) return { ok: false, provider, model, ms: Date.now() - started, error: 'Empty', errorClass: 'empty', usage };
+    return { ok: true, content, model, provider, ms: Date.now() - started, usage, streamed: true };
+  } catch (e) {
+    cleanupAttempt();
+    if (reader) {
+      try {
+        await reader.cancel();
+      } catch {
+        /* stream sudah error/tertutup — abaikan */
+      }
+    }
+    const errorClass = signal && signal.aborted ? 'aborted' : (e && e.name === 'AbortError' ? 'timeout' : 'network');
+    return { ok: false, provider, model, ms: Date.now() - started, error: String((e && e.message) || e), errorClass };
+  }
+}
+
+/**
+ * callGeminiStream — kaki Gemini NATIVE dalam mode streaming (Fase 1).
+ * Endpoint streaming Gemini (`:streamGenerateContent`) adalah ASUMSI
+ * spesifikasi yang BELUM terverifikasi live (Fase 0 §4.4) — Fase 1 TIDAK
+ * mengimplementasikannya. Kaki ini menjalankan callGemini buffered yang
+ * sudah ada, lalu meng-emit konten lengkapnya sebagai SATU delta.
+ * Perilaku jujur: stream tetap berfungsi ujung-ke-ujung (event leg +
+ * delta + complete lengkap), tanpa mengklaim token inkremental yang
+ * tidak terjadi. Implementasi `:streamGenerateContent` sesungguhnya
+ * menunggu verifikasi live di fase berikutnya.
+ */
+async function callGeminiStream(key, model, message, systemPrompt, temperature, maxTokens, jsonMode, media, signal, onDelta) {
+  const r = await callGemini(key, model, message, systemPrompt, temperature, maxTokens, jsonMode, media, signal);
+  if (r.ok && r.content) onDelta(r.content);
+  return r;
+}
+
 // ---------------------------------------------------------------------------
 // B4 (2026-11-19) — MEDIA GUARD untuk rantai text-only (fast/ded).
 // Rantai 'fast' + 'ded' (WeizeRouter-dulu + fallback Crown sejak 2026-11-20
@@ -566,12 +885,50 @@ function mediaGuardFailure(mode, hasImage, hasPdf, requestId) {
  * sedang berjalan dibatalkan dan leg berikutnya tidak dimulai; executeAI
  * mengembalikan { ok:false, errorCode:'CLIENT_DISCONNECTED', aborted:true }.
  * Tanpa sinyal, perilaku identik seperti sebelumnya.
+ * o.stream + o.onStreamEvent (Fase 1 streaming, 2026-11-20): bila
+ * o.stream === true DAN o.onStreamEvent fungsi, rantai berjalan dalam mode
+ * streaming — tiap leg yang dijalankan memancarkan event ber-skala leg
+ * ({ type:'leg_start'|'content_delta'|'leg_failed'|'content_reset'|
+ * 'content_complete', leg, ... }) lewat callback; event ber-skala pesan
+ * (message_start/message_complete/stream_error) adalah tanggung jawab
+ * pemanggil (handleAiRequest). Event TIDAK membawa messageId (pemanggil
+ * menambahkannya) dan TIDAK membawa nama provider/model asli (leg hanya
+ * indeks urutan 0, 1, 2, ...). Bila leg gagal SESUDAH sebagian konten
+ * ter-stream, callback menerima leg_failed + content_reset agar klien
+ * menghapus konten provisional leg itu — dua completion tidak pernah
+ * tersambung. Bentuk return SAMA seperti mode buffered (content = gabungan
+ * delta leg yang melayani). Tanpa onStreamEvent, o.stream diabaikan dan
+ * rantai berjalan buffered seperti sebelumnya.
  */
 export async function executeAI(o, onAttempt) {
   const requestId = o.requestId || newRequestId();
   // ARS-08: sinyal disconnect klien (dari handleAiRequest) — null untuk
   // semua pemanggil lama, sehingga jalur tanpa disconnect tidak berubah.
   const signal = o.signal || null;
+  // Fase 1 streaming: mode streaming aktif HANYA bila flag stream true DAN
+  // callback event tersedia. Tanpa callback, stream tidak punya tujuan —
+  // rantai berjalan buffered (perilaku lama) daripada men-stream ke hampa.
+  const streamMode = o.stream === true && typeof o.onStreamEvent === 'function';
+  const onStreamEvent = streamMode ? o.onStreamEvent : null;
+  // Nomor leg = urutan attempt yang BENAR-BENAR dijalankan (leg yang
+  // dilewati aturan skip tidak mendapat nomor). Klien hanya memakai nomor
+  // ini untuk memisahkan staging konten antar leg.
+  let legCounter = 0;
+  // Callback event TIDAK BOLEH mematahkan rantai: kegagalan tulis SSE
+  // (socket mati) dicatat server-side; penghentian rantai tetap lewat
+  // sinyal disconnect, bukan lewat exception callback.
+  const safeEmitStreamEvent = (evt) => {
+    if (!onStreamEvent) return;
+    try {
+      onStreamEvent(evt);
+    } catch (e) {
+      try {
+        console.error('[ai-gateway] onStreamEvent gagal:', (e && e.message) || e);
+      } catch {
+        /* logging tidak boleh mematahkan rantai */
+      }
+    }
+  };
   // SECURITY: the system prompt sent to the provider ALWAYS starts with the
   // server-owned policy; the client's prompt is appended after it and can
   // never override it. See composeSystemPrompt().
@@ -612,18 +969,24 @@ export async function executeAI(o, onAttempt) {
   // (indeks 0-based ke daftar key provider itu — BUKAN nilai key, hanya
   // label slot) agar aturan dead-key skip bisa membedakan key yang satu
   // dari key lain milik provider yang sama (lihat authDeadKeySlots).
+  // Fase 1 streaming (2026-11-20): setiap attempt JUGA membawa
+  // `runStream(onDelta)` — varian streaming dari `run` (callOAIStream
+  // untuk kaki OpenAI-compatible; callGeminiStream = buffered + satu
+  // delta untuk kaki Gemini native). Loop memakai `run` bila mode
+  // non-streaming dan `runStream` bila streaming; semua aturan skip
+  // (budget, cap, timeout model, dead-key) berlaku identik di keduanya.
   const attempts = [];
-  const geminiCall = (k, model, keyIndex) => ({ provider: 'gemini', model, keyIndex, run: () => callGemini(k, model, message, systemPrompt, temperature, maxTokens, jsonMode, media, signal) });
-  const zyrouterCall = () => ({ provider: 'zyrouter', model: ADVANCED_MODEL, keyIndex: 0, run: () => callOAI(ZYROUTER_BASE, zk, ADVANCED_MODEL, 'zyrouter', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal) });
-  const atriaCall = (k, keyIndex) => ({ provider: 'atria', model: ATRIA_MODEL, keyIndex, run: () => callOAI(ATRIA_BASE, k, ATRIA_MODEL, 'atria', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal) });
-  const dahlCall = (k, keyIndex) => ({ provider: 'dahl', model: DAHL_MODEL, keyIndex, run: () => callOAI(DAHL_BASE, k, DAHL_MODEL, 'dahl', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal) });
-  const geminiOaiCall = (k, keyIndex) => ({ provider: 'gemini-oai', model: GEMINI_OAI_MODEL, keyIndex, run: () => callOAI(GEMINI_OAI_BASE, k, GEMINI_OAI_MODEL, 'gemini-oai', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal) });
-  const riverTextCall = (k, keyIndex) => ({ provider: 'river-text', model: RIVER_TEXT_MODEL, keyIndex, run: () => callOAI(RIVER_BASE, k, RIVER_TEXT_MODEL, 'river-text', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal) });
-  const riverVisionCall = (k, keyIndex) => ({ provider: 'river-vision', model: RIVER_VISION_MODEL, keyIndex, run: () => callOAI(RIVER_BASE, k, RIVER_VISION_MODEL, 'river-vision', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal) });
-  const atmoCall = (k, model, keyIndex) => ({ provider: 'atmorouter', model, keyIndex, run: () => callOAI(ATMO_BASE, k, model, 'atmorouter', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal) });
-  const crownCall = (k, model, keyIndex) => ({ provider: 'crown', model, keyIndex, run: () => callOAI(CROWN_BASE, k, model, 'crown', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal) });
-  const arxpayCall = (k, keyIndex) => ({ provider: 'arxpay', model: ARXPAY_MODEL, keyIndex, run: () => callOAI(ARXPAY_BASE, k, ARXPAY_MODEL, 'arxpay', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal) });
-  const weizeCall = (k, model, keyIndex) => ({ provider: 'weizerouter', model, keyIndex, run: () => callOAI(WEIZEROUTER_BASE, k, model, 'weizerouter', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal) });
+  const geminiCall = (k, model, keyIndex) => ({ provider: 'gemini', model, keyIndex, run: () => callGemini(k, model, message, systemPrompt, temperature, maxTokens, jsonMode, media, signal), runStream: (onDelta) => callGeminiStream(k, model, message, systemPrompt, temperature, maxTokens, jsonMode, media, signal, onDelta) });
+  const zyrouterCall = () => ({ provider: 'zyrouter', model: ADVANCED_MODEL, keyIndex: 0, run: () => callOAI(ZYROUTER_BASE, zk, ADVANCED_MODEL, 'zyrouter', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal), runStream: (onDelta) => callOAIStream(ZYROUTER_BASE, zk, ADVANCED_MODEL, 'zyrouter', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal, onDelta) });
+  const atriaCall = (k, keyIndex) => ({ provider: 'atria', model: ATRIA_MODEL, keyIndex, run: () => callOAI(ATRIA_BASE, k, ATRIA_MODEL, 'atria', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal), runStream: (onDelta) => callOAIStream(ATRIA_BASE, k, ATRIA_MODEL, 'atria', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal, onDelta) });
+  const dahlCall = (k, keyIndex) => ({ provider: 'dahl', model: DAHL_MODEL, keyIndex, run: () => callOAI(DAHL_BASE, k, DAHL_MODEL, 'dahl', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal), runStream: (onDelta) => callOAIStream(DAHL_BASE, k, DAHL_MODEL, 'dahl', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal, onDelta) });
+  const geminiOaiCall = (k, keyIndex) => ({ provider: 'gemini-oai', model: GEMINI_OAI_MODEL, keyIndex, run: () => callOAI(GEMINI_OAI_BASE, k, GEMINI_OAI_MODEL, 'gemini-oai', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal), runStream: (onDelta) => callOAIStream(GEMINI_OAI_BASE, k, GEMINI_OAI_MODEL, 'gemini-oai', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal, onDelta) });
+  const riverTextCall = (k, keyIndex) => ({ provider: 'river-text', model: RIVER_TEXT_MODEL, keyIndex, run: () => callOAI(RIVER_BASE, k, RIVER_TEXT_MODEL, 'river-text', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal), runStream: (onDelta) => callOAIStream(RIVER_BASE, k, RIVER_TEXT_MODEL, 'river-text', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal, onDelta) });
+  const riverVisionCall = (k, keyIndex) => ({ provider: 'river-vision', model: RIVER_VISION_MODEL, keyIndex, run: () => callOAI(RIVER_BASE, k, RIVER_VISION_MODEL, 'river-vision', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal), runStream: (onDelta) => callOAIStream(RIVER_BASE, k, RIVER_VISION_MODEL, 'river-vision', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal, onDelta) });
+  const atmoCall = (k, model, keyIndex) => ({ provider: 'atmorouter', model, keyIndex, run: () => callOAI(ATMO_BASE, k, model, 'atmorouter', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal), runStream: (onDelta) => callOAIStream(ATMO_BASE, k, model, 'atmorouter', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal, onDelta) });
+  const crownCall = (k, model, keyIndex) => ({ provider: 'crown', model, keyIndex, run: () => callOAI(CROWN_BASE, k, model, 'crown', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal), runStream: (onDelta) => callOAIStream(CROWN_BASE, k, model, 'crown', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal, onDelta) });
+  const arxpayCall = (k, keyIndex) => ({ provider: 'arxpay', model: ARXPAY_MODEL, keyIndex, run: () => callOAI(ARXPAY_BASE, k, ARXPAY_MODEL, 'arxpay', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal), runStream: (onDelta) => callOAIStream(ARXPAY_BASE, k, ARXPAY_MODEL, 'arxpay', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal, onDelta) });
+  const weizeCall = (k, model, keyIndex) => ({ provider: 'weizerouter', model, keyIndex, run: () => callOAI(WEIZEROUTER_BASE, k, model, 'weizerouter', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal), runStream: (onDelta) => callOAIStream(WEIZEROUTER_BASE, k, model, 'weizerouter', message, systemPrompt, temperature, maxTokens, jsonMode, media, signal, onDelta) });
   // Crown hanya untuk teks: bila ada gambar/PDF, Crown dilewati total
   // (image_url ditolak gateway Crown) — vision tetap ke rantai lamanya.
   // Chat memakai 3 model urutan owner (GLM -> DeepSeek -> MiniMax,
@@ -665,7 +1028,7 @@ export async function executeAI(o, onAttempt) {
   // Dead-key skip berlaku per provider:keyIndex: 401 WeizeRouter
   // ('weizerouter:0') TIDAK melewati kaki Crown ('crown:0'). Cap
   // attempt per-provider bersifat model-aware (3 model Crown -> cap 3),
-  // jadi ketiga model Crown tetap terjangkau; budget rantai 100 dtk dan
+  // jadi ketiga model Crown tetap terjangkau; budget rantai 240 dtk dan
   // timeout attempt 55 dtk berlaku seperti kaki lain (kegagalan CEPAT
   // WeizeRouter — 401/502/429 — mencapai Crown dalam hitungan detik;
   // kaki WeizeRouter yang MENGGANTUNG tetap memakan budget seperti
@@ -778,14 +1141,18 @@ export async function executeAI(o, onAttempt) {
   }
 
   const outcomes = [];
-  // Anggaran WAKTU TOTAL rantai (fix hang 2026-10-24): tanpa plafon ini,
+  // Anggaran WAKTU TOTAL rantai (fix hang 2026-10-24; dinaikkan 100->240 dtk
+  // 2026-11-20 atas keputusan owner "coba 5 menit aja"): tanpa plafon ini,
   // rantai yang menyempit (mis. ATMO_API_KEY belum terpasang) bisa membakar
-  // 55 dtk x banyak attempt (worst case ~220 dtk) untuk satu pesan chat —
-  // UI terlihat menggantung. Sesudah 100 dtk, attempt BARU tidak dimulai;
-  // attempt yang sedang berjalan tetap dibiarkan selesai (maks +55 dtk,
-  // masih di bawah plafon fungsi 300 dtk).
+  // 55 dtk x banyak attempt untuk satu pesan chat — UI terlihat menggantung.
+  // Sesudah 240 dtk, attempt BARU tidak dimulai; attempt yang sedang
+  // berjalan tetap dibiarkan selesai (maks +55 dtk -> worst case 295 dtk,
+  // masih di bawah plafon fungsi Vercel 300 dtk dan abort klien 301 dtk).
+  // Plafon klien naik bersamaan (MAX_TIMEOUT_MS 180->300 dtk) sehingga
+  // budget ini benar-benar bisa dipakai — dulu budget di atas ~125 dtk
+  // tidak pernah terjangkau karena klien membatalkan di 181 dtk.
   const chainStart = Date.now();
-  const CHAIN_BUDGET_MS = 100000;
+  const CHAIN_BUDGET_MS = 240000;
   // Anggaran percobaan per provider: begitu sebuah provider gagal, ia hanya
   // mendapat MAKS 1 percobaan ulang; attempt berikutnya untuk provider yang
   // sama dilewati dan failover lanjut ke provider berikutnya. Ini memutus
@@ -799,16 +1166,19 @@ export async function executeAI(o, onAttempt) {
   // sekali (55 dtk tanpa respons) dilewati untuk sisa rantai — model
   // berikutnya pada provider yang sama TETAP dicoba. F3 awalnya melewati
   // PROVIDER (terbukti log Vercel 18 Nov: DETAIL mati di 2×55 dtk
-  // WeizeRouter = 110 dtk > budget 100 dtk sebelum ArxPay sempat dicoba)
+  // WeizeRouter = 110 dtk > budget 100 dtk saat itu, sebelum ArxPay sempat dicoba)
   // — sejak rantai 'fast'/'ded' WeizeRouter-only (2026-11-19; sejak
   // 2026-11-20 ditambah fallback Crown, tapi skip level provider tetap
   // mematikan semua kaki WeizeRouter dengan satu timeout). Kegagalan
   // CEPAT (502/401/429/dll.) tetap memakai rotasi model cap di bawah —
-  // hanya timeout yang melewati model. Budget rantai 100 dtk SENGAJA
-  // tidak dinaikkan: klien DED DETAIL membatalkan di 181 dtk
-  // (service.ts: timeoutMs 180000 + 1 dtk), dan worst case rantai =
-  // budget + 55 dtk overshoot attempt yang sedang berjalan — budget di
-  // atas ~125 dtk tidak pernah bisa dipakai klien. Timeout attempt 55 dtk
+  // hanya timeout yang melewati model. Budget rantai 240 dtk (dinaikkan
+  // dari 100 dtk 2026-11-20 atas keputusan owner "coba 5 menit aja"):
+  // klien kini membatalkan di 301 dtk (timeoutMs 300000 + 1 dtk), dan
+  // worst case rantai = budget + 55 dtk overshoot attempt yang sedang
+  // berjalan = 295 dtk — di bawah plafon fungsi Vercel 300 dtk.
+  // DULU budget SENGAJA ditahan di 100 dtk karena klien DED DETAIL
+  // membatalkan di 181 dtk, sehingga budget di atas ~125 dtk tidak pernah
+  // bisa dipakai. Timeout attempt 55 dtk
   // juga SENGAJA tidak dipersingkat: 13 panggilan DETAIL BERHASIL via
   // wz/gpt-6-luna memakan ±43,7 dtk — memotong ke 45 dtk hanya menyisakan
   // margin 1,3 dtk dan akan mengubah sukses terbukti menjadi timeout.
@@ -867,7 +1237,7 @@ export async function executeAI(o, onAttempt) {
       break;
     }
     if (outcomes.length > 0 && Date.now() - chainStart > CHAIN_BUDGET_MS) {
-      outcomes.push({ provider: 'gateway', model: null, ok: false, ms: Date.now() - chainStart, error: 'chain time budget exceeded (100s)' });
+      outcomes.push({ provider: 'gateway', model: null, ok: false, ms: Date.now() - chainStart, error: 'chain time budget exceeded (240s)' });
       break;
     }
     const tries = providerAttempts.get(a.provider) || 0;
@@ -889,7 +1259,31 @@ export async function executeAI(o, onAttempt) {
     if (a.keyIndex !== undefined && authDeadKeySlots.has(a.provider + ':' + a.keyIndex)) continue;
     providerAttempts.set(a.provider, tries + 1);
     triedModels.add(a.model);
-    const r = await a.run();
+    let r;
+    if (streamMode) {
+      // Leg streaming: leg_start -> content_delta* -> content_complete
+      // (sukses) atau leg_failed (+ content_reset bila sebagian konten
+      // sudah ter-stream). Urutan ini dipancarkan SEBELUM cek policy/
+      // disconnect di bawah, sehingga reset selalu mendahului return dini
+      // apa pun — klien tidak pernah menyimpan konten leg gagal.
+      const leg = legCounter++;
+      let streamedChars = 0;
+      safeEmitStreamEvent({ type: 'leg_start', leg });
+      r = await a.runStream((delta) => {
+        if (typeof delta === 'string' && delta) {
+          streamedChars += delta.length;
+          safeEmitStreamEvent({ type: 'content_delta', leg, delta });
+        }
+      });
+      if (r.ok) {
+        safeEmitStreamEvent({ type: 'content_complete', leg });
+      } else {
+        safeEmitStreamEvent({ type: 'leg_failed', leg, errorCode: r.errorClass || 'unknown' });
+        if (streamedChars > 0) safeEmitStreamEvent({ type: 'content_reset', leg });
+      }
+    } else {
+      r = await a.run();
+    }
     if (!r.ok) providerFailures.set(a.provider, fails + 1);
     if (!r.ok && r.errorClass === 'timeout') modelTimeouts.add(a.provider + ':' + a.model);
     if (!r.ok && r.errorStatus === 401 && a.keyIndex !== undefined) authDeadKeySlots.add(a.provider + ':' + a.keyIndex);
@@ -1116,7 +1510,7 @@ export async function handleAiRequest(req, res, opts = {}) {
   //    The browser never holds a shared secret: it sends the user's own JWT.
   //    D2 Option C (Phase 2, 2026-11-19): ukur durasi langkah auth ini —
   //    verifikasi JWT berjalan SEBELUM rantai provider (di luar budget
-  //    rantai 100 dtk, di dalam jendela abort klien), jadi tanpa angka ini
+  //    rantai 240 dtk, di dalam jendela abort klien), jadi tanpa angka ini
   //    H3 (verifikasi JWT lambat memakan jendela klien) tidak bisa
   //    diputuskan dari log. preChainAuthMs dicatat di event auth_rejected,
   //    ai_request, dan client_disconnected; waktu rantai = durationMs -
@@ -1219,6 +1613,11 @@ export async function handleAiRequest(req, res, opts = {}) {
   // 5c. Client idempotency — replay respons sukses untuk kunci yang sama.
   //     Berjalan SESUDAH auth + rate limit (replay tetap butuh auth sah dan
   //     tetap memakan anggaran rate limit) tetapi SEBELUM provider dipanggil.
+  //     Fase 1 streaming: replay mode streaming menyajikan SATU set event
+  //     lengkap (message_start + leg_start + satu content_delta penuh +
+  //     content_complete + message_complete) dari body JSON tersimpan —
+  //     BUKAN re-stream dari provider (tidak ada panggilan provider baru).
+  const isStream = input.stream === true;
   const clientIdemKey = String(
     req.headers['idempotency-key'] || req.headers['x-idempotency-key'] || ''
   )
@@ -1236,12 +1635,61 @@ export async function handleAiRequest(req, res, opts = {}) {
         ipHash: ipHash(req),
         userId: auth.user ? auth.user.id : null,
       });
+      if (isStream) {
+        const replayWriter = createSseWriter(res);
+        const replayMessageId = 'msg_' + requestId;
+        replayWriter.sendEvent('message_start', {
+          messageId: replayMessageId,
+          conversationId: input.conversationId || null,
+          requestId,
+        });
+        replayWriter.sendEvent('leg_start', { messageId: replayMessageId, leg: 0 });
+        if (typeof cached.content === 'string' && cached.content) {
+          replayWriter.sendEvent('content_delta', { messageId: replayMessageId, leg: 0, delta: cached.content });
+        }
+        replayWriter.sendEvent('content_complete', { messageId: replayMessageId, leg: 0 });
+        replayWriter.sendEvent('message_complete', {
+          messageId: replayMessageId,
+          requestId,
+          usage: cached.usage || null,
+          usageStatus: cached.usageStatus || 'missing',
+          durationMs: typeof cached.durationMs === 'number' ? cached.durationMs : 0,
+          model: cached.model || null,
+        });
+        replayWriter.end();
+        return;
+      }
       return res.status(200).json(cached);
     }
   }
 
   // 6. Execute with structured, secret-free logging
   const attemptLog = [];
+  // Fase 1 streaming — state SSE hidup di sini (bukan di executeAI):
+  // writer + heartbeat + messageId stabil untuk seluruh stream. Writer
+  // dibuat DI DALAM callback execute() adapter metering (di bawah), BUKAN
+  // di sini: adapter memanggil execute() hanya SESUDAH lolos pra-cek
+  // (gerbang metering fail-closed) — penolakan pra-eksekusi masih bisa
+  // menjawab JSON error biasa karena header SSE belum terkirim.
+  // messageId stabil 'msg_<requestId>' ditambahkan ke SEMUA event
+  // (executeAI memancarkan event leg TANPA messageId).
+  let sseWriter = null;
+  let sseHeartbeatTimer = null;
+  const sseMessageId = 'msg_' + requestId;
+  const stopSseHeartbeat = () => {
+    if (sseHeartbeatTimer) {
+      clearInterval(sseHeartbeatTimer);
+      sseHeartbeatTimer = null;
+    }
+  };
+  const detachDisconnectListener = () => {
+    if (res && typeof res.off === 'function') res.off('close', onResClose);
+    else if (res && typeof res.removeListener === 'function') res.removeListener('close', onResClose);
+  };
+  const emitStreamEvent = (evt) => {
+    if (!sseWriter || !evt || typeof evt !== 'object') return;
+    sseWriter.sendEvent(evt.type, { messageId: sseMessageId, ...evt });
+  };
   // 6a. Sprint 4 Fase 3 — integrasi Chat FAST ke batas metering bersama
   //     lewat adapter berlingkup sempit (api/_lib/chatFastMetering.js).
   //     Titik sisip di handleAiRequest (BUKAN di executeAI): konteks
@@ -1272,12 +1720,38 @@ export async function handleAiRequest(req, res, opts = {}) {
     message: input.message,
     systemPrompt: input.systemPrompt,
     clientPayload: body,
-    execute: () => executeAI({ ...input, mode, requestId, signal: disconnectCtl.signal }, (a) => attemptLog.push(a)),
+    execute: () => {
+      if (isStream) {
+        sseWriter = createSseWriter(res);
+        sseHeartbeatTimer = setInterval(() => {
+          if (sseWriter) sseWriter.heartbeat();
+        }, STREAM_HEARTBEAT_MS);
+        if (typeof sseHeartbeatTimer.unref === 'function') sseHeartbeatTimer.unref();
+        sseWriter.sendEvent('message_start', {
+          messageId: sseMessageId,
+          conversationId: input.conversationId || null,
+          requestId,
+        });
+      }
+      return executeAI(
+        {
+          ...input,
+          mode,
+          requestId,
+          signal: disconnectCtl.signal,
+          ...(isStream ? { stream: true, onStreamEvent: emitStreamEvent } : {}),
+        },
+        (a) => attemptLog.push(a)
+      );
+    },
   });
   // Rantai selesai (atau dibatalkan) — lepas pengamat disconnect. Respons
-  // normal yang ditulis sesudah ini tidak boleh memicu abort.
-  if (res && typeof res.off === 'function') res.off('close', onResClose);
-  else if (res && typeof res.removeListener === 'function') res.removeListener('close', onResClose);
+  // normal yang ditulis sesudah ini tidak boleh memicu abort. Mode
+  // streaming KECUALI: listener tetap terpasang sampai event final
+  // (message_complete/stream_error) tertulis — disconnect selama penulisan
+  // final tetap harus menghentikan penulisan ke socket mati.
+  const streamingActive = isStream && sseWriter !== null;
+  if (!streamingActive) detachDisconnectListener();
   if (chatFastOutcome.metered && !chatFastOutcome.result) {
     // Gerbang menyala dan operasi Chat FAST ditolak SEBELUM provider
     // berjalan (atau replay terminal tanpa hasil baru): jawab dengan
@@ -1291,6 +1765,24 @@ export async function handleAiRequest(req, res, opts = {}) {
       ipHash: ipHash(req),
       userId: auth.user ? auth.user.id : null,
     });
+    if (streamingActive) {
+      // Cabang ini normalnya hanya terjangkau bila execute() TIDAK
+      // berjalan (penolakan pra-eksekusi) — tetapi boundary bisa gagal
+      // SESUDAH execute() berjalan (mis. settlement error), dan saat itu
+      // header SSE sudah terkirim (message_start sudah keluar). JSON
+      // error di sini akan menabrak header yang sudah terkirim — jawab
+      // sebagai stream_error dengan kode metering yang sama.
+      stopSseHeartbeat();
+      sseWriter.sendEvent('stream_error', {
+        messageId: sseMessageId,
+        errorCode: meteringError,
+        message: 'Penagihan AI belum dapat diproses untuk permintaan ini.',
+        retryable: false,
+      });
+      sseWriter.end();
+      detachDisconnectListener();
+      return;
+    }
     const status =
       meteringError === 'AUTH_CONTEXT_REQUIRED' ? 401
       : meteringError === 'CLIENT_BILLING_FIELDS_FORBIDDEN' ? 400
@@ -1311,6 +1803,8 @@ export async function handleAiRequest(req, res, opts = {}) {
   // jangan simpan replay idempotensi (tak ada respons yang terkirim untuk
   // di-replay), dan jangan catat sebagai kegagalan provider biasa. Event
   // log khusus membawa jejak attempt agar abort tetap dapat diobservasi.
+  // Mode streaming: tutup stream tanpa event final (klien sudah tidak ada
+  // yang membaca) + hentikan heartbeat + lepas listener.
   if (disconnectCtl.signal.aborted || (r && r.aborted)) {
     logAiUsage({
       requestId,
@@ -1322,6 +1816,11 @@ export async function handleAiRequest(req, res, opts = {}) {
       userId: auth.user ? auth.user.id : null,
       attempts: attemptLog,
     });
+    if (streamingActive) {
+      stopSseHeartbeat();
+      sseWriter.end();
+      detachDisconnectListener();
+    }
     return;
   }
 
@@ -1414,6 +1913,25 @@ export async function handleAiRequest(req, res, opts = {}) {
       usageStatus: finalUsage.usageStatus,
     };
     if (idemScope) idempotencyStore(idemScope, responseBody);
+    if (streamingActive) {
+      // Sukses streaming: konten sudah terkirim per delta; message_complete
+      // membawa bukti final (usage + durasi + alias model) lalu stream
+      // ditutup. Idempotency menyimpan body JSON yang SAMA seperti jalur
+      // non-streaming — replay streaming maupun non-streaming bekerja dari
+      // satu bentuk tersimpan.
+      stopSseHeartbeat();
+      sseWriter.sendEvent('message_complete', {
+        messageId: sseMessageId,
+        requestId,
+        usage: finalUsage.usage,
+        usageStatus: finalUsage.usageStatus,
+        durationMs,
+        model: modelAliasForMode(mode),
+      });
+      sseWriter.end();
+      detachDisconnectListener();
+      return;
+    }
     return res.status(200).json(responseBody);
   }
   // F1: penolakan kebijakan/permintaan tak valid BUKAN gangguan layanan —
@@ -1422,7 +1940,31 @@ export async function handleAiRequest(req, res, opts = {}) {
   // B4 (2026-11-19): MEDIA_NOT_SUPPORTED_FOR_MODE juga kesalahan
   // pemanggil (media ke rantai text-only), bukan gangguan layanan.
   if (r.errorCode === 'CONTENT_REJECTED' || r.errorCode === 'AI_BAD_REQUEST' || r.errorCode === 'MEDIA_NOT_SUPPORTED_FOR_MODE') {
+    if (streamingActive) {
+      stopSseHeartbeat();
+      sseWriter.sendEvent('stream_error', {
+        messageId: sseMessageId,
+        errorCode: r.errorCode,
+        message: r.error,
+        retryable: false,
+      });
+      sseWriter.end();
+      detachDisconnectListener();
+      return;
+    }
     return res.status(400).json({ success: false, errorCode: r.errorCode, error: r.error, message: r.error, requestId, durationMs });
+  }
+  if (streamingActive) {
+    stopSseHeartbeat();
+    sseWriter.sendEvent('stream_error', {
+      messageId: sseMessageId,
+      errorCode: 'AI_UNAVAILABLE',
+      message: 'AI sedang tidak tersedia.',
+      retryable: true,
+    });
+    sseWriter.end();
+    detachDisconnectListener();
+    return;
   }
   return res.status(502).json({ success: false, error: 'AI sedang tidak tersedia.', requestId, durationMs });
 }

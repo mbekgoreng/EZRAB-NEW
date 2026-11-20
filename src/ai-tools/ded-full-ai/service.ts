@@ -65,16 +65,18 @@ import type { DedAiItem, DedPriceCompletion } from '../ded-ai-estimate/types';
 
 /**
  * F4 (3.3): batas waktu per panggilan AI yang BENAR-BENAR diterapkan.
- * providerClient membatasi semua permintaan pada plafon 180 detik
- * (MAX_TIMEOUT_MS di gateway client) — meminta 240 detik untuk mode
- * Mendalam dulu dipotong diam-diam sehingga timeout selalu tampak seperti
- * "model lambat". Sekarang permintaan disamakan dengan plafon nyata dan
- * batasnya dinyatakan terbuka di metadata hasil (provenance.timeoutLimitMs)
- * serta peringatan mode Mendalam.
+ * providerClient membatasi semua permintaan pada plafon 300 detik
+ * (MAX_TIMEOUT_MS di gateway client — 2026-11-20: 180->300 dtk atas
+ * keputusan owner "coba 5 menit aja"). DULU meminta 240 detik untuk mode
+ * Mendalam dipotong diam-diam ke plafon 180 dtk sehingga timeout selalu
+ * tampak seperti "model lambat". Sekarang kedua mode meminta tepat
+ * plafon 300 detik (5 menit — maksimal yang diizinkan fungsi Vercel)
+ * dan batasnya dinyatakan terbuka di metadata hasil
+ * (provenance.timeoutLimitMs) serta peringatan mode Mendalam.
  */
 export const FULL_AI_TIMEOUT_MS = {
-  FAST: 120000,
-  ADVANCED: 180000,
+  FAST: 300000,
+  ADVANCED: 300000,
 } as const;
 
 /**
