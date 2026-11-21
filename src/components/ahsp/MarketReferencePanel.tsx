@@ -41,10 +41,10 @@ interface Props {
 }
 
 const STATUS_BADGE: Record<string, { bg: string; fg: string; label: string }> = {
-  MARKET_REFERENCE: { bg: '#e0f2fe', fg: '#0369a1', label: 'Referensi' },
-  NEEDS_REVIEW: { bg: '#fef3c7', fg: '#92400e', label: 'Perlu tinjau' },
-  MARKET_VERIFIED: { bg: '#dcfce7', fg: '#166534', label: 'Terverifikasi pasar' },
-  REJECTED: { bg: '#fee2e2', fg: '#991b1b', label: 'Ditolak' },
+  MARKET_REFERENCE: { bg: 'var(--ez-color-info-soft)', fg: 'var(--ez-color-primary)', label: 'Referensi' },
+  NEEDS_REVIEW: { bg: 'var(--ez-hue-amber-bg-deep)', fg: 'var(--ez-hue-amber-text-dark)', label: 'Perlu tinjau' },
+  MARKET_VERIFIED: { bg: 'var(--ez-hue-green-bg-deep)', fg: 'var(--ez-hue-green-text-deep)', label: 'Terverifikasi pasar' },
+  REJECTED: { bg: 'var(--ez-hue-red-bg)', fg: 'var(--ez-hue-red-text)', label: 'Ditolak' },
 };
 
 const fmtRp = (n: number) => 'Rp ' + Math.round(n).toLocaleString('id-ID');
@@ -287,13 +287,13 @@ export const MarketReferencePanel: React.FC<Props> = ({
           <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer' }}>✕</button>
         </div>
 
-        <div style={{ fontSize: '12px', color: '#475569', background: '#f1f5f9', borderRadius: '10px', padding: '10px 12px', lineHeight: 1.6 }}>
+        <div style={{ fontSize: '12px', color: 'var(--ez-color-text-slate)', background: 'var(--ez-color-surface-tertiary)', borderRadius: '10px', padding: '10px 12px', lineHeight: 1.6 }}>
           Harga pasar hanya menjadi acuan setelah <strong>Anda verifikasi</strong> spesifikasi, satuan, dan sumbernya.
           Tidak ada pengambilan harga otomatis — setiap angka di bawah berasal dari input terverifikasi atau saran AI yang wajib ditinjau.
         </div>
 
         {aiMsg ? (
-          <div style={{ fontSize: '12.5px', fontWeight: 600, color: '#0c4a6e', background: '#e0f2fe', borderRadius: '10px', padding: '10px 12px' }}>{aiMsg}</div>
+          <div style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--ez-hue-blue-text-deep)', background: 'var(--ez-color-info-soft)', borderRadius: '10px', padding: '10px 12px' }}>{aiMsg}</div>
         ) : null}
 
         {/* Daftar referensi */}
@@ -310,23 +310,23 @@ export const MarketReferencePanel: React.FC<Props> = ({
                   <div style={{ fontSize: '13.5px', fontWeight: 700 }}>{r.sourceName}</div>
                   <span style={{ fontSize: '10.5px', fontWeight: 800, padding: '3px 10px', borderRadius: '999px', background: b.bg, color: b.fg }}>{b.label}</span>
                 </div>
-                <div style={{ fontSize: '12.5px', color: '#475569' }}>{r.productTitle}</div>
+                <div style={{ fontSize: '12.5px', color: 'var(--ez-color-text-slate)' }}>{r.productTitle}</div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', flexWrap: 'wrap' }}>
                   <span style={{ fontSize: '16px', fontWeight: 900 }}>{fmtRp(r.listedPrice)}</span>
-                  <span style={{ fontSize: '12px', color: '#64748b' }}>
+                  <span style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)' }}>
                     per {r.packageQuantity && r.packageQuantity !== 1 ? `${r.packageQuantity} ` : ''}{r.packageUnit || r.normalizedUnit}
                     {r.normalizedUnitPrice !== null && r.packageUnit !== r.normalizedUnit ? ` (≈ ${fmtRp(r.normalizedUnitPrice)}/${r.normalizedUnit})` : ''}
                   </span>
                   {r.priceType !== 'normal' ? (
-                    <span style={{ fontSize: '10.5px', fontWeight: 700, color: '#92400e', background: '#fef3c7', padding: '2px 8px', borderRadius: '999px' }}>{r.priceType}</span>
+                    <span style={{ fontSize: '10.5px', fontWeight: 700, color: 'var(--ez-hue-amber-text-dark)', background: 'var(--ez-hue-amber-bg-deep)', padding: '2px 8px', borderRadius: '999px' }}>{r.priceType}</span>
                   ) : null}
                 </div>
                 {r.reviewNotes ? (
-                  <div style={{ fontSize: '12px', color: '#92400e' }}>Catatan: {r.reviewNotes}</div>
+                  <div style={{ fontSize: '12px', color: 'var(--ez-hue-amber-text-dark)' }}>Catatan: {r.reviewNotes}</div>
                 ) : null}
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   {r.productUrl ? (
-                    <a href={r.productUrl} target="_blank" rel="noreferrer" style={{ fontSize: '12px', fontWeight: 700, color: '#0369a1', textDecoration: 'none', border: '1px solid #bae6fd', padding: '6px 12px', borderRadius: '8px' }}>
+                    <a href={r.productUrl} target="_blank" rel="noreferrer" style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-primary)', textDecoration: 'none', border: '1px solid var(--ez-hue-blue-border)', padding: '6px 12px', borderRadius: '8px' }}>
                       Lihat Sumber ↗
                     </a>
                   ) : null}
@@ -336,12 +336,12 @@ export const MarketReferencePanel: React.FC<Props> = ({
                         <button onClick={() => handleApprove(r.id)} style={{ fontSize: '12px', fontWeight: 700, color: '#fff', background: '#16a34a', border: 'none', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer' }}>
                           Setujui Harga
                         </button>
-                        <button onClick={() => setRejecting(rejecting === r.id ? null : r.id)} style={{ fontSize: '12px', fontWeight: 700, color: '#991b1b', background: '#fee2e2', border: 'none', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer' }}>
+                        <button onClick={() => setRejecting(rejecting === r.id ? null : r.id)} style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-hue-red-text)', background: 'var(--ez-hue-red-bg)', border: 'none', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer' }}>
                           Tolak
                         </button>
                       </>
                     ) : (
-                      <span style={{ fontSize: '11.5px', color: '#92400e', background: '#fef3c7', padding: '6px 10px', borderRadius: '8px' }}>
+                      <span style={{ fontSize: '11.5px', color: 'var(--ez-hue-amber-text-dark)', background: 'var(--ez-hue-amber-bg-deep)', padding: '6px 10px', borderRadius: '8px' }}>
                         Verifikasi hanya untuk peran berwenang (Estimator/Konsultan/Tim).
                       </span>
                     )
@@ -389,13 +389,13 @@ export const MarketReferencePanel: React.FC<Props> = ({
           </button>
         </div>
         {enrichMsg && (
-          <div style={{ marginTop: '8px', padding: '10px 12px', borderRadius: '8px', background: '#f0f9ff', border: '1px solid #bae6fd', fontSize: '12.5px', color: '#0c4a6e' }}>
+          <div style={{ marginTop: '8px', padding: '10px 12px', borderRadius: '8px', background: 'var(--ez-hue-sky-bg)', border: '1px solid var(--ez-hue-blue-border)', fontSize: '12.5px', color: 'var(--ez-hue-blue-text-deep)' }}>
             {enrichMsg}
           </div>
         )}
 
         {showForm ? (
-          <div style={{ border: '1px solid var(--ez-color-border-soft)', borderRadius: '12px', padding: '14px', display: 'flex', flexDirection: 'column', gap: '10px', background: '#f8fafc' }}>
+          <div style={{ border: '1px solid var(--ez-color-border-soft)', borderRadius: '12px', padding: '14px', display: 'flex', flexDirection: 'column', gap: '10px', background: 'var(--ez-color-surface-secondary)' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
               <input value={form.sourceName} onChange={(e) => setForm({ ...form, sourceName: e.target.value })} placeholder="Nama toko/sumber *" style={inputStyle} />
               <select value={form.sourceType} onChange={(e) => setForm({ ...form, sourceType: e.target.value as MarketSourceType })} style={inputStyle}>

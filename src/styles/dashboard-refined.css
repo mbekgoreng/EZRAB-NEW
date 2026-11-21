@@ -222,3 +222,21 @@
 @media (prefers-reduced-motion: reduce) {
   .ez-dashboard-kpi-card { transition: none !important; }
 }
+
+/* =========================================================================
+   Mode malam — audit 2026-11-21 (C3 + C4): hover baris proyek / tombol
+   cepat memancarkan latar terang (#f5f8fd / #f1f6ff) dan sub-teks KPI
+   #8b98ad redup di atas kartu gelap. Override dark-only di bawah ini
+   memakai token live; !important wajib karena aturan terang memakai
+   !important. Mode terang tidak berubah.
+   ========================================================================= */
+[data-theme="dark"] .ez-dashboard-project-row:hover {
+  background: var(--ez-color-surface-tertiary) !important;
+}
+[data-theme="dark"] .ez-dashboard-quick-button:hover {
+  background: var(--ez-color-surface-tertiary) !important;
+  border-color: var(--ez-color-border-line) !important;
+}
+[data-theme="dark"] .ez-dashboard-kpi-sub {
+  color: var(--ez-color-text-slate) !important;
+}

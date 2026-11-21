@@ -173,3 +173,62 @@
   .fs-actionbar .fs-actions-btns { margin-left: 0; }
   .fs-actionbar .dedai-btn { padding: 9px 12px; font-size: 13px; }
 }
+
+/* =========================================================================
+   MODE MALAM (audit 2026-11-21: B10)
+   Remap variabel lokal --fs-* ke token dark; topbar + bar aksi putih ke
+   token surface. --fs-deep TIDAK diremap (dipakai latar chip langkah aktif
+   #1D4ED8 + teks putih — tetap terbaca); pemakaian teksnya (label aktif,
+   chip mode, hover tombol kembali) di-override satu per satu ke biru
+   terang. Ikon fitur (gradasi navy + glyph putih) dipulihkan ke gradasi
+   biru gelap agar glyph putih tetap terlihat sesudah --fs-navy diremap.
+   ========================================================================= */
+[data-theme="dark"] .fs-shell {
+  --fs-navy: var(--ez-color-text-primary);
+  --fs-navy2: var(--ez-color-text-secondary);
+  --fs-border: var(--ez-color-border-line);
+  --fs-muted: var(--ez-color-text-secondary);
+  --fs-ink: var(--ez-color-text-primary);
+  --fs-bg: var(--ez-color-background);
+  --fs-green: var(--ez-hue-green-text);
+  --fs-green-bg: var(--ez-hue-green-bg);
+  --fs-amber: var(--ez-hue-amber-text);
+  --fs-amber-bg: var(--ez-hue-amber-bg);
+  --fs-red: var(--ez-hue-red-text);
+  --fs-red-bg: var(--ez-hue-rose-bg);
+  --fs-grey-bg: var(--ez-color-surface-tertiary);
+}
+[data-theme="dark"] .fs-feat-ico {
+  background: linear-gradient(135deg, #1E3A8A, #1D4ED8);
+}
+[data-theme="dark"] .fs-topbar,
+[data-theme="dark"] .fs-actionbar {
+  background: var(--ez-color-surface);
+}
+[data-theme="dark"] .fs-backbtn,
+[data-theme="dark"] .fs-xbtn {
+  background: var(--ez-color-surface);
+}
+[data-theme="dark"] .fs-backbtn:hover {
+  color: var(--ez-hue-blue-text);
+}
+[data-theme="dark"] .fs-xbtn:hover {
+  border-color: var(--ez-hue-rose-border);
+}
+[data-theme="dark"] .fs-chip-mode {
+  background: var(--ez-hue-blue-bg);
+  color: var(--ez-hue-blue-text);
+}
+[data-theme="dark"] .fs-step-n {
+  background: var(--ez-color-surface);
+  border-color: var(--ez-color-border-strong);
+}
+[data-theme="dark"] .fs-step.active .fs-step-n {
+  box-shadow: 0 0 0 4px var(--ez-hue-blue-bg);
+}
+[data-theme="dark"] .fs-step.active .fs-step-lbl {
+  color: var(--ez-hue-blue-text);
+}
+[data-theme="dark"] .fs-stepline {
+  background: var(--ez-color-border-line);
+}

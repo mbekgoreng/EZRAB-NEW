@@ -98,18 +98,18 @@ type SortField = 'no' | 'code' | 'description' | 'volume' | 'unit' | 'unitPrice'
 type SortDirection = 'asc' | 'desc' | null;
 
 const WBS_LETTER_MAP: Record<string, { letter: string; bg: string; text: string; border: string }> = {
-  'Pekerjaan Persiapan & Bowplank': { letter: 'A', bg: 'var(--ez-hue-pink-bg)', text: '#BE185D', border: '#FBCFE8' },
+  'Pekerjaan Persiapan & Bowplank': { letter: 'A', bg: 'var(--ez-hue-pink-bg)', text: 'var(--ez-hue-rose-text)', border: '#FBCFE8' },
   'Pekerjaan Tanah & Pondasi': { letter: 'B', bg: 'var(--ez-hue-blue-bg-deep)', text: 'var(--ez-color-primary-hover)', border: 'var(--ez-hue-blue-border)' },
-  'Pekerjaan Struktur Beton Bertulang': { letter: 'C', bg: 'var(--ez-hue-indigo-bg)', text: '#4338CA', border: '#C7D2FE' },
-  'Pekerjaan Dinding & Plesteran': { letter: 'D', bg: '#E0F2FE', text: '#0369A1', border: '#BAE6FD' },
-  'Pekerjaan Lantai & Keramik': { letter: 'E', bg: '#D1FAE5', text: '#047857', border: 'var(--ez-hue-green-border-deep)' },
-  'Pekerjaan Plafon & Partisi': { letter: 'F', bg: 'var(--ez-hue-amber-bg-deep)', text: '#B45309', border: 'var(--ez-hue-amber-border)' },
-  'Pekerjaan Atap & Rangka Baja Ringan': { letter: 'G', bg: 'var(--ez-hue-orange-bg)', text: '#C2410C', border: 'var(--ez-hue-orange-bg-deep)' },
-  'Pekerjaan Pintu, Jendela & Kaca': { letter: 'H', bg: 'var(--ez-hue-purple-bg-soft)', text: '#7E22CE', border: 'var(--ez-hue-purple-border)' },
-  'Pekerjaan Instalasi Plumbing & Sanitasi': { letter: 'I', bg: '#CFFAFE', text: '#0E7490', border: '#A5F3FC' },
-  'Pekerjaan Instalasi Elektrikal': { letter: 'J', bg: 'var(--ez-hue-yellow-bg)', text: '#A16207', border: '#FEF08A' },
-  'Pekerjaan Pengecatan': { letter: 'K', bg: 'var(--ez-hue-red-bg)', text: '#B91C1C', border: 'var(--ez-hue-rose-border)' },
-  'Pekerjaan Finishing & Eksterior': { letter: 'L', bg: 'var(--ez-color-surface-tertiary)', text: '#334155', border: 'var(--ez-color-border)' },
+  'Pekerjaan Struktur Beton Bertulang': { letter: 'C', bg: 'var(--ez-hue-indigo-bg)', text: 'var(--ez-hue-indigo-text)', border: '#C7D2FE' },
+  'Pekerjaan Dinding & Plesteran': { letter: 'D', bg: 'var(--ez-hue-sky-bg)', text: 'var(--ez-hue-blue-text-deep)', border: '#BAE6FD' },
+  'Pekerjaan Lantai & Keramik': { letter: 'E', bg: 'var(--ez-hue-green-bg-deep)', text: 'var(--ez-hue-green-text)', border: 'var(--ez-hue-green-border-deep)' },
+  'Pekerjaan Plafon & Partisi': { letter: 'F', bg: 'var(--ez-hue-amber-bg-deep)', text: 'var(--ez-hue-amber-text)', border: 'var(--ez-hue-amber-border)' },
+  'Pekerjaan Atap & Rangka Baja Ringan': { letter: 'G', bg: 'var(--ez-hue-orange-bg)', text: 'var(--ez-hue-amber-text)', border: 'var(--ez-hue-orange-bg-deep)' },
+  'Pekerjaan Pintu, Jendela & Kaca': { letter: 'H', bg: 'var(--ez-hue-purple-bg-soft)', text: 'var(--ez-hue-purple-text)', border: 'var(--ez-hue-purple-border)' },
+  'Pekerjaan Instalasi Plumbing & Sanitasi': { letter: 'I', bg: 'var(--ez-hue-sky-bg)', text: 'var(--ez-hue-blue-text-deep)', border: '#A5F3FC' },
+  'Pekerjaan Instalasi Elektrikal': { letter: 'J', bg: 'var(--ez-hue-yellow-bg)', text: 'var(--ez-hue-amber-text)', border: '#FEF08A' },
+  'Pekerjaan Pengecatan': { letter: 'K', bg: 'var(--ez-hue-red-bg)', text: 'var(--ez-hue-red-text)', border: 'var(--ez-hue-rose-border)' },
+  'Pekerjaan Finishing & Eksterior': { letter: 'L', bg: 'var(--ez-color-surface-tertiary)', text: 'var(--ez-color-text-body)', border: 'var(--ez-color-border)' },
 };
 
 // P0-B: JANGAN isi identitas perusahaan palsu. Kosongkan field identitas;
@@ -606,7 +606,7 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
       const letterInfo = WBS_LETTER_MAP[categoryName] || {
         letter: String.fromCharCode(65 + (letterIndex % 26)),
         bg: 'var(--ez-color-surface-tertiary)',
-        text: '#334155',
+        text: 'var(--ez-color-text-body)',
         border: 'var(--ez-color-border)',
       };
 
@@ -641,7 +641,7 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
         const letterInfo = WBS_LETTER_MAP[name] || {
           letter: String.fromCharCode(65 + (letterIndex % 26)),
           bg: 'var(--ez-color-surface-tertiary)',
-          text: '#334155',
+          text: 'var(--ez-color-text-body)',
           border: 'var(--ez-color-border)',
         };
         letterIndex++;
@@ -1062,11 +1062,11 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
                   );
                 })}
                 {(currentProject as any)?.pphEnabled === true && ((currentProject as any)?.pphPercent ?? 0) === 0 && (
-                  <span style={{ fontSize: '12px', color: '#B45309' }}>
+                  <span style={{ fontSize: '12px', color: 'var(--ez-hue-amber-text)' }}>
                     PPh aktif tapi tarifnya 0% — atur tarifnya di Pengaturan Estimasi.
                   </span>
                 )}
-                <span style={{ fontSize: '12px', color: '#64748B' }}>
+                <span style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)' }}>
                   Item yang dicentang &quot;sudah termasuk pajak&quot; tidak dihitung ganda di Rekap.
                 </span>
               </div>

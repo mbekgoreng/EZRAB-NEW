@@ -52,7 +52,17 @@
   background: #fffbeb; border: 1px solid #fcd34d;
   color: #92400e; font-size: 13px;
 }
-[data-theme="dark"] .aic-low-notice { background: rgba(245,158,11,.08); }
+/* B-23/C-09 (audit mode malam 2026-11-21): lengkapi override dark dengan
+   warna teks + border — sebelumnya hanya latar yang digelapkan sehingga
+   teks #92400e tak terbaca di atas tint gelap. */
+[data-theme="dark"] .aic-low-notice {
+  background: rgba(245,158,11,.08);
+  color: var(--ez-hue-amber-text);
+  border-color: var(--ez-hue-amber-border);
+}
+/* C-14: angka debet/kredit riwayat ke varian terang token di dark. */
+[data-theme="dark"] .aic-neg { color: var(--ez-hue-red-text); }
+[data-theme="dark"] .aic-pos { color: var(--ez-hue-green-text); }
 .aic-low-notice button {
   margin-left: auto; height: 30px; padding: 0 14px; border-radius: 8px;
   border: none; background: #d97706; color: #fff;

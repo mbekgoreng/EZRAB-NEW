@@ -1127,19 +1127,19 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
             const actionLabel = isReady ? 'Buka' : 'Lanjutkan';
 
             let statusBg = 'var(--ez-color-surface-secondary)';
-            let statusColor = '#475569';
+            let statusColor = 'var(--ez-color-text-slate)';
             let statusBorder = 'var(--ez-color-border)';
             if (record.status === 'DRAFT') {
               statusBg = 'var(--ez-color-surface-secondary)';
-              statusColor = '#475569';
+              statusColor = 'var(--ez-color-text-slate)';
               statusBorder = 'var(--ez-color-border)';
             } else if (record.status === 'INCOMPLETE') {
               statusBg = 'var(--ez-hue-amber-bg-deep)';
-              statusColor = '#B45309';
+              statusColor = 'var(--ez-hue-amber-text)';
               statusBorder = 'var(--ez-hue-amber-border)';
             } else if (record.status === 'COMPLETE') {
               statusBg = 'var(--ez-hue-green-bg-deep)';
-              statusColor = '#15803D';
+              statusColor = 'var(--ez-hue-green-text)';
               statusBorder = 'var(--ez-hue-green-border)';
             } else if (record.status === 'EXPORTED') {
               statusBg = 'var(--ez-hue-blue-bg-deep)';
@@ -1149,7 +1149,7 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
 
             const revisionCode = record.revision === 2 ? 'R2 • Final' : record.revision === 1 ? 'R1 • Review' : 'R0 • Draft';
             const revBg = record.revision === 2 ? 'var(--ez-hue-green-bg-deep)' : record.revision === 1 ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface-tertiary)';
-            const revColor = record.revision === 2 ? '#15803D' : record.revision === 1 ? 'var(--ez-color-primary-hover)' : '#475569';
+            const revColor = record.revision === 2 ? 'var(--ez-hue-green-text)' : record.revision === 1 ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-slate)';
 
             return (
               <div

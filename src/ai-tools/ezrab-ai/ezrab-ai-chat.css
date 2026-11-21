@@ -154,6 +154,10 @@ button.ezchat2-name:focus-visible { outline: 2px solid var(--ez-color-primary); 
 .ezchat2-attchip { display: inline-flex; align-items: center; gap: 8px; background: var(--ez-color-primary-soft); border: 1.5px solid var(--ez-color-primary-soft); border-radius: var(--ez-radius-control); padding: 6px 10px 6px 6px; margin-bottom: 8px; font-size: 12.5px; font-weight: 600; color: var(--ez-color-primary-hover); }
 .ezchat2-attsize { font-weight: 500; color: var(--ez-color-text-muted); font-size: 12px; }
 .ezchat2-atterr { margin-bottom: 8px; padding: 8px 10px; border-radius: 10px; background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; font-size: 12.5px; line-height: 1.45; }
+/* C-12 (audit mode malam 2026-11-21): kotak error lampiran ke token
+   danger di dark saja — nilai light token danger-soft #FCE9E9 /
+   danger #B54747 BERBEDA dari literal, jadi nilai terang tidak diubah. */
+[data-theme="dark"] .ezchat2-atterr { background: var(--ez-color-danger-soft); border-color: var(--ez-hue-rose-border); color: var(--ez-color-danger); }
 .ezchat2-attchip button { border: none; background: none; cursor: pointer; color: var(--ez-color-text-muted); display: flex; padding: 2px; }
 .ezchat2-attchip button:hover { color: var(--ez-color-danger); }
 .ezchat2-listening { display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 700; color: var(--ez-color-warning); background: var(--ez-color-warning-soft); border-radius: var(--ez-radius-control); padding: 8px 14px; margin-bottom: 8px; }

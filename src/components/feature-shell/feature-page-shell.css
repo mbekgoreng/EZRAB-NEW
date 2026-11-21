@@ -242,3 +242,45 @@
   .fp-shell:has(.dedai-input) .fp-sub { display: block; font-size: 12.5px; }
   .fp-shell:has(.dedai-input) .fp-content { padding: 16px 22px 20px; }
 }
+
+/* =========================================================================
+   MODE MALAM (audit 2026-11-21: K6, B11, B12, C-07, C-08, C-11)
+   Remap variabel lokal --fp-* ke token dark; stepper + bar aksi putih ke
+   token surface. --fp-deep TIDAK diremap (dipakai latar chip langkah aktif
+   #1D4ED8 + teks putih — tetap terbaca); hanya label langkah aktif yang
+   di-override ke biru terang. Ikon fitur (gradasi navy + glyph putih)
+   dipulihkan ke gradasi biru gelap agar glyph putih tetap terlihat
+   sesudah --fp-navy diremap ke teks terang.
+   ========================================================================= */
+[data-theme="dark"] .fp-shell {
+  --fp-navy: var(--ez-color-text-primary);
+  --fp-navy2: var(--ez-color-text-secondary);
+  --fp-border: var(--ez-color-border-line);
+  --fp-muted: var(--ez-color-text-secondary);
+  --fp-ink: var(--ez-color-text-primary);
+}
+[data-theme="dark"] .fp-feat-ico {
+  background: linear-gradient(135deg, #1E3A8A, #1D4ED8);
+}
+[data-theme="dark"] .fp-stepper {
+  background: var(--ez-color-surface);
+}
+[data-theme="dark"] .fp-actionbar {
+  background: var(--ez-color-surface);
+}
+[data-theme="dark"] .fp-step-n {
+  background: var(--ez-color-surface);
+  border-color: var(--ez-color-border-strong);
+}
+[data-theme="dark"] .fp-step.active .fp-step-n {
+  box-shadow: 0 0 0 4px var(--ez-hue-blue-bg);
+}
+[data-theme="dark"] .fp-step.active .fp-step-lbl {
+  color: var(--ez-hue-blue-text);
+}
+[data-theme="dark"] .fp-stepline {
+  background: var(--ez-color-border-line);
+}
+[data-theme="dark"] .fp-actionbar .fs-action-note {
+  color: var(--ez-hue-amber-text);
+}

@@ -951,7 +951,7 @@ padding: '9px 18px', borderRadius: 'var(--ez-radius-control)', border: 'none', f
               <AlertTriangle size={20} color="var(--ez-hue-rose-text)" style={{ flexShrink: 0 }} />
               <div>
                 <div style={{ fontWeight: 800, fontSize: '14px', color: 'var(--ez-hue-red-text)' }}>Analisis belum selesai</div>
-                <div style={{ fontSize: '12px', color: '#7F1D1D', marginTop: '2px' }}>
+                <div style={{ fontSize: '12px', color: 'var(--ez-hue-red-text)', marginTop: '2px' }}>
                   EZRAB mengalami kendala saat membaca DED. Data proyek Anda tetap aman.
                 </div>
               </div>

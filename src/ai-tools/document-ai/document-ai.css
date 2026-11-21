@@ -1323,6 +1323,11 @@
 .docai-funnel-reviewkey { font-size: 13px; font-weight: 700; color: var(--ez-color-text-muted); }
 .docai-funnel-reviewval { font-size: 13.5px; color: var(--ez-color-text-primary); line-height: 1.5; word-break: break-word; }
 .docai-funnel-lock { display: flex; align-items: center; gap: 8px; background: #FEF3C7; border: 1px solid #F59E0B; border-radius: 10px; padding: 10px 12px; font-size: 13px; color: #92400E; margin-bottom: 12px; }
+/* C-19 (audit mode malam 2026-11-21): notis kunci funnel ke token amber
+   di dark saja — amber-bg light #FFFBEB BERBEDA dari literal #FEF3C7,
+   jadi nilai terang tidak diubah. Kotak prompt putih + pratinjau kertas
+   sengaja TIDAK disentuh (keputusan owner). */
+[data-theme="dark"] .docai-funnel-lock { background: var(--ez-hue-amber-bg); border-color: var(--ez-hue-amber-border); color: var(--ez-hue-amber-text); }
 .docai-funnel-done { display: flex; gap: 12px; align-items: flex-start; background: var(--ez-color-primary-soft); border: 1.5px solid var(--ez-color-primary); border-radius: 12px; padding: 14px 16px; margin-bottom: 18px; }
 .docai-funnel-doneicon { width: 32px; height: 32px; border-radius: 50%; background: var(--ez-color-primary); color: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .docai-funnel-done strong { font-size: 15px; color: var(--ez-color-text-primary); }

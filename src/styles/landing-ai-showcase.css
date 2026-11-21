@@ -37,7 +37,7 @@
 .pillars {display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:48px}
 .ezai-scope .pillar {background:linear-gradient(180deg,#FCFDFF,#EFF4FD);border-radius:20px;padding:28px 26px;color:#12263F;box-shadow:0 18px 40px rgba(13,40,80,.10);border:1px solid #E2EAF3;position:relative;overflow:hidden}
 .ezai-scope .pillar:before {content:"";position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#2563EB,#38BDF8)}
-.ezai-scope .pillar h3 {font-size:20px;font-weight:800;margin:16px 0 8px}
+.ezai-scope .pillar h3 {font-size:20px;font-weight:800;margin:16px 0 8px;color:#12263F}
 .ezai-scope .pillar p {font-size:14px;line-height:1.6;color:#4C637F}
 .ezai-scope .pillar ul {list-style:none;margin-top:16px;display:flex;flex-direction:column;gap:9px}
 .ezai-scope .pillar li {font-size:13.5px;font-weight:600;color:#33506F;display:flex;gap:8px;align-items:flex-start}
@@ -92,7 +92,7 @@
 .ezai-scope .plan {background:#FFFFFF;border:1px solid #E2EAF3;color:#12263F;border-radius:20px;padding:28px 24px;display:flex;flex-direction:column;box-shadow:0 18px 40px rgba(13,40,80,.10)}
 .ezai-scope .plan.pop {outline:3px solid #2563EB;position:relative}
 .ezai-scope .plan .tag {position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:#2563EB;color:#fff;font-size:11px;font-weight:800;letter-spacing:.06em;padding:5px 14px;border-radius:999px}
-.ezai-scope .plan h3 {font-size:16.5px;font-weight:800}
+.ezai-scope .plan h3 {font-size:16.5px;font-weight:800;color:#12263F}
 .ezai-scope .plan .price {font-size:29px;font-weight:800;letter-spacing:-.02em;margin:10px 0 2px}
 .ezai-scope .plan .price small {font-size:13px;color:#8498AF;font-weight:600}
 .ezai-scope .cred {display:flex;align-items:center;gap:8px;background:#E4EDFF;color:#1E40AF;font-weight:800;font-size:13.5px;border-radius:10px;padding:9px 12px;margin:14px 0 16px}
@@ -383,4 +383,117 @@
 @media(max-width:760px) {
   .ezai-scope .bill-notes ul {grid-template-columns:1fr}
   .ezai-scope .cmp-legend {gap:12px;font-size:12.5px}
+}
+
+/* =========================================================================
+   MODE MALAM (audit 2026-11-21: B1 + K1 + K2)
+   Latar halaman .ezai-scope ke token background; teks yang duduk langsung
+   di atas latar halaman (h2, sub, step, judul/legenda perbandingan)
+   diremap ke token teks agar tetap terbaca. Kartu .plan dibuat FULL-DARK
+   (8 aturan, di bawah batas 15) dan tabel perbandingan .cmp-scroll
+   full-dark. Kartu simulasi/ilustrasi (.pillar, .win, .mini, .tile,
+   .hcard, .qa, .bill-notes, footer) sengaja TETAP TERANG dengan teks
+   gelap — terbaca penuh, pola sama seperti jendela mockup hero.
+   ========================================================================= */
+[data-theme="dark"] .ezai-scope {
+  background: var(--ez-color-background);
+  color: var(--ez-color-text-body);
+}
+[data-theme="dark"] .ezai-scope h2 {
+  color: var(--ez-color-text-primary);
+}
+[data-theme="dark"] .ezai-scope .cta-box h2 {
+  color: #FFFFFF;
+}
+[data-theme="dark"] .ezai-scope h2 .bl {
+  background: linear-gradient(180deg, #93C5FD 0%, #60A5FA 52%, #3B82F6 100%);
+  /* WAJIB: shorthand background me-reset background-clip ke border-box;
+     tanpa 3 baris ini gradasi mengecat kotak span (teks transparan hilang). */
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+[data-theme="dark"] .ezai-scope .sub {
+  color: var(--ez-color-text-muted);
+}
+[data-theme="dark"] .ezai-scope .eyebrow {
+  color: var(--ez-hue-blue-text);
+}
+[data-theme="dark"] .ezai-scope .step b {
+  color: var(--ez-color-text-primary);
+}
+[data-theme="dark"] .ezai-scope .step p {
+  color: var(--ez-color-text-muted);
+}
+/* --- Kartu harga .plan: full-dark (8 aturan) --- */
+[data-theme="dark"] .ezai-scope .plan {
+  background: var(--ez-color-surface);
+  border-color: var(--ez-color-border-line);
+  color: var(--ez-color-text-primary);
+}
+[data-theme="dark"] .ezai-scope .plan h3 {
+  color: var(--ez-color-text-primary);
+}
+[data-theme="dark"] .ezai-scope .plan .price small {
+  color: var(--ez-color-text-muted);
+}
+[data-theme="dark"] .ezai-scope .plan .plan-tag {
+  color: var(--ez-color-text-muted);
+}
+[data-theme="dark"] .ezai-scope .cred {
+  background: var(--ez-hue-blue-bg);
+  color: var(--ez-hue-blue-text);
+}
+[data-theme="dark"] .ezai-scope .plan ul {
+  color: var(--ez-color-text-slate);
+}
+[data-theme="dark"] .ezai-scope .plan li svg,
+[data-theme="dark"] .ezai-scope .plan li:before {
+  color: var(--ez-hue-blue-text);
+}
+[data-theme="dark"] .ezai-scope .plan .btn.soft {
+  background: var(--ez-hue-blue-bg);
+  color: var(--ez-hue-blue-text);
+}
+/* --- Tabel perbandingan .cmp-scroll: full-dark --- */
+[data-theme="dark"] .ezai-scope .cmp-title {
+  color: var(--ez-color-text-primary);
+}
+[data-theme="dark"] .ezai-scope .cmp-legend {
+  color: var(--ez-color-text-muted);
+}
+[data-theme="dark"] .ezai-scope .cmp-txt {
+  color: var(--ez-color-text-primary);
+}
+[data-theme="dark"] .ezai-scope .cmp-yes {
+  color: var(--ez-hue-blue-text);
+}
+[data-theme="dark"] .ezai-scope .cmp-lim {
+  color: var(--ez-hue-amber-text);
+}
+[data-theme="dark"] .ezai-scope .cmp-link a {
+  color: var(--ez-hue-blue-text);
+}
+[data-theme="dark"] .ezai-scope .cmp-scroll {
+  background: var(--ez-color-surface);
+  border-color: var(--ez-color-border-line);
+}
+[data-theme="dark"] .ezai-scope table.cmp th[scope="row"],
+[data-theme="dark"] .ezai-scope table.cmp td {
+  color: var(--ez-color-text-primary);
+}
+[data-theme="dark"] .ezai-scope table.cmp tbody tr:not(.cmp-cat):not(.cmp-note) {
+  border-top-color: var(--ez-color-border-line);
+}
+[data-theme="dark"] .ezai-scope table.cmp td.cmp-pop,
+[data-theme="dark"] .ezai-scope table.cmp tbody th.cmp-pop {
+  background: var(--ez-hue-blue-bg);
+}
+[data-theme="dark"] .ezai-scope table.cmp tr.cmp-cat th {
+  background: var(--ez-hue-blue-bg);
+  color: var(--ez-hue-blue-text);
+}
+[data-theme="dark"] .ezai-scope table.cmp tr.cmp-note td {
+  background: var(--ez-color-surface-secondary);
+  color: var(--ez-color-text-muted);
 }

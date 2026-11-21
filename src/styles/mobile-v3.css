@@ -1094,3 +1094,146 @@
     box-shadow: 0 10px 24px rgba(29, 78, 216, 0.16) !important;
   }
 }
+
+/* =========================================================================
+   MODE MALAM (audit 2026-11-21: B4, B5, C-01, C-03, C-05, C-10)
+   -------------------------------------------------------------------------
+   Blok [data-theme="dark"] di dalam media query HP yang sama. Latar shell
+   (.pf-panel) memakai token --ezrab-bg + tekstur blueprint redup; kartu
+   .mv3-* putih memakai token surface; teks memakai token teks. Elemen
+   yang memang dirancang gelap/berwarna (hero foto, kartu AI biru, kartu
+   profil biru, header RAB/QTO biru, pil putih di atas kartu biru) TIDAK
+   disentuh — terbaca di kedua mode.
+   ========================================================================= */
+@media (max-width: 767px) {
+  /* --- Shell: gradasi gelap + blueprint redup (B4/B5/C-05) --------------
+     !important wajib: aturan terang .pf-panel memakai !important. */
+  [data-theme="dark"] .pf-panel {
+    background:
+      linear-gradient(rgba(96, 165, 250, 0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(96, 165, 250, 0.06) 1px, transparent 1px),
+      linear-gradient(168deg, #12233D 0%, var(--ezrab-bg) 45%, #0D1B2A 100%) !important;
+    background-size: 28px 28px, 28px 28px, 100% 100% !important;
+  }
+  /* Halaman menu fullscreen memakai gradasi terang yang sama. */
+  [data-theme="dark"] .mv3-menu-page {
+    background:
+      linear-gradient(rgba(96, 165, 250, 0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(96, 165, 250, 0.06) 1px, transparent 1px),
+      linear-gradient(168deg, #12233D 0%, var(--ezrab-bg) 45%, #0D1B2A 100%);
+    background-size: 28px 28px, 28px 28px, 100% 100%;
+  }
+
+  /* --- Bottom nav (B4/B5) --- */
+  [data-theme="dark"] .mv3-bottom-nav {
+    background: linear-gradient(180deg, var(--ez-color-surface) 0%, var(--ez-color-surface-secondary) 100%);
+    border-top-color: var(--ez-color-border-line);
+    box-shadow: 0 -14px 30px -14px rgba(0, 0, 0, 0.5), 0 -2px 6px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.06), inset 0 2px 3px -2px rgba(37, 99, 235, 0.25);
+  }
+  [data-theme="dark"] .mv3-nav-item { color: var(--ez-color-text-muted); }
+  [data-theme="dark"] .mv3-nav-item.is-active { color: var(--ez-hue-blue-text); }
+  [data-theme="dark"] .mv3-nav-item.is-active .mv3-nav-under { background: var(--ez-color-primary); }
+
+  /* --- Kartu putih -> token surface --- */
+  [data-theme="dark"] .mv3-sheet,
+  [data-theme="dark"] .mv3-menu-card,
+  [data-theme="dark"] .mv3-menu-row,
+  [data-theme="dark"] .mv3-stats,
+  [data-theme="dark"] .mv3-tile,
+  [data-theme="dark"] .mv3-project-card,
+  [data-theme="dark"] .mv3-search,
+  [data-theme="dark"] .mv3-filter-chip,
+  [data-theme="dark"] .mv3-total-card,
+  [data-theme="dark"] .mv3-icon-btn {
+    background: var(--ez-color-surface);
+  }
+  [data-theme="dark"] .mv3-menu-row.is-active,
+  [data-theme="dark"] .mv3-notif-row.is-unread {
+    background: var(--ez-hue-blue-bg);
+  }
+  [data-theme="dark"] .mv3-sheet-actions button {
+    background: var(--ez-color-surface-secondary);
+    border-color: var(--ez-color-border-line);
+    color: var(--ez-hue-blue-text);
+  }
+  [data-theme="dark"] .mv3-notif-ic { background: var(--ez-color-surface-tertiary); }
+  [data-theme="dark"] .mv3-notif-row.is-unread .mv3-notif-ic { background: var(--ez-color-surface); }
+  [data-theme="dark"] .mv3-empty-cta {
+    background: var(--ez-hue-blue-bg);
+    border-color: var(--ez-hue-blue-border);
+    color: var(--ez-hue-blue-text);
+  }
+  [data-theme="dark"] .mv3-progress-track { background: var(--ez-color-surface-tertiary); }
+  [data-theme="dark"] .mv3-total-sub {
+    background: var(--ez-hue-green-bg);
+    color: var(--ez-hue-green-text);
+  }
+
+  /* --- Border kartu --- */
+  [data-theme="dark"] .mv3-icon-btn,
+  [data-theme="dark"] .mv3-filter-chip {
+    border-color: var(--ez-color-border-line);
+  }
+  [data-theme="dark"] .mv3-menu-row { border-bottom-color: var(--ez-color-border-line); }
+  [data-theme="dark"] .mv3-stat + .mv3-stat { border-left-color: var(--ez-color-border-line); }
+
+  /* --- Teks utama kartu (#0F172A) -> token teks primer --- */
+  [data-theme="dark"] .mv3-sheet-title,
+  [data-theme="dark"] .mv3-notif-title,
+  [data-theme="dark"] .mv3-menu-title,
+  [data-theme="dark"] .mv3-menu-label,
+  [data-theme="dark"] .mv3-stat-num,
+  [data-theme="dark"] .mv3-project-name,
+  [data-theme="dark"] .mv3-project-value,
+  [data-theme="dark"] .mv3-section-head,
+  [data-theme="dark"] .mv3-projects-title,
+  [data-theme="dark"] .mv3-total-value,
+  [data-theme="dark"] .mv3-search input {
+    color: var(--ez-color-text-primary);
+  }
+  [data-theme="dark"] .mv3-search input::placeholder { color: var(--ez-color-text-faint); }
+
+  /* --- Teks sekunder (#64748B / #475569 / #94A3B8) -> token muted/slate --- */
+  [data-theme="dark"] .mv3-sheet-sub,
+  [data-theme="dark"] .mv3-menu-sub,
+  [data-theme="dark"] .mv3-menu-group-label,
+  [data-theme="dark"] .mv3-stat-label,
+  [data-theme="dark"] .mv3-total-label,
+  [data-theme="dark"] .mv3-empty,
+  [data-theme="dark"] .mv3-notif-time,
+  [data-theme="dark"] .mv3-project-date,
+  [data-theme="dark"] .mv3-photo-note {
+    color: var(--ez-color-text-muted);
+  }
+  [data-theme="dark"] .mv3-notif-body,
+  [data-theme="dark"] .mv3-plan-note,
+  [data-theme="dark"] .mv3-project-status,
+  [data-theme="dark"] .mv3-filter-chip {
+    color: var(--ez-color-text-slate);
+  }
+  [data-theme="dark"] .mv3-tile-label,
+  [data-theme="dark"] .mv3-icon-btn {
+    color: var(--ez-color-text-body);
+  }
+
+  /* --- Aksen biru (#1D4ED8) -> token biru terang --- */
+  [data-theme="dark"] .mv3-menu-row.is-active .mv3-menu-label,
+  [data-theme="dark"] .mv3-stat-num-blue,
+  [data-theme="dark"] .mv3-project-pct,
+  [data-theme="dark"] .mv3-see-all,
+  [data-theme="dark"] .mv3-projects-eyebrow,
+  [data-theme="dark"] .mv3-inline-link {
+    color: var(--ez-hue-blue-text);
+  }
+  [data-theme="dark"] .mv3-stat-num-green { color: var(--ez-hue-green-text-bright); }
+
+  /* --- Chat AI empty state HP (C-03/C-10): kartu putih -> surface gelap;
+     sapaan dipaksa #0F172A !important -> token teks (butuh !important). --- */
+  [data-theme="dark"] .ezchat2-empty {
+    background: var(--ez-color-surface);
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.35);
+  }
+  [data-theme="dark"] .ezchat2-greet {
+    color: var(--ez-color-text-primary) !important;
+  }
+}

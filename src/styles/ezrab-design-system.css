@@ -25,6 +25,13 @@
   --ez-color-surface-secondary: #F8FAFC;
   --ez-color-surface-tertiary: #F1F5F9;
   --ez-color-surface-faint: #FAFAFA;
+  /* ---- Warm neutrals (audit mode malam 2026-11-21) ----
+     Alias bertema untuk literal warm-white yang dipakai inline di
+     ResourceLibraryView / DocumentWorkspace. Nilai light = literal asli
+     (tampilan terang piksel-identik); nilai dark = permukaan gelap. */
+  --ez-color-surface-warm: #F5F4EF;
+  --ez-color-surface-warm-soft: #FAFAF8;
+  --ez-color-border-warm: #EEF1F6;
   --ez-color-on-primary: #FFFFFF;
 
   /* ---- Sidebar & navigation ---- */
@@ -243,6 +250,9 @@
   --ez-color-surface-secondary: #141D2E;
   --ez-color-surface-tertiary: #243046;
   --ez-color-surface-faint: #1C2740;
+  --ez-color-surface-warm: #1C2740;
+  --ez-color-surface-warm-soft: #1C2740;
+  --ez-color-border-warm: #2B3A55;
   --ez-color-on-primary: #FFFFFF;
   --ez-color-sidebar: #1B2433;
   --ez-color-sidebar-border: #26334A;
@@ -641,3 +651,43 @@ a:focus-visible,
 @media (prefers-reduced-motion: reduce) {
   .ez-ai-item::before, .ez-ai-item::after { animation: none; }
 }
+
+/* =========================================================================
+   Mode malam — F-2 (audit 2026-11-21, B-02 + C-15): override kelas
+   arbitrary Tailwind yang dibekukan blob magic-ai.css ke RGB terang.
+   Blob memakai var() di dalam nama kelas; nilainya ter-bake saat compile
+   sehingga tidak mengikuti token dark. Override di sini memakai var LIVE
+   (nilai dark dari blok [data-theme="dark"] di atas) — bukan RGB beku.
+   Spesifisitas [data-theme="dark"] .bg-... (0,2,0) mengalahkan aturan
+   blob (0,1,0) tanpa !important. Mode terang tidak berubah: aturan ini
+   hanya aktif di dark.
+   Catatan verifikasi 2026-11-21 (Chromium headless): selektor blob
+   bentuk .bg-\[\var(--...)\] ternyata TIDAK VALID di browser
+   (querySelector melempar) sehingga aturan beku var() tidak pernah
+   berlaku di mode apa pun; yang benar-benar beku & berlaku hanyalah
+   kelas hex (.bg-[#E8F0FF] dkk.). Override di bawah tetap benar:
+   inilah aturan pertama yang memberi efek nyata pada kelas var()
+   tersebut, dan hanya di dark. Dipakai DocumentViewer +
+   DedAnalysisDashboard (Magic AI) saja.
+   ========================================================================= */
+[data-theme="dark"] .bg-\[var\(--ez-hue-slate-bg\)\] { background-color: var(--ez-hue-slate-bg); }
+[data-theme="dark"] .bg-\[var\(--ez-color-surface-tertiary\)\] { background-color: var(--ez-color-surface-tertiary); }
+[data-theme="dark"] .bg-\[var\(--ez-hue-blue-bg\)\] { background-color: var(--ez-hue-blue-bg); }
+[data-theme="dark"] .bg-\[var\(--ez-color-border-line\)\] { background-color: var(--ez-color-border-line); }
+[data-theme="dark"] .bg-\[var\(--ez-hue-blue-bg-deep\)\] { background-color: var(--ez-hue-blue-bg-deep); }
+[data-theme="dark"] .bg-\[var\(--ez-hue-green-bg\)\] { background-color: var(--ez-hue-green-bg); }
+[data-theme="dark"] .bg-\[var\(--ez-hue-red-bg\)\] { background-color: var(--ez-hue-red-bg); }
+[data-theme="dark"] .bg-\[var\(--ez-hue-amber-bg-deep\)\] { background-color: var(--ez-hue-amber-bg-deep); }
+[data-theme="dark"] .bg-\[\#E8F0FF\] { background-color: var(--ez-hue-blue-bg); }
+[data-theme="dark"] .bg-\[\#F2F7FF\] { background-color: var(--ez-color-background); }
+[data-theme="dark"] .bg-\[\#FEFCE8\] { background-color: var(--ez-hue-yellow-bg); }
+
+/* F-2 — kelas teks arbitrary yang HILANG (tidak terdefinisi di mana pun):
+   didefinisikan di sini dengan var live agar mengikuti tema. Berlaku di
+   kedua mode; var-nya yang beradaptasi. Nilai light = nilai yang sama
+   dengan yang diwarisi teks ini saat ini (token teks), jadi mode terang
+   piksel-identik. */
+.text-\[var\(--ez-color-text-primary\)\] { color: var(--ez-color-text-primary); }
+.text-\[var\(--ez-color-text-slate\)\] { color: var(--ez-color-text-slate); }
+.text-\[var\(--ez-hue-blue-text\)\] { color: var(--ez-hue-blue-text); }
+.text-\[var\(--ez-hue-green-text-bright\)\] { color: var(--ez-hue-green-text-bright); }

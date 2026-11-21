@@ -1216,7 +1216,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                       lineHeight: 1.6,
                       color: 'var(--ez-color-text-strong)',
                       whiteSpace: 'pre-wrap',
-                      background: '#FDFEFE',
+                      background: 'var(--ez-color-surface-warm-soft)',
                       padding: '12px 14px',
                       borderRadius: 6,
                       border: '1px solid var(--ez-color-surface-tertiary)',

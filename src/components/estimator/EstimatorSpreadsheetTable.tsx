@@ -546,8 +546,8 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                                 marginLeft: '6px',
                                 borderRadius: '4px',
                                 background: 'var(--ez-color-surface)',
-                                border: '1px solid #FECDD3',
-                                color: '#BE123C',
+                                border: '1px solid var(--ez-hue-rose-border)',
+                                color: 'var(--ez-hue-rose-text)',
                                 fontSize: '11px',
                                 fontWeight: 700,
                                 cursor: 'pointer',
@@ -679,7 +679,7 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                                   {(item.priceStatus === 'PRICE_UNRESOLVED' || item.verificationStatus === 'NEEDS_VERIFICATION') && (
                                     <span
                                       title={item.priceStatus === 'PRICE_UNRESOLVED' ? 'Harga satuan belum diisi — bukan Rp0. Isi harga nyata.' : 'Item ini perlu diverifikasi.'}
-                                      style={{ display: 'inline-block', background: '#FEF3C7', color: '#92400E', padding: '1px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 600, marginTop: '3px' }}
+                                      style={{ display: 'inline-block', background: 'var(--ez-hue-amber-bg-deep)', color: 'var(--ez-hue-amber-text-dark)', padding: '1px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 600, marginTop: '3px' }}
                                     >
                                       ⚠ {item.priceStatus === 'PRICE_UNRESOLVED' ? 'Harga belum diisi' : 'Perlu verifikasi'}
                                     </span>
@@ -699,12 +699,12 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                                           type="button"
                                           onClick={(e) => { e.stopPropagation(); toggleIntegrityDetail(item.id); }}
                                           title={notice.hasDetail ? 'Klik untuk melihat detail peringatan harga item ini' : notice.badgeLabel}
-                                          style={{ display: 'inline-block', background: '#FFFBEB', color: '#92400E', border: '1px solid #F59E0B', padding: '1px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 700, cursor: 'pointer' }}
+                                          style={{ display: 'inline-block', background: 'var(--ez-hue-amber-bg)', color: 'var(--ez-hue-amber-text-dark)', border: '1px solid var(--ez-hue-amber-text-deep)', padding: '1px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 700, cursor: 'pointer' }}
                                         >
                                           ⚠ {notice.badgeLabel}{notice.hasDetail ? (expanded ? ' ▾' : ' ▸') : ''}
                                         </button>
                                         {expanded && notice.hasDetail && (
-                                          <div style={{ marginTop: '4px', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: '6px', padding: '6px 8px', fontSize: '10.5px', fontWeight: 400, color: '#92400E', lineHeight: 1.5 }}>
+                                          <div style={{ marginTop: '4px', background: 'var(--ez-hue-amber-bg)', border: '1px solid var(--ez-hue-amber-border)', borderRadius: '6px', padding: '6px 8px', fontSize: '10.5px', fontWeight: 400, color: 'var(--ez-hue-amber-text-dark)', lineHeight: 1.5 }}>
                                             {notice.warnings.map((w, wi) => (
                                               <div key={wi}>• {w}</div>
                                             ))}
@@ -734,7 +734,7 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                                     {item.unitPrice != null ? (
                                       <span>@ Rp {item.unitPrice.toLocaleString('id-ID')}</span>
                                     ) : (
-                                      <span style={{ color: '#DC2626', fontWeight: 600 }}>Belum ada harga</span>
+                                      <span style={{ color: 'var(--ez-hue-rose-text)', fontWeight: 600 }}>Belum ada harga</span>
                                     )}
                                     {item.volumeSource && (
                                       <span style={{ background: 'var(--ez-hue-blue-bg)', color: 'var(--ez-color-primary)', padding: '1px 4px', borderRadius: '3px', fontSize: '10px' }}>
@@ -1045,7 +1045,7 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                                     onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface-secondary)')}
                                     onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                                   >
-                                    <ArrowUp size={12} color="#64748B" />
+                                    <ArrowUp size={12} color="var(--ez-color-text-muted)" />
                                     <span>Sisipkan di Atas</span>
                                   </button>
 
@@ -1071,7 +1071,7 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                                     onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface-secondary)')}
                                     onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                                   >
-                                    <ArrowDown size={12} color="#64748B" />
+                                    <ArrowDown size={12} color="var(--ez-color-text-muted)" />
                                     <span>Sisipkan di Bawah</span>
                                   </button>
 
@@ -1091,7 +1091,7 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                                       borderRadius: '4px',
                                       border: 'none',
                                       background: 'transparent',
-                                      color: '#EF4444',
+                                      color: 'var(--ez-hue-rose-text)',
                                       fontSize: '11.5px',
                                       fontWeight: 600,
                                       cursor: 'pointer',
@@ -1099,7 +1099,7 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                                     onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-hue-rose-bg)')}
                                     onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                                   >
-                                    <Trash2 size={12} color="#EF4444" />
+                                    <Trash2 size={12} color="var(--ez-hue-rose-text)" />
                                     <span>Hapus Item</span>
                                   </button>
                                 </div>

@@ -295,14 +295,14 @@ function PlanControls(props: {
           onClick={() => props.onCancel(props.planId)}
           disabled={props.busy}
           style={{
-            padding: '8px 14px', borderRadius: 8, border: '1px solid #CBD5E1',
-            background: '#F8FAFC', color: '#334155', fontWeight: 600,
+            padding: '8px 14px', borderRadius: 8, border: '1px solid var(--ez-hue-slate-border)',
+            background: 'var(--ez-color-surface-secondary)', color: 'var(--ez-color-text-body)', fontWeight: 600,
             fontSize: 13, cursor: props.busy ? 'default' : 'pointer', opacity: props.busy ? 0.6 : 1,
           }}
         >
           Batalkan
         </button>
-        <span style={{ fontSize: 12, color: '#64748B' }}>Perubahan belum berjalan sampai Anda mengonfirmasi.</span>
+        <span style={{ fontSize: 12, color: 'var(--ez-color-text-muted)' }}>Perubahan belum berjalan sampai Anda mengonfirmasi.</span>
       </div>
     );
   }
@@ -311,7 +311,7 @@ function PlanControls(props: {
     : plan.status === 'cancelled' ? 'Pratinjau dibatalkan — tidak ada perubahan yang dibuat.'
     : plan.status === 'expired' ? 'Pratinjau kedaluwarsa — buat permintaan baru.'
     : 'Eksekusi gagal — lihat pesan hasil.';
-  return <div style={{ marginTop: 8, fontSize: 12, color: '#64748B' }}>{note}</div>;
+  return <div style={{ marginTop: 8, fontSize: 12, color: 'var(--ez-color-text-muted)' }}>{note}</div>;
 }
 
 /* ---- Tipe minimal Web Speech API (Chrome: webkitSpeechRecognition) ---- */

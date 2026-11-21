@@ -479,3 +479,171 @@
   .gs-rotate-prompt { animation: none; }
   .gs-rotate-prompt-icon { animation: none; }
 }
+
+/* =========================================================================
+   MODE MALAM (audit 2026-11-21: C-02, C-06)
+   Satu blok dark: overlay/menu/HUD/target-bar/canvas-wrap/palet/modal/
+   panel-2D ke token surface + teks tab/search/empty ke token teks.
+   TIDAK disentuh (sudah gelap by design): header gradasi navy, kartu menu
+   gradasi warna (.gs-card-*), area game 2D #0b1020, toast, prompt putar
+   HP, badge combo, .gs-card-cta putih di atas kartu gradasi.
+   Catatan: .gs-card dasar (bg #fff) sengaja TIDAK di-override — semua
+   kartu menu memakai kelas tema gradasi, dan override [data-theme]
+   (0,2,0) akan mengalahkan tema gradasi (0,1,0) sehingga kartu kehilangan
+   warnanya. Tab aktif amber + teks gelap juga dibiarkan (terbaca).
+   ========================================================================= */
+[data-theme="dark"] .gs-overlay {
+  background: var(--ez-color-surface);
+}
+[data-theme="dark"] .gs-menu-intro {
+  color: var(--ez-color-text-muted);
+}
+[data-theme="dark"] .gs-menu-note {
+  color: var(--ez-color-text-muted);
+}
+[data-theme="dark"] .gs-game,
+[data-theme="dark"] .gs-canvas-wrap,
+[data-theme="dark"] .gs-fallback {
+  background: var(--ez-color-background);
+}
+[data-theme="dark"] .gs-hud,
+[data-theme="dark"] .gs-palette,
+[data-theme="dark"] .gs-hintbar {
+  background: var(--ez-color-surface);
+  border-color: var(--ez-color-border-line);
+}
+[data-theme="dark"] .gs-hud-title {
+  color: var(--ez-color-text-primary);
+}
+[data-theme="dark"] .gs-stat {
+  background: var(--ez-hue-blue-bg);
+  border-color: var(--ez-hue-blue-border);
+  color: var(--ez-hue-blue-text);
+}
+[data-theme="dark"] .gs-stat-hot {
+  background: var(--ez-hue-amber-bg-deep);
+  border-color: var(--ez-hue-amber-border);
+  color: var(--ez-hue-amber-text);
+}
+[data-theme="dark"] .gs-targets {
+  background: var(--ez-color-surface-secondary);
+  border-color: var(--ez-color-border-line);
+}
+[data-theme="dark"] .gs-target {
+  background: var(--ez-color-surface);
+  border-color: var(--ez-color-border-line);
+  color: var(--ez-color-text-slate);
+}
+[data-theme="dark"] .gs-target.done {
+  background: var(--ez-hue-green-bg);
+  border-color: var(--ez-hue-green-border-deep);
+  color: var(--ez-hue-green-text-deep);
+}
+[data-theme="dark"] .gs-palette-label,
+[data-theme="dark"] .gs-hintbar {
+  color: var(--ez-color-text-muted);
+}
+[data-theme="dark"] .gs-comp {
+  background: var(--ez-color-surface-secondary);
+  border-color: var(--ez-color-border-line);
+}
+[data-theme="dark"] .gs-comp.active {
+  background: var(--ez-hue-blue-bg);
+}
+[data-theme="dark"] .gs-comp-name {
+  color: var(--ez-color-text-primary);
+}
+[data-theme="dark"] .gs-modal,
+[data-theme="dark"] .gs-fallback-card,
+[data-theme="dark"] .gs2d-panel {
+  background: var(--ez-color-surface);
+}
+[data-theme="dark"] .gs-modal h3,
+[data-theme="dark"] .gs-fallback-card h3,
+[data-theme="dark"] .gs2d-panel h2 {
+  color: var(--ez-color-text-primary);
+}
+[data-theme="dark"] .gs-modal p,
+[data-theme="dark"] .gs2d-panel p {
+  color: var(--ez-color-text-slate);
+}
+[data-theme="dark"] .gs-fallback-card p,
+[data-theme="dark"] .gs-rules-note {
+  color: var(--ez-color-text-muted);
+}
+[data-theme="dark"] .gs-brief {
+  background: var(--ez-hue-blue-bg);
+  border-color: var(--ez-hue-blue-border);
+}
+[data-theme="dark"] .gs-rules {
+  color: var(--ez-color-text-body);
+}
+[data-theme="dark"] .gs-score-rows > div {
+  background: var(--ez-color-surface-secondary);
+  border-color: var(--ez-color-border-line);
+  color: var(--ez-color-text-slate);
+}
+[data-theme="dark"] .gs-score-rows b {
+  color: var(--ez-hue-blue-text);
+}
+[data-theme="dark"] .gs-btn,
+[data-theme="dark"] .gs-iconbtn {
+  background: var(--ez-color-surface);
+  border-color: var(--ez-color-border-line);
+  color: var(--ez-color-text-body);
+}
+[data-theme="dark"] .gs-btn:hover,
+[data-theme="dark"] .gs-iconbtn:hover {
+  color: var(--ez-hue-blue-text);
+}
+/* Ikon di header navy: kembalikan gaya translucent terang (aturan umum
+   .gs-iconbtn di atas akan menimpanya karena blok dark ini di akhir file). */
+[data-theme="dark"] .gs-header .gs-iconbtn {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.22);
+  color: #fff;
+}
+[data-theme="dark"] .gs-header .gs-iconbtn:hover {
+  background: rgba(255, 255, 255, 0.26);
+  color: #fff;
+}
+[data-theme="dark"] .gs2d-panel .gs2d-joke {
+  background: var(--ez-hue-amber-bg);
+  border-color: var(--ez-hue-amber-border);
+  color: var(--ez-hue-amber-text-dark);
+}
+[data-theme="dark"] .gs2d-btn-secondary {
+  background: var(--ez-color-surface-tertiary);
+  color: var(--ez-color-text-primary);
+}
+[data-theme="dark"] .gs-loading {
+  color: var(--ez-color-text-muted);
+}
+[data-theme="dark"] .gs-demo-progress {
+  background: var(--ez-hue-orange-bg);
+  border-color: var(--ez-hue-amber-border);
+}
+[data-theme="dark"] .gs-demo-progress-bar {
+  background: var(--ez-hue-amber-bg-deep);
+}
+[data-theme="dark"] .gs-demo-progress-label {
+  color: var(--ez-hue-amber-text-deep);
+}
+/* --- Menu: tab / cari / kosong (C-02) — gayanya memang mengasumsikan
+   latar gelap; sesudah overlay digelapkan, teksnya dipetakan ke token. --- */
+[data-theme="dark"] .gs-tab {
+  background: var(--ez-color-surface-secondary);
+  border-color: var(--ez-color-border-line);
+  color: var(--ez-color-text-primary);
+}
+[data-theme="dark"] .gs-search {
+  background: var(--ez-color-surface-secondary);
+  border-color: var(--ez-color-border-line);
+  color: var(--ez-color-text-primary);
+}
+[data-theme="dark"] .gs-search::placeholder {
+  color: var(--ez-color-text-faint);
+}
+[data-theme="dark"] .gs-empty {
+  color: var(--ez-color-text-muted);
+}

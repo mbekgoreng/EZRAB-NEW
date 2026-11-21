@@ -1338,3 +1338,14 @@
   .mat-filter-box select { font-size: 16px !important; min-height: 44px !important; }
   .mat-filter-grid-5 > div > svg { bottom: 16px !important; }
 }
+
+/* B-28 (audit mode malam 2026-11-21): ikon keluarga kalkulator adalah
+   WebP berlatar biru muda tidak transparan — tampil sebagai tile terang
+   di kartu gelap. Aset TIDAK diubah; di dark mode thumb diberi bingkai
+   chip gelap (border token + cincin surface) agar terbaca sebagai ubin
+   yang disengaja. Aturan di luar media query agar berlaku di desktop
+   juga (tile 40x40 tampil di kedua viewport). */
+[data-theme="dark"] .ezrab-calc-card-icon {
+  border: 1px solid var(--ez-color-border-line);
+  box-shadow: 0 0 0 3px var(--ez-color-surface-tertiary);
+}

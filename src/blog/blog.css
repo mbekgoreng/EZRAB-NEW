@@ -297,6 +297,9 @@
   font-size: 22px;
   font-weight: 800;
   margin: 0;
+  /* K5 (audit mode malam 2026-11-21): warna eksplisit agar tidak dibalik
+     aturan heading global di dark mode; token --ezb-text beradaptasi. */
+  color: var(--ezb-text);
 }
 
 .ezb-link-more {
@@ -334,6 +337,8 @@
   font-size: 16px;
   font-weight: 800;
   margin: 0 0 14px;
+  /* K5 (audit mode malam 2026-11-21): warna eksplisit — lihat .ezb-section-head h2. */
+  color: var(--ezb-text);
 }
 
 .ezb-cat-row {
@@ -574,6 +579,8 @@
   font-size: 17px;
   font-weight: 800;
   margin: 0 0 6px;
+  /* K5 (audit mode malam 2026-11-21): warna eksplisit — lihat .ezb-section-head h2. */
+  color: var(--ezb-text);
 }
 
 .ezb-newsletter-text p {
@@ -666,6 +673,8 @@
   font-weight: 800;
   margin: 0 0 14px;
   max-width: 860px;
+  /* K5 (audit mode malam 2026-11-21): warna eksplisit — lihat .ezb-section-head h2. */
+  color: var(--ezb-text);
 }
 
 .ezb-excerpt {
@@ -1189,4 +1198,67 @@
 .ezb-pagination[hidden],
 .ezb-state[hidden] {
   display: none;
+}
+
+/* =========================================================================
+   MODE MALAM (audit 2026-11-21: B9 + K5)
+   Satu blok pemetaan ulang token --ezb-* ke nilai gelap + override latar
+   literal #fff yang tidak bertoken. Semua komponen bertoken --ezb-*
+   mengikuti remap ini sekaligus. Elemen yang sudah gelap by design
+   (blok CTA gradasi biru, <pre> kode, avatar gradasi) TIDAK disentuh.
+   ========================================================================= */
+[data-theme="dark"] .ezb-page {
+  --ezb-bg: var(--ez-color-background);
+  --ezb-surface: var(--ez-color-surface-secondary);
+  --ezb-text: var(--ez-color-text-primary);
+  --ezb-muted: var(--ez-color-text-muted);
+  --ezb-border: var(--ez-color-border-line);
+  --ezb-blue-dark: var(--ez-color-primary-hover);
+  --ezb-blue-soft: var(--ez-hue-blue-bg);
+  --ezb-shadow: 0 1px 2px rgba(0, 0, 0, 0.25), 0 8px 24px -12px rgba(0, 0, 0, 0.4);
+}
+/* Navbar: scrim putih -> scrim gelap; tautan nav gelap -> teks bodi. */
+[data-theme="dark"] .ezb-nav {
+  background: rgba(15, 23, 42, 0.94);
+}
+[data-theme="dark"] .ezb-nav-links a {
+  color: var(--ez-color-text-body);
+}
+/* Latar literal #fff -> token surface (teks di dalamnya sudah bertoken
+   --ezb-text yang kini terang — tanpa override ini teks jadi putih di
+   atas putih). */
+[data-theme="dark"] .ezb-hero,
+[data-theme="dark"] .ezb-footer {
+  background: var(--ezb-bg);
+}
+[data-theme="dark"] .ezb-btn-outline,
+[data-theme="dark"] .ezb-btn-ghost,
+[data-theme="dark"] .ezb-hero-search input,
+[data-theme="dark"] .ezb-widget,
+[data-theme="dark"] .ezb-card,
+[data-theme="dark"] .ezb-newsletter-ic,
+[data-theme="dark"] .ezb-newsletter-form input,
+[data-theme="dark"] .ezb-pagination button {
+  background: var(--ez-color-surface);
+}
+[data-theme="dark"] .ezb-article-hero {
+  background: linear-gradient(180deg, var(--ezb-surface) 0%, var(--ezb-bg) 100%);
+}
+/* Border literal biru muda -> token border biru. */
+[data-theme="dark"] .ezb-newsletter,
+[data-theme="dark"] .ezb-newsletter-ic {
+  border-color: var(--ez-hue-blue-border);
+}
+[data-theme="dark"] .ezb-pop-item {
+  border-bottom-color: var(--ezb-border);
+}
+/* Prose: teks bodi + kutipan + kode inline. */
+[data-theme="dark"] .ezb-prose {
+  color: var(--ezb-text);
+}
+[data-theme="dark"] .ezb-prose blockquote {
+  color: var(--ez-hue-blue-text-deep);
+}
+[data-theme="dark"] .ezb-prose code {
+  background: var(--ez-color-surface-tertiary);
 }

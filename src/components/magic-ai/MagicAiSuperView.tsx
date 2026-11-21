@@ -56,7 +56,7 @@ export const MagicAiSuperView: React.FC<MagicAiSuperViewProps> = ({
           AHSP kanonis + finalisasi idempoten. */}
       <div
         role="note"
-        style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', padding: '8px 16px', background: '#FFFBEB', borderBottom: '1px solid #FDE68A', fontSize: '12px', color: '#92400E' }}
+        style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', padding: '8px 16px', background: 'var(--ez-hue-amber-bg)', borderBottom: '1px solid var(--ez-hue-amber-border)', fontSize: '12px', color: 'var(--ez-hue-amber-text-dark)' }}
       >
         <span>
           <strong>Permukaan DED warisan.</strong> Permukaan DED utama EZRAB adalah <strong>DED AI Estimate</strong> (terhubung AHSP kanonis). Halaman ini tetap tersedia untuk pembacaan vision dokumen.
@@ -65,7 +65,7 @@ export const MagicAiSuperView: React.FC<MagicAiSuperViewProps> = ({
           <button
             type="button"
             onClick={() => onNavigateToTab('ded-ai')}
-            style={{ marginLeft: 'auto', padding: '4px 10px', borderRadius: '6px', border: '1px solid #FDE68A', background: '#fff', color: '#92400E', fontSize: '11.5px', fontWeight: 650, cursor: 'pointer' }}
+            style={{ marginLeft: 'auto', padding: '4px 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-amber-border)', background: 'var(--ez-color-surface)', color: 'var(--ez-hue-amber-text-dark)', fontSize: '11.5px', fontWeight: 650, cursor: 'pointer' }}
           >
             Buka DED AI Estimate
           </button>

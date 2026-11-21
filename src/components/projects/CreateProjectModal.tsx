@@ -412,7 +412,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                     {t('proj.create.card1_tag')}
                   </span>
                 </div>
-                <h3 style={{ fontSize: '15px', fontWeight: 750, color: '#1E1B4B', margin: '0 0 4px 0' }}>
+                <h3 style={{ fontSize: '15px', fontWeight: 750, color: 'var(--ez-color-text-primary)', margin: '0 0 4px 0' }}>
                   {t('proj.create.card1_t')}
                 </h3>
                 <p style={{ fontSize: '12px', color: 'var(--ez-hue-indigo-text)', lineHeight: 1.45, margin: 0 }}>

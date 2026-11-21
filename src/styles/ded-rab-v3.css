@@ -93,6 +93,15 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
+/* C-17 (audit mode malam 2026-11-21): cerahkan ujung gradasi teks di
+   dark — ujung hijau pekat #047857 redup di atas latar gelap. */
+[data-theme="dark"] .ded-gradient-text {
+  background: linear-gradient(135deg, #34D399 0%, #2DD4BF 40%, #38BDF8 100%);
+  /* WAJIB: shorthand background me-reset background-clip ke border-box;
+     tanpa 2 baris ini gradasi mengecat kotak teks (teks transparan hilang). */
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
 
 /* Feature Cards Grid in Hero */
 .ded-feature-card {
@@ -316,6 +325,14 @@
   background: var(--ez-hue-emerald-bg);
   border-color: #A7F3D0;
   box-shadow: 0 2px 6px rgba(16, 185, 129, 0.1);
+}
+/* C-17: tab non-aktif ke token muted; tab aktif ke hijau terang token. */
+[data-theme="dark"] .ded-tab {
+  color: var(--ez-color-text-muted);
+}
+[data-theme="dark"] .ded-tab.active {
+  color: var(--ez-hue-green-text-deep);
+  border-color: var(--ez-hue-green-border-deep);
 }
 
 /* Stepper Stage */

@@ -1343,3 +1343,56 @@
     justify-content: center;
   }
 }
+
+/* =========================================================================
+   MODE MALAM (audit 2026-11-21: B8)
+   Remap token lokal file ini (--ez-text-dark dkk.) di bawah wrapper
+   halaman — hanya memengaruhi /tentang. Seksi gelap (01, 04, 06, 08)
+   memakai warna eksplisit #FFFFFF/#CBD5E1 dan TIDAK memakai token ini,
+   jadi tidak tersentuh remap.
+   PENGECUALIAN (tetap terang by design, terbaca penuh):
+   - S02 WHY: foto full-bleed + scrim putih — token teks gelap
+     dikembalikan di dalam seksi ini agar teks tetap gelap di atas scrim.
+   - S07 STATEMENT: visual blueprint terang + warna teks/SVG inline di
+     TSX (di luar jangkauan CSS) — latarnya di-pin terang (#F8FAFC,
+     nilai light --ez-hue-slate-bg) agar teks inline gelap tetap terbaca.
+     Tanpa pin ini, latar seksi (var(--ez-hue-slate-bg)) menjadi tint
+     gelap sementara teks inline tetap gelap -> tak terbaca.
+   ========================================================================= */
+[data-theme="dark"] .ez-about-page-wrapper {
+  --ez-text-dark: var(--ez-color-text-primary);
+  --ez-text-muted: var(--ez-color-text-muted);
+  --ez-border-light: var(--ez-color-border-line);
+  --ez-light-bg: var(--ez-color-surface);
+  --ez-light-alt: var(--ez-color-surface-secondary);
+  --ez-light-slate: var(--ez-color-surface-tertiary);
+}
+/* S02 WHY — tetap terang: kembalikan token teks gelap di dalam seksi. */
+[data-theme="dark"] .ez-about-why-section {
+  --ez-text-dark: #0B1B33;
+  --ez-text-muted: #64748B;
+}
+/* S07 STATEMENT — tetap terang: pin latar (lihat catatan di atas). */
+[data-theme="dark"] .ez-about-statement-section {
+  background: #F8FAFC;
+}
+/* S03 WORKFLOW — node + inspector literal #fff -> token surface. */
+[data-theme="dark"] .ez-about-pipeline-node {
+  background: var(--ez-color-surface);
+}
+[data-theme="dark"] .ez-about-pipeline-node.active {
+  background: var(--ez-hue-blue-bg);
+}
+[data-theme="dark"] .ez-about-pipeline-icon {
+  color: var(--ez-color-text-slate);
+}
+[data-theme="dark"] .ez-about-workflow-inspector {
+  background: var(--ez-color-surface);
+}
+/* S05 ROLES — seksi + hover kartu -> token. */
+[data-theme="dark"] .ez-about-roles-section {
+  background: var(--ez-color-background);
+}
+[data-theme="dark"] .ez-about-role-card:hover {
+  background: var(--ez-color-surface);
+}

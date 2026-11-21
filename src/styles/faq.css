@@ -74,3 +74,104 @@
   .faq-acc-chevron, .faq-acc-item, .faq-search, .faq-chip, .faq-cta a {transition:none}
   .faq-cta a.primary:hover {transform:none}
 }
+
+/* =========================================================================
+   MODE MALAM (audit 2026-11-21: B7)
+   Halaman + akordeon bersama ke token gelap. Heading sudah berwana
+   eksplisit gelap di terang — semuanya diremap ke token teks di sini.
+   Chip aktif biru + tombol utama biru dibiarkan (terbaca kedua mode).
+   ========================================================================= */
+[data-theme="dark"] .faq-page {
+  background: var(--ez-color-background);
+  color: var(--ez-color-text-primary);
+}
+[data-theme="dark"] .faq-acc-item {
+  background: var(--ez-color-surface);
+  border-color: var(--ez-color-border-line);
+}
+[data-theme="dark"] .faq-acc-item:hover {
+  border-color: var(--ez-color-border-strong);
+}
+[data-theme="dark"] .faq-acc-item.open {
+  border-color: var(--ez-hue-blue-border);
+}
+[data-theme="dark"] .faq-acc-q {
+  color: var(--ez-color-text-primary);
+}
+[data-theme="dark"] .faq-acc-q:hover {
+  background: var(--ez-color-surface-secondary);
+}
+[data-theme="dark"] .faq-acc-a p {
+  color: var(--ez-color-text-slate);
+}
+[data-theme="dark"] .faq-eyebrow {
+  color: var(--ez-hue-blue-text);
+}
+[data-theme="dark"] .faq-hero h1,
+[data-theme="dark"] .faq-group h2,
+[data-theme="dark"] .faq-empty h2,
+[data-theme="dark"] .faq-cta h2 {
+  color: var(--ez-color-text-primary);
+}
+[data-theme="dark"] .faq-hero .faq-sub,
+[data-theme="dark"] .faq-empty p {
+  color: var(--ez-color-text-muted);
+}
+[data-theme="dark"] .faq-search {
+  background: var(--ez-color-surface);
+  border-color: var(--ez-color-border-strong);
+}
+[data-theme="dark"] .faq-search svg {
+  color: var(--ez-color-text-muted);
+}
+[data-theme="dark"] .faq-search input {
+  color: var(--ez-color-text-primary);
+}
+[data-theme="dark"] .faq-search input::placeholder {
+  color: var(--ez-color-text-faint);
+}
+[data-theme="dark"] .faq-clear {
+  background: var(--ez-color-surface-tertiary);
+  border-color: var(--ez-color-border-line);
+  color: var(--ez-color-text-body);
+}
+[data-theme="dark"] .faq-clear:hover {
+  background: var(--ez-color-surface-secondary);
+}
+[data-theme="dark"] .faq-count,
+[data-theme="dark"] .faq-group .faq-group-count {
+  color: var(--ez-color-text-muted);
+}
+[data-theme="dark"] .faq-chip {
+  background: var(--ez-color-surface);
+  border-color: var(--ez-color-border-line);
+  color: var(--ez-color-text-body);
+}
+[data-theme="dark"] .faq-chip:hover {
+  color: var(--ez-hue-blue-text-deep);
+}
+[data-theme="dark"] .faq-empty {
+  background: var(--ez-color-surface);
+  border-color: var(--ez-color-border-strong);
+}
+[data-theme="dark"] .faq-cta {
+  background: var(--ez-hue-blue-bg);
+  border-color: var(--ez-hue-blue-border);
+}
+[data-theme="dark"] .faq-cta p {
+  color: var(--ez-color-text-slate);
+}
+[data-theme="dark"] .faq-cta a.ghost {
+  background: var(--ez-color-surface);
+  color: var(--ez-hue-blue-text-deep);
+  border-color: var(--ez-hue-blue-border);
+}
+[data-theme="dark"] .faq-cta a.ghost:hover {
+  background: var(--ez-color-surface-secondary);
+}
+[data-theme="dark"] .faq-back {
+  color: var(--ez-hue-blue-text);
+}
+[data-theme="dark"] .faq-back:hover {
+  color: var(--ez-hue-blue-text-deep);
+}

@@ -115,20 +115,20 @@ export const AiPriceEstimatePanel: React.FC<Props> = ({
         </span>
       </div>
 
-      <p style={{ fontSize: 12.5, color: '#64748b', margin: '0 0 10px', lineHeight: 1.5 }}>
+      <p style={{ fontSize: 12.5, color: 'var(--ez-color-text-muted)', margin: '0 0 10px', lineHeight: 1.5 }}>
         Harga komponen ini belum tersedia. Estimasi dibuat otomatis oleh AI berdasarkan
         referensi harga pasar dan data material saat ini — <em>bukan harga resmi</em>.
       </p>
 
       {loading && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#7c3aed', padding: '8px 0' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--ez-hue-violet-text)', padding: '8px 0' }}>
           <Loader2 size={15} className="spin" />
           Membuat estimasi…
         </div>
       )}
 
       {error && (
-        <div style={{ marginTop: 10, fontSize: 12.5, color: '#b91c1c', display: 'flex', gap: 6 }}>
+        <div style={{ marginTop: 10, fontSize: 12.5, color: 'var(--ez-hue-red-text)', display: 'flex', gap: 6 }}>
           <XCircle size={15} style={{ flexShrink: 0, marginTop: 1 }} />
           <span>{error}</span>
         </div>
@@ -140,26 +140,26 @@ export const AiPriceEstimatePanel: React.FC<Props> = ({
             style={{
               padding: 12,
               borderRadius: 10,
-              background: '#fff',
+              background: 'var(--ez-color-surface)',
               border: '1px solid rgba(168,85,247,0.3)',
             }}
           >
-            <div style={{ fontSize: 11, color: '#64748b', marginBottom: 2 }}>
+            <div style={{ fontSize: 11, color: 'var(--ez-color-text-muted)', marginBottom: 2 }}>
               {estimate.method === 'ai' ? 'Estimasi AI' : 'Estimasi heuristik (AI tidak terjangkau)'} ·{' '}
               confidence {Math.round(estimate.confidence * 100)}%
             </div>
-            <div style={{ fontSize: 20, fontWeight: 800, color: '#7c3aed' }}>
+            <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--ez-hue-violet-text)' }}>
               {formatAiEstimatePrice(estimate.estimatedPrice)}
             </div>
-            <div style={{ fontSize: 12, color: '#475569', marginTop: 6, lineHeight: 1.5 }}>
+            <div style={{ fontSize: 12, color: 'var(--ez-color-text-slate)', marginTop: 6, lineHeight: 1.5 }}>
               <Info size={12} style={{ verticalAlign: -2, marginRight: 4 }} />
               {estimate.reasoning}
             </div>
             <div style={{ marginTop: 8 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', marginBottom: 4 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--ez-color-text-muted)', marginBottom: 4 }}>
                 DASAR ESTIMASI ({estimate.sources.length} sumber):
               </div>
-              <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12, color: '#475569' }}>
+              <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12, color: 'var(--ez-color-text-slate)' }}>
                 {estimate.sources.map((s, i) => (
                   <li key={i}>
                     {s.label}: {fmtRp(s.price)} / {s.unit}
@@ -176,7 +176,7 @@ export const AiPriceEstimatePanel: React.FC<Props> = ({
               alignItems: 'flex-start',
               marginTop: 10,
               fontSize: 12.5,
-              color: '#334155',
+              color: 'var(--ez-color-text-body)',
               cursor: 'pointer',
               lineHeight: 1.5,
             }}

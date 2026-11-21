@@ -37,7 +37,7 @@ export const PricingPage: React.FC<PricingPageProps> = ({
   }, []);
 
   return (
-    <div ref={pageRef} style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#ffffff' }}>
+    <div ref={pageRef} style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--ez-color-surface)' }}>
       <ExactNavbar
         onOpenAuth={onOpenAuth}
         onBackToLanding={onBackToLanding}
