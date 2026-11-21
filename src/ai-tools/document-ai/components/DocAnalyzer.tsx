@@ -47,6 +47,19 @@ import {
 } from 'lucide-react';
 import { dokumenAiService, formatCoverageLine, stripCoverageLine } from '../service';
 import type { DocAiProgressEvent } from '../service';
+import {
+  cancelDocAiAnalysis,
+  consumeDocAiAnalysisRun,
+  failDocAiAnalysis,
+  finishDocAiAnalysis,
+  getDocAiAnalysisRun,
+  isDocAiAnalysisActive,
+  patchDocAiAnalysisProgress,
+  recordHistoryDurable,
+  startDocAiAnalysis,
+  subscribeDocAiAnalysis,
+  type DocAiAnalysisRun,
+} from '../docAiRunStore';
 import type { DocCoverageInfo, DokumenAiChatResponse } from '../types';
 import { markdownToHtml } from '../markdownHtml';
 import type { DocRecord, ChatMessage, HistoryEntry, HistoryType } from '../view';
@@ -165,6 +178,10 @@ export const DocAnalyzer: React.FC<{
   /** Token run yang sedang berjalan — Batalkan menaikkan token sehingga
       hasil/callback run lama dibuang. */
   const runIdRef = useRef(0);
+  /** requestId runtime (docAiRunStore) untuk lari milik mount ini —
+      dipakai re-attach untuk melewati lari sendiri, dan cancelRun untuk
+      membatalkan lari di runtime. */
+  const ownAnalysisRunRef = useRef<number | null>(null);
   /** Nonce runRequest yang sudah dikonsumsi mount ini (anti double-run). */
   const consumedRunRef = useRef<number | null>(null);
   // QA chat
@@ -193,7 +210,7 @@ export const DocAnalyzer: React.FC<{
   const scrollChat = () => setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
 
   const recordHistory = (anaTab: AnaTab, reply: string, chatLog?: ChatMessage[]) => {
-    onAddHistory({
+    const entry = {
       type: HISTORY_TYPE_OF[anaTab],
       docIds: [doc.id],
       docNames: [doc.fileName],
@@ -201,7 +218,13 @@ export const DocAnalyzer: React.FC<{
       resultPreview: reply.slice(0, 300),
       resultFull: reply,
       ...(chatLog ? { chat: chatLog } : {}),
-    });
+    };
+    onAddHistory(entry);
+    // Riwayat juga ditulis LANGSUNG ke localStorage agar bertahan bila
+    // komponen ter-unmount (pindah menu) sebelum efek tulis-ulang view
+    // jalan — entri inilah satu-satunya salinan tahan-refresh dari hasil
+    // analisis (modeResults hanya di memori).
+    recordHistoryDurable(entry);
   };
 
   /** Penanganan hasil sukses bersama runMode + runCompare. */
@@ -214,6 +237,13 @@ export const DocAnalyzer: React.FC<{
       ...prev,
       [anaTab]: { reply, coverage: res.coverage, truncated: !!res.truncated },
     }));
+    // Hasil juga dicatat ke runtime agar mount kembali (sesudah pindah
+    // menu) bisa me-attach ulang tanpa mengulang panggilan AI.
+    if (ownAnalysisRunRef.current != null) {
+      finishDocAiAnalysis(ownAnalysisRunRef.current, {
+        reply, coverage: res.coverage, truncated: !!res.truncated,
+      });
+    }
     recordHistory(anaTab, reply);
     // --- AI Credits: catat pemakaian SIMULASI (kategori mode yang dijalankan) ---
     const estimate = tariffFor(`ai-document/${TAB_CREDIT_CATEGORY[anaTab]}`);
@@ -236,15 +266,24 @@ export const DocAnalyzer: React.FC<{
       dibatalkan — service tidak punya seam AbortSignal. */
   const cancelRun = () => {
     runIdRef.current += 1;
+    // Batalkan juga di runtime agar mount kembali tidak me-attach ulang
+    // ke lari yang sudah dibatalkan user.
+    if (ownAnalysisRunRef.current != null) {
+      cancelDocAiAnalysis(ownAnalysisRunRef.current);
+      ownAnalysisRunRef.current = null;
+    }
     setBusy(false);
     setProgress(null);
     setRunStartedAt(null);
     setElapsedSec(0);
   };
 
-  const beginRun = (): number => {
+  const beginRun = (anaTab: AnaTab): number => {
     const myRun = runIdRef.current + 1;
     runIdRef.current = myRun;
+    // Catat lari di runtime (docAiRunStore) agar bertahan melewati
+    // pindah menu — mount kembali me-attach ulang ke lari ini.
+    ownAnalysisRunRef.current = startDocAiAnalysis(doc.id, doc.fileName, anaTab).requestId;
     setBusy(true);
     setError(null);
     setProgress({ phase: 'single', done: 0, total: 0, percent: null, status: 'Menyiapkan analisis…' });
@@ -264,7 +303,8 @@ export const DocAnalyzer: React.FC<{
   const runMode = async (anaTab: AnaTab, prompt?: string) => {
     if (!docAiAllowed) { setError(docAiLockedMsg); return; }
     const mode = MODE_OF[anaTab];
-    const myRun = beginRun();
+    const myRun = beginRun(anaTab);
+    const reqId = ownAnalysisRunRef.current;
     try {
       const res = await dokumenAiService.chat(
         {
@@ -273,20 +313,31 @@ export const DocAnalyzer: React.FC<{
           mode,
           prompt,
         },
-        (ev) => { if (runIdRef.current === myRun) setProgress(ev); },
+        (ev) => {
+          if (runIdRef.current !== myRun) return;
+          setProgress(ev);
+          // Progres juga ke runtime agar mount kembali melihat progres
+          // live (bukan dari nol).
+          if (reqId != null) patchDocAiAnalysisProgress(reqId, ev.percent, ev.status);
+        },
       );
       if (runIdRef.current !== myRun) return; // dibatalkan — buang hasil
       if (res.success) {
         handleSuccess(anaTab, res);
       } else {
         clearModeResult(anaTab);
-        setError(`${res.errorCode || 'ERROR'}: ${res.message || t('ai.doc.err_failed')}`);
+        const msg = `${res.errorCode || 'ERROR'}: ${res.message || t('ai.doc.err_failed')}`;
+        if (reqId != null) failDocAiAnalysis(reqId, msg);
+        setError(msg);
       }
     } catch (e: any) {
       if (runIdRef.current !== myRun) return;
       clearModeResult(anaTab);
-      setError(e?.message || t('ai.doc.err_unexpected'));
+      const msg = e?.message || t('ai.doc.err_unexpected');
+      if (reqId != null) failDocAiAnalysis(reqId, msg);
+      setError(msg);
     } finally {
+      if (ownAnalysisRunRef.current === reqId) ownAnalysisRunRef.current = null;
       endRun(myRun);
     }
   };
@@ -312,12 +363,18 @@ export const DocAnalyzer: React.FC<{
         const aiMsg: ChatMessage = { role: 'ai', text: res.reply || '', at: Date.now() };
         const final = [...next, aiMsg];
         setChat(final);
-        onAddHistory({
-          type: 'qa', docIds: [doc.id], docNames: [doc.fileName],
+        const qaEntry = {
+          type: 'qa' as const, docIds: [doc.id], docNames: [doc.fileName],
           title: `${t('ai.doc.ana.hist_ask_a')} ${q.slice(0, 60)} — ${doc.fileName}`,
           resultPreview: (res.reply || '').slice(0, 300), resultFull: res.reply || '',
           chat: final,
-        });
+        };
+        onAddHistory(qaEntry);
+        // Jawaban QA juga ditulis LANGSUNG ke localStorage (riwayat)
+        // agar tidak hilang bila user pindah menu sebelum efek
+        // tulis-ulang view jalan. Rangkaian chat sendiri bersifat
+        // sementara dan tidak di-attach ulang.
+        recordHistoryDurable(qaEntry);
       } else {
         setError(`${res.errorCode || 'ERROR'}: ${res.message || t('ai.doc.err_failed')}`);
       }
@@ -332,7 +389,8 @@ export const DocAnalyzer: React.FC<{
     const other = docs.find((d) => d.id === (compareDocId ?? compareId));
     if (!other) { setError(t('ai.doc.ana.err_compare_first')); return; }
     if (!docAiAllowed) { setError(docAiLockedMsg); return; }
-    const myRun = beginRun();
+    const myRun = beginRun('compare');
+    const reqId = ownAnalysisRunRef.current;
     try {
       // Tanpa batas pemrosesan (2026-11-19): kedua dokumen dibandingkan
       // UTUH lewat compareDocuments (tiap dokumen diekstrak per potongan,
@@ -341,29 +399,87 @@ export const DocAnalyzer: React.FC<{
       const res = await dokumenAiService.compareDocuments(
         { fileName: doc.fileName, text: doc.text },
         { fileName: other.fileName, text: other.text },
-        { onProgress: (ev) => { if (runIdRef.current === myRun) setProgress(ev); } },
+        { onProgress: (ev) => {
+          if (runIdRef.current !== myRun) return;
+          setProgress(ev);
+          if (reqId != null) patchDocAiAnalysisProgress(reqId, ev.percent, ev.status);
+        } },
       );
       if (runIdRef.current !== myRun) return; // dibatalkan — buang hasil
       if (res.success) {
         handleSuccess('compare', res);
       } else {
         clearModeResult('compare');
-        setError(`${res.errorCode || 'ERROR'}: ${res.message || t('ai.doc.err_failed')}`);
+        const msg = `${res.errorCode || 'ERROR'}: ${res.message || t('ai.doc.err_failed')}`;
+        if (reqId != null) failDocAiAnalysis(reqId, msg);
+        setError(msg);
       }
     } catch (e: any) {
       if (runIdRef.current !== myRun) return;
       clearModeResult('compare');
-      setError(e?.message || t('ai.doc.err_unexpected'));
+      const msg = e?.message || t('ai.doc.err_unexpected');
+      if (reqId != null) failDocAiAnalysis(reqId, msg);
+      setError(msg);
     } finally {
+      if (ownAnalysisRunRef.current === reqId) ownAnalysisRunRef.current = null;
       endRun(myRun);
     }
   };
+
+  // Re-attach analisis (perintah owner 2026-11-21 04:19 — proses tidak
+  // boleh ke-reset saat pindah menu): lari analisis dicatat di
+  // docAiRunStore (module-level) dan bertahan melewati unmount. Mount
+  // ini me-attach ulang HANYA ke lari untuk dokumen yang sama: lari
+  // yang masih berjalan → tampil busy + progres; lari yang selesai
+  // saat user di menu lain → hasilnya dipulihkan ke modeResults tanpa
+  // mengulang panggilan AI. Lari milik mount ini dilewati (fungsi
+  // run-nya sendiri yang mengatur UI-nya).
+  useEffect(() => {
+    const attach = (run: DocAiAnalysisRun | null) => {
+      if (!run || run.docId !== doc.id) return;
+      if (run.requestId === ownAnalysisRunRef.current) return;
+      if (run.status === 'running') {
+        setTab(run.tab as AnaTab);
+        setBusy(true);
+        setProgress({ phase: 'single', done: 0, total: 0, percent: run.percent, status: run.statusText });
+        setRunStartedAt(run.startedAt);
+        setElapsedSec(Math.max(0, Math.floor((Date.now() - run.startedAt) / 1000)));
+        return;
+      }
+      if (run.status === 'done' && run.result) {
+        const doneTab = run.tab as AnaTab;
+        const doneResult = run.result;
+        setModeResults((prev) => prev[doneTab] ? prev : {
+          ...prev,
+          [doneTab]: {
+            reply: doneResult.reply,
+            coverage: doneResult.coverage as DocCoverageInfo | undefined,
+            truncated: doneResult.truncated,
+          },
+        });
+        setTab(doneTab);
+        consumeDocAiAnalysisRun(run.requestId);
+        return;
+      }
+      if (run.status === 'failed') {
+        setError(run.error ?? 'Analisis gagal.');
+        consumeDocAiAnalysisRun(run.requestId);
+      }
+    };
+    attach(getDocAiAnalysisRun());
+    return subscribeDocAiAnalysis(attach);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [doc.id]);
 
   // Auto-run satu kali dari tombol "Jalankan {Mode}" di Dokumen Saya.
   // Handoff chat / tombol tab / tombol Analisis per baris tidak membawa
   // runRequest sehingga workspace dibuka tanpa menjalankan (perilaku lama).
   useEffect(() => {
     if (!runRequest || consumedRunRef.current === runRequest.nonce) return;
+    // Lari aktif di runtime untuk dokumen ini (user kembali sesudah
+    // pindah menu): JANGAN jalankan lagi — re-attach di atas yang
+    // menampilkan lari itu.
+    if (isDocAiAnalysisActive(doc.id)) return;
     consumedRunRef.current = runRequest.nonce;
     const reqTab = runRequest.tab;
     setTab(reqTab);

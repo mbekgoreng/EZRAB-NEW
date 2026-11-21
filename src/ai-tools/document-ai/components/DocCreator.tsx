@@ -46,6 +46,18 @@ import { useCreditSimulation } from '../../../ai-credits/useCreditSimulation';
 import { aiFeatureLockedMessage, planAllowsAiFeature } from '../../../ai-credits/featureGate';
 import { collectProjectContext, detectMissingFields } from '../contextAdapter';
 import { approveDraft, buildTranslatedDraft, deriveDisplayStatus, pushVersion, restoreVersion } from '../store';
+import {
+  consumeDocAiGenerateRun,
+  failDocAiGenerate,
+  finishDocAiGenerate,
+  getDocAiGenerateRun,
+  persistDraftDurable,
+  readDraftDurable,
+  recordHistoryDurable,
+  startDocAiGenerate,
+  subscribeDocAiGenerate,
+  type DocAiGenerateRun,
+} from '../docAiRunStore';
 import { TRANSLATE_LANGUAGE_NAMES } from '../prompt';
 import {
   TRANSLATE_LANGUAGE_CODES,
@@ -247,6 +259,50 @@ export const DocCreator: React.FC<{
   const editorRef = useRef<Editor | null>(null);
   const loadingRef = useRef(false);
 
+  // Re-attach generate (perintah owner 2026-11-21 04:19 — proses tidak
+  // boleh ke-reset saat pindah menu): lari generate dicatat di
+  // docAiRunStore (module-level) dan bertahan melewati unmount. Mount
+  // ini me-attach ulang: lari yang masih berjalan → tampil busy; lari
+  // yang selesai saat user di menu lain → drafnya dimuat ke editor.
+  // Lari MILIK mount ini dilewati (fungsi run-nya sendiri yang mengatur
+  // UI-nya); cermin mode/draf dipakai agar draf selesai tidak menimpa
+  // pekerjaan editor yang sedang dibuka user.
+  const ownGenRunRef = useRef<number | null>(null);
+  const editorStateRef = useRef({ mode, draft });
+  editorStateRef.current = { mode, draft };
+  useEffect(() => {
+    const attach = (run: DocAiGenerateRun | null) => {
+      if (!run || run.requestId === ownGenRunRef.current) return;
+      if (run.status === 'running') {
+        if (run.kind === 'funnel') setFunnelBusy(true);
+        else if (run.kind === 'translate') setTranslating(true);
+        else setBusy(true);
+        return;
+      }
+      if (run.status === 'done' && run.draftId) {
+        const { mode: m, draft: d } = editorStateRef.current;
+        if (m === 'empty' && !d) {
+          const rec = readDraftDurable(run.draftId);
+          if (rec) {
+            setFunnelActive(false);
+            loadIntoEditor(rec);
+          }
+        }
+        consumeDocAiGenerateRun(run.requestId);
+        return;
+      }
+      if (run.status === 'failed') {
+        setError(run.error ?? 'Generate gagal.');
+        consumeDocAiGenerateRun(run.requestId);
+      }
+    };
+    attach(getDocAiGenerateRun());
+    return subscribeDocAiGenerate(attach);
+    // Sengaja []: attach memakai ref + fungsi stabil; loadIntoEditor
+    // hanya memanggil setState + helper modul (aman dari closure basi).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const template = ALL_TEMPLATES.find((x) => x.id === templateId) ?? ALL_TEMPLATES[0];
   const selectedUserTpl: UserTemplate | undefined = userTemplates.find((u) => u.id === templateId);
   const baseMeta = TEMPLATE_META[selectedUserTpl ? selectedUserTpl.baseTemplateId : templateId];
@@ -352,6 +408,11 @@ export const DocCreator: React.FC<{
   const persist = async (rec: DraftRecord): Promise<boolean> => {
     setSaveState('saving');
     onUpsertDraft(rec);
+    // Tulis LANGSUNG ke localStorage (docAiRunStore): bila komponen
+    // ter-unmount sebelum efek tulis-ulang view jalan (pindah menu di
+    // tengah generate), draf tetap tersimpan — dan verifySaved di bawah
+    // (baca-balik localStorage) tetap lolos.
+    persistDraftDurable(rec);
     setDraft(rec);
     const ok = await verifySaved(rec);
     setSaveState(ok ? 'saved' : 'failed');
@@ -428,6 +489,7 @@ export const DocCreator: React.FC<{
     setPending(null);
     setGenMissing([]);
     setGenTruncated(false);
+    let genRunId: number | null = null;
     try {
       // Nama dokumen: jalur AI tanpa jenis terpilih = draf bebas otomatis.
       const docName =
@@ -436,6 +498,10 @@ export const DocCreator: React.FC<{
           : activeSubtypeLabel
             ? `${template.name} — ${activeSubtypeLabel}`
             : template.name;
+      // Catat lari di runtime (docAiRunStore) agar bertahan melewati
+      // pindah menu — mount kembali me-attach ulang ke lari ini.
+      genRunId = startDocAiGenerate('generate', docName).requestId;
+      ownGenRunRef.current = genRunId;
       // CREATE_DOCUMENT (mode DRAFT + scaffold/aiGuidance + konteks
       // ber-provenance). Field yang belum tersedia TIDAK memblokir generate:
       // orchestrator melaporkannya sebagai missingFields dan AI menandai
@@ -450,7 +516,9 @@ export const DocCreator: React.FC<{
         fileName: docName,
       });
       if (!res.success) {
-        setError(`${res.errorCode || 'ERROR'}: ${res.message || t('ai.doc.err_failed')}`);
+        const msg = `${res.errorCode || 'ERROR'}: ${res.message || t('ai.doc.err_failed')}`;
+        if (genRunId != null) failDocAiGenerate(genRunId, msg);
+        setError(msg);
         return;
       }
       const reply = res.content || '';
@@ -485,6 +553,7 @@ export const DocCreator: React.FC<{
         setEditorKey((k) => k + 1);
         setMode('editor');
         await persist(rec);
+        if (genRunId != null) finishDocAiGenerate(genRunId, rec.id);
       } else {
         const rec: DraftRecord = {
           id: newId('draft'),
@@ -506,18 +575,26 @@ export const DocCreator: React.FC<{
         setEditorKey((k) => k + 1);
         setMode('editor');
         await persist(rec);
+        if (genRunId != null) finishDocAiGenerate(genRunId, rec.id);
       }
-      onAddHistory({
-        type: 'draft',
-        docIds: [],
-        docNames: [],
+      const historyEntry = {
+        type: 'draft' as const,
+        docIds: [] as string[],
+        docNames: [] as string[],
         title: `${t('ai.doc.create.hist_a')} ${draft?.title || docName}`,
         resultPreview: reply.slice(0, 300),
         resultFull: reply,
-      });
+      };
+      onAddHistory(historyEntry);
+      // Riwayat juga ditulis LANGSUNG ke localStorage agar bertahan
+      // bila komponen ter-unmount sebelum efek tulis-ulang view jalan.
+      recordHistoryDurable(historyEntry);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : t('ai.doc.err_unexpected'));
+      const msg = e instanceof Error ? e.message : t('ai.doc.err_unexpected');
+      if (genRunId != null) failDocAiGenerate(genRunId, msg);
+      setError(msg);
     } finally {
+      if (genRunId != null && ownGenRunRef.current === genRunId) ownGenRunRef.current = null;
       setBusy(false);
     }
   };
@@ -550,6 +627,10 @@ export const DocCreator: React.FC<{
     const funnelInstruction =
       `${req.prompt.trim()}\n\nTanggal dokumen: ${formatFunnelDate(req.date)}.`;
     setFunnelBusy(true);
+    // Catat lari di runtime (docAiRunStore) agar bertahan melewati
+    // pindah menu — mount kembali me-attach ulang ke lari ini.
+    const funnelRunId = startDocAiGenerate('funnel', docName).requestId;
+    ownGenRunRef.current = funnelRunId;
     try {
       const res = await documentStudioOrchestrator.handle({
         intent: 'CREATE_DOCUMENT',
@@ -561,7 +642,9 @@ export const DocCreator: React.FC<{
         fileName: docName,
       });
       if (!res.success) {
-        return { ok: false, error: `${res.errorCode || 'ERROR'}: ${res.message || t('ai.doc.err_failed')}` };
+        const msg = `${res.errorCode || 'ERROR'}: ${res.message || t('ai.doc.err_failed')}`;
+        failDocAiGenerate(funnelRunId, msg);
+        return { ok: false, error: msg };
       }
       const newHtml = markdownToHtml(res.content || '');
       const rec: DraftRecord = {
@@ -585,18 +668,26 @@ export const DocCreator: React.FC<{
       setHtml(newHtml);
       setEditorKey((k) => k + 1);
       await persist(rec);
-      onAddHistory({
-        type: 'draft',
-        docIds: [],
-        docNames: [],
+      finishDocAiGenerate(funnelRunId, rec.id);
+      const funnelHistoryEntry = {
+        type: 'draft' as const,
+        docIds: [] as string[],
+        docNames: [] as string[],
         title: `${t('ai.doc.create.hist_a')} ${docName}`,
         resultPreview: (res.content || '').slice(0, 300),
         resultFull: res.content || '',
-      });
+      };
+      onAddHistory(funnelHistoryEntry);
+      // Riwayat juga ditulis LANGSUNG ke localStorage agar bertahan
+      // bila komponen ter-unmount sebelum efek tulis-ulang view jalan.
+      recordHistoryDurable(funnelHistoryEntry);
       return { ok: true, draft: rec, html: newHtml };
     } catch (e: unknown) {
-      return { ok: false, error: e instanceof Error ? e.message : t('ai.doc.err_unexpected') };
+      const msg = e instanceof Error ? e.message : t('ai.doc.err_unexpected');
+      failDocAiGenerate(funnelRunId, msg);
+      return { ok: false, error: msg };
     } finally {
+      if (ownGenRunRef.current === funnelRunId) ownGenRunRef.current = null;
       setFunnelBusy(false);
     }
   };
@@ -620,6 +711,10 @@ export const DocCreator: React.FC<{
     }
     setTranslating(true);
     setError(null);
+    // Catat lari di runtime (docAiRunStore) agar bertahan melewati
+    // pindah menu — mount kembali me-attach ulang ke lari ini.
+    const translateRunId = startDocAiGenerate('translate', source.title).requestId;
+    ownGenRunRef.current = translateRunId;
     try {
       const sourceNow = buildRecord({ content: sourceHtml, contentFormat: 'html', status: source.status });
       await persist(sourceNow);
@@ -631,7 +726,9 @@ export const DocCreator: React.FC<{
         targetLanguage: target,
       });
       if (!res.success) {
-        setError(`${res.errorCode || 'ERROR'}: ${res.message || t('ai.doc.err_failed')}`);
+        const msg = `${res.errorCode || 'ERROR'}: ${res.message || t('ai.doc.err_failed')}`;
+        failDocAiGenerate(translateRunId, msg);
+        setError(msg);
         return;
       }
       const translatedHtml = markdownToHtml(res.content || '');
@@ -643,6 +740,7 @@ export const DocCreator: React.FC<{
         promptVersion: res.promptVersion,
       });
       await persist(rec);
+      finishDocAiGenerate(translateRunId, rec.id);
       loadIntoEditor(rec);
       setTranslateInfo(
         `Draf terjemahan (${langLabel}) dibuat dari "${source.title}" dan tersimpan sebagai dokumen baru — dokumen sumber tidak berubah.` +
@@ -653,17 +751,24 @@ export const DocCreator: React.FC<{
           // from stored/legacy responses — never render it verbatim.
           (res.model ? ` Model: ${maskAiModelName(res.model)}.` : ''),
       );
-      onAddHistory({
-        type: 'draft',
-        docIds: [],
-        docNames: [],
+      const translateHistoryEntry = {
+        type: 'draft' as const,
+        docIds: [] as string[],
+        docNames: [] as string[],
         title: `Terjemahan ${langLabel}: ${rec.title}`,
         resultPreview: (res.content || '').slice(0, 300),
         resultFull: res.content || '',
-      });
+      };
+      onAddHistory(translateHistoryEntry);
+      // Riwayat juga ditulis LANGSUNG ke localStorage agar bertahan
+      // bila komponen ter-unmount sebelum efek tulis-ulang view jalan.
+      recordHistoryDurable(translateHistoryEntry);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : t('ai.doc.err_unexpected'));
+      const msg = e instanceof Error ? e.message : t('ai.doc.err_unexpected');
+      failDocAiGenerate(translateRunId, msg);
+      setError(msg);
     } finally {
+      if (ownGenRunRef.current === translateRunId) ownGenRunRef.current = null;
       setTranslating(false);
       setTranslateOpen(false);
     }

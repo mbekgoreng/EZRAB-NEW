@@ -38,6 +38,16 @@ import { mapMagicAiItemToRabInput } from '../../ai-tools/ded-ai-estimate/finaliz
 import { buildFinalizationKey } from '../../ai-tools/ded-ai-estimate/finalizationKey';
 import { csvRow } from '../../lib/csv';
 import { EZRAB_MODEL_FLASH, EZRAB_MODEL_PRO } from '../../services/aiModelMasking';
+import {
+  appendDedAnalysisLog,
+  getDedAnalysisSnapshot,
+  patchDedAnalysisRun,
+  publishDedAnalysis,
+  stageDedAnalysisFile,
+  startDedAnalysisRun,
+  subscribeDedAnalysis,
+  type DedAnalysisSnapshot,
+} from './dedAnalysisRuntime';
 
 export interface DedAnalysisDashboardProps {
   currentProject?: Project | null;
@@ -71,31 +81,40 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
   const { createRabItemDirect, bulkAddRabItems, getLastBulkAddOutcome } = useProject();
   const { formatDisplay } = useCurrency();
 
+  // State lari dihidratasi dari runtime module-level (dedAnalysisRuntime)
+  // — perintah owner 2026-11-21 04:19: pindah menu (unmount) TIDAK BOLEH
+  // me-reset proses. Mount baru membaca snapshot terkini, bukan dari nol.
+  const initialSnapshot = getDedAnalysisSnapshot();
+
   // Mode: FAST (Gemini 3.5 Flash-Lite) vs DETAIL (Gemini 3.8 Flash)
-  const [selectedMode, setSelectedMode] = useState<AiEstimateAnalysisMode>('FAST');
+  const [selectedMode, setSelectedMode] = useState<AiEstimateAnalysisMode>(initialSnapshot?.mode ?? 'FAST');
   const activeModelConfig = useMemo(() => getAiEstimateModelConfig(selectedMode), [selectedMode]);
 
   // File state
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [fileBuffer, setFileBuffer] = useState<ArrayBuffer | null>(null);
-  const [isSampleLoaded, setIsSampleLoaded] = useState<boolean>(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(initialSnapshot?.file ?? null);
+  const [fileBuffer, setFileBuffer] = useState<ArrayBuffer | null>(initialSnapshot?.fileBuffer ?? null);
+  const [isSampleLoaded, setIsSampleLoaded] = useState<boolean>(initialSnapshot?.isSample ?? false);
   const [isLoadingSample, setIsLoadingSample] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Execution & Progress state
-  const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
-  const [analysisProgress, setAnalysisProgress] = useState<number>(0);
-  const [activeStageId, setActiveStageId] = useState<string>('READING_DED');
-  const [statusMessage, setStatusMessage] = useState<string>('Menunggu analisis dimulai...');
-  const [outputResult, setOutputResult] = useState<AiEstimateOutput | null>(null);
-  const [startTime, setStartTime] = useState<number | null>(null);
-  const [elapsedSeconds, setElapsedSeconds] = useState<number>(0);
+  const [isAnalyzing, setIsAnalyzing] = useState<boolean>(initialSnapshot?.status === 'running');
+  const [analysisProgress, setAnalysisProgress] = useState<number>(initialSnapshot?.progress ?? 0);
+  const [activeStageId, setActiveStageId] = useState<string>(initialSnapshot?.stageId ?? 'READING_DED');
+  const [statusMessage, setStatusMessage] = useState<string>(initialSnapshot?.statusMessage ?? 'Menunggu analisis dimulai...');
+  const [outputResult, setOutputResult] = useState<AiEstimateOutput | null>(initialSnapshot?.result ?? null);
+  const [startTime, setStartTime] = useState<number | null>(initialSnapshot?.startTime ?? null);
+  const [elapsedSeconds, setElapsedSeconds] = useState<number>(
+    initialSnapshot?.status === 'running' && initialSnapshot.startTime
+      ? Math.max(0, Math.floor((Date.now() - initialSnapshot.startTime) / 1000))
+      : 0,
+  );
 
   // Viewer and logging state
   const [activePage, setActivePage] = useState<number>(1);
   const [executionLogs, setExecutionLogs] = useState<
     Array<{ timestamp: string; level: 'INFO' | 'SUCCESS' | 'WARN'; message: string; stage?: string }>
-  >([]);
+  >(initialSnapshot?.logs ?? []);
 
   // Result Filtering state
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -105,10 +124,10 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
   const [editQty, setEditQty] = useState<string>('');
   const [editPrice, setEditPrice] = useState<string>('');
   const [isCommitting, setIsCommitting] = useState<boolean>(false);
-  const [committedSuccess, setCommittedSuccess] = useState<boolean>(false);
+  const [committedSuccess, setCommittedSuccess] = useState<boolean>(initialSnapshot?.committedSuccess ?? false);
   /* P0-A: laporan commit jujur — berapa item masuk vs ditahan karena
    * harga belum tersedia (ditahan = tidak dimasukkan sebagai Rp0). */
-  const [commitReport, setCommitReport] = useState<{ added: number; held: number } | null>(null);
+  const [commitReport, setCommitReport] = useState<{ added: number; held: number } | null>(initialSnapshot?.commitReport ?? null);
   /* Audit 2026-10-31 (F-4.1): pesan penolakan unggahan (ukuran/tipe). */
   const [fileError, setFileError] = useState<string | null>(null);
 
@@ -129,6 +148,40 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
       handleLoadSampleDED(false);
     }
   }, []);
+
+  // Mirror runtime (perintah owner 2026-11-21 04:19): dashboard hanya
+  // MENAMPILKAN snapshot runtime — lari hidup di module-level dan
+  // terus berjalan saat komponen ter-unmount (pindah menu). Unmount =
+  // unsubscribe saja. Mount kembali menghidratasi dari snapshot (lihat
+  // initializers di atas) lalu mengikuti notifikasi runtime.
+  useEffect(() => {
+    const mirror = (snap: DedAnalysisSnapshot | null) => {
+      if (!snap) return;
+      setSelectedMode(snap.mode);
+      setSelectedFile(snap.file);
+      setFileBuffer(snap.fileBuffer);
+      setIsSampleLoaded(snap.isSample);
+      setIsAnalyzing(snap.status === 'running');
+      setAnalysisProgress(snap.progress);
+      setActiveStageId(snap.stageId);
+      setStatusMessage(snap.statusMessage);
+      setOutputResult(snap.result);
+      setStartTime(snap.startTime);
+      setExecutionLogs(snap.logs);
+      setCommittedSuccess(snap.committedSuccess);
+      setCommitReport(snap.commitReport);
+    };
+    mirror(getDedAnalysisSnapshot());
+    return subscribeDedAnalysis(() => mirror(getDedAnalysisSnapshot()));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /** Ganti mode analisis — mode juga dipublikasikan ke runtime agar
+      mount kembali membuka mode yang sama. */
+  const changeMode = (mode: AiEstimateAnalysisMode) => {
+    setSelectedMode(mode);
+    publishDedAnalysis({ mode });
+  };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -167,6 +220,9 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
     reader.onload = () => {
       if (reader.result instanceof ArrayBuffer) {
         setFileBuffer(reader.result);
+        // Stage ke runtime: file + buffer bertahan melewati pindah menu
+        // (mount baru tidak auto-load dokumen contoh lagi).
+        stageDedAnalysisFile(file, reader.result, false);
       }
     };
     reader.readAsArrayBuffer(file);
@@ -186,6 +242,9 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
       setSelectedFile(sampleFile);
       setFileBuffer(buffer);
       setIsSampleLoaded(true);
+      // Stage ke runtime agar mount kembali tidak memuat ulang contoh
+      // dan lari auto-start tidak kehilangan filenya.
+      stageDedAnalysisFile(sampleFile, buffer, true);
 
       if (startAuto) {
         setTimeout(() => {
@@ -201,7 +260,10 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
 
   const addLog = (message: string, level: 'INFO' | 'SUCCESS' | 'WARN' = 'INFO', stage?: string) => {
     const timeStr = new Date().toTimeString().split(' ')[0];
-    setExecutionLogs((prev) => [...prev, { timestamp: timeStr, level, message, stage }]);
+    // Log ditulis ke runtime (mirror yang menampilkan di UI) — bertahan
+    // melewati pindah menu; lari yang selesai saat ter-unmount tetap
+    // meninggalkan jejak lognya.
+    appendDedAnalysisLog({ timestamp: timeStr, level, message, stage });
   };
 
   // Run the full AI Estimate Pipeline
@@ -210,15 +272,24 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
     const targetBuffer = bufferToUse || fileBuffer;
     if (!targetFile || !targetBuffer) return;
 
-    setIsAnalyzing(true);
-    setOutputResult(null);
-    setCommittedSuccess(false);
-    setAnalysisProgress(5);
-    setActiveStageId('READING_DED');
-    setStatusMessage('Memulai pemrosesan dokumen DED...');
-    setStartTime(Date.now());
+    // Lari dicatat di runtime module-level (dedAnalysisRuntime) agar
+    // bertahan melewati pindah menu — pipeline menulis ke runtime,
+    // mirror yang menampilkan di UI. isSample dibaca dari snapshot
+    // (file yang sama) karena closure setTimeout jalur contoh bisa
+    // memegang nilai isSampleLoaded yang basi.
+    const staged = getDedAnalysisSnapshot();
+    const isSample = staged?.file != null
+      && staged.file.name === targetFile.name
+      && staged.file.size === targetFile.size
+      && staged.isSample;
+    const run = startDedAnalysisRun({
+      file: targetFile,
+      buffer: targetBuffer,
+      isSample,
+      mode: selectedMode,
+    });
+    const reqId = run.requestId;
     setElapsedSeconds(0);
-    setExecutionLogs([]);
 
     addLog(`Memulai analisis DED (${activeModelConfig.title} · ${activeModelConfig.modelName})`, 'INFO', 'INIT');
     addLog(`Target file: ${targetFile.name} (${(targetFile.size / (1024 * 1024)).toFixed(2)} MB)`, 'INFO', 'INIT');
@@ -237,9 +308,13 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
         region: currentProject?.location || 'DKI Jakarta / Nasional',
         mode: selectedMode,
         onProgress: (evt: AiEstimateProgressEvent) => {
-          setAnalysisProgress(evt.percent);
-          setStatusMessage(evt.message);
-          setActiveStageId(evt.stage);
+          // Progres ke runtime — patch ditolak bila lari ini sudah
+          // digantikan lari baru (lari usang tidak menimpa lari baru).
+          patchDedAnalysisRun(reqId, {
+            progress: evt.percent,
+            statusMessage: evt.message,
+            stageId: evt.stage,
+          });
           addLog(evt.message, evt.percent >= 90 ? 'SUCCESS' : 'INFO', evt.stage);
         },
       });
@@ -256,19 +331,27 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
         totalCost: result.summary?.estimatedTotal ?? 0,
       });
 
-      setOutputResult(result);
-      setAnalysisProgress(100);
-      setActiveStageId('COMPLETED');
-      setStatusMessage('Analisis DED selesai. RAB estimasi berhasil disusun.');
+      patchDedAnalysisRun(reqId, {
+        result,
+        progress: 100,
+        stageId: 'COMPLETED',
+        status: 'done',
+        statusMessage: 'Analisis DED selesai. RAB estimasi berhasil disusun.',
+      });
       const totalItemsCount = result.stats?.totalItems ?? result.workItems.length;
       addLog(`Analisis selesai dalam ${Math.round(result.executionDurationSec || 0)} detik. Ditemukan ${totalItemsCount} pekerjaan.`, 'SUCCESS', 'BUILD_RAB');
     } catch (err: any) {
       console.error('[DedAnalysisDashboard] Execution Error:', err);
-      setStatusMessage('Analisis DED gagal: ' + (err?.message || 'Terjadi kesalahan sistem'));
+      patchDedAnalysisRun(reqId, {
+        status: 'failed',
+        statusMessage: 'Analisis DED gagal: ' + (err?.message || 'Terjadi kesalahan sistem'),
+        error: err?.message || 'Terjadi kesalahan sistem',
+      });
       addLog(`Error saat memproses DED: ${err?.message || err}`, 'WARN', 'ERROR');
-    } finally {
-      setIsAnalyzing(false);
     }
+    // TIDAK ADA finally yang me-reset isAnalyzing: nilainya dicerminkan
+    // dari runtime (status done/failed) — finally yang menulis setState
+    // lokal akan menimpa mirror bila lari baru sudah dimulai.
   };
 
   // Derive the 4-step progress states
@@ -459,11 +542,15 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
       }
 
       setCommitReport({ added: addedCount, held: heldCount });
+      // Status commit juga ke runtime agar bertahan melewati pindah menu.
+      publishDedAnalysis({ commitReport: { added: addedCount, held: heldCount } });
       if (duplicateBlocked) {
         setStatusMessage('Finalisasi ini sudah pernah disimpan ke proyek ini — transfer duplikat diblokir, tidak ada baris ganda.');
+        publishDedAnalysis({ statusMessage: 'Finalisasi ini sudah pernah disimpan ke proyek ini — transfer duplikat diblokir, tidak ada baris ganda.' });
       }
       if (itemsToAdd.length > 0) {
         setCommittedSuccess(true);
+        publishDedAnalysis({ committedSuccess: true });
         if (onCommitSuccess) {
           onCommitSuccess([], outputResult.summary?.estimatedTotal ?? 0, currentProject?.id);
         }
@@ -632,7 +719,7 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
             <div className="inline-flex p-1 bg-[var(--ez-color-surface-tertiary)] border border-[var(--ez-color-border-line)] rounded-[10px] gap-1">
               <button
                 type="button"
-                onClick={() => setSelectedMode('FAST')}
+                onClick={() => changeMode('FAST')}
                 disabled={isAnalyzing}
                 className={`px-3 py-1.5 rounded-[7px] text-[12px] font-semibold transition-all flex items-center gap-1.5 ${
                   selectedMode === 'FAST'
@@ -648,7 +735,7 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
               </button>
               <button
                 type="button"
-                onClick={() => setSelectedMode('DETAIL')}
+                onClick={() => changeMode('DETAIL')}
                 disabled={isAnalyzing}
                 className={`px-3 py-1.5 rounded-[7px] text-[12px] font-semibold transition-all flex items-center gap-1.5 ${
                   selectedMode === 'DETAIL'

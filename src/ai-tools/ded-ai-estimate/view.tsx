@@ -29,6 +29,19 @@ import { loadPersistedDedMode } from './dedModePersistence';
 import { probeDedPdf, resolvePageScope } from './parser';
 import { DedAiInputView, DedAiSession } from './DedAiInputView';
 import { DedAiProgressView, DedAiStage, applyStageMark, getStageDefs, mapProgressStageKey, ProgressSummary } from './DedAiProgressView';
+import {
+  cancelDedRun,
+  getDedRunSnapshot,
+  isDedRunActive,
+  isDedRunCancelled,
+  patchDedRun,
+  publishDedRun,
+  publishDedRunSnapshot,
+  startDedRun,
+  subscribeDedRun,
+  type DedRunPatch,
+  type DedRunSnapshot,
+} from './dedRunStore';
 import { DedAiResultView } from './DedAiResultView';
 import { fullAiDedService, FULL_AI_TIMEOUT_MS } from '../ded-full-ai/service';
 import { FullAiOutput, FullAiItem } from '../ded-full-ai/types';
@@ -124,12 +137,22 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
   // Saldo kredit simulasi (store bersama mockAdapter — angka yang sama
   // dengan yang dilihat InputView) untuk chip Kredit AI di bar atas shell.
   const { balance: creditBalance } = useCreditSimulation();
-  const [screen, setScreen] = useState<Screen>('input');
+  // HIDRASI DARI STORE LARI (perintah owner 2026-11-21 04:19 — proses
+  // tidak boleh ke-reset saat pindah menu): bila sebuah lari masih
+  // tersimpan di dedRunStore (user kembali sesudah pindah menu), mount
+  // ini menampilkan snapshot itu — progres terkini, atau hasil bila
+  // lari sudah selesai saat user di menu lain — bukan layar input
+  // segar. Tanpa snapshot: default persis seperti sebelumnya. State
+  // lokal di bawah ini adalah MIRROR snapshot store, bukan kebenaran
+  // sendiri (lihat applyDedRunSnapshot + efek langganan di bawah).
+  const [hydratedRun] = useState(getDedRunSnapshot);
+  const [screen, setScreen] = useState<Screen>(hydratedRun?.screen ?? 'input');
   // D-45 (Batch E): sesi baru memakai mode DED terakhir yang dipilih
   // pengguna (localStorage `ezrab_dedai_mode`), bukan selalu default
   // C2 — policy/fullAi diturunkan dari mode yang dipulihkan (C1).
   // Tanpa nilai tersimpan → default EZRAB AI MODE seperti sebelumnya.
   const [session, setSession] = useState<DedAiSession>(() => {
+    if (hydratedRun?.session) return hydratedRun.session;
     const persistedMode = loadPersistedDedMode();
     return {
       files: [], description: '', projectName: '',
@@ -137,26 +160,85 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
       policy: policyForMode(persistedMode), fullAi: persistedMode === 'FULL_AI', targetProjectId: null,
     };
   });
-  const [stages, setStages] = useState<DedAiStage[]>(() => initialStages(t, loadPersistedDedMode()));
-  const [percent, setPercent] = useState(0);
-  const [statusLine, setStatusLine] = useState(t('ai.ded.preparing'));
-  const [fullAiOutput, setFullAiOutput] = useState<FullAiOutput | null>(null);
-  const [summary, setSummary] = useState<ProgressSummary>({
+  const [stages, setStages] = useState<DedAiStage[]>(() => hydratedRun?.stages ?? initialStages(t, loadPersistedDedMode()));
+  const [percent, setPercent] = useState(hydratedRun?.percent ?? 0);
+  const [statusLine, setStatusLine] = useState(hydratedRun?.statusLine ?? t('ai.ded.preparing'));
+  const [fullAiOutput, setFullAiOutput] = useState<FullAiOutput | null>(hydratedRun?.fullAiOutput ?? null);
+  const [summary, setSummary] = useState<ProgressSummary>(hydratedRun?.summary ?? {
     projectName: '', fileCount: 0, totalSize: 0, mode: 'FAST', startedAt: Date.now(),
   });
-  const [error, setError] = useState<{ message: string; errorCode?: string; stage?: string; retryable?: boolean } | null>(null);
-  const [result, setResult] = useState<DedAiOutput | null>(null);
-  const [resultReady, setResultReady] = useState(false);
+  const [error, setError] = useState<{ message: string; errorCode?: string; stage?: string; retryable?: boolean } | null>(hydratedRun?.error ?? null);
+  const [result, setResult] = useState<DedAiOutput | null>(hydratedRun?.result ?? null);
+  const [resultReady, setResultReady] = useState(hydratedRun?.resultReady ?? false);
   const [drafts, setDrafts] = useState<DraftRecord[]>(loadDrafts);
-  const [draftSaved, setDraftSaved] = useState(false);
-  const [finalized, setFinalized] = useState(false);
-  const cancelRef = useRef(false);
+  const [draftSaved, setDraftSaved] = useState(hydratedRun?.draftSaved ?? false);
+  const [finalized, setFinalized] = useState(hydratedRun?.finalized ?? false);
+  // runId lari yang dimiliki/dilanjutkan mount ini — dipakai loop lari
+  // (tulis store) dan aksi batal. Diisi saat lari dimulai atau saat
+  // hidrasi dari snapshot. TIDAK PERNAH di-reset oleh unmount.
+  // (cancelRef lama DIHAPUS: flag batal kini hidup di store agar
+  // terbaca loop lintas mount — ref komponen mati bersama mount-nya.)
+  const activeRunIdRef = useRef<number | null>(hydratedRun?.runId ?? null);
   // Mode lari yang sedang berjalan (diferensiasi progres 2 mode, ACC
   // 2026-11-20): markUpTo butuh mode untuk memetakan kunci tahap 6-tahap
   // ke daftar tahap tampilan (3 tahap Full AI vs 6 tahap EZRAB AI).
   // Diisi runAnalysis sesudah resolveDedAiMode, sebelum satu pun
   // markUpTo dipanggil; tidak pernah dibaca di luar lari.
   const runModeRef = useRef<DedRabAiMode>('EZRAB_AI');
+
+  // Mirror snapshot store → state lokal. Satu-satunya penulis state
+  // lokal dari store; dipanggil saat mount (hidrasi susulan) dan pada
+  // tiap perubahan snapshot (progres live dari loop lari — termasuk
+  // loop yang jalan saat komponen ini ter-unmount).
+  const applyDedRunSnapshot = useCallback((snap: DedRunSnapshot) => {
+    activeRunIdRef.current = snap.runId;
+    setScreen(snap.screen);
+    if (snap.session) setSession(snap.session);
+    setStages(snap.stages);
+    setPercent(snap.percent);
+    setStatusLine(snap.statusLine);
+    setSummary(snap.summary);
+    setError(snap.error);
+    setResult(snap.result);
+    setFullAiOutput(snap.fullAiOutput);
+    setResultReady(snap.resultReady);
+    setDraftSaved(snap.draftSaved);
+    setFinalized(snap.finalized);
+  }, []);
+
+  // Langganan store lari: unmount = unsubscribe SAJA. TIDAK ADA
+  // pembatalan di sini — inilah inti perbaikan reset-saat-pindah-menu
+  // (cleanup unmount lama yang mengeset cancelRef DIHAPUS; lari terus
+  // berjalan di balik menu lain dan snapshot-nya dibaca lagi di sini).
+  useEffect(() => {
+    const snap = getDedRunSnapshot();
+    if (snap) applyDedRunSnapshot(snap);
+    return subscribeDedRun((s) => { if (s) applyDedRunSnapshot(s); });
+  }, [applyDedRunSnapshot]);
+
+  // Penulis loop lari → store. Loop TIDAK PERNAH memanggil setState
+  // komponen langsung — setState ke komponen yang ter-unmount hilang,
+  // sementara tulis store bertahan dan di-mirror saat mount kembali.
+  const writeRun = useCallback((patch: DedRunPatch) => {
+    const runId = activeRunIdRef.current;
+    if (runId == null) return;
+    patchDedRun(runId, patch);
+  }, []);
+  // Satu-satunya cek pembatalan loop: flag store (batal eksplisit atau
+  // supersede oleh lari baru). Unmount TIDAK PERNAH membuatnya true.
+  const runCancelled = useCallback(() => {
+    const runId = activeRunIdRef.current;
+    return runId == null ? true : isDedRunCancelled(runId);
+  }, []);
+  // Tulis ringkasan (currentFile dkk.) — baca-modifikasi-tulis atas
+  // snapshot store, karena loop tidak punya akses ke state komponen
+  // sesudah unmount.
+  const writeRunSummary = useCallback((patch: Partial<ProgressSummary>) => {
+    const runId = activeRunIdRef.current;
+    const snap = getDedRunSnapshot();
+    if (runId == null || !snap || snap.runId !== runId) return;
+    patchDedRun(runId, { summary: { ...snap.summary, ...patch } });
+  }, []);
 
   // Perbaikan final: konsumsi entry DED. Sebelumnya view ini TIDAK PERNAH
   // mengonsumsi entry klasik — hanya projectId via URL yang bertahan,
@@ -202,18 +284,24 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
   // ada yang diubah); kunci dipetakan ke tahap tampilan mode berjalan
   // (mapProgressStageKey) dan urutan diambil dari daftar mode itu —
   // EZRAB_AI: pemetaan identitas + urutan 6 tahap (perilaku lama persis).
+  // Tulis ke STORE (bukan setState) agar tahap bertahan melewati
+  // unmount; daftar tahap dibaca dari snapshot store (selalu terkini,
+  // bahkan saat loop jalan tanpa komponen ter-mount).
   const markUpTo = (key: string, status: DedAiStage['status']) => {
+    const runId = activeRunIdRef.current;
+    const snap = getDedRunSnapshot();
+    if (runId == null || !snap || snap.runId !== runId) return;
     const mode = runModeRef.current;
     const order = getStageDefs(t, mode).map((d) => d.key);
     const mappedKey = mapProgressStageKey(key, mode);
-    setStages((prev) => applyStageMark(prev, order, mappedKey, status));
+    patchDedRun(runId, { stages: applyStageMark(snap.stages, order, mappedKey, status) });
   };
 
   const runFullAiAnalysis = async (sess: DedAiSession, aiMode: DedRabAiMode) => {
     try {
       markUpTo('received', 'done');
-      setPercent(5);
-      setStatusLine('Full AI: Dokumen diterima — memulai pembacaan…');
+      writeRun({ percent: 5 });
+      writeRun({ statusLine: 'Full AI: Dokumen diterima — memulai pembacaan…' });
 
       // Gabungkan buffer dari semua file (Full AI v1: proses file pertama + catat sisanya)
       // Untuk multi-file, proses per file dan gabungkan items.
@@ -225,28 +313,31 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
       let lastOutput: FullAiOutput | null = null;
 
       for (let fi = 0; fi < sess.files.length; fi += 1) {
-        if (cancelRef.current) return;
+        if (runCancelled()) return;
         const f = sess.files[fi];
-        setSummary((s) => ({ ...s, currentFile: f.file.name }));
+        writeRunSummary({ currentFile: f.file.name });
         markUpTo('reading', 'active');
-        setStatusLine(`Full AI: Membaca ${f.file.name}…`);
-        setPercent(5 + (fi / sess.files.length) * 20);
+        writeRun({ statusLine: `Full AI: Membaca ${f.file.name}…` });
+        writeRun({ percent: 5 + (fi / sess.files.length) * 20 });
 
         const buffer = await f.file.arrayBuffer();
         // Cakupan halaman pilihan pengguna (per berkas) untuk mesin Full AI.
         const fullAiScope = await resolveSessionPageScope(sess, f, buffer);
         if (fullAiScope && fullAiScope.length === 0) {
           markUpTo('identify', 'failed');
-          setError({
-            message: `Berkas ${f.file.name} tidak memiliki halaman dalam rentang terpilih — sesuaikan cakupan halaman atau gunakan "Semua halaman".`,
-            retryable: false,
+          writeRun({
+            error: {
+              message: `Berkas ${f.file.name} tidak memiliki halaman dalam rentang terpilih — sesuaikan cakupan halaman atau gunakan "Semua halaman".`,
+              retryable: false,
+            },
+            status: 'failed',
           });
-          setStatusLine('Full AI: Analisis gagal');
+          writeRun({ statusLine: 'Full AI: Analisis gagal' });
           return;
         }
         markUpTo('extract', 'done');
         markUpTo('identify', 'active');
-        setStatusLine(`Full AI: Menganalisis ${f.file.name}…`);
+        writeRun({ statusLine: `Full AI: Menganalisis ${f.file.name}…` });
 
         const out = await fullAiDedService.execute({
           fileName: f.file.name,
@@ -263,10 +354,10 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
           pageScope: fullAiScope,
           projectName: sess.projectName,
           onProgress: (stage, pct, msg) => {
-            if (cancelRef.current) return;
-            setStatusLine(`Full AI: ${msg}`);
+            if (runCancelled()) return;
+            writeRun({ statusLine: `Full AI: ${msg}` });
             const base = 25 + (fi / sess.files.length) * 70;
-            setPercent(base + (pct / 100) * (70 / sess.files.length));
+            writeRun({ percent: base + (pct / 100) * (70 / sess.files.length) });
             if (stage === 'ANALYZE') markUpTo('identify', 'active');
             if (stage === 'VALIDATE') { markUpTo('identify', 'done'); markUpTo('validate', 'active'); }
             if (stage === 'FINALIZE') { markUpTo('validate', 'done'); markUpTo('prepare', 'active'); }
@@ -275,12 +366,15 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
 
         if (!out.success) {
           markUpTo('identify', 'failed');
-          setError({
-            message: out.error?.message || `Full AI gagal menganalisis ${f.file.name}.`,
-            errorCode: out.error?.code,
-            retryable: out.error?.retryable,
+          writeRun({
+            error: {
+              message: out.error?.message || `Full AI gagal menganalisis ${f.file.name}.`,
+              errorCode: out.error?.code,
+              retryable: out.error?.retryable,
+            },
+            status: 'failed',
           });
-          setStatusLine('Full AI: Analisis gagal');
+          writeRun({ statusLine: 'Full AI: Analisis gagal' });
           return;
         }
 
@@ -340,26 +434,31 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
       };
 
       markUpTo('prepare', 'done');
-      setPercent(100);
-      setStatusLine('Full AI: Analisis selesai');
-      setFullAiOutput(combined);
-      setResultReady(true);
+      writeRun({ percent: 100 });
+      writeRun({ statusLine: 'Full AI: Analisis selesai' });
+      writeRun({ fullAiOutput: combined });
+      writeRun({ resultReady: true, status: 'done' });
       notificationBus.publish({
         type: 'success',
         title: 'Full AI selesai',
         message: `${allItems.length} pekerjaan dari ${sess.files.length} dokumen (${sess.mode === 'FAST' ? 'Cepat' : 'Mendalam'}).`,
         link: 'ded-ai',
       });
-      setTimeout(() => { if (!cancelRef.current) setScreen('result'); }, 900);
+      // Pindah ke layar hasil lewat store — bila user sedang di menu
+      // lain, snapshot-lah yang pindah ke 'result' sehingga kembali ke
+      // DED langsung menampilkan hasil (bukan input segar).
+      setTimeout(() => {
+        const runId = activeRunIdRef.current;
+        if (runId != null && !isDedRunCancelled(runId)) patchDedRun(runId, { screen: 'result' });
+      }, 900);
     } catch (e: any) {
       markUpTo('reading', 'failed');
-      setError({ message: e?.message || 'Full AI: Kesalahan tidak terduga.', retryable: true });
-      setStatusLine('Full AI: Analisis gagal');
+      writeRun({ error: { message: e?.message || 'Full AI: Kesalahan tidak terduga.', retryable: true }, status: 'failed' });
+      writeRun({ statusLine: 'Full AI: Analisis gagal' });
     }
   };
 
   const runAnalysis = useCallback(async (sess: DedAiSession) => {
-    cancelRef.current = false;
     // DUAL MODE (§3): dispatch pada MODE kanonis (dedMode), bukan
     // boolean fullAi — sesi lama tanpa dedMode dimigrasikan (mesin menang).
     const aiMode = resolveDedAiMode(sess);
@@ -371,26 +470,26 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
     // sama persis dalam urutan yang sama persis (netral); runFullAiAnalysis
     // lalu menimpa tahap awalnya sendiri (received done, 5%) seperti
     // sebelumnya, sesudah init ini.
-    setError(null);
-    setResult(null);
-    // Hasil mode lain dibersihkan juga: tanpa ini, hasil Full AI basi akan
-    // menang atas hasil standar yang baru (isFullAiResult + urutan cabang
-    // render) — cacat yang sama dengan yang sudah diperbaiki di
-    // handleLoadDraft untuk draft standar. Full AI mengisi ulang
-    // fullAiOutput di akhir runFullAiAnalysis.
-    setFullAiOutput(null);
-    setResultReady(false);
-    setDraftSaved(false);
-    setFinalized(false);
-    setStages(initialStages(t, aiMode));
-    setPercent(2);
+    // Init kini MEMULAI LARI DI STORE (startDedRun): error/hasil mode
+    // lain dibersihkan di sana (hasil Full AI basi tidak boleh menang
+    // atas hasil standar yang baru — cacat yang sama dengan yang sudah
+    // diperbaiki di handleLoadDraft untuk draft standar), layar jadi
+    // 'progress', dan lari mendapat runId baru (lari lama — bila masih
+    // berjalan — tersupersede dan tulisannya ditolak).
     const startedAt = Date.now();
     const totalSize = sess.files.reduce((a, f) => a + f.file.size, 0);
-    setSummary({
-      projectName: sess.projectName, fileCount: sess.files.length,
-      totalSize, mode: sess.mode, startedAt, currentFile: sess.files[0]?.file.name,
+    const started = startDedRun({
+      session: sess,
+      runMode: aiMode,
+      stages: initialStages(t, aiMode),
+      percent: 2,
+      statusLine: t('ai.ded.preparing'),
+      summary: {
+        projectName: sess.projectName, fileCount: sess.files.length,
+        totalSize, mode: sess.mode, startedAt, currentFile: sess.files[0]?.file.name,
+      },
     });
-    setScreen('progress');
+    activeRunIdRef.current = started.runId;
     if (aiMode === 'FULL_AI') {
       await runFullAiAnalysis(sess, aiMode);
       return;
@@ -398,8 +497,8 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
 
     // Tahap 1: dokumen diterima (validasi sudah di input)
     markUpTo('received', 'done');
-    setPercent(5);
-    setStatusLine(t('ai.ded.reading_start'));
+    writeRun({ percent: 5 });
+    writeRun({ statusLine: t('ai.ded.reading_start') });
 
     const mergedItems: DedAiItem[] = [];
     let totalPages = 0;
@@ -410,14 +509,14 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
 
     try {
       for (let fi = 0; fi < sess.files.length; fi += 1) {
-        if (cancelRef.current) return;
+        if (runCancelled()) return;
         const f = sess.files[fi];
         fileNames.push(f.file.name);
-        setSummary((s) => ({ ...s, currentFile: f.file.name }));
+        writeRunSummary({ currentFile: f.file.name });
 
         // Tahap 2-3: baca dokumen
         markUpTo('reading', 'active');
-        setStatusLine(`${t('ai.ded.reading_doc_a')} ${fi + 1}/${sess.files.length}: ${f.file.name}`);
+        writeRun({ statusLine: `${t('ai.ded.reading_doc_a')} ${fi + 1}/${sess.files.length}: ${f.file.name}` });
         const buffer = await f.file.arrayBuffer();
 
         // Cakupan halaman pilihan pengguna (per berkas): halaman terpilih
@@ -425,11 +524,14 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
         const pageScope = await resolveSessionPageScope(sess, f, buffer);
         if (pageScope && pageScope.length === 0) {
           markUpTo('identify', 'failed');
-          setError({
-            message: `Berkas ${f.file.name} tidak memiliki halaman dalam rentang terpilih — sesuaikan cakupan halaman atau gunakan "Semua halaman".`,
-            retryable: false,
+          writeRun({
+            error: {
+              message: `Berkas ${f.file.name} tidak memiliki halaman dalam rentang terpilih — sesuaikan cakupan halaman atau gunakan "Semua halaman".`,
+              retryable: false,
+            },
+            status: 'failed',
           });
-          setStatusLine(t('ai.ded.status_failed'));
+          writeRun({ statusLine: t('ai.ded.status_failed') });
           return;
         }
 
@@ -447,23 +549,23 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
           complexity: sess.mode === 'DETAIL' ? sess.complexity : undefined,
           projectName: sess.projectName,
           onProgress: (e) => {
-            if (cancelRef.current) return;
+            if (runCancelled()) return;
             // Petakan progress service (10/30/50) ke 6 tahap, dibagi per file.
             const base = (fi / sess.files.length) * 100;
             const span = 100 / sess.files.length;
             if (e.stage === 'PARSE') {
               markUpTo('reading', 'active');
-              setStatusLine(e.message);
-              setPercent(base + span * 0.1);
+              writeRun({ statusLine: e.message });
+              writeRun({ percent: base + span * 0.1 });
             } else if (e.stage === 'PICK_MODE') {
               markUpTo('reading', 'done');
               markUpTo('extract', 'done');
               markUpTo('identify', 'active');
-              setStatusLine(e.message);
-              setPercent(base + span * 0.3);
+              writeRun({ statusLine: e.message });
+              writeRun({ percent: base + span * 0.3 });
             } else if (e.stage === 'ANALYZE') {
-              setStatusLine(`${t('ai.ded.analyzing_a')} ${f.file.name}${t('ai.ded.analyzing_b')}`);
-              setPercent(base + span * 0.55);
+              writeRun({ statusLine: `${t('ai.ded.analyzing_a')} ${f.file.name}${t('ai.ded.analyzing_b')}` });
+              writeRun({ percent: base + span * 0.55 });
             }
           },
         });
@@ -471,11 +573,14 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
         if (!res || !res.success) {
           const fail = res as unknown as { errorCode?: string; stage?: string; message?: string; retryable?: boolean };
           markUpTo('identify', 'failed');
-          setError({
-            message: fail?.message || `${t('ai.ded.fail_analyze_a')} ${f.file.name}.`,
-            errorCode: fail?.errorCode, stage: fail?.stage, retryable: fail?.retryable,
+          writeRun({
+            error: {
+              message: fail?.message || `${t('ai.ded.fail_analyze_a')} ${f.file.name}.`,
+              errorCode: fail?.errorCode, stage: fail?.stage, retryable: fail?.retryable,
+            },
+            status: 'failed',
           });
-          setStatusLine(t('ai.ded.status_failed'));
+          writeRun({ statusLine: t('ai.ded.status_failed') });
           return;
         }
 
@@ -483,8 +588,8 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
         // Tahap 5: validasi (convertAiItem + calculator sudah jalan di service; tandai)
         markUpTo('identify', 'done');
         markUpTo('validate', 'active');
-        setStatusLine(`${t('ai.ded.validating_a')} ${out.items.length} ${t('ai.ded.validating_b')} ${f.file.name}…`);
-        setPercent((fi / sess.files.length) * 100 + (100 / sess.files.length) * 0.85);
+        writeRun({ statusLine: `${t('ai.ded.validating_a')} ${out.items.length} ${t('ai.ded.validating_b')} ${f.file.name}…` });
+        writeRun({ percent: (fi / sess.files.length) * 100 + (100 / sess.files.length) * 0.85 });
 
         const pageOffset = totalPages;
         // FINAL REVIEW (Tugas A): simpan jejak file ini untuk digabung di akhir.
@@ -510,7 +615,7 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
 
       // Tahap 6: siapkan estimasi gabungan
       markUpTo('prepare', 'active');
-      setStatusLine(t('ai.ded.preparing_final'));
+      writeRun({ statusLine: t('ai.ded.preparing_final') });
       const merged = DedAiCalculator.buildOutput({
         jobId: `dedai-${Date.now()}`,
         projectType: sess.projectType,
@@ -538,10 +643,10 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
         projectType: sess.projectType,
       });
       markUpTo('prepare', 'done');
-      setPercent(100);
-      setStatusLine(t('ai.ded.status_done'));
-      setResult(merged);
-      setResultReady(true);
+      writeRun({ percent: 100 });
+      writeRun({ statusLine: t('ai.ded.status_done') });
+      writeRun({ result: merged });
+      writeRun({ resultReady: true, status: 'done' });
       // FASE 5 — hasil DED di-wire ke memori proyek Fase 2 (satu record
       // 'ded:understanding') agar Chat AI/Copilot melihat spek + data
       // hilang lewat retrieval memori biasa — tanpa menyatukan dua
@@ -558,14 +663,18 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
         message: `${merged.items.length} ${t('ai.ded.notif_msg_a')} ${fileNames.length} ${t('ai.ded.notif_msg_b')} (${sess.mode === 'FAST' ? t('ai.ded.input.mode_fast') : t('ai.ded.input.mode_deep')}).`,
         link: 'ded-ai',
       });
-      // Otomatis ke hasil setelah jeda singkat
-      setTimeout(() => { if (!cancelRef.current) setScreen('result'); }, 900);
+      // Otomatis ke hasil setelah jeda singkat (lewat store — lihat
+      // catatan setTimeout yang sama di runFullAiAnalysis).
+      setTimeout(() => {
+        const runId = activeRunIdRef.current;
+        if (runId != null && !isDedRunCancelled(runId)) patchDedRun(runId, { screen: 'result' });
+      }, 900);
     } catch (e: any) {
       markUpTo('reading', 'failed');
-      setError({ message: e?.message || t('ai.ded.err_unexpected'), retryable: true });
-      setStatusLine(t('ai.ded.status_failed'));
+      writeRun({ error: { message: e?.message || t('ai.ded.err_unexpected'), retryable: true }, status: 'failed' });
+      writeRun({ statusLine: t('ai.ded.status_failed') });
     }
-  }, [t]);
+  }, [t, runCancelled, writeRun, writeRunSummary]);
 
   const handleStart = (sess: DedAiSession) => {
     setSession(sess);
@@ -602,6 +711,11 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
   useEffect(() => {
     if (dedAutorunRef.current) return;
     dedAutorunRef.current = true;
+    // Lari aktif di store (user kembali sesudah pindah menu): JANGAN
+    // konsumsi sinyal autorun — lari itu terus berjalan, dan konsumsi
+    // di sini akan memulai lari kedua. Sinyal dibiarkan kedaluwarsa
+    // sendiri (TTL 60 dtk di holder).
+    if (isDedRunActive()) return;
     const res = consumeDedAutorun<DedAiSession>();
     if (!res.ok) {
       if (res.reason === 'expired') setAutorunNotice('Perintah "jalankan analisis DED" dari chat sudah kedaluwarsa (lebih dari 60 detik) — klik Jalankan Analisis untuk memulai.');
@@ -640,12 +754,32 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
     setDedSession(session, screen === 'progress' && error === null);
   }, [session, screen, error]);
 
-  const handleBack = () => { cancelRef.current = true; setScreen('input'); };
+  // Pembatalan EKSPLISIT (tombol Kembali/Batal di layar progress) —
+  // satu-satunya jalur batal selain supersede oleh lari baru. Flag
+  // ditulis ke store agar loop lintas mount membacanya; pindah menu
+  // (unmount) TIDAK pernah memanggil ini.
+  const handleBack = () => {
+    const runId = activeRunIdRef.current;
+    if (runId != null) cancelDedRun(runId);
+    setScreen('input');
+  };
+  // Kembali ke layar input dari layar HASIL — layar ditulis ke store
+  // agar mount kembali tidak menghidrasi layar hasil yang sudah
+  // ditinggalkan user.
+  const goInputScreen = useCallback(() => {
+    publishDedRun({ screen: 'input' });
+    setScreen('input');
+  }, []);
   // Full AI tidak pernah mengisi `result` (hasilnya di `fullAiOutput`) —
   // tanpa cek ini tombol "Lihat Hasil Estimasi" di layar progress mati
   // untuk Full AI pada jendela 900 mdtk sebelum auto-navigasi.
   // Jalur standar tidak berubah: `result` tetap dicek pertama.
-  const handleSeeResult = () => { if (result || fullAiOutput) setScreen('result'); };
+  const handleSeeResult = () => {
+    if (result || fullAiOutput) {
+      publishDedRun({ screen: 'result' });
+      setScreen('result');
+    }
+  };
 
   const handleSaveDraft = (items: DedAiItem[]) => {
     if (!result) return;
@@ -665,6 +799,7 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
       outputPrefs: session.outputPrefs,
     };
     persistDrafts([rec, ...drafts].slice(0, 20));
+    publishDedRun({ draftSaved: true });
     setDraftSaved(true);
   };
 
@@ -689,6 +824,7 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
       outputPrefs: session.outputPrefs,
     };
     persistDrafts([rec, ...drafts].slice(0, 20));
+    publishDedRun({ draftSaved: true });
     setDraftSaved(true);
   };
 
@@ -719,9 +855,32 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
     }
     setDraftSaved(true);
     setFinalized(false);
-    setSession((s) => ({ ...s, projectName: d.projectName, projectType: d.projectType, mode: d.mode, dedMode: restored.mode, policy: restored.policy, fullAi: restored.fullAi, files: [], outputPrefs: d.outputPrefs ?? s.outputPrefs }));
-    setSummary((s) => ({ ...s, projectName: d.projectName, fileCount: d.fileNames.length, mode: d.mode }));
+    const nextSession: DedAiSession = { ...session, projectName: d.projectName, projectType: d.projectType, mode: d.mode, dedMode: restored.mode, policy: restored.policy, fullAi: restored.fullAi, files: [], outputPrefs: d.outputPrefs ?? session.outputPrefs };
+    setSession(nextSession);
+    const nextSummary: ProgressSummary = { ...summary, projectName: d.projectName, fileCount: d.fileNames.length, mode: d.mode };
+    setSummary(nextSummary);
     setScreen('result');
+    // Draft yang dimuat menjadi snapshot lari terkini — tanpa ini,
+    // pindah menu lalu kembali akan menghidrasi lari LAMA, bukan draft
+    // yang sedang ditampilkan. (Tahap/persen/baris status dipertahankan
+    // dari keadaan kini, sama seperti sebelumnya.)
+    publishDedRunSnapshot({
+      status: 'done',
+      screen: 'result',
+      session: nextSession,
+      runMode: restored.mode,
+      stages,
+      percent,
+      statusLine,
+      summary: nextSummary,
+      error: null,
+      result: d.fullAiOutput ? null : d.output ?? null,
+      fullAiOutput: d.fullAiOutput ?? null,
+      resultReady: !d.fullAiOutput,
+      draftSaved: true,
+      finalized: false,
+      startedAt: getDedRunSnapshot()?.startedAt ?? Date.now(),
+    });
   };
 
   const handleDeleteDraft = (id: string) => persistDrafts(drafts.filter((d) => d.id !== id));
@@ -854,6 +1013,7 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
       const added = bulkAddRabItems(mappedInputs, projectId, { finalizationKey });
       const outcome = typeof getLastBulkAddOutcome === 'function' ? getLastBulkAddOutcome() : null;
       setCurrentProjectId(projectId);
+      publishDedRun({ finalized: true });
       setFinalized(true);
       if (outcome?.duplicate) {
         return {
@@ -880,8 +1040,11 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
     if (onNavigateToTab) onNavigateToTab('rab-estimasi');
   };
 
-  // Bersihkan flag cancel saat unmount
-  useEffect(() => () => { cancelRef.current = true; }, []);
+  // TIDAK ADA cleanup unmount yang membatalkan lari di sini — unmount
+  // (pindah menu) hanya melepas langganan store (efek di atas); lari
+  // terus berjalan dan snapshot-nya dibaca lagi saat mount kembali.
+  // (Cleanup lama `cancelRef.current = true` adalah penyebab reset
+  // yang dilaporkan owner 2026-11-21 04:19 — DIHAPUS.)
 
   const handleFullAiFinalize = async (items: FullAiItem[]): Promise<{ ok: boolean; message: string }> => {
     // W4 (§9+§11): validasi-SEBELUM-sisip — sama seperti jalur standar:
@@ -925,6 +1088,7 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
       const added = bulkAddRabItems(mappedInputs, projectId, { finalizationKey });
       const outcome = typeof getLastBulkAddOutcome === 'function' ? getLastBulkAddOutcome() : null;
       setCurrentProjectId(projectId);
+      publishDedRun({ finalized: true });
       setFinalized(true);
       if (outcome?.duplicate) {
         return {
@@ -971,7 +1135,7 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
             { label: t('ai.ded.input.step_3'), state: 'upcoming' },
           ]
         : [
-            { label: t('ai.ded.input.step_1'), state: 'done', onClick: () => setScreen('input') },
+            { label: t('ai.ded.input.step_1'), state: 'done', onClick: goInputScreen },
             { label: t('ai.ded.input.step_2'), state: 'done' },
             { label: t('ai.ded.input.step_3'), state: 'active' },
           ];
@@ -1033,7 +1197,7 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
         onSaveDraft={handleSaveFullAiDraft}
         draftSaved={draftSaved}
         onSendToChat={handleFullAiSendToChat}
-        onBack={() => setScreen('input')}
+        onBack={goInputScreen}
         embedded
       />
     );
@@ -1065,7 +1229,7 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
         )}
         <DedAiResultView
           output={result}
-          onBackToInput={() => setScreen('input')}
+          onBackToInput={goInputScreen}
           onSaveDraft={handleSaveDraft}
           onFinalize={handleFinalize}
           onOpenSpreadsheet={handleOpenSpreadsheet}
