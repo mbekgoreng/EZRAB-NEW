@@ -124,7 +124,11 @@
 .dedai-stat .val.slate { color: var(--ez-color-text-secondary); }
 .dedai-stat .hint { font-size: 11px; color: var(--ez-color-text-muted); margin-top: 4px; }
 .dedai-filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
-.dedai-table-wrap { overflow: auto; max-height: 560px; border: 1px solid var(--ez-color-border-soft); border-radius: var(--ez-radius-card); background: var(--ez-color-surface); box-shadow: 0 4px 20px rgba(0,0,0,0.045); }
+/* flex-shrink: 0 — WAJIB: .dedai di dalam shell adalah kolom flex; kontainer
+   overflow:auto punya min-size otomatis 0 sehingga menyerap SEMUA susut
+   flex dan kolaps ke 2px (hanya border) — tabel hasil tak terlihat dan
+   gerbang review menutupinya (terukur 2026-11-21, dark+light). */
+.dedai-table-wrap { overflow: auto; max-height: 560px; flex-shrink: 0; border: 1px solid var(--ez-color-border-soft); border-radius: var(--ez-radius-card); background: var(--ez-color-surface); box-shadow: 0 4px 20px rgba(0,0,0,0.045); }
 .dedai-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 860px; }
 .dedai-table th { position: sticky; top: 0; z-index: 1; background: var(--ez-color-surface-secondary); text-align: left; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--ez-color-text-muted); padding: 11px 12px; border-bottom: 1px solid var(--ez-color-border-soft); white-space: nowrap; }
 .dedai-table td { padding: 11px 12px; border-bottom: 1px solid var(--ez-color-surface-secondary); vertical-align: top; }
@@ -768,6 +772,11 @@
    (≤720px); blok HP Wave 3 sendiri tidak memakai warna.
    Bayangan hardcode rgba(0,0,0,0.045) sengaja tidak di-override:
    di dark ia sekadar tak terlihat, bukan merusak keterbacaan. */
+
+/* --- Progress + Hasil: kata aksen judul — --ez-color-primary (#2563EB)
+   hanya 3,45:1 di latar gelap (teks paling redup di kedua layar);
+   biru terang token 7,02:1. Hanya dark; light tidak berubah. --- */
+[data-theme="dark"] .dedai-head h1 .accent { color: var(--ez-hue-blue-text); }
 
 /* --- Variabel lokal D6: teks navy → terang, border → gelap --- */
 [data-theme="dark"] .dedai.dedai-input {
