@@ -32,7 +32,7 @@ const PLAN_CTA: Record<PlanId, string> = {
   free: 'Mulai Gratis',
   starter: 'Pilih Starter',
   professional: 'Pilih Professional',
-  business: 'Pilih Advanced',
+  business: 'Pilih Business',
 };
 
 interface PricingCardsProps {

@@ -58,7 +58,9 @@ body,
    ========================================================================== */
 .ez-nav-dark {
   position: fixed;
-  top: 0;
+  /* Geser ke bawah banner fail-safe bila tampil (perbaikan overlap
+     2026-11-23 — variabel diukur live oleh AuthFailsafeBanner). */
+  top: var(--ez-failsafe-banner-h, 0px);
   left: 0;
   right: 0;
   height: 52px;

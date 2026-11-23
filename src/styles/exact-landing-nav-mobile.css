@@ -8,7 +8,8 @@
 @media (max-width: 767px) {
   /* Floating glass navigation */
   .ez-nav-dark {
-    top: 10px;
+    /* Floating bar + offset banner fail-safe (perbaikan overlap 2026-11-23). */
+    top: calc(var(--ez-failsafe-banner-h, 0px) + 10px);
     left: 10px;
     right: 10px;
     width: auto;

@@ -72,6 +72,7 @@ const FAILSAFE_BANNER_DISMISS_KEY = 'ezrab_auth_failsafe_dismissed';
  */
 const AuthFailsafeBanner: React.FC = () => {
   const [dismissed, setDismissed] = useState(false);
+  const bannerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     try {
@@ -82,6 +83,35 @@ const AuthFailsafeBanner: React.FC = () => {
       /* storage tidak tersedia — banner tetap tampil */
     }
   }, []);
+
+  // Perbaikan overlap banner (2026-11-23): banner in-flow di atas dokumen,
+  // navbar fixed top:0 — tanpa offset keduanya berebut 52px teratas dan
+  // hasilnya ditentukan stacking context per halaman (overlap di / & /harga,
+  // banner tertutup navbar di /fitur). Tinggi diukur live (wrap di HP)
+  // dan disalurkan sebagai --ez-failsafe-banner-h untuk .ez-nav-dark.
+  useEffect(() => {
+    if (dismissed) return;
+    const el = bannerRef.current;
+    if (!el || typeof document === 'undefined') return;
+    const root = document.documentElement;
+    const apply = () => {
+      root.style.setProperty('--ez-failsafe-banner-h', `${el.offsetHeight}px`);
+    };
+    apply();
+    if (typeof ResizeObserver !== 'undefined') {
+      const ro = new ResizeObserver(apply);
+      ro.observe(el);
+      return () => {
+        ro.disconnect();
+        root.style.removeProperty('--ez-failsafe-banner-h');
+      };
+    }
+    window.addEventListener('resize', apply);
+    return () => {
+      window.removeEventListener('resize', apply);
+      root.style.removeProperty('--ez-failsafe-banner-h');
+    };
+  }, [dismissed]);
 
   if (dismissed) return null;
 
@@ -96,6 +126,7 @@ const AuthFailsafeBanner: React.FC = () => {
 
   return (
     <div
+      ref={bannerRef}
       role="alert"
       style={{
         display: 'flex',

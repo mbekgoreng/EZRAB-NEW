@@ -58,7 +58,9 @@ body,
    ========================================================================== */
 .ez-nav-dark {
   position: fixed;
-  top: 0;
+  /* Geser ke bawah banner fail-safe bila tampil (perbaikan overlap
+     2026-11-23 — variabel diukur live oleh AuthFailsafeBanner). */
+  top: var(--ez-failsafe-banner-h, 0px);
   left: 0;
   right: 0;
   height: 52px;
@@ -8384,7 +8386,8 @@ body,
   padding: 72px 0 72px;
   border-bottom: 1px solid var(--ez-color-border-line);
   overflow: hidden;
-  scroll-margin-top: 84px;
+  /* + tinggi banner fail-safe bila tampil (perbaikan overlap 2026-11-23). */
+  scroll-margin-top: calc(84px + var(--ez-failsafe-banner-h, 0px));
 }
 
 /* Subtle blueprint grid & soft blue glow behind Pro card */

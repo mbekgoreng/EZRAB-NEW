@@ -316,8 +316,8 @@
 .ezai-scope .mascot-hero {display:none}
 }
 /* Jangkar seksi: beri ruang di bawah navbar lengket supaya label & judul seksi tidak tertutup saat lompat via tautan navbar */
-.ezai-scope .ezai-sec[id] {scroll-margin-top:92px}
-#fitur.ez-wf-pipeline-section {scroll-margin-top:92px}
+.ezai-scope .ezai-sec[id] {scroll-margin-top:calc(92px + var(--ez-failsafe-banner-h, 0px))}
+#fitur.ez-wf-pipeline-section {scroll-margin-top:calc(92px + var(--ez-failsafe-banner-h, 0px))}
 /* HP: kartu harga menumpuk 1 kolom selebar layar — harga & fitur harus terbaca penuh, tidak terpotong */
 @media(max-width:640px) {
 .ezai-scope .plans {grid-template-columns:1fr}

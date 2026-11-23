@@ -117,8 +117,8 @@ test('AiShowcase: sub-copy CTA tanpa janji masuk demo instan', () => {
 });
 
 console.log('\n[3] Gerbang D-01/D-03 TIDAK disentuh (penjaga regresi):');
-test('App.tsx: AUTH_ENABLED tetap false', () => {
-  ok(appSrc.includes('const AUTH_ENABLED = false;'), 'AUTH_ENABLED berubah dari false');
+test('App.tsx: AUTH_ENABLED true (flip perintah owner 8a03451 — re-baseline 2026-11-23)', () => {
+  ok(appSrc.includes('const AUTH_ENABLED = true;'), 'AUTH_ENABLED bukan true');
 });
 test('App.tsx: CTA workspace /fitur tetap ke /daftar (tujuan tidak diubah)', () => {
   ok(

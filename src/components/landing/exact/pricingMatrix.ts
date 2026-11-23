@@ -12,9 +12,11 @@ import type { PlanId } from '../../../billing/plans';
  * File ini hanya memuat matriks fitur tampilan + teks ketentuan, agar tidak
  * ada definisi paket kedua yang bisa menyimpang dari konfigurasi billing.
  *
- * CATATAN KETIDAKSESUAIAN (didokumentasikan, tidak diubah diam-diam):
- * - plans.ts masih menamai paket tertinggi 'Business' (id 'business');
- *   Spec v1.0 menamainya 'Advanced'. Nama tampil di landing mengikuti spec.
+ * CATATAN KETIDAKSESUAIAN (DISELESAIKAN 2026-11-23, perintah owner 'perbaiki'):
+ * plans.ts menamai paket tertinggi 'Business' (id 'business'); Spec v1.0
+ * menamainya 'Advanced'. Nama tampil kini mengikuti plans.ts ('Business')
+ * di semua permukaan — selaras dengan knowledge base Chat AI, FAQ /fitur,
+ * dan CTA kartu ('Coba Business').
  * - (TERSELESAIKAN oleh Amendemen v1.2, Keputusan Owner 2026-11-07)
  *   plans.ts memberi Free kredit 'initial' 100; Spec v1.0 §4 semula
  *   menetapkan Free = 0 kredit AI. Amendemen v1.2 membatalkan ketentuan
@@ -63,12 +65,15 @@ const N: PricingCell = { t: 'no' };
 const T = (v: string): PricingCell => ({ t: 'text', v });
 const Q = (v: string): PricingCell => ({ t: 'quota', v });
 
-/** Nama tampil mengikuti Spec v1.0 (id kanonis 'business' = 'Advanced'). */
+/** Nama tampil mengikuti konfigurasi kanonis plans.ts (diselaraskan 2026-11-23:
+    Spec v1.0 menamai paket tertinggi 'Advanced', tapi plans.ts, knowledge base
+    Chat AI, FAQ /fitur, dan CTA kartu semuanya memakai 'Business' — satu nama
+    kini berlaku di semua permukaan). */
 export const PLAN_DISPLAY_NAME: Record<PlanId, string> = {
   free: 'Free',
   starter: 'Starter',
   professional: 'Professional',
-  business: 'Advanced',
+  business: 'Business',
 };
 
 /** Deskripsi target pengguna per paket (Spec v1.0 §2 positioning). */

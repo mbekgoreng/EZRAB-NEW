@@ -78,7 +78,15 @@ export const ExactNavbar: React.FC<ExactNavbarProps> = ({
           // Koreksi posisi akhir (layout bisa bergeser saat aset dimuat).
           setTimeout(() => {
             const top = el.getBoundingClientRect().top + window.scrollY;
-            window.scrollTo({ top: Math.max(0, top - 70), behavior: 'smooth' });
+            // Offset navbar 70px + tinggi banner fail-safe bila tampil
+            // (perbaikan overlap 2026-11-23).
+            const bannerH =
+              parseFloat(
+                getComputedStyle(document.documentElement).getPropertyValue(
+                  '--ez-failsafe-banner-h'
+                )
+              ) || 0;
+            window.scrollTo({ top: Math.max(0, top - 70 - bannerH), behavior: 'smooth' });
           }, 900);
           return;
         }
