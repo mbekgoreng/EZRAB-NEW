@@ -3,6 +3,15 @@ import { Sparkles, Save, FolderOpen, Check, Send, AlertTriangle, Info } from 'lu
 import { parseHousePrompt, validateSpec, type HouseSpec } from './specEngine';
 import { DesignSpreadsheet, specToSpreadsheetRows } from './DesignSpreadsheet';
 import { spreadsheetToWorkItems, validateWorkItemsForRab, buildApprovalSummary } from './designToRabBridge';
+import type { DesignWorkItem } from './designToRabBridge';
+/* Lengkapi dengan Full AI (§5 budget-based RAB — call site 2). */
+import { completeBudgetRabWithFullAi, buildFullAiCompletionSummary } from '../ai-tools/ezrab-ai/fullAiRabCompletion';
+import type { FullAiCompletionSummary } from '../ai-tools/ezrab-ai/fullAiRabCompletion';
+import { extractUniversalSpec } from '../ai-tools/ezrab-ai/universalRab';
+import { extractRabIntentSpec } from '../ai-tools/ezrab-ai/rabIntentSpec';
+import { aiToolsProviderClient } from '../ai-tools/providerClient';
+import { formatRupiah } from '../engine/formulaEngine';
+import { formatBudgetFeasibilityLine } from '../ai-tools/ezrab-ai/budgetFeasibility';
 import { useProject } from '../context/ProjectContext';
 import { navigateTo, routeForMenu } from '../routing/routes';
 import { saveDesign, listDesigns, getDesign, type SavedDesign } from './designStorage';
@@ -82,6 +91,13 @@ export const AiDesignStudio: React.FC<AiDesignStudioProps> = ({ initialPrompt, o
   const [pickerFor, setPickerFor] = useState<string | null>(null);
   // Fase 6: penolakan persetujuan ditampilkan inline (bukan alert()).
   const [approveNote, setApproveNote] = useState<string | null>(null);
+  // Lengkapi dengan Full AI (§5): harga terisi (state Review saja —
+  // emisi default bridge tetap null + PRICE_UNRESOLVED; reset tiap
+  // generate baru).
+  const [fullAiItems, setFullAiItems] = useState<DesignWorkItem[] | null>(null);
+  const [fullAiSummary, setFullAiSummary] = useState<FullAiCompletionSummary | null>(null);
+  const [fullAiBusy, setFullAiBusy] = useState(false);
+  const [fullAiError, setFullAiError] = useState<string | null>(null);
 
   useEffect(() => { onTabChange?.(activeTab); }, [activeTab, onTabChange]);
 
@@ -90,11 +106,20 @@ export const AiDesignStudio: React.FC<AiDesignStudioProps> = ({ initialPrompt, o
     setSpec(result.spec);
     setClarifications(result.needsClarification);
     setApproved(false);
+    // Lengkapi dengan Full AI: desain baru = completion lama gugur
+    // (harga asumsi milik desain lama, tidak boleh terbawa).
+    setFullAiItems(null);
+    setFullAiSummary(null);
+    setFullAiError(null);
     if (result.spec) setActiveTab('spec');
   }, [prompt]);
 
   const validation = useMemo(() => spec ? validateSpec(spec) : null, [spec]);
   const workItems = useMemo(() => spec ? spreadsheetToWorkItems(specToSpreadsheetRows(spec)) : [], [spec]);
+  // Lengkapi dengan Full AI (§5): item efektif Review = terisi bila ada.
+  const effectiveWorkItems = fullAiItems ?? workItems;
+  // Budget dari prompt (gerbang Q7: completion hanya bila ber-budget).
+  const studioBudgetCap = useMemo(() => extractUniversalSpec(prompt).budgetCap, [prompt]);
   const approval = useMemo(() => spec ? buildApprovalSummary(spec, workItems) : null, [spec, workItems]);
   // Fase 5: status validasi TIGA tingkat. VALID hanya bila tidak ada issues,
   // tidak ada warnings (overlap/keluar tapak), tidak ada asumsi, dan tidak ada
@@ -117,11 +142,11 @@ export const AiDesignStudio: React.FC<AiDesignStudioProps> = ({ initialPrompt, o
       detail: 'Lolos seluruh pemeriksaan yang dijalankan: dimensi, luas minimum ruang, batas tapak, overlap, dan kelengkapan spesifikasi. Tetap konseptual — bukan gambar siap konstruksi.' };
   }, [spec, validation, clarifications]);
   // Fase 6: gerbang kirim ke RAB — hitungan lolos / terblokir selalu terlihat.
-  const rabGate = useMemo(() => validateWorkItemsForRab(workItems), [workItems]);
+  const rabGate = useMemo(() => validateWorkItemsForRab(effectiveWorkItems), [effectiveWorkItems]);
 
   const handleApprove = useCallback(() => {
     if (!spec || !validation?.valid) return;
-    const { valid, rejected } = validateWorkItemsForRab(workItems);
+    const { valid, rejected } = validateWorkItemsForRab(effectiveWorkItems);
     if (rejected.length > 0) {
       setApproveNote(
         `${rejected.length} item terblokir dan tidak ikut disetujui: ` +
@@ -133,7 +158,7 @@ export const AiDesignStudio: React.FC<AiDesignStudioProps> = ({ initialPrompt, o
     setApproveNote(null);
     setApproved(true);
     onApprove?.(spec, valid);
-  }, [spec, validation, workItems, onApprove]);
+  }, [spec, validation, effectiveWorkItems, onApprove]);
 
   // P0: Kirim ke RAB via ProjectContext (dengan konfirmasi & cegah duplikat)
   const handleSendToRab = useCallback(() => {
@@ -142,7 +167,7 @@ export const AiDesignStudio: React.FC<AiDesignStudioProps> = ({ initialPrompt, o
       setSendError('Tidak ada proyek aktif. Buat atau buka proyek dulu di menu Proyek.');
       return;
     }
-    const { valid, rejected } = validateWorkItemsForRab(workItems);
+    const { valid, rejected } = validateWorkItemsForRab(effectiveWorkItems);
     if (valid.length === 0) {
       setSendError('Tidak ada item valid untuk dikirim.');
       return;
@@ -163,7 +188,18 @@ export const AiDesignStudio: React.FC<AiDesignStudioProps> = ({ initialPrompt, o
         unit: item.unit,
         code: item.code,
         category: item.category,
-        priceStatus: 'PRICE_UNRESOLVED' as const,
+        // Lengkapi dengan Full AI (§5): item terisi diteruskan sebagai
+        // PRICE_ESTIMATED + EZRAB_ASSUMPTION + NEEDS_VERIFICATION
+        // (basis di priceSourceExplanation — factory meneruskannya ke
+        // RabItem; item tak terisi tetap PRICE_UNRESOLVED).
+        priceStatus: item.priceStatus === 'PRICE_ESTIMATED' ? 'PRICE_ESTIMATED' as const : 'PRICE_UNRESOLVED' as const,
+        ...(item.priceStatus === 'PRICE_ESTIMATED' && typeof item.unitPrice === 'number' ? {
+          unitPrice: item.unitPrice,
+          priceSourceKind: 'EZRAB_ASSUMPTION' as const,
+          priceSourceLabel: item.priceSourceLabel,
+          priceSourceExplanation: item.priceSourceExplanation,
+          verificationStatus: 'NEEDS_VERIFICATION' as const,
+        } : {}),
         volumeSource: 'AI_GENERATED' as const,
         // P1: AHSP mapping manual (jika user memilih kandidat)
         ...(ahspMappings[item.code] ? { ahspCode: ahspMappings[item.code] } : {}),
@@ -178,7 +214,72 @@ export const AiDesignStudio: React.FC<AiDesignStudioProps> = ({ initialPrompt, o
     } catch (e) {
       setSendError('Gagal mengirim ke RAB: ' + (e as Error).message);
     }
-  }, [currentProject, workItems, projectRabItems, bulkAddRabItems, ahspMappings]);
+  }, [currentProject, effectiveWorkItems, projectRabItems, bulkAddRabItems, ahspMappings]);
+
+  // Lengkapi dengan Full AI (§5): isi harga (dan kuantitas yang masih
+  // kosong) lewat orkestrator chat yang sama — hasil disimpan di state
+  // Review (fullAiItems), bukan di emisi bridge. Gerbang Q7: tanpa
+  // budget di prompt, ditolak jujur (tanpa panggilan AI).
+  const handleFullAiComplete = useCallback(async () => {
+    setFullAiError(null);
+    const budgetCap = studioBudgetCap;
+    if (budgetCap == null) {
+      setFullAiError('Sebutkan budget di prompt (mis. "budget 500 juta") agar harga bisa dilengkapi dengan Full AI.');
+      return;
+    }
+    const quality = extractRabIntentSpec(prompt).quality ?? null;
+    const uniSpec = extractUniversalSpec(prompt);
+    setFullAiBusy(true);
+    try {
+      const result = await completeBudgetRabWithFullAi({
+        items: workItems.map((it) => ({
+          description: it.description,
+          category: it.category,
+          volume: it.volume,
+          unit: it.unit,
+          unitPrice: it.unitPrice,
+          priceStatus: it.priceStatus,
+          notes: it.notes,
+        })),
+        budgetCap,
+        quality,
+        region: uniSpec.location,
+        projectType: spec ? `rumah ${spec.floors} lantai, ${spec.buildingAreaM2} m²` : 'desain',
+        projectLabel: spec ? `Desain ${spec.buildingWidthM}×${spec.buildingLengthM}m` : undefined,
+        deps: { execute: (req) => aiToolsProviderClient.execute(req), productId: 'EZRAB_AI' },
+      });
+      if (result.failed) {
+        setFullAiError(`Lengkapi dengan Full AI gagal: ${result.failureMessage ?? 'AI gagal memproses'} — tidak ada harga yang dikarang.`);
+        return;
+      }
+      const completed = workItems.map((it, idx) => {
+        const done = result.items[idx];
+        if (!done) return it;
+        const volumeChanged = typeof done.volume === 'number' && done.volume !== it.volume;
+        if (done.priceStatus === 'PRICE_ESTIMATED') {
+          return {
+            ...it,
+            unitPrice: done.unitPrice,
+            priceStatus: 'PRICE_ESTIMATED' as const,
+            priceSourceKind: 'EZRAB_ASSUMPTION' as const,
+            priceSourceLabel: done.priceSourceLabel,
+            priceSourceExplanation: done.priceSourceExplanation,
+            verificationStatus: 'NEEDS_VERIFICATION' as const,
+            notes: done.notes,
+            volume: typeof done.volume === 'number' ? done.volume : it.volume,
+          };
+        }
+        if (volumeChanged) return { ...it, volume: done.volume as number };
+        return it;
+      });
+      setFullAiItems(completed);
+      setFullAiSummary(buildFullAiCompletionSummary(result, budgetCap));
+    } catch (e) {
+      setFullAiError(`Lengkapi dengan Full AI gagal: ${e instanceof Error ? e.message : 'kesalahan tak dikenal'} — tidak ada harga yang dikarang.`);
+    } finally {
+      setFullAiBusy(false);
+    }
+  }, [prompt, workItems, spec, studioBudgetCap]);
 
   const handleGoToRab = useCallback(() => {
     navigateTo(routeForMenu('rab-estimasi', currentProject?.id || null));
@@ -463,17 +564,24 @@ export const AiDesignStudio: React.FC<AiDesignStudioProps> = ({ initialPrompt, o
             <div style={{ ...CARD, padding: 24 }}>
               <h3 style={{ margin: '0 0 8px', fontSize: 17, fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>Review Sebelum Dikirim ke QTO/RAB</h3>
               <div>
-                {approval.lines.map((line, i) => (
-                  <div key={i} style={{ padding: '8px 0', borderBottom: '1px solid var(--ez-color-border-soft)', fontSize: 13.5, color: 'var(--ez-color-text-body)' }}>{line}</div>
-                ))}
+                {approval.lines
+                  // Lengkapi dengan Full AI: baris "BELUM ADA HARGA"
+                  // disembunyikan sesudah completion (panel completion
+                  // di bawah menggantikannya dengan hitungan terisi).
+                  .filter((line) => !(fullAiSummary && line.includes('BELUM ADA HARGA')))
+                  .map((line, i) => (
+                    <div key={i} style={{ padding: '8px 0', borderBottom: '1px solid var(--ez-color-border-soft)', fontSize: 13.5, color: 'var(--ez-color-text-body)' }}>{line}</div>
+                  ))}
               </div>
               {/* Fase 6: ringkasan gerbang RAB — lolos / perlu review / terblokir / harga */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10, marginTop: 14 }}>
                 {[
                   { label: 'Lolos ke RAB', value: rabGate.valid.length, color: '#059669' },
-                  { label: 'Perlu review', value: workItems.filter(i => i.needsReview).length, color: '#D97706' },
+                  { label: 'Perlu review', value: effectiveWorkItems.filter(i => i.needsReview).length, color: '#D97706' },
                   { label: 'Terblokir', value: rabGate.rejected.length, color: '#DC2626' },
-                  { label: 'Belum ada harga', value: workItems.length, color: 'var(--ez-color-text-primary)' },
+                  // Lengkapi dengan Full AI: sesudah completion, kartu ini
+                  // menunjukkan SISA item tanpa harga (bukan total item).
+                  { label: fullAiSummary ? 'Belum ada harga (sisa)' : 'Belum ada harga', value: fullAiSummary ? fullAiSummary.unfilled.length : workItems.length, color: 'var(--ez-color-text-primary)' },
                 ].map(s => (
                   <div key={s.label} style={{ background: 'var(--ez-color-surface-faint)', borderRadius: 12, padding: '10px 12px' }}>
                     <div style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--ez-color-text-muted)', marginBottom: 4 }}>{s.label}</div>
@@ -489,14 +597,60 @@ export const AiDesignStudio: React.FC<AiDesignStudioProps> = ({ initialPrompt, o
                   </ul>
                 </div>
               )}
-              <div style={{ ...WARN_PANEL, padding: '12px 14px', marginTop: 14, display: 'flex', gap: 9, alignItems: 'flex-start' }}>
-                <AlertTriangle size={15} color="#D97706" style={{ flexShrink: 0, marginTop: 1 }} />
-                <span style={{ fontSize: 13, lineHeight: 1.55, color: 'var(--ez-color-text-body)' }}>
-                  <strong>Penting:</strong> Semua {approval.unresolvedPriceCount} item belum memiliki harga (null).
-                  Harga akan ditentukan via AHSP/resolver/manual <em>setelah</em> Anda menyetujui desain.
-                  Tidak ada harga yang dikarang.
-                </span>
-              </div>
+              {/* Lengkapi dengan Full AI (§5): sesudah completion, panel
+                  peringatan diganti panel ringkasan asumsi + verdict;
+                  tombol completion hanya tampil sebelum terisi. */}
+              {fullAiSummary ? (
+                <div style={{ ...OK_PANEL, padding: '12px 14px', marginTop: 14, fontSize: 13, lineHeight: 1.6, color: 'var(--ez-color-text-body)' }}>
+                  <div>
+                    <strong style={{ color: '#059669' }}>Estimasi Sementara (asumsi AI): {formatRupiah(fullAiSummary.estimatedTotal)}</strong>
+                    {' '}— harga diisi AI untuk {fullAiSummary.filledPriceCount} dari {fullAiSummary.totalItems} item
+                    {fullAiSummary.filledQuantityCount > 0 ? `; kuantitas diisi AI untuk ${fullAiSummary.filledQuantityCount} item` : ''}
+                    {` (kualitas ${fullAiSummary.qualityUsed}${fullAiSummary.qualityDefaulted ? ' — asumsi, karena kualitas tidak disebutkan' : ''}).`}
+                  </div>
+                  <div style={{ marginTop: 4 }}>{formatBudgetFeasibilityLine(fullAiSummary.feasibility)}</div>
+                  {fullAiSummary.qualityDowngradedFrom && fullAiSummary.totalAtRequestedTier != null && fullAiSummary.budgetCap != null && (
+                    <div style={{ marginTop: 4 }}>
+                      Agar muat di anggaran {formatRupiah(fullAiSummary.budgetCap)}, kualitas diturunkan dari {fullAiSummary.qualityDowngradedFrom} ke {fullAiSummary.qualityUsed} — total pada kualitas {fullAiSummary.qualityDowngradedFrom} adalah {formatRupiah(fullAiSummary.totalAtRequestedTier)}.
+                    </div>
+                  )}
+                  <div style={{ marginTop: 4 }}>
+                    Total di atas adalah Estimasi Sementara (asumsi AI) — verdict kelayakan berlaku atas total asumsi ini, bukan atas harga resmi. Item terisi berlabel Estimasi AI (asumsi) dengan spek + dasar di penjelasan harga; {fullAiSummary.unfilled.length > 0 ? `${fullAiSummary.unfilled.length} item belum terisi dan tidak masuk total.` : 'semua item terisi.'}
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div style={{ ...WARN_PANEL, padding: '12px 14px', marginTop: 14, display: 'flex', gap: 9, alignItems: 'flex-start' }}>
+                    <AlertTriangle size={15} color="#D97706" style={{ flexShrink: 0, marginTop: 1 }} />
+                    <span style={{ fontSize: 13, lineHeight: 1.55, color: 'var(--ez-color-text-body)' }}>
+                      <strong>Penting:</strong> Semua {approval.unresolvedPriceCount} item belum memiliki harga (null).
+                      Harga akan ditentukan via AHSP/resolver/manual <em>setelah</em> Anda menyetujui desain.
+                      Tidak ada harga yang dikarang.
+                    </span>
+                  </div>
+                  <div style={{ marginTop: 12, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <button onClick={handleFullAiComplete} disabled={fullAiBusy || studioBudgetCap == null}
+                      style={{
+                        ...BTN_PRIMARY,
+                        background: fullAiBusy || studioBudgetCap == null ? 'var(--ez-color-surface-tertiary)' : 'var(--ez-color-primary)',
+                        color: fullAiBusy || studioBudgetCap == null ? 'var(--ez-color-text-muted)' : '#FFF',
+                        cursor: fullAiBusy || studioBudgetCap == null ? 'default' : 'pointer',
+                      }}>
+                      <Sparkles size={15} /> {fullAiBusy ? 'Mengisi harga…' : 'Lengkapi harga dengan Full AI'}
+                    </button>
+                    {studioBudgetCap == null && (
+                      <span style={{ fontSize: 12.5, color: 'var(--ez-color-text-muted)' }}>
+                        Sebutkan budget di prompt (mis. "budget 500 juta") untuk mengaktifkan.
+                      </span>
+                    )}
+                  </div>
+                  {fullAiError && (
+                    <div style={{ ...ERROR_PANEL, padding: '11px 14px', marginTop: 12, fontSize: 13, lineHeight: 1.55, color: 'var(--ez-color-text-body)' }}>
+                      {fullAiError}
+                    </div>
+                  )}
+                </>
+              )}
 
               {/* P1: Manual AHSP mapping */}
               <div style={{ marginTop: 20, borderTop: '1px solid var(--ez-color-border-soft)', paddingTop: 16 }}>
@@ -504,7 +658,7 @@ export const AiDesignStudio: React.FC<AiDesignStudioProps> = ({ initialPrompt, o
                 <div style={{ fontSize: 12.5, color: 'var(--ez-color-text-muted)', margin: '4px 0 6px' }}>
                   Pilih kandidat AHSP secara manual untuk setiap item. Tidak ada auto-mapping.
                 </div>
-                {workItems.map(item => (
+                {effectiveWorkItems.map(item => (
                   <div key={item.code} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: '1px solid var(--ez-color-border-soft)', fontSize: 13 }}>
                     <span style={{ flex: 1, color: 'var(--ez-color-text-body)' }}>
                       {item.description} ({item.volume} {item.unit})
@@ -535,8 +689,8 @@ export const AiDesignStudio: React.FC<AiDesignStudioProps> = ({ initialPrompt, o
               {pickerFor && (
                 <div style={{ marginTop: 14 }}>
                   <AhspCandidatePicker
-                    keywords={getKeywordsForItem(workItems.find(w => w.code === pickerFor)?.description || '')}
-                    requiredUnit={workItems.find(w => w.code === pickerFor)?.unit || ''}
+                    keywords={getKeywordsForItem(effectiveWorkItems.find(w => w.code === pickerFor)?.description || '')}
+                    requiredUnit={effectiveWorkItems.find(w => w.code === pickerFor)?.unit || ''}
                     onSelect={(ahsp) => handleAhspSelect(pickerFor, ahsp)}
                     onCancel={() => setPickerFor(null)}
                   />
@@ -563,14 +717,18 @@ export const AiDesignStudio: React.FC<AiDesignStudioProps> = ({ initialPrompt, o
                 <div style={{ marginTop: 18, borderTop: '1px solid var(--ez-color-border-soft)', paddingTop: 18 }}>
                   {!showConfirm ? (
                     <button onClick={() => setShowConfirm(true)} style={BTN_PRIMARY}>
-                      <Send size={15} /> Kirim {workItems.length} Item ke RAB
+                      <Send size={15} /> Kirim {effectiveWorkItems.length} Item ke RAB
                     </button>
                   ) : (
                     <div style={{ background: 'var(--ez-color-primary-soft)', borderRadius: 12, padding: 16 }}>
                       <strong style={{ fontSize: 14 }}>Kirim ke proyek "{currentProject?.name || '(belum ada proyek aktif)'}"?</strong>
                       <ul style={{ fontSize: 13, margin: '8px 0', paddingLeft: 20, lineHeight: 1.6, color: 'var(--ez-color-text-body)' }}>
-                        {workItems.map(item => (
-                          <li key={item.code}>{item.description} — {item.volume} {item.unit} (harga: belum ada)</li>
+                        {effectiveWorkItems.map(item => (
+                          <li key={item.code}>
+                            {item.description} — {item.volume} {item.unit} {item.priceStatus === 'PRICE_ESTIMATED' && typeof item.unitPrice === 'number'
+                              ? `(harga estimasi AI: ${formatRupiah(item.unitPrice)}/${item.unit})`
+                              : '(harga: belum ada)'}
+                          </li>
                         ))}
                       </ul>
                       <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
@@ -598,7 +756,9 @@ export const AiDesignStudio: React.FC<AiDesignStudioProps> = ({ initialPrompt, o
                     <Check size={16} /> Item berhasil dikirim ke RAB proyek "{currentProject?.name}"
                   </div>
                   <div style={{ fontSize: 13, color: 'var(--ez-color-text-secondary)', marginTop: 5, lineHeight: 1.55 }}>
-                    Item masuk dengan status harga UNRESOLVED (null). Tentukan harga via AHSP atau input manual di menu RAB.
+                    {fullAiSummary
+                      ? `Dari desain ini, ${fullAiSummary.filledPriceCount} item dilengkapi harga estimasi AI (asumsi, perlu verifikasi) dan ${fullAiSummary.unfilled.length} item masuk tanpa harga. Tentukan harga sisanya via AHSP atau input manual di menu RAB.`
+                      : 'Item masuk dengan status harga UNRESOLVED (null). Tentukan harga via AHSP atau input manual di menu RAB.'}
                   </div>
                   <button onClick={handleGoToRab} style={{ ...BTN_PRIMARY, marginTop: 12 }}>
                     Buka RAB →

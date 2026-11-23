@@ -26,6 +26,12 @@
  *  7. DED: spek eksplisit dipertahankan lewat jalur intake DED.
  *  8. Gerbang persetujuan utuh: pratinjau + tombol push eksplisit,
  *     TRANSFER_DRAFT tanpa callback menolak jujur (tanpa penulisan).
+ *  9. (B5-refix 2026-11-23) Jalur intent PENUH evaluateRabIntent →
+ *     buildUniversalDraft untuk kasus W13: pemenang seri intent yang
+ *     ditolak evaluator B1 tidak pernah dipaksakan ke builder (B5-1).
+ * 10. (B5-refix 2026-11-23) Cabang "di luar cakupan" yang jujur di
+ *     CREATE_RAB_CLARIFY untuk permintaan berukuran yang tak dikenali
+ *     (B5-4); "buatkan rab" tanpa objek tetap menu generik.
  *
  * Catatan asersi: pesan RAB spek MENYEBUT basis parametrik "Tipe 70"
  * secara terbuka (basis perhitungan, bukan pemilihan template) — karena
@@ -38,7 +44,7 @@
  */
 import { executeIntent, continueRabChoice } from '../ai-tools/ezrab-ai/actionRegistry';
 import { getLastDirectRab } from '../ai-tools/ezrab-ai/directRab';
-import { getLastUniversalDraft } from '../ai-tools/ezrab-ai/universalRab';
+import { getLastUniversalDraft, buildUniversalDraft, effectiveItems } from '../ai-tools/ezrab-ai/universalRab';
 import {
   runRabIntentFlow, evaluateRabIntent, continueRabIntent,
   getLastRabIntentSpec, clearLastRabIntentSpec, buildSpecClarification,
@@ -282,6 +288,106 @@ console.log('== 8 — Gerbang persetujuan ==');
   const transfer = executeIntent('TRANSFER_DRAFT', undefined, ctxFor(''));
   check('8.4 TRANSFER_DRAFT tanpa callback → ok:false', transfer.ok === false);
   check('8.5 draf pratinjau tetap ada sesudah penolakan', getLastDirectRab() !== null);
+}
+
+/* ------------------------------------------------------------------ */
+/* 9 — B5-1: jalur intent PENUH (evaluateRabIntent → buildUniversalDraft) */
+/* Celah yang ditutup: matriks W13 menguji buildUniversalDraft langsung, */
+/* sehingga tie-break intent yang mem-bypass evaluator B1 (jalan beton  */
+/* BARU → RECONSTRUCTION + item Pembongkaran) tidak pernah terlihat.    */
+/* Kabel di sini PERSIS kabel registry (actionRegistry CREATE_RAB_      */
+/* DIRECT/SUMMARY): buildUniversalDraft(text, ev.forcedTemplateId).     */
+/* ------------------------------------------------------------------ */
+console.log('== 9 — B5-1: jalur intent penuh W13 ==');
+{
+  const intentDraftOf = (text: string) => {
+    const ev = evaluateRabIntent(text);
+    return { ev, res: buildUniversalDraft(text, ev.forcedTemplateId) };
+  };
+  const partIds = (res: ReturnType<typeof buildUniversalDraft>) =>
+    res.kind === 'draft' ? res.draft.parts.map((p) => p.template.id) : [];
+
+  // 9a. Jalan beton BARU — kasus B5-1.
+  const road = intentDraftOf('buatkan RAB jalan beton baru panjang 1 km lebar 6 m');
+  check('9.1 jalan baru: intent TIDAK memaksa template', road.ev.forcedTemplateId === undefined,
+    `dapat ${road.ev.forcedTemplateId}`);
+  check('9.2 jalan baru: rekomendasi RIGID (bukan RECONSTRUCTION)',
+    road.ev.recommendation.templateId === 'INFRA-ROAD-RIGID', `dapat ${road.ev.recommendation.templateId}`);
+  check('9.3 jalan baru: draft memakai INFRA-ROAD-RIGID',
+    road.res.kind === 'draft' && partIds(road.res).includes('INFRA-ROAD-RIGID'), partIds(road.res).join(','));
+  check('9.4 jalan baru: TANPA item pembongkaran',
+    road.res.kind === 'draft' && !effectiveItems(road.res.draft).some((i) => /pembongkaran|bongkar/i.test(i.description)),
+    road.res.kind === 'draft' ? effectiveItems(road.res.draft).map((i) => i.description).join(' | ') : road.res.kind);
+  // Jalur live yang sama dengan UI B5 (router → CREATE_RAB_SUMMARY).
+  clearLastRabIntentSpec();
+  const live = executeIntent('CREATE_RAB_SUMMARY', undefined, ctxFor('buatkan RAB jalan beton baru panjang 1 km lebar 6 m'));
+  const liveDraft = getLastUniversalDraft();
+  check('9.5 jalan baru (jalur live SUMMARY): draf terbentuk', hasAction(live, 'push-universal'));
+  check('9.6 jalan baru (jalur live SUMMARY): part RIGID',
+    liveDraft?.parts.some((p) => p.template.id === 'INFRA-ROAD-RIGID') === true,
+    liveDraft?.parts.map((p) => p.template.id).join(','));
+  check('9.7 jalan baru (jalur live SUMMARY): pesan tanpa "Pembongkaran"',
+    !/pembongkaran/i.test(live.message));
+
+  // 9b. Rekonstruksi eksplisit — RECONSTRUCTION tetap benar (evaluator).
+  const recon = intentDraftOf('buatkan RAB rekonstruksi jalan beton eksisting panjang 1 km lebar 6 m');
+  check('9.8 rekonstruksi: draft memakai INFRA-ROAD-RECONSTRUCTION',
+    recon.res.kind === 'draft' && partIds(recon.res).includes('INFRA-ROAD-RECONSTRUCTION'), partIds(recon.res).join(','));
+
+  // 9c. Kasus W13 lain lewat jalur intent (bukan builder langsung).
+  const housing = intentDraftOf('buatkan RAB perumahan 20 unit');
+  check('9.9 perumahan 20 unit (intent): BLD-RUSUN',
+    housing.res.kind === 'draft' && partIds(housing.res).includes('BLD-RUSUN'), partIds(housing.res).join(','));
+  const retaining = intentDraftOf('buatkan RAB retaining wall panjang 100 m tinggi 3 m');
+  check('9.10 retaining wall (intent): STR-RETAINING-RC',
+    retaining.res.kind === 'draft' && partIds(retaining.res).includes('STR-RETAINING-RC'), partIds(retaining.res).join(','));
+  const ruko = intentDraftOf('buatkan RAB ruko 2 lantai luas 120 m2');
+  check('9.11 ruko 2 lantai (intent): BLD-SHOWROOM-AUTO (bukan high-rise)',
+    ruko.res.kind === 'draft' && partIds(ruko.res).includes('BLD-SHOWROOM-AUTO'), partIds(ruko.res).join(','));
+  const mep = intentDraftOf('buatkan RAB instalasi listrik luas 120 m2');
+  check('9.12 listrik-only (intent): needs-spec, bukan draft paksa',
+    mep.res.kind === 'needs-spec' && mep.ev.forcedTemplateId === undefined,
+    `${mep.res.kind} / forced=${mep.ev.forcedTemplateId}`);
+  const mixed = intentDraftOf('buatkan RAB perumahan 20 unit + jalan 1 km + drainase 500 m + retaining wall 100 m');
+  check('9.13 campuran (intent): tanpa template paksa (multi-cakupan)',
+    mixed.ev.forcedTemplateId === undefined, `dapat ${mixed.ev.forcedTemplateId}`);
+  check('9.14 campuran (intent): draft 4 part / 39 item',
+    mixed.res.kind === 'draft' && mixed.res.draft.parts.length === 4 && effectiveItems(mixed.res.draft).length === 39,
+    mixed.res.kind === 'draft' ? `${mixed.res.draft.parts.length} part / ${effectiveItems(mixed.res.draft).length} item` : mixed.res.kind);
+
+  // 9d. Kontrol positif: pemenang seri yang LOLOS evaluator tetap boleh
+  // dipaksakan (cold-storage — pin 3.13/3.14; perbaikan B5-1 tidak boleh
+  // mematikan tie-break untuk kandidat yang sah).
+  const cold = evaluateRabIntent('buatkan rab gudang pendingin 500 m2');
+  check('9.15 cold-storage (kandidat sah): tetap dipaksa',
+    cold.forcedTemplateId === 'BLD-IND-COLDSTORAGE', `dapat ${cold.forcedTemplateId}`);
+}
+
+/* ------------------------------------------------------------------ */
+/* 10 — B5-4: cabang "di luar cakupan" yang jujur (CREATE_RAB_CLARIFY) */
+/* ------------------------------------------------------------------ */
+console.log('== 10 — B5-4: permintaan tak didukung dijawab jujur ==');
+{
+  clearLastRabIntentSpec();
+  const tower = executeIntent('CREATE_RAB_CLARIFY', undefined, ctxFor('buatkan RAB menara telekomunikasi tinggi 30 m'));
+  check('10.1 menara: jawaban "belum didukung" (jujur)', /belum didukung/i.test(tower.message),
+    tower.message.slice(0, 120));
+  check('10.2 menara: TANPA pemilih jalur generik', !tower.message.includes('Pilih jalurnya'));
+  check('10.3 menara: TANPA total draft', !/Total RAB|Total biaya langsung/.test(tower.message));
+  check('10.4 menara: ukuran yang disebut diakui (tinggi 30 m)', tower.message.includes('tinggi 30 m'));
+  check('10.5 menara: ditawari RAB manual', (tower.actions ?? []).some((a) => a.label === 'Mulai manual'),
+    JSON.stringify((tower.actions ?? []).map((a) => a.label)));
+  check('10.6 menara: TIDAK dilempar ke katalog template',
+    !(tower.actions ?? []).some((a) => a.label === 'Pakai template'));
+  // Perilaku yang dipertahankan: tanpa objek/ukuran → menu generik.
+  const bare = executeIntent('CREATE_RAB_CLARIFY', undefined, ctxFor('buatkan rab'));
+  check('10.7 "buatkan rab" tetap menu generik', bare.message.includes('Pilih jalurnya'));
+  const t12 = executeIntent('CREATE_RAB_CLARIFY', undefined,
+    ctxFor('Buatkan RAB dengan spesifikasi standar saja, saya belum tahu detailnya.'));
+  check('10.8 T12 (tanpa objek/ukuran) tetap menu generik', t12.message.includes('Pilih jalurnya'));
+  const teleport = executeIntent('CREATE_RAB_CLARIFY', undefined,
+    ctxFor('buatkan RAB teleportasi quantum dimensi lima'));
+  check('10.9 teleportasi (tanpa ukuran) tetap menu generik', teleport.message.includes('Pilih jalurnya'));
 }
 
 /* ------------------------------------------------------------------ */

@@ -28,6 +28,12 @@
 import type { UniversalSpec, UniversalDraft, DraftPart } from './universalRab';
 import type { BuildingModel } from './multiBuilding';
 import {
+  classifyUniversal,
+  SUBCATEGORIES,
+  type Classification,
+  type SubcategoryDef,
+} from './universalTaxonomy';
+import {
   checkQtoAgainstUserDimensions,
   type QtoCheck,
   type QtoItemLike,
@@ -75,6 +81,115 @@ const MATERIAL_WORDS = [
 ];
 const EXTRA_WORDS = ['drainase', 'pagar', 'trotoar', 'kanstin', 'marka', 'pju', 'lampu'];
 
+/* ------------------------------------------------------------------ */
+/* Fungsi per gedung (Batch 1, 2026-11-23)                             */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Subkategori bangunan SPESIFIK yang boleh menimpa fungsi proyek untuk
+ * SATU gedung. 'renovasi' (cara pengerjaan, bukan fungsi), 'kandang'
+ * (bukan cakupan gedung), dan 'bangunan-umum' (generik) TIDAK masuk:
+ * ketiganya tidak pernah menimpa.
+ */
+const SPECIFIC_BUILDING_SUBCATEGORIES: ReadonlySet<string> = new Set([
+  'rumah', 'apartemen', 'hotel', 'kantor', 'komersial',
+  'gudang-industri', 'sekolah', 'kesehatan', 'bangunan-publik',
+]);
+
+/** Pemetaan id subkategori → functionId kanonis (GEDUNG_FUNCTIONS). */
+const SUBCATEGORY_TO_FUNCTION: Record<string, string> = {
+  rumah: 'rumah-tinggal',
+  apartemen: 'apartemen',
+  hotel: 'hotel',
+  kantor: 'kantor',
+  komersial: 'komersial',
+  'gudang-industri': 'gudang',
+  sekolah: 'sekolah',
+  kesehatan: 'rumah-sakit',
+  'bangunan-publik': 'gedung-umum',
+};
+
+/** Kata jenis kanonis per subkategori (cadangan bila span tidak memuat kata yang cocok). */
+const SUBCATEGORY_KIND_WORD: Record<string, string> = {
+  rumah: 'rumah',
+  apartemen: 'apartemen',
+  hotel: 'hotel',
+  kantor: 'kantor',
+  komersial: 'komersial',
+  'gudang-industri': 'gudang',
+  sekolah: 'sekolah',
+  kesehatan: 'rumah sakit',
+  'bangunan-publik': 'gedung serbaguna',
+};
+
+function functionLabelFor(functionId: string): string {
+  const words = functionId.replace(/-/g, ' ');
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
+/**
+ * Turunkan sinyal FUNGSI satu gedung dari datanya SENDIRI — model
+ * gedung (categoryId terstruktur) lalu span teksnya — BUKAN dari spek
+ * proyek.
+ *
+ * Mengapa: spek proyek membawa fungsi gedung PERTAMA (atau fungsi
+ * proyek secara keseluruhan). Mewariskannya ke setiap gedung adalah
+ * tebakan silang-gedung — aturan kejujuran yang sama dengan
+ * dimensi/lantai di atas. Sebelum Batch 1 ini tidak teramati karena
+ * penskor memakai rawText (span) untuk konflik keluarga; evaluator
+ * kesesuaian Batch 1 membaca classification/functionId, sehingga
+ * warisan proyek yang salah menutup template yang benar: gedung
+ * kantor di dalam teks gudang ditolak semua template kantornya
+ * (F1), kandang ayam yang menang, part atap proyek salah tertekan
+ * (G2B-1.02/1.03).
+ *
+ * Aturan:
+ *  - span/model menyebut fungsi SPESIFIK (kantor, gudang, …) →
+ *    timpa classification/kindLabel/functionId/functionLabel dari
+ *    fungsi itu (kindLabel = kata yang benar-benar muncul di span
+ *    bila ada, agar penskor \"cocok jenis\" tetap bekerja);
+ *  - span DIAM soal fungsi (generik/null/bukan bangunan) → BERSIHKAN
+ *    sinyal fungsi warisan proyek (fungsi gedung ini TIDAK DIKETAHUI
+ *    — penskor memutuskan tanpa restriksi fungsi, seperti sebelum
+ *    Batch 1; TIDAK ditebak dari gedung lain);
+ *  - gedung tanpa teks sendiri (span/source null → rawText proyek) →
+ *    klasifikasinya sama dengan proyek, jadi timpa adalah no-op.
+ */
+export function buildingFunctionSignals(
+  building: BuildingModel,
+  rawText: string,
+): {
+  classification: Classification;
+  kindLabel: string | null;
+  functionId: string | null;
+  functionLabel: string | null;
+} {
+  let def: SubcategoryDef | null = null;
+  // classifyUniversal murni/deterministik (regex detect tanpa flag g/y),
+  // sehingga pemanggilan di muka ini identik perilakunya dengan
+  // pemanggilan di cabang !def — dan membuat TS dapat membuktikan
+  // classification selalu terisi (perbaikan TS2454, Batch 1).
+  let classification: Classification = classifyUniversal(rawText);
+  if (building.categoryId && SPECIFIC_BUILDING_SUBCATEGORIES.has(building.categoryId)) {
+    def = SUBCATEGORIES.find((d) => d.id === building.categoryId) ?? null;
+    if (def) classification = { primary: def, secondary: [], matches: [def], isMulti: false };
+  }
+  if (!def) {
+    if (classification.primary && SPECIFIC_BUILDING_SUBCATEGORIES.has(classification.primary.id)) {
+      def = classification.primary;
+    }
+  }
+  if (!def) {
+    // Fungsi tidak diketahui dari data gedung ini — bersihkan warisan.
+    return { classification, kindLabel: null, functionId: null, functionLabel: null };
+  }
+  const lower = rawText.toLowerCase();
+  const match = def.detect.exec(` ${lower.replace(/\s+/g, ' ')} `);
+  const kindLabel = match ? match[0].trim() : (SUBCATEGORY_KIND_WORD[def.id] ?? def.id);
+  const functionId = SUBCATEGORY_TO_FUNCTION[def.id] ?? def.id;
+  return { classification, kindLabel, functionId, functionLabel: functionLabelFor(functionId) };
+}
+
 /**
  * Turunkan spek SATU gedung dari spek proyek. Aturan (inti CHAT-03):
  *  - lantai/dimensi/luas = milik gedung ini SAJA; bila gedung tidak
@@ -86,6 +201,11 @@ const EXTRA_WORDS = ['drainase', 'pagar', 'trotoar', 'kanstin', 'marka', 'pju', 
  *  - rawText = span teks milik gedung ini (bila ada) agar penskoran
  *    template memakai kata-kata gedung itu sendiri; kata kunci
  *    material/lingkup dihitung ulang dari span itu;
+ *  - FUNGSI (klasifikasi/kindLabel/functionId) diturunkan dari data
+ *    gedung INI (categoryId/span) — TIDAK diwarisi dari proyek
+ *    (Batch 1, 2026-11-23; lihat `buildingFunctionSignals`): fungsi
+ *    proyek adalah data gedung lain dan mewariskannya adalah tebakan
+ *    silang-gedung yang menutup template yang benar (G2B-1.02/1.03);
  *  - budgetCap, lokasi, dan cakupan diwarisi dari proyek (tingkat
  *    proyek — bukan per gedung).
  */
@@ -96,9 +216,26 @@ export function specForBuilding(projectSpec: UniversalSpec, building: BuildingMo
     building.lengthM != null && building.widthM != null
       ? Math.round(building.lengthM * building.widthM * 100) / 100
       : (building.buildingAreaM2 ?? null);
+  const fn = buildingFunctionSignals(building, rawText);
   return {
     ...projectSpec,
     rawText,
+    // Fungsi per gedung (lihat buildingFunctionSignals): timpa dari
+    // span/model bila spesifik; BERSIHKAN warisan proyek bila span
+    // diam soal fungsi (fungsi tidak diketahui, bukan fungsi proyek).
+    // UniversalSpec.classification menyimpan ID saja (JSON-serializable,
+    // pola kanonis yang sama dengan extractUniversalSpec) — BUKAN objek
+    // Classification (perbaikan TS2739, Batch 1; tanpa ini
+    // spec.classification.primaryId bernilai undefined di runtime).
+    classification: {
+      primaryId: fn.classification.primary?.id ?? null,
+      secondaryIds: fn.classification.secondary.map((d) => d.id),
+      isMulti: fn.classification.isMulti,
+    },
+    kindLabel: fn.kindLabel,
+    functionId: fn.functionId,
+    functionLabel: fn.functionLabel,
+    needsFunctionLabel: fn.functionId ? null : projectSpec.needsFunctionLabel,
     floors: building.floors,
     floorsExplicit: building.floors != null,
     footprintM2,
@@ -115,17 +252,22 @@ export function specForBuilding(projectSpec: UniversalSpec, building: BuildingMo
     areaM2: footprintM2,
     lengthM: building.widthM,
     widthM: building.lengthM,
-    // Ukuran proyek-level lain (bentang/tebal/volume/jumlah) tidak
-    // diatribusikan ke satu gedung — bisa milik gedung lain.
+    // Ukuran proyek-level lain (bentang/kedalaman/tebal/volume/
+    // jumlah) tidak diatribusikan ke satu gedung — bisa milik gedung
+    // lain (kedalaman sumur bor proyek tidak boleh menjadi kedalaman
+    // basement satu gedung).
     spanM: null,
     heightM: null,
+    depthM: null,
     thicknessCm: null,
     volumeM3: null,
     count: null,
     materialKeywords: MATERIAL_WORDS.filter((w) => lower.includes(w)),
     extraKeywords: EXTRA_WORDS.filter((w) => lower.includes(w)),
-    // Asumsi/fungsi proyek-level dipertahankan apa adanya (label fungsi
-    // per gedung belum terstruktur — lihat batasan di laporan Gate 2).
+    // understandingFlags proyek-level dipertahankan apa adanya.
+    // (FUNGSI tidak lagi diwarisi — lihat buildingFunctionSignals di
+    // atas; komentar lama Gate 2 \"label fungsi per gedung belum
+    // terstruktur\" kini dijawab oleh klasifikasi span/model.)
     understandingFlags: [...projectSpec.understandingFlags],
   };
 }

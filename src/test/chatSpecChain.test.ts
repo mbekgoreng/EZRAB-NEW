@@ -31,14 +31,26 @@ import {
 } from '../ai-tools/ezrab-ai/universalRab';
 import {
   MATERIAL_BINDING,
+  MATERIAL_BINDING_EVIDENCE,
   lookupMaterialBinding,
   resolveDeterministicPick,
+  requestedMaterialForSpec,
   suppressedScopes,
   booleanParamOverrides,
   selectParamOverrides,
   materialStatusForItem,
+  materialSpecForScope,
   validateDraftChain,
+  traceItemSpecs,
+  traceItemReasons,
+  computeVolumeBasis,
+  detectMissingRequiredSpecs,
+  validateWbsCompleteness,
+  deriveMaterialBinding,
+  compareMaterialBinding,
   familyIdFromSpecs,
+  type CatalogSnapshotEntry,
+  type ChainDraftLike,
 } from '../ai-tools/ezrab-ai/specChain';
 import { isNegatedAt } from '../ai-tools/ezrab-ai/rabNeeds';
 import { RabTemplateService } from '../services/rabTemplateService';
@@ -766,7 +778,7 @@ test('C14: gudang Galvalum + paving → kedua varian MATCHED + OFFICIAL_AHSP', (
 
 console.log('== C15. Foot plat: template baru + jejak penuh ==');
 
-test('C15: pondasi foot plat → FND-FOOT-PLAT; bekisting OFFICIAL, beton fallback pasar', () => {
+test('C15: pondasi foot plat → FND-FOOT-PLAT; bekisting OFFICIAL, beton OFFICIAL (2.2.1.4.3 FULL)', () => {
   const d = draftOf(
     'buatkan RAB gedung kantor 3 lantai luas 900 m2 pondasi foot plat',
     [S('building-foundation', 'scope', 'Pondasi', 'Foot plat')],
@@ -780,14 +792,17 @@ test('C15: pondasi foot plat → FND-FOOT-PLAT; bekisting OFFICIAL, beton fallba
   assert.equal(bek!.priceSourceKind, 'OFFICIAL_AHSP');
   const beton = items.find((i) => i.description === 'Beton Foot Plat fc 15 MPa');
   assert.ok(beton, 'item beton foot plat harus ada');
-  assert.equal(beton!.unitPrice, 1355000);
-  assert.equal(beton!.priceSourceKind, 'MARKET_REFERENCE', 'beton 2.2.1.4.3 PARTIAL → fallback pasar (pola mapan FND-*)');
+  // Re-baseline koordinator (2026-11-22, temuan W4): kode 2.2.1.4.3 kini resolve FULL 8/8
+  // pada data kanonis committed → OFFICIAL_AHSP Rp1.278.955. Pin lama (PARTIAL → fallback
+  // pasar Rp1.355.000) basi — terbukti sudah gagal di HEAD bersih 450787a (34/2, log /tmp/head-suite.log).
+  assert.equal(beton!.unitPrice, 1278955);
+  assert.equal(beton!.priceSourceKind, 'OFFICIAL_AHSP', 'beton 2.2.1.4.3 FULL → harga resmi AHSP');
   assert.ok(!d.chainValidation!.ambiguousPicks.some((a) => a.scope === 'pondasi'), 'foot plat tidak boleh AMBIGUOUS_PICK lagi');
 });
 
 console.log('== C16. Dak beton: template baru + jejak penuh ==');
 
-test('C16: atap dak beton → ROOF-CONCRETE-DECK; bekisting OFFICIAL, beton & membran fallback pasar', () => {
+test('C16: atap dak beton → ROOF-CONCRETE-DECK; bekisting OFFICIAL, beton OFFICIAL, membran fallback pasar', () => {
   const d = draftOf(
     'buatkan RAB rumah 2 lantai luas 180 m2 atap dak beton',
     [S('building-roof-type', 'scope', 'Atap', 'Dak beton')],
@@ -801,12 +816,18 @@ test('C16: atap dak beton → ROOF-CONCRETE-DECK; bekisting OFFICIAL, beton & me
   assert.equal(bek!.priceSourceKind, 'OFFICIAL_AHSP');
   const beton = items.find((i) => i.description === 'Beton Plat Dak fc 15 MPa');
   assert.ok(beton, 'item beton plat harus ada');
-  assert.equal(beton!.unitPrice, 1355000);
-  assert.equal(beton!.priceSourceKind, 'MARKET_REFERENCE');
+  // Re-baseline koordinator (2026-11-22, temuan W4): 2.2.1.4.3 FULL → OFFICIAL Rp1.278.955
+  // (pin lama PARTIAL → pasar Rp1.355.000 basi; sudah gagal di HEAD bersih — lihat C15).
+  assert.equal(beton!.unitPrice, 1278955);
+  assert.equal(beton!.priceSourceKind, 'OFFICIAL_AHSP', 'beton 2.2.1.4.3 FULL → harga resmi AHSP');
   const mem = items.find((i) => i.description === 'Waterproofing Membran Bakar Dak');
   assert.ok(mem, 'item membran bakar harus ada');
   assert.equal(mem!.unitPrice, 207102);
-  assert.equal(mem!.priceSourceKind, 'MARKET_REFERENCE', 'membran 3.4.1 PARTIAL → fallback pasar (pola mapan ROOF-WP-*)');
+  // Re-baseline koordinator (2026-11-22): membran 3.4.1 juga resolve FULL pada data kanonis
+  // committed → OFFICIAL_AHSP (harga 207102 tidak berubah). Terbukti pra-ada di HEAD bersih
+  // 450787a (worktree wt-verify-c16, 35/1 — gagal di asersi ini juga); sebelumnya tertutup
+  // oleh kegagalan asersi beton di atasnya.
+  assert.equal(mem!.priceSourceKind, 'OFFICIAL_AHSP', 'membran 3.4.1 FULL → harga resmi AHSP');
   assert.ok(!d.chainValidation!.ambiguousPicks.some((a) => a.scope === 'atap'), 'dak beton tidak boleh AMBIGUOUS_PICK lagi');
 });
 
@@ -843,6 +864,468 @@ test('C18: telford / skimmer / semi-overflow / anti-licin / genteng-metal / salu
   assert.ok(tel.chainValidation!.ambiguousPicks.some((a) => a.scope === 'jalan' && /telford/i.test(a.reason)));
   const msg = formatUniversalDraftMessage(tel);
   assert.ok(/telford/i.test(msg), 'pesan draft harus menyebut telford');
+});
+
+console.log('== G5. Kunci spek baru per disiplin (W4 / Universal Construction Intelligence §4) ==');
+
+test('G5a: sel binding baru — MEP 4× AVAILABLE, struktur-jembatan beton/baja AVAILABLE + kayu UNAVAILABLE, struktur-gudang portal AVAILABLE + truss UNAVAILABLE', () => {
+  assert.equal(lookupMaterialBinding('mep', 'listrik'), 'AVAILABLE');
+  assert.equal(lookupMaterialBinding('mep', 'plumbing'), 'AVAILABLE');
+  assert.equal(lookupMaterialBinding('mep', 'ac'), 'AVAILABLE');
+  assert.equal(lookupMaterialBinding('mep', 'fire protection'), 'AVAILABLE');
+  assert.equal(lookupMaterialBinding('struktur-jembatan', 'beton'), 'AVAILABLE');
+  assert.equal(lookupMaterialBinding('struktur-jembatan', 'baja'), 'AVAILABLE');
+  assert.equal(lookupMaterialBinding('struktur-jembatan', 'kayu'), 'UNAVAILABLE');
+  assert.equal(lookupMaterialBinding('struktur-gudang', 'portal frame'), 'AVAILABLE');
+  assert.equal(lookupMaterialBinding('struktur-gudang', 'truss'), 'UNAVAILABLE');
+  // Sel drainase sudah ada sejak audit — pin ulang (G5 memakainya).
+  assert.equal(lookupMaterialBinding('drainase', 'u-ditch'), 'AVAILABLE');
+  assert.equal(lookupMaterialBinding('drainase', 'box culvert'), 'AVAILABLE');
+  assert.equal(lookupMaterialBinding('drainase', 'pasangan batu kali'), 'UNVERIFIED');
+  assert.equal(lookupMaterialBinding('drainase', 'beton cor'), 'UNVERIFIED');
+});
+
+test('G5b: requestedMaterialForSpec — token per kunci baru (drainase/MEP/struktur)', () => {
+  const req = (s: StructuredSpec) => requestedMaterialForSpec(s);
+  assert.deepEqual(req(S('drainage-material', 'material', 'Material saluran', 'U-ditch pracetak')), { bindingFamily: 'drainase', family: 'drainase', material: 'u-ditch' });
+  assert.equal(req(S('drainage-material', 'material', 'Material saluran', 'Box culvert'))!.material, 'box culvert');
+  assert.equal(req(S('drainage-material', 'material', 'Material saluran', 'Pasangan batu kali'))!.material, 'pasangan batu kali');
+  assert.equal(req(S('drainage-material', 'material', 'Material saluran', 'Beton cor di tempat'))!.material, 'beton cor');
+  assert.equal(req(S('building-mep-scope', 'scope', 'MEP', 'Instalasi listrik'))!.material, 'listrik');
+  assert.equal(req(S('building-mep-scope', 'scope', 'MEP', 'Plumbing & sanitair'))!.material, 'plumbing');
+  assert.equal(req(S('building-mep-scope', 'scope', 'MEP', 'AC / tata udara'))!.material, 'ac');
+  assert.equal(req(S('building-mep-scope', 'scope', 'MEP', 'Fire protection'))!.material, 'fire protection');
+  // Multi-subsistem: token pertama menurut urutan prioritas (listrik > plumbing > AC > fire).
+  assert.equal(req(S('building-mep-scope', 'scope', 'MEP', ['Instalasi listrik', 'Plumbing & sanitair']))!.material, 'listrik');
+  assert.equal(req(S('building-mep-scope', 'scope', 'MEP', ['AC / tata udara', 'Fire protection']))!.material, 'ac');
+  // 'ac' batas kata: 'pracetak' TIDAK BOLEH dibaca sebagai AC.
+  assert.equal(req(S('building-mep-scope', 'scope', 'MEP', 'Pemasangan pracetak'))!, null);
+  assert.equal(req(S('renovation-mep', 'scope', 'MEP renovasi', 'Perbaikan instalasi listrik'))!.material, 'listrik');
+  assert.equal(req(S('renovation-mep', 'scope', 'MEP renovasi', 'Perbaikan plumbing / sanitair'))!.material, 'plumbing');
+  assert.equal(req(S('renovation-mep', 'scope', 'MEP renovasi', 'Tanpa pekerjaan instalasi')), null, "'Tanpa pekerjaan instalasi' bukan permintaan subsistem");
+  assert.equal(req(S('bridge-type', 'scope', 'Tipe jembatan', 'Beton'))!.material, 'beton');
+  assert.equal(req(S('bridge-type', 'scope', 'Tipe jembatan', 'Baja'))!.material, 'baja');
+  assert.equal(req(S('bridge-type', 'scope', 'Tipe jembatan', 'Kayu'))!.material, 'kayu');
+  assert.equal(req(S('bridge-type', 'scope', 'Tipe jembatan', 'Bailey'))!.material, 'baja', 'jembatan Bailey adalah rangka baja');
+  assert.equal(req(S('warehouse-system', 'scope', 'Sistem gudang', 'Portal frame baja WF'))!.material, 'portal frame');
+  assert.equal(req(S('warehouse-system', 'scope', 'Sistem gudang', 'Truss / rangka ruang'))!.material, 'truss');
+});
+
+test('G5c: selectParamOverrides — kunci baru SENGAJA tanpa override (tidak ada param SELECT varian; bukan cacat)', () => {
+  // Pin DELIBERATE: baris-baris G5 tidak punya paramKey (tidak ada
+  // template yang mendeklarasikan param SELECT varian untuk spek
+  // ini; menambah param dekoratif = mengulang cacat G8). Efek
+  // deterministiknya adalah pick template + status material, bukan
+  // override param. Bila suatu hari template mendeklarasikan param
+  // varian nyata, pin ini yang diubah — secara terbuka.
+  assert.deepEqual(selectParamOverrides([S('drainage-material', 'material', 'Material saluran', 'U-ditch pracetak')]), {});
+  assert.deepEqual(selectParamOverrides([S('building-mep-scope', 'scope', 'MEP', 'Instalasi listrik')]), {});
+  assert.deepEqual(selectParamOverrides([S('bridge-type', 'scope', 'Tipe jembatan', 'Beton')]), {});
+  assert.deepEqual(selectParamOverrides([S('warehouse-system', 'scope', 'Sistem gudang', 'Portal frame')]), {});
+  // Kunci lama tidak berubah.
+  assert.deepEqual(selectParamOverrides([S('kandang-roof-material', 'material', 'Atap', 'Galvalum')]), { roof_material: 'galvalum' });
+});
+
+test('G5d: resolveDeterministicPick — drainase (U-ditch/box) + MEP (4 subsistem); pasangan batu/beton cor → null', () => {
+  const drnRanked = [
+    { template: { id: 'DRN-UDITCH-COVER', name: 'Saluran U-Ditch + Tutup Heavy Duty Jalan Kolektor' }, score: 20 },
+    { template: { id: 'DRN-STORM-CULVERT', name: 'Gorong-gorong & Cross Drain Jalan (RCP + Box)' }, score: 20 },
+    { template: { id: 'SDA-DRAIN-UDITCH', name: 'Saluran Drainase U-Ditch Beton Pracetak' }, score: 20 },
+  ];
+  assert.ok(
+    resolveDeterministicPick({ id: 'drainase' }, [S('drainage-material', 'material', 'Material saluran', 'U-ditch pracetak')], drnRanked)?.templateId === 'DRN-UDITCH-COVER',
+    'U-ditch → DRN-UDITCH-COVER (katalog-180, bukan seed legacy SDA-*)',
+  );
+  assert.ok(
+    resolveDeterministicPick({ id: 'drainase' }, [S('drainage-material', 'material', 'Material saluran', 'Box culvert')], drnRanked)?.templateId === 'DRN-STORM-CULVERT',
+  );
+  assert.equal(
+    resolveDeterministicPick({ id: 'drainase' }, [S('drainage-material', 'material', 'Material saluran', 'Pasangan batu kali')], drnRanked),
+    null,
+  );
+  assert.equal(
+    resolveDeterministicPick({ id: 'drainase' }, [S('drainage-material', 'material', 'Material saluran', 'Beton cor di tempat')], drnRanked),
+    null,
+  );
+  const mepRanked = [
+    { template: { id: 'MEP-ELECTRICAL-DIST', name: 'Distribusi Elektrikal Gedung' }, score: 20 },
+    { template: { id: 'MEP-PLUMBING-TOWER', name: 'Sistem Plumbing Gedung Bertingkat' }, score: 20 },
+    { template: { id: 'MEP-HVAC-VRF', name: 'Sistem HVAC VRF/VRV Gedung' }, score: 20 },
+    { template: { id: 'MEP-FIRE-PROTECTION', name: 'Proteksi Kebakaran Gedung' }, score: 20 },
+  ];
+  const mepPick = (v: string | string[]) =>
+    resolveDeterministicPick({ id: 'mep' }, [S('building-mep-scope', 'scope', 'MEP', v)], mepRanked)?.templateId;
+  assert.equal(mepPick('Instalasi listrik'), 'MEP-ELECTRICAL-DIST');
+  assert.equal(mepPick('Plumbing & sanitair'), 'MEP-PLUMBING-TOWER');
+  assert.equal(mepPick('AC / tata udara'), 'MEP-HVAC-VRF');
+  assert.equal(mepPick('Fire protection'), 'MEP-FIRE-PROTECTION');
+  assert.equal(mepPick(['Instalasi listrik', 'Plumbing & sanitair']), 'MEP-ELECTRICAL-DIST', 'multi-subsistem: token pertama menang (keterbatasan v1)');
+  // Target di luar kandidat → null (tidak memaksa template yang tidak lolos gerbang scope).
+  assert.equal(
+    resolveDeterministicPick({ id: 'mep' }, [S('building-mep-scope', 'scope', 'MEP', 'Instalasi listrik')], [{ template: { id: 'MEP-HVAC-VRF', name: 'Sistem HVAC VRF/VRV Gedung' }, score: 20 }]),
+    null,
+  );
+  // Jembatan SENGAJA tanpa pick deterministik (bentang + penjaga material memilikinya).
+  assert.equal(
+    resolveDeterministicPick({ id: 'jembatan' }, [S('bridge-type', 'scope', 'Tipe jembatan', 'Beton')], [{ template: { id: 'BRG-GIRDER-20M', name: 'Jembatan Gelagar Beton Pratekan Bentang 20 m' }, score: 20 }]),
+    null,
+  );
+});
+
+test('G5e: materialStatusForItem — keluarga baru + penjaga positif-palsu (abutment/pipa generik)', () => {
+  const uditch = [S('drainage-material', 'material', 'Material saluran', 'U-ditch pracetak')];
+  assert.equal(materialStatusForItem('Saluran U-Ditch 50x50x120 + Lantai Kerja fc 10', uditch, 'drainase').status, 'MATCHED');
+  const box = [S('drainage-material', 'material', 'Material saluran', 'Box culvert')];
+  assert.equal(materialStatusForItem('Saluran U-Ditch 50x50x120 + Lantai Kerja fc 10', box, 'drainase').status, 'SUBSTITUTED');
+  assert.equal(materialStatusForItem('Box Culvert 60x60x100 Pracetak + Lantai Kerja', box, 'drainase').status, 'MATCHED');
+  assert.equal(materialStatusForItem('Galian Tanah Biasa Jalur Drainase', uditch, 'drainase').status, 'NOT_APPLICABLE');
+  const listrik = [S('building-mep-scope', 'scope', 'MEP', 'Instalasi listrik')];
+  assert.equal(materialStatusForItem('Panel MDP Utama Gedung (Paket)', listrik, 'mep').status, 'MATCHED');
+  assert.equal(materialStatusForItem('Busduct Riser per Meter', listrik, 'mep').status, 'MATCHED');
+  assert.equal(materialStatusForItem('Kepala Sprinkler per Titik', listrik, 'mep').status, 'SUBSTITUTED');
+  const ac = [S('building-mep-scope', 'scope', 'MEP', 'AC / tata udara')];
+  assert.equal(materialStatusForItem('Unit Outdoor VRF per PK Terpasang (Paket)', ac, 'mep').status, 'MATCHED');
+  // 'Pipa'/'Pompa' generik TIDAK BOLEH cocok: pipa tembaga MEDIS bukan
+  // AC, pompa submersible bukan pompa transfer/kebakaran.
+  assert.equal(materialStatusForItem('Pipa Tembaga Medis Jaringan (Pipa Tembaga AC setara per Meter)', ac, 'mep').status, 'NOT_APPLICABLE');
+  assert.equal(materialStatusForItem('Pompa Submersible Cutter 75 LPM Kuras Bak', listrik, 'mep').status, 'NOT_APPLICABLE');
+  const fire = [S('building-mep-scope', 'scope', 'MEP', 'Fire protection')];
+  assert.equal(materialStatusForItem('Sprinkler Head Upright Area Gudang', fire, 'gedung').status, 'MATCHED', 'sprinkler gudang cocok untuk spek fire pada part gedung');
+  const beton = [S('bridge-type', 'scope', 'Tipe jembatan', 'Beton')];
+  assert.equal(materialStatusForItem('Penyediaan Gelagar Pracetak Pratekan Tipe U Bentang ±32 m (Padanan Bentang)', beton, 'jembatan').status, 'MATCHED');
+  assert.equal(materialStatusForItem('Beton Plat Lantai Jembatan fc 15 MPa (t=35–45 cm)', beton, 'jembatan').status, 'MATCHED');
+  assert.equal(materialStatusForItem('Fabrikasi & Ereksi Baja Profil Rangka Jembatan', beton, 'jembatan').status, 'SUBSTITUTED');
+  // PENJAGA ABUTMENT: beton abutment/lantai ada di jembatan baja juga
+  // — bukan bukti struktur atas beton.
+  assert.equal(materialStatusForItem('Beton Abutment & Wing Wall fc 15 MPa', beton, 'jembatan').status, 'NOT_APPLICABLE');
+  const baja = [S('bridge-type', 'scope', 'Tipe jembatan', 'Baja')];
+  assert.equal(materialStatusForItem('Beton Abutment & Wing Wall fc 15 MPa', baja, 'jembatan').status, 'NOT_APPLICABLE');
+  assert.equal(materialStatusForItem('Beton Lantai Kendaraan Komposit fc 15 MPa', baja, 'jembatan').status, 'NOT_APPLICABLE');
+  assert.equal(materialStatusForItem('Fabrikasi & Ereksi Baja Profil Rangka Jembatan', baja, 'jembatan').status, 'MATCHED');
+  const portal = [S('warehouse-system', 'scope', 'Sistem gudang', 'Portal frame baja WF')];
+  assert.equal(materialStatusForItem('Struktur Baja Portal Gudang (Pabrikasi & Ereksi)', portal, 'gedung').status, 'MATCHED');
+  assert.equal(materialStatusForItem('Fabrikasi & Ereksi Struktur Rangka Baja Profil WF 200/250/300', portal, 'gedung').status, 'MATCHED', 'rangka WF = konstruksi portal frame');
+  const truss = [S('warehouse-system', 'scope', 'Sistem gudang', 'Truss / rangka ruang')];
+  assert.equal(materialStatusForItem('Struktur Baja Portal Gudang (Pabrikasi & Ereksi)', truss, 'gedung').status, 'SUBSTITUTED');
+  assert.equal(materialStatusForItem('Struktur Baja Portal Gudang (Pabrikasi & Ereksi)', truss, 'gedung').requestedMaterial, 'truss');
+});
+
+test('G5f: materialSpecForScope — drainase/mep/jembatan/renovasi + gedung (mep & sistem terakhir)', () => {
+  const specs = [
+    S('drainage-material', 'material', 'Material saluran', 'U-ditch pracetak'),
+    S('building-mep-scope', 'scope', 'MEP', 'Instalasi listrik'),
+    S('bridge-type', 'scope', 'Tipe jembatan', 'Beton'),
+    S('renovation-mep', 'scope', 'MEP renovasi', 'Perbaikan plumbing / sanitair'),
+  ];
+  assert.equal(materialSpecForScope(specs, 'drainase')?.key, 'drainage-material');
+  assert.equal(materialSpecForScope(specs, 'mep')?.key, 'building-mep-scope');
+  assert.equal(materialSpecForScope(specs, 'jembatan')?.key, 'bridge-type');
+  assert.equal(materialSpecForScope(specs, 'renovasi')?.key, 'renovation-mep');
+  // Gedung: kunci lama tetap didahulukan (first-wins seperti semula).
+  const gspecs = [
+    S('warehouse-roof', 'material', 'Atap gudang', 'Spandek'),
+    S('building-mep-scope', 'scope', 'MEP', 'Instalasi listrik'),
+  ];
+  assert.equal(materialSpecForScope(gspecs, 'gedung')?.key, 'warehouse-roof');
+  assert.equal(materialSpecForScope([S('warehouse-system', 'scope', 'Sistem gudang', 'Truss / rangka ruang')], 'gedung')?.key, 'warehouse-system');
+});
+
+console.log('== G5-e2e. Draft ujung-ke-ujung dengan spek baru ==');
+
+test('G5g: drainase U-ditch → DRN-UDITCH-COVER deterministik + spek USED + item MATCHED', () => {
+  const d = draftOf(
+    'buatkan RAB drainase U-ditch sepanjang 500 meter',
+    [S('drainage-material', 'material', 'Material saluran drainase', 'U-ditch pracetak')],
+  );
+  assert.ok(d.parts.some((p) => p.template.id === 'DRN-UDITCH-COVER'), `part DRN-UDITCH-COVER harus ada; dapat: ${d.parts.map((p) => p.template.id).join(', ')}`);
+  const cv = d.chainValidation!;
+  assert.ok(cv, 'chainValidation harus ada bila spek diberikan');
+  const cov = cv.specCoverage.find((s) => s.key === 'drainage-material');
+  assert.equal(cov?.status, 'USED');
+  assert.ok(cv.materialMismatches.length === 0, `tidak boleh ada mismatch material; dapat: ${JSON.stringify(cv.materialMismatches)}`);
+  assert.ok(!cv.ambiguousPicks.some((a) => a.scope === 'drainase'), 'pick deterministik tidak boleh AMBIGUOUS_PICK');
+  assert.ok(effectiveItems(d).some((i) => i.description.includes('U-Ditch 50x50')), 'item U-Ditch harus ada');
+});
+
+test('G5h: MEP listrik → MEP-ELECTRICAL-DIST deterministik + spek USED', () => {
+  const d = draftOf(
+    'buatkan RAB instalasi listrik gedung kantor luas 2000 m2',
+    [S('building-mep-scope', 'scope', 'Cakupan instalasi MEP', ['Instalasi listrik'])],
+  );
+  assert.ok(d.parts.some((p) => p.template.id === 'MEP-ELECTRICAL-DIST'), `part MEP-ELECTRICAL-DIST harus ada; dapat: ${d.parts.map((p) => p.template.id).join(', ')}`);
+  const cv = d.chainValidation!;
+  const cov = cv.specCoverage.find((s) => s.key === 'building-mep-scope');
+  assert.equal(cov?.status, 'USED');
+  assert.ok(!cv.ambiguousPicks.some((a) => a.scope === 'mep'), 'pick deterministik tidak boleh AMBIGUOUS_PICK');
+});
+
+test('G5i: gudang truss → SUBSTITUTED portal frame + AMBIGUOUS_PICK (truss UNAVAILABLE, jujur)', () => {
+  const d = draftOf(
+    'buatkan RAB gudang 5000 m2',
+    [S('warehouse-system', 'scope', 'Sistem struktur gudang', 'Truss / rangka ruang')],
+    'BLD-IND-MULTITENANT',
+  );
+  assert.equal(d.parts[0].template.id, 'BLD-IND-MULTITENANT');
+  const cv = d.chainValidation!;
+  const cov = cv.specCoverage.find((s) => s.key === 'warehouse-system');
+  assert.equal(cov?.status, 'USED', 'spek terpakai sebagai substitusi berlabel (bukan diabaikan)');
+  assert.ok(cov!.usedBy.some((u) => u.includes('NEEDS_MANUAL_PRICE')), 'jejak substitusi harus menyebut NEEDS_MANUAL_PRICE');
+  assert.ok(cv.materialMismatches.some((m) => m.requested === 'truss' && m.actual === 'portal frame'), 'mismatch truss→portal frame harus tercatat');
+  const amb = cv.ambiguousPicks.find((a) => a.scope === 'gedung');
+  assert.ok(amb, 'truss (UNAVAILABLE) harus tercatat AMBIGUOUS_PICK pada scope gedung');
+  assert.ok(/truss/i.test(amb!.reason), `alasan harus menyebut truss, dapat: ${amb!.reason}`);
+});
+
+/* ---- Draft sintetis ChainDraftLike (pola p3dWbsCompleteness) ---- */
+function synthChainDraft(
+  scopeId: string,
+  scopeLabel: string,
+  templateId: string,
+  templateName: string,
+  items: Array<{ id: string; description: string; unit?: string; volume?: number; componentName?: string; sourceComponentId?: string }>,
+  opts?: {
+    parameters?: ChainDraftLike['parts'][number]['template']['parameters'];
+    evaluatedParams?: Record<string, unknown>;
+  },
+): ChainDraftLike {
+  return {
+    spec: {},
+    parts: [{
+      scope: { id: scopeId, label: scopeLabel },
+      template: {
+        id: templateId,
+        name: templateName,
+        parameters: opts?.parameters ?? [],
+        components: items.map((i) => ({ id: `c-${i.id}`, name: i.componentName ?? i.description, calculationRule: '1', variables: [] as string[] })),
+      },
+      evaluatedParams: opts?.evaluatedParams ?? {},
+      generation: {
+        items: items.map((i) => ({
+          id: i.id, description: i.description, volume: i.volume ?? 1, unit: i.unit ?? 'm2',
+          unitPrice: null, priceStatus: null, priceSourceKind: null, ahspMappingStatus: null, notes: null,
+          ...(i.sourceComponentId ? { sourceComponentId: i.sourceComponentId } : {}),
+        })),
+      },
+      removedKeys: [],
+      manualPrices: {},
+    }],
+  };
+}
+
+test('G5j: jembatan beton (draft sintetis) — girder MATCHED + spek USED, abutment TIDAK tertaut', () => {
+  const d = synthChainDraft('jembatan', 'Jembatan & Struktur Khusus', 'BRG-GIRDER-20M', 'Jembatan Gelagar Beton Pratekan Bentang 20 m', [
+    { id: 'i1', description: 'Penyediaan Gelagar Pracetak Pratekan Tipe U Bentang ±32 m (Padanan Bentang)', unit: 'unit' },
+    { id: 'i2', description: 'Beton Abutment & Wing Wall fc 15 MPa', unit: 'm3' },
+    { id: 'i3', description: 'Beton Lantai Kendaraan & Trotoar fc 15 MPa', unit: 'm3' },
+  ]);
+  const specs = [S('bridge-type', 'scope', 'Tipe jembatan', 'Beton')];
+  const cv = validateDraftChain(d, specs);
+  assert.equal(cv.specCoverage.find((s) => s.key === 'bridge-type')?.status, 'USED');
+  assert.equal(cv.materialMismatches.length, 0, 'tidak ada mismatch pada jembatan beton');
+  assert.ok(!cv.ambiguousPicks.some((a) => a.scope === 'jembatan'));
+  const traces = traceItemSpecs(d, specs);
+  const girder = traces.find((t) => t.description.includes('Gelagar Pracetak'));
+  assert.ok(girder, 'trace girder harus ada');
+  assert.deepEqual(girder!.specKeys, ['bridge-type']);
+  assert.equal(girder!.traceSource, 'SPESIFIK');
+  const abut = traces.find((t) => t.description.includes('Abutment'));
+  assert.ok(abut, 'trace abutment harus ada');
+  assert.deepEqual(abut!.specKeys, [], 'abutment TIDAK tertaut spek struktur atas (penjaga abutment)');
+  assert.equal(abut!.traceSource, 'TEMPLATE');
+});
+
+test('G5k: renovation-mep "Tanpa pekerjaan instalasi" → tanpa token → UNUSED dengan alasan baru', () => {
+  const d = synthChainDraft('renovasi', 'Renovasi', 'SYN-RENOV', 'Template Sintetis Renovasi', [
+    { id: 'i1', description: 'Pengecatan Ulang Dinding' },
+  ]);
+  const specs = [S('renovation-mep', 'scope', 'Perbaikan instalasi renovasi', 'Tanpa pekerjaan instalasi')];
+  assert.equal(requestedMaterialForSpec(specs[0]), null);
+  const cv = validateDraftChain(d, specs);
+  const cov = cv.specCoverage.find((s) => s.key === 'renovation-mep');
+  assert.equal(cov?.status, 'UNUSED');
+  assert.ok(/listrik\/plumbing/.test(cov?.reason ?? ''), `alasan harus menyebut subsistem yang dikenal, dapat: ${cov?.reason}`);
+});
+
+console.log('== G5-status. Proposed vs verified: ASSUMPTION tidak pernah tampil sebagai CONFIRMED ==');
+
+test('G5-status-a: traceItemSpecs — spek ASSUMPTION → specStatus ASSUMPTION; CONFIRMED → CONFIRMED; campuran → terburuk', () => {
+  const d = synthChainDraft('drainase', 'Drainase & Saluran', 'DRN-UDITCH-COVER', 'Saluran U-Ditch + Tutup Heavy Duty Jalan Kolektor', [
+    { id: 'i1', description: 'Saluran U-Ditch 50x50x120 + Lantai Kerja fc 10', unit: 'm1' },
+  ]);
+  const assumed = traceItemSpecs(d, [S('drainage-material', 'material', 'Material saluran', 'U-ditch pracetak', 'ASSUMPTION')]);
+  assert.equal(assumed[0].specStatus, 'ASSUMPTION', 'spek asumsi TIDAK BOLEH naik status menjadi CONFIRMED');
+  assert.equal(assumed[0].traceSource, 'SPESIFIK');
+  const confirmed = traceItemSpecs(d, [S('drainage-material', 'material', 'Material saluran', 'U-ditch pracetak', 'CONFIRMED')]);
+  assert.equal(confirmed[0].specStatus, 'CONFIRMED');
+  // Campuran: material ASSUMPTION + dimensi CONFIRMED yang tertaut
+  // parameter yang sama → status terburuk (ASSUMPTION) yang menang.
+  const d2 = synthChainDraft('drainase', 'Drainase & Saluran', 'DRN-UDITCH-COVER', 'Saluran U-Ditch + Tutup Heavy Duty Jalan Kolektor', [
+    { id: 'i1', description: 'Saluran U-Ditch 50x50x120 + Lantai Kerja fc 10', unit: 'm1' },
+  ], {
+    parameters: [{ key: 'channel_length', label: 'Panjang Saluran', type: 'NUMBER' }],
+    evaluatedParams: { channel_length: 500 },
+  });
+  const mixed = traceItemSpecs(d2, [
+    S('drainage-material', 'material', 'Material saluran', 'U-ditch pracetak', 'ASSUMPTION'),
+    S('ded-length', 'dimension', 'Panjang (dari DED)', 500, 'CONFIRMED'),
+  ]);
+  assert.deepEqual(mixed[0].specKeys.sort(), ['ded-length', 'drainage-material']);
+  assert.equal(mixed[0].specStatus, 'ASSUMPTION', 'status terburuk (ASSUMPTION) menang atas CONFIRMED');
+});
+
+test('G5-status-b: spek material baru yang UNRESOLVED → field wajib hilang + draft tidak terverifikasi', () => {
+  const d = synthChainDraft('drainase', 'Drainase & Saluran', 'DRN-UDITCH-COVER', 'Saluran U-Ditch + Tutup Heavy Duty Jalan Kolektor', [
+    { id: 'i1', description: 'Saluran U-Ditch 50x50x120 + Lantai Kerja fc 10', unit: 'm1' },
+  ]);
+  const unresolved = [S('drainage-material', 'material', 'Material saluran drainase', 'Belum ditentukan', 'UNRESOLVED')];
+  const missing = detectMissingRequiredSpecs(d, unresolved);
+  assert.ok(missing.some((m) => m.specKey === 'drainage-material'), 'spek drainase UNRESOLVED harus tercatat sebagai field wajib hilang');
+  const answered = [S('drainage-material', 'material', 'Material saluran drainase', 'U-ditch pracetak', 'CONFIRMED')];
+  assert.ok(!detectMissingRequiredSpecs(d, answered).some((m) => m.specKey === 'drainage-material'), 'spek terjawab tidak boleh tercatat hilang');
+  const rep = validateWbsCompleteness(d, [
+    ...answered,
+    S('building-mep-scope', 'scope', 'Cakupan instalasi MEP', null, 'UNRESOLVED'),
+  ]);
+  assert.equal(rep.isVerified, false, 'satu spek UNRESOLVED saja sudah menggagalkan label terverifikasi');
+  assert.ok(rep.unresolvedSpecKeys.includes('building-mep-scope'));
+  assert.ok(rep.issues.some((i) => i.includes('Cakupan instalasi MEP') && i.includes('belum terjawab')));
+});
+
+test('G7a: sourceComponentId — item yang deskripsinya di-rename tetap tertaut komponen (tanpa false ASSUMPTION)', () => {
+  const d = synthChainDraft('drainase', 'Drainase & Saluran', 'DRN-UDITCH-COVER', 'Saluran U-Ditch + Tutup Heavy Duty Jalan Kolektor', [
+    { id: 'i1', description: 'Saluran U-Ditch — revisi user (nama diubah)', componentName: 'Saluran U-Ditch 50x50x120 + Lantai Kerja fc 10', sourceComponentId: 'c-i1', unit: 'm1' },
+  ]);
+  const basis = computeVolumeBasis(d, []);
+  assert.equal(basis.length, 1);
+  assert.ok(!basis[0].basisDetail.includes('tidak ditemukan'), `item ber-ID komponen harus tertaut walau namanya diubah; dapat: ${basis[0].basisDetail}`);
+  assert.ok(basis[0].basisDetail.startsWith('Rumus 1'), `detail harus menyebut rumus komponen yang tertaut; dapat: ${basis[0].basisDetail}`);
+  const reasons = traceItemReasons(d, []);
+  assert.equal(reasons.items[0].source, 'TEMPLATE', 'item tertaut komponen harus beralasan TEMPLATE, bukan UNRESOLVED');
+  assert.equal(reasons.counts.unresolved, 0);
+});
+
+test('G7b: sourceComponentId — fallback nama dipertahankan (tanpa ID = perilaku lama; ID basi + nama cocok = tertaut nama)', () => {
+  // Tanpa sourceComponentId: rename → perilaku lama (ASSUMPTION "tidak ditemukan" + UNRESOLVED).
+  const dNoId = synthChainDraft('drainase', 'Drainase & Saluran', 'DRN-UDITCH-COVER', 'Saluran U-Ditch + Tutup Heavy Duty Jalan Kolektor', [
+    { id: 'i1', description: 'Saluran U-Ditch — revisi user (nama diubah)', componentName: 'Saluran U-Ditch 50x50x120 + Lantai Kerja fc 10', unit: 'm1' },
+  ]);
+  const basisNoId = computeVolumeBasis(dNoId, []);
+  assert.equal(basisNoId[0].basis, 'ASSUMPTION');
+  assert.ok(basisNoId[0].basisDetail.includes('tidak ditemukan'), `tanpa ID, item rename harus tetap "tidak ditemukan" (perilaku lama); dapat: ${basisNoId[0].basisDetail}`);
+  assert.equal(traceItemReasons(dNoId, []).items[0].source, 'UNRESOLVED');
+  // ID basi (tidak menyelesaikan ke komponen mana pun) + nama cocok → fallback ke nama.
+  const dStale = synthChainDraft('drainase', 'Drainase & Saluran', 'DRN-UDITCH-COVER', 'Saluran U-Ditch + Tutup Heavy Duty Jalan Kolektor', [
+    { id: 'i1', description: 'Saluran U-Ditch 50x50x120 + Lantai Kerja fc 10', sourceComponentId: 'c-sudah-dihapus', unit: 'm1' },
+  ]);
+  const basisStale = computeVolumeBasis(dStale, []);
+  assert.ok(!basisStale[0].basisDetail.includes('tidak ditemukan'), `ID basi + nama cocok harus fallback ke nama; dapat: ${basisStale[0].basisDetail}`);
+  assert.equal(traceItemReasons(dStale, []).items[0].source, 'TEMPLATE');
+});
+
+console.log('== G6. Binding turunan katalog — tes divergensi ==');
+
+function catalogSnapshot(): CatalogSnapshotEntry[] {
+  const svc = RabTemplateService.getInstance();
+  const out: CatalogSnapshotEntry[] = [];
+  for (const t of svc.getAllTemplates()) {
+    if (t.metadata?.source !== 'EZRAB_OFFICIAL') continue;
+    for (const c of t.components ?? []) {
+      out.push({
+        templateId: t.id,
+        templateName: t.name,
+        templateCategory: t.category,
+        componentName: c.name,
+        ahspCode: c.ahspCode ?? null,
+        unitPrice: c.unitPrice ?? null,
+        detailLevel: c.detailLevel ?? 'STANDARD',
+      });
+    }
+  }
+  return out;
+}
+
+test('G6a: derivasi katalog == MATERIAL_BINDING (0 divergensi; tes GAGAL bila tabel/katalog menyimpang)', () => {
+  const snap = catalogSnapshot();
+  assert.ok(snap.length > 2000, `potret katalog harus >2000 komponen, dapat ${snap.length}`);
+  const { derived, details } = deriveMaterialBinding(snap);
+  const divs = compareMaterialBinding(derived, details);
+  assert.deepEqual(
+    divs,
+    [],
+    `DIVERGENSI binding↔katalog (${divs.length}):\n${divs.map((v) => `  ${v.cell}: tabel=${v.table} turunan=${v.derived} bukti=${v.evidence ?? '-'} cap=${v.capped}`).join('\n')}`,
+  );
+  // Sel yang dicap audit tetap TERCAP (bukan kebetulan cocok).
+  const capped = details.filter((d) => d.capped).map((d) => d.cell).sort();
+  assert.deepEqual(
+    capped,
+    ['drainase:beton cor', 'drainase:pasangan batu kali', 'kolam-finish:batu alam', 'lantai-gudang:beton'],
+    'tepat 4 sel yang dicap penilaian audit (bukan derivasi murni)',
+  );
+});
+
+test('G6b: higienitas aturan bukti — semua sel tercakup, semua ID template ada, semua cap beralasan', () => {
+  const tableCells = Object.keys(MATERIAL_BINDING).sort();
+  const ruleCells = Object.keys(MATERIAL_BINDING_EVIDENCE).sort();
+  assert.deepEqual(ruleCells, tableCells, 'aturan bukti WAJIB mencakup TEPAT semua sel tabel (tanpa sel tanpa aturan, tanpa aturan yatim)');
+  assert.equal(tableCells.length, 47, '38 sel audit + 9 sel baru W4 (mep 4 + struktur-jembatan 3 + struktur-gudang 2)');
+  const svc = RabTemplateService.getInstance();
+  const knownIds = new Set(svc.getAllTemplates().map((t) => t.id));
+  const knownCats = new Set(svc.getAllTemplates().map((t) => t.category));
+  for (const [cell, rule] of Object.entries(MATERIAL_BINDING_EVIDENCE)) {
+    assert.ok(rule.tokens.length > 0, `${cell}: tokens tidak boleh kosong`);
+    for (const id of rule.templates ?? []) {
+      assert.ok(knownIds.has(id), `${cell}: template lingkup ${id} tidak ada di katalog (typo?)`);
+    }
+    for (const cat of rule.categories ?? []) {
+      assert.ok(knownCats.has(cat), `${cell}: kategori lingkup ${cat} tidak ada di katalog (typo?)`);
+    }
+    if (rule.maxAvailability != null) {
+      assert.ok(rule.reason != null && rule.reason.length > 20, `${cell}: cap maxAvailability WAJIB beralasan`);
+    }
+  }
+});
+
+test('G6c: kontrol negatif — tes DAPAT gagal (mutasi katalog memunculkan divergensi)', () => {
+  const snap = catalogSnapshot();
+  // (1) Hapus SELURUH template U-ditch → 'drainase:u-ditch' jatuh ke
+  // UNAVAILABLE dan divergensi muncul (tes bukan tautologi).
+  const noUditch = snap.filter((e) => e.templateId !== 'DRN-UDITCH-COVER' && e.templateId !== 'SDA-DRAIN-UDITCH');
+  const { derived: d1, details: det1 } = deriveMaterialBinding(noUditch);
+  const divs1 = compareMaterialBinding(d1, det1);
+  const ud = divs1.find((v) => v.cell === 'drainase:u-ditch');
+  assert.ok(ud, 'menghapus template U-ditch HARUS memunculkan divergensi drainase:u-ditch');
+  assert.equal(ud!.derived, 'UNAVAILABLE');
+  assert.equal(ud!.table, 'AVAILABLE');
+  // Sel drainase lain TIDAK ikut menyimpang (mutasi terisolasi).
+  assert.ok(!divs1.some((v) => v.cell === 'drainase:box culvert'), 'box culvert tidak boleh ikut menyimpang');
+  // (2) Komponen COMPREHENSIVE-only → UNVERIFIED (aturan level).
+  const miniComp: CatalogSnapshotEntry[] = [{
+    templateId: 'SPT-SWIMMING-POOL', templateName: 'Kolam Renang Publik/Klub (25 m)',
+    templateCategory: 'OLAHRAGA', componentName: 'Saluran Overflow & Balance Tank Kecil',
+    ahspCode: '6.3.1', unitPrice: null, detailLevel: 'COMPREHENSIVE',
+  }];
+  assert.equal(deriveMaterialBinding(miniComp).derived['kolam-type:overflow'], 'UNVERIFIED');
+  const miniProf = [{ ...miniComp[0], detailLevel: 'PROFESSIONAL' }];
+  assert.equal(deriveMaterialBinding(miniProf).derived['kolam-type:overflow'], 'AVAILABLE', 'level PROFESSIONAL yang sama → AVAILABLE');
+  // (3) Cap maxAvailability dihormati (base AVAILABLE → UNVERIFIED).
+  const miniCap: CatalogSnapshotEntry[] = [{
+    templateId: 'BLD-IND-MULTITENANT', templateName: 'Gudang Multitenant',
+    templateCategory: 'INDUSTRI', componentName: 'Beton Slab Gudang & Struktur fc 15 MPa',
+    ahspCode: '2.2.1.4.3', unitPrice: 1355000, detailLevel: 'STANDARD',
+  }];
+  const capRes = deriveMaterialBinding(miniCap);
+  assert.equal(capRes.derived['lantai-gudang:beton'], 'UNVERIFIED');
+  assert.equal(capRes.details.find((x) => x.cell === 'lantai-gudang:beton')?.capped, true);
+  assert.equal(capRes.details.find((x) => x.cell === 'lantai-gudang:beton')?.base, 'AVAILABLE');
+  // (4) Elemen tak berharga (tanpa kode & tanpa harga) → UNVERIFIED, bukan AVAILABLE.
+  const miniUnpriced: CatalogSnapshotEntry[] = [{
+    templateId: 'AGR-LIVESTOCK-BARN', templateName: 'Kandang Sapi',
+    templateCategory: 'PERTANIAN_PERKEBUNAN', componentName: 'Penutup Atap Spandek Kandang',
+    ahspCode: null, unitPrice: null, detailLevel: 'STANDARD',
+  }];
+  assert.equal(deriveMaterialBinding(miniUnpriced).derived['atap-kandang:spandek'], 'UNVERIFIED');
+  const miniPriced = [{ ...miniUnpriced[0], ahspCode: '3.1.3.8' }];
+  assert.equal(deriveMaterialBinding(miniPriced).derived['atap-kandang:spandek'], 'AVAILABLE');
 });
 
 console.log(`\nCHAT SPEC CHAIN (FASE 2 BAGIAN B): ${passed} PASS, ${failed} FAIL`);

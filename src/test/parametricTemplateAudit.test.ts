@@ -96,9 +96,10 @@ function auditResult(id: string, r: TemplateGenerationResult) {
   expect(Math.abs(sumCats - r.totalDirectCost), `${id} sigma kategori == direct`).toBeLessThan(1);
 
   // Rantai overhead -> profit -> pajak terdeklarasi & konsisten.
-  expect(r.overheadPercentage, `${id} overhead %`).toBe(5);
-  expect(r.profitPercentage, `${id} profit %`).toBe(5);
-  expect(r.taxPercentage, `${id} pajak %`).toBe(11);
+  // Re-baseline W8/S3-14 (2026-11-22): default §14 = 0/0/0 (dulu 5/5/11).
+  expect(r.overheadPercentage, `${id} overhead %`).toBe(0);
+  expect(r.profitPercentage, `${id} profit %`).toBe(0);
+  expect(r.taxPercentage, `${id} pajak %`).toBe(0);
   const overhead = Math.round((r.totalDirectCost * r.overheadPercentage) / 100);
   const profit = Math.round((r.totalDirectCost * r.profitPercentage) / 100);
   const subtotal = r.totalDirectCost + overhead + profit;
@@ -173,7 +174,8 @@ describe('B.2 — audit semua template parametrik jalur spek bebas/direct', () =
     expect(unpriced.map((w) => w.ahspCode).sort()).toEqual(['BM.5.3.1.5', 'BM.5.3.1.8']);
     expect(r.unpricedItemCount).toBe(2);
     expect(r.totalDirectCost).toBe(1570224500);
-    expect(r.totalRabCost).toBe(1917244115);
+    // Re-baseline W8/S3-14 (2026-11-22): default 0/0/0 (total lama 1917244115 pada 5/5/11); total RAB == biaya langsung.
+    expect(r.totalRabCost).toBe(1570224500);
     expect(r.totalStatus).toBe('INCOMPLETE');
     expect(r.isReadyForSpreadsheet).toBe(false);
   });

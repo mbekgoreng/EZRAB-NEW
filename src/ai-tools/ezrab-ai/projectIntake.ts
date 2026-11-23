@@ -101,6 +101,18 @@ export interface AreaAllocation {
 
 export interface ProjectIntakeContext {
   intent: 'CREATE_RAB';
+  /**
+   * S3-B (2026-11-23) — proyek pemilik konteks ini, cermin
+   * `UniversalIntakeContext.projectId` (ARS-06). Dicap gerbang landscape
+   * (`projectIntakeGate`) dari proyek aktif pemanggil; spread `...base`
+   * di `extractProjectContext` mempertahankannya lewat seluruh giliran
+   * tanpa kode tambahan. null/undefined = konteks tanpa cap (dibuat
+   * tanpa proyek aktif — global sejati): TIDAK PERNAH dicap retroaktif;
+   * penjaga boundary memperlakukannya sebagai asing begitu proyek aktif
+   * ada (§5.3 S3-B). Tanpa cap ini jawaban di proyek lain digabung ke
+   * konteks proyek sebelumnya (kontaminasi S1–S3 discovery S3-B).
+   */
+  projectId?: string | null;
   category: ProjectCategory | null;
   categoryLabel: string | null;
   /** Kata kategori apa adanya dari teks ("landscape", "taman kota", …). */
@@ -147,6 +159,7 @@ export interface ProjectIntakeContext {
 
 export const emptyProjectIntake = (): ProjectIntakeContext => ({
   intent: 'CREATE_RAB',
+  projectId: null,
   category: null,
   categoryLabel: null,
   categoryTerm: null,

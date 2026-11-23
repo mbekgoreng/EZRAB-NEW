@@ -345,17 +345,20 @@ check('4.1 rumah bertipe → parametrik: findDirectTemplate + buildDirectRab', (
   assert.ok(b !== null, 'buildDirectRab menghasilkan RAB');
   eq(b!.calc.items.length, 25, 'RAB Type 70 = 25 item');
   eq(b!.calc.totalDirectCost, 208541930, 'direct cost parametrik Type 70');
-  eq(b!.calc.totalRabCost, 254629698, 'total RAB parametrik Type 70 (tangga 5/5/11)');
-  eq(b!.calc.generationResult.overheadPercentage, 5, 'tangga parametrik: OH 5%');
-  eq(b!.calc.generationResult.profitPercentage, 5, 'tangga parametrik: profit 5%');
-  eq(b!.calc.generationResult.taxPercentage, 11, 'tangga parametrik: pajak 11%');
+  // Re-baseline W8/S3-14 (2026-11-22): default parametrik kini 0/0/0 per §14 master prompt
+  // (dulu 5/5/11; total lama 254629698). Total RAB default == biaya langsung.
+  eq(b!.calc.totalRabCost, 208541930, 'total RAB parametrik Type 70 (default §14: 0/0/0 == biaya langsung)');
+  eq(b!.calc.generationResult.overheadPercentage, 0, 'tangga parametrik default §14: OH 0%');
+  eq(b!.calc.generationResult.profitPercentage, 0, 'tangga parametrik default §14: profit 0%');
+  eq(b!.calc.generationResult.taxPercentage, 0, 'tangga parametrik default §14: pajak 0% (opt-in)');
 });
 
 check('4.2 rumah spek bebas → parametrik: buildSpecRab', () => {
   const s = buildSpecRab('buatkan rab rumah 5x10');
   assert.ok(s !== null, 'buildSpecRab menghasilkan RAB rumah spek bebas');
   eq(s!.calc.items.length, 25, 'RAB rumah 5x10 = 25 item');
-  eq(s!.calc.totalRabCost, 176024079, 'total RAB parametrik rumah 5x10');
+  // Re-baseline W8/S3-14 (2026-11-22): default 0/0/0 (total lama 176024079 pada 5/5/11).
+  eq(s!.calc.totalRabCost, 144163865, 'total RAB parametrik rumah 5x10 (default §14: 0/0/0 == biaya langsung)');
 });
 
 check('4.3 non-rumah: hijack guard aktif; jalan → katalog universal', () => {
@@ -392,7 +395,7 @@ check('4.5 [P3B-O2 KARAKTERISASI] preview universal vs grand proyek terkonfigura
   eq(s.grandTotal - preview, 962717700, 'SELISIH TERUKUR (+27,7%): pratinjau tidak menampilkan O&P/pajak — temuan terbuka P3B-O2, keputusan owner');
 });
 
-check('4.6 [P3B-O3 KARAKTERISASI] tangga parametrik vs tangga kanonis proyek baru: selisih terukur Rp46.087.768', () => {
+check('4.6 [P3B-O3 TERTUTUP] tangga parametrik vs tangga kanonis proyek baru: selisih Rp0 (S3-14, 2026-11-22)', () => {
   const b = buildDirectRab('buatkan rab rumah type 70 2 lantai');
   assert.ok(b !== null, 'buildDirectRab non-null');
   const canonicalFresh = UnifiedProjectEngine.recalculateCostSummary(
@@ -400,7 +403,8 @@ check('4.6 [P3B-O3 KARAKTERISASI] tangga parametrik vs tangga kanonis proyek bar
     {} as never,
   );
   eq(canonicalFresh.grandTotal, 208541930, 'kanonis proyek baru (O&P 0/0, pajak mati) == biaya langsung');
-  eq(b!.calc.totalRabCost - canonicalFresh.grandTotal, 46087768, 'SELISIH TERUKUR: tangga parametrik (5/5/11 selalu) vs tangga kanonis proyek baru — temuan terbuka P3B-O3, keputusan owner');
+  // Dulu selisih terukur 46087768 (temuan terbuka P3B-O3); ditutup W8/S3-14 (default 0/0/0).
+  eq(b!.calc.totalRabCost - canonicalFresh.grandTotal, 0, 'SELISIH TERTUTUP: tangga parametrik default §14 (0/0/0) == tangga kanonis proyek baru');
 });
 
 delete (globalThis as any).window;

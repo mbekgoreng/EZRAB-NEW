@@ -331,7 +331,10 @@ async function main() {
   await check('F-04 view: wiring penggantian record tersimpan lengkap', () => {
     // persistMessage mengembalikan id + memakai updateMessage sekali pakai.
     assert(view.includes('const persistMessage = (role: \'user\' | \'assistant\', content: string): string | null =>'), 'persistMessage harus mengembalikan id tersimpan');
-    assert(view.includes('unifiedConversationStore.updateMessage(convId, storeProjectId, replacesId, { content })'), 'persistMessage harus memanggil updateMessage pada id error');
+    // DEFECT-1 (B5-3, 2026-11-23): proyek di-resolve live saat persist
+    // (storeProjectIdRef), bukan dari closure storeProjectId — pin teks
+    // mengikuti perubahan yang disengaja itu.
+    assert(view.includes('unifiedConversationStore.updateMessage(convId, projectId, replacesId, { content })'), 'persistMessage harus memanggil updateMessage pada id error');
     assert(view.includes('retryReplacesMessageIdRef.current = null;'), 'penanda penggantian harus sekali-pakai (dibersihkan saat dipakai)');
     // Pelacak error diisi di kedua situs kegagalan.
     assert(view.includes('lastAiErrorMessageIdRef.current = res.success ? null : persistedReplyId;'), 'cabang LLM harus melacak id error tersimpan');

@@ -184,7 +184,8 @@ describe('S2 — fallback datar Rp150.000 dihapus sebagai sumber harga', () => {
     expect(r.isReadyForSpreadsheet).toBe(false);
     // Total sesudah 9cdfa9c + 7c9ef1e: 24 item berharga (22 BENCHMARK + 2 OFFICIAL).
     expect(r.totalDirectCost).toBe(144163865);
-    expect(r.totalRabCost).toBe(176024079);
+    // Re-baseline W8/S3-14 (2026-11-22): default 0/0/0 (total lama 176024079 pada 5/5/11); total RAB == biaya langsung.
+    expect(r.totalRabCost).toBe(144163865);
   });
 });
 

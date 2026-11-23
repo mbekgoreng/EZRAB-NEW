@@ -44,6 +44,17 @@ import {
   type SerializedUniversalIntakeContext,
   type UniversalIntakeContext,
 } from './universalIntake';
+/* W11 §11 — rebuild match kartu pilihan dari rawText saat load (lihat
+   seksi state rumah di bawah). directRab tidak mengimpor modul ini
+   (grafnya: rabNeeds/data/formulaEngine/directRabGate→universalRab)
+   sehingga impor ini tidak membentuk sikel. */
+import { findDirectTemplate } from './directRab';
+import type { RabNeeds } from './rabNeeds';
+import type { RabIntentSpec } from './rabIntentSpec';
+/* Type-only: PendingRabChoice didefinisikan di actionRegistry (yang
+   mengimpor modul ini sebagai nilai) — impor tipe terhapus saat
+   kompilasi sehingga tidak ada sikel runtime. */
+import type { PendingRabChoice } from './actionRegistry';
 /* Type-only: rantai spek→RAB Fase 2 (tanpa sisi runtime — specChain
    diimpor bernilai oleh universalRab; di sini hanya tipenya). */
 import type { ChainValidation, WbsCompletenessReport } from './specChain';
@@ -57,6 +68,10 @@ import type { StructuredSpec } from './structuredSpec';
 import type { DraftVersionSnapshot } from './draftRevision';
 /* Type-only: rekonsiliasi DED/QTO (Gate 4 / 5D). */
 import type { DedQtoDraftInfo } from './dedQtoIntegration';
+/* Type-only: model cakupan proyek (Batch 2 §5.2 — scopeDiscipline
+   adalah modul daun yang hanya mengimpor TIPE dari universalRab;
+   impor tipe di sini aman dari siklus). */
+import type { DraftScopeModel } from './scopeDiscipline';
 
 export const AI_DRAFTS_STORAGE_KEY = 'ezrab_prod_ai_drafts';
 
@@ -66,6 +81,8 @@ export const DRAFT_SCHEMA_VERSION = 1;
 export type DraftPersistenceErrorCode =
   | 'DRAFT_PERSISTENCE_FAILED'
   | 'DRAFT_VERSION_CONFLICT'
+  | 'INTAKE_VERSION_CONFLICT'
+  | 'HOME_STATE_VERSION_CONFLICT'
   | 'DRAFT_SCHEMA_UNSUPPORTED'
   | 'DRAFT_QUOTA_EXCEEDED'
   | 'DRAFT_NOT_FOUND'
@@ -74,7 +91,7 @@ export type DraftPersistenceErrorCode =
 export interface DraftPriceProvenance {
   itemId: string;
   description: string;
-  /** Status payload: PRICE_RESOLVED | PRICE_MANUAL | PRICE_UNRESOLVED. */
+  /** Status payload: PRICE_RESOLVED | PRICE_ESTIMATED | PRICE_MANUAL | PRICE_UNRESOLVED. */
   priceStatus: string;
   priceSourceKind: string | null;
   priceSourceLabel: string | null;
@@ -160,6 +177,23 @@ export interface PersistedDraftRecord {
    */
   wbsArtifact?: WbsArtifact | null;
   wbsCompleteness?: WbsCompletenessReport | null;
+  /**
+   * Batch 2 (§5.2/§5.4) — model cakupan proyek + laporan validasi
+   * integritas cakupan. Opsional — record lama tanpa field ini tetap
+   * terbaca; DRAFT_SCHEMA_VERSION tetap 1 (preseden P6/dedQto).
+   * Disalin dari draft (bukan dari record lama) — model terbaru yang
+   * berlaku. Tanpa threading ini, draft in-memory vs seed v1 tidak
+   * byte-identik (invariansi revisi 5C-01/5C-10 pecah) — alasan yang
+   * sama dengan P6 untuk wbsArtifact.
+   */
+  scopeModel?: DraftScopeModel | null;
+  /**
+   * Batch 2 (§5.3) — id template yang dipaksa pengguna (bila ada).
+   * Tanpa threading ini, pengecualian L1 (pilihan eksplisit pengguna)
+   * hilang sesudah reload sehingga validator bisa menembak pada draft
+   * yang sama yang lolos sebelum disimpan.
+   */
+  forcedTemplateId?: string | null;
 }
 
 type DraftMap = Record<string, PersistedDraftRecord>;
@@ -253,8 +287,16 @@ function deriveStatus(draft: UniversalDraft, projectId: string): PersistedDraftR
  * chainValidation) DAN membawa `checkedAt` non-deterministik —
  * memasukkannya akan memecahkan dedupe + menginvalidasi binding
  * approval transfer (G1) pada tiap validasi ulang tanpa perubahan
- * makna. */
-function draftFingerprint(draft: UniversalDraft): string {
+ * makna.
+ * Batch 2: scopeModel SENGAJA TIDAK masuk — model itu murni turunan
+ * deterministik dari parts + spek (+ forcedTemplateId untuk
+ * pengecualian L1); parts/spec sama ⇒ model sama.
+ * Batch 4 (§8): diekspor agar gerbang transfer risiko teknik
+ * (checkEngineeringTransferGate, pricingFinancialIntegrity.ts) dapat
+ * mengikat catatan review pada sidik keadaan draft yang SAMA dengan
+ * binding approval transfer G1 — tanpa ekspor ini, B5 tidak punya
+ * sidik kanonis untuk mengikat review. */
+export function draftFingerprint(draft: UniversalDraft): string {
   return JSON.stringify({
     id: draft.id,
     version: draft.version,
@@ -428,11 +470,18 @@ export function buildPersistedRecord(
     priceProvenance: items.map((it) => ({
       itemId: it.id,
       description: it.description,
+      // Batch 4 (§7.2/§7.5): snapshot provenance HARUS membedakan
+      // estimasi dari resmi — versi lama melipat PRICE_ESTIMATED ke
+      // 'PRICE_RESOLVED' sehingga record tersimpan mengklaim resmi
+      // atas harga asumsi (estimasi Full AI yang sudah di-transfer
+      // tercatat sebagai harga resmi di snapshot).
       priceStatus: !isPriceValidForTotal(it)
         ? 'PRICE_UNRESOLVED'
         : it.priceStatus === 'PRICE_MANUAL'
           ? 'PRICE_MANUAL'
-          : 'PRICE_RESOLVED',
+          : it.priceStatus === 'PRICE_ESTIMATED'
+            ? 'PRICE_ESTIMATED'
+            : 'PRICE_RESOLVED',
       priceSourceKind: (it as { priceSourceKind?: string }).priceSourceKind ?? null,
       priceSourceLabel: it.priceSourceLabel ?? null,
       priceSourceExplanation: it.priceSourceExplanation ?? null,
@@ -464,6 +513,11 @@ export function buildPersistedRecord(
     // tanpa artefak (record tetap terbaca; UI menghitung on-demand).
     ...(draft.wbsArtifact ? { wbsArtifact: draft.wbsArtifact } : {}),
     ...(draft.wbsCompleteness ? { wbsCompleteness: draft.wbsCompleteness } : {}),
+    // Batch 2 (§5.2/§5.4): model cakupan + template paksa disalin dari
+    // draft (alasan yang sama dengan P6 — tanpa ini seed v1 hasil
+    // reload tidak byte-identik dengan draft in-memory, 5C-01/5C-10).
+    ...(draft.scopeModel ? { scopeModel: draft.scopeModel } : {}),
+    ...(draft.forcedTemplateId ? { forcedTemplateId: draft.forcedTemplateId } : {}),
   };
 }
 
@@ -596,6 +650,15 @@ export function loadDraft(projectId: string): LoadDraftResult {
     (record.wbsCompleteness.status === 'LENGKAP' || record.wbsCompleteness.status === 'BELUM_LENGKAP')
       ? { wbsCompleteness: record.wbsCompleteness }
       : {}),
+    // Batch 2 (§5.2/§5.4) — model cakupan + template paksa: dipulihkan
+    // apa adanya bila record membawanya (bentuk divalidasi ringan:
+    // model punya scopes array). Record lama tanpa field ini tetap
+    // terbaca (field absen = draft pra-B2; model dibangun ulang pada
+    // revisi berikutnya via snapshotVersion).
+    ...(record.scopeModel && Array.isArray(record.scopeModel.scopes)
+      ? { scopeModel: record.scopeModel }
+      : {}),
+    ...(record.forcedTemplateId ? { forcedTemplateId: record.forcedTemplateId } : {}),
   };
   return {
     ok: true,
@@ -733,26 +796,74 @@ function readIntakeMap(): { ok: true; map: IntakeMap } | { ok: false; error: Dra
 }
 
 /**
+ * REFIX Stage 3 (2026-11-23) — kunci perbandingan ISI konteks intake.
+ * `serializeUniversalIntakeContext` menderivasi ulang `structuredSpecs`
+ * di SETIAP simpan, dan `deriveStructuredSpecs` mencap `updatedAt` tiap
+ * spek dengan jam dinding saat `questionnaire.submittedAt` null (alur
+ * chat-only — questionnaire.ts:1826). Akibatnya JSON mentah TIDAK PERNAH
+ * sama untuk konteks berspesifikasi: dedupe gagal di tiap simpan dan
+ * tiap simpan menulis versi baru — tak terlihat single-tab, tetapi
+ * listener storage S3-A mengubahnya menjadi ping-pong refresh/simpan
+ * ~10 versi/detik antar-tab (VERIFICATION-REPORT Stage 3 §5.1).
+ * `updatedAt` spek adalah stempel derivasi, BUKAN isi spek — konvensi
+ * yang sama sudah dipakai chatSpecChainSchema.test.ts:125-134 (spek
+ * dibandingkan tanpa updatedAt). Semua medan lain (termasuk `version`,
+ * sehingga migrasi v1→v2 tetap menulis) dibandingkan apa adanya.
+ */
+function intakeContextContentKey(serialized: SerializedUniversalIntakeContext): string {
+  const specs = serialized.structuredSpecs;
+  if (!specs || specs.length === 0) return JSON.stringify(serialized);
+  const stripped = specs.map(({ updatedAt: _ignored, ...rest }) => rest);
+  return JSON.stringify({ ...serialized, structuredSpecs: stripped });
+}
+
+/**
  * Simpan snapshot konteks intake proyek (idempoten: isi sama → tanpa tulis ulang).
  * `meta.generatedDraftId` menandai konteks ini sebagai sumber draft tersebut
  * (GATE 1 / 5A) — dedupe MEMBANDINGKAN linkage juga: konteks yang sama yang
  * baru saja menghasilkan draft WAJIB ditulis (bukan di-dedupe), agar relasi
  * intake ↔ draft mendarat di storage.
+ * S3-A (2026-11-23) — optimistic concurrency antar-tab, cermin guard
+ * `expectedUpdatedAt` saveDraft: bila `opts.expectedUpdatedAt` terisi dan
+ * record tersimpan kini punya updatedAt BERBEDA, sesi/tab lain sudah menulis
+ * sesudahnya → penulisan ini basi → INTAKE_VERSION_CONFLICT (tidak menimpa
+ * diam-diam). Bila null/undefined → perilaku lama (kompatibel dengan
+ * pemanggil yang belum melacak baseline). URUTAN GUARD vs DEDUPE sengaja
+ * dibalik dari saveDraft: dedupe dicek DULU — tulisan yang isinya identik
+ * dengan record tersimpan adalah no-op (tidak menghancurkan apa pun) dan
+ * sukses-dedupe justru memajukan baseline pemanggil ke updatedAt terbaru
+ * (self-heal); hanya tulisan yang BENAR-BENAR mengubah isi yang bisa
+ * konflik. Tanpa ini, autosave tab basi atas konten yang sudah sama akan
+ * menembak konflik palsu di tiap perubahan pesan.
  */
 export function saveIntakeContext(
   projectId: string,
   ctx: UniversalIntakeContext,
   meta?: { generatedDraftId?: string | null; generatedAt?: string | null },
+  opts?: { expectedUpdatedAt?: string | null },
 ): SaveDraftResult {
   if (!projectId) {
     return { ok: false, error: 'DRAFT_PERSISTENCE_FAILED', message: 'projectId kosong — konteks intake tidak disimpan.' };
+  }
+  // F-ISO-3 (Phase 2, 2026-11-23) — pertahanan berlapis isolasi
+  // lintas-proyek: konteks yang tercap proyek lain TIDAK BOLEH tersimpan
+  // di bawah kunci ini. Satu pemanggil yang tidak disiplin (efek simpan
+  // view sebelum F-ISO-1) pernah menulis konteks A di bawah kunci B;
+  // lapisan ini mencegah SEMUA pemanggil — kini dan masa depan —
+  // mengulangi kesalahan yang sama. Konteks tanpa cap proyek (jalur
+  // lama / tes / pra-ARS-06) tetap diterima.
+  if (ctx.projectId && ctx.projectId !== projectId) {
+    return { ok: false, error: 'DRAFT_PERSISTENCE_FAILED', message: `Konteks intake milik proyek ${ctx.projectId} — tidak disimpan di bawah proyek ${projectId} (isolasi lintas-proyek).` };
   }
   const read = readIntakeMap();
   if (!read.ok) return read;
   const serialized = serializeUniversalIntakeContext(ctx);
   const existing = read.map[projectId] ?? null;
+  // REFIX Stage 3 — dedupe berbasis ISI (abaikan stempel derivasi spek):
+  // tanpa ini dedupe tidak pernah cocok untuk konteks berspesifikasi
+  // (lihat intakeContextContentKey di atas).
   const contextSame =
-    !!existing && JSON.stringify(existing.context) === JSON.stringify(serialized);
+    !!existing && intakeContextContentKey(existing.context) === intakeContextContentKey(serialized);
   // Linkage intake ↔ draft: bila pemanggil memberi meta, meta itu yang
   // berlaku (null eksplisit = hapus relasi). Bila pemanggil tidak memberi
   // meta (simpan per-giliran dari view), relasi dipertahankan HANYA bila
@@ -777,6 +888,15 @@ export function saveIntakeContext(
     (existing.generatedAt ?? null) === nextGeneratedAt
   ) {
     return { ok: true, updatedAt: existing.updatedAt, deduplicated: true };
+  }
+  // S3-A — guard optimistic concurrency (sesudah dedupe, lihat dok
+  // fungsi): tulisan basi yang benar-benar mengubah isi ditolak.
+  if (existing && opts?.expectedUpdatedAt != null && existing.updatedAt !== opts.expectedUpdatedAt) {
+    return {
+      ok: false,
+      error: 'INTAKE_VERSION_CONFLICT',
+      message: 'Snapshot intake sudah ditulis sesi/tab lain sesudah terakhir Anda baca — penulisan basi ditolak agar tidak menimpa jawaban yang lebih baru.',
+    };
   }
   const record: PersistedIntakeRecord = {
     schemaVersion: INTAKE_CONTEXT_SERIAL_VERSION,
@@ -822,6 +942,18 @@ export function loadIntakeContext(projectId: string): LoadIntakeResult {
       message: 'Snapshot konteks intake tidak lolos rehidrasi (id kategori tak dikenal / bentuk tak sah) — konteks tidak ditebak.',
     };
   }
+  // F-ISO-3 (Phase 2, 2026-11-23): snapshot yang tercap proyek lain
+  // (tertulis sebelum validasi simpan ada — lihat F-ISO-1) diperlakukan
+  // sebagai record korup: fail-closed, JANGAN pernah dimuat lalu
+  // "dilaundering" oleh restore menjadi konteks proyek ini. Snapshot
+  // lama tanpa cap proyek tetap terbaca (kompatibilitas pra-ARS-06).
+  if (ctx.projectId && ctx.projectId !== projectId) {
+    return {
+      ok: false,
+      error: 'DRAFT_PERSISTENCE_FAILED',
+      message: `Snapshot konteks intake milik proyek ${ctx.projectId} — tidak dimuat untuk proyek ${projectId} (isolasi lintas-proyek).`,
+    };
+  }
   return {
     ok: true,
     ctx,
@@ -831,13 +963,23 @@ export function loadIntakeContext(projectId: string): LoadIntakeResult {
   };
 }
 
-/** Hapus snapshot konteks intake proyek (mis. intake selesai digantikan draft). */
-export function clearIntakeContext(projectId: string): void {
+/**
+ * Hapus snapshot konteks intake proyek (mis. intake selesai digantikan draft).
+ * S3-A (2026-11-23): bila `expectedUpdatedAt` terisi, hapus HANYA bila record
+ * saat ini masih versi itu — tab basi tidak boleh menghapus snapshot yang
+ * lebih baru dari tab lain (stale delete). Mengembalikan true bila sebuah
+ * record terhapus; false bila tidak ada record, peta tak terbaca, atau
+ * penghapusan DITAHAN karena versi sudah berubah (pemanggil membedakan
+ * "ditahan" dari "tidak ada" lewat peek sebelum memanggil).
+ */
+export function clearIntakeContext(projectId: string, expectedUpdatedAt?: string | null): boolean {
   const read = readIntakeMap();
-  if (!read.ok || !read.map[projectId]) return;
+  if (!read.ok || !read.map[projectId]) return false;
+  if (expectedUpdatedAt != null && read.map[projectId].updatedAt !== expectedUpdatedAt) return false;
   const next = { ...read.map };
   delete next[projectId];
   saveVersioned(AI_INTAKE_STORAGE_KEY, next);
+  return true;
 }
 
 /** Baca record mentah snapshot intake (audit/tes) — null bila tidak ada. */
@@ -867,4 +1009,233 @@ export function shouldRestoreIntakeSnapshot(
   const linked = !!loaded.generatedDraftId && draftRec.draftId === loaded.generatedDraftId;
   if (draftRec.updatedAt >= loaded.updatedAt && !linked) return false;
   return true;
+}
+
+/* ------------------------------------------------------------------ */
+/* State RUMAH (W11 §11, celah S1-4) — RabNeeds + RabIntentSpec +     */
+/* pendingChoice. Sebelum W11 hanya draft universal + intake universal */
+/* yang dipersistensi; ketiga state jalur rumah ini hilang saat        */
+/* reload (singleton in-memory di actionRegistry/rabIntentFlow).       */
+/* Mekanisme yang SAMA dengan snapshot intake di atas (hardenedStorage */
+/* envelope v2, kunci namespace saudara, peta projectId → record,      */
+/* idempoten isi-sama-tanpa-tulis-ulang, fail-closed skema tak         */
+/* dikenal).                                                           */
+/*                                                                     */
+/* PILIHAN SERIALISASI pendingChoice: `match` (TypedTemplateMatch)     */
+/* TIDAK disimpan — ia membawa objek template registry (bukan data     */
+/* JSON murni). Yang disimpan adalah rawText + needs + floors + spec;  */
+/* `match` dibangun ulang deterministik dari rawText lewat              */
+/* findDirectTemplate saat load. Bila rebuild gagal (registry berubah  */
+/* / rawText tak lagi cocok), kartu dibuang JUJUR                      */
+/* (pendingChoiceDropped) sementara kebutuhan + spek tetap dipulihkan. */
+/* `needs` tersimpan adalah kebutuhan TERKOREKSI (bukan needs asal     */
+/* match) — perilaku kartu (GENERATE_RAB_TEMPLATE + continueRabChoice) */
+/* memakai p.needs, bukan match.needs.                                 */
+/*                                                                     */
+/* lastRabRaw (teks mentah untuk prompt desain) SENGAJA tidak ikut:    */
+/* ia hanya dipakai getLastRabDesignPrompt dan dapat dibangun ulang    */
+/* dari needs — kehilangan teks mentah pasca-reload adalah degradasi   */
+/* yang diterima, bukan kehilangan state perilaku.                     */
+/* ------------------------------------------------------------------ */
+
+export const AI_HOME_STATE_STORAGE_KEY = 'ezrab_prod_ai_home_state';
+
+/** Versi skema payload record state rumah. */
+export const HOME_STATE_SCHEMA_VERSION = 1;
+
+/** Bentuk TERSIMPAN kartu pilihan — TANPA `match` (lihat kepala seksi). */
+export interface PersistedPendingChoice {
+  rawText: string;
+  needs: RabNeeds;
+  floors: number;
+  floorsMentioned: boolean;
+  landAreaM2: number | null;
+  spec: RabIntentSpec | null;
+}
+
+export interface PersistedHomeStateRecord {
+  schemaVersion: number;
+  updatedAt: string;
+  needs: RabNeeds | null;
+  intentSpec: RabIntentSpec | null;
+  pendingChoice: PersistedPendingChoice | null;
+}
+
+export interface HomeStateInput {
+  needs: RabNeeds | null;
+  intentSpec: RabIntentSpec | null;
+  pendingChoice: PendingRabChoice | null;
+}
+
+export interface LoadedHomeState {
+  needs: RabNeeds | null;
+  intentSpec: RabIntentSpec | null;
+  /** Kartu pilihan yang berhasil dibangun ulang (null bila tidak ada
+   *  kartu tersimpan ATAU match-nya tidak dapat dibangun ulang). */
+  pendingChoice: PendingRabChoice | null;
+  /** True bila record MEMBAWA kartu tetapi match-nya gagal dibangun
+   *  ulang dari rawText — kartu dibuang jujur, kebutuhan + spek tetap
+   *  dipulihkan. */
+  pendingChoiceDropped: boolean;
+}
+
+export type LoadHomeStateResult =
+  | { ok: true; state: LoadedHomeState; updatedAt: string }
+  | { ok: false; error: DraftPersistenceErrorCode; message: string };
+
+type HomeStateMap = Record<string, PersistedHomeStateRecord>;
+
+function isPlainRecord(v: unknown): v is Record<string, unknown> {
+  return !!v && typeof v === 'object' && !Array.isArray(v);
+}
+
+function readHomeStateMap(): { ok: true; map: HomeStateMap } | { ok: false; error: DraftPersistenceErrorCode; message: string } {
+  const res = loadVersioned<HomeStateMap>(AI_HOME_STATE_STORAGE_KEY);
+  if (!res.ok) {
+    if (res.error === 'NOT_FOUND') return { ok: true, map: {} };
+    return { ok: false, error: 'DRAFT_PERSISTENCE_FAILED', message: `State rumah tidak dapat dibaca (${res.error}).` };
+  }
+  if (!res.data || typeof res.data !== 'object' || Array.isArray(res.data)) {
+    return { ok: false, error: 'DRAFT_PERSISTENCE_FAILED', message: 'State rumah rusak (bukan peta proyek).' };
+  }
+  return { ok: true, map: res.data };
+}
+
+/**
+ * Simpan state rumah proyek (idempoten: isi sama → tanpa tulis ulang).
+ * Dipanggil efek persistensi view pada tiap perubahan pesan — termasuk
+ * saat ketiganya null (record all-null MENIMPA record basi sehingga
+ * kartu yang sudah dikonsumsi tidak bangkit lagi sesudah reload).
+ * S3-A (2026-11-23): guard `expectedUpdatedAt` yang sama dengan
+ * saveIntakeContext (termasuk urutan dedupe-dulu — lihat dok di sana);
+ * konflik → HOME_STATE_VERSION_CONFLICT.
+ */
+export function saveHomeState(
+  projectId: string,
+  input: HomeStateInput,
+  opts?: { expectedUpdatedAt?: string | null },
+): SaveDraftResult {
+  if (!projectId) {
+    return { ok: false, error: 'DRAFT_PERSISTENCE_FAILED', message: 'projectId kosong — state rumah tidak disimpan.' };
+  }
+  const read = readHomeStateMap();
+  if (!read.ok) return read;
+  const record: PersistedHomeStateRecord = {
+    schemaVersion: HOME_STATE_SCHEMA_VERSION,
+    updatedAt: new Date().toISOString(),
+    needs: input.needs,
+    intentSpec: input.intentSpec,
+    pendingChoice: input.pendingChoice
+      ? {
+          rawText: input.pendingChoice.rawText,
+          needs: input.pendingChoice.needs,
+          floors: input.pendingChoice.floors,
+          floorsMentioned: input.pendingChoice.floorsMentioned,
+          landAreaM2: input.pendingChoice.landAreaM2,
+          spec: input.pendingChoice.spec,
+        }
+      : null,
+  };
+  const existing = read.map[projectId] ?? null;
+  if (
+    existing &&
+    JSON.stringify(existing.needs) === JSON.stringify(record.needs) &&
+    JSON.stringify(existing.intentSpec) === JSON.stringify(record.intentSpec) &&
+    JSON.stringify(existing.pendingChoice) === JSON.stringify(record.pendingChoice)
+  ) {
+    return { ok: true, updatedAt: existing.updatedAt, deduplicated: true };
+  }
+  // S3-A — guard optimistic concurrency (sesudah dedupe, alasan yang
+  // sama dengan saveIntakeContext).
+  if (existing && opts?.expectedUpdatedAt != null && existing.updatedAt !== opts.expectedUpdatedAt) {
+    return {
+      ok: false,
+      error: 'HOME_STATE_VERSION_CONFLICT',
+      message: 'State rumah sudah ditulis sesi/tab lain sesudah terakhir Anda baca — penulisan basi ditolak agar tidak menimpa state yang lebih baru.',
+    };
+  }
+  const saved = saveVersioned(AI_HOME_STATE_STORAGE_KEY, { ...read.map, [projectId]: record });
+  if (!saved.ok) {
+    const mapped = storageError(saved.error, saved.message);
+    return { ok: false, error: mapped.error, message: mapped.message };
+  }
+  return { ok: true, updatedAt: record.updatedAt, deduplicated: false };
+}
+
+/**
+ * Muat state rumah proyek dari storage dingin (fail-closed skema).
+ * `match` kartu dibangun ulang dari rawText; kegagalan rebuild
+ * membuang kartu saja (pendingChoiceDropped), bukan seluruh state.
+ * Bentuk field yang rusak (bukan objek) diperlakukan sebagai tidak ada
+ * — tidak pernah ditebak.
+ */
+export function loadHomeState(projectId: string): LoadHomeStateResult {
+  const read = readHomeStateMap();
+  if (!read.ok) return read;
+  const record = read.map[projectId];
+  if (!record) {
+    return { ok: false, error: 'DRAFT_NOT_FOUND', message: `Tidak ada state rumah tersimpan untuk proyek ${projectId}.` };
+  }
+  if (typeof record.schemaVersion !== 'number' || record.schemaVersion !== HOME_STATE_SCHEMA_VERSION) {
+    return {
+      ok: false,
+      error: 'DRAFT_SCHEMA_UNSUPPORTED',
+      message: `Skema record state rumah v${String(record.schemaVersion)} tidak didukung (didukung: v${HOME_STATE_SCHEMA_VERSION}) — state tidak ditebak/dimigrasi.`,
+    };
+  }
+  const needs = isPlainRecord(record.needs) ? (record.needs as RabNeeds) : null;
+  const intentSpec = isPlainRecord(record.intentSpec) ? (record.intentSpec as RabIntentSpec) : null;
+  let pendingChoice: PendingRabChoice | null = null;
+  let pendingChoiceDropped = false;
+  const stored = record.pendingChoice;
+  if (isPlainRecord(stored)) {
+    const rawText = stored.rawText;
+    const storedNeeds = stored.needs;
+    const floors = stored.floors;
+    if (typeof rawText === 'string' && rawText && isPlainRecord(storedNeeds) && typeof floors === 'number') {
+      const match = findDirectTemplate(rawText);
+      if (match) {
+        pendingChoice = {
+          rawText,
+          match,
+          needs: storedNeeds as RabNeeds,
+          floors,
+          floorsMentioned: stored.floorsMentioned === true,
+          landAreaM2: typeof stored.landAreaM2 === 'number' ? stored.landAreaM2 : null,
+          spec: isPlainRecord(stored.spec) ? (stored.spec as RabIntentSpec) : null,
+        };
+      } else {
+        pendingChoiceDropped = true;
+      }
+    } else {
+      pendingChoiceDropped = true;
+    }
+  }
+  return {
+    ok: true,
+    state: { needs, intentSpec, pendingChoice, pendingChoiceDropped },
+    updatedAt: record.updatedAt,
+  };
+}
+
+/**
+ * Hapus record state rumah proyek. S3-A (2026-11-23): semantik yang sama
+ * dengan clearIntakeContext — `expectedUpdatedAt` terisi = hapus hanya
+ * bila versi cocok; true bila terhapus, false bila tidak ada / ditahan.
+ */
+export function clearHomeState(projectId: string, expectedUpdatedAt?: string | null): boolean {
+  const read = readHomeStateMap();
+  if (!read.ok || !read.map[projectId]) return false;
+  if (expectedUpdatedAt != null && read.map[projectId].updatedAt !== expectedUpdatedAt) return false;
+  const next = { ...read.map };
+  delete next[projectId];
+  saveVersioned(AI_HOME_STATE_STORAGE_KEY, next);
+  return true;
+}
+
+/** Baca record mentah state rumah (audit/tes) — null bila tidak ada. */
+export function peekHomeState(projectId: string): PersistedHomeStateRecord | null {
+  const read = readHomeStateMap();
+  if (!read.ok) return null;
+  return read.map[projectId] ?? null;
 }

@@ -190,7 +190,20 @@ async function main(): Promise<void> {
   await test('D-51: review-draft wiring is present (openReviewPanel → persistMessage)', () => {
     contains(view, "appendLocalAssistant('Belum ada draft RAB aktif untuk ditinjau", 'no-draft review posts the assistant message');
     contains(view, "persistMessage('assistant', content);", 'appendLocalAssistant persists the message');
-    contains(view, 'unifiedConversationStore.appendMessage(convId, storeProjectId, {', 'persistMessage writes to the canonical store');
+    // DEFECT-1 (B5-3, 2026-11-23): proyek di-resolve live saat persist
+    // (storeProjectIdRef), bukan dari closure storeProjectId — pin teks
+    // mengikuti perubahan yang disengaja itu.
+    // S3-C F1 (Stage 3, 2026-11-23): bentuknya berubah menjadi override
+    // scope sekali-pakai — scope KIRIM bila ada (balasan in-flight
+    // pulang ke proyek asal), bila tidak resolve LIVE dari
+    // storeProjectIdRef (perilaku DEFECT-1 dipertahankan pada cabang
+    // fallback). Pin diperbarui mengikuti perubahan yang disengaja itu
+    // (preseden yang sama dengan pembaruan pin B5-3); perilaku
+    // dipertahankan — dibuktikan gerbang B-0 DEFECT-1 T7a 12/12 di
+    // browser (VERIFICATION-REPORT Stage 3 §3.3: teks 10.812 karakter
+    // pulih verbatim sesudah reload).
+    contains(view, 'const projectId = effectiveScope ? effectiveScope.projectId : storeProjectIdRef.current;', 'persistMessage resolves the project live at persist time when no send scope overrides (DEFECT-1 + S3-C F1)');
+    contains(view, 'unifiedConversationStore.appendMessage(convId, projectId, {', 'persistMessage writes to the canonical store');
   });
 
   await test('NEW-02: persistMessage surfaces failures (log + banner state), never silent null', () => {

@@ -7,6 +7,18 @@
  * AHSP, dan tidak memuat angka/volume/harga apa pun. Susunan final
  * BOQ tetap ditentukan engine katalog (universalRab) dari template
  * resmi, atau item manual berlabel jujur yang dibuat pengguna.
+ *
+ * KUNCI ADA DUA KELUARGA (W3/W9 G3, 2026-11-22 — perluasan 6→18 scope):
+ * - 6 kunci subkategori intake warisan (`rumah`, `gudang-industri`,
+ *   `kandang`, `jembatan`, `renovasi`, `kolam`) — dipakai
+ *   `universalIntake`/`wbsArtifact` dengan ID subkategori; DIPERTAHANKAN
+ *   apa adanya (konsumen lama tetap mendapat daftar yang sama).
+ * - 18 kunci scope engine (`SCOPE_GROUPS`, universalRab) — `jembatan`
+ *   + `renovasi` sudah ada sebagai kunci ganda (subkategori = scope),
+ *   16 kunci scope sisanya ditambahkan di bawah. Isi tiap entri scope
+ *   diturunkan dari `CONSTRUCTION_KNOWLEDGE.conceptualWbs` record yang
+ *   dicantumkan di komentar entri (pengetahuan konseptual internal yang
+ *   sudah ada — bukan karangan baru); tanpa angka/dimensi/grade/harga.
  */
 
 export const CONCEPTUAL_WBS_LABEL =
@@ -72,6 +84,155 @@ const WBS: Record<string, string[]> = {
     'Plumbing pengisian & pembuangan',
     'Deck & area sekitar kolam',
     'Elektrikal & penerangan kolam',
+  ],
+  // --- Entri scope engine (G3): sejajar SCOPE_GROUPS. Isi diturunkan
+  // dari CONSTRUCTION_KNOWLEDGE.conceptualWbs (record tercantum per
+  // entri); 'jembatan' + 'renovasi' sudah ada di atas sebagai kunci
+  // ganda. Tanpa angka — label BUKAN BOQ tetap berlaku (lihat header).
+  // Record: 'jalan' (+ 'jalan-beton'/'jalan-aspal' sebagai varian).
+  jalan: [
+    'Pekerjaan persiapan & pembersihan lahan',
+    'Pekerjaan tanah & lapis pondasi',
+    'Perkerasan (aspal/beton/paving — dipilih eksplisit)',
+    'Bahu jalan, kanstin & marka',
+    'Drainase tepi & pelengkap jalan',
+  ],
+  // Record: 'drainase' (+ 'box-culvert').
+  drainase: [
+    'Pekerjaan persiapan & pengukuran',
+    'Galian saluran',
+    'Pasangan saluran (batu/U-ditch/box culvert — dipilih eksplisit)',
+    'Lantai kerja & headwall',
+    'Tutup saluran & aksesoris',
+    'Urugan kembali & perataan',
+  ],
+  // Record: 'irigasi'.
+  irigasi: [
+    'Pekerjaan persiapan & pengukuran',
+    'Galian & pekerjaan tanah saluran',
+    'Pasangan saluran',
+    'Bangunan bagi & pintu air',
+    'Plengsengan & perlindungan tebing',
+    'Urugan kembali & perataan',
+  ],
+  // Record: 'pondasi-khusus' (digeneralisasi: jenis pondasi dipilih
+  // eksplisit, bukan ditetapkan di sini).
+  pondasi: [
+    'Pekerjaan persiapan & penyelidikan tanah',
+    'Galian & pekerjaan tanah pondasi',
+    'Pondasi (telapak/pancang/bore pile — dipilih eksplisit)',
+    'Pembesian, bekisting & pengecoran',
+    'Pile cap & sloof',
+    'Urugan kembali & perataan',
+  ],
+  // Record: 'struktur-beton-baja'.
+  struktur: [
+    'Pekerjaan persiapan & pengukuran',
+    'Bekisting',
+    'Pembesian',
+    'Pengecoran beton / fabrikasi baja (dipilih eksplisit)',
+    'Ereksi & perakitan struktur',
+    'Perawatan beton & pembongkaran bekisting',
+  ],
+  // Record: 'atap'.
+  atap: [
+    'Pekerjaan persiapan & pengukuran',
+    'Rangka atap',
+    'Penutup atap',
+    'Lisplank & talang',
+    'Waterproofing',
+  ],
+  // Record: 'finishing'.
+  finishing: [
+    'Pekerjaan persiapan & pengukuran',
+    'Plester & acian',
+    'Penutup lantai & dinding',
+    'Plafon',
+    'Pintu & jendela',
+    'Pengecatan',
+  ],
+  // Record: 'kantor' (digeneralisasi: 'struktur bertingkat' menjadi
+  // struktur umum agar berlaku untuk gedung berapa pun lantainya).
+  gedung: [
+    'Pekerjaan persiapan & pengukuran',
+    'Pekerjaan tanah & pondasi',
+    'Pekerjaan struktur (kolom, balok, pelat)',
+    'Pekerjaan dinding & partisi',
+    'Pekerjaan atap/dak',
+    'Pekerjaan MEP (listrik, air, sanitasi)',
+    'Pekerjaan finishing interior',
+    'Pekerjaan lanskap & area luar',
+  ],
+  // Record: 'mep'.
+  mep: [
+    'Pekerjaan persiapan & pengukuran',
+    'Instalasi listrik & panel',
+    'Instalasi air bersih',
+    'Instalasi air kotor & septic tank/IPAL',
+    'Pompa & tangki air',
+    'AC & ventilasi',
+    'Hydrant & proteksi kebakaran',
+  ],
+  // Record: 'sanitasi'.
+  sanitasi: [
+    'Pekerjaan persiapan & pengukuran',
+    'Galian & pekerjaan tanah saluran',
+    'Jaringan air kotor',
+    'Septic tank / IPAL',
+    'Resapan',
+    'Sanitair',
+  ],
+  // Record: 'pagar' + 'parkir-garasi'.
+  lanskap: [
+    'Pekerjaan persiapan & pembersihan lahan',
+    'Perkerasan area & jalur',
+    'Pondasi & pasangan pagar',
+    'Gerbang & pos',
+    'Drainase & penerangan area',
+    'Tanaman & softscape',
+    'Finishing area luar',
+  ],
+  // Record: 'demolisi'.
+  demolisi: [
+    'Survei kondisi eksisting & pengamanan area',
+    'Pemutusan utilitas eksisting',
+    'Pembongkaran struktur',
+    'Pemilahan & pembuangan puing',
+    'Pembersihan & perataan lahan',
+  ],
+  // Record: 'pelabuhan'.
+  pelabuhan: [
+    'Pekerjaan persiapan & akses kerja',
+    'Pengerukan',
+    'Struktur dermaga / penahan gelombang',
+    'Apron & utilitas kawasan',
+    'Fasilitas keselamatan & rambu',
+  ],
+  // Record: 'lapangan-olahraga' + 'gedung-olahraga'.
+  olahraga: [
+    'Pekerjaan persiapan & pengukuran',
+    'Pekerjaan tanah & drainase lapangan',
+    'Lapis dasar & permukaan lapangan',
+    'Garis lapangan & peralatan olahraga',
+    'Tribun & fasilitas pendukung',
+    'Utilitas & penerangan lapangan',
+  ],
+  // Record: 'pertanian'.
+  pertanian: [
+    'Pekerjaan persiapan & pembersihan lahan',
+    'Pekerjaan tanah',
+    'Pondasi sederhana',
+    'Struktur ringan',
+    'Dinding & atap',
+    'Utilitas dasar',
+  ],
+  // Record: 'pekerjaan-tanah'.
+  tanah: [
+    'Survei & pengukuran',
+    'Pembersihan lahan',
+    'Galian',
+    'Urugan & pemadatan',
+    'Perataan',
   ],
 };
 

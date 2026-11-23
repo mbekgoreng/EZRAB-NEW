@@ -31,6 +31,9 @@
 import type { StructuredSpec, SpecStatus } from './structuredSpec';
 import { SPEC_KEY_META, latestSpecsByKey, isSpecUnresolved } from './structuredSpec';
 import { classifyItemRelevance } from './relevanceGate';
+/* W2/W10 §10 (G12) — tabel cakupan template keluarga → scope (data,
+ * bukan hardcode). Impor dari modul daun universalTaxonomy: tanpa siklus. */
+import { coveredScopesForFamily } from './universalTaxonomy';
 /* P3D — artefak WBS (wbsArtifact TIDAK mengimpor specChain: aman). */
 import { buildWbsArtifact, wbsNodeId, scopeForSpecKey, SCOPE_LABELS } from './wbsArtifact';
 import type { WbsArtifact, BuildWbsArtifactInput, WbsPartInput } from './wbsArtifact';
@@ -49,6 +52,10 @@ export interface ChainDraftItemLike {
   priceSourceKind?: string | null;
   ahspMappingStatus?: string | null;
   notes?: string | null;
+  /** G7 (W7 menulis, W4 mengonsumsi): ID komponen template sumber item
+   *  ini (= comp.id, stabil terhadap rename deskripsi). Absen pada item
+   *  donor/revisi/manual/lama. */
+  sourceComponentId?: string;
 }
 
 export interface ChainTemplateLike {
@@ -95,6 +102,8 @@ export interface ChainDraftLike {
     volumeM3?: number | null;
     count?: number | null;
     floors?: number | null;
+    /** Batch 2 (§5.3): daya listrik terpasang (kVA). */
+    powerKva?: number | null;
     budgetCap?: number | null;
     buildingLengthM?: number | null;
     buildingWidthM?: number | null;
@@ -237,6 +246,48 @@ export const MATERIAL_BINDING: Readonly<Record<string, MaterialAvailability>> = 
   'kolam-finish:mozaik': 'AVAILABLE',
   'kolam-finish:batu alam': 'UNVERIFIED',
   'kolam-deck:batu alam': 'AVAILABLE',
+  // MEP (W4 / program Universal Construction Intelligence §4, G5) —
+  // subsistem = SATU TEMPLATE per subsistem (bukan varian dalam satu
+  // template): listrik → MEP-ELECTRICAL-DIST (trafo, busduct, panel
+  // MDP, kabel feeder — komponen berkode 5.1.x); plumbing →
+  // MEP-PLUMBING-TOWER (ground/roof tank, pompa transfer & booster);
+  // AC → MEP-HVAC-VRF (unit indoor/outdoor VRF, pipa tembaga
+  // refrigeran); fire protection → MEP-FIRE-PROTECTION (sprinkler,
+  // hydrant, pompa kebakaran, APAR). Keempatnya ADA sebagai template
+  // katalog-180 dengan komponen berharga (mayoritas MARKET_REFERENCE
+  // — hanya 18/54 komponen MEP_SYSTEM berkode AHSP; harga resmi
+  // adalah sumbu TERPISAH yang dinilai saat generate, bukan di
+  // binding ini — lihat MATERIAL_BINDING_EVIDENCE). CATATAN:
+  // constructionKnowledge masih menandai hvac & proteksi-kebakaran
+  // NOT_YET_SUPPORTED ("belum ada kalkulator/template HVAC khusus")
+  // — catatan itu KADALUWARSA sejak template MEP-HVAC-VRF &
+  // MEP-FIRE-PROTECTION ada; yang belum ada adalah kalkulator beban
+  // pendingin & desain kebakaran bersertifikat (tetap di tangan
+  // engineer — tercantum di asumsi/eksklusi template).
+  'mep:listrik': 'AVAILABLE',
+  'mep:plumbing': 'AVAILABLE',
+  'mep:ac': 'AVAILABLE',
+  'mep:fire protection': 'AVAILABLE',
+  // Struktur jembatan (W4 / G5) — sistem struktur atas, BUKAN
+  // material tiap komponen: beton ADA (BRG-GIRDER-20M gelagar
+  // pracetak pratekan; BRG-SLAB-CULVERT plat lantai; BRG-BOX-BRIDGE
+  // box culvert); baja ADA (BRG-STEEL-TRUSS rangka baja;
+  // BRG-PEDESTRIAN-STEEL gelagar baja; BRG-BAILEY-TEMP panel Bailey);
+  // kayu TIDAK ADA (0 komponen/template jembatan kayu di katalog).
+  // Abutment/lantai kendaraan beton ADA di jembatan baja juga —
+  // karena itu pencocokan item keluarga ini HANYA memakai token
+  // struktur atas (gelagar/rangka/plat), bukan 'beton' mentah.
+  'struktur-jembatan:beton': 'AVAILABLE',
+  'struktur-jembatan:baja': 'AVAILABLE',
+  'struktur-jembatan:kayu': 'UNAVAILABLE',
+  // Struktur gudang (W4 / G5) — portal frame ADA ('Struktur Baja
+  // Portal Frame' BLD-IND-FOODFACTORY; 'Struktur Baja Portal'
+  // BLD-IND-COLDSTORAGE; 'Struktur Baja Portal Gudang'
+  // BLD-IND-MULTITENANT; rangka baja profil WF BLD-IND-WAREHOUSE =
+  // konstruksi portal frame); truss/rangka ruang TIDAK ADA (0 hit
+  // 'truss'/'rangka ruang' di template industri).
+  'struktur-gudang:portal frame': 'AVAILABLE',
+  'struktur-gudang:truss': 'UNAVAILABLE',
 };
 
 export function lookupMaterialBinding(
@@ -244,6 +295,365 @@ export function lookupMaterialBinding(
   material: string
 ): MaterialAvailability {
   return MATERIAL_BINDING[`${norm(family)}:${norm(material)}`] ?? 'UNVERIFIED';
+}
+
+/* ------------------------------------------------------------------ */
+/* G6 (W4 / program Universal Construction Intelligence §4) — binding  */
+/* turunan katalog.                                                    */
+/*                                                                     */
+/* MATERIAL_BINDING di atas adalah tabel STATIS (audit Fase 1 §5 +     */
+/* keputusan owner). Bagian ini membuatnya DAPAT DIVERIFIKASI terhadap */
+/* katalog: tiap sel punya ATURAN BUKTI (MATERIAL_BINDING_EVIDENCE)   */
+/* dan `deriveMaterialBinding` menghitung ulang ketersediaan dari      */
+/* potret katalog (nama template/komponen + kode/harga + level). Tes   */
+/* katalog (chatSpecChain.test.ts §G6) GAGAL bila tabel dan katalog    */
+/* menyimpang — ke arah mana pun.                                      */
+/*                                                                     */
+/* SEMANTIK DERIVASI (divalidasi empiris terhadap 38 sel audit —       */
+/* BUKAN definisi aspirasional S2 §4.3):                               */
+/* - AVAILABLE ⟺ dalam LINGKUP KELUARGA sel itu (templates[] /        */
+/*   categories[]), ada elemen katalog BERHARGA (komponen punya        */
+/*   ahspCode ATAU unitPrice; atau nama template cocok + template      */
+/*   itu punya ≥1 komponen berharga) pada tampilan PROFESIONAL         */
+/*   (detailLevel STANDARD/PROFESSIONAL) yang memuat token.            */
+/* - UNVERIFIED ⟺ token hanya ditemukan di komponen COMPREHENSIVE,    */
+/*   atau hanya sebagai elemen TAK BERHARGA, atau sel dibatasi         */
+/*   `maxAvailability` oleh penilaian audit (lihat alasan per sel).    */
+/* - UNAVAILABLE ⟺ token tidak ditemukan sama sekali dalam lingkup.    */
+/*                                                                     */
+/* PENYIMPANGAN DARI S2 §4.3 YANG DISEPAKATI DATA: S2 merumuskan       */
+/* "tersedia ⟺ token + kode AHSP lolos gerbang [resmi FULL]". Probe    */
+/* katalog 2026-11-22 MEMBANTAH rumusan itu untuk tabel audit:         */
+/* hotmix, mozaik, u-ditch, box culvert, tiang pancang, dan            */
+/* lantai-kandang:beton semuanya AVAILABLE menurut audit/owner         */
+/* padahal TIDAK SATU PUN komponen pencocoknya lolos gerbang resmi     */
+/* FULL (harganya MARKET_REFERENCE atau UNRESOLVED). Menuntut gerbang  */
+/* FULL akan memaksa penurunan sel-sel sah itu ke UNVERIFIED dan       */
+/* memecahkan pin tes yang ada. Jadi: binding = KETERSEDIAAN elemen    */
+/* katalog berharga dalam konteks keluarga; harga RESMI vs REFERENSI   */
+/* adalah sumbu TERPISAH yang dinilai per item saat generate           */
+/* (resolveTemplateComponentPrice) dan TIDAK dicampur ke binding.      */
+/*                                                                     */
+/* LINGKUP KELUARGA ADALAH INTI: token global tidak cukup — 'beton'    */
+/* muncul 301× di katalog, tapi 'lantai-kandang:beton' AVAILABLE       */
+/* sementara 'lantai-gudang:beton' UNVERIFIED; 'batu kali' muncul      */
+/* 12× tapi 'pondasi:batu kali' UNAVAILABLE (hanya item di template    */
+/* lain, bukan template pondasi). Tanpa lingkup, derivasi tidak dapat  */
+/* mereproduksi tabel.                                                 */
+/*                                                                     */
+/* `maxAvailability` = penilaian audit yang TIDAK dapat diturunkan     */
+/* dari token (mis. "ada tapi bukan item saluran", "ada tapi selalu    */
+/* berpasangan"): pindai tetap berjalan dan sel tetap sensitif         */
+/* terhadap drift (bila token hilang total, derivasi jatuh ke          */
+/* UNAVAILABLE dan tes gagal — memaksa peninjauan ulang), tapi nilai   */
+/* tertinggi yang diizinkan dibatasi. Alasan WAJIB diisi.              */
+/*                                                                     */
+/* Modul ini TIDAK mengimpor RabTemplateService / repository (tetap    */
+/* dapat dimuat mandiri): potret katalog dipasok pemanggil (tes).      */
+/* ------------------------------------------------------------------ */
+
+/** Satu baris potret katalog (cukup untuk derivasi — tanpa harga). */
+export interface CatalogSnapshotEntry {
+  templateId: string;
+  templateName: string;
+  templateCategory: string;
+  componentName: string;
+  ahspCode?: string | null;
+  unitPrice?: number | null;
+  /** STANDARD | PROFESSIONAL | COMPREHENSIVE (kosong = STANDARD). */
+  detailLevel?: string;
+}
+
+/** Aturan bukti satu sel MATERIAL_BINDING. */
+export interface MaterialBindingEvidence {
+  /** Token (ternormalisasi) yang dicari di nama komponen/template. */
+  tokens: string[];
+  /** Bila ada, kecualikan kecocokan yang mengandung salah satu token ini. */
+  excludeTokens?: string[];
+  /** Batasi pindai ke ID template ini (bila diisi). */
+  templates?: string[];
+  /** Batasi pindai ke kategori template ini (bila diisi). */
+  categories?: string[];
+  /** Bila true, nama template yang cocok juga dihitung sebagai bukti. */
+  matchTemplateName?: boolean;
+  /** Batas atas penilaian audit (dengan alasan wajib). */
+  maxAvailability?: MaterialAvailability;
+  /** Alasan maxAvailability / catatan bukti (wajib bila ada cap). */
+  reason?: string;
+}
+
+/* Lingkup keluarga (ID template — dipakai berulang di aturan). */
+const TPL_KANDANG = ['AGR-LIVESTOCK-BARN'];
+const TPL_GUDANG = ['BLD-IND-WAREHOUSE', 'BLD-IND-MULTITENANT'];
+const TPL_ATAP_GEDUNG = [
+  'ROOF-TILE-PREMIUM', 'ROOF-CONCRETE-DECK', 'ROOF-METAL-STANDING',
+  'ROOF-GREEN-GARDEN', 'ROOF-SKYLIGHT-ATRIUM', 'ROOF-WP-DECK-AUDIT',
+];
+const TPL_JALAN = [
+  'INFRA-ROAD-ASPHALT', 'INFRA-ROAD-RIGID', 'INFRA-ROAD-MACADAM',
+  'INFRA-ROAD-RECONSTRUCTION', 'PAV-KOMPLEK-6CM', 'PAV-INDUSTRI-8CM',
+  'PAV-PEDESTRIAN-INTERLOCK', 'PAV-GRASS-BLOCK',
+];
+const TPL_DRAINASE = [
+  'DRN-UDITCH-COVER', 'DRN-FRENCH-DRAIN', 'DRN-DETENTION-TANK',
+  'DRN-SEWER-LINE', 'DRN-STORM-CULVERT', 'DRN-BIOFILTER-GARDEN',
+  'DRN-SEPTIC-COMMUNAL', 'SDA-DRAIN-UDITCH', 'SDA-BOX-CULVERT',
+];
+const TPL_KOLAM = ['SPT-SWIMMING-POOL', 'LAND-POOL-WATERFEATURE'];
+const TPL_GUDANG_INDUSTRI = [
+  'BLD-IND-WAREHOUSE', 'BLD-IND-MULTITENANT', 'BLD-IND-FOODFACTORY',
+  'BLD-IND-COLDSTORAGE', 'BLD-IND-WORKSHOP-FAB', 'BLD-IND-POULTRY',
+];
+
+export const MATERIAL_BINDING_EVIDENCE: Readonly<
+  Record<string, MaterialBindingEvidence>
+> = {
+  // --- Atap kandang (AGR-LIVESTOCK-BARN) ---
+  'atap-kandang:spandek': { tokens: ['spandek'], templates: TPL_KANDANG },
+  'atap-kandang:genteng': { tokens: ['genteng'], templates: TPL_KANDANG },
+  'atap-kandang:galvalum': { tokens: ['galvalum'], templates: TPL_KANDANG },
+  'atap-kandang:asbes': { tokens: ['asbes'], templates: TPL_KANDANG },
+  // --- Atap gudang ---
+  'atap-gudang:spandek': { tokens: ['spandek'], templates: TPL_GUDANG },
+  'atap-gudang:galvalum': { tokens: ['galvalum'], templates: TPL_GUDANG },
+  'atap-gudang:zincalume': { tokens: ['zincalume'], templates: TPL_GUDANG },
+  'atap-gudang:genteng metal': { tokens: ['genteng metal'], templates: TPL_GUDANG },
+  // --- Atap gedung (template ROOF-*) ---
+  'atap-gedung:genteng': { tokens: ['genteng'], templates: TPL_ATAP_GEDUNG },
+  'atap-gedung:spandek-galvalum': { tokens: ['spandek-galvalum'], templates: TPL_ATAP_GEDUNG },
+  'atap-gedung:dak beton': {
+    tokens: ['dak beton'], templates: TPL_ATAP_GEDUNG, matchTemplateName: true,
+  },
+  // --- Lantai kandang ---
+  'lantai-kandang:beton': { tokens: ['lantai beton'], templates: TPL_KANDANG },
+  'lantai-kandang:anti-licin': { tokens: ['anti-licin', 'anti licin'], templates: TPL_KANDANG },
+  'lantai-kandang:kombinasi': { tokens: ['kombinasi'], templates: TPL_KANDANG },
+  // --- Lantai gudang ---
+  'lantai-gudang:hardener': { tokens: ['hardener'], templates: TPL_GUDANG },
+  'lantai-gudang:beton': {
+    tokens: ['beton'], templates: TPL_GUDANG,
+    maxAvailability: 'UNVERIFIED',
+    reason: 'Audit Fase 1 §5: slab beton ADA tapi selalu berpasangan dengan finishing hardener/paving di atasnya; tidak ada varian "beton biasa" yang dapat dipilih sendiri sebagai finishing.',
+  },
+  'lantai-gudang:paving': { tokens: ['paving'], templates: TPL_GUDANG },
+  // --- Pondasi (kategori PONDASI_GEOTEKNIK; 'bore pile' butuh alias
+  // 'bored pile' — komponen/template memakai ejaan 'Bored Pile'). ---
+  'pondasi:bore pile': { tokens: ['bore pile', 'bored pile'], categories: ['PONDASI_GEOTEKNIK'], matchTemplateName: true },
+  'pondasi:tiang pancang': { tokens: ['tiang pancang'], categories: ['PONDASI_GEOTEKNIK'], matchTemplateName: true },
+  'pondasi:sumuran': { tokens: ['sumuran'], categories: ['PONDASI_GEOTEKNIK'], matchTemplateName: true },
+  'pondasi:foot plat': { tokens: ['foot plat'], categories: ['PONDASI_GEOTEKNIK'], matchTemplateName: true },
+  'pondasi:batu kali': { tokens: ['batu kali'], categories: ['PONDASI_GEOTEKNIK'], matchTemplateName: true },
+  // --- Perkerasan jalan (hotmix/rigid hanya ada di NAMA template —
+  // komponennya bernama AC-WC/AC-BC & 'Beton Semen', bukan 'hotmix' /
+  // 'rigid' — karena itu matchTemplateName wajib untuk keduanya). ---
+  'perkerasan-jalan:hotmix': { tokens: ['hotmix'], templates: TPL_JALAN, matchTemplateName: true },
+  'perkerasan-jalan:rigid': { tokens: ['rigid'], templates: TPL_JALAN, matchTemplateName: true },
+  'perkerasan-jalan:paving': { tokens: ['paving'], templates: TPL_JALAN, matchTemplateName: true },
+  'perkerasan-jalan:telford': { tokens: ['telford'], templates: TPL_JALAN, matchTemplateName: true },
+  'perkerasan-jalan:makadam': { tokens: ['makadam'], templates: TPL_JALAN, matchTemplateName: true },
+  // --- Drainase ---
+  'drainase:u-ditch': { tokens: ['u-ditch', 'uditch'], templates: TPL_DRAINASE, matchTemplateName: true },
+  'drainase:box culvert': { tokens: ['box culvert'], templates: TPL_DRAINASE, matchTemplateName: true },
+  'drainase:pasangan batu kali': {
+    tokens: ['pasangan batu kali'], templates: TPL_DRAINASE,
+    maxAvailability: 'UNVERIFIED',
+    reason: 'Audit Fase 1 §5: pasangan batu kali hanya sebagai wingwall/headwall & perkuatan mulut gorong, bukan item saluran.',
+  },
+  'drainase:beton cor': {
+    // Token 'beton cor' persis TIDAK ADA di katalog (0 hit) — token
+    // 'beton' menangkap beton drainase (outfall/manhole/headwall) dan
+    // cap menyatakan penilaian auditnya.
+    tokens: ['beton'], templates: TPL_DRAINASE,
+    maxAvailability: 'UNVERIFIED',
+    reason: 'Audit Fase 1 §5: beton cor hanya sebagai outfall/manhole/headwall, bukan item saluran.',
+  },
+  // --- Kolam ---
+  'kolam-type:skimmer': { tokens: ['skimmer'], templates: TPL_KOLAM },
+  'kolam-type:semi-overflow': { tokens: ['semi-overflow', 'semi overflow'], templates: TPL_KOLAM },
+  'kolam-type:overflow': { tokens: ['overflow'], templates: TPL_KOLAM },
+  'kolam-finish:keramik': { tokens: ['keramik'], templates: TPL_KOLAM },
+  'kolam-finish:mozaik': { tokens: ['mozaik'], templates: TPL_KOLAM },
+  'kolam-finish:batu alam': {
+    tokens: ['batu alam'], templates: TPL_KOLAM,
+    maxAvailability: 'UNVERIFIED',
+    reason: 'Audit Fase 1 §5: batu alam hanya sebagai dek, bukan finishing kolam.',
+  },
+  'kolam-deck:batu alam': { tokens: ['dek kolam batu alam', 'deking batu alam'], templates: TPL_KOLAM },
+  // --- MEP (W4/G5; subsistem = template — matchTemplateName adalah
+  // bukti utama, token komponen sebagai penguat). ---
+  'mep:listrik': {
+    tokens: ['elektrikal', 'trafo', 'busduct', 'panel mdp', 'kabel feeder', 'gardu'],
+    categories: ['MEP_SYSTEM'], matchTemplateName: true,
+  },
+  'mep:plumbing': {
+    tokens: ['plumbing', 'ground water tank', 'roof tank', 'pompa transfer', 'pompa booster'],
+    categories: ['MEP_SYSTEM'], matchTemplateName: true,
+  },
+  'mep:ac': {
+    tokens: ['hvac', 'vrf'], categories: ['MEP_SYSTEM'], matchTemplateName: true,
+  },
+  'mep:fire protection': {
+    tokens: ['proteksi kebakaran', 'sprinkler', 'hydrant'],
+    categories: ['MEP_SYSTEM'], matchTemplateName: true,
+  },
+  // --- Struktur jembatan (token struktur atas SAJA — 'beton' mentah
+  // tidak dipakai: abutment beton ada di jembatan baja juga). ---
+  'struktur-jembatan:beton': {
+    tokens: ['gelagar pracetak', 'gelagar pratekan', 'plat lantai jembatan', 'box culvert'],
+    categories: ['JEMBATAN_STRUKTUR'],
+  },
+  'struktur-jembatan:baja': {
+    tokens: ['rangka jembatan', 'baja pelat', 'baja gelagar', 'bailey'],
+    categories: ['JEMBATAN_STRUKTUR'],
+  },
+  'struktur-jembatan:kayu': {
+    tokens: ['kayu', 'gelagar kayu', 'lantai kayu'], categories: ['JEMBATAN_STRUKTUR'],
+  },
+  // --- Struktur gudang ---
+  'struktur-gudang:portal frame': { tokens: ['portal'], templates: TPL_GUDANG_INDUSTRI },
+  'struktur-gudang:truss': { tokens: ['truss', 'rangka ruang'], templates: TPL_GUDANG_INDUSTRI },
+};
+
+const AVAILABILITY_RANK: Record<MaterialAvailability, number> = {
+  UNAVAILABLE: 0,
+  UNVERIFIED: 1,
+  AVAILABLE: 2,
+};
+
+export interface BindingDerivationDetail {
+  cell: string;
+  derived: MaterialAvailability;
+  /** Nilai sebelum cap maxAvailability (null bila tak ada cap). */
+  base: MaterialAvailability;
+  capped: boolean;
+  /** Bukti pertama yang ditemukan (untuk diagnostik tes). */
+  evidence: string | null;
+}
+
+function isProfLevel(level: string | undefined): boolean {
+  const l = (level ?? 'STANDARD').toUpperCase();
+  return l === 'STANDARD' || l === 'PROFESSIONAL';
+}
+
+function entryMatches(
+  haystack: string,
+  rule: MaterialBindingEvidence,
+): boolean {
+  const h = norm(haystack);
+  if (!rule.tokens.some((t) => h.includes(norm(t)))) return false;
+  if ((rule.excludeTokens ?? []).some((t) => h.includes(norm(t)))) return false;
+  return true;
+}
+
+function inScope(entry: CatalogSnapshotEntry, rule: MaterialBindingEvidence): boolean {
+  if (rule.templates && rule.templates.length > 0 && !rule.templates.includes(entry.templateId)) {
+    return false;
+  }
+  if (rule.categories && rule.categories.length > 0 && !rule.categories.includes(entry.templateCategory)) {
+    return false;
+  }
+  return true;
+}
+
+function isPriced(entry: CatalogSnapshotEntry): boolean {
+  return (
+    (entry.ahspCode != null && entry.ahspCode !== '') ||
+    (entry.unitPrice != null && Number.isFinite(entry.unitPrice) && entry.unitPrice > 0)
+  );
+}
+
+/**
+ * Turunkan MATERIAL_BINDING dari potret katalog (G6). Satu derivasi
+ * per sel; lihat komentar kepala bagian untuk semantiknya. Mengembalikan
+ * peta turunan + perincian bukti per sel (untuk diagnostik tes).
+ */
+export function deriveMaterialBinding(
+  snapshot: CatalogSnapshotEntry[],
+): { derived: Record<string, MaterialAvailability>; details: BindingDerivationDetail[] } {
+  const derived: Record<string, MaterialAvailability> = {};
+  const details: BindingDerivationDetail[] = [];
+  // Template → punya ≥1 komponen PROF berharga (untuk bukti nama template).
+  const templateHasPricedProf = new Map<string, boolean>();
+  for (const e of snapshot) {
+    if (isProfLevel(e.detailLevel) && isPriced(e)) templateHasPricedProf.set(e.templateId, true);
+  }
+  for (const [cell, rule] of Object.entries(MATERIAL_BINDING_EVIDENCE)) {
+    const scoped = snapshot.filter((e) => inScope(e, rule));
+    let profPricedEvidence: string | null = null;
+    let anyEvidence: string | null = null;
+    const seenTemplates = new Set<string>();
+    for (const e of scoped) {
+      const compHit = entryMatches(e.componentName, rule);
+      const tplHit =
+        rule.matchTemplateName === true &&
+        !seenTemplates.has(e.templateId) &&
+        entryMatches(e.templateName, rule);
+      if (tplHit) seenTemplates.add(e.templateId);
+      if (!compHit && !tplHit) continue;
+      const ev = tplHit && !compHit
+        ? `template "${e.templateName}" (${e.templateId})`
+        : `${e.templateId}::"${e.componentName}"${e.ahspCode ? ` [${e.ahspCode}]` : ''}`;
+      if (anyEvidence == null) anyEvidence = ev;
+      const prof = isProfLevel(e.detailLevel);
+      const priced = tplHit && !compHit
+        ? templateHasPricedProf.get(e.templateId) === true
+        : isPriced(e);
+      if (prof && priced && profPricedEvidence == null) profPricedEvidence = ev;
+    }
+    const base: MaterialAvailability =
+      profPricedEvidence != null
+        ? 'AVAILABLE'
+        : anyEvidence != null
+          ? 'UNVERIFIED'
+          : 'UNAVAILABLE';
+    const capped =
+      rule.maxAvailability != null &&
+      AVAILABILITY_RANK[base] > AVAILABILITY_RANK[rule.maxAvailability];
+    const value = capped ? (rule.maxAvailability as MaterialAvailability) : base;
+    derived[cell] = value;
+    details.push({
+      cell,
+      derived: value,
+      base,
+      capped,
+      evidence: profPricedEvidence ?? anyEvidence,
+    });
+  }
+  return { derived, details };
+}
+
+export interface BindingDivergence {
+  cell: string;
+  table: MaterialAvailability;
+  derived: MaterialAvailability;
+  evidence: string | null;
+  capped: boolean;
+}
+
+/**
+ * Bandingkan tabel MATERIAL_BINDING dengan hasil derivasi katalog.
+ * Mengembalikan sel yang menyimpang (kosong = tabel selaras katalog).
+ * Sel tabel TANPA aturan bukti juga dilaporkan sebagai penyimpangan
+ * (aturan wajib mencakup semua sel — tanpa pengecualian diam-diam).
+ */
+export function compareMaterialBinding(
+  derived: Record<string, MaterialAvailability>,
+  details?: BindingDerivationDetail[],
+): BindingDivergence[] {
+  const out: BindingDivergence[] = [];
+  const detailByCell = new Map((details ?? []).map((d) => [d.cell, d]));
+  for (const [cell, table] of Object.entries(MATERIAL_BINDING)) {
+    const d = derived[cell];
+    if (d === undefined) {
+      out.push({ cell, table, derived: 'UNVERIFIED', evidence: null, capped: false });
+      continue;
+    }
+    if (d !== table) {
+      const det = detailByCell.get(cell);
+      out.push({ cell, table, derived: d, evidence: det?.evidence ?? null, capped: det?.capped ?? false });
+    }
+  }
+  return out;
 }
 
 /* ------------------------------------------------------------------ */
@@ -270,12 +680,14 @@ export function familyIdFromSpecs(specs: StructuredSpec[]): string | null {
 /* suppressedScopes                                                    */
 /*                                                                     */
 /* (a) road-drainage 'tanpa'/'eksisting' → suppress 'drainase'.       */
-/* (b) atap: family kandang/gudang-industri → suppress 'atap' —       */
-/*     TERVERIFIKASI terhadap komponen template: AGR-LIVESTOCK-BARN   */
-/*     memuat 'Penutup Atap Spandek Kandang' (specialty3.ts) dan      */
-/*     BLD-IND-MULTITENANT memuat 'Penutup Atap UPVC Atap Gudang'     */
-/*     (buildings2.ts) — atap sudah tercakup komponen template        */
-/*     keluarga, jadi part atap terpisah adalah ganda.                 */
+/* (b) cakupan yang sudah tercakup komponen template keluarga →        */
+/*     suppress scope itu. TABEL DATA (universalTaxonomy.ts            */
+/*     TEMPLATE_FAMILY_COVERAGE, G12) — dulu 2 hardcode di sini        */
+/*     (kandang/gudang-industri → atap, TERVERIFIKASI:                 */
+/*     AGR-LIVESTOCK-BARN memuat 'Penutup Atap Spandek Kandang' dan    */
+/*     BLD-IND-MULTITENANT memuat 'Penutup Atap UPVC Atap Gudang').    */
+/*     Baris baru ditambahkan sebagai DATA di tabel itu (wajib dengan  */
+/*     bukti komponen katalog) — tanpa logika baru di sini.            */
 /* ------------------------------------------------------------------ */
 
 export type SpecChainScopeId =
@@ -293,7 +705,10 @@ export function suppressedScopes(
     const v = norm(specText(drainage));
     if (v.includes('tanpa') || v.includes('eksisting')) out.add('drainase');
   }
-  if (familyId === 'kandang' || familyId === 'gudang-industri') out.add('atap');
+  // (b) G12: dari tabel cakupan (bukan hardcode per keluarga).
+  for (const covered of coveredScopesForFamily(familyId)) {
+    out.add(covered as SpecChainScopeId);
+  }
   return out;
 }
 
@@ -304,8 +719,9 @@ export function suppressedScopes(
 export interface RequestedMaterial {
   /** Keluarga MATERIAL_BINDING ('atap-kandang', 'pondasi', dst.). */
   bindingFamily: string;
-  /** Keluarga materialStatusForItem ('atap'|'lantai'|'pondasi'|'perkerasan'). */
-  family: 'atap' | 'lantai' | 'pondasi' | 'perkerasan';
+  /** Keluarga materialStatusForItem. W4/G5 menambah: 'drainase',
+   *  'mep', 'struktur-jembatan', 'struktur-gudang'. */
+  family: 'atap' | 'lantai' | 'pondasi' | 'perkerasan' | 'drainase' | 'mep' | 'struktur-jembatan' | 'struktur-gudang';
   material: string;
 }
 
@@ -320,6 +736,36 @@ const MATERIAL_SPEC_MAP: Record<
   'warehouse-floor': { bindingFamily: 'lantai-gudang', family: 'lantai', paramKey: 'floor_type' },
   'building-foundation': { bindingFamily: 'pondasi', family: 'pondasi', paramKey: 'foundation_type' },
   'road-pavement': { bindingFamily: 'perkerasan-jalan', family: 'perkerasan', paramKey: 'pavement_type' },
+  // --- W4 / G5 (program Universal Construction Intelligence §4) ---
+  // Baris-baris ini SENGAJA tanpa paramKey: TIDAK ADA template yang
+  // mendeklarasikan param SELECT varian untuk spek-spek ini, dan
+  // menambah param dekoratif yang tidak dibaca komponen mana pun
+  // hanya mengulang cacat G8 (quality_level). Efek deterministik
+  // baris ini adalah: pick template (resolveDeterministicPick:
+  // drainase + mep), status material per item (materialStatusForItem),
+  // penanda AMBIGUOUS_PICK (materialSpecForScope), dan cakupan spek
+  // (validateDraftChain butir 3). Varian DALAM template untuk
+  // disiplin ini membutuhkan kunci spek baru (dimensi penampang /
+  // daya / mutu beton) + desain varian — di luar v1, lihat laporan W4.
+  // Drainase: material saluran (U-ditch / box culvert / pasangan
+  // batu kali / beton cor) — sel binding sudah ada sejak audit.
+  'drainage-material': { bindingFamily: 'drainase', family: 'drainase' },
+  // MEP: subsistem (listrik / plumbing / AC / fire protection) —
+  // nilai multi (string[]): token PERTAMA menurut urutan prioritas
+  // ekstraktor yang dipakai (keterbatasan v1 yang didokumentasikan:
+  // satu scope = satu part = satu template; subsistem kedua dst.
+  // belum membangun part sendiri — lihat laporan W4).
+  'building-mep-scope': { bindingFamily: 'mep', family: 'mep' },
+  'renovation-mep': { bindingFamily: 'mep', family: 'mep' },
+  // Struktur: sistem struktur atas jembatan (beton/baja/kayu) dan
+  // sistem struktur gudang (portal frame/truss). BUKAN mutu beton:
+  // tidak ada kunci spek mutu beton (K-xxx/f'c) — label mutu HANYA
+  // menegaskan yang disebut user/template dan tidak pernah dikarang
+  // (§4 master prompt); kunci `structure-concrete-grade` membutuhkan
+  // SPEC_KEY_META + definisi kuesioner (W6) — di luar v1, lihat
+  // laporan W4.
+  'bridge-type': { bindingFamily: 'struktur-jembatan', family: 'struktur-jembatan' },
+  'warehouse-system': { bindingFamily: 'struktur-gudang', family: 'struktur-gudang' },
 };
 
 /** Token material dari nilai spek (urutan = prioritas pencocokan). */
@@ -360,6 +806,43 @@ function extractMaterialToken(
     if (v.includes('batu kali')) return 'batu kali';
     if (v.includes('sumuran')) return 'sumuran';
     if (v.includes('mini pile')) return 'mini pile';
+    return null;
+  }
+  if (family === 'drainase') {
+    // Urutan: box culvert dulu (frasa terpanjang yang tumpang tindih
+    // dengan 'culvert' generik), lalu u-ditch, lalu pasangan batu.
+    if (v.includes('box culvert')) return 'box culvert';
+    if (v.includes('u-ditch') || v.includes('uditch') || v.includes('u ditch')) return 'u-ditch';
+    if (v.includes('pasangan batu kali') || v.includes('batu kali')) return 'pasangan batu kali';
+    if (v.includes('beton cor')) return 'beton cor';
+    return null;
+  }
+  if (family === 'mep') {
+    // Urutan = urutan opsi kuesioner (listrik, plumbing, AC, fire).
+    // Nilai multi (string[]) digabung specText dengan ', ' — token
+    // pertama menurut urutan INI yang dipakai (keterbatasan v1).
+    // 'ac' WAJIB batas kata: substring 'ac' ada di 'pracetak' dsb.
+    // 'Tanpa pekerjaan instalasi' (renovation-mep) tidak mengandung
+    // satu pun token di bawah → null (bukan permintaan subsistem).
+    if (v.includes('listrik') || v.includes('elektrikal')) return 'listrik';
+    if (v.includes('plumbing') || v.includes('sanitair')) return 'plumbing';
+    if (/\bhvac\b/.test(v) || /\bvrf\b/.test(v) || v.includes('tata udara') || /\bac\b/.test(v)) return 'ac';
+    if (v.includes('fire') || v.includes('proteksi kebakaran') || v.includes('pemadam')) return 'fire protection';
+    return null;
+  }
+  if (family === 'struktur-jembatan') {
+    // 'bailey' = jembatan Bailey (rangka baja panel) — disebut di
+    // isSatisfied pertanyaan bridge-type; materialnya baja.
+    if (v.includes('bailey')) return 'baja';
+    if (v.includes('beton')) return 'beton';
+    if (v.includes('baja')) return 'baja';
+    if (v.includes('kayu')) return 'kayu';
+    return null;
+  }
+  if (family === 'struktur-gudang') {
+    // 'Portal frame baja WF' mengandung 'baja' — cek portal dulu.
+    if (v.includes('portal frame') || v.includes('portal')) return 'portal frame';
+    if (v.includes('truss') || v.includes('rangka ruang')) return 'truss';
     return null;
   }
   // perkerasan
@@ -504,7 +987,12 @@ export function materialSpecForScope(
     pondasi: ['building-foundation'],
     atap: ['kandang-roof-material', 'warehouse-roof', 'building-roof-type'],
     pertanian: ['kandang-roof-material', 'kandang-floor'],
-    gedung: ['warehouse-roof', 'building-roof-type', 'warehouse-floor'],
+    gedung: ['warehouse-roof', 'building-roof-type', 'warehouse-floor', 'building-mep-scope', 'warehouse-system'],
+    // W4/G5: drainase, mep, jembatan, renovasi.
+    drainase: ['drainage-material'],
+    mep: ['building-mep-scope', 'renovation-mep'],
+    jembatan: ['bridge-type'],
+    renovasi: ['renovation-mep'],
   };
   for (const k of keys[scopeId] ?? []) {
     const found = specs.find((s) => s.key === k);
@@ -581,7 +1069,49 @@ export function resolveDeterministicPick(
       }
       // batu kali → null (tak ada template).
     }
+  } else if (scope.id === 'drainase') {
+    // W4/G5: material saluran → template saluran. U-ditch &
+    // box culvert punya template katalog-180; pasangan batu kali &
+    // beton cor → null (bukan item saluran — lihat binding).
+    // Token dari requestedMaterialForSpec (satu sumber kebenaran
+    // dengan status material & cakupan spek), bukan pencocokan teks
+    // kedua. Bila dua template se-material (DRN-UDITCH-COVER vs
+    // SDA-DRAIN-UDITCH), pilih katalog-180 (DRN-*) — SDA-* adalah
+    // seed legacy dengan harga referensi A.x/SDA.x.
+    const req = specs
+      .map((s) => requestedMaterialForSpec(s))
+      .find((r) => r?.family === 'drainase');
+    if (req?.material === 'u-ditch') {
+      target = { templateId: 'DRN-UDITCH-COVER', reason: `saluran U-ditch (spek "${req.material}") → template Saluran U-Ditch + Tutup Heavy Duty` };
+    } else if (req?.material === 'box culvert') {
+      target = { templateId: 'DRN-STORM-CULVERT', reason: `saluran box culvert (spek "${req.material}") → template Gorong-gorong & Cross Drain (RCP + Box)` };
+    }
+  } else if (scope.id === 'mep') {
+    // W4/G5: subsistem MEP → template subsistem. Satu scope = satu
+    // part = satu template: bila spek multi-subsistem (mis. listrik
+    // + plumbing), token PERTAMA menurut urutan prioritas ekstraktor
+    // yang menang (keterbatasan v1 yang didokumentasikan di
+    // MATERIAL_SPEC_MAP — subsistem lain belum membangun part
+    // sendiri).
+    const req = specs
+      .map((s) => requestedMaterialForSpec(s))
+      .find((r) => r?.family === 'mep');
+    if (req?.material === 'listrik') {
+      target = { templateId: 'MEP-ELECTRICAL-DIST', reason: `instalasi listrik (spek "${req.material}") → template Distribusi Elektrikal Gedung` };
+    } else if (req?.material === 'plumbing') {
+      target = { templateId: 'MEP-PLUMBING-TOWER', reason: `plumbing (spek "${req.material}") → template Sistem Plumbing Gedung Bertingkat` };
+    } else if (req?.material === 'ac') {
+      target = { templateId: 'MEP-HVAC-VRF', reason: `AC / tata udara (spek "${req.material}") → template Sistem HVAC VRF/VRV Gedung` };
+    } else if (req?.material === 'fire protection') {
+      target = { templateId: 'MEP-FIRE-PROTECTION', reason: `fire protection (spek "${req.material}") → template Proteksi Kebakaran Gedung` };
+    }
   }
+  // TIDAK ADA pick deterministik untuk 'jembatan' (W4/G5, sengaja):
+  // pemilihan template jembatan bergantung BENTANG (girder 20 m vs
+  // slab 6–10 m vs truss 30 m) + penjaga material/bentang di
+  // buildDraftPart (universalRab) yang menolak substitusi beton↔baja.
+  // Pick buta-material akan menabrak keduanya. Spek bridge-type
+  // tetap bekerja lewat status material + cakupan + AMBIGUOUS_PICK.
   if (!target) return null;
   if (!ranked.some((r) => r.template.id === target!.templateId)) return null;
   return target;
@@ -624,14 +1154,46 @@ const MATERIAL_FAMILY_TOKENS: Record<
   lantai: ['floor hardener', 'hardener', 'paving', 'keramik', 'granit', 'anti-licin', 'beton'],
   pondasi: ['bore pile', 'bored pile', 'tiang pancang', 'foot plat', 'batu kali', 'sumuran'],
   perkerasan: ['hotmix', 'aspal', 'rigid', 'beton', 'paving', 'telford', 'makadam'],
+  // W4/G5 — drainase: token NAMA ITEM saluran. 'beton cor' sengaja
+  // TIDAK punya padanan item generik: 'Beton Kepala Outfall' /
+  // 'Beton Manhole' adalah beton pelengkap, bukan saluran cor —
+  // hanya frasa 'beton cor' persis yang cocok (saat ini 0 item).
+  drainase: ['u-ditch', 'uditch', 'box culvert', 'pasangan batu kali', 'beton cor'],
+  // W4/G5 — mep: HANYA frasa spesifik subsistem (multi-kata atau
+  // istilah khas). 'pipa'/'panel'/'pompa' mentah DILARANG di sini:
+  // ketiganya muncul di semua subsistem ('Pipa Sprinkler' vs 'Pipa
+  // Tembaga Refrigeran' vs 'Pipa Cabang'; 'Pompa Transfer' vs 'Pompa
+  // Kebakaran' vs 'Pompa Submersible'). Urutan = prioritas (frasa
+  // terpanjang/terkhas dulu).
+  mep: [
+    'panel mdp', 'busduct', 'trafo distribusi', 'gardu trafo', 'kabel feeder',
+    'panel distribusi', 'grounding',
+    'ground water tank', 'roof tank', 'pompa transfer', 'pompa booster',
+    'riser air bersih', 'riser air kotor', 'pipa cabang',
+    'unit outdoor vrf', 'unit indoor vrf', 'pipa tembaga refrigeran', 'kontrol terpusat',
+    'sprinkler', 'hydrant', 'pompa kebakaran', 'detektor asap', 'fire extinguisher', 'apar',
+  ],
+  // W4/G5 — struktur-jembatan: HANYA token STRUKTUR ATAS. 'beton'
+  // mentah DILARANG: abutment & lantai kendaraan beton ada di
+  // jembatan baja juga (positif-palsu SUBSTITUTED — analog dengan
+  // pengecualian 'rangka ≠ penutup' keluarga atap).
+  'struktur-jembatan': [
+    'gelagar pracetak', 'gelagar pratekan', 'plat lantai jembatan', 'box culvert',
+    'rangka jembatan', 'baja pelat', 'baja gelagar', 'bailey',
+    'gelagar kayu', 'lantai kayu',
+  ],
+  // W4/G5 — struktur-gudang: 'rangka baja profil wf' = konstruksi
+  // portal frame (WF adalah profil portal frame gudang standar).
+  'struktur-gudang': ['portal frame', 'struktur baja portal', 'rangka baja profil wf', 'truss', 'rangka ruang'],
 };
 
 /** Keluarga material yang relevan untuk satu scope part. */
 function familiesForScope(partScopeId: string): RequestedMaterial['family'][] {
   switch (partScopeId) {
     case 'pertanian':
-    case 'gedung':
       return ['atap', 'lantai', 'pondasi'];
+    case 'gedung':
+      return ['atap', 'lantai', 'pondasi', 'mep', 'struktur-gudang'];
     case 'atap':
       return ['atap'];
     case 'pondasi':
@@ -640,8 +1202,19 @@ function familiesForScope(partScopeId: string): RequestedMaterial['family'][] {
       return ['perkerasan'];
     case 'finishing':
       return ['lantai'];
+    // W4/G5: part drainase/mep/jembatan dipersempit ke keluarganya
+    // sendiri — token generik keluarga lain ('beton' perkerasan /
+    // lantai) di item drainase/MEP/jembatan adalah positif-palsu
+    // (mis. 'Perkerasan Beton Pemulihan di Atas Cross Drain' bukan
+    // perkerasan jalan yang diminta spek road-pavement).
+    case 'drainase':
+      return ['drainase'];
+    case 'mep':
+      return ['mep'];
+    case 'jembatan':
+      return ['struktur-jembatan'];
     default:
-      return ['atap', 'lantai', 'pondasi', 'perkerasan'];
+      return ['atap', 'lantai', 'pondasi', 'perkerasan', 'drainase', 'mep', 'struktur-jembatan', 'struktur-gudang'];
   }
 }
 
@@ -653,6 +1226,22 @@ function normalizeFamilyToken(
   if (family === 'perkerasan' && token === 'aspal') return 'hotmix';
   if (family === 'perkerasan' && token === 'beton') return 'rigid';
   if (family === 'lantai' && token === 'floor hardener') return 'hardener';
+  if (family === 'drainase' && token === 'uditch') return 'u-ditch';
+  if (family === 'mep') {
+    if (['panel mdp', 'busduct', 'trafo distribusi', 'gardu trafo', 'kabel feeder', 'panel distribusi', 'grounding'].includes(token)) return 'listrik';
+    if (['ground water tank', 'roof tank', 'pompa transfer', 'pompa booster', 'riser air bersih', 'riser air kotor', 'pipa cabang'].includes(token)) return 'plumbing';
+    if (['unit outdoor vrf', 'unit indoor vrf', 'pipa tembaga refrigeran', 'kontrol terpusat'].includes(token)) return 'ac';
+    if (['sprinkler', 'hydrant', 'pompa kebakaran', 'detektor asap', 'fire extinguisher', 'apar'].includes(token)) return 'fire protection';
+  }
+  if (family === 'struktur-jembatan') {
+    if (['gelagar pracetak', 'gelagar pratekan', 'plat lantai jembatan', 'box culvert'].includes(token)) return 'beton';
+    if (['rangka jembatan', 'baja pelat', 'baja gelagar', 'bailey'].includes(token)) return 'baja';
+    if (['gelagar kayu', 'lantai kayu'].includes(token)) return 'kayu';
+  }
+  if (family === 'struktur-gudang') {
+    if (['portal frame', 'struktur baja portal', 'rangka baja profil wf'].includes(token)) return 'portal frame';
+    if (['truss', 'rangka ruang'].includes(token)) return 'truss';
+  }
   return token;
 }
 
@@ -681,7 +1270,11 @@ export function materialStatusForItem(
     // MATCHED). Spek material atap selalu meminta PENUTUP, tidak
     // pernah rangka — jadi item bernama 'rangka' dilewati untuk
     // keluarga ini (NOT_APPLICABLE), apa pun token di namanya.
-    if (/\brangka\b/.test(desc)) continue;
+    // PENJAGA INI HANYA UNTUK KELUARGA 'atap' (W4/G5): untuk
+    // 'struktur-jembatan', 'rangka' JUSTRU struktur atasnya ('Rangka
+    // Jembatan' = rangka baja) — menerapkan penjaga ke semua
+    // keluarga akan membutakan pencocokan struktur jembatan.
+    if (family === 'atap' && /\brangka\b/.test(desc)) continue;
     // Token material item: token pertama dari daftar keluarga yang
     // muncul di deskripsi (urutan daftar = prioritas).
     let itemToken: string | null = null;
@@ -725,8 +1318,12 @@ export function materialStatusForItem(
 /*   = FLAG (volume yatim, perlu tinjau).                             */
 /* ------------------------------------------------------------------ */
 
-/** CERMIN universalRab.classifyParam — jaga tetap sinkron. */
-type ParamKind = 'length' | 'span' | 'width' | 'area' | 'thickness' | 'floors' | 'height' | 'volume' | 'count' | 'other';
+/** CERMIN universalRab.classifyParam — jaga tetap sinkron.
+ * Batch 2 menambahkan 'power' (kVA). 'depth' SENGAJA tidak ditambah
+ * di sini: cermin ini sudah stale terhadap 'depth' sejak lama dan
+ * menambahkannya akan mengubah perilaku validasi rantai — di luar
+ * cakupan Batch 2. */
+type ParamKind = 'length' | 'span' | 'width' | 'area' | 'thickness' | 'floors' | 'height' | 'volume' | 'count' | 'power' | 'other';
 
 function classifyParamLocal(key: string, label: string): ParamKind {
   const s = `${key} ${label}`.toLowerCase();
@@ -738,6 +1335,7 @@ function classifyParamLocal(key: string, label: string): ParamKind {
   if (/floor|lantai/.test(s)) return 'floors';
   if (/height|tinggi/.test(s)) return 'height';
   if (/volume/.test(s)) return 'volume';
+  if (/kva/.test(s)) return 'power';
   if (/count|jumlah|num_|sel|unit_count/.test(s)) return 'count';
   return 'other';
 }
@@ -757,6 +1355,7 @@ function specValueForKind(
     case 'height': return spec.heightM ?? null;
     case 'volume': return spec.volumeM3 ?? null;
     case 'count': return spec.count ?? null;
+    case 'power': return spec.powerKva ?? null;
     default: return null;
   }
 }
@@ -821,6 +1420,25 @@ function effectiveItemsLocal(draft: ChainDraftLike): Array<ChainDraftItemLike & 
   return out;
 }
 
+/* G7 — tautan item↔komponen: `sourceComponentId` (= comp.id, ditulis W7
+ * di generateDefaultItemsFromComponents) didahulukan karena stabil
+ * terhadap rename deskripsi item; fallback ke pencocokan nama untuk
+ * item lama/manual tanpa field itu (dan untuk ID basi yang tidak lagi
+ * menyelesaikan ke komponen mana pun — perilaku lama dipertahankan).
+ * Tanpa ini, item yang deskripsinya diedit user jatuh ke ASSUMPTION
+ * "komponen template tidak ditemukan" padahal komponennya ada. */
+function findSourceComponent(
+  components: ChainTemplateLike['components'],
+  item: ChainDraftItemLike,
+): NonNullable<ChainTemplateLike['components']>[number] | undefined {
+  const list = components ?? [];
+  if (item.sourceComponentId) {
+    const byId = list.find((c) => c.id === item.sourceComponentId);
+    if (byId) return byId;
+  }
+  return list.find((c) => c.name === item.description);
+}
+
 export function computeVolumeBasis(
   draft: ChainDraftLike,
   specs: StructuredSpec[]
@@ -839,7 +1457,7 @@ export function computeVolumeBasis(
     );
     for (const item of part.generation.items) {
       if (part.removedKeys.includes(itemKeyLocal(item))) continue;
-      const comp = (part.template.components ?? []).find((c) => c.name === item.description);
+      const comp = findSourceComponent(part.template.components, item);
       if (!comp) {
         const trace = traceById.get(item.id);
         out.push({
@@ -963,7 +1581,7 @@ export function traceItemReasons(
       const eff = items.find((e) => e.id === it.id) ?? it;
       const basis = basisById.get(it.id);
       const volumeBasis = basis?.basis ?? 'ASSUMPTION';
-      const comp = (part.template.components ?? []).find((c) => c.name === it.description);
+      const comp = findSourceComponent(part.template.components, it);
       const dedLinked = dedNames.has(norm(it.description));
       const mat = materialStatusForItem(it.description, specs, part.scope.id);
       const specLinked = mat.status === 'MATCHED' || volumeBasis === 'USER_DIMENSION';
@@ -1090,10 +1708,15 @@ const UNUSED_REASONS: Record<string, string> = {
   'warehouse-loading': 'tidak ada pemetaan ke parameter num_docks — item dock tetap hadir dari default template (8 pintu) apa pun jawabannya',
   'road-traffic': 'kelas lalu lintas tidak memiliki parameter pada template jalan mana pun',
   'road-subgrade': 'kondisi tanah dasar tidak mengubah item subgrade (tetap "CBR Min 6%")',
-  'building-finish-grade': 'grade finishing tidak mengubah template/item/harga pada jalur ini',
-  'building-mep-scope': 'tidak ada pemetaan deterministik ke part MEP pada jalur ini (opsi AC & fire protection bahkan tidak memicu scope MEP lewat teks)',
+  'building-finish-grade': 'grade finishing tidak mengubah template/item/harga pada jalur ini (G8 program Universal Construction Intelligence: kualitas DIKONSUMSI oleh completion pass Full AI — modul fullAiRabCompletion.ts, W5 — bukan oleh rantai spek; deklarasi quality_level di houseTypeCatalog TIDAK dihapus)',
+  // W4/G5: building-mep-scope & renovation-mep & drainage-material
+  // kini MEMILIKI pemetaan deterministik (MATERIAL_SPEC_MAP +
+  // resolveDeterministicPick). Alasan di bawah hanya tercapai bila
+  // nilainya tidak mengandung token yang dikenal — bukan lagi
+  // "tidak ada pemetaan".
+  'building-mep-scope': 'nilai cakupan MEP tidak mengandung subsistem yang dikenal (listrik/plumbing/AC/fire protection) — tidak ada pemetaan ke part MEP',
   'building-bedrooms': 'tidak ada parameter kamar tidur pada template apartemen',
-  'drainage-material': 'tidak ada pemetaan deterministik material saluran → item pada jalur ini',
+  'drainage-material': 'nilai material saluran tidak mengandung material yang dikenal (U-ditch/box culvert/pasangan batu kali/beton cor) — tidak ada pemetaan ke template drainase',
   'drainage-flow': 'arah aliran & tujuan buang tidak memetakan ke item/volume',
   'drainage-cover': 'penutup saluran tidak memetakan ke item pada jalur ini',
   'pool-type': 'tipe sirkulasi kolam tidak memetakan ke item draft (skimmer/semi-overflow tidak ada di katalog)',
@@ -1104,7 +1727,9 @@ const UNUSED_REASONS: Record<string, string> = {
   'landscape-lighting': 'pencahayaan lanskap tidak memetakan ke item draft pada jalur ini',
   'renovation-condition': 'kondisi renovasi tidak memetakan ke item draft pada jalur ini',
   'renovation-finish-grade': 'grade finishing renovasi tidak mengubah template/item/harga',
-  'renovation-mep': 'cakupan MEP renovasi tidak memetakan ke item draft pada jalur ini',
+  'renovation-mep': 'nilai perbaikan instalasi tidak mengandung subsistem yang dikenal (listrik/plumbing) — tidak ada pemetaan ke part MEP',
+  'bridge-type': 'nilai tipe jembatan tidak mengandung material struktur yang dikenal (beton/baja/kayu) — tidak ada pemetaan ke template jembatan',
+  'warehouse-system': 'nilai sistem struktur gudang tidak mengandung sistem yang dikenal (portal frame/truss) — tidak ada pemetaan ke komponen struktur gudang',
   'new-construction': 'penanda pembangunan baru — tidak ada pemetaan ke item',
 };
 

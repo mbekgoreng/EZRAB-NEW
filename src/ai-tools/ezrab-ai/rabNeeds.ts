@@ -141,12 +141,23 @@ const LAND_AREA_RE =
 const LAND_DIMS_RE =
   /(?:^|[\s,;])(?:lahan|tanah)\s*(?:ukuran\s*)?(\d+(?:[.,]\d+)?)\s*[x×]\s*(\d+(?:[.,]\d+)?)/;
 
-/** Luas lahan eksplisit dalam m² ("luas lahan 90 m2", "lahan 90 m2"). */
+/** Luas lahan eksplisit dalam m² ("luas lahan 90 m2", "lahan 90 m2").
+ * Batch 3 (§6.3): "tanah" di sini harus berarti LAHAN — lewati
+ * kecocokan yang kata lahan/tanahnya didahului kata penahan/galian/
+ * urugan/timbunan/pemadatan/pekerjaan ("dinding penahan tanah
+ * 100 m2" adalah dinding penahan, bukan lahan; "galian tanah
+ * 100 m2" adalah galian, bukan lahan). Penjaga yang sama ada di
+ * buildingTypology.landArea agar kedua jalur membaca angka sama. */
 export function parseLandAreaM2(rawText: string): number | null {
   const t = (rawText || '').toLowerCase();
-  const m = t.match(LAND_AREA_RE);
-  if (!m) return null;
-  return parseAreaNumber(m[1] ?? m[2]);
+  const re = new RegExp(LAND_AREA_RE.source, 'g');
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(t)) !== null) {
+    const before = t.slice(Math.max(0, (m.index ?? 0) - 16), m.index ?? 0);
+    if (/(penahan|galian|urugan|timbunan|pemadatan|pekerjaan)\s+$/.test(before)) continue;
+    return parseAreaNumber(m[1] ?? m[2]);
+  }
+  return null;
 }
 
 /**
@@ -305,6 +316,14 @@ export function parseFloorsMention(text: string): number | null {
     const next = tG[(am.index ?? 0) + am[0].length];
     if (next === 'x' || next === '×') continue;
     if (inDimSpan(am.index + am[0].length - am[1].length, am[1].length)) continue;
+    // GUARD SATUAN UKUR (cacat live 2026-11-22, Preview 9p1tqx9l1):
+    // "1 lantai 60 m2" — angka sesudah "lantai" yang diikuti satuan
+    // ukuran (m2/m²/meter persegi/m) adalah UKURAN, bukan jumlah
+    // lantai. Tanpa guard ini pola "lantai <angka>" memungut 60 lalu
+    // aturan "kandidat terakhir menang" mengalahkan "1 lantai" yang
+    // benar dari pola "<angka> lantai".
+    const restAfterNum = tG.slice((am.index ?? 0) + am[0].length);
+    if (/^\s*(m2|m²|meter\s*persegi|meter|m)\b/.test(restAfterNum)) continue;
     push(am.index, parseInt(am[1], 10));
   }
   for (const m of tG.matchAll(/\blantai\s+(satu|dua|tiga|empat|lima)\b/g)) {
@@ -414,6 +433,236 @@ export function formatLengthM(m: number): string {
 }
 
 /* ------------------------------------------------------------------ */
+/* Parser budget KANONIS (Universal Construction Intelligence §2,      */
+/* S1-R2/F11 — SATU-SATUNYA parser budget di repo).                    */
+/*                                                                     */
+/* Sebelumnya 4 situs menduplikasi parsing budget dengan perilaku      */
+/* berbeda (rabIntentSpec, universalRab, draftRevision,                */
+/* universalIntake): guard "uang" hanya di 2 situs, "budget menjadi   */
+/* 250 juta" tidak tertangkap di universalRab, dan celah "uang muka   */
+/* Rp 50 juta" diakui di komentar rabIntentSpec (cabang fallback `rp`  */
+/* tidak melewati guard "uang"). Keempat situs kini memanggil          */
+/* `parseBudgetMentions` di bawah dan hanya berbeda pada PILIHAN       */
+/* (pertama vs terakhir) — pola, guard, dan ambang yang sama.          */
+/*                                                                     */
+/* Aturan (dipin di src/test/universalClassification.test.ts):         */
+/* - Kata kunci: anggaran|budget|dana|biaya|harga|maks(imal)|mentok|   */
+/*   total|rp|sekitar|kurang lebih|uang. Kata sisipan wajar antara     */
+/*   kata kunci dan angka ("menjadi/sebesar/senilai/adalah/saya/ke",   */
+/*   "maksimal/mentok/sekitar/kisaran", "Rp") tidak menggagalkan.      */
+/* - Satuan: miliar|milyar|m (= miliar), jt|juta, rb|ribu|k (= ribu).  */
+/*   Tanpa satuan, angka diterima hanya bila ≥ Rp1.000.000 (aturan     */
+/*   draftRevision — "anggaran 50" bukan nominal), KECUALI cabang      */
+/*   Rp telanjang ("Rp 500.000.000" tanpa kata kunci → ≥ Rp10.000,     */
+/*   aturan fallback rabIntentSpec).                                   */
+/* - Guard "uang" (prompt owner 2026-11-22): "uang" adalah kata kunci  */
+/*   anggaran, TAPI "uang muka/jalan/saku" (termasuk bentuk -nya)      */
+/*   BUKAN cap anggaran — ditolak lewat lookahead negatif pada kata    */
+/*   "uang" DAN lewat penolakan jendela pada kecocokan `rp`/Rp        */
+/*   telanjang yang didahului frasa itu (menutup celah "uang muka      */
+/*   Rp 50 juta"). `\b` di depan "uang" mencegah "ruang 120jt".       */
+/* - Koreksi "bukan X" (semantik koreksi yang sama dengan seluruh      */
+/*   repo): nilai yang dibatalkan pola "bukan <angka>" tidak pernah    */
+/*   menang — "bukan 300 juta, tapi 250 juta" → 250 juta di SEMUA      */
+/*   situs (sebelumnya situs first-match justru memakai 300 jt).       */
+/* - Cabang Rp telanjang TIDAK dihidupkan bila kata kunci budget       */
+/*   muncul ≤40 karakter sebelumnya — cabang kata kunci yang           */
+/*   memilikinya (agar "budget Rp 500.000" tetap ditolak sebagai       */
+/*   unitless < Rp1 jt, bukan dihidupkan ulang lewat Rp).              */
+/* ------------------------------------------------------------------ */
+
+export type BudgetMentionKind = 'MAXIMUM' | 'ESTIMATED' | 'TARGET' | 'UNSPECIFIED';
+
+export interface BudgetMention {
+  /** Nominal rupiah penuh (sudah dikali faktor satuan). */
+  amount: number;
+  /** Jenis batas dari kualifier teks (maksimal / sekitar / target). */
+  kind: BudgetMentionKind;
+  /** Teks kecocokan apa adanya (untuk provenance / pesan). */
+  original: string;
+  /** Posisi awal kecocokan pada teks ternormalisasi. */
+  index: number;
+  /** true bila angka membawa satuan skala (jt/juta/miliar/ribu/k/m). */
+  hasUnit: boolean;
+}
+
+const BUDGET_UNIT_FACTORS: Record<string, number> = {
+  miliar: 1_000_000_000, milyar: 1_000_000_000, m: 1_000_000_000,
+  jt: 1_000_000, juta: 1_000_000, rb: 1_000, ribu: 1_000, k: 1_000,
+};
+
+/** Token angka format Indonesia (dipakai bersama parser budget). */
+const BUDGET_NUM_TOKEN = String.raw`\d{1,3}(?:\.\d{3})+(?:,\d+)?|\d+(?:,\d+)?|\d+(?:\.\d+)?`;
+
+/** Kata kunci budget (gabungan keempat situs lama — lihat header). */
+const BUDGET_KEYWORD_SRC =
+  String.raw`anggaran|budget|dana|biaya|harga|maks(?:imal)?|mentok|total|rp\.?|sekitar|kurang\s+lebih|\buang(?!\s+(?:muka|jalan|saku)(?:nya)?\b)`;
+
+/** Kata sisipan wajar antara kata kunci budget dan angkanya. */
+const BUDGET_FILLER_SRC =
+  String.raw`(?:maksimal|maks|mentok|sekitar|kisaran|kira-kira)?\s*(?:rp\.?\s*)?(?:\s*(?:menjadi|sebesar|senilai|adalah|saya|ke))*`;
+
+function budgetKindFromWindow(windowText: string): BudgetMentionKind {
+  if (/\b(maksimal|maks|mentok|paling banyak)\b/.test(windowText)) return 'MAXIMUM';
+  if (/\b(sekitar|kisaran|kira-kira)\b/.test(windowText)) return 'ESTIMATED';
+  if (/\btarget\b/.test(windowText)) return 'TARGET';
+  return 'UNSPECIFIED';
+}
+
+/**
+ * SEMUA penyebutan budget pada teks, berurutan posisi. Satu-satunya
+ * implementasi parsing budget — situs pemanggil hanya memilih
+ * pertama (rabIntentSpec, draftRevision) atau terakhir (universalRab,
+ * universalIntake) dari daftar ini.
+ */
+export function parseBudgetMentions(text: string): BudgetMention[] {
+  const t = ` ${(text || '').toLowerCase().replace(/\s+/g, ' ')} `;
+  // Nilai yang dibatalkan pola koreksi "bukan <angka> <satuan?>".
+  const cancelled = new Set<number>();
+  for (const m of t.matchAll(
+    new RegExp(`\\bbukan\\s+(?:rp\\.?\\s*)?(${BUDGET_NUM_TOKEN})\\s*(miliar|milyar|jt|juta|rb|ribu|k|m)?\\b`, 'g'),
+  )) {
+    const v = parseAreaNumber(m[1]);
+    if (v != null) cancelled.add(Math.round(v * (BUDGET_UNIT_FACTORS[m[2] ?? ''] ?? 1)));
+  }
+  const found: BudgetMention[] = [];
+  const spans: Array<[number, number]> = [];
+  const overlapsAccepted = (start: number, end: number): boolean =>
+    spans.some(([s, e]) => start < e && end > s);
+  const precededByUangMuka = (start: number): boolean =>
+    /\buang\s+(muka|jalan|saku)(?:nya)?\b(?:\s*rp\.?)?\s*$/.test(t.slice(Math.max(0, start - 40), start));
+  const pushMention = (
+    start: number, end: number, original: string,
+    numStr: string, unit: string | undefined, hasUnit: boolean,
+  ): void => {
+    if (overlapsAccepted(start, end)) return;
+    if (precededByUangMuka(start)) return; // celah "uang muka Rp …" (F11)
+    const v = parseAreaNumber(numStr);
+    if (v == null || v <= 0) return;
+    const amount = Math.round(v * (unit ? (BUDGET_UNIT_FACTORS[unit] ?? 1) : 1));
+    if (!hasUnit && amount < 1_000_000) return; // "anggaran 50" bukan nominal
+    if (cancelled.has(amount)) return;
+    const windowText = t.slice(Math.max(0, start - 30), end);
+    found.push({
+      amount,
+      kind: budgetKindFromWindow(windowText),
+      original: original.trim(),
+      index: start,
+      hasUnit,
+    });
+    spans.push([start, end]);
+  };
+  // Cabang 1 — kata kunci budget + angka (+ satuan opsional).
+  const kwRe = new RegExp(
+    `(?:${BUDGET_KEYWORD_SRC})\\s*${BUDGET_FILLER_SRC}\\s*(${BUDGET_NUM_TOKEN})\\s*(miliar|milyar|jt|juta|rb|ribu|k|m)?\\b`,
+    'g',
+  );
+  for (const m of t.matchAll(kwRe)) {
+    const start = m.index ?? 0;
+    pushMention(start, start + m[0].length, m[0], m[1], m[2], m[2] != null);
+  }
+  // Cabang 2 — Rp telanjang tanpa kata kunci ("Rp 500.000.000").
+  // Hanya bila TIDAK ada kata kunci budget ≤40 karakter sebelumnya
+  // (bila ada, cabang 1 yang memilikinya — lihat header).
+  const rpRe = new RegExp(`\\brp\\.?\\s*(${BUDGET_NUM_TOKEN})\\s*(miliar|milyar|jt|juta|rb|ribu|k|m)?\\b`, 'g');
+  for (const m of t.matchAll(rpRe)) {
+    const start = m.index ?? 0;
+    if (overlapsAccepted(start, start + m[0].length)) continue;
+    if (precededByUangMuka(start)) continue;
+    const before = t.slice(Math.max(0, start - 40), start);
+    if (/(anggaran|budget|dana|biaya|harga|maks(?:imal)?|mentok|total|uang|sekitar|kurang lebih)\b[^.]{0,40}$/.test(before)) continue;
+    const v = parseAreaNumber(m[1]);
+    if (v == null || v <= 0) continue;
+    const amount = Math.round(v * (m[2] ? (BUDGET_UNIT_FACTORS[m[2]] ?? 1) : 1));
+    // Tanpa satuan, Rp telanjang memakai ambang fallback rabIntentSpec
+    // (≥ Rp10.000) — lebih longgar dari ambang kata kunci karena "Rp"
+    // sendiri sudah menegaskan konteks nominal.
+    if (!m[2] && amount < 10_000) continue;
+    if (cancelled.has(amount)) continue;
+    found.push({
+      amount,
+      kind: budgetKindFromWindow(t.slice(Math.max(0, start - 30), start + m[0].length)),
+      original: m[0].trim(),
+      index: start,
+      hasUnit: m[2] != null,
+    });
+    spans.push([start, start + m[0].length]);
+  }
+  found.sort((a, b) => a.index - b.index);
+  return found;
+}
+
+/* ------------------------------------------------------------------ */
+/* Ukuran universal bersama (S1-R3 — satu sumber ekstraksi ukuran      */
+/* lintas disiplin: bentang, lebar, tinggi, tebal, volume, jumlah,     */
+/* kedalaman). Kedalaman (koordinator 2026-11-22, final gate A-079):   */
+/* "sumur bor 30 m" adalah kedalaman, bukan panjang — tanpa field ini  */
+/* template sumur bor (UTIL-DEEP-WELL, param well_depth) tidak pernah  */
+/* bisa dipetakan dari ukuran yang disebut pengguna.                   */
+/* Dipakai extractUniversalSpec (universalRab) dan                    */
+/* extractRabIntentSpec (rabIntentSpec) agar kedua model spek membaca  */
+/* angka yang SAMA dari teks yang sama. Pola dipindah verbatim dari    */
+/* extractUniversalSpec — tidak ada perilaku baru.                     */
+/* ------------------------------------------------------------------ */
+
+export interface UniversalMeasures {
+  spanM: number | null;
+  widthM: number | null;
+  heightM: number | null;
+  thicknessCm: number | null;
+  volumeM3: number | null;
+  count: number | null;
+  /** Kedalaman eksplisit (m) — "kedalaman 30 m" / "dalam 30 m". */
+  depthM: number | null;
+}
+
+export function extractUniversalMeasures(rawText: string): UniversalMeasures {
+  const lower = (rawText || '').toLowerCase();
+  const num = (s: string) => parseFloat(s.replace(',', '.'));
+  const span = lower.match(/(?:bentang|span)\s*(?:sekitar\s*)?(\d+(?:[.,]\d+)?)\s*(?:meter|m)\b/);
+  const width = lower.match(/(?:lebar)\s*(?:sekitar\s*)?(\d+(?:[.,]\d+)?)\s*(?:meter|m)\b/);
+  const height = lower.match(/(?:tinggi)\s*(?:sekitar\s*)?(\d+(?:[.,]\d+)?)\s*(?:meter|m)\b/);
+  const thick = lower.match(/(?:tebal)\s*(?:sekitar\s*)?(\d+(?:[.,]\d+)?)\s*cm\b/);
+  // 'dalam' berjangkar angka+satuan ("dalam 30 m") dibaca sebagai
+  // kedalaman — KECUALI diikuti "dari" ("dalam 30 m dari jalan" =
+  // JARAK dari jalan, bukan kedalaman — Batch 3 §6.3). Frasa
+  // "dalam X m" tanpa konteks kedalaman lain tetap dibaca sebagai
+  // kedalaman; ambiguitas sisanya dicatat (sama seperti
+  // 'tinggi'/'lebar' berjangkar). Semantik posisi-pertama dari
+  // regex asli dipertahankan: bila 'kedalaman' dan 'dalam' sama-sama
+  // ada, yang muncul lebih dulu yang dipakai.
+  const depth = (() => {
+    const kd = lower.match(/(?:kedalaman)\s*(?:sekitar\s*)?(\d+(?:[.,]\d+)?)\s*(?:meter|m)\b/);
+    const dl = lower.match(/(?:dalam)\s*(?:sekitar\s*)?(\d+(?:[.,]\d+)?)\s*(?:meter|m)\b/);
+    const dlOk = dl && !/^\s*dari\b/.test(lower.slice((dl.index ?? 0) + dl[0].length, (dl.index ?? 0) + dl[0].length + 12)) ? dl : null;
+    if (kd && dlOk) return (kd.index ?? 0) <= (dlOk.index ?? 0) ? kd : dlOk;
+    return kd ?? dlOk;
+  })();
+  const vol = lower.match(/(\d+(?:[.,]\d+)?)\s*m3\b/);
+  // Basis ukuran JUMLAH ("24 titik", "20 unit", "5 buah", "1 paket",
+  // "30 ekor"): "titik" hanya dihitung bila teks menyebut pekerjaan
+  // yang memang berbasis titik (pondasi/sanitasi/MEP) agar "titik"
+  // geografis tidak salah tafsir; unit/buah/paket bersifat umum.
+  const count = (() => {
+    const cm = lower.match(/(\d+(?:[.,]\d+)?)\s*(unit|buah|paket|set|titik|ekor)\b/);
+    if (!cm) return null;
+    const v = num(cm[1]);
+    if (!(v > 0)) return null;
+    if (cm[2] === 'titik' && !/(pondasi|bore|pancang|sumuran|strauss|kloset|floor drain|perkuatan|titik lampu|titik air|instalasi|sanitasi)/.test(lower)) return null;
+    return v;
+  })();
+  return {
+    spanM: span ? num(span[1]) : null,
+    widthM: width ? num(width[1]) : null,
+    heightM: height ? num(height[1]) : null,
+    thicknessCm: thick ? num(thick[1]) : null,
+    volumeM3: vol ? num(vol[1]) : null,
+    count,
+    depthM: depth ? num(depth[1]) : null,
+  };
+}
+
+/* ------------------------------------------------------------------ */
 /* Validasi dimensi fisik (finalisasi 2026-11-08, §4).                 */
 /*                                                                     */
 /* Seluruh regex dimensi di parser ini menolak angka ≤ 0 SECARA        */
@@ -454,7 +703,7 @@ export function validatePhysicalDimensions(rawText: string): string[] {
       );
     }
   }
-  for (const label of ['panjang', 'lebar', 'tinggi'] as const) {
+  for (const label of ['panjang', 'lebar', 'tinggi', 'kedalaman', 'dalam'] as const) {
     const m = t.match(new RegExp(`${label}\\s*(?:=|sekitar)?\\s*(-?\\d+(?:[.,]\\d+)?)\\s*(?:meter|m)\\b`));
     if (m) {
       const v = parseFloat(m[1].replace(',', '.'));

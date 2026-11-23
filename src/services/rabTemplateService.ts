@@ -17,6 +17,7 @@ import {
   TemplateCategory,
   TemplateParameter,
   ConstructionComponentTemplate,
+  CustomAhspComponent,
   GeneratedTemplateRabResult,
   DetailLevel,
   TraceabilityRecord,
@@ -24,7 +25,7 @@ import {
   TemplatePriceSummary,
   TemplateMappingReadiness
 } from '../types/rabTemplate';
-import { RabItem } from '../types';
+import { RabItem, ChatQtoTrace } from '../types';
 import { SafeDecimalEngine } from '../engine/safeDecimalEngine';
 import { MaterialLibraryService } from './materialLibraryService';
 import { officialAhspRepository } from '../data/nationalCostDatabase/officialAhspRepository';
@@ -33,6 +34,111 @@ import { unitsCompatible } from '../data/priceDatabase2026/normalize';
 import { CATALOG_180_TEMPLATES } from '../data/templateCatalog180';
 
 const STORAGE_KEY_CUSTOM_TEMPLATES = 'ezrab_custom_rab_templates';
+
+// ---------------------------------------------------------------------------
+// Custom AHSP — komposer komponen (W8, S3-12, 2026-11-22).
+//
+// Item non-katalog (tanpa kode AHSP resmi) selama ini hanya bisa berharga
+// via harga baked template (MARKET_REFERENCE) atau input manual user.
+// Komposer ini memberi jalan ketiga yang ber-provenance: template author
+// mendeklarasikan daftar komponen (tenaga kerja / material / peralatan +
+// koefisien) di `ConstructionComponentTemplate.customComposition`, dan
+// tiap komponen di-resolve ke master harga 2026 lewat
+// `priceResolver2026.resolveResourcePrice` — mesin yang sama dengan
+// komposisi AHSP resmi (`resolveAhspUnitPrice`), tanpa duplikasi data
+// harga. Harga = jumlah biaya langsung komponen (basis DIRECT_COST).
+//
+// Aturan fail-closed (cermin aturan kanonis DED):
+// - Komposisi PARTIAL (satu komponen saja tidak ter-resolve, atau
+//   koefisien tidak valid) TIDAK PERNAH menghasilkan harga — jumlah
+//   parsial tidak dipakai; resolver jatuh ke cabang harga referensi /
+//   unresolved seperti biasa.
+// - Tanpa fallback harga baked per komponen (template author yang ingin
+//   harga baked memakai `comp.unitPrice` seperti sebelumnya).
+// - Harga nasional (tanpa lokasi/periode) — sama dengan adapter kanonis.
+// ---------------------------------------------------------------------------
+
+/** Satu baris hasil komposisi: komponen + harga ter-resolve + subtotal. */
+export interface CustomCompositionLine {
+  resourceCode?: string;
+  resourceName: string;
+  resourceType: 'material' | 'labor' | 'equipment';
+  coefficient: number;
+  unit: string;
+  /** Harga satuan master (null bila tidak ter-resolve). */
+  unitPrice: number | null;
+  /** koefisien × harga satuan, dibulatkan 2 desimal (null bila tak berharga). */
+  amount: number | null;
+  /** Nama sumber harga master (mis. 'Standar Bahan Cipta Karya SE 47/2026'). */
+  sourceName: string | null;
+}
+
+export interface CustomCompositionResult {
+  /** FULL = semua komponen ter-resolve (satu-satunya status yang berharga). */
+  status: 'FULL' | 'PARTIAL' | 'MISSING';
+  /** Jumlah biaya langsung komponen — HANYA bila FULL, selain itu null. */
+  unitPrice: number | null;
+  resolved: number;
+  total: number;
+  missing: Array<{ resourceName: string; unit: string; reason: string }>;
+  /** Pecahan biaya langsung per jenis (untuk splits item RAB). */
+  splits: { labor: number; material: number; equipment: number };
+  lines: CustomCompositionLine[];
+}
+
+const EMPTY_COMPOSITION_SPLITS = { labor: 0, material: 0, equipment: 0 };
+
+/**
+ * Rakit harga satuan dari daftar komponen custom. Murni deterministik
+ * (tanpa AI, tanpa network) — hanya membaca master harga 2026.
+ */
+export function composeCustomAhspPrice(components: CustomAhspComponent[]): CustomCompositionResult {
+  const list = Array.isArray(components) ? components : [];
+  if (list.length === 0) {
+    return { status: 'MISSING', unitPrice: null, resolved: 0, total: 0, missing: [], splits: { ...EMPTY_COMPOSITION_SPLITS }, lines: [] };
+  }
+  const lines: CustomCompositionLine[] = [];
+  const missing: CustomCompositionResult['missing'] = [];
+  const splits = { ...EMPTY_COMPOSITION_SPLITS };
+  let resolved = 0;
+  for (const comp of list) {
+    const coef = Number(comp?.coefficient);
+    const name = String(comp?.resourceName || '').trim();
+    const unit = String(comp?.unit || '').trim();
+    const type = comp?.resourceType === 'labor' || comp?.resourceType === 'equipment' ? comp.resourceType : 'material';
+    if (!Number.isFinite(coef) || coef <= 0) {
+      missing.push({ resourceName: name || '(tanpa nama)', unit, reason: `koefisien tidak valid (${String(comp?.coefficient)}) — harus angka > 0` });
+      lines.push({ resourceCode: comp?.resourceCode, resourceName: name, resourceType: type, coefficient: coef, unit, unitPrice: null, amount: null, sourceName: null });
+      continue;
+    }
+    let res: ReturnType<typeof priceResolver2026.resolveResourcePrice> | null = null;
+    try {
+      res = priceResolver2026.resolveResourcePrice({
+        resourceCode: comp?.resourceCode,
+        resourceName: name,
+        resourceType: type,
+        unit,
+      });
+    } catch {
+      res = null;
+    }
+    const price = res && res.status === 'RESOLVED' && res.price != null && res.price > 0 ? res.price : null;
+    if (price === null) {
+      missing.push({ resourceName: name || '(tanpa nama)', unit, reason: res?.explanation || 'tidak ditemukan di master harga 2026' });
+      lines.push({ resourceCode: comp?.resourceCode, resourceName: name, resourceType: type, coefficient: coef, unit, unitPrice: null, amount: null, sourceName: null });
+      continue;
+    }
+    const amount = Math.round(coef * price * 100) / 100;
+    splits[type] = Math.round((splits[type] + amount) * 100) / 100;
+    resolved++;
+    lines.push({ resourceCode: comp?.resourceCode, resourceName: name, resourceType: type, coefficient: coef, unit, unitPrice: price, amount, sourceName: res?.source?.name ?? null });
+  }
+  const status = missing.length === 0 ? 'FULL' : resolved > 0 ? 'PARTIAL' : 'MISSING';
+  const unitPrice = status === 'FULL'
+    ? Math.round(lines.reduce((s, l) => s + (l.amount ?? 0), 0) * 100) / 100
+    : null;
+  return { status, unitPrice, resolved, total: list.length, missing, splits, lines };
+}
 
 /**
  * Tabel harga historis template (era AHSP 2022 / kode non-kanonis).
@@ -1782,6 +1888,35 @@ export class RabTemplateService {
         volume = SafeDecimalEngine.safeRound(Math.max(0.01, volume), 2);
       }
 
+      // W7 (§7/S3-6 + G7, 2026-11-22) — trace QTO terstruktur per item,
+      // mengikuti pola GeneratedWorkItemResult parametric engine
+      // (formula + formulaInputs). Aritmetika TIDAK diubah: trace hanya
+      // merekam rumus + nilai parameter yang dirujuk rumus itu saat
+      // evaluasi. `formulaInputs` dibatasi ke identifier yang muncul di
+      // rule (bukan seluruh context) agar audit per-input tepat.
+      // `sourceComponentId` (comp.id) menggantikan tautan item↔komponen
+      // berbasis nama di computeVolumeBasis/traceItemSpecs (G7).
+      // volumeSource 'CALCULATOR': volume dievaluasi deterministik dari
+      // rule template (kode, bukan karangan AI).
+      const ruleText = comp.calculationRule && comp.calculationRule.trim() !== ''
+        ? comp.calculationRule
+        : null;
+      const formulaInputs: Record<string, number | string> = {};
+      if (ruleText) {
+        const identifiers = new Set(ruleText.match(/[A-Za-z_][A-Za-z0-9_]*/g) ?? []);
+        for (const key of identifiers) {
+          if (key === 'Math') continue;
+          const v = context[key];
+          if (typeof v === 'number' || typeof v === 'string') formulaInputs[key] = v;
+        }
+      }
+      const qtoTrace: ChatQtoTrace = {
+        formula: ruleText,
+        formulaInputs,
+        volumeSource: 'CALCULATOR',
+        sourceComponentId: comp.id,
+      };
+
       // 5. HONEST AHSP & MATERIAL PRICING RESOLUTION (Katalog 180, Fase F)
       // Urutan resolusi yang jujur:
       //   a) Resolver resmi AHSP 2026 — hanya bila kode ada di katalog kanonis,
@@ -1843,6 +1978,10 @@ export class RabTemplateService {
         description: comp.name,
         volume,
         unit: comp.unit,
+        volumeSource: 'CALCULATOR',
+        sourceComponentId: comp.id,
+        qtoTrace,
+        ...(ruleText ? { calculationFormula: ruleText } : {}),
         materialPrice: unitPrice == null ? undefined : (resolution.splits ? Math.round(resolution.splits.material) : Math.round(unitPrice * 0.7)),
         laborPrice: unitPrice == null ? undefined : (resolution.splits ? Math.round(resolution.splits.labor) : Math.round(unitPrice * 0.25)),
         equipmentPrice: unitPrice == null ? undefined : (resolution.splits ? Math.round(resolution.splits.equipment) : Math.round(unitPrice * 0.05)),
@@ -1884,6 +2023,13 @@ export class RabTemplateService {
    *      global lagi untuk item OFFICIAL_AHSP.
    * Gagal di gerbang mana pun → harga referensi komponen (REFERENCE_PRICE)
    * atau null. Tidak ada fallback angka karangan.
+   *
+   * Custom AHSP (W8, S3-12): bila komponen mendeklarasikan
+   * `customComposition` dan komposer menghasilkan FULL, harga = jumlah
+   * biaya langsung komponen (kind CUSTOM_COMPOSED, basis DIRECT_COST).
+   * Cabang ini berjalan sesudah gerbang resmi, sebelum harga referensi
+   * material; komposisi PARTIAL jatuh ke cabang berikut tanpa memakai
+   * jumlah parsial.
    */
   private resolveTemplateComponentPrice(
     comp: ConstructionComponentTemplate,
@@ -1891,7 +2037,7 @@ export class RabTemplateService {
     materialMeta?: { supplier: string; effectiveDate: string; location: string } | null
   ): {
     unitPrice: number | null;
-    kind: 'OFFICIAL_AHSP' | 'MARKET_REFERENCE' | 'UNRESOLVED';
+    kind: 'OFFICIAL_AHSP' | 'MARKET_REFERENCE' | 'CUSTOM_COMPOSED' | 'UNRESOLVED';
     label: string;
     explanation: string;
     sourceName: string | null;
@@ -1948,6 +2094,38 @@ export class RabTemplateService {
       } catch {
         // Resolver/katalog gagal dibaca → perlakukan sebagai belum terpetakan.
         mappingStatus = comp.ahspCode ? 'NEEDS_MAPPING' : 'NOT_APPLICABLE';
+      }
+    }
+
+    // Custom AHSP (W8, S3-12): komponen tanpa kode katalog (atau kode yang
+    // gagal gerbang resmi di atas) bisa berharga via rakitan komponen
+    // ber-provenance — BUKAN harga resmi (kind CUSTOM_COMPOSED, basis
+    // DIRECT_COST: jumlah biaya langsung, tanpa O&P). Cabang ini berjalan
+    // SEBELUM harga referensi material: komposisi penuh adalah harga item
+    // kerja utuh, sedangkan harga material hanya proksi satu bahan.
+    // Komposisi PARTIAL/MISSING jatuh ke cabang berikut (jumlah parsial
+    // TIDAK PERNAH dipakai sebagai harga).
+    if (comp.customComposition && comp.customComposition.length > 0) {
+      const composed = composeCustomAhspPrice(comp.customComposition);
+      if (composed.status === 'FULL' && composed.unitPrice != null && composed.unitPrice > 0) {
+        const lineSummary = composed.lines
+          .map((l) => `${l.resourceName} ${l.coefficient} ${l.unit} @ Rp${Math.round(l.unitPrice as number).toLocaleString('id-ID')}`)
+          .join('; ');
+        return {
+          unitPrice: composed.unitPrice,
+          kind: 'CUSTOM_COMPOSED',
+          label: 'Harga Komposisi Kustom',
+          explanation: `AHSP kustom rakitan komponen (${composed.resolved}/${composed.total} komponen ter-resolve di master harga 2026): ${lineSummary}. Harga = jumlah biaya langsung komponen, tanpa overhead & profit — bukan harga resmi AHSP.${comp.ahspCode ? ` Kode ${comp.ahspCode} tidak menghasilkan harga resmi (status: ${mappingStatus}).` : ''}`,
+          sourceName: 'Master harga 2026 (komposisi kustom)',
+          sourceSupplier: null,
+          sourceDate: null,
+          sourceRegion: null,
+          mappingStatus,
+          // §17.1: komposisi adalah biaya langsung (tanpa O&P) — O&P
+          // rekap tetap berlaku, seperti harga kanonis DED.
+          priceCostBasis: 'DIRECT_COST',
+          splits: composed.splits,
+        };
       }
     }
 

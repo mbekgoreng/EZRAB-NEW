@@ -25,8 +25,8 @@ import { parseRequestedQuantity } from './chatAnswerTransfer';
 // Handler perintah deterministik kelompok 1–5 (2026-11-17, gap P2–P8 +
 // P12 audit perintah): logika perintah hidup di ./commands/*, registry
 // hanya mendelegasikan (case di executeIntent, sesudah UNDO_LAST).
-import { handleProjectCommand } from './commands/projectCommands';
-import { handleQtoCommand, type QtoChatItem, type CreateQtoItemInput } from './commands/qtoCommands';
+import { handleProjectCommand, resolveProjectTarget, PROJECT_MAX_NAME_LENGTH } from './commands/projectCommands';
+import { handleQtoCommand, parseCreateQtoTarget, parseSyncQtoTarget, resolveQtoItemByName, qtoHasTransferablePrice, formatQtoItemLabel, type QtoChatItem, type CreateQtoItemInput } from './commands/qtoCommands';
 import { handleDedDocCommand } from './commands/dedDocCommands';
 import {
   handleExportCreditCommand,
@@ -34,7 +34,7 @@ import {
   type CreatedRevision,
   type TopUpCreditResult,
 } from './commands/exportCreditCommands';
-import { handleProjectSettingsCommand, type ProjectSettingsPatch } from './commands/projectSettingsCommands';
+import { handleProjectSettingsCommand, parseSettingsPatch, formatPercentValue, type ProjectSettingsPatch } from './commands/projectSettingsCommands';
 import {
   RabNeeds, extractRabNeeds, missingNeeds, buildDesignPrompt, summarizeRabNeeds,
   resolveLandAreaM2, stripLandPhrases, formatLengthM,
@@ -95,14 +95,20 @@ import {
 import { clarifyTopicCard, clarifyPickResult } from './clarifyTopics';
 import { evaluateCalculation } from './calcIntent';
 import { findGamesMentioned, buildGameInfoAnswer } from '../../game-space/catalog';
-import { buildDirectRab, displayTemplateBasisName, findDirectTemplate, formatDirectRabMessage, matchDirectRegion } from './directRab';
+import { buildDirectRab, displayTemplateBasisName, findDirectTemplate, formatDirectRabMessage, matchDirectRegion, getLastDirectRab } from './directRab';
+import type { DirectRabResult } from './directRab';
 import { buildSpecRab, buildSpecRabFromNeeds } from './specRab';
-import { runRabIntentFlow, evaluateRabIntent, getLastRabIntentSpec, setLastRabIntentSpec, formatSpecSummaryLines, specToRabNeeds, unsupportedSpecReasons } from './rabIntentFlow';
+import { runRabIntentFlow, evaluateRabIntent, continueRabIntent, getLastRabIntentSpec, setLastRabIntentSpec, formatSpecSummaryLines, specToRabNeeds, unsupportedSpecReasons } from './rabIntentFlow';
 import type { RabTemplateRecommendation } from './rabIntentFlow';
 import { extractRabIntentSpec, mergeRabIntentSpec } from './rabIntentSpec';
 import type { RabIntentSpec } from './rabIntentSpec';
-import { buildUniversalDraft, formatUniversalDraftMessage, extractUniversalSpec, getLastUniversalDraft } from './universalRab';
-import { saveIntakeContext, clearIntakeContext } from './draftPersistence';
+import { buildUniversalDraft, formatUniversalDraftMessage, extractUniversalSpec, getLastUniversalDraft, setLastUniversalDraft, effectiveItems, isPriceValidForTotal, itemKey } from './universalRab';
+import type { UniversalDraft } from './universalRab';
+import { getDraftProjectEnsurer } from './tempProject';
+import { aiToolsProviderClient } from '../providerClient';
+import { completeBudgetRabWithFullAi, buildFullAiCompletionSummary } from './fullAiRabCompletion';
+import type { ChatRabCompletionDeps } from './fullAiRabCompletion';
+import { saveIntakeContext, clearIntakeContext, peekIntakeContext } from './draftPersistence';
 import { captureFeedback } from './constructionFeedback';
 
 export interface ChatActionContext {
@@ -261,8 +267,17 @@ export interface ChatActionButton {
     | { kind: 'nav-entry'; entryId: string }
     | { kind: 'intent'; intent: string; param?: string }
     | { kind: 'push-rab' }
+    /* W11 §11 (S1-R5) — konfirmasi push direct: tombol pada pesan
+     * pratinjau push-rab; tanpa pratinjau aktif (binding), handler
+     * view menolak menulis. */
+    | { kind: 'push-rab-confirm' }
     | { kind: 'push-universal' }
     | { kind: 'push-universal-confirm' }
+    /* Lengkapi dengan Full AI (§5 budget-based RAB): tombol pada jawaban
+     * draft parsial ber-budget — target = draft yang tombolnya diklik
+     * (view menentukan dari aksi jawaban itu). Ditangani async di view
+     * lewat executeBudgetFullAiRab (bukan lewat executeIntent sinkron). */
+    | { kind: 'budget-full-ai-complete'; target?: 'universal' | 'direct' }
     /* GATE 3 (5C) — revisi immutable: konfirmasi / batal pratinjau revisi
      * yang menunggu, dan tampilkan riwayat versi. */
     | { kind: 'revision-confirm' }
@@ -319,6 +334,12 @@ export interface ActionResult {
    *  view meneruskannya ke ChatEntry.planId sehingga kartu Konfirmasi
    *  Eksekusi ter-render (mutasi item deterministik 2026-11-17). */
   planId?: string;
+  /** B5-3: id proyek yang dipastikan untuk draft ini (baru dibuat
+   *  sementara ATAU proyek yang sudah aktif) — hanya diisi bila draft
+   *  berhasil dibuat TANPA projectId pemanggil. Pemanggil yang membawa
+   *  konteks intake (generateFromUniversalContext) memakai ini untuk
+   *  mengikat snapshot intake ke proyek yang sama. */
+  ensuredProjectId?: string;
 }
 
 const MENU_LABELS: Record<string, string> = {
@@ -374,11 +395,22 @@ let lastRabRaw = '';
 /** Proyek pemilik lastRabNeeds (null = ditangkap tanpa proyek aktif). */
 let lastRabNeedsProjectId: string | null = null;
 
-/** Tulis kebutuhan + scope proyeknya (null = hapus state + scope). */
-function setLastRabNeeds(needs: RabNeeds | null, projectId?: string | null): void {
+/** Tulis kebutuhan + scope proyeknya (null = hapus state + scope).
+ *  Diekspor (W11 §11) untuk hidrasi state rumah sesudah muat ulang
+ *  (efek pemulihan view.tsx) — pemanggil produksi lain tidak berubah. */
+export function setLastRabNeeds(needs: RabNeeds | null, projectId?: string | null): void {
   lastRabNeeds = needs;
   lastRabNeedsProjectId = needs ? (projectId ?? null) : null;
   if (!needs) lastRabRaw = '';
+}
+
+/**
+ * Baca kebutuhan rumah yang masih berlaku untuk proyek ini (W11 §11 —
+ * dipakai efek persistensi view.tsx; pembacaan perilaku lain tetap
+ * lewat scopedLastRabNeeds di bawah).
+ */
+export function getLastRabNeeds(projectId?: string | null): RabNeeds | null {
+  return scopedLastRabNeeds(projectId);
 }
 
 /**
@@ -691,6 +723,63 @@ export function clearUniversalContext(): void {
 /* SELALU terikat proyek (pelajaran ARS-06).                           */
 /* ------------------------------------------------------------------ */
 
+/* ------------------------------------------------------------------ */
+/* S3-A (2026-11-23) — last-seen snapshot intake per proyek: baseline  */
+/* optimistic concurrency ANTAR-TAB untuk jalur registry (generate +   */
+/* drop). Peta modul = satu salinan PER TAB (tiap tab memuat salinan   */
+/* modulnya sendiri), persis seperti `universalCtx` di atas. View      */
+/* mencatat versinya lewat noteIntakeSnapshotVersion setiap kali ia    */
+/* membaca/menulis snapshot (efek simpan/pulih/refresh); registry      */
+/* mencatat versinya sendiri setiap kali persistIntakeSnapshotNow      */
+/* sukses. Tanpa entri (tab ini belum pernah melihat snapshot proyek   */
+/* itu) → tidak ada baseline → perilaku lama (guard tidak aktif;      */
+/* perlindungan penuh butuh baseline — lihat keterbatasan S3-A).       */
+/*                                                                     */
+/* Dua outcome sekali-pakai (consume-once, pola pending ref view):     */
+/* drop yang DITAHAN guard + simpan-generate yang KONFLIK tidak punya  */
+/* jalur pesan ke pengguna (tryContinue mengembalikan null; nilai      */
+/* balik persist diabaikan pemanggil) — view menguras keduanya di      */
+/* efek simpan dan memposting pesan jujur. Satu slot per jenis:        */
+/* outcome terbaru menang; outcome proyek lain dibuang view.          */
+/* ------------------------------------------------------------------ */
+const lastSeenIntakeUpdatedAt = new Map<string, string>();
+
+export function noteIntakeSnapshotVersion(projectId: string, updatedAt: string): void {
+  lastSeenIntakeUpdatedAt.set(projectId, updatedAt);
+}
+
+/**
+ * Baseline last-seen snapshot intake proyek ini (null = tab ini belum
+ * pernah melihat snapshot proyek itu). SATU-SATUNYA sumber kebenaran
+ * baseline per tab: view MEMBACA baseline dari sini (bukan menyimpan
+ * ref sendiri) dan MENCATAT tiap simpan/bacanya ke sini — begitu pula
+ * persist registry. Dua pelacak terpisah (ref view + peta registry)
+ * PASTI divergen: persist generate memajukan storage tanpa
+ * memperbarui ref view, sehingga intake baru sesudah generate kena
+ * konflik palsu satu-tab (dipin P5A-23: konteks baru menimpa snapshot
+ * tertaut). Dengan satu peta, penulis view + registry tidak pernah
+ * saling mengonflik — hanya tulisan TAB LAIN yang konflik.
+ */
+export function getLastSeenIntakeVersion(projectId: string): string | null {
+  return lastSeenIntakeUpdatedAt.get(projectId) ?? null;
+}
+
+let lastIntakeDropOutcome: { projectId: string; held: true; at: string } | null = null;
+
+export function takeIntakeDropOutcome(): { projectId: string; held: true; at: string } | null {
+  const outcome = lastIntakeDropOutcome;
+  lastIntakeDropOutcome = null;
+  return outcome;
+}
+
+let lastIntakePersistConflict: { projectId: string; at: string } | null = null;
+
+export function takeIntakePersistConflict(): { projectId: string; at: string } | null {
+  const outcome = lastIntakePersistConflict;
+  lastIntakePersistConflict = null;
+  return outcome;
+}
+
 /** Simpan snapshot konteks ini sekarang; false bila tak tersimpan. */
 function persistIntakeSnapshotNow(
   ctx: UniversalIntakeContext,
@@ -699,14 +788,28 @@ function persistIntakeSnapshotNow(
   const projectId = ctx.projectId ?? null;
   if (!projectId) return false;
   try {
+    // S3-A: teruskan baseline last-seen tab ini — tulisan basi dari
+    // tab ini (tab lain sudah maju) DITOLAK guard, bukan menimpa.
+    // Kegagalan konflik dicatat sebagai outcome (view memposting
+    // pesan jujur); nilai balik false = kontrak lama, pemanggil sudah
+    // menanganinya (generate/draft tetap berjalan — snapshot yang
+    // dipertahankan adalah versi tab lain yang lebih baru).
+    const baseline = lastSeenIntakeUpdatedAt.get(projectId) ?? null;
     const res =
       generatedDraftId == null
-        ? saveIntakeContext(projectId, ctx)
+        ? saveIntakeContext(projectId, ctx, undefined, { expectedUpdatedAt: baseline })
         : saveIntakeContext(projectId, ctx, {
             generatedDraftId,
             generatedAt: new Date().toISOString(),
-          });
-    return res.ok;
+          }, { expectedUpdatedAt: baseline });
+    if (res.ok) {
+      lastSeenIntakeUpdatedAt.set(projectId, res.updatedAt);
+      return true;
+    }
+    if (res.error === 'INTAKE_VERSION_CONFLICT') {
+      lastIntakePersistConflict = { projectId, at: new Date().toISOString() };
+    }
+    return false;
   } catch {
     return false;
   }
@@ -717,7 +820,21 @@ function dropPersistedIntakeSnapshot(ctx: UniversalIntakeContext | null): void {
   const projectId = ctx?.projectId ?? null;
   if (!projectId) return;
   try {
-    clearIntakeContext(projectId);
+    // S3-A: hapus hanya bila record masih versi yang diketahui tab ini
+    // (stale delete dari tab basi atas snapshot baru tab lain DITAHAN
+    // guard — singleton lokal tetap boleh dibersihkan pemanggil; niat
+    // pengguna tab ini dihormati tanpa menghancurkan pekerjaan tab
+    // lain). Outcome ditahan dicatat agar view bisa memberi pesan
+    // jujur; sukses hapus menghapus entri last-seen (tidak ada lagi
+    // versi yang dikenal — simpan berikutnya adalah simpan pertama).
+    const baseline = lastSeenIntakeUpdatedAt.get(projectId) ?? null;
+    const hadRecord = peekIntakeContext(projectId) !== null;
+    const deleted = clearIntakeContext(projectId, baseline ?? undefined);
+    if (deleted) {
+      lastSeenIntakeUpdatedAt.delete(projectId);
+    } else if (hadRecord) {
+      lastIntakeDropOutcome = { projectId, held: true, at: new Date().toISOString() };
+    }
   } catch {
     /* penghapusan gagal ≠ alur gagal */
   }
@@ -729,6 +846,29 @@ export function getProjectContextState(): ProjectIntakeContext | null {
 
 export function clearProjectContext(): void {
   projectCtx = null;
+}
+
+/* ------------------------------------------------------------------ */
+/* S3-B (2026-11-23) — kepemilikan konteks landscape. Aturan tunggal    */
+/* (§5.3 discovery S3-B) yang dipakai SEMUA boundary: gerbang, aksi    */
+/* tombol, generate, penjaga submit view, efek ganti-proyek.           */
+/*   - konteks tercap P: asing bila proyek aktif ≠ P (termasuk null —  */
+/*     konteks proyek P tidak boleh menjadi dasar percakapan/draft     */
+/*     global maupun proyek lain);                                     */
+/*   - konteks TANPA cap (global sejati, dibuat tanpa proyek aktif):   */
+/*     hanya boleh berlanjut selama proyek aktif tetap null — begitu   */
+/*     proyek aktif ada, ia asing (tidak pernah dicap retroaktif;      */
+/*     mengarang identitas dilarang invariant §5.3).                   */
+/*   - null (tidak ada konteks): tidak asing.                          */
+/* `activeProjectId` null/undefined = tanpa proyek aktif.              */
+/* ------------------------------------------------------------------ */
+export function isProjectContextForeign(
+  ctx: ProjectIntakeContext | null | undefined,
+  activeProjectId: string | null | undefined,
+): boolean {
+  if (!ctx) return false;
+  if (ctx.projectId != null) return ctx.projectId !== activeProjectId;
+  return activeProjectId != null;
 }
 
 const numID = (v: number): string => v.toLocaleString('id-ID', { maximumFractionDigits: 2 });
@@ -910,6 +1050,17 @@ export function projectPreviewResult(ctx: ProjectIntakeContext): ActionResult {
  * yang gagal disusun tetap hidup agar pengguna bisa melengkapi.
  */
 function generateFromProjectContext(ctx: ProjectIntakeContext, projectId?: string | null): ActionResult {
+  // S3-B (lapis kedua; RAB_PROJECT_PREVIEW sudah menjaga di atas): draft
+  // TIDAK PERNAH dibangun dari konteks milik proyek lain — generate dari
+  // fakta A yang terikat ke B adalah dampak tertinggi discovery (S2).
+  // projectId undefined = tanpa info scope (pemanggil lama): tanpa cek.
+  if (projectId !== undefined && isProjectContextForeign(ctx, projectId)) {
+    return {
+      ok: false,
+      message:
+        'Konteks proyek sudah tidak aktif. Tulis ulang kebutuhannya, misalnya "buatkan rab landscape 1 hektar".',
+    };
+  }
   const status = landscapeCatalogStatus(ctx);
   // Teks mesin: gabungan giliran + FAKTA TERSTRUKTUR yang sudah
   // terkonfirmasi dinyatakan ulang dalam bentuk yang dikenali mesin
@@ -1002,8 +1153,17 @@ function intakeNextStep(
  * percakapan (kasus owner: kategori+luas sudah jelas tetapi draft
  * langsung disusun dari angka yang salah baca).
  */
-export function projectIntakeGate(raw: string): ActionResult | null {
-  const extracted = extractProjectContext(raw, projectCtx ?? undefined);
+export function projectIntakeGate(raw: string, projectId?: string | null): ActionResult | null {
+  // S3-B: konteks yang hidup milik scope lain TIDAK BOLEH menjadi base —
+  // permintaan baru di proyek ini mulai segar (tanpa fakta proyek lama
+  // di combinedText). projectId undefined (pemanggil lama/tes) = tanpa
+  // info scope: perilaku lama (base dipakai, cap dipertahankan).
+  // Konteks hasil ekstraksi dicap proyek pemanggil; spread ...base di
+  // extractProjectContext mempertahankan cap saat merge same-project.
+  const hasScope = projectId !== undefined;
+  const foreignBase = hasScope && isProjectContextForeign(projectCtx, projectId ?? null);
+  const extracted = extractProjectContext(raw, foreignBase ? undefined : (projectCtx ?? undefined));
+  if (hasScope) extracted.projectId = projectId ?? null;
   if (!isLandscapeFamily(extracted.category)) {
     // Bukan keluarga landscape: hanya perbarui konteks bila memang
     // sedang ada konteks landscape aktif? Tidak — topik berganti,
@@ -1381,6 +1541,14 @@ function generateFromUniversalContext(ctx: UniversalIntakeContext): ActionResult
     // needs-spec / pertanyaan lanjutan dari mesin — konteks tetap hidup.
     return { ...res, awaitProjectConcept: true };
   }
+  // B5-3: draft berhasil + proyek dipastikan (baru/sudah aktif) — ikat
+  // konteks ke proyek itu SEBELUM snapshot disimpan, agar snapshot
+  // intake (dengan relasi generatedDraftId) mendarat di bawah proyek
+  // yang sama dengan draftnya — prasyarat pemulihan pasca-reload
+  // (B5/B6: tanpa ini konteks tidak dipulihkan dan pesan lanjutan jatuh
+  // ke LLM). Tanpa ensuredProjectId (proyek sudah terikat sejak intake
+  // / tanpa ensurer) tidak ada yang berubah.
+  if (res.ensuredProjectId) ctx.projectId = res.ensuredProjectId;
   // GATE 1 (5A) — SIMPAN DULU, BARU BERSIHKAN: konteks final yang
   // disetujui (APPROVED + jawaban kuesioner + budgetHistory + koreksi +
   // bangunan per bangunan) dipertahankan sebagai snapshot terakhir,
@@ -1800,9 +1968,17 @@ function rabSummaryResult(raw: string, base?: RabNeeds, projectId?: string | nul
 
   // INTENT-FIRST: spek kanonis mengikuti siklus state kebutuhan — giliran
   // pertama diekstrak segar, lanjutan (base ada) digabung lewat
-  // mergeRabIntentSpec agar koreksi hanya mengubah field yang disebut.
+  // continueRabIntent agar koreksi hanya mengubah field yang disebut
+  // (W6: satu pemilik jalur koreksi spek — dulu merge manual di sini,
+  // continueRabIntent dulu dead code). continueRabIntent(prev) =
+  // mergeRabIntentSpec + evaluasi ulang MURNI (evaluateRabIntent tanpa
+  // efek samping; spek yang disimpan identik dengan hasil merge).
+  // Dua cabang lain TIDAK diganti: giliran pertama (!base) WAJIB ekstrak
+  // segar (bukan merge ke spek basi topik lama), dan lanjutan tanpa spek
+  // aktif (base && !prevSpec) tetap no-op — continueRabIntent akan
+  // mengekstrak segar dari fragmen koreksi dan menyimpan spek parsial.
   const prevSpec = getLastRabIntentSpec();
-  if (base && prevSpec) setLastRabIntentSpec(mergeRabIntentSpec(prevSpec, raw));
+  if (base && prevSpec) continueRabIntent(raw);
   else if (!base) setLastRabIntentSpec(extractRabIntentSpec(raw));
 
   /* Refinement (perbaikan overhaul 2026-11-06): bila ini lanjutan dari
@@ -2022,6 +2198,9 @@ export function continueRabFinalize(text: string, projectId?: string | null): Ac
       'Status: DRAFT AWAL untuk ditinjau, bukan estimasi final. Item yang masih menunggu spesifikasi teknis atau verifikasi harga ditandai di tabel dan tidak dicampur ke total terverifikasi.\n\n' +
       table.message,
     actions: table.actions,
+    // B5-3 direct: teruskan ikatan proyek dari corong (tanpa ini
+    // pemanggil tidak tahu draft finalisasi sudah dipastikan proyeknya).
+    ...(table.ensuredProjectId ? { ensuredProjectId: table.ensuredProjectId } : {}),
   };
 }
 
@@ -2056,22 +2235,70 @@ export function clearPendingRabChoice(): void {
   pendingChoice = null;
 }
 
+/**
+ * Pulihkan kartu pilihan RAB (W11 §11 — dipakai efek hidrasi view.tsx
+ * sesudah muat ulang; null = hapus, sama dengan clearPendingRabChoice).
+ * Nilai yang dipulihkan WAJIB hasil loadHomeState (match dibangun ulang
+ * dari rawText lewat findDirectTemplate) — jangan membangun
+ * PendingRabChoice dari sumber lain.
+ */
+export function setPendingRabChoice(p: PendingRabChoice | null): void {
+  pendingChoice = p;
+}
+
 type BuiltRab = NonNullable<ReturnType<typeof buildDirectRab>>;
 
 /**
  * Hasil komposisi deterministik sebagai jawaban chat: tabel lengkap +
  * tombol Push ke Spreadsheet RAB (pola yang sama dengan
  * GENERATE_RAB_TEMPLATE dan jalur spek bebas CREATE_RAB_DIRECT).
+ *
+ * B5-3 direct (keputusan owner 2026-11-23, tap "Cakup juga jalur
+ * direct-RAB") — HOOK KEDUA: ini corong commit draft direct (semua
+ * pemanggil — CREATE_RAB_DIRECT, GENERATE_RAB_TEMPLATE, RAB_FULL_AI,
+ * finalisasi "itu aja", koreksi kartu — tiba di sini SETELAH
+ * buildDirectRab/buildSpecRab sukses). Sama seperti hook universal di
+ * universalResultFor: bila ada ensurer terdaftar (view chat), pastikan
+ * proyeknya SEKARANG — ensurer mengembalikan proyek aktif yang sudah
+ * ada (tanpa pembuatan baru) atau proyek sementara yang baru dibuat
+ * ("RAB <displayLabel> (Sementara)"); draft direct tidak punya record
+ * UniversalDraft, jadi ensurer hanya membuat proyek + migrasi
+ * percakapan (tanpa saveDraft — lihat isUniversalDraft di
+ * tempProject.ts). Tanpa ensurer (tes / jalur lain) perilaku IDENTIK
+ * dengan lama. Kegagalan ensurer TIDAK PERNAH menggagalkan draft
+ * (draft tetap tampil tanpa ikatan — jalan buntu revisi lama, bukan
+ * crash). Gerbang yang kembali SEBELUM build (ded/clarify/kartu
+ * pilihan/ringkasan kebutuhan) tidak pernah sampai ke sini → tidak
+ * pernah memicu proyek.
  */
 function directRabTableResult(built: BuiltRab): ActionResult {
+  let ensuredProjectId: string | undefined;
+  let ensuredCreatedName: string | null = null;
+  const ensurer = getDraftProjectEnsurer();
+  if (ensurer) {
+    try {
+      const ensured = ensurer({ title: built.displayLabel });
+      if (ensured) {
+        ensuredProjectId = ensured.id;
+        if (ensured.created) ensuredCreatedName = ensured.name;
+      }
+    } catch {
+      /* pembuatan proyek gagal — draft tetap berlaku tanpa ikatan */
+    }
+  }
   return {
     ok: true,
-    message: formatDirectRabMessage(built),
+    message:
+      formatDirectRabMessage(built) +
+      (ensuredCreatedName
+        ? `\n\n📌 Draft ini tersimpan di proyek sementara "${ensuredCreatedName}" — proyek dibuat otomatis karena belum ada proyek aktif. Beri nama dan lengkapi datanya lewat menu Proyek.`
+        : ''),
     actions: [
       { label: 'Push ke Spreadsheet RAB', action: { kind: 'push-rab' } },
       { label: 'Buka Spreadsheet RAB', action: { kind: 'navigate', menu: 'rab-estimasi' } },
       { label: 'Buka Workspace Desain & RAB', action: { kind: 'navigate', menu: 'desain-rab' } },
     ],
+    ...(ensuredProjectId ? { ensuredProjectId } : {}),
   };
 }
 
@@ -2176,9 +2403,42 @@ function universalResultFor(raw: string, forcedTemplateId?: string, materialNote
       const names = res.draft.parts.map((p) => p.template.name).join(' + ');
       res.draft.assumptions.unshift(materialNote.replace('{template}', names));
     }
+    // B5-3 (D-11, keputusan owner 2026-11-23) — TITIK HOOK: ini corong
+    // commit draft universal jalur chat (semua pemanggil — brief,
+    // pratinjau landscape, gerbang material, jalur cepat — tiba di sini
+    // SETELAH buildUniversalDraft sukses). Bila draft ini tidak terikat
+    // proyek (pemanggil tanpa projectId) DAN ada ensurer terdaftar
+    // (view chat), pastikan proyeknya SEKARANG: ensurer mengembalikan
+    // proyek aktif yang sudah ada (tanpa pembuatan baru) atau proyek
+    // sementara yang baru dibuat — draft diikat ulang ke id itu agar
+    // aktivasi revisi + autosave + restore pasca-reload bekerja.
+    // Tanpa ensurer (tes / jalur lain) perilaku IDENTIK dengan lama.
+    // Kegagalan ensurer TIDAK PERNAH menggagalkan draft (draft tetap
+    // tampil tanpa ikatan — jalan buntu revisi lama, bukan crash).
+    let ensuredProjectId: string | undefined;
+    let ensuredCreatedName: string | null = null;
+    if (!opts?.projectId) {
+      const ensurer = getDraftProjectEnsurer();
+      if (ensurer) {
+        try {
+          const ensured = ensurer(res.draft);
+          if (ensured) {
+            ensuredProjectId = ensured.id;
+            if (ensured.created) ensuredCreatedName = ensured.name;
+            setLastUniversalDraft(res.draft, ensured.id);
+          }
+        } catch {
+          /* pembuatan proyek gagal — draft tetap berlaku tanpa ikatan */
+        }
+      }
+    }
     return {
       ok: true,
-      message: formatUniversalDraftMessage(res.draft),
+      message:
+        formatUniversalDraftMessage(res.draft) +
+        (ensuredCreatedName
+          ? `\n\n📌 Draft ini tersimpan di proyek sementara "${ensuredCreatedName}" — proyek dibuat otomatis karena belum ada proyek aktif. Beri nama dan lengkapi datanya lewat menu Proyek.`
+          : ''),
       actions: [
         { label: 'Push ke Spreadsheet', action: { kind: 'push-universal' } },
         { label: 'Buka Spreadsheet RAB', action: { kind: 'navigate', menu: 'rab-estimasi' } },
@@ -2186,9 +2446,34 @@ function universalResultFor(raw: string, forcedTemplateId?: string, materialNote
         // DED terlampir + MISMATCH belum diputuskan).
         ...qtoActions,
       ],
+      ...(ensuredProjectId ? { ensuredProjectId } : {}),
     };
   }
   if (res.kind === 'needs-spec') {
+    // S1-R1 (W6, §6/§11): needs-spec jalur cepat TIDAK BOLEH terminal —
+    // sebelumnya pesan ini dikembalikan tanpa state menunggu sehingga
+    // jawaban susulan ("bentang 12 m") jatuh ke LLM, bukan ke intake.
+    // Kini konteks menunggu disetel dari teks yang sama (deterministik,
+    // identik dengan snapshot jalur cepat yang disimpan gerbang) dan
+    // view menandai awaitingConcept — jawaban susulan masuk
+    // tryContinueUniversalContext. Penjaga: konteks yang SUDAH hidup
+    // (generate dari brief yang disetujui) TIDAK ditimpa ekstrak segar
+    // — ekstrak segar akan membuang jawaban/kuesioner/budgetHistory;
+    // dan bila gerbang landscape yang memiliki topik (projectCtx),
+    // konteks universal tidak dibuat (satu topik, satu gerbang).
+    if (!universalCtx && !projectCtx) {
+      universalCtx = extractUniversalContext(raw);
+      // REFIX Stage 3 (BV-02, 2026-11-23) — cap konteks menunggu dengan
+      // proyek pemanggil, cermin gerbang universalIntakeGate (yang
+      // mencap `if (projectId) ctx.projectId = projectId`). Tanpa cap,
+      // dropPersistedIntakeSnapshot early-return (tanpa clear, tanpa
+      // outcome) sehingga pesan drop-ditahan S3-A tidak pernah tampil
+      // dan snapshot "selamat" secara trivial; konteks tanpa cap juga
+      // lolos dari penjaga Tier 1/Tier 2 F-ISO-5 (diperlakukan sebagai
+      // jalur lama) sehingga bisa bertahan melewati ganti proyek.
+      // Tanpa proyek aktif (global) ctx tetap tanpa cap — perilaku lama.
+      if (opts?.projectId) universalCtx.projectId = opts.projectId;
+    }
     // Pesan kontekstual tipologi (2026-11-08): bila builder sudah
     // menyusun ringkasan pemahaman, tampilkan itu — pengguna melihat apa
     // yang sudah dipahami dan hanya ditanya SATU hal yang benar-benar
@@ -2200,12 +2485,14 @@ function universalResultFor(raw: string, forcedTemplateId?: string, materialNote
           `${res.reason}\n\nYang sudah saya pahami: ${res.understoodSummary}.\n\n` +
           `Yang masih dibutuhkan:\n${res.missing.map((m) => `• ${m}`).join('\n')}\n\n` +
           'Begitu ukurannya ada, draft awal langsung saya siapkan — spesifikasi lain (struktur, pondasi, atap) cukup ditandai perlu konfirmasi, tidak menghalangi draft.',
+        awaitProjectConcept: true,
       };
     }
     return {
       ok: true,
       message:
-        `${res.reason}\n\nYang masih dibutuhkan:\n${res.missing.map((m) => `• ${m}`).join('\n')}\n\nKirim ulang permintaan lengkap dengan data itu — draft tidak dibuat dari tebakan.`,
+        `${res.reason}\n\nYang masih dibutuhkan:\n${res.missing.map((m) => `• ${m}`).join('\n')}\n\nBalas pesan ini dengan data itu — tidak perlu mengulang permintaan dari awal; draft tidak dibuat dari tebakan.`,
+      awaitProjectConcept: true,
     };
   }
   return null;
@@ -2382,6 +2669,13 @@ export function continueRabChoice(text: string, projectId?: string | null): Acti
   const merged = extractRabNeeds(stripLandPhrases(text), { ...p.needs });
   // INTENT-FIRST: koreksi digabung ke SPEK via mergeRabIntentSpec — hanya
   // field yang disebut koreksi yang berubah; sisanya dipertahankan.
+  // SENGAJA BUKAN continueRabIntent (W6, diputuskan sesudah analisis):
+  // basis merge di sini adalah spek KARTU (p.spec), BUKAN spek aktif
+  // modul (lastRabIntentSpec) yang dipakai continueRabIntent — keduanya
+  // bisa berbeda (kartu dibuat sebelum alur lain menimpa spek aktif).
+  // Fallback p.spec==null juga berbeda: ekstrak segar dari teks gabungan
+  // kartu+koreksi, bukan dari fragmen koreksi saja. Mengganti ke
+  // continueRabIntent akan mengubah perilaku koreksi kartu — JANGAN.
   const mergedSpec = p.spec
     ? mergeRabIntentSpec(p.spec, text)
     : extractRabIntentSpec(`${p.rawText}\n${text}`);
@@ -3186,6 +3480,255 @@ function handleChangePlan(param: string | undefined, ctx: ChatActionContext): Ac
   };
 }
 
+/* ------------------------------------------------------------------ */
+/* W11 §11 (S1-R5, 2026-11-22) — konfirmasi perintah langsung.         */
+/*                                                                     */
+/* Enam perintah mengeksekusi langsung tanpa konfirmasi: RENAME,       */
+/* CREATE, ARCHIVE, DUPLICATE_PROJECT, UPDATE_PROJECT_SETTINGS,        */
+/* CREATE_QTO_ITEM/SYNC_QTO. Mulai W11, pemanggilan PERTAMA hanya      */
+/* memvalidasi + menampilkan pratinjau aksi + tombol konfirmasi;       */
+/* eksekusi terjadi HANYA pada pemanggilan KEDUA atas perintah yang    */
+/* sama (klik tombol konfirmasi / ketik ulang perintah) selagi slot    */
+/* konfirmasi masih segar dan sidik aksi TIDAK berubah.                */
+/*                                                                     */
+/* Mengapa "ulangi perintah" dan bukan intent *_CONFIRM ala            */
+/* DELETE_PROJECT_CONFIRM: intent konfirmasi baru butuh (a) anggota   */
+/* baru union ChatIntent di intentRouter.ts dan (b) cabang dispatch    */
+/* baru di handleActionButton view.tsx — keduanya di luar wilayah W11. */
+/* Sebagai gantinya, tombol konfirmasi memakai label = teks perintah   */
+/* itu sendiri: view tidak punya dispatch generik kind 'intent'        */
+/* sehingga tombol jatuh ke submit(label), label me-routing kembali ke */
+/* intent yang sama, dan gerbang di bawah mengklaim slot konfirmasi.   */
+/* Action intent/param yang menyertai tombol adalah kontrak yang sama  */
+/* bila suatu saat view mendapat dispatch generik.                     */
+/*                                                                     */
+/* Pengikatan (cermin TransferApprovalBinding, draftPersistence.ts):   */
+/* sidik dihitung dari aksi TERNORMALISASI hasil validasi segar        */
+/* (target ter-resolusi + nilai), BUKAN param mentah — perintah yang   */
+/* sama sesudah keadaan berubah (proyek berganti nama, item QTO        */
+/* bertambah) menghasilkan sidik berbeda dan DITANYA ULANG dengan      */
+/* pratinjau segar, bukan dieksekusi. Slot sekali pakai (diklaim =     */
+/* dihapus) + TTL 10 menit: klik ganda tombol konfirmasi tidak pernah  */
+/* mengeksekusi dua kali — klik kedua hanya bertanya ulang.            */
+/*                                                                     */
+/* Gerbang TIDAK mengubah pesan fail-closed handler: input tidak valid */
+/* / target tak ditemukan / tanpa callback → gerbang mengembalikan     */
+/* null dan handler yang bersangkutan menjawab sendiri (tanpa          */
+/* eksekusi, seperti sebelumnya). DELETE_PROJECT tidak lewat sini —    */
+/* ia sudah punya konfirmasi dua langkah sendiri.                      */
+/* ------------------------------------------------------------------ */
+
+/** TTL konfirmasi perintah langsung — 10 menit, SAMA dengan
+ *  TRANSFER_APPROVAL_TTL_MS (draftPersistence.ts). */
+export const DIRECT_COMMAND_CONFIRM_TTL_MS = 10 * 60 * 1000;
+
+interface PendingDirectConfirmation {
+  /** Sidik aksi yang DITINJAU (target + nilai ternormalisasi). */
+  fingerprint: string;
+  createdAt: number;
+}
+
+/** Satu slot konfirmasi tertunda per intent (module-level, pola
+ *  pendingChoice — TIDAK dipersist; reload membatalkan konfirmasi). */
+const pendingDirectConfirmations = new Map<string, PendingDirectConfirmation>();
+
+/** Kosongkan semua konfirmasi tertunda (dipakai tes; tidak ada pemanggil
+ *  produksi — slot dibersihkan sendiri saat diklaim/kedaluwarsa). */
+export function clearPendingDirectConfirmations(): void {
+  pendingDirectConfirmations.clear();
+}
+
+/**
+ * Klaim konfirmasi tertunda untuk intent ini: true HANYA bila ada slot
+ * segar (dalam TTL) dengan sidik yang SAMA PERSIS dengan aksi yang baru
+ * divalidasi — klaim MENGHABISKAN slot (sekali pakai). Slot basi / sidik
+ * berbeda dihapus + mengembalikan false (pemanggil bertanya ulang
+ * dengan pratinjau segar).
+ */
+function claimDirectConfirmation(intent: string, fingerprint: string, now: number = Date.now()): boolean {
+  const p = pendingDirectConfirmations.get(intent);
+  if (!p) return false;
+  if (now > p.createdAt + DIRECT_COMMAND_CONFIRM_TTL_MS || p.fingerprint !== fingerprint) {
+    pendingDirectConfirmations.delete(intent);
+    return false;
+  }
+  pendingDirectConfirmations.delete(intent);
+  return true;
+}
+
+function storeDirectConfirmation(intent: string, fingerprint: string, now: number = Date.now()): void {
+  pendingDirectConfirmations.set(intent, { fingerprint, createdAt: now });
+}
+
+/** Tombol konfirmasi perintah langsung (label = teks perintah itu
+ *  sendiri — lihat penjelasan di kepala seksi ini). */
+function directConfirmActions(label: string, intent: string, param: string): ChatActionButton[] {
+  return [{ label, action: { kind: 'intent', intent, param } }];
+}
+
+/**
+ * Gerbang konfirmasi CREATE/ARCHIVE/DUPLICATE_PROJECT. Mengembalikan
+ * ActionResult bila perintah HARUS BERHENTI di sini (tanya konfirmasi —
+ * tanpa eksekusi), atau null bila handler boleh jalan (konfirmasi sudah
+ * diklaim, ATAU input tidak valid sehingga handler sendiri yang
+ * menjawab jujur tanpa mengeksekusi).
+ */
+function gateProjectCommandConfirmation(
+  intent: 'CREATE_PROJECT' | 'ARCHIVE_PROJECT' | 'DUPLICATE_PROJECT',
+  param: string | undefined,
+  ctx: ChatActionContext,
+): ActionResult | null {
+  if (intent === 'CREATE_PROJECT') {
+    // Cermin pembersihan nama handleCreateProject (projectCommands.ts)
+    // — sidik dihitung dari nama TERNORMALISASI, bukan param mentah.
+    const name = (param ?? '').trim().replace(/[?.!…]+$/u, '').trim();
+    if (!name || name.toLowerCase() === 'baru' || name.length > PROJECT_MAX_NAME_LENGTH || !ctx.createProject) {
+      return null; // handler menjawab sendiri (klarifikasi/navigasi/tolak/fail-closed) — tanpa eksekusi
+    }
+    const fingerprint = JSON.stringify({ intent, name });
+    if (claimDirectConfirmation(intent, fingerprint)) return null;
+    storeDirectConfirmation(intent, fingerprint);
+    return {
+      ok: true,
+      message:
+        `Buat proyek baru "${name}"?\n\nKlik "Buat proyek ${name}" untuk mengonfirmasi — atau abaikan pesan ini bila tidak jadi (konfirmasi kedaluwarsa dalam 10 menit).`,
+      actions: directConfirmActions(`Buat proyek ${name}`, intent, name),
+    };
+  }
+  // ARCHIVE / DUPLICATE — target harus ter-resolusi dulu.
+  const res = resolveProjectTarget(param, ctx);
+  if (res.kind !== 'found') return null; // handler menjawab kegagalan resolusi — tanpa eksekusi
+  const hasCallback = intent === 'ARCHIVE_PROJECT' ? !!ctx.archiveProject : !!ctx.duplicateProject;
+  if (!hasCallback) return null; // handler fail-closed — tanpa eksekusi
+  const fingerprint = JSON.stringify({ intent, projectId: res.project.id, name: res.project.name });
+  if (claimDirectConfirmation(intent, fingerprint)) return null;
+  storeDirectConfirmation(intent, fingerprint);
+  const verb = intent === 'ARCHIVE_PROJECT' ? 'Arsipkan' : 'Duplikat';
+  return {
+    ok: true,
+    message:
+      `${verb} proyek "${res.project.name}"?\n\nKlik "${verb} proyek ${res.project.name}" untuk mengonfirmasi — atau abaikan pesan ini bila tidak jadi (konfirmasi kedaluwarsa dalam 10 menit).`,
+    actions: directConfirmActions(`${verb} proyek ${res.project.name}`, intent, res.project.name),
+  };
+}
+
+/**
+ * Gerbang konfirmasi UPDATE_PROJECT_SETTINGS (kontrak yang sama dengan
+ * gateProjectCommandConfirmation: null = handler boleh jalan).
+ */
+function gateProjectSettingsConfirmation(
+  param: string | undefined,
+  ctx: ChatActionContext,
+): ActionResult | null {
+  const text = (param ?? '').trim();
+  if (!text) return null;
+  const parsed = parseSettingsPatch(text);
+  if (!parsed.ok) return null; // handler menjawab (klarifikasi/rentang/pajak) — tanpa eksekusi
+  if (!ctx.activeProject || !ctx.updateProjectSettings) return null;
+  const fingerprint = JSON.stringify({
+    intent: 'UPDATE_PROJECT_SETTINGS',
+    projectId: ctx.activeProject.id,
+    patch: parsed.patch,
+  });
+  if (claimDirectConfirmation('UPDATE_PROJECT_SETTINGS', fingerprint)) return null;
+  storeDirectConfirmation('UPDATE_PROJECT_SETTINGS', fingerprint);
+  const changesText = parsed.changes.map((c) => `${c.label} jadi ${formatPercentValue(c.value)}%`).join(' ');
+  const lines = parsed.changes.map(
+    (c) => `• ${c.label}: ${formatPercentValue(c.value)}%${c.activates ? ' (diaktifkan)' : ''}`,
+  );
+  return {
+    ok: true,
+    message:
+      `Ubah pengaturan proyek "${ctx.activeProject.name}":\n${lines.join('\n')}\n\nKlik "Ubah ${changesText}" untuk mengonfirmasi — atau abaikan pesan ini bila tidak jadi (konfirmasi kedaluwarsa dalam 10 menit).`,
+    actions: directConfirmActions(`Ubah ${changesText}`, 'UPDATE_PROJECT_SETTINGS', changesText),
+  };
+}
+
+/**
+ * Gerbang konfirmasi CREATE_QTO_ITEM / SYNC_QTO (kontrak yang sama
+ * dengan gateProjectCommandConfirmation: null = handler boleh jalan).
+ * SYNC_QTO 'semua': sidik mengikat DAFTAR item berharga saat
+ * pratinjau — item berharga yang muncul sesudahnya membatalkan
+ * konfirmasi (tanya ulang dengan daftar segar).
+ */
+function gateQtoCommandConfirmation(
+  intent: 'CREATE_QTO_ITEM' | 'SYNC_QTO',
+  param: string | undefined,
+  ctx: ChatActionContext,
+): ActionResult | null {
+  if (intent === 'CREATE_QTO_ITEM') {
+    const target = parseCreateQtoTarget(param);
+    if (!target.uraian || target.quantity === null || target.unit === null) return null;
+    if (!ctx.activeProject || !ctx.createQtoItem) return null;
+    const fingerprint = JSON.stringify({
+      intent,
+      projectId: ctx.activeProject.id,
+      uraian: target.uraian,
+      quantity: target.quantity,
+      unit: target.unit,
+    });
+    if (claimDirectConfirmation(intent, fingerprint)) return null;
+    storeDirectConfirmation(intent, fingerprint);
+    const label = `Buat item QTO ${target.uraian} ${target.quantity} ${target.unit}`;
+    return {
+      ok: true,
+      message:
+        `Buat item QTO "${target.uraian}" (${String(target.quantity).replace('.', ',')} ${target.unit}) di proyek "${ctx.activeProject.name}"?\n\nKlik "${label}" untuk mengonfirmasi — atau abaikan pesan ini bila tidak jadi (konfirmasi kedaluwarsa dalam 10 menit).`,
+      actions: directConfirmActions(label, intent, `${target.uraian} ${target.quantity} ${target.unit}`),
+    };
+  }
+  // SYNC_QTO
+  const target = parseSyncQtoTarget(param);
+  if (target.kind === 'empty') return null;
+  if (!ctx.activeProject || !ctx.listQtoItems || !ctx.syncQtoItem) return null;
+  const items = ctx.listQtoItems();
+  const projectName = ctx.activeProject.name;
+  if (target.kind === 'all') {
+    if (items.length === 0) return null;
+    const priced = items.filter((it) => qtoHasTransferablePrice(it).priced);
+    const unpriced = items.filter((it) => !qtoHasTransferablePrice(it).priced);
+    if (priced.length === 0) return null; // handler hanya melaporkan item tanpa harga — tanpa eksekusi
+    const fingerprint = JSON.stringify({
+      intent,
+      kind: 'all',
+      projectId: ctx.activeProject.id,
+      priced: priced.map((it) => it.id).sort(),
+    });
+    if (claimDirectConfirmation(intent, fingerprint)) return null;
+    storeDirectConfirmation(intent, fingerprint);
+    const label = 'Sinkronkan semua QTO';
+    return {
+      ok: true,
+      message:
+        `Sinkronkan ${priced.length} item QTO berharga ke RAB proyek "${projectName}"?` +
+        (unpriced.length > 0 ? `\n${unpriced.length} item tanpa harga akan dilewati (tidak disinkron diam-diam).` : '') +
+        `\n\nKlik "${label}" untuk mengonfirmasi — atau abaikan pesan ini bila tidak jadi (konfirmasi kedaluwarsa dalam 10 menit).`,
+      actions: directConfirmActions(label, intent, 'semua qto'),
+    };
+  }
+  const resolved = resolveQtoItemByName(items, target.name);
+  if (resolved.kind !== 'one') return null; // handler menjawab (tidak ada/ambigu) — tanpa eksekusi
+  const item = resolved.item;
+  if (!qtoHasTransferablePrice(item).priced) return null; // handler menolak + mengarahkan ke Rekap QTO — tanpa eksekusi
+  const fingerprint = JSON.stringify({
+    intent,
+    kind: 'named',
+    projectId: ctx.activeProject.id,
+    itemId: item.id,
+    quantity: item.quantity,
+    unit: item.unit,
+  });
+  if (claimDirectConfirmation(intent, fingerprint)) return null;
+  storeDirectConfirmation(intent, fingerprint);
+  const label = `Sinkronkan QTO ${item.uraian} ke RAB`;
+  return {
+    ok: true,
+    message:
+      `Sinkronkan item QTO ${formatQtoItemLabel(item)} ke RAB proyek "${projectName}"?\n\nKlik "${label}" untuk mengonfirmasi — atau abaikan pesan ini bila tidak jadi (konfirmasi kedaluwarsa dalam 10 menit).`,
+    actions: directConfirmActions(label, intent, `${item.uraian} ke rab`),
+  };
+}
+
 export function executeIntent(
   intent: ChatIntent,
   param: string | undefined,
@@ -3261,6 +3804,21 @@ export function executeIntent(
         return {
           ok: false,
           message: 'Saya belum bisa mengubah nama proyek dari chat ini. Ubah lewat Daftar Proyek (tombol edit pada proyeknya).',
+        };
+      }
+      // W11 §11 (S1-R5) — konfirmasi sebelum mutasi: perintah yang sama
+      // diulang (klik tombol konfirmasi / ketik ulang) untuk mengeksekusi.
+      // Sidik mengikat proyek + nama lama + nama baru: proyek yang
+      // berganti nama di tempat lain sesudah pratinjau membatalkan
+      // konfirmasi (tanya ulang dengan nama segar).
+      const fingerprint = JSON.stringify({ intent: 'RENAME_PROJECT', projectId: ctx.activeProject.id, oldName, newName });
+      if (!claimDirectConfirmation('RENAME_PROJECT', fingerprint)) {
+        storeDirectConfirmation('RENAME_PROJECT', fingerprint);
+        return {
+          ok: true,
+          message:
+            `Ganti nama proyek "${oldName}" menjadi "${newName}"?\n\nKlik "Ubah nama proyek menjadi ${newName}" untuk mengonfirmasi — atau abaikan pesan ini bila tidak jadi (konfirmasi kedaluwarsa dalam 10 menit).`,
+          actions: directConfirmActions(`Ubah nama proyek menjadi ${newName}`, 'RENAME_PROJECT', newName),
         };
       }
       const changed = ctx.renameProject(ctx.activeProject.id, newName);
@@ -3390,16 +3948,29 @@ export function executeIntent(
     // Perintah deterministik kelompok 1–5 (2026-11-17, gap P2–P8 + P12
     // audit perintah): handler di ./commands/* — registry hanya
     // mendelegasikan; tiap handler fail-closed tanpa callback/proyek.
+    // W11 §11 (S1-R5): CREATE/ARCHIVE/DUPLICATE_PROJECT + QTO +
+    // UPDATE_PROJECT_SETTINGS lewat gerbang konfirmasi dulu (gerbang
+    // mengembalikan null bila konfirmasi sudah diklaim / input tidak
+    // valid sehingga handler menjawab sendiri). DELETE_PROJECT TIDAK
+    // lewat gerbang — ia sudah punya konfirmasi dua langkah sendiri
+    // (DELETE_PROJECT_CONFIRM).
     case 'CREATE_PROJECT':
-    case 'DELETE_PROJECT':
-    case 'DELETE_PROJECT_CONFIRM':
     case 'ARCHIVE_PROJECT':
     case 'DUPLICATE_PROJECT': {
+      const gated = gateProjectCommandConfirmation(intent, param, ctx);
+      if (gated) return gated;
+      return handleProjectCommand(intent, param, ctx)
+        ?? { ok: false, message: 'Perintah proyek tidak dikenali.' };
+    }
+    case 'DELETE_PROJECT':
+    case 'DELETE_PROJECT_CONFIRM': {
       return handleProjectCommand(intent, param, ctx)
         ?? { ok: false, message: 'Perintah proyek tidak dikenali.' };
     }
     case 'CREATE_QTO_ITEM':
     case 'SYNC_QTO': {
+      const gated = gateQtoCommandConfirmation(intent, param, ctx);
+      if (gated) return gated;
       return handleQtoCommand(intent, param, ctx)
         ?? { ok: false, message: 'Perintah QTO tidak dikenali.' };
     }
@@ -3416,6 +3987,8 @@ export function executeIntent(
         ?? { ok: false, message: 'Perintah tidak dikenali.' };
     }
     case 'UPDATE_PROJECT_SETTINGS': {
+      const gated = gateProjectSettingsConfirmation(param, ctx);
+      if (gated) return gated;
       return handleProjectSettingsCommand(intent, param, ctx)
         ?? { ok: false, message: 'Perintah pengaturan tidak dikenali.' };
     }
@@ -3572,6 +4145,50 @@ export function executeIntent(
       // null dari gerbang dan menu di bawah tetap tampil (skenario B).
       const uniClarify = universalIntakeGate(rawClarify, true, ctx.activeProject?.id ?? null);
       if (uniClarify) return uniClarify;
+      // B5-4 (2026-11-23): cabang "di luar cakupan" yang jujur — PEMETAAN
+      // dari klasifikasi builder, bukan logika baru. Bila builder tidak
+      // mengenali cakupan apa pun (needs-spec yang menanyakan OBJEKNYA
+      // sendiri) TETAPI pengguna SUDAH menyebut ukuran fisik, objeknya
+      // sudah dideskripsikan konkret dan memang tidak tercakup katalog —
+      // jawab jujur "belum didukung" + tawarkan RAB manual/klarifikasi,
+      // bukan pemilih jalur generik (menara telekomunikasi 30 m dilempar
+      // ke katalog 183 template tanpa pernah dinyatakan tak didukung).
+      // Permintaan tanpa objek/ukuran ("buatkan rab") TETAP mendapat menu
+      // generik di bawah (pin WaveB T12 / WaveA). buildUniversalDraft
+      // dipanggil HANYA bila cakupan kosong — ia kembali awal
+      // (needs-spec) tanpa membangun draft, jadi tanpa efek samping
+      // setLastUniversalDraft. Feedback ditangkap seperti di
+      // universalResultFor agar antrean review punya bahan nyata.
+      const clarifySpec = extractUniversalSpec(rawClarify);
+      if (clarifySpec.scopes.length === 0) {
+        const fmtM = (v: number) => v.toLocaleString('id-ID', { maximumFractionDigits: 1 });
+        const statedMeasures: string[] = [];
+        if (clarifySpec.areaM2 != null) statedMeasures.push(`luas ${fmtM(clarifySpec.areaM2)} m²`);
+        if (clarifySpec.lengthM != null) statedMeasures.push(`panjang ${fmtM(clarifySpec.lengthM)} m`);
+        if (clarifySpec.widthM != null) statedMeasures.push(`lebar ${fmtM(clarifySpec.widthM)} m`);
+        if (clarifySpec.heightM != null) statedMeasures.push(`tinggi ${fmtM(clarifySpec.heightM)} m`);
+        if (clarifySpec.spanM != null) statedMeasures.push(`bentang ${fmtM(clarifySpec.spanM)} m`);
+        if (clarifySpec.depthM != null) statedMeasures.push(`kedalaman ${fmtM(clarifySpec.depthM)} m`);
+        if (statedMeasures.length > 0) {
+          const built = buildUniversalDraft(rawClarify);
+          if (built.kind === 'needs-spec' && built.missing.some((m) => /objek\/pekerjaan konstruksi/i.test(m))) {
+            captureFeedback('unsupported-request', rawClarify, { reason: built.reason });
+            return {
+              ok: true,
+              message:
+                `Maaf — jenis pekerjaan dalam permintaan ini belum didukung katalog RAB EZRAB. ` +
+                `Anda sudah menyebut ukuran (${statedMeasures.join(', ')}), tetapi tidak ada template katalog untuk pekerjaan ini, ` +
+                `jadi RAB-nya belum dapat saya susun dari template — dan saya tidak akan menebak-nebak itemnya.\n\n` +
+                `Silakan susun manual lewat RAB & Estimasi (RAB kosong, isi item sendiri), atau tulis ulang dengan kata lain ` +
+                `bila maksud Anda pekerjaan yang ada di katalog. Bila Anda punya gambar kerjanya, DED Estimate AI dapat menghitung dari gambar.`,
+              actions: [
+                { label: 'Mulai manual', action: { kind: 'navigate', menu: 'rab-estimasi' } },
+                { label: 'Dari gambar DED', action: { kind: 'navigate', menu: 'ded-ai' } },
+              ],
+            };
+          }
+        }
+      }
       // "buatkan rab" tanpa objek: tanya balik + tombol jalur, JANGAN
       // menumpahkan daftar template ke chat. Lokal penuh, tanpa kredit AI.
       return {
@@ -3672,15 +4289,10 @@ export function executeIntent(
       const built = usePending ? buildDirectRab(p.rawText, p.needs) : buildDirectRab(rawParam);
       if (!built) return rabSummaryResult(rawParam, undefined, ctx.activeProject?.id ?? null);
       if (usePending) pendingChoice = null;
-      return {
-        ok: true,
-        message: formatDirectRabMessage(built),
-        actions: [
-          { label: 'Push ke Spreadsheet RAB', action: { kind: 'push-rab' } },
-          { label: 'Buka Spreadsheet RAB', action: { kind: 'navigate', menu: 'rab-estimasi' } },
-          { label: 'Buka Workspace Desain & RAB', action: { kind: 'navigate', menu: 'desain-rab' } },
-        ],
-      };
+      // B5-3 direct: lewat corong yang sama (hasil identik: tabel +
+      // tiga tombol yang sama) agar klik "Pakai Template" juga
+      // memastikan proyek sementara bila belum ada proyek aktif.
+      return directRabTableResult(built);
     }
 
     case 'CREATE_RAB_SUMMARY': {
@@ -3706,7 +4318,9 @@ export function executeIntent(
       // terlindungi gerbang ini mengembalikan null.
       const uniRes = universalIntakeGate(rawSummary, false, ctx.activeProject?.id ?? null);
       if (uniRes) return uniRes;
-      const intakeRes = projectIntakeGate(rawSummary);
+      // S3-B: teruskan proyek aktif agar konteks landscape dicap pemiliknya
+      // (null eksplisit = global — konteks tanpa cap, bukan tanpa info).
+      const intakeRes = projectIntakeGate(rawSummary, ctx.activeProject?.id ?? null);
       if (intakeRes) return intakeRes;
       // Universal (2026-10-26): permintaan non-rumah yang terukur langsung
       // dicoba menjadi draft katalog; rumah tetap ringkasan dulu (desain
@@ -3730,7 +4344,12 @@ export function executeIntent(
           // disimpan gerbang.
           if (uniSummary.actions?.some((a) => a.action.kind === 'push-universal')) {
             const draftNow = getLastUniversalDraft();
-            const pid = ctx.activeProject?.id ?? null;
+            // F-ISO-2 (Phase 2, 2026-11-23): tanpa proyek aktif, draft
+            // mendarat di proyek sementara B5-3 (ensuredProjectId) —
+            // snapshot HARUS ikut ke proyek itu, bukan hilang karena
+            // activeProject null. Cermin jalur terpandu (:1423) yang
+            // mengikat konteks ke ensuredProjectId sebelum menyimpan.
+            const pid = uniSummary.ensuredProjectId ?? ctx.activeProject?.id ?? null;
             if (draftNow && pid) {
               const fastCtx = extractUniversalContext(rawSummary);
               fastCtx.projectId = pid;
@@ -3756,7 +4375,9 @@ export function executeIntent(
       // id konsep dari peta projectIntake ('custom' = konsep bebas
       // pengguna — fasilitasnya ditangkap dari teks, bukan daftar).
       const ctxIntake = projectCtx;
-      if (!ctxIntake) {
+      // S3-B: konteks milik proyek lain diperlakukan sama dengan konteks
+      // tidak aktif — jangan mutasi (set conceptId) dari konteks asing.
+      if (!ctxIntake || isProjectContextForeign(ctxIntake, ctx.activeProject?.id ?? null)) {
         return {
           ok: false,
           message:
@@ -3785,7 +4406,10 @@ export function executeIntent(
       // kanonis dari konteks gabungan (buildUniversalDraft lewat
       // universalResultFor), template konsep dipaksakan bila ada.
       const ctxIntake = projectCtx;
-      if (!ctxIntake) {
+      // S3-B: konteks milik proyek lain diperlakukan sama dengan konteks
+      // tidak aktif — jangan tampilkan pratinjau / generate dari fakta
+      // proyek lain (S2 discovery: draft B dari fakta A).
+      if (!ctxIntake || isProjectContextForeign(ctxIntake, ctx.activeProject?.id ?? null)) {
         return {
           ok: false,
           message:
@@ -4209,5 +4833,278 @@ export function executeIntent(
 
     default:
       return { ok: false, message: 'Perintah tidak dikenali. Ketik /help untuk daftar perintah.' };
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Lengkapi dengan Full AI — budget-based RAB (§5, 2026-11-22).        */
+/*                                                                     */
+/* Entri ASYNC baru (di luar executeIntent yang SINKRON — completion   */
+/* butuh panggilan AI sehingga tidak bisa hidup di registry sinkron).  */
+/* Dipanggil view dari tombol "Lengkapi dengan Full AI" + trigger teks */
+/* follow-up. Urutan: draft universal aktif → hasil direct aktif →    */
+/* rebuild dari teks (hanya bila tak ada draft aktif yang bisa        */
+/* dilengkapi). Gerbang Q7: v1 HANYA request ber-budget.              */
+/*                                                                     */
+/* Kejujuran:                                                          */
+/* - Universal: isian ditulis kembali ke item generasi draft (kontrak  */
+/*   transfer yang ada menangani PRICE_ESTIMATED + NEEDS_VERIFICATION  */
+/*   tanpa perubahan kode); harga manual revisi TETAP menang. Revisi   */
+/*   meregenerasi part sehingga isian gugur secara jujur (§2.4 v1).    */
+/* - Direct: calc.items ASLI tidak diubah; salinan terisi tinggal di  */
+/*   fullAiCompletion dan IKUT ter-push sebagai PRICE_ESTIMATED +      */
+/*   NEEDS_VERIFICATION + EZRAB_ASSUMPTION (Batch 4 §7.2 — mapper      */
+/*   push menggabungkan isian; sebelumnya display-only karena          */
+/*   payload push tidak bisa membedakan harga AI dari harga resmi).    */
+/* - AI gagal → jawaban adalah draft parsial ASLI + baris warning      */
+/*   jujur; tidak ada harga yang dikarang.                             */
+/* ------------------------------------------------------------------ */
+
+/** Deps gateway produksi untuk completion (tanpa kode metering klien). */
+function defaultBudgetFullAiDeps(): ChatRabCompletionDeps {
+  return {
+    execute: (req) => aiToolsProviderClient.execute(req),
+    productId: 'EZRAB_AI',
+  };
+}
+
+export interface ExecuteBudgetFullAiRabOptions {
+  /** Target eksplisit dari tombol (tanpa ini: universal dulu, lalu direct). */
+  target?: 'universal' | 'direct';
+  /** Deps injeksi (tes memakai stub execute — tanpa live gateway). */
+  deps?: ChatRabCompletionDeps;
+}
+
+const BUDGET_FULL_AI_ACTIONS_UNIVERSAL: ChatActionButton[] = [
+  { label: 'Push ke Spreadsheet', action: { kind: 'push-universal' } },
+  { label: 'Buka Spreadsheet RAB', action: { kind: 'navigate', menu: 'rab-estimasi' } },
+];
+
+const BUDGET_FULL_AI_ACTIONS_DIRECT: ChatActionButton[] = [
+  { label: 'Push ke Spreadsheet RAB', action: { kind: 'push-rab' } },
+  { label: 'Buka Spreadsheet RAB', action: { kind: 'navigate', menu: 'rab-estimasi' } },
+  { label: 'Buka Workspace Desain & RAB', action: { kind: 'navigate', menu: 'desain-rab' } },
+];
+
+async function completeUniversalDraftWithFullAi(
+  draft: UniversalDraft,
+  args: { quality: string | null; deps: ChatRabCompletionDeps },
+): Promise<ActionResult> {
+  const eff = effectiveItems(draft);
+  const budgetCap = draft.spec.budgetCap;
+  const result = await completeBudgetRabWithFullAi({
+    items: eff.map((it) => ({
+      description: it.description,
+      category: it.category,
+      group: it.__partScope,
+      volume: it.volume,
+      unit: it.unit,
+      unitPrice: it.unitPrice,
+      priceStatus: it.priceStatus,
+      priceSourceKind: it.priceSourceKind,
+      ahspCode: it.ahspCode,
+      notes: it.notes,
+      formula: it.calculationFormula,
+    })),
+    budgetCap,
+    quality: args.quality,
+    region: draft.spec.location,
+    projectType: draft.title,
+    projectLabel: draft.title,
+    deps: args.deps,
+  });
+  if (result.failed) {
+    return {
+      ok: true,
+      message:
+        `${formatUniversalDraftMessage(draft)}\n\nLengkapi dengan Full AI gagal: ${result.failureMessage ?? 'AI gagal memproses'} — draft parsial di atas tetap berlaku, tidak ada harga yang dikarang.`,
+      actions: BUDGET_FULL_AI_ACTIONS_UNIVERSAL,
+    };
+  }
+  // Tulis kembali isian ke item generasi draft (berdasarkan id efektif
+  // `${templateId}::${id}` — effectiveItems memakai kunci yang sama).
+  // Harga manual revisi TETAP menang (tidak ditimpa); item yang dihapus
+  // dari draft tidak ada di peta sehingga tidak tersentuh.
+  const completedById = new Map(result.items.map((it, idx) => [eff[idx].id, it]));
+  for (const part of draft.parts) {
+    for (const gen of part.generation.items) {
+      if (part.manualPrices[itemKey(gen)]) continue;
+      const done = completedById.get(`${part.template.id}::${gen.id}`);
+      if (!done) continue;
+      if (done.priceStatus === 'PRICE_ESTIMATED') {
+        gen.unitPrice = done.unitPrice;
+        gen.amount = done.amount ?? null;
+        gen.totalPrice = done.totalPrice ?? null;
+        gen.priceStatus = 'PRICE_ESTIMATED';
+        gen.priceSourceKind = 'EZRAB_ASSUMPTION';
+        gen.priceSourceLabel = done.priceSourceLabel;
+        gen.priceSourceExplanation = done.priceSourceExplanation;
+        gen.verificationStatus = 'NEEDS_VERIFICATION';
+      }
+      if (typeof done.volume === 'number' && done.volume !== gen.volume) {
+        gen.volume = done.volume;
+        gen.volumeSource = 'AI_GENERATED';
+      }
+      if (done.notes && done.notes !== gen.notes) gen.notes = done.notes;
+    }
+  }
+  const summary = buildFullAiCompletionSummary(result, budgetCap);
+  return {
+    ok: true,
+    message: formatUniversalDraftMessage(draft, { fullAiCompletion: summary }),
+    actions: BUDGET_FULL_AI_ACTIONS_UNIVERSAL,
+  };
+}
+
+async function completeDirectRabWithFullAi(
+  direct: DirectRabResult,
+  args: { budgetCap: number; quality: string | null; deps: ChatRabCompletionDeps },
+): Promise<ActionResult> {
+  const calcItems = direct.calc.items;
+  const result = await completeBudgetRabWithFullAi({
+    items: calcItems.map((it) => ({
+      description: it.name,
+      category: it.category,
+      volume: it.volume,
+      unit: it.unit,
+      // Engine memakai unitPrice 0 = belum ada harga (bukan null).
+      unitPrice:
+        typeof it.unitPrice === 'number' && Number.isFinite(it.unitPrice) && it.unitPrice > 0
+          ? it.unitPrice
+          : null,
+      priceStatus: it.priceStatus,
+      // Total baris engine dibawa (lihat AdaptableChatItem.totalPrice):
+      // tanpa ini total completion meleset pecahan rupiah dari Σ
+      // totalPrice yang dirender tabel.
+      totalPrice: it.totalPrice,
+    })),
+    budgetCap: args.budgetCap,
+    quality: args.quality,
+    region: direct.region,
+    projectType: direct.displayLabel,
+    projectLabel: direct.displayLabel,
+    deps: args.deps,
+    useLineTotals: true,
+  });
+  if (result.failed) {
+    return {
+      ok: true,
+      message:
+        `${formatDirectRabMessage(direct)}\n\nLengkapi dengan Full AI gagal: ${result.failureMessage ?? 'AI gagal memproses'} — tabel parsial di atas tetap berlaku, tidak ada harga yang dikarang.`,
+      actions: BUDGET_FULL_AI_ACTIONS_DIRECT,
+    };
+  }
+  // Salinan terisi (calc.items ASLI tidak diubah — lihat fullAiCompletion).
+  const completedItems = calcItems.map((it, idx) => {
+    const done = result.items[idx];
+    if (!done) return it;
+    const volumeChanged = typeof done.volume === 'number' && done.volume !== it.volume;
+    if (done.priceStatus === 'PRICE_ESTIMATED') {
+      return {
+        ...it,
+        unitPrice: done.unitPrice ?? it.unitPrice,
+        totalPrice: done.totalPrice ?? it.totalPrice,
+        volume: typeof done.volume === 'number' ? done.volume : it.volume,
+      };
+    }
+    if (volumeChanged) {
+      return {
+        ...it,
+        volume: done.volume as number,
+        totalPrice:
+          typeof it.unitPrice === 'number' && it.unitPrice > 0
+            ? Math.round((done.volume as number) * it.unitPrice)
+            : it.totalPrice,
+      };
+    }
+    return it;
+  });
+  direct.fullAiCompletion = {
+    items: completedItems,
+    summary: buildFullAiCompletionSummary(result, args.budgetCap),
+  };
+  return {
+    ok: true,
+    message: formatDirectRabMessage(direct),
+    actions: BUDGET_FULL_AI_ACTIONS_DIRECT,
+  };
+}
+
+export async function executeBudgetFullAiRab(
+  rawText: string,
+  ctx: ChatActionContext,
+  opts?: ExecuteBudgetFullAiRabOptions,
+): Promise<ActionResult> {
+  const projectId = ctx.activeProject?.id ?? null;
+  const deps = opts?.deps ?? defaultBudgetFullAiDeps();
+  const lastSpec = getLastRabIntentSpec();
+  const textSpec = rawText ? extractRabIntentSpec(rawText) : null;
+  const quality = lastSpec?.quality ?? textSpec?.quality ?? null;
+  const noDraft: ActionResult = {
+    ok: true,
+    message:
+      'Tidak ada draft RAB parsial dengan budget yang bisa saya lengkapi saat ini. Susun dulu draft RAB dengan menyebutkan budget (mis. "buatkan RAB rumah 2 lantai, budget 200 juta"), lalu klik "Lengkapi dengan Full AI" pada jawaban draftnya — atau ketik "lengkapi dengan full ai".',
+  };
+  try {
+    // 1. Draft universal aktif (target default / eksplisit universal).
+    if (opts?.target !== 'direct') {
+      const draft = getLastUniversalDraft(projectId);
+      if (draft && draft.spec.budgetCap != null) {
+        const eff = effectiveItems(draft);
+        if (eff.some((it) => !isPriceValidForTotal(it))) {
+          return await completeUniversalDraftWithFullAi(draft, { quality, deps });
+        }
+      }
+    }
+    // 2. Hasil direct aktif (parametrik/spec).
+    if (opts?.target !== 'universal') {
+      const direct = getLastDirectRab();
+      const budgetCap =
+        lastSpec?.budgetIdr ??
+        textSpec?.budgetIdr ??
+        (rawText ? extractUniversalSpec(rawText).budgetCap : null);
+      if (direct && !direct.fullAiCompletion && budgetCap != null) {
+        const hasUnpriced = direct.calc.items.some(
+          (it) =>
+            !(typeof it.unitPrice === 'number' && Number.isFinite(it.unitPrice) && it.unitPrice > 0),
+        );
+        if (hasUnpriced) {
+          return await completeDirectRabWithFullAi(direct, { budgetCap, quality, deps });
+        }
+      }
+    }
+    // 3. Rebuild dari teks — hanya bila tak ada draft aktif yang bisa
+    // dilengkapi (mis. trigger teks tanpa draft aktif). Memakai komposisi
+    // sinkron yang sama dengan jalur normal (bukan duplikasi routing).
+    if (rawText.trim()) {
+      if (opts?.target !== 'universal') {
+        const flow = runRabIntentFlow(rawText, { hijacked: specRabHijackGuard(rawText) });
+        if (flow.built) {
+          const budgetCap = flow.evaluation.spec.budgetIdr ?? textSpec?.budgetIdr ?? null;
+          if (budgetCap != null) {
+            return await completeDirectRabWithFullAi(flow.built, {
+              budgetCap,
+              quality: flow.evaluation.spec.quality ?? quality,
+              deps,
+            });
+          }
+        }
+      }
+      if (opts?.target !== 'direct') {
+        const uni = buildUniversalDraft(rawText, undefined, { projectId });
+        if (uni.kind === 'draft' && uni.draft.spec.budgetCap != null) {
+          const eff = effectiveItems(uni.draft);
+          if (eff.some((it) => !isPriceValidForTotal(it))) {
+            return await completeUniversalDraftWithFullAi(uni.draft, { quality, deps });
+          }
+        }
+      }
+    }
+    return noDraft;
+  } catch (e) {
+    return {
+      ok: false,
+      message: `Lengkapi dengan Full AI gagal: ${e instanceof Error ? e.message : 'kesalahan tak dikenal'} — draft parsial tetap berlaku, tidak ada harga yang dikarang.`,
+    };
   }
 }

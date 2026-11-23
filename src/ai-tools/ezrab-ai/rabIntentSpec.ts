@@ -28,12 +28,117 @@
  *    jenis bangunan dan belum diketahui; untuk `source === 'ded'` ia
  *    mengembalikan [] karena gambar kerja adalah sumber kebenarannya.
  *
- * Murni deterministik, tanpa LLM, tanpa I/O, tanpa dependensi.
+ * Murni deterministik, tanpa LLM, tanpa I/O. Satu-satunya dependensi
+ * adalah rabNeeds.ts: parser budget KANONIS (S1-R2/F11 — satu parser
+ * untuk keempat situs budget) + ekstraksi ukuran universal bersama
+ * (S1-R3 — bentang/tebal/volume/jumlah yang sama dengan UniversalSpec).
  */
+
+import { parseBudgetMentions, extractUniversalMeasures } from './rabNeeds';
+import type { UniversalSpec } from './universalRab';
 
 /* ------------------------------------------------------------------ */
 /* Model kanonis (FROZEN — jangan ubah)                                */
 /* ------------------------------------------------------------------ */
+
+/**
+ * Sub-model UNIVERSAL di dalam spek rumah (W2/W10 §2, S1-R3 —
+ * unifikasi spek): ukuran lintas disiplin (bentang, tebal, volume,
+ * jumlah) yang tidak punya kolom di RabIntentSpec. Diisi
+ * extractRabIntentSpec dari teks yang sama (parser bersama
+ * extractUniversalMeasures) agar jalur rumah dapat MEMBACA field
+ * universal tanpa kehilangan data; jembatan dua arah
+ * (universalSpecToRabIntent / rabIntentSpecToUniversal di
+ * universalRab.ts) memakainya untuk round-trip lossless.
+ * Absen (undefined) = tidak satu pun ukuran universal disebut.
+ */
+export interface UniversalSpecView {
+  spanM: number | null;
+  widthM: number | null;
+  heightM: number | null;
+  thicknessCm: number | null;
+  volumeM3: number | null;
+  count: number | null;
+  depthM: number | null;
+}
+
+/**
+ * Sub-model RUMAH di dalam spek universal (W2/W10 §2, S1-R3): field
+ * rumah yang tidak punya kolom di UniversalSpec (kamar, kualitas,
+ * pengecualian, sistem atap/pondasi/struktur, lingkup, jenis/fungsi
+ * bangunan, kategori proyek). Dibaca jalur universal lewat
+ * UniversalSpec.house / UniversalIntakeContext.house; dibuat dari
+ * RabIntentSpec oleh houseViewFromSpec. Field null/[] = UNKNOWN
+ * (tidak pernah dikarang).
+ */
+export interface HouseSpecView {
+  bedrooms: number | null;
+  bathrooms: number | null;
+  quality: string | null;
+  exclusions: string[];
+  roofSystem: string[];
+  foundationSystem: string | null;
+  structuralSystem: string[];
+  scope: string[];
+  buildingType: string | null;
+  buildingFunction: string | null;
+  projectCategory: string | null;
+}
+
+/** View rumah dari satu RabIntentSpec — null bila tak ada field rumah yang terisi. */
+export function houseViewFromSpec(spec: RabIntentSpec): HouseSpecView | null {
+  const view: HouseSpecView = {
+    bedrooms: spec.bedrooms,
+    bathrooms: spec.bathrooms,
+    quality: spec.quality,
+    exclusions: [...spec.exclusions],
+    roofSystem: [...spec.roofSystem],
+    foundationSystem: spec.foundationSystem,
+    structuralSystem: [...spec.structuralSystem],
+    scope: [...spec.scope],
+    buildingType: spec.buildingType,
+    buildingFunction: spec.buildingFunction,
+    projectCategory: spec.projectCategory,
+  };
+  const hasData =
+    view.bedrooms != null || view.bathrooms != null || view.quality != null ||
+    view.exclusions.length > 0 || view.roofSystem.length > 0 ||
+    view.foundationSystem != null || view.structuralSystem.length > 0 ||
+    view.scope.length > 0 || view.buildingType != null ||
+    view.buildingFunction != null || view.projectCategory != null;
+  return hasData ? view : null;
+}
+
+/**
+ * Gabung view rumah antar-giliran (dipakai UniversalIntakeContext):
+ * skalar giliran baru menimpa bila terisi, array di-union — semantik
+ * yang sama dengan mergeRabIntentSpec. Bila keduanya kosong → null.
+ */
+export function mergeHouseViews(
+  base: HouseSpecView | null | undefined,
+  turn: HouseSpecView | null | undefined,
+): HouseSpecView | null {
+  if (!base) return turn ? { ...turn, exclusions: [...turn.exclusions], roofSystem: [...turn.roofSystem], structuralSystem: [...turn.structuralSystem], scope: [...turn.scope] } : null;
+  if (!turn) return base;
+  const union = (a: string[], b: string[]): string[] => {
+    const out = [...a];
+    for (const x of b) if (!out.some((y) => y.toLowerCase() === x.toLowerCase())) out.push(x);
+    return out;
+  };
+  return {
+    bedrooms: turn.bedrooms ?? base.bedrooms,
+    bathrooms: turn.bathrooms ?? base.bathrooms,
+    quality: turn.quality ?? base.quality,
+    exclusions: union(base.exclusions, turn.exclusions),
+    roofSystem: union(base.roofSystem, turn.roofSystem),
+    foundationSystem: turn.foundationSystem ?? base.foundationSystem,
+    structuralSystem: union(base.structuralSystem, turn.structuralSystem),
+    scope: union(base.scope, turn.scope),
+    buildingType: turn.buildingType ?? base.buildingType,
+    buildingFunction: turn.buildingFunction ?? base.buildingFunction,
+    projectCategory: turn.projectCategory ?? base.projectCategory,
+  };
+}
 
 export interface RabIntentSpec {
   buildingType: string | null;
@@ -57,6 +162,12 @@ export interface RabIntentSpec {
   source: 'ded' | 'template' | 'free' | null;
   rawText: string;
   explicitFields: string[]; // field yang berasal dari input eksplisit pengguna
+  /**
+   * Sub-model universal (W2/W10 §2, S1-R3) — ukuran lintas disiplin
+   * dari teks yang sama. Opsional + absen bila tidak disebut (agar
+   * bentuk lama tetap valid). Lihat UniversalSpecView.
+   */
+  universal?: UniversalSpecView;
 }
 
 /* ------------------------------------------------------------------ */
@@ -726,32 +837,17 @@ export function extractRabIntentSpec(text: string): RabIntentSpec {
   spec.exclusions = dedupeCaseInsensitive(exclusions);
   if (spec.exclusions.length > 0) mark('exclusions');
 
-  /* ---- budget -------------------------------------------------------- */
-  let budget: number | null = null;
-  const budgetScaleRe = new RegExp(
-    `(?:budget|anggaran|dana|biaya|harga|maks(?:imal)?|total|rp\\.?|sekitar|kurang\\s+lebih)\\s*(?:rp\\.?\\s*)?(${NUM_TOKEN})\\s*(juta|jt|miliar|milyar|ribu|rb|k|m)\\b`,
-  );
-  const bsMatch = lower.match(budgetScaleRe);
-  if (bsMatch) {
-    const v = parseIdNumber(bsMatch[1]);
-    const scale = bsMatch[2];
-    if (v !== null) {
-      const mult =
-        scale === 'juta' || scale === 'jt' ? 1_000_000
-        : scale === 'miliar' || scale === 'milyar' || scale === 'm' ? 1_000_000_000
-        : 1_000; // ribu / rb / k
-      budget = v * mult;
-    }
-  } else {
-    // "Rp 500.000.000" tanpa kata skala.
-    const rpMatch = lower.match(new RegExp(`\\brp\\.?\\s*(${NUM_TOKEN})`));
-    if (rpMatch) {
-      const v = parseIdNumber(rpMatch[1]);
-      if (v !== null && v >= 10_000) budget = v;
-    }
-  }
-  if (budget !== null) {
-    spec.budgetIdr = budget;
+  /* ---- budget (parser KANONIS — S1-R2/F11) ---------------------- */
+  // SATU parser untuk keempat situs (rabNeeds.parseBudgetMentions):
+  // situs ini memakai penyebutan PERTAMA (semantik first-match lama —
+  // merge koreksi ditangani mergeRabIntentSpec, bukan last-match di
+  // sini). Guard "uang" (uang muka/jalan/saku ditolak, `\b` cegah
+  // "ruang"), celah "uang muka Rp 50 juta" (ditutup penolakan jendela
+  // pada cabang rp), dan "budget menjadi 250 juta" semuanya milik
+  // parser kanonis — lihat rabNeeds.ts.
+  const budgetMentions = parseBudgetMentions(lower);
+  if (budgetMentions.length > 0) {
+    spec.budgetIdr = budgetMentions[0].amount;
     mark('budgetIdr');
   }
 
@@ -762,6 +858,21 @@ export function extractRabIntentSpec(text: string): RabIntentSpec {
   if (qualityMatch) {
     spec.quality = qualityMatch[1];
     mark('quality');
+  }
+
+  /* ---- ukuran universal (sub-model — S1-R3) ------------------------ */
+  // Bentang/tebal/volume/jumlah dari teks yang sama, lewat parser
+  // bersama extractUniversalMeasures (satu sumber dengan
+  // extractUniversalSpec) — agar jalur rumah dapat MEMBACA field
+  // universal. Hanya dipasang bila ≥1 ukuran disebut.
+  const universalMeasures = extractUniversalMeasures(lower);
+  if (
+    universalMeasures.spanM != null || universalMeasures.widthM != null ||
+    universalMeasures.heightM != null || universalMeasures.thicknessCm != null ||
+    universalMeasures.volumeM3 != null || universalMeasures.count != null ||
+    universalMeasures.depthM != null
+  ) {
+    spec.universal = { ...universalMeasures };
   }
 
   spec.explicitFields = [...explicit];
@@ -872,4 +983,71 @@ export function identifyMissingSpec(spec: RabIntentSpec): string[] {
   if (spec.quality === null) missing.push('quality');
   if (spec.scope.length === 0) missing.push('scope');
   return missing;
+}
+
+/* ------------------------------------------------------------------ */
+/* Jembatan dua arah spek rumah ↔ spek universal (W2/W10 §2, S1-R3)    */
+/*                                                                     */
+/* PENDEKATAN (dampak terkecil — BUKAN penulisan ulang kedua model):   */
+/* kedua model tetap hidup; yang disatukan adalah PEMBACAANNYA.        */
+/* - Universal → rumah (fungsi di bawah): UniversalSpec dibaca sebagai */
+/*   RabIntentSpec; ukuran universal (bentang/tebal/volume/jumlah)     */
+/*   masuk sub-model `universal`, field rumah masuk dari               */
+/*   UniversalSpec.house (bila ada — bila tidak ada, UNKNOWN, tidak    */
+/*   pernah ditebak dari label bebas seperti kindLabel).               */
+/* - Rumah → universal: rabIntentSpecToUniversal di universalRab.ts    */
+/*   (extractUniversalSpec + overlay field rumah + sub-model).         */
+/* Round-trip dipin di universalClassification.test.ts: rumah →        */
+/* universal → rumah dan universal → rumah → universal tidak           */
+/* kehilangan field di kedua arah.                                     */
+/*                                                                     */
+/* `explicitFields` hasil jembatan SENGAJA kosong: jembatan tidak      */
+/* tahu field mana yang disebut eksplisit pengguna (itu provenance     */
+/* ekstraksi, bukan data) — mengisinya dari non-null akan memalsukan   */
+/* provenance dan merusak mergeRabIntentSpec.                          */
+/* ------------------------------------------------------------------ */
+
+/** Baca satu UniversalSpec sebagai RabIntentSpec (view rumah). */
+export function universalSpecToRabIntent(uni: UniversalSpec): RabIntentSpec {
+  const house = uni.house;
+  const measures: UniversalSpecView = {
+    spanM: uni.spanM,
+    widthM: uni.widthM,
+    heightM: uni.heightM,
+    thicknessCm: uni.thicknessCm,
+    volumeM3: uni.volumeM3,
+    count: uni.count,
+    depthM: uni.depthM,
+  };
+  const hasUniversal =
+    measures.spanM != null || measures.widthM != null || measures.heightM != null ||
+    measures.thicknessCm != null || measures.volumeM3 != null || measures.count != null ||
+    measures.depthM != null;
+  return {
+    buildingType: house?.buildingType ?? null,
+    buildingFunction: house?.buildingFunction ?? null,
+    landAreaM2: uni.landAreaM2,
+    buildingAreaM2: uni.areaM2,
+    dimensionsM:
+      uni.buildingLengthM != null || uni.buildingWidthM != null
+        ? { lengthM: uni.buildingLengthM, widthM: uni.buildingWidthM }
+        : null,
+    floors: uni.floors,
+    bedrooms: house?.bedrooms ?? null,
+    bathrooms: house?.bathrooms ?? null,
+    location: uni.location,
+    roofSystem: house ? [...house.roofSystem] : [],
+    foundationSystem: house?.foundationSystem ?? null,
+    structuralSystem: house ? [...house.structuralSystem] : [],
+    materials: [...uni.materialKeywords],
+    scope: house ? [...house.scope] : [],
+    exclusions: house ? [...house.exclusions] : [],
+    budgetIdr: uni.budgetCap,
+    quality: house?.quality ?? null,
+    projectCategory: house?.projectCategory ?? null,
+    source: null,
+    rawText: uni.rawText,
+    explicitFields: [],
+    ...(hasUniversal ? { universal: measures } : {}),
+  };
 }

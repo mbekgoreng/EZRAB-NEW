@@ -109,9 +109,23 @@ export interface GenerateRabOptions {
   parameters?: Record<string, any>;
   assumptionOverrides?: Record<string, Partial<TemplateAssumption>>;
   region?: string;
+  /**
+   * Overhead/profit (W8, S3-14, §14): default 0%/0% — selaras dengan engine
+   * kanonis (`unifiedProjectEngine.ts` `?? 0`) dan proyek baru
+   * (`createProject`). Nilai eksplisit (termasuk 0) tetap dihormati.
+   */
   overheadPercentage?: number; // e.g. 5 for 5%
   profitPercentage?: number;   // e.g. 5 for 5%
+  /**
+   * Tarif pajak (default 11% PPN) — HANYA dipakai bila `taxEnabled: true`.
+   * Tanpa flag, pajak TIDAK dihitung (opt-in, cermin `ppnEnabled` engine
+   * kanonis). Nilai efektif yang dilaporkan di hasil adalah tarif yang
+   * benar-benar dipakai (0 bila pajak mati), agar audit rantai
+   * (taxAmount == subtotal × taxPercentage) tetap konsisten.
+   */
   taxPercentage?: number;      // e.g. 11 for 11% PPN
+  /** Pajak opt-in (§14): pajak hanya dihitung bila true (default false). */
+  taxEnabled?: boolean;
   projectType?: string;
   location?: string;
 }
@@ -401,12 +415,18 @@ export class ParametricVolumeEngine {
       parameters = {},
       assumptionOverrides = {},
       region = 'DKI Jakarta',
-      overheadPercentage = 5.0,
-      profitPercentage = 5.0,
+      // §14 (W8, S3-14): default proyek baru 0%/0%, pajak opt-in — dulu
+      // 5%/5%/11% selalu. Nilai eksplisit pemanggil tetap dihormati.
+      overheadPercentage = 0,
+      profitPercentage = 0,
       taxPercentage = 11.0,
+      taxEnabled = false,
       projectType,
       location = region,
     } = options;
+    // Tarif pajak EFEKTIF: 0 bila opt-in tidak diaktifkan — nilai inilah
+    // yang dipakai tangga dan dilaporkan di hasil (bukan tarif konfigurasi).
+    const effectiveTaxPercentage = taxEnabled ? taxPercentage : 0;
 
     const template = masterBuildingTemplateRegistry.getTemplateById(templateId);
     if (!template) {
@@ -624,7 +644,7 @@ export class ParametricVolumeEngine {
     const overheadAmount = Math.round((totalDirectCost * overheadPercentage) / 100);
     const profitAmount = Math.round((totalDirectCost * profitPercentage) / 100);
     const subtotalWithOverheadProfit = totalDirectCost + overheadAmount + profitAmount;
-    const taxAmount = Math.round((subtotalWithOverheadProfit * taxPercentage) / 100);
+    const taxAmount = Math.round((subtotalWithOverheadProfit * effectiveTaxPercentage) / 100);
     const totalRabCost = subtotalWithOverheadProfit + taxAmount;
 
     // Building area or unit calculation for cost per unit
@@ -654,7 +674,7 @@ export class ParametricVolumeEngine {
     const vOverhead = Math.round((verifiedDirectCost * overheadPercentage) / 100);
     const vProfit = Math.round((verifiedDirectCost * profitPercentage) / 100);
     const vSubtotal = verifiedDirectCost + vOverhead + vProfit;
-    const vTax = Math.round((vSubtotal * taxPercentage) / 100);
+    const vTax = Math.round((vSubtotal * effectiveTaxPercentage) / 100);
 
     // REMEDIASI Fase 5 (S5 — cakupan instalasi air): keterbatasan dari
     // template diteruskan apa adanya, ditambah catatan cakupan yang
@@ -716,7 +736,9 @@ export class ParametricVolumeEngine {
       overheadAmount,
       profitPercentage,
       profitAmount,
-      taxPercentage,
+      // §14: laporkan tarif EFEKTIF (0 bila pajak tidak di-opt-in) agar
+      // taxAmount == subtotal × taxPercentage tetap konsisten di audit.
+      taxPercentage: effectiveTaxPercentage,
       taxAmount,
       totalRabCost,
       costPerM2,

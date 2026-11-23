@@ -29,6 +29,17 @@ export interface RabItemInput extends Partial<RabItem> {
   volume: number;
   unit: string;
   /**
+   * W3/W9 (§9, S3-15/16) — basis volume item (runtime field, preseden
+   * `wbsNodeId` di bawah: tidak dideklarasikan di tipe `RabItem`,
+   * diteruskan factory sebagai field runtime; persistensi JSON
+   * membawanya utuh). `USER_DIMENSION` = volume dihitung dari dimensi
+   * yang diberikan pengguna; `ASSUMPTION` = volume memakai default
+   * template/asumsi. Dihitung `computeVolumeBasis` (specChain) saat
+   * transfer chat (`buildPushPayload`) — factory TIDAK PERNAH
+   * menyimpulkannya sendiri (tanpa nilai = field absen).
+   */
+  volumeBasis?: VolumeBasis;
+  /**
    * S6 (§6, P3D-O4) — tautan node WBS + status asosiasi, field RUNTIME
    * (tidak dideklarasikan di tipe `RabItem` — diteruskan sebagai field
    * runtime mengikuti preseden `priceStatus`/`priceSourceKind` yang
@@ -49,6 +60,17 @@ export interface RabItemFactoryOpts {
   /** default unit when itemData.unit is absent */
   defaultUnit?: string;
 }
+
+/**
+ * W3/W9 (§9, S3-15/16) — basis volume: dari mana angka volume berasal.
+ * `USER_DIMENSION` = rumus memakai ≥1 parameter dimensi yang diberikan
+ * pengguna; `ASSUMPTION` = rumus hanya memakai default template /
+ * konstanta (volume berbasis asumsi). Kosakata yang sama dengan
+ * `VolumeBasisItem.basis` (specChain `computeVolumeBasis`) — tipe ini
+ * tinggal di factory karena factory adalah pemilik record; pemanggil
+ * transfer mengimpor tipe ini (bukan menduplikasi literalnya).
+ */
+export type VolumeBasis = 'USER_DIMENSION' | 'ASSUMPTION';
 
 function randomSuffix(): string {
   return Math.random().toString(36).slice(2, 6);
@@ -220,6 +242,29 @@ export function createRabItemRecord(
     // nyata ada; tanpa ini rumus berhenti di DedFinalizeRabInput dan
     // Sheet 4 menampilkan 'Tidak tersedia'.
     ...(itemData.calculationFormula ? { calculationFormula: itemData.calculationFormula } : {}),
+    // W3/W9 (§9, S3-15): basis volume dari transfer chat
+    // (`buildPushPayload` → `computeVolumeBasis`) diteruskan apa
+    // adanya — factory adalah allowlist; tanpa ini basis hilang
+    // senyap saat kreasi item dan record pasca-transfer tidak bisa
+    // membedakan volume dari dimensi pengguna vs asumsi template.
+    // Tanpa nilai = field absen (tidak ada default karangan).
+    ...(itemData.volumeBasis ? { volumeBasis: itemData.volumeBasis } : {}),
+    // W3/W9 (§9, S3-15) + W7 (§7/S3-6): trace QTO terstruktur + ID
+    // komponen sumber diteruskan apa adanya — factory adalah
+    // allowlist; tanpa ini keduanya hilang senyap saat kreasi item
+    // (catatan W7 di tipe RabItem: "BELUM diteruskan factory").
+    // Salinan defensif (bukan referensi): trace milik draft/item
+    // pemanggil — record tidak boleh mengaliasi objek yang sama
+    // (pola priceValidationWarnings di atas).
+    ...(itemData.sourceComponentId ? { sourceComponentId: itemData.sourceComponentId } : {}),
+    ...(itemData.qtoTrace
+      ? {
+          qtoTrace: {
+            ...itemData.qtoTrace,
+            formulaInputs: { ...(itemData.qtoTrace.formulaInputs ?? {}) },
+          },
+        }
+      : {}),
     // S6 (§6, menutup P3D-O4): traceabilitas WBS diteruskan apa adanya —
     // factory adalah allowlist; tanpa ini `wbsCode` + tautan node yang
     // dibawa `buildPushPayload` hilang senyap (sebelum S6, `wbsCode`
@@ -260,6 +305,17 @@ export function createRabItemRecord(
  * atasnya: klaim VERIFIED atas identitas UNSAFE tetap diturunkan
  * (penurunan, bukan peningkatan — invarian tidak dilanggar).
  *
+ * `volumeBasis` (W3/W9, S3-15) IKUT disalin: salinan membawa volume
+ * yang SAMA dari basis yang SAMA (dimensi pengguna vs asumsi) —
+ * provenance volume, bukan identitas per baris. `calculationFormula`
+ * sudah ikut sejak F2 dengan alasan yang sama.
+ *
+ * `qtoTrace` + `sourceComponentId` (W3/W9, S3-15; W7) IKUT disalin:
+ * salinan adalah item kerja yang SAMA (rumus + komponen sumber yang
+ * sama) — tautan komponen BUKAN identitas per baris. Beda dengan
+ * `qtoItemId` di bawah (produk run kalkulasi spesifik — salinan
+ * BUKAN produk run itu).
+ *
  * SENGAJA DIKECUALIKAN (identitas, bukan provenance):
  * - `qtoItemId` / `calculationRunId` / `calculatorId`: salinan BUKAN
  *   produk run kalkulasi sumber; menyalinnya akan menautkan salinan
@@ -272,6 +328,9 @@ export function createRabItemRecord(
  *   sendiri (Fase 4A) di semua jalur duplikat.
  */
 export function cloneProvenance(item: RabItem): Partial<RabItem> {
+  // volumeBasis adalah field runtime (bukan di tipe RabItem — preseden
+  // wbsNodeId); dibaca via cast agar salinan tetap membawanya.
+  const volumeBasis = (item as { volumeBasis?: VolumeBasis }).volumeBasis;
   return {
     ...(item.verificationStatus ? { verificationStatus: item.verificationStatus } : {}),
     ...(item.priceSourceKind ? { priceSourceKind: item.priceSourceKind } : {}),
@@ -286,6 +345,16 @@ export function cloneProvenance(item: RabItem): Partial<RabItem> {
     ...(item.verificationDate ? { verificationDate: item.verificationDate } : {}),
     ...(item.userDecisionStatus ? { userDecisionStatus: item.userDecisionStatus } : {}),
     ...(item.calculationFormula ? { calculationFormula: item.calculationFormula } : {}),
+    ...(volumeBasis ? { volumeBasis } : {}),
+    ...(item.sourceComponentId ? { sourceComponentId: item.sourceComponentId } : {}),
+    ...(item.qtoTrace
+      ? {
+          qtoTrace: {
+            ...item.qtoTrace,
+            formulaInputs: { ...(item.qtoTrace.formulaInputs ?? {}) },
+          },
+        }
+      : {}),
     ...(item.isPartial ? { isPartial: true } : {}),
     ...(typeof item.unresolvedComponentCount === 'number'
       ? { unresolvedComponentCount: item.unresolvedComponentCount }

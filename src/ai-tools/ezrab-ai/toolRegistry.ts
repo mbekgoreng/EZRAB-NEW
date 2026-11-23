@@ -68,8 +68,11 @@ import {
   draftReadiness,
   formatUniversalDraftMessage,
   getLastUniversalDraft,
+  getLastUniversalDraftProjectId,
+  setLastUniversalDraft,
   type UniversalDraft,
 } from './universalRab';
+import { getDraftProjectEnsurer } from './tempProject';
 import { validateDraftChain, type ChainValidation } from './specChain';
 import {
   analyzeDraftCosts,
@@ -1360,6 +1363,38 @@ export async function executeTool(input: ExecuteToolInput): Promise<ExecuteToolR
     output: safeOutputPreview(output),
     approvedBy: input.approval?.actor ?? null,
   });
+  // F-ISO-4 (TEMPORARY, keputusan owner 2026-11-23): draft
+  // build_universal_draft yang baru di-commit dan masih TAK-TERIKAT
+  // diikat ke proyek lewat ensurer B5-3 yang SAMA (cermin hook di
+  // universalResultFor, actionRegistry.ts:2290-2306) — proyek sementara
+  // dibuat bila belum ada proyek aktif. Hanya jalur invoke SEGAR yang
+  // sampai ke sini (replay idempotensi return lebih dulu tanpa invoke
+  // dan tidak membangun ulang singleton); hanya tool ini (penjaga
+  // def.name — tanpa itu setiap tool sukses akan memicu ensurer).
+  // Kegagalan ensurer TIDAK PERNAH menggagalkan hasil tool.
+  // S3-C (F4, 2026-11-23): teruskan scope eksekusi
+  // (effectiveProjectId — projectId request / snapshot, BUKAN args)
+  // sebagai petunjuk ke ensurer. Tool di-commit SESUDAH await
+  // provider; tanpa petunjuk, ensurer membaca proyek LIVE dan draft
+  // dari konteks A terikat ke B bila pengguna pindah di tengah jalan
+  // (S7). Tanpa scope (pengiriman global) → perilaku F-ISO-4 persis
+  // (ensurer tanpa petunjuk: live, atau buat sementara).
+  if (def.name === 'build_universal_draft') {
+    try {
+      const freshDraft = getLastUniversalDraft();
+      if (freshDraft && getLastUniversalDraftProjectId() === null) {
+        const ensurer = getDraftProjectEnsurer();
+        if (ensurer) {
+          const ensured = effectiveProjectId
+            ? ensurer(freshDraft, effectiveProjectId)
+            : ensurer(freshDraft);
+          if (ensured) setLastUniversalDraft(freshDraft, ensured.id);
+        }
+      }
+    } catch {
+      /* binding gagal ≠ eksekusi gagal — draft tetap tampil tanpa ikatan */
+    }
+  }
   recordResultToMemory(def, done, output);
   return { ok: true, record: done, output };
 }

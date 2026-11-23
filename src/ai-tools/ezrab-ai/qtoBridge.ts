@@ -33,6 +33,18 @@
  * "bukaan belum diketahui") lewat `QtoCheck.derivationNotes` + baris
  * konteks `Catatan derivasi: …`. Keduanya HANYA ada bila item
  * membawanya; tanpa bukti, output byte-identik dengan sebelumnya.
+ *
+ * W7 (§7/S3-5, 2026-11-22): keluarga cek GENERIK di samping cek
+ * kata-kunci m³/m² yang dipertahankan — panjang (m vs dimensi linear),
+ * berat (kg/ton vs volume×rasio), hitung (unit/bh/set/titik vs jumlah
+ * elemen). Keluarga dipilih `resolveQtoCheckFamily` dari SATUAN dulu
+ * (satuan adalah kebenaran dimensi kuantitas), lalu dari peta kategori
+ * pekerjaan `WORK_CATEGORY_CHECK_FAMILY` bila satuannya generik
+ * (hitung/lumpsum). Berat TIDAK PERNAH memakai rasio karangan:
+ * tanpa `weightRatioKgPerM3` eksplisit di item, verdict CANNOT_CHECK.
+ * `thicknessM` sudah mengalir dari intake (`extractUniversalSpec` →
+ * `thicknessCm` → `dimsFromRawText`, actionRegistry) — tidak ada
+ * perubahan intake di sini.
  */
 
 /** Satu input derivasi (dimensi sumber: nama + nilai + satuan + sumber DED/USER/ASSUMPTION). */
@@ -47,6 +59,25 @@ export interface QtoItemLike {
   description: string;
   quantity: number | null;
   unit: string;
+  /**
+   * W7 (S3-5) — kategori pekerjaan terstruktur item (mis. 'CONCRETE',
+   * 'pembesian', 'pipa'). Dipakai `resolveQtoCheckFamily` HANYA bila
+   * satuan item generik (hitung/lumpsum); satuan dimensional (m³/m²/
+   * m/kg/ton) selalu menang. Absen = keluarga dari satuan saja.
+   */
+  category?: string | null;
+  /**
+   * W7 (S3-5) — rasio berat eksplisit (kg per m³ volume) untuk cek
+   * WEIGHT, mis. rasio tulangan dari derivasi DED / spek. TIDAK
+   * PERNAH diisi default — tanpa ini, item kg/ton CANNOT_CHECK.
+   */
+  weightRatioKgPerM3?: number | null;
+  /**
+   * W7 (S3-5) — jumlah elemen yang dinyatakan independen (mis. jumlah
+   * pintu dari jadwal DED) untuk cek COUNT. Tanpa ini, item hitung
+   * CANNOT_CHECK (jumlah tidak ditebak dari dimensi).
+   */
+  elementCount?: number | null;
   /** Input derivasi (DED): nilai + sumber DED/USER/ASSUMPTION. */
   derivationInputs?: QtoDerivationInput[];
   /** Catatan kuantitas dari DED (bila ada). */
@@ -115,6 +146,110 @@ const AREA_KEYWORDS = [
 ];
 
 /**
+ * W7 (§7/S3-5) — keluarga cek generik. Peta kategori pekerjaan →
+ * keluarga, dipakai HANYA bila satuan item generik (hitung/lumpsum)
+ * — satuan dimensional selalu menang di `resolveQtoCheckFamily`.
+ * Kunci dinormalisasi (huruf kecil, spasi tunggal). Kosakata kunci
+ * memakai kategori DED yang sudah ada (CONCRETE/MASONRY/EARTHWORK/
+ * FINISH/ROOF) + keluarga kerja generik; W2 (taksonomi universal)
+ * dapat memperluas peta ini tanpa mengubah logika cek.
+ */
+export type QtoCheckFamily = 'VOLUME' | 'AREA' | 'LENGTH' | 'WEIGHT' | 'COUNT';
+
+export const WORK_CATEGORY_CHECK_FAMILY: Record<string, QtoCheckFamily> = {
+  // Volume (m³) — kategori DED + padanan Indonesia.
+  concrete: 'VOLUME',
+  beton: 'VOLUME',
+  earthwork: 'VOLUME',
+  galian: 'VOLUME',
+  urugan: 'VOLUME',
+  timbunan: 'VOLUME',
+  masonry: 'VOLUME',
+  pondasi: 'VOLUME',
+  // Luas (m²).
+  finish: 'AREA',
+  finishing: 'AREA',
+  roof: 'AREA',
+  atap: 'AREA',
+  lantai: 'AREA',
+  dinding: 'AREA',
+  // Panjang (m) — pekerjaan linear.
+  pipa: 'LENGTH',
+  piping: 'LENGTH',
+  kabel: 'LENGTH',
+  cable: 'LENGTH',
+  drainase: 'LENGTH',
+  drainage: 'LENGTH',
+  saluran: 'LENGTH',
+  jalan: 'LENGTH',
+  road: 'LENGTH',
+  pagar: 'LENGTH',
+  fence: 'LENGTH',
+  // Berat (kg/ton).
+  pembesian: 'WEIGHT',
+  rebar: 'WEIGHT',
+  tulangan: 'WEIGHT',
+  aspal: 'WEIGHT',
+  asphalt: 'WEIGHT',
+  baja: 'WEIGHT',
+  steel: 'WEIGHT',
+  // Hitung (unit/bh/set/titik).
+  pintu: 'COUNT',
+  door: 'COUNT',
+  jendela: 'COUNT',
+  window: 'COUNT',
+  titik: 'COUNT',
+  fixture: 'COUNT',
+  'tiang pancang': 'COUNT',
+  pile: 'COUNT',
+};
+
+function normCategory(c: string | null | undefined): string {
+  return (c || '').toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * W7 (S3-5) — keluarga cek satu item. SATUAN dulu (kebenaran dimensi
+ * kuantitas): m³→VOLUME, m²→AREA, m/m1→LENGTH, kg/ton→WEIGHT,
+ * unit/bh/set/titik/buah/batang→COUNT. Bila satuan bukan dimensional
+ * (mis. 'ls' atau kosong), peta kategori yang memutuskan; bila
+ * keduanya bungkam → null (CANNOT_CHECK di pemanggil).
+ */
+export function resolveQtoCheckFamily(item: QtoItemLike): QtoCheckFamily | null {
+  const unit = normUnit(item.unit);
+  if (unit === 'm3') return 'VOLUME';
+  if (unit === 'm2') return 'AREA';
+  if (unit === 'm' || unit === 'm1') return 'LENGTH';
+  if (unit === 'kg' || unit === 'ton') return 'WEIGHT';
+  if (unit === 'unit' || unit === 'bh' || unit === 'set' || unit === 'titik' || unit === 'buah' || unit === 'batang') return 'COUNT';
+  return WORK_CATEGORY_CHECK_FAMILY[normCategory(item.category)] ?? null;
+}
+
+/**
+ * W7 (S3-5) — volume (m³) dari dimensi pengguna: L×W×kedalaman, lalu
+ * luas bangunan×tebal (dua derivasi yang sama dengan cabang VOLUME
+ * kata-kunci di bawah — perilaku m³ dipertahankan). `includeHeight`
+ * menambah L×W×tinggi sebagai sumber ketiga, HANYA untuk cek WEIGHT
+ * (volume beton kolom/balok) — cabang VOLUME kata-kunci tidak memakai
+ * sumber ketiga ini agar verdict m³ yang ada tidak berubah.
+ */
+function volumeFromDims(
+  dims: QtoUserDimensions,
+  includeHeight = false,
+): { value: number; basis: string } | null {
+  if (dims.lengthM != null && dims.widthM != null && dims.depthM != null) {
+    return { value: dims.lengthM * dims.widthM * dims.depthM, basis: `panjang × lebar × kedalaman (${dims.lengthM}×${dims.widthM}×${dims.depthM} m)` };
+  }
+  if (dims.buildingAreaM2 != null && dims.thicknessM != null) {
+    return { value: dims.buildingAreaM2 * dims.thicknessM, basis: `luas bangunan × tebal (${dims.buildingAreaM2} m² × ${dims.thicknessM} m)` };
+  }
+  if (includeHeight && dims.lengthM != null && dims.widthM != null && dims.heightM != null) {
+    return { value: dims.lengthM * dims.widthM * dims.heightM, basis: `panjang × lebar × tinggi (${dims.lengthM}×${dims.widthM}×${dims.heightM} m)` };
+  }
+  return null;
+}
+
+/**
  * Volume/luas yang diharapkan dari dimensi pengguna untuk satu item,
  * atau null bila tidak dapat diturunkan (bukan kegagalan — dinyatakan
  * CANNOT_CHECK di pemanggil).
@@ -142,6 +277,49 @@ export function expectedQuantityFromDimensions(
       return { expected: dims.buildingAreaM2, basis: `luas bangunan (${dims.buildingAreaM2} m²)` };
     }
     return { expected: null, basis: null };
+  }
+  // W7 (§7/S3-5) — keluarga cek generik (di bawah cabang kata-kunci
+  // agar perilaku m³/m² yang ada dipertahankan persis). Keluarga dari
+  // satuan/kategori, bukan dari kata kunci nama.
+  const family = resolveQtoCheckFamily(item);
+  if (family === 'VOLUME') {
+    const v = volumeFromDims(dims);
+    return v ? { expected: v.value, basis: v.basis } : { expected: null, basis: null };
+  }
+  if (family === 'AREA') {
+    if (dims.lengthM != null && dims.widthM != null) {
+      return { expected: dims.lengthM * dims.widthM, basis: `panjang × lebar (${dims.lengthM}×${dims.widthM} m)` };
+    }
+    if (dims.buildingAreaM2 != null) {
+      return { expected: dims.buildingAreaM2, basis: `luas bangunan (${dims.buildingAreaM2} m²)` };
+    }
+    return { expected: null, basis: null };
+  }
+  if (family === 'LENGTH') {
+    if (dims.lengthM != null) {
+      return { expected: dims.lengthM, basis: `panjang linear (${dims.lengthM} m)` };
+    }
+    return { expected: null, basis: null };
+  }
+  if (family === 'WEIGHT') {
+    const ratio = item.weightRatioKgPerM3;
+    if (ratio == null || !Number.isFinite(ratio) || ratio <= 0) {
+      return { expected: null, basis: null };
+    }
+    const v = volumeFromDims(dims, true);
+    if (!v) return { expected: null, basis: null };
+    const kg = v.value * ratio;
+    if (unit === 'ton') {
+      return { expected: kg / 1000, basis: `${v.basis} × rasio ${ratio} kg/m³ = ${kg} kg` };
+    }
+    return { expected: kg, basis: `${v.basis} × rasio ${ratio} kg/m³` };
+  }
+  if (family === 'COUNT') {
+    const n = item.elementCount;
+    if (n == null || !Number.isFinite(n) || n < 0) {
+      return { expected: null, basis: null };
+    }
+    return { expected: n, basis: `jumlah elemen (${n})` };
   }
   return { expected: null, basis: null };
 }

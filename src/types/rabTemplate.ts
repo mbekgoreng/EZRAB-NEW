@@ -214,6 +214,27 @@ export interface UserOverrideRecord {
   reason?: string;
 }
 
+/**
+ * Custom AHSP (W8, S3-12, 2026-11-22): satu komponen rakitan untuk item
+ * non-katalog. Harga komponen di-resolve per komponen dari master harga
+ * 2026 (`priceResolver2026.resolveResourcePrice`) oleh komposer
+ * `composeCustomAhspPrice` (rabTemplateService) — koefisien × harga
+ * satuan master, dijumlahkan sebagai biaya langsung. Tanpa fallback
+ * harga baked: komponen yang tidak ter-resolve membuat komposisi
+ * PARTIAL dan harga menjadi null (fail-closed).
+ */
+export interface CustomAhspComponent {
+  /** Kode sumber daya di master harga (opsional — resolusi bisa by-name). */
+  resourceCode?: string;
+  /** Nama sumber daya (dipakai untuk resolusi by-name bila kode kosong). */
+  resourceName: string;
+  resourceType: 'material' | 'labor' | 'equipment';
+  /** Koefisien per 1 satuan item (mis. 0,5 m3 pasir per m2 plesteran). Harus > 0. */
+  coefficient: number;
+  /** Satuan koefisien (mis. 'kg', 'm3', 'OH') — harus cocok dengan satuan master. */
+  unit: string;
+}
+
 export interface ConstructionComponentTemplate {
   id: string;
   name: string;
@@ -243,6 +264,15 @@ export interface ConstructionComponentTemplate {
   mappingStatus?: AhspMappingStatus;
   /** Catatan asal harga referensi (wajib jujur bila unitPrice bukan harga resmi). */
   priceNote?: string;
+  /**
+   * Custom AHSP (W8, S3-12): daftar komponen rakitan untuk item tanpa kode
+   * AHSP katalog. Bila diisi dan SEMUA komponen ter-resolve, harga item =
+   * jumlah biaya langsung komponen (kind CUSTOM_COMPOSED). Bila ada yang
+   * tidak ter-resolve, komposisi diabaikan dan resolver jatuh ke cabang
+   * harga referensi/unresolved seperti biasa (jumlah parsial tidak pernah
+   * dipakai). Kosong = perilaku lama, tanpa perubahan.
+   */
+  customComposition?: CustomAhspComponent[];
 }
 
 export interface CalculationRule {

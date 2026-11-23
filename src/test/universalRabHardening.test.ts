@@ -540,5 +540,17 @@ test('X-F2: koreksi kepemilikan "lantainya 1 saja" terbaca lapisan bersama penye
   assert.equal(parseFloorsMention('buatkan rab jalan'), null);
 });
 
+test('X-F3: angka luas sesudah "lantai" bukan jumlah lantai (cacat live 2026-11-22: "1 lantai 60 m2" → 60 lantai)', () => {
+  // Akar cacat: pola "lantai <angka>" memungut angka luas ("lantai 60")
+  // lalu aturan "kandidat terakhir menang" mengalahkan "1 lantai".
+  assert.equal(parseFloorsMention('Buatkan RAB rumah 1 lantai 60 m2 di Probolinggo, 3 kamar tidur'), 1);
+  assert.equal(parseFloorsMention('rumah 2 lantai 100 m2'), 2);
+  assert.equal(parseFloorsMention('rumah 1 lantai 60 m²'), 1);
+  assert.equal(parseFloorsMention('rumah 3 lantai 200 meter persegi'), 3);
+  // Bentuk sah "lantai <angka>" tidak berubah:
+  assert.equal(parseFloorsMention('rumah lantai 2'), 2);
+  assert.equal(parseFloorsMention('lantai 3, 100 m2'), 3);
+});
+
 console.log(`\nUNIVERSAL RAB HARDENING: ${passed} PASS, ${failed} FAIL`);
 if (failed > 0) process.exit(1);

@@ -38,11 +38,12 @@
  * ASSUMPTION_PENDING_APPROVAL, UNRESOLVED (belum diketahui/diputuskan).
  */
 
-import { extractRabNeeds, parseAreaNumber } from './rabNeeds';
+import { extractRabNeeds, parseAreaNumber, parseBudgetMentions, type BudgetMentionKind } from './rabNeeds';
+import { extractRabIntentSpec, houseViewFromSpec, mergeHouseViews } from './rabIntentSpec';
+import type { HouseSpecView } from './rabIntentSpec';
 import { extractUniversalSpec } from './universalRab';
 import { extractProjectContext, parseAreaMentionM2 } from './projectIntake';
 import { detectSubtypeFromText } from './rabSubtypes';
-import { RabTemplateService } from '../../services/rabTemplateService';
 import { conceptualWbsLines } from './conceptualWbs';
 /**
  * Impor NILAI dari questionnaire.ts AMAN (tanpa siklus runtime):
@@ -52,6 +53,10 @@ import { conceptualWbsLines } from './conceptualWbs';
  * structuredSpec.ts sendiri tidak mengimpor apa pun.
  */
 import { deriveStructuredSpecs } from './questionnaire';
+/* Batch 3 (§6.1) — basis ukuran MEP per subsistem (modul daun: hanya
+ * mengimpor TIPE dari universalRab, jadi impor nilai ini tidak
+ * bersiklus). */
+import { mepBasisFor } from './engineeringSpec';
 import { validateStructuredSpecs } from './structuredSpec';
 import { isValidDedSpec } from './structuredSpec';
 import type { StructuredSpec } from './structuredSpec';
@@ -88,394 +93,54 @@ export interface IntakeFact {
 }
 
 /* ------------------------------------------------------------------ */
-/* Klasifikasi universal (§2) — keluarga + subkategori. `catalog` =    */
-/* kategori RabTemplateService yang NYATA mendukung subkategori ini;   */
-/* `specific` = kata kunci yang dicocokkan ke nama/subkategori         */
-/* template untuk membedakan "didukung template khusus" vs "hanya      */
-/* didukung sebagian oleh paket kategori".                             */
+/* Taksonomi + klasifikasi + parser satuan: PINDAH ke                */
+/* universalTaxonomy.ts (W2/W10 §2, S1-R3/G13) — modul daun tanpa     */
+/* dependensi ke universalRab/universalIntake sehingga KEDUA lapisan  */
+/* (intake dan engine) dapat mengimpor SATU sumber yang sama tanpa    */
+/* siklus. Blok di bawah hanya mengimpor ulang untuk pemakaian        */
+/* internal file ini + mengekspor ulang agar SEMUA impor lama         */
+/* (`from './universalIntake'`) tetap berfungsi tanpa perubahan.      */
 /* ------------------------------------------------------------------ */
 
-export type UniversalFamily = 'building' | 'civil' | 'landscape' | 'mep' | 'specialized';
+import {
+  SUBCATEGORIES,
+  FAMILY_LABELS,
+  subcategoryById,
+  catalogCoverage,
+  coverageFor,
+  classifyUniversal,
+  findLinearMentions,
+  parseAnchoredLinear,
+  parseCountMentions,
+  parseVolumeMention,
+} from './universalTaxonomy';
+import type {
+  UniversalFamily,
+  SubcategoryDef,
+  Classification,
+} from './universalTaxonomy';
 
-export const FAMILY_LABELS: Record<UniversalFamily, string> = {
-  building: 'Pekerjaan bangunan',
-  civil: 'Pekerjaan sipil & infrastruktur',
-  landscape: 'Landscape & pengembangan lahan',
-  mep: 'Pekerjaan MEP',
-  specialized: 'Pekerjaan khusus',
-};
-
-export interface SubcategoryDef {
-  id: string;
-  family: UniversalFamily;
-  label: string;
-  detect: RegExp;
-  catalog: string[];
-  specific: string[];
-  /** id cakupan universalRab yang relevan (jembatan ke mesin). */
-  scopes: string[];
-  /** Alur khusus yang sudah ada memilikinya — intake universal tidak mencegat. */
-  protectedFlow?: 'house' | 'material-gate' | 'subtype' | 'landscape';
-}
-
-const S = (
-  id: string, family: UniversalFamily, label: string, detect: RegExp,
-  catalog: string[], specific: string[], scopes: string[],
-  protectedFlow?: SubcategoryDef['protectedFlow'],
-): SubcategoryDef => ({ id, family, label, detect, catalog, specific, scopes, protectedFlow });
-
-export const SUBCATEGORIES: SubcategoryDef[] = [
-  /* --- A. Bangunan --- */
-  S('renovasi', 'building', 'Renovasi / rehabilitasi / restorasi', /\b(renovasi|rehabilitasi|restorasi|retrofit|perkuatan)\b/, ['RENOVASI_MAINTENANCE'], ['renovasi', 'restorasi', 'retrofit', 'perkuatan'], ['renovasi']),
-  S('sekolah', 'building', 'Sekolah & fasilitas pendidikan', /\b(sekolah|madrasah|kampus|universitas|gedung kuliah|fasilitas pendidikan)\b/, ['PENDIDIKAN'], ['sekolah', 'pendidikan', 'kampus', 'madrasah'], ['gedung']),
-  S('kesehatan', 'building', 'Rumah sakit & fasilitas kesehatan', /\b(rumah sakit|klinik|puskesmas|fasilitas kesehatan|rumah bersalin)\b/, ['KESEHATAN'], ['klinik', 'puskesmas', 'medis', 'laboratorium'], ['gedung']),
-  S('hotel', 'building', 'Hotel & hospitality', /\b(hotel|ballroom|kondotel|villa)\b/, ['HOTEL_HOSPITALITY'], ['hotel', 'ballroom', 'villa'], ['gedung']),
-  S('kantor', 'building', 'Gedung perkantoran', /\b(kantor|perkantoran|office|gedung kantor)\b/, ['GEDUNG', 'BANGUNAN_TINGGI'], ['perkantoran', 'kantor', 'co-working', 'menara kantor'], ['gedung']),
-  S('komersial', 'building', 'Bangunan komersial', /\b(mall|pasar modern|minimarket|restoran|showroom|pertokoan|ruko|kafe|toko)\b/, ['GEDUNG', 'BANGUNAN_TINGGI', 'HOTEL_HOSPITALITY'], ['pasar modern', 'showroom', 'retail', 'minimarket'], ['gedung']),
-  S('gudang-industri', 'building', 'Gudang & bangunan industri', /\b(gudang|pabrik|workshop|warehouse|cold storage|bengkel|industri)\b/, ['INDUSTRI', 'GEDUNG'], ['gudang', 'pabrik', 'workshop', 'cold storage'], ['gedung']),
-  // Agrikultur/peternakan (Gelombang A Fase 6): sebelumnya TIDAK ada di
-  // taksonomi intake padahal scope-engine punya templatenya — pesan
-  // kandang jatuh ke menu generik (S1). Katalog: PERTANIAN_PERKEBUNAN.
-  S('kandang', 'specialized', 'Kandang & peternakan', /\b(kandang|peternakan)\b/, ['PERTANIAN_PERKEBUNAN'], ['kandang'], ['pertanian']),
-  S('bangunan-publik', 'building', 'Bangunan publik', /\b(masjid|musholla|mushola|gereja|tempat ibadah|aula|gedung serbaguna|balai|gedung pemerintah|perpustakaan|asrama)\b/, ['GEDUNG'], ['serbaguna', 'fasilitas umum', 'asrama'], ['gedung']),
-  S('apartemen', 'building', 'Apartemen & hunian bertingkat', /\b(apartemen|rumah susun|rusun)\b/, ['BANGUNAN_TINGGI'], ['apartemen', 'rumah susun', 'kondotel'], ['gedung']),
-  S('rumah', 'building', 'Rumah tinggal', /\b(rumah tinggal|rumah|hunian)\b/, ['RUMAH_TINGGAL'], ['rumah'], ['gedung'], 'house'),
-  // "bangunan" TIDAK dihitung bila bagian dari "luas bangunan" (itu
-  // dimensi, bukan fungsi); def ini fallback — gugur di classify bila
-  // ada def bangunan yang lebih spesifik.
-  S('bangunan-umum', 'building', 'Bangunan gedung', /\bgedung\b|(?<!luas )\bbangunan\b/, ['GEDUNG'], ['gedung'], ['gedung']),
-
-  /* --- B. Sipil & infrastruktur --- */
-  S('jembatan', 'civil', 'Jembatan', /\b(jembatan|jpo|flyover|overpass)\b/, ['JEMBATAN_STRUKTUR'], ['jembatan', 'jpo', 'box culvert bridge', 'slab bridge'], ['jembatan'], 'subtype'),
-  S('gorong-gorong', 'civil', 'Gorong-gorong & box culvert', /\b(gorong|box culvert)\b/, ['JEMBATAN_STRUKTUR', 'DRAINASE_SANITASI', 'SDA_IRIGASI'], ['box culvert', 'cross drain'], ['drainase', 'jembatan'], 'subtype'),
-  S('bendung', 'civil', 'Bendung & bangunan air', /\b(bendung|bendungan|embung|pintu air|check dam|bangunan air)\b/, ['SDA_IRIGASI'], ['bendung', 'embung', 'check dam', 'pintu air'], ['irigasi']),
-  S('irigasi', 'civil', 'Saluran irigasi', /\b(irigasi)\b/, ['SDA_IRIGASI'], ['irigasi'], ['irigasi']),
-  S('drainase', 'civil', 'Drainase & saluran', /\b(drainase|saluran air|u-?ditch)\b/, ['DRAINASE_SANITASI', 'SDA_IRIGASI'], ['u-ditch', 'drainase', 'sewer', 'box culvert'], ['drainase'], 'subtype'),
-  S('jalan-tol', 'civil', 'Jalan tol', /\b(jalan tol)\b/, ['JALAN_TRANSPORTASI'], [], ['jalan'], 'subtype'),
-  S('jalan-aspal', 'civil', 'Jalan aspal / hotmix', /\b(hotmix|hot mix|aspal|asphalt)\b/, ['JALAN_TRANSPORTASI', 'PERKERASAN'], ['perkerasan lentur', 'overlay aspal'], ['jalan'], 'subtype'),
-  S('jalan-beton', 'civil', 'Jalan beton / rigid', /\b(jalan|perkerasan)\b[^.]{0,24}\b(beton|rigid|rabat)\b|\b(rigid pavement|jalan beton)\b/, ['JALAN_TRANSPORTASI', 'PERKERASAN'], ['perkerasan kaku'], ['jalan'], 'subtype'),
-  S('jalan-lingkungan', 'civil', 'Jalan lingkungan / desa', /\b(jalan lingkungan|jalan desa)\b/, ['JALAN_TRANSPORTASI'], ['jalan lingkungan'], ['jalan'], 'subtype'),
-  S('jalan', 'civil', 'Jalan & perkerasan', /\b(jalan|perkerasan|paving)\b/, ['JALAN_TRANSPORTASI', 'PERKERASAN'], ['jalan', 'paving'], ['jalan'], 'subtype'),
-  S('dinding-penahan', 'civil', 'Dinding penahan tanah', /\b(dinding penahan|tembok penahan|retaining wall|turap)\b/, ['STRUKTUR_BETON_BAJA', 'PONDASI_GEOTEKNIK'], ['retaining', 'penahan'], ['lanskap', 'pondasi']),
-  S('pelindung-pantai', 'civil', 'Pelindung pantai & dermaga', /\b(breakwater|seawall|pengaman pantai|pelindung pantai|dermaga|pelabuhan|tetrapod)\b/, ['PELABUHAN_PESISIR'], ['seawall', 'breakwater', 'dermaga', 'pengaman pantai'], ['pelabuhan']),
-  S('pekerjaan-tanah', 'civil', 'Pekerjaan tanah & pematangan lahan', /\b(pekerjaan tanah|pematangan lahan|cut and fill|cut & fill|galian|urugan|timbunan|land clearing)\b/, ['PEKERJAAN_TANAH'], ['cut & fill', 'galian', 'timbunan', 'land clearing', 'terasering'], ['tanah']),
-
-  /* --- D. MEP --- */
-  S('fire-protection', 'mep', 'Fire protection', /\b(fire protection|hydrant|pemadam kebakaran|fire alarm)\b/, ['MEP_SYSTEM', 'UTILITAS'], ['fire protection', 'hydrant'], ['mep']),
-  S('hvac', 'mep', 'HVAC & tata udara', /\b(hvac|instalasi ac|tata udara|ventilasi|ac sentral)\b/, ['MEP_SYSTEM'], ['hvac', 'vrf'], ['mep']),
-  S('komunikasi-data', 'mep', 'Sistem komunikasi & data', /\b(sistem komunikasi|jaringan data|komunikasi dan data)\b/, ['MEP_SYSTEM'], ['data & komunikasi'], ['mep']),
-  S('lift', 'mep', 'Lift & eskalator', /\b(lift|eskalator)\b/, [], [], ['mep']),
-  S('plumbing', 'mep', 'Plumbing & sanitasi air', /\b(plumbing|perpipaan|air bersih|air kotor|sanitasi|septictank|septic tank|ipal)\b/, ['MEP_SYSTEM', 'UTILITAS', 'DRAINASE_SANITASI'], ['plumbing', 'air bersih', 'ipal', 'septik', 'stp'], ['mep', 'sanitasi']),
-  S('listrik', 'mep', 'Instalasi listrik & penerangan', /\b(instalasi listrik|elektrikal|panel listrik|phb|stop kontak|sakelar|penerangan|pju)\b/, ['MEP_SYSTEM', 'UTILITAS'], ['elektrikal', 'lighting', 'penerangan'], ['mep']),
-  S('mep-umum', 'mep', 'MEP (mekanikal & elektrikal)', /\b(mep|mekanikal)\b/, ['MEP_SYSTEM'], ['mep terintegrasi'], ['mep']),
-
-  /* --- E. Pekerjaan khusus --- */
-  S('pondasi', 'specialized', 'Pondasi', /\b(pondasi|bore pile|bored pile|tiang pancang|foot plat|sumuran|mini pile)\b/, ['PONDASI_GEOTEKNIK'], ['bored pile', 'tiang pancang', 'sumuran', 'mini pile', 'raft'], ['pondasi'], 'material-gate'),
-  S('struktur-atap', 'specialized', 'Struktur & penutup atap', /\b(rangka atap|penutup atap|atap|genteng)\b/, ['ATAP_WATERPROOFING'], ['genteng', 'standing seam', 'skylight', 'green roof'], ['atap'], 'material-gate'),
-  S('waterproofing', 'specialized', 'Waterproofing', /\b(waterproofing)\b/, ['ATAP_WATERPROOFING'], ['waterproofing'], ['atap'], 'material-gate'),
-  S('struktur-baja', 'specialized', 'Struktur baja', /\b(struktur baja|rangka baja)\b/, ['STRUKTUR_BETON_BAJA'], ['rangka baja', 'steel frame', 'space frame'], ['struktur']),
-  S('struktur-beton', 'specialized', 'Struktur beton bertulang', /\b(struktur beton|kolom|balok|sloof|pelat lantai|beton bertulang)\b/, ['STRUKTUR_BETON_BAJA'], ['pracetak', 'shear wall', 'post-tensioned'], ['struktur']),
-  S('fasad', 'specialized', 'Pekerjaan fasad', /\b(fasad|facade)\b/, ['FINISHING_INTERIOR', 'RENOVASI_MAINTENANCE'], ['fasad'], ['finishing']),
-  S('interior', 'specialized', 'Pekerjaan interior & fit-out', /\b(interior|fit ?out|fitout)\b/, ['FINISHING_INTERIOR', 'RENOVASI_MAINTENANCE'], ['fit-out', 'interior'], ['finishing']),
-  S('finishing', 'specialized', 'Finishing', /\b(finishing|keramik|granit|plafon|pengecatan|plester|acian|cat tembok)\b/, ['FINISHING_INTERIOR'], ['lantai', 'akustik', 'kitchen'], ['finishing']),
-  S('pintu-jendela', 'specialized', 'Pintu & jendela', /\b(pintu|jendela|kusen)\b/, ['FINISHING_INTERIOR'], [], ['finishing']),
-  S('pembongkaran', 'specialized', 'Pekerjaan pembongkaran', /\b(demolisi|pembongkaran|dibongkar)\b/, ['DEMOLISI_REKONSTRUKSI'], ['demolisi', 'bongkar', 'strip'], ['demolisi']),
-  S('pemeliharaan', 'specialized', 'Pekerjaan pemeliharaan', /\b(pemeliharaan|maintenance|perawatan gedung)\b/, ['RENOVASI_MAINTENANCE'], ['pemeliharaan', 'rehabilitasi'], ['renovasi']),
-
-  /* --- C. Landscape & pengembangan lahan (selain yang dimiliki gerbang landscape) --- */
-  S('taman-kota', 'landscape', 'Taman kota / taman publik', /\b(taman kota|taman publik|taman umum|ruang terbuka hijau|rth)\b/, ['LANDSCAPE_SITE'], ['taman kota'], ['lanskap'], 'landscape'),
-  S('landscape-komersial', 'landscape', 'Landscape komersial', /\b(landscape|lanskap)\b[^.]{0,24}\bkomersial\b|\blandscape komersial\b/, ['LANDSCAPE_SITE'], [], ['lanskap'], 'landscape'),
-  S('landscape-resort', 'landscape', 'Landscape resort', /\b(landscape|lanskap)\b[^.]{0,24}\b(resort|hotel|villa)\b|\blandscape resort\b/, ['LANDSCAPE_SITE'], ['kolam & waterfeature'], ['lanskap'], 'landscape'),
-  S('landscape-perumahan', 'landscape', 'Landscape perumahan', /\b(landscape|lanskap)\b[^.]{0,24}\bperumahan\b|\blandscape perumahan\b/, ['LANDSCAPE_SITE'], ['landscape & taman'], ['lanskap'], 'landscape'),
-  S('hardscape', 'landscape', 'Hardscape & streetscape', /\b(hardscape|streetscape|area parkir|parkir)\b/, ['LANDSCAPE_SITE'], ['streetscape'], ['lanskap']),
-  S('jogging-track', 'landscape', 'Jogging track', /\b(jogging|joging)\b/, ['LANDSCAPE_SITE', 'FASILITAS_OLAHRAGA'], ['jogging track'], ['olahraga', 'lanskap']),
-  S('playground', 'landscape', 'Playground', /\b(playground|taman bermain)\b/, [], [], ['lanskap']),
-  S('kolam', 'landscape', 'Kolam & water feature', /\b(kolam renang|water ?feature|kolam)\b/, ['LANDSCAPE_SITE', 'FASILITAS_OLAHRAGA'], ['kolam'], ['lanskap', 'olahraga']),
-  S('irigasi-landscape', 'landscape', 'Irigasi landscape', /\b(irigasi taman|sistem irigasi landscape|penyiraman taman)\b/, ['LANDSCAPE_SITE'], ['irigasi taman'], ['lanskap']),
-  S('pagar-gerbang', 'landscape', 'Pagar & gerbang', /\b(pagar|gerbang)\b/, ['LANDSCAPE_SITE'], ['pagar'], ['lanskap']),
-  S('landscape-umum', 'landscape', 'Landscape', /\b(landscape|lanskap|taman)\b/, ['LANDSCAPE_SITE'], ['landscape & taman', 'taman kota'], ['lanskap'], 'landscape'),
-];
-
-export function subcategoryById(id: string | null): SubcategoryDef | null {
-  if (!id) return null;
-  return SUBCATEGORIES.find((s) => s.id === id) ?? null;
-}
-
-/* ------------------------------------------------------------------ */
-/* Matriks cakupan katalog NYATA (§2/§15) — dihitung dari katalog      */
-/* hidup RabTemplateService setiap dipanggil; tidak ada angka yang    */
-/* dikarang di sini.                                                   */
-/* ------------------------------------------------------------------ */
-
-export type SupportLevel = 'didukung' | 'sebagian' | 'tidak-ada';
-
-export interface CoverageEntry {
-  subcategoryId: string;
-  label: string;
-  family: UniversalFamily;
-  /** Jumlah template pada kategori katalog yang dipetakan. */
-  categoryTemplateCount: number;
-  /** Jumlah template yang spesifik untuk subkategori ini. */
-  specificTemplateCount: number;
-  support: SupportLevel;
-  /** Contoh nama template spesifik (maks 3) untuk laporan/pratinjau. */
-  sampleTemplates: string[];
-}
-
-export function catalogCoverage(): CoverageEntry[] {
-  const svc = RabTemplateService.getInstance();
-  const all = svc.getAllTemplates();
-  return SUBCATEGORIES.map((def) => {
-    const inCategories = all.filter((t) => def.catalog.includes(t.category));
-    const specific = inCategories.filter((t) => {
-      const hay = `${t.name} ${t.subcategory ?? ''}`.toLowerCase();
-      return def.specific.some((k) => hay.includes(k));
-    });
-    const support: SupportLevel =
-      specific.length > 0 ? 'didukung' : inCategories.length > 0 ? 'sebagian' : 'tidak-ada';
-    return {
-      subcategoryId: def.id,
-      label: def.label,
-      family: def.family,
-      categoryTemplateCount: inCategories.length,
-      specificTemplateCount: specific.length,
-      support,
-      sampleTemplates: specific.slice(0, 3).map((t) => t.name),
-    };
-  });
-}
-
-export function coverageFor(def: SubcategoryDef): CoverageEntry {
-  return catalogCoverage().find((c) => c.subcategoryId === def.id)!;
-}
-
-/* ------------------------------------------------------------------ */
-/* Klasifikasi teks (§2 + F multi-disiplin)                            */
-/* ------------------------------------------------------------------ */
-
-export interface Classification {
-  primary: SubcategoryDef | null;
-  secondary: SubcategoryDef[];
-  matches: SubcategoryDef[];
-  isMulti: boolean;
-}
-
-/** Prioritas disiplin untuk memilih primer pada proyek gabungan. */
-const PRIMARY_PRIORITY: Record<string, number> = {
-  renovasi: 0, sekolah: 1, kesehatan: 1, hotel: 1, kantor: 1, komersial: 1,
-  kandang: 1,
-  'gudang-industri': 1, 'bangunan-publik': 1, apartemen: 1, 'bangunan-umum': 2,
-  jembatan: 3, drainase: 3, irigasi: 3, bendung: 3, 'gorong-gorong': 3,
-  'jalan-tol': 4, 'jalan-aspal': 4, 'jalan-beton': 4, 'jalan-lingkungan': 4, jalan: 4,
-  'dinding-penahan': 4, 'pelindung-pantai': 4, 'pekerjaan-tanah': 4,
-  'fire-protection': 5, hvac: 5, 'komunikasi-data': 5, lift: 5, plumbing: 5, listrik: 5, 'mep-umum': 5,
-  pondasi: 6, 'struktur-atap': 6, waterproofing: 6, 'struktur-baja': 6, 'struktur-beton': 6,
-  fasad: 6, interior: 6, finishing: 6, 'pintu-jendela': 6, pembongkaran: 6, pemeliharaan: 6,
-  rumah: 7,
-  'taman-kota': 8, 'landscape-komersial': 8, 'landscape-resort': 8, 'landscape-perumahan': 8,
-  hardscape: 8, 'jogging-track': 8, playground: 8, kolam: 8, 'irigasi-landscape': 8,
-  'pagar-gerbang': 8, 'landscape-umum': 9,
-};
-
-export function classifyUniversal(text: string): Classification {
-  const t = ` ${(text || '').toLowerCase().replace(/\s+/g, ' ')} `;
-  let matches = SUBCATEGORIES.filter((d) => d.detect.test(t));
-  if (!matches.length) return { primary: null, secondary: [], matches: [], isMulti: false };
-  // Fallback generik "bangunan gedung" gugur bila ada def lain yang
-  // lebih spesifik ("gedung kantor" tidak butuh def generiknya).
-  if (matches.length > 1) matches = matches.filter((d) => d.id !== 'bangunan-umum');
-  // Disiplin = subkategori, kecuali varian jalan (aspal/beton/lingkungan/
-  // tol/umum) yang merupakan SATU disiplin jalan, dan varian landscape
-  // konsep yang merupakan satu disiplin landscape.
-  const disciplineOf = (d: SubcategoryDef): string => {
-    if (d.id.startsWith('jalan')) return 'jalan';
-    if (d.family === 'landscape') return 'landscape';
-    if (d.id === 'bangunan-umum') return 'bangunan-umum';
-    return d.id;
-  };
-  const disciplines = new Set(matches.map(disciplineOf));
-  // G2 (F8 buildingTypology): komponen bangunan — famili 'specialized'
-  // kecuali kandang (pondasi, struktur/atap, waterproofing, struktur
-  // baja/beton, fasad, interior, finishing, pintu-jendela, dsb.) —
-  // adalah BAGIAN dari bangunan, bukan disiplin terpisah. Bila ada
-  // disiplin bangunan di antara matches, komponen tidak menambah
-  // disiplin: 'gudang + atap baja ringan' adalah satu bangunan (atap
-  // ada di conceptualWbs gudang; roofSystem adalah field bangunan di
-  // buildingTypology), bukan proyek multi-disiplin. Tanpa ini,
-  // universalIntakeGate mencegat permintaan gudang yang sudah lengkap
-  // dan menanyakan pembangunan-baru-vs-renovasi alih-alih menyusun
-  // draft. Preseden: pengecualian 'rumah + renovasi' di bawah.
-  // 'secondary' sengaja TIDAK diubah — ia informatif (cakupan yang
-  // disebut), sedangkan isMulti adalah sakelar perilaku gerbang.
-  const hasBuildingDiscipline = matches.some((d) => d.family === 'building' || d.id === 'kandang');
-  if (hasBuildingDiscipline) {
-    for (const d of matches) {
-      if (d.family === 'specialized' && d.id !== 'kandang') disciplines.delete(disciplineOf(d));
-    }
-  }
-  // 'rumah' + 'renovasi' bukan multi — renovasi adalah cara pengerjaan
-  // atas rumah itu (primer renovasi, rumah konteksnya).
-  const isMulti = disciplines.size >= 2 && !(disciplines.size === 2 && disciplines.has('rumah') && disciplines.has('renovasi'));
-  const sorted = [...matches].sort(
-    (a, b) => (PRIMARY_PRIORITY[a.id] ?? 9) - (PRIMARY_PRIORITY[b.id] ?? 9)
-  );
-  let primary = sorted[0];
-  // INTENT-FIRST (2026-11-20): komponen bangunan (famili 'specialized':
-  // pondasi, struktur/atap, waterproofing, fasad, interior, ...) adalah
-  // BAGIAN dari bangunan — logika G2 di atas sudah menerapkannya untuk
-  // isMulti, tetapi pemilihan PRIMER masih menempatkan komponen (prioritas
-  // 6) di atas rumah (7). Akibatnya frasa lingkup "pondasi sampai atap"
-  // membuat permintaan RUMAH terklasifikasi primer 'pondasi', dan
-  // specRabHijackGuard membajaknya dari mesin rumah. Bila ada disiplin
-  // bangunan di antara matches, primer diambil dari disiplin bangunan
-  // (komponen tetap tercatat di secondary/matches; blok objek-pertama
-  // MEP/landscape di bawah tetap dapat mempromosikan di atasnya).
-  // Tanpa disiplin bangunan perilaku tidak berubah ("buatkan rab
-  // waterproofing" tetap primer waterproofing).
-  if (hasBuildingDiscipline) {
-    const buildingFirst = sorted.find((d) => d.family === 'building' || d.id === 'kandang');
-    if (buildingFirst) primary = buildingFirst;
-  }
-  // Sistem MEP yang disebut SEBAGAI objek utama kalimat ("buatkan rab
-  // instalasi listrik gedung kantor") menjadi primer — gedungnya
-  // konteks. Bila gedung disebut lebih dulu, gedung tetap primer.
-  if (primary.family === 'building') {
-    const idxOf = (d: SubcategoryDef): number => {
-      const i = t.search(d.detect);
-      return i < 0 ? Number.MAX_SAFE_INTEGER : i;
-    };
-    const mepFirst = matches
-      .filter((d) => d.family === 'mep')
-      .sort((a, b) => idxOf(a) - idxOf(b))[0];
-    if (mepFirst && idxOf(mepFirst) < idxOf(primary)) primary = mepFirst;
-  }
-  // FASE 4 (CHAT-05 + E-T1) — objek-pertama: bila disiplin landscape
-  // (kolam / taman / playground) disebut SEBELUM bangunan yang menjadi
-  // primer, landscape itulah objek proyeknya dan bangunan hanya konteks
-  // lokasi ("kolam renang di halaman rumah", "taman di depan rumah").
-  // Sebaliknya "rumah dengan kolam renang" tetap primer rumah (kolam
-  // disebut sesudah rumah = cakupan tambahan, bukan subordinat yang
-  // hilang). Aturan ini HANYA mempromosikan bila landscape muncul
-  // lebih dulu di teks — urutan prioritas lain tidak berubah.
-  if (primary.family === 'building') {
-    const idxOf = (d: SubcategoryDef): number => {
-      const i = t.search(d.detect);
-      return i < 0 ? Number.MAX_SAFE_INTEGER : i;
-    };
-    const landscapeFirst = matches
-      .filter((d) => d.family === 'landscape')
-      .sort((a, b) => idxOf(a) - idxOf(b) || (PRIMARY_PRIORITY[a.id] ?? 9) - (PRIMARY_PRIORITY[b.id] ?? 9))[0];
-    if (landscapeFirst && idxOf(landscapeFirst) < idxOf(primary)) primary = landscapeFirst;
-  }
-  const secondary = sorted.filter((d) => d.id !== primary.id && disciplineOf(d) !== disciplineOf(primary));
-  return { primary, secondary, matches, isMulti };
-}
-
-/* ------------------------------------------------------------------ */
-/* Parser satuan Indonesia (§6) — linear (km/m/cm/mm), jumlah          */
-/* (titik/unit/set/buah), volume (m³). Nilai ASLI dipertahankan;       */
-/* konversi ditandai SYSTEM_DERIVED oleh pemanggil. Semantik koreksi   */
-/* "bukan X, tapi Y" sama seperti parseAreaMentionM2: nilai yang       */
-/* dibatalkan tidak menang.                                            */
-/* ------------------------------------------------------------------ */
-
-const LINEAR_FACTORS: Record<string, number> = {
-  km: 1000, kilometer: 1000, m: 1, meter: 1, cm: 0.01, centimeter: 0.01, mm: 0.001, milimeter: 0.001,
-};
-const LINEAR_RE = /(\d+(?:[.,]\d+)?)\s*(kilometer|km|centimeter|cm|milimeter|mm|meter|m)\b/gi;
-
-function cancelledLinearValues(text: string): number[] {
-  const t = (text || '').toLowerCase();
-  const out: number[] = [];
-  for (const m of t.matchAll(/\bbukan\s+(\d+(?:[.,]\d+)?)\s*(kilometer|km|centimeter|cm|milimeter|mm|meter|m)\b/g)) {
-    const v = parseAreaNumber(m[1]);
-    if (v == null) continue;
-    out.push(Math.round(v * (LINEAR_FACTORS[m[2]] ?? 1) * 1000) / 1000);
-  }
-  return out;
-}
-
-export interface LinearHit { valueM: number; original: string; pos: number }
-
-/** Semua penyebutan linear pada teks, berurutan posisi. */
-export function findLinearMentions(text: string): LinearHit[] {
-  const t = (text || '').toLowerCase();
-  const hits: LinearHit[] = [];
-  for (const m of t.matchAll(LINEAR_RE)) {
-    const v = parseAreaNumber(m[1]);
-    if (v == null || v <= 0) continue;
-    hits.push({
-      valueM: Math.round(v * (LINEAR_FACTORS[m[2]] ?? 1) * 1000) / 1000,
-      original: `${m[1]} ${m[2]}`,
-      pos: m.index ?? 0,
-    });
-  }
-  return hits;
-}
-
-/**
- * Penyebutan linear yang menempel pada kata kunci dimensi tertentu
- * ("lebar 5 meter", "sepanjang 2 km", "bentang 12 meter",
- * "kedalaman 1,5 m", "tinggi 3 meter"). Mengembalikan penyebutan
- * terakhir yang tidak dibatalkan pola koreksi.
- */
-export function parseAnchoredLinear(
-  text: string,
-  anchors: string[],
-): { valueM: number; original: string } | null {
-  const t = (text || '').toLowerCase();
-  const cancelled = cancelledLinearValues(t);
-  const hits: LinearHit[] = [];
-  for (const anchor of anchors) {
-    const re = new RegExp(`\\b${anchor}(?:nya)?\\b[^\\d]{0,20}?(\\d+(?:[.,]\\d+)?)\\s*(kilometer|km|centimeter|cm|milimeter|mm|meter|m)\\b`, 'gi');
-    for (const m of t.matchAll(re)) {
-      const v = parseAreaNumber(m[1]);
-      if (v == null || v <= 0) continue;
-      hits.push({
-        valueM: Math.round(v * (LINEAR_FACTORS[m[2]] ?? 1) * 1000) / 1000,
-        original: `${m[1]} ${m[2]}`,
-        pos: m.index ?? 0,
-      });
-    }
-  }
-  const live = hits.filter((h) => !cancelled.includes(h.valueM)).sort((a, b) => a.pos - b.pos);
-  if (live.length) return live[live.length - 1];
-  // Semua hit berjangkar dibatalkan pola koreksi ("panjangnya bukan
-  // 2 km, tapi 1500 meter") — nilai penggantinya tidak berjangkar;
-  // ambil penyebutan linear terakhir yang tidak dibatalkan.
-  if (hits.length) {
-    const free = findLinearMentions(text).filter((h) => !cancelled.includes(h.valueM));
-    if (free.length) {
-      const last = free[free.length - 1];
-      return { valueM: last.valueM, original: last.original };
-    }
-  }
-  return null;
-}
-
-/** Jumlah satuan hitung: "40 titik", "12 unit", "3 set", "25 buah". */
-export function parseCountMentions(text: string): Array<{ value: number; unit: string; original: string }> {
-  const t = (text || '').toLowerCase();
-  const out: Array<{ value: number; unit: string; original: string }> = [];
-  for (const m of t.matchAll(/(\d+(?:[.,]\d+)?)\s*(titik|unit|set|buah|ekor)\b/g)) {
-    const v = parseAreaNumber(m[1]);
-    if (v == null || v <= 0) continue;
-    out.push({ value: v, unit: m[2], original: `${m[1]} ${m[2]}` });
-  }
-  return out;
-}
-
-/** Volume m³ yang disebut ("volume 250 m3", "galian 1.200 m³"). */
-export function parseVolumeMention(text: string): { valueM3: number; original: string } | null {
-  const t = (text || '').toLowerCase();
-  let last: { valueM3: number; original: string } | null = null;
-  for (const m of t.matchAll(/(\d+(?:[.,]\d+)?)\s*m(?:3|³)\b/g)) {
-    const v = parseAreaNumber(m[1]);
-    if (v == null || v <= 0) continue;
-    last = { valueM3: v, original: `${m[1]} m³` };
-  }
-  return last;
-}
+export {
+  SUBCATEGORIES,
+  FAMILY_LABELS,
+  subcategoryById,
+  catalogCoverage,
+  coverageFor,
+  classifyUniversal,
+  findLinearMentions,
+  parseAnchoredLinear,
+  parseCountMentions,
+  parseVolumeMention,
+  cancelledLinearValues,
+} from './universalTaxonomy';
+export type {
+  UniversalFamily,
+  SubcategoryDef,
+  SupportLevel,
+  CoverageEntry,
+  Classification,
+  LinearHit,
+} from './universalTaxonomy';
 
 /* ------------------------------------------------------------------ */
 /* Konteks intake universal (§6)                                       */
@@ -502,7 +167,8 @@ export interface ScopeItem {
 /* masuk budgetHistory, konteks lain tidak disentuh.                   */
 /* ------------------------------------------------------------------ */
 
-export type BudgetKind = 'MAXIMUM' | 'ESTIMATED' | 'TARGET' | 'UNSPECIFIED';
+/** Jenis batas budget — alias atas jenis kanonis parser budget (rabNeeds). */
+export type BudgetKind = BudgetMentionKind;
 
 /* Cakupan budget (Wave C, menutup celah T29): budget yang dinyatakan  */
 /* "sudah termasuk peralatan dan instalasi air" TIDAK setara dengan    */
@@ -631,47 +297,13 @@ export const BUDGET_KIND_LABELS: Record<BudgetKind, string> = {
   UNSPECIFIED: 'disebut tanpa kualifier batas',
 };
 
-const BUDGET_UNIT_FACTORS: Record<string, number> = {
-  miliar: 1_000_000_000, milyar: 1_000_000_000, jt: 1_000_000, juta: 1_000_000, rb: 1_000, ribu: 1_000,
-};
-
-/** Parse SATU penyebutan budget dari teks (yang terakhir & tidak dibatalkan koreksi "bukan X"). */
+/** Parse SATU penyebutan budget dari teks (yang TERAKHIR). Pembungkus
+ * tipis atas parser KANONIS `parseBudgetMentions` (rabNeeds — S1-R2/F11)
+ * yang menambah cakupan budget terstruktur; pola, guard "uang", dan
+ * semantik koreksi "bukan X" semuanya milik parser kanonis itu. */
 export function parseBudgetMention(text: string): BudgetContext | null {
-  const t = ` ${(text || '').toLowerCase().replace(/\s+/g, ' ')} `;
-  const cancelled = new Set<number>();
-  for (const m of t.matchAll(/\bbukan\s+(?:rp\.?\s*)?(\d[\d.]*(?:,\d+)?)\s*(miliar|milyar|jt|juta|rb|ribu)?\b/g)) {
-    const v = parseAreaNumber(m[1]);
-    if (v != null) cancelled.add(Math.round(v * (BUDGET_UNIT_FACTORS[m[2] ?? ''] ?? 1)));
-  }
-  let last: BudgetContext | null = null;
-  // Kata sisipan wajar antara kata kunci budget dan angkanya ("budget
-  // menjadi 400 juta", "anggaran saya 100 juta", "dana sebesar 2 miliar")
-  // tidak boleh menggagalkan pembacaan — tanpa sisipan ini koreksi
-  // budget yang paling umum justru tidak terbaca (Gelombang B, T23/I04).
-  const re = /(?:anggaran|budget|dana|biaya|maks(?:imal)?|mentok)\s*(?:maksimal|maks|mentok)?\s*(?:sekitar|kisaran|kira-kira)?\s*(?:rp\.?\s*)?(?:\s*(?:menjadi|sebesar|senilai|adalah|saya|ke))*\s*(\d[\d.]*(?:,\d+)?)\s*(miliar|milyar|jt|juta|rb|ribu)\b/g;
-  for (const m of t.matchAll(re)) {
-    const v = parseAreaNumber(m[1]);
-    if (v == null || v <= 0) continue;
-    const amount = Math.round(v * (BUDGET_UNIT_FACTORS[m[2]] ?? 1));
-    if (cancelled.has(amount)) continue;
-    const start = m.index ?? 0;
-    const windowBefore = t.slice(Math.max(0, start - 30), start + m[0].length);
-    let kind: BudgetKind = 'UNSPECIFIED';
-    if (/\b(maksimal|maks|mentok|paling banyak)\b/.test(windowBefore) || /\b(budget|anggaran|dana)\s+(maksimal|maks|mentok)\b/.test(t.slice(start, start + 40))) kind = 'MAXIMUM';
-    else if (/\b(sekitar|kisaran|kira-kira)\b/.test(windowBefore)) kind = 'ESTIMATED';
-    else if (/\btarget\b/.test(windowBefore)) kind = 'TARGET';
-    last = { amount, kind, original: m[0].trim(), coverage: parseBudgetCoverage(text) };
-  }
-  if (last) return last;
-  // Bentuk Rp penuh tanpa satuan ("budget Rp275.000.000").
-  for (const m of t.matchAll(/(?:anggaran|budget|dana)\s*(?:maksimal|maks|mentok|sekitar|kisaran)?\s*(?:\s*(?:menjadi|sebesar|senilai|adalah|saya|ke))*\s*rp\.?\s*(\d{1,3}(?:\.\d{3})+|\d{7,})\b/g)) {
-    const v = parseAreaNumber(m[1]);
-    if (v == null || v <= 0 || cancelled.has(Math.round(v))) continue;
-    const windowBefore = t.slice(Math.max(0, (m.index ?? 0) - 30), (m.index ?? 0) + m[0].length);
-    const kind: BudgetKind = /\b(maksimal|maks|mentok)\b/.test(windowBefore) ? 'MAXIMUM' : /\b(sekitar|kisaran)\b/.test(windowBefore) ? 'ESTIMATED' : 'UNSPECIFIED';
-    last = { amount: Math.round(v), kind, original: m[0].trim(), coverage: parseBudgetCoverage(text) };
-  }
-  return last;
+  const all = parseAllBudgetMentions(text);
+  return all.length ? all[all.length - 1] : null;
 }
 
 /**
@@ -680,39 +312,17 @@ export function parseBudgetMention(text: string): BudgetContext | null {
  * revisi dalam satu pesan ("anggaran 300 juta anggaran 250 juta")
  * kehilangan nilai sebelumnya; pemanggil memakai daftar ini untuk
  * mengisi `budgetHistory` (nilai lama) + koreksi, selaras semantik
- * last-match rantai spek Fase 2.
+ * last-match rantai spek Fase 2. Pola milik parser kanonis
+ * `parseBudgetMentions` (rabNeeds); di sini hanya ditambah cakupan.
  */
 export function parseAllBudgetMentions(text: string): BudgetContext[] {
-  const t = ` ${(text || '').toLowerCase().replace(/\s+/g, ' ')} `;
-  const cancelled = new Set<number>();
-  for (const m of t.matchAll(/\bbukan\s+(?:rp\.?\s*)?(\d[\d.]*(?:,\d+)?)\s*(miliar|milyar|jt|juta|rb|ribu)?\b/g)) {
-    const v = parseAreaNumber(m[1]);
-    if (v != null) cancelled.add(Math.round(v * (BUDGET_UNIT_FACTORS[m[2] ?? ''] ?? 1)));
-  }
-  const found: Array<{ ctx: BudgetContext; index: number }> = [];
-  const re = /(?:anggaran|budget|dana|biaya|maks(?:imal)?|mentok)\s*(?:maksimal|maks|mentok)?\s*(?:sekitar|kisaran|kira-kira)?\s*(?:rp\.?\s*)?(?:\s*(?:menjadi|sebesar|senilai|adalah|saya|ke))*\s*(\d[\d.]*(?:,\d+)?)\s*(miliar|milyar|jt|juta|rb|ribu)\b/g;
-  for (const m of t.matchAll(re)) {
-    const v = parseAreaNumber(m[1]);
-    if (v == null || v <= 0) continue;
-    const amount = Math.round(v * (BUDGET_UNIT_FACTORS[m[2]] ?? 1));
-    if (cancelled.has(amount)) continue;
-    const start = m.index ?? 0;
-    const windowBefore = t.slice(Math.max(0, start - 30), start + m[0].length);
-    let kind: BudgetKind = 'UNSPECIFIED';
-    if (/\b(maksimal|maks|mentok|paling banyak)\b/.test(windowBefore) || /\b(budget|anggaran|dana)\s+(maksimal|maks|mentok)\b/.test(t.slice(start, start + 40))) kind = 'MAXIMUM';
-    else if (/\b(sekitar|kisaran|kira-kira)\b/.test(windowBefore)) kind = 'ESTIMATED';
-    else if (/\btarget\b/.test(windowBefore)) kind = 'TARGET';
-    found.push({ ctx: { amount, kind, original: m[0].trim(), coverage: parseBudgetCoverage(text) }, index: start });
-  }
-  for (const m of t.matchAll(/(?:anggaran|budget|dana)\s*(?:maksimal|maks|mentok|sekitar|kisaran)?\s*(?:\s*(?:menjadi|sebesar|senilai|adalah|saya|ke))*\s*rp\.?\s*(\d{1,3}(?:\.\d{3})+|\d{7,})\b/g)) {
-    const v = parseAreaNumber(m[1]);
-    if (v == null || v <= 0 || cancelled.has(Math.round(v))) continue;
-    const windowBefore = t.slice(Math.max(0, (m.index ?? 0) - 30), (m.index ?? 0) + m[0].length);
-    const kind: BudgetKind = /\b(maksimal|maks|mentok)\b/.test(windowBefore) ? 'MAXIMUM' : /\b(sekitar|kisaran)\b/.test(windowBefore) ? 'ESTIMATED' : 'UNSPECIFIED';
-    found.push({ ctx: { amount: Math.round(v), kind, original: m[0].trim(), coverage: parseBudgetCoverage(text) }, index: m.index ?? 0 });
-  }
-  found.sort((a, b) => a.index - b.index);
-  return found.map((f) => f.ctx);
+  const coverage = parseBudgetCoverage(text);
+  return parseBudgetMentions(text).map((m) => ({
+    amount: m.amount,
+    kind: m.kind,
+    original: m.original,
+    coverage,
+  }));
 }
 
 /* ------------------------------------------------------------------ */
@@ -905,6 +515,15 @@ export interface UniversalIntakeContext {
   askedKeys: string[];
   forceGenerate: boolean;
   combinedText: string;
+  /**
+   * View rumah (W2/W10 §2, S1-R3): field rumah (kamar, kualitas,
+   * pengecualian, …) dari teks giliran — digabung antar-giliran
+   * (mergeHouseViews) seperti field universal lainnya, agar jalur
+   * universal multi-giliran dapat MEMBACA field rumah. Absen bila
+   * tidak ada field rumah yang pernah disebut. Dipersistensi lewat
+   * spread `rest` di serialize (data JSON polos).
+   */
+  house?: HouseSpecView;
 }
 
 export const emptyUniversalIntake = (): UniversalIntakeContext => ({
@@ -1055,6 +674,15 @@ export function extractUniversalContext(text: string, base?: UniversalIntakeCont
     }
   }
 
+  // --- View rumah (W2/W10 §2, S1-R3): field rumah dari giliran ini
+  // (kamar, kualitas, pengecualian, …) digabung ke konteks agar
+  // lestari antar-giliran seperti field universal lainnya. ---
+  const turnHouse = houseViewFromSpec(extractRabIntentSpec(raw));
+  if (turnHouse) {
+    const mergedHouse = mergeHouseViews(ctx.house, turnHouse);
+    if (mergedHouse) ctx.house = mergedHouse;
+  }
+
   // --- Lapisan bersama (projectIntake): luas hektar/are + lokasi +
   // kondisi lahan + preferensi — dipakai ulang, bukan ditulis ulang. ---
   const shared = extractProjectContext(raw);
@@ -1181,7 +809,10 @@ export function extractUniversalContext(text: string, base?: UniversalIntakeCont
 
   // --- Dimensi dari parser kebutuhan bersama ---
   const needs = extractRabNeeds(raw);
-  const spec = extractUniversalSpec(raw);
+  // W2/W10 §2: klasifikasi giliran ini (cls) DITERUSKAN ke ekstraksi
+  // spek — intake dan engine memakai SATU objek klasifikasi yang sama,
+  // bukan dua hasil klasifikasi yang bisa berbeda.
+  const spec = extractUniversalSpec(raw, { classification: cls });
   const areaMention = parseAreaMentionM2(raw);
   // "Luas bangunannya …" secara eksplisit adalah luas BANGUNAN (Contoh F).
   const buildingAreaMention = /luas bangunan/.test(t) ? areaMention : null;
@@ -1557,6 +1188,38 @@ const hasAnyMeasure = (ctx: UniversalIntakeContext): boolean =>
   ctx.lengthM != null || ctx.landAreaM2 != null || ctx.buildingAreaM2 != null ||
   ctx.volumeM3 != null || ctx.dimensionsText != null || ctx.counts.length > 0;
 
+/**
+ * Definisi pertanyaan intake per subkategori utama (54) + keluarga.
+ *
+ * HUBUNGAN DENGAN criticalFieldsFor (rabIntentFlow.ts, W6) — TIDAK
+ * DI-WIRE (keputusan W2/W10, 2026-11-22; lihat laporan koordinator):
+ * kedua tabel memakai kata "kritis" dengan SEMANTIK BERBEDA. Tabel W6
+ * menjawab "field apa yang ditanyakan bila basis terukur hilang"
+ * (klarifikasi satu-shot; SEMUA field-nya kritis). Flag `critical` di
+ * sini menjawab "pertanyaan apa yang memblokir progres ke brief"
+ * (multi-giliran; sebagian pertanyaan ukuran SENGAJA non-kritis —
+ * "jawab 'itu aja'", nilainya mengikuti template/default — lihat
+ * selectNextQuestion: non-kritis hanya diajukan sebagai pertanyaan
+ * pertama intake).
+ *
+ * Divergensi yang DIKETAHUI (dipin perilaku di
+ * universalClassification.test.ts §8 — wiring yang mengubahnya harus
+ * mengubah pin itu secara sadar + keputusan koordinator):
+ * - bridge-width, drainage-dims, renovation-area: non-kritis di sini,
+ *   tetapi field-nya ada di tabel W6 (jembatan: span+width; drainase:
+ *   length+channelDims; renovasi: area).
+ * - Tabel W6 punya field yang TIDAK PUNYA pertanyaan di sini: gudang
+ *   clearSpan+height, irigasi channelDims, drainase length, struktur
+ *   dimensions+height, pondasi count, sanitasi units.
+ * - Pertanyaan kritis NON-ukuran di sini (kandang-type,
+ *   building-function, renovation-scope, bridge-type, drainage-type,
+ *   new-construction) tidak punya padanan di tabel W6.
+ * - Penguncian berbeda: tabel W6 per DISIPLIN/scope (18+4), fungsi ini
+ *   per SUBKATEGORI (54); subkategori multi-scope (kolam, gorong-gorong,
+ *   dinding-penahan, plumbing) membuat pemetaan disiplinnya ambigu.
+ * Wiring yang benar butuh keputusan desain dulu (mis. flag `blocking`
+ * per field di tabel W6) — bukan sekadar impor.
+ */
 function questionDefsFor(ctx: UniversalIntakeContext): IntakeQuestion[] {
   const p = ctx.primary;
   if (!p) return [];
@@ -1757,20 +1420,61 @@ function questionDefsFor(ctx: UniversalIntakeContext): IntakeQuestion[] {
       }
       break;
 
-    case 'mep':
-      add({
-        key: 'mep-area', stage: 'PROJECT_DIMENSIONS', critical: true,
-        missingLabel: 'luas bangunan/proyek yang dilayani',
-        isSatisfied: (c) => c.buildingAreaM2 != null || c.landAreaM2 != null || c.dimensionsText != null || c.counts.length > 0,
-        prompt: (c) => `Berapa **luas bangunan/proyek** yang dilayani ${labelShort(c)} ini? Luas itu yang menjadi basis perhitungan jumlah titik dan panjang instalasinya.`,
-      });
-      add({
-        key: 'mep-floors', stage: 'PROJECT_DIMENSIONS', critical: false,
-        missingLabel: 'jumlah lantai bangunan',
-        isSatisfied: (c) => c.floors != null,
-        prompt: () => 'Bangunannya berapa lantai? Bila tidak relevan, jawab "itu aja".',
-      });
+    case 'mep': {
+      // Batch 3 (§6.1) — pertanyaan kritis MEP mengikuti BASIS UKURAN
+      // subsistemnya (mepBasisFor — dari parameter NYATA template
+      // katalog), bukan selalu luas. Listrik butuh daya/lantai
+      // (template MEP-ELECTRICAL-DIST tidak punya parameter luas —
+      // kuesioner lama yang menanyakan luas sebagai kritis untuk
+      // listrik adalah inkonsistensi yang dicatat Batch 1), plumbing
+      // butuh lantai/unit, data butuh titik; hanya HVAC/fire/mep-umum
+      // yang basisnya luas. Kunci pertanyaan memakai kunci kuesioner
+      // yang sama bila ada (pola bridge-span: tanpa tanya ganda).
+      const basis = mepBasisFor(p.id);
+      const powerMentioned = (c: UniversalIntakeContext): boolean =>
+        /\b\d[\d.,]*\s*(kva|va|watt|kw)\b/i.test(c.combinedText || '');
+      if (basis.criticalQuestionKey === 'mep-power-capacity') {
+        add({
+          key: 'mep-power-capacity', stage: 'PROJECT_DIMENSIONS', critical: true,
+          missingLabel: 'daya listrik terpasang (kVA) atau jumlah lantai',
+          isSatisfied: (c) => powerMentioned(c) || c.floors != null || c.counts.length > 0,
+          prompt: () => basis.criticalPrompt,
+        });
+      } else if (basis.criticalQuestionKey === 'mep-floors') {
+        add({
+          key: 'mep-floors', stage: 'PROJECT_DIMENSIONS', critical: true,
+          missingLabel: 'jumlah lantai / unit basah yang dilayani',
+          isSatisfied: (c) => c.floors != null || c.counts.length > 0,
+          prompt: () => basis.criticalPrompt,
+        });
+      } else if (basis.criticalQuestionKey === 'mep-points') {
+        add({
+          key: 'mep-points', stage: 'PROJECT_DIMENSIONS', critical: true,
+          missingLabel: 'jumlah titik data',
+          isSatisfied: (c) => c.counts.length > 0 || c.floors != null,
+          prompt: () => basis.criticalPrompt,
+        });
+      } else {
+        add({
+          key: 'mep-area', stage: 'PROJECT_DIMENSIONS', critical: true,
+          missingLabel: 'luas bangunan/proyek yang dilayani',
+          isSatisfied: (c) => c.buildingAreaM2 != null || c.landAreaM2 != null || c.dimensionsText != null || c.counts.length > 0,
+          prompt: (c) => `Berapa **luas bangunan/proyek** yang dilayani ${labelShort(c)} ini? Luas itu yang menjadi basis perhitungan jumlah titik dan panjang instalasinya.`,
+        });
+      }
+      // Pertanyaan lantai sekunder (non-kritis) — tidak ditambahkan
+      // bila lantai sudah menjadi pertanyaan kritis (plumbing) agar
+      // kunci 'mep-floors' tidak ganda.
+      if (basis.criticalQuestionKey !== 'mep-floors') {
+        add({
+          key: 'mep-floors', stage: 'PROJECT_DIMENSIONS', critical: false,
+          missingLabel: 'jumlah lantai bangunan',
+          isSatisfied: (c) => c.floors != null,
+          prompt: () => 'Bangunannya berapa lantai? Bila tidak relevan, jawab "itu aja".',
+        });
+      }
       break;
+    }
 
     case 'specialized':
       if (p.id === 'pembongkaran') {

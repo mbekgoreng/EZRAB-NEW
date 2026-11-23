@@ -857,7 +857,7 @@
    "type": "understand",
    "text": "buatkan rab saluran pasangan batu 400 m",
    "expect": {
-    "kind": "needs-spec"
+    "kind": "draft"
    },
    "id": "A-078"
   },
@@ -867,7 +867,7 @@
    "type": "understand",
    "text": "buatkan rab sumur bor 30 m",
    "expect": {
-    "kind": "needs-spec"
+    "kind": "draft"
    },
    "id": "A-079"
   },
@@ -3335,10 +3335,9 @@
    "check": "distribution",
    "expected": {
     "FULLY_SUPPORTED": 15,
-    "PARTIALLY_SUPPORTED": 23,
+    "PARTIALLY_SUPPORTED": 25,
     "SUPPORTED_GENERAL_WORKFLOW": 4,
-    "REQUIRES_ENGINEERING_SPEC": 6,
-    "NOT_YET_SUPPORTED": 2
+    "REQUIRES_ENGINEERING_SPEC": 6
    },
    "id": "C-095"
   },
@@ -4051,7 +4050,7 @@
    "severity": "medium",
    "type": "shape",
    "unit": "kg",
-   "expected": "COUNT",
+   "expected": "WEIGHT",
    "id": "D-061"
   },
   {

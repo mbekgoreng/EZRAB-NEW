@@ -374,6 +374,15 @@ export function understandProject(rawText: string): ProjectUnderstanding {
     let last: number | null = null;
     let lastIsBareLandWord = false;
     while ((m = re.exec(tLand)) !== null) {
+      // Batch 3 (§6.3): "tanah" di sini harus berarti LAHAN — lewati
+      // kecocokan yang kata lahan/tanahnya didahului kata penahan/
+      // galian/urugan/timbunan/pemadatan/pekerjaan ("dinding penahan
+      // tanah 100 m" adalah dinding penahan SEPANJANG 100 m, bukan
+      // lahan 100 m²; "galian tanah 100 m3" adalah volume galian,
+      // bukan lahan). Penjaga yang sama ada di parseLandAreaM2
+      // (rabNeeds) agar kedua jalur membaca angka sama.
+      const beforeLand = tLand.slice(Math.max(0, (m.index ?? 0) - 16), m.index ?? 0);
+      if (/(penahan|galian|urugan|timbunan|pemadatan|pekerjaan)\s+$/.test(beforeLand)) continue;
       // Satuan tidak wajib bila kata lahan/tanah eksplisit ("lahannya
       // 1500 bukan 2000" — konteks lahan sudah pasti), TAPI angka yang
       // merupakan bagian dari dimensi "AxB" di belakang kata lahan

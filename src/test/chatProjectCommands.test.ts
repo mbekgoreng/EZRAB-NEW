@@ -93,6 +93,30 @@ function makeCtx(over: Partial<ProjectCommandContext> = {}): {
   assert(r?.intent === 'CREATE_PROJECT' && r?.param === 'Villa Teduh', 'A9: bikin proyek … → CREATE_PROJECT');
 }
 
+/* --- A10–A15. Penjaga anti-"rab" (Phase 2, 2026-11-23): permintaan RAB
+ * yang mengandung kata "proyek" TIDAK BOLEH cocok CREATE_PROJECT — pola
+ * lama membajaknya (regresi c96881c; P5A-01/03/06/24). --- */
+{
+  assert(matchProjectCommand('Buatkan RAB proyek 2 gedung: gedung A 3 lantai 20 x 12 m dan gedung B 2 lantai 15 x 10 m, budget 500 juta') === null, 'A10: RAB proyek 2 gedung → BUKAN CREATE_PROJECT');
+}
+{
+  assert(matchProjectCommand('Buatkan RAB proyek kandang sapi 17 x 9 m') === null, 'A11: RAB proyek kandang → BUKAN CREATE_PROJECT');
+}
+{
+  assert(matchProjectCommand('Buatkan RAB untuk proyek gedung kantor 3 lantai') === null, 'A12: RAB untuk proyek gedung → BUKAN CREATE_PROJECT');
+}
+{
+  assert(matchProjectCommand('Buatkan RAB proyek renovasi dapur') === null, 'A13: RAB proyek renovasi → BUKAN CREATE_PROJECT');
+}
+{
+  assert(matchProjectCommand('Buatkan RAB jalan beton 500 m proyek desa') === null, 'A14: RAB jalan … proyek desa → BUKAN CREATE_PROJECT');
+}
+{
+  // Batas penjaga: "rab" SESUDAH "proyek" adalah bagian nama proyek.
+  const r = matchProjectCommand('buat proyek RAB Gedung');
+  assert(r?.intent === 'CREATE_PROJECT' && r?.param === 'RAB Gedung', 'A15: "rab" sesudah "proyek" = nama → CREATE_PROJECT');
+}
+
 /* --- B. Pola DELETE_PROJECT (+ non-hijack) --- */
 
 {

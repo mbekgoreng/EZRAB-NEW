@@ -1110,9 +1110,12 @@ describe('§14.1 — server-side / RLS / API enforcement: BLOCKED (evidence pinn
     expect(readme).toContain('DO NOT APPLY');
   });
 
-  it('AUTH_ENABLED is still hardcoded false in src/App.tsx (blocker evidence)', () => {
+  // Re-baseline 2026-11-23 (perintah owner 'perbaiki' atas laporan audit malam):
+  // flip AUTH_ENABLED ke true (8a03451, perintah owner) menyelesaikan kaki auth
+  // dari blocker §4.1; blokirnya sendiri TETAP (migrasi NOT APPLIED + tanpa API).
+  it('AUTH_ENABLED is hardcoded true in src/App.tsx (auth leg of the §4.1 blocker resolved)', () => {
     const app = readText('src/App.tsx');
-    expect(app).toContain('const AUTH_ENABLED = false');
+    expect(app).toContain('const AUTH_ENABLED = true');
   });
 
   it('no master-price API endpoint exists (api/ and server/api/)', () => {

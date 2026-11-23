@@ -30,11 +30,13 @@ import {
 } from '../../engine/parametricVolumeEngine/parametricVolumeEngine';
 import type { TemplateGenerationResult } from '../../data/buildingTemplates/schema/types';
 import { formatRupiah } from '../../engine/formulaEngine';
+import { formatBudgetFeasibilityLine } from './budgetFeasibility';
 import {
   resolveProvinceFromLocation,
   resolveRegionIndex,
 } from '../../data/indonesiaRegions';
 import { applyRelevanceGateToDirectCalc } from './directRabGate';
+import type { FullAiCompletionSummary } from './fullAiRabCompletion';
 
 export interface DirectRabResult {
   houseType: number;
@@ -65,6 +67,27 @@ export interface DirectRabResult {
   displayLabel: string;
   /** Daftar asumsi transparan (jalur spec; jalur template memakai warnings). */
   assumptions: string[];
+  /**
+   * Lengkapi dengan Full AI (§5, 2026-11-22) — OPSIONAL, absen = perilaku
+   * lama persis (byte-identical). Bila terisi, formatter merender tabel
+   * dari `items` (salinan calc dengan harga terisi) + total RECOMPUTED
+   * dari ringkasan — BUKAN total engine g.totalDirectCost/g.totalRabCost
+   * yang basi sesudah harga diisi pasca-hoc. `calc` ASLI TIDAK PERNAH
+   * diubah. Batch 4 (§7.2): salinan terisi ini JUGA yang di-push ke
+   * Spreadsheet — `mapDirectRabPushItems` menggabungkan isian sebagai
+   * PRICE_ESTIMATED + NEEDS_VERIFICATION + EZRAB_ASSUMPTION (bukan
+   * RESOLVED), sehingga tabel chat dan spreadsheet membaca nilai yang
+   * sama; harga engine asli tidak pernah ditimpa isian.
+   */
+  fullAiCompletion?: DirectRabFullAiCompletion;
+}
+
+/** Hasil completion Full AI untuk satu hasil RAB langsung (parametrik/spec). */
+export interface DirectRabFullAiCompletion {
+  /** Salinan calc.items dengan harga (+kuantitas) terisi — calc asli utuh. */
+  items: Array<DirectRabResult['calc']['items'][number]>;
+  /** Ringkasan completion (hitungan, total recomputed, kualitas, verdict). */
+  summary: FullAiCompletionSummary;
 }
 
 /** Hasil terakhir yang dirender ke chat — target tombol "Push ke Spreadsheet". */
@@ -443,6 +466,68 @@ function fmtVol(v: number): string {
 }
 
 /**
+ * Komponen O&P/pajak untuk baris total RAB: hanya komponen BUKAN NOL
+ * yang ditampilkan — "overhead 0%, profit 0%, pajak 0%" disembunyikan
+ * (benar tapi canggung; bila semua nol, kurungnya hilang sama sekali
+ * dan baris menjadi "**Total RAB: Rp…**").
+ */
+function formatTotalComponents(g: {
+  overheadPercentage?: number;
+  profitPercentage?: number;
+  taxPercentage?: number;
+}): string {
+  const parts: string[] = [];
+  if (g.overheadPercentage) parts.push(`overhead ${g.overheadPercentage}%`);
+  if (g.profitPercentage) parts.push(`profit ${g.profitPercentage}%`);
+  if (g.taxPercentage) parts.push(`pajak ${g.taxPercentage}%`);
+  return parts.length > 0 ? ` (termasuk ${parts.join(', ')})` : '';
+}
+
+/**
+ * Blok completion "Lengkapi dengan Full AI" untuk pesan RAB langsung:
+ * ringkasan asumsi + verdict atas total RECOMPUTED + caveat + kualitas
+ * (+ downgrade bila terjadi) + spek per item terisi. Hanya dipanggil
+ * bila `fullAiCompletion` terisi — pesan default tidak berubah.
+ */
+function formatDirectFullAiCompletionLines(s: FullAiCompletionSummary): string[] {
+  const lines: string[] = [];
+  lines.push('**Lengkapi dengan Full AI — Estimasi Sementara (asumsi AI)**');
+  lines.push(
+    `• Harga diisi AI untuk ${s.filledPriceCount} dari ${s.totalItems} item` +
+      (s.filledQuantityCount > 0 ? `; kuantitas diisi AI untuk ${s.filledQuantityCount} item` : '') +
+      ` (kualitas ${s.qualityUsed}${s.qualityDefaulted ? ' — asumsi, karena kualitas tidak disebutkan' : ''}). ` +
+      'Baris bertanda (est. AI) adalah estimasi AI, bukan harga AHSP resmi.',
+  );
+  lines.push(
+    `• Total di atas mencakup ${formatRupiah(s.assumedTotal)} dari ${s.filledPriceCount} item estimasi AI (asumsi) — bukan total final terverifikasi.`,
+  );
+  lines.push(formatBudgetFeasibilityLine(s.feasibility));
+  lines.push(
+    '• Total di atas adalah Estimasi Sementara (asumsi AI) — verdict kelayakan berlaku atas total asumsi ini, bukan atas harga resmi.',
+  );
+  if (s.qualityDowngradedFrom && s.totalAtRequestedTier != null && s.budgetCap != null) {
+    const over = s.totalAtRequestedTier - s.budgetCap;
+    lines.push(
+      `• Agar muat di anggaran ${formatRupiah(s.budgetCap)}, kualitas diturunkan dari ${s.qualityDowngradedFrom} ke ${s.qualityUsed} — total estimasi menjadi ${formatRupiah(s.estimatedTotal)}. Total pada kualitas ${s.qualityDowngradedFrom} adalah ${formatRupiah(s.totalAtRequestedTier)} (melebihi anggaran ${formatRupiah(Math.abs(over))}).`,
+    );
+  }
+  if (s.unfilled.length > 0) {
+    const shown = s.unfilled.slice(0, 5).join('; ');
+    lines.push(
+      `• ${s.unfilled.length} item belum terisi harga dan tidak masuk total: ${shown}${s.unfilled.length > 5 ? `; …dan ${s.unfilled.length - 5} item lainnya` : ''}.`,
+    );
+  }
+  for (const w of s.warnings.slice(0, 3)) lines.push(`• ⚠ ${w}`);
+  if (s.filledDetails.length > 0) {
+    lines.push('**Spek material (asumsi AI) per item terisi:**');
+    for (const d of s.filledDetails) {
+      lines.push(`• ${d.description} — ${d.spec} (dasar: ${d.basis})`);
+    }
+  }
+  return lines;
+}
+
+/**
  * Render hasil sebagai pesan chat: ringkasan + tabel markdown per kelompok
  * WBS + total + status kejujuran harga + peringatan. Harga fabricated
  * ditandai " (est.)".
@@ -473,10 +558,31 @@ export function formatDirectRabMessage(r: DirectRabResult): string {
     lines.push('');
   }
 
+  // Lengkapi dengan Full AI (§5): tabel dirender dari salinan terisi
+  // bila ada (calc.items ASLI tidak diubah — lihat fullAiCompletion).
+  const completion = r.fullAiCompletion;
+  const tableItems = completion ? completion.items : r.calc.items;
+  // Baris terisi AI ditandai '(est. AI)': bandingkan dengan calc asli
+  // (urutan sama) — item yang aslinya tak berharga kini berharga.
+  const aiFilledRows = new Set<object>();
+  if (completion) {
+    completion.items.forEach((it, i) => {
+      const orig = r.calc.items[i];
+      const origPriced =
+        orig != null &&
+        typeof orig.unitPrice === 'number' &&
+        Number.isFinite(orig.unitPrice) &&
+        orig.unitPrice > 0;
+      const nowPriced =
+        typeof it.unitPrice === 'number' && Number.isFinite(it.unitPrice) && it.unitPrice > 0;
+      if (!origPriced && nowPriced) aiFilledRows.add(it);
+    });
+  }
+
   // Kelompokkan dari calc.items (membawa wbsCode lengkap); urutan kategori
   // mengikuti kemunculan pertama, sama seperti categoryGroups engine.
-  const groups = new Map<string, typeof r.calc.items>();
-  for (const it of r.calc.items) {
+  const groups = new Map<string, typeof tableItems>();
+  for (const it of tableItems) {
     const key = it.category ?? 'LAINNYA';
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key)!.push(it);
@@ -509,7 +615,7 @@ export function formatDirectRabMessage(r: DirectRabResult): string {
       const priced = hasPrice(it.unitPrice);
       if (!priced) unpricedRows++;
       const price = priced
-        ? formatRupiah(it.unitPrice) + (fabricated ? ' (est.)' : '')
+        ? formatRupiah(it.unitPrice) + (fabricated ? ' (est.)' : '') + (aiFilledRows.has(it) ? ' (est. AI)' : '')
         : 'Harga belum tersedia';
       const total = priced && typeof it.totalPrice === 'number' ? formatRupiah(it.totalPrice) : '—';
       lines.push(
@@ -532,7 +638,17 @@ export function formatDirectRabMessage(r: DirectRabResult): string {
   // menyatakan INCOMPLETE — jangan pernah tampil sebagai total final.
   const isPartial = unpricedRows > 0 || (g.totalStatus ?? 'INDICATIVE') === 'INCOMPLETE';
 
-  if (isPartial) {
+  if (completion) {
+    // Total RECOMPUTED dari ringkasan (bukan engine g.totalDirectCost /
+    // g.totalRabCost yang basi sesudah harga diisi pasca-hoc). Tangga
+    // O&P/pajak engine TIDAK dihitung ulang — total completion adalah
+    // biaya langsung (Σ qty × harga atas item terisi).
+    lines.push(
+      `**Total biaya langsung — Estimasi Sementara (asumsi AI): ${formatRupiah(completion.summary.estimatedTotal)}**`
+    );
+    lines.push('');
+    for (const l of formatDirectFullAiCompletionLines(completion.summary)) lines.push(l);
+  } else if (isPartial) {
     lines.push(
       `**Total biaya langsung (PARSIAL — ${pricedRows} dari ${totalItems} item berharga): ${formatRupiah(g.totalDirectCost)}**`
     );
@@ -541,13 +657,13 @@ export function formatDirectRabMessage(r: DirectRabResult): string {
     // (cacat D2 QA browser).
     lines.push('');
     lines.push(
-      `**Total RAB PARSIAL — BELUM FINAL (termasuk overhead ${g.overheadPercentage}%, profit ${g.profitPercentage}%, pajak ${g.taxPercentage}%): ${formatRupiah(g.totalRabCost)}**`
+      `**Total RAB PARSIAL — BELUM FINAL${formatTotalComponents(g)}: ${formatRupiah(g.totalRabCost)}**`
     );
   } else {
     lines.push(`**Total biaya langsung: ${formatRupiah(g.totalDirectCost)}**`);
     lines.push('');
     lines.push(
-      `**Total RAB (termasuk overhead ${g.overheadPercentage}%, profit ${g.profitPercentage}%, pajak ${g.taxPercentage}%): ${formatRupiah(g.totalRabCost)}**`
+      `**Total RAB${formatTotalComponents(g)}: ${formatRupiah(g.totalRabCost)}**`
     );
   }
   lines.push('');

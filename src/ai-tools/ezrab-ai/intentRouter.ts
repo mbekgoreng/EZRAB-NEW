@@ -322,6 +322,17 @@ const PATTERNS: Pattern[] = [
   // -> UNKNOWN. Guard (?!\s+rab) menjaga "pengaturan rab" tidak salah masuk
   // pengaturan global (audit routing 2026-10-23).
   { intent: 'OPEN_SETTINGS', re: /\b(buka|bukain|bukakan|tampilkan|tampilin|lihat|liatin|ke)\b.*\b(pengaturan|setting|settings)\b(?!\s+rab\b)/ },
+  // RAB Full AI lewat TEKS (W6, §6 Universal Construction Intelligence):
+  // sebelumnya RAB_FULL_AI hanya tercapai lewat klik tombol — frasa
+  // "full ai" dari pengguna jatuh UNKNOWN ke LLM. Pola ini HARUS sebelum
+  // blok CREATE_RAB_DIRECT/SUMMARY di bawah: penanda "full ai" adalah
+  // pilihan jalur eksplisit pengguna dan menang atas rute template/
+  // ringkasan ("buatkan rab rumah type 45 full ai" → Full AI, bukan
+  // direct). Bentuk yang ditangkap: "full ai", "ai full", dan verba
+  // susun/buat/hitung + "pakai/dengan/lewat ai".
+  { intent: 'RAB_FULL_AI', re: /\bfull ai\b/ },
+  { intent: 'RAB_FULL_AI', re: /\bai full\b/ },
+  { intent: 'RAB_FULL_AI', re: /\b(susun|susunkan|buatkan|buatin|bikin|buat|hitung|hitungkan)\b[^.]{0,30}\b(pakai|dengan|lewat)\s+ai\b/ },
   // RAB langsung (permintaan user 2026-10-21): perintah RAB rumah DENGAN tipe
   // eksplisit ("buatkan rab rumah type 70 2 lantai") dihitung langsung oleh
   // mesin parametrik dan ditampilkan sebagai tabel — bukan ringkasan/template.

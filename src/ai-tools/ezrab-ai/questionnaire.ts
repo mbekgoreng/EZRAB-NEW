@@ -118,6 +118,117 @@ function upsertCount(ctx: UniversalIntakeContext, value: number, unit: string, o
   else ctx.counts.push(entry);
 }
 
+/* ------------------------------------------------------------------ */
+/* Parser jawaban teks bebas (W6 — keluarga baru)                      */
+/*                                                                     */
+/* questionnaire.ts TIDAK BOLEH mengimpor nilai dari universalIntake   */
+/* (impor melingkar: universalIntake mengimpor deriveStructuredSpecs   */
+/* dari modul ini) — parser angka ditulis lokal, deterministik, dan    */
+/* gagal-jujur (null bila tidak ada angka yang sah; jawaban teks tetap */
+/* tercatat, hanya angka kanonisnya yang tidak diisi — tidak ditebak). */
+/* ------------------------------------------------------------------ */
+
+/** Angka desimal Indonesia: "12,5" → 12.5; "1.200" → 1200; "12.5" → 12.5. */
+function parseIdDecimal(token: string): number | null {
+  const t = token.replace(/[.,]+$/, ''); // buang pemisah menggantung ("12.")
+  if (t === '') return null;
+  let v: number;
+  if (t.includes(',')) v = Number(t.replace(/\./g, '').replace(',', '.'));
+  else if (/^\d{1,3}(?:\.\d{3})+$/.test(t)) v = Number(t.replace(/\./g, ''));
+  else v = Number(t);
+  return Number.isFinite(v) && v > 0 ? v : null;
+}
+
+/** Panjang dari label bebas: "12 m" → 12; "2 km" → 2000; "150 cm" → 1.5. */
+function parseLengthMeters(label: string): number | null {
+  const m = label.match(/(\d[\d.,]*)\s*(km|cm|m|meter)?\b/i);
+  if (!m) return null;
+  const v = parseIdDecimal(m[1]);
+  if (v == null) return null;
+  const unit = (m[2] ?? 'm').toLowerCase();
+  if (unit === 'km') return v * 1000;
+  if (unit === 'cm') return v / 100;
+  return v;
+}
+
+/** Bilangan cacah pertama dari label ("24 titik" → 24; "sekitar 20" → 20). */
+function parseCountNumber(label: string): number | null {
+  const m = label.match(/\d+/);
+  if (!m) return null;
+  const v = Number(m[0]);
+  return Number.isFinite(v) && v > 0 ? v : null;
+}
+
+/**
+ * Dimensi penampang dari label bebas: "1,5 x 1 m" → lebar 1,5 / dalam 1;
+ * "lebar 1,5 m, dalam 1 m" → sama. Null bila polanya tidak dikenali —
+ * teksnya tetap tercatat sebagai spek, hanya angka kanonisnya yang kosong.
+ */
+function parseChannelDims(label: string): { widthM: number; depthM: number } | null {
+  const axb = label.match(/(\d[\d.,]*)\s*(?:x|×)\s*(\d[\d.,]*)\s*(cm|m|meter)?/i);
+  if (axb) {
+    const w = parseIdDecimal(axb[1]);
+    const d = parseIdDecimal(axb[2]);
+    if (w != null && d != null) {
+      const f = (axb[3] ?? 'm').toLowerCase() === 'cm' ? 0.01 : 1;
+      return { widthM: w * f, depthM: d * f };
+    }
+  }
+  const wMatch = label.match(/lebar\s*(\d[\d.,]*)/i);
+  const dMatch = label.match(/dalam\s*(\d[\d.,]*)/i);
+  if (wMatch && dMatch) {
+    const w = parseIdDecimal(wMatch[1]);
+    const d = parseIdDecimal(dMatch[1]);
+    if (w != null && d != null) return { widthM: w, depthM: d };
+  }
+  return null;
+}
+
+/**
+ * Parafrasa jawaban pondasi jembatan yang BEBAS kata kunci scope
+ * (lihat catatan pada definisi bridge-foundation): istilah baku
+ * ('bore pile', 'tiang pancang', 'sumuran') adalah kata kunci scope
+ * Pondasi & Geoteknik — bila masuk teks generate, draf jembatan
+ * mendapat part pondasi mandiri. Opsi yang dikenal dipetakan eksplisit;
+ * teks bebas disanitasi pola-per-pola. Jawaban persis pengguna TIDAK
+ * hilang: tersimpan di ctx.answers + technicalSpecs + spek terstruktur.
+ */
+function sanitizeBridgeFoundationLabel(label: string): string {
+  const known: Record<string, string> = {
+    'Telapak beton': 'telapak beton',
+    'Bore pile': 'tiang bor',
+    'Tiang pancang': 'tiang dalam',
+    Sumuran: 'sumur dangkal',
+  };
+  if (known[label] != null) return known[label];
+  return label
+    .replace(/\bbored? pile\b/gi, 'tiang bor')
+    .replace(/\btiang pancang\b/gi, 'tiang dalam')
+    .replace(/\bsumuran\b/gi, 'sumur dangkal')
+    .replace(/\bfoot ?plat\b/gi, 'telapak beton')
+    .replace(/\bpondasi\b/gi, 'tumpuan');
+}
+
+/**
+ * Parafrasa jawaban tipe saluran irigasi yang BEBAS kata kunci scope
+ * Drainase ('saluran'/'pasangan batu'/'u-ditch' memicu scope Drainase
+ * & Saluran mandiri pada draf irigasi). Jawaban persis tetap tersimpan
+ * di ctx.answers + technicalSpecs + spek terstruktur.
+ */
+function sanitizeIrrigationTypeLabel(label: string): string {
+  const known: Record<string, string> = {
+    'Saluran tanah': 'tanah asli',
+    'Pasangan batu kali': 'dinding batu kali',
+    'Beton cor di tempat': 'beton cor',
+    'U-ditch pracetak': 'pracetak bentuk U',
+  };
+  if (known[label] != null) return known[label];
+  return label
+    .replace(/\bpasangan batu\b/gi, 'dinding batu')
+    .replace(/\bu-?ditch\b/gi, 'pracetak bentuk U')
+    .replace(/\bsaluran\b/gi, 'irigasi');
+}
+
 const ROOF_MATERIAL_RE = /\b(spandek|galvalum|zincalume|genteng|asbes|seng gelombang|metal deck|standing seam)\b/;
 
 const SPEC_QUESTION_DEFS: SpecQuestionDef[] = [
@@ -781,6 +892,548 @@ const SPEC_QUESTION_DEFS: SpecQuestionDef[] = [
     },
     phrase: (label) => `instalasi: ${label}`,
   },
+
+  /* ================= MEP (W6 — Universal Construction Intelligence §6) ================= */
+  {
+    key: 'mep-installation-type',
+    appliesTo: (c) => c.primary?.family === 'mep',
+    isSatisfied: (c) =>
+      hasAnswer(c, 'mep-installation-type') ||
+      textHas(c, /\b(instalasi listrik|plumbing|hvac|instalasi ac|hydrant|fire protection|jaringan data)\b/),
+    prompt: () => 'Jenis instalasi apa saja yang termasuk? (boleh lebih dari satu)',
+    kind: 'multi',
+    options: [
+      { id: 'mep-jenis-listrik', label: 'Instalasi listrik' },
+      { id: 'mep-jenis-plumbing', label: 'Plumbing & air bersih' },
+      { id: 'mep-jenis-ac', label: 'AC / tata udara (HVAC)' },
+      { id: 'mep-jenis-fire', label: 'Fire protection & hydrant' },
+      { id: 'mep-jenis-data', label: 'Sistem komunikasi & data' },
+    ],
+    allowCustom: true,
+    priority: 15,
+    missingLabel: 'jenis instalasi MEP',
+    apply: (ctx, label, rec) => {
+      setAnswer(ctx, 'mep-installation-type', label);
+      const scopeByOption: Record<string, string> = {
+        'mep-jenis-listrik': 'Instalasi listrik',
+        'mep-jenis-plumbing': 'Plumbing & air bersih',
+        'mep-jenis-ac': 'AC / tata udara (HVAC)',
+        'mep-jenis-fire': 'Fire protection & hydrant',
+        'mep-jenis-data': 'Sistem komunikasi & data',
+      };
+      resetScopes(ctx, Object.values(scopeByOption));
+      for (const id of rec.selectedIds) {
+        const s = scopeByOption[id];
+        if (s) addScope(ctx, s);
+      }
+    },
+    phrase: (label) => `instalasi: ${label}`,
+  },
+  {
+    key: 'mep-power-capacity',
+    appliesTo: (c) => c.primary?.family === 'mep',
+    isSatisfied: (c) =>
+      hasAnswer(c, 'mep-power-capacity') ||
+      textHas(c, /\b\d[\d.,]*\s*(va|kva|watt|kw)\b/i),
+    prompt: () => 'Berapa daya listrik yang dibutuhkan?',
+    kind: 'single',
+    options: [
+      { id: 'daya-900', label: '900 VA' },
+      { id: 'daya-1300', label: '1300 VA' },
+      { id: 'daya-2200', label: '2200 VA' },
+      { id: 'daya-3500', label: '3500 VA' },
+      { id: 'daya-5500', label: '5500 VA' },
+      { id: 'daya-lebih', label: 'Di atas 5500 VA' },
+    ],
+    allowCustom: true,
+    priority: 20,
+    missingLabel: 'daya listrik yang dibutuhkan',
+    apply: (ctx, label) => {
+      setAnswer(ctx, 'mep-power-capacity', label);
+      replaceSpec(ctx, 'daya listrik: ', `daya listrik: ${label}`);
+    },
+    phrase: (label) => `daya listrik ${label}`,
+  },
+  {
+    key: 'mep-points',
+    appliesTo: (c) => c.primary?.family === 'mep',
+    isSatisfied: (c) =>
+      hasAnswer(c, 'mep-points') || c.counts.some((x) => x.unit === 'titik'),
+    prompt: () => 'Berapa jumlah titik instalasinya (titik lampu, stop kontak, atau titik air)? Tulis angkanya — mis. "24 titik".',
+    kind: 'text',
+    options: [],
+    allowCustom: true,
+    priority: 25,
+    missingLabel: 'jumlah titik instalasi MEP',
+    apply: (ctx, label) => {
+      setAnswer(ctx, 'mep-points', label);
+      const num = parseCountNumber(label);
+      if (num != null) upsertCount(ctx, num, 'titik', `${num} titik`);
+    },
+    phrase: (label) =>
+      label.toLowerCase().includes('titik') ? `${label} instalasi` : `${label} titik instalasi`,
+  },
+
+  /* ================= JEMBATAN (W6) =================
+   * Bentang & lebar adalah pertanyaan percakapan KRITIS (questionDefsFor:
+   * 'bridge-span'/'bridge-width') — definisi kuesioner di bawah MEMAKAI
+   * KUNCI YANG SAMA sebagai kesempatan kedua berbentuk teks: pertanyaan
+   * percakapan hanya diajukan sekali (askedKeys), jadi bila pengguna
+   * melewatinya tanpa angka, kuesioner menanyakannya lagi dalam bentuk
+   * kartu. isSatisfied mengunci ke ctx.spanM/ctx.widthM yang sama
+   * sehingga TIDAK PERNAH ada tanya ganda. */
+  {
+    key: 'bridge-span',
+    appliesTo: (c) => c.primary?.id === 'jembatan',
+    isSatisfied: (c) =>
+      hasAnswer(c, 'bridge-span') || c.spanM != null || c.lengthM != null,
+    prompt: () => 'Berapa bentang jembatannya (meter)? Tulis angkanya — mis. "12 m".',
+    kind: 'text',
+    options: [],
+    allowCustom: true,
+    priority: 10,
+    missingLabel: 'bentang jembatan',
+    apply: (ctx, label) => {
+      setAnswer(ctx, 'bridge-span', label);
+      const m = parseLengthMeters(label);
+      if (m != null) {
+        ctx.spanM = m;
+        replaceSpec(ctx, 'bentang jembatan: ', `bentang jembatan: ${m} m`);
+      }
+    },
+    phrase: (label) => `bentang ${label}`,
+  },
+  {
+    key: 'bridge-width',
+    appliesTo: (c) => c.primary?.id === 'jembatan',
+    isSatisfied: (c) => hasAnswer(c, 'bridge-width') || c.widthM != null,
+    prompt: () => 'Berapa lebar jembatannya (meter)? Tulis angkanya — mis. "7 m".',
+    kind: 'text',
+    options: [],
+    allowCustom: true,
+    priority: 12,
+    missingLabel: 'lebar jembatan',
+    apply: (ctx, label) => {
+      setAnswer(ctx, 'bridge-width', label);
+      const m = parseLengthMeters(label);
+      if (m != null) {
+        ctx.widthM = m;
+        replaceSpec(ctx, 'lebar jembatan: ', `lebar jembatan: ${m} m`);
+      }
+    },
+    phrase: (label) => `lebar ${label}`,
+  },
+  {
+    key: 'bridge-structure-type',
+    appliesTo: (c) => c.primary?.id === 'jembatan',
+    isSatisfied: (c) =>
+      hasAnswer(c, 'bridge-structure-type') ||
+      textHas(c, /\b(gelagar|box girder|rangka baja|beton bertulang)\b/),
+    prompt: () => 'Tipe struktur atas jembatannya apa?',
+    kind: 'single',
+    options: [
+      { id: 'jbt-gelagar', label: 'Gelagar beton pracetak' },
+      { id: 'jbt-beton-cor', label: 'Beton bertulang cor di tempat' },
+      { id: 'jbt-rangka-baja', label: 'Rangka baja' },
+      { id: 'jbt-box-girder', label: 'Box girder beton' },
+      { id: 'jbt-kayu', label: 'Kayu' },
+    ],
+    allowCustom: true,
+    priority: 20,
+    missingLabel: 'tipe struktur atas jembatan',
+    apply: (ctx, label) => {
+      setAnswer(ctx, 'bridge-structure-type', label);
+      replaceSpec(ctx, 'struktur atas jembatan: ', `struktur atas jembatan: ${label}`);
+    },
+    phrase: (label) => `struktur jembatan ${label}`,
+  },
+  {
+    key: 'bridge-foundation',
+    appliesTo: (c) => c.primary?.id === 'jembatan',
+    isSatisfied: (c) =>
+      hasAnswer(c, 'bridge-foundation') ||
+      textHas(c, /\b(telapak|bore pile|bored pile|tiang pancang|sumuran|foot plat)\b/),
+    prompt: () => 'Pondasi/tumpuan jembatannya direncanakan apa?',
+    kind: 'single',
+    options: [
+      { id: 'jbt-pond-telapak', label: 'Telapak beton' },
+      { id: 'jbt-pond-borepile', label: 'Bore pile' },
+      { id: 'jbt-pond-pancang', label: 'Tiang pancang' },
+      { id: 'jbt-pond-sumuran', label: 'Sumuran' },
+    ],
+    allowCustom: true,
+    priority: 25,
+    missingLabel: 'pondasi/tumpuan jembatan',
+    apply: (ctx, label) => {
+      setAnswer(ctx, 'bridge-foundation', label);
+      replaceSpec(ctx, 'tumpuan jembatan: ', `tumpuan jembatan: ${label}`);
+    },
+    // Frasa generate memakai parafrasa BEBAS kata kunci scope (lihat
+    // sanitizeBridgeFoundationLabel): 'bore pile'/'tiang pancang'/
+    // 'sumuran' memicu scope Pondasi mandiri pada draf jembatan —
+    // padahal tumpuan adalah bagian jembatannya. Jawaban persis
+    // pengguna tetap tersimpan di ctx.answers + technicalSpecs.
+    phrase: (label) => `tumpuan jembatan: ${sanitizeBridgeFoundationLabel(label)}`,
+  },
+  {
+    key: 'bridge-traffic',
+    appliesTo: (c) => c.primary?.id === 'jembatan',
+    isSatisfied: (c) => hasAnswer(c, 'bridge-traffic'),
+    prompt: () => 'Lalu lintas apa yang akan melintasi jembatan ini?',
+    kind: 'single',
+    options: [
+      { id: 'jbt-lalin-ringan', label: 'Kendaraan ringan saja' },
+      { id: 'jbt-lalin-berat', label: 'Kendaraan berat / truk' },
+      { id: 'jbt-lalin-pejalan', label: 'Pejalan kaki saja' },
+      { id: 'jbt-lalin-campuran', label: 'Campuran kendaraan + pejalan kaki' },
+    ],
+    allowCustom: true,
+    priority: 30,
+    missingLabel: 'lalu lintas yang melintasi jembatan',
+    apply: (ctx, label) => {
+      setAnswer(ctx, 'bridge-traffic', label);
+      replaceSpec(ctx, 'lalu lintas jembatan: ', `lalu lintas jembatan: ${label}`);
+    },
+    // "Pejalan kaki" TIDAK BOLEH masuk frasa generate apa adanya:
+    // detectScopes memakai substring match dan "pejalan" MENGANDUNG
+    // kata kunci scope Jalan ("jalan") — draf jembatan akan mendapat
+    // part jalan tanpa panjang dan gagal di gerbang ukuran. Diparafrasa
+    // "pedestrian"; jawaban persis tetap di ctx.answers + technicalSpecs.
+    phrase: (label) =>
+      `lalu lintas jembatan: ${label.replace(/pejalan kaki/gi, 'pedestrian')}`,
+  },
+  {
+    key: 'bridge-pedestrian',
+    appliesTo: (c) => c.primary?.id === 'jembatan',
+    isSatisfied: (c) => hasAnswer(c, 'bridge-pedestrian') || textHas(c, /\btrotoar\b/),
+    prompt: () => 'Apakah jembatan perlu trotoar/fasilitas pejalan kaki?',
+    kind: 'single',
+    options: [
+      { id: 'jbt-trotoar-2', label: 'Dengan trotoar kedua sisi' },
+      { id: 'jbt-trotoar-1', label: 'Trotoar satu sisi' },
+      { id: 'jbt-trotoar-tanpa', label: 'Tanpa trotoar' },
+    ],
+    allowCustom: true,
+    priority: 35,
+    missingLabel: 'trotoar/fasilitas pejalan kaki jembatan',
+    apply: (ctx, label, rec) => {
+      setAnswer(ctx, 'bridge-pedestrian', label);
+      replaceSpec(ctx, 'trotoar jembatan: ', `trotoar jembatan: ${label}`);
+      resetScopes(ctx, ['Trotoar jembatan']);
+      if (rec.selectedIds.includes('jbt-trotoar-2') || rec.selectedIds.includes('jbt-trotoar-1')) {
+        addScope(ctx, 'Trotoar jembatan');
+      }
+    },
+    // Kata "trotoar" adalah kata kunci scope Jalan — frasa generate
+    // TIDAK BOLEH memuatnya (jalan tanpa panjang akan memblokir draf
+    // jembatan lewat gerbang ukuran). "Pejalan kaki" juga dilarang:
+    // "pejalan" MENGANDUNG substring "jalan" (detectScopes memakai
+    // substring match). Diparafrasa "pedestrian"; jawaban persis tetap
+    // di ctx.answers + technicalSpecs.
+    phrase: (label) =>
+      label.includes('Tanpa')
+        ? 'tanpa fasilitas pedestrian'
+        : 'dengan fasilitas pedestrian',
+  },
+
+  /* ================= IRIGASI (W6) ================= */
+  {
+    key: 'irrigation-length',
+    appliesTo: (c) => (c.primary?.scopes ?? []).includes('irigasi'),
+    isSatisfied: (c) =>
+      hasAnswer(c, 'irrigation-length') || c.lengthM != null,
+    prompt: () => 'Berapa panjang salurannya (meter)? Tulis angkanya — mis. "800 m" atau "2 km".',
+    kind: 'text',
+    options: [],
+    allowCustom: true,
+    priority: 10,
+    missingLabel: 'panjang saluran irigasi',
+    apply: (ctx, label) => {
+      setAnswer(ctx, 'irrigation-length', label);
+      const m = parseLengthMeters(label);
+      if (m != null) {
+        ctx.lengthM = m;
+        replaceSpec(ctx, 'panjang irigasi: ', `panjang irigasi: ${m} m`);
+      }
+    },
+    phrase: (label) => `panjang irigasi ${label}`,
+  },
+  {
+    key: 'irrigation-channel-size',
+    appliesTo: (c) => (c.primary?.scopes ?? []).includes('irigasi'),
+    isSatisfied: (c) =>
+      hasAnswer(c, 'irrigation-channel-size') ||
+      (c.widthM != null && c.depthM != null),
+    prompt: () => 'Berapa dimensi salurannya (lebar × kedalaman)? Tulis bebas — mis. "lebar 1,5 m, dalam 1 m" atau "1,5 x 1 m".',
+    kind: 'text',
+    options: [],
+    allowCustom: true,
+    priority: 15,
+    missingLabel: 'dimensi saluran irigasi (lebar × kedalaman)',
+    apply: (ctx, label) => {
+      setAnswer(ctx, 'irrigation-channel-size', label);
+      replaceSpec(ctx, 'dimensi saluran irigasi: ', `dimensi saluran irigasi: ${label}`);
+      const dims = parseChannelDims(label);
+      if (dims) {
+        ctx.widthM = dims.widthM;
+        ctx.depthM = dims.depthM;
+      }
+    },
+    phrase: (label) => `dimensi irigasi ${label}`,
+  },
+  {
+    key: 'irrigation-channel-type',
+    appliesTo: (c) => (c.primary?.scopes ?? []).includes('irigasi'),
+    isSatisfied: (c) =>
+      hasAnswer(c, 'irrigation-channel-type') ||
+      textHas(c, /\b(saluran tanah|pasangan batu|u-?ditch|beton cor)\b/),
+    prompt: () => 'Tipe salurannya apa?',
+    kind: 'single',
+    options: [
+      { id: 'irg-tipe-tanah', label: 'Saluran tanah' },
+      { id: 'irg-tipe-batu', label: 'Pasangan batu kali' },
+      { id: 'irg-tipe-beton', label: 'Beton cor di tempat' },
+      { id: 'irg-tipe-uditch', label: 'U-ditch pracetak' },
+    ],
+    allowCustom: true,
+    priority: 20,
+    missingLabel: 'tipe saluran irigasi',
+    apply: (ctx, label) => {
+      setAnswer(ctx, 'irrigation-channel-type', label);
+      replaceSpec(ctx, 'tipe saluran irigasi: ', `tipe saluran irigasi: ${label}`);
+    },
+    // Frasa generate diparafrasa bebas kata kunci scope Drainase
+    // ('saluran'/'pasangan batu'/'u-ditch' memicu scope Drainase
+    // mandiri — padahal ini saluran irigasinya). Jawaban persis
+    // tetap di ctx.answers + technicalSpecs.
+    phrase: (label) => `tipe irigasi: ${sanitizeIrrigationTypeLabel(label)}`,
+  },
+  {
+    key: 'irrigation-structures',
+    appliesTo: (c) => (c.primary?.scopes ?? []).includes('irigasi'),
+    isSatisfied: (c) => hasAnswer(c, 'irrigation-structures'),
+    prompt: () => 'Bangunan pelengkap apa saja yang termasuk? (boleh lebih dari satu)',
+    kind: 'multi',
+    options: [
+      { id: 'irg-str-bendung', label: 'Bendung' },
+      { id: 'irg-str-pintu', label: 'Pintu air' },
+      { id: 'irg-str-bagi', label: 'Bangunan bagi' },
+      { id: 'irg-str-embung', label: 'Embung' },
+      { id: 'irg-str-tanggul', label: 'Tanggul' },
+    ],
+    allowCustom: true,
+    priority: 30,
+    missingLabel: 'bangunan pelengkap irigasi',
+    apply: (ctx, label, rec) => {
+      setAnswer(ctx, 'irrigation-structures', label);
+      const scopeByOption: Record<string, string> = {
+        'irg-str-bendung': 'Bendung irigasi',
+        'irg-str-pintu': 'Pintu air',
+        'irg-str-bagi': 'Bangunan bagi irigasi',
+        'irg-str-embung': 'Embung',
+        'irg-str-tanggul': 'Tanggul',
+      };
+      resetScopes(ctx, Object.values(scopeByOption));
+      for (const id of rec.selectedIds) {
+        const s = scopeByOption[id];
+        if (s) addScope(ctx, s);
+      }
+    },
+    phrase: (label) => `bangunan irigasi: ${label}`,
+  },
+
+  /* ================= PELABUHAN & PESISIR (W6) ================= */
+  {
+    key: 'harbor-structure-type',
+    appliesTo: (c) => (c.primary?.scopes ?? []).includes('pelabuhan'),
+    isSatisfied: (c) =>
+      hasAnswer(c, 'harbor-structure-type') ||
+      textHas(c, /\b(dermaga|breakwater|turap|tetrapod|dinding laut)\b/),
+    prompt: () => 'Struktur pelabuhan/pesisirnya apa?',
+    kind: 'single',
+    options: [
+      { id: 'plb-str-dermaga', label: 'Dermaga' },
+      { id: 'plb-str-breakwater', label: 'Breakwater (pemecah gelombang)' },
+      { id: 'plb-str-turap', label: 'Turap / dinding laut' },
+      { id: 'plb-str-tetrapod', label: 'Tetrapod (pelindung pantai)' },
+    ],
+    allowCustom: true,
+    priority: 15,
+    missingLabel: 'struktur pelabuhan/pesisir',
+    apply: (ctx, label) => {
+      setAnswer(ctx, 'harbor-structure-type', label);
+      replaceSpec(ctx, 'struktur pelabuhan: ', `struktur pelabuhan: ${label}`);
+    },
+    phrase: (label) => `struktur pelabuhan ${label}`,
+  },
+  {
+    key: 'harbor-function',
+    appliesTo: (c) => (c.primary?.scopes ?? []).includes('pelabuhan'),
+    isSatisfied: (c) => hasAnswer(c, 'harbor-function'),
+    prompt: () => 'Fungsinya untuk apa?',
+    kind: 'single',
+    options: [
+      { id: 'plb-fung-umum', label: 'Pelabuhan umum' },
+      { id: 'plb-fung-nelayan', label: 'Dermaga kapal nelayan' },
+      { id: 'plb-fung-lindung', label: 'Pelindung pantai' },
+      { id: 'plb-fung-wisata', label: 'Dermaga kapal wisata' },
+    ],
+    allowCustom: true,
+    priority: 25,
+    missingLabel: 'fungsi pelabuhan',
+    apply: (ctx, label) => {
+      setAnswer(ctx, 'harbor-function', label);
+      replaceSpec(ctx, 'fungsi pelabuhan: ', `fungsi pelabuhan: ${label}`);
+    },
+    phrase: (label) => `fungsi pelabuhan: ${label}`,
+  },
+  {
+    key: 'harbor-material',
+    appliesTo: (c) => (c.primary?.scopes ?? []).includes('pelabuhan'),
+    isSatisfied: (c) =>
+      hasAnswer(c, 'harbor-material') || textHas(c, /\b(beton|baja|kayu)\b/),
+    prompt: () => 'Material strukturnya apa?',
+    kind: 'single',
+    options: [
+      { id: 'plb-mat-beton', label: 'Beton' },
+      { id: 'plb-mat-baja', label: 'Baja' },
+      { id: 'plb-mat-kayu', label: 'Kayu' },
+      { id: 'plb-mat-batu', label: 'Batu' },
+      { id: 'plb-mat-kombinasi', label: 'Kombinasi' },
+    ],
+    allowCustom: true,
+    priority: 30,
+    missingLabel: 'material struktur pelabuhan',
+    apply: (ctx, label) => {
+      setAnswer(ctx, 'harbor-material', label);
+      replaceSpec(ctx, 'material pelabuhan: ', `material pelabuhan: ${label}`);
+    },
+    phrase: (label) => `material pelabuhan ${label}`,
+  },
+
+  /* ================= SANITASI (W6) =================
+   * Primer sanitasi = subkategori 'plumbing' (scopes ['mep','sanitasi'])
+   * — appliesTo mengunci ke scope 'sanitasi' agar keluarga ini hanya
+   * muncul untuk proyek sanitasi, bukan semua proyek MEP. */
+  {
+    key: 'sanitation-system-type',
+    appliesTo: (c) => (c.primary?.scopes ?? []).includes('sanitasi'),
+    isSatisfied: (c) =>
+      hasAnswer(c, 'sanitation-system-type') ||
+      textHas(c, /\b(septic tank|septictank|ipal|sumur resapan|stp)\b/),
+    prompt: () => 'Sistem pengolahannya apa?',
+    kind: 'single',
+    options: [
+      { id: 'san-sis-septik', label: 'Septic tank' },
+      { id: 'san-sis-ipal', label: 'IPAL komunal' },
+      { id: 'san-sis-resapan', label: 'Sumur resapan' },
+      { id: 'san-sis-stp', label: 'STP (sewage treatment plant)' },
+    ],
+    allowCustom: true,
+    priority: 15,
+    missingLabel: 'sistem pengolahan sanitasi',
+    apply: (ctx, label) => {
+      setAnswer(ctx, 'sanitation-system-type', label);
+      replaceSpec(ctx, 'sistem sanitasi: ', `sistem sanitasi: ${label}`);
+    },
+    phrase: (label) => `sistem sanitasi ${label}`,
+  },
+  {
+    key: 'sanitation-units',
+    appliesTo: (c) => (c.primary?.scopes ?? []).includes('sanitasi'),
+    isSatisfied: (c) =>
+      hasAnswer(c, 'sanitation-units') ||
+      c.counts.some((x) => x.unit === 'sambungan') ||
+      textHas(c, /\b\d+\s*(sambungan|kk)\b/i),
+    prompt: () => 'Berapa jumlah unit/sambungan yang dilayani? Tulis angkanya — mis. "40 sambungan" atau "25 KK".',
+    kind: 'text',
+    options: [],
+    allowCustom: true,
+    priority: 20,
+    missingLabel: 'jumlah unit/sambungan sanitasi',
+    apply: (ctx, label) => {
+      setAnswer(ctx, 'sanitation-units', label);
+      const num = parseCountNumber(label);
+      if (num != null) upsertCount(ctx, num, 'sambungan', `${num} sambungan`);
+    },
+    phrase: (label) =>
+      /sambungan|kk/i.test(label) ? `${label} sanitasi` : `${label} sambungan sanitasi`,
+  },
+  {
+    key: 'sanitation-disposal',
+    appliesTo: (c) => (c.primary?.scopes ?? []).includes('sanitasi'),
+    isSatisfied: (c) => hasAnswer(c, 'sanitation-disposal'),
+    prompt: () => 'Buangan akhirnya ke mana?',
+    kind: 'single',
+    options: [
+      { id: 'san-buang-resapan', label: 'Resapan ke tanah' },
+      { id: 'san-buang-jaringan', label: 'Jaringan air limbah kota' },
+      { id: 'san-buang-badanair', label: 'Badan air penerima' },
+    ],
+    allowCustom: true,
+    priority: 30,
+    missingLabel: 'buangan akhir sanitasi',
+    apply: (ctx, label) => {
+      setAnswer(ctx, 'sanitation-disposal', label);
+      replaceSpec(ctx, 'buangan akhir sanitasi: ', `buangan akhir sanitasi: ${label}`);
+    },
+    phrase: (label) => `buangan sanitasi: ${label}`,
+  },
+
+  /* ================= STRUKTUR (W6) ================= */
+  {
+    key: 'structure-system',
+    appliesTo: (c) => (c.primary?.scopes ?? []).includes('struktur'),
+    isSatisfied: (c) =>
+      hasAnswer(c, 'structure-system') ||
+      textHas(c, /\b(beton bertulang|struktur baja|rangka baja|komposit)\b/),
+    prompt: () => 'Sistem strukturnya apa?',
+    kind: 'single',
+    options: [
+      { id: 'str-sis-beton', label: 'Beton bertulang' },
+      { id: 'str-sis-baja', label: 'Baja' },
+      { id: 'str-sis-komposit', label: 'Komposit beton-baja' },
+      { id: 'str-sis-kayu', label: 'Kayu' },
+    ],
+    allowCustom: true,
+    priority: 15,
+    missingLabel: 'sistem struktur',
+    apply: (ctx, label) => {
+      setAnswer(ctx, 'structure-system', label);
+      replaceSpec(ctx, 'sistem struktur: ', `sistem struktur: ${label}`);
+    },
+    phrase: (label) => `sistem struktur ${label}`,
+  },
+  {
+    key: 'structure-concrete-grade',
+    appliesTo: (c) => (c.primary?.scopes ?? []).includes('struktur'),
+    isSatisfied: (c) => {
+      if (hasAnswer(c, 'structure-concrete-grade')) return true;
+      // Mutu beton tidak relevan bila strukturnya baja/kayu (kecuali
+      // komposit) — jangan tanyakan.
+      if (c.primary?.id === 'struktur-baja') return true;
+      const sys = c.answers['structure-system'] ?? '';
+      if (/baja|kayu/i.test(sys) && !/komposit/i.test(sys)) return true;
+      return textHas(c, /\bk-?\s*\d{3}\b/i);
+    },
+    prompt: () => 'Mutu beton yang direncanakan? (pilih kelasnya — bukan karangan, hanya yang Anda putuskan)',
+    kind: 'single',
+    options: [
+      { id: 'str-mutu-k225', label: 'K-225' },
+      { id: 'str-mutu-k250', label: 'K-250' },
+      { id: 'str-mutu-k300', label: 'K-300' },
+      { id: 'str-mutu-k350', label: 'K-350' },
+      { id: 'str-mutu-belum', label: 'Belum ditentukan (mengikuti desain struktur)' },
+    ],
+    allowCustom: true,
+    priority: 25,
+    missingLabel: 'mutu beton struktur',
+    apply: (ctx, label) => {
+      setAnswer(ctx, 'structure-concrete-grade', label);
+      replaceSpec(ctx, 'mutu beton: ', `mutu beton: ${label}`);
+    },
+    phrase: (label) => `mutu beton ${label}`,
+  },
 ];
 
 function defByKey(key: string): SpecQuestionDef | null {
@@ -1066,6 +1719,8 @@ export function questionnaireDefKeys(): string[] {
 function specUnitForKey(key: string): string | undefined {
   if (key === 'kandang-capacity') return 'ekor';
   if (key === 'building-bedrooms') return 'kamar tidur';
+  if (key === 'mep-points') return 'titik';
+  if (key === 'sanitation-units') return 'sambungan';
   if (key === 'budget') return 'IDR';
   return undefined;
 }

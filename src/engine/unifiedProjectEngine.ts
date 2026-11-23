@@ -306,6 +306,16 @@ export class UnifiedProjectEngine {
           // F2 (lanjutan §5): rumus kuantitas diteruskan ke Sheet 4
           // (volumeFormulaOf) — tanpa ini rumus berhenti di record RAB.
           ...((it as any).calculationFormula ? { calculationFormula: (it as any).calculationFormula } : {}),
+          // Batch 4 (§7.5 — menutup keterbatasan v1 "volumeBasis tidak
+          // diteruskan ke normalizeSections/ekspor"): basis volume
+          // diteruskan ke seksi ekspor (pola yang sama dengan
+          // calculationFormula di atas) — tanpa ini basis hilang di
+          // rekonstruksi seksi dan ekspor tidak bisa membedakan volume
+          // dari dimensi pengguna vs asumsi template. Tanpa nilai =
+          // field absen (tidak ada default karangan). Batas yang sama
+          // dengan S6: seksi TERSIMPAN dikembalikan apa adanya (early
+          // return di atas) tanpa pemetaan ini.
+          ...((it as any).volumeBasis ? { volumeBasis: (it as any).volumeBasis } : {}),
           // S6 (§6, P5-O3): traceabilitas WBS diteruskan ke seksi ekspor
           // — tanpa ini Sheet 2 tidak bisa menampilkan hierarki WBS
           // (jalur ekspor nyata: normalizeSections → freezeRabSnapshot

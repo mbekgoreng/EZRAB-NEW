@@ -1011,6 +1011,29 @@ export interface WorkItemAuditEntry {
 }
 
 // Backwards Compatibility Aliases
+/**
+ * W7 (§7/S3-6 + G7, Universal Construction Intelligence 2026-11-22) —
+ * trace QTO terstruktur per item chat, mengikuti pola
+ * `GeneratedWorkItemResult` parametric engine (`formula` /
+ * `formulaInputs`). Ditulis `generateDefaultItemsFromComponents`
+ * (rabTemplateService) saat generate; `formulaInputs` adalah snapshot
+ * nilai parameter yang DIRUJUK rumus (bukan seluruh context).
+ * `sourceComponentId` adalah join key stabil item↔komponen template —
+ * pengganti tautan berbasis nama di `computeVolumeBasis` /
+ * `traceItemSpecs` (G7; konsumsi oleh W4). Aditif & opsional; item
+ * lama tanpa trace tetap valid.
+ */
+export interface ChatQtoTrace {
+  /** Rumus template yang dipakai (calculationRule komponen); null bila komponen tanpa rule. */
+  formula: string | null;
+  /** Nilai parameter yang dirujuk rumus (nama → nilai saat evaluasi). */
+  formulaInputs: Record<string, number | string>;
+  /** Sumber volume — 'CALCULATOR' (evaluasi deterministik rule template, bukan karangan AI). */
+  volumeSource: VolumeSourceType;
+  /** ID komponen template sumber (stabil terhadap rename komponen). */
+  sourceComponentId: string;
+}
+
 export interface RabItem {
   id: string;
   no: number;
@@ -1086,6 +1109,21 @@ export interface RabItem {
    * tanpa karangan).
    */
   calculationFormula?: string;
+  /**
+   * W7 (§7/S3-6 + G7, 2026-11-22) — ID komponen template sumber item
+   * ini (stabil terhadap rename; join key untuk `computeVolumeBasis` /
+   * `traceItemSpecs`, menggantikan pencocokan `c.name ===
+   * item.description`). Diisi generator template; item donor/revisi /
+   * manual tidak membawanya (absen = tidak tertaut komponen).
+   */
+  sourceComponentId?: string;
+  /**
+   * W7 (§7/S3-6, 2026-11-22) — trace QTO terstruktur per item chat
+   * (`ChatQtoTrace`): rumus + input rumus + sumber volume + ID
+   * komponen. Diisi generator template; absen pada item lama/manual.
+   * BELUM diteruskan factory ke `RABItem` ekspor (S3-15, W9).
+   */
+  qtoTrace?: ChatQtoTrace;
   verificationStatus?: VerificationStatus;
   manualOverrideAudit?: ManualOverrideAudit;
   ahspSnapshot?: AHSPProjectSnapshot;
@@ -1105,7 +1143,18 @@ export interface RabItem {
    * MARKET_REFERENCE); ekspor mengemberkannya sebagai manual lewat
    * priceStatus PRICE_MANUAL (priceIntegrity.bucketOf).
    */
-  priceSourceKind?: 'OFFICIAL_AHSP' | 'MARKET_REFERENCE' | 'EZRAB_ASSUMPTION' | 'UNRESOLVED' | 'USER_MANUAL';
+  /**
+   * 'CUSTOM_COMPOSED' (W8, S3-12, 2026-11-22 — aditif): harga dirakit
+   * dari komponen sendiri (komposer `composeCustomAhspPrice` di
+   * rabTemplateService) — tiap komponen ter-resolve di master harga 2026
+   * via `priceResolver2026.resolveResourcePrice`; harga = jumlah biaya
+   * langsung komponen (basis DIRECT_COST, tanpa O&P). BUKAN bukti resolved
+   * (hasResolvedPriceEvidence hanya mengakui OFFICIAL_AHSP /
+   * MARKET_REFERENCE) — di transfer turun ke PRICE_ESTIMATED; di
+   * totalsFromItems masuk ember database. Komposisi PARTIAL tidak pernah
+   * menghasilkan harga (fail-closed, seperti aturan kanonis DED).
+   */
+  priceSourceKind?: 'OFFICIAL_AHSP' | 'MARKET_REFERENCE' | 'EZRAB_ASSUMPTION' | 'UNRESOLVED' | 'USER_MANUAL' | 'CUSTOM_COMPOSED';
   /** Human-readable source label. */
   priceSourceLabel?: string;
   /** Explanation of price provenance (e.g. assumption ID, basis). */

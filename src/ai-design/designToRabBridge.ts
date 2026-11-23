@@ -8,6 +8,11 @@
 
 import type { HouseSpec } from './specEngine';
 import type { SpreadsheetRow } from './DesignSpreadsheet';
+/* G17-kecil (W3/W9): label skema G untuk kelompok spreadsheet — satu
+ * lookup saat membangun item, agar `group` item desain selaras dengan
+ * kategori template saat ditransfer (konsumen transfer di integrasi
+ * akhir; modul ini hanya menempelkan labelnya). */
+import { gLabelForSpreadsheetGroup } from '../ai-tools/ezrab-ai/wbsGroupMapping';
 
 export interface DesignWorkItem {
   // Identitas (untuk QTO/RAB)
@@ -16,6 +21,11 @@ export interface DesignWorkItem {
   category: string;
   /** Kelompok WBS asal di spreadsheet desain (mis. '01 Persiapan'). */
   group?: string;
+  /** Label skema G untuk kelompok ini (mis. '01. PEKERJAAN PERSIAPAN')
+   *  — dari `gLabelForSpreadsheetGroup`; undefined bila kelompok tidak
+   *  dikenal di peta WBS. Dipakai transfer agar group selaras dengan
+   *  kategori template (G17-kecil). */
+  gLabel?: string;
   unit: string;
   volume: number;
   // Provenance
@@ -23,8 +33,20 @@ export interface DesignWorkItem {
   sourceDetail: string;   // mis. "Dinding bata perimeter: 2×(6+15)×0.15×3.2"
   designRowId: string;    // referensi ke spreadsheet row
   // Status harga (selalu null di tahap ini — bukan 0)
-  unitPrice: null;
-  priceStatus: 'PRICE_UNRESOLVED';
+  // Lengkapi dengan Full AI (§5): field harga-terisi OPSIONAL — emisi
+  // default spreadsheetToWorkItems TETAP null + PRICE_UNRESOLVED
+  // (fail-closed); completion mengisi field-field ini di salinan state
+  // Review (AiDesignStudio), bukan di emisi default.
+  unitPrice: number | null;
+  priceStatus: 'PRICE_UNRESOLVED' | 'PRICE_ESTIMATED';
+  /** Kind/label/penjelasan harga terisi (hanya bila PRICE_ESTIMATED). */
+  priceSourceKind?: 'EZRAB_ASSUMPTION';
+  priceSourceLabel?: string;
+  priceSourceExplanation?: string;
+  verificationStatus?: 'NEEDS_VERIFICATION';
+  /** Catatan spek asal baris spreadsheet (r.catatan) + spek asumsi AI —
+   *  dibawa completion agar dasar spek tidak hilang ke RAB. */
+  notes?: string;
   // Review
   needsReview: boolean;
   reviewReason: string;
@@ -42,6 +64,8 @@ export function spreadsheetToWorkItems(rows: SpreadsheetRow[]): DesignWorkItem[]
       description: r.uraian,
       category: 'AI_DESIGN',
       group: r.kelompok,
+      // G17-kecil: satu lookup label G per baris (null → undefined).
+      gLabel: gLabelForSpreadsheetGroup(r.kelompok) ?? undefined,
       unit: r.satuan,
       volume: r.volume,
       source: 'AI_DESIGN_GEOMETRY' as const,
@@ -49,6 +73,9 @@ export function spreadsheetToWorkItems(rows: SpreadsheetRow[]): DesignWorkItem[]
       designRowId: r.id,
       unitPrice: null,
       priceStatus: 'PRICE_UNRESOLVED' as const,
+      // Catatan spek baris dibawa (DESIGN.md §3 aturan 4): completion
+      // Full AI menggabungkannya dengan spek AI di notes item.
+      notes: r.catatan || undefined,
       needsReview: r.status === 'PERLU_REVIEW',
       reviewReason: r.status === 'PERLU_REVIEW'
         ? 'Volume dari geometri konsep — perlu verifikasi sebelum jadi RAB final'

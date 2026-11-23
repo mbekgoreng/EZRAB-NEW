@@ -508,6 +508,41 @@ export function getActiveExecution(conversationId: string): AiExecutionRecord | 
   return null;
 }
 
+/**
+ * S3-C (F2/F3, 2026-11-23) — eksekusi aktif TERBARU di SEMUA
+ * percakapan (bukan superseded, masih preparing/generating), bila ada.
+ * `busy` dan tombol Berhenti dimiliki VIEW, bukan percakapan: ganti
+ * proyek/percakapan di tengah request tidak boleh me-reset indikator
+ * sibuk (S2/S5) atau membuat request tak-terjangkau tombol Berhenti
+ * (S4b). Berbeda dengan penghitung in-flight milik komponen, helper
+ * ini tetap benar sesudah remount (view dilepas lalu kembali saat
+ * request proyek lain masih berjalan — ref komponen sudah reset,
+ * registry runtime tetap memegang recordnya).
+ *
+ * `excludeConversationIdPrefixes` mengecualikan kunci eksekusi yang
+ * BUKAN Chat AI — pemanggil view meneruskan `['spreadsheet-modal:']`
+ * (kunci `spreadsheetModalExecutionKey` modal spreadsheet): generasi
+ * pratinjau modal bukan permintaan chat dan tidak boleh mengunci
+ * composer atau menjadi target tombol Berhenti Chat AI. Tanpa
+ * pengecualian, semua eksekusi aktif dihitung.
+ */
+export function getAnyActiveExecution(excludeConversationIdPrefixes: string[] = []): AiExecutionRecord | null {
+  let best: ActiveEntry | null = null;
+  for (const entry of records.values()) {
+    const rec = entry.record;
+    if (rec.superseded) continue;
+    if (rec.status !== 'preparing' && rec.status !== 'generating') continue;
+    if (excludeConversationIdPrefixes.some((p) => rec.conversationId.startsWith(p))) continue;
+    if (!best || rec.startedAt >= best.record.startedAt) best = entry;
+  }
+  return best ? snapshotRecord(best) : null;
+}
+
+/** S3-C (F2) — true bila ada eksekusi aktif di percakapan mana pun (di luar pengecualian). */
+export function hasAnyActiveExecution(excludeConversationIdPrefixes: string[] = []): boolean {
+  return getAnyActiveExecution(excludeConversationIdPrefixes) !== null;
+}
+
 /** Record terakhir pada sebuah percakapan (apa pun statusnya), bila ada. */
 export function getLastExecution(conversationId: string): AiExecutionRecord | null {
   const entry = latestEntry(conversationId);

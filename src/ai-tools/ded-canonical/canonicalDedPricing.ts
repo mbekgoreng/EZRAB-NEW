@@ -148,6 +148,53 @@ const GENERIC_WORDS = new Set([
   'buah', 'ls', 'titik', 'lembar', 'batang', 'zak', 'unit',
 ]);
 
+/**
+ * Sinonim pekerjaan konstruksi → bentuk kanonis katalog AHSP (W8, S3-7,
+ * 2026-11-22). Matching nama bergantung pada kata kueri yang muncul di
+ * judul katalog; DED memakai istilah lapangan yang TIDAK ADA di katalog
+ * ("pembesian" tidak ada di judul AHSP mana pun — katalog memakai
+ * "penulangan"; "urugan" tidak ada — katalog memakai "timbunan"). Tanpa
+ * alias, kueri itu mengembalikan kandidat menyesatkan ("urugan pasir" →
+ * "penggalian pasir") atau NO_MATCH ("plester" vs "plesteran": gerbang
+ * kata-isi menolak substring). Alias diterapkan SIMETRIS pada kueri DAN
+ * judul (stripDedName/contentWords/titleWords/headPhraseTokens + pencarian
+ * ganda di searchCandidates) — Gerbang A/B/C TIDAK berubah, hanya
+ * kosakatanya yang disamakan. Verifikasi katalog 2026-11-22:
+ * - pembesian (0 judul) → penulangan (54 judul)
+ * - urugan (0 judul) → timbunan (63 judul)
+ * - batu kali → batu belah (skor pencarian 55 → 110)
+ * - cor beton → pengecoran beton (skor 55 → 75)
+ * - plester → plesteran (lolos gerbang kata-isi)
+ * - bowplank/bouwplank → papan duga: contoh brief; TIDAK ADA target
+ *   katalog untuk kedua istilah saat ini (keduanya NO_MATCH) — alias ini
+ *   hanya menyamakan normalisasi agar match bekerja bila katalog kelak
+ *   memuat itemnya. JANGAN tambah alias tanpa verifikasi katalog.
+ */
+const DED_SYNONYM_ALIASES: ReadonlyArray<readonly [string, string]> = [
+  ['bouwplank', 'papan duga'],
+  ['bowplank', 'papan duga'],
+  ['pembesian', 'penulangan'],
+  ['urugan', 'timbunan'],
+  ['batu kali', 'batu belah'],
+  ['cor beton', 'pengecoran beton'],
+  ['plester', 'plesteran'],
+];
+
+/**
+ * Samakan sinonim ke bentuk kanonis katalog. Input HARUS teks
+ * ternormalisasi (keluaran normText: huruf kecil, tanpa tanda baca).
+ * Penggantian memakai batas kata (\b) agar 'plester' tidak merusak
+ * 'plesteran' menjadi 'plesteranan'.
+ */
+export function canonicalizeDedSynonyms(normalizedText: string): string {
+  let out = String(normalizedText || '');
+  for (const [alias, canonical] of DED_SYNONYM_ALIASES) {
+    const pattern = alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+');
+    out = out.replace(new RegExp(`\\b${pattern}\\b`, 'g'), canonical);
+  }
+  return out.replace(/\s+/g, ' ').trim();
+}
+
 function normText(t: string): string {
   return String(t || '')
     .toLowerCase()
@@ -156,15 +203,16 @@ function normText(t: string): string {
     .trim();
 }
 
-/** Kata isi kueri: kata bermakna (panjang > 2, bukan generik). */
+/** Kata isi kueri: kata bermakna (panjang > 2, bukan generik). Sinonim
+ *  disamakan dulu ke bentuk kanonis katalog (W8, S3-7). */
 function contentWords(name: string): string[] {
-  return normText(name)
+  return canonicalizeDedSynonyms(normText(name))
     .split(' ')
     .filter((w) => w.length > 2 && !GENERIC_WORDS.has(w));
 }
 
 function titleWords(title: string): Set<string> {
-  return new Set(normText(title).split(' ').filter((w) => w.length > 0));
+  return new Set(canonicalizeDedSynonyms(normText(title)).split(' ').filter((w) => w.length > 0));
 }
 
 /** Normalisasi judul katalog: buang awalan generik + pola "1 m2/1 m3/..." agar
@@ -178,9 +226,10 @@ function stripCatalogPrefix(title: string): string {
 
 /** Normalisasi nama DED untuk perbandingan judul persis: buang awalan
  *  katalog ("Pemasangan 1 m2 ...") lalu kata generik — agar "Pemasangan
- *  1 m2 plesteran 1SP : 4PP tebal 15 mm" setara dengan judul katalognya. */
+ *  1 m2 plesteran 1SP : 4PP tebal 15 mm" setara dengan judul katalognya.
+ *  Sinonim disamakan ke bentuk kanonis katalog (W8, S3-7). */
 function stripDedName(name: string): string {
-  return stripCatalogPrefix(name)
+  return canonicalizeDedSynonyms(stripCatalogPrefix(name))
     .split(' ')
     .filter((w) => !GENERIC_WORDS.has(w))
     .join(' ');
@@ -194,7 +243,7 @@ function stripDedName(name: string): string {
  * chatSearch.ts (kata generik/satuan/angka murni dibuang).
  */
 function headPhraseTokens(title: string): string[] {
-  return stripCatalogPrefix(title)
+  return canonicalizeDedSynonyms(stripCatalogPrefix(title))
     .split(' ')
     .filter((w) => w.length > 0 && !GENERIC_WORDS.has(w) && !/^\d+$/.test(w))
     .slice(0, GATE_C_HEAD_TOKENS);
@@ -443,10 +492,28 @@ export function resolveCanonicalCode(code: string, unit: string): CanonicalDedMa
 /** Kandidat dari pencarian nama — untuk review; Gerbang C adalah satu-satunya
  *  pengecualian auto-pilih (top-1 unik bermargin, lihat evaluateGateC). */
 function searchCandidates(name: string, unit: string): CanonicalCandidate[] {
-  const raw = officialAhspRepository.searchOfficialAhsp(name, {
-    unit: unit || undefined,
-    limit: SEARCH_LIMIT,
-  });
+  // Pencarian ganda sinonim (W8, S3-7): kueri asli + kueri terkanonisasi
+  // alias — skor per kode diambil yang tertinggi. Tanpa ini, alias hanya
+  // menyamakan normalisasi tetapi kandidat tidak pernah ditemukan (skor
+  // 'pondasi batu kali' = 55, di bawah SCORE_FLOOR 60). Bila kueri tidak
+  // mengandung alias, pencarian kedua tidak dijalankan (perilaku identik
+  // dengan sebelumnya).
+  const queries = [name];
+  const canonicalQuery = canonicalizeDedSynonyms(normText(name));
+  if (canonicalQuery !== normText(name)) queries.push(canonicalQuery);
+  type SearchHit = ReturnType<typeof officialAhspRepository.searchOfficialAhsp>[number];
+  const merged = new Map<string, SearchHit>();
+  for (const q of queries) {
+    const found = officialAhspRepository.searchOfficialAhsp(q, {
+      unit: unit || undefined,
+      limit: SEARCH_LIMIT,
+    });
+    for (const hit of found) {
+      const prev = merged.get(hit.item.code);
+      if (!prev || hit.score > prev.score) merged.set(hit.item.code, hit);
+    }
+  }
+  const raw = [...merged.values()].sort((a, b) => b.score - a.score);
   const words = contentWords(name);
   const reqUnit = normUnit(unit);
   const out: CanonicalCandidate[] = [];

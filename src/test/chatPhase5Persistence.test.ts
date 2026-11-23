@@ -116,11 +116,20 @@ async function main(): Promise<void> {
   const hasPush = (res: { actions?: Array<{ action: { kind: string } }> } | null | undefined) =>
     !!res?.actions?.some((a) => a.action.kind === 'push-universal');
 
-  /** Tiruan setia efek simpan intake view.tsx (jalan sesudah render). */
+  /** Tiruan setia efek simpan intake view.tsx (jalan sesudah render).
+   * Phase 2 (F-ISO-1): penjaga proyek — konteks milik proyek lain
+   * tidak disimpan di bawah proyek ini.
+   * S3-A (2026-11-23): baseline last-seen dibaca dari peta registry
+   * (satu-satunya sumber kebenaran per tab) dan sukses dicatat ke
+   * sana — cermin efek simpan view.tsx saat ini. Tanpa pencatatan
+   * ini, persist registry (generate) memakai baseline basi dan
+   * konflik dengan simpan view tabnya sendiri. */
   const viewSaveEffect = (projectId: string) => {
     const ictx = reg.getUniversalContextState();
     if (!ictx) return 'SKIP';
-    const res = dp.saveIntakeContext(projectId, ictx);
+    if (ictx.projectId && ictx.projectId !== projectId) return 'SKIP-PROJECT-MISMATCH';
+    const res = dp.saveIntakeContext(projectId, ictx, undefined, { expectedUpdatedAt: reg.getLastSeenIntakeVersion(projectId) });
+    if (res.ok) reg.noteIntakeSnapshotVersion(projectId, res.updatedAt);
     return res.ok ? (res.deduplicated ? 'DEDUP' : 'SAVED') : `FAIL ${res.error}`;
   };
 
@@ -721,6 +730,58 @@ async function main(): Promise<void> {
     assert(dp.peekIntakeContext(PROJECT_A) === null, 'snapshot tersimpan ikut digugurkan');
   });
 
+  // ================= (6) ISOLASI LINTAS-PROYEK (Phase 2, 2026-11-23) =================
+  await check('P5A-26 F-ISO-1: intake A yang masih hidup TIDAK menimpa snapshot B saat efek simpan jalan di B', () => {
+    resetAll();
+    // Snapshot B yang sah dulu: intake kandang di B sampai brief.
+    kandangSampaiBrief(PROJECT_B);
+    const snapBBefore = dp.peekIntakeContext(PROJECT_B)!;
+    assert(snapBBefore !== null, 'snapshot B ada sebelum pindah');
+    assert((snapBBefore.context.data as Record<string, unknown>).projectId === PROJECT_B, 'snapshot B tercap proyek B');
+    // Pengguna pindah ke A dan memulai intake di sana (singleton kini A).
+    kandangSampaiBrief(PROJECT_A);
+    const ictx = reg.getUniversalContextState()!;
+    assert(ictx.projectId === PROJECT_A, 'singleton kini milik proyek A');
+    // Efek simpan view berjalan di B (mount/chat B): HARUS dilewati.
+    const eff = viewSaveEffect(PROJECT_B);
+    assert(eff === 'SKIP-PROJECT-MISMATCH', `efek simpan di B harus dilewati (dapat: ${eff})`);
+    const snapBAfter = dp.peekIntakeContext(PROJECT_B)!;
+    assert(snapBAfter !== null, 'snapshot B tetap ada');
+    assert(snapBAfter.updatedAt === snapBBefore.updatedAt, 'snapshot B TIDAK tertimpa (updatedAt sama)');
+    assert((snapBAfter.context.data as Record<string, unknown>).projectId === PROJECT_B, 'snapshot B tetap tercap proyek B');
+    // Pertahanan berlapis: pemanggilan lapisan langsung pun ditolak.
+    const direct = dp.saveIntakeContext(PROJECT_B, ictx);
+    assert(!direct.ok, 'saveIntakeContext(B, ctxA) harus ditolak');
+    assert(dp.peekIntakeContext(PROJECT_B)!.updatedAt === snapBBefore.updatedAt, 'snapshot B tetap utuh sesudah penolakan langsung');
+    // Snapshot A sendiri tetap tersimpan normal.
+    assert(dp.peekIntakeContext(PROJECT_A) !== null, 'snapshot A tetap ada');
+  });
+
+  await check('P5A-27 F-ISO-3: loadIntakeContext fail-closed pada snapshot tercap proyek lain; snapshot lama tanpa cap tetap terbaca', () => {
+    resetAll();
+    kandangSampaiBrief(PROJECT_A);
+    // Seed record TIDAK COCOK langsung ke storage (meniru snapshot yang
+    // tertulis sebelum validasi simpan ada): salin record A ke kunci B.
+    const raw = storage.getItem(dp.AI_INTAKE_STORAGE_KEY) ?? '';
+    const envelope = JSON.parse(raw) as { data: Record<string, unknown> };
+    envelope.data[PROJECT_B] = JSON.parse(JSON.stringify(envelope.data[PROJECT_A]));
+    storage.setItem(dp.AI_INTAKE_STORAGE_KEY, JSON.stringify(envelope));
+    const loadedB = dp.loadIntakeContext(PROJECT_B);
+    assert(!loadedB.ok, 'snapshot tercap A tidak boleh dimuat untuk B');
+    assert(!loadedB.ok && loadedB.error === 'DRAFT_PERSISTENCE_FAILED', 'error isolasi jujur');
+    const loadedA = dp.loadIntakeContext(PROJECT_A);
+    assert(loadedA.ok, 'snapshot A tetap terbaca untuk A');
+    // Kompatibilitas: snapshot lama tanpa cap proyek tetap terbaca.
+    const legacy = JSON.parse(JSON.stringify(envelope.data[PROJECT_A])) as {
+      context: { data: Record<string, unknown> };
+    };
+    delete legacy.context.data.projectId;
+    envelope.data['PRJ-LEGACY'] = legacy;
+    storage.setItem(dp.AI_INTAKE_STORAGE_KEY, JSON.stringify(envelope));
+    const loadedLegacy = dp.loadIntakeContext('PRJ-LEGACY');
+    assert(loadedLegacy.ok, 'snapshot lama tanpa cap proyek tetap terbaca');
+  });
+
   // ================= ASERSI SUMBER =================
   await check('S5A-01 view: efek pemulihan memakai penjaga tautan (shouldRestoreIntakeSnapshot)', () => {
     const view = read('src/ai-tools/ezrab-ai/view.tsx');
@@ -800,6 +861,17 @@ async function main(): Promise<void> {
     assert(view.includes("lastStored.role === 'user'"), 'derivasi tidak memeriksa peran pesan tersimpan terakhir');
     const deriv = view.slice(view.indexOf('Penanda INTERRUPTED'));
     assert(!deriv.slice(0, 2400).includes('messages[messages.length - 1]'), 'derivasi masih memakai messages[] terakhir');
+  });
+
+  // S5A-09 (Phase 2, F-ISO-1) — efek simpan intake view memeriksa
+  // ictx.projectId vs effProject.id sebelum menyimpan (penjaga primer;
+  // lapisan saveIntakeContext adalah pertahanan berlapis, dipin P5A-26).
+  await check('S5A-09 view: efek simpan intake memeriksa ictx.projectId (F-ISO-1)', () => {
+    const view = read('src/ai-tools/ezrab-ai/view.tsx');
+    const effStart = view.indexOf('/* ---- Persistensi konteks intake universal');
+    assert(effStart > 0, 'efek simpan intake ditemukan');
+    const eff = view.slice(effStart, effStart + 1400);
+    assert(eff.includes('ictx.projectId && ictx.projectId !== effProject.id'), 'efek simpan tidak memeriksa ictx.projectId vs effProject.id');
   });
 
   resetAll();

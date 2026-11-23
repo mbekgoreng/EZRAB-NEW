@@ -50,6 +50,9 @@
 import { formatProjectSummary, type ProjectSnapshot } from './projectContext';
 import type { StructuredSpec } from './structuredSpec';
 import type { UniversalIntakeContext } from './universalIntake';
+/* Type-only: RabIntentSpec (jalur rumah) — formatRabIntentSpecLines di
+   bawah hanya membaca field-nya; tidak ada impor runtime. */
+import type { RabIntentSpec } from './rabIntentSpec';
 import {
   buildExtractiveSummary,
   normalizeForDedupe,
@@ -145,6 +148,19 @@ export interface CanonicalContextInput {
   /** Fallback teks bebas (warisan) — hanya bila tanpa snapshot. */
   projectSummaryText?: string | null;
   intakeContext?: UniversalIntakeContext | null;
+  /**
+   * W11 §11 (celah S1-4) — spek intent-first jalur RUMAH
+   * (RabIntentSpec). Sebelum W11, spek ini tidak pernah masuk konteks
+   * kanonis LLM (hanya UniversalIntakeContext) sehingga model
+   * kehilangan kamar/atap/pondasi/kualitas/eksklusi rumah di giliran
+   * lanjutan. Baris-barisnya masuk seksi FAKTA PROYEK (anggaran 4.000
+   * yang sama — dipotong per baris seperti fakta lain, total tetap
+   * ≤ 16.000; tanpa spek, perilaku persis seperti sebelumnya).
+   * PEMANGGIL: service.ts belum meneruskan field ini (di luar wilayah
+   * W11) — wiring view submit → request.rabIntentSpec → service.ts
+   * adalah tindak lanjut koordinator; builder ini sudah siap.
+   */
+  rabIntentSpec?: RabIntentSpec | null;
   structuredSpecs?: StructuredSpec[] | null;
   draftSummary?: CanonicalDraftSummary | null;
   /** Ringkasan tersimpan per conversationId (dari store percakapan). */
@@ -449,6 +465,49 @@ function formatIntakeLines(ctx: UniversalIntakeContext): string[] {
   return lines.map((l) => (l.length > 400 ? `${l.slice(0, 400)}…` : l));
 }
 
+/**
+ * W11 §11 — baris fakta dari RabIntentSpec (jalur rumah), cermin
+ * formatIntakeLines di atas. Label memakai akhiran "(spek RAB)" pada
+ * field yang tumpang tindih dengan intake (luas/lantai/budget/lokasi)
+ * agar model bisa membedakan sumbernya bila nilainya berbeda; field
+ * yang hanya ada di spek rumah (kamar/atap/pondasi/struktur/material/
+ * lingkup/pengecualian/kualitas) memakai label polos. Hanya field yang
+ * TERISI yang diformat (null/[] = UNKNOWN, tidak pernah dikarang) —
+ * rawText TIDAK ikut (teks mentah sudah ada di riwayat).
+ */
+function formatRabIntentSpecLines(spec: RabIntentSpec): string[] {
+  const lines: string[] = [];
+  const push = (label: string, value: string | null | undefined): void => {
+    if (value === null || value === undefined || value === '') return;
+    lines.push(`${label}: ${value}`);
+  };
+  push('Jenis bangunan (spek RAB)', spec.buildingType);
+  push('Fungsi bangunan (spek RAB)', spec.buildingFunction);
+  push('Kategori proyek (spek RAB)', spec.projectCategory);
+  push('Sumber spek RAB', spec.source);
+  if (spec.landAreaM2 != null) lines.push(`Luas tanah (spek RAB): ${spec.landAreaM2} m²`);
+  if (spec.buildingAreaM2 != null) lines.push(`Luas bangunan (spek RAB): ${spec.buildingAreaM2} m²`);
+  if (spec.dimensionsM?.lengthM != null && spec.dimensionsM?.widthM != null) {
+    lines.push(`Dimensi (spek RAB): ${spec.dimensionsM.lengthM} m × ${spec.dimensionsM.widthM} m`);
+  }
+  if (spec.floors != null) lines.push(`Jumlah lantai (spek RAB): ${spec.floors}`);
+  if (spec.bedrooms != null) lines.push(`Kamar tidur (spek RAB): ${spec.bedrooms}`);
+  if (spec.bathrooms != null) lines.push(`Kamar mandi (spek RAB): ${spec.bathrooms}`);
+  push('Lokasi (spek RAB)', spec.location);
+  if (spec.roofSystem.length > 0) lines.push(`Atap (spek RAB): ${spec.roofSystem.join(', ')}`);
+  push('Pondasi (spek RAB)', spec.foundationSystem);
+  if (spec.structuralSystem.length > 0) lines.push(`Struktur (spek RAB): ${spec.structuralSystem.join(', ')}`);
+  if (spec.materials.length > 0) lines.push(`Material (spek RAB): ${spec.materials.join(', ')}`);
+  if (spec.scope.length > 0) lines.push(`Lingkup (spek RAB): ${spec.scope.join(', ')}`);
+  if (spec.exclusions.length > 0) lines.push(`Pengecualian (spek RAB): ${spec.exclusions.join(', ')}`);
+  if (spec.budgetIdr != null) lines.push(`Budget (spek RAB): ${formatIdr(spec.budgetIdr)}`);
+  push('Kualitas (spek RAB)', spec.quality);
+  if (spec.explicitFields.length > 0) {
+    lines.push(`Field eksplisit dari pengguna (spek RAB): ${spec.explicitFields.join(', ')}`);
+  }
+  return lines.map((l) => (l.length > 400 ? `${l.slice(0, 400)}…` : l));
+}
+
 function formatSpecLines(specs: StructuredSpec[]): string[] {
   const rank = (s: StructuredSpec): number =>
     s.status === 'CONFIRMED' ? 0 : s.status === 'ASSUMPTION' ? 1 : s.status === 'RECOMMENDATION' ? 2 : 3;
@@ -482,7 +541,34 @@ export function buildCanonicalContext(input: CanonicalContextInput): CanonicalCo
         `tidak cocok dengan scope ${input.projectId} — konteks lintas proyek ditolak.`,
     );
   }
+  // S3-B (2026-11-23) — defense-in-depth, cermin cek snapshot di atas:
+  // (1) intakeContext tercap proyek lain vs scope → tolak. Jalur view
+  // sudah dilindungi Tier 1/2, tetapi builder sendiri tidak boleh
+  // memformat baris fakta proyek A ke payload proyek B (S11c discovery).
+  // null di kedua sisi = tanpa klaim kepemilikan → diizinkan, cermin
+  // semantik cek snapshot (hanya throw bila ADA dan mismatch).
+  if (input.intakeContext?.projectId && projectId && input.intakeContext.projectId !== projectId) {
+    throw new Error(
+      `CANONICAL_CONTEXT_PROJECT_MISMATCH: intake konteks proyek ${input.intakeContext.projectId} ` +
+        `tidak cocok dengan scope ${projectId} — konteks lintas proyek ditolak.`,
+    );
+  }
   const conversationId = input.conversationId ?? null;
+  // S3-B (2): conversationId yang cocok pola generator store
+  // (`conv-<projectId>-<ms>-<5 acak>`, unifiedConversationStore.ts:159)
+  // mengklaim pemiliknya — bila pemilik itu ≠ scope, tolak (S11b).
+  // ID yang TIDAK cocok pola (sesi non-conv, fixture tes) tidak membawa
+  // klaim kepemilikan yang bisa diperiksa → dibiarkan (jangan tolak
+  // yang tidak bisa dibuktikan). Scope null = tanpa klaim → dibiarkan.
+  if (conversationId && projectId) {
+    const convOwner = /^conv-(.+)-(\d{10,})-[a-z0-9]{5}$/.exec(conversationId);
+    if (convOwner && convOwner[1] !== projectId) {
+      throw new Error(
+        `CANONICAL_CONTEXT_PROJECT_MISMATCH: percakapan ${conversationId} milik proyek ${convOwner[1]} ` +
+          `tidak cocok dengan scope ${projectId} — konteks lintas proyek ditolak.`,
+      );
+    }
+  }
   const userId = input.userId ?? null;
 
   const reserved = Math.max(0, input.reservedChars ?? 0);
@@ -559,6 +645,24 @@ export function buildCanonicalContext(input: CanonicalContextInput): CanonicalCo
         duplicatesDropped++; // fakta intake yang sudah ada di snapshot tidak diulang
         continue;
       }
+      factLines.push(l);
+    }
+  }
+  // W11 §11 — spek rumah (RabIntentSpec) masuk FAKTA dengan prioritas
+  // sesudah intake universal, sebelum spek terstruktur v2. Dedupe
+  // terhadap fakta yang sudah ada (bila intake sudah membawa nilai
+  // yang sama persis, baris spek tidak diulang). Anggaran TIDAK
+  // berubah: baris-baris ini tunduk pada cap fakta 4.000 + pemotongan
+  // per baris di bawah, sehingga total tetap ≤ 16.000.
+  if (input.rabIntentSpec) {
+    const rabLines = formatRabIntentSpecLines(input.rabIntentSpec);
+    const existingRab = new Set(factLines.map(normalizeForDedupe));
+    for (const l of rabLines) {
+      if (existingRab.has(normalizeForDedupe(l))) {
+        duplicatesDropped++;
+        continue;
+      }
+      existingRab.add(normalizeForDedupe(l));
       factLines.push(l);
     }
   }

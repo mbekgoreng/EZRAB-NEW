@@ -58,6 +58,15 @@ routes('bagaimana cara ekspor ke Excel?', 'HOWTO_EXCEL_EXPORT', 'B7 howto stays 
 routes('buka ded ai', 'OPEN_DED_ESTIMATE', 'B8 buka ded stays nav');
 routes('buatkan rab rumah type 70 2 lantai', 'CREATE_RAB_DIRECT', 'B9 rab direct intact');
 routes('buat proyek baru', 'OPEN_PROJECT_CREATE', 'B10 buat proyek baru stays nav');
+// Penjaga anti-"rab" (Phase 2, 2026-11-23 — regresi c96881c): permintaan
+// RAB ber-"proyek" TIDAK BOLEH dibajak CREATE_PROJECT; "rab" sesudah
+// "proyek" tetap bagian dari nama proyek (B16).
+routes('Buatkan RAB proyek 2 gedung: gedung A 3 lantai 20 x 12 m dan gedung B 2 lantai 15 x 10 m, budget 500 juta', 'CREATE_RAB_SUMMARY', 'B11 rab proyek 2 gedung not CREATE_PROJECT');
+routes('Buatkan RAB proyek kandang sapi 17 x 9 m', 'CREATE_RAB_SUMMARY', 'B12 rab proyek kandang not CREATE_PROJECT');
+routes('Buatkan RAB untuk proyek gedung kantor 3 lantai', 'CREATE_RAB_SUMMARY', 'B13 rab untuk proyek gedung not CREATE_PROJECT');
+routes('Buatkan RAB proyek renovasi dapur', 'CREATE_RAB_SUMMARY', 'B14 rab proyek renovasi not CREATE_PROJECT');
+routes('Buatkan RAB jalan beton 500 m proyek desa', 'CREATE_RAB_SUMMARY', 'B15 rab jalan proyek desa not CREATE_PROJECT');
+routes('buat proyek RAB Gedung', 'CREATE_PROJECT', 'B16 rab sesudah proyek = nama proyek');
 routes('hapus item plesteran', 'DELETE_ITEM', 'B11 hapus item intact');
 routes('berapa total proyek ini', 'QUERY_PROJECT_TOTAL', 'B12 total intact');
 routes('ubah nama proyek menjadi Rumah Impian', 'RENAME_PROJECT', 'B13 rename intact');
@@ -103,7 +112,13 @@ const baseCtx: ChatActionContext = {
   projectTotal: null,
 };
 {
-  // CREATE_PROJECT sukses + fail-closed tanpa callback
+  // CREATE_PROJECT dua langkah (W11 §11, S1-R5): panggilan pertama hanya
+  // bertanya (tidak membuat), panggilan kedua mengeksekusi.
+  const ask = executeIntent('CREATE_PROJECT', 'Rumah Impian', {
+    ...baseCtx,
+    createProject: (name) => ({ id: 'p2', name }),
+  });
+  assert(ask.ok && ask.message.includes('Rumah Impian') && (ask.actions?.length ?? 0) === 1, 'F1a create project asks first');
   const ok = executeIntent('CREATE_PROJECT', 'Rumah Impian', {
     ...baseCtx,
     createProject: (name) => ({ id: 'p2', name }),
@@ -126,8 +141,15 @@ const baseCtx: ChatActionContext = {
     ...baseCtx, creditBalance: 4500, creditSource: 'unavailable',
   });
   assert(!unav.ok && unav.message.includes('belum terhubung'), 'F5 credit unavailable honest');
-  // UPDATE_PROJECT_SETTINGS: patch hanya field yang disebut
+  // UPDATE_PROJECT_SETTINGS dua langkah (W11 §11, S1-R5): panggilan
+  // pertama hanya bertanya (patch tidak diterapkan), panggilan kedua
+  // menerapkan — patch hanya field yang disebut.
   let seenPatch: Record<string, unknown> | null = null;
+  const setAsk = executeIntent('UPDATE_PROJECT_SETTINGS', 'overhead jadi 10%', {
+    ...baseCtx,
+    updateProjectSettings: (_id, patch) => { seenPatch = patch as unknown as Record<string, unknown>; return true; },
+  });
+  assert(setAsk.ok && seenPatch === null, 'F6a settings asks first (patch not applied)');
   const set = executeIntent('UPDATE_PROJECT_SETTINGS', 'overhead jadi 10%', {
     ...baseCtx,
     updateProjectSettings: (_id, patch) => { seenPatch = patch as unknown as Record<string, unknown>; return true; },

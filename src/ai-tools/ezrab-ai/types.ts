@@ -42,6 +42,10 @@ export interface EzrabAiRequest {
   userId?: string | null;
   /** Konteks intake kanonis proyek (state terstruktur — sumber fakta). */
   intakeContext?: import('./universalIntake').UniversalIntakeContext | null;
+  /** Spek RAB jalur rumah per pesan (W11 builder + wiring koordinator §11):
+   *  diekstrak pemanggil dari teks pesan via extractRabIntentSpec; builder
+   *  hanya memformat field yang terisi (null/[] = UNKNOWN, tidak dikarang). */
+  rabIntentSpec?: import('./rabIntentSpec').RabIntentSpec | null;
   /** Spek terstruktur v2 (bila tidak ikut intakeContext). */
   structuredSpecs?: import('./structuredSpec').StructuredSpec[] | null;
   /** Ringkasan draft aktif proyek (judul/versi/jumlah — bukan isi penuh). */

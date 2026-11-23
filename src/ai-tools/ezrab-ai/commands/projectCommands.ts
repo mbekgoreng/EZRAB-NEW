@@ -62,6 +62,13 @@ export interface ProjectPattern {
  * - CREATE_PROJECT tidak membajak CREATE_RAB_DIRECT: pola ini menuntut
  *   kata "proyek" sesudah kata kerja buat ("buatkan RAB rumah 2 lantai"
  *   tidak mengandung "proyek" sehingga tidak cocok).
+ * - CREATE_PROJECT tidak membajak permintaan RAB yang mengandung kata
+ *   "proyek" ("Buatkan RAB proyek 2 gedung…"): penjaga anti-"rab"
+ *   (Phase 2, 2026-11-23) — segmen antara kata kerja dan "proyek"
+ *   memakai tempered token `(?:(?!\brab\b).)*` sehingga kata "rab" di
+ *   antara keduanya menggagalkan pola ini dan teks jatuh ke pola
+ *   CREATE_RAB_SUMMARY. "rab" SESUDAH "proyek" tetap bagian dari nama
+ *   ("buat proyek RAB Gedung" → CREATE_PROJECT, param "RAB Gedung").
  */
 export const PROJECT_PATTERNS: ProjectPattern[] = [
   // CREATE_PROJECT — menuntut nama. "buat proyek" (tanpa nama) TIDAK
@@ -73,7 +80,12 @@ export const PROJECT_PATTERNS: ProjectPattern[] = [
   // TRADE-OFF yang disengaja: nama proyek yang diawali kata "Baru"
   // ("Baru Jaya") ikut terpotong menjadi "Jaya" — pesan konfirmasi
   // mengutip nama yang dibuat sehingga pengguna bisa mengoreksi.
-  { intent: 'CREATE_PROJECT', re: /\b(?:buat|buatkan|bikin|bikinin|tambah)\b.*\bproyek\b\s+(?!baru\s*$)(?:baru\s+)?(.+)/, paramGroup: true },
+  // PENJAGA ANTI-"rab" (Phase 2, 2026-11-23 — regresi c96881c,
+  // P5A-01/03/06/24): segmen antara kata kerja dan "proyek" memakai
+  // tempered token `(?:(?!\brab\b).)*` sebagai ganti `.*`, sehingga
+  // "Buatkan RAB proyek 2 gedung…" TIDAK cocok di sini dan jatuh ke
+  // pola CREATE_RAB_SUMMARY. Grup tangkap tetap grup 1 (param).
+  { intent: 'CREATE_PROJECT', re: /\b(?:buat|buatkan|bikin|bikinin|tambah)\b(?:(?!\brab\b).)*\bproyek\b\s+(?!baru\s*$)(?:baru\s+)?(.+)/, paramGroup: true },
 
   // DELETE_PROJECT — langkah 1 (minta konfirmasi dua tombol).
   // Dijangkar ke awal pesan (opsional "tolong") agar afirmasi bebas

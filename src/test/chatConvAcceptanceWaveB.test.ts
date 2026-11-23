@@ -139,7 +139,7 @@ describe('Grup A — permintaan jelas', () => {
     expect(res.message).toContain('direnovasi');
   });
 
-  it('T05 (CASE E) jembatan kecil perkebunan → tanya bentang → tipe → brief+WBS; tanpa dimensi karangan', () => {
+  it('T05 (CASE E) jembatan kecil perkebunan → tanya bentang → tipe → kuesioner → brief+WBS; tanpa dimensi karangan', () => {
     const { res } = start('Saya mau membangun jembatan kecil untuk akses perkebunan.');
     expect(res.message).not.toContain(GENERIC_MENU_MARK);
     expect(res.message).not.toContain('Kirim ulang');
@@ -147,10 +147,25 @@ describe('Grup A — permintaan jelas', () => {
     expect(/\d/.test(res.message)).toBe(false);
     const cont = tryContinueUniversalContext('bentang 6 meter');
     expect(cont!.message).toContain('konstruksi');
-    const brief = tryContinueUniversalContext('beton');
+    // Re-baseline koordinator 2026-11-22 22:05 (final gate, §6): sesudah
+    // jawaban tipe, alur kini menampilkan KARTU KUESIONER untuk field
+    // kritis jembatan yang masih kosong (lebar + tipe struktur atas)
+    // SEBELUM brief — bukan brief langsung. Ini perilaku §6 yang
+    // disengaja (klarifikasi adaptif per disiplin): brief tanpa lebar
+    // jembatan tidak bisa dihitung. Brief tetap tercapai sesudah
+    // kuesioner dikirim (jawaban kosong = "belum ditentukan", bukan
+    // jalan buntu) — dibuktikan langkah ke-4 di bawah.
+    const q = tryContinueUniversalContext('beton');
+    expect(q!.questionnaire).toBeDefined();
+    expect(q!.message).toContain('lebar jembatannya');
+    const brief = submitQuestionnaireAnswers({
+      'bridge-width': { selectedIds: [], customText: '7 m', status: 'answered' },
+      'bridge-structure-type': { selectedIds: ['jbt-gelagar'], customText: null, status: 'answered' },
+    });
     expect(brief!.message).toContain('Brief proyek');
     expect(brief!.message).toContain('WBS konseptual');
     expect(getUniversalContextState()?.spanM).toBe(6);
+    expect(getUniversalContextState()?.widthM).toBe(7);
     expect(getUniversalContextState()?.answers['bridge-type']).toBe('beton');
   });
 

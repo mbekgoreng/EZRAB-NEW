@@ -140,6 +140,7 @@ export class EzrabAiService {
       projectSnapshot: snapshot,
       projectSummaryText: request.projectSummary ?? null,
       intakeContext: request.intakeContext ?? null,
+      rabIntentSpec: request.rabIntentSpec ?? null,
       structuredSpecs: request.structuredSpecs ?? null,
       draftSummary: request.draftSummary ?? null,
       storedSummary: request.storedSummary ?? null,

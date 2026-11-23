@@ -50,10 +50,10 @@ export interface StructuredSpec {
  * Metadata kanonis per kunci spek: kind + family (pengelompokan untuk
  * Bagian B — BUKAN family taksonomi subkategori) + label manusiawi.
  *
- * Cakupan: SEMUA kunci definisi kuesioner di questionnaire.ts (29
+ * Cakupan: SEMUA kunci definisi kuesioner di questionnaire.ts (50
  * kunci) + 4 kunci percakapan (kandang-type, warehouse-system,
  * bridge-type, new-construction) + 'budget' + 5 kunci dimensi DED
- * (Fase 4 — pemahaman DED, sumber 'DED') = 39 kunci.
+ * (Fase 4 — pemahaman DED, sumber 'DED') = 60 kunci.
  *
  * Keputusan kind yang TIDAK eksplisit di tugas (didokumentasikan,
  * bukan diam-diam):
@@ -87,6 +87,29 @@ export interface StructuredSpec {
  *   lantai), BUKAN 'condition' — sesuai arahan tugas.
  * - `landscape-vegetation` (multi) → 'condition' dengan value
  *   string[] (vegetasi yang direncanakan adalah kondisi tapak).
+ * - Keluarga W6 (MEP/jembatan/irigasi/pelabuhan/sanitasi/struktur,
+ *   21 kunci) MEMAKAI ULANG 12 family yang sudah ada — family BARU
+ *   dilarang pin P3D §0.3 (`families.size === 12`): MEP + struktur →
+ *   'gedung' (sistem bangunan); irigasi + pelabuhan + sanitasi →
+ *   'drainage' (infrastruktur air — sanitasi berbagi kategori
+ *   DRAINASE_SANITASI dengan drainase); jembatan → 'jembatan' (sudah
+ *   ada lewat 'bridge-type'). Bila kelak family khusus ditambahkan
+ *   (mep/irigasi/pelabuhan/sanitasi/struktur), baris
+ *   SPEC_FAMILY_TO_SCOPE + pin P3D §0.3 harus ikut diperbarui.
+ * - `bridge-span` / `bridge-width` / `irrigation-length` /
+ *   `irrigation-channel-size` → 'condition' (nilai STRING label
+ *   jawaban, mis. "12 m") — BUKAN 'dimension': angka kanonisnya
+ *   ditulis `apply` kuesioner ke ctx.spanM/widthM/lengthM/depthM,
+ *   sementara spek terstruktur membawa label mentahnya. Kind
+ *   'dimension' akan memaksa parse angka di derive — jawaban teks
+ *   tanpa angka ("dua belas") menjadi string yang MENOLAK SELURUH
+ *   array spek saat rehydrate (fail-closed validator).
+ * - `mep-power-capacity` → 'condition' (string "2200 VA"): opsi
+ *   "Di atas 5500 VA" TIDAK BOLEH di-parse menjadi angka 5500 —
+ *   itu mengarang nilai pasti dari batas bawah.
+ * - `mep-points` → 'count', unit 'titik'; `sanitation-units` →
+ *   'count', unit 'sambungan' (pola yang sama dengan
+ *   `kandang-capacity` → 'count', unit 'ekor').
  */
 export const SPEC_KEY_META: Record<string, { kind: SpecKind; family: string; label: string }> = {
   /* --- Kandang & peternakan --- */
@@ -126,6 +149,33 @@ export const SPEC_KEY_META: Record<string, { kind: SpecKind; family: string; lab
   'renovation-condition': { kind: 'condition', family: 'renovasi', label: 'Kondisi eksisting renovasi' },
   'renovation-finish-grade': { kind: 'quality', family: 'renovasi', label: 'Grade finishing renovasi' },
   'renovation-mep': { kind: 'scope', family: 'renovasi', label: 'Perbaikan instalasi renovasi' },
+  /* --- MEP (W6) — family 'gedung' (lihat catatan family di atas) --- */
+  'mep-installation-type': { kind: 'scope', family: 'gedung', label: 'Jenis instalasi MEP' },
+  'mep-power-capacity': { kind: 'condition', family: 'gedung', label: 'Daya listrik yang dibutuhkan' },
+  'mep-points': { kind: 'count', family: 'gedung', label: 'Jumlah titik instalasi MEP' },
+  /* --- Jembatan (W6) --- */
+  'bridge-span': { kind: 'condition', family: 'jembatan', label: 'Bentang jembatan' },
+  'bridge-width': { kind: 'condition', family: 'jembatan', label: 'Lebar jembatan' },
+  'bridge-structure-type': { kind: 'scope', family: 'jembatan', label: 'Tipe struktur atas jembatan' },
+  'bridge-foundation': { kind: 'scope', family: 'jembatan', label: 'Pondasi/tumpuan jembatan' },
+  'bridge-traffic': { kind: 'condition', family: 'jembatan', label: 'Lalu lintas yang melintasi jembatan' },
+  'bridge-pedestrian': { kind: 'scope', family: 'jembatan', label: 'Trotoar/fasilitas pejalan kaki jembatan' },
+  /* --- Irigasi (W6) — family 'drainage' (lihat catatan family di atas) --- */
+  'irrigation-length': { kind: 'condition', family: 'drainage', label: 'Panjang saluran irigasi' },
+  'irrigation-channel-size': { kind: 'condition', family: 'drainage', label: 'Dimensi saluran irigasi (lebar × kedalaman)' },
+  'irrigation-channel-type': { kind: 'material', family: 'drainage', label: 'Tipe saluran irigasi' },
+  'irrigation-structures': { kind: 'scope', family: 'drainage', label: 'Bangunan pelengkap irigasi' },
+  /* --- Pelabuhan & pesisir (W6) — family 'drainage' (lihat catatan family di atas) --- */
+  'harbor-structure-type': { kind: 'scope', family: 'drainage', label: 'Struktur pelabuhan/pesisir' },
+  'harbor-function': { kind: 'condition', family: 'drainage', label: 'Fungsi pelabuhan' },
+  'harbor-material': { kind: 'material', family: 'drainage', label: 'Material struktur pelabuhan' },
+  /* --- Sanitasi (W6) — family 'drainage' (kategori DRAINASE_SANITASI) --- */
+  'sanitation-system-type': { kind: 'scope', family: 'drainage', label: 'Sistem pengolahan sanitasi' },
+  'sanitation-units': { kind: 'count', family: 'drainage', label: 'Jumlah unit/sambungan sanitasi' },
+  'sanitation-disposal': { kind: 'condition', family: 'drainage', label: 'Buangan akhir sanitasi' },
+  /* --- Struktur (W6) — family 'gedung' (lihat catatan family di atas) --- */
+  'structure-system': { kind: 'scope', family: 'gedung', label: 'Sistem struktur' },
+  'structure-concrete-grade': { kind: 'material', family: 'gedung', label: 'Mutu beton struktur' },
   /* --- Kunci percakapan (questionDefsFor, bukan definisi kuesioner) --- */
   'kandang-type': { kind: 'scope', family: 'kandang', label: 'Tipe kandang (terbuka/tertutup)' },
   'warehouse-system': { kind: 'scope', family: 'gudang', label: 'Sistem struktur gudang (portal frame/truss)' },

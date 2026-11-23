@@ -225,6 +225,42 @@ async function main(): Promise<void> {
   // Rp1.278.955 DHSP; total Rp125.837.348,49 →
   // Rp125.255.604,24 (Δ −Rp581.744,25 = 7,65 m³ × Rp76.045 persis).
   // Ronde 2 tidak menggeser nilai-nilai ini lebih lanjut.
+  // RE-BASELINE 2026-11-22 (program Universal Construction Intelligence,
+  // koordinator; salinan lama: golden-single-building.pre-universal-2026-11-22.json):
+  // BUKAN re-baseline buta — diff diverifikasi substansi via regen-golden-5b-gate5.ts
+  // --diff-only SEBELUM menulis: 11 dari 12 kasus berubah, SEMUA perubahan ADITIF.
+  // Draft: hanya field spek baru W2/W10 (scopeSpecs, classification, house) + kata kunci
+  // 'perumahan' di scope gedung. Pesan: hanya seksi baru W3/W9 (Brief proyek, Struktur
+  // paket/WBS, Subtotal per cakupan, baris tangga keuangan). REVISE: hanya pesan.
+  // NOL perubahan pada: title, parts, template, evaluatedParams, item, volume, harga,
+  // total, asumsi, warning, ok/changed/totals revisi. TIDAK ADA harga/total yang bergerak
+  // (berbeda dengan re-baseline 17 Nov yang mengubah nilai Rp). Buildings DIPERTAHANKAN
+  // dari golden lama (drift pra-ada sejak Gate 2, ditolerir tes modulo dims/span).
+  // Catatan wart yang ikut terbaking: kasus jalan 1 km membawa house.bathrooms=1 —
+  // ambiguitas "km" pra-ada di extractor rumah (dibaca kamar mandi), kini terlihat lewat
+  // house view W2; perbaikan ambiguitas butuh keputusan terpisah.
+  // RE-BASELINE 2026-11-22 22:10 (final gate, perbaikan A-079 — kedalaman):
+  // salinan lama: golden-single-building.pre-depth-2026-11-22.json. Diff
+  // --diff-only SEBELUM menulis: 9 dari 12 kasus berubah, SEMUA perubahan
+  // ADITIF/terjelaskan — spec.depthM: null di semua draft (field baru) +
+  // keywords pertanian kasus kandang (penghapusan 'sumur bor' dari scope
+  // pertanian — pindah ke mep, perbaikan A-079). NOL perubahan pada: title,
+  // parts, template, evaluatedParams, item, volume, harga, total, asumsi,
+  // warning, pesan, REVISE. Buildings tetap DIPERTAHANKAN dari golden lama
+  // (drift pra-ada Gate 2, ditolerir tes).
+  // RE-BASELINE 2026-11-23 (Batch 1 Template Intelligence; salinan lama:
+  // golden-single-building.pre-b1-2026-11-23.json): BUKAN re-baseline
+  // buta — diff --diff-only diverifikasi substansi SEBELUM menulis; 5 dari
+  // 12 kasus "berubah", 2 di antaranya HANYA buildings (kantor/gudang,
+  // tidak ditulis — buildings dipertahankan dari golden lama) dan 3
+  // SUBSTANTIF, semuanya perbaikan kesesuaian yang disengaja B1:
+  // (1) jalan beton 1 km + (2) jalan+drainase 500 m: RECONSTRUCTION →
+  // INFRA-ROAD-RIGID (T1: jalan BARU bukan rekonstruksi eksisting —
+  // kegagalan W13 #4); (3) sekolah 2 lantai 20x12: BLD-EDU-SCHOOL →
+  // BLD-EDU-VOCATIONAL (D2: golden lama menghitung luas total 240 m²
+  // sebagai "Luas per Ruang Kelas" × 6 ruang = 1.440 m² lantai kelas
+  // untuk gedung 240 m² — korupsi pemetaan yang kini ditolak). Kedua
+  // kasus REVISE SAMA.
   await check('5B-06 single-building: output identik dengan sebelum gate (golden)', () => {
     const goldenPath = `${process.cwd()}/../your_files/EZRAB-PHASE5-WORKFLOW-INTEGRATION-2026-11-12/repro/golden-single-building.json`;
     const golden = JSON.parse(readFileSync(goldenPath, 'utf-8')) as Record<string, any>;

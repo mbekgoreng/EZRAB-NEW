@@ -230,6 +230,29 @@ console.log('§7.12 — Budget, kualitas, kamar, lokasi (tambahan)');
   check("kualitas: 'premium'", b3.quality === 'premium', b3.quality);
   const b4 = extractRabIntentSpec('Rp 500.000.000 untuk rumah 2 lantai');
   check('budget: "Rp 500.000.000" → 500000000', b4.budgetIdr === 500_000_000, b4.budgetIdr);
+  // Budget "uang …" (2026-11-22): prompt owner "saya ada uang 120jt …"
+  // sebelumnya TIDAK tertangkap sebagai cap anggaran. Type 36 di string
+  // owner hanya contoh — parsing budget generik, tanpa preset tipe.
+  const b5 = extractRabIntentSpec('saya ada uang 120jt saya ingin kamu buatkan rab untuk rumah type 36, apa saja pekerjaan dan spek materialnya?');
+  check('budget: string persis owner "uang 120jt" (type 36) → 120000000', b5.budgetIdr === 120_000_000, b5.budgetIdr);
+  const b6 = extractRabIntentSpec('saya ada uang 200jt, buatkan RAB rumah type 45');
+  check('budget: "uang 200jt" type 45 (generik, bukan khusus 36) → 200000000', b6.budgetIdr === 200_000_000, b6.budgetIdr);
+  const b7 = extractRabIntentSpec('saya ada uang 175jt, buatkan RAB rumah 7x12');
+  check('budget: "uang 175jt" ukuran custom 7x12 → 175000000', b7.budgetIdr === 175_000_000, b7.budgetIdr);
+  const b8 = extractRabIntentSpec('uang muka 50jt');
+  check('budget: "uang muka 50jt" BUKAN budget → null', b8.budgetIdr === null, b8.budgetIdr);
+  const b9 = extractRabIntentSpec('uang jalan 500rb');
+  check('budget: "uang jalan 500rb" BUKAN budget → null', b9.budgetIdr === null, b9.budgetIdr);
+  const b10 = extractRabIntentSpec('uang saku 2jt');
+  check('budget: "uang saku 2jt" BUKAN budget → null', b10.budgetIdr === null, b10.budgetIdr);
+  const b11 = extractRabIntentSpec('ruang 120jt');
+  check('budget: "ruang 120jt" BUKAN budget → null', b11.budgetIdr === null, b11.budgetIdr);
+  const b12 = extractRabIntentSpec('anggaran 300jt');
+  check('budget: "anggaran 300jt" tetap → 300000000', b12.budgetIdr === 300_000_000, b12.budgetIdr);
+  const b13 = extractRabIntentSpec('budget 250 juta');
+  check('budget: "budget 250 juta" tetap → 250000000', b13.budgetIdr === 250_000_000, b13.budgetIdr);
+  const b14 = extractRabIntentSpec('dana 120jt');
+  check('budget: "dana 120jt" tetap → 120000000', b14.budgetIdr === 120_000_000, b14.budgetIdr);
   const r1 = extractRabIntentSpec('rumah 3 kamar tidur, 2 kamar mandi');
   check('kamar: bedrooms=3', r1.bedrooms === 3, r1.bedrooms);
   check('kamar: bathrooms=2', r1.bathrooms === 2, r1.bathrooms);

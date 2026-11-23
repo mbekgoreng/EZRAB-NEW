@@ -94,6 +94,14 @@ export interface RabIntentEvaluation {
    * pemenang seri yang lebih cocok dengan kata-kata pengguna daripada
    * pemenang urutan katalog. Multi-cakupan: tidak pernah dipaksa (satu
    * id tidak boleh dipaksakan ke semua cakupan).
+   *
+   * B5-1 (2026-11-23): pemenang seri yang dipaksakan dari jalur intent
+   * SELALU lolos evaluator kesesuaian B1 — template yang ditolak
+   * evaluator tidak pernah dipaksakan dari sini (template paksa
+   * melewati evaluator berdasarkan desain, jadi inferensi intent tidak
+   * boleh mengesampingkannya). Berbeda dengan template paksa dari
+   * PILIHAN EKSPLISIT pengguna (klik kartu/katalog → universalResultFor
+   * langsung), yang memang tetap melewati evaluator berdasarkan desain.
    */
   forcedTemplateId?: string;
 }
@@ -164,6 +172,222 @@ export function unsupportedSpecReasons(spec: RabIntentSpec): string[] {
 }
 
 /* ------------------------------------------------------------------ */
+/* Definisi kritis per disiplin (§6 Universal Construction Intelligence, */
+/* W6 2026-11-22)                                                      */
+/* ------------------------------------------------------------------ */
+
+/** Satu field kritis: data inti yang wajib ada sebelum draft disusun. */
+export interface CriticalField {
+  /** Kunci stabil (dipakai lintas jalur: klarifikasi intent-first,
+   *  pertanyaan percakapan intake, kuesioner). */
+  key: string;
+  /** Label manusiawi (dipakai pesan + brief). */
+  label: string;
+}
+
+/**
+ * Tabel kritis per disiplin — SATU-SATUNYA definisi "data inti" untuk
+ * klarifikasi. Dipakai `buildSpecClarification` di bawah; `questionDefsFor`
+ * (universalIntake.ts, milik W2/W10) diarahkan memakai tabel yang sama
+ * agar kedua jalur tidak punya definisi "kritis" yang berbeda (S1 §5.5).
+ *
+ * Kunci disiplin = id scope universal (`UniversalScopeId`) + 'rumah'
+ * (jalur intent-first rumah) + 'bangunan' (default bila disiplin tidak
+ * dikenali). Field mengikuti contoh §6 master prompt: rumah =
+ * luas/dimensi; jalan = panjang+lebar; jembatan = bentang+lebar;
+ * irigasi = panjang+dimensi saluran; gudang = dimensi+bentang
+ * bebas+tinggi. `ask` adalah kalimat pertanyaan untuk disiplin itu —
+ * JANGAN tanya pertanyaan rumah untuk proyek jalan/irigasi.
+ */
+const DISCIPLINE_CRITICAL: Record<
+  string,
+  { fields: CriticalField[]; ask: (typeLabel: string) => string }
+> = {
+  rumah: {
+    fields: [
+      { key: 'area', label: 'luas bangunan (m²)' },
+      { key: 'dimensions', label: 'dimensi bangunan (m)' },
+    ],
+    ask: (t) =>
+      `Sebelum saya susun RAB-nya, saya butuh satu data inti: berapa luas bangunan ${t}nya ` +
+      `(dalam m²), atau ukurannya (misalnya 6 × 15 m)?`,
+  },
+  bangunan: {
+    fields: [
+      { key: 'area', label: 'luas bangunan (m²)' },
+      { key: 'dimensions', label: 'dimensi bangunan (m)' },
+    ],
+    ask: () =>
+      'Sebelum saya susun RAB-nya, saya butuh satu data inti: berapa luas bangunannya ' +
+      '(dalam m²), atau ukurannya (misalnya 6 × 15 m)?',
+  },
+  gedung: {
+    fields: [
+      { key: 'area', label: 'luas bangunan (m²)' },
+      { key: 'dimensions', label: 'dimensi bangunan (m)' },
+    ],
+    ask: (t) =>
+      `Sebelum saya susun RAB-nya, saya butuh satu data inti: berapa luas bangunan ${t}nya ` +
+      `(dalam m²), atau ukurannya (misalnya 6 × 15 m)?`,
+  },
+  gudang: {
+    fields: [
+      { key: 'dimensions', label: 'dimensi gudang — panjang × lebar (m)' },
+      { key: 'clearSpan', label: 'bentang bebas (m)' },
+      { key: 'height', label: 'tinggi gudang (m)' },
+    ],
+    ask: () =>
+      'Sebelum saya susun RAB-nya, saya butuh data intinya: berapa dimensi gudangnya ' +
+      '(panjang × lebar dalam meter), bentang bebas, dan tingginya?',
+  },
+  jalan: {
+    fields: [
+      { key: 'length', label: 'panjang jalan (m)' },
+      { key: 'width', label: 'lebar jalan (m)' },
+    ],
+    ask: () =>
+      'Sebelum saya susun RAB-nya, saya butuh dua data inti: berapa panjang dan lebar jalannya (dalam meter)?',
+  },
+  jembatan: {
+    fields: [
+      { key: 'span', label: 'bentang jembatan (m)' },
+      { key: 'width', label: 'lebar jembatan (m)' },
+    ],
+    ask: () =>
+      'Sebelum saya susun RAB-nya, saya butuh dua data inti: berapa bentang dan lebar jembatannya (dalam meter)?',
+  },
+  irigasi: {
+    fields: [
+      { key: 'length', label: 'panjang saluran (m)' },
+      { key: 'channelDims', label: 'dimensi saluran — lebar × kedalaman (m)' },
+    ],
+    ask: () =>
+      'Sebelum saya susun RAB-nya, saya butuh dua data inti: berapa panjang dan dimensi salurannya (lebar × kedalaman, dalam meter)?',
+  },
+  drainase: {
+    fields: [
+      { key: 'length', label: 'panjang saluran (m)' },
+      { key: 'channelDims', label: 'dimensi saluran — lebar × kedalaman (m)' },
+    ],
+    ask: () =>
+      'Sebelum saya susun RAB-nya, saya butuh dua data inti: berapa panjang dan dimensi salurannya (lebar × kedalaman, dalam meter)?',
+  },
+  mep: {
+    fields: [
+      { key: 'area', label: 'luas area yang dilayani (m²)' },
+      { key: 'points', label: 'jumlah titik instalasi' },
+    ],
+    ask: () =>
+      'Sebelum saya susun RAB-nya, saya butuh dua data inti: berapa luas area yang dilayani instalasinya (dalam m²), dan berapa jumlah titiknya?',
+  },
+  sanitasi: {
+    fields: [
+      { key: 'areaOrLength', label: 'luas/panjang area layanan' },
+      { key: 'units', label: 'jumlah unit/sambungan' },
+    ],
+    ask: () =>
+      'Sebelum saya susun RAB-nya, saya butuh dua data inti: berapa luas/panjang area layanannya, dan berapa jumlah unit/sambungannya?',
+  },
+  pelabuhan: {
+    fields: [{ key: 'length', label: 'panjang dermaga/garis pantai (m)' }],
+    ask: () =>
+      'Sebelum saya susun RAB-nya, saya butuh satu data inti: berapa panjang dermaga/garis pantainya (dalam meter)?',
+  },
+  struktur: {
+    fields: [
+      { key: 'dimensions', label: 'dimensi struktur (m)' },
+      { key: 'height', label: 'tinggi struktur (m)' },
+    ],
+    ask: () =>
+      'Sebelum saya susun RAB-nya, saya butuh data intinya: berapa dimensi dan tinggi strukturnya (dalam meter)?',
+  },
+  pondasi: {
+    fields: [
+      { key: 'dimensions', label: 'dimensi area pondasi (m)' },
+      { key: 'count', label: 'jumlah titik pondasi' },
+    ],
+    ask: () =>
+      'Sebelum saya susun RAB-nya, saya butuh satu data inti: berapa dimensi area pondasinya, atau jumlah titik pondasinya?',
+  },
+  tanah: {
+    fields: [
+      { key: 'area', label: 'luas area (m²)' },
+      { key: 'volume', label: 'volume galian/urugan (m³)' },
+    ],
+    ask: () =>
+      'Sebelum saya susun RAB-nya, saya butuh satu data inti: berapa luas area atau volume galian/urugannya (dalam m³)?',
+  },
+  lanskap: {
+    fields: [
+      { key: 'area', label: 'luas area (m²)' },
+      { key: 'length', label: 'panjang area (m)' },
+    ],
+    ask: () =>
+      'Sebelum saya susun RAB-nya, saya butuh satu data inti: berapa luas atau panjang area lanskapnya?',
+  },
+  renovasi: {
+    fields: [{ key: 'area', label: 'luas area yang direnovasi (m²)' }],
+    ask: () =>
+      'Sebelum saya susun RAB-nya, saya butuh satu data inti: berapa luas area yang direnovasinya (dalam m²)?',
+  },
+  demolisi: {
+    fields: [{ key: 'area', label: 'luas bangunan yang dibongkar (m²)' }],
+    ask: () =>
+      'Sebelum saya susun RAB-nya, saya butuh satu data inti: berapa luas bangunan yang dibongkarnya (dalam m²)?',
+  },
+  olahraga: {
+    fields: [{ key: 'area', label: 'luas lapangan (m²)' }],
+    ask: () =>
+      'Sebelum saya susun RAB-nya, saya butuh satu data inti: berapa luas lapangannya (dalam m²)?',
+  },
+  pertanian: {
+    fields: [
+      { key: 'area', label: 'luas area (m²)' },
+      { key: 'length', label: 'panjang area (m)' },
+    ],
+    ask: () =>
+      'Sebelum saya susun RAB-nya, saya butuh satu data inti: berapa luas atau panjang area pertaniannya?',
+  },
+  atap: {
+    fields: [{ key: 'area', label: 'luas atap (m²)' }],
+    ask: () =>
+      'Sebelum saya susun RAB-nya, saya butuh satu data inti: berapa luas atapnya (dalam m²)?',
+  },
+  finishing: {
+    fields: [{ key: 'area', label: 'luas area finishing (m²)' }],
+    ask: () =>
+      'Sebelum saya susun RAB-nya, saya butuh satu data inti: berapa luas area finishingnya (dalam m²)?',
+  },
+};
+
+/**
+ * Field kritis untuk satu disiplin (disiplin tak dikenal → default
+ * 'bangunan': luas/dimensi). Salinan baru tiap panggil — tabel tidak
+ * boleh dimutasi pemanggil.
+ */
+export function criticalFieldsFor(discipline: string): CriticalField[] {
+  const entry =
+    DISCIPLINE_CRITICAL[(discipline || '').toLowerCase().trim()] ??
+    DISCIPLINE_CRITICAL.bangunan;
+  return entry.fields.map((f) => ({ ...f }));
+}
+
+/**
+ * Disiplin satu spek intent-first: gudang didahulukan (tipenya dikenal
+ * spek rumah tetapi kritisnya bukan luas saja), lalu rumah (aturan
+ * isHouseRequest yang sama dengan evaluateRabIntent), lalu scope
+ * universal pertama dari teks mentah, lalu gedung generik bila ada
+ * buildingType, else 'bangunan'.
+ */
+export function disciplineForSpec(spec: RabIntentSpec): string {
+  if (spec.buildingType === 'gudang') return 'gudang';
+  if (isHouseRequest(spec, spec.rawText)) return 'rumah';
+  const scopes = detectScopes(spec.rawText);
+  if (scopes.length > 0) return scopes[0].id;
+  return spec.buildingType ? 'gedung' : 'bangunan';
+}
+
+/* ------------------------------------------------------------------ */
 /* Klarifikasi                                                         */
 /* ------------------------------------------------------------------ */
 
@@ -173,6 +397,15 @@ export function unsupportedSpecReasons(spec: RabIntentSpec): string[] {
  * lantai/kamar/lokasi/dll. berjalan sebagai asumsi berlabel sesuai
  * aturan owner yang sudah ada. Field yang sudah eksplisit tidak pernah
  * ditanyakan (dijaga lewat explicitFields + identifyMissingSpec).
+ *
+ * §6 (W6): PERTANYAANNYA adaptif per disiplin via criticalFieldsFor —
+ * jalan ditanya panjang+lebar, jembatan ditanya bentang+lebar, irigasi
+ * ditanya panjang+dimensi saluran — bukan pertanyaan luas rumah. Aturan
+ * BLOKIR tidak berubah: RabIntentSpec tidak punya kolom bentang/
+ * panjang/lebar, jadi "basis terukur" yang bisa dilihat modul ini tetap
+ * luas/dimensi; disiplin non-rumah yang lolos ke jalur universal
+ * diklarifikasi alur universal sendiri (evaluateRabIntent mengembalikan
+ * clarification null untuk rute itu).
  */
 export function buildSpecClarification(spec: RabIntentSpec): string | null {
   if (spec.source === 'ded') return null; // gambar kerja yang menjawab
@@ -185,11 +418,10 @@ export function buildSpecClarification(spec: RabIntentSpec): string | null {
   if (!basisBlocked) return null;
   const explicit = new Set(spec.explicitFields);
   if (explicit.has('buildingAreaM2') || explicit.has('dimensionsM')) return null;
+  const discipline = disciplineForSpec(spec);
+  const entry = DISCIPLINE_CRITICAL[discipline] ?? DISCIPLINE_CRITICAL.bangunan;
   const typeLabel = spec.buildingType ?? 'bangunan';
-  return (
-    `Sebelum saya susun RAB-nya, saya butuh satu data inti: berapa luas bangunan ${typeLabel}nya ` +
-    `(dalam m²), atau ukurannya (misalnya 6 × 15 m)?`
-  );
+  return entry.ask(typeLabel);
 }
 
 /* ------------------------------------------------------------------ */
@@ -356,7 +588,7 @@ function evaluateUniversal(rawText: string): UniversalEvaluation {
         method: 'custom',
         reasons: [
           'Tidak ada kategori pekerjaan yang dikenali dari permintaan ini — tidak ada template katalog yang bisa dipilih secara bertanggung jawab.',
-          'RAB disusun dari spesifikasi Anda (jalur kustom/ringkasan), bukan dipaksakan ke template yang tidak cocok.',
+          'Belum ada jalur hitung untuk spesifikasi ini — saya susun ringkasan kebutuhan dulu (bukan RAB jadi); lengkapi datanya atau susun manual lewat RAB & Estimasi.',
         ],
       },
       candidates: [],
@@ -392,9 +624,22 @@ function evaluateUniversal(rawText: string): UniversalEvaluation {
     // relevan daripada pemenang urutan katalog. Ini TIDAK mengubah pick
     // engine — ia dicatat sebagai rekomendasi alternatif (dan dipaksakan
     // hanya bila cakupan tunggal, lihat di bawah).
+    //
+    // B5-1 (2026-11-23): pemecah seri HANYA boleh memilih dari kandidat
+    // yang LOLOS evaluator kesesuaian B1 (`res.suitable`). Template
+    // paksa MELEWATI evaluator berdasarkan desain (dianggap keputusan
+    // eksplisit), jadi pemenang seri yang ditolak evaluator tidak boleh
+    // dipaksakan ke builder: RECONSTRUCTION untuk jalan beton BARU
+    // menang seri hanya karena namanya memuat kata "baru" ("Rigid
+    // Baru") — padahal evaluator menolaknya (T1: tanpa bukti struktur
+    // eksisting) — dan jalan baru itu mendapat item Pembongkaran Beton.
+    // Kandidat yang lolos evaluator (mis. cold-storage untuk gudang
+    // pendingin) tetap boleh menang seri dan dipaksakan.
+    const suitableIds = new Set(res.suitable.map((s) => s.template.id));
+    const tiedSuitable = tied.filter((t) => suitableIds.has(t.template.id));
     let betterMatch: { name: string; id: string } | null = null;
-    if (tied.length > 1 && distinctive.length > 0) {
-      const scored = tied.map((t) => ({
+    if (tiedSuitable.length > 1 && distinctive.length > 0) {
+      const scored = tiedSuitable.map((t) => ({
         name: t.template.name,
         id: t.template.id,
         hits: distinctive.filter((w) => t.template.name.toLowerCase().includes(w)).length,
@@ -426,7 +671,7 @@ function evaluateUniversal(rawText: string): UniversalEvaluation {
         method: 'custom',
         reasons: [
           'Tidak ada template katalog yang mencapai ambang kecocokan untuk spesifikasi ini — tidak ada template yang dipaksakan.',
-          'RAB disusun dari spesifikasi Anda (jalur kustom/ringkasan), bukan dari template yang tidak cocok.',
+          'Belum ada jalur hitung untuk spesifikasi ini — saya susun ringkasan kebutuhan dulu (bukan RAB jadi); lengkapi datanya atau susun manual lewat RAB & Estimasi.',
         ],
       },
       candidates,

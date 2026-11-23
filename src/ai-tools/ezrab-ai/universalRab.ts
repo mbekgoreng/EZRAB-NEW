@@ -92,6 +92,7 @@ import {
   validateWbsCompleteness,
   traceItemSpecs,
   formatWbsCompletenessLines,
+  computeVolumeBasis,
 } from './specChain';
 import type { ChainValidation, ItemSpecTrace, WbsCompletenessReport } from './specChain';
 import { resolveWbsMapping } from './wbsArtifact';
@@ -118,12 +119,61 @@ import type {
  * impor ini aman dari siklus runtime. */
 import { formatDedQtoDraftLines } from './dedQtoIntegration';
 import type { DedQtoDraftInfo } from './dedQtoIntegration';
-import type { RabItem, UserDecisionStatus, VerificationStatus } from '../../types';
-import { extractRabNeeds, stripLandPhrases, detectNeedsFunction, isNegatedAt } from './rabNeeds';
+import type { RabItem, UserDecisionStatus, VerificationStatus, VolumeSourceType, ChatQtoTrace } from '../../types';
+/* W3/W9 (§9, S3-15/16) — import TYPE saja (dihapus saat kompilasi):
+ * factory mengimpor wbsArtifact secara runtime, jadi impor nilai dari
+ * sini akan melingkar; tipe `VolumeBasis` aman diimpor sebagai type. */
+import type { VolumeBasis } from '../../engine/rab/rabItemFactory';
+import { extractRabNeeds, stripLandPhrases, detectNeedsFunction, isNegatedAt, parseBudgetMentions, extractUniversalMeasures } from './rabNeeds';
+import { extractRabIntentSpec, houseViewFromSpec } from './rabIntentSpec';
+import type { HouseSpecView, RabIntentSpec } from './rabIntentSpec';
+/* W2/W10 §2 — taksonomi tunggal (universalTaxonomy adalah modul daun:
+ * impor ini tidak bersiklus karena taksonomi tidak mengimpor modul ini). */
+import {
+  classifyUniversal,
+  findLinearMentions,
+  parseAnchoredLinear,
+  findAreaMentions,
+  findVolumeMentions,
+  parseCountMentions,
+  cancelledLinearValues,
+  findPowerMentions,
+  isExcludedKeywordOccurrence,
+} from './universalTaxonomy';
+import type { Classification } from './universalTaxonomy';
+/* Batch 1 (§4) — evaluator kesesuaian template (modul daun: hanya
+ * mengimpor TIPE dari modul ini, jadi impor nilai ini tidak bersiklus). */
+import { evaluateTemplateSuitability, isPerUnitAreaParam } from './templateSuitability';
+import type { SuitabilityDecision } from './templateSuitability';
+/* Batch 3 (§6) — gerbang spesifikasi teknik & integritas QTO (modul
+ * daun: hanya mengimpor TIPE dari modul ini, jadi impor nilai ini
+ * tidak bersiklus). */
+import {
+  engineeringCategoryFor,
+  evaluateEngineeringSpec,
+  classifyEngineeringRisk,
+  assessDraftEngineering,
+} from './engineeringSpec';
+import type { DraftEngineeringAssessment } from './engineeringSpec';
+/* Batch 2 (§5) — intelijensi disiplin & cakupan (modul daun: hanya
+ * mengimpor TIPE dari modul ini + nilai dari taksonomi/evaluator,
+ * jadi impor nilai ini tidak bersiklus). */
+import {
+  buildScopeModel,
+  refreshScopeModel,
+  computeContextScopeSuppression,
+  shouldSuppressRenovasiPart,
+  resolveScopeAddress,
+} from './scopeDiscipline';
+import type { DraftScopeModel } from './scopeDiscipline';
 import { formatWorkItemTitle } from './workItemTitle';
 import { understandProject, assessBuildingMissingInfo, summarizeUnderstanding } from './buildingTypology';
 import { formatRupiah } from '../../engine/formulaEngine';
 import { filterItemsByRelevance } from './relevanceGate';
+/* Lengkapi dengan Full AI (§5) — import TYPE saja (dihapus saat kompilasi):
+ * fullAiRabCompletion mengimpor totalsFromItems/isPriceValidForTotal dari
+ * modul ini secara runtime, jadi impor nilai dari sini akan melingkar. */
+import type { FullAiCompletionSummary } from './fullAiRabCompletion';
 
 /* ------------------------------------------------------------------ */
 /* Cakupan                                                             */
@@ -168,20 +218,55 @@ export const SCOPE_GROUPS: ScopeGroup[] = [
   { id: 'struktur', label: 'Struktur Beton & Baja', categories: ['STRUKTUR_BETON_BAJA'], keywords: ['struktur beton', 'sloof', 'kolom', 'balok', 'pelat lantai', 'tangga beton', 'dinding geser', 'struktur baja', 'bekisting', 'pembesian', 'pengecoran'], primaryMeasure: 'areaOrFloors', primaryLabel: 'luas atau jumlah lantai' },
   { id: 'atap', label: 'Atap & Waterproofing', categories: ['ATAP_WATERPROOFING'], keywords: ['atap', 'rangka atap', 'genteng', 'baja ringan', 'waterproofing', 'membran bakar', 'penutup atap'], primaryMeasure: 'area', primaryLabel: 'luas atap (m²)' },
   { id: 'finishing', label: 'Finishing & Interior', categories: ['FINISHING_INTERIOR'], keywords: ['finishing', 'keramik', 'granit', 'plafon', 'partisi', 'kusen', 'pintu', 'jendela', 'plester', 'acian', 'pengecatan', 'cat tembok', 'bata ringan', 'pasangan bata'], primaryMeasure: 'area', primaryLabel: 'luas pekerjaan (m²)' },
-  { id: 'mep', label: 'Mekanikal, Elektrikal & Plumbing', categories: ['MEP_SYSTEM', 'UTILITAS'], keywords: ['mep', 'mekanikal', 'elektrikal', 'plumbing', 'instalasi listrik', 'panel listrik', 'pompa air', 'perpipaan', 'hvac', 'instalasi air', 'instalasi ac', 'hydrant', 'gas medis'], primaryMeasure: 'areaOrLength', primaryLabel: 'luas bangunan atau panjang instalasi' },
+  { id: 'mep', label: 'Mekanikal, Elektrikal & Plumbing', categories: ['MEP_SYSTEM', 'UTILITAS'], keywords: ['mep', 'mekanikal', 'elektrikal', 'plumbing', 'instalasi listrik', 'panel listrik', 'pompa air', 'perpipaan', 'hvac', 'instalasi air', 'instalasi ac', 'hydrant', 'gas medis', 'sumur bor', 'fire protection', 'fire alarm', 'pemadam kebakaran', 'sprinkler', 'jaringan data', 'kabel data', 'sistem komunikasi', 'komunikasi dan data', 'structured cabling'], primaryMeasure: 'areaOrLength', primaryLabel: 'luas bangunan atau panjang instalasi' },
   { id: 'sanitasi', label: 'Sanitasi & Air Limbah', categories: ['DRAINASE_SANITASI', 'UTILITAS'], keywords: ['sanitasi', 'septictank', 'septic tank', 'tangki septik', 'sumur resapan', 'ipal', 'wastafel', 'kloset', 'floor drain', 'air limbah'], primaryMeasure: 'areaOrLength', primaryLabel: 'luas atau panjang' },
   { id: 'jalan', label: 'Jalan & Perkerasan', categories: ['JALAN_TRANSPORTASI', 'PERKERASAN'], keywords: ['jalan', 'perkerasan', 'aspal', 'hotmix', 'paving', 'rabat beton', 'trotoar', 'kanstin', 'marka jalan', 'bahu jalan'], primaryMeasure: 'length', primaryLabel: 'panjang (meter) atau luas (m²) untuk paving' },
-  { id: 'gedung', label: 'Gedung & Bangunan', categories: ['GEDUNG', 'BANGUNAN_TINGGI', 'HOTEL_HOSPITALITY', 'KESEHATAN', 'PENDIDIKAN', 'INDUSTRI'], keywords: ['gedung', 'kantor', 'sekolah', 'rumah sakit', 'klinik', 'gudang', 'hotel', 'ruko', 'villa', 'kos', 'apartemen', 'masjid', 'puskesmas', 'pasar', 'pabrik', 'bengkel', 'workshop', 'warehouse', 'toko', 'aula', 'minimarket', 'restoran', 'kafe', 'showroom', 'apotek', 'laundry', 'kios', 'warung', 'musholla', 'mushola', 'vihara', 'klenteng', 'gereja', 'pura', 'madrasah', 'perpustakaan', 'kontrakan', 'rumah makan', 'tempat ibadah'], primaryMeasure: 'areaOrFloors', primaryLabel: 'luas atau dimensi bangunan' },
+  { id: 'gedung', label: 'Gedung & Bangunan', categories: ['GEDUNG', 'BANGUNAN_TINGGI', 'HOTEL_HOSPITALITY', 'KESEHATAN', 'PENDIDIKAN', 'INDUSTRI'], keywords: ['gedung', 'kantor', 'sekolah', 'rumah sakit', 'klinik', 'gudang', 'hotel', 'ruko', 'villa', 'kos', 'apartemen', 'masjid', 'puskesmas', 'pasar', 'pabrik', 'bengkel', 'workshop', 'warehouse', 'toko', 'aula', 'minimarket', 'restoran', 'kafe', 'showroom', 'apotek', 'laundry', 'kios', 'warung', 'musholla', 'mushola', 'vihara', 'klenteng', 'gereja', 'pura', 'madrasah', 'perpustakaan', 'kontrakan', 'rumah makan', 'tempat ibadah', 'perumahan'], primaryMeasure: 'areaOrFloors', primaryLabel: 'luas atau dimensi bangunan' },
   { id: 'lanskap', label: 'Lanskap, Pagar & Halaman', categories: ['LANDSCAPE_SITE'], keywords: ['lanskap', 'landscape', 'pagar', 'gerbang', 'halaman', 'taman', 'area parkir', 'pekarangan', 'tembok penahan', 'retaining wall', 'dinding penahan'], primaryMeasure: 'areaOrLength', primaryLabel: 'luas atau panjang' },
   { id: 'renovasi', label: 'Renovasi & Rehabilitasi', categories: ['RENOVASI_MAINTENANCE'], keywords: ['renovasi', 'rehabilitasi', 'rehab', 'perbaikan', 'restorasi', 'perkuatan', 'renov', 'kanopi'], primaryMeasure: 'areaOrBudget', primaryLabel: 'luas atau batas anggaran' },
   { id: 'demolisi', label: 'Demolisi & Pembongkaran', categories: ['DEMOLISI_REKONSTRUKSI'], keywords: ['demolisi', 'pembongkaran', 'bongkar', 'robohkan', 'pembongkaran'], primaryMeasure: 'area', primaryLabel: 'luas bangunan yang dibongkar (m²)' },
   { id: 'pelabuhan', label: 'Pelabuhan & Pesisir', categories: ['PELABUHAN_PESISIR'], keywords: ['pelabuhan', 'dermaga', 'pesisir', 'tetrapod', 'turap', 'breakwater', 'dinding laut'], primaryMeasure: 'length', primaryLabel: 'panjang (meter)' },
   { id: 'olahraga', label: 'Fasilitas Olahraga', categories: ['FASILITAS_OLAHRAGA'], keywords: ['lapangan', 'stadion', 'olahraga', 'futsal', 'badminton', 'kolam renang', 'kolam ikan', 'kolam', 'sport'], primaryMeasure: 'area', primaryLabel: 'luas lapangan (m²)' },
-  { id: 'pertanian', label: 'Pertanian & Perkebunan', categories: ['PERTANIAN_PERKEBUNAN'], keywords: ['pertanian', 'perkebunan', 'sawah', 'sumur bor', 'kebun', 'kandang', 'greenhouse', 'rumah kaca', 'lumbung'], primaryMeasure: 'areaOrLength', primaryLabel: 'luas atau panjang' },
+  // 'sumur bor' PINDAH ke mep (koordinator 2026-11-22 21:58, final gate A-079):
+  // sumur bor adalah sistem air tanah (template UTIL-DEEP-WELL, kategori
+  // UTILITAS — ada di pool mep, BUKAN di pool PERTANIAN_PERKEBUNAN).
+  // Sebelumnya keyword ini di pertanian sehingga "sumur bor 30 m"
+  // dipasangi template jalan kebun — RAB yang salah total untuk
+  // pekerjaan pengeboran. Sumur bor untuk kandang/sawah tetap terhitung
+  // benar lewat template yang sama; label scope-nya MEP, bukan pertanian.
+  { id: 'pertanian', label: 'Pertanian & Perkebunan', categories: ['PERTANIAN_PERKEBUNAN'], keywords: ['pertanian', 'perkebunan', 'sawah', 'kebun', 'kandang', 'greenhouse', 'rumah kaca', 'lumbung'], primaryMeasure: 'areaOrLength', primaryLabel: 'luas atau panjang' },
   { id: 'tanah', label: 'Pekerjaan Tanah', categories: ['PEKERJAAN_TANAH'], keywords: ['galian', 'urugan', 'timbunan', 'pemadatan', 'cut and fill', 'cut & fill', 'pekerjaan tanah'], primaryMeasure: 'any', primaryLabel: 'volume, luas, atau panjang' },
 ];
 
-/** Deteksi grup cakupan dari teks (bisa lebih dari satu untuk "A, B, dan C"). */
+/**
+ * Deteksi grup cakupan dari teks (bisa lebih dari satu untuk "A, B, dan C").
+ *
+ * KEPUTUSAN W2/W10 (2026-11-22 — lihat header universalTaxonomy.ts):
+ * fungsi ini TETAP satu-satunya sumber scope engine (part BOQ).
+ * classifyUniversal (intake) menjawab pertanyaan berbeda — disiplin
+ * yang DISEBUT, termasuk konteks dan kandidat ambigu — dan hasil
+ * probe membuktikan union keduanya merusak pin perilaku (rumah typed,
+ * box culvert telanjang, "lift gedung"). Yang disatukan adalah
+ * SUMBERNYA: extractUniversalSpec menghitung/menerima SATU
+ * Classification yang sama dengan intake dan menyimpannya di
+ * UniversalSpec.classification — intake dan engine tidak bisa
+ * berbeda klasifikasi, sementara keputusan part tetap di sini.
+ *
+ * CATATAN (handoff W6, 2026-11-22 — TIDAK diperbaiki di sini, di luar
+ * cakupan W2/W10): pencocokan di bawah adalah SUBSTRING
+ * (`indexOf`), sehingga ada positif-palsu yang TERVERIFIKASI:
+ * "pejalan"/"perjalanan" → jalan ('jalur pejalan kaki' ikut memicu
+ * scope Jalan); "lahan kosong" → gedung (kata kunci 'kos' ⊂ 'kosong');
+ * "beratap" → atap. TETAPI guard batas-kata naif (`\b`) JUGA SALAH:
+ * ia mematahkan kecocokan berimbuhan yang SAH — "pergudangan" →
+ * gedung, "pertamanan" → lanskap, "penggedungan" → gedung — dan
+ * morfologi saja tidak bisa membedakan "perjalanan" (bukan jalan)
+ * dari "pergudangan" (memang gudang): pola imbuhannya sama
+ * (per-…-an), maknanya berbeda. Perbaikan yang benar butuh kebijakan
+ * batas PER-KATA-KUNCI (standalone vs imbuhan-ok + daftar pengecualian
+ * leksikal) + regresi penuh atas suite yang mem-pin perilaku fungsi
+ * ini — keputusan desain + worker khusus, bukan tambalan di sini.
+ */
 export function detectScopes(rawText: string): ScopeGroup[] {
   const t = ` ${(rawText || '').toLowerCase()} `;
   const found: ScopeGroup[] = [];
@@ -196,7 +281,11 @@ export function detectScopes(rawText: string): ScopeGroup[] {
       let idx = t.indexOf(kw);
       let hit = false;
       while (idx >= 0) {
-        if (!isNegatedAt(t, idx)) { hit = true; break; }
+        // Batch 2 (§5.3): kata kunci yang merupakan BAGIAN dari frasa
+        // cakupan lain tidak memicu cakupan ini ("saluran irigasi"
+        // bukan drainase; "irigasi taman" bukan irigasi SDA;
+        // "sprinkler taman" bukan fire protection).
+        if (!isNegatedAt(t, idx) && !isExcludedKeywordOccurrence(g.id, kw, t.slice(idx + kw.length))) { hit = true; break; }
         idx = t.indexOf(kw, idx + 1);
       }
       if (hit) {
@@ -250,9 +339,28 @@ export interface UniversalSpec {
   widthM: number | null;
   spanM: number | null;
   heightM: number | null;
+  /**
+   * Kedalaman eksplisit (m) — "kedalaman 30 m" / "dalam 30 m" (global,
+   * lewat extractUniversalMeasures) atau panjang telanjang pada
+   * permintaan berkata-kunci kedalaman ("sumur bor 30 m" → depthM
+   * per-scope mep, lihat DEPTH_KEYWORDS di extractScopeSpecs).
+   * Dipakai param template berkind 'depth' (well_depth, pile_depth,
+   * channel_depth, …) — BUKAN panjang (lihat catatan classifyParam).
+   */
+  depthM: number | null;
   thicknessCm: number | null;
   volumeM3: number | null;
   count: number | null;
+  /**
+   * Daya listrik terpasang (kVA) — Batch 2 (§5.3): basis kuantitas
+   * listrik ("instalasi listrik 11 kVA"). Hanya kVA (dan VA→/1000);
+   * kW dan kWp TIDAK dikonflasi. Dipakai param template berkind
+   * 'power' (installed_kva) — dan scopeMeasureAvailable menerima
+   * powerKva sebagai basis mep. Opsional: spek yang dibangun manual
+   * di luar extractUniversalSpec tidak wajib memilikinya (absen =
+   * tidak disebut, sama dengan null).
+   */
+  powerKva?: number | null;
   budgetCap: number | null;
   location: string | null;
   /** Kata kunci material/kualitas yang disebut (beton, aspal, baja ringan…). */
@@ -261,6 +369,56 @@ export interface UniversalSpec {
   extraKeywords: string[];
   isRenovation: boolean;
   isDemolition: boolean;
+  /**
+   * Spek PER-SCOPE (W2/W10 §10, S1-R4): ukuran yang teratribusi ke
+   * tiap cakupan ("jalan 2 km + drainase 500 m" → jalan 2000 m,
+   * drainase 500 m). Hanya berisi ukuran yang TERATRIBUSI ke scope
+   * itu; scope tanpa atribusi memakai ukuran proyek (global) lewat
+   * specForScope — perilaku lama dipertahankan (lihat catatan di
+   * specForScope). Selalu ada ({} bila tidak ada atribusi).
+   */
+  scopeSpecs: Record<string, ScopeSpec>;
+  /**
+   * Klasifikasi intake (W2/W10 §2): primer/sekunder/isMulti dari
+   * classifyUniversal yang SAMA dengan yang dipakai intake — disimpan
+   * sebagai ID saja (bukan objek SubcategoryDef, agar spek tetap
+   * JSON-serializable untuk persistence). Absen hanya pada spek yang
+   * dibangun manual di luar extractUniversalSpec.
+   */
+  classification?: {
+    primaryId: string | null;
+    secondaryIds: string[];
+    isMulti: boolean;
+  };
+  /**
+   * View rumah (W2/W10 §2, S1-R3): field rumah (kamar, kualitas,
+   * pengecualian, …) dari teks yang sama, agar jalur universal dapat
+   * MEMBACA field rumah tanpa kehilangan data. Absen bila tidak ada
+   * field rumah yang terisi. Lihat HouseSpecView (rabIntentSpec.ts).
+   */
+  house?: HouseSpecView;
+}
+
+/**
+ * Ukuran satu cakupan dalam proyek mixed-discipline. SEMUA field
+ * opsional: hanya ukuran yang TERATRIBUSI ke scope itu yang diisi
+ * (atribusi = penyebutan angka terdekat dengan kata kunci scope itu
+ * di teks, lihat extractScopeSpecs). Field yang absen berarti "tidak
+ * disebut untuk scope ini" — BUKAN nol, dan specForScope jatuh ke
+ * ukuran proyek (global) untuk field itu.
+ */
+export interface ScopeSpec {
+  lengthM?: number;
+  areaM2?: number;
+  spanM?: number;
+  widthM?: number;
+  heightM?: number;
+  depthM?: number;
+  thicknessCm?: number;
+  volumeM3?: number;
+  count?: number;
+  /** Daya listrik terpasang teratribusi ke scope ini (kVA) — Batch 2. */
+  powerKva?: number;
 }
 
 const MATERIAL_WORDS = [
@@ -290,36 +448,53 @@ export function parseRupiahAmount(numStr: string, unit: string | undefined): num
   return v;
 }
 
-/** Ekstrak spesifikasi terukur dari teks (deterministik, tanpa AI). */
-export function extractUniversalSpec(rawText: string): UniversalSpec {
+/** Ekstrak spesifikasi terukur dari teks (deterministik, tanpa AI).
+ *
+ * @param opts.classification — klasifikasi intake yang SUDAH dihitung
+ * pemanggil (jalur intake via extractUniversalContext). Bila tidak
+ * diberikan, dihitung di sini dengan classifyUniversal yang SAMA —
+ * intake dan engine tidak bisa berbeda klasifikasi (W2/W10 §2).
+ */
+export function extractUniversalSpec(rawText: string, opts?: { classification?: Classification }): UniversalSpec {
   const text = (rawText || '').trim();
   const lower = text.toLowerCase();
   const needs = extractRabNeeds(stripLandPhrases(text));
   const scopes = detectScopes(text);
   const understanding = understandProject(text);
+  // Klasifikasi intake (W2/W10 §2): SATU fungsi classifyUniversal
+  // untuk intake dan engine — pemanggil yang sudah mengklasifikasi
+  // meneruskan hasilnya, yang lain menghitung di sini.
+  const classification = opts?.classification ?? classifyUniversal(text);
 
   // Anggaran = kemunculan TERAKHIR (koreksi pengguna menggantikan
   // nilai lama — dulu first-match sehingga revisi "anggaran 300 jt …
   // anggaran 250 jt" tetap memakai cap basi 300 jt; audit Fase 1 §7).
-  // BATASAN: pola yang sama tidak menangkap "budget menjadi 250 juta"
-  // (kata 'menjadi' di antara kata kunci dan angka) — frasa itu tetap
-  // tidak terbaca sebagai anggaran; perluasan pola di luar tugas ini.
-  let budgetCap: number | null = null;
-  const budgetRe = /(?:anggaran|budget|dana|biaya\s*maks(?:imal)?|maks(?:imal)?)\s*(?:sekitar\s*)?(?:rp\.?\s*)?([\d.]+(?:,\d+)?)\s*(miliar|milyar|jt|juta|rb|ribu)?\b/g;
-  for (const m of lower.matchAll(budgetRe)) {
-    const v = parseRupiahAmount(m[1], m[2]);
-    if (v > 0) budgetCap = v;
-  }
+  // Parser KANONIS (rabNeeds.parseBudgetMentions — S1-R2/F11): satu
+  // parser untuk keempat situs; "budget menjadi 250 juta" kini
+  // tertangkap (dulu diakui sebagai batasan di komentar ini) dan
+  // celah "uang muka Rp 50 juta" ditutup. Guard "uang" (uang
+  // muka/jalan/saku ditolak, `\b` cegah "ruang") milik parser itu.
+  const budgetMentions = parseBudgetMentions(text);
+  const budgetCap = budgetMentions.length > 0
+    ? budgetMentions[budgetMentions.length - 1].amount
+    : null;
 
-  const span = lower.match(/(?:bentang|span)\s*(?:sekitar\s*)?(\d+(?:[.,]\d+)?)\s*(?:meter|m)\b/);
-  const width = lower.match(/(?:lebar)\s*(?:sekitar\s*)?(\d+(?:[.,]\d+)?)\s*(?:meter|m)\b/);
-  const height = lower.match(/(?:tinggi)\s*(?:sekitar\s*)?(\d+(?:[.,]\d+)?)\s*(?:meter|m)\b/);
-  const thick = lower.match(/(?:tebal)\s*(?:sekitar\s*)?(\d+(?:[.,]\d+)?)\s*cm\b/);
-  const vol = lower.match(/(\d+(?:[.,]\d+)?)\s*m3\b/);
+  // Ukuran universal bersama (rabNeeds.extractUniversalMeasures —
+  // S1-R3): pola yang SAMA dipakai jalur rumah (rabIntentSpec), jadi
+  // kedua model spek membaca angka yang sama dari teks yang sama.
+  const measures = extractUniversalMeasures(text);
 
   const materialKeywords = MATERIAL_WORDS.filter((w) => lower.includes(w));
   const extraKeywords = ['drainase', 'pagar', 'trotoar', 'kanstin', 'marka', 'pju', 'lampu']
     .filter((w) => lower.includes(w));
+
+  // View rumah (W2/W10 §2, S1-R3): field rumah dari teks yang sama
+  // (kamar, kualitas, pengecualian, …) agar jalur universal dapat
+  // MEMBACANYA tanpa kehilangan data. Hanya dipasang bila ≥1 field
+  // rumah terisi.
+  const house = houseViewFromSpec(extractRabIntentSpec(text));
+  // Batch 2 (§5.3): penyebutan daya listrik terpasang (kVA).
+  const powerMentions = findPowerMentions(text);
 
   return {
     rawText: text,
@@ -349,38 +524,294 @@ export function extractUniversalSpec(rawText: string): UniversalSpec {
     // permintaan gudang ditolak sebagai "belum ada luas/lantai").
     areaM2: needs.buildingArea ?? needs.footprintM2 ?? understanding.footprint.value,
     lengthM: needs.lengthM,
-    widthM: width ? NUM(width[1]) : null,
-    spanM: span ? NUM(span[1]) : null,
-    heightM: height ? NUM(height[1]) : null,
-    thicknessCm: thick ? NUM(thick[1]) : null,
-    volumeM3: vol ? NUM(vol[1]) : null,
-    // Audit ekstrem 2026-11-08 (KELUARGA CACAT A): basis ukuran JUMLAH
-    // ("24 titik", "20 unit", "5 buah", "1 paket") sebelumnya dibuang —
-    // count dikunci null sehingga pekerjaan berbasis jumlah (bore pile
-    // per titik, kusen per unit, IPAL per paket, dst.) selalu ditolak
-    // sebagai belum ada ukuran padahal ukurannya sudah diberikan.
-    // Ekstraksi jumlah: angka + satuan jumlah yang eksplisit. "titik"
-    // hanya dihitung bila teks menyebut pekerjaan yang memang berbasis
-    // titik (pondasi/sanitasi/MEP) agar "titik" geografis tidak salah
-    // tafsir; unit/buah/paket bersifat umum untuk pekerjaan berbasis
-    // jumlah.
-    count: (() => {
-      // Fase 2 Bagian B (audit §1): satuan 'ekor' ditambahkan — dulu
-      // "kapasitas 30 ekor" tidak cocok sehingga spec.count null dan
-      // num_animals jatuh ke default template 60 ekor.
-      const cm = lower.match(/(\d+(?:[.,]\d+)?)\s*(unit|buah|paket|set|titik|ekor)\b/);
-      if (!cm) return null;
-      const v = NUM(cm[1]);
-      if (!(v > 0)) return null;
-      if (cm[2] === 'titik' && !/(pondasi|bore|pancang|sumuran|strauss|kloset|floor drain|perkuatan|titik lampu|titik air|instalasi|sanitasi)/.test(lower)) return null;
-      return v;
-    })(),
+    widthM: measures.widthM,
+    spanM: measures.spanM,
+    heightM: measures.heightM,
+    depthM: measures.depthM,
+    thicknessCm: measures.thicknessCm,
+    volumeM3: measures.volumeM3,
+    // Basis ukuran JUMLAH (audit ekstrem 2026-11-08, KELUARGA CACAT A)
+    // — lihat extractUniversalMeasures (rabNeeds).
+    count: measures.count,
+    // Batch 2 (§5.3): daya listrik terpasang (kVA) — basis kuantitas
+    // listrik; kemunculan TERAKHIR menang (koreksi menggantikan).
+    // Field HANYA dipasang bila ada penyebutan daya — spek tanpa daya
+    // tetap byte-identik dengan sebelum Batch 2 (golden 5B-06).
+    ...(powerMentions.length > 0
+      ? { powerKva: powerMentions[powerMentions.length - 1].valueKva }
+      : {}),
     budgetCap,
     location: needs.location,
     materialKeywords,
     extraKeywords,
     isRenovation: /\b(renovasi|rehab|rehabilitasi|perbaikan|restorasi)\b/.test(lower),
     isDemolition: /\b(demolisi|pembongkaran|bongkar)\b/.test(lower),
+    // Spek per-scope (§10) + klasifikasi intake (§2) + view rumah (§2).
+    scopeSpecs: extractScopeSpecs(text, scopes),
+    classification: {
+      primaryId: classification.primary?.id ?? null,
+      secondaryIds: classification.secondary.map((d) => d.id),
+      isMulti: classification.isMulti,
+    },
+    ...(house ? { house } : {}),
+  };
+}
+
+/**
+ * Atribusi ukuran per-scope (W2/W10 §10, S1-R4): tiap penyebutan angka
+ * diatribusikan ke cakupan yang kata kuncinya TERDEKAT (kata kunci
+ * sebelumnya dalam 80 karakter didahulukan, lalu kata kunci sesudahnya
+ * dalam 40 karakter). Memakai parser berposisi yang sudah ada
+ * (findLinearMentions / parseAnchoredLinear / findAreaMentions /
+ * findVolumeMentions / parseCountMentions).
+ *
+ * Aturan penjaga (agar atribusi tidak MENCURI angka yang bukan milik
+ * scope itu — semuanya dipin di universalClassification.test.ts):
+ * - Nilai yang dibatalkan koreksi "bukan X" tidak diatribusikan.
+ * - Sisi dimensi "A x B m" BUKAN panjang linear (konsisten dengan
+ *   guard hasDims di parseLinearLength) — dilewati.
+ * - Panjang linear hanya diatribusikan ke scope yang ukuran utamanya
+ *   berbasis panjang (length / areaOrLength / span / any) — "gudang
+ *   10 x 20 m" tidak boleh memberi gedung lengthM dari sisi dimensi.
+ * - Penyebutan pertama yang hidup menang per (scope, ukuran) —
+ *   konsisten dengan semantik first-match parseLinearLength global;
+ *   koreksi ditangani penyaringan "bukan X", bukan last-wins.
+ * - Scope tanpa atribusi memakai ukuran proyek (global) lewat
+ *   specForScope — perilaku lama dipertahankan.
+ */
+export function extractScopeSpecs(rawText: string, scopes: ScopeGroup[]): Record<string, ScopeSpec> {
+  const out: Record<string, ScopeSpec> = {};
+  if (scopes.length === 0) return out;
+  const lower = (rawText || '').toLowerCase();
+  // Kemunculan kata kunci scope (tanpa negasi — semantik detectScopes).
+  // `kw` dibawa agar atribusi panjang telanjang bisa membedakan
+  // kata-kunci kedalaman (DEPTH_KEYWORDS) dari kata-kunci biasa.
+  interface KwOcc { scopeId: UniversalScopeId; pos: number; end: number; kw: string }
+  const occs: KwOcc[] = [];
+  for (const scope of scopes) {
+    for (const kw of scope.keywords) {
+      let idx = lower.indexOf(kw);
+      while (idx >= 0) {
+        // Batch 2 (§5.3): pengecualian frasa yang sama dengan
+        // detectScopes — "saluran" di dalam "saluran irigasi" bukan
+        // kemunculan drainase, jadi angka irigasi tidak teratribusi
+        // ke drainase.
+        if (!isNegatedAt(lower, idx) && !isExcludedKeywordOccurrence(scope.id, kw, lower.slice(idx + kw.length))) occs.push({ scopeId: scope.id, pos: idx, end: idx + kw.length, kw });
+        idx = lower.indexOf(kw, idx + 1);
+      }
+    }
+  }
+  if (occs.length === 0) return out;
+  const scopeById = new Map(scopes.map((s) => [s.id, s]));
+  const LENGTH_MEASURES: Array<ScopeGroup['primaryMeasure']> = ['length', 'areaOrLength', 'span', 'any'];
+  /** Kemunculan kata kunci terdekat untuk satu posisi penyebutan
+   *  (null = tidak teratribusi). Mengembalikan kemunculannya (bukan
+   *  hanya scopeId) agar pemanggil tahu kata kunci mana yang cocok —
+   *  dipakai atribusi kedalaman (DEPTH_KEYWORDS). */
+  const attribute = (pos: number, lengthOnly: boolean): KwOcc | null => {
+    const pool = lengthOnly
+      ? occs.filter((o) => LENGTH_MEASURES.includes(scopeById.get(o.scopeId)?.primaryMeasure ?? 'any'))
+      : occs;
+    let best: KwOcc | null = null;
+    let bestDist = Infinity;
+    for (const o of pool) {
+      if (o.end <= pos) {
+        const d = pos - o.end;
+        if (d <= 80 && d < bestDist) { best = o; bestDist = d; }
+      }
+    }
+    if (best) return best;
+    for (const o of pool) {
+      if (o.pos >= pos) {
+        const d = o.pos - pos;
+        if (d <= 40 && d < bestDist) { best = o; bestDist = d; }
+      }
+    }
+    return best;
+  };
+  /** Isi (scope, ukuran) — hanya bila belum terisi (first-wins). */
+  const set = (scopeId: string, key: keyof ScopeSpec, value: number): void => {
+    const cur = out[scopeId] ?? {};
+    if (cur[key] == null) cur[key] = value;
+    out[scopeId] = cur;
+  };
+  /** true bila penyebutan linear ini adalah sisi dimensi "A x B m". */
+  const isDimensionSide = (pos: number): boolean =>
+    /\d+(?:[.,]\d+)?\s*[x×]\s*$/.test(lower.slice(Math.max(0, pos - 24), pos));
+  const cancelled = new Set(cancelledLinearValues(rawText));
+  for (const h of findLinearMentions(rawText)) {
+    if (cancelled.has(h.valueM)) continue;
+    if (isDimensionSide(h.pos)) continue;
+    const occ = attribute(h.pos, true);
+    if (!occ) continue;
+    set(occ.scopeId, 'lengthM', h.valueM);
+    // Panjang telanjang pada kata-kunci kedalaman ADALAH kedalaman
+    // ("sumur bor 30 m" → depthM 30 untuk mep) — diatribusikan SEBAGAI
+    // depthM juga (lengthM tetap diisi: fallback global + gerbang
+    // ukuran memakai lengthM; pemetaan param memakai depthM untuk
+    // param berkind 'depth' — keduanya konsisten bernilai sama).
+    if (DEPTH_KEYWORDS.has(occ.kw)) set(occ.scopeId, 'depthM', h.valueM);
+  }
+  for (const h of findAreaMentions(rawText)) {
+    // Batch 3 (§6.3): penyebutan LUAS LAHAN ("luas lahan 500 m2",
+    // "lahan 500 m2", "tanah seluas 500 m2") BUKAN luas cakupan —
+    // mengatribusikannya sebagai areaM2 scope membuat "gudang 10x20
+    // + lahan 500 m2" dihitung 500 m² (bukan tapak 200 m²) dan
+    // "gudang luas lahan 500 m2" lolos sebagai draft (padahal tidak
+    // ada ukuran bangunan). Pola lahan yang sama dengan LAND_AREA_RE
+    // kanonis (rabNeeds): "luas lahan/tanah" atau "lahan/tanah"
+    // tepat sebelum angka. Konsisten dengan parser lahan kanonis:
+    // "pekerjaan tanah 100 m2" juga terbaca sebagai lahan di sana.
+    const beforeArea = lower.slice(Math.max(0, h.pos - 32), h.pos);
+    if (/(luas\s+)?(lahan|tanah)(nya)?\s*(seluas\s*)?$/.test(beforeArea)) continue;
+    const occ = attribute(h.pos, false);
+    if (occ) set(occ.scopeId, 'areaM2', h.valueM2);
+  }
+  for (const h of findVolumeMentions(rawText)) {
+    const occ = attribute(h.pos, false);
+    if (occ) set(occ.scopeId, 'volumeM3', h.valueM3);
+  }
+  for (const c of parseCountMentions(rawText)) {
+    const occ = attribute(c.pos, false);
+    if (occ) set(occ.scopeId, 'count', c.value);
+  }
+  // Batch 2 (§5.3): daya listrik terpasang (kVA) — diatribusikan ke
+  // cakupan terdekat (biasanya mep), seperti penyebutan jumlah.
+  for (const p of findPowerMentions(rawText)) {
+    const occ = attribute(p.pos, false);
+    if (occ) set(occ.scopeId, 'powerKva', p.valueKva);
+  }
+  // Ukuran berjangkar: bentang → scope jembatan bila ada (bila tidak,
+  // ke scope terdekat); lebar/tinggi/tebal ke scope terdekat.
+  // parseAnchoredLinear mengembalikan meter — tebal dikonversi balik
+  // ke cm (satuan UniversalSpec.thicknessCm).
+  const span = parseAnchoredLinear(rawText, ['bentang', 'span']);
+  if (span) {
+    if (scopeById.has('jembatan')) set('jembatan', 'spanM', span.valueM);
+    else {
+      const occ = attribute(span.pos, false);
+      if (occ) set(occ.scopeId, 'spanM', span.valueM);
+    }
+  }
+  const width = parseAnchoredLinear(rawText, ['lebar']);
+  if (width) {
+    const occ = attribute(width.pos, false);
+    if (occ) set(occ.scopeId, 'widthM', width.valueM);
+  }
+  const height = parseAnchoredLinear(rawText, ['tinggi']);
+  if (height) {
+    const occ = attribute(height.pos, false);
+    if (occ) set(occ.scopeId, 'heightM', height.valueM);
+  }
+  const thick = parseAnchoredLinear(rawText, ['tebal']);
+  if (thick) {
+    const occ = attribute(thick.pos, false);
+    if (occ) set(occ.scopeId, 'thicknessCm', Math.round(thick.valueM * 100 * 1000) / 1000);
+  }
+  // Kedalaman berjangkar ("kedalaman 30 m", "dalam 30 m") — jangkar
+  // SAMA dengan dimsFromRawText (actionRegistry) agar kedua jalur
+  // membaca angka yang sama.
+  const depth = parseAnchoredLinear(rawText, ['kedalaman', 'kedalaman saluran', 'dalam']);
+  if (depth) {
+    // Batch 3 (§6.3): "dalam X m dari ..." adalah JARAK, bukan
+    // kedalaman ("gedung dalam 30 m dari jalan" = 30 m DARI jalan) —
+    // cermin pengecualian yang sama di extractUniversalMeasures
+    // (rabNeeds). Tanpa ini jarak disalahbaca sebagai kedalaman scope.
+    const depthWindow = lower.slice(depth.pos, depth.pos + 48);
+    const isDistance = /^dalam\s+(?:sekitar\s+)?\d+(?:[.,]\d+)?\s*(?:meter|m)\b\s*dari\b/.test(depthWindow);
+    if (!isDistance) {
+      const occ = attribute(depth.pos, false);
+      if (occ) set(occ.scopeId, 'depthM', depth.valueM);
+    }
+  }
+  return out;
+}
+
+/**
+ * Kata kunci cakupan yang membuat panjang TELANJANG menjadi kedalaman
+ * ("sumur bor 30 m" → depthM 30). Daftar ini SENGAJA minimal: hanya
+ * kata kunci yang template-nya TERBUKTI berparameter kedalaman.
+ * Batch 3 (§6.3) — perluasan TERVERIFIKASI terhadap katalog hidup:
+ * - 'bore pile'/'bored pile' → FND-BORED-PILE, pile_depth 6–45 m;
+ * - 'tiang pancang' → FND-DRIVEN-PILE, pile_depth 8–45 m;
+ * - 'sumuran' → FND-SUMURAN-CAISSON, well_depth 3–9 m.
+ * TIDAK ditambahkan (perlu verifikasi template per kata kunci):
+ * 'strauss' (tidak ada template Strauss berparameter kedalaman —
+ * FND-MINI-PILE adalah tiang segitiga), 'sumur resapan' (tidak ada
+ * template berparameter kedalaman), 'galian' ("galian 100 m" adalah
+ * PANJANG galian, bukan kedalaman — excavation_depth maks 10 m).
+ */
+const DEPTH_KEYWORDS: ReadonlySet<string> = new Set(['sumur bor', 'bore pile', 'bored pile', 'tiang pancang', 'sumuran']);
+
+/**
+ * Spek yang dipakai membangun SATU part cakupan (W2/W10 §10): klon
+ * spek proyek dengan ukuran per-scope (scopeSpecs) menimpa ukuran
+ * global HANYA untuk field yang teratribusi ke scope itu. Tanpa
+ * atribusi, objek yang sama dikembalikan apa adanya (perilaku lama).
+ *
+ * BATASAN YANG DIKETAHUI (bukan bug yang disembunyikan): scope tanpa
+ * atribusi MASIH memakai ukuran global — "jalan 2 km + drainase"
+ * (drainase tanpa panjang) membangun part drainase dari panjang jalan
+ * 2 km, sama seperti sebelum W2/W10. Mengubahnya menjadi gerbang
+ * ketat per-scope (drainase tanpa panjang → needs-spec) adalah
+ * perubahan perilaku yang butuh keputusan owner, bukan bagian dari
+ * pekerjaan ini. Yang dijamin di sini: scope YANG menyebut ukurannya
+ * sendiri memakai ukurannya sendiri.
+ *
+ * CATATAN multi-gedung: part 'gedung' per gedung TIDAK memakai
+ * fungsi ini — specForBuilding (multiBuildingRab) yang otoritatif
+ * untuk spek per gedung; scopeSpecs hanya berlaku di tingkat proyek.
+ */
+export function specForScope(spec: UniversalSpec, scopeId: string): UniversalSpec {
+  const scoped = spec.scopeSpecs?.[scopeId];
+  if (!scoped) return spec;
+  return {
+    ...spec,
+    lengthM: scoped.lengthM ?? spec.lengthM,
+    areaM2: scoped.areaM2 ?? spec.areaM2,
+    spanM: scoped.spanM ?? spec.spanM,
+    widthM: scoped.widthM ?? spec.widthM,
+    heightM: scoped.heightM ?? spec.heightM,
+    depthM: scoped.depthM ?? spec.depthM,
+    thicknessCm: scoped.thicknessCm ?? spec.thicknessCm,
+    volumeM3: scoped.volumeM3 ?? spec.volumeM3,
+    count: scoped.count ?? spec.count,
+    powerKva: scoped.powerKva ?? spec.powerKva,
+  };
+}
+
+/**
+ * Baca satu RabIntentSpec sebagai UniversalSpec (view universal —
+ * W2/W10 §2, S1-R3; pasangan universalSpecToRabIntent di
+ * rabIntentSpec.ts). Ekstraksi universal dijalankan dari rawText yang
+ * sama (satu sumber angka), lalu field rumah menimpa/melengkapi:
+ * luas/lantai/anggaran/lokasi/dimensi dari spek rumah menang bila
+ * terisi (aturan "luas telanjang = bangunan" milik jalur rumah),
+ * ukuran universal dari sub-model `universal` menang bila terisi, dan
+ * field rumah dibawa sebagai sub-model `house`. Round-trip dipin di
+ * universalClassification.test.ts.
+ */
+export function rabIntentSpecToUniversal(rab: RabIntentSpec): UniversalSpec {
+  const spec = extractUniversalSpec(rab.rawText);
+  const house = houseViewFromSpec(rab);
+  return {
+    ...spec,
+    areaM2: rab.buildingAreaM2 ?? spec.areaM2,
+    landAreaM2: rab.landAreaM2 ?? spec.landAreaM2,
+    floors: rab.floors ?? spec.floors,
+    floorsExplicit: rab.floors != null ? true : spec.floorsExplicit,
+    buildingWidthM: rab.dimensionsM?.widthM ?? spec.buildingWidthM,
+    buildingLengthM: rab.dimensionsM?.lengthM ?? spec.buildingLengthM,
+    budgetCap: rab.budgetIdr ?? spec.budgetCap,
+    location: rab.location ?? spec.location,
+    spanM: rab.universal?.spanM ?? spec.spanM,
+    widthM: rab.universal?.widthM ?? spec.widthM,
+    heightM: rab.universal?.heightM ?? spec.heightM,
+    depthM: rab.universal?.depthM ?? spec.depthM,
+    thicknessCm: rab.universal?.thicknessCm ?? spec.thicknessCm,
+    volumeM3: rab.universal?.volumeM3 ?? spec.volumeM3,
+    count: rab.universal?.count ?? spec.count,
+    ...(house ? { house } : {}),
   };
 }
 
@@ -394,8 +825,21 @@ export function scopeMeasureAvailable(spec: UniversalSpec, scope: ScopeGroup): b
     // berisi pekerjaan berbasis JUMLAH dan VOLUME (IPAL per paket,
     // tangki septik per m³) — basis itu kini diterima untuk cakupan
     // sanitasi saja; cakupan areaOrLength lain tidak berubah.
-    case 'areaOrLength': return spec.areaM2 != null || spec.lengthM != null
-      || (scope.id === 'sanitasi' && (spec.count != null || spec.volumeM3 != null));
+    // Kedalaman adalah basis ukuran yang sah untuk cakupan
+    // areaOrLength (sumur bor: kedalaman ADALAH ukuran utamanya —
+    // "sumur bor kedalaman 30 m" tanpa panjang telanjang tetap bisa
+    // dihitung). Sengaja TIDAK untuk 'length' (pengerukan/saluran
+    // butuh panjang/luas untuk volume — kedalaman saja tidak cukup)
+    // maupun 'any' (galian butuh luas/volume).
+    case 'areaOrLength': return spec.areaM2 != null || spec.lengthM != null || spec.depthM != null
+      || (scope.id === 'sanitasi' && (spec.count != null || spec.volumeM3 != null))
+      // Batch 2 (§5.3): template MEP berparameter lantai/jumlah/daya
+      // (num_floors, num_points, installed_kva) — lantai ("plumbing
+      // gedung 3 lantai"), jumlah ("jaringan data 220 titik"), dan
+      // daya ("instalasi listrik 11 kVA") adalah basis ukuran MEP
+      // yang sah. Pola yang sama dengan basis count sanitasi/gedung:
+      // diterima hanya untuk cakupan mep, bukan global.
+      || (scope.id === 'mep' && (spec.floors != null || spec.count != null || spec.powerKva != null));
     // Audit ekstrem A-094 (2026-11-08): bangunan berbasis JUMLAH UNIT
     // (kos/kontrakan "10 unit") punya basis ukuran yang sah untuk
     // cakupan gedung — template katalognya sendiri berparameter jumlah
@@ -426,6 +870,8 @@ export interface TemplatePick {
   outOfRange: string[];
   /** Jenis ukuran dari nilai yang di luar batas (untuk aturan demosi). */
   outOfRangeKinds: ParamKind[];
+  /** Kunci parameter yang nilainya di luar batas (untuk aturan per-unit Batch 1). */
+  outOfRangeKeys: string[];
   /** Kata kunci yang cocok di NAMA template (sinyal lebih kuat dari deskripsi). */
   nameMatches: string[];
 }
@@ -487,13 +933,17 @@ export function paramOutOfRangeDetails(spec: UniversalSpec, template: RabTemplat
   return out;
 }
 
-/** Jenis ukuran yang relevan untuk primaryMeasure satu cakupan. */
+/** Jenis ukuran yang relevan untuk primaryMeasure satu cakupan.
+ * Kedalaman adalah dimensi LINEAR — relevan di mana pun panjang
+ * relevan (template berparam depth menerima basis linear pengguna;
+ * nilai yang dipetakan tetap dari depthM, bukan lengthM — lihat
+ * classifyParam). */
 export function relevantParamKinds(primaryMeasure: ScopeGroup['primaryMeasure']): ParamKind[] {
   switch (primaryMeasure) {
-    case 'length': return ['length'];
+    case 'length': return ['length', 'depth'];
     case 'span': return ['span'];
     case 'area': return ['area'];
-    case 'areaOrLength': return ['area', 'length'];
+    case 'areaOrLength': return ['area', 'length', 'depth'];
     case 'areaOrFloors': return ['area', 'floors'];
     case 'areaOrBudget': return ['area'];
     case 'any': return [];
@@ -538,11 +988,18 @@ function templateText(t: RabTemplate): string {
 }
 
 /** Klasifikasi semantik parameter template dari key + label. */
-export type ParamKind = 'length' | 'span' | 'width' | 'area' | 'thickness' | 'floors' | 'height' | 'volume' | 'count' | 'other';
+export type ParamKind = 'length' | 'span' | 'width' | 'area' | 'thickness' | 'floors' | 'height' | 'depth' | 'volume' | 'count' | 'power' | 'other';
 
 export function classifyParam(key: string, label: string): ParamKind {
   const s = `${key} ${label}`.toLowerCase();
   if (/span|bentang/.test(s)) return 'span';
+  // Kedalaman adalah JENIS SENDIRI, bukan 'length': mapSpecToParams
+  // memetakan SATU nilai spek ke SEMUA param sejenis — bila depth
+  // digabung ke 'length', "saluran 400 m" akan mengisi channel_depth
+  // = 400 (batas maks 2,5 m) bersama channel_length = 400. Depth
+  // hanya terisi dari depthM ("kedalaman X m" / panjang telanjang
+  // pada kata-kunci kedalaman) — tanpa itu memakai default template.
+  if (/depth|kedalaman/.test(s)) return 'depth';
   if (/length|panjang|lintasan/.test(s)) return 'length';
   if (/width|lebar/.test(s)) return 'width';
   if (/\barea\b|luas/.test(s)) return 'area';
@@ -550,6 +1007,11 @@ export function classifyParam(key: string, label: string): ParamKind {
   if (/floor|lantai/.test(s)) return 'floors';
   if (/height|tinggi/.test(s)) return 'height';
   if (/volume/.test(s)) return 'volume';
+  // Batch 2 (§5.3): daya listrik adalah JENIS SENDIRI (installed_kva)
+  // — ditempatkan SEBELUM 'count' karena label "Daya terpasang (kVA)"
+  // tidak mengandung kata jumlah, tetapi urutan ini menjaga pemetaan
+  // tetap tegas bila suatu label memuat keduanya.
+  if (/kva/.test(s)) return 'power';
   if (/count|jumlah|num_|sel|unit_count/.test(s)) return 'count';
   return 'other';
 }
@@ -564,8 +1026,10 @@ export function specValueFor(spec: UniversalSpec, kind: ParamKind): number | nul
     case 'thickness': return spec.thicknessCm;
     case 'floors': return spec.floors;
     case 'height': return spec.heightM;
+    case 'depth': return spec.depthM;
     case 'volume': return spec.volumeM3;
     case 'count': return spec.count;
+    case 'power': return spec.powerKva ?? null;
     default: return null;
   }
 }
@@ -633,6 +1097,22 @@ export function mapSpecToParams(
     }
     if (p.type !== 'NUMBER') continue;
     const kind = classifyParam(p.key, p.label);
+    // Batch 3 (§6.3) — cacat mapper pra-ada (dicatat B1 §9.7):
+    // parameter LUAS PER-UNIT (unit_area/room_area/villa_area — luas
+    // per unit/kamar, BUKAN luas total) TIDAK PERNAH diisi dari luas
+    // total pengguna: "perumahan 20 unit, luas total 720 m²" akan
+    // menghitung 20 × 720 m² bila dipetakan (korupsi yang sama dengan
+    // kasus sekolah B1 §5: 1.440 m² lantai kelas untuk gedung 240 m²).
+    // D2 Batch 1 hanya MENOLAK bila di luar batas; di sini mappernya
+    // sendiri diperbaiki — parameter per-unit memakai default template
+    // dan dicatat eksplisit (luas total bukan luas per unit).
+    if (kind === 'area' && isPerUnitAreaParam(p.key, p.label)) {
+      if (p.defaultValue !== undefined) {
+        params[p.key] = p.defaultValue;
+        defaulted.push(`${p.label} memakai default template (${p.defaultValue}${p.unit ? ` ${p.unit}` : ''}) — luas total yang Anda sebut bukan luas per unit`);
+      }
+      continue;
+    }
     const raw = specValueFor(spec, kind);
     // Konversi satuan tebal (temuan samping audit §8): spek menyebut
     // cm; parameter bermeter (concrete_thickness_m, unit 'm') harus
@@ -784,7 +1264,7 @@ export function scoreTemplate(
   }
   const outOfRange = paramOutOfRangeDetails(spec, template);
   for (const o of outOfRange) reasons.push(`di luar batas: ${o.detail}`);
-  return { template, score, reasons, outOfRange: outOfRange.map((o) => o.detail), outOfRangeKinds: outOfRange.map((o) => o.kind), nameMatches };
+  return { template, score, reasons, outOfRange: outOfRange.map((o) => o.detail), outOfRangeKinds: outOfRange.map((o) => o.kind), outOfRangeKeys: outOfRange.map((o) => o.key), nameMatches };
 }
 
 /** Template resmi (EZRAB_OFFICIAL) saja — template kustom tidak dipakai. */
@@ -804,6 +1284,15 @@ export interface ScopePickResult {
   closeCall: boolean;
   /** Kandidat skor tertinggi yang didemosi karena di luar batas parameter. */
   demoted: TemplatePick | null;
+  /**
+   * Batch 1 (§4) — kandidat yang LOLOS evaluator kesesuaian, terurut
+   * (alternatif yang sah untuk pesan/asumsi). `ranked` tetap daftar
+   * skor penuh (dipakai pick deterministik + tes); `suitable` adalah
+   * kompetisi yang bermakna — margin/closeCall dihitung dari sini.
+   */
+  suitable: TemplatePick[];
+  /** Batch 1 (§4) — keputusan kesesuaian terstruktur (audit). */
+  suitability: SuitabilityDecision;
 }
 
 /**
@@ -819,6 +1308,18 @@ export interface ScopePickResult {
  * tanpa pemberitahuan (kasus teruji: struktur luas 200 m², semua template
  * STRUKTUR_BETON_BAJA berbatas ≥ 300 m²); peringatan + status BLOCKED
  * untuk cakupan kritis ditangani di draftReadiness, bukan di sini.
+ *
+ * Batch 1 (§4) — evaluator kesesuaian (templateSuitability.ts) menyaring
+ * kandidat yang dinilai di atas dengan constraint keras (fungsi, tipe
+ * konstruksi, material, cakupan MEP, dimensi relevan, semantik per-unit,
+ * representasi jumlah). Skor TIDAK PERNAH mengalahkan constraint keras:
+ * kandidat skor tertinggi yang melanggar constraint keras tidak dipakai,
+ * betapa pun tinggi skornya. Demosi di atas TIDAK mengecualikan kandidat
+ * dari evaluasi (demosi adalah heuristik rentang sekunder; bila evaluator
+ * memilih template yang didemosi, pilihan evaluator yang menang dan
+ * catatan demosi ditekan di buildDraftPart agar pesan tidak berbohong).
+ * Margin/closeCall dihitung atas kandidat yang LOLOS (kompetisi yang
+ * bermakna), bukan atas kandidat yang sudah ditolak.
  */
 export function pickTemplateForScope(
   spec: UniversalSpec,
@@ -846,15 +1347,53 @@ export function pickTemplateForScope(
       best = inRange;
     }
   }
-  const pick = best && best.score >= 8 ? best : null;
-  const others = candidates.filter((c) => c !== pick);
+  // Batch 1 (§4): evaluator kesesuaian memutuskan kandidat mana yang
+  // BOLEH dipilih (constraint keras) + alternatif yang sah.
+  const decision = evaluateTemplateSuitability(spec, scope, candidates, { relevantKinds: relevant });
+  const byId = new Map(candidates.map((c) => [c.template.id, c]));
+  // TemplatePick untuk kandidat lintas-pool (tidak ada di `candidates`):
+  // disintesis dari template katalog + detail batas kanonis.
+  const suitable: TemplatePick[] = [];
+  for (const cand of decision.candidates) {
+    const existing = byId.get(cand.templateId);
+    if (existing) {
+      suitable.push(existing);
+      continue;
+    }
+    const tpl = RabTemplateService.getInstance().getTemplateById(cand.templateId);
+    if (!tpl) continue;
+    const oor = paramOutOfRangeDetails(spec, tpl);
+    suitable.push({
+      template: tpl,
+      score: cand.score,
+      reasons: [`kesesuaian lintas-pool (skor evaluator ${cand.score})`, ...cand.softNotes],
+      outOfRange: oor.map((o) => o.detail),
+      outOfRangeKinds: oor.map((o) => o.kind),
+      outOfRangeKeys: oor.map((o) => o.key),
+      nameMatches: [],
+    });
+  }
+  // Ambang skor lama (≥ 8) tetap berlaku untuk kandidat dalam pool;
+  // kandidat lintas-pool memakai skor evaluator (skala berbeda) dan
+  // tidak dikenai ambang 8.
+  let pick: TemplatePick | null = null;
+  if (decision.selectedTemplateId) {
+    const chosen = suitable.find((s) => s.template.id === decision.selectedTemplateId) ?? null;
+    if (chosen) {
+      const inPool = byId.has(chosen.template.id);
+      pick = !inPool || chosen.score >= 8 ? chosen : null;
+    }
+  }
+  const others = suitable.filter((c) => c !== pick);
   const margin = pick ? pick.score - (others[0]?.score ?? pick.score) : 0;
   return {
     pick,
     ranked: candidates,
     scoreMargin: pick ? margin : 0,
-    closeCall: !!pick && candidates.length >= 2 && margin <= 3,
+    closeCall: !!pick && suitable.length >= 2 && margin <= 3,
     demoted,
+    suitable,
+    suitability: decision,
   };
 }
 
@@ -958,6 +1497,27 @@ export interface UniversalDraft {
    *  dipersistensi (skema record tetap v1) + ikut terklon pratinjau
    *  revisi Gate 3. Absen = draft tanpa DED terlampir (perilaku lama). */
   dedQto?: DedQtoDraftInfo;
+  /**
+   * Batch 2 (§5.2/§5.4) — model cakupan proyek: satu ProjectScope per
+   * part + per cakupan yang diminta tetapi belum tergambar, cakupan
+   * yang dikecualikan sebagai konteks, dan laporan validasi integritas
+   * cakupan (kebocoran disiplin L1–L7). LAPISAN VALIDASI — tidak
+   * mengubah total/isi RAB; data JSON polos. DIPASANG OTOMATIS oleh
+   * `buildUniversalDraft` dan DISEGARKAN `snapshotVersion` (satu
+   * choke point semua jalur revisi). DIBAWA `draftPersistence`
+   * (record + restore, pola `wbsArtifact` P6) — draft in-memory vs
+   * seed v1 tetap byte-identik (invariansi revisi 5C-01/5C-10).
+   * Record lama tanpa field ini tetap terbaca; model dibangun ulang
+   * pada revisi berikutnya via snapshotVersion.
+   */
+  scopeModel?: DraftScopeModel;
+  /**
+   * Batch 2 (§5.3) — id template yang dipaksa pengguna (bila
+   * buildUniversalDraft dipanggil dengan forcedTemplateId). Validator
+   * cakupan membebaskan part ini dari aturan L1 (pilihan eksplisit
+   * pengguna = persetujuan ekspansi cakupan).
+   */
+  forcedTemplateId?: string;
 }
 
 export type DraftItem = RabItem & {
@@ -1005,6 +1565,13 @@ export function effectiveItems(draft: UniversalDraft): DraftItem[] {
               amount: manual.unitPrice * it.volume,
               totalPrice: manual.unitPrice * it.volume,
               priceStatus: 'PRICE_MANUAL' as const,
+              // Batch 4 (§7.1): harga manual adalah keadaan harga
+              // tersendiri — kind-nya USER_MANUAL, BUKAN kind template
+              // yang tersisa dari spread (mis. MARKET_REFERENCE atau
+              // UNRESOLVED sesudah harga dikosongkan). Tanpa ini item
+              // manual masuk payload/factory/ekspor dengan kind yang
+              // salah (status sudah benar PRICE_MANUAL).
+              priceSourceKind: 'USER_MANUAL' as const,
               priceSourceLabel: 'Harga manual pengguna',
               priceSourceExplanation: manual.note,
             }
@@ -1053,6 +1620,49 @@ export function wbsCompletenessLines(draft: UniversalDraft): string[] {
   const report = draft.wbsCompleteness
     ?? validateWbsCompleteness(draft, draft.structuredSpecs ?? [], draft.wbsArtifact ?? null);
   return formatWbsCompletenessLines(report);
+}
+
+/**
+ * W3/W9 (G2) — baris pesan "Struktur paket (WBS)" untuk pesan draft:
+ * satu baris per paket (scope → template → jumlah item + status node
+ * artefak bila ada), node artefak tanpa part (cakupan disebut spek/
+ * konseptual tapi belum dibangun, atau dikecualikan) dinyatakan
+ * eksplisit, lalu laporan kelengkapan (`wbsCompletenessLines`).
+ * Seksi TETAP — dirender untuk semua draft, bukan hanya draft
+ * berspek. Tanpa artefak (draft lama pra-P6), status node tidak
+ * diklaim (baris part tampil tanpa status) — kelengkapan tetap
+ * dihitung on-demand oleh `wbsCompletenessLines`.
+ */
+export function wbsStructureLines(draft: UniversalDraft): string[] {
+  const lines: string[] = ['**Struktur paket (WBS):**'];
+  const artifact = draft.wbsArtifact ?? null;
+  const nodeByScope = new Map((artifact?.nodes ?? []).map((n) => [n.scopeId, n]));
+  const seenScopes = new Set<string>();
+  for (const part of draft.parts) {
+    seenScopes.add(part.scope.id);
+    const count = part.generation.items.filter(
+      (it) => !part.removedKeys.includes(itemKey(it)),
+    ).length;
+    const node = nodeByScope.get(part.scope.id);
+    const status = node ? `: ${node.status}` : '';
+    const classified = node && node.classifiedItemIds.length > 0
+      ? ` (+${node.classifiedItemIds.length} tercakup dari paket lain)`
+      : '';
+    lines.push(`• ${part.scope.label}${status} — ${count} item${classified} — "${part.template.name}"`);
+  }
+  // Node artefak tanpa part — cakupan yang disebut spek/konseptual
+  // tapi belum dibangun, atau dikecualikan eksplisit. Dinyatakan
+  // (bukan hilang) agar struktur yang tampil lengkap.
+  for (const node of artifact?.nodes ?? []) {
+    if (seenScopes.has(node.scopeId)) continue;
+    const excl = node.exclusion ? ` (dikecualikan: ${node.exclusion.reason})` : '';
+    const classified = node.classifiedItemIds.length > 0
+      ? ` — ${node.classifiedItemIds.length} item tercakup dari paket lain`
+      : '';
+    lines.push(`• ${node.label}: ${node.status} — 0 item${classified}${excl}`);
+  }
+  for (const l of wbsCompletenessLines(draft)) lines.push(l);
+  return lines;
 }
 
 /**
@@ -1397,6 +2007,64 @@ export function reconcileMultiBuildingTotals(draft: UniversalDraft): MultiBuildi
   return { sections, projectTotal, sumOfSections, diffRp, balanced: Math.abs(diffRp) < 0.005 };
 }
 
+export interface DraftScopeTotals {
+  /** ID scope (UniversalScopeId). */
+  scopeId: UniversalScopeId;
+  /** Label scope untuk tampilan. */
+  label: string;
+  /** Nama template part-part scope ini (urut kemunculan). */
+  templates: string[];
+  itemCount: number;
+  totals: DraftTotals;
+}
+
+/**
+ * W3/W9 (G14) — total per cakupan (scope) untuk draft multi-scope
+ * single-building. Pola yang sama dengan `computeSectionTotals`:
+ * agregasi `effectiveItems` per `__partScope` + `totalsFromItems`
+ * (SATU definisi ember harga — Σ scope = total proyek, modulo ulp
+ * float). Label scope unik per scope id (`SCOPE_GROUPS`), jadi
+ * agregasi per label setara dengan agregasi per id. Multi-building
+ * TIDAK memakai ini (sudah punya ringkasan per seksi); single-scope
+ * tidak butuh (total proyek = subtotal scope itu).
+ */
+export function computeScopeTotals(draft: UniversalDraft): DraftScopeTotals[] {
+  const items = effectiveItems(draft);
+  const idByLabel = new Map<string, UniversalScopeId>();
+  for (const part of draft.parts) idByLabel.set(part.scope.label, part.scope.id);
+  const byLabel = new Map<string, { templates: string[]; items: DraftItem[] }>();
+  for (const part of draft.parts) {
+    let s = byLabel.get(part.scope.label);
+    if (!s) {
+      s = { templates: [], items: [] };
+      byLabel.set(part.scope.label, s);
+    }
+    if (!s.templates.includes(part.template.name)) s.templates.push(part.template.name);
+  }
+  for (const it of items) {
+    let s = byLabel.get(it.__partScope);
+    if (!s) {
+      // Tidak terjadi pada draft normal (item efektif selalu berasal
+      // dari part) — jaring pengaman agar item tidak hilang dari
+      // penjumlahan bila penanda part rusak.
+      s = { templates: [], items: [] };
+      byLabel.set(it.__partScope, s);
+    }
+    s.items.push(it);
+  }
+  const out: DraftScopeTotals[] = [];
+  for (const [label, s] of byLabel) {
+    out.push({
+      scopeId: idByLabel.get(label) ?? (label as UniversalScopeId),
+      label,
+      templates: s.templates,
+      itemCount: s.items.length,
+      totals: totalsFromItems(s.items),
+    });
+  }
+  return out;
+}
+
 /* ------------------------------------------------------------------ */
 /* Kesiapan draft (FASE 3): siap ditinjau / perlu spesifikasi /       */
 /* diblokir untuk transfer — dihitung LANGSUNG dari data draft saat    */
@@ -1574,7 +2242,14 @@ export function setLastUniversalDraft(d: UniversalDraft | null, projectId?: stri
     lastUniversalDraftProjectId = null;
     return;
   }
-  if (projectId) lastUniversalDraftProjectId = projectId;
+  // F-ISO-4 (2026-11-23): null EKSPLISIT menghapus ikatan — draft yang
+  // dibangun tanpa projectId benar-benar tak-terikat (sebelumnya ikatan
+  // draft sebelumnya diwarisi diam-diam — "warisan ikatan basi").
+  // undefined (argumen tidak diteruskan) mempertahankan ikatan lama.
+  // reviseUniversalDraft tidak bergantung pada pewarisan implisit: ia
+  // meneruskan bindProjectId eksplisit (projectId ?? ikatan saat ini).
+  if (projectId === null) lastUniversalDraftProjectId = null;
+  else if (projectId) lastUniversalDraftProjectId = projectId;
 }
 export function clearLastUniversalDraft(projectId?: string | null): void {
   if (!projectId || lastUniversalDraftProjectId === projectId) {
@@ -1959,7 +2634,10 @@ interface PartBuildContext {
 type PartBuildOutcome =
   | { kind: 'part'; part: DraftPart }
   | { kind: 'deduped' }
-  | { kind: 'skip'; reason: string; missing: string[] };
+  // Batch 2 (§5.4): `outcome` keputusan suitability (NEEDS_SPEC /
+  // UNSUPPORTED) diteruskan agar model cakupan dapat membedakan
+  // cakupan yang perlu spesifikasi dari yang tidak didukung katalog.
+  | { kind: 'skip'; reason: string; missing: string[]; outcome?: SuitabilityDecision['outcome'] };
 
 function buildDraftPart(
   ctx: PartBuildContext,
@@ -1979,6 +2657,9 @@ function buildDraftPart(
     if (forced && forced.metadata.source === 'EZRAB_OFFICIAL') template = forced;
   }
   let ranked: TemplatePick[] = [];
+  let suitable: TemplatePick[] = [];
+  let suitability: SuitabilityDecision | null = null;
+  let chosenPick: TemplatePick | null = null;
   let closeCall = false;
   let scoreMargin = 0;
   let demoted: TemplatePick | null = null;
@@ -1986,6 +2667,9 @@ function buildDraftPart(
   if (!template) {
     const res = pickTemplateForScope(spec, scope);
     ranked = res.ranked;
+    suitable = res.suitable;
+    suitability = res.suitability;
+    chosenPick = res.pick;
     closeCall = res.closeCall;
     scoreMargin = res.scoreMargin;
     demoted = res.demoted;
@@ -2006,6 +2690,19 @@ function buildDraftPart(
     }
   }
   if (!template) {
+    // Batch 1 (§4): bila evaluator memutuskan TIDAK ADA kandidat yang
+    // sah, pakai alasan + spek hilang dari keputusan itu (spesifik dan
+    // dapat ditindaklanjuti) — bukan pesan generik. Bila evaluator
+    // memilih kandidat tetapi ambang skor menggagalkannya (atau tidak
+    // ada keputusan), pesan generik lama yang dipakai.
+    if (suitability && (suitability.outcome === 'NEEDS_CLARIFICATION' || suitability.outcome === 'UNSUPPORTED' || suitability.outcome === 'ENGINEERING_REVIEW_REQUIRED')) {
+      return {
+        kind: 'skip',
+        reason: suitability.explanation,
+        missing: suitability.missingSpecs,
+        outcome: suitability.outcome,
+      };
+    }
     return {
       kind: 'skip',
       reason: `Untuk ${tag} tidak ada template katalog EZRAB yang cocok dengan spesifikasi ini.`,
@@ -2034,15 +2731,43 @@ function buildDraftPart(
   // saja TIDAK memicu pertanyaan klarifikasi, karena kategori sudah
   // menyaring kandidat dan alternatifnya selalu tercantum di asumsi.
   // Pengecualian: demosi batas parameter (lihat pickTemplateForScope).
-  if (demoted) {
+  // Batch 1 (§4): alternatif yang tercantum HANYA kandidat yang lolos
+  // evaluator (template yang ditolak constraint keras bukan alternatif
+  // yang sah); catatan demosi ditekan bila evaluator memilih template
+  // yang didemosi itu sendiri, dan bila template yang didemosi juga
+  // ditolak evaluator, alasan evaluatorlah yang dicatat (bukan alasan
+  // rentang sekunder demosi).
+  const demotedRejection = demoted && suitability
+    ? suitability.rejections.find((r) => r.templateId === demoted!.template.id) ?? null
+    : null;
+  if (demoted && template.id !== demoted.template.id && demotedRejection) {
+    assumptions.push(
+      `[${tag}] Template "${demoted.template.name}" (skor tertinggi ${demoted.score}) TIDAK dipakai: ${demotedRejection.violations[0].reason}; dipakai "${template.name}".`
+    );
+  } else if (demoted && template.id !== demoted.template.id) {
     assumptions.push(
       `[${tag}] Template "${demoted.template.name}" (skor tertinggi ${demoted.score}) TIDAK dipakai karena nilai Anda di luar batasnya (${demoted.outOfRange.join('; ')}); dipakai "${template.name}" yang masih dalam batas.`
     );
-  } else if (!forcedTemplateId && !deterministicApplied && ranked.length >= 2 && ranked[0].score >= 8) {
-    const pickScore = ranked.find((r) => r.template.id === template!.id)?.score ?? ranked[0].score;
+  } else if (!forcedTemplateId && !deterministicApplied && suitable.length >= 1) {
+    const pickScore = chosenPick?.template.id === template.id
+      ? chosenPick.score
+      : (ranked.find((r) => r.template.id === template!.id)?.score ?? ranked[0]?.score ?? 0);
+    const alternatives = suitable.filter((r) => r.template.id !== template!.id).slice(0, 2);
+    const altText = alternatives.length > 0
+      ? `; alternatif se-cakupan: ${alternatives.map((r) => `"${r.template.name}" (skor ${r.score})`).join(', ')} — revisi dengan "ganti menjadi …" bila maksud Anda yang lain.`
+      : '.';
     assumptions.push(
-      `[${tag}] Template "${template.name}" dipakai (skor ${pickScore}${closeCall ? `, selisih tipis ${scoreMargin} dari pesaing terdekat — pilihan tidak tegas` : ''}); alternatif se-cakupan: ${ranked.filter((r) => r.template.id !== template!.id).slice(0, 2).map((r) => `"${r.template.name}" (skor ${r.score})`).join(', ')} — revisi dengan "ganti menjadi …" bila maksud Anda yang lain.`
+      `[${tag}] Template "${template.name}" dipakai (skor ${pickScore}${closeCall ? `, selisih tipis ${scoreMargin} dari pesaing terdekat — pilihan tidak tegas` : ''})${altText}`
     );
+  }
+  // Batch 1 (§4): asumsi + caveat evaluator kesesuaian (tanpa template
+  // paksa/deterministik — pilihan eksplisit pengguna tidak perlu
+  // penjelasan evaluator).
+  if (!forcedTemplateId && !deterministicApplied && suitability) {
+    for (const a of suitability.assumptions) assumptions.push(`[${tag}] ${a}`);
+    if (suitability.outcome === 'MULTIPLE_CANDIDATES' && suitability.requiredConfirmation) {
+      assumptions.push(`[${tag}] ${suitability.requiredConfirmation}`);
+    }
   }
   // AMBIGUOUS_PICK (Fase 2 Bagian B): close-call, atau material
   // yang diminta untuk scope ini TIDAK TERSEDIA di katalog. Pick
@@ -2058,14 +2783,16 @@ function buildDraftPart(
       ambiguousPicks.push({
         scope: scope.id,
         chosen: template.id,
-        candidates: ranked.filter((r) => r.template.id !== template!.id).slice(0, 2).map((r) => r.template.name),
+        // Batch 1 (§4): alternatif yang tercantum adalah kandidat yang
+        // lolos evaluator (fallback ke ranked bila tidak ada).
+        candidates: (suitable.length > 0 ? suitable : ranked).filter((r) => r.template.id !== template!.id).slice(0, 2).map((r) => r.template.name),
         reason: `${building ? `${building.label}: ` : ''}skor selisih tipis ${scoreMargin} dari pesaing terdekat — pilihan tidak tegas${req ? `; material yang diminta (${req.material}) tidak memetakan deterministik ke template ini` : ''}`,
       });
     } else if (unavailable && req) {
       ambiguousPicks.push({
         scope: scope.id,
         chosen: template.id,
-        candidates: ranked.slice(0, 3).map((r) => r.template.name),
+        candidates: (suitable.length > 0 ? suitable : ranked).slice(0, 3).map((r) => r.template.name),
         reason: `${building ? `${building.label}: ` : ''}material yang diminta (${req.material}) tidak tersedia di katalog — template "${template.name}" dipakai sebagai pengganti dari penskoran teks, bukan pilihan material; butuh harga manual/konfirmasi (NEEDS_MANUAL_PRICE)`,
       });
     }
@@ -2095,6 +2822,51 @@ function buildDraftPart(
         reason: `Bentang ${spec.spanM} m di luar cakupan template beton katalog (maks ${spanParam.max} m).`,
         missing: ['desain struktur khusus (gambar DED, tipe girder, dan perhitungan struktur oleh perencana) — jembatan bentang ini tidak boleh dirinci dari template umum'],
       };
+    }
+  }
+  // Batch 3 (§6.1–§6.2) — gerbang spesifikasi teknik: bila kategori
+  // part ini punya profil gerbang, nilai kelengkapan + risiko
+  // tekniknya dari spek PER-SCOPE part ini (bukan spek global —
+  // dimensi cakupan lain tidak boleh bocor ke penilaian part ini).
+  // Verdict blocking (basis hilang / dimensi rekayasa-kritis di luar
+  // cakupan template) → skip seperti penjaga jembatan di atas, dengan
+  // outcome yang sama dengan evaluator B1 agar model cakupan B2
+  // membedakan NEEDS_SPEC dari ENGINEERING_REVIEW. Template paksa /
+  // deterministik mengesampingkan blokir gerbang (pilihan eksplisit
+  // pengguna — pola yang sama dengan evaluator B1) tetapi peringatan
+  // risikonya tetap tampil bila verdictnya CALCULABLE.
+  const gateCategory = engineeringCategoryFor(scope.id, { templateId: template.id });
+  if (gateCategory) {
+    const gate = evaluateEngineeringSpec(gateCategory, spec, template);
+    if (gate.blocking && !forcedTemplateId && !deterministicApplied) {
+      return {
+        kind: 'skip',
+        reason: gate.explanation,
+        missing: [
+          ...gate.missingRequired.map((m) => m.label),
+          ...gate.documentsRequired,
+        ],
+        outcome: gate.verdict === 'REQUIRES_ENGINEERING_DESIGN' ? 'ENGINEERING_REVIEW_REQUIRED' : 'NEEDS_CLARIFICATION',
+      };
+    }
+    const risk = classifyEngineeringRisk(gate);
+    // Peringatan wajib hanya untuk verdict CALCULABLE yang HIGH
+    // (field rekayasa-kritis hilang — mis. tinggi dinding penahan,
+    // daya listrik): verdict NEEDS_CLARIFICATION / ENGINEERING_REVIEW
+    // pada template paksa tidak diperingatkan di sini karena teksnya
+    // ("belum bisa menghitung") bertentangan dengan draft yang tetap
+    // dibangun atas pilihan eksplisit pengguna.
+    if (gate.verdict === 'CALCULABLE' && risk.warningMandatory && risk.warningText) {
+      // Dedup vs partIssues: material jembatan/struktur yang hilang
+      // sudah ditandai criticalGap di partIssues (blokir transfer) —
+      // gerbang tidak mengulanginya sebagai peringatan kedua.
+      const coveredByPartIssues = gate.missingCritical.length > 0 &&
+        gate.missingCritical.every((m) => m.key === 'material') &&
+        (scope.id === 'jembatan' || scope.id === 'struktur');
+      if (!coveredByPartIssues) warnings.push(`[${tag}] ${risk.warningText}`);
+    }
+    for (const doc of gate.documentsRequired) {
+      assumptions.push(`[${tag}] Dokumen yang dibutuhkan: ${doc}`);
     }
   }
 
@@ -2202,8 +2974,10 @@ function buildDraftPart(
  * pajak opt-in) baru berlaku pasca-transfer. Dipin di
  * `src/test/p3bCanonicalCalculation.test.ts` §4.
  */
-export function buildUniversalDraft(rawText: string, forcedTemplateId?: string, opts?: { structuredSpecs?: StructuredSpec[]; budgetCapOverride?: number | null; projectId?: string | null; buildings?: BuildingModel[]; dedQto?: DedQtoDraftInfo }): BuildResult {
-  const spec = extractUniversalSpec(rawText);
+export function buildUniversalDraft(rawText: string, forcedTemplateId?: string, opts?: { structuredSpecs?: StructuredSpec[]; budgetCapOverride?: number | null; projectId?: string | null; buildings?: BuildingModel[]; dedQto?: DedQtoDraftInfo; classification?: Classification }): BuildResult {
+  // W2/W10 §2: klasifikasi intake diteruskan ke ekstraksi spek bila
+  // pemanggil sudah mengklasifikasi (bila tidak, dihitung di sana).
+  const spec = extractUniversalSpec(rawText, opts?.classification ? { classification: opts.classification } : undefined);
   // Fase 2 Bagian B: spek terstruktur (Bagian A) + override cap.
   // Tanpa opts → perilaku IDENTIK dengan sebelumnya (semua jalur baru
   // dilewati). budgetCapOverride (nilai terkini ctx.budget) mengalahkan
@@ -2259,6 +3033,12 @@ export function buildUniversalDraft(rawText: string, forcedTemplateId?: string, 
   const multiRoof = !hasSpecs && isMultiBuilding
     ? computeMultiBuildingRoofSuppression(spec, parsedBuildings, forcedTemplateId)
     : null;
+  // Batch 2 (§5.3) — penekanan cakupan konteks: gedung sebagai LOKASI
+  // instalasi MEP (bukan bangunan yang dihitung) ditekan di sini,
+  // sebelum pemeriksaan ukuran — pola yang sama dengan noSpecRoof
+  // (cakupan yang ditekan tidak diwajibkan ukurannya dan tidak
+  // dibangun sebagai part; jejaknya transparan di peringatan).
+  const contextSuppressed = computeContextScopeSuppression(spec, SCOPE_GROUPS);
   // Override SELECT dari teks (tanpa spek): material atap yang disebut
   // pengguna dan ditawarkan template keluarga dihormati lewat param
   // (sebelumnya param itu selalu default template). Hanya berlaku bila
@@ -2341,9 +3121,12 @@ export function buildUniversalDraft(rawText: string, forcedTemplateId?: string, 
   // yang diperbaiki itulah yang dihitung; renovasi tetap ikut sebagai
   // konteks part bila templatenya cocok).
   const measureAvailableFor = (scope: ScopeGroup): boolean => {
-    if (scopeMeasureAvailable(spec, scope)) return true;
+    // W2/W10 §10: basis ukuran dinilai dari spek PER-SCOPE (scope yang
+    // menyebut ukurannya sendiri memakai ukurannya sendiri; scope tanpa
+    // atribusi jatuh ke ukuran proyek lewat specForScope — perilaku lama).
+    if (scopeMeasureAvailable(specForScope(spec, scope.id), scope)) return true;
     if (scope.id === 'renovasi') {
-      return spec.scopes.some((s) => s.id !== 'renovasi' && scopeMeasureAvailable(spec, s));
+      return spec.scopes.some((s) => s.id !== 'renovasi' && scopeMeasureAvailable(specForScope(spec, s.id), s));
     }
     return false;
   };
@@ -2355,6 +3138,9 @@ export function buildUniversalDraft(rawText: string, forcedTemplateId?: string, 
     // diwajibkan ukurannya (ia memang tidak dibangun terpisah).
     // GELOMBANG 2 (§17.3): sama untuk penekanan multi-gedung.
     if (scope.id === 'atap' && (noSpecRoof?.suppress || multiRoof?.suppress)) continue;
+    // Batch 2 (§5.3): cakupan konteks (gedung lokasi instalasi MEP)
+    // juga tidak diwajibkan ukurannya (ia memang tidak dibangun).
+    if (contextSuppressed.has(scope.id)) continue;
     // GATE 2 (5B): cakupan 'gedung' pada draft multi dinilai PER GEDUNG —
     // cukup SATU gedung berbasis ukuran agar draft jalan; gedung tanpa
     // basis sudah ditandai di flaggedBuildings dan tidak menghalangi.
@@ -2424,7 +3210,14 @@ export function buildUniversalDraft(rawText: string, forcedTemplateId?: string, 
     warnings,
     ambiguousPicks,
   };
-  const multiSkipReasons: string[] = [];
+  // Batch 2 (§5.4): skipOutcomes membawa scopeId + outcome keputusan
+  // suitability agar model cakupan dapat membedakan NEEDS_SPEC dari
+  // UNSUPPORTED per cakupan.
+  const skipOutcomes: Array<{ where: string; scopeId: string; reason: string; missing: string[]; outcome?: SuitabilityDecision['outcome'] }> = [];
+  // Batch 2 (§5.2): penekanan renovasi-modifier dikumpulkan di sini
+  // agar model cakupan mencatatnya sebagai SUPPRESSED/tercakup (bukan
+  // NEEDS_SPEC — renovasinya memang sudah tercakup part lain).
+  const renovasiSuppressed: Array<{ scopeId: string; reason: string; kind: 'covered' }> = [];
   for (const scope of spec.scopes) {
     // PRE-PASS suppression: scope yang ter-suppress oleh spek
     // terstruktur DILEWATI dengan jejak transparan (bukan diam-diam):
@@ -2477,6 +3270,28 @@ export function buildUniversalDraft(rawText: string, forcedTemplateId?: string, 
       }
       continue;
     }
+    // Batch 2 (§5.3) — penekanan cakupan konteks: gedung sebagai
+    // lokasi instalasi MEP tidak dibangun sebagai part tersendiri.
+    // Jejak transparan, bukan diam-diam (pola penekanan atap di atas).
+    const contextReason = contextSuppressed.get(scope.id);
+    if (contextReason) {
+      warnings.push(`[${scope.label}] tidak dibangun — ${contextReason}.`);
+      continue;
+    }
+    // Batch 2 (§5.3) — renovasi adalah MODIFIER: bila pekerjaan yang
+    // direnovasi sudah punya part (kantor/jalan/drainase), part
+    // renovasi rumah tersendiri adalah kebocoran dan ditekan. Dicek
+    // di sini (di dalam loop, sesudah part lain dibangun) karena
+    // renovasi terlambat dalam urutan SCOPE_GROUPS dan penekanan
+    // tidak boleh menekan satu-satunya cakupan yang dapat dibangun.
+    if (scope.id === 'renovasi') {
+      const renovReason = shouldSuppressRenovasiPart(spec, parts);
+      if (renovReason) {
+        warnings.push(`[${scope.label}] tidak dibangun — ${renovReason}.`);
+        renovasiSuppressed.push({ scopeId: scope.id, reason: renovReason, kind: 'covered' });
+        continue;
+      }
+    }
     // Target build untuk cakupan ini.
     const targets: Array<{ targetSpec: UniversalSpec; building: BuildingModel | null; sectionKind: 'building' | 'shared-works' | 'project' | undefined }> = [];
     if (scope.id === 'gedung' && isMultiBuilding) {
@@ -2485,11 +3300,12 @@ export function buildUniversalDraft(rawText: string, forcedTemplateId?: string, 
         targets.push({ targetSpec: specForBuilding(spec, b), building: b, sectionKind: 'building' });
       }
     } else if (isMultiBuilding && isSharedWorksScope(scope.id)) {
-      targets.push({ targetSpec: spec, building: null, sectionKind: 'shared-works' });
+      // W2/W10 §10: part tingkat proyek memakai spek PER-SCOPE.
+      targets.push({ targetSpec: specForScope(spec, scope.id), building: null, sectionKind: 'shared-works' });
     } else if (isMultiBuilding) {
-      targets.push({ targetSpec: spec, building: null, sectionKind: 'project' });
+      targets.push({ targetSpec: specForScope(spec, scope.id), building: null, sectionKind: 'project' });
     } else {
-      targets.push({ targetSpec: spec, building: null, sectionKind: undefined });
+      targets.push({ targetSpec: specForScope(spec, scope.id), building: null, sectionKind: undefined });
     }
     for (const target of targets) {
       // GELOMBANG 2 (§17.3): tiap gedung memakai override atap dari
@@ -2513,15 +3329,16 @@ export function buildUniversalDraft(rawText: string, forcedTemplateId?: string, 
         continue;
       }
       if (outcome.kind === 'deduped') continue;
-      // Skip: single-building = needs-spec persis seperti sebelum Gate 2
-      // (alasan + missing yang sama); multi = peringatan, gedung lain
-      // tetap dibangun.
-      if (!isMultiBuilding) {
-        return { kind: 'needs-spec', reason: outcome.reason, missing: outcome.missing };
-      }
+      // Skip (W2/W10 §10, G10 — draft parsial): single-building kini
+      // SAMA dengan multi-gedung — part yang gagal dicatat sebagai
+      // peringatan, part lain tetap dibangun; needs-spec HANYA bila
+      // TIDAK SATU PUN part berhasil (lihat blok sesudah loop).
+      // Perilaku single-scope TIDAK berubah: satu-satunya part gagal →
+      // parts kosong → needs-spec dengan alasan/missing yang sama
+      // persis seperti sebelum perubahan ini.
       const where = target.building ? `${scope.label} — ${target.building.label}` : scope.label;
       warnings.push(`[${where}] tidak dibangun: ${outcome.reason}`);
-      multiSkipReasons.push(`[${where}] ${outcome.reason}`);
+      skipOutcomes.push({ where, scopeId: scope.id, reason: outcome.reason, missing: outcome.missing, outcome: outcome.outcome });
     }
   }
   // Multi-gedung tetapi TIDAK SATU PUN seksi berhasil dibangun: draft
@@ -2529,8 +3346,22 @@ export function buildUniversalDraft(rawText: string, forcedTemplateId?: string, 
   if (isMultiBuilding && parts.length === 0) {
     return {
       kind: 'needs-spec',
-      reason: `Tidak ada seksi yang dapat dihitung untuk proyek multi-gedung ini: ${multiSkipReasons.join('; ') || 'tidak ada gedung dengan basis ukuran.'}`,
+      reason: `Tidak ada seksi yang dapat dihitung untuk proyek multi-gedung ini: ${skipOutcomes.map((s) => `[${s.where}] ${s.reason}`).join('; ') || 'tidak ada gedung dengan basis ukuran.'}`,
       missing: parsedBuildings.map((b) => `${b.label}: jumlah lantai atau dimensi (contoh: "Gedung A 3 lantai 15 x 10 m")`),
+    };
+  }
+  // Single-building tetapi TIDAK SATU PUN part berhasil (G10): draft
+  // kosong tidak pernah dikembalikan — needs-spec. Satu kegagalan →
+  // alasan/missing-nya persis seperti sebelum G10 (pin jembatan-50m
+  // dkk. tidak berubah); >1 kegagalan → alasan + missing gabungan.
+  if (!isMultiBuilding && parts.length === 0 && skipOutcomes.length > 0) {
+    if (skipOutcomes.length === 1) {
+      return { kind: 'needs-spec', reason: skipOutcomes[0].reason, missing: skipOutcomes[0].missing };
+    }
+    return {
+      kind: 'needs-spec',
+      reason: `Tidak ada cakupan yang dapat dihitung: ${skipOutcomes.map((s) => `[${s.where}] ${s.reason}`).join('; ')}`,
+      missing: [...new Set(skipOutcomes.flatMap((s) => s.missing))],
     };
   }
   // Gedung tanpa basis ukuran: ditandai eksplisit sebagai peringatan
@@ -2671,6 +3502,9 @@ export function buildUniversalDraft(rawText: string, forcedTemplateId?: string, 
     // GATE 4 (5D): rekonsiliasi DED/QTO dari pemanggil (bila ada DED
     // terlampir) — lapisan validasi, bukan input angka ke mesin RAB.
     ...(opts?.dedQto ? { dedQto: opts.dedQto } : {}),
+    // Batch 2 (§5.3): template yang dipaksa pengguna dicatat di draft
+    // — validator cakupan membebaskan part ini dari aturan L1.
+    ...(forcedTemplateId ? { forcedTemplateId } : {}),
   };
   // Validasi rantai (hanya bila spek terstruktur ada).
   if (hasSpecs) {
@@ -2682,6 +3516,38 @@ export function buildUniversalDraft(rawText: string, forcedTemplateId?: string, 
   // seed v1 tetap byte-identik (P4-(d)). Sebelum P6, hook ini sengaja
   // dilepas karena persistence menggugurkan field tak dikenal.
   rebuildWbsAttachment(draft);
+  // Batch 2 (§5.2/§5.4) — model cakupan proyek: dibangun dari draft +
+  // jejak skip/suppress build ini (pola rebuildWbsAttachment di atas
+  // — lapisan validasi, tidak mengubah total/isi RAB).
+  draft.scopeModel = buildScopeModel(
+    draft,
+    {
+      skipped: skipOutcomes.map((s) => ({ scopeId: s.scopeId, reason: s.reason, missing: s.missing, outcome: s.outcome })),
+      suppressed: [
+        ...[...contextSuppressed.entries()].map(([scopeId, reason]) => ({ scopeId, reason, kind: 'context' as const })),
+        ...renovasiSuppressed,
+        // Penekanan spek terstruktur: drainase = jawaban 'tanpa'
+        // (dikeluarkan), atap = tercakup komponen template keluarga.
+        ...[...suppressed].map((scopeId) => {
+          if (scopeId === 'drainase') {
+            const ds = structuredSpecs.find((s) => s.key === 'road-drainage');
+            const val = ds
+              ? (Array.isArray(ds.value) ? ds.value.join(', ') : String(ds.value ?? ''))
+              : 'tanpa drainase baru';
+            return { scopeId, reason: `jawaban Anda: ${val}`, kind: 'excluded' as const };
+          }
+          return { scopeId, reason: `sudah tercakup komponen template ${specFamilyId === 'kandang' ? 'kandang' : 'gudang'}`, kind: 'covered' as const, coversScopeId: 'scope-gedung' };
+        }),
+        ...(noSpecRoof?.suppress
+          ? [{ scopeId: 'atap', reason: `atap sudah tercakup komponen template "${noSpecRoof.coveringTemplateName}" ("${noSpecRoof.coveringComponent}")`, kind: 'covered' as const, coversScopeId: 'scope-gedung' }]
+          : []),
+        ...(multiRoof?.suppress
+          ? [{ scopeId: 'atap', reason: `atap sudah tercakup komponen template tiap gedung (${multiRoof.coverages.map((c) => `${c.label}: "${c.coveringComponent}"`).join('; ')})`, kind: 'covered' as const, coversScopeId: 'scope-gedung' }]
+          : []),
+      ],
+    },
+    SCOPE_GROUPS,
+  );
   const totals = computeTotals(draft);
   draft.versions.push({
     n: 1,
@@ -2719,7 +3585,77 @@ function traceFor(part: DraftPart, item: RabItem): string {
   return t?.calculationTrace || item.notes || `Volume: ${fmtNum(item.volume)} ${item.unit}`;
 }
 
-export function formatUniversalDraftMessage(draft: UniversalDraft): string {
+/**
+ * W3/W9 (G14) — frasa dimensi terkonfirmasi dari spek, dipakai
+ * bersama oleh baris 'Dimensi terkonfirmasi' ringkasan dan seksi
+ * brief di kepala pesan (satu definisi, dua tempat tampil).
+ * `projectLevelOnly` = hanya bentang/tebal tingkat proyek (GATE 2:
+ * pada draft multi, angka tunggal spek proyek — luas/lantai gedung
+ * PERTAMA — tidak boleh tampil sebagai dimensi terkonfirmasi).
+ * Urutan frasa = urutan lama persis (luas, panjang, bentang, lantai,
+ * lebar, tebal) agar pesan lama tidak berubah.
+ */
+function dimensionPhrases(spec: UniversalSpec, projectLevelOnly: boolean): string[] {
+  const out: string[] = [];
+  if (!projectLevelOnly) {
+    if (spec.areaM2 != null) out.push(`luas ${fmtNum(spec.areaM2)} m²`);
+    if (spec.lengthM != null) out.push(`panjang ${fmtNum(spec.lengthM)} m`);
+  }
+  if (spec.spanM != null) out.push(`bentang ${fmtNum(spec.spanM)} m`);
+  if (!projectLevelOnly) {
+    if (spec.floors != null) out.push(`${spec.floors} lantai`);
+    if (spec.widthM != null) out.push(`lebar ${fmtNum(spec.widthM)} m`);
+  }
+  if (spec.thicknessCm != null) out.push(`tebal ${fmtNum(spec.thicknessCm)} cm`);
+  if (spec.depthM != null) out.push(`kedalaman ${fmtNum(spec.depthM)} m`);
+  return out;
+}
+
+/**
+ * Blok completion "Lengkapi dengan Full AI" untuk pesan draft universal.
+ * Hanya dipanggil bila opts.fullAiCompletion terisi — pesan default
+ * (tanpa opts) byte-identical. Verdict TIDAK diulang di sini: baris
+ * verdict kanonis di atas sudah dihitung atas total TERISI (item draft
+ * sudah termutasi sebelum format), sehingga blok ini hanya menambah
+ * caveat asumsi + ringkasan + kualitas/downgrade.
+ *
+ * Catatan ember: item estimasi AI (EZRAB_ASSUMPTION) masuk ember
+ * 'HARGA DATABASE' di total (totalsFromItems — perilaku pin
+ * displayPriceStatus untuk kind ini); blok ini menyatakan porsi
+ * asumsinya secara eksplisit agar tidak terbaca sebagai harga template.
+ */
+function formatFullAiCompletionBlockLines(s: FullAiCompletionSummary): string[] {
+  const lines: string[] = [];
+  lines.push('**Lengkapi dengan Full AI — Estimasi Sementara (asumsi AI)**');
+  lines.push(
+    `• Harga diisi AI untuk ${s.filledPriceCount} dari ${s.totalItems} item` +
+      (s.filledQuantityCount > 0 ? `; kuantitas diisi AI untuk ${s.filledQuantityCount} item` : '') +
+      ` (kualitas ${s.qualityUsed}${s.qualityDefaulted ? ' — asumsi, karena kualitas tidak disebutkan' : ''}). ` +
+      'Item terisi berlabel Estimasi AI (asumsi) — lihat Detail item di bawah untuk spek + dasar tiap item.',
+  );
+  lines.push(
+    `• Total Estimasi Sementara (asumsi AI): ${formatRupiah(s.estimatedTotal)} — termasuk ${formatRupiah(s.assumedTotal)} dari ${s.filledPriceCount} item asumsi berlabel, bukan total final terverifikasi. Porsi asumsi tercakup dalam hitungan 'HARGA DATABASE' di atas (bukan harga template).`,
+  );
+  lines.push(
+    '• Total di atas adalah Estimasi Sementara (asumsi AI) — verdict kelayakan di atas berlaku atas total asumsi ini, bukan atas harga resmi.',
+  );
+  if (s.qualityDowngradedFrom && s.totalAtRequestedTier != null && s.budgetCap != null) {
+    const over = s.totalAtRequestedTier - s.budgetCap;
+    lines.push(
+      `• Agar muat di anggaran ${formatRupiah(s.budgetCap)}, kualitas diturunkan dari ${s.qualityDowngradedFrom} ke ${s.qualityUsed} — total estimasi menjadi ${formatRupiah(s.estimatedTotal)}. Total pada kualitas ${s.qualityDowngradedFrom} adalah ${formatRupiah(s.totalAtRequestedTier)} (melebihi anggaran ${formatRupiah(Math.abs(over))}).`,
+    );
+  }
+  if (s.unfilled.length > 0) {
+    const shown = s.unfilled.slice(0, 5).join('; ');
+    lines.push(
+      `• ${s.unfilled.length} item belum terisi harga dan tidak masuk total: ${shown}${s.unfilled.length > 5 ? `; …dan ${s.unfilled.length - 5} item lainnya` : ''}.`,
+    );
+  }
+  for (const w of s.warnings.slice(0, 3)) lines.push(`• ⚠ ${w}`);
+  return lines;
+}
+
+export function formatUniversalDraftMessage(draft: UniversalDraft, opts?: { fullAiCompletion?: FullAiCompletionSummary }): string {
   const items = effectiveItems(draft);
   const totals = computeTotals(draft);
   const lines: string[] = [];
@@ -2730,16 +3666,33 @@ export function formatUniversalDraftMessage(draft: UniversalDraft): string {
   const isMultiSection = (draft.buildings?.length ?? 0) >= 2
     && draft.parts.some((p) => p.sectionKind === 'building');
 
-  const confirmed: string[] = [];
-  if (spec.areaM2 != null) confirmed.push(`luas ${fmtNum(spec.areaM2)} m²`);
-  if (spec.lengthM != null) confirmed.push(`panjang ${fmtNum(spec.lengthM)} m`);
-  if (spec.spanM != null) confirmed.push(`bentang ${fmtNum(spec.spanM)} m`);
-  if (spec.floors != null) confirmed.push(`${spec.floors} lantai`);
-  if (spec.widthM != null) confirmed.push(`lebar ${fmtNum(spec.widthM)} m`);
-  if (spec.thicknessCm != null) confirmed.push(`tebal ${fmtNum(spec.thicknessCm)} cm`);
+  const confirmed = dimensionPhrases(spec, false);
 
   const readiness = draftReadiness(draft);
   lines.push(`Siap — ini draft RAB **${draft.title}** (versi ${draft.version}) yang saya susun dari katalog template resmi EZRAB, dihitung deterministik oleh engine template:`);
+  lines.push('');
+  // W3/W9 (G14) — seksi brief di kepala pesan: 4 baris recap
+  // (fungsi/disiplin → ukuran terkonfirmasi → spek material yang
+  // dipakai → jumlah scope/part) dari `draft.spec` + `draft.parts`
+  // yang sudah ada. Tanpa perubahan mesin; ukuran memakai frasa yang
+  // sama dengan baris 'Dimensi terkonfirmasi' di bawah (GATE 2:
+  // draft multi hanya menampilkan bentang/tebal tingkat proyek).
+  lines.push('**Brief proyek:**');
+  {
+    const functionLabel = spec.functionLabel ?? spec.needsFunctionLabel ?? spec.kindLabel;
+    const scopeLabels = [...new Set(draft.parts.map((p) => p.scope.label))];
+    // Label fungsi upstream kadang huruf kecil ('jembatan') — kapital
+    // awal hanya untuk tampilan (data tidak diubah).
+    lines.push(functionLabel
+      ? `• Fungsi: ${functionLabel.charAt(0).toUpperCase() + functionLabel.slice(1)} — disiplin: ${scopeLabels.join(', ')}`
+      : `• Disiplin: ${scopeLabels.join(', ')}`);
+    const briefDims = isMultiSection ? dimensionPhrases(spec, true) : confirmed;
+    lines.push(isMultiSection
+      ? `• Ukuran terkonfirmasi: ${briefDims.length > 0 ? `${briefDims.join(', ')} (tingkat proyek)` : 'per gedung — lihat rincian seksi di bawah'}`
+      : `• Ukuran terkonfirmasi: ${briefDims.length > 0 ? briefDims.join(', ') : '— (memakai default template, lihat asumsi)'}`);
+    lines.push(`• Spek material: ${spec.materialKeywords.length > 0 ? spec.materialKeywords.join(', ') : '— (tidak disebut; memakai default template)'}`);
+    lines.push(`• Cakupan: ${items.length} item dalam ${draft.parts.length} paket (${scopeLabels.join(', ')})`);
+  }
   lines.push('');
   lines.push(`• Jenis proyek: ${draft.title}`);
   // GATE 2: pada draft multi, angka tunggal spek proyek (luas/lantai/
@@ -2748,9 +3701,7 @@ export function formatUniversalDraftMessage(draft: UniversalDraft): string {
   // gedung ada di ringkasan seksi di bawah. Bentang/tebal (tingkat
   // proyek) tetap tampil.
   if (isMultiSection) {
-    const projectConfirmed: string[] = [];
-    if (spec.spanM != null) projectConfirmed.push(`bentang ${fmtNum(spec.spanM)} m`);
-    if (spec.thicknessCm != null) projectConfirmed.push(`tebal ${fmtNum(spec.thicknessCm)} cm`);
+    const projectConfirmed = dimensionPhrases(spec, true);
     lines.push(`• Dimensi terkonfirmasi: ${projectConfirmed.length > 0 ? `${projectConfirmed.join(', ')} (tingkat proyek)` : 'per gedung — lihat rincian seksi di bawah'}`);
   } else {
     lines.push(`• Dimensi terkonfirmasi: ${confirmed.length > 0 ? confirmed.join(', ') : '— (memakai default template, lihat asumsi)'}`);
@@ -2786,6 +3737,23 @@ export function formatUniversalDraftMessage(draft: UniversalDraft): string {
     // input DED/QTO nyata (Gate 4).
   }
   lines.push(`• Template terpilih: ${draft.parts.map((p) => `[${p.scope.label}] "${p.template.name}"`).join('; ')}`);
+  // W3/W9 (G14) — subtotal per scope untuk draft multi-scope
+  // single-building (pola yang sama dengan ringkasan per seksi
+  // multi-gedung di atas: subtotal + catatan parsial + rekonsiliasi
+  // Σ scope = total proyek). Multi-gedung tidak perlu (sudah punya
+  // ringkasan per seksi); single-scope tidak butuh (total proyek =
+  // subtotal scope itu).
+  if (!isMultiSection && new Set(draft.parts.map((p) => p.scope.id)).size >= 2) {
+    const scopeTotals = computeScopeTotals(draft);
+    lines.push('**Subtotal per cakupan:**');
+    for (const s of scopeTotals) {
+      const unpricedNote = s.totals.unpricedCount > 0 ? ` (parsial — ${s.totals.unpricedCount} item belum berharga)` : '';
+      lines.push(`• ${s.label}: ${s.templates.map((t) => `"${t}"`).join(', ')} — ${s.itemCount} item — subtotal ${formatRupiah(s.totals.estimatedTotal)}${unpricedNote}`);
+    }
+    const sumOfScopes = scopeTotals.reduce((acc, s) => acc + s.totals.estimatedTotal, 0);
+    const diffScope = totals.estimatedTotal - sumOfScopes;
+    lines.push(`• Rekonsiliasi total: Σ cakupan ${formatRupiah(sumOfScopes)} = total proyek ${formatRupiah(totals.estimatedTotal)} (selisih ${formatRupiah(Math.abs(diffScope))}${Math.abs(diffScope) < 0.005 ? ' — seimbang' : ' — TIDAK SEIMBANG, laporkan'})`);
+  }
   lines.push(`• Status draft: ${readinessLabel(readiness.status)} — belum masuk Spreadsheet sampai Anda menyetujui transfer${readiness.status === 'BLOCKED' ? ' (dan saat ini TIDAK DAPAT ditransfer — lihat alasan di bawah)' : ''}`);
   if (readiness.blockedReasons.length > 0) {
     for (const r of readiness.blockedReasons) lines.push(`• ⛔ Alasan blokir transfer: ${r}`);
@@ -2818,6 +3786,12 @@ export function formatUniversalDraftMessage(draft: UniversalDraft): string {
     // FASE 4 (CHAT-02) — tanpa budget, kelayakan DINYATAKAN tidak dapat
     // dinilai (dengan alasannya), bukan dihilangkan diam-diam.
     lines.push(formatBudgetFeasibilityLine(assessBudgetFeasibility({ totalPriced: totals.estimatedTotal, unpricedCount: totals.unpricedCount, budgetCap: null })));
+  }
+  // Lengkapi dengan Full AI (§5): blok completion SETELAH baris verdict
+  // budget (caveat asumsi langsung mengikuti verdict). Absen bila tanpa
+  // opts — pesan default byte-identical.
+  if (opts?.fullAiCompletion) {
+    for (const l of formatFullAiCompletionBlockLines(opts.fullAiCompletion)) lines.push(l);
   }
   // FASE 4 — deteksi konflik teknis deterministik atas dimensi/spek
   // draft (bukan tebakan model): konflik tampil di pesan draft agar
@@ -2903,6 +3877,11 @@ export function formatUniversalDraftMessage(draft: UniversalDraft): string {
   if (draft.dedQto) {
     for (const l of formatDedQtoDraftLines(draft.dedQto)) lines.push(l);
   }
+  // W3/W9 (G2) — struktur paket (WBS) sebagai seksi TETAP sebelum
+  // tabel item: node per scope dari artefak + laporan kelengkapan.
+  // Ringkasan alasan per item (traceItemReasons) sudah dirender tanpa
+  // syarat di blok GATE 5 di atas — tidak diulang di sini.
+  for (const l of wbsStructureLines(draft)) lines.push(l);
   lines.push('');
 
   // Kelompok = kategori komponen (bukan baris biaya); urutan kemunculan.
@@ -2960,6 +3939,14 @@ export function formatUniversalDraftMessage(draft: UniversalDraft): string {
   lines.push(`**Total estimasi (termasuk harga database, referensi pasar, dan manual): ${formatRupiah(totals.estimatedTotal)}**`);
   lines.push(`Status total: **${totals.status}** — ${items.length} item. Total ini BUKAN angka final/resmi bila ada harga database, manual, atau item belum tersedia.`);
   lines.push('ESTIMASI di sini berarti total kuantitas × harga katalog per item (resmi/pasar/database/manual sesuai label tiap item) — bukan harga yang dihitung atau diverifikasi AI per item; estimasi kuantitas, referensi pasar, harga resmi, dan item belum tersedia adalah hal yang berbeda dan tidak dicampur. Item BELUM TERSEDIA tidak masuk total (bukan Rp 0).');
+  // W3/W9 (G15/G16) — satu baris tangga keuangan: total pratinjau
+  // adalah biaya langsung; Total RAB (overhead/profit/pajak) dihitung
+  // pasca-transfer di Spreadsheet. Label 'biaya langsung' vs
+  // 'Total RAB' diselaraskan dengan pesan parametrik
+  // (`formatDirectRabMessage`: 'Total biaya langsung' / 'Total RAB
+  // (termasuk overhead …%)') — hanya teks penjelasan, angka/tangga
+  // tidak berubah.
+  lines.push('Total pratinjau di atas adalah **biaya langsung** (kuantitas × harga katalog per item). **Total RAB** dihitung sesudah transfer di Spreadsheet — overhead, profit, dan pajak mengikuti konfigurasi proyek (proyek baru: overhead 0%, profit 0%, pajak opt-in, sehingga Total RAB sama dengan biaya langsung sampai konfigurasi diubah).');
   lines.push('');
 
   const unpriced = items.filter((i) => !isPriceValidForTotal(i));
@@ -3074,6 +4061,12 @@ export function snapshotVersion(draft: UniversalDraft, summary: string): void {
   // tidak menampilkan validasi basi.
   if (draft.structuredSpecs) {
     draft.chainValidation = validateDraftChain(draft, draft.structuredSpecs);
+  }
+  // Batch 2 (§5.2): model cakupan disegarkan di choke point yang sama
+  // (semua jalur revisi yang menaikkan versi lewat sini, termasuk
+  // draftRevision) — catatan penekanan model lama dibawa.
+  if (draft.scopeModel) {
+    draft.scopeModel = refreshScopeModel(draft, draft.scopeModel, SCOPE_GROUPS);
   }
   const totals = computeTotals(draft);
   draft.version += 1;
@@ -3288,13 +4281,20 @@ export function reviseUniversalDraft(draft: UniversalDraft, rawText: string, pro
   }
 
   // --- Perubahan ukuran (berlaku untuk part yang parameternya cocok) ---
-  const measureUpdates: Array<{ re: RegExp; apply: (v: number) => void; label: (v: number) => string }> = [
-    { re: /(?:luas(?:\s+bangunan)?|area)\s*(?:menjadi|=)?\s*(\d+(?:[.,]\d+)?)\s*m/, apply: (v) => { spec.areaM2 = v; }, label: (v) => `luas menjadi ${fmtNum(v)} m²` },
-    { re: /(?:panjang)\s*(?:menjadi|=)?\s*(\d+(?:[.,]\d+)?)\s*m\b/, apply: (v) => { spec.lengthM = v; }, label: (v) => `panjang menjadi ${fmtNum(v)} m` },
-    { re: /(?:lebar)\s*(?:menjadi|=)?\s*(\d+(?:[.,]\d+)?)\s*m\b/, apply: (v) => { spec.widthM = v; }, label: (v) => `lebar menjadi ${fmtNum(v)} m` },
-    { re: /(?:bentang|span)\s*(?:menjadi|=)?\s*(\d+(?:[.,]\d+)?)\s*m\b/, apply: (v) => { spec.spanM = v; }, label: (v) => `bentang menjadi ${fmtNum(v)} m` },
-    { re: /(?:lantai)\s*(?:menjadi|=)?\s*(\d+)\s*lantai/, apply: (v) => { spec.floors = v; }, label: (v) => `jumlah lantai menjadi ${v}` },
-    { re: /(?:tebal)\s*(?:menjadi|=)?\s*(\d+(?:[.,]\d+)?)\s*cm/, apply: (v) => { spec.thicknessCm = v; }, label: (v) => `tebal menjadi ${fmtNum(v)} cm` },
+  // Batch 2 (§5.2/§5.5) — revisi ukuran BER-ALAMAT cakupan: tiap pola
+  // membawa segmen tengah opsional ("panjang JALAN menjadi 2000 m" —
+  // nilai tangkapan pindah ke grup 2) dan `field` ScopeSpec-nya.
+  // `field: null` (lantai) = ukuran tingkat proyek — tidak beralamat
+  // (ScopeSpec tidak punya lantai; per-gedung ditangani specForBuilding).
+  // "panjang menjadi 2 km" TETAP tidak cocok (pin 13.20m — km tidak
+  // diterima di revisi): pola mensyaratkan satuan m sesudah angka.
+  const measureUpdates: Array<{ re: RegExp; apply: (v: number) => void; label: (v: number) => string; field: keyof ScopeSpec | null }> = [
+    { re: /(?:luas(?:\s+bangunan)?|area)\s*([a-z\s]+?)?\s*(?:menjadi|=)?\s*(\d+(?:[.,]\d+)?)\s*m/, apply: (v) => { spec.areaM2 = v; }, label: (v) => `luas menjadi ${fmtNum(v)} m²`, field: 'areaM2' },
+    { re: /(?:panjang)\s*([a-z\s]+?)?\s*(?:menjadi|=)?\s*(\d+(?:[.,]\d+)?)\s*m\b/, apply: (v) => { spec.lengthM = v; }, label: (v) => `panjang menjadi ${fmtNum(v)} m`, field: 'lengthM' },
+    { re: /(?:lebar)\s*([a-z\s]+?)?\s*(?:menjadi|=)?\s*(\d+(?:[.,]\d+)?)\s*m\b/, apply: (v) => { spec.widthM = v; }, label: (v) => `lebar menjadi ${fmtNum(v)} m`, field: 'widthM' },
+    { re: /(?:bentang|span)\s*([a-z\s]+?)?\s*(?:menjadi|=)?\s*(\d+(?:[.,]\d+)?)\s*m\b/, apply: (v) => { spec.spanM = v; }, label: (v) => `bentang menjadi ${fmtNum(v)} m`, field: 'spanM' },
+    { re: /(?:lantai)\s*([a-z\s]+?)?\s*(?:menjadi|=)?\s*(\d+)\s*lantai/, apply: (v) => { spec.floors = v; }, label: (v) => `jumlah lantai menjadi ${v}`, field: null },
+    { re: /(?:tebal)\s*([a-z\s]+?)?\s*(?:menjadi|=)?\s*(\d+(?:[.,]\d+)?)\s*cm/, apply: (v) => { spec.thicknessCm = v; }, label: (v) => `tebal menjadi ${fmtNum(v)} cm`, field: 'thicknessCm' },
   ];
   // GATE 2 (5B) — penjaga ambiguitas: pada draft multi-seksi, perubahan
   // ukuran TANPA alamat gedung ambigu — ditolak dengan permintaan
@@ -3313,17 +4313,110 @@ export function reviseUniversalDraft(draft: UniversalDraft, rawText: string, pro
       };
     }
   }
+  // Batch 2 (§5.2/§5.5) — target revisi ukuran per cakupan. Aturan:
+  // - beralamat ("panjang jalan …") → HANYA scopeSpecs cakupan itu
+  //   (global tidak disentuh — revisi tidak boleh bocor ke cakupan
+  //   lain; probe B2: "panjang menjadi 2000 m" pada jalan+drainase
+  //   sebelumnya mengubah KEDUA part menjadi 2000 m);
+  // - tanpa alamat pada draft SATU cakupan → global (perilaku lama,
+  //   pin 13.20h `d.spec.widthM === 8` dipertahankan);
+  // - tanpa alamat pada draft multi-cakupan dengan TEPAT SATU cakupan
+  //   yang mengatribusi ukuran itu → cakupan itu saja;
+  // - tanpa alamat dengan ≥2 cakupan yang mengatribusi ukuran itu →
+  //   DITOLAK sebagai ambigu (pesan gaya Gate 2) — perubahan perilaku
+  //   yang disengaja: penerapan global diam-diam adalah kebocoran.
+  // Target diselesaikan SEMUA sebelum ada yang diterapkan, agar
+  // penolakan tidak meninggalkan setengah perubahan.
   let touched = false;
+  const pendingUpdates: Array<{ entry: (typeof measureUpdates)[number]; value: number; segment: string | undefined }> = [];
   for (const m of measureUpdates) {
     const mm = t.match(m.re);
-    if (mm) {
-      const v = NUM(mm[1]);
-      if (Number.isFinite(v) && v > 0) {
-        m.apply(v);
-        changes.push(m.label(v));
-        touched = true;
+    if (!mm) continue;
+    const v = NUM(mm[2]);
+    if (Number.isFinite(v) && v > 0) {
+      pendingUpdates.push({ entry: m, value: v, segment: mm[1]?.trim() || undefined });
+    }
+  }
+  const actions: Array<{ apply: () => void; label: string }> = [];
+  // Tulis SATU nilai (scope, field) dengan MENGGANTI record + entri
+  // (bukan mutasi in-place): part.spec gedung (specForBuilding)
+  // berbagi REFERENSI scopeSpecs dengan spek proyek — mutasi in-place
+  // akan mengubah part gedung yang seharusnya utuh (pin 5B-19: revisi
+  // jalan akses mengubah serialisasi part Gedung A/B).
+  const setScopeSpecValue = (scopeId: string, field: keyof ScopeSpec, value: number): void => {
+    const cur = spec.scopeSpecs?.[scopeId] ?? {};
+    spec.scopeSpecs = { ...(spec.scopeSpecs ?? {}), [scopeId]: { ...cur, [field]: value } };
+  };
+  // Terapkan revisi ke GLOBAL + sinkronkan atribusi per-scope yang
+  // sudah ada untuk field yang sama — bila tidak, specForScope akan
+  // menimpa nilai global hasil revisi dengan nilai atribusi LAMA
+  // (regresi yang ditangkap pin 13.20k/B1.14e: revisi lebar pada draft
+  // satu cakupan tidak mengubah total karena widthM 6 m teratribusi
+  // ke jalan menimpa widthM 8 m hasil revisi).
+  const applyGlobal = (entry: (typeof measureUpdates)[number], value: number): void => {
+    entry.apply(value);
+    if (entry.field != null) {
+      for (const s of spec.scopes) {
+        const cur = spec.scopeSpecs?.[s.id];
+        if (cur?.[entry.field] != null) setScopeSpecValue(s.id, entry.field, value);
       }
     }
+  };
+  for (const u of pendingUpdates) {
+    const { entry, value, segment } = u;
+    if (entry.field == null) {
+      actions.push({ apply: () => applyGlobal(entry, value), label: entry.label(value) });
+      continue;
+    }
+    const addressed = segment ? resolveScopeAddress(segment, spec.scopes) : [];
+    if (addressed.length > 1) {
+      const labels = addressed.map((id) => spec.scopes.find((s) => s.id === id)?.label ?? id);
+      return {
+        ok: false,
+        changed: false,
+        message: `Perubahan "${entry.label(value)}" menyebut ${labels.map((l) => `[${l}]`).join(' dan ')} sekaligus — sebutkan satu cakupan saja (mis. "panjang jalan menjadi 2000 m") agar hanya cakupan itu yang berubah. Draft tidak berubah.`,
+      };
+    }
+    if (addressed.length === 1) {
+      const targetScope = spec.scopes.find((s) => s.id === addressed[0])!;
+      if (!draft.parts.some((p) => p.scope.id === addressed[0])) {
+        return {
+          ok: false,
+          changed: false,
+          message: `Cakupan [${targetScope.label}] tidak ada di draft ini — revisi tidak dapat diterapkan. Draft tidak berubah.`,
+        };
+      }
+      actions.push({
+        apply: () => setScopeSpecValue(addressed[0], entry.field!, value),
+        label: `${entry.label(value)} [${targetScope.label}]`,
+      });
+      continue;
+    }
+    if (spec.scopes.length <= 1) {
+      actions.push({ apply: () => applyGlobal(entry, value), label: entry.label(value) });
+      continue;
+    }
+    const attributed = spec.scopes.filter((s) => spec.scopeSpecs?.[s.id]?.[entry.field!] != null);
+    if (attributed.length === 1) {
+      actions.push({
+        apply: () => setScopeSpecValue(attributed[0].id, entry.field!, value),
+        label: `${entry.label(value)} [${attributed[0].label}]`,
+      });
+      continue;
+    }
+    if (attributed.length >= 2) {
+      return {
+        ok: false,
+        changed: false,
+        message: `Perubahan "${entry.label(value)}" ambigu — ${attributed.map((s) => `[${s.label}]`).join(' dan ')} sama-sama menyebut ukuran itu. Sebutkan cakupannya (mis. "panjang jalan menjadi 2000 m") agar hanya cakupan itu yang berubah. Draft tidak berubah.`,
+      };
+    }
+    actions.push({ apply: () => applyGlobal(entry, value), label: entry.label(value) });
+  }
+  for (const a of actions) {
+    a.apply();
+    changes.push(a.label);
+    touched = true;
   }
   if (touched) {
     // GATE 2: draft satu gedung yang membawa model gedung (mis. dari
@@ -3351,7 +4444,12 @@ export function reviseUniversalDraft(draft: UniversalDraft, rawText: string, pro
       // revisi tingkat proyek). Single-building: part.spec selalu absen
       // sehingga perilakunya identik dengan sebelumnya.
       if (isMultiSectionDraft && part.sectionKind === 'building') continue;
-      const mapped = mapSpecToParams(part.spec ?? spec, part.template, boolOverrides, selectOverrides);
+      // Batch 2 (§5.2): regenerasi memakai spek PER-SCOPE part itu
+      // (specForScope) — revisi beralamat hanya mengubah part yang
+      // dituju; part lain memakai ukurannya sendiri. Tanpa atribusi
+      // scopeSpecs, specForScope mengembalikan spek proyek apa adanya
+      // (perilaku lama identik).
+      const mapped = mapSpecToParams(part.spec ?? specForScope(spec, part.scope.id), part.template, boolOverrides, selectOverrides);
       regeneratePart(draft, part, mapped.params);
       // Overlay manual/hapus dipertahankan lewat kunci deskripsi+satuan.
     }
@@ -3476,6 +4574,36 @@ export function reviseUniversalDraft(draft: UniversalDraft, rawText: string, pro
       }
     }
     // (b) Donor: generate template se-cakupan lain, ambil item yang cocok.
+    // Batch 1 (§4): dedup KONSEP — bila kata kunci ini SUDAH dipenuhi
+    // perintah tambah sebelumnya (komponen opsional template sendiri
+    // lewat jalur (a), atau item donor lewat jalur (b)), perintah kedua
+    // adalah duplikat — tolak, jangan mencari item BERBEDA dari donor
+    // lain. (Tanpa ini, "tambah marka jalan" kedua pada draft RIGID
+    // menambahkan item marka parkir yang berbeda — 13.21c — karena
+    // jalur (a) sudah memakai item marka template sendiri dan jalur (b)
+    // hanya membandingkan identitas item, bukan kata kuncinya.)
+    // Item BASE generasi (bukan dari perintah tambah) TIDAK memblokir:
+    // mis. draft paving sudah memuat kanstin pengunci, "tambah kanstin"
+    // pertama tetap boleh menambah kanstin donor (D4 hardening).
+    {
+      let alreadyAdded: string | null = null;
+      for (const part of draft.parts) {
+        for (const oid of part.generation.selectedOptionalItemIds || []) {
+          const c = (part.template.components || []).find((x) => x.id === oid);
+          if (c && c.name.toLowerCase().includes(keyword)) { alreadyAdded = c.name; break; }
+        }
+        if (alreadyAdded) break;
+      }
+      if (!alreadyAdded) {
+        const donorHit = effectiveItems(draft).find(
+          (i) => i.id.startsWith('rab-donor-') && i.description.toLowerCase().includes(keyword)
+        );
+        if (donorHit) alreadyAdded = donorHit.description;
+      }
+      if (alreadyAdded) {
+        return { ok: false, changed: false, message: `Item "${alreadyAdded}" sudah ada di draft — tidak digandakan. Draft tidak berubah.` };
+      }
+    }
     for (const part of draft.parts) {
       const donors = officialTemplates().filter(
         (tpl) => tpl.id !== part.template.id && part.scope.categories.includes(tpl.category)
@@ -3579,8 +4707,32 @@ export interface UniversalPushItem {
   wbsNodeId?: string;
   wbsMappingStatus?: WbsMappingStatus;
   wbsSuggestedNodeId?: string;
+  /**
+   * W3/W9 (§9, S3-15/16) + W7 (§7/S3-6) — jejak QTO + basis volume.
+   * `calculationFormula` = rumus volume item: `calculationFormula`
+   * top-level dari generator W7 (rumus murni, mis.
+   * 'span_length * bridge_width * 2.2') bila ada, else string jejak
+   * 'Rule: …' dari traceability/notes; absen bila tidak ada jejak
+   * nyata (fallback 'Volume: N satuan' BUKAN rumus).
+   * `qtoTrace` = trace terstruktur W7 (rumus + input rumus + sumber
+   * volume 'CALCULATOR' + ID komponen); `sourceComponentId` = ID
+   * komponen template sumber (join key stabil, juga di dalam qtoTrace
+   * — dibawa top-level agar konsumen tanpa trace tetap bisa join).
+   * Keduanya diteruskan apa adanya dari item draft (absen pada item
+   * lama/manual/donor tanpa tautan komponen).
+   * `volumeBasis` SELALU terisi (USER_DIMENSION = rumus memakai
+   * dimensi pengguna; ASSUMPTION = hanya default template).
+   * `volumeSource` dibedakan dari basisnya (bukan lagi selalu
+   * AI_GENERATED): USER_DIMENSION → MANUAL (dimensi dari pengguna),
+   * ASSUMPTION → AI_GENERATED (diisi engine). Diteruskan factory →
+   * record (cloneProvenance ikut membawa keempatnya).
+   */
+  calculationFormula?: string;
+  volumeBasis?: VolumeBasis;
+  qtoTrace?: ChatQtoTrace;
+  sourceComponentId?: string;
   category: string;
-  volumeSource: 'AI_GENERATED';
+  volumeSource: VolumeSourceType;
 }
 
 /**
@@ -3709,6 +4861,16 @@ export interface UniversalPushPreview {
   readiness: DraftReadinessStatus;
   transferBlocked: boolean;
   blockReasons: string[];
+  /**
+   * Batch 4 (§8, handoff Batch 3) — penilaian risiko teknik draft
+   * saat preview dibuat (ADVISORY SAJA: tidak memblokir transfer —
+   * belum ada mekanisme pencatatan review teknik; penegakan
+   * pemblokiran adalah wilayah Batch 5, memakai
+   * checkEngineeringTransferGate di pricingFinancialIntegrity.ts).
+   * Pratinjau adalah titik di mana pengguna meninjau nilai yang
+   * akan ditransfer — penilaian ini yang ditampilkan UI B5.
+   */
+  engineeringRisk: DraftEngineeringAssessment;
 }
 
 /** Preview transfer: hitungan + daftar yang perlu diperbaiki, tanpa menulis. */
@@ -3755,7 +4917,23 @@ export function buildPushPreview(draft: UniversalDraft): UniversalPushPreview {
     readiness: readiness.status,
     transferBlocked: readiness.status === 'BLOCKED',
     blockReasons: readiness.blockedReasons,
+    // Batch 4 (§8): penilaian risiko teknik on-demand (murni,
+    // deterministik — dihitung ulang dari draft yang sama selalu
+    // memberi hasil yang sama). Advisory: TIDAK memengaruhi
+    // transferBlocked (lihat dok medan engineeringRisk di atas).
+    engineeringRisk: assessDraftEngineering(draft),
   };
+}
+
+/**
+ * Jejak `Volume: <angka> <satuan>` adalah fallback BUKAN rumus (dibuat
+ * `rabTemplateService` bila item tanpa `notes`) — tidak diteruskan
+ * sebagai `calculationFormula` (rumus yang absen tampil 'Tidak
+ * tersedia' di Sheet 4, bukan restatement volume). Jejak nyata selalu
+ * berawalan 'Rule: '.
+ */
+function isVolumeFallbackTrace(trace: string): boolean {
+  return /^Volume: [\d.,]+ \S+$/.test(trace.trim());
 }
 
 /**
@@ -3791,6 +4969,20 @@ export function buildPushPreview(draft: UniversalDraft): UniversalPushPreview {
  *   `wbsCode` hanya bila ada kode asli tervalidasi; nomor urut
  *   generasi ('1'..'11') TIDAK PERNAH menjadi wbsCode. Kontrak harga
  *   S2 di atas TIDAK diubah di sini.
+ * - W3/W9 (§9, S3-15/16) + W7 (§7/S3-6): jejak QTO + basis volume
+ *   dibawa eksplisit — `calculationFormula` dari `calculationFormula`
+ *   top-level generator W7 (rumus murni; fallback ke traceability
+ *   generasi lalu `notes` item bila absen, mis. item donor revisi /
+ *   komponen tanpa rule), `qtoTrace` + `sourceComponentId` diteruskan
+ *   apa adanya dari item draft, dan `volumeBasis` dari
+ *   `computeVolumeBasis` (dihitung PER PART agar kunci ID efektif
+ *   `templateId::id` unik — ID mentah `rab-<ms>-<index>` BISA
+ *   bertabrakan antar-part yang di-generate dalam milidetik yang
+ *   sama). `volumeSource` dibedakan dari basis: USER_DIMENSION →
+ *   MANUAL, ASSUMPTION → AI_GENERATED (nilai enum yang sudah ada;
+ *   tidak ada nilai 'USER_DIMENSION' di `VolumeSourceType` — nilai
+ *   'CALCULATOR' W7 tetap tersimpan di dalam `qtoTrace.volumeSource`).
+ *   Status harga/totals TIDAK diubah di sini.
  */
 export function buildPushPayload(draft: UniversalDraft): UniversalPushItem[] {
   const readiness = draftReadiness(draft);
@@ -3821,11 +5013,35 @@ export function buildPushPayload(draft: UniversalDraft): UniversalPushItem[] {
       ownerScopeByItemId.set(`${part.template.id}::${g.id}`, part.scope.id);
     }
   }
+  // W3/W9 (§9, S3-15/16): jejak QTO + basis volume per item efektif.
+  // Basis dihitung PER PART (`computeVolumeBasis` atas draft satu
+  // part): ID mentah item (`rab-<ms>-<index>`) bisa bertabrakan
+  // antar-part yang di-generate dalam milidetik yang sama, sehingga
+  // join basis HARUS memakai ID efektif `templateId::id` (skema yang
+  // sama dengan `effectiveItems` + peta scope di atas) — join dengan
+  // ID mentah akan menempelkan basis part lain ke item ini.
+  // Per-part vs sekali-se draft memberi hasil identik (basis dihitung
+  // per part dari spek part itu; total kerja sama).
+  const volumeBasisByItemId = new Map<string, VolumeBasis>();
+  const formulaByItemId = new Map<string, string>();
+  for (const part of draft.parts) {
+    for (const b of computeVolumeBasis({ ...draft, parts: [part] }, draft.structuredSpecs ?? [])) {
+      volumeBasisByItemId.set(`${part.template.id}::${b.itemId}`, b.basis);
+    }
+    for (const t of part.generation.traceability ?? []) {
+      if (t.calculationTrace && !isVolumeFallbackTrace(t.calculationTrace)) {
+        formulaByItemId.set(`${part.template.id}::${t.itemId}`, t.calculationTrace);
+      }
+    }
+  }
   return effectiveItems(draft).map((it) => {
     // S2 (§2): status transfer dari kontrak transferPriceStatus — JANGAN
     // pernah melipat ke PRICE_RESOLVED di sini (P6-O2).
     const priceStatus = transferPriceStatus(it);
     const verificationStatus = transferVerificationStatus(it, priceStatus);
+    // W3/W9 (§9, S3-15/16): basis volume item ini (peta per-part di
+    // atas); default ASSUMPTION hanya jaring pengaman.
+    const volumeBasis = volumeBasisByItemId.get(it.id) ?? 'ASSUMPTION';
     // S6 (§6): pemetaan WBS tervalidasi — `wbsCode` hanya dari kode asli
     // tervalidasi; `__wbsNodeId` draft TIDAK dipakai di sini (itu milik
     // `traceDraftItems`, dipertahankan apa adanya di jalurnya).
@@ -3890,8 +5106,32 @@ export function buildPushPayload(draft: UniversalDraft): UniversalPushItem[] {
       ...(wbs.wbsNodeId ? { wbsNodeId: wbs.wbsNodeId } : {}),
       wbsMappingStatus: wbs.status,
       ...(wbs.suggestedNodeId ? { wbsSuggestedNodeId: wbs.suggestedNodeId } : {}),
+      // W3/W9 (§9, S3-15/16): jejak QTO + basis volume. Formula dari
+      // `calculationFormula` top-level generator W7 (rumus murni)
+      // bila ada; fallback ke traceability generasi lalu `notes` item
+      // (jejak yang sama — traceability dibangun dari notes) untuk
+      // item tanpa formula top-level (komponen tanpa rule, item donor
+      // revisi, draft lama pra-W7). Tanpa jejak nyata = field absen
+      // (bukan karangan). Basis SELALU terisi — default ASSUMPTION
+      // hanya jaring pengaman untuk item yang lolos dari peta (tidak
+      // terjadi pada draft normal).
+      ...(() => {
+        const formula = it.calculationFormula
+          ?? formulaByItemId.get(it.id)
+          ?? (it.notes && !isVolumeFallbackTrace(it.notes) ? it.notes : undefined);
+        return formula ? { calculationFormula: formula } : {};
+      })(),
+      // W7 (§7/S3-6): trace QTO terstruktur + ID komponen sumber
+      // diteruskan apa adanya dari item draft (absen = item lama /
+      // manual / donor tanpa tautan komponen — bukan karangan).
+      ...(it.sourceComponentId ? { sourceComponentId: it.sourceComponentId } : {}),
+      ...(it.qtoTrace ? { qtoTrace: it.qtoTrace } : {}),
+      volumeBasis,
       category: it.category || 'Lainnya',
-      volumeSource: 'AI_GENERATED',
+      // W3/W9 (§9, S3-16): volumeSource dibedakan dari basis — volume
+      // dari dimensi pengguna BUKAN hasil AI (MANUAL = data dari
+      // pengguna); volume dari default template tetap AI_GENERATED.
+      volumeSource: volumeBasis === 'USER_DIMENSION' ? 'MANUAL' : 'AI_GENERATED',
     };
   });
 }

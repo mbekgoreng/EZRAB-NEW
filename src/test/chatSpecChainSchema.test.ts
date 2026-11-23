@@ -267,7 +267,7 @@ describe('SpecChain v2 — skema + derivasi + migrasi', () => {
 
   it('S7: SPEC_KEY_META mencakup semua kunci definisi kuesioner', () => {
     const defKeys = questionnaireDefKeys();
-    expect(defKeys.length).toBe(29);
+    expect(defKeys.length).toBe(50);
     const missing = defKeys.filter((k) => !(k in SPEC_KEY_META));
     expect(missing).toEqual([]);
     // 29 kunci def + 4 kunci percakapan + budget = 34 — DIPERBARUI
@@ -276,7 +276,10 @@ describe('SpecChain v2 — skema + derivasi + migrasi', () => {
     // 'DED') = 39. Kunci DED tidak berasal dari definisi kuesioner
     // (bukan jawaban pengguna) — itulah mengapa hitungan META kini
     // melebihi hitungan def; validator tetap menolak kunci tak dikenal.
-    expect(Object.keys(SPEC_KEY_META).length).toBe(39);
+    // DIPERBARUI W6 (Universal Construction Intelligence §6, 2026-11-22):
+    // + 21 kunci definisi kuesioner keluarga baru (MEP 3, jembatan 6,
+    // irigasi 4, pelabuhan 3, sanitasi 3, struktur 2) = 50 def, 60 META.
+    expect(Object.keys(SPEC_KEY_META).length).toBe(60);
     for (const k of ['ded-length', 'ded-width', 'ded-height', 'ded-area', 'ded-volume']) {
       expect(k in SPEC_KEY_META).toBe(true);
       expect(SPEC_KEY_META[k].kind).toBe('dimension');

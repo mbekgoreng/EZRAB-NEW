@@ -88,9 +88,13 @@ function makeCtx(over: Partial<ChatActionContext> = {}): { ctx: ChatActionContex
   return { ctx, calls, succeed };
 }
 
-// 9. Rename berhasil: callback dipanggil, pesan mengutip lama → baru
+// 9. Rename berhasil DUA LANGKAH (W11 §11, S1-R5): panggilan pertama
+// hanya bertanya (callback tidak dipanggil), panggilan kedua mengeksekusi.
 {
   const { ctx, calls } = makeCtx();
+  const ask = executeIntent('RENAME_PROJECT', 'Rumah Impian', ctx);
+  assert(calls.length === 0, '9a: rename langkah 1 → callback tidak dipanggil (hanya bertanya)');
+  assert(ask.ok === true && ask.message.includes('Rumah Impian'), '9b: rename langkah 1 → bertanya + mengutip nama baru');
   const res = executeIntent('RENAME_PROJECT', 'Rumah Impian', ctx);
   assert(res.ok === true, '9: rename berhasil → ok');
   assert(calls.length === 1 && calls[0].id === 'p1' && calls[0].name === 'Rumah Impian', '9: callback dipanggil dengan id + nama baru');
@@ -134,9 +138,12 @@ function makeCtx(over: Partial<ChatActionContext> = {}): { ctx: ChatActionContex
   assert(res.ok === false && res.message.includes('120 karakter'), '14: pesan menyebut batas 120 karakter');
 }
 // 15. Callback false (id tidak ditemukan): TIDAK mengklaim berhasil
+// (dua langkah — konfirmasi dulu, eksekusi gagal jujur sesudahnya).
 {
   const { ctx, succeed } = makeCtx();
   succeed.v = false;
+  const ask = executeIntent('RENAME_PROJECT', 'Rumah Impian', ctx);
+  assert(ask.ok === true, '15a: langkah 1 bertanya (ok true, belum eksekusi)');
   const res = executeIntent('RENAME_PROJECT', 'Rumah Impian', ctx);
   assert(res.ok === false, '15: callback false → ok false');
   assert(res.message.includes('belum berubah'), '15: pesan jujur belum berubah');

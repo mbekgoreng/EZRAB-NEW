@@ -54,7 +54,6 @@ import {
   getLastUniversalDraftProjectId,
   isPriceValidForTotal,
   itemKey,
-  parseRupiahAmount,
   reconcileMultiBuildingTotals,
   reviseUniversalDraft,
   setLastUniversalDraft,
@@ -63,6 +62,7 @@ import {
   type DraftItem,
   type UniversalDraft,
 } from './universalRab';
+import { parseBudgetMentions } from './rabNeeds';
 import { parseBuildingRevision } from './multiBuildingRab';
 import {
   assessBudgetFeasibility,
@@ -320,20 +320,17 @@ function snapshotOf(
 /* Parsing permintaan revisi khusus                                    */
 /* ------------------------------------------------------------------ */
 
-/** Nominal rupiah dari teks ("250 juta", "Rp 1,5 miliar", "Rp 250.000.000"). */
+/**
+ * Nominal rupiah dari teks ("250 juta", "Rp 1,5 miliar", "Rp 250.000.000",
+ * "revisi budget menjadi Rp 800 juta"). Parser KANONIS
+ * (rabNeeds.parseBudgetMentions — S1-R2/F11); situs ini memakai
+ * penyebutan PERTAMA (semantik first-match lama). Aturan ambang
+ * unitless (< Rp1 jt ditolak) + guard "uang" + koreksi "bukan X"
+ * semuanya milik parser kanonis itu.
+ */
 function parseBudgetAmount(text: string): number | null {
-  const t = (text || '').toLowerCase();
-  const m = t.match(
-    /(?:anggaran|budget|dana)\b[^.\d]{0,40}?(?:rp\.?\s*)?([\d.]+(?:,\d+)?)\s*(miliar|milyar|jt|juta|rb|ribu)?\b/,
-  );
-  if (!m) return null;
-  const v = parseRupiahAmount(m[1], m[2]);
-  if (!Number.isFinite(v) || v <= 0) return null;
-  // Tanpa satuan, angka kecil (< Rp1 juta) hampir pasti bukan nominal
-  // budget (mis. "anggaran 50" tanpa konteks) — tolak sebagai bukan
-  // nominal agar tidak ditebak.
-  if (!m[2] && v < 1_000_000) return null;
-  return v;
+  const mentions = parseBudgetMentions(text);
+  return mentions.length > 0 ? mentions[0].amount : null;
 }
 
 function isBudgetRevisionRequest(text: string): boolean {

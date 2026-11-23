@@ -150,6 +150,34 @@ test('renovasi anggaran Rp150 juta → budgetCap 150.000.000 + perbandingan DI B
   assert.ok(msg.includes('DI BAWAH'), 'estimasi di bawah anggaran harus dinyatakan');
 });
 
+// Budget "uang …" (2026-11-22): prompt owner "saya ada uang 120jt …"
+// sebelumnya TIDAK tertangkap sebagai cap anggaran. Type 36 di string
+// owner hanya contoh — parsing budget generik, tanpa preset tipe.
+test('budget "uang 120jt" (string persis owner, type 36) → budgetCap 120.000.000', () => {
+  const spec = extractUniversalSpec('saya ada uang 120jt saya ingin kamu buatkan rab untuk rumah type 36, apa saja pekerjaan dan spek materialnya?');
+  assert.equal(spec.budgetCap, 120_000_000);
+});
+
+test('budget "uang" generik — BUKAN khusus type 36 (type 45 + ukuran custom)', () => {
+  assert.equal(extractUniversalSpec('saya ada uang 200jt, buatkan RAB rumah type 45').budgetCap, 200_000_000);
+  assert.equal(extractUniversalSpec('saya ada uang 175jt, buatkan RAB rumah 7x12').budgetCap, 175_000_000);
+  assert.equal(extractUniversalSpec('uang 120jt').budgetCap, 120_000_000);
+});
+
+test('guard budget: "uang muka/jalan/saku" BUKAN cap anggaran; "ruang 120jt" tidak tertangkap', () => {
+  assert.equal(extractUniversalSpec('uang muka 50jt').budgetCap, null);
+  assert.equal(extractUniversalSpec('uang jalan 500rb').budgetCap, null);
+  assert.equal(extractUniversalSpec('uang saku 2jt').budgetCap, null);
+  assert.equal(extractUniversalSpec('ruang 120jt').budgetCap, null);
+});
+
+test('bentuk anggaran lama tetap terbaca (anggaran/budget/dana/Rp)', () => {
+  assert.equal(extractUniversalSpec('anggaran 300jt').budgetCap, 300_000_000);
+  assert.equal(extractUniversalSpec('budget 250 juta').budgetCap, 250_000_000);
+  assert.equal(extractUniversalSpec('dana 120jt').budgetCap, 120_000_000);
+  assert.equal(extractUniversalSpec('anggaran Rp 500.000.000').budgetCap, 500_000_000);
+});
+
 test('irigasi tanpa ukuran → needs-spec dengan SATU pertanyaan ukuran utama', () => {
   const res = buildUniversalDraft('Buat RAB pekerjaan irigasi');
   assert.equal(res.kind, 'needs-spec');
