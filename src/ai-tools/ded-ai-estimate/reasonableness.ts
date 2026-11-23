@@ -199,6 +199,11 @@ const DIMS_NEEDED: Record<QuantityShape, number> = {
   AREA: 2,
   LENGTH: 1,
   COUNT: 0,
+  // W7 (§7/S3-3): WEIGHT = 0 — berat tidak dapat dihitung-ulang dari
+  // dimensi panjang saja (butuh densitas/rasio kg/m³ yang tidak dimiliki
+  // recompute); seperti COUNT, item berat lolos dari aturan
+  // ketidakcocokan dimensional dan hanya dinilai sumbu envelope skala.
+  WEIGHT: 0,
 };
 
 function recompute(item: DedAiItem, shape: QuantityShape): RecomputeResult {
