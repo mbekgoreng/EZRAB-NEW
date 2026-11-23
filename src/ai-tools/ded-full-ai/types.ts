@@ -31,6 +31,9 @@ import type { DedEstimationPolicy, DedRabAiMode } from '../ded-ai-estimate/dedMo
 import type {
   DedWorkflowUsage, DedPriceCompletion, DedQuantityAudit,
 } from '../ded-ai-estimate/types';
+// I8 — type-only imports (erased at compile; zero runtime cost).
+import type { VisionResponder } from '../ded-vision/visionClient';
+import type { VisionDocumentResult, VisionItemEvidence } from '../ded-vision/visionPipeline';
 
 // SPRINT 4 (paritas DED Full AI): blok metadata penyelesaian memakai
 // ULANG tipe pipeline standar — tidak ada model duplikat di jalur ini.
@@ -122,6 +125,15 @@ export interface FullAiItem {
   status: 'READY' | 'NEEDS_CONFIRMATION' | 'UNRESOLVED' | 'EXCLUDED';
   exclusionReason: FullAiExclusionReason; // Alasan spesifik tidak masuk total
   sourcePages?: number[];
+  /**
+   * I8 — bukti visual dari lapisan vision (halaman + bbox piksel pada
+   * gambar halaman parser). Diisi service hanya bila visionEnabled dan
+   * hanya bila sebuah deteksi vision terikat tekstual ke item ini.
+   * Absen/kosong = tidak ada bukti visual. TIDAK PERNAH memengaruhi
+   * kuantitas, harga, subtotal, atau QC. (FullAiResultView belum
+   * menampilkan penanda visual — follow-up setelah I8.)
+   */
+  visionEvidence?: VisionItemEvidence[];
   /**
    * SPRINT 4 (paritas): cerminan item-level blok penyelesaian harga —
    * objek yang sama dengan price.priceCompletion, pada posisi yang
@@ -247,6 +259,19 @@ export interface FullAiOutput {
   };
   /** HARDENING 2026-11-10 (Tahap 6): metadata usage workflow untuk kesiapan Unified Credits — bukan tagihan. */
   usage?: DedWorkflowUsage;
+  /**
+   * I8 — hasil lapisan vision (deteksi per halaman yang sudah
+   * divalidasi deterministik). Absen bila vision tidak jalan
+   * (visionEnabled false = perilaku lama). Tidak pernah memengaruhi
+   * item, total, atau QC — hanya bukti.
+   */
+  vision?: VisionDocumentResult | null;
+  /**
+   * I8 — gambar halaman DED (preview parser 1.0×). Absen bila vision
+   * tidak jalan. (FullAiResultView belum memakai field ini — follow-up
+   * setelah I8; disimpan di sini agar tidak hilang dari hasil.)
+   */
+  pageImages?: Array<{ page: number; dataUrl: string }>;
   provenance: {
     /** Provider yang BENAR-BENAR melayani respons (dari gateway); null = respons tidak membawa identitas — jangan ditebak. */
     provider: string | null;
@@ -292,4 +317,21 @@ export interface FullAiServiceOptions {
   pageScope?: number[];
   projectName?: string;
   onProgress?: (stage: string, percent: number, message: string) => void;
+  /**
+   * I8 — aktifkan lapisan vision (DEFAULT FALSE). FALSE (atau absen) =
+   * perilaku teks-saja persis seperti hari ini. TRUE = parse
+   * withImages:true + pipeline vision jalan sesudah parse. Panggilan
+   * vision live ke gateway butuh persetujuan owner TERPISAH.
+   * I11 — opsi ini saja TIDAK cukup: service menerapkan gerbang
+   * enablement (visionEnablement.ts) — vision hanya jalan bila env
+   * flag VITE_DED_VISION_ENABLED='true' DAN runtime non-produksi.
+   * Di produksi gerbang selalu tertutup; tidak ada toggle UI untuk
+   * opsi ini.
+   */
+  visionEnabled?: boolean;
+  /**
+   * I8 — responder vision injeksi (tes memakai stub; produksi memakai
+   * responder gateway nyata). Service tidak pernah mengimpor stub tes.
+   */
+  visionResponder?: VisionResponder;
 }

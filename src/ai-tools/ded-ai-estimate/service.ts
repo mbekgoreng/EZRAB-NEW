@@ -14,6 +14,36 @@
 
 import { aiToolsProviderClient, AiToolsResult, AiToolsUsage, balancedJsonEnd } from '../providerClient';
 import { waitForMinimum, minDelayFor } from '../aiResponseTiming';
+import { aiGatewayAuthHeaders } from '../aiGatewayAuth';
+// I8 — lapisan vision (ded-vision). Modul ini TIDAK mengimpor matcher
+// AHSP / price resolver / database harga / ded-rab-v2/v3 runtime apa
+// pun (hanya type-only + SafeDecimalEngine generik lewat geometryQto),
+// sehingga impor ini tidak melanggar isolasi di header berkas ini.
+// Render halaman memakai preview parser (parser.ts), BUKAN
+// pdfPageService (ded-rab-v2) — impor runtime ke ded-rab-v2 tetap
+// dilarang di berkas ini; seam renderPage menerima implementasi
+// pdfPageService kelak bila koordinator mencabut larangan itu.
+import { createGatewayVisionResponder } from '../ded-vision/visionClient';
+import type { VisionParseResult } from '../ded-vision/visionClient';
+import { VisionCache } from '../ded-vision/visionCache';
+import { resolveVisionEnabled } from '../ded-vision/visionEnablement';
+import {
+  base64LengthOfDataUrl,
+  browserSessionVisionCacheStorage,
+  coerceToUint8Array,
+  computeDocHash,
+  createParserPreviewRenderPage,
+  matchVisionEvidenceToItem,
+  pngDimensionsFromDataUrl,
+  runVisionForDedService,
+} from '../ded-vision/visionPipeline';
+import type {
+  ParserPreviewImage,
+  VisionDocumentResult,
+  VisionPageInput,
+} from '../ded-vision/visionPipeline';
+import { createVisionAhspMatcher } from '../ded-vision/visionAhsp';
+import type { DedRabAiMode } from './dedMode';
 import { buildFastPrompt, DedFastOutput, DedFastPromptInput } from './prompts/fast';
 import { buildDetailPrompt, DedDetailOutput, DedDetailPromptInput } from './prompts/detail';
 import { parseDedPdf, DedParsedDocument } from './parser';
@@ -880,9 +910,16 @@ export class DedAiEstimateService {
     }
 
     // F4 (3.6): label jujur — pipeline ini mengekstrak TEKS saja
-    // (parseDedPdf dipanggil dengan withImages: false; gambar tidak dibaca).
-    notify('PARSE', 'Membaca DED', 10, 'Mengekstrak teks dari PDF DED…');
-    const parsedResult = await parseDedPdf(options.buffer, options.fileName, { withImages: false });
+    // (parseDedPdf dipanggil dengan withImages: false; gambar tidak dibaca)
+    // KECUALI bila visionEnabled (I8): withImages:true dan gambar halaman
+    // dibaca lapisan vision sesudah parse. Default tetap teks-saja.
+    // I11 — gerbang enablement (visionEnablement.ts): `visionEnabled`
+    // saja TIDAK cukup — lingkungan juga harus mengizinkan (env flag
+    // VITE_DED_VISION_ENABLED='true' + runtime non-produksi). Di
+    // produksi gerbang ini selalu tertutup, apa pun yang diminta caller.
+    const visionEnabled = resolveVisionEnabled(options.visionEnabled);
+    notify('PARSE', 'Membaca DED', 10, visionEnabled ? 'Mengekstrak teks dan gambar dari PDF DED…' : 'Mengekstrak teks dari PDF DED…');
+    const parsedResult = await parseDedPdf(options.buffer, options.fileName, { withImages: visionEnabled });
     if (!parsedResult || 'success' in parsedResult) {
       return parsedResult as any; // structured error
     }
@@ -921,6 +958,107 @@ export class DedAiEstimateService {
       }
       pageScopeApplied = scopedPages.map((p) => p.page);
       parsed.pages = scopedPages;
+    }
+
+    // === I8 — lapisan vision (DEFAULT MATI) ===
+    // Berjalan HANYA bila `visionEnabled` di atas true — yaitu bila
+    // caller meminta DAN gerbang enablement I11 mengizinkan (env flag
+    // VITE_DED_VISION_ENABLED='true' + runtime non-produksi; di
+    // produksi selalu tertutup). Gerbang kedua ada di
+    // runVisionForDedService; tanpa itu tidak ada responder yang
+    // dibangun, tidak ada cache yang disentuh, tidak ada perubahan
+    // output apa pun). Vision adalah PENGAYA BUKTI, bukan masukan ke
+    // pass AI teks: ia jalan sesudah parse, sebelum pass AI, dan
+    // hasilnya dicocokkan ke item sesudah item terbentuk (di bawah).
+    // Kegagalan vision TIDAK PERNAH menggagalkan lari teks-saja:
+    // ditangkap, dicatat sebagai peringatan, hasil teks tetap dipakai.
+    // Mode pipeline diturunkan dari kebijakan harga (DATABASE =
+    // EZRAB_AI boleh katalog kanonis; FULL_AI = terisolasi C3) — BUKAN
+    // dari mesin (mesin standar selalu fullAi=false sehingga
+    // modeFromLegacy tidak membedakan keduanya).
+    let visionResult: VisionDocumentResult | null = null;
+    let visionPageImages: Array<{ page: number; dataUrl: string }> = [];
+    const visionWarnings: string[] = [];
+    if (visionEnabled) {
+      notify('VISION', 'Membaca gambar DED', 20, 'Menganalisis gambar halaman DED (vision)…', {
+        pagesRead: 0,
+        totalPages: documentTotalPages,
+      });
+      try {
+        const visionPolicy = options.policy ?? 'FULL_AI';
+        const pipelineMode: DedRabAiMode = visionPolicy === 'DATABASE' ? 'EZRAB_AI' : 'FULL_AI';
+        const docHash = await computeDocHash(coerceToUint8Array(options.buffer));
+        const previews = new Map<number, ParserPreviewImage>();
+        for (const p of parsed.pages) {
+          if (p.previewDataUrl) {
+            const dims = pngDimensionsFromDataUrl(p.previewDataUrl);
+            previews.set(p.page, {
+              dataUrl: p.previewDataUrl,
+              widthPx: dims?.widthPx ?? 0,
+              heightPx: dims?.heightPx ?? 0,
+              base64Length: base64LengthOfDataUrl(p.previewDataUrl),
+            });
+            visionPageImages.push({ page: p.page, dataUrl: p.previewDataUrl });
+          }
+        }
+        const visionInputs: VisionPageInput[] = parsed.pages.map((p) => {
+          const preview = previews.get(p.page);
+          return {
+            page: p.page,
+            title: p.title,
+            text: p.text,
+            hasTextLayer: p.text.trim().length > 0,
+            widthPx: preview?.widthPx ?? 0,
+            heightPx: preview?.heightPx ?? 0,
+            base64Length: preview?.base64Length ?? 0,
+            fileName: options.fileName,
+          };
+        });
+        const cacheStorage = browserSessionVisionCacheStorage();
+        const visionCache = new VisionCache<VisionParseResult>(
+          cacheStorage ? { storage: cacheStorage } : {},
+        );
+        visionResult = await runVisionForDedService({
+          visionEnabled: true,
+          responder: options.visionResponder,
+          // Responder gateway nyata DIBANGUN DI SINI (lazy factory —
+          // tidak pernah dipanggil bila vision mati atau stub disuntik).
+          // Auth memakai helper yang sama dengan panggilan AI live
+          // (aiGatewayAuthHeaders — JWT Supabase user).
+          createResponder: () =>
+            createGatewayVisionResponder({ getAuthHeaders: aiGatewayAuthHeaders }),
+          docHash,
+          mode: pipelineMode,
+          pages: visionInputs,
+          renderPage: createParserPreviewRenderPage(previews),
+          cache: visionCache,
+          fileName: options.fileName,
+          // I11 Stage 4 — AHSP enrichment for vision records (openings +
+          // geometry quantities) via the canonical resolver. In FULL_AI
+          // mode the pipeline never calls it (C3 gate); in EZRAB_AI mode
+          // unmatched records stay null + UNRESOLVED, never invented.
+          ahspMatcher: createVisionAhspMatcher(),
+          onProgress: (ev) => {
+            notify('VISION', 'Membaca gambar DED', 20, `Menganalisis gambar halaman ${ev.page}…`, {
+              pagesRead: ev.pagesDone,
+              totalPages: documentTotalPages,
+            });
+          },
+        });
+        if (visionResult) {
+          visionWarnings.push(
+            `Vision: ${visionResult.totalCost.calls} panggilan, ${visionResult.pages.length} halaman dibaca` +
+              (visionResult.totalCost.cacheHits > 0 ? ` (${visionResult.totalCost.cacheHits} dari cache)` : '') +
+              (visionResult.budgetHit ? ' — anggaran panggilan habis, sebagian halaman NOT_DETECTED.' : '.'),
+          );
+        }
+      } catch (e: any) {
+        visionWarnings.push(
+          `Lapisan vision gagal dijalankan (${e?.message || 'unknown'}) — hasil teks tetap dipakai; tidak ada bukti visual pada lari ini.`,
+        );
+        visionResult = null;
+        visionPageImages = [];
+      }
     }
 
     notify('PICK_MODE', mode === 'FAST' ? 'Mode Cepat' : 'Mode Detail', 30, `Menyiapkan model ${mode === 'FAST' ? 'EZRAB Fast Engine' : 'EZRAB Deep Engine'}…`, {
@@ -1262,6 +1400,26 @@ export class DedAiEstimateService {
       completionReport = completed.report;
     }
 
+    // I8 — cocokkan bukti vision ke item (hanya bila vision jalan).
+    // Pencocokan deterministik + konservatif (matchVisionEvidenceToItem):
+    // deteksi menempel hanya bila teksnya terikat ke item DAN halamannya
+    // termasuk sourcePages item. visionEvidence TIDAK PERNAH mengubah
+    // kuantitas/harga/subtotal — finalizeItems menyebarkannya apa adanya
+    // (...it) ke output.
+    if (visionResult) {
+      for (const it of finalItems) {
+        const evidence = matchVisionEvidenceToItem(
+          {
+            name: it.name,
+            texts: [it.rawDimensions ?? '', it.quantityFormula ?? ''],
+            sourcePages: it.sourcePages,
+          },
+          visionResult.pages,
+        );
+        if (evidence.length > 0) it.visionEvidence = evidence;
+      }
+    }
+
     const output = DedAiCalculator.buildOutput({
       jobId,
       projectType,
@@ -1273,6 +1431,12 @@ export class DedAiEstimateService {
       items: finalItems,
     });
     if (completionReport) output.completionReport = completionReport;
+    // I8 — lampirkan hasil vision + gambar halaman ke output (hanya bila
+    // vision jalan; lari teks-saja tidak membawa kedua field ini).
+    if (visionResult) {
+      output.vision = visionResult;
+      output.pageImages = visionPageImages;
+    }
 
     // === FASE P0: cakupan 12 divisi + jejak analisis ===
     // Coverage dihitung dari item yang sama yang masuk output (diklasifikasi
@@ -1305,6 +1469,18 @@ export class DedAiEstimateService {
       traceWarnings.push(
         `${selection.noTextCount} halaman tanpa lapisan teks tidak dapat dianalisis (kemungkinan hasil scan/gambar — butuh OCR): halaman ${formatPageRanges(noTextPages)}.`
       );
+    }
+    // I8 — peringatan vision masuk jejak (dibatasi 20 baris; selengkapnya
+    // ada di output.vision.warnings). Lari teks-saja tidak menambah apa pun.
+    traceWarnings.push(...visionWarnings);
+    if (visionResult && visionResult.warnings.length > 0) {
+      const shown = visionResult.warnings.slice(0, 20);
+      traceWarnings.push(...shown.map((w) => `Vision: ${w}`));
+      if (visionResult.warnings.length > 20) {
+        traceWarnings.push(
+          `Vision: +${visionResult.warnings.length - 20} peringatan lainnya (lihat output.vision.warnings).`,
+        );
+      }
     }
     // Selisih total usulan AI vs total terverifikasi (bila ada) ikut
     // jejak sebagai peringatan — bukan ditimpa diam-diam.

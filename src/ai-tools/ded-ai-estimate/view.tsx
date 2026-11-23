@@ -43,6 +43,10 @@ import {
   type DedRunSnapshot,
 } from './dedRunStore';
 import { DedAiResultView } from './DedAiResultView';
+// I11 Stage 1 — demo visual-test hook (LOCAL TEST ONLY, demo-gated):
+// memasang hasil sintetis bila URL membawa `?dedvr-demo=1`. Tanpa
+// param itu modul demo tidak pernah dibaca (lihat dedVisionReviewDemo.ts).
+import { demoDedRunSnapshot, isDedVisionReviewDemoRequested } from './dedVisionReviewDemo';
 import { fullAiDedService, FULL_AI_TIMEOUT_MS } from '../ded-full-ai/service';
 import { FullAiOutput, FullAiItem } from '../ded-full-ai/types';
 import { FullAiResultView } from '../ded-full-ai/FullAiResultView';
@@ -215,6 +219,17 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
     if (snap) applyDedRunSnapshot(snap);
     return subscribeDedRun((s) => { if (s) applyDedRunSnapshot(s); });
   }, [applyDedRunSnapshot]);
+
+  // I11 Stage 1 — DEMO VISUAL-TEST HOOK (gated `?dedvr-demo=1`):
+  // pasang hasil sintetis dari dedVisionReviewDemo.ts sebagai layar
+  // hasil agar viewer tinjau visual I7 bisa dirender + diuji di
+  // browser tanpa lari vision live. TIDAK PERNAH menimpa lari nyata
+  // (guard snapshot) dan tidak aktif tanpa param query tersebut.
+  useEffect(() => {
+    if (!isDedVisionReviewDemoRequested()) return;
+    if (getDedRunSnapshot()) return;
+    publishDedRunSnapshot(demoDedRunSnapshot());
+  }, []);
 
   // Penulis loop lari → store. Loop TIDAK PERNAH memanggil setState
   // komponen langsung — setState ke komponen yang ter-unmount hilang,
@@ -503,6 +518,9 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
     const mergedItems: DedAiItem[] = [];
     let totalPages = 0;
     const fileNames: string[] = [];
+    // I8: gambar halaman gabungan (pageImages per berkas, di-offset
+    // seperti sourcePages) untuk panel gambar split-view I7.
+    const mergedPageImages: Array<{ page: number; dataUrl: string }> = [];
     // FINAL REVIEW (Tugas A): jejak per file + bukti halaman untuk metadata gabungan.
     const fileTraceInputs: FileTraceInput[] = [];
     const evidencePages: Array<{ page: number; pageType: string }> = [];
@@ -607,8 +625,19 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
             ...it,
             id: `dedai-f${fi + 1}-${idx + 1}`,
             sourcePages: it.sourcePages.map((p) => p + pageOffset),
+            // I8: halaman bukti vision ikut di-offset seperti sourcePages
+            // (tanpa ini penanda menunjuk halaman berkas yang salah).
+            ...(it.visionEvidence
+              ? { visionEvidence: it.visionEvidence.map((ev) => ({ ...ev, page: ev.page + pageOffset })) }
+              : {}),
           });
         });
+        // I8: gambar halaman berkas ini ikut digabung (di-offset global).
+        if (out.pageImages) {
+          for (const img of out.pageImages) {
+            mergedPageImages.push({ page: img.page + pageOffset, dataUrl: img.dataUrl });
+          }
+        }
         totalPages += out.pageCount;
         markUpTo('validate', 'done');
       }
@@ -642,6 +671,13 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
         pages: evidencePages,
         projectType: sess.projectType,
       });
+      // I8: gambar halaman gabungan dilampirkan ke hasil (hanya bila ada
+      // — lari teks-saja tidak membawa pageImages). Hasil vision
+      // per-berkas (output.vision) TIDAK digabung di sini: nomor
+      // halamannya butuh transformasi offset mendalam; yang dipertahankan
+      // lintas-berkas adalah yang dibutuhkan viewer — pageImages +
+      // visionEvidence per item (sudah di-offset di atas).
+      if (mergedPageImages.length > 0) merged.pageImages = mergedPageImages;
       markUpTo('prepare', 'done');
       writeRun({ percent: 100 });
       writeRun({ statusLine: t('ai.ded.status_done') });
@@ -784,6 +820,13 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
   const handleSaveDraft = (items: DedAiItem[]) => {
     if (!result) return;
     const policy = result.policy ?? 'FULL_AI';
+    // I8: pageImages (base64 MB-an) TIDAK ikut ke draft localStorage —
+    // kuota 5 MB akan menggagalkan seluruh tulis draft (dan persistDrafts
+    // menelan errornya diam-diam). visionEvidence per item (bbox kecil)
+    // + output.vision (teks) tetap tersimpan; gambar dimuat ulang saat
+    // analisis berikutnya.
+    const { pageImages: _droppedPageImages, ...resultWithoutImages } = result;
+    void _droppedPageImages;
     const rec: DraftRecord = {
       id: `draft-${Date.now()}`,
       createdAt: Date.now(),
@@ -791,7 +834,7 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
       projectType: result.projectType as DedAiProjectType,
       mode: result.mode,
       fileNames: session.files.map((f) => f.file.name),
-      output: { ...result, items },
+      output: { ...resultWithoutImages, items },
       // G-ST-2: mode/policy/mesin tersimpan agar load mempertahankannya.
       policy,
       fullAi: false,
@@ -810,6 +853,10 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
   const handleSaveFullAiDraft = (items: FullAiItem[]) => {
     if (!fullAiOutput) return;
     const policy = fullAiOutput.policy ?? 'FULL_AI';
+    // I8: pageImages tidak ikut ke draft localStorage (alasan sama
+    // seperti handleSaveDraft — kuota).
+    const { pageImages: _droppedFullAiPageImages, ...fullAiWithoutImages } = fullAiOutput;
+    void _droppedFullAiPageImages;
     const rec: DraftRecord = {
       id: `draft-${Date.now()}`,
       createdAt: Date.now(),
@@ -817,7 +864,7 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
       projectType: session.projectType,
       mode: depthModeFromFullAi(fullAiOutput.mode),
       fileNames: session.files.map((f) => f.file.name),
-      fullAiOutput: { ...fullAiOutput, items },
+      fullAiOutput: { ...fullAiWithoutImages, items },
       policy,
       fullAi: true,
       dedMode: 'FULL_AI',
@@ -1207,39 +1254,46 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
     // tidak boleh terbaca sebagai total tervalidasi sumber. Tanpa asumsi,
     // tidak ada strip tambahan.
     const assumptionCount = resolveAssumptionCount(result.coverage, result.items);
+    // I11 Stage 1b (Finding 3): strip asumsi dilewatkan sebagai
+    // `topNotice` — dirender DI DALAM .dedai (ikut bergeser dengan
+    // hasil), BUKAN sebagai saudara .dedai di .fp-content (sebagai item
+    // flex saudara ia menjepit .dedai ke 53px di HP).
     screenContent = (
-      <>
-        {assumptionCount > 0 && (
-          <div
-            role="note"
-            style={{
-              margin: '20px 24px 0',
-              padding: '10px 14px',
-              borderRadius: '12px',
-              border: '1px solid var(--ez-hue-amber-border, #F59E0B)',
-              background: 'var(--ez-hue-amber-bg, #FFFBEB)',
-              fontSize: '12.5px',
-              lineHeight: 1.5,
-            }}
-          >
-            <strong>Total estimasi mencakup {assumptionCount} item dengan kuantitas asumsi (ASSUMPTION)</strong>
-            {' '}— periksa badge "Perlu Ditinjau" pada item terkait. Kuantitas asumsi tetap
-            terhitung dalam total estimasi, tetapi bukan kuantitas terverifikasi dari dokumen.
-          </div>
-        )}
-        <DedAiResultView
-          output={result}
-          onBackToInput={goInputScreen}
-          onSaveDraft={handleSaveDraft}
-          onFinalize={handleFinalize}
-          onOpenSpreadsheet={handleOpenSpreadsheet}
-          onSendToChat={handleSendToChat}
-          draftSaved={draftSaved}
-          finalized={finalized}
-          creditEstimate={session.creditEstimate}
-          outputPrefs={session.outputPrefs ?? DEFAULT_DED_OUTPUT_PREFS}
-        />
-      </>
+      <DedAiResultView
+        output={result}
+        onBackToInput={goInputScreen}
+        onSaveDraft={handleSaveDraft}
+        onFinalize={handleFinalize}
+        onOpenSpreadsheet={handleOpenSpreadsheet}
+        onSendToChat={handleSendToChat}
+        draftSaved={draftSaved}
+        finalized={finalized}
+        creditEstimate={session.creditEstimate}
+        outputPrefs={session.outputPrefs ?? DEFAULT_DED_OUTPUT_PREFS}
+        // I8: gambar halaman parser (bila vision jalan) ke panel
+        // gambar split-view I7; absen = empty state jujur per halaman.
+        pageImages={result.pageImages}
+        topNotice={
+          assumptionCount > 0 ? (
+            <div
+              role="note"
+              style={{
+                margin: '0 0 16px',
+                padding: '10px 14px',
+                borderRadius: '12px',
+                border: '1px solid var(--ez-hue-amber-border, #F59E0B)',
+                background: 'var(--ez-hue-amber-bg, #FFFBEB)',
+                fontSize: '12.5px',
+                lineHeight: 1.5,
+              }}
+            >
+              <strong>Total estimasi mencakup {assumptionCount} item dengan kuantitas asumsi (ASSUMPTION)</strong>
+              {' '}— periksa badge "Perlu Ditinjau" pada item terkait. Kuantitas asumsi tetap
+              terhitung dalam total estimasi, tetapi bukan kuantitas terverifikasi dari dokumen.
+            </div>
+          ) : null
+        }
+      />
     );
   } else {
     screenContent = (

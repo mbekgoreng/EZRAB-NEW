@@ -20,6 +20,32 @@
  */
 import { aiToolsProviderClient } from '../providerClient';
 import { waitForMinimum, minDelayFor } from '../aiResponseTiming';
+import { aiGatewayAuthHeaders } from '../aiGatewayAuth';
+// I8 — lapisan vision (ded-vision). Modul ini TIDAK mengimpor matcher
+// AHSP / price resolver / database harga / ded-rab-v2/v3 runtime apa pun
+// (hanya type-only + SafeDecimalEngine generik lewat geometryQto).
+// Render halaman memakai preview parser (parser.ts), BUKAN
+// pdfPageService (ded-rab-v2).
+import { createGatewayVisionResponder } from '../ded-vision/visionClient';
+import type { VisionParseResult } from '../ded-vision/visionClient';
+import { VisionCache } from '../ded-vision/visionCache';
+import { resolveVisionEnabled } from '../ded-vision/visionEnablement';
+import {
+  base64LengthOfDataUrl,
+  browserSessionVisionCacheStorage,
+  coerceToUint8Array,
+  computeDocHash,
+  createParserPreviewRenderPage,
+  matchVisionEvidenceToItem,
+  pngDimensionsFromDataUrl,
+  runVisionForDedService,
+} from '../ded-vision/visionPipeline';
+import type {
+  ParserPreviewImage,
+  VisionDocumentResult,
+  VisionPageInput,
+} from '../ded-vision/visionPipeline';
+import { createVisionAhspMatcher } from '../ded-vision/visionAhsp';
 import { parseDedPdf } from '../ded-ai-estimate/parser';
 import { PAGE_TYPE_PRIORITY, formatPageRanges, type SelectedPage } from '../ded-ai-estimate/analysisTrace';
 import { planDedPasses, DED_PASS_REQUEST_BUDGET_CHARS } from '../ded-ai-estimate/service';
@@ -311,8 +337,15 @@ export class FullAiDedService {
 
     try {
       // §6 Tahap 1 — Document Intelligence: parse dokumen
+      // I8: withImages:true HANYA bila visionEnabled (default false =
+      // teks-saja persis seperti hari ini).
+      // I11 — gerbang enablement (visionEnablement.ts): `visionEnabled`
+      // saja TIDAK cukup — lingkungan juga harus mengizinkan (env flag
+      // VITE_DED_VISION_ENABLED='true' + runtime non-produksi). Di
+      // produksi gerbang ini selalu tertutup, apa pun yang diminta caller.
+      const visionEnabled = resolveVisionEnabled(options.visionEnabled);
       notify('PARSE', 10, 'Membaca dokumen DED...');
-      const parsed = await parseDedPdf(options.buffer, options.fileName, { withImages: false });
+      const parsed = await parseDedPdf(options.buffer, options.fileName, { withImages: visionEnabled });
 
       if ('errorCode' in parsed) {
         return this.errorOutput(mode, policy, {
@@ -341,6 +374,94 @@ export class FullAiDedService {
         }
       }
       notify('PARSE', 25, `Dokumen dibaca: ${pages.length} halaman`);
+
+      // === I8 — lapisan vision (DEFAULT MATI) ===
+      // Berjalan HANYA bila `visionEnabled` di atas true — yaitu bila
+      // caller meminta DAN gerbang enablement I11 mengizinkan (env flag
+      // VITE_DED_VISION_ENABLED='true' + runtime non-produksi; di
+      // produksi selalu tertutup). Gerbang kedua ada di
+      // runVisionForDedService. Mode pipeline = rabMode yang sudah
+      // ter-resolve di atas (C3: FULL_AI terisolasi dari katalog
+      // kanonis/harga internal — guard dievaluasi pipeline). Vision
+      // adalah PENGAYA BUKTI: hasilnya dicocokkan ke item sesudah item
+      // terbentuk (sebelum QC) dan dilampirkan ke keluaran. Kegagalan
+      // vision TIDAK PERNAH menggagalkan lari teks-saja.
+      let visionResult: VisionDocumentResult | null = null;
+      let visionPageImages: Array<{ page: number; dataUrl: string }> = [];
+      const visionWarnings: string[] = [];
+      if (visionEnabled) {
+        notify('VISION', 20, 'Menganalisis gambar halaman DED (vision)...');
+        try {
+          const docHash = await computeDocHash(coerceToUint8Array(options.buffer));
+          const previews = new Map<number, ParserPreviewImage>();
+          for (const p of pages) {
+            const previewDataUrl = (p as any).previewDataUrl as string | undefined;
+            if (previewDataUrl) {
+              const dims = pngDimensionsFromDataUrl(previewDataUrl);
+              previews.set(p.page, {
+                dataUrl: previewDataUrl,
+                widthPx: dims?.widthPx ?? 0,
+                heightPx: dims?.heightPx ?? 0,
+                base64Length: base64LengthOfDataUrl(previewDataUrl),
+              });
+              visionPageImages.push({ page: p.page, dataUrl: previewDataUrl });
+            }
+          }
+          const visionInputs: VisionPageInput[] = pages.map((p: any) => {
+            const preview = previews.get(p.page);
+            return {
+              page: p.page,
+              title: p.title,
+              text: p.text || '',
+              hasTextLayer: (p.text || '').trim().length > 0,
+              widthPx: preview?.widthPx ?? 0,
+              heightPx: preview?.heightPx ?? 0,
+              base64Length: preview?.base64Length ?? 0,
+              fileName: options.fileName,
+            };
+          });
+          const cacheStorage = browserSessionVisionCacheStorage();
+          const visionCache = new VisionCache<VisionParseResult>(
+            cacheStorage ? { storage: cacheStorage } : {},
+          );
+          visionResult = await runVisionForDedService({
+            visionEnabled: true,
+            responder: options.visionResponder,
+            // Responder gateway nyata (lazy factory) + auth yang sama
+            // dengan panggilan AI live (aiGatewayAuthHeaders).
+            createResponder: () =>
+              createGatewayVisionResponder({ getAuthHeaders: aiGatewayAuthHeaders }),
+            docHash,
+            mode: rabMode,
+            pages: visionInputs,
+            renderPage: createParserPreviewRenderPage(previews),
+            cache: visionCache,
+            fileName: options.fileName,
+            // I11 Stage 4 — passed for symmetry with the EZRAB_AI
+            // service; in FULL_AI mode the pipeline's C3 gate means
+            // this matcher is NEVER called (call count 0, verified by
+            // the pipeline suite), so no catalog/price data reaches
+            // FULL AI.
+            ahspMatcher: createVisionAhspMatcher(),
+            onProgress: (ev) => {
+              notify('VISION', 20, `Menganalisis gambar halaman ${ev.page}...`);
+            },
+          });
+          if (visionResult) {
+            visionWarnings.push(
+              `Vision: ${visionResult.totalCost.calls} panggilan, ${visionResult.pages.length} halaman dibaca` +
+                (visionResult.totalCost.cacheHits > 0 ? ` (${visionResult.totalCost.cacheHits} dari cache)` : '') +
+                (visionResult.budgetHit ? ' — anggaran panggilan habis, sebagian halaman NOT_DETECTED.' : '.'),
+            );
+          }
+        } catch (e: any) {
+          visionWarnings.push(
+            `Lapisan vision gagal dijalankan (${e?.message || 'unknown'}) — hasil teks tetap dipakai; tidak ada bukti visual pada lari ini.`,
+          );
+          visionResult = null;
+          visionPageImages = [];
+        }
+      }
 
       // §6 Tahap 1 (lanjutan): rencanakan dokumen menjadi KELOMPOK
       // halaman (tanpa batas pemrosesan 2026-11-19 — menggantikan
@@ -959,6 +1080,25 @@ export class FullAiDedService {
           : 'Dilewati: penyelesaian kuantitas hanya berjalan pada policy FULL_AI.',
       );
 
+      // I8 — cocokkan bukti vision ke item (hanya bila vision jalan).
+      // Pencocokan deterministik + konservatif (matchVisionEvidenceToItem):
+      // deteksi menempel hanya bila teksnya terikat ke item DAN halamannya
+      // termasuk sourcePages item. visionEvidence TIDAK PERNAH mengubah
+      // kuantitas/harga/subtotal/status — QC di bawah tidak membacanya.
+      if (visionResult) {
+        for (const it of items) {
+          const evidence = matchVisionEvidenceToItem(
+            {
+              name: it.name,
+              texts: [it.quantity?.formula ?? '', it.quantity?.dimensions ?? ''],
+              sourcePages: it.sourcePages ?? [],
+            },
+            visionResult.pages,
+          );
+          if (evidence.length > 0) it.visionEvidence = evidence;
+        }
+      }
+
       // §6 Tahap 7 — Quality Control: audit single-pass atas item final.
       // TANPA loop revisi otomatis (revisionIterations QC selalu 0); isu
       // dipertahankan sebagai warning/unresolved yang terlihat.
@@ -973,6 +1113,17 @@ export class FullAiDedService {
         `Audit single-pass: ${qualityControl.checks.filter((c) => c.passed).length}/${qualityControl.checks.length} pemeriksaan lolos, ${qualityControl.unresolvedIssueCount} isu dipertahankan terlihat, 0 iterasi revisi.`,
       );
       warnings.push(...qualityControl.warnings);
+      // I8 — peringatan vision masuk warnings keluaran (dibatasi 20 baris;
+      // selengkapnya ada di output.vision.warnings).
+      warnings.push(...visionWarnings);
+      if (visionResult && visionResult.warnings.length > 0) {
+        warnings.push(...visionResult.warnings.slice(0, 20).map((w) => `Vision: ${w}`));
+        if (visionResult.warnings.length > 20) {
+          warnings.push(
+            `Vision: +${visionResult.warnings.length - 20} peringatan lainnya (lihat output.vision.warnings).`,
+          );
+        }
+      }
 
       // Total: jumlah subtotal terverifikasi — rumus diekstrak ke
       // computeFullAiGrandTotal (semantik persis penjumlahan inline lama;
@@ -1069,6 +1220,10 @@ export class FullAiDedService {
         summary,
         pipelineStages: stageTrace,
         qualityControl,
+        // I8 — hasil vision + gambar halaman (hanya bila vision jalan;
+        // lari teks-saja tidak membawa kedua field ini).
+        vision: visionResult ?? undefined,
+        pageImages: visionPageImages.length > 0 ? visionPageImages : undefined,
         // F4 (3.7): error validator per item WAJIB tampil di hasil akhir;
         // peringatan model dinormalisasi (string utuh ≠ peringatan per karakter).
         warnings: [

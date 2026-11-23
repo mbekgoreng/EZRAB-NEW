@@ -12,6 +12,10 @@
  * - No grand-total from the AI — totals are computed by `calculator.ts`.
  */
 
+// I8 — type-only imports (erased at compile; zero runtime cost).
+import type { VisionResponder } from '../ded-vision/visionClient';
+import type { VisionDocumentResult, VisionItemEvidence } from '../ded-vision/visionPipeline';
+
 export type DedAiProjectType =
   | 'BANGUNAN'
   | 'GEDUNG'
@@ -273,6 +277,15 @@ export interface DedAiItem {
   aiProposedSubtotal?: number | null;
   sourcePages: number[];
   sourceEvidence?: string;
+  /**
+   * I8 — bukti visual dari lapisan vision (halaman + bbox piksel pada
+   * gambar halaman parser). Diisi service hanya bila visionEnabled dan
+   * hanya bila sebuah deteksi vision terikat tekstual ke item ini
+   * (lihat matchVisionEvidenceToItem). Absen/kosong = tidak ada bukti
+   * visual untuk item ini — viewer I7 memakai lompatan halaman saja.
+   * TIDAK PERNAH memengaruhi kuantitas, harga, subtotal, atau gerbang.
+   */
+  visionEvidence?: VisionItemEvidence[];
   provenance: string[];
   stage: 'PARSE' | 'QUANTITY' | 'PRICING' | 'CALCULATED' | 'REJECTED';
   /** WBS: kode klasifikasi (diisi oleh wbsClassifier, tidak mengubah data asli) */
@@ -625,6 +638,20 @@ export interface DedAiOutput {
    * yang hilang diam-diam karena budget/kegagalan pass.
    */
   analysisTrace?: DedAnalysisTrace;
+  /**
+   * I8 — hasil lapisan vision (deteksi per halaman yang sudah
+   * divalidasi deterministik). Absen bila vision tidak jalan
+   * (visionEnabled false = perilaku lama). Tidak pernah memengaruhi
+   * item, total, atau gerbang — hanya bukti + penanda visual.
+   */
+  vision?: VisionDocumentResult | null;
+  /**
+   * I8 — gambar halaman DED (preview parser 1.0×) untuk panel gambar
+   * split-view I7 (DedAiResultView `pageImages`). Absen bila vision
+   * tidak jalan (parse withImages:false = perilaku lama). Nomor halaman
+   * adalah nomor asli dokumen (view meng-offset untuk multi-file).
+   */
+  pageImages?: Array<{ page: number; dataUrl: string }>;
 }
 
 /**
@@ -811,4 +838,26 @@ export interface DedAiServiceOptions {
   projectId?: string;
   workspaceId?: string;
   actorUserId?: string;
+  /**
+   * I8 — aktifkan lapisan vision (DEFAULT FALSE). FALSE (atau absen) =
+   * perilaku teks-saja persis seperti hari ini: parse withImages:false,
+   * tanpa responder, tanpa cache, tanpa perubahan output apa pun.
+   * TRUE = parse withImages:true + pipeline vision jalan sesudah parse
+   * (bukti vision + pageImages dilampirkan ke hasil). Panggilan vision
+   * live ke gateway butuh persetujuan owner TERPISAH — opsi ini hanya
+   * membuka kabelnya, bukan izinnya.
+   * I11 — opsi ini saja TIDAK cukup: service menerapkan gerbang
+   * enablement (visionEnablement.ts) — vision hanya jalan bila env
+   * flag VITE_DED_VISION_ENABLED='true' DAN runtime non-produksi.
+   * Di produksi gerbang selalu tertutup; tidak ada toggle UI untuk
+   * opsi ini.
+   */
+  visionEnabled?: boolean;
+  /**
+   * I8 — responder vision injeksi. Tes memakai stub lewat sini (tanpa
+   * jaringan); produksi membiarkannya kosong sehingga service memakai
+   * responder gateway nyata (createGatewayVisionResponder +
+   * aiGatewayAuthHeaders). Service tidak pernah mengimpor stub tes.
+   */
+  visionResponder?: VisionResponder;
 }

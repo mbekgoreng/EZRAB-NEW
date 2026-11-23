@@ -197,6 +197,18 @@
   .fp-actionbar { padding: 10px 12px; }
   .fp-actionbar .fs-actions-btns { margin-left: 0; }
   .fp-actionbar .dedai-btn { padding: 9px 12px; font-size: 13px; }
+  /* --- Hasil DED di HP (I11 Stage 1b, Finding 3) ---
+     Bar aksi 6 tombol menelan 325px dari shell 672px sehingga wilayah
+     hasil hanya 225px dan .dedai terjepit 53px — layar hasil tidak
+     terbaca di HP. Batasi bar aksi + biarkan ia bergeser sendiri di
+     dalamnya: kedua tombol utama (Finalisasi, Buka Spreadsheet) tetap
+     terlihat tanpa geser, tombol sekunder terjangkau dengan menggeser
+     bar. Hanya hasil DED (.dedai-result) — layar lain tak berubah. */
+  .fp-shell:has(.dedai-result) .fp-actionbar {
+    max-height: 180px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
 }
 
 /* ---------- Layar PENDEK (laptop 1366×768 / 1600×864): mode kompak -------

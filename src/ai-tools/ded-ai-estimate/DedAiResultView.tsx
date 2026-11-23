@@ -4,11 +4,11 @@
  * Aturan: item diblokir & tanpa harga TIDAK masuk total final. Rp0 tidak dipakai
  * sebagai pengganti data kosong — tampilkan "—".
  */
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   CheckCircle2, AlertTriangle, XCircle, MinusCircle, Pencil, ChevronDown,
   ChevronUp, Save, FolderCheck, Table2, FileSpreadsheet, FileJson,
-  ArrowLeft, Info, Check, X, Sparkles, Undo2, MessageSquare, Lock,
+  ArrowLeft, Info, Check, X, Sparkles, Undo2, MessageSquare, Lock, Eye,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { DedAiItem, DedAiOutput, DedCompletionReport, DedOutputPrefs, DEFAULT_DED_OUTPUT_PREFS } from './types';
@@ -36,7 +36,29 @@ import {
 } from './dedReviewGate';
 import { useI18n } from '../../i18n/I18nContext';
 import { FsFooterPortal } from '../../components/feature-shell/FeatureFullscreenShell';
+// I7b — Tinjau visual (split-view, konsep ter-ACC owner 2026-10-07):
+// viewer gambar DED di kiri + panel hasil di kanan. ReviewState murni
+// (ded-vision/reviewState.ts) + jembatan ke item live
+// (ded-vision/reviewIntegration.ts). Viewer TIDAK mengimpor CSS sendiri
+// — view ini yang mengimpor dedVisionReview.css (lihat bawah).
+import { DedVisionReviewViewer } from './DedVisionReviewViewer';
+import type { FocusTarget } from './DedVisionReviewViewer';
+import {
+  REVIEW_STATUS_LABELS, approveAssumption, clampConfidence, confidenceToColor,
+  confirmItem, correctItem, createReviewState, jumpTarget, rejectAssumption,
+  rejectItem, reviewItemById,
+} from '../ded-vision/reviewState';
+import type { ReviewItem, ReviewState } from '../ded-vision/reviewState';
+import {
+  buildReviewItems, dedAiIdFromReviewId, liveItemFingerprint, mirrorReviewConfirmation,
+  mirrorReviewCorrection, mirrorReviewRejection, reconcileReviewState, reviewIdForDedAiItem,
+} from '../ded-vision/reviewIntegration';
+// I11 Stage 1 — demo visual-test hook (LOCAL TEST ONLY, demo-gated):
+// item vision-only sintetis (pita keyakinan kuning) hanya bila URL
+// membawa `?dedvr-demo=1` (lihat dedVisionReviewDemo.ts).
+import { buildDemoVisionReviewItems, isDedVisionReviewDemoRequested } from './dedVisionReviewDemo';
 import './dedAi.css';
+import './dedVisionReview.css';
 import '../../ai-credits/ai-credits.css';
 
 export type ItemStatus = 'valid' | 'review' | 'blocked' | 'no-price';
@@ -103,11 +125,29 @@ interface Props {
    * kebijakan harga, lencana status, dan aksi koreksi TIDAK digerbang.
    */
   outputPrefs?: DedOutputPrefs;
+  /**
+   * I7b — gambar halaman DED untuk panel gambar split-view: preview
+   * 1.0× per halaman dari parser (`previewDataUrl`, parser.ts). Opsional:
+   * lari lama / `withImages: false` tidak membawa gambar — viewer
+   * menampilkan empty state jujur per halaman dan panel hasil tetap
+   * bekerja penuh (tinjau, koreksi, gerbang, finalisasi). I8 menyambung
+   * pemanggil (view.tsx + service) agar mengoper preview parser ke sini.
+   */
+  pageImages?: Map<number, string> | Array<{ page: number; dataUrl: string }>;
+  /**
+   * I11 Stage 1b (Finding 3) — pemberitahuan di atas hasil (mis. strip
+   * kuantitas asumsi dari view.tsx), dirender sebagai anak PERTAMA
+   * .dedai agar ikut bergeser dengan hasil. JANGAN dirender pemanggil
+   * sebagai saudara .dedai di dalam .fp-content: sebagai item flex
+   * saudara, strip itu tidak bisa menyusut dan .dedai (min-height: 0)
+   * menyerap SEMUA susut — di HP .dedai terjepit 53px.
+   */
+  topNotice?: React.ReactNode;
 }
 
 export const DedAiResultView: React.FC<Props> = ({
   output, onBackToInput, onSaveDraft, onFinalize, onOpenSpreadsheet, onSendToChat, draftSaved, finalized,
-  creditEstimate, outputPrefs,
+  creditEstimate, outputPrefs, pageImages, topNotice,
 }) => {
   const prefs = outputPrefs ?? DEFAULT_DED_OUTPUT_PREFS;
   const { t } = useI18n();
@@ -133,6 +173,77 @@ export const DedAiResultView: React.FC<Props> = ({
   // (keputusan owner no. 3 masih terbuka — default fail-closed).
   const [reviewed, setReviewed] = useState<Set<string>>(new Set());
 
+  // ---- I7b: tinjau visual (split-view) ----
+  // ReviewState dibangun sekali dari item hasil; keputusan tinjau
+  // (konfirmasi/koreksi/penolakan/asumsi) hidup di sini dan DICERMINKAN
+  // ke `items` — satu-satunya daftar yang difinalisasi, disimpan draf,
+  // dan diekspor. TIDAK ADA jalur finalisasi kedua: gerbang review
+  // (dedReviewGate) diturunkan dari `items`, sehingga ia melihat
+  // keputusan tinjau secara otomatis (item terkoreksi jadi USER_INPUT
+  // dan keluar dari alasan kuantitas gerbang; item ditolak jadi
+  // terblokir dan tidak savable). Konfirmasi juga mencentang gerbang
+  // item itu (pengguna sudah meninjaunya) — lihat handleReviewConfirm.
+  const [reviewState, setReviewState] = useState<ReviewState>(
+    () =>
+      createReviewState(
+        // I11 Stage 1 (demo-gated `?dedvr-demo=1`): tambahkan item
+        // vision-only sintetis (pita kuning) — tanpa param, persis
+        // seperti sebelumnya (item live saja).
+        isDedVisionReviewDemoRequested()
+          ? [...buildReviewItems(output.items), ...buildDemoVisionReviewItems()]
+          : buildReviewItems(output.items),
+      ),
+  );
+  // Sidik jari item live terakhir yang disinkronkan dengan reviewState
+  // (reconcile di bawah). Aksi tinjau memperbaruinya di handler agar
+  // cerminnya sendiri tidak me-reset keputusan yang baru dibuat.
+  const reviewFingerprintsRef = useRef<Map<string, string>>(
+    new Map(output.items.map((it) => [it.id, liveItemFingerprint(it)])),
+  );
+  const [selectedReviewId, setSelectedReviewId] = useState<string | null>(null);
+  const [focusTarget, setFocusTarget] = useState<FocusTarget | null>(null);
+  // Mobile (≤768px): toggle gambar/hasil, default hasil (perilaku prototipe).
+  const [mobileView, setMobileView] = useState<'drawing' | 'results'>('results');
+  // State UI per item tinjau (dikunci id DedAi, sejajar confirmError).
+  const [correctVals, setCorrectVals] = useState<Record<string, string>>({});
+  const [correctConfirm, setCorrectConfirm] = useState<Record<string, boolean>>({});
+  const [rejectingId, setRejectingId] = useState<string | null>(null);
+  const [rejectReasons, setRejectReasons] = useState<Record<string, string>>({});
+  const [reviewError, setReviewError] = useState<Record<string, string>>({});
+  const [reviewMsg, setReviewMsg] = useState<Record<string, string>>({});
+
+  // Sinkronisasi review ↔ item live: bila `items` berubah DI LUAR panel
+  // tinjau (edit pensil, isi cepat, pilih AHSP, penyelesaian AI), item
+  // terkait di-reset ke baseline adapter — nilai yang ditinjau sudah
+  // tidak ada lagi — sementara keputusan item lain dipertahankan.
+  useEffect(() => {
+    const res = reconcileReviewState(reviewState, items, reviewFingerprintsRef.current);
+    reviewFingerprintsRef.current = res.fingerprints;
+    if (res.changed) setReviewState(res.state);
+    // reviewState sengaja tidak di deps: efek ini bereaksi pada `items`
+    // saja; aksi tinjau memperbarui kedua state dalam satu handler.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items]);
+
+  // Judul lembar dari jejak analisis (ditampilkan viewer bila ada; tanpa
+  // jejak, judul kosong — bukan karangan).
+  const pageTitles = useMemo(() => {
+    const titles: Record<number, string> = {};
+    for (const p of output.analysisTrace?.pages ?? []) {
+      if (p.title && p.title.trim() !== '') titles[p.page] = p.title;
+    }
+    return titles;
+  }, [output.analysisTrace]);
+
+  // ReviewItem per id DedAi — untuk badge status di baris + blok detail.
+  const reviewByLiveId = useMemo(() => {
+    const m = new Map<string, ReviewItem>();
+    for (const ri of reviewState.items) {
+      const dedAiId = dedAiIdFromReviewId(ri.id);
+      if (dedAiId !== null) m.set(dedAiId, ri);
+    }
+    return m;
+  }, [reviewState]);
   // WBS grouping — dihitung dari items aktual, tidak mengubah data
   const wbsData = useMemo(
     () => groupByWbs(items, output.projectType || 'BANGUNAN'),
@@ -196,6 +307,142 @@ export const DedAiResultView: React.FC<Props> = ({
     window.setTimeout(() => {
       document.getElementById(`dedai-row-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }, 60);
+  };
+
+  // ---- I7b: aksi tinjau visual ----
+  // Klik baris hasil → pilih item + lompat ke halaman sumbernya. Viewer
+  // HANYA bereaksi pada objek focusTarget BARU (kontrak props-driven),
+  // jadi selalu bangun objek literal segar — termasuk bila targetnya
+  // sama dengan lompat sebelumnya. Item live hari ini tanpa bbox:
+  // lompatnya halaman saja, tidak ada penanda posisi palsu.
+  const selectReviewItemAndJump = (dedAiId: string) => {
+    const reviewId = reviewIdForDedAiItem(dedAiId);
+    const ri = reviewItemById(reviewState, reviewId);
+    setSelectedReviewId(reviewId);
+    if (!ri) return;
+    const target = jumpTarget(ri);
+    if (target) setFocusTarget({ page: target.page, bbox: target.bbox });
+  };
+
+  // Klik penanda di viewer → pilih item + buka & sorot baris hasilnya.
+  // Pemilihan saja TIDAK menggerakkan viewer (kontrak viewer: penanda
+  // yang diklik sudah terlihat). Item visi-only (I8+) belum punya baris
+  // live — hanya dipilih, tanpa scroll.
+  const handleViewerSelect = (reviewId: string | null) => {
+    setSelectedReviewId(reviewId);
+    if (!reviewId) return;
+    const dedAiId = dedAiIdFromReviewId(reviewId);
+    if (!dedAiId) return;
+    setFilter('all');
+    setExpanded(dedAiId);
+    window.setTimeout(() => {
+      document.getElementById(`dedai-row-${dedAiId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 60);
+  };
+
+  const setReviewNotice = (dedAiId: string, msg?: string, err?: string) => {
+    setReviewMsg((m) => {
+      const next = { ...m };
+      if (msg) next[dedAiId] = msg; else delete next[dedAiId];
+      return next;
+    });
+    setReviewError((e) => {
+      const next = { ...e };
+      if (err) next[dedAiId] = err; else delete next[dedAiId];
+      return next;
+    });
+  };
+
+  // Terapkan cermin keputusan tinjau ke `items` + tandai sidik jari item
+  // itu agar reconcile tidak me-reset keputusan yang baru dibuat.
+  const applyReviewMirror = (nextItems: DedAiItem[], dedAiId: string) => {
+    const touched = nextItems.find((it) => it.id === dedAiId);
+    if (touched) reviewFingerprintsRef.current.set(dedAiId, liveItemFingerprint(touched));
+    setItems(nextItems);
+  };
+
+  const handleReviewConfirm = (dedAiId: string) => {
+    const reviewId = reviewIdForDedAiItem(dedAiId);
+    const res = confirmItem(reviewState, reviewId);
+    if (!res.ok) { setReviewNotice(dedAiId, undefined, res.error); return; }
+    setReviewState(res.state);
+    applyReviewMirror(mirrorReviewConfirmation(items, dedAiId), dedAiId);
+    // Konfirmasi tinjau = pengguna sudah meninjau item ini → centang
+    // gerbangnya (bukan "tandai semua": satu aksi eksplisit per item).
+    setReviewed((prev) => new Set(prev).add(dedAiId));
+    setReviewNotice(dedAiId, 'Item dikonfirmasi — status Terverifikasi.');
+  };
+
+  const handleReviewReject = (dedAiId: string) => {
+    const reason = (rejectReasons[dedAiId] ?? '').trim();
+    const reviewId = reviewIdForDedAiItem(dedAiId);
+    const res = rejectItem(reviewState, reviewId, reason);
+    if (!res.ok) { setReviewNotice(dedAiId, undefined, res.error); return; }
+    setReviewState(res.state);
+    applyReviewMirror(mirrorReviewRejection(items, dedAiId, reason), dedAiId);
+    // Item ditolak → terblokir (kuantitas null), keluar dari gerbang;
+    // bersihkan centangnya agar tidak mengendap.
+    setReviewed((prev) => {
+      const next = new Set(prev);
+      next.delete(dedAiId);
+      return next;
+    });
+    setRejectingId(null);
+    setReviewNotice(dedAiId, 'Deteksi ditolak — kuantitas dikosongkan, item tidak masuk total/finalisasi.');
+  };
+
+  const handleReviewCorrect = (dedAiId: string) => {
+    const raw = (correctVals[dedAiId] ?? '').trim().replace(',', '.');
+    const value = raw === '' ? NaN : Number(raw);
+    const reviewId = reviewIdForDedAiItem(dedAiId);
+    // Koreksi NILAI langsung (satu-satunya bentuk koreksi untuk item
+    // live — koreksi per input ditolak reviewState karena item live
+    // tanpa recomputeKind; UI menampilkan baris itu dalam keadaan
+    // nonaktif dengan penjelasan). Penolakan (NaN/negatif/pecahan
+    // untuk satuan hitung) ditampilkan apa adanya dari reviewState.
+    const res = correctItem(
+      reviewState,
+      reviewId,
+      { type: 'value', value },
+      { confirm: !!correctConfirm[dedAiId] },
+    );
+    if (!res.ok) { setReviewNotice(dedAiId, undefined, res.error); return; }
+    const corrected = reviewItemById(res.state, reviewId);
+    setReviewState(res.state);
+    if (corrected) applyReviewMirror(mirrorReviewCorrection(items, dedAiId, corrected), dedAiId);
+    setCorrectVals((v) => {
+      const next = { ...v };
+      delete next[dedAiId];
+      return next;
+    });
+    setReviewNotice(
+      dedAiId,
+      correctConfirm[dedAiId]
+        ? 'Koreksi diterapkan dan dikonfirmasi — status Terverifikasi.'
+        : 'Koreksi diterapkan — nilai baru masuk total & finalisasi. Rumus lama disimpan sebagai rumus asal.',
+    );
+  };
+
+  const handleAssumptionDecision = (dedAiId: string, assumptionId: string, approve: boolean) => {
+    const reviewId = reviewIdForDedAiItem(dedAiId);
+    const res = approve
+      ? approveAssumption(reviewState, reviewId, assumptionId)
+      : rejectAssumption(reviewState, reviewId, assumptionId);
+    if (!res.ok) { setReviewNotice(dedAiId, undefined, res.error); return; }
+    setReviewState(res.state);
+    if (!approve) {
+      // Asumsi ditolak → dasar item digugat (reviewState memflag
+      // NEEDS_REVIEW); centang gerbang lama — bila ada — tidak lagi
+      // berlaku atas dasar yang digugat.
+      setReviewed((prev) => {
+        const next = new Set(prev);
+        next.delete(dedAiId);
+        return next;
+      });
+      setReviewNotice(dedAiId, 'Asumsi ditolak — item diflag Perlu ditinjau.');
+    } else {
+      setReviewNotice(dedAiId, 'Asumsi disetujui.');
+    }
   };
 
   const startEdit = (it: DedAiItem) => {
@@ -443,7 +690,8 @@ export const DedAiResultView: React.FC<Props> = ({
   };
 
   return (
-    <div className="dedai">
+    <div className="dedai dedai-result">
+      {topNotice}
       <div className="dedai-head">
         <h1>{t('ai.ded.result.head_a')} <span className="accent">{output.projectName}</span></h1>
         <p>{t('ai.ded.result.head_sub')}</p>
@@ -716,6 +964,44 @@ export const DedAiResultView: React.FC<Props> = ({
         </div>
       )}
 
+      {/* ---- I7b: split-view tinjau visual (konsep ter-ACC owner
+          2026-10-07): gambar DED di KIRI, panel hasil di KANAN — satu
+          layar, bukan wizard. Header/ringkasan di atas tetap selebar
+          penuh; yang terbagi hanya wilayah hasil (filter + tabel +
+          laporan + gerbang). Di layar ≤768px, data-dedvr-view pada
+          wrapper mengendalikan pane mana yang tampil (default: hasil);
+          tombol toggle di bawah hanya tampil di layar kecil. ---- */}
+      <div className="dedvr-mobile-toggle" role="group" aria-label="Tampilan tinjau">
+        <button
+          type="button"
+          className={`dedvr-mobile-toggle-btn${mobileView === 'drawing' ? ' active' : ''}`}
+          onClick={() => setMobileView('drawing')}
+          aria-pressed={mobileView === 'drawing'}
+        >
+          Gambar DED
+        </button>
+        <button
+          type="button"
+          className={`dedvr-mobile-toggle-btn${mobileView === 'results' ? ' active' : ''}`}
+          onClick={() => setMobileView('results')}
+          aria-pressed={mobileView === 'results'}
+        >
+          Hasil
+        </button>
+      </div>
+      <div className="dedvr-split" data-dedvr-view={mobileView}>
+        <div className="dedvr-split-viewer">
+          <DedVisionReviewViewer
+            pageImages={pageImages ?? []}
+            items={reviewState.items}
+            selectedItemId={selectedReviewId}
+            onSelectItem={handleViewerSelect}
+            focusTarget={focusTarget}
+            totalPages={output.pageCount}
+            pageTitles={pageTitles}
+          />
+        </div>
+        <div className="dedvr-split-results">
       {/* ---- Detail RAB: filter + isi cepat + tabel (digerbang preferensi
           output "Detail RAB" — USULAN BARU ter-ACC 2026-11-10) ---- */}
       {prefs.detailRab && (<>
@@ -826,13 +1112,16 @@ export const DedAiResultView: React.FC<Props> = ({
               // Chip bukti KUANTITAS (mockup v2.3 §1) — taksonomi dari
               // dedReviewGate.ts; terpisah dari chip provenans HARGA.
               const qtyChip = quantityEvidenceChipFor(it.quantitySource);
+              // I7b: status tinjau visual item ini (badge di sel status +
+              // blok detail). Selalu ada untuk item live (adapter 1:1).
+              const reviewItem = reviewByLiveId.get(it.id);
               const needsAhsp = it.ahspMatch?.status === 'NEEDS_REVIEW' && it.ahspMatch.candidates.length > 0;
               return (
                 <React.Fragment key={it.id}>
                   <tr
                     id={`dedai-row-${it.id}`}
-                    className="dedai-row-clickable"
-                    onClick={() => { if (!isEditing) setExpanded(isOpen ? null : it.id); }}
+                    className={`dedai-row-clickable${selectedReviewId === reviewIdForDedAiItem(it.id) ? ' dedvr-row-selected' : ''}`}
+                    onClick={() => { if (!isEditing) { setExpanded(isOpen ? null : it.id); selectReviewItemAndJump(it.id); } }}
                   >
                     <td className="dedai-num">{i + 1}</td>
                     <td style={{ minWidth: 200 }}>
@@ -872,6 +1161,20 @@ export const DedAiResultView: React.FC<Props> = ({
                         <>
                           <br />
                           <span className="dedai-qchip dedai-qchip-confirm" title="Padanan AHSP belum dikonfirmasi — pilih di detail item.">Perlu konfirmasi AHSP</span>
+                        </>
+                      )}
+                      {/* I7b: badge status tinjau visual (taksonomi 6-state,
+                          spec §10) — detail lengkapnya di blok tinjau. */}
+                      {reviewItem && (
+                        <>
+                          <br />
+                          <span
+                            className={`dedvr-status dedvr-status--${reviewItem.status.toLowerCase().replace(/_/g, '-')}`}
+                            title="Status tinjau visual — klik baris untuk detail"
+                            style={{ marginTop: 4 }}
+                          >
+                            {REVIEW_STATUS_LABELS[reviewItem.status]}
+                          </span>
                         </>
                       )}
                     </td>
@@ -929,6 +1232,150 @@ export const DedAiResultView: React.FC<Props> = ({
                             {!it.rawDimensions && !it.quantityFormula && !it.derivation && !it.quantityNote && !it.sourceEvidence && (
                               <div className="dl-row"><span className="dl-k">Keterangan</span><span>Tidak ada dasar kuantitas tersimpan untuk item ini.</span></div>
                             )}
+                            {/* ---- I7b: blok tinjau visual (spec §10) ----
+                                Interpretasi + keyakinan + status 6-state +
+                                koreksi nilai + log asumsi + konfirmasi /
+                                penolakan. Dimensi mentah & rumus di atas
+                                adalah dasar yang sama (blok ini tidak
+                                menggantikannya — hanya menambahkan tinjau). */}
+                            {(() => {
+                              const ri = reviewItem;
+                              if (!ri) return null;
+                              const confColor = confidenceToColor(ri.confidence);
+                              const confPct = Math.round(clampConfidence(ri.confidence) * 100);
+                              const isRejecting = rejectingId === it.id;
+                              const isRejected = ri.status === 'NOT_DETECTED';
+                              return (
+                                <div className="dedvr-review-block">
+                                  <div className="dedvr-review-head">
+                                    <span className="dedvr-review-title">Tinjau visual</span>
+                                    <span className={`dedvr-status dedvr-status--${ri.status.toLowerCase().replace(/_/g, '-')}`}>{REVIEW_STATUS_LABELS[ri.status]}</span>
+                                    <span
+                                      className={`dedvr-confidence dedvr-confidence--${confColor}`}
+                                      title="Keyakinan berbasis provenans kuantitas (heuristik tampilan — bukan pengukuran model)"
+                                    >
+                                      Keyakinan {confPct}%
+                                    </span>
+                                    {ri.page !== null && (
+                                      <button type="button" className="dedvr-jump-btn" onClick={() => selectReviewItemAndJump(it.id)}>
+                                        <Eye size={13} /> Lihat di gambar (hal. {ri.page})
+                                      </button>
+                                    )}
+                                  </div>
+                                  <div className="dl-row"><span className="dl-k">Interpretasi</span><span>
+                                    {ri.interpretation.value !== null
+                                      ? <><b>{fmtQty(ri.interpretation.value)} {ri.interpretation.unit}</b> · {ri.interpretation.detail}</>
+                                      : <>Tidak ada nilai — {ri.interpretation.detail}</>}
+                                    {ri.originalText ? <> (dari “{ri.originalText}”)</> : null}
+                                  </span></div>
+                                  {ri.correctedFrom && (
+                                    <div className="dl-row"><span className="dl-k">Koreksi terakhir</span><span>{ri.correctedFrom.note}</span></div>
+                                  )}
+                                  {ri.rejectionReason && (
+                                    <div className="dl-row"><span className="dl-k">Alasan penolakan</span><span>{ri.rejectionReason}</span></div>
+                                  )}
+                                  {ri.notes.length > 0 && (
+                                    <div className="dl-row"><span className="dl-k">Catatan tinjau</span><span>{ri.notes.join(' · ')}</span></div>
+                                  )}
+                                  {/* Koreksi nilai (pola .edit-row prototipe):
+                                      koreksi langsung oleh pengguna; rumus
+                                      lama disimpan sebagai "rumus asal". */}
+                                  <div className="dedvr-edit-row">
+                                    <span className="dedvr-edit-label">Koreksi nilai:</span>
+                                    <input
+                                      type="text"
+                                      inputMode="decimal"
+                                      className="dedvr-edit-input"
+                                      placeholder={ri.interpretation.value !== null ? String(ri.interpretation.value) : '—'}
+                                      value={correctVals[it.id] ?? ''}
+                                      onChange={(e) => setCorrectVals({ ...correctVals, [it.id]: e.target.value })}
+                                      disabled={isRejected}
+                                    />
+                                    <span className="dedvr-edit-unit">{ri.interpretation.unit}</span>
+                                    <button type="button" className="dedvr-btn-primary" disabled={isRejected} onClick={() => handleReviewCorrect(it.id)}>Terapkan</button>
+                                    <label className="dedvr-edit-check">
+                                      <input
+                                        type="checkbox"
+                                        checked={!!correctConfirm[it.id]}
+                                        onChange={(e) => setCorrectConfirm({ ...correctConfirm, [it.id]: e.target.checked })}
+                                        disabled={isRejected}
+                                      />
+                                      Sekaligus konfirmasi
+                                    </label>
+                                  </div>
+                                  <div className="dedvr-edit-note">Rumus lama disimpan sebagai “rumus asal” — nilai baru tidak lagi mengikuti rumus itu.</div>
+                                  {/* Koreksi per input: TIDAK tersedia untuk
+                                      item live (tanpa recomputeKind — input
+                                      memakai satuan asli, bukan mm; paksa
+                                      recompute akan salah baca satuan).
+                                      Ditampilkan nonaktif + penjelasan,
+                                      bukan disembunyikan. */}
+                                  <div className="dedvr-edit-row dedvr-edit-row--disabled" title="Item live tidak punya rumus recompute (input memakai satuan asli, bukan mm) — koreksi per input tidak tersedia.">
+                                    <span className="dedvr-edit-label">Koreksi per input:</span>
+                                    <input type="text" className="dedvr-edit-input" disabled placeholder="—" />
+                                    <button type="button" className="dedvr-btn-primary" disabled>Terapkan</button>
+                                    <span className="dedvr-edit-note">Tidak tersedia untuk item ini — pakai koreksi nilai di atas.</span>
+                                  </div>
+                                  {/* Log asumsi (pola .assumption prototipe):
+                                      tolak → item diflag Perlu ditinjau. */}
+                                  {ri.assumptions.map((a) => (
+                                    <div
+                                      key={a.id}
+                                      className={`dedvr-assumption${a.decision !== 'pending' ? ' dedvr-assumption--resolved' : ''}${a.decision === 'rejected' ? ' dedvr-assumption--danger' : ''}`}
+                                    >
+                                      <div>⚠️ {a.text}</div>
+                                      <div className="dedvr-assumption-state">
+                                        {a.decision === 'pending' ? 'Menunggu keputusan' : a.decision === 'approved' ? '✓ Disetujui' : '✗ Ditolak'}
+                                        {a.note ? ` — ${a.note}` : ''}
+                                      </div>
+                                      {a.decision === 'pending' && (
+                                        <div className="dedvr-assumption-acts">
+                                          <button type="button" className="dedvr-assumption-btn dedvr-assumption-btn--ok" onClick={() => handleAssumptionDecision(it.id, a.id, true)}>Setujui</button>
+                                          <button type="button" className="dedvr-assumption-btn" onClick={() => handleAssumptionDecision(it.id, a.id, false)}>Tolak</button>
+                                        </div>
+                                      )}
+                                    </div>
+                                  ))}
+                                  {/* Konfirmasi / penolakan item. Konfirmasi
+                                      butuh nilai (guard reviewState); tolak
+                                      butuh alasan (input inline). */}
+                                  <div className="dedvr-review-acts">
+                                    <button
+                                      type="button"
+                                      className="dedvr-btn-primary"
+                                      disabled={ri.status === 'VERIFIED' || isRejected}
+                                      onClick={() => handleReviewConfirm(it.id)}
+                                    >
+                                      <Check size={13} /> {ri.status === 'VERIFIED' ? 'Sudah terverifikasi' : 'Konfirmasi (Terverifikasi)'}
+                                    </button>
+                                    {isRejecting ? (
+                                      <>
+                                        <input
+                                          type="text"
+                                          className="dedvr-reject-input"
+                                          placeholder="Alasan penolakan (wajib)"
+                                          value={rejectReasons[it.id] ?? ''}
+                                          onChange={(e) => setRejectReasons({ ...rejectReasons, [it.id]: e.target.value })}
+                                        />
+                                        <button type="button" className="dedvr-btn-danger" onClick={() => handleReviewReject(it.id)}>Ya, tolak</button>
+                                        <button type="button" className="dedvr-btn-ghost" onClick={() => setRejectingId(null)}>Batal</button>
+                                      </>
+                                    ) : (
+                                      <button
+                                        type="button"
+                                        className="dedvr-btn-danger"
+                                        disabled={isRejected}
+                                        onClick={() => setRejectingId(it.id)}
+                                      >
+                                        <X size={13} /> {isRejected ? 'Sudah ditolak' : 'Tolak deteksi'}
+                                      </button>
+                                    )}
+                                  </div>
+                                  {reviewError[it.id] && <div className="dedvr-review-error" role="alert">{reviewError[it.id]}</div>}
+                                  {reviewMsg[it.id] && <div className="dedvr-review-msg" role="status">{reviewMsg[it.id]}</div>}
+                                </div>
+                              );
+                            })()}
                           </div>
                           {prefs.priceAnalysis && <div className="dl-row"><span className="dl-k">{t('ai.ded.result.detail_source')}</span><span><code>{it.quantitySource}</code> · <code>{it.priceSource}</code>{it.ahspCode ? <> · <code>AHSP {it.ahspCode}</code></> : null}</span></div>}
                           {/* W6 (§8): baris provenance eksplisit — chip +
@@ -1115,6 +1562,8 @@ export const DedAiResultView: React.FC<Props> = ({
           )}
         </div>
       )}
+        </div>
+      </div>
 
       {finalMsg && (
         <div className={finalMsg.ok ? 'dedai-notice blue' : 'dedai-error'} style={{ marginTop: 16 }}>

@@ -1,0 +1,1044 @@
+/* ==========================================================================
+   DED Vision Review Viewer — styles (increment I7)
+   Component: src/ai-tools/ded-ai-estimate/DedVisionReviewViewer.tsx
+   Imported by the view that mounts the component (NOT by the component
+   itself, so plain tsx can import the component for a smoke check).
+   Do NOT edit dedAi.css for viewer styles — this file owns them.
+
+   Design: owner-approved split-view concept (2026-10-07) + prototype
+   ~/workspace/your_files/ded-ai-prototype.html (.dim-marker etc.),
+   adapted: EZRAB blue #2563EB/#1D4ED8 for primary actions; green /
+   amber / red ONLY for confidence semantics (never for actions).
+   Theme: light #F8FAFC, Plus Jakarta Sans.
+
+   Coordinate model: markers are positioned with CSS percentages of the
+   stage (the rendered page image) — see bboxToPercent() in
+   ded-vision/reviewState.ts. The stage is the positioning context, so
+   markers scale with zoom for free.
+
+   Mobile toggle (prototype behaviour): on <=768px the parent controls
+   which pane shows by setting data-dedvr-view="drawing" | "results"
+   on ANY ancestor of .dedvr-root (the split-view wrapper or <body>).
+   Without the attribute the viewer stays visible. Desktop (>=769px)
+   always shows the viewer.
+   ========================================================================== */
+
+.dedvr-root {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  background: #fff;
+  border: 1px solid #E2E8F0;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05);
+  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+  color: #0F172A;
+}
+
+/* ---- Toolbar: page nav + zoom -------------------------------------- */
+
+.dedvr-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  border-bottom: 1px solid #F1F5F9;
+  font-size: 12.5px;
+  color: #64748B;
+  flex-shrink: 0;
+}
+
+.dedvr-nav,
+.dedvr-zoom {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dedvr-nav-btn,
+.dedvr-zoom-btn {
+  min-width: 30px;
+  height: 30px;
+  padding: 0 8px;
+  border-radius: 10px;
+  border: 1px solid #E2E8F0;
+  background: #F8FAFC;
+  color: #475569;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.dedvr-nav-btn:hover:not(:disabled),
+.dedvr-zoom-btn:hover:not(:disabled) {
+  background: #EFF6FF;
+  border-color: #2563EB;
+  color: #1D4ED8;
+}
+
+.dedvr-nav-btn:disabled,
+.dedvr-zoom-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.dedvr-page-indicator {
+  font-weight: 700;
+  color: #0F172A;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.dedvr-page-title {
+  color: #64748B;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+}
+
+.dedvr-zoom-label {
+  min-width: 52px;
+  height: 30px;
+  padding: 0 8px;
+  border-radius: 10px;
+  border: 1px solid #E2E8F0;
+  background: #F8FAFC;
+  color: #475569;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.dedvr-zoom-label:hover {
+  background: #EFF6FF;
+  border-color: #2563EB;
+  color: #1D4ED8;
+}
+
+/* ---- Banner: selected item lives on another page -------------------- */
+
+.dedvr-banner {
+  flex-shrink: 0;
+  width: 100%;
+  padding: 9px 14px;
+  border: none;
+  border-bottom: 1px solid #DBEAFE;
+  background: #EFF6FF;
+  color: #1D4ED8;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dedvr-banner:hover {
+  background: #DBEAFE;
+}
+
+/* ---- Viewport + stage ----------------------------------------------- */
+
+.dedvr-viewport {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  background: #F8FAFC;
+  cursor: grab;
+  outline: none;
+  /* Touch pan is handled by pointer events in the component; native
+     touch scrolling would fight it (pointercancel mid-drag). */
+  touch-action: none;
+}
+
+.dedvr-viewport:focus-visible {
+  box-shadow: inset 0 0 0 2px #2563EB;
+}
+
+.dedvr-viewport--dragging {
+  cursor: grabbing;
+}
+
+.dedvr-canvas-pad {
+  min-width: 100%;
+  min-height: 100%;
+  width: max-content;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.dedvr-stage {
+  position: relative;
+  flex-shrink: 0;
+  background: #fff;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  box-shadow: 0 12px 32px -8px rgba(15, 23, 42, 0.12);
+  overflow: hidden;
+  line-height: 0;
+}
+
+.dedvr-image {
+  display: block;
+  max-width: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.dedvr-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: #94A3B8;
+  background: #fff;
+  line-height: 1.4;
+}
+
+/* ---- Markers (prototype .dim-marker, confidence semantics) ---------- */
+
+.dedvr-marker {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s, box-shadow 0.15s;
+  line-height: 1.3;
+  overflow: hidden;
+  z-index: 1;
+  /* Green = confident (default). */
+  background: rgba(16, 185, 129, 0.12);
+  border: 2px solid #10B981;
+}
+
+.dedvr-marker:hover {
+  background: rgba(16, 185, 129, 0.25);
+  z-index: 2;
+}
+
+.dedvr-marker--yellow {
+  border-color: #F59E0B;
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.dedvr-marker--yellow:hover {
+  background: rgba(245, 158, 11, 0.25);
+}
+
+.dedvr-marker--red {
+  border-color: #EF4444;
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.dedvr-marker--red:hover {
+  background: rgba(239, 68, 68, 0.22);
+}
+
+/* Selected = prototype's amber ring (applies over any confidence colour). */
+.dedvr-marker--selected {
+  border-color: #F59E0B;
+  background: rgba(245, 158, 11, 0.18);
+  box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.2);
+  z-index: 3;
+}
+
+.dedvr-marker:focus-visible {
+  outline: 2px solid #1D4ED8;
+  outline-offset: 1px;
+  z-index: 3;
+}
+
+.dedvr-marker-label {
+  font-family: inherit;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #047857;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 2px 8px;
+  border-radius: 6px;
+  pointer-events: none;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: calc(100% - 6px);
+}
+
+.dedvr-marker--yellow .dedvr-marker-label {
+  color: #B45309;
+}
+
+.dedvr-marker--red .dedvr-marker-label {
+  color: #B91C1C;
+}
+
+/* ---- Empty state (honest: no fake/placeholder drawing) -------------- */
+
+.dedvr-empty {
+  align-self: center;
+  max-width: 420px;
+  margin: auto;
+  padding: 32px 24px;
+  text-align: center;
+  background: #fff;
+  border: 1px solid #E2E8F0;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05);
+}
+
+.dedvr-empty-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: #0F172A;
+  margin-bottom: 6px;
+}
+
+.dedvr-empty-text {
+  font-size: 13px;
+  line-height: 1.6;
+  color: #64748B;
+}
+
+/* ---- Footer: counts + legend ---------------------------------------- */
+
+.dedvr-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+  padding: 10px 16px;
+  border-top: 1px solid #F1F5F9;
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+  background: #fff;
+}
+
+.dedvr-footer-count {
+  font-variant-numeric: tabular-nums;
+}
+
+.dedvr-legend {
+  display: flex;
+  gap: 14px;
+}
+
+.dedvr-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dedvr-legend-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.dedvr-legend-dot--green {
+  background: #10B981;
+}
+
+.dedvr-legend-dot--yellow {
+  background: #F59E0B;
+}
+
+.dedvr-legend-dot--red {
+  background: #EF4444;
+}
+
+/* ---- Mobile (prototype behaviour) ----------------------------------- */
+
+@media (max-width: 768px) {
+  .dedvr-toolbar {
+    padding: 10px 12px;
+  }
+
+  .dedvr-page-title {
+    max-width: 140px;
+  }
+
+  .dedvr-canvas-pad {
+    padding: 12px;
+  }
+
+  /* Prototype: touch-friendly markers. */
+  .dedvr-marker {
+    min-height: 32px;
+  }
+
+  .dedvr-marker-label {
+    font-size: 11px;
+  }
+
+  /* Viewer/results toggle, driven by the parent via
+     data-dedvr-view on any ancestor (see header). */
+  [data-dedvr-view="results"] .dedvr-root {
+    display: none;
+  }
+
+  [data-dedvr-view="drawing"] .dedvr-root {
+    display: flex;
+  }
+}
+
+@media (min-width: 769px) {
+  .dedvr-root {
+    display: flex !important;
+  }
+}
+
+/* ---- Dark mode (same [data-theme="dark"] mechanism as dedAi.css) ----
+   Only the viewer chrome goes dark; the page stage stays white because
+   drawings are white, and confidence colours keep their semantics. */
+
+[data-theme="dark"] .dedvr-root {
+  background: var(--ez-color-surface, #1E293B);
+  border-color: var(--ez-color-border-line, #334155);
+  color: var(--ez-color-text-primary, #F1F5F9);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .dedvr-toolbar {
+  border-bottom-color: var(--ez-color-border-line, #334155);
+  color: var(--ez-color-text-muted, #94A3B8);
+}
+
+[data-theme="dark"] .dedvr-nav-btn,
+[data-theme="dark"] .dedvr-zoom-btn,
+[data-theme="dark"] .dedvr-zoom-label {
+  background: var(--ez-color-surface-secondary, #0F172A);
+  border-color: var(--ez-color-border-line, #334155);
+  color: var(--ez-color-text-primary, #F1F5F9);
+}
+
+[data-theme="dark"] .dedvr-nav-btn:hover:not(:disabled),
+[data-theme="dark"] .dedvr-zoom-btn:hover:not(:disabled),
+[data-theme="dark"] .dedvr-zoom-label:hover {
+  background: var(--ez-hue-blue-bg, #1E3A8A);
+  border-color: var(--ez-hue-blue-text, #60A5FA);
+  color: var(--ez-color-text-primary, #F1F5F9);
+}
+
+[data-theme="dark"] .dedvr-page-indicator {
+  color: var(--ez-color-text-primary, #F1F5F9);
+}
+
+[data-theme="dark"] .dedvr-page-title {
+  color: var(--ez-color-text-muted, #94A3B8);
+}
+
+[data-theme="dark"] .dedvr-banner {
+  background: var(--ez-hue-blue-bg, #1E3A8A);
+  border-bottom-color: var(--ez-hue-blue-border, #1D4ED8);
+  color: var(--ez-color-text-primary, #F1F5F9);
+}
+
+[data-theme="dark"] .dedvr-banner:hover {
+  background: var(--ez-hue-blue-border, #1D4ED8);
+}
+
+[data-theme="dark"] .dedvr-viewport {
+  background: var(--ez-color-surface-secondary, #0F172A);
+}
+
+[data-theme="dark"] .dedvr-empty {
+  background: var(--ez-color-surface, #1E293B);
+  border-color: var(--ez-color-border-line, #334155);
+}
+
+[data-theme="dark"] .dedvr-empty-title {
+  color: var(--ez-color-text-primary, #F1F5F9);
+}
+
+[data-theme="dark"] .dedvr-empty-text {
+  color: var(--ez-color-text-muted, #94A3B8);
+}
+
+[data-theme="dark"] .dedvr-footer {
+  background: var(--ez-color-surface, #1E293B);
+  border-top-color: var(--ez-color-border-line, #334155);
+  color: var(--ez-color-text-muted, #94A3B8);
+}
+
+[data-theme="dark"] .dedvr-loading {
+  background: #fff;
+}
+
+/* ==========================================================================
+   I7b: split-view layout + review block (DedAiResultView wiring)
+   ========================================================================== */
+
+/* The split needs more room than the 1080px .dedai column; widen only
+   when the view actually renders the split (never for other .dedai
+   screens). */
+.dedai:has(> .dedvr-split) {
+  max-width: 1480px;
+}
+
+.dedvr-split {
+  display: grid;
+  grid-template-columns: minmax(340px, 5fr) minmax(0, 7fr);
+  gap: 16px;
+  align-items: start;
+  margin-bottom: 8px;
+}
+
+/* Sticky viewer: the drawing stays in view while the results column
+   scrolls. If an ancestor clips sticky positioning, this degrades to a
+   static viewer at the top of the split — still a valid split view. */
+.dedvr-split-viewer {
+  position: sticky;
+  top: 16px;
+  height: min(78vh, 920px);
+  min-height: 480px;
+  min-width: 0;
+}
+
+.dedvr-split-results {
+  min-width: 0;
+}
+
+/* Mobile toggle bar: hidden on desktop (see the <=768px rules below). */
+.dedvr-mobile-toggle {
+  display: none;
+}
+
+/* Selected result row (row click / marker click): prototype amber. */
+.dedai-table tbody tr.dedvr-row-selected {
+  background: #FFFBEB;
+  box-shadow: inset 3px 0 0 #F59E0B;
+}
+
+.dedai-table tbody tr.dedvr-row-selected:hover {
+  background: #FEF3C7;
+}
+
+/* ---- Review block inside "Dasar kuantitas" -------------------------- */
+
+.dedvr-review-block {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 2px solid #DBEAFE;
+}
+
+.dedvr-review-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.dedvr-review-title {
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: #1D4ED8;
+}
+
+/* 6-state status badges (spec §10 taxonomy). */
+.dedvr-status {
+  display: inline-block;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.dedvr-status--verified {
+  background: #DCFCE7;
+  color: #15803D;
+}
+
+.dedvr-status--high-confidence {
+  background: #DBEAFE;
+  color: #1D4ED8;
+}
+
+.dedvr-status--needs-review {
+  background: #FEF3C7;
+  color: #92400E;
+}
+
+.dedvr-status--conflict {
+  background: #FEE2E2;
+  color: #B91C1C;
+}
+
+.dedvr-status--unresolved {
+  background: #F1F5F9;
+  color: #475569;
+  border: 1px solid #E2E8F0;
+}
+
+.dedvr-status--not-detected {
+  background: #FEE2E2;
+  color: #991B1B;
+  border: 1px dashed #FCA5A5;
+}
+
+/* Confidence chip: green/yellow/red ONLY for confidence semantics. */
+.dedvr-confidence {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #047857;
+}
+
+.dedvr-confidence::before {
+  content: '';
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #10B981;
+}
+
+.dedvr-confidence--yellow {
+  color: #B45309;
+}
+
+.dedvr-confidence--yellow::before {
+  background: #F59E0B;
+}
+
+.dedvr-confidence--red {
+  color: #B91C1C;
+}
+
+.dedvr-confidence--red::before {
+  background: #EF4444;
+}
+
+.dedvr-jump-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 9px;
+  border: 1px solid #2563EB;
+  background: #EFF6FF;
+  color: #1D4ED8;
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.dedvr-jump-btn:hover {
+  background: #DBEAFE;
+}
+
+/* Edit row (prototype .edit-row). */
+.dedvr-edit-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: #475569;
+}
+
+.dedvr-edit-label {
+  font-weight: 700;
+}
+
+.dedvr-edit-input {
+  width: 110px;
+  background: #fff;
+  border: 1.5px solid #E2E8F0;
+  color: #0F172A;
+  border-radius: 10px;
+  padding: 8px 11px;
+  font-size: 13.5px;
+  font-weight: 600;
+  font-family: inherit;
+}
+
+.dedvr-edit-input:focus {
+  outline: none;
+  border-color: #2563EB;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, .12);
+}
+
+.dedvr-edit-input:disabled {
+  background: #F1F5F9;
+  color: #94A3B8;
+}
+
+.dedvr-edit-row--disabled {
+  opacity: .8;
+}
+
+.dedvr-edit-unit {
+  font-weight: 600;
+}
+
+.dedvr-edit-note {
+  font-size: 11.5px;
+  color: #64748B;
+  margin-top: 4px;
+  line-height: 1.5;
+}
+
+.dedvr-edit-row .dedvr-edit-note {
+  margin-top: 0;
+}
+
+.dedvr-edit-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Buttons: EZRAB blue for primary actions (never confidence colours). */
+.dedvr-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  font-size: 12.5px;
+  font-weight: 700;
+  font-family: inherit;
+  color: #fff;
+  background: #2563EB;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.dedvr-btn-primary:hover:not(:disabled) {
+  background: #1D4ED8;
+}
+
+.dedvr-btn-primary:disabled {
+  opacity: .45;
+  cursor: default;
+}
+
+.dedvr-btn-danger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  font-size: 12.5px;
+  font-weight: 700;
+  font-family: inherit;
+  color: #B91C1C;
+  background: #fff;
+  border: 1.5px solid #FCA5A5;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.dedvr-btn-danger:hover:not(:disabled) {
+  background: #FEF2F2;
+}
+
+.dedvr-btn-danger:disabled {
+  opacity: .45;
+  cursor: default;
+}
+
+.dedvr-btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  font-size: 12.5px;
+  font-weight: 700;
+  font-family: inherit;
+  color: #475569;
+  background: #fff;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.dedvr-btn-ghost:hover {
+  background: #F8FAFC;
+}
+
+/* Assumption log (prototype .assumption). */
+.dedvr-assumption {
+  border-left: 3.5px solid #F59E0B;
+  padding: 9px 13px;
+  margin: 10px 0;
+  background: #FFFBEB;
+  border-radius: 0 10px 10px 0;
+  font-size: 12.5px;
+  color: #92400E;
+}
+
+.dedvr-assumption--resolved {
+  opacity: .75;
+  border-left-color: #10B981;
+  background: #ECFDF5;
+  color: #065F46;
+}
+
+.dedvr-assumption--danger {
+  border-left-color: #EF4444;
+  background: #FEF2F2;
+  color: #991B1B;
+}
+
+.dedvr-assumption-state {
+  font-size: 11.5px;
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+.dedvr-assumption-acts {
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+}
+
+.dedvr-assumption-btn {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 9px;
+  border: 1.5px solid #E2E8F0;
+  background: #fff;
+  color: #475569;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.dedvr-assumption-btn--ok {
+  border-color: #10B981;
+  color: #059669;
+  background: #ECFDF5;
+}
+
+.dedvr-review-acts {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.dedvr-reject-input {
+  flex: 1;
+  min-width: 200px;
+  background: #fff;
+  border: 1.5px solid #E2E8F0;
+  color: #0F172A;
+  border-radius: 10px;
+  padding: 8px 11px;
+  font-size: 13px;
+  font-family: inherit;
+}
+
+.dedvr-reject-input:focus {
+  outline: none;
+  border-color: #2563EB;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, .12);
+}
+
+.dedvr-review-error {
+  margin-top: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #B91C1C;
+  line-height: 1.5;
+}
+
+.dedvr-review-msg {
+  margin-top: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #15803D;
+  line-height: 1.5;
+}
+
+/* ---- Mobile split toggle (prototype behaviour) ---------------------- */
+
+@media (max-width: 768px) {
+  .dedvr-split {
+    display: block;
+  }
+
+  .dedvr-split-viewer {
+    position: static;
+    height: 70vh;
+    min-height: 420px;
+  }
+
+  /* One pane at a time, driven by data-dedvr-view on the wrapper. */
+  [data-dedvr-view="drawing"] .dedvr-split-results {
+    display: none;
+  }
+
+  [data-dedvr-view="results"] .dedvr-split-viewer {
+    display: none;
+  }
+
+  .dedvr-mobile-toggle {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .dedvr-mobile-toggle-btn {
+    flex: 1;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1.5px solid #E2E8F0;
+    background: #fff;
+    color: #475569;
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .dedvr-mobile-toggle-btn.active {
+    background: #2563EB;
+    border-color: #2563EB;
+    color: #fff;
+  }
+
+  .dedvr-edit-input {
+    width: 110px;
+    padding: 10px;
+    font-size: 14px;
+  }
+
+  .dedvr-assumption-btn {
+    padding: 9px 16px;
+  }
+}
+
+/* ---- Dark mode: I7b additions (same mechanism as the viewer) -------- */
+
+[data-theme="dark"] .dedvr-review-block {
+  border-top-color: var(--ez-hue-blue-border, #1D4ED8);
+}
+
+[data-theme="dark"] .dedvr-review-title {
+  color: var(--ez-hue-blue-text-deep, #93C5FD);
+}
+
+[data-theme="dark"] .dedai-table tbody tr.dedvr-row-selected {
+  background: var(--ez-hue-amber-bg, #422006);
+}
+
+[data-theme="dark"] .dedai-table tbody tr.dedvr-row-selected:hover {
+  background: var(--ez-hue-amber-bg-deep, #451A03);
+}
+
+[data-theme="dark"] .dedvr-jump-btn {
+  background: var(--ez-hue-blue-bg, #1E3A8A);
+  border-color: var(--ez-hue-blue-text, #60A5FA);
+  color: var(--ez-color-text-primary, #F1F5F9);
+}
+
+[data-theme="dark"] .dedvr-jump-btn:hover {
+  background: var(--ez-hue-blue-border, #1D4ED8);
+}
+
+[data-theme="dark"] .dedvr-edit-row {
+  color: var(--ez-color-text-muted, #94A3B8);
+}
+
+[data-theme="dark"] .dedvr-edit-input,
+[data-theme="dark"] .dedvr-reject-input {
+  background: var(--ez-color-surface-secondary, #0F172A);
+  border-color: var(--ez-color-border-line, #334155);
+  color: var(--ez-color-text-primary, #F1F5F9);
+}
+
+[data-theme="dark"] .dedvr-edit-input:disabled {
+  background: var(--ez-color-surface-tertiary, #1E293B);
+  color: var(--ez-color-text-faint, #64748B);
+}
+
+[data-theme="dark"] .dedvr-edit-note {
+  color: var(--ez-color-text-muted, #94A3B8);
+}
+
+[data-theme="dark"] .dedvr-btn-danger,
+[data-theme="dark"] .dedvr-btn-ghost,
+[data-theme="dark"] .dedvr-assumption-btn {
+  background: var(--ez-color-surface, #1E293B);
+  border-color: var(--ez-color-border-line, #334155);
+  color: var(--ez-color-text-primary, #F1F5F9);
+}
+
+[data-theme="dark"] .dedvr-btn-danger:hover:not(:disabled),
+[data-theme="dark"] .dedvr-btn-ghost:hover,
+[data-theme="dark"] .dedvr-assumption-btn:hover {
+  background: var(--ez-color-surface-secondary, #0F172A);
+}
+
+[data-theme="dark"] .dedvr-assumption {
+  background: var(--ez-hue-amber-bg, #422006);
+  color: var(--ez-hue-amber-text, #FBBF24);
+}
+
+[data-theme="dark"] .dedvr-assumption--resolved {
+  background: var(--ez-color-surface-secondary, #0F172A);
+  color: var(--ez-color-success, #22C55E);
+}
+
+[data-theme="dark"] .dedvr-assumption--danger {
+  background: var(--ez-color-danger-soft, #450A0A);
+  color: var(--ez-color-danger, #F87171);
+}
+
+[data-theme="dark"] .dedvr-review-error {
+  color: var(--ez-color-danger, #F87171);
+}
+
+[data-theme="dark"] .dedvr-review-msg {
+  color: var(--ez-color-success, #22C55E);
+}
+
+[data-theme="dark"] .dedvr-mobile-toggle-btn {
+  background: var(--ez-color-surface, #1E293B);
+  border-color: var(--ez-color-border-line, #334155);
+  color: var(--ez-color-text-primary, #F1F5F9);
+}
+
+[data-theme="dark"] .dedvr-mobile-toggle-btn.active {
+  background: #2563EB;
+  border-color: #2563EB;
+  color: #fff;
+}
+
