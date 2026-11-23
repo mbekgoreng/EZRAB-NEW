@@ -18,10 +18,9 @@ delete process.env.ZYROUTER_API_KEY;
 delete process.env.AI_GATEWAY_TOKEN;
 delete process.env.SUPABASE_URL;
 delete process.env.SUPABASE_SECRET_KEY;
-process.env.GEMINI_API_KEY_1 = 'dummy-idem-key';
-// Mode 'fast' WeizeRouter-dulu + fallback Crown sejak 2026-11-20 —
-// suite ini memakai key WeizeRouter + stub payload berbentuk OpenAI.
-process.env.WEIZEROUTER_API_KEY = 'dummy-weize';
+// Crown kaki pertama rantai fast (spesifikasi final 2026-11-22 01:37;
+// Gemini native + WeizeRouter dicabut dari semua rantai).
+process.env.CROWN_API_KEY = 'dummy-idem-crown';
 
 let failures = 0;
 const test = async (name, fn) => {

@@ -210,7 +210,11 @@ async function main(): Promise<void> {
   check('tombol nonaktif saat sibuk', creatorSrc.includes('disabled={busy}'));
   check('status loading (spinner + teks sibuk)', creatorSrc.includes("t('ai.doc.create.gen_busy')") && creatorSrc.includes('className="spin"'));
   check('status error dirender', creatorSrc.includes('className="docai-error"'));
-  check('gerbang generate: AI terkunci → error + batal', creatorSrc.includes("if (!docAiAllowed && createMode === 'ai') { setError(docAiLockedMsg); return; }"));
+  // Audit DocAI 2026-11-22 (D4): gerbang generate kini berlaku di KEDUA mode —
+  // pengecualian `createMode === 'ai'` lama membiarkan paket terkunci generate
+  // draf AI lewat mode form (tombol yang sama, panggilan AI yang sama).
+  check('gerbang generate: AI terkunci → error + batal (kedua mode)', creatorSrc.includes("if (!docAiAllowed) { setError(docAiLockedMsg); return; }"));
+  check('gerbang generate: pengecualian mode-form lama SUDAH dihapus', !creatorSrc.includes("if (!docAiAllowed && createMode === 'ai')"));
   check('tombol mode form tetap memakai label i18n gen', creatorSrc.includes("t('ai.doc.create.gen')"));
   check('klik tombol tetap memanggil runGenerate(false)', creatorSrc.includes('onClick={() => void runGenerate(false)}'));
 

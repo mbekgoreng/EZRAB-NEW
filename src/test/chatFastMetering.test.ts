@@ -434,18 +434,19 @@ console.log('=== Level HTTP (handleAiRequest + fetch stub deterministik) ===');
   ];
   const savedEnv: Record<string, string | undefined> = {};
   for (const k of envKeysToClear) { savedEnv[k] = process.env[k]; delete process.env[k]; }
-  process.env.GEMINI_API_KEY_1 = 'dummy-gemini-key';
+  // Crown kaki pertama chat/fast + Atmo untuk advanced (spesifikasi final
+  // 2026-11-22 01:37; kaki Gemini native dicabut dari semua rantai).
+  process.env.CROWN_API_KEY = 'dummy-crown-key';
+  process.env.ATMO_API_KEY = 'dummy-atmo-key';
 
-  let usageStub = { promptTokenCount: 2000, candidatesTokenCount: 1000, totalTokenCount: 3000 };
+  let usageStub = { prompt_tokens: 2000, completion_tokens: 1000, total_tokens: 3000 };
   const fetchCalls: any[] = [];
   (globalThis as any).fetch = async (url: string, init: any) => {
     fetchCalls.push({ url: String(url), body: init && init.body ? JSON.parse(init.body) : null });
     const payload = {
-      candidates: [{ content: { parts: [{ text: 'HALO-DARI-GEMINI' }] } }],
-      usageMetadata: usageStub,
-      // Bentuk OpenAI untuk kaki WeizeRouter (mode fast WeizeRouter-dulu
-      // + fallback Crown sejak 2026-11-20; jalur Gemini membaca candidates).
-      choices: [{ message: { content: 'HALO-DARI-GEMINI' } }],
+      // Bentuk OpenAI (semua kaki rantai kini OpenAI-compatible).
+      choices: [{ message: { content: 'HALO-DARI-CROWN' } }],
+      usage: usageStub,
     };
     return {
       ok: true, status: 200, headers: { get: () => 'application/json' },
@@ -472,15 +473,21 @@ console.log('=== Level HTTP (handleAiRequest + fetch stub deterministik) ===');
   await handleAiRequest(mockReq(chatBody) as any, resOff, chatOpts);
   check('HTTP gate OFF: 200 success', resOff.statusCode === 200 && resOff.body.success === true);
   check('HTTP gate OFF: content/mode sama; provider/model TERMASKING (alias, bukan nama asli)',
-    resOff.body.content === 'HALO-DARI-GEMINI' && resOff.body.provider === 'ezrab'
+    resOff.body.content === 'HALO-DARI-CROWN' && resOff.body.provider === 'ezrab'
     && resOff.body.model === 'Ezrab-flash-v1' && resOff.body.mode === 'chat');
   check('HTTP gate OFF: struktur respons persis {success,content,model,provider,mode,requestId,durationMs,usage,usageStatus} (tanpa attempts)',
     JSON.stringify(Object.keys(resOff.body).sort()) === JSON.stringify(['content', 'durationMs', 'mode', 'model', 'provider', 'requestId', 'success', 'usage', 'usageStatus']));
   check('HTTP gate OFF: provider dipanggil sekali', fetchCalls.length === 1);
   {
-    const contents = fetchCalls[0].body.contents;
-    const systemText = contents[0].parts[0].text;
-    const userText = contents[contents.length - 1].parts[0].text;
+    // Body OpenAI: messages[0] = system (kebijakan server + prompt klien),
+    // messages terakhir = user (content berbentuk array parts).
+    // (Dulu body Gemini `contents` — Gemini native dicabut 2026-11-22.)
+    const messages = fetchCalls[0].body.messages;
+    const systemText = messages[0].content;
+    const lastMsg = messages[messages.length - 1];
+    const userText = Array.isArray(lastMsg.content)
+      ? lastMsg.content.map((p: any) => p.text || '').join('')
+      : lastMsg.content;
     check('HTTP gate OFF: prompt ke provider = kebijakan server + prompt klien + pesan sama seperti semula',
       systemText.includes('KEBIJAKAN SERVER EZRAB') && systemText.includes('Jawab ringkas.') && userText === 'halo ezrab');
   }
@@ -491,7 +498,7 @@ console.log('=== Level HTTP (handleAiRequest + fetch stub deterministik) ===');
     const r: any = mockRes();
     await handleAiRequest(mockReq(chatBody) as any, r, chatOpts);
     check(`HTTP gate "${v}": tetap 200 dengan content sama + provider/model termasking`,
-      r.statusCode === 200 && r.body.content === 'HALO-DARI-GEMINI' && r.body.provider === 'ezrab' && r.body.model === 'Ezrab-flash-v1');
+      r.statusCode === 200 && r.body.content === 'HALO-DARI-CROWN' && r.body.provider === 'ezrab' && r.body.model === 'Ezrab-flash-v1');
   }
   // --- Gerbang menyala tanpa konteks/boundary: fail-closed, provider tak jalan ---
   process.env.AI_METERING_ENABLED = 'true';
@@ -501,7 +508,7 @@ console.log('=== Level HTTP (handleAiRequest + fetch stub deterministik) ===');
   check('HTTP gate ON tanpa konteks: 401 AUTH_CONTEXT_REQUIRED', resOnNoCtx.statusCode === 401 && resOnNoCtx.body.errorCode === 'AUTH_CONTEXT_REQUIRED' && resOnNoCtx.body.success === false);
   check('HTTP gate ON tanpa konteks: provider TIDAK dipanggil', fetchCalls.length === 0);
   // --- Gerbang menyala dengan konteks+boundary suntikan: SETTLED lewat HTTP ---
-  usageStub = { promptTokenCount: 100, candidatesTokenCount: 50, totalTokenCount: 150 };
+  usageStub = { prompt_tokens: 100, completion_tokens: 50, total_tokens: 150 };
   const http = freshOn('acct-http-1');
   const ctxHttp = { accountId: 'acct-http-1', workspaceId: 'ws-http', userId: 'user-http' };
   fetchCalls.length = 0;
@@ -509,7 +516,7 @@ console.log('=== Level HTTP (handleAiRequest + fetch stub deterministik) ===');
   await handleAiRequest(mockReq(chatBody) as any, resOn, {
     productIdToMode: () => 'chat', meteringContext: ctxHttp, meteringBoundary: http.boundary,
   });
-  check('HTTP gate ON terkonteks: 200 dengan content asli', resOn.statusCode === 200 && resOn.body.content === 'HALO-DARI-GEMINI');
+  check('HTTP gate ON terkonteks: 200 dengan content asli', resOn.statusCode === 200 && resOn.body.content === 'HALO-DARI-CROWN');
   const recHttp: any = http.boundary.findByIdempotencyKey('acct-http-1', `chatfast-${resOn.body.requestId}`);
   const opsHttp = [...(http.ledger as any).store.operations.values()] as any[];
   check('HTTP gate ON terkonteks: tepat satu operasi SETTLED chat-ai/fast',
@@ -521,21 +528,18 @@ console.log('=== Level HTTP (handleAiRequest + fetch stub deterministik) ===');
   // --- Gerbang menyala: fitur lain lewat HTTP tetap tak termeter ---
   fetchCalls.length = 0;
   const resDed: any = mockRes();
-  // Mode fast (WeizeRouter-dulu + fallback Crown sejak 2026-11-20): key WeizeRouter
-  // dipasang HANYA untuk cek ini — bila dipasang global, kaki WeizeRouter
-  // menjadi pertama di rantai chat dan mematahkan cek bentuk prompt Gemini
-  // di atas (body OpenAI tidak punya `contents`).
-  process.env.WEIZEROUTER_API_KEY = 'dummy-weize-key';
+  // Mode fast — Crown kaki pertama (key Crown sudah terpasang global di
+  // blok ini); tanpa metering karena productId bukan EZRAB_AI.
   await handleAiRequest(mockReq({ message: 'analisis ded', productId: 'DED_AI_FAST' }) as any, resDed, { productIdToMode: () => 'fast' });
-  delete process.env.WEIZEROUTER_API_KEY;
-  check('HTTP gate ON: DED_AI_FAST (mode fast) tetap 200 normal tanpa metering', resDed.statusCode === 200 && resDed.body.content === 'HALO-DARI-GEMINI');
+  check('HTTP gate ON: DED_AI_FAST (mode fast) tetap 200 normal tanpa metering', resDed.statusCode === 200 && resDed.body.content === 'HALO-DARI-CROWN');
   const resAdv: any = mockRes();
   await handleAiRequest(mockReq(chatBody) as any, resAdv, { productIdToMode: () => 'advanced' });
-  check('HTTP gate ON: mode advanced tetap 200 normal tanpa metering', resAdv.statusCode === 200 && resAdv.body.content === 'HALO-DARI-GEMINI');
+  check('HTTP gate ON: mode advanced tetap 200 normal tanpa metering', resAdv.statusCode === 200 && resAdv.body.content === 'HALO-DARI-CROWN');
 
   // Pulihkan env & fetch (proses tes saja — tidak persisten ke mana pun).
   delete process.env.AI_METERING_ENABLED;
-  delete process.env.GEMINI_API_KEY_1;
+  delete process.env.CROWN_API_KEY;
+  delete process.env.ATMO_API_KEY;
   for (const k of envKeysToClear) { if (savedEnv[k] !== undefined) process.env[k] = savedEnv[k]; }
   (globalThis as any).fetch = savedFetch;
 }

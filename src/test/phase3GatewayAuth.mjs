@@ -95,14 +95,14 @@ await test('rateLimitIdentity: user id when JWT, ip otherwise', async () => {
 
 // --- full pipeline via handleAiRequest ---
 let fetchCalls = 0;
-// Stub ganda: candidates (jalur Gemini) + choices (jalur OpenAI/WeizeRouter).
-// Mode default 'fast' WeizeRouter-dulu + fallback Crown sejak 2026-11-20.
+// Stub ganda: candidates dipertahankan untuk kompatibilitas + choices
+// (jalur OpenAI — semua kaki rantai kini OpenAI-compatible).
+// Mode default 'fast' Crown-dulu (spesifikasi final 2026-11-22 01:37).
 global.fetch = async () => ({ ok: true, json: async () => ({
   candidates: [{ content: { parts: [{ text: 'ok' }] } }],
   choices: [{ message: { content: 'ok' } }],
 }) });
-process.env.GEMINI_API_KEY_1 = 'dummy';
-process.env.WEIZEROUTER_API_KEY = 'dummy-weize';
+process.env.CROWN_API_KEY = 'dummy';
 
 await test('pipeline JWT: missing token -> 401 Login diperlukan', async () => {
   process.env.SUPABASE_URL = 'https://xyz.supabase.co'; process.env.SUPABASE_ANON_KEY = 'anon';

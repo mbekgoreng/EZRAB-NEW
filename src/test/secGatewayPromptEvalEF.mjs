@@ -86,7 +86,7 @@ for (let i = 1; i <= 4; i++) delete process.env['ATMO_API_KEY_' + i];
 delete process.env.ATMO_API_KEY;
 delete process.env.ZYROUTER_API_KEY;
 delete process.env.ZROUTER_API_KEY;
-process.env.GEMINI_API_KEY_1 = 'dummy-capture-key';
+process.env.CROWN_API_KEY = 'dummy-capture-key';
 
 const capturedBodies = [];
 globalThis.fetch = async (url, opts) => {
@@ -94,7 +94,7 @@ globalThis.fetch = async (url, opts) => {
   return {
     ok: true,
     headers: { get: () => 'application/json' },
-    json: async () => ({ candidates: [{ content: { parts: [{ text: 'jawaban stub' }] } }] }),
+    json: async () => ({ choices: [{ message: { content: 'jawaban stub' } }] }),
   };
 };
 
@@ -117,13 +117,17 @@ const SCENARIOS = {
 for (const [id, message] of Object.entries(SCENARIOS)) {
   const before = capturedBodies.length;
   try {
-    // Mode 'chat' (fast WeizeRouter-dulu + fallback Crown sejak 2026-11-20 —
-    // suite ini hanya memasang key Gemini dan menangkap body Gemini).
+    // Mode 'chat' — kaki pertama Crown V4-0731 (spesifikasi final
+    // 2026-11-22 01:37; dulu Gemini native, dicabut 2026-11-22).
+    // Body OAI: kebijakan server ada di pesan role 'system' (awalan
+    // '[SYSTEM]\n' hanya ada di jalur Gemini — di OAI tidak ada).
     const r = await executeAI({ message, systemPrompt: 'Kamu adalah asisten EZRAB.', mode: 'chat' });
     ok(r.ok, `${id}: executeAI gagal pada stub provider`);
     ok(capturedBodies.length === before + 1, `${id}: tepat satu panggilan provider tertangkap`);
-    const sysText = capturedBodies[before].contents[0].parts[0].text;
-    ok(sysText.startsWith('[SYSTEM]\n[KEBIJAKAN SERVER EZRAB'), `${id}: kebijakan server bukan awalan prompt terkirim`);
+    const sysMsg = capturedBodies[before].messages.find((m) => m.role === 'system');
+    ok(sysMsg, `${id}: pesan system tidak ada di body terkirim`);
+    const sysText = sysMsg.content;
+    ok(sysText.startsWith('[KEBIJAKAN SERVER EZRAB'), `${id}: kebijakan server bukan awalan prompt terkirim`);
     for (const marker of CLAUSE_MARKERS) {
       ok(sysText.includes(marker), `${id}: klausul "${marker}" tidak ada di prompt terkirim`);
     }

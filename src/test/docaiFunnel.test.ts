@@ -211,6 +211,11 @@ function main(): void {
   check('enhance: hasil ≤ 600 karakter', enhanced !== null && enhanced.length <= FUNNEL_PROMPT_MAX);
   const long = enhanceFunnelPrompt('x'.repeat(700), 'Surat Permohonan');
   check('enhance: input panjang dipotong di 600', long !== null && long.length === FUNNEL_PROMPT_MAX);
+  // Audit DocAI 2026-11-22 (D1b): bingkai TIDAK BOLEH memotong isi pengguna —
+  // prompt 550 karakter yang tak muat dibingkai kembali UTUH (tanpa bingkai),
+  // bukan terpotong oleh overhead bingkai.
+  const mid = enhanceFunnelPrompt('y'.repeat(550), 'Surat Permohonan');
+  check('enhance: prompt 550 karakter kembali utuh tanpa bingkai', mid !== null && mid === 'y'.repeat(550));
   const already = enhanceFunnelPrompt('Buatkan Surat Permohonan berdasarkan keterangan berikut: a', 'Surat Permohonan');
   check('enhance: prompt yang sudah dibingkai tidak dibingkai dua kali', already === 'Buatkan Surat Permohonan berdasarkan keterangan berikut: a');
 

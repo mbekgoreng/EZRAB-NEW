@@ -8,30 +8,35 @@
  * menjawab memakan seluruh waktu — suite ini membuktikan dengan WAKTU
  * NYATA (bukan AbortError simulasi seperti suite F3) bahwa satu kaki
  * yang menggantung dibatalkan tepat 55 dtk lalu rantai pindah ke kaki
- * berikutnya, dan budget rantai menghentikan rantai sebelum plafon
- * fungsi 300 dtk.
+ * berikutnya, dan rantai berhenti sebelum plafon fungsi 300 dtk.
+ *
+ * Ditulis ulang 2026-11-22 untuk SPESIFIKASI FINAL owner 01:37 — rantai
+ * 'ded' kini PERSIS 2 kaki Atmo (cx/gpt-6-luna -> ag/gemini-3.8-flash-high),
+ * bukan lagi 12 kaki WeizeRouter+Crown+River+Atmo. Konsekuensi penting
+ * yang dipin skenario B: worst case semua-menggantung kini hanya
+ * 2 x 55 dtk = ~110 dtk — jalur entri budget 240 dtk TIDAK LAGI
+ * terjangkau lewat timeout (rantai habis dulu); budget tetap ada sebagai
+ * jaring pengaman untuk rantai 4-kaki (4 x 55 = 220 dtk < 240 dtk).
  *
  * Yang dibuktikan (semua provider di-mock — fetch di-stub per model,
  * tanpa panggilan jaringan nyata, tanpa key asli):
  *  A. Failover kaki pertama yang MENGGANTUNG (waktu nyata ~55 dtk):
- *     kaki 1 (wz/gpt-6-luna) diam total → diaborsi 55 dtk (errorClass
- *     'timeout') → kaki 2 (weizerouter-v1) menjawab → sukses. Total
- *     ~55 dtk, BUKAN 5 menit.
- *  B. Akuntansi budget baru 240 dtk (waktu nyata ~275 dtk): SEMUA kaki
- *     menggantung → tepat 5 kaki × 55 dtk lalu entri budget
- *     'chain time budget exceeded (240s)' — total ~275 dtk, DI BAWAH
- *     plafon bunuh Vercel 300 dtk. Batas jujur: dalam skenario semua-
- *     menggantung, Crown/ArxPay TIDAK sempat dicoba (budget habis di
- *     5 kaki WeizeRouter).
+ *     kaki 1 (cx/gpt-6-luna) diam total → diaborsi 55 dtk (errorClass
+ *     'timeout') → kaki 2 (ag/gemini-3.8-flash-high) menjawab → sukses.
+ *     Total ~55 dtk, BUKAN 5 menit.
+ *  B. Semua kaki menggantung (waktu nyata ~110 dtk): tepat 2 kaki x
+ *     55 dtk, TANPA entri budget — total ~110 dtk, JAUH DI BAWAH plafon
+ *     bunuh Vercel 300 dtk. (Dulu: 5 kaki x 55 dtk lalu entri budget,
+ *     ~275 dtk — rantai lama 12 kaki.)
  *  C. Pin sumber nilai baru: CHAIN_BUDGET_MS 240000, MAX_TIMEOUT_MS
  *     300_000 (3 situs clamp), FULL_AI_TIMEOUT_MS 300000/300000,
  *     timeout pass DED standar 300000; ATTEMPT_TIMEOUT_MS TETAP 55000
- *     (tidak diubah — keputusan owner); worst case 240+55=295 dtk <
+ *     (tidak diubah — keputusan owner); worst case 4-kaki 220 dtk <
  *     maxDuration Vercel (dibaca dari vercel.json, bukan hardcode).
- *  D. Kegagalan CEPAT tetap menelusuri seluruh rantai (9 kaki ded
- *     dalam hitungan detik) — budget baru tidak merusak failover cepat.
+ *  D. Kegagalan CEPAT tetap menelusuri seluruh rantai (2 kaki ded +
+ *     4 kaki fast dalam hitungan detik) — failover cepat tidak rusak.
  *
- * RUNTIME: ~5,5 menit (55 + 275 dtk waktu nyata + sisanya seketika).
+ * RUNTIME: ~3 menit (55 + 110 dtk waktu nyata + sisanya seketika).
  * Itu harga bukti waktu-nyata; JANGAN "mempercepat" dengan AbortError
  * simulasi — simulasi membuktikan klasifikasi, bukan timer.
  * Jalankan: node src/test/dedTimeout5Min.mjs
@@ -43,16 +48,16 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 
-// Hanya tiga key rantai ded/fast; key provider lain dihapus supaya tidak
-// ada kaki asing yang ikut terhitung.
+// Hanya key rantai ded/fast (Crown + River + Atmo); key provider lain
+// dihapus supaya tidak ada kaki asing yang ikut terhitung.
 for (const k of Object.keys(process.env)) {
-  if (/^(GEMINI|RIVER|DAHL|ATRIA|ZYROUTER|ATMO|GEMINI_OAI)_/.test(k) || k === 'ZYROUTER_API_KEY' || k === 'ATMO_API_KEY') {
+  if (/^(GEMINI|RIVER|DAHL|ATRIA|ZYROUTER|ATMO|GEMINI_OAI|WEIZEROUTER)_/.test(k) || k === 'ZYROUTER_API_KEY' || k === 'ATMO_API_KEY' || k === 'WEIZEROUTER_API_KEY') {
     delete process.env[k];
   }
 }
-process.env.WEIZEROUTER_API_KEY = 'probe-weize';
 process.env.CROWN_API_KEY = 'probe-crown';
-process.env.ARXPAY_API_KEY = 'probe-arxpay';
+process.env.RIVER_API_KEY_1 = 'probe-river';
+process.env.ATMO_API_KEY = 'probe-atmo';
 
 // Perilaku per MODEL (kaki ded berbagi host — stub per host tidak cukup).
 // 'hang' = tidak pernah merespons kecuali sinyal abort menembak (meniru
@@ -103,12 +108,14 @@ global.fetch = (url, init = {}) => {
 
 const { executeAI } = await import('../../api/_lib/aiGateway.js');
 
-const DED_MODELS = [
-  'wz/gpt-6-luna', 'weizerouter-v1', 'wz/gemini-3.8-flash-high', 'wz/grok-4.7', 'wz/deepseek-v4-pro',
-  'zai-org/GLM-5.3-Flash', 'deepseek-ai/DeepSeek-V4-Flash-0731', 'MiniMaxAI/MiniMax-M2.7',
-  'deepseek-v4.1-flash',
+const DED_MODELS = ['cx/gpt-6-luna', 'ag/gemini-3.8-flash-high'];
+const FAST_MODELS = [
+  'deepseek-ai/DeepSeek-V4-Flash-0731',
+  'nvidia/NVIDIA-Nemotron-3.5-Super-VL-120B-A12B-NVFP4',
+  'deepseek-ai/DeepSeek-V4.1-Flash-1017',
+  'cx/gpt-6-luna',
 ];
-function setAll(b) { for (const m of DED_MODELS) behavior.set(m, b); }
+function setAll(b) { for (const m of [...DED_MODELS, ...FAST_MODELS]) behavior.set(m, b); }
 
 let passed = 0, failed = 0;
 const failures = [];
@@ -120,18 +127,18 @@ const fmt = (r) => r.attempts.map((a) => `${a.provider}:${a.model ?? '-'}[${a.ok
 const readSrc = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
 
 // --- A. Failover kaki pertama yang menggantung (waktu nyata ~55 dtk) ---
-console.log('A: leg 1 hang, leg 2 ok (ekspektasi: sukses via weizerouter-v1 dalam ~55 dtk)...');
+console.log('A: leg 1 hang, leg 2 ok (ekspektasi: sukses via ag/gemini-3.8-flash-high dalam ~55 dtk)...');
 setAll('ok');
-behavior.set('wz/gpt-6-luna', 'hang');
+behavior.set('cx/gpt-6-luna', 'hang');
 const tA = Date.now();
 const rA = await executeAI({ message: 'halo', mode: 'ded' });
 const wallA = Date.now() - tA;
 console.log(`  TERUKUR wall=${wallA}ms ok=${rA.ok} provider=${rA.provider} model=${rA.model}`);
 console.log(`  attempts: ${fmt(rA)}`);
-check('A1 sukses via kaki kedua (weizerouter-v1), bukan kaki pertama', () => {
+check('A1 sukses via kaki kedua (ag/gemini-3.8-flash-high), bukan kaki pertama', () => {
   assert.equal(rA.ok, true);
-  assert.equal(rA.provider, 'weizerouter');
-  assert.equal(rA.model, 'weizerouter-v1');
+  assert.equal(rA.provider, 'atmorouter');
+  assert.equal(rA.model, 'ag/gemini-3.8-flash-high');
 });
 check('A2 kaki pertama errorClass timeout (bukan network/aborted)', () => {
   assert.equal(rA.attempts[0].errorClass, 'timeout');
@@ -143,8 +150,9 @@ check('A4 total wall ~55 dtk (50-65 dtk) — SATU kaki diam TIDAK memakan 5 meni
   assert.ok(wallA >= 50000 && wallA <= 65000, `wall=${wallA}`);
 });
 
-// --- B. Akuntansi budget 240 dtk, semua kaki menggantung (waktu nyata ~275 dtk) ---
-console.log('B: semua kaki hang (ekspektasi: 5 kaki x 55 dtk lalu budget, ~275 dtk total)...');
+// --- B. Semua kaki menggantung (waktu nyata ~110 dtk): 2 kaki x 55 dtk,
+//      TANPA entri budget — rantai 2-kaki habis sebelum budget 240 dtk. ---
+console.log('B: semua kaki hang (ekspektasi: 2 kaki x 55 dtk, tanpa entri budget, ~110 dtk total)...');
 setAll('hang');
 const tB = Date.now();
 const rB = await executeAI({ message: 'halo', mode: 'ded' });
@@ -152,28 +160,26 @@ const wallB = Date.now() - tB;
 console.log(`  TERUKUR wall=${wallB}ms ok=${rB.ok}`);
 console.log(`  attempts: ${fmt(rB)}`);
 check('B1 gagal fail-closed (ok=false)', () => assert.equal(rB.ok, false));
-check('B2 tepat 5 kaki menggantung lalu entri budget (6 entri)', () => {
-  assert.equal(rB.attempts.length, 6);
-  for (let i = 0; i < 5; i++) assert.equal(rB.attempts[i].errorClass, 'timeout');
-  assert.equal(rB.attempts[5].provider, 'gateway');
-  assert.match(rB.attempts[5].error, /chain time budget exceeded \(240s\)/);
+check('B2 tepat 2 kaki menggantung, TANPA entri budget (2 entri, bukan 6)', () => {
+  assert.equal(rB.attempts.length, 2);
+  assert.equal(rB.attempts[0].errorClass, 'timeout');
+  assert.equal(rB.attempts[1].errorClass, 'timeout');
+  assert.equal(rB.attempts.some((a) => a.provider === 'gateway'), false);
 });
 check('B3 tiap kaki menggantung diaborsi ~55 dtk (54-56 dtk)', () => {
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 2; i++) {
     const ms = rB.attempts[i].ms;
     assert.ok(ms >= 54000 && ms <= 56000, `kaki ${i + 1} ms=${ms}`);
   }
 });
-check('B4 total wall ~275 dtk (270-290 dtk)', () => {
-  assert.ok(wallB >= 270000 && wallB <= 290000, `wall=${wallB}`);
+check('B4 total wall ~110 dtk (105-125 dtk)', () => {
+  assert.ok(wallB >= 105000 && wallB <= 125000, `wall=${wallB}`);
 });
 check('B5 wall DI BAWAH plafon bunuh Vercel 300 dtk', () => {
   assert.ok(wallB < 300000, `wall=${wallB}`);
 });
-check('B6 batas jujur: Crown/ArxPay TIDAK sempat dicoba saat semua menggantung', () => {
-  const providers = rB.attempts.map((a) => a.provider);
-  assert.ok(!providers.includes('crown'), 'crown tercoba — di luar ekspektasi budget');
-  assert.ok(!providers.includes('arxpay'), 'arxpay tercoba — di luar ekspektasi budget');
+check('B6 jalur budget-entry TIDAK terjangkau lewat timeout di rantai 2-kaki (budget 240 dtk > 2 x 55 dtk)', () => {
+  assert.equal(rB.error.includes('chain time budget exceeded'), false);
 });
 
 // --- C. Pin sumber nilai baru (tanpa penantian) ---
@@ -210,28 +216,40 @@ check('C7 timeout pass DED standar = 300000 (ternari lama 120000/180000 hilang)'
   assert.ok(stdDed.includes('timeoutMs: 300000,'));
   assert.ok(!stdDed.includes("mode === 'FAST' ? 120000 : 180000"));
 });
-check('C8 worst case rantai 240+55=295 dtk < maxDuration Vercel (dari vercel.json)', () => {
+check('C8 worst case rantai 4-kaki 220 dtk < maxDuration Vercel (dari vercel.json)', () => {
   const vercel = JSON.parse(fs.readFileSync(path.join(ROOT, 'vercel.json'), 'utf8'));
   const maxDuration = vercel.functions?.['api/ai/**/*.js']?.maxDuration;
   assert.equal(typeof maxDuration, 'number', 'maxDuration tidak terbaca dari vercel.json');
+  assert.ok(4 * 55 < maxDuration, `220 !< ${maxDuration}`);
+  // Jaring pengaman lama tetap benar sebagai aritmetika: budget + 1 overshoot.
   assert.ok(240 + 55 < maxDuration, `295 !< ${maxDuration}`);
-  console.log(`     (maxDuration Vercel = ${maxDuration} dtk; worst case rantai = 295 dtk)`);
+  console.log(`     (maxDuration Vercel = ${maxDuration} dtk; worst case rantai 4-kaki = 220 dtk; budget+overshoot = 295 dtk)`);
 });
 
 // --- D. Kegagalan cepat tetap menelusuri seluruh rantai ---
-console.log('D: semua kaki fail 500 cepat (ekspektasi: 9 kaki ded dalam hitungan detik)...');
+console.log('D: semua kaki fail 500 cepat (ekspektasi: 2 kaki ded + 4 kaki fast dalam hitungan detik)...');
 setAll('fail500');
 const tD = Date.now();
 const rD = await executeAI({ message: 'halo', mode: 'ded' });
 const wallD = Date.now() - tD;
 console.log(`  TERUKUR wall=${wallD}ms ok=${rD.ok} attempts=${rD.attempts.length}`);
 check('D1 gagal fail-closed (ok=false)', () => assert.equal(rD.ok, false));
-check('D2 kesembilan kaki ded dicoba (WeizeRouter 5 + Crown 3 + ArxPay 1)', () => {
-  assert.equal(rD.attempts.length, 9);
+check('D2 kedua kaki ded dicoba (cx -> ag)', () => {
+  assert.equal(rD.attempts.length, 2);
   assert.deepEqual(rD.attempts.map((a) => a.model), DED_MODELS);
 });
-check('D3 kegagalan cepat selesai <10 dtk (budget baru tidak memperlambat failover cepat)', () => {
+check('D3 kegagalan cepat selesai <10 dtk', () => {
   assert.ok(wallD < 10000, `wall=${wallD}`);
+});
+const tD2 = Date.now();
+const rD2 = await executeAI({ message: 'halo', mode: 'fast' });
+const wallD2 = Date.now() - tD2;
+console.log(`  TERUKUR fast wall=${wallD2}ms ok=${rD2.ok} attempts=${rD2.attempts.length}`);
+check('D4 keempat kaki fast dicoba (Crown -> Nemotron -> 1017 -> cx)', () => {
+  assert.equal(rD2.ok, false);
+  assert.equal(rD2.attempts.length, 4);
+  assert.deepEqual(rD2.attempts.map((a) => a.model), FAST_MODELS);
+  assert.ok(wallD2 < 10000, `wall=${wallD2}`);
 });
 
 console.log(`\nHasil: ${passed} lolos, ${failed} gagal${failed ? ` — GAGAL: ${failures.join(', ')}` : ''}`);

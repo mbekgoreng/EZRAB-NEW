@@ -162,7 +162,10 @@ export const DocAnalyzer: React.FC<{
    */
   runRequest?: DocAnalyzerRunRequest | null;
 }> = ({ doc, docs, onBack, onAddHistory, initialTab, initialQuestion, initialCompareId, runRequest }) => {
-  const { t } = useI18n();
+  // `lang` diteruskan ke service sebagai bahasa jawaban AI (audit DocAI
+  // 2026-11-22 — pengaturan "Bahasa Dokumen & Hasil" menjanjikan ringkasan
+  // dan jawaban mengikuti bahasa antarmuka).
+  const { t, lang } = useI18n();
   const TABS = getTabs(t);
   const [tab, setTab] = useState<AnaTab>(initialTab ?? 'summary');
   const [pageIdx, setPageIdx] = useState(0);
@@ -312,6 +315,7 @@ export const DocAnalyzer: React.FC<{
           fileName: doc.fileName,
           mode,
           prompt,
+          language: lang,
         },
         (ev) => {
           if (runIdRef.current !== myRun) return;
@@ -355,6 +359,7 @@ export const DocAnalyzer: React.FC<{
         fileName: doc.fileName,
         mode: 'QA',
         prompt: q,
+        language: lang,
         // Riwayat percakapan SEBELUM pertanyaan ini (service memotong ke 6
         // turn terakhir) — pertanyaan lanjutan terjawab dalam konteksnya.
         history: chat.map((m) => ({ role: m.role, text: m.text })),
@@ -399,7 +404,7 @@ export const DocAnalyzer: React.FC<{
       const res = await dokumenAiService.compareDocuments(
         { fileName: doc.fileName, text: doc.text },
         { fileName: other.fileName, text: other.text },
-        { onProgress: (ev) => {
+        { language: lang, onProgress: (ev) => {
           if (runIdRef.current !== myRun) return;
           setProgress(ev);
           if (reqId != null) patchDocAiAnalysisProgress(reqId, ev.percent, ev.status);

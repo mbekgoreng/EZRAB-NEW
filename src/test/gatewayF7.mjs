@@ -114,7 +114,10 @@ const httpFail = (status) => ({
 });
 
 // ---------------------------------------------------------------------------
-// 3. End-to-end: ZyRouter membalas SSE (mode chat & advanced kini selamat)
+// 3. End-to-end: ZyRouter membalas SSE (mode vision kini selamat —
+//    ZyRouter hanya tersisa di rantai vision sejak spesifikasi final
+//    2026-11-22 01:37; mekanisme toleransi SSE di callOAI tidak
+//    bergantung pada provider)
 // ---------------------------------------------------------------------------
 {
   process.env.ZYROUTER_API_KEY = 'dummy-zyrouter';
@@ -137,12 +140,12 @@ const httpFail = (status) => ({
     }
     return httpFail(500);
   };
-  const r = await executeAI({ message: 'buat bast', mode: 'chat' });
-  check('sse e2e chat: ok via zyrouter', () => {
+  const r = await executeAI({ message: 'buat bast', mode: 'vision', imageDataBase64: 'AAAA', imageMimeType: 'image/png' });
+  check('sse e2e vision: ok via zyrouter', () => {
     assert.equal(r.ok, true);
     assert.equal(r.provider, 'zyrouter');
   });
-  check('sse e2e chat: konten delta tergabung utuh', () =>
+  check('sse e2e vision: konten delta tergabung utuh', () =>
     assert.equal(r.content, 'BAST selesai dibuat.'));
   check('sse e2e: payload meminta stream:false', () =>
     assert.equal(lastZyrouterBody.stream, false));
@@ -153,33 +156,54 @@ const httpFail = (status) => ({
 // 4. Anggaran provider: 429 tidak membakar banyak percobaan di provider sama
 // ---------------------------------------------------------------------------
 {
-  // Chat: 4 key Gemini, semuanya 429 -> hanya 2 attempt Gemini yang tercatat
-  // (1 awal + 1 ulang), lalu failover keluar dari provider itu.
-  // Mode 'chat' (fast WeizeRouter-dulu + fallback Crown sejak 2026-11-20 —
-  // Gemini tidak lagi ada di rantai fast).
-  for (let i = 1; i <= 4; i++) process.env['GEMINI_API_KEY_' + i] = 'dummy-g' + i;
+  // Chat: 4 key River, semuanya 429 -> hanya 2 attempt river-flash yang
+  // tercatat (cap model-aware: 1 model -> cap 2), lalu failover keluar
+  // dari provider itu. (Dulu: Gemini cap 2 — Gemini dicabut 2026-11-22.)
+  for (let i = 1; i <= 4; i++) process.env['RIVER_API_KEY_' + i] = 'dummy-r' + i;
   global.fetch = async () => httpFail(429);
   const r = await executeAI({ message: 'halo', mode: 'chat' });
   check('budget: chat all-429 ok=false', () => assert.equal(r.ok, false));
-  check('budget: gemini dibatasi 2 attempt walau 4 key tersedia', () =>
-    assert.equal(r.attempts.filter((a) => a.provider === 'gemini').length, 2));
-  for (let i = 1; i <= 4; i++) delete process.env['GEMINI_API_KEY_' + i];
+  check('budget: river-flash dibatasi 2 attempt walau 4 key tersedia', () =>
+    assert.equal(r.attempts.filter((a) => a.provider === 'river-flash').length, 2));
+  for (let i = 1; i <= 4; i++) delete process.env['RIVER_API_KEY_' + i];
 
-  // Chat: Atria kini cadangan terakhir dengan SATU attempt walau 3 key ada.
-  process.env.ZYROUTER_API_KEY = 'dummy-zyrouter';
-  for (let i = 1; i <= 3; i++) process.env['ATRIA_API_KEY_' + i] = 'dummy-a' + i;
-  global.fetch = async (url) => httpFail(hostOf(String(url)) === 'atria' ? 429 : 500);
+  // Advanced: 3 key Atmo, 3 model, semuanya 429 -> cap model-aware
+  // max(2, 3 model) = 3 membatasi total attempt Atmo menjadi 5
+  // (cx k0, cx k1, cx k2 — tries 2 < cap 3 saat k2 — lalu ag k0 + mv k0
+  // sebagai model yang belum dicoba) — BUKAN 9 (3 key x 3 model).
+  process.env.ATMO_API_KEY = 'dummy-atmo';
+  process.env.ATMO_API_KEY_1 = 'dummy-atmo-1';
+  process.env.ATMO_API_KEY_2 = 'dummy-atmo-2';
+  global.fetch = async () => httpFail(429);
+  const ra = await executeAI({ message: 'halo', mode: 'advanced' });
+  check('budget: advanced all-429 ok=false', () => assert.equal(ra.ok, false));
+  check('budget: atmo 3 key x 3 model dibatasi 5 attempt (cap model-aware)', () => {
+    assert.equal(ra.attempts.length, 5);
+    assert.deepEqual(ra.attempts.map((a) => a.model), [
+      'cx/gpt-6-luna', 'cx/gpt-6-luna', 'cx/gpt-6-luna', 'ag/gemini-3.8-flash-high', 'mv/mistral-medium-3-5',
+    ]);
+  });
+  delete process.env.ATMO_API_KEY;
+  delete process.env.ATMO_API_KEY_1;
+  delete process.env.ATMO_API_KEY_2;
+
+  // Chat: Atmo zai/glm-5.3-flash adalah kaki TERAKHIR rantai chat
+  // (spesifikasi final 2026-11-22 01:37 — dulu Atria cadangan terakhir).
+  process.env.CROWN_API_KEY = 'dummy-crown';
+  process.env.RIVER_API_KEY_1 = 'dummy-river';
+  process.env.ATMO_API_KEY = 'dummy-atmo';
+  global.fetch = async () => httpFail(500);
   const rc = await executeAI({ message: 'halo', mode: 'chat' });
   check('budget: chat all-fail ok=false', () => assert.equal(rc.ok, false));
-  check('budget: atria tepat 1 attempt (cadangan terakhir, 1 key)', () =>
-    assert.equal(rc.attempts.filter((a) => a.provider === 'atria').length, 1));
-  check('budget: atria berada di urutan paling akhir rantai chat', () => {
+  check('budget: atmo zai berada di urutan paling akhir rantai chat', () => {
     const seqProviders = rc.attempts.map((a) => a.provider);
-    assert.equal(seqProviders[seqProviders.length - 1], 'atria');
-    assert.equal(seqProviders[0], 'zyrouter'); // gemini/atmo tanpa key -> zyrouter pertama yang dicoba
+    assert.equal(seqProviders[seqProviders.length - 1], 'atmorouter');
+    assert.equal(rc.attempts[rc.attempts.length - 1].model, 'zai/glm-5.3-flash');
+    assert.equal(seqProviders[0], 'crown'); // crown kaki pertama rantai chat
   });
-  delete process.env.ZYROUTER_API_KEY;
-  for (let i = 1; i <= 3; i++) delete process.env['ATRIA_API_KEY_' + i];
+  delete process.env.CROWN_API_KEY;
+  delete process.env.RIVER_API_KEY_1;
+  delete process.env.ATMO_API_KEY;
 }
 
 // ---------------------------------------------------------------------------

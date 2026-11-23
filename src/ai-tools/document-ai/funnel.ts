@@ -191,9 +191,14 @@ export function examplePromptFor(choice: FunnelChoice): string | undefined {
  * Membingkai prompt ketikan pengguna menjadi prompt yang lebih lengkap dan
  * formal — persis perilaku mockup: "Buatkan {nama dokumen} berdasarkan
  * keterangan berikut: {prompt}. Susun dengan struktur lengkap dan bahasa
- * formal sesuai standar dokumen proyek." Hasil dipotong di 600 karakter.
+ * formal sesuai standar dokumen proyek."
  * Mengembalikan null bila prompt kosong (pemanggil mengisi contoh bila ada).
  * Sudah-ditingkatkan (diawali "Buatkan ") dikembalikan apa adanya.
+ * Bila hasil bingkai melebihi 600 karakter, teks ASLI pengguna dikembalikan
+ * apa adanya (dipotong di 600 bila inputnya sendiri melebihi batas) —
+ * bingkai TIDAK BOLEH memotong isi pengguna (audit DocAI 2026-11-22:
+ * slice hasil bingkai memangkas kata-kata pengguna sendiri saat prompt
+ * panjang).
  */
 export function enhanceFunnelPrompt(prompt: string, docLabel: string): string | null {
   const text = (prompt || '').trim();
@@ -202,7 +207,9 @@ export function enhanceFunnelPrompt(prompt: string, docLabel: string): string | 
   const framed =
     `Buatkan ${docLabel} berdasarkan keterangan berikut: ${text} ` +
     'Susun dengan struktur lengkap dan bahasa formal sesuai standar dokumen proyek.';
-  return framed.slice(0, FUNNEL_PROMPT_MAX);
+  if (framed.length <= FUNNEL_PROMPT_MAX) return framed;
+  // Bingkai tidak muat: kembalikan teks asli, bukan bingkai terpotong.
+  return text.slice(0, FUNNEL_PROMPT_MAX);
 }
 
 /* ------------------------------------------------------------------ */

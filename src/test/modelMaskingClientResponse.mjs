@@ -19,13 +19,12 @@
  *  (g) cross-check: konstanta alias server (api/_lib/modelMasking.js) dan
  *      klien (src/services/aiModelMasking.ts) SEPAKAT (nilai literal sama).
  *
- * Fetch di-stub (hanya key Gemini dummy yang terpasang, jadi hanya kaki
- * Gemini native yang berjalan di semua mode — KECUALI mode fast/ded yang
- * WeizeRouter-dulu + fallback Crown (WeizeRouter-only 2026-11-19 s.d.
- * 2026-11-20): tes (a)/(b1)/(e)
- * memasang key WeizeRouter dummy sementara + stub payload ganda
- * candidates/choices); tidak ada jaringan, tidak ada key asli, tidak ada
- * panggilan AI live.
+ * Fetch di-stub (key Crown + River + Atmo + ZyRouter dummy yang terpasang,
+ * jadi kaki pertama tiap mode yang berjalan: Crown V4-0731 di chat/fast/
+ * docai, Atmo cx/gpt-6-luna di advanced/ded, River vision di vision);
+ * tidak ada jaringan, tidak ada key asli, tidak ada panggilan AI live.
+ * (Dulu: hanya key Gemini dummy — kaki Gemini native dicabut dari semua
+ * rantai 2026-11-22 atas perintah owner, spesifikasi final 01:37.)
  * Run: node src/test/modelMaskingClientResponse.mjs
  */
 import assert from 'node:assert';
@@ -42,7 +41,7 @@ import {
 import chatHandler from '../../api/ai/chat.js';
 import toolsExecuteHandler from '../../api/ai/tools/execute.js';
 
-// --- env: hanya Gemini dummy (pola dedGatewayUsageEvidence.mjs) ---
+// --- env: key dummy Crown + River + Atmo + ZyRouter (pola dedGatewayUsageEvidence.mjs) ---
 for (let i = 1; i <= 6; i++) delete process.env['GEMINI_API_KEY_' + i];
 for (let i = 1; i <= 10; i++) delete process.env['RIVER_API_KEY_' + i];
 for (let i = 1; i <= 14; i++) delete process.env['ATRIA_API_KEY_' + i];
@@ -59,7 +58,12 @@ delete process.env.AI_GATEWAY_TOKEN;
 delete process.env.SUPABASE_URL;
 delete process.env.SUPABASE_SECRET_KEY;
 delete process.env.SUPABASE_ANON_KEY;
-process.env.GEMINI_API_KEY_1 = 'dummy-mask-key';
+// Satu-satunya provider rantai teks (spesifikasi final 2026-11-22 01:37)
+// + ZyRouter untuk kaki vision terakhir.
+process.env.CROWN_API_KEY = 'dummy-mask-crown';
+process.env.RIVER_API_KEY_1 = 'dummy-mask-river';
+process.env.ATMO_API_KEY = 'dummy-mask-atmo';
+process.env.ZYROUTER_API_KEY = 'dummy-mask-zyrouter';
 
 let failures = 0;
 const test = async (name, fn) => {
@@ -114,12 +118,13 @@ function mockRes() {
   };
 }
 
-// Stub Gemini: konten netral (tanpa token denylist) + usage terukur agar
+// Stub provider: konten netral (tanpa token denylist) + usage terukur agar
 // ketiadaan usage.source bermakna (bukan karena usage null).
-// Payload GANDA: candidates+usageMetadata (jalur Gemini) dan
-// choices+usage (jalur OpenAI/WeizeRouter — mode fast/ded WeizeRouter-dulu
-// + fallback Crown sejak 2026-11-20; kedua bentuk membawa konten + usage
-// yang sama agar asersi bersama berlaku di kedua jalur).
+// Payload GANDA: candidates+usageMetadata (jalur Gemini — dipertahankan
+// untuk kompatibilitas stub) dan choices+usage (jalur OpenAI — semua kaki
+// rantai kini OpenAI-compatible: Crown/River/Atmo/ZyRouter); kedua bentuk
+// membawa konten + usage yang sama agar asersi bersama berlaku di kedua
+// jalur.
 let fetchCalls = 0;
 const geminiPayload = {
   candidates: [{ content: { parts: [{ text: 'STUB-OK' }] } }],
@@ -133,14 +138,9 @@ const geminiFetch = async () => {
 };
 globalThis.fetch = geminiFetch;
 
-// Mode fast/ded (WeizeRouter-dulu + fallback Crown sejak 2026-11-20): key
-// WeizeRouter dummy dipasang HANYA di dalam tes yang membutuhkannya,
-// lalu dihapus — bila dipasang global, kaki WeizeRouter menjadi pertama
-// di rantai chat/advanced dan tes (c1)/(c2) kehilangan kaki Gemini.
-async function withWeizeKey(fn) {
-  process.env.WEIZEROUTER_API_KEY = 'dummy-mask-weize';
-  try { await fn(); } finally { delete process.env.WEIZEROUTER_API_KEY; }
-}
+// (Dulu ada helper withWeizeKey di sini — mode fast/ded WeizeRouter-dulu
+// sampai 2026-11-22; WeizeRouter dicabut dari semua rantai, jadi kaki
+// pertama tiap mode kini langsung Crown/Atmo/River dari key global di atas.)
 
 // Asersi bersama untuk SATU respons klien termasking.
 function assertMaskedClientBody(r, { mode, model }) {
@@ -164,24 +164,24 @@ await test('0: denylist tidak mengenai string alias itu sendiri', async () => {
   eq(findDenied(JSON.stringify({ model: 'gemini-3.5-flash-lite' }).toLowerCase()), 'gemini-');
   eq(findDenied(JSON.stringify({ provider: 'weizerouter' }).toLowerCase()), 'weizerouter');
   eq(findDenied(JSON.stringify({ model: 'Atria-Dawn-Preview' }).toLowerCase()), 'atria');
+  // Model baru spesifikasi final 2026-11-22 01:37 ikut tertangkap:
+  eq(findDenied(JSON.stringify({ model: 'mm/MiniMax-M3.1-Flash' }).toLowerCase()), 'minimax');
+  eq(findDenied(JSON.stringify({ model: 'zai/glm-5.3-flash' }).toLowerCase()), 'glm-5');
+  eq(findDenied(JSON.stringify({ model: 'deepseek-ai/DeepSeek-V4.1-Flash-1017' }).toLowerCase()), 'deepseek-');
 });
 
-// --- (a) mode fast ---
+// --- (a) mode fast (Crown V4-0731 kaki pertama) ---
 await test('a: respons klien mode fast termasking penuh', async () => {
-  await withWeizeKey(async () => {
-    const r = mockRes();
-    await handleAiRequest(mockReq({ body: { message: 'halo', mode: 'fast' } }), r);
-    assertMaskedClientBody(r, { mode: 'fast', model: 'Ezrab-flash-v1' });
-  });
+  const r = mockRes();
+  await handleAiRequest(mockReq({ body: { message: 'halo', mode: 'fast' } }), r);
+  assertMaskedClientBody(r, { mode: 'fast', model: 'Ezrab-flash-v1' });
 });
 
 // --- (b) mode ded / advanced / chat / vision ---
 await test('b1: respons klien mode ded (via tools/execute, DED_AI_DETAIL) -> Ezrab-pro', async () => {
-  await withWeizeKey(async () => {
-    const r = mockRes();
-    await toolsExecuteHandler(mockReq({ body: { message: 'hitung rab', productId: 'DED_AI_DETAIL' } }), r);
-    assertMaskedClientBody(r, { mode: 'ded', model: 'Ezrab-pro' });
-  });
+  const r = mockRes();
+  await toolsExecuteHandler(mockReq({ body: { message: 'hitung rab', productId: 'DED_AI_DETAIL' } }), r);
+  assertMaskedClientBody(r, { mode: 'ded', model: 'Ezrab-pro' });
 });
 
 await test('b2: respons klien mode advanced -> Ezrab-pro', async () => {
@@ -205,23 +205,22 @@ await test('b4: respons klien mode vision -> Ezrab-flash-v1', async () => {
 });
 
 // --- (c) return INTERNAL executeAI tetap nama asli ---
-// Mode 'chat' (fast WeizeRouter-dulu + fallback Crown sejak 2026-11-20 —
-// tes ini membuktikan nama internal Gemini; rantai chat masih berisi
-// Gemini dan hanya key Gemini yang terpasang di titik ini).
+// Mode 'chat' — kaki pertama Crown V4-0731 (spesifikasi final 2026-11-22;
+// dulu Gemini native, dicabut 2026-11-22).
 await test('c1: executeAI internal tetap membawa nama asli (provider/model/attempts)', async () => {
   const r = await executeAI({ message: 'halo', mode: 'chat' });
   eq(r.ok, true, 'ok');
-  eq(r.provider, 'gemini', 'provider internal asli');
-  eq(r.model, 'gemini-3.5-flash-lite', 'model internal asli');
+  eq(r.provider, 'crown', 'provider internal asli');
+  eq(r.model, 'deepseek-ai/DeepSeek-V4-Flash-0731', 'model internal asli');
   eq(r.attempts.length, 1, 'attempts internal utuh');
-  eq(r.attempts[0].provider, 'gemini', 'attempt provider asli');
-  eq(r.attempts[0].model, 'gemini-3.5-flash-lite', 'attempt model asli');
+  eq(r.attempts[0].provider, 'crown', 'attempt provider asli');
+  eq(r.attempts[0].model, 'deepseek-ai/DeepSeek-V4-Flash-0731', 'attempt model asli');
   eq(r.attempts[0].ok, true, 'attempt ok');
 });
 
 await test('c2: failover internal: attempts gagal + sukses tercatat nama asli', async () => {
-  // Key kedua + stub gagal-sekali: attempt 1 (key 1) gagal, attempt 2 (key 2) sukses.
-  process.env.GEMINI_API_KEY_2 = 'dummy-mask-key-2';
+  // Key kedua + stub gagal-sekali: attempt 1 (key polos) gagal, attempt 2 (key _1) sukses.
+  process.env.CROWN_API_KEY_1 = 'dummy-mask-crown-2';
   let call = 0;
   globalThis.fetch = async () => {
     call++;
@@ -233,11 +232,11 @@ await test('c2: failover internal: attempts gagal + sukses tercatat nama asli', 
     eq(r.ok, true, 'ok sesudah failover');
     eq(r.attempts.length, 2, 'dua attempt tercatat');
     eq(r.attempts[0].ok, false, 'attempt 1 gagal');
-    eq(r.attempts[0].provider, 'gemini', 'attempt gagal: provider asli');
+    eq(r.attempts[0].provider, 'crown', 'attempt gagal: provider asli');
     eq(r.attempts[1].ok, true, 'attempt 2 sukses');
-    eq(r.attempts[1].model, 'gemini-3.5-flash-lite', 'attempt sukses: model asli');
+    eq(r.attempts[1].model, 'deepseek-ai/DeepSeek-V4-Flash-0731', 'attempt sukses: model asli');
   } finally {
-    delete process.env.GEMINI_API_KEY_2;
+    delete process.env.CROWN_API_KEY_1;
     globalThis.fetch = geminiFetch;
   }
 });
@@ -255,8 +254,8 @@ await test('d1: maskUsageHistoryModel — kunci fitur operasi (primer)', async (
     ['ded-ai/medium', null, EZRAB_MODEL_PRO],
     ['ded-ai/complex', null, EZRAB_MODEL_PRO],
     ['ded-ai/full-ai', null, EZRAB_MODEL_PRO],
-    ['ai-document/analysis', null, EZRAB_MODEL_PRO],
-    ['ai-document/translate', 'deepseek-v4.1-flash', EZRAB_MODEL_PRO],
+    ['ai-document/analysis', null, EZRAB_MODEL_FLASH],
+    ['ai-document/translate', 'deepseek-v4.1-flash', EZRAB_MODEL_FLASH],
   ];
   for (const [feature, model, expected] of cases) {
     eq(maskUsageHistoryModel({ feature, model }), expected, `feature ${feature} (model ${model})`);
@@ -278,7 +277,11 @@ await test('d2: maskUsageHistoryModel — kunci bare legacy jatuh ke fallback na
 });
 
 await test('d3: maskUsageHistoryModel — fallback nama model (pro/flash-only, ambigu, tak dikenal)', async () => {
-  const proOnly = ['gpt-6-luna', 'muse-spark-1.3-contributor', 'wz/gpt-6-luna', 'wz/deepseek-v4.1-flash'];
+  const proOnly = [
+    'gpt-6-luna', 'muse-spark-1.3-contributor', 'wz/gpt-6-luna', 'wz/deepseek-v4.1-flash',
+    // Spesifikasi final 2026-11-22 01:37 — hanya di rantai pro ('advanced' + 'ded'):
+    'ag/gemini-3.8-flash-high', 'mv/mistral-medium-3-5',
+  ];
   for (const model of proOnly) {
     eq(maskUsageHistoryModel({ model }), EZRAB_MODEL_PRO, `pro-only ${model}`);
   }
@@ -288,13 +291,18 @@ await test('d3: maskUsageHistoryModel — fallback nama model (pro/flash-only, a
     'deepseek-ai/DeepSeek-V4.1-Flash',
     'nvidia/NVIDIA-Nemotron-3.5-Super-VL-120B-A12B-NVFP4',
     'Atria-Dawn-Preview', 'gemini-3.8-flash',
+    // Spesifikasi final 2026-11-22 01:37 — hanya di rantai flash ('chat' + 'docai' + 'fast'):
+    'deepseek-ai/DeepSeek-V4-Flash-0731', 'deepseek-ai/DeepSeek-V4.1-Flash-1017',
+    'mm/MiniMax-M3.1-Flash', 'zai/glm-5.3-flash',
   ];
   for (const model of flashOnly) {
     eq(maskUsageHistoryModel({ model }), EZRAB_MODEL_FLASH, `flash-only ${model}`);
   }
   const ambiguous = [
     'cx/gpt-6-luna', 'gemini-3.5-flash-lite', 'deepseek-v4.1-flash',
-    'geminiflash-3.8', 'ag/gemini-3.8-flash-high',
+    'geminiflash-3.8',
+    // 'ag/gemini-3.8-flash-high' KELUAR dari daftar ambigu 2026-11-22:
+    // kini pro-only (hanya di rantai 'advanced' + 'ded').
   ];
   for (const model of ambiguous) {
     eq(maskUsageHistoryModel({ model }), null, `ambigu ${model} -> null (jangan tebak tier)`);
@@ -308,6 +316,7 @@ await test('d3: maskUsageHistoryModel — fallback nama model (pro/flash-only, a
 await test('d4: modelAliasForMode — pemetaan mode ke alias', async () => {
   eq(modelAliasForMode('fast'), EZRAB_MODEL_FLASH, 'fast -> flash');
   eq(modelAliasForMode('chat'), EZRAB_MODEL_FLASH, 'chat -> flash');
+  eq(modelAliasForMode('docai'), EZRAB_MODEL_FLASH, 'docai -> flash (mode baru 2026-11-22)');
   eq(modelAliasForMode('vision'), EZRAB_MODEL_FLASH, 'vision -> flash');
   eq(modelAliasForMode('advanced'), EZRAB_MODEL_PRO, 'advanced -> pro');
   eq(modelAliasForMode('ded'), EZRAB_MODEL_PRO, 'ded -> pro');
@@ -316,7 +325,6 @@ await test('d4: modelAliasForMode — pemetaan mode ke alias', async () => {
 
 // --- (e) replay idempotency menyajikan body termasking ---
 await test('e: replay idempotency menyajikan body TERMASKING (tanpa panggil provider lagi)', async () => {
-  await withWeizeKey(async () => {
   const h = { 'idempotency-key': 'idem-key-mask-client' };
   fetchCalls = 0;
   const r1 = mockRes();
@@ -338,7 +346,6 @@ await test('e: replay idempotency menyajikan body TERMASKING (tanpa panggil prov
   ok(!('attempts' in r2.body), 'replay: tanpa attempts[]');
   ok(!('source' in r2.body.usage), 'replay: tanpa usage.source');
   assertNoRealNames(JSON.stringify(r2.body), 'body replay');
-  });
 });
 
 // --- (f) pindaian string tampil atas file display program ini ---

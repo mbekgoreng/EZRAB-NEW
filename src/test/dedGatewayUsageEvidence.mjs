@@ -23,7 +23,10 @@ delete process.env.AI_GATEWAY_TOKEN;
 delete process.env.SUPABASE_URL;
 delete process.env.SUPABASE_SECRET_KEY;
 delete process.env.SUPABASE_ANON_KEY;
-process.env.GEMINI_API_KEY_1 = 'dummy-sprint5-key';
+process.env.ATMO_API_KEY = 'dummy-sprint5-atmo';
+// (Dulu: hanya key Gemini dummy — kaki Gemini native dicabut dari semua
+// rantai 2026-11-22, spesifikasi final owner 01:37. Mode 'advanced' kini
+// Atmo-only (cx -> ag -> mv); usage dibuktikan lewat payload OAI.)
 
 let failures = 0;
 const test = async (name, fn) => {
@@ -51,25 +54,29 @@ function mockRes() {
   };
 }
 
-// Respons Gemini stub yang bisa dikonfigurasi per skenario.
-let geminiPayload = null;
+// Respons OAI stub yang bisa dikonfigurasi per skenario (adapter
+// callOAI: prompt_tokens/completion_tokens/total_tokens +
+// prompt_tokens_details.cached_tokens).
+let oaiPayload = null;
 globalThis.fetch = async () => ({
   ok: true,
-  json: async () => geminiPayload,
+  json: async () => oaiPayload,
 });
-const geminiWith = (text, usageMetadata) => ({
-  candidates: [{ content: { parts: [{ text }] } }],
-  ...(usageMetadata !== undefined ? { usageMetadata } : {}),
+const oaiWith = (text, usage) => ({
+  choices: [{ message: { content: text } }],
+  ...(usage !== undefined ? { usage } : {}),
+});
+const u = (prompt_tokens, completion_tokens, total_tokens, cached_tokens) => ({
+  prompt_tokens, completion_tokens, total_tokens,
+  ...(cached_tokens !== undefined ? { prompt_tokens_details: { cached_tokens } } : {}),
 });
 
-// Mode 'advanced' (mode 'fast' WeizeRouter-dulu + fallback Crown sejak
-// 2026-11-20 — suite ini membuktikan usage Gemini, dan Gemini hanya ada
-// di rantai chat/advanced/vision; 'advanced' dapat dijangkau lewat body,
-// 'chat' tidak — validateAiInput meng-clamp mode tak dikenal ke 'fast').
+// Mode 'advanced' (dapat dijangkau lewat body — validateAiInput
+// meng-clamp mode tak dikenal ke 'fast'; 'advanced' lolos).
 const body = { message: 'analisis dokumen ini', mode: 'advanced' };
 
-await test('G1: usage Gemini valid selamat melewati batas HTTP (X1) — termasking', async () => {
-  geminiPayload = geminiWith('hasil analisis', { promptTokenCount: 1200, candidatesTokenCount: 300, totalTokenCount: 1500, cachedContentTokenCount: 200 });
+await test('G1: usage Atmo valid selamat melewati batas HTTP (X1) — termasking', async () => {
+  oaiPayload = oaiWith('hasil analisis', u(1200, 300, 1500, 200));
   const r = mockRes();
   await handleAiRequest(mockReq({ body }), r);
   eq(r.statusCode, 200, 'status');
@@ -85,17 +92,17 @@ await test('G1: usage Gemini valid selamat melewati batas HTTP (X1) — termaski
   eq(r.body.content, 'hasil analisis', 'field lama utuh');
   eq(r.body.provider, 'ezrab', 'provider disamarkan');
   eq(r.body.model, 'Ezrab-pro', 'model mode advanced -> alias pro');
-  ok(!JSON.stringify(r.body).includes('gemini'), 'nama model/provider asli tidak ada di body');
+  ok(!JSON.stringify(r.body).includes('atmo'), 'nama model/provider asli tidak ada di body');
 });
 
 await test('G2: nol terukur eksplisit != usage hilang (X4 state 1 vs 3)', async () => {
-  geminiPayload = geminiWith('nol', { promptTokenCount: 0, candidatesTokenCount: 0, totalTokenCount: 0 });
+  oaiPayload = oaiWith('nol', u(0, 0, 0));
   const r = mockRes();
   await handleAiRequest(mockReq({ body }), r);
   eq(r.statusCode, 200, 'status');
   eq(r.body.usageStatus, 'measured_zero', 'nol terukur berstatus measured_zero');
   eq(r.body.usage.inputTokens, 0, 'nol dipertahankan sebagai 0');
-  geminiPayload = geminiWith('tanpa usage', undefined);
+  oaiPayload = oaiWith('tanpa usage', undefined);
   const r2 = mockRes();
   await handleAiRequest(mockReq({ body }), r2);
   eq(r2.statusCode, 200, 'status 2');
@@ -104,9 +111,9 @@ await test('G2: nol terukur eksplisit != usage hilang (X4 state 1 vs 3)', async 
 });
 
 await test('G3: respons kosong DENGAN usage -> failover sukses, usage final = attempt sukses SAJA (X4 state 6)', async () => {
-  // Attempt Gemini pertama: HTTP 200, teks kosong, usage terukur.
+  // Attempt Atmo pertama (cx, key polos): HTTP 200, teks kosong, usage terukur.
   // Attempt kedua (key sama dicoba ulang oleh rantai? tidak — rantai
-  // pindah provider; di sini key Gemini kedua tidak ada, jadi stub
+  // pindah ke key/model berikutnya; di sini key Atmo kedua dipasang, jadi stub
   // dibuat bergantian: panggilan fetch pertama kosong, kedua sukses).
   // MASKING (2026-11-16): bukti per-attempt (usage attempt gagal +
   // errorClass) TIDAK LAGI melewati batas HTTP — attempts[] dihapus
@@ -117,14 +124,14 @@ await test('G3: respons kosong DENGAN usage -> failover sukses, usage final = at
   let call = 0;
   globalThis.fetch = async () => {
     call++;
-    if (call === 1) return { ok: true, json: async () => geminiWith('', { promptTokenCount: 500, candidatesTokenCount: 0, totalTokenCount: 500 }) };
-    return { ok: true, json: async () => geminiWith('sukses kedua', { promptTokenCount: 700, candidatesTokenCount: 100, totalTokenCount: 800 }) };
+    if (call === 1) return { ok: true, json: async () => oaiWith('', u(500, 0, 500)) };
+    return { ok: true, json: async () => oaiWith('sukses kedua', u(700, 100, 800)) };
   };
-  process.env.GEMINI_API_KEY_2 = 'dummy-sprint5-key-2';
+  process.env.ATMO_API_KEY_1 = 'dummy-sprint5-atmo-2';
   const r = mockRes();
   await handleAiRequest(mockReq({ body }), r);
-  delete process.env.GEMINI_API_KEY_2;
-  globalThis.fetch = async () => ({ ok: true, json: async () => geminiPayload });
+  delete process.env.ATMO_API_KEY_1;
+  globalThis.fetch = async () => ({ ok: true, json: async () => oaiPayload });
   eq(r.statusCode, 200, 'status');
   eq(r.body.content, 'sukses kedua', 'konten dari attempt final');
   eq(r.body.usage.inputTokens, 700, 'usage final = attempt sukses SAJA (bukan 500+700)');
@@ -132,14 +139,14 @@ await test('G3: respons kosong DENGAN usage -> failover sukses, usage final = at
 });
 
 await test('G4: field sensitif tidak pernah terekspos di respons', async () => {
-  geminiPayload = geminiWith('aman', { promptTokenCount: 10, candidatesTokenCount: 5, totalTokenCount: 15 });
+  oaiPayload = oaiWith('aman', u(10, 5, 15));
   const r = mockRes();
   await handleAiRequest(mockReq({ body }), r);
   const wire = JSON.stringify(r.body);
-  ok(!wire.includes('dummy-sprint5-key'), 'API key tidak bocor');
+  ok(!wire.includes('dummy-sprint5-atmo'), 'API key tidak bocor');
   ok(!/authorization/i.test(wire), 'header otorisasi tidak bocor');
   ok(!('attempts' in r.body), 'attempts[] tidak dikirim');
-  ok(!wire.includes('gemini-3.5-flash-lite'), 'nama model asli tidak bocor');
+  ok(!wire.includes('cx/gpt-6-luna'), 'nama model asli tidak bocor');
 });
 
 await test('G5: sanitizeUsageForClient — malformed tidak menjadi token karangan', async () => {
@@ -171,14 +178,14 @@ await test('G6: sanitizeAttemptForClient membuang teks error mentah + menyamarka
 });
 
 await test('G7: mode advanced -> alias Ezrab-pro (masking per-mode)', async () => {
-  geminiPayload = geminiWith('mendalam', { promptTokenCount: 10, candidatesTokenCount: 5, totalTokenCount: 15 });
+  oaiPayload = oaiWith('mendalam', u(10, 5, 15));
   const r = mockRes();
   await handleAiRequest(mockReq({ body: { message: 'analisis mendalam', mode: 'advanced' } }), r);
   eq(r.statusCode, 200, 'status');
   eq(r.body.model, 'Ezrab-pro', 'model mode advanced -> alias pro');
   eq(r.body.provider, 'ezrab', 'provider disamarkan');
   eq(r.body.mode, 'advanced', 'mode dipertahankan');
-  ok(!JSON.stringify(r.body).includes('gemini'), 'nama asli tidak ada di body');
+  ok(!JSON.stringify(r.body).includes('gpt-6-luna'), 'nama asli tidak ada di body');
 });
 
 console.log(failures === 0 ? '\nSEMUA LULUS' : `\n${failures} GAGAL`);

@@ -23,6 +23,8 @@ import { documentStudioOrchestrator } from '../orchestrator';
 import type { EnhanceTransform } from '../types';
 import type { DraftRecord } from '../view';
 import { ENHANCE_ACTIONS, rangeTextStillMatches, selectionBlockReason } from './enhanceActions';
+import { useCreditSimulation } from '../../../ai-credits/useCreditSimulation';
+import { tariffFor } from '../../../ai-credits/config';
 
 interface CapturedSelection {
   text: string;
@@ -51,7 +53,16 @@ export const DocEnhance: React.FC<{
     candidateText: string,
     note: string,
   ) => Promise<void>;
-}> = ({ draft, getEditor, onApplyEnhance }) => {
+  /**
+   * Gerbang paket (audit DocAI 2026-11-22): transformasi AI sebelumnya
+   * tanpa gerbang sama sekali — paket terkunci (Free/Starter) bisa
+   * memanggil ENHANCE_TEXT dari editor. Diteruskan DocCreator; default
+   * true = perilaku lama bila pemanggil tidak memberi gerbang.
+   */
+  docAiAllowed?: boolean;
+  docAiLockedMsg?: string;
+}> = ({ draft, getEditor, onApplyEnhance, docAiAllowed = true, docAiLockedMsg = '' }) => {
+  const { consume } = useCreditSimulation();
   const [captured, setCaptured] = useState<CapturedSelection | null>(null);
   const [captureNote, setCaptureNote] = useState<string | null>(null);
   const [instruction, setInstruction] = useState('');
@@ -102,6 +113,10 @@ export const DocEnhance: React.FC<{
 
   const runTransform = async (params: RunParams) => {
     if (!captured || blockReason) return;
+    if (!docAiAllowed) {
+      setError(docAiLockedMsg || 'Fitur AI Document terkunci untuk paket Anda.');
+      return;
+    }
     if (params.transform === 'bebas' && !params.instruction.trim()) {
       setError('Transformasi "Tulis ulang dengan instruksi sendiri" membutuhkan instruksi — tulis dulu arahannya pada kolom instruksi bebas.');
       return;
@@ -124,6 +139,10 @@ export const DocEnhance: React.FC<{
       const label = ENHANCE_ACTIONS.find((a) => a.transform === params.transform)?.label ?? params.transform;
       setCandidate({ text: res.content || '', transform: params.transform, label });
       setLastRun(params);
+      // --- AI Credits: catat pemakaian SIMULASI (audit DocAI 2026-11-22:
+      // enhance sebelumnya tidak memotong kredit). Kategori simple —
+      // suntingan satu rentang terpilih. ---
+      consume('ai-document', tariffFor('ai-document/simple').max, `AI Document (enhance): ${draft.title.slice(0, 50)}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Penyempurnaan teks gagal.');
     } finally {
@@ -197,6 +216,12 @@ export const DocEnhance: React.FC<{
         </button>
       </div>
 
+      {!docAiAllowed && docAiLockedMsg && (
+        <div className="docai-warn" role="alert">
+          <AlertTriangle size={13} /> {docAiLockedMsg}
+        </div>
+      )}
+
       {captureNote && <div className="docai-warn">{captureNote}</div>}
 
       {captured && (
@@ -222,11 +247,13 @@ export const DocEnhance: React.FC<{
             key={a.transform}
             className="docai-btn-ghost docai-mini"
             onClick={() => void runTransform({ transform: a.transform, instruction })}
-            disabled={!captured || !!blockReason || busy || applyBusy}
+            disabled={!captured || !!blockReason || busy || applyBusy || !docAiAllowed}
             title={
-              !captured
-                ? 'Ambil dulu teks terpilih dari editor'
-                : blockReason ?? `Jalankan: ${a.label}`
+              !docAiAllowed
+                ? docAiLockedMsg || 'Fitur AI Document terkunci untuk paket Anda.'
+                : !captured
+                  ? 'Ambil dulu teks terpilih dari editor'
+                  : blockReason ?? `Jalankan: ${a.label}`
             }
           >
             {busyTransform === a.transform ? <Loader2 size={13} className="spin" /> : <Sparkles size={13} />}{' '}

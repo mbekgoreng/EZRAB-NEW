@@ -95,8 +95,10 @@ export function deriveChatFastFeatureKey(input) {
     return CHAT_FAST_FEATURE_KEY;
   }
   if (mode === 'fast' || mode == null || mode === '') {
-    // Rantai fast dipakai bersama DED/Dokumen/generik — hanya EZRAB_AI
-    // yang terbukti Chat FAST.
+    // Rantai fast dipakai bersama DED Cepat/generik/mode tak dikenal —
+    // hanya EZRAB_AI yang terbukti Chat FAST. (Document AI TIDAK lagi
+    // lewat sini: sejak 2026-11-22 ia memakai mode 'docai' sendiri dan
+    // jatuh ke `return null` di bawah — benar, DocAI bukan Chat FAST.)
     return productId === CHAT_FAST_PRODUCT_ID ? CHAT_FAST_FEATURE_KEY : null;
   }
   return null;

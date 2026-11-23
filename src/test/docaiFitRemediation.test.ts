@@ -151,7 +151,10 @@ async function main() {
   check('kolom compose + konteks masing-masing sekali', count(creator, '<div className="docai-col-compose">') === 1 && count(creator, '<div className="docai-col-context">') === 1);
   check('tombol generate tidak terduplikasi', count(creator, 'docai-btn-primary docai-runbtn') === 1);
   check('panel konteks tidak terduplikasi', count(creator, '<DocContextPanel') === 1);
-  check('gerbang generate tidak berubah', creator.includes("if (!docAiAllowed && createMode === 'ai') { setError(docAiLockedMsg); return; }"));
+  // Audit DocAI 2026-11-22 (D4): pin lama mengunci pengecualian mode-form
+  // (gerbang hanya mode AI) — pengecualian itu adalah celah: generate mode
+  // form memanggil AI yang sama. Gerbang kini tanpa syarat mode.
+  check('gerbang generate tanpa syarat mode (celah form ditutup)', creator.includes("if (!docAiAllowed) { setError(docAiLockedMsg); return; }") && !creator.includes("if (!docAiAllowed && createMode === 'ai')"));
 
   console.log(`\nHasil: ${passed} lolos, ${failed} gagal`);
   if (failed > 0) { console.log('GAGAL:', failures.join(' | ')); process.exit(1); }

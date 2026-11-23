@@ -116,6 +116,30 @@ ATURAN WAJIB:
 5. KONFLIK DI DALAM DOKUMEN: Jika dokumen memuat nilai atau fakta yang saling bertentangan antar-bagian (misalnya dua nilai kontrak, tanggal, atau nama yang berbeda di halaman awal dan halaman akhir), tampilkan SEMUA versi yang bertentangan beserta lokasinya di dokumen, tandai secara eksplisit sebagai KONFLIK, dan minta klarifikasi kepada pengguna. JANGAN memilih salah satu secara diam-diam dan jangan menggabungkan keduanya.
 6. BAGIAN TIDAK TERBACA: Jika sebagian teks rusak atau tidak terbaca wajar (karakter acak, angka terpotong, hasil pindaian/ekstraksi buram), tandai bagian itu sebagai "tidak terbaca — perlu verifikasi" dan JANGAN menebak isinya. Ini berbeda dari informasi yang memang tidak tercantum (aturan 2): yang tidak terbaca pernah ada tetapi tidak dapat dipastikan isinya.`;
 
+/**
+ * Instruksi bahasa jawaban untuk mode ANALISIS (audit DocAI 2026-11-22).
+ * '' untuk 'id'/absen (system prompt sudah berbahasa Indonesia); untuk
+ * bahasa lain, satu baris tegas di akhir system prompt. Nama bahasa
+ * disebut dalam Bahasa Indonesia + nama aslinya agar model tidak salah
+ * bahasa. Dipakai service.executeAi — BUKAN untuk DRAFT (dokumen resmi
+ * tetap Indonesia) atau TRANSLATE (punya targetLanguage sendiri).
+ */
+export function responseLanguageInstruction(
+  language: 'id' | 'en' | 'zh' | 'ms' | undefined,
+): string {
+  switch (language) {
+    case 'en':
+      return '\n\nBAHASA JAWABAN: Tulis SELURUH jawaban dalam Bahasa Inggris (English) — bukan Bahasa Indonesia. Kutipan dari dokumen boleh tetap dalam bahasa aslinya, tetapi penjelasan, ringkasan, dan struktur jawaban memakai Bahasa Inggris.';
+    case 'zh':
+      return '\n\nBAHASA JAWABAN: Tulis SELURUH jawaban dalam Bahasa Mandarin Sederhana (Simplified Chinese, 简体中文) — bukan Bahasa Indonesia. Kutipan dari dokumen boleh tetap dalam bahasa aslinya, tetapi penjelasan, ringkasan, dan struktur jawaban memakai Bahasa Mandarin Sederhana.';
+    case 'ms':
+      return '\n\nBAHASA JAWABAN: Tulis SELURUH jawaban dalam Bahasa Melayu (Malay) — bukan Bahasa Indonesia. Kutipan dari dokumen boleh tetap dalam bahasa aslinya, tetapi penjelasan, ringkasan, dan struktur jawaban memakai Bahasa Melayu.';
+    case 'id':
+    default:
+      return '';
+  }
+}
+
 export function systemForMode(mode: 'SUMMARY' | 'QA' | 'EXTRACT' | 'COMPARE' | 'CHAT' | 'CHECKLIST' | 'DRAFT' | 'ENHANCE' | 'TRANSLATE'): string {
   const base = DOKUMEN_AI_SYSTEM_BASE;
   switch (mode) {

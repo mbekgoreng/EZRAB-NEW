@@ -719,13 +719,20 @@ async function runIntegration(): Promise<void> {
 // GATEWAY (6G) — handler ASLI vs transport provider STUB (HTTP nyata)
 // ---------------------------------------------------------------------------
 
-function setProviderKeys(opts: { crown?: boolean; gemini?: boolean }): void {
+// (Opsi gemini DIHAPUS 2026-11-22 — kaki Gemini native dicabut dari semua
+// rantai, spesifikasi final owner 01:37; diganti river + atmo.)
+function setProviderKeys(opts: { crown?: boolean; river?: boolean; atmo?: boolean }): void {
   delete process.env.CROWN_API_KEY;
   for (let i = 1; i <= 4; i++) delete process.env[`CROWN_API_KEY_${i}`];
+  delete process.env.RIVER_API_KEY;
+  for (let i = 1; i <= 10; i++) delete process.env[`RIVER_API_KEY_${i}`];
+  delete process.env.ATMO_API_KEY;
+  for (let i = 1; i <= 4; i++) delete process.env[`ATMO_API_KEY_${i}`];
   delete process.env.GEMINI_API_KEY;
   for (let i = 1; i <= 6; i++) delete process.env[`GEMINI_API_KEY_${i}`];
   if (opts.crown) process.env.CROWN_API_KEY = STUB_DUMMY_KEY;
-  if (opts.gemini) process.env.GEMINI_API_KEY_1 = STUB_DUMMY_KEY;
+  if (opts.river) process.env.RIVER_API_KEY_1 = STUB_DUMMY_KEY;
+  if (opts.atmo) process.env.ATMO_API_KEY = STUB_DUMMY_KEY;
 }
 
 function mockReq(body: unknown, opts: { ip?: string; idemKey?: string } = {}): any {
@@ -784,16 +791,16 @@ async function runGateway(): Promise<void> {
     assert(!JSON.stringify(body).includes('crown') && !JSON.stringify(body).includes('MiniMax') && !JSON.stringify(body).includes('GLM') && !JSON.stringify(body).includes('DeepSeek'), 'nama asli tidak ada di body');
     assert(providerCalls() - mark === 1, 'tepat 1 panggilan provider stub');
   });
-  await check('6G-02 STUB (f) provider 5xx semua kaki: rantai 3 attempt errorClass server → 502 ke klien', async () => {
-    setProviderKeys({ crown: true });
+  await check('6G-02 STUB (f) provider 5xx semua kaki: rantai 4 attempt errorClass server → 502 ke klien', async () => {
+    setProviderKeys({ crown: true, river: true, atmo: true });
     setStubBScenario('server-error');
     const mark = providerCalls();
     const direct = await gw.executeAI({ message: 'halo stub', mode: 'chat' });
     assert(direct.ok === false, 'executeAI gagal');
-    assert(Array.isArray(direct.attempts) && direct.attempts.length === 3, `3 attempt (dapat ${direct.attempts?.length})`);
-    assert(direct.attempts.every((a: any) => a.errorClass === 'server'), 'ketiga attempt errorClass server');
-    assert(direct.attempts.map((a: any) => a.model).join('|') === 'zai-org/GLM-5.3-Flash|deepseek-ai/DeepSeek-V4-Flash-0731|MiniMaxAI/MiniMax-M2.7', 'ketiga model Crown urutan owner (GLM -> DeepSeek -> MiniMax)');
-    assert(providerCalls() - mark === 3, '3 panggilan provider stub (ketiga kaki Crown dicoba)');
+    assert(Array.isArray(direct.attempts) && direct.attempts.length === 4, `4 attempt (dapat ${direct.attempts?.length})`);
+    assert(direct.attempts.every((a: any) => a.errorClass === 'server'), 'keempat attempt errorClass server');
+    assert(direct.attempts.map((a: any) => a.model).join('|') === 'deepseek-ai/DeepSeek-V4-Flash-0731|deepseek-ai/DeepSeek-V4.1-Flash-1017|mm/MiniMax-M3.1-Flash|zai/glm-5.3-flash', 'keempat kaki chat urutan spesifikasi final (Crown -> River -> Atmo mm -> Atmo zai)');
+    assert(providerCalls() - mark === 4, '4 panggilan provider stub (keempat kaki chat dicoba)');
     const req = mockReq(gatewayBody(), { ip: '10.99.6.2' });
     const res = mockRes();
     await executeHandler(req, res);
@@ -801,7 +808,7 @@ async function runGateway(): Promise<void> {
     assert(JSON.parse(res.body).error === 'AI sedang tidak tersedia.', 'pesan 502 generik ke klien');
   });
   await check('6G-03 STUB (e→failover) 429 kaki-1 lalu sukses kaki-2: failover MENYAMARKAN rate limit menjadi sukses', async () => {
-    setProviderKeys({ crown: true });
+    setProviderKeys({ crown: true, river: true });
     setStubBScenario(['rate-limit', 'valid']);
     const direct = await gw.executeAI({ message: 'halo stub', mode: 'chat' });
     assert(direct.ok === true, 'executeAI sukses lewat failover');
@@ -935,20 +942,18 @@ async function runGateway(): Promise<void> {
     const body = JSON.parse(res.body);
     assert(body.content === '[STUB-GATE6] Jawaban stub SSE deterministik.', `konten tergabung (dapat: ${JSON.stringify(body.content)})`);
   });
-  await check('6G-12 STUB failover ANTAR-provider: Crown 500 → Gemini native sukses (urutan rantai terbukti)', async () => {
-    setProviderKeys({ crown: true, gemini: true });
-    setStubBScenario({ crown: 'server-error', gemini: 'valid' });
+  await check('6G-12 STUB failover ANTAR-provider: Crown 500 → River 1017 sukses (urutan rantai terbukti)', async () => {
+    setProviderKeys({ crown: true, river: true });
+    setStubBScenario({ crown: 'server-error', river: 'valid' });
     const mark = providerCalls();
     const direct = await gw.executeAI({ message: 'halo stub', mode: 'chat' });
-    assert(direct.ok === true, 'executeAI sukses lewat Gemini');
-    assert(direct.provider === 'gemini', `provider pelayan: ${direct.provider}`);
-    assert(direct.model === 'gemini-3.5-flash-lite', `model pelayan: ${direct.model}`);
-    assert(direct.attempts.length === 4, `4 attempt (dapat ${direct.attempts.length})`);
-    assert(direct.attempts[0].provider === 'crown' && direct.attempts[0].model === 'zai-org/GLM-5.3-Flash' && direct.attempts[0].errorClass === 'server', 'attempt 1 Crown GLM 500');
-    assert(direct.attempts[1].provider === 'crown' && direct.attempts[1].model === 'deepseek-ai/DeepSeek-V4-Flash-0731' && direct.attempts[1].errorClass === 'server', 'attempt 2 Crown DeepSeek 500');
-    assert(direct.attempts[2].provider === 'crown' && direct.attempts[2].model === 'MiniMaxAI/MiniMax-M2.7' && direct.attempts[2].errorClass === 'server', 'attempt 3 Crown MiniMax 500');
-    assert(direct.attempts[3].provider === 'gemini' && direct.attempts[3].ok === true, 'attempt 4 Gemini sukses');
-    assert(providerCalls() - mark === 4, '4 panggilan provider stub');
+    assert(direct.ok === true, 'executeAI sukses lewat River');
+    assert(direct.provider === 'river-flash', `provider pelayan: ${direct.provider}`);
+    assert(direct.model === 'deepseek-ai/DeepSeek-V4.1-Flash-1017', `model pelayan: ${direct.model}`);
+    assert(direct.attempts.length === 2, `2 attempt (dapat ${direct.attempts.length})`);
+    assert(direct.attempts[0].provider === 'crown' && direct.attempts[0].model === 'deepseek-ai/DeepSeek-V4-Flash-0731' && direct.attempts[0].errorClass === 'server', 'attempt 1 Crown V4 500');
+    assert(direct.attempts[1].provider === 'river-flash' && direct.attempts[1].ok === true, 'attempt 2 River 1017 sukses');
+    assert(providerCalls() - mark === 2, '2 panggilan provider stub');
   });
   await check('6G-13 STUB replay ter-scope pemanggil: kunci sama dari IP BERBEDA → provider dipanggil lagi', async () => {
     setProviderKeys({ crown: true });
@@ -976,7 +981,7 @@ async function runGateway(): Promise<void> {
     const res2 = mockRes();
     await executeHandler(req2, res2);
     assert(res2.statusCode === 200, `kedua 200 — kegagalan tidak di-cache (dapat ${res2.statusCode})`);
-    assert(providerCalls() - mark === 4, `4 panggilan provider (3 gagal + 1 sukses; dapat ${providerCalls() - mark})`);
+    assert(providerCalls() - mark === 2, `2 panggilan provider (1 gagal + 1 sukses — Crown kini 1 kaki; dapat ${providerCalls() - mark})`);
   });
 }
 

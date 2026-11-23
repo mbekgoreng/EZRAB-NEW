@@ -6,6 +6,14 @@
 
 export type DocAiMode = 'SUMMARY' | 'QA' | 'EXTRACT' | 'COMPARE' | 'CHAT' | 'CHECKLIST' | 'DRAFT' | 'ENHANCE' | 'TRANSLATE';
 
+/** Bahasa jawaban AI (mengikuti bahasa antarmuka — id | en | zh | ms,
+ *  sama dengan `Lang` di i18n/I18nContext; diduplikasi di sini agar modul
+ *  service tidak bergantung pada konteks React). Hanya memengaruhi mode
+ *  ANALISIS (SUMMARY/QA/CHAT/EXTRACT/COMPARE/CHECKLIST) — DRAFT tetap
+ *  berbahasa Indonesia (dokumen resmi konstruksi Indonesia),
+ *  TRANSLATE memakai targetLanguage-nya sendiri. */
+export type DocAiResponseLanguage = 'id' | 'en' | 'zh' | 'ms';
+
 export type ChatTurn = { role: 'user' | 'ai'; text: string };
 
 export type DokumenAiChatRequest = {
@@ -16,6 +24,14 @@ export type DokumenAiChatRequest = {
   /** Riwayat percakapan untuk QA kontekstual (maks beberapa turn terakhir). */
   history?: ChatTurn[];
   timeoutMs?: number;
+  /**
+   * Bahasa jawaban AI (audit DocAI 2026-11-22: pengaturan "Bahasa Dokumen
+   * & Hasil" di DocLibrary menjanjikan ringkasan/jawaban mengikuti bahasa
+   * antarmuka, tetapi bahasa tidak pernah dikirim ke AI). Diisi pemanggil
+   * dari bahasa antarmuka; absen/'id' = perilaku lama (Indonesia).
+   * Hanya dipakai mode ANALISIS — lihat DocAiResponseLanguage.
+   */
+  language?: DocAiResponseLanguage;
   /**
    * Mode ENHANCE: teks TARGET yang disunting (rentang terpilih atau seluruh
    * dokumen bila pemanggil memintanya). Hanya teks ini yang dikirim ke

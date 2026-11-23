@@ -12,6 +12,13 @@
  * generate/ekspor/editor didelegasikan ke DocCreator lewat props, sehingga
  * funnel memakai jalur yang sama persis dengan form lama — termasuk ekspor
  * PDF formal (paperExport.ts) dan panel Poles/Revisi di editor.
+ *
+ * Tombol AI langkah 3 (audit DocAI 2026-11-22): menyempurnakan prompt
+ * dengan AI SUNGGUHAN lewat prop onEnhancePrompt (DocCreator →
+ * orchestrator ENHANCE_TEXT) bila tersedia + paket mengizinkan; bila
+ * tidak, jatuh ke bingkai deterministik enhanceFunnelPrompt (tanpa
+ * panggilan berbayar). Sebelum perbaikan ini tombol berlabel AI tetapi
+ * SELALU deterministik — janji AI yang tidak ditepati.
  */
 import React, { useMemo, useState } from 'react';
 import {
@@ -45,9 +52,20 @@ export type FunnelGenerateResult =
   | { ok: true; draft: DraftRecord; html: string }
   | { ok: false; error: string };
 
+/** Hasil penyempurnaan prompt langkah 3 lewat AI (DocCreator). */
+export type FunnelEnhancePromptResult =
+  | { ok: true; text: string }
+  | { ok: false; error: string };
+
 export interface DocFunnelProps {
   /** Generate draf lewat mesin DocCreator (orchestrator CREATE_DOCUMENT). */
   onGenerate: (req: FunnelGenerateRequest) => Promise<FunnelGenerateResult>;
+  /**
+   * Sempurnakan custom prompt dengan AI (DocCreator → ENHANCE_TEXT).
+   * Opsional: bila tidak diberikan (atau paket terkunci), tombol AI memakai
+   * bingkai deterministik enhanceFunnelPrompt sebagai fallback.
+   */
+  onEnhancePrompt?: (prompt: string, docLabel: string) => Promise<FunnelEnhancePromptResult>;
   /** Ekspor draf aktif — fungsi yang sama dengan tombol editor (doExport). */
   onExport: (kind: 'pdf' | 'docx') => void;
   /** Buka draf aktif di editor (panel Poles Dokumen & Revisi ada di sana). */
@@ -87,6 +105,7 @@ const CATEGORY_DESCS: Record<FunnelCategoryId, string> = {
 
 export const DocFunnel: React.FC<DocFunnelProps> = ({
   onGenerate,
+  onEnhancePrompt,
   onExport,
   onOpenInEditor,
   onNavigateToMenu,
@@ -105,6 +124,10 @@ export const DocFunnel: React.FC<DocFunnelProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [doneDraft, setDoneDraft] = useState<DraftRecord | null>(null);
   const [doneHtml, setDoneHtml] = useState('');
+  /** Penyempurnaan prompt AI sedang berjalan (tombol AI langkah 3). */
+  const [enhanceBusy, setEnhanceBusy] = useState(false);
+  /** Catatan bila AI tidak tersedia dan fallback deterministik dipakai. */
+  const [enhanceNote, setEnhanceNote] = useState<string | null>(null);
 
   const choices = useMemo(
     () => (category ? funnelChoicesFor(category) : []),
@@ -141,12 +164,37 @@ export const DocFunnel: React.FC<DocFunnelProps> = ({
     setStep(3);
   };
 
-  /** Tombol AI (ikon Sparkles): kotak kosong → isi contoh (bila ada); terisi → sempurnakan. */
-  const handleEnhance = () => {
-    if (!choice) return;
+  /**
+   * Tombol AI (ikon Sparkles): kotak kosong → isi contoh (bila ada);
+   * terisi → sempurnakan dengan AI SUNGGUHAN bila tersedia + paket
+   * mengizinkan (onEnhancePrompt), bila tidak → bingkai deterministik
+   * enhanceFunnelPrompt dengan catatan jujur.
+   */
+  const handleEnhance = async () => {
+    if (!choice || enhanceBusy) return;
     if (!prompt.trim()) {
       if (example) setPrompt(example);
       return;
+    }
+    setEnhanceNote(null);
+    if (onEnhancePrompt && docAiAllowed) {
+      setEnhanceBusy(true);
+      try {
+        const res = await onEnhancePrompt(prompt.trim(), choice.label);
+        if (res.ok && res.text.trim()) {
+          setPrompt(res.text.trim().slice(0, FUNNEL_PROMPT_MAX));
+          return;
+        }
+        setEnhanceNote(
+          res.ok
+            ? 'AI mengembalikan hasil kosong — prompt dibingkai otomatis sebagai gantinya.'
+            : `AI tidak tersedia (${res.error}) — prompt dibingkai otomatis sebagai gantinya.`,
+        );
+      } catch {
+        setEnhanceNote('AI tidak tersedia — prompt dibingkai otomatis sebagai gantinya.');
+      } finally {
+        setEnhanceBusy(false);
+      }
     }
     const enhanced = enhanceFunnelPrompt(prompt, choice.label);
     if (enhanced) setPrompt(enhanced);
@@ -326,10 +374,17 @@ export const DocFunnel: React.FC<DocFunnelProps> = ({
               <button
                 type="button"
                 className="docai-funnel-aibtn"
-                onClick={handleEnhance}
-                title={prompt.trim() ? 'Sempurnakan prompt ini dengan AI' : 'Isi dengan contoh'}
+                onClick={() => void handleEnhance()}
+                disabled={enhanceBusy}
+                title={
+                  !prompt.trim()
+                    ? 'Isi dengan contoh'
+                    : onEnhancePrompt && docAiAllowed
+                      ? 'Sempurnakan prompt ini dengan AI'
+                      : 'Susun prompt ini menjadi instruksi lengkap'
+                }
               >
-                <Sparkles size={14} /> AI
+                {enhanceBusy ? <Loader2 size={14} className="spin" /> : <Sparkles size={14} />} AI
               </button>
               <span className="docai-funnel-count" aria-live="polite">
                 {prompt.length}/{FUNNEL_PROMPT_MAX}
@@ -338,7 +393,13 @@ export const DocFunnel: React.FC<DocFunnelProps> = ({
           </div>
           <p className="docai-hint" style={{ textAlign: 'left' }}>
             Tombol AI menyempurnakan prompt Anda — hasilnya tetap dapat diubah manual.
+            Bila AI tidak tersedia, prompt dibingkai otomatis tanpa mengubah isinya.
           </p>
+          {enhanceNote && (
+            <div className="docai-warn" role="status" style={{ marginTop: 8 }}>
+              {enhanceNote}
+            </div>
+          )}
           {example && (
             <div className="docai-funnel-examples">
               <span className="docai-funnel-fieldlabel">Contoh</span>

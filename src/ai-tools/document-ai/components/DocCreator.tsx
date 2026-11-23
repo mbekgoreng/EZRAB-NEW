@@ -43,6 +43,7 @@ import { DocFunnel, type FunnelGenerateRequest, type FunnelGenerateResult } from
 import { formatFunnelDate } from '../funnel';
 import { documentStudioOrchestrator } from '../orchestrator';
 import { useCreditSimulation } from '../../../ai-credits/useCreditSimulation';
+import { tariffFor } from '../../../ai-credits/config';
 import { aiFeatureLockedMessage, planAllowsAiFeature } from '../../../ai-credits/featureGate';
 import { collectProjectContext, detectMissingFields } from '../contextAdapter';
 import { approveDraft, buildTranslatedDraft, deriveDisplayStatus, pushVersion, restoreVersion } from '../store';
@@ -153,11 +154,15 @@ export const DocCreator: React.FC<{
   onEmptyChange?: (isEmpty: boolean) => void;
 }> = ({ drafts, onUpsertDraft, onAddHistory, onNavigateToMenu, onOpenAnalysis, studioPath, subView, onSubViewChange, onEmptyChange }) => {
   const { t } = useI18n();
-  // Gerbang paket (simulasi): mode "Buat dengan AI" (generate bebas AI)
-  // mengikuti entitlement aiDocuments plans.ts — tertutup untuk Free &
-  // Starter. Mode Form Template mengikuti entitlement template (sumbu
-  // terpisah) dan tidak diubah di sini.
-  const { balance: creditBalance } = useCreditSimulation();
+  // Gerbang paket (simulasi): SELURUH generate mengikuti entitlement
+  // aiDocuments plans.ts — tertutup untuk Free & Starter. KOREKSI audit
+  // DocAI 2026-11-22: komentar lama membebaskan mode Form Template
+  // ("mengikuti entitlement template, sumbu terpisah") — padahal tombol
+  // generate mode form memanggil AI yang SAMA PERSIS (CREATE_DOCUMENT)
+  // dengan mode AI, sehingga pengguna Starter bisa generate draf AI
+  // lewat mode form. Gerbang kini berlaku di kedua mode (runGenerate),
+  // begitu pula terjemahan, Poles/Revisi, dan Sempurnakan Teks.
+  const { balance: creditBalance, consume } = useCreditSimulation();
   const docAiAllowed = planAllowsAiFeature(creditBalance.plan, 'ai-document');
   const docAiLockedMsg = aiFeatureLockedMessage(creditBalance.plan, 'ai-document');
   /* Fit remediation 2026-11-19 (Child 5): satu baris — kalimat pertama pesan
@@ -483,7 +488,11 @@ export const DocCreator: React.FC<{
   /* ---------------- generate (AI) via Document Studio Orchestrator ---------------- */
 
   const runGenerate = async (isRegen: boolean) => {
-    if (!docAiAllowed && createMode === 'ai') { setError(docAiLockedMsg); return; }
+    // Gerbang berlaku di KEDUA mode (audit DocAI 2026-11-22): generate
+    // mode form memanggil AI yang sama dengan mode AI — pengecualian
+    // `createMode === 'ai'` lama membiarkan paket terkunci generate
+    // lewat mode form.
+    if (!docAiAllowed) { setError(docAiLockedMsg); return; }
     setBusy(true);
     setError(null);
     setPending(null);
@@ -589,6 +598,11 @@ export const DocCreator: React.FC<{
       // Riwayat juga ditulis LANGSUNG ke localStorage agar bertahan
       // bila komponen ter-unmount sebelum efek tulis-ulang view jalan.
       recordHistoryDurable(historyEntry);
+      // --- AI Credits: catat pemakaian SIMULASI (audit DocAI 2026-11-22:
+      // generate sebelumnya tidak memotong kredit sama sekali, padahal
+      // analisis di DocAnalyzer memotong). Kategori complex — generate
+      // dokumen utuh, pola yang sama dengan DocAnalyzer. ---
+      consume('ai-document', tariffFor('ai-document/complex').max, `AI Document (generate): ${docName.slice(0, 50)}`);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : t('ai.doc.err_unexpected');
       if (genRunId != null) failDocAiGenerate(genRunId, msg);
@@ -596,6 +610,39 @@ export const DocCreator: React.FC<{
     } finally {
       if (genRunId != null && ownGenRunRef.current === genRunId) ownGenRunRef.current = null;
       setBusy(false);
+    }
+  };
+
+  /* ---------------- sempurnakan prompt funnel dengan AI (langkah 3) ---------------- */
+
+  /** Sempurnakan custom prompt funnel dengan AI SUNGGUHAN (audit DocAI
+      2026-11-22 — tombol AI langkah 3 sebelumnya hanya membingkai teks
+      secara deterministik). Lewat ENHANCE_TEXT mode ENHANCE (transformasi
+      'bebas' + instruksi): model memperbaiki bahasa prompt tanpa menambah
+      fakta. Gagal → DocFunnel memakai bingkai deterministik sebagai
+      fallback. TIDAK memotong kredit — ini penyempurnaan MASUKAN untuk
+      generate yang sudah dikenai tarif complex. */
+  const enhanceFunnelPromptAi = async (
+    text: string,
+    docLabel: string,
+  ): Promise<{ ok: true; text: string } | { ok: false; error: string }> => {
+    if (!docAiAllowed) return { ok: false, error: docAiLockedMsg };
+    try {
+      const res = await documentStudioOrchestrator.handle({
+        intent: 'ENHANCE_TEXT',
+        selectionText: text,
+        transform: 'bebas',
+        instruction: `Sempurnakan prompt pembuatan "${docLabel}" ini: perbaiki bahasa menjadi jelas, lengkap, dan formal; pertahankan SEMUA fakta, angka, nama, tanggal, dan detail persis seperti aslinya; jangan menambah fakta baru. Kembalikan HANYA prompt hasil sempurnaan, maksimal 600 karakter.`,
+        fileName: docLabel,
+      });
+      if (!res.success) {
+        return { ok: false, error: `${res.errorCode || 'ERROR'}: ${res.message || 'Penyempurnaan prompt gagal.'}` };
+      }
+      const out = (res.content || '').trim();
+      if (!out) return { ok: false, error: 'AI mengembalikan hasil kosong.' };
+      return { ok: true, text: out };
+    } catch (e: unknown) {
+      return { ok: false, error: e instanceof Error ? e.message : 'Penyempurnaan prompt gagal.' };
     }
   };
 
@@ -681,6 +728,9 @@ export const DocCreator: React.FC<{
       // Riwayat juga ditulis LANGSUNG ke localStorage agar bertahan
       // bila komponen ter-unmount sebelum efek tulis-ulang view jalan.
       recordHistoryDurable(funnelHistoryEntry);
+      // --- AI Credits: catat pemakaian SIMULASI (complex — generate
+      // dokumen utuh; sebelumnya tidak memotong kredit sama sekali). ---
+      consume('ai-document', tariffFor('ai-document/complex').max, `AI Document (funnel): ${docName.slice(0, 50)}`);
       return { ok: true, draft: rec, html: newHtml };
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : t('ai.doc.err_unexpected');
@@ -702,6 +752,9 @@ export const DocCreator: React.FC<{
       final & persetujuan sumber tidak diwarisi). */
   const runTranslate = async (target: TranslateLanguageCode) => {
     if (!draft || translating) return;
+    // Gerbang paket (audit DocAI 2026-11-22): terjemahan adalah panggilan
+    // AI (TRANSLATE_DOCUMENT) — sebelumnya tanpa gerbang sama sekali.
+    if (!docAiAllowed) { setError(docAiLockedMsg); return; }
     const source = draft;
     const sourceHtml = html;
     if (!toPlainText(sourceHtml, 'html').trim()) {
@@ -742,11 +795,13 @@ export const DocCreator: React.FC<{
       await persist(rec);
       finishDocAiGenerate(translateRunId, rec.id);
       loadIntoEditor(rec);
+      // Cabang res.truncated DIHAPUS (audit DocAI 2026-11-22): service
+      // TRANSLATE selalu mengembalikan truncated=false sejak tanpa-batas
+      // pemrosesan (dokumen besar diterjemahkan per potongan, bukan
+      // dipotong) — cabang itu mati dan pesannya ("sebagian isi sumber
+      // dipotong") sudah tidak bisa terjadi lagi.
       setTranslateInfo(
         `Draf terjemahan (${langLabel}) dibuat dari "${source.title}" dan tersimpan sebagai dokumen baru — dokumen sumber tidak berubah.` +
-          (res.truncated
-            ? ' Sebagian isi sumber dipotong karena batas karakter saat dikirim ke AI — periksa kelengkapan hasil terjemahan.'
-            : '') +
           // Masking (defense-in-depth): res.model may still carry a raw name
           // from stored/legacy responses — never render it verbatim.
           (res.model ? ` Model: ${maskAiModelName(res.model)}.` : ''),
@@ -763,6 +818,9 @@ export const DocCreator: React.FC<{
       // Riwayat juga ditulis LANGSUNG ke localStorage agar bertahan
       // bila komponen ter-unmount sebelum efek tulis-ulang view jalan.
       recordHistoryDurable(translateHistoryEntry);
+      // --- AI Credits: catat pemakaian SIMULASI (complex — terjemahan
+      // dokumen utuh; sebelumnya tidak memotong kredit sama sekali). ---
+      consume('ai-document', tariffFor('ai-document/complex').max, `AI Document (translate): ${source.title.slice(0, 50)}`);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : t('ai.doc.err_unexpected');
       failDocAiGenerate(translateRunId, msg);
@@ -1226,6 +1284,7 @@ export const DocCreator: React.FC<{
       <div className="docai-tab">
         <DocFunnel
           onGenerate={runFunnelGenerate}
+          onEnhancePrompt={enhanceFunnelPromptAi}
           onExport={(kind) => void doExport(kind)}
           onOpenInEditor={() => { if (draft) setMode('editor'); }}
           onNavigateToMenu={onNavigateToMenu}
@@ -2053,6 +2112,8 @@ export const DocCreator: React.FC<{
           getEditor={() => editorRef.current}
           onApplyCandidate={applyCandidate}
           onRestoreVersion={restoreVersionById}
+          docAiAllowed={docAiAllowed}
+          docAiLockedMsg={docAiLockedMsg}
           onFindingStatusesChange={changeFindingStatuses}
         />
       )}
@@ -2063,6 +2124,8 @@ export const DocCreator: React.FC<{
           draft={draft}
           getEditor={() => editorRef.current}
           onApplyEnhance={applyEnhance}
+          docAiAllowed={docAiAllowed}
+          docAiLockedMsg={docAiLockedMsg}
         />
       )}
 

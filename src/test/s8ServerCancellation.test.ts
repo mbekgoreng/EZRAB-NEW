@@ -337,9 +337,11 @@ describe('S8-D — kanselasi server didukung stack provider (fetch stub, 0 provi
         delete process.env[k];
       }
     }
-    process.env.GEMINI_API_KEY_1 = 'dummy-s8-key';
+    // (Key Gemini diganti Crown 2026-11-22 — kaki Gemini native dicabut
+    // dari rantai chat, spesifikasi final owner 01:37.)
+    process.env.CROWN_API_KEY = 'dummy-s8-key';
     return () => {
-      delete process.env.GEMINI_API_KEY_1;
+      delete process.env.CROWN_API_KEY;
       for (const [k, v] of Object.entries(saved)) {
         if (v !== undefined) process.env[k] = v;
       }
@@ -371,13 +373,16 @@ describe('S8-D — kanselasi server didukung stack provider (fetch stub, 0 provi
           }, { once: true });
         });
       }
+      // callOAI membaca r.text() DULU (bukan r.json()) — text() wajib
+      // mengembalikan JSON utuh, bukan string kosong.
+      const payload = {
+        choices: [{ message: { content: 'STUB-OK-S8' } }],
+        usage: { prompt_tokens: 10, completion_tokens: 5, total_tokens: 15 },
+      };
       return {
         ok: true,
-        text: async () => '',
-        json: async () => ({
-          candidates: [{ content: { parts: [{ text: 'STUB-OK-S8' }] } }],
-          usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 5, totalTokenCount: 15 },
-        }),
+        text: async () => JSON.stringify(payload),
+        json: async () => payload,
       } as unknown as Response;
     }) as unknown as typeof fetch;
     (calls as unknown as { __restore: () => void }).__restore = () => {
@@ -431,13 +436,13 @@ describe('S8-D — kanselasi server didukung stack provider (fetch stub, 0 provi
     }
   });
 
-  it('tanpa sinyal: perilaku lama utuh (sukses leg Gemini, tanpa abort)', async () => {
+  it('tanpa sinyal: perilaku lama utuh (sukses leg Crown, tanpa abort)', async () => {
     const restoreEnv = isolateProviderEnv();
     const calls = stubFetch('valid');
     try {
       const r = await executeAI({ message: 'halo', mode: 'chat' });
       expect(r.ok).toBe(true);
-      expect((r as { provider?: string }).provider).toBe('gemini');
+      expect((r as { provider?: string }).provider).toBe('crown');
       expect((r as { content?: string }).content).toBe('STUB-OK-S8');
       expect(calls.length).toBe(1);
       expect(calls[0].aborted).toBe(false);

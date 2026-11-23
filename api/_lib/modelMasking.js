@@ -3,9 +3,15 @@
  * model/provider AI EZRAB (program masking nama model, 2026-11-16).
  *
  * Keputusan koordinator (jangan diubah tanpa keputusan baru):
- * - mode 'fast' / 'chat' / 'vision' -> `Ezrab-flash-v1`
+ * - mode 'fast' / 'chat' / 'docai' / 'vision' -> `Ezrab-flash-v1`
  * - mode 'advanced' / 'ded'         -> `Ezrab-pro`
  * - field provider di respons klien -> nilai netral `ezrab`
+ *
+ * Tier mengikuti rantai spesifikasi final owner 2026-11-22 01:37:
+ * 'chat'/'docai'/'fast' adalah rantai Cepat (semua kaki *-flash),
+ * 'advanced'/'ded' adalah rantai Mendalam. Model yang melayani KEDUA
+ * tier (cx/gpt-6-luna: pro di 'advanced'/'ded', flash di 'fast')
+ * tetap AMBIGU — tidak ada di peta mana pun, jatuh ke null.
  *
  * Nama model/provider ASLI hanya hidup di sisi server (rantai failover,
  * log, ledger, metering) — TIDAK PERNAH melewati batas HTTP ke klien.
@@ -39,28 +45,35 @@ export function modelAliasForMode(mode) {
  *    - 'ded-ai/simple'           -> Ezrab-flash-v1 (DED FAST -> mode 'fast';
  *                                   usageMetadata.ts:107 memetakan FAST ke simple)
  *    - 'ded-ai/medium|complex|full-ai' -> Ezrab-pro (DED DETAIL -> mode 'ded')
- *    - 'ai-document/*'           -> Ezrab-pro (Document AI via mode 'advanced'
- *                                   sejak 2026-11-16 — WeizeRouter gpt-6-luna
- *                                   pertama; kunci nyata 'ai-document/analysis')
+ *    - 'ai-document/*'           -> Ezrab-flash-v1 (Document AI via mode
+ *                                   'docai' sejak 2026-11-22 — rantainya
+ *                                   persis Chat Cepat, semua kaki
+ *                                   *-flash; SEBELUM 2026-11-22 via mode
+ *                                   'advanced' -> pro)
  *    Kunci bare legacy 'ded-ai'/'ai-document' AMBIGU (LEGACY_AMBIGUOUS_FEATURE_KEYS
  *    di aiMetering.js) — TIDAK dipetakan di sini, jatuh ke fallback nama model.
  * 2. Fallback peta balik nama model (hanya bila fitur absen/tak dikenal —
  *    operasi legacy atau dibuat manual tanpa fitur):
  *    - model yang HANYA melayani rantai pro -> Ezrab-pro
  *    - model yang HANYA melayani rantai flash -> Ezrab-flash-v1
- *    - model AMBIGU (melayani kedua tier, mis. model Crown/ArxPay) atau
+ *    - model AMBIGU (melayani kedua tier, mis. model Crown/River) atau
  *      nama tak dikenal -> null (jujur "tier tak dapat ditentukan dari
  *      nama saja"; JANGAN menebak tier — aturan tanpa-fabrikasi).
  */
-// Sengaja TIDAK di sini: 'cx/gpt-6-luna' + 'ag/gemini-3.8-flash-high'
-// (Atmo advanced dipakai rantai chat/flash JUGA advanced/ded/pro) dan
-// 'gemini-3.5-flash-lite' (FAST_MODEL — fallback di SEMUA mode) — ketiganya
-// AMBIGU, jadi jatuh ke null.
+// Sengaja TIDAK di sini: 'cx/gpt-6-luna' (Atmo — pro di 'advanced'/
+// 'ded', flash di 'fast') dan 'gemini-3.5-flash-lite' (FAST_MODEL —
+// DULU fallback di semua mode; kakinya dicabut dari semua rantai
+// 2026-11-22, model ini tidak lagi melayani rantai apa pun) — keduanya
+// AMBIGU/pensiun, jadi jatuh ke null.
 const PRO_ONLY_MODELS = new Set([
   'gpt-6-luna',
   'muse-spark-1.3-contributor',
   'wz/gpt-6-luna',
   'wz/deepseek-v4.1-flash',
+  // Spesifikasi final 2026-11-22 01:37 — hanya di rantai pro
+  // ('advanced' + 'ded'):
+  'ag/gemini-3.8-flash-high',
+  'mv/mistral-medium-3-5',
 ]);
 
 const FLASH_ONLY_MODELS = new Set([
@@ -74,6 +87,12 @@ const FLASH_ONLY_MODELS = new Set([
   // Ekor chat + fast saja (keduanya tier flash) — tidak pernah di pro:
   'Atria-Dawn-Preview',
   'gemini-3.8-flash',
+  // Spesifikasi final 2026-11-22 01:37 — hanya di rantai flash
+  // ('chat' + 'docai' + 'fast'):
+  'deepseek-ai/DeepSeek-V4-Flash-0731',
+  'deepseek-ai/DeepSeek-V4.1-Flash-1017',
+  'mm/MiniMax-M3.1-Flash',
+  'zai/glm-5.3-flash',
 ]);
 
 export function maskUsageHistoryModel({ feature, model } = {}) {
@@ -82,7 +101,7 @@ export function maskUsageHistoryModel({ feature, model } = {}) {
   if (f === 'chat-ai/fast') return EZRAB_MODEL_FLASH;
   if (f === 'ded-ai/simple') return EZRAB_MODEL_FLASH;
   if (f === 'ded-ai/medium' || f === 'ded-ai/complex' || f === 'ded-ai/full-ai') return EZRAB_MODEL_PRO;
-  if (f.startsWith('ai-document/')) return EZRAB_MODEL_PRO;
+  if (f.startsWith('ai-document/')) return EZRAB_MODEL_FLASH;
   const m = typeof model === 'string' ? model : '';
   if (!m) return null;
   if (PRO_ONLY_MODELS.has(m)) return EZRAB_MODEL_PRO;

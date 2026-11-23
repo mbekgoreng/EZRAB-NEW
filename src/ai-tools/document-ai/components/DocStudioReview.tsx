@@ -36,6 +36,8 @@ import { draftFormat, toPlainText } from '../richText';
 import { htmlToMarkdownLite } from '../markdownHtml';
 import { formatDate, type DraftRecord } from '../view';
 import { groupFindingsByCategory, POLISH_PRESETS, type PolishPreset } from './reviewPolish';
+import { useCreditSimulation } from '../../../ai-credits/useCreditSimulation';
+import { tariffFor } from '../../../ai-credits/config';
 
 const SEVERITY_LABEL: Record<ReviewFinding['severity'], string> = {
   high: 'Tinggi',
@@ -73,7 +75,18 @@ export const DocStudioReview: React.FC<{
   onRestoreVersion: (versionId: string) => Promise<void>;
   /** Tulis balik status temuan ke DraftRecord.findingStatuses (persisten). */
   onFindingStatusesChange?: (statuses: Record<string, ReviewFindingStatus>) => void;
-}> = ({ draft, html, templateMeta, contextFields, getEditor, onApplyCandidate, onRestoreVersion, onFindingStatusesChange }) => {
+  /**
+   * Gerbang paket (audit DocAI 2026-11-22): jalur REVISI AI (perbaiki
+   * temuan, poles, revisi bebas) sebelumnya tanpa gerbang sama sekali —
+   * paket terkunci (Free/Starter) bisa memanggil REVISE_DOCUMENT dari
+   * editor. Diteruskan DocCreator; default true = perilaku lama bila
+   * pemanggil tidak memberi gerbang. Review DETERMINISTIK dan banding
+   * versi TIDAK digerbang (bukan AI).
+   */
+  docAiAllowed?: boolean;
+  docAiLockedMsg?: string;
+}> = ({ draft, html, templateMeta, contextFields, getEditor, onApplyCandidate, onRestoreVersion, onFindingStatusesChange, docAiAllowed = true, docAiLockedMsg = '' }) => {
+  const { consume } = useCreditSimulation();
   const [findings, setFindings] = useState<ReviewFinding[] | null>(null);
   const [reviewBusy, setReviewBusy] = useState(false);
   const [reviewError, setReviewError] = useState<string | null>(null);
@@ -170,6 +183,10 @@ export const DocStudioReview: React.FC<{
     findingId?: string,
     meta?: DocTemplateMeta,
   ) => {
+    if (!docAiAllowed) {
+      setReviewError(docAiLockedMsg || 'Fitur AI Document terkunci untuk paket Anda.');
+      return;
+    }
     const res = await documentStudioOrchestrator.handle({
       intent: 'REVISE_DOCUMENT',
       documentText: currentMarkdown(),
@@ -182,6 +199,10 @@ export const DocStudioReview: React.FC<{
       return;
     }
     setCandidate({ text: res.content || '', sourceLabel, findingId });
+    // --- AI Credits: catat pemakaian SIMULASI (audit DocAI 2026-11-22:
+    // revisi sebelumnya tidak memotong kredit). Kategori complex —
+    // revisi dokumen utuh. ---
+    consume('ai-document', tariffFor('ai-document/complex').max, `AI Document (revise): ${draft.title.slice(0, 50)}`);
   };
 
   const fixFinding = async (f: ReviewFinding) => {
@@ -342,7 +363,8 @@ export const DocStudioReview: React.FC<{
         <button
           className="docai-btn-ghost docai-mini"
           onClick={() => void fixFinding(f)}
-          disabled={fixBusyId !== null || f.status === 'fixed'}
+          disabled={fixBusyId !== null || f.status === 'fixed' || !docAiAllowed}
+          title={!docAiAllowed ? (docAiLockedMsg || 'Fitur AI Document terkunci untuk paket Anda.') : undefined}
         >
           {fixBusyId === f.id ? <Loader2 size={13} className="spin" /> : <Wand2 size={13} />}{' '}
           Perbaiki dengan AI
@@ -408,6 +430,11 @@ export const DocStudioReview: React.FC<{
           {reviewError}
         </div>
       )}
+      {!docAiAllowed && docAiLockedMsg && (
+        <div className="docai-warn" role="alert">
+          {docAiLockedMsg} Periksa Dokumen (deterministik) dan Bandingkan Versi tetap tersedia.
+        </div>
+      )}
       {jumpNote && <div className="docai-warn">{jumpNote}</div>}
 
       <div className="docai-polishbox">
@@ -423,8 +450,8 @@ export const DocStudioReview: React.FC<{
               key={p.id}
               className="docai-btn-ghost docai-mini"
               onClick={() => void runPolish(p)}
-              disabled={polishBusyId !== null || reviseBusy || fixBusyId !== null}
-              title={`Jalankan preset: ${p.label}`}
+              disabled={polishBusyId !== null || reviseBusy || fixBusyId !== null || !docAiAllowed}
+              title={!docAiAllowed ? (docAiLockedMsg || 'Fitur AI Document terkunci untuk paket Anda.') : `Jalankan preset: ${p.label}`}
             >
               {polishBusyId === p.id ? <Loader2 size={13} className="spin" /> : <Wand2 size={13} />}{' '}
               {p.label}
@@ -500,7 +527,8 @@ export const DocStudioReview: React.FC<{
           <button
             className="docai-btn-ghost"
             onClick={() => void runFreeRevise()}
-            disabled={reviseBusy || !reviseText.trim()}
+            disabled={reviseBusy || !reviseText.trim() || !docAiAllowed}
+            title={!docAiAllowed ? (docAiLockedMsg || 'Fitur AI Document terkunci untuk paket Anda.') : undefined}
           >
             {reviseBusy ? <Loader2 size={14} className="spin" /> : <Wand2 size={14} />} Buat Kandidat Revisi
           </button>

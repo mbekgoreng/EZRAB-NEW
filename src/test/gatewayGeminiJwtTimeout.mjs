@@ -35,8 +35,9 @@
  */
 import assert from 'node:assert';
 
-// Bersihkan key provider yang mungkin terbawa dari shell (hanya WeizeRouter
-// yang dipakai skenario sukses di sini).
+// Bersihkan key provider yang mungkin terbawa dari shell (hanya Crown
+// yang dipakai skenario sukses di sini — WeizeRouter dicabut dari semua
+// rantai 2026-11-22, spesifikasi final owner 01:37).
 for (let i = 1; i <= 6; i++) delete process.env['GEMINI_API_KEY_' + i];
 for (const v of [
   'GEMINI_API_KEY', 'ZYROUTER_API_KEY', 'ZROUTER_API_KEY', 'ATMO_API_KEY',
@@ -48,14 +49,14 @@ delete process.env.AI_ALLOW_ANONYMOUS;
 // Supabase "configured" agar authenticateRequest memakai jalur JWT.
 process.env.SUPABASE_URL = 'https://example.supabase.co';
 process.env.SUPABASE_ANON_KEY = 'dummy-anon-key';
-process.env.WEIZEROUTER_API_KEY = 'dummy-weize';
+process.env.CROWN_API_KEY = 'dummy-crown';
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 global.fetch = async (url) => {
   const u = String(url);
-  if (u.includes('weizerouter.web.id')) {
-    const payload = { choices: [{ message: { content: 'OK-WEIZE' } }], usage: {} };
+  if (u.includes('crown.ai.id')) {
+    const payload = { choices: [{ message: { content: 'OK-CROWN' } }], usage: {} };
     return { ok: true, status: 200, json: async () => payload, text: async () => JSON.stringify(payload) };
   }
   return { ok: false, status: 500, json: async () => ({}), text: async () => 'stub-fail' };
@@ -195,7 +196,7 @@ async function withLogCapture(fn) {
     return r;
   });
   const aiReq = events.find((e) => e.event === 'ai_request');
-  check('J-7 sukses: HTTP 200 via weizerouter', () => {
+  check('J-7 sukses: HTTP 200 via crown', () => {
     assert.equal(res.statusCode, 200);
     assert.equal(res.body.success, true);
   });

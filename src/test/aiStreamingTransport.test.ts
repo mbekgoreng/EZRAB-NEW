@@ -34,7 +34,8 @@ delete process.env.SUPABASE_ANON_KEY;
 delete process.env.AI_GATEWAY_TOKEN;
 delete process.env.AI_METERING_ENABLED;
 process.env.CROWN_API_KEY = 'dummy-crown';
-process.env.GEMINI_API_KEY_1 = 'dummy-gemini';
+// (Key Gemini TIDAK dipasang — kaki Gemini native dicabut dari semua
+// rantai 2026-11-22, spesifikasi final owner 01:37.)
 process.env.ZYROUTER_API_KEY = 'dummy-zyrouter';
 process.env.AI_RATE_LIMIT_PER_MIN = '1000';
 
@@ -622,6 +623,7 @@ console.log('\n[5] executeAI mode streaming (fetch provider mock)');
       !url.startsWith('https://crown.ai.id') &&
       !url.startsWith('https://generativelanguage.googleapis.com') &&
       !url.startsWith('https://api.zyrouter.com') &&
+      !url.startsWith('https://api.river.ai') &&
       !url.startsWith('https://atmorouter.dev')
     ) {
       throw new Error('fetch ke host tak dikenal diblokir: ' + url);
@@ -712,11 +714,14 @@ console.log('\n[5] executeAI mode streaming (fetch provider mock)');
   }
 
   // 5b. Gagal di tengah stream -> reset + failover ke leg berikut.
+  // Leg 0 Crown V4-0731 (satu-satunya model Crown kini — dulu GLM) gagal
+  // di tengah stream; leg 1 River V4.1-1017 menjawab.
   {
+    process.env.RIVER_API_KEY_1 = 'dummy-river';
     providerCalls = [];
     providerBehavior = (url, init) => {
       const model = init.body ? JSON.parse(init.body).model : '';
-      if (model === 'zai-org/GLM-5.3-Flash') {
+      if (model === 'deepseek-ai/DeepSeek-V4-Flash-0731') {
         // Stream "Hel" lalu reader melempar (jaringan putus).
         const bytes = encoder.encode(oaiSseBody(['Hel']));
         let step = 0;
@@ -737,13 +742,14 @@ console.log('\n[5] executeAI mode streaming (fetch provider mock)');
           text: async () => '',
         };
       }
-      if (model === 'deepseek-ai/DeepSeek-V4-Flash-0731') {
+      if (model === 'deepseek-ai/DeepSeek-V4.1-Flash-1017') {
         return mockProviderSse(oaiSseBody(['World']));
       }
       throw new Error('leg tak terduga: ' + model);
     };
     const events: any[] = [];
     const r: any = await executeAI({ ...chatReq, requestId: 't5b', stream: true, onStreamEvent: (e: any) => events.push(e) });
+    delete process.env.RIVER_API_KEY_1;
     check('5b: ok sesudah failover', r.ok === true);
     eq(r.content, 'World', '5b: konten final = leg 2 saja');
     eq(
@@ -771,27 +777,31 @@ console.log('\n[5] executeAI mode streaming (fetch provider mock)');
     eq(events.filter((e) => e.type === 'content_delta')[0]?.delta, 'Jawaban JSON penuh', '5c: delta tunggal = konten penuh');
   }
 
-  // 5d. Crown 500 x3 -> kaki Gemini buffered (satu delta).
+  // 5d. Crown 500 -> kaki River 1017 buffered (satu delta).
+  // (Dulu: Crown 500 x3 -> kaki Gemini buffered — Gemini native dicabut
+  // 2026-11-22; Crown kini 1 model, jadi hanya 1 leg_failed sebelum River.)
   {
+    process.env.RIVER_API_KEY_1 = 'dummy-river';
     providerCalls = [];
     providerBehavior = (url) => {
       if (url.startsWith('https://crown.ai.id')) return mockProviderError(500, 'err');
-      if (url.startsWith('https://generativelanguage.googleapis.com')) {
+      if (url.startsWith('https://api.river.ai')) {
         return mockProviderJson({
-          candidates: [{ content: { parts: [{ text: 'Jawaban Gemini' }] } }],
-          usageMetadata: { promptTokenCount: 8, candidatesTokenCount: 6, totalTokenCount: 14 },
+          choices: [{ message: { content: 'Jawaban River' } }],
+          usage: { prompt_tokens: 8, completion_tokens: 6, total_tokens: 14 },
         });
       }
       throw new Error('leg tak terduga: ' + url);
     };
     const events: any[] = [];
     const r: any = await executeAI({ ...chatReq, requestId: 't5d', stream: true, onStreamEvent: (e: any) => events.push(e) });
-    check('5d: ok via Gemini', r.ok === true);
-    eq(r.content, 'Jawaban Gemini', '5d: konten Gemini');
-    eq(r.provider, 'gemini', '5d: provider pelayan = gemini');
+    delete process.env.RIVER_API_KEY_1;
+    check('5d: ok via River', r.ok === true);
+    eq(r.content, 'Jawaban River', '5d: konten River');
+    eq(r.provider, 'river-flash', '5d: provider pelayan = river-flash');
     eq(
       events.map((e) => `${e.type}:${e.leg}`),
-      ['leg_start:0', 'leg_failed:0', 'leg_start:1', 'leg_failed:1', 'leg_start:2', 'leg_failed:2', 'leg_start:3', 'content_delta:3', 'content_complete:3'],
+      ['leg_start:0', 'leg_failed:0', 'leg_start:1', 'content_delta:1', 'content_complete:1'],
       '5d: urutan event (tanpa reset — tak ada konten ter-stream sebelum gagal)'
     );
     check('5d: tanpa content_reset bila tak ada delta', !events.some((e) => e.type === 'content_reset'));

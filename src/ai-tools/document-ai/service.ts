@@ -7,7 +7,7 @@
 import { aiToolsProviderClient } from '../providerClient';
 import type { AiToolsResult } from '../providerClient';
 import { waitForMinimum, minDelayFor } from '../aiResponseTiming';
-import { ENHANCE_TRANSFORM_GUIDANCE, TRANSLATE_LANGUAGE_NAMES, systemForMode } from './prompt';
+import { ENHANCE_TRANSFORM_GUIDANCE, TRANSLATE_LANGUAGE_NAMES, responseLanguageInstruction, systemForMode } from './prompt';
 import {
   DOC_CHUNK_TEXT_BUDGET,
   MAX_AI_REQUEST_CHARS,
@@ -99,6 +99,22 @@ const TRANSLATE_CHUNK_TEXT_BUDGET = 8_000;
 /** Kedalaman maksimum sintesis hierarkis (reduce bertingkat). */
 const MAX_REDUCE_DEPTH = 3;
 
+/**
+ * Mode yang mengikuti bahasa jawaban antarmuka (audit DocAI 2026-11-22).
+ * DRAFT dikecualikan — dokumen resmi konstruksi Indonesia tetap disusun
+ * berbahasa Indonesia apa pun bahasa antarmukanya. ENHANCE/TRANSLATE
+ * tidak melewati executeAi (panggilan langsung; TRANSLATE punya bahasa
+ * targetnya sendiri).
+ */
+const LANGUAGE_FOLLOWING_MODES: ReadonlySet<DokumenAiChatRequest['mode']> = new Set([
+  'SUMMARY',
+  'QA',
+  'CHAT',
+  'EXTRACT',
+  'COMPARE',
+  'CHECKLIST',
+]);
+
 export class DokumenAiService {
   constructor(private readonly aiClient: DokumenAiAiClient = aiToolsProviderClient) {}
 
@@ -151,16 +167,24 @@ export class DokumenAiService {
     return this.runWholeDocument(request, fullText, onProgress);
   }
 
-  /** Panggilan AI tunggal lewat klien terinjeksi (default: providerClient). */
+  /**
+   * Panggilan AI tunggal lewat klien terinjeksi (default: providerClient).
+   * Mode ANALISIS menambahkan instruksi bahasa jawaban dari
+   * request.language (audit DocAI 2026-11-22) — 'id'/absen = tanpa
+   * instruksi (perilaku lama).
+   */
   private executeAi(
     request: DokumenAiChatRequest,
     systemPrompt: string,
     userPrompt: string,
   ): Promise<AiToolsResult<unknown>> {
+    const languageSuffix = LANGUAGE_FOLLOWING_MODES.has(request.mode)
+      ? responseLanguageInstruction(request.language)
+      : '';
     return this.aiClient.execute<unknown>({
       productId: 'DOKUMEN_AI',
       prompt: userPrompt,
-      systemPrompt,
+      systemPrompt: languageSuffix ? `${systemPrompt}${languageSuffix}` : systemPrompt,
       jsonMode: false,
       maxTokens: 4000,
       timeoutMs: request.timeoutMs ?? 120000,
@@ -819,7 +843,7 @@ export class DokumenAiService {
   public async compareDocuments(
     a: { fileName: string; text: string },
     b: { fileName: string; text: string },
-    opts?: { timeoutMs?: number; onProgress?: DocAiProgressCallback },
+    opts?: { timeoutMs?: number; onProgress?: DocAiProgressCallback; language?: DokumenAiChatRequest['language'] },
   ): Promise<DokumenAiChatResponse> {
     const startedAt = Date.now();
     const run = this.runCompareDocuments(a, b, opts);
@@ -829,7 +853,7 @@ export class DokumenAiService {
   private async runCompareDocuments(
     a: { fileName: string; text: string },
     b: { fileName: string; text: string },
-    opts?: { timeoutMs?: number; onProgress?: DocAiProgressCallback },
+    opts?: { timeoutMs?: number; onProgress?: DocAiProgressCallback; language?: DokumenAiChatRequest['language'] },
   ): Promise<DokumenAiChatResponse> {
     if (!(a.text || '').trim() || !(b.text || '').trim()) {
       return {
@@ -850,6 +874,7 @@ export class DokumenAiService {
       fileName: '',
       mode: 'COMPARE',
       timeoutMs: opts?.timeoutMs,
+      language: opts?.language,
     };
     // Potongan kedua dokumen dibangun dulu agar progress memakai SATU
     // total gabungan (bukan 0–90% dua kali) — perilaku pemetaan tidak berubah.

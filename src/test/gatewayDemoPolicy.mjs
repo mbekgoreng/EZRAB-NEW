@@ -18,10 +18,10 @@ import { evaluateCreditAccess } from '../../api/_lib/security.js';
 // the injected verifier (values are dummies; verifier never calls network).
 process.env.SUPABASE_URL = 'https://example.supabase.co';
 process.env.SUPABASE_ANON_KEY = 'dummy-anon-key';
-process.env.GEMINI_API_KEY_1 = 'test-dummy-key';
-// The 'chat' chain (River -> Dahl -> Atmo -> ZyRouter) has no Gemini-native
-// attempt, so give it a dummy ZyRouter key to succeed against the stub.
-process.env.ZYROUTER_API_KEY = 'test-dummy-key';
+// Serving providers untuk rantai spesifikasi final 2026-11-22 01:37:
+// Crown (kaki pertama chat/fast) + Atmo (satu-satunya provider advanced/ded).
+process.env.CROWN_API_KEY = 'test-dummy-key';
+process.env.ATMO_API_KEY = 'test-dummy-key';
 
 let failures = 0;
 const test = async (name, fn) => {
@@ -47,8 +47,8 @@ function mockRes() {
 let fetchCalls = 0;
 global.fetch = async () => {
   fetchCalls++;
-  // Dual-shape stub: Gemini-native parsers read `candidates`, the
-  // OpenAI-compatible chains (ZyRouter/River/…) read `choices`.
+  // Dual-shape stub: `candidates` dipertahankan untuk kompatibilitas,
+  // rantai kini membaca `choices` (semua kaki OpenAI-compatible).
   return {
     ok: true,
     json: async () => ({
@@ -61,7 +61,7 @@ global.fetch = async () => {
 // Same product routing as api/ai/tools/execute.js
 const productIdToMode = (pid, requestedMode) => {
   if (pid === 'DED_AI_DETAIL') return 'ded';
-  if (pid === 'DOKUMEN_AI') return 'advanced';
+  if (pid === 'DOKUMEN_AI') return 'docai';
   if (pid === 'EZRAB_AI') return requestedMode === 'advanced' ? 'advanced' : 'chat';
   return 'fast';
 };

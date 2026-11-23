@@ -7,10 +7,10 @@ import { handleAiRequest } from '../../api/_lib/aiGateway.js';
 
 // Test env: dummy provider keys so the failover chain has attempts to make
 // (upstream fetch is stubbed below — no real network).
-// Mode 'fast' WeizeRouter-dulu + fallback Crown sejak 2026-11-20 —
-// suite ini memakai key WeizeRouter + stub payload berbentuk OpenAI.
-process.env.GEMINI_API_KEY_1 = 'test-dummy-key';
-process.env.WEIZEROUTER_API_KEY = 'test-dummy-weize';
+// Crown kaki pertama rantai fast + Atmo untuk advanced (spesifikasi final
+// 2026-11-22 01:37; Gemini native + WeizeRouter dicabut dari semua rantai).
+process.env.CROWN_API_KEY = 'test-dummy-key';
+process.env.ATMO_API_KEY = 'test-dummy-key';
 
 let failures = 0;
 const test = async (name, fn) => {
@@ -35,7 +35,7 @@ function mockRes() {
   return res;
 }
 
-// stub upstream: WeizeRouter answers OK for any key (payload OpenAI)
+// stub upstream: Crown/Atmo answers OK for any key (payload OpenAI)
 let fetchCalls = 0;
 global.fetch = async (url) => {
   fetchCalls++;
