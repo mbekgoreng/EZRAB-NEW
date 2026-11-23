@@ -15,6 +15,17 @@ export interface QtyInputs {
   volume?: number;
   count?: number;
   factor?: number;
+  /**
+   * W7 (§7/S3-3, 2026-11-22) — bentuk WEIGHT: berat = volume × faktor
+   * kg/m³. `densityKgPerM3` = densitas material (mis. aspal ±2400
+   * kg/m³); `ratioKgPerM3` = rasio tulangan terhadap volume beton
+   * (mis. pembesian 120 kg/m³). Bila keduanya diisi, densitas menang.
+   * TANPA salah satunya, WEIGHT mengembalikan null (tidak ditebak).
+   */
+  densityKgPerM3?: number;
+  ratioKgPerM3?: number;
+  /** Satuan hasil WEIGHT: 'kg' (default) atau 'ton' (= kg / 1000). */
+  weightUnit?: 'kg' | 'ton';
 }
 
 /**
@@ -57,14 +68,17 @@ export function parseDimensionsString(input: string | undefined): number[] {
   return out;
 }
 
-export type QuantityShape = 'VOLUME' | 'AREA' | 'LENGTH' | 'COUNT';
+export type QuantityShape = 'VOLUME' | 'AREA' | 'LENGTH' | 'COUNT' | 'WEIGHT';
 
 export function computeQuantity(
   shape: QuantityShape,
   inputs: QtyInputs,
   formula: string
 ): { quantity: number | null; formula: string } {
-  if (typeof inputs.volume === 'number' && Number.isFinite(inputs.volume) && inputs.volume > 0) {
+  // W7 (S3-3): volume eksplisit BUKAN kuantitas untuk WEIGHT — volume
+  // adalah INPUT berat (volume × densitas/rasio), bukan hasilnya.
+  // Tanpa pengecualian ini, beton 10 m³ akan "menghasilkan" besi 10 kg.
+  if (shape !== 'WEIGHT' && typeof inputs.volume === 'number' && Number.isFinite(inputs.volume) && inputs.volume > 0) {
     return { quantity: inputs.volume, formula: `${formula} (volume eksplisit ${inputs.volume})` };
   }
   if (shape === 'AREA' && typeof inputs.area === 'number' && Number.isFinite(inputs.area) && inputs.area > 0) {
@@ -101,6 +115,34 @@ export function computeQuantity(
     return { quantity: l, formula: `${formula} (= panjang ${l})` };
   }
 
+  // W7 (§7/S3-3): WEIGHT — berat = volume × densitas/rasio (kg/m³).
+  // Volume dari input eksplisit, atau L×W×H, atau L×W×D. Tanpa faktor
+  // kg/m³ yang valid → null (tidak pernah ditebak; tidak pernah 0).
+  if (shape === 'WEIGHT') {
+    const factor = inputs.densityKgPerM3 ?? inputs.ratioKgPerM3;
+    let vol: number | null = null;
+    let volText = '';
+    if (typeof inputs.volume === 'number' && Number.isFinite(inputs.volume) && inputs.volume > 0) {
+      vol = inputs.volume;
+      volText = `${inputs.volume} m³`;
+    } else if (typeof l === 'number' && typeof w === 'number' && typeof h === 'number' && Number.isFinite(l + w + h)) {
+      vol = l * w * h;
+      volText = `${l} × ${w} × ${h} m³`;
+    } else if (typeof l === 'number' && typeof w === 'number' && typeof d === 'number' && Number.isFinite(l + w + d)) {
+      vol = l * w * d;
+      volText = `${l} × ${w} × ${d} m³`;
+    }
+    if (vol !== null && typeof factor === 'number' && Number.isFinite(factor) && factor > 0) {
+      const kg = vol * factor;
+      const factorLabel = inputs.densityKgPerM3 != null ? 'densitas' : 'rasio';
+      if (inputs.weightUnit === 'ton') {
+        const ton = kg / 1000;
+        return { quantity: ton, formula: `${formula} (= ${volText} × ${factor} kg/m³ [${factorLabel}] = ${kg} kg = ${ton} ton)` };
+      }
+      return { quantity: kg, formula: `${formula} (= ${volText} × ${factor} kg/m³ [${factorLabel}] = ${kg} kg)` };
+    }
+  }
+
   return { quantity: null, formula };
 }
 
@@ -115,6 +157,9 @@ export const UNIT_SHAPE: Record<string, QuantityShape> = {
   set: 'COUNT',
   l: 'VOLUME',
   titik: 'COUNT',
+  // W7 (§7/S3-3): kg/ton adalah WEIGHT, bukan COUNT.
+  kg: 'WEIGHT',
+  ton: 'WEIGHT',
 };
 
 export function shapeForUnit(unit: string): QuantityShape {
@@ -233,7 +278,11 @@ export function attemptQuantityFromDimensionString(
 
   const shape = shapeForUnit(unit);
   const [a, b, c] = scaled;
-  const res = computeQuantity(shape, { length: a, width: b, height: c }, dimensionString);
+  // W7 (S3-3): teruskan satuan berat agar item 'ton' mengonversi kg→ton
+  // bila densitas/rasio tersedia di jalur ini (saat ini belum — WEIGHT
+  // tanpa faktor tetap null).
+  const weightUnit = shape === 'WEIGHT' ? (unit.trim().toLowerCase() === 'ton' ? 'ton' as const : 'kg' as const) : undefined;
+  const res = computeQuantity(shape, { length: a, width: b, height: c, weightUnit }, dimensionString);
   const formula = res.formula || dimensionString;
   // Catat konversi agar transparan di UI (provenance).
   const annotated = dimUnit !== 'm'
@@ -274,7 +323,9 @@ export function attemptQuantityWithAssumedUnit(
   const scaled = nums.map((n) => n * factor);
   const shape = shapeForUnit(unit);
   const [a, b, c] = scaled;
-  const res = computeQuantity(shape, { length: a, width: b, height: c }, dimensionString);
+  // W7 (S3-3): satuan berat diteruskan seperti di attemptQuantityFromDimensionString.
+  const weightUnit = shape === 'WEIGHT' ? (unit.trim().toLowerCase() === 'ton' ? 'ton' as const : 'kg' as const) : undefined;
+  const res = computeQuantity(shape, { length: a, width: b, height: c, weightUnit }, dimensionString);
   const base = res.formula || dimensionString;
   return {
     quantity: res.quantity,

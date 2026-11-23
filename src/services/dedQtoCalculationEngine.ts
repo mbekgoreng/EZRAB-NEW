@@ -111,6 +111,36 @@ export class DedQtoCalculationEngine {
   }
 
   /**
+   * W7 (§7/S3-4, 2026-11-22) — normalisasi satu dimensi ke meter dari
+   * satuan EKSPLISIT provenance (`dimensions.provenance.<dim>.unit`).
+   * Menggantikan heuristik lama `nilai > 10 ? nilai/100 : nilai` yang
+   * mengubah lebar 12 m yang sah menjadi 0,12 m. Tanpa satuan
+   * eksplisit, nilai dianggap meter (kontrak pipeline:
+   * dedToRabPipelineService sudah menormalisasi mm→m sebelum mengisi
+   * dimensions). Satuan eksplisit yang tak dikenal → null (pemanggil
+   * MENOLAK, seperti quantity.ts yang menolak bila satuan tidak jelas
+   * — tidak pernah ditebak).
+   */
+  private dimensionToMeters(value: number, provenanceUnit?: string | null): number | null {
+    const u = (provenanceUnit ?? '').trim().toLowerCase();
+    if (u === '' || u === 'm' || u === 'meter' || u === 'meters') return value;
+    if (u === 'cm') return value / 100;
+    if (u === 'mm') return value / 1000;
+    return null;
+  }
+
+  /**
+   * W7 (§7/S3-4) — catatan konversi untuk formula, agar konversi
+   * satuan transparan di hasil (pola quantity.ts).
+   */
+  private conversionNote(units: Array<string | null | undefined>): string {
+    const converted = [...new Set(
+      units.map((u) => (u ?? '').trim().toLowerCase()).filter((u) => u === 'cm' || u === 'mm')
+    )];
+    return converted.length > 0 ? ` [konversi ${converted.join('/')}→m]` : '';
+  }
+
+  /**
    * Performs deterministic arithmetic calculation using EZRAB Core
    */
   public calculateQuantity(item: DEDWorkItem): {
@@ -149,10 +179,28 @@ export class DedQtoCalculationEngine {
 
     // 2. 3D Volume: Length × Width × Height (e.g. 42.50m × 0.60m × 0.30m = 7.65 m³)
     if (dims.length !== undefined && dims.width !== undefined && dims.height !== undefined) {
-      // Normalize units (convert cm to m if needed)
-      const l = dims.length;
-      const w = dims.width > 10 ? dims.width / 100 : dims.width;
-      const h = dims.height > 10 ? dims.height / 100 : dims.height;
+      // W7 (S3-4): satuan eksplisit dari provenance; tanpa satuan =
+      // meter (BUKAN heuristik >10 → /100). Satuan tak dikenal → tolak.
+      const l = this.dimensionToMeters(dims.length, dims.provenance?.length?.unit);
+      const w = this.dimensionToMeters(dims.width, dims.provenance?.width?.unit);
+      const h = this.dimensionToMeters(dims.height, dims.provenance?.height?.unit);
+      if (l === null || w === null || h === null) {
+        const bad = l === null
+          ? `panjang ("${dims.provenance?.length?.unit}")`
+          : w === null
+            ? `lebar ("${dims.provenance?.width?.unit}")`
+            : `tinggi ("${dims.provenance?.height?.unit}")`;
+        return {
+          success: false,
+          errorState: 'AMBIGUOUS_UNIT',
+          reason: `Satuan dimensi ${bad} tidak dikenal — kuantitas tidak dapat dihitung tanpa satuan panjang yang jelas (m/cm/mm).`,
+        };
+      }
+      const note = this.conversionNote([
+        dims.provenance?.length?.unit,
+        dims.provenance?.width?.unit,
+        dims.provenance?.height?.unit,
+      ]);
 
       const rawVol = l * w * h;
       const vol = Number(rawVol.toFixed(3));
@@ -162,7 +210,7 @@ export class DedQtoCalculationEngine {
         quantity: vol,
         unit: 'm³',
         calculation: {
-          formula: `${l.toFixed(2)} m × ${w.toFixed(2)} m × ${h.toFixed(2)} m = ${vol} m³`,
+          formula: `${l.toFixed(2)} m × ${w.toFixed(2)} m × ${h.toFixed(2)} m = ${vol} m³${note}`,
           computedValue: vol,
           unit: 'm³',
           calculationType: 'VOLUME_3D',
@@ -172,8 +220,22 @@ export class DedQtoCalculationEngine {
 
     // 3. 2D Area: Length × Width (e.g. 4.00m × 5.00m = 20.00 m²)
     if (dims.length !== undefined && dims.width !== undefined) {
-      const l = dims.length;
-      const w = dims.width > 10 ? dims.width / 100 : dims.width;
+      const l = this.dimensionToMeters(dims.length, dims.provenance?.length?.unit);
+      const w = this.dimensionToMeters(dims.width, dims.provenance?.width?.unit);
+      if (l === null || w === null) {
+        const bad = l === null
+          ? `panjang ("${dims.provenance?.length?.unit}")`
+          : `lebar ("${dims.provenance?.width?.unit}")`;
+        return {
+          success: false,
+          errorState: 'AMBIGUOUS_UNIT',
+          reason: `Satuan dimensi ${bad} tidak dikenal — kuantitas tidak dapat dihitung tanpa satuan panjang yang jelas (m/cm/mm).`,
+        };
+      }
+      const note = this.conversionNote([
+        dims.provenance?.length?.unit,
+        dims.provenance?.width?.unit,
+      ]);
       const rawArea = l * w;
       const area = Number(rawArea.toFixed(2));
 
@@ -182,7 +244,7 @@ export class DedQtoCalculationEngine {
         quantity: area,
         unit: 'm²',
         calculation: {
-          formula: `${l.toFixed(2)} m × ${w.toFixed(2)} m = ${area} m²`,
+          formula: `${l.toFixed(2)} m × ${w.toFixed(2)} m = ${area} m²${note}`,
           computedValue: area,
           unit: 'm²',
           calculationType: 'AREA_2D',
@@ -192,13 +254,22 @@ export class DedQtoCalculationEngine {
 
     // 4. 1D Perimeter / Linear Length
     if (dims.length !== undefined) {
+      const l = this.dimensionToMeters(dims.length, dims.provenance?.length?.unit);
+      if (l === null) {
+        return {
+          success: false,
+          errorState: 'AMBIGUOUS_UNIT',
+          reason: `Satuan dimensi panjang ("${dims.provenance?.length?.unit}") tidak dikenal — kuantitas tidak dapat dihitung tanpa satuan panjang yang jelas (m/cm/mm).`,
+        };
+      }
+      const note = this.conversionNote([dims.provenance?.length?.unit]);
       return {
         success: true,
-        quantity: dims.length,
+        quantity: l,
         unit: 'm',
         calculation: {
-          formula: `${dims.length.toFixed(2)} m (Panjang linier)`,
-          computedValue: dims.length,
+          formula: `${l.toFixed(2)} m (Panjang linier)${note}`,
+          computedValue: l,
           unit: 'm',
           calculationType: 'PERIMETER_1D',
         },
