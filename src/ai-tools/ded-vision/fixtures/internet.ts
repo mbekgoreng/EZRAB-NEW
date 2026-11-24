@@ -532,13 +532,16 @@ const HOUSE_ID_KRS_TYPE45: BenchmarkFixture = {
     'Dimensions are bare integers in mm (2000, 6000, 17500…) — the ' +
     'Indonesian convention of unitless mm on the drawing. The kusen plan ' +
     'carries Indonesian opening marks J1/J2 (jendela) and P1–P4 (pintu), ' +
-    'hand-counted from the text layer: J1 ×2, J2 ×2, P1 ×3, P2 ×4, P3 ×2, ' +
-    'P4 ×2. The size details for these marks live on the DETAIL J1/P1 ' +
-    'sheets (lembar 11–12), NOT in a schedule table on this sheet — so ' +
-    'the openings are expected with null dims (plan symbols only, same ' +
-    'pattern as the 111853 D mark). The stored PDF is pages 7 + 14 of ' +
-    'the 40-page source (4.4 MB, over the 2 MB per-file cap), extracted ' +
-    'with pypdf; the source URL below is the full set.',
+    'hand-counted from the text layer: J1 ×2, J2 ×2, P1 ×3, P2 ×3, P3 ×2, ' +
+    'P4 ×2 (14 marks: 8 in-plan + 6 legend entries). I11 Stage 5: P2 was ' +
+    '×4 in the original fixture — corrected to ×3 (the text layer, the ' +
+    'render, and the fixture comment all agree on 3). The size details ' +
+    'for these marks live on the DETAIL J1/P1 sheets (lembar 11–12), NOT ' +
+    'in a schedule table on this sheet — so the openings are expected ' +
+    'with null dims (plan symbols only, same pattern as the 111853 D mark). ' +
+    'The stored PDF is pages 7 + 14 of the 40-page source (4.4 MB, over ' +
+    'the 2 MB per-file cap), extracted with pypdf; the source URL below ' +
+    'is the full set.',
   source: {
     name: 'BANK DESAIN KRS JAWA 3 — Desain Rumah Tumbuh (houseDesign PDF)',
     url: 'https://apiternak.krsjawa3.com/uploads/files/houseDesign_file-1765700333456.pdf',
@@ -558,6 +561,7 @@ const HOUSE_ID_KRS_TYPE45: BenchmarkFixture = {
     'Grid labels (A–E, 1–8) and the north arrow (U) are not dimensions and are not stubbed.',
     'bbox IoU not measured — no ground-truth pixel coordinates extracted.',
     'Wall / structure / roof / QTO / AHSP not measured on these sheets — no wall-thickness schedule, no structural schedule, no quantities in the text layer.',
+    'I11 Stage 5 (KRS verification): the live read\'s extra marks P5/P6/J3/J4 do NOT exist on this sheet — no such labels in the text layer (pdftotext -bbox, whole sheet) and none drawn on the 300-DPI render (all 6 doors + 2 windows carry P1–P4/J1/J2 labels; the one unlabelled grille is a vent, not a marked opening). The live extras were model misreads, not a fixture gap — no human look is needed.',
   ],
   pages: [
     {
@@ -576,16 +580,28 @@ const HOUSE_ID_KRS_TYPE45: BenchmarkFixture = {
           // not of instances). Bare integers ≥ 100 mm parse as mm (E1
           // year exception: 2000 is a multiple of 10, so it stays a
           // dimension).
-          dimEntry('1000', boxKrs()),
-          dimEntry('1500', boxKrs()),
-          dimEntry('2000', boxKrs()),
-          dimEntry('2500', boxKrs()),
-          dimEntry('3000', boxKrs()),
-          dimEntry('4000', boxKrs()),
-          dimEntry('4500', boxKrs()),
-          dimEntry('5000', boxKrs()),
-          dimEntry('6000', boxKrs()),
-          dimEntry('17500', boxKrs()),
+          // I11 Stage 5 (E18) — kinds revised from the DRAWING
+          // (pdftotext -bbox positions + the 300-DPI render), not from
+          // the model's word: the top chain 2000+1000+2000+1000 sums
+          // to 6000 and the 6000 line sits OUTSIDE (above) the chain;
+          // the right chain 4000+3000+4500+1000+5000 sums to 17500
+          // and the 17500 line sits OUTSIDE (right of) the chain
+          // column; the left outer chain sums to 17500 too. Every
+          // instance of the 8 other values sits ON a chain line, and
+          // 6000/17500 appear exactly once each, on outside overall
+          // lines — so 8 values are CHAINED, 6000/17500 OVERALL. The
+          // stub labels evidence the kind exactly as a perfect model
+          // read would (v3 prompt: "overall"/"chained" deliberately).
+          dimEntry('1000', boxKrs(), 0.95, 'chained segment'),
+          dimEntry('1500', boxKrs(), 0.95, 'chained segment'),
+          dimEntry('2000', boxKrs(), 0.95, 'chained segment'),
+          dimEntry('2500', boxKrs(), 0.95, 'chained segment'),
+          dimEntry('3000', boxKrs(), 0.95, 'chained segment'),
+          dimEntry('4000', boxKrs(), 0.95, 'chained segment'),
+          dimEntry('4500', boxKrs(), 0.95, 'chained segment'),
+          dimEntry('5000', boxKrs(), 0.95, 'chained segment'),
+          dimEntry('6000', boxKrs(), 0.95, 'overall width'),
+          dimEntry('17500', boxKrs(), 0.95, 'overall length'),
           legendEntry('Skala 1 : 100', boxKrs()),
         ]),
         detail: emptyDetections(),
@@ -607,15 +623,23 @@ const HOUSE_ID_KRS_TYPE45: BenchmarkFixture = {
       stub: {
         survey: detections([
           // Dimension sample (same grid dims as p1; 4 of 10 values).
-          dimEntry('2000', boxKrs()),
-          dimEntry('3000', boxKrs()),
-          dimEntry('5000', boxKrs()),
-          dimEntry('17500', boxKrs()),
+          // E18 kinds as p1 (the kusen plan reuses the denah geometry
+          // — identical dimension positions): 2000/3000/5000 are
+          // chain segments, 17500 the right overall.
+          dimEntry('2000', boxKrs(), 0.95, 'chained segment'),
+          dimEntry('3000', boxKrs(), 0.95, 'chained segment'),
+          dimEntry('5000', boxKrs(), 0.95, 'chained segment'),
+          dimEntry('17500', boxKrs(), 0.95, 'overall length'),
           // Kusen marks, hand-counted from the text layer (order as
           // printed: J2 P1 P1 P2 P3 J1 P2 P4 P1 P3 P4 J1 J2 P2).
           // J = jendela (window), P = pintu (door) — the stub rawText
           // carries the Indonesian keyword the openings module maps
           // (OPENING_KEYWORDS: pintu/jendela).
+          // I11 Stage 5 (KRS verification) — the stub previously
+          // carried a 15th symbol (a 4th P2) that is in NEITHER the
+          // text layer (P2 ×3: 2 in-plan + 1 legend) NOR this comment's
+          // own "order as printed" (14 tokens, P2 ×3) NOR the render
+          // (2 P2 doors drawn). Removed with file evidence; P2 is ×3.
           symbolEntry('J2', 'J2 JENDELA', boxKrs()),
           symbolEntry('P1', 'P1 PINTU', boxKrs()),
           symbolEntry('P1', 'P1 PINTU', boxKrs()),
@@ -629,7 +653,6 @@ const HOUSE_ID_KRS_TYPE45: BenchmarkFixture = {
           symbolEntry('P4', 'P4 PINTU', boxKrs()),
           symbolEntry('J1', 'J1 JENDELA', boxKrs()),
           symbolEntry('J2', 'J2 JENDELA', boxKrs()),
-          symbolEntry('P2', 'P2 PINTU', boxKrs()),
           symbolEntry('P2', 'P2 PINTU', boxKrs()),
           legendEntry('Skala 1 : 100', boxKrs()),
         ]),
@@ -650,29 +673,32 @@ const HOUSE_ID_KRS_TYPE45: BenchmarkFixture = {
   ],
   expected: {
     dimensions: [
-      // Page 1 — all 10 distinct values.
-      { page: 1, originalText: '1000', value: 1000, unit: 'mm', kind: 'LINEAR' },
-      { page: 1, originalText: '1500', value: 1500, unit: 'mm', kind: 'LINEAR' },
-      { page: 1, originalText: '2000', value: 2000, unit: 'mm', kind: 'LINEAR' },
-      { page: 1, originalText: '2500', value: 2500, unit: 'mm', kind: 'LINEAR' },
-      { page: 1, originalText: '3000', value: 3000, unit: 'mm', kind: 'LINEAR' },
-      { page: 1, originalText: '4000', value: 4000, unit: 'mm', kind: 'LINEAR' },
-      { page: 1, originalText: '4500', value: 4500, unit: 'mm', kind: 'LINEAR' },
-      { page: 1, originalText: '5000', value: 5000, unit: 'mm', kind: 'LINEAR' },
-      { page: 1, originalText: '6000', value: 6000, unit: 'mm', kind: 'LINEAR' },
-      { page: 1, originalText: '17500', value: 17500, unit: 'mm', kind: 'LINEAR' },
-      // Page 2 — 4-value sample.
-      { page: 2, originalText: '2000', value: 2000, unit: 'mm', kind: 'LINEAR' },
-      { page: 2, originalText: '3000', value: 3000, unit: 'mm', kind: 'LINEAR' },
-      { page: 2, originalText: '5000', value: 5000, unit: 'mm', kind: 'LINEAR' },
-      { page: 2, originalText: '17500', value: 17500, unit: 'mm', kind: 'LINEAR' },
+      // Page 1 — all 10 distinct values. E18 kinds (I11 Stage 5):
+      // 8 chain segments + 2 overalls, evidenced by the drawing
+      // geometry (see the p1 stub comment).
+      { page: 1, originalText: '1000', value: 1000, unit: 'mm', kind: 'CHAINED' },
+      { page: 1, originalText: '1500', value: 1500, unit: 'mm', kind: 'CHAINED' },
+      { page: 1, originalText: '2000', value: 2000, unit: 'mm', kind: 'CHAINED' },
+      { page: 1, originalText: '2500', value: 2500, unit: 'mm', kind: 'CHAINED' },
+      { page: 1, originalText: '3000', value: 3000, unit: 'mm', kind: 'CHAINED' },
+      { page: 1, originalText: '4000', value: 4000, unit: 'mm', kind: 'CHAINED' },
+      { page: 1, originalText: '4500', value: 4500, unit: 'mm', kind: 'CHAINED' },
+      { page: 1, originalText: '5000', value: 5000, unit: 'mm', kind: 'CHAINED' },
+      { page: 1, originalText: '6000', value: 6000, unit: 'mm', kind: 'OVERALL' },
+      { page: 1, originalText: '17500', value: 17500, unit: 'mm', kind: 'OVERALL' },
+      // Page 2 — 4-value sample (same E18 kinds as p1).
+      { page: 2, originalText: '2000', value: 2000, unit: 'mm', kind: 'CHAINED' },
+      { page: 2, originalText: '3000', value: 3000, unit: 'mm', kind: 'CHAINED' },
+      { page: 2, originalText: '5000', value: 5000, unit: 'mm', kind: 'CHAINED' },
+      { page: 2, originalText: '17500', value: 17500, unit: 'mm', kind: 'OVERALL' },
     ],
     openings: [
       // Null dims: no schedule table on this sheet (see notes).
+      // P2 is ×3 (I11 Stage 5 correction — see the p2 stub comment).
       { mark: 'J1', widthMm: null, heightMm: null, quantity: 2, schedulePage: null },
       { mark: 'J2', widthMm: null, heightMm: null, quantity: 2, schedulePage: null },
       { mark: 'P1', widthMm: null, heightMm: null, quantity: 3, schedulePage: null },
-      { mark: 'P2', widthMm: null, heightMm: null, quantity: 4, schedulePage: null },
+      { mark: 'P2', widthMm: null, heightMm: null, quantity: 3, schedulePage: null },
       { mark: 'P3', widthMm: null, heightMm: null, quantity: 2, schedulePage: null },
       { mark: 'P4', widthMm: null, heightMm: null, quantity: 2, schedulePage: null },
     ],

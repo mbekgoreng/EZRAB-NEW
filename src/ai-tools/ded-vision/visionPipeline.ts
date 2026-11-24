@@ -158,8 +158,8 @@ import {
 import type { OcrTextSpan } from './visionOcr';
 import { visionCacheKey } from './visionCache';
 import type { VisionCache, VisionCacheStorage } from './visionCache';
-import { dedupeProposals, roiIdFor, tilePage, tilePageGrid } from './roi';
-import type { PageTile } from './roi';
+import { bboxIou, dedupeProposals, roiIdFor, tilePage, tilePageGrid } from './roi';
+import type { DedupeMerge, PageTile } from './roi';
 import { canUseCanonicalCatalog, canUseInternalPriceData } from '../ded-ai-estimate/dedMode';
 import type { DedRabAiMode } from '../ded-ai-estimate/dedMode';
 import { statusFromConfidence } from './types';
@@ -1370,6 +1370,230 @@ export function detectDegenerateFlood(proposals: VisionDetectionProposal[]): Set
   return flood;
 }
 
+/** Normalize a text for identity/containment comparisons (F12/F13): uppercase, one separator letter, single spaces. */
+function normalizeIdentityText(s: string): string {
+  return s
+    .toUpperCase()
+    .replace(/[×✕]/g, 'X')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
+ * I11 Stage 5 (F13) — cross-pass identity of a proposal: what the
+ * detection IS, independent of how the model happened to phrase its
+ * label on this pass. The DETAIL/focused re-read returns the same
+ * symbol at the same bbox but with label/rawText SWAPPED (survey:
+ * label `Pintu P1` + rawText `P1`; DETAIL: label `P1` + rawText
+ * `Pintu P1`) — the label-exact `dedupeProposals` cannot see they are
+ * the same detection, so every re-read occurrence counted twice
+ * (opening counts exactly 2×, element quantities ×2, schedule rows
+ * duplicated). The identity is per kind:
+ * - symbol: the mark (`P1`), via the same `markFromLabel` validation
+ *   uses — null when no mark is extractable (those symbols skip
+ *   anyway, so there is nothing to dedupe).
+ * - object: the inferred element (category + type + mark, when the
+ *   object carries one) — null when no element is inferred.
+ * - table: the normalized row text — a schedule row is a DEFINITION,
+ *   so identical text is the same row even without bbox evidence.
+ * - dimension: the parsed mm values (+ kinds) — the same annotation
+ *   re-read with a different label parses to the same values; when the
+ *   text does not parse, the normalized raw text itself is the
+ *   identity (two identical unparseable texts at the same bbox are
+ *   the same annotation — e.g. an E21 bare `44` re-read).
+ * - text/legend: null — those kinds are never re-read by a focused or
+ *   DETAIL pass (the prompts are dimensions/symbols/tables only).
+ * Exported for tests.
+ */
+export function crossPassIdentity(p: VisionDetectionProposal): string | null {
+  if (p.kind === 'symbol') {
+    const mark = markFromLabel(p.label, p.rawText, { symbolContext: true });
+    return mark ? `symbol:${normalizeMark(mark)}` : null;
+  }
+  if (p.kind === 'object') {
+    const inferred = inferElement(p.label, p.rawText);
+    if (!inferred) return null;
+    const mark = elementMarkFromText(`${p.label} ${p.rawText}`);
+    return mark
+      ? `object:${inferred.category}:${inferred.elementType}:${normalizeMark(mark)}`
+      : `object:${inferred.category}:${inferred.elementType}`;
+  }
+  if (p.kind === 'table') {
+    if (!parseScheduleRow(p.rawText, 0)) return null;
+    return `table:${normalizeIdentityText(p.rawText)}`;
+  }
+  if (p.kind === 'dimension') {
+    const records = parseDimensionList(p.rawText, { page: 0 });
+    if (records.length > 0) {
+      return `dimension:${records
+        .map((r) => `${dimensionRecordToMm(r) ?? '?'}:${r.kind}`)
+        .join('+')}`;
+    }
+    return `dimension:raw:${normalizeIdentityText(p.rawText)}`;
+  }
+  return null;
+}
+
+/**
+ * I11 Stage 5 (F13) — cross-pass dedupe. Two proposals with the SAME
+ * cross-pass identity are the same detection seen on two passes when
+ * their bboxes overlap above the IoU threshold (default 0.5, same as
+ * `dedupeProposals`): the higher-confidence one is kept, the other is
+ * dropped and the merge recorded. On a confidence tie the FIRST
+ * proposal wins (stable — same rule as `dedupeProposals`).
+ *
+ * Two different instances of one mark (two P1 doors at different
+ * places) NEVER merge: their bboxes do not overlap. Null-bbox
+ * proposals never merge either (no placement evidence — the same rule
+ * as `dedupeProposals`), EXCEPT table rows, whose identity is the row
+ * text itself: a schedule row is a definition, not an instance, so
+ * two identical row texts are one row even with no bbox.
+ *
+ * Runs AFTER `dedupeProposals` at every merge point (survey, focused,
+ * DETAIL) — the label-exact pass catches same-label duplicates first,
+ * this pass catches the label-variant re-reads it misses.
+ * Exported for tests.
+ */
+export function dedupeCrossPassProposals(
+  proposals: VisionDetectionProposal[],
+  iouThreshold = 0.5,
+): { kept: VisionDetectionProposal[]; dropped: VisionDetectionProposal[]; merges: DedupeMerge[] } {
+  if (!Number.isFinite(iouThreshold) || iouThreshold < 0 || iouThreshold > 1) {
+    throw new RangeError('dedupeCrossPassProposals: iouThreshold must be a finite number in 0..1.');
+  }
+  const identities = proposals.map((p) => crossPassIdentity(p));
+  const ordered = proposals
+    .map((p, i) => ({ p, i }))
+    .sort((a, b) => b.p.confidence - a.p.confidence || a.i - b.i)
+    .map(({ p, i }) => ({ p, identity: identities[i] }));
+  const kept: VisionDetectionProposal[] = [];
+  const keptIdentities: Array<string | null> = [];
+  const dropped: VisionDetectionProposal[] = [];
+  const merges: DedupeMerge[] = [];
+  for (const { p: candidate, identity } of ordered) {
+    let duplicateOf: VisionDetectionProposal | null = null;
+    let duplicateIou = 0;
+    if (identity !== null) {
+      for (let k = 0; k < kept.length; k += 1) {
+        const existing = kept[k];
+        if (keptIdentities[k] !== identity) continue;
+        if (existing.kind !== candidate.kind) continue;
+        if (candidate.kind === 'table') {
+          // Schedule rows merge on identical text alone (see above).
+          duplicateOf = existing;
+          duplicateIou = 1;
+          break;
+        }
+        if (existing.bbox === null || candidate.bbox === null) continue;
+        const iou = bboxIou(existing.bbox, candidate.bbox);
+        if (iou > iouThreshold) {
+          duplicateOf = existing;
+          duplicateIou = iou;
+          break;
+        }
+      }
+    }
+    if (duplicateOf) {
+      dropped.push(candidate);
+      merges.push({
+        kind: candidate.kind,
+        label: candidate.label,
+        keptConfidence: duplicateOf.confidence,
+        droppedConfidence: candidate.confidence,
+        iou: duplicateIou,
+      });
+    } else {
+      kept.push(candidate);
+      keptIdentities.push(identity);
+    }
+  }
+  return { kept, dropped, merges };
+}
+
+/**
+ * I11 Stage 5 (F14) — cap on identical NULL-BBOX proposals per
+ * (kind, rawText, confidence) group on one page. On the KRS p1 live
+ * read both focused-dimensions calls hit the 8K clamp and the
+ * salvaged entries carried NO bbox (coverage 38% / 24%), so 115
+ * identical `300` + 92 `1500` records survived: null-bbox proposals
+ * skip the flood detector (`!p.bbox → return`) and cannot dedupe (no
+ * bbox to compare), so the p1 count of 233 was not credible as an
+ * instance count. The VALUES were grounded (hallucination 2/262) but
+ * the multiplicities were not.
+ *
+ * Why 10: a genuine page rarely repeats the exact same dimension
+ * value more than ~10 times with NO placement evidence at all
+ * (bbox'd repeats are real — chains, grids — and are covered by the
+ * grid detector + IoU dedupe instead); the flood cases run 92–115.
+ * The cap keeps the FIRST 10 in proposal order and skips the rest as
+ * `null-bbox-repetition-cap`. It applies to dimension + symbol kinds
+ * only (the record-bearing kinds that COUNT); table rows dedupe by
+ * text under F13, and text/legend proposals never become counted
+ * records. Exported for tests.
+ */
+export const NULL_BBOX_REPETITION_CAP = 10;
+
+/**
+ * I11 Stage 5 (F14) — indices of proposals beyond the null-bbox
+ * repetition cap, with the group key + total for the warning. A group
+ * is (kind, rawText, confidence) over null-bbox dimension/symbol
+ * proposals only. Exported for tests.
+ */
+export function nullBboxRepetitionCapIndices(
+  proposals: VisionDetectionProposal[],
+  cap: number = NULL_BBOX_REPETITION_CAP,
+): Map<number, { key: string; total: number }> {
+  const groups = new Map<string, number[]>();
+  proposals.forEach((p, i) => {
+    if ((p.kind !== 'dimension' && p.kind !== 'symbol') || p.bbox !== null) return;
+    const key = `${p.kind}|${p.rawText}|${p.confidence}`;
+    const list = groups.get(key) ?? [];
+    list.push(i);
+    groups.set(key, list);
+  });
+  const capped = new Map<number, { key: string; total: number }>();
+  for (const [key, indices] of groups) {
+    if (indices.length <= cap) continue;
+    for (const i of indices.slice(cap)) {
+      capped.set(i, { key, total: indices.length });
+    }
+  }
+  return capped;
+}
+
+/**
+ * I11 Stage 5 (F9/F10) — size of an identical (kind, rawText,
+ * confidence) group in ONE call's response that counts as runaway
+ * repetition. The F9 flood was 123 identical symbols and the F10
+ * flood 49 identical dimensions per call; a legitimate focused call
+ * never returns 20+ IDENTICAL values at identical confidence (a dense
+ * sheet yields many values, not many copies of one value).
+ */
+export const FOCUSED_RUNAWAY_GROUP_SIZE = 20;
+
+/**
+ * I11 Stage 5 (F9/F10) — does this single call's batch show runaway
+ * repetition? Either (a) an identical (kind, rawText, confidence)
+ * group of ≥ FOCUSED_RUNAWAY_GROUP_SIZE, or (b) a degenerate grid
+ * flood (the F9/F10 signature) inside the batch. The caller
+ * early-stops the NEXT tile's focused call for the same kind when
+ * this returns true — the runaway batch itself still flows through
+ * validation, where the flood detector + F14 cap bound it; the
+ * early-stop only saves the next tile's wasted call.
+ * Exported for tests.
+ */
+export function isRunawayBatch(proposals: VisionDetectionProposal[]): boolean {
+  const groups = new Map<string, number>();
+  for (const p of proposals) {
+    if (p.kind !== 'dimension' && p.kind !== 'symbol') continue;
+    const key = `${p.kind}|${p.rawText}|${p.confidence}`;
+    const count = (groups.get(key) ?? 0) + 1;
+    if (count >= FOCUSED_RUNAWAY_GROUP_SIZE) return true;
+    groups.set(key, count);
+  }
+  return detectDegenerateFlood(proposals).size > 0;
+}
+
 /** Do two bboxes come within `maxGapPx` of each other (expanded-intersection test)? */
 function bboxNear(a: BoundingBox, b: BoundingBox, maxGapPx: number): boolean {
   return (
@@ -1387,6 +1611,77 @@ function bboxNear(a: BoundingBox, b: BoundingBox, maxGapPx: number): boolean {
  */
 const DIMENSION_EVIDENT_LABEL_RE =
   /\b(mm|cm|m|meter|dimensi|dimension|tebal|lebar|tinggi|panjang|ukuran|frame|kusen)\b/i;
+
+/**
+ * I11 Stage 5 (F12) — a bare size pair (`90 x 210`, `0.9 x 2.1`,
+ * `120×150 cm`): two numbers joined by a separator, optionally with a
+ * unit. This is the shape of a schedule row's size re-reported as a
+ * dimension proposal — a labeled dimension (`TREAD - 0.25M`) or a
+ * single value (`2100`) never matches.
+ */
+const SIZE_PAIR_RE = /^\d+(?:[.,]\d+)?\s*[Xx×]\s*\d+(?:[.,]\d+)?\s*(?:mm|cm|m)?$/;
+
+interface ScheduleRowIndexEntry {
+  entry: ScheduleEntry;
+  rawText: string;
+  bbox: BoundingBox | null;
+}
+
+/**
+ * I11 Stage 5 (F12) — does this dimension proposal re-report a
+ * schedule row's size? The live model returns BOTH the table row AND
+ * a dimension proposal for each schedule size (`90 x 210`), and the
+ * pipeline had no cross-kind dedupe, so schedule sizes became phantom
+ * dimension records (8 extras on id-jadwal-kusen p2). Two evidences,
+ * either suffices:
+ * (a) TEXT: the proposal is a bare size pair whose normalized text is
+ *     contained in a same-page schedule row's normalized text
+ *     (`90 X 210` inside `P1 | PINTU | 90 X 210 | ...`) — the
+ *     dimension text IS the row's size substring.
+ * (b) VALUE + PLACE: the proposal parses to exactly two values that
+ *     equal a row's (widthMm, heightMm) pair (order-insensitive) AND
+ *     its bbox overlaps the row's bbox — the same size re-read in a
+ *     different surface form (`0.9 x 2.1` vs row `90 x 210`) at the
+ *     same place.
+ * Single values are never suppressed this way (a 2100 mm height
+ * dimension is common on plans and is not a schedule re-report), and
+ * a pair that matches no row on THIS page is kept. Returns the
+ * matched row's mark for the warning, or null. The information
+ * survives in the schedule entry — suppression loses no data, it
+ * removes a duplicate.
+ */
+function scheduleRowDuplicatedBy(
+  proposal: VisionDetectionProposal,
+  records: DimensionRecord[],
+  rows: ScheduleRowIndexEntry[],
+): string | null {
+  const dimText = normalizeIdentityText(proposal.rawText);
+  const isPairShape = SIZE_PAIR_RE.test(proposal.rawText.trim());
+  const values =
+    records.length === 2
+      ? records.map((r) => dimensionRecordToMm(r))
+      : null;
+  for (const row of rows) {
+    if (isPairShape && normalizeIdentityText(row.rawText).includes(dimText)) {
+      return row.entry.mark;
+    }
+    if (
+      values !== null &&
+      values[0] !== null &&
+      values[1] !== null &&
+      row.entry.widthMm != null &&
+      row.entry.heightMm != null &&
+      ((values[0] === row.entry.widthMm && values[1] === row.entry.heightMm) ||
+        (values[0] === row.entry.heightMm && values[1] === row.entry.widthMm)) &&
+      proposal.bbox !== null &&
+      row.bbox !== null &&
+      bboxIou(proposal.bbox, row.bbox) > 0
+    ) {
+      return row.entry.mark;
+    }
+  }
+  return null;
+}
 
 /**
  * Validate deduped page-coordinate proposals through I2/I3/I5/I6.
@@ -1510,6 +1805,26 @@ function validateProposals(
   // readings. Flood members skip before any kind branch runs.
   const floodIndices = detectDegenerateFlood(proposals);
 
+  // I11 Stage 5 (F14) — null-bbox repetition cap pre-pass: identical
+  // null-bbox proposals beyond the cap skip before any kind branch
+  // runs (they carry no placement evidence, so neither the flood
+  // detector nor IoU dedupe can bound them).
+  const cappedIndices = nullBboxRepetitionCapIndices(proposals);
+  const cappedWarnings = new Set<string>();
+
+  // I11 Stage 5 (F12) — schedule-row index for the cross-kind check:
+  // every table proposal on this page that parses into a schedule
+  // entry, with its verbatim row text + bbox. Built BEFORE the main
+  // loop because a dimension proposal may precede its row in proposal
+  // order. parseScheduleRow is pure, so the main loop's own table
+  // branch re-parses the same rows idempotently.
+  const scheduleRowIndex: ScheduleRowIndexEntry[] = [];
+  for (const proposal of proposals) {
+    if (proposal.kind !== 'table') continue;
+    const entry = parseScheduleRow(proposal.rawText, ctx.page);
+    if (entry) scheduleRowIndex.push({ entry, rawText: proposal.rawText, bbox: proposal.bbox });
+  }
+
   // I11 Stage 4 (E21) — bare sub-100 integer dimension proposals that
   // failed the plain parse are held for the second pass below (after
   // the main loop, when validated dimensions exist for adjacency).
@@ -1525,6 +1840,20 @@ function validateProposals(
       warnings.push(
         `"${proposal.rawText}" (hal. ${ctx.page}) bagian dari pola kisi identik berulang — dibaca sebagai halusinasi model, bukan deteksi.`,
       );
+      return;
+    }
+
+    const capped = cappedIndices.get(proposalIdx);
+    if (capped) {
+      skip('null-bbox-repetition-cap');
+      // One warning per group, not one per dropped copy (a flood can
+      // carry a hundred copies of one value).
+      if (!cappedWarnings.has(capped.key)) {
+        cappedWarnings.add(capped.key);
+        warnings.push(
+          `"${proposal.rawText}" (hal. ${ctx.page}): ${capped.total} deteksi identik tanpa bbox — hanya ${NULL_BBOX_REPETITION_CAP} pertama yang dipakai (batas pengulangan F14).`,
+        );
+      }
       return;
     }
 
@@ -1561,6 +1890,17 @@ function validateProposals(
         skip('dimension-unparseable');
         warnings.push(
           `Dimensi "${proposal.rawText}" (hal. ${ctx.page}) tidak dapat diuraikan parser I2 — diabaikan, bukan ditebak.`,
+        );
+        return;
+      }
+      // I11 Stage 5 (F12) — a dimension proposal that re-reports a
+      // schedule row's size is the same text twice, not a dimension:
+      // skip it (the size survives in the schedule entry).
+      const duplicatedRowMark = scheduleRowDuplicatedBy(proposal, records, scheduleRowIndex);
+      if (duplicatedRowMark !== null) {
+        skip('dimension-duplicates-schedule-row');
+        warnings.push(
+          `Dimensi "${proposal.rawText}" (hal. ${ctx.page}) mengulang ukuran baris jadwal ${duplicatedRowMark} — diabaikan, bukan dihitung dua kali.`,
         );
         return;
       }
@@ -2505,13 +2845,23 @@ export async function runVisionPage(input: RunVisionPageInput): Promise<VisionPa
   }
 
   // 6. Dedupe in PAGE coordinates (tile overlap zones report twice).
+  //    I11 Stage 5 (F13): the label-exact pass runs first, then the
+  //    cross-pass pass catches label-variant re-reads of the same
+  //    detection (same mark + same bbox, different label wording).
   const deduped = dedupeProposals(surveyed);
   if (deduped.merges.length > 0) {
     warnings.push(
       `Hal. ${input.page}: ${deduped.merges.length} deteksi ganda zona overlap tile digabung (keyakinan tertinggi dipertahankan).`,
     );
   }
-  let proposals = deduped.kept;
+  const dedupedCrossPass = dedupeCrossPassProposals(deduped.kept);
+  if (dedupedCrossPass.merges.length > 0) {
+    warnings.push(
+      `Hal. ${input.page}: ${dedupedCrossPass.merges.length} deteksi ganda lintas-pass digabung (tanda/bbox sama, label berbeda).`,
+    );
+  }
+  const surveyDedupeMerges = deduped.merges.length + dedupedCrossPass.merges.length;
+  let proposals = dedupedCrossPass.kept;
 
   // 7. Scanned pages: re-classify from the first pass's own text (OCR
   //    spans for scanned pages, survey detections otherwise), then
@@ -2551,7 +2901,7 @@ export async function runVisionPage(input: RunVisionPageInput): Promise<VisionPa
       proposals,
       skippedProposals: validated.skipped,
       droppedProposalCount,
-      dedupeMerges: deduped.merges.length,
+      dedupeMerges: surveyDedupeMerges,
       cacheHit: cost.calls === 0 && cost.cacheHits > 0,
       status: classification.status,
       skippedReason: 'policy',
@@ -2685,6 +3035,7 @@ export async function runVisionPage(input: RunVisionPageInput): Promise<VisionPa
         if (focusBudgetHit) break;
         try {
           const image = await input.renderPage({ page: input.page, roi: tile.bbox });
+          const focusedBefore = focused.length;
           const ok = await focusOne({
             kind,
             image,
@@ -2696,6 +3047,21 @@ export async function runVisionPage(input: RunVisionPageInput): Promise<VisionPa
             label: `tile ${tile.index}`,
           });
           kindOk = kindOk || ok;
+          // I11 Stage 5 (F9/F10) — early-stop: when one tile's focused
+          // call comes back as runaway repetition (the F9 123×
+          // identical symbols / F10 49× identical dimensions shape),
+          // the next tile's call for the SAME kind would burn another
+          // clamped call on the same illegible read — skip it. The
+          // runaway batch itself still flows through validation,
+          // where the flood detector + F14 cap bound it. Other kinds
+          // are unaffected (a symbols runaway says nothing about the
+          // tables pass).
+          if (ok && isRunawayBatch(focused.slice(focusedBefore))) {
+            warnings.push(
+              `Hal. ${input.page}: re-pass fokus ${kind} tile ${tile.index} menunjukkan pengulangan massal — tile berikutnya dilewati (early-stop F9/F10).`,
+            );
+            break;
+          }
         } catch (e) {
           warnings.push(
             `Render/analisis tile ${tile.index} re-pass fokus ${kind} hal. ${input.page} gagal: ${e instanceof Error ? e.message : String(e)}`,
@@ -2707,10 +3073,19 @@ export async function runVisionPage(input: RunVisionPageInput): Promise<VisionPa
   }
   if (focused.length > 0) {
     const mergedFocus = dedupeProposals([...proposals, ...focused]);
-    proposals = mergedFocus.kept;
+    // I11 Stage 5 (F13): the focused re-read may return the same
+    // detection with a swapped label — the cross-pass pass merges it
+    // (same mark + bbox), so a re-read occurrence is not counted twice.
+    const mergedFocusCrossPass = dedupeCrossPassProposals(mergedFocus.kept);
+    proposals = mergedFocusCrossPass.kept;
     if (mergedFocus.merges.length > 0) {
       warnings.push(
         `Hal. ${input.page}: ${mergedFocus.merges.length} deteksi ganda re-pass fokus digabung.`,
+      );
+    }
+    if (mergedFocusCrossPass.merges.length > 0) {
+      warnings.push(
+        `Hal. ${input.page}: ${mergedFocusCrossPass.merges.length} deteksi ganda lintas-pass re-pass fokus digabung (tanda/bbox sama, label berbeda).`,
       );
     }
     validated = validateProposals(proposals, {
@@ -2793,7 +3168,17 @@ export async function runVisionPage(input: RunVisionPageInput): Promise<VisionPa
             : p,
         );
         const merged = dedupeProposals([...proposals, ...detailProposals]);
-        proposals = merged.kept;
+        // I11 Stage 5 (F13): the DETAIL re-read returns the same
+        // symbols/elements at the same bboxes with swapped
+        // label/rawText — the cross-pass pass merges them, so a
+        // re-read occurrence is not counted twice.
+        const mergedCrossPass = dedupeCrossPassProposals(merged.kept);
+        if (mergedCrossPass.merges.length > 0) {
+          warnings.push(
+            `Hal. ${input.page}: ${mergedCrossPass.merges.length} deteksi ganda lintas-pass re-pass DETAIL digabung (tanda/bbox sama, label berbeda).`,
+          );
+        }
+        proposals = mergedCrossPass.kept;
         // Full re-validation of the merged set (deterministic; the
         // detail read may repair or contradict the survey).
         validated = validateProposals(proposals, {
@@ -2874,7 +3259,7 @@ export async function runVisionPage(input: RunVisionPageInput): Promise<VisionPa
     proposals,
     skippedProposals: validated.skipped,
     droppedProposalCount,
-    dedupeMerges: deduped.merges.length,
+    dedupeMerges: surveyDedupeMerges,
     cacheHit: cost.calls === 0 && cost.cacheHits > 0,
     status: aggregatePageStatus(validated.dimensions, openings, quantities, elements),
     ahsp,

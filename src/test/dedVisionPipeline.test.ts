@@ -32,15 +32,21 @@ import {
   DEFAULT_MAX_VISION_CALLS_PER_DOCUMENT,
   DENSITY_TILE_MAX_PX,
   DENSITY_TILE_THRESHOLD_CHARS_PER_MP,
+  FOCUSED_RUNAWAY_GROUP_SIZE,
+  NULL_BBOX_REPETITION_CAP,
   base64LengthOfDataUrl,
   canEnrichWithCanonical,
   cleanSymbolLabel,
   computeDocHash,
   createParserPreviewRenderPage,
+  crossPassIdentity,
   decideVisionRender,
+  dedupeCrossPassProposals,
   detectDegenerateFlood,
   focusRoiId,
+  isRunawayBatch,
   matchVisionEvidenceToItem,
+  nullBboxRepetitionCapIndices,
   pngDimensionsFromDataUrl,
   rescaleBboxToPage,
   runVisionDocument,
@@ -206,6 +212,17 @@ function symbolEntry(mark: string, extra: Record<string, unknown> = {}): Record<
     confidence: 0.9,
     ...extra,
   };
+}
+
+/** Typed proposal builder for direct dedupe/cap unit tests (Section U). */
+function prop(
+  kind: VisionDetectionProposal['kind'],
+  label: string,
+  rawText: string,
+  bbox: { x: number; y: number; width: number; height: number } | null,
+  confidence = 0.9,
+): VisionDetectionProposal {
+  return { kind, label, rawText, bbox, confidence, page: 1, status: 'HIGH_CONFIDENCE', raw: null };
 }
 
 function makeLiveItem(overrides: Partial<DedAiItem> = {}): DedAiItem {
@@ -1369,7 +1386,13 @@ async function main(): Promise<void> {
         symbolEntry('D', { rawText: 'D DOOR', bbox: { x: 500, y: 200, width: 60, height: 90 } }),
         symbolEntry('MD', { rawText: 'MD MAIN DOOR' }),
         symbolEntry('W', { rawText: 'W WINDOW' }),
-        symbolEntry('D-DOOR', { rawText: 'D-DOOR' }),
+        // I11 Stage 5 (F13): this third D occurrence MUST sit at a
+        // distinct bbox — same mark + same bbox is the SAME detection
+        // re-read (the F13 duplicate), not a second door. The old
+        // fixture reused the default bbox here, which is geometrically
+        // impossible for two distinct doors; the count assertion below
+        // is unchanged.
+        symbolEntry('D-DOOR', { rawText: 'D-DOOR', bbox: { x: 700, y: 200, width: 60, height: 90 } }),
         symbolEntry('A', { rawText: 'A' }),
         { kind: 'table', label: 'D', rawText: 'D-DOOR - 0.91X2.13', bbox: { x: 50, y: 50, width: 400, height: 30 }, confidence: 0.95 },
         { kind: 'table', label: 'MD', rawText: 'MD-MAIN DOOR - 1.07X2.13', bbox: { x: 50, y: 90, width: 400, height: 30 }, confidence: 0.95 },
@@ -2037,6 +2060,398 @@ async function main(): Promise<void> {
     });
     check('C3 quantities: FULL_AI matcher call count is 0', fullAiCalls, 0);
     check('C3 quantities: FULL_AI carries no matches', fullAi.pages[0].ahsp.matches.length, 0);
+  }
+
+  // =======================================================================
+  // U. I11 Stage 5 — F13 cross-pass dedupe, F14 null-bbox cap,
+  //    F9/F10 early-stop, F12 schedule-row dimension dedupe
+  // =======================================================================
+  {
+    // F13 unit — the Stage 4 live shape: the survey writes label
+    // `Pintu P1` + rawText `P1`; the DETAIL re-read swaps them (label
+    // `P1` + rawText `Pintu P1`) at the same bbox. Same mark + same
+    // bbox = the same detection, however the label is worded.
+    const box = { x: 300, y: 200, width: 60, height: 90 };
+    const survey = prop('symbol', 'Pintu P1', 'P1', box, 0.9);
+    const detail = prop('symbol', 'P1', 'Pintu P1', box, 0.85);
+    check('F13 identity: swapped label/rawText share one identity', crossPassIdentity(survey), crossPassIdentity(detail));
+    const merged = dedupeCrossPassProposals([survey, detail]);
+    check('F13: swapped re-read merges to 1 kept', merged.kept.length, 1);
+    check('F13: one merge recorded', merged.merges.length, 1);
+    check('F13: higher-confidence copy kept', merged.kept[0]?.confidence, 0.9);
+    // Confidence tie → the FIRST proposal wins (stable, same rule as
+    // dedupeProposals).
+    const tied = dedupeCrossPassProposals([
+      prop('symbol', 'Pintu P1', 'P1', box, 0.9),
+      prop('symbol', 'P1', 'Pintu P1', box, 0.9),
+    ]);
+    check('F13: confidence tie keeps the first proposal', tied.kept[0]?.label, 'Pintu P1');
+    // Two DIFFERENT instances of one mark (different bboxes) never
+    // merge — that is how counts stay honest.
+    const twoDoors = dedupeCrossPassProposals([
+      prop('symbol', 'P1', 'P1', { x: 100, y: 200, width: 60, height: 90 }, 0.9),
+      prop('symbol', 'P1', 'P1', { x: 500, y: 200, width: 60, height: 90 }, 0.9),
+    ]);
+    check('F13: same mark at different bboxes stays 2', twoDoors.kept.length, 2);
+    // Different marks at the same bbox never merge (a dimension line
+    // legitimately overlaps the symbol it annotates; same for marks).
+    const twoMarks = dedupeCrossPassProposals([
+      prop('symbol', 'P1', 'P1', box, 0.9),
+      prop('symbol', 'P2', 'P2', box, 0.9),
+    ]);
+    check('F13: different marks at one bbox stay 2', twoMarks.kept.length, 2);
+    // Null-bbox symbols never merge (no placement evidence — the same
+    // rule as dedupeProposals).
+    const noBbox = dedupeCrossPassProposals([
+      prop('symbol', 'P1', 'P1', null, 0.9),
+      prop('symbol', 'P1', 'P1', null, 0.9),
+    ]);
+    check('F13: null-bbox symbols never merge', noBbox.kept.length, 2);
+    // Schedule rows merge on identical text alone — a row is a
+    // definition, not an instance (bbox or no bbox).
+    const rows = dedupeCrossPassProposals([
+      prop('table', 'P1', 'P1 | Pintu | 90 x 210', { x: 50, y: 50, width: 400, height: 30 }, 0.95),
+      prop('table', 'P1', 'P1 | Pintu | 90 x 210', { x: 60, y: 55, width: 400, height: 30 }, 0.9),
+      prop('table', 'P1', 'P1 | Pintu | 90 x 210', null, 0.9),
+    ]);
+    check('F13: identical schedule rows merge to 1', rows.kept.length, 1);
+    check('F13: schedule-row merges recorded', rows.merges.length, 2);
+    // Dimensions merge on parsed value + bbox, whatever the label says.
+    const dims = dedupeCrossPassProposals([
+      prop('dimension', 'wall length', '3.500', { x: 100, y: 100, width: 200, height: 40 }, 0.95),
+      prop('dimension', 'chained segment', '3.500', { x: 100, y: 100, width: 200, height: 40 }, 0.9),
+    ]);
+    check('F13: same dimension value + bbox merges across labels', dims.kept.length, 1);
+    // Unparseable dimension text falls back to the raw text identity.
+    const bare44 = dedupeCrossPassProposals([
+      prop('dimension', 'frame 44', '44', { x: 300, y: 100, width: 60, height: 30 }, 0.9),
+      prop('dimension', '44', '44', { x: 300, y: 100, width: 60, height: 30 }, 0.85),
+    ]);
+    check('F13: unparseable dims merge on raw text + bbox', bare44.kept.length, 1);
+    // Objects merge on inferred element + bbox.
+    const walls = dedupeCrossPassProposals([
+      prop('object', 'DINDING LUAR', 'Dinding luar 7.000 x 3.500', { x: 100, y: 100, width: 400, height: 40 }, 0.9),
+      prop('object', 'Dinding luar', 'Dinding luar', { x: 100, y: 100, width: 400, height: 40 }, 0.85),
+    ]);
+    check('F13: same wall object + bbox merges', walls.kept.length, 1);
+    // No identity for text/legend (never re-read) or unmarked symbols.
+    check('F13 identity: text has no cross-pass identity', crossPassIdentity(prop('text', 'DENAH', 'DENAH', box)), null);
+    check('F13 identity: legend has no cross-pass identity', crossPassIdentity(prop('legend', 'SKALA 1:100', 'SKALA 1:100', box)), null);
+    check('F13 identity: unmarked symbol has no identity', crossPassIdentity(prop('symbol', 'door', 'door, unmarked', box)), null);
+  }
+  {
+    // F13 e2e — the id-jadwal-kusen live shape end to end: the survey
+    // reads P1 once, the DETAIL re-read (UNRESOLVED opening, no
+    // schedule) returns the swapped label/rawText at the same bbox.
+    // Before the fix the opening counted 2; now it counts 1.
+    const box = { x: 300, y: 200, width: 60, height: 90 };
+    const script: ScriptFn = (req) => {
+      if (promptKind(req.prompt) === 'symbol') {
+        return detections([{ kind: 'symbol', label: 'P1', rawText: 'Pintu P1', bbox: box, confidence: 0.9 }]);
+      }
+      return detections([{ kind: 'symbol', label: 'Pintu P1', rawText: 'P1', bbox: box, confidence: 0.9 }]);
+    };
+    const { responder } = makeResponder(script);
+    const { renderPage } = makeRenderPage({ 1: { w: 1000, h: 800, b64: 1000 } });
+    const page = await runVisionPage({
+      ...floorPlanPage(),
+      docHash: 'doc-u1',
+      mode: 'EZRAB_AI',
+      responder,
+      renderPage,
+      budget: { used: 0, max: DEFAULT_MAX_VISION_CALLS_PER_DOCUMENT },
+    });
+    check('F13 e2e: DETAIL re-pass fired (UNRESOLVED opening)', page.detailPass, true);
+    check('F13 e2e: one P1 opening', page.openings.length, 1);
+    check('F13 e2e: P1 quantity is 1, not 2', page.openings[0]?.quantity, 1);
+    check('F13 e2e: one proposal survives the merge', page.proposals.length, 1);
+    checkTrue(
+      'F13 e2e: the cross-pass merge is warned',
+      page.warnings.some((w) => w.includes('lintas-pass')),
+    );
+    // Control — two P1 doors at DIFFERENT bboxes still count 2.
+    const { responder: responder2 } = makeResponder(() =>
+      detections([
+        { kind: 'symbol', label: 'P1', rawText: 'P1', bbox: { x: 100, y: 200, width: 60, height: 90 }, confidence: 0.9 },
+        { kind: 'symbol', label: 'P1', rawText: 'P1', bbox: { x: 500, y: 200, width: 60, height: 90 }, confidence: 0.9 },
+      ]),
+    );
+    const page2 = await runVisionPage({
+      ...floorPlanPage(),
+      docHash: 'doc-u1b',
+      mode: 'EZRAB_AI',
+      responder: responder2,
+      renderPage,
+      budget: { used: 0, max: DEFAULT_MAX_VISION_CALLS_PER_DOCUMENT },
+    });
+    check('F13 e2e control: two doors at two bboxes count 2', page2.openings[0]?.quantity, 2);
+  }
+  {
+    // F14 unit — the KRS p1 shape: identical null-bbox proposals in
+    // one (kind, rawText, confidence) group, capped at 10.
+    check('F14: cap constant is 10', NULL_BBOX_REPETITION_CAP, 10);
+    const flood = Array.from({ length: 12 }, () => prop('dimension', '300', '300', null, 0.6));
+    const capped = nullBboxRepetitionCapIndices(flood);
+    check('F14 unit: 12 identical null-bbox dims cap 2', capped.size, 2);
+    check('F14 unit: the first 10 survive (indices 10, 11 capped)', [...capped.keys()].join(','), '10,11');
+    check('F14 unit: group total recorded', capped.get(10)?.total, 12);
+    const exactlyTen = Array.from({ length: 10 }, () => prop('dimension', '300', '300', null, 0.6));
+    check('F14 unit: exactly 10 identical null-bbox dims cap 0', nullBboxRepetitionCapIndices(exactlyTen).size, 0);
+    const withBbox = Array.from({ length: 12 }, (_, i) =>
+      prop('dimension', '300', '300', { x: 100 + i * 50, y: 100, width: 40, height: 20 }, 0.6),
+    );
+    check('F14 unit: bbox-d proposals are never capped', nullBboxRepetitionCapIndices(withBbox).size, 0);
+    const twoConfs = [
+      ...Array.from({ length: 12 }, () => prop('dimension', '300', '300', null, 0.6)),
+      ...Array.from({ length: 12 }, () => prop('dimension', '300', '300', null, 0.9)),
+    ];
+    check('F14 unit: different confidences are separate groups', nullBboxRepetitionCapIndices(twoConfs).size, 4);
+    const symbols = Array.from({ length: 11 }, () => prop('symbol', 'D', 'D', null, 0.6));
+    check('F14 unit: symbols cap the same way', nullBboxRepetitionCapIndices(symbols).size, 1);
+    const tables = Array.from({ length: 15 }, () => prop('table', 'P1', 'P1 | Pintu | 90 x 210', null, 0.9));
+    check('F14 unit: table rows are not capped (F13 owns them)', nullBboxRepetitionCapIndices(tables).size, 0);
+  }
+  {
+    // F14 e2e — 15 identical null-bbox `300` dims + one real `3.500`:
+    // 10 survive, 5 skip as null-bbox-repetition-cap, the real dim is
+    // untouched, and exactly ONE warning names the group.
+    const flood = Array.from({ length: 15 }, () => ({
+      kind: 'dimension', label: '300', rawText: '300', bbox: null, confidence: 0.6,
+    }));
+    const { responder } = makeResponder(() => detections([...flood, dimEntry('3.500')]));
+    const { renderPage } = makeRenderPage({ 1: { w: 1000, h: 800, b64: 1000 } });
+    const page = await runVisionPage({
+      ...floorPlanPage(),
+      docHash: 'doc-u2',
+      mode: 'EZRAB_AI',
+      responder,
+      renderPage,
+      budget: { used: 0, max: DEFAULT_MAX_VISION_CALLS_PER_DOCUMENT },
+    });
+    check('F14 e2e: 10 of the 15 null-bbox 300s survive', page.dimensions.filter((d) => d.normalizedValue === 300).length, 10);
+    checkTrue('F14 e2e: the real 3.500 survives', page.dimensions.some((d) => d.normalizedValue === 3500));
+    check(
+      'F14 e2e: 5 skip as null-bbox-repetition-cap',
+      page.skippedProposals.filter((s) => s.reason === 'null-bbox-repetition-cap').length,
+      5,
+    );
+    check(
+      'F14 e2e: exactly one warning per capped group',
+      page.warnings.filter((w) => w.includes('batas pengulangan F14')).length,
+      1,
+    );
+  }
+  {
+    // F9/F10 early-stop unit — isRunawayBatch.
+    check('F9/F10: runaway group size constant is 20', FOCUSED_RUNAWAY_GROUP_SIZE, 20);
+    const runaway = Array.from({ length: 20 }, (_, i) =>
+      prop('dimension', '0.91', '0.91', { x: 100 + i * 37, y: 100, width: 30, height: 20 }, 0.6),
+    );
+    checkTrue('F9/F10 unit: 20 identical in one batch is runaway', isRunawayBatch(runaway));
+    const nineteen = runaway.slice(0, 19);
+    check('F9/F10 unit: 19 identical is not runaway', isRunawayBatch(nineteen), false);
+    const varied = Array.from({ length: 25 }, (_, i) =>
+      prop('dimension', `${100 + i}`, `${100 + i}`, { x: 100 + i * 37, y: 100, width: 30, height: 20 }, 0.9),
+    );
+    check('F9/F10 unit: 25 distinct values is not runaway', isRunawayBatch(varied), false);
+    // A degenerate grid flood (6 identical on a perfect 2×3 lattice)
+    // is runaway even below the group-size threshold.
+    const grid: VisionDetectionProposal[] = [];
+    for (let r = 0; r < 2; r += 1) {
+      for (let c = 0; c < 3; c += 1) {
+        grid.push(prop('symbol', 'door, unmarked', 'door, unmarked', { x: 100 + c * 45, y: 100 + r * 45, width: 30, height: 30 }, 0.3));
+      }
+    }
+    checkTrue('F9/F10 unit: a degenerate grid batch is runaway', isRunawayBatch(grid));
+  }
+  {
+    // F9/F10 early-stop e2e — tiled page (6 tiles), text layer
+    // evidences dimensions the survey validated zero of, so the
+    // focused-dimensions pass fires per tile. Tile 0 comes back as a
+    // runaway batch (25 identical dims) — tiles 1..5 must NOT be
+    // called for that kind.
+    const runawayBatch = Array.from({ length: 25 }, (_, i) => ({
+      kind: 'dimension',
+      label: '0.91',
+      rawText: '0.91',
+      // Irregular positions (never a uniform grid — the runaway
+      // trigger here is the group size, not the flood detector).
+      bbox: { x: 100 + i * 37 + (i % 3) * 7, y: 100 + (i % 5) * 53, width: 30, height: 20 },
+      confidence: 0.9,
+    }));
+    const script: ScriptFn = (req, callIndex) => {
+      const kind = promptKind(req.prompt);
+      if (kind === 'survey') {
+        // Tile 0 only: one visible text proposal (so proposals.length
+        // > 0 and the gap trigger may fire); other tiles see nothing.
+        return callIndex === 0
+          ? detections([{ kind: 'text', label: 'DENAH LANTAI 1', rawText: 'DENAH LANTAI 1', bbox: null, confidence: 0.9 }])
+          : detections([]);
+      }
+      if (kind === 'dimension') return detections(runawayBatch);
+      return detections([]);
+    };
+    const { responder, calls } = makeResponder(script);
+    const { renderPage } = makeRenderPage({ 1: { w: 4000, h: 3000, b64: 14100000 } });
+    const page = await runVisionPage({
+      ...floorPlanPage({
+        text: 'denah lantai 1 ruang tamu 3.500',
+        widthPx: 4000,
+        heightPx: 3000,
+        base64Length: 14100000,
+      }),
+      docHash: 'doc-u3',
+      mode: 'EZRAB_AI',
+      responder,
+      renderPage,
+      budget: { used: 0, max: DEFAULT_MAX_VISION_CALLS_PER_DOCUMENT },
+    });
+    check('F9/F10 e2e: page is tiled', page.renderDecision.mode, 'tiled');
+    check('F9/F10 e2e: the dimensions focused pass ran', page.focusPasses.join(','), 'dimensions');
+    const dimensionCalls = calls.filter((c) => promptKind(c.prompt) === 'dimension').length;
+    check('F9/F10 e2e: only ONE focused-dimensions call (tile 0)', dimensionCalls, 1);
+    check('F9/F10 e2e: 6 survey + 1 focused calls total', calls.length, 7);
+    checkTrue(
+      'F9/F10 e2e: the early-stop is warned',
+      page.warnings.some((w) => w.includes('early-stop F9/F10')),
+    );
+    // Control — a normal focused batch (3 distinct dims) does NOT
+    // early-stop: all 6 tiles get their focused call.
+    const normalBatch = [
+      { kind: 'dimension', label: '3.500', rawText: '3.500', bbox: { x: 100, y: 100, width: 30, height: 20 }, confidence: 0.9 },
+      { kind: 'dimension', label: '2.800', rawText: '2.800', bbox: { x: 200, y: 100, width: 30, height: 20 }, confidence: 0.9 },
+      { kind: 'dimension', label: '1.200', rawText: '1.200', bbox: { x: 300, y: 100, width: 30, height: 20 }, confidence: 0.9 },
+    ];
+    const script2: ScriptFn = (req, callIndex) => {
+      const kind = promptKind(req.prompt);
+      if (kind === 'survey') {
+        return callIndex === 0
+          ? detections([{ kind: 'text', label: 'DENAH LANTAI 1', rawText: 'DENAH LANTAI 1', bbox: null, confidence: 0.9 }])
+          : detections([]);
+      }
+      if (kind === 'dimension') return detections(normalBatch);
+      return detections([]);
+    };
+    const { responder: responder2, calls: calls2 } = makeResponder(script2);
+    const page2 = await runVisionPage({
+      ...floorPlanPage({
+        text: 'denah lantai 1 ruang tamu 3.500',
+        widthPx: 4000,
+        heightPx: 3000,
+        base64Length: 14100000,
+      }),
+      docHash: 'doc-u3b',
+      mode: 'EZRAB_AI',
+      responder: responder2,
+      renderPage,
+      budget: { used: 0, max: DEFAULT_MAX_VISION_CALLS_PER_DOCUMENT },
+    });
+    check(
+      'F9/F10 e2e control: a normal batch calls all 6 tiles',
+      calls2.filter((c) => promptKind(c.prompt) === 'dimension').length,
+      6,
+    );
+    checkTrue(
+      'F9/F10 e2e control: no early-stop warning for a normal batch',
+      !page2.warnings.some((w) => w.includes('early-stop F9/F10')),
+    );
+  }
+  {
+    // F12 — a dimension proposal that re-reports a schedule row's size
+    // is suppressed; the size survives in the schedule entry. The
+    // dimension proposal deliberately PRECEDES the table row in
+    // proposal order (the check must not depend on ordering).
+    const { responder } = makeResponder(() =>
+      detections([
+        { kind: 'dimension', label: '90 x 210', rawText: '90 x 210', bbox: { x: 100, y: 400, width: 120, height: 30 }, confidence: 0.9 },
+        dimEntry('3.500'),
+        { kind: 'table', label: 'P1', rawText: 'P1 | Pintu Utama | 90 x 210 | Kayu Jati', bbox: { x: 50, y: 50, width: 400, height: 30 }, confidence: 0.95 },
+      ]),
+    );
+    const { renderPage } = makeRenderPage({ 1: { w: 1000, h: 800, b64: 1000 } });
+    const page = await runVisionPage({
+      ...floorPlanPage(),
+      docHash: 'doc-u4',
+      mode: 'EZRAB_AI',
+      responder,
+      renderPage,
+      budget: { used: 0, max: DEFAULT_MAX_VISION_CALLS_PER_DOCUMENT },
+    });
+    check('F12: the schedule row is kept', page.scheduleEntries.length, 1);
+    check('F12: the re-reported size produces no dimension record', page.dimensions.filter((d) => d.normalizedValue === 210).length, 0);
+    checkTrue('F12: the genuine 3.500 survives', page.dimensions.some((d) => d.normalizedValue === 3500));
+    check(
+      'F12: the re-report skips as dimension-duplicates-schedule-row',
+      page.skippedProposals.filter((s) => s.reason === 'dimension-duplicates-schedule-row').length,
+      1,
+    );
+    checkTrue(
+      'F12: the suppression names the row mark',
+      page.warnings.some((w) => w.includes('baris jadwal P1')),
+    );
+    // Value-pair + bbox variant: the same size re-read in a different
+    // surface form (`0.9 x 2.1` vs row `900 x 2100`) at the same place
+    // is still the same size.
+    const rowBox = { x: 50, y: 50, width: 400, height: 30 };
+    const { responder: responder2 } = makeResponder(() =>
+      detections([
+        { kind: 'dimension', label: '0.9 x 2.1', rawText: '0.9 x 2.1', bbox: { x: 60, y: 55, width: 120, height: 20 }, confidence: 0.9 },
+        { kind: 'table', label: 'D1', rawText: 'D1 | Pintu | 900 x 2100', bbox: rowBox, confidence: 0.95 },
+      ]),
+    );
+    const page2 = await runVisionPage({
+      ...floorPlanPage(),
+      docHash: 'doc-u4b',
+      mode: 'EZRAB_AI',
+      responder: responder2,
+      renderPage,
+      budget: { used: 0, max: DEFAULT_MAX_VISION_CALLS_PER_DOCUMENT },
+    });
+    check('F12 value-pair: the re-read size is suppressed', page2.dimensions.length, 0);
+    check(
+      'F12 value-pair: skip reason recorded',
+      page2.skippedProposals.filter((s) => s.reason === 'dimension-duplicates-schedule-row').length,
+      1,
+    );
+    // Control — the same pair FAR from the row is a genuine dimension
+    // (the value-pair path requires bbox overlap).
+    const { responder: responder3 } = makeResponder(() =>
+      detections([
+        { kind: 'dimension', label: '0.9 x 2.1', rawText: '0.9 x 2.1', bbox: { x: 800, y: 600, width: 120, height: 20 }, confidence: 0.9 },
+        { kind: 'table', label: 'D1', rawText: 'D1 | Pintu | 900 x 2100', bbox: rowBox, confidence: 0.95 },
+      ]),
+    );
+    const page3 = await runVisionPage({
+      ...floorPlanPage(),
+      docHash: 'doc-u4c',
+      mode: 'EZRAB_AI',
+      responder: responder3,
+      renderPage,
+      budget: { used: 0, max: DEFAULT_MAX_VISION_CALLS_PER_DOCUMENT },
+    });
+    check('F12 control: a distant pair is kept (2 records)', page3.dimensions.length, 2);
+    checkTrue('F12 control: the pair values are 900 + 2100', page3.dimensions.some((d) => d.normalizedValue === 900) && page3.dimensions.some((d) => d.normalizedValue === 2100));
+    // Negative — a size pair with NO schedule row on the page is kept
+    // (nothing to duplicate).
+    const { responder: responder4 } = makeResponder(() =>
+      detections([
+        { kind: 'dimension', label: '90 x 210', rawText: '90 x 210', bbox: { x: 100, y: 400, width: 120, height: 30 }, confidence: 0.9 },
+      ]),
+    );
+    const page4 = await runVisionPage({
+      ...floorPlanPage(),
+      docHash: 'doc-u4d',
+      mode: 'EZRAB_AI',
+      responder: responder4,
+      renderPage,
+      budget: { used: 0, max: DEFAULT_MAX_VISION_CALLS_PER_DOCUMENT },
+    });
+    check('F12 negative: a pair without a row is kept', page4.dimensions.length, 1);
+    check(
+      'F12 negative: no schedule-row skip without a row',
+      page4.skippedProposals.filter((s) => s.reason === 'dimension-duplicates-schedule-row').length,
+      0,
+    );
   }
 
   // --- Summary ------------------------------------------------------------
