@@ -91,7 +91,7 @@ export const PriceProvenancePanel: React.FC<{
         <tbody>
           {rows.map(([k, v]) => (
             <tr key={k}>
-              <td style={{ padding: '4px 8px', color: '#6b7280', width: 140 }}>{k}</td>
+              <td style={{ padding: '4px 8px', color: 'var(--ez-color-text-secondary)', width: 140 }}>{k}</td>
               <td style={{ padding: '4px 8px', fontWeight: 500 }}>{v}</td>
             </tr>
           ))}

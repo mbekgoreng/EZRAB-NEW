@@ -57,7 +57,7 @@ export const PriceManagementPanel: React.FC<{ currentUser: string }> = ({ curren
   return (
     <div style={{ padding: 24, maxWidth: 1100, margin: '0 auto' }}>
       <h2 style={{ margin: '0 0 8px' }}>Manajemen Harga</h2>
-      <p style={{ color: '#6b7280', margin: '0 0 16px', fontSize: 14 }}>
+      <p style={{ color: 'var(--ez-color-text-secondary)', margin: '0 0 16px', fontSize: 14 }}>
         Kelola harga asumsi EZRAB. Harga asumsi <strong>tidak pernah</strong> menjadi harga resmi AHSP.
         Label sumber: {Object.values(PRICE_SOURCE_LABELS).join(' · ')}
       </p>
@@ -67,12 +67,12 @@ export const PriceManagementPanel: React.FC<{ currentUser: string }> = ({ curren
           placeholder="Cari kode / nama resource…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          style={{ flex: 1, padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8 }}
+          style={{ flex: 1, padding: '8px 12px', border: '1px solid var(--ez-color-border-strong)', borderRadius: 8, background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)' }}
         />
         <select
           value={filter}
           onChange={(e) => setFilter(e.target.value as AssumptionStatus | 'ALL')}
-          style={{ padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8 }}
+          style={{ padding: '8px 12px', border: '1px solid var(--ez-color-border-strong)', borderRadius: 8, background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)' }}
         >
           <option value="ALL">Semua status</option>
           {(Object.keys(STATUS_LABELS) as AssumptionStatus[]).map((s) => (
@@ -82,7 +82,7 @@ export const PriceManagementPanel: React.FC<{ currentUser: string }> = ({ curren
       </div>
 
       {items.length === 0 && (
-        <div style={{ padding: 32, textAlign: 'center', color: '#9ca3af' }}>
+        <div style={{ padding: 32, textAlign: 'center', color: 'var(--ez-color-text-muted)' }}>
           Belum ada harga asumsi. Buat asumsi baru melalui API atau impor.
         </div>
       )}
@@ -94,10 +94,10 @@ export const PriceManagementPanel: React.FC<{ currentUser: string }> = ({ curren
             <div
               key={a.id}
               style={{
-                border: '1px solid #e5e7eb',
+                border: '1px solid var(--ez-color-border-line)',
                 borderRadius: 12,
                 padding: 16,
-                background: '#fff',
+                background: 'var(--ez-color-surface)',
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -105,14 +105,14 @@ export const PriceManagementPanel: React.FC<{ currentUser: string }> = ({ curren
                   <div style={{ fontWeight: 600 }}>
                     {a.resourceCode} — {a.resourceName}
                   </div>
-                  <div style={{ fontSize: 13, color: '#6b7280', marginTop: 4 }}>
+                  <div style={{ fontSize: 13, color: 'var(--ez-color-text-secondary)', marginTop: 4 }}>
                     {fmtRp(a.price)} / {a.unit} · {a.resourceType}
                     {a.region ? ` · ${a.region}` : ''}
                   </div>
-                  <div style={{ fontSize: 13, color: '#6b7280', marginTop: 4 }}>
+                  <div style={{ fontSize: 13, color: 'var(--ez-color-text-secondary)', marginTop: 4 }}>
                     Dasar: {a.sourceNote}
                   </div>
-                  <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 4 }}>
+                  <div style={{ fontSize: 12, color: 'var(--ez-color-text-muted)', marginTop: 4 }}>
                     Berlaku {a.validFrom}{a.validUntil ? ` s.d. ${a.validUntil}` : ''} ·
                     Dibuat {a.createdBy} · {new Date(a.createdAt).toLocaleDateString('id-ID')}
                     {a.approvedBy ? ` · Disetujui ${a.approvedBy}` : ''}
@@ -134,7 +134,7 @@ export const PriceManagementPanel: React.FC<{ currentUser: string }> = ({ curren
               </div>
 
               {!usable && a.status === 'APPROVED' && (
-                <div style={{ marginTop: 8, fontSize: 12, color: '#d97706' }}>
+                <div style={{ marginTop: 8, fontSize: 12, color: 'var(--ez-hue-amber-text)' }}>
                   ⚠ Di luar periode berlaku — tidak dipakai resolver.
                 </div>
               )}
@@ -186,7 +186,7 @@ export const PriceManagementPanel: React.FC<{ currentUser: string }> = ({ curren
               </div>
 
               {a.history.length > 1 && (
-                <details style={{ marginTop: 8, fontSize: 12, color: '#6b7280' }}>
+                <details style={{ marginTop: 8, fontSize: 12, color: 'var(--ez-color-text-secondary)' }}>
                   <summary style={{ cursor: 'pointer' }}>Riwayat ({a.history.length})</summary>
                   <ul style={{ margin: '8px 0 0', paddingLeft: 18 }}>
                     {a.history.map((h, i) => (
@@ -208,9 +208,10 @@ export const PriceManagementPanel: React.FC<{ currentUser: string }> = ({ curren
 
 const btn: React.CSSProperties = {
   padding: '6px 14px',
-  border: '1px solid #d1d5db',
+  border: '1px solid var(--ez-color-border-strong)',
   borderRadius: 8,
-  background: '#fff',
+  background: 'var(--ez-color-surface)',
+  color: 'var(--ez-color-text-primary)',
   cursor: 'pointer',
   fontSize: 13,
 };
