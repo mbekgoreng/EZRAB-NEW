@@ -15,6 +15,20 @@ import { aiGatewayAuthHeaders } from '../../ai-tools/aiGatewayAuth';
 
 export type DedAiMode = 'quick' | 'advanced' | 'vision' | 'internal';
 
+/**
+ * M-13 (2026-11-24): productId DED untuk mode v3 — mode 'advanced' v3
+ * BUKAN rantai Chat Mendalam. Tanpa productId, endpoint multi-provider
+ * memakai mode body apa adanya dan 'advanced' jatuh ke Chat Mendalam;
+ * dengan productId, server memetakan ke rantai DED final-spec
+ * (DED_AI_DETAIL → 'ded' / DED_AI_FAST → 'fast'). Vision tidak membawa
+ * productId (harus tetap di rantai 'vision').
+ */
+export function dedProductIdForMode(mode: DedAiMode): 'DED_AI_FAST' | 'DED_AI_DETAIL' | undefined {
+  if (mode === 'vision') return undefined;
+  if (mode === 'advanced') return 'DED_AI_DETAIL';
+  return 'DED_AI_FAST';
+}
+
 // ============================================================================
 // F5 (4.4): coded errors + disciplined retry policy.
 // Before this fix executeChat retried EVERY failure 3× (including 401s and
@@ -303,6 +317,7 @@ export class AiProviderClient {
           const timeoutMs = options.timeoutMs || 45000;
           const payload = {
             mode: resolvedMode,
+            productId: dedProductIdForMode(resolvedMode),
             prompt: options.prompt,
             systemPrompt: options.systemPrompt,
             imageDataBase64: options.imageDataBase64,

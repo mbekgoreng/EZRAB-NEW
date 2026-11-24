@@ -83,6 +83,15 @@ export class ZyRouterError extends Error {
   }
 }
 
+/**
+ * M-13 (2026-11-24): productId DED untuk permintaan teks v2 — sama seperti
+ * v3: tanpa productId, mode 'advanced' jatuh ke rantai Chat Mendalam.
+ * Vision tidak membawa productId (tetap di rantai 'vision').
+ */
+export function dedProductIdForZyrouterRequest(hasImage: boolean): 'DED_AI_DETAIL' | undefined {
+  return hasImage ? undefined : 'DED_AI_DETAIL';
+}
+
 export class ZyrouterClient {
   private static instance: ZyrouterClient;
   private defaultModel: string;
@@ -383,6 +392,7 @@ export class ZyrouterClient {
         signal: controller.signal,
         body: JSON.stringify({
           mode: request.imageDataBase64 ? 'vision' : 'advanced',
+          productId: dedProductIdForZyrouterRequest(Boolean(request.imageDataBase64)),
           prompt: request.prompt,
           systemPrompt: request.systemPrompt,
           imageDataBase64: request.imageDataBase64,
