@@ -6,6 +6,10 @@
 > Disusun dari audit repository aktual (branch `integrasi/unified-ui-engine`,
 > HEAD 9471c81, 2026-10-18). Tidak ada secret di dokumen ini — hanya nama
 > variabel dan tujuannya.
+>
+> Koreksi 2026-11-24 (W6): §1 baris AI gateway + §5 diperbarui ke spesifikasi
+> final owner 2026-11-22 (`api/_lib/aiGateway.js:25-37`). Sisa dokumen masih
+> mencerminkan audit 2026-10-18.
 
 ## 1. Arsitektur saat ini
 
@@ -13,7 +17,7 @@
 |---|---|---|
 | Frontend | React + Vite + TypeScript | `src/` |
 | Backend serverless | Vercel Functions (Node.js) | `api/` |
-| AI gateway | Canonical handler + failover Gemini → ZyRouter → Atria | `api/_lib/aiGateway.js` |
+| AI gateway | Canonical handler + failover per fitur (Crown → River → Atmo; lihat §5) | `api/_lib/aiGateway.js` |
 | Database | Supabase Postgres (belum terkoneksi dari app) | `supabase/migrations/` |
 | Auth | OFF (`AUTH_ENABLED=false`); JWT Supabase siap tapi tidak aktif | `src/auth/`, `api/_lib/supabaseAuth.js` |
 
@@ -54,8 +58,20 @@
 
 ## 5. Integrasi AI provider
 
-- Failover: 6 kunci Gemini → ZyRouter → 14 kunci Atria.
-- Model: FAST `gemini-3.5-flash-lite`, ADVANCED `geminiflash-3.8`, Atria `Atria-Dawn-Preview`.
+- Failover per fitur — spesifikasi final owner 2026-11-22
+  (`api/_lib/aiGateway.js:25-37`, menggantikan semua urutan sebelumnya):
+  Chat Cepat & DocAI = Crown V4-0731 → River V4.1-1017 → Atmo mm/M3.1 →
+  Atmo zai/glm-5.3; Chat Mendalam = Atmo cx/luna → Atmo ag/gemini-3.8-high →
+  Atmo mv/mistral-medium-3-5; DED Cepat = Crown V4-0731 → River Nemotron →
+  River V4.1-1017 → Atmo cx/luna; DED Dalam = Atmo cx/luna → Atmo
+  ag/gemini-3.8-flash-high; vision = River V4.1-Flash → Atmo
+  ag/gemini-3.8-high → ZyRouter. Gemini native, WeizeRouter, ArxPay, Dahl,
+  Atria & gemini-oai KELUAR dari semua rantai teks (ZyRouter hanya tersisa
+  di vision).
+- Konstanta lama `FAST_MODEL` (`gemini-3.5-flash-lite`), `ADVANCED_MODEL`
+  (`geminiflash-3.8`), `ATRIA_MODEL` (`Atria-Dawn-Preview`) masih ada di
+  `api/_lib/aiGateway.js:81-91` hanya sebagai cadangan rotasi key — BUKAN
+  model aktif rantai mana pun.
 - Usage metadata kini ditangkap (Phase 3): `usageMetadata` Gemini,
   `usage` OpenAI-compatible. Biaya provider UNDETERMINED (tarif belum dikonfigurasi).
 - `vercel.json`: `maxDuration: 300` untuk `api/ai/**`.

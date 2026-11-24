@@ -1,79 +1,112 @@
 import React, { useState } from 'react';
 import { Check, Sparkles } from 'lucide-react';
+import {
+  PLAN_IDS,
+  getPlanDefinition,
+  type PlanId,
+} from '../../billing/plans';
+import { PLAN_TAGLINE } from './exact/pricingMatrix';
 
 interface PricingSectionProps {
   onSelectPlan?: (planId: string) => void;
 }
 
+// ---------------------------------------------------------------------------
+// W6 (Wave 7): harga, batas proyek, dan jatah kredit TIDAK lagi hardcoded —
+// semuanya diturunkan dari definisi paket kanonis (src/billing/plans.ts).
+// Versi sebelumnya menampilkan paket usang Free/Basic/Pro/Enterprise dengan
+// harga Rp0/99.000/199.000/499.000 dan batas proyek 1/3/10/∞ — semuanya
+// menyimpang dari kanonis (Free/Starter/Professional/Business,
+// Rp0/54.999/79.999/159.999, batas 1/7/25/∞). Diskon tahunan 15% mengikuti
+// rumus yang sama dengan ExactPricing (bukan angka terpisah).
+// ---------------------------------------------------------------------------
+
+interface PlanPresentation {
+  /** Fitur setelah baris batas proyek & jatah kredit (keduanya otomatis). */
+  features: string[];
+  ctaText: string;
+  isPopular?: boolean;
+  btnVariant: 'outline' | 'primary';
+}
+
+const PLAN_PRESENTATION: Record<PlanId, PlanPresentation> = {
+  free: {
+    features: ['AHSP Cipta Karya penuh', 'Ekspor PDF 15×/bulan · Excel 1×/bulan'],
+    ctaText: 'Mulai Gratis',
+    btnVariant: 'outline',
+  },
+  starter: {
+    features: [
+      'AHSP Cipta Karya penuh',
+      'RAB AI, Chat AI & Dokumen AI (terbatas)',
+      'Ekspor PDF 50× · Excel 30× per siklus',
+    ],
+    ctaText: 'Pilih Starter',
+    btnVariant: 'outline',
+  },
+  professional: {
+    features: [
+      'Semua kategori AHSP 2026',
+      'Custom Instructions di Chat AI',
+      'Role Team hingga 6 seat · Ekspor tanpa batas',
+    ],
+    ctaText: 'Pilih Professional',
+    isPopular: true,
+    btnVariant: 'primary',
+  },
+  business: {
+    features: [
+      'Semua kategori AHSP 2026',
+      'Kredit AI terbesar',
+      'Role Team hingga 10 seat · Ekspor tanpa batas',
+    ],
+    ctaText: 'Pilih Business',
+    btnVariant: 'outline',
+  },
+};
+
+interface PlanView {
+  id: PlanId;
+  name: string;
+  subtitle: string;
+  priceMonthly: number;
+  priceAnnual: number;
+  features: string[];
+  btnText: string;
+  isPopular: boolean;
+  btnVariant: 'outline' | 'primary';
+}
+
+function toPlanView(id: PlanId): PlanView {
+  const def = getPlanDefinition(id);
+  const p = PLAN_PRESENTATION[id];
+  const monthly = def.monthlyPriceIdr;
+  const projectFeature =
+    def.projectLimit === null ? 'Proyek tanpa batas' : `${def.projectLimit} proyek aktif`;
+  const creditFeature =
+    def.credits.kind === 'initial'
+      ? `${def.credits.credits.toLocaleString('id-ID')} kredit AI sekali — hanya untuk Chat AI`
+      : `${def.credits.credits.toLocaleString('id-ID')} kredit AI/bln`;
+  return {
+    id: def.id,
+    name: def.displayName,
+    subtitle: PLAN_TAGLINE[id],
+    priceMonthly: monthly,
+    // Harga bulanan setara paket tahunan (diskon 15% dari harga kanonis).
+    priceAnnual: Math.round(monthly * 0.85),
+    features: [projectFeature, creditFeature, ...p.features],
+    btnText: p.ctaText,
+    isPopular: p.isPopular ?? false,
+    btnVariant: p.btnVariant,
+  };
+}
+
+const PLANS: PlanView[] = PLAN_IDS.map(toPlanView);
+
 export const PricingSection: React.FC<PricingSectionProps> = ({ onSelectPlan }) => {
   const [isAnnual, setIsAnnual] = useState(false);
 
-  const plans = [
-    {
-      id: 'free',
-      name: 'Free',
-      subtitle: 'Coba sekarang, tanpa biaya',
-      priceMonthly: 0,
-      priceAnnual: 0,
-      features: [
-        'Input & Edit RAB',
-        'Export PDF',
-        'Akses template dasar',
-        '1 proyek aktif',
-      ],
-      btnText: 'Mulai Gratis',
-      isPopular: false,
-      btnVariant: 'outline',
-    },
-    {
-      id: 'basic',
-      name: 'Basic',
-      subtitle: 'Cocok untuk individu & tim kecil',
-      priceMonthly: 99000,
-      priceAnnual: 79000,
-      features: [
-        'Semua fitur Free',
-        'Export Excel',
-        'Akses semua template',
-        '3 proyek aktif',
-      ],
-      btnText: 'Pilih Basic',
-      isPopular: false,
-      btnVariant: 'outline',
-    },
-    {
-      id: 'pro',
-      name: 'Pro',
-      subtitle: 'Untuk profesional & perusahaan',
-      priceMonthly: 199000,
-      priceAnnual: 159000,
-      features: [
-        'Semua fitur Basic',
-        'Kolaborasi tim',
-        'Manajemen proyek',
-        '10 proyek aktif',
-      ],
-      btnText: 'Pilih Pro',
-      isPopular: true,
-      btnVariant: 'primary',
-    },
-    {
-      id: 'enterprise',
-      name: 'Enterprise',
-      subtitle: 'Untuk kebutuhan skala besar',
-      priceMonthly: 499000,
-      priceAnnual: 399000,
-      features: [
-        'Semua fitur Pro',
-        'Custom template',
-        'Dukungan prioritas',
-        'Proyek tak terbatas',
-      ],
-      btnText: 'Hubungi Kami',
-      isPopular: false,
-      btnVariant: 'outline',
-    },
-  ];
+  const plans = PLANS;
 
   const formatPrice = (val: number) => {
     return new Intl.NumberFormat('id-ID').format(val);
@@ -137,7 +170,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ onSelectPlan }) 
             Mulai gratis, upgrade kapan saja. Nikmati semua fitur premium untuk mendukung produktivitas Anda.
           </p>
 
-          {/* Billing Toggle (Bulanan | Tahunan Hemat 20%) */}
+          {/* Billing Toggle (Bulanan | Tahunan Hemat 15%) */}
           <div
             style={{
               display: 'inline-flex',
@@ -177,7 +210,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ onSelectPlan }) 
                 transition: 'all 0.2s',
               }}
             >
-              Tahunan <span style={{ fontSize: '11px', opacity: 0.9 }}>(Hemat 20%)</span>
+              Tahunan <span style={{ fontSize: '11px', opacity: 0.9 }}>(Hemat 15%)</span>
             </button>
           </div>
         </div>
