@@ -38,7 +38,7 @@ const PLAN_PRESENTATION: Record<PlanId, PlanPresentation> = {
   starter: {
     features: [
       'AHSP Cipta Karya penuh',
-      'RAB AI, Chat AI & Dokumen AI (terbatas)',
+      'RAB AI & Chat AI (terbatas)',
       'Ekspor PDF 50× · Excel 30× per siklus',
     ],
     ctaText: 'Pilih Starter',

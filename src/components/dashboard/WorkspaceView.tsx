@@ -1019,7 +1019,7 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
                   fontWeight: 600,
                 }}
               >
-                Paket {(({ free: 'Free', basic: 'Basic', pro: 'Pro', enterprise: 'Enterprise' } as Record<string, string>)[selectedPlanId] || selectedPlanId)} dipilih — pembayaran belum tersedia. Paket Anda saat ini: <strong>Gratis</strong>.
+                Paket {(({ free: 'Free', starter: 'Starter', professional: 'Professional', business: 'Business' } as Record<string, string>)[selectedPlanId] || selectedPlanId)} dipilih — pembayaran belum tersedia. Paket Anda saat ini: <strong>Gratis</strong>.
               </div>
             )}
             <PricingSection onSelectPlan={(planId) => setSelectedPlanId(planId)} />

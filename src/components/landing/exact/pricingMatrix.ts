@@ -126,7 +126,7 @@ export const PRICING_CATEGORIES: PricingCategory[] = [
     rows: [
       { label: 'RAB AI', values: { free: N, starter: L, professional: Y, business: Y } },
       { label: 'Chat AI', values: { free: L, starter: L, professional: Y, business: Y } },
-      { label: 'Dokumen AI', values: { free: N, starter: L, professional: Y, business: Y } },
+      { label: 'Dokumen AI', values: { free: N, starter: N, professional: Y, business: Y } },
       { label: 'Custom Instructions', values: { free: N, starter: N, professional: Y, business: Y } },
       { label: 'Kredit AI per Bulan', values: { free: T('100 (sekali)'), starter: { t: 'credits' }, professional: { t: 'credits' }, business: { t: 'credits' } } },
     ],

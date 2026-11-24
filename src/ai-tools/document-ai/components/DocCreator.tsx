@@ -43,6 +43,8 @@ import { DocFunnel, type FunnelGenerateRequest, type FunnelGenerateResult } from
 import { formatFunnelDate } from '../funnel';
 import { documentStudioOrchestrator } from '../orchestrator';
 import { useCreditSimulation } from '../../../ai-credits/useCreditSimulation';
+import { CreditBalance } from '../../../ai-credits/components/CreditBalance';
+import '../../../ai-credits/ai-credits.css';
 import { tariffFor } from '../../../ai-credits/config';
 import { aiFeatureLockedMessage, planAllowsAiFeature } from '../../../ai-credits/featureGate';
 import { collectProjectContext, detectMissingFields } from '../contextAdapter';
@@ -1282,6 +1284,13 @@ export const DocCreator: React.FC<{
   if (mode === 'empty' && subView === 'buat' && studioPath !== 'periksa' && funnelActive) {
     return (
       <div className="docai-tab">
+        {/* Badge saldo kredit (pola yang sama dengan DocAnalyzer):
+            funnel adalah entri default generate — saldo harus terlihat
+            sebelum pengguna menekan generate. Tanpa tombol top-up,
+            seperti permukaan analisis. */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+          <CreditBalance compact showTopUp={false} />
+        </div>
         <DocFunnel
           onGenerate={runFunnelGenerate}
           onEnhancePrompt={enhanceFunnelPromptAi}
@@ -1519,6 +1528,12 @@ export const DocCreator: React.FC<{
             {/* Field isian template (subjenis + grid) — di kolom compose,
                 tepat sebelum generate (Child 5, fit remediation). */}
             {templateFillFields}
+            {/* Badge saldo kredit (pola yang sama dengan DocAnalyzer) —
+                tepat sebelum tombol generate, agar saldo terlihat sebelum
+                generate memotong kredit ai-document. */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+              <CreditBalance compact showTopUp={false} />
+            </div>
             <button className="docai-btn-primary docai-runbtn" onClick={() => void runGenerate(false)} disabled={busy}>
               {busy ? (
                 <>
@@ -1792,6 +1807,10 @@ export const DocCreator: React.FC<{
         </div>
         <div className="docai-edactions">
           {statusPill}
+          {/* Badge saldo kredit (pola yang sama dengan DocAnalyzer) —
+              generate ulang / terjemahan di editor memotong kredit
+              ai-document. Tanpa tombol top-up, seperti permukaan analisis. */}
+          <CreditBalance compact showTopUp={false} />
           <button className="docai-btn-primary" onClick={() => void saveDraft()} disabled={saveState === 'saving' || !draft}>
             <Save size={15} /> {t('ai.doc.create.ed_save')}
           </button>
