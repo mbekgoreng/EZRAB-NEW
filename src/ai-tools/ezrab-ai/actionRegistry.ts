@@ -1779,7 +1779,22 @@ export function tryContinueUniversalContext(text: string): ActionResult | null {
     }
     return universalReviewResult(ctx);
   }
-  if (/\b(susun|buatkan|generate)\b[^.]{0,20}\b(draft|rab)\b/.test(t) && ctx.stage === 'PROJECT_REVIEW') {
+  // DEFECT-2 (WP02, diperbaiki 2026-11-24): cabang generate ini mendahului
+  // gerbang topik-baru di bawah — "Buatkan RAB <topik lain>" saat
+  // PROJECT_REVIEW men-generate draft dari konteks BASI (mis. RAB jalan
+  // untuk permintaan kolam renang). Topik yang terklasifikasi dan BERBEDA
+  // dari konteks saat ini harus jatuh ke gerbang topik-baru (gugur +
+  // intake baru), bukan generate. Perbandingan id primer persis sama
+  // dengan gerbang topik-baru agar keduanya sepakat soal "topik berubah"
+  // (jalan vs jalan-beton dihitung BERBEDA — sama seperti perilaku
+  // gerbang topik-baru di tengah intake). Permintaan tanpa topik
+  // terklasifikasi ("susun draft RAB", "buatkan rab") tetap generate
+  // seperti dulu — itu perintah generate untuk brief yang sedang
+  // ditinjau, bukan topik baru.
+  const requestedPrimaryId = classifyUniversal(text).primary?.id ?? null;
+  const topicChanged =
+    requestedPrimaryId !== null && ctx.primary?.id != null && requestedPrimaryId !== ctx.primary.id;
+  if (/\b(susun|buatkan|generate)\b[^.]{0,20}\b(draft|rab)\b/.test(t) && ctx.stage === 'PROJECT_REVIEW' && !topicChanged) {
     return generateFromUniversalContext(ctx);
   }
 
