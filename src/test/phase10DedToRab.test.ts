@@ -236,7 +236,12 @@ describe('PHASE 10 [2] — AHSP MAPPING, PRICING & EVIDENCE PROPAGATION', () => 
     assert.ok(row.evidence);
     assert.equal(row.evidence.sourceName, 'DED_Struktur_Kolom.pdf');
     assert.ok(row.evidence.sourceId);
-    assert.equal(row.evidence.confidence, 'HIGH');
+    // FU2 (2026-11-24): confidence MEDIUM, bukan HIGH — harga kolom K-250
+    // kini BENAR-BENAR diblokir gerbang satuan (kecocokan palsu 'k250' ⊂
+    // 'jarak 250 m', A.3.05.4c.1 per batang vs kuantitas m³; tidak ada item
+    // Beton K-250 per-m³ di katalog resmi). Metadata evidence tetap lengkap
+    // (sourceName/sourceId/status/calculator di bawah tidak berubah).
+    assert.equal(row.evidence.confidence, 'MEDIUM');
     assert.equal(row.evidence.status, 'VERIFIED');
     assert.equal(row.evidence.calculator, 'EZRAB_DETERMINISTIC_ENGINE');
   });
@@ -422,19 +427,31 @@ describe('PHASE 10 [4] — USER OVERRIDE, CONFIRMATION GATE & REVISION SAFETY', 
 
   it('19. revision safety: computes pre-save diff comparison between existing RAB and draft', async () => {
     const service = DedToRabPipelineService.getInstance();
-    // G2: teks DED memakai kolom K-300 (bukan K-250/default). Kolom tanpa
-    // mutu terpetakan ke AI-CUSTOM tanpa harga sehingga subtotal draft
-    // jujur 0 dan newTotal == existingTotal — asersi `newTotal > ...`
-    // tidak dapat teramati. K-300 adalah kolom yang sama (dimensi, jumlah,
-    // volume 3.456 m³ identik) dengan harga katalog resmi (A.3.04.5c),
-    // sehingga diff bertambah nilai nyata (Rp81.161) dan properti revisi
-    // (delta = new - existing) teruji apa adanya.
+    // G2 (dikoreksi FU2, 2026-11-24): "harga katalog resmi (A.3.04.5c)"
+    // yang dulu dipakai di sini adalah KECOCOKAN PALSU — 'k300' ⊂ '3000 kg'
+    // ("Pracetak 3000 kg" per BUAH) — sehingga "nilai nyata Rp81.161"
+    // adalah 3.456 m³ × Rp23.487/buah: kuantitas m³ dihargai dengan harga
+    // per-buah. Tidak ada item Beton K-250/K-300 per-m³ di katalog resmi
+    // (0 item — terverifikasi koordinator), dan tidak ada teks DED yang
+    // menghasilkan baris berharga jujur lewat pipeline V1 ini (semua nama
+    // hasil interpreter → AI-CUSTOM). Jadi draft yang jujur memang
+    // subtotal 0 dan newTotal == existingTotal — persis seperti yang
+    // diakui komentar G2 semula untuk kolom tanpa mutu. Yang diuji tetap
+    // mesin diff-nya (hitungan, delta = new − existing) + pin gerbang
+    // FU2 (baris PRICE_INCOMPLETE, bukan harga salah-satuan).
     const pdf = createRealPdfStream(['DED Struktur Kolom K-300 0.30 x 0.30 x 3.20 Count: 12']);
 
-    await service.executePipeline({
+    const draft = await service.executePipeline({
       projectId: 'PRJ-TEST-P10-10',
       files: [{ fileName: 'DED_Kolom.pdf', buffer: pdf }],
     });
+
+    // Pin gerbang FU2: pemetaan dipertahankan (A.3.04.5c), harga diblokir.
+    const kolomItem = draft.detectedWorkItems.find((w) => w.name.includes('Kolom'));
+    assert.equal(kolomItem?.ahspCode, 'A.3.04.5c');
+    assert.ok(!kolomItem?.unitPrice);
+    assert.equal(kolomItem?.priceStatus, 'PRICE_INCOMPLETE');
+    assert.equal(draft.subtotal, 0);
 
     const existingItems: RabItem[] = [
       {
@@ -456,7 +473,9 @@ describe('PHASE 10 [4] — USER OVERRIDE, CONFIRMATION GATE & REVISION SAFETY', 
     assert.equal(diff.existingItemsCount, 1);
     assert.equal(diff.existingTotal, 4250000);
     assert.equal(diff.newItemsCount, 1);
-    assert.ok(diff.newTotal > diff.existingTotal);
+    // Draft jujur tak berharga (FU2): newTotal == existingTotal, delta 0.
+    assert.equal(diff.newTotal, diff.existingTotal);
+    assert.equal(diff.deltaTotal, 0);
     assert.equal(diff.deltaTotal, diff.newTotal - diff.existingTotal);
   });
 

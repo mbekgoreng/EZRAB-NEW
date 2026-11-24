@@ -267,7 +267,13 @@ describe('REAL DED VALIDATION & PRODUCTION HARDENING [ACCEPTANCE SUITE]', () => 
     assert.ok(kolom?.ahspCode);
     assert.equal(kolom?.ahspSourceType, 'OFFICIAL_AHSP');
     assert.equal(kolom?.ahspMatchStatus, 'EXACT_MATCH');
-    assert.ok(kolom?.unitPrice && kolom.unitPrice > 0);
+    // FU2 (2026-11-24): harga kolom K-250 TIDAK diselesaikan — gerbang
+    // satuan memblokir kecocokan palsu 'k250' ⊂ 'jarak 250 m'
+    // (A.3.05.4c.1 per batang vs kuantitas m³; dulu Rp145/batang).
+    // Tidak ada item Beton K-250 per-m³ di katalog resmi (0 item).
+    // Pemetaan (3 asersi di atas) tetap OFFICIAL/EXACT_MATCH.
+    assert.ok(!kolom?.unitPrice);
+    assert.equal(kolom?.priceStatus, 'PRICE_INCOMPLETE');
   });
 
   it('8. AI_CUSTOM Fallback: tags unknown specialty items as AI_CUSTOM with PRICE_NOT_FOUND', async () => {

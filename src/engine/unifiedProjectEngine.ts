@@ -72,6 +72,28 @@ export function isHspPricedItem(item: PriceCostBasisLike | null | undefined): bo
   return false;
 }
 
+/**
+ * W7 FU3 (2026-11-24) — jumlah tersimpan yang sah untuk penjumlahan biaya.
+ *
+ * Amount tersimpan negatif/non-finite (mis. dari edit spreadsheet
+ * langsung) TIDAK BOLEH mengurangi directCost: ia berkontribusi 0.
+ * Nilai 0/undefined/null juga 0 (sama seperti pola `|| 0` sebelumnya).
+ * Nilai sumber item TIDAK PERNAH diubah — yang digerbangi hanya
+ * penjumlahan di sini.
+ *
+ * Kontrak P3B TIDAK tersentuh: `totalsFromItems` (pratinjau draft)
+ * tidak pernah membaca amount tersimpan — ia menghitung ulang
+ * volume × unitPrice — dan record factory selalu
+ * amount == volume × unitPrice ≥ 0, sehingga pin
+ * estimatedTotal == directCost tetap berlaku persis di domainnya
+ * (lihat src/test/p3bCanonicalCalculation.test.ts). Amount negatif
+ * hanya bisa datang dari jalur tulis non-factory (edit spreadsheet),
+ * di luar jangkauan pin itu.
+ */
+function validAmountForTotal(value: unknown): number {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : 0;
+}
+
 export class UnifiedProjectEngine {
   /**
    * Recalculates Project Cost Summary from a list of RAB items.
@@ -96,7 +118,8 @@ export class UnifiedProjectEngine {
     // (backward compatible).
     const unresolved = items.filter((itm) => itm.priceStatus === 'PRICE_UNRESOLVED');
     const pricedItems = items.filter((itm) => itm.priceStatus !== 'PRICE_UNRESOLVED');
-    const directCost = pricedItems.reduce((acc, itm) => acc + (itm.amount || 0), 0);
+    // W7 FU3: amount negatif/non-finite berkontribusi 0 (validAmountForTotal).
+    const directCost = pricedItems.reduce((acc, itm) => acc + validAmountForTotal(itm.amount), 0);
     /* Fallback overhead/profit 0% (keputusan owner 2026-11-08,
      * menggantikan fallback 10%/5% dari 2026-10-27):
      * berlaku bila pemanggil tidak memberi persen SAMA SEKALI
@@ -122,7 +145,7 @@ export class UnifiedProjectEngine {
      * 0%/0% tidak berubah (basis apa pun × 0% = 0); proyek O&P
      * terkonfigurasi berhenti menagih O&P dua kali atas item DHSP. */
     const hspExemptDirect = pricedItems.reduce(
-      (acc, itm) => acc + (isHspPricedItem(itm as unknown as PriceCostBasisLike) ? (itm.amount || 0) : 0),
+      (acc, itm) => acc + (isHspPricedItem(itm as unknown as PriceCostBasisLike) ? validAmountForTotal(itm.amount) : 0),
       0
     );
     const overheadProfitBase = directCost - hspExemptDirect;
@@ -150,7 +173,7 @@ export class UnifiedProjectEngine {
     const ppnEnabled = currentSummary?.ppnEnabled === true;
     const pphEnabled = currentSummary?.pphEnabled === true;
     const pphPercent = currentSummary?.pphPercent ?? 0;
-    const itemAmount = (itm: RabItem) => itm.amount || 0;
+    const itemAmount = (itm: RabItem) => validAmountForTotal(itm.amount);
     const taxableDirect = (flag: 'taxIncludedPpn' | 'taxIncludedPph') =>
       pricedItems
         .filter((itm) => (itm as any)?.[flag] !== true)
@@ -351,11 +374,13 @@ export class UnifiedProjectEngine {
     // item UNRESOLVED tidak bocor ke directCost/grandTotal. Seksi tanpa
     // item tetap memakai subtotal tersimpan (total seksi yang diinput
     // manual tanpa rincian item tidak dihapus).
+    // W7 FU3: jumlah negatif/non-finite (dari edit spreadsheet langsung)
+    // berkontribusi 0 — sama seperti mesin utama di atas.
     const directCost = sections.reduce((sum, s) => {
       if (s.items && s.items.length > 0) {
-        return sum + s.items.reduce((a, it) => a + (exportItemAmount(it as any) ?? 0), 0);
+        return sum + s.items.reduce((a, it) => a + validAmountForTotal(exportItemAmount(it as any)), 0);
       }
-      return sum + (s.subtotal || 0);
+      return sum + validAmountForTotal(s.subtotal);
     }, 0);
     const unresolvedItems = sections.reduce(
       (n, s) => n + (s.items || []).filter((it: any) => it.priceStatus === 'PRICE_UNRESOLVED').length,
@@ -394,7 +419,7 @@ export class UnifiedProjectEngine {
             (a, it) =>
               a +
               (isHspPricedItem(it as unknown as PriceCostBasisLike)
-                ? (exportItemAmount(it as any) ?? 0)
+                ? validAmountForTotal(exportItemAmount(it as any))
                 : 0),
             0
           )

@@ -42,6 +42,7 @@ import { officialAhspRepository, ALL_OFFICIAL_AHSP_ITEMS } from '../data/nationa
 import { isQuarantined } from '../data/nationalCostDatabase/ahspQuarantine';
 import { priceResolver2026 } from '../data/priceDatabase2026/resolver';
 import { PrecisionEngine } from '../engine/calculatorCore/precision/precisionEngine';
+import { validateUnitCompatibility, type UnitCompatibilityResult } from '../engine/constructionCalculators/unitCompatibility';
 import { RabItem } from '../types';
 import { dedEvidenceStore } from './dedEvidenceStore';
 import { dedWorkItemStore } from './dedWorkItemStore';
@@ -455,6 +456,22 @@ export class DedToRabPipelineService {
       return undefined;
     }
 
+    // W7 FU1 (2026-11-24): dimensi WAJIB bilangan finite positif —
+    // preseden INVALID_DIMENSION W1 di dedQtoCalculationEngine.ts.
+    // Dulu panjang/lebar/tinggi 0, negatif, atau NaN lolos dan
+    // menghasilkan kuantitas 0/negatif (mis. -5 × 2 × 3 = -30 m³) yang
+    // mengalir ke totalPrice lalu MENGURANGI subtotal draf. Nol/negatif/
+    // NaN = data dimensi tidak valid, bukan kuantitas: fail-closed
+    // (tanpa kuantitas, seperti jalur skala-tak-terverifikasi di atas),
+    // bukan ditebak. Count tidak dicek di sini: semua cabang di bawah
+    // sudah mensyaratkan count > 0 sebelum memakainya.
+    for (const key of ['length', 'width', 'height'] as const) {
+      const v = dims[key];
+      if (v !== undefined && (!Number.isFinite(v) || v <= 0)) {
+        return undefined;
+      }
+    }
+
     // 1. 3D Volume with Count multiplier: Length × Width × Height × (Count || 1)
     if (dims.length !== undefined && dims.width !== undefined && dims.height !== undefined) {
       const baseVol = PrecisionEngine.multiply(PrecisionEngine.multiply(dims.length, dims.width), dims.height);
@@ -520,6 +537,61 @@ export class DedToRabPipelineService {
   }
 
   /**
+   * W7 FU2 (2026-11-24) — GERBANG SATUAN resolusi AHSP.
+   *
+   * Preseden: `validateUnitCompatibility` (unitCompatibility.ts, gerbang
+   * satuan terpusat Master Repair Fase 3) — satuan tidak cocok →
+   * PRICE_INCOMPLETE (UNIT_MISMATCH), tidak pernah dihargai, tidak
+   * pernah dikonversi diam-diam.
+   *
+   * Mengembalikan info mismatch bila kandidat TERPILIH tidak boleh
+   * menghargai kuantitas bersatuan `requestedUnit`, atau undefined bila
+   * gerbang lolos / tidak dapat dinilai:
+   * - Tanpa satuan QTO (undefined/kosong/'UNIT_NOT_FOUND') gerbang tidak
+   *   dapat dinilai — perilaku lama dipertahankan (pemetaan tetap jalan,
+   *   harga tetap diselesaikan seperti sebelumnya).
+   * - Lolos HANYA bila harga dapat dipakai APA ADANYA: EXACT_MATCH
+   *   (sesudah normalisasi notasi: m2↔m², m'↔m, huruf besar/kecil) atau
+   *   APPROVED_CONVERSION dengan faktor tepat 1 (sinonim hitung
+   *   buah↔unit — bukan konversi, satu benda diskrit yang sama).
+   * - Konversi SI lain (mis. m³↔liter) DIBLOKIR di sini: jalur harga
+   *   resolver ini tidak menerapkan faktor konversi, jadi membiarkannya
+   *   lolos sama dengan menghargai dengan faktor yang salah.
+   * - UNIT_MISMATCH / UNIT_UNKNOWN → diblokir (harga tidak dipakai).
+   *
+   * Gerbang ini TIDAK menghapus pemetaan (ahspCode/matchStatus tetap
+   * dikembalikan — pemetaan adalah saran, bukan uang); giginya ada di
+   * titik pemakaian harga (pemanggil pipeline + auto-fill), yang WAJIB
+   * memeriksa `unitMismatch` dan tidak menyelesaikan harga bila ada.
+   */
+  private checkAhspUnitGate(
+    requestedUnit: string | undefined,
+    candidate: { code: string; unit: string }
+  ): {
+    requestedUnit: string;
+    candidateUnit: string;
+    ahspCode: string;
+    result: UnitCompatibilityResult;
+    reason: string;
+  } | undefined {
+    const req = (requestedUnit ?? '').trim();
+    if (!req || req.toUpperCase() === 'UNIT_NOT_FOUND') return undefined;
+    const v = validateUnitCompatibility(req, candidate.unit);
+    if (v.result === 'EXACT_MATCH') return undefined;
+    if (v.result === 'APPROVED_CONVERSION' && v.priceFactor === 1) return undefined;
+    return {
+      requestedUnit: v.componentUnit || req,
+      candidateUnit: v.candidateUnit || candidate.unit,
+      ahspCode: candidate.code,
+      result: v.result,
+      reason:
+        `UNIT_MISMATCH: kuantitas bersatuan ${v.componentUnit || req} tidak boleh dihargai ` +
+        `dengan AHSP ${candidate.code} bersatuan ${v.candidateUnit || candidate.unit} — ` +
+        `harga tidak diselesaikan (PRICE_INCOMPLETE). ${v.reason}`,
+    };
+  }
+
+  /**
    * PHASE 11: LATEST AHSP RESOLUTION
    * Strict Resolution Order:
    * 1. Latest Official AHSP (PUPR 2026 / SNI)
@@ -544,6 +616,19 @@ export class DedToRabPipelineService {
     reason: string;
     candidates: AHSPMappingCandidate[];
     customItem?: AICustomItem;
+    /**
+     * W7 FU2: terisi bila kandidat terpilih SATUANNYA tidak cocok dengan
+     * satuan kuantitas QTO — pemetaan tetap dikembalikan, tetapi harga
+     * dari kandidat ini TIDAK BOLEH dipakai (PRICE_INCOMPLETE /
+     * UNIT_MISMATCH). Pemanggil yang menghargai WAJIB memeriksa field ini.
+     */
+    unitMismatch?: {
+      requestedUnit: string;
+      candidateUnit: string;
+      ahspCode: string;
+      result: UnitCompatibilityResult;
+      reason: string;
+    };
   } {
     const query = `${name} ${specification || ''}`.toLowerCase();
     const isSpecialtyFinish = query.includes('special') || query.includes('khusus') || query.includes('custom') || query.includes('artistic');
@@ -630,6 +715,10 @@ export class DedToRabPipelineService {
     if (officialCandidates.length > 0) {
       officialCandidates[0].isRecommended = true;
       const best = officialCandidates[0];
+      // W7 FU2: gerbang satuan pada kandidat terpilih (lihat
+      // checkAhspUnitGate) — pemetaan tetap dikembalikan, harga diblokir
+      // di titik pemakaian bila mismatch.
+      const unitMismatch = this.checkAhspUnitGate(unit, { code: best.ahspCode, unit: best.unit });
       return {
         ahspCode: best.ahspCode,
         ahspName: best.name,
@@ -637,8 +726,9 @@ export class DedToRabPipelineService {
         sourceType: 'OFFICIAL_AHSP',
         version: best.version || 'Standar PUPR 2026',
         effectiveDate: best.effectiveDate || '2026-01-01',
-        reason: best.reason,
+        reason: unitMismatch ? `${best.reason} ${unitMismatch.reason}` : best.reason,
         candidates: officialCandidates,
+        ...(unitMismatch ? { unitMismatch } : {}),
       };
     }
 
@@ -664,6 +754,8 @@ export class DedToRabPipelineService {
         }
       }
       if (projCandidates.length > 0) {
+        // W7 FU2: gerbang satuan pada kandidat proyek terpilih.
+        const unitMismatch = this.checkAhspUnitGate(unit, { code: projCandidates[0].ahspCode, unit: projCandidates[0].unit });
         return {
           ahspCode: projCandidates[0].ahspCode,
           ahspName: projCandidates[0].name,
@@ -671,8 +763,9 @@ export class DedToRabPipelineService {
           sourceType: 'PROJECT_AHSP',
           version: 'Standar Proyek Aktif',
           effectiveDate: '2026-01-01',
-          reason: projCandidates[0].reason,
+          reason: unitMismatch ? `${projCandidates[0].reason} ${unitMismatch.reason}` : projCandidates[0].reason,
           candidates: projCandidates,
+          ...(unitMismatch ? { unitMismatch } : {}),
         };
       }
     }
@@ -699,6 +792,8 @@ export class DedToRabPipelineService {
         }
       }
       if (compCandidates.length > 0) {
+        // W7 FU2: gerbang satuan pada kandidat perusahaan terpilih.
+        const unitMismatch = this.checkAhspUnitGate(unit, { code: compCandidates[0].ahspCode, unit: compCandidates[0].unit });
         return {
           ahspCode: compCandidates[0].ahspCode,
           ahspName: compCandidates[0].name,
@@ -706,8 +801,9 @@ export class DedToRabPipelineService {
           sourceType: 'COMPANY_AHSP',
           version: 'Standar Perusahaan 2026',
           effectiveDate: '2026-01-01',
-          reason: compCandidates[0].reason,
+          reason: unitMismatch ? `${compCandidates[0].reason} ${unitMismatch.reason}` : compCandidates[0].reason,
           candidates: compCandidates,
+          ...(unitMismatch ? { unitMismatch } : {}),
         };
       }
     }
@@ -732,6 +828,8 @@ export class DedToRabPipelineService {
         version: 'Referensi Nasional',
         effectiveDate: '2026-01-01',
       };
+      // W7 FU2: gerbang satuan pada kandidat referensi terpilih.
+      const unitMismatch = this.checkAhspUnitGate(unit, { code: candidate.ahspCode, unit: candidate.unit });
       return {
         ahspCode: candidate.ahspCode,
         ahspName: candidate.name,
@@ -739,8 +837,9 @@ export class DedToRabPipelineService {
         sourceType: 'REFERENCE',
         version: 'Referensi Nasional',
         effectiveDate: '2026-01-01',
-        reason: candidate.reason,
+        reason: unitMismatch ? `${candidate.reason} ${unitMismatch.reason}` : candidate.reason,
         candidates: [candidate],
+        ...(unitMismatch ? { unitMismatch } : {}),
       };
     }
 
@@ -1461,7 +1560,22 @@ export class DedToRabPipelineService {
         );
 
         const isCustomItem = ahspRes.sourceType === 'AI_CUSTOM';
-        const priceRes = this.resolvePrice(ahspRes.ahspCode, existingProjectRabItems, isCustomItem);
+        // W7 FU2: gerbang satuan — bila satuan kandidat AHSP terpilih
+        // tidak cocok dengan satuan kuantitas QTO (mis. kuantitas m³ vs
+        // harga per m²), harga kandidat itu TIDAK BOLEH dipakai: dulu
+        // pipeline mengambil harga apa adanya dan mengalikan kuantitas
+        // m³ dengan harga per m² tanpa penanda apa pun. Harga diblokir
+        // (PRICE_NOT_FOUND + alasan UNIT_MISMATCH); pemetaan AHSP-nya
+        // tetap tercatat di ahspCode/ahspMappingReason untuk review.
+        const priceRes: PriceSourceResolution = ahspRes.unitMismatch
+          ? {
+              unitPrice: undefined,
+              priceSource: 'PRICE_NOT_FOUND',
+              sourceDetail: ahspRes.unitMismatch.reason,
+              currency: 'IDR',
+              isOfficial: false,
+            }
+          : this.resolvePrice(ahspRes.ahspCode, existingProjectRabItems, isCustomItem);
 
         let confidence: WorkItemConfidence = 'HIGH';
         if (!source.scaleVerified || dims.scaleVerified === false || isConflict || !quantity) {
@@ -1531,7 +1645,15 @@ export class DedToRabPipelineService {
               ? PrecisionEngine.applyPolicy(PrecisionEngine.multiply(quantity, priceRes.unitPrice), 'INTEGER_ROUND')
               : null,
           priceSource: priceRes,
-          priceProvenance: priceRes.valueSourceType || (isCustomItem ? 'AI_ESTIMATE' : 'OFFICIAL_AHSP'),
+          // W7 FU2: item yang gerbang satuannya menolak ditandai
+          // PRICE_INCOMPLETE (UNIT_MISMATCH) — harga belum dapat
+          // ditentukan karena satuannya tidak cocok, bukan karena tidak
+          // ada AHSP. priceProvenance dibiarkan kosong untuk item
+          // tersebut agar tidak berlabel OFFICIAL_AHSP tanpa harga.
+          priceStatus: ahspRes.unitMismatch ? 'PRICE_INCOMPLETE' : undefined,
+          priceProvenance: ahspRes.unitMismatch
+            ? undefined
+            : priceRes.valueSourceType || (isCustomItem ? 'AI_ESTIMATE' : 'OFFICIAL_AHSP'),
           conflictDetails,
           originalAiValue: {
             name: itemName,
@@ -1779,6 +1901,12 @@ export class DedToRabPipelineService {
           wi.ahspSourceType = ahspRes.sourceType;
           wi.ahspMatchStatus = ahspRes.matchStatus;
           wi.isCustomItem = false;
+          // W7 FU2: pemetaan terisi, tetapi bila gerbang satuan menolak,
+          // tandai PRICE_INCOMPLETE agar blok harga di bawah tidak
+          // mengambil harga satuan yang salah untuk kuantitas ini.
+          if (ahspRes.unitMismatch) {
+            wi.priceStatus = 'PRICE_INCOMPLETE';
+          }
           itemChanged = true;
           filledCount++;
         } else if (!wi.ahspCode) {
@@ -1796,39 +1924,47 @@ export class DedToRabPipelineService {
 
       // 2. Resolve missing Price
       if (wi.ahspCode && !wi.unitPrice) {
-        const priceRes = this.resolvePrice(wi.ahspCode, undefined, wi.isCustomItem);
-        if (priceRes.unitPrice && priceRes.priceSource !== 'PRICE_NOT_FOUND') {
-          wi.unitPrice = priceRes.unitPrice;
-          wi.priceSource = priceRes;
-          wi.priceProvenance = priceRes.valueSourceType;
-          if (wi.quantity) {
-            wi.totalPrice = PrecisionEngine.applyPolicy(
-              PrecisionEngine.multiply(wi.quantity, priceRes.unitPrice),
-              'INTEGER_ROUND'
-            );
-          }
-          itemChanged = true;
-          filledCount++;
-        } else if (wi.isCustomItem) {
-          // Phase 2J P0 fix: never fabricate prices. Custom items without
-          // a price source stay PRICE_UNRESOLVED (was: hardcoded Rp125.000,
-          // contradicting Phase 4A anti-fabrication remediation).
-          wi.unitPrice = null;
-          wi.totalPrice = null;
-          wi.priceStatus = 'PRICE_UNRESOLVED';
-          wi.priceProvenance = 'AI_ESTIMATE';
-          wi.priceSource = {
-            unitPrice: null,
-            priceSource: 'PRICE_NOT_FOUND',
-            valueSourceType: 'AI_ESTIMATE',
-            sourceDetail: 'Estimasi Biaya AI untuk Item Kustom (Perlu Review) — harga belum tersedia',
-            currency: 'IDR',
-            isOfficial: false,
-          };
-          itemChanged = true;
-          filledCount++;
-        } else {
+        // W7 FU2: item PRICE_INCOMPLETE (gerbang satuan menolak pasangan
+        // kode AHSP + satuan kuantitas ini) TIDAK BOLEH dihargai di sini
+        // — resolvePrice by-code tidak membawa satuan dan akan
+        // mengembalikan harga per satuan yang salah. Tetap unresolved.
+        if (wi.priceStatus === 'PRICE_INCOMPLETE') {
           unresolvedCount++;
+        } else {
+          const priceRes = this.resolvePrice(wi.ahspCode, undefined, wi.isCustomItem);
+          if (priceRes.unitPrice && priceRes.priceSource !== 'PRICE_NOT_FOUND') {
+            wi.unitPrice = priceRes.unitPrice;
+            wi.priceSource = priceRes;
+            wi.priceProvenance = priceRes.valueSourceType;
+            if (wi.quantity) {
+              wi.totalPrice = PrecisionEngine.applyPolicy(
+                PrecisionEngine.multiply(wi.quantity, priceRes.unitPrice),
+                'INTEGER_ROUND'
+              );
+            }
+            itemChanged = true;
+            filledCount++;
+          } else if (wi.isCustomItem) {
+            // Phase 2J P0 fix: never fabricate prices. Custom items without
+            // a price source stay PRICE_UNRESOLVED (was: hardcoded Rp125.000,
+            // contradicting Phase 4A anti-fabrication remediation).
+            wi.unitPrice = null;
+            wi.totalPrice = null;
+            wi.priceStatus = 'PRICE_UNRESOLVED';
+            wi.priceProvenance = 'AI_ESTIMATE';
+            wi.priceSource = {
+              unitPrice: null,
+              priceSource: 'PRICE_NOT_FOUND',
+              valueSourceType: 'AI_ESTIMATE',
+              sourceDetail: 'Estimasi Biaya AI untuk Item Kustom (Perlu Review) — harga belum tersedia',
+              currency: 'IDR',
+              isOfficial: false,
+            };
+            itemChanged = true;
+            filledCount++;
+          } else {
+            unresolvedCount++;
+          }
         }
       }
 
