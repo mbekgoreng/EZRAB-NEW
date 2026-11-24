@@ -94,24 +94,29 @@ export function computeQuantity(
   const d = inputs.depth;
 
   if (shape === 'VOLUME') {
-    if (typeof l === 'number' && typeof w === 'number' && typeof h === 'number' && Number.isFinite(l + w + h)) {
+    // W1 (2026-11-24): dimensi WAJIB positif — dulu panjang/lebar/
+    // tinggi negatif (mis. token "-5" dari parseDimensionsString)
+    // menghasilkan kuantitas negatif, bukan null. Cabang nilai
+    // eksplisit di atas sudah mensyaratkan > 0; cabang produk dimensi
+    // diselaraskan (nol/negatif = tidak dapat dihitung, bukan volume).
+    if (typeof l === 'number' && typeof w === 'number' && typeof h === 'number' && Number.isFinite(l + w + h) && l > 0 && w > 0 && h > 0) {
       return { quantity: l * w * h, formula: `${formula} (= ${l} × ${w} × ${h})` };
     }
-    if (typeof l === 'number' && typeof w === 'number' && typeof d === 'number' && Number.isFinite(l + w + d)) {
+    if (typeof l === 'number' && typeof w === 'number' && typeof d === 'number' && Number.isFinite(l + w + d) && l > 0 && w > 0 && d > 0) {
       return { quantity: l * w * d, formula: `${formula} (= ${l} × ${w} × ${d})` };
     }
   }
 
   if (shape === 'AREA') {
-    if (typeof l === 'number' && typeof w === 'number' && Number.isFinite(l + w)) {
+    if (typeof l === 'number' && typeof w === 'number' && Number.isFinite(l + w) && l > 0 && w > 0) {
       return { quantity: l * w, formula: `${formula} (= ${l} × ${w})` };
     }
-    if (typeof l === 'number' && typeof h === 'number' && Number.isFinite(l + h)) {
+    if (typeof l === 'number' && typeof h === 'number' && Number.isFinite(l + h) && l > 0 && h > 0) {
       return { quantity: l * h, formula: `${formula} (= ${l} × ${h})` };
     }
   }
 
-  if (shape === 'LENGTH' && typeof l === 'number' && Number.isFinite(l)) {
+  if (shape === 'LENGTH' && typeof l === 'number' && Number.isFinite(l) && l > 0) {
     return { quantity: l, formula: `${formula} (= panjang ${l})` };
   }
 
@@ -125,10 +130,10 @@ export function computeQuantity(
     if (typeof inputs.volume === 'number' && Number.isFinite(inputs.volume) && inputs.volume > 0) {
       vol = inputs.volume;
       volText = `${inputs.volume} m³`;
-    } else if (typeof l === 'number' && typeof w === 'number' && typeof h === 'number' && Number.isFinite(l + w + h)) {
+    } else if (typeof l === 'number' && typeof w === 'number' && typeof h === 'number' && Number.isFinite(l + w + h) && l > 0 && w > 0 && h > 0) {
       vol = l * w * h;
       volText = `${l} × ${w} × ${h} m³`;
-    } else if (typeof l === 'number' && typeof w === 'number' && typeof d === 'number' && Number.isFinite(l + w + d)) {
+    } else if (typeof l === 'number' && typeof w === 'number' && typeof d === 'number' && Number.isFinite(l + w + d) && l > 0 && w > 0 && d > 0) {
       vol = l * w * d;
       volText = `${l} × ${w} × ${d} m³`;
     }

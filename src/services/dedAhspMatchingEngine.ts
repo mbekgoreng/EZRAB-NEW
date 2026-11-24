@@ -42,6 +42,18 @@ export interface AhspMatchingResult {
 export class DedAhspMatchingEngine {
   private static instance: DedAhspMatchingEngine;
 
+  /**
+   * W1 (2026-11-24): penghitung urut kode CUSTOM — dulu kodenya
+   * `CUST-${Date.now().toString().slice(-4)}` (4 digit milidetik):
+   * dua item tak cocok yang diproses dalam milidetik yang sama (dan
+   * setiap kelipatan 10 detik) mendapat KODE YANG SAMA, merusak
+   * identitas/jejak item di RAB. Preseden yang sama dengan pipeline
+   * (`customItemSeq` di dedToRabPipelineService): urutan monoton
+   * per instance singleton — unik dalam satu proses, tanpa
+   * ketergantungan pada jam.
+   */
+  private customItemSeq = 1;
+
   private constructor() {}
 
   public static getInstance(): DedAhspMatchingEngine {
@@ -193,7 +205,7 @@ export class DedAhspMatchingEngine {
     }
 
     // 5. Fallback to AI_CUSTOM (Section 13)
-    const customCode = `CUST-${Date.now().toString().slice(-4)}`;
+    const customCode = `CUST-${String(this.customItemSeq++).padStart(3, '0')}`;
     const customItemDetails: AICustomItem = {
       code: customCode,
       name: item.name,

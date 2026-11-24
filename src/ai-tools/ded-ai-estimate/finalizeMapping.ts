@@ -196,7 +196,16 @@ export function mapDedAiItemToRabInput(
   item: DedAiItem,
   policy: DedEstimationPolicy
 ): DedFinalizeRabInput | null {
-  if (item.unitPrice == null || item.quantity == null) return null;
+  // W1 (2026-11-24): penjaga non-positif/non-finite — dulu hanya null
+  // yang ditahan, sehingga kuantitas/harga <= 0 atau NaN lolos menjadi
+  // baris RAB (volume negatif / harga negatif masuk total engine).
+  // Selaras mapper Magic AI (harga <= 0 ditahan) + calcSubtotal
+  // (kuantitas/harga <= 0 → subtotal null): baris yang tidak dapat
+  // dihitung tidak boleh menjadi baris RAB berharga.
+  if (
+    item.unitPrice == null || !Number.isFinite(item.unitPrice) || item.unitPrice <= 0 ||
+    item.quantity == null || !Number.isFinite(item.quantity) || item.quantity <= 0
+  ) return null;
   const calculationFormula = realFormula(item.quantityFormula);
   const common = {
     description: item.name,
@@ -457,7 +466,12 @@ export function mapFullAiItemToRabInput(
   item: FullAiItem,
   policy: DedEstimationPolicy
 ): DedFinalizeRabInput | null {
-  if (item.price.unitPrice == null || item.quantity.value == null) return null;
+  // W1 (2026-11-24): penjaga non-positif/non-finite — sama dengan
+  // mapDedAiItemToRabInput di atas (dulu hanya null yang ditahan).
+  if (
+    item.price.unitPrice == null || !Number.isFinite(item.price.unitPrice) || item.price.unitPrice <= 0 ||
+    item.quantity.value == null || !Number.isFinite(item.quantity.value) || item.quantity.value <= 0
+  ) return null;
   const calculationFormula = realFormula(item.quantity.formula);
   const common = {
     description: item.name,

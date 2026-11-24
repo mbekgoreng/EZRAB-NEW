@@ -17,7 +17,7 @@ import { PrecisionEngine } from '../engine/calculatorCore/precision/precisionEng
 
 export interface QtoCalculationValidation {
   isValid: boolean;
-  errorState?: 'DIMENSION_NOT_FOUND' | 'QUANTITY_NOT_FOUND' | 'CONFLICT' | 'EVIDENCE_REQUIRED';
+  errorState?: 'DIMENSION_NOT_FOUND' | 'QUANTITY_NOT_FOUND' | 'CONFLICT' | 'EVIDENCE_REQUIRED' | 'INVALID_DIMENSION';
   reason?: string;
 }
 
@@ -63,6 +63,26 @@ export class DedQtoCalculationEngine {
         errorState: 'DIMENSION_NOT_FOUND',
         reason: 'Item tidak memiliki parameter dimensi untuk dihitung.',
       };
+    }
+
+    // W1 (2026-11-24): dimensi WAJIB bilangan finite positif — dulu
+    // panjang/lebar/tinggi 0, negatif, atau NaN lolos validasi (hanya
+    // kehadiran yang dicek) lalu calculateQuantity mengembalikan
+    // kuantitas 0/negatif/NaN dengan success=true, dan kuantitas itu
+    // mengalir ke total RAB. Nol/negatif/NaN = data dimensi tidak
+    // valid, bukan kuantitas — ditolak eksplisit (INVALID_DIMENSION),
+    // bukan ditebak. Count tidak dicek di sini: cabang count di bawah
+    // sudah mensyaratkan count > 0, dan count negatif pada item
+    // non-count diabaikan calculateQuantity (bukan dipakai aritmetika).
+    for (const key of ['length', 'width', 'height'] as const) {
+      const v = dims[key];
+      if (v !== undefined && (!Number.isFinite(v) || v <= 0)) {
+        return {
+          isValid: false,
+          errorState: 'INVALID_DIMENSION',
+          reason: `Dimensi ${key} tidak valid (${String(v)}) — dimensi harus bilangan positif. Kuantitas tidak dapat dihitung dari dimensi ini.`,
+        };
+      }
     }
 
     // Explicit count check (for units/buah/set)

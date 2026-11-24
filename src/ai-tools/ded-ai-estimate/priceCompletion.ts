@@ -574,7 +574,21 @@ export function completeDedItem(
 
 /** Tempel blok audit kuantitas (Tahap 1) ke item hasil penyelesaian. */
 function withQuantityAudit(item: DedAiItem, fill?: QuantityFillTrace): DedAiItem {
-  return { ...item, quantityAudit: buildQuantityAudit(item, fill) };
+  const audited = { ...item, quantityAudit: buildQuantityAudit(item, fill) };
+  if (fill && audited.priceCompletion) {
+    // W1 (2026-11-24): `originalQuantity` blok penyelesaian HARUS
+    // kuantitas SEBELUM pengisian (fill.originalQuantity). Blok-blok di
+    // atas dibangun dari item PASCA-isi — applyReference mencatat
+    // quantity terisi, markQuantityBasis mencatat null — sehingga
+    // rejectCompletion memulihkan kuantitas ke nilai ISIAN (pengisian
+    // tidak ter-undo) atau kehilangan nilai fragmen aslinya. Koreksi di
+    // sini, satu titik yang dilalui kedua return completeDedItem.
+    audited.priceCompletion = {
+      ...audited.priceCompletion,
+      originalQuantity: fill.originalQuantity,
+    };
+  }
+  return audited;
 }
 
 function markQuantityBasis(item: DedAiItem, quantityFilled: boolean): DedAiItem {

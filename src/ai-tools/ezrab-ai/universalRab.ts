@@ -1700,7 +1700,12 @@ export function rebuildWbsAttachment(
  */
 export function isPriceValidForTotal(it: { priceStatus?: string | null; unitPrice?: number | null }): boolean {
   if (it.priceStatus === 'PRICE_UNRESOLVED') return false;
-  return it.unitPrice != null && Number.isFinite(it.unitPrice);
+  // W1 (2026-11-24): harga NEGATIF bukan harga valid — tanpanya harga
+  // negatif lolos gerbang ini lalu mengurangi total (totalsFromItems),
+  // masuk payload transfer sebagai PRICE_RESOLVED, dan memblokir
+  // pengisian Full AI (item dianggap sudah berharga). Nol eksplisit
+  // tetap valid menurut kontrak sentinel di atas (hanya < 0 ditolak).
+  return it.unitPrice != null && Number.isFinite(it.unitPrice) && it.unitPrice >= 0;
 }
 
 /** Jumlah item bila harganya valid, null bila belum dapat dihitung. */
