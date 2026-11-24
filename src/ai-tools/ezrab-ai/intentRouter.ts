@@ -333,12 +333,24 @@ const PATTERNS: Pattern[] = [
   { intent: 'RAB_FULL_AI', re: /\bfull ai\b/ },
   { intent: 'RAB_FULL_AI', re: /\bai full\b/ },
   { intent: 'RAB_FULL_AI', re: /\b(susun|susunkan|buatkan|buatin|bikin|buat|hitung|hitungkan)\b[^.]{0,30}\b(pakai|dengan|lewat)\s+ai\b/ },
+  // Keluarga kata kerja pembuat RAB (W2, 2026-11-24): "susun / susunkan /
+  // generate / bikinkan" adalah kata kerja yang sama sahnya dengan
+  // "buatkan / bikin" — tombol UI-nya saja bernama "Susun draft RAB"
+  // dan cabang generate actionRegistry sudah mengenalinya. Sebelumnya
+  // keempat verba ini TIDAK ada di pola CREATE_RAB_* sehingga "susun
+  // rab rumah" / "bikinkan rab jalan" jatuh UNKNOWN ke LLM (padahal
+  // mesin deterministik bisa menangani), sementara pola rumah sempat
+  // membawa alternatif mati " Bikinkan" (huruf kapital + spasi awalan,
+  // tak pernah cocok dengan teks yang sudah dinormalisasi huruf kecil).
+  // Semua pola CREATE_RAB_DIRECT / SUMMARY / CLARIFY kini memakai
+  // kelompok verba yang sama; "susun/generate" TANPA kata "rab"
+  // ("susun jadwal") tetap tidak tertangkap — aman.
   // RAB langsung (permintaan user 2026-10-21): perintah RAB rumah DENGAN tipe
   // eksplisit ("buatkan rab rumah type 70 2 lantai") dihitung langsung oleh
   // mesin parametrik dan ditampilkan sebagai tabel — bukan ringkasan/template.
   // Pola ini HARUS sebelum pola CREATE_RAB_SUMMARY rumah di bawah.
-  { intent: 'CREATE_RAB_DIRECT', re: /\b(buatkan|buatin|bikin|buat)\b.*\brab\b.*\brumah\b.*\b(type|tipe)\s*\d+/ },
-  { intent: 'CREATE_RAB_DIRECT', re: /\b(buatkan|buatin|bikin|buat)\b.*\brumah\b.*\b(type|tipe)\s*\d+.*\brab\b/ },
+  { intent: 'CREATE_RAB_DIRECT', re: /\b(buatkan|buatin|bikinkan|bikin|buat|susun|susunkan|generate)\b.*\brab\b.*\brumah\b.*\b(type|tipe)\s*\d+/ },
+  { intent: 'CREATE_RAB_DIRECT', re: /\b(buatkan|buatin|bikinkan|bikin|buat|susun|susunkan|generate)\b.*\brumah\b.*\b(type|tipe)\s*\d+.*\brab\b/ },
   { intent: 'CREATE_RAB_DIRECT', re: /\brab\b.*\brumah\b.*\b(type|tipe)\s*\d+/ },
   // RAB langsung SPESIFIKASI BEBAS (perluasan 2026-10-22): perintah RAB rumah
   // dengan spesifikasi terukur TANPA tipe terdaftar — dimensi ("rumah 5x10"),
@@ -346,11 +358,11 @@ const PATTERNS: Pattern[] = [
   // masuk CREATE_RAB_DIRECT; actionRegistry/specRab yang memutuskan generate
   // parametrik vs jatuh ke ringkasan. Pola dimensi tanpa kata "rab" memakai
   // penjaga anti-"desain" agar "buatkan desain rumah 5x10" tetap ringkasan.
-  { intent: 'CREATE_RAB_DIRECT', re: /\b(buatkan|buatin|bikin|buat)\b.*\brab\b.*\brumah\b.*\d+\s*[x×]\s*\d+/ },
+  { intent: 'CREATE_RAB_DIRECT', re: /\b(buatkan|buatin|bikinkan|bikin|buat|susun|susunkan|generate)\b.*\brab\b.*\brumah\b.*\d+\s*[x×]\s*\d+/ },
   { intent: 'CREATE_RAB_DIRECT', re: /\brab\b.*\brumah\b.*\d+\s*[x×]\s*\d+/ },
-  { intent: 'CREATE_RAB_DIRECT', re: /\b(buatkan|buatin|bikin|buat)\b(?!.*\bdesain\b)(?!.*\bdesign\b).*\brumah\b.*\d+\s*[x×]\s*\d+/ },
-  { intent: 'CREATE_RAB_DIRECT', re: /\b(buatkan|buatin|bikin|buat)\b.*\brab\b.*\brumah\b.*(?:luas(?:\s+bangunan)?|lb)\s*(?:=|sekitar)?\s*\d+/ },
-  { intent: 'CREATE_RAB_DIRECT', re: /\b(buatkan|buatin|bikin|buat)\b.*\brab\b.*\brumah\b.*\d+\s*m(?:2|²)/ },
+  { intent: 'CREATE_RAB_DIRECT', re: /\b(buatkan|buatin|bikinkan|bikin|buat|susun|susunkan|generate)\b(?!.*\bdesain\b)(?!.*\bdesign\b).*\brumah\b.*\d+\s*[x×]\s*\d+/ },
+  { intent: 'CREATE_RAB_DIRECT', re: /\b(buatkan|buatin|bikinkan|bikin|buat|susun|susunkan|generate)\b.*\brab\b.*\brumah\b.*(?:luas(?:\s+bangunan)?|lb)\s*(?:=|sekitar)?\s*\d+/ },
+  { intent: 'CREATE_RAB_DIRECT', re: /\b(buatkan|buatin|bikinkan|bikin|buat|susun|susunkan|generate)\b.*\brab\b.*\brumah\b.*\d+\s*m(?:2|²)/ },
   // Perbaikan 2026-10-27 (prompt user "rab rumah di probolinggo luas
   // bangunan 70m2" jatuh ke UNKNOWN → agen LLM hanya menampilkan daftar
   // template, bukan tabel): perintah RAB rumah TANPA kata kerja
@@ -374,7 +386,7 @@ const PATTERNS: Pattern[] = [
   // chat menampilkan ringkasan kebutuhan yang terekstrak + tombol eksplisit
   // "Buka Workspace Desain & RAB". Wizard/studio hanya terbuka oleh klik tombol
   // tersebut (persetujuan pengguna), bukan oleh teks perintah.
-  { intent: 'CREATE_RAB_SUMMARY', re: /\b(buatkan|buatin|bikin| Bikinkan|buat)\b.*\brab\b.*\brumah\b/ },
+  { intent: 'CREATE_RAB_SUMMARY', re: /\b(buatkan|buatin|bikinkan|bikin|buat|susun|susunkan|generate)\b.*\brab\b.*\brumah\b/ },
   { intent: 'CREATE_RAB_SUMMARY', re: /\brab\b.*\brumah\b.*\b(baru|wizard|panduan)\b/ },
   { intent: 'CREATE_RAB_SUMMARY', re: /\b(buat|bikin|desain|design)\b.*\b(desain|design)\b.*\brumah\b/ },
   // "buatkan desain rumah 5x10" sebelumnya lolos dari semua pola (kata kerja
@@ -382,22 +394,22 @@ const PATTERNS: Pattern[] = [
   // memblokir DIRECT) -> UNKNOWN, padahal maksudnya intake desain/ringkasan.
   // Tetap BUKAN direct — ringkasan kebutuhan yang menawari workspace desain
   // (audit routing 2026-10-23).
-  { intent: 'CREATE_RAB_SUMMARY', re: /\b(buatkan|buatin|bikin|buat)\b.*\b(desain|design)\b.*\brumah\b/ },
+  { intent: 'CREATE_RAB_SUMMARY', re: /\b(buatkan|buatin|bikinkan|bikin|buat|susun|susunkan|generate)\b.*\b(desain|design)\b.*\brumah\b/ },
   { intent: 'CREATE_RAB_SUMMARY', re: /\b(desain|design)\b.*\brumah\b.*\d+\s*[x×]\s*\d+/ },
   { intent: 'CREATE_RAB_SUMMARY', re: /\b(buatkan|buatin)\b.*\brumah\b.*\b(\d+)\s*m/ },
-  { intent: 'CREATE_RAB_SUMMARY', re: /\b(buatkan|buatin|bikin|buat)\b.*\brab\b.*\b(gedung|ruko|villa|gudang|kantor|jalan|drainase|saluran|paving|renovasi|jembatan)\b/ },
+  { intent: 'CREATE_RAB_SUMMARY', re: /\b(buatkan|buatin|bikinkan|bikin|buat|susun|susunkan|generate)\b.*\brab\b.*\b(gedung|ruko|villa|gudang|kantor|jalan|drainase|saluran|paving|renovasi|jembatan)\b/ },
   // Cakupan universal (2026-10-26): kata kunci cakupan lain yang sebelumnya
   // jatuh ke CLARIFY/UNKNOWN — irigasi, pondasi, struktur, atap, finishing,
   // MEP, lanskap, demolisi, dan bangunan khusus. Tetap SETELAH pola spesifik
   // di atas dan SEBELUM pola CLARIFY umum; actionRegistry memutuskan
   // apakah draft universal bisa dibuat atau tetap ringkasan kebutuhan.
-  { intent: 'CREATE_RAB_SUMMARY', re: /\b(buatkan|buatin|bikin|buat)\b.*\brab\b.*\b(irigasi|pondasi|struktur|atap|finishing|mekanikal|elektrikal|plumbing|mep|lanskap|pagar|pembongkaran|demolisi|sekolah|rumah sakit|klinik|puskesmas|pelabuhan|dermaga|olahraga|lapangan|pertanian|beton|trotoar|kanstin|kolom|balok|sloof|genteng|keramik|plafon|sanitasi|bendung|bendungan|embung|dinding penahan|tembok penahan|turap|retaining|waterproofing|hvac|lift|eskalator|fasad|interior|gorong|u-?ditch|hotel|mall|apartemen|gudang|pabrik)\b/ },
+  { intent: 'CREATE_RAB_SUMMARY', re: /\b(buatkan|buatin|bikinkan|bikin|buat|susun|susunkan|generate)\b.*\brab\b.*\b(irigasi|pondasi|struktur|atap|finishing|mekanikal|elektrikal|plumbing|mep|lanskap|pagar|pembongkaran|demolisi|sekolah|rumah sakit|klinik|puskesmas|pelabuhan|dermaga|olahraga|lapangan|pertanian|beton|trotoar|kanstin|kolom|balok|sloof|genteng|keramik|plafon|sanitasi|bendung|bendungan|embung|dinding penahan|tembok penahan|turap|retaining|waterproofing|hvac|lift|eskalator|fasad|interior|gorong|u-?ditch|hotel|mall|apartemen|gudang|pabrik)\b/ },
   // Frasa keinginan tanpa kata "rab" ("Saya ingin membuat drainase
   // lingkungan sepanjang 500 meter") — kategori teridentifikasi, jadi
   // ringkasan/intake yang menanganinya, BUKAN "Perintah tidak dikenali"
   // (Universal Intake 2026-11-10). HARUS sebelum CREATE_RAB_CLARIFY.
   { intent: 'CREATE_RAB_SUMMARY', re: /\b(ingin|mau|pengen|hendak)\s+(membuat|buat|bikin|membangun|bangun|dibangun|dibuat|merenovasi|renovasi)\b[^.]{0,60}\b(drainase|saluran|jalan|jembatan|irigasi|gedung|kantor|sekolah|rumah sakit|rumah|hunian|kandang|peternakan|kolam renang|kolam|villa|gudang|bangunan|taman|landscape|lanskap|pagar|pondasi|renovasi|instalasi|plumbing|hvac|dinding penahan|gorong)\b/ },
-  { intent: 'CREATE_RAB_SUMMARY', re: /\b(buatkan|buatin|bikin|buat)\b.*\brab\b.*\b(ded|gambar kerja)\b/ },
+  { intent: 'CREATE_RAB_SUMMARY', re: /\b(buatkan|buatin|bikinkan|bikin|buat|susun|susunkan|generate)\b.*\brab\b.*\b(ded|gambar kerja)\b/ },
   // Landscape/taman & ruang publik (Conversational Intelligence Upgrade,
   // master prompt owner 2026-11-10): permintaan RAB landscape yang sudah
   // menyebut kategori TIDAK PERNAH jatuh ke menu generik CREATE_RAB_CLARIFY
@@ -405,10 +417,10 @@ const PATTERNS: Pattern[] = [
   // + pertanyaan konsep), ditangani executeIntent CREATE_RAB_SUMMARY lewat
   // gerbang konteks proyek di actionRegistry. Pola "rab"-dulu juga ditangkap
   // ("rab landscape 1 hektar dong") agar tidak tertelan pola jalan/umum.
-  { intent: 'CREATE_RAB_SUMMARY', re: /\b(buatkan|buatin|bikin|buat)\b.*\brab\b.*\b(landscape|lanskap)\b/ },
+  { intent: 'CREATE_RAB_SUMMARY', re: /\b(buatkan|buatin|bikinkan|bikin|buat|susun|susunkan|generate)\b.*\brab\b.*\b(landscape|lanskap)\b/ },
   { intent: 'CREATE_RAB_SUMMARY', re: /\brab\b.*\b(landscape|lanskap)\b/ },
-  { intent: 'CREATE_RAB_SUMMARY', re: /\b(buatkan|buatin|bikin|buat)\b.*\b(taman kota|taman publik|taman umum|ruang terbuka hijau)\b/ },
-  { intent: 'CREATE_RAB_SUMMARY', re: /\b(buatkan|buatin|bikin|buat)\b.*\btaman\b.*\b(hektar|ha\b|m2|m²|meter persegi|surabaya|jakarta|bandung|semarang|medan|makassar|denpasar|yogyakarta|malang|bogor|depok|bekasi|tangerang|palembang|pekanbaru|batam|samarinda|balikpapan|pontianak|manado|solo|surakarta|jogja)\b/ },
+  { intent: 'CREATE_RAB_SUMMARY', re: /\b(buatkan|buatin|bikinkan|bikin|buat|susun|susunkan|generate)\b.*\b(taman kota|taman publik|taman umum|ruang terbuka hijau)\b/ },
+  { intent: 'CREATE_RAB_SUMMARY', re: /\b(buatkan|buatin|bikinkan|bikin|buat|susun|susunkan|generate)\b.*\btaman\b.*\b(hektar|ha\b|m2|m²|meter persegi|surabaya|jakarta|bandung|semarang|medan|makassar|denpasar|yogyakarta|malang|bogor|depok|bekasi|tangerang|palembang|pekanbaru|batam|samarinda|balikpapan|pontianak|manado|solo|surakarta|jogja)\b/ },
   // Gelombang A Fase 2 (2026-11-11): pesan pertama dengan SINYAL PROYEK
   // terbaca tidak boleh jatuh ke menu generik/UNKNOWN hanya karena verba
   // atau sinonimnya di luar daftar lama. Kategori non-katalog & sinonim
@@ -416,9 +428,9 @@ const PATTERNS: Pattern[] = [
   // perlu/minta/hitungkan/perbaikan → jalur percakapan kontekstual
   // (CREATE_RAB_SUMMARY → gerbang intake universal). Umum, bukan
   // hardcode contoh: pola = verba RAB × keluarga kategori.
-  { intent: 'CREATE_RAB_SUMMARY', re: /\b(buatkan|buatin|bikin|buat|tolong|minta|perlu|ingin|mau|pengen|hendak|hitungkan|hitung)\b[^.]{0,40}\brab\b[^.]{0,60}\b(kandang|peternakan|lembu|warehouse|kolam renang|jembatan|gudang)\b/ },
+  { intent: 'CREATE_RAB_SUMMARY', re: /\b(buatkan|buatin|bikinkan|bikin|buat|susun|susunkan|generate|tolong|minta|perlu|ingin|mau|pengen|hendak|hitungkan|hitung)\b[^.]{0,40}\brab\b[^.]{0,60}\b(kandang|peternakan|lembu|warehouse|kolam renang|jembatan|gudang)\b/ },
   { intent: 'CREATE_RAB_SUMMARY', re: /\brab\b[^.]{0,60}\b(kandang|peternakan|warehouse|kolam renang)\b/ },
-  { intent: 'CREATE_RAB_SUMMARY', re: /\b(buatkan|buatin|bikin|buat)\b.*\brab\b.*\b(hunian)\b/ },
+  { intent: 'CREATE_RAB_SUMMARY', re: /\b(buatkan|buatin|bikinkan|bikin|buat|susun|susunkan|generate)\b.*\brab\b.*\b(hunian)\b/ },
   { intent: 'CREATE_RAB_SUMMARY', re: /\brab\b.*\b(perbaikan|renovasi)\b.*\b(dapur|kamar mandi|toilet|atap|rumah)\b/ },
   { intent: 'CREATE_RAB_SUMMARY', re: /\b(perlu|minta|tolong)\b[^.]{0,30}\brab\b[^.]{0,60}\b(jembatan|drainase|pagar|kolam|jalan|gedung|kantor|sekolah)\b/ },
   // Gelombang B (2026-11-11): verba "hitungkan/hitung + estimasi" tanpa
@@ -429,7 +441,7 @@ const PATTERNS: Pattern[] = [
   // "buatkan rab" tanpa objek spesifik -> tanya balik (jangan tumpahkan daftar
   // template). Pola spesifik (rumah/dll) sudah tertangkap di atas; pola umum
   // ini HARUS tetap setelahnya. \brab\b tidak menangkap "rabat beton".
-  { intent: 'CREATE_RAB_CLARIFY', re: /\b(buatkan|buatin|bikin|buat|mau buat|ingin buat|pengen buat)\b.*\brab\b/ },
+  { intent: 'CREATE_RAB_CLARIFY', re: /\b(buatkan|buatin|bikinkan|bikin|buat|susun|susunkan|generate|mau buat|ingin buat|pengen buat)\b.*\brab\b/ },
   { intent: 'CREATE_RAB_CLARIFY', re: /^\s*rab\s+baru\s*$/ },
   { intent: 'OPEN_SPREADSHEET', re: /\b(buka|bukain|tampilkan|tampilin)\b.*\bspreadsheet\b/ },
   { intent: 'OPEN_DASHBOARD', re: /\b(buka|kembali|ke)\b.*\bdashboard\b/ },

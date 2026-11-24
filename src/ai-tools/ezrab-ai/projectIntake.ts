@@ -771,7 +771,10 @@ export function extractProjectContext(text: string, base?: ProjectIntakeContext)
   if (mat) ctx.materialPreference = mat[1].trim();
 
   if (/\b(ded|gambar kerja|gambar teknis|denah)\b/.test(t)) ctx.hasDedDocument = true;
-  if (/\b(langsung buatkan|langsung buat|langsung saja|lgsg|buatkan sekarang|langsung dihitung)\b/.test(t)) {
+  // W2 (2026-11-24): pemicu forceGenerate memakai keluarga kata kerja
+  // pembuat RAB yang sama dengan router + cabang generate (susun /
+  // susunkan / generate / bikinkan) — cermin universalIntake.
+  if (/\b(langsung buatkan|langsung buat|langsung susun|langsung susunkan|langsung generate|langsung bikinkan|langsung saja|lgsg|buatkan sekarang|susun sekarang|langsung dihitung)\b/.test(t)) {
     ctx.forceGenerate = true;
   }
 

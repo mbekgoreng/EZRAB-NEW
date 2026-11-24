@@ -991,7 +991,11 @@ export function extractUniversalContext(text: string, base?: UniversalIntakeCont
     }
   }
 
-  if (/\b(langsung buatkan|langsung buat|langsung saja|buatkan sekarang|langsung dihitung)\b/.test(t)) {
+  // W2 (2026-11-24): pemicu forceGenerate memakai keluarga kata kerja
+  // pembuat RAB yang sama dengan router + cabang generate (susun /
+  // susunkan / generate / bikinkan) — "langsung susun" sebelumnya tidak
+  // memicu sehingga pengguna yang mengetiknya tetap ditanyai.
+  if (/\b(langsung buatkan|langsung buat|langsung susun|langsung susunkan|langsung generate|langsung bikinkan|langsung saja|buatkan sekarang|susun sekarang|langsung dihitung)\b/.test(t)) {
     ctx.forceGenerate = true;
   }
 

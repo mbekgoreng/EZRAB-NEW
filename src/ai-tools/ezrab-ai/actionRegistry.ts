@@ -1459,10 +1459,21 @@ export function restoreUniversalContext(ctx: UniversalIntakeContext, projectId?:
 /** Brief proyek universal (§8) — ditampilkan sebelum generate. */
 export function universalReviewResult(ctx: UniversalIntakeContext, ackChanges?: string[]): ActionResult {
   refreshUniversalFacts(ctx);
-  ctx.stage = 'PROJECT_REVIEW';
   universalCtx = ctx;
   const lines = buildUniversalBriefLines(ctx);
   lines.push(...questionnaireBriefLines(ctx));
+  // W2 (2026-11-24): tahap HARUS ditetapkan SESUDAH pembangun baris —
+  // buildUniversalBriefLines memanggil refreshUniversalFacts yang
+  // menghitung ulang stage dari pertanyaan kritis yang masih hilang,
+  // sehingga penetapan PROJECT_REVIEW SEBELUM baris dibangun terhapus
+  // kembali (brief forceGenerate tampil dengan stage PROJECT_DIMENSIONS
+  // dan perintah teks "susun draft RAB" / "oke" sesudahnya mengulang
+  // brief selamanya — cabang generate + afirmasi mensyaratkan
+  // PROJECT_REVIEW — sementara tombol "Susun draft RAB" bekerja).
+  // Brief SEDANG ditinjau pengguna, jadi PROJECT_REVIEW adalah tahap
+  // yang benar meski pertanyaan tersisa; generate tetap gagal jujur
+  // bila mesin katalog tidak bisa membangun dari brief itu.
+  ctx.stage = 'PROJECT_REVIEW';
   if (ackChanges?.length) lines.unshift(`Siap, saya perbarui: ${ackChanges.join('; ')}.`, '');
   return {
     ok: true,
@@ -1794,12 +1805,24 @@ export function tryContinueUniversalContext(text: string): ActionResult | null {
   const requestedPrimaryId = classifyUniversal(text).primary?.id ?? null;
   const topicChanged =
     requestedPrimaryId !== null && ctx.primary?.id != null && requestedPrimaryId !== ctx.primary.id;
-  if (/\b(susun|buatkan|generate)\b[^.]{0,20}\b(draft|rab)\b/.test(t) && ctx.stage === 'PROJECT_REVIEW' && !topicChanged) {
+  if (/\b(susun|susunkan|buatkan|buatin|generate)\b[^.]{0,20}\b(draft|rab)\b/.test(t) && ctx.stage === 'PROJECT_REVIEW' && !topicChanged) {
     return generateFromUniversalContext(ctx);
   }
 
   // --- Perintah baru yang jelas menggugurkan konteks (pola gerbang lain) ---
-  if (/\b(buka|bukain|tampilkan|cari|carikan)\b/.test(t) || (/\bbuatkan\b[^.]{0,30}\brab\b/.test(t) && classifyUniversal(text).primary?.id !== ctx.primary?.id)) {
+  // W2 (2026-11-24): gerbang topik-baru kini juga menangkap "susun /
+  // susunkan / generate (draft) RAB <topik lain>" — sebelumnya frasa itu
+  // lolos dari cabang generate (topicChanged) lalu jatuh ke jalur merge
+  // dan topik baru MERANGKAP sebagai disiplin sekunder konteks lama
+  // ("Susun RAB kolam renang" saat brief jalan → kolam menempel di RAB
+  // jalan). Keluarga kata kerja yang sama ("susunkan", "buatin") juga
+  // ditambahkan ke cabang generate di atas agar keduanya sepakat.
+  // Perbandingan topicChanged yang KETAT dipakai di sini (topik harus
+  // terklasifikasi DAN berbeda): "susun draft RAB" tanpa topik tetap
+  // generate (cabang di atas), dan "susun ulang" (revisi draft yang
+  // sedang ditinjau) tidak menggugurkan konteks.
+  const susunUlang = /\b(susun|susunkan|generate)\s+ulang\b/.test(t);
+  if (/\b(buka|bukain|tampilkan|cari|carikan)\b/.test(t) || (/\b(buatkan|buatin)\b[^.]{0,30}\brab\b/.test(t) && classifyUniversal(text).primary?.id !== ctx.primary?.id) || (!susunUlang && /\b(susun|susunkan|generate)\b[^.]{0,30}\b(draft|rab)\b/.test(t) && topicChanged)) {
     // GATE 1 (5A) — topik sengaja ditinggalkan: snapshot tersimpan ikut
     // digugurkan agar reload tidak membangkitkan konteks yang sudah
     // ditinggalkan pengguna (keterbatasan v1 kuesioner §9.8).
