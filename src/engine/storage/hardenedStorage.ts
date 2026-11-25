@@ -152,6 +152,33 @@ export function loadVersioned<T>(key: string): LoadResult<T> {
 }
 
 // ---------------------------------------------------------------------------
+// Corrupt-payload quarantine (B3 2026-11-25)
+// ---------------------------------------------------------------------------
+
+/**
+ * Best-effort preservation of a storage payload that failed to parse.
+ *
+ * WHY: a corrupt key used to be silently replaced by the fallback AND then
+ * overwritten by the next debounced flush (~400 ms after mount) — the only
+ * copy of the user's data was destroyed with no warning and no recovery
+ * path (repro: evidence/b3-repro-corrupt-storage.ts). Quarantining keeps
+ * the raw bytes under `<key>.corrupt-<timestamp>` so support/manual
+ * recovery stays possible; the app still falls back exactly as before.
+ * Never throws; returns the quarantine key, or null when nothing was
+ * preserved (no raw bytes, or the quarantine write itself failed).
+ */
+export function quarantineCorruptPayload(key: string, raw: string | undefined): string | null {
+  if (!raw) return null;
+  try {
+    const qkey = `${key}.corrupt-${Date.now()}`;
+    localStorage.setItem(qkey, raw);
+    return qkey;
+  } catch {
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Cross-tab conflict detection
 // ---------------------------------------------------------------------------
 

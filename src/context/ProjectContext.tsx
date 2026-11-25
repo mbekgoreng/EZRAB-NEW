@@ -58,6 +58,7 @@ import { cloneProjectItems } from '../lib/projectClone';
 import {
   saveVersioned,
   loadVersioned,
+  quarantineCorruptPayload,
   onExternalStorageChange,
   peekEnvelope,
   type SaveResult,
@@ -729,7 +730,12 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const result = loadVersioned<T>(key);
     if (result.ok) return result.data;
     if (result.error === 'CORRUPT' || result.error === 'MIGRATION_FAILED') {
-      console.warn(`[EZRAB] Storage ${result.error} for key ${key}; using fallback.`);
+      // B3 (2026-11-25): karantina byte mentah SEBELUM fallback — tanpa
+      // ini flush mount menimpa kunci korup dan satu-satunya salinan data
+      // hilang tanpa jejak (lihat b3-repro-corrupt-storage). Fallback
+      // tetap sama; hanya byte aslinya yang kini terselamatkan.
+      const qkey = quarantineCorruptPayload(key, result.raw);
+      console.warn(`[EZRAB] Storage ${result.error} for key ${key}; using fallback.${qkey ? ` Raw bytes quarantined at ${qkey}.` : ''}`);
     }
     return fallback;
   }
@@ -744,6 +750,14 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const alreadySeeded = localStorage.getItem(SEED_FLAG) === '1';
       // Hardened: unwrap versioned envelope if present, else legacy raw.
       const loaded = loadVersioned<Project[]>('ezrab_prod_projects');
+      // B3 (2026-11-25): karantina byte mentah bila kunci proyek korup —
+      // initializer ini tidak memakai loadDataset, jadi tanpa baris ini
+      // flush mount (±400 ms) menimpa kunci korup dengan daftar fallback
+      // dan seluruh proyek user hilang tanpa jejak (b3-repro).
+      if (!loaded.ok && (loaded.error === 'CORRUPT' || loaded.error === 'MIGRATION_FAILED')) {
+        const qkey = quarantineCorruptPayload('ezrab_prod_projects', loaded.raw);
+        console.warn(`[EZRAB] Storage ${loaded.error} for key ezrab_prod_projects; using fallback.${qkey ? ` Raw bytes quarantined at ${qkey}.` : ''}`);
+      }
       const savedJson = loaded.ok ? JSON.stringify(loaded.data) : localStorage.getItem('ezrab_prod_projects');
       // Keputusan owner 2026-11-04 — SATU proyek contoh super lengkap:
       // instalasi baru TIDAK lagi di-seed portofolio 5 proyek. Daftar awal

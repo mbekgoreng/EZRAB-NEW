@@ -32,6 +32,8 @@
 
 import type { DedAiItem, DedAiOutput } from '../ai-tools/ded-ai-estimate/types';
 import type { AiEstimateOutput, AiEstimateWorkItem } from '../ai-estimate/types';
+// WD-3.7-08 (Batch 4): catatan asumsi kanonis satuan-diasumsikan.
+import { UNIT_UNKNOWN_ASSUMPTION_NOTE } from '../ai-tools/ded-ai-estimate/unitUnknownLabel';
 
 // ===========================================================================
 // 1. TIPE KONTRAK
@@ -277,6 +279,10 @@ export function mapDedAiOutputToContract(output: DedAiOutput): DedOutputContract
       assumptions: [
         ...(item.quantityAudit?.assumptions ? [item.quantityAudit.assumptions] : []),
         ...(item.quantitySource === 'ASSUMPTION' ? ['Kuantitas berasal dari ASSUMPTION (ded-ai quantitySource)'] : []),
+        // WD-3.7-08 (Batch 4): satuan diasumsikan m² dibawa ke kontrak —
+        // sebelumnya flag/token berhenti di lapisan view/RAB, sehingga
+        // konsumen kontrak (perbandingan/ekspor) tidak melihatnya.
+        ...(item.unitUnknown ? [UNIT_UNKNOWN_ASSUMPTION_NOTE] : []),
       ],
       warnings,
     };

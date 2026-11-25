@@ -78,6 +78,7 @@ import { useAuth } from '../../auth/AuthContext';
 import { logoutAll } from '../../auth/logoutAll';
 import { useTheme, type PremiumTheme } from '../../context/ThemeContext';
 import { CreditBalance } from '../../ai-credits/components/CreditBalance';
+import { SaveStatusIndicator } from '../storage/SaveStatusIndicator';
 import { ONBOARDING_OPEN_EVENT } from '../onboarding/OnboardingTour';
 import { navigateTo } from '../../routing/routes';
 
@@ -591,7 +592,17 @@ onFocus={(e) => {
           RIGHT: NOTIFICATION + HELP + PROFILE MENU
          ======================================================================= */}
       <div className="ezrab-topbar-right" style={{ display: 'flex', alignItems: 'center', gap: isNarrowMobile ? '6px' : '8px', flexShrink: 0 }}>
-        
+
+{/* 0. STATUS PENYIMPANAN (B3 2026-11-25): SaveStatusIndicator sebelumnya
+            TIDAK PERNAH di-mount di mana pun — gagal simpan (kuota dsb.)
+            + konflik antar-tab tidak terlihat user sama sekali, padahal
+            status + modal error/konflik sudah dibangun di komponennya.
+            Pill ringkas; di HP sempit disembunyikan mengikuti pola
+            cluster kanan ini (tema/kurs/bantuan). */}
+        {!isNarrowMobile && (
+          <SaveStatusIndicator compact />
+        )}
+
 {/* 0. THEME TOGGLE (terang/gelap) — di HP ringkas: tema tetap bisa
             diganti dari Pengaturan > Preferensi, TopBar HP fokus ke kredit. */}
         {!isNarrowMobile && (

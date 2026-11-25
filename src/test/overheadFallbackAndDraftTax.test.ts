@@ -195,6 +195,15 @@ check('B7. wizard: tanpa projectTax → pajak 0; dengan flag → sesuai; persen 
   eq(on.summary.pphAmount, Math.round(on.summary.subtotalBeforeTax * 0.02), 'wizard flag PPh aktif');
   eq(on.summary.grandTotal, on.summary.subtotalBeforeTax + on.summary.taxAmount + on.summary.pphAmount, 'wizard grand konsisten');
 });
+check('B2-W. wizard: pesan pratinjau menyatakan overhead/profit 5% adalah asumsi template + total dihitung ulang mengikuti pengaturan proyek saat diterapkan (Batch 2 Master Finalization 2026-11-25)', () => {
+  const wiz = (tax?: any) => resolveClientWizardStep('s1', undefined, { building_area: 72 }, { selectedTemplate: { label: 'Rumah Type 72', area: 72, floorCount: 1 } }, tax);
+  const off = wiz();
+  assert(typeof (off as any).message === 'string' && (off as any).message.includes('asumsi template'), 'pesan pratinjau harus menyebut asumsi template');
+  assert((off as any).message.includes('dihitung ulang mengikuti pengaturan overhead/profit proyek'), 'pesan harus menyatakan total dihitung ulang mengikuti pengaturan proyek');
+  // Angka TIDAK berubah (P3B-O3): pratinjau tetap memakai 5/5 template.
+  eq(off.summary.overheadPercent, 5, 'overhead pratinjau tetap 5% (asumsi template)');
+  eq(off.summary.profitPercent, 5, 'profit pratinjau tetap 5% (asumsi template)');
+});
 
 /* --- C. Penyamaan 0/0: template, contoh, portfolio (owner 2026-11-08 05:01) ---
  * Tiga permukaan sisa disamakan ke 0/0. Pemeriksaan sumber di sini

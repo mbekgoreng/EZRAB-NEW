@@ -29,10 +29,25 @@ export class ProjectAuthorizationError extends Error {
 
 const roles: UserRole[] = ['SUPER_ADMIN', 'ESTIMATOR', 'DIREKSI', 'CLIENT', 'EDITOR'];
 
+/**
+ * B1 2026-11-25 (PE-7 — sharpest server/ activation hazard): legacy mode
+ * is now EXPLICIT OPT-IN ONLY. Previously this defaulted to
+ * 'legacy-development' whenever NODE_ENV !== 'production', so starting
+ * server/ on a VPS/local dev without Supabase configured silently
+ * trusted client-supplied x-user-id / x-user-role headers (with
+ * defaults user-estimator-01 / ESTIMATOR) and turned
+ * assertProjectAccess / authorizeProject into no-ops. Now the default
+ * is 'trusted': without Supabase credentials the Deny resolvers fail
+ * every authentication closed (AUTH_REQUIRED) instead of inventing an
+ * identity. Local development that genuinely needs the legacy seam must
+ * set EZRAB_AUTH_MODE=legacy-development explicitly — and the
+ * per-request warning in authenticate() still fires for every legacy
+ * identity issued.
+ */
 function configuredMode(): AuthMode {
   const value = process.env.EZRAB_AUTH_MODE;
   if (value === 'legacy-development' || value === 'trusted') return value;
-  return process.env.NODE_ENV === 'production' ? 'trusted' : 'legacy-development';
+  return 'trusted';
 }
 
 function buildDefaultResolvers(): {

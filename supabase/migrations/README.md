@@ -21,6 +21,7 @@ project first. Never apply a superseded file.
 | 10 | `20261110_unified_credits_foundation.sql` | Unified credits foundation. |
 | 11 | `20261112_ai_memory_foundation.sql` | AI memory foundation. |
 | 12 | `20261116_master_price_governance.sql` | **Master Pricing §4 (M-9).** Global master price governance: `global_admins`, `master_price_entities`, `master_price_records`, `master_price_history`, `master_price_aliases`, `ahsp_database_versions`. Requires (a) the Supabase project, (b) `AUTH_ENABLED=true` + real login, (c) this file, (d) the admin API. See the file header for the full blocker record. |
+| 13 | `20261124_price_assumptions_rls_hardening.sql` | **P1-D corrective (WC-04) + OD-A4-1 (owner decision 2026-11-24 22:49, Option A).** Replaces the four permissive `20261012` policies + rewrites the transition guard (approved_by bound to `auth.uid()` server-side; trigger fires on every update). Approvers are global admins + workspace SUPER_ADMINs only (ESTIMATOR does NOT approve). Requires #1 + #2 + #12 applied (preflight aborts otherwise). Never edit `20261012` itself — it may already be applied live. |
 
 Files 3–11 are independent of each other (each is self-contained);
 their relative order above is chronological. File 12 depends only on
@@ -42,3 +43,12 @@ until the migration is applied to a Supabase instance. The file is
 self-guarding: without the tables it prints a BLOCKED notice and
 exits 0; with the tables it runs T1–T11 inside one transaction and
 rolls back. See the file header for run instructions.
+
+`../tests/p1_rls_negative_tests.sql` — RLS negative tests for the P1-D
+`20261124` hardening (D6 case Q-6, WC-04 regression). **BLOCKED:
+documented, not runnable** until a live Supabase instance has
+20261008 + 20261012 + 20261116 + 20261124 applied. Self-guarding (prints BLOCKED
+and exits 0 without the hardening); runs Q-6a–Q-6s inside one
+transaction and rolls back. See the file header for run instructions.
+Complements `../tests/phase3_rls_negative_tests.sql` (A9 suite for the
+canonical 20261008 policies).

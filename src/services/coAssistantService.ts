@@ -1668,7 +1668,15 @@ export function resolveClientWizardStep(
     // P9.3 — pesan lama mengklaim "dikalkulasi secara presisi dengan
     // standar AHSP PUPR 2026" untuk harga literal template. Jujurnya:
     // ini estimasi template yang belum terverifikasi.
-    message: `RAB untuk **${tplName}** (Luas ${area} m²) telah dihitung sebagai **estimasi template**. Harga satuan di bawah ini adalah angka acuan template (**estimasi, belum terverifikasi** terhadap AHSP/harga resmi) — tinjau dan sesuaikan sebelum menerapkan ke spreadsheet proyek. Penyesuaian Wilayah: ${regionFactor.name} (${regionFactor.percentage}% acuan).`,
+    // B2 (Master Finalization 2026-11-25): total pratinjau ini memakai
+    // overhead & profit template masing-masing 5% — BUKAN konfigurasi
+    // proyek (proyek baru 0%/0% per keputusan owner 2026-11-08). Saat
+    // diterapkan, item masuk spreadsheet lewat jalur kanonis dan total
+    // dihitung ulang mengikuti pengaturan proyek — jadi total pratinjau
+    // dan total Rekap pasca-terap BISA berbeda. Kalimat ini menyatakan
+    // itu eksplisit; angkanya tidak diubah (penyatuan tangga template
+    // 5/5 dengan tangga proyek butuh keputusan owner, P3B-O3).
+    message: `RAB untuk **${tplName}** (Luas ${area} m²) telah dihitung sebagai **estimasi template**. Harga satuan di bawah ini adalah angka acuan template (**estimasi, belum terverifikasi** terhadap AHSP/harga resmi) — tinjau dan sesuaikan sebelum menerapkan ke spreadsheet proyek. Overhead & profit masing-masing 5% di total ini adalah asumsi template; saat diterapkan, total dihitung ulang mengikuti pengaturan overhead/profit proyek. Penyesuaian Wilayah: ${regionFactor.name} (${regionFactor.percentage}% acuan).`,
     canGoBack: true,
     canCancel: true,
     calculatedItems,

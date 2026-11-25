@@ -39,7 +39,8 @@ import { ProjectFinanceRepository } from '../../../domain/finance/repository';
 import { LocalDocumentRepository } from '../../../document-engine/repository';
 import { DOCUMENT_REGISTRY } from '../../../document-engine/registry';
 import { SafeDecimalEngine } from '../../../engine/safeDecimalEngine';
-import { canonicalDirectCost } from '../../../engine/projectCostConfig';
+import { canonicalDirectCost, resolveProjectCostConfig } from '../../../engine/projectCostConfig';
+import { UnifiedProjectEngine } from '../../../engine/unifiedProjectEngine';
 import { ezrabCoreQto } from '../../../ded-rab-v2/qto/ezrabCoreQto';
 import { ahspMatcher } from '../../../ded-rab-v2/ahsp/ahspMatcher';
 import { ahspPriceResolver } from '../../../ded-rab-v2/ahsp/ahspPriceResolver';
@@ -1098,30 +1099,38 @@ export class AIToolRegistry {
     // -------------------------------------------------------------------------
     this.registerTool({
       name: 'calculate_rab_total',
-      description: 'Menghitung grand total dan subtotal RAB proyek via SafeDecimalEngine.',
+      description: 'Menghitung grand total dan subtotal RAB proyek via mesin kanonis (UnifiedProjectEngine.recalculateCostSummary).',
       category: 'calculation',
       mode: 'information',
       requiresApproval: false,
       mutation: false,
       execute: async (_input, context) => {
         const items = context.rabItems || [];
-        let grandTotal = 0;
-        for (const it of items) {
-          const v = it.volume || 0;
-          const p = it.unitPrice || 0;
-          const lineTotal = SafeDecimalEngine.safeMultiply(v, p, 2);
-          grandTotal = SafeDecimalEngine.safeAdd(grandTotal, lineTotal);
-        }
+        // B2 (Master Finalization 2026-11-25) — SATU otoritas hitung.
+        // Sebelumnya tool ini menjumlah sendiri Σ volume×unitPrice: tanpa
+        // overhead/profit/pajak proyek DAN menghitung item PRICE_UNRESOLVED
+        // seolah berharga (repro: Rp21.000.000 vs mesin Rp24.420.000 pada
+        // konfigurasi flagship 5%/5%/PPN 11%). Kini memakai mesin kanonis
+        // yang sama dengan Rekap/ekspor/konteks AI, dengan konfigurasi biaya
+        // proyek yang sama (resolveProjectCostConfig: field → costSummary
+        // → default mesin 0%/0%, PPN opt-in).
+        const config = resolveProjectCostConfig(context.project);
+        const summary = UnifiedProjectEngine.recalculateCostSummary(items, config);
 
         return {
           success: true,
           result: {
-            grandTotal,
-            formatted: 'Rp ' + Math.round(grandTotal).toLocaleString('id-ID'),
+            grandTotal: summary.grandTotal,
+            directCost: summary.directCost,
+            overheadAmount: summary.overheadAmount,
+            profitAmount: summary.profitAmount,
+            taxAmount: summary.taxAmount,
+            unresolvedItems: summary.unresolvedItems ?? 0,
+            formatted: 'Rp ' + Math.round(summary.grandTotal).toLocaleString('id-ID'),
             itemCount: items.length,
           },
           provenance: {
-            source: 'SafeDecimalEngine Arithmetic Core',
+            source: 'UnifiedProjectEngine.recalculateCostSummary',
             sourceType: 'CALCULATION_ENGINE',
             timestamp: new Date().toISOString(),
           },
