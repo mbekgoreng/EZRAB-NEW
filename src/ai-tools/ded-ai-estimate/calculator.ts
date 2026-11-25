@@ -22,7 +22,10 @@ const ABSOLUTE_QUANTITY_CAP: Record<string, number> = {
 };
 
 export type QuantityVerdict =
-  | { ok: true }
+  // WD-3.7-08: `note` = catatan review ADVISORY pada verdict lolos —
+  // tidak pernah memblokir (ok tetap true); dibaca finalizeItems untuk
+  // ditempel ke quantityNote agar tampil di layar hasil.
+  | { ok: true; note?: string }
   | { ok: false; reason: string };
 
 /**
@@ -58,11 +61,15 @@ export function applyUnitChange(item: DedAiItem, newUnits: string): DedAiItem {
   if (newUnits === item.units) return item;
   // Satuan berubah = dasar hitung berubah → usulan AI ikut dibersihkan
   // (baik untuk harga estimasi maupun kanonis yang dibatalkan di bawah).
-  if (item.priceSource !== 'AHSP_2026') return { ...item, units: newUnits, aiProposedSubtotal: undefined };
+  // WD-3.7-08: satuan yang diubah pengguna adalah satuan YANG DINYATAKAN
+  // — anotasi unitUnknown (satuan diasumsikan) dicabut; token provenance
+  // `unit:assumed-m2` tetap tinggal sebagai jejak audit waktu parse.
+  if (item.priceSource !== 'AHSP_2026') return { ...item, units: newUnits, aiProposedSubtotal: undefined, unitUnknown: undefined };
   return {
     ...item,
     units: newUnits,
     aiProposedSubtotal: undefined,
+    unitUnknown: undefined,
     unitPrice: null,
     priceSource: 'UNRESOLVED' as const,
     ahspCode: undefined,
@@ -122,7 +129,7 @@ export function requiresAreaUnit(name: string): boolean {
 }
 
 export function validateQuantity(
-  item: Pick<DedAiItem, 'quantity' | 'units' | 'quantitySource'> & { name?: string; category?: string }
+  item: Pick<DedAiItem, 'quantity' | 'units' | 'quantitySource' | 'unitUnknown'> & { name?: string; category?: string }
 ): QuantityVerdict {
   const q = item.quantity;
   if (q === null || q === undefined) return { ok: false, reason: 'Kuantitas belum terhitung.' };
@@ -174,6 +181,16 @@ export function validateQuantity(
   if (q > cap) {
     return { ok: false, reason: `Kuantitas ${q} melebihi batas wajar (${cap}) untuk satuan ${item.units}; kemungkinan salah satuan.` };
   }
+  // WD-3.7-08: satuan diasumsikan + kuantitas diturunkan dari dimensi
+  // (DED_GEOMETRIC/DERIVED) → catatan review ADVISORY, bukan blok:
+  // bentuk kuantitas dihitung dengan satuan asumsi m², jadi perlu
+  // verifikasi — tetapi item tetap lolos (ok: true).
+  if (item.unitUnknown && (item.quantitySource === 'DED_GEOMETRIC' || item.quantitySource === 'DERIVED')) {
+    return {
+      ok: true,
+      note: 'Satuan diasumsikan m² — model/DED tidak menyatakan satuan; kuantitas dihitung dari dimensi dengan satuan asumsi, perlu verifikasi.',
+    };
+  }
   return { ok: true };
 }
 
@@ -192,10 +209,18 @@ export class DedAiCalculator {
           quantityNote: it.quantityNote || verdict.reason,
         };
       }
+      // WD-3.7-08: tempel catatan advisory validateQuantity ke quantityNote
+      // (tampil sebagai "Catatan" di layar hasil). Idempotent — finalizeItems
+      // bisa jalan berulang atas item yang sama (edit/konfirmasi kandidat).
+      const advisoryNote = verdict.note;
+      const quantityNote =
+        advisoryNote && !(it.quantityNote || '').includes(advisoryNote)
+          ? [it.quantityNote, advisoryNote].filter(Boolean).join(' ')
+          : it.quantityNote;
       if (q !== null && p !== null && isSaneEstimate(p) && q > 0) {
-        return { ...it, subtotal: calcSubtotal(q, p), stage: 'CALCULATED' as const };
+        return { ...it, subtotal: calcSubtotal(q, p), stage: 'CALCULATED' as const, quantityNote };
       }
-      return { ...it, subtotal: null, stage: 'PARSE' as const };
+      return { ...it, subtotal: null, stage: 'PARSE' as const, quantityNote };
     });
   }
 

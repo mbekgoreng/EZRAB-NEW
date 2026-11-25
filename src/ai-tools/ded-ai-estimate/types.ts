@@ -214,6 +214,16 @@ export interface DedAiItem {
   specification?: string;
   description?: string;
   units: string;
+  /**
+   * WD-3.7-08 (keputusan owner 2026-11-24): true bila model tidak
+   * menyatakan satuan sama sekali dan `units` adalah default 'm2' dari
+   * convertAiItem — BUKAN satuan dari DED/model. ANOTASI MURNI —
+   * tidak pernah mengubah quantity, subtotal, harga, status, atau
+   * provenance (mengikuti preseden quantityReview). Dihapus bila
+   * pengguna mengubah satuan (applyUnitChange). Absen = satuan
+   * dinyatakan (atau item lama sebelum anotasi ini ada).
+   */
+  unitUnknown?: boolean;
   quantity: number | null;
   quantitySource: DedAiQuantitySource;
   quantityFormula?: string;

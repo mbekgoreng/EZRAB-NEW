@@ -26,6 +26,15 @@
  *   DedPriceSourceKind — anggota baru hanya akan menduplikasi keduanya.
  * - UNRESOLVED        — ADA di 4 kosakata + PRICE_UNRESOLVED.
  *
+ * H-05 (keputusan owner 2026-11-24) menambah label KEENAM,
+ * MARKET_REFERENCE: referensi pasar tersimpan BUKAN bukti verifikasi,
+ * sehingga kind MARKET_REFERENCE tanpa verificationStatus VERIFIED
+ * eksplisit TIDAK BOLEH memetakan ke EXTERNALLY_VERIFIED (badge
+ * 'Terverifikasi'). Label keenam memakai nama kind RAB yang sudah ada
+ * + uiLabel 'Referensi Pasar' (kosakata PRICE_SOURCE_LABELS) —
+ * bukan istilah baru. EXTERNALLY_VERIFIED kini hanya untuk referensi
+ * eksternal yang SUDAH terverifikasi eksplisit.
+ *
  * Dua keputusan pemetaan yang disengaja (baca sebelum mengubah):
  * 1. Kanonis AHSP_2026 → label EXTERNALLY_VERIFIED (harganya
  *    terverifikasi terhadap katalog resmi eksternal SE 47/2026), TAPI
@@ -62,12 +71,21 @@ import type {
 import type { FullAiPriceSource } from '../ded-full-ai/types';
 import type { PriceStatus, RabItem, VerificationStatus } from '../../types';
 
-/** Label provenance directive §8 — lima label, tanpa tambahan. */
+/**
+ * Label provenance directive §8 — ENAM label sejak H-05 (keputusan
+ * owner 2026-11-24). Label keenam, MARKET_REFERENCE, memisahkan
+ * referensi pasar dari EXTERNALLY_VERIFIED: harga pasar tersimpan
+ * adalah SUMBER harga, bukan peristiwa verifikasi, sehingga tidak
+ * boleh memakai badge 'Terverifikasi'. Kosakata labelnya memakai
+ * nama kind RAB yang sudah ada (bukan istilah baru); uiLabel-nya
+ * 'Referensi Pasar' mengikuti PRICE_SOURCE_LABELS / displayPriceStatus.
+ */
 export type DedProvenanceLabel =
   | 'AI_GENERATED'
   | 'AI_ESTIMATED'
   | 'USER_PROVIDED'
   | 'EXTERNALLY_VERIFIED'
+  | 'MARKET_REFERENCE'
   | 'UNRESOLVED';
 
 export const DED_PROVENANCE_LABELS: readonly DedProvenanceLabel[] = [
@@ -75,6 +93,7 @@ export const DED_PROVENANCE_LABELS: readonly DedProvenanceLabel[] = [
   'AI_ESTIMATED',
   'USER_PROVIDED',
   'EXTERNALLY_VERIFIED',
+  'MARKET_REFERENCE',
   'UNRESOLVED',
 ] as const;
 
@@ -160,7 +179,27 @@ export const DED_PROVENANCE_MAP: Record<DedProvenanceLabel, DedProvenanceMapping
     nearestMatchNote:
       'Tidak ada anggota enum EXTERNALLY_VERIFIED: VERIFIED_SUPPLIER ' +
       '(DED) / MARKET_REFERENCE (RAB) sudah membawa semantik ini, dan ' +
-      'MARKET_REFERENCE diakui kontrak bukti S2 sebagai bukti resolved.',
+      'MARKET_REFERENCE diakui kontrak bukti S2 sebagai bukti resolved. ' +
+      'H-05: label ini HANYA untuk referensi pasar yang SUDAH ' +
+      'terverifikasi eksplisit (verificationStatus VERIFIED); referensi ' +
+      'pasar tanpa verifikasi eksplisit memakai label MARKET_REFERENCE.',
+  },
+  MARKET_REFERENCE: {
+    label: 'MARKET_REFERENCE',
+    dedPriceSource: null,
+    dedPriceSourceKind: 'MARKET_REFERENCE',
+    dedClassification: 'MARKET_REFERENCE',
+    rabPriceSourceKind: 'MARKET_REFERENCE',
+    priceStatus: 'PRICE_RESOLVED',
+    verificationStatus: 'NEEDS_VERIFICATION',
+    uiLabel: 'Referensi Pasar',
+    explanation:
+      'Harga referensi pasar tersimpan — bukan harga resmi AHSP dan belum terverifikasi; konfirmasi ke pemasok sebelum kontrak.',
+    nearestMatchNote:
+      'H-05 (keputusan owner 2026-11-24): label ini memisahkan ' +
+      'referensi pasar dari EXTERNALLY_VERIFIED. Harganya tetap ' +
+      'PRICE_RESOLVED (bukti resolved menurut kontrak S2 — total tidak ' +
+      'berubah); yang dipisah hanya sumbu verifikasi.',
   },
   UNRESOLVED: {
     label: 'UNRESOLVED',
@@ -222,8 +261,17 @@ export function dedSourceToLabel(
  * didokumentasikan agar tidak ambigu:
  *  1. PRICE_UNRESOLVED → UNRESOLVED (tanpa harga = tanpa provenance);
  *  2. PRICE_MANUAL / kind USER_MANUAL → USER_PROVIDED;
- *  3. kind OFFICIAL_AHSP / MARKET_REFERENCE → EXTERNALLY_VERIFIED
- *     (keduanya bukti resolved menurut kontrak S2);
+ *  3. kind OFFICIAL_AHSP → EXTERNALLY_VERIFIED (katalog resmi);
+ *  3b. H-05: kind MARKET_REFERENCE + verificationStatus VERIFIED
+ *      (verifikasi eksplisit) → EXTERNALLY_VERIFIED — verifikasi
+ *      eksplisit user/review tetap dihormati, dan cabang inilah yang
+ *      mempertahankan round-trip label EXTERNALLY_VERIFIED (yang
+ *      kind RAB-nya MARKET_REFERENCE + status VERIFIED);
+ *  3c. H-05: kind MARKET_REFERENCE tanpa verifikasi eksplisit →
+ *      MARKET_REFERENCE — referensi pasar tersimpan BUKAN bukti
+ *      verifikasi; labelnya 'Referensi Pasar', bukan 'Terverifikasi'.
+ *      Cabang ini HARUS mendahului langkah 4 (PRICE_RESOLVED saja
+ *      tidak boleh mengangkat referensi pasar menjadi terverifikasi);
  *  4. PRICE_RESOLVED → EXTERNALLY_VERIFIED (resolved menyiratkan bukti,
  *     karena S2 menurunkan klaim tanpa bukti ke ESTIMATED);
  *  5. verificationStatus AI_GENERATED → AI_GENERATED;
@@ -241,8 +289,13 @@ export function rabProvenanceToLabel(input: {
   if (input.priceStatus === 'PRICE_MANUAL' || input.priceSourceKind === 'USER_MANUAL') {
     return 'USER_PROVIDED';
   }
-  if (input.priceSourceKind === 'OFFICIAL_AHSP' || input.priceSourceKind === 'MARKET_REFERENCE') {
+  if (input.priceSourceKind === 'OFFICIAL_AHSP') {
     return 'EXTERNALLY_VERIFIED';
+  }
+  if (input.priceSourceKind === 'MARKET_REFERENCE') {
+    // H-05: hanya referensi pasar yang SUDAH terverifikasi eksplisit
+    // yang naik ke EXTERNALLY_VERIFIED; sisanya label pasar.
+    return input.verificationStatus === 'VERIFIED' ? 'EXTERNALLY_VERIFIED' : 'MARKET_REFERENCE';
   }
   if (input.priceStatus === 'PRICE_RESOLVED') return 'EXTERNALLY_VERIFIED';
   if (input.verificationStatus === 'AI_GENERATED') return 'AI_GENERATED';
@@ -322,6 +375,9 @@ const LABEL_BADGES: Record<DedProvenanceLabel, ProvenanceBadgeProps> = {
   AI_ESTIMATED: { text: 'Estimasi AI', bg: 'var(--ez-hue-amber-bg-deep)', fg: 'var(--ez-hue-amber-text-dark)' },
   USER_PROVIDED: { text: 'Input User', bg: 'var(--ez-hue-purple-bg-deep)', fg: 'var(--ez-hue-purple-text)' },
   EXTERNALLY_VERIFIED: { text: 'Terverifikasi', bg: 'var(--ez-hue-green-bg-deep)', fg: 'var(--ez-hue-green-text-deep)' },
+  // H-05: biru pasar (selaras PriceSourceBadge MARKET_REFERENCE) —
+  // BUKAN hijau 'Terverifikasi'.
+  MARKET_REFERENCE: { text: 'Referensi Pasar', bg: 'var(--ez-hue-blue-bg)', fg: 'var(--ez-hue-blue-text-deep)' },
   UNRESOLVED: { text: 'Tanpa Harga', bg: 'var(--ez-color-surface-tertiary)', fg: 'var(--ez-color-text-muted)' },
 };
 

@@ -245,6 +245,19 @@ function testContractHelpers(): void {
   eq('tanpa status eksplisit + RESOLVED berbukti → VERIFIED',
     transferVerificationStatus({}, 'PRICE_RESOLVED'),
     'VERIFIED');
+  // H-05 (keputusan owner 2026-11-24): referensi pasar BUKAN
+  // verifikasi — kind MARKET_REFERENCE tanpa status eksplisit tetap
+  // NEEDS_VERIFICATION meski PRICE_RESOLVED; priceStatus-nya tidak
+  // berubah (lihat 'RESOLVED + MARKET_REFERENCE → RESOLVED' di atas).
+  eq('H-05: MARKET_REFERENCE + RESOLVED tanpa status eksplisit → NEEDS_VERIFICATION',
+    transferVerificationStatus({ priceStatus: 'PRICE_RESOLVED', unitPrice: 100000, priceSourceKind: 'MARKET_REFERENCE' }, 'PRICE_RESOLVED'),
+    'NEEDS_VERIFICATION');
+  eq('H-05: OFFICIAL_AHSP + RESOLVED tanpa status eksplisit → VERIFIED (tetap)',
+    transferVerificationStatus({ priceStatus: 'PRICE_RESOLVED', unitPrice: 100000, priceSourceKind: 'OFFICIAL_AHSP' }, 'PRICE_RESOLVED'),
+    'VERIFIED');
+  eq('H-05: MARKET_REFERENCE + VERIFIED eksplisit dipertahankan (aksi user nyata)',
+    transferVerificationStatus({ priceStatus: 'PRICE_RESOLVED', unitPrice: 100000, priceSourceKind: 'MARKET_REFERENCE', verificationStatus: 'VERIFIED', verificationDate: VERIFY_AT }, 'PRICE_RESOLVED'),
+    'VERIFIED');
   eq('tanpa status eksplisit + ESTIMATED → NEEDS_VERIFICATION (bukan simpulan dari angka)',
     transferVerificationStatus({}, 'PRICE_ESTIMATED'),
     'NEEDS_VERIFICATION');
@@ -498,7 +511,9 @@ function testStage5(draft: UniversalDraft, ids: Record<string, string>): { paylo
   const pMkt = byId(ids.market);
   eq('payload MARKET: PRICE_RESOLVED dipertahankan (berbukti)', pMkt.priceStatus, 'PRICE_RESOLVED');
   eq('payload MARKET: kind MARKET_REFERENCE', pMkt.priceSourceKind, 'MARKET_REFERENCE');
-  eq('payload MARKET: VERIFIED (klaim berbukti)', pMkt.verificationStatus, 'VERIFIED');
+  // H-05 (keputusan owner 2026-11-24 — ekspektasi DIUBAH dari VERIFIED):
+  // referensi pasar tanpa verifikasi eksplisit BUKAN terverifikasi.
+  eq('payload MARKET: NEEDS_VERIFICATION (H-05: referensi pasar bukan verifikasi)', pMkt.verificationStatus, 'NEEDS_VERIFICATION');
   eq('payload MARKET: supplier fixture dibawa', pMkt.priceSourceSupplier, 'SUPPLIER-FIXTURE-S2');
   eq('payload MARKET: date fixture dibawa', pMkt.priceSourceDate, '2026-11-13');
   eq('payload MARKET: region fixture dibawa', pMkt.priceSourceRegion, 'REGION-FIXTURE-S2');
@@ -563,6 +578,7 @@ function testStage5(draft: UniversalDraft, ids: Record<string, string>): { paylo
   eq('factory OFFICIAL: priceCostBasis HSP bertahan', rOff.priceCostBasis, 'HSP');
   const rMkt = recByDesc(ids.market);
   eq('factory MARKET: PRICE_RESOLVED bertahan', rMkt.priceStatus, 'PRICE_RESOLVED');
+  eq('factory MARKET: NEEDS_VERIFICATION bertahan (H-05)', rMkt.verificationStatus, 'NEEDS_VERIFICATION');
   eq('factory MARKET: supplier bertahan', rMkt.priceSourceSupplier, 'SUPPLIER-FIXTURE-S2');
   eq('factory MARKET: date bertahan', rMkt.priceSourceDate, '2026-11-13');
   eq('factory MARKET: region bertahan', rMkt.priceSourceRegion, 'REGION-FIXTURE-S2');

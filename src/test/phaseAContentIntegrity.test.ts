@@ -25,13 +25,11 @@ function check(name: string, cond: boolean, extra?: string): void {
   }
 }
 
-console.log('=== LAND-01: pricing jujur soal tahap pengujian ===');
-const pricing = read('src/components/landing/exact/ExactPricing.tsx');
-check('ada pengungkapan tahap pengujian', pricing.includes('tahap pengujian'));
-check('menyatakan paket berbayar belum dapat dibeli', pricing.replace(/\s+/g, ' ').includes('belum dapat dibeli'));
-check("CTA tidak lagi 'Pilih Starter/Pro'", !pricing.includes('Pilih Starter') && !pricing.includes('Pilih Pro'));
-check("CTA berbayar sekarang 'Coba ...'", pricing.includes("ctaText: 'Coba Starter'") && pricing.includes("ctaText: 'Coba Pro'"));
-check("tidak ada lagi teks 'Dibayar Rp'", !pricing.includes('Dibayar Rp'));
+console.log('=== LAND-01: ExactPricing DIHAPUS (keputusan owner 2026-11-24) ===');
+// ExactPricing dihapus: komponen mati tanpa importer yang membawa klaim
+// promo tak terverifikasi (harga coret Rp 125.000/Rp 180.000). Cek-cek
+// LAND-01 lama yang membaca berkas itu diganti pin penghapusan ini.
+check('ExactPricing.tsx terhapus (klaim promo tak terverifikasi ikut hilang)', !existsSync(join(root, 'src/components/landing/exact/ExactPricing.tsx')));
 const pricingCss = read('src/styles/exact-landing.css');
 check('CSS catatan tahap (.ez-pricing-stage-note) ada', pricingCss.includes('.ez-pricing-stage-note'));
 
@@ -88,7 +86,8 @@ check("label menyesatkan 'Masuk ke Workspace' hilang", !navbar.includes('Masuk k
 check('menu mobile punya entri Coba Gratis', navbar.includes("onOpenAuth('daftar')") && navbar.includes('Coba Gratis'));
 const infoPages = read('src/components/public/PublicInfoPages.tsx');
 check("judul lama 'Masuk/Daftar belum dibuka' hilang", !infoPages.includes("'Masuk belum dibuka'") && !infoPages.includes("'Daftar belum dibuka'") && !app.includes('belum dibuka — EZRAB'));
-check('AuthNoticePage menjelaskan peran demo', infoPages.includes('peran demo'));
+check('AuthNoticePage tanpa janji peran demo (Opsi A 2026-11-24)', !infoPages.includes('peran demo'));
+check('AuthNoticePage menjelaskan jalur Buka Aplikasi -> kode akses', infoPages.includes('"Buka Aplikasi"') && infoPages.includes('lalu masukkan kode akses'));
 const gate = read('src/auth/PasscodeGate.tsx');
 check("gate tidak lagi mengklaim '4 digit'", !gate.includes('4 digit'));
 check('gate input tanpa autoFocus (A11Y-02)', !gate.includes('autoFocus'));

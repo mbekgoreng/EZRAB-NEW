@@ -2,9 +2,10 @@
  * W6 — DED-RAB AI DUAL MODE §8: provenance DED ↔ RAB (G-PV-1/2/3).
  *
  * Membuktikan, lewat JALUR KODE NYATA (bukan mock atas hal yang diuji):
- *  [0] tabel pemetaan kanonis 5 label directive lengkap
+ *  [0] tabel pemetaan kanonis 6 label lengkap (5 label directive +
+ *      MARKET_REFERENCE pemisah H-05, keputusan owner 2026-11-24)
  *      (dedProvenance.ts — G-PV-1);
- *  [1] round-trip label → RAB → label untuk kelima label, plus
+ *  [1] round-trip label → RAB → label untuk keenam label, plus
  *      DED → label dan RAB → label;
  *  [2] klaim transfer per sumber DED (dedTransferClaim) + kontrak bukti
  *      S2 (hasResolvedPriceEvidence);
@@ -76,14 +77,28 @@ function eq(name: string, actual: unknown, expected: unknown): void {
 }
 
 /* ================================================================== */
-/* [0] Tabel pemetaan kanonis — 5 label directive lengkap (G-PV-1)      */
+/* [0] Tabel pemetaan kanonis — 6 label lengkap (G-PV-1 + H-05)       */
 /* ================================================================== */
 function testMappingTable(): void {
-  console.log('\n[0] Tabel pemetaan kanonis DED_PROVENANCE_MAP (5 label directive):');
-  eq('tepat 5 label directive', DED_PROVENANCE_LABELS.length, 5);
-  for (const label of ['AI_GENERATED', 'AI_ESTIMATED', 'USER_PROVIDED', 'EXTERNALLY_VERIFIED', 'UNRESOLVED'] as const) {
+  console.log('\n[0] Tabel pemetaan kanonis DED_PROVENANCE_MAP (6 label: 5 directive + MARKET_REFERENCE H-05):');
+  // H-05 (keputusan owner 2026-11-24 — ekspektasi DIUBAH dari 5):
+  // label keenam MARKET_REFERENCE memisahkan referensi pasar dari
+  // EXTERNALLY_VERIFIED.
+  eq('tepat 6 label (5 directive + MARKET_REFERENCE H-05)', DED_PROVENANCE_LABELS.length, 6);
+  for (const label of ['AI_GENERATED', 'AI_ESTIMATED', 'USER_PROVIDED', 'EXTERNALLY_VERIFIED', 'MARKET_REFERENCE', 'UNRESOLVED'] as const) {
     check(`label ${label} ada di tabel`, DED_PROVENANCE_MAP[label] !== undefined);
   }
+
+  // H-05: entri MARKET_REFERENCE — harga tetap RESOLVED, verifikasi
+  // NEEDS_VERIFICATION, uiLabel 'Referensi Pasar' (bukan 'Terverifikasi').
+  const mkt = DED_PROVENANCE_MAP.MARKET_REFERENCE;
+  eq('MARKET_REFERENCE: dedPriceSourceKind MARKET_REFERENCE', mkt.dedPriceSourceKind, 'MARKET_REFERENCE');
+  eq('MARKET_REFERENCE: dedClassification MARKET_REFERENCE', mkt.dedClassification, 'MARKET_REFERENCE');
+  eq('MARKET_REFERENCE: rabKind MARKET_REFERENCE', mkt.rabPriceSourceKind, 'MARKET_REFERENCE');
+  eq('MARKET_REFERENCE: priceStatus PRICE_RESOLVED (harga tetap resolved)', mkt.priceStatus, 'PRICE_RESOLVED');
+  eq('MARKET_REFERENCE: verificationStatus NEEDS_VERIFICATION', mkt.verificationStatus, 'NEEDS_VERIFICATION');
+  eq('MARKET_REFERENCE: uiLabel Referensi Pasar', mkt.uiLabel, 'Referensi Pasar');
+  check('MARKET_REFERENCE: uiLabel TIDAK mengandung Terverifikasi', !mkt.uiLabel.includes('Terverifikasi'));
 
   const aiGen = DED_PROVENANCE_MAP.AI_GENERATED;
   eq('AI_GENERATED: dedPriceSource AI_ESTIMATE', aiGen.dedPriceSource, 'AI_ESTIMATE');
@@ -163,9 +178,18 @@ function testRoundTrip(): void {
   eq('RAB OFFICIAL_AHSP + RESOLVED → EXTERNALLY_VERIFIED',
     rabProvenanceToLabel({ priceStatus: 'PRICE_RESOLVED', priceSourceKind: 'OFFICIAL_AHSP', verificationStatus: 'VERIFIED' }),
     'EXTERNALLY_VERIFIED');
-  eq('RAB MARKET_REFERENCE → EXTERNALLY_VERIFIED',
+  // H-05 (keputusan owner 2026-11-24 — ekspektasi DIUBAH dari
+  // EXTERNALLY_VERIFIED): referensi pasar tanpa verifikasi eksplisit
+  // memakai label MARKET_REFERENCE, bukan 'Terverifikasi'.
+  eq('RAB MARKET_REFERENCE tanpa verifikasi eksplisit → MARKET_REFERENCE (H-05)',
     rabProvenanceToLabel({ priceStatus: 'PRICE_RESOLVED', priceSourceKind: 'MARKET_REFERENCE' }),
+    'MARKET_REFERENCE');
+  eq('RAB MARKET_REFERENCE + VERIFIED eksplisit → EXTERNALLY_VERIFIED (H-05: verifikasi eksplisit dihormati)',
+    rabProvenanceToLabel({ priceStatus: 'PRICE_RESOLVED', priceSourceKind: 'MARKET_REFERENCE', verificationStatus: 'VERIFIED' }),
     'EXTERNALLY_VERIFIED');
+  eq('RAB MARKET_REFERENCE + NEEDS_VERIFICATION → MARKET_REFERENCE (H-05)',
+    rabProvenanceToLabel({ priceStatus: 'PRICE_RESOLVED', priceSourceKind: 'MARKET_REFERENCE', verificationStatus: 'NEEDS_VERIFICATION' }),
+    'MARKET_REFERENCE');
   eq('RAB USER_MANUAL + MANUAL → USER_PROVIDED',
     rabProvenanceToLabel({ priceStatus: 'PRICE_MANUAL', priceSourceKind: 'USER_MANUAL' }),
     'USER_PROVIDED');
@@ -563,6 +587,11 @@ function testBadges(): void {
   eq('badge USER_INPUT: teks Input User', provenanceBadgeForDedSource('USER_INPUT').text, 'Input User');
   eq('badge VERIFIED_SOURCE: teks Belum terverifikasi', provenanceBadgeForDedSource('VERIFIED_SOURCE').text, 'Belum terverifikasi');
   eq('badge UNRESOLVED: teks Tanpa Harga', provenanceBadgeForDedSource('UNRESOLVED').text, 'Tanpa Harga');
+  // H-05: badge label MARKET_REFERENCE = 'Referensi Pasar', bukan
+  // 'Terverifikasi'; latar biru pasar, bukan hijau terverifikasi.
+  eq('badge label MARKET_REFERENCE: teks Referensi Pasar', provenanceBadgeForLabel('MARKET_REFERENCE').text, 'Referensi Pasar');
+  check('badge label MARKET_REFERENCE: latar ≠ hijau terverifikasi',
+    provenanceBadgeForLabel('MARKET_REFERENCE').bg !== provenanceBadgeForLabel('EXTERNALLY_VERIFIED').bg);
   const aiBg = provenanceBadgeForDedSource('AI_ESTIMATE').bg;
   const canonBg = provenanceBadgeForDedSource('AHSP_2026').bg;
   const manBg = provenanceBadgeForDedSource('USER_INPUT').bg;

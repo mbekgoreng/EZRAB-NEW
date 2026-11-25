@@ -17,7 +17,14 @@
  *   dilindungi kode akses".
  * - AuthNoticePage: "seluruh fitur dapat dibuka dari tombol di bawah"
  *   -> "workspace dapat dibuka dari tombol di bawah dengan kode akses".
- *   Frasa "peran demo" dipertahankan (di-pin phaseAContentIntegrity).
+ *
+ * Keputusan owner 2026-11-24 (/masuk Opsi A, copy-only): janji peran
+ * demo di AuthNoticePage adalah janji palsu — dalam mode failsafe-demo
+ * kartu login tidak di-render sama sekali (resolveLoginUi mengembalikan
+ * showModal:false), jadi tidak ada entri peran demo di sana. Frasa
+ * "peran demo" DIHAPUS dari AuthNoticePage (membatalkan pin phaseA
+ * sebelumnya); copy baru menjelaskan jalur masuk yang sebenarnya:
+ * tombol "Buka Aplikasi" -> kode akses -> workspace.
  *
  * Teks JSX terpotong baris di sumber, jadi semua asersi memakai sumber
  * yang dinormalisasi (whitespace ciut jadi satu spasi).
@@ -90,13 +97,26 @@ test('tanpa janji "seluruh fitur dapat dibuka dari tombol di bawah"', () => {
   );
 });
 test('kalimat tombol menyebut pembukaan dengan kode akses', () => {
+  // NB: asersi source-level — tag <strong> di sekitar "Buka Aplikasi"
+  // memecah kalimat, jadi cek per fragmen, bukan satu string utuh.
   ok(
-    infoPagesSrc.includes('workspace dapat dibuka dari tombol di bawah dengan kode akses'),
-    'kalimat tombol tidak menyebut kode akses'
+    infoPagesSrc.includes('Workspace tetap dapat dibuka tanpa akun lewat tombol') &&
+      infoPagesSrc.includes('"Buka Aplikasi"') &&
+      infoPagesSrc.includes('di bawah, lalu masukkan kode akses'),
+    'kalimat tombol tidak menjelaskan jalur Buka Aplikasi -> kode akses'
   );
 });
-test('penjelasan peran demo tetap ada (pin phaseA)', () => {
-  ok(infoPagesSrc.includes('peran demo'), 'penjelasan peran demo hilang');
+test('tanpa janji peran demo (Opsi A — tidak ada entri peran demo di mode failsafe-demo)', () => {
+  ok(
+    !infoPagesSrc.includes('peran demo'),
+    'janji peran demo masih ada di AuthNoticePage padahal kartu login tidak di-render di mode failsafe-demo'
+  );
+});
+test('menyebut login/pendaftaran email belum dibuka', () => {
+  ok(
+    infoPagesSrc.includes('belum dibuka, jadi belum ada akun yang bisa dipakai untuk masuk'),
+    'penjelasan bahwa belum ada akun untuk masuk hilang'
+  );
 });
 test('paragraf gerbang kode akses tetap ada', () => {
   ok(

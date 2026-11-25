@@ -206,6 +206,12 @@ export function mapDedAiItemToRabInput(
     item.unitPrice == null || !Number.isFinite(item.unitPrice) || item.unitPrice <= 0 ||
     item.quantity == null || !Number.isFinite(item.quantity) || item.quantity <= 0
   ) return null;
+  // WD-3.7-08: satuan diasumsikan (bukan dari DED/model) dibawa ke catatan
+  // transfer RAB — baris RAB tidak boleh menampilkan m² seolah-olah
+  // dinyatakan. Ditempel ke priceSourceExplanation di ketiga cabang di bawah.
+  const unitAssumedNote = item.unitUnknown
+    ? ' Satuan diasumsikan m² — tidak tercantum di DED/model; verifikasi satuan sebelum memakai baris ini.'
+    : '';
   const calculationFormula = realFormula(item.quantityFormula);
   const common = {
     description: item.name,
@@ -232,7 +238,7 @@ export function mapDedAiItemToRabInput(
       priceCostBasis: 'DIRECT_COST',
       priceSourceExplanation: baseExplanation(
         policy,
-        item.priceAssumptionNote || `AHSP kanonis ${item.ahspCode} — harga tervalidasi database EZRAB.`
+        (item.priceAssumptionNote || `AHSP kanonis ${item.ahspCode} — harga tervalidasi database EZRAB.`) + unitAssumedNote
       ),
       verificationStatus,
     };
@@ -261,7 +267,7 @@ export function mapDedAiItemToRabInput(
       priceSourceExplanation: baseExplanation(
         policy,
         (item.priceAssumptionNote ||
-          'Estimasi AI — perkiraan, bukan harga database AHSP EZRAB.') + completionSummary
+          'Estimasi AI — perkiraan, bukan harga database AHSP EZRAB.') + completionSummary + unitAssumedNote
       ),
       verificationStatus,
     };
@@ -278,7 +284,7 @@ export function mapDedAiItemToRabInput(
       priceSourceLabel: 'Input User',
       priceSourceExplanation: baseExplanation(
         policy,
-        'Harga dimasukkan pengguna secara manual (bukan harga database AHSP).'
+        'Harga dimasukkan pengguna secara manual (bukan harga database AHSP).' + unitAssumedNote
       ),
       verificationStatus,
     };

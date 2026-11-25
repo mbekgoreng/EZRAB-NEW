@@ -4830,6 +4830,14 @@ export function transferPriceStatus(it: TransferPriceInput): UniversalPushItem['
  *   boleh memverifikasi harga estimasi, tetapi status harganya TETAP
  *   ESTIMATED (sumbu berbeda — persetujuan/verifikasi tidak mengubah
  *   asumsi menjadi harga resmi AHSP);
+ * - H-05 (keputusan owner 2026-11-24): kind MARKET_REFERENCE TANPA
+ *   status eksplisit → NEEDS_VERIFICATION, BAHKAN bila priceStatus
+ *   PRICE_RESOLVED. Referensi pasar tersimpan adalah SUMBER harga,
+ *   bukan peristiwa verifikasi — tidak ada yang pernah memverifikasi
+ *   angka itu. priceStatus-nya TETAP PRICE_RESOLVED (bukti resolved
+ *   menurut hasResolvedPriceEvidence tidak berubah; total tidak
+ *   bergerak) — yang dipisah hanya sumbu verifikasi. VERIFIED eksplisit
+ *   (aksi user di review, cabang di atas) tetap dipertahankan;
  * - tanpa status eksplisit (generasi template tidak pernah mengisinya):
  *   JANGAN simpulkan VERIFIED dari sekadar adanya angka harga — hanya
  *   klaim RESOLVED yang berbukti yang terverifikasi; estimasi, manual,
@@ -4842,6 +4850,8 @@ export function transferVerificationStatus(
 ): VerificationStatus {
   if (priceStatus === 'PRICE_UNRESOLVED') return 'NEEDS_VERIFICATION';
   if (it.verificationStatus) return it.verificationStatus as VerificationStatus;
+  // H-05: referensi pasar bukan verifikasi (lihat doc di atas).
+  if (it.priceSourceKind === 'MARKET_REFERENCE') return 'NEEDS_VERIFICATION';
   if (priceStatus === 'PRICE_RESOLVED') return 'VERIFIED';
   return 'NEEDS_VERIFICATION';
 }
