@@ -29,7 +29,7 @@ const WORKFLOW_STEPS: WorkflowStep[] = [
   {
     id: '1',
     name: 'GAMBAR KERJA',
-    sub: 'CAD / BIM / PDF',
+    sub: 'CAD / PDF',
     icon: <FileText size={18} />,
     detailTitle: 'Spesifikasi Gambar Kerja Terbaca',
     detailDesc: 'Ekstraksi denah lantai, elevasi fondasi, dimensi balok, dan potongan arsitektur langsung dari file teknis.',

@@ -29,9 +29,19 @@
  * Modul ini mengimpor clarifyTopics (murni, tanpa siklus) hanya untuk
  * menjaga aturan owner 2026-10-23: topik telanjang tetap ditangani kartu
  * klarifikasi, bukan dibajak menjadi navigasi.
+ *
+ * KEBIJAKAN SLASH-ONLY (keputusan owner, directive P1 §4.1 / OD-1,
+ * 2026-11-24 — MENGGANTIKAN perilaku Command Router 2026-10-26):
+ * navigasi chat HANYA lewat perintah slash eksplisit. Bahasa alami
+ * ("buka ahsp", "tampilkan database AHSP") TIDAK PERNAH menavigasi —
+ * pesan seperti itu dikembalikan 'none' agar sampai ke AI sebagai
+ * percakapan biasa. Satu-satunya bentuk non-awal yang masih menavigasi
+ * adalah perintah slash yang didahului kesopanan/verba ("tolong buka
+ * /ahsp") — isi operatif pesannya tetap perintah slash itu sendiri.
+ * Negasi ("jangan buka /ahsp") tidak pernah menavigasi (W-A-01).
  */
 import { routeForMenu } from '../../routing/routes';
-import { clarifyPickResult, detectClarifyTopic } from './clarifyTopics';
+import { detectClarifyTopic } from './clarifyTopics';
 
 export interface NavEntry {
   /** Identifier stabil, unik, dipakai chip nav-entry + tes. */
@@ -116,30 +126,58 @@ const LEGACY_SLASH = new Set([
 const NAV_VERBS =
   /\b(buka|bukain|bukakan|pergi ke|masuk ke|tampilkan|tampilin|tunjukin|tunjukkan|lihat|liatin|pindah ke|antarkan ke|bawa ke)\b/;
 const LEADING_KE = /^ke\s+/;
-const HOWTO =
-  /^(bagaimana|gimana)\b.*\b(cara|buka|membuka|masuk|mengakses)\b|\bcara (membuka|buka|mengakses|masuk ke)\b|\b(di mana|dimana)\b.*\b(menu|letak|halaman)\b/;
-const INFO_VERBS =
-  /\b(jelaskan|apa itu|ceritakan|beritahu|beri tahu|terangkan|uraikan|definisi|pengertian)\b/;
+
+/**
+ * Penanda penolakan navigasi (W-A-01, directive P1 §4.1). Bila pesan
+ * memuat salah satunya, pesan TIDAK PERNAH menavigasi — termasuk bentuk
+ * "jangan buka /ahsp" yang memuat perintah slash. \b di kedua ujung
+ * menjaga "batalkan" (UNDO_LAST) tidak tertangkap "batal".
+ */
+export const NAV_NEGATION_RE =
+  /\b(jangan|tidak mau|nggak mau|gak mau|tidak usah|jangan dulu|batal|tidak jadi|nggak jadi|gak jadi|tidak ingin|nggak ingin|do not|don't|dont|never|not want)\b/;
+
+export const hasNavNegation = (text: string): boolean => NAV_NEGATION_RE.test(text ?? '');
+
+/**
+ * Awalan yang boleh mendahului perintah slash di tengah pesan ("tolong
+ * buka /ahsp"): partikel kesopanan + verba navigasi + "ke". Hanya awalan
+ * ini yang dilucuti — kata lain ("jelaskan", "explain") menghentikan
+ * pelucutan sehingga "/ahsp" di tengah kalimat penjelasan TIDAK
+ * dieksekusi ("Explain the /ahsp command" → AI).
+ */
+const SLASH_PREFIX_RE =
+  /^(?:tolong|mohon|please|coba|bisakah|bisa|ayo|yuk|buka|bukain|bukakan|pergi ke|masuk ke|tampilkan|tampilin|tunjukin|tunjukkan|lihat|liatin|pindah ke|antarkan ke|bawa ke|open|show|go to|ke)\b\s*/;
 
 export const normalizeNavText = (s: string): string =>
   (s ?? '').toLowerCase().trim().replace(/\s+/g, ' ').replace(/[.!\?…]+$/, '').trim();
 
-const escapeRegExp = (s: string): string => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
-/** Cari alias terpanjang yang muncul sebagai frasa utuh di teks. */
-function findAliasMatch(text: string): { entry: NavEntry; alias: string }[] {
-  const hits: { entry: NavEntry; alias: string }[] = [];
-  for (const entry of NAV_ENTRIES) {
-    for (const alias of entry.aliases) {
-      const re = new RegExp(`(?<!\\w)${escapeRegExp(alias)}(?!\\w)`);
-      if (re.test(text)) hits.push({ entry, alias });
-    }
-  }
-  const maxLen = hits.reduce((m, h) => Math.max(m, h.alias.length), 0);
-  return hits.filter((h) => h.alias.length === maxLen);
+/**
+ * Ekstraksi kata kunci sisa AHSP (F-06, diperketat W-A-03, directive
+ * P1 §4.1): lucuti partikel kesopanan, token "/", tanda kutip, verba
+ * navigasi, kata "menu/halaman/katalog", dan tahun edisi — lalu hanya
+ * kembalikan sisa bila memuat SATU token kata kunci alfanumerik
+ * (panjang ≥ 2). Tanpa itu, ahspQuery TIDAK PERNAH di-set (tanpa q
+ * sampah seperti "tolong /" atau "/"). Dipakai pada jalur slash
+ * tengah-pesan, yang residunya (awalan kesopanan/verba) selalu
+ * terluncuti habis — sehingga dalam praktik q tidak pernah ter-set
+ * dari sana; helper ini adalah penjaga defense-in-depth + penanda
+ * aturan W-A-03 sebagai kode yang bisa dites.
+ */
+export function extractAhspResidual(text: string): string | undefined {
+  const rest = (text ?? '')
+    .replace(/["'«»„“”]/g, ' ')
+    .replace(/\//g, ' ')
+    .replace(/\b(tolong|mohon|please|coba|bisakah|bisa|ayo|yuk)\b/g, ' ')
+    .replace(new RegExp(NAV_VERBS.source, 'g'), ' ')
+    .replace(LEADING_KE, ' ')
+    .replace(/\b(menu|halaman|katalog)\b/g, ' ')
+    .replace(/\b(19|20)\d{2}\b/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!rest) return undefined;
+  const hasKeyword = rest.split(' ').some((t) => /[a-z0-9]{2,}/i.test(t));
+  return hasKeyword ? rest : undefined;
 }
-
-const FALLBACK_SUGGESTIONS = ['spreadsheet-rab', 'ahsp', 'proyek-semua', 'template-rab'];
 
 function levenshtein(a: string, b: string): number {
   const m = a.length;
@@ -154,10 +192,17 @@ function levenshtein(a: string, b: string): number {
   return dp[m][n];
 }
 
-/** Saran untuk slash tak dikenal: prefix → substring → kemiripan → fallback. */
+/**
+ * Saran untuk slash tak dikenal: prefix → substring → kemiripan.
+ * W-A-05 (directive P1 §4.1): TANPA fallback tetap — bila tidak ada
+ * entri yang mirip, kembalikan [] dan pemanggil mengarahkan ke /help,
+ * bukan menampilkan chip yang tidak berhubungan.
+ * W-A-06: token kosong ("/" telanjang) → [] — pemanggil menampilkan
+ * petunjuk /help, bukan 33 chip "tidak dikenal".
+ */
 export function suggestSlash(token: string): NavEntry[] {
   const q = token.replace(/^\//, '').toLowerCase();
-  if (!q) return [...NAV_ENTRIES];
+  if (!q) return [];
   const byPrefix = NAV_ENTRIES.filter((e) => e.slash.slice(1).startsWith(q));
   if (byPrefix.length > 0) return byPrefix;
   const bySub = NAV_ENTRIES.filter(
@@ -166,24 +211,64 @@ export function suggestSlash(token: string): NavEntry[] {
   if (bySub.length > 0) return bySub;
   const byEdit = NAV_ENTRIES.filter((e) => levenshtein(e.slash.slice(1), q) <= 3);
   if (byEdit.length > 0) return byEdit;
-  return FALLBACK_SUGGESTIONS.map((id) => NAV_BY_ID[id]);
+  return [];
 }
 
 export type NavResolution =
   | { mode: 'none' }
   | { mode: 'direct'; entry: NavEntry; ahspQuery?: string }
-  | { mode: 'suggest'; entry: NavEntry; message: string; candidates: NavEntry[] }
+  | { mode: 'suggest'; entry?: NavEntry; message: string; candidates: NavEntry[] }
   | { mode: 'ambiguous'; candidates: NavEntry[]; message: string };
+
+/** Resolusi satu token slash (dipakai cabang slash awal + tengah-pesan). */
+function resolveSlashToken(token: string): NavResolution {
+  // W-A-06: "/" telanjang → petunjuk /help, tanpa kata "tidak dikenal"
+  // dan tanpa chip (menu slash lengkap sudah ada di composer).
+  if (token === '/') {
+    return {
+      mode: 'suggest',
+      message: 'Ketik /help untuk daftar perintah — atau ketik "/" diikuti nama perintah.',
+      candidates: [],
+    };
+  }
+  const bySlash = NAV_ENTRIES.find((e) => e.slash === token);
+  if (bySlash) return { mode: 'direct', entry: bySlash };
+  if (LEGACY_SLASH.has(token)) return { mode: 'none' };
+  const candidates = suggestSlash(token);
+  if (candidates.length > 0) {
+    return {
+      mode: 'suggest',
+      entry: candidates[0],
+      message: `Perintah ${token} tidak dikenal. Mungkin maksudmu:`,
+      candidates,
+    };
+  }
+  // W-A-05: tidak ada entri mirip → arahkan ke /help, bukan chip acak.
+  return {
+    mode: 'suggest',
+    message: `Perintah ${token} tidak dikenal. Ketik /help untuk daftar perintah.`,
+    candidates: [],
+  };
+}
 
 /**
  * Resolver deterministik. Berjalan SEBELUM request AI (view memanggilnya di
  * submit) dan MURNI — tidak menavigasi, tidak mengubah state.
  *
- * Urutan: topik telanjang (klarifikasi, jangan dibajak) → slash → cara
- * membuka (saran, bukan auto-nav) → campuran info+perintah (saran + jawaban
- * singkat untuk AHSP) → pesan sangat panjang (saran, anti false-positive
- * dari teks dokumen tempelan) → perintah eksplisit (langsung) → nama
- * target telanjang (ambigu, pilihan chip) → bukan navigasi.
+ * Urutan (slash-only, directive P1 §4.1 / OD-1): topik telanjang
+ * (klarifikasi, jangan dibajak) → perintah slash di awal pesan →
+ * penjaga negasi (W-A-01) → perintah slash tengah-pesan sesudah awalan
+ * kesopanan/verba ("tolong buka /ahsp") → SELAIN ITU 'none' (pesan
+ * sampai ke AI sebagai percakapan biasa).
+ *
+ * DIHAPUS oleh §4.1 (perubahan perilaku yang disengaja, bukan pelemahan):
+ * cabang perintah eksplisit bahasa alami ("buka ahsp" → direct), cabang
+ * saran "cara membuka" / campuran info+perintah / pesan panjang, dan
+ * cabang nama target telanjang ("database" → chip ambigu). Semua bentuk
+ * itu kini 'none' — view tidak lagi mencegatnya dari AI. Ekstraksi
+ * F-06 ikut terhapus bersama cabang eksplisitnya; aturan scrubbing
+ * W-A-03 hidup di extractAhspResidual() dan dipakai jalur slash
+ * tengah-pesan (yang dalam praktik tidak pernah menghasilkan q).
  */
 export function resolveNavCommand(rawInput: string): NavResolution {
   const text = normalizeNavText(rawInput);
@@ -192,134 +277,46 @@ export function resolveNavCommand(rawInput: string): NavResolution {
   // Topik telanjang tetap milik kartu klarifikasi (aturan owner 2026-10-23).
   if (detectClarifyTopic(text)) return { mode: 'none' };
 
-  // ---- Slash command ----
+  // ---- Slash command di awal pesan (sesudah spasi opsional) ----
   if (text.startsWith('/')) {
     const token = text.split(' ')[0];
-    const bySlash = NAV_ENTRIES.find((e) => e.slash === token);
-    if (bySlash) return { mode: 'direct', entry: bySlash };
-    if (LEGACY_SLASH.has(token)) return { mode: 'none' };
-    const candidates = suggestSlash(token);
-    return {
-      mode: 'suggest',
-      entry: candidates[0],
-      message: `Perintah ${token} tidak dikenal. Mungkin maksudmu:`,
-      candidates,
-    };
+    return resolveSlashToken(token);
   }
 
-  const hasVerb = NAV_VERBS.test(text) || LEADING_KE.test(text);
-  const aliasHits = findAliasMatch(text);
+  // ---- Penjaga negasi (W-A-01): penolakan tidak pernah menavigasi. ----
+  // Ditempatkan sesudah cabang slash awal — perintah slash eksplisit
+  // yang diketik pengguna (/ahsp) tidak ambigu — dan sebelum cabang
+  // slash tengah-pesan ("jangan buka /ahsp" → none).
+  if (hasNavNegation(text)) return { mode: 'none' };
 
-  // Remediasi Batch 1 (2026-10-28): pertanyaan prosedural "cara mengekspor
-  // ke file" BUKAN permintaan navigasi — jangan diubah menjadi kartu
-  // "Buka …" (itulah yang terjadi pada Q18). Kembalikan 'none' agar
-  // routeIntent menjawab dengan langkah how-to deterministik. Perintah
-  // navigasi ("cara membuka …") tetap ditangani cabang HOWTO di bawah,
-  // karena ia tidak mengandung verba ekspor.
-  const EXPORT_VERBS = /\b(mengekspor|mengekspor|ekspor|export|mengunduh|unduh|download)\b/;
-  const FILE_FORMATS = /\b(excel|xlsx|pdf)\b/;
-  if (EXPORT_VERBS.test(text) && FILE_FORMATS.test(text) && !NAV_VERBS.test(text)) {
-    return { mode: 'none' };
+  // ---- Slash tengah-pesan: awalan kesopanan/verba + perintah slash. ----
+  // "tolong buka /ahsp" → navigasi (tanpa q); "Explain the /ahsp
+  // command" → none ("explain" menghentikan pelucutan); slash dalam
+  // tanda kutip ("buka \"/ahsp\"") → none (kutip bukan awalan).
+  let rest = text;
+  let stripped = false;
+  for (;;) {
+    const m = rest.match(SLASH_PREFIX_RE);
+    if (!m || m[0].length === 0) break;
+    rest = rest.slice(m[0].length);
+    stripped = true;
   }
-
-  // ---- "Bagaimana cara membuka X" / "di mana menu X" → saran, bukan auto-nav.
-  if (HOWTO.test(text) && aliasHits.length > 0) {
-    const entry = aliasHits[0].entry;
-    return {
-      mode: 'suggest',
-      entry,
-      message: `Berikut shortcut ke ${entry.label} — klik untuk membuka.`,
-      candidates: [entry],
-    };
-  }
-
-  // ---- Campuran: penjelasan + perintah ("jelaskan AHSP dan buka halaman AHSP").
-  // Auto-navigasi akan menyembunyikan jawabannya (chat ter-unmount), jadi
-  // kembalikan jawaban singkat + chip, bukan navigasi langsung.
-  if (INFO_VERBS.test(text) && hasVerb && aliasHits.length > 0) {
-    const entry = aliasHits[0].entry;
-    if (entry.id === 'ahsp') {
-      return {
-        mode: 'suggest',
-        entry,
-        message: `${clarifyPickResult('ahsp:explain').message}\n\nKlik shortcut ini untuk membuka katalognya:`,
-        candidates: [entry],
-      };
+  if (stripped && rest.startsWith('/')) {
+    const token = rest.split(' ')[0];
+    const prefix = text.slice(0, text.length - rest.length);
+    const res = resolveSlashToken(token);
+    if (res.mode === 'direct' && res.entry.id === 'ahsp') {
+      // W-A-03: q hanya bila awalan menyisakan kata kunci nyata —
+      // awalan kesopanan/verba selalu terluncuti habis ("tolong buka"
+      // → tanpa q), sehingga ini penjaga, bukan jalur q baru.
+      const q = extractAhspResidual(prefix);
+      if (q) return { ...res, ahspQuery: q };
     }
-    return {
-      mode: 'suggest',
-      entry,
-      message: `Berikut shortcut ke ${entry.label} — klik untuk membuka.`,
-      candidates: [entry],
-    };
+    return res;
   }
 
-  // ---- Pesan sangat panjang (tempelan dokumen): jangan auto-navigasi dari
-  // frasa yang kebetulan muncul di dalamnya; cukup tawarkan chip.
-  if (text.length > 160 && hasVerb && aliasHits.length > 0) {
-    const entry = aliasHits[0].entry;
-    return {
-      mode: 'suggest',
-      entry,
-      message: `Kutemukan perintah navigasi di pesanmu — klik shortcut ini untuk membuka ${entry.label}:`,
-      candidates: [entry],
-    };
-  }
-
-  // ---- Perintah eksplisit: submenu spesifik menang (alias terpanjang).
-  if (hasVerb && aliasHits.length > 0) {
-    const distinct = [...new Map(aliasHits.map((h) => [h.entry.id, h.entry])).values()];
-    if (distinct.length === 1) {
-      const entry = distinct[0];
-      // F-06: kata kunci sisa untuk AHSP ("buka ahsp beton" → q=beton).
-      // Hanya cabang eksplisit AHSP; slash /ahsp tanpa kata kunci tetap tanpa q.
-      if (entry.id === 'ahsp') {
-        const alias = aliasHits[0].alias;
-        const rest = text
-          .replace(new RegExp(`(?<!\\w)${escapeRegExp(alias)}(?!\\w)`, 'g'), ' ')
-          .replace(new RegExp(NAV_VERBS.source, 'g'), ' ')
-          .replace(LEADING_KE, ' ')
-          .replace(/\b(menu|halaman|katalog)\b/g, ' ')
-          // Tahun edisi katalog ("2026") bukan kata kunci isi — buang agar
-          // "buka katalog ahsp 2026 beton" menjadi q=beton, bukan q="2026 beton".
-          .replace(/\b(19|20)\d{2}\b/g, ' ')
-          .replace(/\s+/g, ' ')
-          .trim();
-        if (rest) return { mode: 'direct', entry, ahspQuery: rest };
-      }
-      return { mode: 'direct', entry };
-    }
-    // Satu frasa dipakai beberapa entry (mis. "rekapitulasi" untuk RAB & QTO)
-    // → ambigu, jangan tebak.
-    return {
-      mode: 'ambiguous',
-      candidates: distinct,
-      message: 'Maksudmu yang mana? Pilih tujuannya:',
-    };
-  }
-
-  // ---- Nama target telanjang tanpa kata kerja → pilihan, bukan auto-nav.
-  // Khusus "proyek": tampilkan kelima filter sebagai pilihan.
-  if (!hasVerb) {
-    if (text === 'proyek') {
-      const candidates = NAV_ENTRIES.filter((e) => e.category === 'Proyek');
-      return { mode: 'ambiguous', candidates, message: 'Proyek yang mana? Pilih filternya:' };
-    }
-    const exact = NAV_ENTRIES.filter((e) =>
-      e.aliases.some((a) => a === text) || e.label.toLowerCase() === text,
-    );
-    if (exact.length === 1) {
-      return {
-        mode: 'ambiguous',
-        candidates: exact,
-        message: `Mau membuka ${exact[0].label}?`,
-      };
-    }
-    if (exact.length > 1) {
-      return { mode: 'ambiguous', candidates: exact, message: 'Maksudmu yang mana? Pilih tujuannya:' };
-    }
-  }
-
+  // Bahasa alami — termasuk verba navigasi + nama target — BUKAN
+  // perintah navigasi (§4.1): kembalikan 'none' agar pesan sampai ke AI.
   return { mode: 'none' };
 }
 

@@ -113,7 +113,7 @@ function matchQto(rawInput: string): { intent: string; param?: string } | null {
   assert(matchQto('hitung volume galian 10 m3') === null, 'B1: hitung volume … bukan CREATE_QTO_ITEM (itu CALCULATE/hitung_qto)');
   assert(matchQto('hitung QTO galian 10 m3') === null, 'B2: hitung QTO … bukan perintah buat/sinkron');
   assert(matchQto('buka kalkulator volume') === null, 'B3: buka kalkulator volume bukan intent QTO');
-  assert(matchQto('buka QTO') === null, 'B4: buka QTO bukan intent QTO (itu navigasi OPEN_QTO)');
+  assert(matchQto('buka QTO') === null, 'B4: buka QTO bukan intent QTO (§4.1: ke AI, bukan navigasi OPEN_QTO)');
   assert(matchQto('tambah item plesteran 10 m2') === null, 'B5: tambah item (tanpa QTO) bukan CREATE_QTO_ITEM (itu ADD_ITEM)');
   assert(matchQto('buatkan RAB rumah type 70 2 lantai') === null, 'B6: buat RAB bukan CREATE_QTO_ITEM');
   assert(matchQto('berapa total proyek saya?') === null, 'B7: pertanyaan total bukan intent QTO');

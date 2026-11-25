@@ -9,6 +9,12 @@
  * Supported commands (case/space-insensitive):
  *   game | /game | main game | buka game | game space
  *
+ * CATATAN (Fast Track §7 / P1-17, 2026-11-24): matcher ini TIDAK lagi
+ * dipakai jalur routing Chat AI — navigasi Game Space dari chat hanya
+ * lewat slash /game (intentRouter langkah 1). Fungsi dipertahankan
+ * sebagai gramatika perintah modul game-space + diuji unit di
+ * gameSpace.test.ts §1; jangan sambungkan kembali ke intentRouter.
+ *
  * Deliberately NOT matched: sentences that merely mention the word "game"
  * without a play/open verb (e.g. "apa itu game?"), so normal chat keeps
  * flowing to the AI.

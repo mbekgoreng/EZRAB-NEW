@@ -223,6 +223,12 @@ const noNoteDb = convertAiItem(10, {
 }, 'FAST', 'DATABASE');
 check('7.3 DATABASE: estimasi tanpa catatan tetap fallback AI_ESTIMATE berlabel (perilaku lama)',
   noNoteDb.priceSource === 'AI_ESTIMATE' && noNoteDb.unitPrice === 150000, `${noNoteDb.priceSource}/${noNoteDb.unitPrice}`);
+const supUnit = convertAiItem(11, {
+  name: 'Plester Dinding', category: 'Arsitektur', units: 'm²',
+  quantity: null, dimensions: '6 x 10 m', quantitySource: 'DED_EXPLICIT',
+}, 'FAST', 'DATABASE');
+check('7.4 WD-3.7-06: satuan superskrip m² dinormalisasi ke m2 + kuantitas 60 (bukan null/COUNT)',
+  supUnit.units === 'm2' && supUnit.quantity === 60, `${supUnit.units}/${supUnit.quantity}`);
 
 console.log('\n== 8. Finalisasi & total: asumsi terhitung, label tidak naik kelas ==');
 const out = DedAiCalculator.buildOutput({

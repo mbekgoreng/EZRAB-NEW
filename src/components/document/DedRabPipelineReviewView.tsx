@@ -255,7 +255,12 @@ export const DedRabPipelineReviewView: React.FC<DedRabPipelineReviewViewProps> =
             <span>PHASE 10: DED → RAB PRODUCTION PIPELINE</span>
           </div>
           <h1 style={{ fontSize: '22px', fontWeight: 800, margin: '0 0 6px 0', letterSpacing: '-0.02em' }}>
-            Draf RAB Terverifikasi • {projectName}
+            {/* H-07: "Terverifikasi" only when every item is verified — same counts the filter tabs render. */}
+            {draft.totalItems === 0
+              ? <>Draf RAB • {projectName}</>
+              : draft.verifiedCount === draft.totalItems
+                ? <>Draf RAB Terverifikasi • {projectName}</>
+                : <>Draf RAB • {draft.verifiedCount}/{draft.totalItems} terverifikasi • {projectName}</>}
           </h1>
           <p style={{ fontSize: '13px', color: '#DBEAFE', margin: 0, maxWidth: '650px', lineHeight: 1.5 }}>
             Data diekstrak langsung dari berkas gambar kerja teknis, dihitung secara deterministik oleh engine EZRAB, dan dipetakan ke katalog AHSP resmi tanpa estimasi liar.
@@ -307,7 +312,8 @@ export const DedRabPipelineReviewView: React.FC<DedRabPipelineReviewViewProps> =
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <FileText size={18} color="var(--ez-hue-blue-text)" />
-            <span style={{ fontSize: '14px', fontWeight: 750, color: 'var(--ez-color-text-primary)' }}>SOURCE INVENTORY (BERKAS TERVERIFIKASI)</span>
+            {/* H-07: files are registered (SHA-256 + metadata), not verified — retitled to match the "{n} berkas terdaftar" count beside it. */}
+            <span style={{ fontSize: '14px', fontWeight: 750, color: 'var(--ez-color-text-primary)' }}>SOURCE INVENTORY (BERKAS TERDAFTAR)</span>
           </div>
           <span style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)' }}>{draft.sourceInventory.length} berkas terdaftar</span>
         </div>

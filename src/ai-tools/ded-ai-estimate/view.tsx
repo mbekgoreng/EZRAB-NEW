@@ -57,6 +57,9 @@ import { recordDedUnderstandingToMemory } from '../ezrab-ai/dedUnderstanding';
 import { attachDedToProject } from '../ezrab-ai/dedQtoIntegration';
 import { notificationBus } from '../../notifications/notificationBus';
 import { useProject } from '../../context/ProjectContext';
+import { useRole } from '../../auth/RoleContext';
+import { authorizeChatAiMutation } from '../ezrab-ai/mutationInventory';
+import { appendMutationAuditRecord } from '../ezrab-ai/mutationAuditLog';
 import { useI18n } from '../../i18n/I18nContext';
 import { Building2 } from 'lucide-react';
 import { FsChip, FsStep } from '../../components/feature-shell/FeatureFullscreenShell';
@@ -138,6 +141,14 @@ const initialStages = (t: (key: string) => string, mode: DedRabAiMode = 'EZRAB_A
 export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
   const { t } = useI18n();
   const { projects, createProject, bulkAddRabItems, getLastBulkAddOutcome, setCurrentProjectId, currentProjectId } = useProject();
+  // P1-B — Gerbang kapabilitas finalisasi DED: peran aktif dibaca
+  // LANGSUNG dari useRole (view DED tidak memasang konteks operasi
+  // asisten chat — getAssistantOperationContext() di sini null karena
+  // view chat tidak ter-mount, sehingga memakainya akan menolak
+  // SEMUA finalisasi). Peta "Admin" §4.2 = edit-estimate, sama
+  // seperti gerbang Chat AI. KEJUJURAN (WC-06): gerbang UX sisi
+  // klien — lihat mutationInventory.ts.
+  const { activeRole, hasCapability } = useRole();
   // Saldo kredit simulasi (store bersama mockAdapter — angka yang sama
   // dengan yang dilihat InputView) untuk chip Kredit AI di bar atas shell.
   const { balance: creditBalance } = useCreditSimulation();
@@ -1008,6 +1019,14 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
   };
 
   const handleFinalize = async (items: DedAiItem[]): Promise<{ ok: boolean; message: string }> => {
+    // P1-B: gerbang kapabilitas — finalisasi DED adalah mutasi persisten
+    // (menulis RAB + bisa membuat proyek). Digunakan SEBELUM validasi:
+    // tombol Finalisasi adalah pemicu mutasi murni (tanpa input yang
+    // perlu diklarifikasi), dan aturan owner §4.2 mutlak — non-admin
+    // ditolak apa pun keadaan batch-nya. Penolakan memakai kalimat
+    // owner persis (lihat mutationInventory.ts).
+    const cap = authorizeChatAiMutation('DED_FINALIZE', hasCapability('edit-estimate'));
+    if (!cap.ok) return { ok: false, message: cap.message };
     // FASE DED-FIX TASK 3: hanya item yang lolos validasi kuantitas (stage CALCULATED,
     // subtotal terhitung) yang boleh masuk RAB. Item REJECTED/UNRESOLVED tidak lolos
     // jalur finalisasi apa pun — tidak disamarkan menjadi angka.
@@ -1015,6 +1034,9 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
     // bila satu item gagal dipetakan, TIDAK ADA yang disisip dan TIDAK ADA
     // proyek yang dibuat (tanpa RAB korup sebagian, tanpa proyek kosong
     // tertinggal). Hasil analisis + draft tetap utuh untuk diperbaiki.
+    // §4.5 TIDAK mengubah jalur ini: pembuatan proyek DED (creationMethod
+    // 'ai-ded') terjadi SESUDAH klik Finalisasi — klik itu SENDIRI adalah
+    // konfirmasi eksplisitnya, bukan pembuatan implisit.
     const validation = validateDedFinalizeBatch(items, result?.policy ?? 'FULL_AI');
     const savable = validation.savable;
     const blocked = validation.blockedCount;
@@ -1062,6 +1084,24 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
       setCurrentProjectId(projectId);
       publishDedRun({ finalized: true });
       setFinalized(true);
+      // P1-E: record audit finalisasi (referensi konfirmasi = kunci
+      // finalisasi deterministik G4 — finalisasi logis yang sama
+      // berbagi kunci yang sama). outcomeVerified dari outcome store
+      // bulkAdd (duplikat = keadaan tujuan sudah tercapai).
+      appendMutationAuditRecord({
+        actor: activeRole?.name ?? 'Peran demo',
+        projectId,
+        projectName,
+        operation: 'DED_FINALIZE',
+        before: null,
+        after: { itemCount: added.length, duplicate: outcome?.duplicate === true },
+        confirmationRef: finalizationKey,
+        result: 'executed',
+        outcomeVerified: true,
+        verificationNote: 'bulk-add-outcome: bulkAddRabItems + getLastBulkAddOutcome melaporkan outcome store.',
+        source: 'ded-ai',
+        message: `${added.length} item DED difinalisasi ke proyek "${projectName}".`,
+      });
       if (outcome?.duplicate) {
         return {
           ok: true,
@@ -1094,6 +1134,12 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
   // yang dilaporkan owner 2026-11-21 04:19 — DIHAPUS.)
 
   const handleFullAiFinalize = async (items: FullAiItem[]): Promise<{ ok: boolean; message: string }> => {
+    // P1-B: gerbang kapabilitas — sama seperti handleFinalize standar
+    // (mutasi persisten; non-admin ditolak dengan kalimat owner persis,
+    // sebelum validasi). §4.5 tidak mengubah jalur ini (klik
+    // Finalisasi SENDIRI adalah konfirmasi eksplisitnya).
+    const cap = authorizeChatAiMutation('DED_FINALIZE_FULL_AI', hasCapability('edit-estimate'));
+    if (!cap.ok) return { ok: false, message: cap.message };
     // W4 (§9+§11): validasi-SEBELUM-sisip — sama seperti jalur standar:
     // seluruh batch divalidasi dulu; satu kegagalan membatalkan semua
     // (tanpa RAB korup sebagian, tanpa proyek kosong tertinggal).
@@ -1137,6 +1183,22 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
       setCurrentProjectId(projectId);
       publishDedRun({ finalized: true });
       setFinalized(true);
+      // P1-E: record audit finalisasi Full AI (kunci finalisasi G4
+      // sebagai referensi konfirmasi).
+      appendMutationAuditRecord({
+        actor: activeRole?.name ?? 'Peran demo',
+        projectId,
+        projectName,
+        operation: 'DED_FINALIZE_FULL_AI',
+        before: null,
+        after: { itemCount: added.length, duplicate: outcome?.duplicate === true },
+        confirmationRef: finalizationKey,
+        result: 'executed',
+        outcomeVerified: true,
+        verificationNote: 'bulk-add-outcome: bulkAddRabItems + getLastBulkAddOutcome melaporkan outcome store.',
+        source: 'ded-ai',
+        message: `${added.length} item Full AI DED difinalisasi ke proyek "${projectName}".`,
+      });
       if (outcome?.duplicate) {
         return {
           ok: true,

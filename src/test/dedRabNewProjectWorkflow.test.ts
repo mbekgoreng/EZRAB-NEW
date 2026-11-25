@@ -9,6 +9,7 @@
  * TEST E — New Project + No DED (Guided DED selection -> enabled CTA)
  * TEST F — Analysis Error Resilience (Project retained + Retry without duplication)
  * TEST G — Strict Project Data Isolation (Project A vs Project B)
+ * TEST H — Analysis Start Never Creates Projects Implicitly (FTC Priority D §7)
  */
 
 import { deriveProjectNameFromFileName } from '../components/document/DedRabWorkflowView';
@@ -213,13 +214,15 @@ class DedRabWorkflowSimulator {
     if (this.state.createdProjectId) {
       targetProjectId = this.state.createdProjectId;
       targetProjectName = this.activeTargetProject?.name || 'Proyek Baru';
-    } else if (this.state.targetProjectMode === 'NEW' || !this.state.currentProject) {
-      const newProj = this.createNewProject();
-      targetProjectId = newProj.id;
-      targetProjectName = newProj.name;
-    } else {
+    } else if (this.state.currentProject && this.state.targetProjectMode === 'ACTIVE') {
       targetProjectId = this.state.currentProject.id;
       targetProjectName = this.state.currentProject.name;
+    } else {
+      // FTC Priority D (§7): cerminan handleStartAnalysis fail-closed —
+      // memulai analisis TIDAK PERNAH membuat proyek diam-diam. Proyek
+      // hanya dibuat lewat tombol eksplisit "＋ Buat Proyek".
+      this.state.isExecuting = false;
+      throw new Error('NO_TARGET_PROJECT: Pilih proyek yang ada atau buat proyek baru sebelum memulai analisis.');
     }
 
     if (mockFail) {
@@ -263,7 +266,7 @@ class DedRabWorkflowSimulator {
 
 async function runAcceptanceTests() {
   console.log('======================================================================');
-  console.log('EZRAB DED → RAB WORKFLOW ACCEPTANCE CRITERIA VERIFICATION (TESTS A-G)');
+  console.log('EZRAB DED → RAB WORKFLOW ACCEPTANCE CRITERIA VERIFICATION (TESTS A-H)');
   console.log('======================================================================\n');
 
   let passed = 0;
@@ -420,6 +423,29 @@ async function runAcceptanceTests() {
   const itemsB = commitB_res.items;
   const leakage = itemsB.some((b) => b.projectId === projA.id) || itemsA.some((a) => a.projectId === projB.id);
   assert(!leakage, 'TEST G.4: Zero data leakage between projects');
+
+  // --- TEST H: Analysis Start Never Creates Projects Implicitly ---
+  console.log('\n--- TEST H: Analysis Start Never Creates Projects Implicitly (FTC Priority D) ---');
+  const simH = new DedRabWorkflowSimulator(null);
+  simH.uploadFile('PRJ-RUMAH-2LT-01_DED.pdf');
+  assert(simH.state.targetProjectMode === 'NEW', 'TEST H.1: Fresh session defaults to NEW mode');
+
+  let threwH = false;
+  try {
+    await simH.startAnalysis();
+  } catch (e: any) {
+    threwH = /NO_TARGET_PROJECT/.test(e?.message || '');
+  }
+  assert(threwH, 'TEST H.2: startAnalysis blocks without an explicit project (fail-closed)');
+  assert(simH.state.projects.length === 0, 'TEST H.3: No project was created as a side effect of analysis start');
+  assert(simH.state.executionOutput === null, 'TEST H.4: No analysis output without a target project');
+  assert(!simH.state.isExecuting, 'TEST H.5: Executing flag released after fail-closed block');
+
+  // Explicit creation then analysis still works (the supported path)
+  const newProjH = simH.createNewProject();
+  await simH.startAnalysis();
+  assert(simH.state.executionOutput?.projectId === newProjH.id, 'TEST H.6: Analysis runs after explicit project creation');
+  assert(simH.state.projects.length === 1, 'TEST H.7: Exactly one project exists — no duplicate from analysis start');
 
   // ===========================================================================
   // SUMMARY

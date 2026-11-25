@@ -11,9 +11,15 @@
  *  B. Konfirmasi 6 perintah langsung (actionRegistry.ts): rename,
  *     buat, arsip, duplikat proyek, ubah settings, buat/sinkron QTO —
  *     pemanggilan pertama HANYA bertanya (callback tidak dipanggil),
- *     pemanggilan kedua mengeksekusi tepat sekali, pemanggilan ketiga
- *     bertanya lagi (idempotensi). Input tidak valid tetap fail-closed
+ *     KLIK TOMBOL konfirmasi (executeDirectConfirmation) mengeksekusi
+ *     tepat sekali, pemanggilan ketiga bertanya lagi (idempotensi).
+ *     P1-C (direktif owner 2026-11-24, D6 O-5): kirim-ulang TEKS
+ *     perintah yang sama TIDAK PERNAH mengeksekusi — eksekusi hanya
+ *     lewat dispatch tombol. Input tidak valid tetap fail-closed
  *     tanpa menyimpan konfirmasi. DELETE_PROJECT tidak berubah.
+ *     P1-B: seksi B berjalan sebagai Estimator (writesEnabled: true —
+ *     setAssistantOperationContext) karena gerbang kapabilitas kini
+ *     menolak tanpa konteks operasi.
  *  C. Persistensi state rumah (draftPersistence.ts): RabNeeds +
  *     RabIntentSpec + pendingChoice survive simulasi reload (persist +
  *     hydrate); kartu dibangun ulang dari rawText; record basi
@@ -38,6 +44,7 @@ import {
 } from '../ai-tools/ezrab-ai/directRabPush';
 import {
   executeIntent,
+  executeDirectConfirmation,
   clearPendingDirectConfirmations,
   getLastRabNeeds,
   setLastRabNeeds,
@@ -47,6 +54,7 @@ import {
   type ChatActionContext,
   type PendingRabChoice,
 } from '../ai-tools/ezrab-ai/actionRegistry';
+import { setAssistantOperationContext } from '../ai-tools/ezrab-ai/operations';
 import {
   getLastRabIntentSpec,
   setLastRabIntentSpec,
@@ -172,6 +180,9 @@ function baseCtx(): ChatActionContext {
 }
 
 /* --- B1. RENAME_PROJECT --- */
+// P1-B: seksi B berjalan sebagai Estimator (gerbang kapabilitas
+// menolak tanpa konteks operasi / tanpa edit-estimate).
+setAssistantOperationContext({ actor: 'Penguji', writesEnabled: true });
 {
   clearPendingDirectConfirmations();
   const calls: Array<{ id: string; name: string }> = [];
@@ -181,9 +192,13 @@ function baseCtx(): ChatActionContext {
   assert(calls.length === 0, 'B1a: rename panggilan pertama → callback TIDAK dipanggil');
   assert(ask.ok && ask.message.includes('Rumah Impian'), 'B1b: rename panggilan pertama → bertanya + mengutip nama baru');
   assert((ask.actions?.length ?? 0) === 1 && ask.actions![0].label === 'Ubah nama proyek menjadi Rumah Impian', 'B1c: rename bertanya dengan tombol konfirmasi berlabel perintah');
-  const exec = executeIntent('RENAME_PROJECT', 'Rumah Impian', ctx);
-  assert(calls.length === 1 && calls[0].id === 'p1' && calls[0].name === 'Rumah Impian', 'B1d: rename panggilan kedua → callback dipanggil tepat sekali');
-  assert(exec.message.includes('diubah dari'), 'B1e: rename panggilan kedua → pesan sukses');
+  // P1-C (O-5): kirim-ulang TEKS tidak mengeksekusi — hanya tombol.
+  const retext = executeIntent('RENAME_PROJECT', 'Rumah Impian', ctx);
+  assert(calls.length === 0, 'B1d: rename kirim-ulang teks → TIDAK mengeksekusi (O-5)');
+  assert(retext.message.includes('mengonfirmasi'), 'B1d2: rename kirim-ulang teks → bertanya lagi');
+  const exec = executeDirectConfirmation('RENAME_PROJECT', 'Rumah Impian', ctx);
+  assert(calls.length === 1 && calls[0].id === 'p1' && calls[0].name === 'Rumah Impian', 'B1e: rename klik tombol konfirmasi → callback dipanggil tepat sekali');
+  assert(exec.message.includes('diubah dari'), 'B1e2: rename klik tombol konfirmasi → pesan sukses');
   const again = executeIntent('RENAME_PROJECT', 'Rumah Impian', ctx);
   assert(calls.length === 1, 'B1f: rename panggilan ketiga → TIDAK mengeksekusi lagi (idempotensi)');
   assert(again.message.includes('mengonfirmasi'), 'B1g: rename panggilan ketiga → bertanya lagi');
@@ -198,9 +213,9 @@ function baseCtx(): ChatActionContext {
   const ask = executeIntent('CREATE_PROJECT', 'Rumah Impian', ctx);
   assert(created.length === 0, 'B2a: create panggilan pertama → TIDAK membuat proyek');
   assert(ask.ok && ask.actions?.[0]?.label === 'Buat proyek Rumah Impian', 'B2b: create bertanya dengan tombol konfirmasi');
-  const exec = executeIntent('CREATE_PROJECT', 'Rumah Impian', ctx);
-  assert(created.length === 1 && created[0] === 'Rumah Impian', 'B2c: create panggilan kedua → membuat tepat sekali');
-  assert(exec.message.includes('dibuat'), 'B2d: create panggilan kedua → pesan sukses');
+  const exec = executeDirectConfirmation('CREATE_PROJECT', 'Rumah Impian', ctx);
+  assert(created.length === 1 && created[0] === 'Rumah Impian', 'B2c: create klik tombol konfirmasi → membuat tepat sekali');
+  assert(exec.message.includes('dibuat'), 'B2d: create klik tombol konfirmasi → pesan sukses');
   executeIntent('CREATE_PROJECT', 'Rumah Impian', ctx);
   assert(created.length === 1, 'B2e: create panggilan ketiga → TIDAK membuat lagi');
   // 'baru' bukan nama — tetap navigasi, tanpa menyimpan konfirmasi.
@@ -222,9 +237,9 @@ function baseCtx(): ChatActionContext {
   const ask = executeIntent('ARCHIVE_PROJECT', 'ini', ctx);
   assert(archived.length === 0, 'B3a: arsip panggilan pertama → TIDAK mengarsipkan');
   assert(ask.actions?.[0]?.label === 'Arsipkan proyek Rumah Demo', 'B3b: arsip bertanya dengan tombol konfirmasi bernamakan target ter-resolusi');
-  const exec = executeIntent('ARCHIVE_PROJECT', 'ini', ctx);
-  assert(archived.length === 1 && archived[0] === 'p1', 'B3c: arsip panggilan kedua → mengarsipkan tepat sekali');
-  assert(exec.message.includes('diarsipkan'), 'B3d: arsip panggilan kedua → pesan sukses');
+  const exec = executeDirectConfirmation('ARCHIVE_PROJECT', 'ini', ctx);
+  assert(archived.length === 1 && archived[0] === 'p1', 'B3c: arsip klik tombol konfirmasi → mengarsipkan tepat sekali');
+  assert(exec.message.includes('diarsipkan'), 'B3d: arsip klik tombol konfirmasi → pesan sukses');
   executeIntent('ARCHIVE_PROJECT', 'ini', ctx);
   assert(archived.length === 1, 'B3e: arsip panggilan ketiga → TIDAK mengarsipkan lagi');
   // Target tak ditemukan → fail-closed, tanpa konfirmasi tersimpan.
@@ -247,7 +262,7 @@ function baseCtx(): ChatActionContext {
   const reask = executeIntent('ARCHIVE_PROJECT', 'ini', renamedCtx);
   assert(archived.length === 0, 'B3h: proyek berganti nama sesudah tanya → TIDAK dieksekusi');
   assert(reask.message.includes('Rumah Demo Baru'), 'B3i: proyek berganti nama → tanya ulang dengan nama segar');
-  executeIntent('ARCHIVE_PROJECT', 'ini', renamedCtx);
+  executeDirectConfirmation('ARCHIVE_PROJECT', 'ini', renamedCtx);
   assert(archived.length === 1, 'B3j: konfirmasi baru sesudah drift → mengeksekusi sekali');
 }
 
@@ -260,9 +275,9 @@ function baseCtx(): ChatActionContext {
   const ask = executeIntent('DUPLICATE_PROJECT', 'ini', ctx);
   assert(duped.length === 0, 'B4a: duplikat panggilan pertama → TIDAK menduplikat');
   assert(ask.actions?.[0]?.label === 'Duplikat proyek Rumah Demo', 'B4b: duplikat bertanya dengan tombol konfirmasi');
-  const exec = executeIntent('DUPLICATE_PROJECT', 'ini', ctx);
-  assert(duped.length === 1 && duped[0] === 'p1', 'B4c: duplikat panggilan kedua → menduplikat tepat sekali');
-  assert(exec.message.includes('duplikat'), 'B4d: duplikat panggilan kedua → pesan sukses');
+  const exec = executeDirectConfirmation('DUPLICATE_PROJECT', 'ini', ctx);
+  assert(duped.length === 1 && duped[0] === 'p1', 'B4c: duplikat klik tombol konfirmasi → menduplikat tepat sekali');
+  assert(exec.message.includes('duplikat'), 'B4d: duplikat klik tombol konfirmasi → pesan sukses');
   executeIntent('DUPLICATE_PROJECT', 'ini', ctx);
   assert(duped.length === 1, 'B4e: duplikat panggilan ketiga → TIDAK menduplikat lagi');
 }
@@ -282,10 +297,13 @@ function baseCtx(): ChatActionContext {
   assert(applyCount === 0 && seenPatch === null, 'B5a: settings panggilan pertama → TIDAK diterapkan');
   assert(ask.message.includes('Overhead') && ask.message.includes('10%'), 'B5b: settings bertanya dengan pratinjau perubahan');
   assert(ask.actions?.[0]?.label === 'Ubah Overhead jadi 10%', 'B5c: settings bertanya dengan tombol konfirmasi');
-  const exec = executeIntent('UPDATE_PROJECT_SETTINGS', 'overhead jadi 10%', ctx);
-  assert(applyCount === 1, 'B5d: settings panggilan kedua → diterapkan tepat sekali');
+  // P1-C (O-5): kirim-ulang TEKS tidak mengeksekusi — hanya tombol.
+  executeIntent('UPDATE_PROJECT_SETTINGS', 'overhead jadi 10%', ctx);
+  assert(applyCount === 0, 'B5d: settings kirim-ulang teks → TIDAK diterapkan (O-5)');
+  const exec = executeDirectConfirmation('UPDATE_PROJECT_SETTINGS', 'overhead jadi 10%', ctx);
+  assert(applyCount === 1, 'B5d2: settings klik tombol konfirmasi → diterapkan tepat sekali');
   assert(seenPatch !== null && Object.keys(seenPatch).length === 1 && (seenPatch as Record<string, unknown>).overheadPercent === 10, 'B5e: patch hanya field yang disebut');
-  assert(exec.message.includes('diubah'), 'B5f: settings panggilan kedua → pesan sukses');
+  assert(exec.message.includes('diubah'), 'B5f: settings klik tombol konfirmasi → pesan sukses');
   executeIntent('UPDATE_PROJECT_SETTINGS', 'overhead jadi 10%', ctx);
   assert(applyCount === 1, 'B5g: settings panggilan ketiga → TIDAK diterapkan lagi');
   // 'pajak' ambigu → tanya PPN/PPh, tanpa konfirmasi tersimpan.
@@ -303,9 +321,9 @@ function baseCtx(): ChatActionContext {
   const ask = executeIntent('CREATE_QTO_ITEM', 'galian tanah 10 m3', ctx);
   assert(created.length === 0, 'B6a: buat QTO panggilan pertama → TIDAK membuat item');
   assert(ask.actions?.[0]?.label === 'Buat item QTO galian tanah 10 m3', 'B6b: buat QTO bertanya dengan tombol konfirmasi');
-  const exec = executeIntent('CREATE_QTO_ITEM', 'galian tanah 10 m3', ctx);
-  assert(created.length === 1 && created[0].uraian === 'galian tanah' && created[0].quantity === 10 && created[0].unit === 'm3', 'B6c: buat QTO panggilan kedua → membuat tepat sekali');
-  assert(exec.message.includes('dibuat'), 'B6d: buat QTO panggilan kedua → pesan sukses');
+  const exec = executeDirectConfirmation('CREATE_QTO_ITEM', 'galian tanah 10 m3', ctx);
+  assert(created.length === 1 && created[0].uraian === 'galian tanah' && created[0].quantity === 10 && created[0].unit === 'm3', 'B6c: buat QTO klik tombol konfirmasi → membuat tepat sekali');
+  assert(exec.message.includes('dibuat'), 'B6d: buat QTO klik tombol konfirmasi → pesan sukses');
   executeIntent('CREATE_QTO_ITEM', 'galian tanah 10 m3', ctx);
   assert(created.length === 1, 'B6e: buat QTO panggilan ketiga → TIDAK membuat lagi');
   // Tanpa volume → tanya volume, tanpa konfirmasi tersimpan.
@@ -327,9 +345,9 @@ function baseCtx(): ChatActionContext {
   const ask = executeIntent('SYNC_QTO', 'galian ke rab', ctx);
   assert(synced.length === 0, 'B7a: sync bernama panggilan pertama → TIDAK menyinkron');
   assert(ask.actions?.[0]?.label === 'Sinkronkan QTO galian tanah ke RAB', 'B7b: sync bernama bertanya dengan tombol konfirmasi');
-  const exec = executeIntent('SYNC_QTO', 'galian ke rab', ctx);
-  assert(synced.length === 1 && synced[0] === 'q1', 'B7c: sync bernama panggilan kedua → menyinkron tepat sekali');
-  assert(exec.message.includes('disinkronkan'), 'B7d: sync bernama panggilan kedua → pesan sukses');
+  const exec = executeDirectConfirmation('SYNC_QTO', 'galian ke rab', ctx);
+  assert(synced.length === 1 && synced[0] === 'q1', 'B7c: sync bernama klik tombol konfirmasi → menyinkron tepat sekali');
+  assert(exec.message.includes('disinkronkan'), 'B7d: sync bernama klik tombol konfirmasi → pesan sukses');
   executeIntent('SYNC_QTO', 'galian ke rab', ctx);
   assert(synced.length === 1, 'B7e: sync bernama panggilan ketiga → TIDAK menyinkron lagi');
 }
@@ -347,10 +365,10 @@ function baseCtx(): ChatActionContext {
   const ask = executeIntent('SYNC_QTO', 'semua qto', ctx);
   assert(synced.length === 0, 'B7f: sync semua panggilan pertama → TIDAK menyinkron');
   assert(ask.message.includes('2 item') && ask.message.includes('1 item tanpa harga'), 'B7g: sync semua bertanya dengan hitungan berharga vs tanpa harga');
-  const exec = executeIntent('SYNC_QTO', 'semua qto', ctx);
-  assert(synced.length === 2 && synced.includes('q1') && synced.includes('q2'), 'B7h: sync semua panggilan kedua → hanya item berharga yang tersinkron');
+  const exec = executeDirectConfirmation('SYNC_QTO', 'semua qto', ctx);
+  assert(synced.length === 2 && synced.includes('q1') && synced.includes('q2'), 'B7h: sync semua klik tombol konfirmasi → hanya item berharga yang tersinkron');
   assert(!synced.includes('q3'), 'B7i: sync semua → item tanpa harga tidak disinkron diam-diam');
-  assert(exec.message.includes('disinkronkan'), 'B7j: sync semua panggilan kedua → pesan sukses');
+  assert(exec.message.includes('disinkronkan'), 'B7j: sync semua klik tombol konfirmasi → pesan sukses');
   executeIntent('SYNC_QTO', 'semua qto', ctx);
   assert(synced.length === 2, 'B7k: sync semua panggilan ketiga → TIDAK menyinkron lagi');
 }
@@ -370,7 +388,7 @@ function baseCtx(): ChatActionContext {
   const reask = executeIntent('SYNC_QTO', 'semua qto', ctx);
   assert(synced.length === 0, 'B7l: item berharga baru sesudah tanya → TIDAK dieksekusi');
   assert(reask.message.includes('2 item'), 'B7m: item baru → tanya ulang dengan daftar segar');
-  executeIntent('SYNC_QTO', 'semua qto', ctx);
+  executeDirectConfirmation('SYNC_QTO', 'semua qto', ctx);
   assert(synced.length === 2, 'B7n: konfirmasi baru sesudah drift → menyinkron kedua item');
 }
 

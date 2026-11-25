@@ -417,6 +417,22 @@ export async function exportRABToProfessionalExcel(
     const hasZeroCostItems = normalizedSections.some((sec) => sec.items.some((it) => (it.volume || 0) <= 0 || (it.unitPrice || 0) <= 0));
     const scheduleCheck = UnifiedProjectEngine.validateScheduleReadiness(project, (project as any).scheduleTasks || []);
 
+    // Fast Track H-04: bobot WBS DIHITUNG dari total berharga tiap seksi
+    // terhadap Direct Cost — definisi bobot yang sama dengan kolom
+    // Bobot % sheet 03_Estimate_Summary (secTotal / directCost) — bukan
+    // literal '100.00%'. Bila tidak ada total berharga, jumlah bobot
+    // tidak dapat dihitung (TIDAK DIPERIKSA, bukan PASS palsu).
+    const wbsWeightSumPct = directCost > 0
+      ? (exportSummary.pricedTotal / directCost) * 100
+      : null;
+    const wbsWeightOk = wbsWeightSumPct != null && Math.abs(wbsWeightSumPct - 100) <= 0.01;
+
+    // Fast Track H-04: dua baris dihapus dari array di bawah karena tidak
+    // pernah diukur — 'Konsistensi Grand Total (Excel/PDF)' (ekspor Excel
+    // tidak pernah menghasilkan/membandingkan PDF) dan 'Integritas
+    // Formula Matematika' (tidak ada formula yang dievaluasi). Baris
+    // 'Kelompok Pekerjaan (WBS)' kini mencatat apa yang benar-benar
+    // diperiksa (jumlah divisi), bukan klaim standar Permen PUPR.
     const validationParams = [
       {
         param: 'Kelengkapan Item Pekerjaan (RAB)',
@@ -428,7 +444,7 @@ export async function exportRABToProfessionalExcel(
         param: 'Kelompok Pekerjaan (WBS)',
         status: normalizedSections.length > 0 ? 'PASS' : 'ERROR',
         val: `${normalizedSections.length} Divisi WBS`,
-        notes: 'Hierarki WBS terstandar Permen PUPR.',
+        notes: 'Jumlah divisi WBS terdaftar; kesesuaian kode terhadap Permen PUPR tidak diperiksa.',
       },
       {
         param: 'Integritas Volume & Harga Satuan',
@@ -442,27 +458,17 @@ export async function exportRABToProfessionalExcel(
       },
       {
         param: 'Total Akumulasi Bobot WBS',
-        status: 'PASS',
-        val: '100.00%',
-        notes: 'Formula bobot terikat konsisten terhadap Direct Cost.',
-      },
-      {
-        param: 'Konsistensi Grand Total (Excel/PDF)',
-        status: 'PASS',
-        val: noPricedTotal ? 'HARGA BELUM TERSEDIA' : `Rp ${grandTotal.toLocaleString('id-ID')}`,
-        notes: 'Dihitung via UnifiedProjectEngine dengan presisi 1:1.',
+        status: wbsWeightSumPct == null ? 'TIDAK DIPERIKSA' : (wbsWeightOk ? 'PASS' : 'WARNING'),
+        val: wbsWeightSumPct == null ? 'Tidak dapat dihitung' : `${wbsWeightSumPct.toFixed(2)}%`,
+        notes: wbsWeightSumPct == null
+          ? 'Tidak ada total berharga sebagai pembagi bobot.'
+          : 'Jumlah bobot seksi dihitung dari total berharga tiap seksi terhadap Direct Cost.',
       },
       {
         param: 'Kesiapan Data Jadwal & Kurva-S',
         status: scheduleCheck.isReady ? 'PASS' : 'DATA INCOMPLETE',
         val: scheduleCheck.isReady ? 'Jadwal Siap & Lengkap' : 'Jadwal Belum Dikonfigurasi',
         notes: scheduleCheck.isReady ? 'Durasi dan minggu pelaksanaan valid.' : (scheduleCheck.reason || 'Lengkapi jadwal di menu Manajemen Proyek.'),
-      },
-      {
-        param: 'Integritas Formula Matematika',
-        status: 'PASS',
-        val: '0 Formula Errors',
-        notes: 'Seluruh formula aktif dilindungi IFERROR defensive check.',
       },
     ];
 
@@ -1300,6 +1306,25 @@ export async function exportRABToProfessionalExcel(
     wsMc0.getCell('A3').value = `Nomor Dokumen: MC-0 (Baseline Fisik 0%) • Proyek: ${project.name} • Lokasi: ${project.location || 'Belum diisi'} • Rev: ${project.currentVersion || 'Rev 00'}`;
     wsMc0.getCell('A3').font = FONT_HIERARCHY.DOC_SUBTITLE;
 
+    // Fast Track H-03: tidak ada rekam pengukuran MC-0 eksplisit di
+    // codebase — satu-satunya catatan verifikasi nyata adalah
+    // verificationStatus VERIFIED + verificationDate (predikat yang sama
+    // dengan hasResolvedPriceEvidence di universalRab: stempel aksi
+    // verifikasi eksplisit, bukan sekadar adanya angka). Bila tidak ada
+    // satu pun item yang membawa catatan itu, sheet menyatakan jujur
+    // bahwa volumenya diambil dari RAB, bukan dari pengukuran lapangan.
+    const mc0HasVerificationRecord = normalizedSections.some((sec) =>
+      sec.items.some(
+        (itm) => (itm as any).verificationStatus === 'VERIFIED' && !!(itm as any).verificationDate
+      )
+    );
+    if (!mc0HasVerificationRecord) {
+      wsMc0.mergeCells('A4:I4');
+      wsMc0.getCell('A4').value =
+        'Catatan: volume pada sheet ini diambil dari RAB, bukan dari hasil pengukuran lapangan bersama.';
+      wsMc0.getCell('A4').font = FONT_HIERARCHY.BODY_MUTED;
+    }
+
     const mc0Head = wsMc0.getRow(5);
     mc0Head.values = ['NO', 'KODE', 'URAIAN PEKERJAAN', 'VOLUME MC-0', 'SAT', 'LOKASI / AREA', 'REFERENSI GAMBAR', 'CATATAN PENGUKURAN', 'STATUS'];
     mc0Head.height = 24;
@@ -1330,14 +1355,19 @@ export async function exportRABToProfessionalExcel(
         r.getCell(4).value = itm.volume || 0;
         r.getCell(4).numFmt = NUMBER_FORMATS.QUANTITY;
         r.getCell(5).value = itm.unit;
-        r.getCell(6).value = (itm as any).location || 'Seluruh Area Bangunan';
-        r.getCell(7).value = (itm as any).drawingRef || `DWG-${sec.code}-${idx + 1}`;
-        r.getCell(8).value = itm.notes || 'Hasil Pengukuran Joint Survey MC-0';
-        // Phase 2I.2: status verifikasi dihitung dari data aktual, bukan hardcode 100%.
-        // Hanya "Terverifikasi" bila volume terukur valid dan harga tersedia.
-        const volOk = Number(itm.volume) > 0;
-        const priceOk = itm.unitPrice != null && (itm as any).priceStatus !== 'PRICE_UNRESOLVED';
-        r.getCell(9).value = volOk && priceOk ? 'Terverifikasi' : 'Belum Terverifikasi';
+        // Fast Track H-03: tanpa bukti pengukuran, lokasi / referensi /
+        // catatan TIDAK BOLEH dikarang — 'Seluruh Area Bangunan',
+        // 'DWG-…' sintetis, dan 'Hasil Pengukuran Joint Survey MC-0'
+        // adalah fabrikasi bukti kontraktual. Status 'Terverifikasi'
+        // hanya untuk item dengan catatan verifikasi nyata (VERIFIED +
+        // verificationDate); volume > 0 + harga tersedia BUKAN bukti
+        // verifikasi.
+        r.getCell(6).value = (itm as any).location || 'Tidak tersedia';
+        r.getCell(7).value = (itm as any).drawingRef || 'Tidak tersedia';
+        r.getCell(8).value = itm.notes || 'Tidak tersedia';
+        const hasVerificationRecord =
+          (itm as any).verificationStatus === 'VERIFIED' && !!(itm as any).verificationDate;
+        r.getCell(9).value = hasVerificationRecord ? 'Terverifikasi' : 'Belum Terverifikasi';
 
         for (let c = 1; c <= 9; c++) {
           r.getCell(c).border = { bottom: BORDER_THIN_LIGHT };
@@ -1539,13 +1569,21 @@ export async function exportRABToProfessionalExcel(
       r.getCell(1).value = idx + 1;
       r.getCell(2).value = mat.code || `MAT-${idx + 1}`;
       r.getCell(3).value = mat.name;
-      r.getCell(4).value = mat.specification || 'Standar SNI';
+      // Continuation §5-C: fallback lama mengarang provenance — 'Standar
+      // SNI' (tanpa spesifikasi tercatat), 'Jabodetabek' (tanpa lokasi),
+      // 'Distributor Resmi' (tanpa sumber), dan TANGGAL HARI INI (tanpa
+      // tanggal) — ketiganya terakhir menembak 100% baris karena ekspor
+      // membaca field `source`/`date` yang TIDAK ADA di tipe PriceItem
+      // (field sebenarnya: `supplier`/`priceSource`/`lastUpdated`).
+      // Kini: baca field yang benar; tanpa data = 'Tidak tersedia' /
+      // 'Belum diisi', bukan klaim.
+      r.getCell(4).value = mat.specification || 'Tidak tersedia';
       r.getCell(5).value = mat.unit;
       r.getCell(6).value = mat.price || 0;
       r.getCell(6).numFmt = NUMBER_FORMATS.CURRENCY;
-      r.getCell(7).value = mat.location || project.location || 'Jabodetabek';
-      r.getCell(8).value = mat.source || 'Distributor Resmi';
-      r.getCell(9).value = mat.date || new Date().toISOString().substring(0, 10);
+      r.getCell(7).value = mat.location || project.location || 'Belum diisi';
+      r.getCell(8).value = mat.supplier || mat.priceSource || 'Tidak tersedia';
+      r.getCell(9).value = mat.lastUpdated || 'Tidak tersedia';
 
       for (let c = 1; c <= 9; c++) {
         r.getCell(c).border = { bottom: BORDER_THIN_LIGHT };
@@ -1604,7 +1642,11 @@ export async function exportRABToProfessionalExcel(
       r.getCell(5).value = lab.price || 0;
       r.getCell(5).numFmt = NUMBER_FORMATS.CURRENCY;
       r.getCell(6).value = lab.location || project.location || 'Belum diisi';
-      r.getCell(7).value = lab.source || 'SK Gubernur / SHST 2026';
+      // Continuation §5-C: fallback lama 'SK Gubernur / SHST 2026'
+      // mengarang sumber keputusan gubernur untuk SEMUA baris (ekspor
+      // membaca field `source` yang tidak ada di PriceItem; field
+      // sebenarnya `priceSource`, mis. 'Standar SHBJ / Permen PUPR 2026').
+      r.getCell(7).value = lab.priceSource || 'Tidak tersedia';
 
       for (let c = 1; c <= 7; c++) {
         r.getCell(c).border = { bottom: BORDER_THIN_LIGHT };
@@ -1663,7 +1705,10 @@ export async function exportRABToProfessionalExcel(
       r.getCell(5).value = eq.price || 0;
       r.getCell(5).numFmt = NUMBER_FORMATS.CURRENCY;
       r.getCell(6).value = eq.location || project.location || 'Belum diisi';
-      r.getCell(7).value = eq.source || 'Vendor Rental';
+      // Continuation §5-C: fallback lama 'Vendor Rental' mengarang sumber
+      // untuk SEMUA baris (field `source` tidak ada di PriceItem; yang
+      // benar `priceSource`, mis. 'Tarif Sewa Alat Konstruksi 2026').
+      r.getCell(7).value = eq.priceSource || 'Tidak tersedia';
 
       for (let c = 1; c <= 7; c++) {
         r.getCell(c).border = { bottom: BORDER_THIN_LIGHT };
@@ -2307,11 +2352,20 @@ export const exportProjectToExcel = exportRABToProfessionalExcel;
  * Diekstrak sebagai fungsi murni agar dapat diuji unit.
  *
  * Aturan:
+ * - PRICE_UNRESOLVED → "HARGA BELUM TERSEDIA" — dicek PERTAMA, sebelum
+ *   cabang kind apa pun (Continuation §5-C): item tanpa harga TIDAK
+ *   PERNAH dilabeli OFFICIAL_AHSP / REFERENSI PASAR / ASUMSI. Kombinasi
+ *   status UNRESOLVED + kind OFFICIAL_AHSP dapat diproduksi factory
+ *   (kode AHSP kanonis-SAFE tetapi resolusi harga gagal) — sebelumnya
+ *   cabang OFFICIAL_AHSP mendahului dan menampilkan kode/'RESMI AHSP'.
  * - PRICE_MANUAL → "INPUT MANUAL" (jangan tampilkan seolah harga resmi AHSP).
  * - OFFICIAL_AHSP + jejak UNIT_CONVERTED → tambah penanda konversi ringkas
  *   namun dapat diaudit (satuan & harga sumber, satuan hasil, faktor, dasar).
  * - OFFICIAL_AHSP tanpa konversi → tampil seperti sebelumnya (tanpa penanda).
- * - PRICE_UNRESOLVED → "HARGA BELUM TERSEDIA".
+ * - Kind UNRESOLVED TANPA status UNRESOLVED bukan berarti tanpa harga
+ *   (factory menurunkannya dari klaim OFFICIAL_AHSP yang identitasnya
+ *   tidak aman, sementara harganya sendiri bisa teresolusi) — jadi tidak
+ *   lagi memaksa teks "HARGA BELUM TERSEDIA"; jatuh ke label legacy.
  */
 function buildExcelSourceTextBase(itm: {
   priceStatus?: string;
@@ -2331,6 +2385,12 @@ function buildExcelSourceTextBase(itm: {
   const srcKind = itm.priceSourceKind;
   const srcLabel = itm.priceSourceLabel;
   const srcExpl = itm.priceSourceExplanation;
+  // Continuation §5-C: status UNRESOLVED mengalahkan SEMUA label kind —
+  // item tanpa harga tidak pernah tampil sebagai sumber resmi/pasar/asumsi.
+  // Kode AHSP tetap terlihat sebagai konteks sesudah penanda (bukan klaim).
+  if (isPriceUnresolved) {
+    return 'HARGA BELUM TERSEDIA — ' + (itm.volumeSource || itm.ahspCode || 'MANUAL');
+  }
   if (isManualPrice) {
     // Harga dioverride pengguna — jangan tampilkan seolah harga resmi AHSP.
     return `INPUT MANUAL${srcExpl ? ' — ' + srcExpl : ''}`;
@@ -2352,9 +2412,11 @@ function buildExcelSourceTextBase(itm: {
     const trail = extractConversionTrail(srcExpl);
     return trail ? `${base} — KONVERSI SATUAN: ${trail}` : base;
   }
-  if (isPriceUnresolved || srcKind === 'UNRESOLVED') {
-    return 'HARGA BELUM TERSEDIA — ' + (itm.volumeSource || itm.ahspCode || 'MANUAL');
-  }
+  // Continuation §5-C: cabang lama `srcKind === 'UNRESOLVED'` dihapus —
+  // kind UNRESOLVED tanpa status UNRESOLVED berarti klaim sumber ditolak
+  // factory (identitas AHSP tidak aman), BUKAN berarti item tanpa harga;
+  // memaksa teks HARGA BELUM TERSEDIA di sini membuat item BERHARGA
+  // tampil seolah tanpa harga. Jatuh ke label legacy di bawah.
   // legacy: no source kind recorded
   return srcLabel || itm.volumeSource || itm.ahspCode || 'MANUAL';
 }

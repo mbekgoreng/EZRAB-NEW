@@ -6,11 +6,18 @@
  *
  * Never fabricates: intents return structured results; actions are executed
  * by the registry, not by string templating.
+ *
+ * NAVIGASI SLASH-ONLY (keputusan owner, directive P1 §4.1 / OD-1,
+ * 2026-11-24): navigasi chat HANYA lewat perintah slash (SLASH_COMMANDS
+ * di bawah). Pola bahasa alami OPEN_* ("buka ahsp", "tampilkan qto")
+ * DIHAPUS — frasa seperti itu kini jatuh UNKNOWN ke AI. Intent OPEN_*
+ * tetap ada sebagai TARGET slash dan sebagai intent yang dieksekusi
+ * registry; yang dihapus hanya pemicu bahasa alaminya.
  */
-import { isGameCommand } from '../../game-space/command';
 import { isGameQuestion } from '../../game-space/catalog';
 import { evaluateCalculation } from './calcIntent';
 import { detectClarifyTopic } from './clarifyTopics';
+import { hasNavNegation } from './navRegistry';
 // Pola perintah deterministik kelompok 1–5 (2026-11-17, gap P2–P8 + P12
 // audit perintah): pola hidup di modul ./commands/* (satu sumber
 // kebenaran dengan yang dites) dan di-spread ke PATTERNS di bawah.
@@ -155,6 +162,54 @@ interface Pattern {
   paramGroup?: boolean;
   /** false = intent flows to AI instead of local execution (default true) */
   localOnly?: boolean;
+  /**
+   * Penjaga tambahan sesudah regex cocok (param sudah dibersihkan):
+   * false = pola dianggap tidak cocok, pencocokan lanjut ke pola
+   * berikutnya. Dipakai catch-all SEARCH_AHSP (W-A-02).
+   */
+  guard?: (param: string | undefined, input: string, match: RegExpMatchArray) => boolean;
+}
+
+/* ------------------------------------------------------------------ */
+/* W-A-02: penjaga catch-all SEARCH_AHSP (directive P1 §4.1).         */
+/* Catch-all "ahsp <kata>" HANYA pencarian bila (a) kata kuncinya     */
+/* memuat token konten (bukan stopword saja — "Open the AHSP page"    */
+/* dan "Explain the /ahsp command" harus jatuh ke AI, bukan mencari   */
+/* "page"/"command"), DAN (b) tidak ada verba navigasi sebelum        */
+/* "ahsp" ("buka ahsp beton" adalah permintaan buka → AI, bukan       */
+/* pencarian). Pola ber-verba-pencari eksplisit (cari/search/carikan) */
+/* TIDAK dipagari — verba itu sendiri adalah niat mencari.            */
+/* ------------------------------------------------------------------ */
+
+/** Kata yang sendirian bukan kata kunci pencarian (fungsi + penanda halaman/perintah). */
+const AHSP_SEARCH_STOPWORDS = new Set([
+  'page', 'command', 'the', 'a', 'an', 'is', 'are', 'was', 'were', 'it', 'its',
+  'this', 'that', 'what', 'how', 'why', 'when', 'where', 'of', 'to', 'in', 'on',
+  'for', 'and', 'or', 'me', 'please', 'about', 'mean', 'means', 'meaning',
+  'explain', 'open', 'show',
+  'halaman', 'perintah', 'itu', 'apa', 'yang', 'di', 'ke', 'dari', 'dan', 'atau',
+  'ini', 'adalah', 'saya', 'tolong', 'tentang', 'arti', 'maksud', 'maksudnya',
+  'artinya', 'bagaimana', 'kenapa', 'mengapa', 'kapan', 'dimana', 'menu', 'katalog',
+]);
+
+const NAV_VERB_RE =
+  /\b(buka|bukain|bukakan|tampilkan|tampilin|tunjukin|tunjukkan|lihat|liatin|pergi ke|masuk ke|pindah ke|antarkan ke|bawa ke|open|show|go to)\b/;
+
+/** True bila kata kunci memuat ≥1 token konten alfanumerik (panjang ≥ 2). */
+function hasSearchContentKeyword(keyword: string | undefined): boolean {
+  if (!keyword) return false;
+  return keyword
+    .toLowerCase()
+    .split(/[\s,;]+/)
+    .map((t) => t.replace(/^[^a-z0-9]+|[^a-z0-9]+$/g, ''))
+    .some((t) => t.length >= 2 && /[a-z0-9]/.test(t) && !AHSP_SEARCH_STOPWORDS.has(t));
+}
+
+/** Penjaga catch-all SEARCH_AHSP: tolak verba navigasi sebelum target + kata kunci stopword-only. */
+function searchAhspCatchAllGuard(param: string | undefined, input: string, match: RegExpMatchArray): boolean {
+  const before = input.slice(0, match.index ?? 0);
+  if (NAV_VERB_RE.test(before)) return false;
+  return hasSearchContentKeyword(param);
 }
 
 const PATTERNS: Pattern[] = [
@@ -226,8 +281,9 @@ const PATTERNS: Pattern[] = [
   { intent: 'UNDO_LAST', re: /\b(?:batalkan|urungkan)\b(?:\s+(?:perubahan|operasi|tindakan))?(?:\s+(?:terakhir|yang terakhir|tadi|barusan))?\s*$/ },
   // DED & AI Document (2026-11-17, kelompok 3): sesudah blok mutasi dan
   // SEBELUM GREETING/HELP — pola HELP menelan "tolong jalankan/ringkas
-  // …" bila blok ini di bawahnya. Tidak beririsan dengan OPEN_DED_ESTIMATE
-  // / OPEN_AI_DOCUMENTS (mereka menuntut verba buka/tampilkan).
+  // …" bila blok ini di bawahnya. (Pola navigasi NL OPEN_DED_ESTIMATE /
+  // OPEN_AI_DOCUMENTS sudah dihapus directive P1 §4.1 — "buka ded ai"
+  // kini jatuh UNKNOWN ke AI, bukan navigasi.)
   ...(DED_DOC_PATTERNS as unknown as Pattern[]),
   // Greeting — must come before others to avoid false positives.
   // Jangkar ^...$ dipertahankan (sapaan + perintah kerja dalam satu pesan
@@ -276,28 +332,22 @@ const PATTERNS: Pattern[] = [
   { intent: 'KURVA_S', re: /\b(kurva|curva)\s*s\b.*\b(bisa|dibuat|dibikin|dibangun)\b/i },
   { intent: 'KURVA_S', re: /^\s*(kurva|curva)\s*s\s*\??\s*$/i },
 
-  // Navigation — require explicit navigation verbs to avoid aggressive matching
-  // (includes informal variants: bukain, tampilin, liatin)
-  { intent: 'OPEN_TEMPLATE', re: /\b(buka|bukain|bukakan|tampilkan|tampilin|lihat|liatin|ke)\b.*\btemplate\b.*\brab\b|\btemplate\b.*\brab\b.*\b(buka|tampilkan|lihat)\b/ },
-  // "lihat template" tanpa kata "rab" tetap navigasi katalog (audit routing
-  // 2026-10-23). Kata "template" telanjang tetap CLARIFY_TOPIC karena
-  // deteksi klarifikasi berjalan sebelum pola.
-  { intent: 'OPEN_TEMPLATE', re: /\b(buka|bukain|bukakan|tampilkan|tampilin|lihat|liatin|ke)\b.*\btemplate\b/ },
-  // "Gunakan/pakai template RAB" = permintaan eksplisit memakai template
-  // (skenario J master prompt Conversational Intelligence 2026-11-10) —
-  // kata kerja PENGGUNAAN, bukan navigasi: tetap menuju alur template
-  // (OPEN_TEMPLATE membuka katalog template), bukan menu generik dan
-  // bukan klarifikasi topik.
-  { intent: 'OPEN_TEMPLATE', re: /\b(gunakan|pakai|memakai|menggunakan|pilih)\b.*\btemplate\b/ },
-  // Penjaga laporan: "lihat laporan proyek" adalah LAPORAN, bukan daftar
-  // proyek — tanpa lookahead ini pola proyek yang rakus (.*proyek) menelan
-  // frasa laporan lebih dulu (audit routing 2026-10-23).
-  { intent: 'OPEN_PROJECTS', re: /\b(buka|bukain|tampilkan|tampilin|lihat|liatin|daftar)\b(?!.*\b(laporan|report)\b).*\bproyek\b/ },
-  // Perintah proyek (2026-11-17, kelompok 1): SEBELUM OPEN_PROJECT_CREATE
-  // — "buat proyek Rumah Baru" cocok dengan keduanya (mengandung "baru")
-  // dan nama yang disebut harus menang (membuat proyek, bukan navigasi).
+  // Navigasi bahasa alami DIHAPUS (directive P1 §4.1 / OD-1, 2026-11-24):
+  // pola OPEN_TEMPLATE / OPEN_PROJECTS / OPEN_PROJECT_CREATE / OPEN_RAB /
+  // OPEN_QTO / OPEN_AHSP / OPEN_REPORTS / OPEN_AI_DOCUMENTS /
+  // OPEN_DED_ESTIMATE / OPEN_SETTINGS / OPEN_SPREADSHEET / OPEN_DASHBOARD
+  // yang menuntut verba buka/tampilkan/lihat SUDAH TIDAK ADA — "buka
+  // ahsp", "tampilkan database AHSP", "buat proyek baru" kini jatuh
+  // UNKNOWN ke AI. Navigasi hanya lewat SLASH_COMMANDS di atas
+  // ("/ahsp", "/rab", "/dashboard", ...). "daftar proyek" TANPA verba
+  // buka tetap dijawab deterministik sebagai QUERY_PROJECT_LIST di bawah
+  // (jawaban daftar, bukan navigasi). "gunakan/pakai template" ikut
+  // terhapus: handler-nya menavigasi ke katalog, jadi di bawah §4.1 ia
+  // harus lewat "/template" atau dijawab AI.
+  // Perintah proyek (2026-11-17, kelompok 1) — "buat proyek Rumah Baru"
+  // mengandung "baru" dan nama yang disebut harus menang (membuat
+  // proyek, bukan navigasi).
   ...(PROJECT_PATTERNS as unknown as Pattern[]),
-  { intent: 'OPEN_PROJECT_CREATE', re: /\b(buat|bikin|tambah).*\bproyek\b.*\bbaru\b/ },
   // Ganti nama proyek (2026-11-17): perintah deterministik lokal —
   // sebelumnya jatuh UNKNOWN ke LLM, yang lalu mengklaim rename berhasil
   // tanpa tool apa pun. Urutan: pola "menjadi/jadi/ke" dulu (nama = grup
@@ -312,16 +362,6 @@ const PATTERNS: Pattern[] = [
   { intent: 'RENAME_PROJECT', re: /\brename\b.*\bproject\b.*\bto\b\s+(.+)/, paramGroup: true },
   { intent: 'RENAME_PROJECT', re: /\b(?:ubah|ubahin|ganti|gantiin|rubah|rename)\b.*\bnama\b.*\bproyek\b\s*$/ },
   { intent: 'RENAME_PROJECT', re: /\b(?:ubah|ubahin|ganti|gantiin|rubah|rename)\b.*\bnama\b.*\bproyek\b.*\b(?:menjadi|jadi|ke)\s*$/ },
-  { intent: 'OPEN_RAB', re: /\b(buka|bukain|tampilkan|tampilin|lihat|liatin)\b.*\brab\b/ },
-  { intent: 'OPEN_QTO', re: /\b(buka|bukain|tampilkan|tampilin)\b.*\bqto\b/ },
-  { intent: 'OPEN_AHSP', re: /\b(buka|bukain|tampilkan|tampilin|lihat|liatin)\b.*\bahsp\b/ },
-  { intent: 'OPEN_REPORTS', re: /\b(buka|bukain|tampilkan|tampilin|lihat|liatin)\b.*\b(laporan|report)\b/ },
-  { intent: 'OPEN_AI_DOCUMENTS', re: /\b(buka|bukain|tampilkan|tampilin)\b.*\b(dokumen|document)\b/ },
-  { intent: 'OPEN_DED_ESTIMATE', re: /\b(buka|bukain|tampilkan|tampilin)\b.*\bded\b/ },
-  // "buka pengaturan" sebelumnya tanpa pola natural (hanya slash /pengaturan)
-  // -> UNKNOWN. Guard (?!\s+rab) menjaga "pengaturan rab" tidak salah masuk
-  // pengaturan global (audit routing 2026-10-23).
-  { intent: 'OPEN_SETTINGS', re: /\b(buka|bukain|bukakan|tampilkan|tampilin|lihat|liatin|ke)\b.*\b(pengaturan|setting|settings)\b(?!\s+rab\b)/ },
   // RAB Full AI lewat TEKS (W6, §6 Universal Construction Intelligence):
   // sebelumnya RAB_FULL_AI hanya tercapai lewat klik tombol — frasa
   // "full ai" dari pengguna jatuh UNKNOWN ke LLM. Pola ini HARUS sebelum
@@ -443,8 +483,6 @@ const PATTERNS: Pattern[] = [
   // ini HARUS tetap setelahnya. \brab\b tidak menangkap "rabat beton".
   { intent: 'CREATE_RAB_CLARIFY', re: /\b(buatkan|buatin|bikinkan|bikin|buat|susun|susunkan|generate|mau buat|ingin buat|pengen buat)\b.*\brab\b/ },
   { intent: 'CREATE_RAB_CLARIFY', re: /^\s*rab\s+baru\s*$/ },
-  { intent: 'OPEN_SPREADSHEET', re: /\b(buka|bukain|tampilkan|tampilin)\b.*\bspreadsheet\b/ },
-  { intent: 'OPEN_DASHBOARD', re: /\b(buka|kembali|ke)\b.*\bdashboard\b/ },
 
   // Remediasi Batch 1 (2026-10-28): pertanyaan konseptual / metodologi /
   // how-to HARUS sebelum pola SEARCH_AHSP yang rakus — kata "ahsp" di
@@ -471,13 +509,13 @@ const PATTERNS: Pattern[] = [
 
   // Queries with params — trigger words are non-capturing so m[1] is always the keyword
   { intent: 'SEARCH_AHSP', re: /\b(?:cari|search|carikan)\b.*\bahsp\b\s+(.+)/, paramGroup: true },
-  { intent: 'SEARCH_AHSP', re: /\bahsp\b\s+(.+)/, paramGroup: true },
+  { intent: 'SEARCH_AHSP', re: /\bahsp\b\s+(.+)/, paramGroup: true, guard: searchAhspCatchAllGuard },
   // "cari harga satuan beton k225" adalah pencarian AHSP yang sama, hanya
   // tanpa kata "ahsp" — sebelumnya UNKNOWN (audit routing 2026-10-23).
   // Bentuk telanjang "cari harga satuan" tetap tertangkap pola klarifikasi
   // SEARCH_AHSP di atas (tanpa kata kunci) karena \s+(.+) tidak cocok.
   { intent: 'SEARCH_AHSP', re: /\b(?:cari|search|carikan)\b.*\bharga satuan\b\s+(.+)/, paramGroup: true },
-  { intent: 'SEARCH_AHSP', re: /\bharga satuan\b\s+(.+)/, paramGroup: true },
+  { intent: 'SEARCH_AHSP', re: /\bharga satuan\b\s+(.+)/, paramGroup: true, guard: searchAhspCatchAllGuard },
   // Item termahal/termurah — deterministik dari snapshot RAB (tanpa AI).
   // Cakup varian: "material paling mahal", "item termahal", "pekerjaan terbesar biayanya", dll.
   // Ditempatkan SEBELUM QUERY_PROJECT_TOTAL agar "berapa material termahal proyek" tidak tersedot ke total.
@@ -516,13 +554,13 @@ export function routeIntent(rawInput: string): IntentResult {
     };
   }
 
-  // 2. Game Space command — deterministic, runs fully local (no AI call, no credits)
-  if (isGameCommand(rawInput)) {
-    return { intent: 'OPEN_GAME_SPACE', confidence: 0.95, needsClarification: false, localOnly: true };
-  }
-
-  // 2a. Pertanyaan TENTANG game ("game apa saja?", "ada game apa?",
+  // 2. Pertanyaan TENTANG game ("game apa saja?", "ada game apa?",
   // "game bongkar rumah tentang apa?") — BUKAN perintah membuka panel.
+  // (Perintah NL game — "buka game", "main game" — DIHAPUS directive
+  // Fast Track §7 / P1-17: navigasi Game Space hanya lewat slash /game
+  // (langkah 1 di atas); frasa NL jatuh UNKNOWN ke AI seperti navigasi
+  // NL lainnya. Penjaga negasi W-A-01 ikut terhapus bersama cabangnya —
+  // hasNavNegation tetap dipakai loop pola langkah 3 di bawah.)
   // Dijawab deterministik dari katalog nyata (game-space/catalog.ts):
   // perintah owner 2026-11-01 — chat wajib menjawab ADA + menjelaskan
   // semua game dan isinya, bukan "tidak tahu" dari model yang memang
@@ -579,6 +617,11 @@ export function routeIntent(rawInput: string): IntentResult {
   for (const p of PATTERNS) {
     if (fictionFramed && RAB_CREATE_INTENTS.has(p.intent)) continue;
     if (bulkMutationFramed && MUTATION_INTENTS.has(p.intent)) continue;
+    // W-A-01 (directive P1 §4.1): penolakan tidak pernah menavigasi.
+    // Defense-in-depth — pola OPEN_* bahasa alami sudah dihapus, jadi
+    // saat ini tidak ada pola OPEN_* yang bisa tertangkap di sini; pagar
+    // ini menjaga pola navigasi yang ditambahkan di masa depan.
+    if (hasNavNegation(input) && p.intent.startsWith('OPEN_')) continue;
     const m = input.match(p.re);
     if (m) {
       // Param diambil dari teks ASLI (rawInput) dengan pola yang sama
@@ -602,6 +645,9 @@ export function routeIntent(rawInput: string): IntentResult {
           param = cleanAhspKeyword(param) || undefined;
         }
       }
+      // Penjaga pola (W-A-02): regex cocok tapi penjaga menolak → pola
+      // dianggap tidak cocok, lanjut ke pola berikutnya.
+      if (p.guard && !p.guard(param, input, m)) continue;
       // SEARCH_AHSP without keyword needs clarification
       if (p.intent === 'SEARCH_AHSP' && !param) {
         return {
@@ -770,4 +816,4 @@ ubah volume/harga [item] jadi … · hapus item … · tambah item … · undo
 ⚙️ Pengaturan proyek: ubah overhead/profit/PPN/PPh jadi …% (contoh: "PPN 11%")
 📤 Draft & harga proyek: "transfer draft ke spreadsheet" · "ubah harga [material] jadi … untuk proyek ini" · "ganti paket ke Pro"
 
-💬 Atau tulis natural, contoh: "buka template rab", "berapa total proyek saya?"`;
+💬 Navigasi pakai slash (contoh: "/template"); atau tanya natural, contoh: "berapa total proyek saya?"`;

@@ -389,7 +389,17 @@ async function runDedRabProjectIntegrationTests() {
 
   const costSummary = UnifiedProjectEngine.recalculateCostSummary(officialRabItems);
   assert(costSummary.directCost === 15892480, 'Direct cost correctly calculated via UnifiedProjectEngine');
-  assert(costSummary.grandTotal > costSummary.directCost, 'Grand total correctly incorporates overhead and tax');
+  // FTC (2026-11-24): asersi lama `grandTotal > directCost` pada
+  // panggilan TANPA summary sudah usang — default owner 2026-11-08
+  // adalah overhead 0% / profit 0% + PPN opt-in (nonaktif bila tidak
+  // diberikan), sehingga grandTotal == directCost dan tes ini gagal di
+  // HEAD (pre-existing, bukan regresi). Perilaku/default TIDAK diubah;
+  // penggabungan overhead+pajak kini diuji pada panggilan dengan
+  // konfigurasi eksplisit — sesuai nama tesnya.
+  const costSummaryConfigured = UnifiedProjectEngine.recalculateCostSummary(officialRabItems, {
+    overheadPercent: 10, profitPercent: 5, ppnEnabled: true, taxPercent: 11,
+  });
+  assert(costSummaryConfigured.grandTotal > costSummary.directCost, 'Grand total correctly incorporates overhead and tax');
 
   // --- 6. Navigation Resilience & Project Isolation ---
   console.log('\n--- 6. Testing Navigation Resilience & Project Isolation ---');

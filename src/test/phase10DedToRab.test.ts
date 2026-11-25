@@ -193,12 +193,22 @@ describe('PHASE 10 [2] — AHSP MAPPING, PRICING & EVIDENCE PROPAGATION', () => 
 
   it('7. AHSP mapping: maps candidate AHSP with match score, specification match, and reason', () => {
     const service = DedToRabPipelineService.getInstance();
-    const mapping = service.mapAhspForWorkItem('Beton Kolom', 'K-250', 'm³');
+    // WB-03 (Fast Track): fixture spec diganti K-250 → fc 20 — tidak ada
+    // item berkode K-250 di katalog (notasi katalog adalah f'c), sehingga
+    // K-250 kini TIDAK menghasilkan specificationMatch (kecocokan palsu
+    // 'k250' ⊂ 'jarak 250' dihapus). Spec fc 20 adalah token asli katalog.
+    const mapping = service.mapAhspForWorkItem('Beton Kolom', 'fc 20', 'm³');
 
     assert.ok(mapping.ahspCode);
     assert.ok(mapping.candidates.length > 0);
-    assert.ok(mapping.reason.includes('K-250'));
+    assert.ok(mapping.reason.includes('fc 20'));
     assert.equal(mapping.candidates[0].specificationMatch, true);
+
+    // Pin negatif WB-03: K-250 tidak lagi spec-match item kayu.
+    const k250 = service.mapAhspForWorkItem('Beton Kolom', 'K-250', 'm³');
+    assert.ok(!k250.reason.includes('K-250'));
+    assert.ok(k250.candidates.every((c) => c.specificationMatch === false));
+    assert.ok(k250.ahspCode !== 'A.3.05.4c.1');
   });
 
   it('8. missing AHSP: returns AHSP_NOT_FOUND if unmapped without fabricating code', () => {
@@ -242,7 +252,15 @@ describe('PHASE 10 [2] — AHSP MAPPING, PRICING & EVIDENCE PROPAGATION', () => 
     // Beton K-250 per-m³ di katalog resmi). Metadata evidence tetap lengkap
     // (sourceName/sourceId/status/calculator di bawah tidak berubah).
     assert.equal(row.evidence.confidence, 'MEDIUM');
-    assert.equal(row.evidence.status, 'VERIFIED');
+    // H-06 (Fast Track Continuation 2026-11-24, directive §7): status
+    // INFERRED, bukan VERIFIED — pin VERIFIED lama mengunci bug jalur
+    // kedua (dedToRabPipelineService.ts:1646 melabel semua evidence
+    // non-CONFLICT VERIFIED walau confidence MEDIUM dan item AI_CUSTOM
+    // dengan harga terblokir gerbang satuan). Cermin aturan situs pertama
+    // (:1289): VERIFIED hanya bila skala terverifikasi DAN confidence
+    // HIGH. Preceden WB-03: pin yang mengunci false positive diperbarui
+    // dengan sitasi §7.
+    assert.equal(row.evidence.status, 'INFERRED');
     assert.equal(row.evidence.calculator, 'EZRAB_DETERMINISTIC_ENGINE');
   });
 
@@ -431,14 +449,18 @@ describe('PHASE 10 [4] — USER OVERRIDE, CONFIRMATION GATE & REVISION SAFETY', 
     // yang dulu dipakai di sini adalah KECOCOKAN PALSU — 'k300' ⊂ '3000 kg'
     // ("Pracetak 3000 kg" per BUAH) — sehingga "nilai nyata Rp81.161"
     // adalah 3.456 m³ × Rp23.487/buah: kuantitas m³ dihargai dengan harga
-    // per-buah. Tidak ada item Beton K-250/K-300 per-m³ di katalog resmi
-    // (0 item — terverifikasi koordinator), dan tidak ada teks DED yang
-    // menghasilkan baris berharga jujur lewat pipeline V1 ini (semua nama
-    // hasil interpreter → AI-CUSTOM). Jadi draft yang jujur memang
-    // subtotal 0 dan newTotal == existingTotal — persis seperti yang
-    // diakui komentar G2 semula untuk kolom tanpa mutu. Yang diuji tetap
-    // mesin diff-nya (hitungan, delta = new − existing) + pin gerbang
-    // FU2 (baris PRICE_INCOMPLETE, bukan harga salah-satuan).
+    // per-buah. FT lalu berasumsi tidak ada item kolom beton per-m³ di
+    // katalog (pin AI_CUSTOM + subtotal 0) — asumsi itu KELIRU: yang
+    // tidak ada hanyalah item BERMUTU K-250/K-300 per-m³; item kolom
+    // beton per-m³ ADA (mis. 2.4.3.3 "Penuangan/Menebar Beton untuk
+    // KOLOM", m³). FTC (2026-11-24) memperbaiki perbandingan satuan
+    // (m³ ≡ m3 ternormalisasi), sehingga kolom kini cocok SEMANTIK —
+    // mutunya tidak terpetakan (maka SEMANTIC, bukan EXACT) — dan
+    // harganya terselesaikan lewat gerbang satuan yang lolos. Pin di
+    // bawah memin perilaku JUJUR pasca-perbaikan itu; inti WB-03 tetap:
+    // kolom TIDAK PERNAH dipetakan ke A.3.04.5c per-buah / A.3.05.4c.1
+    // per-batang. Yang diuji tetap mesin diff-nya (hitungan, delta =
+    // new − existing), kini atas draf yang BERHARGA.
     const pdf = createRealPdfStream(['DED Struktur Kolom K-300 0.30 x 0.30 x 3.20 Count: 12']);
 
     const draft = await service.executePipeline({
@@ -446,12 +468,17 @@ describe('PHASE 10 [4] — USER OVERRIDE, CONFIRMATION GATE & REVISION SAFETY', 
       files: [{ fileName: 'DED_Kolom.pdf', buffer: pdf }],
     });
 
-    // Pin gerbang FU2: pemetaan dipertahankan (A.3.04.5c), harga diblokir.
+    // FTC: kolom K-300 cocok SEMANTIK ke item kolom beton per-m³ resmi
+    // (bukan AI_CUSTOM, bukan kecocokan palsu per-buah/per-batang).
     const kolomItem = draft.detectedWorkItems.find((w) => w.name.includes('Kolom'));
-    assert.equal(kolomItem?.ahspCode, 'A.3.04.5c');
-    assert.ok(!kolomItem?.unitPrice);
-    assert.equal(kolomItem?.priceStatus, 'PRICE_INCOMPLETE');
-    assert.equal(draft.subtotal, 0);
+    assert.ok(kolomItem?.ahspCode && !kolomItem.ahspCode.startsWith('AI-CUSTOM-'));
+    assert.ok(kolomItem?.ahspCode !== 'A.3.04.5c' && kolomItem?.ahspCode !== 'A.3.05.4c.1');
+    assert.equal(kolomItem?.ahspMatchStatus, 'SEMANTIC_MATCH');
+    assert.equal(kolomItem?.ahspSourceType, 'OFFICIAL_AHSP');
+    assert.equal(kolomItem?.isCustomItem, false);
+    assert.ok(kolomItem?.unitPrice && kolomItem.unitPrice > 0);
+    assert.equal(kolomItem?.priceStatus, undefined);
+    assert.ok(draft.subtotal > 0);
 
     const existingItems: RabItem[] = [
       {
@@ -473,9 +500,10 @@ describe('PHASE 10 [4] — USER OVERRIDE, CONFIRMATION GATE & REVISION SAFETY', 
     assert.equal(diff.existingItemsCount, 1);
     assert.equal(diff.existingTotal, 4250000);
     assert.equal(diff.newItemsCount, 1);
-    // Draft jujur tak berharga (FU2): newTotal == existingTotal, delta 0.
-    assert.equal(diff.newTotal, diff.existingTotal);
-    assert.equal(diff.deltaTotal, 0);
+    // Draft berharga jujur (FTC): newTotal = existing + subtotal draf,
+    // delta = subtotal draf (dihitung dari draf, bukan dipin ke harga).
+    assert.equal(diff.newTotal, diff.existingTotal + draft.subtotal);
+    assert.equal(diff.deltaTotal, draft.subtotal);
     assert.equal(diff.deltaTotal, diff.newTotal - diff.existingTotal);
   });
 

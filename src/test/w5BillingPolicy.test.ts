@@ -23,7 +23,7 @@
 // DocAnalyzer, featureGate) — BUKAN sebaliknya.
 //
 // Jalankan dari root repo: npx --yes tsx src/test/w5BillingPolicy.test.ts
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   PLAN_DEFINITIONS,
@@ -158,10 +158,8 @@ check('PricingBlocks bullet Starter tanpa "Dokumen AI"',
 const pricingSrc = read('src/components/landing/PricingSection.tsx');
 check('PricingSection fitur Starter tanpa "Dokumen AI"',
   !pricingSrc.includes('RAB AI, Chat AI & Dokumen AI (terbatas)'));
-const exactSrc = read('src/components/landing/exact/ExactPricing.tsx');
-check('ExactPricing: "AI Documents" hanya muncul mulai Professional (selaras)',
-  exactSrc.indexOf('professional:') !== -1
-  && exactSrc.indexOf("'AI Documents'") > exactSrc.indexOf('professional:'));
+check('ExactPricing.tsx terhapus (keputusan owner 2026-11-24)',
+  !existsSync(join(process.cwd(), 'src/components/landing/exact/ExactPricing.tsx')));
 
 console.log('=== [C] Badge kredit DocCreator (pola DocAnalyzer) ===');
 const creatorSrc = read('src/ai-tools/document-ai/components/DocCreator.tsx');

@@ -48,8 +48,8 @@ describe('TRANSFER_DRAFT: routing', () => {
     expect(routeIntent('kirim draft ke spreadsheet').intent).toBe('TRANSFER_DRAFT');
   });
 
-  it('B2-7. tidak membajak navigasi: "buka spreadsheet" → OPEN_SPREADSHEET', () => {
-    expect(routeIntent('buka spreadsheet').intent).toBe('OPEN_SPREADSHEET');
+  it('B2-7. tidak membajak navigasi: "buka spreadsheet" → UNKNOWN ke AI (§4.1 slash-only; dulu OPEN_SPREADSHEET)', () => {
+    expect(routeIntent('buka spreadsheet').intent).toBe('UNKNOWN');
   });
 
   it('B2-8. tidak membajak pembuatan RAB: "buatkan rab jalan hotmix 1 km" → CREATE_RAB_SUMMARY', () => {

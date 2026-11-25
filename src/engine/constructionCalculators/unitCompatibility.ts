@@ -62,9 +62,20 @@ export function normalizeUnitName(unit: string | null | undefined): string {
   if (u === "m'" || u === 'm1' || u === 'mlari' || u === 'meter') u = 'm';
   if (u === 'meterkubik') u = 'm³';
   if (u === 'meterpersegi') u = 'm²';
+  // WB-02 (Fast Track 2026-11-24): bentuk panjang Bina Marga — "Meter
+  // Panjang" (157 item) adalah meter linear, "Kilogram" (24 item) adalah
+  // kg. Tanpa ini keduanya UNIT_UNKNOWN dan memblokir 181 item BM di
+  // gerbang FU2 (false positive). "Meter lari" = meter linear juga
+  // (padanan panjang dari 'mlari' yang sudah dipetakan).
+  if (u === 'meterpanjang' || u === 'meterlari') u = 'm';
+  if (u === 'kilogram') u = 'kg';
   if (u === 'ltr' || u === 'litre' || u === 'litres') u = 'liter';
   if (u === 'lbr') u = 'lembar';
   if (u === 'bh') u = 'buah';
+  // Singkatan baku Indonesia: "btg" = batang (sekelas 'bh'/'lbr').
+  if (u === 'btg') u = 'batang';
+  // "Lumsum"/"Lumpsum" (ejaan lump sum) = satuan 'ls' yang sama.
+  if (u === 'lumsum' || u === 'lumpsum') u = 'ls';
   // Varian ejaan satuan kemasan yang sama: "zak" (ejaan Belanda, dipakai
   // MASTER_PRICE_ITEMS SM-*) = "sak". Bukan konversi — satuan yang sama.
   if (u === 'zak') u = 'sak';

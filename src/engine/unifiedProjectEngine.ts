@@ -298,7 +298,16 @@ export class UnifiedProjectEngine {
           equipmentPrice: Number(it.equipmentPrice) || 0,
           unitPrice: Number(it.unitPrice) || 0,
           totalPrice: Number(it.amount || it.totalPrice) || (Number(it.volume) * Number(it.unitPrice)) || 0,
-          verificationStatus: it.verificationStatus || 'VERIFIED',
+          // Fast Track H-08 (directive §7 — never fabricate verification
+          // status): cerminkan aturan default factory — harga manual /
+          // estimasi / belum terurai BUKAN harga terverifikasi, jadi item
+          // warisan tanpa status eksplisit tidak lagi naik kelas menjadi
+          // VERIFIED di seksi ekspor. PRICE_RESOLVED tanpa status tetap
+          // default VERIFIED (keputusan owner, sama seperti factory).
+          verificationStatus: it.verificationStatus ||
+            ((it as any).priceStatus === 'PRICE_MANUAL' || (it as any).priceStatus === 'PRICE_ESTIMATED' || (it as any).priceStatus === 'PRICE_UNRESOLVED'
+              ? 'NEEDS_VERIFICATION'
+              : 'VERIFIED'),
           // P0 ekspor 2026-10-26: status & provenance HARUS diteruskan —
           // sebelumnya mapping ini membuang priceStatus/priceSourceKind,
           // sehingga sheet ekspor/PDF yang menerima seksi rekonstruksi
@@ -352,6 +361,16 @@ export class UnifiedProjectEngine {
           ...((it as any).wbsNodeId ? { wbsNodeId: (it as any).wbsNodeId } : {}),
           ...((it as any).wbsMappingStatus ? { wbsMappingStatus: (it as any).wbsMappingStatus } : {}),
           ...((it as any).wbsSuggestedNodeId ? { wbsSuggestedNodeId: (it as any).wbsSuggestedNodeId } : {}),
+          // W-EXPORT2 (Continuation §5-C): lokasi area + referensi gambar
+          // diteruskan ke seksi ekspor — sebelumnya dibuang di sini
+          // padahal sheet 07_BOQ_MC0 membacanya ((itm as any).location /
+          // drawingRef), sehingga item rekonstruksi selalu tampil 'Tidak
+          // tersedia' walau record sumber membawanya. Tanpa nilai = field
+          // absen (tidak ada default karangan). Batas yang sama dengan
+          // S4/S6: seksi TERSIMPAN dikembalikan apa adanya (early return
+          // di atas) tanpa pemetaan ini.
+          ...((it as any).location ? { location: (it as any).location } : {}),
+          ...((it as any).drawingRef ? { drawingRef: (it as any).drawingRef } : {}),
         })),
       });
       secIdx++;

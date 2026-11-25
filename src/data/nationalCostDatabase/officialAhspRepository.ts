@@ -68,18 +68,59 @@ function normCode(code: unknown): string {
   return String(code ?? '').toLowerCase().trim();
 }
 
+/**
+ * WB-05 (Fast Track 2026-11-24): kata kueri yang BUKAN identitas
+ * pekerjaan — cermin STOPWORDS chatSearch.ts (hanya kata yang bisa
+ * lolos saringan panjang kata > 2 di searchOfficialAhsp). Kata-kata
+ * ini tidak pernah menjadi bukti kecocokan nyata.
+ */
+const SEARCH_STOPWORDS = new Set([
+  'harga', 'harganya', 'berapa', 'berapakah', 'apa', 'itu', 'ini',
+  'adalah', 'untuk', 'dari', 'dengan', 'pada', 'dalam', 'bagaimana',
+  'gimana', 'mohon', 'tolong', 'saya', 'mau', 'cari', 'carikan',
+  'search', 'ahsp', 'kode', 'pekerjaan', 'pemasangan', 'pembuatan',
+  'pasang', 'buatkan', 'satuan', 'jika', 'kalau', 'apabila', 'tidak',
+  'ada', 'tersedia', 'ditemukan', 'sebuah', 'satu', 'dong', 'kah',
+  'sih', 'aja', 'saja', 'yang', 'dan', 'atau', 'per', 'campuran',
+  'cocok', 'sesuai', 'tepat', 'bagus', 'benar', 'baik', 'ideal',
+]);
+
+/** WB-05: token satuan bukan identitas pekerjaan (cermin UNIT_TOKENS chatSearch.ts). */
+const SEARCH_UNIT_TOKENS = new Set(['m2', 'm3', 'kg', "m'", 'buah', 'unit', 'titik', 'ls', 'm']);
+
+/** WB-06: kata berbentuk kode AHSP (3.7.4, B.38, 2.3.(21a), 1.000). */
+function isCodeWord(w: string): boolean {
+  return /^[\da-z]+(\.[\da-z()]+)+$/i.test(w);
+}
+
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 class OfficialAhspRepositoryImpl {
   private readonly items: NationalAHSPItem[];
   /** code.toLowerCase() → item */
   private readonly byCode: Map<string, NationalAHSPItem>;
+  /**
+   * WB-04 (Fast Track 2026-11-24): standardCode.toLowerCase() → item.
+   * Bina Marga memakai dua skema kode: kode huruf (B.38) sebagai `code`
+   * dan kode parenthesized (2.3.(21a)) sebagai `standardCode`. Tanpa
+   * indeks ini, 1.134 dari 1.137 kode parenthesized salah dilaporkan
+   * NOT_FOUND. First-wins seperti byCode (2 standardCode dipakai
+   * bersama, keduanya merujuk item yang sama esensinya).
+   */
+  private readonly byStandardCode: Map<string, NationalAHSPItem>;
 
   constructor() {
     // Single backing store — the canonical array itself, never duplicated.
     this.items = ALL_OFFICIAL_AHSP_ITEMS;
     this.byCode = new Map();
+    this.byStandardCode = new Map();
     for (const it of this.items) {
       const key = normCode(it.code);
       if (key && !this.byCode.has(key)) this.byCode.set(key, it);
+      const std = normCode(it.standardCode);
+      if (std && !this.byStandardCode.has(std)) this.byStandardCode.set(std, it);
     }
   }
 
@@ -100,29 +141,39 @@ class OfficialAhspRepositoryImpl {
   }
 
   /**
-   * Exact code lookup. Resolves aliases first (Phase 2E), then looks up.
-   * Returns undefined when the code is absent from the official catalog.
-   * Quarantined codes return undefined (use getQuarantineRecord for audit).
+   * Exact code lookup. Resolves aliases first (Phase 2E), then looks up
+   * by `code`, then by `standardCode` (WB-04: kode parenthesized Bina
+   * Marga, mis. '2.3.(21a)' → B.38). Returns undefined when the code is
+   * absent from the official catalog. Quarantined codes return undefined
+   * (use getQuarantineRecord for audit); the §14 gate is applied to the
+   * RESOLVED item (karantina dicek pada kode huruf item itu).
    */
   public getOfficialAhsp(code: string): NationalAHSPItem | undefined {
     if (!code) return undefined;
     const resolved = resolveCodeAlias(code);
     if (isQuarantined(resolved)) return undefined;
-    const item = this.byCode.get(normCode(resolved));
+    const item =
+      this.byCode.get(normCode(resolved)) ??
+      this.byStandardCode.get(normCode(resolved));
+    if (!item) return undefined;
+    if (isQuarantined(item.code)) return undefined;
     // Phase 2E: apply PDF-verified description corrections overlay.
-    return item ? applyCorrections(item) : undefined;
+    return applyCorrections(item);
   }
 
   /**
    * THE GATE (§14). True iff `code` exists in the official catalog.
-   * Aliases resolve to their canonical code. Quarantined codes return false.
-   * Every MATCHED result in the matcher must satisfy this.
+   * Aliases resolve to their canonical code; parenthesized Bina Marga
+   * codes resolve via `standardCode` (WB-04). Quarantined codes return
+   * false. Every MATCHED result in the matcher must satisfy this.
    */
   public hasOfficialAhsp(code: string): boolean {
     if (!code) return false;
     const resolved = resolveCodeAlias(code);
     if (isQuarantined(resolved)) return false;
-    return this.byCode.has(normCode(resolved));
+    if (this.byCode.has(normCode(resolved))) return true;
+    const viaStd = this.byStandardCode.get(normCode(resolved));
+    return !!viaStd && !isQuarantined(viaStd.code);
   }
 
   /** Official item count (diagnostics / assertions). */
@@ -133,6 +184,16 @@ class OfficialAhspRepositoryImpl {
   /**
    * Text search over the official catalog ONLY (§4, §6). Returns ranked candidates;
    * never auto-selects. Callers must apply their own spec/unit guards and review.
+   *
+   * WB-05 (Fast Track 2026-11-24): relevance floor, ported from the
+   * searchChatAhsp discipline — an item is returned ONLY if at least
+   * one query CONTENT term (non-stopword, non-unit) really matches it:
+   * whole-word in the title, or an anchored code match. Zero-real-match
+   * queries (e.g. 'harga ACP per m2' — 'harga'/'per' stopwords, 'acp'
+   * in no title) return []. This also stops the +25 building-domain
+   * bonus from deciding ties among zero-real-match items. Scoring
+   * steps (+10/+5/+40/+100) are UNCHANGED — canonicalDedPricing's
+   * SCORE_FLOOR/Gate-C calibration depends on them.
    */
   public searchOfficialAhsp(
     query: string,
@@ -150,6 +211,22 @@ class OfficialAhspRepositoryImpl {
     const isDemolitionQuery = /bongkar|pembongkaran|bongkaran/.test(q);
     const preferBuilding = opts.preferBuildingDomain !== false;
 
+    // WB-05: tanpa satu pun istilah konten, tidak ada kecocokan nyata
+    // yang mungkin (mis. "harga per m2" — semua kata stopword/satuan).
+    const contentTerms = words.filter(
+      (w) => !SEARCH_STOPWORDS.has(w) && !SEARCH_UNIT_TOKENS.has(w)
+    );
+    if (contentTerms.length === 0) return [];
+    // Pola batas kata per istilah konten (dikompilasi sekali, bukan
+    // per item): "per" tidak cocok dengan "persiapan".
+    const contentChecks = contentTerms.map((term) => ({
+      term,
+      isCode: isCodeWord(term),
+      re: isCodeWord(term)
+        ? null
+        : new RegExp(`(^|[^a-z0-9])${escapeRegExp(term)}([^a-z0-9]|$)`, 'i'),
+    }));
+
     const scored: Array<{ item: NationalAHSPItem; score: number }> = [];
     for (const it of this.items) {
       // Phase 2E: quarantined items never appear as search candidates.
@@ -160,20 +237,49 @@ class OfficialAhspRepositoryImpl {
       if (isDemolitionItem && !isDemolitionQuery) continue; // Never propose demolition for new work
 
       const itemUnit = String(it.unit || '').toLowerCase();
-      const hay = `${normCode(it.code)} ${title} ${itemUnit} ${String((it as any).category || '').toLowerCase()}`;
+      const code = normCode(it.code);
+      const stdCode = normCode((it as NationalAHSPItem).standardCode);
+      // WB-05: kategori DIKELUARKAN dari haystack — "per" cocok dengan
+      // teks kategori ("Persiapan", "Perkerasan") dan memberi skor palsu.
+      const hay = `${code} ${title} ${itemUnit}`;
+      // WB-06: pencocokan kode berjangkar — kode sama persis, awalan
+      // bertitik (3.7 ⊏ 3.7.4), atau standardCode sama persis.
+      // '3.7.4' TIDAK LAGI cocok dengan '4.1.3.7.4' (substring).
+      const codeMatches = (w: string): boolean =>
+        code === w || code.startsWith(`${w}.`) || (stdCode !== '' && stdCode === w);
       let score = 0;
       if (title === q) score += 100;
       for (const w of words) {
-        if (hay.includes(w)) score += 10;
+        if (isCodeWord(w)) {
+          if (codeMatches(w)) score += 10;
+        } else if (hay.includes(w)) {
+          score += 10;
+        }
       }
       // Also match raw query words (covers alias codes typed by user).
       for (const w of rawWords) {
-        if (w !== q && hay.includes(w)) score += 5;
+        if (w === q) continue;
+        if (isCodeWord(w)) {
+          if (codeMatches(w)) score += 5;
+        } else if (hay.includes(w)) {
+          score += 5;
+        }
       }
       // Whole-query substring is a strong signal.
       if (title.includes(q)) score += 40;
 
-      if (score > 0) {
+      // WB-05: gerbang relevansi — minimal satu istilah konten harus
+      // cocok NYATA (kata utuh pada judul, atau kode berjangkar).
+      let realMatch = title === q;
+      if (!realMatch) {
+        for (const c of contentChecks) {
+          if (c.isCode ? codeMatches(c.term) : c.re!.test(title)) {
+            realMatch = true;
+            break;
+          }
+        }
+      }
+      if (score > 0 && realMatch) {
         // Prioritize building domain (CIPTA_KARYA) for residential & building projects
         if (preferBuilding && it.domain === 'CIPTA_KARYA') {
           score += 25;

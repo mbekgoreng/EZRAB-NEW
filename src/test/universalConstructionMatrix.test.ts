@@ -71,6 +71,7 @@ import {
 import { selectQuestionnaireQuestions } from '../ai-tools/ezrab-ai/questionnaire';
 import {
   executeIntent,
+  executeDirectConfirmation,
   tryContinueUniversalContext,
   getUniversalContextState,
   clearUniversalContext,
@@ -78,6 +79,7 @@ import {
   clearPendingRabChoice,
   clearPendingDirectConfirmations,
 } from '../ai-tools/ezrab-ai/actionRegistry';
+import { setAssistantOperationContext } from '../ai-tools/ezrab-ai/operations';
 import type { ChatActionContext } from '../ai-tools/ezrab-ai/actionRegistry';
 import { routeIntent } from '../ai-tools/ezrab-ai/intentRouter';
 import { matchDedItemToAhsp } from '../ai-tools/ded-canonical/canonicalDedPricing';
@@ -999,6 +1001,11 @@ async function main(): Promise<void> {
         !checkDirectPushApprovalBinding(null, direct, 'p1', 1_000_000).ok);
     }
     // (b) 6 perintah langsung: panggilan pertama HANYA bertanya.
+    // P1-B/P1-C (direktif owner 2026-11-24): seksi ini berjalan sebagai
+    // Estimator (gerbang kapabilitas) dan eksekusi ke-2 memakai KLIK
+    // TOMBOL konfirmasi (executeDirectConfirmation) — kirim-ulang teks
+    // TIDAK PERNAH mengeksekusi (D6 O-5).
+    setAssistantOperationContext({ actor: 'Penguji', writesEnabled: true });
     const PROJECTS = [
       { id: 'p1', name: 'Rumah Demo' },
       { id: 'p2', name: 'Gedung Sekolah' },
@@ -1020,8 +1027,8 @@ async function main(): Promise<void> {
       check('13.22i rename ke-1 → callback TIDAK dipanggil', calls.length === 0);
       check('13.22j rename ke-1 → bertanya + tombol konfirmasi',
         ask.ok && (ask.actions?.length ?? 0) === 1 && ask.actions![0].label === 'Ubah nama proyek menjadi Rumah Impian');
-      executeIntent('RENAME_PROJECT', 'Rumah Impian', ctx);
-      check('13.22k rename ke-2 → callback tepat sekali', calls.length === 1 && calls[0].name === 'Rumah Impian');
+      executeDirectConfirmation('RENAME_PROJECT', 'Rumah Impian', ctx);
+      check('13.22k rename klik tombol konfirmasi → callback tepat sekali', calls.length === 1 && calls[0].name === 'Rumah Impian');
       executeIntent('RENAME_PROJECT', 'Rumah Impian', ctx);
       check('13.22l rename ke-3 → TIDAK mengeksekusi lagi (idempotensi)', calls.length === 1);
     }
@@ -1034,8 +1041,8 @@ async function main(): Promise<void> {
       const ask = executeIntent('CREATE_PROJECT', 'Rumah Impian', ctx);
       check('13.22m buat proyek ke-1 → TIDAK membuat', created.length === 0);
       check('13.22n buat proyek ke-1 → tombol konfirmasi', ask.actions?.[0]?.label === 'Buat proyek Rumah Impian');
-      executeIntent('CREATE_PROJECT', 'Rumah Impian', ctx);
-      check('13.22o buat proyek ke-2 → membuat tepat sekali', created.length === 1);
+      executeDirectConfirmation('CREATE_PROJECT', 'Rumah Impian', ctx);
+      check('13.22o buat proyek klik tombol konfirmasi → membuat tepat sekali', created.length === 1);
       executeIntent('CREATE_PROJECT', 'Rumah Impian', ctx);
       check('13.22p buat proyek ke-3 → TIDAK membuat lagi', created.length === 1);
     }
@@ -1048,8 +1055,8 @@ async function main(): Promise<void> {
       const ask = executeIntent('ARCHIVE_PROJECT', 'ini', ctx);
       check('13.22q arsip ke-1 → TIDAK mengarsipkan', archived.length === 0);
       check('13.22r arsip ke-1 → tombol konfirmasi bernamakan target', ask.actions?.[0]?.label === 'Arsipkan proyek Rumah Demo');
-      executeIntent('ARCHIVE_PROJECT', 'ini', ctx);
-      check('13.22s arsip ke-2 → mengarsipkan tepat sekali', archived.length === 1 && archived[0] === 'p1');
+      executeDirectConfirmation('ARCHIVE_PROJECT', 'ini', ctx);
+      check('13.22s arsip klik tombol konfirmasi → mengarsipkan tepat sekali', archived.length === 1 && archived[0] === 'p1');
       executeIntent('ARCHIVE_PROJECT', 'ini', ctx);
       check('13.22t arsip ke-3 → TIDAK mengarsipkan lagi', archived.length === 1);
     }
@@ -1062,8 +1069,8 @@ async function main(): Promise<void> {
       const ask = executeIntent('DUPLICATE_PROJECT', 'ini', ctx);
       check('13.22u duplikat ke-1 → TIDAK menduplikat', duped.length === 0);
       check('13.22v duplikat ke-1 → tombol konfirmasi', ask.actions?.[0]?.label === 'Duplikat proyek Rumah Demo');
-      executeIntent('DUPLICATE_PROJECT', 'ini', ctx);
-      check('13.22w duplikat ke-2 → menduplikat tepat sekali', duped.length === 1);
+      executeDirectConfirmation('DUPLICATE_PROJECT', 'ini', ctx);
+      check('13.22w duplikat klik tombol konfirmasi → menduplikat tepat sekali', duped.length === 1);
       executeIntent('DUPLICATE_PROJECT', 'ini', ctx);
       check('13.22x duplikat ke-3 → TIDAK menduplikat lagi', duped.length === 1);
     }
@@ -1082,8 +1089,8 @@ async function main(): Promise<void> {
       check('13.22y settings ke-1 → TIDAK diterapkan', applyCount === 0 && seenPatch === null);
       check('13.22z settings ke-1 → pratinjau perubahan + tombol konfirmasi',
         ask.message.includes('Overhead') && ask.actions?.[0]?.label === 'Ubah Overhead jadi 10%');
-      executeIntent('UPDATE_PROJECT_SETTINGS', 'overhead jadi 10%', ctx);
-      check('13.22aa settings ke-2 → diterapkan tepat sekali, patch hanya field yang disebut',
+      executeDirectConfirmation('UPDATE_PROJECT_SETTINGS', 'overhead jadi 10%', ctx);
+      check('13.22aa settings klik tombol konfirmasi → diterapkan tepat sekali, patch hanya field yang disebut',
         applyCount === 1 && seenPatch !== null && (seenPatch as Record<string, unknown>).overheadPercent === 10);
       executeIntent('UPDATE_PROJECT_SETTINGS', 'overhead jadi 10%', ctx);
       check('13.22ab settings ke-3 → TIDAK diterapkan lagi', applyCount === 1);
@@ -1097,8 +1104,8 @@ async function main(): Promise<void> {
       const ask = executeIntent('CREATE_QTO_ITEM', 'galian tanah 10 m3', ctx);
       check('13.22ac buat QTO ke-1 → TIDAK membuat item', created.length === 0);
       check('13.22ad buat QTO ke-1 → tombol konfirmasi', ask.actions?.[0]?.label === 'Buat item QTO galian tanah 10 m3');
-      executeIntent('CREATE_QTO_ITEM', 'galian tanah 10 m3', ctx);
-      check('13.22ae buat QTO ke-2 → membuat tepat sekali', created.length === 1 && created[0].uraian === 'galian tanah');
+      executeDirectConfirmation('CREATE_QTO_ITEM', 'galian tanah 10 m3', ctx);
+      check('13.22ae buat QTO klik tombol konfirmasi → membuat tepat sekali', created.length === 1 && created[0].uraian === 'galian tanah');
       executeIntent('CREATE_QTO_ITEM', 'galian tanah 10 m3', ctx);
       check('13.22af buat QTO ke-3 → TIDAK membuat lagi', created.length === 1);
     }
@@ -1113,8 +1120,8 @@ async function main(): Promise<void> {
       const ask = executeIntent('SYNC_QTO', 'galian ke rab', ctx);
       check('13.22ag sync QTO ke-1 → TIDAK menyinkron', synced.length === 0);
       check('13.22ah sync QTO ke-1 → tombol konfirmasi', ask.actions?.[0]?.label === 'Sinkronkan QTO galian tanah ke RAB');
-      executeIntent('SYNC_QTO', 'galian ke rab', ctx);
-      check('13.22ai sync QTO ke-2 → menyinkron tepat sekali', synced.length === 1 && synced[0] === 'q1');
+      executeDirectConfirmation('SYNC_QTO', 'galian ke rab', ctx);
+      check('13.22ai sync QTO klik tombol konfirmasi → menyinkron tepat sekali', synced.length === 1 && synced[0] === 'q1');
       executeIntent('SYNC_QTO', 'galian ke rab', ctx);
       check('13.22aj sync QTO ke-3 → TIDAK menyinkron lagi', synced.length === 1);
     }

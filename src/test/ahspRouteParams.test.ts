@@ -40,29 +40,30 @@ describe('F-05: parameter URL /app/ahsp', () => {
 });
 
 describe('F-06: kata kunci navigasi AHSP', () => {
-  it('"buka ahsp beton" → direct + ahspQuery beton', () => {
-    const r = resolveNavCommand('buka ahsp beton');
-    expect(r.mode).toBe('direct');
-    if (r.mode === 'direct') {
-      expect(r.entry.id).toBe('ahsp');
-      expect(r.ahspQuery).toBe('beton');
-    }
+  // §4.1 (directive P1 2026-11-24 / OD-1): navigasi bahasa alami DIHAPUS —
+  // "buka ahsp ..." kini 'none' (sampai ke AI), bukan direct + q. Jalur q
+  // dari bahasa alami ikut terhapus bersama cabang eksplisitnya; aturan
+  // scrubbing W-A-03 hidup di extractAhspResidual() dan dipin suite
+  // p1NavSlashOnly. Yang dipertahankan: slash /ahsp (tanpa q) dan slash
+  // tengah-pesan "tolong buka /ahsp" (direct, tanpa q sampah).
+  it('"buka ahsp beton" → none (bahasa alami tidak menavigasi) (§4.1)', () => {
+    expect(resolveNavCommand('buka ahsp beton').mode).toBe('none');
   });
 
-  it('"buka ahsp" → direct tanpa query', () => {
-    const r = resolveNavCommand('buka ahsp');
+  it('"buka ahsp" → none (§4.1)', () => {
+    expect(resolveNavCommand('buka ahsp').mode).toBe('none');
+  });
+
+  it('"buka katalog ahsp 2026 beton bertulang" → none (§4.1)', () => {
+    expect(resolveNavCommand('buka katalog ahsp 2026 beton bertulang').mode).toBe('none');
+  });
+
+  it('"tolong buka /ahsp" → direct tanpa query (W-A-03: tanpa q "tolong /")', () => {
+    const r = resolveNavCommand('tolong buka /ahsp');
     expect(r.mode).toBe('direct');
     if (r.mode === 'direct') {
       expect(r.entry.id).toBe('ahsp');
       expect(r.ahspQuery).toBeUndefined();
-    }
-  });
-
-  it('"buka katalog ahsp 2026 beton bertulang" → beton bertulang (tahun edisi dibuang)', () => {
-    const r = resolveNavCommand('buka katalog ahsp 2026 beton bertulang');
-    expect(r.mode).toBe('direct');
-    if (r.mode === 'direct') {
-      expect(r.ahspQuery).toBe('beton bertulang');
     }
   });
 

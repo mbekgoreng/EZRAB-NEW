@@ -56,13 +56,19 @@ console.log('=== 10. How-to Excel: langkah terverifikasi mendahului kartu naviga
   check('teks HOWTO menyebut RAB proyek aktif', HOWTO_EXCEL_EXPORT_TEXT.includes('proyek yang sedang aktif'));
 }
 
-console.log('=== Preseden navigasi asli tetap utuh ===');
+console.log('=== Preseden navigasi asli tetap utuh (§4.1: NL tidak menavigasi) ===');
 {
+  // §4.1 (directive P1 2026-11-24 / OD-1): navigasi bahasa alami DIHAPUS —
+  // "bagaimana cara membuka RAB" dan "buka RAB" kini 'none' (sampai ke AI
+  // sebagai percakapan biasa), bukan suggest/direct. Perubahan perilaku
+  // yang disengaja, bukan pelemahan. Navigasi hanya lewat perintah slash
+  // — kontrol positif /rab di bawah.
   const open = resolveNavCommand('bagaimana cara membuka RAB');
-  check('cara membuka RAB -> tetap suggest', open.mode === 'suggest', open.mode);
-  check('cara membuka RAB -> entry RAB & Estimasi', (open as any).entry?.id === 'rab-estimasi');
+  check('cara membuka RAB -> none ke AI (§4.1)', open.mode === 'none', open.mode);
   const direct = resolveNavCommand('buka RAB');
-  check('buka RAB -> tetap direct', direct.mode === 'direct', direct.mode);
+  check('buka RAB -> none ke AI (§4.1)', direct.mode === 'none', direct.mode);
+  const slash = resolveNavCommand('/rab');
+  check('slash /rab -> tetap direct', slash.mode === 'direct', slash.mode);
   const q1 = routeIntent('Kode AHSP plesteran dinding campuran 1:4 dan berapa harganya per m2?');
   check('Q1 -> tetap SEARCH_AHSP + param utuh', q1.intent === 'SEARCH_AHSP' && (q1.param ?? '').startsWith('plesteran dinding'), `${q1.intent} / ${q1.param}`);
   const q2 = routeIntent('Berapa harga AHSP 2026 pekerjaan beton K-225 per m3?');

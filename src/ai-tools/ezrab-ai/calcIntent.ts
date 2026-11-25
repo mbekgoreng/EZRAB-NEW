@@ -15,7 +15,15 @@
  * Pertanyaan konseptual (B10/B13/B15 — "mengapa…", "apa yang harus
  * dilakukan…", "apakah boleh…") tidak memuat hitungan konkret sehingga
  * tidak tertangkap di sini dan tetap diteruskan ke AI.
+ *
+ * WB-01 (audit §3.4): pertanyaan pembelian MULTI-BARIS (N baris qty ×
+ * harga satuan, diskon opsional) dijawab HANYA oleh tryMultiLineDiscount,
+ * yang berjalan SEBELUM tryPercent. tryPercent adalah alat persen satu
+ * nilai dan MENOLAK bila ada >1 nilai uang atau kuantitas ber-satuan.
+ * Semua aritmetika uang lewat SafeDecimalEngine (bukan float).
  */
+
+import { SafeDecimalEngine } from '../../engine/safeDecimalEngine';
 
 export interface CalcResult {
   /** Pesan jawaban lengkap (Bahasa Indonesia, angka format id-ID). */
@@ -133,6 +141,21 @@ function rejectNegative(what: string): CalcResult {
 /* Sub-parser per pola hitungan                                        */
 /* ------------------------------------------------------------------ */
 
+/**
+ * Satuan kuantitas yang dikenali parser subtotal/multi-baris. WB-01
+ * menambahkan sak|zak|dus|pail|kaleng (sudah dikenal unitCompatibility).
+ * Urutan penting: bentuk ber-aksen (m²/m³) sebelum 'm' agar tidak
+ * terpotong; 'm' terakhir di kelompok panjang.
+ */
+const QTY_UNITS = 'm²|m2|m³|m3|m|bh|buah|unit|ls|kg|lembar|batang|set|sak|zak|dus|pail|kaleng';
+
+/** WB-01: benar bila teks memuat kuantitas ber-satuan ("100 sak", "20 m²"). */
+const QTY_RE = new RegExp(String.raw`(${NUM})\s*(${QTY_UNITS})(?![a-z])`);
+
+function hasQuantity(t: string): boolean {
+  return QTY_RE.test(t);
+}
+
 /** (f) Konversi satuan: mm/cm/m/km dan m³↔liter. */
 function tryConversion(t: string): CalcResult | null {
   if (!/(konversi|menjadi|ke satuan|dalam satuan)/.test(t)) return null;
@@ -175,11 +198,91 @@ function trySum(t: string): CalcResult | null {
   if (!/(jumlahkan|totalkan|jumlah dari|total dari)/.test(t)) return null;
   const money = extractMoney(t);
   if (money.length < 2) return null;
-  const total = money.reduce((s, x) => s + x.value, 0);
+  const total = SafeDecimalEngine.safeAdd(...money.map((x) => x.value));
   return {
     message:
       `Jumlah = ${money.map((x) => fmtIDR(x.value)).join(' + ')}\n` +
       `= **${fmtIDR(total)}**`,
+  };
+}
+
+/**
+ * (e2) WB-01 — pembelian multi-baris: N baris `qty unit … Rp harga`
+ * dengan diskon X% opsional. Satu-satunya parser yang boleh menjawab
+ * pertanyaan multi-baris; berjalan SEBELUM tryPercent agar pertanyaan
+ * seperti "100 sak @ Rp65.000 + 50 sak @ Rp75.000, diskon 15%" tidak
+ * dijawab sebagai 15% dari satu harga satuan saja. Menangkap ≥2 baris,
+ * atau 1 baris bila ada diskon. Semua aritmetika lewat SafeDecimalEngine.
+ * Rata-rata per unit dihitung dari TOTAL AKHIR (setelah diskon) ÷ total
+ * kuantitas — itulah angka audit §3.4 (Rp 58.083,33/sak).
+ */
+function tryMultiLineDiscount(t: string): CalcResult | null {
+  if (/\bselisih\b/.test(t)) return null; // pertanyaan selisih → tryDifference
+  if (!/(total|jumlah|bayar|berapa|hitung|diskon|potongan)/.test(t)) return null;
+  const lineRe = new RegExp(
+    String.raw`(${NUM})\s*(${QTY_UNITS})(?![a-z]).{0,40}?rp\s*(${NUM})(?:\s*(juta|miliar|milyar|ribu))?`,
+    'g',
+  );
+  const lines: Array<{ qty: number; unit: string; price: number }> = [];
+  let m: RegExpExecArray | null;
+  while ((m = lineRe.exec(t)) !== null) {
+    const scale = m[4] ? SCALE[m[4]] : 1;
+    lines.push({
+      qty: parseIdNumber(m[1]),
+      unit: m[2],
+      price: SafeDecimalEngine.safeMultiply(parseIdNumber(m[3]), scale),
+    });
+  }
+  const discM = t.match(new RegExp(String.raw`(?:diskon|potongan)\s*(${NUM})\s*(%|persen)`));
+  const pct = discM ? parseIdNumber(discM[1]) : null;
+  if (lines.length < 2 && !(lines.length === 1 && pct !== null)) return null;
+  if (lines.some((l) => l.qty < 0 || l.price < 0) || (pct !== null && pct < 0)) {
+    return rejectNegative('kuantitas, harga satuan, atau persen diskon negatif');
+  }
+  if (pct !== null && pct > 100) {
+    return {
+      message:
+        'Hasil perhitungan **tidak valid** (diskon di atas 100%). Diskon tidak boleh melebihi 100% — ' +
+        'periksa kembali persen diskonnya. Nilai seperti ini tidak saya simpan atau tampilkan sebagai hasil yang sah.',
+    };
+  }
+  const subtotals = lines.map((l) => SafeDecimalEngine.safeMultiply(l.qty, l.price));
+  const gross = SafeDecimalEngine.safeAdd(...subtotals);
+  const totalQty = SafeDecimalEngine.safeAdd(...lines.map((l) => l.qty));
+  if (totalQty <= 0) return rejectNegative('total kuantitas tidak positif');
+  const discount = pct === null ? 0 : SafeDecimalEngine.safePercent(gross, pct);
+  const finalTotal = SafeDecimalEngine.safeSubtract(gross, discount);
+  const avg = SafeDecimalEngine.safeDivide(finalTotal, totalQty, 2);
+  const unitLabel = lines.every((l) => l.unit === lines[0].unit) ? lines[0].unit : 'unit';
+  const head =
+    pct !== null
+      ? `Perhitungan pembelian (${lines.length} baris, diskon ${fmtNum(pct)}%):`
+      : `Perhitungan pembelian (${lines.length} baris):`;
+  const body = lines
+    .map((l, i) => `• ${fmtNum(l.qty, 3)} ${l.unit} × ${fmtIDR(l.price)} = ${fmtIDR(subtotals[i])}`)
+    .join('\n');
+  const grossLine =
+    lines.length === 1
+      ? `Total kotor = ${fmtIDR(gross)}`
+      : `Total kotor = ${subtotals.map((s) => fmtIDR(s)).join(' + ')} = ${fmtIDR(gross)}`;
+  const avgLine =
+    pct !== null
+      ? `Rata-rata per ${unitLabel} (setelah diskon) = ${fmtIDR(finalTotal)} ÷ ${fmtNum(totalQty, 3)} ${unitLabel} = Rp ${fmtNum(avg, 2)}/${unitLabel}`
+      : `Rata-rata per ${unitLabel} = ${fmtIDR(gross)} ÷ ${fmtNum(totalQty, 3)} ${unitLabel} = Rp ${fmtNum(avg, 2)}/${unitLabel}`;
+  if (pct === null) {
+    return {
+      message:
+        `${head}\n${body}\n` +
+        `Total = ${subtotals.map((s) => fmtIDR(s)).join(' + ')} = **${fmtIDR(gross)}**\n` +
+        avgLine,
+    };
+  }
+  return {
+    message:
+      `${head}\n${body}\n${grossLine}\n` +
+      `Diskon ${fmtNum(pct)}% = **${fmtIDR(discount)}**\n` +
+      `Total akhir = ${fmtIDR(gross)} − ${fmtIDR(discount)} = **${fmtIDR(finalTotal)}**\n` +
+      avgLine,
   };
 }
 
@@ -191,15 +294,21 @@ function tryPercent(t: string): CalcResult | null {
   if (!hasPpn && !/(dari|subtotal|harga|total|nilai)/.test(t)) return null;
   const money = extractMoney(t);
   if (money.length === 0) return null;
+  // WB-01: persen SATU nilai saja — tolak bila ada >1 nilai uang ATAU
+  // kuantitas ber-satuan. Pertanyaan multi-baris milik tryMultiLineDiscount
+  // (berjalan lebih dulu); menjawabnya di sini berarti 15% dari harga
+  // satuan pertama disajikan sebagai jawaban lengkap (audit §3.4).
+  if (money.length > 1) return null;
+  if (hasQuantity(t)) return null;
   const base = money[0].value;
   const pct = parseIdNumber(pctM[1]);
   if (base < 0 || pct < 0) return rejectNegative('nilai dasar atau persen negatif');
-  const part = (base * pct) / 100;
+  const part = SafeDecimalEngine.safePercent(base, pct);
   if (hasPpn) {
     return {
       message:
         `PPN = ${fmtNum(pct)}% × ${fmtIDR(base)} = **${fmtIDR(part)}**\n` +
-        `Total = ${fmtIDR(base)} + ${fmtIDR(part)} = **${fmtIDR(base + part)}**\n` +
+        `Total = ${fmtIDR(base)} + ${fmtIDR(part)} = **${fmtIDR(SafeDecimalEngine.safeAdd(base, part))}**\n` +
         `Catatan: tarif ${fmtNum(pct)}% adalah **asumsi sesuai soal Anda** — bukan tarif resmi yang saya tetapkan; tarif yang dipakai mengikuti ketentuan dan dokumen proyek Anda.`,
     };
   }
@@ -359,12 +468,16 @@ function trySubtotal(t: string): CalcResult | null {
   if (!/(harga|subtotal|total harga)/.test(t)) return null;
   const money = extractMoney(t);
   if (money.length === 0) return null;
+  // WB-01: satu baris saja — >1 nilai uang berarti pertanyaan multi-baris
+  // (milik tryMultiLineDiscount); mengalikan kuantitas pertama dengan harga
+  // terakhir adalah jawaban salah yang percaya diri.
+  if (money.length > 1) return null;
   const price = money[money.length - 1].value;
-  const qtyM = t.match(new RegExp(String.raw`(${NUM})\s*(m²|m2|m³|m3|m|bh|buah|unit|ls|kg|lembar|batang|set)`));
+  const qtyM = t.match(new RegExp(String.raw`(${NUM})\s*(${QTY_UNITS})`));
   if (!qtyM) return null;
   const qty = parseIdNumber(qtyM[1]);
   if (qty < 0 || price < 0) return rejectNegative('kuantitas atau harga satuan negatif');
-  const total = qty * price;
+  const total = SafeDecimalEngine.safeMultiply(qty, price);
   return {
     message:
       `Subtotal = kuantitas × harga satuan\n` +
@@ -387,6 +500,7 @@ export function evaluateCalculation(rawText: string): CalcResult | null {
   if (!/\d/.test(t) && !new RegExp(`\\b(${WORD_NUM_ALT})\\b`).test(t)) return null;
   const parsers = [
     tryConversion,
+    tryMultiLineDiscount, // WB-01: SEBELUM trySum/tryPercent — multi-baris paling spesifik
     trySum,
     tryPercent,
     tryDifference,

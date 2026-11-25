@@ -183,7 +183,7 @@ function reset(): void {
 /* --- B. Matcher: non-hijack --- */
 
 {
-  assert(matchDedDocPatterns('buka ded ai') === null, 'B1: buka ded ai bukan perintah jalankan (tetap OPEN_DED_ESTIMATE)');
+  assert(matchDedDocPatterns('buka ded ai') === null, 'B1: buka ded ai bukan perintah jalankan (§4.1: kini ke AI, bukan OPEN_DED_ESTIMATE)');
   assert(matchDedDocPatterns('apa itu ded') === null, 'B1: apa itu ded bukan perintah jalankan');
   assert(matchDedDocPatterns('jelaskan ded') === null, 'B1: jelaskan ded bukan perintah jalankan');
   assert(matchDedDocPatterns('bagaimana cara menjalankan analisis ded') === null, 'B2: pertanyaan how-to "menjalankan" bukan perintah jalankan');
@@ -204,8 +204,11 @@ function reset(): void {
   assert(resolveNavCommand('buatkan ringkasan dokumen ini').mode === 'none', 'C2: navRegistry tidak membajak "buatkan ringkasan dokumen ini"');
 }
 {
-  assert(routeIntent('buka ded ai').intent === 'OPEN_DED_ESTIMATE', 'C3: buka ded ai tetap OPEN_DED_ESTIMATE (sebelum & sesudah wiring)');
-  assert(routeIntent('buka ai document').intent === 'OPEN_AI_DOCUMENTS', 'C3: buka ai document tetap OPEN_AI_DOCUMENTS');
+  // §4.1 (directive P1 2026-11-24 / OD-1): navigasi bahasa alami DIHAPUS —
+  // "buka ded ai" / "buka ai document" kini UNKNOWN ke AI (dulu
+  // OPEN_DED_ESTIMATE / OPEN_AI_DOCUMENTS). Navigasi hanya lewat slash.
+  assert(routeIntent('buka ded ai').intent === 'UNKNOWN', 'C3: buka ded ai ke AI (§4.1 slash-only)');
+  assert(routeIntent('buka ai document').intent === 'UNKNOWN', 'C3: buka ai document ke AI (§4.1 slash-only)');
   assert(routeIntent('apa itu ded').intent !== 'RUN_DED_ANALYSIS', 'C4: apa itu ded tidak pernah menjadi RUN_DED_ANALYSIS');
   assert(routeIntent('buat dokumen perjanjian').intent !== 'SUMMARIZE_DOCUMENT', 'C4: buat dokumen perjanjian tidak pernah menjadi SUMMARIZE_DOCUMENT');
 }

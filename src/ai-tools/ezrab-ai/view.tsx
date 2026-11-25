@@ -65,7 +65,7 @@ import { renderMarkdown, markdownToPlainText } from './markdown';
 import { routeIntent, localGreeting, HELP_TEXT } from './intentRouter';
 import { extractSlashToken, filterSlashEntries, NAV_BY_ID, resolveNavCommand, type NavEntry } from './navRegistry';
 import { consumePendingAiEntry, requestAiEntry, consumePendingEzrabAiEntry, peekPendingEzrabAiEntry, ezrabAiEntryRemainingMs, openEzrabAI, type EzrabAiEntryContext } from '../aiNavigation';
-import { executeIntent, executeBudgetFullAiRab, continueRabNeeds, continueRabFinalize, hasActiveRabNeeds, continueRabChoice, tryContinueRabSubtype, tryContinueRabMaterial, tryContinueProjectContext, tryContinueUniversalContext, getLastRabDesignPrompt, getLastRabNeeds, setLastRabNeeds, getPendingRabChoice, setPendingRabChoice, submitQuestionnaireAnswers, clearUniversalContext, restoreUniversalContext, getUniversalContextState, getProjectContextState, clearProjectContext, isProjectContextForeign, noteIntakeSnapshotVersion, getLastSeenIntakeVersion, takeIntakeDropOutcome, takeIntakePersistConflict, ChatActionContext, ChatActionButton, ActionResult, ProjectPriceOverrideInput } from './actionRegistry';
+import { executeIntent, executeDirectConfirmation, executeBudgetFullAiRab, undoFullAiCompletion, acceptFullAiCompletion, discardFullAiCompletion, proposeUiActionConfirmation, claimUiActionConfirmation, takeUiActionConfirmationRef, buildAnswerPushFingerprint, formatAnswerPushPreviewMessage, qtoCorrectionMatchesDisplayed, validateDedSpecRevisionConfirm, DIRECT_COMMAND_CONFIRM_TTL_MS, continueRabNeeds, continueRabFinalize, hasActiveRabNeeds, continueRabChoice, tryContinueRabSubtype, tryContinueRabMaterial, tryContinueProjectContext, tryContinueUniversalContext, getLastRabDesignPrompt, getLastRabNeeds, setLastRabNeeds, getPendingRabChoice, setPendingRabChoice, submitQuestionnaireAnswers, clearUniversalContext, restoreUniversalContext, getUniversalContextState, getProjectContextState, clearProjectContext, isProjectContextForeign, noteIntakeSnapshotVersion, getLastSeenIntakeVersion, takeIntakeDropOutcome, takeIntakePersistConflict, ChatActionContext, ChatActionButton, ActionResult, ProjectPriceOverrideInput } from './actionRegistry';
 import { setActiveProjectSnapshot } from './tools';
 import { QuestionnaireCard } from './questionnaireCard';
 import type { QuestionnairePayload } from './questionnaire';
@@ -80,15 +80,17 @@ import {
   EXECUTION_STAGE_LABELS,
   type AiExecutionHandle, type AiExecutionRecord, type ExecutionStage,
 } from './executionRuntime';
-import { mapDirectRabPushItems, buildDirectPushPreview, formatDirectPushPreviewMessage, createDirectPushApprovalBinding, checkDirectPushApprovalBinding, type DirectPushApprovalBinding } from './directRabPush';
-import { extractAhspCodesFromAnswer, parseRequestedQuantity, buildAnswerTransfer, findPrecedingUserText } from './chatAnswerTransfer';
+import { mapDirectRabPushItems, buildDirectPushPreview, formatDirectPushPreviewMessage, createDirectPushApprovalBinding, checkDirectPushApprovalBinding, directPushFingerprint, type DirectPushApprovalBinding } from './directRabPush';
+import { extractAhspCodesFromAnswer, parseRequestedQuantity, buildAnswerTransfer, findPrecedingUserText, type AnswerTransferPlan, type ChatAnswerPushItem, type RequestedQuantity } from './chatAnswerTransfer';
 import { resolveAhspTopicFromHistory } from './chatSearch';
 import { detectHandoffNeed, HANDOFF_CHOICE_CHAT, HANDOFF_CHOICE_STAY } from './magicHandoff';
 import { structuredAiError, logAiDiagnostic, type AiErrorCode } from './aiErrorCodes';
 import { buildFinalizationKey } from '../ded-ai-estimate/finalizationKey';
 import { getLastUniversalDraft, setLastUniversalDraft, looksLikeUniversalRevision, buildPushPreview, formatPushPreviewMessage, buildPushPayload, dedupePushPayload, validateTransfer, draftReadiness, effectiveItems, isPriceValidForTotal } from './universalRab';
 import type { UniversalDraft } from './universalRab';
-import { setDraftProjectEnsurer, tempProjectNameForDraft, tempProjectDescriptionForDraft, TEMP_PROJECT_CREATION_METHOD, isUniversalDraft, type DraftProjectEnsurer, type DraftProjectRequest, type EnsuredDraftProject } from './tempProject';
+import { setDraftProjectEnsurer, tempProjectNameForDraft, tempProjectDescriptionForDraft, TEMP_PROJECT_CREATION_METHOD, type DraftProjectEnsurer, type DraftProjectRequest, type EnsuredDraftProject } from './tempProject';
+import { authorizeChatAiMutation } from './mutationInventory';
+import { appendMutationAuditRecord } from './mutationAuditLog';
 import { BUDGET_FULL_AI_FOLLOWUP_RE } from './fullAiRabCompletion';
 import { saveDraft, loadDraft, markTransferred, saveIntakeContext, loadIntakeContext, peekPersistedDraft, shouldRestoreIntakeSnapshot, saveHomeState, loadHomeState, draftFingerprint, AI_INTAKE_STORAGE_KEY, AI_HOME_STATE_STORAGE_KEY, AI_DRAFTS_STORAGE_KEY, createTransferApprovalBinding, checkTransferApprovalBinding, type TransferApprovalBinding, type LoadedHomeState } from './draftPersistence';
 import { onExternalStorageChange } from '../../engine/storage/hardenedStorage';
@@ -1194,6 +1196,23 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
    * pendingTransferApprovalRef di atas — sidik + TTL + guard BLOCKED;
    * reload membatalkan approval). */
   const pendingDirectPushApprovalRef = useRef<DirectPushApprovalBinding | null>(null);
+  /* P1 §4.5 — proposal transfer TAK-TERIKAT yang menunggu konfirmasi:
+   * saat pratinjau push dibuat tanpa proyek aktif, tombol konfirmasi
+   * menjadi "Buat proyek & konfirmasi transfer" dan proposal ini
+   * (sidik draft + versi + nama proyek yang diusulkan + stempel waktu)
+   * disimpan di SATU slot ini (pola yang sama dengan
+   * pendingTransferApprovalRef — memori sesi saja, reload membatalkan).
+   * Handler konfirmasi memvalidasi proposal (sidik/versi/TTL 10 menit)
+   * lalu membuat proyek lewat createProject (creationMethod 'chat-ai')
+   * dan mentransfer ke proyek baru itu. Proposal yang kedaluwarsa /
+   * draft yang berubah → ditolak; pratinjau baru wajib dibuat. */
+  const pendingUnboundTransferRef = useRef<{
+    kind: 'universal' | 'direct';
+    fingerprint: string;
+    version: number | null;
+    proposedName: string;
+    createdAt: number;
+  } | null>(null);
   /* GATE 4 (5D) — pratinjau revisi spek DED yang MENUNGGU konfirmasi
    * eksplisit (peta id → pratinjau, memori sesi saja — seperti
    * pendingRevisionRef Gate 3, reload membatalkan pratinjau yang
@@ -1539,21 +1558,21 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     if (res.ok) draftUpdatedAtRef.current = res.updatedAt;
   };
 
-  /* ---- B5-3 (D-11, keputusan owner 2026-11-23) — ensurer proyek-draft ----
+  /* ---- B5-3 (D-11, keputusan owner 2026-11-23) + §4.5 (direktif owner
+   * 2026-11-24, P1 — MENGGANTIKAN SEBAGIAN B5-3) — ensurer proyek-draft ----
    * Didaftarkan ke registry (tempProject.ts): dipanggil registry SAAT
    * draft universal ATAU direct berhasil dibuat tanpa proyek (hook kedua
    * direct-RAB, keputusan owner 2026-11-23 — corong directRabTableResult).
    * Bila proyek sudah aktif (dibuat/dibuka di tengah intake), draft
-   * diikat ke proyek itu tanpa pembuatan baru. Bila belum ada, buat
-   * proyek SEMENTARA lewat createProject konteks yang sama (prepend
-   * sinkron + jadikan aktif — tidak ada mekanisme paralel), persistenkan
-   * draft di bawahnya, dan catat migrasi percakapan untuk efek
-   * muat-percakapan. Mengembalikan null bila pembuatan gagal — registry
-   * memperlakukan itu sebagai "draft tanpa ikatan" (perilaku lama),
-   * bukan error. Draft direct hanya membawa judul (tanpa record
-   * UniversalDraft) — saveDraft dilewati untuknya (penjaga
-   * isUniversalDraft); riwayat chat direct tetap dipersistenkan lewat
-   * persistMessage + migrasi percakapan yang sama. */
+   * diikat ke proyek itu tanpa pembuatan baru. Bila BELUM ADA proyek
+   * aktif, ensurer mengembalikan null — draft tetap TAK TERIKAT.
+   * ENSURER TIDAK PERNAH MEMBUAT PROYEK (§4.5): pembuatan proyek hanya
+   * terjadi lewat konfirmasi eksplisit user (aliran push tak-terikat di
+   * bawah — tombol "Buat proyek & konfirmasi transfer") atau pembuatan
+   * manual. Registry memperlakukan null sebagai "draft tanpa ikatan"
+   * (perilaku lama), bukan error. Draft direct hanya membawa judul
+   * (tanpa record UniversalDraft); riwayat chat direct tetap
+   * dipersistenkan lewat persistMessage seperti biasa. */
   const ensureDraftProject: DraftProjectEnsurer = useCallback((draft: UniversalDraft | DraftProjectRequest, preferredProjectId?: string | null): EnsuredDraftProject | null => {
     // S3-C (F4): petunjuk scope dari registry MENGALAHKAN proyek live.
     // Hook tool di-commit sesudah await provider — pengguna bisa sudah
@@ -1570,66 +1589,19 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     }
     // Proyek menjadi aktif di tengah intake (dibuat/dibuka lewat menu
     // sesudah intake dimulai): ikat draft ke proyek itu — tanpa
-    // pembuatan baru, tanpa pemberitahuan.
+    // pembuatan baru, tanpa pemberitahuan. Draft universal dipersistenkan
+    // ke proyek itu oleh persistActiveDraft di finally handler (yang
+    // melihat proyek aktif yang sama).
     const live = liveProjectRef.current;
     if (live) return { id: live.id, name: live.name, created: false };
-    let created: { id: string; name: string };
-    try {
-      // `as any` mengikuti pola DED (creationMethod 'ai-ded' juga di
-      // luar union tipe Project — ded-ai-estimate/view.tsx).
-      created = createProject({
-        name: tempProjectNameForDraft(draft.title),
-        status: 'draft',
-        creationMethod: TEMP_PROJECT_CREATION_METHOD,
-        description: tempProjectDescriptionForDraft(draft.title),
-      } as any);
-    } catch {
-      return null;
-    }
-    // Migrasi percakapan dicatat untuk efek muat-percakapan (berjalan
-    // sesudah re-render). Pesan draft BELUM tentu tersimpan saat efek
-    // itu berjalan (DEFECT-1: postAssistant menunggu gateWait sebelum
-    // persist) — efek hanya menyalin pesan yang sudah tersimpan, dan
-    // persistMessage me-resolve proyek live sehingga pesan draft yang
-    // dipersist sesudah migrasi mendarat di percakapan baru. Tanpa
-    // percakapan aktif, tidak ada yang dimigrasikan (efek membuat
-    // percakapan baru yang kosong).
-    if (convIdRef.current) {
-      pendingConversationMigrationRef.current = {
-        fromProjectId: storeProjectIdRef.current,
-        fromConversationId: convIdRef.current,
-        toProjectId: created.id,
-      };
-    }
-    // Lewati pemulihan intake SEKALI untuk proyek ini (lihat efeknya).
-    skipIntakeRestoreForRef.current = created.id;
-    // Persistenkan draft di bawah proyek baru SEKARANG — HANYA bila ini
-    // draft universal (punya record). Draft direct (hanya judul) tidak
-    // punya record UniversalDraft: saveDraft dilewati; push-nya memakai
-    // lastDirectRab + proyek aktif, riwayatnya lewat persistMessage.
-    // persistActiveDraft di finally handler masih melihat effProject
-    // basi (null) sehingga no-op; tanpa simpan ini draft hanya hidup di
-    // memori sampai pesan berikutnya. Kegagalan simpan tidak menggagalkan
-    // draft — autosave berikutnya (dengan proyek aktif) mencoba lagi.
-    if (isUniversalDraft(draft)) {
-      try {
-        const res = saveDraft({
-          draft,
-          projectId: created.id,
-          conversationId: convIdRef.current,
-          workflowStage: 'autosave',
-          savedBy: 'autosave',
-        });
-        if (res.ok) draftUpdatedAtRef.current = res.updatedAt;
-      } catch {
-        /* persist gagal — autosave berikutnya mencoba lagi */
-      }
-    }
-    return { id: created.id, name: created.name, created: true };
-  }, [createProject, contextProjects]);
+    // §4.5: tanpa proyek aktif → null. TIDAK ADA pembuatan proyek
+    // implisit — draft tetap tak terikat sampai user mengonfirmasi
+    // pembuatan proyek di aliran push (§6) atau membuat manual.
+    return null;
+  }, [contextProjects]);
 
   // Daftarkan ensurer selama view chat ter-mount; lepas saat unmount
-  // agar permukaan lain yang memakai registry tidak ikut membuat proyek.
+  // agar permukaan lain yang memakai registry tidak ikut mengikat draft.
   useEffect(() => {
     setDraftProjectEnsurer(ensureDraftProject);
     return () => setDraftProjectEnsurer(null);
@@ -1646,6 +1618,16 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   const runRevisionActivation = (
     pending: RevisionPreview,
   ): { message: string; actions?: ChatActionButton[] } => {
+    // Fast Track §7 — REVISION_ACTIVATE adalah mutasi persisten
+    // cakupan draft: hanya Admin (edit-estimate). Gerbang di sini
+    // (satu choke point) menutup KETIGA pemanggil: tombol
+    // "Aktifkan revisi", afirmasi teks, dan panel Review. Penolakan
+    // TIDAK menghapus pratinjau yang menunggu (Admin masih bisa
+    // mengaktifkannya); pemanggil bertanggung jawab menampilkan pesan.
+    const cap = authorizePushMutation('REVISION_ACTIVATE');
+    if (!cap.ok) {
+      return { message: cap.message };
+    }
     if (!effProject) {
       return { message: 'Tidak ada proyek aktif — revisi tidak dapat diaktifkan.' };
     }
@@ -2168,7 +2150,9 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     const actions: ChatActionButton[] = [];
     for (const p of proposals) {
       actions.push(
-        { label: `Terima koreksi QTO: ${p.description}`, action: { kind: 'qto-correction-confirm', correctionId: p.id } },
+        // A2: tombol membawa nilai YANG DITAMPILKAN (pengikatan nilai
+        // konfirmasi — handler menolak bila rekomputasi segar beda).
+        { label: `Terima koreksi QTO: ${p.description}`, action: { kind: 'qto-correction-confirm', correctionId: p.id, expectedQuantity: p.expectedQuantity, expectedUnit: p.expectedUnit, dedQuantity: p.dedQuantity, dedUnit: p.dedUnit } },
         { label: `Tolak koreksi QTO: ${p.description}`, action: { kind: 'qto-correction-reject', correctionId: p.id } },
       );
     }
@@ -2715,11 +2699,16 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     // (forcedAi dikonsumsi di awal submit — lihat intersepsi D-50 di atas.)
     closeSlash();
     /* Command Router (2026-10-26): resolver navigasi deterministik.
-     * TIDAK PERNAH membajak prompt Full AI (forcedAi). Hasil non-'none'
-     * juga membebaskan dari dialog kredit: navigasi itu gratis, dan tanpa
-     * pengecualian ini perintah baru (slash baru / sinonim alami) akan
-     * tertahan dialog karena preRouted-nya UNKNOWN/needsClarification. */
-    const navEarly = forcedAi ? null : resolveNavCommand(msg);
+     * TIDAK PERNAH membajak prompt Full AI (forcedAi) — KECUALI pesan
+     * slash eksplisit (W-A-04, directive P1 §4.1): "/ahsp" yang diketik
+     * pengguna adalah perintah navigasi, bukan prompt Full AI, sehingga
+     * tetap di-resolve (dan dieksekusi di cabang navHit di bawah) meski
+     * forcedAi aktif. Hasil non-'none' juga membebaskan dari dialog
+     * kredit: navigasi itu gratis, dan tanpa pengecualian ini perintah
+     * baru (slash baru / sinonim alami) akan tertahan dialog karena
+     * preRouted-nya UNKNOWN/needsClarification. */
+    const isSlashMessage = /^\s*\//.test(msg);
+    const navEarly = forcedAi && !isSlashMessage ? null : resolveNavCommand(msg);
     const navHit = navEarly && navEarly.mode !== 'none' ? navEarly : null;
     // --- AI Credits: intent lokal tidak memanggil AI → tanpa biaya ---
     // FASE 3 — objektif + rencana tugas (agentOrchestrator): diturunkan
@@ -3080,12 +3069,18 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     /* ---- Command Router (Fase 3/5): navigasi deterministik ----
      * Berjalan SETELAH waiting-state (pilihan/subtipe/needs/klarifikasi) dan
      * SEBELUM Phase-1 routeIntent, agar slash baru tidak ditelan klarifikasi
-     * "perintah tidak dikenal" dan sinonim alami tidak ditelan AI.
-     * Direct = navigasi LANGSUNG tanpa konfirmasi kedua (perintah eksplisit
-     * "buka" + intent pasti); suggest/ambiguous = pesan + chip saja, tanpa
-     * pindah halaman. Pesan asisten dipersistenkan supaya terlihat di
-     * riwayat saat pengguna kembali ke chat. */
-    if (!forcedAi && navHit) {
+     * "perintah tidak dikenal". (Directive P1 §4.1: hanya perintah slash
+     * yang sampai ke sini sebagai navHit — sinonim bahasa alami kini
+     * diteruskan ke AI.)
+     * Direct = navigasi LANGSUNG tanpa konfirmasi kedua (perintah slash
+     * eksplisit — directive P1 §4.1: bahasa alami tidak lagi direct);
+     * suggest/ambiguous = pesan + chip saja, tanpa pindah halaman. Pesan asisten dipersistenkan supaya terlihat di
+     * riwayat saat pengguna kembali ke chat.
+     * (W-A-04, directive P1 §4.1: pesan slash eksplisit tetap dieksekusi
+     * di sini meski forcedAi aktif — carve-out yang sama dengan navEarly
+     * di atas. Tanpa pengecualian ini, navHit slash di Full AI dihitung
+     * tapi tidak pernah dieksekusi.) */
+    if ((!forcedAi || isSlashMessage) && navHit) {
       try {
         if (navHit.mode === 'direct') {
           const navText = `Membuka ${navHit.entry.label}…`;
@@ -3536,6 +3531,14 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     if (!forcedAi && BUDGET_FULL_AI_FOLLOWUP_RE.test(msg)) {
       const target = findCompletableBudgetDraft();
       if (target) {
+        // Fast Track §7 — FULL_AI_COMPLETE (trigger teks): hanya Admin
+        // (edit-estimate), gerbang yang sama dengan tombolnya.
+        const fullAiCap = authorizePushMutation('FULL_AI_COMPLETE');
+        if (!fullAiCap.ok) {
+          await postAssistant(fullAiCap.message);
+          setBusy(false);
+          return;
+        }
         const res = await executeBudgetFullAiRab(msg, {
           navigate: (menu: string) => navigateChat(menu),
           rawText: msg,
@@ -4257,6 +4260,91 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   };
 
   /* ---------- P0 Command Center: action button handler ---------- */
+  /* ---------- P1-B/P1-E/§4.5 — helper gerbang + audit + proyek tak-terikat ---------- */
+  /**
+   * P1-B — Gerbang kapabilitas terpusat untuk mutasi push Chat AI.
+   * Berkonsultasi ke inventaris mutasi (mutationInventory.ts) dengan
+   * bit hasCapability('edit-estimate') peran aktif (peta "Admin" §4.2).
+   * Penolakan memakai kalimat owner persis. KEJUJURAN (WC-06): gerbang
+   * UX SISI KLIEN — peran demo/PIN bukan batas otorisasi; enforcement
+   * yang sebenarnya menunggu peran server.
+   */
+  const authorizePushMutation = (key: string): { ok: true } | { ok: false; message: string } => {
+    const auth = authorizeChatAiMutation(key, hasCapability('edit-estimate'));
+    return auth.ok ? { ok: true } : { ok: false, message: auth.message };
+  };
+
+  /**
+   * P1-E — Record audit untuk satu transfer push yang dieksekusi
+   * sesudah konfirmasi. outcomeVerified=true HANYA bila
+   * insertRabItemsVerified membaca balik outcome store (transfer
+   * terverifikasi) — bukan klaim dari pesan sukses.
+   */
+  const recordPushAudit = (input: {
+    operation: string;
+    projectId: string;
+    projectName: string;
+    after: unknown;
+    confirmationRef: string | null;
+    ok: boolean;
+    outcomeVerified: boolean;
+    message: string;
+  }): void => {
+    appendMutationAuditRecord({
+      actor: activeRole?.name ?? 'Peran demo',
+      projectId: input.projectId,
+      projectName: input.projectName,
+      operation: input.operation,
+      before: null,
+      after: input.after,
+      confirmationRef: input.confirmationRef,
+      result: input.ok ? 'executed' : 'failed',
+      outcomeVerified: input.outcomeVerified,
+      verificationNote: input.outcomeVerified
+        ? 'transfer-verified: insertRabItemsVerified membaca balik outcome store sebelum klaim sukses.'
+        : 'transfer-gagal: tidak ada read-back sukses — lihat result/message.',
+      source: 'chat-ai',
+      message: input.message.slice(0, 300),
+    });
+  };
+
+  /**
+   * P1 §4.5 — Buat proyek untuk transfer tak-terikat SESUDAH user
+   * mengonfirmasi (klik "Buat proyek & konfirmasi transfer" — klik itu
+   * SENDIRI adalah konfirmasi eksplisitnya). Memakai mesin yang sama
+   * dengan ensurer B5-3 lama: createProject konteks (prepend sinkron +
+   * jadikan aktif), migrasi percakapan untuk efek muat-percakapan, dan
+   * lewati pemulihan intake sekali untuk proyek baru. Mengembalikan
+   * proyek baru, atau null bila pembuatan gagal.
+   */
+  const createProjectForUnboundTransfer = (
+    proposedName: string,
+    draftTitle: string | null | undefined,
+  ): { id: string; name: string } | null => {
+    let created: { id: string; name: string };
+    try {
+      // `as any` mengikuti pola DED (creationMethod 'ai-ded' juga di
+      // luar union tipe Project — ded-ai-estimate/view.tsx).
+      created = createProject({
+        name: proposedName,
+        status: 'draft',
+        creationMethod: TEMP_PROJECT_CREATION_METHOD,
+        description: tempProjectDescriptionForDraft(draftTitle),
+      } as any);
+    } catch {
+      return null;
+    }
+    if (convIdRef.current) {
+      pendingConversationMigrationRef.current = {
+        fromProjectId: storeProjectIdRef.current,
+        fromConversationId: convIdRef.current,
+        toProjectId: created.id,
+      };
+    }
+    skipIntakeRestoreForRef.current = created.id;
+    return created;
+  };
+
   /* ---------- Direct RAB: preview push + konfirmasi (W11 §11, S1-R5) ---------- */
   /**
    * Preview push hasil RAB langsung (directRab): ringkasan yang akan
@@ -4275,10 +4363,42 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       appendMsg('Tidak ada hasil RAB langsung yang aktif untuk di-push. Buat dulu dengan perintah seperti "buatkan rab rumah type 70 2 lantai" atau "buatkan rab rumah 5x10".', undefined, true);
       return;
     }
+    // P1-B: gerbang kapabilitas — non-admin ditolak SEBELUM pratinjau
+    // ditampilkan (tidak ada tombol konfirmasi yang mustahil ditekan).
+    const cap = authorizePushMutation('PUSH_DIRECT_RAB');
+    if (!cap.ok) {
+      appendMsg(cap.message, undefined, true);
+      return;
+    }
     const existingCodes = new Set(
       ((projectRabItems || []) as Array<{ code?: string }>).map((i) => i.code).filter(Boolean) as string[]
     );
     const preview = buildDirectPushPreview(r, existingCodes);
+    // P1 §4.5: tanpa proyek aktif, pratinjau tetap dibuat — tombol
+    // konfirmasi menjadi "Buat proyek & konfirmasi transfer" dan
+    // proposal (sidik + nama yang diusulkan + stempel waktu) disimpan
+    // di pendingUnboundTransferRef. TIDAK ADA proyek yang dibuat di
+    // sini — pembuatan hanya terjadi di handler konfirmasi sesudah
+    // user mengklik tombol itu (konfirmasi eksplisit §6).
+    if (!effProject && !preview.blocked) {
+      const proposedName = tempProjectNameForDraft(r.displayLabel);
+      pendingUnboundTransferRef.current = {
+        kind: 'direct',
+        fingerprint: directPushFingerprint(r),
+        version: null,
+        proposedName,
+        createdAt: Date.now(),
+      };
+      pendingDirectPushApprovalRef.current = null;
+      appendMsg(
+        `${formatDirectPushPreviewMessage(r, preview, `"${proposedName}" (baru — dibuat saat konfirmasi)`)}\n\nBelum ada proyek aktif — klik "Buat proyek & konfirmasi transfer" untuk membuat proyek "${proposedName}" dan me-push hasil ini ke sana. Tanpa klik itu, tidak ada proyek yang dibuat dan tidak ada item yang ditulis.`,
+        [
+          { label: 'Buat proyek & konfirmasi transfer', action: { kind: 'push-rab-confirm' as const } },
+          { label: 'Buka Spreadsheet RAB', action: { kind: 'navigate', menu: 'rab-estimasi' } },
+        ],
+      );
+      return;
+    }
     // G1 (cermin transfer universal): ikat approval pada hasil yang
     // DITINJAU di pratinjau ini — handler konfirmasi menolak bila sidik
     // hasil aktif saat klik berbeda. Tanpa tombol konfirmasi (BLOCKED /
@@ -4287,6 +4407,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       effProject && !preview.blocked
         ? createDirectPushApprovalBinding(r, effProject.id)
         : null;
+    pendingUnboundTransferRef.current = null;
     const previewActions: ChatActionButton[] = [
       ...(effProject && !preview.blocked ? [{ label: 'Konfirmasi Push', action: { kind: 'push-rab-confirm' as const } }] : []),
       { label: 'Buka Spreadsheet RAB', action: { kind: 'navigate', menu: 'rab-estimasi' } },
@@ -4313,9 +4434,46 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       appendMsg('Tidak ada hasil RAB langsung yang aktif untuk di-push. Buat dulu dengan perintah seperti "buatkan rab rumah type 70 2 lantai" atau "buatkan rab rumah 5x10".', undefined, true);
       return;
     }
-    if (!effProject) {
-      appendMsg(`Tidak ada proyek aktif. Buat atau buka proyek dulu di menu Proyek, lalu klik "Push ke Spreadsheet RAB" lagi. (Kode: ${structuredAiError('ACTIVE_PROJECT_NOT_FOUND').code})`, undefined, true);
+    // P1-B: gerbang kapabilitas di konfirmasi (juga digerbang di
+    // pratinjau — peran bisa berganti di antara keduanya).
+    const cap = authorizePushMutation('PUSH_DIRECT_RAB');
+    if (!cap.ok) {
+      appendMsg(cap.message, undefined, true);
       return;
+    }
+    // P1 §4.5: tanpa proyek aktif, konfirmasi ini adalah proposal
+    // transfer tak-terikat — validasi proposal (sidik + TTL 10 menit),
+    // lalu buat proyeknya. Klik tombol "Buat proyek & konfirmasi
+    // transfer" SENDIRI adalah konfirmasi eksplisitnya; proposal yang
+    // kedaluwarsa / hasil yang berubah → tolak, pratinjau baru wajib.
+    let targetProject: { id: string; name: string } | null = effProject;
+    let confirmationRef: string | null = null;
+    let unboundCreated = false;
+    if (!targetProject) {
+      const proposal = pendingUnboundTransferRef.current;
+      if (!proposal || proposal.kind !== 'direct') {
+        appendMsg(`Tidak ada proyek aktif. Buat atau buka proyek dulu di menu Proyek, lalu klik "Push ke Spreadsheet RAB" lagi. (Kode: ${structuredAiError('ACTIVE_PROJECT_NOT_FOUND').code})`, undefined, true);
+        return;
+      }
+      if (proposal.fingerprint !== directPushFingerprint(r)) {
+        pendingUnboundTransferRef.current = null;
+        appendMsg('Hasil RAB berubah sejak pratinjau dibuat — proposal pembuatan proyek dibatalkan. Buat pratinjau baru lewat "Push ke Spreadsheet RAB", lalu konfirmasi dari pratinjau itu.', undefined, true);
+        return;
+      }
+      if (Date.now() > proposal.createdAt + DIRECT_COMMAND_CONFIRM_TTL_MS) {
+        pendingUnboundTransferRef.current = null;
+        appendMsg('Proposal pembuatan proyek sudah kedaluwarsa (10 menit). Buat pratinjau baru lewat "Push ke Spreadsheet RAB", lalu konfirmasi dari pratinjau itu.', undefined, true);
+        return;
+      }
+      const created = createProjectForUnboundTransfer(proposal.proposedName, r.displayLabel);
+      if (!created) {
+        appendMsg('Proyek baru gagal dibuat — tidak ada item yang di-push. Coba lagi atau buat proyek manual lewat menu Proyek.', undefined, true);
+        return;
+      }
+      pendingUnboundTransferRef.current = null;
+      confirmationRef = proposal.fingerprint;
+      unboundCreated = true;
+      targetProject = created;
     }
     // G1 (cermin transfer universal) — pengikatan approval push:
     // konfirmasi hanya berlaku untuk hasil yang DITINJAU di pratinjau
@@ -4327,11 +4485,16 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     // berikutnya. Approval yang dipakai untuk push sukses /
     // duplikat-terblokir JUGA hangus (sekali pakai) sehingga klik
     // ganda tombol konfirmasi tidak pernah menulis dua kali.
-    const approval = checkDirectPushApprovalBinding(pendingDirectPushApprovalRef.current, r, effProject.id);
-    if (!approval.ok) {
-      pendingDirectPushApprovalRef.current = null;
-      appendMsg(`${approval.message} Tidak ada item yang di-push — buat pratinjau baru lewat "Push ke Spreadsheet RAB", lalu konfirmasi dari pratinjau itu.`, undefined, true);
-      return;
+    // Aliran tak-terikat MELEWATI cek ini — proposal §4.5 di atas
+    // adalah approval-nya (sidik + TTL yang sama).
+    if (!unboundCreated) {
+      confirmationRef = pendingDirectPushApprovalRef.current?.fingerprint ?? null;
+      const approval = checkDirectPushApprovalBinding(pendingDirectPushApprovalRef.current, r, targetProject.id);
+      if (!approval.ok) {
+        pendingDirectPushApprovalRef.current = null;
+        appendMsg(`${approval.message} Tidak ada item yang di-push — buat pratinjau baru lewat "Push ke Spreadsheet RAB", lalu konfirmasi dari pratinjau itu.`, undefined, true);
+        return;
+      }
     }
     const existingCodes = new Set(
       ((projectRabItems || []) as Array<{ code?: string }>).map((i) => i.code).filter(Boolean) as string[]
@@ -4345,31 +4508,54 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     const newItems = payload.filter((p) => !existingCodes.has(p.code));
     const dupCount = payload.length - newItems.length;
     if (newItems.length === 0) {
-      appendMsg(`Semua ${payload.length} item RAB ${r.displayLabel} sudah ada di Spreadsheet RAB proyek "${effProject.name}" (duplikat dicegah).`, [
+      appendMsg(`Semua ${payload.length} item RAB ${r.displayLabel} sudah ada di Spreadsheet RAB proyek "${targetProject.name}" (duplikat dicegah).`, [
         { label: 'Buka Spreadsheet RAB', action: { kind: 'navigate', menu: 'rab-estimasi' } },
       ]);
       return;
     }
     // Transfer terverifikasi (§12): tujuan proyek EKSPLISIT + outcome
     // store dibaca balik sebelum klaim sukses diucapkan.
-    const res = insertRabItemsVerified(newItems, effProject.id, {
+    const res = insertRabItemsVerified(newItems, targetProject.id, {
       draftId: `direct-${r.displayLabel}`,
       operation: 'push-direct-rab',
-      finalizationKey: buildFinalizationKey(effProject.id, newItems as never),
+      finalizationKey: buildFinalizationKey(targetProject.id, newItems as never),
     });
     if (res.duplicateBlocked && res.inserted === 0) {
       // G1: approval sekali pakai — keadaan tujuan sudah tercapai.
       pendingDirectPushApprovalRef.current = null;
+      // P1-E: keadaan tujuan tercapai (idempotent) tetap dicatat.
+      recordPushAudit({
+        operation: 'PUSH_DIRECT_RAB',
+        projectId: targetProject.id,
+        projectName: targetProject.name,
+        after: { displayLabel: r.displayLabel, pushed: 0, skipped: dupCount + res.total, duplicateBlocked: true },
+        confirmationRef,
+        ok: true,
+        outcomeVerified: true,
+        message: `Hasil RAB ${r.displayLabel} sudah ada di Spreadsheet RAB proyek "${targetProject.name}" (duplikat diblokir).`,
+      });
       appendMsg(
-        `${structuredAiError('DUPLICATE_TRANSFER_BLOCKED').message} Hasil RAB ${r.displayLabel} ini sudah ada di Spreadsheet RAB proyek "${effProject.name}". (Kode: DUPLICATE_TRANSFER_BLOCKED)`,
+        `${structuredAiError('DUPLICATE_TRANSFER_BLOCKED').message} Hasil RAB ${r.displayLabel} ini sudah ada di Spreadsheet RAB proyek "${targetProject.name}". (Kode: DUPLICATE_TRANSFER_BLOCKED)`,
         [{ label: 'Buka Spreadsheet RAB', action: { kind: 'navigate', menu: 'rab-estimasi' } }],
       );
       return;
     }
     if (!res.verified) {
+      // P1-E: transfer parsial/gagal tetap dicatat (sebagian item bisa
+      // sudah tertulis — jejak jujur, bukan klaim sukses).
+      recordPushAudit({
+        operation: 'PUSH_DIRECT_RAB',
+        projectId: targetProject.id,
+        projectName: targetProject.name,
+        after: { displayLabel: r.displayLabel, inserted: res.inserted, total: res.total, errorCode: res.errorCode ?? null },
+        confirmationRef,
+        ok: false,
+        outcomeVerified: false,
+        message: `Transfer push direct RAB ${r.displayLabel} tidak terverifikasi (${res.inserted}/${res.total} item).`,
+      });
       appendMsg(
         res.inserted > 0
-          ? `Transfer parsial: ${res.inserted} dari ${res.total} item terverifikasi masuk ke Spreadsheet RAB proyek "${effProject.name}" — sisanya belum. Klik "Push ke Spreadsheet RAB" lagi untuk melanjutkan; item yang sudah masuk tidak akan digandakan. (Kode: ${res.errorCode})`
+          ? `Transfer parsial: ${res.inserted} dari ${res.total} item terverifikasi masuk ke Spreadsheet RAB proyek "${targetProject.name}" — sisanya belum. Klik "Push ke Spreadsheet RAB" lagi untuk melanjutkan; item yang sudah masuk tidak akan digandakan. (Kode: ${res.errorCode})`
           : `${structuredAiError(res.errorCode ?? 'SPREADSHEET_TRANSFER_FAILED').message} (Kode: ${res.errorCode})`,
         undefined,
         true,
@@ -4379,8 +4565,19 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     const added = res.records;
     // G1: approval sekali pakai — sudah dipakai untuk push ini.
     pendingDirectPushApprovalRef.current = null;
+    // P1-E: record audit transfer terverifikasi.
+    recordPushAudit({
+      operation: 'PUSH_DIRECT_RAB',
+      projectId: targetProject.id,
+      projectName: targetProject.name,
+      after: { displayLabel: r.displayLabel, pushed: added.length, skipped: dupCount, unboundCreated },
+      confirmationRef,
+      ok: true,
+      outcomeVerified: true,
+      message: `${added.length} item RAB ${r.displayLabel} berhasil di-push ke Spreadsheet RAB proyek "${targetProject.name}".`,
+    });
     appendMsg(
-      `✅ ${added.length} item RAB ${r.displayLabel} (${r.floors} lantai) berhasil di-push ke Spreadsheet RAB proyek "${effProject.name}" (terverifikasi tersimpan).` +
+      `✅ ${added.length} item RAB ${r.displayLabel} (${r.floors} lantai) berhasil di-push ke Spreadsheet RAB proyek "${targetProject.name}" (terverifikasi tersimpan).` +
         (dupCount > 0 ? ` ${dupCount} item dilewati karena sudah ada.` : '') +
         // Pesan jujur pasca-perbaikan 2026-10-27: harga ikut ter-push
         // sesuai statusnya (bukan lagi "tidak ikut ter-push" ala S10).
@@ -4399,12 +4596,17 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
    * jalur apa pun ke spreadsheet (hanya tombol salin; draft universal
    * tidak terbentuk dari pertanyaan harga bebas).
    *
-   * Pola konfirmasi transfer jawaban: konfirmasi implisit lewat klik
-   * tombol (berbeda dengan push direct yang kini pratinjau + konfirmasi
-   * eksplisit — W11 §11), dedup berdasarkan kode, penyisipan lewat
-   * insertRabItemsVerified yang sama. Keputusan (kode + volume +
-   * harga) seluruhnya di chatAnswerTransfer (modul murni, dites) —
-   * handler ini hanya wiring React/store:
+   * Pola konfirmasi transfer jawaban (Fast Track §3, P1-04/P1-05):
+   * DUA LANGKAH dengan pratinjau terikat — klik pertama menampilkan
+   * persis nilai yang akan ditulis (jumlah, nama/kode, volume, harga,
+   * proyek tujuan) + mengusulkan slot konfirmasi terikat sidik (pola
+   * perintah langsung: sidik + TTL 10 menit + sekali pakai); tombol
+   * "Konfirmasi tambah ke Spreadsheet" merekomputasi rencana segar
+   * dan mengklaim slot — nilai berubah / kedaluwarsa / sudah dipakai
+   * → klaim gagal, tidak ada yang ditulis. Dedup berdasarkan kode,
+   * penyisipan lewat insertRabItemsVerified yang sama. Keputusan (kode
+   * + volume + harga) seluruhnya di chatAnswerTransfer (modul murni,
+   * dites) — handler ini hanya wiring React/store:
    * - kode dari format kanonis jawaban; harga di-resolve ulang dari
    *   resolver resmi (bukan angka di teks jawaban);
    * - volume dari pesan pengguna sebelumnya; tanpa volume → diblokir
@@ -4413,36 +4615,48 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
    *   berperingkat, bukan satu set RAB — varian lain dilaporkan, bukan
    *   ikut ditransfer).
    */
-  const pushAnswerItemsToSpreadsheet = (msgIndex: number) => {
-    const appendMsg = (content: string, actions?: ChatActionButton[], isError = false) => {
-      const entry: ChatEntry = { role: 'assistant', content, ts: Date.now(), actions, isError };
-      setMessages((prev) => [...prev, entry]);
-      persistMessage('assistant', content);
-    };
+  /**
+   * Hasil persiapan transfer jawaban (dipakai bersama pratinjau +
+   * konfirmasi — rencana DIREKOMPUTASI SEGAR di kedua langkah, bukan
+   * dibawa dari pratinjau: nilai saat konfirmasi adalah nilai yang
+   * dieksekusi, dan sidik membuktikan nilainya sama dengan yang
+   * ditinjau pengguna).
+   */
+  type AnswerTransferPrep =
+    | { ok: true; codes: string[]; quantity: RequestedQuantity; plan: AnswerTransferPlan; newItems: ChatAnswerPushItem[]; dupCount: number }
+    | { ok: false; message: string; actions?: ChatActionButton[]; isError: boolean }
+    | { ok: 'silent' };
+
+  const prepareAnswerTransfer = (msgIndex: number): AnswerTransferPrep => {
     const msg = messages[msgIndex];
-    if (!msg) return;
+    if (!msg) return { ok: 'silent' };
     const codes = extractAhspCodesFromAnswer(msg.content);
-    if (codes.length === 0) return;
+    if (codes.length === 0) return { ok: 'silent' };
+    // P1-B: gerbang kapabilitas — transfer jawaban adalah mutasi
+    // persisten Chat AI (WC-01); non-admin ditolak dengan kalimat owner.
+    // Dicek di KEDUA langkah (pratinjau + konfirmasi): peran bisa
+    // berganti di antara keduanya.
+    const cap = authorizePushMutation('PUSH_ANSWER_ITEMS');
+    if (!cap.ok) {
+      return { ok: false, message: cap.message, isError: true };
+    }
     if (!effProject) {
-      appendMsg(`Tidak ada proyek aktif. Buat atau buka proyek dulu di menu Proyek, lalu klik "Tambah ke Spreadsheet" lagi. (Kode: ${structuredAiError('ACTIVE_PROJECT_NOT_FOUND').code})`, undefined, true);
-      return;
+      return { ok: false, message: `Tidak ada proyek aktif. Buat atau buka proyek dulu di menu Proyek, lalu klik "Tambah ke Spreadsheet" lagi. (Kode: ${structuredAiError('ACTIVE_PROJECT_NOT_FOUND').code})`, isError: true };
     }
     const quantity = parseRequestedQuantity(findPrecedingUserText(messages, msgIndex));
     if (!quantity) {
-      appendMsg(
-        `Volume belum terbaca dari pertanyaan Anda — item teratas jawaban ini adalah [${codes[0]}]. Sebutkan volumenya (mis. "10 m2") lalu klik "Tambah ke Spreadsheet" lagi. Volume tidak pernah dikarang.`,
-        undefined,
-        true,
-      );
-      return;
+      return {
+        ok: false,
+        message: `Volume belum terbaca dari pertanyaan Anda — item teratas jawaban ini adalah [${codes[0]}]. Sebutkan volumenya (mis. "10 m2") lalu klik "Tambah ke Spreadsheet" lagi. Volume tidak pernah dikarang.`,
+        isError: true,
+      };
     }
     const plan = buildAnswerTransfer(codes, quantity);
     if (plan.items.length === 0) {
       const reasons: string[] = [];
       if (plan.unknownCodes.length > 0) reasons.push(`kode ${plan.unknownCodes.join(', ')} tidak ditemukan di katalog AHSP 2026 resmi`);
       if (plan.unitMismatchCodes.length > 0) reasons.push(`satuan ${plan.unitMismatchCodes.join(', ')} tidak cocok dengan volume ${quantity.volume} ${quantity.unit} (tanpa konversi diam-diam)`);
-      appendMsg(`Tidak ada item yang dapat ditransfer${reasons.length > 0 ? `: ${reasons.join('; ')}` : '.'}`, undefined, true);
-      return;
+      return { ok: false, message: `Tidak ada item yang dapat ditransfer${reasons.length > 0 ? `: ${reasons.join('; ')}` : '.'}`, isError: true };
     }
     const existingCodes = new Set(
       ((projectRabItems || []) as Array<{ code?: string }>).map((i) => i.code).filter(Boolean) as string[]
@@ -4450,9 +4664,70 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     const newItems = plan.items.filter((p) => !existingCodes.has(p.code));
     const dupCount = plan.items.length - newItems.length;
     if (newItems.length === 0) {
-      appendMsg(`Item [${plan.topCode}] sudah ada di Spreadsheet RAB proyek "${effProject.name}" (duplikat dicegah).`, [
-        { label: 'Buka Spreadsheet RAB', action: { kind: 'navigate', menu: 'rab-estimasi' } },
-      ]);
+      return {
+        ok: false,
+        message: `Item [${plan.topCode}] sudah ada di Spreadsheet RAB proyek "${effProject.name}" (duplikat dicegah).`,
+        actions: [{ label: 'Buka Spreadsheet RAB', action: { kind: 'navigate', menu: 'rab-estimasi' } }],
+        isError: false,
+      };
+    }
+    return { ok: true, codes, quantity, plan, newItems, dupCount };
+  };
+
+  /**
+   * LANGKAH 1 — Pratinjau transfer jawaban (klik "Tambah ke
+   * Spreadsheet" pada jawaban). Menampilkan PERSIS nilai yang akan
+   * ditulis + mengusulkan slot konfirmasi terikat sidik (pola
+   * perintah langsung: sidik + TTL 10 menit + sekali pakai). TIDAK
+   * MENULIS apa pun — penulisan hanya di confirmAnswerItemsPush.
+   */
+  const pushAnswerItemsToSpreadsheet = (msgIndex: number) => {
+    const appendMsg = (content: string, actions?: ChatActionButton[], isError = false) => {
+      const entry: ChatEntry = { role: 'assistant', content, ts: Date.now(), actions, isError };
+      setMessages((prev) => [...prev, entry]);
+      persistMessage('assistant', content);
+    };
+    const prep = prepareAnswerTransfer(msgIndex);
+    if (prep.ok === 'silent') return;
+    if (prep.ok === false) {
+      appendMsg(prep.message, prep.actions, prep.isError);
+      return;
+    }
+    if (!effProject) return; // prepare sudah menjamin proyek ada
+    proposeUiActionConfirmation('PUSH_ANSWER_ITEMS', buildAnswerPushFingerprint(prep.newItems, effProject.id));
+    appendMsg(formatAnswerPushPreviewMessage(prep.plan, prep.newItems, prep.dupCount, effProject.name), [
+      { label: 'Konfirmasi tambah ke Spreadsheet', action: { kind: 'push-answer-items-confirm', msgIndex } },
+    ]);
+  };
+
+  /**
+   * LANGKAH 2 — Konfirmasi transfer jawaban (tombol pada pesan
+   * pratinjau). Rencana direkomputasi SEGAR lalu sidiknya diklaim:
+   * nilai berubah / proyek berganti / kedaluwarsa / sudah dipakai →
+   * klaim gagal → TIDAK ADA yang ditulis, pengguna diminta membuat
+   * pratinjau baru. Nilai yang dieksekusi adalah nilai segar yang
+   * sidiknya cocok dengan pratinjau — tidak pernah nilai basi.
+   */
+  const confirmAnswerItemsPush = (msgIndex: number) => {
+    const appendMsg = (content: string, actions?: ChatActionButton[], isError = false) => {
+      const entry: ChatEntry = { role: 'assistant', content, ts: Date.now(), actions, isError };
+      setMessages((prev) => [...prev, entry]);
+      persistMessage('assistant', content);
+    };
+    const prep = prepareAnswerTransfer(msgIndex);
+    if (prep.ok === 'silent') return;
+    if (prep.ok === false) {
+      appendMsg(prep.message, prep.actions, prep.isError);
+      return;
+    }
+    if (!effProject) return; // prepare sudah menjamin proyek ada
+    const { plan, newItems, dupCount, quantity } = prep;
+    if (!claimUiActionConfirmation('PUSH_ANSWER_ITEMS', buildAnswerPushFingerprint(newItems, effProject.id))) {
+      appendMsg(
+        'Pratinjau tambah ke Spreadsheet ini sudah tidak berlaku — nilainya berubah, proyek berganti, sudah dipakai, atau kedaluwarsa (lebih dari 10 menit). Tidak ada item yang ditulis. Klik "Tambah ke Spreadsheet" lagi pada jawaban itu untuk pratinjau baru.',
+        undefined,
+        true,
+      );
       return;
     }
     const res = insertRabItemsVerified(newItems, effProject.id, {
@@ -4460,7 +4735,20 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       operation: 'push-chat-answer-items',
       finalizationKey: buildFinalizationKey(effProject.id, newItems as never),
     });
+    // P1-E: referensi konfirmasi = sidik pratinjau yang diklaim
+    // (pratinjau terikat — bukan lagi klik tombol implisit).
+    const answerConfirmationRef = takeUiActionConfirmationRef('PUSH_ANSWER_ITEMS') ?? `answer-transfer:${msgIndex}:${plan.topCode}`;
     if (res.duplicateBlocked && res.inserted === 0) {
+      recordPushAudit({
+        operation: 'PUSH_ANSWER_ITEMS',
+        projectId: effProject.id,
+        projectName: effProject.name,
+        after: { topCode: plan.topCode, pushed: 0, duplicateBlocked: true },
+        confirmationRef: answerConfirmationRef,
+        ok: true,
+        outcomeVerified: true,
+        message: `Item [${plan.topCode}] sudah ada di Spreadsheet RAB proyek "${effProject.name}" (duplikat diblokir).`,
+      });
       appendMsg(
         `${structuredAiError('DUPLICATE_TRANSFER_BLOCKED').message} Item [${plan.topCode}] ini sudah ada di Spreadsheet RAB proyek "${effProject.name}". (Kode: DUPLICATE_TRANSFER_BLOCKED)`,
         [{ label: 'Buka Spreadsheet RAB', action: { kind: 'navigate', menu: 'rab-estimasi' } }],
@@ -4468,6 +4756,16 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       return;
     }
     if (!res.verified) {
+      recordPushAudit({
+        operation: 'PUSH_ANSWER_ITEMS',
+        projectId: effProject.id,
+        projectName: effProject.name,
+        after: { topCode: plan.topCode, inserted: res.inserted, total: res.total, errorCode: res.errorCode ?? null },
+        confirmationRef: answerConfirmationRef,
+        ok: false,
+        outcomeVerified: false,
+        message: `Transfer item jawaban [${plan.topCode}] tidak terverifikasi (${res.inserted}/${res.total} item).`,
+      });
       appendMsg(
         res.inserted > 0
           ? `Transfer parsial: ${res.inserted} dari ${res.total} item terverifikasi masuk ke Spreadsheet RAB proyek "${effProject.name}" — sisanya belum. Klik "Tambah ke Spreadsheet" lagi untuk melanjutkan; item yang sudah masuk tidak akan digandakan. (Kode: ${res.errorCode})`
@@ -4479,6 +4777,17 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     }
     const added = res.records;
     const first = newItems[0];
+    // P1-E: record audit transfer jawaban terverifikasi.
+    recordPushAudit({
+      operation: 'PUSH_ANSWER_ITEMS',
+      projectId: effProject.id,
+      projectName: effProject.name,
+      after: { topCode: plan.topCode, pushed: added.length, volume: first.volume, unit: first.unit },
+      confirmationRef: answerConfirmationRef,
+      ok: true,
+      outcomeVerified: true,
+      message: `Item [${plan.topCode}] berhasil ditambahkan ke Spreadsheet RAB proyek "${effProject.name}".`,
+    });
     appendMsg(
       `✅ Item [${plan.topCode}] ${first.description.replace(/^\[Chat AI\] /, '')} — ${first.volume} ${first.unit} — berhasil ditambahkan ke Spreadsheet RAB proyek "${effProject.name}" (terverifikasi tersimpan).` +
         (dupCount > 0 ? ` ${dupCount} item dilewati karena sudah ada.` : '') +
@@ -4507,8 +4816,40 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       appendMsg('Tidak ada draft RAB universal yang aktif untuk di-push. Buat dulu dengan perintah seperti "buatkan RAB jalan paving 300 m2" atau "buatkan RAB drainase U-Ditch 500 m".', undefined, true);
       return;
     }
+    // P1-B: gerbang kapabilitas — non-admin ditolak SEBELUM pratinjau
+    // ditampilkan (tidak ada tombol konfirmasi yang mustahil ditekan).
+    const cap = authorizePushMutation('PUSH_UNIVERSAL');
+    if (!cap.ok) {
+      appendMsg(cap.message, undefined, true);
+      return;
+    }
     const preview = buildPushPreview(d);
     const readiness = draftReadiness(d);
+    // P1 §4.5: tanpa proyek aktif, pratinjau tetap dibuat — tombol
+    // konfirmasi menjadi "Buat proyek & konfirmasi transfer" dan
+    // proposal (sidik + versi + nama yang diusulkan + stempel waktu)
+    // disimpan di pendingUnboundTransferRef. TIDAK ADA proyek yang
+    // dibuat di sini — pembuatan hanya terjadi di handler konfirmasi
+    // sesudah user mengklik tombol itu (konfirmasi eksplisit §6).
+    if (!effProject && readiness.status !== 'BLOCKED') {
+      const proposedName = tempProjectNameForDraft(d.title);
+      pendingUnboundTransferRef.current = {
+        kind: 'universal',
+        fingerprint: draftFingerprint(d),
+        version: d.version,
+        proposedName,
+        createdAt: Date.now(),
+      };
+      pendingTransferApprovalRef.current = null;
+      appendMsg(
+        `${formatPushPreviewMessage(d, preview, `"${proposedName}" (baru — dibuat saat konfirmasi)`)}\n\nBelum ada proyek aktif — klik "Buat proyek & konfirmasi transfer" untuk membuat proyek "${proposedName}" dan mentransfer draft ini ke sana. Tanpa klik itu, tidak ada proyek yang dibuat dan tidak ada item yang ditulis.`,
+        [
+          { label: 'Buat proyek & konfirmasi transfer', action: { kind: 'push-universal-confirm' as const } },
+          { label: 'Buka Spreadsheet RAB', action: { kind: 'navigate', menu: 'rab-estimasi' } },
+        ],
+      );
+      return;
+    }
     // G1 (K-04): ikat approval pada draft yang DITINJAU di pratinjau
     // ini — handler konfirmasi menolak bila versi/sidik draft aktif
     // saat klik berbeda. Tanpa tombol konfirmasi (BLOCKED / tanpa
@@ -4517,6 +4858,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       effProject && readiness.status !== 'BLOCKED'
         ? createTransferApprovalBinding(d, effProject.id)
         : null;
+    pendingUnboundTransferRef.current = null;
     const previewActions: ChatActionButton[] = [
       ...(effProject && readiness.status !== 'BLOCKED' ? [{ label: 'Konfirmasi Transfer', action: { kind: 'push-universal-confirm' as const } }] : []),
       { label: 'Buka Spreadsheet RAB', action: { kind: 'navigate', menu: 'rab-estimasi' } },
@@ -4543,12 +4885,65 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       appendMsg('Tidak ada draft RAB universal yang aktif untuk di-push.', undefined, true);
       return;
     }
-    if (!effProject) {
-      appendMsg(`Tidak ada proyek aktif. Buat atau buka proyek dulu di menu Proyek, lalu klik "Push ke Spreadsheet" lagi. (Kode: ${structuredAiError('ACTIVE_PROJECT_NOT_FOUND').code})`, undefined, true);
+    // P1-B: gerbang kapabilitas di konfirmasi (juga digerbang di
+    // pratinjau — peran bisa berganti di antara keduanya).
+    const cap = authorizePushMutation('PUSH_UNIVERSAL');
+    if (!cap.ok) {
+      appendMsg(cap.message, undefined, true);
       return;
     }
-    if (d.lastTransfer && d.lastTransfer.projectId === effProject.id && d.lastTransfer.version === d.version) {
-      appendMsg(`Draft "${d.title}" versi ${d.version} sudah ditransfer ke proyek "${effProject.name}" (${d.lastTransfer.pushed} item) — tidak ada penulisan ganda. (Kode: ${structuredAiError('DUPLICATE_TRANSFER_BLOCKED').code})`, [
+    // P1 §4.5: tanpa proyek aktif, konfirmasi ini adalah proposal
+    // transfer tak-terikat — validasi proposal (sidik + versi + TTL
+    // 10 menit), lalu buat proyeknya. Klik tombol "Buat proyek &
+    // konfirmasi transfer" SENDIRI adalah konfirmasi eksplisitnya;
+    // proposal yang kedaluwarsa / draft yang berubah → tolak,
+    // pratinjau baru wajib. Draft diikat + dipersistenkan ke proyek
+    // baru SEBELUM transfer (agar dapat dipulihkan bila transfer
+    // gagal di tengah jalan).
+    let targetProject: { id: string; name: string } | null = effProject;
+    let confirmationRef: string | null = null;
+    let unboundCreated = false;
+    if (!targetProject) {
+      const proposal = pendingUnboundTransferRef.current;
+      if (!proposal || proposal.kind !== 'universal') {
+        appendMsg(`Tidak ada proyek aktif. Buat atau buka proyek dulu di menu Proyek, lalu klik "Push ke Spreadsheet" lagi. (Kode: ${structuredAiError('ACTIVE_PROJECT_NOT_FOUND').code})`, undefined, true);
+        return;
+      }
+      if (proposal.fingerprint !== draftFingerprint(d) || proposal.version !== d.version) {
+        pendingUnboundTransferRef.current = null;
+        appendMsg('Draft berubah sejak pratinjau dibuat — proposal pembuatan proyek dibatalkan. Buat pratinjau baru lewat "Push ke Spreadsheet", lalu konfirmasi dari pratinjau itu.', undefined, true);
+        return;
+      }
+      if (Date.now() > proposal.createdAt + DIRECT_COMMAND_CONFIRM_TTL_MS) {
+        pendingUnboundTransferRef.current = null;
+        appendMsg('Proposal pembuatan proyek sudah kedaluwarsa (10 menit). Buat pratinjau baru lewat "Push ke Spreadsheet", lalu konfirmasi dari pratinjau itu.', undefined, true);
+        return;
+      }
+      const created = createProjectForUnboundTransfer(proposal.proposedName, d.title);
+      if (!created) {
+        appendMsg('Proyek baru gagal dibuat — tidak ada item yang ditransfer. Coba lagi atau buat proyek manual lewat menu Proyek.', undefined, true);
+        return;
+      }
+      pendingUnboundTransferRef.current = null;
+      confirmationRef = proposal.fingerprint;
+      unboundCreated = true;
+      targetProject = created;
+      setLastUniversalDraft(d, created.id);
+      try {
+        const saved = saveDraft({
+          draft: d,
+          projectId: created.id,
+          conversationId: convIdRef.current,
+          workflowStage: 'autosave',
+          savedBy: 'autosave',
+        });
+        if (saved.ok) draftUpdatedAtRef.current = saved.updatedAt;
+      } catch {
+        /* persist gagal — transfer tetap jalan; receipt dicoba lagi di bawah */
+      }
+    }
+    if (d.lastTransfer && d.lastTransfer.projectId === targetProject.id && d.lastTransfer.version === d.version) {
+      appendMsg(`Draft "${d.title}" versi ${d.version} sudah ditransfer ke proyek "${targetProject.name}" (${d.lastTransfer.pushed} item) — tidak ada penulisan ganda. (Kode: ${structuredAiError('DUPLICATE_TRANSFER_BLOCKED').code})`, [
         { label: 'Buka Spreadsheet RAB', action: { kind: 'navigate', menu: 'rab-estimasi' } },
       ]);
       return;
@@ -4562,16 +4957,44 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     // adalah pesan penolakan di chat, sama seperti jalur penolakan
     // lain di handler ini). Approval yang ditolak hangus: pratinjau
     // baru wajib dibuat sebelum konfirmasi berikutnya.
-    const approval = checkTransferApprovalBinding(pendingTransferApprovalRef.current, d, effProject.id);
-    if (!approval.ok) {
-      pendingTransferApprovalRef.current = null;
-      appendMsg(`${approval.message} Tidak ada item yang ditransfer — buat pratinjau baru lewat "Push ke Spreadsheet", lalu konfirmasi dari pratinjau itu.`, undefined, true);
-      return;
+    // Aliran tak-terikat MELEWATI cek ini — proposal §4.5 di atas
+    // adalah approval-nya (sidik + versi + TTL yang sama).
+    if (!unboundCreated) {
+      confirmationRef = pendingTransferApprovalRef.current?.fingerprint ?? null;
+      const approval = checkTransferApprovalBinding(pendingTransferApprovalRef.current, d, targetProject.id);
+      if (!approval.ok) {
+        pendingTransferApprovalRef.current = null;
+        appendMsg(`${approval.message} Tidak ada item yang ditransfer — buat pratinjau baru lewat "Push ke Spreadsheet", lalu konfirmasi dari pratinjau itu.`, undefined, true);
+        return;
+      }
     }
+    // P1 §4.5: persist receipt — aliran tak-terikat tidak bisa memakai
+    // persistActiveDraft (ia membaca effProject dari closure yang
+    // masih null) sehingga saveDraft dipanggil langsung ke proyek
+    // baru. Proyek baru tidak punya record lama — tanpa penjaga
+    // expectedUpdatedAt (cermin simpan ensurer lama).
+    const persistTransferReceipt = () => {
+      if (!unboundCreated) {
+        persistActiveDraft('transferred', 'transfer');
+        return;
+      }
+      try {
+        const saved = saveDraft({
+          draft: d,
+          projectId: targetProject.id,
+          conversationId: convIdRef.current,
+          workflowStage: 'transferred',
+          savedBy: 'transfer',
+        });
+        if (saved.ok) draftUpdatedAtRef.current = saved.updatedAt;
+      } catch {
+        /* receipt tidak tersimpan — draft in-memory tetap bertanda transferred */
+      }
+    };
     // Guard transfer (hardening): draft BLOCKED ditolak dengan pesan ramah
     // SEBELUM buildPushPayload (yang melempar untuk draft BLOCKED). Duplikat
     // dibiarkan jatuh ke cabang di atas agar pesannya tetap spesifik.
-    const validation = validateTransfer(d, effProject.id);
+    const validation = validateTransfer(d, targetProject.id);
     if (!validation.allowed && !validation.duplicate) {
       appendMsg(`Draft "${d.title}" belum dapat ditransfer: ${validation.reasons.join('; ')}. Lengkapi spesifikasi yang diminta, lalu coba lagi dari preview.`, undefined, true);
       return;
@@ -4585,7 +5008,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     }
     const { newItems, dupCount } = dedupePushPayload(payload, (projectRabItems || []) as Array<{ code?: string; description?: string }>);
     if (newItems.length === 0) {
-      appendMsg(`Semua ${payload.length} item draft "${d.title}" sudah ada di Spreadsheet RAB proyek "${effProject.name}" (duplikat dicegah).`, [
+      appendMsg(`Semua ${payload.length} item draft "${d.title}" sudah ada di Spreadsheet RAB proyek "${targetProject.name}" (duplikat dicegah).`, [
         { label: 'Buka Spreadsheet RAB', action: { kind: 'navigate', menu: 'rab-estimasi' } },
       ]);
       return;
@@ -4594,38 +5017,61 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     // store dibaca balik. Kwitansi transfer (lastTransfer) HANYA dicatat
     // bila seluruh payload terverifikasi tersimpan — kegagalan parsial
     // tidak menandai draft sebagai sudah ditransfer.
-    const res = insertRabItemsVerified(newItems, effProject.id, {
+    const res = insertRabItemsVerified(newItems, targetProject.id, {
       draftId: `universal-v${d.version}`,
       operation: 'push-universal-rab',
-      finalizationKey: buildFinalizationKey(effProject.id, newItems as never),
+      finalizationKey: buildFinalizationKey(targetProject.id, newItems as never),
     });
     if (res.duplicateBlocked && res.inserted === 0) {
       // Keadaan tujuan sudah tercapai dari transfer sebelumnya —
       // catat kwitansi agar alur berikutnya konsisten, laporkan jujur
       // sebagai duplikat yang diblokir (bukan penyisipan baru).
-      d.lastTransfer = { projectId: effProject.id, version: d.version, pushed: 0, skipped: dupCount + res.total, at: new Date().toISOString() };
-      setLastUniversalDraft(d, effProject.id);
+      d.lastTransfer = { projectId: targetProject.id, version: d.version, pushed: 0, skipped: dupCount + res.total, at: new Date().toISOString() };
+      setLastUniversalDraft(d, targetProject.id);
       // G1: approval sekali pakai — keadaan tujuan sudah tercapai.
       pendingTransferApprovalRef.current = null;
       // §2/§4: receipt nyata (keadaan tujuan sudah tercapai) ikut
       // dipersistenkan agar status transferred bertahan lintas refresh.
-      persistActiveDraft('transferred', 'transfer');
+      persistTransferReceipt();
       syncTransferredMark(d.lastTransfer);
       // FASE 5 — receipt ikut tercatat di trail audit registry tool.
-      recordTransferReceipt({ projectId: effProject.id, draftVersion: d.version, draftTitle: d.title, pushed: 0, skipped: dupCount + res.total, conversationId: convIdRef.current ?? null });
+      recordTransferReceipt({ projectId: targetProject.id, draftVersion: d.version, draftTitle: d.title, pushed: 0, skipped: dupCount + res.total, conversationId: convIdRef.current ?? null });
+      // P1-E: keadaan tujuan tercapai (idempotent) tetap dicatat.
+      recordPushAudit({
+        operation: 'PUSH_UNIVERSAL',
+        projectId: targetProject.id,
+        projectName: targetProject.name,
+        after: { draftTitle: d.title, version: d.version, pushed: 0, skipped: dupCount + res.total, duplicateBlocked: true, unboundCreated },
+        confirmationRef,
+        ok: true,
+        outcomeVerified: true,
+        message: `Draft "${d.title}" v${d.version} sudah tersimpan di Spreadsheet RAB proyek "${targetProject.name}" (duplikat diblokir).`,
+      });
       // FASE 6 — keadaan tujuan sudah tercapai = langkah transfer-draft
       // rencana selesai (ditandai dari outcome nyata, bukan teks pesan).
       updateAgentPlan((p) => markTransferStepCompleted(p, `Draft "${d.title}" v${d.version} sudah tersimpan di Spreadsheet RAB (transfer terverifikasi sebelumnya — tidak ada penulisan ganda).`));
       appendMsg(
-        `${structuredAiError('DUPLICATE_TRANSFER_BLOCKED').message} Draft "${d.title}" versi ${d.version} sudah tersimpan di Spreadsheet RAB proyek "${effProject.name}". (Kode: DUPLICATE_TRANSFER_BLOCKED)`,
+        `${structuredAiError('DUPLICATE_TRANSFER_BLOCKED').message} Draft "${d.title}" versi ${d.version} sudah tersimpan di Spreadsheet RAB proyek "${targetProject.name}". (Kode: DUPLICATE_TRANSFER_BLOCKED)`,
         [{ label: 'Buka Spreadsheet RAB', action: { kind: 'navigate', menu: 'rab-estimasi' } }],
       );
       return;
     }
     if (!res.verified) {
+      // P1-E: transfer parsial/gagal tetap dicatat (sebagian item bisa
+      // sudah tertulis — jejak jujur, bukan klaim sukses).
+      recordPushAudit({
+        operation: 'PUSH_UNIVERSAL',
+        projectId: targetProject.id,
+        projectName: targetProject.name,
+        after: { draftTitle: d.title, version: d.version, inserted: res.inserted, total: res.total, errorCode: res.errorCode ?? null, unboundCreated },
+        confirmationRef,
+        ok: false,
+        outcomeVerified: false,
+        message: `Transfer draft "${d.title}" v${d.version} tidak terverifikasi (${res.inserted}/${res.total} item).`,
+      });
       appendMsg(
         res.inserted > 0
-          ? `Transfer parsial: ${res.inserted} dari ${res.total} item terverifikasi masuk ke Spreadsheet RAB proyek "${effProject.name}" — sisanya belum dan draft belum ditandai selesai. Klik "Push ke Spreadsheet" lagi untuk melanjutkan; item yang sudah masuk tidak akan digandakan. (Kode: ${res.errorCode})`
+          ? `Transfer parsial: ${res.inserted} dari ${res.total} item terverifikasi masuk ke Spreadsheet RAB proyek "${targetProject.name}" — sisanya belum dan draft belum ditandai selesai. Klik "Push ke Spreadsheet" lagi untuk melanjutkan; item yang sudah masuk tidak akan digandakan. (Kode: ${res.errorCode})`
           : `${structuredAiError(res.errorCode ?? 'SPREADSHEET_TRANSFER_FAILED').message} Draft tetap tersimpan dan bisa dicoba lagi. (Kode: ${res.errorCode})`,
         undefined,
         true,
@@ -4634,21 +5080,32 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     }
     const added = res.records;
     const unresolvedCount = payload.filter((p) => p.priceStatus === 'PRICE_UNRESOLVED').length;
-    d.lastTransfer = { projectId: effProject.id, version: d.version, pushed: added.length, skipped: dupCount, at: new Date().toISOString() };
-    setLastUniversalDraft(d, effProject.id);
+    d.lastTransfer = { projectId: targetProject.id, version: d.version, pushed: added.length, skipped: dupCount, at: new Date().toISOString() };
+    setLastUniversalDraft(d, targetProject.id);
     // G1: approval sekali pakai — sudah dipakai untuk transfer ini.
     pendingTransferApprovalRef.current = null;
     // §2/§4: HANYA sesudah outcome terverifikasi sukses — persistenkan
     // receipt (draftId+versi terikat di lastTransfer) + status transferred.
-    persistActiveDraft('transferred', 'transfer');
+    persistTransferReceipt();
     syncTransferredMark(d.lastTransfer);
     // FASE 5 — receipt ikut tercatat di trail audit registry tool.
-    recordTransferReceipt({ projectId: effProject.id, draftVersion: d.version, draftTitle: d.title, pushed: added.length, skipped: dupCount, conversationId: convIdRef.current ?? null });
+    recordTransferReceipt({ projectId: targetProject.id, draftVersion: d.version, draftTitle: d.title, pushed: added.length, skipped: dupCount, conversationId: convIdRef.current ?? null });
+    // P1-E: record audit transfer terverifikasi.
+    recordPushAudit({
+      operation: 'PUSH_UNIVERSAL',
+      projectId: targetProject.id,
+      projectName: targetProject.name,
+      after: { draftTitle: d.title, version: d.version, pushed: added.length, skipped: dupCount, unboundCreated },
+      confirmationRef,
+      ok: true,
+      outcomeVerified: true,
+      message: `${added.length} item draft "${d.title}" (v${d.version}) berhasil di-push ke Spreadsheet RAB proyek "${targetProject.name}".`,
+    });
     // FASE 6 — transfer terverifikasi = langkah transfer-draft rencana
     // selesai (ditandai dari outcome nyata, bukan teks pesan).
     updateAgentPlan((p) => markTransferStepCompleted(p, `Draft "${d.title}" v${d.version} dipindahkan ke Spreadsheet RAB (${added.length} item terverifikasi).`));
     appendMsg(
-      `✅ ${added.length} item draft "${d.title}" (versi ${d.version}) berhasil di-push ke Spreadsheet RAB proyek "${effProject.name}" (terverifikasi tersimpan).` +
+      `✅ ${added.length} item draft "${d.title}" (versi ${d.version}) berhasil di-push ke Spreadsheet RAB proyek "${targetProject.name}" (terverifikasi tersimpan).` +
         (dupCount > 0 ? ` ${dupCount} item dilewati karena sudah ada.` : '') +
         (unresolvedCount > 0 ? ` ${unresolvedCount} item belum berharga — masuk berlabel BELUM TERSEDIA, bukan Rp0.` : '') +
         ' Status harga dipertahankan per item (RESMI AHSP / HARGA DATABASE / HARGA MANUAL / BELUM TERSEDIA) — tidak ada yang diam-diam berubah menjadi resmi.',
@@ -4754,7 +5211,22 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       pushUniversalToSpreadsheetPreview();
     } else if (btn.action.kind === 'push-universal-confirm') {
       pushUniversalToSpreadsheet();
+    } else if (btn.action.kind === 'push-answer-items-confirm') {
+      // Fast Track §3 (P1-04/P1-05) — konfirmasi transfer jawaban:
+      // klaim slot pratinjau terikat (sidik + TTL + sekali pakai);
+      // tanpa slot yang sah, handler menolak menulis.
+      confirmAnswerItemsPush(btn.action.msgIndex);
     } else if (btn.action.kind === 'budget-full-ai-complete') {
+      // Fast Track §7 — FULL_AI_COMPLETE adalah mutasi persisten
+      // cakupan draft: hanya Admin (edit-estimate). Gerbang di pemicu
+      // (cermin PUSH_UNIVERSAL: pratinjau + konfirmasi sama-sama
+      // digerbang) — "Terima lengkapan" digerbang terpisah di
+      // cabangnya sendiri di bawah.
+      const fullAiCap = authorizePushMutation('FULL_AI_COMPLETE');
+      if (!fullAiCap.ok) {
+        appendLocalAssistant(fullAiCap.message);
+        return;
+      }
       // Lengkapi dengan Full AI (§5): completion async di luar registry
       // sinkron. Busy dipegang selama completion (busy di luar IIFE ini
       // tidak menunggu async), dan autosave dipanggil di dalam IIFE —
@@ -4796,6 +5268,42 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
           if (!hasAnyActiveExecution(NON_CHAT_EXECUTION_PREFIXES)) setBusy(false);
         }
       })();
+    } else if (btn.action.kind === 'budget-full-ai-undo') {
+      // Fast Track §7 — "Batalkan lengkapan" memulihkan snapshot +
+      // autosave (tulis persisten): hanya Admin (edit-estimate),
+      // gerbang yang sama dengan FULL_AI_COMPLETE.
+      const undoCap = authorizePushMutation('FULL_AI_COMPLETE');
+      if (!undoCap.ok) {
+        appendLocalAssistant(undoCap.message);
+        return;
+      }
+      // P1-08 (H-12) — "Batalkan lengkapan": pulihkan snapshot
+      // pra-completion (universal) atau buang isian AI (direct).
+      // Autosave sesudah restore universal (pola yang sama dengan
+      // completion) — tanpa ini versi terisi tetap tersimpan.
+      const res = undoFullAiCompletion(btn.action.target);
+      appendLocalAssistant(res.message);
+      if (res.ok && btn.action.target === 'universal') persistActiveDraft('autosave', 'autosave');
+    } else if (btn.action.kind === 'budget-full-ai-accept') {
+      // Fast Track (P1-08 penuh, H-12) — "Terima lengkapan": terapkan
+      // klon terisi tertunda ke draft live. Gerbang kapabilitas yang
+      // sama dengan FULL_AI_COMPLETE (terima = persist = mutasi
+      // persisten). Autosave sesudah terima universal (pola yang sama
+      // dengan undo) — tanpa ini klon terisi tidak tersimpan.
+      const acceptCap = authorizePushMutation('FULL_AI_COMPLETE');
+      if (!acceptCap.ok) {
+        appendLocalAssistant(acceptCap.message);
+        return;
+      }
+      const res = acceptFullAiCompletion(btn.action.target);
+      appendLocalAssistant(res.message, res.actions);
+      if (res.ok && btn.action.target === 'universal') persistActiveDraft('autosave', 'autosave');
+    } else if (btn.action.kind === 'budget-full-ai-discard') {
+      // Fast Track (P1-08 penuh, H-12) — "Buang lengkapan": buang klon
+      // terisi tertunda (memori saja — draft live tidak berubah, tanpa
+      // gerbang kapabilitas, tanpa autosave).
+      const res = discardFullAiCompletion(btn.action.target);
+      appendLocalAssistant(res.message);
     } else if (btn.action.kind === 'revision-confirm') {
       // GATE 3 (5C) — tombol = konfirmasi eksplisit aktivasi pratinjau.
       // Pratinjau hidup di memori sesi; tombol pada pesan lama (sesudah
@@ -4826,6 +5334,14 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
           : 'Tidak ada proyek aktif — riwayat versi tidak dapat ditampilkan.',
       );
     } else if (btn.action.kind === 'qto-correction-confirm' || btn.action.kind === 'qto-correction-reject') {
+      // Fast Track §7 — QTO_CORRECTION adalah mutasi persisten cakupan
+      // draft: hanya Admin (edit-estimate). Terima DAN tolak digerbang
+      // — keduanya mempersistenkan keputusan lewat saveDedAttachment.
+      const qtoCap = authorizePushMutation('QTO_CORRECTION');
+      if (!qtoCap.ok) {
+        appendLocalAssistant(qtoCap.message);
+        return;
+      }
       // GATE 4 (5D) — konfirmasi/penolakan koreksi QTO HANYA via tombol
       // (bukan afirmasi teks — bila banyak usulan menunggu, afirmasi
       // teks ambigu). Check direkomputasi segar dari lampiran + dimensi
@@ -4837,6 +5353,24 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       // Tangkap id ke const lokal — narrowing union hilang di dalam
       // closure `.find(...)` bila dibaca langsung dari btn.action.
       const correctionId = btn.action.correctionId;
+      // A2 — nilai usulan YANG DITAMPILKAN pada tombol (pengikatan
+      // nilai konfirmasi): keempatnya selalu dibuat bersamaan di
+      // kedua situs pembuat tombol; bila ada yang absen (tombol lama),
+      // displayedValues undefined → helper tidak memeriksa (perilaku
+      // rekomputasi lama).
+      const displayedQtoValues =
+        btn.action.kind === 'qto-correction-confirm'
+        && btn.action.expectedQuantity !== undefined
+        && btn.action.expectedUnit !== undefined
+        && btn.action.dedQuantity !== undefined
+        && btn.action.dedUnit !== undefined
+          ? {
+              expectedQuantity: btn.action.expectedQuantity,
+              expectedUnit: btn.action.expectedUnit,
+              dedQuantity: btn.action.dedQuantity,
+              dedUnit: btn.action.dedUnit,
+            }
+          : undefined;
       if (!effProject) {
         appendLocalAssistant('Tidak ada proyek aktif — koreksi QTO tidak dapat diputuskan.');
       } else {
@@ -4867,6 +5401,15 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
           if (!proposal) {
             appendLocalAssistant(
               'Usulan koreksi QTO ini sudah tidak menunggu (sudah diputuskan, atau lampiran DED berubah sejak usulan dibuat). Tidak ada yang berubah.',
+            );
+          } else if (confirm && !qtoCorrectionMatchesDisplayed(displayedQtoValues, proposal)) {
+            // A2 — nilai usulan BERUBAH sejak ditampilkan (dimensi /
+            // lampiran berubah di antara pratinjau dan klik): tolak,
+            // jangan terapkan nilai yang tidak pernah ditinjau
+            // pengguna. Penolakan (bukan konfirmasi) tidak diperiksa —
+            // menolak mempertahankan nilai DED apa pun yang terjadi.
+            appendLocalAssistant(
+              `Usulan koreksi QTO "${proposal.description}" berubah sejak ditampilkan — nilai saat ini (${proposal.dedQuantity} ${proposal.dedUnit} → ${proposal.expectedQuantity} ${proposal.expectedUnit}) tidak lagi sama dengan nilai yang Anda tinjau. Tidak ada yang diterapkan. Minta usulan terbaru (kirim ulang DED / perbarui dimensi), lalu putuskan dari usulan baru itu.`,
             );
           } else {
             const updated = confirm
@@ -4918,24 +5461,50 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       const preview = pendingDedSpecRevisionsRef.current.get(btn.action.previewId);
       if (!preview) {
         appendLocalAssistant('Pratinjau revisi spek DED ini sudah tidak aktif (sudah diputuskan, atau sesi dimuat ulang). Spek DED tidak berubah.');
-      } else {
-        pendingDedSpecRevisionsRef.current.delete(btn.action.previewId);
-        if (!confirm) {
-          appendLocalAssistant(
-            `Revisi spek DED dibatalkan — ${preview.label} tetap ${preview.oldValue}${preview.oldUnit ? ` ${preview.oldUnit}` : ''} (DED). Tidak ada yang berubah.`,
-          );
+      } else if (confirm) {
+        // Fast Track §7 — DED_SPEC_REVISION (konfirmasi) adalah mutasi
+        // persisten cakupan draft: hanya Admin (edit-estimate).
+        // Penolakan TIDAK menghapus pratinjau (Admin masih bisa
+        // memutuskannya nanti). Pembatalan (reject) tidak digerbang —
+        // tidak menulis apa pun yang persisten.
+        const dedCap = authorizePushMutation('DED_SPEC_REVISION');
+        if (!dedCap.ok) {
+          appendLocalAssistant(dedCap.message);
         } else {
+          pendingDedSpecRevisionsRef.current.delete(btn.action.previewId);
           const liveCtx = getUniversalContextState();
           if (!liveCtx || !effProject) {
             appendLocalAssistant('Konteks intake proyek ini sudah tidak aktif — revisi spek DED tidak dapat diterapkan. Mulai percakapan proyek ini lagi, lalu kirim ulang perintah revisi.');
           } else {
-            const next = applyDedSpecRevision(liveCtx, preview);
-            restoreUniversalContext(next, effProject.id);
-            appendLocalAssistant(
-              `✅ Revisi spek DED diterapkan: ${preview.label} ${preview.oldValue}${preview.oldUnit ? ` ${preview.oldUnit}` : ''} (DED) → **${preview.newValue}${preview.newUnit ? ` ${preview.newUnit}` : ''} (Anda)**.\n\nNilai DED asli tetap tersimpan di data DED (tidak ditimpa). Spek ini sekarang bersumber dari Anda ("percakapan") dan akan dipakai draft berikutnya.`,
-            );
+            // A2 — validasi pratinjau SEBELUM diterapkan: kedaluwarsa
+            // (> 10 menit) / spek DED dasar sudah berganti / sudah
+            // tidak ada → tolak (pratinjau sudah dihapus di atas).
+            // Spek saat ini di-resolusi dengan cara yang SAMA seperti
+            // pembangun pratinjau (dedSpecs konteks bila ada, bila
+            // tidak dari lampiran DED).
+            const attNow = loadDedAttachment(effProject.id);
+            const currentDedSpecs = (liveCtx.dedSpecs?.length ?? 0) > 0
+              ? liveCtx.dedSpecs
+              : attNow
+                ? sanitizeDedSpecs(dedSpecsFromAttachment(attNow).specs)
+                : [];
+            const validation = validateDedSpecRevisionConfirm(preview, currentDedSpecs);
+            if (!validation.ok) {
+              appendLocalAssistant(validation.message);
+            } else {
+              const next = applyDedSpecRevision(liveCtx, preview);
+              restoreUniversalContext(next, effProject.id);
+              appendLocalAssistant(
+                `✅ Revisi spek DED diterapkan: ${preview.label} ${preview.oldValue}${preview.oldUnit ? ` ${preview.oldUnit}` : ''} (DED) → **${preview.newValue}${preview.newUnit ? ` ${preview.newUnit}` : ''} (Anda)**.\n\nNilai DED asli tetap tersimpan di data DED (tidak ditimpa). Spek ini sekarang bersumber dari Anda ("percakapan") dan akan dipakai draft berikutnya.`,
+              );
+            }
           }
         }
+      } else {
+        pendingDedSpecRevisionsRef.current.delete(btn.action.previewId);
+        appendLocalAssistant(
+          `Revisi spek DED dibatalkan — ${preview.label} tetap ${preview.oldValue}${preview.oldUnit ? ` ${preview.oldUnit}` : ''} (DED). Tidak ada yang berubah.`,
+        );
       }
     } else if (btn.action.kind === 'navigate') {
       // Navigasi meninggalkan alur chat — status menunggu subtipe gugur.
@@ -5111,6 +5680,104 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       setMessages((prev) => [...prev, { role: 'assistant', content: res.message, ts: Date.now() }]);
       persistMessage('assistant', res.message);
       if (res.awaitRabNeeds) setAwaitingNeeds(true);
+    } else if (
+      btn.action.intent === 'CREATE_PROJECT'
+      || btn.action.intent === 'ARCHIVE_PROJECT'
+      || btn.action.intent === 'DUPLICATE_PROJECT'
+      || btn.action.intent === 'RENAME_PROJECT'
+      || btn.action.intent === 'UPDATE_PROJECT_SETTINGS'
+      || btn.action.intent === 'CREATE_QTO_ITEM'
+      || btn.action.intent === 'SYNC_QTO'
+      || btn.action.intent === 'CREATE_REVISION'
+    ) {
+      // P1-C (WC-02) — Dispatch GENERIK tombol konfirmasi perintah
+      // langsung: tombol memanggil executeDirectConfirmation
+      // (satu-satunya jalur yang mengklaim slot konfirmasi tertunda),
+      // BUKAN submit(label). Kirim-ulang teks perintah yang sama TIDAK
+      // PERNAH mengklaim (D6 O-5: "ubah overhead jadi 10%" dua kali
+      // tidak mengeksekusi — eksekusi hanya lewat klik tombol ini).
+      // Ctx dibangun lokal seperti cabang tombol lain + SEMUA callback
+      // mutasi perintah langsung (cermin ctx submit — cabang tombol
+      // tidak memakai ctx submit).
+      const res = executeDirectConfirmation(btn.action.intent as never, btn.action.param, {
+        navigate: (menu: string) => navigateChat(menu),
+        currentMenu,
+        activeProject: effProject,
+        projects,
+        projectTotal: projectSnapshot ? projectSnapshot.totalDirect : projectTotal,
+        projectItems: projectSnapshot?.items ?? null,
+        renameProject: (projectId: string, newName: string) => {
+          if (!contextProjects.some((p) => p.id === projectId)) return false;
+          updateProject(projectId, { name: newName });
+          return true;
+        },
+        createProject: (name: string) => {
+          const p = createProject({ name, status: 'draft' });
+          return { id: p.id, name: p.name };
+        },
+        archiveProject: (projectId: string) => {
+          if (!contextProjects.some((p) => p.id === projectId)) return false;
+          updateProject(projectId, { status: 'archived', isArchived: true, archivedAt: new Date().toISOString() });
+          return true;
+        },
+        duplicateProject: (projectId: string) => {
+          const src = contextProjects.find((p) => p.id === projectId);
+          if (!src) return null;
+          const copy = createProject({
+            name: src.name + t('proj.draft.dup_suffix'),
+            clientName: src.clientName || src.client,
+            location: src.location,
+            buildingType: src.buildingType,
+            status: 'draft',
+            totalRab: src.totalRab,
+            costSummary: src.costSummary,
+            sections: src.sections,
+          });
+          duplicateProjectData(src.id, copy.id);
+          return { id: copy.id, name: copy.name };
+        },
+        createQtoItem: (input) => {
+          try {
+            const created = createManualQtoItem(input);
+            return { id: created.id, kode: created.kode };
+          } catch {
+            return null;
+          }
+        },
+        listQtoItems: () => projectQtoItems.map((q) => ({
+          id: q.id, uraian: q.uraian, quantity: q.quantity, unit: q.unit,
+          kode: q.kode, unitPrice: q.unitPrice ?? null, priceUnit: q.priceUnit,
+        })),
+        syncQtoItem: (qtoItemId: string) => {
+          try {
+            syncQtoToRabSpreadsheet(qtoItemId);
+            return true;
+          } catch {
+            return false;
+          }
+        },
+        createRevision: (label) => {
+          const pid = effProject?.id;
+          if (!pid) return null;
+          const versions = estimateVersions.filter((v) => v.projectId === pid);
+          const finalLabel = (label ?? '').trim() || nextVersionNumber(versions);
+          const created = createEstimateVersion(
+            finalLabel,
+            (label ?? '').trim() ? finalLabel : 'Revisi dibuat dari Chat AI',
+            'Dibuat dari Chat AI',
+            pid,
+          );
+          return { versionNumber: created.versionNumber, label: created.label };
+        },
+        updateProjectSettings: (projectId: string, patch: ProjectSettingsPatch) => {
+          if (!contextProjects.some((p) => p.id === projectId)) return false;
+          updateProject(projectId, patch as any);
+          refreshProjectTotals(projectId);
+          return true;
+        },
+      });
+      setMessages((prev) => [...prev, { role: 'assistant', content: res.message, ts: Date.now(), actions: res.actions }]);
+      persistMessage('assistant', res.message);
     } else if (btn.action.intent === 'DELETE_PROJECT_CONFIRM') {
       // Konfirmasi hapus proyek (langkah 2, 2026-11-17, kelompok 1):
       // param tombol = id proyek. Tanpa cabang ini tombol jatuh ke
@@ -5149,6 +5816,26 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       });
       setMessages((prev) => [...prev, { role: 'assistant', content: res.message, ts: Date.now(), actions: res.actions }]);
       persistMessage('assistant', res.message);
+    } else if (btn.action.intent === 'OPEN_GAME_SPACE') {
+      // Fast Track P1-17 — tombol "Buka Game Space" pada jawaban
+      // GAME_INFO: klik tombol adalah aksi eksplisit pengguna, BUKAN
+      // navigasi bahasa alami (§7-compliant). Sebelumnya tombol ini
+      // jatuh ke fallback submit(label) dan mengandalkan routing NL
+      // isGameCommand — yang sudah dihapus W-GAME per §7 — sehingga
+      // panel tidak pernah terbuka. Cabang ini memanggil registry
+      // langsung (pola GENERATE_RAB_TEMPLATE) dan menerapkan flag
+      // openGameSpace seperti alur submit.
+      const res = executeIntent('OPEN_GAME_SPACE', btn.action.param, {
+        navigate: (menu: string) => navigateChat(menu),
+        currentMenu,
+        activeProject: effProject,
+        projects,
+        projectTotal: projectSnapshot ? projectSnapshot.totalDirect : projectTotal,
+        projectItems: projectSnapshot?.items ?? null,
+      });
+      setMessages((prev) => [...prev, { role: 'assistant', content: res.message, ts: Date.now(), actions: res.actions }]);
+      persistMessage('assistant', res.message);
+      if (res.openGameSpace) setGameSpaceOpen(true);
     } else {
       // Fallback: kirim sebagai pesan
       submit(btn.label);

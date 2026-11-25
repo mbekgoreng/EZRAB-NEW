@@ -214,6 +214,32 @@ describe('A3-06 / AGT-06 — spek bertentangan → konflik diidentifikasi', () =
   });
 });
 
+describe('WD-3.7-05 — entitas objektif dari parser kanonis (bukan parser privat orkestrator)', () => {
+  it('rumah 5x10 lantai 2 → floors 2 (bukan 10 dari ekor dimensi)', () => {
+    const obj = deriveObjective('rumah 5x10 lantai 2', 'CREATE_RAB_SUMMARY');
+    expect(obj.entities.floors).toBe(2);
+    expect(obj.entities.count).toBe(null); // "10 lantai" bukan jumlah
+    expect(obj.entities.lengthM).toBe(5);
+    expect(obj.entities.widthM).toBe(10);
+  });
+  it('anggaran 250 juta → budgetRp 250000000 (bukan null)', () => {
+    const obj = deriveObjective('anggaran 250 juta, rumah 2 lantai', 'CREATE_RAB_SUMMARY');
+    expect(obj.entities.budgetRp).toBe(250_000_000);
+    expect(obj.entities.floors).toBe(2);
+  });
+  it('kolom 15x15 cm → lengthM/widthM null (bukan tapak 15×15 m)', () => {
+    const obj = deriveObjective('kolom 15x15 cm', 'CREATE_RAB_SUMMARY');
+    expect(obj.entities.lengthM).toBe(null);
+    expect(obj.entities.widthM).toBe(null);
+  });
+  it('kandang 17 m x 9 m tetap terbaca (tanpa regresi A3-01)', () => {
+    const obj = kandangObjective();
+    expect(obj.entities.lengthM).toBe(17);
+    expect(obj.entities.widthM).toBe(9);
+    expect(obj.entities.budgetRp).toBe(300_000_000);
+  });
+});
+
 describe('A3-07 / AGT-07 — tugas tak didukung → batasan dijelaskan', () => {
   it('permintaan fiksi/luar cakupan → goal unsupported + langkah explain-limits', () => {
     const obj = deriveObjective('Buatkan RAB rumah di Mars, tandai sebagai fiksi', null);

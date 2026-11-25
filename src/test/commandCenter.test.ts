@@ -71,14 +71,14 @@ describe('P0: intent routing untuk command center', () => {
     expect(r.intent).toBe('CREATE_RAB_SUMMARY');
   });
 
-  it('3. "buka menu spreadsheet" → OPEN_SPREADSHEET', () => {
+  it('3. "buka menu spreadsheet" → UNKNOWN ke AI (§4.1 slash-only; dulu OPEN_SPREADSHEET)', () => {
     const r = routeIntent('buka menu spreadsheet');
-    expect(r.intent).toBe('OPEN_SPREADSHEET');
+    expect(r.intent).toBe('UNKNOWN');
   });
 
-  it('4. "buka RAB" tetap → OPEN_RAB (tidak tertelan wizard)', () => {
+  it('4. "buka RAB" → UNKNOWN ke AI (§4.1 slash-only; dulu OPEN_RAB, tidak tertelan wizard)', () => {
     const r = routeIntent('buka RAB');
-    expect(r.intent).toBe('OPEN_RAB');
+    expect(r.intent).toBe('UNKNOWN');
   });
 
   it('4b. "buatkan rab" tanpa objek → CREATE_RAB_CLARIFY (tidak berubah)', () => {

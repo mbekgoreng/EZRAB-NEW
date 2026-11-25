@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Settings,
   User,
@@ -34,6 +34,7 @@ import {
   Activity,
   FolderKanban,
   Database,
+  DatabaseBackup,
   Truck,
   HardHat,
   Package,
@@ -95,6 +96,27 @@ import { useCreditSimulation } from '../../ai-credits/useCreditSimulation';
 import { CREDIT_PLAN_TO_PLAN_ID } from '../../ai-credits/config';
 import { getPlanDefinition } from '../../billing/plans';
 import { MaterialDatabaseService } from '../../domain/material/materialDatabaseService';
+// P1-A (Backup & Restore — R-01): satu-satunya pemakai UI modul backup.
+import {
+  BACKUP_DATASET_LABELS,
+  BACKUP_EXCLUDED_NOTE,
+  BACKUP_REMINDER_DAYS,
+  MAX_IMPORT_BYTES,
+  createBackup,
+  createSafetyBackup,
+  downloadBackup,
+  getBackupReminderState,
+  getBackupSummary,
+  getSafetySlotContent,
+  getSafetySlotInfo,
+  recordBackupExport,
+  restoreBackup,
+  validateBackup,
+  type BackupReminderState,
+  type BackupSummary,
+  type RestoreValidation,
+  type SafetySlotInfo,
+} from '../../engine/storage/backupRestore';
 
 export type SettingsTabId =
   // Level 1: Account
@@ -130,6 +152,7 @@ export type SettingsTabId =
   // System
   | 'system'
   | 'audit-log'
+  | 'backup'
   | 'help'
   // Project-Scoped Tabs
   | 'project-info'
@@ -234,6 +257,177 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
 
   // Audit Logs State
   const [auditLogs, setAuditLogs] = useState<SettingsAuditEntry[]>(() => settingsAuditService.getLogs());
+
+  // -------------------------------------------------------------
+  // P1-A — BACKUP & RESTORE (R-01): state + handler tab 'backup'.
+  // Seluruh logika backup ada di engine/storage/backupRestore.ts;
+  // blok ini hanya alur UI: ekspor, pratinjau impor, konfirmasi,
+  // backup pengaman otomatis, dan muat ulang sesudah restore.
+  // -------------------------------------------------------------
+  const [backupSummary, setBackupSummary] = useState<BackupSummary | null>(null);
+  const [backupReminder, setBackupReminder] = useState<BackupReminderState>(() => getBackupReminderState());
+  const [backupReminderDismissed, setBackupReminderDismissed] = useState(false);
+  const [backupSafetySlot, setBackupSafetySlot] = useState<SafetySlotInfo>(() => getSafetySlotInfo());
+  const [backupBusy, setBackupBusy] = useState<'export' | 'import' | 'restore' | null>(null);
+  const [backupNotice, setBackupNotice] = useState<{ kind: 'success' | 'error' | 'info'; text: string } | null>(null);
+  const [importFileName, setImportFileName] = useState<string | null>(null);
+  const [importText, setImportText] = useState<string | null>(null);
+  const [importPreview, setImportPreview] = useState<Extract<RestoreValidation, { ok: true }> | null>(null);
+  const [restoreConfirmed, setRestoreConfirmed] = useState(false);
+  const [restoreDone, setRestoreDone] = useState<{ restoredKeys: string[]; skippedKeys: string[]; warnings: string[] } | null>(null);
+  const backupFileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const formatBackupBytes = (bytes: number): string => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
+  };
+
+  const refreshBackupTab = () => {
+    setBackupSummary(getBackupSummary());
+    setBackupReminder(getBackupReminderState());
+    setBackupSafetySlot(getSafetySlotInfo());
+  };
+
+  useEffect(() => {
+    if (activeTab === 'backup') refreshBackupTab();
+  }, [activeTab]);
+
+  const handleExportBackup = () => {
+    setBackupBusy('export');
+    setBackupNotice(null);
+    setRestoreDone(null);
+    try {
+      const result = createBackup();
+      if (!result.ok) {
+        setBackupNotice({ kind: 'error', text: result.error });
+        return;
+      }
+      downloadBackup(result.content, result.filename);
+      recordBackupExport();
+      setBackupReminder(getBackupReminderState());
+      const warnSuffix =
+        result.metadata.warnings && result.metadata.warnings.length > 0
+          ? ` Perhatian: ${result.metadata.warnings.join(' ')}`
+          : '';
+      setBackupNotice({
+        kind: 'success',
+        text: `Backup berhasil diunduh: ${result.filename} (${formatBackupBytes(result.sizeBytes)}). Simpan file ini di tempat aman — ini satu-satunya salinan data Anda di luar browser.${warnSuffix}`,
+      });
+    } catch (e) {
+      setBackupNotice({ kind: 'error', text: `Gagal membuat backup: ${String((e as Error)?.message || e)}` });
+    } finally {
+      setBackupBusy(null);
+    }
+  };
+
+  const handleImportFileSelected = async (file: File | undefined) => {
+    if (!file) return;
+    setBackupBusy('import');
+    setBackupNotice(null);
+    setImportPreview(null);
+    setImportText(null);
+    setRestoreConfirmed(false);
+    setRestoreDone(null);
+    setImportFileName(file.name);
+    try {
+      if (file.size > MAX_IMPORT_BYTES) {
+        setBackupNotice({
+          kind: 'error',
+          text: `File terlalu besar (${formatBackupBytes(file.size)}). Maksimum ${MAX_IMPORT_BYTES / 1024 / 1024} MB.`,
+        });
+        return;
+      }
+      const text = await file.text();
+      const validation = validateBackup(text);
+      if (!validation.ok) {
+        setBackupNotice({ kind: 'error', text: `File ditolak: ${validation.error} Tidak ada data yang diubah.` });
+        return;
+      }
+      setImportText(text);
+      setImportPreview(validation);
+    } catch (e) {
+      setBackupNotice({ kind: 'error', text: `Gagal membaca file: ${String((e as Error)?.message || e)}` });
+    } finally {
+      setBackupBusy(null);
+    }
+  };
+
+  const handleConfirmRestore = () => {
+    if (!importText || !importPreview || !restoreConfirmed) return;
+    setBackupBusy('restore');
+    setBackupNotice(null);
+    try {
+      // 1. Backup pengaman dari kondisi SAAT INI — wajib sebelum restore.
+      const safety = createSafetyBackup();
+      if (!safety.ok) {
+        setBackupNotice({
+          kind: 'error',
+          text: `Restore dibatalkan: backup pengaman gagal dibuat (${safety.error}). Tidak ada data yang diubah.`,
+        });
+        return;
+      }
+      let safetyDownloaded = false;
+      if (safety.content && safety.filename) {
+        try {
+          downloadBackup(safety.content, safety.filename);
+          safetyDownloaded = true;
+        } catch {
+          // Unduhan gagal — slot lokal tetap menjadi jaring pengaman.
+        }
+      }
+      // Jaring pengaman WAJIB ada di salah satu jalur sebelum restore menulis
+      // apa pun: bila slot lokal penuh DAN unduhan gagal, batalkan restore.
+      if (!safety.slotStored && !safetyDownloaded) {
+        setBackupNotice({
+          kind: 'error',
+          text: 'Restore dibatalkan: backup pengaman tidak dapat disimpan (slot lokal penuh dan unduhan gagal). Tidak ada data yang diubah. Kosongkan ruang penyimpanan browser lalu coba lagi.',
+        });
+        return;
+      }
+      setBackupSafetySlot(getSafetySlotInfo());
+      // 2. Restore (sudah divalidasi di pratinjau; restoreBackup memvalidasi ulang).
+      const result = restoreBackup(importText);
+      if (!result.ok) {
+        setBackupNotice({
+          kind: 'error',
+          text: `${result.error} Backup pengaman tersedia sebagai file ${safety.filename} (terunduh otomatis) dan di slot lokal di bawah.`,
+        });
+        return;
+      }
+      setRestoreDone({ restoredKeys: result.restoredKeys, skippedKeys: result.skippedKeys, warnings: result.warnings });
+      setImportPreview(null);
+      setImportText(null);
+      setRestoreConfirmed(false);
+      refreshBackupTab();
+    } catch (e) {
+      setBackupNotice({ kind: 'error', text: `Restore gagal: ${String((e as Error)?.message || e)}` });
+    } finally {
+      setBackupBusy(null);
+    }
+  };
+
+  const handleRestoreFromSafetySlot = () => {
+    const content = getSafetySlotContent();
+    if (!content) {
+      setBackupNotice({ kind: 'error', text: 'Slot backup pengaman kosong.' });
+      return;
+    }
+    setImportFileName('Backup pengaman (slot lokal)');
+    const validation = validateBackup(content);
+    if (!validation.ok) {
+      setBackupNotice({ kind: 'error', text: `Backup pengaman di slot lokal rusak: ${validation.error}` });
+      return;
+    }
+    setImportText(content);
+    setImportPreview(validation);
+    setRestoreConfirmed(false);
+    setRestoreDone(null);
+    setBackupNotice({
+      kind: 'info',
+      text: 'Pratinjau backup pengaman dimuat. Periksa isinya di bawah, lalu centang konfirmasi untuk memulihkan.',
+    });
+  };
 
   useEffect(() => {
     if (initialTab) {
@@ -547,6 +741,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
     { id: 'cost', scope: 'GLOBAL', categoryLabel: 'Cost', title: 'Cost Code & Budget', description: 'Standar kode akun biaya proyek dan arus kas', keywords: ['cost', 'biaya', 'cost code', 'budget', 'baseline', 'cashflow'] },
     { id: 'integrations', scope: 'GLOBAL', categoryLabel: 'Integrasi', title: 'Penyimpanan & Sinkronisasi', description: 'Google Drive, Live Spreadsheet Sync, API', keywords: ['integrasi', 'storage', 'api', 'spreadsheet', 'sync', 'excel'] },
     { id: 'audit-log', scope: 'GLOBAL', categoryLabel: 'Sistem', title: 'Audit Trail & Riwayat', description: 'Jejak log perubahan konfigurasi penting', keywords: ['audit', 'log', 'riwayat', 'history', 'jejak', 'perubahan'] },
+    { id: 'backup', scope: 'GLOBAL', categoryLabel: 'Sistem', title: 'Cadangan & Pulihkan Data', description: 'Ekspor backup JSON semua data bisnis dan pulihkan dari file backup', keywords: ['backup', 'cadangan', 'pulihkan', 'restore', 'ekspor', 'impor', 'salinan', 'kehilangan data'] },
     // Project Search Items
     { id: 'project-info', scope: 'PROJECT', categoryLabel: 'Khusus Proyek', title: 'Informasi Proyek', description: 'Nama, nomor kontrak, owner, lokasi, luas', keywords: ['proyek', 'info proyek', 'owner', 'kontrak', 'lokasi', 'luas'] },
     { id: 'project-estimator', scope: 'PROJECT', categoryLabel: 'Khusus Proyek', title: 'Estimator & Pajak Proyek', description: 'Overhead proyek, PPN proyek, pembulatan khusus', keywords: ['pajak proyek', 'overhead proyek', 'ppn proyek', 'pembulatan proyek', 'markup proyek'] },
@@ -631,6 +826,9 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
       items: [
         { id: 'integrations' as SettingsTabId, label: t('settings.tab_integrasi'), icon: RefreshCw },
         { id: 'audit-log' as SettingsTabId, label: t('settings.tab_audit'), icon: History },
+        // P1-A (R-01): label hardcode Indonesia seperti tab proyek —
+        // dictionaries i18n bukan bagian dari paket ini.
+        { id: 'backup' as SettingsTabId, label: 'Cadangan & Pulihkan', icon: DatabaseBackup },
         { id: 'help' as SettingsTabId, label: t('settings.tab_bantuan'), icon: HelpCircle },
       ],
     },
@@ -1060,6 +1258,24 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                     >
                       <Icon size={16} color={isActive ? '#2563EB' : '#64748B'} />
                       <span>{item.label}</span>
+                      {/* P1-A: titik pengingat bila backup belum pernah / sudah lama diekspor. */}
+                      {item.id === 'backup' && backupReminder.needsReminder && (
+                        <span
+                          title={
+                            backupReminder.lastExportAt
+                              ? `Ekspor terakhir ${backupReminder.daysSinceExport} hari lalu`
+                              : 'Belum pernah mengekspor backup'
+                          }
+                          style={{
+                            width: 8,
+                            height: 8,
+                            borderRadius: '50%',
+                            background: '#F59E0B',
+                            flexShrink: 0,
+                            marginLeft: 'auto',
+                          }}
+                        />
+                      )}
                     </button>
                   );
                 })}
@@ -2494,6 +2710,415 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   </tbody>
                 </table>
               </div>
+            </div>
+          )}
+
+          {/* ===================================================================
+              GLOBAL SCOPE: 9b. SISTEM (CADANGAN & PULIHKAN) — P1-A (R-01)
+              Satu-satunya titik masuk backup/restore di aplikasi. Ekspor
+              mengunduh file JSON; impor memvalidasi + pratinjau dulu, lalu
+              membuat backup pengaman otomatis sebelum menulis apa pun.
+             =================================================================== */}
+          {activeTab === 'backup' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div>
+                <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 4px' }}>
+                  Cadangan &amp; Pulihkan Data
+                </h3>
+                <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
+                  Semua data bisnis EZRAB tersimpan di browser ini. Ekspor backup secara berkala dan simpan
+                  filenya di tempat aman (Drive, flashdisk, atau email sendiri) — tanpa file backup, data yang
+                  hilang dari browser tidak dapat dikembalikan.
+                </p>
+              </div>
+
+              {/* Pengingat ekspor (ringan, tidak memblokir, bisa ditutup) */}
+              {backupReminder.needsReminder && !backupReminderDismissed ? (
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: '12px', padding: '12px 14px' }}>
+                  <Clock size={16} color="#D97706" style={{ flexShrink: 0, marginTop: '1px' }} />
+                  <div style={{ fontSize: '12.5px', color: '#92400E', lineHeight: 1.5 }}>
+                    <strong>
+                      {backupReminder.lastExportAt
+                        ? `Ekspor terakhir ${backupReminder.daysSinceExport} hari lalu.`
+                        : 'Anda belum pernah mengekspor backup.'}
+                    </strong>{' '}
+                    Sebaiknya ekspor backup setidaknya tiap {BACKUP_REMINDER_DAYS} hari, dan selalu sebelum
+                    mengganti perangkat atau membersihkan data browser.
+                  </div>
+                  <button
+                    onClick={() => setBackupReminderDismissed(true)}
+                    aria-label="Tutup pengingat ekspor"
+                    style={{ marginLeft: 'auto', flexShrink: 0, border: 'none', background: 'transparent', color: '#92400E', fontSize: '12px', fontWeight: 700, cursor: 'pointer', padding: '2px 4px' }}
+                  >
+                    Tutup
+                  </button>
+                </div>
+              ) : !backupReminder.needsReminder ? (
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '12px', padding: '12px 14px' }}>
+                  <CheckCircle2 size={16} color="#16A34A" style={{ flexShrink: 0, marginTop: '1px' }} />
+                  <div style={{ fontSize: '12.5px', color: '#166534', lineHeight: 1.5 }}>
+                    Ekspor terakhir:{' '}
+                    <strong>
+                      {backupReminder.lastExportAt
+                        ? new Date(backupReminder.lastExportAt).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })
+                        : '—'}
+                    </strong>
+                    . Data Anda punya salinan di luar browser.
+                  </div>
+                </div>
+              ) : null}
+
+              {/* Status ekspor / impor / restore */}
+              {backupNotice && (
+                <div
+                  style={{
+                    display: 'flex',
+                    gap: '10px',
+                    alignItems: 'flex-start',
+                    background: backupNotice.kind === 'error' ? '#FEF2F2' : backupNotice.kind === 'success' ? '#F0FDF4' : '#EFF6FF',
+                    border: `1px solid ${backupNotice.kind === 'error' ? '#FECACA' : backupNotice.kind === 'success' ? '#BBF7D0' : '#BFDBFE'}`,
+                    borderRadius: '12px',
+                    padding: '12px 14px',
+                  }}
+                >
+                  {backupNotice.kind === 'error' ? (
+                    <AlertCircle size={16} color="#DC2626" style={{ flexShrink: 0, marginTop: '1px' }} />
+                  ) : backupNotice.kind === 'success' ? (
+                    <CheckCircle2 size={16} color="#16A34A" style={{ flexShrink: 0, marginTop: '1px' }} />
+                  ) : (
+                    <Info size={16} color="#1D4ED8" style={{ flexShrink: 0, marginTop: '1px' }} />
+                  )}
+                  <div style={{ fontSize: '12.5px', color: backupNotice.kind === 'error' ? '#991B1B' : backupNotice.kind === 'success' ? '#166534' : '#1E40AF', lineHeight: 1.5, wordBreak: 'break-word' }}>
+                    {backupNotice.text}
+                  </div>
+                </div>
+              )}
+
+              {/* Restore berhasil — aplikasi HARUS dimuat ulang */}
+              {restoreDone && (
+                <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '12px', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                    <CheckCircle2 size={16} color="#16A34A" style={{ flexShrink: 0, marginTop: '1px' }} />
+                    <div style={{ fontSize: '12.5px', color: '#166534', lineHeight: 1.5 }}>
+                      <strong>Restore berhasil.</strong> {restoreDone.restoredKeys.length} dataset dipulihkan.
+                      Aplikasi harus dimuat ulang agar menampilkan data yang dipulihkan.
+                      {restoreDone.skippedKeys.length > 0 && (
+                        <span>
+                          {' '}Dilewati (tidak dipulihkan — konfigurasi admin khusus browser ini, data saat
+                          ini dibiarkan utuh):{' '}
+                          {restoreDone.skippedKeys.map((k) => BACKUP_DATASET_LABELS[k] || k).join(', ')}.
+                        </span>
+                      )}
+                      {restoreDone.warnings.length > 0 && (
+                        <span> Catatan: {restoreDone.warnings.join(' ')}</span>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <button
+                      onClick={() => window.location.reload()}
+                      style={{
+                        padding: '8px 16px',
+                        borderRadius: '10px',
+                        border: 'none',
+                        background: '#16A34A',
+                        color: '#fff',
+                        fontSize: '12.5px',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                      }}
+                    >
+                      <RefreshCw size={14} />
+                      <span>Muat Ulang Aplikasi Sekarang</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* ---------------- EKSPOR ---------------- */}
+              <div style={{ border: '1px solid #EEF1F6', borderRadius: '16px', padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+                  <div>
+                    <h4 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 4px' }}>
+                      Ekspor Backup
+                    </h4>
+                    <p style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
+                      Mengunduh satu file JSON berisi seluruh data bisnis Anda. Nama file menyertakan tanggal
+                      dan jam sehingga backup tidak saling menimpa.
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleExportBackup}
+                    disabled={backupBusy !== null}
+                    style={{
+                      padding: '9px 16px',
+                      borderRadius: '10px',
+                      border: 'none',
+                      background: backupBusy !== null ? '#93C5FD' : '#1D4ED8',
+                      color: '#fff',
+                      fontSize: '12.5px',
+                      fontWeight: 700,
+                      cursor: backupBusy !== null ? 'wait' : 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '7px',
+                    }}
+                  >
+                    <Download size={14} />
+                    <span>{backupBusy === 'export' ? 'Membuat backup…' : 'Unduh Backup (JSON)'}</span>
+                  </button>
+                </div>
+
+                {backupSummary ? (
+                  <div style={{ fontSize: '12.5px', color: 'var(--ez-color-text-body)', lineHeight: 1.6 }}>
+                    <div>
+                      Saat ini tersimpan{' '}
+                      <strong>{backupSummary.totalItems.toLocaleString('id-ID')} entri</strong> dalam{' '}
+                      <strong>{backupSummary.datasets.filter((d) => d.present).length} dataset</strong>{' '}
+                      (±{formatBackupBytes(backupSummary.totalBytes)} di penyimpanan browser).
+                    </div>
+                    <details style={{ marginTop: '8px' }}>
+                      <summary style={{ cursor: 'pointer', fontWeight: 700, color: 'var(--ez-color-primary)' }}>
+                        Rincian per dataset
+                      </summary>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: '4px 20px', marginTop: '10px' }}>
+                        {backupSummary.datasets
+                          .filter((d) => d.present)
+                          .sort((a, b) => a.label.localeCompare(b.label, 'id'))
+                          .map((d) => (
+                            <div key={d.key} style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', borderBottom: '1px solid var(--ez-color-surface-tertiary)', padding: '3px 0' }}>
+                              <span style={{ color: 'var(--ez-color-text-slate)' }}>{d.label}</span>
+                              <strong style={{ color: 'var(--ez-color-text-primary)', whiteSpace: 'nowrap' }}>
+                                {d.count.toLocaleString('id-ID')}
+                              </strong>
+                            </div>
+                          ))}
+                      </div>
+                      {backupSummary.uncoveredEzrabKeys.length > 0 && (
+                        <div style={{ marginTop: '10px', fontSize: '11.5px', color: 'var(--ez-color-text-muted)' }}>
+                          Tidak tercakup (sengaja — preferensi, peran, sesi, cache):{' '}
+                          {backupSummary.uncoveredEzrabKeys.length} kunci.
+                        </div>
+                      )}
+                    </details>
+                  </div>
+                ) : (
+                  <div style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)' }}>Memuat ringkasan…</div>
+                )}
+              </div>
+
+              {/* ---------------- IMPOR ---------------- */}
+              <div style={{ border: '1px solid #EEF1F6', borderRadius: '16px', padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+                  <div>
+                    <h4 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 4px' }}>
+                      Pulihkan dari File Backup
+                    </h4>
+                    <p style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
+                      Pilih file backup (.json). File divalidasi dan ditampilkan pratinjaunya dulu — tidak ada
+                      data yang diubah sebelum Anda mengonfirmasi.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => backupFileInputRef.current?.click()}
+                    disabled={backupBusy !== null}
+                    style={{
+                      padding: '9px 16px',
+                      borderRadius: '10px',
+                      border: '1px solid var(--ez-color-border-strong)',
+                      background: 'var(--ez-color-surface)',
+                      color: 'var(--ez-color-text-body)',
+                      fontSize: '12.5px',
+                      fontWeight: 700,
+                      cursor: backupBusy !== null ? 'wait' : 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '7px',
+                    }}
+                  >
+                    <Upload size={14} />
+                    <span>{backupBusy === 'import' ? 'Membaca file…' : 'Pilih File Backup (.json)'}</span>
+                  </button>
+                  <input
+                    ref={backupFileInputRef}
+                    type="file"
+                    accept=".json,application/json"
+                    style={{ display: 'none' }}
+                    onChange={(e) => {
+                      void handleImportFileSelected(e.target.files?.[0]);
+                      e.target.value = '';
+                    }}
+                  />
+                </div>
+
+                {importPreview && importFileName && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', background: 'var(--ez-color-surface-secondary)', borderRadius: '12px', padding: '14px 16px' }}>
+                    <div style={{ fontSize: '12.5px', color: 'var(--ez-color-text-body)', lineHeight: 1.6 }}>
+                      <div>
+                        <strong>File:</strong> {importFileName}
+                      </div>
+                      <div>
+                        <strong>Dibuat:</strong>{' '}
+                        {new Date(importPreview.metadata.createdAt).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })}
+                        {' · '}Format v{importPreview.metadata.formatVersion}, schema v{importPreview.metadata.schemaVersion}
+                      </div>
+                      {importPreview.metadata.projectSummary.length > 0 && (
+                        <div>
+                          <strong>Proyek di backup:</strong>{' '}
+                          {importPreview.metadata.projectSummary.map((p) => `${p.name} (${p.itemCount} item RAB)`).join('; ')}
+                        </div>
+                      )}
+                      <div>
+                        <strong>Isi:</strong>{' '}
+                        {Object.entries(importPreview.counts)
+                          .filter(([, c]) => c > 0)
+                          .sort(([ka], [kb]) => (BACKUP_DATASET_LABELS[ka] || ka).localeCompare(BACKUP_DATASET_LABELS[kb] || kb, 'id'))
+                          .map(([k, c]) => `${BACKUP_DATASET_LABELS[k] || k}: ${c.toLocaleString('id-ID')}`)
+                          .join(' · ') || 'Backup kosong (tidak ada entri).'}
+                      </div>
+                      {importPreview.untouchedKeys.length > 0 && (
+                        <div style={{ color: 'var(--ez-color-text-muted)' }}>
+                          {importPreview.untouchedKeys.length} dataset tidak ada di file ini dan TIDAK akan diubah.
+                        </div>
+                      )}
+                    </div>
+
+                    {importPreview.warnings.length > 0 && (
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: '10px', padding: '10px 12px' }}>
+                        <AlertCircle size={15} color="#D97706" style={{ flexShrink: 0, marginTop: '1px' }} />
+                        <ul style={{ margin: 0, paddingLeft: '16px', fontSize: '12px', color: '#92400E', lineHeight: 1.6 }}>
+                          {importPreview.warnings.map((w, i) => (
+                            <li key={i}>{w}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '10px', padding: '10px 12px' }}>
+                      <ShieldAlert size={15} color="#DC2626" style={{ flexShrink: 0, marginTop: '1px' }} />
+                      <div style={{ fontSize: '12px', color: '#991B1B', lineHeight: 1.6 }}>
+                        <strong>Restore akan MENGGANTI data saat ini</strong> dengan isi file backup ini —
+                        hanya untuk dataset yang ada di file; dataset yang tidak ada di file (termasuk
+                        konfigurasi harga master admin) dibiarkan utuh.
+                        Sebelum restore, backup pengaman dari kondisi saat ini akan <strong>diunduh otomatis</strong>{' '}
+                        (file ezrab-backup-pengaman-*.json) dan disimpan di slot lokal — pakai file itu bila Anda
+                        perlu membatalkan restore. Sesudah restore, aplikasi harus dimuat ulang.
+                      </div>
+                    </div>
+
+                    <label style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', fontSize: '12.5px', color: 'var(--ez-color-text-body)', cursor: 'pointer', lineHeight: 1.5 }}>
+                      <input
+                        type="checkbox"
+                        checked={restoreConfirmed}
+                        onChange={(e) => setRestoreConfirmed(e.target.checked)}
+                        style={{ marginTop: '2px', accentColor: '#DC2626' }}
+                      />
+                      <span>
+                        Saya mengerti: data saat ini akan diganti dengan isi file backup ini untuk
+                        dataset yang ada di file (sisanya dibiarkan utuh), dan saya
+                        sudah memeriksa pratinjau di atas.
+                      </span>
+                    </label>
+
+                    <div>
+                      <button
+                        onClick={handleConfirmRestore}
+                        disabled={!restoreConfirmed || backupBusy !== null}
+                        style={{
+                          padding: '9px 16px',
+                          borderRadius: '10px',
+                          border: 'none',
+                          background: !restoreConfirmed || backupBusy !== null ? '#FCA5A5' : '#DC2626',
+                          color: '#fff',
+                          fontSize: '12.5px',
+                          fontWeight: 700,
+                          cursor: !restoreConfirmed || backupBusy !== null ? 'not-allowed' : 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '7px',
+                        }}
+                      >
+                        <DatabaseBackup size={14} />
+                        <span>{backupBusy === 'restore' ? 'Memulihkan…' : 'Pulihkan Data Sekarang'}</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* ---------------- SLOT PENGAMAN ---------------- */}
+              {backupSafetySlot.exists && (
+                <div style={{ border: '1px solid #EEF1F6', borderRadius: '16px', padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <h4 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
+                    Backup Pengaman Terakhir
+                  </h4>
+                  <p style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', margin: 0, lineHeight: 1.6 }}>
+                    {backupSafetySlot.corrupt
+                      ? 'Slot backup pengaman ada tetapi isinya rusak — pakai file ezrab-backup-pengaman-*.json yang terunduh bila perlu membatalkan restore.'
+                      : `Salinan kondisi sebelum restore terakhir, dibuat ${backupSafetySlot.createdAt ? new Date(backupSafetySlot.createdAt).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }) : '—'} (${formatBackupBytes(backupSafetySlot.sizeBytes)}). Hanya satu slot yang disimpan; restore berikutnya akan menimpanya.`}
+                  </p>
+                  {!backupSafetySlot.corrupt && (
+                    <div>
+                      <button
+                        onClick={handleRestoreFromSafetySlot}
+                        disabled={backupBusy !== null}
+                        style={{
+                          padding: '8px 14px',
+                          borderRadius: '10px',
+                          border: '1px solid var(--ez-color-border-strong)',
+                          background: 'var(--ez-color-surface)',
+                          color: 'var(--ez-color-text-body)',
+                          fontSize: '12px',
+                          fontWeight: 700,
+                          cursor: backupBusy !== null ? 'wait' : 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                        }}
+                      >
+                        <History size={13} />
+                        <span>Muat Pratinjau dari Slot Pengaman</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ---------------- CAKUPAN ---------------- */}
+              <details style={{ border: '1px solid #EEF1F6', borderRadius: '16px', padding: '14px 18px' }}>
+                <summary style={{ cursor: 'pointer', fontSize: '13px', fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>
+                  Apa yang termasuk dalam backup?
+                </summary>
+                <div style={{ fontSize: '12.5px', color: 'var(--ez-color-text-slate)', lineHeight: 1.7, marginTop: '10px' }}>
+                  <p style={{ margin: '0 0 8px' }}>
+                    <strong>Termasuk:</strong> proyek, item RAB &amp; pekerjaan, QTO beserta pemetaannya, riwayat
+                    perhitungan, jadwal, override harga, snapshot &amp; versi estimasi, kunci finalisasi
+                    (anti-duplikat transfer), riwayat progres, percakapan Chat AI, draf &amp; memori AI, analisis &amp;
+                    draf DED, seluruh data Document AI, AHSP kustom, material &amp; harga pengguna, asumsi harga,
+                    overlay &amp; riwayat harga master, kop perusahaan, template dokumen kustom, draf wizard dokumen,
+                    desain rumah, spesifikasi material proyek, cadangan proyek terhapus, pengaturan estimasi
+                    global, template RAB kustom, serta log aktivitas, audit mutasi AI, dan audit trail.
+                  </p>
+                  <p style={{ margin: '0 0 8px' }}>
+                    <strong>Tidak termasuk:</strong> {BACKUP_EXCLUDED_NOTE}
+                  </p>
+                  <p style={{ margin: '0 0 8px' }}>
+                    <strong>Catatan restore:</strong> overlay harga master (admin), riwayat harga master, dan
+                    feed perubahan harga ikut tersimpan di file backup, tetapi <strong>tidak pernah
+                    dipulihkan</strong> — ketiganya adalah konfigurasi admin khusus browser ini, sehingga
+                    restore tidak pernah membawa konfigurasi harga admin dari browser atau pengguna lain.
+                    Data ketiganya di browser ini dibiarkan utuh; overlay dikelola lewat halaman harga
+                    master, bukan lewat restore.
+                  </p>
+                  <p style={{ margin: 0 }}>
+                    Backup adalah file JSON di perangkat Anda — <strong>tidak ada salinan server</strong>. Ekspor
+                    (Excel/PDF) bukan backup: laporan tidak dapat dipulihkan menjadi data.
+                  </p>
+                </div>
+              </details>
             </div>
           )}
 

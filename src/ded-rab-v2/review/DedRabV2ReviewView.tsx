@@ -718,6 +718,16 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
   // =========================================================================
   const approvedCount = workItems.filter((i) => i.userApproved !== false).length;
 
+  // H-07: this view has no verified/total count — the closest the view's own data
+  // supports is the provenance breakdown the filter tabs render. "Terverifikasi"
+  // is claimed only when every item is sourced from the official EZRAB database
+  // (currentProvenance.ezrabDatabase, same count as the Database tab) and no item
+  // is low-confidence (currentConfidence.low, same count as the Low Confidence tab).
+  const isFullyVerified =
+    workItems.length > 0 &&
+    currentProvenance.ezrabDatabase === workItems.length &&
+    currentConfidence.low === 0;
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', padding: '8px 0' }}>
       {/* Header Banner: "✓ RAB BERHASIL DIBUAT" */}
@@ -753,7 +763,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
             }}
           >
             <CheckCircle2 size={14} />
-            <span>{executionMode === 'AI_RAB' ? '🤖 AI Construction Estimator • Selesai Otonom' : '🏗️ EZRAB Standard • Terverifikasi'}</span>
+            <span>{executionMode === 'AI_RAB' ? '🤖 AI Construction Estimator • Selesai Otonom' : isFullyVerified ? '🏗️ EZRAB Standard • Terverifikasi' : '🏗️ EZRAB Standard'}</span>
           </div>
           <h1 style={{ fontSize: '26px', fontWeight: 800, margin: '0 0 6px 0', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '10px' }}>
             <span>✓ RAB berhasil dibuat</span>
@@ -764,7 +774,9 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
           <p style={{ fontSize: '12.5px', color: '#94A3B8', margin: 0, maxWidth: '640px', lineHeight: 1.5 }}>
             {executionMode === 'AI_RAB'
               ? `EZRAB AI telah menyelesaikan estimasi untuk proyek ${projectName} (${location?.city || 'Pasuruan'}, ${location?.province || 'Jawa Timur'}) sampai menjadi draft RAB.`
-              : `Hasil estimasi terverifikasi ketat berdasarkan database resmi EZRAB untuk proyek ${projectName}.`}
+              : isFullyVerified
+                ? `Hasil estimasi terverifikasi ketat berdasarkan database resmi EZRAB untuk proyek ${projectName}.`
+                : `Hasil estimasi untuk proyek ${projectName} (${currentProvenance.ezrabDatabase} dari ${workItems.length} item bersumber dari database resmi EZRAB).`}
           </p>
         </div>
 

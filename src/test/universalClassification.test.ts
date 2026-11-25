@@ -341,6 +341,33 @@ console.log('§4 — Parser budget tunggal (S1-R2, F11)');
   );
 }
 
+console.log('§4b — Ukuran universal Inggris + paritas bentang (WD-3.7-03/WD-3.7-04)');
+{
+  const mSpanPlural = extractUniversalMeasures('span 8 meters');
+  check('span 8 meters (satuan jamak) → spanM 8', mSpanPlural.spanM === 8, mSpanPlural);
+  const mSpanAdj = extractUniversalMeasures('bentang struktur 8 meter');
+  check('bentang struktur 8 meter (kata sifat) → spanM 8', mSpanAdj.spanM === 8, mSpanAdj);
+  check('slab 8 cm → thicknessCm 8 (berjangkar elemen, tanpa kata tebal)',
+    extractUniversalMeasures('slab 8 cm').thicknessCm === 8);
+  check('tebal pelat 12 cm → thicknessCm 12',
+    extractUniversalMeasures('tebal pelat 12 cm').thicknessCm === 12);
+  const mEn = extractUniversalMeasures('width 5 meters height 3 meters');
+  check('width/height Inggris terbaca (5 / 3)', mEn.widthM === 5 && mEn.heightM === 3, mEn);
+  check('volume 250 m³ (superskrip) → volumeM3 250',
+    extractUniversalMeasures('volume 250 m³').volumeM3 === 250);
+  // Bentuk lama tidak berubah:
+  check('bentang 12 meter tetap spanM 12', extractUniversalMeasures('bentang 12 meter').spanM === 12);
+  check('tebal 10 cm tetap thicknessCm 10', extractUniversalMeasures('tebal 10 cm').thicknessCm === 10);
+  // Paritas lintas-parser: intake (parseAnchoredLinear + fallback spec)
+  // membaca angka yang SAMA dengan extractUniversalMeasures.
+  for (const s of ['jembatan span 8 meters', 'jembatan bentang struktur 8 meter', 'jembatan bentang 12 meter']) {
+    const intake = extractUniversalContext(s);
+    const measures = extractUniversalMeasures(s);
+    check(`paritas bentang '${s}': intake ${intake.spanM} == measures ${measures.spanM}`,
+      intake.spanM === measures.spanM && intake.spanM !== null, { intake: intake.spanM, measures: measures.spanM });
+  }
+}
+
 console.log('§5 — Spek per-scope (S1-R4, inti §10)');
 {
   const s = extractUniversalSpec('buatkan RAB jalan 2 km + drainase 500 m');

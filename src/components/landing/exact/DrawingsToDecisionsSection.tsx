@@ -106,7 +106,7 @@ export const DrawingsToDecisionsSection: React.FC<DrawingsToDecisionsSectionProp
   const structureLength = useTransform(smoothProgress, [0.15, 0.6], [0, 1]);
   const structureOpacity = useTransform(smoothProgress, [0.1, 0.25, 0.85, 1], [0, 1, 1, 0.45]);
 
-  // 3. Walls, Enclosure & BIM Model (0.4 -> 0.8)
+  // 3. Walls, Enclosure & 3D Model (0.4 -> 0.8)
   const enclosureLength = useTransform(smoothProgress, [0.35, 0.8], [0, 1]);
   const enclosureOpacity = useTransform(smoothProgress, [0.3, 0.45, 0.9, 1], [0, 1, 1, 0.5]);
 
@@ -197,7 +197,7 @@ export const DrawingsToDecisionsSection: React.FC<DrawingsToDecisionsSectionProp
             {/* Top Right Project Coordinate Marker */}
             <path d="M 1392,36 L 1392,60 M 1380,48 L 1404,48" stroke="rgba(37, 99, 235, 0.35)" strokeWidth="1" />
             <text x="1270" y="52" fill="rgba(37, 99, 235, 0.45)" fontSize="10" fontFamily="monospace" letterSpacing="0.1em">
-              BIM REVISION 2026.04
+              MODEL REVISION 2026.04
             </text>
 
             {/* Bottom Left Elevation Marker */}
@@ -215,7 +215,7 @@ export const DrawingsToDecisionsSection: React.FC<DrawingsToDecisionsSectionProp
         </div>
 
         {/* ===================================================================
-            LAYER 2: Isometric BIM Architectural Wireframe (Scroll-Driven Assemble)
+            LAYER 2: Isometric Architectural Wireframe (Scroll-Driven Assemble)
             =================================================================== */}
         <motion.div
           className="ez-bim-wireframe-layer"
@@ -343,7 +343,7 @@ export const DrawingsToDecisionsSection: React.FC<DrawingsToDecisionsSectionProp
             </motion.g>
 
             {/* ---------------------------------------------------------------
-                PHASE 2: Structural Columns, Footings & Floor Slabs (BIM Level 1)
+                PHASE 2: Structural Columns, Footings & Floor Slabs (Level 1)
                 --------------------------------------------------------------- */}
             <motion.g style={{ opacity: structureOpacity }}>
               {/* Foundation Footing Pads (Level -0.80) */}
@@ -395,7 +395,7 @@ export const DrawingsToDecisionsSection: React.FC<DrawingsToDecisionsSectionProp
             </motion.g>
 
             {/* ---------------------------------------------------------------
-                PHASE 3: Architectural Cantilever, Second Floor & Roof (BIM Level 2)
+                PHASE 3: Architectural Cantilever, Second Floor & Roof (Level 2)
                 --------------------------------------------------------------- */}
             <motion.g style={{ opacity: enclosureOpacity }}>
               {/* Second Floor Slab (Level +3.60) with Cantilever Balcony */}

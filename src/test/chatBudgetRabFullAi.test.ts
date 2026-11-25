@@ -40,6 +40,7 @@ import {
   buildUniversalDraft,
   formatUniversalDraftMessage,
   effectiveItems,
+  getLastUniversalDraft,
   isPriceValidForTotal,
   reviseUniversalDraft,
   transferPriceStatus,
@@ -47,7 +48,7 @@ import {
   hasResolvedPriceEvidence,
 } from '../ai-tools/ezrab-ai/universalRab';
 import type { UniversalDraft } from '../ai-tools/ezrab-ai/universalRab';
-import { executeBudgetFullAiRab } from '../ai-tools/ezrab-ai/actionRegistry';
+import { executeBudgetFullAiRab, acceptFullAiCompletion, __getPendingUniversalCompletionForTests } from '../ai-tools/ezrab-ai/actionRegistry';
 import type { ChatActionContext } from '../ai-tools/ezrab-ai/actionRegistry';
 import { formatRupiah } from '../engine/formulaEngine';
 import { spreadsheetToWorkItems } from '../ai-design/designToRabBridge';
@@ -370,9 +371,14 @@ async function main(): Promise<void> {
     check('4h total Estimasi Sementara 298,9jt tampil', res.message.includes(formatRupiah(298_900_000)));
     check('4i porsi asumsi 70,5jt dinyatakan', res.message.includes(formatRupiah(70_500_000)));
     check('4j tanpa downgrade', !res.message.includes('diturunkan dari'));
-    const eff = effectiveItems(draft);
+    // Fast Track (P1-08 penuh): isian menempel di KLON tertunda, BUKAN
+    // draft live — cek 4k/4l/4m/4n membaca klon tertunda.
+    const pending = __getPendingUniversalCompletionForTests();
+    check('4k0 klon tertunda tersedia', pending !== null);
+    const eff = pending ? effectiveItems(pending) : [];
     const filled = eff.filter((it) => it.priceStatus === 'PRICE_ESTIMATED');
-    check('4k 2 item draft jadi PRICE_ESTIMATED', filled.length === 2, `dapat ${filled.length}`);
+    check('4k 2 item klon tertunda jadi PRICE_ESTIMATED', filled.length === 2, `dapat ${filled.length}`);
+    check('4k2 draft live TIDAK BERUBAH sesudah completion', effectiveItems(draft).filter((it) => it.priceStatus === 'PRICE_ESTIMATED').length === 0);
     check(
       '4l isian berlabel EZRAB_ASSUMPTION + NEEDS_VERIFICATION',
       filled.every((it) => it.priceSourceKind === 'EZRAB_ASSUMPTION' && it.verificationStatus === 'NEEDS_VERIFICATION'),
@@ -387,7 +393,9 @@ async function main(): Promise<void> {
         .filter((it) => it.priceSourceKind === 'MARKET_REFERENCE')
         .every((it) => it.priceStatus === 'PRICE_RESOLVED' && typeof it.unitPrice === 'number' && it.unitPrice > 0),
     );
-    check('4o aksi push-universal disertakan', (res.actions ?? []).some((a) => a.action.kind === 'push-universal'));
+    check('4o pratinjau membawa Terima + Buang (push menyusul sesudah terima)', (res.actions ?? []).some((a) => a.action.kind === 'budget-full-ai-accept') && (res.actions ?? []).some((a) => a.action.kind === 'budget-full-ai-discard') && !(res.actions ?? []).some((a) => a.action.kind === 'push-universal'));
+    const accept = acceptFullAiCompletion('universal');
+    check('4o2 terima berhasil + aksi push-universal disertakan', accept.ok === true && (accept.actions ?? []).some((a) => a.action.kind === 'push-universal'));
   }
 
   /* =================================================================
@@ -537,7 +545,12 @@ async function main(): Promise<void> {
     nullPricesWhere(draft, (it) => it.unit === 'm2');
     const stub = makeStub();
     await executeBudgetFullAiRab('', MIN_CTX, { deps: stub.deps, target: 'universal' });
-    const filled = effectiveItems(draft).filter((it) => it.priceStatus === 'PRICE_ESTIMATED');
+    // Fast Track (P1-08 penuh): isian menempel ke draft live HANYA
+    // sesudah terima — transfer membaca draft yang sudah diterima.
+    const accept = acceptFullAiCompletion('universal');
+    check('9a0 terima lengkapan berhasil', accept.ok === true);
+    const live = getLastUniversalDraft() ?? draft;
+    const filled = effectiveItems(live).filter((it) => it.priceStatus === 'PRICE_ESTIMATED');
     check('9a 2 item terisi untuk transfer', filled.length === 2);
     check(
       '9b transferPriceStatus = PRICE_ESTIMATED (bukan RESOLVED)',
@@ -551,7 +564,7 @@ async function main(): Promise<void> {
       '9d hasResolvedPriceEvidence = false (asumsi bukan bukti)',
       filled.every((it) => hasResolvedPriceEvidence(it) === false),
     );
-    const resolved = effectiveItems(draft).filter((it) => it.priceSourceKind === 'MARKET_REFERENCE');
+    const resolved = effectiveItems(live).filter((it) => it.priceSourceKind === 'MARKET_REFERENCE');
     check(
       '9e item MARKET_REFERENCE tetap punya bukti resolved',
       resolved.length > 0 && resolved.every((it) => hasResolvedPriceEvidence(it) === true),
@@ -830,13 +843,18 @@ async function main(): Promise<void> {
     const stub = makeStub();
     const res = await executeBudgetFullAiRab('', MIN_CTX, { deps: stub.deps, target: 'universal' });
     check('19a completion berhasil dulu', res.message.includes('Estimasi Sementara (asumsi AI)'));
+    // Fast Track (P1-08 penuh): isian menempel ke draft live HANYA
+    // sesudah terima — revisi membaca draft yang sudah diterima.
+    const accept = acceptFullAiCompletion('universal');
+    check('19a2 terima lengkapan berhasil', accept.ok === true);
+    const live = getLastUniversalDraft() ?? draft;
     check(
       '19b fills menempel sebelum revisi',
-      effectiveItems(draft).filter((it) => it.priceStatus === 'PRICE_ESTIMATED').length === 2,
+      effectiveItems(live).filter((it) => it.priceStatus === 'PRICE_ESTIMATED').length === 2,
     );
-    const rev = reviseUniversalDraft(draft, 'ubah ukuran gudang menjadi 12 x 25 m');
+    const rev = reviseUniversalDraft(live, 'ubah ukuran gudang menjadi 12 x 25 m');
     check('19c revisi diterapkan', rev !== null && rev.ok === true, rev ? rev.message.slice(0, 120) : 'null');
-    const effAfter = effectiveItems(draft);
+    const effAfter = effectiveItems(live);
     check(
       '19d TIDAK ADA fills PRICE_ESTIMATED tersisa sesudah revisi',
       effAfter.filter((it) => it.priceStatus === 'PRICE_ESTIMATED').length === 0,
@@ -845,13 +863,13 @@ async function main(): Promise<void> {
       '19e TIDAK ADA kind EZRAB_ASSUMPTION tersisa',
       effAfter.filter((it) => it.priceSourceKind === 'EZRAB_ASSUMPTION').length === 0,
     );
-    const msgAfter = formatUniversalDraftMessage(draft);
+    const msgAfter = formatUniversalDraftMessage(live);
     check('19f pesan revisi tanpa blok completion', !msgAfter.includes('Estimasi Sementara (asumsi AI)'));
     const unpricedAfter = effAfter.filter((it) => !isPriceValidForTotal(it)).length;
     check(
       '19g predikat penawaran konsisten dengan keadaan pasca-revisi',
       draftNeedsFullAiCompletion({
-        budgetCap: draft.spec.budgetCap,
+        budgetCap: live.spec.budgetCap,
         unpricedCount: unpricedAfter,
         totalItems: effAfter.length,
       }) === (unpricedAfter > 0),

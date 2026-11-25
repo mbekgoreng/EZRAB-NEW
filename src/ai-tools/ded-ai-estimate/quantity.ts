@@ -167,8 +167,19 @@ export const UNIT_SHAPE: Record<string, QuantityShape> = {
   ton: 'WEIGHT',
 };
 
+/**
+ * WD-3.7-06: ejaan satuan kanonis — 'm²'/'m³' (superskrip, keluaran
+ * model) adalah satuan yang sama dengan 'm2'/'m3'. Tanpa normalisasi
+ * ini shapeForUnit('m²') jatuh ke COUNT dan kuantitas luas hilang
+ * diam-diam (attemptQuantityFromDimensionString('m²', '6 x 10 m')
+ * → null, padahal 'm2' → 60).
+ */
+export function normalizeUnit(unit: string | undefined | null): string {
+  return (unit ?? '').toLowerCase().replace(/\s+/g, '').replace(/²/g, '2').replace(/³/g, '3');
+}
+
 export function shapeForUnit(unit: string): QuantityShape {
-  return UNIT_SHAPE[unit?.toLowerCase()] || 'COUNT';
+  return UNIT_SHAPE[normalizeUnit(unit)] || 'COUNT';
 }
 
 /**

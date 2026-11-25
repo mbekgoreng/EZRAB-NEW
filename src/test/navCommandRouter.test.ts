@@ -15,6 +15,13 @@
  * BATAS: tes ini tidak menguji render browser (BLOCKED dari sandbox:
  * SSO Vercel + gerbang akses). Rendering 390px & perubahan URL nyata di
  * Preview harus dicek owner setelah push.
+ *
+ * PERUBAHAN PERILAKU §4.1 (keputusan owner, directive P1 2026-11-24 /
+ * OD-1 — perubahan yang disengaja, BUKAN pelemahan): navigasi bahasa
+ * alami DIHAPUS. "buka ahsp" dan sinonim natural lainnya kini 'none'
+ * (sampai ke AI sebagai percakapan biasa); hanya perintah slash yang
+ * menavigasi. Tes-tes di bawah yang dulu mem-pin navigasi NL kini
+ * mem-pin perilaku baru ini.
  */
 import { describe, it, expect } from 'vitest';
 import {
@@ -111,8 +118,23 @@ describe('navRegistry: slash command', () => {
       expect(r.candidates.length).toBeGreaterThan(0);
       expect(r.candidates[0].id).toBe('spreadsheet-rab');
     }
+    // W-A-05 (§4.1): tanpa entri mirip → petunjuk /help, tanpa chip acak.
     const r2 = resolveNavCommand('/zzz-tidak-ada');
     expect(r2.mode).toBe('suggest');
+    if (r2.mode === 'suggest') {
+      expect(r2.candidates).toEqual([]);
+      expect(r2.message).toContain('/help');
+    }
+  });
+
+  it('"/" telanjang → petunjuk /help, bukan 33 chip "tidak dikenal" (W-A-06 §4.1)', () => {
+    const r = resolveNavCommand('/');
+    expect(r.mode).toBe('suggest');
+    if (r.mode === 'suggest') {
+      expect(r.candidates).toEqual([]);
+      expect(r.message).not.toContain('tidak dikenal');
+      expect(r.message).toContain('/help');
+    }
   });
 
   it('slash legacy tetap didelegasikan ke routeIntent (mode none)', () => {
@@ -120,38 +142,77 @@ describe('navRegistry: slash command', () => {
       expect(resolveNavCommand(s).mode, s).toBe('none');
     }
   });
-});
 
-describe('navRegistry: bahasa alami Indonesia', () => {
-  it('sinonim natural → target benar', () => {
-    expect(direct('buka AHSP').id).toBe('ahsp');
-    expect(direct('bukain spreadsheet').id).toBe('spreadsheet-rab');
-    expect(direct('tampilin kalkulator volume').id).toBe('kalkulator-volume');
-    expect(direct('pergi ke laporan').id).toBe('laporan');
-    expect(direct('masuk ke dokumen proyek').id).toBe('dokumen-proyek');
-    expect(direct('lihat proyek selesai').id).toBe('proyek-selesai');
-    expect(direct('buka proyek draft').id).toBe('proyek-draft');
-    expect(direct('buka proyek yang sedang dikerjakan').id).toBe('proyek-aktif');
-    expect(direct('buka jadwal dan manajemen').id).toBe('jadwal-manajemen');
-    expect(direct('buka kurva s').id).toBe('kurva-s');
-    expect(direct('buka template rab').id).toBe('template-rab');
-    expect(direct('buka tutorial').id).toBe('tutorial');
-    expect(direct('buka keuangan proyek').id).toBe('keuangan-proyek');
-    expect(direct('ke ahsp').id).toBe('ahsp');
+  it('slash tengah-pesan sesudah kesopanan/verba tetap menavigasi (§4.1)', () => {
+    // Isi operatif pesan adalah perintah slash-nya; awalan hanya sopan santun.
+    const r1 = resolveNavCommand('tolong buka /ahsp');
+    expect(r1.mode).toBe('direct');
+    if (r1.mode === 'direct') {
+      expect(r1.entry.id).toBe('ahsp');
+      expect(r1.ahspQuery).toBeUndefined(); // W-A-03: tanpa q sampah "tolong /"
+    }
+    const r2 = resolveNavCommand('buka /ahsp');
+    expect(r2.mode).toBe('direct');
+    if (r2.mode === 'direct') expect(r2.ahspQuery).toBeUndefined();
+    // ...tetapi slash di tengah kalimat penjelasan / dalam kutip TIDAK dieksekusi.
+    expect(resolveNavCommand('Explain the /ahsp command').mode).toBe('none');
+    expect(resolveNavCommand('tolong jelaskan /ahsp').mode).toBe('none');
+    expect(resolveNavCommand('"/ahsp"').mode).toBe('none');
+    expect(resolveNavCommand('buka "/ahsp"').mode).toBe('none');
   });
 
-  it('submenu spesifik menang atas induk', () => {
-    expect(direct('buka spreadsheet rab').id).toBe('spreadsheet-rab');
-    expect(direct('buka rekapitulasi rab').id).toBe('rekap-rab');
-    expect(direct('buka rekapitulasi qto').id).toBe('rekap-qto');
-    expect(direct('buka analisa harga rab').id).toBe('rab-analisa-harga');
-    expect(direct('buka analisa harga').id).toBe('ahsp'); // tanpa qualifier = AHSP
-    expect(direct('buka proyek selesai').id).toBe('proyek-selesai');
-    expect(direct('buka jadwal manajemen').id).toBe('jadwal-manajemen');
-    expect(direct('buka jadwal').id).toBe('jadwal');
-    expect(direct('buka pengaturan rab').id).toBe('pengaturan-rab');
-    expect(direct('buka pengaturan').id).toBe('pengaturan');
-    expect(direct('buka dokumen proyek').id).toBe('dokumen-proyek');
+  it('negasi tidak pernah menavigasi (W-A-01 §4.1)', () => {
+    for (const s of [
+      'jangan buka ahsp',
+      'saya tidak mau buka ahsp',
+      'jangan buka /ahsp',
+      'tidak usah buka /rab',
+      'buka /ahsp, jangan yang lain',
+      'I do not want to open /ahsp',
+    ]) {
+      expect(resolveNavCommand(s).mode, s).toBe('none');
+    }
+  });
+});
+
+describe('navRegistry: bahasa alami Indonesia (§4.1 — TIDAK menavigasi)', () => {
+  it('sinonim natural → none (sampai ke AI, bukan navigasi)', () => {
+    for (const s of [
+      'buka AHSP',
+      'bukain spreadsheet',
+      'tampilin kalkulator volume',
+      'pergi ke laporan',
+      'masuk ke dokumen proyek',
+      'lihat proyek selesai',
+      'buka proyek draft',
+      'buka proyek yang sedang dikerjakan',
+      'buka jadwal dan manajemen',
+      'buka kurva s',
+      'buka template rab',
+      'buka tutorial',
+      'buka keuangan proyek',
+      'ke ahsp',
+    ]) {
+      expect(resolveNavCommand(s).mode, s).toBe('none');
+    }
+  });
+
+  it('submenu spesifik bahasa alami → none (bukan direct)', () => {
+    for (const s of [
+      'buka spreadsheet rab',
+      'buka rekapitulasi rab',
+      'buka rekapitulasi qto',
+      'buka analisa harga rab',
+      'buka analisa harga',
+      'buka proyek selesai',
+      'buka jadwal manajemen',
+      'buka jadwal',
+      'buka pengaturan rab',
+      'buka pengaturan',
+      'buka dokumen proyek',
+    ]) {
+      expect(resolveNavCommand(s).mode, s).toBe('none');
+    }
   });
 
   it('pertanyaan informasional TIDAK auto-navigasi', () => {
@@ -163,41 +224,24 @@ describe('navRegistry: bahasa alami Indonesia', () => {
     expect(resolveNavCommand('rab').mode).toBe('none');
   });
 
-  it('ambigu → pilihan chip, tanpa navigasi', () => {
-    const r1 = resolveNavCommand('spreadsheet');
-    expect(r1.mode).toBe('ambiguous');
-    if (r1.mode === 'ambiguous') expect(r1.candidates[0].id).toBe('spreadsheet-rab');
-    const r2 = resolveNavCommand('laporan');
-    expect(r2.mode).toBe('ambiguous');
-    const r3 = resolveNavCommand('proyek');
-    expect(r3.mode).toBe('ambiguous');
-    if (r3.mode === 'ambiguous') expect(r3.candidates.length).toBe(5);
-    const r4 = resolveNavCommand('buka rekapitulasi');
-    expect(r4.mode).toBe('ambiguous');
-    if (r4.mode === 'ambiguous') expect(r4.candidates.length).toBe(2);
-  });
-
-  it('cara membuka → saran chip saja, bukan auto-nav', () => {
-    const r = resolveNavCommand('bagaimana cara membuka ahsp');
-    expect(r.mode).toBe('suggest');
-    if (r.mode === 'suggest') expect(r.entry.id).toBe('ahsp');
-  });
-
-  it('campuran info+perintah → jawaban singkat + chip (AHSP)', () => {
-    const r = resolveNavCommand('jelaskan AHSP lalu buka halamannya');
-    expect(r.mode).toBe('suggest');
-    if (r.mode === 'suggest') {
-      expect(r.entry.id).toBe('ahsp');
-      expect(r.message).toContain('koefisien');
-      expect(r.candidates[0].id).toBe('ahsp');
+  it('nama target telanjang → none (sampai ke AI, bukan chip ambigu) (§4.1)', () => {
+    for (const s of ['spreadsheet', 'laporan', 'proyek', 'database', 'buka rekapitulasi']) {
+      expect(resolveNavCommand(s).mode, s).toBe('none');
     }
   });
 
-  it('pesan sangat panjang dengan frasa nav → saran, bukan direct', () => {
+  it('cara membuka → none (dijawab AI, bukan chip shortcut) (§4.1)', () => {
+    expect(resolveNavCommand('bagaimana cara membuka ahsp').mode).toBe('none');
+  });
+
+  it('campuran info+perintah → none (dijawab AI) (§4.1)', () => {
+    expect(resolveNavCommand('jelaskan AHSP lalu buka halamannya').mode).toBe('none');
+  });
+
+  it('pesan sangat panjang dengan frasa nav → none (dijawab AI) (§4.1)', () => {
     const long = `Berikut isi dokumen proyek saya yang panjang sekali. ${'Kata pengantar dan uraian pekerjaan '.repeat(8)}Tolong buka spreadsheet rab untuk memeriksa angka.`;
     expect(long.length).toBeGreaterThan(160);
-    const r = resolveNavCommand(long);
-    expect(r.mode).toBe('suggest');
+    expect(resolveNavCommand(long).mode).toBe('none');
   });
 });
 
@@ -208,7 +252,7 @@ describe('navRegistry: kemurnian resolver', () => {
     const b = resolveNavCommand(input);
     expect(JSON.stringify(a)).toBe(JSON.stringify(b));
     expect(input).toBe('Buka Spreadsheet RAB');
-    expect(a.mode).toBe('direct');
+    expect(a.mode).toBe('none'); // §4.1: bahasa alami tidak menavigasi
   });
 });
 
@@ -231,9 +275,12 @@ describe('slash menu helpers', () => {
     expect(filterSlashEntries('zzz-tidak-ada').length).toBe(0);
   });
 
-  it('suggestSlash: query kosong = semua; fallback 4 terpakai', () => {
-    expect(suggestSlash('').length).toBe(33); // selaras jumlah registri (lihat R-06)
-    expect(suggestSlash('/zzz-tidak-ada').map((e) => e.id)).toContain('spreadsheet-rab');
+  it('suggestSlash: query kosong = [] (W-A-06); tanpa kemiripan = [] tanpa fallback (W-A-05)', () => {
+    expect(suggestSlash('')).toEqual([]);
+    expect(suggestSlash('/zzz-tidak-ada')).toEqual([]);
+    expect(suggestSlash('/admin')).toEqual([]);
+    // Kemiripan nyata tetap disarankan (bukan fallback buta).
+    expect(suggestSlash('/spradshet').map((e) => e.id)).toContain('spreadsheet-rab');
   });
 });
 

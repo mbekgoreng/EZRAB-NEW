@@ -243,6 +243,51 @@ console.log('== Tambah item dari katalog (F11) ==');
   ok(!bogus.ok && bogus.message.includes('tidak ditemukan di katalog'), 'kode karangan ditolak tanpa pemetaan');
 }
 
+console.log('== Rollback penambahan parsial (FTC A2-#7) ==');
+{
+  // Host yang GAGAL pada applyAdd ke-2 (mengembalikan null) — item
+  // pertama HARUS dibatalkan, bukan tertinggal di proyek. Tanpa
+  // rollback, executePlan melaporkan "gagal" sementara item awal tetap
+  // ada (mutasi parsial — temuan A2 #7 W-MUTATION).
+  class FailSecondAddHost extends FakeHost {
+    applyAdd(itemData: Record<string, unknown>): string | null {
+      if (this.calls.add === 1) { this.calls.add += 1; return null; }
+      return super.applyAdd(itemData);
+    }
+  }
+  const host = new FailSecondAddHost([]);
+  const built = buildAddPlan(snapOf(host.items), '1.1.4.2', 10, ACTOR);
+  ok(built.ok, 'plan tambah terbangun untuk uji rollback (null)');
+  if (built.ok) {
+    const second = { ...built.plan.addItems![0], description: 'Item kedua (gagal null)' };
+    built.plan.addItems!.push(second);
+    const res = await executePlan(built.plan, host);
+    ok(!res.ok, 'penambahan parsial (null) dilaporkan gagal');
+    ok(host.items.length === 0, 'item pertama dibatalkan (rollback) — tidak ada mutasi parsial');
+    ok(host.calls.del >= 1, 'rollback memanggil applyDelete');
+    ok(res.message.includes('dibatalkan'), 'pesan gagal menyatakan rollback');
+  }
+}
+{
+  // Varian lempar: applyAdd ke-2 melempar — rollback tetap jalan.
+  class ThrowSecondAddHost extends FakeHost {
+    applyAdd(itemData: Record<string, unknown>): string | null {
+      if (this.calls.add === 1) { this.calls.add += 1; throw new Error('simulasi mutator gagal'); }
+      return super.applyAdd(itemData);
+    }
+  }
+  const host = new ThrowSecondAddHost([]);
+  const built = buildAddPlan(snapOf(host.items), '1.1.4.2', 10, ACTOR);
+  ok(built.ok, 'plan tambah terbangun untuk uji rollback (lempar)');
+  if (built.ok) {
+    const second = { ...built.plan.addItems![0], description: 'Item kedua (lempar)' };
+    built.plan.addItems!.push(second);
+    const res = await executePlan(built.plan, host);
+    ok(!res.ok, 'lemparan mutator dilaporkan gagal');
+    ok(host.items.length === 0, 'rollback sesudah lemparan — tidak ada mutasi parsial');
+  }
+}
+
 console.log('== Persistensi gagal dilaporkan jujur (F19) ==');
 {
   const target = item({ description: 'Pondasi batu kali', volume: 12, unitPrice: 450000, totalPrice: 5400000 });

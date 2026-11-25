@@ -24,7 +24,8 @@
  *    teresolusi dinyatakan), disusul draft kanonis dari tombol generate.
  *  I "ini gambar DED-nya" → workflow DED yang ada (bukan menu generik,
  *    bukan intake landscape).
- *  J "gunakan template rab" → alur template (OPEN_TEMPLATE navigasi).
+ *  J "gunakan template rab" → ke AI (§4.1 slash-only; dulu alur
+ *    template OPEN_TEMPLATE navigasi — dihapus directive P1 2026-11-24).
  *
  * PAGAR (master prompt): paket ini LOKAL SAJA — tanpa commit/push/
  * deploy/aktivasi billing.
@@ -225,8 +226,13 @@ describe('Skenario I — DED eksplisit', () => {
 });
 
 describe('Skenario J — template eksplisit', () => {
-  it('"gunakan template rab" → OPEN_TEMPLATE (alur katalog template)', () => {
-    expect(routeIntent('gunakan template rab').intent).toBe('OPEN_TEMPLATE');
+  it('"gunakan template rab" → UNKNOWN ke AI (§4.1 slash-only; dulu OPEN_TEMPLATE)', () => {
+    // §4.1 (directive P1 2026-11-24 / OD-1): "gunakan/pakai template"
+    // menavigasi ke katalog, jadi di bawah slash-only ia harus lewat
+    // "/template" atau dijawab AI — bukan navigasi otomatis dari NL.
+    expect(routeIntent('gunakan template rab').intent).toBe('UNKNOWN');
+    // Handler OPEN_TEMPLATE sendiri tidak berubah: bila dipanggil lewat
+    // slash/tombol, ia tetap menavigasi ke katalog.
     const res = executeIntent('OPEN_TEMPLATE', undefined, ctxFor('gunakan template rab'));
     expect(res.navigated).toBe(true);
     // Kata "template" telanjang tetap klarifikasi topik (pola lama).

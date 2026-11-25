@@ -33,10 +33,12 @@
  *
  * Run: npx vitest run src/test/chatProjectPriceCommands.test.ts
  */
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { routeIntent } from '../ai-tools/ezrab-ai/intentRouter';
+import { setAssistantOperationContext } from '../ai-tools/ezrab-ai/operations';
 import {
   executeIntent,
+  proposeUiActionConfirmation,
   resolveProjectPriceTarget,
   stripProjectScopePhrase,
   type ChatActionContext,
@@ -290,6 +292,19 @@ describe('SET_PROJECT_PRICE: langkah 1 (pratinjau, tidak menulis)', () => {
 });
 
 describe('SET_PROJECT_PRICE_CONFIRM: langkah 2 (menulis lewat callback)', () => {
+  // P1-B: langkah konfirmasi digerbang kapabilitas — suite ini berjalan
+  // sebagai Estimator (writesEnabled: true). Langkah 1 (pratinjau)
+  // read-only dan tidak digerbang.
+  // FTC A2: langkah 2 kini mengklaim slot konfirmasi langkah 1 (sidik =
+  // string JSON payload persis, TTL 10 mnt, sekali pakai, terikat
+  // aktor) — konfirmasi tanpa slot DITOLAK. Tes-tes di bawah mengusulkan
+  // slot dulu lewat proposeUiActionConfirmation (persis seperti yang
+  // dilakukan langkah 1 di produksi) agar pertahanan handler diuji
+  // sesudah klaim berhasil; B6-30 sengaja mengusulkan string rusaknya
+  // agar pertahanan parse tetap terjangkau.
+  beforeEach(() => {
+    setAssistantOperationContext({ actor: 'Penguji', writesEnabled: true });
+  });
   const payload = JSON.stringify({
     v: 1, projectId: 'proj-1', code: 'M12', name: 'Semen',
     category: 'MATERIAL', unit: 'kg', masterPrice: 1600, projectPrice: 2000,
@@ -297,6 +312,7 @@ describe('SET_PROJECT_PRICE_CONFIRM: langkah 2 (menulis lewat callback)', () => 
 
   it('B6-28. payload valid + proyek cocok → callback dipanggil sekali dengan input persis + pesan sukses menyebut scope', () => {
     const seen: Array<{ projectId: string; input: ProjectPriceOverrideInput }> = [];
+    proposeUiActionConfirmation('SET_PROJECT_PRICE_CONFIRM', payload);
     const res = executeIntent('SET_PROJECT_PRICE_CONFIRM', payload, baseCtx({
       setProjectPriceOverride: (projectId, input) => { seen.push({ projectId, input }); return true; },
     }));
@@ -314,6 +330,7 @@ describe('SET_PROJECT_PRICE_CONFIRM: langkah 2 (menulis lewat callback)', () => 
 
   it('B6-29. proyek aktif berganti sejak pratinjau → ditolak, callback TIDAK dipanggil', () => {
     let calls = 0;
+    proposeUiActionConfirmation('SET_PROJECT_PRICE_CONFIRM', payload);
     const res = executeIntent('SET_PROJECT_PRICE_CONFIRM', payload, baseCtx({
       activeProject: { id: 'proj-2', name: 'Proyek Dua' },
       setProjectPriceOverride: () => { calls++; return true; },
@@ -325,6 +342,9 @@ describe('SET_PROJECT_PRICE_CONFIRM: langkah 2 (menulis lewat callback)', () => 
 
   it('B6-30. payload rusak (bukan JSON) → ok:false, callback TIDAK dipanggil', () => {
     let calls = 0;
+    // Usulkan slot dengan string rusaknya agar klaim lolos dan
+    // pertahanan parse handler yang diuji (bukan pertahanan klaim).
+    proposeUiActionConfirmation('SET_PROJECT_PRICE_CONFIRM', 'bukan json');
     const res = executeIntent('SET_PROJECT_PRICE_CONFIRM', 'bukan json', baseCtx({
       setProjectPriceOverride: () => { calls++; return true; },
     }));
@@ -336,6 +356,7 @@ describe('SET_PROJECT_PRICE_CONFIRM: langkah 2 (menulis lewat callback)', () => 
   it('B6-31. payload berkode kosong → ok:false (pertahanan berlapis)', () => {
     let calls = 0;
     const bad = JSON.stringify({ v: 1, projectId: 'proj-1', code: '', name: 'X', category: 'MATERIAL', unit: 'kg', masterPrice: 1, projectPrice: 2 });
+    proposeUiActionConfirmation('SET_PROJECT_PRICE_CONFIRM', bad);
     const res = executeIntent('SET_PROJECT_PRICE_CONFIRM', bad, baseCtx({
       setProjectPriceOverride: () => { calls++; return true; },
     }));
@@ -346,6 +367,7 @@ describe('SET_PROJECT_PRICE_CONFIRM: langkah 2 (menulis lewat callback)', () => 
   it('B6-32. payload harga Rp0/negatif → ok:false', () => {
     let calls = 0;
     const bad = JSON.stringify({ v: 1, projectId: 'proj-1', code: 'M12', name: 'Semen', category: 'MATERIAL', unit: 'kg', masterPrice: 1600, projectPrice: 0 });
+    proposeUiActionConfirmation('SET_PROJECT_PRICE_CONFIRM', bad);
     const res = executeIntent('SET_PROJECT_PRICE_CONFIRM', bad, baseCtx({
       setProjectPriceOverride: () => { calls++; return true; },
     }));
@@ -354,12 +376,14 @@ describe('SET_PROJECT_PRICE_CONFIRM: langkah 2 (menulis lewat callback)', () => 
   });
 
   it('B6-33. tanpa callback → ok:false, jujur "belum bisa"', () => {
+    proposeUiActionConfirmation('SET_PROJECT_PRICE_CONFIRM', payload);
     const res = executeIntent('SET_PROJECT_PRICE_CONFIRM', payload, baseCtx());
     expect(res.ok).toBe(false);
     expect(res.message).toContain('belum bisa menerapkan override');
   });
 
   it('B6-34. callback mengembalikan false → ok:false, tanpa klaim sukses', () => {
+    proposeUiActionConfirmation('SET_PROJECT_PRICE_CONFIRM', payload);
     const res = executeIntent('SET_PROJECT_PRICE_CONFIRM', payload, baseCtx({
       setProjectPriceOverride: () => false,
     }));
@@ -369,6 +393,7 @@ describe('SET_PROJECT_PRICE_CONFIRM: langkah 2 (menulis lewat callback)', () => 
 
   it('B6-35. tanpa proyek aktif → tidak diterapkan', () => {
     let calls = 0;
+    proposeUiActionConfirmation('SET_PROJECT_PRICE_CONFIRM', payload);
     const res = executeIntent('SET_PROJECT_PRICE_CONFIRM', payload, baseCtx({
       activeProject: null,
       setProjectPriceOverride: () => { calls++; return true; },

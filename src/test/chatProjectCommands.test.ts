@@ -74,7 +74,7 @@ function makeCtx(over: Partial<ProjectCommandContext> = {}): {
   assert(r?.intent === 'CREATE_PROJECT' && r?.param === 'Rumah Impian', 'A3: "baru" di depan nama dikonsumsi, bukan nama');
 }
 {
-  assert(matchProjectCommand('buat proyek baru') === null, 'A4: "buat proyek baru" → TIDAK cocok (jatuh ke OPEN_PROJECT_CREATE)');
+  assert(matchProjectCommand('buat proyek baru') === null, 'A4: "buat proyek baru" → TIDAK cocok (§4.1: jatuh UNKNOWN ke AI; dulu OPEN_PROJECT_CREATE)');
 }
 {
   assert(matchProjectCommand('buat proyek') === null, 'A5: "buat proyek" tanpa nama → TIDAK cocok');
@@ -86,7 +86,7 @@ function makeCtx(over: Partial<ProjectCommandContext> = {}): {
   assert(matchProjectCommand('buatkan rab rumah type 70') === null, 'A7: rab rumah type 70 → BUKAN CREATE_PROJECT');
 }
 {
-  assert(matchProjectCommand('tambah proyek baru') === null, 'A8: "tambah proyek baru" → TIDAK cocok (OPEN_PROJECT_CREATE)');
+  assert(matchProjectCommand('tambah proyek baru') === null, 'A8: "tambah proyek baru" → TIDAK cocok (§4.1: jatuh UNKNOWN ke AI; dulu OPEN_PROJECT_CREATE)');
 }
 {
   const r = matchProjectCommand('bikin proyek Villa Teduh');

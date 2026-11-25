@@ -22,6 +22,10 @@
 import { marketReviewStore } from '../market/reviewStore';
 import { extractSpec, compareKeyAttributes } from '../market/specProfiles';
 import type { MarketPriceReference } from '../market/types';
+import {
+  normalizeUnitName,
+  approvedConversionBetween,
+} from '../../constructionCalculators/unitCompatibility';
 
 /** Label khusus yang SELALU menyertai harga perkiraan AI. */
 export const AI_ESTIMATE_LABEL = 'Harga Estimasi';
@@ -63,6 +67,28 @@ const newId = () =>
 const nowIso = () => new Date().toISOString();
 
 /**
+ * WB-11 (Fast Track 2026-11-24): harga sumber hanya dapat dipakai bila
+ * satuannya sama dengan satuan yang diminta (sesudah normalisasi notasi:
+ * m2↔m², Meter Panjang↔m), atau sinonim hitung faktor-1 (buah↔unit).
+ * Konversi SI lain tidak diterima — jalur ini tidak menerapkan faktor
+ * konversi, jadi memakainya sama dengan memakai harga yang salah.
+ * Tanpa satuan yang diminta, pemeriksaan dilewati (perilaku lama).
+ */
+function unitMatchesRequested(
+  sourceUnit: string | null | undefined,
+  requestedUnit: string
+): boolean {
+  const req = (requestedUnit ?? '').trim();
+  if (!req) return true;
+  const a = normalizeUnitName(sourceUnit);
+  const b = normalizeUnitName(req);
+  if (!a || !b) return false;
+  if (a === b) return true;
+  const conv = approvedConversionBetween(a, b);
+  return !!conv && conv.priceFactor === 1;
+}
+
+/**
  * Kumpulkan "sumber tertentu": referensi pasar (terverifikasi dulu),
  * lalu database harga material, lalu item AHSP sejenis.
  */
@@ -90,7 +116,13 @@ export function gatherEstimateSources(
     });
 
   for (const r of refs.slice(0, 5)) {
-    const unitPrice = r.normalizedUnitPrice ?? r.listedPrice;
+    // WB-11: referensi yang TIDAK dapat dinormalisasi ke satuan dasar
+    // (normalizedUnitPrice null) DIKELUARKAN — harga tertera per satuan
+    // kemasan tidak boleh dipakai seolah-olah per satuan dasar. Satuan
+    // hasil normalisasi juga wajib cocok dengan satuan yang diminta.
+    if (r.normalizedUnitPrice == null) continue;
+    if (!unitMatchesRequested(r.normalizedUnit, unit)) continue;
+    const unitPrice = r.normalizedUnitPrice;
     if (!(unitPrice > 0)) continue;
     sources.push({
       kind: r.verificationStatus === 'MARKET_VERIFIED' ? 'market_verified' : 'market_review',
@@ -102,17 +134,16 @@ export function gatherEstimateSources(
 
   if (opts.materialDbLookup) {
     const m = opts.materialDbLookup(componentName);
-    if (m && m.price > 0) {
+    if (m && m.price > 0 && unitMatchesRequested(m.unit, unit)) {
       sources.push({ kind: 'material_db', label: m.label, price: m.price, unit: m.unit });
     }
   }
   if (opts.similarAhspLookup) {
     const s = opts.similarAhspLookup(componentName);
-    if (s && s.price > 0) {
+    if (s && s.price > 0 && unitMatchesRequested(s.unit, unit)) {
       sources.push({ kind: 'ahsp_similar', label: s.label, price: s.price, unit: s.unit });
     }
   }
-  void unit;
   return sources;
 }
 

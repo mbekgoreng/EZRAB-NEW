@@ -1176,9 +1176,46 @@ function recordResultToMemory(def: ToolDefinition, record: ToolExecutionRecord, 
 }
 
 /**
+ * P1-B (WC-03) — Allowlist tool yang boleh dipanggil MODEL, CHANNEL-AWARE:
+ * model hanya boleh memanggil tool yang DIADVERTISE ke model di kanal itu.
+ * - Kanal 'chat-ai' (dan kanal lain): persis EZRAB_AI_TOOLS (tools.ts) —
+ *   daftar yang sama yang dikirim ke model Chat AI sebagai function-calling.
+ * - Kanal 'copilot': COPILOT_ALLOWED_TOOLS — subset read-only registry
+ *   yang ditempel ke prompt Copilot (coAssistantService.ts via
+ *   getCopilotToolListText: navigate + 7 tool read-only native). Tanpa
+ *   pengecualian ini, navigasi Copilot live akan rusak: prompt Copilot
+ *   MENGIKLANKAN navigate ke model, dan panggilannya tiba dengan
+ *   actor 'model' + channel 'copilot'.
+ * Tool yang TIDAK ADA DI KEDUA daftar — build_universal_draft (draft),
+ * transfer_draft (consequential), wizard_server + tool unavailable —
+ * TIDAK BOLEH dipanggil model di kanal mana pun: ditolak dengan
+ * TOOL_NOT_MODEL_CALLABLE di langkah 1b executeTool (di bawah).
+ * Aktor 'user'/'system' (orkestrator, jalur deterministik) tidak
+ * terkena allowlist — mereka memanggil tool registry lewat jalur
+ * internal yang sudah digerbang sendiri. Parser (toolCallParser.ts)
+ * SENGAJA tidak digerbang: ia hanya mem-parse teks — penegakan
+ * terjadi di executeTool, satu-satunya titik eksekusi.
+ */
+export const MODEL_CALLABLE_TOOLS: ReadonlySet<string> = new Set(
+  EZRAB_AI_TOOLS.map((t) => t.name),
+);
+const COPILOT_MODEL_CALLABLE_TOOLS: ReadonlySet<string> = new Set(
+  COPILOT_ALLOWED_TOOLS,
+);
+/** Tool boleh dipanggil model di kanal ini? (WC-03, channel-aware.) */
+export function isModelCallableTool(toolName: string, channel: ToolChannel): boolean {
+  if (channel === 'copilot') return COPILOT_MODEL_CALLABLE_TOOLS.has(toolName);
+  return MODEL_CALLABLE_TOOLS.has(toolName);
+}
+
+/**
  * Menjalankan SATU tool lewat registry. Urutan penegakan (semua
  * penolakan tercatat di trail SEBELUM efek apa pun terjadi):
  *  1. Tool dikenal? tersedia? kanal diizinkan?
+ *  1b. (WC-03) Aktor 'model' hanya boleh memanggil tool yang
+ *      diiklankan ke model di kanal itu (EZRAB_AI_TOOLS di chat-ai,
+ *      COPILOT_ALLOWED_TOOLS di copilot) — di luar itu
+ *      TOOL_NOT_MODEL_CALLABLE.
  *  2. Scope proyek (lintas-proyek ditolak; tool proyek tanpa projectId diblokir).
  *  3. Secret di argumen → diblokir.
  *  4. Validasi skema input → tak valid diblokir (runner tak dipanggil).
@@ -1217,6 +1254,23 @@ export async function executeTool(input: ExecuteToolInput): Promise<ExecuteToolR
       error: `Tool ${def.name} tidak diizinkan pada kanal ${input.channel} (kanal yang diizinkan: ${def.channels.join(', ')}).`,
     });
     return { ok: false, record: done, output: null, errorCode: 'TOOL_NOT_ALLOWED_ON_CHANNEL', error: done.error };
+  }
+
+  // 1b. (WC-03) Allowlist panggilan model, CHANNEL-AWARE (lihat
+  // isModelCallableTool): model HANYA boleh memanggil tool yang
+  // diiklankan ke model di kanal itu — EZRAB_AI_TOOLS di kanal chat-ai,
+  // COPILOT_ALLOWED_TOOLS (read-only) di kanal copilot. Tool di luar
+  // daftar kanal itu (mis. build_universal_draft di SEMUA kanal)
+  // ditolak di sini, SEBELUM scope/validasi/approval (tidak ada efek
+  // samping, tidak ada jejak persetujuan yang tercipta). Aktor
+  // 'user'/'system' tidak terkena (jalur internal tergerbang sendiri).
+  if (input.actor === 'model' && !isModelCallableTool(def.name, input.channel)) {
+    const rec = baseRecord(effInput, def, 'blocked');
+    const done = finishRecord(rec, 'blocked', {
+      errorCode: 'TOOL_NOT_MODEL_CALLABLE',
+      error: `Tool ${def.name} tidak dapat dipanggil model di kanal ${input.channel} — hanya tool yang diiklankan ke model di kanal itu yang boleh dipanggil model.`,
+    });
+    return { ok: false, record: done, output: null, errorCode: 'TOOL_NOT_MODEL_CALLABLE', error: done.error };
   }
 
   // 2. Scope proyek.
@@ -1363,22 +1417,24 @@ export async function executeTool(input: ExecuteToolInput): Promise<ExecuteToolR
     output: safeOutputPreview(output),
     approvedBy: input.approval?.actor ?? null,
   });
-  // F-ISO-4 (TEMPORARY, keputusan owner 2026-11-23): draft
+  // F-ISO-4 (TEMPORARY, keputusan owner 2026-11-23) + §4.5 (direktif
+  // owner 2026-11-24, P1 — MENGGANTIKAN SEBAGIAN B5-3): draft
   // build_universal_draft yang baru di-commit dan masih TAK-TERIKAT
-  // diikat ke proyek lewat ensurer B5-3 yang SAMA (cermin hook di
-  // universalResultFor, actionRegistry.ts:2290-2306) — proyek sementara
-  // dibuat bila belum ada proyek aktif. Hanya jalur invoke SEGAR yang
-  // sampai ke sini (replay idempotensi return lebih dulu tanpa invoke
-  // dan tidak membangun ulang singleton); hanya tool ini (penjaga
-  // def.name — tanpa itu setiap tool sukses akan memicu ensurer).
-  // Kegagalan ensurer TIDAK PERNAH menggagalkan hasil tool.
+  // diikat ke proyek lewat ensurer yang SAMA (cermin hook di
+  // universalResultFor) — HANYA ke proyek YANG SUDAH ADA (petunjuk
+  // scope / proyek live). ENSURER TIDAK PERNAH MEMBUAT PROYEK: tanpa
+  // proyek yang cocok, draft tetap TAK TERIKAT. Hanya jalur invoke
+  // SEGAR yang sampai ke sini (replay idempotensi return lebih dulu
+  // tanpa invoke dan tidak membangun ulang singleton); hanya tool ini
+  // (penjaga def.name — tanpa itu setiap tool sukses akan memicu
+  // ensurer). Kegagalan ensurer TIDAK PERNAH menggagalkan hasil tool.
   // S3-C (F4, 2026-11-23): teruskan scope eksekusi
   // (effectiveProjectId — projectId request / snapshot, BUKAN args)
   // sebagai petunjuk ke ensurer. Tool di-commit SESUDAH await
   // provider; tanpa petunjuk, ensurer membaca proyek LIVE dan draft
   // dari konteks A terikat ke B bila pengguna pindah di tengah jalan
-  // (S7). Tanpa scope (pengiriman global) → perilaku F-ISO-4 persis
-  // (ensurer tanpa petunjuk: live, atau buat sementara).
+  // (S7). Tanpa scope (pengiriman global) → ensurer tanpa petunjuk
+  // (live saja — tidak pernah membuat sementara).
   if (def.name === 'build_universal_draft') {
     try {
       const freshDraft = getLastUniversalDraft();

@@ -8,8 +8,8 @@
  *
  * Yang diuji lewat JALUR NYATA (toolRegistry.executeTool +
  * universalRab + draftPersistence + tempProject):
- * - positif: draft tool tanpa proyek → proyek sementara dibuat + draft
- *   terikat + tersimpan; dengan proyek aktif → terikat ke proyek itu;
+ * - positif (§4.5): draft tool tanpa proyek → draft TAK TERIKAT, 0
+ *   proyek dibuat; dengan proyek aktif → terikat ke proyek itu;
  *   dengan args.projectId → terikat ke sana, ensurer tidak dipanggil.
  * - commit boundary: hanya invoke SEGAR yang sukses/parsial mengikat —
  *   gagal build, diblokir gerbang, timeout, replay idempotensi, dan
@@ -18,10 +18,10 @@
  *   tool tetap ok, draft tetap tampil tanpa ikatan.
  * - perbaikan pendamping clear-on-null: build tanpa projectId tidak
  *   lagi mewarisi ikatan basi draft sebelumnya (C3).
- * - kebocoran autosave tertutup: draft terikat proyek sementara tidak
- *   bisa tersimpan di bawah proyek aktif lain (C4).
- * - retry sesudah kegagalan parsial asosiasi: percobaan kedua mengikat
- *   tanpa menduplikasi proyek (ISO4-13).
+ * - kebocoran autosave tertutup: draft terikat satu proyek tidak bisa
+ *   tersimpan di bawah proyek aktif lain (C4).
+ * - retry sesudah kegagalan parsial asosiasi: percobaan kedua memanggil
+ *   ensurer lagi tanpa menduplikasi proyek (ISO4-13).
  *
  * BATAS UJI (jujur): ensurer di sini adalah TIRUAN view (store proyek
  * palsu + saveDraft nyata, pola chatTempProjectB53.test.ts) — ensurer
@@ -29,10 +29,26 @@
  * efek muat) TIDAK dapat diuji tanpa React dan menjadi tugas
  * verifikator UI. Yang dibuktikan suite ini adalah perilaku REGISTRY
  * (hook dipanggil di titik yang benar, dengan kondisi yang benar) +
- * persistensi + penamaan. Jalur tool-registry saat ini LATEN di
+ * persistensi. Jalur tool-registry saat ini LATEN di
  * produksi (build_universal_draft tidak ditawarkan ke model di prompt
  * mana pun — DISCOVERY §4.2) — hook bersifat preventif sampai wiring
  * prompt ada; suite ini membuktikan hook-nya, bukan wiring-nya.
+ *
+ * PASCA-P1 (WC-03 + §4.5, direktif owner 2026-11-24): (1) eksekusi
+ * build_universal_draft di sini memakai aktor 'system' — jalur
+ * orkestrator internal yang sah; model TIDAK BOLEH memanggil tool ini
+ * (TOOL_NOT_MODEL_CALLABLE, dipin p1AuthzConfirmation WC03-01/09).
+ * (2) Tiruan ensurer di suite ini mengikuti KONTRAK §4.5 (Fast Track
+ * §3(g), W-AUTH2): mengembalikan proyek aktif yang SUDAH ADA, atau
+ * null — TIDAK PERNAH membuat proyek. Versi lama suite ini memakai
+ * double pembuat proyek sementara untuk "mekanika hook"; penjaga
+ * level-registry di tempProject.setDraftProjectEnsurer kini MEMBUANG
+ * hasil ensurer yang mengembalikan created:true, sehingga double
+ * pembuat tidak lagi bisa mengikat — double + asersi yang memin
+ * pembuatan proyek sementara DIPERBARUI ke §4.5 di sini. Penamaan
+ * "(Sementara)" tetap hidup di aliran push tak-terikat §4.5 (proyek
+ * dibuat HANYA lewat konfirmasi eksplisit tombol "Buat proyek &
+ * konfirmasi transfer") — bukan lewat ensurer.
  * toolCreateRabDraft (constructionTools, tanpa pemanggil produksi)
  * TIDAK melewati executeTool sehingga tidak ter-hook — di luar cakupan
  * keputusan (hanya perilaku clear-on-null-nya yang dipin ISO4-11).
@@ -117,29 +133,16 @@ async function main(): Promise<void> {
   let ensurerCalls = 0;
   let lastSaveOk: boolean | null = null;
 
-  /* Tiruan ensurer view.tsx: proyek aktif (bila ada) dipakai; bila
-   * tidak, buat proyek sementara + persistenkan draft di bawahnya. */
-  const fakeEnsurer: (draft: { title: string }) => { id: string; name: string; created: boolean } | null = (draft) => {
+  /* Tiruan ensurer view.tsx PASCA-§4.5 (Fast Track §3(g)): proyek
+   * aktif yang SUDAH ADA (bila ada) dipakai; bila tidak, null — draft
+   * tetap TAK TERIKAT. TIDAK PERNAH membuat proyek, TIDAK PERNAH
+   * memanggil saveDraft (penyimpanan terjadi lewat autosave
+   * berikutnya, cermin ensurer view produksi). */
+  const fakeEnsurer: (draft: { title: string }) => { id: string; name: string; created: boolean } | null = (_draft) => {
     ensurerCalls += 1;
     const live = store.current;
     if (live) return { id: live.id, name: live.name, created: false };
-    const created = store.create({
-      name: tp.tempProjectNameForDraft(draft.title),
-      status: 'draft',
-      creationMethod: tp.TEMP_PROJECT_CREATION_METHOD,
-      description: tp.tempProjectDescriptionForDraft(draft.title),
-    });
-    if ('parts' in draft && 'id' in draft) {
-      const res = dp.saveDraft({
-        draft: draft as never,
-        projectId: created.id,
-        conversationId: null,
-        workflowStage: 'autosave',
-        savedBy: 'autosave',
-      });
-      lastSaveOk = res.ok;
-    }
-    return { id: created.id, name: created.name, created: true };
+    return null;
   };
 
   let keySeq = 0;
@@ -149,7 +152,7 @@ async function main(): Promise<void> {
       toolName: 'build_universal_draft',
       args: opts.argsProjectId ? { text, projectId: opts.argsProjectId } : { text },
       projectId: opts.projectId ?? null,
-      actor: 'model',
+      actor: 'system', // WC-03: build_universal_draft tidak model-callable — jalur orkestrator.
       channel: 'chat-ai',
       idempotencyKey: opts.key,
     });
@@ -174,25 +177,19 @@ async function main(): Promise<void> {
     tp.setDraftProjectEnsurer(fakeEnsurer as never);
   };
 
-  await check('ISO4-01 draft tool tanpa proyek → proyek sementara dibuat + draft terikat + tersimpan', async () => {
+  await check('ISO4-01 draft tool tanpa proyek → draft TAK TERIKAT, 0 proyek dibuat (§4.5)', async () => {
     resetAll();
     registerEnsurer();
     const r = await execDraft(KANDANG, { key: nextKey('01') });
     assert(r.ok === true, `eksekusi harus ok, dapat ok=${r.ok} error=${r.errorCode}`);
     assert(r.record.status === 'succeeded' || r.record.status === 'partially-succeeded', `status harus sukses/parsial, dapat "${r.record.status}"`);
     assert(ensurerCalls === 1, `ensurer harus dipanggil 1×, dapat ${ensurerCalls}×`);
-    assert(store.projects.length === 1, `tepat 1 proyek harus dibuat, dapat ${store.projects.length}`);
-    const p = store.projects[0];
-    assert(/^RAB .+ \(Sementara\)$/.test(p.name), `nama harus berpola "RAB <judul> (Sementara)", dapat "${p.name}"`);
-    assert(p.creationMethod === 'chat-ai', `creationMethod harus 'chat-ai', dapat "${p.creationMethod}"`);
-    assert(store.currentId === p.id, 'proyek sementara harus menjadi proyek aktif');
+    assert(store.projects.length === 0, `TIDAK BOLEH ada proyek yang dibuat (§4.5), dapat ${store.projects.length}`);
+    assert(store.currentId === null, 'tidak ada proyek aktif');
     const d = rab.getLastUniversalDraft();
     assert(d !== null, 'singleton draft harus ada');
-    assert(rab.getLastUniversalDraftProjectId() === p.id, 'draft harus terikat ke proyek sementara');
-    assert(lastSaveOk === true, 'draft harus tersimpan (saveDraft ok)');
-    const loaded = dp.loadDraft(p.id);
-    assert(loaded.ok, 'loadDraft proyek sementara harus ok');
-    assert(loaded.ok && loaded.draft.id === d!.id, 'draft tersimpan harus draft yang sama');
+    assert(rab.getLastUniversalDraftProjectId() === null, 'draft harus TAK TERIKAT (§4.5: tanpa proyek aktif, tanpa proyek implisit)');
+    assert(lastSaveOk === null, 'ensurer §4.5 tidak memanggil saveDraft (penyimpanan lewat autosave sesudah proyek ada)');
   });
 
   await check('ISO4-02 draft tool dengan proyek aktif → terikat ke proyek itu, 0 proyek baru', async () => {
@@ -242,16 +239,18 @@ async function main(): Promise<void> {
   await check('ISO4-06 diblokir gerbang (validasi input + scope mismatch) → 0 proyek, 0 ensurer', async () => {
     resetAll();
     registerEnsurer();
-    // (a) Input tak valid: tanpa teks (field wajib).
+    // (a) Input tak valid: tanpa teks (field wajib). Aktor 'system'
+    // (WC-03: 'model' ditolak allowlist sebelum validasi — bukan yang
+    // diuji di sini).
     const noText = await toolReg.executeTool({
-      toolName: 'build_universal_draft', args: {}, projectId: null, actor: 'model', channel: 'chat-ai', idempotencyKey: nextKey('06a'),
+      toolName: 'build_universal_draft', args: {}, projectId: null, actor: 'system', channel: 'chat-ai', idempotencyKey: nextKey('06a'),
     });
     assert(noText.ok === false, 'tanpa teks harus gagal');
     assert(noText.errorCode === 'INPUT_VALIDATION_FAILED', `kode harus INPUT_VALIDATION_FAILED, dapat "${noText.errorCode}"`);
     assert(ensurerCalls === 0, 'ensurer tidak boleh dipanggil saat validasi gagal');
     // (b) Scope mismatch: args menyebut proyek X, scope eksekusi Y.
     const mismatch = await toolReg.executeTool({
-      toolName: 'build_universal_draft', args: { text: KANDANG, projectId: 'PROJ-X' }, projectId: 'PROJ-Y', actor: 'model', channel: 'chat-ai', idempotencyKey: nextKey('06b'),
+      toolName: 'build_universal_draft', args: { text: KANDANG, projectId: 'PROJ-X' }, projectId: 'PROJ-Y', actor: 'system', channel: 'chat-ai', idempotencyKey: nextKey('06b'),
     });
     assert(mismatch.ok === false, 'scope mismatch harus gagal');
     assert(mismatch.errorCode === 'PROJECT_SCOPE_MISMATCH', `kode harus PROJECT_SCOPE_MISMATCH, dapat "${mismatch.errorCode}"`);
@@ -260,25 +259,25 @@ async function main(): Promise<void> {
     assert(rab.getLastUniversalDraft() === null, 'singleton harus tetap null');
   });
 
-  await check('ISO4-07 replay idempotensi → ensurer TIDAK dipanggil lagi, tanpa proyek kedua, singleton tidak dibangun ulang', async () => {
+  await check('ISO4-07 replay idempotensi → ensurer TIDAK dipanggil lagi, 0 proyek, singleton tidak dibangun ulang', async () => {
     resetAll();
     registerEnsurer();
     const key = nextKey('07');
     const first = await execDraft(KANDANG, { key });
     assert(first.ok === true, 'eksekusi pertama harus ok');
     assert(ensurerCalls === 1, 'ensurer 1× sesudah eksekusi pertama');
-    assert(store.projects.length === 1, '1 proyek sesudah eksekusi pertama');
-    const tempId = store.projects[0].id;
-    assert(rab.getLastUniversalDraftProjectId() === tempId, 'draft pertama terikat ke proyek sementara');
+    assert(store.projects.length === 0, '0 proyek sesudah eksekusi pertama (§4.5)');
+    assert(rab.getLastUniversalDraftProjectId() === null, 'draft pertama TAK TERIKAT (§4.5)');
+    const firstDraftId = rab.getLastUniversalDraft()!.id;
     // Kosongkan singleton: apakah replay membangun ulang?
     rab.setLastUniversalDraft(null, null);
     const second = await execDraft(KANDANG, { key });
     assert(second.ok === true, 'replay harus ok');
     assert((second.record as { replayed?: boolean }).replayed === true, 'eksekusi kedua harus replayed');
     assert(ensurerCalls === 1, `ensurer tetap 1× sesudah replay, dapat ${ensurerCalls}×`);
-    assert(store.projects.length === 1, 'tetap 1 proyek sesudah replay');
+    assert(store.projects.length === 0, 'tetap 0 proyek sesudah replay');
     assert(rab.getLastUniversalDraft() === null, 'replay TIDAK membangun ulang singleton');
-    assert(dp.loadDraft(tempId).ok, 'draft pertama tetap tersimpan di bawah proyek sementara');
+    assert(firstDraftId.length > 0, 'prasyarat: draft pertama ada (id tercatat)');
   });
 
   await check('ISO4-08 tool lain yang sukses TIDAK memicu ensurer (penjaga def.name)', async () => {
@@ -308,30 +307,32 @@ async function main(): Promise<void> {
     assert(rab.getLastUniversalDraftProjectId() === null, 'draft tetap tanpa ikatan');
   });
 
-  await check('ISO4-10 partially-succeeded TETAP diikat (commit mencakup parsial)', async () => {
+  await check('ISO4-10 partially-succeeded TETAP di-hook (commit mencakup parsial) — tapi TAK TERIKAT tanpa proyek (§4.5)', async () => {
     resetAll();
     registerEnsurer();
     const r = await execDraft(KANDANG, { key: nextKey('10') });
     assert(r.ok === true, 'eksekusi harus ok');
     assert(r.record.status === 'partially-succeeded', `fixture kandang harus partially-succeeded (item tak berharga), dapat "${r.record.status}"`);
     assert(ensurerCalls === 1, 'ensurer harus dipanggil untuk draft parsial (commit)');
-    assert(store.projects.length === 1, 'proyek sementara harus dibuat untuk draft parsial');
-    assert(rab.getLastUniversalDraftProjectId() === store.projects[0].id, 'draft parsial harus terikat ke proyek sementara');
-    assert(lastSaveOk === true, 'draft parsial harus tersimpan');
+    assert(store.projects.length === 0, 'TIDAK BOLEH ada proyek yang dibuat untuk draft parsial (§4.5)');
+    assert(rab.getLastUniversalDraftProjectId() === null, 'draft parsial TAK TERIKAT tanpa proyek aktif (§4.5)');
+    assert(rab.getLastUniversalDraft() !== null, 'draft parsial tetap ada di singleton');
   });
 
   await check('ISO4-11 clear-on-null: build tanpa projectId TIDAK mewarisi ikatan basi (C3 tertutup)', async () => {
     resetAll();
     registerEnsurer();
-    // (a) Dengan ensurer: draft baru terikat ke proyek sementara BARU,
-    // bukan ke ikatan basi draft sebelumnya.
+    // (a) Dengan ensurer: draft baru TIDAK mewarisi ikatan basi —
+    // tanpa proyek aktif ia TAK TERIKAT (§4.5), bukan terikat ke
+    // proyek sementara baru.
     const bound = ct.toolCreateRabDraft({ text: KANDANG, projectId: 'PROJ-BOUND-A' });
     assert(bound.kind === 'draft', 'prasyarat: draft terikat berhasil dibangun');
     assert(rab.getLastUniversalDraftProjectId() === 'PROJ-BOUND-A', 'prasyarat: ikatan PROJ-BOUND-A');
     const r = await execDraft(GUDANG, { key: nextKey('11a') });
     assert(r.ok === true, 'draft tool kedua harus ok');
     assert(rab.getLastUniversalDraftProjectId() !== 'PROJ-BOUND-A', 'ikatan basi TIDAK BOLEH diwarisi');
-    assert(rab.getLastUniversalDraftProjectId() === store.projects[0].id, 'draft baru terikat ke proyek sementara (bukan ikatan basi)');
+    assert(rab.getLastUniversalDraftProjectId() === null, 'draft baru TAK TERIKAT tanpa proyek aktif (§4.5 — bukan ikatan basi, bukan proyek baru)');
+    assert(store.projects.length === 0, 'tidak boleh ada proyek yang dibuat (§4.5)');
     // (b) Tanpa ensurer (clear-on-null murni, tanpa hook): ikatan null.
     resetAll();
     const bound2 = ct.toolCreateRabDraft({ text: KANDANG, projectId: 'PROJ-BOUND-A' });
@@ -341,23 +342,28 @@ async function main(): Promise<void> {
     assert(rab.getLastUniversalDraftProjectId() === null, 'tanpa ensurer, draft tanpa projectId harus benar-benar tak-terikat (null, bukan warisan)');
   });
 
-  await check('ISO4-12 kebocoran autosave tertutup: draft terikat proyek sementara TIDAK tersimpan di bawah proyek lain (C4)', async () => {
+  await check('ISO4-12 kebocoran autosave tertutup: draft terikat proyek aktif TIDAK tersimpan di bawah proyek lain (C4)', async () => {
     resetAll();
     registerEnsurer();
+    // §4.5: skenario C4 kini memakai proyek yang SUDAH ADA (bukan
+    // proyek sementara buatan ensurer — ensurer tidak pernah membuat).
+    const existing = store.create({ name: 'Proyek Existing' });
     const r = await execDraft(KANDANG, { key: nextKey('12') });
     assert(r.ok === true, 'eksekusi harus ok');
-    const tempId = store.projects[0].id;
-    assert(rab.getLastUniversalDraftProjectId() === tempId, 'draft terikat ke proyek sementara');
+    assert(store.projects.length === 1, 'tepat 1 proyek (yang sudah ada — tanpa proyek baru)');
+    assert(rab.getLastUniversalDraftProjectId() === existing.id, 'draft terikat ke proyek yang sudah ada');
     // Autosave di bawah proyek aktif LAIN (model persistActiveDraft):
     // getter menolak karena ikatan berbeda.
-    assert(rab.getLastUniversalDraft('PROJ-B') === null, 'getLastUniversalDraft(PROJ-B) harus null (draft milik proyek sementara)');
+    assert(rab.getLastUniversalDraft('PROJ-B') === null, 'getLastUniversalDraft(PROJ-B) harus null (draft milik proyek lain)');
     const save = persistActiveDraftModel('PROJ-B');
     assert(save.saved === false, `autosave di bawah PROJ-B harus TIDAK terjadi, dapat ${JSON.stringify(save)}`);
     assert(dp.loadDraft('PROJ-B').ok === false, 'tidak ada record draft di bawah PROJ-B');
-    assert(dp.loadDraft(tempId).ok, 'draft tetap tersimpan di bawah proyek sementaranya');
+    const ownSave = persistActiveDraftModel(existing.id);
+    assert(ownSave.saved === true, 'autosave di bawah proyek pengikatnya sendiri harus berhasil');
+    assert(dp.loadDraft(existing.id).ok, 'draft tersimpan di bawah proyek pengikatnya');
   });
 
-  await check('ISO4-13 retry after partial failure: asosiasi gagal lalu berhasil — tepat 1 proyek, draft terikat', async () => {
+  await check('ISO4-13 retry after partial failure: asosiasi gagal lalu berhasil — tetap 0 proyek, draft TAK TERIKAT (§4.5)', async () => {
     resetAll();
     let attempts = 0;
     tp.setDraftProjectEnsurer(((draft: { title: string }) => {
@@ -371,40 +377,41 @@ async function main(): Promise<void> {
     assert(attempts === 1, 'ensurer dipanggil 1× pada percobaan 1');
     assert(store.projects.length === 0, '0 proyek sesudah percobaan 1 (ensurer melempar)');
     assert(rab.getLastUniversalDraftProjectId() === null, 'draft percobaan 1 tanpa ikatan');
-    // Retry dengan kunci idempotensi BARU (permintaan baru): asosiasi
-    // berhasil, tepat 1 proyek tercipta.
+    // Retry dengan kunci idempotensi BARU (permintaan baru): ensurer
+    // dipanggil lagi; tanpa proyek aktif, draft TETAP tak terikat dan
+    // tetap 0 proyek (§4.5 — retry tidak pernah membuat proyek).
     const retry = await execDraft(KANDANG, { key: nextKey('13b') });
     assert(retry.ok === true, 'retry harus ok');
     assert((retry.record as { replayed?: boolean }).replayed !== true, 'retry kunci baru bukan replay');
     assert(attempts === 2, 'ensurer dipanggil ke-2 kalinya pada retry');
-    assert(store.projects.length === 1, `tepat 1 proyek sesudah retry, dapat ${store.projects.length}`);
-    assert(rab.getLastUniversalDraftProjectId() === store.projects[0].id, 'draft retry terikat ke proyek sementara');
-    assert(lastSaveOk === true, 'draft retry tersimpan di bawah proyek sementara');
+    assert(store.projects.length === 0, `tetap 0 proyek sesudah retry (§4.5), dapat ${store.projects.length}`);
+    assert(rab.getLastUniversalDraftProjectId() === null, 'draft retry TAK TERIKAT tanpa proyek aktif (§4.5)');
   });
 
-  await check('ISO4-14 draft tool kedua memakai proyek sementara yang sama (tanpa proyek baru)', async () => {
+  await check('ISO4-14 draft tool kedua memakai proyek yang SAMA (tanpa proyek baru)', async () => {
     resetAll();
     registerEnsurer();
+    // §4.5: proyek pengikat adalah proyek yang SUDAH ADA.
+    const existing = store.create({ name: 'Proyek Existing' });
     const first = await execDraft(KANDANG, { key: nextKey('14a') });
     assert(first.ok === true, 'draft pertama harus ok');
-    const tempId = store.projects[0].id;
+    assert(rab.getLastUniversalDraftProjectId() === existing.id, 'draft pertama terikat ke proyek yang sudah ada');
     const firstDraftId = rab.getLastUniversalDraft()!.id;
     const second = await execDraft(GUDANG, { key: nextKey('14b') });
     assert(second.ok === true, 'draft kedua harus ok');
     assert(ensurerCalls === 2, `ensurer dipanggil 2× (sekali per draft), dapat ${ensurerCalls}×`);
     assert(store.projects.length === 1, 'draft kedua tidak boleh membuat proyek lagi');
-    assert(rab.getLastUniversalDraftProjectId() === tempId, 'draft kedua terikat ke proyek sementara yang sama');
+    assert(rab.getLastUniversalDraftProjectId() === existing.id, 'draft kedua terikat ke proyek yang sama');
     assert(rab.getLastUniversalDraft()?.id !== firstDraftId, 'singleton harus memegang draft kedua (bukan pertama)');
-    // Ensurer yang mengikat ke proyek LIVE tidak memanggil saveDraft
-    // (cermin ensurer view B5-3 — penyimpanan terjadi lewat autosave
-    // berikutnya, bukan di dalam ensurer): record tersimpan masih
-    // draft pertama sampai autosave berjalan.
-    const beforeAutosave = dp.loadDraft(tempId);
-    assert(beforeAutosave.ok && beforeAutosave.draft.id === firstDraftId, 'sebelum autosave, record tersimpan masih draft pertama (ensurer live-bind tidak menyimpan)');
-    const autosave = persistActiveDraftModel(tempId);
+    // Ensurer §4.5 tidak memanggil saveDraft (cermin ensurer view —
+    // penyimpanan terjadi lewat autosave berikutnya): sebelum autosave,
+    // belum ada record tersimpan di bawah proyek pengikat.
+    const beforeAutosave = dp.loadDraft(existing.id);
+    assert(beforeAutosave.ok === false, 'sebelum autosave, belum ada record draft tersimpan (ensurer tidak menyimpan)');
+    const autosave = persistActiveDraftModel(existing.id);
     assert(autosave.saved === true, 'autosave berikutnya harus menyimpan draft kedua');
-    const loaded = dp.loadDraft(tempId);
-    assert(loaded.ok, 'draft kedua tersimpan di bawah proyek sementara yang sama sesudah autosave');
+    const loaded = dp.loadDraft(existing.id);
+    assert(loaded.ok, 'draft kedua tersimpan di bawah proyek yang sama sesudah autosave');
     assert(loaded.ok && loaded.draft.id === rab.getLastUniversalDraft()!.id, 'record tersimpan harus draft kedua (terbaru) sesudah autosave');
   });
 

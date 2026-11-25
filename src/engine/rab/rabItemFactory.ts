@@ -163,9 +163,25 @@ export function createRabItemRecord(
   // eksplisit dari pemanggil maupun default harga-resolved — diturunkan ke
   // NEEDS_VERIFICATION. Status lain (AI_GENERATED, ESTIMATED, dst.) tidak
   // disentuh.
+  //
+  // Fast Track H-01 (directive §7 — never fabricate verification status):
+  // harga MANUAL atau ESTIMATED adalah harga yang BELUM terverifikasi —
+  // tidak ada tindakan verifikasi apa pun di baliknya. Sebelumnya keduanya
+  // jatuh ke default VERIFIED (hanya UNRESOLVED yang dikecualikan), sehingga
+  // harga ketikan user (mis. AHSP custom domain CUSTOM, priceStatus
+  // PRICE_MANUAL eksplisit) sekaligus "manual" dan "terverifikasi". Kini
+  // keduanya default NEEDS_VERIFICATION — selaras dengan kontrak lapisan
+  // transfer yang sudah berlaku (`transferVerificationStatus` di specChain:
+  // tanpa status eksplisit + MANUAL/ESTIMATED -> NEEDS_VERIFICATION) dan
+  // mapper finalisasi DED. Status VERIFIED EKSPLISIT tetap dihormati (cabang
+  // pertama) — yang berubah hanya DEFAULT saat pemanggil tidak mengisi.
+  // SISA (keputusan owner, SENGAJA tidak diubah di sini): item PRICE_RESOLVED
+  // tanpa status eksplisit tetap default VERIFIED.
   const claimedVerificationStatus =
     itemData.verificationStatus ||
-    (priceStatus === 'PRICE_UNRESOLVED' ? 'NEEDS_VERIFICATION' : 'VERIFIED');
+    (priceStatus === 'PRICE_UNRESOLVED' || priceStatus === 'PRICE_MANUAL' || priceStatus === 'PRICE_ESTIMATED'
+      ? 'NEEDS_VERIFICATION'
+      : 'VERIFIED');
   const effectiveVerificationStatus =
     claimedVerificationStatus === 'VERIFIED' && ahspIdentityStatus === 'UNSAFE'
       ? 'NEEDS_VERIFICATION'

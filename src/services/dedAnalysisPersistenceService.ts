@@ -1,17 +1,30 @@
 /**
  * EZRAB DED -> RAB PERSISTENT ANALYSIS SERVICE
- * 
+ *
  * Canonical persistence and session lifecycle manager for DED -> RAB analyses.
- * 
+ *
  * Guarantees:
  * 1. Completed DED -> RAB analyses survive component unmount, route changes, browser refresh, and project re-opening.
  * 2. Project Isolation: Project A analyses never leak into Project B.
- * 3. Dual-Tier Resilience: Authoritative server/database persistence backed by immediate local recovery cache.
+ * 3. LOCAL-ONLY persistence (P1-D / WC-12 disposition, 2026-11-24): analyses
+ *    live in memory + localStorage ONLY. There is NO server/database tier.
+ *    The Supabase branch was REMOVED (not merely skipped): the upsert could
+ *    never succeed — the record shape does not match the `ded_analyses`
+ *    table (non-UUID `id` / `workspace_id` / `project_id`, 16 columns that
+ *    do not exist in the table, missing NOT NULL `created_by`), and no real
+ *    workspace UUID or auth user id exists at any call site. Wiring it would
+ *    need a server migration + new auth plumbing (Tahap 5). Do NOT re-add a
+ *    Supabase write here without that migration — and never with a
+ *    service-role key in browser code.
  * 4. Incremental Milestone Tracking: Saves progress during long-running pipelines.
  * 5. Atomic Completion: Analysis status is marked COMPLETED only when full data is verified in storage.
+ *
+ * NOTE: the HTTP `/api/projects/.../ded-analyses` tier below is a fail-soft
+ * best-effort call; no such endpoint exists in `api/` (verified 2026-11-24),
+ * so it 404s and the local tier is authoritative. Left in place (out of
+ * P1-D scope) for the Tahap 5 server migration to activate.
  */
 
-import { getSupabaseClient, isSupabaseConfigured } from './supabaseClient';
 import type { DurableDedAnalysis, DedAnalysisStatus } from '../../server/data/durableTypes';
 import type { PipelineExecutionOutput } from '../ded-rab-v2/pipeline/dedRabPipeline';
 import type { PipelineStage } from '../ded-rab-v2/types';
@@ -20,6 +33,11 @@ export type { DurableDedAnalysis, DedAnalysisStatus };
 
 const STORAGE_KEY_ANALYSES = 'ezrab_ded_analyses_v2';
 const STORAGE_KEY_ACTIVE_PREFIX = 'ezrab_active_ded_analysis_';
+// Local-only namespace identifier for DED records. This is NOT a database
+// UUID and is NEVER sent to Supabase (P1-D / WC-12: the Supabase branch
+// was removed because this value + the record shape cannot satisfy the
+// `ded_analyses` table). Do not "fix" it into a UUID without the Tahap 5
+// server migration — the whole record shape mismatches, not just this id.
 const DEFAULT_WORKSPACE_ID = 'ws-default-ezrab';
 
 interface StorageLike {
@@ -110,37 +128,14 @@ export class DedAnalysisPersistenceService {
 
   /**
    * Resolves the latest valid analysis for a project.
-   * Checks Server/Supabase first, falling back to local memory/storage.
+   * Checks the HTTP API tier first (fail-soft), falling back to local
+   * memory/storage. P1-D / WC-12: the Supabase tier was REMOVED — the
+   * `ded_analyses` table cannot accept these records (see header).
    */
   public async getLatestAnalysis(projectId: string): Promise<DurableDedAnalysis | null> {
     if (!projectId) return null;
 
-    // 1. Try Supabase direct query if configured (and not in test environment)
-    if (!isRunningInTestEnvironment() && isSupabaseConfigured()) {
-      const client = getSupabaseClient();
-      if (client) {
-        try {
-          const { data, error } = await client
-            .from('ded_analyses')
-            .select('*')
-            .eq('project_id', projectId)
-            .order('updated_at', { ascending: false })
-            .limit(1)
-            .maybeSingle();
-
-          if (!error && data) {
-            const parsed = this.normalizeAnalysisRecord(data);
-            this.memoryCache.set(parsed.id, parsed);
-            this.saveToLocalStorage();
-            return parsed;
-          }
-        } catch (e) {
-          console.warn('[DedAnalysisPersistenceService] Supabase getLatest failed:', e);
-        }
-      }
-    }
-
-    // 2. Try HTTP API endpoint (browser client only, not in test environment)
+    // 1. Try HTTP API endpoint (browser client only, not in test environment)
     try {
       if (!isRunningInTestEnvironment() && typeof window !== 'undefined' && typeof fetch !== 'undefined') {
         const res = await fetch(`/api/projects/${encodeURIComponent(projectId)}/ded-analyses?latest=true`);
@@ -158,7 +153,7 @@ export class DedAnalysisPersistenceService {
       // Fall through to local cache
     }
 
-    // 3. Fallback to Local Cache / Memory
+    // 2. Fallback to Local Cache / Memory
     this.hydrateFromLocalStorage();
     const storage = getUniversalStorage();
     const activeId = storage.getItem(`${STORAGE_KEY_ACTIVE_PREFIX}${projectId}`);
@@ -382,29 +377,10 @@ export class DedAnalysisPersistenceService {
     const storage = getUniversalStorage();
     storage.setItem(`${STORAGE_KEY_ACTIVE_PREFIX}${record.project_id}`, record.id);
 
-    // 2. Write to Supabase if configured (and not in test environment)
-    if (!isRunningInTestEnvironment() && isSupabaseConfigured()) {
-      const client = getSupabaseClient();
-      if (client) {
-        try {
-          const { data, error } = await client
-            .from('ded_analyses')
-            .upsert(record)
-            .select('*')
-            .single();
-
-          if (!error && data) {
-            const parsed = this.normalizeAnalysisRecord(data);
-            this.memoryCache.set(parsed.id, parsed);
-            return parsed;
-          }
-        } catch (e) {
-          console.warn('[DedAnalysisPersistenceService] Supabase save failed, relying on HTTP/Local tier:', e);
-        }
-      }
-    }
-
-    // 3. Write to HTTP backend API (browser client only, not in test environment)
+    // 2. Write to HTTP backend API (browser client only, not in test environment)
+    // P1-D / WC-12: the Supabase upsert tier that used to sit here was
+    // REMOVED — the record cannot satisfy the `ded_analyses` table
+    // (non-UUID ids, unknown columns, missing created_by). See header.
     try {
       if (!isRunningInTestEnvironment() && typeof window !== 'undefined' && typeof fetch !== 'undefined') {
         const res = await fetch(`/api/projects/${encodeURIComponent(record.project_id)}/ded-analyses`, {

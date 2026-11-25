@@ -145,7 +145,9 @@ function attachmentWith(items: DedAttachment['items']): DedAttachment {
 
 const PROJ = 'proj-s5';
 async function runCheckQto(args: Record<string, unknown>) {
-  return executeTool({ toolName: 'check_qto', args, projectId: PROJ, actor: 'model', channel: 'test' });
+  // WC-03 (P1): check_qto tidak model-callable di kanal 'test' (bukan
+  // EZRAB_AI_TOOLS, bukan kanal copilot) — jalur orkestrator 'system'.
+  return executeTool({ toolName: 'check_qto', args, projectId: PROJ, actor: 'system', channel: 'test' });
 }
 
 /* ================= S5-F1: rumus + bukti derivasi bertahan ================= */

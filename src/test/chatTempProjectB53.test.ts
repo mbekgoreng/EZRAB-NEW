@@ -1,29 +1,42 @@
 /**
- * chatTempProjectB53.test.ts — B5-3 (D-11, keputusan owner 2026-11-23):
- * proyek sementara OTOMATIS saat draft RAB pertama BERHASIL dibuat lewat
- * jalur chat-draft (tanpa proyek aktif, tanpa jalan buntu).
+ * chatTempProjectB53.test.ts — B5-3 (D-11, keputusan owner 2026-11-23)
+ * sebagaimana DIREVISI §4.5 direktif hardening P1 (keputusan owner
+ * 2026-11-24, menggantikan sebagian B5-3): TIDAK ADA lagi pembuatan
+ * proyek implisit. Draft RAB boleh dibuat TANPA IKATAN PROYEK (draft
+ * bukan proyek); proyek baru HANYA dibuat lewat konfirmasi eksplisit
+ * §6 — di alur push/finalize (proposal "Buat proyek & konfirmasi
+ * transfer") atau pembuatan manual lewat menu Proyek.
  *
  * Gaya plain-tsx: `npx --yes tsx src/test/chatTempProjectB53.test.ts`
  *
  * Yang diuji lewat JALUR NYATA (registry + draftPersistence + tempProject):
- * - positif: draft pertama tanpa proyek aktif → proyek sementara dibuat +
- *   aktif + draft terikat + tersimpan + snapshot intake tertaut.
+ * - positif (§4.5): draft pertama tanpa proyek aktif → 0 proyek baru,
+ *   draft TIDAK TERIKAT (unbound), tetap berhasil + tombol push ada.
+ * - draft unbound TIDAK tersimpan (saveDraft butuh projectId; snapshot
+ *   intake butuh projectId) — konsekuensi jujur §4.5 yang dipin di sini:
+ *   draft unbound hidup di singleton dan hilang saat reload.
  * - negatif: tanpa draft (menu generik / needs-spec / gerbang material /
  *   pertanyaan intake) → 0 proyek baru.
- * - dengan proyek aktif → draft terikat ke proyek itu, 0 proyek baru.
- * - tanpa ensurer terdaftar → draft tetap berhasil tanpa proyek (perilaku lama).
- * - rename + lengkapi proyek sementara lewat alur biasa → proyek biasa.
- * - draft kedua memakai proyek sementara yang sama (tanpa proyek baru).
- * - reload: draft + konteks intake pulih dari storage (prasyarat B5/B6).
+ * - dengan proyek aktif (dibuat eksplisit/di tengah intake) → draft
+ *   terikat ke proyek itu, 0 proyek baru, tersimpan + snapshot tertaut.
+ * - tanpa ensurer terdaftar → draft tetap berhasil tanpa proyek.
+ * - rename + lengkapi proyek (yang dibuat eksplisit) lewat alur biasa.
+ * - draft kedua memakai proyek eksplisit yang sama (tanpa proyek baru).
+ * - reload: draft + konteks intake pulih dari storage proyek EKSPLISIT
+ *   (prasyarat B5/B6) — BUKAN dari proyek sementara.
  *
  * BATAS UJI (jujur): ensurer di sini adalah TIRUAN view (store proyek palsu
- * + saveDraft nyata) — ensurer React asli di view.tsx (createProject
- * konteks + migrasi percakapan + efek muat) TIDAK dapat diuji tanpa React
- * dan menjadi tugas verifikator UI. Yang dibuktikan suite ini adalah
+ * + saveDraft nyata) — ensurer React asli di view.tsx (proyek live atau
+ * null, TANPA createProject — §4.5) TIDAK dapat diuji tanpa React dan
+ * menjadi tugas verifikator UI. Yang dibuktikan suite ini adalah
  * perilaku REGISTRY (hook dipanggil di titik yang benar, dengan kondisi
  * yang benar) + persistensi + penamaan. Tiruan store meniru semantik
  * ProjectContext.createProject/updateProject (prepend + jadikan aktif;
  * merge per id) — bila semantik itu berubah, tiruan ini harus ikut.
+ * Alur push/finalize yang MEMBUAT proyek atas konfirmasi (§4.5) hidup di
+ * view.tsx dan TIDAK dapat diuji di tsx polos — tugas verifikator UI;
+ * suite p1AuthzConfirmation memin kontrak ensurer + perilaku unbound
+ * di tingkat registry.
  *
  * DEFECT-1 (B53-13/14, fix 2026-11-23): race React-efek itu sendiri
  * (closure storeProjectId basi vs convIdRef live selama gateWait 5–10 dtk)
@@ -39,15 +52,13 @@
  * yang sama, bukan round-trip localStorage — round-trip nyata juga tugas
  * verifikator UI.
  *
- * B53-D (keputusan owner 2026-11-23, tap "Cakup juga jalur direct-RAB"):
- * hook KEDUA di corong directRabTableResult — draft direct pertama
- * (CREATE_RAB_DIRECT, GENERATE_RAB_TEMPLATE, finalisasi "itu aja")
- * tanpa proyek aktif juga membuat proyek sementara ("RAB <displayLabel>
- * (Sementara)"). Draft direct tidak punya record UniversalDraft, jadi
- * ensurer (asli maupun tiruan di sini) TIDAK memanggil saveDraft
- * untuknya — yang dipin: proyek dibuat + aktif + pesan memberitahu +
- * lastDirectRab tetap menjadi target push. Negatif: kartu pilihan /
- * ringkasan / di-luar-model (tanpa draft) → 0 proyek.
+ * B53-D (keputusan owner 2026-11-23, tap "Cakup juga jalur direct-RAB",
+ * direvisi §4.5): hook KEDUA di corong directRabTableResult — draft
+ * direct pertama (CREATE_RAB_DIRECT, GENERATE_RAB_TEMPLATE, finalisasi
+ * "itu aja") tanpa proyek aktif TIDAK LAGI membuat proyek: 0 proyek,
+ * draft direct unbound, lastDirectRab tetap menjadi target push.
+ * Negatif: kartu pilihan / ringkasan / di-luar-model (tanpa draft) →
+ * 0 proyek.
  */
 
 let passed = 0;
@@ -137,6 +148,7 @@ async function main(): Promise<void> {
   const tp = await import('../ai-tools/ezrab-ai/tempProject');
   const { routeIntent } = await import('../ai-tools/ezrab-ai/intentRouter');
   const { clearLastRabIntentSpec } = await import('../ai-tools/ezrab-ai/rabIntentFlow');
+  const ops = await import('../ai-tools/ezrab-ai/operations');
   const convStore = await import('../services/ai/conversation/unifiedConversationStore');
 
   /* ---------- DEFECT-1: tiruan setia efek migrasi view.tsx:832–877 ----------
@@ -169,35 +181,30 @@ async function main(): Promise<void> {
   };
 
   const store = new FakeProjectStore();
-  let lastSaveOk: boolean | null = null;
 
-  /* Tiruan ensurer view.tsx: proyek aktif (bila ada) dipakai; bila tidak,
-   * buat proyek sementara + persistenkan draft di bawahnya. Cermin penjaga
-   * isUniversalDraft di ensurer asli: HANYA draft universal yang punya
-   * record untuk disimpan — draft direct (hanya judul) tidak memanggil
-   * saveDraft (lastSaveOk tetap null untuknya). */
+  /* Tiruan ensurer view.tsx PASCA-§4.5 (direktif owner 2026-11-24):
+   * ensurer TIDAK PERNAH membuat proyek — ia mengembalikan proyek live
+   * (bila ada) dengan created: false, atau null. Pembuatan proyek HANYA
+   * lewat konfirmasi eksplisit §6 di alur push/finalize (view.tsx) atau
+   * pembuatan manual — keduanya di luar jangkauan tsx polos. Draft
+   * universal yang terikat ke proyek live tetap dipersistenkan (cermin
+   * autosave ensurer asli); draft direct tidak punya record
+   * UniversalDraft sehingga tidak memanggil saveDraft. */
   const fakeEnsurer: (draft: { title: string }) => {
     id: string; name: string; created: boolean;
   } | null = (draft) => {
     const live = store.current;
-    if (live) return { id: live.id, name: live.name, created: false };
-    const created = store.create({
-      name: tp.tempProjectNameForDraft(draft.title),
-      status: 'draft',
-      creationMethod: tp.TEMP_PROJECT_CREATION_METHOD,
-      description: tp.tempProjectDescriptionForDraft(draft.title),
-    });
+    if (!live) return null;
     if ('parts' in draft && 'id' in draft) {
-      const res = dp.saveDraft({
+      dp.saveDraft({
         draft: draft as never,
-        projectId: created.id,
+        projectId: live.id,
         conversationId: null,
         workflowStage: 'autosave',
         savedBy: 'autosave',
       });
-      lastSaveOk = res.ok;
     }
-    return { id: created.id, name: created.name, created: true };
+    return { id: live.id, name: live.name, created: false };
   };
 
   const resetAll = () => {
@@ -212,7 +219,6 @@ async function main(): Promise<void> {
     tp.setDraftProjectEnsurer(null);
     store.reset();
     storage.clear();
-    lastSaveOk = null;
   };
   const registerEnsurer = () => {
     tp.setDraftProjectEnsurer(fakeEnsurer as never);
@@ -243,6 +249,7 @@ async function main(): Promise<void> {
   /* Alur brief skenario B (B5 E2E): chat → tanya lebar → kuesioner →
    * brief → "Susun draft RAB". Mengembalikan hasil generate. */
   const driveBriefFlow = () => {
+    const projectsBefore = store.projects.length;
     const res1 = start('Buat RAB jalan beton sepanjang 2 km');
     assert(res1.message.includes('lebar jalan'), 'langkah 1 harus menanyakan lebar jalan');
     const jawab = reg.tryContinueUniversalContext('lebarnya 5 meter');
@@ -250,11 +257,11 @@ async function main(): Promise<void> {
     const brief = reg.submitQuestionnaireAnswers({});
     assert(brief.message.includes('Brief proyek'), 'kuesioner harus menghasilkan brief');
     assert(!hasPush(brief), 'brief belum boleh membawa tombol push');
-    assert(store.projects.length === 0, 'belum ada proyek sebelum draft dibuat');
+    assert(store.projects.length === projectsBefore, 'belum ada proyek BARU sebelum draft dibuat');
     return reg.executeIntent('RAB_INTAKE_GENERATE', undefined, mockCtx(null, 'susun'));
   };
 
-  await check('B53-01 brief → draft pertama tanpa proyek: proyek sementara dibuat + aktif + draft terikat + tersimpan + snapshot tertaut', () => {
+  await check('B53-01 §4.5: brief → draft pertama tanpa proyek: 0 proyek, draft UNBOUND, tidak tersimpan', () => {
     resetAll();
     registerEnsurer();
     const draftRes = driveBriefFlow();
@@ -262,56 +269,45 @@ async function main(): Promise<void> {
     const d = rab.getLastUniversalDraft();
     assert(d, 'singleton draft harus ada');
     assert(d!.title === 'Jalan & Perkerasan', `judul draft harus "Jalan & Perkerasan", dapat "${d!.title}"`);
-    assert(store.projects.length === 1, `tepat 1 proyek harus dibuat, dapat ${store.projects.length}`);
-    const p = store.projects[0];
-    assert(p.name === 'RAB Jalan & Perkerasan (Sementara)', `nama sementara salah: "${p.name}"`);
-    assert(p.creationMethod === 'chat-ai', `creationMethod harus 'chat-ai', dapat "${p.creationMethod}"`);
-    assert(store.currentId === p.id, 'proyek sementara harus menjadi proyek aktif');
-    assert(draftRes.ensuredProjectId === p.id, 'ensuredProjectId harus id proyek sementara');
-    assert(rab.getLastUniversalDraftProjectId() === p.id, 'draft harus terikat ke proyek sementara');
-    assert(draftRes.message.includes('proyek sementara'), 'pesan draft harus memberitahu proyek sementara');
-    assert(draftRes.message.includes(p.name), 'pesan draft harus menyebut nama proyek sementara');
-    assert(lastSaveOk === true, 'draft harus tersimpan (saveDraft ok)');
-    const loaded = dp.loadDraft(p.id);
-    assert(loaded.ok, 'loadDraft proyek sementara harus ok');
-    assert(loaded.ok && loaded.draft.id === d!.id, 'draft tersimpan harus draft yang sama');
-    const intake = dp.loadIntakeContext(p.id);
-    assert(intake.ok, 'snapshot intake harus tersimpan di bawah proyek sementara');
-    assert(intake.ok && intake.generatedDraftId === d!.id, 'snapshot intake harus tertaut ke draft (generatedDraftId)');
-    assert(
-      intake.ok && dp.shouldRestoreIntakeSnapshot(
-        { updatedAt: intake.updatedAt, generatedDraftId: intake.generatedDraftId },
-        dp.peekPersistedDraft(p.id),
-      ),
-      'snapshot tertaut harus lolos keputusan pemulihan (prasyarat B5/B6)',
-    );
+    assert(store.projects.length === 0, `§4.5: TIDAK BOLEH ada proyek yang dibuat, dapat ${store.projects.length}`);
+    assert(store.currentId === null, 'tidak ada proyek aktif');
+    assert(draftRes.ensuredProjectId === undefined, 'ensuredProjectId harus kosong (tidak ada proyek)');
+    assert(rab.getLastUniversalDraftProjectId() === null, 'draft harus TIDAK TERIKAT (unbound)');
+    assert(!draftRes.message.includes('proyek sementara'), 'pesan draft TIDAK BOLEH menyebut proyek sementara');
+    assert(!draftRes.message.includes('proyek dibuat otomatis'), 'pesan draft TIDAK BOLEH mengklaim pembuatan otomatis');
+    // Konsekuensi jujur §4.5: draft unbound tidak tersimpan (saveDraft +
+    // snapshot intake keduanya butuh projectId) — ia hidup di singleton.
+    assert(storage.getItem(dp.AI_DRAFTS_STORAGE_KEY) === null, 'draft unbound TIDAK BOLEH tersimpan ke storage draft');
+    assert(storage.getItem(dp.AI_INTAKE_STORAGE_KEY) === null, 'snapshot intake unbound TIDAK BOLEH tersimpan');
   });
 
-  await check('B53-02 jalur cepat (one-shot) tanpa proyek: proyek sementara dibuat', () => {
+  await check('B53-02 §4.5: jalur cepat (one-shot) tanpa proyek: 0 proyek, draft UNBOUND', () => {
     resetAll();
     registerEnsurer();
     const res = start('buatkan rab jalan beton 1 km lebar 6 m');
     assert(hasPush(res), 'pesan one-shot harus langsung menghasilkan draft');
-    assert(store.projects.length === 1, `tepat 1 proyek harus dibuat, dapat ${store.projects.length}`);
-    const p = store.projects[0];
-    assert(p.name === 'RAB Jalan & Perkerasan (Sementara)', `nama sementara salah: "${p.name}"`);
-    assert(store.currentId === p.id, 'proyek sementara harus menjadi proyek aktif');
-    assert(res.ensuredProjectId === p.id, 'ensuredProjectId harus id proyek sementara');
-    assert(rab.getLastUniversalDraftProjectId() === p.id, 'draft harus terikat ke proyek sementara');
-    assert(dp.loadDraft(p.id).ok, 'draft harus tersimpan di bawah proyek sementara');
+    assert(store.projects.length === 0, `§4.5: TIDAK BOLEH ada proyek yang dibuat, dapat ${store.projects.length}`);
+    assert(res.ensuredProjectId === undefined, 'ensuredProjectId harus kosong');
+    assert(rab.getLastUniversalDraftProjectId() === null, 'draft harus TIDAK TERIKAT (unbound)');
+    assert(!res.message.includes('proyek sementara'), 'pesan TIDAK BOLEH menyebut proyek sementara');
+    assert(storage.getItem(dp.AI_DRAFTS_STORAGE_KEY) === null, 'draft unbound TIDAK BOLEH tersimpan');
   });
 
-  await check('B53-15 F-ISO-2 (Phase 2): jalur cepat tanpa proyek — snapshot intake tertaut mendarat di proyek sementara + pulih sesudah reload', () => {
+  await check('B53-15 §4.5 + F-ISO-2: proyek EKSPLISIT dulu, lalu one-shot — snapshot intake tertaut mendarat di proyek itu + pulih sesudah reload', () => {
     resetAll();
     registerEnsurer();
+    // §4.5: proyek dibuat EKSPLISIT (simulasi pembuatan manual lewat menu
+    // Proyek) SEBELUM draft — bukan oleh ensurer.
+    const p = store.create({ name: 'Proyek Jalan Lingkungan' });
     const res = start('buatkan rab jalan beton 1 km lebar 6 m');
     assert(hasPush(res), 'pesan one-shot harus langsung menghasilkan draft');
-    const p = store.projects[0];
-    assert(res.ensuredProjectId === p.id, 'ensuredProjectId harus id proyek sementara');
+    assert(store.projects.length === 1, 'tidak boleh ada proyek baru — proyek eksplisit dipakai');
+    assert(res.ensuredProjectId === p.id, 'ensuredProjectId harus id proyek eksplisit');
     const d = rab.getLastUniversalDraft();
     assert(d, 'singleton draft harus ada');
+    assert(rab.getLastUniversalDraftProjectId() === p.id, 'draft harus terikat ke proyek eksplisit');
     const snap = dp.peekIntakeContext(p.id);
-    assert(snap !== null, 'snapshot intake harus mendarat di bawah proyek sementara');
+    assert(snap !== null, 'snapshot intake harus mendarat di bawah proyek eksplisit');
     assert(snap!.generatedDraftId === d!.id, 'snapshot harus tertaut ke draft (generatedDraftId)');
     // Reload: singleton mati, storage utuh → konteks + draft pulih bersama.
     reg.clearUniversalContext();
@@ -391,15 +387,20 @@ async function main(): Promise<void> {
     assert(rab.getLastUniversalDraftProjectId() === null, 'draft tetap tanpa ikatan proyek');
   });
 
-  await check('B53-07 proyek sementara bisa di-rename + dilengkapi lewat alur biasa → proyek biasa', () => {
+  await check('B53-07 §4.5: proyek EKSPLISIT bisa di-rename + dilengkapi lewat alur biasa', () => {
     resetAll();
     registerEnsurer();
+    // §4.5: proyek dibuat EKSPLISIT (simulasi pembuatan manual) sebelum
+    // draft — ensurer tidak lagi membuat proyek sementara.
+    const p = store.create({ name: 'RAB Jalan & Perkerasan (Sementara)' });
     const draftRes = start('buatkan rab jalan beton 1 km lebar 6 m');
     assert(hasPush(draftRes), 'draft harus berhasil');
-    const p = store.projects[0];
-    assert(p.name === 'RAB Jalan & Perkerasan (Sementara)', 'nama awal harus sementara');
-    // Rename lewat intent RENAME_PROJECT (dua langkah: tanya → konfirmasi),
-    // dengan callback renameProject yang meniru view (cek daftar + updateProject).
+    assert(rab.getLastUniversalDraftProjectId() === p.id, 'draft terikat ke proyek eksplisit');
+    // Rename lewat intent RENAME_PROJECT (dua langkah: tanya → KLIK TOMBOL
+    // konfirmasi — P1-C: kirim-ulang teks tidak mengeksekusi), dengan
+    // callback renameProject yang meniru view (cek daftar + updateProject).
+    // P1-B: berjalan sebagai Estimator (gerbang kapabilitas).
+    ops.setAssistantOperationContext({ actor: 'Penguji', writesEnabled: true });
     const renameCtx = {
       ...mockCtx(p.id, 'ubah nama proyek'),
       renameProject: (id: string, name: string) => store.update(id, { name }),
@@ -407,9 +408,10 @@ async function main(): Promise<void> {
     const ask = reg.executeIntent('RENAME_PROJECT', 'Jalan Lingkungan Desa Suka', renameCtx);
     assert(ask.message.includes('Ganti nama proyek'), 'langkah 1 harus meminta konfirmasi');
     assert(store.projects[0].name === 'RAB Jalan & Perkerasan (Sementara)', 'nama belum boleh berubah sebelum konfirmasi');
-    const done = reg.executeIntent('RENAME_PROJECT', 'Jalan Lingkungan Desa Suka', renameCtx);
-    assert(done.message.includes('diubah'), 'langkah 2 harus mengonfirmasi perubahan');
+    const done = reg.executeDirectConfirmation('RENAME_PROJECT', 'Jalan Lingkungan Desa Suka', renameCtx);
+    assert(done.message.includes('diubah'), 'klik tombol konfirmasi harus mengonfirmasi perubahan');
     assert(store.projects[0].name === 'Jalan Lingkungan Desa Suka', 'nama harus berubah sesudah konfirmasi');
+    ops.setAssistantOperationContext(null);
     // Lengkapi data lewat updateProject (yang dipakai EditProjectModal) —
     // tanpa pengecualian untuk proyek sementara.
     assert(store.update(p.id, { client: 'Pemdes Suka', location: 'Probolinggo', buildingType: 'Infrastruktur' }), 'update harus berhasil');
@@ -420,18 +422,21 @@ async function main(): Promise<void> {
     assert(!final.name.includes('(Sementara)'), 'proyek kini proyek biasa (tanpa penanda sementara)');
   });
 
-  await check('B53-08 draft kedua memakai proyek sementara yang sama (tanpa proyek baru)', () => {
+  await check('B53-08 §4.5: draft kedua memakai proyek EKSPLISIT yang sama (tanpa proyek baru)', () => {
     resetAll();
     registerEnsurer();
+    // §4.5: proyek dibuat EKSPLISIT sebelum draft pertama.
+    const p = store.create({ name: 'Proyek Infrastruktur Desa' });
     const first = start('buatkan rab jalan beton 1 km lebar 6 m');
     assert(hasPush(first), 'draft pertama harus berhasil');
-    const p = store.projects[0];
-    // Simulasi keadaan view sesudah proyek dibuat: proyek aktif = sementara.
+    assert(store.projects.length === 1, 'draft pertama tidak boleh membuat proyek');
+    assert(rab.getLastUniversalDraftProjectId() === p.id, 'draft pertama terikat ke proyek eksplisit');
+    // Simulasi keadaan view sesudah proyek dibuat: proyek aktif = eksplisit.
     const second = start('buatkan rab drainase U-Ditch 500 meter', p.id);
     assert(hasPush(second), 'draft kedua harus berhasil');
     assert(store.projects.length === 1, 'draft kedua tidak boleh membuat proyek lagi');
     assert(rab.getLastUniversalDraft()?.title === 'Drainase & Saluran', 'draft kedua harus drainase');
-    assert(rab.getLastUniversalDraftProjectId() === p.id, 'draft kedua terikat ke proyek sementara yang sama');
+    assert(rab.getLastUniversalDraftProjectId() === p.id, 'draft kedua terikat ke proyek eksplisit yang sama');
     assert(second.ensuredProjectId === undefined, 'draft kedua tidak melalui ensure');
   });
 
@@ -466,23 +471,25 @@ async function main(): Promise<void> {
     assert(rab.getLastUniversalDraft() !== null, 'draft tetap ada');
   });
 
-  await check('B53-11 simulasi reload: draft + konteks intake pulih dari storage proyek sementara', () => {
+  await check('B53-11 §4.5: reload — draft terikat proyek EKSPLISIT pulih dari storage; draft UNBOUND hilang', () => {
     resetAll();
     registerEnsurer();
+    // (a) Proyek EKSPLISIT dulu, lalu brief → draft terikat + tersimpan.
+    const p = store.create({ name: 'Proyek Jalan Lingkungan' });
     const draftRes = driveBriefFlow();
     assert(hasPush(draftRes), 'draft harus berhasil');
-    const p = store.projects[0];
+    assert(rab.getLastUniversalDraftProjectId() === p.id, 'draft harus terikat ke proyek eksplisit');
     const draftId = rab.getLastUniversalDraft()!.id;
     // Reload = bersihkan singleton in-memory TANPA menyentuh storage.
     reg.clearUniversalContext();
     rab.clearLastUniversalDraft();
     assert(rab.getLastUniversalDraft() === null, 'singleton draft harus kosong sesudah reload');
     const loaded = dp.loadDraft(p.id);
-    assert(loaded.ok, 'draft harus dapat dimuat dari storage proyek sementara');
+    assert(loaded.ok, 'draft harus dapat dimuat dari storage proyek eksplisit');
     assert(loaded.ok && loaded.draft.id === draftId, 'draft yang dimuat harus draft yang sama');
     // Tiruan efek pemulihan draft view.tsx: ikat ulang singleton.
     if (loaded.ok) rab.setLastUniversalDraft(loaded.draft, p.id);
-    assert(rab.getLastUniversalDraft(p.id)?.id === draftId, 'draft pulih + terikat ke proyek sementara');
+    assert(rab.getLastUniversalDraft(p.id)?.id === draftId, 'draft pulih + terikat ke proyek eksplisit');
     const intake = dp.loadIntakeContext(p.id);
     assert(intake.ok, 'konteks intake harus dapat dimuat dari storage');
     assert(intake.ok && intake.generatedDraftId === draftId, 'konteks intake tertaut ke draft');
@@ -493,6 +500,20 @@ async function main(): Promise<void> {
       ),
       'keputusan pemulihan intake harus true (konteks pulih bersama draft)',
     );
+    // (b) Konsekuensi jujur §4.5: draft UNBOUND (tanpa proyek) TIDAK
+    // tersimpan — sesudah reload ia hilang. Dipin eksplisit agar
+    // ketegangan ini tercatat, bukan tersembunyi.
+    resetAll();
+    registerEnsurer();
+    const unbound = start('buatkan rab jalan beton 1 km lebar 6 m');
+    assert(hasPush(unbound), 'draft unbound harus berhasil');
+    assert(rab.getLastUniversalDraftProjectId() === null, 'draft harus unbound');
+    const unboundId = rab.getLastUniversalDraft()!.id;
+    reg.clearUniversalContext();
+    rab.clearLastUniversalDraft();
+    assert(rab.getLastUniversalDraft() === null, 'singleton kosong sesudah reload');
+    assert(storage.getItem(dp.AI_DRAFTS_STORAGE_KEY) === null, 'tidak ada draft tersimpan untuk dipulihkan');
+    assert(unboundId !== '', 'id draft unbound tercatat (sanity)');
   });
 
   await check('B53-12 penamaan proyek sementara', () => {
@@ -565,7 +586,7 @@ async function main(): Promise<void> {
     assert(s.getConversation(globalConv.id, GLOBAL_PROJECT)!.messages.length === 2, 'percakapan global harus tetap 2 pesan');
   });
 
-  await check('B53-D01 probe D one-shot (rumah tipe 36) tanpa proyek: proyek sementara dibuat + aktif + notice', () => {
+  await check('B53-D01 §4.5: probe D one-shot (rumah tipe 36) tanpa proyek: 0 proyek, draft direct UNBOUND', () => {
     resetAll();
     registerEnsurer();
     const res = start('buatkan RAB rumah tipe 36 anggaran 120 juta');
@@ -574,18 +595,13 @@ async function main(): Promise<void> {
     const last = direct.getLastDirectRab();
     assert(last, 'lastDirectRab harus ada (target push)');
     assert(last!.displayLabel === 'Rumah Type 36', `displayLabel harus "Rumah Type 36", dapat "${last!.displayLabel}"`);
-    assert(store.projects.length === 1, `tepat 1 proyek harus dibuat, dapat ${store.projects.length}`);
-    const p = store.projects[0];
-    assert(p.name === 'RAB Rumah Type 36 (Sementara)', `nama sementara salah: "${p.name}"`);
-    assert(p.creationMethod === 'chat-ai', `creationMethod harus 'chat-ai', dapat "${p.creationMethod}"`);
-    assert(store.currentId === p.id, 'proyek sementara harus menjadi proyek aktif');
-    assert(res.ensuredProjectId === p.id, 'ensuredProjectId harus id proyek sementara');
-    assert(res.message.includes('proyek sementara'), 'pesan draft harus memberitahu proyek sementara');
-    assert(res.message.includes(p.name), 'pesan draft harus menyebut nama proyek sementara');
-    assert(lastSaveOk === null, 'draft direct tidak punya record UniversalDraft — saveDraft tidak boleh dipanggil');
+    assert(store.projects.length === 0, `§4.5: TIDAK BOLEH ada proyek yang dibuat, dapat ${store.projects.length}`);
+    assert(res.ensuredProjectId === undefined, 'ensuredProjectId harus kosong');
+    assert(!res.message.includes('proyek sementara'), 'pesan draft TIDAK BOLEH menyebut proyek sementara');
+    assert(!res.message.includes('proyek dibuat otomatis'), 'pesan draft TIDAK BOLEH mengklaim pembuatan otomatis');
   });
 
-  await check('B53-D02 kartu pilihan → 0 proyek; klik "Pakai Template" (GENERATE_RAB_TEMPLATE) → proyek sementara dibuat', () => {
+  await check('B53-D02 §4.5: kartu pilihan → 0 proyek; klik "Pakai Template" (GENERATE_RAB_TEMPLATE) → draft direct, tetap 0 proyek', () => {
     resetAll();
     registerEnsurer();
     const card = start('buatkan rab rumah tipe 21');
@@ -595,13 +611,9 @@ async function main(): Promise<void> {
     const gen = reg.executeIntent('GENERATE_RAB_TEMPLATE', 'buatkan rab rumah tipe 21', mockCtx(null, 'buatkan rab rumah tipe 21'));
     assert(hasPushDirect(gen), 'GENERATE_RAB_TEMPLATE harus menghasilkan draft direct');
     assert(reg.getPendingRabChoice() === null, 'pending harus terkonsumsi sesudah generate');
-    assert(store.projects.length === 1, `tepat 1 proyek harus dibuat, dapat ${store.projects.length}`);
-    const p = store.projects[0];
-    assert(/^RAB .+ \(Sementara\)$/.test(p.name), `nama harus berpola "RAB <judul> (Sementara)", dapat "${p.name}"`);
-    assert(p.name.includes('21'), `nama harus membawa tipe 21, dapat "${p.name}"`);
-    assert(store.currentId === p.id, 'proyek sementara harus menjadi proyek aktif');
-    assert(gen.ensuredProjectId === p.id, 'ensuredProjectId harus id proyek sementara');
-    assert(gen.message.includes('proyek sementara'), 'pesan draft harus memberitahu proyek sementara');
+    assert(store.projects.length === 0, `§4.5: TIDAK BOLEH ada proyek yang dibuat, dapat ${store.projects.length}`);
+    assert(gen.ensuredProjectId === undefined, 'ensuredProjectId harus kosong');
+    assert(!gen.message.includes('proyek sementara'), 'pesan draft TIDAK BOLEH menyebut proyek sementara');
   });
 
   await check('B53-D03 direct dengan proyek aktif: 0 proyek baru, tanpa notice, draft terikat ke proyek itu', () => {
@@ -657,7 +669,7 @@ async function main(): Promise<void> {
     assert(direct.getLastDirectRab() !== null, 'draft direct tetap ada');
   });
 
-  await check('B53-D07 finalisasi "itu aja" (continueRabFinalize → direct) tanpa proyek: proyek sementara dibuat', () => {
+  await check('B53-D07 §4.5: finalisasi "itu aja" (continueRabFinalize → direct) tanpa proyek: draft direct, 0 proyek', () => {
     resetAll();
     registerEnsurer();
     const summary = reg.executeIntent('CREATE_RAB_SUMMARY', undefined, mockCtx(null, 'buatkan rab rumah 2 lantai luas 120 m2'));
@@ -666,26 +678,26 @@ async function main(): Promise<void> {
     const fin = reg.continueRabFinalize('itu aja', null);
     assert(fin !== null, 'finalisasi harus menangani "itu aja"');
     assert(hasPushDirect(fin), 'finalisasi harus menghasilkan draft direct');
-    assert(store.projects.length === 1, `tepat 1 proyek harus dibuat, dapat ${store.projects.length}`);
-    const p = store.projects[0];
-    assert(p.name === 'RAB Rumah Luas Bangunan 120 m² (Sementara)', `nama sementara salah: "${p.name}"`);
-    assert(store.currentId === p.id, 'proyek sementara harus menjadi proyek aktif');
-    assert(fin!.ensuredProjectId === p.id, 'ensuredProjectId harus id proyek sementara');
-    assert(fin!.message.includes('proyek sementara'), 'pesan finalisasi harus memberitahu proyek sementara');
+    assert(store.projects.length === 0, `§4.5: TIDAK BOLEH ada proyek yang dibuat, dapat ${store.projects.length}`);
+    assert(fin!.ensuredProjectId === undefined, 'ensuredProjectId harus kosong');
+    assert(!fin!.message.includes('proyek sementara'), 'pesan finalisasi TIDAK BOLEH menyebut proyek sementara');
   });
 
-  await check('B53-D08 draft direct kedua memakai proyek sementara yang sama (tanpa proyek baru)', () => {
+  await check('B53-D08 §4.5: draft direct kedua memakai proyek EKSPLISIT yang sama (tanpa proyek baru)', () => {
     resetAll();
     registerEnsurer();
+    // §4.5: proyek dibuat EKSPLISIT sebelum draft pertama.
+    const p = store.create({ name: 'Proyek Rumah Tinggal' });
     const first = start('buatkan RAB rumah tipe 36 anggaran 120 juta');
     assert(hasPushDirect(first), 'draft direct pertama harus berhasil');
-    const p = store.projects[0];
-    // Simulasi keadaan view sesudah proyek dibuat: proyek aktif = sementara.
+    assert(store.projects.length === 1, 'draft pertama tidak boleh membuat proyek');
+    assert(first.ensuredProjectId === p.id, 'draft pertama terikat ke proyek eksplisit');
+    // Simulasi keadaan view sesudah proyek dibuat: proyek aktif = eksplisit.
     const second = start('buatkan rab rumah tipe 45', p.id);
     assert(hasPushDirect(second), 'draft direct kedua harus berhasil');
     assert(store.projects.length === 1, 'draft kedua tidak boleh membuat proyek lagi');
     assert(direct.getLastDirectRab()?.displayLabel === 'Rumah Type 45', 'draft kedua harus tipe 45');
-    assert(second.ensuredProjectId === p.id, 'draft kedua terikat ke proyek sementara yang sama');
+    assert(second.ensuredProjectId === p.id, 'draft kedua terikat ke proyek eksplisit yang sama');
     assert(!second.message.includes('proyek sementara'), 'draft kedua tidak boleh memberitahu proyek baru');
   });
 

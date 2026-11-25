@@ -92,12 +92,21 @@ test('AdvantagesPage hanya menyatakan penolakan testimoni fiktif', () => {
 });
 
 console.log('\n[2] NEW-06 — kode mati tetap mati (tanpa importer):');
-for (const mod of ['ExactPricing', 'ExactMagicAi', 'ExactRoles', 'ExactStackedShowcase']) {
+// ExactPricing DIHAPUS dari daftar ini (keputusan owner 2026-11-24 —
+// dihapus dari tree karena membawa klaim promo tak terverifikasi);
+// tiga modul mati sisanya tetap di-pin tanpa importer.
+for (const mod of ['ExactMagicAi', 'ExactRoles', 'ExactStackedShowcase']) {
   test(`${mod} tanpa importer`, () => {
     const importers = findImporters(mod);
     ok(importers.length === 0, `${mod} kini diimpor oleh: ${importers.join(', ')}`);
   });
 }
+test('ExactPricing terhapus dari tree (keputusan owner 2026-11-24)', () => {
+  ok(
+    !fs.existsSync(path.join(SRC, 'components/landing/exact/ExactPricing.tsx')),
+    'ExactPricing.tsx masih ada di tree'
+  );
+});
 test('toggle bulanan/tahunan TIDAK ada di PricingCards yang live', () => {
   const src = stripComments(read('../components/landing/exact/PricingBlocks.tsx'));
   // 'monthly' saja tidak dihitung — monthlyPriceIdr adalah field

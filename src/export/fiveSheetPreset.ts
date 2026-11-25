@@ -354,15 +354,23 @@ export function verificationLabel(status: string | undefined | null): string {
 
 /** Teks sumber harga fallback (dipakai bila pemanggil tidak mengumpan
  *  `buildExcelSourceText` mesin). Aturan cermin `buildExcelSourceTextBase`
- *  tanpa jejak konversi satuan: manual/asumsi/pasar/resmi/unresolved. */
+ *  tanpa jejak konversi satuan: unresolved-terlebih-dahulu, lalu
+ *  manual/asumsi/pasar/resmi. (Continuation §5-C: urutan lama memeriksa
+ *  kind OFFICIAL_AHSP SEBELUM status UNRESOLVED — bug yang sama dengan
+ *  FIX 1; dan kind UNRESOLVED memaksa teks tanpa-harga pada item
+ *  berharga — bug balik yang sama. Keduanya diperbaiki di sini.) */
 export function fallbackSourceText(itm: ExportItemLike): string {
   const status = itm.priceStatus as string | undefined;
   const kind = itm.priceSourceKind as string | undefined;
+  // Status UNRESOLVED mengalahkan SEMUA label kind — item tanpa harga
+  // tidak pernah tampil sebagai sumber resmi/pasar/asumsi.
+  if (status === 'PRICE_UNRESOLVED') return UNRESOLVED_PRICE_TEXT;
   if (status === 'PRICE_MANUAL') return 'INPUT MANUAL';
   if (kind === 'EZRAB_ASSUMPTION') return 'ASUMSI — PERLU VERIFIKASI';
   if (kind === 'MARKET_REFERENCE') return 'REFERENSI PASAR';
   if (kind === 'OFFICIAL_AHSP') return itm.volumeSource || itm.ahspCode || 'RESMI AHSP';
-  if (status === 'PRICE_UNRESOLVED' || kind === 'UNRESOLVED') return UNRESOLVED_PRICE_TEXT;
+  // kind UNRESOLVED tanpa status UNRESOLVED = klaim sumber ditolak
+  // factory, BUKAN berarti tanpa harga — jatuh ke label legacy.
   return itm.priceSourceLabel || itm.volumeSource || itm.ahspCode || 'MANUAL';
 }
 

@@ -153,6 +153,11 @@ function assertPatch(actual: ProjectSettingsPatch | undefined, expected: Project
   assert(routeIntent('berapa total proyek saya?').intent === 'QUERY_PROJECT_TOTAL', 'B13: total tetap QUERY_PROJECT_TOTAL');
   assert(routeIntent('ubah nama proyek menjadi Rumah Impian').intent === 'RENAME_PROJECT', 'B14: rename tetap RENAME_PROJECT');
   assert(routeIntent('ubah volume plesteran jadi 25 m2').intent === 'UPDATE_ITEM_VOLUME', 'B15: volume tetap UPDATE_ITEM_VOLUME');
+  // WB-01 follow-up (Fast Track): pertanyaan hitungan "X% dari Rp..." bukan perintah setelan.
+  assert(routeIntent('PPN 11% dari Rp 1.000.000').intent === 'CALCULATE', 'B16: PPN 11% dari Rp 1.000.000 → CALCULATE (bukan setelan)');
+  assert(routeIntent('berapa PPN 11% dari Rp 1.000.000?').intent === 'CALCULATE', 'B17: berapa PPN 11% dari … → CALCULATE');
+  assert(routeIntent('PPN 11%').intent === 'UPDATE_PROJECT_SETTINGS', 'B18: PPN 11% telanjang tetap perintah setelan');
+  assert(routeIntent('ubah ppn dari 10% jadi 11%').intent === 'UPDATE_PROJECT_SETTINGS', 'B19: ubah ppn dari 10% jadi 11% tetap perintah (kata kerja)');
 }
 
 /* --- C. Parser --- */

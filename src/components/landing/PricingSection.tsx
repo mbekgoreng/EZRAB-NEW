@@ -18,7 +18,7 @@ interface PricingSectionProps {
 // harga Rp0/99.000/199.000/499.000 dan batas proyek 1/3/10/∞ — semuanya
 // menyimpang dari kanonis (Free/Starter/Professional/Business,
 // Rp0/54.999/79.999/159.999, batas 1/7/25/∞). Diskon tahunan 15% mengikuti
-// rumus yang sama dengan ExactPricing (bukan angka terpisah).
+// rumus dari harga bulanan kanonis (bukan angka terpisah).
 // ---------------------------------------------------------------------------
 
 interface PlanPresentation {
@@ -115,7 +115,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ onSelectPlan }) 
   return (
     <section
       // NEW-05: dulu id="harga" — duplikat dengan section harga
-      // landing (AiShowcase, yang kanonis) dan ExactPricing (mati).
+      // landing (AiShowcase, yang kanonis).
       // Versi in-app ini memakai id sendiri.
       id="harga-paket"
       style={{

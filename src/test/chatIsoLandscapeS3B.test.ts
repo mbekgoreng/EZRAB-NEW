@@ -24,10 +24,10 @@
  *          dengan universal + Q-8)
  * - S3B-07 restore memvalidasi kepemilikan (loadConversation tidak
  *          membangkitkan konteks; store menolak baca lintas-proyek)
- * - S3B-08 binding proyek sementara tidak membocorkan konteks (generate
+ * - S3B-08 binding draft global tidak membocorkan konteks (generate
  *          asing/global-di-proyek ditolak tanpa ensurer dipanggil;
- *          generate global sah terikat ke proyek sementara dari
- *          faktanya sendiri)
+ *          generate global sah tersusun dari faktanya sendiri dan
+ *          tetap TAK TERIKAT tanpa proyek aktif — §4.5)
  * - S3B-09 perilaku landscape valid utuh (alur penuh sampai draft)
  * - S3B-10 PAYLOAD AI FINAL: prompt B bebas penanda A sesudah skenario
  *          kontaminasi; builder menolak intake + conversationId asing
@@ -223,15 +223,20 @@ async function main(): Promise<void> {
       : null;
   };
 
-  /* ---------- Ensurer tiruan (pola chatTempProjectB53) ---------- */
-  const tempCreated: Array<{ id: string; name: string }> = [];
-  const fakeEnsurer = (draft: { title: string }) => {
-    const created = {
-      id: `TMP-S3B-${tempCreated.length + 1}`,
-      name: tp.tempProjectNameForDraft(draft.title),
-    };
-    tempCreated.push(created);
-    return { id: created.id, name: created.name, created: true };
+  /* ---------- Ensurer tiruan (kontrak §4.5, Fast Track §3(g)) ----------
+   * Suite ini tidak memodelkan store proyek — tidak ada proyek "live"
+   * yang bisa dikembalikan — jadi ensurer §4.5 selalu null (draft
+   * tetap tak terikat tanpa proyek aktif). Versi lama double ini
+   * mengembalikan proyek sementara buatan (created:true) untuk
+   * "mekanika hook"; penjaga level-registry di
+   * tempProject.setDraftProjectEnsurer kini MEMBUANG hasil
+   * created:true, sehingga double + asersi S3B-08c DIPERBARUI ke §4.5.
+   * Penghitung panggilan membuktikan hook tetap dipanggil (S3B-08c)
+   * atau tidak dipanggil (S3B-08a/b). */
+  let ensurerCalls = 0;
+  const fakeEnsurer = (_draft: { title: string }) => {
+    ensurerCalls += 1;
+    return null;
   };
 
   const resetAll = () => {
@@ -239,7 +244,7 @@ async function main(): Promise<void> {
     reg.clearProjectContext();
     rab.clearLastUniversalDraft();
     tp.setDraftProjectEnsurer(null);
-    tempCreated.length = 0;
+    ensurerCalls = 0;
     storage.clear();
     effProjectId = null;
     awaitingConcept = false;
@@ -513,7 +518,7 @@ async function main(): Promise<void> {
     assert(awaitingConcept === false, 'awaitingConcept tetap false sesudah restore percakapan');
   });
 
-  /* ================= S3B-08 — binding proyek sementara ================= */
+  /* ================= S3B-08 — binding draft global (§4.5) ================= */
   await check('S3B-08a generate konteks tercap A TANPA proyek aktif ditolak; ensurer tidak dipanggil', () => {
     resetAll();
     tp.setDraftProjectEnsurer(fakeEnsurer as never);
@@ -532,7 +537,7 @@ async function main(): Promise<void> {
       'penolakan harus memakai pesan "konteks tidak aktif" yang sudah ada',
     );
     assert(rab.getLastUniversalDraft() === null, 'tidak boleh ada draft dari konteks asing');
-    assert(tempCreated.length === 0, 'ensurer TIDAK BOLEH dipanggil untuk generate asing (tanpa proyek sementara bocor)');
+    assert(ensurerCalls === 0, 'ensurer TIDAK BOLEH dipanggil untuk generate asing');
   });
 
   await check('S3B-08b generate konteks global DI PROYEK B ditolak (global = asing bila proyek aktif ada)', () => {
@@ -548,10 +553,10 @@ async function main(): Promise<void> {
     const gen = reg.executeIntent('RAB_PROJECT_PREVIEW', 'generate', mockCtx(B));
     assert((gen as { ok?: boolean }).ok === false, 'generate konteks global di proyek B harus ditolak');
     assert(rab.getLastUniversalDraft() === null, 'tidak boleh ada draft dari konteks global di proyek B');
-    assert(tempCreated.length === 0, 'ensurer tidak boleh dipanggil untuk generate yang ditolak');
+    assert(ensurerCalls === 0, 'ensurer tidak boleh dipanggil untuk generate yang ditolak');
   });
 
-  await check('S3B-08c generate global TANPA proyek aktif sah: terikat proyek sementara dari faktanya sendiri', () => {
+  await check('S3B-08c generate global TANPA proyek aktif sah: tersusun dari faktanya sendiri, TAK TERIKAT (§4.5)', () => {
     resetAll();
     tp.setDraftProjectEnsurer(fakeEnsurer as never);
     switchProject(null);
@@ -561,8 +566,8 @@ async function main(): Promise<void> {
     const draft = rab.getLastUniversalDraft();
     assert(draft !== null, 'draft global harus tersusun');
     const binding = rab.getLastUniversalDraftProjectId ? rab.getLastUniversalDraftProjectId() : null;
-    assert(binding === 'TMP-S3B-1', `draft harus terikat proyek sementara ensurer, dapat ${binding}`);
-    assert(tempCreated.length === 1, 'ensurer harus dipanggil tepat 1×');
+    assert(binding === null, `draft global harus TAK TERIKAT tanpa proyek aktif (§4.5), dapat ${binding}`);
+    assert(ensurerCalls === 1, 'ensurer (hook) harus dipanggil tepat 1× walau hasilnya null');
     const msg = (gen as { message?: string }).message ?? '';
     // Pesan generate mesin kanonis menyatakan luas terkonfirmasi (bukan
     // lokasi) — 20.000 m² adalah fakta konteks global itu sendiri.

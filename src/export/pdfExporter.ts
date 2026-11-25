@@ -574,10 +574,16 @@ export async function exportProjectToPDF(
   doc.text(options?.clientApproverName || project.clientName || (project as any).client || 'Owner Proyek', col3X, sigY + 26, { align: 'center' });
 
   // Page 2 Footer
+  // H-10 (Continuation §5-C, directive §7): footer TIDAK BOLEH mengklaim
+  // "Resmi" — dokumen ini dapat memuat item HARGA BELUM TERSEDIA +
+  // peringatan "Estimasi ini belum final" (di bawah), sehingga stempel
+  // resmi adalah klaim tanpa bukti yang bertentangan dengan isi dokumen
+  // sendiri. Footer netral mempertahankan nama produk (EZRAB PRO) tanpa
+  // klaim ke-resmian.
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7.5);
   doc.setTextColor(...DOC_COLORS.SLATE_MUTED);
-  doc.text(`Dokumen Resmi EZRAB PRO • Halaman 2`, pageWidth - 14, pageHeight - 8, { align: 'right' });
+  doc.text(`Dokumen EZRAB PRO • Halaman 2`, pageWidth - 14, pageHeight - 8, { align: 'right' });
   doc.text(`Dicetak pada: ${dateFormatted}`, 14, pageHeight - 8);
 
   // =========================================================================
@@ -773,7 +779,7 @@ export async function exportProjectToPDF(
         doc.setFontSize(7.5);
         doc.setTextColor(...DOC_COLORS.SLATE_MUTED);
         doc.text(
-          `Dokumen Resmi EZRAB PRO • Dicetak pada ${dateFormatted}`,
+          `Dokumen EZRAB PRO • Dicetak pada ${dateFormatted}`,
           12,
           lsHeight - 6
         );
@@ -810,7 +816,9 @@ export async function exportProjectToPDF(
     // P0-B: jangan pakai nomor dokumen contoh sebagai identitas resmi.
     const cleanDocNum = (documentNumber || project.projectNumber || project.id || 'TANPA-NOMOR').replace(/[^a-zA-Z0-9_-]/g, '_');
     const cleanProjName = (project.name || 'Proyek').replace(/[^a-zA-Z0-9_-]/g, '_');
-    const fileName = `RAB_${cleanDocNum}_${cleanProjName}_Resmi.pdf`;
+    // H-10 (Continuation §5-C): nama file tidak lagi mengklaim "_Resmi"
+    // — alasan yang sama dengan footer (dokumen dapat belum final).
+    const fileName = `RAB_${cleanDocNum}_${cleanProjName}.pdf`;
 
     try {
       // (Warning unresolved sudah digambar sebelum blok window — Phase 2I.2.)

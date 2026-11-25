@@ -106,6 +106,35 @@ export const FULL_AI_TIMEOUT_MS = {
 } as const;
 
 /**
+ * O-07 (Fast Track, 2026-11-24): jeda tetap sebelum SATU retry transport
+ * per kelompok halaman. Nilai kecil & tetap (1 detik): tidak ada preseden
+ * backoff di codebase — split-retry kelompok maupun json-retry
+ * providerClient sama-sama langsung tanpa jeda — jadi jeda ini sengaja
+ * minimal, hanya memberi waktu sesaat bagi gangguan koneksi sesaat
+ * (connection reset) untuk pulih sebelum satu-satunya percobaan ulang.
+ */
+export const FULL_AI_TRANSPORT_RETRY_DELAY_MS = 1000;
+
+/**
+ * O-07: klasifikasi kegagalan TRANSPORT — SATU-SATUNYA kode yang
+ * di-retry oleh loop kelompok. `NETWORK_ERROR` adalah kode transport
+ * providerClient (classifyError: TypeError fetch / "failed to fetch" /
+ * connection reset; juga aliran stream yang terputus sebelum selesai).
+ * MODEL_TIMEOUT SENGAJA TIDAK termasuk: providerClient memakainya juga
+ * untuk model yang benar-benar lambat dan timeout auth (AbortError →
+ * MODEL_TIMEOUT), sehingga me-retry-nya akan memperluas retry ke
+ * kegagalan sisi provider/model — di luar cakupan O-07. MODEL_ERROR /
+ * 400-an / MALFORMED_JSON punya jalurnya sendiri (gagal / split-retry)
+ * dan tidak pernah masuk retry transport.
+ */
+export function isFullAiTransportFailure(result: {
+  success: boolean;
+  errorCode?: string | null;
+}): boolean {
+  return !result.success && result.errorCode === 'NETWORK_ERROR';
+}
+
+/**
  * F4 (3.7): normalisasi peringatan dari model. Model kadang mengembalikan
  * `warnings` sebagai SATU string — menyebarnya dengan spread akan memecah
  * string menjadi peringatan per karakter. String utuh menjadi satu
@@ -555,7 +584,10 @@ export class FullAiDedService {
       // Kelompok dijalankan berurutan (menghindari lonjakan paralel ke
       // gateway). Kelompok yang keluarannya bukan JSON valid dipecah dua
       // dan dicoba ulang (kedalaman maks 2 — penawar output terpotong
-      // plafon token, sama seperti mesin standar). Kegagalan provider
+      // plafon token, sama seperti mesin standar). O-07: kegagalan
+      // TRANSPORT (NETWORK_ERROR) dicoba SATU kali lagi (kelompok yang
+      // sama, tanpa pecah, jeda tetap 1 detik); bila percobaan kedua
+      // juga gagal transport, kelompok dicatat gagal. Kegagalan provider
       // pada satu kelompok TIDAK menggugurkan kelompok lain: kelompok
       // itu dicatat gagal dan hasilnya menjadi parsial berlabel.
       // Dokumen tanpa teks sama sekali (0 kelompok) tidak memanggil AI.
@@ -617,15 +649,39 @@ export class FullAiDedService {
             ? `Menganalisis DED dengan AI (${mode}) — kelompok ${executedGroups + 1}/${totalGroupsPlanned}…`
             : `Menganalisis DED dengan AI (${mode})...`,
         );
-        const groupAiResult = await aiToolsProviderClient.execute({
-          productId,
-          prompt: built.prompt,
-          systemPrompt: built.system,
-          jsonMode: true,
-          maxTokens: mode === 'FAST' ? 16000 : 32000,
-          timeoutMs: FULL_AI_TIMEOUT_MS[mode],
-        });
+        // O-07: pemanggilan kelompok difaktorkan agar percobaan ulang
+        // transport memakai request yang persis sama (prompt, system,
+        // maxTokens, timeout) — tanpa pecah, tanpa instruksi baru.
+        const callGroupAi = () =>
+          aiToolsProviderClient.execute({
+            productId,
+            prompt: built.prompt,
+            systemPrompt: built.system,
+            jsonMode: true,
+            maxTokens: mode === 'FAST' ? 16000 : 32000,
+            timeoutMs: FULL_AI_TIMEOUT_MS[mode],
+          });
+        let groupAiResult = await callGroupAi();
         executedGroups++;
+        // O-07: SATU retry transport terbatas. Hanya NETWORK_ERROR yang
+        // di-retry (isFullAiTransportFailure); kegagalan provider/model
+        // (MODEL_ERROR, MODEL_TIMEOUT, 400-an) langsung ke failedGroups
+        // seperti dulu, dan JSON malformed tetap lewat jalur split-retry
+        // di bawah. Retry aman-idempoten: percobaan yang gagal tidak
+        // me-merge apa pun — hasil hanya di-merge SATU kali dari
+        // groupAiResult final di bawah, jadi kelompok yang di-retry
+        // menghasilkan paling banyak satu entri hasil. Bila retry juga
+        // gagal transport, kelompok masuk failedGroups (tepat 2 upaya,
+        // tidak ada upaya ketiga).
+        if (isFullAiTransportFailure(groupAiResult)) {
+          warnings.push(
+            `Kelompok halaman ${formatPageRanges(groupPages)} gagal terhubung ke layanan AI (NETWORK_ERROR); ` +
+            `mencoba sekali lagi setelah jeda singkat.`,
+          );
+          await new Promise((resolve) => setTimeout(resolve, FULL_AI_TRANSPORT_RETRY_DELAY_MS));
+          groupAiResult = await callGroupAi();
+          executedGroups++;
+        }
         if (!groupAiResult.success) {
           failedGroups.push({
             pages: groupPages,

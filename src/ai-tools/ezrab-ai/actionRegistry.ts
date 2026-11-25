@@ -22,6 +22,7 @@ import {
 } from './operations';
 import { snapshotAllItems, type ProjectSnapshot } from './projectContext';
 import { parseRequestedQuantity } from './chatAnswerTransfer';
+import type { AnswerTransferPlan, ChatAnswerPushItem } from './chatAnswerTransfer';
 // Handler perintah deterministik kelompok 1–5 (2026-11-17, gap P2–P8 +
 // P12 audit perintah): logika perintah hidup di ./commands/*, registry
 // hanya mendelegasikan (case di executeIntent, sesudah UNDO_LAST).
@@ -30,6 +31,8 @@ import { handleQtoCommand, parseCreateQtoTarget, parseSyncQtoTarget, resolveQtoI
 import { handleDedDocCommand } from './commands/dedDocCommands';
 import {
   handleExportCreditCommand,
+  cleanRevisionLabel,
+  REVISION_MAX_LABEL_LENGTH,
   type ExportFormat,
   type CreatedRevision,
   type TopUpCreditResult,
@@ -67,6 +70,8 @@ import {
   mergeDedSpecsIntoSpecs,
   type DedAttachment,
   type DedQtoDraftInfo,
+  type QtoCorrectionProposal,
+  type DedSpecRevisionPreview,
 } from './dedQtoIntegration';
 import type { QtoUserDimensions } from './qtoBridge';
 import {
@@ -96,19 +101,22 @@ import { clarifyTopicCard, clarifyPickResult } from './clarifyTopics';
 import { evaluateCalculation } from './calcIntent';
 import { findGamesMentioned, buildGameInfoAnswer } from '../../game-space/catalog';
 import { buildDirectRab, displayTemplateBasisName, findDirectTemplate, formatDirectRabMessage, matchDirectRegion, getLastDirectRab } from './directRab';
-import type { DirectRabResult } from './directRab';
+import type { DirectRabResult, DirectRabFullAiCompletion } from './directRab';
 import { buildSpecRab, buildSpecRabFromNeeds } from './specRab';
 import { runRabIntentFlow, evaluateRabIntent, continueRabIntent, getLastRabIntentSpec, setLastRabIntentSpec, formatSpecSummaryLines, specToRabNeeds, unsupportedSpecReasons } from './rabIntentFlow';
 import type { RabTemplateRecommendation } from './rabIntentFlow';
 import { extractRabIntentSpec, mergeRabIntentSpec } from './rabIntentSpec';
 import type { RabIntentSpec } from './rabIntentSpec';
-import { buildUniversalDraft, formatUniversalDraftMessage, extractUniversalSpec, getLastUniversalDraft, setLastUniversalDraft, effectiveItems, isPriceValidForTotal, itemKey } from './universalRab';
+import { buildUniversalDraft, formatUniversalDraftMessage, extractUniversalSpec, getLastUniversalDraft, getLastUniversalDraftProjectId, setLastUniversalDraft, effectiveItems, isPriceValidForTotal, itemKey } from './universalRab';
 import type { UniversalDraft } from './universalRab';
 import { getDraftProjectEnsurer } from './tempProject';
+import { authorizeChatAiMutation } from './mutationInventory';
+import { appendMutationAuditRecord } from './mutationAuditLog';
 import { aiToolsProviderClient } from '../providerClient';
 import { completeBudgetRabWithFullAi, buildFullAiCompletionSummary } from './fullAiRabCompletion';
-import type { ChatRabCompletionDeps } from './fullAiRabCompletion';
-import { saveIntakeContext, clearIntakeContext, peekIntakeContext } from './draftPersistence';
+import type { ChatRabCompletionDeps, FullAiCompletionSummary } from './fullAiRabCompletion';
+import { saveIntakeContext, clearIntakeContext, peekIntakeContext, draftFingerprint } from './draftPersistence';
+import { directPushFingerprint } from './directRabPush';
 import { captureFeedback } from './constructionFeedback';
 
 export interface ChatActionContext {
@@ -116,6 +124,18 @@ export interface ChatActionContext {
   navigate: (menu: string) => void;
   /** Teks mentah pesan pengguna saat ini (untuk ekstraksi kebutuhan RAB) */
   rawText?: string;
+  /**
+   * P1-C (WC-02) — true HANYA bila pemanggilan ini berasal dari dispatch
+   * tombol konfirmasi (`executeDirectConfirmation`) — BUKAN dari kirim
+   * teks. Gerbang konfirmasi perintah langsung HANYA mengklaim slot
+   * tertunda bila ini true; kirim-ulang teks perintah yang sama TIDAK
+   * PERNAH mengklaim (D6 O-5: "ubah overhead jadi 10%" dua kali tidak
+   * mengeksekusi — eksekusi hanya lewat klik tombol konfirmasi).
+   * Produksi: hanya view.tsx yang memasang flag ini (di dalam
+   * executeDirectConfirmation). Jalur teks (submit) tidak pernah
+   * memasangnya.
+   */
+  claimDirectConfirmation?: boolean;
   /** Mode klarifikasi topik aktif (untuk case CLARIFY_QUERY):
    *  'ahsp' | 'harga-material' | 'harga-upah' | 'harga-alat' | 'template' */
   clarifyMode?: string;
@@ -273,11 +293,28 @@ export interface ChatActionButton {
     | { kind: 'push-rab-confirm' }
     | { kind: 'push-universal' }
     | { kind: 'push-universal-confirm' }
+    /* Fast Track §3 (P1-04/P1-05) — konfirmasi push item jawaban:
+     * tombol pada pesan PRATINJAU "Tambah ke Spreadsheet"; tanpa slot
+     * konfirmasi yang sah (sidik pratinjau + TTL + sekali pakai),
+     * handler view menolak menulis. msgIndex = jawaban yang
+     * ditransfer (rencana direkomputasi segar saat konfirmasi). */
+    | { kind: 'push-answer-items-confirm'; msgIndex: number }
     /* Lengkapi dengan Full AI (§5 budget-based RAB): tombol pada jawaban
      * draft parsial ber-budget — target = draft yang tombolnya diklik
      * (view menentukan dari aksi jawaban itu). Ditangani async di view
      * lewat executeBudgetFullAiRab (bukan lewat executeIntent sinkron). */
     | { kind: 'budget-full-ai-complete'; target?: 'universal' | 'direct' }
+    /* P1-08 (H-12) — "Batalkan lengkapan": mengembalikan draft ke
+     * snapshot pra-completion (universal) atau membersihkan isian AI
+     * (direct). Snapshot diambil SEBELUM completeUniversalDraftWithFullAi
+     * bermutasi; tombol hanya muncul pada pesan hasil completion. */
+    | { kind: 'budget-full-ai-undo'; target: 'universal' | 'direct' }
+    /* Fast Track (P1-08 penuh, H-12) — terima / buang lengkapan yang
+     * tertunda: tombol pada pesan PRATINJAU completion. Terima menukar
+     * draft live dengan klon terisi + autosave (view); buang hanya
+     * membuang klon tertunda di memori (draft tidak berubah). */
+    | { kind: 'budget-full-ai-accept'; target: 'universal' | 'direct' }
+    | { kind: 'budget-full-ai-discard'; target: 'universal' | 'direct' }
     /* GATE 3 (5C) — revisi immutable: konfirmasi / batal pratinjau revisi
      * yang menunggu, dan tampilkan riwayat versi. */
     | { kind: 'revision-confirm' }
@@ -288,8 +325,15 @@ export interface ChatActionButton {
      * tolak SATU pratinjau revisi spek DED (previewId dari
      * buildDedSpecRevisionPreview). Keputusan per item — tombol tidak
      * pernah menerapkan koreksi lain; usulan yang sudah diputuskan
-     * dijawab jujur (bukan diterapkan dua kali). */
-    | { kind: 'qto-correction-confirm'; correctionId: string }
+     * dijawab jujur (bukan diterapkan dua kali).
+     * Fast Track Continuation A2 — pengikatan nilai tampilan: tombol
+     * konfirmasi membawa nilai usulan YANG DITAMPILKAN saat tombol
+     * dibuat (expectedQuantity/Unit + dedQuantity/Unit); handler
+     * menolak bila rekomputasi segar menghasilkan nilai berbeda —
+     * tanpa ini konfirmasi bisa menerapkan nilai yang tidak pernah
+     * ditinjau pengguna. Keempatnya opsional (tombol lama tanpa
+     * pengikatan tetap jalan dengan perilaku rekomputasi lama). */
+    | { kind: 'qto-correction-confirm'; correctionId: string; expectedQuantity?: number; expectedUnit?: string; dedQuantity?: number; dedUnit?: string }
     | { kind: 'qto-correction-reject'; correctionId: string }
     | { kind: 'ded-spec-confirm'; previewId: string }
     | { kind: 'ded-spec-reject'; previewId: string };
@@ -2292,45 +2336,41 @@ type BuiltRab = NonNullable<ReturnType<typeof buildDirectRab>>;
  * GENERATE_RAB_TEMPLATE dan jalur spek bebas CREATE_RAB_DIRECT).
  *
  * B5-3 direct (keputusan owner 2026-11-23, tap "Cakup juga jalur
- * direct-RAB") — HOOK KEDUA: ini corong commit draft direct (semua
+ * direct-RAB") + §4.5 (direktif owner 2026-11-24, P1 — MENGGANTIKAN
+ * SEBAGIAN B5-3) — HOOK KEDUA: ini corong commit draft direct (semua
  * pemanggil — CREATE_RAB_DIRECT, GENERATE_RAB_TEMPLATE, RAB_FULL_AI,
  * finalisasi "itu aja", koreksi kartu — tiba di sini SETELAH
  * buildDirectRab/buildSpecRab sukses). Sama seperti hook universal di
- * universalResultFor: bila ada ensurer terdaftar (view chat), pastikan
- * proyeknya SEKARANG — ensurer mengembalikan proyek aktif yang sudah
- * ada (tanpa pembuatan baru) atau proyek sementara yang baru dibuat
- * ("RAB <displayLabel> (Sementara)"); draft direct tidak punya record
- * UniversalDraft, jadi ensurer hanya membuat proyek + migrasi
- * percakapan (tanpa saveDraft — lihat isUniversalDraft di
- * tempProject.ts). Tanpa ensurer (tes / jalur lain) perilaku IDENTIK
- * dengan lama. Kegagalan ensurer TIDAK PERNAH menggagalkan draft
- * (draft tetap tampil tanpa ikatan — jalan buntu revisi lama, bukan
- * crash). Gerbang yang kembali SEBELUM build (ded/clarify/kartu
- * pilihan/ringkasan kebutuhan) tidak pernah sampai ke sini → tidak
- * pernah memicu proyek.
+ * universalResultFor: bila ada ensurer terdaftar (view chat), ikat
+ * draft ke proyek AKTIF YANG SUDAH ADA (bila ada). ENSURER TIDAK
+ * PERNAH MEMBUAT PROYEK: tanpa proyek aktif, draft tetap TAK TERIKAT
+ * — pembuatan proyek hanya terjadi lewat konfirmasi eksplisit user
+ * (aliran push/finalize §6) atau pembuatan manual. Draft BUKAN
+ * proyek. Draft direct tidak punya record UniversalDraft, jadi
+ * ensurer hanya mengembalikan proyek aktif (tanpa saveDraft — lihat
+ * isUniversalDraft di tempProject.ts). Tanpa ensurer (tes / jalur
+ * lain) perilaku IDENTIK dengan lama. Kegagalan ensurer TIDAK PERNAH
+ * menggagalkan draft (draft tetap tampil tanpa ikatan — jalan buntu
+ * revisi lama, bukan crash). Gerbang yang kembali SEBELUM build
+ * (ded/clarify/kartu pilihan/ringkasan kebutuhan) tidak pernah sampai
+ * ke sini → tidak pernah memicu proyek.
  */
 function directRabTableResult(built: BuiltRab): ActionResult {
   let ensuredProjectId: string | undefined;
-  let ensuredCreatedName: string | null = null;
   const ensurer = getDraftProjectEnsurer();
   if (ensurer) {
     try {
       const ensured = ensurer({ title: built.displayLabel });
       if (ensured) {
         ensuredProjectId = ensured.id;
-        if (ensured.created) ensuredCreatedName = ensured.name;
       }
     } catch {
-      /* pembuatan proyek gagal — draft tetap berlaku tanpa ikatan */
+      /* pengikatan gagal — draft tetap berlaku tanpa ikatan */
     }
   }
   return {
     ok: true,
-    message:
-      formatDirectRabMessage(built) +
-      (ensuredCreatedName
-        ? `\n\n📌 Draft ini tersimpan di proyek sementara "${ensuredCreatedName}" — proyek dibuat otomatis karena belum ada proyek aktif. Beri nama dan lengkapi datanya lewat menu Proyek.`
-        : ''),
+    message: formatDirectRabMessage(built),
     actions: [
       { label: 'Push ke Spreadsheet RAB', action: { kind: 'push-rab' } },
       { label: 'Buka Spreadsheet RAB', action: { kind: 'navigate', menu: 'rab-estimasi' } },
@@ -2392,7 +2432,9 @@ function universalResultFor(raw: string, forcedTemplateId?: string, materialNote
       dedQto = buildDedQtoDraftInfo(attachment, checks, dims);
       for (const p of pendingQtoCorrections(attachment, checks)) {
         qtoActions.push(
-          { label: `Terima koreksi QTO: ${p.description}`, action: { kind: 'qto-correction-confirm', correctionId: p.id } },
+          // A2: tombol membawa nilai YANG DITAMPILKAN (pengikatan nilai
+          // konfirmasi — handler menolak bila rekomputasi segar beda).
+          { label: `Terima koreksi QTO: ${p.description}`, action: { kind: 'qto-correction-confirm', correctionId: p.id, expectedQuantity: p.expectedQuantity, expectedUnit: p.expectedUnit, dedQuantity: p.dedQuantity, dedUnit: p.dedUnit } },
           { label: `Tolak koreksi QTO: ${p.description}`, action: { kind: 'qto-correction-reject', correctionId: p.id } },
         );
       }
@@ -2441,20 +2483,22 @@ function universalResultFor(raw: string, forcedTemplateId?: string, materialNote
       const names = res.draft.parts.map((p) => p.template.name).join(' + ');
       res.draft.assumptions.unshift(materialNote.replace('{template}', names));
     }
-    // B5-3 (D-11, keputusan owner 2026-11-23) — TITIK HOOK: ini corong
-    // commit draft universal jalur chat (semua pemanggil — brief,
-    // pratinjau landscape, gerbang material, jalur cepat — tiba di sini
-    // SETELAH buildUniversalDraft sukses). Bila draft ini tidak terikat
-    // proyek (pemanggil tanpa projectId) DAN ada ensurer terdaftar
-    // (view chat), pastikan proyeknya SEKARANG: ensurer mengembalikan
-    // proyek aktif yang sudah ada (tanpa pembuatan baru) atau proyek
-    // sementara yang baru dibuat — draft diikat ulang ke id itu agar
-    // aktivasi revisi + autosave + restore pasca-reload bekerja.
-    // Tanpa ensurer (tes / jalur lain) perilaku IDENTIK dengan lama.
-    // Kegagalan ensurer TIDAK PERNAH menggagalkan draft (draft tetap
-    // tampil tanpa ikatan — jalan buntu revisi lama, bukan crash).
+    // B5-3 (D-11, keputusan owner 2026-11-23) + §4.5 (direktif owner
+    // 2026-11-24, P1 — MENGGANTIKAN SEBAGIAN B5-3) — TITIK HOOK: ini
+    // corong commit draft universal jalur chat (semua pemanggil —
+    // brief, pratinjau landscape, gerbang material, jalur cepat — tiba
+    // di sini SETELAH buildUniversalDraft sukses). Bila draft ini
+    // tidak terikat proyek (pemanggil tanpa projectId) DAN ada ensurer
+    // terdaftar (view chat), ikat draft ke proyek AKTIF YANG SUDAH ADA
+    // (bila ada) agar aktivasi revisi + autosave + restore pasca-reload
+    // bekerja. ENSURER TIDAK PERNAH MEMBUAT PROYEK: tanpa proyek aktif,
+    // draft tetap TAK TERIKAT — pembuatan proyek hanya terjadi lewat
+    // konfirmasi eksplisit user (aliran push/finalize §6) atau
+    // pembuatan manual. Draft BUKAN proyek. Tanpa ensurer (tes / jalur
+    // lain) perilaku IDENTIK dengan lama. Kegagalan ensurer TIDAK
+    // PERNAH menggagalkan draft (draft tetap tampil tanpa ikatan —
+    // jalan buntu revisi lama, bukan crash).
     let ensuredProjectId: string | undefined;
-    let ensuredCreatedName: string | null = null;
     if (!opts?.projectId) {
       const ensurer = getDraftProjectEnsurer();
       if (ensurer) {
@@ -2462,21 +2506,16 @@ function universalResultFor(raw: string, forcedTemplateId?: string, materialNote
           const ensured = ensurer(res.draft);
           if (ensured) {
             ensuredProjectId = ensured.id;
-            if (ensured.created) ensuredCreatedName = ensured.name;
             setLastUniversalDraft(res.draft, ensured.id);
           }
         } catch {
-          /* pembuatan proyek gagal — draft tetap berlaku tanpa ikatan */
+          /* pengikatan gagal — draft tetap berlaku tanpa ikatan */
         }
       }
     }
     return {
       ok: true,
-      message:
-        formatUniversalDraftMessage(res.draft) +
-        (ensuredCreatedName
-          ? `\n\n📌 Draft ini tersimpan di proyek sementara "${ensuredCreatedName}" — proyek dibuat otomatis karena belum ada proyek aktif. Beri nama dan lengkapi datanya lewat menu Proyek.`
-          : ''),
+      message: formatUniversalDraftMessage(res.draft),
       actions: [
         { label: 'Push ke Spreadsheet', action: { kind: 'push-universal' } },
         { label: 'Buka Spreadsheet RAB', action: { kind: 'navigate', menu: 'rab-estimasi' } },
@@ -3347,6 +3386,14 @@ function handleSetProjectPriceStep1(param: string | undefined, ctx: ChatActionCo
     masterPrice: target.masterPrice,
     projectPrice: price,
   };
+  // Fast Track Continuation A2 — langkah 1 MENGUSULKAN slot konfirmasi
+  // (sidik = payload persis yang ditinjau; TTL 10 menit + sekali pakai
+  // + aktor, pola perintah langsung yang sama): tanpa ini tombol "Ya,
+  // terapkan override" bisa diterapkan kapan saja dalam sesi dan
+  // berulang kali. Sidik adalah string JSON payload itu sendiri —
+  // tombol konfirmasi membawa string yang SAMA PERSIS, sehingga klaim
+  // di langkah 2 membuktikan payload tidak berubah.
+  storeDirectConfirmation('SET_PROJECT_PRICE_CONFIRM', JSON.stringify(payload));
   return {
     ok: true,
     message:
@@ -3554,6 +3601,30 @@ function handleChangePlan(param: string | undefined, ctx: ChatActionContext): Ac
 /* null dan handler yang bersangkutan menjawab sendiri (tanpa          */
 /* eksekusi, seperti sebelumnya). DELETE_PROJECT tidak lewat sini —    */
 /* ia sudah punya konfirmasi dua langkah sendiri.                      */
+/*                                                                     */
+/* P1 (2026-11-24, hardening — WC-01/WC-02/WC-06/WC-11):               */
+/* - P1-B: gerbang kapabilitas terpusat — hanya peran berkemampuan     */
+/*   edit-estimate (peta "Admin" §4.2) yang boleh sampai ke proposal   */
+/*   / eksekusi mutasi. Penolakan memakai kalimat owner persis.        */
+/* - P1-C: tombol konfirmasi kini punya dispatch GENERIK di view       */
+/*   (executeDirectConfirmation di bawah) — klaim slot HANYA lewat     */
+/*   dispatch itu. Kirim-ulang teks TIDAK PERNAH mengklaim (D6 O-5),   */
+/*   dan tanya-ulang atas proposal yang sama TIDAK memperpanjang TTL.   */
+/* - P1-E: setiap eksekusi sesudah konfirmasi mencatat record audit    */
+/*   (mutationAuditLog.ts) — aktor, proyek, operasi, nilai, referensi  */
+/*   konfirmasi, hasil, kunci idempotensi.                             */
+/* - WC-06: semua gerbang di bawah adalah gerbang UX SISI KLIEN —      */
+/*   peran demo/PIN BUKAN batas otorisasi (lihat mutationInventory.ts).*/
+/* Fast Track Continuation A2 (2026-11-24):                            */
+/* - Pengikatan AKTOR: slot menyimpan aktor demo-role yang             */
+/*   mengusulkan; klaim oleh aktor berbeda DITOLAK (slot hangus).      */
+/*   Ini pengikatan sisi klien terhadap peran demo — BUKAN identitas   */
+/*   backend tepercaya (P1-03): batas kejujurannya sama dengan         */
+/*   gerbang kapabilitas (WC-06). Tanpa konteks operasi, aktor         */
+/*   default 'Peran demo' di kedua sisi (propose + claim cocok).       */
+/* - DELETE_PROJECT_CONFIRM + SET_PROJECT_PRICE_CONFIRM kini lewat     */
+/*   slot yang SAMA (sebelumnya: tanpa slot/TTL/sekali-pakai — tombol */
+/*   "Ya, hapus proyek" lama bisa menghapus kapan saja dalam sesi).    */
 /* ------------------------------------------------------------------ */
 
 /** TTL konfirmasi perintah langsung — 10 menit, SAMA dengan
@@ -3564,6 +3635,15 @@ interface PendingDirectConfirmation {
   /** Sidik aksi yang DITINJAU (target + nilai ternormalisasi). */
   fingerprint: string;
   createdAt: number;
+  /** Aktor demo-role yang mengusulkan (ikatan klaim A2 — BUKAN id
+   *  pengguna tepercaya; lihat batas WC-06 di atas). */
+  actor: string;
+}
+
+/** Aktor pengusul/pengklaim saat ini — nama peran demo dari konteks
+ *  operasi asisten; 'Peran demo' bila tanpa konteks. */
+function currentProposalActor(): string {
+  return getAssistantOperationContext()?.actor ?? 'Peran demo';
 }
 
 /** Satu slot konfirmasi tertunda per intent (module-level, pola
@@ -3574,28 +3654,352 @@ const pendingDirectConfirmations = new Map<string, PendingDirectConfirmation>();
  *  produksi — slot dibersihkan sendiri saat diklaim/kedaluwarsa). */
 export function clearPendingDirectConfirmations(): void {
   pendingDirectConfirmations.clear();
+  lastClaimedConfirmations.clear();
 }
 
 /**
  * Klaim konfirmasi tertunda untuk intent ini: true HANYA bila ada slot
  * segar (dalam TTL) dengan sidik yang SAMA PERSIS dengan aksi yang baru
- * divalidasi — klaim MENGHABISKAN slot (sekali pakai). Slot basi / sidik
- * berbeda dihapus + mengembalikan false (pemanggil bertanya ulang
- * dengan pratinjau segar).
+ * divalidasi DAN aktor yang SAMA dengan pengusul — klaim MENGHABISKAN
+ * slot (sekali pakai). Slot basi / sidik berbeda / aktor berbeda
+ * dihapus + mengembalikan false (pemanggil bertanya ulang dengan
+ * pratinjau segar).
  */
+/**
+ * Sidik konfirmasi yang TERAKHIR diklaim per intent — dibaca case
+ * executeIntent untuk referensi konfirmasi record audit (P1-E), lalu
+ * dibersihkan (sekali baca lewat takeClaimedConfirmationRef).
+ */
+const lastClaimedConfirmations = new Map<string, { fingerprint: string; claimedAt: number }>();
+
 function claimDirectConfirmation(intent: string, fingerprint: string, now: number = Date.now()): boolean {
   const p = pendingDirectConfirmations.get(intent);
   if (!p) return false;
-  if (now > p.createdAt + DIRECT_COMMAND_CONFIRM_TTL_MS || p.fingerprint !== fingerprint) {
+  if (
+    now > p.createdAt + DIRECT_COMMAND_CONFIRM_TTL_MS
+    || p.fingerprint !== fingerprint
+    || p.actor !== currentProposalActor()
+  ) {
     pendingDirectConfirmations.delete(intent);
     return false;
   }
   pendingDirectConfirmations.delete(intent);
+  lastClaimedConfirmations.set(intent, { fingerprint, claimedAt: now });
   return true;
 }
 
+/** Ambil (sekali baca) sidik konfirmasi yang diklaim untuk intent ini —
+ *  referensi konfirmasi record audit (P1-E). */
+function takeClaimedConfirmationRef(intent: string): string | null {
+  const rec = lastClaimedConfirmations.get(intent);
+  if (!rec) return null;
+  lastClaimedConfirmations.delete(intent);
+  return rec.fingerprint;
+}
+
+/**
+ * P1-C: tanya-ulang atas proposal yang SAMA PERSIS (sidik identik,
+ * masih dalam TTL) TIDAK memperpanjang TTL — TTL dihitung dari
+ * proposal pertama. Tanpa ini, kirim-ulang teks berulang bisa
+ * memperpanjang jendela konfirmasi tanpa batas.
+ *
+ * A2: pelestarian TTL hanya berlaku bila AKTOR-nya juga sama — usulan
+ * atas aksi yang sama oleh aktor BERBEDA adalah proposal baru (slot
+ * ditimpa dengan aktor + TTL baru); bila tidak, aktor kedua tidak
+ * pernah bisa mengonfirmasi aksinya sendiri selama slot aktor pertama
+ * masih hidup.
+ */
 function storeDirectConfirmation(intent: string, fingerprint: string, now: number = Date.now()): void {
-  pendingDirectConfirmations.set(intent, { fingerprint, createdAt: now });
+  const existing = pendingDirectConfirmations.get(intent);
+  if (
+    existing
+    && existing.fingerprint === fingerprint
+    && existing.actor === currentProposalActor()
+    && now <= existing.createdAt + DIRECT_COMMAND_CONFIRM_TTL_MS
+  ) {
+    return;
+  }
+  pendingDirectConfirmations.set(intent, { fingerprint, createdAt: now, actor: currentProposalActor() });
+}
+
+/**
+ * P1-B — Gerbang kapabilitas terpusat untuk mutasi perintah langsung.
+ * Membaca bit writesEnabled dari konteks operasi asisten (yang dipasang
+ * view dari hasCapability('edit-estimate') — peta "Admin" §4.2) lalu
+ * berkonsultasi ke inventaris mutasi (mutationInventory.ts).
+ * Tanpa konteks / tanpa capability → tolak dengan kalimat owner.
+ *
+ * KEJUJURAN (WC-06): ini gerbang UX SISI KLIEN. Peran demo/PIN bukan
+ * batas otorisasi; enforcement yang sebenarnya menunggu peran server.
+ * Lihat header mutationInventory.ts.
+ */
+function requireChatAiMutationCapability(
+  key: string,
+): { ok: true; actor: string } | { ok: false; message: string } {
+  const opCtx = getAssistantOperationContext();
+  const auth = authorizeChatAiMutation(key, opCtx?.writesEnabled);
+  if (!auth.ok) return { ok: false, message: auth.message };
+  return { ok: true, actor: opCtx?.actor ?? 'Peran demo' };
+}
+
+/** Aktor tampilan untuk record audit (P1-E) — nama peran demo dari
+ *  konteks operasi asisten; BUKAN id pengguna terverifikasi. */
+function currentAuditActor(): string {
+  return getAssistantOperationContext()?.actor ?? 'Peran demo';
+}
+
+/**
+ * P1-E — Catat record audit untuk satu mutasi perintah langsung yang
+ * dieksekusi SESUDAH konfirmasi. Dipanggil case executeIntent SESUDAH
+ * handler berjalan, dengan hasil handler. Percobaan yang gagal tetap
+ * dicatat (result 'failed') — penolakan gerbang TIDAK dicatat di sini
+ * (tidak ada mutasi yang dicoba; penolakan tertera di pesan chat).
+ */
+function recordDirectCommandAudit(input: {
+  operation: string;
+  projectId: string | null;
+  projectName: string | null;
+  before: unknown;
+  after: unknown;
+  confirmationRef: string | null;
+  ok: boolean;
+  message: string;
+}): void {
+  appendMutationAuditRecord({
+    actor: currentAuditActor(),
+    projectId: input.projectId,
+    projectName: input.projectName,
+    operation: input.operation,
+    before: input.before,
+    after: input.after,
+    confirmationRef: input.confirmationRef,
+    result: input.ok ? 'executed' : 'failed',
+    outcomeVerified: input.ok,
+    verificationNote:
+      'callback-result: mutator kanonis melaporkan sukses via nilai balik callback; tanpa read-back pasca-tulis (executeIntent sinkron; persistensi di-debounce 400 ms — lihat mutationAuditLog.ts).',
+    source: 'chat-ai',
+    message: input.message.slice(0, 300),
+  });
+}
+
+/**
+ * P1-C (WC-02) — Dispatch konfirmasi tombol perintah langsung.
+ * Satu-satunya jalur yang boleh mengklaim slot konfirmasi tertunda:
+ * view memanggil ini dari handleActionButtonInner untuk tombol
+ * konfirmasi perintah langsung (kind 'intent' dengan intent perintah
+ * langsung), BUKAN submit(label). Jalur teks (submit) tidak pernah
+ * memasang flag claimDirectConfirmation — kirim-ulang teks tidak
+ * mengklaim (D6 O-5).
+ *
+ * Intents yang didukung: CREATE/ARCHIVE/DUPLICATE/RENAME_PROJECT,
+ * UPDATE_PROJECT_SETTINGS, CREATE_QTO_ITEM, SYNC_QTO, CREATE_REVISION,
+ * DELETE_PROJECT_CONFIRM, SET_PROJECT_PRICE_CONFIRM. Intent lain yang
+ * dilewatkan ke sini dieksekusi sebagai executeIntent biasa (tanpa
+ * klaim slot — slot hanya ada untuk intents di atas).
+ */
+export function executeDirectConfirmation(
+  intent: ChatIntent,
+  param: string | undefined,
+  ctx: ChatActionContext,
+): ActionResult {
+  return executeIntent(intent, param, { ...ctx, claimDirectConfirmation: true });
+}
+
+/* ------------------------------------------------------------------ */
+/* Fast Track §3 (P1-04/P1-05) — Konfirmasi aksi UI lewat slot        */
+/* perintah langsung yang SAMA (bukan sistem konfirmasi kedua).       */
+/*                                                                     */
+/* propose/claim di bawah memakai store + TTL 10 menit + sekali-pakai  */
+/* yang sama dengan konfirmasi perintah langsung (storeDirect-         */
+/* Confirmation / claimDirectConfirmation di atas). Dipakai            */
+/* PUSH_ANSWER_ITEMS: klik pertama ("Tambah ke Spreadsheet")           */
+/* mengusulkan slot dengan sidik nilai yang ditampilkan di pratinjau;  */
+/* tombol konfirmasi mengklaimnya dengan sidik yang direkomputasi     */
+/* segar — sidik berubah / kedaluwarsa / sudah dipakai → klaim gagal   */
+/* → handler meminta pratinjau baru (tidak ada yang ditulis).         */
+/* ------------------------------------------------------------------ */
+
+/** Usulkan slot konfirmasi aksi UI (pratinjau dibuat). */
+export function proposeUiActionConfirmation(key: string, fingerprint: string, now: number = Date.now()): void {
+  storeDirectConfirmation(key, fingerprint, now);
+}
+
+/**
+ * Klaim slot konfirmasi aksi UI: true HANYA bila ada slot segar
+ * (dalam TTL) dengan sidik yang SAMA PERSIS — klaim MENGHABISKAN slot
+ * (sekali pakai). Slot basi / sidik berbeda dihapus + false.
+ */
+export function claimUiActionConfirmation(key: string, fingerprint: string, now: number = Date.now()): boolean {
+  return claimDirectConfirmation(key, fingerprint, now);
+}
+
+/** Ambil (sekali baca) sidik konfirmasi aksi UI yang diklaim —
+ *  referensi konfirmasi record audit (P1-E). */
+export function takeUiActionConfirmationRef(key: string): string | null {
+  return takeClaimedConfirmationRef(key);
+}
+
+/**
+ * Sidik push item jawaban: nilai PERSIS yang akan ditulis (item +
+ * proyek tujuan). Dua pratinjau dengan nilai identik berbagi sidik
+ * (push yang sama); perubahan apa pun pada nilai — volume, harga,
+ * status, deskripsi, proyek — menghasilkan sidik berbeda → klaim
+ * lama ditolak dan pratinjau baru diperlukan.
+ */
+export function buildAnswerPushFingerprint(
+  items: ReadonlyArray<ChatAnswerPushItem>,
+  projectId: string,
+): string {
+  return JSON.stringify({
+    projectId,
+    items: items.map((it) => ({
+      code: it.code,
+      description: it.description,
+      volume: it.volume,
+      unit: it.unit,
+      unitPrice: it.unitPrice ?? null,
+      priceStatus: it.priceStatus,
+    })),
+  });
+}
+
+function formatAnswerPushIdr(n: number): string {
+  return `Rp${Math.round(n).toLocaleString('id-ID')}`;
+}
+
+/**
+ * Pesan pratinjau push item jawaban (P1-04/P1-05): menampilkan PERSIS
+ * nilai yang terikat di sidik konfirmasi — jumlah item, nama/kode,
+ * volume, harga + total baris, status harga, proyek tujuan, duplikat
+ * yang dilewati. Nilai yang dieksekusi di konfirmasi direkomputasi
+ * segar dan harus cocok dengan sidik ini, atau konfirmasi ditolak.
+ */
+export function formatAnswerPushPreviewMessage(
+  plan: AnswerTransferPlan,
+  newItems: ReadonlyArray<ChatAnswerPushItem>,
+  dupCount: number,
+  projectName: string,
+): string {
+  const lines: string[] = [];
+  lines.push('**Pratinjau tambah ke Spreadsheet — item jawaban AHSP**');
+  lines.push(`• Proyek tujuan: ${projectName}`);
+  lines.push(`• ${newItems.length} item baru akan ditambahkan:`);
+  for (const it of newItems) {
+    const statusLabel =
+      it.priceStatus === 'PRICE_RESOLVED'
+        ? 'harga resmi AHSP'
+        : it.priceStatus === 'PRICE_ESTIMATED'
+          ? 'estimasi (perlu verifikasi, bukan harga resmi)'
+          : 'belum berharga (nilainya BELUM DAPAT DIHITUNG dan tidak masuk total)';
+    const pricePart =
+      it.unitPrice != null
+        ? ` × ${formatAnswerPushIdr(it.unitPrice)} = ${formatAnswerPushIdr(it.volume * it.unitPrice)}`
+        : '';
+    lines.push(`  – [${it.code}] ${it.description} — ${it.volume} ${it.unit}${pricePart} (${statusLabel})`);
+  }
+  if (dupCount > 0) lines.push(`• ${dupCount} item dilewati karena sudah ada di Spreadsheet.`);
+  if (plan.skippedAlternatives > 0) lines.push(`• ${plan.skippedAlternatives} varian lain di jawaban tidak ikut — hanya item teratas yang ditransfer.`);
+  if (plan.unknownCodes.length > 0) lines.push(`• Kode ${plan.unknownCodes.join(', ')} dilewati (tidak ditemukan di katalog).`);
+  if (plan.unitMismatchCodes.length > 0) lines.push(`• Kode ${plan.unitMismatchCodes.join(', ')} dilewati (satuan tidak cocok).`);
+  lines.push('');
+  lines.push('Tekan **Konfirmasi tambah ke Spreadsheet** untuk menulis ke Spreadsheet, atau abaikan pratinjau ini — tanpa klik konfirmasi, tidak ada item yang ditulis. Pratinjau berlaku 10 menit dan hanya untuk nilai di atas; bila nilainya berubah, konfirmasi ditolak dan pratinjau baru diperlukan.');
+  return lines.join('\n');
+}
+
+/* ------------------------------------------------------------------ */
+/* Fast Track Continuation A2 — pengikatan nilai konfirmasi QTO +      */
+/* validasi konfirmasi revisi spek DED (helper MURNI agar dapat dites  */
+/* tsx; wiring-nya di handler tombol view.tsx).                        */
+/* ------------------------------------------------------------------ */
+
+/** Nilai usulan koreksi QTO YANG DITAMPILKAN pada tombol konfirmasi
+ *  (dibawa tombol — lihat ChatActionButton qto-correction-confirm). */
+export interface DisplayedQtoCorrectionValues {
+  expectedQuantity: number;
+  expectedUnit: string;
+  dedQuantity: number;
+  dedUnit: string;
+}
+
+/**
+ * Cocokkan usulan koreksi QTO hasil rekomputasi segar dengan nilai
+ * YANG DITAMPILKAN saat tombol dibuat: true bila keempat nilai sama.
+ * `displayed` undefined (tombol lama tanpa pengikatan) → true
+ * (tidak ada yang bisa diperiksa — perilaku rekomputasi lama).
+ * Handler view MENOLAK konfirmasi bila ini false: nilai yang
+ * dieksekusi tidak pernah berbeda dari nilai yang ditinjau pengguna.
+ */
+export function qtoCorrectionMatchesDisplayed(
+  displayed: DisplayedQtoCorrectionValues | undefined,
+  proposal: QtoCorrectionProposal,
+): boolean {
+  if (!displayed) return true;
+  return (
+    displayed.expectedQuantity === proposal.expectedQuantity
+    && displayed.expectedUnit === proposal.expectedUnit
+    && displayed.dedQuantity === proposal.dedQuantity
+    && displayed.dedUnit === proposal.dedUnit
+  );
+}
+
+export type DedSpecRevisionConfirmCheck =
+  | { ok: true }
+  | {
+      ok: false;
+      reason: 'EXPIRED' | 'BASE_CHANGED' | 'BASE_MISSING';
+      message: string;
+    };
+
+/**
+ * Validasi konfirmasi revisi spek DED SEBELUM applyDedSpecRevision:
+ * pratinjau kedaluwarsa (> 10 menit, standar yang sama dengan
+ * konfirmasi lain) DITOLAK; nilai DED saat ini HARUS masih sama
+ * dengan oldValue pratinjau (DED baru yang dilampirkan sesudah
+ * pratinjau dibuat membatalkan konfirmasi — tanpa ini revisi bisa
+ * menimpa spek DED yang sudah berganti dengan catatan koreksi yang
+ * salah); spek kunci itu sudah tidak ada → DITOLAK (fail-closed).
+ * Murni: tidak membaca storage, tidak menulis apa pun.
+ */
+export function validateDedSpecRevisionConfirm(
+  preview: DedSpecRevisionPreview,
+  currentSpecs: ReadonlyArray<StructuredSpec>,
+  now: number = Date.now(),
+): DedSpecRevisionConfirmCheck {
+  const createdMs = Date.parse(preview.createdAt);
+  if (
+    Number.isFinite(createdMs)
+    && now > createdMs + DIRECT_COMMAND_CONFIRM_TTL_MS
+  ) {
+    return {
+      ok: false,
+      reason: 'EXPIRED',
+      message:
+        'Pratinjau revisi spek DED ini sudah kedaluwarsa (lebih dari 10 menit). Kirim ulang perintah revisinya agar nilainya dihitung dari spek DED terbaru.',
+    };
+  }
+  const current = currentSpecs.find(
+    (s) => s.key === preview.key && typeof s.value === 'number',
+  );
+  if (!current || typeof current.value !== 'number') {
+    return {
+      ok: false,
+      reason: 'BASE_MISSING',
+      message:
+        `Spek DED "${preview.label}" sudah tidak ditemukan pada data DED saat ini — revisi dibatalkan agar tidak diterapkan pada dasar yang salah. Kirim ulang perintah revisinya bila masih diperlukan.`,
+    };
+  }
+  if (
+    current.value !== preview.oldValue
+    || (preview.oldUnit !== undefined && current.unit !== undefined && current.unit !== preview.oldUnit)
+  ) {
+    return {
+      ok: false,
+      reason: 'BASE_CHANGED',
+      message:
+        `Nilai DED "${preview.label}" sudah berubah sejak pratinjau dibuat (${preview.oldValue}${preview.oldUnit ? ` ${preview.oldUnit}` : ''} → ${current.value}${current.unit ? ` ${current.unit}` : ''}) — revisi dibatalkan agar tidak menimpa spek yang sudah berganti. Kirim ulang perintah revisinya dari nilai DED terbaru.`,
+    };
+  }
+  return { ok: true };
 }
 
 /** Tombol konfirmasi perintah langsung (label = teks perintah itu
@@ -3623,8 +4027,14 @@ function gateProjectCommandConfirmation(
     if (!name || name.toLowerCase() === 'baru' || name.length > PROJECT_MAX_NAME_LENGTH || !ctx.createProject) {
       return null; // handler menjawab sendiri (klarifikasi/navigasi/tolak/fail-closed) — tanpa eksekusi
     }
+    // P1-B: gerbang kapabilitas — validasi dulu (input tak valid tetap
+    // dijawab handler), baru tolak bila mutasi NYATA ditolak perannya.
+    const cap = requireChatAiMutationCapability(intent);
+    if (!cap.ok) return { ok: false, message: cap.message };
     const fingerprint = JSON.stringify({ intent, name });
-    if (claimDirectConfirmation(intent, fingerprint)) return null;
+    // P1-C: klaim HANYA via dispatch tombol konfirmasi (flag) — kirim
+    // ulang teks tidak pernah mengklaim (D6 O-5).
+    if (ctx.claimDirectConfirmation === true && claimDirectConfirmation(intent, fingerprint)) return null;
     storeDirectConfirmation(intent, fingerprint);
     return {
       ok: true,
@@ -3638,8 +4048,10 @@ function gateProjectCommandConfirmation(
   if (res.kind !== 'found') return null; // handler menjawab kegagalan resolusi — tanpa eksekusi
   const hasCallback = intent === 'ARCHIVE_PROJECT' ? !!ctx.archiveProject : !!ctx.duplicateProject;
   if (!hasCallback) return null; // handler fail-closed — tanpa eksekusi
+  const cap = requireChatAiMutationCapability(intent);
+  if (!cap.ok) return { ok: false, message: cap.message };
   const fingerprint = JSON.stringify({ intent, projectId: res.project.id, name: res.project.name });
-  if (claimDirectConfirmation(intent, fingerprint)) return null;
+  if (ctx.claimDirectConfirmation === true && claimDirectConfirmation(intent, fingerprint)) return null;
   storeDirectConfirmation(intent, fingerprint);
   const verb = intent === 'ARCHIVE_PROJECT' ? 'Arsipkan' : 'Duplikat';
   return {
@@ -3663,12 +4075,14 @@ function gateProjectSettingsConfirmation(
   const parsed = parseSettingsPatch(text);
   if (!parsed.ok) return null; // handler menjawab (klarifikasi/rentang/pajak) — tanpa eksekusi
   if (!ctx.activeProject || !ctx.updateProjectSettings) return null;
+  const cap = requireChatAiMutationCapability('UPDATE_PROJECT_SETTINGS');
+  if (!cap.ok) return { ok: false, message: cap.message };
   const fingerprint = JSON.stringify({
     intent: 'UPDATE_PROJECT_SETTINGS',
     projectId: ctx.activeProject.id,
     patch: parsed.patch,
   });
-  if (claimDirectConfirmation('UPDATE_PROJECT_SETTINGS', fingerprint)) return null;
+  if (ctx.claimDirectConfirmation === true && claimDirectConfirmation('UPDATE_PROJECT_SETTINGS', fingerprint)) return null;
   storeDirectConfirmation('UPDATE_PROJECT_SETTINGS', fingerprint);
   const changesText = parsed.changes.map((c) => `${c.label} jadi ${formatPercentValue(c.value)}%`).join(' ');
   const lines = parsed.changes.map(
@@ -3698,6 +4112,8 @@ function gateQtoCommandConfirmation(
     const target = parseCreateQtoTarget(param);
     if (!target.uraian || target.quantity === null || target.unit === null) return null;
     if (!ctx.activeProject || !ctx.createQtoItem) return null;
+    const cap = requireChatAiMutationCapability(intent);
+    if (!cap.ok) return { ok: false, message: cap.message };
     const fingerprint = JSON.stringify({
       intent,
       projectId: ctx.activeProject.id,
@@ -3705,7 +4121,7 @@ function gateQtoCommandConfirmation(
       quantity: target.quantity,
       unit: target.unit,
     });
-    if (claimDirectConfirmation(intent, fingerprint)) return null;
+    if (ctx.claimDirectConfirmation === true && claimDirectConfirmation(intent, fingerprint)) return null;
     storeDirectConfirmation(intent, fingerprint);
     const label = `Buat item QTO ${target.uraian} ${target.quantity} ${target.unit}`;
     return {
@@ -3726,13 +4142,15 @@ function gateQtoCommandConfirmation(
     const priced = items.filter((it) => qtoHasTransferablePrice(it).priced);
     const unpriced = items.filter((it) => !qtoHasTransferablePrice(it).priced);
     if (priced.length === 0) return null; // handler hanya melaporkan item tanpa harga — tanpa eksekusi
+    const cap = requireChatAiMutationCapability(intent);
+    if (!cap.ok) return { ok: false, message: cap.message };
     const fingerprint = JSON.stringify({
       intent,
       kind: 'all',
       projectId: ctx.activeProject.id,
       priced: priced.map((it) => it.id).sort(),
     });
-    if (claimDirectConfirmation(intent, fingerprint)) return null;
+    if (ctx.claimDirectConfirmation === true && claimDirectConfirmation(intent, fingerprint)) return null;
     storeDirectConfirmation(intent, fingerprint);
     const label = 'Sinkronkan semua QTO';
     return {
@@ -3748,6 +4166,8 @@ function gateQtoCommandConfirmation(
   if (resolved.kind !== 'one') return null; // handler menjawab (tidak ada/ambigu) — tanpa eksekusi
   const item = resolved.item;
   if (!qtoHasTransferablePrice(item).priced) return null; // handler menolak + mengarahkan ke Rekap QTO — tanpa eksekusi
+  const cap = requireChatAiMutationCapability(intent);
+  if (!cap.ok) return { ok: false, message: cap.message };
   const fingerprint = JSON.stringify({
     intent,
     kind: 'named',
@@ -3756,7 +4176,7 @@ function gateQtoCommandConfirmation(
     quantity: item.quantity,
     unit: item.unit,
   });
-  if (claimDirectConfirmation(intent, fingerprint)) return null;
+  if (ctx.claimDirectConfirmation === true && claimDirectConfirmation(intent, fingerprint)) return null;
   storeDirectConfirmation(intent, fingerprint);
   const label = `Sinkronkan QTO ${item.uraian} ke RAB`;
   return {
@@ -3764,6 +4184,40 @@ function gateQtoCommandConfirmation(
     message:
       `Sinkronkan item QTO ${formatQtoItemLabel(item)} ke RAB proyek "${projectName}"?\n\nKlik "${label}" untuk mengonfirmasi — atau abaikan pesan ini bila tidak jadi (konfirmasi kedaluwarsa dalam 10 menit).`,
     actions: directConfirmActions(label, intent, `${item.uraian} ke rab`),
+  };
+}
+
+/**
+ * P1-B + P1-C — Gerbang konfirmasi CREATE_REVISION (kontrak yang sama
+ * dengan gerbang di atas: null = handler boleh jalan). Sebelum P1,
+ * CREATE_REVISION mengeksekusi TANPA konfirmasi dan TANPA gerbang
+ * kapabilitas — padahal aturan owner §4.2/§6 mewajibkan keduanya untuk
+ * setiap mutasi persisten Chat AI. Label dibersihkan dengan
+ * cleanRevisionLabel yang sama seperti handler (cermin validasi),
+ * sidik mengikat proyek + label ternormalisasi.
+ */
+function gateCreateRevisionConfirmation(
+  param: string | undefined,
+  ctx: ChatActionContext,
+): ActionResult | null {
+  if (!ctx.activeProject || !ctx.createRevision) return null; // handler fail-closed — tanpa eksekusi
+  const label = cleanRevisionLabel(param);
+  if (label !== undefined && label.length > REVISION_MAX_LABEL_LENGTH) return null; // handler menolak panjang — tanpa eksekusi
+  const cap = requireChatAiMutationCapability('CREATE_REVISION');
+  if (!cap.ok) return { ok: false, message: cap.message };
+  const fingerprint = JSON.stringify({
+    intent: 'CREATE_REVISION',
+    projectId: ctx.activeProject.id,
+    label: label ?? null,
+  });
+  if (ctx.claimDirectConfirmation === true && claimDirectConfirmation('CREATE_REVISION', fingerprint)) return null;
+  storeDirectConfirmation('CREATE_REVISION', fingerprint);
+  const labelText = label ? ` dengan label "${label}"` : '';
+  return {
+    ok: true,
+    message:
+      `Buat revisi baru untuk proyek "${ctx.activeProject.name}"${labelText}?\n\nKlik "Buat revisi baru" untuk mengonfirmasi — atau abaikan pesan ini bila tidak jadi (konfirmasi kedaluwarsa dalam 10 menit).`,
+    actions: directConfirmActions('Buat revisi baru', 'CREATE_REVISION', label ?? ''),
   };
 }
 
@@ -3793,8 +4247,10 @@ export function executeIntent(
       // Pertanyaan tentang game dijawab dari katalog NYATA
       // (game-space/catalog.ts) — judul yang disebut user dijawab
       // spesifik, selain itu daftar lengkap semua game + isinya.
-      // Tombol "Buka Game Space": handler tombol view mengirim label
-      // sebagai pesan → isGameCommand("buka game space") membuka panel.
+      // Tombol "Buka Game Space": cabang khusus di handler tombol view
+      // (intent OPEN_GAME_SPACE) memanggil registry langsung dan
+      // membuka panel lewat flag openGameSpace — BUKAN lewat routing
+      // bahasa alami (cabang NL isGameCommand sudah dihapus per §7).
       const mentioned = findGamesMentioned(ctx.rawText ?? param ?? '');
       return {
         ok: true,
@@ -3844,13 +4300,20 @@ export function executeIntent(
           message: 'Saya belum bisa mengubah nama proyek dari chat ini. Ubah lewat Daftar Proyek (tombol edit pada proyeknya).',
         };
       }
+      // P1-B: gerbang kapabilitas — validasi dulu (nama tak valid /
+      // tanpa proyek / tanpa callback tetap dijawab di atas), baru
+      // tolak bila mutasi NYATA ditolak perannya.
+      const cap = requireChatAiMutationCapability('RENAME_PROJECT');
+      if (!cap.ok) return { ok: false, message: cap.message };
       // W11 §11 (S1-R5) — konfirmasi sebelum mutasi: perintah yang sama
-      // diulang (klik tombol konfirmasi / ketik ulang) untuk mengeksekusi.
+      // diulang (klik tombol konfirmasi) untuk mengeksekusi. P1-C:
+      // klaim HANYA via dispatch tombol (executeDirectConfirmation) —
+      // ketik ulang teks TIDAK PERNAH mengklaim (D6 O-5).
       // Sidik mengikat proyek + nama lama + nama baru: proyek yang
       // berganti nama di tempat lain sesudah pratinjau membatalkan
       // konfirmasi (tanya ulang dengan nama segar).
       const fingerprint = JSON.stringify({ intent: 'RENAME_PROJECT', projectId: ctx.activeProject.id, oldName, newName });
-      if (!claimDirectConfirmation('RENAME_PROJECT', fingerprint)) {
+      if (!(ctx.claimDirectConfirmation === true && claimDirectConfirmation('RENAME_PROJECT', fingerprint))) {
         storeDirectConfirmation('RENAME_PROJECT', fingerprint);
         return {
           ok: true,
@@ -3860,6 +4323,20 @@ export function executeIntent(
         };
       }
       const changed = ctx.renameProject(ctx.activeProject.id, newName);
+      // P1-E: record audit (sebelum = nama lama yang dibaca dari snapshot
+      // proyek aktif; sesudah = nama baru yang dikonfirmasi).
+      recordDirectCommandAudit({
+        operation: 'RENAME_PROJECT',
+        projectId: ctx.activeProject.id,
+        projectName: oldName,
+        before: { name: oldName },
+        after: { name: newName },
+        confirmationRef: takeClaimedConfirmationRef('RENAME_PROJECT'),
+        ok: changed,
+        message: changed
+          ? `Nama proyek diubah dari "${oldName}" menjadi "${newName}".`
+          : `Nama proyek belum berubah — proyek "${oldName}" tidak ditemukan di daftar aktif.`,
+      });
       if (!changed) {
         return {
           ok: false,
@@ -3997,20 +4474,152 @@ export function executeIntent(
     case 'DUPLICATE_PROJECT': {
       const gated = gateProjectCommandConfirmation(intent, param, ctx);
       if (gated) return gated;
-      return handleProjectCommand(intent, param, ctx)
+      const res = handleProjectCommand(intent, param, ctx)
         ?? { ok: false, message: 'Perintah proyek tidak dikenali.' };
+      // P1-E: record audit — HANYA bila gerbang mengklaim konfirmasi
+      // (takeClaimedConfirmationRef mengembalikan sidik). Bila gerbang
+      // mengembalikan null karena input tak valid / tanpa callback,
+      // handler hanya menjawab tanpa mengeksekusi → tidak ada record.
+      const confirmationRef = takeClaimedConfirmationRef(intent);
+      if (confirmationRef) {
+        const target = intent === 'CREATE_PROJECT' ? null : resolveProjectTarget(param, ctx);
+        const project = target && target.kind === 'found' ? target.project : null;
+        recordDirectCommandAudit({
+          operation: intent,
+          // CREATE_PROJECT: id proyek baru tidak diketahui di registry
+          // (handler hanya mengembalikan pesan) — null adalah nilai jujur.
+          projectId: project?.id ?? null,
+          projectName: project?.name ?? null,
+          before: project ? { name: project.name } : null,
+          after: intent === 'CREATE_PROJECT'
+            ? { name: (param ?? '').trim().replace(/[?.!…]+$/u, '').trim() }
+            : intent === 'ARCHIVE_PROJECT' ? { archived: true } : { duplicated: true },
+          confirmationRef,
+          ok: res.ok,
+          message: res.message,
+        });
+      }
+      return res;
     }
-    case 'DELETE_PROJECT':
-    case 'DELETE_PROJECT_CONFIRM': {
-      return handleProjectCommand(intent, param, ctx)
+    case 'DELETE_PROJECT': {
+      const res = handleProjectCommand(intent, param, ctx)
         ?? { ok: false, message: 'Perintah proyek tidak dikenali.' };
+      // Fast Track Continuation A2 — langkah 1 MENGUSULKAN slot
+      // konfirmasi (sidik + TTL 10 menit + sekali pakai + aktor, pola
+      // perintah langsung yang sama): tanpa ini tombol "Ya, hapus
+      // proyek" bisa menghapus kapan saja dalam sesi, tanpa batas
+      // waktu dan tanpa ikatan pada keadaan yang ditinjau. Slot hanya
+      // diusulkan bila langkah 1 benar-benar menghasilkan tombol
+      // konfirmasi (target ter-resolusi); klarifikasi/penolakan tidak
+      // meninggalkan slot. Sidik mengikat id + nama saat ini: proyek
+      // yang berganti nama sesudah langkah 1 membatalkan konfirmasi.
+      const confirmAction = (res.actions ?? []).find(
+        (a) => a.action.kind === 'intent' && a.action.intent === 'DELETE_PROJECT_CONFIRM',
+      );
+      // Ikat aksi ke const agar penyempitan diskriminan TS berlaku
+      // (akses rantai confirmAction.action.param tidak menyempit).
+      const confirmButtonAction = confirmAction?.action;
+      if (confirmButtonAction?.kind === 'intent') {
+        const target = ctx.projects.find((p) => p.id === confirmButtonAction.param);
+        if (target) {
+          storeDirectConfirmation(
+            'DELETE_PROJECT_CONFIRM',
+            JSON.stringify({ intent: 'DELETE_PROJECT_CONFIRM', projectId: target.id, name: target.name }),
+          );
+        }
+      }
+      return res;
+    }
+    case 'DELETE_PROJECT_CONFIRM': {
+      // P1-B: gerbang kapabilitas HANYA di langkah konfirmasi (langkah 1
+      // hanya bertanya — read-only, tidak digerbang). Penolakan di sini
+      // berarti proyek tidak terhapus.
+      const cap = requireChatAiMutationCapability('DELETE_PROJECT_CONFIRM');
+      if (!cap.ok) return { ok: false, message: cap.message };
+      // A2 — klaim slot langkah 1 (sidik + TTL + sekali pakai + aktor):
+      // tanpa slot yang sah (tidak pernah diminta / kedaluwarsa / sudah
+      // dipakai / proyek berganti nama / aktor berganti), konfirmasi
+      // DITOLAK — tidak ada penghapusan. Klaim di sini (bukan lewat
+      // flag claimDirectConfirmation): intent ini TIDAK punya pola
+      // router sehingga teks tidak pernah sampai ke case ini — case
+      // ini SENDIRI adalah langkah konfirmasi (hanya dari tombol).
+      const confirmId = (param ?? '').trim();
+      const confirmTarget = ctx.projects.find((p) => p.id === confirmId);
+      if (confirmTarget) {
+        const claimed = claimDirectConfirmation(
+          'DELETE_PROJECT_CONFIRM',
+          JSON.stringify({ intent: 'DELETE_PROJECT_CONFIRM', projectId: confirmTarget.id, name: confirmTarget.name }),
+        );
+        if (!claimed) {
+          return {
+            ok: false,
+            message:
+              `Konfirmasi hapus proyek "${confirmTarget.name}" sudah tidak berlaku — mungkin kedaluwarsa (lebih dari 10 menit), sudah dipakai, proyeknya berganti nama, atau diminta oleh peran lain. Tidak ada yang dihapus. Kirim ulang perintah hapusnya bila masih ingin menghapus proyek ini.`,
+          };
+        }
+      }
+      const res = handleProjectCommand(intent, param, ctx)
+        ?? { ok: false, message: 'Perintah proyek tidak dikenali.' };
+      // P1-E: record audit HANYA bila penghapusan benar-benar dicoba
+      // (target ter-resolusi + callback ada). Penolakan validasi
+      // (tanpa id / proyek sudah hilang / tanpa callback) bukan mutasi
+      // — tidak dicatat. Referensi konfirmasi = sidik slot langkah 1
+      // yang diklaim (A2); fallback `delete-confirm:<id>` bila slot
+      // tidak ada (proyek sudah hilang sebelum klaim — tidak dicatat
+      // karena target tidak ada).
+      const id = (param ?? '').trim();
+      const target = ctx.projects.find((p) => p.id === id);
+      if (target && ctx.deleteProject) {
+        recordDirectCommandAudit({
+          operation: 'DELETE_PROJECT_CONFIRM',
+          projectId: target.id,
+          projectName: target.name,
+          before: { name: target.name },
+          after: { deleted: true },
+          confirmationRef: takeClaimedConfirmationRef('DELETE_PROJECT_CONFIRM') ?? `delete-confirm:${id}`,
+          ok: res.ok,
+          message: res.message,
+        });
+      }
+      return res;
     }
     case 'CREATE_QTO_ITEM':
     case 'SYNC_QTO': {
       const gated = gateQtoCommandConfirmation(intent, param, ctx);
       if (gated) return gated;
-      return handleQtoCommand(intent, param, ctx)
+      const res = handleQtoCommand(intent, param, ctx)
         ?? { ok: false, message: 'Perintah QTO tidak dikenali.' };
+      // P1-E: record audit — hanya bila gerbang mengklaim konfirmasi.
+      const confirmationRef = takeClaimedConfirmationRef(intent);
+      if (confirmationRef) {
+        let after: unknown;
+        if (intent === 'CREATE_QTO_ITEM') {
+          const target = parseCreateQtoTarget(param);
+          after = { uraian: target.uraian, quantity: target.quantity, unit: target.unit };
+        } else {
+          const target = parseSyncQtoTarget(param);
+          if (target.kind === 'all') {
+            const priced = (ctx.listQtoItems?.() ?? []).filter((it) => qtoHasTransferablePrice(it).priced);
+            after = { kind: 'all', itemIds: priced.map((it) => it.id).sort() };
+          } else {
+            const resolved = resolveQtoItemByName(ctx.listQtoItems?.() ?? [], target.kind === 'named' ? target.name : '');
+            after = resolved.kind === 'one'
+              ? { kind: 'named', itemId: resolved.item.id, uraian: resolved.item.uraian }
+              : { kind: 'named', name: target.kind === 'named' ? target.name : '' };
+          }
+        }
+        recordDirectCommandAudit({
+          operation: intent,
+          projectId: ctx.activeProject?.id ?? null,
+          projectName: ctx.activeProject?.name ?? null,
+          before: null,
+          after,
+          confirmationRef,
+          ok: res.ok,
+          message: res.message,
+        });
+      }
+      return res;
     }
     case 'RUN_DED_ANALYSIS':
     case 'SUMMARIZE_DOCUMENT': {
@@ -4018,17 +4627,59 @@ export function executeIntent(
         ?? { ok: false, message: 'Perintah tidak dikenali.' };
     }
     case 'EXPORT_PROJECT':
-    case 'CREATE_REVISION':
     case 'CREDIT_BALANCE':
     case 'TOPUP_CREDIT': {
       return handleExportCreditCommand(intent, param, ctx)
         ?? { ok: false, message: 'Perintah tidak dikenali.' };
     }
+    case 'CREATE_REVISION': {
+      // P1-B + P1-C: sebelum P1, CREATE_REVISION mengeksekusi TANPA
+      // konfirmasi dan TANPA gerbang kapabilitas. Kini lewat gerbang
+      // (kapabilitas + konfirmasi tombol + TTL + sekali pakai) seperti
+      // perintah langsung lainnya, + record audit (P1-E).
+      const gated = gateCreateRevisionConfirmation(param, ctx);
+      if (gated) return gated;
+      const res = handleExportCreditCommand(intent, param, ctx)
+        ?? { ok: false, message: 'Perintah tidak dikenali.' };
+      const confirmationRef = takeClaimedConfirmationRef(intent);
+      if (confirmationRef) {
+        recordDirectCommandAudit({
+          operation: 'CREATE_REVISION',
+          projectId: ctx.activeProject?.id ?? null,
+          projectName: ctx.activeProject?.name ?? null,
+          before: null,
+          after: { label: cleanRevisionLabel(param) ?? null },
+          confirmationRef,
+          ok: res.ok,
+          message: res.message,
+        });
+      }
+      return res;
+    }
     case 'UPDATE_PROJECT_SETTINGS': {
       const gated = gateProjectSettingsConfirmation(param, ctx);
       if (gated) return gated;
-      return handleProjectSettingsCommand(intent, param, ctx)
+      const res = handleProjectSettingsCommand(intent, param, ctx)
         ?? { ok: false, message: 'Perintah pengaturan tidak dikenali.' };
+      // P1-E: record audit — hanya bila gerbang mengklaim konfirmasi.
+      // before = null: registry tidak punya akses baca ke pengaturan
+      // proyek aktif (hanya ada di state React ProjectContext) — nilai
+      // patch yang dikonfirmasi tercatat di `after`.
+      const confirmationRef = takeClaimedConfirmationRef(intent);
+      if (confirmationRef) {
+        const parsed = parseSettingsPatch((param ?? '').trim());
+        recordDirectCommandAudit({
+          operation: 'UPDATE_PROJECT_SETTINGS',
+          projectId: ctx.activeProject?.id ?? null,
+          projectName: ctx.activeProject?.name ?? null,
+          before: null,
+          after: parsed.ok ? parsed.patch : null,
+          confirmationRef,
+          ok: res.ok,
+          message: res.message,
+        });
+      }
+      return res;
     }
 
     // Workstream B1 (2026-11-19, gap P2 + P6 + §K baris 42 audit
@@ -4043,7 +4694,52 @@ export function executeIntent(
       return handleSetProjectPriceStep1(param, ctx);
     }
     case 'SET_PROJECT_PRICE_CONFIRM': {
-      return handleSetProjectPriceConfirm(param, ctx);
+      // P1-B: gerbang kapabilitas HANYA di langkah konfirmasi (langkah 1
+      // hanya pratinjau — read-only, tidak digerbang).
+      const cap = requireChatAiMutationCapability('SET_PROJECT_PRICE_CONFIRM');
+      if (!cap.ok) return { ok: false, message: cap.message };
+      // A2 — klaim slot langkah 1 (sidik = string JSON payload persis
+      // yang ditinjau; TTL + sekali pakai + aktor): tanpa slot yang sah
+      // (tidak pernah diminta / kedaluwarsa / sudah dipakai / payload
+      // berubah / aktor berganti), override DITOLAK — tidak ada yang
+      // diterapkan. Klaim di sini (bukan lewat flag
+      // claimDirectConfirmation): intent ini TIDAK punya pola router
+      // sehingga teks tidak pernah sampai ke case ini — case ini
+      // SENDIRI adalah langkah konfirmasi (hanya dari tombol).
+      const priceParam = (param ?? '').trim();
+      if (!claimDirectConfirmation('SET_PROJECT_PRICE_CONFIRM', priceParam)) {
+        return {
+          ok: false,
+          message:
+            'Konfirmasi override harga ini sudah tidak berlaku — mungkin kedaluwarsa (lebih dari 10 menit), sudah dipakai, atau pratinjaunya dibuat ulang. Tidak ada yang diterapkan. Kirim ulang perintahnya, misalnya "ubah harga semen jadi Rp 2.000 untuk proyek ini".',
+        };
+      }
+      const res = handleSetProjectPriceConfirm(param, ctx);
+      // P1-E: record audit HANYA bila override benar-benar dicoba
+      // (payload valid + proyek aktif cocok + callback ada). Payload
+      // JSON yang dikonfirmasi dipakai sebagai referensi konfirmasi
+      // (proposal persis yang ditinjau user) dan nilai before/after.
+      let payload: ProjectPriceConfirmPayload | null = null;
+      try {
+        const parsed = JSON.parse(param ?? '') as ProjectPriceConfirmPayload;
+        if (parsed && parsed.v === 1) payload = parsed;
+      } catch { /* payload rusak — tanpa record */ }
+      if (payload && ctx.activeProject?.id === payload.projectId && ctx.setProjectPriceOverride) {
+        recordDirectCommandAudit({
+          operation: 'SET_PROJECT_PRICE_CONFIRM',
+          projectId: payload.projectId,
+          projectName: ctx.activeProject.name,
+          before: { code: payload.code, name: payload.name, masterPrice: payload.masterPrice, unit: payload.unit },
+          after: { code: payload.code, name: payload.name, projectPrice: payload.projectPrice, unit: payload.unit },
+          // A2: sidik slot yang diklaim (string JSON payload — sama
+          // dengan JSON.stringify(payload); fallback bila klaim tidak
+          // tercatat).
+          confirmationRef: takeClaimedConfirmationRef('SET_PROJECT_PRICE_CONFIRM') ?? JSON.stringify(payload),
+          ok: res.ok,
+          message: res.message,
+        });
+      }
+      return res;
     }
     case 'CHANGE_PLAN': {
       return handleChangePlan(param, ctx);
@@ -4924,10 +5620,352 @@ const BUDGET_FULL_AI_ACTIONS_DIRECT: ChatActionButton[] = [
   { label: 'Buka Workspace Desain & RAB', action: { kind: 'navigate', menu: 'desain-rab' } },
 ];
 
+/* ------------------------------------------------------------------ */
+/* P1-08 (H-12) — Accept-before-persist penuh (Fast Track).            */
+/*                                                                     */
+/* SEBELUM Fast Track (P1 minimal): completeUniversalDraftWithFullAi   */
+/* bermutasi di tempat dan pemanggil langsung autosave — isian AI      */
+/* tersimpan tanpa langkah terima; P1 hanya menambah snapshot pra-     */
+/* completion + tombol "Batalkan lengkapan" + baris pemberitahuan.     */
+/*                                                                     */
+/* SESUDAH Fast Track: completion TIDAK PERNAH menyentuh draft live.   */
+/* Isian ditulis ke KLON (universal) / salinan terisi tertunda         */
+/* (direct) yang disimpan di slot pending di bawah; pesan hasil       */
+/* adalah PRATINJAU dengan tombol "Terima lengkapan" / "Buang          */
+/* lengkapan". HANYA "Terima" yang menukar draft live dengan klon     */
+/* terisi (acceptFullAiCompletion) — dan pemanggil (view) yang         */
+/* meng-autosave sesudah terima, pola yang sama dengan undo. "Buang"   */
+/* hanya membuang klon tertunda; draft live tidak berubah.             */
+/*                                                                     */
+/* Snapshot pra-terima (untuk "Batalkan lengkapan") diambil SAAT      */
+/* TERIMA dari draft live saat itu — bukan saat completion — sehingga  */
+/* undo mengembalikan keadaan sesaat sebelum terima. Undo tetap ada    */
+/* sebagai jaring pengaman sesudah terima. Slot pending + snapshot     */
+/* hanya hidup di memori (reload halaman menghilangkannya — sama       */
+/* seperti slot konfirmasi perintah langsung).                         */
+/* ------------------------------------------------------------------ */
+
+/** Baris pemberitahuan eksplisit di pesan hasil SETELAH terima (P1-08). */
+export const FULL_AI_COMPLETION_NOTICE =
+  'Catatan: draft ini tersimpan dengan harga isian AI (estimasi — berlabel "Perlu verifikasi", bukan harga resmi). Tekan "Batalkan lengkapan" untuk mengembalikan draft ke keadaan sebelum dilengkapi.';
+
+/** Baris pemberitahuan di pesan PRATINJAU (belum diterapkan, belum tersimpan). */
+export const FULL_AI_COMPLETION_PREVIEW_NOTICE =
+  'Pratinjau — lengkapan ini BELUM diterapkan dan BELUM tersimpan. Tekan "Terima lengkapan" untuk menerapkan harga isian AI ke draft (estimasi — berlabel "Perlu verifikasi", bukan harga resmi), atau "Buang lengkapan" untuk membuangnya tanpa mengubah draft. Pratinjau ini berlaku 10 menit; bila draft berubah sesudahnya, terima ditolak dan lengkapan perlu dijalankan ulang pada draft terbaru.';
+
+interface FullAiCompletionSnapshot {
+  /** Id draft universal yang di-snapshot (ikatan validasi restore). */
+  draftId: string;
+  /** Proyek pengikat draft saat snapshot (null = tak terikat). */
+  projectId: string | null;
+  /** Klon dalam draft SEBELUM mutasi completion. */
+  draft: UniversalDraft;
+}
+
+/** Lengkapan universal yang MENUNGGU keputusan terima/buang. */
+interface PendingUniversalFullAiCompletion {
+  /** Id draft live yang dilengkapi (ikatan validasi terima). */
+  draftId: string;
+  /** Klon draft TERISI — BUKAN draft live. */
+  draft: UniversalDraft;
+  /** Ringkasan completion (dipakai ulang di pesan sesudah terima). */
+  summary: FullAiCompletionSummary;
+  /** Fast Track Continuation A2 — Date.now() saat pratinjau dibuat
+   *  (dasar TTL 10 menit, standar yang sama dengan konfirmasi lain). */
+  createdAt: number;
+  /** A2 — draftFingerprint(draft live) saat proposal: terima menolak
+   *  bila draft live berubah sesudahnya (tanpa ini terima menimpa
+   *  diam-diam edit interim pada draft live dengan klon basi). */
+  draftFingerprint: string;
+}
+
+/** Lengkapan direct yang MENUNGGU keputusan terima/buang. */
+interface PendingDirectFullAiCompletion {
+  /** Hasil direct yang dilengkapi (ikatan identitas terima). */
+  direct: DirectRabResult;
+  /** Salinan terisi (calc.items asli tidak pernah diubah). */
+  completion: DirectRabFullAiCompletion;
+  /** A2 — Date.now() saat pratinjau dibuat (dasar TTL 10 menit). */
+  createdAt: number;
+  /** A2 — directPushFingerprint(hasil live) saat proposal: terima
+   *  menolak bila hasil live berubah sesudahnya. */
+  resultFingerprint: string;
+}
+
+let lastFullAiCompletionSnapshot: FullAiCompletionSnapshot | null = null;
+/** Hasil direct terakhir yang dilengkapi (undo = hapus fullAiCompletion;
+ *  calc.items asli tidak pernah diubah — lihat completeDirectRabWithFullAi). */
+let lastDirectFullAiCompleted: DirectRabResult | null = null;
+/** Lengkapan yang menunggu "Terima lengkapan" / "Buang lengkapan". */
+let pendingUniversalCompletion: PendingUniversalFullAiCompletion | null = null;
+let pendingDirectCompletion: PendingDirectFullAiCompletion | null = null;
+
+/** Khusus pengujian: buang snapshot/penanda completion (isolasi antar cek). */
+export function __clearFullAiCompletionSnapshotForTests(): void {
+  lastFullAiCompletionSnapshot = null;
+  lastDirectFullAiCompleted = null;
+  pendingUniversalCompletion = null;
+  pendingDirectCompletion = null;
+}
+
+/** Khusus pengujian: apakah ada snapshot/penanda completion yang tersimpan. */
+export function __hasFullAiCompletionSnapshotForTests(): boolean {
+  return lastFullAiCompletionSnapshot !== null || lastDirectFullAiCompleted !== null;
+}
+
+/** Khusus pengujian: apakah ada lengkapan yang menunggu diterima/dibuang. */
+export function __hasPendingFullAiCompletionForTests(target: 'universal' | 'direct'): boolean {
+  return target === 'universal' ? pendingUniversalCompletion !== null : pendingDirectCompletion !== null;
+}
+
+/** Khusus pengujian: klon terisi yang tertunda (universal) — null bila tidak ada. */
+export function __getPendingUniversalCompletionForTests(): UniversalDraft | null {
+  return pendingUniversalCompletion ? pendingUniversalCompletion.draft : null;
+}
+
+/** Khusus pengujian: salinan terisi yang tertunda (direct) — null bila tidak ada. */
+export function __getPendingDirectCompletionForTests(): DirectRabFullAiCompletion | null {
+  return pendingDirectCompletion ? pendingDirectCompletion.completion : null;
+}
+
+/** Tombol terima/buang pada pesan pratinjau completion. */
+function fullAiCompletionPreviewActions(target: 'universal' | 'direct'): ChatActionButton[] {
+  return [
+    { label: 'Terima lengkapan', action: { kind: 'budget-full-ai-accept', target } },
+    { label: 'Buang lengkapan', action: { kind: 'budget-full-ai-discard', target } },
+  ];
+}
+
+/**
+ * P1-08 (H-12) — "Terima lengkapan": terapkan lengkapan tertunda ke
+ * draft live. SATU-SATUNYA titik di mana isian AI menyentuh draft
+ * live (dan, lewat autosave pemanggil, tersimpan).
+ *
+ * - universal: validasi ikatan (draft live harus draft yang SAMA —
+ *   id cocok; bila draft sudah berganti, terima DITOLAK jujur dan
+ *   pending DIPERTAHANKAN — pengguna bisa kembali ke draft itu lalu
+ *   menerima); snapshot pra-terima diambil dari draft live SAAT
+ *   TERIMA (untuk undo); klon terisi ditukar masuk lewat
+ *   setLastUniversalDraft (ikatan proyek saat terima dipertahankan).
+ * - direct: validasi identitas (hasil direct live harus hasil yang
+ *   SAMA — referensi identik); fullAiCompletion ditempelkan ke hasil
+ *   live; penanda undo diset.
+ *
+ * Fast Track Continuation A2 — dua validasi tambahan (standar yang
+ * sama dengan konfirmasi lain):
+ * - TTL 10 menit: pratinjau kedaluwarsa DITOLAK dan slot DIHAPUS
+ *   (pengguna menjalankan ulang completion pada draft terbaru).
+ * - Kebasi isi: draft/hasil live yang BERUBAH sesudah proposal
+ *   (sidik isi beda) DITOLAK dan pending DIPERTAHANKAN — tanpa ini
+ *   terima menimpa diam-diam edit interim pada draft live dengan
+ *   klon yang dibangun dari keadaan lama. Penolakan kebasi sama
+ *   polanya dengan penolakan draft-berganti di atas.
+ *
+ * Pemanggil (view) bertanggung jawab atas autosave sesudah terima
+ * (universal) — pola yang sama dengan completion lama / undo.
+ */
+export function acceptFullAiCompletion(target: 'universal' | 'direct', now: number = Date.now()): ActionResult {
+  if (target === 'direct') {
+    const pending = pendingDirectCompletion;
+    if (!pending) {
+      return {
+        ok: false,
+        message: 'Tidak ada lengkapan Full AI yang menunggu untuk hasil direct ini — mungkin sudah diterima/dibuang, atau sesi dimuat ulang.',
+      };
+    }
+    if (now > pending.createdAt + DIRECT_COMMAND_CONFIRM_TTL_MS) {
+      pendingDirectCompletion = null;
+      return {
+        ok: false,
+        message: 'Pratinjau lengkapan Full AI ini sudah kedaluwarsa (lebih dari 10 menit) — tidak diterapkan. Jalankan "Lengkapi dengan Full AI" lagi pada hasil yang aktif untuk lengkapan terbaru.',
+      };
+    }
+    const live = getLastDirectRab();
+    if (!live || live !== pending.direct) {
+      return {
+        ok: false,
+        message: 'Hasil direct sudah berganti sejak dilengkapi — lengkapan tertunda tidak diterapkan agar tidak menyentuh hasil yang berbeda. Jalankan "Lengkapi dengan Full AI" lagi pada hasil yang aktif.',
+      };
+    }
+    if (directPushFingerprint(live) !== pending.resultFingerprint) {
+      return {
+        ok: false,
+        message: 'Hasil direct berubah sejak dilengkapi (nilai/item berubah) — lengkapan tertunda tidak diterapkan agar tidak menimpa perubahan itu. Jalankan "Lengkapi dengan Full AI" lagi pada hasil terbaru.',
+      };
+    }
+    live.fullAiCompletion = pending.completion;
+    lastDirectFullAiCompleted = live;
+    pendingDirectCompletion = null;
+    return {
+      ok: true,
+      message: `${formatDirectRabMessage(live)}\n\n${FULL_AI_COMPLETION_NOTICE}`,
+      actions: [
+        ...BUDGET_FULL_AI_ACTIONS_DIRECT,
+        { label: 'Batalkan lengkapan', action: { kind: 'budget-full-ai-undo', target: 'direct' } },
+      ],
+    };
+  }
+  const pending = pendingUniversalCompletion;
+  if (!pending) {
+    return {
+      ok: false,
+      message: 'Tidak ada lengkapan Full AI yang menunggu untuk draft ini — mungkin sudah diterima/dibuang, atau sesi dimuat ulang.',
+    };
+  }
+  if (now > pending.createdAt + DIRECT_COMMAND_CONFIRM_TTL_MS) {
+    pendingUniversalCompletion = null;
+    return {
+      ok: false,
+      message: 'Pratinjau lengkapan Full AI ini sudah kedaluwarsa (lebih dari 10 menit) — tidak diterapkan. Jalankan "Lengkapi dengan Full AI" lagi pada draft yang aktif untuk lengkapan terbaru.',
+    };
+  }
+  const live = getLastUniversalDraft();
+  if (!live || live.id !== pending.draftId) {
+    return {
+      ok: false,
+      message: 'Draft aktif sudah berganti sejak dilengkapi — lengkapan tertunda tidak diterapkan agar tidak menimpa draft yang berbeda. Jalankan "Lengkapi dengan Full AI" lagi pada draft yang aktif.',
+    };
+  }
+  if (draftFingerprint(live) !== pending.draftFingerprint) {
+    return {
+      ok: false,
+      message: 'Draft berubah sejak dilengkapi (item/nilai berubah) — lengkapan tertunda tidak diterapkan agar tidak menimpa perubahan itu. Jalankan "Lengkapi dengan Full AI" lagi pada draft terbaru.',
+    };
+  }
+  // Snapshot pra-terima — dari draft live SAAT TERIMA (bukan saat
+  // completion: draft bisa berubah di antaranya; undo mengembalikan
+  // keadaan sesaat sebelum terima).
+  lastFullAiCompletionSnapshot = {
+    draftId: live.id,
+    projectId: getLastUniversalDraftProjectId(),
+    draft: JSON.parse(JSON.stringify(live)) as UniversalDraft,
+  };
+  const accepted = JSON.parse(JSON.stringify(pending.draft)) as UniversalDraft;
+  setLastUniversalDraft(accepted, getLastUniversalDraftProjectId());
+  pendingUniversalCompletion = null;
+  return {
+    ok: true,
+    message: `${formatUniversalDraftMessage(accepted, { fullAiCompletion: pending.summary })}\n\n${FULL_AI_COMPLETION_NOTICE}`,
+    actions: [
+      ...BUDGET_FULL_AI_ACTIONS_UNIVERSAL,
+      { label: 'Batalkan lengkapan', action: { kind: 'budget-full-ai-undo', target: 'universal' } },
+    ],
+  };
+}
+
+/**
+ * P1-08 (H-12) — "Buang lengkapan": buang lengkapan tertunda. Draft
+ * live TIDAK BERUBAH (klon/salinan terisi hanya hidup di memori).
+ * Tidak butuh gerbang kapabilitas (tidak ada tulis apa pun).
+ */
+export function discardFullAiCompletion(target: 'universal' | 'direct'): ActionResult {
+  if (target === 'direct') {
+    const pending = pendingDirectCompletion;
+    if (!pending) {
+      return {
+        ok: false,
+        message: 'Tidak ada lengkapan Full AI yang menunggu untuk hasil direct ini — mungkin sudah diterima/dibuang, atau sesi dimuat ulang.',
+      };
+    }
+    pendingDirectCompletion = null;
+    return {
+      ok: true,
+      message: `Lengkapan Full AI untuk "${pending.direct.displayLabel}" dibuang — hasil direct tidak berubah (harga isian AI tidak diterapkan).`,
+    };
+  }
+  const pending = pendingUniversalCompletion;
+  if (!pending) {
+    return {
+      ok: false,
+      message: 'Tidak ada lengkapan Full AI yang menunggu untuk draft ini — mungkin sudah diterima/dibuang, atau sesi dimuat ulang.',
+    };
+  }
+  pendingUniversalCompletion = null;
+  return {
+    ok: true,
+    message: `Lengkapan Full AI untuk "${pending.draft.title}" dibuang — draft tidak berubah (harga isian AI tidak diterapkan).`,
+  };
+}
+
+/**
+ * P1-08 (H-12) — "Batalkan lengkapan": kembalikan draft ke keadaan
+ * sebelum completion Full AI.
+ *
+ * - universal: pulihkan snapshot pra-completion ke draft aktif
+ *   (setLastUniversalDraft) — validasi ikatan: draft aktif harus draft
+ *   yang SAMA (id cocok); bila draft sudah direvisi / diganti sesudah
+ *   completion, restore DITOLAK jujur (tidak pernah menimpa draft yang
+ *   berbeda). Snapshot sekali pakai (dihapus sesudah restore).
+ * - direct: hapus fullAiCompletion (calc.items asli tidak pernah
+ *   diubah — undo = buang salinan terisi).
+ *
+ * Pemanggil (view) bertanggung jawab atas autosave sesudah restore —
+ * pola yang sama dengan completion (caller autosaves).
+ */
+export function undoFullAiCompletion(target: 'universal' | 'direct'): ActionResult {
+  if (target === 'direct') {
+    const direct = lastDirectFullAiCompleted;
+    if (!direct || !direct.fullAiCompletion) {
+      return {
+        ok: false,
+        message: 'Tidak ada lengkapan Full AI yang bisa dibatalkan untuk draft direct ini — mungkin sudah dibatalkan, atau draftnya sudah berganti.',
+      };
+    }
+    delete direct.fullAiCompletion;
+    lastDirectFullAiCompleted = null;
+    return {
+      ok: true,
+      message: `Lengkapan Full AI untuk "${direct.displayLabel}" dibatalkan — tabel kembali ke harga database (harga isian AI dibuang).`,
+    };
+  }
+  const snap = lastFullAiCompletionSnapshot;
+  if (!snap) {
+    return {
+      ok: false,
+      message: 'Tidak ada snapshot pra-lengkapan — mungkin completion belum pernah jalan, atau lengkapan sudah dibatalkan.',
+    };
+  }
+  const live = getLastUniversalDraft();
+  if (!live || live.id !== snap.draftId) {
+    return {
+      ok: false,
+      message: 'Draft aktif sudah berganti sejak dilengkapi — snapshot tidak dipulihkan agar tidak menimpa draft yang berbeda. Draft saat ini tetap berlaku.',
+    };
+  }
+  const restored = JSON.parse(JSON.stringify(snap.draft)) as UniversalDraft;
+  setLastUniversalDraft(restored, snap.projectId);
+  lastFullAiCompletionSnapshot = null;
+  return {
+    ok: true,
+    message: `Lengkapan Full AI dibatalkan — draft "${restored.title}" dikembalikan ke keadaan sebelum dilengkapi (harga isian AI dibuang; harga database tetap).`,
+  };
+}
+
 async function completeUniversalDraftWithFullAi(
   draft: UniversalDraft,
   args: { quality: string | null; deps: ChatRabCompletionDeps },
 ): Promise<ActionResult> {
+  // Fast Track (P1-08 penuh): lengkapan yang sudah menunggu untuk
+  // draft yang sama diajukan ulang TANPA memanggil AI lagi.
+  // A2: ajuan-ulang HANYA bila pending masih segar (dalam TTL) DAN
+  // draft live tidak berubah sejak proposal — pending kedaluwarsa /
+  // basi DIBUANG dan completion segar dijalankan dari draft terbaru
+  // (mengajukan ulang klon basi akan menampilkan nilai yang tidak
+  // lagi cocok dengan draft live).
+  const existing = pendingUniversalCompletion;
+  if (existing && existing.draftId === draft.id) {
+    const fresh =
+      Date.now() <= existing.createdAt + DIRECT_COMMAND_CONFIRM_TTL_MS
+      && draftFingerprint(draft) === existing.draftFingerprint;
+    if (fresh) {
+      return {
+        ok: true,
+        message: `${formatUniversalDraftMessage(existing.draft, { fullAiCompletion: existing.summary })}\n\n${FULL_AI_COMPLETION_PREVIEW_NOTICE}`,
+        actions: fullAiCompletionPreviewActions('universal'),
+      };
+    }
+    pendingUniversalCompletion = null;
+  }
   const eff = effectiveItems(draft);
   const budgetCap = draft.spec.budgetCap;
   const result = await completeBudgetRabWithFullAi({
@@ -4959,12 +5997,17 @@ async function completeUniversalDraftWithFullAi(
       actions: BUDGET_FULL_AI_ACTIONS_UNIVERSAL,
     };
   }
-  // Tulis kembali isian ke item generasi draft (berdasarkan id efektif
+  // Fast Track (P1-08 penuh) — complete ke dalam KLON: draft live
+  // TIDAK disentuh sampai user menekan "Terima lengkapan". Klon dalam
+  // via JSON (UniversalDraft JSON-pure). Snapshot pra-terima diambil
+  // NANTI, saat terima (acceptFullAiCompletion) — bukan di sini.
+  const completed = JSON.parse(JSON.stringify(draft)) as UniversalDraft;
+  // Tulis kembali isian ke item generasi KLON (berdasarkan id efektif
   // `${templateId}::${id}` — effectiveItems memakai kunci yang sama).
   // Harga manual revisi TETAP menang (tidak ditimpa); item yang dihapus
   // dari draft tidak ada di peta sehingga tidak tersentuh.
   const completedById = new Map(result.items.map((it, idx) => [eff[idx].id, it]));
-  for (const part of draft.parts) {
+  for (const part of completed.parts) {
     for (const gen of part.generation.items) {
       if (part.manualPrices[itemKey(gen)]) continue;
       const done = completedById.get(`${part.template.id}::${gen.id}`);
@@ -4987,10 +6030,17 @@ async function completeUniversalDraftWithFullAi(
     }
   }
   const summary = buildFullAiCompletionSummary(result, budgetCap);
+  pendingUniversalCompletion = {
+    draftId: draft.id,
+    draft: completed,
+    summary,
+    createdAt: Date.now(),
+    draftFingerprint: draftFingerprint(draft),
+  };
   return {
     ok: true,
-    message: formatUniversalDraftMessage(draft, { fullAiCompletion: summary }),
-    actions: BUDGET_FULL_AI_ACTIONS_UNIVERSAL,
+    message: `${formatUniversalDraftMessage(completed, { fullAiCompletion: summary })}\n\n${FULL_AI_COMPLETION_PREVIEW_NOTICE}`,
+    actions: fullAiCompletionPreviewActions('universal'),
   };
 }
 
@@ -4998,6 +6048,25 @@ async function completeDirectRabWithFullAi(
   direct: DirectRabResult,
   args: { budgetCap: number; quality: string | null; deps: ChatRabCompletionDeps },
 ): Promise<ActionResult> {
+  // Fast Track (P1-08 penuh): lengkapan yang sudah menunggu untuk
+  // hasil yang sama diajukan ulang TANPA memanggil AI lagi.
+  // A2: ajuan-ulang HANYA bila pending masih segar (dalam TTL) DAN
+  // hasil live tidak berubah sejak proposal — pending kedaluwarsa /
+  // basi DIBUANG dan completion segar dijalankan dari hasil terbaru.
+  const existing = pendingDirectCompletion;
+  if (existing && existing.direct === direct) {
+    const fresh =
+      Date.now() <= existing.createdAt + DIRECT_COMMAND_CONFIRM_TTL_MS
+      && directPushFingerprint(direct) === existing.resultFingerprint;
+    if (fresh) {
+      return {
+        ok: true,
+        message: `${formatDirectRabMessage({ ...direct, fullAiCompletion: existing.completion })}\n\n${FULL_AI_COMPLETION_PREVIEW_NOTICE}`,
+        actions: fullAiCompletionPreviewActions('direct'),
+      };
+    }
+    pendingDirectCompletion = null;
+  }
   const calcItems = direct.calc.items;
   const result = await completeBudgetRabWithFullAi({
     items: calcItems.map((it) => ({
@@ -5057,14 +6126,25 @@ async function completeDirectRabWithFullAi(
     }
     return it;
   });
-  direct.fullAiCompletion = {
+  // Fast Track (P1-08 penuh) — salinan terisi DITAHAN di slot pending:
+  // TIDAK ditempelkan ke hasil live sampai user menekan "Terima
+  // lengkapan" (acceptFullAiCompletion). Pesan pratinjau diformat dari
+  // salinan dangkal hasil + completion tertunda (formatter hanya
+  // membaca — hasil live tidak berubah).
+  const completion: DirectRabFullAiCompletion = {
     items: completedItems,
     summary: buildFullAiCompletionSummary(result, args.budgetCap),
   };
+  pendingDirectCompletion = {
+    direct,
+    completion,
+    createdAt: Date.now(),
+    resultFingerprint: directPushFingerprint(direct),
+  };
   return {
     ok: true,
-    message: formatDirectRabMessage(direct),
-    actions: BUDGET_FULL_AI_ACTIONS_DIRECT,
+    message: `${formatDirectRabMessage({ ...direct, fullAiCompletion: completion })}\n\n${FULL_AI_COMPLETION_PREVIEW_NOTICE}`,
+    actions: fullAiCompletionPreviewActions('direct'),
   };
 }
 

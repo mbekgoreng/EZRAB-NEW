@@ -21,19 +21,23 @@ describe('Audit routing intent 2026-10-23 — celah yang diperbaiki', () => {
     expect(routeIntent('hai ezrab').intent).toBe('GREETING');
   });
 
-  it('"lihat template" tanpa kata rab -> OPEN_TEMPLATE (dulu UNKNOWN)', () => {
-    expect(routeIntent('lihat template').intent).toBe('OPEN_TEMPLATE');
-    expect(routeIntent('tampilkan template').intent).toBe('OPEN_TEMPLATE');
+  // §4.1 (directive P1 2026-11-24 / OD-1): tiga tes navigasi bahasa alami
+  // di bawah ini DIPERBARUI — "lihat template", "lihat laporan proyek",
+  // dan "buka pengaturan" kini UNKNOWN ke AI (dulu OPEN_*). Navigasi
+  // hanya lewat slash. Perubahan perilaku yang disengaja, bukan pelemahan.
+  it('"lihat template" tanpa kata rab -> UNKNOWN ke AI (§4.1; dulu OPEN_TEMPLATE)', () => {
+    expect(routeIntent('lihat template').intent).toBe('UNKNOWN');
+    expect(routeIntent('tampilkan template').intent).toBe('UNKNOWN');
   });
 
-  it('"lihat laporan proyek" -> OPEN_REPORTS, bukan OPEN_PROJECTS (dulu salah intent)', () => {
-    expect(routeIntent('lihat laporan proyek').intent).toBe('OPEN_REPORTS');
-    expect(routeIntent('tampilkan laporan proyek saya').intent).toBe('OPEN_REPORTS');
+  it('"lihat laporan proyek" -> UNKNOWN ke AI (§4.1; dulu OPEN_REPORTS)', () => {
+    expect(routeIntent('lihat laporan proyek').intent).toBe('UNKNOWN');
+    expect(routeIntent('tampilkan laporan proyek saya').intent).toBe('UNKNOWN');
   });
 
-  it('"buka pengaturan" -> OPEN_SETTINGS (dulu UNKNOWN; dulu hanya slash)', () => {
-    expect(routeIntent('buka pengaturan').intent).toBe('OPEN_SETTINGS');
-    expect(routeIntent('ke pengaturan').intent).toBe('OPEN_SETTINGS');
+  it('"buka pengaturan" -> UNKNOWN ke AI (§4.1; dulu OPEN_SETTINGS, kini hanya slash /pengaturan)', () => {
+    expect(routeIntent('buka pengaturan').intent).toBe('UNKNOWN');
+    expect(routeIntent('ke pengaturan').intent).toBe('UNKNOWN');
   });
 
   it('"cari harga satuan <objek>" -> SEARCH_AHSP dengan param (dulu UNKNOWN)', () => {
@@ -61,9 +65,9 @@ describe('Audit routing intent 2026-10-23 — penjaga anti-tertelan', () => {
     expect(routeIntent('pagi ini kita bahas proyek').intent).not.toBe('GREETING');
   });
 
-  it('"buka daftar proyek" tetap OPEN_PROJECTS (penjaga laporan tidak merusak jalur proyek)', () => {
-    expect(routeIntent('buka daftar proyek').intent).toBe('OPEN_PROJECTS');
-    expect(routeIntent('daftar proyek saya').intent).toBe('OPEN_PROJECTS');
+  it('"buka daftar proyek" → QUERY_PROJECT_LIST (jawaban daftar, bukan navigasi) (§4.1)', () => {
+    expect(routeIntent('buka daftar proyek').intent).toBe('QUERY_PROJECT_LIST');
+    expect(routeIntent('daftar proyek saya').intent).toBe('QUERY_PROJECT_LIST');
   });
 
   it('"buka pengaturan rab" tidak masuk OPEN_SETTINGS global', () => {
@@ -78,7 +82,8 @@ describe('Audit routing intent 2026-10-23 — penjaga anti-tertelan', () => {
 
   it('perintah spesifik tidak tertelan klarifikasi', () => {
     expect(routeIntent('cari ahsp beton k-225').intent).toBe('SEARCH_AHSP');
-    expect(routeIntent('buka template rab').intent).toBe('OPEN_TEMPLATE');
+    // §4.1: "buka template rab" kini ke AI (dulu OPEN_TEMPLATE).
+    expect(routeIntent('buka template rab').intent).toBe('UNKNOWN');
     expect(routeIntent('buatkan rab rumah type 45').intent).toBe('CREATE_RAB_DIRECT');
   });
 

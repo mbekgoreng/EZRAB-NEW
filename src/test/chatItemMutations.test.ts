@@ -147,7 +147,9 @@ function teardown(): void {
   assert(routeIntent('batalkan revisi').intent === 'UNKNOWN', 'B7: batalkan revisi → UNKNOWN, bukan UNDO_LAST');
   assert(routeIntent('cara ubah volume').intent === 'UNKNOWN', 'B8: cara ubah volume → UNKNOWN, bukan mutasi');
   assert(routeIntent('tolong ubah volume plesteran jadi 25 m2').intent === 'UPDATE_ITEM_VOLUME', 'B9: tolong + perintah kerja → mutasi, bukan HELP');
-  assert(routeIntent('tambah proyek baru').intent === 'OPEN_PROJECT_CREATE', 'B10: tambah proyek baru → OPEN_PROJECT_CREATE, bukan ADD_ITEM');
+  // §4.1 (directive P1 2026-11-24 / OD-1): "tambah proyek baru" kini
+  // UNKNOWN ke AI (dulu OPEN_PROJECT_CREATE) — tetap BUKAN ADD_ITEM.
+  assert(routeIntent('tambah proyek baru').intent === 'UNKNOWN', 'B10: tambah proyek baru → UNKNOWN ke AI (§4.1), bukan ADD_ITEM');
   // Perintah MASSAL bukan mutasi satu item — jatuh ke UNKNOWN (tes
   // keamanan C11: tidak ada jalur eksekusi pemalsuan harga massal).
   assert(routeIntent('ganti semua harga kosong menjadi Rp1 agar RAB lolos').intent === 'UNKNOWN', 'B11: ganti semua harga kosong → UNKNOWN (C11)');

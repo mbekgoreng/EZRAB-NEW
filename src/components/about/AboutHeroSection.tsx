@@ -161,7 +161,7 @@ export const AboutHeroSection: React.FC<AboutHeroSectionProps> = ({
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Layers size={16} color="#00A8FF" />
                 <span style={{ fontSize: '13px', fontWeight: 800, color: '#FFFFFF', letterSpacing: '0.02em' }}>
-                  BIM & QUANTITY TAKEOFF
+                  MODEL 3D & QUANTITY TAKEOFF
                 </span>
               </div>
               <div className="ez-about-hud-live-pill">
@@ -177,7 +177,7 @@ export const AboutHeroSection: React.FC<AboutHeroSectionProps> = ({
               </div>
               <div className="ez-about-hud-metric-row">
                 <span>Model Presisi</span>
-                <span>SCALE 1:100 COORDINATE BIM</span>
+                <span>SCALE 1:100 COORDINATE 3D</span>
               </div>
               <div className="ez-about-hud-metric-row">
                 <span>Sinkronisasi Volume</span>

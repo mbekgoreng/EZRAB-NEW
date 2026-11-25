@@ -15,6 +15,18 @@
  * Kelas bukti: mock terkendali (localStorage shim; provider nyata
  * NOT RUN — 0 panggilan; UI browser dibuktikan E2E terpisah).
  * Jalankan: npx --yes tsx src/test/chatToolOrchestrationPhase5.test.ts
+ *
+ * KONVENSI AKTOR PASCA-P1 (WC-03, direktif owner 2026-11-24): model
+ * HANYA boleh memanggil tool yang diiklankan ke model di kanal itu
+ * (EZRAB_AI_TOOLS di chat-ai; COPILOT_ALLOWED_TOOLS read-only di
+ * copilot). Tool registry native di luar daftar itu
+ * (build_universal_draft, transfer_draft, extract_ded_specs,
+ * analyze_draft_costs, check_qto, navigate di kanal chat-ai) diuji
+ * lewat aktor 'system'/'user' — jalur orkestrator internal yang sah —
+ * BUKAN 'model'. Batas model-callable sendiri dipin suite
+ * p1AuthzConfirmation (WC03-01..09). Satu-satunya pemanggilan
+ * 'model' yang tersisa untuk tool native adalah navigate di kanal
+ * copilot (T5-12) — memang diiklankan ke model Copilot.
  */
 
 import { strict as assert } from 'assert';
@@ -176,17 +188,17 @@ async function main(): Promise<void> {
 
   await test('T5-03 [AGT-08] hasil tak valid → failed/partial, bukan sukses', async () => {
     resetAll();
-    const badDed = await executeTool({ toolName: 'extract_ded_specs', args: { dedOutput: {} }, projectId: PROJ, actor: 'model', channel: 'chat-ai' });
+    const badDed = await executeTool({ toolName: 'extract_ded_specs', args: { dedOutput: {} }, projectId: PROJ, actor: 'system', channel: 'chat-ai' });
     assert.equal(badDed.ok, false, 'dedOutput tanpa items → tidak ok');
     assert.equal(badDed.errorCode, 'OUTPUT_VALIDATION_FAILED', 'kode validasi output');
     assert.equal(badDed.record.status, 'failed', 'status failed');
-    const badDraft = await executeTool({ toolName: 'build_universal_draft', args: { text: 'asdf qwer zxcv' }, projectId: PROJ, actor: 'model', channel: 'chat-ai' });
+    const badDraft = await executeTool({ toolName: 'build_universal_draft', args: { text: 'asdf qwer zxcv' }, projectId: PROJ, actor: 'system', channel: 'chat-ai' });
     assert.equal(badDraft.ok, false, 'teks tanpa spek → draft gagal disusun');
     assert.equal(badDraft.errorCode, 'OUTPUT_VALIDATION_FAILED', 'ERROR: dari invoke → validasi output gagal');
     const partial = await executeTool({
       toolName: 'analyze_draft_costs',
       args: { items: [{ description: 'Item belum berharga', totalPrice: 1000, priceStatus: 'PRICE_UNRESOLVED' }] },
-      projectId: PROJ, actor: 'model', channel: 'chat-ai',
+      projectId: PROJ, actor: 'system', channel: 'chat-ai',
     });
     assert.equal(partial.ok, true, 'analisis item tak berharga tetap ok');
     assert.equal(partial.record.status, 'partially-succeeded', 'status partially-succeeded (bukan succeeded penuh)');
@@ -194,7 +206,10 @@ async function main(): Promise<void> {
 
   await test('T5-04 [AGT-09] tool konsekwensial tanpa persetujuan → tidak dijalankan (awaiting-approval)', async () => {
     resetAll();
-    const r = await executeTool({ toolName: 'transfer_draft', args: { projectId: PROJ, draftVersion: 1 }, projectId: PROJ, actor: 'model', channel: 'chat-ai' });
+    // WC-03: transfer_draft tidak model-callable — gerbang approval diuji
+    // lewat aktor 'user' (jalur orkestrator); penolakan model dipin di
+    // p1AuthzConfirmation (WC03-02).
+    const r = await executeTool({ toolName: 'transfer_draft', args: { projectId: PROJ, draftVersion: 1 }, projectId: PROJ, actor: 'user', channel: 'chat-ai' });
     assert.equal(r.ok, false, 'tanpa approval → tidak ok');
     assert.equal(r.errorCode, 'APPROVAL_REQUIRED', 'kode approval');
     assert.equal(r.record.status, 'awaiting-approval', 'status awaiting-approval');
@@ -204,14 +219,17 @@ async function main(): Promise<void> {
 
   await test('T5-05 [AGT-09] approval model/system ditolak; hanya user yang menyetujui', async () => {
     resetAll();
+    // WC-03: pemanggil 'user' (transfer_draft tidak model-callable) —
+    // yang diuji adalah AKTOR APPROVAL (model/system ditolak), bukan
+    // aktor pemanggil; gerbang memeriksa approval.actor.
     const byModel = await executeTool({
-      toolName: 'transfer_draft', args: { projectId: PROJ, draftVersion: 1 }, projectId: PROJ, actor: 'model',
+      toolName: 'transfer_draft', args: { projectId: PROJ, draftVersion: 1 }, projectId: PROJ, actor: 'user',
       approval: { actor: 'model', approvedAt: new Date().toISOString() }, channel: 'chat-ai',
     });
     assert.equal(byModel.errorCode, 'APPROVAL_SELF_GRANT_DENIED', 'model tidak boleh memberi dirinya izin');
     assert.equal(byModel.record.status, 'failed', 'self-grant → failed');
     const bySystem = await executeTool({
-      toolName: 'transfer_draft', args: { projectId: PROJ, draftVersion: 1 }, projectId: PROJ, actor: 'model',
+      toolName: 'transfer_draft', args: { projectId: PROJ, draftVersion: 1 }, projectId: PROJ, actor: 'user',
       approval: { actor: 'system', approvedAt: new Date().toISOString() }, channel: 'chat-ai',
     });
     assert.equal(bySystem.errorCode, 'APPROVAL_SELF_GRANT_DENIED', 'system juga bukan user');
@@ -272,7 +290,9 @@ async function main(): Promise<void> {
   await test('T5-08 audit trail mencatat tiap eksekusi + dapat dibaca balik', async () => {
     resetAll();
     const s1 = await executeTool({ toolName: 'subtotal', args: { volume: 2, unitPrice: 100000 }, projectId: PROJ, actor: 'model', channel: 'chat-ai' });
-    const s2 = await executeTool({ toolName: 'navigate', args: { command: 'buka dashboard' }, projectId: PROJ, actor: 'model', channel: 'chat-ai' });
+    // WC-03: navigate tidak ada di EZRAB_AI_TOOLS → tidak model-callable
+    // di kanal chat-ai; diuji lewat aktor 'system' (jalur orkestrator).
+    const s2 = await executeTool({ toolName: 'navigate', args: { command: 'buka dashboard' }, projectId: PROJ, actor: 'system', channel: 'chat-ai' });
     assert.equal(s1.ok, true, 'subtotal ok');
     assert.equal(s2.ok, true, 'navigate ok');
     const list = listToolExecutions(PROJ, 50);
@@ -392,8 +412,11 @@ async function main(): Promise<void> {
     // tool kalkulasi tools.ts (mis. subtotal) dapat dieksekusi semua kanal
     // (channels undefined = tanpa pembatasan) tetapi TIDAK masuk daftar
     // Copilot — batasan itu disengaja dan dicatat di laporan.
+    // WC-03 (channel-aware): navigate HANYA model-callable di kanal
+    // copilot (diiklankan di prompt Copilot); di kanal chat-ai model
+    // tidak boleh memanggilnya — viaChat memakai aktor 'system'.
     const args = { command: 'buka dashboard' };
-    const viaChat = await executeTool({ toolName: 'navigate', args, projectId: PROJ, actor: 'model', channel: 'chat-ai' });
+    const viaChat = await executeTool({ toolName: 'navigate', args, projectId: PROJ, actor: 'system', channel: 'chat-ai' });
     const viaCopilot = await executeTool({ toolName: 'navigate', args, projectId: PROJ, actor: 'model', channel: 'copilot' });
     assert.equal(viaChat.ok, true, 'Chat AI ok');
     assert.equal(viaCopilot.ok, true, 'Copilot ok');
@@ -414,11 +437,13 @@ async function main(): Promise<void> {
     // blocked (validasi) + awaiting-approval + cancelled + failed + succeeded + partially-succeeded
     const blocked = await executeTool({ toolName: 'subtotal', args: {}, projectId: PROJ, actor: 'model', channel: 'chat-ai' });
     assert.equal(blocked.record.status, 'blocked', 'blocked tercapai');
-    const awaiting = await executeTool({ toolName: 'transfer_draft', args: { projectId: PROJ, draftVersion: 1 }, projectId: PROJ, actor: 'model', channel: 'chat-ai' });
+    // WC-03: transfer_draft + extract_ded_specs tidak model-callable di
+    // kanal chat-ai — siklus status diuji lewat aktor 'user'/'system'.
+    const awaiting = await executeTool({ toolName: 'transfer_draft', args: { projectId: PROJ, draftVersion: 1 }, projectId: PROJ, actor: 'user', channel: 'chat-ai' });
     assert.equal(awaiting.record.status, 'awaiting-approval', 'awaiting-approval tercapai');
     const cancelled = cancelToolExecution(awaiting.record.executionId);
     assert.equal(cancelled?.status, 'cancelled', 'awaiting-approval dapat dibatalkan → cancelled');
-    const failedRun = await executeTool({ toolName: 'extract_ded_specs', args: { dedOutput: {} }, projectId: PROJ, actor: 'model', channel: 'chat-ai' });
+    const failedRun = await executeTool({ toolName: 'extract_ded_specs', args: { dedOutput: {} }, projectId: PROJ, actor: 'system', channel: 'chat-ai' });
     assert.equal(failedRun.record.status, 'failed', 'failed tercapai');
     const okRun = await executeTool({ toolName: 'subtotal', args: { volume: 1, unitPrice: 5000 }, projectId: PROJ, actor: 'model', channel: 'chat-ai' });
     assert.equal(okRun.record.status, 'succeeded', 'succeeded tercapai');
@@ -427,7 +452,7 @@ async function main(): Promise<void> {
     const partialRun = await executeTool({
       toolName: 'analyze_draft_costs',
       args: { items: [{ description: 'X', totalPrice: 1, priceStatus: 'PRICE_UNRESOLVED' }] },
-      projectId: PROJ, actor: 'model', channel: 'chat-ai',
+      projectId: PROJ, actor: 'system', channel: 'chat-ai',
     });
     assert.equal(partialRun.record.status, 'partially-succeeded', 'partially-succeeded tercapai');
     const doneAgain = cancelToolExecution(okRun.record.executionId);
@@ -459,7 +484,9 @@ async function main(): Promise<void> {
   await test('T5-14 [DED/QTO] reader DED + bridge QTO ter-wire (tool, seksi kanonis, memori)', async () => {
     resetAll();
     const ded = dedFixture();
-    const extracted = await executeTool({ toolName: 'extract_ded_specs', args: { dedOutput: ded }, projectId: PROJ, actor: 'model', channel: 'chat-ai' });
+    // WC-03: extract_ded_specs + check_qto tidak model-callable di kanal
+    // chat-ai — wiring DED/QTO diuji lewat aktor 'system'.
+    const extracted = await executeTool({ toolName: 'extract_ded_specs', args: { dedOutput: ded }, projectId: PROJ, actor: 'system', channel: 'chat-ai' });
     assert.equal(extracted.ok, true, 'extract_ded_specs ok');
     assert.ok(extracted.output?.includes('Pemahaman DED'), 'output memuat pemahaman DED');
     assert.ok(extracted.output?.includes('DATA HILANG'), 'data hilang dinyatakan eksplisit');
@@ -470,7 +497,7 @@ async function main(): Promise<void> {
     const qto = await executeTool({
       toolName: 'check_qto',
       args: { items: [{ description: 'Beton K-300', quantity: 12, unit: 'm3' }], dimensions: { buildingAreaM2: 80 } },
-      projectId: PROJ, actor: 'model', channel: 'chat-ai',
+      projectId: PROJ, actor: 'system', channel: 'chat-ai',
     });
     assert.equal(qto.ok, true, 'check_qto ok');
     assert.equal(qto.output, buildQtoSection(checks), 'seksi QTO = baris pemeriksaan yang sama');

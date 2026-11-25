@@ -87,8 +87,9 @@ describe('routeIntent — klarifikasi vs regresi perintah spesifik', () => {
     expect(routeIntent('hitung volume balok 6x0.3x0.5').intent).toBe('CALCULATE');
     // "buatkan rab" tetap jalur CREATE_RAB_CLARIFY lama (sudah tanya balik).
     expect(routeIntent('buatkan rab').intent).toBe('CREATE_RAB_CLARIFY');
-    // Navigasi eksplisit tetap navigasi.
-    expect(routeIntent('buka template rab').intent).toBe('OPEN_TEMPLATE');
+    // §4.1 (directive P1 2026-11-24 / OD-1): navigasi bahasa alami
+    // DIHAPUS — "buka template rab" kini ke AI (dulu OPEN_TEMPLATE).
+    expect(routeIntent('buka template rab').intent).toBe('UNKNOWN');
     expect(routeIntent('cari ahsp beton').intent).toBe('SEARCH_AHSP');
   });
 });

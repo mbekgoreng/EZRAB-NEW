@@ -11,9 +11,19 @@
  * - Clean non-technical wizard UX for non-technical users
  * - Preserves core dedRabPipeline, activePid isolation, and QTO independence
  * - Production handler handleStartAnalysis -> dedRabPipeline.execute(...)
+ *
+ * FTC Priority D (§7) invariants — do not regress (see
+ * src/test/ftcPriorityDWorkflow.test.ts):
+ * - handleStartAnalysis NEVER creates a project implicitly; projects are
+ *   created only via the explicit Step 1 buttons.
+ * - Session hydration is READ-ONLY; project RAB items are written only
+ *   at explicit user commit (handleCommitOfficialRab).
+ * - A commit with zero items is a no-op (never wipes project RAB).
+ * - Analysis results are shown only after persistence is re-verified
+ *   (getLatestAnalysis returns COMPLETED).
  */
 
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   UploadCloud,
   FileText,
@@ -47,7 +57,6 @@ import { ExecutionMode, ProjectLocation } from '../../ded-rab-v2/resolution/prov
 import { DedRabV2ReviewView } from '../../ded-rab-v2/review/DedRabV2ReviewView';
 import { DedAiSplitAnalysisView } from './DedAiSplitAnalysisView';
 import { dedAnalysisPersistenceService } from '../../services/dedAnalysisPersistenceService';
-import { dedRabReviewService } from '../../ded-rab-v2/review/dedRabReviewService';
 import { dedSpreadsheetSync } from '../../ded-rab-v2/spreadsheet/dedSpreadsheetSync';
 import { EZRAB_MODEL_FLASH, EZRAB_MODEL_PRO } from '../../services/aiModelMasking';
 import { honestVolume } from '../../engine/honestVolume';
@@ -313,20 +322,11 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
     }
   };
 
-  // Synchronize completed analysis items with Project Context for Spreadsheet RAB
-  const syncOutputToProjectRab = useCallback((output: PipelineExecutionOutput, projectId: string) => {
-    if (!output.workItems || output.workItems.length === 0) return;
-    try {
-      const officialItems = dedRabReviewService.convertToOfficialRabItems(output.workItems, projectId);
-      if (replaceProjectRabItems) {
-        replaceProjectRabItems(officialItems, projectId);
-      } else if (bulkAddRabItems) {
-        bulkAddRabItems(officialItems, projectId);
-      }
-    } catch (err) {
-      console.warn('[DedRabWorkflowView] Synchronize to Project RAB warning:', err);
-    }
-  }, [replaceProjectRabItems, bulkAddRabItems]);
+  // FTC Priority D (§7): TIDAK ADA sinkronisasi otomatis hasil analisis
+  // ke RAB proyek. Hydration di bawah ini HANYA MEMBACA (menampilkan
+  // draft terakhir); item RAB proyek hanya ditulis lewat ACC eksplisit
+  // user di handleCommitOfficialRab. Sinkronisasi saat mount sebelumnya
+  // menimpa item RAB proyek hanya karena user MEMBUKA halaman ini.
 
   // HYDRATE PERSISTED SESSION ON MOUNT & ON PROJECT CHANGE
   useEffect(() => {
@@ -340,11 +340,13 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
 
         if (persisted) {
           if (persisted.status === 'COMPLETED' && persisted.execution_output) {
+            // Read-only: tampilkan draft terakhir saja. JANGAN menulis
+            // ke RAB proyek dari sini (lihat catatan FTC Priority D di
+            // atas) — penulisan hanya di handleCommitOfficialRab.
             setExecutionOutput(persisted.execution_output);
             setIsExecuting(false);
             setPipelineProgress(null);
             setExecutionError(null);
-            syncOutputToProjectRab(persisted.execution_output, effectiveProjectId);
           } else if (persisted.status === 'ANALYZING') {
             const inMemory = await dedRabPipeline.getPersistedActiveResult(effectiveProjectId);
             if (inMemory && inMemory.success && inMemory.workItems?.length > 0) {
@@ -386,7 +388,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
     return () => {
       isCancelled = true;
     };
-  }, [effectiveProjectId, syncOutputToProjectRab]);
+  }, [effectiveProjectId]);
 
   // Start fresh analysis without losing historical records
   const handleClearActiveAnalysis = () => {
@@ -471,30 +473,20 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
         targetProjectId = createdProjectId;
         const targetObj = allAvailableProjects.find((p) => p.id === createdProjectId) || resolvedCurrentProject;
         targetProjectName = targetObj?.name || customProjectName || 'Proyek Baru';
-      } else if (targetProjectMode === 'NEW' || !resolvedCurrentProject) {
-        const derivedName = deriveProjectNameFromFileName(selectedFile.name);
-        const finalName = customProjectName.trim() || derivedName || 'Proyek DED Baru';
-        const newProj = createProject({
-          name: finalName,
-          buildingType: 'Rumah Tinggal',
-          creationMethod: 'magic_ai',
-          notes: `Dibuat melalui EZRAB DED → RAB dari file: ${selectedFile.name}`,
-        });
-        targetProjectId = newProj.id;
-        targetProjectName = newProj.name;
-        setCreatedProjectId(newProj.id);
-        setCustomProjectName(newProj.name);
-        setTargetProjectMode('ACTIVE');
-        setHasExplicitlyChosenMode(true);
-        if (setCurrentProjectId) {
-          setCurrentProjectId(targetProjectId);
-        }
-        if (onSelectProject) {
-          onSelectProject(targetProjectId);
-        }
-      } else {
+      } else if (resolvedCurrentProject && targetProjectMode === 'ACTIVE') {
         targetProjectId = resolvedCurrentProject.id;
         targetProjectName = resolvedCurrentProject.name;
+      } else {
+        // FTC Priority D (§7): memulai analisis TIDAK PERNAH membuat
+        // proyek diam-diam. Proyek hanya dibuat lewat tombol eksplisit
+        // "＋ Buat Proyek" (handleCreateNewProject) atau "Buka
+        // Spreadsheet" (handleCreateAndOpenSpreadsheet) di Langkah 1 —
+        // sesuai prinsip §4.5 (draft tidak terikat sampai user
+        // konfirmasi). Kembalikan user ke pemilih proyek dengan pesan
+        // yang jelas; finally di bawah tetap mematikan isExecuting.
+        setExecutionError('Pilih proyek yang ada atau klik "＋ Buat Proyek" di Langkah 1 sebelum memulai analisis.');
+        setIsSelectingProject(true);
+        return;
       }
 
       // 2. Existing RAB Protection Snapshot
@@ -581,6 +573,15 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
 
   // Handle Commit to Official Project RAB
   const handleCommitOfficialRab = (officialItems: RabItem[]) => {
+    // FTC Priority D (§7): commit KOSONG tidak pernah menulis. Tanpa
+    // penjaga ini, commit 0 item memanggil replaceProjectRabItems([],
+    // pid) dan MENGHAPUS seluruh item RAB proyek — dapat terjadi dari
+    // Detail View bila user membatalkan semua persetujuan item
+    // (convertToOfficialRabItems memfilter userApproved === false).
+    if (!officialItems || officialItems.length === 0) {
+      console.warn('[DedRabWorkflowView] Commit dibatalkan: tidak ada item RAB resmi untuk disimpan.');
+      return;
+    }
     let grandTotal = 0;
     const sectionMap = new Map<string, RabItem[]>();
     const activePid = executionOutput?.projectId || effectiveProjectId;
@@ -866,6 +867,13 @@ padding: '9px 18px', borderRadius: 'var(--ez-radius-control)', border: 'none', f
           </div>
 
           {/* Review View */}
+          {/* FTC Priority D (§7): tombol Split View berbunyi "Lanjut ke
+              AHSP & Harga →" — ia MELANJUTKAN ke tampilan Detail (tempat
+              user meninjau AHSP/harga lalu commit item nyata), BUKAN
+              commit. Wiring lama meneruskan [] ke handleCommitOfficialRab
+              sehingga satu klik memanggil replaceProjectRabItems([], pid)
+              dan MENGHAPUS seluruh item RAB proyek + membuat versi ACC
+              0 item. */}
           {resultsViewMode === 'split' ? (
             <DedAiSplitAnalysisView
               projectName={targetProjObj?.name || effectiveProjectName}
@@ -873,7 +881,7 @@ padding: '9px 18px', borderRadius: 'var(--ez-radius-control)', border: 'none', f
               workItems={executionOutput.workItems}
               evidences={executionOutput.evidences}
               grandTotal={executionOutput.grandTotal}
-              onCommitOfficialRab={() => handleCommitOfficialRab([])}
+              onCommitOfficialRab={() => setResultsViewMode('detail')}
               onRetry={() => handleStartAnalysis()}
             />
           ) : (
@@ -952,7 +960,11 @@ padding: '9px 18px', borderRadius: 'var(--ez-radius-control)', border: 'none', f
               <div>
                 <div style={{ fontWeight: 800, fontSize: '14px', color: 'var(--ez-hue-red-text)' }}>Analisis belum selesai</div>
                 <div style={{ fontSize: '12px', color: 'var(--ez-hue-red-text)', marginTop: '2px' }}>
-                  EZRAB mengalami kendala saat membaca DED. Data proyek Anda tetap aman.
+                  {/* FTC Priority D (§7): tampilkan pesan error sebenarnya —
+                      sebelumnya pesan selalu generik sehingga arahan
+                      fail-closed ("pilih/buat proyek dulu") tak pernah
+                      terlihat user. */}
+                  {executionError || 'EZRAB mengalami kendala saat membaca DED. Data proyek Anda tetap aman.'}
                 </div>
               </div>
             </div>

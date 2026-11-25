@@ -50,6 +50,17 @@ import {
   saveMemory,
   type MemoryScope,
 } from './memory';
+/* WD-3.7-05: entitas objektif (dimensi/lantai/budget) DIAMBIL dari parser
+ * kanonis rabNeeds — orkestrator tidak lagi punya parser privatnya
+ * sendiri (dulu: "rumah 5x10 lantai 2" → 10 lantai; "anggaran 250 juta"
+ * → budget null; "kolom 15x15 cm" → tapak 15×15 m). rabNeeds tanpa impor
+ * runtime sehingga impor ini tidak bisa melingkar. */
+import {
+  extractRabNeeds,
+  parseBudgetMentions,
+  parseFloorsMention,
+  BUDGET_UNIT_FACTORS,
+} from './rabNeeds';
 
 /* ------------------------------------------------------------------ */
 /* Batas eksekusi (Part 18 — iterasi & eksekusi berbatas)               */
@@ -139,57 +150,32 @@ const CATEGORY_PATTERNS: Array<{ key: string; label: string; re: RegExp }> = [
   { key: 'irigasi', label: 'Irigasi / bendung', re: /\b(irigasi|bendungan|bendung|embung)\b/ },
 ];
 
-function parseBudget(text: string): number | null {
-  const m = text.match(/rp\s*([\d.,]+)\s*(miliar|milyar|jt|juta|rb|ribu)?/i)
-    ?? text.match(/budget[^0-9]{0,20}([\d.,]+)\s*(miliar|milyar|jt|juta|rb|ribu)?/i)
-    ?? text.match(/([\d.,]+)\s*(miliar|milyar)\b/i);
-  if (!m) return null;
-  const raw = m[1].replace(/\./g, '').replace(/,/g, '.');
-  const n = Number(raw);
-  if (!Number.isFinite(n) || n <= 0) return null;
-  const unit = (m[2] ?? '').toLowerCase();
-  if (unit.startsWith('miliar') || unit.startsWith('milyar')) return Math.round(n * 1_000_000_000);
-  if (unit === 'jt' || unit === 'juta') return Math.round(n * 1_000_000);
-  if (unit === 'rb' || unit === 'ribu') return Math.round(n * 1_000);
-  return Math.round(n);
-}
+/* ------------------------------------------------------------------ */
+/* WD-3.7-05: parser privat dimensi/lantai/budget DIHAPUS —            */
+/* deriveObjective memakai parser kanonis rabNeeds (extractRabNeeds /  */
+/* parseFloorsMention / parseBudgetMentions). Satu-satunya pemindaian  */
+/* lokal yang tersisa adalah bareScaledBudgetAmounts di bawah, dan     */
+/* itu BUKAN parser entitas: ia hanya melengkapi daftar KONFLIK        */
+/* budget dengan angka bersatuan besar telanjang ("eh sebenarnya 250   */
+/* jt") yang TIDAK berjangkar kata kunci sehingga parser kanonis       */
+/* (benar) tidak melihatnya sebagai penyebutan budget — tapi dua       */
+/* angka berskala berbeda dalam satu permintaan tetap sinyal konflik   */
+/* di lapisan objektif. Nilai budgetRp SELALU dari penyebutan          */
+/* kanonis pertama; angka telanjang tidak pernah menjadi budgetRp.     */
+/* ------------------------------------------------------------------ */
 
-function parseAllBudgets(text: string): number[] {
+/** Angka bersatuan besar telanjang (jt/juta/miliar) untuk deteksi konflik budget saja. */
+function bareScaledBudgetAmounts(text: string): number[] {
   const out: number[] = [];
-  const re = /(?:rp|budget)[^0-9]{0,20}([\d.,]+)\s*(miliar|milyar|jt|juta|rb|ribu)?/gi;
+  const re = /(\d+(?:[.,]\d+)?)\s*(miliar|milyar|jt|juta)\b/gi;
   let m: RegExpExecArray | null;
   while ((m = re.exec(text)) !== null) {
     const raw = m[1].replace(/\./g, '').replace(/,/g, '.');
     const n = Number(raw);
     if (!Number.isFinite(n) || n <= 0) continue;
-    const unit = (m[2] ?? '').toLowerCase();
-    const v = unit.startsWith('miliar') || unit.startsWith('milyar') ? n * 1_000_000_000
-      : unit === 'jt' || unit === 'juta' ? n * 1_000_000
-      : unit === 'rb' || unit === 'ribu' ? n * 1_000 : n;
-    out.push(Math.round(v));
+    out.push(Math.round(n * (BUDGET_UNIT_FACTORS[m[2].toLowerCase()] ?? 1)));
   }
-  // Nilai bare dengan satuan besar tanpa awalan rp/budget ("250 jt")
-  // juga budget — tanpa ini koreksi budget kedua tidak terdeteksi konflik.
-  const bare = /([\d.,]+)\s*(miliar|milyar|jt|juta)\b/gi;
-  while ((m = bare.exec(text)) !== null) {
-    const raw = m[1].replace(/\./g, '').replace(/,/g, '.');
-    const n = Number(raw);
-    if (!Number.isFinite(n) || n <= 0) continue;
-    const unit = m[2].toLowerCase();
-    const v = unit.startsWith('miliar') || unit.startsWith('milyar') ? n * 1_000_000_000 : n * 1_000_000;
-    out.push(Math.round(v));
-  }
-  return [...new Set(out)];
-}
-
-function parseDimensions(text: string): { lengthM: number | null; widthM: number | null; areaM2: number | null } {
-  const dim = text.match(/(\d+(?:[.,]\d+)?)\s*(?:m\b|meter)?\s*[x×]\s*(\d+(?:[.,]\d+)?)\s*(?:m\b|meter)?/i);
-  const area = text.match(/(\d+(?:[.,]\d+)?)\s*m(?:2|²)\b/i);
-  return {
-    lengthM: dim ? Number(dim[1].replace(',', '.')) : null,
-    widthM: dim ? Number(dim[2].replace(',', '.')) : null,
-    areaM2: area ? Number(area[1].replace(',', '.')) : null,
-  };
+  return out;
 }
 
 /**
@@ -201,11 +187,38 @@ function parseDimensions(text: string): { lengthM: number | null; widthM: number
 export function deriveObjective(rawText: string, intent?: string | null): AgentObjective {
   const safeText = containsSecret(rawText) ? '[teks mengandung pola kredensial — tidak disimpan sebagai objektif]' : rawText;
   const text = norm(safeText);
-  const dims = parseDimensions(rawText);
-  const budget = parseBudget(rawText);
-  const budgets = parseAllBudgets(rawText);
-  const countM = text.match(/(\d+)\s*(ekor|sapi|ayam|unit|ruang|kamar|lantai|unit)\b/);
-  const floorsM = text.match(/(\d+)\s*lantai/);
+  // WD-3.7-05: entitas dari parser kanonis rabNeeds (satu sumber).
+  // Dimensi: penjaga satuan/penampang extractRabNeeds berlaku di sini
+  // ("kolom 15x15 cm" → lengthM/widthM null, bukan 15×15 m).
+  // Konvensi urutan OBJEKTIF (dipin A3-01): angka PERTAMA = lengthM,
+  // angka KEDUA = widthM — landLength/landWidth menyimpan urutan teks
+  // apa adanya. (buildingTypology membaca urutan sebaliknya — lebar
+  // dulu; perbedaan konvensi itu didokumentasi, bukan disatukan di
+  // sini karena A3-01 mengunci konvensi objektif.)
+  const needs = extractRabNeeds(rawText);
+  const dims = {
+    lengthM: needs.landLength,
+    widthM: needs.landWidth,
+    areaM2: needs.buildingArea,
+  };
+  const budgetMentions = parseBudgetMentions(rawText);
+  const budget = budgetMentions.length > 0 ? budgetMentions[0].amount : null;
+  const budgets = [...new Set([...budgetMentions.map((m) => m.amount), ...bareScaledBudgetAmounts(rawText)])];
+  // Jumlah (ekor/unit/ruang/kamar/lantai): TIDAK ada parser kanonis
+  // yang meliput semua satuannya, jadi pemindaian lokal dipertahankan
+  // — dengan penjaga ekor-dimensi yang sama dengan parseFloorsMention:
+  // pada "rumah 5x10 lantai 2", angka 10 adalah ekor dimensi, bukan
+  // jumlah ("10 lantai" sebagai count adalah cacat yang sama dengan
+  // floors 10 yang diperbaiki WD-3.7-05).
+  const countM = (() => {
+    for (const m of text.matchAll(/(\d+)\s*(ekor|sapi|ayam|unit|ruang|kamar|lantai)\b/g)) {
+      const before = text.slice(0, m.index ?? 0);
+      if (/\d+(?:[.,]\d+)?\s*[x×]\s*$/.test(before)) continue; // ekor dimensi
+      return m;
+    }
+    return null;
+  })();
+  const floors = parseFloorsMention(rawText);
   const materials = MATERIAL_WORDS.filter((w) => new RegExp(`\\b${w.replace(' ', '\\s+')}\\b`).test(text));
   let category: { key: string; label: string } | null = null;
   for (const c of CATEGORY_PATTERNS) {
@@ -227,7 +240,6 @@ export function deriveObjective(rawText: string, intent?: string | null): AgentO
       values: roofMats,
     });
   }
-  const floors = floorsM ? Number(floorsM[1]) : null;
   if (floors !== null && /\b1\s*lantai\b/.test(text) && /\b2\s*lantai\b/.test(text)) {
     conflicts.push({
       key: 'floors',

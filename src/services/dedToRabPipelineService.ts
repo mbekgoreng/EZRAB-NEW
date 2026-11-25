@@ -42,7 +42,7 @@ import { officialAhspRepository, ALL_OFFICIAL_AHSP_ITEMS } from '../data/nationa
 import { isQuarantined } from '../data/nationalCostDatabase/ahspQuarantine';
 import { priceResolver2026 } from '../data/priceDatabase2026/resolver';
 import { PrecisionEngine } from '../engine/calculatorCore/precision/precisionEngine';
-import { validateUnitCompatibility, type UnitCompatibilityResult } from '../engine/constructionCalculators/unitCompatibility';
+import { validateUnitCompatibility, normalizeUnitName, type UnitCompatibilityResult } from '../engine/constructionCalculators/unitCompatibility';
 import { RabItem } from '../types';
 import { dedEvidenceStore } from './dedEvidenceStore';
 import { dedWorkItemStore } from './dedWorkItemStore';
@@ -75,6 +75,29 @@ export interface ProcessPipelineInput {
   forceVision?: boolean;
   preferredProvider?: string;
   preferredModel?: string;
+}
+
+/**
+ * derivePriceProvenance — pure helper (Fast Track Continuation 2026-11-24,
+ * directive §7: never fabricate verification/provenance).
+ *
+ * Provenance is a claim about WHERE A PRICE came from — so an item with NO
+ * price must carry NO provenance. Two no-price cases return undefined:
+ * (a) the FU2 unit gate rejected the candidate (price blocked), and
+ * (b) resolvePrice found no price (unitPrice undefined/null/0-sentinel)
+ * while valueSourceType is also undefined — the old fallback labeled such
+ * a non-custom item 'OFFICIAL_AHSP', i.e. provenance without a price.
+ * When a price IS present, the resolver's own valueSourceType wins; only
+ * then does the custom/official fallback apply. If a price is filled later
+ * (auto-fill), provenance is set from valueSourceType at that site.
+ */
+export function derivePriceProvenance(
+  unitMismatch: unknown,
+  priceRes: Pick<PriceSourceResolution, 'unitPrice' | 'valueSourceType'>,
+  isCustomItem: boolean,
+): ValueSourceType | undefined {
+  if (unitMismatch || !priceRes.unitPrice) return undefined;
+  return priceRes.valueSourceType || (isCustomItem ? 'AI_ESTIMATE' : 'OFFICIAL_AHSP');
 }
 
 export class DedToRabPipelineService {
@@ -326,7 +349,12 @@ export class DedToRabPipelineService {
               extractedText: matchedStr,
               basis: `Elemen visual terdeteksi pada ${source.sourceName}`,
               confidence: 'HIGH',
-              status: 'VERIFIED',
+              // H-06 (Fast Track 2026-11-24): deteksi regex adalah
+              // INFERRED, bukan VERIFIED — pola teks yang cocok belum
+              // merupakan bukti terverifikasi sampai dikoroborasi.
+              // (EvidenceStatus tidak punya 'UNVERIFIED'; INFERRED
+              // adalah literal yang berlaku untuk inferensi ini.)
+              status: 'INFERRED',
               provider: 'LOCAL_PARSER',
               model: 'EZRAB_VISION_SCANNER',
             },
@@ -585,7 +613,10 @@ export class DedToRabPipelineService {
       ahspCode: candidate.code,
       result: v.result,
       reason:
-        `UNIT_MISMATCH: kuantitas bersatuan ${v.componentUnit || req} tidak boleh dihargai ` +
+        // WB-02 (Fast Track 2026-11-24): awalan memakai hasil gerbang
+        // yang sebenarnya — sebelumnya hardcoded `UNIT_MISMATCH:` bahkan
+        // ketika hasilnya UNIT_UNKNOWN (menyesatkan diagnosis).
+        `${v.result}: kuantitas bersatuan ${v.componentUnit || req} tidak boleh dihargai ` +
         `dengan AHSP ${candidate.code} bersatuan ${v.candidateUnit || candidate.unit} — ` +
         `harga tidak diselesaikan (PRICE_INCOMPLETE). ${v.reason}`,
     };
@@ -642,11 +673,25 @@ export class DedToRabPipelineService {
       let matchScore = 0;
       let specMatch = false;
 
-      // Specification exact match e.g. K-250, K-300
+      // WB-03 (Fast Track 2026-11-24): pencocokan spesifikasi dengan
+      // BATAS KATA, bukan substring atas teks yang tanda bacanya dibuang.
+      // Bentuk lama ("k250" ⊂ "jarak250") salah mencocokkan spec K-250
+      // dengan item kayu "jarak 250 m'" (A.3.05.4c.1) lalu memaksanya
+      // jadi EXACT_MATCH. Sekarang spec cocok hanya bila (a) urutan
+      // token spec muncul berurutan pada token item ("k","250" pada
+      // "Beton K-250"), atau (b) spec tanpa tanda baca SAMA PERSIS
+      // dengan satu token item ("k250" = token "k250", bukan "jarak250").
       if (specification) {
-        const specClean = specification.toLowerCase().replace(/[^a-z0-9]/g, '');
-        const itemClean = itemText.replace(/[^a-z0-9]/g, '');
-        if (itemClean.includes(specClean)) {
+        const specTokens = specification.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+        const specClean = specTokens.join('');
+        const itemTokens = itemText.split(/[^a-z0-9]+/).filter(Boolean);
+        const contiguous =
+          specTokens.length > 0 &&
+          itemTokens.some((_, i) =>
+            specTokens.every((tok, j) => itemTokens[i + j] === tok)
+          );
+        const wholeToken = specClean.length > 0 && itemTokens.includes(specClean);
+        if (contiguous || wholeToken) {
           matchScore += 45;
           specMatch = true;
         }
@@ -670,8 +715,16 @@ export class DedToRabPipelineService {
         matchScore += (matchedTerms.length / expandedTerms.length) * 40;
       }
 
-      // Unit alignment
-      if (unit && item.unit && unit.toLowerCase().trim() === item.unit.toLowerCase().trim()) {
+      // Unit alignment — WD-3.7-06 class (Fast Track Continuation
+      // 2026-11-24): bandingkan satuan yang DINORMALISASI, bukan string
+      // mentah. Pipeline meneruskan satuan superskrip ('m³'/'m²' dari
+      // computeDeterministicQuantity) sementara katalog memakai 'm3'/'m2'
+      // — perbandingan exact-string lama TIDAK PERNAH cocok sehingga bonus
+      // +15 hilang dan item berskor 25–40 (mis. Beton Kolom K-250: 42
+      // dengan bonus, 27 tanpa) jatuh ke AI_CUSTOM. normalizeUnitName
+      // adalah normalizer kanonis yang sama dengan gerbang FU2
+      // (checkAhspUnitGate) — 'm³' vs 'm3' sama-sama jadi 'm³'.
+      if (unit && item.unit && normalizeUnitName(unit) === normalizeUnitName(item.unit)) {
         matchScore += 15;
       }
 
@@ -680,9 +733,15 @@ export class DedToRabPipelineService {
         matchScore = Math.max(matchScore, 45);
       }
 
-      if (matchScore >= 40) {
+      // WB-03: spec saja TIDAK PERNAH cukup — kandidat wajib punya
+      // tumpang-tindih istilah nama (bila nama punya istilah), dan
+      // EXACT_MATCH wajib punya tumpang-tindih nama + (spec cocok atau
+      // skor >= 75). Tanpa ini, nama fiktif ("zzzz") + spec K-250 tetap
+      // mengembalikan item kayu sebagai EXACT_MATCH.
+      const hasNameOverlap = matchedTerms.length > 0;
+      if (matchScore >= 40 && (expandedTerms.length === 0 || hasNameOverlap)) {
         const matchClassification: AHSPMatchClassification =
-          (!isSpecialtyFinish && (specMatch || matchScore >= 75)) ? 'EXACT_MATCH' : 'SEMANTIC_MATCH';
+          (!isSpecialtyFinish && hasNameOverlap && (specMatch || matchScore >= 75)) ? 'EXACT_MATCH' : 'SEMANTIC_MATCH';
 
         officialCandidates.push({
           ahspCode: item.code,
@@ -1253,7 +1312,12 @@ export class DedToRabPipelineService {
           extractedText: consolidatedDims.rawSnippets.join(', ') || det.description,
           basis: `Interpretasi AI dari ${sourceRefs.join(' + ')}.`,
           confidence: confidenceScore >= 0.85 ? 'HIGH' : confidenceScore >= 0.60 ? 'MEDIUM' : 'LOW',
-          status: 'VERIFIED',
+          // H-06 (Fast Track 2026-11-24): status diturunkan dari
+          // pemeriksaan yang sudah ada — VERIFIED hanya bila skala
+          // terverifikasi DAN confidenceScore >= 0.85 (ambang HIGH yang
+          // sama dengan baris confidence di atas). Interpretasi 0.40
+          // (skala tak terverifikasi / tanpa dimensi) adalah INFERRED.
+          status: source.scaleVerified && confidenceScore >= 0.85 ? 'VERIFIED' : 'INFERRED',
           provider: 'LOCAL_PARSER',
           model: 'EZRAB_AI_INTERPRETATION_ENGINE',
           calculator: 'EZRAB_DETERMINISTIC_ENGINE',
@@ -1610,7 +1674,19 @@ export class DedToRabPipelineService {
           extractedText: dims.rawSnippets.join(', ') || det.description,
           basis: `Dimensi diekstrak dari ${source.sourceName}, dihitung deterministik oleh EZRAB engine.`,
           confidence,
-          status: status === 'CONFLICT' ? 'CONFLICT' : 'VERIFIED',
+          // H-06 (Fast Track Continuation 2026-11-24, directive §7 — never
+          // fabricate verification status): cerminkan aturan situs pertama
+          // (:1289) — VERIFIED hanya bila skala terverifikasi DAN confidence
+          // HIGH (ambang yang sama dengan confidenceScore >= 0.85 di jalur
+          // pertama; HIGH di sini sudah mensyaratkan skala terverifikasi,
+          // kuantitas ada, padanan EXACT resmi, dan harga ditemukan — lihat
+          // derivasi confidence di atas). Sebelumnya semua evidence
+          // non-CONFLICT dilabel VERIFIED walau status itemnya sendiri
+          // DERIVED/ESTIMATED/NOT_FOUND dan confidence-nya MEDIUM/LOW —
+          // klaim verifikasi tanpa bukti, bertentangan dengan aturan
+          // promosi auto-fill (:2008: kuantitas hasil kalkulasi sengaja
+          // DERIVED, bukan VERIFIED). CONFLICT dipertahankan apa adanya.
+          status: status === 'CONFLICT' ? 'CONFLICT' : source.scaleVerified && confidence === 'HIGH' ? 'VERIFIED' : 'INFERRED',
           provider: providerUsedInPipeline,
           model: modelUsedInPipeline,
           calculator: 'EZRAB_DETERMINISTIC_ENGINE',
@@ -1645,15 +1721,13 @@ export class DedToRabPipelineService {
               ? PrecisionEngine.applyPolicy(PrecisionEngine.multiply(quantity, priceRes.unitPrice), 'INTEGER_ROUND')
               : null,
           priceSource: priceRes,
-          // W7 FU2: item yang gerbang satuannya menolak ditandai
-          // PRICE_INCOMPLETE (UNIT_MISMATCH) — harga belum dapat
-          // ditentukan karena satuannya tidak cocok, bukan karena tidak
-          // ada AHSP. priceProvenance dibiarkan kosong untuk item
-          // tersebut agar tidak berlabel OFFICIAL_AHSP tanpa harga.
+          // W7 FU2 + §7 (lihat derivePriceProvenance di atas): item yang
+          // gerbang satuannya menolak (PRICE_INCOMPLETE) atau yang TANPA
+          // harga apa pun tidak membawa provenance — fallback lama melabel
+          // item non-custom tanpa harga 'OFFICIAL_AHSP' (provenance tanpa
+          // harga = klaim tanpa bukti).
           priceStatus: ahspRes.unitMismatch ? 'PRICE_INCOMPLETE' : undefined,
-          priceProvenance: ahspRes.unitMismatch
-            ? undefined
-            : priceRes.valueSourceType || (isCustomItem ? 'AI_ESTIMATE' : 'OFFICIAL_AHSP'),
+          priceProvenance: derivePriceProvenance(ahspRes.unitMismatch, priceRes, isCustomItem),
           conflictDetails,
           originalAiValue: {
             name: itemName,
@@ -1972,9 +2046,20 @@ export class DedToRabPipelineService {
         if (wi.isCustomItem || wi.priceProvenance === 'AI_ESTIMATE') {
           wi.status = 'NEEDS_REVIEW';
           wi.confidence = 'MEDIUM';
-        } else if (wi.quantity && wi.unitPrice && wi.ahspCode && wi.status !== 'CONFLICT') {
+        } else if (
+          // H-06 (Fast Track 2026-11-24): kelengkapan (kuantitas + harga
+          // + kode) BUKAN verifikasi. Promosi ke VERIFIED hanya bila
+          // pemeriksaan pipeline sendiri sudah lolos: confidence HIGH
+          // (mensyaratkan skala terverifikasi + padanan EXACT resmi +
+          // harga ditemukan), satuan ada, dan status bukan DERIVED
+          // (kuantitas hasil kalkulasi sengaja DERIVED, bukan VERIFIED).
+          // Confidence tidak lagi dipaksa HIGH — ia milik pemeriksaan
+          // pipeline, bukan milik pengisi otomatis.
+          wi.quantity && wi.unitPrice && wi.ahspCode && wi.unit &&
+          wi.status !== 'CONFLICT' && wi.status !== 'DERIVED' &&
+          wi.confidence === 'HIGH'
+        ) {
           wi.status = 'VERIFIED';
-          wi.confidence = 'HIGH';
         }
       }
     }

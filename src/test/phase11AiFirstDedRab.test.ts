@@ -266,7 +266,10 @@ describe('PHASE 11 [2] — DETERMINISTIC QTO & LATEST AHSP RESOLUTION', () => {
 
   it('9. Latest AHSP resolution order: Official -> Project -> Company -> Ref -> Custom', () => {
     // 1. Official match
-    const officialRes = dedToRabPipelineService.resolveLatestAHSP('Beton mutu K-250', 'K-250');
+    // WB-03 (Fast Track): fixture K-250 diganti fc 20 — tidak ada item
+    // berkode K-250 di katalog (notasi katalog adalah f'c), sehingga
+    // K-250 kini AI_CUSTOM (kecocokan palsu 'k250' ⊂ 'jarak 250' dihapus).
+    const officialRes = dedToRabPipelineService.resolveLatestAHSP('Beton kolom', 'fc 20');
     assert.equal(officialRes.sourceType, 'OFFICIAL_AHSP');
     assert.equal(officialRes.version.includes('PUPR 2026') || officialRes.version.includes('Standar'), true);
 
@@ -300,10 +303,26 @@ describe('PHASE 11 [2] — DETERMINISTIC QTO & LATEST AHSP RESOLUTION', () => {
   });
 
   it('10. Exact AHSP match: maps exact specification and terms with EXACT_MATCH', () => {
-    const res = dedToRabPipelineService.resolveLatestAHSP('Pekerjaan beton mutu K-250', 'K-250', 'm³');
+    // WB-03 (Fast Track): fixture K-250 diganti fc 20 (token spec asli
+    // katalog) + pin negatif K-250 (tidak lagi EXACT_MATCH).
+    const res = dedToRabPipelineService.resolveLatestAHSP('Beton kolom', 'fc 20', 'm³');
     assert.equal(res.matchStatus, 'EXACT_MATCH');
     assert.equal(res.sourceType, 'OFFICIAL_AHSP');
     assert.ok(res.ahspCode);
+
+    // FTC (2026-11-24): pin negatif K-250 direvisi — FT berasumsi
+    // "tanpa padanan resmi" (NOT_FOUND/AI_CUSTOM), padahal itu artefak
+    // bug satuan (m³ tidak pernah sama dengan m3 katalog sehingga
+    // bonus +15 hilang dan skor jatuh < 40). Dengan satuan
+    // ternormalisasi, kueri ini cocok SEMANTIK ke item beton per-m³
+    // resmi (A.3.04.1a.1, skor 45) — SEMANTIC, bukan EXACT, karena
+    // mutu K-250 tidak token-match teks katalog mana pun. Inti WB-03
+    // yang dipertahankan: TIDAK PERNAH EXACT_MATCH, dan TIDAK PERNAH
+    // ke kecocokan palsu per-batang A.3.05.4c.1.
+    const k250 = dedToRabPipelineService.resolveLatestAHSP('Pekerjaan beton mutu K-250', 'K-250', 'm³');
+    assert.equal(k250.matchStatus, 'SEMANTIC_MATCH');
+    assert.equal(k250.sourceType, 'OFFICIAL_AHSP');
+    assert.notEqual(k250.ahspCode, 'A.3.05.4c.1');
   });
 
   it('11. Semantic AHSP match: marks general category match as SEMANTIC_MATCH for special finishes', () => {

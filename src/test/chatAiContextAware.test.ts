@@ -39,10 +39,11 @@ const projCtx: ChatActionContext = {
   const r = routeIntent('/template');
   assert(r.intent === 'OPEN_TEMPLATE' && r.confidence === 1, '3: /template → OPEN_TEMPLATE');
 }
-// 4. "buka template rab" → intent yang sama
+// 4. "buka template rab" → AI (§4.1, directive P1 2026-11-24 / OD-1:
+// navigasi bahasa alami DIHAPUS; dulu OPEN_TEMPLATE, kini UNKNOWN ke AI)
 {
   const r = routeIntent('buka template rab');
-  assert(r.intent === 'OPEN_TEMPLATE', '4: natural language → same intent');
+  assert(r.intent === 'UNKNOWN' && !r.localOnly, '4: natural language nav → AI (§4.1 slash-only)');
 }
 // 5. ambigu → klarifikasi (unknown slash)
 {
@@ -126,10 +127,10 @@ const projCtx: ChatActionContext = {
   assert(r.intent === 'UNKNOWN', '20: non-navigation "template" question not hijacked');
 }
 
-// Bonus: variasi informal
+// Bonus: variasi informal (§4.1: bahasa alami tidak menavigasi — ke AI)
 {
-  assert(routeIntent('bukain template rab dong').intent === 'OPEN_TEMPLATE', 'bonus: informal variant');
-  assert(routeIntent('Buka QTO').intent === 'OPEN_QTO', 'bonus: case-insensitive');
+  assert(routeIntent('bukain template rab dong').intent === 'UNKNOWN', 'bonus: informal variant → AI (§4.1)');
+  assert(routeIntent('Buka QTO').intent === 'UNKNOWN', 'bonus: case-insensitive → AI (§4.1)');
 }
 
 // Regresi bug keyword AHSP: "cari ahsp pondasi batu kali" harus ekstrak

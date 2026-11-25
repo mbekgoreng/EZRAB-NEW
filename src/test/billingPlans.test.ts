@@ -6,7 +6,7 @@
 // Gaya harness sama seperti suite src/test lainnya (plain, tanpa vitest).
 // Jalankan dari root repo:
 //   npx --yes esbuild src/test/billingPlans.test.ts --bundle --platform=node --format=cjs --outfile=/tmp/billing-plans.cjs && node /tmp/billing-plans.cjs
-import { readFileSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 import {
   PLAN_IDS,
@@ -176,14 +176,11 @@ check('FREE_INITIAL_CREDITS = 100 dari kanonis', FREE_INITIAL_CREDITS === initia
 check('Free TIDAK punya entri PLAN_CREDITS', !('free' in PLAN_CREDITS));
 
 console.log('=== Permukaan 2: landing pricing menurunkan dari kanonis ===');
-const pricingSrc = read('src/components/landing/exact/ExactPricing.tsx');
-check('ExactPricing mengimpor modul kanonis', pricingSrc.includes("from '../../../billing/plans'"));
-check('ExactPricing memakai getPlanDefinition', pricingSrc.includes('getPlanDefinition'));
-check('tidak ada harga menyimpang Rp 59.999', !pricingSrc.includes('59.999') && !pricingSrc.includes('59999'));
-check('tidak ada klaim 10/20 Proyek', !pricingSrc.includes('10 Proyek') && !pricingSrc.includes('20 Proyek'));
-check("ctaText pins tetap ('Coba Starter'/'Coba Pro')",
-  pricingSrc.includes("ctaText: 'Coba Starter'") && pricingSrc.includes("ctaText: 'Coba Pro'"));
-check('pengungkapan tahap pengujian tetap ada', pricingSrc.includes('tahap pengujian'));
+// ExactPricing.tsx DIHAPUS (keputusan owner 2026-11-24): komponen mati
+// tanpa importer yang membawa klaim promo tak terverifikasi. Cek-cek
+// Permukaan 2 yang membaca berkas itu diganti pin penghapusan ini;
+// permukaan landing yang hidup (PricingBlocks + pricingMatrix) tetap dicek.
+check('ExactPricing.tsx terhapus', !existsSync(join(root, 'src/components/landing/exact/ExactPricing.tsx')));
 const blocksSrc = read('src/components/landing/exact/PricingBlocks.tsx');
 const matrixSrc = read('src/components/landing/exact/pricingMatrix.ts');
 check('kartu Free menampilkan "kredit AI (sekali)", bukan 0/bln (Amendemen v1.2)',

@@ -128,6 +128,55 @@ describe('Kategori B — hitungan deterministik lewat routeIntent/executeIntent'
   });
 });
 
+describe('WB-01 — kalkulator multi-baris + diskon (audit §3.4)', () => {
+  it('§3.4: 100 sak @ Rp65.000 + 50 sak @ Rp75.000, diskon 15% → total Rp 8.712.500', () => {
+    const msg = ask('100 sak semen Rp65.000 + 50 sak semen Rp75.000, diskon 15% berapa totalnya?');
+    expect(msg).toContain('Rp 8.712.500');
+    expect(msg).toContain('Rp 6.500.000');
+    expect(msg).toContain('Rp 3.750.000');
+    expect(msg).toContain('Rp 1.537.500');
+    expect(msg).toContain('Rp 10.250.000');
+    expect(msg).toContain('Rp 58.083,33');
+    // Jawaban lama yang salah (15% dari harga satuan pertama) tidak boleh muncul.
+    expect(msg).not.toContain('Rp 9.750');
+  });
+
+  it('PPN satu nilai tetap jalan (tanpa regresi tryPercent)', () => {
+    // Pin langsung di evaluator: frasa telanjang "PPN 11% ..." dirutekan
+    // router ke UPDATE_PROJECT_SETTINGS oleh PROJECT_SETTINGS_PATTERNS
+    // ("PPN 11%" = perintah set tarif — perilaku router pra-ada, di luar
+    // scope WB-01; intentRouter.ts bukan file milik worker ini). Jalur
+    // CALCULATE ujung-ke-ujung untuk PPN sudah dipin B7.
+    const r = evaluateCalculation('PPN 11% dari Rp 1.000.000');
+    expect(r).not.toBeNull();
+    expect(r!.message).toContain('Rp 110.000');
+    expect(r!.message).toContain('Rp 1.110.000');
+  });
+
+  it('dua baris tanpa diskon → total kotor benar', () => {
+    const msg = ask('Beli 20 sak semen Rp65.000 dan 10 sak semen Rp75.000, berapa totalnya?');
+    expect(msg).toContain('Rp 2.050.000');
+    expect(msg).toContain('Rp 1.300.000');
+    expect(msg).toContain('Rp 750.000');
+  });
+
+  it('satu baris + diskon → subtotal − diskon = total akhir', () => {
+    const msg = ask('100 sak semen Rp65.000 diskon 10%, berapa total bayarnya?');
+    expect(msg).toContain('Rp 6.500.000');
+    expect(msg).toContain('Rp 650.000');
+    expect(msg).toContain('Rp 5.850.000');
+  });
+
+  it('satu baris qty × harga via trySubtotal, satuan sak/zak (WB-01)', () => {
+    expect(ask('100 sak semen harga Rp65.000, berapa total harga?')).toContain('Rp 6.500.000');
+    expect(ask('50 zak semen harga Rp70.000, berapa total harga?')).toContain('Rp 3.500.000');
+  });
+
+  it('tryPercent menolak multi-nilai: persen atas >1 nilai uang tidak dijawab', () => {
+    expect(evaluateCalculation('15% dari Rp65.000 dan Rp75.000 berapa?')).toBeNull();
+  });
+});
+
 describe('Perbaikan tool hitung yang ada (tools.ts)', () => {
   it('luas_dinding: SATU bidang secara default — B3 lewat tool = 28,34 m²', () => {
     const out = String(runTool('luas_dinding', { panjang: 10, tinggi: 3.5, bukaan: 6.66 }));

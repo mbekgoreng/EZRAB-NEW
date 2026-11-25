@@ -144,11 +144,23 @@ test('FU2.3 m³ QTO vs per-m² AHSP (bekisting kolom) → UNIT_MISMATCH', () => 
   assert.ok(r.unitMismatch, 'unitMismatch terisi');
   eq(r.unitMismatch?.result, 'UNIT_MISMATCH', 'hasil gerbang UNIT_MISMATCH');
 });
-test('FU2.4 K-250 false-positive spec match (kolom m³ vs tiang pancang per batang) → UNIT_MISMATCH', () => {
+test('FU2.4 WB-03 (Fast Track): K-250 false-positive spec match DIHAPUS — kolom m³ tidak lagi dipetakan ke tiang pancang per batang', () => {
+  // WB-03 menghapus akar masalahnya: spec "K-250" tidak lagi cocok
+  // substring dengan "jarak 250" (A.3.05.4c.1). FU2.1–FU2.3 tetap
+  // menguji gerbang UNIT_MISMATCH pada pemetaan yang sah.
+  // FTC (2026-11-24): pin FT "tanpa padanan resmi" (AI_CUSTOM) adalah
+  // artefak bug satuan — m³ superskrip tidak pernah sama dengan m3
+  // katalog, bonus +15 hilang, skor 27 < 40. Dengan satuan
+  // ternormalisasi, kolom cocok SEMANTIK ke item kolom beton per-m³
+  // resmi (2.4.3.3) — SEMANTIC, bukan EXACT, karena mutu K-250 tidak
+  // token-match teks katalog. Inti WB-03 dipertahankan: TIDAK PERNAH
+  // ke tiang pancang per-batang A.3.05.4c.1.
   const r = dedToRabPipelineService.resolveLatestAHSP('Beton Kolom K-250', 'K-250', 'm³');
-  eq(r.ahspCode, 'A.3.05.4c.1', 'pemetaan (salah-kecocokkan spek) tetap dikembalikan apa adanya');
-  assert.ok(r.unitMismatch, 'unitMismatch terisi');
-  eq(r.unitMismatch?.candidateUnit, 'batang', 'satuan AHSP batang vs QTO m³');
+  eq(r.ahspCode?.startsWith('AI-CUSTOM-'), false, 'ada padanan resmi (bukan AI_CUSTOM)');
+  eq(r.ahspCode === 'A.3.05.4c.1', false, 'bukan kecocokan palsu A.3.05.4c.1 per batang');
+  eq(r.matchStatus, 'SEMANTIC_MATCH', 'status SEMANTIC_MATCH (mutu tidak terpetakan)');
+  eq(r.sourceType, 'OFFICIAL_AHSP', 'sumber OFFICIAL_AHSP');
+  eq(r.unitMismatch, undefined, 'gerbang satuan lolos: m³ ≡ m3');
 });
 test('FU2.5 matching unit → no flag (lantai keramik m²)', () => {
   const r = dedToRabPipelineService.resolveLatestAHSP('Pekerjaan lantai keramik', undefined, 'm²');
@@ -165,7 +177,10 @@ test('FU2.7 buah ↔ unit factor-1 synonym → no flag (box culvert per buah, QT
   eq(r.unitMismatch, undefined, 'buah↔unit sinonim hitung faktor 1 — harga dipakai apa adanya');
 });
 test('FU2.8 no QTO unit → gate not evaluable, mapping unchanged (backward compatible)', () => {
-  const r = dedToRabPipelineService.resolveLatestAHSP('Beton mutu K-250', 'K-250');
+  // WB-03: fixture K-250 lama diganti pemetaan sah — maksud tes tidak
+  // berubah: tanpa satuan QTO, gerbang tidak dapat dinilai.
+  const r = dedToRabPipelineService.resolveLatestAHSP('Pekerjaan lantai keramik');
+  eq(r.ahspCode, '3.9.7.1', 'pemetaan tetap dikembalikan');
   eq(r.sourceType, 'OFFICIAL_AHSP', 'sumber tetap resmi');
   eq(r.unitMismatch, undefined, 'tanpa satuan QTO gerbang tidak dapat dinilai');
 });
@@ -181,7 +196,17 @@ test('FU2.9 project order: m² project item vs m³ QTO → UNIT_MISMATCH; vs m²
   eq(good.unitMismatch, undefined, 'tidak ada mismatch bila satuan cocok');
 });
 
-test('FU2.10 end-to-end: kolom K-250 (m³) vs AHSP per batang → NO price, PRICE_INCOMPLETE, subtotal excludes it', async () => {
+test('FU2.10 end-to-end WB-03: kolom K-250 (m³) cocok SEMANTIK ke item kolom beton resmi, harga terselesaikan lewat gerbang satuan', async () => {
+  // WB-03 (Fast Track): kecocokan spek palsu 'k250' ⊂ 'jarak 250'
+  // dihapus — kolom K-250 tidak lagi A.3.05.4c.1 per batang +
+  // PRICE_INCOMPLETE. FT lalu memin AI_CUSTOM + tanpa harga, tetapi
+  // itu artefak bug satuan (m³ ≠ m3, bonus +15 hilang). FTC
+  // (2026-11-24) menormalisasi satuan: kolom cocok SEMANTIK ke
+  // 2.4.3.3 (Penuangan Beton untuk KOLOM, m³) dan harganya
+  // terselesaikan (gerbang lolos: m³ ≡ m3). Sifat keamanan TIDAK
+  // berubah: tidak ada harga salah-satuan — harga berasal dari item
+  // resmi dengan satuan yang sama, dan item SEMANTIK tetap
+  // needs-review (bukan VERIFIED).
   dedToRabPipelineService.resetProjectState();
   const pdf = createPdfBuffer([
     'DED Struktur Kolom S-02',
@@ -196,33 +221,76 @@ test('FU2.10 end-to-end: kolom K-250 (m³) vs AHSP per batang → NO price, PRIC
   assert.ok(kolom, 'item kolom terdeteksi');
   eq(kolom?.quantity, 3.456, 'kuantitas QTO 3.456 m³');
   eq(kolom?.unit, 'm³', 'satuan QTO m³');
-  assert.ok(kolom?.ahspCode, 'pemetaan AHSP tetap tercatat');
-  eq(kolom?.unitPrice, undefined, 'harga TIDAK diselesaikan (dulu Rp145/batang × 3.456 m³)');
-  eq(kolom?.totalPrice, null, 'totalPrice null, bukan 0 dan bukan negatif-salah');
-  eq(kolom?.priceStatus, 'PRICE_INCOMPLETE', 'status PRICE_INCOMPLETE (UNIT_MISMATCH)');
-  assert.ok(kolom?.ahspMappingReason?.includes('UNIT_MISMATCH'), 'alasan pemetaan membawa UNIT_MISMATCH');
-  assert.ok(kolom?.priceSource?.sourceDetail?.includes('UNIT_MISMATCH'), 'detail sumber harga membawa UNIT_MISMATCH');
+  assert.ok(kolom?.ahspCode && !kolom.ahspCode.startsWith('AI-CUSTOM-'), 'ada padanan resmi (bukan AI_CUSTOM)');
+  eq(kolom?.ahspCode === 'A.3.05.4c.1', false, 'bukan kecocokan palsu per batang');
+  eq(kolom?.ahspMatchStatus, 'SEMANTIC_MATCH', 'status padanan SEMANTIC_MATCH');
+  eq(kolom?.ahspSourceType, 'OFFICIAL_AHSP', 'sumber OFFICIAL_AHSP');
+  eq(kolom?.isCustomItem, false, 'bukan item custom');
+  assert.ok(kolom?.unitPrice && kolom.unitPrice > 0, 'harga diselesaikan dari item resmi per-m³ (bukan Rp145/batang)');
+  assert.ok(kolom?.totalPrice && kolom.totalPrice > 0, 'totalPrice terisi (bukan null)');
+  eq(kolom?.priceStatus, undefined, 'tanpa unitMismatch, priceStatus tidak diisi saat build');
+  assert.ok(!kolom?.ahspMappingReason?.includes('Tidak ditemukan'), 'alasan pemetaan: padanan ditemukan');
+  assert.ok(!kolom?.priceSource?.sourceDetail?.includes('Belum memiliki harga resmi'), 'detail sumber harga: harga resmi ada');
   const row = draft.rows.find((r) => r.workItemId === kolom?.id);
-  eq(row?.amount, null, 'baris draf amount null');
-  eq(draft.subtotal, 0, 'subtotal draf 0 — harga salah tidak masuk total');
-  eq(draft.grandTotal, 0, 'grand total draf 0');
-  assert.ok(draft.missingCount >= 1, 'item terhitung missing');
-  assert.ok(draft.needsReviewCount >= 1, 'item terhitung needs-review');
+  eq(row?.amount, kolom?.totalPrice, 'baris draf amount = totalPrice item');
+  assert.ok(draft.subtotal > 0, 'subtotal draf > 0 — harga jujur masuk total');
+  eq(draft.subtotal, kolom?.totalPrice, 'subtotal = totalPrice satu-satunya item');
+  eq(draft.grandTotal, draft.subtotal, 'grand total = subtotal (tanpa pajak)');
+  eq(draft.missingCount, 0, 'item berharga masuk needs-review, bukan missingCount (logika penghitung draf yang sudah ada)');
+  assert.ok(draft.needsReviewCount >= 1, 'item SEMANTIK terhitung needs-review');
   assert.ok(
-    draft.missingDataSummary.items.some((m) => m.workItemId === kolom?.id && m.missingFields.includes('Harga Satuan')),
-    'missing summary mencatat Harga Satuan hilang'
+    !draft.missingDataSummary.items.some((m) => m.workItemId === kolom?.id && m.missingFields.includes('Harga Satuan')),
+    'missing summary TIDAK lagi mencatat Harga Satuan hilang untuk kolom'
   );
 });
 
-test('FU2.11 auto-fill must NOT bypass the gate: PRICE_INCOMPLETE item stays unpriced', async () => {
-  // Draft PRJ-W7-FU2 masih di cache dari FU2.10 (proses yang sama).
-  const res = dedToRabPipelineService.autoFillMissingWithValidSources('PRJ-W7-FU2');
-  const kolom = res.updatedDraft.detectedWorkItems.find((w) => w.name.includes('Kolom'));
-  assert.ok(kolom, 'item kolom masih ada sesudah auto-fill');
-  eq(kolom?.unitPrice, undefined, 'auto-fill tidak menghargai item PRICE_INCOMPLETE');
+test('FU2.11 auto-fill must NOT bypass the gate: unpriced item stays unpriced (AI_CUSTOM, draf sintetis)', async () => {
+  // FTC (2026-11-24): kolom K-250 PRJ-W7-FU2 kini BERHARGA (FU2.10),
+  // sehingga sifat "item tanpa harga tetap tanpa harga" tidak lagi
+  // dapat diuji lewat draf itu. Sifat keamanan ini dipertahankan
+  // dengan draf sintetis berisi item AI_CUSTOM tanpa harga (pola yang
+  // sama dipakai pin H-06 auto-fill di fastTrackAhsp): auto-fill
+  // menandainya PRICE_UNRESOLVED dengan unitPrice null (Phase 2J:
+  // tidak pernah mengarang harga). Item custom dihitung "filled"
+  // (penandaan eksplisit), bukan "unresolved" — sifat keamanannya
+  // sama: tetap tanpa harga, subtotal 0.
+  const draftAf: any = {
+    projectId: 'PRJ-W7-FU2-11',
+    detectedWorkItems: [
+      {
+        id: 'wi-w7-fu2-11',
+        projectId: 'PRJ-W7-FU2-11',
+        name: 'Pekerjaan Khusus Tanpa Padanan Resmi',
+        category: 'Pekerjaan Khusus',
+        quantity: 1,
+        unit: 'm3',
+        ahspCode: 'AI-CUSTOM-W7-001',
+        ahspName: 'Pekerjaan Khusus Tanpa Padanan Resmi',
+        unitPrice: undefined,
+        totalPrice: undefined,
+        status: 'NOT_FOUND',
+        confidence: 'LOW',
+        evidence: [],
+        isCustomItem: true,
+        ahspMatchStatus: 'NOT_FOUND',
+      },
+    ],
+    rows: [],
+    subtotal: 0,
+    ppnEnabled: false,
+    pphEnabled: false,
+    verifiedCount: 0,
+    needsReviewCount: 0,
+    missingCount: 0,
+  };
+  (dedToRabPipelineService as any).projectDrafts.set('PRJ-W7-FU2-11', draftAf);
+  const res = dedToRabPipelineService.autoFillMissingWithValidSources('PRJ-W7-FU2-11');
+  const kolom = res.updatedDraft.detectedWorkItems.find((w) => w.id === 'wi-w7-fu2-11');
+  assert.ok(kolom, 'item custom masih ada sesudah auto-fill');
+  eq(kolom?.unitPrice, null, 'auto-fill tidak menghargai item tanpa padanan resmi');
   eq(kolom?.totalPrice, null, 'totalPrice tetap null sesudah auto-fill');
-  eq(kolom?.priceStatus, 'PRICE_INCOMPLETE', 'status tetap PRICE_INCOMPLETE');
-  assert.ok(res.unresolvedCount >= 1, 'auto-fill menghitung item sebagai unresolved');
+  eq(kolom?.priceStatus, 'PRICE_UNRESOLVED', 'status PRICE_UNRESOLVED');
+  eq(kolom?.status, 'NEEDS_REVIEW', 'status NEEDS_REVIEW (bukan VERIFIED — H-06)');
   eq(res.updatedDraft.subtotal, 0, 'subtotal tetap 0 sesudah auto-fill');
 });
 

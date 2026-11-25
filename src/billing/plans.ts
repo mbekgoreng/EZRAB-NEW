@@ -9,7 +9,8 @@
  * TIDAK ada penegakan/gating di sini dan belum ada permukaan fitur yang
  * wajib mematuhinya — penegakan per fitur adalah fase-fase berikutnya.
  * Permukaan yang sudah membaca dari sini: landing pricing
- * (ExactPricing.tsx), konfigurasi kredit AI (src/ai-credits/config.ts),
+ * (PricingBlocks.tsx / PricingSection.tsx), konfigurasi kredit AI
+ * (src/ai-credits/config.ts),
  * dan tab Paket & Billing Pengaturan (UnifiedSettingsView.tsx).
  *
  * Aturan main:

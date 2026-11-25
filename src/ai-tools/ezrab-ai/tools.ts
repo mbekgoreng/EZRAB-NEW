@@ -8,7 +8,6 @@
 import { aiToolsError, AIToolsStructuredError } from '../types';
 import { officialAhspRepository } from '../../data/nationalCostDatabase/officialAhspRepository';
 import { priceResolver2026 } from '../../data/priceDatabase2026/resolver';
-import { ahspChatPriceSuffix } from './ahspChatPrice';
 import { searchChatAhsp, formatChatAhspResult } from './chatSearch';
 import { searchWithOutcome, formatKnowledgeContext } from './constructionRetrieval';
 import { searchProductWithOutcome, formatProductContext } from './productRetrieval';
@@ -380,17 +379,23 @@ export const EZRAB_AI_TOOLS: EzrabAiToolDef[] = [
           // dimensi), BUKAN instruksi untuk model lain. Instruksi internal
           // yang bocor ke bubble adalah bug, bukan perilaku model.
           const rawQ = String(args.kata_kunci ?? args.query ?? '').trim();
+          // WB-12 (Fast Track 2026-11-24): fallback dirutekan lewat
+          // searchChatAhsp (punya gerbang N1/N2 + ambang relevansi),
+          // bukan searchOfficialAhsp mentah. Judul draf + pertanyaan
+          // dimensi diturunkan dari kueri — sebelumnya SEMUA kueri tanpa
+          // template disajikan sebagai "Draf RAB — Jalan / Perkerasan
+          // Paving Block" dengan pertanyaan tebal paving.
           let hits: any[] = [];
           try {
-            hits = officialAhspRepository.searchOfficialAhsp(rawQ, { limit: 8 });
+            const chatRes = searchChatAhsp(rawQ);
+            if (chatRes.outcome !== 'NOT_FOUND') hits = chatRes.items;
           } catch {
             hits = [];
           }
           if (hits.length > 0) {
             const rows = hits.map((h, i) => {
-              const it: any = h.item;
-              const title = it.title ?? it.name ?? '-';
-              const price = ahspChatPriceSuffix(it);
+              const title = h.title ?? '-';
+              const price = h.priceSuffix ?? '';
               // Suffix berbentuk " — Rp X (status)"; untuk yang belum
               // tersedia bentuknya " — harga belum tersedia (lihat analisa
               // komponen)" — statusnya harus "harga belum tersedia", bukan
@@ -404,15 +409,15 @@ export const EZRAB_AI_TOOLS: EzrabAiToolDef[] = [
                   status = m[2];
                 }
               }
-              return `| ${i + 1} | [${it.code ?? '-'}] ${title} | — | ${it.unit ?? '—'} | ${unitPrice} | — | ${status} |`;
+              return `| ${i + 1} | [${h.code ?? '-'}] ${title} | — | ${h.unit ?? '—'} | ${unitPrice} | — | ${status} |`;
             }).join('\n');
             return (
-              `Draf RAB — Jalan / Perkerasan Paving Block (tidak ada template RAB yang cocok untuk "${q}"; disusun dari item AHSP 2026):\n\n` +
+              `Draf RAB — ${rawQ} (tidak ada template RAB yang cocok untuk "${q}"; disusun dari item AHSP 2026):\n\n` +
               '| No | Uraian Pekerjaan | Volume | Satuan | Harga Satuan | Jumlah Harga | Status Harga |\n' +
               '|---|---|---|---|---|---|---|\n' +
               `${rows}\n\n` +
-              'Volume dan jumlah harga belum bisa dihitung karena dimensi jalan belum ada. Berapa panjang dan lebar jalan yang akan dipasang paving? (Sebutkan juga tebal paving yang dipilih: 6 cm atau 8 cm.)\n\n' +
-              'Catatan: draf ini baru mencakup item pemasangan paving yang cocok; pekerjaan persiapan, galian, timbunan, lapis pondasi, dan finishing belum termasuk. ' +
+              'Volume dan jumlah harga belum bisa dihitung karena dimensinya belum ada. Sebutkan ukuran/dimensi pekerjaan yang dimaksud (panjang, lebar, tinggi, atau jumlahnya) agar volume bisa dihitung.\n\n' +
+              'Catatan: draf ini baru mencakup item AHSP yang cocok dengan kata kunci; pekerjaan persiapan, pekerjaan pendukung, dan finishing belum termasuk. ' +
               'Harga di atas berasal dari tool AHSP; item yang belum ada harganya ditulis "harga belum tersedia", bukan Rp0.'
             );
           }

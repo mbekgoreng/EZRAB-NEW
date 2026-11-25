@@ -94,6 +94,27 @@ export interface ProjectSettingsPattern {
   paramGroup?: boolean;
   /** false = intent flows to AI instead of local execution (default true) */
   localOnly?: boolean;
+  /** Penjaga opsional (cermin Pattern.guard di intentRouter.ts): false = pola dilewati. */
+  guard?: (param: string | undefined, input: string, match: RegExpMatchArray) => boolean;
+}
+
+/**
+ * Penjaga pola telanjang (#3, WB-01 follow-up): "PPN 11% dari Rp 1.000.000"
+ * adalah PERTANYAAN hitungan (persen dari suatu jumlah), bukan perintah
+ * "set PPN jadi 11%". Tanpa penjaga ini, pola telanjang cocok di mana saja
+ * (.* menelan sisanya) dan pertanyaan hitungan salah rute menjadi mutasi
+ * pengaturan proyek. Pola ber-kata-kerja (#1/#2/#4) tidak memakai penjaga
+ * ini — kata kerja sudah menandai perintah ("ubah ppn dari 10% jadi 11%"
+ * tetap perintah: "dari" di sana mendahului persen, bukan mengikutinya).
+ */
+function settingsBareFormGuard(
+  _param: string | undefined,
+  input: string,
+  _match: RegExpMatchArray,
+): boolean {
+  if (/\bberapa\b/i.test(input)) return false;
+  if (/%\s*dari\b/i.test(input)) return false;
+  return true;
 }
 
 // ---- Pola router (diterapkan pada teks ternormalisasi huruf kecil) ----
@@ -135,6 +156,7 @@ export const PROJECT_SETTINGS_PATTERNS: ProjectSettingsPattern[] = [
     intent: 'UPDATE_PROJECT_SETTINGS',
     re: new RegExp(`\\b(${SETTINGS_FIELDS}\\b\\s*${SETTINGS_NUMBER}\\s*%.*)`),
     paramGroup: true,
+    guard: settingsBareFormGuard,
   },
   // 4. Kata kerja + field TANPA nilai (dijangkar ke akhir pesan) → router
   //    menjawab prompt klarifikasi, bukan UNKNOWN ke LLM: "ubah overhead",

@@ -124,8 +124,12 @@ async function main(): Promise<void> {
   const tp = await import(`${R}/tempProject`);
 
   // ---------------- Store proyek palsu + ensurer tiruan (hint-aware) ----------------
-  // Model setia ensureDraftProject view.tsx:1539 PASCA-S3-C: petunjuk scope
-  // (F4) mengalahkan proyek live; tanpa petunjuk → perilaku B5-3 persis.
+  // Model setia ensureDraftProject view.tsx PASCA-S3-C + §4.5 (Fast
+  // Track §3(g)): petunjuk scope (F4) mengalahkan proyek live; tanpa
+  // petunjuk → proyek live bila ada, else null. TIDAK PERNAH membuat
+  // proyek (§4.5) — pembuatan eksplisit dimodelkan terpisah di
+  // createProjectMidFlight (cermin createProjectForUnboundTransfer
+  // view.tsx, aliran push tak-terikat §4.5).
   interface FakeProject { id: string; name: string; status: string; creationMethod?: string; description?: string }
   const fakeStore = {
     projects: [] as FakeProject[],
@@ -247,7 +251,10 @@ async function main(): Promise<void> {
     return { saved: res.ok, draftId: d.id, projectId: capturedEffProjectId, conversationIdUsed: conversationId ?? view.convIdRef, error: res.ok ? null : (res as { error?: string }).error };
   };
 
-  // Ensurer tiruan — model setia ensureDraftProject view.tsx:1539 (F4).
+  // Ensurer tiruan — model setia ensureDraftProject view.tsx PASCA-§4.5
+  // (F4): petunjuk scope mengalahkan proyek live; tanpa petunjuk →
+  // proyek live bila ada, else null (draft tak terikat). TIDAK PERNAH
+  // membuat proyek, TIDAK mencatat migrasi, TIDAK menyimpan draft.
   const fakeEnsurer = (draft: { title: string }, preferredProjectId?: string | null) => {
     ensurerCalls.push({ preferredProjectId: preferredProjectId ?? null, liveProjectAtCall: view.liveProjectRef?.id ?? null, draftTitle: draft.title });
     if (preferredProjectId) {
@@ -257,11 +264,22 @@ async function main(): Promise<void> {
     }
     const live = view.liveProjectRef;
     if (live) return { id: live.id, name: live.name, created: false };
+    return null;
+  };
+
+  // Pembuatan proyek eksplisit di tengah penerbangan — model setia
+  // createProjectForUnboundTransfer view.tsx (aliran push tak-terikat
+  // §4.5: klik "Buat proyek & konfirmasi transfer" ADALAH konfirmasi
+  // eksplisitnya). Dipakai S3C-12/13 sebagai pemicu migrasi global→
+  // proyek — peran yang DULU dipegang ensurer B5-3 (yang membuat
+  // proyek sementara secara implisit). Satu-satunya jalur §4.5 bagi
+  // proyek untuk muncul di tengah penerbangan.
+  const createProjectMidFlight = (draftTitle: string) => {
     const created = fakeStore.create({
-      name: tp.tempProjectNameForDraft(draft.title),
+      name: tp.tempProjectNameForDraft(draftTitle),
       status: 'draft',
       creationMethod: tp.TEMP_PROJECT_CREATION_METHOD,
-      description: tp.tempProjectDescriptionForDraft(draft.title),
+      description: tp.tempProjectDescriptionForDraft(draftTitle),
     });
     if (view.convIdRef) {
       view.pendingConversationMigrationRef = {
@@ -271,16 +289,7 @@ async function main(): Promise<void> {
       };
     }
     view.skipIntakeRestoreForRef = created.id;
-    if ('parts' in draft && 'id' in draft) {
-      try {
-        const res = dp.saveDraft({
-          draft: draft as never, projectId: created.id,
-          conversationId: view.convIdRef, workflowStage: 'autosave', savedBy: 'autosave',
-        });
-        if (res.ok) view.draftUpdatedAtRef = res.updatedAt;
-      } catch { /* persist gagal — autosave berikutnya mencoba lagi */ }
-    }
-    return { id: created.id, name: created.name, created: true };
+    return created;
   };
 
   // Efek muat-percakapan view.tsx:870-920 PASCA-S3-C (migrasi + peta).
@@ -884,7 +893,7 @@ async function main(): Promise<void> {
       toolName: 'build_universal_draft',
       args: { text: JALAN_TEXT },
       projectId: 'PRJ-S3C-A-10',
-      actor: 'model',
+      actor: 'system', // WC-03 (P1): build_universal_draft tidak model-callable — jalur orkestrator.
       channel: 'chat-ai',
       idempotencyKey: 's3c-10',
     });
@@ -916,7 +925,7 @@ async function main(): Promise<void> {
       toolName: 'build_universal_draft',
       args: { text: JALAN_TEXT },
       projectId: 'PRJ-DELETED',
-      actor: 'model',
+      actor: 'system', // WC-03 (P1): build_universal_draft tidak model-callable — jalur orkestrator.
       channel: 'chat-ai',
       idempotencyKey: 's3c-11',
     });
@@ -938,11 +947,12 @@ async function main(): Promise<void> {
     assert(longPrompt.length === 10525, `prompt panjang 10.525 karakter (dapat ${longPrompt.length})`);
     const p = submitLlm(longPrompt, { delayMs: 400, reply: 'JAWABAN-TEMP-12' });
     await sleep(60);
-    // Di tengah penerbangan: draft pertama berhasil → ensurer B5-3
-    // membuat proyek sementara (tanpa petunjuk = jalur chat-draft).
-    const ensured = fakeEnsurer({ title: 'RAB Jalan Beton' });
-    assert(ensured.created === true, 'proyek sementara dibuat');
-    const tempId = ensured.id;
+    // Di tengah penerbangan: user mengonfirmasi pembuatan proyek
+    // (aliran push tak-terikat §4.5 — SATU-SATUNYA jalur proyek baru
+    // muncul di tengah penerbangan; ensurer tidak pernah membuat).
+    const created = createProjectMidFlight('RAB Jalan Beton');
+    assert(view.pendingConversationMigrationRef?.toProjectId === created.id, 'migrasi percakapan tercatat ke proyek baru');
+    const tempId = created.id;
     switchProject(tempId); // efek muat mengonsumsi migrasi + mencatat peta
     assert(view.migratedConversationRef.has(convGlobal), 'peta migrasi mencatat global→temp');
     const res = await p;
@@ -974,8 +984,9 @@ async function main(): Promise<void> {
     const convGlobal = view.convIdRef as string;
     const p = submitLlm('Pertanyaan global lalu pindah', { delayMs: 400, reply: 'JAWABAN-TEMP-13' });
     await sleep(60);
-    const ensured = fakeEnsurer({ title: 'RAB Jalan Beton' });
-    const tempId = ensured.id;
+    // §4.5: proyek muncul lewat pembuatan eksplisit (bukan ensurer).
+    const created = createProjectMidFlight('RAB Jalan Beton');
+    const tempId = created.id;
     switchProject(tempId); // migrasi dikonsumsi
     await sleep(30);
     switchProject('PRJ-S3C-B-13'); // lalu pindah ke B sebelum resolve

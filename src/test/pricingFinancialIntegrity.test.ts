@@ -57,6 +57,7 @@ import {
   draftReadiness,
   isPriceValidForTotal,
   setLastUniversalDraft,
+  getLastUniversalDraft,
   transferPriceStatus,
   type UniversalDraft,
   type UniversalPushPayloadItem,
@@ -76,6 +77,7 @@ import {
 } from '../ai-tools/ezrab-ai/directRabPush';
 import {
   executeBudgetFullAiRab,
+  acceptFullAiCompletion,
   type ChatActionContext,
 } from '../ai-tools/ezrab-ai/actionRegistry';
 import type { ChatRabCompletionDeps } from '../ai-tools/ezrab-ai/fullAiRabCompletion';
@@ -392,8 +394,24 @@ async function main(): Promise<void> {
       // Harga tidak ada = field ABSEN (bukan 0 — sentinel-0 bukan harga).
       assert.equal(beforeKloset!.unitPrice, undefined);
     });
-    check('B1c sebelum completion: TIDAK ADA item ber-provenance AI', () => {
-      assert.ok(before.every((i) => i.priceSourceKind === undefined));
+    check('B1c sebelum completion: TIDAK ADA item ber-provenance AI; OFFICIAL membawa OFFICIAL_AHSP + VERIFIED (H-09)', () => {
+      assert.ok(before.every((i) => i.priceSourceKind !== 'EZRAB_ASSUMPTION'), 'tanpa completion, tidak boleh ada kind EZRAB_ASSUMPTION');
+      assert.ok(before.every((i) => i.priceSourceLabel === undefined), 'tanpa completion, tidak boleh ada label asumsi AI');
+      // H-09: harga engine OFFICIAL membawa provenance resmi + status
+      // verifikasi eksplisit hasil kontrak S2 (bukan warisan default
+      // factory); estimasi tetap NEEDS_VERIFICATION.
+      const resolved = before.filter((i) => i.priceStatus === 'PRICE_RESOLVED');
+      assert.ok(resolved.length > 0, 'prasyarat: T70 punya item OFFICIAL');
+      assert.ok(resolved.every((i) => i.priceSourceKind === 'OFFICIAL_AHSP'), 'item RESOLVED harus berkind OFFICIAL_AHSP');
+      assert.ok(resolved.every((i) => i.verificationStatus === 'VERIFIED'), 'item RESOLVED berbukti harus VERIFIED (kontrak S2)');
+      assert.ok(
+        before.filter((i) => i.priceStatus === 'PRICE_ESTIMATED').every((i) => i.verificationStatus === 'NEEDS_VERIFICATION'),
+        'item ESTIMATED harus NEEDS_VERIFICATION',
+      );
+      assert.ok(
+        before.filter((i) => i.priceStatus === 'PRICE_UNRESOLVED').every((i) => i.verificationStatus === 'NEEDS_VERIFICATION'),
+        'item UNRESOLVED harus NEEDS_VERIFICATION (kontrak S2, eksplisit)',
+      );
     });
     const previewBefore = buildDirectPushPreview(direct, new Set<string>());
     eq('B1d preview sebelum: aiFillCount 0', previewBefore.aiFillCount, 0);
@@ -409,6 +427,16 @@ async function main(): Promise<void> {
     check('B2a completion direct sukses (stub)', () => {
       assert.equal(res.ok, true, res.message.slice(0, 200));
       assert.ok(res.message.includes('Lengkapi dengan Full AI'), res.message.slice(0, 200));
+    });
+    // Fast Track (P1-08 penuh): completion hanya PRATINJAU — isian
+    // menempel ke hasil live HANYA sesudah "Terima lengkapan".
+    const beforeAccept = getLastDirectRab();
+    check('B2a2 fullAiCompletion BELUM terset sebelum terima', () => {
+      assert.ok(beforeAccept !== null && !beforeAccept.fullAiCompletion, 'pratinjau tidak boleh menyentuh hasil live');
+    });
+    const accept = acceptFullAiCompletion('direct');
+    check('B2a3 terima lengkapan direct berhasil', () => {
+      assert.equal(accept.ok, true, accept.message.slice(0, 200));
     });
     const completed = getLastDirectRab();
     assert.ok(completed !== null && completed.fullAiCompletion, 'fullAiCompletion tidak terisi');
@@ -550,12 +578,13 @@ async function main(): Promise<void> {
       assert.equal(b!.volume, 8);
       assert.equal(b!.unitPrice, 20_000);
     });
-    check('B8 harga engine ASLI tidak pernah ditimpa isian (C: tetap Rp100.000 RESOLVED)', () => {
+    check('B8 harga engine ASLI tidak pernah ditimpa isian (C: tetap Rp100.000 RESOLVED + OFFICIAL_AHSP + VERIFIED, H-09)', () => {
       const c = payload.find((i) => i.description === 'Item C');
       assert.ok(c, 'Item C hilang');
       assert.equal(c!.unitPrice, 100_000);
       assert.equal(c!.priceStatus, 'PRICE_RESOLVED');
-      assert.equal(c!.priceSourceKind, undefined);
+      assert.equal(c!.priceSourceKind, 'OFFICIAL_AHSP');
+      assert.equal(c!.verificationStatus, 'VERIFIED');
       assert.equal(c!.priceSourceLabel, undefined);
     });
     check('B9 tanpa completion, item qty 0 tetap dilewati (perilaku lama)', () => {
@@ -583,9 +612,18 @@ async function main(): Promise<void> {
       assert.equal(res.ok, true, res.message.slice(0, 200));
       assert.ok(res.message.includes('Lengkapi dengan Full AI'), res.message.slice(0, 200));
     });
-    // Write-back memutasi objek draft yang sama (pola §4
-    // chatBudgetRabFullAi) — `draft` kini membawa isian.
-    const done = draft;
+    // Fast Track (P1-08 penuh): completion hanya PRATINJAU — isian
+    // menempel ke draft live HANYA sesudah "Terima lengkapan"
+    // (accept menukar singleton dengan klon terisi).
+    check('C1a2 draft live BELUM berubah sebelum terima', () => {
+      assert.equal(effectiveItems(draft).filter((i) => i.priceSourceKind === 'EZRAB_ASSUMPTION').length, 0);
+    });
+    const accept = acceptFullAiCompletion('universal');
+    check('C1a3 terima lengkapan universal berhasil', () => {
+      assert.equal(accept.ok, true, accept.message.slice(0, 200));
+    });
+    const done = getLastUniversalDraft()!;
+    assert.ok(done !== null, 'draft live hilang sesudah terima');
     const eff = effectiveItems(done);
     const filled = eff.filter((i) => i.priceSourceKind === 'EZRAB_ASSUMPTION');
     eq('C1b dua item terisi sebagai EZRAB_ASSUMPTION', filled.length, 2);
@@ -921,7 +959,10 @@ async function main3(): Promise<void> {
       deps: makeStub(),
     });
     assert.equal(res.ok, true, res.message.slice(0, 200));
-    const done = draft;
+    // Fast Track (P1-08 penuh): isian menempel HANYA sesudah terima.
+    const acceptE = acceptFullAiCompletion('universal');
+    assert.equal(acceptE.ok, true, acceptE.message.slice(0, 200));
+    const done = getLastUniversalDraft()!;
     const payload = buildPushPayload(done, 'p1');
     const records = payload.map((p) => createRabItemRecord(p as UniversalPushPayloadItem, 'p1', 0));
     const project = {
@@ -1041,7 +1082,11 @@ async function main3(): Promise<void> {
       deps: makeStub(),
     });
     assert.equal(res.ok, true, res.message.slice(0, 200));
-    const payload = buildPushPayload(draft, 'p1');
+    // Fast Track (P1-08 penuh): isian menempel HANYA sesudah terima.
+    const acceptF = acceptFullAiCompletion('universal');
+    assert.equal(acceptF.ok, true, acceptF.message.slice(0, 200));
+    const doneF = getLastUniversalDraft()!;
+    const payload = buildPushPayload(doneF, 'p1');
     const records = payload.map((p) => createRabItemRecord(p as UniversalPushPayloadItem, 'p1', 0));
     const project = {
       id: 'p1', name: 'Proyek Uji B4', currentVersion: 'Rev 01',
@@ -1200,12 +1245,25 @@ async function main3(): Promise<void> {
   /* ================================================================ */
   section('H', 'Pin regresi');
   {
-    check('H1 tanpa completion: mapper + preview byte-identical dengan perilaku lama', () => {
+    check('H1 tanpa completion: tanpa provenance AI; OFFICIAL membawa OFFICIAL_AHSP + VERIFIED (H-09)', () => {
       const r = buildDirectRab('buatkan rab rumah type 36');
       assert.ok(r !== null);
       const payload = mapDirectRabPushItems(r!);
-      assert.ok(payload.every((i) => i.priceSourceKind === undefined));
+      // Tanpa completion: TIDAK ADA provenance AI (kind/label asumsi).
+      assert.ok(payload.every((i) => i.priceSourceKind !== 'EZRAB_ASSUMPTION'));
       assert.ok(payload.every((i) => i.priceSourceLabel === undefined));
+      // H-09: harga engine OFFICIAL membawa kind resmi + verifikasi
+      // eksplisit kontrak S2 (versi lama pin ini melarang kind apa pun
+      // — itulah cacat H-09: RESOLVED tanpa bukti + VERIFIED warisan
+      // default factory).
+      const resolved = payload.filter((i) => i.priceStatus === 'PRICE_RESOLVED');
+      assert.ok(resolved.length > 0, 'prasyarat: T36 punya item OFFICIAL');
+      assert.ok(resolved.every((i) => i.priceSourceKind === 'OFFICIAL_AHSP'));
+      assert.ok(resolved.every((i) => i.verificationStatus === 'VERIFIED'));
+      assert.ok(
+        payload.filter((i) => i.priceStatus !== 'PRICE_RESOLVED').every((i) => i.verificationStatus === 'NEEDS_VERIFICATION'),
+        'item non-RESOLVED harus NEEDS_VERIFICATION',
+      );
       const preview = buildDirectPushPreview(r!, new Set<string>());
       assert.equal(preview.aiFillCount, 0);
       const msg = formatDirectPushPreviewMessage(r!, preview, 'P');

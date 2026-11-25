@@ -16,6 +16,20 @@
  * Tidak ada harga yang dikarang di sini — hanya yang sudah dihitung
  * mesin parametrik.
  *
+ * H-09 (Fast Track, W-AUTH2): status + verifikasi di atas TIDAK LAGI
+ * diklaim langsung — keduanya dirutekan lewat kontrak transfer S2
+ * (transferPriceStatus / transferVerificationStatus dari universalRab,
+ * cermin finalizeMapping.applyTransferContract). Sebelumnya, harga
+ * engine OFFICIAL diklaim PRICE_RESOLVED TANPA priceSourceKind dan
+ * TANPA verificationStatus, sehingga record mewarisi VERIFIED dari
+ * default factory tanpa bukti apa pun (factory: status tak-eksplisit +
+ * bukan UNRESOLVED → VERIFIED). Kini item OFFICIAL membawa kind
+ * OFFICIAL_AHSP — bukti yang membuat S2 mempertahankan RESOLVED — dan
+ * verificationStatus eksplisit hasil kontrak (VERIFIED untuk RESOLVED
+ * berbukti; NEEDS_VERIFICATION untuk ESTIMATED/UNRESOLVED). Total
+ * TIDAK berubah: S2 tidak pernah memindahkan item berharga keluar
+ * total (ESTIMATED dan RESOLVED sama-sama masuk total).
+ *
  * Batch 4 (§7.2) — transfer estimasi Full AI: bila hasil membawa
  * `fullAiCompletion` (salinan calc terisi dari "Lengkapi dengan Full
  * AI"), harga isian AI IKUT ter-push — sebagai PRICE_ESTIMATED +
@@ -40,6 +54,11 @@
  */
 import type { DirectRabResult } from './directRab';
 import { formatWorkItemTitle } from './workItemTitle';
+import {
+  transferPriceStatus,
+  transferVerificationStatus,
+  type TransferPriceInput,
+} from './universalRab';
 
 export type DirectRabPushPriceStatus = 'PRICE_RESOLVED' | 'PRICE_ESTIMATED' | 'PRICE_UNRESOLVED';
 
@@ -55,11 +74,14 @@ export interface DirectRabPushItem {
   volumeSource: 'AI_GENERATED';
   ahspCode?: string;
   /**
-   * Batch 4 (§7.2) — provenance isian Full AI (HANYA terisi untuk
-   * harga isian completion: kind EZRAB_ASSUMPTION + label/penjelasan
-   * asumsi dari filledDetails; item engine TIDAK membawa ketiganya —
-   * perilaku lama dipertahankan persis). Factory meneruskan ketiganya
-   * apa adanya ke record (allowlist factory).
+   * H-09 — provenance eksplisit (kontrak S2):
+   * - harga engine OFFICIAL (PRICE_RESOLVED non-isian) → OFFICIAL_AHSP
+   *   (bukti yang membuat S2 mempertahankan RESOLVED);
+   * - harga isian Full AI → EZRAB_ASSUMPTION + label/penjelasan asumsi
+   *   dari filledDetails (HANYA untuk isian completion);
+   * - benchmark / tanpa harga → kind ABSEN (S2 menurunkannya ke
+   *   ESTIMATED / UNRESOLVED). Factory meneruskan ketiganya apa adanya
+   *   ke record (allowlist factory).
    */
   priceSourceKind?: 'OFFICIAL_AHSP' | 'MARKET_REFERENCE' | 'EZRAB_ASSUMPTION' | 'UNRESOLVED' | 'USER_MANUAL' | 'CUSTOM_COMPOSED';
   priceSourceLabel?: string;
@@ -71,6 +93,45 @@ const pushItemKey = (name: string, wbsCode?: string | null): string =>
 
 const hasValidEnginePrice = (unitPrice: unknown): unitPrice is number =>
   typeof unitPrice === 'number' && Number.isFinite(unitPrice) && unitPrice > 0;
+
+/**
+ * H-09 — Kontrak transfer S2 untuk satu item push direct (cermin
+ * finalizeMapping.applyTransferContract): status + verifikasi TIDAK
+ * diklaim langsung, melainkan diturunkan dari klaim + bukti lewat
+ * transferPriceStatus / transferVerificationStatus.
+ *
+ * - klaim RESOLVED + kind OFFICIAL_AHSP → RESOLVED + VERIFIED;
+ * - klaim ESTIMATED (benchmark / fabricated / isian AI) → ESTIMATED +
+ *   NEEDS_VERIFICATION;
+ * - tanpa harga valid → UNRESOLVED + NEEDS_VERIFICATION.
+ * PRICE_MANUAL tidak pernah keluar dari sini (klaim tidak pernah
+ * MANUAL) — cabang penyempitan hanya untuk memuaskan tipe sempit
+ * DirectRabPushPriceStatus; bila suatu hari muncul, ia diturunkan ke
+ * ESTIMATED (fail-closed: bukan harga resmi).
+ */
+function applyTransferContract(
+  claimedStatus: DirectRabPushPriceStatus,
+  unitPrice: number | null,
+  priceSourceKind: DirectRabPushItem['priceSourceKind'],
+): { priceStatus: DirectRabPushPriceStatus; verificationStatus: 'NEEDS_VERIFICATION' | 'VERIFIED' } {
+  const input: TransferPriceInput = {
+    priceStatus: claimedStatus,
+    unitPrice,
+    priceSourceKind: priceSourceKind ?? null,
+  };
+  const contracted = transferPriceStatus(input);
+  // Fast Track P4 (tsc): transferVerificationStatus mengembalikan tipe
+  // penuh VerificationStatus, sementara DirectRabPushItem memakai union
+  // sempit. Input di sini tidak membawa klaim verificationStatus, jadi
+  // transfer hanya mengembalikan VERIFIED untuk PRICE_RESOLVED —
+  // penyempitan ini fail-closed (apa pun yang bukan VERIFIED eksplisit
+  // menjadi NEEDS_VERIFICATION) dan hanya memuaskan tipe sempit.
+  const verified = transferVerificationStatus(input, contracted);
+  return {
+    priceStatus: contracted === 'PRICE_MANUAL' ? 'PRICE_ESTIMATED' : contracted,
+    verificationStatus: verified === 'VERIFIED' ? 'VERIFIED' : 'NEEDS_VERIFICATION',
+  };
+}
 
 export function mapDirectRabPushItems(r: DirectRabResult): DirectRabPushItem[] {
   const calcByKey = new Map(
@@ -138,8 +199,17 @@ export function mapDirectRabPushItems(r: DirectRabResult): DirectRabPushItem[] {
       aiFilled ||
       (price != null &&
         (calc?.priceStatus === 'BENCHMARK' || Boolean(w.isPriceFabricated)));
-    const priceStatus: DirectRabPushPriceStatus =
+    const claimedStatus: DirectRabPushPriceStatus =
       price == null ? 'PRICE_UNRESOLVED' : estimated ? 'PRICE_ESTIMATED' : 'PRICE_RESOLVED';
+    // H-09 — kind klaim: isian AI = EZRAB_ASSUMPTION; harga engine
+    // OFFICIAL (RESOLVED non-isian) = OFFICIAL_AHSP; sisanya tanpa
+    // kind (S2 menurunkannya sendiri).
+    const claimedKind: DirectRabPushItem['priceSourceKind'] = aiFilled
+      ? 'EZRAB_ASSUMPTION'
+      : claimedStatus === 'PRICE_RESOLVED'
+        ? 'OFFICIAL_AHSP'
+        : undefined;
+    const { priceStatus, verificationStatus } = applyTransferContract(claimedStatus, price, claimedKind);
     const detail = aiFilled ? fillDetailByDesc.get(w.name) : undefined;
     out.push({
       description: formatWorkItemTitle(w.name),
@@ -149,14 +219,14 @@ export function mapDirectRabPushItems(r: DirectRabResult): DirectRabPushItem[] {
       category: w.category,
       ...(price != null ? { unitPrice: price } : {}),
       priceStatus,
-      ...(priceStatus === 'PRICE_ESTIMATED' ? { verificationStatus: 'NEEDS_VERIFICATION' as const } : {}),
+      verificationStatus,
       volumeSource: 'AI_GENERATED' as const,
       ...(w.ahspCode ? { ahspCode: w.ahspCode } : {}),
+      ...(claimedKind ? { priceSourceKind: claimedKind } : {}),
       // Isian AI TIDAK PERNAH membawa kind/label resmi — provenance
       // asumsi eksplisit (spek + dasar dari filledDetails bila ada).
       ...(aiFilled
         ? {
-            priceSourceKind: 'EZRAB_ASSUMPTION' as const,
             priceSourceLabel: 'Estimasi AI (asumsi)',
             ...(detail
               ? { priceSourceExplanation: `Spek: ${detail.spec}. Dasar: ${detail.basis}` }
@@ -323,8 +393,9 @@ export function formatDirectPushPreviewMessage(
  *  hasil mentah yang besar): dua hasil dengan payload identik adalah
  *  push yang sama. displayLabel/floors/totalArea ikut agar hasil dari
  *  permintaan berbeda tidak pernah berbagi sidik walau payload-nya
- *  kebetulan sama. */
-function directPushFingerprint(r: DirectRabResult): string {
+ *  kebetulan sama. Diekspor untuk proposal transfer tak-terikat §4.5
+ *  (view.tsx) — sidik yang sama dipakai approval binding. */
+export function directPushFingerprint(r: DirectRabResult): string {
   return JSON.stringify({
     label: r.displayLabel,
     floors: r.floors,

@@ -146,11 +146,15 @@ test('id="workflow" tepat 1× (AboutWorkflowSection)', () => {
 });
 test('id pengganti ada di tempatnya', () => {
   const pricing = stripComments(read('../components/landing/PricingSection.tsx'));
-  const exactPricing = stripComments(read('../components/landing/exact/ExactPricing.tsx'));
   const workflow = stripComments(read('../components/landing/WorkflowSection.tsx'));
   ok(pricing.includes('id="harga-paket"'), 'PricingSection bukan id="harga-paket"');
-  ok(exactPricing.includes('id="harga-exact"'), 'ExactPricing bukan id="harga-exact"');
   ok(workflow.includes('id="workflow-arsitektur"'), 'WorkflowSection bukan id="workflow-arsitektur"');
+});
+test('ExactPricing terhapus — id="harga-exact" ikut hilang (keputusan owner 2026-11-24)', () => {
+  ok(
+    !fs.existsSync(path.join(__dirname, '../components/landing/exact/ExactPricing.tsx')),
+    'ExactPricing.tsx masih ada — penghapusan belum terjadi'
+  );
 });
 
 console.log(`\nd35New03New04New05.test: ${passes} PASS, ${failures} FAIL`);

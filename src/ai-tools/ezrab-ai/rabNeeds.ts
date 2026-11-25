@@ -115,13 +115,13 @@ export function detectNeedsFunction(rawText: string): { label: string; term: str
 
 const KIND_PATTERNS: Array<{ kind: RabKind; label: string; re: RegExp }> = [
   { kind: 'ded', label: 'dari dokumen DED', re: /\b(ded|gambar kerja|gambar teknis|denah pdf)\b/ },
-  { kind: 'drainase', label: 'drainase / saluran', re: /\b(drainase|saluran air|gorong|u-?ditch)\b/ },
-  { kind: 'jembatan', label: 'jembatan', re: /\bjembatan\b/ },
+  { kind: 'drainase', label: 'drainase / saluran', re: /\b(drainase|saluran air|gorong|u-?ditch|drainage)\b/ },
+  { kind: 'jembatan', label: 'jembatan', re: /\b(jembatan|bridge)\b/ },
   { kind: 'irigasi', label: 'bendungan / irigasi', re: /\b(bendungan|bendung|embung|irigasi)\b/ },
-  { kind: 'jalan', label: 'jalan / perkerasan', re: /\b(jalan|perkerasan|paving|rabat beton|aspal)\b/ },
-  { kind: 'renovasi', label: 'renovasi', re: /\b(renovasi|rehab|perbaikan rumah|perbaikan gedung)\b/ },
-  { kind: 'gedung', label: 'gedung', re: /\b(gedung|kantor|ruko|villa|gudang|sekolah|masjid|kos|kontrakan|apartemen|hotel|toko|pabrik|bengkel|workshop|warehouse|aula|pasar|klinik|puskesmas|rumah sakit|gedung olahraga|minimarket|restoran|kafe|showroom|apotek|laundry|kios|warung|musholla|mushola|vihara|klenteng|gereja|madrasah|perpustakaan|rumah makan|tempat ibadah)\b/ },
-  { kind: 'rumah', label: 'rumah tinggal', re: /\brumah\b/ },
+  { kind: 'jalan', label: 'jalan / perkerasan', re: /\b(jalan|perkerasan|paving|rabat beton|aspal|road)\b/ },
+  { kind: 'renovasi', label: 'renovasi', re: /\b(renovasi|rehab|perbaikan rumah|perbaikan gedung|renovation)\b/ },
+  { kind: 'gedung', label: 'gedung', re: /\b(gedung|kantor|ruko|villa|gudang|sekolah|masjid|kos|kontrakan|apartemen|hotel|toko|pabrik|bengkel|workshop|warehouse|aula|pasar|klinik|puskesmas|rumah sakit|gedung olahraga|minimarket|restoran|kafe|showroom|apotek|laundry|kios|warung|musholla|mushola|vihara|klenteng|gereja|madrasah|perpustakaan|rumah makan|tempat ibadah|building)\b/ },
+  { kind: 'rumah', label: 'rumah tinggal', re: /\b(rumah|house)\b/ },
 ];
 
 
@@ -209,6 +209,15 @@ const WORD_FLOORS: Record<string, number> = {
   tiga: 3,
   empat: 4,
   lima: 5,
+};
+
+/** Kata bilangan Inggris untuk bentuk "two-story" (WD-3.7-03). */
+const EN_WORD_FLOORS: Record<string, number> = {
+  one: 1,
+  two: 2,
+  three: 3,
+  four: 4,
+  five: 5,
 };
 
 /** Material penutup atap yang dikenal parser kebutuhan (ekstraksi atap). */
@@ -332,6 +341,17 @@ export function parseFloorsMention(text: string): number | null {
   }
   for (const m of tG.matchAll(/\b(satu|dua|tiga|empat|lima)\s+lantai\b/g)) {
     const v = WORD_FLOORS[m[1]];
+    if (v != null) push(m.index ?? 0, v);
+  }
+  // WD-3.7-03: bentuk Inggris "two-story" / "2-storey" / "3 story" —
+  // digit maupun kata bilangan, tanda hubung maupun spasi, ejaan
+  // Amerika maupun Britania (story/storey). Kandidat yang sama
+  // (posisi terakhir menang) seperti bentuk Indonesia di atas.
+  for (const m of tG.matchAll(/\b(\d+)[- ]stor(e)?y\b/g)) {
+    push(m.index ?? 0, parseInt(m[1], 10));
+  }
+  for (const m of tG.matchAll(/\b(one|two|three|four|five)[- ]stor(e)?y\b/g)) {
+    const v = EN_WORD_FLOORS[m[1]];
     if (v != null) push(m.index ?? 0, v);
   }
   if (candidates.length > 0) {
@@ -486,7 +506,8 @@ export interface BudgetMention {
   hasUnit: boolean;
 }
 
-const BUDGET_UNIT_FACTORS: Record<string, number> = {
+/** Faktor satuan budget kanonis (diekspor agar pemindai konflik di agentOrchestrator memakai faktor yang sama — satu sumber). */
+export const BUDGET_UNIT_FACTORS: Record<string, number> = {
   miliar: 1_000_000_000, milyar: 1_000_000_000, m: 1_000_000_000,
   jt: 1_000_000, juta: 1_000_000, rb: 1_000, ribu: 1_000, k: 1_000,
 };
@@ -619,10 +640,21 @@ export interface UniversalMeasures {
 export function extractUniversalMeasures(rawText: string): UniversalMeasures {
   const lower = (rawText || '').toLowerCase();
   const num = (s: string) => parseFloat(s.replace(',', '.'));
-  const span = lower.match(/(?:bentang|span)\s*(?:sekitar\s*)?(\d+(?:[.,]\d+)?)\s*(?:meter|m)\b/);
-  const width = lower.match(/(?:lebar)\s*(?:sekitar\s*)?(\d+(?:[.,]\d+)?)\s*(?:meter|m)\b/);
-  const height = lower.match(/(?:tinggi)\s*(?:sekitar\s*)?(\d+(?:[.,]\d+)?)\s*(?:meter|m)\b/);
-  const thick = lower.match(/(?:tebal)\s*(?:sekitar\s*)?(\d+(?:[.,]\d+)?)\s*cm\b/);
+  // WD-3.7-04 / WD-3.7-03: satuan jamak Inggris ("span 8 meters") +
+  // kata sifat di antara jangkar dan angka ("bentang struktur 8
+  // meter") + kata kunci Inggris (width/height/depth/thickness).
+  // Pola bentang kini setara dengan parseAnchoredLinear di jalur
+  // intake (paritas dipin di universalClassification — kedua parser
+  // membaca angka yang sama dari teks yang sama).
+  const span = lower.match(/(?:bentang|span)\s*(?:[a-z]{2,}\s+){0,2}(?:sekitar\s*)?(\d+(?:[.,]\d+)?)\s*(?:meters?|m)\b/);
+  const width = lower.match(/(?:lebar|width)\s*(?:sekitar\s*)?(\d+(?:[.,]\d+)?)\s*(?:meters?|m)\b/);
+  const height = lower.match(/(?:tinggi|height)\s*(?:sekitar\s*)?(\d+(?:[.,]\d+)?)\s*(?:meters?|m)\b/);
+  // Tebal: kata kunci tebal/thickness/thick (dengan kata elemen
+  // opsional — "tebal pelat 12 cm") ATAU berjangkar elemen ("pelat
+  // 8 cm", "slab 8 cm" — angka+cm sesudah kata pelat/slab ADALAH
+  // tebalnya, tanpa perlu kata "tebal").
+  const thick = lower.match(/(?:tebal|thickness|thick)\s*(?:pelat|slab|dinding|plat)?\s*(?:sekitar\s*)?(\d+(?:[.,]\d+)?)\s*cm\b/)
+    ?? lower.match(/(?:pelat|slab)(?:nya)?\s*(?:tebal\s*)?(\d+(?:[.,]\d+)?)\s*cm\b/);
   // 'dalam' berjangkar angka+satuan ("dalam 30 m") dibaca sebagai
   // kedalaman — KECUALI diikuti "dari" ("dalam 30 m dari jalan" =
   // JARAK dari jalan, bukan kedalaman — Batch 3 §6.3). Frasa
@@ -632,19 +664,21 @@ export function extractUniversalMeasures(rawText: string): UniversalMeasures {
   // regex asli dipertahankan: bila 'kedalaman' dan 'dalam' sama-sama
   // ada, yang muncul lebih dulu yang dipakai.
   const depth = (() => {
-    const kd = lower.match(/(?:kedalaman)\s*(?:sekitar\s*)?(\d+(?:[.,]\d+)?)\s*(?:meter|m)\b/);
-    const dl = lower.match(/(?:dalam)\s*(?:sekitar\s*)?(\d+(?:[.,]\d+)?)\s*(?:meter|m)\b/);
+    const kd = lower.match(/(?:kedalaman|depth)\s*(?:sekitar\s*)?(\d+(?:[.,]\d+)?)\s*(?:meters?|m)\b/);
+    const dl = lower.match(/(?:dalam|deep)\s*(?:sekitar\s*)?(\d+(?:[.,]\d+)?)\s*(?:meters?|m)\b/);
     const dlOk = dl && !/^\s*dari\b/.test(lower.slice((dl.index ?? 0) + dl[0].length, (dl.index ?? 0) + dl[0].length + 12)) ? dl : null;
     if (kd && dlOk) return (kd.index ?? 0) <= (dlOk.index ?? 0) ? kd : dlOk;
     return kd ?? dlOk;
   })();
-  const vol = lower.match(/(\d+(?:[.,]\d+)?)\s*m3\b/);
+  // "m³": ³ bukan karakter kata (\w) sehingga \b SESUDAHNYA selalu
+  // gagal — cabang superskrip tanpa \b (³ sudah membatasi diri).
+  const vol = lower.match(/(\d+(?:[.,]\d+)?)\s*m(?:3\b|³)/);
   // Basis ukuran JUMLAH ("24 titik", "20 unit", "5 buah", "1 paket",
   // "30 ekor"): "titik" hanya dihitung bila teks menyebut pekerjaan
   // yang memang berbasis titik (pondasi/sanitasi/MEP) agar "titik"
   // geografis tidak salah tafsir; unit/buah/paket bersifat umum.
   const count = (() => {
-    const cm = lower.match(/(\d+(?:[.,]\d+)?)\s*(unit|buah|paket|set|titik|ekor)\b/);
+    const cm = lower.match(/(\d+(?:[.,]\d+)?)\s*(units?|buah|paket|set|titik|ekor)\b/);
     if (!cm) return null;
     const v = num(cm[1]);
     if (!(v > 0)) return null;
@@ -785,6 +819,66 @@ export function validatePhysicalDimensions(rawText: string): string[] {
   return problems;
 }
 
+/* ------------------------------------------------------------------ */
+/* WD-3.7-01 (2026-11-24): pasangan "A x B" BUTA SATUAN. Regex lama   */
+/* `/(\d+)\s*[x×]\s*(\d+)\s*m?\b/` menangkap "kolom 15x15 cm" sebagai  */
+/* tapak 15×15 m (225 m² — salah 10.000×): `m?` cocok kosong dan `\b` */
+/* bertahan sebelum "c". Pasangan pertama yang LOLOS semua penjaga    */
+/* di bawah yang dipakai sebagai dimensi bangunan; pasangan yang      */
+/* gagal dilewati (pasangan berikutnya masih dicoba — "kolom 15x15    */
+/* cm, rumah 6x15 m" tetap membaca 6×15).                             */
+/* (a) Satuan cm/mm sesudah pasangan = penampang elemen — DILEWATI,   */
+/*     bukan disimpan sebagai meter dan bukan dikonversi (tidak ada   */
+/*     store penampang; mengarangnya di luar cakupan perbaikan ini).  */
+/* (b) Tanpa penanda m/meter, pasangan hanya sah bila teks memuat     */
+/*     jangkar konteks bangunan (jenis/kata bangunan, jumlah lantai,  */
+/*     kamar, carport, ukuran/denah/tapak/lahan/luas) — "15x15"       */
+/*     telanjang tanpa konteks bukan dimensi bangunan.                */
+/* (c) Pasangan yang langsung didahului kata elemen struktur          */
+/*     (kolom/balok/pelat/sloof/dinding/…) adalah penampang elemen,   */
+/*     bukan tapak — walau bersatuan meter ("dinding 10x3 m").        */
+/* (d) validatePhysicalDimensions TIDAK diumpankan ke sini: ia        */
+/*     seberkas (tanpa siklus) tapi validator PELAPOR — kontraknya    */
+/*     "ditandai, tidak ditolak/dinormalisasi diam-diam" — dan        */
+/*     RabNeeds tidak punya kanal masalah; cek positivitasnya sudah   */
+/*     diduplikasi di bawah, dan amplop 50.000 m² tetap urusan        */
+/*     pemanggil yang bisa menampilkan masalahnya.                    */
+/* ------------------------------------------------------------------ */
+
+/** Kata elemen struktur — pasangan dimensi sesudahnya adalah penampang elemen, bukan tapak. */
+const MEMBER_SECTION_WORDS = [
+  'kolom', 'balok', 'pelat', 'sloof', 'dinding', 'tembok', 'pintu', 'jendela', 'pondasi',
+  'column', 'beam', 'slab', 'wall', 'door', 'window', 'footing',
+];
+
+/** Jangkar konteks bangunan untuk pasangan "A x B" tanpa satuan (aturan (b)). */
+const BUILDING_CONTEXT_RE = /\b(rumah|gedung|gudang|bangunan|villa|ruko|kantor|toko|sekolah|masjid|pabrik|bengkel|kos|kontrakan|apartemen|hotel|rumah sakit|klinik|puskesmas|restoran|kafe|showroom|apotek|warung|musholla|mushola|kios|aula|pasar|warehouse|kamar|carport|ukuran|dimensi|denah|tapak|tanah|lahan|luas|bangun|house|building)\b|(?:\d+\s*lantai|\blantai\s+\d+|\b(?:satu|dua|tiga|empat|lima)\s+lantai\b|\blantai\s+(?:satu|dua|tiga|empat|lima)\b)/;
+
+const DIMS_PAIR_RE = /(\d+(?:[.,]\d+)?)\s*(cm|mm|meters?|m)?\s*[x×]\s*(\d+(?:[.,]\d+)?)\s*(cm|mm|meters?|m)?\b/g;
+
+/** Pasangan dimensi bangunan pertama yang lolos penjaga WD-3.7-01, atau null. */
+function pickBuildingDims(t: string): { a: number; b: number } | null {
+  const hasBuildingContext = BUILDING_CONTEXT_RE.test(t);
+  const memberRe = new RegExp(`(?:${MEMBER_SECTION_WORDS.join('|')})(?:nya)?\\s*:?\\s*$`);
+  for (const m of t.matchAll(DIMS_PAIR_RE)) {
+    const a = parseFloat(m[1].replace(',', '.'));
+    const b = parseFloat(m[3].replace(',', '.'));
+    if (!(a > 0) || !(b > 0)) continue;
+    // Satuan boleh menempel di EITHER sisi ("17 m x 9 m", "17 x 9 m",
+    // "17 cm x 9 cm") — cm/mm di sisi mana pun menolak pasangan.
+    const unit1 = (m[2] ?? '').toLowerCase();
+    const unit2 = (m[4] ?? '').toLowerCase();
+    if (unit1 === 'cm' || unit1 === 'mm' || unit2 === 'cm' || unit2 === 'mm') continue; // (a) penampang elemen
+    const before = t.slice(Math.max(0, (m.index ?? 0) - 24), m.index ?? 0);
+    if (memberRe.test(before)) continue; // (c) penampang elemen
+    const isMeter = (u: string) => u === 'm' || u === 'meter' || u === 'meters';
+    const hasMeterMarker = isMeter(unit1) || isMeter(unit2);
+    if (!hasMeterMarker && !hasBuildingContext) continue; // (b) tanpa konteks
+    return { a, b };
+  }
+  return null;
+}
+
 /** Ekstrak kebutuhan dari satu teks. Tidak menebak kolom yang tak disebut. */
 export function extractRabNeeds(text: string, base?: RabNeeds): RabNeeds {
   const t = ` ${text.toLowerCase().trim().replace(/\s+/g, ' ')} `;
@@ -826,11 +920,10 @@ export function extractRabNeeds(text: string, base?: RabNeeds): RabNeeds {
   const landHere = resolveLandAreaM2(text);
   if (landHere != null) n.landAreaM2 = landHere;
 
-  const dimsMatch = t.match(/(\d+(?:[.,]\d+)?)\s*[x×]\s*(\d+(?:[.,]\d+)?)\s*m?\b/);
-  const dims = dimsMatch && parseFloat(dimsMatch[1].replace(',', '.')) > 0 && parseFloat(dimsMatch[2].replace(',', '.')) > 0 ? dimsMatch : null;
+  const dims = pickBuildingDims(t);
   if (dims) {
-    n.landLength = parseFloat(dims[1].replace(',', '.'));
-    n.landWidth = parseFloat(dims[2].replace(',', '.'));
+    n.landLength = dims.a;
+    n.landWidth = dims.b;
     // Dimensi yang sama dicatat juga sebagai dimensi BANGUNAN terstruktur
     // (buildingTypology): jalur universal memakai footprint hasil kalinya
     // sebagai luas, bukan lagi hanya bidang tanah/denah. Pemanggil yang
@@ -846,9 +939,11 @@ export function extractRabNeeds(text: string, base?: RabNeeds): RabNeeds {
     // Bentuk "panjang 20 m lebar 10 m" / "lebar 8 panjang 22" tanpa 'x'
     // (perbaikan ekstraksi 2026-11-08): pasangan panjang/lebar eksplisit
     // adalah dimensi bangunan yang sama sahnya dengan bentuk "A x B".
-    const pj = t.match(/panjang\s*(?:=|sekitar)?\s*(\d+(?:[.,]\d+)?)\s*(?:meter|m)?\b/);
-    const lb = t.match(/lebar\s*(?:=|sekitar)?\s*(\d+(?:[.,]\d+)?)\s*(?:meter|m)?\b/);
-    if (pj && lb) {
+    // WD-3.7-01: satuan cm/mm pada salah satu sisi menolak pasangan ini
+    // ("panjang 15 cm lebar 20 cm" adalah penampang, bukan tapak).
+    const pj = t.match(/panjang\s*(?:=|sekitar)?\s*(\d+(?:[.,]\d+)?)\s*(cm|mm|meter|m)?\b/);
+    const lb = t.match(/lebar\s*(?:=|sekitar)?\s*(\d+(?:[.,]\d+)?)\s*(cm|mm|meter|m)?\b/);
+    if (pj && lb && pj[2] !== 'cm' && pj[2] !== 'mm' && lb[2] !== 'cm' && lb[2] !== 'mm') {
       const p = parseFloat(pj[1].replace(',', '.'));
       const l = parseFloat(lb[1].replace(',', '.'));
       if (p > 0 && l > 0) {

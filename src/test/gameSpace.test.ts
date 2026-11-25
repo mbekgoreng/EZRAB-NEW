@@ -65,13 +65,33 @@ shouldNotMatch.forEach((s) =>
 );
 
 /* ================= 2. Router integration ================= */
-console.log('\n[2] routeIntent → OPEN_GAME_SPACE');
-['game', '/game', 'main game', 'buka game', 'game space', '  GAME  '].forEach((s) =>
+console.log('\n[2] routeIntent → OPEN_GAME_SPACE (slash-only, Fast Track §7 / P1-17)');
+['/game', '/GAME'].forEach((s) =>
   test(`route "${s}"`, () => {
     const r = routeIntent(s);
     assert.equal(r.intent, 'OPEN_GAME_SPACE');
     assert.equal(r.localOnly, true, 'must not call AI provider');
     assert.equal(r.needsClarification, false);
+  }),
+);
+// §7 (Fast Track 2026-11-24): hanya perintah slash terdaftar yang
+// menavigasi dari Chat AI. Frasa bahasa alami game — dulu OPEN_GAME_SPACE
+// lewat isGameCommand — kini jatuh UNKNOWN ke AI, persis frasa navigasi
+// NL lain sesudah P1 §4.1 (OD-1).
+['game', 'main game', 'buka game', 'buka game space', 'game space', '  GAME  ',
+ 'ayo main game', 'bukain game', 'tampilkan game'].forEach((s) =>
+  test(`NL "${s}" TIDAK navigasi (ke AI)`, () => {
+    const r = routeIntent(s);
+    assert.equal(r.intent, 'UNKNOWN');
+    assert.equal(r.localOnly, false, 'falls through to AI conversation');
+  }),
+);
+// Negasi tetap aman: penolakan membuka game tidak menavigasi.
+['jangan buka game', 'tidak mau main game', 'nggak mau buka game'].forEach((s) =>
+  test(`negasi "${s}" → UNKNOWN`, () => {
+    const r = routeIntent(s);
+    assert.equal(r.intent, 'UNKNOWN');
+    assert.ok(!r.intent.startsWith('OPEN_'));
   }),
 );
 // Probe "normal chat still goes to AI" memakai pertanyaan KONSEPTUAL
@@ -94,7 +114,8 @@ test('fully-parseable calculation routes to local CALCULATE (30b268e)', () => {
 });
 test('other commands unaffected', () => {
   assert.equal(routeIntent('/rab').intent, 'OPEN_RAB');
-  assert.equal(routeIntent('buka template rab').intent, 'OPEN_TEMPLATE');
+  // §4.1 (directive P1 2026-11-24 / OD-1): "buka template rab" kini ke AI.
+  assert.equal(routeIntent('buka template rab').intent, 'UNKNOWN');
 });
 test('executeIntent returns openGameSpace flag + no navigation', () => {
   const res = executeIntent('OPEN_GAME_SPACE', undefined, {
@@ -121,8 +142,8 @@ console.log('\n[2b] routeIntent → GAME_INFO (pertanyaan tentang game)');
   }),
 );
 test('pernyataan tentang game (bukan pertanyaan) tetap ke AI', () => {
-  // Tanpa verba perintah ("main game" = perintah panel, perilaku lama)
-  // dan tanpa bingkai tanya → bukan GAME_INFO, mengalir ke AI.
+  // Tanpa bingkai tanya → bukan GAME_INFO, mengalir ke AI. ("main game"
+  // juga ke AI sejak §7 / P1-17 — bukan lagi perintah panel.)
   const r = routeIntent('saya suka game strategi');
   assert.equal(r.intent, 'UNKNOWN');
   assert.equal(r.localOnly, false);

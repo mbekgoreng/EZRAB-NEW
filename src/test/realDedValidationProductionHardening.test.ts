@@ -266,14 +266,23 @@ describe('REAL DED VALIDATION & PRODUCTION HARDENING [ACCEPTANCE SUITE]', () => 
     const kolom = draft.detectedWorkItems.find((w) => w.name.includes('Kolom'));
     assert.ok(kolom?.ahspCode);
     assert.equal(kolom?.ahspSourceType, 'OFFICIAL_AHSP');
-    assert.equal(kolom?.ahspMatchStatus, 'EXACT_MATCH');
-    // FU2 (2026-11-24): harga kolom K-250 TIDAK diselesaikan — gerbang
-    // satuan memblokir kecocokan palsu 'k250' ⊂ 'jarak 250 m'
-    // (A.3.05.4c.1 per batang vs kuantitas m³; dulu Rp145/batang).
-    // Tidak ada item Beton K-250 per-m³ di katalog resmi (0 item).
-    // Pemetaan (3 asersi di atas) tetap OFFICIAL/EXACT_MATCH.
-    assert.ok(!kolom?.unitPrice);
-    assert.equal(kolom?.priceStatus, 'PRICE_INCOMPLETE');
+    // FTC (2026-11-24): SEMANTIC_MATCH, bukan EXACT_MATCH — spec K-250
+    // tidak token-match teks katalog item 2.4.3.3 (skor 42: nama +
+    // satuan ternormalisasi). Riwayat pin ini: (1) pra-FT lolos lewat
+    // FALSE POSITIVE WB-03 — item kayu A.3.05.4c.1 sebagai EXACT_MATCH
+    // via 'k250' ⊂ 'jarak 250 m'; (2) sesudah WB-03, item jatuh ke
+    // AI_CUSTOM — BUKAN karena tidak ada item resmi, melainkan karena
+    // pipeline meneruskan satuan superskrip 'm³' yang tidak pernah sama
+    // dengan 'm3' katalog pada perbandingan exact-string (bonus +15
+    // hilang; skor 27 < 40); (3) FTC menormalisasi perbandingan satuan
+    // (normalizeUnitName, sama dengan gerbang FU2) sehingga kolom kini
+    // cocok resmi + harganya terselesaikan (gerbang lolos: m³ ≡ m3).
+    // Komentar FU2 lama ("pemetaan tetap OFFICIAL/EXACT_MATCH", "harga
+    // TIDAK diselesaikan", "0 item K-250 per-m³") tidak lagi benar dan
+    // dihapus bersama pin lama.
+    assert.equal(kolom?.ahspMatchStatus, 'SEMANTIC_MATCH');
+    assert.ok(kolom?.unitPrice && kolom.unitPrice > 0);
+    assert.notEqual(kolom?.priceStatus, 'PRICE_INCOMPLETE');
   });
 
   it('8. AI_CUSTOM Fallback: tags unknown specialty items as AI_CUSTOM with PRICE_NOT_FOUND', async () => {

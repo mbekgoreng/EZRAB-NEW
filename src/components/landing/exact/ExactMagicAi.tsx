@@ -579,7 +579,7 @@ export const ExactMagicAi: React.FC<ExactMagicAiProps> = ({ onStart }) => {
               <div className="ez-flagship-hud-coordinates hud-top-left">
                 <div className="ez-hud-crosshair" />
                 <div className="ez-hud-text-col">
-                  <span className="ez-hud-tag">MODEL: BIM / CAD 3D</span>
+                  <span className="ez-hud-tag">MODEL: CAD 3D</span>
                   <span className="ez-hud-subtag">LAT: 06°12′S • LNG: 106°49′E</span>
                 </div>
               </div>

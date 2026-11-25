@@ -1,15 +1,20 @@
 /**
- * B5-3 (Release Readiness Tahap 2, keputusan owner 2026-11-23 / D-11):
- * proyek SEMENTARA otomatis untuk draft RAB jalur chat.
+ * B5-3 (Release Readiness Tahap 2, keputusan owner 2026-11-23 / D-11)
+ * + §4.5 (direktif owner 2026-11-24, P1 — MENGGANTIKAN SEBAGIAN B5-3):
+ * pengikatan draft RAB jalur chat ke proyek YANG SUDAH ADA.
  *
- * Aturan owner: pengguna boleh mulai membuat RAB tanpa proyek aktif
- * (tanpa jalan buntu). Saat draft RAB PERTAMA berhasil dibuat lewat
- * jalur chat-draft, EZRAB otomatis membuat proyek sementara, menjadikannya
- * aktif, dan mengaitkan draft ke sana. TIDAK ada proyek yang dibuat hanya
- * karena pengguna membuka halaman. Proyek sementara adalah record Project
- * biasa (dibuat lewat createProject yang sama) — dapat diberi nama +
- * dilengkapi kemudian lewat alur proyek biasa (EditProjectModal /
- * updateProject, tanpa pengecualian), lalu menjadi proyek biasa.
+ * Aturan owner (§4.5): pengguna boleh mulai membuat RAB tanpa proyek
+ * aktif (tanpa jalan buntu) — draft BUKAN proyek. Saat draft RAB
+ * berhasil dibuat lewat jalur chat-draft TANPA proyek aktif, draft
+ * tetap TAK TERIKAT; TIDAK ADA proyek yang dibuat secara implisit.
+ * Pembuatan proyek hanya terjadi lewat konfirmasi eksplisit user
+ * (aliran push/finalize §6: pratinjau transfer tak-terikat → tombol
+ * "Buat proyek & konfirmasi transfer") atau pembuatan manual. Proyek
+ * yang dibuat lewat konfirmasi itu adalah record Project biasa
+ * (dibuat lewat createProject yang sama, creationMethod 'chat-ai') —
+ * dapat diberi nama + dilengkapi kemudian lewat alur proyek biasa
+ * (EditProjectModal / updateProject, tanpa pengecualian), lalu menjadi
+ * proyek biasa.
  *
  * Mekanisme (pemisahan yang disengaja):
  * - Registry (actionRegistry.universalResultFor — corong commit draft
@@ -19,21 +24,24 @@
  *   tool-registry, hook F-ISO-4 per keputusan owner 2026-11-23)
  *   memanggil ensurer yang terdaftar di sini SAAT draft berhasil
  *   dibangun tanpa projectId. Registry tidak tahu cara membuat proyek —
- *   ia hanya meminta.
- * - View chat (view.tsx) mendaftarkan ensurer yang memanggil
- *   createProject konteks + mem-persist draft + menyiapkan migrasi
- *   percakapan. Tanpa view yang mendaftarkan (tes, jalur lain), tidak
- *   ada yang terjadi — draft berperilaku seperti sebelumnya.
+ *   ia hanya meminta pengikatan ke proyek yang SUDAH ADA.
+ * - View chat (view.tsx) mendaftarkan ensurer yang mengembalikan
+ *   proyek aktif yang sudah ada (bila ada) + mem-persist draft ke
+ *   proyek itu. Tanpa proyek aktif → null (draft tak terikat).
+ *   Tanpa view yang mendaftarkan (tes, jalur lain), tidak ada yang
+ *   terjadi — draft berperilaku seperti sebelumnya.
  *
  * BUKAN jalur DED: auto-create DED (ded-ai-estimate/view.tsx,
- * creationMethod 'ai-ded') adalah jalur berbeda dan tidak disentuh.
+ * creationMethod 'ai-ded') adalah jalur berbeda dan tidak disentuh —
+ * klik Finalisasi DED SENDIRI adalah konfirmasi eksplisitnya.
  */
 import type { UniversalDraft } from './universalRab';
 
 /**
- * Penanda nama sementara. Nama proyek sementara SELALU membawa "(Sementara)"
- * agar terlihat jelas di Daftar Proyek; hilang sendiri saat pengguna
- * mengganti nama lewat alur biasa.
+ * Penanda nama sementara. Nama proyek yang dibuat lewat konfirmasi
+ * push/finalize §4.5 SELALU membawa "(Sementara)" agar terlihat jelas
+ * di Daftar Proyek; hilang sendiri saat pengguna mengganti nama lewat
+ * alur biasa.
  */
 export const TEMP_PROJECT_NAME_SUFFIX = '(Sementara)';
 
@@ -63,8 +71,8 @@ export function tempProjectNameForDraft(draftTitle: string | null | undefined): 
 export function tempProjectDescriptionForDraft(draftTitle: string | null | undefined): string {
   const title = (draftTitle ?? '').trim();
   return title
-    ? `Dibuat otomatis dari Chat AI saat draft RAB "${title}" pertama dibuat — beri nama dan lengkapi datanya lewat menu Proyek.`
-    : 'Dibuat otomatis dari Chat AI saat draft RAB pertama dibuat — beri nama dan lengkapi datanya lewat menu Proyek.';
+    ? `Dibuat dari Chat AI saat draft RAB "${title}" ditransfer — beri nama dan lengkapi datanya lewat menu Proyek.`
+    : 'Dibuat dari Chat AI saat draft RAB pertama ditransfer — beri nama dan lengkapi datanya lewat menu Proyek.';
 }
 
 /** Hasil ensurer: proyek yang kini mengikat draft. */
@@ -72,10 +80,10 @@ export interface EnsuredDraftProject {
   id: string;
   name: string;
   /**
-   * true = proyek BARU dibuat untuk draft ini (pesan draft boleh
-   * memberitahu pengguna); false = proyek yang SUDAH aktif dipakai
-   * (mis. pengguna membuat proyek di tengah intake — tanpa pembuatan
-   * baru, tanpa pemberitahuan).
+   * §4.5: SELALU false — ensurer tidak pernah membuat proyek.
+   * Field dipertahankan untuk kompatibilitas pemanggil (registry
+   * membaca `ensured.id` saja; `created` tidak lagi dipakai untuk
+   * pesan "proyek dibuat otomatis").
    */
   created: boolean;
 }
@@ -103,21 +111,22 @@ export function isUniversalDraft(draft: UniversalDraft | DraftProjectRequest): d
 
 /**
  * Ensurer proyek-draft: dipanggil registry saat draft universal ATAU
- * direct berhasil dibuat tanpa proyek. Implementasi (view) mengembalikan
- * proyek aktif yang sudah ada bila ada, atau membuat proyek sementara
- * baru. Mengembalikan null bila proyek tidak dapat dipastikan (kegagalan
- * pembuatan TIDAK PERNAH menggagalkan draft — draft tetap tampil tanpa
- * ikatan proyek, seperti perilaku sebelum B5-3).
+ * direct berhasil dibuat tanpa proyek. Implementasi (view)
+ * mengembalikan proyek aktif yang sudah ada bila ada — DAN TIDAK
+ * PERNAH MEMBUAT PROYEK (§4.5, direktif owner 2026-11-24).
+ * Mengembalikan null bila tidak ada proyek aktif (draft tetap tak
+ * terikat — kegagalan pengikatan TIDAK PERNAH menggagalkan draft,
+ * draft tetap tampil tanpa ikatan proyek).
  *
  * S3-C (F4, 2026-11-23) — `preferredProjectId`: petunjuk scope opsional
  * dari registry (projectId request yang membangun draft). Bila diisi,
  * ensurer WAJIB mengikat ke proyek itu (bila masih ada) — BUKAN ke
  * proyek live, yang bisa sudah berganti selama await provider (S7:
  * draft dari konteks A diikat ke B). Bila proyek petunjuk sudah tidak
- * ada → null (fail-closed). Tanpa petunjuk → perilaku B5-3 persis
- * (live, atau buat sementara). Pemanggil registry yang tidak memberi
- * petunjuk (corong chat/direct sinkron — tidak ada await di antara
- * kirim dan commit) tidak berubah perilakunya.
+ * ada → null (fail-closed). Tanpa petunjuk → proyek live (bila ada),
+ * atau null. Pemanggil registry yang tidak memberi petunjuk (corong
+ * chat/direct sinkron — tidak ada await di antara kirim dan commit)
+ * tidak berubah perilakunya.
  */
 export type DraftProjectEnsurer = (
   draft: UniversalDraft | DraftProjectRequest,
@@ -126,9 +135,39 @@ export type DraftProjectEnsurer = (
 
 let draftProjectEnsurer: DraftProjectEnsurer | null = null;
 
-/** Daftarkan ensurer (view chat saat mount) atau lepas (null, saat unmount). */
+/**
+ * Daftarkan ensurer (view chat saat mount) atau lepas (null, saat unmount).
+ *
+ * Fast Track §3(g) — PENJAGA LEVEL-REGISTRY (§4.5, direktif owner
+ * 2026-11-24): ensurer yang didaftarkan DIBUNGKUS — bila ia
+ * mengembalikan `created: true`, hasilnya DIBUANG (null) dan draft
+ * tetap TAK TERIKAT. Ensurer yang membuat proyek MELANGGAR kontrak
+ * §4.5; mengikat draft ke proyek yang baru saja dibuatnya secara
+ * implisit akan mencuci pelanggaran itu (fail-closed: draft tanpa
+ * proyek aktif tetap tak terikat sampai user mengonfirmasi pembuatan
+ * proyek di aliran push §6 atau membuat manual). Memaksa
+ * `created: false` sambil tetap mengikat TIDAK cukup — ikatan ke
+ * proyek implisit itulah yang dilarang, bukan hanya flag-nya.
+ *
+ * BATAS PENJAGA (jujur): pembungkus ini mengendalikan apa yang
+ * dilihat registry — ia TIDAK BISA membatalkan efek samping pembuatan
+ * yang sudah dilakukan ensurer nakal di dalam store-nya sendiri
+ * sebelum mengembalikan nilai. Ensurer produksi (view.tsx) tidak
+ * pernah membuat proyek, jadi penjaga ini adalah pertahanan
+ * berlapis terhadap ensurer masa depan yang salah implementasi,
+ * bukan pengganti kontrak view.
+ */
 export function setDraftProjectEnsurer(ensurer: DraftProjectEnsurer | null): void {
-  draftProjectEnsurer = ensurer;
+  if (!ensurer) {
+    draftProjectEnsurer = null;
+    return;
+  }
+  draftProjectEnsurer = (draft, preferredProjectId) => {
+    const ensured = ensurer(draft, preferredProjectId);
+    if (!ensured) return null;
+    if (ensured.created) return null;
+    return ensured;
+  };
 }
 
 /** Baca ensurer terdaftar (registry). */

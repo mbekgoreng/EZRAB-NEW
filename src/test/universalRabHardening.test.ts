@@ -552,5 +552,44 @@ test('X-F3: angka luas sesudah "lantai" bukan jumlah lantai (cacat live 2026-11-
   assert.equal(parseFloorsMention('lantai 3, 100 m2'), 3);
 });
 
+test('X-F4: dimensi buta satuan (WD-3.7-01) — "kolom 15x15 cm" BUKAN tapak 225 m²', () => {
+  // Akar cacat: regex lama `/(\d+)\s*[x×]\s*(\d+)\s*m?\b/` menangkap
+  // pasangan cm sebagai meter (m? cocok kosong, \b bertahan sebelum
+  // "c") — salah 10.000× pada luas tapak.
+  const kolom = extractRabNeeds('kolom 15x15 cm');
+  assert.equal(kolom.footprintM2, null);
+  assert.equal(kolom.landLength, null);
+  assert.equal(extractRabNeeds('balok 15x20 cm').footprintM2, null);
+  assert.equal(extractRabNeeds('sloof 15x20 cm').footprintM2, null);
+  // Penampang elemen walau bersatuan meter — bukan tapak bangunan:
+  assert.equal(extractRabNeeds('dinding 10x3 m').footprintM2, null);
+  assert.equal(extractRabNeeds('kolom 15x15').footprintM2, null);
+  // Tanpa regresi: pasangan bermeter / berjangkar konteks tetap dibaca.
+  assert.equal(extractRabNeeds('rumah 6x15 m').footprintM2, 90);
+  assert.equal(extractRabNeeds('buatkan rab rumah 5x10').footprintM2, 50);
+  assert.equal(extractRabNeeds('2 lantai, 6x15, 3 kamar tidur').footprintM2, 90);
+  assert.equal(extractRabNeeds('buatkan rab rumah ukuran 17 m x 9 m').footprintM2, 153);
+  // Pasangan elemen dilewati, pasangan bangunan berikutnya tetap dibaca:
+  assert.equal(extractRabNeeds('kolom 15x15 cm, rumah 6x15 m').footprintM2, 90);
+  // Pasangan telanjang tanpa konteks bukan dimensi bangunan:
+  assert.equal(extractRabNeeds('15x15').footprintM2, null);
+  // Cabang panjang/lebar: cm menolak pasangan, meter menerimanya.
+  assert.equal(extractRabNeeds('panjang 15 cm lebar 20 cm').footprintM2, null);
+  assert.equal(extractRabNeeds('rumah panjang 20 m lebar 10 m').footprintM2, 200);
+});
+
+test('X-F5: alias Inggris jenis + lantai (WD-3.7-03) — "house"/"two-story" terbaca', () => {
+  assert.equal(extractRabNeeds('build a house 6x15 m').kind, 'rumah');
+  assert.equal(extractRabNeeds('build a house 6x15 m').footprintM2, 90);
+  assert.equal(extractRabNeeds('renovation of a building').kind, 'renovasi');
+  assert.equal(extractRabNeeds('build a bridge span 8 meters').kind, 'jembatan');
+  assert.equal(parseFloorsMention('two-story house'), 2);
+  assert.equal(parseFloorsMention('3 storey building'), 3);
+  assert.equal(parseFloorsMention('2-story house'), 2);
+  // Bentuk Indonesia tidak berubah:
+  assert.equal(parseFloorsMention('rumah 5x10 lantai 2'), 2);
+  assert.equal(extractRabNeeds('buatkan rab rumah 5x10').kind, 'rumah');
+});
+
 console.log(`\nUNIVERSAL RAB HARDENING: ${passed} PASS, ${failed} FAIL`);
 if (failed > 0) process.exit(1);

@@ -9,6 +9,8 @@ import {
   detectLengthUnitFactor,
   attemptQuantityFromDimensionString,
   computeQuantity,
+  shapeForUnit,
+  normalizeUnit,
 } from '../ai-tools/ded-ai-estimate/quantity';
 import { DedAiCalculator, validateQuantity } from '../ai-tools/ded-ai-estimate/calculator';
 
@@ -82,6 +84,19 @@ check('T3 finalize: valid CALCULATED', fin[0].stage === 'CALCULATED' && fin[0].s
 check('T3 finalize: inference CALCULATED with review source', fin[1].stage === 'CALCULATED' && fin[1].quantitySource === 'AI_INFERENCE', `got ${fin[1].stage}/${fin[1].quantitySource}`);
 check('T3 finalize: extreme REJECTED', fin[2].stage === 'REJECTED' && fin[2].subtotal === null);
 check('T3 finalize: unresolved REJECTED', fin[3].stage === 'REJECTED' && fin[3].subtotal === null);
+
+// WD-3.7-06: satuan superskrip (m²/m³) dari model adalah satuan yang sama
+// dengan m2/m3 — sebelumnya shapeForUnit jatuh ke COUNT dan kuantitas
+// luas/volume hilang diam-diam (attempt('m²', '6 x 10 m') → null).
+check("WD-3.7-06 shapeForUnit('m²') === 'AREA'", shapeForUnit('m²') === 'AREA', `got ${shapeForUnit('m²')}`);
+check("WD-3.7-06 shapeForUnit('m³') === 'VOLUME'", shapeForUnit('m³') === 'VOLUME', `got ${shapeForUnit('m³')}`);
+check("WD-3.7-06 shapeForUnit('M² ') === 'AREA' (case/spasi)", shapeForUnit('M² ') === 'AREA');
+check("WD-3.7-06 normalizeUnit('m²') === 'm2'", normalizeUnit('m²') === 'm2');
+check("WD-3.7-06 attempt('m²', '6 x 10 m') === 60", attemptQuantityFromDimensionString('m²', '6 x 10 m').quantity === 60, `got ${attemptQuantityFromDimensionString('m²', '6 x 10 m').quantity}`);
+check("WD-3.7-06 attempt('m³', '6 x 10 x 3 m') === 180", attemptQuantityFromDimensionString('m³', '6 x 10 x 3 m').quantity === 180);
+check("WD-3.7-06 attempt('m2', '6 x 10 m') tetap 60 (tanpa regresi)", attemptQuantityFromDimensionString('m2', '6 x 10 m').quantity === 60);
+check("WD-3.7-06 shapeForUnit('kg') tetap WEIGHT", shapeForUnit('kg') === 'WEIGHT');
+check("WD-3.7-06 shapeForUnit('unit') tetap COUNT", shapeForUnit('unit') === 'COUNT');
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

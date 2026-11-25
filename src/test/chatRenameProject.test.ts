@@ -5,7 +5,8 @@
  * Run: npx tsx src/test/chatRenameProject.test.ts
  */
 import { routeIntent } from '../ai-tools/ezrab-ai/intentRouter';
-import { executeIntent, ChatActionContext } from '../ai-tools/ezrab-ai/actionRegistry';
+import { executeIntent, executeDirectConfirmation, ChatActionContext } from '../ai-tools/ezrab-ai/actionRegistry';
+import { setAssistantOperationContext } from '../ai-tools/ezrab-ai/operations';
 import { EZRAB_AI_SYSTEM_PROMPT, EZRAB_AI_PROMPT_VERSION } from '../ai-tools/ezrab-ai/prompt';
 
 let passed = 0;
@@ -62,10 +63,14 @@ const emptyCtx: ChatActionContext = {
 }
 // 8. Perintah proyek lain TIDAK dibajak rename
 {
-  assert(routeIntent('buka daftar proyek').intent === 'OPEN_PROJECTS', '8: buka daftar proyek tetap OPEN_PROJECTS');
+  // §4.1 (directive P1 2026-11-24 / OD-1): "buka daftar proyek" kini
+  // dijawab deterministik sebagai QUERY_PROJECT_LIST (jawaban daftar,
+  // bukan navigasi OPEN_PROJECTS); "daftar proyek ..." tanpa verba buka
+  // juga QUERY_PROJECT_LIST.
+  assert(routeIntent('buka daftar proyek').intent === 'QUERY_PROJECT_LIST', '8: buka daftar proyek → QUERY_PROJECT_LIST (§4.1)');
   assert(routeIntent('berapa total proyek saya?').intent === 'QUERY_PROJECT_TOTAL', '8: total proyek tetap QUERY_PROJECT_TOTAL');
-  // "daftar proyek ..." mengandung verba daftar → navigasi (perilaku lama);
-  // bentuk tanpa verba-lah yang masuk QUERY_PROJECT_LIST.
+  // "daftar proyek ..." mengandung kata daftar → jawaban daftar
+  // (QUERY_PROJECT_LIST, bukan navigasi — §4.1).
   assert(routeIntent('proyek saya apa saja?').intent === 'QUERY_PROJECT_LIST', '8: proyek saya apa saja tetap QUERY_PROJECT_LIST');
   assert(routeIntent('buatkan rab rumah type 70').intent === 'CREATE_RAB_DIRECT', '8: rab rumah tetap CREATE_RAB_DIRECT');
 }
@@ -88,14 +93,20 @@ function makeCtx(over: Partial<ChatActionContext> = {}): { ctx: ChatActionContex
   return { ctx, calls, succeed };
 }
 
-// 9. Rename berhasil DUA LANGKAH (W11 §11, S1-R5): panggilan pertama
-// hanya bertanya (callback tidak dipanggil), panggilan kedua mengeksekusi.
+// P1-B: suite ini berjalan sebagai Estimator (gerbang kapabilitas
+// menolak tanpa konteks operasi / tanpa edit-estimate).
+setAssistantOperationContext({ actor: 'Penguji', writesEnabled: true });
+
+// 9. Rename berhasil DUA LANGKAH (W11 §11, S1-R5 + P1-C): panggilan
+// pertama hanya bertanya (callback tidak dipanggil), KLIK TOMBOL
+// konfirmasi (executeDirectConfirmation) mengeksekusi. Kirim-ulang
+// teks TIDAK PERNAH mengeksekusi (D6 O-5, direktif owner 2026-11-24).
 {
   const { ctx, calls } = makeCtx();
   const ask = executeIntent('RENAME_PROJECT', 'Rumah Impian', ctx);
   assert(calls.length === 0, '9a: rename langkah 1 → callback tidak dipanggil (hanya bertanya)');
   assert(ask.ok === true && ask.message.includes('Rumah Impian'), '9b: rename langkah 1 → bertanya + mengutip nama baru');
-  const res = executeIntent('RENAME_PROJECT', 'Rumah Impian', ctx);
+  const res = executeDirectConfirmation('RENAME_PROJECT', 'Rumah Impian', ctx);
   assert(res.ok === true, '9: rename berhasil → ok');
   assert(calls.length === 1 && calls[0].id === 'p1' && calls[0].name === 'Rumah Impian', '9: callback dipanggil dengan id + nama baru');
   assert(res.message.includes('Rumah Tinggal 2 Lantai') && res.message.includes('Rumah Impian'), '9: pesan mengutip nama lama → baru');
@@ -144,7 +155,7 @@ function makeCtx(over: Partial<ChatActionContext> = {}): { ctx: ChatActionContex
   succeed.v = false;
   const ask = executeIntent('RENAME_PROJECT', 'Rumah Impian', ctx);
   assert(ask.ok === true, '15a: langkah 1 bertanya (ok true, belum eksekusi)');
-  const res = executeIntent('RENAME_PROJECT', 'Rumah Impian', ctx);
+  const res = executeDirectConfirmation('RENAME_PROJECT', 'Rumah Impian', ctx);
   assert(res.ok === false, '15: callback false → ok false');
   assert(res.message.includes('belum berubah'), '15: pesan jujur belum berubah');
   assert(!res.message.includes('diubah dari'), '15: tidak ada klaim berhasil');

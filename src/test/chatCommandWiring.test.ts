@@ -11,7 +11,8 @@
  * Run: npx tsx src/test/chatCommandWiring.test.ts
  */
 import { routeIntent, HELP_TEXT } from '../ai-tools/ezrab-ai/intentRouter';
-import { executeIntent, type ChatActionContext } from '../ai-tools/ezrab-ai/actionRegistry';
+import { executeIntent, executeDirectConfirmation, type ChatActionContext } from '../ai-tools/ezrab-ai/actionRegistry';
+import { setAssistantOperationContext } from '../ai-tools/ezrab-ai/operations';
 
 let passed = 0;
 let failed = 0;
@@ -55,9 +56,12 @@ routes('tolong jalankan analisis ded', 'RUN_DED_ANALYSIS', 'B4 tolong ded not HE
 routes('tambah item QTO galian 10 m3', 'CREATE_QTO_ITEM', 'B5 tambah qto not ADD_ITEM');
 routes('tolong buatkan item QTO galian 10 m3', 'CREATE_QTO_ITEM', 'B6 tolong qto not HELP');
 routes('bagaimana cara ekspor ke Excel?', 'HOWTO_EXCEL_EXPORT', 'B7 howto stays howto');
-routes('buka ded ai', 'OPEN_DED_ESTIMATE', 'B8 buka ded stays nav');
+// §4.1 (directive P1 2026-11-24 / OD-1): navigasi bahasa alami DIHAPUS —
+// "buka ded ai" / "buat proyek baru" kini UNKNOWN ke AI (dulu
+// OPEN_DED_ESTIMATE / OPEN_PROJECT_CREATE). Navigasi hanya lewat slash.
+routes('buka ded ai', 'UNKNOWN', 'B8 buka ded now goes to AI (§4.1 slash-only)');
 routes('buatkan rab rumah type 70 2 lantai', 'CREATE_RAB_DIRECT', 'B9 rab direct intact');
-routes('buat proyek baru', 'OPEN_PROJECT_CREATE', 'B10 buat proyek baru stays nav');
+routes('buat proyek baru', 'UNKNOWN', 'B10 buat proyek baru now goes to AI (§4.1 slash-only)');
 // Penjaga anti-"rab" (Phase 2, 2026-11-23 — regresi c96881c): permintaan
 // RAB ber-"proyek" TIDAK BOLEH dibajak CREATE_PROJECT; "rab" sesudah
 // "proyek" tetap bagian dari nama proyek (B16).
@@ -104,6 +108,9 @@ assert(HELP_TEXT.includes('sisa kredit saya'), 'E4 HELP mentions kredit');
 assert(HELP_TEXT.includes('PPN 11%'), 'E5 HELP mentions settings');
 
 /* --- F. Registry: case mendelegasikan ke handler --- */
+// P1-B: seksi F berjalan sebagai Estimator (gerbang kapabilitas
+// menolak tanpa konteks operasi / tanpa edit-estimate).
+setAssistantOperationContext({ actor: 'Penguji', writesEnabled: true });
 const baseCtx: ChatActionContext = {
   navigate: () => {},
   currentMenu: '',
@@ -112,14 +119,16 @@ const baseCtx: ChatActionContext = {
   projectTotal: null,
 };
 {
-  // CREATE_PROJECT dua langkah (W11 §11, S1-R5): panggilan pertama hanya
-  // bertanya (tidak membuat), panggilan kedua mengeksekusi.
+  // CREATE_PROJECT dua langkah (W11 §11, S1-R5 + P1-C): panggilan
+  // pertama hanya bertanya (tidak membuat), KLIK TOMBOL konfirmasi
+  // (executeDirectConfirmation) mengeksekusi. Kirim-ulang teks TIDAK
+  // PERNAH mengeksekusi (D6 O-5, direktif owner 2026-11-24).
   const ask = executeIntent('CREATE_PROJECT', 'Rumah Impian', {
     ...baseCtx,
     createProject: (name) => ({ id: 'p2', name }),
   });
   assert(ask.ok && ask.message.includes('Rumah Impian') && (ask.actions?.length ?? 0) === 1, 'F1a create project asks first');
-  const ok = executeIntent('CREATE_PROJECT', 'Rumah Impian', {
+  const ok = executeDirectConfirmation('CREATE_PROJECT', 'Rumah Impian', {
     ...baseCtx,
     createProject: (name) => ({ id: 'p2', name }),
   });
@@ -141,16 +150,16 @@ const baseCtx: ChatActionContext = {
     ...baseCtx, creditBalance: 4500, creditSource: 'unavailable',
   });
   assert(!unav.ok && unav.message.includes('belum terhubung'), 'F5 credit unavailable honest');
-  // UPDATE_PROJECT_SETTINGS dua langkah (W11 §11, S1-R5): panggilan
-  // pertama hanya bertanya (patch tidak diterapkan), panggilan kedua
-  // menerapkan — patch hanya field yang disebut.
+  // UPDATE_PROJECT_SETTINGS dua langkah (W11 §11, S1-R5 + P1-C):
+  // panggilan pertama hanya bertanya (patch tidak diterapkan), KLIK
+  // TOMBOL konfirmasi menerapkan — patch hanya field yang disebut.
   let seenPatch: Record<string, unknown> | null = null;
   const setAsk = executeIntent('UPDATE_PROJECT_SETTINGS', 'overhead jadi 10%', {
     ...baseCtx,
     updateProjectSettings: (_id, patch) => { seenPatch = patch as unknown as Record<string, unknown>; return true; },
   });
   assert(setAsk.ok && seenPatch === null, 'F6a settings asks first (patch not applied)');
-  const set = executeIntent('UPDATE_PROJECT_SETTINGS', 'overhead jadi 10%', {
+  const set = executeDirectConfirmation('UPDATE_PROJECT_SETTINGS', 'overhead jadi 10%', {
     ...baseCtx,
     updateProjectSettings: (_id, patch) => { seenPatch = patch as unknown as Record<string, unknown>; return true; },
   });

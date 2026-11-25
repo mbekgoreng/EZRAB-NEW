@@ -89,20 +89,38 @@ check('kode kanonis: VERIFIED bertahan', canon.verificationStatus === 'VERIFIED'
 check('kode kanonis: OFFICIAL_AHSP bertahan', (canon as any).priceSourceKind === 'OFFICIAL_AHSP');
 
 // =====================================================================
-console.log('=== G1-4: item manual tanpa kode AHSP — kompatibilitas penuh ===');
+console.log('=== G1-4: item manual tanpa kode AHSP — harga manual tidak terverifikasi ===');
+// Fast Track H-01 (directive §7 — never fabricate verification status):
+// PERUBAHAN PERILAKU YANG DISENGAJA (perlakuan yang sama dengan yang P1
+// berikan pada suite B5-3). Pin lama mengunci "item manual -> VERIFIED
+// default harga-resolved"; kini item manual SEJATI (priceStatus
+// PRICE_MANUAL eksplisit — harga ketikan user, mis. AHSP custom domain
+// CUSTOM) default NEEDS_VERIFICATION: tidak ada tindakan verifikasi di
+// balik harga manual. Input di bawah kini membawa priceStatus
+// PRICE_MANUAL agar benar-benar mewakili item manual; kompatibilitas
+// yang dipertahankan adalah ketiadaan flag identitas + amount normal,
+// BUKAN status VERIFIED-nya.
 const manual = createRabItemRecord(
-  { description: 'Pekerjaan manual pengguna', volume: 2, unit: 'ls', unitPrice: 150000 } as never,
+  { description: 'Pekerjaan manual pengguna', volume: 2, unit: 'ls', unitPrice: 150000, priceStatus: 'PRICE_MANUAL' } as never,
   'proj-s3', {});
 check('tanpa kode: tidak ada flag identitas (backward compat)',
   (manual as any).ahspIdentityStatus === undefined);
-check('tanpa kode: VERIFIED default harga-resolved tidak berubah',
-  manual.verificationStatus === 'VERIFIED');
+check('tanpa kode: harga MANUAL default NEEDS_VERIFICATION (H-01, dulu VERIFIED)',
+  manual.verificationStatus === 'NEEDS_VERIFICATION', String(manual.verificationStatus));
 check('tanpa kode: amount normal 300.000', manual.amount === 300000, String(manual.amount));
 const manualEmpty = createRabItemRecord(
-  { description: 'Pekerjaan manual pengguna', volume: 2, unit: 'ls', unitPrice: 150000, ahspCode: '' } as never,
+  { description: 'Pekerjaan manual pengguna', volume: 2, unit: 'ls', unitPrice: 150000, priceStatus: 'PRICE_MANUAL', ahspCode: '' } as never,
   'proj-s3', {});
 check('kode string kosong diperlakukan sama dengan tanpa kode',
-  (manualEmpty as any).ahspIdentityStatus === undefined && manualEmpty.verificationStatus === 'VERIFIED');
+  (manualEmpty as any).ahspIdentityStatus === undefined && manualEmpty.verificationStatus === 'NEEDS_VERIFICATION');
+// SISA (keputusan owner, SENGAJA tidak diubah H-01): item PRICE_RESOLVED
+// tanpa status eksplisit tetap default VERIFIED. Pin ini mendokumentasikan
+// perilaku saat ini — ubah hanya atas keputusan owner.
+const resolvedDefault = createRabItemRecord(
+  { description: 'Pekerjaan manual pengguna', volume: 2, unit: 'ls', unitPrice: 150000 } as never,
+  'proj-s3', {});
+check('RESOLVED tanpa status eksplisit tetap default VERIFIED (owner decision pending)',
+  resolvedDefault.verificationStatus === 'VERIFIED', String(resolvedDefault.verificationStatus));
 
 // =====================================================================
 console.log('=== G1-5: klaim harga resmi atas identitas tak dikenal dicabut ===');

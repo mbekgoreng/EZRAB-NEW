@@ -9,6 +9,26 @@
  * - DED AI Estimate DETAIL → geminiflash-3.8 (ZyRouter gateway id, NOT native)
  * - Dokumen AI             → deepseek-ai/DeepSeek-V4.1-Flash (River) + gemini-3.5-flash-lite fallback
  * - EZRAB AI (Chat)        → nvidia Nemotron-3.5-Super-VL (River), fallback deepseek, zyrouter
+ *
+ * DIVERGENSI vs RANTAI FINAL (O-04, Fast Track 2026-11-24 — DIDOKUMENTASI,
+ * TIDAK DIPAKSA): rantai final owner 2026-11-22 (api/_lib/aiGateway.js)
+ * adalah rantai FAILOVER multi-kaki per fitur (Crown -> River -> Atmo),
+ * sedangkan registry ini hanya memegang SATU (provider, model) per produk
+ * — strukturnya tidak punya slot rantai. Lebih dari itu, jalur Node yang
+ * memakai registry ini (providerClient.ts -> server/providers/
+ * multiProvider/adapters.ts) TIDAK mengenal provider 'crown',
+ * 'atmorouter', bahkan 'river': baseUrls() + key pool server hanya berisi
+ * gemini/inception/zrouter/zyrouter/atria/vleee, sehingga mengubah entri
+ * registry ke kaki pertama rantai final akan membuat jalur Node melempar
+ * UNSUPPORTED/AUTH_ERROR (hari ini pun ketiga produk 'river' sudah tidak
+ * bisa dieksekusi lewat jalur Node; hanya DED_AI_DETAIL via zyrouter yang
+ * bisa). Jalur browser TIDAK memakai registry ini — ia mengirim productId
+ * ke /api/ai/tools/execute dan gateway menjalankan rantai finalnya
+ * sendiri. Perbaikan sejati butuh: (1) slot rantai per produk di registry
+ * atau penghapusan registry sebagai sumber model, DAN (2) penambahan
+ * crown/atmorouter/river ke baseUrls + key pool adapter server — keduanya
+ * di luar scope O-04 (server/ tidak boleh disentuh worker ini). Lihat
+ * evidence O-04 di EZRAB-FAST-TRACK-2026-11-24/evidence/.
  */
 
 export type AIProductId =

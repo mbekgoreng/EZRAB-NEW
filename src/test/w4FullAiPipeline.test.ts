@@ -382,6 +382,24 @@ check('3.3 standar: baris hasil pemetaan cacat (volume/harga ≤ 0) ikut membata
   assert.ok(v.failures[0].reason.includes('volume'), 'alasan menyebut volume tidak valid');
 });
 
+check('3.3b standar: harga satuan ≤ 0 disebut di alasan penolakan (cermin 3.3)', () => {
+  const items = [
+    mkDed({ id: 'a', name: 'Harga Negatif', stage: 'CALCULATED', subtotal: 100000, quantity: 5, unitPrice: -100 }),
+  ];
+  const v = validateDedFinalizeBatch(items, 'FULL_AI');
+  eq(v.ok, false, 'batch ditolak');
+  assert.ok(v.failures[0].reason.includes('harga'), 'alasan menyebut harga tidak valid');
+});
+
+check('3.3c Full AI: harga satuan ≤ 0 disebut di alasan penolakan (cermin 3.3)', () => {
+  const items = [
+    mkFullAi({ id: 'a', name: 'Harga Negatif', price: { unitPrice: -100 } }),
+  ];
+  const v = validateFullAiFinalizeBatch(items, 'FULL_AI');
+  eq(v.ok, false, 'batch ditolak');
+  assert.ok(v.failures[0].reason.includes('harga'), 'alasan menyebut harga tidak valid');
+});
+
 check('3.4 Full AI valid: ok; item blocked tidak menggagalkan batch', () => {
   const items = [
     mkFullAi({ id: 'a', name: 'Siap A' }),

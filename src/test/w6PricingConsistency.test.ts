@@ -135,19 +135,13 @@ check('Free: 100 kredit AI sekali — hanya untuk Chat AI',
   pricingBlocks.includes('100 kredit AI sekali — hanya untuk Chat AI'));
 
 // ---------------------------------------------------------------------------
-// [3] ExactPricing.tsx (mati — tanpa importer) — tetap diturunkan dari plans.
+// [3] ExactPricing.tsx DIHAPUS (keputusan owner 2026-11-24) — komponen mati
+// tanpa importer yang membawa klaim promo tak terverifikasi (harga coret
+// Rp 125.000/Rp 180.000). Cek derivasi-dari-plans lama diganti pin hapus.
 // ---------------------------------------------------------------------------
-console.log('[3] ExactPricing.tsx (tanpa importer — dijaga agar tidak menyimpang bila dihidupkan lagi)');
-const exactPricing = read('src/components/landing/exact/ExactPricing.tsx');
-const exactPricingCode = stripComments(exactPricing);
-check('mengimpor modul kanonis billing/plans',
-  exactPricing.includes("from '../../../billing/plans'"));
-check('memakai getPlanDefinition',
-  exactPricing.includes('getPlanDefinition'));
-check('tidak ada literal harga bulanan kanonis di file',
-  !/54[._]?999/.test(exactPricingCode) &&
-  !/79[._]?999/.test(exactPricingCode) &&
-  !/159[._]?999/.test(exactPricingCode));
+console.log('[3] ExactPricing.tsx terhapus (klaim promo tak terverifikasi ikut hilang)');
+check('berkas ExactPricing.tsx tidak ada di tree',
+  !existsSync(join(ROOT, 'src/components/landing/exact/ExactPricing.tsx')));
 
 // ---------------------------------------------------------------------------
 // [4] pricingMatrix.ts — nama tampil kanonis; 'Advanced' hanya riwayat.
@@ -168,8 +162,9 @@ check('ketentuan Free menyebut Amendemen v1.2 (100 sekali, Chat AI saja)',
   matrix.includes('hanya Chat AI'));
 
 // ---------------------------------------------------------------------------
-// [5] Rumus tahunan 15% — nilai ekspektasi (dipakai PricingSection +
-//     ExactPricing; bila rumus berubah, kedua komponen harus ikut).
+// [5] Rumus tahunan 15% — nilai ekspektasi (dipakai PricingSection;
+//     ExactPricing yang dulu memakai rumus yang sama sudah dihapus
+//     per keputusan owner 2026-11-24).
 // ---------------------------------------------------------------------------
 console.log('[5] Rumus harga tahunan (bulanan setara, diskon 15%)');
 check('Starter tahunan = Rp46.749/bln',
@@ -226,9 +221,8 @@ const pricingBlocksMod = await import('../components/landing/exact/PricingBlocks
 check('PricingBlocks termuat + mengekspor PricingCards/PricingComparison',
   typeof pricingBlocksMod.PricingCards === 'function' &&
   typeof pricingBlocksMod.PricingComparison === 'function');
-const exactPricingMod = await import('../components/landing/exact/ExactPricing');
-check('ExactPricing termuat + mengekspor komponen',
-  typeof exactPricingMod.ExactPricing === 'function');
+// (ExactPricing tidak lagi di-smoke-import: berkasnya dihapus per
+// keputusan owner 2026-11-24; penghapusan di-pin di seksi [3].)
 
 console.log(`\nw6PricingConsistency.test: ${pass} PASS, ${fail} FAIL`);
 assert.equal(fail, 0, `${fail} pemeriksaan gagal`);

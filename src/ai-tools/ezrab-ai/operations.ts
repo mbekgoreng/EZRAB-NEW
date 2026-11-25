@@ -671,6 +671,30 @@ export async function executePlan(plan: ChangePlan, host: OperationHost): Promis
 
   // Terapkan lewat mutator kanonis.
   const createdIds: string[] = [];
+  // FTC A2-#7: rollback item yang sudah terlanjur ditambahkan bila
+  // penambahan multi-item gagal di tengah jalan — tanpa ini, kegagalan
+  // dilaporkan "gagal" sementara item awal TETAP ada di proyek (mutasi
+  // parsial). Rollback memakai mutator hapus kanonis yang sama dengan
+  // undo penambahan. Bila rollback sendiri gagal, kegagalan itu
+  // dilaporkan eksplisit — jangan pernah mengaku "dibatalkan" padahal
+  // tidak. Hanya add_item yang mengisi createdIds, jadi jalur lain
+  // (update/hapus) tidak terpengaruh.
+  const rollbackCreated = (): 'none' | 'ok' | 'failed' => {
+    if (createdIds.length === 0) return 'none';
+    try {
+      host.applyDelete([...createdIds]);
+      createdIds.length = 0;
+      return 'ok';
+    } catch {
+      return 'failed';
+    }
+  };
+  const rollbackNote = (rb: 'none' | 'ok' | 'failed'): string =>
+    rb === 'ok'
+      ? ' Item yang sempat ditambahkan sudah dibatalkan.'
+      : rb === 'failed'
+        ? ' PERINGATAN: item yang sempat ditambahkan TIDAK dapat dibatalkan otomatis — periksa spreadsheet proyek secara manual.'
+        : '';
   try {
     if (plan.action === 'update_quantity') {
       host.applyUpdateQuantity(plan.targets[0].itemId, plan.after as number);
@@ -703,11 +727,13 @@ export async function executePlan(plan: ChangePlan, host: OperationHost): Promis
         if (id) createdIds.push(id);
       }
       if (createdIds.length !== (plan.addItems?.length ?? 0)) {
-        return fail('Penambahan item tidak terkonfirmasi seluruhnya di state aplikasi — hasil dilaporkan gagal agar tidak menyesatkan.', true);
+        const rb = rollbackCreated();
+        return fail(`Penambahan item tidak terkonfirmasi seluruhnya di state aplikasi — hasil dilaporkan gagal agar tidak menyesatkan.${rollbackNote(rb)}`, true);
       }
     }
   } catch {
-    return fail('Mutator aplikasi melempar kesalahan saat menerapkan perubahan — operasi dilaporkan gagal.', true);
+    const rb = rollbackCreated();
+    return fail(`Mutator aplikasi melempar kesalahan saat menerapkan perubahan — operasi dilaporkan gagal.${rollbackNote(rb)}`, true);
   }
 
   // Verifikasi hasil + persistensi (state React menetap asinkron; polling singkat).

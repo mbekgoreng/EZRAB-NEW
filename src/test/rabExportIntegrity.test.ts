@@ -152,6 +152,27 @@ describe('factory: harga manual/estimasi dipertahankan (bug fix 2026-10-18)', ()
     expect(item.amount).toBe(750000);
   });
 
+  // Fast Track H-01 (directive §7 — never fabricate verification status):
+  // harga manual/estimasi belum terverifikasi — default NEEDS_VERIFICATION.
+  it('11a. PRICE_MANUAL default NEEDS_VERIFICATION (bukan VERIFIED)', () => {
+    const item = createRabItemRecord({ ...base, unitPrice: 1000000, priceStatus: 'PRICE_MANUAL' }, 'p1');
+    expect(item.verificationStatus).toBe('NEEDS_VERIFICATION');
+  });
+
+  it('11b. PRICE_ESTIMATED default NEEDS_VERIFICATION (bukan VERIFIED)', () => {
+    const item = createRabItemRecord({ ...base, unitPrice: 75000, priceStatus: 'PRICE_ESTIMATED' }, 'p1');
+    expect(item.verificationStatus).toBe('NEEDS_VERIFICATION');
+  });
+
+  it('11c. custom-AHSP manual price (USER_MANUAL + PRICE_MANUAL) default NEEDS_VERIFICATION', () => {
+    const item = createRabItemRecord(
+      { ...base, unitPrice: 250000, priceStatus: 'PRICE_MANUAL', code: 'CUST-01',
+        priceSourceKind: 'USER_MANUAL', priceSourceLabel: 'Input User' } as never,
+      'p1'
+    );
+    expect(item.verificationStatus).toBe('NEEDS_VERIFICATION');
+  });
+
   it('12. PRICE_UNRESOLVED tetap nol (tidak ada harga)', () => {
     const item = createRabItemRecord({ ...base, unitPrice: null, priceStatus: 'PRICE_UNRESOLVED' }, 'p1');
     expect(item.unitPrice).toBe(0);

@@ -498,14 +498,18 @@ async function main(): Promise<void> {
     // blocked (tool tidak tersedia)
     const unavailable = await executeTool({ toolName: 'wizard_server', args: { sessionId: 's1' }, projectId: PROJ, actor: 'model', channel: 'chat-ai' });
     collect(unavailable.record.status);
+    // WC-03 (P1): transfer_draft + analyze_draft_costs tidak
+    // model-callable di kanal chat-ai — matriks status diuji lewat
+    // aktor 'user'/'system' (jalur orkestrator); penolakan model dipin
+    // p1AuthzConfirmation (WC03-02).
     // awaiting-approval (konsekwensial tanpa persetujuan)
-    const awaiting = await executeTool({ toolName: 'transfer_draft', args: { projectId: PROJ, draftVersion: 1 }, projectId: PROJ, actor: 'model', channel: 'chat-ai' });
+    const awaiting = await executeTool({ toolName: 'transfer_draft', args: { projectId: PROJ, draftVersion: 1 }, projectId: PROJ, actor: 'user', channel: 'chat-ai' });
     collect(awaiting.record.status);
-    // failed (approval model ditolak)
-    const selfGrant = await executeTool({ toolName: 'transfer_draft', args: { projectId: PROJ, draftVersion: 1 }, projectId: PROJ, actor: 'model', approval: { actor: 'model', approvedAt: new Date().toISOString() }, channel: 'chat-ai' });
+    // failed (approval model ditolak — gerbang memeriksa approval.actor)
+    const selfGrant = await executeTool({ toolName: 'transfer_draft', args: { projectId: PROJ, draftVersion: 1 }, projectId: PROJ, actor: 'user', approval: { actor: 'model', approvedAt: new Date().toISOString() }, channel: 'chat-ai' });
     collect(selfGrant.record.status);
     // partially-succeeded
-    const partial = await executeTool({ toolName: 'analyze_draft_costs', args: { items: [{ description: 'X', totalPrice: 1, priceStatus: 'PRICE_UNRESOLVED' }] }, projectId: PROJ, actor: 'model', channel: 'chat-ai' });
+    const partial = await executeTool({ toolName: 'analyze_draft_costs', args: { items: [{ description: 'X', totalPrice: 1, priceStatus: 'PRICE_UNRESOLVED' }] }, projectId: PROJ, actor: 'system', channel: 'chat-ai' });
     collect(partial.record.status);
     // blocked (langkah tanpa runner registry)
     const noRunner = await runPlanStepWithRegistry('understand-objective', { projectId: PROJ, conversationId: CONV }, {}, { actor: 'user', channel: 'orchestrator' });

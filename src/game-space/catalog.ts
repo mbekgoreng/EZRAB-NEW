@@ -171,7 +171,7 @@ export function buildGameInfoAnswer(mentioned: GameCatalogEntry[]): string {
     return (
       'Ada, itu game di **EZRAB Game Space** 🎮\n\n' +
       parts.join('\n\n') +
-      '\n\nMainnya langsung di chat ini — tekan tombol **Buka Game Space** di bawah, atau ketik "game", lalu pilih gamenya. Gratis, tanpa AI credits.'
+      '\n\nMainnya langsung di chat ini — tekan tombol **Buka Game Space** di bawah, atau ketik "/game", lalu pilih gamenya. Gratis, tanpa AI credits.'
     );
   }
   const cons = ALL_GAMES.filter((g) => g.cat === 'construction');

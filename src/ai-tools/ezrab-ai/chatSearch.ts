@@ -157,6 +157,12 @@ export interface NormalizedChatQuery {
   grade: string | null;
   /** Kode eksak yang terdeteksi (bentuk penuh), atau null. */
   codeQuery: string | null;
+  /**
+   * WB-06: SEMUA token berbentuk kode pada kueri (mis. ["3.7.4",
+   * "3.7.5"]). codeQuery tetap hanya terisi bila kueri adalah SATU
+   * kode; daftar ini dipakai jalur multi-kode di searchChatAhsp.
+   */
+  codeQueries: string[];
   hasDemolitionWord: boolean;
 }
 
@@ -182,11 +188,13 @@ export function normalizeChatQuery(raw: string): NormalizedChatQuery {
   // campuran huruf-angka (A.2.01.b1.1), dan parenthesized (2.3.(21a)).
   const stripped = text.replace(/[?.,!\s]+$/g, '').trim();
   const codeShape = /^(\d+(\.\d+)+[a-z]?|[a-z][a-z0-9]*(\.[a-z0-9]+)+|\d+(\.\d+)*\.\([0-9a-z]+\))$/i;
+  const ws = text.split(/\s+/).map((t) => t.replace(/[?.,!]+$/g, ''));
+  // WB-06: semua token berbentuk kode (untuk jalur multi-kode).
+  const codeQueries = [...new Set(ws.filter((t) => t && codeShape.test(t)))];
   let codeQuery: string | null = null;
   if (codeShape.test(stripped)) {
     codeQuery = stripped;
   } else {
-    const ws = text.split(/\s+/).map((t) => t.replace(/[?.,!]+$/g, ''));
     const rest = ws.filter((t) => t && !STOPWORDS.has(t));
     if (rest.length === 1 && codeShape.test(rest[0])) codeQuery = rest[0];
   }
@@ -217,6 +225,7 @@ export function normalizeChatQuery(raw: string): NormalizedChatQuery {
     ratio,
     grade,
     codeQuery,
+    codeQueries,
     hasDemolitionWord: DEMOLITION_RE.test(text),
   };
 }
@@ -505,6 +514,44 @@ export function searchChatAhsp(
     );
   }
 
+  // 1b. WB-06: kueri multi-kode ("3.7.4 3.7.5") — selesaikan tiap kode
+  // secara eksak lewat getOfficialAhsp, bukan lewat text search yang
+  // tercemar substring kode ('3.7.4' ⊂ '4.1.3.7.4'). Semua ditemukan →
+  // RELEVANT; sebagian hilang → PARTIAL + nama kode yang hilang; tidak
+  // satu pun ditemukan → NOT_FOUND tegas.
+  if (!n.codeQuery && n.codeQueries.length >= 2) {
+    const found: ChatSearchItem[] = [];
+    const missing: string[] = [];
+    for (const cq of n.codeQueries) {
+      const exact: any = officialAhspRepository.getOfficialAhsp(cq);
+      if (exact) {
+        const it = buildChatItem(exact, requestedUnit);
+        it.matchedTerms = [];
+        it.score = 100;
+        found.push(it);
+      } else {
+        missing.push(cq);
+      }
+    }
+    if (found.length === 0) {
+      return notFound(
+        n.codeQueries.join(', '),
+        `Kode ${n.codeQueries.join(', ')} tidak ditemukan di katalog AHSP 2026 resmi. ` +
+          'Periksa kembali kodenya — kode yang tidak ada tidak diganti dengan item lain.',
+      );
+    }
+    if (missing.length === 0) {
+      return { ...base, outcome: 'FOUND_RELEVANT', items: found.slice(0, 8), notFoundMessage: null };
+    }
+    return {
+      ...base,
+      outcome: 'FOUND_PARTIAL',
+      items: found.slice(0, 8),
+      note: `Kode ${missing.join(', ')} tidak ditemukan di katalog AHSP 2026 resmi — hanya item yang ditemukan yang ditampilkan.`,
+      notFoundMessage: null,
+    };
+  }
+
   // 2. Spesifier keras: rasio / mutu yang tidak cocok dengan item mana pun.
   if (n.ratio) {
     const anyRatio = active.some((it: any) =>
@@ -556,19 +603,73 @@ export function searchChatAhsp(
   const globalTitleTokens = new Set<string>();
   for (const s of titleTokenSets) for (const tk of s) globalTitleTokens.add(tk);
 
-  // 3b. Koreksi ejaan fuzzy: istilah yang tidak ada sebagai token judul
-  // dicoba dikoreksi ke token katalog terdekat (temuan live 2026-11-17:
-  // "blowplank" → "bouwplank"). Istilah kerja selanjutnya memakai hasil
-  // koreksi; `base.terms` tetap memuat istilah ASLI sebagai catatan jujur
-  // atas apa yang ditanyakan, dan koreksinya diungkap di `note` hasil.
-  const corrections: Array<{ from: string; to: string }> = [];
-  const terms: string[] = n.terms.map((term) => {
-    if (globalTitleTokens.has(term)) return term;
-    const fixed = findFuzzyCorrection(term, globalTitleTokens);
-    if (!fixed) return term;
-    corrections.push({ from: term, to: fixed });
-    return fixed;
-  });
+  // 4. Scoring batas kata atas katalog aktif.
+  const scoreAll = (passTerms: string[]): ChatSearchItem[] => {
+    const out: ChatSearchItem[] = [];
+    for (const it of active as any[]) {
+      const title = String(it.title ?? it.name ?? '');
+      if (!n.hasDemolitionWord && DEMOLITION_RE.test(title.toLowerCase())) continue;
+      const { matched, score } = scoreItem(title, passTerms, n.ratio, n.grade);
+      if (score <= 0) continue;
+      const built = buildChatItem(it, requestedUnit);
+      built.matchedTerms = matched;
+      built.score = score;
+      out.push(built);
+    }
+    return out;
+  };
+  const maxScore = (list: ChatSearchItem[]): number =>
+    list.reduce((m, it) => Math.max(m, it.score), 0);
+
+  // 3b. Koreksi ejaan fuzzy — WB-07 (Fast Track 2026-11-24): HANYA
+  // sebagai fallback, dan hanya bila diperlukan. Koreksi di muka
+  // mengubah istilah teknis ("semen portlan" → "portal") padahal
+  // istilah lain kueri sudah cukup menemukan jawaban, dan istilah
+  // terkoreksi itu tidak cocok dengan satu pun item yang
+  // dikembalikan. Maka koreksi dicoba hanya bila (a) kueri apa
+  // adanya tidak mencapai ambang relevansi, ATAU (b) tidak satu pun
+  // item skor-teratas cocok dengan istilah PERTAMA kueri (subjek
+  // permintaan — bila subjeknya saja tidak cocok, ejaannya patut
+  // dicurigai; bila subjek cocok, istilah lain yang salah eja cukup
+  // dibiarkan tidak cocok). Kandidat koreksi sudah dibatasi pada
+  // token judul katalog (findFuzzyCorrection); yang ditambahkan di
+  // sini: (a) pemicu fallback ini, dan (b) istilah terkoreksi wajib
+  // benar-benar cocok dengan item skor-teratas, atau koreksi
+  // dibatalkan. `base.terms` tetap memuat istilah ASLI sebagai
+  // catatan jujur atas apa yang ditanyakan, dan koreksi yang dipakai
+  // diungkap di `note` hasil.
+  let terms: string[] = n.terms;
+  let corrections: Array<{ from: string; to: string }> = [];
+  let scored = scoreAll(terms);
+  let topScore = maxScore(scored);
+  const subjectMatched =
+    terms.length > 0 &&
+    scored.some((it) => it.score === topScore && it.matchedTerms.includes(terms[0]));
+  if (topScore < RELEVANCE_FLOOR || !subjectMatched) {
+    const fallbackCorrections: Array<{ from: string; to: string }> = [];
+    const correctedTerms: string[] = n.terms.map((term) => {
+      if (globalTitleTokens.has(term)) return term;
+      const fixed = findFuzzyCorrection(term, globalTitleTokens);
+      if (!fixed) return term;
+      fallbackCorrections.push({ from: term, to: fixed });
+      return fixed;
+    });
+    if (fallbackCorrections.length > 0) {
+      const rescored = scoreAll(correctedTerms);
+      const rescoredTop = maxScore(rescored);
+      const correctedMatched = rescored.some(
+        (it) =>
+          it.score === rescoredTop &&
+          fallbackCorrections.some((c) => it.matchedTerms.includes(c.to))
+      );
+      if (rescoredTop >= RELEVANCE_FLOOR && correctedMatched) {
+        terms = correctedTerms;
+        corrections = fallbackCorrections;
+        scored = rescored;
+        topScore = rescoredTop;
+      }
+    }
+  }
   const correctionNote =
     corrections.length > 0
       ? `Ejaan ${corrections.map((c) => `"${c.from}" dikoreksi menjadi "${c.to}"`).join('; ')} (tidak ada item dengan ejaan asal di katalog).`
@@ -582,20 +683,7 @@ export function searchChatAhsp(
     termDf.set(term, c);
   }
 
-  // 4. Scoring batas kata atas katalog aktif.
-  const scored: ChatSearchItem[] = [];
-  for (const it of active as any[]) {
-    const title = String(it.title ?? it.name ?? '');
-    if (!n.hasDemolitionWord && DEMOLITION_RE.test(title.toLowerCase())) continue;
-    const { matched, score } = scoreItem(title, terms, n.ratio, n.grade);
-    if (score <= 0) continue;
-    const built = buildChatItem(it, requestedUnit);
-    built.matchedTerms = matched;
-    built.score = score;
-    scored.push(built);
-  }
-  const topScore = scored.reduce((m, it) => Math.max(m, it.score), 0);
-  if (topScore < 3) {
+  if (topScore < RELEVANCE_FLOOR) {
     return notFound(
       null,
       `Tidak ditemukan AHSP untuk "${raw}" di katalog AHSP 2026 resmi. ` +
@@ -603,9 +691,15 @@ export function searchChatAhsp(
         'galian tanah") atau potongan kodenya.',
     );
   }
+  // WB-07: seri skor diputus oleh jumlah istilah yang cocok dulu,
+  // baru urutan kode — item yang cocok lebih banyak istilah kueri
+  // didahulukan atas item yang hanya cocok satu istilah.
   const topAll = scored
     .filter((it) => it.score === topScore)
-    .sort((a, b) => compareCodes(a.code, b.code));
+    .sort(
+      (a, b) =>
+        b.matchedTerms.length - a.matchedTerms.length || compareCodes(a.code, b.code)
+    );
 
   /* Gerbang anti over-matching (audit ekstrem C-039/C-040, 2026-11-08).
    * Skor token saja tidak cukup: satu kata yang kebetulan sama bisa
