@@ -49,6 +49,15 @@ import { dedQuantityReasoningEngine } from '../ded-rab-v3/reasoning/dedQuantityR
 import { PdfPageService } from '../ded-rab-v2/ingestion/pdfPageService';
 import { aiProviderClient } from '../ded-rab-v3/ai/aiProviderClient';
 import { EZRAB_MODEL_PRO } from '../services/aiModelMasking';
+// Phase C — live self-review audit (read-only, advisory). The audit
+// never changes items, totals, or the run outcome; an audit error
+// degrades to "audit unavailable", never to a failed run.
+import {
+  runSelfReviewAudit,
+  unavailableSelfReviewAudit,
+  type AiEstimateOutputWithAudit,
+  type SelfReviewAuditReport,
+} from '../ai-tools/ded-ai-estimate/dedSelfReviewAudit';
 
 export interface AiEstimatePipelineOptions {
   projectId: string;
@@ -161,6 +170,12 @@ export class AiEstimatePipeline {
       // ================================================================
       let estimateItems: AiEstimateWorkItem[];
       let synthesis: DocumentSynthesisSummary;
+      // Phase C: audit inputs threaded out of the mode internals
+      // (document memory for Q17, deduper merge count for Q10, pages
+      // actually read for Q1). The internals own these values.
+      let auditContext: DedContextMemory | undefined;
+      let auditDuplicatesMerged: number | undefined;
+      let auditPagesProcessed = totalPages;
 
       // F5 (4.5): a total pricing-stage failure must reach the user as a
       // result-level warning, not just a console.error.
@@ -179,6 +194,9 @@ export class AiEstimatePipeline {
         estimateItems = fastResult.items;
         synthesis = fastResult.synthesis;
         priceStageWarning = fastResult.priceStageWarning;
+        auditContext = fastResult.context;
+        auditDuplicatesMerged = fastResult.duplicatesMerged;
+        auditPagesProcessed = fastResult.pagesProcessed;
       } else {
         // --- DETAIL MODE (Gemini 3.8 Flash) ---
         const detailResult = await this.executeDetailModeInternal({
@@ -192,6 +210,9 @@ export class AiEstimatePipeline {
         estimateItems = detailResult.items;
         synthesis = detailResult.synthesis;
         priceStageWarning = detailResult.priceStageWarning;
+        auditContext = detailResult.context;
+        auditDuplicatesMerged = detailResult.duplicatesMerged;
+        auditPagesProcessed = detailResult.pagesProcessed;
       }
 
       if (!estimateItems || estimateItems.length === 0) {
@@ -246,6 +267,28 @@ export class AiEstimatePipeline {
         ? [priceStageWarning, ...sanityWarnings]
         : sanityWarnings;
 
+      // Phase C — live self-review audit (read-only, advisory). Runs
+      // AFTER the sanity checks and BEFORE the summary build. An audit
+      // error degrades to "audit unavailable" — it must NEVER fail the
+      // run itself.
+      let selfReviewAudit: SelfReviewAuditReport;
+      try {
+        selfReviewAudit = runSelfReviewAudit({
+          items: estimateItems,
+          pagesTotal: totalPages,
+          pagesProcessed: auditPagesProcessed,
+          contextMemory: auditContext,
+          rooms: auditContext?.rooms,
+          duplicatesMerged: auditDuplicatesMerged,
+        });
+      } catch (e) {
+        selfReviewAudit = unavailableSelfReviewAudit(
+          totalPages,
+          auditPagesProcessed,
+          e instanceof Error ? e.message : 'unknown audit error',
+        );
+      }
+
       // 4. Summaries & Breakdown
       const summary = AiEstimateCalculator.buildSummary(estimateItems);
       const categoryBreakdown = AiEstimateCalculator.buildCategoryBreakdown(estimateItems);
@@ -271,7 +314,7 @@ export class AiEstimatePipeline {
         { pagesRead: totalPages, totalPages, itemsFound: estimateItems.length }
       );
 
-      return {
+      const output: AiEstimateOutputWithAudit = {
         success: true,
         jobId,
         projectId,
@@ -284,7 +327,9 @@ export class AiEstimatePipeline {
         warnings,
         stats,
         totalPagesRead: totalPages,
+        selfReviewAudit,
       };
+      return output;
     } catch (err: any) {
       console.error(`[AiEstimatePipeline] Execution failed (${mode}):`, err);
       notify('FAILED', 'Terjadi kesalahan', 0, err.message);
@@ -345,6 +390,10 @@ export class AiEstimatePipeline {
     items: AiEstimateWorkItem[];
     synthesis: DocumentSynthesisSummary;
     priceStageWarning: AiEstimateWarning | null;
+    /** Phase C audit inputs: document memory (Q17), deduper merges (Q10), pages read (Q1). */
+    context: DedContextMemory;
+    duplicatesMerged: number;
+    pagesProcessed: number;
   }> {
     const { projectId, projectName, rawPages, totalPages, region, notify } = args;
 
@@ -413,7 +462,15 @@ export class AiEstimatePipeline {
     // Fast AI Price Estimation using quick model (Gemini 3.5 Flash-Lite)
     const priceStageWarning = await this.estimatePricesWithAI(items, synthesis, region, 'quick');
 
-    return { items, synthesis, priceStageWarning };
+    return {
+      items,
+      synthesis,
+      priceStageWarning,
+      context,
+      duplicatesMerged: dedup.duplicatesRemoved,
+      // FAST reads key sheets only — pages actually read, not the document total.
+      pagesProcessed: pagesToRead.length,
+    };
   }
 
   /**
@@ -437,6 +494,10 @@ export class AiEstimatePipeline {
     items: AiEstimateWorkItem[];
     synthesis: DocumentSynthesisSummary;
     priceStageWarning: AiEstimateWarning | null;
+    /** Phase C audit inputs: document memory (Q17), deduper merges (Q10), pages read (Q1). */
+    context: DedContextMemory;
+    duplicatesMerged: number;
+    pagesProcessed: number;
   }> {
     const { projectId, projectName, rawPages, totalPages, region, notify } = args;
 
@@ -490,7 +551,15 @@ export class AiEstimatePipeline {
     // Deep AI Price Estimation using advanced model (Gemini 3.8 Flash)
     const priceStageWarning = await this.estimatePricesWithAI(items, synthesis, region, 'advanced');
 
-    return { items, synthesis, priceStageWarning };
+    return {
+      items,
+      synthesis,
+      priceStageWarning,
+      context,
+      duplicatesMerged: dedup.duplicatesRemoved,
+      // DETAIL reads every sheet.
+      pagesProcessed: rawPages.length,
+    };
   }
 
   /**

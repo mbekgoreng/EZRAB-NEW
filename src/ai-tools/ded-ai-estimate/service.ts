@@ -47,10 +47,17 @@ import type { DedRabAiMode } from './dedMode';
 import { buildFastPrompt, DedFastOutput, DedFastPromptInput } from './prompts/fast';
 import { buildDetailPrompt, DedDetailOutput, DedDetailPromptInput } from './prompts/detail';
 import { parseDedPdf, DedParsedDocument } from './parser';
-import { attemptQuantityFromDimensionString, parseDimensionsString } from './quantity';
+import { attemptQuantityFromDimensionString, normalizeUnit, parseDimensionsString } from './quantity';
 import { evaluateAssumptionBasis, type AssumptionBasisKind } from './assumptionBasis';
 import { applyQuantityReasonablenessReview } from './reasonableness';
 import { completeDedBatch, derivePlanContext } from './priceCompletion';
+// Phase C — live self-review audit (read-only, advisory). Runs at the
+// end of the analysis flow, after price completion, over the final items.
+import {
+  runSelfReviewAudit,
+  unavailableSelfReviewAudit,
+  type DedAiOutputWithAudit,
+} from './dedSelfReviewAudit';
 import { buildDedUsageFromStandard } from './usageMetadata';
 import { resolveDedPriceForPolicy } from './pricing';
 import { matchDedItemToAhsp, resolveDedPriceWithCanonical } from '../ded-canonical/canonicalDedPricing';
@@ -100,7 +107,14 @@ export function isProjectTypeSupported(v: string): v is DedAiProjectType {
 // (pola yang sama dengan helper lain di berkas ini).
 export function convertAiItem(idx: number, raw: any, mode: DedAiMode, policy?: import('./types').DedEstimationPolicy): DedAiItem {
   const name = String(raw.name || `Pekerjaan ${idx + 1}`);
-  const units = String(raw.units || raw.unit || 'm2');
+  // WD-3.7-06: normalisasi satuan sebelum dipakai — 'm²'/'m³' dari model
+  // adalah 'm2'/'m3' kanonis (tanpa ini shape kuantitas jatuh ke COUNT).
+  // WD-3.7-08: tangkap SEBELUM default — bila model tidak menyatakan
+  // satuan sama sekali, `units` adalah default 'm2' (load-bearing, tetap
+  // dipertahankan untuk kompatibilitas) dan item DITANDAI unitUnknown +
+  // token provenance `unit:assumed-m2`, bukan diam-diam dianggap m².
+  const unitUnknown = !raw.units && !raw.unit;
+  const units = normalizeUnit(String(raw.units || raw.unit || 'm2'));
   const dims = raw.dimensions || raw.quantityFormula || '';
   // Sprint 3 (G3): ditandai mergeRawItemsAcrossPasses bila item se-nama
   // se-satuan dengan dimensi berbeda dipertahankan dari pass lain.
@@ -345,6 +359,8 @@ export function convertAiItem(idx: number, raw: any, mode: DedAiMode, policy?: i
     specification: raw.specification,
     description: raw.specification || name,
     units,
+    // WD-3.7-08: tempel HANYA bila true — snapshot lama tanpa flag tetap stabil.
+    ...(unitUnknown ? { unitUnknown: true as const } : {}),
     quantity,
     quantitySource,
     quantityFormula: assumptionFormula || fromDim.formula || raw.quantityFormula || undefined,
@@ -368,6 +384,8 @@ export function convertAiItem(idx: number, raw: any, mode: DedAiMode, policy?: i
     sourceEvidence: raw.sourceEvidence || undefined,
     provenance: [
       `quantity:${quantitySource}`,
+      // WD-3.7-08: asumsi satuan terlihat di mana pun provenance ditampilkan.
+      ...(unitUnknown ? ['unit:assumed-m2'] : []),
       ...(assumptionKind ? [`assumption-basis:${assumptionKind}`] : []),
       `price:${price.source}`,
       ...(price.ahspCode ? [`ahsp:${price.ahspCode}`] : []),
@@ -1543,6 +1561,28 @@ export class DedAiEstimateService {
       // user apa adanya; absen tetap absen (builder mencatat null).
       complexity: options.complexity,
     });
+
+    // Phase C — live self-review audit (read-only, advisory) at the end
+    // of the analysis flow, after price completion, over the final
+    // `DedAiItem[]` + page counts. `derivePlanContext(items)` supplies
+    // the floor-area context (note only, never a threshold). An audit
+    // error degrades to "audit unavailable" — it must NEVER fail the
+    // run itself.
+    try {
+      const auditPagesProcessed = pageTrace.filter((t) => t.status === 'SENT').length;
+      (output as DedAiOutputWithAudit).selfReviewAudit = runSelfReviewAudit({
+        items: finalItems,
+        pagesTotal: documentTotalPages,
+        pagesProcessed: auditPagesProcessed,
+        planContext: derivePlanContext(finalItems),
+      });
+    } catch (e) {
+      (output as DedAiOutputWithAudit).selfReviewAudit = unavailableSelfReviewAudit(
+        documentTotalPages,
+        pageTrace.filter((t) => t.status === 'SENT').length,
+        e instanceof Error ? e.message : 'unknown audit error',
+      );
+    }
 
     if (output.coverage.itemsFullyResolved === 0 && output.coverage.totalItems > 0) {
       return {

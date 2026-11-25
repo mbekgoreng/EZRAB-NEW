@@ -18,6 +18,9 @@ import {
 } from './priceCompletion';
 import { resolveCanonicalCode } from '../ded-canonical/canonicalDedPricing';
 import { groupByWbs, WbsGroup } from './wbsClassifier';
+// WD-3.7-08 (Batch 4): label kanonis satuan-diasumsikan untuk ekspor Excel
+// + ringkasan WBS — satu sumber dengan dedOutputContract.
+import { exportUnitLabel, countUnitUnknown } from './unitUnknownLabel';
 // W6 (§8): chip + penjelasan provenance dari SATU tabel kanonis
 // (dedProvenance.ts) — estimasi AI dibedakan visual dari data terverifikasi.
 import { provenanceBadgeForDedSource, provenanceExplanationForDedSource } from './dedProvenance';
@@ -34,6 +37,12 @@ import {
   reviewGateSummary, reviewedCount, isReviewGateComplete, canFinalizeWithGate,
   countSavableDed,
 } from './dedReviewGate';
+// Phase B (DED RAB Validation Gate, advisory): per-item gate status —
+// DISPLAY ONLY; never changes savable/finalize semantics.
+import { validateDedAiItem, blockingSummary } from './dedRabValidationGate';
+// Phase C: live self-review audit (display only).
+import { runSelfReviewAudit, type SelfReviewAuditReport } from './dedSelfReviewAudit';
+import { AHSP_DATABASE_VERSION } from '../../data/nationalCostDatabase/types';
 import { useI18n } from '../../i18n/I18nContext';
 import { FsFooterPortal } from '../../components/feature-shell/FeatureFullscreenShell';
 // I7b — Tinjau visual (split-view, konsep ter-ACC owner 2026-10-07):
@@ -291,6 +300,36 @@ export const DedAiResultView: React.FC<Props> = ({
   const gateComplete = isReviewGateComplete(gateItems, reviewed);
   const savableCount = useMemo(() => countSavableDed(items), [items]);
   const gateAllowsFinalize = canFinalizeWithGate({ gateItems, checkedIds: reviewed, savableCount });
+
+  // ---- Phase B: hasil gate validasi RAB per item (advisory, tampil saja).
+  // Dihitung ulang dari `items` SAAT INI (edit pengguna ikut tercermin).
+  // Tidak memengaruhi savable/finalisasi — hanya anotasi tampilan. ----
+  const validationGateById = useMemo(
+    () => new Map(items.map((it) => [it.id, validateDedAiItem(it, output.policy, { targetAhspVersion: AHSP_DATABASE_VERSION })])),
+    [items, output.policy],
+  );
+
+  // ---- Phase C: audit self-review (tampil saja). ----
+  // Audit hasil analisis (bila service sudah menghitungnya) dipakai apa
+  // adanya; untuk hasil lama tanpa audit, dihitung ulang dari item SAAT
+  // INI (diberi label hitung-ulang) dengan hasil gate Phase B sebagai
+  // masukan Q14/Q15. Tidak memengaruhi savable/finalisasi.
+  const storedAudit = (output as DedAiOutput & { selfReviewAudit?: SelfReviewAuditReport }).selfReviewAudit;
+  const [showAudit, setShowAudit] = useState(false);
+  const selfReviewAudit = useMemo(() => {
+    if (storedAudit) return { audit: storedAudit, recomputed: false };
+    const pagesProcessed = output.analysisTrace?.selectedPageCount ?? output.pageCount;
+    return {
+      audit: runSelfReviewAudit({
+        items,
+        pagesTotal: output.pageCount,
+        pagesProcessed,
+        planContext: derivePlanContext(items),
+        gateResults: validationGateById,
+      }),
+      recomputed: true,
+    };
+  }, [storedAudit, items, output.pageCount, output.analysisTrace, validationGateById]);
 
   const toggleReviewed = (id: string) => {
     setReviewed((prev) => {
@@ -654,7 +693,9 @@ export const DedAiResultView: React.FC<Props> = ({
           [t('ai.ded.result.x_category')]: it.category,
         };
         if (prefs.volume) row[t('ai.ded.result.th_volume')] = it.quantity ?? '';
-        row[t('ai.ded.result.th_unit')] = it.units;
+        // WD-3.7-08 (Batch 4): satuan diasumsikan ikut teranotasi di kolom
+        // satuan ekspor — sebelumnya tampil polos 'm2' seolah dinyatakan.
+        row[t('ai.ded.result.th_unit')] = exportUnitLabel(it.units, it.unitUnknown);
         row[t('ai.ded.result.x_unit_price')] = it.unitPrice ?? '';
         row[t('ai.ded.result.x_total')] = it.subtotal ?? '';
         row[t('ai.ded.result.x_status')] = statusMeta[status].label;
@@ -804,6 +845,49 @@ export const DedAiResultView: React.FC<Props> = ({
           <div className="hint">{output.pageCount} {t('ai.ded.result.stat_total_hint_a')}</div>
         </div>
       </div>
+      {/* ---- Phase C: panel audit self-review (tampil saja) ----
+          Per-question LOLOS/GAGAL/BELUM DINILAI + metrics. Audit hasil
+          analisis dipakai apa adanya; hasil lama dihitung ulang dari
+          item saat ini (diberi label). Tidak memengaruhi
+          savable/finalisasi — hanya anotasi. */}
+      <div className="aic-card" style={{ margin: '0 0 16px' }}>
+        <button
+          type="button"
+          onClick={() => setShowAudit(!showAudit)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            width: '100%', justifyContent: 'space-between', padding: 0,
+            border: 'none', background: 'none', cursor: 'pointer',
+            fontSize: 13.5, fontWeight: 700, color: 'var(--ez-color-text)',
+          }}
+        >
+          <span>
+            Audit Self-Review (DED) — {selfReviewAudit.audit.passedCount} lolos · {selfReviewAudit.audit.failedCount} gagal · {selfReviewAudit.audit.notEvaluatedCount} belum dinilai
+            {selfReviewAudit.audit.cleanPass ? ' · Lolos bersih' : ''}
+            {selfReviewAudit.recomputed ? ' · dihitung ulang dari item saat ini' : ''}
+          </span>
+          <span style={{ fontSize: 18 }}>{showAudit ? '▾' : '▸'}</span>
+        </button>
+        {showAudit && (
+          <div style={{ marginTop: 8 }}>
+            {selfReviewAudit.audit.questions.map((qq) => (
+              <div key={qq.number} style={{ display: 'flex', gap: 8, padding: '6px 0', borderTop: '1px solid var(--ez-color-surface-tertiary)', fontSize: 12.5 }}>
+                <span style={{ fontWeight: 700, minWidth: 22 }}>{qq.number}.</span>
+                <span style={{ flex: 1 }}>
+                  <span style={{ fontWeight: 700 }}>{qq.question}</span>
+                  <span style={{ display: 'block', color: 'var(--ez-color-text-faint)', marginTop: 2 }}>{qq.reason}</span>
+                </span>
+                <span style={{
+                  fontWeight: 700, whiteSpace: 'nowrap',
+                  color: qq.verdict === 'PASS' ? 'var(--ez-color-success)' : qq.verdict === 'FAIL' ? 'var(--ez-color-danger-strong)' : 'var(--ez-hue-amber-text-deep)',
+                }}>
+                  {qq.verdict === 'PASS' ? 'LOLOS' : qq.verdict === 'FAIL' ? 'GAGAL' : 'BELUM DINILAI'}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
       {/* ---- FASE P0: Cakupan 12 Divisi & Jejak Analisis ---- */}
       {output.divisionCoverage && output.divisionCoverage.length > 0 && (
         <div className="aic-card" style={{ margin: '0 0 16px' }}>
@@ -871,6 +955,10 @@ export const DedAiResultView: React.FC<Props> = ({
           <div style={{ marginTop: 8, border: '1px solid var(--ez-color-border-line)', borderRadius: 8, overflow: 'hidden' }}>
             {wbsData.groups.map((g) => {
               const isOpen = wbsExpanded.has(g.node.code);
+              // WD-3.7-08 (Batch 4): kelompok yang memuat item bersatuan
+              // diasumsikan menandainya di baris ringkasan — bukan hanya di
+              // tabel utama. Advisory: tidak mengubah issueCount/total.
+              const unknownCount = countUnitUnknown(g.items);
               return (
                 <div key={g.node.code} style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
                   <button
@@ -899,6 +987,11 @@ export const DedAiResultView: React.FC<Props> = ({
                           {g.issueCount} bermasalah
                         </span>
                       )}
+                      {unknownCount > 0 && (
+                        <span title="Sebagian satuan di kelompok ini diasumsikan m² oleh sistem (bukan dinyatakan DED/model) — verifikasi sebelum finalisasi." style={{ fontSize: 11, background: 'var(--ez-hue-amber-bg-deep)', color: 'var(--ez-hue-amber-text-dark)', padding: '2px 8px', borderRadius: 10, fontWeight: 600 }}>
+                          {unknownCount} satuan diasumsikan
+                        </span>
+                      )}
                     </span>
                     <b className="dedai-wbs-group-total" style={{ color: 'var(--ez-color-primary-hover)', fontSize: 13.5 }}>{fmtRp(g.subtotal)}</b>
                   </button>
@@ -911,6 +1004,16 @@ export const DedAiResultView: React.FC<Props> = ({
                             <span style={{ color: 'var(--ez-color-text-faint)', fontSize: 11.5, marginLeft: 6 }}>
                               {it.quantity != null ? `${fmtQty(it.quantity)} ${it.units}` : '—'}
                             </span>
+                            {/* WD-3.7-08 (Batch 4): badge satuan-diasumsikan di
+                                baris item WBS — cermin badge tabel utama. */}
+                            {it.unitUnknown && (
+                              <span
+                                title="Satuan tidak tercantum di DED/model — m² diasumsikan oleh sistem, bukan dinyatakan. Verifikasi satuan sebelum finalisasi."
+                                style={{ display: 'inline-block', marginLeft: 6, fontSize: 10.5, fontWeight: 700, padding: '1px 7px', borderRadius: 999, background: 'var(--ez-hue-amber-bg-deep)', color: 'var(--ez-hue-amber-text-dark)', whiteSpace: 'nowrap' }}
+                              >
+                                satuan diasumsikan
+                              </span>
+                            )}
                           </span>
                           <span className="dedai-wbs-item-price" style={{ color: it.subtotal != null ? 'var(--ez-color-text-primary)' : 'var(--ez-color-text-faint)', fontWeight: 600 }}>
                             {fmtRp(it.subtotal)}
@@ -1116,6 +1219,8 @@ export const DedAiResultView: React.FC<Props> = ({
               // blok detail). Selalu ada untuk item live (adapter 1:1).
               const reviewItem = reviewByLiveId.get(it.id);
               const needsAhsp = it.ahspMatch?.status === 'NEEDS_REVIEW' && it.ahspMatch.candidates.length > 0;
+              // Phase B: hasil gate validasi RAB item ini (advisory).
+              const vGate = validationGateById.get(it.id);
               return (
                 <React.Fragment key={it.id}>
                   <tr
@@ -1144,7 +1249,20 @@ export const DedAiResultView: React.FC<Props> = ({
                     <td>
                       {isEditing ? (
                         <input className="dedai-edit-input" style={{ width: 64 }} value={editVals.units} onChange={(e) => setEditVals({ ...editVals, units: e.target.value })} />
-                      ) : it.units}
+                      ) : (
+                        <>
+                          {it.units}
+                          {/* WD-3.7-08: satuan diasumsikan m² — jangan tampil seolah dinyatakan model/DED. */}
+                          {it.unitUnknown && (
+                            <span
+                              title="Satuan tidak tercantum di DED/model — m² diasumsikan oleh sistem, bukan dinyatakan. Verifikasi satuan sebelum finalisasi."
+                              style={{ display: 'inline-block', marginLeft: 6, fontSize: 10.5, fontWeight: 700, padding: '1px 7px', borderRadius: 999, background: 'var(--ez-hue-amber-bg-deep)', color: 'var(--ez-hue-amber-text-dark)', whiteSpace: 'nowrap' }}
+                            >
+                              satuan diasumsikan
+                            </span>
+                          )}
+                        </>
+                      )}
                     </td>
                     <td><span className="dedai-num">{fmtRp(it.unitPrice)}</span></td>
                     <td><span className="dedai-num">{fmtRp(it.subtotal)}</span></td>
@@ -1174,6 +1292,30 @@ export const DedAiResultView: React.FC<Props> = ({
                             style={{ marginTop: 4 }}
                           >
                             {REVIEW_STATUS_LABELS[reviewItem.status]}
+                          </span>
+                        </>
+                      )}
+                      {/* Phase B: chip gate validasi RAB (advisory — tampil
+                          saja): gate mana yang gagal + alasannya (tooltip).
+                          BLOCKING = amber klaim, asumsi berlabel = oranye,
+                          WARNING saja = amber garis putus. Item bersih
+                          tanpa asumsi tidak menampilkan chip. */}
+                      {vGate && (vGate.blockingFailures.length > 0 || vGate.warningFailures.length > 0 || vGate.assumptionLabeled) && (
+                        <>
+                          <br />
+                          <span
+                            className={`dedai-qchip ${vGate.blockingFailures.length > 0 ? 'dedai-qchip-claim' : vGate.assumptionLabeled ? 'dedai-qchip-assumption' : 'dedai-qchip-confirm'}`}
+                            title={[
+                              ...(vGate.blockingFailures.length > 0 ? [`BLOCKING — ${blockingSummary(vGate)}`] : []),
+                              ...(vGate.warningFailures.length > 0 ? [`Perlu tinjau — ${vGate.warningFailures.map((g) => `Gate ${g.gate} (${g.name}): ${g.reason}`).join(' | ')}`] : []),
+                              ...(vGate.assumptionLabeled ? [vGate.assumptionNote ?? 'Asumsi berlabel (tanpa AHSP resmi).'] : []),
+                            ].join('\n')}
+                          >
+                            {vGate.blockingFailures.length > 0
+                              ? `Gate ${vGate.blockingFailures.map((g) => g.gate).join(', ')} bermasalah`
+                              : vGate.assumptionLabeled
+                                ? 'Asumsi berlabel (tanpa AHSP)'
+                                : `Gate ${vGate.warningFailures.map((g) => g.gate).join(', ')} perlu tinjau`}
                           </span>
                         </>
                       )}
@@ -1231,6 +1373,24 @@ export const DedAiResultView: React.FC<Props> = ({
                             <div className="dl-row"><span className="dl-k">Halaman sumber</span><span>{it.sourcePages.length ? it.sourcePages.map((p) => `${t('ai.ded.result.page_abbr')}${p}${t('ai.ded.result.page_abbr_suffix')}`).join(', ') : 'Tidak tercatat per item'}</span></div>
                             {!it.rawDimensions && !it.quantityFormula && !it.derivation && !it.quantityNote && !it.sourceEvidence && (
                               <div className="dl-row"><span className="dl-k">Keterangan</span><span>Tidak ada dasar kuantitas tersimpan untuk item ini.</span></div>
+                            )}
+                            {/* ---- Phase B: rincian gate validasi RAB (advisory) ----
+                                Gate yang gagal + alasannya; asumsi berlabel
+                                (FULL_AI tanpa AHSP) dinyatakan eksplisit.
+                                Bukan penghalang finalisasi — hanya anotasi. */}
+                            {vGate && (
+                              <div className="dedai-evidence">
+                                <div className="dedai-evidence-head">Validasi RAB (gate)</div>
+                                {vGate.gates.filter((g) => g.status === 'FAIL').map((g) => (
+                                  <div className="dl-row" key={g.gate}><span className="dl-k">Gate {g.gate} · {g.name}</span><span>{g.reason}</span></div>
+                                ))}
+                                {vGate.assumptionLabeled && (
+                                  <div className="dl-row"><span className="dl-k">Asumsi</span><span>{vGate.assumptionNote}</span></div>
+                                )}
+                                {vGate.gates.every((g) => g.status !== 'FAIL') && !vGate.assumptionLabeled && (
+                                  <div className="dl-row"><span className="dl-k">Keterangan</span><span>Tidak ada gate yang gagal.</span></div>
+                                )}
+                              </div>
                             )}
                             {/* ---- I7b: blok tinjau visual (spec §10) ----
                                 Interpretasi + keyakinan + status 6-state +

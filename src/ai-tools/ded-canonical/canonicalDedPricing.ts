@@ -74,6 +74,7 @@ import { priceResolver2026 } from '../../data/priceDatabase2026/resolver';
 import { canonicalPriceResolver } from '../../engine/pricing/canonical/canonicalPriceResolver';
 import { canonicalUnitRegistry } from '../../engine/pricing/canonical/canonicalUnitRegistry';
 import { isQuarantined } from '../../data/nationalCostDatabase/ahspQuarantine';
+import { checkGradeCompatibility } from './concreteGradeGate';
 
 export type CanonicalMatchStatus =
   | 'RESOLVED'              // Kode terverifikasi + satuan cocok + komposisi FULL
@@ -331,6 +332,20 @@ function disjoint(a: Set<unknown>, b: Set<unknown>): boolean {
  * langsung (kasus K-vs-K tidak punya contoh di katalog).
  */
 export function checkSpecCompatibility(dedText: string, catalogTitle: string): string | null {
+  // Candidate A (port DED v2, owner-approved 2026-11-24): grade gate runs
+  // FIRST. A concrete-grade contradiction is a hard engineering
+  // incompatibility — it must veto auto-accept even when every other spec
+  // check passes. K-vs-fc′ are different systems (no conversion table);
+  // graded-vs-ungraded yields NEEDS_REVIEW, never a silent pass. The
+  // reason keeps its GRADE_MISMATCH:/NEEDS_REVIEW: prefix so the review
+  // UI can tell a grade veto from other spec conflicts. This single
+  // insertion point covers all three auto-accept gates at once: Gate A
+  // via checkClaimedCodeSpec, Gate B exact-title filter, Gate C
+  // evaluateGateC — all three call this function.
+  const grade = checkGradeCompatibility(dedText, catalogTitle);
+  if (!grade.compatible) {
+    return grade.reason;
+  }
   const dedRatios = extractRatios(dedText);
   const catRatios = extractRatios(catalogTitle);
   if (disjoint(dedRatios, catRatios)) {

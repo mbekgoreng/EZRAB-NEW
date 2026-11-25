@@ -40,6 +40,16 @@ import {
   mapFullAiItemToRabInput,
   type DedFinalizeRabInput,
 } from './finalizeMapping';
+import { validateDedAiItem, validateFullAiItem } from './dedRabValidationGate';
+import { AHSP_DATABASE_VERSION } from '../../data/nationalCostDatabase/types';
+
+/** Satu item savable dengan kegagalan gate BLOCKING (advisory — Phase B). */
+export interface DedGateBlockingItem {
+  itemId: string;
+  itemName: string;
+  /** Alasan per gate, format "Gate N (nama): alasan". */
+  failures: string[];
+}
 
 /** Satu item savable yang gagal dipetakan ke baris RAB. */
 export interface DedFinalizeFailure {
@@ -60,6 +70,15 @@ export interface DedFinalizeValidation<TItem> {
   mapped: DedFinalizeRabInput[];
   /** Item savable yang gagal dipetakan (alasan spesifik per item). */
   failures: DedFinalizeFailure[];
+  /**
+   * ADVISORY (Phase B, DED RAB Validation Gate): item savable dengan
+   * kegagalan gate BLOCKING, beserta alasannya. ANOTASI MURNI — tidak
+   * mengubah `ok`, `savable`, `mapped`, atau perilaku finalisasi apa
+   * pun. Finalize tetap berjalan seperti sebelumnya; laporan hanya
+   * memberi tahu item mana yang membawa temuan blocking.
+   */
+  gateBlockingItemCount: number;
+  gateBlockingItems: DedGateBlockingItem[];
   /**
    * true ⟺ ada ≥1 item savable DAN semua item savable terpetakan ke
    * baris RAB yang valid. false ⟹ handler WAJIB tidak menyisip apa pun.
@@ -102,6 +121,19 @@ export function validateDedFinalizeBatch(
   const needsReviewCount = savable.filter(
     (it) => it.quantitySource === 'AI_INFERENCE' || it.quantitySource === 'ASSUMPTION',
   ).length;
+  // ADVISORY (Phase B): gate counts over savable items only. The gate is
+  // read-only — it never changes savable/mapped/ok.
+  const gateBlockingItems: DedGateBlockingItem[] = [];
+  for (const it of savable) {
+    const gate = validateDedAiItem(it, policy, { targetAhspVersion: AHSP_DATABASE_VERSION });
+    if (gate.blockingFailures.length > 0) {
+      gateBlockingItems.push({
+        itemId: it.id,
+        itemName: it.name,
+        failures: gate.blockingFailures.map((g) => `Gate ${g.gate} (${g.name}): ${g.reason}`),
+      });
+    }
+  }
   const mapped: DedFinalizeRabInput[] = [];
   const failures: DedFinalizeFailure[] = [];
   for (const it of savable) {
@@ -110,6 +142,17 @@ export function validateDedFinalizeBatch(
       let reason: string;
       if (it.unitPrice == null) reason = 'tanpa harga satuan (unitPrice kosong)';
       else if (it.quantity == null) reason = 'tanpa kuantitas';
+      // Fast Track (W-AUTH2, w4 3.3): penjaga W1 mapper juga menolak
+      // kuantitas tidak valid (non-finite / <= 0) — alasan itu TADINYA
+      // tertutup cabang sumber-harga di bawah (mapper null untuk
+      // kuantitas -5 dilaporkan sebagai "sumber harga AI_ESTIMATE
+      // tidak dapat dipetakan"). Permukaan di sini agar alasan
+      // menyebut cacat yang sebenarnya.
+      else if (!Number.isFinite(it.quantity) || it.quantity <= 0) reason = `volume tidak valid (${it.quantity})`;
+      // Fast Track (koordinator, residu w4 3.3): penjaga W1 mapper juga
+      // menolak harga satuan tidak valid (non-finite / <= 0) — cermin
+      // cabang volume di atas, agar alasannya menyebut cacat sebenarnya.
+      else if (!Number.isFinite(it.unitPrice) || it.unitPrice <= 0) reason = `harga satuan tidak valid (${it.unitPrice})`;
       else if (it.priceSource === 'UNRESOLVED') {
         reason = 'sumber harga UNRESOLVED — tidak boleh menjadi baris RAB berharga';
       } else {
@@ -131,6 +174,8 @@ export function validateDedFinalizeBatch(
     needsReviewCount,
     mapped,
     failures,
+    gateBlockingItemCount: gateBlockingItems.length,
+    gateBlockingItems,
     ok: savable.length > 0 && failures.length === 0,
   };
 }
@@ -150,6 +195,19 @@ export function validateFullAiFinalizeBatch(
   const savable = items.filter(
     (it) => it.status === 'READY' && it.subtotal != null && it.subtotal > 0 && it.price.unitPrice != null,
   );
+  // ADVISORY (Phase B): gate counts over savable items only — read-only,
+  // never changes savable/mapped/ok.
+  const gateBlockingItems: DedGateBlockingItem[] = [];
+  for (const it of savable) {
+    const gate = validateFullAiItem(it, policy, { targetAhspVersion: AHSP_DATABASE_VERSION });
+    if (gate.blockingFailures.length > 0) {
+      gateBlockingItems.push({
+        itemId: it.id,
+        itemName: it.name,
+        failures: gate.blockingFailures.map((g) => `Gate ${g.gate} (${g.name}): ${g.reason}`),
+      });
+    }
+  }
   const mapped: DedFinalizeRabInput[] = [];
   const failures: DedFinalizeFailure[] = [];
   for (const it of savable) {
@@ -158,6 +216,12 @@ export function validateFullAiFinalizeBatch(
       let reason: string;
       if (it.price.unitPrice == null) reason = 'tanpa harga satuan (unitPrice kosong)';
       else if (it.quantity.value == null) reason = 'tanpa kuantitas';
+      // Fast Track (W-AUTH2, w4 3.3 — cermin jalur standar): mapper
+      // Full AI juga menolak kuantitas non-finite / <= 0; tanpa
+      // cabang ini alasannya tertutup cabang sumber-harga di bawah.
+      else if (!Number.isFinite(it.quantity.value) || it.quantity.value <= 0) reason = `volume tidak valid (${it.quantity.value})`;
+      // Fast Track (koordinator, residu w4 3.3 — cermin jalur standar).
+      else if (!Number.isFinite(it.price.unitPrice) || it.price.unitPrice <= 0) reason = `harga satuan tidak valid (${it.price.unitPrice})`;
       else reason = `sumber harga "${it.price.source}" tidak dapat dipetakan ke baris RAB`;
       failures.push({ itemId: it.id, itemName: it.name, reason });
       continue;
@@ -175,6 +239,8 @@ export function validateFullAiFinalizeBatch(
     needsReviewCount: 0,
     mapped,
     failures,
+    gateBlockingItemCount: gateBlockingItems.length,
+    gateBlockingItems,
     ok: savable.length > 0 && failures.length === 0,
   };
 }
