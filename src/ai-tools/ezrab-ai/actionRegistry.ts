@@ -427,12 +427,28 @@ function fmtIDR(n: number): string {
 /* pengguna pindah ke proyek B lalu mengetik "itu aja" / klik Full AI  */
 /* (finalisasi membangun draft dari kebutuhan proyek lama). Setiap     */
 /* penulisan kini mencatat proyek pemiliknya; setiap pembacaan         */
-/* perilaku (bukan getter diagnostik) melewati scopedLastRabNeeds:     */
-/* bila proyek pemilik ≠ proyek saat ini (keduanya non-null), state    */
-/* dianggap basi, DIBERSIHKAN SENDIRI, dan pembaca memperlakukannya    */
-/* sebagai "tidak ada sesi kebutuhan" — alur draft RAB yang sah (satu  */
-/* proyek yang sama dari ringkasan sampai finalisasi) tidak berubah.   */
-/* null di kedua sisi = tanpa proyek aktif — bukan ketidakcocokan.     */
+/* perilaku (bukan getter diagnostik) melewati scopedLastRabNeeds.     */
+/*                                                                     */
+/* STRICT PROJECT CONTEXT ISOLATION (B-gap-3, 2026-11-26, keputusan   */
+/* owner FINAL — menggantikan aturan B1 di bawah untuk kasus asimetris */
+/* yang dulu lolos):                                                   */
+/*  - konteks GLOBAL (stored null) TIDAK TERLIHAT di dalam proyek      */
+/*    (projectId non-null) — return null TANPA self-clean, agar sesi   */
+/*    global tetap utuh saat pengguna kembali ke chat global;          */
+/*  - konteks PROYEK (stored non-null) TIDAK TERLIHAT di chat global   */
+/*    (projectId null) — return null TANPA self-clean, agar sesi       */
+/*    proyek tetap utuh saat pengguna kembali ke proyek itu;           */
+/*  - antar-proyek (keduanya non-null, berbeda): aturan B1 tetap —     */
+/*    dianggap basi, DIBERSIHKAN SENDIRI, pembaca memperlakukannya     */
+/*    sebagai "tidak ada sesi kebutuhan";                              */
+/*  - alur draft RAB yang sah (satu proyek yang sama dari ringkasan    */
+/*    sampai finalisasi) tidak berubah; pemanggil tanpa scope          */
+/*    (projectId undefined) mendapat perilaku lama (tanpa filter) —    */
+/*    seluruh pemanggil produksi kini meneruskan scope eksplisit       */
+/*    (null = global, string = proyek). Aturan yang sama berlaku untuk */
+/*    scopedPendingSubtypeNeeds dan penjaga tryContinue* di bawah,     */
+/*    cermin isProjectContextForeign (§5.3 S3-B) untuk konteks         */
+/*    landscape/universal.                                             */
 /* ------------------------------------------------------------------ */
 let lastRabNeeds: RabNeeds | null = null;
 let lastRabRaw = '';
@@ -466,6 +482,14 @@ function scopedLastRabNeeds(projectId?: string | null): RabNeeds | null {
   if (!lastRabNeeds) return null;
   if (projectId === undefined) return lastRabNeeds;
   const stored = lastRabNeedsProjectId;
+  // STRICT PROJECT CONTEXT ISOLATION (B-gap-3, 2026-11-26): konteks
+  // global TIDAK TERLIHAT di dalam proyek, dan konteks proyek TIDAK
+  // TERLIHAT di chat global — keduanya return null TANPA self-clean
+  // (sesi yang tak terlihat tetap utuh untuk scope asalnya; "tidak
+  // terlihat" ≠ "basi"). Hanya antar-proyek (keduanya non-null dan
+  // berbeda) yang membersihkan sendiri, seperti aturan B1.
+  if (stored === null && projectId !== null) return null;
+  if (stored !== null && projectId === null) return null;
   if (stored !== null && projectId !== null && stored !== projectId) {
     // Basi: kebutuhan milik proyek lain — bersihkan sendiri agar tidak
     // dipakai ulang oleh jalur lain sesudahnya.
@@ -502,11 +526,16 @@ function setPendingSubtypeNeeds(needs: RabNeeds | null, projectId?: string | nul
 }
 
 /** Baca pertanyaan subtipe yang masih berlaku untuk proyek ini
- *  (aturan ketidakcocokan yang sama dengan scopedLastRabNeeds). */
+ *  (aturan ketidakcocokan yang sama dengan scopedLastRabNeeds —
+ *  STRICT PROJECT CONTEXT ISOLATION, B-gap-3 2026-11-26: global tak
+ *  terlihat di proyek dan sebaliknya, tanpa self-clean; hanya
+ *  antar-proyek yang membersihkan sendiri). */
 function scopedPendingSubtypeNeeds(projectId?: string | null): RabNeeds | null {
   if (!pendingSubtypeNeeds) return null;
   if (projectId === undefined) return pendingSubtypeNeeds;
   const stored = pendingSubtypeProjectId;
+  if (stored === null && projectId !== null) return null;
+  if (stored !== null && projectId === null) return null;
   if (stored !== null && projectId !== null && stored !== projectId) {
     setPendingSubtypeNeeds(null);
     return null;
@@ -538,12 +567,23 @@ function isBuiltFullAiPrompt(text: string): boolean {
   return text.startsWith('Buatkan RAB ') && text.includes('Susun daftar pekerjaan lengkap');
 }
 
-/** Prompt Full AI dari kebutuhan terkumpul (jenis+subtipe+ukuran terbawa). */
-export function buildFullAiPrompt(needs: RabNeeds): string {
+/**
+ * Prompt Full AI dari kebutuhan terkumpul (jenis+subtipe+ukuran terbawa).
+ *
+ * `budgetIdr` (hardening 2026-11-26, Worker D §4D): anggaran TERSTRUKTUR
+ * dari spek intent aktif — RabNeeds tidak punya field budget, jadi tanpa
+ * ini prompt fallback LLM kehilangan anggaran pengguna. Nilai Rp apa
+ * adanya (tanpa pembulatan/konversi); null = tidak disebut (prompt
+ * byte-identical dengan sebelum perubahan). Prompt adalah SATU-SATUNYA
+ * tempat budget dibawa sebagai teks — draft deterministik (path-c/d)
+ * memakai metadata terstruktur, bukan prompt ini.
+ */
+export function buildFullAiPrompt(needs: RabNeeds, budgetIdr?: number | null): string {
   const parts: string[] = [`Buatkan RAB ${needs.kindLabel ?? 'pekerjaan'}`];
   if (needs.subtypeLabel) parts.push(`jenis ${needs.subtypeLabel}`);
   if (needs.lengthM) parts.push(`panjang ${formatLengthM(needs.lengthM)}`);
   if (needs.location) parts.push(`lokasi ${needs.location}`);
+  if (budgetIdr != null) parts.push(`anggaran ${fmtIDR(budgetIdr)}`);
   return (
     `${parts.join(', ')}. Susun daftar pekerjaan lengkap dari persiapan sampai ` +
     'selesai beserta volume dan harga satuannya memakai data AHSP 2026 dan ' +
@@ -592,7 +632,7 @@ function pathCardResult(needs: RabNeeds): ActionResult {
     message: lines.join('\n'),
     actions: [
       { label: 'Pakai template', action: { kind: 'intent', intent: 'RAB_PATH_TEMPLATE' } },
-      { label: 'Full AI', action: { kind: 'intent', intent: 'RAB_FULL_AI', param: buildFullAiPrompt(needs) } },
+      { label: 'Full AI', action: { kind: 'intent', intent: 'RAB_FULL_AI', param: buildFullAiPrompt(needs, getLastRabIntentSpec()?.budgetIdr ?? null) } },
       { label: 'Dari gambar DED', action: { kind: 'navigate', menu: 'ded-ai' } },
     ],
   };
@@ -915,6 +955,23 @@ export function isProjectContextForeign(
   return activeProjectId != null;
 }
 
+/* Cermin aturan tunggal §5.3 di atas untuk konteks UNIVERSAL (B-gap-3,
+ * 2026-11-26, STRICT PROJECT CONTEXT ISOLATION): konteks tanpa cap
+ * (global sejati) hanya boleh berlanjut selama proyek aktif tetap null;
+ * begitu proyek aktif ada, ia asing — dan konteks tercap proyek P
+ * asing bagi global maupun proyek lain. Dipakai penjaga submit view
+ * (foreignIntake) dan tryContinueUniversalContext. `activeProjectId`
+ * null/undefined = tanpa proyek aktif. */
+export function isUniversalContextForeign(
+  ctx: UniversalIntakeContext | null | undefined,
+  activeProjectId: string | null | undefined,
+): boolean {
+  if (!ctx) return false;
+  const stored = ctx.projectId ?? null;
+  if (stored != null) return stored !== (activeProjectId ?? null);
+  return activeProjectId != null;
+}
+
 const numID = (v: number): string => v.toLocaleString('id-ID', { maximumFractionDigits: 2 });
 
 /** Kalimat pembuka yang mengakui SEMUA yang sudah diketahui (§3 prompt). */
@@ -927,6 +984,13 @@ function intakeKnownIntro(ctx: ProjectIntakeContext, whatLabel: string): string 
   }
   if (ctx.location) bits.push(`di ${ctx.location}`);
   if (ctx.facilities.length) bits.push(`dengan ${ctx.facilities.map(facilityLabel).join(', ').toLowerCase()}`);
+  // PERBAIKAN 2026-11-26 (dana + kategori): anggaran yang disebut
+  // pengguna adalah isi permintaan, bukan hiasan — pembuka landscape
+  // WAJIB menggema anggaran yang sudah dicatat (budgetText), sama
+  // seperti pertanyaan intake universal ("Saya sudah mencatat:
+  // anggaran disebut ..."). Tanpa ini "dana 50 juta bisa ga buatkan
+  // rab landscape" dijawab tanpa satu pun penyebutan dananya.
+  if (ctx.budgetText) bits.push(`dengan anggaran ${ctx.budgetText}`);
   return `Siap! Kita buat RAB ${whatLabel}${bits.length ? ` untuk ${bits.join(', ')}` : ''}.`;
 }
 
@@ -1239,9 +1303,15 @@ export function projectIntakeGate(raw: string, projectId?: string | null): Actio
  * tidak ada konteks aktif atau teksnya perintah baru yang jelas
  * (pemanggil memproses normal; konteks gugur seperti pola gerbang lain).
  */
-export function tryContinueProjectContext(text: string): ActionResult | null {
+export function tryContinueProjectContext(text: string, projectId?: string | null): ActionResult | null {
   const ctx = projectCtx;
   if (!ctx) return null;
+  // STRICT PROJECT CONTEXT ISOLATION (B-gap-3, 2026-11-26): pertahanan
+  // dalam di samping penjaga submit view (isProjectContextForeign) —
+  // konteks landscape asing bagi scope pemanggil BUKAN lanjutan (return
+  // null, tanpa merge, tanpa drop). projectId undefined = pemanggil lama
+  // tanpa scope (perilaku lama, tanpa filter).
+  if (projectId !== undefined && isProjectContextForeign(ctx, projectId)) return null;
   const t = (text || '').toLowerCase();
 
   // "Gunakan material premium" & sejenisnya (skenario G): penyebutan
@@ -1751,9 +1821,17 @@ export function universalIntakeGate(raw: string, fromClarify = false, projectId?
  * membuang cakupan terkait, afirmasi menuju brief/generate. Null bila
  * bukan jawaban intake (perintah baru) — pemanggil memproses normal.
  */
-export function tryContinueUniversalContext(text: string): ActionResult | null {
+export function tryContinueUniversalContext(text: string, projectId?: string | null): ActionResult | null {
   const ctx = universalCtx;
   if (!ctx) return null;
+  // STRICT PROJECT CONTEXT ISOLATION (B-gap-3, 2026-11-26, patch A yang
+  // di-ACC): konteks universal tanpa cap (global) BUKAN lanjutan di
+  // dalam proyek, dan konteks tercap proyek BUKAN lanjutan di global /
+  // proyek lain — return null TANPA merge dan TANPA drop (sesi global
+  // tetap hidup untuk chat global; konteks proyek tetap utuh untuk
+  // proyeknya). projectId undefined = pemanggil lama tanpa scope
+  // (perilaku lama, tanpa filter); null = sesi global eksplisit.
+  if (projectId !== undefined && isUniversalContextForeign(ctx, projectId)) return null;
   const t = (text || '').toLowerCase();
 
   // --- Penghapusan cakupan (§8: aksi hapus wajib didukung) ---
@@ -2014,9 +2092,14 @@ function materialGateResult(raw: string, draft: { parts: { scope: { id: string }
  * teks tidak menyebut bahan/afirmasi apa pun — pemanggil (view) lalu
  * memproses pesan secara normal (perintah baru menggugurkan gerbang).
  */
-export function tryContinueRabMaterial(text: string): ActionResult | null {
+export function tryContinueRabMaterial(text: string, projectId?: string | null): ActionResult | null {
   const pending = pendingMaterialGate;
   if (!pending) return null;
+  // STRICT PROJECT CONTEXT ISOLATION (B-gap-3, 2026-11-26): gerbang
+  // bahan menyimpan projectId pemiliknya — jawaban teks dari scope lain
+  // BUKAN lanjutan (return null, gerbang dipertahankan untuk scope
+  // asalnya). projectId undefined = pemanggil lama tanpa scope.
+  if (projectId !== undefined && (pending.projectId ?? null) !== projectId) return null;
   const cls = classifyMaterialText(pending.group, text);
   if (cls.kind === 'option') {
     pendingMaterialGate = null;
@@ -2144,9 +2227,22 @@ function rabSummaryResult(raw: string, base?: RabNeeds, projectId?: string | nul
     };
   }
   if (needs.kind === 'rumah' || needs.kind === 'gedung' || needs.kind === 'renovasi' || needs.kind === null) {
+    // WORKER B §3B (2026-11-26): anggaran giliran pertama tersimpan di
+    // spek intent (budgetIdr) tetapi tidak pernah digema di ringkasan —
+    // pengguna tidak tahu anggarannya tercatat, padahal jalur jembatan
+    // (intake universal) dan cabang rumah-tersirat CREATE_RAB_CLARIFY
+    // sudah menggema anggaran dengan kalimat yang sama. Gema di sini
+    // hanya tampil bila spek aktif memang membawa budget (ekstraksi
+    // segar tiap giliran pertama menimpa spek lama, jadi anggaran topik
+    // lama tidak bisa bocor ke ringkasan baru).
+    const specBudget = getLastRabIntentSpec()?.budgetIdr ?? null;
+    const budgetLine =
+      specBudget != null
+        ? `\n\nAnggaran ${fmtIDR(specBudget)} saya catat sebagai batas: total drafnya nanti saya bandingkan dengan anggaran itu, bukan memangkas lingkup diam-diam.`
+        : '';
     return {
       ok: true,
-      message: summary,
+      message: summary + budgetLine,
       // Perbaikan overhaul 2026-11-06: ringkasan pertama ikut menyetel
       // status menunggu kelengkapan — sebelumnya flag ini hanya disetel
       // hasil klik tombol "Lengkapi kebutuhan", sehingga jawaban ketikan
@@ -2176,7 +2272,7 @@ function rabSummaryResult(raw: string, base?: RabNeeds, projectId?: string | nul
       `Untuk pekerjaan ${needs.kindLabel ?? 'ini'}, jalur yang tersedia adalah template RAB, Full AI, estimasi dari DED, atau mulai manual — tidak saya arahkan ke wizard rumah.`,
     actions: [
       { label: 'Pakai template', action: { kind: 'navigate', menu: 'template-rab' } },
-      { label: 'Full AI', action: { kind: 'intent', intent: 'RAB_FULL_AI', param: buildFullAiPrompt(needs) } },
+      { label: 'Full AI', action: { kind: 'intent', intent: 'RAB_FULL_AI', param: buildFullAiPrompt(needs, getLastRabIntentSpec()?.budgetIdr ?? null) } },
       { label: 'Dari gambar DED', action: { kind: 'navigate', menu: 'ded-ai' } },
       { label: 'Mulai manual', action: { kind: 'navigate', menu: 'rab-estimasi' } },
     ],
@@ -2249,7 +2345,11 @@ export function continueRabFinalize(text: string, projectId?: string | null): Ac
     };
   }
 
-  const built = buildSpecRabFromNeeds(needs);
+  // Worker F (sprint 2026-11-26, B-gap-2): anggaran dari spek intent
+  // aktif diteruskan eksplisit — RabNeeds tidak punya field budget, dan
+  // tanpa ini draft finalisasi tidak pernah membandingkan total vs
+  // anggaran. Budget HANYA pembanding verdict, bukan pemangkas lingkup.
+  const built = buildSpecRabFromNeeds(needs, getLastRabIntentSpec()?.budgetIdr ?? null);
   if (!built) {
     return {
       ok: true,
@@ -2655,6 +2755,12 @@ function choiceCardResult(p: PendingRabChoice, corrected: boolean, projectId?: s
   }
   if (p.spec && p.spec.scope.length > 0) {
     lines.push(`• Lingkup: ${p.spec.scope.join(', ')} — Dari Anda`);
+  }
+  // Worker F (sprint 2026-11-26, D-G1): anggaran di spek ikut digema di
+  // kartu — tanpa baris ini pengguna tidak tahu anggarannya tercatat
+  // sebelum memilih jalur (draft-nya sendiri kini memuat verdict).
+  if (p.spec?.budgetIdr != null) {
+    lines.push(`• Anggaran: ${fmtIDR(p.spec.budgetIdr)} — Dari Anda (dicatat — dipakai sebagai pembanding sesudah RAB dihitung)`);
   }
   lines.push(
     `• Jumlah lantai: ${p.floors} lantai — ${p.floorsMentioned ? 'Dari Anda' : 'Asumsi (default — tidak disebutkan; koreksi bila berbeda)'}`
@@ -4221,6 +4327,35 @@ function gateCreateRevisionConfirmation(
   };
 }
 
+/**
+ * Konsep/gaya rumah dari teks ("konsep classic", "gaya minimalis",
+ * "rumah tropis") — dipakai cabang rumah-tersirat CREATE_RAB_CLARIFY
+ * agar jawaban menggema gaya yang disebut pengguna, bukan menebaknya.
+ * Hanya kosakata gaya yang umum dipakai pengguna Indonesia; kata
+ * kualitas harga (ekonomis/sederhana) sengaja TIDAK di sini — itu
+ * preferensi mutu, bukan gaya arsitektur.
+ */
+const HOUSE_STYLE_WORDS: Array<{ re: RegExp; label: string }> = [
+  { re: /\b(klasik|classic|klasikal)\b/, label: 'klasik' },
+  { re: /\bminimalis\b/, label: 'minimalis' },
+  { re: /\bmodern\b/, label: 'modern' },
+  { re: /\btropis|tropical\b/, label: 'tropis' },
+  { re: /\bmediterania|mediterranean\b/, label: 'mediterania' },
+  { re: /\bkontemporer|contemporary\b/, label: 'kontemporer' },
+  { re: /\bindustrial\b/, label: 'industrial' },
+  { re: /\bskandinavia|scandinavian\b/, label: 'skandinavia' },
+  { re: /\btradisional|joglo|limasan\b/, label: 'tradisional' },
+  { re: /\bmewah|luxury\b/, label: 'mewah' },
+];
+
+function parseHouseStyle(text: string): string | null {
+  const t = ` ${(text || '').toLowerCase()} `;
+  for (const s of HOUSE_STYLE_WORDS) {
+    if (s.re.test(t)) return s.label;
+  }
+  return null;
+}
+
 export function executeIntent(
   intent: ChatIntent,
   param: string | undefined,
@@ -4923,6 +5058,49 @@ export function executeIntent(
           }
         }
       }
+      // PERBAIKAN 2026-11-26 (laporan owner — "budget 300jt, 2 lantai,
+      // konsep classic" dijawab menu generik): permintaan yang SUDAH
+      // menyebut lantai + anggaran dan/atau konsep rumah adalah
+      // permintaan rumah tersirat yang konkret — jumlah lantai dan
+      // anggaran adalah parameter RAB, bukan ketiadaan objek. Menu
+      // generik 4 jalur mengabaikan ketiganya, jadi cabang ini menjawab
+      // substantif: gema fakta yang ditangkap + SATU pertanyaan basis
+      // (luas bangunan) + simpan state agar giliran berikut melanjutkan
+      // tanpa mengulang. Pemicu konservatif: lantai WAJIB disebut, plus
+      // anggaran atau konsep. Tanpa lantai (hanya anggaran/konsep) dan
+      // tanpa ketiganya ("buatkan rab") tetap menu generik di bawah
+      // (pin WaveB T12 / WaveA). Jenis "rumah" adalah tafsir yang
+      // DINYATAKAN TERBUKA di pesan (bukan tebakan diam-diam): disimpan
+      // sebagai kind agar alur ringkasan tidak menanyakan lagi jenis
+      // pekerjaan yang sudah tersirat, dan pengguna dipersilakan
+      // mengoreksi bila maksudnya bukan rumah tinggal.
+      const clarifyNeeds = extractRabNeeds(rawClarify);
+      const houseStyle = parseHouseStyle(rawClarify);
+      if (clarifyNeeds.floors != null && (clarifySpec.budgetCap != null || houseStyle != null)) {
+        const intentSpec = extractRabIntentSpec(rawClarify);
+        const storedNeeds = specToRabNeeds(intentSpec);
+        storedNeeds.kind = 'rumah';
+        storedNeeds.kindLabel = 'Rumah Tinggal';
+        setLastRabIntentSpec(intentSpec);
+        setLastRabNeeds(storedNeeds, ctx.activeProject?.id ?? null);
+        if (rawClarify) lastRabRaw = rawClarify;
+        const fmtRp = (v: number) => `Rp${v.toLocaleString('id-ID')}`;
+        const understood: string[] = [`rumah ${clarifyNeeds.floors} lantai`];
+        if (houseStyle) understood.push(`konsep ${houseStyle}`);
+        if (clarifySpec.budgetCap != null) understood.push(`anggaran ${fmtRp(clarifySpec.budgetCap)}`);
+        return {
+          ok: true,
+          awaitRabNeeds: true,
+          message:
+            `Bisa — saya bantu buatkan. Saya tangkap permintaannya begini: ${understood.join(', ')}. ` +
+            `Kalau maksudnya bukan rumah tinggal, koreksi saya ya.\n\n` +
+            `Satu data lagi yang saya butuhkan untuk menghitung RAB-nya: berapa luas bangunannya? ` +
+            `Boleh juga luas tanahnya — mis. "tanah 10x15" atau "luas bangunan 120 m2".` +
+            (clarifySpec.budgetCap != null
+              ? `\n\nAnggaran ${fmtRp(clarifySpec.budgetCap)} saya catat sebagai batas: total drafnya nanti saya bandingkan dengan anggaran itu, bukan memangkas lingkup diam-diam.`
+              : ''),
+        };
+      }
       // "buatkan rab" tanpa objek: tanya balik + tombol jalur, JANGAN
       // menumpahkan daftar template ke chat. Lokal penuh, tanpa kredit AI.
       return {
@@ -5259,7 +5437,7 @@ export function executeIntent(
             'Jalur yang tersedia: **Full AI** (AI menyusun RAB dari kebutuhan Anda memakai data ' +
             'AHSP 2026) atau estimasi dari gambar DED.',
           actions: [
-            { label: 'Full AI', action: { kind: 'intent', intent: 'RAB_FULL_AI', param: buildFullAiPrompt(needs) } },
+            { label: 'Full AI', action: { kind: 'intent', intent: 'RAB_FULL_AI', param: buildFullAiPrompt(needs, getLastRabIntentSpec()?.budgetIdr ?? null) } },
             { label: 'Dari gambar DED', action: { kind: 'navigate', menu: 'ded-ai' } },
             { label: 'Mulai manual', action: { kind: 'navigate', menu: 'rab-estimasi' } },
           ],
@@ -5276,7 +5454,7 @@ export function executeIntent(
           'template di atas akan muncul dan bisa langsung diterapkan ke proyek.',
         actions: [
           { label: 'Buka Katalog Template', action: { kind: 'navigate', menu: 'template-rab' } },
-          { label: 'Full AI', action: { kind: 'intent', intent: 'RAB_FULL_AI', param: buildFullAiPrompt(needs) } },
+          { label: 'Full AI', action: { kind: 'intent', intent: 'RAB_FULL_AI', param: buildFullAiPrompt(needs, getLastRabIntentSpec()?.budgetIdr ?? null) } },
         ],
       };
     }
@@ -5293,13 +5471,27 @@ export function executeIntent(
       // (jalan/drainase/jembatan) yang belum punya mesin parametrik.
       const rawParam = param ?? '';
 
+      // Worker D (hardening 2026-11-26, §4D): anggaran pengguna dari
+      // spek intent aktif — SATU-SATUNYA sumber terstruktur budget di
+      // case ini (RabNeeds tidak punya field budget; teks sintetis
+      // path-c/d tidak memuat budget). Dipakai path (c) + (d) + prompt
+      // fallback. Nilai Rp apa adanya; null = tidak disebut.
+      const specBudget = getLastRabIntentSpec()?.budgetIdr ?? null;
+
       // (a) Kartu pilihan rumah aktif: susun dari teks asal + kebutuhan
       // TERKOREKSI pada kartu (pola GENERATE_RAB_TEMPLATE — pending hanya
       // dipakai bila param kosong/teks asal kartu, dan terkonsumsi hanya
       // bila komposisi berhasil).
       const p = pendingChoice;
       if (p && (rawParam === '' || rawParam === p.rawText)) {
-        const built = buildDirectRab(p.rawText, p.needs);
+        // Worker D (hardening 2026-11-26, §4D): anggaran TERSTRUKTUR
+        // dari spek KARTU (p.spec) — koreksi anggaran lewat kartu
+        // ("anggaran 250 juta") hanya memperbarui spek, sementara
+        // p.rawText tetap teks asal; parse teks saja akan memakai
+        // anggaran BASI. Spek kartu menang (itu yang digema kartu);
+        // spek aktif modul hanya fallback kartu lama (p.spec null).
+        const cardBudget = p.spec?.budgetIdr ?? getLastRabIntentSpec()?.budgetIdr ?? null;
+        const built = buildDirectRab(p.rawText, p.needs, cardBudget);
         if (built) {
           pendingChoice = null;
           return directRabTableResult(built);
@@ -5317,11 +5509,19 @@ export function executeIntent(
       // (c) Kebutuhan terakhir berupa rumah: susun teks sintetis minimal
       // dari needs dan coba komposisi sekali lagi; hanya hasil nyata
       // yang dikembalikan.
+      // Worker D (hardening 2026-11-26, §4D): anggaran TERSTRUKTUR dari
+      // spek intent aktif diteruskan ke KEDUA builder — teks sintetis
+      // TIDAK memuat budget (RabNeeds tidak punya field budget), jadi
+      // tanpa ini draft path-(c) kehilangan verdict anggaran. Nilai Rp
+      // apa adanya (tanpa pembulatan/konversi); teks sintetis TIDAK
+      // dipakai sebagai pembawa metadata finansial. null = tidak
+      // disebut → builder memakai parse teks (juga null) → tanpa
+      // verdict, seperti sebelumnya.
       const n = scopedLastRabNeeds(ctx.activeProject?.id ?? null);
       if (n && n.kind === 'rumah') {
         const synthetic = syntheticHouseRawText(n);
         const built = synthetic
-          ? buildDirectRab(synthetic, n) ?? buildSpecRab(synthetic)
+          ? buildDirectRab(synthetic, n, specBudget) ?? buildSpecRab(synthetic, { budgetCap: specBudget })
           : null;
         if (built) return directRabTableResult(built);
       }
@@ -5335,7 +5535,11 @@ export function executeIntent(
         const syntheticUniversal = syntheticUniversalRawText(nUniversal);
         if (syntheticUniversal) {
           // GATE 4 (5D): projectId diteruskan (lampiran DED ikut).
-          const uni = universalResultFor(syntheticUniversal, undefined, undefined, { projectId: ctx.activeProject?.id ?? null });
+          // Worker D (§4D): cap budget terstruktur diteruskan — teks
+          // sintetis tidak memuat budget, tanpa ini draft universal
+          // path-(d) mengklaim "Budget belum disebutkan" padahal
+          // pengguna sudah menyebutnya.
+          const uni = universalResultFor(syntheticUniversal, undefined, undefined, { projectId: ctx.activeProject?.id ?? null, budgetCapOverride: specBudget });
           if (uni) return uni;
         }
       }
@@ -5343,7 +5547,7 @@ export function executeIntent(
       // Fallback — perilaku lama PERSIS: prompt terkumpul diteruskan ke
       // view untuk dikirim ke pipeline Chat AI sebagai pesan.
       const fallbackNeeds = scopedLastRabNeeds(ctx.activeProject?.id ?? null);
-      const prompt = param || (fallbackNeeds ? buildFullAiPrompt(fallbackNeeds) : '');
+      const prompt = param || (fallbackNeeds ? buildFullAiPrompt(fallbackNeeds, specBudget) : '');
       return {
         ok: true,
         message: 'Menyiapkan Full AI dari kebutuhan yang terkumpul…',

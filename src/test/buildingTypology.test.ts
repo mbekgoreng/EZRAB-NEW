@@ -318,12 +318,17 @@ function check(name: string, cond: boolean, detail?: string) {
  * probe terprogram dan diperbaiki di lapisan bersama (bukan tempelan
  * per-soal): negasi lantai di parseFloorsMention; dimensi yang
  * dibatalkan ("bukan AxB") di pemilih pasangan-terakhir; fungsi
- * sama-panjang terakhir-menang di detectBuildingFunction. */
+ * sama-panjang terakhir-menang di detectBuildingFunction.
+ * REVISI 2026-11-26 (Worker F, keputusan owner FINAL): negasi lantai
+ * di parser kini UNKNOWN (null), BUKAN 1 eksplisit — IR tipologi tetap
+ * membawa nilai 1 HANYA sebagai asumsi berlabel (source 'assumption',
+ * explicit false), jadi X1 menegaskan label asumsi itu, bukan
+ * keeksplisitan. */
 {
   const neg1 = understandProject('buatkan rab gudang 10x20, jangan dua lantai');
-  check('X1. negasi lantai: "jangan dua lantai" → 1 lantai eksplisit (bukan 2)', neg1.floors.value === 1 && neg1.floors.explicit === true, `dapat ${neg1.floors.value}`);
+  check('X1. negasi lantai: "jangan dua lantai" → UNKNOWN di parser; IR asumsi 1 terlabel (bukan eksplisit)', neg1.floors.value === 1 && neg1.floors.source === 'assumption' && neg1.floors.explicit === false, `dapat ${neg1.floors.value} explicit=${neg1.floors.explicit}`);
   const neg2 = understandProject('buatkan rab gudang 10x20 tidak bertingkat');
-  check('X1. negasi bertingkat: "tidak bertingkat" → 1 lantai eksplisit', neg2.floors.value === 1 && neg2.floors.explicit === true, `dapat ${neg2.floors.value}`);
+  check('X1. negasi bertingkat: "tidak bertingkat" → UNKNOWN di parser; IR asumsi 1 terlabel (bukan eksplisit)', neg2.floors.value === 1 && neg2.floors.source === 'assumption' && neg2.floors.explicit === false, `dapat ${neg2.floors.value} explicit=${neg2.floors.explicit}`);
   const batal = understandProject('buatkan rab gudang 10x20, bukan 8x15');
   check('X2. dimensi dibatalkan: "10x20, bukan 8x15" → tapak 200 (bukan 120)', batal.footprint.value === 200, `dapat ${batal.footprint.value}`);
   const batal2 = understandProject('buatkan rab gudang bukan 8x15 tapi 10x20');

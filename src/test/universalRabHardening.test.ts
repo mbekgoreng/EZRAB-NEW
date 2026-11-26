@@ -532,10 +532,12 @@ test('X-F2: koreksi kepemilikan "lantainya 1 saja" terbaca lapisan bersama penye
   // tidak cocok; koreksi pengguna dilaporkan "tidak ada perubahan".
   assert.equal(parseFloorsMention('lantainya 1 saja'), 1);
   assert.equal(parseFloorsMention('lantainya 3'), 3);
-  // Bentuk-bentuk lama tidak berubah:
+  // Bentuk-bentuk lama tidak berubah — KECUALI "jangan dua lantai":
+  // keputusan owner FINAL 2026-11-26 (Worker F) mencabut pin lama
+  // "negasi → 1": murni negasi kini UNKNOWN (null), bukan 1.
   assert.equal(parseFloorsMention('rumah 2 lantai 8x12'), 2);
   assert.equal(parseFloorsMention('ganti jadi 1 lantai'), 1);
-  assert.equal(parseFloorsMention('jangan dua lantai'), 1);
+  assert.equal(parseFloorsMention('jangan dua lantai'), null);
   assert.equal(parseFloorsMention('2 lantai 3 kamar'), 2);
   assert.equal(parseFloorsMention('buatkan rab jalan'), null);
 });

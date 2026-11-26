@@ -255,16 +255,33 @@ const WORD_COUNTS: Record<string, number> = {
  */
 export function parseFloorsMention(text: string): number | null {
   const t = ` ${(text || '').toLowerCase()} `;
-  // Negasi lantai (audit ekstrem 2026-11-08): "jangan dua lantai",
-  // "tidak bertingkat", "bukan 2 lantai" adalah penyebutan NEGATIF —
-  // pengguna justru menetapkan SATU lantai. Tanpa aturan ini pola
-  // "<angka> lantai" di bawah memungut angka yang dinegasikan sebagai
-  // nilai eksplisit (cacat terukur: "jangan dua lantai" → 2 lantai
-  // eksplisit). Aturan ini berada di LAPISAN BERSAMA penyebutan lantai
-  // sehingga semua pemanggil (IR tipologi & kebutuhan RAB) konsisten.
-  if (/\b(?:jangan|tidak|tak|bukan)\s+(?:\d+|satu|dua|tiga|empat|lima)\s+lantai\b/.test(t)) return 1;
-  if (/\b(?:tidak|tak|bukan)\s+bertingkat\b/.test(t)) return 1;
-  if (/\bbertingkat\s+(?:tidak|tak|bukan)\b/.test(t)) return 1;
+  // Negasi lantai (audit ekstrem 2026-11-08; KEPUTUSAN OWNER FINAL
+  // 2026-11-26, Worker F — MEMBALIKKAN aturan lama): "jangan dua
+  // lantai", "tidak bertingkat", "bukan 2 lantai" adalah penyebutan
+  // NEGATIF — nilai yang dinegasikan DITOLAK, bukan ditetapkan.
+  // Murni negasi tanpa pengganti ("Bukan 2 lantai.", "Tidak jadi
+  // 3 lantai.", "Jangan buat 4 lantai.") → null (UNKNOWN), BUKAN 1.
+  // Aturan lama ("semua negasi → 1 lantai") dicabut eksplisit oleh
+  // owner — jangan kembalikan. Frasa yang dinegasikan DIBLANKO
+  // (posisi dipertahankan) lalu parsing berlanjut — kandidat sah
+  // BERIKUTNYA yang menang ("bukan 2 lantai, 3 lantai" → 3).
+  // Kata kerja/kata benda perantara ("tidak JADI 3 lantai", "jangan
+  // BUAT 4 lantai", "bukan BANGUNAN 2 lantai") ikut dinegasikan —
+  // daftar tertutup di bawah; satu kata perantara sembarang TIDAK
+  // diterima (terlalu luas: "jangan lupa 2 lantai" bukan negasi).
+  // Aturan ini berada di LAPISAN BERSAMA penyebutan lantai sehingga
+  // semua pemanggil (IR tipologi & kebutuhan RAB) konsisten.
+  const NEG_LINK_WORDS = '(?:jadi|buat|bikin|pakai|bangunan|gedung|rumah)';
+  const negFloorsRe = new RegExp(
+    `\\b(?:jangan|tidak|tak|bukan)\\s+(?:${NEG_LINK_WORDS}\\s+)?(?:\\d+|satu|dua|tiga|empat|lima)\\s+lantai\\b`,
+  );
+  const negBertingkatRe = /\b(?:tidak|tak|bukan)\s+bertingkat\b/;
+  const negBertingkatTrailRe = /\bbertingkat\s+(?:tidak|tak|bukan)\b/;
+  const blankNegated = (m: string) => ' '.repeat(m.length);
+  const tWork = t
+    .replace(new RegExp(negFloorsRe.source, 'g'), blankNegated)
+    .replace(new RegExp(negBertingkatRe.source, 'g'), blankNegated)
+    .replace(new RegExp(negBertingkatTrailRe.source, 'g'), blankNegated);
   // Penanda posisi frasa dimensi "A x B": angka tepat sebelum 'x'/'×'
   // adalah LEBAR dan angka tepat sesudahnya adalah PANJANG — keduanya
   // bukan jumlah lantai walau kata "lantai" berdiri di dekatnya
@@ -278,7 +295,7 @@ export function parseFloorsMention(text: string): number | null {
   // E2E Fase 4 run 4: "luas 240 m², 15 lantai"). Dengan matchAll,
   // "15" tertolak sebagai lantai; kandidat terakhir yang sah adalah 2.
   const dimNumSpans: Array<[number, number]> = [];
-  for (const dm of t.matchAll(/(\d+(?:[.,]\d+)?)\s*[x×]\s*(\d+(?:[.,]\d+)?)/g)) {
+  for (const dm of tWork.matchAll(/(\d+(?:[.,]\d+)?)\s*[x×]\s*(\d+(?:[.,]\d+)?)/g)) {
     if (dm.index == null) continue;
     const aStart = dm.index;
     const aEnd = aStart + dm[1].length;
@@ -291,7 +308,7 @@ export function parseFloorsMention(text: string): number | null {
   // ditutupi ("### kamar") agar pola "lantai <angka>" tidak memungut
   // jumlah kamar sebagai lantai — "2 lantai 3 kamar" tetap 2 lantai.
   // Posisi dipertahankan (panjang sama) agar kandidat tetap terurut.
-  const tG = t.replace(/\b\d+\s*kamar\b/g, (m) => '#'.repeat(m.length));
+  const tG = tWork.replace(/\b\d+\s*kamar\b/g, (m) => '#'.repeat(m.length));
   // Urutan giliran layar: kandidat TERAKHIR di seluruh teks menang —
   // pada gabungan multi-giliran koreksi pengguna menggantikan nilai
   // lama ("dua lantai" → "satu lantai saja"; "2 lantai" → "lantai 3"
@@ -370,12 +387,17 @@ export function parseFloorsMention(text: string): number | null {
   // hanya berjalan bila tidak ada kandidat lain sama sekali, dan kata
   // "jadi <N> lantai" tanpa kata "lantai" terpisah TIDAK ditambahkan:
   // bentuk itu ambigu dengan konteks lain.
-  const possessive = t.match(/\blantainya\s*(\d+)\s*(?:saja|aja)?\b/);
+  const possessive = tWork.match(/\blantainya\s*(\d+)\s*(?:saja|aja)?\b/);
   if (possessive) {
     const v = parseInt(possessive[1], 10);
     if (v >= 1 && v <= 999) return v;
   }
   if (/\bbertingkat\b/.test(tG)) return 2;
+  // Murni negasi tanpa kandidat sah berikutnya ("jangan dua lantai",
+  // "tidak bertingkat", "bukan 2 lantai"): jumlah lantai TIDAK
+  // DIKETAHUI — keputusan owner 2026-11-26 (Worker F final): null
+  // (UNKNOWN), bukan 1. Lapisan hilir yang butuh lantai wajib
+  // bertanya / menandai asumsi secara terbuka, bukan menebak 1.
   return null;
 }
 
@@ -1094,7 +1116,11 @@ export function extractRabNeeds(text: string, base?: RabNeeds): RabNeeds {
   }
 
   const loc = t.match(/\bdi\s+([a-z][a-z\s]{2,24}?)(?=\s*(?:,|\.|$|\d+\s*lantai|\d+\s*m\b))/);
-  if (loc && !/^(sini|sana|dalam|luar|atas|bawah|rumah|gedung)\b/.test(loc[1].trim())) {
+  // AI Workflow Sprint 2026-11-26 (Worker A): kata generik penanda
+  // tempat ("di desa", "di pinggir jalan raya", "di kampung halaman")
+  // BUKAN nama lokasi — "Pinggir Jalan Raya" sebelumnya lolos sebagai
+  // lokasi karena 'pinggir' tidak ada di daftar tolak.
+  if (loc && !/^(sini|sana|dalam|luar|atas|bawah|rumah|gedung|pinggir|desa|kampung|halaman|depan|belakang|samping|tengah|lahan|tanah|area|taman)\b/.test(loc[1].trim())) {
     n.location = loc[1].trim().replace(/\b\w/g, (c) => c.toUpperCase());
   }
   return n;
@@ -1130,7 +1156,11 @@ export function missingNeeds(n: RabNeeds): string[] {
 export function buildDesignPrompt(n: RabNeeds, rawText: string): string {
   if (n.kind !== 'rumah' && n.kind !== 'gedung' && n.kind !== 'renovasi') return rawText;
   const parts: string[] = [];
-  parts.push(`Buatkan ${n.kindLabel ?? 'rumah tinggal'} ${n.floors ? `${n.floors} lantai` : '1 lantai'}`);
+  // Lantai UNKNOWN (null — mis. semua penyebutan lantai dinegasikan)
+  // TIDAK ditulis sebagai "1 lantai" di prompt desain: angka itu
+  // karangan (keputusan owner 2026-11-26, Worker F). Frasa lantai
+  // dihilangkan saja; Studio merancang tanpa jumlah lantai eksplisit.
+  parts.push(`Buatkan ${n.kindLabel ?? 'rumah tinggal'}${n.floors ? ` ${n.floors} lantai` : ''}`);
   if (n.landLength && n.landWidth) parts.push(`ukuran ${n.landLength} × ${n.landWidth} m`);
   if (n.buildingArea) parts.push(`luas bangunan ${n.buildingArea} m²`);
   if (n.bedrooms) parts.push(`${n.bedrooms} kamar tidur`);

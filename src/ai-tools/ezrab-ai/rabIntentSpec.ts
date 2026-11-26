@@ -610,17 +610,37 @@ export function extractRabIntentSpec(text: string): RabIntentSpec {
   }
 
   /* ---- lantai ------------------------------------------------------ */
+  // Koreksi negasi (sprint 2026-11-26, Worker F; KEPUTUSAN OWNER FINAL
+  // 2026-11-26 — MEMBALIKKAN fallback lama): "bukan 2 lantai,
+  // 3 lantai" — kemunculan yang dinegasikan ("2 lantai") DILEWATI dan
+  // kandidat sah TERAKHIR yang menang; murni negasi tanpa pengganti
+  // ("bukan 2 lantai") → null (UNKNOWN), BUKAN 1 — selaras
+  // parseFloorsMention (rabNeeds.ts); kedua lapisan harus sepakat.
+  // Kata perantara ("tidak JADI 3 lantai", "jangan BUAT 4 lantai",
+  // "bukan BANGUNAN 2 lantai") ikut dinegasikan — daftar tertutup yang
+  // sama dengan rabNeeds.ts.
   const floorsRe = new RegExp(
     `(?:(\\d+|${NUMBER_WORD_PATTERN})\\s+lantai|lantai(?:nya)?\\s*(\\d+|${NUMBER_WORD_PATTERN})|berlantai\\s*(\\d+|${NUMBER_WORD_PATTERN}))`,
+    'g',
   );
-  const fMatch = lower.match(floorsRe);
-  if (fMatch) {
+  let lastFloors: number | null = null;
+  for (const fMatch of lower.matchAll(floorsRe)) {
     const token = fMatch[1] ?? fMatch[2] ?? fMatch[3];
     const n = token ? parseCountToken(token) : null;
-    if (n !== null && n >= 1 && n <= 100) {
-      spec.floors = n;
-      mark('floors');
+    if (n === null || n < 1 || n > 100) continue;
+    // Kemunculan yang langsung didahului kata negasi ("bukan",
+    // "jangan", "tidak", "tak") — dengan satu kata perantara opsional
+    // ("jadi"/"buat"/"bikin"/"pakai"/"bangunan"/"gedung"/"rumah") —
+    // adalah nilai yang DITOLAK, bukan nilai yang ditetapkan.
+    const before = lower.slice(0, fMatch.index ?? 0);
+    if (/(?:jangan|tidak|tak|bukan)\s+(?:(?:jadi|buat|bikin|pakai|bangunan|gedung|rumah)\s+)?$/.test(before)) {
+      continue;
     }
+    lastFloors = n;
+  }
+  if (lastFloors !== null) {
+    spec.floors = lastFloors;
+    mark('floors');
   }
 
   /* ---- kamar tidur / kamar mandi ----------------------------------- */
@@ -656,6 +676,7 @@ export function extractRabIntentSpec(text: string): RabIntentSpec {
     'tempat', 'lokasi', 'tengah', 'pinggir', 'depan', 'belakang',
     'samping', 'kiri', 'kanan', 'lantai', 'rumah', 'gedung', 'ruko',
     'villa', 'gudang', 'kantor', 'jalan', 'jl', 'rt', 'rw', 'dusun',
+    'desa', 'kampung', 'halaman',
     'dekat', 'seberang', 'sekitar', 'area', 'kawasan', 'komplek',
     'kompleks', 'perumahan', 'site', 'proyek', 'lapangan', 'saya',
     'kami', 'kita', 'sini', 'situ', 'sana', 'mana', 'mana-mana',

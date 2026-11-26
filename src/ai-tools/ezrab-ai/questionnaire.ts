@@ -986,7 +986,7 @@ const SPEC_QUESTION_DEFS: SpecQuestionDef[] = [
     key: 'bridge-span',
     appliesTo: (c) => c.primary?.id === 'jembatan',
     isSatisfied: (c) =>
-      hasAnswer(c, 'bridge-span') || c.spanM != null || c.lengthM != null,
+      hasAnswer(c, 'bridge-span') || c.spanM != null,
     prompt: () => 'Berapa bentang jembatannya (meter)? Tulis angkanya — mis. "12 m".',
     kind: 'text',
     options: [],

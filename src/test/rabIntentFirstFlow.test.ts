@@ -42,7 +42,7 @@
  * Jalankan: npx --yes tsx src/test/rabIntentFirstFlow.test.ts
  * (skrip asersi tsx polos — BUKAN vitest.)
  */
-import { executeIntent, continueRabChoice } from '../ai-tools/ezrab-ai/actionRegistry';
+import { executeIntent, continueRabChoice, continueRabNeeds, getLastRabNeeds } from '../ai-tools/ezrab-ai/actionRegistry';
 import { getLastDirectRab } from '../ai-tools/ezrab-ai/directRab';
 import { getLastUniversalDraft, buildUniversalDraft, effectiveItems } from '../ai-tools/ezrab-ai/universalRab';
 import {
@@ -388,6 +388,121 @@ console.log('== 10 — B5-4: permintaan tak didukung dijawab jujur ==');
   const teleport = executeIntent('CREATE_RAB_CLARIFY', undefined,
     ctxFor('buatkan RAB teleportasi quantum dimensi lima'));
   check('10.9 teleportasi (tanpa ukuran) tetap menu generik', teleport.message.includes('Pilih jalurnya'));
+}
+
+/* ------------------------------------------------------------------ */
+/* 11 — Rumah tersirat (perbaikan 2026-11-26, laporan owner 01:33):   */
+/* "bisa ga kamu buat rab, dana saya budget 300jt saya ingin 2 lantai */
+/* konsep classic" — lantai + anggaran + konsep adalah parameter RAB, */
+/* bukan ketiadaan objek. Jawaban harus menggema ketiganya + menanya  */
+/* SATU basis (luas bangunan), bukan menu generik 4 jalur.            */
+/* ------------------------------------------------------------------ */
+console.log('== 11 — Rumah tersirat: lantai + anggaran/konsep ==');
+{
+  // 11a. Contoh persis laporan owner.
+  clearLastRabIntentSpec();
+  const userMsg = 'bisa ga kamu buat rab, dana saya budget 300jt saya ingin 2 lantai konsep classic';
+  const res = executeIntent('CREATE_RAB_CLARIFY', undefined, ctxFor(userMsg));
+  check('11.1 tanpa menu generik', !res.message.includes('Pilih jalurnya'), res.message.slice(0, 120));
+  check('11.2 menggema 2 lantai', res.message.includes('2 lantai'));
+  check('11.3 menggema konsep klasik', res.message.includes('klasik'));
+  check('11.4 menggema anggaran Rp300.000.000', res.message.includes('Rp300.000.000'));
+  check('11.5 menanyakan luas bangunan (satu basis)', res.message.includes('luas bangunan'));
+  check('11.6 menunggu jawaban (awaitRabNeeds)', res.awaitRabNeeds === true);
+  check('11.7 spek lantai 2 tersimpan', getLastRabIntentSpec()?.floors === 2, `dapat ${getLastRabIntentSpec()?.floors}`);
+  check('11.8 spek anggaran 300jt tersimpan', getLastRabIntentSpec()?.budgetIdr === 300_000_000, `dapat ${getLastRabIntentSpec()?.budgetIdr}`);
+  check('11.9 kebutuhan lantai 2 tersimpan', getLastRabNeeds()?.floors === 2, `dapat ${getLastRabNeeds()?.floors}`);
+  check('11.10 kebutuhan jenis rumah tersimpan (tafsir terbuka)', getLastRabNeeds()?.kind === 'rumah', `dapat ${getLastRabNeeds()?.kind}`);
+
+  // 11b. Lanjutan: jawaban luas bangunan bergabung; jenis + lantai
+  //     + anggaran bertahan di state (tidak ditanya ulang).
+  const follow = continueRabNeeds('luas bangunan 120 m2');
+  check('11.11 lanjutan menyebut luas 120 m²', follow.message.includes('120 m²'), follow.message.slice(0, 200));
+  check('11.12 lanjutan: lantai tetap 2', getLastRabNeeds()?.floors === 2, `dapat ${getLastRabNeeds()?.floors}`);
+  check('11.13 lanjutan: luas bangunan 120 tersimpan', getLastRabNeeds()?.buildingArea === 120, `dapat ${getLastRabNeeds()?.buildingArea}`);
+  check('11.14 lanjutan: anggaran 300jt tetap di spek', getLastRabIntentSpec()?.budgetIdr === 300_000_000, `dapat ${getLastRabIntentSpec()?.budgetIdr}`);
+  check('11.15 lanjutan tidak menunggu lagi (data cukup)', follow.awaitRabNeeds === false, `awaitRabNeeds=${follow.awaitRabNeeds}`);
+
+  // 11c. Lantai + konsep tanpa anggaran → sama, tanpa baris anggaran.
+  clearLastRabIntentSpec();
+  const noBudget = executeIntent('CREATE_RAB_CLARIFY', undefined, ctxFor('buatkan rab 2 lantai konsep minimalis'));
+  check('11.16 lantai+konsep tanpa anggaran: tanpa menu generik', !noBudget.message.includes('Pilih jalurnya'));
+  check('11.17 lantai+konsep: menggema minimalis', noBudget.message.includes('minimalis'));
+  check('11.18 lantai+konsep: tanpa klaim anggaran', !/Rp\d/.test(noBudget.message));
+  check('11.19 lantai+konsep: menunggu jawaban', noBudget.awaitRabNeeds === true);
+
+  // 11d. Batas pemicu (konservatif): hanya lantai, atau hanya anggaran
+  //     → TETAP menu generik (pin perilaku lama).
+  const floorsOnly = executeIntent('CREATE_RAB_CLARIFY', undefined, ctxFor('buatkan rab 2 lantai'));
+  check('11.20 hanya lantai → tetap menu generik', floorsOnly.message.includes('Pilih jalurnya'));
+  const budgetOnly = executeIntent('CREATE_RAB_CLARIFY', undefined, ctxFor('buatkan rab budget 300jt'));
+  check('11.21 hanya anggaran → tetap menu generik', budgetOnly.message.includes('Pilih jalurnya'));
+}
+
+/* ------------------------------------------------------------------ */
+/* 12 — Dana + kategori (generalisasi 2026-11-26, permintaan owner    */
+/* 01:48): "dana sekian bisa ga buatkan rab landscape / jembatan /    */
+/* struktur lain" — jawaban harus menggema anggaran + fakta yang      */
+/* disebut, bukan menu generik dan bukan jawaban yang mengabaikan     */
+/* dana. Perilaku per kategori (dipin di sini):                      */
+/* - landscape → tanya konsep, gema luas + anggaran;                  */
+/* - jembatan tanpa bentang → needs-spec (PIN REKAYASA: panjang BUKAN */
+/*   bentang — chatClarificationUniversal 1.3–1.11, matrix 13.5f)     */
+/*   TAPI menggema panjang + anggaran yang disebut;                    */
+/* - jembatan berbentang → draft + vonis anggaran;                    */
+/* - retaining wall / gudang → draft + vonis anggaran.                */
+/* ------------------------------------------------------------------ */
+console.log('== 12 — Dana + kategori: landscape / jembatan / struktur ==');
+{
+  // 12a. Landscape + anggaran: konsep ditanya, dana digema.
+  clearLastRabIntentSpec();
+  const land = executeIntent('CREATE_RAB_SUMMARY', undefined, ctxFor('dana 50 juta bisa ga buatkan rab landscape 1 hektar'));
+  check('12.1 landscape: tanpa menu generik', !land.message.includes('Pilih jalurnya'));
+  check('12.2 landscape: menggema anggaran Rp50.000.000', land.message.includes('Rp50.000.000'), land.message.slice(0, 200));
+  check('12.3 landscape: menggema luas 1 hektar', land.message.includes('1 hektar'));
+  check('12.4 landscape: menanyakan konsep', land.message.includes('Landscape seperti apa'));
+
+  // 12b. Jembatan + panjang + anggaran: needs-spec (pin rekayasa —
+  //     panjang BUKAN bentang) tapi menggema panjang + anggaran.
+  const bridge = executeIntent('CREATE_RAB_SUMMARY', undefined, ctxFor('dana 500jt bisa ga buatkan rab jembatan beton panjang 20 m'));
+  check('12.5 jembatan: tetap menunggu bentang (pin rekayasa)', bridge.awaitProjectConcept === true, `await=${bridge.awaitProjectConcept}`);
+  check('12.6 jembatan: menggema anggaran Rp 500.000.000', bridge.message.includes('Rp 500.000.000'), bridge.message.slice(0, 300));
+  check('12.7 jembatan: menggema panjang 20 m yang disebut', bridge.message.includes('panjang 20 m'), bridge.message.slice(0, 300));
+  check('12.8 jembatan: menanyakan bentang yang hilang', bridge.message.includes('bentang'));
+
+  // 12c. Jembatan tanpa ukuran + anggaran: tanya bentang, dana digema.
+  const bridgeBare = executeIntent('CREATE_RAB_SUMMARY', undefined, ctxFor('budget 200jt buatkan rab jembatan'));
+  check('12.9 jembatan tanpa ukuran: menanyakan bentang', bridgeBare.message.includes('bentang jembatan'));
+  check('12.10 jembatan tanpa ukuran: menggema anggaran Rp200.000.000', bridgeBare.message.includes('Rp200.000.000'));
+
+  // 12d. Jembatan berbentang + anggaran: draft + vonis anggaran.
+  const bridgeFull = executeIntent('CREATE_RAB_SUMMARY', undefined, ctxFor('buatkan rab jembatan beton bentang 12 m lebar 7 m budget 500jt'));
+  check('12.11 jembatan berbentang: draft dibangun (push-universal)', hasAction(bridgeFull, 'push-universal'));
+  check('12.12 jembatan berbentang: menggema anggaran Rp500.000.000', bridgeFull.message.includes('Rp500.000.000'));
+
+  // 12e. Retaining wall + anggaran: draft + vonis anggaran.
+  const wall = executeIntent('CREATE_RAB_SUMMARY', undefined, ctxFor('budget 100jt buatkan rab struktur retaining wall panjang 50 m'));
+  check('12.13 retaining wall: draft dinding penahan dibangun', wall.message.includes('Dinding Penahan Tanah'), wall.message.slice(0, 200));
+  check('12.14 retaining wall: vonis anggaran tampil', wall.message.includes('MELEBIHI anggaran') && wall.message.includes('Rp100.000.000'));
+
+  // 12f. Gudang + anggaran: draft + vonis anggaran.
+  const ware = executeIntent('CREATE_RAB_SUMMARY', undefined, ctxFor('dana 300jt buatkan rab gudang 500 m2'));
+  check('12.15 gudang: draft dibangun', ware.message.includes('Gudang'));
+  check('12.16 gudang: vonis anggaran tampil', ware.message.includes('MELEBIHI anggaran') && ware.message.includes('Rp300.000.000'));
+
+  // 12g. Builder langsung: needs-spec menggema anggaran; tanpa
+  //     anggaran, tidak ada klaim anggaran (tidak mengarang).
+  const nsBudget = buildUniversalDraft('buatkan rab jembatan beton budget 500jt');
+  check('12.17 needs-spec builder: jenis needs-spec', nsBudget.kind === 'needs-spec', (nsBudget as { kind: string }).kind);
+  if (nsBudget.kind === 'needs-spec') {
+    check('12.18 needs-spec builder: alasan menggema anggaran', nsBudget.reason.includes('Rp 500.000.000'), nsBudget.reason);
+  }
+  const nsNoBudget = buildUniversalDraft('buatkan rab jembatan beton panjang 20 m');
+  check('12.19 needs-spec builder tanpa anggaran: tetap needs-spec', nsNoBudget.kind === 'needs-spec', (nsNoBudget as { kind: string }).kind);
+  if (nsNoBudget.kind === 'needs-spec') {
+    check('12.20 needs-spec builder tanpa anggaran: tanpa klaim Rp', !/Rp[\d.]+/.test(nsNoBudget.reason), nsNoBudget.reason);
+    check('12.21 needs-spec builder: menggema panjang 20 m', nsNoBudget.reason.includes('panjang 20 m'), nsNoBudget.reason);
+  }
 }
 
 /* ------------------------------------------------------------------ */

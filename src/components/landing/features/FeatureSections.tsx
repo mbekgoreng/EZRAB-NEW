@@ -229,7 +229,7 @@ export const WayfindingSection: React.FC<{
     {
       icon: Tag,
       title: 'Lihat Harga',
-      desc: `Free untuk mencoba · Starter ${formatPlanPriceIdr(getPlanDefinition('starter').monthlyPriceIdr)}/bln · Pro ${formatPlanPriceIdr(getPlanDefinition('professional').monthlyPriceIdr)}/bln.`,
+      desc: `Free untuk mencoba · Starter ${formatPlanPriceIdr(getPlanDefinition('starter').monthlyPriceIdr)}/bln · Professional ${formatPlanPriceIdr(getPlanDefinition('professional').monthlyPriceIdr)}/bln · Business ${formatPlanPriceIdr(getPlanDefinition('business').monthlyPriceIdr)}/bln.`,
       action: onOpenPricing,
       cta: 'Bandingkan paket',
     },

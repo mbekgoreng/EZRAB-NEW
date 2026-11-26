@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { flushSync } from 'react-dom';
 import {
   Project,
   RabItem,
@@ -995,6 +996,26 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     finalizationKeysRef.current = finalizationKeys;
   });
 
+  // E-GAP-E1 (2026-11-26): ref untuk efek debounce di bawah — flushToStorage
+  // ikut memakainya (pendingFlushRef dibersihkan sesudah tiap percobaan
+  // flush; mountedRef menjaga flushSync tidak jalan saat unmount).
+  const prevDatasetsRef = useRef<unknown[] | null>(null);
+  const prevSnapshotRef = useRef<string | null>(null);
+  const prevProjectIdRef = useRef<string | null>(currentProjectId);
+  const pendingFlushRef = useRef(false);
+  const mountedRef = useRef(true);
+
+  // E-GAP-E1: penanda mount. Efek ini DIDEKLARASIKAN SEBELUM efek
+  // flush-unmount supaya cleanup-nya jalan duluan saat unmount (cleanup
+  // React jalan dalam urutan deklarasi) — flush unmount kemudian tahu
+  // bahwa flushSync harus dilewati (setState sudah no-op di sana).
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
   // Flush pending writes on unmount (e.g. project switch / tab close via React tree).
   useEffect(() => {
     return () => {
@@ -1022,6 +1043,17 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     // tetap utuh di storage (tidak dihapus logout), jadi melewati
     // flush ini tidak menghilangkan data apa pun.
     if (isLogoutInProgress()) return;
+    // E-GAP-E1 (2026-11-26): commit 'saving' SECARA SINKRON sebelum
+    // menulis, supaya keadaan "Menyimpan…" benar-benar ter-render.
+    // Tanpa flushSync, setSaveStatus('saving') di sini dan
+    // setSaveStatus('saved'/'error') di bawah ter-batch dalam satu
+    // render dan 'saving' tidak pernah tampil (terbukti probe jsdom:
+    // tanpa flushSync urutan commit = saved → dirty → saved).
+    // Saat unmount (flush via flushToStorageRef) mountedRef sudah false
+    // dan flushSync dilewati — setState di sana memang sudah no-op.
+    if (mountedRef.current) {
+      flushSync(() => setSaveStatus('saving'));
+    }
     const failures: string[] = [];
     const saveOne = (key: string, data: unknown) => {
       const result: SaveResult = saveVersioned(key, data);
@@ -1061,6 +1093,9 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setSaveError(null);
       setSaveStatus('saved');
     }
+    // E-GAP-E1: percobaan flush (berhasil/gagal) menutup jendela
+    // "perubahan tertunda" — edit berikutnya akan menandainya lagi.
+    pendingFlushRef.current = false;
   }, []);
 
   // Keep ref in sync so unmount flush uses the latest implementation.
@@ -1068,9 +1103,86 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     flushToStorageRef.current = flushToStorage;
   }, [flushToStorage]);
 
+  // E-GAP-E1 (2026-11-26) — keadaan 'dirty' sebelumnya DEAD STATE:
+  // efek ini langsung men-set 'saving' pada setiap perubahan, sehingga
+  // label "Belum tersimpan" tidak pernah bisa muncul. Siklus yang benar:
+  //   data berubah → 'dirty' (jendela debounce 400 ms) → 'saving'
+  //   (saat flush mulai; di-commit sinkron di flushToStorage) →
+  //   'saved' / 'error' (sesudah flush).
+  // Satu pendekatan saja — EFEK ini. Mutator TIDAK men-set saveStatus.
+  //
+  // Dua penjaga supaya 'dirty' tidak pernah bohong:
+  // 1. Mount: state awal baru saja dimuat dari storage → bukan dirty.
+  //    Flush mount tetap jalan seperti sebelumnya ('saving' → flush).
+  // 2. Perubahan tanpa perubahan DATA (ganti proyek aktif saja, atau
+  //    update no-op yang hanya men-stempel updatedAt) → bukan dirty.
+  //    Data dibandingkan dengan snapshot JSON terakhir (tanpa updatedAt —
+  //    stempel itu berubah di tiap updateProject walau nilainya sama).
+  //    Ganti proyek saat ada perubahan tertunda TIDAK mereset 'dirty':
+  //    status ini milik SELURUH store lokal (bukan per-proyek), jadi
+  //    flush tertunda tetap menulis semua dataset, termasuk proyek
+  //    yang ditinggalkan — tidak ada "save state proyek lain" yang
+  //    bocor ke tampilan.
   useEffect(() => {
-    setSaveStatus('saving');
-    setSaveError(null);
+    const datasets = [
+      projects,
+      workItems,
+      calculationRuns,
+      qtoItems,
+      mappings,
+      allRabItems,
+      scheduleTasks,
+      priceOverrides,
+      versionSnapshots,
+      estimateVersions,
+      finalizationKeys,
+    ];
+    const refsChanged =
+      prevDatasetsRef.current === null ||
+      datasets.some((d, i) => d !== prevDatasetsRef.current![i]);
+    prevDatasetsRef.current = datasets;
+    let snapshot = prevSnapshotRef.current;
+    if (refsChanged) {
+      try {
+        snapshot = JSON.stringify(datasets, (k, v) => (k === 'updatedAt' ? undefined : v));
+      } catch {
+        // Tidak bisa diserialisasi (seharusnya tak terjadi — flush juga
+        // men-JSON-kan dataset yang sama): jangan pernah klaim tidak ada
+        // perubahan; anggap data berubah bila ada referensi berganti.
+        snapshot = null;
+      }
+    }
+    const isFirstRun = prevSnapshotRef.current === null;
+    const dataChanged =
+      !isFirstRun && (snapshot === null ? refsChanged : snapshot !== prevSnapshotRef.current);
+    if (snapshot !== null) prevSnapshotRef.current = snapshot;
+    const pointerChanged = prevProjectIdRef.current !== currentProjectId;
+    prevProjectIdRef.current = currentProjectId;
+
+    if (isFirstRun) {
+      // Mount: tulis ulang state awal seperti sebelumnya; bukan dirty.
+      setSaveStatus('saving');
+      setSaveError(null);
+    } else if (dataChanged) {
+      pendingFlushRef.current = true;
+      setSaveStatus('dirty');
+      setSaveError(null);
+    } else if (!pendingFlushRef.current && !pointerChanged) {
+      // No-op murni: tidak ada data baru, tidak ada ganti proyek, tidak
+      // ada flush tertunda — jangan sentuh status DAN jangan jadwalkan
+      // tulis ulang (tidak ada yang perlu ditulis; flush unmount tetap
+      // menulis bila tab ditutup).
+      return;
+    } else if (pointerChanged && !pendingFlushRef.current) {
+      // Ganti proyek saja: hanya penunjuk aktif yang perlu ditulis.
+      // Perilaku lama dipertahankan ('saving' → flush), tanpa 'dirty'
+      // palsu — tidak ada data proyek yang berubah.
+      setSaveStatus('saving');
+      setSaveError(null);
+    }
+    // dataChanged, atau ganti proyek saat flush tertunda: 'dirty' tetap
+    // tampil sampai flush mulai; flush tetap dijadwalkan ulang (debounce
+    // 400 ms dipertahankan; pembatalan timer lama oleh cleanup efek).
     const timer = setTimeout(flushToStorage, 400);
     return () => clearTimeout(timer);
   }, [

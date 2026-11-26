@@ -424,7 +424,15 @@ describe('Grup F — kompleks', () => {
     expect(res.message).not.toContain(GENERIC_MENU_MARK);
     expect(res.message).not.toContain('Kirim ulang');
     const ext = extractUniversalContext(text);
-    expect(ext.primary?.id).toBe('hotel');
+    // PERUBAHAN PERILAKU YANG DISENGAJA (sprint 2026-11-26, Worker D F3):
+    // villa telanjang = rumah tinggal, bukan hotel — katalog membedakan
+    // HOUSE-VILLA-MODERN (villa tunggal, RUMAH_TINGGAL) dari
+    // BLD-BOUTIQUE-VILLA (resort 8 unit, HOTEL_HOSPITALITY); hanya villa
+    // berkualifikasi resort yang tetap hotel. Judul tes ini sendiri
+    // ("villa = bangunan") sudah menyatakan tafsir yang benar; ekspektasi
+    // lama 'hotel' mem-pin perilaku lama yang salah. Dua asersi kendala
+    // tapak di bawah tidak berubah.
+    expect(ext.primary?.id).toBe('rumah');
     expect(ext.siteConditions).toContain('akses terbatas');
     expect(ext.siteConditions).toContain('lahan berbukit');
   });

@@ -443,12 +443,17 @@ const PATTERNS: Pattern[] = [
   // MEP, lanskap, demolisi, dan bangunan khusus. Tetap SETELAH pola spesifik
   // di atas dan SEBELUM pola CLARIFY umum; actionRegistry memutuskan
   // apakah draft universal bisa dibuat atau tetap ringkasan kebutuhan.
-  { intent: 'CREATE_RAB_SUMMARY', re: /\b(buatkan|buatin|bikinkan|bikin|buat|susun|susunkan|generate)\b.*\brab\b.*\b(irigasi|pondasi|struktur|atap|finishing|mekanikal|elektrikal|plumbing|mep|lanskap|pagar|pembongkaran|demolisi|sekolah|rumah sakit|klinik|puskesmas|pelabuhan|dermaga|olahraga|lapangan|pertanian|beton|trotoar|kanstin|kolom|balok|sloof|genteng|keramik|plafon|sanitasi|bendung|bendungan|embung|dinding penahan|tembok penahan|turap|retaining|waterproofing|hvac|lift|eskalator|fasad|interior|gorong|u-?ditch|hotel|mall|apartemen|gudang|pabrik)\b/ },
+  { intent: 'CREATE_RAB_SUMMARY', re: /\b(buatkan|buatin|bikinkan|bikin|buat|susun|susunkan|generate)\b.*\brab\b.*\b(irigasi|pondasi|struktur|atap|finishing|mekanikal|elektrikal|plumbing|mep|lanskap|pagar|pembongkaran|demolisi|sekolah|rumah sakit|klinik|puskesmas|pelabuhan|dermaga|olahraga|lapangan|pertanian|beton|trotoar|kanstin|kolom|balok|sloof|genteng|keramik|plafon|sanitasi|bendung|bendungan|embung|dinding penahan|tembok penahan|turap|retaining|waterproofing|hvac|lift|eskalator|fasad|interior|gorong|u-?ditch|hotel|mall|apartemen|gudang|pabrik|bengkel|workshop|masjid|musholla|mushola|gereja|tempat ibadah|galian|urugan|timbunan|pekerjaan tanah|pematangan lahan|cut and fill|sumur bor|spbu)\b/ },
   // Frasa keinginan tanpa kata "rab" ("Saya ingin membuat drainase
   // lingkungan sepanjang 500 meter") — kategori teridentifikasi, jadi
   // ringkasan/intake yang menanganinya, BUKAN "Perintah tidak dikenali"
   // (Universal Intake 2026-11-10). HARUS sebelum CREATE_RAB_CLARIFY.
-  { intent: 'CREATE_RAB_SUMMARY', re: /\b(ingin|mau|pengen|hendak)\s+(membuat|buat|bikin|membangun|bangun|dibangun|dibuat|merenovasi|renovasi)\b[^.]{0,60}\b(drainase|saluran|jalan|jembatan|irigasi|gedung|kantor|sekolah|rumah sakit|rumah|hunian|kandang|peternakan|kolam renang|kolam|villa|gudang|bangunan|taman|landscape|lanskap|pagar|pondasi|renovasi|instalasi|plumbing|hvac|dinding penahan|gorong)\b/ },
+  { intent: 'CREATE_RAB_SUMMARY', re: /\b(ingin|mau|pengen|hendak)\s+(membuat|buat|bikin|membangun|bangun|dibangun|dibuat|merenovasi|renovasi)\b[^.]{0,60}\b(drainase|saluran|jalan|jembatan|irigasi|gedung|kantor|sekolah|rumah sakit|rumah|hunian|kandang|peternakan|kolam renang|kolam|villa|gudang|bangunan|taman|landscape|lanskap|pagar|pondasi|renovasi|instalasi|plumbing|hvac|dinding penahan|gorong|ruko|apartemen|masjid|hotel|pabrik|bengkel|workshop)\b/ },
+  // AI Workflow Sprint 2026-11-26 (Worker A): "rencana bangun ruko ..."
+  // tanpa kata "rab" adalah niat bangun yang sama — sebelumnya UNKNOWN
+  // ke AI padahal kategori + speknya lengkap. Verba rencana + bangun +
+  // kategori eksplisit; tanpa kategori tetap UNKNOWN (bukan tebakan).
+  { intent: 'CREATE_RAB_SUMMARY', re: /\b(rencana|berencana)\b[^.]{0,40}\b(bangun|membangun|membuat|bikin|merenovasi|renovasi)\b[^.]{0,60}\b(rumah|ruko|gudang|kantor|villa|apartemen|gedung|sekolah|jalan|jembatan|drainase|kolam|kandang|masjid|hotel|pabrik|bengkel)\b/ },
   { intent: 'CREATE_RAB_SUMMARY', re: /\b(buatkan|buatin|bikinkan|bikin|buat|susun|susunkan|generate)\b.*\brab\b.*\b(ded|gambar kerja)\b/ },
   // Landscape/taman & ruang publik (Conversational Intelligence Upgrade,
   // master prompt owner 2026-11-10): permintaan RAB landscape yang sudah
@@ -477,7 +482,7 @@ const PATTERNS: Pattern[] = [
   // kata "rab" ("Hitungkan estimasi pembangunan gudang baja 20 × 40")
   // adalah permintaan estimasi yang sama — sebelumnya UNKNOWN padahal
   // kategori + ukurannya lengkap dan mesin katalog bisa menyusunnya.
-  { intent: 'CREATE_RAB_SUMMARY', re: /\b(hitungkan|hitung|estimasikan)\b[^.]{0,30}\b(estimasi|perhitungan)\b[^.]{0,60}\b(gudang|kandang|peternakan|jembatan|gedung|kantor|sekolah|kolam renang|warehouse|jalan|drainase|rumah|villa)\b/ },
+  { intent: 'CREATE_RAB_SUMMARY', re: /\b(hitungkan|hitung|estimasikan)\b[^.]{0,30}\b(estimasi|perhitungan|biaya|ongkos|anggaran)\b[^.]{0,60}\b(gudang|kandang|peternakan|jembatan|gedung|kantor|sekolah|kolam renang|warehouse|jalan|drainase|rumah|villa|ruko|masjid|apartemen)\b/ },
   // "buatkan rab" tanpa objek spesifik -> tanya balik (jangan tumpahkan daftar
   // template). Pola spesifik (rumah/dll) sudah tertangkap di atas; pola umum
   // ini HARUS tetap setelahnya. \brab\b tidak menangkap "rabat beton".

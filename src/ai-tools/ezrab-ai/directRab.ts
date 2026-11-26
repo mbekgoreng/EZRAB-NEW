@@ -19,7 +19,7 @@
  * - Total mengikuti status engine (VERIFIED / INDICATIVE / INCOMPLETE).
  */
 
-import { extractRabNeeds, stripLandPhrases } from './rabNeeds';
+import { extractRabNeeds, parseBudgetMentions, stripLandPhrases } from './rabNeeds';
 import type { RabNeeds } from './rabNeeds';
 import { HouseTypeCatalog } from '../../data/houseTypeCatalog';
 import type { HouseTypeCatalogItem } from '../../data/houseTypeCatalog';
@@ -30,7 +30,7 @@ import {
 } from '../../engine/parametricVolumeEngine/parametricVolumeEngine';
 import type { TemplateGenerationResult } from '../../data/buildingTemplates/schema/types';
 import { formatRupiah } from '../../engine/formulaEngine';
-import { formatBudgetFeasibilityLine } from './budgetFeasibility';
+import { assessBudgetFeasibility, formatBudgetFeasibilityLine } from './budgetFeasibility';
 import {
   resolveProvinceFromLocation,
   resolveRegionIndex,
@@ -43,6 +43,12 @@ export interface DirectRabResult {
   floors: number;
   /** Total luas seluruh lantai (tipe × lantai; jalur fallback luas = luas permintaan). */
   totalArea: number;
+  /** Anggaran pengguna (Rp) dari pesan, bila disebut — dipakai sebagai
+   *  pembanding verdict kelayakan (tidak pernah memangkas lingkup).
+   *  null/undefined = budget tidak disebut. Diambil dari
+   *  parseBudgetMentions kanonis (kemunculan TERAKHIR menang, selaras
+   *  budgetCap universal). Jalur spek mengisi dari FreeSpec/intentSpec. */
+  budgetIdr?: number | null;
   /** Fallback luas R1 (null = tipe eksak) — transparansi basis perhitungan. */
   areaFallback: { requestedArea: number; basisArea: number } | null;
   /**
@@ -265,10 +271,28 @@ export function findDirectTemplate(rawText: string): TypedTemplateMatch | null {
  * `needsOverride` dipakai jalur koreksi kartu pilihan (D1): kebutuhan hasil
  * gabungan koreksi pengguna menggantikan ekstraksi teks mentah untuk
  * lantai/kamar/dimensi/lokasi, sementara identitas template tetap dari teks.
+ *
+ * `budgetIdrOverride` (hardening 2026-11-26, Worker D §4D): anggaran
+ * TERSTRUKTUR dari spek intent aktif (nilai Rp apa adanya — tanpa
+ * pembulatan/konversi). Dipakai pemanggil yang membangun dari teks
+ * SINTETIS (RAB_FULL_AI path-c): teks sintetis tidak memuat budget
+ * (RabNeeds tidak punya field budget), jadi parse teks di sini selalu
+ * menghasilkan null. Override MENANG atas parse teks — sumber
+ * terstruktur adalah otoritas budget, teks hanya fallback bila
+ * override null. TIDAK PERNAH memangkas lingkup; hanya pembanding
+ * verdict di formatDirectRabMessage.
  */
-export function buildDirectRab(rawText: string, needsOverride?: RabNeeds): DirectRabResult | null {
+export function buildDirectRab(rawText: string, needsOverride?: RabNeeds, budgetIdrOverride?: number | null): DirectRabResult | null {
   const text = (rawText || '').trim();
   if (!text) return null;
+
+  // Anggaran pengguna (sprint 2026-11-26, Worker F — D-G1): kemunculan
+  // TERAKHIR menang, selaras budgetCap universal (budgetFeasibility).
+  const budgetMentions = parseBudgetMentions(text);
+  const parsedBudgetIdr = budgetMentions.length > 0
+    ? budgetMentions[budgetMentions.length - 1].amount
+    : null;
+  const budgetIdr = budgetIdrOverride ?? parsedBudgetIdr;
 
   const match = findDirectTemplate(text);
   if (!match) return null;
@@ -414,6 +438,7 @@ export function buildDirectRab(rawText: string, needsOverride?: RabNeeds): Direc
     houseType: found.item.area,
     floors,
     totalArea,
+    budgetIdr,
     areaFallback: match.areaFallback,
     areaAdaptation,
     provenance,
@@ -664,6 +689,23 @@ export function formatDirectRabMessage(r: DirectRabResult): string {
     lines.push('');
     lines.push(
       `**Total RAB${formatTotalComponents(g)}: ${formatRupiah(g.totalRabCost)}**`
+    );
+  }
+  // Verdict anggaran (sprint 2026-11-26, Worker F — B-gap-2 / D-G1):
+  // hanya bila budget disebut; tanpa budget pesan byte-identical.
+  // Pembanding adalah biaya langsung (g.totalDirectCost), selaras jalur
+  // universal yang membandingkan estimatedTotal (biaya langsung).
+  // Bila completion Full AI terisi, blok completion SUDAH merender
+  // verdict atas total recomputed-nya — jangan dobel.
+  if (!completion && r.budgetIdr != null) {
+    lines.push(
+      formatBudgetFeasibilityLine(
+        assessBudgetFeasibility({
+          totalPriced: g.totalDirectCost,
+          unpricedCount,
+          budgetCap: r.budgetIdr,
+        }),
+      ),
     );
   }
   lines.push('');

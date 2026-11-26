@@ -65,7 +65,7 @@ import { renderMarkdown, markdownToPlainText } from './markdown';
 import { routeIntent, localGreeting, HELP_TEXT } from './intentRouter';
 import { extractSlashToken, filterSlashEntries, NAV_BY_ID, resolveNavCommand, type NavEntry } from './navRegistry';
 import { consumePendingAiEntry, requestAiEntry, consumePendingEzrabAiEntry, peekPendingEzrabAiEntry, ezrabAiEntryRemainingMs, openEzrabAI, type EzrabAiEntryContext } from '../aiNavigation';
-import { executeIntent, executeDirectConfirmation, executeBudgetFullAiRab, undoFullAiCompletion, acceptFullAiCompletion, discardFullAiCompletion, proposeUiActionConfirmation, claimUiActionConfirmation, takeUiActionConfirmationRef, buildAnswerPushFingerprint, formatAnswerPushPreviewMessage, qtoCorrectionMatchesDisplayed, validateDedSpecRevisionConfirm, DIRECT_COMMAND_CONFIRM_TTL_MS, continueRabNeeds, continueRabFinalize, hasActiveRabNeeds, continueRabChoice, tryContinueRabSubtype, tryContinueRabMaterial, tryContinueProjectContext, tryContinueUniversalContext, getLastRabDesignPrompt, getLastRabNeeds, setLastRabNeeds, getPendingRabChoice, setPendingRabChoice, submitQuestionnaireAnswers, clearUniversalContext, restoreUniversalContext, getUniversalContextState, getProjectContextState, clearProjectContext, isProjectContextForeign, noteIntakeSnapshotVersion, getLastSeenIntakeVersion, takeIntakeDropOutcome, takeIntakePersistConflict, ChatActionContext, ChatActionButton, ActionResult, ProjectPriceOverrideInput } from './actionRegistry';
+import { executeIntent, executeDirectConfirmation, executeBudgetFullAiRab, undoFullAiCompletion, acceptFullAiCompletion, discardFullAiCompletion, proposeUiActionConfirmation, claimUiActionConfirmation, takeUiActionConfirmationRef, buildAnswerPushFingerprint, formatAnswerPushPreviewMessage, qtoCorrectionMatchesDisplayed, validateDedSpecRevisionConfirm, DIRECT_COMMAND_CONFIRM_TTL_MS, continueRabNeeds, continueRabFinalize, hasActiveRabNeeds, continueRabChoice, tryContinueRabSubtype, tryContinueRabMaterial, tryContinueProjectContext, tryContinueUniversalContext, isUniversalContextForeign, getLastRabDesignPrompt, getLastRabNeeds, setLastRabNeeds, getPendingRabChoice, setPendingRabChoice, submitQuestionnaireAnswers, clearUniversalContext, restoreUniversalContext, getUniversalContextState, getProjectContextState, clearProjectContext, isProjectContextForeign, noteIntakeSnapshotVersion, getLastSeenIntakeVersion, takeIntakeDropOutcome, takeIntakePersistConflict, ChatActionContext, ChatActionButton, ActionResult, ProjectPriceOverrideInput } from './actionRegistry';
 import { setActiveProjectSnapshot } from './tools';
 import { QuestionnaireCard } from './questionnaireCard';
 import type { QuestionnairePayload } from './questionnaire';
@@ -2884,7 +2884,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     if (!forcedAi && awaitingChoice) {
       if (looksLikeNeedsAnswer(msg)) {
         try {
-          const res = continueRabChoice(msg, effProject?.id);
+          const res = continueRabChoice(msg, effProject?.id ?? null);
           const acts = res.actions && res.actions.length > 0 ? res.actions : undefined;
           await postAssistant(res.message, acts);
           if (!res.awaitRabChoice) setAwaitingChoice(false);
@@ -2901,7 +2901,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
      * ditampilkan — BUKAN dilempar ke AI. Pesan tanpa subtipe (perintah
      * baru) menggugurkan status menunggu dan diproses normal di bawah. */
     if (!forcedAi && awaitingSubtype) {
-      const subRes = tryContinueRabSubtype(msg, effProject?.id);
+      const subRes = tryContinueRabSubtype(msg, effProject?.id ?? null);
       if (subRes) {
         const acts = subRes.actions && subRes.actions.length > 0 ? subRes.actions : undefined;
         setMessages((prev) => [...prev, { role: 'assistant', content: subRes.message, ts: Date.now(), actions: acts }]);
@@ -2921,7 +2921,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
      * BUKAN dilempar ke AI. Pesan lain (perintah baru) menggugurkan
      * status menunggu dan diproses normal di bawah. */
     if (!forcedAi && awaitingMaterial) {
-      const matRes = tryContinueRabMaterial(msg);
+      const matRes = tryContinueRabMaterial(msg, effProject?.id ?? null);
       if (matRes) {
         const acts = matRes.actions && matRes.actions.length > 0 ? matRes.actions : undefined;
         setMessages((prev) => [...prev, { role: 'assistant', content: matRes.message, ts: Date.now(), actions: acts }]);
@@ -2941,14 +2941,20 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
      * BUKAN dilempar ke AI dan BUKAN me-restart alur. Pesan yang bukan
      * jawaban (perintah baru) menggugurkan status menunggu di registry
      * (hasil null) dan diproses normal di bawah.
-     * F-ISO-5 (PRESERVE, Tier 1, 2026-11-23): singleton intake adalah
-     * GLOBAL — bila ia milik proyek LAIN, pesan ini BUKAN lanjutan
-     * intake itu: tryContinueUniversalContext tidak dipanggil (tidak ada
-     * merge ke konteks asing, dan tidak ada drop snapshot proyek lain
-     * lewat cabang perintah-baru); pesan jatuh ke routing normal sebagai
-     * intake baru di proyek aktif. Konteks milik proyek aktif atau tanpa
-     * cap (jalur lama) berperilaku seperti sebelumnya — termasuk drop
-     * same-project saat topik sengaja ditinggalkan.
+     * F-ISO-5 (PRESERVE, Tier 1, 2026-11-23; DIPERKETAT B-gap-3
+     * 2026-11-26, STRICT PROJECT CONTEXT ISOLATION): singleton intake
+     * adalah GLOBAL — bila ia milik proyek LAIN, pesan ini BUKAN
+     * lanjutan intake itu: tryContinueUniversalContext tidak dipanggil
+     * (tidak ada merge ke konteks asing, dan tidak ada drop snapshot
+     * proyek lain lewat cabang perintah-baru); pesan jatuh ke routing
+     * normal sebagai intake baru di proyek aktif. Sejak B-gap-3 aturan
+     * yang sama berlaku untuk konteks TANPA CAP (global sejati): begitu
+     * proyek aktif ada, konteks global itu asing — "tanpa cap" BUKAN
+     * lagi jalur lama yang boleh berlanjut di proyek mana pun. Penjaga
+     * isUniversalContextForeign + parameter projectId eksplisit
+     * (null = global) pada tryContinueUniversalContext menegakkannya
+     * di dua lapis; konteks global TIDAK di-drop — ia tetap hidup
+     * untuk chat global.
      * S3-B (2026-11-23): cermin Tier 1 untuk jalur LANDSCAPE — sebelum
      * tryContinueProjectContext, periksa cap proyek konteksnya. Bila
      * milik proyek lain (atau tanpa cap sementara proyek aktif ada),
@@ -2964,10 +2970,14 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
      * tiap submit. */
     const foreignProjectCtx = isProjectContextForeign(getProjectContextState(), effProject?.id);
     if (!forcedAi && awaitingConcept) {
-      // F-ISO-5 Tier 1 (lihat komentar di atas).
+      // F-ISO-5 Tier 1 (lihat komentar di atas) + B-gap-3: konteks
+      // universal tanpa cap (global) asing begitu proyek aktif ada —
+      // isUniversalContextForeign menegakkannya; projectId eksplisit
+      // (null = global) diteruskan ke kedua tryContinue agar pertahanan
+      // dalam registry ikut menolak lanjutan lintas-scope.
       const liveIntake = getUniversalContextState();
-      const foreignIntake = !!liveIntake?.projectId && liveIntake.projectId !== effProject?.id;
-      const ctxRes = (foreignProjectCtx ? null : tryContinueProjectContext(msg)) ?? (foreignIntake ? null : tryContinueUniversalContext(msg));
+      const foreignIntake = isUniversalContextForeign(liveIntake, effProject?.id);
+      const ctxRes = (foreignProjectCtx ? null : tryContinueProjectContext(msg, effProject?.id ?? null)) ?? (foreignIntake ? null : tryContinueUniversalContext(msg, effProject?.id ?? null));
       if (ctxRes) {
         const acts = ctxRes.actions && ctxRes.actions.length > 0 ? ctxRes.actions : undefined;
         setMessages((prev) => [...prev, { role: 'assistant', content: ctxRes.message, ts: Date.now(), actions: acts, questionnaire: ctxRes.questionnaire }]);
@@ -2986,12 +2996,15 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     }
     /* ---- Chat-to-RAB Fase 2: jawaban atas "Lengkapi kebutuhan" ----
      * Bila chat sedang menunggu kelengkapan dan pesan ini berbentuk jawaban
-     * (lantai/dimensi/kamar), gabungkan ke ringkasan — jangan lempar ke AI. */
+     * (lantai/dimensi/kamar), gabungkan ke ringkasan — jangan lempar ke AI.
+     * Scope eksplisit (null = global): tanpa ini, di chat global
+     * projectId undefined lolos sebagai "tanpa filter" dan kebutuhan
+     * proyek lain bisa terbaca (B-gap-3). */
     if (!forcedAi && awaitingNeeds) {
       setAwaitingNeeds(false);
       if (looksLikeNeedsAnswer(msg)) {
         try {
-          const res = continueRabNeeds(msg, effProject?.id);
+          const res = continueRabNeeds(msg, effProject?.id ?? null);
           const acts = res.actions && res.actions.length > 0 ? res.actions : undefined;
           await postAssistant(res.message, acts);
         } finally {
@@ -3007,8 +3020,8 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
      * karena flag awaitingNeeds (yang kini juga disetel ringkasan
      * pertama) sedang tidak aktif. Perintah baru berbentuk perintah
      * tidak tertangkap looksLikeNeedsAnswer dan diproses normal. */
-    if (!forcedAi && hasActiveRabNeeds(effProject?.id)) {
-      const fin = continueRabFinalize(msg, effProject?.id);
+    if (!forcedAi && hasActiveRabNeeds(effProject?.id ?? null)) {
+      const fin = continueRabFinalize(msg, effProject?.id ?? null);
       if (fin) {
         try {
           const acts = fin.actions && fin.actions.length > 0 ? fin.actions : undefined;
@@ -3021,7 +3034,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       }
       if (!awaitingNeeds && looksLikeNeedsAnswer(msg)) {
         try {
-          const res = continueRabNeeds(msg, effProject?.id);
+          const res = continueRabNeeds(msg, effProject?.id ?? null);
           const acts = res.actions && res.actions.length > 0 ? res.actions : undefined;
           await postAssistant(res.message, acts);
           if (res.awaitRabNeeds) setAwaitingNeeds(true);
@@ -5530,7 +5543,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       // navigasi AI sekali-pakai, konteks chat tetap utuh untuk kembali.
       // Pilihan pada kartu (bila ada) dianggap selesai: status koreksi tutup.
       setAwaitingChoice(false);
-      const prompt = btn.action.param ?? getLastRabDesignPrompt(effProject?.id) ?? undefined;
+      const prompt = btn.action.param ?? getLastRabDesignPrompt(effProject?.id ?? null) ?? undefined;
       requestAiEntry('design_workspace', {
         projectId: effProject?.id ?? null,
         initialPrompt: prompt,

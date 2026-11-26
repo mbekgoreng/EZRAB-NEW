@@ -88,7 +88,7 @@ export const SUBCATEGORIES: SubcategoryDef[] = [
   S('renovasi', 'building', 'Renovasi / rehabilitasi / restorasi', /\b(renovasi|rehabilitasi|restorasi|retrofit|perkuatan)\b/, ['RENOVASI_MAINTENANCE'], ['renovasi', 'restorasi', 'retrofit', 'perkuatan'], ['renovasi']),
   S('sekolah', 'building', 'Sekolah & fasilitas pendidikan', /\b(sekolah|madrasah|kampus|universitas|gedung kuliah|fasilitas pendidikan)\b/, ['PENDIDIKAN'], ['sekolah', 'pendidikan', 'kampus', 'madrasah'], ['gedung']),
   S('kesehatan', 'building', 'Rumah sakit & fasilitas kesehatan', /\b(rumah sakit|klinik|puskesmas|fasilitas kesehatan|rumah bersalin)\b/, ['KESEHATAN'], ['klinik', 'puskesmas', 'medis', 'laboratorium'], ['gedung']),
-  S('hotel', 'building', 'Hotel & hospitality', /\b(hotel|ballroom|kondotel|villa)\b/, ['HOTEL_HOSPITALITY'], ['hotel', 'ballroom', 'villa'], ['gedung']),
+  S('hotel', 'building', 'Hotel & hospitality', /\b(hotel|ballroom|kondotel)\b|\b(villa resort|resort villa|boutique villa|villa boutique)\b/, ['HOTEL_HOSPITALITY'], ['hotel', 'ballroom', 'villa'], ['gedung']),
   S('kantor', 'building', 'Gedung perkantoran', /\b(kantor|perkantoran|office|gedung kantor)\b/, ['GEDUNG', 'BANGUNAN_TINGGI'], ['perkantoran', 'kantor', 'co-working', 'menara kantor'], ['gedung']),
   S('komersial', 'building', 'Bangunan komersial', /\b(mall|pasar modern|minimarket|restoran|showroom|pertokoan|ruko|kafe|toko)\b/, ['GEDUNG', 'BANGUNAN_TINGGI', 'HOTEL_HOSPITALITY'], ['pasar modern', 'showroom', 'retail', 'minimarket'], ['gedung']),
   S('gudang-industri', 'building', 'Gudang & bangunan industri', /\b(gudang|pabrik|workshop|warehouse|cold storage|bengkel|industri)\b/, ['INDUSTRI', 'GEDUNG'], ['gudang', 'pabrik', 'workshop', 'cold storage'], ['gedung']),
@@ -104,7 +104,19 @@ export const SUBCATEGORIES: SubcategoryDef[] = [
   // §10 'perumahan + jalan + drainase + retaining wall' kehilangan
   // disiplin perumahannya. Subkategori khusus 'perumahan' (estate vs
   // rumah tunggal) ditunda — butuh entri keluarga projectTaxonomy.
-  S('rumah', 'building', 'Rumah tinggal', /\b(rumah tinggal|rumah|hunian|perumahan)\b/, ['RUMAH_TINGGAL'], ['rumah'], ['gedung'], 'house'),
+  // Worker D 2026-11-26 (follow-up P1+P2 Worker A): 'villa' telanjang
+  // adalah rumah tinggal (template HOUSE-VILLA-MODERN, RUMAH_TINGGAL)
+  // — bukan hotel; hotel hanya mengklaim villa bila konteks resort
+  // ("villa resort"/"boutique villa"/"villa boutique" → BLD-BOUTIQUE-VILLA). 'rumah'
+  // telanjang tidak cocok bila diikuti sakit/bersalin/susun — frasa
+  // itu milik kesehatan ("rumah sakit", "rumah bersalin") dan
+  // apartemen ("rumah susun"); tanpa guard, "rumah sakit" membawa
+  // sekunder 'rumah' yang spurious + isMulti=true. 'villa' juga
+  // dikecualikan bila 'resort' bersebelahan (kedua arah), agar
+  // "boutique villa resort" tetap primer hotel tunggal, bukan
+  // multi hotel+rumah. `specific` + 'villa' agar coverageFor(rumah)
+  // menghitung template villa khusus (didukung, bukan sebagian).
+  S('rumah', 'building', 'Rumah tinggal', /\b(rumah tinggal|hunian|perumahan)\b|\brumah(?!\s+(sakit|bersalin|susun))\b|(?<!resort\s)\bvilla\b(?!\s+resort\b)/, ['RUMAH_TINGGAL'], ['rumah', 'villa'], ['gedung'], 'house'),
   // "bangunan" TIDAK dihitung bila bagian dari "luas bangunan" (itu
   // dimensi, bukan fungsi); def ini fallback — gugur di classify bila
   // ada def bangunan yang lebih spesifik.
@@ -495,14 +507,55 @@ export function parsePowerMention(text: string): { valueKva: number; original: s
 
 export interface AreaHit { valueM2: number; original: string; pos: number }
 
-/** Semua penyebutan luas (m² / m2 / meter persegi) pada teks, berurutan posisi. */
+/**
+ * Faktor konversi satuan luas ke m² (satu sumber — dipakai
+ * findAreaMentions + cancelledAreaValues). Hektar/hektare/ha = 10.000
+ * m²; are = 100 m² (selaras parseAreaUnitM2 di projectIntake +
+ * engineeringSpec.ts:1032).
+ */
+export const AREA_UNIT_FACTORS: Record<string, number> = {
+  m2: 1, 'm²': 1, 'meter persegi': 1,
+  hektar: 10000, hektare: 10000, ha: 10000, are: 100,
+};
+
+/**
+ * Nilai luas yang dibatalkan pola koreksi "bukan X, tapi Y" — cermin
+ * cancelledLinearValues untuk luas (termasuk hektar/are, dikonversi
+ * ke m² agar cocok dengan valueM2 hasil findAreaMentions).
+ */
+export function cancelledAreaValues(text: string): number[] {
+  const t = (text || '').toLowerCase();
+  const out: number[] = [];
+  for (const m of t.matchAll(/\bbukan\s+(\d+(?:[.,]\d+)?)\s*(m2|m²|meter persegi|hektar|hektare|ha|are)\b/g)) {
+    const v = parseAreaNumber(m[1]);
+    if (v == null) continue;
+    out.push(Math.round(v * (AREA_UNIT_FACTORS[m[2].toLowerCase()] ?? 1) * 1000) / 1000);
+  }
+  return out;
+}
+
+/**
+ * Semua penyebutan luas pada teks, berurutan posisi — m² / m2 /
+ * meter persegi DAN hektar/hektare/ha/are (dikonversi ke m²).
+ *
+ * Worker D 2026-11-26 (AI & Workflow Completion Sprint §3D): "1
+ * hektar" sebelumnya tidak terbaca parser luas mana pun di lapisan
+ * universal, sehingga buildUniversalDraft("... landscape 1 hektar
+ * ...") jatuh ke needs-spec "ukuran belum lengkap" padahal ukurannya
+ * ada — satu-satunya jalan adalah workaround pernyataan-ulang m² di
+ * generateFromProjectContext (actionRegistry.ts:1119). Nilai ASLI
+ * dipertahankan di `original` ("1 hektar"); valueM2 adalah konversi
+ * deterministik (bukan tebakan). `\b` sesudah `ha`/`are` mencegah
+ * "hari"/"arena" tertangkap; angka wajib mendahului satuan.
+ */
 export function findAreaMentions(text: string): AreaHit[] {
   const t = (text || '').toLowerCase();
   const hits: AreaHit[] = [];
-  for (const m of t.matchAll(/(\d+(?:[.,]\d+)?)\s*(m2|m²|meter persegi)\b/gi)) {
+  for (const m of t.matchAll(/(\d+(?:[.,]\d+)?)\s*(m2|m²|meter persegi|hektar|hektare|ha|are)\b/gi)) {
     const v = parseAreaNumber(m[1]);
     if (v == null || v <= 0) continue;
-    hits.push({ valueM2: v, original: `${m[1]} ${m[2]}`, pos: m.index ?? 0 });
+    const factor = AREA_UNIT_FACTORS[m[2].toLowerCase()] ?? 1;
+    hits.push({ valueM2: Math.round(v * factor * 1000) / 1000, original: `${m[1]} ${m[2]}`, pos: m.index ?? 0 });
   }
   return hits;
 }

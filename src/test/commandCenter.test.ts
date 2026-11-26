@@ -580,12 +580,13 @@ describe('Scope per-proyek lastRabNeeds (Workstream B1, 2026-11-19)', () => {
     expect(getLastRabDesignPrompt('proj-B')).toBeNull();
   });
 
-  it('L6. Tanpa proyek aktif (null): perilaku lama dipertahankan — sesi unscoped tetap bisa difinalisasi', () => {
+  it('L6. Tanpa proyek aktif (null): sesi global tidak terbaca dari proyek (isolasi ketat B-gap-3, keputusan owner 2026-11-26) — sesi unscoped tetap bisa difinalisasi dari global', () => {
     seedHouse(null);
     expect(hasActiveRabNeeds()).toBe(true);
     expect(hasActiveRabNeeds(null)).toBe(true);
-    // Stored null = tanpa scope → bacaan ber-scope apa pun tetap boleh.
-    expect(hasActiveRabNeeds('proj-X')).toBe(true);
+    // Stored null = tanpa scope → TIDAK terbaca dari proyek mana pun
+    // (isolasi ketat: global tak terlihat di proyek, tanpa self-clean).
+    expect(hasActiveRabNeeds('proj-X')).toBe(false);
     const res = continueRabFinalize('itu aja');
     expect(res).not.toBeNull();
     expect(res!.message).toContain('Draft RAB rumah tinggal');

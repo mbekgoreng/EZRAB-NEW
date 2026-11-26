@@ -402,6 +402,14 @@ export const LANDSCAPE_CONCEPTS: LandscapeConcept[] = [
       F('drainage', 'Drainase', /\b(drainase|saluran)\b/),
       F('toilet', 'Toilet umum', /\b(toilet|wc umum|kamar kecil)\b/),
       F('parking', 'Area parkir', /\b(parkir|parking)\b/),
+      // Sprint Worker C (§3C): irigasi + hardscape sebelumnya TIDAK
+      // ADA di daftar fasilitas konsep mana pun — penyebutan "sistem
+      // irigasi" / "hardscape" tidak pernah tercatat sebagai fasilitas
+      // (dan "irigasi" malah membalik kategori sesi, lihat penjaga di
+      // extractProjectContext). Ditambahkan di AKHIR tiap daftar agar
+      // urutan saran yang sudah ada tidak berubah.
+      F('irrigation', 'Sistem irigasi / penyiraman', /\b(irigasi|penyiraman)\b/),
+      F('hardscape', 'Hardscape / perkerasan', /\bhardscape\b/),
     ],
   },
   {
@@ -420,6 +428,8 @@ export const LANDSCAPE_CONCEPTS: LandscapeConcept[] = [
       F('lighting', 'Penerangan', /\b(penerangan|lampu|pencahayaan)\b/),
       F('drainage', 'Drainase', /\b(drainase|saluran)\b/),
       F('seating', 'Tempat duduk luar', /\b(tempat duduk|area duduk|bangku|gazebo)\b/),
+      F('irrigation', 'Sistem irigasi / penyiraman', /\b(irigasi|penyiraman)\b/),
+      F('hardscape', 'Hardscape / perkerasan', /\bhardscape\b/),
     ],
   },
   {
@@ -438,6 +448,8 @@ export const LANDSCAPE_CONCEPTS: LandscapeConcept[] = [
       F('parking', 'Landscape parkir', /\b(parkir|parking)\b/),
       F('decorative-planting', 'Tanaman dekoratif', /\b(dekoratif|tanaman hias|ornamental)\b/),
       F('gathering', 'Area berkumpul luar', /\b(berkumpul|gathering|area kumpul|amphitheater|amfiteater)\b/),
+      F('irrigation', 'Sistem irigasi / penyiraman', /\b(irigasi|penyiraman)\b/),
+      F('hardscape', 'Hardscape / perkerasan', /\bhardscape\b/),
     ],
   },
   {
@@ -454,6 +466,8 @@ export const LANDSCAPE_CONCEPTS: LandscapeConcept[] = [
       F('relaxation', 'Area relaksasi luar', /\b(relaksasi|santai|relax)\b/),
       F('lighting', 'Penerangan', /\b(penerangan|lampu|pencahayaan)\b/),
       F('drainage', 'Drainase', /\b(drainase|saluran)\b/),
+      F('irrigation', 'Sistem irigasi / penyiraman', /\b(irigasi|penyiraman)\b/),
+      F('hardscape', 'Hardscape / perkerasan', /\bhardscape\b/),
     ],
   },
   {
@@ -472,6 +486,8 @@ export const LANDSCAPE_CONCEPTS: LandscapeConcept[] = [
       F('lighting', 'Penerangan', /\b(penerangan|lampu)\b/),
       F('drainage', 'Drainase', /\b(drainase|saluran)\b/),
       F('seating', 'Area duduk', /\b(area duduk|tempat duduk|bangku)\b/),
+      F('irrigation', 'Sistem irigasi / penyiraman', /\b(irigasi|penyiraman)\b/),
+      F('hardscape', 'Hardscape / perkerasan', /\bhardscape\b/),
     ],
   },
 ];
@@ -707,7 +723,13 @@ export function extractProjectContext(text: string, base?: ProjectIntakeContext)
       .match(/\bdi\s+([a-z]+(?:\s+[a-z]+){0,2}?)(?=\s+(?:dengan|dan|yang|untuk|ada|pakai|menggunakan)\b|\s*[,.;]|$)/);
     if (locIntake) {
       const candidate = locIntake[1].trim();
-      if (!/^(sini|sana|dalam|luar|atas|bawah|lahan|tanah|area|taman|rumah|gedung|lahan)$/.test(candidate) && candidate.length >= 3) {
+      // AI Workflow Sprint 2026-11-26 (Worker A): kata generik penanda
+      // tempat ("di desa", "di pinggir jalan raya", "di kampung halaman
+      // saya") BUKAN nama lokasi — tolak berdasarkan kata PERTAMA
+      // kandidat, bukan hanya kandidat satu kata ("pinggir jalan raya"
+      // sebelumnya lolos karena penolakan memakai pencocokan utuh).
+      const firstWord = candidate.split(/\s+/)[0] ?? '';
+      if (!/^(sini|sana|dalam|luar|atas|bawah|lahan|tanah|area|taman|rumah|gedung|pinggir|desa|kampung|halaman|depan|belakang|samping|tengah)$/.test(firstWord) && candidate.length >= 3) {
         ctx.location = candidate.replace(/\b\w/g, (c) => c.toUpperCase());
       }
     }
@@ -717,7 +739,16 @@ export function extractProjectContext(text: string, base?: ProjectIntakeContext)
   }
 
   // --- Konsep & fasilitas (keluarga landscape) ---
-  if (isLandscapeFamily(ctx.category)) {
+  // Sprint Worker C (§3C): jawaban fasilitas pada giliran lanjutan
+  // TIDAK BOLEH hilang hanya karena satu kata pada jawaban itu cocok
+  // pola kategori lain ("sistem irigasi" cocok INFRASTRUCTURE
+  // sehingga kategori giliran ini menimpa konteks landscape dan blok
+  // ini dilewati — fasilitas yang disebut ikut hilang). Deteksi
+  // fasilitas memakai keluarga konteks SESI (base), bukan hanya
+  // kategori giliran ini. Klasifikasi kategorinya sendiri TIDAK diubah
+  // di sini (milik lapisan klasifikasi); yang dijaga hanya agar
+  // jawaban atas pertanyaan fasilitas tetap tercatat.
+  if (isLandscapeFamily(ctx.category) || isLandscapeFamily(base?.category ?? null)) {
     const concept = detectLandscapeConcept(raw);
     if (concept) {
       ctx.conceptId = concept.id;

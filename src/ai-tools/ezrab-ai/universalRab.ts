@@ -134,6 +134,7 @@ import {
   findLinearMentions,
   parseAnchoredLinear,
   findAreaMentions,
+  cancelledAreaValues,
   findVolumeMentions,
   parseCountMentions,
   cancelledLinearValues,
@@ -448,6 +449,39 @@ export function parseRupiahAmount(numStr: string, unit: string | undefined): num
   return v;
 }
 
+/**
+ * Fallback luas kerja dari penyebutan hektar/are ("1 hektar" →
+ * 10.000 m², "2,5 hektar" → 25.000 m², "1 are" → 100 m²).
+ *
+ * Worker D 2026-11-26 (AI & Workflow Completion Sprint §3D): parser
+ * luas jalur needs/understanding tidak mengenal satuan besar, sehingga
+ * areaM2 untuk "landscape 1 hektar" selalu null dan draft jatuh ke
+ * needs-spec — padahal intake (projectIntake.parseAreaUnitM2) sudah
+ * membaca hektar sejak lama. Hanya dipakai bila TIDAK ADA luas kerja
+ * dari jalur needs/understanding (fallback terakhir, bukan override).
+ * Penyebutan yang dibatalkan koreksi ("bukan 1 hektar") dan penyebutan
+ * LUAS LAHAN ("luas lahan 1 hektar" — bukan luas kerja) dilewati;
+ * penyebutan terakhir yang hidup menang (semantik koreksi).
+ */
+function hectareAreaFallback(rawText: string): number | null {
+  const lower = rawText.toLowerCase();
+  const cancelled = new Set(cancelledAreaValues(rawText));
+  const hits = findAreaMentions(rawText).filter((h) => {
+    if (cancelled.has(h.valueM2)) return false;
+    // Hanya satuan hektar/are — penyebutan m² sudah dibaca jalur
+    // needs/understanding; fallback ini menutup celah satuan besar saja.
+    const unit = h.original.split(' ').pop() ?? '';
+    if (!/^(hektar|hektare|ha|are)$/.test(unit)) return false;
+    // Penyebutan LUAS LAHAN ("luas lahan 1 hektar") BUKAN luas kerja
+    // — penjaga yang sama dengan loop atribusi extractScopeSpecs.
+    const before = lower.slice(Math.max(0, h.pos - 32), h.pos);
+    if (/(luas\s+)?(lahan|tanah)(nya)?\s*(seluas\s*)?$/.test(before)) return false;
+    return true;
+  });
+  if (hits.length === 0) return null;
+  return hits[hits.length - 1].valueM2;
+}
+
 /** Ekstrak spesifikasi terukur dari teks (deterministik, tanpa AI).
  *
  * @param opts.classification — klasifikasi intake yang SUDAH dihitung
@@ -522,7 +556,9 @@ export function extractUniversalSpec(rawText: string, opts?: { classification?: 
     // eksplisit (perbaikan tipologi 2026-11-08 — sebelumnya dimensi
     // "10 x 20 m" tidak pernah menjadi luas di jalur ini sehingga
     // permintaan gudang ditolak sebagai "belum ada luas/lantai").
-    areaM2: needs.buildingArea ?? needs.footprintM2 ?? understanding.footprint.value,
+    // Worker D 2026-11-26: fallback hektar/are terakhir
+    // (hectareAreaFallback — "1 hektar" → 10.000 m²).
+    areaM2: needs.buildingArea ?? needs.footprintM2 ?? understanding.footprint.value ?? hectareAreaFallback(text),
     lengthM: needs.lengthM,
     widthM: measures.widthM,
     spanM: measures.spanM,
@@ -652,7 +688,12 @@ export function extractScopeSpecs(rawText: string, scopes: ScopeGroup[]): Record
     // param berkind 'depth' — keduanya konsisten bernilai sama).
     if (DEPTH_KEYWORDS.has(occ.kw)) set(occ.scopeId, 'depthM', h.valueM);
   }
+  // Worker D 2026-11-26: nilai luas yang dibatalkan pola koreksi
+  // ("bukan 1 hektar, tapi 8.000 m²") tidak boleh menang — cermin
+  // penyaringan cancelledLinearValues pada loop linear di atas.
+  const cancelledAreas = new Set(cancelledAreaValues(rawText));
   for (const h of findAreaMentions(rawText)) {
+    if (cancelledAreas.has(h.valueM2)) continue;
     // Batch 3 (§6.3): penyebutan LUAS LAHAN ("luas lahan 500 m2",
     // "lahan 500 m2", "tanah seluas 500 m2") BUKAN luas cakupan —
     // mengatribusikannya sebagai areaM2 scope membuat "gudang 10x20
@@ -2979,6 +3020,34 @@ function buildDraftPart(
  * pajak opt-in) baru berlaku pasca-transfer. Dipin di
  * `src/test/p3bCanonicalCalculation.test.ts` §4.
  */
+/**
+ * Akhiran alasan needs-spec (perbaikan 2026-11-26 — "dana sekian bisa ga
+ * buatkan rab ..."): gema apa yang SUDAH diketahui (ukuran yang disebut
+ * + anggaran) agar jawaban "belum bisa" tidak terasa mengabaikan pesan
+ * pengguna. Anggaran dicatat sebagai pembanding yang dipakai begitu
+ * ukuran lengkap — bukan janji total. Ukuran diambil dari spek PER-SCOPE
+ * (specForScope) agar ukuran cakupan lain tidak bocor ke sini.
+ * CATATAN JEMBATAN: "panjang" SENGAJA tidak dipetakan ke bentang di
+ * sini — bentang adalah dimensi rekayasa yang berbeda dari panjang total
+ * (pin: chatClarificationUniversal 1.3–1.11, universalConstructionMatrix
+ * 13.5f/13.5g/13.13e — jembatan tanpa bentang WAJIB needs-spec meski
+ * panjang disebut). Yang digema di sini hanya apa yang memang disebut.
+ */
+function needsSpecKnownSuffix(scopeSpec: UniversalSpec, spec: UniversalSpec): string {
+  const bits: string[] = [];
+  if (scopeSpec.lengthM != null) bits.push(`panjang ${fmtNum(scopeSpec.lengthM)} m`);
+  if (scopeSpec.widthM != null) bits.push(`lebar ${fmtNum(scopeSpec.widthM)} m`);
+  if (scopeSpec.heightM != null) bits.push(`tinggi ${fmtNum(scopeSpec.heightM)} m`);
+  if (scopeSpec.areaM2 != null) bits.push(`luas ${fmtNum(scopeSpec.areaM2)} m²`);
+  if (scopeSpec.depthM != null) bits.push(`kedalaman ${fmtNum(scopeSpec.depthM)} m`);
+  if (scopeSpec.volumeM3 != null) bits.push(`volume ${fmtNum(scopeSpec.volumeM3)} m³`);
+  const known = bits.length ? ` Yang sudah saya catat: ${bits.join(' · ')}.` : '';
+  const budget = spec.budgetCap != null
+    ? ` Anggaran ${formatRupiah(spec.budgetCap)} sudah saya catat — begitu ukurannya lengkap, total drafnya akan saya bandingkan dengan anggaran itu.`
+    : '';
+  return known + budget;
+}
+
 export function buildUniversalDraft(rawText: string, forcedTemplateId?: string, opts?: { structuredSpecs?: StructuredSpec[]; budgetCapOverride?: number | null; projectId?: string | null; buildings?: BuildingModel[]; dedQto?: DedQtoDraftInfo; classification?: Classification }): BuildResult {
   // W2/W10 §2: klasifikasi intake diteruskan ke ekstraksi spek bila
   // pemanggil sudah mengklasifikasi (bila tidak, dihitung di sana).
@@ -3153,7 +3222,11 @@ export function buildUniversalDraft(rawText: string, forcedTemplateId?: string, 
       if (parsedBuildings.some((b) => buildingHasMeasureBasis(b))) continue;
       return {
         kind: 'needs-spec',
-        reason: 'Untuk Gedung & Bangunan saya belum bisa menghitung volume secara bertanggung jawab — tidak satu pun gedung menyebut jumlah lantai, dimensi, atau luas.',
+        reason:
+          'Untuk Gedung & Bangunan saya belum bisa menghitung volume secara bertanggung jawab — tidak satu pun gedung menyebut jumlah lantai, dimensi, atau luas.' +
+          (spec.budgetCap != null
+            ? ` Anggaran ${formatRupiah(spec.budgetCap)} sudah saya catat — begitu ukurannya lengkap, total drafnya akan saya bandingkan dengan anggaran itu.`
+            : ''),
         missing: parsedBuildings.map((b) => `${b.label}: jumlah lantai atau dimensi (contoh: "Gedung A 3 lantai 15 x 10 m")`),
       };
     }
@@ -3180,7 +3253,9 @@ export function buildUniversalDraft(rawText: string, forcedTemplateId?: string, 
       }
       return {
         kind: 'needs-spec',
-        reason: `Untuk ${scope.label} saya belum bisa menghitung volume secara bertanggung jawab.`,
+        reason:
+          `Untuk ${scope.label} saya belum bisa menghitung volume secara bertanggung jawab.` +
+          needsSpecKnownSuffix(specForScope(spec, scope.id), spec),
         missing: [`${scope.primaryLabel} untuk ${scope.label} (contoh: "${scopeLabelExample(scope)}")`],
       };
     }
@@ -3791,6 +3866,39 @@ export function formatUniversalDraftMessage(draft: UniversalDraft, opts?: { full
     // FASE 4 (CHAT-02) — tanpa budget, kelayakan DINYATAKAN tidak dapat
     // dinilai (dengan alasannya), bukan dihilangkan diam-diam.
     lines.push(formatBudgetFeasibilityLine(assessBudgetFeasibility({ totalPriced: totals.estimatedTotal, unpricedCount: totals.unpricedCount, budgetCap: null })));
+  }
+  // Worker D 2026-11-26 (§3E — Budget Intelligence): kontributor
+  // biaya terbesar + gambaran selisih. Sebelumnya pesan draft hanya
+  // membawa total + verdict tanpa menyebut item mana yang mendominasi
+  // total — pengguna yang anggarannya terlampaui tidak diberi tahu
+  // komponen apa yang mendorong total. Semua angka di sini aritmetika
+  // deterministik dari item efektif (volume × harga satuan yang
+  // berharga); TIDAK ADA klaim sebab-akibat rekayasa dan TIDAK ADA
+  // usulan pemangkasan lingkup — hanya fakta + persentase, keputusan
+  // tetap di tangan pengguna.
+  {
+    const ranked = items
+      .map((it) => ({ it, amount: pricedAmount(it) }))
+      .filter((x): x is { it: DraftItem; amount: number } => x.amount != null && x.amount > 0)
+      .sort((a, b) => b.amount - a.amount);
+    if (totals.estimatedTotal > 0 && ranked.length > 0) {
+      const top = ranked.slice(0, 3);
+      const pct = (amt: number) =>
+        `${((amt / totals.estimatedTotal) * 100).toLocaleString('id-ID', { maximumFractionDigits: 1 })}%`;
+      lines.push('**Kontributor biaya terbesar:**');
+      for (const { it, amount } of top) {
+        lines.push(`• ${it.description} — ${formatRupiah(amount)} (${pct(amount)} dari total estimasi)`);
+      }
+      if (spec.budgetCap != null && totals.estimatedTotal > spec.budgetCap) {
+        const over = totals.estimatedTotal - spec.budgetCap;
+        const coverage = (spec.budgetCap / totals.estimatedTotal) * 100;
+        lines.push(
+          `• Gambaran selisih: anggaran ${formatRupiah(spec.budgetCap)} menutup ${coverage.toLocaleString('id-ID', { maximumFractionDigits: 1 })}% dari total estimasi pada lingkup saat ini — selisih ${formatRupiah(over)} di atas anggaran. ` +
+          `Item terbesar di atas (${top[0].it.description}, ${pct(top[0].amount)}) adalah komponen tunggal yang paling memengaruhi total; ` +
+          'bila total harus turun, yang perlu diputuskan adalah mengurangi lingkup / mengganti spek komponen itu, atau menambah anggaran — pilihannya di tangan Anda.',
+        );
+      }
+    }
   }
   // Lengkapi dengan Full AI (§5): blok completion SETELAH baris verdict
   // budget (caveat asumsi langsung mengikuti verdict). Absen bila tanpa

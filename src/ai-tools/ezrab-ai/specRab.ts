@@ -28,6 +28,7 @@
 
 import {
   extractRabNeeds,
+  parseBudgetMentions,
   parseLandDims,
   resolveLandAreaM2,
   stripLandPhrases,
@@ -86,6 +87,12 @@ export interface FreeSpec {
   location: string | null;
   /** Angka type|tipe bila disebut (dan tidak terdaftar — lihat parseFreeSpec). */
   typeNumber: number | null;
+  /** Anggaran pengguna (Rp) dari teks, bila disebut — dipakai sebagai
+   *  pembanding verdict kelayakan (tidak pernah memangkas lingkup).
+   *  null/undefined = budget tidak disebut. Kemunculan TERAKHIR menang,
+   *  selaras budgetCap universal. Jalur kebutuhan mengisi dari spek
+   *  intent aktif (buildSpecRabFromNeeds). */
+  budgetIdr?: number | null;
 }
 
 /**
@@ -137,6 +144,12 @@ export function parseFreeSpec(
   const explicitBuildingArea = needs.buildingArea;
   const typeMatch = lower.match(/\b(?:type|tipe)\s*(\d+)/);
   const typeNumber = typeMatch ? parseInt(typeMatch[1], 10) : null;
+  // Anggaran pengguna (sprint 2026-11-26, Worker F — D-G1): kemunculan
+  // TERAKHIR menang, selaras budgetCap universal (budgetFeasibility).
+  const budgetMentions = parseBudgetMentions(text);
+  const budgetIdr = budgetMentions.length > 0
+    ? budgetMentions[budgetMentions.length - 1].amount
+    : null;
 
   let footprintArea: number;
   let totalArea: number;
@@ -187,6 +200,7 @@ export function parseFreeSpec(
     bathrooms: needs.bathrooms,
     location: needs.location,
     typeNumber,
+    budgetIdr,
   };
 }
 
@@ -220,13 +234,21 @@ function fmtArea(v: number): string {
  * di daftar asumsi + provenance hasil (mesin parametrik tidak
  * memodelkannya sebagai parameter terpisah, jadi kejujurannya adalah
  * mencatatnya terbuka, bukan mengklaimnya memengaruhi hitungan).
+ *
+ * `opts.budgetCap` (hardening 2026-11-26, Worker D §4D): anggaran
+ * TERSTRUKTUR dari spek intent aktif — dipakai pemanggil yang membangun
+ * dari teks SINTETIS (RAB_FULL_AI path-c), yang tidak memuat budget.
+ * MENANG atas budget hasil parse teks (teks sintetis tidak pernah
+ * memuat budget; teks asli tetap jadi fallback bila cap null).
+ * Hanya pembanding verdict, tidak pernah memangkas lingkup.
  */
 export function buildSpecRab(
   rawText: string,
-  opts?: { skipTemplateGuard?: boolean; intentSpec?: RabIntentSpec | null },
+  opts?: { skipTemplateGuard?: boolean; intentSpec?: RabIntentSpec | null; budgetCap?: number | null },
 ): DirectRabResult | null {
   const spec = parseFreeSpec(rawText, opts);
   if (!spec) return null;
+  if (opts?.budgetCap != null) spec.budgetIdr = opts.budgetCap;
   return buildFromFreeSpec(spec, rawText, opts?.intentSpec ?? null);
 }
 
@@ -240,8 +262,13 @@ export function buildSpecRab(
  * - Tanpa luas bangunan, dimensi mengikuti konvensi jalur teks (tapak).
  * Mengembalikan null bila basis luas tidak ada / di luar kewajaran —
  * pemanggil wajib menjawab jujur, bukan mengarang draft.
+ *
+ * `budgetCap` (sprint 2026-11-26, Worker F — B-gap-2): anggaran dari
+ * spek intent aktif — RabNeeds tidak punya field budget, jadi anggaran
+ * diteruskan eksplisit dari pemanggil (continueRabFinalize) agar
+ * verdict kelayakan ikut ter-render di draft finalisasi.
  */
-export function buildSpecRabFromNeeds(needs: RabNeeds): DirectRabResult | null {
+export function buildSpecRabFromNeeds(needs: RabNeeds, budgetCap?: number | null): DirectRabResult | null {
   if (needs.kind && needs.kind !== 'rumah') return null;
   const floors = needs.floors ?? 1;
   const dims =
@@ -270,6 +297,7 @@ export function buildSpecRabFromNeeds(needs: RabNeeds): DirectRabResult | null {
       bathrooms: needs.bathrooms,
       location: needs.location,
       typeNumber: null,
+      budgetIdr: budgetCap ?? null,
     };
   } else if (dims) {
     spec = {
@@ -286,6 +314,7 @@ export function buildSpecRabFromNeeds(needs: RabNeeds): DirectRabResult | null {
       bathrooms: needs.bathrooms,
       location: needs.location,
       typeNumber: null,
+      budgetIdr: budgetCap ?? null,
     };
   } else {
     return null;
@@ -503,6 +532,10 @@ function buildFromFreeSpec(
     houseType: Math.round(spec.footprintArea),
     floors: spec.floors,
     totalArea: spec.totalArea,
+    // Anggaran: dari FreeSpec (jalur teks / kebutuhan); bila kosong,
+    // fallback ke intentSpec aktif yang diteruskan pemanggil — tanpa ini
+    // draft jalur spek kehilangan verdict anggaran (D-G1).
+    budgetIdr: spec.budgetIdr ?? intentSpec?.budgetIdr ?? null,
     catalogLabel: displayLabel,
     templateName: template.name,
     region,

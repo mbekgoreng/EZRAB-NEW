@@ -179,7 +179,7 @@ export const AuthNoticePage: React.FC<AuthNoticePageProps> = ({ tab, ...props })
   <PageShell icon={<LogIn size={20} />} title={tab === 'daftar' ? 'Daftar di EZRAB' : 'Masuk ke EZRAB'} {...props}>
     <p style={{ margin: 0 }}>
       Halaman {tab === 'daftar' ? 'pendaftaran' : 'masuk'} EZRAB tersedia di{' '}
-      <strong>/masuk</strong>. Saat ini EZRAB masih dalam tahap pengujian:{' '}
+      <strong>{tab === 'daftar' ? '/daftar' : '/masuk'}</strong>. Saat ini EZRAB masih dalam tahap pengujian:{' '}
       {tab === 'daftar' ? 'pendaftaran akun email' : 'login email'} belum dibuka, jadi belum
       ada akun yang bisa dipakai untuk masuk. Workspace tetap dapat dibuka tanpa akun lewat
       tombol <strong>"Buka Aplikasi"</strong> di bawah, lalu masukkan kode akses. Data Anda

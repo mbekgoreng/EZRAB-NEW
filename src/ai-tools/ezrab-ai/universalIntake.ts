@@ -883,11 +883,28 @@ export function extractUniversalContext(text: string, base?: UniversalIntakeCont
   }
 
   // --- Linear: panjang pekerjaan (jalan/saluran/jembatan/pagar) ---
+  // PIN REKAYASA (Worker C, sprint 2026-11-26): angka yang berjangkar
+  // ke dimensi LAIN (lebar/bentang) TIDAK BOLEH menjadi panjang.
+  // Parser kebutuhan membaca angka telanjang ("bentang 12 m" → 12,
+  // "lebar 6 m" → 6) sebagai lengthM generik; tanpa penjaga ini,
+  // "jembatan bentang 12 m" mencatat panjang total 12 m yang tidak
+  // pernah disebut, dan "jalan lebar 6 m" mencatat panjang 6 m
+  // sehingga pertanyaan panjang tidak pernah diajukan. Penjaga hanya
+  // menolak fallback needs.lengthM bila nilainya SAMA PERSIS dengan
+  // nilai berjangkar lebar/bentang pada giliran ini dan tidak ada
+  // jangkar panjang eksplisit — "panjang 20 m" (jangkar eksplisit)
+  // dan "drainase 500 m" (tanpa jangkar lain) tetap diterima.
+  const widthAnchor = parseAnchoredLinear(raw, ['lebar']);
+  const spanAnchor = parseAnchoredLinear(raw, ['bentang', 'span']);
   const anchoredLen = parseAnchoredLinear(raw, ['sepanjang', 'panjang']);
   if (anchoredLen) {
     ctx.lengthM = anchoredLen.valueM;
     ctx.lengthOriginal = anchoredLen.original;
-  } else if (needs.lengthM != null) {
+  } else if (
+    needs.lengthM != null &&
+    !((widthAnchor && needs.lengthM === widthAnchor.valueM) ||
+      (spanAnchor && needs.lengthM === spanAnchor.valueM))
+  ) {
     ctx.lengthM = needs.lengthM;
     ctx.lengthOriginal = ctx.lengthOriginal ?? `${fmtNum(needs.lengthM)} m`;
   } else {
@@ -899,7 +916,7 @@ export function extractUniversalContext(text: string, base?: UniversalIntakeCont
       ctx.lengthOriginal = kmHit.original;
     }
   }
-  const width = parseAnchoredLinear(raw, ['lebar']);
+  const width = widthAnchor;
   if (width) ctx.widthM = width.valueM;
   else if (spec.widthM != null) ctx.widthM = spec.widthM;
   const depth = parseAnchoredLinear(raw, ['kedalaman', 'kedalaman saluran', 'dalam']);
@@ -907,7 +924,7 @@ export function extractUniversalContext(text: string, base?: UniversalIntakeCont
   const height = parseAnchoredLinear(raw, ['tinggi']);
   if (height) ctx.heightM = height.valueM;
   else if (spec.heightM != null) ctx.heightM = spec.heightM;
-  const span = parseAnchoredLinear(raw, ['bentang', 'span']);
+  const span = spanAnchor;
   if (span) ctx.spanM = span.valueM;
   else if (spec.spanM != null) ctx.spanM = spec.spanM;
   const vol = parseVolumeMention(raw);
@@ -1262,18 +1279,6 @@ function questionDefsFor(ctx: UniversalIntakeContext): IntakeQuestion[] {
       ],
     });
   }
-  if (p.id === 'gudang-industri') {
-    add({
-      key: 'warehouse-system', stage: 'TECHNICAL_REQUIREMENTS', critical: false,
-      missingLabel: 'sistem struktur gudang (portal frame/truss)',
-      isSatisfied: (c) => c.answers['warehouse-system'] != null,
-      prompt: () => 'Untuk gudangnya, sistem strukturnya mau **portal frame** (kolom + rafter baja WF) atau **truss/rangka ruang**? Dan berapa **clear height** (tinggi bersih di dalam)-nya? Sebutkan yang sudah ditentukan saja.',
-      options: [
-        { id: 'wh-portal', label: 'Portal frame baja WF' },
-        { id: 'wh-truss', label: 'Truss / rangka ruang' },
-      ],
-    });
-  }
   switch (p.family) {
     case 'building':
       if (p.id === 'bangunan-umum') {
@@ -1310,6 +1315,29 @@ function questionDefsFor(ctx: UniversalIntakeContext): IntakeQuestion[] {
           isSatisfied: (c) => c.buildingAreaM2 != null || c.dimensionsText != null,
           prompt: () => 'Berapa perkiraan **luas bangunan total**-nya?',
         });
+        if (p.id === 'gudang-industri') {
+          // Urutan (Worker C, sprint 2026-11-26): sistem struktur
+          // ditanyakan SESUDAH dimensi — sebelumnya blok ini berdiri
+          // SEBELUM switch sehingga gudang tanpa dimensi ditanya
+          // sistem dulu (dimensi adalah basis kuantitas yang paling
+          // memblokir). Prompt tetap menggabungkan sistem + clear
+          // height dalam satu giliran: kuesioner/tabel W6 tidak punya
+          // pertanyaan clear-height terpisah dan pin §8 melarang
+          // pertanyaan clearSpan/height tambahan (intake TIDAK PUNYA
+          // pertanyaan itu) — jadi clear height ditangkap sebagai
+          // jawaban sukarela pada giliran sistem, bukan pertanyaan
+          // sendiri.
+          add({
+            key: 'warehouse-system', stage: 'TECHNICAL_REQUIREMENTS', critical: false,
+            missingLabel: 'sistem struktur gudang (portal frame/truss)',
+            isSatisfied: (c) => c.answers['warehouse-system'] != null,
+            prompt: () => 'Untuk gudangnya, sistem strukturnya mau **portal frame** (kolom + rafter baja WF) atau **truss/rangka ruang**? Dan berapa **clear height** (tinggi bersih di dalam)-nya? Sebutkan yang sudah ditentukan saja.',
+            options: [
+              { id: 'wh-portal', label: 'Portal frame baja WF' },
+              { id: 'wh-truss', label: 'Truss / rangka ruang' },
+            ],
+          });
+        }
         add({
           key: 'building-floors', stage: 'PROJECT_DIMENSIONS', critical: false,
           missingLabel: 'jumlah lantai',
@@ -1324,8 +1352,19 @@ function questionDefsFor(ctx: UniversalIntakeContext): IntakeQuestion[] {
         add({
           key: 'bridge-span', stage: 'PROJECT_DIMENSIONS', critical: true,
           missingLabel: 'bentang jembatan',
-          isSatisfied: (c) => c.spanM != null || c.lengthM != null,
-          prompt: () => 'Berapa **bentang jembatan** yang direncanakan (meter)?',
+          // PIN REKAYASA (Worker C, sprint 2026-11-26; celah Worker B
+          // §7/7.2): PANJANG total BUKAN bentang — panjang yang disebut
+          // TIDAK PERNAH memenuhi pertanyaan bentang. Sebelum perbaikan
+          // ini, "panjang 20 m" menandai bentang "terjawab" sehingga
+          // bentang hilang dari missingCritical + seksi hilang di brief
+          // review (jembatan bisa sampai review tanpa bentang dan tanpa
+          // prompt). Perilaku tanya-tidak-ulang TIDAK diubah (pin Worker
+          // B 1.11: sesudah "panjang 20 m", giliran berikut menanyakan
+          // tipe konstruksi, bukan mengulang bentang) — yang diperbaiki
+          // adalah kejujuran daftar hilang: bentang yang belum disebut
+          // tetap tercatat kritis-hilang sampai benar-benar dijawab.
+          isSatisfied: (c) => c.spanM != null,
+          prompt: () => 'Berapa **bentang jembatan** yang direncanakan (jarak antar tumpuan, meter) — bukan panjang totalnya?',
         });
         add({
           key: 'bridge-width', stage: 'PROJECT_DIMENSIONS', critical: false,
@@ -1361,6 +1400,21 @@ function questionDefsFor(ctx: UniversalIntakeContext): IntakeQuestion[] {
             { id: 'drain-beton-terbuka', label: 'Saluran beton terbuka' },
           ],
         });
+        // Panjang saluran (Worker C, sprint 2026-11-26): sebelumnya
+        // TIDAK ADA pertanyaan panjang untuk drainase — tipe yang
+        // sudah dikenal + panjang yang hilang langsung lolos ke brief
+        // tanpa pernah ditanya (panjang adalah basis kuantitas
+        // saluran). Urutan: tipe dulu (menentukan lingkup), lalu
+        // panjang (kritis), lalu dimensi penampang (non-kritis, pin
+        // §8 dipertahankan). Aman untuk pin §8: konteks pin membawa
+        // lengthM 500 sehingga pertanyaan ini terpenuhi dan
+        // drainage-dims tetap yang pertama diajukan di sana.
+        add({
+          key: 'drainage-length', stage: 'PROJECT_DIMENSIONS', critical: true,
+          missingLabel: 'panjang saluran drainase',
+          isSatisfied: (c) => c.lengthM != null,
+          prompt: () => 'Berapa **panjang saluran** drainasenya (meter)?',
+        });
         add({
           key: 'drainage-dims', stage: 'PROJECT_DIMENSIONS', critical: false,
           missingLabel: 'lebar & kedalaman saluran',
@@ -1368,6 +1422,15 @@ function questionDefsFor(ctx: UniversalIntakeContext): IntakeQuestion[] {
           prompt: () => 'Berapa lebar dan kedalaman salurannya? Bila belum ditentukan, jawab "itu aja" — dimensinya mengikuti parameter template dan ditandai di brief.',
         });
       } else if (p.id === 'dinding-penahan') {
+        // Urutan DIPERTAHANKAN panjang-dulu (Worker C, sprint 2026-11-26):
+        // tinggi-dulu sempat dicoba (tinggi menentukan sistem struktur)
+        // tetapi chatUniversalIntake.test.ts mem-pin pertanyaan pertama
+        // bare retaining wall adalah panjang ("panjang dinding penahan"
+        // harus ada di balasan CLARIFY) — file tes itu bukan milik
+        // Worker C, jadi urutan ini tidak diubah. Tinggi tetap
+        // non-kritis (pin jalur cepat: retaining + panjang saja tetap
+        // draft langsung, §12.13); tinggi ditanyakan sebagai pertanyaan
+        // pertama bila panjang sudah diberikan di awal.
         add({
           key: 'retaining-length', stage: 'PROJECT_DIMENSIONS', critical: true,
           missingLabel: 'panjang dinding penahan',

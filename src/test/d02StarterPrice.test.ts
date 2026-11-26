@@ -93,10 +93,11 @@ test('teks hasil turunan sama dengan string lama yang benar', () => {
   const fmt = (n: number) => 'Rp ' + n.toLocaleString('id-ID');
   const desc =
     `Free untuk mencoba · Starter ${fmt(getPlanDefinition('starter').monthlyPriceIdr)}/bln · ` +
-    `Pro ${fmt(getPlanDefinition('professional').monthlyPriceIdr)}/bln.`;
+    `Professional ${fmt(getPlanDefinition('professional').monthlyPriceIdr)}/bln · ` +
+    `Business ${fmt(getPlanDefinition('business').monthlyPriceIdr)}/bln.`;
   eq(
     desc,
-    'Free untuk mencoba · Starter Rp 54.999/bln · Pro Rp 79.999/bln.',
+    'Free untuk mencoba · Starter Rp 54.999/bln · Professional Rp 79.999/bln · Business Rp 159.999/bln.',
     'teks turunan'
   );
 });

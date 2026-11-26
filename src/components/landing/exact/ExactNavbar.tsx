@@ -20,6 +20,12 @@ const keyForPath = (pathname: string): NavKey => {
   return 'beranda';
 };
 
+// Halaman yang latar atasnya TERANG: nav transparan (teks putih) tidak
+// terbaca pada scroll 0 — nav harus gelap sejak load di halaman ini.
+// (Defect live 2026-11-26: /harga nav nyaris tak terlihat sebelum scroll.)
+const LIGHT_TOP_PATHS: readonly string[] = ['/harga'];
+const isLightTopPage = (pathname: string) => LIGHT_TOP_PATHS.includes(pathname);
+
 export const ExactNavbar: React.FC<ExactNavbarProps> = ({
   onOpenAuth,
   onBackToLanding,
@@ -32,7 +38,7 @@ export const ExactNavbar: React.FC<ExactNavbarProps> = ({
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 30);
+      setIsScrolled(window.scrollY > 30 || isLightTopPage(window.location.pathname));
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
     handleScroll();
@@ -41,7 +47,10 @@ export const ExactNavbar: React.FC<ExactNavbarProps> = ({
 
   // Strip biru mengikuti halaman aktif — sinkron dengan setiap navigasi SPA.
   useEffect(() => {
-    const sync = () => setActiveKey(keyForPath(window.location.pathname));
+    const sync = () => {
+      setActiveKey(keyForPath(window.location.pathname));
+      setIsScrolled(window.scrollY > 30 || isLightTopPage(window.location.pathname));
+    };
     window.addEventListener('popstate', sync);
     window.addEventListener('hashchange', sync);
     window.addEventListener('ezrab:navigate', sync);
