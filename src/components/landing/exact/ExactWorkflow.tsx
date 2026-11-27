@@ -12,6 +12,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { navigateTo } from '../../../routing/routes';
+import { useI18n } from '../../../i18n';
 
 interface WorkflowStep {
   id: string;
@@ -21,19 +22,22 @@ interface WorkflowStep {
   icon: React.ElementType;
 }
 
-const WORKFLOW_STEPS: WorkflowStep[] = [
-  { id: 'step-1', num: '01', label: 'Gambar Kerja', sublabel: 'CAD & PDF', icon: FileCode2 },
-  { id: 'step-2', num: '02', label: 'Volume', sublabel: 'Ekstraksi Dimensi', icon: Box },
-  { id: 'step-3', num: '03', label: 'QTO', sublabel: 'Kuantitas Material', icon: Ruler },
-  { id: 'step-4', num: '04', label: 'AHSP', sublabel: 'Standar PUPR 2026', icon: Database },
-  { id: 'step-5', num: '05', label: 'RAB', sublabel: 'Estimasi Biaya', icon: Calculator },
-  { id: 'step-6', num: '06', label: 'BOQ', sublabel: 'Bill of Quantities', icon: ClipboardList },
-  { id: 'step-7', num: '07', label: 'Rekapitulasi', sublabel: 'Ringkasan Proyek', icon: BarChart3 },
-  { id: 'step-8', num: '08', label: 'Kurva S', sublabel: 'Jadwal & Progres', icon: TrendingUp },
-  { id: 'step-9', num: '09', label: 'Laporan', sublabel: 'Ekspor Dokumen', icon: FileCheck2 },
-];
-
 export const ExactWorkflow: React.FC = () => {
+  const { t } = useI18n();
+  // Langkah workflow — label/sublabel diterjemahkan di sini (literal t()
+  // agar terdeteksi suite parity); id/num/ikon tetap stabil.
+  const steps: WorkflowStep[] = [
+    { id: 'step-1', num: '01', label: t('landing.wf_step1_label'), sublabel: t('landing.wf_step1_sub'), icon: FileCode2 },
+    { id: 'step-2', num: '02', label: t('landing.wf_step2_label'), sublabel: t('landing.wf_step2_sub'), icon: Box },
+    { id: 'step-3', num: '03', label: t('landing.wf_step3_label'), sublabel: t('landing.wf_step3_sub'), icon: Ruler },
+    { id: 'step-4', num: '04', label: t('landing.wf_step4_label'), sublabel: t('landing.wf_step4_sub'), icon: Database },
+    { id: 'step-5', num: '05', label: t('landing.wf_step5_label'), sublabel: t('landing.wf_step5_sub'), icon: Calculator },
+    { id: 'step-6', num: '06', label: t('landing.wf_step6_label'), sublabel: t('landing.wf_step6_sub'), icon: ClipboardList },
+    { id: 'step-7', num: '07', label: t('landing.wf_step7_label'), sublabel: t('landing.wf_step7_sub'), icon: BarChart3 },
+    { id: 'step-8', num: '08', label: t('landing.wf_step8_label'), sublabel: t('landing.wf_step8_sub'), icon: TrendingUp },
+    { id: 'step-9', num: '09', label: t('landing.wf_step9_label'), sublabel: t('landing.wf_step9_sub'), icon: FileCheck2 },
+  ];
+
   const sectionRef = useRef<HTMLElement>(null);
   const [isInView, setIsInView] = useState(false);
   const [revealedCount, setRevealedCount] = useState(0);
@@ -65,7 +69,7 @@ export const ExactWorkflow: React.FC = () => {
     const interval = setInterval(() => {
       current += 1;
       setRevealedCount(current);
-      if (current >= WORKFLOW_STEPS.length) {
+      if (current >= steps.length) {
         clearInterval(interval);
       }
     }, 280);
@@ -75,11 +79,11 @@ export const ExactWorkflow: React.FC = () => {
 
   // Active Sequential Flow Particle Cycle (Runs continuously after all nodes are revealed)
   useEffect(() => {
-    if (revealedCount < WORKFLOW_STEPS.length) return;
+    if (revealedCount < steps.length) return;
 
     const cycleInterval = setInterval(() => {
       setActiveStepIndex((prev) => {
-        if (prev === null || prev >= WORKFLOW_STEPS.length - 1) {
+        if (prev === null || prev >= steps.length - 1) {
           return 0;
         }
         return prev + 1;
@@ -89,8 +93,8 @@ export const ExactWorkflow: React.FC = () => {
     return () => clearInterval(cycleInterval);
   }, [revealedCount]);
 
-  const topRowSteps = WORKFLOW_STEPS.slice(0, 5); // 01 Gambar Kerja -> 02 Volume -> 03 QTO -> 04 AHSP -> 05 RAB
-  const bottomRowSteps = WORKFLOW_STEPS.slice(5).reverse(); // 06 BOQ (Right) -> 07 Rekap -> 08 Kurva S -> 09 Laporan (Left)
+  const topRowSteps = steps.slice(0, 5); // 01 Gambar Kerja -> 02 Volume -> 03 QTO -> 04 AHSP -> 05 RAB
+  const bottomRowSteps = steps.slice(5).reverse(); // 06 BOQ (Right) -> 07 Rekap -> 08 Kurva S -> 09 Laporan (Left)
 
   return (
     <section ref={sectionRef} id="fitur" className="ez-wf-pipeline-section">
@@ -103,24 +107,23 @@ export const ExactWorkflow: React.FC = () => {
         <div className="ez-wf-pipeline-left">
           <div className="ez-wf-eyebrow">
             <span className="ez-wf-eyebrow-dash" />
-            <span>SATU WORKFLOW</span>
+            <span>{t('landing.wf_eyebrow')}</span>
           </div>
 
           <h2 className="ez-wf-heading">
-            Dari Gambar Kerja<br />
-            ke Laporan.
+            {t('landing.wf_title_a')}
+            <br />
+            {t('landing.wf_title_b')}
           </h2>
 
-          <p className="ez-wf-body">
-            Semua proses estimasi dan perhitungan proyek terhubung dalam satu alur kerja yang efisien.
-          </p>
+          <p className="ez-wf-body">{t('landing.wf_body')}</p>
 
           {/* D-04: dulu href="#demo" — tidak ada elemen id="demo" di mana
               pun, tautan mati. "Jelajahi Alur" kini menunjuk ke demo
               pertama di bawah (DED Estimate AI, id="ded"); scroll-nya
               ditangani efek hash-scroll App.tsx bila dimuat segar. */}
           <a href="#ded" className="ez-wf-cta-link">
-            <span>Jelajahi Alur</span>
+            <span>{t('landing.wf_explore')}</span>
             <ArrowRight size={16} className="ez-wf-cta-arrow" />
           </a>
         </div>
@@ -261,7 +264,7 @@ export const ExactWorkflow: React.FC = () => {
           {/* ================= MOBILE: VERTICAL TIMELINE (1 ROW PER STEP) ================= */}
           <div className="ez-wf-mobile-timeline">
             <div className="ez-wf-mobile-vertical-line" />
-            {WORKFLOW_STEPS.map((step, idx) => {
+            {steps.map((step, idx) => {
               const isRevealed = revealedCount > idx;
               const isActive = activeStepIndex === idx;
               const IconComponent = step.icon;
@@ -314,7 +317,7 @@ export const ExactWorkflow: React.FC = () => {
                 fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
               }}
             >
-              Jelajahi semua fitur EZRAB <ArrowRight size={15} />
+              {t('landing.wf_all_features')} <ArrowRight size={15} />
             </button>
           </div>
         </div>

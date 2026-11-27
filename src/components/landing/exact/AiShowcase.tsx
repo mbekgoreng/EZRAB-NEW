@@ -72,6 +72,33 @@ export const AiShowcase: React.FC<AiShowcaseProps> = ({ onOpenAuth, onOpenDemo, 
     return () => io.disconnect();
   }, []);
 
+  // FAQ unggulan landing: petakan ke terjemahan per id stabil (t() literal,
+  // tanpa key dinamis) sebelum diteruskan ke FaqAccordion.
+  const featuredFaqs = getFeaturedFaqs().map((item) => {
+    switch (item.id) {
+      case 'mengenal-apa-itu-ezrab':
+        return { ...item, question: t('landing.faq_mengenal-apa-itu-ezrab_q'), answer: t('landing.faq_mengenal-apa-itu-ezrab_a') };
+      case 'mengenal-siapa-pengguna':
+        return { ...item, question: t('landing.faq_mengenal-siapa-pengguna_q'), answer: t('landing.faq_mengenal-siapa-pengguna_a') };
+      case 'rab-membantu-membuat':
+        return { ...item, question: t('landing.faq_rab-membantu-membuat_q'), answer: t('landing.faq_rab-membantu-membuat_a') };
+      case 'ai-apa-itu-magic-ai':
+        return { ...item, question: t('landing.faq_ai-apa-itu-magic-ai_q'), answer: t('landing.faq_ai-apa-itu-magic-ai_a') };
+      case 'ai-langsung-diterapkan':
+        return { ...item, question: t('landing.faq_ai-langsung-diterapkan_q'), answer: t('landing.faq_ai-langsung-diterapkan_a') };
+      case 'ahsp-2026':
+        return { ...item, question: t('landing.faq_ahsp-2026_q'), answer: t('landing.faq_ahsp-2026_a') };
+      case 'qto-hitung-volume':
+        return { ...item, question: t('landing.faq_qto-hitung-volume_q'), answer: t('landing.faq_qto-hitung-volume_a') };
+      case 'akun-sudah-dibuka':
+        return { ...item, question: t('landing.faq_akun-sudah-dibuka_q'), answer: t('landing.faq_akun-sudah-dibuka_a') };
+      case 'keamanan-acuan-final':
+        return { ...item, question: t('landing.faq_keamanan-acuan-final_q'), answer: t('landing.faq_keamanan-acuan-final_a') };
+      default:
+        return item;
+    }
+  });
+
   return (
     <div className="ezai-scope" ref={scopeRef}>
       <section className="ezai-sec"><div className="grid-bg"></div><div className="glow" style={{width: '560px', height: '560px', background: 'rgba(37,99,235,.15)', top: '-160px', left: '50%', transform: 'translateX(-50%)'}}></div>
@@ -80,21 +107,21 @@ export const AiShowcase: React.FC<AiShowcaseProps> = ({ onOpenAuth, onOpenDemo, 
       <h2>{t('landing.hero_title_a')} <span className="bl">{t('landing.hero_title_b')}</span></h2>
       <p className="sub">{t('landing.hero_sub')}</p>
       <div className="pillars" style={{textAlign: 'left'}}>
-      <div className="pillar"><div className="mini-scene"><svg viewBox="0 0 200 76" style={{width: '100%', height: '100%'}}><rect x="8" y="6" width="184" height="64" fill="#fff" stroke="#33506E" strokeWidth="3"/><path d="M84,6 V44 M8,44 H192 M132,44 V70" stroke="#33506E" strokeWidth="3" fill="none"/><rect x="96" y="16" width="30" height="16" fill="#EFF4FB" stroke="#B9CBDF"/><rect x="20" y="50" width="34" height="14" fill="#EFF4FB" stroke="#B9CBDF"/></svg><div className="beam-mini"></div></div><h3>DED Estimate AI</h3><p>Upload gambar kerja, AI membaca denah & detail lalu menyusun item pekerjaan beserta volumenya.</p><ul><li>Deteksi item & volume otomatis</li><li>Langsung masuk ke RAB proyek</li><li>Setiap angka berlabel & bisa ditelusur</li></ul><div className="go">Lihat cara kerjanya ↓</div></div>
-      <div className="pillar"><div className="mini-scene col"><div className="mbub u">Harga plesteran 1:4?</div><div className="mbub a">Kode 3.7.4 — <b>Rp56.784/m²</b> · AHSP resmi</div><div className="mbub u" style={{animationDelay: '1.4s'}}>Hitung volume dinding</div></div><h3>Ezrab Chat AI</h3><p>Tanya harga, hitung volume, minta rekap — dijawab dari data EZRAB sendiri, bukan karangan model.</p><ul><li>Terhubung AHSP 2026 & harga pasar</li><li>Paham konteks proyek aktif Anda</li><li>Bisa menjalankan perintah navigasi</li></ul><div className="go">Lihat contoh percakapan ↓</div></div>
-      <div className="pillar"><div className="mini-scene col" style={{gap: '8px'}}><div style={{display: 'flex', alignItems: 'center', gap: '7px'}}><span className="pdfchip">PDF</span><b style={{fontSize: '12px', color: '#0A2540'}}>Surat Penawaran</b></div><div className="line" style={{animationDelay: '.2s'}}></div><div className="line" style={{animationDelay: '.5s', width: '88%'}}></div><div className="line" style={{animationDelay: '.8s', width: '60%'}}></div></div><h3>AI Document</h3><p>Surat penawaran, laporan, dan dokumen proyek tersusun otomatis dari data proyek yang sudah ada.</p><ul><li>Template resmi siap pakai</li><li>Angka mengikuti RAB terbaru</li><li>Tetap bisa diedit sebelum unduh</li></ul><div className="go">Lihat contoh dokumen ↓</div></div>
+      <div className="pillar"><div className="mini-scene"><svg viewBox="0 0 200 76" style={{width: '100%', height: '100%'}}><rect x="8" y="6" width="184" height="64" fill="#fff" stroke="#33506E" strokeWidth="3"/><path d="M84,6 V44 M8,44 H192 M132,44 V70" stroke="#33506E" strokeWidth="3" fill="none"/><rect x="96" y="16" width="30" height="16" fill="#EFF4FB" stroke="#B9CBDF"/><rect x="20" y="50" width="34" height="14" fill="#EFF4FB" stroke="#B9CBDF"/></svg><div className="beam-mini"></div></div><h3>DED Estimate AI</h3><p>{t('landing.pillar_ded_desc')}</p><ul><li>{t('landing.pillar_ded_bullet1')}</li><li>{t('landing.pillar_ded_bullet2')}</li><li>{t('landing.pillar_ded_bullet3')}</li></ul><div className="go">{t('landing.pillar_ded_go')}</div></div>
+      <div className="pillar"><div className="mini-scene col"><div className="mbub u">{t('landing.pillar_chat_q')}</div><div className="mbub a">{t('landing.pillar_chat_a_pre')}<b>Rp56.784/m²</b>{t('landing.pillar_chat_a_post')}</div><div className="mbub u" style={{animationDelay: '1.4s'}}>{t('landing.chat_quick_calc')}</div></div><h3>Ezrab Chat AI</h3><p>{t('landing.pillar_chat_desc')}</p><ul><li>{t('landing.pillar_chat_bullet1')}</li><li>{t('landing.pillar_chat_bullet2')}</li><li>{t('landing.pillar_chat_bullet3')}</li></ul><div className="go">{t('landing.pillar_chat_go')}</div></div>
+      <div className="pillar"><div className="mini-scene col" style={{gap: '8px'}}><div style={{display: 'flex', alignItems: 'center', gap: '7px'}}><span className="pdfchip">PDF</span><b style={{fontSize: '12px', color: '#0A2540'}}>{t('landing.pillar_doc_mini')}</b></div><div className="line" style={{animationDelay: '.2s'}}></div><div className="line" style={{animationDelay: '.5s', width: '88%'}}></div><div className="line" style={{animationDelay: '.8s', width: '60%'}}></div></div><h3>AI Document</h3><p>{t('landing.pillar_doc_desc')}</p><ul><li>{t('landing.pillar_doc_bullet1')}</li><li>{t('landing.pillar_doc_bullet2')}</li><li>{t('landing.pillar_doc_bullet3')}</li></ul><div className="go">{t('landing.pillar_doc_go')}</div></div>
       </div></div></section>
 
       <section className="ezai-sec" id="ded" style={{paddingTop: '30px'}}><div className="wrap"><div className="split">
       <div><span className="eyebrow"> DED Estimate AI</span>
-      <h2>Dari gambar kerja, <span className="bl">langsung jadi draf RAB.</span></h2>
-      <p className="sub">Tidak perlu lagi mengukur ulang satu per satu. AI membaca gambar Anda, mengenali elemen bangunan, lalu menghitung volume dan menyusunnya sebagai item RAB.</p>
+      <h2>{t('landing.ded_title_a')}<span className="bl">{t('landing.ded_title_b')}</span></h2>
+      <p className="sub">{t('landing.ded_sub')}</p>
       <div className="steps">
-      <div className="step"><div className="n">1</div><div><b>Upload gambar kerja</b><p>Denah, potongan, atau detail — PNG, JPG, atau PDF.</p></div></div>
-      <div className="step"><div className="n">2</div><div><b>AI membaca & menghitung</b><p>Item pekerjaan dan volume terdeteksi, lengkap dengan basis perhitungannya.</p></div></div>
-      <div className="step"><div className="n">3</div><div><b>Masuk ke RAB proyek</b><p>Item yang belum ada harga resminya ditahan & diberi label — tidak pernah masuk sebagai Rp0.</p></div></div>
+      <div className="step"><div className="n">1</div><div><b>{t('landing.ded_step1_title')}</b><p>{t('landing.ded_step1_desc')}</p></div></div>
+      <div className="step"><div className="n">2</div><div><b>{t('landing.ded_step2_title')}</b><p>{t('landing.ded_step2_desc')}</p></div></div>
+      <div className="step"><div className="n">3</div><div><b>{t('landing.ded_step3_title')}</b><p>{t('landing.ded_step3_desc')}</p></div></div>
       </div></div>
-      <div><div className="win"><div className="win-head"><span className="dot" style={{background: '#F87171'}}></span><span className="dot" style={{background: '#FBBF24'}}></span><span className="dot" style={{background: '#34D399'}}></span><span className="win-title">DED Estimate AI — denah-rumah-2lt.png</span></div><div className="sim sim-ded" style={{borderRadius: '0 0 19px 19px', overflow: 'hidden'}}>
+      <div><div className="win"><div className="win-head"><span className="dot" style={{background: '#F87171'}}></span><span className="dot" style={{background: '#FBBF24'}}></span><span className="dot" style={{background: '#34D399'}}></span><span className="win-title">{t('landing.ded_win_title')}</span></div><div className="sim sim-ded" style={{borderRadius: '0 0 19px 19px', overflow: 'hidden'}}>
       <div className="planbox simfade12">
       <svg viewBox="0 0 340 236" style={{width: '100%', display: 'block'}} role="img" aria-label="Denah lantai 1">
       <rect x="12" y="12" width="316" height="212" fill="#FFFFFF"/>
@@ -119,115 +146,115 @@ export const AiShowcase: React.FC<AiShowcaseProps> = ({ onOpenAuth, onOpenDemo, 
       <rect x="60" y="9" width="46" height="6" fill="#fff" stroke="#33506E" strokeWidth="1.5"/>
       <rect x="325" y="58" width="6" height="42" fill="#fff" stroke="#33506E" strokeWidth="1.5"/>
       <g fontSize="10.5" fontWeight="700" fill="#5A718C" letterSpacing=".06em" textAnchor="middle">
-      <text x="102" y="42">R. TAMU</text><text x="262" y="104">K. TIDUR</text><text x="80" y="172">DAPUR</text><text x="202" y="172">KM/WC</text><text x="292" y="140" fontSize="9">TERAS</text>
+      <text x="102" y="42">{t('landing.ded_room_living')}</text><text x="262" y="104">{t('landing.ded_room_bed')}</text><text x="80" y="172">{t('landing.ded_room_kitchen')}</text><text x="202" y="172">{t('landing.ded_room_bath')}</text><text x="292" y="140" fontSize="9">{t('landing.ded_room_terrace')}</text>
       </g>
       </svg>
-      <div className="pstat"><span>Denah Lt. 1 — 96 m²</span><span className="pctstack"><span>Memindai 24%</span><span>Memindai 57%</span><span>Memindai 86%</span><span>Selesai — 24 item</span></span></div>
+      <div className="pstat"><span>{t('landing.ded_plan_label')}</span><span className="pctstack"><span>{t('landing.ded_scan_24')}</span><span>{t('landing.ded_scan_57')}</span><span>{t('landing.ded_scan_86')}</span><span>{t('landing.ded_scan_done')}</span></span></div>
       <div className="pbar"><i></i></div>
       </div>
       <div className="resbox simfade12">
-      <div className="rhead"><b>Hasil deteksi AI</b><span className="cnt">24 item</span></div>
-      <div className="rrow" style={{animationDelay: '5s'}}><span style={{flex: '1'}}>Pondasi batu kali</span><span className="rv">12,40 m³</span><span className="chip ai">Estimasi AI</span></div>
-      <div className="rrow" style={{animationDelay: '5.8s'}}><span style={{flex: '1'}}>Dinding bata merah 1:4</span><span className="rv">96,20 m²</span><span className="chip ai">Estimasi AI</span></div>
-      <div className="rrow" style={{animationDelay: '6.6s'}}><span style={{flex: '1'}}>Plesteran 1:4 (3.7.4)</span><span className="rv">192,40 m²</span><span className="chip ok">AHSP Resmi</span></div>
-      <div className="rrow" style={{animationDelay: '7.4s'}}><span style={{flex: '1'}}>Keramik lantai 40×40</span><span className="rv">84,00 m²</span><span className="chip ai">Estimasi AI</span></div>
-      <div className="rrow" style={{animationDelay: '8.2s'}}><span style={{flex: '1'}}>Cat tembok interior</span><span className="rv">210,50 m²</span><span className="chip ai">Estimasi AI</span></div>
+      <div className="rhead"><b>{t('landing.ded_result_title')}</b><span className="cnt">{t('landing.ded_result_count')}</span></div>
+      <div className="rrow" style={{animationDelay: '5s'}}><span style={{flex: '1'}}>{t('landing.ded_item_foundation')}</span><span className="rv">12,40 m³</span><span className="chip ai">{t('landing.ded_chip_ai')}</span></div>
+      <div className="rrow" style={{animationDelay: '5.8s'}}><span style={{flex: '1'}}>{t('landing.ded_item_wall')}</span><span className="rv">96,20 m²</span><span className="chip ai">{t('landing.ded_chip_ai')}</span></div>
+      <div className="rrow" style={{animationDelay: '6.6s'}}><span style={{flex: '1'}}>{t('landing.ded_item_plaster')}</span><span className="rv">192,40 m²</span><span className="chip ok">{t('landing.ded_chip_official')}</span></div>
+      <div className="rrow" style={{animationDelay: '7.4s'}}><span style={{flex: '1'}}>{t('landing.ded_item_ceramic')}</span><span className="rv">84,00 m²</span><span className="chip ai">{t('landing.ded_chip_ai')}</span></div>
+      <div className="rrow" style={{animationDelay: '8.2s'}}><span style={{flex: '1'}}>{t('landing.ded_item_paint')}</span><span className="rv">210,50 m²</span><span className="chip ai">{t('landing.ded_chip_ai')}</span></div>
       {/* D-05: dulu <button> tanpa onClick — tampak aktif tapi tidak
           berbuat apa-apa. Tidak ada alur nyata yang bermakna dari
           ilustrasi landing ini (tanpa konteks proyek; demo terkunci
           kode), jadi tombol diganti krom mockup non-interaktif:
           <span> ber-aria-hidden, bukan <button>, kursor default. */}
-      <span className="btn ctaglow mock-btn" aria-hidden="true" style={{width: '100%', justifyContent: 'center', marginTop: '4px'}}>Masukkan ke RAB Proyek</span>
-      <p style={{fontSize: '11px', color: '#8498AF', marginTop: '9px', lineHeight: '1.5'}}>Item yang belum ada harga resminya ditahan & diberi label — tidak pernah masuk sebagai Rp0.</p>
+      <span className="btn ctaglow mock-btn" aria-hidden="true" style={{width: '100%', justifyContent: 'center', marginTop: '4px'}}>{t('landing.ded_cta')}</span>
+      <p style={{fontSize: '11px', color: '#8498AF', marginTop: '9px', lineHeight: '1.5'}}>{t('landing.ded_step3_desc')}</p>
       </div>
       <div className="ring ringDed"></div>
       <div className="cur curDed"><svg width="20" height="20" viewBox="0 0 24 24"><path d="M5 3 L19 12 L12.5 13.5 L9.5 20 Z" fill="#0A2540" stroke="#fff" strokeWidth="1.6"/></svg></div>
-      </div></div><div className="demo-note">Ilustrasi animasi cara kerja EZRAB.</div></div>
+      </div></div><div className="demo-note">{t('landing.demo_note')}</div></div>
       </div></div></section>
 
       <section className="ezai-sec" id="chat" style={{paddingTop: '30px'}}><div className="grid-bg"></div><div className="wrap"><div className="split rev">
-      <div><div className="win"><div className="win-head"><span className="dot" style={{background: '#F87171'}}></span><span className="dot" style={{background: '#FBBF24'}}></span><span className="dot" style={{background: '#34D399'}}></span><span className="win-title">Ezrab Chat AI — Proyek: Rumah Tinggal 2 Lantai</span></div><div className="sim" style={{borderRadius: '0 0 19px 19px', overflow: 'hidden'}}>
+      <div><div className="win"><div className="win-head"><span className="dot" style={{background: '#F87171'}}></span><span className="dot" style={{background: '#FBBF24'}}></span><span className="dot" style={{background: '#34D399'}}></span><span className="win-title">{t('landing.chat_win_title')}</span></div><div className="sim" style={{borderRadius: '0 0 19px 19px', overflow: 'hidden'}}>
       <div className="simchat">
       <div className="msgs simfade14" style={{display: 'flex', flexDirection: 'column', gap: '9px'}}>
-      <div className="bub u anim-bub" style={{animationDuration: '14s'}}>Berapa harga plesteran 1:4 per m²?</div>
+      <div className="bub u anim-bub" style={{animationDuration: '14s'}}>{t('landing.chat_q1')}</div>
       <div className="bub a typing" style={{animationDuration: '14s', animationDelay: '.9s'}}><i></i><i></i><i></i></div>
-      <div className="bub a anim-bub" style={{animationDuration: '14s', animationDelay: '2.6s'}}>Berikut data resmi dari database EZRAB:
+      <div className="bub a anim-bub" style={{animationDuration: '14s', animationDelay: '2.6s'}}>{t('landing.chat_a_intro')}
       <div className="dcard">
-      <div className="dr"><span>Kode AHSP</span><b>3.7.4</b></div>
-      <div className="dr"><span>Plesteran 1:4 tebal 15 mm</span><b>Rp56.784/m²</b></div>
-      <div style={{marginTop: '6px'}}><span className="src">Sumber: AHSP 2026 resmi</span></div>
+      <div className="dr"><span>{t('landing.chat_label_code')}</span><b>3.7.4</b></div>
+      <div className="dr"><span>{t('landing.chat_item_plaster')}</span><b>Rp56.784/m²</b></div>
+      <div style={{marginTop: '6px'}}><span className="src">{t('landing.chat_source')}</span></div>
       </div></div>
-      <div className="quickrow anim-bub" style={{animationDuration: '14s', animationDelay: '5.6s'}}><span className="qchip chipGlow">Hitung volume dinding</span><span>Audit RAB</span><span>Cari AHSP</span></div>
-      <div className="bub u anim-bub" style={{animationDuration: '14s', animationDelay: '7.6s'}}>Hitung volume dinding bata untuk denah ini</div>
+      <div className="quickrow anim-bub" style={{animationDuration: '14s', animationDelay: '5.6s'}}><span className="qchip chipGlow">{t('landing.chat_quick_calc')}</span><span>{t('landing.chat_quick_audit')}</span><span>{t('landing.chat_quick_search')}</span></div>
+      <div className="bub u anim-bub" style={{animationDuration: '14s', animationDelay: '7.6s'}}>{t('landing.chat_q2')}</div>
       <div className="bub a typing2" style={{animationDelay: '1.2s'}}><i></i><i></i><i></i></div>
-      <div className="bub a anim-bub" style={{animationDuration: '14s', animationDelay: '9.9s'}}>Siap — dihitung dari denah proyek aktif yang sedang Anda buka:
+      <div className="bub a anim-bub" style={{animationDuration: '14s', animationDelay: '9.9s'}}>{t('landing.chat_a2_intro')}
       <table className="mtab">
-      <tr><td>Dinding bata merah 1:4</td><td>96,20 m²</td></tr>
-      <tr><td>Plesteran 1:4 (3.7.4)</td><td>192,40 m²</td></tr>
+      <tr><td>{t('landing.ded_item_wall')}</td><td>96,20 m²</td></tr>
+      <tr><td>{t('landing.ded_item_plaster')}</td><td>192,40 m²</td></tr>
       </table>
-      <p style={{fontSize: '12px', color: '#5A718C', marginTop: '7px'}}>Berlabel <b>Estimasi AI</b> — klik angkanya untuk melihat basis perhitungannya.</p>
-      <span className="abtn">Masukkan ke RAB</span></div>
+      <p style={{fontSize: '12px', color: '#5A718C', marginTop: '7px'}}>{t('landing.chat_note')}</p>
+      <span className="abtn">{t('landing.chat_cta')}</span></div>
       </div>
-      <div className="composer"><span className="ct">Tanya harga, hitung volume, minta rekap…<span className="caret"></span></span><span className="sendb">↑</span></div>
+      <div className="composer"><span className="ct">{t('landing.chat_composer')}<span className="caret"></span></span><span className="sendb">↑</span></div>
       </div>
       <div className="ring ringChat"></div>
       <div className="cur curChat"><svg width="20" height="20" viewBox="0 0 24 24"><path d="M5 3 L19 12 L12.5 13.5 L9.5 20 Z" fill="#0A2540" stroke="#fff" strokeWidth="1.6"/></svg></div>
-      </div><div className="demo-note">Ilustrasi animasi cara kerja EZRAB.</div></div></div>
+      </div><div className="demo-note">{t('landing.demo_note')}</div></div></div>
       <div><span className="eyebrow"> Ezrab Chat AI</span>
-      <h2>Tanya apa pun, <span className="bl">dijawab dari data EZRAB.</span></h2>
-      <p className="sub">Chat AI lain menjawab dari ingatan model. Ezrab Chat AI menjawab dari database AHSP 2026, harga material, upah, dan peralatan di dalam EZRAB — lengkap dengan sumbernya.</p>
+      <h2>{t('landing.chat_title_a')}<span className="bl">{t('landing.chat_title_b')}</span></h2>
+      <p className="sub">{t('landing.chat_sub')}</p>
       <div className="steps">
-      <div className="step"><div className="n">1</div><div><b>Terhubung data resmi</b><p>AHSP 2026, harga material, upah, dan alat — bukan angka karangan.</p></div></div>
-      <div className="step"><div className="n">2</div><div><b>Paham proyek aktif</b><p>Jawaban mengikuti konteks proyek yang sedang Anda buka.</p></div></div>
-      <div className="step"><div className="n">3</div><div><b>Langsung bertindak</b><p>Menghitung volume, membuka menu, menyusun draf — bukan sekadar teks.</p></div></div>
+      <div className="step"><div className="n">1</div><div><b>{t('landing.chat_step1_title')}</b><p>{t('landing.chat_step1_desc')}</p></div></div>
+      <div className="step"><div className="n">2</div><div><b>{t('landing.chat_step2_title')}</b><p>{t('landing.chat_step2_desc')}</p></div></div>
+      <div className="step"><div className="n">3</div><div><b>{t('landing.chat_step3_title')}</b><p>{t('landing.chat_step3_desc')}</p></div></div>
       </div></div>
       </div></div></section>
 
       <section className="ezai-sec" id="dokumen" style={{paddingTop: '30px'}}><div className="wrap"><div className="split">
       <div><span className="eyebrow"> AI Document</span>
-      <h2>Dokumen proyek, <span className="bl">tersusun otomatis.</span></h2>
-      <p className="sub">Surat penawaran, laporan kemajuan, hingga berita acara — AI Document menyusunnya dari data proyek dan RAB terbaru Anda. Anda tinggal memeriksa dan mengunduh.</p>
+      <h2>{t('landing.doc_title_a')}<span className="bl">{t('landing.doc_title_b')}</span></h2>
+      <p className="sub">{t('landing.doc_sub')}</p>
       <div className="steps">
-      <div className="step"><div className="n">1</div><div><b>Pilih template</b><p>Katalog template dokumen konstruksi siap pakai.</p></div></div>
-      <div className="step"><div className="n">2</div><div><b>AI menyusun dari data proyek</b><p>Nama proyek, nilai RAB, dan jadwal terisi otomatis — konsisten dengan angka terbaru.</p></div></div>
-      <div className="step"><div className="n">3</div><div><b>Periksa, edit, unduh</b><p>Semua hasil tetap bisa diedit manual sebelum diekspor ke PDF.</p></div></div>
+      <div className="step"><div className="n">1</div><div><b>{t('landing.doc_step1_title')}</b><p>{t('landing.doc_step1_desc')}</p></div></div>
+      <div className="step"><div className="n">2</div><div><b>{t('landing.doc_step2_title')}</b><p>{t('landing.doc_step2_desc')}</p></div></div>
+      <div className="step"><div className="n">3</div><div><b>{t('landing.doc_step3_title')}</b><p>{t('landing.doc_step3_desc')}</p></div></div>
       </div></div>
-      <div><div className="win"><div className="win-head"><span className="dot" style={{background: '#F87171'}}></span><span className="dot" style={{background: '#FBBF24'}}></span><span className="dot" style={{background: '#34D399'}}></span><span className="win-title">AI Document — dokumen proyek</span></div><div className="sim simdoc" style={{borderRadius: '0 0 19px 19px', overflow: 'hidden'}}>
+      <div><div className="win"><div className="win-head"><span className="dot" style={{background: '#F87171'}}></span><span className="dot" style={{background: '#FBBF24'}}></span><span className="dot" style={{background: '#34D399'}}></span><span className="win-title">{t('landing.doc_win_title')}</span></div><div className="sim simdoc" style={{borderRadius: '0 0 19px 19px', overflow: 'hidden'}}>
       <div className="docpage simfade12">
       <div className="lh"><img src={logoImg} alt="" /><div><b>CV. BERKAH KONSTRUKSI</b><span>Jl. Raya Pembangunan No. 88 — Probolinggo, Jawa Timur</span></div></div>
-      <h4>SURAT PENAWARAN</h4>
-      <p className="meta">Nomor: 014/SP/XI/2026<br/>Kepada: Pemilik Proyek Rumah Tinggal 2 Lantai<br/>Perihal: Penawaran harga pembangunan — mengikuti RAB terbaru</p>
+      <h4>{t('landing.doc_letter_title')}</h4>
+      <p className="meta">{t('landing.doc_meta_no')}<br/>{t('landing.doc_meta_to')}<br/>{t('landing.doc_meta_re')}</p>
       <div className="line" style={{animationDelay: '.2s'}}></div>
       <div className="line" style={{animationDelay: '.55s', width: '92%'}}></div>
       <div className="line" style={{animationDelay: '.9s', width: '64%'}}></div>
       <table className="dtab">
-      <tr><th>URAIAN PEKERJAAN</th><th>JUMLAH</th></tr>
-      <tr><td style={{animationDelay: '3.4s'}}>Pondasi & struktur beton</td><td style={{animationDelay: '3.4s'}}>Rp148.500.000</td></tr>
-      <tr><td style={{animationDelay: '4.2s'}}>Dinding, plesteran & pengecatan</td><td style={{animationDelay: '4.2s'}}>Rp96.750.000</td></tr>
-      <tr><td style={{animationDelay: '5s'}}>Finishing & sanitair</td><td style={{animationDelay: '5s'}}>Rp72.300.000</td></tr>
-      <tr className="tot"><td style={{animationDelay: '5.8s'}}>TOTAL PENAWARAN</td><td style={{animationDelay: '5.8s'}}>Rp317.550.000</td></tr>
+      <tr><th>{t('landing.doc_th_desc')}</th><th>{t('landing.doc_th_amount')}</th></tr>
+      <tr><td style={{animationDelay: '3.4s'}}>{t('landing.doc_row1')}</td><td style={{animationDelay: '3.4s'}}>Rp148.500.000</td></tr>
+      <tr><td style={{animationDelay: '4.2s'}}>{t('landing.doc_row2')}</td><td style={{animationDelay: '4.2s'}}>Rp96.750.000</td></tr>
+      <tr><td style={{animationDelay: '5s'}}>{t('landing.doc_row3')}</td><td style={{animationDelay: '5s'}}>Rp72.300.000</td></tr>
+      <tr className="tot"><td style={{animationDelay: '5.8s'}}>{t('landing.doc_total')}</td><td style={{animationDelay: '5.8s'}}>Rp317.550.000</td></tr>
       </table>
-      <div className="sign">Hormat kami,
+      <div className="sign">{t('landing.doc_sign_open')}
       <div className="stamp">BERKAH<br/>KONSTRUKSI</div>
       <div><svg className="scrib" width="92" height="30" viewBox="0 0 90 30"><path d="M4 22 C 18 4, 30 28, 44 12 S 74 8, 86 16" stroke="#33506E" fill="none" strokeWidth="2" strokeLinecap="round"/></svg></div>
-      <b style={{color: '#0A2540'}}>Ir. B. Prasetyo</b><br/>Direktur</div>
+      <b style={{color: '#0A2540'}}>Ir. B. Prasetyo</b><br/>{t('landing.doc_sign_role')}</div>
       </div>
       <div className="docside simfade12">
-      <b style={{fontSize: '13.5px', color: '#0A2540'}}>Disusun AI dari data proyek</b>
-      <div className="chk" style={{animationDelay: '2.2s'}}><span className="ck">✓</span><span>Angka mengikuti RAB proyek terbaru</span></div>
-      <div className="chk" style={{animationDelay: '3s'}}><span className="ck">✓</span><span>Template surat resmi siap pakai</span></div>
-      <div className="chk" style={{animationDelay: '3.8s'}}><span className="ck">✓</span><span>Setiap angka berlabel sumbernya</span></div>
-      <p style={{fontSize: '11.5px', color: '#8498AF', lineHeight: '1.55'}}>Seluruh isi tetap bisa Anda edit sebelum diunduh atau dikirim.</p>
+      <b style={{fontSize: '13.5px', color: '#0A2540'}}>{t('landing.doc_side_title')}</b>
+      <div className="chk" style={{animationDelay: '2.2s'}}><span className="ck">✓</span><span>{t('landing.doc_chk1')}</span></div>
+      <div className="chk" style={{animationDelay: '3s'}}><span className="ck">✓</span><span>{t('landing.doc_chk2')}</span></div>
+      <div className="chk" style={{animationDelay: '3.8s'}}><span className="ck">✓</span><span>{t('landing.doc_chk3')}</span></div>
+      <p style={{fontSize: '11.5px', color: '#8498AF', lineHeight: '1.55'}}>{t('landing.doc_side_note')}</p>
       {/* D-05: sama seperti di atas — krom mockup, bukan tombol. */}
-      <span className="btn dlGlow mock-btn" aria-hidden="true" style={{justifyContent: 'center', marginTop: 'auto', width: '100%'}}>Unduh PDF</span>
+      <span className="btn dlGlow mock-btn" aria-hidden="true" style={{justifyContent: 'center', marginTop: 'auto', width: '100%'}}>{t('landing.doc_download')}</span>
       </div>
       <div className="ring ringDoc"></div>
       <div className="cur curDoc"><svg width="20" height="20" viewBox="0 0 24 24"><path d="M5 3 L19 12 L12.5 13.5 L9.5 20 Z" fill="#0A2540" stroke="#fff" strokeWidth="1.6"/></svg></div>
       </div></div>
-      <div className="demo-note">Ilustrasi animasi cara kerja EZRAB.</div></div></div>
+      <div className="demo-note">{t('landing.demo_note')}</div></div></div>
       <div className="half2">
-      <div className="mini" id="smart-rab"><img className="mini-img" src={logoImg} alt="" /><h3>Smart RAB</h3><p>Ceritakan proyek Anda di chat — mis. "rumah 2 lantai 120 m²" — dan draf RAB tersusun dari kode AHSP resmi, siap Anda periksa item per item.</p></div>
-      <div className="mini"><img className="mini-img" src={mascotImg} alt="" /><h3>Co Assistant</h3><p>Asisten pendamping di setiap halaman: audit RAB, periksa Kurva S, jelaskan item, hitung ulang — tanpa berpindah menu.</p></div>
+      <div className="mini" id="smart-rab"><img className="mini-img" src={logoImg} alt="" /><h3>Smart RAB</h3><p>{t('landing.pillar_smartrab_desc')}</p></div>
+      <div className="mini"><img className="mini-img" src={mascotImg} alt="" /><h3>Co Assistant</h3><p>{t('landing.pillar_coasst_desc')}</p></div>
       </div></div></section>
 
       <section className="ezai-sec" id="asisten">
@@ -235,38 +262,38 @@ export const AiShowcase: React.FC<AiShowcaseProps> = ({ onOpenAuth, onOpenDemo, 
       <div className="wrap">
       <div className="split">
       <div>
-      <span className="eyebrow">Ezrab AI Assistant</span>
-      <h2>Asisten pribadi di dalam <span className="bl">seluruh workspace.</span></h2>
-      <p className="sub">Panel pendamping yang bisa Anda perintahkan dengan bahasa sehari-hari — membuka menu, menghitung, dan menyiapkan draf, sementara Anda tetap memegang kendali.</p>
+      <span className="eyebrow">{t('landing.asst_eyebrow')}</span>
+      <h2>{t('landing.asst_title_a')} <span className="bl">{t('landing.asst_title_b')}</span></h2>
+      <p className="sub">{t('landing.asst_sub')}</p>
       <div className="steps">
-      <div className="step"><span className="n">1</span><div><b>Perintah bahasa sehari-hari</b><p>"Buka kurva S", "hitung volume dinding", "buatkan rekap" — langsung dipahami & dijalankan.</p></div></div>
-      <div className="step"><span className="n">2</span><div><b>Menavigasi & menyiapkan untuk Anda</b><p>Membuka menu yang tepat, mengisi draf, menyusun rekap — bukan sekadar menjawab teks.</p></div></div>
-      <div className="step"><span className="n">3</span><div><b>Tetap dengan izin Anda</b><p>Setiap aksi penting menunggu konfirmasi Anda. Tidak ada perubahan diam-diam.</p></div></div>
+      <div className="step"><span className="n">1</span><div><b>{t('landing.asst_step1_t')}</b><p>{t('landing.asst_step1_d')}</p></div></div>
+      <div className="step"><span className="n">2</span><div><b>{t('landing.asst_step2_t')}</b><p>{t('landing.asst_step2_d')}</p></div></div>
+      <div className="step"><span className="n">3</span><div><b>{t('landing.asst_step3_t')}</b><p>{t('landing.asst_step3_d')}</p></div></div>
       </div>
       </div>
       <div style={{position: 'relative'}}>
       <img className="mascot-hero" src={mascotFullbody} alt="Maskot EZRAB" />
       <div className="win">
-      <div className="win-head"><span className="dot" style={{background: '#F87171'}}></span><span className="dot" style={{background: '#FBBF24'}}></span><span className="dot" style={{background: '#34D399'}}></span><span className="win-title">Ezrab AI Assistant — panel pendamping</span></div>
+      <div className="win-head"><span className="dot" style={{background: '#F87171'}}></span><span className="dot" style={{background: '#FBBF24'}}></span><span className="dot" style={{background: '#34D399'}}></span><span className="win-title">{t('landing.asst_win_title')}</span></div>
       <div className="sim" style={{borderRadius: '0 0 19px 19px', overflow: 'hidden'}}>
       <div className="asst">
       <div className="msgs simfade12" style={{display: 'flex', flexDirection: 'column', gap: '9px'}}>
-      <div className="ahead"><img src={mascotImg} alt="" /><div><b style={{fontSize: '14px', color: '#0A2540', display: 'block'}}>Ezrab AI Assistant</b><span className="on">● Online — siap membantu</span></div></div>
-      <div className="bub u anim-bub" style={{animationDuration: '12s'}}>Buka Spreadsheet RAB proyek ini</div>
-      <div className="bub a anim-bub" style={{animationDuration: '12s', animationDelay: '2.4s'}}>Siap — membuka Spreadsheet RAB untuk <b>Rumah Tinggal 2 Lantai</b>.
-      <div className="acard"><span style={{fontWeight: '800'}}>✓</span><span>Navigasi selesai — Spreadsheet RAB terbuka</span></div></div>
-      <div className="bub u anim-bub" style={{animationDuration: '12s', animationDelay: '5.8s'}}>Berapa total RAB proyek aktif?</div>
-      <div className="bub a anim-bub" style={{animationDuration: '12s', animationDelay: '8.2s'}}>Total RAB — Rumah Tinggal 2 Lantai:
-      <div className="dcard"><div className="bigamt">Rp317.550.000</div><p style={{fontSize: '12px', color: '#5A718C', marginTop: '4px'}}>Dihitung langsung dari item RAB proyek aktif — lengkap dengan label sumber di setiap angkanya.</p></div></div>
-      <div className="quickrow anim-bub" style={{animationDuration: '12s', animationDelay: '10.2s'}}><span>Buka Kurva S</span><span>Buat Laporan</span><span>Cek Harga Material</span></div>
+      <div className="ahead"><img src={mascotImg} alt="" /><div><b style={{fontSize: '14px', color: '#0A2540', display: 'block'}}>{t('landing.asst_header')}</b><span className="on">{t('landing.asst_online')}</span></div></div>
+      <div className="bub u anim-bub" style={{animationDuration: '12s'}}>{t('landing.asst_u1')}</div>
+      <div className="bub a anim-bub" style={{animationDuration: '12s', animationDelay: '2.4s'}}>{t('landing.asst_a1')}{' '}<b>{t('landing.asst_project')}</b>.
+      <div className="acard"><span style={{fontWeight: '800'}}>✓</span><span>{t('landing.asst_nav_done')}</span></div></div>
+      <div className="bub u anim-bub" style={{animationDuration: '12s', animationDelay: '5.8s'}}>{t('landing.asst_u2')}</div>
+      <div className="bub a anim-bub" style={{animationDuration: '12s', animationDelay: '8.2s'}}>{t('landing.asst_a2')}{' '}{t('landing.asst_project')}:
+      <div className="dcard"><div className="bigamt">Rp317.550.000</div><p style={{fontSize: '12px', color: '#5A718C', marginTop: '4px'}}>{t('landing.asst_a2_note')}</p></div></div>
+      <div className="quickrow anim-bub" style={{animationDuration: '12s', animationDelay: '10.2s'}}><span>{t('landing.asst_chip1')}</span><span>{t('landing.asst_chip2')}</span><span>{t('landing.asst_chip3')}</span></div>
       </div>
-      <div className="composer"><span className="ct">Perintahkan apa saja…<span className="caret"></span></span><span className="sendb">↑</span></div>
+      <div className="composer"><span className="ct">{t('landing.asst_composer')}<span className="caret"></span></span><span className="sendb">↑</span></div>
       </div>
       <div className="ring ringAsst"></div>
       <div className="cur curAsst"><svg width="20" height="20" viewBox="0 0 24 24"><path d="M5 3 L19 12 L12.5 13.5 L9.5 20 Z" fill="#0A2540" stroke="#fff" strokeWidth="1.6"/></svg></div>
       </div>
       </div>
-      <div className="demo-note">Ilustrasi animasi cara kerja EZRAB.</div>
+      <div className="demo-note">{t('landing.demo_note')}</div>
       </div>
       </div>
       </div>
@@ -274,40 +301,40 @@ export const AiShowcase: React.FC<AiShowcaseProps> = ({ onOpenAuth, onOpenDemo, 
 
 
       <section className="ezai-sec" id="perkakas" style={{paddingTop: '26px'}}><div className="wrap">
-      <div className="center"><span className="eyebrow"> Mesin Estimasi Lengkap</span>
-      <h2 style={{fontSize: '32px'}}>AI-nya bintang utama. <span className="bl">Mesin di baliknya tetap lengkap.</span></h2></div>
+      <div className="center"><span className="eyebrow"> {t('landing.bento_eyebrow')}</span>
+      <h2 style={{fontSize: '32px'}}>{t('landing.bento_title_a')} <span className="bl">{t('landing.bento_title_b')}</span></h2></div>
       <div className="bento">
       {/* D-07: tiap tile punya id sendiri — tautan footer Produk kini
           menunjuk ke tile yang sesuai, bukan semuanya ke #perkakas. */}
-      <div className="tile" id="kalkulator-volume"><div className="motif"><div className="keys"><i></i><i></i><i></i><i></i><i className="hot"></i><i></i><i></i><i></i><i></i></div></div><b>Kalkulator Volume</b><p>190 kalkulator pekerjaan konstruksi terstandarisasi SNI.</p></div>
-      <div className="tile" id="ahsp-2026"><div className="motif col2"><i className="brow" style={{width: '72%'}}></i><i className="brow" style={{width: '54%', animationDelay: '.5s'}}></i><i className="brow" style={{width: '64%', animationDelay: '1s'}}></i></div><b>AHSP 2026</b><p>Database analisa harga satuan resmi, selalu jadi rujukan harga.</p></div>
-      <div className="tile" id="spreadsheet-rab"><div className="motif"><div className="sgrid"><i></i><i></i><i></i><i></i><i></i><i className="hl"></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div><b>Spreadsheet RAB</b><p>Susun dan edit RAB seperti spreadsheet yang Anda kenal.</p></div>
-      <div className="tile" id="kurva-s"><div className="motif"><svg width="120" height="44" viewBox="0 0 120 44"><path className="scurve" d="M6 38 C 40 36, 52 30, 66 20 S 100 6, 114 5" stroke="#2563EB" strokeWidth="3" fill="none" strokeLinecap="round"/><line x1="6" y1="40" x2="114" y2="40" stroke="#D7E3F2" strokeWidth="2"/></svg></div><b>Kurva S & Jadwal</b><p>Pantau rencana vs realisasi proyek dalam satu grafik.</p></div>
-      <div className="tile"><div className="motif"><div className="sheet">↓ PDF</div></div><b>Ekspor Excel & PDF</b><p>Hasil akhir siap dibagikan ke klien dan tim lapangan.</p></div>
+      <div className="tile" id="kalkulator-volume"><div className="motif"><div className="keys"><i></i><i></i><i></i><i></i><i className="hot"></i><i></i><i></i><i></i><i></i></div></div><b>{t('landing.bento_calc_t')}</b><p>{t('landing.bento_calc_d')}</p></div>
+      <div className="tile" id="ahsp-2026"><div className="motif col2"><i className="brow" style={{width: '72%'}}></i><i className="brow" style={{width: '54%', animationDelay: '.5s'}}></i><i className="brow" style={{width: '64%', animationDelay: '1s'}}></i></div><b>{t('landing.bento_ahsp_t')}</b><p>{t('landing.bento_ahsp_d')}</p></div>
+      <div className="tile" id="spreadsheet-rab"><div className="motif"><div className="sgrid"><i></i><i></i><i></i><i></i><i></i><i className="hl"></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div><b>{t('landing.bento_sheet_t')}</b><p>{t('landing.bento_sheet_d')}</p></div>
+      <div className="tile" id="kurva-s"><div className="motif"><svg width="120" height="44" viewBox="0 0 120 44"><path className="scurve" d="M6 38 C 40 36, 52 30, 66 20 S 100 6, 114 5" stroke="#2563EB" strokeWidth="3" fill="none" strokeLinecap="round"/><line x1="6" y1="40" x2="114" y2="40" stroke="#D7E3F2" strokeWidth="2"/></svg></div><b>{t('landing.bento_curve_t')}</b><p>{t('landing.bento_curve_d')}</p></div>
+      <div className="tile"><div className="motif"><div className="sheet">↓ PDF</div></div><b>{t('landing.bento_export_t')}</b><p>{t('landing.bento_export_d')}</p></div>
       </div></div></section>
 
       <section className="ezai-sec" style={{paddingTop: '10px'}}><div className="wrap">
-      <div className="center"><h2 style={{fontSize: '32px'}}>AI yang <span className="bl">tidak mengarang angka.</span></h2>
-      <p className="sub">Prinsip yang kami pegang sejak awal — dan alasan estimator profesional bisa percaya.</p></div>
+      <div className="center"><h2 style={{fontSize: '32px'}}>{t('landing.honest_title_a')} <span className="bl">{t('landing.honest_title_b')}</span></h2>
+      <p className="sub">{t('landing.honest_sub')}</p></div>
       <div className="honest">
-      <div className="hcard"><div className="hnum">01</div><div><b>Harga dari AHSP resmi</b><p>Harga satuan bersumber dari AHSP 2026 dan data proyek Anda — bukan hasil tebakan model AI.</p></div></div>
-      <div className="hcard"><div className="hnum">02</div><div><b>Label & basis transparan</b><p>Setiap angka perkiraan berlabel "Estimasi AI" dan dapat diklik untuk melihat dasar perhitungannya.</p></div></div>
-      <div className="hcard"><div className="hnum">03</div><div><b>Anda tetap memegang kendali</b><p>Semua hasil AI bisa diperiksa dan diedit manual. Item tanpa harga resmi tidak pernah masuk sebagai Rp0.</p></div></div>
+      <div className="hcard"><div className="hnum">01</div><div><b>{t('landing.honest_1_t')}</b><p>{t('landing.honest_1_d')}</p></div></div>
+      <div className="hcard"><div className="hnum">02</div><div><b>{t('landing.honest_2_t')}</b><p>{t('landing.honest_2_d')}</p></div></div>
+      <div className="hcard"><div className="hnum">03</div><div><b>{t('landing.honest_3_t')}</b><p>{t('landing.honest_3_d')}</p></div></div>
       </div></div></section>
 
       <section className="ezai-sec" id="harga" style={{paddingTop: '20px'}}><div className="grid-bg"></div><div className="wrap" style={{position: 'relative'}}>
-      <div className="center"><span className="eyebrow"> Harga & Kredit AI</span>
-      <h2>Paket mengikuti <span className="bl">kebutuhan AI Anda.</span></h2>
-      <p className="sub" style={{margin: '0 auto'}}>Semua paket memakai mesin hitung yang sama. Yang berbeda: akses AHSP, jatah kredit AI, kuota ekspor, dan kolaborasi tim. Free gratis selamanya — bukan uji coba.</p></div>
+      <div className="center"><span className="eyebrow"> {t('landing.price_eyebrow')}</span>
+      <h2>{t('landing.price_title_a')} <span className="bl">{t('landing.price_title_b')}</span></h2>
+      <p className="sub" style={{margin: '0 auto'}}>{t('landing.price_sub')}</p></div>
       <PricingCards onOpenAuth={onOpenAuth} />
-      <p className="cmp-link"><button type="button" className="btn soft" onClick={() => onOpenPricing?.()}>Lihat Perbandingan Lengkap</button></p>
-      <p className="demo-note" style={{textAlign: 'center'}}>Mode simulasi — langganan belum aktif, belum ada penagihan nyata.</p>
+      <p className="cmp-link"><button type="button" className="btn soft" onClick={() => onOpenPricing?.()}>{t('landing.price_compare')}</button></p>
+      <p className="demo-note" style={{textAlign: 'center'}}>{t('landing.price_sim_note')}</p>
       </div></section>
 
       <section className="ezai-sec" id="faq" style={{paddingTop: '16px'}}><div className="wrap">
-      <div className="center"><span className="eyebrow">Pusat Bantuan</span><h2 style={{fontSize: '32px'}}>Sering ditanyakan <span className="bl">soal EZRAB</span></h2></div>
-      <div style={{maxWidth: '860px', margin: '34px auto 0'}}><FaqAccordion items={getFeaturedFaqs()} idPrefix="home-faq" /></div>
-      <div className="center" style={{marginTop: '26px'}}><button type="button" className="btn" onClick={() => onOpenFaq?.()}>Lihat Semua Pertanyaan</button></div>
+      <div className="center"><span className="eyebrow">{t('landing.faqsec_eyebrow')}</span><h2 style={{fontSize: '32px'}}>{t('landing.faqsec_title_a')} <span className="bl">{t('landing.faqsec_title_b')}</span></h2></div>
+      <div style={{maxWidth: '860px', margin: '34px auto 0'}}><FaqAccordion items={featuredFaqs} idPrefix="home-faq" /></div>
+      <div className="center" style={{marginTop: '26px'}}><button type="button" className="btn" onClick={() => onOpenFaq?.()}>{t('landing.faqsec_all')}</button></div>
       <div className="cta-box" style={{marginTop: '132px'}}><img className="mascot-cta" src={mascotSitting} alt="Maskot EZRAB" /><span className="eyebrow" style={{background: 'rgba(255,255,255,.14)', borderColor: 'rgba(255,255,255,.3)', color: '#DCEBFF'}}> {t('landing.cta_eyebrow')}</span>
       <h2>{t('landing.cta_ai_title_a')}<br/>{t('landing.cta_ai_title_b')}</h2>
       <p className="sub" style={{margin: '0 auto 30px', color: '#C9DCF7'}}>{t('landing.cta_ai_sub')}</p>
@@ -315,13 +342,13 @@ export const AiShowcase: React.FC<AiShowcaseProps> = ({ onOpenAuth, onOpenDemo, 
       </div></section>
       <footer className="ezai-footer"><div className="wrap"><div className="fgrid">
       <div><div style={{display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px'}}><img src={logoImg} alt="Logo EZRAB" style={{width: '38px', height: '38px', borderRadius: '9px', objectFit: 'cover'}} /><b style={{margin: '0', fontSize: '16px'}}>EZRAB</b></div>
-      <p style={{fontSize: '13.5px', lineHeight: '1.65', color: '#5F7694', maxWidth: '300px'}}>Workspace estimasi konstruksi bertenaga AI — dari gambar kerja sampai RAB dan dokumen, dalam satu tempat.</p></div>
-      <div><b>Fitur AI</b><a href="#ded">DED Estimate AI</a><a href="#chat">Ezrab Chat AI</a><a href="#dokumen">AI Document</a><a href="#smart-rab">Smart RAB</a></div>
-      <div><b>Produk</b><a href="#kalkulator-volume">Kalkulator Volume</a><a href="#ahsp-2026">AHSP 2026</a><a href="#spreadsheet-rab">Spreadsheet RAB</a><a href="#kurva-s">Kurva S</a></div>
-      <div><b>Perusahaan</b><a href="#harga">Harga</a><a href="#faq">Sering Ditanyakan</a><a href="/privacy" onClick={(e) => { e.preventDefault(); navigateTo('/privacy'); window.scrollTo({ top: 0 }); }}>Privacy Policy</a><a href="/terms" onClick={(e) => { e.preventDefault(); navigateTo('/terms'); window.scrollTo({ top: 0 }); }}>Terms of Service</a><button type="button" onClick={() => onOpenAuth('masuk')}>Masuk</button>
-      <button type="button" onClick={() => onOpenAuth('daftar')}>Daftar</button></div>
+      <p style={{fontSize: '13.5px', lineHeight: '1.65', color: '#5F7694', maxWidth: '300px'}}>{t('landing.foot_desc')}</p></div>
+      <div><b>{t('landing.foot_ai')}</b><a href="#ded">DED Estimate AI</a><a href="#chat">Ezrab Chat AI</a><a href="#dokumen">AI Document</a><a href="#smart-rab">Smart RAB</a></div>
+      <div><b>{t('landing.foot_product')}</b><a href="#kalkulator-volume">Kalkulator Volume</a><a href="#ahsp-2026">AHSP 2026</a><a href="#spreadsheet-rab">Spreadsheet RAB</a><a href="#kurva-s">Kurva S</a></div>
+      <div><b>{t('landing.foot_company')}</b><a href="#harga">{t('landing.foot_price')}</a><a href="#faq">{t('landing.foot_faq')}</a><a href="/privacy" onClick={(e) => { e.preventDefault(); navigateTo('/privacy'); window.scrollTo({ top: 0 }); }}>{t('landing.foot_privacy')}</a><a href="/terms" onClick={(e) => { e.preventDefault(); navigateTo('/terms'); window.scrollTo({ top: 0 }); }}>{t('landing.foot_terms')}</a><button type="button" onClick={() => onOpenAuth('masuk')}>{t('landing.foot_login')}</button>
+      <button type="button" onClick={() => onOpenAuth('daftar')}>{t('landing.foot_signup')}</button></div>
       </div>
-      <div className="fbot"><span>© 2026 EZRAB — YF ARCH. Seluruh hak cipta dilindungi.</span><span>ezrab.site</span></div>
+      <div className="fbot"><span>{t('landing.foot_copyright')}</span><span>ezrab.site</span></div>
       </div></footer>
     </div>
   );

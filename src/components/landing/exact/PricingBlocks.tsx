@@ -1,9 +1,9 @@
 import React from 'react';
+import { useI18n } from '../../../i18n';
 import { PLAN_DEFINITIONS, PLAN_IDS, type PlanId } from '../../../billing/plans';
 import {
   PRICING_CATEGORIES,
   PLAN_DISPLAY_NAME,
-  PLAN_TAGLINE,
   BILLING_TRANSPARENCY_POINTS,
   type PricingCell,
 } from './pricingMatrix';
@@ -21,42 +21,49 @@ import {
 const formatIdr = (n: number) => 'Rp' + n.toLocaleString('id-ID');
 const formatNum = (n: number) => n.toLocaleString('id-ID');
 
-const PLAN_BULLETS: Record<PlanId, string[]> = {
-  free: ['1 proyek aktif', 'AHSP Cipta Karya penuh', '100 kredit AI sekali — hanya untuk Chat AI', 'Ekspor PDF 15×/bulan · Excel 1×/bulan'],
-  starter: ['7 proyek aktif', 'AHSP Cipta Karya penuh', 'RAB AI & Chat AI (terbatas)', 'Ekspor PDF 50× · Excel 30× per siklus'],
-  professional: ['25 proyek aktif', 'Semua kategori AHSP 2026', 'Custom Instructions di Chat AI', 'Role Team hingga 6 seat · Ekspor tanpa batas'],
-  business: ['Proyek tanpa batas', 'Semua kategori AHSP 2026', 'Kredit AI terbesar', 'Role Team hingga 10 seat · Ekspor tanpa batas'],
-};
-
-const PLAN_CTA: Record<PlanId, string> = {
-  free: 'Mulai Gratis',
-  starter: 'Pilih Starter',
-  professional: 'Pilih Professional',
-  business: 'Pilih Business',
-};
-
 interface PricingCardsProps {
   onOpenAuth: (tab?: 'masuk' | 'daftar') => void;
 }
 
-export const PricingCards: React.FC<PricingCardsProps> = ({ onOpenAuth }) => (
+export const PricingCards: React.FC<PricingCardsProps> = ({ onOpenAuth }) => {
+  const { t } = useI18n();
+  // Teks kartu paket diterjemahkan (tagline/bullet/CTA dari kamus landing.price_*).
+  const PLAN_BULLETS: Record<PlanId, string[]> = {
+    free: [t('landing.price_bullet_free_1'), t('landing.price_bullet_free_2'), t('landing.price_bullet_free_3'), t('landing.price_bullet_free_4')],
+    starter: [t('landing.price_bullet_starter_1'), t('landing.price_bullet_starter_2'), t('landing.price_bullet_starter_3'), t('landing.price_bullet_starter_4')],
+    professional: [t('landing.price_bullet_professional_1'), t('landing.price_bullet_professional_2'), t('landing.price_bullet_professional_3'), t('landing.price_bullet_professional_4')],
+    business: [t('landing.price_bullet_business_1'), t('landing.price_bullet_business_2'), t('landing.price_bullet_business_3'), t('landing.price_bullet_business_4')],
+  };
+  const PLAN_CTA: Record<PlanId, string> = {
+    free: t('landing.price_cta_free'),
+    starter: t('landing.price_cta_starter'),
+    professional: t('landing.price_cta_professional'),
+    business: t('landing.price_cta_business'),
+  };
+  const PLAN_TAGLINE_I18N: Record<PlanId, string> = {
+    free: t('landing.price_tagline_free'),
+    starter: t('landing.price_tagline_starter'),
+    professional: t('landing.price_tagline_professional'),
+    business: t('landing.price_tagline_business'),
+  };
+  return (
   <div className="plans">
     {PLAN_IDS.map((id) => {
       const p = PLAN_DEFINITIONS[id];
       const popular = id === 'professional';
       return (
         <div className={popular ? 'plan pop' : 'plan'} key={id}>
-          {popular && <span className="tag">PALING POPULER</span>}
+          {popular && <span className="tag">{t('landing.price_popular')}</span>}
           <h3>{PLAN_DISPLAY_NAME[id]}</h3>
-          <p className="plan-tag">{PLAN_TAGLINE[id]}</p>
+          <p className="plan-tag">{PLAN_TAGLINE_I18N[id]}</p>
           <div className="price">
             {formatIdr(p.monthlyPriceIdr)}
-            {p.monthlyPriceIdr > 0 && <small>/bln</small>}
+            {p.monthlyPriceIdr > 0 && <small>{t('landing.price_per_month')}</small>}
           </div>
           <div className="cred">
             {p.credits.kind === 'periodic'
-              ? `${formatNum(p.credits.credits)} kredit AI/bln`
-              : `${formatNum(p.credits.credits)} kredit AI (sekali)`}
+              ? `${formatNum(p.credits.credits)} ${t('landing.price_credits_month')}`
+              : `${formatNum(p.credits.credits)} ${t('landing.price_credits_once')}`}
           </div>
           <ul>
             {PLAN_BULLETS[id].map((b) => (
@@ -74,7 +81,8 @@ export const PricingCards: React.FC<PricingCardsProps> = ({ onOpenAuth }) => (
       );
     })}
   </div>
-);
+  );
+};
 
 const renderCell = (cell: PricingCell, planId: PlanId) => {
   switch (cell.t) {

@@ -1,6 +1,7 @@
 import React, { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { Pause, Play } from 'lucide-react';
 import './cinematic-hero.css';
+import { useI18n } from '../../../i18n';
 import { useSceneMachine, type SceneDef } from './sceneMachine';
 import {
   SceneAiEstimate,
@@ -10,15 +11,6 @@ import {
   SceneProjectIntelligence,
   SceneQtoVolume,
 } from './scenes';
-
-const SCENES: SceneDef[] = [
-  { id: 'project-intelligence', label: 'Proyek', durationMs: 3500 },
-  { id: 'ai-estimate', label: 'AI Estimate', durationMs: 4000 },
-  { id: 'ded-dokumen', label: 'AI Dokumen', durationMs: 3500 },
-  { id: 'qto-volume', label: 'QTO Volume', durationMs: 3500 },
-  { id: 'ahsp-rab', label: 'AHSP & RAB', durationMs: 4000 },
-  { id: 'laporan-kurva-s', label: 'Kurva S', durationMs: 3500 },
-];
 
 const SceneComponents = [
   SceneProjectIntelligence,
@@ -39,7 +31,21 @@ const TRANSITION_MS = 450;
  */
 export const ProductStage: React.FC<{ flat?: boolean; onSceneChange?: (index: number) => void }> = memo(
   ({ flat = false, onSceneChange }) => {
-  const scenes = useMemo(() => SCENES, []);
+  const { t } = useI18n();
+  // Label scene diterjemahkan di sini (literal t() agar terdeteksi suite
+  // parity); identitas array stabil per bahasa via useMemo — durasi sama,
+  // jadi totalMs & mesin scene tidak berubah saat bahasa berganti.
+  const scenes: SceneDef[] = useMemo(
+    () => [
+      { id: 'project-intelligence', label: t('landing.cine_scene_proyek'), durationMs: 3500 },
+      { id: 'ai-estimate', label: t('landing.cine_scene_ai_estimate'), durationMs: 4000 },
+      { id: 'ded-dokumen', label: t('landing.cine_scene_ai_dokumen'), durationMs: 3500 },
+      { id: 'qto-volume', label: t('landing.cine_scene_qto'), durationMs: 3500 },
+      { id: 'ahsp-rab', label: t('landing.cine_scene_ahsp_rab'), durationMs: 4000 },
+      { id: 'laporan-kurva-s', label: t('landing.cine_scene_kurva_s'), durationMs: 3500 },
+    ],
+    [t],
+  );
   const { sceneIndex, sceneProgress, elapsed, playing, reducedMotion, totalMs, play, pause, goTo } =
     useSceneMachine(scenes, true);
 
@@ -120,18 +126,18 @@ export const ProductStage: React.FC<{ flat?: boolean; onSceneChange?: (index: nu
             type="button"
             className="ch-play-btn"
             onClick={() => (playing ? pause() : play())}
-            aria-label={playing ? 'Jeda demo' : 'Putar demo'}
+            aria-label={playing ? t('landing.cine_stage_pause') : t('landing.cine_stage_play')}
           >
             {playing ? <Pause size={14} /> : <Play size={14} />}
           </button>
-          <div className="ch-dots" role="tablist" aria-label="Pilih scene demo">
+          <div className="ch-dots" role="tablist" aria-label={t('landing.cine_stage_choose')}>
             {scenes.map((s, i) => (
               <button
                 key={s.id}
                 type="button"
                 role="tab"
                 aria-selected={i === sceneIndex}
-                aria-label={`Scene ${i + 1}: ${s.label}`}
+                aria-label={`${t('landing.cine_stage_scene')} ${i + 1}: ${s.label}`}
                 className={`ch-dot${i === sceneIndex ? ' is-active' : ''}`}
                 onClick={() => goTo(i)}
               />
@@ -143,7 +149,7 @@ export const ProductStage: React.FC<{ flat?: boolean; onSceneChange?: (index: nu
         </div>
       </div>
       <p className="ch-honest-caption ch-honest-caption--stage">
-        Animasi demonstrasi — bukan rekaman aplikasi langsung. Semua angka adalah data demonstrasi.
+        {t('landing.cine_stage_caption')}
       </p>
     </div>
   );

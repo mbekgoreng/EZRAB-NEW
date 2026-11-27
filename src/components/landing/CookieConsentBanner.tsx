@@ -6,6 +6,7 @@ import {
   type CookieConsentChoice,
 } from '../../lib/cookieConsent';
 import { navigateTo } from '../../routing/routes';
+import { useI18n } from '../../i18n';
 
 /**
  * Banner persetujuan cookie — khusus landing publik.
@@ -19,6 +20,7 @@ import { navigateTo } from '../../routing/routes';
  * "Terima" (lihat hasAnalyticsConsent di lib/cookieConsent).
  */
 export const CookieConsentBanner: React.FC = () => {
+  const { t } = useI18n();
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -59,11 +61,9 @@ export const CookieConsentBanner: React.FC = () => {
   };
 
   return (
-    <div className="ez-cookie-banner" role="region" aria-label="Persetujuan cookie">
+    <div className="ez-cookie-banner" role="region" aria-label={t('landing.cookie_aria')}>
       <p className="ez-cookie-banner-text">
-        Kami memakai cookie agar sesi kamu tetap aman. Bila kamu setuju, kami
-        juga memakai cookie pengukuran untuk memahami kunjungan dan membuat
-        EZRAB lebih baik — pengukuran hanya berjalan bila kamu menekan Terima.{' '}
+        {t('landing.cookie_text')}{' '}
         <a
           href="/privacy"
           className="ez-cookie-banner-link"
@@ -73,7 +73,7 @@ export const CookieConsentBanner: React.FC = () => {
             window.scrollTo({ top: 0 });
           }}
         >
-          Kebijakan Privasi
+          {t('landing.cookie_privacy')}
         </a>
       </p>
       <div className="ez-cookie-banner-actions">
@@ -82,14 +82,14 @@ export const CookieConsentBanner: React.FC = () => {
           className="ez-cookie-banner-btn ez-cookie-banner-btn-ghost"
           onClick={() => choose('rejected')}
         >
-          Tolak
+          {t('landing.cookie_decline')}
         </button>
         <button
           type="button"
           className="ez-cookie-banner-btn ez-cookie-banner-btn-primary"
           onClick={() => choose('accepted')}
         >
-          Terima
+          {t('landing.cookie_accept')}
         </button>
       </div>
     </div>
