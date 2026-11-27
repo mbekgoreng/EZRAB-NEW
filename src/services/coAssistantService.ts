@@ -390,7 +390,7 @@ class CoAssistantService {
     const complexity = classifyRequest(clean, activity);
     request.onThinking?.(statusTextFor(complexity, activity));
     const startedAt = Date.now();
-    // RAB (owner 2026-10-27): 5–10 detik dari besarnya hasil, bukan 3 detik.
+    // RAB (owner 2026-10-27, diperpanjang 2026-11-28): 5–20 detik dari besarnya hasil, bukan 3 detik.
     if (activity === 'rab') {
       return waitForRabMinimum(startedAt, this.runSendMessage(request), request.signal, (r) => r?.message?.text ?? '');
     }

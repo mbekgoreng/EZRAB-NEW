@@ -32,6 +32,8 @@ import { ClientUserManagementService } from '../../services/userManagementServic
 import { UserRole, type Project } from '../../types';
 import { useI18n, LANG_OPTIONS } from '../../i18n';
 import type { Lang } from '../../i18n';
+import type { SkillRole } from '../../ai-tools/skill-engine/types';
+import { TRYOUT_ROLE_ORDER, TRYOUT_ROLE_META } from '../../roles/serverRoleTryout';
 
 /** Pilihan tema — dipindah ke menu profil (pojok kanan atas). */
 const THEME_OPTIONS: { id: PremiumTheme; name: string; desc: string; swatch: string }[] = [
@@ -105,6 +107,11 @@ interface TopBarProps {
   onNavigate: (menu: string, tab?: string) => void;
   onLogout?: () => void;
   workspaceName?: string;
+  /** Peran try-out aktif (5 peran server, tampilan browser saja) +
+   * handler ganti peran — disediakan WorkspaceView. Tanpa keduanya,
+   * seksi ganti peran tidak tampil di menu pengguna. */
+  tryoutRole?: SkillRole;
+  onTryoutRoleChange?: (role: SkillRole) => void;
 breadcrumb?: React.ReactNode;
 }
 
@@ -120,6 +127,8 @@ export const TopBar: React.FC<TopBarProps> = ({
   onNavigate,
   onLogout,
   workspaceName = 'EZRAB Construction Workspace',
+  tryoutRole,
+  onTryoutRoleChange,
   breadcrumb,
 }) => {
 const { t, lang, setLang } = useI18n();
@@ -155,6 +164,7 @@ const { t, lang, setLang } = useI18n();
   const [shortcutOpen, setShortcutOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [themeOpen, setThemeOpen] = useState(false);
+  const [roleOpen, setRoleOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
   /* Menu ganti kurs di Top Bar (owner 2026-10-27): satu-satunya tempat
    * ganti mata uang tampil yang mudah dijangkau (sebelumnya hanya di
@@ -1484,6 +1494,128 @@ color: 'var(--ez-hue-violet-text)', background: 'var(--ez-hue-violet-bg)',
                   </div>
                 )}
               </div>
+
+              {/* Ganti peran (try-out 5 peran server) — pindahan dari
+                  baris chip di bawah TopBar (owner 2026-11-27): ganti
+                  peran adanya di menu pengguna pojok kanan atas.
+                  Tampilan browser saja, bukan otorisasi server (lihat
+                  src/roles/serverRoleTryout.ts). Dropdown dibiarkan
+                  terbuka sesudah memilih agar centang aktif terlihat;
+                  toast konfirmasi tampil dari WorkspaceView. */}
+              {tryoutRole && onTryoutRoleChange && (
+                <div style={{ padding: '6px', borderTop: '1px solid var(--ez-color-surface-tertiary)' }}>
+                  <button
+                    onClick={() => setRoleOpen(!roleOpen)}
+                    aria-expanded={roleOpen}
+                    style={{
+                      width: '100%',
+                      height: '36px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '0 10px',
+                      borderRadius: '8px',
+                      background: roleOpen ? 'var(--ez-color-surface-secondary)' : 'transparent',
+                      border: 'none',
+                      color: 'var(--ez-color-text-body)',
+                      fontSize: '12.5px',
+                      fontWeight: 500,
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      transition: 'background 0.12s ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'var(--ez-color-surface-secondary)';
+                      e.currentTarget.style.color = 'var(--ez-color-primary)';
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!roleOpen) {
+                        e.currentTarget.style.background = 'transparent';
+                        e.currentTarget.style.color = 'var(--ez-color-text-body)';
+                      }
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <Users size={15} color="var(--ez-color-text-muted)" />
+                      <span>Ganti peran</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>
+                        {TRYOUT_ROLE_META[tryoutRole].label}
+                      </span>
+                      <ChevronDown
+                        size={13}
+                        color="var(--ez-color-border-strong)"
+                        style={{ transform: roleOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s ease' }}
+                      />
+                    </div>
+                  </button>
+
+                  {roleOpen && (
+                    <div style={{ padding: '2px 2px 6px' }}>
+                      <div style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '0.05em', color: 'var(--ez-color-text-muted)', padding: '8px 8px 6px' }}>
+                        PERAN DEMO
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        {TRYOUT_ROLE_ORDER.map((role) => {
+                          const meta = TRYOUT_ROLE_META[role];
+                          const isActive = role === tryoutRole;
+                          return (
+                            <button
+                              key={role}
+                              type="button"
+                              aria-pressed={isActive}
+                              onClick={() => onTryoutRoleChange(role)}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '10px',
+                                width: '100%',
+                                padding: '7px 8px',
+                                borderRadius: '8px',
+                                border: 'none',
+                                background: isActive ? 'var(--ez-color-primary-soft)' : 'transparent',
+                                cursor: 'pointer',
+                                textAlign: 'left',
+                              }}
+                              onMouseEnter={(e) => {
+                                if (!isActive) e.currentTarget.style.background = 'var(--ez-color-surface-secondary)';
+                              }}
+                              onMouseLeave={(e) => {
+                                if (!isActive) e.currentTarget.style.background = 'transparent';
+                              }}
+                            >
+                              <span
+                                aria-hidden="true"
+                                style={{
+                                  width: '26px', height: '26px', borderRadius: '8px', flex: 'none',
+                                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                  fontWeight: 800, fontSize: '10.5px', color: '#FFFFFF',
+                                  background: meta.color,
+                                }}
+                              >
+                                {meta.initials}
+                              </span>
+                              <span style={{ flex: 1, minWidth: 0 }}>
+                                <span style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, color: 'var(--ez-color-text-body)' }}>
+                                  {meta.label}
+                                </span>
+                                <span style={{ display: 'block', fontSize: '10.5px', color: 'var(--ez-color-text-muted)' }}>
+                                  {meta.person}
+                                </span>
+                              </span>
+                              {isActive && <Check size={14} color="var(--ez-color-primary)" />}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <div style={{ fontSize: '10.5px', color: 'var(--ez-color-text-muted)', padding: '6px 8px 2px' }}>
+                        Peran demo ≠ otorisasi server.
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Logout Footer */}
               <div style={{ padding: '6px', borderTop: '1px solid var(--ez-color-surface-tertiary)' }}>

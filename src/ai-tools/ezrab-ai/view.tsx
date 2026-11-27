@@ -77,6 +77,7 @@ import {
   beginExecution, finishExecution, cancelExecution, getExecution, getActiveExecution,
   getAnyActiveExecution, hasAnyActiveExecution,
   subscribeExecution, releaseConversation, emitExecutionStage, reportedExecutionStage,
+  stageSequenceForReply,
   EXECUTION_STAGE_LABELS,
   type AiExecutionHandle, type AiExecutionRecord, type ExecutionStage,
 } from './executionRuntime';
@@ -162,7 +163,7 @@ import {
   getMemoryReport,
   type MemoryScope,
 } from './memory';
-import { buildRevealPlan, summarizeReveal, formatElapsedDtk, prefersReducedMotion, formatRupiah as formatRevealRupiah, type RevealPlan } from './streamingReveal';
+import { buildRevealPlan, summarizeReveal, shouldRevealEntry, formatRupiah as formatRevealRupiah, type RevealPlan } from './streamingReveal';
 import './streaming.css';
 import { looksLikeNeedsAnswer, parseFloorsMention } from './rabNeeds';
 import { extractRabIntentSpec } from './rabIntentSpec';
@@ -197,6 +198,8 @@ import {
   applyRegistryOutcomeToStep,
   markTransferStepCompleted,
   markQuestionnaireStepCompleted,
+  markValidateStepCompleted,
+  markQuestionnaireStepBypassed,
   replanForNewObjective,
   getPendingFollowUps,
   formatFollowUpMessage,
@@ -484,14 +487,13 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   // dipancarkan; null bila belum ada event (tanpa tahap karangan).
   const reportedActiveStage = reportedExecutionStage(activeExec);
   /* Streaming Fase 2 (mockup-chat-ai-streaming, 2026-11-27):
-   * - thinkingElapsedMs = milidetik sejak eksekusi aktif dimulai
-   *   (activeExec.startedAt, WAKTU NYATA — bukan timer karangan);
-   *   ditampilkan sebagai penghitung detik di gelembung thinking.
    * - streaming = jawaban AI yang sedang di-reveal kata per kata
    *   (streamingReveal.ts); entry ditempel ke `messages` hanya sesudah
    *   reveal selesai — persist ke store tetap memakai teks penuh di
-   *   jalur kirim seperti sebelumnya. */
-  const [thinkingElapsedMs, setThinkingElapsedMs] = useState(0);
+   *   jalur kirim seperti sebelumnya.
+   * Owner 2026-11-27: penghitung detik gelembung thinking ("1,4 dtk")
+   * dihapus dari tampilan; helper formatElapsedDtk di streamingReveal.ts
+   * tetap dipertahankan (masih diuji suite chatAiStreamingFase2). */
   const [streaming, setStreaming] = useState<{
     entry: ChatEntry;
     plan: RevealPlan;
@@ -805,11 +807,18 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   }, []);
 
   /* ---- Streaming Fase 2 (mockup-chat-ai-streaming) ---- *
-   * beginStreamingReveal: jawaban AI sukses ditampilkan kata per kata
-   * (bukan sekaligus). Fallback ke tampil-sekaligus (perilaku lama):
-   * jawaban gagal, jawaban kosong, plan reveal kosong, atau
-   * prefers-reduced-motion. Persist ke store TIDAK berubah — teks
-   * penuh sudah dipersist di jalur kirim sebelum pemanggilan ini.
+   * beginStreamingReveal: jawaban asisten sukses ditampilkan kata per
+   * kata (bukan sekaligus). Owner 2026-11-28: berlaku untuk SEMUA
+   * balasan asisten — jawaban LLM maupun deterministik/lokal
+   * (kuesioner, draf RAB langsung, jawaban budget, balasan tombol
+   * aksi). Gerbang `fromAi` DILUAR: entry lokal memang tidak membawa
+   * `fromAi` dan itu bukan alasan tampil-sekaligus; provenance TIDAK
+   * diubah — entry lokal tetap tanpa `fromAi` (dipakai tombol "Coba
+   * Lagi" dkk.). Kelayakan dicek shouldRevealEntry (streamingReveal).
+   * Fallback ke tampil-sekaligus (perilaku lama): jawaban gagal,
+   * jawaban kosong, plan reveal kosong, atau prefers-reduced-motion.
+   * Persist ke store TIDAK berubah — teks penuh sudah dipersist di
+   * jalur kirim sebelum pemanggilan ini.
    * finishStreamingRevealNow: selesaikan reveal seketika (dipakai
    * pengiriman baru yang datang saat reveal masih berjalan + tombol
    * Baru). Entry hanya ditempel bila percakapan asal masih tampil —
@@ -817,7 +826,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
    * baru (teksnya tetap tersimpan di store percakapan asal). */
   const beginStreamingReveal = useCallback((entry: ChatEntry) => {
     const full = entry.content ?? '';
-    if (!entry.fromAi || entry.isError || !full.trim() || prefersReducedMotion()) {
+    if (!shouldRevealEntry(entry)) {
       setMessages((prev) => [...prev, entry]);
       return;
     }
@@ -865,21 +874,6 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   // Segarkan daftar saat percakapan siap, saat jumlah pesan berubah, dan
   // saat store berubah (pesan masuk dari permukaan AI lain).
   useEffect(() => { refreshHistory(); }, [refreshHistory, conversationReady, messages.length]);
-
-  /* Streaming Fase 2 — penghitung detik gelembung thinking: dihitung
-   * dari activeExec.startedAt (waktu nyata) tiap 100 mdtk selama AI
-   * sibuk; kembali ke 0 bila tidak ada eksekusi aktif. */
-  useEffect(() => {
-    if (!busy || !activeExec) {
-      setThinkingElapsedMs(0);
-      return undefined;
-    }
-    const startedAt = activeExec.startedAt;
-    const tick = () => setThinkingElapsedMs(Date.now() - startedAt);
-    tick();
-    const id = window.setInterval(tick, 100);
-    return () => window.clearInterval(id);
-  }, [busy, activeExec]);
 
   /* Streaming Fase 2 — penggerak reveal: majukan satu langkah reveal
    * tiap delay langkahnya (kata 46 mdtk, baris tabel 210 mdtk, tick
@@ -946,7 +940,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     // aktif lewat re-render dan efek ini berjalan pada perubahan
     // storeProjectId. URUTAN YANG BENAR (DEFECT-1, 2026-11-23): pesan
     // draft BELUM tentu tersimpan saat efek ini berjalan — postAssistant
-    // menunggu gateWait (RAB 5–10 dtk) SEBELUM persistMessage, jadi
+    // menunggu gateWait (RAB 5–20 dtk) SEBELUM persistMessage, jadi
     // salinan di sini hanya membawa pesan yang SUDAH tersimpan (mis.
     // prompt user). Pesan draft tetap selamat karena persistMessage
     // me-resolve proyek SAAT persist dari storeProjectIdRef (live) —
@@ -1152,7 +1146,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     // handler di luar submit), perilaku DEFECT-1 di bawah tidak
     // berubah: proyek di-resolve SAAT persist dari storeProjectIdRef
     // (live), BUKAN dari closure storeProjectId.
-    // postAssistant menunggu gateWait (RAB 5–10 dtk) sebelum persist;
+    // postAssistant menunggu gateWait (RAB 5–20 dtk) sebelum persist;
     // selama await itu efek migrasi B5-3 bisa memindahkan convIdRef ke
     // percakapan proyek-sementara sementara closure ini masih mengikat
     // proyek lama (global) → appendMessage(tempConv, global) melempar
@@ -1590,12 +1584,30 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       // FASE 3 — draft nyata tersimpan → langkah generate-draft rencana
       // ditandai sukses (bukan diklaim dari teks pesan). Langkah
       // transfer tetap menunggu persetujuan eksplisit pengguna.
-      updateAgentPlan((p) => ({
-        ...p,
-        steps: p.steps.map((s) => (s.kind === 'generate-draft' && s.status !== 'succeeded'
-          ? { ...s, status: 'succeeded' as const, result: `Draft tersimpan: ${d.title} (v${d.version}).`, completedAt: new Date().toISOString() }
-          : s)),
-      }));
+      // PERBAIKAN 2026-11-28 (panel Rencana Tugas tidak update): draf
+      // tersimpan juga menutup DEPENDENSI generate-draft di titik yang
+      // sama — validasi rantai dari d.chainValidation yang sudah ada,
+      // dan kuesioner (succeeded bila kartu sempat tampil lalu spek
+      // terkumpul lewat chat; cancelled bila kartu tak pernah tampil).
+      // Tanpa ini draf ✓ sementara 2 langkah sebelumnya tetap ○.
+      // Helper-helper di bawah no-op pada langkah terminal — tidak
+      // pernah menimpa status final yang sudah ada.
+      updateAgentPlan((p) => {
+        let next = p;
+        if (d.chainValidation) next = markValidateStepCompleted(next, d.chainValidation);
+        const q = next.steps.find((s) => s.kind === 'collect-specs-questionnaire');
+        if (q && q.status === 'running') {
+          next = markQuestionnaireStepCompleted(next, 'Spek terkumpul lewat chat — kuesioner tidak dijawab lewat kartu.');
+        } else if (q && (q.status === 'planned' || q.status === 'ready')) {
+          next = markQuestionnaireStepBypassed(next);
+        }
+        return {
+          ...next,
+          steps: next.steps.map((s) => (s.kind === 'generate-draft' && s.status !== 'succeeded'
+            ? { ...s, status: 'succeeded' as const, result: `Draft tersimpan: ${d.title} (v${d.version}).`, completedAt: new Date().toISOString() }
+            : s)),
+        };
+      });
       return;
     }
     const err = structuredAiError('DRAFT_PERSISTENCE_FAILED');
@@ -1760,6 +1772,121 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     persistMessageScoped('assistant', content, scope);
   };
 
+  /* ---- Pacing balasan asisten lokal (program pacing Chat AI, 2026-11-28) ----
+   * postLocalAssistantPaced: SATU-SATUNYA jalan menampilkan balasan
+   * asisten yang lahir DI LUAR submit() — klik tombol aksi, jawaban
+   * kuesioner, ringkasan dokumen, hasil plan, pratinjau push. Isi
+   * balasannya SUDAH dihitung saat helper dipanggil (deterministik,
+   * lokal); yang di-pacing adalah PENAMPILANNYA: gelembung thinking
+   * tampil selama minimum-display per aiResponseTiming.ts, persis
+   * seperti gateWait/postAssistant di submit().
+   * - Tahap yang tampil adalah fase-fase pipeline NYATA dari
+   *   EXECUTION_STAGE_LABELS lewat stageSequenceForReply (bukan label
+   *   karangan, bukan progres persen): 'questionnaire'/'local' →
+   *   preparing → identifying-items → validating; 'rab' → rantai RAB
+   *   penuh (kuantitas → AHSP → harga → validasi). Tahap digilir
+   *   sepanjang minimum delay; wait-nya ADALAH pacing tampilan,
+   *   bukan penalaran model palsu.
+   * - Durasi: 'questionnaire'/'local' memakai minDelayFor(
+   *   classifyRequest(content, 'chat')) (2/2,5/4 dtk); 'rab' memakai
+   *   rabMinDelayMs(content) (kurva RAB 5–20 dtk dari besarnya hasil).
+   * - Eksekusi runtime sendiri (beginExecution + setActiveExec) supaya
+   *   tombol Berhenti bisa membatalkannya; signal-nya milik runtime,
+   *   bukan lifecycle komponen — unmount TIDAK PERNAH meng-abort-nya
+   *   (pola yang sama dengan submit): balasan yang resolve sesudah
+   *   unmount/switch tetap tersimpan ke percakapan ASAL lewat scope
+   *   yang ditangkap saat dipanggil, dan hanya tampil bila percakapan
+   *   itu masih tampil.
+   * - Batal: abort saat menunggu → balasan TIDAK ditempel dan TIDAK
+   *   dipersist; bila status record 'cancelled' (Berhenti eksplisit),
+   *   SATU catatan "Permintaan dibatalkan." ditulis (cermin
+   *   noteCancelledIfNeeded di submit — record berbeda, jadi tidak
+   *   pernah ganda dengan catatan submit). Disalip permintaan baru
+   *   (isCurrent() false, bukan cancel) → diam, tanpa catatan.
+   * - appendLocalAssistant tetap primitif sinkron untuk pemakaian yang
+   *   memang bukan balasan user-visible; semua situs balasan di bawah
+   *   memakai helper ini. */
+  type LocalReplyKind = 'questionnaire' | 'local' | 'rab';
+  interface PostLocalAssistantOptions {
+    actions?: ChatActionButton[];
+    scope?: SendScope | null;
+    kind?: LocalReplyKind;
+    questionnaire?: QuestionnairePayload;
+    quickActionResponse?: QuickActionDialogueData;
+    followUpSuggestions?: string[];
+    isError?: boolean;
+  }
+  const postLocalAssistantPaced = async (content: string, opts?: PostLocalAssistantOptions): Promise<boolean> => {
+    const kind = opts?.kind ?? 'local';
+    // Scope ditangkap SAAT dipanggil (S3-C F1): hasil yang tiba sesudah
+    // switch percakapan pulang ke percakapan asal, bukan yang tampil.
+    const rawScope = opts?.scope ?? (convIdRef.current ? { conversationId: convIdRef.current, projectId: storeProjectIdRef.current } : null);
+    const scope = rawScope ? resolveSendScope(rawScope) : null;
+    const conversationId = scope?.conversationId ?? convIdRef.current;
+    const projectId = scope?.projectId ?? storeProjectIdRef.current;
+    if (!conversationId) {
+      // Tanpa percakapan (belum siap) tidak ada eksekusi yang bisa
+      // dibuat — perilaku lama sinkron, tanpa pacing.
+      appendLocalAssistant(content, opts?.actions, scope ?? undefined);
+      return true;
+    }
+    const startedAt = Date.now();
+    const activity: AiActivity = kind === 'rab' ? 'rab' : 'chat';
+    const complexity = classifyRequest(content, activity);
+    const minMs = kind === 'rab' ? rabMinDelayMs(content) : minDelayFor(complexity);
+    const exec = beginExecution(conversationId, projectId);
+    const requestId = exec.record.requestId;
+    setActiveExec(exec.record);
+    setBusy(true);
+    setThinkingText(statusTextFor(complexity, activity));
+    const finishLocalExec = (outcome: 'completed' | 'failed' = 'completed') => {
+      finishExecution(requestId, outcome);
+      setActiveExec((prev) => (prev && prev.requestId === requestId ? getAnyActiveExecution(NON_CHAT_EXECUTION_PREFIXES) : prev));
+      if (!hasAnyActiveExecution(NON_CHAT_EXECUTION_PREFIXES)) setBusy(false);
+    };
+    const noteLocalCancelledIfNeeded = () => {
+      const rec = getExecution(requestId);
+      if (rec?.status !== 'cancelled') return;
+      const text = 'Permintaan dibatalkan.';
+      if (!scope || isScopeDisplayed(scope)) setMessages((prev) => [...prev, { role: 'assistant', content: text, ts: Date.now() }]);
+      persistMessageScoped('assistant', text, scope);
+    };
+    try {
+      const sequence = stageSequenceForReply(kind);
+      const firstStage = sequence[0];
+      if (firstStage) emitExecutionStage(requestId, firstStage);
+      for (let i = 1; i < sequence.length; i++) {
+        // Tunggu sampai irisan ke-i dari minimum, lalu pancarkan tahap
+        // berikutnya — tahap bergilir sepanjang minimum-display, dan
+        // abort di tengah irisan menolak seketika (bukan sesudah penuh).
+        await waitForMinimum(startedAt, Math.round((minMs * i) / sequence.length), Promise.resolve(), exec.signal);
+        if (!exec.isCurrent()) { finishLocalExec(); return false; }
+        const stage = sequence[i];
+        if (stage) emitExecutionStage(requestId, stage);
+      }
+      await waitForMinimum(startedAt, minMs, Promise.resolve(), exec.signal);
+      if (!exec.isCurrent()) { finishLocalExec(); return false; }
+    } catch (e) {
+      if (isAbortError(e)) { noteLocalCancelledIfNeeded(); finishLocalExec(); return false; }
+      // waitForMinimum di atas hanya bisa menolak lewat abort (hasilnya
+      // Promise.resolve()); apa pun selain itu adalah kegagalan pacing —
+      // balasan tidak ditempel, eksekusi ditutup sebagai gagal.
+      finishLocalExec('failed');
+      return false;
+    }
+    const replyDisplayed = !scope || isScopeDisplayed(scope);
+    // Reveal per kata (owner 2026-11-28): balasan lokal juga tampil
+    // kata per kata lewat beginStreamingReveal — bukan ditempel
+    // sekaligus. Urutan tetap gate → reveal: minimum-display di atas
+    // sudah selesai sebelum baris ini. Entry error (isError) dan
+    // jawaban kosong/reduced-motion tetap tampil-sekaligus lewat
+    // fallback di dalam helpernya.
+    if (replyDisplayed) beginStreamingReveal({ role: 'assistant', content, ts: Date.now(), actions: opts?.actions, questionnaire: opts?.questionnaire, quickActionResponse: opts?.quickActionResponse, followUpSuggestions: opts?.followUpSuggestions, isError: opts?.isError });
+    persistMessageScoped('assistant', content, scope);
+    finishLocalExec();
+    return true;
+  };
+
   /* ---- P6 — handler panel Review draft ----
    * Setiap aksi panel MENGUBAH draft + BERTAHAN: singleton diganti
    * lalu `persistActiveDraft` menulis record (pola keputusan koreksi
@@ -1819,7 +1946,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     const pending = pendingRevisionRef.current;
     if (!pending) return;
     const res = runRevisionActivation(pending);
-    appendLocalAssistant(res.message, res.actions);
+    void postLocalAssistantPaced(res.message, { actions: res.actions, kind: 'local' });
     setReviewTick((t) => t + 1);
   };
 
@@ -1827,22 +1954,23 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     const pending = pendingRevisionRef.current;
     if (!pending) return;
     pendingRevisionRef.current = null;
-    appendLocalAssistant(
+    void postLocalAssistantPaced(
       `Revisi dibatalkan — versi aktif tetap versi ${pending.baseVersion}, tidak berubah. Pratinjau dibuang.`,
+      { kind: 'local' },
     );
     setReviewTick((t) => t + 1);
   };
 
   const handleCompareVersionsFromPanel = (versionA: number, versionB: number): void => {
     if (!effProject) return;
-    appendLocalAssistant(compareStoredVersions(effProject.id, versionA, versionB));
+    void postLocalAssistantPaced(compareStoredVersions(effProject.id, versionA, versionB), { kind: 'local' });
   };
 
   const openReviewPanel = (): void => {
     setMenuOpen(false);
     const d = getLastUniversalDraft(effProject?.id);
     if (!d) {
-      appendLocalAssistant('Belum ada draft RAB aktif untuk ditinjau — susun draft dulu lewat chat (mis. "buatkan RAB rumah 120 m²"), lalu buka Review draft.');
+      void postLocalAssistantPaced('Belum ada draft RAB aktif untuk ditinjau — susun draft dulu lewat chat (mis. "buatkan RAB rumah 120 m²"), lalu buka Review draft.', { kind: 'local' });
       return;
     }
     setReviewOpen(true);
@@ -2248,9 +2376,9 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         { label: `Tolak koreksi QTO: ${p.description}`, action: { kind: 'qto-correction-reject', correctionId: p.id } },
       );
     }
-    appendLocalAssistant(
+    void postLocalAssistantPaced(
       formatDedFeedbackLines({ attachment: att, understanding, userDims: dims, conflicts, checks, proposals, priceReview }).join('\n'),
-      actions.length > 0 ? actions : undefined,
+      { actions: actions.length > 0 ? actions : undefined, kind: 'local' },
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [effProject, conversationReady]);
@@ -2331,10 +2459,8 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     setBusyPlanId(planId);
     try {
       const res = await executePlan(plan, buildOperationHost());
-      const entry: ChatEntry = { role: 'assistant', content: res.message, ts: Date.now() };
       const scope = scopeAtConfirm ? resolveSendScope(scopeAtConfirm) : null;
-      if (!scope || isScopeDisplayed(scope)) setMessages((prev) => [...prev, entry]);
-      persistMessageScoped('assistant', res.message, scope);
+      await postLocalAssistantPaced(res.message, { scope, kind: 'local' });
     } finally {
       setBusyPlanId(null);
       setPlanTick((t) => t + 1);
@@ -2692,14 +2818,11 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         const userEntry: ChatEntry = { role: 'user', content: msg, ts: Date.now() };
         setMessages((prev) => [...prev, userEntry]);
         persistMessage('user', userEntry.content);
-        const dialogueEntry: ChatEntry = {
-          role: 'assistant',
-          content: dialogue.message,
-          ts: Date.now(),
-          quickActionResponse: dialogue,
-        };
-        setMessages((prev) => [...prev, dialogueEntry]);
-        persistMessage('assistant', dialogue.message);
+        // Pacing (2026-11-28): dialog lokal juga balasan asisten — lewat
+        // gerbang minimum-display. postAssistant belum terdefinisi di
+        // titik ini (TDZ: timingStart/gateWait dideklarasikan di bawah),
+        // jadi memakai helper paced yang sama dengan balasan di luar submit.
+        void postLocalAssistantPaced(dialogue.message, { quickActionResponse: dialogue, kind: 'local' });
         return;
       }
     }
@@ -2726,8 +2849,10 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         setMessages((prev) => [...prev, userEntry]);
         persistMessage('user', userEntry.content);
         const acts = chipRes.actions && chipRes.actions.length > 0 ? chipRes.actions : undefined;
-        setMessages((prev) => [...prev, { role: 'assistant', content: chipRes.message, ts: Date.now(), actions: acts, questionnaire: chipRes.questionnaire }]);
-        persistMessage('assistant', chipRes.message);
+        // Pacing (2026-11-28): seperti dialog di atas — postAssistant
+        // belum terdefinisi di titik ini, jadi balasan chip dirutekan
+        // lewat helper paced (kurva chat: ini sapaan/intake, bukan tabel RAB).
+        void postLocalAssistantPaced(chipRes.message, { actions: acts, questionnaire: chipRes.questionnaire, kind: 'local' });
         persistActiveDraft('autosave');
         setAwaitingRabType(false);
         if (chipRes.awaitRabNeeds) setAwaitingNeeds(true);
@@ -2947,9 +3072,9 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     // provider, bukan sesudahnya); false = dibatalkan eksplisit atau
     // disalip permintaan yang lebih baru → hasil TIDAK ditampilkan.
     // Signal milik runtime: navigasi TIDAK membatalkan gerbang ini.
-    // RAB (owner 2026-10-27): minimum 5–10 detik dari BESARNYA HASIL,
+    // RAB (owner 2026-10-27, kurva 2026-11-28): minimum 5–20 detik dari BESARNYA HASIL,
     // bukan dari prompt — jadi gateWait menerima teks balasan dan
-    // menghitung rabMinDelayMs dari situ. Non-RAB tetap 1/2/3 detik.
+    // menghitung rabMinDelayMs dari situ. Non-RAB tetap 2/2,5/4 detik.
     const gateWait = async (resultText?: string): Promise<boolean> => {
       const h = ensureExec();
       try {
@@ -2983,7 +3108,12 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       const sendExec = exec;
       const sendScope = sendExec ? resolveSendScope({ conversationId: sendExec.record.conversationId, projectId: sendExec.record.projectId }) : undefined;
       const replyDisplayed = !sendScope || isScopeDisplayed(sendScope);
-      if (replyDisplayed) setMessages((prev) => [...prev, { role: 'assistant', content, ts: Date.now(), actions, questionnaire, planId }]);
+      // Reveal per kata (owner 2026-11-28): balasan deterministik/lokal
+      // juga tampil kata per kata lewat beginStreamingReveal — bukan
+      // ditempel sekaligus. Urutan tetap gate → reveal: gateWait di atas
+      // sudah selesai sebelum baris ini. Fallback tampil-sekaligus
+      // (error/kosong/reduced-motion) ada di dalam helpernya.
+      if (replyDisplayed) beginStreamingReveal({ role: 'assistant', content, ts: Date.now(), actions, questionnaire, planId });
       persistMessageScoped('assistant', content, sendScope);
       // FASE 3 — kartu kuesioner ditampilkan → langkah pengumpulan spek
       // rencana berjalan (menunggu jawaban pengguna, bukan sukses).
@@ -3057,8 +3187,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       const subRes = tryContinueRabSubtype(msg, effProject?.id ?? null);
       if (subRes) {
         const acts = subRes.actions && subRes.actions.length > 0 ? subRes.actions : undefined;
-        setMessages((prev) => [...prev, { role: 'assistant', content: subRes.message, ts: Date.now(), actions: acts }]);
-        persistMessage('assistant', subRes.message);
+        await postAssistant(subRes.message, acts);
         persistActiveDraft('autosave');
         setAwaitingSubtype(false);
         setBusy(false);
@@ -3077,8 +3206,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       const matRes = tryContinueRabMaterial(msg, effProject?.id ?? null);
       if (matRes) {
         const acts = matRes.actions && matRes.actions.length > 0 ? matRes.actions : undefined;
-        setMessages((prev) => [...prev, { role: 'assistant', content: matRes.message, ts: Date.now(), actions: acts }]);
-        persistMessage('assistant', matRes.message);
+        await postAssistant(matRes.message, acts);
         persistActiveDraft('autosave');
         setAwaitingMaterial(matRes.awaitRabMaterial === true);
         setBusy(false);
@@ -3133,8 +3261,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       const ctxRes = (foreignProjectCtx ? null : tryContinueProjectContext(msg, effProject?.id ?? null)) ?? (foreignIntake ? null : tryContinueUniversalContext(msg, effProject?.id ?? null));
       if (ctxRes) {
         const acts = ctxRes.actions && ctxRes.actions.length > 0 ? ctxRes.actions : undefined;
-        setMessages((prev) => [...prev, { role: 'assistant', content: ctxRes.message, ts: Date.now(), actions: acts, questionnaire: ctxRes.questionnaire }]);
-        persistMessage('assistant', ctxRes.message);
+        await postAssistant(ctxRes.message, acts, ctxRes.questionnaire);
         // GATE 1 (5A) — titik commit draft: generate via afirmasi di
         // cabang ini membangun draft di registry; tanpa autosave di sini
         // draft hanya hidup in-memory dan hilang saat reload (cabang
@@ -3250,7 +3377,10 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       try {
         if (navHit.mode === 'direct') {
           const navText = `Membuka ${navHit.entry.label}…`;
-          setMessages((prev) => [...prev, { role: 'assistant', content: navText, ts: Date.now() }]);
+          // Reveal per kata (owner 2026-11-28): konfirmasi navigasi
+          // juga lewat beginStreamingReveal (pesan 2–3 kata → reveal
+          // ~2 langkah). Navigasi langsung sesudahnya tetap jalan.
+          beginStreamingReveal({ role: 'assistant', content: navText, ts: Date.now() });
           persistMessage('assistant', navText);
           // F-06: perintah AHSP dengan kata kunci sisa → katalog sudah
           // terfilter (?q=) lewat parameter URL F-05, bukan katalog default.
@@ -3264,7 +3394,10 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
             label: `Buka ${c.label}`,
             action: { kind: 'nav-entry', entryId: c.id },
           }));
-          setMessages((prev) => [...prev, { role: 'assistant', content: navHit.message, ts: Date.now(), actions: acts }]);
+          // Reveal per kata (owner 2026-11-28): saran navigasi juga
+          // lewat beginStreamingReveal; chip aksi tampil sesudah
+          // reveal selesai (menempel di entry yang sama).
+          beginStreamingReveal({ role: 'assistant', content: navHit.message, ts: Date.now(), actions: acts });
           persistMessage('assistant', navHit.message);
         }
       } finally {
@@ -3492,10 +3625,10 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
               ? { conversationId: convIdRef.current, projectId: storeProjectIdRef.current }
               : null;
             void (async () => {
+              // Pacing (2026-11-28): ringkasan dokumen diposting sebagai
+              // balasan asisten lewat gerbang minimum-display, bukan instan.
               const post = (text: string) => {
-                const scope = scopeAtRequest ? resolveSendScope(scopeAtRequest) : null;
-                if (!scope || isScopeDisplayed(scope)) setMessages((prev) => [...prev, { role: 'assistant', content: text, ts: Date.now() }]);
-                persistMessageScoped('assistant', text, scope);
+                void postLocalAssistantPaced(text, { scope: scopeAtRequest, kind: 'local' });
               };
               if (!planAllowsAiFeature(balance.plan, 'ai-document')) { post(aiFeatureLockedMessage(balance.plan, 'ai-document')); return; }
               const doc = getDocFromLibrary(docId);
@@ -3549,9 +3682,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
                 else await exportProjectToExcel(project, company);
               } catch (err) {
                 const msg = `Gagal mengekspor ${format === 'pdf' ? 'PDF' : 'Excel'}: ${err instanceof Error ? err.message : 'kesalahan tidak dikenal'}. Coba lagi lewat menu Laporan.`;
-                const scope = scopeAtRequest ? resolveSendScope(scopeAtRequest) : null;
-                if (!scope || isScopeDisplayed(scope)) setMessages((prev) => [...prev, { role: 'assistant', content: msg, ts: Date.now() }]);
-                persistMessageScoped('assistant', msg, scope);
+                void postLocalAssistantPaced(msg, { scope: scopeAtRequest, kind: 'local' });
               }
             })();
           },
@@ -3735,7 +3866,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     try {
       // Provider berjalan PARALEL dengan timer minimum (dihitung sejak
       // kirim): hasil cepat menunggu sisa minimum, hasil lambat tidak
-      // ditambah delay. RAB: minimum 5–10 detik dari besarnya hasil
+      // ditambah delay. RAB: minimum 5–20 detik dari besarnya hasil
       // (waitForRabMinimum), bukan 3 detik complex.
       const planIdsBeforeSend = new Set(listPendingPlans().map((p) => p.id));
       // FASE 1 — konteks terstruktur ke builder kanonis: intake + draft
@@ -4128,20 +4259,9 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       const data: QuickActionDialogueData = sessionId.startsWith('qa_local_')
         ? { ...resp, canGoBack: false }
         : resp;
-      setMessages((prev) => [...prev, {
-        role: 'assistant',
-        content: data.message || '',
-        ts: Date.now(),
-        quickActionResponse: data,
-        followUpSuggestions: data.followUpSuggestions,
-      }]);
+      await postLocalAssistantPaced(data.message || '', { quickActionResponse: data, followUpSuggestions: data.followUpSuggestions, kind: 'local' });
     } catch (err: any) {
-      setMessages((prev) => [...prev, {
-        role: 'assistant',
-        content: 'Terjadi kendala pada dialog: ' + (err?.message || 'Gagal memproses'),
-        isError: true,
-        ts: Date.now(),
-      }]);
+      await postLocalAssistantPaced('Terjadi kendala pada dialog: ' + (err?.message || 'Gagal memproses'), { isError: true, kind: 'local' });
     } finally {
       setQaBusy(false);
     }
@@ -4155,10 +4275,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     setQaBusy(true);
     try {
       const resp = await quickActionService.goBack(sessionId);
-      setMessages((prev) => [...prev, {
-        role: 'assistant', content: resp.message || '', ts: Date.now(),
-        quickActionResponse: resp,
-      }]);
+      await postLocalAssistantPaced(resp.message || '', { quickActionResponse: resp, kind: 'local' });
     } catch (err) {
       console.warn('[Chat AI] QuickAction goBack error:', err);
     } finally {
@@ -4183,12 +4300,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     }
     try {
       const resp = await quickActionService.cancelSession(sessionId);
-      setMessages((prev) => [...prev, {
-        role: 'assistant',
-        content: resp.message || 'Sesi tindakan telah dibatalkan.',
-        ts: Date.now(),
-        followUpSuggestions: resp.followUpSuggestions,
-      }]);
+      await postLocalAssistantPaced(resp.message || 'Sesi tindakan telah dibatalkan.', { followUpSuggestions: resp.followUpSuggestions, kind: 'local' });
     } catch (err) {
       console.warn('[Chat AI] QuickAction cancel error:', err);
     }
@@ -4198,19 +4310,9 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     setQaBusy(true);
     try {
       const resp = await quickActionService.confirmSession(sessionId);
-      setMessages((prev) => [...prev, {
-        role: 'assistant',
-        content: resp.message,
-        ts: Date.now(),
-        followUpSuggestions: resp.followUpSuggestions,
-      }]);
+      await postLocalAssistantPaced(resp.message, { followUpSuggestions: resp.followUpSuggestions, kind: 'local' });
     } catch (err: any) {
-      setMessages((prev) => [...prev, {
-        role: 'assistant',
-        content: 'Gagal mengonfirmasi tindakan: ' + (err?.message || 'Terjadi kesalahan'),
-        isError: true,
-        ts: Date.now(),
-      }]);
+      await postLocalAssistantPaced('Gagal mengonfirmasi tindakan: ' + (err?.message || 'Terjadi kesalahan'), { isError: true, kind: 'local' });
     } finally {
       setQaBusy(false);
     }
@@ -4625,10 +4727,10 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
    * universal (pushUniversalToSpreadsheetPreview di bawah).
    */
   const pushDirectRabToSpreadsheetPreview = () => {
+    // Pacing (2026-11-28): pratinjau/konfirmasi push membawa hasil RAB —
+    // tampil lewat gerbang minimum-display kurva RAB (5–20 dtk), bukan instan.
     const appendMsg = (content: string, actions?: ChatActionButton[], isError = false) => {
-      const entry: ChatEntry = { role: 'assistant', content, ts: Date.now(), actions, isError };
-      setMessages((prev) => [...prev, entry]);
-      persistMessage('assistant', content);
+      void postLocalAssistantPaced(content, { actions, isError, kind: 'rab' });
     };
     const r = getLastDirectRab();
     if (!r) {
@@ -4696,10 +4798,10 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
    * gerbang approval di kepala handler ini.
    */
   const pushDirectRabToSpreadsheet = () => {
+    // Pacing (2026-11-28): pratinjau/konfirmasi push membawa hasil RAB —
+    // tampil lewat gerbang minimum-display kurva RAB (5–20 dtk), bukan instan.
     const appendMsg = (content: string, actions?: ChatActionButton[], isError = false) => {
-      const entry: ChatEntry = { role: 'assistant', content, ts: Date.now(), actions, isError };
-      setMessages((prev) => [...prev, entry]);
-      persistMessage('assistant', content);
+      void postLocalAssistantPaced(content, { actions, isError, kind: 'rab' });
     };
     const r = getLastDirectRab();
     if (!r) {
@@ -4954,10 +5056,10 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
    * MENULIS apa pun — penulisan hanya di confirmAnswerItemsPush.
    */
   const pushAnswerItemsToSpreadsheet = (msgIndex: number) => {
+    // Pacing (2026-11-28): pratinjau/konfirmasi push membawa hasil RAB —
+    // tampil lewat gerbang minimum-display kurva RAB (5–20 dtk), bukan instan.
     const appendMsg = (content: string, actions?: ChatActionButton[], isError = false) => {
-      const entry: ChatEntry = { role: 'assistant', content, ts: Date.now(), actions, isError };
-      setMessages((prev) => [...prev, entry]);
-      persistMessage('assistant', content);
+      void postLocalAssistantPaced(content, { actions, isError, kind: 'rab' });
     };
     const prep = prepareAnswerTransfer(msgIndex);
     if (prep.ok === 'silent') return;
@@ -4981,10 +5083,10 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
    * sidiknya cocok dengan pratinjau — tidak pernah nilai basi.
    */
   const confirmAnswerItemsPush = (msgIndex: number) => {
+    // Pacing (2026-11-28): pratinjau/konfirmasi push membawa hasil RAB —
+    // tampil lewat gerbang minimum-display kurva RAB (5–20 dtk), bukan instan.
     const appendMsg = (content: string, actions?: ChatActionButton[], isError = false) => {
-      const entry: ChatEntry = { role: 'assistant', content, ts: Date.now(), actions, isError };
-      setMessages((prev) => [...prev, entry]);
-      persistMessage('assistant', content);
+      void postLocalAssistantPaced(content, { actions, isError, kind: 'rab' });
     };
     const prep = prepareAnswerTransfer(msgIndex);
     if (prep.ok === 'silent') return;
@@ -5078,10 +5180,10 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
    * "Konfirmasi Transfer" (push-universal-confirm).
    */
   const pushUniversalToSpreadsheetPreview = () => {
+    // Pacing (2026-11-28): pratinjau/konfirmasi push membawa hasil RAB —
+    // tampil lewat gerbang minimum-display kurva RAB (5–20 dtk), bukan instan.
     const appendMsg = (content: string, actions?: ChatActionButton[], isError = false) => {
-      const entry: ChatEntry = { role: 'assistant', content, ts: Date.now(), actions, isError };
-      setMessages((prev) => [...prev, entry]);
-      persistMessage('assistant', content);
+      void postLocalAssistantPaced(content, { actions, isError, kind: 'rab' });
     };
     const d = getLastUniversalDraft(effProject?.id);
     if (!d) {
@@ -5157,10 +5259,10 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
    * berdasarkan kode+uraian dilewati dan dilaporkan.
    */
   const pushUniversalToSpreadsheet = () => {
+    // Pacing (2026-11-28): pratinjau/konfirmasi push membawa hasil RAB —
+    // tampil lewat gerbang minimum-display kurva RAB (5–20 dtk), bukan instan.
     const appendMsg = (content: string, actions?: ChatActionButton[], isError = false) => {
-      const entry: ChatEntry = { role: 'assistant', content, ts: Date.now(), actions, isError };
-      setMessages((prev) => [...prev, entry]);
-      persistMessage('assistant', content);
+      void postLocalAssistantPaced(content, { actions, isError, kind: 'rab' });
     };
     const d = getLastUniversalDraft(effProject?.id);
     if (!d) {
@@ -5471,15 +5573,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     if (res.ok && !res.questionnaire) {
       updateAgentPlan((p) => markQuestionnaireStepCompleted(p, 'Kuesioner spesifikasi dijawab — spek terkumpul.'));
     }
-    const entry: ChatEntry = {
-      role: 'assistant',
-      content: res.message,
-      ts: Date.now(),
-      actions: res.actions,
-      questionnaire: res.questionnaire,
-    };
-    setMessages((prev) => [...prev, entry]);
-    persistMessage('assistant', res.message);
+    void postLocalAssistantPaced(res.message, { actions: res.actions, questionnaire: res.questionnaire, kind: 'questionnaire' });
     setAwaitingConcept(res.awaitProjectConcept === true);
     persistActiveDraft('autosave');
   };
@@ -5507,11 +5601,11 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
             : 'change-spec';
       const res = answerBudgetDecision(choice);
       if (res) {
-        appendLocalAssistant(res.message, res.actions && res.actions.length > 0 ? res.actions : undefined);
+        void postLocalAssistantPaced(res.message, { actions: res.actions && res.actions.length > 0 ? res.actions : undefined, kind: 'local' });
         setAwaitingBudgetDecision(res.awaitBudgetDecision === true);
         if (res.ok) persistActiveDraft('autosave', 'autosave');
       } else {
-        appendLocalAssistant('Pertanyaan budget itu sudah tidak aktif (sudah dijawab atau kedaluwarsa) — jalankan ulang permintaan RAB-nya bila total masih melebihi anggaran.');
+        void postLocalAssistantPaced('Pertanyaan budget itu sudah tidak aktif (sudah dijawab atau kedaluwarsa) — jalankan ulang permintaan RAB-nya bila total masih melebihi anggaran.', { kind: 'local' });
       }
     } else if (btn.action.kind === 'push-universal-confirm') {
       pushUniversalToSpreadsheet();
@@ -5528,7 +5622,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       // cabangnya sendiri di bawah.
       const fullAiCap = authorizePushMutation('FULL_AI_COMPLETE');
       if (!fullAiCap.ok) {
-        appendLocalAssistant(fullAiCap.message);
+        void postLocalAssistantPaced(fullAiCap.message, { kind: 'local' });
         return;
       }
       // Lengkapi dengan Full AI (§5): completion async di luar registry
@@ -5556,14 +5650,13 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
             projectItems: projectSnapshot?.items ?? null,
           }, { target: budgetFullAiTarget });
           const scope = budgetFullAiScope ? resolveSendScope(budgetFullAiScope) : undefined;
-          appendLocalAssistant(res.message, res.actions, scope);
+          await postLocalAssistantPaced(res.message, { actions: res.actions, scope, kind: 'rab' });
           persistActiveDraft('autosave', 'autosave', scope?.conversationId);
         } catch (e) {
           const scope = budgetFullAiScope ? resolveSendScope(budgetFullAiScope) : undefined;
-          appendLocalAssistant(
+          await postLocalAssistantPaced(
             `Lengkapi dengan Full AI gagal: ${e instanceof Error ? e.message : 'kesalahan tak dikenal'} — draft parsial tetap berlaku, tidak ada harga yang dikarang.`,
-            undefined,
-            scope,
+            { scope, kind: 'local' },
           );
         } finally {
           // S3-C (F2): jangan mengosongkan busy bila eksekusi chat lain
@@ -5578,7 +5671,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       // gerbang yang sama dengan FULL_AI_COMPLETE.
       const undoCap = authorizePushMutation('FULL_AI_COMPLETE');
       if (!undoCap.ok) {
-        appendLocalAssistant(undoCap.message);
+        void postLocalAssistantPaced(undoCap.message, { kind: 'local' });
         return;
       }
       // P1-08 (H-12) — "Batalkan lengkapan": pulihkan snapshot
@@ -5586,7 +5679,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       // Autosave sesudah restore universal (pola yang sama dengan
       // completion) — tanpa ini versi terisi tetap tersimpan.
       const res = undoFullAiCompletion(btn.action.target);
-      appendLocalAssistant(res.message);
+      void postLocalAssistantPaced(res.message, { kind: 'local' });
       if (res.ok && btn.action.target === 'universal') persistActiveDraft('autosave', 'autosave');
     } else if (btn.action.kind === 'budget-full-ai-accept') {
       // Fast Track (P1-08 penuh, H-12) — "Terima lengkapan": terapkan
@@ -5596,11 +5689,11 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       // dengan undo) — tanpa ini klon terisi tidak tersimpan.
       const acceptCap = authorizePushMutation('FULL_AI_COMPLETE');
       if (!acceptCap.ok) {
-        appendLocalAssistant(acceptCap.message);
+        void postLocalAssistantPaced(acceptCap.message, { kind: 'local' });
         return;
       }
       const res = acceptFullAiCompletion(btn.action.target);
-      appendLocalAssistant(res.message, res.actions);
+      void postLocalAssistantPaced(res.message, { actions: res.actions, kind: 'local' });
       // D5: lengkapan yang diterima ternyata OVER → pertanyaan budget
       // aktif; pesan berikutnya dirutekan ke continueBudgetDecision.
       setAwaitingBudgetDecision(res.awaitBudgetDecision === true);
@@ -5610,35 +5703,38 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       // terisi tertunda (memori saja — draft live tidak berubah, tanpa
       // gerbang kapabilitas, tanpa autosave).
       const res = discardFullAiCompletion(btn.action.target);
-      appendLocalAssistant(res.message);
+      void postLocalAssistantPaced(res.message, { kind: 'local' });
     } else if (btn.action.kind === 'revision-confirm') {
       // GATE 3 (5C) — tombol = konfirmasi eksplisit aktivasi pratinjau.
       // Pratinjau hidup di memori sesi; tombol pada pesan lama (sesudah
       // reload / sesudah pratinjau diputuskan) menjawab jujur.
       const pending = pendingRevisionRef.current;
       if (!pending) {
-        appendLocalAssistant(
+        void postLocalAssistantPaced(
           'Pratinjau revisi ini sudah tidak aktif (sudah diaktifkan/dibatalkan, atau sesi dimuat ulang). Kirim ulang permintaan revisi bila masih diperlukan — versi aktif tidak berubah.',
+          { kind: 'local' },
         );
       } else {
         const res = runRevisionActivation(pending);
-        appendLocalAssistant(res.message, res.actions);
+        void postLocalAssistantPaced(res.message, { actions: res.actions, kind: 'local' });
       }
     } else if (btn.action.kind === 'revision-cancel') {
       const pending = pendingRevisionRef.current;
       if (!pending) {
-        appendLocalAssistant('Tidak ada pratinjau revisi yang menunggu — tidak ada yang dibatalkan. Versi aktif tidak berubah.');
+        void postLocalAssistantPaced('Tidak ada pratinjau revisi yang menunggu — tidak ada yang dibatalkan. Versi aktif tidak berubah.', { kind: 'local' });
       } else {
         pendingRevisionRef.current = null;
-        appendLocalAssistant(
+        void postLocalAssistantPaced(
           `Revisi dibatalkan — versi aktif tetap versi ${pending.baseVersion}, tidak berubah. Pratinjau dibuang.`,
+          { kind: 'local' },
         );
       }
     } else if (btn.action.kind === 'revision-history') {
-      appendLocalAssistant(
+      void postLocalAssistantPaced(
         effProject
           ? formatVersionHistoryMessage(effProject.id)
           : 'Tidak ada proyek aktif — riwayat versi tidak dapat ditampilkan.',
+        { kind: 'local' },
       );
     } else if (btn.action.kind === 'qto-correction-confirm' || btn.action.kind === 'qto-correction-reject') {
       // Fast Track §7 — QTO_CORRECTION adalah mutasi persisten cakupan
@@ -5646,7 +5742,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       // — keduanya mempersistenkan keputusan lewat saveDedAttachment.
       const qtoCap = authorizePushMutation('QTO_CORRECTION');
       if (!qtoCap.ok) {
-        appendLocalAssistant(qtoCap.message);
+        void postLocalAssistantPaced(qtoCap.message, { kind: 'local' });
         return;
       }
       // GATE 4 (5D) — konfirmasi/penolakan koreksi QTO HANYA via tombol
@@ -5679,11 +5775,11 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
             }
           : undefined;
       if (!effProject) {
-        appendLocalAssistant('Tidak ada proyek aktif — koreksi QTO tidak dapat diputuskan.');
+        void postLocalAssistantPaced('Tidak ada proyek aktif — koreksi QTO tidak dapat diputuskan.', { kind: 'local' });
       } else {
         const att = loadDedAttachment(effProject.id);
         if (!att) {
-          appendLocalAssistant('Lampiran DED proyek ini sudah tidak ada — koreksi QTO tidak dapat diputuskan. Kirim ulang DED dari halaman DED AI bila masih diperlukan.');
+          void postLocalAssistantPaced('Lampiran DED proyek ini sudah tidak ada — koreksi QTO tidak dapat diputuskan. Kirim ulang DED dari halaman DED AI bila masih diperlukan.', { kind: 'local' });
         } else {
           // Dimensi efektif (F9-QTO-1): dims TERSIMPAN di dedQto
           // diutamakan, dimensi hidup hanya fallback — usulan yang
@@ -5706,8 +5802,9 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
             : { checks: activeDraftForQto?.dedQto?.checks ?? [] };
           const proposal = pendingQtoCorrections(att, checks).find((p) => p.id === correctionId);
           if (!proposal) {
-            appendLocalAssistant(
+            void postLocalAssistantPaced(
               'Usulan koreksi QTO ini sudah tidak menunggu (sudah diputuskan, atau lampiran DED berubah sejak usulan dibuat). Tidak ada yang berubah.',
+              { kind: 'local' },
             );
           } else if (confirm && !qtoCorrectionMatchesDisplayed(displayedQtoValues, proposal)) {
             // A2 — nilai usulan BERUBAH sejak ditampilkan (dimensi /
@@ -5715,15 +5812,16 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
             // jangan terapkan nilai yang tidak pernah ditinjau
             // pengguna. Penolakan (bukan konfirmasi) tidak diperiksa —
             // menolak mempertahankan nilai DED apa pun yang terjadi.
-            appendLocalAssistant(
+            void postLocalAssistantPaced(
               `Usulan koreksi QTO "${proposal.description}" berubah sejak ditampilkan — nilai saat ini (${proposal.dedQuantity} ${proposal.dedUnit} → ${proposal.expectedQuantity} ${proposal.expectedUnit}) tidak lagi sama dengan nilai yang Anda tinjau. Tidak ada yang diterapkan. Minta usulan terbaru (kirim ulang DED / perbarui dimensi), lalu putuskan dari usulan baru itu.`,
+              { kind: 'local' },
             );
           } else {
             const updated = confirm
               ? applyQtoCorrection(att, proposal, checks)
               : rejectQtoCorrection(att, proposal);
             if (!updated.ok) {
-              appendLocalAssistant(`⚠️ ${updated.message} — tidak ada yang berubah.`);
+              void postLocalAssistantPaced(`⚠️ ${updated.message} — tidak ada yang berubah.`, { kind: 'local' });
             } else {
               saveDedAttachment(updated.attachment);
               // Segarkan dedQto pada draft aktif (bila ada) + persist:
@@ -5748,10 +5846,11 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
                 setLastUniversalDraft(nextDraft, effProject.id);
                 persistActiveDraft('autosave');
               }
-              appendLocalAssistant(
+              void postLocalAssistantPaced(
                 confirm
                   ? `✅ ${updated.message}\n\nKuantitas terkoreksi tercatat sebagai kuantitas Anda (sumber: USER_INPUT); nilai DED asli (${proposal.dedQuantity} ${proposal.dedUnit}) tetap tersimpan di keputusan koreksi dan dapat dibuktikan.`
                   : `ℹ️ ${updated.message}\n\nNilai DED dipertahankan — tidak ada yang berubah pada data DED.`,
+                { kind: 'local' },
               );
             }
           }
@@ -5767,7 +5866,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       const confirm = btn.action.kind === 'ded-spec-confirm';
       const preview = pendingDedSpecRevisionsRef.current.get(btn.action.previewId);
       if (!preview) {
-        appendLocalAssistant('Pratinjau revisi spek DED ini sudah tidak aktif (sudah diputuskan, atau sesi dimuat ulang). Spek DED tidak berubah.');
+        void postLocalAssistantPaced('Pratinjau revisi spek DED ini sudah tidak aktif (sudah diputuskan, atau sesi dimuat ulang). Spek DED tidak berubah.', { kind: 'local' });
       } else if (confirm) {
         // Fast Track §7 — DED_SPEC_REVISION (konfirmasi) adalah mutasi
         // persisten cakupan draft: hanya Admin (edit-estimate).
@@ -5776,12 +5875,12 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         // tidak menulis apa pun yang persisten.
         const dedCap = authorizePushMutation('DED_SPEC_REVISION');
         if (!dedCap.ok) {
-          appendLocalAssistant(dedCap.message);
+          void postLocalAssistantPaced(dedCap.message, { kind: 'local' });
         } else {
           pendingDedSpecRevisionsRef.current.delete(btn.action.previewId);
           const liveCtx = getUniversalContextState();
           if (!liveCtx || !effProject) {
-            appendLocalAssistant('Konteks intake proyek ini sudah tidak aktif — revisi spek DED tidak dapat diterapkan. Mulai percakapan proyek ini lagi, lalu kirim ulang perintah revisi.');
+            void postLocalAssistantPaced('Konteks intake proyek ini sudah tidak aktif — revisi spek DED tidak dapat diterapkan. Mulai percakapan proyek ini lagi, lalu kirim ulang perintah revisi.', { kind: 'local' });
           } else {
             // A2 — validasi pratinjau SEBELUM diterapkan: kedaluwarsa
             // (> 10 menit) / spek DED dasar sudah berganti / sudah
@@ -5797,20 +5896,22 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
                 : [];
             const validation = validateDedSpecRevisionConfirm(preview, currentDedSpecs);
             if (!validation.ok) {
-              appendLocalAssistant(validation.message);
+              void postLocalAssistantPaced(validation.message, { kind: 'local' });
             } else {
               const next = applyDedSpecRevision(liveCtx, preview);
               restoreUniversalContext(next, effProject.id);
-              appendLocalAssistant(
+              void postLocalAssistantPaced(
                 `✅ Revisi spek DED diterapkan: ${preview.label} ${preview.oldValue}${preview.oldUnit ? ` ${preview.oldUnit}` : ''} (DED) → **${preview.newValue}${preview.newUnit ? ` ${preview.newUnit}` : ''} (Anda)**.\n\nNilai DED asli tetap tersimpan di data DED (tidak ditimpa). Spek ini sekarang bersumber dari Anda ("percakapan") dan akan dipakai draft berikutnya.`,
+                { kind: 'local' },
               );
             }
           }
         }
       } else {
         pendingDedSpecRevisionsRef.current.delete(btn.action.previewId);
-        appendLocalAssistant(
+        void postLocalAssistantPaced(
           `Revisi spek DED dibatalkan — ${preview.label} tetap ${preview.oldValue}${preview.oldUnit ? ` ${preview.oldUnit}` : ''} (DED). Tidak ada yang berubah.`,
+          { kind: 'local' },
         );
       }
     } else if (btn.action.kind === 'navigate') {
@@ -5859,9 +5960,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         projectTotal: projectSnapshot ? projectSnapshot.totalDirect : projectTotal,
         projectItems: projectSnapshot?.items ?? null,
       });
-      const entry: ChatEntry = { role: 'assistant', content: res.message, ts: Date.now(), actions: res.actions };
-      setMessages((prev) => [...prev, entry]);
-      persistMessage('assistant', res.message);
+      void postLocalAssistantPaced(res.message, { actions: res.actions, kind: 'rab' });
     } else if (btn.action.intent === 'RAB_SUBTYPE_SELECT' || btn.action.intent === 'RAB_PATH_TEMPLATE') {
       // Klarifikasi subtipe (2026-10-23): klik subtipe → kartu jalur;
       // klik "Pakai template" pada kartu jalur → daftar template NYATA
@@ -5877,9 +5976,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         projectTotal: projectSnapshot ? projectSnapshot.totalDirect : projectTotal,
         projectItems: projectSnapshot?.items ?? null,
       });
-      const entry: ChatEntry = { role: 'assistant', content: res.message, ts: Date.now(), actions: res.actions };
-      setMessages((prev) => [...prev, entry]);
-      persistMessage('assistant', res.message);
+      void postLocalAssistantPaced(res.message, { actions: res.actions, kind: 'rab' });
     } else if (btn.action.intent === 'RAB_MATERIAL_SELECT') {
       // Gerbang klarifikasi material (2026-11-10): klik bahan → draft
       // disusun dari template bahan itu; klik "pakai asumsi" → draft
@@ -5894,9 +5991,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         projectTotal: projectSnapshot ? projectSnapshot.totalDirect : projectTotal,
         projectItems: projectSnapshot?.items ?? null,
       });
-      const entry: ChatEntry = { role: 'assistant', content: res.message, ts: Date.now(), actions: res.actions };
-      setMessages((prev) => [...prev, entry]);
-      persistMessage('assistant', res.message);
+      void postLocalAssistantPaced(res.message, { actions: res.actions, kind: 'rab' });
       setAwaitingMaterial(res.awaitRabMaterial === true);
     } else if (btn.action.intent === 'RAB_CONCEPT_SELECT' || btn.action.intent === 'RAB_PROJECT_PREVIEW'
       || btn.action.intent === 'RAB_INTAKE_OPTION' || btn.action.intent === 'RAB_INTAKE_GENERATE') {
@@ -5914,9 +6009,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         projectTotal: projectSnapshot ? projectSnapshot.totalDirect : projectTotal,
         projectItems: projectSnapshot?.items ?? null,
       });
-      const entry: ChatEntry = { role: 'assistant', content: res.message, ts: Date.now(), actions: res.actions, questionnaire: res.questionnaire };
-      setMessages((prev) => [...prev, entry]);
-      persistMessage('assistant', res.message);
+      void postLocalAssistantPaced(res.message, { actions: res.actions, questionnaire: res.questionnaire, kind: 'rab' });
       setAwaitingConcept(res.awaitProjectConcept === true);
       // D5: tombol (mis. pratinjau RAB) dapat mengembalikan tanya-balik
       // budget OVER — pesan berikutnya dirutekan ke continueBudgetDecision.
@@ -5945,9 +6038,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         forceAiRef.current = true;
         void submit(res.fullAiPrompt);
       } else if (res.message) {
-        const entry: ChatEntry = { role: 'assistant', content: res.message, ts: Date.now(), actions: res.actions };
-        setMessages((prev) => [...prev, entry]);
-        persistMessage('assistant', res.message);
+        void postLocalAssistantPaced(res.message, { actions: res.actions, kind: 'rab' });
         // D5: komposisi Full AI yang OVER mengembalikan tanya-balik
         // budget — pesan berikutnya dirutekan ke continueBudgetDecision.
         setAwaitingBudgetDecision(res.awaitBudgetDecision === true);
@@ -5970,9 +6061,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         projectTotal: projectSnapshot ? projectSnapshot.totalDirect : projectTotal,
         projectItems: projectSnapshot?.items ?? null,
       });
-      const entry: ChatEntry = { role: 'assistant', content: res.message, ts: Date.now(), actions: res.actions };
-      setMessages((prev) => [...prev, entry]);
-      persistMessage('assistant', res.message);
+      void postLocalAssistantPaced(res.message, { actions: res.actions, kind: 'local' });
       setAwaitingClarify(res.awaitClarify ?? null);
     } else if (btn.action.intent === 'CREATE_RAB_SUMMARY') {
       // Tombol pilihan jenis pekerjaan pada kartu klarifikasi topik 'rab':
@@ -5994,8 +6083,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         projectTotal: projectSnapshot ? projectSnapshot.totalDirect : projectTotal,
         projectItems: projectSnapshot?.items ?? null,
       });
-      setMessages((prev) => [...prev, { role: 'assistant', content: res.message, ts: Date.now() }]);
-      persistMessage('assistant', res.message);
+      void postLocalAssistantPaced(res.message, { kind: 'local' });
       if (res.awaitRabNeeds) setAwaitingNeeds(true);
     } else if (
       btn.action.intent === 'CREATE_PROJECT'
@@ -6093,8 +6181,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
           return true;
         },
       });
-      setMessages((prev) => [...prev, { role: 'assistant', content: res.message, ts: Date.now(), actions: res.actions }]);
-      persistMessage('assistant', res.message);
+      void postLocalAssistantPaced(res.message, { actions: res.actions, kind: 'local' });
     } else if (btn.action.intent === 'DELETE_PROJECT_CONFIRM') {
       // Konfirmasi hapus proyek (langkah 2, 2026-11-17, kelompok 1):
       // param tombol = id proyek. Tanpa cabang ini tombol jatuh ke
@@ -6114,8 +6201,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
           return true;
         },
       });
-      setMessages((prev) => [...prev, { role: 'assistant', content: res.message, ts: Date.now(), actions: res.actions }]);
-      persistMessage('assistant', res.message);
+      void postLocalAssistantPaced(res.message, { actions: res.actions, kind: 'local' });
     } else if (btn.action.intent === 'SET_PROJECT_PRICE_CONFIRM') {
       // Konfirmasi override harga proyek (langkah 2, Workstream B1):
       // param tombol = payload JSON pratinjau. Tanpa cabang ini tombol
@@ -6131,8 +6217,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         projectItems: projectSnapshot?.items ?? null,
         setProjectPriceOverride: applyProjectPriceOverride,
       });
-      setMessages((prev) => [...prev, { role: 'assistant', content: res.message, ts: Date.now(), actions: res.actions }]);
-      persistMessage('assistant', res.message);
+      void postLocalAssistantPaced(res.message, { actions: res.actions, kind: 'local' });
     } else if (btn.action.intent === 'OPEN_GAME_SPACE') {
       // Fast Track P1-17 — tombol "Buka Game Space" pada jawaban
       // GAME_INFO: klik tombol adalah aksi eksplisit pengguna, BUKAN
@@ -6150,8 +6235,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         projectTotal: projectSnapshot ? projectSnapshot.totalDirect : projectTotal,
         projectItems: projectSnapshot?.items ?? null,
       });
-      setMessages((prev) => [...prev, { role: 'assistant', content: res.message, ts: Date.now(), actions: res.actions }]);
-      persistMessage('assistant', res.message);
+      void postLocalAssistantPaced(res.message, { actions: res.actions, kind: 'local' });
       if (res.openGameSpace) setGameSpaceOpen(true);
     } else {
       // Fallback: kirim sebagai pesan
@@ -6722,7 +6806,12 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
                                   const text = exec.ok
                                     ? `Langkah "${s.description}" dijalankan lewat registry: ${exec.output ?? 'selesai.'}`
                                     : `Langkah "${s.description}" tidak dapat dijalankan lewat registry: ${exec.error ?? 'gagal.'}`;
-                                  setMessages((prev) => [...prev, { role: 'assistant', content: text, ts: Date.now() }]);
+                                  // Pacing (2026-11-28): hasil eksekusi langkah
+                                  // adalah balasan asisten — lewat gerbang
+                                  // minimum-display, bukan instan. (Perilaku
+                                  // persist ikut helper: pesan kini tersimpan
+                                  // seperti balasan asisten lain, bukan efemeral.)
+                                  await postLocalAssistantPaced(text, { kind: 'local' });
                                   // FASE 6 — hasil eksekusi registry
                                   // disinkronkan ke status langkah di
                                   // panel (bukan hanya pesan chat):
@@ -7144,10 +7233,10 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
                 <img src={MASCOT_PNG} alt="Ezrab" className="ezchat2-avatar thinking" />
                 <div className="ezchat2-bubble ai typing">
                   {/* Streaming Fase 2 (mockup-chat-ai-streaming): sparkle
-                      berdenyut + status tahap berkilau + penghitung detik
-                      berjalan. Tahapnya tetap label TAHAP NYATA dari event
-                      eksekusi (bukan karangan); detiknya waktu nyata sejak
-                      eksekusi dimulai. */}
+                      berdenyut + status tahap berkilau. Tahapnya tetap label
+                      TAHAP NYATA dari event eksekusi (bukan karangan).
+                      Owner 2026-11-27: teks waktu berjalan ("1,4 dtk")
+                      dihapus dari indikator ini. */}
                   <Sparkles size={15} className="ezstream-spark" aria-hidden="true" />
                   <span className="tdot" /><span className="tdot" /><span className="tdot" />
                   {/* P2: bila eksekusi runtime sudah melewati 'preparing',
@@ -7158,7 +7247,6 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
                       sinkron dan tidak punya event tahap — teks status
                       klasifikasi lama tetap dipakai (tanpa tahap karangan). */}
                   <span className="ezchat2-thinking ezstream-shimmer">{reportedActiveStage && reportedActiveStage !== 'preparing' ? EXECUTION_STAGE_LABELS[reportedActiveStage] : thinkingText}</span>
-                  <span className="ezstream-elapsed">{formatElapsedDtk(thinkingElapsedMs)}</span>
                   {/* Berhenti — pembatalan EKSPLISIT satu-satunya (lifecycle
                       fix 2026-11-12). Navigasi tidak pernah membatalkan;
                       tombol ini menghentikan request aktif ini saja. */}

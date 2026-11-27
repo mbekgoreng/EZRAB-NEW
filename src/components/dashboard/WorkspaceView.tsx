@@ -111,8 +111,6 @@ import { useProject } from '../../context/ProjectContext';
 import { useI18n } from '../../i18n';
 import type { SkillRole } from '../../ai-tools/skill-engine/types';
 import {
-  TRYOUT_ROLE_ORDER,
-  TRYOUT_ROLE_META,
   canTryout,
   tryoutMenuAccess,
   tryoutDeniedMenuMessage,
@@ -699,90 +697,11 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
             }
           }}
           onLogout={handleWorkspaceLogout}
+          tryoutRole={tryoutRole}
+          onTryoutRoleChange={handleTryoutRoleChange}
         />
         )}
 
-        {/* TRY-OUT 5 PERAN SERVER (mockup "Coba 5 Role") — chip ganti peran
-            di dalam aplikasi + banner mode lihat saja. Tampilan di browser
-            saja, bukan otorisasi server (lihat src/roles/serverRoleTryout.ts).
-            Diletakkan di sini (di bawah TopBar, di atas view menu) agar
-            terlihat di semua menu termasuk DED/Dokumen AI yang mengunci
-            scroll .pf-main. */}
-        <div
-          role="group"
-          aria-label="Ganti peran (try-out)"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: '8px',
-            padding: '10px 16px',
-            background: 'var(--ez-color-surface)',
-            borderBottom: '1px solid var(--ez-color-border)',
-            flexShrink: 0,
-          }}
-        >
-          <span style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--ez-color-text-muted)' }}>
-            Ganti peran:
-          </span>
-          {TRYOUT_ROLE_ORDER.map((role) => {
-            const meta = TRYOUT_ROLE_META[role];
-            const isActive = role === tryoutRole;
-            return (
-              <button
-                key={role}
-                type="button"
-                aria-pressed={isActive}
-                onClick={() => handleTryoutRoleChange(role)}
-                style={{
-                  minHeight: '2.25rem',
-                  fontFamily: 'inherit',
-                  fontSize: '13px',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  borderRadius: '999px',
-                  padding: '6px 14px',
-                  border: `1.5px solid ${isActive ? '#1D4ED8' : 'var(--ez-color-border)'}`,
-                  background: isActive ? '#1D4ED8' : 'var(--ez-color-surface)',
-                  color: isActive ? '#FFFFFF' : 'var(--ez-color-text-primary)',
-                }}
-              >
-                {meta.label}
-              </button>
-            );
-          })}
-          <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-            <span
-              aria-hidden="true"
-              style={{
-                width: '36px', height: '36px', borderRadius: '10px', flex: 'none',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontWeight: 800, fontSize: '13px', color: '#FFFFFF',
-                background: TRYOUT_ROLE_META[tryoutRole].color,
-              }}
-            >
-              {TRYOUT_ROLE_META[tryoutRole].initials}
-            </span>
-            <span style={{ lineHeight: 1.25 }}>
-              <span style={{ display: 'block', fontWeight: 700, fontSize: '13px' }}>
-                {TRYOUT_ROLE_META[tryoutRole].person}
-              </span>
-              <span
-                style={{
-                  display: 'inline-block', fontSize: '11px', fontWeight: 800,
-                  letterSpacing: '0.05em', textTransform: 'uppercase',
-                  padding: '2px 8px', borderRadius: '999px', color: '#FFFFFF',
-                  background: TRYOUT_ROLE_META[tryoutRole].color,
-                }}
-              >
-                {TRYOUT_ROLE_META[tryoutRole].label}
-              </span>
-            </span>
-            <span style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)' }}>
-              Peran demo ≠ otorisasi server.
-            </span>
-          </span>
-        </div>
         {tryoutAccess === 'read' && (
           <div
             role="status"

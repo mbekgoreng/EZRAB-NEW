@@ -1876,13 +1876,13 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
     secTitle: { fontSize: '17px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '2px 2px 4px', letterSpacing: '-0.01em', fontFamily: "'Plus Jakarta Sans', sans-serif" },
     secSub: { fontSize: '13px', fontWeight: 500, color: 'var(--ez-color-text-muted)', margin: '0 2px 14px' },
     catCard: { border: '1px solid #EEF1F6', background: 'var(--ez-color-surface)', borderRadius: '16px', padding: 0, overflow: 'hidden', textAlign: 'left', width: '100%', display: 'flex', flexDirection: 'column', cursor: 'pointer', boxShadow: '0 2px 10px rgba(23, 63, 110, 0.08)' },
-    art: { height: '110px', flex: '0 0 110px', display: 'block', background: 'linear-gradient(160deg, #E9EFF7 0%, #F8FAFC 70%)', overflow: 'hidden' },
+    art: { height: '55px', flex: '0 0 55px', display: 'block', background: 'linear-gradient(160deg, #E9EFF7 0%, #F8FAFC 70%)', overflow: 'hidden' },
     meta: { padding: '11px 13px 13px', display: 'block' },
     cardTitle: { margin: 0, fontSize: '15px', fontWeight: 800, lineHeight: 1.25, color: 'var(--ez-color-text-primary)', fontFamily: "'Plus Jakarta Sans', sans-serif" },
     cardDesc: { margin: '4px 0 0', fontSize: '12px', color: 'var(--ez-color-text-muted)', fontWeight: 500, lineHeight: 1.4 },
     countPill: { display: 'inline-block', marginTop: '8px', fontSize: '11px', fontWeight: 800, color: '#1D4ED8', background: '#E3EDFD', padding: '3px 8px', borderRadius: '999px' },
     itemRow: { display: 'flex', alignItems: 'center', gap: '13px', width: '100%', background: 'var(--ez-color-surface)', border: '1px solid #EEF1F6', borderRadius: '16px', padding: '10px 12px', textAlign: 'left', boxShadow: '0 2px 10px rgba(23, 63, 110, 0.08)', cursor: 'pointer' },
-    thumb: { width: '86px', height: '62px', flex: '0 0 86px', borderRadius: '11px', overflow: 'hidden', background: 'linear-gradient(160deg, #E9EFF7 0%, #F8FAFC 70%)', border: '1px solid #EEF1F6', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+    thumb: { width: '43px', height: '31px', flex: '0 0 43px', borderRadius: '11px', overflow: 'hidden', background: 'linear-gradient(160deg, #E9EFF7 0%, #F8FAFC 70%)', border: '1px solid #EEF1F6', display: 'flex', alignItems: 'center', justifyContent: 'center' },
     unitBadge: { fontSize: '11px', fontWeight: 800, color: '#1D4ED8', background: '#E3EDFD', borderRadius: '7px', padding: '4px 7px', whiteSpace: 'nowrap' },
     subCard: { display: 'flex', alignItems: 'center', gap: '13px', width: '100%', background: 'var(--ez-color-surface)', border: '1px solid #EEF1F6', borderRadius: '16px', padding: '12px', textAlign: 'left', cursor: 'pointer', boxShadow: '0 2px 10px rgba(23, 63, 110, 0.08)' },
     emptyNote: { textAlign: 'center', color: 'var(--ez-color-text-muted)', fontSize: '13.5px', fontWeight: 500, padding: '26px 10px' },
@@ -1905,9 +1905,9 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
           {opts.artSrc ? (
             <img src={opts.artSrc} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
           ) : ArtIcon ? (
-            <ArtIcon size={26} color="#1D4ED8" />
+            <ArtIcon size={13} color="#1D4ED8" />
           ) : (
-            <Calculator size={26} color="#1D4ED8" />
+            <Calculator size={13} color="#1D4ED8" />
           )}
         </span>
         <span style={{ flex: 1, minWidth: 0 }}>
@@ -1923,6 +1923,13 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
       </button>
     );
   };
+
+  // Owner 2026-11-27: rincian harga komponen di kalkulator volume
+  // disembunyikan dari tampilan (total harga tetap tampil). Ubah ke true
+  // untuk menampilkan kembali — perhitungan, sinkronisasi RAB/QTO, dan
+  // peringatan komponen belum berharga tidak berubah, hanya render yang
+  // disembunyikan.
+  const SHOW_COMPONENT_PRICE_BREAKDOWN = false;
 
   return (
     <div
@@ -2276,7 +2283,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                               <img src={art} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                             ) : (
                               <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-                                <DomainIcon size={40} color="#1D4ED8" />
+                                <DomainIcon size={20} color="#1D4ED8" />
                               </span>
                             )}
                           </span>
@@ -2355,7 +2362,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                           <img src={art} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                         ) : Icon ? (
                           <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-                            <Icon size={40} color="#1D4ED8" />
+                            <Icon size={20} color="#1D4ED8" />
                           </span>
                         ) : null}
                       </span>
@@ -2389,7 +2396,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                         {art ? (
                           <img src={art} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                         ) : (
-                          <Calculator size={26} color="#1D4ED8" />
+                          <Calculator size={13} color="#1D4ED8" />
                         )}
                       </span>
                       <span style={{ flex: 1, minWidth: 0 }}>
@@ -3382,7 +3389,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                   keyakinan INDEX_ONLY, dan penjelasan ekuivalensi sumber
                   tidak terlihat di titik keputusan harga. Tabel ini
                   menampilkannya apa adanya dari hasil resolver. */}
-              {priceBreakdown.allRows.length > 0 && (
+              {SHOW_COMPONENT_PRICE_BREAKDOWN && priceBreakdown.allRows.length > 0 && (
                 <div
                   className="ezrab-prov-wrap"
                   style={{

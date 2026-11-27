@@ -19,6 +19,7 @@ import {
   formatRupiah,
   formatElapsedDtk,
   prefersReducedMotion,
+  shouldRevealEntry,
 } from '../ai-tools/ezrab-ai/streamingReveal.js';
 
 let passed = 0;
@@ -169,6 +170,63 @@ check(
 );
 const longPara = buildRevealPlan(Array.from({ length: 300 }, (_, i) => `kata${i}`).join(' '));
 check('paragraf 300 kata dibatasi ~140 langkah kata', longPara.steps.filter((s) => s.kind === 'word').length <= 140);
+
+// ---------------------------------------------------------------------------
+// [7] Reveal per kata untuk SEMUA balasan (owner 2026-11-28)
+// ---------------------------------------------------------------------------
+console.log('\n[7] gerbang reveal dilonggarkan + draf RAB lokal');
+check('shouldRevealEntry: balasan lokal tanpa fromAi → reveal', shouldRevealEntry({ content: 'Siap, saya perbarui: pondasi bore pile.' }));
+check('shouldRevealEntry: balasan LLM (fromAi) tetap reveal', shouldRevealEntry({ content: 'Siap, ini drafnya.' }));
+check('shouldRevealEntry: jawaban gagal → tampil sekaligus', !shouldRevealEntry({ isError: true, content: 'AI gagal menjawab.' }));
+check('shouldRevealEntry: jawaban kosong → tampil sekaligus', !shouldRevealEntry({ content: '   ' }));
+check('shouldRevealEntry: content null → tampil sekaligus', !shouldRevealEntry({ content: null }));
+// Balasan lokal (kuesioner/konfirmasi): tampil kata per kata, bukan
+// sekaligus — langkah pertama adalah kata, ada banyak langkah kata.
+const localReply = buildRevealPlan('Siap, saya perbarui: jenis pondasi — Bore pile / tiang pancang; jenis atap — Dak beton; grade finishing — Premium.');
+check('balasan lokal: langkah pertama kata', localReply.steps[0]?.kind === 'word');
+check('balasan lokal: lebih dari satu langkah kata', localReply.steps.filter((s) => s.kind === 'word').length > 1);
+// Draf RAB lokal (formatDirectRabMessage): judul grup `**...**`
+// menempel tepat di atas tabel tanpa baris kosong — tabel HARUS tetap
+// dikenali sebagai blok tabel (tableHead + row), bukan tenggelam jadi
+// blok 'other' satu run. Total grand tampil sebagai baris paragraf
+// (`**Total RAB: Rp...**`), BUKAN baris tabel — jadi tidak ada
+// totalTick untuk draf lokal (didokumentasikan, bukan bug: tabel lokal
+// tidak punya baris total; nilai total tetap tampil verbatim).
+const LOCAL_DRAFT = [
+  'Siap — ini draf RAB Rumah Type 36 (1 lantai, luas total ±36 m²).',
+  '',
+  '**01 PERSIAPAN**',
+  '| No | Uraian | Volume | Satuan | Harga Satuan | Jumlah |',
+  '|---:|---|---:|---|---:|---:|',
+  '| 1 | Pembersihan Lapangan | 64 | m² | Rp8.500 (est.) | Rp544.000 |',
+  '| 2 | Bouwplank Kayu | 32 | m\u2019 | Rp28.500 (est.) | Rp912.000 |',
+  'Subtotal 01 PERSIAPAN: **Rp1.456.000**',
+  '',
+  '**Total RAB PARSIAL — BELUM FINAL: Rp1.456.000**',
+].join('\n');
+const localPlan = buildRevealPlan(LOCAL_DRAFT);
+eq(localPlan.blocks.length, 5, 'draf lokal: lima blok (intro, judul grup, tabel, subtotal, total)');
+eq(localPlan.blocks[0].kind, 'para', 'draf lokal: blok 0 paragraf intro');
+eq(localPlan.blocks[1].kind, 'para', 'draf lokal: judul grup jadi paragraf sendiri');
+eq(localPlan.blocks[2].kind, 'table', 'draf lokal: tabel dikenali meski menempel judul grup');
+eq(localPlan.blocks[3].kind, 'para', 'draf lokal: subtotal jadi paragraf');
+eq(localPlan.blocks[4].kind, 'para', 'draf lokal: total grand jadi paragraf');
+if (localPlan.blocks[2].kind === 'table') {
+  eq(localPlan.blocks[2].rows.length, 2, 'draf lokal: dua baris isi tabel');
+  eq(localPlan.blocks[2].totalRowIndex, null, 'draf lokal: tabel tanpa baris total');
+  eq(localPlan.blocks[2].totalValue, null, 'draf lokal: tanpa nilai total tabel');
+}
+const localKinds = localPlan.steps.map((s) => s.kind);
+check('draf lokal: ada tableHead', localKinds.includes('tableHead'));
+check('draf lokal: dua langkah row (baris per baris)', localKinds.filter((k) => k === 'row').length === 2);
+check('draf lokal: tanpa totalTick (total bukan baris tabel)', !localKinds.includes('totalTick'));
+const localDone = summarizeReveal(localPlan, localPlan.totalSteps);
+check('draf lokal selesai: semua baris tampil', localPlan.blocks[2].kind === 'table' && localDone[2].rowsShown === 2);
+check('draf lokal selesai: nilai total tampil verbatim', localDone[4].words.join(' ').includes('Rp1.456.000'));
+// Kontrol: baris pipa TANPA baris pemisah bukan awal tabel — tetap
+// di dalam run (perilaku lama, bukan tabel).
+const strayPipe = buildRevealPlan('Catatan: pakai | pipa | besi\nBaris biasa.');
+check('baris pipa tanpa pemisah bukan tabel', strayPipe.blocks.length === 1 && strayPipe.blocks[0].kind === 'other');
 
 // ---------------------------------------------------------------------------
 console.log(`\n${passed} lolos, ${failed} gagal`);

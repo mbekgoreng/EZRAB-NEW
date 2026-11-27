@@ -90,6 +90,8 @@ async function main() {
     deriveObjective,
     buildPlanForObjective,
     markQuestionnaireStepCompleted,
+    markValidateStepCompleted,
+    markQuestionnaireStepBypassed,
   } = await import('../ai-tools/ezrab-ai/agentOrchestrator');
   const { detectHandoffNeed } = await import('../ai-tools/ezrab-ai/magicHandoff');
   const { UnifiedConversationStore } = await import(
@@ -352,6 +354,134 @@ async function main() {
     // record adalah urusan store + view, bukan registry eksekusi.
     const runtime = read('src/ai-tools/ezrab-ai/executionRuntime.ts');
     assert(!runtime.includes('retryReplaces') && !runtime.includes('lastAiErrorMessageId'), 'executionRuntime.ts tidak boleh memuat logika F-6B klaster ini');
+  });
+
+  /* ============ 6. RENCANA TUGAS — draf tersimpan menutup dependensi ============ */
+  /* PERBAIKAN 2026-11-28 (panel Rencana Tugas tidak update): draf ✓
+   * sementara kuesioner & validasi masih ○ — persistActiveDraft kini
+   * menutup dependensi generate-draft di titik yang sama. */
+
+  // Fixture ChainValidation lolos-penuh (6/6): semua spek terpakai,
+  // semua volume OK, harga lengkap, anggaran di bawah cap, tanpa
+  // pilihan ambigu / item asing.
+  const cleanValidation = (): Record<string, unknown> => ({
+    specCoverage: [
+      { key: 'pool-type', label: 'Tipe kolam', status: 'USED', usedBy: ['item "Kolam" memakai skimmer sesuai permintaan'] },
+      { key: 'pool-finish', label: 'Finishing kolam', status: 'USED', usedBy: ['item "Finishing" memakai keramik sesuai permintaan'] },
+    ],
+    itemLinks: [
+      { itemId: 'i1', description: 'Galian tanah kolam', basis: 'USER_DIMENSION', basisDetail: '8 x 4 x 1,5 m' },
+    ],
+    volumeChecks: [
+      { itemId: 'i1', description: 'Galian tanah kolam', verdict: 'OK', detail: 'volume dari dimensi pengguna' },
+    ],
+    priceChecks: { resolved: 1, unresolved: 0, substituted: 0 },
+    budget: { cap: 300000000, total: 100000000, verdict: 'UNDER', diff: -200000000 },
+    ambiguousPicks: [],
+    foreignItems: [],
+    materialMismatches: [],
+  });
+  const rabPlan = () => buildPlanForObjective(
+    deriveObjective('buatkan rab kolam renang 8x4 meter', 'CREATE_RAB_DIRECT'),
+    { userId: null, projectId: PROJECT, conversationId: 'conv-v' },
+  );
+
+  await check('V-01 markValidateStepCompleted: validasi lolos-penuh → succeeded + "6/6 butir lolos"', () => {
+    const plan = rabPlan();
+    const next = markValidateStepCompleted(plan, cleanValidation());
+    const step = next.steps.find((s: { kind: string }) => s.kind === 'validate-spec-chain');
+    assert(step.status === 'succeeded', `status harus succeeded, dapat ${step.status}`);
+    assert(step.result === 'Validasi rantai spek: 6/6 butir lolos.', `result harus "6/6 butir lolos", dapat ${step.result}`);
+    assert(typeof step.completedAt === 'string' && step.completedAt.length > 0, 'completedAt harus terisi');
+    assert(step.error === null, 'error harus bersih');
+    const others = next.steps.filter((s: { kind: string }) => s.kind !== 'validate-spec-chain');
+    assert(others.every((s: { status: string }) => s.status !== 'succeeded' || s.kind === 'understand-objective'), 'langkah lain tidak ikut berubah');
+  });
+
+  await check('V-02 markValidateStepCompleted: sebagian gagal → succeeded + hitungan jujur + nama butir gagal', () => {
+    const partial = cleanValidation();
+    partial.priceChecks = { resolved: 0, unresolved: 2, substituted: 0 };
+    partial.budget = { cap: 50000000, total: 100000000, verdict: 'OVER', diff: 50000000 };
+    partial.ambiguousPicks = [{ scope: 'finishing', chosen: 'Keramik', candidates: ['Mozaik'], reason: 'skor selisih tipis' }];
+    const next = markValidateStepCompleted(rabPlan(), partial);
+    const step = next.steps.find((s: { kind: string }) => s.kind === 'validate-spec-chain');
+    assert(step.status === 'succeeded', `status tetap succeeded (validasi dijalankan), dapat ${step.status}`);
+    assert(
+      step.result === 'Validasi rantai spek: 3/6 butir lolos — belum lolos: harga, anggaran, pilihan ambigu.',
+      `result harus menyebut 3/6 + butir gagal, dapat ${step.result}`,
+    );
+  });
+
+  await check('V-03 markValidateStepCompleted: no-op tanpa data / tanpa langkah / langkah terminal', () => {
+    const plan = rabPlan();
+    assert(markValidateStepCompleted(plan, null) === plan, 'tanpa chainValidation harus no-op (objek sama)');
+    assert(markValidateStepCompleted(plan, undefined) === plan, 'tanpa chainValidation (undefined) harus no-op (objek sama)');
+    const greeting = buildPlanForObjective(deriveObjective('halo', 'GREETING'), { userId: null, projectId: PROJECT, conversationId: 'conv-v2' });
+    assert(!greeting.steps.some((s: { kind: string }) => s.kind === 'validate-spec-chain'), 'rencana greeting tidak punya langkah validasi');
+    assert(markValidateStepCompleted(greeting, cleanValidation()) === greeting, 'tanpa langkah validasi harus no-op (objek sama)');
+    const done = {
+      ...plan,
+      steps: plan.steps.map((s: { kind: string }) =>
+        s.kind === 'validate-spec-chain'
+          ? { ...s, status: 'succeeded', completedAt: '2026-11-28T00:00:00.000Z', result: 'lama' }
+          : s,
+      ),
+    };
+    const kept = markValidateStepCompleted(done, cleanValidation());
+    const step = kept.steps.find((s: { kind: string }) => s.kind === 'validate-spec-chain');
+    assert(step.completedAt === '2026-11-28T00:00:00.000Z', 'completedAt terminal tidak boleh ditimpa');
+    assert(step.result === 'lama', 'result terminal tidak boleh ditimpa');
+  });
+
+  await check('V-04 markQuestionnaireStepBypassed: planned/ready → cancelled jujur; running/terminal → no-op', () => {
+    const planned = markQuestionnaireStepBypassed(rabPlan());
+    const step = planned.steps.find((s: { kind: string }) => s.kind === 'collect-specs-questionnaire');
+    assert(step.status === 'cancelled', `planned harus jadi cancelled, dapat ${step.status}`);
+    assert(step.result === 'Spek terkumpul lewat chat — kuesioner tidak ditampilkan.', `result harus kalimat bypass, dapat ${step.result}`);
+    assert(typeof step.completedAt === 'string' && step.completedAt.length > 0, 'completedAt harus terisi');
+    const ready = {
+      ...rabPlan(),
+      steps: rabPlan().steps.map((s: { kind: string }) => (s.kind === 'collect-specs-questionnaire' ? { ...s, status: 'ready' } : s)),
+    };
+    const cancelled = markQuestionnaireStepBypassed(ready);
+    assert(cancelled.steps.find((s: { kind: string }) => s.kind === 'collect-specs-questionnaire').status === 'cancelled', 'ready juga harus jadi cancelled');
+    // Kartu SUDAH tampil (running) bukan ranah helper ini — no-op agar
+    // tidak berbohong soal kartu yang tampil.
+    const running = {
+      ...rabPlan(),
+      steps: rabPlan().steps.map((s: { kind: string }) =>
+        s.kind === 'collect-specs-questionnaire' ? { ...s, status: 'running', startedAt: new Date().toISOString() } : s,
+      ),
+    };
+    assert(markQuestionnaireStepBypassed(running) === running, 'running harus no-op (objek sama)');
+    const done = {
+      ...rabPlan(),
+      steps: rabPlan().steps.map((s: { kind: string }) =>
+        s.kind === 'collect-specs-questionnaire' ? { ...s, status: 'succeeded', completedAt: '2026-11-28T00:00:00.000Z', result: 'lama' } : s,
+      ),
+    };
+    const kept = markQuestionnaireStepBypassed(done);
+    const keptStep = kept.steps.find((s: { kind: string }) => s.kind === 'collect-specs-questionnaire');
+    assert(keptStep.result === 'lama', 'result terminal tidak boleh ditimpa');
+    const greeting = buildPlanForObjective(deriveObjective('halo', 'GREETING'), { userId: null, projectId: PROJECT, conversationId: 'conv-v3' });
+    assert(markQuestionnaireStepBypassed(greeting) === greeting, 'tanpa langkah kuesioner harus no-op (objek sama)');
+  });
+
+  await check('V-05 view: persistActiveDraft menutup dependensi generate-draft di titik yang sama', () => {
+    assert(orch.includes('export function markValidateStepCompleted'), 'helper validasi harus ada di agentOrchestrator.ts');
+    assert(orch.includes('export function markQuestionnaireStepBypassed'), 'helper bypass kuesioner harus ada di agentOrchestrator.ts');
+    assert(view.includes('markValidateStepCompleted,'), 'view harus mengimpor markValidateStepCompleted');
+    assert(view.includes('markQuestionnaireStepBypassed,'), 'view harus mengimpor markQuestionnaireStepBypassed');
+    const idxPersist = view.indexOf('const persistActiveDraft');
+    const idxValidate = view.indexOf('markValidateStepCompleted(next, d.chainValidation)');
+    assert(idxPersist !== -1 && idxValidate > idxPersist, 'persistActiveDraft harus memanggil markValidateStepCompleted');
+    assert(idxValidate - idxPersist < 6000, 'pemanggilan validasi harus di dalam persistActiveDraft');
+    const idxRunning = view.indexOf("markQuestionnaireStepCompleted(next, 'Spek terkumpul lewat chat — kuesioner tidak dijawab lewat kartu.')");
+    assert(idxRunning > idxPersist, 'kartu tampil (running) harus ditutup succeeded lewat chat');
+    const idxBypass = view.indexOf('markQuestionnaireStepBypassed(next)');
+    assert(idxBypass > idxPersist, 'kartu tak tampil (planned/ready) harus ditutup cancelled');
+    const idxDraft = view.indexOf("Draft tersimpan: ${d.title} (v${d.version}).");
+    assert(idxDraft > idxValidate && idxDraft > idxBypass, 'generate-draft tetap ditandai di callback yang sama');
   });
 
   console.log(`\nchatPerbaikanSemuaA: ${passed} passed, ${failed} failed`);

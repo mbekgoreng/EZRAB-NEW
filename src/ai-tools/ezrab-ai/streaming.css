@@ -27,16 +27,6 @@
   to { background-position: -220% 0; }
 }
 
-/* Penghitung detik berjalan ("0,6 dtk"). */
-.ezstream-elapsed {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 11px;
-  color: var(--ez-color-text-muted, #64748B);
-  font-weight: 500;
-  white-space: nowrap;
-  flex: none;
-}
-
 /* Kursor berkedip di ujung jawaban yang sedang mengalir. */
 .ezstream-cursor {
   display: inline-block;

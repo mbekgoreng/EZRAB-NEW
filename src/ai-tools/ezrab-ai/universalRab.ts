@@ -2003,6 +2003,248 @@ export function overBudgetDecision(draft: UniversalDraft): OverBudgetDecision | 
   };
 }
 
+/**
+ * D5-lanjutan (2026-11-28, perintah owner): draf yang dibatasi budget
+ * MAKSIMUM — tahap/fase yang benar-benar muat di anggaran, sisanya
+ * dinyatakan belum teranggarkan (bukan dipotong diam-diam).
+ *
+ * ATURAN PEMILIHAN (deterministik, satu kalimat): paket struktural
+ * (persiapan, galian, pondasi, struktur) didahulukan sesuai urutan
+ * paket draft, lalu item diambil berurutan selama total berharga
+ * tetap ≤ cap — item tidak pernah dipotong sebagian dan harga tidak
+ * pernah diturunkan.
+ *
+ * Detail aturan:
+ * - Urutan paket: draft sendiri TIDAK selalu mengurutkan struktur
+ *   lebih dulu (kasus villa owner: part "Finishing & Interior" datang
+ *   sebelum "Gedung & Bangunan"), jadi paket diberi peringkat
+ *   struktural lewat kata kunci pada label scope / nama template /
+ *   uraian itemnya (batas kata `\b` agar "Substruktur" tidak
+ *   terhitung "struktur"); paket peringkat 0 dulu, lalu peringkat 1,
+ *   masing-masing tetap dalam urutan aslinya (stable sort).
+ * - Rakus berawalan (prefix-greedy) atas item BERHARGA dalam urutan
+ *   itu: item ditambahkan hanya bila total berjalan + jumlahnya
+ *   tetap ≤ cap; begitu satu item berharga akan melampaui cap,
+ *   pemilihan BERHENTI — item murah sesudahnya TIDAK dilompati
+ *   (tidak ada skip-and-continue), karena tahap yang terpotong di
+ *   tengah bukan tahap yang utuh.
+ * - Item BELUM BERHARGA tidak pernah masuk total mana pun (harganya
+ *   tetap null, tampil "Harga belum tersedia"). Item belum berharga
+ *   hanya ikut bila paketnya SUDAH termasuk — yaitu paket itu punya
+ *   ≥1 item berharga yang terpilih (ditentukan dalam pass kedua,
+ *   sehingga posisinya di dalam paket tidak penting, termasuk bila
+ *   ia muncul sebelum item berharga pertama paket itu). Paket tanpa
+ *   item berharga terpilih tidak menyumbang item belum berharga.
+ * - `included`/`excluded` dikembalikan dalam URUTAN DRAF ASLI (bukan
+ *   urutan peringkat) agar pesan + konsumen lain membaca draf seperti
+ *   semula.
+ * - null bila: tidak ada cap, cap ≤ 0 / bukan angka hingga, verdict
+ *   bukan OVER (UNDER / total == cap / tanpa budget — "semuanya muat"
+ *   adalah kasus UNDER, bukan proposal terpotong).
+ * - Fungsi ini MURNI: tidak mengubah draft, tidak mengarang harga.
+ */
+export interface WithinBudgetProposal {
+  included: DraftItem[];
+  excluded: DraftItem[];
+  includedTotal: number;
+  excludedPricedTotal: number;
+  unpricedIncludedCount: number;
+  unpricedExcludedCount: number;
+  fullTotal: number;
+  cap: number;
+  coveragePct: number;
+  remaining: number;
+}
+
+/** Kata kunci paket struktural (batas kata — "Substruktur" ≠ "struktur"). */
+const STRUCTURAL_SECTION_RE =
+  /\b(persiapan|galian|pondasi|fondasi|struktur|beton|kolom|balok|sloof|footplat|pancang|tiang|bowplank|urugan|retaining|penahan|dewatering|bored|pile|plat|pembersihan|tanah|pemadatan)\b/i;
+
+function partIsStructuralPriority(part: DraftPart): boolean {
+  if (STRUCTURAL_SECTION_RE.test(part.scope.label)) return true;
+  if (STRUCTURAL_SECTION_RE.test(part.template.name)) return true;
+  return part.generation.items.some((it) => STRUCTURAL_SECTION_RE.test(it.description));
+}
+
+export function selectWithinBudgetScope(draft: UniversalDraft): WithinBudgetProposal | null {
+  const decision = overBudgetDecision(draft);
+  const cap = draft.spec.budgetCap ?? null;
+  if (decision == null || cap == null || !Number.isFinite(cap) || cap <= 0) return null;
+  const fullTotal = decision.total;
+
+  // Kelompokkan item efektif per part TANPA menduplikasi logika
+  // effectiveItems: daftar datar itu adalah gabungan per-part dalam
+  // urutan part (item yang dihapus dilewati), jadi iris berdasarkan
+  // jumlah item efektif tiap part.
+  const flat = effectiveItems(draft);
+  const perPart: DraftItem[][] = [];
+  let cursor = 0;
+  for (const part of draft.parts) {
+    const count = part.generation.items.filter(
+      (it) => !part.removedKeys.includes(itemKey(it)),
+    ).length;
+    perPart.push(flat.slice(cursor, cursor + count));
+    cursor += count;
+  }
+  // Urutan pemilihan: paket struktural dulu, lalu sisanya — stabil
+  // dalam urutan draft masing-masing.
+  const partOrder = draft.parts
+    .map((part, index) => ({ index, structural: partIsStructuralPriority(part) }))
+    .sort((a, b) => (a.structural ? 0 : 1) - (b.structural ? 0 : 1) || a.index - b.index)
+    .map((x) => x.index);
+  const ordered: Array<{ item: DraftItem; partIndex: number; flatIndex: number }> = [];
+  {
+    let flatIndex = 0;
+    const flatIndexOfPart = new Map<number, number>();
+    for (let pi = 0; pi < draft.parts.length; pi++) {
+      flatIndexOfPart.set(pi, flatIndex);
+      flatIndex += perPart[pi].length;
+    }
+    for (const pi of partOrder) {
+      perPart[pi].forEach((item, j) => {
+        ordered.push({ item, partIndex: pi, flatIndex: (flatIndexOfPart.get(pi) ?? 0) + j });
+      });
+    }
+  }
+
+  // Pass 1 — rakus berawalan atas item berharga; berhenti pada item
+  // pertama yang akan melampaui cap.
+  const includedSet = new Set<DraftItem>();
+  const includedPartIndexes = new Set<number>();
+  let includedTotal = 0;
+  for (const { item, partIndex } of ordered) {
+    const amount = pricedAmount(item);
+    if (amount == null) continue; // belum berharga — pass 2
+    if (includedTotal + amount > cap) break;
+    includedSet.add(item);
+    includedPartIndexes.add(partIndex);
+    includedTotal += amount;
+  }
+  // Pass 2 — item belum berharga hanya bila paketnya sudah termasuk.
+  let unpricedIncludedCount = 0;
+  for (const { item, partIndex } of ordered) {
+    if (pricedAmount(item) != null) continue;
+    if (!includedPartIndexes.has(partIndex)) continue;
+    if (includedSet.has(item)) continue;
+    includedSet.add(item);
+    unpricedIncludedCount++;
+  }
+
+  // Kembalikan dalam urutan draf asli.
+  const byFlatIndex = [...ordered].sort((a, b) => a.flatIndex - b.flatIndex);
+  const included: DraftItem[] = [];
+  const excluded: DraftItem[] = [];
+  let excludedPricedTotal = 0;
+  let unpricedExcludedCount = 0;
+  for (const { item } of byFlatIndex) {
+    if (includedSet.has(item)) {
+      included.push(item);
+    } else {
+      excluded.push(item);
+      const amount = pricedAmount(item);
+      if (amount == null) unpricedExcludedCount++;
+      else excludedPricedTotal += amount;
+    }
+  }
+  return {
+    included,
+    excluded,
+    includedTotal,
+    excludedPricedTotal,
+    unpricedIncludedCount,
+    unpricedExcludedCount,
+    fullTotal,
+    cap,
+    coveragePct: fullTotal > 0 ? (includedTotal / fullTotal) * 100 : 0,
+    remaining: fullTotal - includedTotal,
+  };
+}
+
+/** Satu baris tabel item — cermin baris `formatUniversalDraftMessage`
+ *  (header, "Harga belum tersedia", label status, sufiks AHSP sama). */
+function withinBudgetItemRow(no: number, it: DraftItem): string {
+  const st = displayPriceStatus(it);
+  const valid = isPriceValidForTotal(it);
+  const price = !valid ? 'Harga belum tersedia' : `${formatRupiah(it.unitPrice as number)} [${st.label}]`;
+  const amt = !valid ? '—' : formatRupiah(it.volume * (it.unitPrice as number));
+  const ahspSuffix = it.ahspCode ? ` (AHSP: ${it.ahspCode})` : '';
+  return `| ${no} | ${it.description}${ahspSuffix} | ${fmtNum(it.volume)} | ${it.unit} | ${price} | ${amt} |`;
+}
+
+/**
+ * D5-lanjutan (2026-11-28) — render blok draf yang dibatasi budget
+ * dari `selectWithinBudgetScope`. Tidak mengarang harga: item belum
+ * berharga tetap "Harga belum tersedia" dan tidak masuk total mana
+ * pun. `decision` dipakai untuk kelipatan anggaran + catatan
+ * SEMENTARA (total PARSIAL) — angka-angka proposal sendiri yang
+ * menjadi sumber subtotal/selisih.
+ */
+export function formatWithinBudgetProposal(proposal: WithinBudgetProposal, decision: OverBudgetDecision): string {
+  const { included, excluded, includedTotal, cap, fullTotal, coveragePct, remaining } = proposal;
+  const lines: string[] = [];
+  lines.push(`**Tahap 1 — sesuai budget ${formatRupiah(cap)}**`);
+  lines.push(
+    'Aturan pemilihan: tahap persiapan, pondasi, dan struktur diambil lebih dulu sesuai urutan paket draft, lalu item ditambahkan berurutan selama totalnya tetap dalam budget — item tidak pernah dipotong sebagian dan harga tidak pernah diturunkan.',
+  );
+  if (included.length === 0) {
+    const blocker = excluded.find((it) => pricedAmount(it) != null);
+    lines.push(
+      `Tidak ada satu tahap lengkap pun yang muat dalam budget ${formatRupiah(cap)} — ` +
+      (blocker
+        ? `bahkan item pertama yang harus dikerjakan, ${blocker.description} (${formatRupiah(pricedAmount(blocker) as number)}), sudah melebihi anggaran, sehingga tidak ada item yang bisa dikerjakan sebagian.`
+        : 'bahkan item pertama yang harus dikerjakan sudah melebihi anggaran, sehingga tidak ada item yang bisa dikerjakan sebagian.'),
+    );
+  } else {
+    // Item termasuk — dikelompokkan per scope seperti pesan draft,
+    // dalam urutan kemunculan.
+    const groups = new Map<string, DraftItem[]>();
+    for (const it of included) {
+      const key = it.__partScope;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)!.push(it);
+    }
+    let no = 0;
+    for (const [groupName, groupItems] of groups) {
+      let subtotal = 0;
+      let groupUnpriced = 0;
+      lines.push(`**${groupName}**`);
+      lines.push('| No | Uraian | Volume | Satuan | Harga Satuan | Jumlah |');
+      lines.push('|---:|---|---:|---|---:|---:|');
+      for (const it of groupItems) {
+        no++;
+        const amt = pricedAmount(it);
+        if (amt == null) groupUnpriced++;
+        else subtotal += amt;
+        lines.push(withinBudgetItemRow(no, it));
+      }
+      lines.push(`Subtotal ${groupName}: **${formatRupiah(subtotal)}**${groupUnpriced > 0 ? ` (parsial — ${groupUnpriced} item belum berharga)` : ''}`);
+      lines.push('');
+    }
+    lines.push(`Subtotal Tahap 1: **${formatRupiah(includedTotal)}** — dalam budget ${formatRupiah(cap)}${proposal.unpricedIncludedCount > 0 ? ` (parsial — ${proposal.unpricedIncludedCount} item belum berharga, tidak masuk total)` : ''}`);
+    lines.push('');
+  }
+  lines.push('**Belum teranggarkan:**');
+  if (excluded.length === 0) {
+    lines.push('• Tidak ada — semua item sudah masuk Tahap 1.');
+  } else {
+    for (const it of excluded) {
+      const amt = pricedAmount(it);
+      lines.push(`• ${it.description} (${it.__partScope}) — ${amt == null ? 'Harga belum tersedia' : formatRupiah(amt)}`);
+    }
+  }
+  lines.push('');
+  lines.push(
+    `Anggaran ${formatRupiah(cap)} tidak cukup untuk menyelesaikan proyek ini. ` +
+    `Total lingkup penuh ${formatRupiah(fullTotal)} (${decision.multiple.toLocaleString('id-ID', { maximumFractionDigits: 2 })}× anggaran) — ` +
+    `Tahap 1 menutup ${coveragePct.toLocaleString('id-ID', { maximumFractionDigits: 1 })}% dari total; ` +
+    `masih kurang ${formatRupiah(remaining)} untuk ${excluded.length} item yang belum teranggarkan.`,
+  );
+  if (decision.provisional) {
+    lines.push('Total bersifat SEMENTARA — ada item belum berharga yang belum masuk hitungan, sehingga total final dapat berubah sesudah harga dilengkapi.');
+  }
+  return lines.join('\n');
+}
+
 /** D5 — kalimat Push di akhir `formatUniversalDraftMessage` (satu sumber
  *  kebenaran: `overBudgetAskBack` menyaring kalimat ini dari balasan
  *  OVER tanpa menyentuh renderer murni tersebut). */

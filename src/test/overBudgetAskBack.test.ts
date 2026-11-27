@@ -16,11 +16,17 @@
  *  3. Jawaban (b) tambah budget → cap baru diparse; bila kini UNDER,
  *     slot + penanda dibersihkan dan Push kembali; bila masih OVER,
  *     tanya-balik diperbarui dengan angka baru.
- *  4. Jawaban (a)/(c) → balasan menyebut kontributor + menanyakan
- *     detail pemotongan/pengganti; TIDAK ADA pemangkasan diam-diam;
- *     instruksi revisi berikutnya diteruskan ke jalur revisi normal
- *     (`continueBudgetDecision` mengembalikan null, slot dibersihkan,
- *     penanda draft TETAP sampai revisi membuat total UNDER).
+ *  4. Jawaban (a) — PERUBAHAN BENTUK D5-lanjutan 2026-11-28 (perintah
+ *     owner 00:18): opsi (a) BUKAN lagi "tanya apa yang dipotong" —
+ *     tombol "Terima draf sesuai budget (Tahap 1)" MENERIMA draf Tahap 1
+ *     dari proposal dalam-budget: draf Tahap 1 menjadi draf aktif yang
+ *     bisa ditransfer (slot + penanda bersih, Push kembali), draf
+ *     lengkap tersimpan sebagai referensi sesi. Jawaban (c) tetap
+ *     tanya spek pengganti. Revisi SPESIFIK sebagai pesan pertama
+ *     ("kurangi penulangan jadi 50%") diteruskan ke jalur revisi
+ *     normal (`continueBudgetDecision` mengembalikan null, slot
+ *     dibersihkan, penanda draft TETAP sampai revisi membuat total
+ *     UNDER).
  *  5. Draft UNDER / tanpa budget / tidak dapat dinilai → perilaku lama
  *     persis (Push ada, tanpa tanya-balik, tanpa slot).
  *  6. TTL 10 menit kedaluwarsa dan sidik draft berubah → slot
@@ -38,13 +44,14 @@
 import {
   executeIntent, universalResultFor, continueBudgetDecision, answerBudgetDecision,
   __clearPendingBudgetDecisionForTests, __getPendingBudgetDecisionForTests,
+  __getFullScopeDraftBeforeCapForTests,
   DIRECT_COMMAND_CONFIRM_TTL_MS, tryContinueProjectContext, getProjectContextState,
   clearProjectContext,
 } from '../ai-tools/ezrab-ai/actionRegistry';
 import {
   buildUniversalDraft, computeTotals, getLastUniversalDraft, clearLastUniversalDraft,
   overBudgetDecision, topCostContributors, formatCostContributorLine,
-  validateTransfer, buildPushPayload,
+  validateTransfer, buildPushPayload, selectWithinBudgetScope, effectiveItems,
 } from '../ai-tools/ezrab-ai/universalRab';
 import { extractProjectContext } from '../ai-tools/ezrab-ai/projectIntake';
 import { clearLastRabIntentSpec } from '../ai-tools/ezrab-ai/rabIntentFlow';
@@ -189,21 +196,38 @@ console.log('== 1 — OVER retaining wall 50 m / budget 100jt ==');
     check('1.23 (b) 200jt masih OVER: transfer tetap ditolak', validateTransfer(getLastUniversalDraft()!, 'proj-1').allowed === false);
   }
 
-  // (a) lewat TOMBOL → tanya detail potongan; revisi diteruskan (null).
+  // D5-lanjutan 2026-11-28 (perintah owner 00:18) — PERUBAHAN BENTUK
+  // YANG DISENGAJA: opsi (a) kini MENERIMA draf Tahap 1 sesuai budget
+  // (bukan lagi "tanya apa yang dipotong"). Cek lama 1.24–1.28 yang
+  // mem-pin perilaku lama ("sebut kontributor + tanya potongan; slot
+  // tetap menunggu; revisi lanjutan diteruskan") diganti dengan
+  // asersi perilaku baru di bawah — bukan dilemahkan: penerimaan
+  // Tahap 1 dipin sampai ke transfer (payload hanya item Tahap 1)
+  // dan draf lengkap dipin tetap tersimpan.
   reset();
   executeIntent('CREATE_RAB_SUMMARY', undefined, ctxFor('budget 100jt buatkan rab struktur retaining wall panjang 50 m'));
   const btnA = answerBudgetDecision('reduce-scope');
-  check('1.24 (a) tombol: sebut kontributor + tanya apa yang dipotong', btnA != null && btnA.ok === true &&
-    btnA.message.includes('Penulangan Dinding BjTP ≥ 12 mm') && btnA.message.includes('tidak ada pemangkasan diam-diam'), btnA?.message.slice(0, 200));
-  check('1.25 (a) tombol: slot MASIH menunggu, transfer tetap ditolak', __getPendingBudgetDecisionForTests() != null &&
-    getLastUniversalDraft() != null && validateTransfer(getLastUniversalDraft()!, 'proj-1').allowed === false);
+  check('1.24 (a) tombol: terima Tahap 1 — draf final + total Rp38.570.246 ≤ 100jt + Push ADA', btnA != null && btnA.ok === true &&
+    btnA.message.includes('draf Tahap 1 sudah final') && btnA.message.includes('total Rp38.570.246') &&
+    btnA.message.includes('DI BAWAH anggaran Rp100.000.000') && hasAction(btnA, 'push-universal'), btnA?.message.slice(0, 300));
+  check('1.25 (a) tombol: slot + penanda bersih, transfer diizinkan, payload hanya 3 item Tahap 1', __getPendingBudgetDecisionForTests() === null &&
+    getLastUniversalDraft()?.budgetDecisionPending === false &&
+    getLastUniversalDraft() != null && close(computeTotals(getLastUniversalDraft()!).estimatedTotal, 38570246) &&
+    validateTransfer(getLastUniversalDraft()!, 'proj-1').allowed === true &&
+    (() => { try { return buildPushPayload(getLastUniversalDraft()!).length === 3; } catch { return false; } })(),
+    getLastUniversalDraft() ? String(computeTotals(getLastUniversalDraft()!).estimatedTotal) : 'null');
+  check('1.26 (a) tombol: draf lengkap tersimpan sebagai referensi sesi (total Rp356.953.225, id Tahap 1 cocok)', (() => {
+    const full = __getFullScopeDraftBeforeCapForTests();
+    return full != null && close(computeTotals(full.draft).estimatedTotal, 356953225) && full.cappedDraftId === getLastUniversalDraft()?.id;
+  })());
+  // Revisi SPESIFIK sebagai pesan pertama → diteruskan (null).
+  reset();
+  executeIntent('CREATE_RAB_SUMMARY', undefined, ctxFor('budget 100jt buatkan rab struktur retaining wall panjang 50 m'));
   const relA = continueBudgetDecision('kurangi penulangan jadi 50%');
-  check('1.26 (a) lanjutan revisi → null (diteruskan ke jalur revisi)', relA === null);
-  check('1.27 (a) lanjutan revisi: slot bersih, penanda TETAP (masih OVER)', __getPendingBudgetDecisionForTests() === null &&
-    getLastUniversalDraft()?.budgetDecisionPending === true);
-  if (getLastUniversalDraft()) {
-    check('1.28 (a) lanjutan revisi: transfer TETAP ditolak', validateTransfer(getLastUniversalDraft()!, 'proj-1').allowed === false);
-  }
+  check('1.27 revisi spesifik pertama → null (diteruskan ke jalur revisi)', relA === null);
+  check('1.28 revisi spesifik pertama: slot bersih, penanda TETAP (masih OVER), transfer TETAP ditolak', __getPendingBudgetDecisionForTests() === null &&
+    getLastUniversalDraft()?.budgetDecisionPending === true &&
+    getLastUniversalDraft() != null && validateTransfer(getLastUniversalDraft()!, 'proj-1').allowed === false);
 
   // (c) lewat TOMBOL → tanya spek pengganti; revisi diteruskan (null).
   reset();
@@ -366,6 +390,85 @@ console.log('== 6 — Intake landscape OVER: konteks bersih, tanya-balik aktif =
   check('6.5 slot + penanda terpasang', __getPendingBudgetDecisionForTests() != null && getLastUniversalDraft()?.budgetDecisionPending === true);
   const s8 = tryContinueProjectContext('kan budget saya 50jt');
   check('6.6 giliran sesudah draft → null (tanpa tanya-ulang)', s8 === null, s8 === null ? 'null' : (s8?.message ?? '').slice(0, 120));
+}
+
+/* ------------------------------------------------------------------ */
+/* 7 — D5-lanjutan 2026-11-28: kasus owner villa 2 lantai 500 m²      */
+/*     mewah / budget Rp50jt → draf Rp1.319.572.020 (26,39×). Bentuk   */
+/*     balasan baru: (1) draf Tahap 1 sesuai budget sebagai balasan   */
+/*     UTAMA, (2) pernyataan tegas anggaran tidak cukup, (3) draf     */
+/*     lengkap sebagai pembanding, (4) pilihan dengan opsi (a) =      */
+/*     terima Tahap 1. Menerima (a) menjadikan Tahap 1 draf aktif     */
+/*     yang bisa ditransfer; draf lengkap tetap tersimpan.            */
+/* ------------------------------------------------------------------ */
+console.log('== 7 — Owner: villa 2 lantai 500 m2 mewah / budget 50jt ==');
+{
+  reset();
+  const live = executeIntent('CREATE_RAB_SUMMARY', undefined, ctxFor('Budget saya Rp50jt, buatkan RAB villa 2 lantai 500 m² full finishing mewah'));
+  check('7.1 ask-back muncul (awaitBudgetDecision)', (live as { awaitBudgetDecision?: boolean }).awaitBudgetDecision === true);
+  check('7.2 total penuh Rp1.319.572.020 tampil', live.message.includes('Rp1.319.572.020'));
+  check('7.3 kelipatan 26,39× tampil', live.message.includes('26,39×'));
+  check('7.4 URUTAN balasan: Tahap 1 dulu, lalu "anggaran tidak cukup", lalu pilihan', (() => {
+    const iProposal = live.message.indexOf('Tahap 1 — sesuai budget');
+    const iInsuff = live.message.indexOf('tidak cukup untuk membangun proyek ini sampai selesai');
+    const iChoice = live.message.indexOf('perlu keputusan Anda');
+    return iProposal >= 0 && iInsuff > iProposal && iChoice > iInsuff;
+  })(), `proposal=${live.message.indexOf('Tahap 1 — sesuai budget')} insuff=${live.message.indexOf('tidak cukup untuk membangun proyek ini sampai selesai')} choice=${live.message.indexOf('perlu keputusan Anda')}`);
+  check('7.5 Tahap 1: subtotal Rp 5.525.000 ≤ Rp 50.000.000 + 15 item belum teranggarkan', live.message.includes('Subtotal Tahap 1: **Rp 5.525.000**') &&
+    live.message.includes('Belum teranggarkan'));
+  check('7.6 TANPA Push (aksi maupun kalimat)', !hasAction(live, 'push-universal') && !live.message.includes('Klik **Push ke Spreadsheet**'));
+  check('7.7 tombol pertama = "Terima draf sesuai budget (Tahap 1)" (kind lama, tanpa kind baru)', (live.actions ?? [])[0]?.label === 'Terima draf sesuai budget (Tahap 1)' &&
+    hasAction(live, 'budget-decision-reduce-scope'), JSON.stringify((live.actions ?? []).map((a) => a.label)));
+  const d = getLastUniversalDraft();
+  check('7.8 total draft Rp1.319.572.020 (26,39×)', d != null && close(computeTotals(d).estimatedTotal, 1319572020), d ? String(computeTotals(d).estimatedTotal) : 'null');
+  if (d) {
+    const p = selectWithinBudgetScope(d);
+    check('7.9 proposal: 1 item masuk (Rp5.525.000), 15 keluar, 0 belum berharga di dalam', p != null &&
+      p.included.length === 1 && close(p.includedTotal, 5525000) && p.excluded.length === 15 &&
+      p.unpricedIncludedCount === 0 && p.unpricedExcludedCount === 3, p ? JSON.stringify({ in: p.included.length, inTotal: p.includedTotal, ex: p.excluded.length, unIn: p.unpricedIncludedCount, unEx: p.unpricedExcludedCount }) : 'null');
+    check('7.10 transfer ditolak selama menunggu', validateTransfer(d, 'proj-1').allowed === false);
+  }
+  // (a) lewat TOMBOL → Tahap 1 menjadi draf aktif yang bisa ditransfer.
+  const btnA = answerBudgetDecision('reduce-scope');
+  check('7.11 (a) tombol: Tahap 1 final + Push ADA', btnA != null && btnA.ok === true &&
+    btnA.message.includes('draf Tahap 1 sudah final') && hasAction(btnA, 'push-universal'), btnA?.message.slice(0, 200));
+  const capped = getLastUniversalDraft();
+  check('7.12 (a) tombol: draf aktif kini total Rp5.525.000 (≤ 50jt), 1 item', capped != null &&
+    close(computeTotals(capped).estimatedTotal, 5525000) && effectiveItems(capped).length === 1,
+    capped ? `${computeTotals(capped).estimatedTotal} / ${effectiveItems(capped).length} item` : 'null');
+  check('7.13 (a) tombol: slot + penanda bersih, transfer diizinkan, payload 1 item', __getPendingBudgetDecisionForTests() === null &&
+    capped?.budgetDecisionPending === false && capped != null && validateTransfer(capped, 'proj-1').allowed === true &&
+    (() => { try { return buildPushPayload(capped).length === 1; } catch { return false; } })());
+  check('7.14 (a) tombol: draf lengkap tersimpan (Rp1.319.572.020) + 3 item belum berharga TETAP belum berharga (tanpa harga karangan)', (() => {
+    const full = __getFullScopeDraftBeforeCapForTests();
+    return full != null && close(computeTotals(full.draft).estimatedTotal, 1319572020) &&
+      computeTotals(full.draft).unpricedCount === 3 &&
+      effectiveItems(full.draft).filter((it) => it.unitPrice == null).length === 3;
+  })());
+  check('7.15 (a) tombol: draf Tahap 1 tanpa harga karangan (0 item belum berharga di dalam)', capped != null &&
+    computeTotals(capped).unpricedCount === 0 &&
+    effectiveItems(capped).every((it) => it.unitPrice != null && it.unitPrice > 0));
+
+  // (a) lewat TEKS ("terima draf sesuai budget") → sama dengan tombol.
+  reset();
+  executeIntent('CREATE_RAB_SUMMARY', undefined, ctxFor('Budget saya Rp50jt, buatkan RAB villa 2 lantai 500 m² full finishing mewah'));
+  const txtA = continueBudgetDecision('terima draf sesuai budget');
+  check('7.16 (a) teks: terima Tahap 1 + Push ADA', txtA != null && txtA.ok === true &&
+    txtA.message.includes('draf Tahap 1 sudah final') && hasAction(txtA, 'push-universal'), txtA?.message.slice(0, 200));
+  check('7.17 (a) teks: draf aktif total Rp5.525.000', getLastUniversalDraft() != null &&
+    close(computeTotals(getLastUniversalDraft()!).estimatedTotal, 5525000));
+
+  // (b) cap baru TAPI masih OVER → tanya-balik diperbarui DENGAN
+  // proposal Tahap 1 untuk cap baru (bukan blok pertanyaan saja).
+  reset();
+  executeIntent('CREATE_RAB_SUMMARY', undefined, ctxFor('budget 100jt buatkan rab struktur retaining wall panjang 50 m'));
+  const stillOver = continueBudgetDecision('tambah budget jadi 200 juta');
+  check('7.18 (b) 200jt masih OVER: proposal Tahap 1 untuk cap BARU tampil', stillOver != null &&
+    stillOver.message.includes('Tahap 1 — sesuai budget Rp 200.000.000') &&
+    stillOver.message.includes('masih MELEBIHI anggaran sebesar Rp156.953.225'), stillOver?.message.slice(0, 300));
+  check('7.19 (b) 200jt masih OVER: tanpa Push, slot tetap', stillOver != null && !hasAction(stillOver, 'push-universal') && __getPendingBudgetDecisionForTests() != null);
+  check('7.20 (b) 200jt masih OVER: transfer tetap ditolak', getLastUniversalDraft() != null &&
+    validateTransfer(getLastUniversalDraft()!, 'proj-1').allowed === false);
 }
 
 console.log(`\nD5 overBudgetAskBack: ${passed} lulus / ${failed} gagal${failed ? ` — GAGAL: ${failures.join(', ')}` : ''}`);

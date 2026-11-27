@@ -112,8 +112,8 @@ import { runRabIntentFlow, evaluateRabIntent, continueRabIntent, getLastRabInten
 import type { RabTemplateRecommendation } from './rabIntentFlow';
 import { extractRabIntentSpec, mergeRabIntentSpec } from './rabIntentSpec';
 import type { RabIntentSpec } from './rabIntentSpec';
-import { buildUniversalDraft, formatUniversalDraftMessage, extractUniversalSpec, getLastUniversalDraft, getLastUniversalDraftProjectId, setLastUniversalDraft, effectiveItems, isPriceValidForTotal, itemKey, computeTotals, overBudgetDecision, formatCostContributorLine, UNIVERSAL_DRAFT_PUSH_SENTENCE, looksLikeUniversalRevision } from './universalRab';
-import type { UniversalDraft, OverBudgetDecision } from './universalRab';
+import { buildUniversalDraft, formatUniversalDraftMessage, extractUniversalSpec, getLastUniversalDraft, getLastUniversalDraftProjectId, setLastUniversalDraft, effectiveItems, isPriceValidForTotal, itemKey, computeTotals, overBudgetDecision, formatCostContributorLine, UNIVERSAL_DRAFT_PUSH_SENTENCE, looksLikeUniversalRevision, selectWithinBudgetScope, formatWithinBudgetProposal, snapshotVersion, rebuildWbsAttachment } from './universalRab';
+import type { UniversalDraft, OverBudgetDecision, WithinBudgetProposal } from './universalRab';
 import { formatRupiah } from './budgetFeasibility';
 import { getDraftProjectEnsurer } from './tempProject';
 import { authorizeChatAiMutation } from './mutationInventory';
@@ -6051,9 +6051,21 @@ export function __getPendingDirectCompletionForTests(): DirectRabFullAiCompletio
 /* D5 — TANYA-BALIK BUDGET OVER (perintah owner 2026-11-26)            */
 /* Budget adalah BATAS MAKSIMUM, bukan target. Bila total estimasi    */
 /* draft MELEBIHI anggaran, draft TIDAK final dan TIDAK BISA          */
-/* ditransfer sampai pengguna memilih: (a) kurangi lingkup,           */
-/* (b) tambah budget, atau (c) ganti spek/material. Lingkup TIDAK     */
-/* PERNAH dipangkas diam-diam.                                        */
+/* ditransfer sampai pengguna memilih: (a) terima draf Tahap 1        */
+/* sesuai budget, (b) tambah budget, atau (c) ganti spek/material.    */
+/* Lingkup TIDAK PERNAH dipangkas diam-diam.                          */
+/*                                                                     */
+/* BENTUK BALASAN (perintah owner 2026-11-28 00:18 — AI yang          */
+/* mengurus, bukan melempar pilihan telanjang): balasan OVER           */
+/* menyajikan DULU draf Tahap 1 yang muat di anggaran (blok proposal  */
+/* dari `selectWithinBudgetScope`/`formatWithinBudgetProposal`,        */
+/* universalRab), lalu pernyataan tegas anggaran tidak cukup, lalu    */
+/* draf lengkap sebagai pembanding, baru pilihannya — dengan opsi (a)  */
+/* = MENERIMA draf Tahap 1 itu (tombol "Terima draf sesuai budget     */
+/* (Tahap 1)"). Menerima (a) menjadikan draf Tahap 1 itu draf aktif   */
+/* yang bisa ditransfer; draf lengkap TETAP tersimpan sebagai         */
+/* referensi sesi (`lastFullScopeDraftBeforeCap`) + dirujuk nominal   */
+/* di asumsi draf Tahap 1 — bukan dihancurkan diam-diam.              */
 /*                                                                     */
 /* Dua lapis keadaan (sengaja dipisah):                               */
 /*  - slot in-memory `pendingBudgetDecision` (pola yang sama dengan    */
@@ -6077,9 +6089,40 @@ interface PendingBudgetDecision {
 
 let pendingBudgetDecision: PendingBudgetDecision | null = null;
 
+/**
+ * D5 (2026-11-28, perintah owner) — draf LENGKAP yang dipangkas saat
+ * pengguna menerima draf Tahap 1 (opsi (a)). Disimpan sebagai klon
+ * dalam (in-memory, satu sesi) agar penerimaan Tahap 1 TIDAK
+ * menghancurkan draf lengkap diam-diam: nominalnya dirujuk di asumsi
+ * draf Tahap 1, dan klon ini bisa dibaca/dipulihkan selama sesi
+ * berjalan. BATAS YANG DISENGAJA: slot ini hilang saat reload (tidak
+ * ada tombol "Kembalikan draf lengkap" — itu butuh kind tombol baru
+ * di view.tsx, di luar cakupan ini); sesudah reload yang tersisa
+ * adalah draf Tahap 1 + catatan asumsinya yang menyebut total
+ * lengkapnya.
+ */
+interface FullScopeDraftBeforeCap {
+  draft: UniversalDraft;
+  cappedDraftId: string;
+  createdAt: number;
+}
+
+let lastFullScopeDraftBeforeCap: FullScopeDraftBeforeCap | null = null;
+
+/** Khusus pengujian: draf lengkap sebelum pemangkasan Tahap 1 (null bila belum ada penerimaan). */
+export function __getFullScopeDraftBeforeCapForTests(): FullScopeDraftBeforeCap | null {
+  return lastFullScopeDraftBeforeCap;
+}
+
+/** Khusus pengujian: buang draf lengkap tersimpan (isolasi antar cek). */
+export function __clearFullScopeDraftBeforeCapForTests(): void {
+  lastFullScopeDraftBeforeCap = null;
+}
+
 /** Khusus pengujian: buang slot pertanyaan budget (isolasi antar cek). */
 export function __clearPendingBudgetDecisionForTests(): void {
   pendingBudgetDecision = null;
+  lastFullScopeDraftBeforeCap = null;
 }
 
 /** Khusus pengujian: slot pertanyaan budget saat ini (null bila tidak ada). */
@@ -6089,7 +6132,12 @@ export function __getPendingBudgetDecisionForTests(): PendingBudgetDecision | nu
 
 function budgetDecisionActions(): ChatActionButton[] {
   return [
-    { label: 'Kurangi lingkup', action: { kind: 'budget-decision-reduce-scope' } },
+    // D5 (2026-11-28, perintah owner) — opsi (a) BUKAN lagi "kurangi
+    // lingkup" telanjang: tombol ini MENERIMA draf Tahap 1 sesuai
+    // budget yang disajikan di atas (kind TETAP
+    // 'budget-decision-reduce-scope' — view.tsx sudah mendispatch
+    // kind ini ke answerBudgetDecision; tanpa kind baru).
+    { label: 'Terima draf sesuai budget (Tahap 1)', action: { kind: 'budget-decision-reduce-scope' } },
     { label: 'Tambah budget', action: { kind: 'budget-decision-raise-budget' } },
     { label: 'Ganti spek/material', action: { kind: 'budget-decision-change-spec' } },
   ];
@@ -6107,20 +6155,30 @@ function formatOverBudgetQuestionBlock(d: OverBudgetDecision): string {
   lines.push('**Kontributor biaya terbesar:**');
   for (const c of d.contributors) lines.push(formatCostContributorLine(c));
   lines.push('Draft ini BELUM final dan BELUM bisa ditransfer sampai Anda memilih salah satu:');
-  lines.push('1. **Kurangi lingkup** — sebutkan item/bagian mana yang dikurangi dan seberapa besar (tidak ada pemangkasan diam-diam).');
+  lines.push('1. **Terima draf sesuai budget (Tahap 1)** — Kurangi lingkup ke item yang muat di anggaran (draf Tahap 1 di atas); sisanya tercatat sebagai Tahap 2, belum teranggarkan — bukan dihapus diam-diam.');
   lines.push('2. **Tambah budget** — sebutkan anggaran baru Anda.');
   lines.push('3. **Ganti spek/material** — sebutkan spek atau material penggantinya.');
-  lines.push('Balas dengan pilihan Anda, mis. "kurangi lingkup", "tambah budget jadi 400 juta", atau "ganti spek".');
+  lines.push('Balas dengan pilihan Anda, mis. "terima draf sesuai budget", "tambah budget jadi 400 juta", atau "ganti spek".');
   return lines.join('\n');
 }
 
 /**
  * D5 — helper bersama (dipakai `universalResultFor` + `acceptFullAiCompletion`):
  * bila draft OVER, setel slot + penanda draft dan kembalikan ActionResult
- * tanya-balik (pesan draft TANPA kalimat Push + blok pertanyaan + 3 tombol
- * opsi saja); bila tidak OVER, kembalikan null (pemanggil memakai hasil
+ * tanya-balik; bila tidak OVER, kembalikan null (pemanggil memakai hasil
  * normalnya). `extraActions` ditambahkan sesudah 3 tombol opsi (mis.
  * tombol "Batalkan lengkapan" pada jalur accept).
+ *
+ * BENTUK BALASAN (perintah owner 2026-11-28 00:18 — AI yang mengurus):
+ *  (1) blok proposal draf Tahap 1 sesuai budget (PRIMARY — dari
+ *      `formatWithinBudgetProposal`; bila tidak ada proposal yang bisa
+ *      disusun — mis. tidak satu pun item muat — jatuh ke bentuk lama:
+ *      draf lengkap + blok pertanyaan saja);
+ *  (2) pernyataan tegas anggaran tidak cukup (total vs budget,
+ *      coverage, sisa — tanpa pelunakan);
+ *  (3) pesan draf lengkap sebagai pembanding (base utuh, minus kalimat
+ *      Push seperti sebelumnya);
+ *  (4) pilihan — opsi (a) = menerima draf Tahap 1 di atas.
  */
 function overBudgetAskBack(
   draft: UniversalDraft,
@@ -6149,11 +6207,120 @@ function overBudgetAskBack(
     .filter((l) => l.trim() !== UNIVERSAL_DRAFT_PUSH_SENTENCE)
     .join('\n')
     .trimEnd();
+  const proposal = selectWithinBudgetScope(draft);
+  if (!proposal) {
+    return {
+      ok: true,
+      message: `${base}\n\n${formatOverBudgetQuestionBlock(decision)}`,
+      actions: [...budgetDecisionActions(), ...extraActions],
+      awaitBudgetDecision: true,
+    };
+  }
+  const insufficiency =
+    `Anggaran ${formatRupiah(decision.cap)} tidak cukup untuk membangun proyek ini sampai selesai: ` +
+    `total kebutuhan ${formatRupiah(decision.total)} — anggaran hanya menutup ` +
+    `${decision.coveragePct.toLocaleString('id-ID', { maximumFractionDigits: 1 })}% — ` +
+    `masih kurang ${formatRupiah(decision.over)}.`;
   return {
     ok: true,
-    message: `${base}\n\n${formatOverBudgetQuestionBlock(decision)}`,
+    message:
+      `${formatWithinBudgetProposal(proposal, decision)}\n\n${insufficiency}\n\n${base}\n\n${formatOverBudgetQuestionBlock(decision)}`,
     actions: [...budgetDecisionActions(), ...extraActions],
     awaitBudgetDecision: true,
+  };
+}
+
+/**
+ * D5 (2026-11-28, perintah owner) — bangun draf Tahap 1 dari proposal
+ * dalam-budget: klon draf lengkap, lalu item Tahap 2 dikeluarkan lewat
+ * mekanisme penghapusan draft yang SUDAH ADA (`part.removedKeys` —
+ * `effectiveItems`/`computeTotals`/`buildPushPayload` semuanya
+ * menghormatinya, jadi total terhitung ulang dan Push hanya
+ * mentransfer item Tahap 1; tidak ada harga yang dikarang dan item
+ * belum berharga tetap belum berharga). Versi dicatat lewat
+ * `snapshotVersion` (choke point revisi yang sama) + artefak WBS
+ * dibangun ulang agar tidak basi; penanda budget dibersihkan karena
+ * total Tahap 1 DI BAWAH cap. Draf lengkap TIDAK diubah (klon).
+ *
+ * BATAS YANG DIKETAHUI: `removedKeys` berkunci deskripsi+satuan
+ * (`itemKey`) — bila satu part memuat dua item berdeskripsi+satuan
+ * identik, keduanya ikut keluar; pemanggil memverifikasi total hasil
+ * (`overBudgetDecision(capped) === null`) sebelum memakai draf ini.
+ */
+function buildCappedDraftFromProposal(
+  full: UniversalDraft,
+  proposal: WithinBudgetProposal,
+): UniversalDraft {
+  const capped = JSON.parse(JSON.stringify(full)) as UniversalDraft;
+  const excludedIds = new Set(proposal.excluded.map((it) => it.id));
+  for (const part of capped.parts) {
+    for (const gen of part.generation.items) {
+      if (!excludedIds.has(`${part.template.id}::${gen.id}`)) continue;
+      const key = itemKey(gen);
+      if (!part.removedKeys.includes(key)) part.removedKeys.push(key);
+    }
+  }
+  capped.budgetDecisionPending = false;
+  capped.assumptions.unshift(
+    `Tahap 1 — sesuai budget ${formatRupiah(proposal.cap)}: draf ini hanya memuat ${proposal.included.length} item ` +
+    `dengan total ${formatRupiah(proposal.includedTotal)}; ${proposal.excluded.length} item ` +
+    `(total ${formatRupiah(proposal.excludedPricedTotal)}) tercatat sebagai Tahap 2 — belum teranggarkan, bukan dihapus. ` +
+    `Draf lengkap proyek ini total ${formatRupiah(proposal.fullTotal)}; Tahap 1 menutup ` +
+    `${proposal.coveragePct.toLocaleString('id-ID', { maximumFractionDigits: 1 })}% dari total lingkup penuh.`,
+  );
+  capped.changes.unshift(
+    `Draf dipangkas ke Tahap 1 sesuai budget ${formatRupiah(proposal.cap)} atas pilihan pengguna: ` +
+    `${proposal.included.length} item dipertahankan, ${proposal.excluded.length} item menjadi Tahap 2.`,
+  );
+  rebuildWbsAttachment(capped);
+  snapshotVersion(
+    capped,
+    `Tahap 1 — sesuai budget ${formatRupiah(proposal.cap)}: ${proposal.included.length} item, total ${formatRupiah(computeTotals(capped).estimatedTotal)}`,
+  );
+  return capped;
+}
+
+/**
+ * D5 (2026-11-28, perintah owner) — opsi (a): TERIMA draf Tahap 1.
+ * Draf Tahap 1 menjadi draf aktif yang bisa ditransfer (slot +
+ * penanda dibersihkan; `overBudgetDecision(capped)` HARUS null —
+ * bila ternyata masih OVER, proposal dianggap tidak layak dan
+ * pemanggil jatuh ke tanya-detail lama, BUKAN membebaskan transfer).
+ * Draf lengkap disimpan sebagai klon di
+ * `lastFullScopeDraftBeforeCap` (referensi sesi) sebelum diganti.
+ * Mengembalikan null bila tidak ada proposal yang bisa diterima
+ * (pemanggil memakai jalur tanya-detail lama).
+ */
+function acceptWithinBudgetProposal(live: UniversalDraft, now: number = Date.now()): ActionResult | null {
+  const proposal = selectWithinBudgetScope(live);
+  // Proposal kosong (tidak satu pun item muat) BUKAN draf Tahap 1 yang
+  // bisa diterima — menerima akan menghasilkan draf kosong.
+  if (!proposal || proposal.included.length === 0) return null;
+  const capped = buildCappedDraftFromProposal(live, proposal);
+  if (overBudgetDecision(capped) !== null) return null;
+  lastFullScopeDraftBeforeCap = {
+    draft: JSON.parse(JSON.stringify(live)) as UniversalDraft,
+    cappedDraftId: capped.id,
+    createdAt: now,
+  };
+  pendingBudgetDecision = null;
+  setLastUniversalDraft(capped, getLastUniversalDraftProjectId() ?? undefined);
+  const cappedTotals = computeTotals(capped);
+  const unpricedNote =
+    proposal.unpricedIncludedCount > 0
+      ? ` (parsial — ${proposal.unpricedIncludedCount} item belum berharga; total final dapat berubah sesudah harga masuk)`
+      : '';
+  return {
+    ok: true,
+    message:
+      `Terima — draf Tahap 1 sudah final dan bisa ditransfer.\n` +
+      `• Draf Tahap 1: ${proposal.included.length} item, total ${formatRupiah(cappedTotals.estimatedTotal)} — DI BAWAH anggaran ${formatRupiah(proposal.cap)}${unpricedNote}.\n` +
+      `• Tahap 2 (belum teranggarkan): ${proposal.excluded.length} item, total ${formatRupiah(proposal.excludedPricedTotal)} — belum masuk draf ini, bukan dihapus.\n` +
+      `• Draf lengkap (total ${formatRupiah(proposal.fullTotal)}) tersimpan sebagai referensi sesi ini; tidak ada pemangkasan diam-diam — yang dipangkas hanya ${proposal.excluded.length} item Tahap 2 di atas.`,
+    actions: [
+      { label: 'Push ke Spreadsheet', action: { kind: 'push-universal' } },
+      { label: 'Buka Spreadsheet RAB', action: { kind: 'navigate', menu: 'rab-estimasi' } },
+    ],
   };
 }
 
@@ -6162,14 +6329,17 @@ function overBudgetAskBack(
  * `answerBudgetDecision` yang mendelegasikan ke sini dengan teks kanonis).
  * Mengembalikan null bila TIDAK ADA slot yang menunggu (pemanggil
  * memproses pesan secara normal) atau bila pesan adalah instruksi revisi
- * sesudah pilihan (a)/(c) — revisi itu diteruskan ke jalur revisi normal
- * oleh pemanggil (view), BUKAN diterapkan di sini.
+ * SPESIFIK ("kurangi penulangan jadi 50%", "ganti penulangan dengan
+ * besi polos") — revisi itu diteruskan ke jalur revisi normal oleh
+ * pemanggil (view), BUKAN diterapkan di sini.
  *
- * (a) kurangi lingkup → balas dengan kontributor + tanya apa yang
- *     dipotong; slot TETAP menunggu (pemotongan hanya lewat revisi).
+ * (a) terima draf sesuai budget → draf Tahap 1 dari proposal
+ *     dalam-budget MENJADI draf aktif yang bisa ditransfer (draf
+ *     lengkap tersimpan sebagai referensi sesi); bila tidak ada
+ *     proposal yang bisa diterima, jatuh ke tanya-detail lama.
  * (b) tambah budget → parse cap baru; bila kini UNDER → slot + penanda
  *     dibersihkan dan Push kembali; bila masih OVER → tanya-balik
- *     diperbarui dengan angka baru.
+ *     diperbarui (dengan proposal Tahap 1 untuk cap baru).
  * (c) ganti spek → balas dengan kontributor + tanya spek pengganti;
  *     slot TETAP menunggu (perubahan hanya lewat revisi).
  */
@@ -6237,6 +6407,21 @@ export function continueBudgetDecision(text: string, now: number = Date.now()): 
         ],
       };
     }
+    // D5 (2026-11-28) — masih OVER: tanya-balik diperbarui LEWAT
+    // helper bersama (bukan blok pertanyaan saja) agar balasan memuat
+    // proposal Tahap 1 untuk cap BARU, dengan urutan yang sama
+    // (proposal → anggaran tidak cukup → draf lengkap → pilihan).
+    // Helper menyetel ulang slot (sidik + createdAt) + penanda.
+    const askBack = overBudgetAskBack(live, formatUniversalDraftMessage(live));
+    if (askBack) {
+      return {
+        ok: true,
+        message:
+          `Anggaran diperbarui ke ${formatRupiah(newCap)}, tetapi total estimasi ${formatRupiah(decision.total)} masih MELEBIHI anggaran sebesar ${formatRupiah(decision.over)}.\n\n${askBack.message}`,
+        actions: askBack.actions,
+        awaitBudgetDecision: true,
+      };
+    }
     pendingBudgetDecision = {
       ...pending,
       decision,
@@ -6252,13 +6437,38 @@ export function continueBudgetDecision(text: string, now: number = Date.now()): 
       awaitBudgetDecision: true,
     };
   }
+  // D5 (2026-11-28) — revisi SPESIFIK sebagai pesan pertama ("kurangi
+  // penulangan jadi 50%", "ganti penulangan dengan besi polos"):
+  // diteruskan ke jalur revisi normal (null; slot dibersihkan, penanda
+  // draft TETAP) — BUKAN ditelan sebagai pilihan (a)/(c). Penjaga ini
+  // SENGAJA sesudah cabang (b) di atas: "tambah budget jadi 400 juta"
+  // mengandung kata revisi ("tambah", "jadi") tapi adalah jawaban
+  // budget, bukan revisi. Frasa pilihan telanjang ("kurangi lingkup",
+  // "ganti spek", "tambah budget") BUKAN revisi spesifik dan TIDAK
+  // diteruskan — ia jatuh ke pencocokan pilihan di bawah.
+  const isBareBudgetChoice =
+    /^\s*(kurangi|potong|kurang)\s+(lingkup|scope)\.?\s*$/.test(t) ||
+    /^\s*(ganti|ubah)\s+(spek|material)(\/material)?\.?\s*$/.test(t) ||
+    /^\s*(tambah|naik)\s+(budget|anggaran)\.?\s*$/.test(t) ||
+    t.includes('terima draf sesuai budget') || t.includes('tahap 1');
+  if (!isBareBudgetChoice && looksLikeUniversalRevision(text)) {
+    pendingBudgetDecision = null;
+    return null;
+  }
   // Pilihan baru dari teks.
-  if (/\b(kurangi|potong|kurang)\b/.test(t) || t.includes('lingkup') || t.includes('scope')) {
+  if (/\b(kurangi|potong|kurang)\b/.test(t) || t.includes('lingkup') || t.includes('scope') || t.includes('terima draf sesuai budget') || t.includes('tahap 1')) {
+    // D5 (2026-11-28, perintah owner) — opsi (a) = TERIMA draf Tahap 1
+    // sesuai budget (bukan lagi tanya "apa yang dipotong"): draf Tahap 1
+    // menjadi draf aktif yang bisa ditransfer. Bila tidak ada proposal
+    // yang bisa diterima (mis. tidak satu pun item muat di anggaran),
+    // jatuh ke tanya-detail lama — slot TETAP menunggu.
+    const accepted = acceptWithinBudgetProposal(live, now);
+    if (accepted) return accepted;
     pending.answeredChoice = 'reduce-scope';
     return {
       ok: true,
       message:
-        `Baik — kita kurangi lingkup. Kontributor terbesar saat ini:\n${pending.decision.contributors.map(formatCostContributorLine).join('\n')}\n\nSebutkan item/bagian mana yang dikurangi dan seberapa besar (mis. "kurangi pohon peneduh jadi 20" atau "hapus jalur pejalan"). Saya terapkan lewat revisi — tidak ada pemangkasan diam-diam.`,
+        `Baik — kita kurangi lingkup. Kontributor terbesar saat ini:\n${pending.decision.contributors.map(formatCostContributorLine).join('\n')}\n\nTidak ada draf Tahap 1 yang bisa saya susun dalam anggaran ini — sebutkan item/bagian mana yang dikurangi dan seberapa besar (mis. "kurangi pohon peneduh jadi 20" atau "hapus jalur pejalan"). Saya terapkan lewat revisi — tidak ada pemangkasan diam-diam.`,
       awaitBudgetDecision: true,
     };
   }

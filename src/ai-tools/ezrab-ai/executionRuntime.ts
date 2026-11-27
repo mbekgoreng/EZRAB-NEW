@@ -116,6 +116,27 @@ export const EXECUTION_STAGE_LABELS: Record<ExecutionStage, string> = {
   cancelled: 'Dibatalkan',
 };
 
+/**
+ * Urutan tahap yang ditampilkan selama pacing minimum-display untuk
+ * satu jenis balasan (program pacing Chat AI, 2026-11-28).
+ *
+ * Urutan ini adalah fase-fase pipeline NYATA dari EXECUTION_STAGE_LABELS
+ * (bukan label karangan): 'questionnaire'/'local' hanya melewati
+ * persiapan → identifikasi → validasi, sedangkan 'rab' melewati seluruh
+ * rantai RAB (kuantitas → AHSP → harga → validasi). Pacing yang
+ * menggerakkan urutan ini adalah pacing minimum-display per
+ * aiResponseTiming.ts — tampilan tahap bergilir selama minimum delay
+ * berlangsung, BUKAN penalaran model palsu dan BUKAN progres persen.
+ * Tahap tetap hanya dipancarkan dari event nyata lewat
+ * emitExecutionStage; fungsi ini hanya memberi URUTAN tampilannya.
+ */
+export function stageSequenceForReply(kind: 'questionnaire' | 'local' | 'rab'): ExecutionStage[] {
+  if (kind === 'rab') {
+    return ['preparing', 'identifying-items', 'calculating-quantities', 'mapping-ahsp', 'checking-prices', 'validating'];
+  }
+  return ['preparing', 'identifying-items', 'validating'];
+}
+
 export interface ExecutionStageEvent {
   stage: ExecutionStage;
   at: number;

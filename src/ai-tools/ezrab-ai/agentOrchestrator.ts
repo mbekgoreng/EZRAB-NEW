@@ -61,6 +61,10 @@ import {
   parseFloorsMention,
   BUDGET_UNIT_FACTORS,
 } from './rabNeeds';
+/* PERBAIKAN 2026-11-28 (panel Rencana Tugas): markValidateStepCompleted
+ * butuh bentuk hasil validateDraftChain — impor TYPE ONLY (dihapus
+ * saat kompilasi, tanpa siklus runtime). */
+import type { ChainValidation } from './specChain';
 
 /* ------------------------------------------------------------------ */
 /* Batas eksekusi (Part 18 — iterasi & eksekusi berbatas)               */
@@ -878,6 +882,85 @@ export function markQuestionnaireStepCompleted(plan: TaskPlan, message: string):
   const step = plan.steps.find((s) => s.kind === 'collect-specs-questionnaire');
   if (!step) return plan;
   return applyRegistryOutcomeToStep(plan, step.id, { status: 'succeeded', message }).plan;
+}
+
+/**
+ * PERBAIKAN 2026-11-28 (panel Rencana Tugas tidak update) — menandai
+ * langkah validate-spec-chain selesai dari hasil validasi yang SUDAH
+ * ADA di draft (`d.chainValidation`, dihitung buildUniversalDraft di
+ * dalam — bukan validasi baru, bukan klaim dari teks pesan). Sebelum
+ * ini langkah 3 tidak pernah ditandai di alur live meski validasi
+ * benar-benar berjalan, sehingga draf ✓ sementara validasi tetap ○.
+ *
+ * "6 butir" = 6 seksi validateDraftChain (specChain.ts): cakupan spek,
+ * basis volume, harga, anggaran, pilihan ambigu, item asing. Tiap
+ * butir punya aturan lolos deterministik dari field ChainValidation:
+ * spek SKIPPED (tidak dijawab) / volume FLAG (asumsi) / harga belum
+ * tersedia / anggaran OVER atau tak dapat dinilai / ada pilihan
+ * ambigu / ada item asing → butir itu tidak lolos. Pesan mencatat
+ * hitungan + nama butir yang belum lolos (cermin pesan F6-S1
+ * "Validasi rantai spek: 6/6 butir lolos."). Status tetap
+ * `succeeded` — langkahnya adalah "validasi dijalankan + dilaporkan",
+ * dan hitungan di result yang membawa kejujuran hasilnya.
+ * No-op (objek sama) bila rencana tidak punya langkah validasi,
+ * chainValidation tidak ada, atau langkah sudah terminal.
+ */
+export function markValidateStepCompleted(
+  plan: TaskPlan,
+  chainValidation: ChainValidation | null | undefined,
+): TaskPlan {
+  const step = plan.steps.find((s) => s.kind === 'validate-spec-chain');
+  if (!step || !chainValidation) return plan;
+  const checks: Array<{ label: string; ok: boolean }> = [
+    { label: 'cakupan spek', ok: chainValidation.specCoverage.every((s) => s.status !== 'SKIPPED') },
+    { label: 'basis volume', ok: chainValidation.volumeChecks.every((v) => v.verdict === 'OK') },
+    { label: 'harga', ok: chainValidation.priceChecks.unresolved === 0 },
+    {
+      label: 'anggaran',
+      ok: chainValidation.budget.verdict === 'UNDER' || chainValidation.budget.verdict === 'NO_BUDGET',
+    },
+    { label: 'pilihan ambigu', ok: chainValidation.ambiguousPicks.length === 0 },
+    { label: 'item asing', ok: chainValidation.foreignItems.length === 0 },
+  ];
+  const passed = checks.filter((c) => c.ok).length;
+  const failed = checks.filter((c) => !c.ok).map((c) => c.label);
+  const message = failed.length === 0
+    ? `Validasi rantai spek: ${passed}/6 butir lolos.`
+    : `Validasi rantai spek: ${passed}/6 butir lolos — belum lolos: ${failed.join(', ')}.`;
+  return applyRegistryOutcomeToStep(plan, step.id, { status: 'succeeded', message }).plan;
+}
+
+/**
+ * PERBAIKAN 2026-11-28 (panel Rencana Tugas tidak update) — menandai
+ * langkah collect-specs-questionnaire sebagai dilewati karena spek
+ * ternyata terkumpul lewat chat TANPA kartu kuesioner pernah tampil
+ * (langkah masih `planned`/`ready` saat draf tersimpan). Status
+ * `cancelled` + result jujur — bukan `succeeded`, karena kuesioner
+ * memang tidak dijalankan. No-op (objek sama) bila tidak ada langkah
+ * kuesioner, langkah sudah terminal, atau kartu SUDAH tampil
+ * (`running` — itu ranah markQuestionnaireStepCompleted: menandai
+ * `cancelled` di sana akan berbohong soal kartu yang tampil).
+ */
+export function markQuestionnaireStepBypassed(plan: TaskPlan): TaskPlan {
+  const step = plan.steps.find((s) => s.kind === 'collect-specs-questionnaire');
+  if (!step) return plan;
+  if (step.status !== 'planned' && step.status !== 'ready') return plan;
+  const now = new Date().toISOString();
+  const next: TaskPlan = {
+    ...plan,
+    steps: plan.steps.map((s) => (s.id === step.id
+      ? {
+        ...s,
+        status: 'cancelled' as const,
+        result: 'Spek terkumpul lewat chat — kuesioner tidak ditampilkan.',
+        error: null,
+        completedAt: now,
+      }
+      : s)),
+    updatedAt: now,
+  };
+  next.status = derivePlanStatus(next);
+  return next;
 }
 
 /** Retry SATU langkah gagal (bukan seluruh rencana); maks 2×. */

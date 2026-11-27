@@ -13,11 +13,12 @@
  * - Complex → minimum 4 detik (prompt panjang, pembacaan DED, analisis
  *   dokumen, multi-langkah). Rentang direktif 2026-11-11 §11: pendek
  *   ≈2 dtk, kontekstual 2–3 dtk, kompleks 3–5 dtk.
- * - RAB     → minimum 5–10 detik, tergantung banyak/tidaknya hasil
- *   (perintah owner 2026-10-27): hasil pendek ≈ 5 detik, hasil besar
- *   (tabel RAB panjang) ≈ 10 detik, di antaranya diskalakan dari
- *   panjang teks hasil. RAB menggantikan complex 4 detik — bukan
- *   ditambahkan di atasnya.
+ * - RAB     → minimum 5–20 detik, tergantung banyak/tidaknya hasil
+ *   (perintah owner 2026-10-27, diperpanjang 2026-11-28): hasil pendek
+ *   ≈ 5 detik, hasil besar (tabel RAB panjang) ≈ 10 detik, hasil sangat
+ *   besar (draf uji owner: 34 item, ~30 ribu karakter) ≈ 20 detik;
+ *   di antaranya diskalakan dari panjang teks hasil. RAB menggantikan
+ *   complex 4 detik — bukan ditambahkan di atasnya.
  * - Durasi adalah MINIMUM pengalaman pemrosesan, bukan maksimum: timer
  *   dihitung SEJAK permintaan dikirim dan berjalan PARALEL dengan provider.
  *   Provider 5 detik → hasil tampil pada 5 detik (bukan 6–8). Provider
@@ -37,8 +38,8 @@ export type AiActivity = 'chat' | 'rab' | 'ded' | 'document';
  * respons pendek ≈2 dtk; kontekstual normal 2–3 dtk; penalaran
  * kompleks 3–5 dtk. Proses dokumen/RAB nyata memakai durasi operasi
  * sebenarnya (waitForMinimum tidak pernah menambah tunda di atas
- * durasi aktual). Skala khusus hasil RAB (5–10 dtk, keputusan owner
- * 2026-10-27) TIDAK berubah — lihat rabMinDelayMs di bawah.
+ * durasi aktual). Skala khusus hasil RAB (5–20 dtk, keputusan owner
+ * 2026-10-27, diperpanjang 2026-11-28) TIDAK berubah — lihat rabMinDelayMs di bawah.
  */
 export const AI_MIN_DELAY_MS: Record<AiRequestComplexity, number> = {
   simple: 2000,
@@ -75,32 +76,49 @@ export function minDelayFor(complexity: AiRequestComplexity): number {
 }
 
 /**
- * Rentang timing RAB (owner 2026-10-27): 5 detik untuk hasil pendek,
- * 10 detik untuk hasil besar. Skala dari panjang teks hasil agar
+ * Rentang timing RAB (owner 2026-10-27, diperpanjang 2026-11-28):
+ * 5 detik untuk hasil pendek, 10 detik untuk hasil besar, 20 detik
+ * untuk hasil sangat besar. Skala dari panjang teks hasil agar
  * "tergantung hasil nanti banyak atau tidak" benar-benar terukur,
  * bukan tebakan dari panjang prompt (prompt pendek bisa menghasilkan
  * tabel RAB 25 baris).
  *
- * Ambang: ≤1.500 karakter → 5.000 ms; ≥8.000 karakter → 10.000 ms;
- * di antaranya linear, dibulatkan ke kelipatan 500 ms.
+ * Ambang: ≤1.500 karakter → 5.000 ms; 1.500–8.000 karakter → linear
+ * 5.000→10.000 ms; 8.000–30.000 karakter → linear 10.000→20.000 ms;
+ * ≥30.000 karakter → 20.000 ms (cap). Dibulatkan ke kelipatan 500 ms.
+ * Draf uji owner (34 item, ~30 ribu karakter) mencapai cap 20 detik.
  */
-export const AI_RAB_DELAY_MS = { min: 5000, max: 10000 } as const;
+export const AI_RAB_DELAY_MS = { min: 5000, max: 20000 } as const;
 
 export function rabMinDelayMs(resultText: string): number {
   const len = (resultText || '').length;
   if (len <= 1500) return AI_RAB_DELAY_MS.min;
-  if (len >= 8000) return AI_RAB_DELAY_MS.max;
-  const ratio = (len - 1500) / (8000 - 1500);
-  const ms = AI_RAB_DELAY_MS.min + ratio * (AI_RAB_DELAY_MS.max - AI_RAB_DELAY_MS.min);
+  if (len <= 8000) {
+    const ratio = (len - 1500) / (8000 - 1500);
+    const ms = AI_RAB_DELAY_MS.min + ratio * (10000 - AI_RAB_DELAY_MS.min);
+    return Math.round(ms / 500) * 500;
+  }
+  if (len >= 30000) return AI_RAB_DELAY_MS.max;
+  const ratio = (len - 8000) / (30000 - 8000);
+  const ms = 10000 + ratio * (AI_RAB_DELAY_MS.max - 10000);
   return Math.round(ms / 500) * 500;
 }
 
-/** Varian berbasis jumlah item (pemanggil yang sudah tahu itemCount). */
+/**
+ * Varian berbasis jumlah item (pemanggil yang sudah tahu itemCount).
+ * Ambang: ≤5 item → 5.000 ms; 5–30 item → linear 5.000→10.000 ms;
+ * 30–60 item → linear 10.000→20.000 ms; ≥60 item → 20.000 ms (cap).
+ */
 export function rabMinDelayMsForItems(itemCount: number): number {
   if (itemCount <= 5) return AI_RAB_DELAY_MS.min;
-  if (itemCount >= 30) return AI_RAB_DELAY_MS.max;
-  const ratio = (itemCount - 5) / (30 - 5);
-  const ms = AI_RAB_DELAY_MS.min + ratio * (AI_RAB_DELAY_MS.max - AI_RAB_DELAY_MS.min);
+  if (itemCount <= 30) {
+    const ratio = (itemCount - 5) / (30 - 5);
+    const ms = AI_RAB_DELAY_MS.min + ratio * (10000 - AI_RAB_DELAY_MS.min);
+    return Math.round(ms / 500) * 500;
+  }
+  if (itemCount >= 60) return AI_RAB_DELAY_MS.max;
+  const ratio = (itemCount - 30) / (60 - 30);
+  const ms = 10000 + ratio * (AI_RAB_DELAY_MS.max - 10000);
   return Math.round(ms / 500) * 500;
 }
 

@@ -46,6 +46,34 @@ export function formatElapsedDtk(ms: number): string {
 }
 
 /**
+ * Kelayakan reveal kata per kata untuk satu entry balasan asisten.
+ *
+ * Owner 2026-11-28: reveal berlaku untuk SEMUA balasan asisten yang
+ * sukses — jawaban LLM maupun deterministik/lokal (kuesioner, draf RAB
+ * langsung, jawaban budget, balasan tombol aksi). `fromAi` TIDAK lagi
+ * menjadi gerbang: entry lokal memang tidak membawa `fromAi`, dan itu
+ * bukan alasan untuk menampilkannya sekaligus; provenance TIDAK
+ * diubah — entry lokal tetap tanpa `fromAi` (dipakai tombol "Coba
+ * Lagi" dkk.), hanya gerbang reveal-nya yang dilonggarkan.
+ *
+ * Tetap tampil-sekaligus (fallback): jawaban gagal, jawaban kosong,
+ * atau prefers-reduced-motion. Rencana kosong (0 langkah) juga
+ * fallback — dicek pemanggil sesudah buildRevealPlan.
+ */
+export interface RevealEntryInput {
+  isError?: boolean;
+  content?: string | null;
+}
+
+export function shouldRevealEntry(entry: RevealEntryInput): boolean {
+  if (entry.isError) return false;
+  const full = entry.content ?? '';
+  if (!full.trim()) return false;
+  if (prefersReducedMotion()) return false;
+  return true;
+}
+
+/**
  * Parse sel berisi angka rupiah ribuan bulat ("Rp120.660.900",
  * "120.660.900", "1850000"). Sel dengan koma desimal ("Rp3,35 juta")
  * DITOLAK (null) — bukan nilai total yang bisa dihitung naik; tabel
@@ -215,9 +243,18 @@ export function buildRevealPlan(md: string): RevealPlan {
       blocks.push({ kind: 'table', headers, aligns, rows, totalRowIndex, totalCellIndex, totalValue });
       continue;
     }
-    // Kumpulkan run baris non-kosong.
+    // Kumpulkan run baris non-kosong — TAPI berhenti bila di tengah run
+    // muncul awal tabel (baris header + baris pemisah). Draf RAB lokal
+    // (formatDirectRabMessage / formatUniversalDraftMessage) menempel
+    // judul grup `**...**` tepat di atas tabel tanpa baris kosong di
+    // antaranya; tanpa pemisahan ini satu run utuh (judul + tabel +
+    // subtotal) jatuh ke blok 'other' dan tabelnya tampil baris per
+    // baris lewat langkah 'line' biasa — bukan lewat tableHead/row.
+    // Baris pipa yang TIDAK diikuti pemisah bukan awal tabel (tetap
+    // di dalam run, perilaku lama).
     const run: string[] = [];
     while (i < lines.length && lines[i].trim() !== '') {
+      if (isTableRow(lines[i]) && i + 1 < lines.length && isSeparatorRow(lines[i + 1])) break;
       run.push(lines[i]);
       i++;
     }

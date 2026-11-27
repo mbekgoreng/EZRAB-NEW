@@ -55,6 +55,9 @@ import {
   nextReadyStep,
   applyRegistryOutcomeToStep,
   markTransferStepCompleted,
+  markQuestionnaireStepCompleted,
+  markValidateStepCompleted,
+  markQuestionnaireStepBypassed,
   type TaskPlan,
   type PlanStepKind,
 } from '../ai-tools/ezrab-ai/agentOrchestrator';
@@ -479,6 +482,64 @@ async function main(): Promise<void> {
     const pushSites = viewSrc.split('markTransferStepCompleted(p,').length - 1;
     assert.equal(pushSites, 2, 'dua situs push-rab (sukses terverifikasi + duplikat-terblokir) menandai langkah transfer');
     assert.ok(viewSrc.includes('kegagalan registry tidak boleh merusak rencana yang sudah disetujui'), 'pagar catch Fase 5 dipertahankan verbatim');
+  });
+
+  await test('F6-S16 PERBAIKAN 2026-11-28: draf tersimpan ⇒ kuesioner + validasi + generate-draft tertutup (invarian live)', () => {
+    resetAll();
+    // Rencana build-rab kolam (kasus laporan user: draf ✓, kuesioner &
+    // validasi masih ○) + draft NYATA dari spek terstruktur (bukan
+    // fixture ChainValidation buatan) — validasi rantai dihitung mesin.
+    const obj = deriveObjective('buatkan rab kolam renang 8x4 meter', 'CREATE_RAB_DIRECT');
+    assert.equal(obj.goal, 'build-rab', 'pra-kondisi: goal build-rab');
+    const plan = buildPlanForObjective(obj, { userId: null, projectId: PROJ, conversationId: CONV });
+    const specs = [
+      { key: 'pool-type', kind: 'material', label: 'Tipe kolam', value: 'skimmer', status: 'confirmed', source: 'percakapan', updatedAt: new Date().toISOString() },
+      { key: 'pool-finish', kind: 'material', label: 'Finishing kolam', value: 'keramik', status: 'confirmed', source: 'percakapan', updatedAt: new Date().toISOString() },
+    ];
+    const res = buildUniversalDraft('Buatkan RAB kolam renang 8x4 meter', undefined, { projectId: PROJ, structuredSpecs: specs });
+    assert.equal(res.kind, 'draft', 'pra-kondisi: draft terbentuk');
+    const draft = (res as { draft: UniversalDraft }).draft;
+    assert.ok(draft.chainValidation, 'pra-kondisi: draft membawa chainValidation (spek terstruktur)');
+    // Keadaan laporan: kartu kuesioner TIDAK pernah tampil (planned),
+    // validasi belum ditandai (planned), draf belum ditandai (planned).
+    assert.equal(stepOf(plan, 'collect-specs-questionnaire').status, 'planned', 'pra-kondisi: kuesioner planned');
+    assert.equal(stepOf(plan, 'validate-spec-chain').status, 'planned', 'pra-kondisi: validasi planned');
+    assert.equal(stepOf(plan, 'generate-draft').status, 'planned', 'pra-kondisi: draf planned');
+    // Komposisi yang SAMA dengan callback persistActiveDraft di view.tsx
+    // (V-05 di chatPerbaikanSemuaA.test.ts mengunci wiring-nya).
+    let next = plan;
+    if (draft.chainValidation) next = markValidateStepCompleted(next, draft.chainValidation);
+    const q = next.steps.find((s) => s.kind === 'collect-specs-questionnaire');
+    if (q && q.status === 'running') {
+      next = markQuestionnaireStepCompleted(next, 'Spek terkumpul lewat chat — kuesioner tidak dijawab lewat kartu.');
+    } else if (q && (q.status === 'planned' || q.status === 'ready')) {
+      next = markQuestionnaireStepBypassed(next);
+    }
+    next = {
+      ...next,
+      steps: next.steps.map((s) => (s.kind === 'generate-draft' && s.status !== 'succeeded'
+        ? { ...s, status: 'succeeded' as const, result: `Draft tersimpan: ${draft.title} (v${draft.version}).`, completedAt: new Date().toISOString() }
+        : s)),
+    };
+    // INVARIAN: tidak ada lagi langkah 2/3/4 yang planned/running.
+    for (const kind of ['collect-specs-questionnaire', 'validate-spec-chain', 'generate-draft'] as const) {
+      const st = stepOf(next, kind).status;
+      assert.ok(st === 'succeeded' || st === 'cancelled', `langkah ${kind} harus tertutup, dapat ${st}`);
+    }
+    // Validasi NYATA kolam: volume berbasis asumsi → 5/6, basis volume
+    // disebut sebagai butir yang belum lolos (angka dari mesin, bukan
+    // fixture — bila mesin berubah, hitungan ini ikut berubah).
+    assert.equal(
+      stepOf(next, 'validate-spec-chain').result,
+      'Validasi rantai spek: 5/6 butir lolos — belum lolos: basis volume.',
+      'result validasi = hitungan mesin yang sebenarnya',
+    );
+    assert.equal(
+      stepOf(next, 'collect-specs-questionnaire').result,
+      'Spek terkumpul lewat chat — kuesioner tidak ditampilkan.',
+      'kuesioner tak tampil → cancelled jujur',
+    );
+    assert.ok(stepOf(next, 'generate-draft').result?.startsWith('Draft tersimpan:'), 'draf ditandai tersimpan');
   });
 
   // ============ (P) KEPUTUSAN planned/ready ============
