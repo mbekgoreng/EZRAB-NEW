@@ -146,7 +146,18 @@ export function stageDedAnalysisFile(
   return current;
 }
 
-/** Mulai lari analisis baru — menggantikan lari sebelumnya. */
+/**
+ * Mulai lari analisis baru — menggantikan lari sebelumnya.
+ *
+ * Ulangi Proses (owner 2026-11-28 01:17): hasil lari lama DIPERTAHANKAN
+ * saat lari baru dimulai — layar hasil tetap menampilkan hasil lama
+ * selama lari baru berjalan, dan tetap utuh bila lari baru GAGAL.
+ * Hasil baru menggantikan hasil lama hanya bila lari baru SUKSES
+ * (patch sukses di dashboard). Status commit ikut dipertahankan
+ * dengan alasan yang sama (item lama memang sudah terkirim) dan
+ * direset oleh patch sukses yang sama — bukan di sini. Log tetap
+ * dikosongkan di awal lari (perilaku lama).
+ */
 export function startDedAnalysisRun(init: {
   file: File;
   buffer: ArrayBuffer;
@@ -154,6 +165,7 @@ export function startDedAnalysisRun(init: {
   mode: AiEstimateAnalysisMode;
 }): DedAnalysisSnapshot {
   const now = Date.now();
+  const prev = current;
   current = {
     requestId: ++seq,
     status: 'running',
@@ -167,11 +179,13 @@ export function startDedAnalysisRun(init: {
     // Log dikosongkan di awal lari, mengikuti perilaku dashboard
     // sebelumnya (setExecutionLogs([]) di awal runAnalysisPipeline).
     logs: [],
-    result: null,
+    // Hasil + status commit lari lama dipertahankan (lihat komentar
+    // di atas) — lari pertama tidak punya pendahulu, jadi null.
+    result: prev?.result ?? null,
     startTime: now,
     error: null,
-    committedSuccess: false,
-    commitReport: null,
+    committedSuccess: prev?.committedSuccess ?? false,
+    commitReport: prev?.commitReport ?? null,
     startedAt: now,
     updatedAt: now,
   };

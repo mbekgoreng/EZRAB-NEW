@@ -270,6 +270,11 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
 
   // Run the full AI Estimate Pipeline
   const runAnalysisPipeline = async (fileToUse?: File, bufferToUse?: ArrayBuffer) => {
+    // Pagar ganda (Ulangi Proses 2026-11-28): tombol sudah disabled
+    // saat lari berjalan, tapi pemanggilan langsung (mis. klik ganda
+    // cepat sebelum render berikutnya) juga ditahan di sini — lari
+    // baru tidak boleh menggantikan lari yang masih berjalan.
+    if (isAnalyzing) return;
     const targetFile = fileToUse || selectedFile;
     const targetBuffer = bufferToUse || fileBuffer;
     if (!targetFile || !targetBuffer) return;
@@ -339,6 +344,13 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
         stageId: 'COMPLETED',
         status: 'done',
         statusMessage: t('ai.ded.dash.status_done'),
+        // Ulangi Proses (2026-11-28): hasil baru menggantikan hasil
+        // lama — status commit lari lama TIDAK berlaku untuk item baru
+        // (belum terkirim), jadi direset di titik sukses ini, bukan
+        // di awal lari (bila lari baru gagal, hasil + status commit
+        // lama tetap utuh — lihat startDedAnalysisRun).
+        committedSuccess: false,
+        commitReport: null,
       });
       const totalItemsCount = result.stats?.totalItems ?? result.workItems.length;
       addLog(t('ai.ded.dash.log_done_a') + Math.round(result.executionDurationSec || 0) + t('ai.ded.dash.log_done_b') + totalItemsCount + t('ai.ded.dash.log_done_c'), 'SUCCESS', 'BUILD_RAB');
@@ -374,7 +386,12 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
       ];
     }
 
-    if (outputResult) {
+    // Ulangi Proses (2026-11-28): hasil lama DIPERTAHANKAN selama
+    // lari baru berjalan (lihat startDedAnalysisRun), jadi cabang
+    // sukses di bawah wajib kalah oleh cabang aktif — tanpa
+    // `!isAnalyzing` ini, panel tahap akan menampilkan SUCCESS
+    // basi dari hasil lama sementara lari baru masih berjalan.
+    if (outputResult && !isAnalyzing) {
       const itemsCount = outputResult.stats?.totalItems ?? outputResult.workItems.length;
       const st = outputResult.stats;
       // Hitungan verifikasi NYATA dari hasil pipeline (quantitySanityGate
@@ -1047,6 +1064,24 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
                   >
                     <Download size={14} />
                     <span>{t('ai.ded.dash.export_csv')}</span>
+                  </button>
+                  {/* Ulangi Proses (perintah owner 2026-11-28 01:17):
+                      sesudah generate selesai, jalankan ulang analisis
+                      dari dokumen + pengaturan yang sama (tanpa unggah
+                      ulang) lewat runAnalysisPipeline yang sama. Hanya
+                      tampil di layar hasil (blok ini hanya dirender bila
+                      outputResult ada); disabled + label berjalan saat
+                      lari berlangsung. Hasil lama diganti hasil baru
+                      hanya bila lari baru sukses; bila gagal, hasil
+                      lama tetap tampil. */}
+                  <button
+                    type="button"
+                    onClick={() => runAnalysisPipeline()}
+                    disabled={isAnalyzing}
+                    className="py-2 px-3.5 ez-bg-surface border border-[var(--ez-hue-slate-border)] hover:bg-[var(--ez-hue-slate-bg)] text-[var(--ez-color-text-primary)] text-[12px] font-semibold rounded-[8px] transition flex items-center gap-1.5 disabled:opacity-50"
+                  >
+                    <RotateCcw size={14} />
+                    <span>{isAnalyzing ? t('ai.ded.dash.btn_repeat_running') : t('ai.ded.dash.btn_repeat_process')}</span>
                   </button>
                   <button
                     type="button"

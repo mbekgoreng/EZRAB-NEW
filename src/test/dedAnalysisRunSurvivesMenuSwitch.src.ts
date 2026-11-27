@@ -62,6 +62,13 @@ const fakeResult = {
   summary: { estimatedTotal: 5000000 },
   executionDurationSec: 42,
 } as any;
+const fakeResult2 = {
+  success: true,
+  workItems: [{ id: 'w2' }],
+  stats: { totalItems: 1 },
+  summary: { estimatedTotal: 7770000 },
+  executionDurationSec: 55,
+} as any;
 
 async function main() {
   // =====================================================================
@@ -142,10 +149,28 @@ async function main() {
     && getDedAnalysisSnapshot()?.commitReport?.held === 1);
   appendDedAnalysisLog({ timestamp: '04:31:00', level: 'SUCCESS', message: 'Selesai', stage: 'BUILD_RAB' });
   const run3 = startDedAnalysisRun({ file: f1, buffer: b1, isSample: false, mode: 'FAST' });
-  check('C4 lari baru mengosongkan log + status commit (perilaku lama)',
-    run3.logs.length === 0 && run3.committedSuccess === false && run3.commitReport === null);
+  // C4 — Ulangi Proses (2026-11-28): lari baru MEMPERTAHANKAN hasil +
+  // status commit lari lama (layar hasil tetap menampilkan hasil lama
+  // selama lari baru berjalan, dan utuh bila lari baru gagal); hanya
+  // log yang dikosongkan di awal lari. Perilaku lama (mengosongkan
+  // hasil + commit di awal lari) sengaja diubah — pin lama diganti.
+  check('C4 lari baru mempertahankan hasil + status commit lama, log dikosongkan',
+    run3.logs.length === 0
+    && run3.result === fakeResult
+    && run3.committedSuccess === true
+    && run3.commitReport?.added === 3 && run3.commitReport?.held === 1
+    && run3.status === 'running' && run3.progress === 5);
+  check('C5 lari baru sukses mengganti hasil + mereset status commit (bentuk patch sukses dashboard)',
+    patchDedAnalysisRun(run3.requestId, {
+      result: fakeResult2, progress: 100, stageId: 'COMPLETED',
+      status: 'done', statusMessage: 'Analisis DED selesai. RAB estimasi berhasil disusun.',
+      committedSuccess: false, commitReport: null,
+    }) === true
+    && getDedAnalysisSnapshot()?.result === fakeResult2
+    && getDedAnalysisSnapshot()?.committedSuccess === false
+    && getDedAnalysisSnapshot()?.commitReport === null);
   __resetDedAnalysisRuntime();
-  check('C5 publish tanpa snapshot = no-op (false)',
+  check('C6 publish tanpa snapshot = no-op (false)',
     publishDedAnalysis({ committedSuccess: true }) === false && getDedAnalysisSnapshot() === null);
 
   // =====================================================================
