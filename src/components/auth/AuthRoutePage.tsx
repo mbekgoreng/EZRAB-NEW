@@ -19,6 +19,7 @@ import { X } from 'lucide-react';
 import { navigateTo } from '../../routing/routes';
 import { RoleLoginPanel } from './RoleLoginPanel';
 import { SlidingAuthCard } from './SlidingAuthCard';
+import { useI18n } from '../../i18n';
 
 interface AuthRoutePageProps {
   initialTab?: 'masuk' | 'daftar';
@@ -60,6 +61,7 @@ export const AuthRoutePage: React.FC<AuthRoutePageProps> = ({
   onSuccessLogin,
   onBackToLanding,
 }) => {
+  const { t } = useI18n();
   const [showRole, setShowRole] = useState(false);
 
   if (showRole) {
@@ -72,7 +74,7 @@ export const AuthRoutePage: React.FC<AuthRoutePageProps> = ({
           <button
             type="button"
             onClick={onBackToLanding}
-            aria-label="Kembali ke beranda"
+            aria-label={t('landing.auth_back_home')}
             style={ROLE_CLOSE}
           >
             <X size={18} />

@@ -11,6 +11,7 @@ import React, { useState } from 'react';
 import { AlertCircle, Inbox, Info, Lock, MapPin, Paperclip, Send } from 'lucide-react';
 import { useAuth } from '../../auth/AuthContext';
 import { useRole } from '../../auth/RoleContext';
+import { useI18n } from '../../i18n';
 import {
   DESCRIPTION_MAX_LENGTH,
   EMPTY_REPORT_DRAFT,
@@ -69,6 +70,7 @@ function FieldError({ id, message }: { id: string; message?: string }) {
 export const SuggestionComplaintBox: React.FC = () => {
   const { user, loading: authLoading } = useAuth();
   const { activeRole } = useRole();
+  const { t } = useI18n();
   // D-83 (Batch G2): gateSession: true — INVARIAN MOUNT: komponen ini
   // hanya di-mount di tab help UnifiedSettingsView, di dalam workspace
   // yang hanya bisa dimasuki lewat gerbang kode akses (produksi) atau
@@ -133,7 +135,7 @@ export const SuggestionComplaintBox: React.FC = () => {
 
   return (
     <section
-      aria-label="Kotak Saran dan Pengaduan"
+      aria-label={t('settings.ks_judul')}
       style={{
         padding: '16px',
         borderRadius: '16px',
@@ -161,11 +163,10 @@ export const SuggestionComplaintBox: React.FC = () => {
         </div>
         <div style={{ flex: '1 1 260px', minWidth: '220px' }}>
           <h4 style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--ez-color-text-primary)', margin: 0 }}>
-            Kotak Saran &amp; Pengaduan
+            {t('settings.ks_judul')}
           </h4>
           <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-slate)', margin: '6px 0 0', lineHeight: 1.5 }}>
-            Sampaikan saran, laporkan kendala, atau beri tahu kami jika Anda menemukan masalah pada EZRAB.
-            Masukan Anda membantu kami meningkatkan kualitas layanan.
+            {t('settings.ks_desc')}
           </p>
         </div>
         <button
@@ -187,7 +188,7 @@ export const SuggestionComplaintBox: React.FC = () => {
             flexShrink: 0,
           }}
         >
-          {open ? 'Tutup Formulir' : 'Buat Laporan'}
+          {open ? t('settings.ks_tutup') : t('settings.ks_buat')}
         </button>
       </div>
 
@@ -195,7 +196,7 @@ export const SuggestionComplaintBox: React.FC = () => {
         <div id="ks-panel" style={{ marginTop: '16px' }}>
           {authLoading ? (
             <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
-              Memeriksa sesi masuk Anda…
+              {t('settings.ks_memeriksa_sesi')}
             </p>
           ) : !signedIn ? (
             // Cabang defensif: dengan gateSession: true di atas, cabang
@@ -215,27 +216,24 @@ export const SuggestionComplaintBox: React.FC = () => {
               <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
                 <Lock size={15} style={{ color: 'var(--ez-color-text-muted)', flexShrink: 0, marginTop: '1px' }} />
                 <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-slate)', margin: 0, lineHeight: 1.55 }}>
-                  Fitur ini tersedia untuk pengguna yang sudah masuk, agar setiap laporan terhubung ke
-                  akun yang jelas. Laporan anonim tidak didukung. Sesi Anda saat ini tidak dikenali —
-                  muat ulang halaman atau masuk kembali lewat gerbang workspace.
+                  {t('settings.ks_butuh_masuk')}
                 </p>
               </div>
             </div>
           ) : (
             <>
               <p style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', margin: '0 0 14px', lineHeight: 1.5 }}>
-                Melapor sebagai{' '}
+                {t('settings.ks_melapor_a')}
                 <strong style={{ color: 'var(--ez-color-text-primary)' }}>{identity.label}</strong>
-                {identity.kind === 'demo-role' ? ' (sesi peran demo)' : ''}
-                {identity.kind === 'access-gate' ? ' (sesi gerbang kode akses)' : ''} — identitas diambil dari sesi
-                masuk Anda, jadi Anda tidak perlu mengetik ulang email.
+                {identity.kind === 'demo-role' ? t('settings.ks_sesi_demo') : ''}
+                {identity.kind === 'access-gate' ? t('settings.ks_sesi_gerbang') : ''}{t('settings.ks_melapor_b')}
               </p>
 
-              <form onSubmit={handleSubmit} noValidate aria-label="Formulir saran dan pengaduan">
+              <form onSubmit={handleSubmit} noValidate aria-label={t('settings.ks_form_aria')}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                   <div>
                     <label htmlFor="ks-title" style={labelStyle}>
-                      Judul laporan <span aria-hidden="true" style={{ color: 'var(--ez-color-danger)' }}>*</span>
+                      {t('settings.ks_judul_laporan')}<span aria-hidden="true" style={{ color: 'var(--ez-color-danger)' }}>*</span>
                     </label>
                     <input
                       id="ks-title"
@@ -243,7 +241,7 @@ export const SuggestionComplaintBox: React.FC = () => {
                       value={draft.title}
                       maxLength={TITLE_MAX_LENGTH}
                       onChange={(e) => updateDraft({ title: e.target.value })}
-                      placeholder="Ringkasan singkat masalah atau saran Anda"
+                      placeholder={t('settings.ks_ph_judul')}
                       aria-required="true"
                       aria-invalid={errors.title ? true : undefined}
                       aria-describedby={errors.title ? 'ks-title-error' : undefined}
@@ -255,7 +253,7 @@ export const SuggestionComplaintBox: React.FC = () => {
                   <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
                     <div style={{ flex: '1 1 220px', minWidth: '200px' }}>
                       <label htmlFor="ks-category" style={labelStyle}>
-                        Kategori <span aria-hidden="true" style={{ color: 'var(--ez-color-danger)' }}>*</span>
+                        {t('settings.ks_kategori')}<span aria-hidden="true" style={{ color: 'var(--ez-color-danger)' }}>*</span>
                       </label>
                       <select
                         id="ks-category"
@@ -266,7 +264,7 @@ export const SuggestionComplaintBox: React.FC = () => {
                         aria-describedby={errors.category ? 'ks-category-error' : undefined}
                         style={{ ...inputStyle, padding: '0 10px' }}
                       >
-                        <option value="">Pilih kategori laporan</option>
+                        <option value="">{t('settings.ks_pilih_kategori')}</option>
                         {REPORT_CATEGORIES.map((category) => (
                           <option key={category} value={category}>
                             {category}
@@ -278,7 +276,7 @@ export const SuggestionComplaintBox: React.FC = () => {
 
                     <div style={{ flex: '1 1 160px', minWidth: '150px' }}>
                       <label htmlFor="ks-priority" style={labelStyle}>
-                        Prioritas yang dirasakan (opsional)
+                        {t('settings.ks_prioritas')}
                       </label>
                       <select
                         id="ks-priority"
@@ -300,14 +298,14 @@ export const SuggestionComplaintBox: React.FC = () => {
 
                   <div>
                     <label htmlFor="ks-description" style={labelStyle}>
-                      Deskripsi <span aria-hidden="true" style={{ color: 'var(--ez-color-danger)' }}>*</span>
+                      {t('settings.ks_deskripsi')}<span aria-hidden="true" style={{ color: 'var(--ez-color-danger)' }}>*</span>
                     </label>
                     <textarea
                       id="ks-description"
                       value={draft.description}
                       maxLength={DESCRIPTION_MAX_LENGTH}
                       onChange={(e) => updateDraft({ description: e.target.value })}
-                      placeholder="Jelaskan saran atau kendala Anda — langkah yang dilakukan, hasil yang diharapkan, dan yang sebenarnya terjadi."
+                      placeholder={t('settings.ks_ph_deskripsi')}
                       rows={5}
                       aria-required="true"
                       aria-invalid={errors.description ? true : undefined}
@@ -318,14 +316,14 @@ export const SuggestionComplaintBox: React.FC = () => {
                       <FieldError id="ks-description-error" message={errors.description} />
                     ) : (
                       <p id="ks-description-count" style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', margin: '6px 0 0', textAlign: 'right' }}>
-                        {draft.description.length}/{DESCRIPTION_MAX_LENGTH} karakter
+                        {draft.description.length}/{DESCRIPTION_MAX_LENGTH} {t('settings.ks_karakter')}
                       </p>
                     )}
                   </div>
 
                   <div>
                     <label htmlFor="ks-attachment" style={labelStyle}>
-                      Lampiran screenshot (opsional)
+                      {t('settings.ks_lampiran')}
                     </label>
                     <div
                       style={{
@@ -340,8 +338,7 @@ export const SuggestionComplaintBox: React.FC = () => {
                     >
                       <Paperclip size={14} style={{ color: 'var(--ez-color-text-muted)', flexShrink: 0, marginTop: '1px' }} />
                       <p style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', margin: 0, lineHeight: 1.5 }}>
-                        Lampiran belum tersedia — pengiriman laporan belum terhubung ke server, jadi file
-                        belum dapat dilampirkan saat ini.
+                        {t('settings.ks_lampiran_note')}
                       </p>
                     </div>
                     <input id="ks-attachment" type="file" accept="image/*" disabled style={{ display: 'none' }} tabIndex={-1} />
@@ -360,9 +357,9 @@ export const SuggestionComplaintBox: React.FC = () => {
                         style={{ marginTop: '2px', flexShrink: 0 }}
                       />
                       <span>
-                        Sertakan konteks halaman ini
+                        {t('settings.ks_konteks')}
                         <span style={{ display: 'block', fontSize: '11.5px', color: 'var(--ez-color-text-muted)' }}>
-                          Menandai bahwa laporan dibuat dari halaman Pusat Bantuan.
+                          {t('settings.ks_konteks_desc')}
                         </span>
                       </span>
                     </label>
@@ -403,8 +400,7 @@ export const SuggestionComplaintBox: React.FC = () => {
                       <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-slate)', margin: 0, lineHeight: 1.55 }}>
                         {unavailableMessage}{' '}
                         <span style={{ color: 'var(--ez-color-text-muted)' }}>
-                          Tulisan Anda tetap ada di formulir ini selama halaman terbuka, tetapi belum
-                          tersimpan di mana pun.
+                          {t('settings.ks_tulisan_tetap')}
                         </span>
                       </p>
                     </div>
@@ -432,7 +428,7 @@ export const SuggestionComplaintBox: React.FC = () => {
                       }}
                     >
                       <Send size={14} />
-                      {checking ? 'Memeriksa…' : 'Kirim Laporan'}
+                      {checking ? t('settings.ks_memeriksa') : t('settings.ks_kirim')}
                     </button>
                   </div>
                 </div>

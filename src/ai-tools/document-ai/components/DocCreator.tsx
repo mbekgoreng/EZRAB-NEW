@@ -299,7 +299,7 @@ export const DocCreator: React.FC<{
         return;
       }
       if (run.status === 'failed') {
-        setError(run.error ?? 'Generate gagal.');
+        setError(run.error ?? t('ai.doc.create.err_gen_failed'));
         consumeDocAiGenerateRun(run.requestId);
       }
     };
@@ -544,7 +544,7 @@ export const DocCreator: React.FC<{
         // versi sebelumnya DAN entri riwayat versi — tidak ada yang terhapus
         // diam-diam.
         const current = buildRecord({ content: html, contentFormat: 'html' });
-        const withVersion = pushVersion(current, 'generate', 'Isi sebelum buat ulang AI');
+        const withVersion = pushVersion(current, 'generate', t('ai.doc.create.ver_before_regen'));
         const rec: DraftRecord = {
           ...withVersion,
           content: newHtml,
@@ -638,13 +638,13 @@ export const DocCreator: React.FC<{
         fileName: docLabel,
       });
       if (!res.success) {
-        return { ok: false, error: `${res.errorCode || 'ERROR'}: ${res.message || 'Penyempurnaan prompt gagal.'}` };
+        return { ok: false, error: `${res.errorCode || 'ERROR'}: ${res.message || t('ai.doc.create.err_prompt_failed')}` };
       }
       const out = (res.content || '').trim();
-      if (!out) return { ok: false, error: 'AI mengembalikan hasil kosong.' };
+      if (!out) return { ok: false, error: t('ai.doc.create.err_prompt_empty') };
       return { ok: true, text: out };
     } catch (e: unknown) {
-      return { ok: false, error: e instanceof Error ? e.message : 'Penyempurnaan prompt gagal.' };
+      return { ok: false, error: e instanceof Error ? e.message : t('ai.doc.create.err_prompt_failed') };
     }
   };
 
@@ -661,7 +661,7 @@ export const DocCreator: React.FC<{
       sama sehingga ekspor PDF/Word dan editor memakai draf yang sama. */
   const runFunnelGenerate = async (req: FunnelGenerateRequest): Promise<FunnelGenerateResult> => {
     if (!docAiAllowed) return { ok: false, error: docAiLockedMsg };
-    if (funnelBusy) return { ok: false, error: 'Generate sedang berjalan.' };
+    if (funnelBusy) return { ok: false, error: t('ai.doc.create.err_gen_busy') };
     const baseMeta = TEMPLATE_META[req.choice.templateId];
     if (!baseMeta) return { ok: false, error: `Template "${req.choice.templateId}" tidak ditemukan.` };
     const meta = resolveTemplate(baseMeta, req.choice.subtypeId);
@@ -761,7 +761,7 @@ export const DocCreator: React.FC<{
     const sourceHtml = html;
     if (!toPlainText(sourceHtml, 'html').trim()) {
       setTranslateOpen(false);
-      setError('Dokumen kosong — tidak ada isi yang bisa diterjemahkan.');
+      setError(t('ai.doc.create.err_empty_translate'));
       return;
     }
     setTranslating(true);
@@ -873,9 +873,9 @@ export const DocCreator: React.FC<{
     candidateText: string,
     note: string,
   ) => {
-    if (!draft) throw new Error('Tidak ada draf aktif — kandidat tidak diterapkan.');
+    if (!draft) throw new Error(t('ai.doc.create.enhance_err_no_draft'));
     const ed = editorRef.current;
-    if (!ed) throw new Error('Editor tidak tersedia — kandidat tidak diterapkan.');
+    if (!ed) throw new Error(t('ai.doc.create.enhance_err_no_editor'));
     const current = buildRecord({ content: html, contentFormat: 'html' });
     const withVersion = pushVersion(current, 'enhance', note);
     const structured =
@@ -889,7 +889,7 @@ export const DocCreator: React.FC<{
           { from: range.from, to: range.to },
           { type: 'text', text: candidateText },
         );
-    if (!ok) throw new Error('Penggantian rentang di editor gagal — dokumen tidak berubah.');
+    if (!ok) throw new Error(t('ai.doc.create.enhance_err_replace'));
     const newHtml = ed.getHTML();
     const rec: DraftRecord = {
       ...withVersion,
@@ -1033,7 +1033,7 @@ export const DocCreator: React.FC<{
       if (kind === 'pdf') await exportPaperPdf(input);
       else await exportPaperDocx(input);
     } catch (e) {
-      setError(`Ekspor ${kind.toUpperCase()} gagal: ${e instanceof Error ? e.message : 'kesalahan tak dikenal'}`);
+      setError(`${t('ai.doc.create.export_fail_a')} ${kind.toUpperCase()} ${t('ai.doc.create.export_fail_b')} ${e instanceof Error ? e.message : t('ai.doc.create.export_fail_c')}`);
     } finally {
       setExporting(null);
     }
@@ -1083,7 +1083,7 @@ export const DocCreator: React.FC<{
       approverName,
     );
     if (!res.ok) {
-      setError(res.reason || 'Persetujuan tidak dapat dilakukan.');
+      setError(res.reason || t('ai.doc.create.err_approve_failed'));
       return;
     }
     setApproveOpen(false);
@@ -1192,11 +1192,11 @@ export const DocCreator: React.FC<{
     showTemplateDetail &&
     ((baseMeta?.subtypes?.length ?? 0) > 0 || (effectiveMeta && effectiveMeta.fields.length > 0)) ? (
       <>
-        <div className="docai-step" style={{ textAlign: 'left', marginTop: 10 }}>Isi field template</div>
+        <div className="docai-step" style={{ textAlign: 'left', marginTop: 10 }}>{t('ai.doc.create.fill_title')}</div>
         <div className="docai-fieldgrid">
           {baseMeta?.subtypes && baseMeta.subtypes.length > 0 && (
             <label className="docai-fielditem">
-              <span className="docai-label">Subjenis Dokumen *</span>
+              <span className="docai-label">{t('ai.doc.create.subtype_label')}</span>
               <select
                 className="docai-select"
                 style={{ marginBottom: 0 }}
@@ -1218,7 +1218,7 @@ export const DocCreator: React.FC<{
                 <textarea className="docai-textarea" style={{ marginBottom: 0 }} rows={2} value={fieldValues[f.key] || ''} placeholder={f.placeholder} onChange={(e) => setFieldValues((v) => ({ ...v, [f.key]: e.target.value }))} />
               ) : f.type === 'select' ? (
                 <select className="docai-select" style={{ marginBottom: 0 }} value={fieldValues[f.key] || ''} onChange={(e) => setFieldValues((v) => ({ ...v, [f.key]: e.target.value }))}>
-                  <option value="">— Pilih —</option>
+                  <option value="">{t('ai.doc.create.opt_pick')}</option>
                   {(f.options ?? []).map((o) => (
                     <option key={o.value} value={o.value}>{o.label}</option>
                   ))}
@@ -1244,10 +1244,9 @@ export const DocCreator: React.FC<{
         <CompanyIdentityPanel onChanged={() => setProfileVersion((v) => v + 1)} />
         {onNavigateToMenu && (
           <p className="docai-hint" style={{ marginTop: 14 }}>
-            Profil &amp; kop di halaman ini dipakai untuk dokumen bebas AI Document. Kop untuk dokumen
-            tender diatur terpisah di Dokumen Proyek — datanya berasal dari data perusahaan &amp; proyek.{' '}
+            {t('ai.doc.create.identity_hint_a')}{' '}
             <button type="button" className="docai-linkbtn" onClick={() => onNavigateToMenu('dokumen-tender')}>
-              Buka Dokumen Proyek <ArrowRight size={13} />
+              {t('ai.doc.create.xlink_open')} <ArrowRight size={13} />
             </button>
           </p>
         )}
@@ -1312,7 +1311,7 @@ export const DocCreator: React.FC<{
       <div className="docai-tab">
         {/* V3 2026-11-19 (mockup v3 di-ACC owner): subjudul halaman + hero
             "Mulai dokumen baru" dihapus — form langsung mulai di bawah
-            tab. Judul halaman tetap di FeaturePageShell (view.tsx).
+            tab. Header shell juga DIHAPUS (owner 2026-11-27).
             Catatan: pengungkapan status DRAF ikut hilang dari layar ini;
             draf tetap berlabel DRAF di editor/riwayat. */}
         <div className="docai-empty docai-edempty">
@@ -1374,7 +1373,7 @@ export const DocCreator: React.FC<{
                           onClick={() => setLockDetailOpen((v) => !v)}
                           aria-expanded={lockDetailOpen}
                         >
-                          {lockDetailOpen ? 'Sembunyikan' : 'Detail'}
+                          {lockDetailOpen ? t('ai.doc.create.lock_hide') : t('ai.doc.create.lock_detail')}
                         </button>
                       </div>
                       {lockDetailOpen && <div className="docai-lockstrip-full">{docAiLockedMsg}</div>}
@@ -1384,16 +1383,16 @@ export const DocCreator: React.FC<{
                 {/* V3 2026-11-19: label langkah tenang tanpa nomor; tombol
                     perluas/ciutkan dihapus — textarea kini 120px
                     secara default (document-ai.css). */}
-                <div className="docai-step" style={{ textAlign: 'left' }}>Instruksi</div>
+                <div className="docai-step" style={{ textAlign: 'left' }}>{t('ai.doc.create.instr_title')}</div>
                 <textarea
                   className="docai-textarea"
                   rows={5}
                   value={instruction}
                   onChange={(e) => setInstruction(e.target.value)}
-                  placeholder="Tuliskan dokumen yang Anda butuhkan dalam Bahasa Indonesia. AI hanya memakai instruksi ini dan data pada ringkasan konteks; data yang belum tersedia ditandai [ISI: ...], tidak dikarang."
+                  placeholder={t('ai.doc.create.instr_hint')}
                 />
                 <div className="docai-step" style={{ textAlign: 'left', marginTop: 4 }}>
-                  Jenis dokumen
+                  {t('ai.doc.create.type_title')}
                 </div>
                 <select
                   className="docai-select docai-full"
@@ -1407,7 +1406,7 @@ export const DocCreator: React.FC<{
                     }
                   }}
                 >
-                  <option value="">Otomatis — AI menentukan dari instruksi (Draf Bebas)</option>
+                  <option value="">{t('ai.doc.create.type_auto')}</option>
                   {ALL_TEMPLATES.map((tmpl) => (
                     <option key={tmpl.id} value={tmpl.id}>
                       {tmpl.name}
@@ -1415,7 +1414,7 @@ export const DocCreator: React.FC<{
                   ))}
                 </select>
                 <div className="docai-step" style={{ textAlign: 'left', marginTop: 8 }}>
-                  Proyek
+                  {t('ai.doc.create.project_title')}
                 </div>
               </>
             )}
@@ -1427,11 +1426,11 @@ export const DocCreator: React.FC<{
               <input
                 value={tplQuery}
                 onChange={(e) => setTplQuery(e.target.value)}
-                placeholder="Cari template (nama / kegunaan)…"
-                aria-label="Cari template"
+                placeholder={t('ai.doc.create.tpl_search_ph')}
+                aria-label={t('ai.doc.create.tpl_search_label')}
               />
             </div>
-            <div className="docai-catchips" role="tablist" aria-label="Filter kategori template">
+            <div className="docai-catchips" role="tablist" aria-label={t('ai.doc.create.tpl_cat_filter')}>
               <button
                 type="button"
                 role="tab"
@@ -1439,7 +1438,7 @@ export const DocCreator: React.FC<{
                 className={`docai-catchip ${tplCat === 'all' ? 'active' : ''}`}
                 onClick={() => setTplCat('all')}
               >
-                Semua
+                {t('ai.doc.create.cat_all')}
               </button>
               {TEMPLATE_CATEGORIES.map((c) => (
                 <button
@@ -1576,11 +1575,10 @@ export const DocCreator: React.FC<{
                 {effectiveMeta?.reference?.scope ? <> · {effectiveMeta.reference.scope}</> : null}
               </p>
               <div className="docai-tmpldetail-sec">
-                <span className="docai-label">Data yang diambil dari proyek &amp; perusahaan</span>
+                <span className="docai-label">{t('ai.doc.create.ctx_data_title')}</span>
                 {availableContext.length === 0 ? (
                   <p className="docai-hint" style={{ margin: 0 }}>
-                    Belum ada data konteks yang tersedia — pilih proyek dan lengkapi profil perusahaan
-                    agar AI memakai data yang sah, bukan karangan.
+                    {t('ai.doc.create.ctx_data_empty')}
                   </p>
                 ) : (
                   <ul className="docai-tmpldetail-ctx">
@@ -1591,15 +1589,15 @@ export const DocCreator: React.FC<{
                       </li>
                     ))}
                     {availableContext.length > 8 && (
-                      <li className="docai-hint">+{availableContext.length - 8} field tersedia lainnya (lihat ringkasan konteks).</li>
+                      <li className="docai-hint">+{availableContext.length - 8} {t('ai.doc.create.ctx_more')}</li>
                     )}
                   </ul>
                 )}
               </div>
               <div className="docai-tmpldetail-sec">
-                <span className="docai-label">Data wajib yang belum tersedia</span>
+                <span className="docai-label">{t('ai.doc.create.missing_title')}</span>
                 {liveMissing.length === 0 ? (
-                  <p className="docai-hint" style={{ margin: 0 }}>Semua data wajib yang terdeteksi sudah tersedia.</p>
+                  <p className="docai-hint" style={{ margin: 0 }}>{t('ai.doc.create.missing_all')}</p>
                 ) : (
                   <ul className="docai-tmpldetail-missing">
                     {liveMissing.map((m) => (
@@ -1619,14 +1617,14 @@ export const DocCreator: React.FC<{
                     setAiAutoType(false);
                   }}
                 >
-                  <Sparkles size={13} /> Buat dengan AI
+                  <Sparkles size={13} /> {t('ai.doc.create.mode_ai')}
                 </button>
                 <button
                   type="button"
                   className={`docai-btn-ghost docai-mini ${createMode === 'form' ? 'is-active' : ''}`}
                   onClick={() => setCreateMode('form')}
                 >
-                  <FileText size={13} /> Isi Manual
+                  <FileText size={13} /> {t('ai.doc.create.mode_manual')}
                 </button>
               </div>
             </div>
@@ -1635,8 +1633,8 @@ export const DocCreator: React.FC<{
                 Kolom kanan hanya detail read-only + acuan + contoh. */}
             {effectiveMeta?.reference && (
               <p className="docai-hint" style={{ textAlign: 'left' }}>
-                Acuan: {effectiveMeta.reference.sourceName}
-                {effectiveMeta.reference.sourceRef ? ` (${effectiveMeta.reference.sourceRef})` : ''} · Status:{' '}
+                {t('ai.doc.create.ref_a')} {effectiveMeta.reference.sourceName}
+                {effectiveMeta.reference.sourceRef ? ` (${effectiveMeta.reference.sourceRef})` : ''} · {t('ai.doc.create.ref_status')}{' '}
                 {referenceStatusLabel(effectiveMeta.reference.verification)} · {effectiveMeta.reference.scope}
               </p>
             )}
@@ -1644,10 +1642,10 @@ export const DocCreator: React.FC<{
               <div style={{ textAlign: 'left' }}>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   <button type="button" className="docai-btn-ghost" onClick={() => setShowSample((v) => !v)}>
-                    {showSample ? 'Sembunyikan Contoh' : 'Lihat Contoh Dokumen'}
+                    {showSample ? t('ai.doc.create.sample_hide') : t('ai.doc.create.sample_show')}
                   </button>
                   <button type="button" className="docai-btn-ghost" onClick={createFromSample}>
-                    Buat dari Contoh (tanpa AI)
+                    {t('ai.doc.create.sample_create')}
                   </button>
                 </div>
                 {showSample && (
@@ -1666,14 +1664,13 @@ export const DocCreator: React.FC<{
           <div className="docai-xlink">
             <Briefcase size={22} style={{ color: 'var(--ez-color-primary)', flexShrink: 0 }} />
             <div style={{ flex: 1, minWidth: 200 }}>
-              <div className="docai-xlink-t">Dokumen Proyek &amp; Tender</div>
+              <div className="docai-xlink-t">{t('ai.doc.create.xlink_title')}</div>
               <div className="docai-xlink-d">
-                Paket dokumen resmi{project ? <> proyek <strong>{project.name}</strong></> : ' proyek ini'} — surat
-                penawaran, kontrak, dan administrasi tender yang disusun dari data proyek &amp; RAB.
+                {t('ai.doc.create.xlink_d_a')}{project ? <> {t('ai.doc.create.xlink_d_proj')} <strong>{project.name}</strong></> : t('ai.doc.create.xlink_d_noproj')}{t('ai.doc.create.xlink_d_b')}
               </div>
             </div>
             <button type="button" className="docai-btn-ghost" onClick={() => onNavigateToMenu('dokumen-tender')}>
-              Buka Dokumen Proyek <ArrowRight size={14} />
+              {t('ai.doc.create.xlink_open')} <ArrowRight size={14} />
             </button>
           </div>
         )}
@@ -1682,10 +1679,9 @@ export const DocCreator: React.FC<{
           <div className="docai-periksapick">
             <ClipboardCheck size={20} style={{ color: 'var(--ez-color-primary)', flexShrink: 0 }} />
             <div>
-              <strong>Edit &amp; Periksa</strong>
+              <strong>{t('ai.doc.create.periksa_title')}</strong>
               <p>
-                Pilih draf tersimpan di bawah untuk membukanya di editor. Panel Periksa Dokumen, Revisi
-                Bahasa Alami, dan Riwayat Versi berada di bawah editor.
+                {t('ai.doc.create.periksa_p')}
               </p>
             </div>
           </div>
@@ -1743,25 +1739,25 @@ export const DocCreator: React.FC<{
               )}
               {draft.status === 'final' ? (
                 <span className="docai-finalnote">
-                  <Lock size={12} /> Final — disetujui oleh <strong>{draft.approvedBy || '—'}</strong>
+                  <Lock size={12} /> {t('ai.doc.create.final_by_a')} <strong>{draft.approvedBy || '—'}</strong>
                   {draft.approvedAt
-                    ? ` pada ${new Date(draft.approvedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`
+                    ? `${t('ai.doc.create.final_on_a')}${new Date(draft.approvedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`
                     : ''}
-                  . Status terkunci.
+                  {t('ai.doc.create.final_locked')}
                 </span>
               ) : (
                 <>
                   <select
-                    aria-label="Status dokumen"
+                    aria-label={t('ai.doc.panels.status_label')}
                     value={draft.status}
                     onChange={(e) => changeDraftStatus(e.target.value as DocDraftStatus)}
                     className="docai-statusselect"
                   >
-                    <option value="draft">Draft</option>
-                    <option value="editing">Sedang Disunting</option>
-                    <option value="review">Perlu Ditinjau</option>
-                    <option value="reviewed">Siap Disetujui</option>
-                    <option value="archived">Diarsipkan</option>
+                    <option value="draft">{t('ai.doc.panels.status_draft')}</option>
+                    <option value="editing">{t('ai.doc.panels.status_editing')}</option>
+                    <option value="review">{t('ai.doc.create.status_review')}</option>
+                    <option value="reviewed">{t('ai.doc.create.status_ready')}</option>
+                    <option value="archived">{t('ai.doc.panels.status_archived')}</option>
                   </select>
                   {displayStatus === 'Siap disetujui' && (
                     <button
@@ -1769,7 +1765,7 @@ export const DocCreator: React.FC<{
                       className="docai-btn-ghost docai-mini"
                       onClick={() => setApproveOpen(true)}
                     >
-                      <CheckCircle2 size={13} /> Setujui &amp; Tandai Final
+                      <CheckCircle2 size={13} /> {t('ai.doc.create.approve_final')}
                     </button>
                   )}
                 </>
@@ -1779,19 +1775,19 @@ export const DocCreator: React.FC<{
           {draft && (
             <div className="docai-edstatus">
               <label className="docai-kopselect">
-                <Building2 size={13} /> Kop dokumen:
+                <Building2 size={13} /> {t('ai.doc.create.kop_label')}
                 <select
                   value={draft.companyProfileId ?? ''}
                   onChange={(e) => changeDraftKop(e.target.value)}
                   disabled={draft.status === 'final'}
-                  aria-label="Profil kop untuk dokumen ini"
+                  aria-label={t('ai.doc.create.kop_profile_label')}
                 >
                   <option value="">
-                    Profil default{defaultProfile?.name ? ` (${defaultProfile.name})` : ''}
+                    {t('ai.doc.create.kop_default')}{defaultProfile?.name ? ` (${defaultProfile.name})` : ''}
                   </option>
                   {allProfiles.map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.name || '(tanpa nama)'}
+                      {p.name || t('ai.doc.panels.no_name')}
                       {p.isDefault ? ' · default' : ''}
                     </option>
                   ))}
@@ -1939,17 +1935,15 @@ export const DocCreator: React.FC<{
         <div className="docai-confirmbar" role="alertdialog" aria-live="polite">
           <CheckCircle2 size={16} />
           <span>
-            Tandai dokumen ini <strong>Final</strong>? Persetujuan dicatat atas nama penyetuju dan
-            status dokumen terkunci. Perubahan isi sesudahnya (buat ulang / pulihkan versi) membatalkan
-            status final.
+            {t('ai.doc.create.approve_q_a')} <strong>{t('ai.doc.panels.status_final')}</strong>{t('ai.doc.create.approve_q_b')}
           </span>
           <input
             className="docai-input docai-approver-input"
             style={{ marginBottom: 0 }}
             value={approverName}
             onChange={(e) => setApproverName(e.target.value)}
-            placeholder="Nama penyetuju (wajib)"
-            aria-label="Nama penyetuju"
+            placeholder={t('ai.doc.create.approver_ph')}
+            aria-label={t('ai.doc.create.approver_label')}
           />
           <div className="docai-confirmbtns">
             <button
@@ -1957,7 +1951,7 @@ export const DocCreator: React.FC<{
               onClick={() => void approveCurrentDraft()}
               disabled={!approverName.trim()}
             >
-              Setujui &amp; Tandai Final
+              {t('ai.doc.create.approve_final')}
             </button>
             <button className="docai-btn-ghost" onClick={() => setApproveOpen(false)}>
               {t('ai.doc.create.ed_cancel')}
@@ -1966,11 +1960,10 @@ export const DocCreator: React.FC<{
         </div>
       )}
       {translateOpen && draft && (
-        <div className="docai-confirmbar" role="dialog" aria-label="Terjemahkan dokumen">
+        <div className="docai-confirmbar" role="dialog" aria-label={t('ai.doc.create.translate_label')}>
           <Languages size={16} />
           <span>
-            Terjemahkan dokumen ini ke bahasa lain. Hasilnya disimpan sebagai <strong>draf baru</strong>{' '}
-            (dokumen ini tidak berubah, status persetujuan tidak ikut terbawa):
+            {t('ai.doc.create.translate_a')} <strong>{t('ai.doc.create.translate_new')}</strong>{t('ai.doc.create.translate_b')}
           </span>
           <div className="docai-confirmbtns">
             {TRANSLATE_LANGUAGE_CODES.map((code) => (
@@ -1996,8 +1989,7 @@ export const DocCreator: React.FC<{
           </div>
           {translating && (
             <span className="docai-hint" style={{ margin: 0 }}>
-              <Loader2 size={13} className="spin" /> Menerjemahkan dokumen — struktur, nama, nomor,
-              tanggal, dan nilai dipertahankan…
+              <Loader2 size={13} className="spin" /> {t('ai.doc.create.translating')}
             </span>
           )}
         </div>
@@ -2020,25 +2012,21 @@ export const DocCreator: React.FC<{
             className="docai-btn-ghost docai-mini"
             onClick={() => setTranslateInfo(null)}
           >
-            Tutup
+            {t('common.tutup')}
           </button>
         </div>
       )}
 
       {previewMode && (
         <div className="docai-previewbar" role="status">
-          <Eye size={14} /> Mode Pratinjau — dokumen tidak dapat disunting. Matikan Pratinjau untuk
-          kembali menyunting.
+          <Eye size={14} /> {t('ai.doc.create.preview_warn')}
         </div>
       )}
 
       {draft && !kopHtml(effectiveProfile) && (
         <div className="docai-warn docai-kophint" role="note">
-          <Building2 size={14} /> Dokumen ini belum memiliki kop surat — profil perusahaan untuk
-          dokumen ini belum diisi (nama/logo kosong dan tidak ada gambar kop penuh), sehingga lembar
-          tampil tanpa kop dan hasil ekspor pun tanpa kop. Isi profil lewat tab{' '}
-          <strong>Identitas Perusahaan</strong>, atau pilih profil lain pada pemilih “Kop dokumen” di
-          atas. Pemberitahuan ini hanya tampil di layar — tidak ikut tercetak atau terekspor.
+          <Building2 size={14} /> {t('ai.doc.create.kop_warn_a')}{' '}
+          <strong>{t('ai.doc.panels.identity_title')}</strong>{t('ai.doc.create.kop_warn_b')}
         </div>
       )}
 
@@ -2096,17 +2084,14 @@ export const DocCreator: React.FC<{
 
       {genTruncated && (
         <div className="docai-warn" role="note">
-          <AlertTriangle size={14} /> Konteks yang dikirim ke AI pada generate terakhir melebihi
-          batas 140.000 karakter dan <strong>dipotong</strong> — draf disusun dari bagian awal
-          konteks saja. Bila hasilnya terasa tidak lengkap, persempit sumber konteks (matikan salah
-          satu sumber pada ringkasan konteks) lalu buat ulang draf.
+          <AlertTriangle size={14} /> {t('ai.doc.create.trunc_a')} <strong>{t('ai.doc.create.trunc_b')}</strong>{t('ai.doc.create.trunc_c')}
         </div>
       )}
 
       {genMissing.length > 0 && (
         <div className="docai-missingbox docai-genmissing">
           <div className="docai-missingbox-t">
-            <AlertTriangle size={14} /> Perlu dilengkapi pada draf ini ({genMissing.length})
+            <AlertTriangle size={14} /> {t('ai.doc.create.gen_missing_a')} ({genMissing.length})
           </div>
           <ul>
             {genMissing.map((m) => (
@@ -2116,7 +2101,7 @@ export const DocCreator: React.FC<{
             ))}
           </ul>
           <p className="docai-hint" style={{ marginTop: 6 }}>
-            Draf tetap dibuat; lengkapi bagian di atas langsung di editor atau lewat panel Periksa di bawah.
+            {t('ai.doc.create.gen_missing_p')}
           </p>
         </div>
       )}

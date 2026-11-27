@@ -166,6 +166,21 @@ export interface EzrabAiEntryContext {
   /** Prompt awal (prefill, bukan autosend — kecuali pemanggil lama yang
    *  eksplisit memakai sendMode autosend lewat API lama). */
   prompt?: string;
+  /* ---- Step 3 Magic AI (2026-11-26): sapaan pembuka — ADITIF ----
+   * Modal proyek baru boleh menitipkan sapaan hangat (teks jadi,
+   * disusun pemanggil — mis. memakai nama proyek + menyebut budget
+   * sebagai batas maksimal) beserta chip saran lanjutan. Chat AI
+   * menyematkannya sebagai SATU pesan asisten pertama percakapan
+   * proyek yang masih kosong (lihat view.tsx, efek seed greeting):
+   * teksnya dipersist seperti pesan asisten biasa, chip-nya dirender
+   * dari followUpSuggestions (efemeral sesi, seperti saran lain).
+   * TANPA greeting: perilaku lama utuh (tanpa pesan tambahan, tanpa
+   * perubahan prefill/autosend). Greeting TIDAK PERNAH dikirim
+   * otomatis sebagai pesan pengguna — ia hanya ditampilkan. */
+  greeting?: string;
+  /** Chip saran lanjutan di bawah sapaan (mis. kategori pekerjaan);
+   * klik chip mengirim labelnya sebagai pesan pengguna biasa. */
+  greetingSuggestions?: string[];
   /** Id item RAB yang sedang diaudit dari inspector (bukan objek item). */
   rabItemId?: string;
   documentId?: string;

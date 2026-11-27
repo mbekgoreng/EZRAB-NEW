@@ -47,6 +47,7 @@ import {
   signUpWithEmailPassword,
 } from '../../services/supabaseClient';
 import { useRole } from '../../auth/RoleContext';
+import { useI18n } from '../../i18n/I18nContext';
 import { EMAIL_FORMAT, friendlyAuthError } from './authFormShared';
 import { ROLE_ACCOUNTS } from '../../auth/roleAccounts';
 import { logoutSessionsOnly } from '../../auth/logoutAll';
@@ -119,6 +120,7 @@ export const SlidingAuthCard: React.FC<Props> = ({
   onModeChange,
   demoOnly = false,
 }) => {
+  const { t } = useI18n();
   const [isSignUp, setIsSignUp] = useState(initialTab === 'daftar');
   // AUTH-06: mode mengikuti route — saat URL berpindah /masuk ↔ /daftar
   // (termasuk tombol kembali browser), form menyesuaikan, bukan sebaliknya.
@@ -649,7 +651,7 @@ export const SlidingAuthCard: React.FC<Props> = ({
       >
         {/* Tombol tutup menempel di pojok kartu (bukan melayang di pojok
             viewport) — di halaman route ini jalan kembali ke beranda. */}
-        <button type="button" className="sac-close" onClick={onClose} aria-label="Tutup">
+        <button type="button" className="sac-close" onClick={onClose} aria-label={t('auth.tutup')}>
           <X size={20} />
         </button>
 
@@ -720,7 +722,7 @@ export const SlidingAuthCard: React.FC<Props> = ({
                 )}
                 {isSignUp && (
                   <div className="field-group">
-                    <label className="field-label" htmlFor="sac2-name">Nama lengkap</label>
+                    <label className="field-label" htmlFor="sac2-name">{t('auth.nama_lengkap')}</label>
                     <div className="input-line">
                       <input
                         ref={nameRef}
@@ -738,7 +740,7 @@ export const SlidingAuthCard: React.FC<Props> = ({
                           if (fieldErrors.name)
                             setFieldErrors((prev) => ({ ...prev, name: undefined }));
                         }}
-                        placeholder="Nama lengkap Anda"
+                        placeholder={t('auth.nama_placeholder')}
                         autoComplete="name"
                         {...fieldFocus(null)}
                       />
@@ -773,7 +775,7 @@ export const SlidingAuthCard: React.FC<Props> = ({
                         const progress = Math.min(1, e.target.value.length / 24);
                         trackTarget.current = { x: 0.35 + progress * 0.65, y: -0.35 };
                       }}
-                      placeholder="you@example.com"
+                      placeholder={t('auth.email_placeholder')}
                       autoComplete="email"
                       {...fieldFocus('email')}
                     />
@@ -786,7 +788,7 @@ export const SlidingAuthCard: React.FC<Props> = ({
                 </div>
 
                 <div className="field-group">
-                  <label className="field-label" htmlFor="sac2-password">Kata sandi</label>
+                  <label className="field-label" htmlFor="sac2-password">{t('auth.password')}</label>
                   <div className="input-line">
                     <input
                       id="sac2-password"
@@ -831,7 +833,7 @@ export const SlidingAuthCard: React.FC<Props> = ({
 
                 {isSignUp && (
                   <div className="field-group">
-                    <label className="field-label" htmlFor="sac2-confirm">Konfirmasi kata sandi</label>
+                    <label className="field-label" htmlFor="sac2-confirm">{t('auth.konfirmasi_password')}</label>
                     <div className="input-line">
                       <input
                         id="sac2-confirm"
@@ -869,7 +871,7 @@ export const SlidingAuthCard: React.FC<Props> = ({
                       onClick={() => void forgotPassword()}
                       disabled={resetBusy || busy || googleBusy}
                     >
-                      {resetBusy ? 'Mengirim…' : 'Lupa kata sandi?'}
+                      {resetBusy ? 'Mengirim…' : `${t('auth.lupa_password')}?`}
                     </button>
                   </div>
                 )}
@@ -886,7 +888,7 @@ export const SlidingAuthCard: React.FC<Props> = ({
                 )}
 
                 <button type="submit" className="primary-btn" disabled={fieldsLocked || busy || googleBusy}>
-                  {busy ? spinner : null} {isSignUp ? 'Daftar' : 'Masuk'}
+                  {busy ? spinner : null} {isSignUp ? t('auth.daftar') : t('auth.masuk')}
                 </button>
 
                 <div className="or-divider">
@@ -912,9 +914,9 @@ export const SlidingAuthCard: React.FC<Props> = ({
               </form>
 
               <p className="signup-footer">
-                <span>{isSignUp ? 'Sudah punya akun?' : 'Belum punya akun?'}</span>
+                <span>{isSignUp ? t('auth.sudah_punya') : t('auth.belum_punya')}</span>
                 <button type="button" className="signup-link" onClick={() => switchMode(!isSignUp)}>
-                  {isSignUp ? 'Masuk' : 'Daftar gratis'}
+                  {isSignUp ? t('auth.masuk') : 'Daftar gratis'}
                 </button>
               </p>
             </>

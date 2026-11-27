@@ -29,14 +29,6 @@ const MAX_FILE_MB = 25;
 export type AfterAnalysisChoice = 'hasil' | 'ded';
 
 /** Deskripsi singkat mode analisis pertama (ditampilkan di panel). */
-const MODE_DESCRIPTIONS: Record<AnaTab, string> = {
-  summary: 'Dapatkan ringkasan terstruktur: tujuan, poin utama, kesimpulan. Mode lain tetap tersedia di workspace analisis sesudah dokumen dibuka.',
-  qa: 'Ajukan pertanyaan bebas — jawaban hanya dari isi dokumen; bila tidak ditemukan, AI mengatakannya.',
-  extract: 'Ekstrak data terstruktur dari isi dokumen: nilai, tanggal, pihak, dan tabel penting.',
-  compare: 'Bandingkan dokumen terpilih dengan dokumen lain yang sudah siap dianalisis.',
-  checklist: 'Periksa kelengkapan aspek dokumen konstruksi satu per satu: ADA atau TIDAK DITEMUKAN.',
-};
-
 function kindIcon(kind: string) {
   if (kind === 'pdf') return <FileText size={18} color="var(--ez-color-danger)" />;
   if (kind === 'xlsx') return <FileSpreadsheet size={18} color="var(--ez-color-success)" />;
@@ -254,8 +246,8 @@ export const DocLibrary: React.FC<{
 
           <div className="docai-lib-upload">
             <div className="docai-lib-upload-head">
-              <h3>{t('ai.doc.lib.h2')} — Upload Dokumen</h3>
-              <p>Unggah PDF, DOCX, atau XLSX pertama Anda untuk mulai menganalisis</p>
+              <h3>{t('ai.doc.lib.h2')} — {t('ai.doc.lib.upload_suffix')}</h3>
+              <p>{t('ai.doc.lib.empty_p_none')}</p>
             </div>
             <div
               className={`docai-drop ${dragOver ? 'over' : ''}`}
@@ -265,14 +257,12 @@ export const DocLibrary: React.FC<{
               onDrop={(e) => { e.preventDefault(); setDragOver(false); handleFiles(e.dataTransfer.files); }}
             >
               <div className="big-ico"><UploadCloud size={26} /></div>
-              <p className="docai-drop-title">Seret & letakkan dokumen di sini</p>
+              <p className="docai-drop-title">{t('ai.doc.lib.drop_title')}</p>
               <p className="docai-drop-sub">
-                Lepaskan dokumen konstruksi (gambar DED, spesifikasi teknis, BOQ, kontrak) di area ini,
-                atau gunakan tombol di bawah. Teks dokumen diekstrak otomatis sesudah diunggah — dokumen
-                hasil scan tanpa lapisan teks tidak bisa diekstrak.
+                {t('ai.doc.lib.drop_sub')}
               </p>
               <div className="docai-drop-badges">
-                <span>PDF</span><span>DOCX</span><span>XLSX</span><span>TXT · CSV</span><span>Maks {MAX_FILE_MB} MB / file</span>
+                <span>PDF</span><span>DOCX</span><span>XLSX</span><span>TXT · CSV</span><span>{t('ai.doc.lib.max_a')} {MAX_FILE_MB} MB / file</span>
               </div>
               <button
                 type="button"
@@ -295,7 +285,7 @@ export const DocLibrary: React.FC<{
                 <div className="docai-lib-selected-info">
                   <div className="docai-lib-selected-name">{selectedDoc.fileName}</div>
                   <div className="docai-lib-selected-meta">
-                    {selectedDoc.pages ? `${selectedDoc.pages} halaman · ` : ''}{formatBytes(selectedDoc.sizeBytes)} · {statusText(selectedDoc.status, t)}
+                    {selectedDoc.pages ? `${selectedDoc.pages} ${t('ai.doc.lib.pages_suffix')} · ` : ''}{formatBytes(selectedDoc.sizeBytes)} · {statusText(selectedDoc.status, t)}
                   </div>
                 </div>
                 {statusBadge(selectedDoc.status, t)}
@@ -370,15 +360,15 @@ export const DocLibrary: React.FC<{
         </div>
 
         {/* ================= Panel Pengaturan Dokumen (pinggir kanan) ================= */}
-        <aside className="docai-settings" aria-label="Pengaturan Dokumen">
+        <aside className="docai-settings" aria-label={t('ai.doc.lib.settings_aria')}>
           <div className="docai-settings-scroll">
             <div className="docai-settings-head">
-              <h2><span className="ico"><Settings2 size={18} /></span> Pengaturan Dokumen</h2>
-              <p>Berlaku untuk analisis pertama dokumen ini</p>
+              <h2><span className="ico"><Settings2 size={18} /></span> {t('ai.doc.lib.settings_title')}</h2>
+              <p>{t('ai.doc.lib.settings_sub')}</p>
             </div>
 
             <section className="docai-set-sec">
-              <h3>Mode Analisis Pertama</h3>
+              <h3>{t('ai.doc.lib.mode_title')}</h3>
               <div className="docai-modecards">
                 {modeTabs.map((m) => {
                   const Icon = m.icon;
@@ -391,7 +381,7 @@ export const DocLibrary: React.FC<{
                       aria-pressed={initialMode === m.id}
                     >
                       <span className="docai-modecard-top"><Icon size={15} /> {m.label}</span>
-                      <span className="docai-modecard-hint">{MODE_DESCRIPTIONS[m.id]}</span>
+                      <span className="docai-modecard-hint">{t('ai.doc.lib.mode_desc_' + m.id)}</span>
                     </button>
                   );
                 })}
@@ -400,43 +390,43 @@ export const DocLibrary: React.FC<{
 
             {initialMode === 'qa' && (
               <section className="docai-set-sec">
-                <h3>Pertanyaan Anda</h3>
+                <h3>{t('ai.doc.lib.question_title')}</h3>
                 <input
                   className="docai-input"
                   style={{ marginBottom: 0 }}
                   value={initialQuestion}
                   onChange={(e) => onInitialQuestionChange(e.target.value)}
                   placeholder={t('ai.doc.ana.qa_ph')}
-                  aria-label="Pertanyaan tentang dokumen"
+                  aria-label={t('ai.doc.lib.question_label')}
                 />
-                <p className="docai-set-sub">Pertanyaan dikirim otomatis saat analisis dijalankan; Anda bisa bertanya lagi di workspace analisis.</p>
+                <p className="docai-set-sub">{t('ai.doc.lib.question_sub')}</p>
               </section>
             )}
 
             {initialMode === 'compare' && (
               <section className="docai-set-sec">
-                <h3>Dokumen Pembanding</h3>
+                <h3>{t('ai.doc.lib.compare_title')}</h3>
                 <select
                   value={initialCompareId}
                   onChange={(e) => onInitialCompareIdChange(e.target.value)}
                   className="docai-select docai-full"
-                  aria-label="Pilih dokumen pembanding"
+                  aria-label={t('ai.doc.lib.compare_label')}
                 >
                   <option value="">{t('ai.doc.ana.compare_pick')}</option>
                   {compareOptions.map((o) => <option key={o.id} value={o.id}>{o.fileName}</option>)}
                 </select>
-                <p className="docai-set-sub">Dokumen terpilih dibandingkan dengan dokumen ini — keduanya dibaca utuh.</p>
+                <p className="docai-set-sub">{t('ai.doc.lib.compare_sub')}</p>
               </section>
             )}
 
             {/* Draft & Terjemah BUKAN mode analisis — keduanya jalur Studio
                 (keputusan mockup v2.3 §6 / keputusan 11). */}
             <div className="docai-routing-note">
-              Draft dan Terjemah bukan bagian dari Analisis Dokumen — keduanya adalah jalur Studio, di tab <strong>Buat dengan AI</strong> dan <strong>Edit &amp; Periksa</strong>.
+              {t('ai.doc.lib.routing_a')} <strong>{t('ai.doc.create.mode_ai')}</strong>{t('ai.doc.lib.routing_b')}<strong>{t('ai.doc.create.periksa_title')}</strong>{t('ai.doc.lib.routing_c')}
             </div>
 
             <section className="docai-set-sec">
-              <h3>Jenis Dokumen</h3>
+              <h3>{t('ai.doc.lib.kind_title')}</h3>
               <div className="docai-modechips">
                 {kindChips.map((c) => (
                   <button
@@ -450,11 +440,11 @@ export const DocLibrary: React.FC<{
                   </button>
                 ))}
               </div>
-              <p className="docai-set-sub">Filter jenis mengikuti perpustakaan dokumen (Dokumen Saya) — “Semua jenis” adalah bawaan saat mengunggah.</p>
+              <p className="docai-set-sub">{t('ai.doc.lib.kind_sub')}</p>
             </section>
 
             <section className="docai-set-sec">
-              <h3>Bahasa Dokumen & Hasil</h3>
+              <h3>{t('ai.doc.lib.lang_title')}</h3>
               <div className="docai-seg2">
                 {langChips.map((o) => (
                   <button
@@ -464,15 +454,15 @@ export const DocLibrary: React.FC<{
                     onClick={() => setLang(o.id as Lang)}
                     aria-pressed={lang === o.id}
                   >
-                    {o.id === 'id' ? 'Bahasa Indonesia' : o.nativeName}
+                    {o.id === 'id' ? t('ai.doc.lib.lang_id') : o.nativeName}
                   </button>
                 ))}
               </div>
-              <p className="docai-set-sub">Mengikuti bahasa antarmuka aplikasi (i18n) — ringkasan dan jawaban AI memakai bahasa yang sama.</p>
+              <p className="docai-set-sub">{t('ai.doc.lib.lang_sub')}</p>
             </section>
 
             <section className="docai-set-sec">
-              <h3>Sesudah Analisis</h3>
+              <h3>{t('ai.doc.lib.after_title')}</h3>
               <div className="docai-seg2">
                 <button
                   type="button"
@@ -480,7 +470,7 @@ export const DocLibrary: React.FC<{
                   onClick={() => onAfterAnalysisChange('hasil')}
                   aria-pressed={afterAnalysis === 'hasil'}
                 >
-                  Buka Hasil Analisis
+                  {t('ai.doc.lib.after_result')}
                 </button>
                 <button
                   type="button"
@@ -489,25 +479,25 @@ export const DocLibrary: React.FC<{
                   aria-pressed={afterAnalysis === 'ded'}
                   disabled={!onContinueToDed}
                 >
-                  Lanjut ke DED AI
+                  {t('ai.doc.lib.after_ded')}
                 </button>
               </div>
               <p className="docai-set-sub">
                 {afterAnalysis === 'ded'
-                  ? 'Tombol utama membawa Anda ke DED Estimate AI sesudah dokumen siap.'
-                  : 'Tombol utama membuka workspace analisis untuk dokumen terpilih.'}
+                  ? t('ai.doc.lib.after_ded_sub')
+                  : t('ai.doc.lib.after_result_sub')}
               </p>
             </section>
 
             {selectedDoc && (
               <section className="docai-set-sec">
-                <h3>Dokumen Terpilih</h3>
+                <h3>{t('ai.doc.lib.selected_title')}</h3>
                 <div className="docai-set-rows">
-                  <div><span>Nama</span><b>{selectedDoc.fileName}</b></div>
-                  <div><span>Jenis</span><b style={{ textTransform: 'uppercase' }}>{selectedDoc.kind}</b></div>
-                  <div><span>Ukuran</span><b>{formatBytes(selectedDoc.sizeBytes)}</b></div>
-                  {selectedDoc.pages ? <div><span>Halaman</span><b>{selectedDoc.pages}</b></div> : null}
-                  <div><span>Status</span><b>{statusText(selectedDoc.status, t)}</b></div>
+                  <div><span>{t('ai.doc.lib.row_name')}</span><b>{selectedDoc.fileName}</b></div>
+                  <div><span>{t('ai.doc.lib.th_kind')}</span><b style={{ textTransform: 'uppercase' }}>{selectedDoc.kind}</b></div>
+                  <div><span>{t('ai.doc.lib.th_size')}</span><b>{formatBytes(selectedDoc.sizeBytes)}</b></div>
+                  {selectedDoc.pages ? <div><span>{t('ai.doc.lib.row_pages')}</span><b>{selectedDoc.pages}</b></div> : null}
+                  <div><span>{t('ai.doc.lib.th_status')}</span><b>{statusText(selectedDoc.status, t)}</b></div>
                 </div>
               </section>
             )}
@@ -521,18 +511,18 @@ export const DocLibrary: React.FC<{
               disabled={afterAnalysis === 'ded' ? !canAnalyze : !runReady}
               onClick={handlePrimary}
             >
-              <FileSearch size={17} /> {afterAnalysis === 'ded' ? 'Lanjut ke DED AI' : `${t('ai.doc.ana.run_a')} ${activeModeLabel}`}
+              <FileSearch size={17} /> {afterAnalysis === 'ded' ? t('ai.doc.lib.after_ded') : `${t('ai.doc.ana.run_a')} ${activeModeLabel}`}
             </button>
             <p className="docai-settings-hint">
               {!selectedDoc
-                ? 'Unggah atau pilih dokumen yang siap untuk mulai.'
+                ? t('ai.doc.lib.hint_pick')
                 : afterAnalysis === 'ded'
-                  ? '1 dokumen terpilih · lanjut ke DED Estimate AI'
+                  ? t('ai.doc.lib.hint_ded')
                   : initialMode === 'qa' && !initialQuestion.trim()
-                    ? 'Tulis pertanyaan tentang dokumen ini dulu.'
+                    ? t('ai.doc.lib.hint_question')
                     : initialMode === 'compare' && !initialCompareId
                       ? t('ai.doc.ana.err_compare_first')
-                      : `1 dokumen terpilih · mode ${activeModeLabel} · hasil dibuka di workspace analisis`}
+                      : `${t('ai.doc.lib.hint_ready_a')}${activeModeLabel}${t('ai.doc.lib.hint_ready_b')}`}
             </p>
           </div>
         </aside>

@@ -16,12 +16,10 @@
  * kartu estimasi lega (baris estimasi 1 baris + persetujuan singkat
  * + teks lengkap di balik "Selengkapnya"), catatan ekspektasi jujur
  * verbatim, tombol Mulai Analisis DED lebar penuh 52px, dan daftar
- * Draft tersimpan baris ramping di bawah. Judul + subtitle + pill
- * kredit disediakan shell halaman (FeaturePageShell); subtitle
- * dipulihkan khusus halaman ini lewat pengecualian per-halaman di
- * feature-page-shell.css (aturan kompresi global layar pendek tetap
- * berlaku untuk menu lain). Semua state, handler, dan gerbang kredit
- * TIDAK berubah dari tampilan sebelumnya. Kelas baru hanya .mk4-*
+ * Draft tersimpan baris ramping di bawah. Header shell (judul +
+ * subtitle + pill kredit) DIHAPUS (owner 2026-11-27). Semua state,
+ * handler, dan gerbang kredit TIDAK berubah dari tampilan sebelumnya.
+ * Kelas baru hanya .mk4-*
  * (lihat blok V4 CIAMIK di dedAi.css); kelas .dedai-mk-sec-h,
  * .dedai-mk-pick, dan .dedai-mk-start dipakai ulang dari blok
  * REBUILD. v4 TIDAK muat satu layar di desktop mana pun (keputusan
@@ -129,12 +127,6 @@ const fmtSize = (b: number) =>
   b >= 1048576 ? `${(b / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(b / 1024))} KB`;
 
 /** Label kategori kompleksitas DED (dipilih user — bukan hasil deteksi AI). */
-const COMPLEXITY_OPTIONS = [
-  { value: 'simple' as const, label: 'Sederhana', desc: '1–2 lantai, denah simpel', tariffKey: 'ded-ai/simple' },
-  { value: 'medium' as const, label: 'Menengah', desc: '2–3 lantai / ruko', tariffKey: 'ded-ai/medium' },
-  { value: 'complex' as const, label: 'Kompleks', desc: 'Gedung / struktur khusus', tariffKey: 'ded-ai/complex' },
-];
-const complexityLabel = (v: string) => COMPLEXITY_OPTIONS.find((o) => o.value === v)?.label ?? v;
 
 /** Hasil probe per berkas: jumlah halaman + karakter teks sampel (keterbacaan). */
 type FileProbe = { pages: number; textChars: number } | 'error';
@@ -144,6 +136,13 @@ export const DedAiInputView: React.FC<Props> = ({
   onSessionChange,
 }) => {
   const { t } = useI18n();
+  /** Label kategori kompleksitas DED (dipilih user — bukan hasil deteksi AI). */
+  const COMPLEXITY_OPTIONS = [
+    { value: 'simple' as const, label: t('ai.ded.input.cx_simple'), desc: t('ai.ded.input.cx_simple_d'), tariffKey: 'ded-ai/simple' },
+    { value: 'medium' as const, label: t('ai.ded.input.cx_medium'), desc: t('ai.ded.input.cx_medium_d'), tariffKey: 'ded-ai/medium' },
+    { value: 'complex' as const, label: t('ai.ded.input.cx_complex'), desc: t('ai.ded.input.cx_complex_d'), tariffKey: 'ded-ai/complex' },
+  ];
+  const complexityLabel = (v: string) => COMPLEXITY_OPTIONS.find((o) => o.value === v)?.label ?? v;
   const PROJECT_TYPE_OPTIONS: Array<{ value: DedAiProjectType; label: string }> = [
     { value: 'BANGUNAN', label: t('ai.ded.input.type_bangunan') },
     { value: 'GEDUNG', label: t('ai.ded.input.type_gedung') },
@@ -289,12 +288,12 @@ export const DedAiInputView: React.FC<Props> = ({
     .map((p) => p.pages);
   const scopeError = (() => {
     if (scopeKind !== 'SELECTED') return null;
-    if (!scopeSpec.trim()) return 'Isi rentang halaman dulu, mis. 1-5, 8, 12.';
+    if (!scopeSpec.trim()) return t('ai.ded.input.scope_err_empty');
     const probe = resolvePageScope(scopeSpec, 100000);
-    if (probe.invalid.length > 0) return `Format tidak dikenal: ${probe.invalid.join(', ')}`;
-    if (probe.pages.length === 0) return 'Rentang halaman kosong.';
+    if (probe.invalid.length > 0) return `${t('ai.ded.input.scope_err_format_a')}${probe.invalid.join(', ')}`;
+    if (probe.pages.length === 0) return t('ai.ded.input.scope_err_empty_range');
     if (knownCounts.length > 0 && knownCounts.every((c) => resolvePageScope(scopeSpec, c).pages.length === 0)) {
-      return `Halaman terpilih di luar dokumen (dokumen terpanjang ${Math.max(...knownCounts)} halaman).`;
+      return `${t('ai.ded.input.scope_err_oob_a')}${Math.max(...knownCounts)}${t('ai.ded.input.scope_err_oob_b')}`;
     }
     return null;
   })();
@@ -442,7 +441,7 @@ export const DedAiInputView: React.FC<Props> = ({
                       <div className="f-info">
                         <div className="f-name">{f.file.name}</div>
                         <div className="f-meta">
-                          {probe && probe !== 'error' ? `${probe.pages} halaman · ` : ''}{fmtSize(f.file.size)}
+                          {probe && probe !== 'error' ? `${probe.pages} ${t('ai.doc.lib.pages_suffix')} · ` : ''}{fmtSize(f.file.size)}
                         </div>
                         {f.error && <div className="f-err"><AlertTriangle size={13} /> {f.error}</div>}
                       </div>
@@ -452,11 +451,11 @@ export const DedAiInputView: React.FC<Props> = ({
                           hasil scan). */}
                       {!f.error && probe && probe !== 'error' && (
                         probe.textChars > 0
-                          ? <span className="f-tag ok">Teks terbaca · siap</span>
-                          : <span className="f-tag warn">Tanpa teks — mungkin scan</span>
+                          ? <span className="f-tag ok">{t('ai.ded.input.probe_ok')}</span>
+                          : <span className="f-tag warn">{t('ai.ded.input.probe_scan')}</span>
                       )}
-                      {!f.error && probe === 'error' && <span className="f-tag warn">Tidak terprobe</span>}
-                      <button className="f-act" onClick={() => startReplace(f.id)} title="Ganti berkas">
+                      {!f.error && probe === 'error' && <span className="f-tag warn">{t('ai.ded.input.probe_error')}</span>}
+                      <button className="f-act" onClick={() => startReplace(f.id)} title={t('ai.ded.input.replace_file')}>
                         <RotateCcw size={14} />
                       </button>
                       <button className="f-del" onClick={() => setFiles((p) => p.filter((x) => x.id !== f.id))} title={t('ai.ded.input.del_file')}>
@@ -470,7 +469,7 @@ export const DedAiInputView: React.FC<Props> = ({
           </section>
           {/* ===== v4 KARTU 2: Penyimpanan Proyek ===== */}
           <section className="mk4-card">
-            <h2 className="dedai-mk-sec-h"><span className="n">2.</span> Penyimpanan Proyek</h2>
+            <h2 className="dedai-mk-sec-h"><span className="n">2.</span> {t('ai.ded.input.storage_title')}</h2>
             <div className="dedai-seg">
               <button className={!useExisting ? 'active' : ''} onClick={() => setUseExisting(false)}>
                 <PlusCircle size={15} /> {t('ai.ded.input.seg_new')}
@@ -504,14 +503,14 @@ export const DedAiInputView: React.FC<Props> = ({
           </section>
           {/* ===== v4 KARTU 3: Konfigurasi Analisis ===== */}
           <section className="mk4-card">
-            <h2 className="dedai-mk-sec-h"><span className="ic"><Settings2 size={17} /></span><span className="n">3.</span> Konfigurasi Analisis</h2>
+            <h2 className="dedai-mk-sec-h"><span className="ic"><Settings2 size={17} /></span><span className="n">3.</span> {t('ai.ded.input.config_title')}</h2>
             {/* DUAL MODE (§3, G-UI-1): PERSIS DUA kartu mode — EZRAB AI
                 (referensi AHSP) atau Full AI (mandiri). K9 (ACC):
                 chevron expand DIHAPUS; klik badan kartu memilih mode.
                 Kebijakan Harga tetap tidak ada sebagai seksi —
                 kebijakan harga diturunkan dari kartu mode terpilih
                 (catatan keterbukaan per-kartu). */}
-            <div className="dedai-modecards dedai-v23-modecards" role="radiogroup" aria-label="Mode analisis DED">
+            <div className="dedai-modecards dedai-v23-modecards" role="radiogroup" aria-label={t('ai.ded.input.mode_aria')}>
               {DED_MODE_CARDS.map((card) => {
                 const selected = dedMode === card.mode;
                 return (
@@ -533,7 +532,7 @@ export const DedAiInputView: React.FC<Props> = ({
                       </span>
                       <span className="dedai-v23-modecard-text">
                         <span className="dedai-modecard-title">{card.title}</span>
-                        <span className="dedai-modecard-sub" title={card.subtitle}>{card.subtitle}</span>
+                        <span className="dedai-modecard-sub" title={card.mode === 'EZRAB_AI' ? t('ai.ded.input.modecard_ezrab_sub') : t('ai.ded.input.modecard_full_sub')}>{card.mode === 'EZRAB_AI' ? t('ai.ded.input.modecard_ezrab_sub') : t('ai.ded.input.modecard_full_sub')}</span>
                       </span>
                       {selected && (
                         <span className="dedai-modecard-check" aria-hidden="true"><Check size={13} /></span>
@@ -550,14 +549,14 @@ export const DedAiInputView: React.FC<Props> = ({
                 (bukan pengungkapan). Dipin F-1/F-2 dedDocViewportFit
                 + E-2 dedPremiumOneScreen + (a) dedOneScreenBehavior. */}
             {DED_MODE_CARDS.filter((card) => card.mode === dedMode).map((card) => (
-              <p key={card.mode} className="dedai-modecard-note mk4-modenote">{card.note}</p>
+              <p key={card.mode} className="dedai-modecard-note mk4-modenote">{card.mode === 'EZRAB_AI' ? t('ai.ded.input.modecard_ezrab_note') : t('ai.ded.input.modecard_full_note')}</p>
             ))}
             {/* Kedalaman: label singkat 1 baris + segmen + hint di
                 baris sendiri — label panjang lama melipat di kolom
                 sempit. */}
             <div className="mk4-depth">
               <div className="mk4-depth-row">
-                <span className="mk4-depth-lbl">Kedalaman</span>
+                <span className="mk4-depth-lbl">{t('ai.ded.input.depth_label')}</span>
                 <div className="dedai-seg dedai-cfgseg">
                   <button className={mode === 'FAST' ? 'active' : ''} onClick={() => setMode('FAST')}>
                     <Zap size={14} /> {t('ai.ded.input.mode_fast')}
@@ -574,8 +573,8 @@ export const DedAiInputView: React.FC<Props> = ({
           <details className="mk4-card mk4-adv">
             <summary>
               <SlidersHorizontal size={16} />
-              <span className="mk4-adv-t">Pengaturan lanjutan</span>
-              <span className="mk4-adv-s">Kompleksitas · Cakupan · Jenis proyek · Deskripsi · Preferensi output</span>
+              <span className="mk4-adv-t">{t('ai.ded.input.adv_title')}</span>
+              <span className="mk4-adv-s">{t('ai.ded.input.adv_sub')}</span>
               <ChevronDown size={16} className="cv" />
             </summary>
             <div className="mk4-adv-body">
@@ -585,8 +584,8 @@ export const DedAiInputView: React.FC<Props> = ({
                       DETAIL (mockup menampilkannya aktif — itu perubahan
                       perilaku, tidak diambil). */}
                   <div className={`dedai-cfgrow ${mode !== 'DETAIL' ? 'is-dim' : ''}`}>
-                    <span className="dedai-cfglbl">Kompleksitas</span>
-                    <div className="dedai-seg dedai-cfgseg" role="group" aria-label="Kompleksitas analisis DETAIL">
+                    <span className="dedai-cfglbl">{t('ai.ded.input.complexity_label')}</span>
+                    <div className="dedai-seg dedai-cfgseg" role="group" aria-label={t('ai.ded.input.complexity_aria')}>
                       {COMPLEXITY_OPTIONS.map((o) => (
                         <button
                           key={o.value}
@@ -603,18 +602,18 @@ export const DedAiInputView: React.FC<Props> = ({
                     </div>
                     <span className="dedai-cfghint">
                       {mode !== 'DETAIL'
-                        ? 'Aktif pada mode DETAIL — menentukan estimasi kredit.'
+                        ? t('ai.ded.input.complexity_hint_off')
                         : `${complexityActive?.desc ?? ''} · ±${(tariffFor(complexityActive?.tariffKey ?? 'ded-ai/simple').target ?? 0).toLocaleString('id-ID')} kredit`}
                     </span>
                   </div>
                   <div className="dedai-cfgrow">
-                    <span className="dedai-cfglbl">Cakupan Halaman</span>
+                    <span className="dedai-cfglbl">{t('ai.ded.input.scope_label')}</span>
                     <div className="dedai-seg dedai-cfgseg">
                       <button className={scopeKind === 'ALL' ? 'active' : ''} onClick={() => setScopeKind('ALL')}>
-                        Semua halaman
+                        {t('ai.ded.input.scope_all')}
                       </button>
                       <button className={scopeKind === 'SELECTED' ? 'active' : ''} onClick={() => setScopeKind('SELECTED')}>
-                        Halaman dipilih
+                        {t('ai.ded.input.scope_selected')}
                       </button>
                     </div>
                     {scopeKind === 'SELECTED' ? (
@@ -623,15 +622,15 @@ export const DedAiInputView: React.FC<Props> = ({
                           type="text"
                           value={scopeSpec}
                           onChange={(e) => setScopeSpec(e.target.value)}
-                          placeholder="mis. 1-5, 8, 12"
-                          aria-label="Rentang halaman yang dianalisis"
+                          placeholder={t('ai.ded.input.scope_ph')}
+                          aria-label={t('ai.ded.input.scope_aria')}
                         />
                         {scopeError
                           ? <span className="dedai-scopeerr">{scopeError}</span>
-                          : <span className="dedai-cfghint">Hanya halaman ini yang diteruskan ke analisis, per berkas.</span>}
+                          : <span className="dedai-cfghint">{t('ai.ded.input.scope_hint_selected')}</span>}
                       </span>
                     ) : (
-                      <span className="dedai-cfghint">Seluruh halaman setiap berkas dianalisis.</span>
+                      <span className="dedai-cfghint">{t('ai.ded.input.scope_hint_all')}</span>
                     )}
                   </div>
                   <div className="dedai-cfgrow last">
@@ -657,8 +656,8 @@ export const DedAiInputView: React.FC<Props> = ({
                       placeholder={t('ai.ded.input.desc_ph')}
                     />
                   </div>
-                  <p className="ph">Preferensi Output</p>
-                  <p className="ps">Mengatur bagian yang tampil pada hasil &amp; ekspor Excel. Peringatan harga dan status item tetap selalu tampil.</p>
+                  <p className="ph">{t('ai.ded.input.prefs_title')}</p>
+                  <p className="ps">{t('ai.ded.input.prefs_sub')}</p>
                   <div className="dedai-prefs dedai-os-prefs2">
                     <label>
                       <input
@@ -666,7 +665,7 @@ export const DedAiInputView: React.FC<Props> = ({
                         checked={outputPrefs.detailRab}
                         onChange={(e) => setOutputPrefs((p) => ({ ...p, detailRab: e.target.checked }))}
                       />
-                      <span>Detail RAB</span>
+                      <span>{t('ai.ded.input.pref_detail')}</span>
                     </label>
                     <label>
                       <input
@@ -674,7 +673,7 @@ export const DedAiInputView: React.FC<Props> = ({
                         checked={outputPrefs.volume}
                         onChange={(e) => setOutputPrefs((p) => ({ ...p, volume: e.target.checked }))}
                       />
-                      <span>Volume pekerjaan</span>
+                      <span>{t('ai.ded.input.pref_volume')}</span>
                     </label>
                     <label>
                       <input
@@ -682,7 +681,7 @@ export const DedAiInputView: React.FC<Props> = ({
                         checked={outputPrefs.priceAnalysis}
                         onChange={(e) => setOutputPrefs((p) => ({ ...p, priceAnalysis: e.target.checked }))}
                       />
-                      <span>Analisis harga &amp; asal-usul harga</span>
+                      <span>{t('ai.ded.input.pref_price')}</span>
                     </label>
                     <label>
                       <input
@@ -690,7 +689,7 @@ export const DedAiInputView: React.FC<Props> = ({
                         checked={outputPrefs.unresolvedReport}
                         onChange={(e) => setOutputPrefs((p) => ({ ...p, unresolvedReport: e.target.checked }))}
                       />
-                      <span>Laporan item tak teresolusi</span>
+                      <span>{t('ai.ded.input.pref_unresolved')}</span>
                     </label>
                   </div>
                 </div>
@@ -717,8 +716,8 @@ export const DedAiInputView: React.FC<Props> = ({
           {balance.total < dedTarget && (
             <div className="aic-low-notice">
               <AlertTriangle size={16} />
-              <span>Saldo simulasi ({balance.total.toLocaleString('id-ID')}) di bawah estimasi. Anda tetap bisa lanjut setelah menyetujui, atau top-up dulu.</span>
-              <button type="button" onClick={() => setCreditTopUpOpen(true)}>Top-up</button>
+              <span>{t('ai.ded.input.low_bal_a')}{balance.total.toLocaleString('id-ID')}{t('ai.ded.input.low_bal_b')}</span>
+              <button type="button" onClick={() => setCreditTopUpOpen(true)}>{t('ai.ded.input.topup')}</button>
             </div>
           )}
           {/* ---- v4: Estimasi + persetujuan (kartu sendiri, lega) ----
@@ -727,10 +726,10 @@ export const DedAiInputView: React.FC<Props> = ({
               "Selengkapnya" (label singkat di baris persetujuan). */}
           <section className="mk4-card mk4-est">
             <div className="mk4-est-row">
-              <Zap size={15} /> Estimasi Kredit <b>± {dedTarget.toLocaleString('id-ID')} kredit</b>
+              <Zap size={15} /> {t('ai.ded.input.credit_title')} <b>± {dedTarget.toLocaleString('id-ID')} kredit</b>
               <span className="aic-estimate">
-                <span>(maksimum simulasi)</span>
-                <span className="aic-sim">simulasi</span>
+                <span>{t('ai.ded.input.credit_max')}</span>
+                <span className="aic-sim">{t('ai.ded.input.sim_badge')}</span>
               </span>
             </div>
             <div className="mk4-consent-row">
@@ -741,17 +740,16 @@ export const DedAiInputView: React.FC<Props> = ({
                   disabled={!dedAllowed}
                   onChange={(e) => setCreditApproved(e.target.checked)}
                 />
-                <span>Saya menyetujui estimasi ini (simulasi)</span>
+                <span>{t('ai.ded.input.consent_short')}</span>
               </label>
               <button type="button" className="mk4-more" onClick={() => setShowConsentFull((v) => !v)} aria-expanded={showConsentFull}>
-                {showConsentFull ? 'Sembunyikan' : 'Selengkapnya'}
+                {showConsentFull ? t('ai.doc.create.lock_hide') : t('ai.ded.input.consent_more')}
               </button>
             </div>
             {showConsentFull && (
               <p className="mk4-fulltext">
-                Saya menyetujui estimasi <strong>{dedTarget.toLocaleString('id-ID')} kredit (simulasi)</strong> untuk
-                analisis DED kategori <strong>{complexityLabel(complexity)}</strong>. Saya paham angka ini
-                simulasi frontend, bukan penagihan nyata.
+                {t('ai.ded.input.consent_full_a')}<strong>{dedTarget.toLocaleString('id-ID')} {t('ai.ded.input.consent_credits')}</strong>{t('ai.ded.input.consent_full_b')}
+                <strong>{complexityLabel(complexity)}</strong>{t('ai.ded.input.consent_full_c')}
               </p>
             )}
           </section>
@@ -759,7 +757,7 @@ export const DedAiInputView: React.FC<Props> = ({
               prefiks label tebal (replika v4 hanya kalimat + ikon Info). */}
           <p className="mk4-expect">
             <Info size={15} />
-            <span>DED membaca lapisan teks PDF. Dimensi yang hanya hidup di garis gambar tidak bisa di-take-off — kuantitas dari situ adalah perkiraan dan ditandai "Klaim" di layar hasil.</span>
+            <span>{t('ai.ded.input.expect_note')}</span>
           </p>
           {/* Tombol besar lebar penuh kolom (v4). Sub-teks validasi inline
               tidak muat di tombol — alasannya di atribut title (kunci
@@ -780,7 +778,7 @@ export const DedAiInputView: React.FC<Props> = ({
             <details className="mk4-drafts">
               <summary>
                 <span className="mk4-adv-t">{t('ai.ded.input.drafts_title')}</span>
-                <span className="mk4-adv-s">{drafts.length} draft</span>
+                <span className="mk4-adv-s">{drafts.length} {t('ai.ded.input.drafts_word')}</span>
                 <ChevronDown size={15} className="cv" />
               </summary>
               <div className="mk4-drafts-body">
@@ -788,7 +786,7 @@ export const DedAiInputView: React.FC<Props> = ({
                   <div key={d.id} className="mk4-draft">
                     <span className="mk4-draft-n">{d.projectName}</span>
                     <span className="mk4-draft-m">
-                      {new Date(d.createdAt).toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })} · {d.itemCount} item
+                      {new Date(d.createdAt).toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })} · {d.itemCount} {t('ai.ded.input.items_word')}
                     </span>
                     <button className="dedai-icon-btn" onClick={() => onLoadDraft(d.id)} title={t('ai.ded.input.open_draft')}>
                       <RotateCcw size={14} />

@@ -27,6 +27,7 @@ import { verifySubtotal, clearAiProposal } from './validator';
 // W6 (§8): chip + penjelasan provenance harga dari SATU tabel kanonis
 // (dedProvenance.ts) — estimasi AI dibedakan visual dari data terverifikasi.
 import { provenanceBadgeForDedSource, provenanceExplanationForDedSource } from '../ded-ai-estimate/dedProvenance';
+import { useI18n } from '../../i18n/I18nContext';
 
 interface Props {
   output: FullAiOutput;
@@ -81,6 +82,7 @@ function ItemCard({ item, onUpdate, rabMode, openRequest }: {
   /** Permintaan buka dari gerbang ("Lihat"): kartu yang id-nya cocok membuka detailnya. */
   openRequest?: { id: string; n: number } | null;
 }) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editQty, setEditQty] = useState(item.quantity.value?.toString() || '');
@@ -123,12 +125,12 @@ function ItemCard({ item, onUpdate, rabMode, openRequest }: {
     // §7 (G-IS-3): pertahanan kedua — tombolnya sudah disembunyikan di
     // mode FULL_AI, tapi handler ini pun menolak memanggil katalog.
     if (!allowCanonicalConfirm) {
-      setConfirmMsg('Konfirmasi padanan AHSP tidak tersedia di mode Full AI — mode ini tidak mengakses katalog AHSP. Kandidat di bawah adalah usulan AI saja.');
+      setConfirmMsg(t('ai.ded.fullai.confirm_na'));
       return;
     }
     const resolved = resolveCanonicalCode(code, item.quantity.unit);
     if (resolved.status !== 'RESOLVED' || resolved.unitPrice == null) {
-      setConfirmMsg(`Kandidat ${code} tidak bisa dipakai: ${resolved.reason}`);
+      setConfirmMsg(t('ai.ded.fullai.cand_fail_a') + code + t('ai.ded.fullai.cand_fail_b') + resolved.reason);
       return;
     }
     const newPrice = {
@@ -177,8 +179,8 @@ function ItemCard({ item, onUpdate, rabMode, openRequest }: {
         {open ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
         <span className="dedai-fcard-name">{item.no}. {item.name}</span>
         {STATUS_ICON[item.status]}
-        <span className={`dedai-qchip ${prov.className}`} title={prov.hint}>
-          {prov.label}
+        <span className={`dedai-qchip ${prov.className}`} title={t('ai.ded.result.qev_hint_' + prov.kind.replace('-', '_'))}>
+          {prov.kind === 'claim' ? t('ai.ded.fullai.qev_claim') : t('ai.ded.result.qev_' + prov.kind.replace('-', '_'))}
         </span>
         <span title={provenanceExplanationForDedSource(p.source)} style={{
           fontSize: 11, padding: '2px 8px', borderRadius: 10,
@@ -192,12 +194,12 @@ function ItemCard({ item, onUpdate, rabMode, openRequest }: {
         <div style={{ padding: '0 12px 12px 36px', fontSize: 13, color: 'var(--ez-color-text-body)' }}>
           <div className="dedai-fcard-grid">
             <div>
-              <strong>Volume:</strong>{' '}
-              {q.value != null ? `${q.value.toLocaleString('id-ID')} ${q.unit}` : <em>belum jelas</em>}
+              <strong>{t('ai.ded.fullai.vol')}</strong>{' '}
+              {q.value != null ? `${q.value.toLocaleString('id-ID')} ${q.unit}` : <em>{t('ai.ded.fullai.vol_na')}</em>}
             </div>
             <div>
-              <strong>Harga:</strong>{' '}
-              {p.unitPrice != null ? `${fmtRp(p.unitPrice)}/${p.unit}` : <em>belum ada</em>}
+              <strong>{t('ai.ded.fullai.price')}</strong>{' '}
+              {p.unitPrice != null ? `${fmtRp(p.unitPrice)}/${p.unit}` : <em>{t('ai.ded.fullai.price_na')}</em>}
               {' '}
               <span style={{ fontSize: 11, color: priceSrc.color }}>({priceSrc.label})</span>
               {p.ahspCode ? <span style={{ fontSize: 11, color: 'var(--ez-color-text-muted)' }}> · AHSP {p.ahspCode}</span> : null}
@@ -208,7 +210,7 @@ function ItemCard({ item, onUpdate, rabMode, openRequest }: {
               sumber harga ini (asumsi rinci tetap di blok Asumsi /
               Catatan harga / Penyelesaian AI di bawah). */}
           <div style={{ marginBottom: 6, fontSize: 12, color: 'var(--ez-color-text-muted)' }}>
-            <strong>Provenans harga:</strong> {provenanceExplanationForDedSource(p.source)}
+            <strong>{t('ai.ded.result.prov_title')}:</strong> {provenanceExplanationForDedSource(p.source)}
           </div>
 
           {/* Dasar kuantitas (mockup v2.3 §1): rumus, langkah, dimensi,
@@ -217,71 +219,71 @@ function ItemCard({ item, onUpdate, rabMode, openRequest }: {
               field-nya di FullAiQuantityDetail) — yang tidak ada tidak
               ditampilkan, bukan dikarang. */}
           <div style={{ fontWeight: 800, fontSize: 11.5, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--ez-color-primary-hover)', marginBottom: 6 }}>
-            Dasar kuantitas
+            {t('ai.ded.result.detail_basis')}
           </div>
 
           {q.formula && (
             <div style={{ marginBottom: 6 }}>
-              <strong>Rumus:</strong> <code style={{ background: 'var(--ez-color-surface-tertiary)', padding: '2px 6px', borderRadius: 4 }}>{q.formula}</code>
+              <strong>{t('ai.ded.result.ev_formula')}:</strong> <code style={{ background: 'var(--ez-color-surface-tertiary)', padding: '2px 6px', borderRadius: 4 }}>{q.formula}</code>
             </div>
           )}
 
           {q.steps && q.steps.length > 0 && (
             <div style={{ marginBottom: 6 }}>
-              <strong>Langkah:</strong>
+              <strong>{t('ai.ded.fullai.steps')}</strong>
               <ol style={{ margin: '4px 0', paddingLeft: 20 }}>
                 {q.steps.map((s, i) => <li key={i}>{s}</li>)}
               </ol>
             </div>
           )}
 
-          {q.dimensions && <div style={{ marginBottom: 6 }}><strong>Dimensi:</strong> {q.dimensions}</div>}
+          {q.dimensions && <div style={{ marginBottom: 6 }}><strong>{t('ai.ded.fullai.dim')}</strong> {q.dimensions}</div>}
 
           {q.assumptions && q.assumptions.length > 0 && (
             <div style={{ marginBottom: 6, color: 'var(--ez-hue-amber-text-deep)' }}>
-              <strong>Asumsi:</strong> {q.assumptions.join('; ')}
+              <strong>{t('ai.ded.result.gate_assump_label')}:</strong> {q.assumptions.join('; ')}
             </div>
           )}
 
-          {q.notes && <div style={{ marginBottom: 6 }}><strong>Catatan:</strong> {q.notes}</div>}
+          {q.notes && <div style={{ marginBottom: 6 }}><strong>{t('ai.ded.result.ev_note')}:</strong> {q.notes}</div>}
 
           <div style={{ marginBottom: 6, fontSize: 12, color: 'var(--ez-color-text-muted)' }}>
-            <strong>Keyakinan AI:</strong> {q.confidence === 'HIGH' ? 'tinggi' : q.confidence === 'MEDIUM' ? 'sedang' : 'rendah'}
+            <strong>{t('ai.ded.fullai.conf')}</strong> {q.confidence === 'HIGH' ? t('ai.ded.fullai.conf_high') : q.confidence === 'MEDIUM' ? t('ai.ded.fullai.conf_med') : t('ai.ded.fullai.conf_low')}
           </div>
 
           {!q.formula && !(q.steps && q.steps.length > 0) && !q.dimensions && !(q.assumptions && q.assumptions.length > 0) && !q.notes && (
-            <div style={{ marginBottom: 6, color: 'var(--ez-color-text-muted)' }}>Tidak ada dasar kuantitas tersimpan untuk item ini.</div>
+            <div style={{ marginBottom: 6, color: 'var(--ez-color-text-muted)' }}>{t('ai.ded.result.ev_none')}</div>
           )}
 
-          {p.notes && <div style={{ marginBottom: 6 }}><strong>Catatan harga:</strong> {p.notes}</div>}
+          {p.notes && <div style={{ marginBottom: 6 }}><strong>{t('ai.ded.result.detail_price_note')}:</strong> {p.notes}</div>}
 
           {/* SPRINT 4 (paritas): blok penyelesaian harga terstruktur —
               bentuk yang sama dengan DedAiResultView pipeline standar. */}
           {pc && (
             <div style={{ marginBottom: 6, background: 'var(--ez-hue-green-bg)', border: '1px solid var(--ez-hue-green-border)', borderRadius: 6, padding: '6px 8px' }}>
-              <strong>Penyelesaian AI:</strong> klasifikasi <b>{pc.classification}</b>
-              {pc.sourceKind ? <> · jenis sumber {pc.sourceKind}</> : null}
-              {' '}· verifikasi {pc.verificationStatus ?? 'UNVERIFIED'} · persetujuan {pc.userApprovalStatus ?? '—'}
+              <strong>{t('ai.ded.fullai.comp_title')}</strong>{t('ai.ded.fullai.comp_class_a')}<b>{pc.classification}</b>
+              {pc.sourceKind ? <>{t('ai.ded.fullai.comp_kind_a')}{pc.sourceKind}</> : null}
+              {' '}{t('ai.ded.fullai.comp_verify_a')}{pc.verificationStatus ?? 'UNVERIFIED'}{t('ai.ded.fullai.comp_approval_a')}{pc.userApprovalStatus ?? '—'}
               {pc.rangeMin != null && pc.rangeMax != null
-                ? <> · rentang referensi {fmtRp(pc.rangeMin)}–{fmtRp(pc.rangeMax)}/{pc.unit}</>
+                ? <>{t('ai.ded.result.comp_range')}{fmtRp(pc.rangeMin)}–{fmtRp(pc.rangeMax)}/{pc.unit}</>
                 : null}
-              {' '}· cakupan {pc.scope === 'TERPASANG_PENUH' ? 'terpasang penuh' : pc.scope === 'MATERIAL_SAJA' ? 'material saja' : 'tidak dinyatakan'}
-              {pc.region ? <> · wilayah {pc.region}</> : null}
+              {' '}{t('ai.ded.result.comp_scope')}{pc.scope === 'TERPASANG_PENUH' ? t('ai.ded.result.comp_scope_full') : pc.scope === 'MATERIAL_SAJA' ? t('ai.ded.result.comp_scope_mat') : t('ai.ded.result.comp_scope_na')}
+              {pc.region ? <>{t('ai.ded.result.comp_region')}{pc.region}</> : null}
               {pc.sourceName
-                ? <><br />Sumber: {pc.sourceUrl
+                ? <><br />{t('ai.ded.result.comp_source')}{pc.sourceUrl
                   ? <a href={pc.sourceUrl} target="_blank" rel="noreferrer">{pc.sourceName}</a>
                   : pc.sourceName}
-                  {pc.sourceDate ? <> (data {pc.sourceDate}, diambil {pc.accessedAt})</> : null}</>
+                  {pc.sourceDate ? <>{t('ai.ded.result.comp_source_date_a')}{pc.sourceDate}{t('ai.ded.result.comp_source_date_b')}{pc.accessedAt}{t('ai.ded.result.comp_source_date_c')}</> : null}</>
                 : null}
-              {pc.specAssumption ? <><br />Asumsi spek: {pc.specAssumption}</> : null}
-              {pc.quantityBasis ? <><br />Dasar kuantitas: {pc.quantityBasis}</> : null}
-              {pc.method ? <><br />Metode: {pc.method}</> : null}
-              {pc.sourceStale ? <><br /><b style={{ color: 'var(--ez-hue-amber-text-deep)' }}>Sumber BASI</b> (melewati masa segar 30 hari) — keyakinan diturunkan.</> : null}
+              {pc.specAssumption ? <><br />{t('ai.ded.result.comp_spec')}{pc.specAssumption}</> : null}
+              {pc.quantityBasis ? <><br />{t('ai.ded.result.comp_qty_basis')}{pc.quantityBasis}</> : null}
+              {pc.method ? <><br />{t('ai.ded.result.comp_method')}{pc.method}</> : null}
+              {pc.sourceStale ? <><br /><b style={{ color: 'var(--ez-hue-amber-text-deep)' }}>{t('ai.ded.result.comp_stale')}</b>{t('ai.ded.result.comp_stale_b')}</> : null}
               {pc.originalUnitPrice != null || pc.originalQuantity != null
-                ? <><br />Nilai asli sebelum penyelesaian: {pc.originalQuantity != null ? `kuantitas ${pc.originalQuantity} ${q.unit}` : ''}{pc.originalUnitPrice != null ? ` · harga ${fmtRp(pc.originalUnitPrice)}/${pc.unit}` : ' · harga kosong'}</>
+                ? <><br />{t('ai.ded.result.comp_orig')}{pc.originalQuantity != null ? `${t('ai.ded.result.comp_orig_qty')}${pc.originalQuantity} ${q.unit}` : ''}{pc.originalUnitPrice != null ? `${t('ai.ded.result.comp_orig_price')}${fmtRp(pc.originalUnitPrice)}/${pc.unit}` : t('ai.ded.fullai.comp_orig_price_empty')}</>
                 : null}
               {pc.history && pc.history.length > 0
-                ? <><br />Riwayat: {pc.history.map((h) => `${fmtRp(h.unitPrice)} (${h.classification}, ${h.at})`).join(' → ')}</>
+                ? <><br />{t('ai.ded.result.comp_hist')}{pc.history.map((h) => `${fmtRp(h.unitPrice)} (${h.classification}, ${h.at})`).join(' → ')}</>
                 : null}
             </div>
           )}
@@ -289,12 +291,12 @@ function ItemCard({ item, onUpdate, rabMode, openRequest }: {
           {/* SPRINT 4 (paritas): blok audit kuantitas bersama (8 kelas). */}
           {qa && (
             <div style={{ marginBottom: 6, background: 'var(--ez-hue-blue-bg)', border: '1px solid var(--ez-hue-blue-border)', borderRadius: 6, padding: '6px 8px' }}>
-              <strong>Audit Kuantitas:</strong> kelas <b>{qa.classification}</b> · metode {qa.method} · keyakinan {qa.confidence} · verifikasi {qa.verificationStatus} · persetujuan {qa.userApprovalStatus}
-              {qa.formula ? <><br />Dasar: {qa.formula}</> : null}
+              <strong>{t('ai.ded.fullai.audit_title')}</strong>{t('ai.ded.fullai.audit_class_a')}<b>{qa.classification}</b>{t('ai.ded.result.audit_method')}{qa.method}{t('ai.ded.result.audit_conf')}{qa.confidence}{t('ai.ded.result.audit_verify')}{qa.verificationStatus}{t('ai.ded.result.audit_approval')}{qa.userApprovalStatus}
+              {qa.formula ? <><br />{t('ai.ded.result.audit_basis')}{qa.formula}</> : null}
               {qa.originalQuantity != null && qa.originalQuantity !== qa.proposedQuantity
-                ? <><br />Kuantitas asli: {qa.originalQuantity} {qa.unit} → usulan {qa.proposedQuantity != null ? qa.proposedQuantity : '—'} {qa.unit}</>
+                ? <><br />{t('ai.ded.result.audit_orig')}{qa.originalQuantity} {qa.unit}{t('ai.ded.result.audit_proposed')}{qa.proposedQuantity != null ? qa.proposedQuantity : '—'} {qa.unit}</>
                 : null}
-              {qa.assumptions ? <><br />Asumsi: {qa.assumptions}</> : null}
+              {qa.assumptions ? <><br />{t('ai.ded.fullai.audit_assump')}{qa.assumptions}</> : null}
             </div>
           )}
 
@@ -306,14 +308,14 @@ function ItemCard({ item, onUpdate, rabMode, openRequest }: {
           {hasPendingCompletion && (
             <div style={{ marginBottom: 6, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
               {completionApproved ? (
-                <span style={{ fontSize: 12, color: 'var(--ez-hue-green-text-bright)', fontWeight: 600 }}>✓ Penyelesaian diterima pengguna — termasuk total berlabel estimasi (verifikasi tidak berubah).</span>
+                <span style={{ fontSize: 12, color: 'var(--ez-hue-green-text-bright)', fontWeight: 600 }}>{t('ai.ded.fullai.comp_accepted_full')}</span>
               ) : (
                 <button
                   className="dedai-fcard-mini"
                   onClick={(e) => { e.stopPropagation(); onUpdate(acceptFullAiCompletion(item)); }}
                   style={{ fontSize: 12, padding: '4px 12px', borderRadius: 6, border: '1px solid var(--ez-hue-green-text-bright)', background: 'var(--ez-hue-green-bg)', color: 'var(--ez-hue-green-text)', cursor: 'pointer' }}
                 >
-                  Terima penyelesaian ini
+                  {t('ai.ded.result.comp_accept')}
                 </button>
               )}
               <button
@@ -321,39 +323,39 @@ function ItemCard({ item, onUpdate, rabMode, openRequest }: {
                 onClick={(e) => { e.stopPropagation(); onUpdate(rejectFullAiCompletion(item)); }}
                 style={{ fontSize: 12, padding: '4px 12px', borderRadius: 6, border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', cursor: 'pointer' }}
               >
-                Tolak penyelesaian — kembalikan seperti semula
+                {t('ai.ded.result.comp_reject')}
               </button>
             </div>
           )}
 
           {item.subtotalDiscrepancy && (
             <div style={{ marginBottom: 6, color: 'var(--ez-hue-amber-text-dark)', background: 'var(--ez-hue-amber-bg)', padding: '6px 8px', borderRadius: 6 }}>
-              <strong>Selisih usulan AI:</strong> {item.subtotalDiscrepancy}
+              <strong>{t('ai.ded.fullai.disc_title')}</strong> {item.subtotalDiscrepancy}
               {item.price.source === 'AHSP_2026'
-                ? ' Selisih ini kemungkinan karena harga kanonis menggantikan estimasi AI, bukan semata kesalahan hitung AI.'
-                : ' Selisih ini adalah perbedaan hitung AI atas subtotal ini.'}
+                ? t('ai.ded.fullai.disc_canon')
+                : t('ai.ded.fullai.disc_ai')}
               {item.aiProposedSubtotal != null && (
-                <> Usulan AI: {fmtRp(item.aiProposedSubtotal)}; terverifikasi aplikasi: {item.subtotal != null ? fmtRp(item.subtotal) : '—'}.</>
+                <>{t('ai.ded.fullai.disc_a')}{fmtRp(item.aiProposedSubtotal)}{t('ai.ded.fullai.disc_b')}{item.subtotal != null ? fmtRp(item.subtotal) : '—'}.</>
               )}
             </div>
           )}
 
           {item.price.ahspMatch && item.price.ahspMatch.status === 'NEEDS_REVIEW' && item.price.ahspMatch.candidates.length > 0 && (
             <div style={{ marginTop: 8, padding: 10, background: 'var(--ez-hue-amber-bg)', border: '1px solid var(--ez-hue-amber-border)', borderRadius: 8 }}>
-              <div style={{ fontWeight: 700, marginBottom: 4 }}>{allowCanonicalConfirm ? 'Padanan AHSP menunggu konfirmasi — pilih satu (tidak ada yang dipilih otomatis):' : 'Usulan padanan AHSP dari AI — belum dikonfirmasi (mode Full AI tidak mengakses katalog AHSP). Akui harga Estimasi AI lewat daftar tinjau di bawah, atau jalankan ulang di mode EZRAB AI untuk mengonfirmasi harga kanonis.'}</div>
+              <div style={{ fontWeight: 700, marginBottom: 4 }}>{allowCanonicalConfirm ? t('ai.ded.fullai.cand_head_confirm') : t('ai.ded.fullai.cand_head_ai')}</div>
               <div style={{ fontSize: 12, color: 'var(--ez-hue-amber-text-dark)', marginBottom: 6 }}>{item.price.ahspMatch.reason}</div>
               {item.price.ahspMatch.candidates.map((c) => (
                 <div key={c.code} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center', padding: '6px 0', borderTop: '1px solid var(--ez-hue-amber-border)', fontSize: 12 }}>
                   <span><b>{c.code}</b> — {c.name} ({c.unit})
-                    {c.priceStatus === 'FULL' && c.canonicalPrice != null ? ` — ${fmtRp(c.canonicalPrice)}/${c.unit}` : c.priceStatus === 'PARTIAL' ? ' — komponen belum lengkap' : c.priceStatus === 'UNPRICED' ? ' — tanpa rincian komponen' : ''}
-                    {!c.unitExact ? ' — satuan berbeda' : ''}</span>
+                    {c.priceStatus === 'FULL' && c.canonicalPrice != null ? ` — ${fmtRp(c.canonicalPrice)}/${c.unit}` : c.priceStatus === 'PARTIAL' ? t('ai.ded.result.cand_partial') : c.priceStatus === 'UNPRICED' ? t('ai.ded.result.cand_unpriced') : ''}
+                    {!c.unitExact ? t('ai.ded.result.cand_unit_diff') : ''}</span>
                   {allowCanonicalConfirm && (
                     <button
                       className="dedai-fcard-mini"
                       onClick={(e) => { e.stopPropagation(); handleConfirmCandidate(c.code); }}
                       style={{ fontSize: 12, padding: '4px 12px', borderRadius: 6, border: '1px solid var(--ez-color-primary)', background: 'var(--ez-hue-blue-bg)', color: 'var(--ez-color-primary-hover)', cursor: 'pointer', flexShrink: 0 }}
                     >
-                      Pilih
+                      {t('ai.ded.result.cand_pick')}
                     </button>
                   )}
                 </div>
@@ -364,35 +366,35 @@ function ItemCard({ item, onUpdate, rabMode, openRequest }: {
           {item.price.ahspMatch && item.price.ahspMatch.status !== 'RESOLVED' && item.price.ahspMatch.status !== 'NEEDS_REVIEW' && (
             <div style={{ marginTop: 8, padding: 10, background: 'var(--ez-color-surface-secondary)', border: '1px solid var(--ez-color-border-neutral)', borderRadius: 8, fontSize: 12, color: 'var(--ez-color-text-muted)' }}>
               <strong>AHSP:</strong> {item.price.ahspMatch.reason}
-              {item.price.ahspMatch.matchedCode ? ` (kode: ${item.price.ahspMatch.matchedCode})` : ''}
+              {item.price.ahspMatch.matchedCode ? `${t('ai.ded.fullai.code_a')}${item.price.ahspMatch.matchedCode}${t('ai.ded.fullai.code_b')}` : ''}
             </div>
           )}
 
           {item.sourcePages && item.sourcePages.length > 0 && (
             <div style={{ marginBottom: 6, fontSize: 12, color: 'var(--ez-color-text-muted)' }}>
-              Sumber: halaman {item.sourcePages.join(', ')}
+              {t('ai.ded.fullai.src_pages_a')}{item.sourcePages.join(', ')}
             </div>
           )}
 
           <div className="dedai-fcard-subtotal" style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--ez-color-surface-tertiary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span>
-              <strong>Subtotal:</strong>{' '}
+              <strong>{t('ai.ded.fullai.subtotal')}</strong>{' '}
               <span style={{ fontWeight: 700, color: item.subtotal != null ? 'var(--ez-color-text-primary)' : 'var(--ez-color-text-faint)' }}>
                 {fmtRp(item.subtotal)}
               </span>
               {item.subtotal != null && (
                 <span style={{ fontSize: 11, color: item.subtotalVerified ? 'var(--ez-hue-green-text-bright)' : 'var(--ez-hue-amber-text-deep)', marginLeft: 8 }}>
-                  {item.subtotalVerified ? '✓ terverifikasi (volume × harga)' : 'belum terverifikasi'}
+                  {item.subtotalVerified ? t('ai.ded.fullai.sub_verified') : t('ai.ded.fullai.sub_unverified')}
                 </span>
               )}
               {item.subtotal == null && item.status !== 'UNRESOLVED' && (
                 <span style={{ fontSize: 11, color: 'var(--ez-color-text-faint)', marginLeft: 8 }}>
-                  tidak masuk total{item.exclusionReason ? ` [${item.exclusionReason}]` : ''}
+                  {t('ai.ded.fullai.sub_excluded')}{item.exclusionReason ? ` [${item.exclusionReason}]` : ''}
                 </span>
               )}
               {isEdited && (
                 <span style={{ fontSize: 11, color: 'var(--ez-color-primary)', marginLeft: 8, fontWeight: 600 }}>
-                  ✏️ diedit user
+                  {t('ai.ded.fullai.edited')}
                 </span>
               )}
             </span>
@@ -410,7 +412,7 @@ function ItemCard({ item, onUpdate, rabMode, openRequest }: {
                   border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', cursor: 'pointer',
                 }}
               >
-                {editing ? 'Batal' : 'Edit'}
+                {editing ? t('ai.ded.result.modal_batal') : t('ai.ded.fullai.edit_btn')}
               </button>
             </div>
           </div>
@@ -420,26 +422,26 @@ function ItemCard({ item, onUpdate, rabMode, openRequest }: {
               <div className="dedai-fcard-editgrid">
                 <div>
                   <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 4 }}>
-                    Volume ({q.unit || 'satuan'})
+                    {t('ai.ded.fullai.edit_vol_a')}{q.unit || 'satuan'}{t('ai.ded.fullai.edit_vol_b')}
                   </label>
                   <input
                     type="number" step="any" min="0"
                     value={editQty}
                     onChange={(e) => setEditQty(e.target.value)}
                     style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid var(--ez-color-border-strong)' }}
-                    placeholder="Kosongkan jika belum jelas"
+                    placeholder={t('ai.ded.fullai.edit_qty_ph')}
                   />
                 </div>
                 <div>
                   <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 4 }}>
-                    Harga Satuan (Rp/{p.unit || q.unit || 'satuan'})
+                    {t('ai.ded.fullai.edit_price_a')}{p.unit || q.unit || 'satuan'}{t('ai.ded.fullai.edit_price_b')}
                   </label>
                   <input
                     type="number" step="any" min="0"
                     value={editPrice}
                     onChange={(e) => setEditPrice(e.target.value)}
                     style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid var(--ez-color-border-strong)' }}
-                    placeholder="Kosongkan jika belum ada"
+                    placeholder={t('ai.ded.fullai.edit_price_ph')}
                   />
                 </div>
               </div>
@@ -509,10 +511,10 @@ function ItemCard({ item, onUpdate, rabMode, openRequest }: {
                   background: 'var(--ez-color-primary)', color: '#fff', fontWeight: 600, cursor: 'pointer',
                 }}
               >
-                Simpan Perubahan
+                {t('ai.ded.fullai.save_changes')}
               </button>
               <div style={{ fontSize: 11, color: 'var(--ez-color-text-muted)', marginTop: 8 }}>
-                Perubahan ditandai sebagai input user. Nilai asli AI tetap tercatat di catatan.
+                {t('ai.ded.fullai.edit_note')}
               </div>
             </div>
           )}
@@ -523,6 +525,7 @@ function ItemCard({ item, onUpdate, rabMode, openRequest }: {
 }
 
 export const FullAiResultView: React.FC<Props> = ({ output, onFinalize, onSaveDraft, draftSaved = false, onSendToChat, onBack, embedded = false }) => {
+  const { t } = useI18n();
   const [finalizing, setFinalizing] = useState(false);
   const [finalMsg, setFinalMsg] = useState('');
   const [items, setItems] = useState<FullAiItem[]>(output.items);
@@ -605,11 +608,11 @@ export const FullAiResultView: React.FC<Props> = ({ output, onFinalize, onSaveDr
     // onFinalize (disable saja tidak cukup). Validator fail-closed di
     // handler (dedFinalizeValidation) tetap menjadi gerbang akhir.
     if (!gateComplete) {
-      setFinalMsg(`Finalisasi terkunci: masih ada ${gateItems.length - gateCheckedCount} item yang belum ditinjau di daftar tinjau di bawah.`);
+      setFinalMsg(t('ai.ded.fullai.final_locked_a') + (gateItems.length - gateCheckedCount) + t('ai.ded.fullai.final_locked_b'));
       return;
     }
     if (!gateAllowsFinalize) {
-      setFinalMsg('Tidak ada item yang bisa difinalisasi — semua item belum lengkap (tanpa kuantitas/harga).');
+      setFinalMsg(t('ai.ded.fullai.final_none'));
       return;
     }
     setFinalizing(true);
@@ -627,7 +630,7 @@ export const FullAiResultView: React.FC<Props> = ({ output, onFinalize, onSaveDr
   // tetap terlihat — "Lain-lain" hanya bila keduanya kosong.
   const groups = new Map<string, FullAiItem[]>();
   for (const it of items) {
-    const key = it.wbsGroup || it.category || 'Lain-lain';
+    const key = it.wbsGroup || it.category || t('ai.ded.fullai.group_other');
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key)!.push(it);
   }
@@ -637,17 +640,17 @@ export const FullAiResultView: React.FC<Props> = ({ output, onFinalize, onSaveDr
       {!embedded && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
           <button onClick={onBack} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid var(--ez-color-border-neutral)', cursor: 'pointer', minHeight: 44 }}>
-            ← Kembali
+            {t('ai.ded.fullai.back')}
           </button>
-          <h1 style={{ margin: 0, fontSize: 20 }}>Hasil FULL AI MODE</h1>
+          <h1 style={{ margin: 0, fontSize: 20 }}>{t('ai.ded.fullai.title')}</h1>
           <span style={{
             fontSize: 11, padding: '4px 12px', borderRadius: 12,
             background: 'var(--ez-hue-violet-bg)', color: 'var(--ez-hue-violet-text)', fontWeight: 700,
           }}>
-            {output.mode === 'FAST' ? 'Cepat' : 'Mendalam'} •{' '}
+            {output.mode === 'FAST' ? t('ai.ded.input.mode_fast') : t('ai.ded.input.mode_deep')} •{' '}
             {output.provenance.provider && output.provenance.model
               ? `${output.provenance.provider} / ${output.provenance.model}`
-              : output.provenance.model || 'Model tidak diketahui'}
+              : output.provenance.model || t('ai.ded.fullai.model_unknown')}
           </span>
         </div>
       )}
@@ -660,26 +663,26 @@ export const FullAiResultView: React.FC<Props> = ({ output, onFinalize, onSaveDr
            agar bila aturan migrasi di dedMode.ts kelak memakai policy,
            banner ini ikut tanpa perubahan) ---- */}
       {(() => {
-        const canonNote = s.itemsWithCanonicalPrice > 0 ? ` ${s.itemsWithCanonicalPrice} item memakai harga AHSP kanonis (SE 47/2026, biaya langsung).` : '';
-        const reviewNote = s.itemsNeedAhspReview > 0 ? ` ${s.itemsNeedAhspReview} item menunggu konfirmasi padanan AHSP.` : '';
-        const incompleteNote = s.itemsAhspIncomplete > 0 ? ` ${s.itemsAhspIncomplete} item AHSP-nya belum lengkap komponennya.` : '';
+        const canonNote = s.itemsWithCanonicalPrice > 0 ? ` ${s.itemsWithCanonicalPrice}${t('ai.ded.result.banner_full_canon_a')}` : '';
+        const reviewNote = s.itemsNeedAhspReview > 0 ? ` ${s.itemsNeedAhspReview}${t('ai.ded.result.banner_full_review_a')}` : '';
+        const incompleteNote = s.itemsAhspIncomplete > 0 ? ` ${s.itemsAhspIncomplete}${t('ai.ded.result.banner_full_incomplete_a')}` : '';
         return rabMode === 'FULL_AI' ? (
           <div style={{ padding: '12px 14px', borderRadius: 12, background: 'var(--ez-hue-amber-bg)', border: '1px solid var(--ez-hue-amber-border)', fontSize: 13, lineHeight: 1.55, marginBottom: 16 }}>
-            <b>Mode: FULL AI MODE.</b> {s.itemsWithAiPrice} item memakai harga estimasi AI (AI_ESTIMATE) — bukan harga resmi AHSP.{canonNote}{reviewNote}{incompleteNote} {s.excludedFromTotal} item dikecualikan dari total. Periksa dan validasi sebelum RAB dipakai untuk pengadaan, tender, atau kontrak.
+            <b>Mode: FULL AI MODE.</b> {s.itemsWithAiPrice}{t('ai.ded.result.banner_full_a')}{canonNote}{reviewNote}{incompleteNote}{s.excludedFromTotal > 0 ? ` ${s.excludedFromTotal}${t('ai.ded.fullai.banner_excluded_a')}` : ''}{t('ai.ded.result.banner_full_b')}
           </div>
         ) : (
           <div style={{ padding: '12px 14px', borderRadius: 12, background: 'var(--ez-hue-blue-bg)', border: '1px solid var(--ez-hue-blue-border)', fontSize: 13, lineHeight: 1.55, marginBottom: 16 }}>
-            <b>Mode: EZRAB AI MODE.</b> Harga diutamakan dari AHSP kanonis — {s.itemsWithCanonicalPrice} item teratasi dari AHSP kanonis, {s.itemsWithAiPrice} item memakai estimasi AI berlabel sebagai fallback karena tidak ada di database (bukan harga database), {s.itemsUnresolved} item belum tersedia, {s.excludedFromTotal} item dikecualikan dari total.{reviewNote}{incompleteNote} Total di bawah bersifat <b>parsial</b> sampai harga yang hilang dilengkapi.
+            <b>Mode: EZRAB AI MODE.</b>{t('ai.ded.fullai.banner_ez_lead')}{s.itemsWithCanonicalPrice}{t('ai.ded.result.banner_ez_b')}{s.itemsWithAiPrice}{t('ai.ded.result.banner_ez_c')}{s.itemsUnresolved}{t('ai.ded.fullai.banner_ez_unavail_a')}{s.excludedFromTotal}{t('ai.ded.fullai.banner_ez_excl')}{reviewNote}{incompleteNote}{t('ai.ded.fullai.banner_ez_tail')}<b>{t('ai.ded.result.banner_ez_partial')}</b>{t('ai.ded.fullai.banner_ez_tail_b')}
           </div>
         );
       })()}
 
       {output.error ? (
         <div style={{ padding: 24, background: 'var(--ez-hue-rose-bg)', borderRadius: 8, border: '1px solid var(--ez-hue-rose-border)' }}>
-          <h3 style={{ color: 'var(--ez-color-danger-strong)', margin: '0 0 8px' }}>Analisis Gagal</h3>
+          <h3 style={{ color: 'var(--ez-color-danger-strong)', margin: '0 0 8px' }}>{t('ai.ded.fullai.err_title')}</h3>
           <p>{output.error.message}</p>
-          <p style={{ fontSize: 12, color: 'var(--ez-color-text-muted)' }}>Kode: {output.error.code}</p>
-          {output.error.retryable && <p style={{ fontSize: 13 }}>Silakan coba lagi.</p>}
+          <p style={{ fontSize: 12, color: 'var(--ez-color-text-muted)' }}>{t('ai.ded.fullai.err_code')}{output.error.code}</p>
+          {output.error.retryable && <p style={{ fontSize: 13 }}>{t('ai.ded.fullai.err_retry')}</p>}
         </div>
       ) : (
         <>
@@ -689,16 +692,16 @@ export const FullAiResultView: React.FC<Props> = ({ output, onFinalize, onSaveDr
             gap: 8, marginBottom: 16,
           }}>
             {[
-              ['Total Item', s.totalItems],
-              ['Ada Volume', s.itemsWithQuantity],
-              ['Asumsi', s.itemsWithAssumption],
-              ['Perlu Konfirmasi', s.itemsNeedConfirmation],
-              ['Harga Estimasi AI', s.itemsWithAiPrice],
-              ['Harga AHSP Kanonis', s.itemsWithCanonicalPrice],
-              ['Harga Terverifikasi (lama)', s.itemsWithVerifiedPrice],
-              ['Perlu Konfirmasi AHSP', s.itemsNeedAhspReview],
-              ['Belum Jelas', s.itemsUnresolved],
-              ['Dikecualikan', s.excludedFromTotal],
+              [t('ai.ded.fullai.sum_total'), s.totalItems],
+              [t('ai.ded.fullai.sum_volume'), s.itemsWithQuantity],
+              [t('ai.ded.fullai.sum_assump'), s.itemsWithAssumption],
+              [t('ai.ded.fullai.sum_confirm'), s.itemsNeedConfirmation],
+              [t('ai.ded.fullai.sum_ai_price'), s.itemsWithAiPrice],
+              [t('ai.ded.fullai.sum_canon_price'), s.itemsWithCanonicalPrice],
+              [t('ai.ded.fullai.sum_verified_price'), s.itemsWithVerifiedPrice],
+              [t('ai.ded.fullai.sum_ahsp_review'), s.itemsNeedAhspReview],
+              [t('ai.ded.fullai.sum_unresolved'), s.itemsUnresolved],
+              [t('ai.ded.fullai.sum_excluded'), s.excludedFromTotal],
             ].map(([label, val]) => (
               <div key={label as string} style={{
                 padding: 12, background: 'var(--ez-color-surface-secondary)', borderRadius: 8,
@@ -713,10 +716,10 @@ export const FullAiResultView: React.FC<Props> = ({ output, onFinalize, onSaveDr
           {/* Info proyek */}
           {output.projectInfo.scopeSummary && (
             <div style={{ padding: 12, background: 'var(--ez-hue-blue-bg)', borderRadius: 8, marginBottom: 16, fontSize: 13 }}>
-              <strong>Ringkasan Proyek:</strong> {output.projectInfo.scopeSummary}
+              <strong>{t('ai.ded.fullai.proj_summary')}</strong> {output.projectInfo.scopeSummary}
               {output.projectInfo.missingInfo && output.projectInfo.missingInfo.length > 0 && (
                 <div style={{ marginTop: 6, color: 'var(--ez-hue-amber-text-deep)' }}>
-                  <strong>Info hilang:</strong> {output.projectInfo.missingInfo.join('; ')}
+                  <strong>{t('ai.ded.fullai.proj_missing')}</strong> {output.projectInfo.missingInfo.join('; ')}
                 </div>
               )}
             </div>
@@ -725,7 +728,7 @@ export const FullAiResultView: React.FC<Props> = ({ output, onFinalize, onSaveDr
           {/* Warnings */}
           {output.warnings.length > 0 && (
             <div style={{ padding: 12, background: 'var(--ez-hue-amber-bg)', borderRadius: 8, marginBottom: 16, fontSize: 13, border: '1px solid var(--ez-hue-amber-border)' }}>
-              <strong>⚠️ Perhatian:</strong>
+              <strong>{t('ai.ded.fullai.warn_title')}</strong>
               <ul style={{ margin: '6px 0 0', paddingLeft: 20 }}>
                 {output.warnings.map((w, i) => <li key={i}>{w}</li>)}
               </ul>
@@ -762,21 +765,21 @@ export const FullAiResultView: React.FC<Props> = ({ output, onFinalize, onSaveDr
               {gateComplete
                 ? <CheckCircle2 size={18} className="dedai-gate-ico" />
                 : <Lock size={18} className="dedai-gate-ico" />}
-              <h2>{gateComplete ? 'Semua item sudah ditinjau' : 'Tinjau sebelum finalisasi (terkunci)'}</h2>
+              <h2>{gateComplete ? t('ai.ded.result.gate_done') : t('ai.ded.result.gate_locked')}</h2>
             </div>
             {gateItems.length === 0 ? (
-              <p className="dedai-gate-counts">Tidak ada item yang perlu ditinjau — finalisasi terbuka.</p>
+              <p className="dedai-gate-counts">{t('ai.ded.result.gate_review_none')}</p>
             ) : (
               <>
                 <p className="dedai-gate-counts">
-                  {gateSummary.total} item perlu ditinjau
-                  {gateSummary.quantityCount > 0 && <> · {gateSummary.quantityCount} kuantitas estimasi</>}
-                  {gateSummary.priceCount > 0 && <> · {gateSummary.priceCount} harga Estimasi AI</>}
-                  {gateSummary.ahspCount > 0 && <> · {gateSummary.ahspCount} padanan AHSP</>}
+                  {gateSummary.total}{t('ai.ded.result.gate_count_a')}
+                  {gateSummary.quantityCount > 0 && <> · {gateSummary.quantityCount}{t('ai.ded.result.gate_count_qty_b')}</>}
+                  {gateSummary.priceCount > 0 && <> · {gateSummary.priceCount}{t('ai.ded.result.gate_count_price_b')}</>}
+                  {gateSummary.ahspCount > 0 && <> · {gateSummary.ahspCount}{t('ai.ded.result.gate_count_ahsp_b')}</>}
                 </p>
                 <div className="dedai-gate-progress">
                   <div className="dedai-gate-bar"><div className="dedai-gate-fill" style={{ width: `${gateItems.length > 0 ? Math.round((gateCheckedCount / gateItems.length) * 100) : 0}%` }} /></div>
-                  <span className="dedai-gate-progress-txt">{gateCheckedCount} dari {gateItems.length} ditinjau</span>
+                  <span className="dedai-gate-progress-txt">{gateCheckedCount}{t('ai.ded.result.trace_b')}{gateItems.length}{t('ai.ded.result.gate_prog_b')}</span>
                 </div>
                 {gateItems.map((g) => (
                   <div className="dedai-gate-item" key={g.itemId}>
@@ -797,10 +800,10 @@ export const FullAiResultView: React.FC<Props> = ({ output, onFinalize, onSaveDr
                         <span className="dedai-gate-desc">{g.description}</span>
                       </span>
                     </label>
-                    <button className="dedai-gate-lihat" onClick={() => viewGateItem(g.itemId)}>Lihat</button>
+                    <button className="dedai-gate-lihat" onClick={() => viewGateItem(g.itemId)}>{t('ai.doc.lib.title_view')}</button>
                   </div>
                 ))}
-                <p className="dedai-gate-note">Centang satu per satu sesudah memeriksa dasarnya di detail kartu. Item “Klaim: dari DED” dan “Input user” tidak masuk daftar ini.</p>
+                <p className="dedai-gate-note">{t('ai.ded.fullai.gate_note')}</p>
               </>
             )}
           </div>
@@ -811,22 +814,22 @@ export const FullAiResultView: React.FC<Props> = ({ output, onFinalize, onSaveDr
             marginBottom: 16,
           }}>
             <div>
-              <div style={{ fontSize: 13, opacity: 0.7 }}>Total Estimasi Sementara</div>
+              <div style={{ fontSize: 13, opacity: 0.7 }}>{t('ai.ded.fullai.grand_title')}</div>
               <div style={{ fontSize: 24, fontWeight: 700 }}>{fmtRp(grandTotal)}</div>
               <div style={{ fontSize: 11, color: '#fbbf24', marginTop: 4 }}>
-                Termasuk {s.itemsWithAssumption} item asumsi berlabel — bukan total final terverifikasi.
+                {t('ai.ded.fullai.grand_assump_a')}{s.itemsWithAssumption}{t('ai.ded.fullai.grand_assump_b')}
               </div>
               {s.excludedFromTotal > 0 && (
                 <div style={{ fontSize: 12, color: '#fbbf24', marginTop: 4 }}>
-                  Mengecualikan {s.excludedFromTotal} item yang belum lengkap.
+                  {t('ai.ded.fullai.grand_excl_a')}{s.excludedFromTotal}{t('ai.ded.fullai.grand_excl_b')}
                 </div>
               )}
               {proposedGrandTotalLive > 0 && Math.round(proposedGrandTotalLive) !== Math.round(grandTotal) && (
                 <div style={{ fontSize: 12, color: '#fbbf24', marginTop: 4 }}>
-                  Total usulan AI: {fmtRp(proposedGrandTotalLive)} (untuk perbandingan; total terverifikasi di atas yang dipakai).
+                  {t('ai.ded.result.proposed_a')}{fmtRp(proposedGrandTotalLive)}{t('ai.ded.result.proposed_b')}
                   {hasCanonicalSubstitution
-                    ? ' Selisih dapat mencerminkan substitusi harga kanonis atas estimasi AI, bukan semata kesalahan hitung.'
-                    : ' Selisih ini adalah perbedaan hitung AI.'}
+                    ? t('ai.ded.fullai.proposed_canon')
+                    : t('ai.ded.fullai.proposed_ai')}
                 </div>
               )}
             </div>
@@ -840,7 +843,7 @@ export const FullAiResultView: React.FC<Props> = ({ output, onFinalize, onSaveDr
                     background: 'transparent', color: '#fff', fontWeight: 600, cursor: 'pointer',
                   }}
                 >
-                  {draftSaved ? 'Draft Tersimpan' : 'Simpan Draft'}
+                  {draftSaved ? t('ai.ded.result.act_saved_draft') : t('ai.ded.result.act_save_draft')}
                 </button>
               )}
               {/* G-UI-3 (§3) — kirim hasil Full AI ke Chat AI (sejajar DedAiResultView). */}
@@ -854,13 +857,13 @@ export const FullAiResultView: React.FC<Props> = ({ output, onFinalize, onSaveDr
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                   }}
                 >
-                  <MessageSquare size={16} /> Kirim ke Chat AI
+                  <MessageSquare size={16} /> {t('ai.ded.result.send_chat')}
                 </button>
               )}
               <button
                 onClick={handleFinalize}
                 disabled={finalizing || !gateComplete}
-                title={!gateComplete ? `Finalisasi terkunci — ${gateItems.length - gateCheckedCount} item belum ditinjau` : undefined}
+                title={!gateComplete ? t('ai.ded.result.finalize_locked_a') + (gateItems.length - gateCheckedCount) + t('ai.ded.result.finalize_locked_b') : undefined}
                 className="dedai-ftotal-btn"
                 style={{
                   padding: '12px 24px', borderRadius: 8, border: 'none',
@@ -870,7 +873,7 @@ export const FullAiResultView: React.FC<Props> = ({ output, onFinalize, onSaveDr
                 }}
               >
                 {!gateComplete && !finalizing && <Lock size={16} />}
-                {finalizing ? 'Menyimpan…' : 'Konfirmasi & Masukkan ke RAB'}
+                {finalizing ? t('ai.ded.result.act_finalizing') : t('ai.ded.fullai.finalize_btn')}
               </button>
             </div>
           </div>

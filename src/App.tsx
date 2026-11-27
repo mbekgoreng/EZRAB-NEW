@@ -15,6 +15,7 @@ import { shouldScheduleAutoTour } from './components/onboarding/autoTourTrigger'
 import { FeatureTutorialPlayer } from './components/onboarding/tutorials/FeatureTutorialPlayer';
 import { WelcomeSlotGuard } from './components/onboarding/tutorials/WelcomeSlotGuard';
 import { isAppPath, isSafeInternalReturnTo, navigateTo, parseWorkspaceRoute, paths, routeForMenu, routeLabel } from './routing/routes';
+import { useI18n } from './i18n';
 import { scrollToHashTarget } from './routing/scrollToHash';
 import { useBrowserLocation } from './routing/useBrowserLocation';
 import { resolveAuthMode, resolveLoginUi, type AuthMode } from './auth/authMode';
@@ -227,6 +228,7 @@ const PublicNotFoundPage = lazy(() =>
 );
 
 export const App: React.FC = () => {
+  const { t, lang } = useI18n();
   const location = useBrowserLocation();
   const workspaceRoute = parseWorkspaceRoute(location.pathname, location.search);
   const isWorkspace = isAppPath(location.pathname);
@@ -296,9 +298,16 @@ export const App: React.FC = () => {
     return scrollToHashTarget(location.hash);
   }, [location.pathname, location.hash]);
 
+  // Judul tab mengikuti bahasa aktif (i18n): judul Masuk/Daftar dan
+  // 'Halaman tidak ditemukan' memakai key kamus yang sudah ada
+  // (auth.masuk/auth.daftar, dash.err_page_title). Judul workspace tetap
+  // memakai routeLabel() — modul routes.ts tidak punya akses hook dan
+  // nilainya dikunci tes d17RouteLabels — dan judul rute publik lain
+  // (Tentang/Fitur/Harga/FAQ/Privasi/Ketentuan/Akses/Undangan/beranda)
+  // belum punya key kamus yang cocok, jadi dibiarkan apa adanya.
   useEffect(() => {
     if (isBlogHost) document.title = 'Blog EZRAB';
-    else if (isWorkspace) document.title = workspaceRoute.status === 'not-found' ? 'Halaman Tidak Ditemukan — EZRAB' : `${routeLabel(workspaceRoute)} — EZRAB`;
+    else if (isWorkspace) document.title = workspaceRoute.status === 'not-found' ? `${t('dash.err_page_title')} — EZRAB` : `${routeLabel(workspaceRoute)} — EZRAB`;
     else if (isAccess) document.title = 'Akses Dashboard — EZRAB';
     else if (invitationToken) document.title = 'Terima Undangan — EZRAB';
     else if (isAbout) document.title = 'Tentang EZRAB';
@@ -308,11 +317,11 @@ export const App: React.FC = () => {
     else if (isTerms) document.title = 'Ketentuan Layanan — EZRAB';
     else if (isFaq) document.title = 'Pertanyaan Umum (FAQ) — EZRAB';
     else if (isPricing) document.title = 'Harga & Paket — EZRAB';
-    else if (isAuthRoute) document.title = authNoticeTab === 'daftar' ? 'Daftar — EZRAB' : 'Masuk — EZRAB';
-    else if (isAuthNotice) document.title = authNoticeTab === 'daftar' ? 'Daftar — EZRAB' : 'Masuk — EZRAB';
-    else if (!isHomePath) document.title = 'Halaman Tidak Ditemukan — EZRAB';
+    else if (isAuthRoute) document.title = authNoticeTab === 'daftar' ? `${t('auth.daftar')} — EZRAB` : `${t('auth.masuk')} — EZRAB`;
+    else if (isAuthNotice) document.title = authNoticeTab === 'daftar' ? `${t('auth.daftar')} — EZRAB` : `${t('auth.masuk')} — EZRAB`;
+    else if (!isHomePath) document.title = `${t('dash.err_page_title')} — EZRAB`;
     else document.title = 'EZRAB — RAB & Estimasi Konstruksi';
-  }, [isAbout, isFeatures, isAdvantages, isWorkspace, workspaceRoute, isPrivacy, isTerms, isFaq, isPricing, isAuthRoute, isAuthNotice, authNoticeTab, isHomePath]);
+  }, [isAbout, isFeatures, isAdvantages, isWorkspace, workspaceRoute, isPrivacy, isTerms, isFaq, isPricing, isAuthRoute, isAuthNotice, authNoticeTab, isHomePath, lang, t]);
 
   useEffect(() => {
     migrateLegacyOnboardingFlag(); // idempoten: pengguna lama tidak ditanya ulang

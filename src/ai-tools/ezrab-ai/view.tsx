@@ -25,7 +25,7 @@ import {
   History, Trash2, MoreVertical, Gamepad2, Brain, Pencil, Save, ListChecks,
   ClipboardList,
 } from 'lucide-react';
-import { ezrabAiService } from './service';
+import { ezrabAiService, PROJECT_SCOPE_CANNED_REPLY } from './service';
 import { maskAiModelName } from '../../services/aiModelMasking';
 import {
   TEXT_ATTACHMENT_ACCEPT,
@@ -65,7 +65,7 @@ import { renderMarkdown, markdownToPlainText } from './markdown';
 import { routeIntent, localGreeting, HELP_TEXT } from './intentRouter';
 import { extractSlashToken, filterSlashEntries, NAV_BY_ID, resolveNavCommand, type NavEntry } from './navRegistry';
 import { consumePendingAiEntry, requestAiEntry, consumePendingEzrabAiEntry, peekPendingEzrabAiEntry, ezrabAiEntryRemainingMs, openEzrabAI, type EzrabAiEntryContext } from '../aiNavigation';
-import { executeIntent, executeDirectConfirmation, executeBudgetFullAiRab, undoFullAiCompletion, acceptFullAiCompletion, discardFullAiCompletion, proposeUiActionConfirmation, claimUiActionConfirmation, takeUiActionConfirmationRef, buildAnswerPushFingerprint, formatAnswerPushPreviewMessage, qtoCorrectionMatchesDisplayed, validateDedSpecRevisionConfirm, DIRECT_COMMAND_CONFIRM_TTL_MS, continueRabNeeds, continueRabFinalize, hasActiveRabNeeds, continueRabChoice, tryContinueRabSubtype, tryContinueRabMaterial, tryContinueProjectContext, tryContinueUniversalContext, isUniversalContextForeign, getLastRabDesignPrompt, getLastRabNeeds, setLastRabNeeds, getPendingRabChoice, setPendingRabChoice, submitQuestionnaireAnswers, clearUniversalContext, restoreUniversalContext, getUniversalContextState, getProjectContextState, clearProjectContext, isProjectContextForeign, noteIntakeSnapshotVersion, getLastSeenIntakeVersion, takeIntakeDropOutcome, takeIntakePersistConflict, ChatActionContext, ChatActionButton, ActionResult, ProjectPriceOverrideInput } from './actionRegistry';
+import { executeIntent, executeDirectConfirmation, executeBudgetFullAiRab, undoFullAiCompletion, acceptFullAiCompletion, discardFullAiCompletion, proposeUiActionConfirmation, claimUiActionConfirmation, takeUiActionConfirmationRef, buildAnswerPushFingerprint, formatAnswerPushPreviewMessage, qtoCorrectionMatchesDisplayed, validateDedSpecRevisionConfirm, DIRECT_COMMAND_CONFIRM_TTL_MS, continueRabNeeds, continueRabFinalize, hasActiveRabNeeds, continueRabChoice, continueBudgetDecision, answerBudgetDecision, tryContinueRabSubtype, tryContinueRabMaterial, tryContinueProjectContext, tryContinueUniversalContext, tryGreetingRabType, isUniversalContextForeign, getLastRabDesignPrompt, getLastRabNeeds, setLastRabNeeds, getPendingRabChoice, setPendingRabChoice, submitQuestionnaireAnswers, clearUniversalContext, restoreUniversalContext, getUniversalContextState, getProjectContextState, clearProjectContext, isProjectContextForeign, noteIntakeSnapshotVersion, getLastSeenIntakeVersion, takeIntakeDropOutcome, takeIntakePersistConflict, ChatActionContext, ChatActionButton, ActionResult, ProjectPriceOverrideInput } from './actionRegistry';
 import { setActiveProjectSnapshot } from './tools';
 import { QuestionnaireCard } from './questionnaireCard';
 import type { QuestionnairePayload } from './questionnaire';
@@ -86,7 +86,7 @@ import { resolveAhspTopicFromHistory } from './chatSearch';
 import { detectHandoffNeed, HANDOFF_CHOICE_CHAT, HANDOFF_CHOICE_STAY } from './magicHandoff';
 import { structuredAiError, logAiDiagnostic, type AiErrorCode } from './aiErrorCodes';
 import { buildFinalizationKey } from '../ded-ai-estimate/finalizationKey';
-import { getLastUniversalDraft, setLastUniversalDraft, looksLikeUniversalRevision, buildPushPreview, formatPushPreviewMessage, buildPushPayload, dedupePushPayload, validateTransfer, draftReadiness, effectiveItems, isPriceValidForTotal } from './universalRab';
+import { getLastUniversalDraft, setLastUniversalDraft, looksLikeUniversalRevision, buildPushPreview, formatPushPreviewMessage, buildPushPayload, dedupePushPayload, validateTransfer, draftReadiness, effectiveItems, isPriceValidForTotal, overBudgetDecision } from './universalRab';
 import type { UniversalDraft } from './universalRab';
 import { setDraftProjectEnsurer, tempProjectNameForDraft, tempProjectDescriptionForDraft, TEMP_PROJECT_CREATION_METHOD, type DraftProjectEnsurer, type DraftProjectRequest, type EnsuredDraftProject } from './tempProject';
 import { authorizeChatAiMutation } from './mutationInventory';
@@ -531,8 +531,17 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   const [gameSpaceOpen, setGameSpaceOpen] = useState(false);
   /** Chat-to-RAB Fase 2: menunggu jawaban "Lengkapi kebutuhan" dari pengguna */
   const [awaitingNeeds, setAwaitingNeeds] = useState(false);
+  /** Step 3 Magic AI (2026-11-26, Gap D): sapaan proyek baru baru saja
+   *  disematkan dan menunggu jawaban JENIS RAB lewat ketuk chip kategori
+   *  ("Rumah Tinggal", "Gudang", …). Selama aktif, ketukan chip dirutekan
+   *  deterministik lewat tryGreetingRabType (bukan ke pipeline AI);
+   *  pesan lain menggugurkan status ini dan diproses normal. */
+  const [awaitingRabType, setAwaitingRabType] = useState(false);
   /** D1: kartu pilihan RAB bertipe menunggu koreksi/pilihan pengguna */
   const [awaitingChoice, setAwaitingChoice] = useState(false);
+  /** D5 (2026-11-26, perintah owner): menunggu jawaban atas pertanyaan
+   *  budget OVER (kurangi lingkup / tambah budget / ganti spek) */
+  const [awaitingBudgetDecision, setAwaitingBudgetDecision] = useState(false);
   /** Klarifikasi subtipe (2026-10-23): menunggu jawaban "Jalan apa?" */
   const [awaitingSubtype, setAwaitingSubtype] = useState(false);
   /** Gerbang klarifikasi material (2026-11-10): menunggu jawaban bahan
@@ -1636,6 +1645,12 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       pendingRevisionRef.current = null;
       draftUpdatedAtRef.current = res.updatedAt;
       if (!res.alreadyActivated) {
+        // D5 (2026-11-26, perintah owner): revisi yang (masih) OVER
+        // tidak boleh menawarkan Push — transfer terkunci sampai
+        // pertanyaan budget dijawab (atau revisi membuat total UNDER).
+        const liveAfter = getLastUniversalDraft(effProject?.id);
+        const overPending =
+          liveAfter != null && liveAfter.budgetDecisionPending === true && overBudgetDecision(liveAfter) != null;
         return {
           message:
             `✅ ${res.message}\n\n` +
@@ -1643,7 +1658,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
             `Total estimasi: ${formatRupiah(pending.before.estimatedTotal)} → ${formatRupiah(pending.after.estimatedTotal)}.\n` +
             `Bandingkan versi lama dengan yang baru lewat perintah "bandingkan versi ${pending.baseVersion} dan ${pending.targetVersion}".`,
           actions: [
-            { label: 'Push ke Spreadsheet', action: { kind: 'push-universal' } },
+            ...(overPending ? [] : [{ label: 'Push ke Spreadsheet', action: { kind: 'push-universal' as const } }]),
             { label: 'Riwayat versi', action: { kind: 'revision-history' } },
             { label: 'Buka Spreadsheet RAB', action: { kind: 'navigate', menu: 'rab-estimasi' } },
           ],
@@ -2606,6 +2621,40 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         return;
       }
     }
+    /* ---- Step 3 Magic AI (2026-11-26, Gap D): jawaban atas sapaan
+     *  proyek baru — ketuk chip kategori ("Rumah Tinggal", "Gudang", …)
+     *  pada sapaan yang baru disematkan. Label telanjang itu merute
+     *  UNKNOWN ke AI (tanpa verba RAB), padahal gerbang intake
+     *  deterministik sudah mengenal kategorinya. Selama awaitingRabType
+     *  aktif, ketukan chip dirutekan lewat tryGreetingRabType — jalur
+     *  CREATE_RAB_SUMMARY yang sama dengan "Buatkan RAB <kategori>" —
+     *  TANPA mengubah pesan yang dikirim (tetap label chip apa adanya;
+     *  tidak ada kalimat karangan) dan TANPA panggilan AI/kredit.
+     *  Pola posting mengikuti intersepsi D-50 di atas (gema pengguna +
+     *  balasan asisten dipersist). Pesan lain menggugurkan status
+     *  menunggu dan diproses normal di bawah. */
+    if (echo && !attached && !forcedAi && awaitingRabType) {
+      const chipRes = tryGreetingRabType(msg, effProject ?? null);
+      if (chipRes) {
+        setInput('');
+        clearDraftNow();
+        closeSlash();
+        autoresize();
+        const userEntry: ChatEntry = { role: 'user', content: msg, ts: Date.now() };
+        setMessages((prev) => [...prev, userEntry]);
+        persistMessage('user', userEntry.content);
+        const acts = chipRes.actions && chipRes.actions.length > 0 ? chipRes.actions : undefined;
+        setMessages((prev) => [...prev, { role: 'assistant', content: chipRes.message, ts: Date.now(), actions: acts, questionnaire: chipRes.questionnaire }]);
+        persistMessage('assistant', chipRes.message);
+        persistActiveDraft('autosave');
+        setAwaitingRabType(false);
+        if (chipRes.awaitRabNeeds) setAwaitingNeeds(true);
+        if (chipRes.awaitProjectConcept) setAwaitingConcept(true);
+        if (chipRes.awaitBudgetDecision) setAwaitingBudgetDecision(true);
+        return;
+      }
+      setAwaitingRabType(false);
+    }
     // FASE 2 — ekstraksi memori deterministik di AWAL submit (sebelum
     // cabang routing apa pun): koreksi/budget/preferensi/keputusan
     // eksplisit dari pesan ini terekam sebagai memori — termasuk bila
@@ -2875,6 +2924,28 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       endExec();
       return true;
     };
+    /* ---- D5 (2026-11-26, perintah owner): jawaban atas pertanyaan
+     *  budget OVER. Selama pertanyaan aktif, pesan dirutekan ke
+     *  continueBudgetDecision. Bila mengembalikan null, pesan itu
+     *  instruksi revisi sesudah pilihan (a)/(c) — status menunggu
+     *  digugurkan dan pesan jatuh ke pemrosesan normal di bawah
+     *  (jalur revisi). Pesan yang tidak dikenali dijawab tanya-ulang
+     *  oleh registry (slot tetap menunggu). */
+    if (!forcedAi && awaitingBudgetDecision) {
+      const budgetRes = continueBudgetDecision(msg);
+      if (budgetRes) {
+        try {
+          const acts = budgetRes.actions && budgetRes.actions.length > 0 ? budgetRes.actions : undefined;
+          await postAssistant(budgetRes.message, acts);
+          if (!budgetRes.awaitBudgetDecision) setAwaitingBudgetDecision(false);
+          persistActiveDraft('autosave');
+        } finally {
+          setBusy(false);
+        }
+        return;
+      }
+      setAwaitingBudgetDecision(false);
+    }
     /* ---- D1: koreksi pra-pilih pada kartu pilihan RAB bertipe ----
      * Selama kartu pilihan aktif, pesan berbentuk koreksi spek (lantai/
      * dimensi/kamar/luas) digabung ke kartu dan kartu di-render ulang
@@ -3501,6 +3572,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
           reply = res.message;
           if (res.awaitRabNeeds) setAwaitingNeeds(true);
           if (res.awaitRabChoice) setAwaitingChoice(true);
+          if (res.awaitBudgetDecision) setAwaitingBudgetDecision(true);
           if (res.awaitRabSubtype) setAwaitingSubtype(true);
           if (res.awaitRabMaterial) setAwaitingMaterial(true);
           if (res.awaitProjectConcept) setAwaitingConcept(true);
@@ -3810,6 +3882,14 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
           try { console.warn('[response-quality-gate] fail-open:', gateErr); } catch { /* abaikan */ }
         }
       }
+      // D3 (2026-11-26): penjaga balasan tool — token internal
+      // (nama tool, projectId, kode error registry, "dalam scope
+      // eksekusi") TIDAK PERNAH tampil, TERMASUK pada balasan tool
+      // deterministik yang melewati quality gate di atas. Balasan
+      // apa pun yang memuatnya diganti pesan kaleng scope-proyek.
+      if (res.success && /get_project_items|projectId|dalam scope eksekusi|PROJECT_REQUIRED|TOOL_[A-Z_]+|Approval/.test(res.reply ?? '')) {
+        res.reply = PROJECT_SCOPE_CANNED_REPLY;
+      }
       // CHAT-08: bila pengiriman gagal, wajah kegagalannya bukan lagi
       // satu kalimat generik — pesan layanan dipertahankan sebagai
       // baris pertama, ditambah panduan + rujukan tombol Coba Lagi
@@ -3863,7 +3943,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         type: heldReplyNotice ? 'error' : res.success ? 'success' : 'error',
         title: heldReplyNotice
           ? 'Jawaban AI ditahan — tidak lolos pemeriksaan kualitas'
-          : res.success ? 'Ezrab AI selesai menjawab' : 'Ezrab AI gagal menjawab',
+          : res.success ? t('ai.chat.notif_done') : t('ai.chat.notif_fail'),
         message: msg.length > 90 ? `${msg.slice(0, 90)}…` : msg,
         link: 'ezrab-ai',
       });
@@ -3901,7 +3981,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       if (errDisplayed) lastAiErrorMessageIdRef.current = persistedErrId;
       notificationBus.publish({
         type: 'error',
-        title: 'Ezrab AI mengalami gangguan',
+        title: t('ai.chat.notif_error'),
         message: errMsg.length > 140 ? `${errMsg.slice(0, 140)}…` : errMsg,
         link: 'ezrab-ai',
       });
@@ -4076,6 +4156,24 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
    * draft TIDAK disentuh). Mode default 'chat'; entry sekali-pakai dari
    * resolver mengisi banner + (bila ada prompt) prefill input. */
   const [aiEntryContext, setAiEntryContext] = useState<EzrabAiEntryContext | null>(null);
+  /* ---- Step 3 Magic AI (2026-11-26): sapaan pembuka dari entry ----
+   * Bila entry membawa `greeting`, sapaan itu disematkan sebagai SATU
+   * pesan asisten pertama percakapan proyek yang masih kosong (efek
+   * seed di bawah) — teks dipersist via persistMessage, chip saran
+   * dirender dari followUpSuggestions (efemeral sesi, seperti saran
+   * lain; restore dari store tidak membawanya — D-50). TANPA greeting
+   * state ini tetap null dan tidak ada yang berubah. Greeting tidak
+   * pernah dikirim sebagai pesan pengguna dan tidak mengubah prefill
+   * (injectedPrompt) apa pun. */
+  const [pendingGreeting, setPendingGreeting] = useState<{
+    text: string;
+    suggestions?: string[];
+    projectId: string | null;
+  } | null>(null);
+  /* Kunci seed sekali-pakai (percakapan + teks sapaan): melindungi
+   * dari seed ganda bila efek seed dieksekusi dua kali (StrictMode)
+   * sebelum setPendingGreeting(null) ter-render. */
+  const greetingSeededRef = useRef<string | null>(null);
   /* ---- Arsitektur AI Terpadu (Opsi A, 2026-11-11): mode presentasi.
    * 'magic' HANYA mengubah presentasi (label header + banner) —
    * percakapan, unifiedConversationStore, draft, dan asosiasi proyek di
@@ -4106,6 +4204,18 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         // atas percakapan kanonis yang sama.
         setPresentationMode('magic');
         setEnteredViaMagic(true);
+      }
+      // Step 3 Magic AI: titipkan sapaan untuk efek seed — proyek
+      // dicatat dari entry (bukan closure storeProjectId, yang bisa
+      // basi di callback ini); efek seed yang membandingkan dengan
+      // proyek yang sedang tampil.
+      const greetingText = ezEntry.greeting?.trim();
+      if (greetingText) {
+        setPendingGreeting({
+          text: greetingText,
+          suggestions: ezEntry.greetingSuggestions,
+          projectId: ezEntry.projectId ?? null,
+        });
       }
       clearBannerTimer();
       const remaining = peeked ? ezrabAiEntryRemainingMs(peeked.createdAt) : 60_000;
@@ -4157,6 +4267,69 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     // menunggu (tidak dihapus, tidak ditimpa) hingga input dikosongkan.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [injectedPrompt, conversationReady, busy, input]);
+
+  /* ---- Step 3 Magic AI (2026-11-26): seed sapaan pembuka ----
+   * Syarat seed (semua harus benar, kalau tidak sapaan dibuang diam-
+   * diam tanpa mengubah apa pun):
+   *  1. Percakapan sudah siap + tidak sedang sibuk (pola yang sama
+   *     dengan efek injectedPrompt di atas).
+   *  2. Sapaan ditujukan ke proyek yang SEDANG tampil (entry tanpa
+   *     projectId = chat global). Bila proyeknya berbeda, sapaan
+   *     DITAHAN (bukan dibuang): pengguna bisa kembali ke proyek itu
+   *     dan sapaan tetap disematkan di sana.
+   *  3. Percakapan aktif yang ter-muat BENAR-BENAR milik proyek tampil
+   *     (dicek ke store — getConversation melempar bila milik proyek
+   *     lain): tanpa ini, sapaan bisa diputuskan dari `messages` basi
+   *     proyek sebelumnya saat ganti proyek (transien satu commit
+   *     antara efek muat-percakapan dan render berikutnya).
+   *  4. Percakapan masih KOSONG (messages.length === 0): sapaan hanya
+   *     pembuka percakapan baru. Riwayat yang sudah ada = momen sapaan
+   *     sudah lewat → sapaan dibuang.
+   * Seed SEKALI per percakapan+teks (greetingSeededRef): persist teks
+   * ke store + tampilkan di state dengan followUpSuggestions agar
+   * chip kategori dirender jalur yang sudah ada (tanpa perubahan
+   * render). Reload sesudahnya menampilkan teks sapaan (tersimpan)
+   * tanpa chip — perilaku efemeral yang sama dengan semua saran. */
+  useEffect(() => {
+    if (!pendingGreeting || !conversationReady || busy) return;
+    const greetingProjectId = pendingGreeting.projectId ?? '__ezrab_ai_global__';
+    if (greetingProjectId !== storeProjectId) return;
+    if (!activeConvId) return;
+    let convCurrent = false;
+    try {
+      convCurrent = unifiedConversationStore.getConversation(activeConvId, storeProjectId) !== null;
+    } catch {
+      convCurrent = false;
+    }
+    if (!convCurrent) return;
+    const key = `${activeConvId}:${pendingGreeting.text}`;
+    if (greetingSeededRef.current === key) {
+      setPendingGreeting(null);
+      return;
+    }
+    if (messages.length > 0) {
+      setPendingGreeting(null);
+      return;
+    }
+    greetingSeededRef.current = key;
+    const { text, suggestions } = pendingGreeting;
+    setPendingGreeting(null);
+    persistMessage('assistant', text);
+    setMessages((prev) => (prev.length > 0
+      ? prev
+      : [...prev, {
+          role: 'assistant',
+          content: text,
+          ts: Date.now(),
+          followUpSuggestions: suggestions?.length ? suggestions : undefined,
+        }]));
+    // Gap D (2026-11-26): sapaan membawa chip kategori — percakapan ini
+    // kini menunggu jawaban jenis RAB lewat ketukan chip; submit
+    // merutekannya deterministik (tryGreetingRabType) selama flag ini
+    // aktif. Tanpa chip (sapaan tanpa saran) flag tetap mati.
+    if (suggestions?.length) setAwaitingRabType(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingGreeting, conversationReady, busy, messages.length, activeConvId, storeProjectId]);
 
   const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const copiedMdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -4838,13 +5011,17 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     }
     const preview = buildPushPreview(d);
     const readiness = draftReadiness(d);
+    // D5 (2026-11-26, perintah owner): draft OVER yang menunggu jawaban
+    // budget — pratinjau tetap ditampilkan (read-only), tapi TIDAK ADA
+    // tombol konfirmasi transfer sampai pertanyaan dijawab.
+    const overPending = d.budgetDecisionPending === true && overBudgetDecision(d) != null;
     // P1 §4.5: tanpa proyek aktif, pratinjau tetap dibuat — tombol
     // konfirmasi menjadi "Buat proyek & konfirmasi transfer" dan
     // proposal (sidik + versi + nama yang diusulkan + stempel waktu)
     // disimpan di pendingUnboundTransferRef. TIDAK ADA proyek yang
     // dibuat di sini — pembuatan hanya terjadi di handler konfirmasi
     // sesudah user mengklik tombol itu (konfirmasi eksplisit §6).
-    if (!effProject && readiness.status !== 'BLOCKED') {
+    if (!effProject && readiness.status !== 'BLOCKED' && !overPending) {
       const proposedName = tempProjectNameForDraft(d.title);
       pendingUnboundTransferRef.current = {
         kind: 'universal',
@@ -4868,15 +5045,21 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     // saat klik berbeda. Tanpa tombol konfirmasi (BLOCKED / tanpa
     // proyek), slot dikosongkan: tidak ada approval yang tertunda.
     pendingTransferApprovalRef.current =
-      effProject && readiness.status !== 'BLOCKED'
+      effProject && readiness.status !== 'BLOCKED' && !overPending
         ? createTransferApprovalBinding(d, effProject.id)
         : null;
     pendingUnboundTransferRef.current = null;
     const previewActions: ChatActionButton[] = [
-      ...(effProject && readiness.status !== 'BLOCKED' ? [{ label: 'Konfirmasi Transfer', action: { kind: 'push-universal-confirm' as const } }] : []),
+      ...(effProject && readiness.status !== 'BLOCKED' && !overPending ? [{ label: 'Konfirmasi Transfer', action: { kind: 'push-universal-confirm' as const } }] : []),
       { label: 'Buka Spreadsheet RAB', action: { kind: 'navigate', menu: 'rab-estimasi' } },
     ];
-    appendMsg(formatPushPreviewMessage(d, preview, effProject?.name ?? null), previewActions);
+    appendMsg(
+      formatPushPreviewMessage(d, preview, effProject?.name ?? null) +
+        (overPending
+          ? '\n\nDraft ini BELUM bisa ditransfer — total melebihi anggaran dan pertanyaan budget belum dijawab. Jawab dulu di chat (kurangi lingkup / tambah budget / ganti spek).'
+          : ''),
+      previewActions
+    );
   };
 
   /**
@@ -5222,6 +5405,28 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       pushDirectRabToSpreadsheet();
     } else if (btn.action.kind === 'push-universal') {
       pushUniversalToSpreadsheetPreview();
+    } else if (
+      btn.action.kind === 'budget-decision-reduce-scope' ||
+      btn.action.kind === 'budget-decision-raise-budget' ||
+      btn.action.kind === 'budget-decision-change-spec'
+    ) {
+      // D5 (2026-11-26, perintah owner): jawaban tombol atas pertanyaan
+      // budget OVER — tanpa gerbang kapabilitas (hanya percakapan;
+      // transfer tetap digerbang di validateTransfer/buildPushPayload).
+      const choice =
+        btn.action.kind === 'budget-decision-reduce-scope'
+          ? 'reduce-scope'
+          : btn.action.kind === 'budget-decision-raise-budget'
+            ? 'raise-budget'
+            : 'change-spec';
+      const res = answerBudgetDecision(choice);
+      if (res) {
+        appendLocalAssistant(res.message, res.actions && res.actions.length > 0 ? res.actions : undefined);
+        setAwaitingBudgetDecision(res.awaitBudgetDecision === true);
+        if (res.ok) persistActiveDraft('autosave', 'autosave');
+      } else {
+        appendLocalAssistant('Pertanyaan budget itu sudah tidak aktif (sudah dijawab atau kedaluwarsa) — jalankan ulang permintaan RAB-nya bila total masih melebihi anggaran.');
+      }
     } else if (btn.action.kind === 'push-universal-confirm') {
       pushUniversalToSpreadsheet();
     } else if (btn.action.kind === 'push-answer-items-confirm') {
@@ -5310,6 +5515,9 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       }
       const res = acceptFullAiCompletion(btn.action.target);
       appendLocalAssistant(res.message, res.actions);
+      // D5: lengkapan yang diterima ternyata OVER → pertanyaan budget
+      // aktif; pesan berikutnya dirutekan ke continueBudgetDecision.
+      setAwaitingBudgetDecision(res.awaitBudgetDecision === true);
       if (res.ok && btn.action.target === 'universal') persistActiveDraft('autosave', 'autosave');
     } else if (btn.action.kind === 'budget-full-ai-discard') {
       // Fast Track (P1-08 penuh, H-12) — "Buang lengkapan": buang klon
@@ -5624,6 +5832,9 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       setMessages((prev) => [...prev, entry]);
       persistMessage('assistant', res.message);
       setAwaitingConcept(res.awaitProjectConcept === true);
+      // D5: tombol (mis. pratinjau RAB) dapat mengembalikan tanya-balik
+      // budget OVER — pesan berikutnya dirutekan ke continueBudgetDecision.
+      setAwaitingBudgetDecision(res.awaitBudgetDecision === true);
     } else if (btn.action.intent === 'RAB_FULL_AI') {
       // Klik "Full AI" pada kartu jalur = persetujuan pengguna. Kontrak baru:
       // registry lebih dulu mencoba komposisi deterministik dari kebutuhan
@@ -5651,6 +5862,9 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         const entry: ChatEntry = { role: 'assistant', content: res.message, ts: Date.now(), actions: res.actions };
         setMessages((prev) => [...prev, entry]);
         persistMessage('assistant', res.message);
+        // D5: komposisi Full AI yang OVER mengembalikan tanya-balik
+        // budget — pesan berikutnya dirutekan ke continueBudgetDecision.
+        setAwaitingBudgetDecision(res.awaitBudgetDecision === true);
       } else if (btn.action.param) {
         // Cadangan defensif: registry tidak memberi apa pun — pakai param
         // tombol seperti perilaku lama.
@@ -5682,7 +5896,11 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       setAwaitingClarify(null);
       void submit(btn.action.param ?? btn.label);
     } else if (btn.action.intent === 'RAB_NEEDS_REFINE') {
-      const res = executeIntent('RAB_NEEDS_REFINE', undefined, {
+      // GAP B (2026-11-26): param tombol diteruskan — chip jawaban
+      // lantai ("Berapa lantai?") memakai intent ini dengan param
+      // `floors:N`; tombol "Lengkapi kebutuhan" tanpa param berperilaku
+      // persis seperti sebelumnya (param undefined).
+      const res = executeIntent('RAB_NEEDS_REFINE', btn.action.param, {
         navigate: (menu: string) => navigateChat(menu),
         currentMenu,
         activeProject: effProject,
@@ -5951,7 +6169,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     if (!Ctor) {
       setMessages((prev) => [...prev, {
         role: 'assistant', ts: Date.now(), isError: true,
-        content: 'Browser ini tidak mendukung voice input. Coba buka di Chrome Android/desktop ya.',
+        content: t('ai.chat.err_voice_unsupported'),
       }]);
       return;
     }
@@ -5984,12 +6202,12 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       if (err === 'not-allowed' || err === 'service-not-allowed') {
         setMessages((prev) => [...prev, {
           role: 'assistant', ts: Date.now(), isError: true,
-          content: 'Izin mikrofon ditolak. Izinkan akses mic di pengaturan browser ya.',
+          content: t('ai.chat.err_mic_denied'),
         }]);
       } else if (err !== 'aborted' && err !== 'no-speech') {
         setMessages((prev) => [...prev, {
           role: 'assistant', ts: Date.now(), isError: true,
-          content: 'Voice input gagal. Coba ketik manual ya.',
+          content: t('ai.chat.err_voice_failed'),
         }]);
       }
     };
@@ -6071,7 +6289,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     <div className="ezhist-head">
       <h3 className="ezhist-heading">Riwayat Percakapan</h3>
       <button className="ezhist-newbtn" onClick={newChat} disabled={busy}>
-        <Plus size={13} /> Percakapan Baru
+        <Plus size={13} /> {t('ai.chat.new_chat_title')}
       </button>
     </div>
   );
@@ -6112,7 +6330,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
           <FileText size={16} />
           <span>{attached.name}</span>
           <span className="ezchat2-attsize">{formatTextAttachmentSize(attached.size)}</span>
-          <button onClick={() => setAttached(null)} title="Hapus">
+          <button onClick={() => setAttached(null)} title={t('ai.chat.remove_attach')}>
             <X size={13} />
           </button>
         </div>
@@ -6121,7 +6339,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         <div className="ezchat2-atterr" role="alert">{attachError}</div>
       )}
       {listening && (
-        <div className="ezchat2-listening"><span className="ezdot busy pulse" /> Mendengarkan… bicara sekarang</div>
+        <div className="ezchat2-listening"><span className="ezdot busy pulse" /> {t('ai.chat.listening')}</div>
       )}
       <div className="ezchat2-pill">
         {/* Tombol lampirkan file DIHAPUS (owner 2026-10-27): tidak ada
@@ -6132,7 +6350,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
           value={input}
           onChange={(e) => { setInput(e.target.value); autoresize(); updateSlashState(e.target.value, e.target.selectionStart); saveDraftSoon(e.target.value); }}
           onKeyDown={onKey}
-          placeholder={listening ? 'Mendengarkan…' : 'Ketik pesan atau perintah…'}
+          placeholder={listening ? t('ai.chat.placeholder_listening') : t('ai.chat.placeholder')}
           rows={1}
           disabled={busy}
           aria-expanded={slashOpen}
@@ -6142,7 +6360,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         <button
           className={`ezchat2-tool ${listening ? 'listening' : ''}`}
           onClick={toggleMic}
-          title={listening ? 'Berhenti merekam' : 'Voice input (id-ID)'}
+          title={listening ? t('ai.chat.mic_stop') : t('ai.chat.mic_start')}
           disabled={busy}
         >
           <Mic size={17} />
@@ -6151,13 +6369,13 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
           className={`ezchat2-send ${input.trim() || attached ? 'ready' : ''}`}
           onClick={() => submit()}
           disabled={busy || (!input.trim() && !attached)}
-          title="Kirim"
+          title={t('ai.chat.send')}
         >
           {busy ? <Loader2 size={17} className="spin" /> : <Send size={17} />}
         </button>
       </div>
       <div className="ezchat2-foot">
-        Ezrab AI bisa salah, cek ulang angka penting
+        {t('ai.chat.foot_disclaimer')}
       </div>
       <div style={{ display: 'flex', justifyContent: 'center', marginTop: 6 }}>
         <CreditEstimateBadge estimate={chatEstimate} />
@@ -6212,16 +6430,16 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
             aria-label="Mode AI"
             disabled={busy}
           >
-            <option value="fast">Cepat</option>
-            <option value="advanced">Mendalam</option>
+            <option value="fast">{t('ai.chat.mode_fast')}</option>
+            <option value="advanced">{t('ai.chat.mode_deep')}</option>
           </select>
           <button
             className="ezchat2-new"
             onClick={() => { setMenuOpen(false); newChat(); }}
             disabled={busy}
-            title="Percakapan baru"
+            title={t('ai.chat.new_chat_title')}
           >
-            <Plus size={15} /> Baru
+            <Plus size={15} /> {t('ai.chat.new_chat')}
           </button>
           <div className="ezchat2-menuwrap">
             <button
@@ -6294,7 +6512,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
           <div className="ezchat2-hist-panel" role="dialog" aria-label="Memori tersimpan">
             <div className="ezhist-head">
               <h3 className="ezhist-heading">Memori Tersimpan</h3>
-              <button className="ezhist-newbtn" onClick={() => setMemoryOpen(false)}>Tutup</button>
+              <button className="ezhist-newbtn" onClick={() => setMemoryOpen(false)}>{t('common.tutup')}</button>
             </div>
             <p style={{ fontSize: '12px', color: 'var(--ez-color-text-body, #475569)', margin: '4px 0 10px' }}>
               {MEMORY_HONEST_LABEL} Memori yang dihapus tidak muncul lagi di jawaban berikutnya.
@@ -6667,8 +6885,8 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
                 interactive
               />
             </div>
-            <h2 className="ezchat2-greet">Halo, ada yang bisa saya bantu?</h2>
-            <p className="ezchat2-sub">Tanyakan tentang estimasi, AHSP, volume pekerjaan, atau dokumen proyek.</p>
+            <h2 className="ezchat2-greet">{t('ai.chat.greet_1')}</h2>
+            <p className="ezchat2-sub">{t('ai.chat.sub')}</p>
             {composer(true)}
           </div>
         ) : (
@@ -6804,7 +7022,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
                         fontWeight: 600, fontSize: 13, cursor: busy ? 'default' : 'pointer',
                         opacity: busy ? 0.6 : 1,
                       }}>
-                      <RotateCcw size={13} /> Coba Lagi
+                      <RotateCcw size={13} /> {t('common.coba_lagi')}
                     </button>
                   )}
                   <div className="ezchat2-ts">{fmtTime(m.ts)}</div>
@@ -6932,7 +7150,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
               padding: '6px 12px', borderRadius: 8, border: '1px solid #D97706',
               background: '#FFF', color: '#92400E', fontWeight: 700, fontSize: 13, cursor: 'pointer',
             }}>
-            Coba Lagi
+            {t('common.coba_lagi')}
           </button>
         </div>
       )}
@@ -6947,7 +7165,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
           <div className="aic-modal aic" onClick={(e) => e.stopPropagation()}>
             <h3>Saldo kredit tidak cukup</h3>
             <p className="aic-sub">
-              Mode {mode === 'fast' ? 'Cepat' : 'Mendalam'} membutuhkan estimasi hingga{' '}
+              Mode {mode === 'fast' ? t('ai.chat.mode_fast') : t('ai.chat.mode_deep')} membutuhkan estimasi hingga{' '}
               <strong>{creditConfirm.estimate} kredit (simulasi)</strong>, sedangkan saldo
               simulasi Anda {balance.total.toLocaleString('id-ID')} kredit.
             </p>
@@ -6956,7 +7174,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
               <div className="row"><span>Saldo simulasi</span><strong>{balance.total.toLocaleString('id-ID')} kredit</strong></div>
             </div>
             <div className="aic-modal-actions">
-              <button type="button" className="aic-btn-ghost" onClick={() => setCreditConfirm(null)}>Batal</button>
+              <button type="button" className="aic-btn-ghost" onClick={() => setCreditConfirm(null)}>{t('common.batal')}</button>
               <button type="button" className="aic-btn-ghost" onClick={() => { setCreditConfirm(null); setCreditTopUpOpen(true); }}>
                 Top-up (simulasi)
               </button>
@@ -6980,13 +7198,13 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
               Tindakan ini tidak dapat dibatalkan. Percakapan lain tidak berubah.
             </p>
             <div className="aic-modal-actions">
-              <button type="button" className="aic-btn-ghost" onClick={() => setPendingDeleteConv(null)}>Batal</button>
+              <button type="button" className="aic-btn-ghost" onClick={() => setPendingDeleteConv(null)}>{t('common.batal')}</button>
               <button
                 type="button"
                 className="aic-btn-primary"
                 onClick={() => { const id = pendingDeleteConv.id; setPendingDeleteConv(null); deleteHistoryItem(id); }}
               >
-                Hapus
+                {t('common.hapus')}
               </button>
             </div>
           </div>
@@ -7004,8 +7222,8 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
               Asisten AI EZRAB untuk estimasi RAB, AHSP 2026, dan analisis proyek.
             </p>
             <div className="aic-confirm-list">
-              <div className="row"><span>Versi</span><strong>V {EZRAB_CHAT_AI_VERSION}</strong></div>
-              <div className="row"><span>Mode AI</span><strong>{mode === 'fast' ? 'Cepat' : 'Mendalam'}</strong></div>
+              <div className="row"><span>{t('common.versi')}</span><strong>V {EZRAB_CHAT_AI_VERSION}</strong></div>
+              <div className="row"><span>Mode AI</span><strong>{mode === 'fast' ? t('ai.chat.mode_fast') : t('ai.chat.mode_deep')}</strong></div>
               <div className="row"><span>Proyek aktif</span><strong>{effProject?.name ?? 'Tanpa proyek aktif'}</strong></div>
               <div className="row"><span>Percakapan tersimpan</span><strong>{historyItems.length} percakapan</strong></div>
             </div>
@@ -7013,7 +7231,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
               Percakapan tersimpan lokal di perangkat ini.
             </p>
             <div className="aic-modal-actions">
-              <button type="button" className="aic-btn-primary" onClick={() => setAboutOpen(false)}>Tutup</button>
+              <button type="button" className="aic-btn-primary" onClick={() => setAboutOpen(false)}>{t('common.tutup')}</button>
             </div>
           </div>
         </div>
@@ -7039,7 +7257,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
               <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '12px 12px 0' }}>
                 <button onClick={() => setRabWizardOpen(false)}
                   style={{ padding: '7px 14px', borderRadius: 10, border: '1px solid var(--ez-color-border)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-secondary)', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
-                  ✕ Tutup
+                  ✕ {t('common.tutup')}
                 </button>
               </div>
               <DesignWizardFlowLazy
@@ -7061,7 +7279,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
               <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '8px 8px 0' }}>
                 <button onClick={() => setDesignStudioOpen(false)}
                   style={{ padding: '7px 14px', borderRadius: 10, border: '1px solid var(--ez-color-border)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-secondary)', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
-                  ✕ Tutup
+                  ✕ {t('common.tutup')}
                 </button>
               </div>
               <DesignStudioLazy initialPrompt={designPrompt} />

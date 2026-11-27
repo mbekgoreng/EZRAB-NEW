@@ -54,24 +54,34 @@ interface SearchResultItem {
   run: () => void;
 }
 
-/** Indeks menu untuk pencarian global (label + kata kunci). */
-const MENU_SEARCH_INDEX: Array<{ id: string; label: string; keywords: string }> = [
-  { id: 'dashboard', label: 'Dashboard', keywords: 'beranda home utama ringkasan' },
-  { id: 'proyek', label: 'Proyek', keywords: 'projects daftar proyek portofolio' },
-  { id: 'qto-vc', label: 'Kalkulator Volume', keywords: 'volume kalkulator hitung qto' },
-  { id: 'rab-estimasi', label: 'RAB & Estimasi', keywords: 'rab estimasi anggaran biaya spreadsheet' },
-  { id: 'ezrab-ai', label: 'Ezrab Chat AI', keywords: 'chat ai asisten' },
-  { id: 'ded-ai', label: 'DED Estimate AI', keywords: 'ded estimate gambar ai' },
-  { id: 'dokumen-ai', label: 'AI Document', keywords: 'dokumen document ai' },
-  { id: 'dokumen-tender', label: 'Dokumen Tender', keywords: 'dokumen tender proyek lelang berkas' },
-  { id: 'kredit-ai', label: 'Kredit AI', keywords: 'kredit ai saldo token top up' },
-  { id: 'template-rab', label: 'Template RAB', keywords: 'template' },
-  { id: 'keuangan-proyek', label: 'Keuangan Proyek', keywords: 'keuangan finance kas' },
-  { id: 'ahsp-2026', label: 'AHSP 2026', keywords: 'ahsp analisa harga satuan pupr' },
-  { id: 'database-material', label: 'Database Material', keywords: 'material bahan harga' },
-  { id: 'master-pricing', label: 'Harga Master', keywords: 'harga master ahsp versi adopsi admin pricing' },
-  { id: 'laporan', label: 'Laporan', keywords: 'laporan report boq rekap' },
-  { id: 'pengaturan', label: 'Pengaturan', keywords: 'pengaturan settings setelan' },
+/**
+ * Indeks menu untuk pencarian global.
+ * - `labelKey`: key kamus untuk label (diterjemahkan via t() di dalam
+ *   komponen — modul ini di luar komponen sehingga t() tidak tersedia
+ *   di sini). Bila null, `label` Indonesia dipakai apa adanya karena
+ *   belum ada key kamus yang cocok (kredit-ai, database-material).
+ * - `keywords`: kata kunci pencarian — SENGAJA tetap Indonesia (lihat
+ *   catatan di searchResults): pencocokan query terhadap keywords
+ *   tidak diterjemahkan, jadi pencarian berbahasa lain hanya mencocokkan
+ *   label terjemahan, bukan keywords.
+ */
+const MENU_SEARCH_INDEX: Array<{ id: string; label: string; labelKey: string | null; keywords: string }> = [
+  { id: 'dashboard', label: 'Dashboard', labelKey: 'dash.dashboard', keywords: 'beranda home utama ringkasan' },
+  { id: 'proyek', label: 'Proyek', labelKey: 'nav.proyek', keywords: 'projects daftar proyek portofolio' },
+  { id: 'qto-vc', label: 'Kalkulator Volume', labelKey: 'nav.volume_kalkulator', keywords: 'volume kalkulator hitung qto' },
+  { id: 'rab-estimasi', label: 'RAB & Estimasi', labelKey: 'nav.rab_estimasi', keywords: 'rab estimasi anggaran biaya spreadsheet' },
+  { id: 'ezrab-ai', label: 'Ezrab Chat AI', labelKey: 'nav.chat_ai', keywords: 'chat ai asisten' },
+  { id: 'ded-ai', label: 'DED Estimate AI', labelKey: 'nav.ded_ai', keywords: 'ded estimate gambar ai' },
+  { id: 'dokumen-ai', label: 'AI Document', labelKey: 'nav.doc_ai', keywords: 'dokumen document ai' },
+  { id: 'dokumen-tender', label: 'Dokumen Tender', labelKey: 'nav.dokumen_proyek', keywords: 'dokumen tender proyek lelang berkas' },
+  { id: 'kredit-ai', label: 'Kredit AI', labelKey: null, keywords: 'kredit ai saldo token top up' },
+  { id: 'template-rab', label: 'Template RAB', labelKey: 'nav.template_rab', keywords: 'template' },
+  { id: 'keuangan-proyek', label: 'Keuangan Proyek', labelKey: 'nav.keuangan_proyek', keywords: 'keuangan finance kas' },
+  { id: 'ahsp-2026', label: 'AHSP 2026', labelKey: 'nav.bottom_ahsp', keywords: 'ahsp analisa harga satuan pupr' },
+  { id: 'database-material', label: 'Database Material', labelKey: null, keywords: 'material bahan harga' },
+  { id: 'master-pricing', label: 'Harga Master', labelKey: 'nav.master_pricing', keywords: 'harga master ahsp versi adopsi admin pricing' },
+  { id: 'laporan', label: 'Laporan', labelKey: 'nav.laporan', keywords: 'laporan report boq rekap' },
+  { id: 'pengaturan', label: 'Pengaturan', labelKey: 'nav.pengaturan', keywords: 'pengaturan settings setelan' },
 ];
 import { useRole } from '../../auth/RoleContext';
 import { useAuth } from '../../auth/AuthContext';
@@ -178,45 +188,53 @@ const { t, lang, setLang } = useI18n();
     const q = searchQuery.trim().toLowerCase();
     if (!q) return [];
     const out: SearchResultItem[] = [];
-    // 1. Proyek (maks 4)
+    const proyekGroup = t('nav.proyek');
+    // 1. Proyek (maks 4) — nama/klien/lokasi proyek adalah data user,
+    //    bukan string UI, jadi grupnya saja yang diterjemahkan.
     for (const p of projects) {
       if (out.length >= 9) break;
       const hay = `${p.name} ${p.clientName ?? ''} ${p.location ?? ''}`.toLowerCase();
       if (!hay.includes(q)) continue;
       out.push({
         key: `project:${p.id}`,
-        group: 'Proyek',
+        group: proyekGroup,
         label: p.name,
         sub: [p.clientName, p.location].filter(Boolean).join(' • ') || undefined,
         icon: <Building2 size={15} color="var(--ez-color-primary)" />,
         run: () => onOpenProject?.(p.id),
       });
-      if (out.filter((r) => r.group === 'Proyek').length >= 4) break;
+      if (out.filter((r) => r.group === proyekGroup).length >= 4) break;
     }
-    // 2. Menu navigasi
+    // 2. Menu navigasi — label diterjemahkan via labelKey; keywords
+    //    tetap Indonesia (limitasi: query bahasa lain hanya mencocokkan
+    //    label terjemahan, bukan keywords).
     for (const m of MENU_SEARCH_INDEX) {
       if (out.length >= 9) break;
-      if (!`${m.label} ${m.keywords}`.toLowerCase().includes(q)) continue;
+      const label = m.labelKey ? t(m.labelKey) : m.label;
+      if (!`${label} ${m.keywords}`.toLowerCase().includes(q)) continue;
       out.push({
         key: `menu:${m.id}`,
+        // Grup 'Menu'/'Aksi' belum punya key kamus — dibiarkan Indonesia.
         group: 'Menu',
-        label: m.label,
+        label,
         icon: <ChevronRight size={15} color="var(--ez-color-text-muted)" />,
         run: () => onNavigate(m.id),
       });
     }
-    // 3. Aksi cepat
+    // 3. Aksi cepat — label diterjemahkan; kondisi pencocokan tetap
+    //    kata Indonesia ('buat proyek baru' / 'proyek', lihat limitasi
+    //    keywords di atas).
     if ('buat proyek baru'.includes(q) || q.includes('proyek')) {
       out.push({
         key: 'action:create-project',
         group: 'Aksi',
-        label: 'Buat proyek baru',
+        label: t('nav.create_project'),
         icon: <Plus size={15} color="var(--ez-color-success)" />,
         run: () => onCreateProject?.(),
       });
     }
     return out.slice(0, 9);
-  }, [searchQuery, projects, onOpenProject, onNavigate, onCreateProject]);
+  }, [searchQuery, projects, onOpenProject, onNavigate, onCreateProject, t]);
 
   const closeSearch = () => {
     setSearchFocused(false);

@@ -17,16 +17,34 @@ import {
   claimMagicAiSubmission,
   bindMagicAiSubmission,
 } from '../../ai-tools/ezrab-ai/projectCreationIntent';
+import {
+  buildNewProjectMagicPrompt,
+  buildNewProjectGreeting,
+  buildNewProjectGreetingSuggestions,
+  formatBudgetInputDigits,
+  type NewProjectFormInput,
+} from '../../ai-tools/ezrab-ai/newProjectMagicPrompt';
 import { structuredAiError } from '../../ai-tools/ezrab-ai/aiErrorCodes';
 
 export type KickoffMethod = 'select' | 'magic_ai' | 'manual' | 'volume_calculation' | 'template';
+
+/**
+ * Opsi pembuka Magic AI dari form Step 1 — diteruskan apa adanya ke
+ * handler `onOpenMagicAiWithPrompt` agar diteruskan ke konteks entry
+ * (`greeting` / `greetingSuggestions` di `EzrabAiEntryContext`, yang
+ * ditambahkan sisi chat). Modal TIDAK menyentuh aiNavigation.ts.
+ */
+export interface MagicAiOpenOptions {
+  greeting?: string;
+  greetingSuggestions?: string[];
+}
 
 interface CreateProjectModalProps {
   isOpen: boolean;
   onClose: () => void;
   onCreateProject: (projectData: Partial<Project>) => Project;
   onNavigateToTab: (tab: string, projectId?: string | null) => void;
-  onOpenMagicAiWithPrompt?: (prompt: string, projectId: string, projectName: string) => void;
+  onOpenMagicAiWithPrompt?: (prompt: string, projectId: string, projectName: string, options?: MagicAiOpenOptions) => void;
   /**
    * Proyek aktif saat ini (untuk keputusan pembuatan Magic AI §5.3):
    * bila ada, prompt Magic AI secara default dilanjutkan ke proyek
@@ -44,16 +62,27 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
   activeProject,
 }) => {
   const { t } = useI18n();
-  const [activeStep, setActiveStep] = useState<KickoffMethod>('select');
+  // ALUR BARU (Step 1 form dulu, Step 2 wizard): modal dibuka pada form
+  // 'manual' — identitas proyek diisi + divalidasi di sini, BARU sesudah
+  // itu pengguna memilih cara menyusun RAB di langkah 'select'. Kartu
+  // Manual di wizard kembali ke form ini (submit yang sama).
+  const [activeStep, setActiveStep] = useState<KickoffMethod>('manual');
 
-  // Manual RAB Form State
+  // Manual RAB Form State (Step 1)
   const [manualName, setManualName] = useState('');
   const [manualClient, setManualClient] = useState('');
   const [manualLocation, setManualLocation] = useState('Jakarta Selatan');
   const [manualBuildingType, setManualBuildingType] = useState<BuildingType>('Rumah Tinggal');
   const [manualBuildingArea, setManualBuildingArea] = useState('120');
+  const [manualLandArea, setManualLandArea] = useState('');
   const [manualFloorCount, setManualFloorCount] = useState('1');
+  // Disimpan sebagai digit mentah ("850000000"); tampilan diformat
+  // berkelompok id-ID saat render. Budget = BATAS ATAS (maksimal).
   const [manualEstimatedBudget, setManualEstimatedBudget] = useState('');
+  const [manualStartDate, setManualStartDate] = useState('');
+  const [manualNotes, setManualNotes] = useState('');
+  // Error inline Step 1: nama proyek wajib sebelum lanjut / simpan.
+  const [formNameError, setFormNameError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Magic AI Form State
@@ -72,15 +101,107 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
 
   if (!isOpen) return null;
 
+  /** Snapshot state form Step 1 untuk penyintesis prompt/sapaan. */
+  const formDataForPrompt = (): NewProjectFormInput => {
+    const budgetNumber = parseFloat(manualEstimatedBudget.replace(/[^0-9]/g, '')) || 0;
+    const areaNumber = parseFloat(manualBuildingArea) || 0;
+    const landNumber = parseFloat(manualLandArea) || 0;
+    const floorsNumber = parseInt(manualFloorCount, 10) || 1;
+    return {
+      name: manualName.trim(),
+      clientName: manualClient.trim() || undefined,
+      location: manualLocation.trim() || undefined,
+      buildingType: manualBuildingType,
+      buildingAreaM2: areaNumber > 0 ? areaNumber : undefined,
+      landAreaM2: landNumber > 0 ? landNumber : undefined,
+      floorCount: floorsNumber,
+      maxBudgetRp: budgetNumber > 0 ? budgetNumber : undefined,
+      startDate: manualStartDate || undefined,
+      notes: manualNotes.trim() || undefined,
+    };
+  };
+
+  /** Opsi sapaan Magic AI dari form — diteruskan ke handler pembuka. */
+  const magicOpenOptions = (): MagicAiOpenOptions => {
+    const form = formDataForPrompt();
+    return {
+      greeting: buildNewProjectGreeting(form),
+      greetingSuggestions: buildNewProjectGreetingSuggestions(form),
+    };
+  };
+
+  // Prefill Magic AI dari form: textarea menampilkan sintesis form
+  // selama pengguna belum mengetik prompt sendiri; editan pengguna
+  // selalu menang (aiPrompt non-kosong tidak pernah ditimpa).
+  const synthesizedMagicPrompt = buildNewProjectMagicPrompt(formDataForPrompt());
+  const effectiveAiPrompt = aiPrompt.trim() ? aiPrompt : synthesizedMagicPrompt;
+
+  /** Validasi Step 1: nama proyek wajib; error tampil inline. */
+  const validateFormName = (): boolean => {
+    if (!manualName.trim()) {
+      setFormNameError(t('proj.create.f_name_error'));
+      return false;
+    }
+    setFormNameError(null);
+    return true;
+  };
+
+  /** Lanjut Step 1 -> Step 2 (wizard), hanya bila nama terisi. */
+  const handleFormNext = () => {
+    if (validateFormName()) setActiveStep('select');
+  };
+
+  /**
+   * Satu sumber identitas proyek dari form Step 1 — dipakai ketiga
+   * jalur yang membuat proyek (manual, Magic AI, volume). Field
+   * opsional yang kosong TIDAK ditulis agar default aman kanonis
+   * createProject yang berlaku.
+   */
+  const buildProjectFromForm = (
+    creationMethod: 'manual' | 'magic_ai' | 'volume_calculation',
+  ): Partial<Project> => {
+    const budgetNumber = parseFloat(manualEstimatedBudget.replace(/[^0-9]/g, '')) || 0;
+    const areaNumber = parseFloat(manualBuildingArea) || 0;
+    const landNumber = parseFloat(manualLandArea) || 0;
+    const floorsNumber = parseInt(manualFloorCount, 10) || 1;
+    const data: Partial<Project> = {
+      name: manualName.trim(),
+      client: manualClient.trim() || 'Klien Proyek',
+      clientName: manualClient.trim() || 'Klien Proyek',
+      location: manualLocation.trim() || 'Indonesia',
+      buildingType: manualBuildingType,
+      buildingArea: areaNumber,
+      floorCount: floorsNumber,
+      // D-85 (Batch G2): anggaran perkiraan disimpan sebagai
+      // estimatedBudget — BUKAN totalRab. Menulis budget ke totalRab
+      // membuat proyek kosong tampil seolah sudah punya nilai RAB
+      // terhitung (salah satu dari 3 penulis cache totalRab yang
+      // semantiknya bertabrakan). totalRab proyek baru tetap 0 sampai
+      // mesin kanonis menghitungnya dari item RAB. Budget ini adalah
+      // BATAS ATAS (maksimal), bukan target.
+      estimatedBudget: budgetNumber,
+      creationMethod,
+      status: 'draft',
+    };
+    if (landNumber > 0) data.landArea = landNumber;
+    if (manualStartDate) data.startDate = manualStartDate;
+    if (manualNotes.trim()) data.notes = manualNotes.trim();
+    return data;
+  };
+
   const resetForm = () => {
-    setActiveStep('select');
+    setActiveStep('manual');
     setManualName('');
     setManualClient('');
     setManualLocation('Jakarta Selatan');
     setManualBuildingType('Rumah Tinggal');
     setManualBuildingArea('120');
+    setManualLandArea('');
     setManualFloorCount('1');
     setManualEstimatedBudget('');
+    setManualStartDate('');
+    setManualNotes('');
+    setFormNameError(null);
     setAiPrompt('');
     setIsSubmitting(false);
     setMagicAskChoice(false);
@@ -95,34 +216,14 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
     onClose();
   };
 
-  // Submit Manual Project Creation
+  // Submit Manual Project Creation (jalur kartu Manual RAB Builder —
+  // kartu wizard kembali ke form ini, submit yang sama yang dipakai).
   const handleManualSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!manualName.trim()) return;
+    if (!validateFormName() || isSubmitting) return;
 
     setIsSubmitting(true);
-    const budgetNumber = parseFloat(manualEstimatedBudget.replace(/[^0-9]/g, '')) || 0;
-    const areaNumber = parseFloat(manualBuildingArea) || 0;
-    const floorsNumber = parseInt(manualFloorCount, 10) || 1;
-
-    const newProj = onCreateProject({
-      name: manualName.trim(),
-      client: manualClient.trim() || 'Klien Proyek',
-      clientName: manualClient.trim() || 'Klien Proyek',
-      location: manualLocation.trim() || 'Indonesia',
-      buildingType: manualBuildingType,
-      buildingArea: areaNumber,
-      floorCount: floorsNumber,
-      // D-85 (Batch G2): anggaran perkiraan disimpan sebagai
-      // estimatedBudget — BUKAN totalRab. Menulis budget ke totalRab
-      // membuat proyek kosong tampil seolah sudah punya nilai RAB
-      // terhitung (salah satu dari 3 penulis cache totalRab yang
-      // semantiknya bertabrakan). totalRab proyek baru tetap 0 sampai
-      // mesin kanonis menghitungnya dari item RAB.
-      estimatedBudget: budgetNumber,
-      creationMethod: 'manual',
-      status: 'draft',
-    });
+    const newProj = onCreateProject(buildProjectFromForm('manual'));
 
     handleClose();
     // Directly guide user to Spreadsheet RAB
@@ -143,6 +244,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
           prompt,
           claim.projectId,
           activeProject?.id === claim.projectId ? activeProject.name : prompt,
+          magicOpenOptions(),
         );
       } else {
         onNavigateToTab('magic-ai', claim.projectId);
@@ -150,25 +252,20 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
       return;
     }
     const intent = extractProjectCreationIntent(prompt);
-    // Hanya field yang BENAR-BENAR diketahui dari prompt yang ditulis.
-    // Field tak diketahui dibiarkan kosong agar default aman kanonis
-    // createProject yang berlaku — tidak ada "Klien AI", lokasi, atau
-    // tipe bangunan yang dikarang di jalur Magic AI.
-    const data: Partial<Project> = {
-      creationMethod: 'magic_ai',
-      status: 'draft',
-    };
-    const name = intent.explicitName ?? intent.descriptiveName;
-    if (name) data.name = name;
-    if (intent.buildingType) data.buildingType = intent.buildingType;
-    if (intent.location) data.location = intent.location;
-    if (intent.clientName) {
-      data.client = intent.clientName;
-      data.clientName = intent.clientName;
+    // Identitas proyek = form Step 1 (sudah tervalidasi) — MENANG atas
+    // ekstraksi prompt. Intent hanya mengisi celah yang form kosongkan
+    // (mis. luas lahan bila form mengosongkannya). Field yang tidak
+    // diketahui di kedua sumber TIDAK dikarang: default aman kanonis
+    // createProject yang berlaku.
+    const data = buildProjectFromForm('magic_ai');
+    if (!data.landArea && intent.landAreaM2 != null) data.landArea = intent.landAreaM2;
+    if ((!data.buildingArea || data.buildingArea === 0) && intent.buildingAreaM2 != null) {
+      data.buildingArea = intent.buildingAreaM2;
     }
-    if (intent.landAreaM2 != null) data.landArea = intent.landAreaM2;
-    if (intent.buildingAreaM2 != null) data.buildingArea = intent.buildingAreaM2;
-    if (intent.floors != null) data.floorCount = intent.floors;
+    if (intent.floors != null && (!data.floorCount || data.floorCount <= 0)) {
+      data.floorCount = intent.floors;
+    }
+    data.initialPrompt = prompt;
 
     let newProj: Project;
     try {
@@ -183,7 +280,8 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
     if (onOpenMagicAiWithPrompt) {
       // R1: teruskan ID + nama proyek BARU ke handler — handler tidak boleh
       // menebak dari proyek aktif lama (closure render sebelum pembuatan).
-      onOpenMagicAiWithPrompt(aiPrompt, newProj.id, newProj.name);
+      // Sapaan + chip saran dari form ikut sebagai opsi pembuka.
+      onOpenMagicAiWithPrompt(aiPrompt, newProj.id, newProj.name, magicOpenOptions());
     } else {
       onNavigateToTab('magic-ai', newProj.id);
     }
@@ -194,7 +292,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
     if (!activeProject) return;
     handleClose();
     if (onOpenMagicAiWithPrompt) {
-      onOpenMagicAiWithPrompt(aiPrompt.trim(), activeProject.id, activeProject.name);
+      onOpenMagicAiWithPrompt(effectiveAiPrompt, activeProject.id, activeProject.name, magicOpenOptions());
     } else {
       onNavigateToTab('magic-ai', activeProject.id);
     }
@@ -203,9 +301,9 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
   // Launch Magic AI Project Pathway
   const handleMagicAiSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!aiPrompt.trim() || isSubmitting) return;
+    if (!effectiveAiPrompt.trim() || isSubmitting) return;
     setMagicError(null);
-    const intent = extractProjectCreationIntent(aiPrompt);
+    const intent = extractProjectCreationIntent(effectiveAiPrompt);
     const action = decideMagicAiProjectAction({
       hasActiveProject: !!activeProject,
       explicitNewProject: intent.explicitNewProject,
@@ -218,7 +316,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
       return;
     }
     setIsSubmitting(true);
-    proceedMagicCreate(aiPrompt.trim());
+    proceedMagicCreate(effectiveAiPrompt.trim());
   };
 
   // Launch Volume Calculation Pathway (D-28, Batch F): klik kartu HANYA
@@ -233,6 +331,9 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
     const action = decideVolumeCalcProjectAction({ hasActiveProject: !!activeProject });
     setVolumeAskChoice(action === 'ask');
     setVolumeError(null);
+    // Nama proyek sudah diisi di form Step 1 — isi awal langkah volume
+    // dengan nama itu (pengguna tetap bisa mengubahnya di sini).
+    if (!volumeName.trim() && manualName.trim()) setVolumeName(manualName.trim());
     setActiveStep('volume_calculation');
   };
 
@@ -243,7 +344,8 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
     onNavigateToTab('qto-vc', activeProject.id);
   };
 
-  // Buat proyek volume BARU dari nama yang dimasukkan pengguna.
+  // Buat proyek volume BARU dari nama yang dimasukkan pengguna
+  // (diisi awal dari form Step 1) + identitas form lainnya.
   const handleVolumeSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!volumeName.trim() || isSubmitting) return;
@@ -252,13 +354,9 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
     let newProj;
     try {
       newProj = onCreateProject({
+        ...buildProjectFromForm('volume_calculation'),
         name: volumeName.trim(),
-        client: 'Klien Proyek',
-        clientName: 'Klien Proyek',
-        location: 'Indonesia',
-        buildingType: 'Rumah Tinggal',
         creationMethod: 'volume_calculation',
-        status: 'draft',
       });
     } catch {
       setVolumeError(structuredAiError('PROJECT_CREATION_FAILED').message);
@@ -295,7 +393,9 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
           background: 'var(--ez-color-surface)',
           borderRadius: 'var(--ez-radius-card)',
           width: '100%',
-          maxWidth: activeStep === 'select' ? '680px' : '540px',
+          maxWidth: activeStep === 'magic_ai' || activeStep === 'volume_calculation' ? '540px' : '680px',
+          maxHeight: 'calc(100vh - 40px)',
+          overflowY: 'auto',
           padding: '28px',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
           position: 'relative',
@@ -313,9 +413,10 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            {activeStep !== 'select' && (
+            {/* Kembali: wizard -> form Step 1; sub-langkah -> wizard. */}
+            {activeStep !== 'manual' && (
               <button
-                onClick={() => setActiveStep('select')}
+                onClick={() => setActiveStep(activeStep === 'select' ? 'manual' : 'select')}
                 style={{
                   background: 'var(--ez-color-surface-tertiary)',
                   border: 'none',
@@ -335,14 +436,14 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
             )}
             <div>
               <h2 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
-                {activeStep === 'select' && t('proj.create.title_select')}
-                {activeStep === 'manual' && t('proj.create.title_manual')}
+                {activeStep === 'select' && t('proj.create.title_method')}
+                {activeStep === 'manual' && t('proj.create.title_form')}
                 {activeStep === 'magic_ai' && t('proj.create.title_ai')}
                 {activeStep === 'volume_calculation' && t('proj.create.title_volume')}
               </h2>
               <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: '2px 0 0 0' }}>
-                {activeStep === 'select' && t('proj.create.sub_select')}
-                {activeStep === 'manual' && t('proj.create.sub_manual')}
+                {activeStep === 'select' && t('proj.create.sub_method')}
+                {activeStep === 'manual' && t('proj.create.sub_form')}
                 {activeStep === 'magic_ai' && t('proj.create.sub_ai')}
                 {activeStep === 'volume_calculation' && t('proj.create.sub_volume')}
               </p>
@@ -365,7 +466,9 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
         </div>
 
         {/* =========================================================================
-            STEP 1: METHOD SELECTION (THE 4 PATHWAYS)
+            STEP 2: METHOD SELECTION (THE 4 PATHWAYS)
+            Kartu-kartu di bawah TIDAK diubah label/badge/deskripsi/CTA-nya.
+            Kartu Manual kembali ke form Step 1 (submit yang sama).
            ========================================================================= */}
         {activeStep === 'select' && (
           <div data-tutorial="proyek-method" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px' }}>
@@ -599,7 +702,10 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
         )}
 
         {/* =========================================================================
-            STEP 2A: MANUAL FORM
+            STEP 1: PROJECT FORM (identitas proyek — nama wajib).
+            Sesudah valid, "Lanjut" membuka STEP 2 (wizard 4 kartu).
+            Tombol submit di sini adalah jalur Manual RAB Builder yang sama
+            (kartu wizard kembali ke form ini).
            ========================================================================= */}
         {activeStep === 'manual' && (
           <form onSubmit={handleManualSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -610,19 +716,25 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
               <input
                 type="text"
                 required
+                aria-invalid={!!formNameError}
                 placeholder={t('proj.create.f_name_ph')}
                 value={manualName}
-                onChange={(e) => setManualName(e.target.value)}
+                onChange={(e) => { setManualName(e.target.value); if (formNameError) setFormNameError(null); }}
                 style={{
                   width: '100%',
                   padding: '9px 12px',
                   borderRadius: '8px',
-                  border: '1px solid var(--ez-hue-slate-border)',
+                  border: formNameError ? '1px solid #DC2626' : '1px solid var(--ez-hue-slate-border)',
                   fontSize: '13px',
                   outline: 'none',
                   boxSizing: 'border-box',
                 }}
               />
+              {formNameError && (
+                <p role="alert" style={{ fontSize: '12px', color: '#DC2626', margin: '5px 0 0 0' }}>
+                  {formNameError}
+                </p>
+              )}
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
@@ -700,6 +812,29 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
 
               <div>
                 <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: '5px' }}>
+                  {t('proj.create.f_land_area')}
+                </label>
+                <input
+                  type="number"
+                  placeholder={t('proj.create.f_land_area_ph')}
+                  value={manualLandArea}
+                  onChange={(e) => setManualLandArea(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '9px 12px',
+                    borderRadius: '8px',
+                    border: '1px solid var(--ez-hue-slate-border)',
+                    fontSize: '13px',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: '5px' }}>
                   {t('proj.create.f_floors')}
                 </label>
                 <input
@@ -708,6 +843,26 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                   max="50"
                   value={manualFloorCount}
                   onChange={(e) => setManualFloorCount(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '9px 12px',
+                    borderRadius: '8px',
+                    border: '1px solid var(--ez-hue-slate-border)',
+                    fontSize: '13px',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: '5px' }}>
+                  {t('proj.create.f_start_date')}
+                </label>
+                <input
+                  type="date"
+                  value={manualStartDate}
+                  onChange={(e) => setManualStartDate(e.target.value)}
                   style={{
                     width: '100%',
                     padding: '9px 12px',
@@ -749,9 +904,10 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                 </label>
                 <input
                   type="text"
+                  inputMode="numeric"
                   placeholder={t('proj.create.f_budget_ph')}
-                  value={manualEstimatedBudget}
-                  onChange={(e) => setManualEstimatedBudget(e.target.value)}
+                  value={formatBudgetInputDigits(manualEstimatedBudget)}
+                  onChange={(e) => setManualEstimatedBudget(e.target.value.replace(/[^0-9]/g, ''))}
                   style={{
                     width: '100%',
                     padding: '9px 12px',
@@ -765,27 +921,53 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
               </div>
             </div>
 
+            <div>
+              <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: '5px' }}>
+                {t('proj.create.f_notes')}
+              </label>
+              <textarea
+                rows={2}
+                placeholder={t('proj.create.f_notes_ph')}
+                value={manualNotes}
+                onChange={(e) => setManualNotes(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '9px 12px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--ez-hue-slate-border)',
+                  fontSize: '13px',
+                  outline: 'none',
+                  resize: 'vertical',
+                  boxSizing: 'border-box',
+                }}
+              />
+            </div>
+
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
               <button
-                type="button"
-                onClick={() => setActiveStep('select')}
+                type="submit"
+                disabled={isSubmitting}
                 style={{
                   padding: '9px 16px',
                   borderRadius: '8px',
                   border: '1px solid var(--ez-color-border-line)',
                   background: 'var(--ez-color-surface)',
-                  color: 'var(--ez-color-text-muted)',
+                  color: 'var(--ez-color-primary)',
                   fontSize: '13px',
                   fontWeight: 600,
-                  cursor: 'pointer',
+                  cursor: isSubmitting ? 'wait' : 'pointer',
                 }}
               >
-                {t('proj.create.back_btn')}
+                {isSubmitting ? t('proj.create.saving') : t('proj.create.save_open')}
               </button>
               <button
-                type="submit"
-                disabled={isSubmitting || !manualName.trim()}
+                type="button"
+                onClick={handleFormNext}
+                disabled={isSubmitting}
                 style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
                   padding: '9px 20px',
                   borderRadius: '8px',
                   background: 'var(--ez-color-primary)',
@@ -794,17 +976,19 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                   fontSize: '13px',
                   fontWeight: 650,
                   cursor: isSubmitting ? 'wait' : 'pointer',
-                  opacity: !manualName.trim() ? 0.6 : 1,
                 }}
               >
-                {isSubmitting ? t('proj.create.saving') : t('proj.create.save_open')}
+                <span>{t('proj.create.next_btn')}</span>
+                <ArrowRight size={14} />
               </button>
             </div>
           </form>
         )}
 
         {/* =========================================================================
-            STEP 2B: MAGIC AI FORM
+            STEP 2A: MAGIC AI FORM
+            Textarea terisi awal dari sintesis form Step 1 (prompt efektif);
+            editan pengguna selalu menang.
            ========================================================================= */}
         {activeStep === 'magic_ai' && (
           <form onSubmit={handleMagicAiSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -826,7 +1010,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                 rows={4}
                 required
                 placeholder={t('proj.create.f_desc_ph')}
-                value={aiPrompt}
+                value={effectiveAiPrompt}
                 onChange={(e) => setAiPrompt(e.target.value)}
                 style={{
                   width: '100%',
@@ -866,7 +1050,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                   </button>
                   <button
                     type="button"
-                    onClick={() => { setMagicAskChoice(false); setIsSubmitting(true); proceedMagicCreate(aiPrompt.trim()); }}
+                    onClick={() => { setMagicAskChoice(false); setIsSubmitting(true); proceedMagicCreate(effectiveAiPrompt.trim()); }}
                     style={{ padding: '8px 14px', borderRadius: '8px', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-body)', border: '1px solid var(--ez-color-border-line)', fontSize: '12.5px', fontWeight: 600, cursor: 'pointer' }}
                   >
                     Buat proyek baru
@@ -894,7 +1078,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
               </button>
               <button
                 type="submit"
-                disabled={isSubmitting || !aiPrompt.trim()}
+                disabled={isSubmitting || !effectiveAiPrompt.trim()}
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
@@ -907,7 +1091,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                   fontSize: '13px',
                   fontWeight: 650,
                   cursor: isSubmitting ? 'wait' : 'pointer',
-                  opacity: !aiPrompt.trim() ? 0.6 : 1,
+                  opacity: !effectiveAiPrompt.trim() ? 0.6 : 1,
                   boxShadow: '0 4px 12px rgba(79, 70, 229, 0.25)',
                 }}
               >
@@ -919,7 +1103,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
         )}
 
         {/* =========================================================================
-            STEP 2C: VOLUME CALCULATION FORM (D-28, Batch F)
+            STEP 2B: VOLUME CALCULATION FORM (D-28, Batch F)
             Klik kartu Volume membuka langkah ini — proyek BARU dibuat hanya
             sesudah pengguna menamai + menekan "Buat & Buka Kalkulator".
             Bila ada proyek aktif, pengguna ditawari memakai ulang proyek

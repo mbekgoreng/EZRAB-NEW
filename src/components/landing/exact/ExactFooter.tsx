@@ -1,12 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { navigateTo, paths } from '../../../routing/routes';
 import { getBlogBaseUrl } from '../../../blog/site';
+import { useI18n } from '../../../i18n';
 
 interface ExactFooterProps {
   // Footer mandiri: link "Tentang EZRAB" selalu ke landing page.
 }
 
 export const ExactFooter: React.FC<ExactFooterProps> = () => {
+  const { t } = useI18n();
   const [lineDrawn, setLineDrawn] = useState(false);
   const footerRef = useRef<HTMLElement>(null);
 
@@ -57,10 +59,10 @@ export const ExactFooter: React.FC<ExactFooterProps> = () => {
           <div className="ez-minimal-footer-brand-col">
             <div className="ez-minimal-footer-brand-title">EZRAB</div>
             <div className="ez-minimal-footer-subhead">
-              Construction Estimation Workspace
+              {t('landing.footer_tagline')}
             </div>
             <p className="ez-minimal-footer-quote">
-              &ldquo;Dari gambar kerja hingga keputusan proyek.&rdquo;
+              &ldquo;{t('landing.footer_quote')}&rdquo;
             </p>
             {/* Ikon sosial DIHAPUS (F6): tidak ada akun resmi EZRAB yang
                 terkonfirmasi — tautan generik x.com/instagram/linkedin
@@ -73,16 +75,16 @@ export const ExactFooter: React.FC<ExactFooterProps> = () => {
                 #harga ada di landing; tautan mati #integrasi dihapus — F6).
                 Dari halaman lain, handler menavigasi ke beranda dulu (F3). */}
             <div className="ez-minimal-footer-col">
-              <h4 className="ez-minimal-footer-col-title">Product</h4>
+              <h4 className="ez-minimal-footer-col-title">{t('landing.footer_product')}</h4>
               <ul className="ez-minimal-footer-links">
-                <li><a href="/#fitur" onClick={goHomeSection('fitur')}>Fitur</a></li>
-                <li><a href="/#harga" onClick={goHomeSection('harga')}>Harga</a></li>
+                <li><a href="/#fitur" onClick={goHomeSection('fitur')}>{t('landing.nav_fitur')}</a></li>
+                <li><a href="/#harga" onClick={goHomeSection('harga')}>{t('landing.nav_harga')}</a></li>
               </ul>
             </div>
 
             {/* Perusahaan — tautan mati #karier & #kontak dihapus (F6) */}
             <div className="ez-minimal-footer-col">
-              <h4 className="ez-minimal-footer-col-title">Perusahaan</h4>
+              <h4 className="ez-minimal-footer-col-title">{t('landing.footer_perusahaan')}</h4>
               <ul className="ez-minimal-footer-links">
                 <li>
                   <a
@@ -93,7 +95,7 @@ export const ExactFooter: React.FC<ExactFooterProps> = () => {
                       window.scrollTo({ top: 0, behavior: 'smooth' });
                     }}
                   >
-                    Tentang EZRAB
+                    {t('landing.footer_tentang')}
                   </a>
                 </li>
               </ul>
@@ -102,7 +104,7 @@ export const ExactFooter: React.FC<ExactFooterProps> = () => {
             {/* Sumber Daya — FAQ menuju bagian FAQ di halaman /fitur;
                 tautan mati #panduan & #dukungan dihapus (F6) */}
             <div className="ez-minimal-footer-col">
-              <h4 className="ez-minimal-footer-col-title">Sumber Daya</h4>
+              <h4 className="ez-minimal-footer-col-title">{t('landing.footer_sumber_daya')}</h4>
               <ul className="ez-minimal-footer-links">
                 <li>
                   {/* Blog tinggal di subdomain — tautan absolut, tanpa SPA navigate */}
@@ -134,7 +136,7 @@ export const ExactFooter: React.FC<ExactFooterProps> = () => {
         <div className="ez-minimal-footer-bottom">
           <div className="ez-minimal-footer-copyright-group">
             <span className="ez-copy-brand">© 2026 EZRAB</span>
-            <span className="ez-copy-tagline">Built for better estimating.</span>
+            <span className="ez-copy-tagline">{t('landing.footer_built')}</span>
           </div>
 
           <div className="ez-minimal-footer-legal-group">
@@ -147,7 +149,7 @@ export const ExactFooter: React.FC<ExactFooterProps> = () => {
                 window.scrollTo({ top: 0 });
               }}
             >
-              Privacy Policy
+              {t('landing.footer_privacy')}
             </a>
             <a
               href="/terms"
@@ -158,7 +160,7 @@ export const ExactFooter: React.FC<ExactFooterProps> = () => {
                 window.scrollTo({ top: 0 });
               }}
             >
-              Terms of Service
+              {t('landing.footer_terms')}
             </a>
           </div>
         </div>

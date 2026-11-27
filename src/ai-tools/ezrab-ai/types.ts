@@ -111,4 +111,8 @@ export interface EzrabAiResponse {
    * lama dipertahankan); cabang gagal tidak pernah membawa saran.
    */
   followUpSuggestions?: string[];
+  /** D3 (2026-11-26): aksi lanjutan yang dilampirkan service bila reply
+   *  adalah balasan aman atas kegagalan scope proyek (PROJECT_SCOPE_*).
+   *  Bentuk intent-only agar tidak ada siklus impor ke actionRegistry. */
+  actions?: Array<{ label: string; action: { kind: 'intent'; intent: string; param?: string } }>;
 }

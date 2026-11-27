@@ -28,10 +28,12 @@ import './feature-page-shell.css';
 export type { FsStep };
 
 interface FeaturePageShellProps {
-  title: string;
+  /** Judul halaman — bila tidak diisi, seluruh header disembunyikan
+      (owner 2026-11-27: Document AI & DED RAB AI tanpa header). */
+  title?: string;
   /** Baris keterangan singkat di bawah judul (bahasa mockup ter-ACC). */
   subtitle?: string;
-  icon: React.ReactNode;
+  icon?: React.ReactNode;
   /** Label konteks, mis. "Proyek aktif:" / "Dokumen:". */
   contextLabel?: string;
   /** Nilai konteks (nama proyek / nama dokumen + metadata). */
@@ -61,28 +63,30 @@ export const FeaturePageShell: React.FC<FeaturePageShellProps> = ({
 
   return (
     <div className="fp-shell">
-      <header className="fp-head">
-        <div className="fp-feat-ico">{icon}</div>
-        <div className="fp-feat-txt">
-          <h1>{title}</h1>
-          {subtitle ? <p className="fp-sub">{subtitle}</p> : null}
-          {contextText ? (
-            <div className="fp-ctx">
-              {contextLabel ? <>{contextLabel} </> : null}
-              <b>{contextText}</b>
-            </div>
+      {title ? (
+        <header className="fp-head">
+          {icon ? <div className="fp-feat-ico">{icon}</div> : null}
+          <div className="fp-feat-txt">
+            <h1>{title}</h1>
+            {subtitle ? <p className="fp-sub">{subtitle}</p> : null}
+            {contextText ? (
+              <div className="fp-ctx">
+                {contextLabel ? <>{contextLabel} </> : null}
+                <b>{contextText}</b>
+              </div>
+            ) : null}
+          </div>
+          {chips}
+          {creditText ? (
+            <span className="fp-credit">
+              <Zap size={13} strokeWidth={2.5} /> {creditText}
+            </span>
           ) : null}
-        </div>
-        {chips}
-        {creditText ? (
-          <span className="fp-credit">
-            <Zap size={13} strokeWidth={2.5} /> {creditText}
-          </span>
-        ) : null}
-      </header>
+        </header>
+      ) : null}
 
       {steps && steps.length > 0 ? (
-        <nav className="fp-stepper" aria-label={`Tahap ${title}`}>
+        <nav className="fp-stepper" aria-label={title ? `Tahap ${title}` : 'Tahap'}>
           {steps.map((s, i) => (
             <React.Fragment key={`${i}-${s.label}`}>
               {i > 0 ? <div className="fp-stepline" aria-hidden="true" /> : null}

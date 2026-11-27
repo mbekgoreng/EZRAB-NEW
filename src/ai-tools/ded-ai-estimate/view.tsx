@@ -18,7 +18,6 @@ import {
 import {
   depthModeFromFullAi,
   modeFromLegacy,
-  modeLabel,
   policyForMode,
   resolveDraftMode,
   type DedEstimationPolicy,
@@ -61,11 +60,9 @@ import { useRole } from '../../auth/RoleContext';
 import { authorizeChatAiMutation } from '../ezrab-ai/mutationInventory';
 import { appendMutationAuditRecord } from '../ezrab-ai/mutationAuditLog';
 import { useI18n } from '../../i18n/I18nContext';
-import { Building2 } from 'lucide-react';
-import { FsChip, FsStep } from '../../components/feature-shell/FeatureFullscreenShell';
+import { FsStep } from '../../components/feature-shell/FeatureFullscreenShell';
 import { FeaturePageShell } from '../../components/feature-shell/FeaturePageShell';
 import { useCreditSimulation } from '../../ai-credits/useCreditSimulation';
-import { maskAiModelName, maskAiProviderName } from '../../services/aiModelMasking';
 
 interface Props {
   onNavigateToTab?: (tab: string) => void;
@@ -327,7 +324,7 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
     try {
       markUpTo('received', 'done');
       writeRun({ percent: 5 });
-      writeRun({ statusLine: 'Full AI: Dokumen diterima — memulai pembacaan…' });
+      writeRun({ statusLine: t('ai.ded.view.fullai_received') });
 
       // Gabungkan buffer dari semua file (Full AI v1: proses file pertama + catat sisanya)
       // Untuk multi-file, proses per file dan gabungkan items.
@@ -343,7 +340,7 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
         const f = sess.files[fi];
         writeRunSummary({ currentFile: f.file.name });
         markUpTo('reading', 'active');
-        writeRun({ statusLine: `Full AI: Membaca ${f.file.name}…` });
+        writeRun({ statusLine: t('ai.ded.view.fullai_reading_a') + f.file.name + t('ai.ded.view.fullai_reading_b') });
         writeRun({ percent: 5 + (fi / sess.files.length) * 20 });
 
         const buffer = await f.file.arrayBuffer();
@@ -353,17 +350,17 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
           markUpTo('identify', 'failed');
           writeRun({
             error: {
-              message: `Berkas ${f.file.name} tidak memiliki halaman dalam rentang terpilih — sesuaikan cakupan halaman atau gunakan "Semua halaman".`,
+              message: t('ai.ded.view.fullai_nopages_a') + f.file.name + t('ai.ded.view.fullai_nopages_b'),
               retryable: false,
             },
             status: 'failed',
           });
-          writeRun({ statusLine: 'Full AI: Analisis gagal' });
+          writeRun({ statusLine: t('ai.ded.view.fullai_failed') });
           return;
         }
         markUpTo('extract', 'done');
         markUpTo('identify', 'active');
-        writeRun({ statusLine: `Full AI: Menganalisis ${f.file.name}…` });
+        writeRun({ statusLine: t('ai.ded.view.fullai_analyzing_a') + f.file.name + t('ai.ded.view.fullai_analyzing_b') });
 
         const out = await fullAiDedService.execute({
           fileName: f.file.name,
@@ -394,13 +391,13 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
           markUpTo('identify', 'failed');
           writeRun({
             error: {
-              message: out.error?.message || `Full AI gagal menganalisis ${f.file.name}.`,
+              message: out.error?.message || (t('ai.ded.view.fullai_fail_file_a') + f.file.name + t('ai.ded.view.fullai_fail_file_b')),
               errorCode: out.error?.code,
               retryable: out.error?.retryable,
             },
             status: 'failed',
           });
-          writeRun({ statusLine: 'Full AI: Analisis gagal' });
+          writeRun({ statusLine: t('ai.ded.view.fullai_failed') });
           return;
         }
 
@@ -461,13 +458,13 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
 
       markUpTo('prepare', 'done');
       writeRun({ percent: 100 });
-      writeRun({ statusLine: 'Full AI: Analisis selesai' });
+      writeRun({ statusLine: t('ai.ded.view.fullai_done') });
       writeRun({ fullAiOutput: combined });
       writeRun({ resultReady: true, status: 'done' });
       notificationBus.publish({
         type: 'success',
-        title: 'Full AI selesai',
-        message: `${allItems.length} pekerjaan dari ${sess.files.length} dokumen (${sess.mode === 'FAST' ? 'Cepat' : 'Mendalam'}).`,
+        title: t('ai.ded.view.notif_full_title'),
+        message: `${allItems.length}${t('ai.ded.view.notif_full_a')}${sess.files.length}${t('ai.ded.view.notif_full_b')}${sess.mode === 'FAST' ? t('ai.ded.input.mode_fast') : t('ai.ded.input.mode_deep')}${t('ai.ded.view.notif_full_c')}`,
         link: 'ded-ai',
       });
       // Pindah ke layar hasil lewat store — bila user sedang di menu
@@ -479,8 +476,8 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
       }, 900);
     } catch (e: any) {
       markUpTo('reading', 'failed');
-      writeRun({ error: { message: e?.message || 'Full AI: Kesalahan tidak terduga.', retryable: true }, status: 'failed' });
-      writeRun({ statusLine: 'Full AI: Analisis gagal' });
+      writeRun({ error: { message: e?.message || t('ai.ded.view.fullai_unexpected'), retryable: true }, status: 'failed' });
+      writeRun({ statusLine: t('ai.ded.view.fullai_failed') });
     }
   };
 
@@ -555,7 +552,7 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
           markUpTo('identify', 'failed');
           writeRun({
             error: {
-              message: `Berkas ${f.file.name} tidak memiliki halaman dalam rentang terpilih — sesuaikan cakupan halaman atau gunakan "Semua halaman".`,
+              message: t('ai.ded.view.fullai_nopages_a') + f.file.name + t('ai.ded.view.fullai_nopages_b'),
               retryable: false,
             },
             status: 'failed',
@@ -765,9 +762,9 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
     if (isDedRunActive()) return;
     const res = consumeDedAutorun<DedAiSession>();
     if (!res.ok) {
-      if (res.reason === 'expired') setAutorunNotice('Perintah "jalankan analisis DED" dari chat sudah kedaluwarsa (lebih dari 60 detik) — klik Jalankan Analisis untuk memulai.');
-      else if (res.reason === 'mismatch') setAutorunNotice('Berkas DED berubah sejak perintah chat diberikan — sinyal jalankan otomatis dibatalkan. Klik Jalankan Analisis untuk memulai.');
-      else if (res.reason === 'no-session' || res.reason === 'no-files') setAutorunNotice('Sesi DED dari chat tidak lagi tersedia — upload ulang PDF lalu klik Jalankan Analisis.');
+      if (res.reason === 'expired') setAutorunNotice(t('ai.ded.view.autorun_expired'));
+      else if (res.reason === 'mismatch') setAutorunNotice(t('ai.ded.view.autorun_mismatch'));
+      else if (res.reason === 'no-session' || res.reason === 'no-files') setAutorunNotice(t('ai.ded.view.autorun_nosession'));
       // Mount biasa (tanpa sinyal) maupun gagal konsumsi: bebaskan
       // referensi berkas holder. (Efek sinkronisasi dilewati di layar
       // input — holder ditulis ulang oleh publish draft DedAiInputView
@@ -958,8 +955,8 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
       // kegagalan disampaikan lewat notifikasi (pola sukses analisis).
       notificationBus.publish({
         type: 'error',
-        title: 'DED tidak terkirim ke Chat AI',
-        message: 'Pilih proyek dulu (pilih proyek di halaman input DED, atau jadikan satu proyek sebagai proyek aktif).',
+        title: t('ai.ded.view.notif_not_sent'),
+        message: t('ai.ded.view.notif_pick_project'),
       });
       return;
     }
@@ -968,7 +965,7 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
     if (!attached.ok) {
       notificationBus.publish({
         type: 'error',
-        title: 'DED tidak terkirim ke Chat AI',
+        title: t('ai.ded.view.notif_not_sent'),
         message: attached.message,
       });
       return;
@@ -991,8 +988,8 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
     if (!projectId) {
       notificationBus.publish({
         type: 'error',
-        title: 'DED tidak terkirim ke Chat AI',
-        message: 'Pilih proyek dulu (pilih proyek di halaman input DED, atau jadikan satu proyek sebagai proyek aktif).',
+        title: t('ai.ded.view.notif_not_sent'),
+        message: t('ai.ded.view.notif_pick_project'),
       });
       return;
     }
@@ -1006,7 +1003,7 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
     if (!attached.ok) {
       notificationBus.publish({
         type: 'error',
-        title: 'DED tidak terkirim ke Chat AI',
+        title: t('ai.ded.view.notif_not_sent'),
         message: attached.message,
       });
       return;
@@ -1047,7 +1044,7 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
     if (!validation.ok) {
       return {
         ok: false,
-        message: `Finalisasi dibatalkan — ${validation.failures.length} dari ${savable.length} item tidak lolos validasi, TIDAK ADA item yang disimpan:\n${formatFinalizeFailures(validation.failures)}\nPerbaiki item tersebut lalu coba lagi.`,
+        message: t('ai.ded.view.finalize_cancel_a') + validation.failures.length + t('ai.ded.view.finalize_cancel_b') + savable.length + t('ai.ded.view.finalize_cancel_c') + formatFinalizeFailures(validation.failures) + t('ai.ded.view.finalize_cancel_d'),
       };
     }
     try {
@@ -1100,12 +1097,12 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
         outcomeVerified: true,
         verificationNote: 'bulk-add-outcome: bulkAddRabItems + getLastBulkAddOutcome melaporkan outcome store.',
         source: 'ded-ai',
-        message: `${added.length} item DED difinalisasi ke proyek "${projectName}".`,
+        message: `${added.length}${t('ai.ded.view.finalize_ded_a')}${projectName}${t('ai.ded.view.finalize_ded_b')}`,
       });
       if (outcome?.duplicate) {
         return {
           ok: true,
-          message: `Finalisasi ini sudah pernah disimpan ke proyek "${projectName}" — tidak ada duplikasi.`,
+          message: t('ai.ded.view.finalize_dup_a') + projectName + t('ai.ded.view.finalize_dup_b'),
         };
       }
       notificationBus.publish({
@@ -1117,7 +1114,7 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
       // G2 (Opsi A): total tunggal tetap memuat kuantitas ASSUMPTION —
       // keberadaan & jumlahnya WAJIB diungkap di ringkasan finalisasi.
       const assumptionSaved = countAssumptionItems(savable);
-      return { ok: true, message: `${added.length} ${t('ai.ded.finalize_ok_a')} "${projectName}".${blocked > 0 ? ` ${blocked} ${t('ai.ded.finalize_blocked_a')}` : ''}${needsReview > 0 ? ` ${needsReview} ${t('ai.ded.finalize_review_a')} "${t('ai.ded.result.badge_review')}" ${t('ai.ded.finalize_review_b')}` : ''}${assumptionSaved > 0 ? ` Total estimasi mencakup ${assumptionSaved} item dengan kuantitas asumsi (ASSUMPTION) — periksa badge "Perlu Ditinjau".` : ''} ${t('ai.ded.finalize_open')}` };
+      return { ok: true, message: `${added.length} ${t('ai.ded.finalize_ok_a')} "${projectName}".${blocked > 0 ? ` ${blocked} ${t('ai.ded.finalize_blocked_a')}` : ''}${needsReview > 0 ? ` ${needsReview} ${t('ai.ded.finalize_review_a')} "${t('ai.ded.result.badge_review')}" ${t('ai.ded.finalize_review_b')}` : ''}${assumptionSaved > 0 ? t('ai.ded.view.finalize_assump_a') + assumptionSaved + t('ai.ded.view.finalize_assump_b') : ''} ${t('ai.ded.finalize_open')}` };
     } catch (e: any) {
       return { ok: false, message: e?.message || t('ai.ded.err_save') };
     }
@@ -1147,12 +1144,12 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
     const savable = validation.savable;
     const blocked = validation.blockedCount;
     if (savable.length === 0) {
-      return { ok: false, message: 'Tidak ada item yang bisa disimpan (semua belum lengkap / tanpa harga).' };
+      return { ok: false, message: t('ai.ded.view.finalize_none') };
     }
     if (!validation.ok) {
       return {
         ok: false,
-        message: `Finalisasi dibatalkan — ${validation.failures.length} dari ${savable.length} item tidak lolos validasi, TIDAK ADA item yang disimpan:\n${formatFinalizeFailures(validation.failures)}\nPerbaiki item tersebut lalu coba lagi.`,
+        message: t('ai.ded.view.finalize_cancel_a') + validation.failures.length + t('ai.ded.view.finalize_cancel_b') + savable.length + t('ai.ded.view.finalize_cancel_c') + formatFinalizeFailures(validation.failures) + t('ai.ded.view.finalize_cancel_d'),
       };
     }
     try {
@@ -1197,28 +1194,28 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
         outcomeVerified: true,
         verificationNote: 'bulk-add-outcome: bulkAddRabItems + getLastBulkAddOutcome melaporkan outcome store.',
         source: 'ded-ai',
-        message: `${added.length} item Full AI DED difinalisasi ke proyek "${projectName}".`,
+        message: `${added.length}${t('ai.ded.view.finalize_fullai_a')}${projectName}${t('ai.ded.view.finalize_fullai_b')}`,
       });
       if (outcome?.duplicate) {
         return {
           ok: true,
-          message: `Finalisasi ini sudah pernah disimpan ke proyek "${projectName}" — tidak ada duplikasi.`,
+          message: t('ai.ded.view.finalize_dup_a') + projectName + t('ai.ded.view.finalize_dup_b'),
         };
       }
       notificationBus.publish({
         type: 'success',
-        title: 'Full AI tersimpan ke proyek',
-        message: `${added.length} item RAB tersimpan ke "${projectName}".`,
+        title: t('ai.ded.view.notif_full_saved'),
+        message: `${added.length}${t('ai.ded.view.notif_full_saved_a')}${projectName}${t('ai.ded.view.notif_full_saved_b')}`,
         link: 'rab-estimasi',
       });
       return {
         ok: true,
-        message: `${added.length} item berhasil disimpan ke proyek "${projectName}".` +
-          (blocked > 0 ? ` ${blocked} item ditahan dan tidak masuk RAB.` : '') +
-          ' Buka Spreadsheet RAB untuk melihatnya.',
+        message: `${added.length}${t('ai.ded.view.save_ok_a')}${projectName}${t('ai.ded.view.save_ok_b')}` +
+          (blocked > 0 ? ` ${blocked}${t('ai.ded.view.save_blocked_a')}` : '') +
+          t('ai.ded.view.save_open'),
       };
     } catch (e: any) {
-      return { ok: false, message: e?.message || 'Gagal menyimpan ke proyek.' };
+      return { ok: false, message: e?.message || t('ai.ded.view.save_fail') };
     }
   };
 
@@ -1254,29 +1251,8 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
      sehingga shell tidak lagi menerima catatan itu sebagai prop. */
 
   const isFullAiResult = screen === 'result' && !!fullAiOutput;
-  // DUAL MODE (§3, G-UI-2): chip menampilkan MODE kanonis — hasil Full AI
-  // berlabuh pada outputnya sendiri; selain itu pada mode sesi.
-  const shellMode: DedRabAiMode = isFullAiResult ? 'FULL_AI' : resolveDedAiMode(session);
-  const shellChips = isFullAiResult ? (
-    <>
-      <FsChip>Mode: {modeLabel(shellMode)}</FsChip>
-      <FsChip kind="plain">
-        {/* Masking (defense-in-depth): server already masks provenance, but
-            stored/legacy results may still carry raw provider/model names. */}
-        {fullAiOutput.provenance.provider && fullAiOutput.provenance.model
-          ? `${maskAiProviderName(fullAiOutput.provenance.provider)} / ${maskAiModelName(fullAiOutput.provenance.model)}`
-          : fullAiOutput.provenance.model ? maskAiModelName(fullAiOutput.provenance.model) : 'Model tidak diketahui'}
-      </FsChip>
-    </>
-  ) : screen !== 'input' ? (
-    <>
-      <FsChip>Mode: {modeLabel(shellMode)}</FsChip>
-      <FsChip kind="plain">{session.mode === 'FAST' ? 'Cepat' : 'Mendalam'}</FsChip>
-    </>
-  ) : undefined;
-
-  const shellContextText =
-    result?.projectName || summary.projectName || session.projectName || undefined;
+  // Header shell DIHAPUS (owner 2026-11-27) — chip mode/model + konteks
+  // proyek aktif tidak lagi dirender; stepper + konten tidak berubah.
 
   // v4 CIAMIK 2026-11-20: ringkasan lari terakhir DIHAPUS dari layar
   // input (tidak ada lagi kartu hasil di sana) — komputasi di sini
@@ -1391,13 +1367,6 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
 
   return (
     <FeaturePageShell
-      title={`DED → ${t('ai.ded.input.head_title_post')}`}
-      subtitle={t('ai.ded.input.head_sub')}
-      icon={<Building2 size={20} />}
-      contextLabel="Proyek aktif:"
-      contextText={shellContextText}
-      chips={shellChips}
-      creditText={`Kredit AI: ${creditBalance.total.toLocaleString('id-ID')}`}
       // v4 CIAMIK 2026-11-20: stepper balok shell TIDAK diteruskan di
       // layar input — stepper ramping di dalam kolom (.mk4-stepper)
       // menggantikannya. Stepper shell kembali penuh saat

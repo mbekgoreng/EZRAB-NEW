@@ -50,6 +50,13 @@
  *    (pin §8: intake TIDAK PUNYA pertanyaan clearSpan/height);
  *    clear height tetap ditangkap lewat prompt sistem yang
  *    menggabungkan sistem + clear height.
+ *    AMANDEMEN 2026-11-26 (owner requirement — mockup Step 3 di-ACC:
+ *    "tanyakan ... clear height untuk gudang", Gap C): prompt gabungan
+ *    itu kini JUGA diajukan di alur bare-chip (luas dijawab di dalam
+ *    intake) — warehouse-system dikecualikan dari aturan §7
+ *    non-kritis-hanya-sebagai-pertanyaan-pertama di selectNextQuestion.
+ *    TIDAK ADA pertanyaan clear-height terpisah yang ditambahkan
+ *    (pin §8 di atas tetap berlaku); cek §4 di bawah tidak berubah.
  *
  * Jalankan: npx --yes tsx src/test/aiWorkflowSprintClarify.test.ts
  * (skrip asersi tsx polos — BUKAN vitest.)

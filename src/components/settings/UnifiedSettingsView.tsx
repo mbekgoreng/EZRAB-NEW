@@ -65,6 +65,7 @@ import { TeamInvitationsPanel } from './TeamInvitationsPanel';
 import { UserRole, Project } from '../../types';
 import { useProject } from '../../context/ProjectContext';
 import { useI18n, LANG_OPTIONS, type Lang } from '../../i18n';
+import { dictionaries } from '../../i18n/dictionaries';
 import { useRole } from '../../auth/RoleContext';
 import { useAuth } from '../../auth/AuthContext';
 import { logoutAll } from '../../auth/logoutAll';
@@ -196,15 +197,15 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
   const { balance: creditBalance } = useCreditSimulation();
   const simulatedPlanDef = getPlanDefinition(CREDIT_PLAN_TO_PLAN_ID[creditBalance.plan]);
   const simulatedPlanFacts = [
-    simulatedPlanDef.monthlyPriceIdr === 0
-      ? 'Rp0 (gratis)'
+      simulatedPlanDef.monthlyPriceIdr === 0
+      ? t('settings.paket_gratis')
       : `${formatCurrencyIDR(simulatedPlanDef.monthlyPriceIdr)}/bulan`,
     simulatedPlanDef.projectLimit === null
-      ? 'Proyek tanpa batas'
-      : `Maks. ${simulatedPlanDef.projectLimit} proyek`,
+      ? t('settings.paket_tanpa_batas')
+      : `${t('settings.paket_maks_a')}${simulatedPlanDef.projectLimit}${t('settings.paket_maks_b')}`,
     simulatedPlanDef.credits.kind === 'initial'
-      ? `${simulatedPlanDef.credits.credits.toLocaleString('id-ID')} kredit AI awal (sekali)`
-      : `${simulatedPlanDef.credits.credits.toLocaleString('id-ID')} kredit AI per periode`,
+      ? `${simulatedPlanDef.credits.credits.toLocaleString('id-ID')} ${t('settings.paket_kredit_awal')}`
+      : `${simulatedPlanDef.credits.credits.toLocaleString('id-ID')} ${t('settings.paket_kredit_periode')}`,
   ].join(' • ');
 
   // Scope: 'GLOBAL' (Account & Workspace) vs 'PROJECT' (Project Configuration)
@@ -237,7 +238,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
 
   const [activeTab, setActiveTab] = useState<SettingsTabId>(() => resolveTab(initialTab));
   const [savedToast, setSavedToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState('Pengaturan berhasil disimpan!');
+  const [toastMessage, setToastMessage] = useState(t('settings.toast_disimpan'));
   const [addUserModalOpen, setAddUserModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -308,14 +309,14 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
       setBackupReminder(getBackupReminderState());
       const warnSuffix =
         result.metadata.warnings && result.metadata.warnings.length > 0
-          ? ` Perhatian: ${result.metadata.warnings.join(' ')}`
+          ? `${t('settings.backup_unduh_warn')}${result.metadata.warnings.join(' ')}`
           : '';
       setBackupNotice({
         kind: 'success',
-        text: `Backup berhasil diunduh: ${result.filename} (${formatBackupBytes(result.sizeBytes)}). Simpan file ini di tempat aman — ini satu-satunya salinan data Anda di luar browser.${warnSuffix}`,
+        text: `${t('settings.backup_unduh_a')}${result.filename} (${formatBackupBytes(result.sizeBytes)}${t('settings.backup_unduh_c')}${warnSuffix}`,
       });
     } catch (e) {
-      setBackupNotice({ kind: 'error', text: `Gagal membuat backup: ${String((e as Error)?.message || e)}` });
+      setBackupNotice({ kind: 'error', text: `${t('settings.backup_gagal_buat_a')}${String((e as Error)?.message || e)}` });
     } finally {
       setBackupBusy(null);
     }
@@ -334,20 +335,20 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
       if (file.size > MAX_IMPORT_BYTES) {
         setBackupNotice({
           kind: 'error',
-          text: `File terlalu besar (${formatBackupBytes(file.size)}). Maksimum ${MAX_IMPORT_BYTES / 1024 / 1024} MB.`,
+          text: `${t('settings.backup_file_besar_a')}${formatBackupBytes(file.size)}${t('settings.backup_file_besar_b')}${MAX_IMPORT_BYTES / 1024 / 1024}${t('settings.backup_file_besar_c')}`,
         });
         return;
       }
       const text = await file.text();
       const validation = validateBackup(text);
       if (!validation.ok) {
-        setBackupNotice({ kind: 'error', text: `File ditolak: ${validation.error} Tidak ada data yang diubah.` });
+        setBackupNotice({ kind: 'error', text: `${t('settings.backup_file_ditolak_a')}${validation.error}${t('settings.backup_file_ditolak_b')}` });
         return;
       }
       setImportText(text);
       setImportPreview(validation);
     } catch (e) {
-      setBackupNotice({ kind: 'error', text: `Gagal membaca file: ${String((e as Error)?.message || e)}` });
+      setBackupNotice({ kind: 'error', text: `${t('settings.backup_gagal_baca_a')}${String((e as Error)?.message || e)}` });
     } finally {
       setBackupBusy(null);
     }
@@ -363,7 +364,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
       if (!safety.ok) {
         setBackupNotice({
           kind: 'error',
-          text: `Restore dibatalkan: backup pengaman gagal dibuat (${safety.error}). Tidak ada data yang diubah.`,
+          text: `${t('settings.restore_batal_gagal_a')}${safety.error}${t('settings.restore_batal_gagal_b')}`,
         });
         return;
       }
@@ -381,7 +382,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
       if (!safety.slotStored && !safetyDownloaded) {
         setBackupNotice({
           kind: 'error',
-          text: 'Restore dibatalkan: backup pengaman tidak dapat disimpan (slot lokal penuh dan unduhan gagal). Tidak ada data yang diubah. Kosongkan ruang penyimpanan browser lalu coba lagi.',
+          text: t('settings.restore_batal_penuh'),
         });
         return;
       }
@@ -391,7 +392,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
       if (!result.ok) {
         setBackupNotice({
           kind: 'error',
-          text: `${result.error} Backup pengaman tersedia sebagai file ${safety.filename} (terunduh otomatis) dan di slot lokal di bawah.`,
+          text: `${result.error}${t('settings.restore_error_b')}${safety.filename}${t('settings.restore_error_c')}`,
         });
         return;
       }
@@ -401,7 +402,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
       setRestoreConfirmed(false);
       refreshBackupTab();
     } catch (e) {
-      setBackupNotice({ kind: 'error', text: `Restore gagal: ${String((e as Error)?.message || e)}` });
+      setBackupNotice({ kind: 'error', text: `${t('settings.restore_gagal_a')}${String((e as Error)?.message || e)}` });
     } finally {
       setBackupBusy(null);
     }
@@ -410,13 +411,13 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
   const handleRestoreFromSafetySlot = () => {
     const content = getSafetySlotContent();
     if (!content) {
-      setBackupNotice({ kind: 'error', text: 'Slot backup pengaman kosong.' });
+      setBackupNotice({ kind: 'error', text: t('settings.slot_kosong') });
       return;
     }
     setImportFileName('Backup pengaman (slot lokal)');
     const validation = validateBackup(content);
     if (!validation.ok) {
-      setBackupNotice({ kind: 'error', text: `Backup pengaman di slot lokal rusak: ${validation.error}` });
+      setBackupNotice({ kind: 'error', text: `${t('settings.slot_rusak_a')}${validation.error}` });
       return;
     }
     setImportText(content);
@@ -425,7 +426,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
     setRestoreDone(null);
     setBackupNotice({
       kind: 'info',
-      text: 'Pratinjau backup pengaman dimuat. Periksa isinya di bawah, lalu centang konfirmasi untuk memulihkan.',
+      text: t('settings.slot_pratinjau'),
     });
   };
 
@@ -499,15 +500,15 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
           connected: ready,
           latencyMs: Date.now() - start,
           message: ready
-            ? 'EZRAB AI Engine terhubung dan siap digunakan.'
-            : 'Server terjangkau, tetapi tidak ada kunci provider AI yang terkonfigurasi.',
+            ? t('settings.ai_engine_ok')
+            : t('settings.ai_engine_no_keys'),
           lastChecked: new Date().toLocaleTimeString('id-ID'),
         });
       } else {
         setAiAuditResult({
           connected: false,
           latencyMs: Date.now() - start,
-          message: `Server AI membalas HTTP ${res.status} — engine tidak dapat diverifikasi.`,
+          message: `${t('settings.ai_engine_http_a')}${res.status}${t('settings.ai_engine_http_b')}`,
           lastChecked: new Date().toLocaleTimeString('id-ID'),
         });
       }
@@ -515,7 +516,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
       setAiAuditResult({
         connected: false,
         latencyMs: Date.now() - start,
-        message: 'Tidak dapat menjangkau server AI — periksa koneksi atau status deployment.',
+        message: t('settings.ai_engine_unreachable'),
         lastChecked: new Date().toLocaleTimeString('id-ID'),
       });
     } finally {
@@ -687,7 +688,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
         reason: 'Pembaruan konfigurasi estimator khusus proyek',
       });
 
-      setToastMessage(`Konfigurasi proyek "${projName}" berhasil disimpan ke sistem!`);
+      setToastMessage(`${t('settings.toast_proyek_a')}${projName}${t('settings.toast_proyek_b')}`);
     } else {
       // Global Save
       settingsAuditService.recordChange({
@@ -701,7 +702,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
         reason: 'Pembaruan preferensi dan standar workspace',
       });
 
-      setToastMessage('Pengaturan workspace & akun berhasil disimpan!');
+      setToastMessage(t('settings.toast_workspace'));
     }
 
     setAuditLogs(settingsAuditService.getLogs());
@@ -726,28 +727,28 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
 
   // Searchable Settings Catalog for Live Search
   const searchCatalog: SearchableSettingItem[] = useMemo(() => [
-    { id: 'profile', scope: 'GLOBAL', categoryLabel: 'Akun', title: 'Profil Saya', description: 'Ubah nama, email, nomor kontak, foto avatar', keywords: ['profil', 'nama', 'email', 'avatar', 'user', 'bahasa', 'tanggal', 'mata uang', 'rupiah', 'idr'] },
-    { id: 'notifications', scope: 'GLOBAL', categoryLabel: 'Akun', title: 'Notifikasi', description: 'Preferensi pemberitahuan proyek dan revisi RAB', keywords: ['notifikasi', 'email', 'lonceng', 'alert', 'pemberitahuan'] },
-    { id: 'security', scope: 'GLOBAL', categoryLabel: 'Akun', title: 'Keamanan & Login', description: 'Ubah password dan otentikasi 2 faktor', keywords: ['keamanan', 'password', 'kata sandi', 'login', '2fa', 'security'] },
-    { id: 'company', scope: 'GLOBAL', categoryLabel: 'Workspace', title: 'Profil Perusahaan', description: 'Nama kantor, NPWP, alamat dan kontak', keywords: ['perusahaan', 'kantor', 'npwp', 'alamat', 'telepon', 'pt', 'cv'] },
-    { id: 'users', scope: 'GLOBAL', categoryLabel: 'Workspace', title: 'Tim & Anggota', description: 'Kelola anggota tim dan undang estimator baru', keywords: ['pengguna', 'tim', 'anggota', 'users', 'undang', 'role'] },
-    { id: 'roles', scope: 'GLOBAL', categoryLabel: 'Workspace', title: 'Role & Hak Akses', description: 'Matriks izin akses Super Admin, Estimator, Direksi', keywords: ['role', 'hak akses', 'izin', 'permission', 'direksi', 'client', 'editor'] },
-    { id: 'subscription', scope: 'GLOBAL', categoryLabel: 'Workspace', title: 'Paket & Billing', description: 'Paket saat ini, kuota kredit AI, dan status langganan (simulasi)', keywords: ['paket', 'billing', 'langganan', 'proyek', 'pembayaran', 'invoice'] },
-    { id: 'master-data', scope: 'GLOBAL', categoryLabel: 'Master Data', title: 'Master Harga & AHSP', description: 'Database acuan harga 38 provinsi dan PUPR 2026', keywords: ['master', 'harga', 'ahsp', 'pupr', 'material', 'upah', 'alat'] },
-    { id: 'estimator', scope: 'GLOBAL', categoryLabel: 'Estimator', title: 'Pengaturan RAB & Pajak', description: 'Persentase overhead acuan, PPN 11%, pembulatan', keywords: ['pajak', 'ppn', 'overhead', 'profit', 'margin', 'pembulatan', 'rab', 'estimator'] },
-    { id: 'ded-volume', scope: 'GLOBAL', categoryLabel: 'DED & Volume', title: 'Presisi & Waste Factor', description: 'Presisi desimal volume dan susut material', keywords: ['ded', 'volume', 'presisi', 'desimal', 'waste', 'susut', 'satuan'] },
-    { id: 'documents', scope: 'GLOBAL', categoryLabel: 'Dokumen', title: 'Template & Penomoran', description: 'Standar penomoran dokumen tender dan format PDF', keywords: ['dokumen', 'template', 'pdf', 'penomoran', 'kop', 'tanda tangan', 'surat'] },
-    { id: 'schedule', scope: 'GLOBAL', categoryLabel: 'Schedule', title: 'Kalender & Hari Kerja', description: 'Hari kerja per minggu dan toleransi kurva-s', keywords: ['jadwal', 'kalender', 'hari kerja', 'kurva s', 'durasi'] },
-    { id: 'cost', scope: 'GLOBAL', categoryLabel: 'Cost', title: 'Cost Code & Budget', description: 'Standar kode akun biaya proyek dan arus kas', keywords: ['cost', 'biaya', 'cost code', 'budget', 'baseline', 'cashflow'] },
-    { id: 'integrations', scope: 'GLOBAL', categoryLabel: 'Integrasi', title: 'Penyimpanan & Sinkronisasi', description: 'Google Drive, Live Spreadsheet Sync, API', keywords: ['integrasi', 'storage', 'api', 'spreadsheet', 'sync', 'excel'] },
-    { id: 'audit-log', scope: 'GLOBAL', categoryLabel: 'Sistem', title: 'Audit Trail & Riwayat', description: 'Jejak log perubahan konfigurasi penting', keywords: ['audit', 'log', 'riwayat', 'history', 'jejak', 'perubahan'] },
+    { id: 'profile', scope: 'GLOBAL', categoryLabel: 'Akun', title: t('settings.tab_profil'), description: 'Ubah nama, email, nomor kontak, foto avatar', keywords: ['profil', 'nama', 'email', 'avatar', 'user', 'bahasa', 'tanggal', 'mata uang', 'rupiah', 'idr'] },
+    { id: 'notifications', scope: 'GLOBAL', categoryLabel: 'Akun', title: t('settings.tab_notifikasi'), description: 'Preferensi pemberitahuan proyek dan revisi RAB', keywords: ['notifikasi', 'email', 'lonceng', 'alert', 'pemberitahuan'] },
+    { id: 'security', scope: 'GLOBAL', categoryLabel: 'Akun', title: t('settings.tab_keamanan'), description: 'Ubah password dan otentikasi 2 faktor', keywords: ['keamanan', 'password', 'kata sandi', 'login', '2fa', 'security'] },
+    { id: 'company', scope: 'GLOBAL', categoryLabel: 'Workspace', title: t('settings.tab_perusahaan'), description: 'Nama kantor, NPWP, alamat dan kontak', keywords: ['perusahaan', 'kantor', 'npwp', 'alamat', 'telepon', 'pt', 'cv'] },
+    { id: 'users', scope: 'GLOBAL', categoryLabel: 'Workspace', title: t('settings.tab_tim'), description: 'Kelola anggota tim dan undang estimator baru', keywords: ['pengguna', 'tim', 'anggota', 'users', 'undang', 'role'] },
+    { id: 'roles', scope: 'GLOBAL', categoryLabel: 'Workspace', title: t('settings.tab_role'), description: 'Matriks izin akses Super Admin, Estimator, Direksi', keywords: ['role', 'hak akses', 'izin', 'permission', 'direksi', 'client', 'editor'] },
+    { id: 'subscription', scope: 'GLOBAL', categoryLabel: 'Workspace', title: t('settings.tab_paket'), description: 'Paket saat ini, kuota kredit AI, dan status langganan (simulasi)', keywords: ['paket', 'billing', 'langganan', 'proyek', 'pembayaran', 'invoice'] },
+    { id: 'master-data', scope: 'GLOBAL', categoryLabel: 'Master Data', title: t('settings.tab_master'), description: 'Database acuan harga 38 provinsi dan PUPR 2026', keywords: ['master', 'harga', 'ahsp', 'pupr', 'material', 'upah', 'alat'] },
+    { id: 'estimator', scope: 'GLOBAL', categoryLabel: 'Estimator', title: t('settings.tab_estimator'), description: 'Persentase overhead acuan, PPN 11%, pembulatan', keywords: ['pajak', 'ppn', 'overhead', 'profit', 'margin', 'pembulatan', 'rab', 'estimator'] },
+    { id: 'ded-volume', scope: 'GLOBAL', categoryLabel: 'DED & Volume', title: t('settings.tab_ded'), description: 'Presisi desimal volume dan susut material', keywords: ['ded', 'volume', 'presisi', 'desimal', 'waste', 'susut', 'satuan'] },
+    { id: 'documents', scope: 'GLOBAL', categoryLabel: 'Dokumen', title: t('settings.tab_dokumen'), description: 'Standar penomoran dokumen tender dan format PDF', keywords: ['dokumen', 'template', 'pdf', 'penomoran', 'kop', 'tanda tangan', 'surat'] },
+    { id: 'schedule', scope: 'GLOBAL', categoryLabel: 'Schedule', title: t('settings.tab_jadwal'), description: 'Hari kerja per minggu dan toleransi kurva-s', keywords: ['jadwal', 'kalender', 'hari kerja', 'kurva s', 'durasi'] },
+    { id: 'cost', scope: 'GLOBAL', categoryLabel: 'Cost', title: t('settings.tab_biaya'), description: 'Standar kode akun biaya proyek dan arus kas', keywords: ['cost', 'biaya', 'cost code', 'budget', 'baseline', 'cashflow'] },
+    { id: 'integrations', scope: 'GLOBAL', categoryLabel: 'Integrasi', title: t('settings.tab_integrasi'), description: 'Google Drive, Live Spreadsheet Sync, API', keywords: ['integrasi', 'storage', 'api', 'spreadsheet', 'sync', 'excel'] },
+    { id: 'audit-log', scope: 'GLOBAL', categoryLabel: 'Sistem', title: t('settings.tab_audit'), description: 'Jejak log perubahan konfigurasi penting', keywords: ['audit', 'log', 'riwayat', 'history', 'jejak', 'perubahan'] },
     { id: 'backup', scope: 'GLOBAL', categoryLabel: 'Sistem', title: 'Cadangan & Pulihkan Data', description: 'Ekspor backup JSON semua data bisnis dan pulihkan dari file backup', keywords: ['backup', 'cadangan', 'pulihkan', 'restore', 'ekspor', 'impor', 'salinan', 'kehilangan data'] },
     // Project Search Items
     { id: 'project-info', scope: 'PROJECT', categoryLabel: 'Khusus Proyek', title: 'Informasi Proyek', description: 'Nama, nomor kontrak, owner, lokasi, luas', keywords: ['proyek', 'info proyek', 'owner', 'kontrak', 'lokasi', 'luas'] },
     { id: 'project-estimator', scope: 'PROJECT', categoryLabel: 'Khusus Proyek', title: 'Estimator & Pajak Proyek', description: 'Overhead proyek, PPN proyek, pembulatan khusus', keywords: ['pajak proyek', 'overhead proyek', 'ppn proyek', 'pembulatan proyek', 'markup proyek'] },
     { id: 'project-ded', scope: 'PROJECT', categoryLabel: 'Khusus Proyek', title: 'DED & Waste Factor Proyek', description: 'Presisi volume dan susut material proyek', keywords: ['waste proyek', 'desimal proyek', 'presisi proyek'] },
     { id: 'project-documents', scope: 'PROJECT', categoryLabel: 'Khusus Proyek', title: 'Dokumen & Tanda Tangan Proyek', description: 'Format nomor surat dan penandatangan proyek', keywords: ['nomor dokumen proyek', 'penandatangan proyek', 'kop proyek'] },
-  ], []);
+  ], [lang]);
 
   const searchResults = useMemo(() => {
     if (!searchQuery.trim()) return [];
@@ -764,11 +765,11 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
 
   const renderRoleBadge = (role: UserRole) => {
     const styles: Record<UserRole, { bg: string; color: string; border: string; label: string }> = {
-      SUPER_ADMIN: { bg: 'var(--ez-hue-blue-bg)', color: 'var(--ez-color-primary-hover)', border: 'var(--ez-hue-blue-border)', label: 'Super Admin' },
-      ESTIMATOR: { bg: 'var(--ez-hue-green-bg)', color: 'var(--ez-hue-green-text)', border: 'var(--ez-hue-green-border)', label: 'Estimator' },
-      DIREKSI: { bg: 'var(--ez-hue-purple-bg)', color: 'var(--ez-hue-purple-text)', border: 'var(--ez-hue-purple-border)', label: 'Direksi' },
-      CLIENT: { bg: 'var(--ez-hue-amber-bg)', color: 'var(--ez-hue-amber-text)', border: 'var(--ez-hue-amber-border)', label: 'Client' },
-      EDITOR: { bg: 'var(--ez-color-surface-tertiary)', color: 'var(--ez-color-text-slate)', border: 'var(--ez-color-border)', label: 'Editor' },
+      SUPER_ADMIN: { bg: 'var(--ez-hue-blue-bg)', color: 'var(--ez-color-primary-hover)', border: 'var(--ez-hue-blue-border)', label: t('settings.role_super_admin') },
+      ESTIMATOR: { bg: 'var(--ez-hue-green-bg)', color: 'var(--ez-hue-green-text)', border: 'var(--ez-hue-green-border)', label: t('settings.role_estimator') },
+      DIREKSI: { bg: 'var(--ez-hue-purple-bg)', color: 'var(--ez-hue-purple-text)', border: 'var(--ez-hue-purple-border)', label: t('settings.role_direksi') },
+      CLIENT: { bg: 'var(--ez-hue-amber-bg)', color: 'var(--ez-hue-amber-text)', border: 'var(--ez-hue-amber-border)', label: t('settings.role_client') },
+      EDITOR: { bg: 'var(--ez-color-surface-tertiary)', color: 'var(--ez-color-text-slate)', border: 'var(--ez-color-border)', label: t('settings.role_editor') },
     };
     const s = styles[role] || styles.SUPER_ADMIN;
     return (
@@ -828,7 +829,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
         { id: 'audit-log' as SettingsTabId, label: t('settings.tab_audit'), icon: History },
         // P1-A (R-01): label hardcode Indonesia seperti tab proyek —
         // dictionaries i18n bukan bagian dari paket ini.
-        { id: 'backup' as SettingsTabId, label: 'Cadangan & Pulihkan', icon: DatabaseBackup },
+        { id: 'backup' as SettingsTabId, label: t('settings.tab_backup'), icon: DatabaseBackup },
         { id: 'help' as SettingsTabId, label: t('settings.tab_bantuan'), icon: HelpCircle },
       ],
     },
@@ -871,15 +872,15 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
 
   // Grouped Navigation for Level 3 (Project Scope)
   const projectNavItems = [
-    { id: 'project-info' as SettingsTabId, label: 'Informasi Proyek', icon: FolderKanban },
-    { id: 'project-estimator' as SettingsTabId, label: 'Estimator & Pajak Proyek', icon: Coins },
-    { id: 'project-ded' as SettingsTabId, label: 'DED & Waste Factor', icon: Calculator },
-    { id: 'project-documents' as SettingsTabId, label: 'Dokumen & Surat', icon: FileText },
+    { id: 'project-info' as SettingsTabId, label: t('settings.nav_proyek_info'), icon: FolderKanban },
+    { id: 'project-estimator' as SettingsTabId, label: t('settings.nav_proyek_estimator'), icon: Coins },
+    { id: 'project-ded' as SettingsTabId, label: t('settings.nav_proyek_ded'), icon: Calculator },
+    { id: 'project-documents' as SettingsTabId, label: t('settings.nav_proyek_dokumen'), icon: FileText },
     // D-78 (Batch G2, OD-20(a)): label jujur — bagian ini hanya berisi
     // dua field tanggal, bukan kalender hari kerja. Tanpa membangun
     // kalender (di luar otorisasi OD-20(a)).
-    { id: 'project-schedule' as SettingsTabId, label: 'Tanggal Proyek', icon: Calendar },
-    { id: 'project-cost' as SettingsTabId, label: 'Cost Code & Baseline', icon: TrendingUp },
+    { id: 'project-schedule' as SettingsTabId, label: t('settings.nav_proyek_jadwal'), icon: Calendar },
+    { id: 'project-cost' as SettingsTabId, label: t('settings.nav_proyek_biaya'), icon: TrendingUp },
   ];
 
   return (
@@ -970,13 +971,15 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                     border: scope === 'PROJECT' ? '1px solid var(--ez-hue-amber-border)' : '1px solid var(--ez-hue-blue-bg-deep)',
                   }}
                 >
-                  {scope === 'PROJECT' ? 'Scope: Khusus Proyek' : 'Scope: Global Workspace'}
+                  {scope === 'PROJECT' ? t('settings.scope_proyek') : t('settings.scope_global')}
                 </span>
               </div>
               <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: '3px 0 0' }}>
-                {scope === 'PROJECT'
-                  ? `Mengonfigurasi parameter proyek "${activeProject?.name || 'Proyek Aktif'}". Nilai ini meng-override pengaturan global.`
-                  : 'Kelola preferensi akun, profil kantor perusahaan, standar estimasi, dan kebijakan sistem EZRAB.'}
+                {scope === 'PROJECT' ? (
+                  <>{t('settings.scope_sub_proyek_a')}{activeProject?.name || t('settings.proyek_aktif')}{t('settings.scope_sub_proyek_b')}</>
+                ) : (
+                  t('settings.scope_sub_global')
+                )}
               </p>
             </div>
           </div>
@@ -1034,7 +1037,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
               }}
             >
               <Building2 size={14} />
-              <span>Pengaturan Global (Workspace & Akun)</span>
+              <span>{t('settings.scope_global_btn')}</span>
             </button>
 
             <button
@@ -1059,14 +1062,14 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
               }}
             >
               <FolderKanban size={14} />
-              <span>Pengaturan Khusus Proyek</span>
+              <span>{t('settings.scope_proyek_btn')}</span>
             </button>
           </div>
 
           {/* Project Selector (Visible in Project Scope) */}
           {scope === 'PROJECT' && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-muted)' }}>Pilih Proyek:</span>
+              <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-muted)' }}>{t('settings.pilih_proyek')}</span>
               <select
                 value={selectedProjectId}
                 onChange={(e) => {
@@ -1109,7 +1112,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 }}
               >
                 <Tag size={13} />
-                <span>Override Harga Proyek →</span>
+                <span>{t('settings.override_harga_btn')}</span>
               </button>
             </div>
           )}
@@ -1121,7 +1124,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Cari pengaturan (pajak, waste, npwp...)"
+              placeholder={t('settings.cari_placeholder')}
               style={{
                 width: '100%',
                 height: '34px',
@@ -1161,7 +1164,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 }}
               >
                 <div style={{ padding: '6px 10px', fontSize: '11px', fontWeight: 800, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase' }}>
-                  Hasil Pencarian ({searchResults.length})
+                  {t('settings.cari_hasil_a')}{searchResults.length}{t('settings.cari_hasil_b')}
                 </div>
                 {searchResults.map((item) => (
                   <button
@@ -1263,8 +1266,8 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                         <span
                           title={
                             backupReminder.lastExportAt
-                              ? `Ekspor terakhir ${backupReminder.daysSinceExport} hari lalu`
-                              : 'Belum pernah mengekspor backup'
+                              ? `${t('settings.cari_ekspor_terakhir_a')}${backupReminder.daysSinceExport}${t('settings.cari_ekspor_terakhir_b')}`
+                              : t('settings.cari_belum_ekspor')
                           }
                           style={{
                             width: 8,
@@ -1284,7 +1287,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
               <div style={{ fontSize: '10.5px', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', padding: '4px 10px', letterSpacing: '0.04em' }}>
-                KONFIGURASI PROYEK
+                {t('settings.nav_grup_konfig_proyek')}
               </div>
               {projectNavItems.map((item) => {
                 const Icon = item.icon;
@@ -1350,7 +1353,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   {restrictedTab.label}
                 </h3>
                 <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
-                  Bagian ini tidak tersedia untuk sesi Anda saat ini.
+                  {t('settings.terbatas_desc')}
                 </p>
               </div>
               <div
@@ -1365,11 +1368,10 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 }}
               >
                 <div style={{ fontWeight: 700, marginBottom: '4px' }}>
-                  Memerlukan kapabilitas “{restrictedCapability}”
+                  {t('settings.terbatas_butuh_a')}{restrictedCapability}{t('settings.terbatas_butuh_b')}
                 </div>
                 <div>
-                  Kapabilitas ini hanya dimiliki peran Tim. Masuk dengan PIN peran Tim untuk membuka bagian ini.
-                  Peran demo default sengaja tidak diberi akses manajemen pengguna &amp; keamanan.
+                  {t('settings.terbatas_body')}
                 </div>
               </div>
             </div>
@@ -1435,7 +1437,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Nomor Telepon / WhatsApp</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.profil_telp')}</label>
                   <input
                     type="text"
                     value={profilePhone}
@@ -1445,7 +1447,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Jabatan / Spesialisasi</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.profil_jabatan')}</label>
                   <input
                     type="text"
                     value={profileTitle}
@@ -1556,7 +1558,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
               {/* Umum */}
               <div style={{ borderTop: '1px solid var(--ez-color-surface-tertiary)', paddingTop: '16px' }}>
                 <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-body)', display: 'block', marginBottom: '12px' }}>
-                  Umum
+                  {t('settings.umum_label')}
                 </label>
                 <div className="ezrab-set-grid2" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
                   <div>
@@ -1564,8 +1566,11 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                     <select
                       value={lang}
                       onChange={(e) => {
-                        setLang(e.target.value as Lang);
-                        setToastMessage(t('settings.tersimpan'));
+                        const nextLang = e.target.value as Lang;
+                        setLang(nextLang);
+                        // t() di sini masih closure dari render lama (bahasa sebelum switch),
+                        // jadi ambil string toast langsung dari kamus bahasa baru.
+                        setToastMessage(dictionaries[nextLang].settings.tersimpan ?? t('settings.tersimpan'));
                         setSavedToast(true);
                       }}
                       style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: 'var(--ez-color-surface)' }}
@@ -1579,19 +1584,19 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   </div>
 
                   <div>
-                    <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Format Tanggal</label>
+                    <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.format_tanggal')}</label>
                     <select
                       value={dateFormat}
                       onChange={(e) => setDateFormat(e.target.value)}
                       style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: 'var(--ez-color-surface)' }}
                     >
-                      <option value="DD/MM/YYYY">DD/MM/YYYY (Contoh: 27/09/2026)</option>
-                      <option value="YYYY-MM-DD">YYYY-MM-DD (Standar ISO)</option>
+                      <option value="DD/MM/YYYY">{t('settings.format_tanggal_contoh')}</option>
+                      <option value="YYYY-MM-DD">{t('settings.format_tanggal_iso')}</option>
                     </select>
                   </div>
 
                   <div>
-                    <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Mata Uang Tampil (Referensi)</label>
+                    <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.mata_uang_tampil')}</label>
                     <select
                       value={displayCurrency}
                       onChange={(e) => setDisplayCurrency(e.target.value as typeof displayCurrency)}
@@ -1607,7 +1612,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                       })}
                     </select>
                     <div style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)', marginTop: '6px' }}>
-                      Berlaku langsung untuk tampilan. Nilai sumber resmi tetap dalam IDR — mengubah mata uang tidak mengubah data proyek, harga AHSP, atau laporan tersimpan.
+                      {t('settings.mata_uang_note')}
                     </div>
                     {displayCurrency !== 'IDR' && (() => {
                       const code = displayCurrency as ForeignCurrencyCode;
@@ -1616,13 +1621,13 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                       return (
                         <div style={{ marginTop: '12px', border: '1px solid var(--ez-color-border-strong)', borderRadius: '12px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                           <div style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>
-                            Kurs {code}: {rate ? formatRateLine(code, rate.idrPerUnit) : '—'}
+                            {t('settings.kurs_label')} {code}: {rate ? formatRateLine(code, rate.idrPerUnit) : '—'}
                           </div>
                           <div style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)' }}>
-                            Sumber: {rate ? `${rate.source}${rate.manual ? ' (manual)' : ''}` : '—'} · Diperbarui: {rate ? formatRateTimestamp(rate.retrievedAtMs) : '—'}
+                            {t('settings.kurs_sumber')} {rate ? `${rate.source}${rate.manual ? t('settings.kurs_manual_flag') : ''}` : '—'} · {t('settings.kurs_diperbarui')} {rate ? formatRateTimestamp(rate.retrievedAtMs) : '—'}
                           </div>
                           <div style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)' }}>
-                            Status: {evaluation.state === 'available' ? 'Kurs terkini' : evaluation.state === 'stale' ? 'Kurs lama (> 24 jam) — masih dapat dipakai' : evaluation.state === 'expired' ? 'Kurs kedaluwarsa (> 7 hari) — tidak dapat dipakai' : evaluation.state === 'invalid' ? 'Kurs tidak valid' : 'Kurs belum tersedia'}
+                            {t('settings.kurs_status_label')} {evaluation.state === 'available' ? t('settings.kurs_terkini') : evaluation.state === 'stale' ? t('settings.kurs_lama') : evaluation.state === 'expired' ? t('settings.kurs_kedaluwarsa') : evaluation.state === 'invalid' ? t('settings.kurs_tidak_valid') : t('settings.kurs_belum_tersedia')}
                           </div>
                           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                             <button
@@ -1634,27 +1639,27 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                                 const result = await refreshRates();
                                 setRateRefreshing(false);
                                 if (result.ok) {
-                                  setToastMessage('Kurs diperbarui dari open.er-api.com (kurs manual dipertahankan).');
+                                  setToastMessage(t('settings.toast_kurs_ok'));
                                   setSavedToast(true);
                                 } else {
-                                  setRateError(result.error || 'Gagal memperbarui kurs. Kurs lama dipertahankan.');
+                                  setRateError(result.error || t('settings.toast_kurs_gagal'));
                                 }
                               }}
                               style={{ height: '32px', padding: '0 12px', borderRadius: '8px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '12px', fontWeight: 600, cursor: rateRefreshing ? 'wait' : 'pointer' }}
                             >
-                              {rateRefreshing ? 'Memperbarui…' : 'Perbarui kurs'}
+                              {rateRefreshing ? t('settings.kurs_memperbarui') : t('settings.kurs_perbarui')}
                             </button>
                             {rate?.manual && (
                               <button
                                 type="button"
                                 onClick={() => {
                                   clearManualRate(code);
-                                  setToastMessage('Kurs manual dihapus. Gunakan Perbarui kurs untuk kurs provider.');
+                                  setToastMessage(t('settings.toast_kurs_hapus'));
                                   setSavedToast(true);
                                 }}
                                 style={{ height: '32px', padding: '0 12px', borderRadius: '8px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
                               >
-                                Hapus kurs manual
+                                {t('settings.kurs_hapus_manual')}
                               </button>
                             )}
                           </div>
@@ -1668,7 +1673,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                               step="any"
                               value={manualRateInput}
                               onChange={(e) => setManualRateInput(e.target.value)}
-                              placeholder={`Kurs manual (Rp per 1 ${code})`}
+                              placeholder={`${t('settings.kurs_manual_ph_a')}${code}${t('settings.kurs_manual_ph_b')}`}
                               style={{ flex: '1 1 160px', height: '32px', borderRadius: '8px', border: '1px solid var(--ez-color-border-strong)', color: 'var(--ez-color-text-primary)', fontSize: '12px', padding: '0 10px', background: 'var(--ez-color-surface)' }}
                             />
                             <button
@@ -1677,7 +1682,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                                 const parsed = parseFloat(manualRateInput);
                                 const result = setManualRate(code, parsed);
                                 if (!result.ok) {
-                                  setManualRateError(result.error || 'Kurs manual tidak valid.');
+                                  setManualRateError(result.error || t('settings.kurs_manual_tidak_valid'));
                                   return;
                                 }
                                 setManualRateError(null);
@@ -1687,14 +1692,14 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                               }}
                               style={{ height: '32px', padding: '0 12px', borderRadius: '8px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
                             >
-                              Simpan kurs manual
+                              {t('settings.kurs_simpan_manual')}
                             </button>
                           </div>
                           {manualRateError && (
                             <div style={{ fontSize: '11.5px', color: '#DC2626' }}>{manualRateError}</div>
                           )}
                           <div style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)' }}>
-                            Nilai konversi di aplikasi hanya estimasi referensi — bukan harga resmi AHSP. Ekspor Excel/PDF tetap dalam IDR resmi.
+                            {t('settings.kurs_disclaimer')}
                           </div>
                         </div>
                       );
@@ -1713,10 +1718,10 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
               <div>
                 <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 4px' }}>
-                  Preferensi Notifikasi
+                  {t('settings.notif_judul')}
                 </h3>
                 <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
-                  Pilih pemberitahuan aktivitas yang ingin Anda terima di aplikasi.
+                  {t('settings.notif_desc')}
                 </p>
               </div>
 
@@ -1731,16 +1736,16 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 >
                   <BrowserNotifyControl />
                   <div style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)', marginTop: '4px' }}>
-                    Teruskan notifikasi aplikasi ke notifikasi browser (Chrome dan lainnya) — preferensi yang sama dengan panel lonceng.
+                    {t('settings.notif_browser_desc')}
                   </div>
                 </div>
                 {[
-                  { label: 'Pembaruan Status Proyek', desc: 'Notifikasi saat ada revisi atau perubahan status tender', checked: notifProject, setChecked: setNotifProject },
-                  { label: 'Kalkulasi Otomatis RAB', desc: 'Notifikasi saat perhitungan otomatis RAB & rekapitulasi selesai', checked: notifRab, setChecked: setNotifRab },
-                  { label: 'Ekstraksi DED & Gambar Kerja', desc: 'Pemberitahuan saat analisis gambar denah selesai diproses', checked: notifDed, setChecked: setNotifDed },
-                  { label: 'Rekapitulasi Volume (QTO)', desc: 'Notifikasi perubahan kuantitas volume pekerjaan', checked: notifQto, setChecked: setNotifQto },
-                  { label: 'Pencadangan Sistem & Ekspor', desc: 'Konfirmasi ekspor PDF, Excel, dan backup data', checked: notifSystem, setChecked: setNotifSystem },
-                  { label: 'Keamanan Akun & Login Baru', desc: 'Peringatan aktivitas login dari perangkat baru', checked: notifSecurity, setChecked: setNotifSecurity },
+                  { label: t('settings.notif_status_judul'), desc: t('settings.notif_status_desc'), checked: notifProject, setChecked: setNotifProject },
+                  { label: t('settings.notif_rab_judul'), desc: t('settings.notif_rab_desc'), checked: notifRab, setChecked: setNotifRab },
+                  { label: t('settings.notif_ded_judul'), desc: t('settings.notif_ded_desc'), checked: notifDed, setChecked: setNotifDed },
+                  { label: t('settings.notif_qto_judul'), desc: t('settings.notif_qto_desc'), checked: notifQto, setChecked: setNotifQto },
+                  { label: t('settings.notif_sistem_judul'), desc: t('settings.notif_sistem_desc'), checked: notifSystem, setChecked: setNotifSystem },
+                  { label: t('settings.notif_keamanan_judul'), desc: t('settings.notif_keamanan_desc'), checked: notifSecurity, setChecked: setNotifSecurity },
                 ].map((item) => (
                   <div
                     key={item.label}
@@ -1778,16 +1783,16 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
                 <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 4px' }}>
-                  Keamanan & Kata Sandi
+                  {t('settings.keamanan_judul')}
                 </h3>
                 <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
-                  Perbarui kata sandi akun dan amankan sesi login Anda.
+                  {t('settings.keamanan_desc')}
                 </p>
               </div>
 
               <div style={{ maxWidth: '480px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Kata Sandi Saat Ini</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.keamanan_saat_ini')}</label>
                   <input
                     type="password"
                     value={currentPassword}
@@ -1798,23 +1803,23 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Kata Sandi Baru</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.keamanan_baru')}</label>
                   <input
                     type="password"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="Minimal 8 karakter"
+                    placeholder={t('settings.keamanan_min8')}
                     style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Konfirmasi Kata Sandi Baru</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.keamanan_konfirmasi')}</label>
                   <input
                     type="password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Ulangi kata sandi baru"
+                    placeholder={t('settings.keamanan_ulang')}
                     style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                 </div>
@@ -1822,7 +1827,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 <div style={{ padding: '12px 14px', background: 'var(--ez-hue-blue-bg)', borderRadius: '16px', border: '1px solid var(--ez-hue-blue-bg-deep)', display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <ShieldCheck size={18} color="var(--ez-hue-blue-text)" />
                   <span style={{ fontSize: '12px', color: 'var(--ez-hue-blue-text-deep)', fontWeight: 500 }}>
-                    Autentikasi dua faktor (2FA) aktif untuk akun Super Admin ini.
+                    {t('settings.keamanan_2fa')}
                   </span>
                 </div>
               </div>
@@ -1836,16 +1841,16 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
                 <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 4px' }}>
-                  Profil Perusahaan & Legalitas Kantor
+                  {t('settings.perusahaan_judul')}
                 </h3>
                 <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
-                  Informasi resmi perusahaan yang digunakan pada kop surat, dokumen lelang, dan tanda tangan resmi.
+                  {t('settings.perusahaan_desc')}
                 </p>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Nama Resmi Perusahaan / Kantor</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.perusahaan_nama')}</label>
                   <input
                     type="text"
                     value={workspaceName}
@@ -1855,7 +1860,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Nomor NPWP Badan Usaha</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.perusahaan_npwp')}</label>
                   <input
                     type="text"
                     value={companyNpwp}
@@ -1865,7 +1870,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Nama Direktur Utama / Penanggung Jawab</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.perusahaan_direktur')}</label>
                   <input
                     type="text"
                     value={companyDirector}
@@ -1875,7 +1880,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Lead Estimator / Kepala Proyek</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.perusahaan_lead')}</label>
                   <input
                     type="text"
                     value={companyLeadEstimator}
@@ -1885,7 +1890,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Nomor Telepon Kantor</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.perusahaan_telp')}</label>
                   <input
                     type="text"
                     value={companyPhone}
@@ -1895,7 +1900,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Email Korespondensi Resmi</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.perusahaan_email')}</label>
                   <input
                     type="email"
                     value={companyEmail}
@@ -1905,7 +1910,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 </div>
 
                 <div style={{ gridColumn: 'span 2' }}>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Alamat Kantor Pusat</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.perusahaan_alamat')}</label>
                   <textarea
                     rows={2}
                     value={companyAddress}
@@ -1925,10 +1930,10 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
                 <div>
                   <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 4px' }}>
-                    Tim & Anggota Workspace
+                    {t('settings.tim_judul')}
                   </h3>
                   <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
-                    Kelola anggota yang memiliki akses ke workspace dan proyek perusahaan Anda.
+                    {t('settings.tim_desc')}
                   </p>
                 </div>
 
@@ -1951,7 +1956,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   }}
                 >
                   <Plus size={15} />
-                  <span>+ Tambah Anggota</span>
+                  <span>{t('settings.tim_tambah')}</span>
                 </button>
               </div>
 
@@ -1960,12 +1965,12 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12.5px' }}>
                   <thead>
                     <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', color: 'var(--ez-color-text-slate)', fontWeight: 700 }}>
-                      <th style={{ padding: '12px 16px' }}>Nama</th>
-                      <th style={{ padding: '12px 16px' }}>Email</th>
-                      <th style={{ padding: '12px 16px' }}>Role</th>
-                      <th style={{ padding: '12px 16px' }}>Status</th>
-                      <th style={{ padding: '12px 16px' }}>Perusahaan</th>
-                      <th style={{ padding: '12px 16px', textAlign: 'right' }}>Aksi</th>
+                      <th style={{ padding: '12px 16px' }}>{t('settings.tim_th_nama')}</th>
+                      <th style={{ padding: '12px 16px' }}>{t('settings.tim_th_email')}</th>
+                      <th style={{ padding: '12px 16px' }}>{t('settings.tim_th_role')}</th>
+                      <th style={{ padding: '12px 16px' }}>{t('settings.tim_th_status')}</th>
+                      <th style={{ padding: '12px 16px' }}>{t('settings.tim_th_perusahaan')}</th>
+                      <th style={{ padding: '12px 16px', textAlign: 'right' }}>{t('settings.tim_th_aksi')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -2014,13 +2019,13 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                               color: user.status === 'ACTIVE' ? 'var(--ez-hue-green-text-deep)' : 'var(--ez-hue-amber-text)',
                             }}
                           >
-                            {user.status === 'ACTIVE' ? 'Active' : 'Invited'}
+                            {user.status === 'ACTIVE' ? t('settings.tim_status_aktif') : t('settings.tim_status_diundang')}
                           </span>
                         </td>
-                        <td style={{ padding: '12px 16px', color: 'var(--ez-color-text-muted)' }}>{user.company || 'Internal Workspace'}</td>
+                        <td style={{ padding: '12px 16px', color: 'var(--ez-color-text-muted)' }}>{user.company || t('settings.tim_perusahaan_internal')}</td>
                         <td style={{ padding: '12px 16px', textAlign: 'right' }}>
                           <button
-                            onClick={() => alert(`Detail Pengguna: ${user.name} (${user.role})`)}
+                            onClick={() => alert(`${t('settings.tim_detail_a')}${user.name}${t('settings.tim_detail_b')}${user.role}${t('settings.tim_detail_c')}`)}
                             style={{
                               padding: '4px 10px',
                               borderRadius: '10px',
@@ -2030,7 +2035,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                               cursor: 'pointer',
                             }}
                           >
-                            Lihat
+                            {t('settings.tim_lihat')}
                           </button>
                         </td>
                       </tr>
@@ -2054,10 +2059,10 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
                 <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 4px' }}>
-                  Matriks Hak Akses (Role-Based Access Control)
+                  {t('settings.roles_judul')}
                 </h3>
                 <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
-                  Standar wewenang setiap peran dalam mengelola proyek, harga, dan persetujuan RAB.
+                  {t('settings.roles_desc')}
                 </p>
               </div>
 
@@ -2065,21 +2070,21 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12px' }}>
                   <thead>
                     <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', color: 'var(--ez-color-text-slate)', fontWeight: 700 }}>
-                      <th style={{ padding: '12px 16px' }}>Wewenang / Fitur</th>
-                      <th style={{ padding: '12px 14px', textAlign: 'center' }}>Super Admin</th>
-                      <th style={{ padding: '12px 14px', textAlign: 'center' }}>Estimator</th>
-                      <th style={{ padding: '12px 14px', textAlign: 'center' }}>Direksi</th>
-                      <th style={{ padding: '12px 14px', textAlign: 'center' }}>Client / Owner</th>
+                      <th style={{ padding: '12px 16px' }}>{t('settings.roles_th_wewenang')}</th>
+                      <th style={{ padding: '12px 14px', textAlign: 'center' }}>{t('settings.role_super_admin')}</th>
+                      <th style={{ padding: '12px 14px', textAlign: 'center' }}>{t('settings.role_estimator')}</th>
+                      <th style={{ padding: '12px 14px', textAlign: 'center' }}>{t('settings.role_direksi')}</th>
+                      <th style={{ padding: '12px 14px', textAlign: 'center' }}>{t('settings.role_client_owner')}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {[
-                      { feat: 'Buat & Edit RAB Proyek', sa: true, est: true, dir: false, cli: false },
-                      { feat: 'Override Harga Khusus Proyek', sa: true, est: true, dir: false, cli: false },
-                      { feat: 'Ubah Markup & Overhead Direksi', sa: true, est: false, dir: true, cli: false },
-                      { feat: 'Approve & Kunci RAB Final', sa: true, est: false, dir: true, cli: true },
-                      { feat: 'Kelola Master Data & Standar AHSP', sa: true, est: true, dir: false, cli: false },
-                      { feat: 'Kelola Anggota & Billing Workspace', sa: true, est: false, dir: false, cli: false },
+                      { feat: t('settings.roles_feat_rab'), sa: true, est: true, dir: false, cli: false },
+                      { feat: t('settings.roles_feat_override'), sa: true, est: true, dir: false, cli: false },
+                      { feat: t('settings.roles_feat_markup'), sa: true, est: false, dir: true, cli: false },
+                      { feat: t('settings.roles_feat_approve'), sa: true, est: false, dir: true, cli: true },
+                      { feat: t('settings.roles_feat_master'), sa: true, est: true, dir: false, cli: false },
+                      { feat: t('settings.roles_feat_anggota'), sa: true, est: false, dir: false, cli: false },
                     ].map((row, idx) => (
                       <tr key={row.feat} style={{ borderBottom: idx < 5 ? '1px solid var(--ez-color-surface-tertiary)' : 'none', background: 'var(--ez-color-surface)' }}>
                         <td style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--ez-color-text-primary)' }}>{row.feat}</td>
@@ -2102,10 +2107,10 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
                 <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 4px' }}>
-                  Paket Langganan & Billing Workspace
+                  {t('settings.paket_judul')}
                 </h3>
                 <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
-                  Informasi paket saat ini, kuota penyimpanan, dan kuota proyek.
+                  {t('settings.paket_desc')}
                 </p>
               </div>
 
@@ -2113,7 +2118,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
                   <div>
                     <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--ez-color-primary-hover)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                      Paket Saat Ini (Simulasi)
+                      {t('settings.paket_saat_ini')}
                     </span>
                     <h2 style={{ fontSize: '20px', fontWeight: 900, color: 'var(--ez-color-text-primary)', margin: '4px 0 0' }}>
                       {simulatedPlanDef.displayName}
@@ -2122,11 +2127,11 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                       {simulatedPlanFacts}
                     </p>
                     <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-body)', margin: '4px 0 0' }}>
-                      Saldo kredit AI saat ini: {creditBalance.total.toLocaleString('id-ID')} kredit (simulasi). Billing belum aktif — belum ada langganan berbayar yang terverifikasi; paket di atas adalah paket pada simulasi kredit frontend EZRAB.
+                      {t('settings.paket_saldo_a')}{creditBalance.total.toLocaleString('id-ID')}{t('settings.paket_saldo_b')}
                     </p>
                   </div>
                   <div style={{ padding: '8px 16px', background: 'var(--ez-color-surface-tertiary)', color: 'var(--ez-color-text-body)', border: '1px solid var(--ez-color-border-strong)', borderRadius: '10px', fontSize: '12.5px', fontWeight: 700 }}>
-                    Mode Simulasi — Bukan Langganan Aktif
+                    {t('settings.paket_mode_simulasi')}
                   </div>
                 </div>
               </div>
@@ -2140,38 +2145,38 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
                 <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 4px' }}>
-                  Standar Master Data & Regulasi AHSP
+                  {t('settings.master_judul')}
                 </h3>
                 <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
-                  Pengaturan standar acuan analisa harga satuan pekerjaan dan basis data harga nasional.
+                  {t('settings.master_desc')}
                 </p>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Regulasi Standar AHSP Default</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.master_regulasi')}</label>
                   <select
                     value={defaultAhspSource}
                     onChange={(e) => setDefaultAhspSource(e.target.value)}
                     style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: 'var(--ez-color-surface)' }}
                   >
-                    <option value="pupr-2026">Permen PUPR No. 28/PRT/M/2026 (Terbaru)</option>
-                    <option value="pupr-2022">Permen PUPR No. 1/PRT/M/2022</option>
-                    <option value="sni-2020">SNI Standar Nasional Indonesia</option>
+                    <option value="pupr-2026">{t('settings.master_reg_2026')}</option>
+                    <option value="pupr-2022">{t('settings.master_reg_2022')}</option>
+                    <option value="sni-2020">{t('settings.master_reg_sni')}</option>
                   </select>
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Wilayah Indeks Harga Acuan</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.master_wilayah')}</label>
                   <select
                     value={defaultRegion}
                     onChange={(e) => setDefaultRegion(e.target.value)}
                     style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: 'var(--ez-color-surface)' }}
                   >
-                    <option value="DKI Jakarta (Indeks 1.00)">DKI Jakarta (Indeks 1.00)</option>
-                    <option value="Jawa Barat / Bandung (Indeks 0.95)">Jawa Barat / Bandung (Indeks 0.95)</option>
-                    <option value="Jawa Timur / Surabaya (Indeks 0.94)">Jawa Timur / Surabaya (Indeks 0.94)</option>
-                    <option value="Kalimantan Timur / IKN (Indeks 1.25)">Kalimantan Timur / IKN (Indeks 1.25)</option>
+                    <option value="DKI Jakarta (Indeks 1.00)">{t('settings.master_wilayah_dki')}</option>
+                    <option value="Jawa Barat / Bandung (Indeks 0.95)">{t('settings.master_wilayah_jabar')}</option>
+                    <option value="Jawa Timur / Surabaya (Indeks 0.94)">{t('settings.master_wilayah_jatim')}</option>
+                    <option value="Kalimantan Timur / IKN (Indeks 1.25)">{t('settings.master_wilayah_kaltim')}</option>
                   </select>
                 </div>
               </div>
@@ -2179,14 +2184,14 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
               {/* Direct links to master tables */}
               <div style={{ marginTop: '10px' }}>
                 <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '8px' }}>
-                  Akses Cepat Tabel Database Master:
+                  {t('settings.master_akses_cepat')}
                 </span>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
                   {[
-                    { label: `Database Material (${liveMaterialCount.toLocaleString('id-ID')})`, icon: Package, tab: 'database-material' },
-                    { label: 'Database AHSP PUPR', icon: Database, tab: 'ahsp-2026' },
-                    { label: 'Database Upah Tenaga Kerja', icon: HardHat, tab: 'database-upah' },
-                    { label: 'Database Peralatan Berat', icon: Truck, tab: 'database-alat' },
+                    { label: `${t('settings.master_db_material_a')}${liveMaterialCount.toLocaleString('id-ID')}${t('settings.master_db_material_b')}`, icon: Package, tab: 'database-material' },
+                    { label: t('settings.master_db_ahsp'), icon: Database, tab: 'ahsp-2026' },
+                    { label: t('settings.master_db_upah'), icon: HardHat, tab: 'database-upah' },
+                    { label: t('settings.master_db_alat'), icon: Truck, tab: 'database-alat' },
                   ].map((card) => {
                     const Icon = card.icon;
                     return (
@@ -2225,7 +2230,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
                 <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 4px' }}>
-                  Standar Estimator & Parameter RAB (Acuan Workspace)
+                  {t('settings.estimator_judul')}
                 </h3>
                 {/* D-77: nilai-nilai ini HANYA acuan — terverifikasi tidak
                     disimpan dan tidak dibaca jalur mana pun (proyek baru
@@ -2234,13 +2239,13 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                     "saat membuat proyek baru" menyiratkan nilai ini menjadi
                     default proyek baru, padahal tidak pernah diterapkan. */}
                 <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
-                  Nilai acuan persentase margin overhead, tarif pajak PPN, dan pembulatan — referensi workspace saja, tidak diterapkan otomatis ke proyek mana pun.
+                  {t('settings.estimator_desc')}
                 </p>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Overhead Standar (%)</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.estimator_overhead')}</label>
                   <input
                     type="number"
                     min={0}
@@ -2250,11 +2255,11 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                     onChange={(e) => setDefaultOverhead(Number(e.target.value))}
                     style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
-                  <span style={{ fontSize: '11px', color: '#94A3B8', marginTop: '2px', display: 'block' }}>Rekomendasi PU: 5% - 15%</span>
+                  <span style={{ fontSize: '11px', color: '#94A3B8', marginTop: '2px', display: 'block' }}>{t('settings.estimator_overhead_hint')}</span>
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Profit Kontraktor Pelaksana (%)</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.estimator_profit')}</label>
                   <input
                     type="number"
                     min={0}
@@ -2264,11 +2269,11 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                     onChange={(e) => setDefaultProfit(Number(e.target.value))}
                     style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
-                  <span style={{ fontSize: '11px', color: '#94A3B8', marginTop: '2px', display: 'block' }}>Margin keuntungan standar proyek</span>
+                  <span style={{ fontSize: '11px', color: '#94A3B8', marginTop: '2px', display: 'block' }}>{t('settings.estimator_profit_hint')}</span>
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Tarif Pajak PPN Standar (%)</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.estimator_ppn')}</label>
                   <input
                     type="number"
                     min={0}
@@ -2277,19 +2282,19 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                     onChange={(e) => setDefaultPpn(Number(e.target.value))}
                     style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
-                  <span style={{ fontSize: '11px', color: '#94A3B8', marginTop: '2px', display: 'block' }}>Tarif PPN UU HPP saat ini (11% / 12%)</span>
+                  <span style={{ fontSize: '11px', color: '#94A3B8', marginTop: '2px', display: 'block' }}>{t('settings.estimator_ppn_hint')}</span>
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Skema Pembulatan Nilai Total</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.estimator_rounding')}</label>
                   <select
                     value={defaultRounding}
                     onChange={(e) => setDefaultRounding(e.target.value)}
                     style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: 'var(--ez-color-surface)' }}
                   >
-                    <option value="RIBUAN">Pembulatan ke Ribuan Terdekat (Rp 1.000)</option>
-                    <option value="RATUSAN">Pembulatan ke Ratusan Terdekat (Rp 100)</option>
-                    <option value="EXACT">Nilai Tepat 2 Desimal (Rp 0,00)</option>
+                    <option value="RIBUAN">{t('settings.rounding_ribuan')}</option>
+                    <option value="RATUSAN">{t('settings.rounding_ratusan')}</option>
+                    <option value="EXACT">{t('settings.rounding_exact')}</option>
                   </select>
                 </div>
               </div>
@@ -2303,33 +2308,33 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
                 <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 4px' }}>
-                  Presisi Kalkulasi DED & Waste Factor Material
+                  {t('settings.ded_judul')}
                 </h3>
                 <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
-                  Konfigurasi desimal volume, faktor susut/kehilangan material konstruksi.
+                  {t('settings.ded_desc')}
                 </p>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Faktor Susut Besi Tulangan (Waste %)</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.ded_waste')}</label>
                   <input
                     type="number"
                     value={defaultWaste}
                     onChange={(e) => setDefaultWaste(Number(e.target.value))}
                     style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
-                  <span style={{ fontSize: '11px', color: '#94A3B8', marginTop: '2px', display: 'block' }}>Standar overlap & potongan: 5%</span>
+                  <span style={{ fontSize: '11px', color: '#94A3B8', marginTop: '2px', display: 'block' }}>{t('settings.ded_waste_hint')}</span>
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Presisi Desimal Hasil Volume (m³ / m²)</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.ded_presisi')}</label>
                   <select
                     value={2}
                     disabled
                     style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: 'var(--ez-color-surface-secondary)' }}
                   >
-                    <option value={2}>2 Angka di Belakang Koma (0.00)</option>
+                    <option value={2}>{t('settings.ded_presisi_opt')}</option>
                   </select>
                   {/* D-81 (Batch G2): jelaskan MENGAPA kontrol ini
                       nonaktif — tanpa penjelasan, select yang tampak
@@ -2338,7 +2343,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                       ini tidak menimpa opacity-nya. Presisi per proyek
                       diatur di tab "DED & Waste Factor Proyek". */}
                   <span style={{ fontSize: '11px', color: '#94A3B8', marginTop: '2px', display: 'block' }}>
-                    Presisi global dikunci di 2 desimal — ubah per proyek di tab DED &amp; Waste Factor Proyek.
+                    {t('settings.ded_presisi_note')}
                   </span>
                 </div>
               </div>
@@ -2352,47 +2357,47 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
                 <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 4px' }}>
-                  Standar Dokumen & Parameter Ekspor PDF / Excel
+                  {t('settings.dokumen_judul')}
                 </h3>
                 <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
-                  Format kertas, orientasi cetak, kop branding, dan format penomoran berkas tender.
+                  {t('settings.dokumen_desc')}
                 </p>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Ukuran Kertas Ekspor Dokumen</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.dokumen_kertas')}</label>
                   <select
                     value={pdfPaperSize}
                     onChange={(e) => setPdfPaperSize(e.target.value)}
                     style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: 'var(--ez-color-surface)' }}
                   >
-                    <option value="A4">A4 (210 x 297 mm) - Standar Umum</option>
-                    <option value="F4">F4 / Folio (215 x 330 mm) - Standar PUPR</option>
+                    <option value="A4">{t('settings.dokumen_kertas_a4')}</option>
+                    <option value="F4">{t('settings.dokumen_kertas_f4')}</option>
                   </select>
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Orientasi Cetak Halaman</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.dokumen_orientasi')}</label>
                   <select
                     value={pdfOrientation}
                     onChange={(e) => setPdfOrientation(e.target.value)}
                     style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: 'var(--ez-color-surface)' }}
                   >
-                    <option value="landscape">Landscape (Lebar - Rekomendasi RAB & BOQ)</option>
-                    <option value="portrait">Portrait (Tegak - Surat Penawaran)</option>
+                    <option value="landscape">{t('settings.dokumen_orientasi_landscape')}</option>
+                    <option value="portrait">{t('settings.dokumen_orientasi_portrait')}</option>
                   </select>
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Prefix Penomoran Dokumen</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.dokumen_prefix')}</label>
                   <input
                     type="text"
                     value={docPrefix}
                     onChange={(e) => setDocPrefix(e.target.value)}
                     style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
-                  <span style={{ fontSize: '11px', color: '#94A3B8', marginTop: '2px', display: 'block' }}>Format nomor: {docPrefix}/PROYEK/2026</span>
+                  <span style={{ fontSize: '11px', color: '#94A3B8', marginTop: '2px', display: 'block' }}>{t('settings.dokumen_format_nomor')}{docPrefix}/PROYEK/2026</span>
                 </div>
               </div>
             </div>
@@ -2405,36 +2410,36 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
                 <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 4px' }}>
-                  Standar Kalender Kerja & Kurva-S
+                  {t('settings.jadwal_judul')}
                 </h3>
                 <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
-                  Konfigurasi jumlah hari kerja dan toleransi deviasi jadwal pelaksanaan.
+                  {t('settings.jadwal_desc')}
                 </p>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Jumlah Hari Kerja Per Minggu</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.jadwal_hari')}</label>
                   <select
                     value={defaultWorkingDays}
                     onChange={(e) => setDefaultWorkingDays(Number(e.target.value))}
                     style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: 'var(--ez-color-surface)' }}
                   >
-                    <option value={6}>6 Hari Kerja (Senin - Sabtu) - Standar Lapangan</option>
-                    <option value={5}>5 Hari Kerja (Senin - Jumat)</option>
-                    <option value={7}>7 Hari Kerja (Shift Penuh Non-Stop)</option>
+                    <option value={6}>{t('settings.jadwal_hari_6')}</option>
+                    <option value={5}>{t('settings.jadwal_hari_5')}</option>
+                    <option value={7}>{t('settings.jadwal_hari_7')}</option>
                   </select>
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Jam Kerja Efektif Per Hari (OH)</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.jadwal_jam')}</label>
                   <input
                     type="number"
                     value={workingHoursPerDay}
                     onChange={(e) => setWorkingHoursPerDay(Number(e.target.value))}
                     style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
-                  <span style={{ fontSize: '11px', color: '#94A3B8', marginTop: '2px', display: 'block' }}>Standar PUPR: 7 Jam/Hari Kerja</span>
+                  <span style={{ fontSize: '11px', color: '#94A3B8', marginTop: '2px', display: 'block' }}>{t('settings.jadwal_jam_hint')}</span>
                 </div>
               </div>
             </div>
@@ -2447,24 +2452,24 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
                 <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 4px' }}>
-                  Standar Cost Code & Pengendalian Biaya
+                  {t('settings.cost_judul')}
                 </h3>
                 <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
-                  Struktur kode akun pengeluaran proyek (Direct Material, Labor, Equipment, Subkontraktor).
+                  {t('settings.cost_desc')}
                 </p>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Skema Kode Akun Biaya (Cost Code)</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.cost_skema')}</label>
                   <select
                     value={costCodeFormat}
                     onChange={(e) => setCostCodeFormat(e.target.value)}
                     style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: 'var(--ez-color-surface)' }}
                   >
-                    <option value="WBS_STANDARD">WBS Hierarkis (1.1, 1.2, 1.3)</option>
-                    <option value="CSI_MASTERFORMAT">CSI MasterFormat (Divisi 01 - 33)</option>
-                    <option value="PU_CODE">Standar Kementerian PUPR (Divisi 1 - 10)</option>
+                    <option value="WBS_STANDARD">{t('settings.cost_wbs')}</option>
+                    <option value="CSI_MASTERFORMAT">{t('settings.cost_csi')}</option>
+                    <option value="PU_CODE">{t('settings.cost_pu')}</option>
                   </select>
                 </div>
               </div>
@@ -2478,10 +2483,10 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
                 <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 4px' }}>
-                  Integrasi Eksternal & Sinkronisasi
+                  {t('settings.integrasi_judul')}
                 </h3>
                 <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
-                  Koneksi live spreadsheet, penyimpanan cloud, dan ekspor data otomatis.
+                  {t('settings.integrasi_desc')}
                 </p>
               </div>
 
@@ -2491,12 +2496,12 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <FileSpreadsheet size={24} color="var(--ez-hue-green-text)" />
                     <div>
-                      <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>Live Spreadsheet Sync (4 Sheets Engine)</div>
-                      <div style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)' }}>Sinkronisasi real-time dua arah antara tabel aplikasi dengan format spreadsheet</div>
+                      <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>{t('settings.integrasi_sync_judul')}</div>
+                      <div style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)' }}>{t('settings.integrasi_sync_desc')}</div>
                     </div>
                   </div>
                   <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--ez-hue-green-text)', background: 'var(--ez-pastel-mint)', padding: '3px 10px', borderRadius: 'var(--ez-radius-pill)' }}>
-                    Tersambung (Active)
+                    {t('settings.integrasi_tersambung')}
                   </span>
                 </div>
 
@@ -2509,7 +2514,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                       </div>
                       <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontSize: '14.5px', fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>Audit EZRAB AI Engine</span>
+                          <span style={{ fontSize: '14.5px', fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>{t('settings.ai_audit_judul')}</span>
                           {/* D-82 (Batch G2): warna badge mengikuti HASIL
                               AUDIT — bukan hijau permanen. Sebelum audit,
                               badge netral abu-abu + tanpa ikon centang
@@ -2523,11 +2528,11 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                             padding: '2px 8px', borderRadius: 'var(--ez-radius-pill)', display: 'inline-flex', alignItems: 'center', gap: '4px',
                           }}>
                             {aiAuditResult?.connected ? <CheckCircle2 size={12} /> : null}
-                            {aiAuditResult == null ? 'Belum diperiksa' : aiAuditResult.connected ? 'Terhubung & Aktif' : 'Tidak Terhubung'}
+                            {aiAuditResult == null ? t('settings.ai_audit_belum') : aiAuditResult.connected ? t('settings.ai_audit_ok') : t('settings.ai_audit_gagal')}
                           </span>
                         </div>
                         <div style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>
-                          Status klaster kecerdasan buatan, latensi respons, dan audit kepatuhan isolasi sistem AI EZRAB.
+                          {t('settings.ai_audit_desc')}
                         </div>
                       </div>
                     </div>
@@ -2553,41 +2558,41 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                       }}
                     >
                       <RefreshCw size={13} className={isAuditingAi ? 'animate-spin' : ''} />
-                      <span>{isAuditingAi ? 'Menguji Koneksi...' : 'Uji Koneksi EZRAB AI'}</span>
+                      <span>{isAuditingAi ? t('settings.ai_audit_menguji') : t('settings.ai_audit_uji')}</span>
                     </button>
                   </div>
 
                   {/* Audit Metrics Grid */}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', marginTop: '14px', marginBottom: '16px' }}>
                     <div style={{ padding: '12px', borderRadius: '10px', background: 'var(--ez-color-surface-secondary)', border: '1px solid #EEF1F6' }}>
-                      <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>Status Engine Cluster</div>
+                      <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>{t('settings.ai_metric_cluster')}</div>
                       {/* D-82 (Batch G2): status mengikuti hasil audit —
                           "Aktif & Siap Operasi" hardcode mengklaim sukses
                           sebelum audit apa pun dijalankan. */}
                       <div style={{ fontSize: '14px', fontWeight: 800, color: aiAuditResult == null ? 'var(--ez-color-text-muted)' : aiAuditResult.connected ? 'var(--ez-hue-green-text)' : 'var(--ez-color-danger-strong)', marginTop: '4px' }}>
-                        {aiAuditResult == null ? 'Belum diperiksa' : aiAuditResult.connected ? 'Aktif & Siap Operasi' : 'Tidak terhubung'}
+                        {aiAuditResult == null ? t('settings.ai_audit_belum') : aiAuditResult.connected ? t('settings.ai_metric_aktif') : t('settings.ai_metric_tidak')}
                       </div>
                       <div style={{ fontSize: '10.5px', color: '#94A3B8', marginTop: '2px' }}>Server Isolation Guard</div>
                     </div>
 
                     <div style={{ padding: '12px', borderRadius: '10px', background: 'var(--ez-color-surface-secondary)', border: '1px solid #EEF1F6' }}>
-                      <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>Asistensi Cepat (Quick)</div>
+                      <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>{t('settings.ai_metric_quick')}</div>
                       <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--ez-color-primary)', marginTop: '4px' }}>
                         EZRAB AI 1.3
                       </div>
-                      <div style={{ fontSize: '10.5px', color: '#94A3B8', marginTop: '2px' }}>Tanya Jawab & Bantuan Kilat</div>
+                      <div style={{ fontSize: '10.5px', color: '#94A3B8', marginTop: '2px' }}>{t('settings.ai_metric_quick_desc')}</div>
                     </div>
 
                     <div style={{ padding: '12px', borderRadius: '10px', background: 'var(--ez-color-surface-secondary)', border: '1px solid #EEF1F6' }}>
-                      <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>Penalaran Lanjutan (Pro)</div>
+                      <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>{t('settings.ai_metric_pro')}</div>
                       <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--ez-hue-violet-text)', marginTop: '4px' }}>
                         EZRAB AI Pro
                       </div>
-                      <div style={{ fontSize: '10.5px', color: '#94A3B8', marginTop: '2px' }}>DED → RAB & Analisis QTO</div>
+                      <div style={{ fontSize: '10.5px', color: '#94A3B8', marginTop: '2px' }}>{t('settings.ai_metric_pro_desc')}</div>
                     </div>
 
                     <div style={{ padding: '12px', borderRadius: '10px', background: 'var(--ez-color-surface-secondary)', border: '1px solid #EEF1F6' }}>
-                      <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>Latensi Respons</div>
+                      <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>{t('settings.ai_metric_latensi')}</div>
                       <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--ez-color-text-primary)', marginTop: '4px' }}>
                         {aiAuditResult?.latencyMs ? `${aiAuditResult.latencyMs} ms` : '—'}
                       </div>
@@ -2595,7 +2600,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                           klaim kecepatan. "Sangat Cepat & Stabil" hardcode
                           muncul bahkan saat latensi belum pernah diukur. */}
                       <div style={{ fontSize: '10.5px', color: aiAuditResult?.latencyMs ? 'var(--ez-hue-green-text)' : '#94A3B8', marginTop: '2px' }}>
-                        {aiAuditResult?.latencyMs ? '● Terukur saat audit terakhir' : 'Belum diukur'}
+                        {aiAuditResult?.latencyMs ? t('settings.ai_metric_terukur') : t('settings.ai_metric_belum_ukur')}
                       </div>
                     </div>
                   </div>
@@ -2604,18 +2609,18 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   <div style={{ padding: '14px', borderRadius: '10px', background: 'var(--ez-hue-green-bg)', border: '1px solid var(--ez-hue-green-border)' }}>
                     <div style={{ fontSize: '12px', fontWeight: 750, color: 'var(--ez-hue-green-text-deep)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <ShieldCheck size={16} color="var(--ez-hue-green-text-bright)" />
-                      <span>Hasil Audit Kepatuhan & Keamanan Peraturan AI EZRAB:</span>
+                      <span>{t('settings.ai_audit_hasil')}</span>
                     </div>
                     <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '11.5px', color: 'var(--ez-hue-green-text)', lineHeight: 1.6 }}>
-                      <li><strong>Isolasi Server-Side:</strong> Seluruh kredensial dan infrastruktur AI terisolasi di lingkungan server (<em>Server-Side Isolation Guard</em>) tanpa eksposur ke browser client.</li>
-                      <li><strong>Abstraksi Penuh:</strong> Komunikasi client ke server menggunakan identitas resmi <em>EZRAB AI 1.3</em>, <em>EZRAB AI Pro</em>, dan <em>EZRAB Vision</em>.</li>
-                      <li><strong>Multimodal Terpadu:</strong> Dukungan penuh pengenalan visual gambar teknis, format PDF vektor, dan dokumen pindaian beresolusi tinggi.</li>
+                      <li><strong>{t('settings.ai_iso_label')}</strong> {t('settings.ai_iso_a')}<em>Server-Side Isolation Guard</em>{t('settings.ai_iso_b')}</li>
+                      <li><strong>{t('settings.ai_abstraksi_label')}</strong> {t('settings.ai_abstraksi_a')}<em>EZRAB AI 1.3</em>{t('settings.ai_abstraksi_sep1')}<em>EZRAB AI Pro</em>{t('settings.ai_abstraksi_dan')}<em>EZRAB Vision</em>{t('settings.ai_abstraksi_end')}</li>
+                      <li><strong>{t('settings.ai_multi_label')}</strong> {t('settings.ai_multi_body')}</li>
                       {/* D-82 (Batch G2): fallback lama MENGARANG sukses
                           ("Baru saja — Semua engine operasional.") saat
                           aiAuditResult null. Kini jujur: belum pernah
                           diaudit. */}
-                      <li><strong>Audit Terakhir:</strong> {aiAuditResult == null
-                        ? 'Belum pernah diaudit — jalankan Uji Koneksi untuk memeriksa engine.'
+                      <li><strong>{t('settings.ai_terakhir_label')}</strong> {aiAuditResult == null
+                        ? t('settings.ai_terakhir_belum')
                         : `${aiAuditResult.lastChecked ?? '—'} — ${aiAuditResult.message ?? '—'}`}</li>
                     </ul>
                   </div>
@@ -2632,10 +2637,10 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
                 <div>
                   <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 4px' }}>
-                    Audit Trail & Riwayat Perubahan Konfigurasi
+                    {t('settings.audit_judul')}
                   </h3>
                   <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
-                    Jejak log aktivitas pengubahan parameter harga, perpajakan, dan pengaturan sistem.
+                    {t('settings.audit_desc')}
                   </p>
                 </div>
 
@@ -2654,7 +2659,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   }}
                 >
                   <RefreshCw size={13} />
-                  <span>Refresh Log</span>
+                  <span>{t('settings.audit_refresh')}</span>
                 </button>
               </div>
 
@@ -2663,12 +2668,12 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12px' }}>
                   <thead>
                     <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', color: 'var(--ez-color-text-slate)', fontWeight: 700 }}>
-                      <th style={{ padding: '10px 14px' }}>Waktu</th>
-                      <th style={{ padding: '10px 14px' }}>Aktor</th>
-                      <th style={{ padding: '10px 14px' }}>Scope</th>
-                      <th style={{ padding: '10px 14px' }}>Kategori & Field</th>
-                      <th style={{ padding: '10px 14px' }}>Nilai Baru</th>
-                      <th style={{ padding: '10px 14px' }}>Alasan Perubahan</th>
+                      <th style={{ padding: '10px 14px' }}>{t('settings.audit_th_waktu')}</th>
+                      <th style={{ padding: '10px 14px' }}>{t('settings.audit_th_aktor')}</th>
+                      <th style={{ padding: '10px 14px' }}>{t('settings.audit_th_scope')}</th>
+                      <th style={{ padding: '10px 14px' }}>{t('settings.audit_th_kategori')}</th>
+                      <th style={{ padding: '10px 14px' }}>{t('settings.audit_th_nilai')}</th>
+                      <th style={{ padding: '10px 14px' }}>{t('settings.audit_th_alasan')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -2723,12 +2728,10 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
                 <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 4px' }}>
-                  Cadangan &amp; Pulihkan Data
+                  {t('settings.backup_judul')}
                 </h3>
                 <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
-                  Semua data bisnis EZRAB tersimpan di browser ini. Ekspor backup secara berkala dan simpan
-                  filenya di tempat aman (Drive, flashdisk, atau email sendiri) — tanpa file backup, data yang
-                  hilang dari browser tidak dapat dikembalikan.
+                  {t('settings.backup_desc')}
                 </p>
               </div>
 
@@ -2738,32 +2741,33 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   <Clock size={16} color="#D97706" style={{ flexShrink: 0, marginTop: '1px' }} />
                   <div style={{ fontSize: '12.5px', color: '#92400E', lineHeight: 1.5 }}>
                     <strong>
-                      {backupReminder.lastExportAt
-                        ? `Ekspor terakhir ${backupReminder.daysSinceExport} hari lalu.`
-                        : 'Anda belum pernah mengekspor backup.'}
+                      {backupReminder.lastExportAt ? (
+                        <>{t('settings.backup_reminder_terakhir_a')}{backupReminder.daysSinceExport}{t('settings.backup_reminder_terakhir_b')}</>
+                      ) : (
+                        t('settings.backup_reminder_belum')
+                      )}
                     </strong>{' '}
-                    Sebaiknya ekspor backup setidaknya tiap {BACKUP_REMINDER_DAYS} hari, dan selalu sebelum
-                    mengganti perangkat atau membersihkan data browser.
+                    {t('settings.backup_reminder_saran_a')}{BACKUP_REMINDER_DAYS}{t('settings.backup_reminder_saran_b')}
                   </div>
                   <button
                     onClick={() => setBackupReminderDismissed(true)}
-                    aria-label="Tutup pengingat ekspor"
+                    aria-label={t('settings.backup_reminder_tutup_aria')}
                     style={{ marginLeft: 'auto', flexShrink: 0, border: 'none', background: 'transparent', color: '#92400E', fontSize: '12px', fontWeight: 700, cursor: 'pointer', padding: '2px 4px' }}
                   >
-                    Tutup
+                    {t('common.tutup')}
                   </button>
                 </div>
               ) : !backupReminder.needsReminder ? (
                 <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '12px', padding: '12px 14px' }}>
                   <CheckCircle2 size={16} color="#16A34A" style={{ flexShrink: 0, marginTop: '1px' }} />
                   <div style={{ fontSize: '12.5px', color: '#166534', lineHeight: 1.5 }}>
-                    Ekspor terakhir:{' '}
+                    {t('settings.backup_terakhir_label')}
                     <strong>
                       {backupReminder.lastExportAt
                         ? new Date(backupReminder.lastExportAt).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })
                         : '—'}
                     </strong>
-                    . Data Anda punya salinan di luar browser.
+                    {t('settings.backup_terakhir_b')}
                   </div>
                 </div>
               ) : null}
@@ -2800,17 +2804,15 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
                     <CheckCircle2 size={16} color="#16A34A" style={{ flexShrink: 0, marginTop: '1px' }} />
                     <div style={{ fontSize: '12.5px', color: '#166534', lineHeight: 1.5 }}>
-                      <strong>Restore berhasil.</strong> {restoreDone.restoredKeys.length} dataset dipulihkan.
-                      Aplikasi harus dimuat ulang agar menampilkan data yang dipulihkan.
+                      <strong>{t('settings.backup_restore_ok')}</strong> {restoreDone.restoredKeys.length} {t('settings.backup_restore_ok_b')}
                       {restoreDone.skippedKeys.length > 0 && (
                         <span>
-                          {' '}Dilewati (tidak dipulihkan — konfigurasi admin khusus browser ini, data saat
-                          ini dibiarkan utuh):{' '}
-                          {restoreDone.skippedKeys.map((k) => BACKUP_DATASET_LABELS[k] || k).join(', ')}.
+                          {' '}{t('settings.backup_restore_lewat_a')}
+                          {restoreDone.skippedKeys.map((k) => BACKUP_DATASET_LABELS[k] || k).join(', ')}{t('settings.backup_restore_lewat_b')}
                         </span>
                       )}
                       {restoreDone.warnings.length > 0 && (
-                        <span> Catatan: {restoreDone.warnings.join(' ')}</span>
+                          <span> {t('settings.backup_restore_catatan')}{restoreDone.warnings.join(' ')}</span>
                       )}
                     </div>
                   </div>
@@ -2832,7 +2834,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                       }}
                     >
                       <RefreshCw size={14} />
-                      <span>Muat Ulang Aplikasi Sekarang</span>
+                      <span>{t('settings.backup_muat_ulang')}</span>
                     </button>
                   </div>
                 </div>
@@ -2843,11 +2845,10 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
                   <div>
                     <h4 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 4px' }}>
-                      Ekspor Backup
+                      {t('settings.backup_ekspor_judul')}
                     </h4>
                     <p style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
-                      Mengunduh satu file JSON berisi seluruh data bisnis Anda. Nama file menyertakan tanggal
-                      dan jam sehingga backup tidak saling menimpa.
+                      {t('settings.backup_ekspor_desc')}
                     </p>
                   </div>
                   <button
@@ -2868,21 +2869,21 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                     }}
                   >
                     <Download size={14} />
-                    <span>{backupBusy === 'export' ? 'Membuat backup…' : 'Unduh Backup (JSON)'}</span>
+                    <span>{backupBusy === 'export' ? t('settings.backup_membuat') : t('settings.backup_unduh_btn')}</span>
                   </button>
                 </div>
 
                 {backupSummary ? (
                   <div style={{ fontSize: '12.5px', color: 'var(--ez-color-text-body)', lineHeight: 1.6 }}>
                     <div>
-                      Saat ini tersimpan{' '}
-                      <strong>{backupSummary.totalItems.toLocaleString('id-ID')} entri</strong> dalam{' '}
-                      <strong>{backupSummary.datasets.filter((d) => d.present).length} dataset</strong>{' '}
-                      (±{formatBackupBytes(backupSummary.totalBytes)} di penyimpanan browser).
+                      {t('settings.backup_summary_a')}
+                      <strong>{backupSummary.totalItems.toLocaleString('id-ID')} {t('settings.backup_summary_entri')}</strong>{t('settings.backup_summary_b')}
+                      <strong>{backupSummary.datasets.filter((d) => d.present).length} {t('settings.backup_summary_dataset')}</strong>{' '}
+                      (±{formatBackupBytes(backupSummary.totalBytes)} {t('settings.backup_summary_c')}
                     </div>
                     <details style={{ marginTop: '8px' }}>
                       <summary style={{ cursor: 'pointer', fontWeight: 700, color: 'var(--ez-color-primary)' }}>
-                        Rincian per dataset
+                        {t('settings.backup_rincian')}
                       </summary>
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: '4px 20px', marginTop: '10px' }}>
                         {backupSummary.datasets
@@ -2899,14 +2900,14 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                       </div>
                       {backupSummary.uncoveredEzrabKeys.length > 0 && (
                         <div style={{ marginTop: '10px', fontSize: '11.5px', color: 'var(--ez-color-text-muted)' }}>
-                          Tidak tercakup (sengaja — preferensi, peran, sesi, cache):{' '}
-                          {backupSummary.uncoveredEzrabKeys.length} kunci.
+                          {t('settings.backup_tidak_tercakup_a')}
+                          {backupSummary.uncoveredEzrabKeys.length}{t('settings.backup_tidak_tercakup_b')}
                         </div>
                       )}
                     </details>
                   </div>
                 ) : (
-                  <div style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)' }}>Memuat ringkasan…</div>
+                  <div style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)' }}>{t('settings.backup_memuat')}</div>
                 )}
               </div>
 
@@ -2915,11 +2916,10 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
                   <div>
                     <h4 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 4px' }}>
-                      Pulihkan dari File Backup
+                      {t('settings.backup_impor_judul')}
                     </h4>
                     <p style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
-                      Pilih file backup (.json). File divalidasi dan ditampilkan pratinjaunya dulu — tidak ada
-                      data yang diubah sebelum Anda mengonfirmasi.
+                      {t('settings.backup_impor_desc')}
                     </p>
                   </div>
                   <button
@@ -2940,7 +2940,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                     }}
                   >
                     <Upload size={14} />
-                    <span>{backupBusy === 'import' ? 'Membaca file…' : 'Pilih File Backup (.json)'}</span>
+                    <span>{backupBusy === 'import' ? t('settings.backup_membaca') : t('settings.backup_pilih_file')}</span>
                   </button>
                   <input
                     ref={backupFileInputRef}
@@ -2958,30 +2958,30 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', background: 'var(--ez-color-surface-secondary)', borderRadius: '12px', padding: '14px 16px' }}>
                     <div style={{ fontSize: '12.5px', color: 'var(--ez-color-text-body)', lineHeight: 1.6 }}>
                       <div>
-                        <strong>File:</strong> {importFileName}
+                        <strong>{t('settings.backup_prev_file')}</strong> {importFileName}
                       </div>
                       <div>
-                        <strong>Dibuat:</strong>{' '}
+                        <strong>{t('settings.backup_prev_dibuat')}</strong>{' '}
                         {new Date(importPreview.metadata.createdAt).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })}
                         {' · '}Format v{importPreview.metadata.formatVersion}, schema v{importPreview.metadata.schemaVersion}
                       </div>
                       {importPreview.metadata.projectSummary.length > 0 && (
                         <div>
-                          <strong>Proyek di backup:</strong>{' '}
-                          {importPreview.metadata.projectSummary.map((p) => `${p.name} (${p.itemCount} item RAB)`).join('; ')}
+                          <strong>{t('settings.backup_prev_proyek')}</strong>{' '}
+                          {importPreview.metadata.projectSummary.map((p) => `${p.name} (${p.itemCount} ${t('settings.backup_prev_item_rab')})`).join('; ')}
                         </div>
                       )}
                       <div>
-                        <strong>Isi:</strong>{' '}
+                        <strong>{t('settings.backup_prev_isi')}</strong>{' '}
                         {Object.entries(importPreview.counts)
                           .filter(([, c]) => c > 0)
                           .sort(([ka], [kb]) => (BACKUP_DATASET_LABELS[ka] || ka).localeCompare(BACKUP_DATASET_LABELS[kb] || kb, 'id'))
                           .map(([k, c]) => `${BACKUP_DATASET_LABELS[k] || k}: ${c.toLocaleString('id-ID')}`)
-                          .join(' · ') || 'Backup kosong (tidak ada entri).'}
+                          .join(' · ') || t('settings.backup_prev_kosong')}
                       </div>
                       {importPreview.untouchedKeys.length > 0 && (
                         <div style={{ color: 'var(--ez-color-text-muted)' }}>
-                          {importPreview.untouchedKeys.length} dataset tidak ada di file ini dan TIDAK akan diubah.
+                          {importPreview.untouchedKeys.length}{t('settings.backup_prev_tidak_ada')}
                         </div>
                       )}
                     </div>
@@ -3000,12 +3000,8 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '10px', padding: '10px 12px' }}>
                       <ShieldAlert size={15} color="#DC2626" style={{ flexShrink: 0, marginTop: '1px' }} />
                       <div style={{ fontSize: '12px', color: '#991B1B', lineHeight: 1.6 }}>
-                        <strong>Restore akan MENGGANTI data saat ini</strong> dengan isi file backup ini —
-                        hanya untuk dataset yang ada di file; dataset yang tidak ada di file (termasuk
-                        konfigurasi harga master admin) dibiarkan utuh.
-                        Sebelum restore, backup pengaman dari kondisi saat ini akan <strong>diunduh otomatis</strong>{' '}
-                        (file ezrab-backup-pengaman-*.json) dan disimpan di slot lokal — pakai file itu bila Anda
-                        perlu membatalkan restore. Sesudah restore, aplikasi harus dimuat ulang.
+                        <strong>{t('settings.backup_warn_strong_a')}</strong>{t('settings.backup_warn_a')}<strong>{t('settings.backup_warn_strong')}</strong>{' '}
+                        {t('settings.backup_warn_b')}
                       </div>
                     </div>
 
@@ -3017,9 +3013,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                         style={{ marginTop: '2px', accentColor: '#DC2626' }}
                       />
                       <span>
-                        Saya mengerti: data saat ini akan diganti dengan isi file backup ini untuk
-                        dataset yang ada di file (sisanya dibiarkan utuh), dan saya
-                        sudah memeriksa pratinjau di atas.
+                        {t('settings.backup_konfirmasi')}
                       </span>
                     </label>
 
@@ -3042,7 +3036,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                         }}
                       >
                         <DatabaseBackup size={14} />
-                        <span>{backupBusy === 'restore' ? 'Memulihkan…' : 'Pulihkan Data Sekarang'}</span>
+                        <span>{backupBusy === 'restore' ? t('settings.backup_memulihkan') : t('settings.backup_pulihkan_btn')}</span>
                       </button>
                     </div>
                   </div>
@@ -3053,12 +3047,12 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
               {backupSafetySlot.exists && (
                 <div style={{ border: '1px solid #EEF1F6', borderRadius: '16px', padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   <h4 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
-                    Backup Pengaman Terakhir
+                    {t('settings.backup_slot_judul')}
                   </h4>
                   <p style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', margin: 0, lineHeight: 1.6 }}>
                     {backupSafetySlot.corrupt
-                      ? 'Slot backup pengaman ada tetapi isinya rusak — pakai file ezrab-backup-pengaman-*.json yang terunduh bila perlu membatalkan restore.'
-                      : `Salinan kondisi sebelum restore terakhir, dibuat ${backupSafetySlot.createdAt ? new Date(backupSafetySlot.createdAt).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }) : '—'} (${formatBackupBytes(backupSafetySlot.sizeBytes)}). Hanya satu slot yang disimpan; restore berikutnya akan menimpanya.`}
+                      ? t('settings.backup_slot_rusak')
+                      : <>{t('settings.backup_slot_a')}{backupSafetySlot.createdAt ? new Date(backupSafetySlot.createdAt).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }) : '—'} ({formatBackupBytes(backupSafetySlot.sizeBytes)}{t('settings.backup_slot_b')}</>}
                   </p>
                   {!backupSafetySlot.corrupt && (
                     <div>
@@ -3080,7 +3074,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                         }}
                       >
                         <History size={13} />
-                        <span>Muat Pratinjau dari Slot Pengaman</span>
+                        <span>{t('settings.backup_slot_pratinjau')}</span>
                       </button>
                     </div>
                   )}
@@ -3090,32 +3084,20 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
               {/* ---------------- CAKUPAN ---------------- */}
               <details style={{ border: '1px solid #EEF1F6', borderRadius: '16px', padding: '14px 18px' }}>
                 <summary style={{ cursor: 'pointer', fontSize: '13px', fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>
-                  Apa yang termasuk dalam backup?
+                  {t('settings.backup_cakupan_judul')}
                 </summary>
                 <div style={{ fontSize: '12.5px', color: 'var(--ez-color-text-slate)', lineHeight: 1.7, marginTop: '10px' }}>
                   <p style={{ margin: '0 0 8px' }}>
-                    <strong>Termasuk:</strong> proyek, item RAB &amp; pekerjaan, QTO beserta pemetaannya, riwayat
-                    perhitungan, jadwal, override harga, snapshot &amp; versi estimasi, kunci finalisasi
-                    (anti-duplikat transfer), riwayat progres, percakapan Chat AI, draf &amp; memori AI, analisis &amp;
-                    draf DED, seluruh data Document AI, AHSP kustom, material &amp; harga pengguna, asumsi harga,
-                    overlay &amp; riwayat harga master, kop perusahaan, template dokumen kustom, draf wizard dokumen,
-                    desain rumah, spesifikasi material proyek, cadangan proyek terhapus, pengaturan estimasi
-                    global, template RAB kustom, serta log aktivitas, audit mutasi AI, dan audit trail.
+                    <strong>{t('settings.backup_inc_label')}</strong> {t('settings.backup_inc_body')}
                   </p>
                   <p style={{ margin: '0 0 8px' }}>
-                    <strong>Tidak termasuk:</strong> {BACKUP_EXCLUDED_NOTE}
+                    <strong>{t('settings.backup_exc_label')}</strong> {BACKUP_EXCLUDED_NOTE}
                   </p>
                   <p style={{ margin: '0 0 8px' }}>
-                    <strong>Catatan restore:</strong> overlay harga master (admin), riwayat harga master, dan
-                    feed perubahan harga ikut tersimpan di file backup, tetapi <strong>tidak pernah
-                    dipulihkan</strong> — ketiganya adalah konfigurasi admin khusus browser ini, sehingga
-                    restore tidak pernah membawa konfigurasi harga admin dari browser atau pengguna lain.
-                    Data ketiganya di browser ini dibiarkan utuh; overlay dikelola lewat halaman harga
-                    master, bukan lewat restore.
+                    <strong>{t('settings.backup_catatan_label')}</strong> {t('settings.backup_catatan_a')}<strong>{t('settings.backup_catatan_strong')}</strong>{t('settings.backup_catatan_b')}
                   </p>
                   <p style={{ margin: 0 }}>
-                    Backup adalah file JSON di perangkat Anda — <strong>tidak ada salinan server</strong>. Ekspor
-                    (Excel/PDF) bukan backup: laporan tidak dapat dipulihkan menjadi data.
+                    {t('settings.backup_server_a')}<strong>{t('settings.backup_server_strong')}</strong>{t('settings.backup_server_b')}
                   </p>
                 </div>
               </details>
@@ -3129,18 +3111,18 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
                 <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 4px' }}>
-                  Pusat Bantuan & Panduan EZRAB
+                  {t('settings.bantuan_judul')}
                 </h3>
                 <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
-                  Dokumentasi alur lifecycle proyek dari Gambar Kerja, DED, Volume QTO, hingga RAB Final.
+                  {t('settings.bantuan_desc')}
                 </p>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {[
-                  { q: 'Bagaimana alur lifecycle proyek di EZRAB?', a: 'Alur resmi: Gambar Kerja / Denah → Analisis DED → Hitung Volume (QTO) → Susun RAB & AHSP → Dokumen Tender → Schedule & Kurva-S → Kontrol Biaya (Cost).' },
-                  { q: 'Bagaimana cara kerja Harga Proyek Override?', a: 'Harga Proyek meng-override harga master database khusus untuk proyek terpilih tanpa mengubah master data acuan nasional.' },
-                  { q: 'Apakah model AI dapat diubah oleh pengguna?', a: 'Tidak. Sesuai prinsip arsitektur EZRAB, AI beroperasi secara internal sebagai task router infrastructure terpusat.' },
+                  { q: t('settings.faq_1_q'), a: t('settings.faq_1_a') },
+                  { q: t('settings.faq_2_q'), a: t('settings.faq_2_a') },
+                  { q: t('settings.faq_3_q'), a: t('settings.faq_3_a') },
                 ].map((faq) => (
                   <div key={faq.q} style={{ padding: '16px', borderRadius: '16px', background: 'var(--ez-color-surface-secondary)', border: '1px solid #EEF1F6' }}>
                     <div style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>{faq.q}</div>
@@ -3163,20 +3145,20 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
-                    Informasi & Metadata Proyek
+                    {t('settings.pinfo_judul')}
                   </h3>
                   <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--ez-hue-amber-text-dark)', background: 'var(--ez-hue-amber-bg-deep)', padding: '2px 10px', borderRadius: 'var(--ez-radius-pill)' }}>
-                    {activeProject?.name || 'Proyek'}
+                    {activeProject?.name || t('settings.proyek_nama_badge')}
                   </span>
                 </div>
                 <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: '4px 0 0' }}>
-                  Konfigurasi identitas proyek yang ditampilkan pada laporan, kontrak, dan cover dokumen tender.
+                  {t('settings.pinfo_desc')}
                 </p>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Nama Proyek</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.pinfo_nama')}</label>
                   <input
                     type="text"
                     value={projName}
@@ -3186,7 +3168,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Nomor Kontrak / Registrasi Proyek</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.pinfo_nomor')}</label>
                   <input
                     type="text"
                     value={projNumber}
@@ -3196,7 +3178,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Klien / Pemilik Proyek (Owner)</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.pinfo_klien')}</label>
                   <input
                     type="text"
                     value={projClient}
@@ -3206,7 +3188,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Lokasi / Wilayah Pelaksanaan</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.pinfo_lokasi')}</label>
                   <input
                     type="text"
                     value={projLocation}
@@ -3216,21 +3198,21 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Kategori / Tipe Bangunan</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.pinfo_kategori')}</label>
                   <select
                     value={projBuildingType}
                     onChange={(e) => setProjBuildingType(e.target.value as any)}
                     style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: 'var(--ez-color-surface)' }}
                   >
-                    <option value="Rumah Tinggal">Rumah Tinggal</option>
-                    <option value="Gedung Kantor">Gedung Kantor</option>
-                    <option value="Infrastruktur">Infrastruktur & Jalan</option>
-                    <option value="Gudang & Pabrik">Gudang & Pabrik</option>
+                    <option value="Rumah Tinggal">{t('settings.pinfo_tipe_rumah')}</option>
+                    <option value="Gedung Kantor">{t('settings.pinfo_tipe_kantor')}</option>
+                    <option value="Infrastruktur">{t('settings.pinfo_tipe_infra')}</option>
+                    <option value="Gudang & Pabrik">{t('settings.pinfo_tipe_gudang')}</option>
                   </select>
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Luas Bangunan (m²)</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.pinfo_luas')}</label>
                   <input
                     type="number"
                     value={projBuildingArea}
@@ -3244,57 +3226,57 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                     punya semuanya; field kosong dibiarkan kosong (jujur),
                     tidak diisi contoh. */}
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Provinsi</label>
-                  <input type="text" value={projProvince} onChange={(e) => setProjProvince(e.target.value)} placeholder="cth: Jawa Timur" style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }} />
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.pinfo_provinsi')}</label>
+                  <input type="text" value={projProvince} onChange={(e) => setProjProvince(e.target.value)}                   placeholder={t('settings.pinfo_ph_provinsi')} style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }} />
                 </div>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Kabupaten / Kota</label>
-                  <input type="text" value={projCityRegency} onChange={(e) => setProjCityRegency(e.target.value)} placeholder="cth: Probolinggo" style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }} />
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.pinfo_kota')}</label>
+                  <input type="text" value={projCityRegency} onChange={(e) => setProjCityRegency(e.target.value)}                   placeholder={t('settings.pinfo_ph_kota')} style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }} />
                 </div>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Institusi</label>
-                  <input type="text" value={projInstitution} onChange={(e) => setProjInstitution(e.target.value)} placeholder="cth: Dinas PU Daerah / Swasta" style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }} />
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.pinfo_institusi')}</label>
+                  <input type="text" value={projInstitution} onChange={(e) => setProjInstitution(e.target.value)}                   placeholder={t('settings.pinfo_ph_institusi')} style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }} />
                 </div>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Jenis Kontrak</label>
-                  <input type="text" value={projContractType} onChange={(e) => setProjContractType(e.target.value)} placeholder="cth: Harga Satuan (Unit Price) / Lump Sum" style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }} />
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.pinfo_jenis_kontrak')}</label>
+                  <input type="text" value={projContractType} onChange={(e) => setProjContractType(e.target.value)}                   placeholder={t('settings.pinfo_ph_kontrak')} style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }} />
                 </div>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Sumber Dana</label>
-                  <input type="text" value={projFundingSource} onChange={(e) => setProjFundingSource(e.target.value)} placeholder="cth: APBN / APBD / Swasta" style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }} />
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.pinfo_sumber_dana')}</label>
+                  <input type="text" value={projFundingSource} onChange={(e) => setProjFundingSource(e.target.value)}                   placeholder={t('settings.pinfo_ph_dana')} style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }} />
                 </div>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Pemilik (Owner / PPK)</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.pinfo_pemilik')}</label>
                   <input type="text" value={projOwnerName} onChange={(e) => setProjOwnerName(e.target.value)} style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }} />
                 </div>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Konsultan Pengawas</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.pinfo_konsultan')}</label>
                   <input type="text" value={projConsultantName} onChange={(e) => setProjConsultantName(e.target.value)} style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }} />
                 </div>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Kontraktor Pelaksana</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.pinfo_kontraktor')}</label>
                   <input type="text" value={projContractorName} onChange={(e) => setProjContractorName(e.target.value)} style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }} />
                 </div>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Tahun Anggaran</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.pinfo_tahun')}</label>
                   <input type="number" value={projBudgetYear} onChange={(e) => setProjBudgetYear(Number(e.target.value))} style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }} />
                 </div>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Tanggal Mulai</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.pinfo_mulai')}</label>
                   <input type="date" value={projStartDate} onChange={(e) => setProjStartDate(e.target.value)} style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }} />
                 </div>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Target Selesai</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.pinfo_selesai')}</label>
                   <input type="date" value={projTargetDate} onChange={(e) => setProjTargetDate(e.target.value)} style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }} />
                 </div>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Durasi Proyek (otomatis)</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.pinfo_durasi')}</label>
                   <input type="text" readOnly value={(() => {
                     const s = new Date(projStartDate);
-                    const t = new Date(projTargetDate);
-                    if (isNaN(s.getTime()) || isNaN(t.getTime()) || t < s) return '—';
-                    const days = Math.round((t.getTime() - s.getTime()) / 86400000);
-                    return `${days} hari (± ${Math.max(1, Math.ceil(days / 7))} minggu)`;
+                    const end = new Date(projTargetDate);
+                    if (isNaN(s.getTime()) || isNaN(end.getTime()) || end < s) return '—';
+                    const days = Math.round((end.getTime() - s.getTime()) / 86400000);
+                    return `${days} ${t('settings.pinfo_durasi_hari')} (± ${Math.max(1, Math.ceil(days / 7))} ${t('settings.pinfo_durasi_minggu')})`;
                   })()} style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface-secondary)', color: 'var(--ez-color-text-slate)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }} />
                 </div>
               </div>
@@ -3321,8 +3303,8 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 if (!info) {
                   return (
                     <div style={{ padding: '14px 16px', borderRadius: '12px', background: 'var(--ez-color-surface-secondary)', border: '1px solid var(--ez-color-border-line)' }}>
-                      <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>Total Nilai RAB (terhitung)</div>
-                      <div style={{ fontSize: '13px', color: 'var(--ez-color-text-slate)', marginTop: '4px' }}>Belum ada item RAB di proyek ini.</div>
+                      <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>{t('settings.pinfo_total_judul')}</div>
+                      <div style={{ fontSize: '13px', color: 'var(--ez-color-text-slate)', marginTop: '4px' }}>{t('settings.pinfo_total_kosong')}</div>
                     </div>
                   );
                 }
@@ -3337,16 +3319,16 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   <div style={{ padding: '14px 16px', borderRadius: '12px', background: 'var(--ez-color-surface-secondary)', border: '1px solid var(--ez-color-border-line)' }}>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'baseline', justifyContent: 'space-between' }}>
                       <div>
-                        <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>Total Nilai RAB (terhitung)</div>
+                        <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>{t('settings.pinfo_total_judul')}</div>
                         <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-color-text-primary)', marginTop: '4px', fontVariantNumeric: 'tabular-nums' }}>
                           {formatCurrencyIDR(total)}
                         </div>
                         <div style={{ fontSize: '11.5px', color: '#94A3B8', marginTop: '2px' }}>
-                          Dari {items.length} item · biaya langsung + overhead {ohPct}%{info.profit > 0 ? ` + profit ${info.profitPercent}%` : ''}{ppn > 0 ? ` + PPN` : ''}{pph > 0 ? ` + PPh` : ''} — sama seperti Rekapitulasi. Nilai tersimpan tetap IDR.
+                          {t('settings.pinfo_total_a')}{items.length} {t('settings.pinfo_total_item')}{t('settings.pinfo_total_b')}{ohPct}%{info.profit > 0 ? `${t('settings.pinfo_total_profit')}${info.profitPercent}%` : ''}{ppn > 0 ? ` + PPN` : ''}{pph > 0 ? ` + PPh` : ''}{t('settings.pinfo_total_c')}
                         </div>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Tampil dalam</label>
+                        <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.pinfo_tampil')}</label>
                         <select
                           value={displayCurrency}
                           onChange={(e) => setDisplayCurrency(e.target.value as any)}
@@ -3377,20 +3359,20 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
-                    Parameter Estimasi & Pajak Proyek
+                    {t('settings.pest_judul')}
                   </h3>
                   <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--ez-hue-amber-text-dark)', background: 'var(--ez-hue-amber-bg-deep)', padding: '2px 10px', borderRadius: 'var(--ez-radius-pill)' }}>
-                    {activeProject?.name || 'Proyek'}
+                    {activeProject?.name || t('settings.proyek_nama_badge')}
                   </span>
                 </div>
                 <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: '4px 0 0' }}>
-                  Atur persentase margin overhead khusus, PPN kontrak, dan pembulatan untuk proyek ini.
+                  {t('settings.pest_desc')}
                 </p>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Overhead Proyek (%)</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.pest_overhead')}</label>
                   <input
                     type="number"
                     min={0}
@@ -3403,7 +3385,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Profit Proyek (%)</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.pest_profit')}</label>
                   <input
                     type="number"
                     min={0}
@@ -3416,7 +3398,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Tarif Pajak PPN Proyek (%)</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.pest_ppn')}</label>
                   <input
                     type="number"
                     min={0}
@@ -3427,12 +3409,12 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   />
                   <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12.5px', fontWeight: 650, color: 'var(--ez-color-text-body)', cursor: 'pointer', marginTop: '8px' }}>
                     <input type="checkbox" checked={projPpnEnabled} onChange={(e) => setProjPpnEnabled(e.target.checked)} style={{ width: '16px', height: '16px', accentColor: '#2563EB' }} />
-                    Tambahkan PPN di Rekapitulasi (bila mati, Rekap tidak menambah PPN)
+                    {t('settings.pest_ppn_cek')}
                   </label>
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Tarif Pajak PPh Proyek (%)</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.pest_pph')}</label>
                   <input
                     type="number"
                     min={0}
@@ -3444,20 +3426,20 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   />
                   <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12.5px', fontWeight: 650, color: 'var(--ez-color-text-body)', cursor: 'pointer', marginTop: '8px' }}>
                     <input type="checkbox" checked={projPphEnabled} onChange={(e) => setProjPphEnabled(e.target.checked)} style={{ width: '16px', height: '16px', accentColor: '#2563EB' }} />
-                    Tambahkan PPh di Rekapitulasi (tarif diisi sendiri — tidak ada default resmi)
+                    {t('settings.pest_pph_cek')}
                   </label>
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Aturan Pembulatan Nilai Akhir</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.pest_rounding')}</label>
                   <select
                     value={projRounding}
                     onChange={(e) => setProjRounding(e.target.value)}
                     style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: 'var(--ez-color-surface)' }}
                   >
-                    <option value="RIBUAN">Pembulatan ke Ribuan Terdekat (Rp 1.000)</option>
-                    <option value="RATUSAN">Pembulatan ke Ratusan Terdekat (Rp 100)</option>
-                    <option value="EXACT">Nilai Tepat 2 Desimal (Rp 0,00)</option>
+                    <option value="RIBUAN">{t('settings.rounding_ribuan')}</option>
+                    <option value="RATUSAN">{t('settings.rounding_ratusan')}</option>
+                    <option value="EXACT">{t('settings.rounding_exact')}</option>
                   </select>
                 </div>
               </div>
@@ -3467,8 +3449,8 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <Tag size={20} color="var(--ez-hue-blue-text)" />
                   <div>
-                    <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ez-color-primary-hover)' }}>Harga Khusus Proyek (Override)</div>
-                    <div style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)' }}>Tetapkan harga khusus material, upah, atau alat untuk proyek ini tanpa mengubah master data.</div>
+                    <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ez-color-primary-hover)' }}>{t('settings.pest_override_judul')}</div>
+                    <div style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)' }}>{t('settings.pest_override_desc')}</div>
                   </div>
                 </div>
                 <button
@@ -3484,7 +3466,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                     cursor: 'pointer',
                   }}
                 >
-                  Buka Override Proyek →
+                  {t('settings.pest_override_btn')}
                 </button>
               </div>
             </div>
@@ -3497,16 +3479,16 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
                 <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 4px' }}>
-                  Waste Factor & Presisi DED Proyek
+                  {t('settings.pded_judul')}
                 </h3>
                 <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
-                  Konfigurasi faktor kehilangan material dan toleransi perhitungan untuk proyek ini.
+                  {t('settings.pded_desc')}
                 </p>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Faktor Waste Proyek (%)</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.pded_waste')}</label>
                   <input
                     type="number"
                     value={projWaste}
@@ -3516,14 +3498,14 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Presisi Desimal Perhitungan</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.pded_presisi')}</label>
                   <select
                     value={projVolumeDecimals}
                     onChange={(e) => setProjVolumeDecimals(Number(e.target.value))}
                     style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: 'var(--ez-color-surface)' }}
                   >
-                    <option value={2}>2 Desimal (Standar PU)</option>
-                    <option value={3}>3 Desimal (Presisi Tinggi)</option>
+                    <option value={2}>{t('settings.pded_des2')}</option>
+                    <option value={3}>{t('settings.pded_des3')}</option>
                   </select>
                 </div>
               </div>
@@ -3537,16 +3519,16 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
                 <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 4px' }}>
-                  Dokumen & Penandatangan Proyek
+                  {t('settings.pdok_judul')}
                 </h3>
                 <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
-                  Atur penomoran surat lelang dan nama penanggung jawab tanda tangan pada laporan proyek.
+                  {t('settings.pdok_desc')}
                 </p>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Format Nomor Surat Tender Proyek</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.pdok_format')}</label>
                   <input
                     type="text"
                     defaultValue={`SP/${projNumber}/2026`}
@@ -3555,7 +3537,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Nama Penandatangan Dokumen</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.pdok_penanda')}</label>
                   <input
                     type="text"
                     defaultValue={companyDirector}
@@ -3573,16 +3555,16 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
                 <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 4px' }}>
-                  Tanggal Proyek
+                  {t('settings.pjad_judul')}
                 </h3>
                 <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
-                  Tanggal mulai pelaksanaan dan target serah terima proyek.
+                  {t('settings.pjad_desc')}
                 </p>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Tanggal Mulai Pekerjaan</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.pjad_mulai')}</label>
                   <input
                     type="date"
                     value={projStartDate}
@@ -3592,7 +3574,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Target Tanggal Selesai (PHO)</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.pjad_selesai')}</label>
                   <input
                     type="date"
                     value={projTargetDate}
@@ -3611,16 +3593,16 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
                 <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 4px' }}>
-                  Cost Code & Baseline Anggaran Proyek
+                  {t('settings.pbiaya_judul')}
                 </h3>
                 <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
-                  Pagu anggaran baseline untuk pemantauan deviasi biaya aktual.
+                  {t('settings.pbiaya_desc')}
                 </p>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Pagu Anggaran Baseline (Rp)</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.pbiaya_pagu')}</label>
                   {/* D-79: nilai lama Rp450.000.000 adalah literal hardcoded
                       dengan caption palsu ("disetujui direksi") — bukan data
                       proyek mana pun. Kini jujur kosong sampai ada fitur
@@ -3629,11 +3611,11 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                       bukan turunan RAB). */}
                   <input
                     type="text"
-                    defaultValue="Belum ditetapkan"
+                    defaultValue={t('settings.pbiaya_belum')}
                     disabled
                     style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', background: 'var(--ez-color-surface-secondary)', fontWeight: 700 }}
                   />
-                  <span style={{ fontSize: '11px', color: '#94A3B8', marginTop: '2px', display: 'block' }}>Belum ada pagu anggaran yang ditetapkan untuk proyek ini.</span>
+                  <span style={{ fontSize: '11px', color: '#94A3B8', marginTop: '2px', display: 'block' }}>{t('settings.pbiaya_belum_desc')}</span>
                 </div>
               </div>
             </div>

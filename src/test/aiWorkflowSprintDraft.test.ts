@@ -165,8 +165,15 @@ console.log('== 2 — Retaining wall 50 m, budget 100jt (OVER) ==');
   clearLastUniversalDraft();
   clearLastRabIntentSpec();
   const live = executeIntent('CREATE_RAB_SUMMARY', undefined, ctxFor('budget 100jt buatkan rab struktur retaining wall panjang 50 m'));
-  check('2.11 live: draft + vonis MELEBIHI', hasAction(live, 'push-universal') &&
-    live.message.includes('MELEBIHI anggaran') && live.message.includes('Rp100.000.000'));
+  // D5 (perintah owner 2026-11-26: budget = BATAS MAKSIMUM — draft OVER
+  // WAJIB tanya balik dan TIDAK BOLEH menawarkan Push sampai dijawab).
+  // Pin lama (push-universal + MELEBIHI) diganti perilaku baru.
+  check('2.11 live: draft OVER → tanya-balik, tanpa Push',
+    !hasAction(live, 'push-universal') && live.awaitBudgetDecision === true &&
+    live.message.includes('MELEBIHI anggaran') && live.message.includes('Rp100.000.000') &&
+    live.message.includes('perlu keputusan Anda') &&
+    live.message.includes('Kurangi lingkup') && live.message.includes('Tambah budget') &&
+    live.message.includes('Ganti spek/material'));
 
   // Tanpa budget: kontributor tetap ada, verdict TIDAK DAPAT DINILAI.
   const noBudget = buildUniversalDraft('buatkan RAB retaining wall panjang 100 m tinggi 3 m');
@@ -209,8 +216,15 @@ console.log('== 3 — Gudang 500 m², budget 300jt (OVER) ==');
   clearLastUniversalDraft();
   clearLastRabIntentSpec();
   const live = executeIntent('CREATE_RAB_SUMMARY', undefined, ctxFor('dana 300jt buatkan rab gudang 500 m2'));
-  check('3.10 live: draft + vonis MELEBIHI', hasAction(live, 'push-universal') &&
-    live.message.includes('MELEBIHI anggaran') && live.message.includes('Rp300.000.000'));
+  // D5 (perintah owner 2026-11-26: budget = BATAS MAKSIMUM — draft OVER
+  // WAJIB tanya balik dan TIDAK BOLEH menawarkan Push sampai dijawab).
+  // Pin lama (push-universal + MELEBIHI) diganti perilaku baru.
+  check('3.10 live: draft OVER → tanya-balik, tanpa Push',
+    !hasAction(live, 'push-universal') && live.awaitBudgetDecision === true &&
+    live.message.includes('MELEBIHI anggaran') && live.message.includes('Rp300.000.000') &&
+    live.message.includes('perlu keputusan Anda') &&
+    live.message.includes('Kurangi lingkup') && live.message.includes('Tambah budget') &&
+    live.message.includes('Ganti spek/material'));
 }
 
 /* ------------------------------------------------------------------ */

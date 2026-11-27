@@ -10,6 +10,7 @@
  */
 import React, { useRef, useState } from 'react';
 import { Building2, Upload, Trash2, Check, FileText, Archive, Copy, Play, AlertTriangle, Search } from 'lucide-react';
+import { useI18n } from '../../../i18n/I18nContext';
 import {
   emptyProfile,
   kopHtml,
@@ -36,6 +37,7 @@ import { docStatusLabel, type DocDraftStatus, type DraftRecord } from '../view';
 /* ------------------------------------------------------------------ */
 
 export const CompanyIdentityPanel: React.FC<{ onChanged?: () => void }> = ({ onChanged }) => {
+  const { t } = useI18n();
   const [profiles, setProfiles] = useState<CompanyProfile[]>(() => listProfiles());
   const [editing, setEditing] = useState<CompanyProfile>(() => listProfiles().find((x) => x.isDefault) ?? emptyProfile());
   const [logoMsg, setLogoMsg] = useState<string | null>(null);
@@ -64,11 +66,11 @@ export const CompanyIdentityPanel: React.FC<{ onChanged?: () => void }> = ({ onC
     const v = await validateLogoFile(file);
     setLogoBusy(false);
     if (!v.ok) {
-      setLogoMsg(v.error || 'Logo tidak valid.');
+      setLogoMsg(v.error || t('ai.doc.panels.logo_invalid'));
       return;
     }
     setEditing((e) => ({ ...e, logoDataUrl: v.dataUrl || null }));
-    setLogoMsg(`Logo valid${v.width ? ` (${v.width}×${v.height}px, ${v.kind?.toUpperCase()})` : ''}.`);
+    setLogoMsg(`${t('ai.doc.panels.logo_valid_a')}${v.width ? ` (${v.width}×${v.height}px, ${v.kind?.toUpperCase()})` : ''}${t('ai.doc.panels.logo_valid_b')}`);
   };
 
   const handleFullKop = async (file: File | null) => {
@@ -79,11 +81,11 @@ export const CompanyIdentityPanel: React.FC<{ onChanged?: () => void }> = ({ onC
     setKopBusy(false);
     if (!v.ok) {
       // Error validasi ditampilkan apa adanya agar pengguna bisa bertindak.
-      setKopMsg(v.error || 'Gambar kop tidak valid.');
+      setKopMsg(v.error || t('ai.doc.panels.kop_invalid'));
       return;
     }
     setEditing((e) => ({ ...e, fullKopDataUrl: v.dataUrl || null }));
-    setKopMsg(`Gambar kop valid${v.width ? ` (${v.width}×${v.height}px, ${v.kind?.toUpperCase()})` : ''}. Klik Simpan Profil untuk menyimpan.`);
+    setKopMsg(`${t('ai.doc.panels.kop_valid_a')}${v.width ? ` (${v.width}×${v.height}px, ${v.kind?.toUpperCase()})` : ''}${t('ai.doc.panels.kop_valid_b')}`);
   };
 
   const handleSave = () => {
@@ -113,11 +115,11 @@ export const CompanyIdentityPanel: React.FC<{ onChanged?: () => void }> = ({ onC
 
   const confirmText =
     confirmKind === 'logo'
-      ? 'Hapus logo dari profil ini? Logo tidak tampil lagi di kop sampai Anda mengunggah ulang (klik Simpan Profil untuk menerapkan).'
+      ? t('ai.doc.panels.confirm_logo')
       : confirmKind === 'fullkop'
-        ? 'Hapus gambar kop penuh dari profil ini? Mode kop gambar penuh tidak aktif sampai gambar diunggah lagi (klik Simpan Profil untuk menerapkan).'
+        ? t('ai.doc.panels.confirm_fullkop')
         : confirmKind === 'profile'
-          ? `Hapus profil perusahaan "${editing.name || '(tanpa nama)'}" secara permanen dari perangkat ini?`
+          ? `${t('ai.doc.panels.confirm_profile_a')}${editing.name || t('ai.doc.panels.no_name')}${t('ai.doc.panels.confirm_profile_b')}`
           : '';
 
   const field = (label: string, key: keyof CompanyProfile, placeholder?: string) => (
@@ -137,8 +139,8 @@ export const CompanyIdentityPanel: React.FC<{ onChanged?: () => void }> = ({ onC
     <div className="docai-tab">
       <div className="docai-pagehead">
         <div>
-          <h2><Building2 size={20} style={{ verticalAlign: -3 }} /> Identitas Perusahaan</h2>
-          <p>Profil ini menjadi kop surat dokumen Anda. Tersimpan di perangkat ini (lokal), bukan di server.</p>
+          <h2><Building2 size={20} style={{ verticalAlign: -3 }} /> {t('ai.doc.panels.identity_title')}</h2>
+          <p>{t('ai.doc.panels.identity_sub')}</p>
         </div>
       </div>
 
@@ -150,25 +152,25 @@ export const CompanyIdentityPanel: React.FC<{ onChanged?: () => void }> = ({ onC
               className={`docai-subbtn ${editing.id === p.id ? 'active' : ''}`}
               onClick={() => setEditing(p)}
             >
-              {p.name || '(tanpa nama)'} {p.isDefault ? '• Default' : ''}
+              {p.name || t('ai.doc.panels.no_name')} {p.isDefault ? t('ai.doc.panels.profile_default') : ''}
             </button>
           ))}
-          <button className="docai-subbtn" onClick={() => setEditing(emptyProfile())}>+ Profil Baru</button>
+          <button className="docai-subbtn" onClick={() => setEditing(emptyProfile())}>{t('ai.doc.panels.new_profile')}</button>
         </div>
       )}
 
       <div className="docai-panelgrid">
         <div className="docai-card">
-          <div className="docai-step">Profil Perusahaan</div>
-          {field('Nama Perusahaan', 'name', 'mis. YF Architect Studio')}
-          {field('Alamat', 'address', 'Jalan, kota, kode pos')}
-          {field('Telepon', 'phone', 'mis. 0812-3456-7890')}
-          {field('Email', 'email', 'halo@perusahaan.co.id')}
-          {field('Website', 'website', 'www.perusahaan.co.id')}
-          {field('Info Tambahan (opsional)', 'extra', 'mis. NPWP / nomor izin')}
-          <div className="docai-step" style={{ marginTop: 8 }}>Kop Surat</div>
-          <span className="docai-label">Mode Kop Surat</span>
-          <div className="docai-modeline" role="tablist" aria-label="Mode kop surat" style={{ marginBottom: 12 }}>
+          <div className="docai-step">{t('ai.doc.panels.profile_title')}</div>
+          {field(t('ai.doc.panels.field_name'), 'name', t('ai.doc.panels.ph_name'))}
+          {field(t('ai.doc.panels.field_address'), 'address', t('ai.doc.panels.ph_address'))}
+          {field(t('ai.doc.panels.field_phone'), 'phone', t('ai.doc.panels.ph_phone'))}
+          {field(t('ai.doc.panels.field_email'), 'email', t('ai.doc.panels.ph_email'))}
+          {field(t('ai.doc.panels.field_website'), 'website', t('ai.doc.panels.ph_website'))}
+          {field(t('ai.doc.panels.field_extra'), 'extra', t('ai.doc.panels.ph_extra'))}
+          <div className="docai-step" style={{ marginTop: 8 }}>{t('ai.doc.panels.kop_title')}</div>
+          <span className="docai-label">{t('ai.doc.panels.kop_mode')}</span>
+          <div className="docai-modeline" role="tablist" aria-label={t('ai.doc.panels.kop_mode_aria')} style={{ marginBottom: 12 }}>
             <button
               type="button"
               role="tab"
@@ -176,7 +178,7 @@ export const CompanyIdentityPanel: React.FC<{ onChanged?: () => void }> = ({ onC
               className={kopMode === 'structured' ? 'active' : ''}
               onClick={() => setEditing((p) => ({ ...p, kopMode: 'structured' }))}
             >
-              Kop Terstruktur
+              {t('ai.doc.panels.kop_mode_structured')}
             </button>
             <button
               type="button"
@@ -185,31 +187,31 @@ export const CompanyIdentityPanel: React.FC<{ onChanged?: () => void }> = ({ onC
               className={kopMode === 'full' ? 'active' : ''}
               onClick={() => setEditing((p) => ({ ...p, kopMode: 'full' }))}
             >
-              Kop Gambar Penuh
+              {t('ai.doc.panels.kop_mode_full')}
             </button>
           </div>
           <p className="docai-hint" style={{ margin: '0 0 12px' }}>
             {kopMode === 'structured'
-              ? 'Kop disusun dari logo + nama/kontak perusahaan di bawah. Gambar kop penuh (bila pernah diunggah) tetap tersimpan dan tidak ditimpa mode ini.'
-              : 'Satu gambar kop surat lengkap menggantikan seluruh blok kop — logo/nama terstruktur TIDAK ditumpuk di atasnya. Data terstruktur tetap tersimpan dan tidak ditimpa mode ini.'}
+              ? t('ai.doc.panels.kop_hint_structured')
+              : t('ai.doc.panels.kop_hint_full')}
           </p>
 
           {kopMode === 'structured' && (
             <>
           <label style={{ display: 'block', marginBottom: 10 }}>
-            <span className="docai-label">Layout Kop</span>
+            <span className="docai-label">{t('ai.doc.panels.kop_layout')}</span>
             <select
               className="docai-select docai-full"
               value={editing.layout}
               onChange={(e) => setEditing((p) => ({ ...p, layout: e.target.value as KopLayout }))}
             >
-              <option value="left">Logo kiri, teks kanan</option>
-              <option value="center">Di tengah</option>
-              <option value="minimal">Minimal (satu baris)</option>
+              <option value="left">{t('ai.doc.panels.kop_layout_left')}</option>
+              <option value="center">{t('ai.doc.panels.kop_layout_center')}</option>
+              <option value="minimal">{t('ai.doc.panels.kop_layout_minimal')}</option>
             </select>
           </label>
           <label style={{ display: 'block', marginBottom: 10 }}>
-            <span className="docai-label">Warna Aksen Garis Kop</span>
+            <span className="docai-label">{t('ai.doc.panels.kop_accent')}</span>
             <input
               type="color"
               className="docai-colorinput"
@@ -219,14 +221,14 @@ export const CompanyIdentityPanel: React.FC<{ onChanged?: () => void }> = ({ onC
           </label>
 
           <div style={{ marginBottom: 12 }}>
-            <span className="docai-label">Logo Perusahaan</span>
+            <span className="docai-label">{t('ai.doc.panels.logo_title')}</span>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
               <button className="docai-btn-ghost" onClick={() => fileRef.current?.click()} disabled={logoBusy}>
-                <Upload size={14} /> {logoBusy ? 'Memeriksa…' : 'Unggah Logo'}
+                <Upload size={14} /> {logoBusy ? t('ai.doc.panels.checking') : t('ai.doc.panels.upload_logo')}
               </button>
               {editing.logoDataUrl && (
                 <button className="docai-btn-ghost" onClick={() => setConfirmKind('logo')}>
-                  <Trash2 size={14} /> Hapus Logo
+                  <Trash2 size={14} /> {t('ai.doc.panels.delete_logo')}
                 </button>
               )}
               <input
@@ -238,35 +240,34 @@ export const CompanyIdentityPanel: React.FC<{ onChanged?: () => void }> = ({ onC
               />
             </div>
             {logoMsg && <p className="docai-hint" style={{ marginTop: 6 }}>{logoMsg}</p>}
-            <p className="docai-hint">PNG/JPG/GIF/WebP asli (isi file diperiksa), maks 2 MB. Rekomendasi: latar transparan, lebar ≥ 400px.</p>
+            <p className="docai-hint">{t('ai.doc.panels.logo_hint')}</p>
           </div>
             </>
           )}
 
           {kopMode === 'full' && (
             <div style={{ marginBottom: 12 }}>
-              <span className="docai-label">Gambar Kop Surat Lengkap</span>
+              <span className="docai-label">{t('ai.doc.panels.fullkop_title')}</span>
               {effectiveKopMode !== 'full' && (
                 <div className="docai-warn" style={{ margin: '0 0 10px' }}>
-                  Mode kop gambar penuh dipilih, tetapi gambar kop belum diunggah — yang tampil pada
-                  dokumen saat ini adalah kop terstruktur. Unggah gambar kop di bawah agar mode penuh aktif.
+                  {t('ai.doc.panels.fullkop_warn')}
                 </div>
               )}
               {editing.fullKopDataUrl && (
                 <img
                   className="docai-fullkop-img"
                   src={editing.fullKopDataUrl}
-                  alt="Pratinjau gambar kop surat lengkap"
+                  alt={t('ai.doc.panels.fullkop_alt')}
                   style={{ width: `${Math.max(50, Math.min(100, editing.fullKopWidthPct ?? 100))}%` }}
                 />
               )}
               <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginTop: 8 }}>
                 <button className="docai-btn-ghost" onClick={() => fullKopRef.current?.click()} disabled={kopBusy}>
-                  <Upload size={14} /> {kopBusy ? 'Memeriksa…' : editing.fullKopDataUrl ? 'Ganti Gambar Kop' : 'Unggah Gambar Kop'}
+                  <Upload size={14} /> {kopBusy ? t('ai.doc.panels.checking') : editing.fullKopDataUrl ? t('ai.doc.panels.change_fullkop') : t('ai.doc.panels.upload_fullkop')}
                 </button>
                 {editing.fullKopDataUrl && (
                   <button className="docai-btn-ghost" onClick={() => setConfirmKind('fullkop')}>
-                    <Trash2 size={14} /> Hapus Gambar Kop
+                    <Trash2 size={14} /> {t('ai.doc.panels.delete_fullkop')}
                   </button>
                 )}
                 <input
@@ -278,10 +279,10 @@ export const CompanyIdentityPanel: React.FC<{ onChanged?: () => void }> = ({ onC
                 />
               </div>
               {kopMsg && <p className="docai-hint" style={{ marginTop: 6 }}>{kopMsg}</p>}
-              <p className="docai-hint">PNG/JPG/GIF/WebP asli (isi file diperiksa, bukan hanya ekstensi), maks 5 MB. Gambar tersimpan lokal di perangkat ini, sama seperti profil — bukan unggahan cloud.</p>
+              <p className="docai-hint">{t('ai.doc.panels.fullkop_hint')}</p>
               <div className="docai-numrow">
                 <label>
-                  <span className="docai-label">Lebar Kop (%)</span>
+                  <span className="docai-label">{t('ai.doc.panels.fullkop_width')}</span>
                   <input
                     type="number"
                     className="docai-input"
@@ -293,7 +294,7 @@ export const CompanyIdentityPanel: React.FC<{ onChanged?: () => void }> = ({ onC
                   />
                 </label>
                 <label>
-                  <span className="docai-label">Jarak ke Isi (mm)</span>
+                  <span className="docai-label">{t('ai.doc.panels.fullkop_gap')}</span>
                   <input
                     type="number"
                     className="docai-input"
@@ -314,7 +315,7 @@ export const CompanyIdentityPanel: React.FC<{ onChanged?: () => void }> = ({ onC
               checked={editing.isDefault}
               onChange={(e) => setEditing((p) => ({ ...p, isDefault: e.target.checked }))}
             />
-            <span>Jadikan profil default</span>
+            <span>{t('ai.doc.panels.make_default')}</span>
           </label>
 
           {confirmKind && (
@@ -322,36 +323,36 @@ export const CompanyIdentityPanel: React.FC<{ onChanged?: () => void }> = ({ onC
               <AlertTriangle size={16} />
               <span>{confirmText}</span>
               <div className="docai-confirmbtns">
-                <button className="docai-btn-primary" onClick={runConfirmedDelete}>Ya, Hapus</button>
-                <button className="docai-btn-ghost" onClick={() => setConfirmKind(null)}>Batal</button>
+                <button className="docai-btn-primary" onClick={runConfirmedDelete}>{t('ai.doc.panels.confirm_yes')}</button>
+                <button className="docai-btn-ghost" onClick={() => setConfirmKind(null)}>{t('ai.doc.create.ed_cancel')}</button>
               </div>
             </div>
           )}
 
           <div style={{ display: 'flex', gap: 8 }}>
             <button className="docai-btn-primary" onClick={handleSave}>
-              <Check size={15} /> Simpan Profil
+              <Check size={15} /> {t('ai.doc.panels.save_profile')}
             </button>
             {profiles.some((p) => p.id === editing.id) && (
               <button className="docai-btn-ghost" onClick={() => setConfirmKind('profile')}>
-                <Trash2 size={14} /> Hapus
+                <Trash2 size={14} /> {t('ai.doc.lib.title_delete')}
               </button>
             )}
-            {savedMsg && <span className="docai-savedmsg"><Check size={14} /> Tersimpan</span>}
+            {savedMsg && <span className="docai-savedmsg"><Check size={14} /> {t('ai.doc.create.saved')}</span>}
           </div>
         </div>
 
         <div>
-          <span className="docai-label">Pratinjau Kop Surat</span>
+          <span className="docai-label">{t('ai.doc.panels.preview_title')}</span>
           <div className="docai-kop-preview">
             {kopHtml(editing) ? (
               <div dangerouslySetInnerHTML={{ __html: kopHtml(editing) }} />
             ) : (
-              <p className="docai-hint">Isi nama perusahaan atau unggah logo untuk melihat kop surat.</p>
+              <p className="docai-hint">{t('ai.doc.panels.preview_empty')}</p>
             )}
             <div className="docai-prose" style={{ opacity: 0.55 }}>
-              <h1>Contoh Judul Dokumen</h1>
-              <p>Paragraf contoh isi dokumen. Kop di atas akan tampil sama pada editor, hasil cetak, PDF, dan DOCX.</p>
+              <h1>{t('ai.doc.panels.preview_doc_title')}</h1>
+              <p>{t('ai.doc.panels.preview_doc_body')}</p>
             </div>
           </div>
         </div>
@@ -368,6 +369,7 @@ export const MyTemplatesPanel: React.FC<{
   builtinNames: Array<{ id: string; name: string }>;
   onUse: (t: UserTemplate) => void;
 }> = ({ builtinNames, onUse }) => {
+  const { t } = useI18n();
   const [items, setItems] = useState<UserTemplate[]>(() => listUserTemplates());
   const [form, setForm] = useState<UserTemplate>(() => newUserTemplate({}));
   const [msg, setMsg] = useState(false);
@@ -386,24 +388,24 @@ export const MyTemplatesPanel: React.FC<{
     <div className="docai-tab">
       <div className="docai-pagehead">
         <div>
-          <h2><FileText size={20} style={{ verticalAlign: -3 }} /> Template Saya</h2>
-          <p>Template pribadi tersimpan di perangkat ini. Template dengan contoh isi akan membuka dokumen langsung dari contohnya; template tanpa contoh memakai AI dengan kerangka struktur Anda.</p>
+          <h2><FileText size={20} style={{ verticalAlign: -3 }} /> {t('ai.doc.panels.templates_title')}</h2>
+          <p>{t('ai.doc.panels.templates_sub')}</p>
         </div>
       </div>
 
       <div className="docai-panelgrid">
         <div className="docai-card">
-          <div className="docai-step">Buat Template</div>
+          <div className="docai-step">{t('ai.doc.panels.templates_create')}</div>
           <label style={{ display: 'block', marginBottom: 10 }}>
-            <span className="docai-label">Nama Template</span>
-            <input className="docai-input" style={{ marginBottom: 0 }} value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="mis. BA Pemeriksaan Kolom" />
+            <span className="docai-label">{t('ai.doc.panels.templates_name')}</span>
+            <input className="docai-input" style={{ marginBottom: 0 }} value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder={t('ai.doc.panels.templates_ph_name')} />
           </label>
           <label style={{ display: 'block', marginBottom: 10 }}>
-            <span className="docai-label">Deskripsi</span>
-            <input className="docai-input" style={{ marginBottom: 0 }} value={form.desc} onChange={(e) => setForm((f) => ({ ...f, desc: e.target.value }))} placeholder="Kegunaan template ini" />
+            <span className="docai-label">{t('ai.doc.panels.templates_desc')}</span>
+            <input className="docai-input" style={{ marginBottom: 0 }} value={form.desc} onChange={(e) => setForm((f) => ({ ...f, desc: e.target.value }))} placeholder={t('ai.doc.panels.templates_ph_desc')} />
           </label>
           <label style={{ display: 'block', marginBottom: 10 }}>
-            <span className="docai-label">Template Dasar</span>
+            <span className="docai-label">{t('ai.doc.panels.templates_base')}</span>
             <select className="docai-select docai-full" value={form.baseTemplateId} onChange={(e) => setForm((f) => ({ ...f, baseTemplateId: e.target.value }))}>
               {builtinNames.map((b) => (
                 <option key={b.id} value={b.id}>{b.name}</option>
@@ -411,16 +413,16 @@ export const MyTemplatesPanel: React.FC<{
             </select>
           </label>
           <label style={{ display: 'block', marginBottom: 10 }}>
-            <span className="docai-label">Kerangka Struktur (untuk AI)</span>
-            <textarea className="docai-textarea" rows={5} value={form.scaffold} onChange={(e) => setForm((f) => ({ ...f, scaffold: e.target.value }))} placeholder="Bagian-bagian dokumen, urutannya, dan hal yang wajib ada." />
+            <span className="docai-label">{t('ai.doc.panels.templates_scaffold')}</span>
+            <textarea className="docai-textarea" rows={5} value={form.scaffold} onChange={(e) => setForm((f) => ({ ...f, scaffold: e.target.value }))} placeholder={t('ai.doc.panels.templates_ph_scaffold')} />
           </label>
           <div style={{ display: 'flex', gap: 8 }}>
             <button className="docai-btn-primary" disabled={!form.name.trim()} onClick={() => { persist(form); setForm(newUserTemplate({})); }}>
-              <Check size={15} /> Simpan Template
+              <Check size={15} /> {t('ai.doc.panels.templates_save')}
             </button>
-            {msg && <span className="docai-savedmsg"><Check size={14} /> Tersimpan</span>}
+            {msg && <span className="docai-savedmsg"><Check size={14} /> {t('ai.doc.create.saved')}</span>}
           </div>
-          <p className="docai-hint" style={{ marginTop: 10 }}>Tip: dari editor dokumen, gunakan menu ⋯ → “Simpan sebagai Template” untuk menyimpan isi dokumen saat ini sebagai contoh template.</p>
+          <p className="docai-hint" style={{ marginTop: 10 }}>{t('ai.doc.panels.templates_tip')}</p>
         </div>
 
         <div>
@@ -431,36 +433,36 @@ export const MyTemplatesPanel: React.FC<{
                 <input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Cari template saya…"
-                  aria-label="Cari template saya"
+                  placeholder={t('ai.doc.panels.templates_search_ph')}
+                  aria-label={t('ai.doc.panels.templates_search_ph')}
                 />
               </div>
-              <span className="docai-listcount">{shownItems.length} dari {items.length} template</span>
+              <span className="docai-listcount">{shownItems.length} {t('ai.doc.panels.count_of')} {items.length} {t('ai.doc.panels.count_templates')}</span>
             </div>
           )}
           <div className="docai-draftlist" style={{ marginTop: 0 }}>
             {items.length === 0 && (
               <div className="docai-empty docai-empty-sm">
                 <FileText size={26} />
-                <h3>Belum ada template pribadi</h3>
-                <p>Gunakan formulir buat template untuk menambahkan template pertama Anda, atau simpan isi dokumen dari editor lewat menu ⋯ → “Simpan sebagai Template”.</p>
+                <h3>{t('ai.doc.panels.templates_empty_h')}</h3>
+                <p>{t('ai.doc.panels.templates_empty_p')}</p>
               </div>
             )}
             {items.length > 0 && shownItems.length === 0 && (
-              <p className="docai-hint" style={{ margin: 0 }}>Tidak ada template yang cocok dengan pencarian ini.</p>
+              <p className="docai-hint" style={{ margin: 0 }}>{t('ai.doc.panels.templates_no_match')}</p>
             )}
             {shownItems.map((x) => (
               <div key={x.id} className={`docai-draftitem ${x.archived ? 'is-archived' : ''}`} style={{ cursor: 'default' }}>
                 <div>
                   <strong>{x.name}</strong>
-                  <span className="docai-draftmeta">{x.archived ? 'Diarsipkan' : x.sampleHtml ? 'Dengan contoh isi' : 'Kerangka AI'}</span>
+                  <span className="docai-draftmeta">{x.archived ? t('ai.doc.panels.status_archived') : x.sampleHtml ? t('ai.doc.panels.tpl_with_sample') : t('ai.doc.panels.tpl_scaffold_only')}</span>
                   {x.desc && <div className="docai-hint" style={{ marginTop: 2 }}>{x.desc}</div>}
                 </div>
                 <div style={{ display: 'flex', gap: 6 }}>
-                  <button className="docai-iconbtn" title="Pakai template" aria-label={`Pakai template ${x.name}`} onClick={() => onUse(x)}><Play size={14} /></button>
-                  <button className="docai-iconbtn" title="Duplikat" aria-label={`Duplikat template ${x.name}`} onClick={() => setItems(saveUserTemplate(newUserTemplate({ ...x, name: `${x.name} (salinan)` })))}><Copy size={14} /></button>
-                  <button className="docai-iconbtn" title={x.archived ? 'Batalkan arsip' : 'Arsipkan'} aria-label={`${x.archived ? 'Batalkan arsip' : 'Arsipkan'} template ${x.name}`} onClick={() => setItems(saveUserTemplate({ ...x, archived: !x.archived }))}><Archive size={14} /></button>
-                  <button className="docai-iconbtn danger" title="Hapus" aria-label={`Hapus template ${x.name}`} onClick={() => setItems(deleteUserTemplate(x.id))}><Trash2 size={14} /></button>
+                  <button className="docai-iconbtn" title={t('ai.doc.panels.tpl_use')} aria-label={`${t('ai.doc.panels.tpl_use')} ${x.name}`} onClick={() => onUse(x)}><Play size={14} /></button>
+                  <button className="docai-iconbtn" title={t('ai.doc.panels.tpl_duplicate')} aria-label={`${t('ai.doc.panels.tpl_duplicate')} ${t('ai.doc.panels.tpl_word_template')} ${x.name}`} onClick={() => setItems(saveUserTemplate(newUserTemplate({ ...x, name: `${x.name}${t('ai.doc.panels.tpl_copy_suffix')}` })))}><Copy size={14} /></button>
+                  <button className="docai-iconbtn" title={x.archived ? t('ai.doc.panels.tpl_unarchive') : t('ai.doc.panels.tpl_archive')} aria-label={`${x.archived ? t('ai.doc.panels.tpl_unarchive') : t('ai.doc.panels.tpl_archive')} ${t('ai.doc.panels.tpl_word_template')} ${x.name}`} onClick={() => setItems(saveUserTemplate({ ...x, archived: !x.archived }))}><Archive size={14} /></button>
+                  <button className="docai-iconbtn danger" title={t('ai.doc.lib.title_delete')} aria-label={`${t('ai.doc.lib.title_delete')} ${t('ai.doc.panels.tpl_word_template')} ${x.name}`} onClick={() => setItems(deleteUserTemplate(x.id))}><Trash2 size={14} /></button>
                 </div>
               </div>
             ))}
@@ -482,6 +484,7 @@ export const SavedDocsPanel: React.FC<{
   /** Aksi kosong-state: kembali ke sub-view Buat Dokumen (opsional). */
   onCreate?: () => void;
 }> = ({ drafts, onOpen, onStatus, onCreate }) => {
+  const { t } = useI18n();
   const [filter, setFilter] = useState<string>('all');
   const [query, setQuery] = useState('');
   const shown = drafts.filter(
@@ -493,8 +496,8 @@ export const SavedDocsPanel: React.FC<{
     <div className="docai-tab">
       <div className="docai-pagehead">
         <div>
-          <h2><Archive size={20} style={{ verticalAlign: -3 }} /> Dokumen Tersimpan</h2>
-          <p>Semua draf di perangkat ini beserta statusnya. Mengarsipkan tidak menghapus dokumen.</p>
+          <h2><Archive size={20} style={{ verticalAlign: -3 }} /> {t('ai.doc.panels.saved_title')}</h2>
+          <p>{t('ai.doc.panels.saved_sub')}</p>
         </div>
       </div>
       {drafts.length > 0 && (
@@ -504,49 +507,49 @@ export const SavedDocsPanel: React.FC<{
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Cari dokumen (judul / template)…"
-              aria-label="Cari dokumen tersimpan"
+              placeholder={t('ai.doc.panels.saved_search_ph')}
+              aria-label={t('ai.doc.panels.saved_search_label')}
             />
           </div>
-          <select className="docai-select" value={filter} onChange={(e) => setFilter(e.target.value)} aria-label="Filter status dokumen">
-            <option value="all">Semua status</option>
-            <option value="draft">Draft</option>
-            <option value="editing">Sedang Disunting</option>
-            <option value="review">Siap Ditinjau</option>
-            <option value="final">Final</option>
-            <option value="archived">Diarsipkan</option>
+          <select className="docai-select" value={filter} onChange={(e) => setFilter(e.target.value)} aria-label={t('ai.doc.panels.filter_label')}>
+            <option value="all">{t('ai.doc.panels.filter_all')}</option>
+            <option value="draft">{t('ai.doc.panels.status_draft')}</option>
+            <option value="editing">{t('ai.doc.panels.status_editing')}</option>
+            <option value="review">{t('ai.doc.panels.status_review')}</option>
+            <option value="final">{t('ai.doc.panels.status_final')}</option>
+            <option value="archived">{t('ai.doc.panels.status_archived')}</option>
           </select>
-          <span className="docai-listcount">{shown.length} dari {drafts.length} dokumen</span>
+          <span className="docai-listcount">{shown.length} {t('ai.doc.panels.count_of')} {drafts.length} {t('ai.doc.panels.count_documents')}</span>
         </div>
       )}
       <div className="docai-draftlist" style={{ marginTop: 0 }}>
         {drafts.length === 0 && (
           <div className="docai-empty">
             <Archive size={30} />
-            <h3>Belum ada dokumen tersimpan</h3>
-            <p>Draf yang Anda buat akan muncul di sini beserta statusnya, siap dibuka kembali kapan saja.</p>
+            <h3>{t('ai.doc.panels.saved_empty_h')}</h3>
+            <p>{t('ai.doc.panels.saved_empty_p')}</p>
             {onCreate && (
-              <button className="docai-btn-primary" onClick={onCreate}>Buat Dokumen</button>
+              <button className="docai-btn-primary" onClick={onCreate}>{t('ai.doc.panels.create_doc')}</button>
             )}
           </div>
         )}
         {drafts.length > 0 && shown.length === 0 && (
           <div className="docai-empty docai-empty-sm">
             <Search size={26} />
-            <h3>Tidak ada dokumen yang cocok</h3>
-            <p>Tidak ada dokumen yang cocok dengan pencarian atau filter status ini.</p>
+            <h3>{t('ai.doc.panels.saved_nomatch_h')}</h3>
+            <p>{t('ai.doc.panels.saved_nomatch_p')}</p>
             <button
               className="docai-btn-ghost"
               onClick={() => { setQuery(''); setFilter('all'); }}
             >
-              Atur Ulang Filter
+              {t('ai.doc.panels.reset_filter')}
             </button>
           </div>
         )}
         {shown.map((d) => (
           <div key={d.id} className="docai-draftitem" style={{ cursor: 'default' }}>
             <div>
-              <button type="button" className="docai-titlebtn" onClick={() => onOpen(d)} title="Buka dokumen di editor">{d.title}</button>
+              <button type="button" className="docai-titlebtn" onClick={() => onOpen(d)} title={t('ai.doc.panels.open_doc_title')}>{d.title}</button>
               <span className="docai-draftmeta">{d.templateName} · {new Date(d.updatedAt).toLocaleString('id-ID')}</span>
             </div>
             <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
@@ -554,27 +557,27 @@ export const SavedDocsPanel: React.FC<{
                 // Final hanya dicapai lewat persetujuan bernama (approveDraft)
                 // di editor — di sini statusnya terkunci, tidak dipilih bebas.
                 <span className="docai-statusbadge st-final">
-                  Final{d.approvedBy ? ` · ${d.approvedBy}` : ''}
+                  {t('ai.doc.panels.status_final')}{d.approvedBy ? ` · ${d.approvedBy}` : ''}
                 </span>
               ) : (
                 <select
                   className="docai-select"
                   value={d.status === 'reviewed' ? 'review' : d.status}
                   onChange={(e) => onStatus(d, e.target.value as DocDraftStatus)}
-                  aria-label="Status dokumen"
+                  aria-label={t('ai.doc.panels.status_label')}
                 >
-                  <option value="draft">Draft</option>
-                  <option value="editing">Sedang Disunting</option>
-                  <option value="review">Siap Ditinjau</option>
-                  <option value="archived">Diarsipkan</option>
+                  <option value="draft">{t('ai.doc.panels.status_draft')}</option>
+                  <option value="editing">{t('ai.doc.panels.status_editing')}</option>
+                  <option value="review">{t('ai.doc.panels.status_review')}</option>
+                  <option value="archived">{t('ai.doc.panels.status_archived')}</option>
                 </select>
               )}
-              <button className="docai-btn-primary docai-mini" onClick={() => onOpen(d)}>Buka</button>
+              <button className="docai-btn-primary docai-mini" onClick={() => onOpen(d)}>{t('ai.doc.panels.open_doc')}</button>
             </div>
           </div>
         ))}
       </div>
-      <p className="docai-hint" style={{ marginTop: 10 }}>Catatan: penyimpanan saat ini lokal per perangkat — bila dua orang menyunting dokumen yang sama dari perangkat berbeda, versi terakhir yang disimpan akan menang (belum ada penggabungan versi).</p>
+      <p className="docai-hint" style={{ marginTop: 10 }}>{t('ai.doc.panels.saved_note')}</p>
     </div>
   );
 };

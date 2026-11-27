@@ -45,6 +45,17 @@ import {
 } from '../ai-tools/document-ai/components/DocContextPanel';
 import { planAllowsAiFeature, aiFeatureLockedMessage } from '../ai-credits/featureGate';
 import type { Project } from '../types';
+import { id as idDict } from '../i18n/dictionaries';
+
+/** Resolver kamus id (pola dedProgressTwoModes): copy Indonesia yang dulu
+ *  literal di DocCreator kini tinggal di kamus — cek nilainya di sana dan
+ *  pemakaian t() di komponen, bukan literal di source. */
+const resolveId = (key: string): string => {
+  let cur: unknown = idDict;
+  for (const part of key.split('.')) cur = (cur as Record<string, unknown>)[part];
+  if (typeof cur !== 'string') throw new Error(`kunci kamus hilang: ${key}`);
+  return cur;
+};
 
 const read = (rel: string) => readFileSync(fileURLToPath(new URL(rel, import.meta.url)), 'utf8');
 
@@ -80,22 +91,22 @@ async function main(): Promise<void> {
   check('semantik tab dipertahankan (role=tab + aria-selected)', creatorSrc.includes('role="tab"') && creatorSrc.includes('aria-selected={createMode === \'ai\'}'));
   check('efek studioPath ai→ai / template→form', creatorSrc.includes("if (studioPath === 'ai') setCreateMode('ai')") && creatorSrc.includes("if (studioPath === 'template') setCreateMode('form')"));
   check('deskripsi mode duplikat di detail template DIHAPUS', !creatorSrc.includes('AI menyusun draf dari instruksi + data konteks') && !creatorSrc.includes('Anda mengisi field template di bawah'));
-  check('tombol mini alih-mode di detail template tetap ada', creatorSrc.includes('Isi Manual') && creatorSrc.includes('setAiAutoType(false)'));
-  check('input khusus mode AI tetap ada (jenis dokumen opsional)', creatorSrc.includes('Otomatis — AI menentukan dari instruksi'));
-  check('input khusus mode form tetap ada (pencarian template)', creatorSrc.includes('Cari template (nama / kegunaan)'));
+  check('tombol mini alih-mode di detail template tetap ada', resolveId('ai.doc.create.mode_manual').includes('Isi Manual') && creatorSrc.includes("t('ai.doc.create.mode_manual')") && creatorSrc.includes('setAiAutoType(false)'));
+  check('input khusus mode AI tetap ada (jenis dokumen opsional)', resolveId('ai.doc.create.type_auto').includes('Otomatis — AI menentukan dari instruksi') && creatorSrc.includes("t('ai.doc.create.type_auto')"));
+  check('input khusus mode form tetap ada (pencarian template)', resolveId('ai.doc.create.tpl_search_ph').includes('Cari template (nama / kegunaan)') && creatorSrc.includes("t('ai.doc.create.tpl_search_ph')"));
 
   console.log('\n[2] Input instruksi AI (§6) — makna placeholder utuh + perluas opsional:');
-  check('frasa kunci placeholder: AI hanya memakai instruksi ini', creatorSrc.includes('AI hanya memakai instruksi ini'));
-  check('frasa kunci placeholder: data pada ringkasan konteks', creatorSrc.includes('data pada ringkasan konteks'));
-  check('frasa kunci placeholder: [ISI: ...]', creatorSrc.includes('ditandai [ISI: ...]'));
-  check('frasa kunci placeholder: tidak dikarang', creatorSrc.includes('tidak dikarang'));
-  check('frasa kunci placeholder: Bahasa Indonesia', creatorSrc.includes('dalam Bahasa Indonesia'));
+  check('frasa kunci placeholder: AI hanya memakai instruksi ini', resolveId('ai.doc.create.instr_hint').includes('AI hanya memakai instruksi ini') && creatorSrc.includes("t('ai.doc.create.instr_hint')"));
+  check('frasa kunci placeholder: data pada ringkasan konteks', resolveId('ai.doc.create.instr_hint').includes('data pada ringkasan konteks') && creatorSrc.includes("t('ai.doc.create.instr_hint')"));
+  check('frasa kunci placeholder: [ISI: ...]', resolveId('ai.doc.create.instr_hint').includes('ditandai [ISI: ...]') && creatorSrc.includes("t('ai.doc.create.instr_hint')"));
+  check('frasa kunci placeholder: tidak dikarang', resolveId('ai.doc.create.instr_hint').includes('tidak dikarang') && creatorSrc.includes("t('ai.doc.create.instr_hint')"));
+  check('frasa kunci placeholder: Bahasa Indonesia', resolveId('ai.doc.create.instr_hint').includes('dalam Bahasa Indonesia') && creatorSrc.includes("t('ai.doc.create.instr_hint')"));
   check('placeholder netral-layout (tanpa "di bawah")', !creatorSrc.includes('ringkasan konteks di bawah'));
   /* Re-baseline 2026-11-19 (v3, mockup di-ACC owner): nomor langkah
      dihapus ("1 · Instruksi untuk AI" → "Instruksi"); tombol
      Perluas/Ciutkan kolom + state instrExpanded dihapus — textarea kini
      120px secara default (dipin di docaiFitRemediation §8). */
-  check('judul seksi instruksi', creatorSrc.includes(`<div className="docai-step" style={{ textAlign: 'left' }}>Instruksi</div>`));
+  check('judul seksi instruksi', resolveId('ai.doc.create.instr_title') === 'Instruksi' && creatorSrc.includes(`<div className="docai-step" style={{ textAlign: 'left' }}>{t('ai.doc.create.instr_title')}</div>`));
   check('tinggi default 5 baris (tanpa toggle perluas)', creatorSrc.includes('rows={5}') && !creatorSrc.includes('instrExpanded'));
   check('tombol perluas/ciutkan kolom DIHAPUS (v3)', !creatorSrc.includes('Perluas kolom') && !creatorSrc.includes('Ciutkan kolom'));
   check('state perluas DIHAPUS (v3)', !creatorSrc.includes('instrExpanded'));
@@ -227,7 +238,7 @@ async function main(): Promise<void> {
   check('panel: antarmuka props tidak berubah', ctxSrc.includes('fields: ContextField[]') && ctxSrc.includes('sources: { project: boolean; company: boolean }') && ctxSrc.includes("onToggleSource: (which: 'project' | 'company', on: boolean) => void") && ctxSrc.includes('missing: MissingFieldInfo[]'));
   check('panel: ekspor label + grup tetap ada', ctxSrc.includes('export const CONTEXT_FIELD_LABELS') && ctxSrc.includes('export const CONTEXT_SOURCE_LABELS') && ctxSrc.includes('export const CONTEXT_FIELD_GROUPS'));
   check('creator: impor panel + label tetap ada', creatorSrc.includes("import { DocContextPanel, CONTEXT_FIELD_LABELS } from './DocContextPanel'"));
-  check('ringkasan +N netral-layout (tanpa "di atas")', creatorSrc.includes('field tersedia lainnya (lihat ringkasan konteks)') && !creatorSrc.includes('lihat ringkasan konteks di atas'));
+  check('ringkasan +N netral-layout (tanpa "di atas")', resolveId('ai.doc.create.ctx_more').includes('field tersedia lainnya (lihat ringkasan konteks)') && creatorSrc.includes("t('ai.doc.create.ctx_more')") && !creatorSrc.includes('lihat ringkasan konteks di atas'));
 
   console.log('\n[9] Workspace dua kolom (kontrak Child 2) — compose kiri, konteks kanan:');
   const count = (s: string, sub: string) => s.split(sub).length - 1;
@@ -239,7 +250,7 @@ async function main(): Promise<void> {
   const iContext = creatorSrc.indexOf('<div className="docai-col-context">');
   check('urutan: grid → compose → konteks', iWs > -1 && iWs < iCompose && iCompose < iContext);
   check('mode buat di kolom compose', iCompose < creatorSrc.indexOf('docai-modeline') && creatorSrc.indexOf('docai-modeline') < iContext);
-  check('instruksi AI di kolom compose', iCompose < creatorSrc.indexOf(`<div className="docai-step" style={{ textAlign: 'left' }}>Instruksi</div>`) && creatorSrc.indexOf(`<div className="docai-step" style={{ textAlign: 'left' }}>Instruksi</div>`) < iContext);
+  check('instruksi AI di kolom compose', iCompose < creatorSrc.indexOf("t('ai.doc.create.instr_title')") && creatorSrc.indexOf("t('ai.doc.create.instr_title')") < iContext);
   check('pilih proyek di kolom compose', iCompose < creatorSrc.indexOf("t('ai.doc.create.opt_no_project')") && creatorSrc.indexOf("t('ai.doc.create.opt_no_project')") < iContext);
   check('instruksi mode form di kolom compose', iCompose < creatorSrc.indexOf("t('ai.doc.create.instr_ph')") && creatorSrc.indexOf("t('ai.doc.create.instr_ph')") < iContext);
   check('tombol generate di kolom compose', iCompose < creatorSrc.indexOf('Buat Draf dengan AI') && creatorSrc.indexOf('Buat Draf dengan AI') < iContext);

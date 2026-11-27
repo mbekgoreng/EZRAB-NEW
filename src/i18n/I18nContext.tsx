@@ -107,11 +107,29 @@ export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (value !== undefined) return value;
       const idValue = resolveKey(dictionaries.id, key);
       if (idValue !== undefined) return idValue;
+      // Key tidak ada di locale aktif maupun di 'id' — peringatkan di dev
+      // saja agar key yang hilang ketahuan saat pengembangan.
+      if (isDev()) console.warn('[i18n] missing key: ' + key);
       // Key mentah tidak boleh bocor ke UI produksi — hanya tampilkan di dev.
       return isDev() ? `[${key}]` : key;
     },
     [lang]
   );
+
+  // Sinkronisasi antar-tab: bila bahasa diubah di tab lain (event
+  // 'storage'), ikuti nilainya tanpa reload. Validasi whitelist sama
+  // seperti setLang; setLangState dipakai langsung (bukan setLang) agar
+  // tidak menulis ulang localStorage yang sudah ditulis tab lain.
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== LANG_STORAGE_KEY) return;
+      if (e.newValue && (VALID_LANGS as string[]).includes(e.newValue)) {
+        setLangState(e.newValue as Lang);
+      }
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
 
   // Sinkronkan atribut lang pada <html> agar screen reader & STT mengenali bahasa aktif.
   useEffect(() => {

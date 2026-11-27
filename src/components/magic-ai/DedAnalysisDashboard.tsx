@@ -37,6 +37,7 @@ import { useCurrency } from '../../context/CurrencyContext';
 import { mapMagicAiItemToRabInput } from '../../ai-tools/ded-ai-estimate/finalizeMapping';
 import { buildFinalizationKey } from '../../ai-tools/ded-ai-estimate/finalizationKey';
 import { csvRow } from '../../lib/csv';
+import { useI18n } from '../../i18n/I18nContext';
 import { EZRAB_MODEL_FLASH, EZRAB_MODEL_PRO } from '../../services/aiModelMasking';
 import {
   appendDedAnalysisLog,
@@ -78,6 +79,7 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
   onCommitSuccess,
   onOpenRabDetail,
 }) => {
+  const { t } = useI18n();
   const { createRabItemDirect, bulkAddRabItems, getLastBulkAddOutcome } = useProject();
   const { formatDisplay } = useCurrency();
 
@@ -101,7 +103,7 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(initialSnapshot?.status === 'running');
   const [analysisProgress, setAnalysisProgress] = useState<number>(initialSnapshot?.progress ?? 0);
   const [activeStageId, setActiveStageId] = useState<string>(initialSnapshot?.stageId ?? 'READING_DED');
-  const [statusMessage, setStatusMessage] = useState<string>(initialSnapshot?.statusMessage ?? 'Menunggu analisis dimulai...');
+  const [statusMessage, setStatusMessage] = useState<string>(initialSnapshot?.statusMessage ?? t('ai.ded.dash.status_waiting'));
   const [outputResult, setOutputResult] = useState<AiEstimateOutput | null>(initialSnapshot?.result ?? null);
   const [startTime, setStartTime] = useState<number | null>(initialSnapshot?.startTime ?? null);
   const [elapsedSeconds, setElapsedSeconds] = useState<number>(
@@ -194,22 +196,22 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
      * accept saja mudah dilewati dan tidak membuktikan isi berkas). */
     const MAX_PDF_MB = 25;
     if (file.size === 0) {
-      setFileError('Berkas kosong — pilih PDF gambar kerja yang valid.');
+      setFileError(t('ai.ded.dash.err_empty'));
       return;
     }
     if (file.size > MAX_PDF_MB * 1024 * 1024) {
-      setFileError(`Ukuran berkas ${(file.size / (1024 * 1024)).toFixed(1)} MB melebihi batas ${MAX_PDF_MB} MB.`);
+      setFileError(t('ai.ded.dash.err_size_a') + (file.size / (1024 * 1024)).toFixed(1) + t('ai.ded.dash.err_size_b') + MAX_PDF_MB + t('ai.ded.dash.err_size_c'));
       return;
     }
     try {
       const head = new Uint8Array(await file.slice(0, 5).arrayBuffer());
       const magic = String.fromCharCode(...head);
       if (magic !== '%PDF-') {
-        setFileError('Berkas bukan PDF yang valid (tanda tangan %PDF- tidak ditemukan).');
+        setFileError(t('ai.ded.dash.err_notpdf'));
         return;
       }
     } catch {
-      setFileError('Berkas tidak dapat dibaca — coba pilih ulang.');
+      setFileError(t('ai.ded.dash.err_unreadable'));
       return;
     }
     setFileError(null);
@@ -291,8 +293,8 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
     const reqId = run.requestId;
     setElapsedSeconds(0);
 
-    addLog(`Memulai analisis DED (${activeModelConfig.title} · ${activeModelConfig.modelName})`, 'INFO', 'INIT');
-    addLog(`Target file: ${targetFile.name} (${(targetFile.size / (1024 * 1024)).toFixed(2)} MB)`, 'INFO', 'INIT');
+    addLog(t('ai.ded.dash.log_start_a') + activeModelConfig.title + ' · ' + activeModelConfig.modelName + t('ai.ded.dash.log_start_b'), 'INFO', 'INIT');
+    addLog(t('ai.ded.dash.log_target_a') + targetFile.name + ' (' + (targetFile.size / (1024 * 1024)).toFixed(2) + t('ai.ded.dash.log_target_b'), 'INFO', 'INIT');
 
     try {
       const result = await aiEstimatePipeline.execute({
@@ -336,18 +338,18 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
         progress: 100,
         stageId: 'COMPLETED',
         status: 'done',
-        statusMessage: 'Analisis DED selesai. RAB estimasi berhasil disusun.',
+        statusMessage: t('ai.ded.dash.status_done'),
       });
       const totalItemsCount = result.stats?.totalItems ?? result.workItems.length;
-      addLog(`Analisis selesai dalam ${Math.round(result.executionDurationSec || 0)} detik. Ditemukan ${totalItemsCount} pekerjaan.`, 'SUCCESS', 'BUILD_RAB');
+      addLog(t('ai.ded.dash.log_done_a') + Math.round(result.executionDurationSec || 0) + t('ai.ded.dash.log_done_b') + totalItemsCount + t('ai.ded.dash.log_done_c'), 'SUCCESS', 'BUILD_RAB');
     } catch (err: any) {
       console.error('[DedAnalysisDashboard] Execution Error:', err);
       patchDedAnalysisRun(reqId, {
         status: 'failed',
-        statusMessage: 'Analisis DED gagal: ' + (err?.message || 'Terjadi kesalahan sistem'),
-        error: err?.message || 'Terjadi kesalahan sistem',
+        statusMessage: t('ai.ded.dash.status_fail_a') + (err?.message || t('ai.ded.dash.err_system')),
+        error: err?.message || t('ai.ded.dash.err_system'),
       });
-      addLog(`Error saat memproses DED: ${err?.message || err}`, 'WARN', 'ERROR');
+      addLog(t('ai.ded.dash.log_err_a') + (err?.message || err), 'WARN', 'ERROR');
     }
     // TIDAK ADA finally yang me-reset isAnalyzing: nilainya dicerminkan
     // dari runtime (status done/failed) — finally yang menulis setState
@@ -365,10 +367,10 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
   const steps: StepInfo[] = useMemo(() => {
     if (!isAnalyzing && !outputResult) {
       return [
-        { id: 'READING_DED', number: '01', title: 'Membaca DED', subtitle: 'Ekstraksi gambar & teks', status: 'WAITING', detail: 'Belum ada dokumen dibaca' },
-        { id: 'IDENTIFY_WORK', number: '02', title: 'Mengenali Pekerjaan', subtitle: 'Identifikasi item & kategori', status: 'WAITING', detail: 'Struktur, arsitektur, dan MEP' },
-        { id: 'CALCULATE_ESTIMATE', number: '03', title: 'Menghitung Estimasi', subtitle: 'Volume & harga awal', status: 'WAITING', detail: 'Perhitungan kuantitas & tarif' },
-        { id: 'BUILD_RAB', number: '04', title: 'Menyusun RAB', subtitle: 'Validasi & finalisasi', status: 'WAITING', detail: 'Sanity check deterministik' },
+        { id: 'READING_DED', number: '01', title: t('ai.ded.dash.step1_title'), subtitle: t('ai.ded.dash.step1_sub'), status: 'WAITING', detail: t('ai.ded.dash.step1_wait') },
+        { id: 'IDENTIFY_WORK', number: '02', title: t('ai.ded.dash.step2_title'), subtitle: t('ai.ded.dash.step2_sub'), status: 'WAITING', detail: t('ai.ded.dash.step2_wait') },
+        { id: 'CALCULATE_ESTIMATE', number: '03', title: t('ai.ded.dash.step3_title'), subtitle: t('ai.ded.dash.step3_sub'), status: 'WAITING', detail: t('ai.ded.dash.step3_wait') },
+        { id: 'BUILD_RAB', number: '04', title: t('ai.ded.dash.step4_title'), subtitle: t('ai.ded.dash.step4_sub'), status: 'WAITING', detail: t('ai.ded.dash.step4_wait') },
       ];
     }
 
@@ -382,13 +384,13 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
       const blockedCount = outputResult.workItems.filter((i) => i.status === 'BLOCKED').length;
       const pagesDetail =
         outputResult.totalPagesRead > 0
-          ? `${outputResult.totalPagesRead} halaman gambar kerja berhasil dibaca`
-          : 'Gambar kerja berhasil dibaca';
+          ? `${outputResult.totalPagesRead}${t('ai.ded.dash.pages_read_a')}`
+          : t('ai.ded.dash.pages_read_na');
       return [
-        { id: 'READING_DED', number: '01', title: 'Membaca DED', subtitle: 'Ekstraksi gambar & teks', status: 'SUCCESS', detail: pagesDetail },
-        { id: 'IDENTIFY_WORK', number: '02', title: 'Mengenali Pekerjaan', subtitle: 'Identifikasi item & kategori', status: 'SUCCESS', detail: `${itemsCount} pekerjaan teridentifikasi` },
-        { id: 'CALCULATE_ESTIMATE', number: '03', title: 'Menghitung Estimasi', subtitle: 'Volume & harga awal', status: 'SUCCESS', detail: `${itemsCount} pekerjaan dihitung · ${st?.unresolvedItems ?? 0} belum terpecahkan · ${st?.blockedItems ?? 0} tertahan dari total` },
-        { id: 'BUILD_RAB', number: '04', title: 'Menyusun RAB', subtitle: 'Validasi & finalisasi', status: 'SUCCESS', detail: `Valid ${validCount} · Perlu tinjauan ${reviewCount} · Tertahan ${blockedCount}` },
+        { id: 'READING_DED', number: '01', title: t('ai.ded.dash.step1_title'), subtitle: t('ai.ded.dash.step1_sub'), status: 'SUCCESS', detail: pagesDetail },
+        { id: 'IDENTIFY_WORK', number: '02', title: t('ai.ded.dash.step2_title'), subtitle: t('ai.ded.dash.step2_sub'), status: 'SUCCESS', detail: `${itemsCount}${t('ai.ded.dash.items_ident_a')}` },
+        { id: 'CALCULATE_ESTIMATE', number: '03', title: t('ai.ded.dash.step3_title'), subtitle: t('ai.ded.dash.step3_sub'), status: 'SUCCESS', detail: `${itemsCount}${t('ai.ded.dash.calc_a')}${st?.unresolvedItems ?? 0}${t('ai.ded.dash.calc_b')}${st?.blockedItems ?? 0}${t('ai.ded.dash.calc_c')}` },
+        { id: 'BUILD_RAB', number: '04', title: t('ai.ded.dash.step4_title'), subtitle: t('ai.ded.dash.step4_sub'), status: 'SUCCESS', detail: `${t('ai.ded.dash.build_valid')}${validCount}${t('ai.ded.dash.build_review')}${reviewCount}${t('ai.ded.dash.build_blocked')}${blockedCount}` },
       ];
     }
 
@@ -399,38 +401,38 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
       {
         id: 'READING_DED',
         number: '01',
-        title: 'Membaca DED',
-        subtitle: 'Ekstraksi gambar & teks',
+        title: t('ai.ded.dash.step1_title'),
+        subtitle: t('ai.ded.dash.step1_sub'),
         status: p >= 35 ? 'SUCCESS' : 'PROCESSING',
         duration: p >= 35 ? undefined : `${elapsedSeconds}s`,
-        detail: 'Memproses halaman gambar kerja',
+        detail: t('ai.ded.dash.step1_active'),
       },
       {
         id: 'IDENTIFY_WORK',
         number: '02',
-        title: 'Mengenali Pekerjaan',
-        subtitle: 'Identifikasi item & kategori',
+        title: t('ai.ded.dash.step2_title'),
+        subtitle: t('ai.ded.dash.step2_sub'),
         status: p >= 65 ? 'SUCCESS' : p >= 35 ? 'PROCESSING' : 'WAITING',
         duration: p >= 35 && p < 65 ? `${elapsedSeconds}s` : undefined,
-        detail: 'Mengidentifikasi struktur, arsitektur, dan MEP',
+        detail: t('ai.ded.dash.step2_active'),
       },
       {
         id: 'CALCULATE_ESTIMATE',
         number: '03',
-        title: 'Menghitung Estimasi',
-        subtitle: 'Volume & harga awal',
+        title: t('ai.ded.dash.step3_title'),
+        subtitle: t('ai.ded.dash.step3_sub'),
         status: p >= 85 ? 'SUCCESS' : p >= 65 ? 'PROCESSING' : 'WAITING',
         duration: p >= 65 && p < 85 ? `${elapsedSeconds}s` : undefined,
-        detail: 'Estimasi volume dan harga satuan awal',
+        detail: t('ai.ded.dash.step3_active'),
       },
       {
         id: 'BUILD_RAB',
         number: '04',
-        title: 'Menyusun RAB',
-        subtitle: 'Validasi & finalisasi',
+        title: t('ai.ded.dash.step4_title'),
+        subtitle: t('ai.ded.dash.step4_sub'),
         status: p >= 100 ? 'SUCCESS' : p >= 85 ? 'PROCESSING' : 'WAITING',
         duration: p >= 85 && p < 100 ? `${elapsedSeconds}s` : undefined,
-        detail: 'Validasi, sanity check, dan finalisasi',
+        detail: t('ai.ded.dash.step4_active'),
       },
     ];
   }, [isAnalyzing, outputResult, analysisProgress, elapsedSeconds]);
@@ -466,16 +468,16 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
   const handleExportCsv = () => {
     if (!outputResult) return;
     const headers = [
-      'No',
-      'Pekerjaan',
-      'Kategori',
-      'Spesifikasi',
-      'Volume',
-      'Satuan',
-      'Harga Satuan (Rp)',
-      'Subtotal (Rp)',
-      'Confidence',
-      'Status',
+      t('ai.ded.dash.th_no'),
+      t('ai.ded.dash.th_work'),
+      t('ai.ded.dash.th_cat'),
+      t('ai.ded.dash.csv_spec'),
+      t('ai.ded.dash.th_vol'),
+      t('ai.ded.dash.th_unit'),
+      t('ai.ded.dash.csv_price'),
+      t('ai.ded.dash.csv_subtotal'),
+      t('ai.ded.dash.th_conf'),
+      t('ai.ded.dash.th_status'),
     ];
     // Sel lewat helper CSV bersama (audit F-5.2): nama/spesifikasi berasal
     // dari ekstraksi AI atas PDF unggahan — wajib lolos netralisasi formula.
@@ -545,8 +547,8 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
       // Status commit juga ke runtime agar bertahan melewati pindah menu.
       publishDedAnalysis({ commitReport: { added: addedCount, held: heldCount } });
       if (duplicateBlocked) {
-        setStatusMessage('Finalisasi ini sudah pernah disimpan ke proyek ini — transfer duplikat diblokir, tidak ada baris ganda.');
-        publishDedAnalysis({ statusMessage: 'Finalisasi ini sudah pernah disimpan ke proyek ini — transfer duplikat diblokir, tidak ada baris ganda.' });
+        setStatusMessage(t('ai.ded.dash.status_dup'));
+        publishDedAnalysis({ statusMessage: t('ai.ded.dash.status_dup') });
       }
       if (itemsToAdd.length > 0) {
         setCommittedSuccess(true);
@@ -566,7 +568,7 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
    * mata uang yang dipilih di Top Bar (default IDR); nilai sumber
    * tetap IDR, unresolved tetap "Harga belum tersedia". */
   const formatRupiah = (val?: number | null) => {
-    if (val === null || val === undefined || isNaN(val)) return 'Harga belum tersedia';
+    if (val === null || val === undefined || isNaN(val)) return t('ai.ded.dash.price_na');
     return formatDisplay(val);
   };
 
@@ -681,35 +683,35 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
               type="button"
               onClick={onBackToDashboard}
               className="p-1.5 rounded-[8px] text-[#64748B] hover:text-[var(--ez-color-text-primary)] hover:bg-[var(--ez-color-surface-tertiary)] transition"
-              title="Kembali ke Dashboard"
+              title={t('ai.ded.dash.back')}
             >
               <ArrowLeft size={18} />
             </button>
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-[20px] font-black text-[var(--ez-color-text-primary)] tracking-tight">
-                  Analisis DED
+                  {t('ai.ded.dash.title')}
                 </h1>
                 {/* Status Badge */}
                 {isAnalyzing ? (
                   <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[var(--ez-hue-blue-bg)] text-[var(--ez-hue-blue-text)] border border-[var(--ez-hue-blue-border)]">
                     <span className="w-2 h-2 rounded-full bg-[#2563EB] animate-pulse" />
-                    Sedang Diproses
+                    {t('ai.ded.dash.badge_processing')}
                   </span>
                 ) : outputResult ? (
                   <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[var(--ez-hue-green-bg)] text-[var(--ez-hue-green-text-bright)] border border-[var(--ez-hue-green-border)]">
                     <span className="w-2 h-2 rounded-full bg-[#16A34A]" />
-                    Selesai
+                    {t('ai.ded.dash.badge_done')}
                   </span>
                 ) : (
                   <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[var(--ez-color-surface-tertiary)] text-[#64748B] border border-[var(--ez-hue-slate-border)]">
                     <span className="w-2 h-2 rounded-full bg-[#94A3B8]" />
-                    Siap Dianalisis
+                    {t('ai.ded.dash.badge_ready')}
                   </span>
                 )}
               </div>
               <p className="text-[13px] text-[#64748B] font-normal deddash-x3">
-                AI membaca gambar kerja dan menyusun estimasi biaya proyek.
+                {t('ai.ded.dash.subtitle')}
               </p>
             </div>
           </div>
@@ -728,7 +730,7 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
                 }`}
               >
                 <Zap size={13} className={selectedMode === 'FAST' ? 'text-[var(--ez-hue-blue-text)]' : ''} />
-                <span>Estimasi Cepat</span>
+                <span>{t('ai.ded.dash.mode_fast')}</span>
                 <span className="text-[10px] font-mono text-[#64748B] bg-[var(--ez-hue-slate-bg)] px-1.5 rounded border border-[var(--ez-color-border-line)] deddash-x4">
                   {EZRAB_MODEL_FLASH}
                 </span>
@@ -744,7 +746,7 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
                 }`}
               >
                 <Sliders size={13} className={selectedMode === 'DETAIL' ? 'text-[var(--ez-hue-blue-text)]' : ''} />
-                <span>Estimasi Detail</span>
+                <span>{t('ai.ded.dash.mode_detail')}</span>
                 <span className="text-[10px] font-mono text-[#64748B] bg-[var(--ez-hue-slate-bg)] px-1.5 rounded border border-[var(--ez-color-border-line)] deddash-x4">
                   {EZRAB_MODEL_PRO}
                 </span>
@@ -781,7 +783,7 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
             </div>
             <div className="min-w-0">
               <div className="text-[13.5px] font-bold text-[var(--ez-color-text-primary)] truncate">
-                {selectedFile ? selectedFile.name : 'Belum ada dokumen DED dipilih'}
+                {selectedFile ? selectedFile.name : t('ai.ded.dash.no_doc')}
               </div>
               {/* SEC-04: meta di bawah ini dulu statis — ukuran, jumlah
                   halaman, dan deskripsi isi BERKAS CONTOH ditampilkan
@@ -796,14 +798,14 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
                     <span>•</span>
                     <span>
                       {outputResult && outputResult.totalPagesRead > 0
-                        ? `${outputResult.totalPagesRead} halaman`
-                        : 'Jumlah halaman belum dihitung'}
+                        ? `${outputResult.totalPagesRead}${t('ai.ded.dash.pages_a')}`
+                        : t('ai.ded.dash.pages_na')}
                     </span>
                     <span>•</span>
-                    <span className="truncate">Dokumen PDF</span>
+                    <span className="truncate">{t('ai.ded.dash.doc_pdf')}</span>
                   </>
                 ) : (
-                  <span>Pilih berkas PDF DED untuk dianalisis</span>
+                  <span>{t('ai.ded.dash.pick_file')}</span>
                 )}
               </div>
             </div>
@@ -816,7 +818,7 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
               disabled={isAnalyzing}
               className="px-3 py-1.5 ez-bg-surface border border-[var(--ez-hue-slate-border)] hover:bg-[var(--ez-hue-slate-bg)] text-[var(--ez-color-text-primary)] text-[12px] font-semibold rounded-[8px] transition disabled:opacity-50"
             >
-              Ganti File
+              {t('ai.ded.dash.change_file')}
             </button>
             <button
               type="button"
@@ -824,7 +826,7 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
               disabled={isAnalyzing || isLoadingSample}
               className="px-3 py-1.5 bg-[var(--ez-color-surface-tertiary)] hover:bg-[var(--ez-color-border-line)] text-[var(--ez-color-text-slate)] text-[12px] font-semibold rounded-[8px] transition disabled:opacity-50"
             >
-              {isLoadingSample ? 'Memuat...' : 'Pakai Contoh DED'}
+              {isLoadingSample ? t('ai.ded.dash.sample_loading') : t('ai.ded.dash.sample_btn')}
             </button>
             <button
               type="button"
@@ -833,7 +835,7 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
               className="px-4 py-1.5 bg-[#2563EB] hover:bg-[#1D4ED8] disabled:bg-[#94A3B8] text-white text-[12px] font-bold rounded-[8px] transition shadow-xs flex items-center gap-1.5"
             >
               <Zap size={14} />
-              <span>{isAnalyzing ? 'Menganalisis...' : outputResult ? 'Analisis Ulang' : 'Mulai Analisis'}</span>
+              <span>{isAnalyzing ? t('ai.ded.dash.btn_analyzing') : outputResult ? t('ai.ded.dash.btn_reanalyze') : t('ai.ded.dash.btn_start')}</span>
             </button>
           </div>
         </div>
@@ -910,9 +912,9 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
               {/* Header */}
               <div className="border-b border-[var(--ez-color-border-line)] flex items-center justify-between deddash-x16">
                 <div>
-                  <h2 className="text-[15px] font-bold text-[var(--ez-color-text-primary)]">Proses Analisis</h2>
+                  <h2 className="text-[15px] font-bold text-[var(--ez-color-text-primary)]">{t('ai.ded.dash.proc_title')}</h2>
                   <p className="text-[11.5px] text-[#64748B] deddash-x17">
-                    Status engine ekstraksi gambar dan perhitungan biaya proyek
+                    {t('ai.ded.dash.proc_sub')}
                   </p>
                 </div>
                 <span className="text-[10px] font-mono font-bold bg-[var(--ez-color-surface-tertiary)] text-[var(--ez-color-text-slate)] px-2 py-0.5 rounded border border-[var(--ez-color-border-line)]">
@@ -981,7 +983,7 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
               {/* Live Status Description */}
               <div className="bg-[var(--ez-hue-slate-bg)] border border-[var(--ez-color-border-line)] rounded-[8px] p-3 text-[12px] text-[var(--ez-color-text-slate)] leading-relaxed">
                 <div className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider deddash-x21">
-                  Engine Status
+                  {t('ai.ded.dash.engine_status')}
                 </div>
                 {isAnalyzing ? (
                   <div className="flex items-center gap-2 text-[var(--ez-hue-blue-text)] font-medium">
@@ -991,10 +993,10 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
                 ) : outputResult ? (
                   <div className="text-[var(--ez-hue-green-text-bright)] font-semibold flex items-center gap-1.5">
                     <CheckCircle2 size={14} />
-                    <span>Perhitungan volume & biaya selesai. Siap diekspor ke RAB.</span>
+                    <span>{t('ai.ded.dash.status_done_msg')}</span>
                   </div>
                 ) : (
-                  <div>Dokumen DED siap. Klik tombol "Mulai Analisis" untuk memulai ekstraksi.</div>
+                  <div>{t('ai.ded.dash.status_ready_msg')}</div>
                 )}
               </div>
             </div>
@@ -1003,10 +1005,10 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
             <div className="border-t border-[var(--ez-color-border-line)] flex items-center justify-between text-[11.5px] text-[#64748B] deddash-x22">
               <div className="flex items-center gap-1.5">
                 <ShieldCheck size={14} className="text-[var(--ez-hue-green-text-bright)]" />
-                <span>Deterministic Sanity Gate Active</span>
+                <span>{t('ai.ded.dash.gate_active')}</span>
               </div>
               <div className="font-mono text-[11px] text-[var(--ez-color-text-primary)]">
-                {elapsedSeconds > 0 ? `${elapsedSeconds}s elapsed` : 'Ready'}
+                {elapsedSeconds > 0 ? `${elapsedSeconds}${t('ai.ded.dash.elapsed_suffix')}` : t('ai.ded.dash.ready')}
               </div>
             </div>
           </div>
@@ -1024,7 +1026,7 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
                   <div className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-[#16A34A]" />
                     <h2 className="text-[18px] font-black text-[var(--ez-color-text-primary)] tracking-tight">
-                      Analisis DED Selesai
+                      {t('ai.ded.dash.done_title')}
                     </h2>
                   </div>
                   {/* SEC-04: jumlah halaman dan blocker di sini dulu memakai
@@ -1033,8 +1035,7 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
                       akui tidak tercatat); blocker = stats.blockedItems
                       nyata. */}
                   <p className="text-[13px] text-[#64748B] mt-1 font-normal">
-                    {outputResult.totalPagesRead > 0 ? `${outputResult.totalPagesRead} halaman dianalisis` : 'Jumlah halaman tidak tercatat'} • {outputResult.stats?.totalItems ?? outputResult.workItems.length} pekerjaan
-                    teridentifikasi • {outputResult.stats?.blockedItems ?? outputResult.workItems.filter((i) => i.status === 'BLOCKED').length} item tertahan
+                    {outputResult.totalPagesRead > 0 ? `${outputResult.totalPagesRead}${t('ai.ded.dash.pages_done_a')}` : t('ai.ded.dash.pages_done_na')} • {outputResult.stats?.totalItems ?? outputResult.workItems.length} {t('ai.ded.dash.summary_items')} • {outputResult.stats?.blockedItems ?? outputResult.workItems.filter((i) => i.status === 'BLOCKED').length} {t('ai.ded.dash.summary_blocked')}
                   </p>
                 </div>
 
@@ -1045,7 +1046,7 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
                     className="py-2 ez-bg-surface border border-[var(--ez-hue-slate-border)] hover:bg-[var(--ez-hue-slate-bg)] text-[var(--ez-color-text-primary)] text-[12px] font-semibold rounded-[8px] transition flex items-center gap-1.5 deddash-x27"
                   >
                     <Download size={14} />
-                    <span>Ekspor CSV</span>
+                    <span>{t('ai.ded.dash.export_csv')}</span>
                   </button>
                   <button
                     type="button"
@@ -1058,7 +1059,7 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
                     }`}
                   >
                     <FileSpreadsheet size={14} />
-                    <span>{committedSuccess ? '✓ Tersimpan di Proyek' : 'Masukkan ke Spreadsheet'}</span>
+                    <span>{committedSuccess ? t('ai.ded.dash.commit_saved') : t('ai.ded.dash.commit_btn')}</span>
                   </button>
                 </div>
               </div>
@@ -1075,10 +1076,10 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
                   }`}
                 >
                   {commitReport.added > 0
-                    ? `${commitReport.added} item masuk ke spreadsheet sebagai Estimasi AI (perlu verifikasi, bukan harga resmi AHSP).`
-                    : 'Tidak ada item yang dimasukkan ke spreadsheet.'}
+                    ? `${commitReport.added}${t('ai.ded.dash.report_added_a')}`
+                    : t('ai.ded.dash.report_none')}
                   {commitReport.held > 0 &&
-                    ` ${commitReport.held} item ditahan karena harga belum tersedia — tidak dimasukkan sebagai Rp0. Tambahkan manual di spreadsheet setelah harganya diketahui.`}
+                    ` ${commitReport.held}${t('ai.ded.dash.report_held_a')}`}
                 </div>
               )}
 
@@ -1087,50 +1088,50 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
                 {/* Total Estimasi */}
                 <div className="p-4 rounded-[10px] bg-[var(--ez-hue-slate-bg)] border border-[var(--ez-color-border-line)]">
                   <div className="text-[11px] font-bold text-[#64748B] uppercase tracking-wider">
-                    Total Estimasi
+                    {t('ai.ded.dash.metric_total')}
                   </div>
                   <div className="text-[20px] font-black text-[var(--ez-color-text-primary)] tracking-tight mt-1">
                     {formatRupiah(outputResult.summary?.estimatedTotal)}
                   </div>
                   <div className="text-[11px] text-[var(--ez-hue-green-text-bright)] font-semibold mt-1 flex items-center gap-1">
-                    <span>✓ Linear deterministic sum</span>
+                    <span>{t('ai.ded.dash.metric_sum')}</span>
                   </div>
                 </div>
 
                 {/* Range Estimasi */}
                 <div className="p-4 rounded-[10px] bg-[var(--ez-hue-slate-bg)] border border-[var(--ez-color-border-line)]">
                   <div className="text-[11px] font-bold text-[#64748B] uppercase tracking-wider">
-                    Range Estimasi
+                    {t('ai.ded.dash.metric_range')}
                   </div>
                   <div className="text-[15px] font-black text-[var(--ez-color-text-primary)] tracking-tight mt-1 font-mono">
                     {formatRupiah(outputResult.summary?.rangeLow)} – {formatRupiah(outputResult.summary?.rangeHigh)}
                   </div>
-                  <div className="text-[11px] text-[#64748B] mt-1">Estimasi variansi pasar (±5%)</div>
+                  <div className="text-[11px] text-[#64748B] mt-1">{t('ai.ded.dash.metric_var')}</div>
                 </div>
 
                 {/* Item Teridentifikasi */}
                 <div className="p-4 rounded-[10px] bg-[var(--ez-hue-slate-bg)] border border-[var(--ez-color-border-line)]">
                   <div className="text-[11px] font-bold text-[#64748B] uppercase tracking-wider">
-                    Item Teridentifikasi
+                    {t('ai.ded.dash.metric_items')}
                   </div>
                   <div className="text-[20px] font-black text-[var(--ez-color-text-primary)] tracking-tight mt-1">
                     {outputResult.stats?.totalItems ?? outputResult.workItems.length}
                   </div>
                   <div className="text-[11px] text-[#64748B] mt-1">
-                    {categories.length} kategori pekerjaan terdeteksi
+                    {categories.length}{t('ai.ded.dash.metric_cats_a')}
                   </div>
                 </div>
 
                 {/* Perlu Review */}
                 <div className="p-4 rounded-[10px] bg-[var(--ez-hue-slate-bg)] border border-[var(--ez-color-border-line)]">
                   <div className="text-[11px] font-bold text-[#64748B] uppercase tracking-wider">
-                    Perlu Review
+                    {t('ai.ded.dash.metric_review')}
                   </div>
                   <div className="text-[20px] font-black text-[var(--ez-color-text-primary)] tracking-tight mt-1">
                     {outputResult.warnings.length}
                   </div>
                   <div className="text-[11px] text-[var(--ez-hue-green-text-bright)] font-semibold mt-1">
-                    {outputResult.warnings.length === 0 ? '✓ Siap diajukan langsung' : 'Tinjau catatan estimator'}
+                    {outputResult.warnings.length === 0 ? t('ai.ded.dash.metric_ready') : t('ai.ded.dash.metric_review_note')}
                   </div>
                 </div>
               </div>
@@ -1146,7 +1147,7 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Cari item pekerjaan atau spesifikasi..."
+                    placeholder={t('ai.ded.dash.search_ph')}
                     className="w-full py-1.5 text-[12.5px] rounded-[8px] border border-[var(--ez-hue-slate-border)] focus:outline-hidden focus:border-[#2563EB] text-[var(--ez-color-text-primary)] deddash-x32"
                   />
                 </div>
@@ -1155,10 +1156,10 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
                   <select
                     value={selectedCategory}
                     onChange={(e) => setSelectedCategory(e.target.value)}
-                    aria-label="Filter Kategori Pekerjaan"
+                    aria-label={t('ai.ded.dash.filter_cat')}
                     className="text-[12px] px-3 py-1.5 rounded-[8px] border border-[var(--ez-hue-slate-border)] ez-bg-surface text-[var(--ez-color-text-primary)] focus:outline-hidden"
                   >
-                    <option value="ALL">Semua Kategori ({categories.length})</option>
+                    <option value="ALL">{t('ai.ded.dash.cat_all_a')}{categories.length}{t('ai.ded.dash.cat_all_b')}</option>
                     {categories.map((c) => (
                       <option key={c} value={c}>
                         {c}
@@ -1169,13 +1170,13 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
                   <select
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value as any)}
-                    aria-label="Filter Status Pekerjaan"
+                    aria-label={t('ai.ded.dash.filter_status')}
                     className="text-[12px] px-3 py-1.5 rounded-[8px] border border-[var(--ez-hue-slate-border)] ez-bg-surface text-[var(--ez-color-text-primary)] focus:outline-hidden"
                   >
-                    <option value="ALL">Semua Status</option>
-                    <option value="VALID">Terverifikasi</option>
-                    <option value="REVIEW">Perlu Review</option>
-                    <option value="BLOCKED">Diblokir</option>
+                    <option value="ALL">{t('ai.ded.dash.status_all')}</option>
+                    <option value="VALID">{t('ai.ded.dash.status_valid')}</option>
+                    <option value="REVIEW">{t('ai.ded.dash.status_review')}</option>
+                    <option value="BLOCKED">{t('ai.ded.dash.status_blocked')}</option>
                   </select>
                 </div>
               </div>
@@ -1185,22 +1186,22 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
                 <table className="w-full text-left border-collapse text-[12.5px]">
                   <thead>
                     <tr className="bg-[var(--ez-hue-slate-bg)] border-b border-[var(--ez-color-border-line)] text-[#64748B] text-[11px] font-bold uppercase tracking-wider">
-                      <th className="py-2.5 px-3 text-center deddash-x34">No</th>
-                      <th className="py-2.5 px-3">Pekerjaan</th>
-                      <th className="py-2.5 px-3">Kategori</th>
-                      <th className="py-2.5 px-3 text-right">Volume</th>
-                      <th className="py-2.5 px-3 text-center">Satuan</th>
-                      <th className="py-2.5 px-3 text-right">Harga Satuan</th>
-                      <th className="py-2.5 px-3 text-right">Jumlah</th>
-                      <th className="py-2.5 px-3 text-center">Confidence</th>
-                      <th className="py-2.5 px-3 text-center">Status</th>
+                      <th className="py-2.5 px-3 text-center deddash-x34">{t('ai.ded.dash.th_no')}</th>
+                      <th className="py-2.5 px-3">{t('ai.ded.dash.th_work')}</th>
+                      <th className="py-2.5 px-3">{t('ai.ded.dash.th_cat')}</th>
+                      <th className="py-2.5 px-3 text-right">{t('ai.ded.dash.th_vol')}</th>
+                      <th className="py-2.5 px-3 text-center">{t('ai.ded.dash.th_unit')}</th>
+                      <th className="py-2.5 px-3 text-right">{t('ai.ded.dash.th_price')}</th>
+                      <th className="py-2.5 px-3 text-right">{t('ai.ded.dash.th_total')}</th>
+                      <th className="py-2.5 px-3 text-center">{t('ai.ded.dash.th_conf')}</th>
+                      <th className="py-2.5 px-3 text-center">{t('ai.ded.dash.th_status')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[var(--ez-color-border-line)]">
                     {filteredItems.length === 0 ? (
                       <tr>
                         <td colSpan={9} className="text-center text-[#94A3B8] deddash-x35">
-                          Tidak ada pekerjaan yang sesuai kriteria pencarian.
+                          {t('ai.ded.dash.empty_search')}
                         </td>
                       </tr>
                     ) : (
@@ -1235,7 +1236,7 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
                                 Number(it.quantity).toLocaleString('id-ID', { maximumFractionDigits: 2 })
                               ) : (
                                 <span className="text-[var(--ez-hue-amber-text-deep)] italic font-sans text-[11px]">
-                                  Belum tersedia
+                                  {t('ai.ded.dash.vol_na')}
                                 </span>
                               )}
                             </td>
@@ -1245,13 +1246,13 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
                                 formatRupiah(it.unitPrice || it.estimatedUnitPrice)
                               ) : (
                                 <span className="text-[var(--ez-hue-amber-text-deep)] italic font-sans text-[11px]">
-                                  Harga belum tersedia
+                                  {t('ai.ded.dash.price_na')}
                                 </span>
                               )}
                             </td>
                             <td className="py-2.5 px-3 text-right font-mono font-bold text-[var(--ez-color-text-primary)]">
                               {it.status === 'BLOCKED' ? (
-                                <span className="text-[var(--ez-hue-rose-text)] font-sans font-bold text-[11px]">Diblokir</span>
+                                <span className="text-[var(--ez-hue-rose-text)] font-sans font-bold text-[11px]">{t('ai.ded.dash.row_blocked')}</span>
                               ) : hasSubtotal ? (
                                 formatRupiah(it.subtotal || it.estimatedSubtotal)
                               ) : (
@@ -1283,7 +1284,7 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
                                     : 'bg-[var(--ez-hue-blue-bg)] text-[var(--ez-hue-blue-text)] border border-[var(--ez-hue-blue-border)]'
                                 }`}
                               >
-                                {it.status === 'VALID' ? 'TERVERIFIKASI' : it.status || 'AI ESTIMATE'}
+                                {it.status === 'VALID' ? t('ai.ded.dash.status_valid_chip') : it.status || 'AI ESTIMATE'}
                               </span>
                             </td>
                           </tr>

@@ -543,7 +543,7 @@ const BUDGET_KEYWORD_SRC =
 
 /** Kata sisipan wajar antara kata kunci budget dan angkanya. */
 const BUDGET_FILLER_SRC =
-  String.raw`(?:maksimal|maks|mentok|sekitar|kisaran|kira-kira)?\s*(?:rp\.?\s*)?(?:\s*(?:menjadi|sebesar|senilai|adalah|saya|ke))*`;
+  String.raw`(?:maksimal|maks|mentok|sekitar|kisaran|kira-kira)?\s*(?:rp\.?\s*)?(?:\s*(?:menjadi|jadi|sebesar|senilai|adalah|saya|ke))*`;
 
 function budgetKindFromWindow(windowText: string): BudgetMentionKind {
   if (/\b(maksimal|maks|mentok|paling banyak)\b/.test(windowText)) return 'MAXIMUM';
@@ -1022,7 +1022,10 @@ export function extractRabNeeds(text: string, base?: RabNeeds): RabNeeds {
   // lahan tidak mengenali bentuk posesif "-nya", sehingga ringkasan
   // melaporkan "Luas bangunan: 500 m²" untuk lahan pengguna.
   const tArea = stripLandPhrases(t);
-  const areaRe = /(?:luas(?:\s+bangunan)?|lb)\s*(?:=|sekitar|kurang lebih)?\s*(\d+(?:[.,]\d+)?)\s*(m(?:2|²|eter)?)?/g;
+  // D1 2026-11-26 (lapisan bersama): kata revisi "jadi"/"menjadi" boleh
+  // berdiri antara jangkar dan angka ("luas bangunan jadi 150 m2") —
+  // tanpa ini revisi luas rumah diabaikan dan angka pertama menang.
+  const areaRe = /(?:luas(?:\s+bangunan)?|lb)\s*(?:=|sekitar|kurang lebih|jadi|menjadi)?\s*(\d+(?:[.,]\d+)?)\s*(m(?:2|²|eter)?)?/g;
   let areaLast: { raw: string; hasUnit: boolean; index: number } | null = null;
   for (const m of tArea.matchAll(areaRe)) {
     const after = tArea.slice((m.index ?? 0) + m[0].length, (m.index ?? 0) + m[0].length + 7);

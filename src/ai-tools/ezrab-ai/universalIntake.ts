@@ -921,7 +921,12 @@ export function extractUniversalContext(text: string, base?: UniversalIntakeCont
   else if (spec.widthM != null) ctx.widthM = spec.widthM;
   const depth = parseAnchoredLinear(raw, ['kedalaman', 'kedalaman saluran', 'dalam']);
   if (depth) ctx.depthM = depth.valueM;
-  const height = parseAnchoredLinear(raw, ['tinggi']);
+  // GAP C (2026-11-26, owner requirement — clear height gudang):
+  // jawaban atas prompt warehouse-system ("portal frame, clear height
+  // 8 m") menyimpan angka clear height sebagai heightM — slot tinggi
+  // yang sudah ada (brief menampilkannya sebagai "Tinggi: 8 m").
+  // Jangkar 'tinggi' saja tidak menangkap frasa Inggris itu.
+  const height = parseAnchoredLinear(raw, ['tinggi', 'clear height']);
   if (height) ctx.heightM = height.valueM;
   else if (spec.heightM != null) ctx.heightM = spec.heightM;
   const span = spanAnchor;
@@ -1570,6 +1575,32 @@ function questionDefsFor(ctx: UniversalIntakeContext): IntakeQuestion[] {
       });
       break;
   }
+
+  // --- Kondisi lahan/tapak generik (Step 3 Magic AI, 2026-11-26) ---
+  // Satu pertanyaan lintas kategori, NON-KRITIS (tidak memblokir
+  // jalur cepat, tidak masuk missingCritical — hanya `unresolved` di
+  // brief bila tak terjawab). Aturan §7 di selectNextQuestion membuat
+  // pertanyaan non-kritis HANYA diajukan sebagai pertanyaan pertama
+  // intake: def ini baru tercapai bila semua pertanyaan kritis sudah
+  // terpenuhi DAN belum ada pertanyaan yang diajukan — sesudah satu
+  // pertanyaan terjawab, def ini tidak pernah muncul (askedKeys).
+  // Jawaban ditangkap pola SITE_PATTERNS lewat extractProjectContext
+  // yang SUDAH dipakai updateUniversalContext (tidak ada duplikasi
+  // pola di sini); isSatisfied cukup memeriksa siteConditions.
+  // Jalan sudah punya pertanyaan kondisi sendiri ('road-condition',
+  // lebih dulu di urutan) — def generik tidak ditambahkan di sana
+  // agar kondisi tapak tidak ditanyakan dua kali. Keluarga landscape
+  // murni tidak sampai ke sini: gerbang landscape (projectIntakeGate)
+  // yang menanyakan kondisi lahannya, dan gerbang universal
+  // mengembalikan null untuknya — jadi tidak ada tanya ganda.
+  if (!defs.some((d) => d.key === 'road-condition')) {
+    add({
+      key: 'site-condition', stage: 'SITE_CONDITIONS', critical: false,
+      missingLabel: 'kondisi lahan/tapak eksisting',
+      isSatisfied: (c) => c.siteConditions.length > 0,
+      prompt: () => 'Bagaimana **kondisi lahan/tapaknya** saat ini — misalnya lahan datar, lahan kosong, berkontur/miring, atau ada bangunan eksisting yang perlu dibongkar? Bila tidak ada catatan, jawab "itu aja".',
+    });
+  }
   return defs;
 }
 
@@ -1593,7 +1624,18 @@ export function selectNextQuestion(ctx: UniversalIntakeContext): IntakeQuestion 
       // pertama intake; sesudah pengguna menjawab satu pertanyaan,
       // sisanya dicatat sebagai belum teresolusi di brief — bukan
       // diinterogasi satu per satu (§7: satu pertanyaan fokus).
-      continue;
+      // PENGECUALIAN — GAP C (2026-11-26, owner requirement: "tanyakan
+      // ... clear height untuk gudang", mockup Step 3 di-ACC): prompt
+      // `warehouse-system` menggabungkan sistem struktur + clear height
+      // dalam SATU giliran, dan itulah satu-satunya tempat clear height
+      // ditanyakan (TIDAK ADA pertanyaan clear-height terpisah — pin §8
+      // dipertahankan). Tanpa pengecualian ini, alur bare-chip (luas
+      // dijawab di dalam intake) tidak pernah menanyakan clear height
+      // sama sekali: luas → kuesioner (atap/lantai/dock, tanpa clear
+      // height) → brief. Pengecualian ini HANYA mengizinkan kunci
+      // warehouse-system diajukan sesudah satu jawaban; urutan
+      // (luas dulu, baru sistem) dan aturan tanya-sekali tetap utuh.
+      if (def.key !== 'warehouse-system') continue;
     }
     return def;
   }

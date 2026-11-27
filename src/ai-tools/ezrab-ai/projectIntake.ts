@@ -783,7 +783,10 @@ export function extractProjectContext(text: string, base?: ProjectIntakeContext)
     { re: /\b(rawa|becek|sering banjir|daerah banjir|genangan)\b/, label: 'lahan rawa/rawan genangan' },
     { re: /\b(berbatu|tanah keras)\b/, label: 'tanah keras/berbatu' },
     { re: /\b(akses (sempit|sulit|terbatas))\b/, label: 'akses terbatas' },
-    { re: /\b(perlu pembongkaran|ada yang dibongkar|pembongkaran)\b/, label: 'perlu pembongkaran sebagian' },
+    { re: /\b(perlu (pembongkaran|dibongkar)|ada yang dibongkar|dibongkar|pembongkaran|bongkar)\b/, label: 'perlu pembongkaran sebagian' },
+    // D2 2026-11-26: "revitalisasi" adalah kondisi lahan yang sama
+    // (lahan perlu dibongkar) — label tunggal, bukan kondisi baru.
+    { re: /\brevitalisasi\b/, label: 'perlu pembongkaran sebagian' },
   ];
   for (const s of SITE_PATTERNS) {
     if (s.re.test(t) && !ctx.siteConditions.includes(s.label)) ctx.siteConditions.push(s.label);

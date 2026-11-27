@@ -115,6 +115,7 @@ interface MobileBottomNavV3Props {
  * Notifikasi diganti Chat AI; notifikasi tetap tersedia lewat TopBar.
  */
 export const MobileBottomNavV3: React.FC<MobileBottomNavV3Props> = ({ activeTab, onTab, onCreateProject }) => {
+  const { t } = useI18n();
   const item = (
     tab: MobileNavTab,
     label: string,
@@ -139,7 +140,7 @@ export const MobileBottomNavV3: React.FC<MobileBottomNavV3Props> = ({ activeTab,
   return (
     <nav className="mv3-bottom-nav" aria-label="Navigasi bawah mobile v3">
       {item('beranda', 'Beranda', Home)}
-      {item('proyek', 'Proyek', Folder)}
+      {item('proyek', t('nav.bottom_proyek'), Folder)}
       <button
         type="button"
         className="mv3-nav-item mv3-nav-create"
@@ -192,18 +193,19 @@ const NotifTypeIcon: React.FC<{ type: NotificationItem['type'] }> = ({ type }) =
 /** Panel notifikasi mobile v3 — data dari NotificationContext yang sama
  * dengan NotificationBell di TopBar (bukan sumber baru). */
 export const MobileNotifSheet: React.FC<{ onClose: () => void }> = ({ onClose }) => {
+  const { t } = useI18n();
   const { notifications, unreadCount, markRead, markAllRead, clearRead } = useNotifications();
   return (
     <div className="mv3-sheet-veil" onClick={onClose} role="presentation">
       <div
         className="mv3-sheet"
         role="dialog"
-        aria-label="Notifikasi"
+        aria-label={t('notif.judul')}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mv3-sheet-head">
           <div>
-            <div className="mv3-sheet-title">Notifikasi</div>
+            <div className="mv3-sheet-title">{t('notif.judul')}</div>
             <div className="mv3-sheet-sub">
               {unreadCount > 0 ? `${unreadCount} belum dibaca` : 'Semua sudah dibaca'}
             </div>
@@ -214,7 +216,7 @@ export const MobileNotifSheet: React.FC<{ onClose: () => void }> = ({ onClose })
         </div>
         {notifications.length > 0 && (
           <div className="mv3-sheet-actions">
-            <button type="button" onClick={markAllRead}>Tandai semua dibaca</button>
+            <button type="button" onClick={markAllRead}>{t('notif.tandai_dibaca')}</button>
             <button type="button" onClick={clearRead}>
               <Trash2 size={13} /> Hapus yang dibaca
             </button>
@@ -589,7 +591,7 @@ export const MobileHomeV3: React.FC<MobileHomeV3Props> = ({
           <div className="mv3-section-head">
             <span>Proyek Terbaru</span>
             <button type="button" className="mv3-see-all" onClick={() => onOpenProjects('Semua Proyek')}>
-              Lihat Semua <ChevronRight size={14} />
+              {t('common.lihat_semua')} <ChevronRight size={14} />
             </button>
           </div>
           <section className="mv3-home-projects">
@@ -674,6 +676,7 @@ export const MobileProjectsV3: React.FC<MobileProjectsV3Props> = ({
   onCreateProject,
   onOpenProject,
 }) => {
+  const { t } = useI18n();
   const [query, setQuery] = useState('');
   const filtered = useMemo(() => {
     let list = projects;
@@ -704,7 +707,7 @@ export const MobileProjectsV3: React.FC<MobileProjectsV3Props> = ({
             className={`mv3-filter-chip${initialFilter === f ? ' is-active' : ''}`}
             onClick={() => onFilterChange(f)}
           >
-            {f === 'Semua Proyek' ? 'Semua' : f}
+            {f === 'Semua Proyek' ? t('common.semua') : f}
           </button>
         ))}
       </div>

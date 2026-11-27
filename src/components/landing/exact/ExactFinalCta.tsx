@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useI18n } from '../../../i18n';
 
 interface ExactFinalCtaProps {
   onStartFree?: () => void;
@@ -6,6 +7,7 @@ interface ExactFinalCtaProps {
 }
 
 export const ExactFinalCta: React.FC<ExactFinalCtaProps> = ({ onStartFree }) => {
+  const { t } = useI18n();
   const [isVisible, setIsVisible] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
 
@@ -72,20 +74,20 @@ export const ExactFinalCta: React.FC<ExactFinalCtaProps> = ({ onStartFree }) => 
 
       <div className="ez-luxury-cta-container">
         <h2 className="ez-luxury-cta-heading">
-          Siap membuat workflow estimasi yang lebih terhubung?
+          {t('landing.cta_title')}
         </h2>
 
         <p className="ez-luxury-cta-subtext">
-          Dari gambar kerja hingga laporan proyek, kelola semuanya dalam satu workspace.
+          {t('landing.cta_sub')}
         </p>
 
         <div className="ez-luxury-cta-action">
           <button
             onClick={onStartFree}
             className="ez-luxury-cta-primary-btn"
-            aria-label="Buat RAB pertama gratis"
+            aria-label={t('landing.cta_button')}
           >
-            <span>Buat RAB Pertama Gratis</span>
+            <span>{t('landing.cta_button')}</span>
             <span className="ez-luxury-cta-arrow" aria-hidden="true">→</span>
           </button>
         </div>

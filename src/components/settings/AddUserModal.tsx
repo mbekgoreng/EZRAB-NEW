@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { ClientUserManagementService, WorkspaceMember } from '../../services/userManagementService';
 import { UserRole } from '../../types';
+import { useI18n } from '../../i18n';
 
 interface AddUserModalProps {
   isOpen: boolean;
@@ -32,28 +33,30 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onU
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
+  const { t } = useI18n();
+
   if (!isOpen) return null;
 
   const roleDescriptions: Record<'ESTIMATOR' | 'DIREKSI' | 'CLIENT', { title: string; description: string; icon: any; bg: string; color: string; border: string }> = {
     ESTIMATOR: {
-      title: 'Estimator',
-      description: 'Membantu penyusunan RAB, QTO, perhitungan volume, dan analisa harga satuan AHSP proyek.',
+      title: t('settings.role_estimator'),
+      description: t('settings.tambah_desc_estimator'),
       icon: Briefcase,
       bg: 'var(--ez-hue-green-bg)',
       color: 'var(--ez-hue-green-text)',
       border: 'var(--ez-hue-green-border)',
     },
     DIREKSI: {
-      title: 'Direksi',
-      description: 'Melihat proyek, laporan eksekutif, memantau kemajuan Kurva S, dan memberikan persetujuan sesuai hak akses.',
+      title: t('settings.role_direksi'),
+      description: t('settings.tambah_desc_direksi'),
       icon: Shield,
       bg: 'var(--ez-hue-purple-bg)',
       color: 'var(--ez-hue-purple-text)',
       border: 'var(--ez-hue-purple-border)',
     },
     CLIENT: {
-      title: 'Client',
-      description: 'Melihat informasi proyek, ringkasan penawaran RAB, dan dokumen yang dibagikan khusus untuk pemilik proyek.',
+      title: t('settings.role_client'),
+      description: t('settings.tambah_desc_client'),
       icon: Eye,
       bg: 'var(--ez-hue-amber-bg)',
       color: 'var(--ez-hue-amber-text)',
@@ -70,12 +73,12 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onU
     setSuccessMsg(null);
 
     if (!name.trim()) {
-      setErrorMsg('Nama lengkap wajib diisi.');
+      setErrorMsg(t('settings.tambah_nama_wajib'));
       return;
     }
 
     if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      setErrorMsg('Format email tidak valid.');
+      setErrorMsg(t('settings.tambah_email_tidak_valid'));
       return;
     }
 
@@ -93,7 +96,7 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onU
       setLoading(false);
 
       if (result.success && result.user) {
-        setSuccessMsg('Pengguna berhasil dibuat.');
+        setSuccessMsg(t('settings.tambah_berhasil'));
         onUserAdded(result.user);
         setTimeout(() => {
           onClose();
@@ -105,7 +108,7 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onU
           setSuccessMsg(null);
         }, 1200);
       } else {
-        setErrorMsg(result.error || 'Gagal menambahkan pengguna.');
+        setErrorMsg(result.error || t('settings.tambah_gagal'));
       }
     }, 400);
   };
@@ -170,17 +173,17 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onU
             </div>
             <div>
               <h2 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0, letterSpacing: '-0.01em' }}>
-                Tambah Pengguna
+                {t('settings.tambah_judul')}
               </h2>
               <p style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', margin: '2px 0 0' }}>
-                Undang anggota tim baru untuk mengakses workspace Anda
+                {t('settings.tambah_desc')}
               </p>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            aria-label="Tutup"
+            aria-label={t('common.tutup')}
             style={{
               width: '32px',
               height: '32px',
@@ -242,13 +245,13 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onU
           {/* Form Fields */}
           <div>
             <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: 'var(--ez-color-text-body)', marginBottom: '6px' }}>
-              Nama Lengkap <span style={{ color: '#EF4444' }}>*</span>
+              {t('settings.tambah_nama_label')} <span style={{ color: '#EF4444' }}>*</span>
             </label>
             <div style={{ position: 'relative' }}>
               <User size={15} color="#94A3B8" style={{ position: 'absolute', left: '12px', top: '12px' }} />
               <input
                 type="text"
-                placeholder="Contoh: Budi Santoso, ST."
+                placeholder={t('settings.tambah_ph_nama')}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
@@ -269,13 +272,13 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onU
 
           <div>
             <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: 'var(--ez-color-text-body)', marginBottom: '6px' }}>
-              Alamat Email <span style={{ color: '#EF4444' }}>*</span>
+              {t('settings.tambah_email_label')} <span style={{ color: '#EF4444' }}>*</span>
             </label>
             <div style={{ position: 'relative' }}>
               <Mail size={15} color="#94A3B8" style={{ position: 'absolute', left: '12px', top: '12px' }} />
               <input
                 type="email"
-                placeholder="budi.santoso@perusahaan.com"
+                placeholder={t('settings.tambah_ph_email')}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -297,7 +300,7 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onU
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <div>
               <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: 'var(--ez-color-text-body)', marginBottom: '6px' }}>
-                Nomor WhatsApp
+                {t('settings.tambah_wa_label')}
               </label>
               <div style={{ position: 'relative' }}>
                 <Phone size={15} color="#94A3B8" style={{ position: 'absolute', left: '12px', top: '12px' }} />
@@ -323,13 +326,13 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onU
 
             <div>
               <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: 'var(--ez-color-text-body)', marginBottom: '6px' }}>
-                Perusahaan / Instansi
+                {t('settings.tambah_perusahaan_label')}
               </label>
               <div style={{ position: 'relative' }}>
                 <Building2 size={15} color="#94A3B8" style={{ position: 'absolute', left: '12px', top: '12px' }} />
                 <input
                   type="text"
-                  placeholder="Nama Perusahaan"
+                  placeholder={t('settings.tambah_ph_perusahaan')}
                   value={company}
                   onChange={(e) => setCompany(e.target.value)}
                   style={{
@@ -351,7 +354,7 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onU
           {/* Role Selection */}
           <div>
             <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: 'var(--ez-color-text-body)', marginBottom: '6px' }}>
-              Role / Hak Akses <span style={{ color: '#EF4444' }}>*</span>
+              {t('settings.tambah_role_label')} <span style={{ color: '#EF4444' }}>*</span>
             </label>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
               {(['ESTIMATOR', 'DIREKSI', 'CLIENT'] as const).map((r) => {
@@ -374,7 +377,7 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onU
                       textTransform: 'capitalize',
                     }}
                   >
-                    {r === 'ESTIMATOR' ? 'Estimator' : r === 'DIREKSI' ? 'Direksi' : 'Client'}
+                    {r === 'ESTIMATOR' ? t('settings.role_estimator') : r === 'DIREKSI' ? t('settings.role_direksi') : t('settings.role_client')}
                   </button>
                 );
               })}
@@ -396,7 +399,7 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onU
             <RoleIcon size={18} color={selectedRoleMeta.color} style={{ marginTop: '2px', flexShrink: 0 }} />
             <div>
               <div style={{ fontSize: '12.5px', fontWeight: 750, color: selectedRoleMeta.color }}>
-                Role: {selectedRoleMeta.title}
+                {t('settings.tambah_role_prefix')}{selectedRoleMeta.title}
               </div>
               <div style={{ fontSize: '11.5px', color: 'var(--ez-color-text-slate)', marginTop: '2px', lineHeight: 1.4 }}>
                 {selectedRoleMeta.description}
@@ -432,7 +435,7 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onU
                 cursor: 'pointer',
               }}
             >
-              Batal
+              {t('common.batal')}
             </button>
             <button
               type="submit"
@@ -453,7 +456,7 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onU
                 boxShadow: '0 2px 8px rgba(37,99,235,0.25)',
               }}
             >
-              {loading ? 'Menyimpan...' : 'Tambahkan Pengguna'}
+              {loading ? t('settings.tambah_menyimpan') : t('settings.tambah_submit')}
             </button>
           </div>
         </form>

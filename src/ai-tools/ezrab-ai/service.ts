@@ -39,6 +39,31 @@ function newIdempotencyKey(): string {
 }
 
 /**
+ * D3 (2026-11-26) — balasan aman bila tool proyek gagal karena tidak ada
+ * proyek aktif: error mentah registry (PROJECT_REQUIRED /
+ * PROJECT_SCOPE_MISMATCH, "Tool … butuh proyek aktif (projectId) — …")
+ * TIDAK PERNAH ditampilkan ke pengguna. Pesan kaleng di bawah adalah
+ * satu-satunya teks yang boleh tampil untuk kasus itu.
+ */
+export const PROJECT_SCOPE_CANNED_REPLY =
+  'Siap, kondisi lahan kosong sudah saya catat. Draf RAB yang sudah disusun masih tersimpan sebagai draf sementara — belum terikat ke proyek, jadi saya belum bisa memeriksa item-itemnya satu per satu dari sini. Lanjut ke pratinjau draf untuk melihat ringkasannya, atau sebutkan luas/dimensinya bila mau saya hitung volumenya dari konteks chat ini.';
+/** Aksi lanjutan untuk balasan PROJECT_SCOPE di atas (lapisan service;
+ *  view belum merender `actions` dari EzrabAiResponse — teks kaleng
+ *  sudah menawarkan pratinjau dalam prosa; rendering tombol = tindak
+ *  lanjut, lihat laporan D3). */
+export const PROJECT_SCOPE_ACTIONS: Array<{ label: string; action: { kind: 'intent'; intent: string; param?: string } }> = [
+  { label: 'Susun pratinjau RAB', action: { kind: 'intent', intent: 'RAB_PROJECT_PREVIEW', param: 'generate' } },
+  { label: 'Lihat draf', action: { kind: 'intent', intent: 'RAB_PROJECT_PREVIEW' } },
+];
+export function isProjectScopeErrorCode(code: string | null | undefined): boolean {
+  return code === 'PROJECT_REQUIRED' || code === 'PROJECT_SCOPE_MISMATCH';
+}
+/** Balasan aman bila SEMUA tool call dalam satu giliran gagal karena
+ *  alasan BUKAN scope proyek — tanpa token internal apa pun. */
+export const ALL_TOOLS_FAILED_REPLY =
+  'Maaf, saya belum bisa menjalankan pemeriksaan itu saat ini. Silakan ketuk "Coba Lagi" atau sebutkan luas/dimensinya bila mau saya hitung dari konteks chat ini.';
+
+/**
  * P2 — tahap eksekusi untuk SATU tool call yang benar-benar dijalankan.
  * Pemetaan ini jujur karena setiap tool call adalah event nyata (model
  * memanggilnya, registry mengeksekusinya); tool yang tidak masuk peta
@@ -213,12 +238,17 @@ export class EzrabAiService {
     // up to 3 sequential calls). A malformed call is NEVER executed with
     // silently-emptied args — it is reported as not understood instead.
     let toolReply: string | null = null;
+    let toolReplyActions: EzrabAiResponse['actions'];
     let fallbackText = result.content;
     try {
       const scan = scanToolCalls(result.content);
       fallbackText = scan.cleanText;
       if (scan.calls.length > 0) {
         const outputs: string[] = [];
+        // D3 (2026-11-26): error tool mentah TIDAK PERNAH menjadi
+        // jawaban — cabang di bawah memilah ok vs gagal per panggilan.
+        let projectScopeFailures = 0;
+        let otherFailures = 0;
         for (const call of scan.calls) {
           // P2: pembatalan menghentikan LANGKAH BERIKUTNYA — cek sebelum
           // SETIAP tool call (bukan hanya sebelum fetch): abort yang
@@ -243,12 +273,49 @@ export class EzrabAiService {
             channel: 'chat-ai',
             projectSnapshot: snapshot,
           });
-          const output = exec.output ?? exec.error ?? `Alat ${call.toolName} gagal tanpa pesan.`;
-          toolResults.push({ toolName: call.toolName, ok: exec.ok, output });
-          outputs.push(output);
+          if (exec.ok) {
+            const output = exec.output ?? '';
+            toolResults.push({ toolName: call.toolName, ok: true, output });
+            outputs.push(output);
+          } else {
+            // Gagal: catat di toolResults (ok:false, observabilitas)
+            // dengan teks AMAN — `exec.error` mentah (nama tool,
+            // projectId, kode internal) tidak pernah masuk reply
+            // maupun output hasil tool.
+            toolResults.push({
+              toolName: call.toolName,
+              ok: false,
+              output: isProjectScopeErrorCode(exec.errorCode)
+                ? PROJECT_SCOPE_CANNED_REPLY
+                : `Pemeriksaan ${call.toolName} tidak dapat dijalankan.`,
+            });
+            if (isProjectScopeErrorCode(exec.errorCode)) projectScopeFailures++;
+            else otherFailures++;
+          }
         }
         // Deterministic: tool output(s) ARE the answer.
-        toolReply = outputs.join('\n\n');
+        if (outputs.length > 0) {
+          toolReply = outputs.join('\n\n');
+        } else if (projectScopeFailures > 0 && otherFailures === 0) {
+          // Semua tool gagal karena tidak ada proyek aktif: JANGAN
+          // gagalkan giliran — jawab dengan prosa model bila ada,
+          // kalau tidak pesan kaleng + aksi lanjutan.
+          toolReply = fallbackText || PROJECT_SCOPE_CANNED_REPLY;
+          toolReplyActions = PROJECT_SCOPE_ACTIONS;
+        } else if (projectScopeFailures + otherFailures === scan.calls.length) {
+          // Semua tool gagal karena alasan lain: success:false +
+          // balasan aman agar view memakai formatAiFailureMessage +
+          // jalur "Coba Lagi" (bukan error mentah).
+          return {
+            success: false,
+            reply: ALL_TOOLS_FAILED_REPLY,
+            rawContent: result.content,
+            requestId: result.requestId,
+            errorCode: 'TOOL_EXECUTION_FAILED',
+            toolCalls: toolCalls.length ? toolCalls : undefined,
+            toolResults: toolResults.length ? toolResults : undefined,
+          };
+        }
       } else if (scan.malformed) {
         // The model tried to call a tool but the call could not be parsed.
         // Never run it with {} args; answer with the model's remaining
@@ -299,6 +366,7 @@ export class EzrabAiService {
       toolCalls: toolCalls.length ? toolCalls : undefined,
       toolResults: toolResults.length ? toolResults : undefined,
       followUpSuggestions,
+      actions: toolReplyActions,
     };
   }
 }

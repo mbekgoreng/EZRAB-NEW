@@ -8,6 +8,7 @@ import mascotSitting from '../../../assets/mascot-ezrab-sitting.png';
 import { FaqAccordion } from '../../../faq/FaqAccordion';
 import { getFeaturedFaqs } from '../../../faq/faqData';
 import { navigateTo } from '../../../routing/routes';
+import { useI18n } from '../../../i18n';
 
 interface AiShowcaseProps {
   onOpenAuth: (tab?: 'masuk' | 'daftar') => void;
@@ -27,6 +28,7 @@ const formatNum = (n: number) => n.toLocaleString('id-ID');
  * Semua ilustrasi adalah SIMULASI animasi CSS — diberi label sebagai ilustrasi.
  */
 export const AiShowcase: React.FC<AiShowcaseProps> = ({ onOpenAuth, onOpenDemo, onOpenFaq, onOpenPricing }) => {
+  const { t } = useI18n();
   // Animasi transisi: teks & gambar muncul berjenjang (fade + naik) saat
   // masuk viewport. Kelas .rv/.rv-on diatur di landing-ai-showcase.css;
   // prefers-reduced-motion menonaktifkannya dari sisi CSS.
@@ -74,9 +76,9 @@ export const AiShowcase: React.FC<AiShowcaseProps> = ({ onOpenAuth, onOpenDemo, 
     <div className="ezai-scope" ref={scopeRef}>
       <section className="ezai-sec"><div className="grid-bg"></div><div className="glow" style={{width: '560px', height: '560px', background: 'rgba(37,99,235,.15)', top: '-160px', left: '50%', transform: 'translateX(-50%)'}}></div>
       <div className="wrap center" style={{position: 'relative'}}>
-      <span className="eyebrow"> Fitur AI EZRAB</span>
-      <h2>Tiga AI. <span className="bl">Satu Workspace Estimasi.</span></h2>
-      <p className="sub">EZRAB sekarang bertumpu pada AI: membaca gambar kerja, menjawab dari data proyek Anda, dan menyusun dokumen — pekerjaan berminggu-minggu dipadatkan jadi hitungan menit.</p>
+      <span className="eyebrow"> {t('landing.hero_eyebrow')}</span>
+      <h2>{t('landing.hero_title_a')} <span className="bl">{t('landing.hero_title_b')}</span></h2>
+      <p className="sub">{t('landing.hero_sub')}</p>
       <div className="pillars" style={{textAlign: 'left'}}>
       <div className="pillar"><div className="mini-scene"><svg viewBox="0 0 200 76" style={{width: '100%', height: '100%'}}><rect x="8" y="6" width="184" height="64" fill="#fff" stroke="#33506E" strokeWidth="3"/><path d="M84,6 V44 M8,44 H192 M132,44 V70" stroke="#33506E" strokeWidth="3" fill="none"/><rect x="96" y="16" width="30" height="16" fill="#EFF4FB" stroke="#B9CBDF"/><rect x="20" y="50" width="34" height="14" fill="#EFF4FB" stroke="#B9CBDF"/></svg><div className="beam-mini"></div></div><h3>DED Estimate AI</h3><p>Upload gambar kerja, AI membaca denah & detail lalu menyusun item pekerjaan beserta volumenya.</p><ul><li>Deteksi item & volume otomatis</li><li>Langsung masuk ke RAB proyek</li><li>Setiap angka berlabel & bisa ditelusur</li></ul><div className="go">Lihat cara kerjanya ↓</div></div>
       <div className="pillar"><div className="mini-scene col"><div className="mbub u">Harga plesteran 1:4?</div><div className="mbub a">Kode 3.7.4 — <b>Rp56.784/m²</b> · AHSP resmi</div><div className="mbub u" style={{animationDelay: '1.4s'}}>Hitung volume dinding</div></div><h3>Ezrab Chat AI</h3><p>Tanya harga, hitung volume, minta rekap — dijawab dari data EZRAB sendiri, bukan karangan model.</p><ul><li>Terhubung AHSP 2026 & harga pasar</li><li>Paham konteks proyek aktif Anda</li><li>Bisa menjalankan perintah navigasi</li></ul><div className="go">Lihat contoh percakapan ↓</div></div>
@@ -306,10 +308,10 @@ export const AiShowcase: React.FC<AiShowcaseProps> = ({ onOpenAuth, onOpenDemo, 
       <div className="center"><span className="eyebrow">Pusat Bantuan</span><h2 style={{fontSize: '32px'}}>Sering ditanyakan <span className="bl">soal EZRAB</span></h2></div>
       <div style={{maxWidth: '860px', margin: '34px auto 0'}}><FaqAccordion items={getFeaturedFaqs()} idPrefix="home-faq" /></div>
       <div className="center" style={{marginTop: '26px'}}><button type="button" className="btn" onClick={() => onOpenFaq?.()}>Lihat Semua Pertanyaan</button></div>
-      <div className="cta-box" style={{marginTop: '132px'}}><img className="mascot-cta" src={mascotSitting} alt="Maskot EZRAB" /><span className="eyebrow" style={{background: 'rgba(255,255,255,.14)', borderColor: 'rgba(255,255,255,.3)', color: '#DCEBFF'}}> Mulai Sekarang</span>
-      <h2>Rasakan estimator<br/>yang bekerja dengan AI.</h2>
-      <p className="sub" style={{margin: '0 auto 30px', color: '#C9DCF7'}}>Demo dibuka dengan kode akses selama masa pratinjau — coba DED Estimate AI, Chat AI, dan AI Document tanpa kartu kredit.</p>
-      <div style={{display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap'}}><button className="btn" style={{background: '#fff', color: '#1E40AF'}} onClick={onOpenDemo}>Coba Masuk sebagai Demo</button><button className="btn ghost" onClick={() => onOpenAuth('daftar')}>Daftar Gratis</button></div></div>
+      <div className="cta-box" style={{marginTop: '132px'}}><img className="mascot-cta" src={mascotSitting} alt="Maskot EZRAB" /><span className="eyebrow" style={{background: 'rgba(255,255,255,.14)', borderColor: 'rgba(255,255,255,.3)', color: '#DCEBFF'}}> {t('landing.cta_eyebrow')}</span>
+      <h2>{t('landing.cta_ai_title_a')}<br/>{t('landing.cta_ai_title_b')}</h2>
+      <p className="sub" style={{margin: '0 auto 30px', color: '#C9DCF7'}}>{t('landing.cta_ai_sub')}</p>
+      <div style={{display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap'}}><button className="btn" style={{background: '#fff', color: '#1E40AF'}} onClick={onOpenDemo}>{t('landing.cta_demo')}</button><button className="btn ghost" onClick={() => onOpenAuth('daftar')}>{t('landing.cta_daftar_gratis')}</button></div></div>
       </div></section>
       <footer className="ezai-footer"><div className="wrap"><div className="fgrid">
       <div><div style={{display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px'}}><img src={logoImg} alt="Logo EZRAB" style={{width: '38px', height: '38px', borderRadius: '9px', objectFit: 'cover'}} /><b style={{margin: '0', fontSize: '16px'}}>EZRAB</b></div>

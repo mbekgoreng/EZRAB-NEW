@@ -40,8 +40,13 @@ import {
 import { handleProjectSettingsCommand, parseSettingsPatch, formatPercentValue, type ProjectSettingsPatch } from './commands/projectSettingsCommands';
 import {
   RabNeeds, extractRabNeeds, missingNeeds, buildDesignPrompt, summarizeRabNeeds,
-  resolveLandAreaM2, stripLandPhrases, formatLengthM,
+  resolveLandAreaM2, stripLandPhrases, formatLengthM, parseBudgetMentions,
 } from './rabNeeds';
+/* Chip sapaan proyek baru (Step 3): satu-satunya sumber label kategori
+ * — dipakai tryGreetingRabType (Gap D) agar ketuk chip telanjang
+ * dikenali persis tanpa menduplikasi daftar (newProjectMagicPrompt
+ * murni — tanpa impor balik ke registry). */
+import { NEW_PROJECT_GREETING_SUGGESTIONS } from './newProjectMagicPrompt';
 import {
   RabSubtype, subtypeGroupFor, getSubtype, detectSubtypeFromText, findSubtypeTemplates,
 } from './rabSubtypes';
@@ -107,8 +112,9 @@ import { runRabIntentFlow, evaluateRabIntent, continueRabIntent, getLastRabInten
 import type { RabTemplateRecommendation } from './rabIntentFlow';
 import { extractRabIntentSpec, mergeRabIntentSpec } from './rabIntentSpec';
 import type { RabIntentSpec } from './rabIntentSpec';
-import { buildUniversalDraft, formatUniversalDraftMessage, extractUniversalSpec, getLastUniversalDraft, getLastUniversalDraftProjectId, setLastUniversalDraft, effectiveItems, isPriceValidForTotal, itemKey } from './universalRab';
-import type { UniversalDraft } from './universalRab';
+import { buildUniversalDraft, formatUniversalDraftMessage, extractUniversalSpec, getLastUniversalDraft, getLastUniversalDraftProjectId, setLastUniversalDraft, effectiveItems, isPriceValidForTotal, itemKey, computeTotals, overBudgetDecision, formatCostContributorLine, UNIVERSAL_DRAFT_PUSH_SENTENCE, looksLikeUniversalRevision } from './universalRab';
+import type { UniversalDraft, OverBudgetDecision } from './universalRab';
+import { formatRupiah } from './budgetFeasibility';
 import { getDraftProjectEnsurer } from './tempProject';
 import { authorizeChatAiMutation } from './mutationInventory';
 import { appendMutationAuditRecord } from './mutationAuditLog';
@@ -336,7 +342,13 @@ export interface ChatActionButton {
     | { kind: 'qto-correction-confirm'; correctionId: string; expectedQuantity?: number; expectedUnit?: string; dedQuantity?: number; dedUnit?: string }
     | { kind: 'qto-correction-reject'; correctionId: string }
     | { kind: 'ded-spec-confirm'; previewId: string }
-    | { kind: 'ded-spec-reject'; previewId: string };
+    | { kind: 'ded-spec-reject'; previewId: string }
+    /* D5 (2026-11-26, perintah owner) — jawaban atas pertanyaan budget
+     * OVER: kurangi lingkup / tambah budget / ganti spek-material.
+     * Ditangani view lewat answerBudgetDecision (bukan executeIntent). */
+    | { kind: 'budget-decision-reduce-scope' }
+    | { kind: 'budget-decision-raise-budget' }
+    | { kind: 'budget-decision-change-spec' };
 }
 
 export interface ActionResult {
@@ -359,6 +371,10 @@ export interface ActionResult {
   awaitRabNeeds?: boolean;
   /** Kartu pilihan RAB bertipe sedang menunggu pilihan/koreksi pengguna (D1) */
   awaitRabChoice?: boolean;
+  /** D5 (2026-11-26, perintah owner): chat menunggu jawaban atas
+   *  pertanyaan budget OVER (kurangi lingkup / tambah budget / ganti
+   *  spek) — pesan berikutnya dirutekan ke continueBudgetDecision. */
+  awaitBudgetDecision?: boolean;
   /** Chat menunggu jawaban subtipe pekerjaan (klarifikasi "Jalan apa?") */
   awaitRabSubtype?: boolean;
   /** Chat menunggu jawaban klarifikasi material (gerbang bahan sebelum draft) */
@@ -1198,7 +1214,11 @@ function generateFromProjectContext(ctx: ProjectIntakeContext, projectId?: strin
     };
   }
   // Hasil needs-spec dari universal = draft tidak tersusun; konteks tetap.
-  if (!res.actions?.some((a) => a.action.kind === 'push-universal')) {
+  // D5 (2026-11-26): tanya-balik budget OVER BUKAN needs-spec — draft
+  // SUDAH tersusun (hanya tanpa push-universal); konteks dibersihkan
+  // seperti draft biasa, kalau tidak giliran sesudah draft masih
+  // menemukan konteks hidup dan menanyakan ulang pratinjau.
+  if (!res.actions?.some((a) => a.action.kind === 'push-universal') && !res.awaitBudgetDecision) {
     return { ...res, awaitProjectConcept: true };
   }
   projectCtx = null;
@@ -1419,7 +1439,10 @@ export function tryContinueProjectContext(text: string, projectId?: string | nul
   return intakeNextStep(merged, {
     ackChanges: changes.length ? changes : undefined,
     askedFacilities: beforeStage === 'facilities' || beforeStage === 'site',
-    askedSite: beforeStage === 'site',
+    // D2 2026-11-26 (pertahanan lapis kedua, lapisan bersama): sesudah
+    // pratinjau/teknis, pertanyaan kondisi lahan SUDAH lewat — revisi
+    // atau giliran lanjutan tidak boleh mundur menanyakannya lagi.
+    askedSite: beforeStage === 'site' || beforeStage === 'preview' || beforeStage === 'technical',
   });
 }
 
@@ -1662,8 +1685,11 @@ function generateFromUniversalContext(ctx: UniversalIntakeContext): ActionResult
       actions: [{ label: 'Mulai manual', action: { kind: 'navigate', menu: 'rab-estimasi' } as const }],
     };
   }
-  if (!res.actions?.some((a) => a.action.kind === 'push-universal')) {
+  if (!res.actions?.some((a) => a.action.kind === 'push-universal') && !res.awaitBudgetDecision) {
     // needs-spec / pertanyaan lanjutan dari mesin — konteks tetap hidup.
+    // D5: tanya-balik budget OVER bukan needs-spec — draft sudah tersusun
+    // (tanpa push-universal); konteks disimpan sebagai snapshot lalu
+    // dibersihkan seperti draft biasa.
     return { ...res, awaitProjectConcept: true };
   }
   // B5-3: draft berhasil + proyek dipastikan (baru/sudah aktif) — ikat
@@ -1813,6 +1839,45 @@ export function universalIntakeGate(raw: string, fromClarify = false, projectId?
   universalCtx = ctx;
   projectCtx = null; // topik diambil alih gerbang ini
   return universalNextStep(ctx);
+}
+
+/**
+ * GAP D (2026-11-26) — ketuk chip kategori sapaan proyek baru (Step 3).
+ *
+ * Masalah: ketuk chip ("Rumah Tinggal", "Gudang", …) mengirim label
+ * telanjang lewat handleSelectSuggestion → submit → routeIntent, dan
+ * routeIntent mengembalikan UNKNOWN untuk label tanpa verba RAB —
+ * sehingga ketukan jatuh ke pipeline live-AI, padahal gerbang intake
+ * deterministik sudah mengenal kategorinya (classifyUniversal +
+ * extractRabNeeds). Jalur ini DIPANGGIL view hanya selama status
+ * menunggu jenis RAB sapaan aktif (awaitingRabType, disetel efek seed
+ * sapaan) — di luar konteks itu submit berjalan normal.
+ *
+ * Perilaku: label dicocokkan PERSIS (case-insensitive, tanpa spasi
+ * lebih) dengan 6 chip kanonis; bukan chip → null (submit normal).
+ * Label yang cocok dirutekan lewat executeIntent CREATE_RAB_SUMMARY —
+ * jalur yang SAMA dengan "Buatkan RAB <kategori>" (gerbang universal →
+ * gerbang landscape → universalResultFor → ringkasan rumah) — sehingga
+ * tidak ada logika routing kedua yang bisa drift. Pesan yang tampil
+ * tetap label chip apa adanya: TIDAK ADA kalimat karangan yang
+ * dikirim atas nama pengguna; label hanya dipakai sebagai konteks
+ * "mau bikin RAB apa?" di dalam registry. Tanpa panggilan AI.
+ */
+export function tryGreetingRabType(
+  text: string,
+  activeProject: { id: string; name: string } | null,
+): ActionResult | null {
+  const raw = (text ?? '').trim().toLowerCase();
+  const chip = NEW_PROJECT_GREETING_SUGGESTIONS.find((c) => c.toLowerCase() === raw);
+  if (!chip) return null;
+  return executeIntent('CREATE_RAB_SUMMARY', undefined, {
+    navigate: () => {},
+    rawText: chip,
+    currentMenu: 'ezrab-ai',
+    activeProject: activeProject ?? null,
+    projects: activeProject ? [activeProject] : [],
+    projectTotal: null,
+  });
 }
 
 /**
@@ -2121,6 +2186,19 @@ export function tryContinueRabMaterial(text: string, projectId?: string | null):
   return null;
 }
 
+/* GAP B (2026-11-26, owner requirement — mockup Step 3 di-ACC):
+ * chip jawaban pertanyaan lantai rumah ("Berapa lantai?").
+ * Param `floors:N` ditangani case RAB_NEEDS_REFINE (bukan intent baru —
+ * ChatIntent di intentRouter.ts tidak diubah); label "4+" adalah bak
+ * "4 lantai atau lebih" dan param-nya '4' (nilai kerja yang disimpan;
+ * parseFloorsMention tidak membaca "4+ lantai" sebagai angka). */
+const HOUSE_FLOORS_ACTIONS: ChatActionButton[] = [
+  { label: '1 lantai', action: { kind: 'intent', intent: 'RAB_NEEDS_REFINE', param: 'floors:1' } },
+  { label: '2 lantai', action: { kind: 'intent', intent: 'RAB_NEEDS_REFINE', param: 'floors:2' } },
+  { label: '3 lantai', action: { kind: 'intent', intent: 'RAB_NEEDS_REFINE', param: 'floors:3' } },
+  { label: '4+ lantai', action: { kind: 'intent', intent: 'RAB_NEEDS_REFINE', param: 'floors:4' } },
+];
+
 function rabSummaryResult(raw: string, base?: RabNeeds, projectId?: string | null): ActionResult {
   // Alur ringkasan menggantikan kartu pilihan yang mungkin menggantung.
   pendingChoice = null;
@@ -2240,15 +2318,30 @@ function rabSummaryResult(raw: string, base?: RabNeeds, projectId?: string | nul
       specBudget != null
         ? `\n\nAnggaran ${fmtIDR(specBudget)} saya catat sebagai batas: total drafnya nanti saya bandingkan dengan anggaran itu, bukan memangkas lingkup diam-diam.`
         : '';
+    // GAP B (2026-11-26, owner requirement — mockup Step 3 di-ACC):
+    // rumah yang lantainya belum diketahui DITANYA sekali di sini
+    // ("Berapa lantai?", chip 1/2/3/4+) — bukan lagi langsung
+    // diasumsikan diam-diam. NON-BLOKIR (keputusan hardening owner
+    // 2026-11-26): bila tak dijawab, floors tetap UNKNOWN (null) dan
+    // ringkasan di atas tetap menampilkan asumsi 1 lantai yang
+    // terlabel terbuka; default draft TIDAK berubah. Pertanyaan hanya
+    // di giliran pertama (cabang ini) — giliran lanjutan memakai cabang
+    // refinement di atas sehingga tidak pernah ditanya ulang. Hanya
+    // kind 'rumah' (aliran rumah tinggal); gedung/renovasi tidak diubah.
+    const askHouseFloors = needs.kind === 'rumah' && needs.floors == null;
+    const floorsQuestion = askHouseFloors
+      ? '\n\nBerapa lantai? Pilih salah satu di bawah — bila belum tahu, lewati saja; asumsi 1 lantai di atas tetap berlaku sampai Anda mengoreksinya.'
+      : '';
     return {
       ok: true,
-      message: summary + budgetLine,
+      message: summary + budgetLine + floorsQuestion,
       // Perbaikan overhaul 2026-11-06: ringkasan pertama ikut menyetel
       // status menunggu kelengkapan — sebelumnya flag ini hanya disetel
       // hasil klik tombol "Lengkapi kebutuhan", sehingga jawaban ketikan
       // pengguna bocor ke pipeline LLM tanpa state kebutuhan.
       awaitRabNeeds: missing.length > 0,
       actions: [
+        ...(askHouseFloors ? HOUSE_FLOORS_ACTIONS : []),
         { label: 'Buka Workspace Desain & RAB', action: { kind: 'intent', intent: 'OPEN_DESIGN_WORKSPACE' } },
         { label: 'Lengkapi kebutuhan', action: { kind: 'intent', intent: 'RAB_NEEDS_REFINE' } },
         { label: 'Mulai manual', action: { kind: 'navigate', menu: 'rab-estimasi' } },
@@ -2511,7 +2604,7 @@ function dimsFromRawText(raw: string): QtoUserDimensions {
   };
 }
 
-function universalResultFor(raw: string, forcedTemplateId?: string, materialNote?: string, opts?: { structuredSpecs?: StructuredSpec[]; budgetCapOverride?: number | null; projectId?: string | null; buildings?: BuildingModel[]; dedQtoDims?: QtoUserDimensions }): ActionResult | null {
+export function universalResultFor(raw: string, forcedTemplateId?: string, materialNote?: string, opts?: { structuredSpecs?: StructuredSpec[]; budgetCapOverride?: number | null; projectId?: string | null; buildings?: BuildingModel[]; dedQtoDims?: QtoUserDimensions }): ActionResult | null {
   // GATE 4 (5D) — DED lampiran: spek DED digabung ke spek draft
   // (spek user menang per kunci — mergeDedSpecsIntoSpecs) +
   // rekonsiliasi QTO dihitung untuk draft + tombol koreksi QTO yang
@@ -2612,6 +2705,14 @@ function universalResultFor(raw: string, forcedTemplateId?: string, materialNote
           /* pengikatan gagal — draft tetap berlaku tanpa ikatan */
         }
       }
+    }
+    // D5 (2026-11-26, perintah owner): draft OVER — JANGAN sajikan
+    // Push; tanyakan balik (kurangi lingkup / tambah budget / ganti
+    // spek) dan kunci transfer sampai dijawab. Kalimat Push disaring
+    // di dalam `overBudgetAskBack`; renderer murni tidak disentuh.
+    const askBack = overBudgetAskBack(res.draft, formatUniversalDraftMessage(res.draft));
+    if (askBack) {
+      return { ...askBack, ...(ensuredProjectId ? { ensuredProjectId } : {}) };
     }
     return {
       ok: true,
@@ -5254,7 +5355,11 @@ export function executeIntent(
           // konteks draft ini BERSAMA draftnya. Konteks diekstrak ulang
           // dari teks yang sama — deterministik, identik dengan yang
           // disimpan gerbang.
-          if (uniSummary.actions?.some((a) => a.action.kind === 'push-universal')) {
+          // D5: tanya-balik budget OVER juga berarti draft tersusun
+          // (tanpa push-universal) — snapshot tetap ditautkan ke draft
+          // segar itu agar pemulihan pasca-reload memulihkan konteks
+          // bersama draftnya. Tanpa ini, konteks OVER kehilangan tautan.
+          if (uniSummary.actions?.some((a) => a.action.kind === 'push-universal') || uniSummary.awaitBudgetDecision) {
             const draftNow = getLastUniversalDraft();
             // F-ISO-2 (Phase 2, 2026-11-23): tanpa proyek aktif, draft
             // mendarat di proyek sementara B5-3 (ensuredProjectId) —
@@ -5556,6 +5661,16 @@ export function executeIntent(
     }
 
     case 'RAB_NEEDS_REFINE': {
+      // GAP B (2026-11-26, owner requirement): jawaban chip atas
+      // pertanyaan lantai rumah ("Berapa lantai?") memakai intent yang
+      // sama dengan param `floors:N` (N = 1..4; "4+" = 4) — digabung ke
+      // state kebutuhan lewat jalur teks yang sama (continueRabNeeds),
+      // sehingga lantai tersimpan sebagai floors dan dilaporkan sebagai
+      // perubahan seperti jawaban ketikan "3 lantai".
+      const floorsParam = (param ?? '').match(/^floors:([1-4])$/);
+      if (floorsParam) {
+        return continueRabNeeds(`${floorsParam[1]} lantai`, ctx.activeProject?.id ?? null);
+      }
       const refineNeeds = scopedLastRabNeeds(ctx.activeProject?.id ?? null);
       const missing = refineNeeds ? missingNeeds(refineNeeds) : [];
       return {
@@ -5932,6 +6047,255 @@ export function __getPendingDirectCompletionForTests(): DirectRabFullAiCompletio
   return pendingDirectCompletion ? pendingDirectCompletion.completion : null;
 }
 
+/* ------------------------------------------------------------------ */
+/* D5 — TANYA-BALIK BUDGET OVER (perintah owner 2026-11-26)            */
+/* Budget adalah BATAS MAKSIMUM, bukan target. Bila total estimasi    */
+/* draft MELEBIHI anggaran, draft TIDAK final dan TIDAK BISA          */
+/* ditransfer sampai pengguna memilih: (a) kurangi lingkup,           */
+/* (b) tambah budget, atau (c) ganti spek/material. Lingkup TIDAK     */
+/* PERNAH dipangkas diam-diam.                                        */
+/*                                                                     */
+/* Dua lapis keadaan (sengaja dipisah):                               */
+/*  - slot in-memory `pendingBudgetDecision` (pola yang sama dengan    */
+/*    `pendingUniversalCompletion`): merutekan pesan berikutnya +      */
+/*    TTL 10 menit + sidik draft; hilang saat reload.                 */
+/*  - penanda persisten `draft.budgetDecisionPending` (universalRab):  */
+/*    gerbang transfer (`validateTransfer` / `buildPushPayload`) —     */
+/*    reload TIDAK membuat draft diam-diam bisa ditransfer; revisi    */
+/*    ke UNDER membebaskan lewat `overBudgetDecision`.                 */
+/* ------------------------------------------------------------------ */
+
+export type BudgetDecisionChoice = 'reduce-scope' | 'raise-budget' | 'change-spec';
+
+interface PendingBudgetDecision {
+  draftId: string;
+  draftFingerprint: string;
+  createdAt: number;
+  decision: OverBudgetDecision;
+  answeredChoice: BudgetDecisionChoice | null;
+}
+
+let pendingBudgetDecision: PendingBudgetDecision | null = null;
+
+/** Khusus pengujian: buang slot pertanyaan budget (isolasi antar cek). */
+export function __clearPendingBudgetDecisionForTests(): void {
+  pendingBudgetDecision = null;
+}
+
+/** Khusus pengujian: slot pertanyaan budget saat ini (null bila tidak ada). */
+export function __getPendingBudgetDecisionForTests(): PendingBudgetDecision | null {
+  return pendingBudgetDecision;
+}
+
+function budgetDecisionActions(): ChatActionButton[] {
+  return [
+    { label: 'Kurangi lingkup', action: { kind: 'budget-decision-reduce-scope' } },
+    { label: 'Tambah budget', action: { kind: 'budget-decision-raise-budget' } },
+    { label: 'Ganti spek/material', action: { kind: 'budget-decision-change-spec' } },
+  ];
+}
+
+function formatOverBudgetQuestionBlock(d: OverBudgetDecision): string {
+  const lines: string[] = [];
+  lines.push('**Total melebihi anggaran — perlu keputusan Anda:**');
+  lines.push(
+    `• Total estimasi ${formatRupiah(d.total)} vs anggaran ${formatRupiah(d.cap)} — MELEBIHI anggaran sebesar ${formatRupiah(d.over)}; anggaran menutup ${d.coveragePct.toLocaleString('id-ID', { maximumFractionDigits: 1 })}% dari total estimasi (${d.multiple.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}× anggaran).`
+  );
+  if (d.provisional) {
+    lines.push('• SEMENTARA — total PARSIAL, ada item belum berharga; total final dapat berubah sesudah harga masuk.');
+  }
+  lines.push('**Kontributor biaya terbesar:**');
+  for (const c of d.contributors) lines.push(formatCostContributorLine(c));
+  lines.push('Draft ini BELUM final dan BELUM bisa ditransfer sampai Anda memilih salah satu:');
+  lines.push('1. **Kurangi lingkup** — sebutkan item/bagian mana yang dikurangi dan seberapa besar (tidak ada pemangkasan diam-diam).');
+  lines.push('2. **Tambah budget** — sebutkan anggaran baru Anda.');
+  lines.push('3. **Ganti spek/material** — sebutkan spek atau material penggantinya.');
+  lines.push('Balas dengan pilihan Anda, mis. "kurangi lingkup", "tambah budget jadi 400 juta", atau "ganti spek".');
+  return lines.join('\n');
+}
+
+/**
+ * D5 — helper bersama (dipakai `universalResultFor` + `acceptFullAiCompletion`):
+ * bila draft OVER, setel slot + penanda draft dan kembalikan ActionResult
+ * tanya-balik (pesan draft TANPA kalimat Push + blok pertanyaan + 3 tombol
+ * opsi saja); bila tidak OVER, kembalikan null (pemanggil memakai hasil
+ * normalnya). `extraActions` ditambahkan sesudah 3 tombol opsi (mis.
+ * tombol "Batalkan lengkapan" pada jalur accept).
+ */
+function overBudgetAskBack(
+  draft: UniversalDraft,
+  baseMessage: string,
+  extraActions: ChatActionButton[] = []
+): ActionResult | null {
+  const decision = overBudgetDecision(draft);
+  if (!decision) return null;
+  draft.budgetDecisionPending = true;
+  // Penanda hidup DI OBJEK draft (bukan slot saja): ia ikut ke mana pun
+  // draft diserialisasi/disimpa (autosave view, restore pasca-reload) —
+  // reload TIDAK membuat draft diam-diam bisa ditransfer. setLast...
+  // menegaskan ulang draft aktif sesudah mutasi (ikatan proyek
+  // dipertahankan: undefined = pertahankan, bukan hapus).
+  setLastUniversalDraft(draft, getLastUniversalDraftProjectId() ?? undefined);
+  pendingBudgetDecision = {
+    draftId: draft.id,
+    draftFingerprint: draftFingerprint(draft),
+    createdAt: Date.now(),
+    decision,
+    answeredChoice: null,
+  };
+  // Renderer murni TIDAK disentuh: kalimat Push disaring di sini saja.
+  const base = baseMessage
+    .split('\n')
+    .filter((l) => l.trim() !== UNIVERSAL_DRAFT_PUSH_SENTENCE)
+    .join('\n')
+    .trimEnd();
+  return {
+    ok: true,
+    message: `${base}\n\n${formatOverBudgetQuestionBlock(decision)}`,
+    actions: [...budgetDecisionActions(), ...extraActions],
+    awaitBudgetDecision: true,
+  };
+}
+
+/**
+ * D5 — jawaban atas pertanyaan budget OVER (jalur teks; tombol memanggil
+ * `answerBudgetDecision` yang mendelegasikan ke sini dengan teks kanonis).
+ * Mengembalikan null bila TIDAK ADA slot yang menunggu (pemanggil
+ * memproses pesan secara normal) atau bila pesan adalah instruksi revisi
+ * sesudah pilihan (a)/(c) — revisi itu diteruskan ke jalur revisi normal
+ * oleh pemanggil (view), BUKAN diterapkan di sini.
+ *
+ * (a) kurangi lingkup → balas dengan kontributor + tanya apa yang
+ *     dipotong; slot TETAP menunggu (pemotongan hanya lewat revisi).
+ * (b) tambah budget → parse cap baru; bila kini UNDER → slot + penanda
+ *     dibersihkan dan Push kembali; bila masih OVER → tanya-balik
+ *     diperbarui dengan angka baru.
+ * (c) ganti spek → balas dengan kontributor + tanya spek pengganti;
+ *     slot TETAP menunggu (perubahan hanya lewat revisi).
+ */
+export function continueBudgetDecision(text: string, now: number = Date.now()): ActionResult | null {
+  const pending = pendingBudgetDecision;
+  if (!pending) return null;
+  const live = getLastUniversalDraft();
+  if (!live || live.id !== pending.draftId) {
+    pendingBudgetDecision = null;
+    return {
+      ok: false,
+      message: 'Draft berubah sejak pertanyaan budget diajukan — draft berubah, jalankan ulang permintaan RAB-nya untuk pertanyaan budget terbaru.',
+    };
+  }
+  if (now > pending.createdAt + DIRECT_COMMAND_CONFIRM_TTL_MS) {
+    pendingBudgetDecision = null;
+    if (live.budgetDecisionPending) live.budgetDecisionPending = false;
+    return {
+      ok: false,
+      message: 'Pertanyaan budget ini sudah kedaluwarsa (lebih dari 10 menit) — jalankan ulang permintaan RAB-nya untuk pertanyaan budget terbaru.',
+    };
+  }
+  if (draftFingerprint(live) !== pending.draftFingerprint) {
+    pendingBudgetDecision = null;
+    return {
+      ok: false,
+      message: 'Draft berubah sejak pertanyaan budget diajukan — draft berubah, jalankan ulang permintaan RAB-nya untuk pertanyaan budget terbaru.',
+    };
+  }
+  const t = (text || '').toLowerCase();
+  // Lanjutan sesudah pilihan (a)/(c): instruksi revisi diteruskan ke
+  // jalur revisi normal — kembalikan null agar view memprosesnya biasa
+  // (slot dibersihkan; penanda draft TETAP — transfer tetap diblokir
+  // sampai revisi membuat total UNDER atau tanya-balik baru dijawab).
+  if ((pending.answeredChoice === 'reduce-scope' || pending.answeredChoice === 'change-spec') &&
+      looksLikeUniversalRevision(text)) {
+    pendingBudgetDecision = null;
+    return null;
+  }
+  // (b) — anggaran baru disebut (langsung, atau sesudah ditanya).
+  // Bila slot sudah menanyakan anggaran baru (answeredChoice (b)),
+  // angka telanjang ("400 juta") pun jawaban yang sah — coba lagi
+  // dengan kata kunci konteks ("budget …") agar parser yang sama
+  // (faktor satuan + pembatalan "bukan X" + ambang) yang menilai.
+  let budgetMentions = parseBudgetMentions(text);
+  if (budgetMentions.length === 0 && pending.answeredChoice === 'raise-budget') {
+    budgetMentions = parseBudgetMentions(`budget ${text}`);
+  }
+  const mentionsBudget = /tambah|budget|anggaran|naik|jadi|menjadi/.test(t);
+  if (budgetMentions.length > 0 && (pending.answeredChoice === 'raise-budget' || mentionsBudget)) {
+    const newCap = budgetMentions[budgetMentions.length - 1].amount;
+    live.spec.budgetCap = newCap;
+    const decision = overBudgetDecision(live);
+    if (!decision) {
+      pendingBudgetDecision = null;
+      live.budgetDecisionPending = false;
+      setLastUniversalDraft(live, getLastUniversalDraftProjectId() ?? undefined);
+      return {
+        ok: true,
+        message:
+          `Siap — anggaran diperbarui ke ${formatRupiah(newCap)}. Total estimasi ${formatRupiah(computeTotals(live).estimatedTotal)} kini DI BAWAH anggaran — draft sudah final dan bisa ditransfer.`,
+        actions: [
+          { label: 'Push ke Spreadsheet', action: { kind: 'push-universal' } },
+          { label: 'Buka Spreadsheet RAB', action: { kind: 'navigate', menu: 'rab-estimasi' } },
+        ],
+      };
+    }
+    pendingBudgetDecision = {
+      ...pending,
+      decision,
+      draftFingerprint: draftFingerprint(live),
+      createdAt: now,
+    };
+    setLastUniversalDraft(live, getLastUniversalDraftProjectId() ?? undefined);
+    return {
+      ok: true,
+      message:
+        `Anggaran diperbarui ke ${formatRupiah(newCap)}, tetapi total estimasi ${formatRupiah(decision.total)} masih MELEBIHI anggaran sebesar ${formatRupiah(decision.over)}.\n\n${formatOverBudgetQuestionBlock(decision)}`,
+      actions: budgetDecisionActions(),
+      awaitBudgetDecision: true,
+    };
+  }
+  // Pilihan baru dari teks.
+  if (/\b(kurangi|potong|kurang)\b/.test(t) || t.includes('lingkup') || t.includes('scope')) {
+    pending.answeredChoice = 'reduce-scope';
+    return {
+      ok: true,
+      message:
+        `Baik — kita kurangi lingkup. Kontributor terbesar saat ini:\n${pending.decision.contributors.map(formatCostContributorLine).join('\n')}\n\nSebutkan item/bagian mana yang dikurangi dan seberapa besar (mis. "kurangi pohon peneduh jadi 20" atau "hapus jalur pejalan"). Saya terapkan lewat revisi — tidak ada pemangkasan diam-diam.`,
+      awaitBudgetDecision: true,
+    };
+  }
+  if (/\b(tambah|naik)\b/.test(t) || t.includes('budget')) {
+    pending.answeredChoice = 'raise-budget';
+    return {
+      ok: true,
+      message: 'Baik — sebutkan anggaran baru Anda (mis. "tambah budget jadi 400 juta").',
+      awaitBudgetDecision: true,
+    };
+  }
+  if (/\b(ganti|ubah)\b/.test(t) || t.includes('spek') || t.includes('material')) {
+    pending.answeredChoice = 'change-spec';
+    return {
+      ok: true,
+      message:
+        `Baik — kita ganti spek/material. Kontributor terbesar saat ini:\n${pending.decision.contributors.map(formatCostContributorLine).join('\n')}\n\nSebutkan spek atau material penggantinya (mis. "ganti pohon peneduh dengan semak" atau "jalur pejalan pakai paving, bukan beton cetak"). Saya terapkan lewat revisi.`,
+      awaitBudgetDecision: true,
+    };
+  }
+  // Tidak dikenali → tanyakan ulang (slot tetap).
+  return {
+    ok: true,
+    message: formatOverBudgetQuestionBlock(pending.decision),
+    actions: budgetDecisionActions(),
+    awaitBudgetDecision: true,
+  };
+}
+
+/** D5 — jawaban lewat tombol opsi (view): delegasi ke `continueBudgetDecision`. */
+export function answerBudgetDecision(choice: BudgetDecisionChoice, now: number = Date.now()): ActionResult | null {
+  if (!pendingBudgetDecision) return null;
+  const text =
+    choice === 'reduce-scope' ? 'kurangi lingkup' : choice === 'raise-budget' ? 'tambah budget' : 'ganti spek';
+  return continueBudgetDecision(text, now);
+}
+
 /** Tombol terima/buang pada pesan pratinjau completion. */
 function fullAiCompletionPreviewActions(target: 'universal' | 'direct'): ChatActionButton[] {
   return [
@@ -6047,6 +6411,15 @@ export function acceptFullAiCompletion(target: 'universal' | 'direct', now: numb
   const accepted = JSON.parse(JSON.stringify(pending.draft)) as UniversalDraft;
   setLastUniversalDraft(accepted, getLastUniversalDraftProjectId());
   pendingUniversalCompletion = null;
+  // D5 (2026-11-26, perintah owner): lengkapan yang diterima ternyata
+  // OVER — tanya balik seperti draft baru (tombol "Batalkan lengkapan"
+  // tetap tersedia sesudah 3 opsi). Kalimat Push disaring di helper.
+  const askBack = overBudgetAskBack(
+    accepted,
+    `${formatUniversalDraftMessage(accepted, { fullAiCompletion: pending.summary })}\n\n${FULL_AI_COMPLETION_NOTICE}`,
+    [{ label: 'Batalkan lengkapan', action: { kind: 'budget-full-ai-undo', target: 'universal' } }]
+  );
+  if (askBack) return askBack;
   return {
     ok: true,
     message: `${formatUniversalDraftMessage(accepted, { fullAiCompletion: pending.summary })}\n\n${FULL_AI_COMPLETION_NOTICE}`,

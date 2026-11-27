@@ -68,11 +68,11 @@ function resetEntries(): void {
 // ---------------------------------------------------------------- R1
 const createModal = readSrc('components/projects/CreateProjectModal.tsx');
 check(
-  createModal.includes('onOpenMagicAiWithPrompt(aiPrompt, newProj.id, newProj.name)'),
+  createModal.includes('onOpenMagicAiWithPrompt(aiPrompt, newProj.id, newProj.name, magicOpenOptions())'),
   'R1a: modal meneruskan newProj.id + newProj.name ke handler kartu AI',
 );
 check(
-  createModal.includes('(prompt: string, projectId: string, projectName: string)'),
+  createModal.includes('(prompt: string, projectId: string, projectName: string, options?: MagicAiOpenOptions)'),
   'R1b: signature prop modal membawa projectId + projectName',
 );
 const workspace = readSrc('components/dashboard/WorkspaceView.tsx');

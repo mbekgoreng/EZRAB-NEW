@@ -20,23 +20,24 @@ import {
   MailPlus, RefreshCw, Ban, Copy, Check, Loader2, TriangleAlert, MailCheck, MailX, MailQuestion,
 } from 'lucide-react';
 import { invitationClient, hasInvitationSession, type InvitationAdminView } from '../../services/invitationClient';
+import { useI18n } from '../../i18n';
 
 const FILTERS = [
-  { id: 'ALL', label: 'Semua' },
-  { id: 'AKTIF', label: 'Aktif' },
-  { id: 'PENDING', label: 'Undangan Pending' },
-  { id: 'KEDALUWARSA', label: 'Kedaluwarsa' },
-  { id: 'DIBATALKAN', label: 'Dibatalkan' },
+  { id: 'ALL', key: 'common.semua' },
+  { id: 'AKTIF', key: 'settings.und_filter_aktif' },
+  { id: 'PENDING', key: 'settings.und_filter_pending' },
+  { id: 'KEDALUWARSA', key: 'settings.und_filter_kedaluwarsa' },
+  { id: 'DIBATALKAN', key: 'settings.und_filter_dibatalkan' },
 ] as const;
 
 const ROLE_OPTIONS = ['ESTIMATOR', 'DIREKSI', 'CLIENT', 'EDITOR'];
 
-function statusChip(inv: InvitationAdminView) {
+function statusChip(inv: InvitationAdminView, t: (key: string) => string) {
   const map: Record<string, { label: string; bg: string; fg: string }> = {
-    PENDING: { label: 'Pending', bg: 'var(--ez-color-warning-soft, #fef3c7)', fg: 'var(--ez-color-warning, #b45309)' },
-    ACCEPTED: { label: 'Aktif — sudah diterima', bg: 'var(--ez-color-success-soft, #dcfce7)', fg: 'var(--ez-color-success, #15803d)' },
-    EXPIRED: { label: 'Kedaluwarsa', bg: 'var(--ez-color-surface-tertiary, #e2e8f0)', fg: 'var(--ez-color-text-secondary, #47597a)' },
-    REVOKED: { label: 'Dibatalkan', bg: 'var(--ez-color-danger-soft, #fee2e2)', fg: 'var(--ez-color-danger, #dc2626)' },
+    PENDING: { label: t('settings.und_status_pending'), bg: 'var(--ez-color-warning-soft, #fef3c7)', fg: 'var(--ez-color-warning, #b45309)' },
+    ACCEPTED: { label: t('settings.und_status_aktif'), bg: 'var(--ez-color-success-soft, #dcfce7)', fg: 'var(--ez-color-success, #15803d)' },
+    EXPIRED: { label: t('settings.und_status_kedaluwarsa'), bg: 'var(--ez-color-surface-tertiary, #e2e8f0)', fg: 'var(--ez-color-text-secondary, #47597a)' },
+    REVOKED: { label: t('settings.und_status_dibatalkan'), bg: 'var(--ez-color-danger-soft, #fee2e2)', fg: 'var(--ez-color-danger, #dc2626)' },
   };
   const s = map[inv.status] || map.PENDING;
   return (
@@ -46,14 +47,14 @@ function statusChip(inv: InvitationAdminView) {
   );
 }
 
-function emailChip(inv: InvitationAdminView) {
+function emailChip(inv: InvitationAdminView, t: (key: string) => string) {
   if (inv.emailStatus === 'sent') {
-    return <span style={{ display: 'inline-flex', gap: 5, alignItems: 'center', fontSize: 12, color: 'var(--ez-color-success, #15803d)', fontWeight: 600 }}><MailCheck size={14} /> Email terkirim</span>;
+    return <span style={{ display: 'inline-flex', gap: 5, alignItems: 'center', fontSize: 12, color: 'var(--ez-color-success, #15803d)', fontWeight: 600 }}><MailCheck size={14} /> {t('settings.und_email_terkirim')}</span>;
   }
   if (inv.emailStatus === 'failed') {
-    return <span style={{ display: 'inline-flex', gap: 5, alignItems: 'center', fontSize: 12, color: 'var(--ez-color-danger, #dc2626)', fontWeight: 600 }}><MailX size={14} /> Email gagal</span>;
+    return <span style={{ display: 'inline-flex', gap: 5, alignItems: 'center', fontSize: 12, color: 'var(--ez-color-danger, #dc2626)', fontWeight: 600 }}><MailX size={14} /> {t('settings.und_email_gagal')}</span>;
   }
-  return <span style={{ display: 'inline-flex', gap: 5, alignItems: 'center', fontSize: 12, color: 'var(--ez-color-text-muted, #7c8aa5)', fontWeight: 600 }}><MailQuestion size={14} /> Email belum dikirim</span>;
+  return <span style={{ display: 'inline-flex', gap: 5, alignItems: 'center', fontSize: 12, color: 'var(--ez-color-text-muted, #7c8aa5)', fontWeight: 600 }}><MailQuestion size={14} /> {t('settings.und_email_belum')}</span>;
 }
 
 const smallBtn: React.CSSProperties = {
@@ -68,6 +69,7 @@ const fieldInput: React.CSSProperties = {
 };
 
 export const TeamInvitationsPanel: React.FC<{ workspaceId: string; workspaceName: string }> = ({ workspaceId, workspaceName }) => {
+  const { t } = useI18n();
   // Konteks workspace panel ini berasal dari profil tampilan (demo lokal).
   // hasSession membedakan label yang jujur: sesi Supabase nyata vs demo.
   // Otorisasi TIDAK PERNAH berasal dari nilai workspaceId di sini — server
@@ -103,9 +105,9 @@ export const TeamInvitationsPanel: React.FC<{ workspaceId: string; workspaceName
     } else if (r.status === 401 || r.status === 403) {
       setRows([]);
       setNotConfigured(false);
-      setError('Daftar undangan hanya dapat dilihat oleh Super Admin workspace yang sedang login. Pada mode demo/login nonaktif, daftar tidak ditampilkan.');
+      setError(t('settings.und_err_akses'));
     } else {
-      setError(r.message || 'Gagal memuat daftar undangan.');
+      setError(r.message || t('settings.und_err_muat'));
     }
     setLoading(false);
   }, [workspaceId]);
@@ -131,15 +133,15 @@ export const TeamInvitationsPanel: React.FC<{ workspaceId: string; workspaceName
       setFreshLink({ invitationId: r.data.invitation.id, link: r.data.link });
       setFormOk(
         r.data.email.status === 'sent'
-          ? 'Undangan dibuat dan email terkirim. Link juga dapat disalin sekali dari daftar di bawah.'
-          : 'Undangan dibuat. Email BELUM dikirim (provider email belum terkonfigurasi) — salin link undangan dari daftar di bawah dan sampaikan melalui kanal Anda sendiri.'
+          ? t('settings.und_ok_terkirim')
+          : t('settings.und_ok_belum_kirim')
       );
       setName('');
       setEmail('');
       setRole('ESTIMATOR');
       void load(filter);
     } else {
-      setFormError(r.messages?.join(' ') || r.message || 'Gagal membuat undangan.');
+      setFormError(r.messages?.join(' ') || r.message || t('settings.und_err_buat'));
     }
   };
 
@@ -150,7 +152,7 @@ export const TeamInvitationsPanel: React.FC<{ workspaceId: string; workspaceName
       setCopiedId(inv.id);
       setTimeout(() => setCopiedId(null), 2000);
     } catch {
-      setError('Gagal menyalin link. Salin manual dari kotak link undangan terakhir.');
+      setError(t('settings.und_err_salin'));
     }
   };
 
@@ -162,7 +164,7 @@ export const TeamInvitationsPanel: React.FC<{ workspaceId: string; workspaceName
     if (r.ok) {
       if (freshLink?.invitationId === inv.id) setFreshLink(null);
       void load(filter);
-    } else setError(r.message || 'Gagal membatalkan undangan.');
+    } else setError(r.message || t('settings.und_err_batal'));
   };
 
   const handleResend = async (inv: InvitationAdminView) => {
@@ -171,9 +173,9 @@ export const TeamInvitationsPanel: React.FC<{ workspaceId: string; workspaceName
     setBusyRow(null);
     if (r.ok) {
       setFreshLink({ invitationId: r.data.invitation.id, link: r.data.link });
-      setFormOk('Undangan baru diterbitkan dengan token dan masa berlaku baru. Token lama sudah dicabut.');
+      setFormOk(t('settings.und_ok_kirim_ulang'));
       void load(filter);
-    } else setError(r.message || 'Gagal mengirim ulang undangan.');
+    } else setError(r.message || t('settings.und_err_kirim_ulang'));
   };
 
   return (
@@ -181,29 +183,25 @@ export const TeamInvitationsPanel: React.FC<{ workspaceId: string; workspaceName
       <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 4 }}>
         <MailPlus size={18} color="var(--ez-color-primary, #2563eb)" />
         <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: 'var(--ez-color-text-primary, #0f2a54)' }}>
-          Undangan Aman (Secure Invitation)
+          {t('settings.und_judul')}
         </h3>
       </div>
       <p style={{ margin: '0 0 16px', fontSize: 13, color: 'var(--ez-color-text-secondary, #47597a)', lineHeight: 1.55 }}>
-        Undang anggota baru ke <strong>{workspaceName}</strong> melalui tautan rahasia sekali pakai (berlaku 24 jam).
-        Penerima membuat kata sandinya sendiri. Role Super Admin tidak dapat diberikan melalui undangan.
+        {t('settings.und_desc_a')}<strong>{workspaceName}</strong>{t('settings.und_desc_b')}
       </p>
 
       {hasSession === false && (
         <div style={{ display: 'flex', gap: 9, alignItems: 'flex-start', background: 'var(--ez-color-warning-soft, #fef3c7)', borderRadius: 10, padding: '11px 13px', marginBottom: 16 }}>
           <TriangleAlert size={16} color="var(--ez-color-warning, #b45309)" style={{ flexShrink: 0, marginTop: 1 }} />
           <span style={{ fontSize: 12.5, lineHeight: 1.55, color: 'var(--ez-color-text-primary, #0f2a54)' }}>
-            <strong>Konteks demo:</strong> nama perusahaan &amp; workspace di panel ini berasal dari profil demo lokal,
-            bukan dari membership akun yang login (tidak ada sesi Supabase nyata terdeteksi). Konteks demo ini
-            <strong> tidak memberikan otorisasi apa pun</strong> — server hanya mengakui workspace dari membership
-            Super Admin akun yang login, diverifikasi dari database, dan menolak aksi undangan tanpa sesi nyata.
+            <strong>{t('settings.und_demo_label')}</strong> {t('settings.und_demo_a')}
+            <strong>{t('settings.und_demo_strong')}</strong>{t('settings.und_demo_b')}
           </span>
         </div>
       )}
       {hasSession === true && (
         <p style={{ margin: '0 0 16px', fontSize: 12, lineHeight: 1.55, color: 'var(--ez-color-text-muted, #7c8aa5)' }}>
-          Sesi login nyata terdeteksi. Otorisasi tidak berasal dari halaman ini: untuk setiap aksi, server
-          memverifikasi dari database bahwa akun Anda adalah Super Admin pada workspace target.
+          {t('settings.und_sesi_nyata')}
         </p>
       )}
 
@@ -211,35 +209,33 @@ export const TeamInvitationsPanel: React.FC<{ workspaceId: string; workspaceName
         <div style={{ display: 'flex', gap: 9, alignItems: 'flex-start', background: 'var(--ez-color-warning-soft, #fef3c7)', borderRadius: 10, padding: '11px 13px', marginBottom: 16 }}>
           <TriangleAlert size={16} color="var(--ez-color-warning, #b45309)" style={{ flexShrink: 0, marginTop: 1 }} />
           <span style={{ fontSize: 12.5, lineHeight: 1.55, color: 'var(--ez-color-text-primary, #0f2a54)' }}>
-            Backend undangan <strong>belum aktif</strong> di server (database autentikasi belum dikonfigurasi).
-            Form dan daftar di bawah ini adalah UI finalnya; pembuatan undangan akan berfungsi setelah admin
-            mengaktifkan Supabase + migration undangan. Tidak ada undangan yang dibuat atau dikirim dari halaman ini saat ini.
+            {t('settings.und_belum_aktif_a')}<strong>{t('settings.und_belum_aktif_strong')}</strong>{t('settings.und_belum_aktif_b')}
           </span>
         </div>
       )}
 
       <form onSubmit={handleCreate} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 8 }}>
         <div>
-          <label style={{ display: 'block', fontSize: 11.5, fontWeight: 700, marginBottom: 5, color: 'var(--ez-color-text-secondary, #47597a)' }}>NAMA ANGGOTA</label>
-          <input style={fieldInput} value={name} onChange={(e) => setName(e.target.value)} placeholder="Nama lengkap penerima" required />
+          <label style={{ display: 'block', fontSize: 11.5, fontWeight: 700, marginBottom: 5, color: 'var(--ez-color-text-secondary, #47597a)' }}>{t('settings.und_label_nama')}</label>
+          <input style={fieldInput} value={name} onChange={(e) => setName(e.target.value)} placeholder={t('settings.und_ph_nama')} required />
         </div>
         <div>
-          <label style={{ display: 'block', fontSize: 11.5, fontWeight: 700, marginBottom: 5, color: 'var(--ez-color-text-secondary, #47597a)' }}>EMAIL</label>
-          <input style={fieldInput} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="nama@perusahaan.co.id" required />
+          <label style={{ display: 'block', fontSize: 11.5, fontWeight: 700, marginBottom: 5, color: 'var(--ez-color-text-secondary, #47597a)' }}>{t('settings.und_label_email')}</label>
+          <input style={fieldInput} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t('settings.und_ph_email')} required />
         </div>
         <div>
-          <label style={{ display: 'block', fontSize: 11.5, fontWeight: 700, marginBottom: 5, color: 'var(--ez-color-text-secondary, #47597a)' }}>ROLE</label>
+          <label style={{ display: 'block', fontSize: 11.5, fontWeight: 700, marginBottom: 5, color: 'var(--ez-color-text-secondary, #47597a)' }}>{t('settings.und_label_role')}</label>
           <select style={fieldInput} value={role} onChange={(e) => setRole(e.target.value)}>
             {ROLE_OPTIONS.map((r) => <option key={r} value={r}>{r}</option>)}
           </select>
         </div>
         <div>
-          <label style={{ display: 'block', fontSize: 11.5, fontWeight: 700, marginBottom: 5, color: 'var(--ez-color-text-secondary, #47597a)' }}>PERUSAHAAN / WORKSPACE</label>
+          <label style={{ display: 'block', fontSize: 11.5, fontWeight: 700, marginBottom: 5, color: 'var(--ez-color-text-secondary, #47597a)' }}>{t('settings.und_label_perusahaan')}</label>
           <input style={{ ...fieldInput, opacity: 0.75 }} value={workspaceName} disabled readOnly />
         </div>
         <div>
-          <label style={{ display: 'block', fontSize: 11.5, fontWeight: 700, marginBottom: 5, color: 'var(--ez-color-text-secondary, #47597a)' }}>MASA BERLAKU</label>
-          <input style={{ ...fieldInput, opacity: 0.75 }} value="24 jam" disabled readOnly />
+          <label style={{ display: 'block', fontSize: 11.5, fontWeight: 700, marginBottom: 5, color: 'var(--ez-color-text-secondary, #47597a)' }}>{t('settings.und_label_masa')}</label>
+          <input style={{ ...fieldInput, opacity: 0.75 }} value={t('settings.und_masa_24')} disabled readOnly />
         </div>
         <div style={{ display: 'flex', alignItems: 'flex-end' }}>
           <button type="submit" disabled={creating} style={{
@@ -247,7 +243,7 @@ export const TeamInvitationsPanel: React.FC<{ workspaceId: string; workspaceName
             background: 'var(--ez-color-primary, #2563eb)', color: '#fff', fontSize: 13.5, fontWeight: 700,
             cursor: creating ? 'wait' : 'pointer', fontFamily: 'inherit', width: '100%', justifyContent: 'center',
           }}>
-            {creating ? <Loader2 size={15} className="spin" /> : <MailPlus size={15} />} Buat Undangan
+            {creating ? <Loader2 size={15} className="spin" /> : <MailPlus size={15} />} {t('settings.und_buat')}
           </button>
         </div>
       </form>
@@ -261,7 +257,7 @@ export const TeamInvitationsPanel: React.FC<{ workspaceId: string; workspaceName
             border: '1px solid var(--ez-color-border, #dbe3ee)',
             background: filter === f.id ? 'var(--ez-color-primary, #2563eb)' : 'var(--ez-color-surface, #fff)',
             color: filter === f.id ? '#fff' : 'var(--ez-color-text-secondary, #47597a)',
-          }}>{f.label}</button>
+          }}>{t(f.key)}</button>
         ))}
       </div>
 
@@ -269,12 +265,12 @@ export const TeamInvitationsPanel: React.FC<{ workspaceId: string; workspaceName
 
       {loading ? (
         <p style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13.5, color: 'var(--ez-color-text-secondary, #47597a)' }}>
-          <Loader2 size={15} className="spin" /> Memuat undangan…
+          <Loader2 size={15} className="spin" /> {t('settings.und_memuat')}
         </p>
       ) : rows.length === 0 ? (
         <div style={{ border: '1.5px dashed var(--ez-color-border, #dbe3ee)', borderRadius: 12, padding: '22px 16px', textAlign: 'center' }}>
           <p style={{ margin: 0, fontSize: 13.5, color: 'var(--ez-color-text-muted, #7c8aa5)' }}>
-            {notConfigured ? 'Belum ada data — backend undangan belum aktif.' : 'Belum ada undangan pada filter ini.'}
+            {notConfigured ? t('settings.und_kosong_belum_aktif') : t('settings.und_kosong_filter')}
           </p>
         </div>
       ) : (
@@ -293,38 +289,38 @@ export const TeamInvitationsPanel: React.FC<{ workspaceId: string; workspaceName
                   {inv.email} · {inv.role}
                 </div>
                 <div style={{ fontSize: 12, color: 'var(--ez-color-text-muted, #7c8aa5)', marginTop: 2 }}>
-                  Diundang {new Date(inv.createdAt).toLocaleString('id-ID')} · berlaku s/d {new Date(inv.expiresAt).toLocaleString('id-ID')}
-                  {inv.acceptedAt ? ` · diterima ${new Date(inv.acceptedAt).toLocaleString('id-ID')}` : ''}
+                  {t('settings.und_diundang_a')}{new Date(inv.createdAt).toLocaleString('id-ID')}{t('settings.und_berlaku_a')}{new Date(inv.expiresAt).toLocaleString('id-ID')}
+                  {inv.acceptedAt ? `${t('settings.und_diterima_a')}${new Date(inv.acceptedAt).toLocaleString('id-ID')}` : ''}
                 </div>
-                <div style={{ marginTop: 4 }}>{emailChip(inv)}</div>
+                <div style={{ marginTop: 4 }}>{emailChip(inv, t)}</div>
               </div>
               <div style={{ display: 'flex', gap: 7, alignItems: 'center', flexWrap: 'wrap' }}>
-                {statusChip(inv)}
+                {statusChip(inv, t)}
                 {inv.status === 'PENDING' && freshLink?.invitationId === inv.id && (
                   <button style={{ ...smallBtn, background: 'var(--ez-color-primary, #2563eb)', color: '#fff', border: 'none' }} onClick={() => void handleCopy(inv)}>
-                    {copiedId === inv.id ? <Check size={13} /> : <Copy size={13} />} {copiedId === inv.id ? 'Tersalin' : 'Salin Link Undangan'}
+                    {copiedId === inv.id ? <Check size={13} /> : <Copy size={13} />} {copiedId === inv.id ? t('settings.und_tersalin') : t('settings.und_salin')}
                   </button>
                 )}
                 {(inv.status === 'PENDING' || inv.status === 'EXPIRED') && (
                   <button style={smallBtn} disabled={busyRow === inv.id} onClick={() => void handleResend(inv)}>
-                    <RefreshCw size={13} /> Kirim Ulang
+                    <RefreshCw size={13} /> {t('settings.und_kirim_ulang')}
                   </button>
                 )}
                 {inv.status === 'PENDING' && (confirmRevoke === inv.id ? (
                   <>
                     <button style={{ ...smallBtn, color: 'var(--ez-color-danger, #dc2626)', borderColor: 'var(--ez-color-danger, #dc2626)' }}
                       disabled={busyRow === inv.id} onClick={() => void handleRevoke(inv)}>
-                      <Ban size={13} /> Ya, batalkan
+                      <Ban size={13} /> {t('settings.und_ya_batal')}
                     </button>
-                    <button style={smallBtn} onClick={() => setConfirmRevoke(null)}>Urung</button>
+                    <button style={smallBtn} onClick={() => setConfirmRevoke(null)}>{t('settings.und_urung')}</button>
                   </>
                 ) : (
                   <button style={smallBtn} onClick={() => setConfirmRevoke(inv.id)}>
-                    <Ban size={13} /> Batalkan
+                    <Ban size={13} /> {t('settings.und_batalkan')}
                   </button>
                 ))}
                 {inv.status === 'ACCEPTED' && (
-                  <span style={{ fontSize: 12, color: 'var(--ez-color-text-muted, #7c8aa5)' }}>Anggota aktif — kelola dari daftar anggota di atas</span>
+                  <span style={{ fontSize: 12, color: 'var(--ez-color-text-muted, #7c8aa5)' }}>{t('settings.und_anggota_aktif')}</span>
                 )}
               </div>
             </div>
@@ -332,9 +328,7 @@ export const TeamInvitationsPanel: React.FC<{ workspaceId: string; workspaceName
         </div>
       )}
       <p style={{ fontSize: 11.5, color: 'var(--ez-color-text-muted, #7c8aa5)', marginTop: 12, lineHeight: 1.55 }}>
-        Demi keamanan, link undangan hanya dapat disalin sesaat setelah undangan dibuat/dikirim ulang dari sesi ini.
-        Untuk membagikan ulang di lain waktu, gunakan Kirim Ulang — token lama otomatis dicabut dan token baru diterbitkan.
-        Hash token tidak pernah ditampilkan.
+        {t('settings.und_catatan')}
       </p>
     </div>
   );

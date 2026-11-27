@@ -21,8 +21,7 @@
  * DokumenAiView melaporkan status workspace via onAnalysisActiveChange.
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { FolderOpen, ScanSearch, History, Sparkles, LayoutTemplate, ClipboardCheck, Lock, FileText } from 'lucide-react';
-import { FsChip } from '../../components/feature-shell/FeatureFullscreenShell';
+import { FolderOpen, ScanSearch, History, Sparkles, LayoutTemplate, ClipboardCheck, Lock } from 'lucide-react';
 import { FeaturePageShell } from '../../components/feature-shell/FeaturePageShell';
 import { useCreditSimulation } from '../../ai-credits/useCreditSimulation';
 import { aiFeatureLockedMessage, planAllowsAiFeature } from '../../ai-credits/featureGate';
@@ -389,58 +388,11 @@ export const DokumenAiView: React.FC<DokumenAiViewProps> = ({ onAnalysisActiveCh
   // ter-ACC owner 2026-11-10): fitur TIDAK lagi menutupi workspace —
   // sidebar + topbar tetap terlihat, halaman tidak scroll. Shell hanya
   // membingkai Studio: tab, state, dan komponen di dalamnya tidak
-  // berubah. Header memuat chip tab aktif + chip status dokumen
-  // (pengganti stepper shell lama sesuai mockup ter-ACC).
-  const TAB_LABELS: Record<Tab, string> = {
-    'buat-ai': 'Buat dengan AI',
-    template: 'Gunakan Template',
-    periksa: 'Edit & Periksa',
-    library: t('ai.doc.tab_library'),
-    analyze: t('ai.doc.tab_analyze'),
-    history: t('ai.doc.tab_history'),
-  };
-  /* Chip indikator tab aktif di header shell. Teks TANPA awalan "Tab:"
-     (owner 2026-11-10: label lama terbaca seperti label debug) — fungsinya
-     sama, tab aktif juga terlihat pada bar tab di bawahnya. */
-  const docTabChip = <FsChip kind="plain">{TAB_LABELS[tab]}</FsChip>;
-
-  const docContextText = activeDoc
-    ? `${activeDoc.fileName}${activeDoc.pages ? ` · ${activeDoc.pages} halaman` : ''} · ${formatBytes(activeDoc.sizeBytes)}`
-    : undefined;
-
-  const docStatusChip = activeDoc ? (
-    <FsChip
-      kind={
-        activeDoc.status === 'ready'
-          ? 'ok'
-          : activeDoc.status === 'needs_review'
-            ? 'warn'
-            : activeDoc.status === 'failed'
-              ? 'danger'
-              : 'mode'
-      }
-    >
-      Status:{' '}
-      {activeDoc.status === 'ready'
-        ? 'Siap'
-        : activeDoc.status === 'needs_review'
-          ? 'Perlu Ditinjau'
-          : activeDoc.status === 'failed'
-            ? 'Gagal'
-            : 'Diproses'}
-    </FsChip>
-  ) : undefined;
+  // berubah. Header shell DIHAPUS (owner 2026-11-27) — tab aktif
+  // terlihat pada bar tab di bawahnya.
 
   return (
-    <FeaturePageShell
-      title="Document AI"
-      subtitle={t('ai.doc.lib.sub')}
-      icon={<FileText size={20} />}
-      contextLabel={activeDoc ? 'Dokumen:' : undefined}
-      contextText={docContextText}
-      chips={<>{docTabChip}{docStatusChip}</>}
-      creditText={`Kredit AI: ${creditBalance.total.toLocaleString('id-ID')}`}
-    >
+    <FeaturePageShell>
     <div className="docai-shell" data-tutorial="dokumenai-main">
       {docEntryBanner && (
         <div className="docai-entrybanner">

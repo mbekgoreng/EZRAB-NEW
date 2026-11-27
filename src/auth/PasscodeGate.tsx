@@ -6,6 +6,7 @@ import {
   sanitizeNextPath,
 } from './passcode';
 import { navigateTo } from '../routing/routes';
+import { useI18n } from '../i18n';
 
 /**
  * Gerbang kode sementara untuk seluruh workspace (/app/*).
@@ -28,6 +29,7 @@ export const PasscodeGate: React.FC<{
   standalone?: boolean;
   children?: React.ReactNode;
 }> = ({ enabled, standalone = false, children }) => {
+  const { t } = useI18n();
   const [phase, setPhase] = useState<GatePhase>(enabled ? 'checking' : 'unlocked');
   const [configNote, setConfigNote] = useState('');
   const [code, setCode] = useState('');
@@ -53,14 +55,10 @@ export const PasscodeGate: React.FC<{
         if (standalone) goNext();
         else setPhase('unlocked');
       } else if (!state.reachable) {
-        setConfigNote(
-          'Server akses tidak terjangkau, sehingga status gerbang tidak dapat diperiksa. Coba muat ulang halaman.'
-        );
+        setConfigNote(t('landing.gate_unreachable'));
         setPhase('unconfigured');
       } else if (!state.configured) {
-        setConfigNote(
-          'Gerbang akses belum dikonfigurasi di server. Hubungi admin untuk menyelesaikan penyiapan.'
-        );
+        setConfigNote(t('landing.gate_unconfigured'));
         setPhase('unconfigured');
       } else {
         setPhase('locked');
@@ -80,7 +78,7 @@ export const PasscodeGate: React.FC<{
     // D-13: kode kosong BUKAN "kode salah" — jangan panggil server,
     // beri pesan yang jujur soal apa yang kurang.
     if (!code.trim()) {
-      setError('Masukkan kode akses terlebih dahulu.');
+      setError(t('landing.gate_code_empty'));
       return;
     }
     setSubmitting(true);
@@ -154,7 +152,7 @@ export const PasscodeGate: React.FC<{
             textAlign: 'center',
           }}
         >
-          Dashboard Terkunci
+          {t('landing.gate_title')}
         </h2>
         <p
           style={{
@@ -168,8 +166,8 @@ export const PasscodeGate: React.FC<{
           {phase === 'unconfigured'
             ? configNote
             : busy
-              ? 'Memeriksa sesi akses Anda…'
-              : 'Masukkan kode akses untuk membuka workspace EZRAB.'}
+              ? t('landing.gate_checking')
+              : t('landing.gate_prompt')}
         </p>
 
         {phase !== 'unconfigured' && (
@@ -186,7 +184,7 @@ export const PasscodeGate: React.FC<{
                 gap: '6px',
               }}
             >
-              <KeyRound size={14} /> Kode akses
+              <KeyRound size={14} /> {t('landing.gate_code_label')}
             </label>
             <input
               id="ezrab-passcode"
@@ -248,7 +246,7 @@ export const PasscodeGate: React.FC<{
                 opacity: formDisabled ? 0.65 : 1,
               }}
             >
-              {submitting ? 'Memeriksa…' : 'Buka Dashboard'}
+              {submitting ? t('landing.gate_checking_btn') : t('landing.gate_open')}
             </button>
           </>
         )}
@@ -265,7 +263,7 @@ export const PasscodeGate: React.FC<{
           }}
         >
           <ShieldAlert size={12} />
-          <span>Kunci sementara — sesi berlaku 12 jam, lalu kode diperlukan lagi.</span>
+          <span>{t('landing.gate_session_note')}</span>
         </div>
         <p
           style={{
@@ -276,7 +274,7 @@ export const PasscodeGate: React.FC<{
             lineHeight: 1.5,
           }}
         >
-          Belum punya kode? Kode akses diberikan oleh owner EZRAB.
+          {t('landing.gate_no_code')}
         </p>
         {/* D-13: jalan keluar — sebelumnya satu-satunya cara pergi
             adalah tombol Back browser. */}
@@ -295,7 +293,7 @@ export const PasscodeGate: React.FC<{
             textUnderlineOffset: '3px',
           }}
         >
-          ← Kembali ke Beranda
+          ← {t('landing.info_back_home')}
         </button>
       </form>
     </div>

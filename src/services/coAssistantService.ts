@@ -30,6 +30,7 @@ import { notificationBus } from '../notifications/notificationBus';
 import { aiToolsProviderClient } from '../ai-tools/providerClient';
 import { RESPONSE_LANGUAGE_RULE, RESPONSE_FORMAT_RULE } from '../ai-tools/ezrab-ai/prompt';
 import { scanToolCalls } from '../ai-tools/ezrab-ai/toolCallParser';
+import { PROJECT_SCOPE_CANNED_REPLY, isProjectScopeErrorCode } from '../ai-tools/ezrab-ai/service';
 import { executeTool, getCopilotToolListText } from '../ai-tools/ezrab-ai/toolRegistry';
 import {
   buildLocalQuickActionDialogue,
@@ -707,6 +708,12 @@ class CoAssistantService {
       const scan = scanToolCalls(result.content);
       if (scan.calls.length > 0) {
         const outputs: string[] = [];
+        // D3 (2026-11-26, cermin service.ts): error tool mentah TIDAK
+        // PERNAH menjadi jawaban — gagal scope proyek → pesan kaleng
+        // (atau prosa model bila ada); gagal lain → tidak menyumbang
+        // output; semua gagal non-scope → balasan aman generik.
+        let projectScopeFailures = 0;
+        let otherFailures = 0;
         for (const call of scan.calls) {
           const exec = await executeTool({
             toolName: call.toolName,
@@ -717,9 +724,17 @@ class CoAssistantService {
             channel: 'copilot',
             projectSnapshot: copilotSnapshot,
           });
-          outputs.push(exec.output ?? exec.error ?? `Alat ${call.toolName} gagal tanpa pesan.`);
+          if (exec.ok) outputs.push(exec.output ?? '');
+          else if (isProjectScopeErrorCode(exec.errorCode)) projectScopeFailures++;
+          else otherFailures++;
         }
-        copilotReplyText = outputs.join('\n\n');
+        if (outputs.length > 0) copilotReplyText = outputs.join('\n\n');
+        else if (projectScopeFailures > 0 && otherFailures === 0) {
+          copilotReplyText = scan.cleanText || PROJECT_SCOPE_CANNED_REPLY;
+        } else if (projectScopeFailures + otherFailures === scan.calls.length) {
+          copilotReplyText =
+            'Maaf, saya belum bisa menjalankan pemeriksaan itu saat ini. Silakan coba lagi, atau sebutkan luas/dimensinya bila mau saya hitung dari konteks chat ini.';
+        }
       } else if (scan.malformed) {
         copilotReplyText = scan.cleanText || result.content;
       }

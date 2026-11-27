@@ -10,8 +10,9 @@
  * - "Nanti saja" → tutup kali ini saja (muncul lagi saat buka dashboard).
  * - "Jangan tampilkan lagi" → tutup permanen via localStorage.
  */
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { FolderPlus, Calculator, FileBarChart, X } from 'lucide-react';
+import { useI18n } from '../../i18n/I18nContext';
 
 export const DASHBOARD_GUIDE_FLAG = 'ezrab_dashboard_guide_done_v1';
 export const DASHBOARD_GUIDE_OPEN_EVENT = 'ezrab:open-dashboard-guide';
@@ -40,21 +41,21 @@ export function markDashboardGuideDone(): void {
   writeFlag();
 }
 
-const STEPS = [
+const STEPS: Array<{ icon: ReactNode; titleKey: string; descKey: string }> = [
   {
     icon: <FolderPlus size={20} />,
-    title: 'Buat proyek',
-    desc: 'Beri nama proyek dan info dasar — cuma butuh beberapa detik.',
+    titleKey: 'dash.guide_step1_title',
+    descKey: 'dash.guide_step1_desc',
   },
   {
     icon: <Calculator size={20} />,
-    title: 'Susun RAB',
-    desc: 'Tambah item pekerjaan manual atau hitung volume otomatis.',
+    titleKey: 'dash.guide_step2_title',
+    descKey: 'dash.guide_step2_desc',
   },
   {
     icon: <FileBarChart size={20} />,
-    title: 'Rekap otomatis',
-    desc: 'Total anggaran terhitung sendiri, siap export ke Excel/PDF.',
+    titleKey: 'dash.guide_step3_title',
+    descKey: 'dash.guide_step3_desc',
   },
 ];
 
@@ -65,6 +66,7 @@ interface Props {
 }
 
 export function DashboardGuideModal({ open, onClose, onStartFirstProject }: Props) {
+  const { t } = useI18n();
   const handleStart = useCallback(() => {
     markDashboardGuideDone();
     onStartFirstProject();
@@ -94,7 +96,7 @@ export function DashboardGuideModal({ open, onClose, onStartFirstProject }: Prop
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Panduan langkah pertama"
+      aria-label={t('dash.guide_aria')}
       style={{
         position: 'fixed',
         inset: 0,
@@ -124,7 +126,7 @@ export function DashboardGuideModal({ open, onClose, onStartFirstProject }: Prop
       >
         <button
           onClick={handleSkipOnce}
-          aria-label="Tutup"
+          aria-label={t('dash.guide_close')}
           style={{
             position: 'absolute',
             top: 14,
@@ -153,7 +155,7 @@ export function DashboardGuideModal({ open, onClose, onStartFirstProject }: Prop
             margin: '0 0 6px',
           }}
         >
-          Mulai langkah pertama Anda
+          {t('dash.guide_title')}
         </h2>
         <p
           style={{
@@ -163,13 +165,13 @@ export function DashboardGuideModal({ open, onClose, onStartFirstProject }: Prop
             margin: '0 0 18px',
           }}
         >
-          Tiga langkah cepat menuju RAB pertama Anda:
+          {t('dash.guide_sub')}
         </p>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 22 }}>
           {STEPS.map((s, i) => (
             <div
-              key={s.title}
+              key={s.titleKey}
               style={{
                 display: 'flex',
                 gap: 12,
@@ -217,10 +219,10 @@ export function DashboardGuideModal({ open, onClose, onStartFirstProject }: Prop
               </div>
               <div>
                 <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--ezrab-text, #111827)', margin: '0 0 2px' }}>
-                  {s.title}
+                  {t(s.titleKey)}
                 </p>
                 <p style={{ fontSize: 12.5, lineHeight: 1.55, color: 'var(--ezrab-text-secondary, #64748b)', margin: 0 }}>
-                  {s.desc}
+                  {t(s.descKey)}
                 </p>
               </div>
             </div>
@@ -248,7 +250,7 @@ export function DashboardGuideModal({ open, onClose, onStartFirstProject }: Prop
               padding: '8px 12px',
             }}
           >
-            Nanti saja
+            {t('dash.guide_later')}
           </button>
           <span style={{ color: 'var(--ezrab-border-light, #e2e8f0)' }}>|</span>
           <button
@@ -264,7 +266,7 @@ export function DashboardGuideModal({ open, onClose, onStartFirstProject }: Prop
               padding: '8px 12px',
             }}
           >
-            Jangan tampilkan lagi
+            {t('dash.guide_never')}
           </button>
         </div>
       </div>

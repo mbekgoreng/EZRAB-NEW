@@ -609,9 +609,15 @@ export function extractUniversalSpec(rawText: string, opts?: { classification?: 
  * - Panjang linear hanya diatribusikan ke scope yang ukuran utamanya
  *   berbasis panjang (length / areaOrLength / span / any) — "gudang
  *   10 x 20 m" tidak boleh memberi gedung lengthM dari sisi dimensi.
- * - Penyebutan pertama yang hidup menang per (scope, ukuran) —
- *   konsisten dengan semantik first-match parseLinearLength global;
- *   koreksi ditangani penyaringan "bukan X", bukan last-wins.
+ * - Penyebutan pertama yang hidup menang per (scope, ukuran)
+ *   (first-wins) — KECUALI penyebutan bertanda revisi ("revisi …
+ *   jadi/hanya X"), yang menimpa (lihat setRev). Last-wins MURNI
+ *   ditolak 2026-11-26 (D1): penyebutan linear telanjang mencakup
+ *   juga angka lebar/tinggi ("jalan 1 km lebar 6 m" → lengthM 6,
+ *   "retaining wall 100 m tinggi 3 m" → lengthM 3) sehingga
+ *   last-wins merusak total pin jalan/pagar/retaining wall;
+ *   koreksi ditangani penyaringan "bukan X" + override revisi,
+ *   bukan last-wins.
  * - Scope tanpa atribusi memakai ukuran proyek (global) lewat
  *   specForScope — perilaku lama dipertahankan.
  */
@@ -665,10 +671,47 @@ export function extractScopeSpecs(rawText: string, scopes: ScopeGroup[]): Record
     }
     return best;
   };
-  /** Isi (scope, ukuran) — hanya bila belum terisi (first-wins). */
+  /** Isi (scope, ukuran) — hanya bila belum terisi (first-wins).
+   *  D1 2026-11-26: last-wins MURNI ditolak — penyebutan linear
+   *  telanjang mencakup angka lebar/tinggi, jadi last-wins akan
+   *  menimpa lengthM dengan angka tinggi/lebar (lihat setRev). */
   const set = (scopeId: string, key: keyof ScopeSpec, value: number): void => {
     const cur = out[scopeId] ?? {};
     if (cur[key] == null) cur[key] = value;
+    out[scopeId] = cur;
+  };
+  /** Penanda revisi dalam ±48 karakter sebelum penyebutan
+   *  ("revisi … hanya 895 m2", "ubah … jadi 150 m2"). */
+  const REVISION_MARK_RE = /\b(revisi|ubah|koreksi|ternyata|menjadi|jadi|hanya)\b/;
+  const isRevisionMention = (pos: number): boolean =>
+    REVISION_MARK_RE.test(lower.slice(Math.max(0, pos - 48), pos));
+  /** Atribusi dengan override revisi (D1 2026-11-26, lapisan bersama —
+   *  Opsi B): penyebutan TANPA tanda revisi memakai first-wins biasa;
+   *  penyebutan BERTANDA revisi MENIMPA nilai scope teratribusi.
+   *  Bila scope teratribusi BELUM memegang ukuran itu sementara scope
+   *  lain SUDAH memegangnya, revisi dialihkan ke pemegang terdekat:
+   *  ia mengoreksi ukuran yang sudah ada, bukan ukuran baru scope
+   *  tersebut. Contoh hidup: "… lahan perlu dibongkar … revisi
+   *  ternyata untuk luas hanya 895 m2" — 895 teratribusi ke `demolisi`
+   *  (kata kunci terdekat) padahal ia mengoreksi luas taman 10.000 m²;
+   *  aturan ini mengalihkannya ke pemegang luas terdekat (`lanskap`). */
+  const setRev = (scopeId: string, key: keyof ScopeSpec, value: number, pos: number): void => {
+    if (!isRevisionMention(pos)) { set(scopeId, key, value); return; }
+    if (out[scopeId]?.[key] == null) {
+      let best: string | null = null;
+      let bestDist = Infinity;
+      for (const holder of Object.keys(out)) {
+        if (holder === scopeId || out[holder][key] == null) continue;
+        for (const o of occs) {
+          if (o.scopeId !== holder) continue;
+          const d = o.end <= pos ? pos - o.end : o.pos - pos;
+          if (d < bestDist) { bestDist = d; best = holder; }
+        }
+      }
+      if (best) { const cur = out[best] ?? {}; cur[key] = value; out[best] = cur; return; }
+    }
+    const cur = out[scopeId] ?? {};
+    cur[key] = value;
     out[scopeId] = cur;
   };
   /** true bila penyebutan linear ini adalah sisi dimensi "A x B m". */
@@ -680,13 +723,13 @@ export function extractScopeSpecs(rawText: string, scopes: ScopeGroup[]): Record
     if (isDimensionSide(h.pos)) continue;
     const occ = attribute(h.pos, true);
     if (!occ) continue;
-    set(occ.scopeId, 'lengthM', h.valueM);
+    setRev(occ.scopeId, 'lengthM', h.valueM, h.pos);
     // Panjang telanjang pada kata-kunci kedalaman ADALAH kedalaman
     // ("sumur bor 30 m" → depthM 30 untuk mep) — diatribusikan SEBAGAI
     // depthM juga (lengthM tetap diisi: fallback global + gerbang
     // ukuran memakai lengthM; pemetaan param memakai depthM untuk
     // param berkind 'depth' — keduanya konsisten bernilai sama).
-    if (DEPTH_KEYWORDS.has(occ.kw)) set(occ.scopeId, 'depthM', h.valueM);
+    if (DEPTH_KEYWORDS.has(occ.kw)) setRev(occ.scopeId, 'depthM', h.valueM, h.pos);
   }
   // Worker D 2026-11-26: nilai luas yang dibatalkan pola koreksi
   // ("bukan 1 hektar, tapi 8.000 m²") tidak boleh menang — cermin
@@ -706,21 +749,21 @@ export function extractScopeSpecs(rawText: string, scopes: ScopeGroup[]): Record
     const beforeArea = lower.slice(Math.max(0, h.pos - 32), h.pos);
     if (/(luas\s+)?(lahan|tanah)(nya)?\s*(seluas\s*)?$/.test(beforeArea)) continue;
     const occ = attribute(h.pos, false);
-    if (occ) set(occ.scopeId, 'areaM2', h.valueM2);
+    if (occ) setRev(occ.scopeId, 'areaM2', h.valueM2, h.pos);
   }
   for (const h of findVolumeMentions(rawText)) {
     const occ = attribute(h.pos, false);
-    if (occ) set(occ.scopeId, 'volumeM3', h.valueM3);
+    if (occ) setRev(occ.scopeId, 'volumeM3', h.valueM3, h.pos);
   }
   for (const c of parseCountMentions(rawText)) {
     const occ = attribute(c.pos, false);
-    if (occ) set(occ.scopeId, 'count', c.value);
+    if (occ) setRev(occ.scopeId, 'count', c.value, c.pos);
   }
   // Batch 2 (§5.3): daya listrik terpasang (kVA) — diatribusikan ke
   // cakupan terdekat (biasanya mep), seperti penyebutan jumlah.
   for (const p of findPowerMentions(rawText)) {
     const occ = attribute(p.pos, false);
-    if (occ) set(occ.scopeId, 'powerKva', p.valueKva);
+    if (occ) setRev(occ.scopeId, 'powerKva', p.valueKva, p.pos);
   }
   // Ukuran berjangkar: bentang → scope jembatan bila ada (bila tidak,
   // ke scope terdekat); lebar/tinggi/tebal ke scope terdekat.
@@ -1522,6 +1565,15 @@ export interface UniversalDraft {
    */
   wbsArtifact?: WbsArtifact;
   wbsCompleteness?: WbsCompletenessReport;
+  /** D5 (2026-11-26, perintah owner): penanda persisten bahwa draft
+   *  ini SUDAH ditanyai balik soal budget OVER dan belum dijawab.
+   *  Disetel `overBudgetAskBack` (actionRegistry) bersama slot
+   *  percakapan in-memory; dibersihkan saat jawaban diterima. Bertahan
+   *  di klon/persistensi draft (boolean polos) sehingga reload TIDAK
+   *  membuat draft diam-diam bisa ditransfer — `validateTransfer` /
+   *  `buildPushPayload` memeriksa penanda ini + verdict OVER terkini
+   *  (revisi ke UNDER membebaskannya walau penanda masih menempel). */
+  budgetDecisionPending?: boolean;
   /** Pilihan template ambigu (close-call / material tak tersedia). */
   ambiguousPicks?: Array<{ scope: string; chosen: string; candidates: string[]; reason: string }>;
   /** Model per-bangunan (FASE 4, CHAT-03): diparse dari teks mentah
@@ -1881,6 +1933,81 @@ export interface DraftTotals {
 export function computeTotals(draft: UniversalDraft): DraftTotals {
   return totalsFromItems(effectiveItems(draft));
 }
+
+/** D5 (2026-11-26, perintah owner) — kontributor biaya terbesar. */
+export interface CostContributor {
+  description: string;
+  amount: number;
+  /** Persen dari total estimasi (angka, mis. 40.9 = 40,9%). */
+  pct: number;
+}
+
+/** D5 — N item termahal dari draft (urut turun), murni + dapat dites. */
+export function topCostContributors(draft: UniversalDraft, n = 3): CostContributor[] {
+  const totals = computeTotals(draft);
+  if (totals.estimatedTotal <= 0) return [];
+  return effectiveItems(draft)
+    .map((it) => ({ it, amount: pricedAmount(it) }))
+    .filter((x): x is { it: DraftItem; amount: number } => x.amount != null && x.amount > 0)
+    .sort((a, b) => b.amount - a.amount)
+    .slice(0, n)
+    .map(({ it, amount }) => ({
+      description: it.description,
+      amount,
+      pct: (amount / totals.estimatedTotal) * 100,
+    }));
+}
+
+/** D5 — satu baris kontributor, format kanonis yang sama dengan pesan draft. */
+export function formatCostContributorLine(c: CostContributor): string {
+  return `• ${c.description} — ${formatRupiah(c.amount)} (${c.pct.toLocaleString('id-ID', { maximumFractionDigits: 1 })}% dari total estimasi)`;
+}
+
+/** D5 — keputusan budget OVER untuk satu draft (murni). null = tidak
+ *  perlu tanya balik (UNDER/dalam anggaran, tanpa budget, atau tidak
+ *  dapat dinilai). OVER memakai perbandingan ketat (`>`): total ==
+ *  anggaran adalah DI BAWAH (bukan OVER). Item belum berharga TIDAK
+ *  membatalkan verdict — verdict tetap OVER tapi `provisional: true`
+ *  (total SEMENTARA — PARSIAL). */
+export interface OverBudgetDecision {
+  total: number;
+  cap: number;
+  /** Selisih total − cap (Rp). */
+  over: number;
+  /** Anggaran menutup berapa % dari total estimasi. */
+  coveragePct: number;
+  /** Total = berapa × anggaran. */
+  multiple: number;
+  contributors: CostContributor[];
+  /** true bila ada item belum berharga (total PARSIAL). */
+  provisional: boolean;
+}
+
+export function overBudgetDecision(draft: UniversalDraft): OverBudgetDecision | null {
+  const totals = computeTotals(draft);
+  const cap = draft.spec.budgetCap ?? null;
+  const verdict = assessBudgetFeasibility({
+    totalPriced: totals.estimatedTotal,
+    unpricedCount: totals.unpricedCount,
+    budgetCap: cap,
+  });
+  if (verdict.verdict !== 'OVER' || cap == null) return null;
+  return {
+    total: totals.estimatedTotal,
+    cap,
+    over: totals.estimatedTotal - cap,
+    coveragePct: (cap / totals.estimatedTotal) * 100,
+    multiple: totals.estimatedTotal / cap,
+    contributors: topCostContributors(draft, 3),
+    provisional: totals.unpricedCount > 0,
+  };
+}
+
+/** D5 — kalimat Push di akhir `formatUniversalDraftMessage` (satu sumber
+ *  kebenaran: `overBudgetAskBack` menyaring kalimat ini dari balasan
+ *  OVER tanpa menyentuh renderer murni tersebut). */
+export const UNIVERSAL_DRAFT_PUSH_SENTENCE =
+  'Draft ini belum mengubah Spreadsheet apa pun. Klik **Push ke Spreadsheet** untuk meninjau preview transfer, lalu konfirmasi bila sudah sesuai.';
 
 /**
  * GATE 2 (5B) — total dari daftar item (dipakai `computeTotals` untuk
@@ -3876,25 +4003,23 @@ export function formatUniversalDraftMessage(draft: UniversalDraft, opts?: { full
   // berharga); TIDAK ADA klaim sebab-akibat rekayasa dan TIDAK ADA
   // usulan pemangkasan lingkup — hanya fakta + persentase, keputusan
   // tetap di tangan pengguna.
+  // D5 2026-11-26: ranking diekstrak ke `topCostContributors` (dipakai
+  // ulang blok tanya-balik budget) — keluaran pesan ini byte-identik.
   {
-    const ranked = items
-      .map((it) => ({ it, amount: pricedAmount(it) }))
-      .filter((x): x is { it: DraftItem; amount: number } => x.amount != null && x.amount > 0)
-      .sort((a, b) => b.amount - a.amount);
-    if (totals.estimatedTotal > 0 && ranked.length > 0) {
-      const top = ranked.slice(0, 3);
+    const top = topCostContributors(draft, 3);
+    if (totals.estimatedTotal > 0 && top.length > 0) {
       const pct = (amt: number) =>
         `${((amt / totals.estimatedTotal) * 100).toLocaleString('id-ID', { maximumFractionDigits: 1 })}%`;
       lines.push('**Kontributor biaya terbesar:**');
-      for (const { it, amount } of top) {
-        lines.push(`• ${it.description} — ${formatRupiah(amount)} (${pct(amount)} dari total estimasi)`);
+      for (const c of top) {
+        lines.push(formatCostContributorLine(c));
       }
       if (spec.budgetCap != null && totals.estimatedTotal > spec.budgetCap) {
         const over = totals.estimatedTotal - spec.budgetCap;
         const coverage = (spec.budgetCap / totals.estimatedTotal) * 100;
         lines.push(
           `• Gambaran selisih: anggaran ${formatRupiah(spec.budgetCap)} menutup ${coverage.toLocaleString('id-ID', { maximumFractionDigits: 1 })}% dari total estimasi pada lingkup saat ini — selisih ${formatRupiah(over)} di atas anggaran. ` +
-          `Item terbesar di atas (${top[0].it.description}, ${pct(top[0].amount)}) adalah komponen tunggal yang paling memengaruhi total; ` +
+          `Item terbesar di atas (${top[0].description}, ${pct(top[0].amount)}) adalah komponen tunggal yang paling memengaruhi total; ` +
           'bila total harus turun, yang perlu diputuskan adalah mengurangi lingkup / mengganti spek komponen itu, atau menambah anggaran — pilihannya di tangan Anda.',
         );
       }
@@ -4111,7 +4236,7 @@ export function formatUniversalDraftMessage(draft: UniversalDraft, opts?: { full
     }
   }
   lines.push('');
-  lines.push('Draft ini belum mengubah Spreadsheet apa pun. Klik **Push ke Spreadsheet** untuk meninjau preview transfer, lalu konfirmasi bila sudah sesuai.');
+  lines.push(UNIVERSAL_DRAFT_PUSH_SENTENCE);
   // P6 (D): pintu masuk panel Review — pemeriksaan per item (edit,
   // remap AHSP, harga manual, putusan asumsi, banding revisi) hidup
   // di sana, bukan di pesan ini.
@@ -5114,6 +5239,15 @@ export function buildPushPayload(draft: UniversalDraft): UniversalPushItem[] {
       `Draft diblokir untuk transfer: ${readiness.blockedReasons.join('; ')} — lengkapi spesifikasi lewat revisi, lalu coba lagi.`
     );
   }
+  // D5 (2026-11-26, perintah owner): jaring pengaman terakhir — cermin
+  // `validateTransfer`: draft OVER yang menunggu jawaban budget TIDAK
+  // BOLEH ditransfer lewat jalur mana pun, termasuk klik ganda /
+  // eksekusi ulang handler di view.
+  if (draft.budgetDecisionPending === true && overBudgetDecision(draft)) {
+    throw new Error(
+      'Draft menunggu jawaban atas pertanyaan budget (total melebihi anggaran) — jawab dulu: kurangi lingkup, tambah budget, atau ganti spek/material.'
+    );
+  }
   // GATE 2 (5B): pada draft multi-seksi, item membawa label seksinya di
   // deskripsi — tanpa ini dua gedung bertemplate sama menghasilkan item
   // berdeskripsi+volume identik yang saling men-dedup di
@@ -5337,6 +5471,14 @@ export function validateTransfer(
   const readiness = draftReadiness(draft);
   if (readiness.status === 'BLOCKED') {
     reasons.push(...readiness.blockedReasons);
+  }
+  // D5 (2026-11-26, perintah owner): draft OVER yang SUDAH ditanyai
+  // balik soal budget dan belum dijawab TIDAK BOLEH ditransfer — walau
+  // readiness bukan BLOCKED (OVER sengaja bukan alasan BLOCKED agar
+  // status/label draft tidak berubah). Penanda dibersihkan saat jawaban
+  // diterima; revisi ke UNDER membebaskan lewat `overBudgetDecision`.
+  if (draft.budgetDecisionPending === true && overBudgetDecision(draft)) {
+    reasons.push('menunggu jawaban atas pertanyaan budget (total melebihi anggaran) — jawab dulu: kurangi lingkup, tambah budget, atau ganti spek/material');
   }
   let duplicate = false;
   if (projectId && draft.lastTransfer &&
