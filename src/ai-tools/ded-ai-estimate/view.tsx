@@ -1369,9 +1369,12 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
     <FeaturePageShell
       // v4 CIAMIK 2026-11-20: stepper balok shell TIDAK diteruskan di
       // layar input — stepper ramping di dalam kolom (.mk4-stepper)
-      // menggantikannya. Stepper shell kembali penuh saat
-      // analisis/hasil.
-      steps={screen === 'input' ? undefined : shellSteps}
+      // menggantikannya. Stepper shell tampil penuh HANYA saat analisis;
+      // di layar HASIL disembunyikan (mockup "DED & Document AI Lebih
+      // Luas", ACC owner 2026-11-27: ketiga langkah sudah selesai,
+      // informasinya nol) — jalan pulang ke input adalah tombol
+      // "← Input" di baris ramping hasil + bar aksi bawah.
+      steps={screen === 'progress' ? shellSteps : undefined}
     >
       {screenContent}
     </FeaturePageShell>

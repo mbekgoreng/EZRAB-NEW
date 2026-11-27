@@ -1715,8 +1715,12 @@ export const DocCreator: React.FC<{
     </span>
   );
 
+  /* Render editor = layar hasil Document AI. Kelas docai-tab-editor
+     menandai layar ini untuk aturan "lebih luas" (document-ai.css) —
+     layar input (compose/funnel/template) tidak memakai kelas ini dan
+     tidak berubah. */
   return (
-    <div className={`docai-tab ${focusMode ? 'docai-focusmode' : ''}`}>
+    <div className={`docai-tab docai-tab-editor ${focusMode ? 'docai-focusmode' : ''}`}>
       <div className="docai-edhead">
         <div className="docai-edhead-main">
           <input

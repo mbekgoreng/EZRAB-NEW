@@ -19,6 +19,7 @@ import {
   FileSpreadsheet,
   Download,
   CheckCircle2,
+  Eye,
   Image as ImageIcon,
   MapPin,
   TrendingUp,
@@ -108,6 +109,18 @@ import {
 
 import { useProject } from '../../context/ProjectContext';
 import { useI18n } from '../../i18n';
+import type { SkillRole } from '../../ai-tools/skill-engine/types';
+import {
+  TRYOUT_ROLE_ORDER,
+  TRYOUT_ROLE_META,
+  canTryout,
+  tryoutMenuAccess,
+  tryoutDeniedMenuMessage,
+  tryoutEnteredMessage,
+  tryoutReadOnlyBanner,
+  readStoredTryoutRole,
+  storeTryoutRole,
+} from '../../roles/serverRoleTryout';
 import { routeLabel, type WorkspaceRoute } from '../../routing/routes';
 import { openEzrabAI } from '../../ai-tools/aiNavigation';
 import '../layout/menu-animations.css';
@@ -171,6 +184,34 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
   const [searchQuery, setSearchQuery] = useState('');
   const { t } = useI18n();
 
+  // Try-out 5 peran server (mockup "Coba 5 Role") — tampilan di browser
+  // SAJA, bukan otorisasi server. Terpisah dari role demo login
+  // (RoleContext: qs/estimator/kontraktor/konsultan/team) — keduanya
+  // tidak dipetakan satu sama lain (K-16 tetap terbuka). Default mengikuti
+  // mockup (Super Admin = akses penuh, perilaku lama dipertahankan).
+  const [tryoutRole, setTryoutRoleState] = useState<SkillRole>(() => readStoredTryoutRole());
+  const [tryoutToast, setTryoutToast] = useState<{ message: string; kind: 'denied' | 'ok' } | null>(null);
+  const tryoutToastTimerRef = useRef<number | null>(null);
+  const showTryoutToast = useCallback((message: string, kind: 'denied' | 'ok') => {
+    setTryoutToast({ message, kind });
+    if (tryoutToastTimerRef.current !== null) window.clearTimeout(tryoutToastTimerRef.current);
+    // Durasi toast mengikuti mockup (4200 ms).
+    tryoutToastTimerRef.current = window.setTimeout(() => setTryoutToast(null), 4200);
+  }, []);
+  useEffect(() => () => {
+    if (tryoutToastTimerRef.current !== null) window.clearTimeout(tryoutToastTimerRef.current);
+  }, []);
+  const handleTryoutRoleChange = useCallback((role: SkillRole) => {
+    setTryoutRoleState(role);
+    storeTryoutRole(role);
+    showTryoutToast(tryoutEnteredMessage(role), 'ok');
+    // Bila menu aktif terkunci untuk peran baru, pengalihan ke dashboard
+    // ditangani efek sinkronisasi route di bawah (satu jalur yang sama
+    // dengan deep link ke menu terkunci).
+  }, [showTryoutToast]);
+  // Akses menu aktif untuk peran try-out ('full' | 'read' | 'lock').
+  const tryoutAccess = tryoutMenuAccess(tryoutRole, activeMenu);
+
   // Project status filter ('Semua Proyek', 'Draft', 'Sedang Dikerjakan', 'Selesai', 'Arsip')
   const [projectFilter, setProjectFilter] = useState<string>('Semua Proyek');
 
@@ -223,7 +264,15 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
   // lewat logoutAll — sesi Supabase diperlukan di sini agar alur keluar
   // sidebar sama persis dengan TopBar.
   const { session: supabaseSession, signOut: signOutAuth } = useAuth();
-  const coAssistantUserRole = activeRole && hasCapability('edit-estimate') ? 'ESTIMATOR' : 'CLIENT';
+  // Try-out 5 peran (mockup, CAPS 'chat'): operasi tulis Chat AI hanya
+  // untuk SUPER_ADMIN / ESTIMATOR / EDITOR. Syarat ini DITAMBAHKAN
+  // (AND) ke pemetaan demo-role yang sudah ada — pemetaan fail-closed
+  // F-2.2 (tanpa sesi demo -> CLIENT) tetap dipertahankan, try-out
+  // hanya bisa mempersempit, tidak pernah melonggarkan.
+  const coAssistantUserRole =
+    activeRole && hasCapability('edit-estimate') && canTryout(tryoutRole, 'chat')
+      ? 'ESTIMATOR'
+      : 'CLIENT';
 
   // Mobile Navigation & Viewport State
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
@@ -264,11 +313,19 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
   // Browser URL is authoritative for module and project context. The menu remains a
   // presentation state only; every user navigation is mirrored into browser history.
   const setActiveMenu = useCallback((menu: string, projectId: string | null = currentProjectId) => {
+    // Gerbang menu try-out 5 peran (mockup): menu 'lock' menolak saat
+    // diklik — navigasi tidak terjadi, penolakan dijawab lewat toast.
+    // Semua jalur pindah menu (sidebar, breadcrumb, topbar, bottom nav,
+    // panggilan onNavigateToTab dari view anak) lewat sini.
+    if (tryoutMenuAccess(tryoutRole, menu) === 'lock') {
+      showTryoutToast(tryoutDeniedMenuMessage(tryoutRole, menu), 'denied');
+      return;
+    }
     setActiveMenuState(menu);
     setMobileDrawerOpen(false);
     resetMainScroll();
     onNavigateMenu(menu, projectId);
-  }, [currentProjectId, onNavigateMenu, resetMainScroll]);
+  }, [currentProjectId, onNavigateMenu, resetMainScroll, tryoutRole, showTryoutToast]);
 
   const routeProject = route.projectId ? projects.find((project) => project.id === route.projectId) : undefined;
   const hasRouteError = route.status === 'not-found' || (route.scope === 'project' && !routeProject);
@@ -281,6 +338,13 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
 
   useEffect(() => {
     setActiveMenuState(route.menu);
+    // Gerbang menu try-out 5 peran (mockup) untuk jalur URL: deep link /
+    // back-forward / ganti peran ke menu yang terkunci dialihkan ke
+    // dashboard — menu terkunci tidak bisa dibuka oleh peran ini.
+    if (tryoutMenuAccess(tryoutRole, route.menu) === 'lock') {
+      setActiveMenuState('dashboard');
+      onNavigateMenu('dashboard', null);
+    }
     if (prevRouteMenuRef.current !== route.menu) {
       prevRouteMenuRef.current = route.menu;
       resetMainScroll();
@@ -288,7 +352,7 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
     if (route.scope === 'project' && routeProject && route.projectId !== currentProjectId) {
       setCurrentProjectId(routeProject.id);
     }
-  }, [currentProjectId, route.menu, route.projectId, route.scope, routeProject, setCurrentProjectId, resetMainScroll]);
+  }, [currentProjectId, route.menu, route.projectId, route.scope, routeProject, setCurrentProjectId, resetMainScroll, tryoutRole, onNavigateMenu]);
 
   // User activity log
   const [activities, setActivities] = useState<Array<{ text: string; time: string; type: string }>>(() => {
@@ -636,6 +700,104 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
           }}
           onLogout={handleWorkspaceLogout}
         />
+        )}
+
+        {/* TRY-OUT 5 PERAN SERVER (mockup "Coba 5 Role") — chip ganti peran
+            di dalam aplikasi + banner mode lihat saja. Tampilan di browser
+            saja, bukan otorisasi server (lihat src/roles/serverRoleTryout.ts).
+            Diletakkan di sini (di bawah TopBar, di atas view menu) agar
+            terlihat di semua menu termasuk DED/Dokumen AI yang mengunci
+            scroll .pf-main. */}
+        <div
+          role="group"
+          aria-label="Ganti peran (try-out)"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '8px',
+            padding: '10px 16px',
+            background: 'var(--ez-color-surface)',
+            borderBottom: '1px solid var(--ez-color-border)',
+            flexShrink: 0,
+          }}
+        >
+          <span style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--ez-color-text-muted)' }}>
+            Ganti peran:
+          </span>
+          {TRYOUT_ROLE_ORDER.map((role) => {
+            const meta = TRYOUT_ROLE_META[role];
+            const isActive = role === tryoutRole;
+            return (
+              <button
+                key={role}
+                type="button"
+                aria-pressed={isActive}
+                onClick={() => handleTryoutRoleChange(role)}
+                style={{
+                  minHeight: '2.25rem',
+                  fontFamily: 'inherit',
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  borderRadius: '999px',
+                  padding: '6px 14px',
+                  border: `1.5px solid ${isActive ? '#1D4ED8' : 'var(--ez-color-border)'}`,
+                  background: isActive ? '#1D4ED8' : 'var(--ez-color-surface)',
+                  color: isActive ? '#FFFFFF' : 'var(--ez-color-text-primary)',
+                }}
+              >
+                {meta.label}
+              </button>
+            );
+          })}
+          <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            <span
+              aria-hidden="true"
+              style={{
+                width: '36px', height: '36px', borderRadius: '10px', flex: 'none',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontWeight: 800, fontSize: '13px', color: '#FFFFFF',
+                background: TRYOUT_ROLE_META[tryoutRole].color,
+              }}
+            >
+              {TRYOUT_ROLE_META[tryoutRole].initials}
+            </span>
+            <span style={{ lineHeight: 1.25 }}>
+              <span style={{ display: 'block', fontWeight: 700, fontSize: '13px' }}>
+                {TRYOUT_ROLE_META[tryoutRole].person}
+              </span>
+              <span
+                style={{
+                  display: 'inline-block', fontSize: '11px', fontWeight: 800,
+                  letterSpacing: '0.05em', textTransform: 'uppercase',
+                  padding: '2px 8px', borderRadius: '999px', color: '#FFFFFF',
+                  background: TRYOUT_ROLE_META[tryoutRole].color,
+                }}
+              >
+                {TRYOUT_ROLE_META[tryoutRole].label}
+              </span>
+            </span>
+            <span style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)' }}>
+              Peran demo ≠ otorisasi server.
+            </span>
+          </span>
+        </div>
+        {tryoutAccess === 'read' && (
+          <div
+            role="status"
+            style={{
+              display: 'flex', gap: '10px', alignItems: 'flex-start',
+              margin: '12px 16px 0', padding: '11px 14px', borderRadius: '12px',
+              fontSize: '13.5px', lineHeight: 1.5, flexShrink: 0,
+              background: 'var(--ez-hue-amber-bg, #FFFBEB)',
+              border: '1px solid var(--ez-hue-amber-border, #FDE68A)',
+              color: '#92400E',
+            }}
+          >
+            <Eye size={16} style={{ flex: 'none', marginTop: '2px' }} aria-hidden="true" />
+            <span>{tryoutReadOnlyBanner(tryoutRole)}</span>
+          </div>
         )}
 
         {/* =========================================================================
@@ -1213,6 +1375,34 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
           Laporan) di semua view non-dashboard. Progres tetap tersimpan dan
           checklist muncul lagi saat kembali ke Dashboard. */}
       {activeMenu === 'dashboard' && <FirstProjectChecklist />}
+
+      {/* Toast try-out 5 peran (mockup): penolakan izin & konfirmasi masuk
+          peran. Posisi bawah-tengah, hilang otomatis setelah 4,2 detik. */}
+      {tryoutToast && (
+        <div
+          role="status"
+          aria-live="polite"
+          style={{
+            position: 'fixed',
+            left: '50%',
+            bottom: '22px',
+            transform: 'translateX(-50%)',
+            maxWidth: 'min(92vw, 520px)',
+            width: 'max-content',
+            background: tryoutToast.kind === 'denied' ? '#B91C1C' : '#15803D',
+            color: '#FFFFFF',
+            borderRadius: '12px',
+            padding: '13px 18px',
+            fontSize: '14px',
+            fontWeight: 600,
+            lineHeight: 1.5,
+            boxShadow: '0 18px 44px rgba(22, 42, 84, .13)',
+            zIndex: 60,
+          }}
+        >
+          {tryoutToast.message}
+        </div>
+      )}
     </div>
   );
 };

@@ -1304,3 +1304,56 @@
   .mk4-line { flex-basis: 32px; }
   .mk4-depth-row { flex-wrap: wrap; }
 }
+
+/* ==========================================================================
+   LAYAR HASIL LEBIH LUAS (mockup "DED & Document AI Lebih Luas", ACC
+   owner 2026-11-27) — HANYA .dedai-result; layar input/progress TIDAK
+   berubah. Adaptasi header: header shell SUDAH dihapus (724fc61), jadi
+   TIDAK ada header baru yang ditambahkan — yang diringkas adalah kepala
+   besar di dalam view hasil (.dedai-head) menjadi satu baris: tombol
+   "← Input" + judul + nama proyek inline; subtitle penjelasan
+   disembunyikan (fungsinya selesai di layar hasil). Chip mode + kredit
+   tetap pada tempatnya semula (banner mode + kartu kredit), bukan
+   dipindah ke baris ini. Stepper shell di layar hasil dimatikan dari
+   view.tsx (steps hanya progress); .dedai-steps di dalam view sudah
+   disembunyikan shell CSS. Full-bleed: .fp-shell .dedai sudah
+   max-width: none; kunci 1480px split-view dilepas di
+   dedVisionReview.css (lihat sana).
+   ========================================================================== */
+.dedai-result .dedai-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  margin: 0 0 14px;
+  min-height: 48px;
+}
+.dedai-result .dedai-head h1 {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 16px;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dedai-result .dedai-head p { display: none; }
+/* Tombol kembali di baris ramping — pengganti stepper sebagai jalan
+   pulang; label + handler sama persis dengan tombol di bar aksi bawah. */
+.dedai-btn.ghost.dedai-result-back {
+  flex: 0 0 auto;
+  padding: 6px 12px;
+  font-size: 13px;
+  gap: 7px;
+  border-radius: 9px;
+  min-height: 36px;
+}
+
+/* HP (mockup): kolom Harga Satuan disembunyikan di layar hasil — bukan
+   digeser menyamping. Tabel tetap bergeser horizontal di dalam
+   .dedai-table-wrap (9 kolom tidak muat 390px walau satu kolom hilang);
+   yang dihemat adalah satu kolom penuh perjalanan geser. */
+@media (max-width: 700px) {
+  .dedai-result .dedai-col-unitprice { display: none; }
+  .dedai-result .dedai-head h1 { font-size: 15px; }
+}

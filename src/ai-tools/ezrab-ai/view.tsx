@@ -22,8 +22,8 @@ import React, { useRef, useState, useEffect, useLayoutEffect, useCallback, Suspe
 import {
   Send, Sparkles, Loader2, RotateCcw,
   Copy, Check, Mic, Paperclip, X, Plus, FileText,
-  History, Trash2, MoreVertical, Gamepad2, Brain, Pencil, Save, ListChecks,
-  ClipboardList,
+  History, Trash2, MoreVertical, Gamepad2, Save, ListChecks,
+  ClipboardList, ChevronDown, ChevronUp,
 } from 'lucide-react';
 import { ezrabAiService, PROJECT_SCOPE_CANNED_REPLY } from './service';
 import { maskAiModelName } from '../../services/aiModelMasking';
@@ -61,7 +61,7 @@ import {
 } from '../../components/copilot/QuickActionDialogueRenderer';
 import { quickActionService } from '../../services/quickActionService';
 
-import { renderMarkdown, markdownToPlainText } from './markdown';
+import { renderMarkdown, renderInline, markdownToPlainText } from './markdown';
 import { routeIntent, localGreeting, HELP_TEXT } from './intentRouter';
 import { extractSlashToken, filterSlashEntries, NAV_BY_ID, resolveNavCommand, type NavEntry } from './navRegistry';
 import { consumePendingAiEntry, requestAiEntry, consumePendingEzrabAiEntry, peekPendingEzrabAiEntry, ezrabAiEntryRemainingMs, openEzrabAI, type EzrabAiEntryContext } from '../aiNavigation';
@@ -86,7 +86,7 @@ import { resolveAhspTopicFromHistory } from './chatSearch';
 import { detectHandoffNeed, HANDOFF_CHOICE_CHAT, HANDOFF_CHOICE_STAY } from './magicHandoff';
 import { structuredAiError, logAiDiagnostic, type AiErrorCode } from './aiErrorCodes';
 import { buildFinalizationKey } from '../ded-ai-estimate/finalizationKey';
-import { getLastUniversalDraft, setLastUniversalDraft, looksLikeUniversalRevision, buildPushPreview, formatPushPreviewMessage, buildPushPayload, dedupePushPayload, validateTransfer, draftReadiness, effectiveItems, isPriceValidForTotal, overBudgetDecision } from './universalRab';
+import { getLastUniversalDraft, setLastUniversalDraft, looksLikeUniversalRevision, buildPushPreview, formatPushPreviewMessage, buildPushPayload, dedupePushPayload, validateTransfer, draftReadiness, effectiveItems, isPriceValidForTotal, overBudgetDecision, computeTotals } from './universalRab';
 import type { UniversalDraft } from './universalRab';
 import { setDraftProjectEnsurer, tempProjectNameForDraft, tempProjectDescriptionForDraft, TEMP_PROJECT_CREATION_METHOD, type DraftProjectEnsurer, type DraftProjectRequest, type EnsuredDraftProject } from './tempProject';
 import { authorizeChatAiMutation } from './mutationInventory';
@@ -159,16 +159,11 @@ import {
   formatPreferenceLines,
   applyPersonalizationGate,
   getPreferences,
-  setPreference,
-  listMemories,
-  deleteMemory,
-  correctMemory,
   getMemoryReport,
-  MEMORY_HONEST_LABEL,
-  type MemoryRecord,
   type MemoryScope,
-  type UserPreferences,
 } from './memory';
+import { buildRevealPlan, summarizeReveal, formatElapsedDtk, prefersReducedMotion, formatRupiah as formatRevealRupiah, type RevealPlan } from './streamingReveal';
+import './streaming.css';
 import { looksLikeNeedsAnswer, parseFloorsMention } from './rabNeeds';
 import { extractRabIntentSpec } from './rabIntentSpec';
 import { notificationBus } from '../../notifications/notificationBus';
@@ -488,6 +483,26 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   // `stage` mentah: yang tampil adalah tahap yang benar-benar
   // dipancarkan; null bila belum ada event (tanpa tahap karangan).
   const reportedActiveStage = reportedExecutionStage(activeExec);
+  /* Streaming Fase 2 (mockup-chat-ai-streaming, 2026-11-27):
+   * - thinkingElapsedMs = milidetik sejak eksekusi aktif dimulai
+   *   (activeExec.startedAt, WAKTU NYATA — bukan timer karangan);
+   *   ditampilkan sebagai penghitung detik di gelembung thinking.
+   * - streaming = jawaban AI yang sedang di-reveal kata per kata
+   *   (streamingReveal.ts); entry ditempel ke `messages` hanya sesudah
+   *   reveal selesai — persist ke store tetap memakai teks penuh di
+   *   jalur kirim seperti sebelumnya. */
+  const [thinkingElapsedMs, setThinkingElapsedMs] = useState(0);
+  const [streaming, setStreaming] = useState<{
+    entry: ChatEntry;
+    plan: RevealPlan;
+    step: number;
+    conversationId: string | null;
+  } | null>(null);
+  /* Cermin ref `streaming` untuk penyelesaian instan dari callback
+   * (menghindari setState di dalam updater — StrictMode bisa memanggil
+   * updater dua kali dan entry akan tertempel ganda). */
+  const streamingRef = useRef<typeof streaming>(null);
+  useEffect(() => { streamingRef.current = streaming; }, [streaming]);
   // Penanda terputus (jaminan reload §8): pesan pengguna terakhir tanpa
   // balasan + tidak ada eksekusi hidup = request terputus; tampil sebagai
   // banner dengan aksi Coba Lagi manual (tidak pernah auto-resubmit).
@@ -742,28 +757,6 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     return () => window.removeEventListener('keydown', onEsc);
   }, [aboutOpen]);
 
-  /* ---- FASE 2 — Kontrol memori pengguna (panel Memori) ---- *
-   * Lihat memori relevan yang tersimpan, koreksi memori yang salah,
-   * hapus memori, nonaktifkan personalisasi opsional. Label jujur:
-   * memori lokal per-perangkat — belum lintas-perangkat. */
-  const [memoryOpen, setMemoryOpen] = useState(false);
-  const [memoryItems, setMemoryItems] = useState<MemoryRecord[]>([]);
-  const [memoryPrefs, setMemoryPrefs] = useState<UserPreferences>(() => getPreferences(null));
-  const [memoryEditingId, setMemoryEditingId] = useState<string | null>(null);
-  const [memoryEditingText, setMemoryEditingText] = useState('');
-  const refreshMemoryPanel = useCallback(() => {
-    if (!effProject) {
-      setMemoryItems([]);
-      return;
-    }
-    const scope: MemoryScope = { userId: null, projectId: effProject.id, conversationId: convIdRef.current ?? null };
-    // Histori ikut ditampilkan (superseded berlabel 'digantikan') agar
-    // koreksi spek terlihat jejaknya — bukan hanya nilai current.
-    const listed = listMemories(scope, { statuses: ['current', 'contradictory', 'superseded'] });
-    setMemoryItems(listed.ok ? listed.value : []);
-    setMemoryPrefs(getPreferences(null));
-  }, [effProject?.id]);
-
   /* ---- FASE 3 — Rencana tugas agen (panel Rencana) ---- *
    * Rencana multi-langkah per proyek/percakapan (agentOrchestrator):
    * dipersist di storage lokal, selamat dari navigasi & reload.
@@ -771,10 +764,29 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
    * bukan toast berulang. */
   const [agentPlan, setAgentPlan] = useState<TaskPlan | null>(null);
   const [planOpen, setPlanOpen] = useState(false);
+  /* Mockup v2 (2026-11-27) — detail Rencana Tugas di-hide bila tidak
+   * penting: daftar langkah panjang hanya terbuka otomatis bila ada
+   * langkah yang butuh perhatian (menunggu persetujuan / gagal /
+   * terhenti / sedang berjalan); selebihnya panel hanya menampilkan
+   * ringkasan + tombol "Lihat detail". Pilihan manual pengguna
+   * (planDetailsManual) mengalahkan aturan otomatis sampai panel
+   * ditutup — tiap kali dibuka, aturan otomatis berlaku lagi. */
+  const [planDetailsManual, setPlanDetailsManual] = useState<boolean | null>(null);
+  const planAttentionCount = agentPlan?.steps.filter((s) => s.status === 'awaiting-approval' || s.status === 'failed' || s.status === 'blocked' || s.status === 'running').length ?? 0;
+  const planDoneCount = agentPlan?.steps.filter((s) => s.status === 'succeeded' || s.status === 'partially-succeeded').length ?? 0;
+  const planDetailsOpen = planDetailsManual ?? ((agentPlan?.steps.length ?? 0) > 0 && planAttentionCount > 0);
+  useEffect(() => { if (!planOpen) setPlanDetailsManual(null); }, [planOpen]);
   /* P6 — panel Review draft: dibuka dari menu ⋯. reviewTick memaksa
    * render ulang sesudah aksi panel (singleton draft dibaca segar
    * tiap render, tetapi React tidak tahu singleton berubah). */
   const [reviewOpen, setReviewOpen] = useState(false);
+  /* Mockup v2 (2026-11-27) — detail Review draft di-hide bila tidak
+   * penting (aturan yang sama dengan rencana: terbuka otomatis hanya
+   * bila ada item belum berharga / peringatan draft; selebihnya hanya
+   * ringkasan + tombol "Lihat detail"). Aturan otomatisnya dihitung
+   * di dalam dialog dari draft aktif; pilihan manual di-reset tiap
+   * kali dialog ditutup. */
+  const [reviewDetailsManual, setReviewDetailsManual] = useState<boolean | null>(null);
   const [, setReviewTick] = useState(0);
   const [followUpBanner, setFollowUpBanner] = useState<string | null>(null);
   const agentPlanRef = useRef<TaskPlan | null>(null);
@@ -790,6 +802,40 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     agentPlanRef.current = plan;
     setAgentPlan(plan);
     if (plan) { try { savePlan(plan); } catch { /* abaikan */ } }
+  }, []);
+
+  /* ---- Streaming Fase 2 (mockup-chat-ai-streaming) ---- *
+   * beginStreamingReveal: jawaban AI sukses ditampilkan kata per kata
+   * (bukan sekaligus). Fallback ke tampil-sekaligus (perilaku lama):
+   * jawaban gagal, jawaban kosong, plan reveal kosong, atau
+   * prefers-reduced-motion. Persist ke store TIDAK berubah — teks
+   * penuh sudah dipersist di jalur kirim sebelum pemanggilan ini.
+   * finishStreamingRevealNow: selesaikan reveal seketika (dipakai
+   * pengiriman baru yang datang saat reveal masih berjalan + tombol
+   * Baru). Entry hanya ditempel bila percakapan asal masih tampil —
+   * jawaban milik percakapan lama tidak pernah bocor ke percakapan
+   * baru (teksnya tetap tersimpan di store percakapan asal). */
+  const beginStreamingReveal = useCallback((entry: ChatEntry) => {
+    const full = entry.content ?? '';
+    if (!entry.fromAi || entry.isError || !full.trim() || prefersReducedMotion()) {
+      setMessages((prev) => [...prev, entry]);
+      return;
+    }
+    const plan = buildRevealPlan(full);
+    if (plan.totalSteps === 0) {
+      setMessages((prev) => [...prev, entry]);
+      return;
+    }
+    setStreaming({ entry, plan, step: 0, conversationId: convIdRef.current ?? null });
+  }, []);
+  const finishStreamingRevealNow = useCallback(() => {
+    const cur = streamingRef.current;
+    if (!cur) return;
+    streamingRef.current = null;
+    setStreaming(null);
+    if (cur.conversationId === (convIdRef.current ?? null)) {
+      setMessages((msgs) => [...msgs, cur.entry]);
+    }
   }, []);
 
   const refreshHistory = useCallback(() => {
@@ -820,14 +866,45 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   // saat store berubah (pesan masuk dari permukaan AI lain).
   useEffect(() => { refreshHistory(); }, [refreshHistory, conversationReady, messages.length]);
 
-  /* FASE 2 — muat daftar memori saat panel Memori dibuka; Escape menutup. */
+  /* Streaming Fase 2 — penghitung detik gelembung thinking: dihitung
+   * dari activeExec.startedAt (waktu nyata) tiap 100 mdtk selama AI
+   * sibuk; kembali ke 0 bila tidak ada eksekusi aktif. */
   useEffect(() => {
-    if (!memoryOpen) return undefined;
-    refreshMemoryPanel();
-    const onEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') setMemoryOpen(false); };
-    window.addEventListener('keydown', onEsc);
-    return () => window.removeEventListener('keydown', onEsc);
-  }, [memoryOpen, refreshMemoryPanel]);
+    if (!busy || !activeExec) {
+      setThinkingElapsedMs(0);
+      return undefined;
+    }
+    const startedAt = activeExec.startedAt;
+    const tick = () => setThinkingElapsedMs(Date.now() - startedAt);
+    tick();
+    const id = window.setInterval(tick, 100);
+    return () => window.clearInterval(id);
+  }, [busy, activeExec]);
+
+  /* Streaming Fase 2 — penggerak reveal: majukan satu langkah reveal
+   * tiap delay langkahnya (kata 46 mdtk, baris tabel 210 mdtk, tick
+   * total 30 mdtk — dari rencana streamingReveal.ts). Langkah terakhir
+   * menempelkan entry penuh ke `messages` (hanya bila percakapan asal
+   * masih tampil) lalu membersihkan state streaming. */
+  useEffect(() => {
+    if (!streaming) return undefined;
+    const { plan, step } = streaming;
+    if (step >= plan.totalSteps) {
+      const cur = streamingRef.current;
+      if (cur && cur.conversationId === (convIdRef.current ?? null)) {
+        setMessages((prev) => [...prev, cur.entry]);
+      }
+      streamingRef.current = null;
+      setStreaming(null);
+      return undefined;
+    }
+    const current = plan.steps[step];
+    const id = window.setTimeout(() => {
+      setStreaming((prev) => (prev ? { ...prev, step: prev.step + 1 } : prev));
+    }, current.delayMs);
+    return () => window.clearTimeout(id);
+  }, [streaming]);
+
   // Berlangganan eksekusi persisten (lifecycle fix 2026-11-12): cleanup
   // efek ini HANYA unsubscribe — TIDAK PERNAH meng-abort eksekusi.
   // Navigasi (unmount) bukan pembatalan; pekerjaan AI terus berjalan di
@@ -2371,7 +2448,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   useEffect(() => {
     const el = scrollRef.current;
     if (el && nearBottomRef.current) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
-  }, [messages, busy]);
+  }, [messages, busy, streaming]);
 
   /* Bersihkan sesi STT saat unmount. */
   useEffect(() => {
@@ -2391,8 +2468,9 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   const newChat = () => {
     /* Dilarang saat sibuk: permintaan yang sedang berjalan akan
        menempelkan jawabannya ke percakapan BARU (append fungsional +
-       convId sudah berganti) sehingga jawaban muncul tanpa pertanyaan. */
-    if (busy) return;
+       convId sudah berganti) sehingga jawaban muncul tanpa pertanyaan.
+       Alasan yang sama berlaku saat reveal streaming masih berjalan. */
+    if (busy || streaming) return;
     setHistoryOpen(false);
     setMessages([]);
     setInput('');
@@ -2563,6 +2641,10 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     // draft yang sedang diketik pengguna.
     const echo = opts?.echo !== false;
     if ((!msg && !attached) || busy) return;
+    // Streaming Fase 2 — pengiriman baru menyelesaikan reveal yang
+    // masih berjalan seketika (jawabannya ditempel utuh dulu) agar
+    // urutan pesan tetap benar.
+    finishStreamingRevealNow();
     // F-6B: penanda penggantian error milik SATU percobaan retry —
     // dibersihkan di awal setiap pengiriman agar tidak pernah bocor ke
     // pengiriman yang tidak terkait; cabang echo=false di bawah
@@ -3917,7 +3999,11 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         // (service hanya menempel di jalur sukses).
         followUpSuggestions: heldReplyNotice ? undefined : res.followUpSuggestions,
       };
-      if (replyDisplayed) setMessages((prev) => [...prev, assistantEntry]);
+      // Streaming Fase 2: jawaban sukses tampil kata per kata lewat
+      // beginStreamingReveal (fallback tampil-sekaligus untuk jawaban
+      // gagal/kosong/reduced-motion — lihat helpernya). Persist di bawah
+      // tetap memakai teks penuh seperti sebelumnya.
+      if (replyDisplayed) beginStreamingReveal(assistantEntry);
       // S3-C (F1): persist ke scope KIRIM. Teks panggilan ini DIPIN
       // tiga suite (aiCancellationPropagation #5, chatPerbaikanSemuaA
       // C-04, s8ServerCancellation — literal
@@ -6300,6 +6386,59 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
    * (flex-shrink 0 + latar + garis atas), tidak ikut discroll bersama
    * daftar pesan — owner 2026-10-27: kalau sudah ada percakapan,
    * chatbox berada di bawah saja. */
+  /* Streaming Fase 2 — render isi jawaban yang sedang di-reveal:
+   * paragraf dirender dari kata-kata yang sudah tampil (via
+   * renderMarkdown yang sama dengan pesan biasa), tabel RAB dirender
+   * baris per baris dengan struktur yang sama dengan renderMarkdown
+   * (md-table + renderInline per sel), dan sel total menampilkan nilai
+   * yang sedang dihitung naik selama animasinya berjalan. Sesudah
+   * reveal selesai, gelembung ini diganti pesan biasa (renderMarkdown
+   * penuh) — tidak ada dua sumber tampilan yang bertahan. */
+  const renderStreamingContent = (plan: RevealPlan, step: number) => {
+    const states = summarizeReveal(plan, step);
+    return (
+      <>
+        {states.map((s, bi) => {
+          if (s.block.kind === 'para') {
+            if (s.words.length === 0) return null;
+            return <div key={bi}>{renderMarkdown(s.words.join(' '))}</div>;
+          }
+          if (s.block.kind === 'table') {
+            if (!s.headerShown && s.rowsShown === 0) return null;
+            const b = s.block;
+            return (
+              <table key={bi} className="md-table">
+                <thead>
+                  <tr>{b.headers.map((h, hi) => (<th key={hi} style={{ textAlign: b.aligns[hi] }}>{renderInline(h, `sth${bi}-${hi}`)}</th>))}</tr>
+                </thead>
+                <tbody>
+                  {b.rows.slice(0, s.rowsShown).map((r, ri) => (
+                    <tr key={ri} className="ezstream-row">
+                      {r.map((c, ci) => {
+                        const isTotalCell = b.totalRowIndex === ri && b.totalCellIndex === ci;
+                        if (isTotalCell && s.totalAnimated !== null) {
+                          return <td key={ci} style={{ textAlign: b.aligns[ci] }}>{formatRevealRupiah(s.totalAnimated)}</td>;
+                        }
+                        return <td key={ci} style={{ textAlign: b.aligns[ci] }}>{renderInline(c, `std${bi}-${ri}-${ci}`)}</td>;
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            );
+          }
+          if (s.lines.length === 0) return null;
+          return <div key={bi}>{renderMarkdown(s.lines.join('\n'))}</div>;
+        })}
+      </>
+    );
+  };
+
+  /* Streaming Fase 2: selama jawaban masih di-reveal kata per kata,
+   * composer terkunci seperti saat AI sibuk (hindari pengiriman baru
+   * menimpa reveal yang berjalan). */
+  const answering = busy || streaming !== null;
+
   const composer = (middle: boolean) => (
     <div className={`ezchat2-input-wrap${middle ? ' middle' : ' docked'}`}>
       {/* Menu slash (Command Router Fase 4): muncul saat "/" diketik sebelum
@@ -6352,7 +6491,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
           onKeyDown={onKey}
           placeholder={listening ? t('ai.chat.placeholder_listening') : t('ai.chat.placeholder')}
           rows={1}
-          disabled={busy}
+          disabled={answering}
           aria-expanded={slashOpen}
           aria-controls="ezchat2-slashmenu"
           aria-activedescendant={slashOpen && slashEntries[slashIndex] ? `ezchat2-slashopt-${slashEntries[slashIndex].id}` : undefined}
@@ -6361,17 +6500,17 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
           className={`ezchat2-tool ${listening ? 'listening' : ''}`}
           onClick={toggleMic}
           title={listening ? t('ai.chat.mic_stop') : t('ai.chat.mic_start')}
-          disabled={busy}
+          disabled={answering}
         >
           <Mic size={17} />
         </button>
         <button
           className={`ezchat2-send ${input.trim() || attached ? 'ready' : ''}`}
           onClick={() => submit()}
-          disabled={busy || (!input.trim() && !attached)}
+          disabled={answering || (!input.trim() && !attached)}
           title={t('ai.chat.send')}
         >
-          {busy ? <Loader2 size={17} className="spin" /> : <Send size={17} />}
+          {answering ? <Loader2 size={17} className="spin" /> : <Send size={17} />}
         </button>
       </div>
       <div className="ezchat2-foot">
@@ -6436,7 +6575,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
           <button
             className="ezchat2-new"
             onClick={() => { setMenuOpen(false); newChat(); }}
-            disabled={busy}
+            disabled={busy || streaming !== null}
             title={t('ai.chat.new_chat_title')}
           >
             <Plus size={15} /> {t('ai.chat.new_chat')}
@@ -6458,12 +6597,6 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
                   onClick={() => { setMenuOpen(false); setHistoryOpen(true); }}
                 >
                   <History size={14} /> Riwayat percakapan
-                </button>
-                <button
-                  role="menuitem"
-                  onClick={() => { setMenuOpen(false); setHistoryOpen(false); setMemoryOpen(true); }}
-                >
-                  <Brain size={14} /> Memori tersimpan
                 </button>
                 <button
                   role="menuitem"
@@ -6506,133 +6639,23 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
           </div>
         </>
       )}
-      {memoryOpen && (
-        <>
-          <div className="ezchat2-hist-veil" onClick={() => setMemoryOpen(false)} />
-          <div className="ezchat2-hist-panel" role="dialog" aria-label="Memori tersimpan">
-            <div className="ezhist-head">
-              <h3 className="ezhist-heading">Memori Tersimpan</h3>
-              <button className="ezhist-newbtn" onClick={() => setMemoryOpen(false)}>{t('common.tutup')}</button>
-            </div>
-            <p style={{ fontSize: '12px', color: 'var(--ez-color-text-body, #475569)', margin: '4px 0 10px' }}>
-              {MEMORY_HONEST_LABEL} Memori yang dihapus tidak muncul lagi di jawaban berikutnya.
-            </p>
-            <label style={{ display: 'flex', gap: '8px', alignItems: 'center', fontSize: '13px', marginBottom: '8px' }}>
-              <input
-                type="checkbox"
-                checked={memoryPrefs.personalizationEnabled}
-                onChange={(e) => {
-                  const res = setPreference(null, 'personalizationEnabled', e.target.checked);
-                  if (res.ok) setMemoryPrefs(res.value);
-                }}
-              />
-              Personalisasi aktif (pakai preferensi saya di jawaban AI)
-            </label>
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '10px', fontSize: '12px' }}>
-              <label>Presentasi RAB:{' '}
-                <select
-                  value={memoryPrefs.rabPresentation}
-                  onChange={(e) => {
-                    const res = setPreference(null, 'rabPresentation', e.target.value as UserPreferences['rabPresentation']);
-                    if (res.ok) setMemoryPrefs(res.value);
-                  }}
-                >
-                  <option value="ringkas">Ringkas</option>
-                  <option value="rinci">Rinci</option>
-                </select>
-              </label>
-              <label>Gaya workflow:{' '}
-                <select
-                  value={memoryPrefs.workflowStyle}
-                  onChange={(e) => {
-                    const res = setPreference(null, 'workflowStyle', e.target.value as UserPreferences['workflowStyle']);
-                    if (res.ok) setMemoryPrefs(res.value);
-                  }}
-                >
-                  <option value="bertahap">Bertahap</option>
-                  <option value="langsung">Langsung</option>
-                </select>
-              </label>
-              <label>Level detail:{' '}
-                <select
-                  value={memoryPrefs.detailLevel}
-                  onChange={(e) => {
-                    const res = setPreference(null, 'detailLevel', e.target.value as UserPreferences['detailLevel']);
-                    if (res.ok) setMemoryPrefs(res.value);
-                  }}
-                >
-                  <option value="ringkas">Ringkas</option>
-                  <option value="sedang">Sedang</option>
-                  <option value="rinci">Rinci</option>
-                </select>
-              </label>
-            </div>
-            {memoryItems.length === 0 ? (
-              <p className="ezhist-empty">Belum ada memori tersimpan untuk proyek ini.</p>
-            ) : (
-              <div className="ezhist-list">
-                {memoryItems.map((m) => (
-                  <div key={m.memoryId} className="ezhist-row" style={{ alignItems: 'flex-start' }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: '13px', fontWeight: 600 }}>
-                        [{m.layer} · {m.quality}]{m.status === 'contradictory' ? ' ⚠️ KONFLIK — perlu ditanyakan' : ''}{m.status === 'superseded' ? ' · digantikan' : ''}
-                      </div>
-                      {memoryEditingId === m.memoryId ? (
-                        <div style={{ display: 'flex', gap: '6px', marginTop: '4px' }}>
-                          <input
-                            value={memoryEditingText}
-                            onChange={(e) => setMemoryEditingText(e.target.value)}
-                            style={{ flex: 1, minWidth: 0 }}
-                            aria-label="Koreksi memori"
-                          />
-                          <button
-                            title="Simpan koreksi"
-                            onClick={() => {
-                              if (!effProject) return;
-                              const res = correctMemory(m.memoryId, memoryEditingText, { userId: null, projectId: effProject.id, conversationId: convIdRef.current ?? null });
-                              if (res.ok) { setMemoryEditingId(null); refreshMemoryPanel(); }
-                            }}
-                          >
-                            <Save size={14} />
-                          </button>
-                        </div>
-                      ) : (
-                        <div style={{ fontSize: '13px', wordBreak: 'break-word' }}>{m.content}</div>
-                      )}
-                      <div style={{ fontSize: '11px', color: 'var(--ez-color-text-body, #64748b)' }}>
-                        {m.provenance} • {new Date(m.updatedAt).toLocaleDateString('id-ID')}
-                      </div>
-                    </div>
-                    <button
-                      title="Koreksi memori"
-                      onClick={() => { setMemoryEditingId(m.memoryId); setMemoryEditingText(m.content); }}
-                    >
-                      <Pencil size={14} />
-                    </button>
-                    <button
-                      className="ezhist-del"
-                      title="Hapus memori"
-                      onClick={() => {
-                        if (!effProject) return;
-                        deleteMemory(m.memoryId, { userId: null, projectId: effProject.id, conversationId: convIdRef.current ?? null });
-                        refreshMemoryPanel();
-                      }}
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </>
-      )}
       {planOpen && (
         <>
           <div className="ezchat2-hist-veil" onClick={() => setPlanOpen(false)} />
           <div className="ezchat2-hist-panel" role="dialog" aria-label="Rencana tugas">
             <div className="ezhist-head">
               <h3 className="ezhist-heading">Rencana Tugas</h3>
+              {agentPlan && agentPlan.steps.length > 0 && (
+                <button
+                  type="button"
+                  className="ezhist-newbtn"
+                  onClick={() => setPlanDetailsManual(!planDetailsOpen)}
+                  aria-expanded={planDetailsOpen}
+                  title={planDetailsOpen ? 'Sembunyikan daftar langkah' : 'Tampilkan daftar langkah'}
+                >
+                  {planDetailsOpen ? <ChevronUp size={13} /> : <ChevronDown size={13} />} {planDetailsOpen ? 'Sembunyikan detail' : 'Lihat detail'}
+                </button>
+              )}
               <button className="ezhist-newbtn" onClick={() => setPlanOpen(false)}>Tutup</button>
             </div>
             {!agentPlan ? (
@@ -6642,6 +6665,14 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
                 <p style={{ fontSize: '12px', color: 'var(--ez-color-text-body, #475569)', margin: '4px 0 10px' }}>
                   {agentPlan.objective.goalText} Rencana tersimpan lokal per-perangkat dan selamat dari navigasi maupun reload.
                 </p>
+                {/* Mockup v2: daftar langkah panjang di-hide bila tidak ada
+                    yang butuh perhatian — hanya ringkasan yang tampil. */}
+                {!planDetailsOpen ? (
+                  <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-body, #475569)', margin: '4px 0 2px', fontWeight: 600 }}>
+                    {planDoneCount} dari {agentPlan.steps.length} langkah selesai
+                    {planAttentionCount > 0 ? ` · ${planAttentionCount} langkah perlu perhatian` : ''}
+                  </p>
+                ) : (
                 <div className="ezhist-list">
                   {agentPlan.steps.map((s) => (
                     <div key={s.id} className="ezhist-row" style={{ alignItems: 'flex-start' }}>
@@ -6747,13 +6778,14 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
                     </div>
                   ))}
                 </div>
+                )}
               </>
             )}
           </div>
         </>
       )}
       {/* P6 — panel Review draft (overlay sendiri, lebih lebar dari panel
-          riwayat/memori karena memuat tabel item; gaya inline agar tidak
+          riwayat karena memuat tabel item; gaya inline agar tidak
           menyentuh lembar gaya bersama). Draft + lampiran DED dibaca
           segar tiap render; reviewTick memaksa render ulang sesudah
           aksi panel. */}
@@ -6766,9 +6798,20 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         } catch {
           att = null;
         }
+        /* Mockup v2: tabel item yang panjang di-hide bila tidak ada yang
+         * butuh perhatian — hanya ringkasan (judul, versi, jumlah item,
+         * total estimasi, item belum berharga) + tombol "Lihat detail".
+         * Aturan otomatis: terbuka bila ada item belum berharga atau
+         * peringatan draft; pilihan manual di-reset tiap dialog ditutup. */
+        const reviewItems = effectiveItems(d);
+        const reviewTotals = computeTotals(d);
+        const reviewUnpriced = reviewTotals.unpricedCount;
+        const reviewWarnings = d.warnings?.length ?? 0;
+        const reviewDetailsOpen = reviewDetailsManual ?? (reviewUnpriced > 0 || reviewWarnings > 0);
+        const closeReviewPanel = () => { setReviewOpen(false); setReviewDetailsManual(null); };
         return (
           <>
-            <div className="ezchat2-hist-veil" onClick={() => setReviewOpen(false)} />
+            <div className="ezchat2-hist-veil" onClick={closeReviewPanel} />
             <div
               role="dialog"
               aria-label="Review draft"
@@ -6788,18 +6831,66 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
                 padding: 16,
               }}
             >
-              <DraftReviewPanel
-                draft={d}
-                projectId={effProject.id}
-                dedAttachment={att}
-                pendingRevision={pendingRevisionRef.current}
-                onApplyDraft={handleApplyReviewDraft}
-                onResolveMissing={handleResolveMissingFromPanel}
-                onActivateRevision={handleActivateRevisionFromPanel}
-                onCancelRevision={handleCancelRevisionFromPanel}
-                onCompareVersions={handleCompareVersionsFromPanel}
-                onClose={() => setReviewOpen(false)}
-              />
+              {!reviewDetailsOpen ? (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+                    <div>
+                      <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--ez-color-text-primary, #0F172A)' }}>Review Draft — {d.title}</div>
+                      <div style={{ fontSize: 12, color: 'var(--ez-color-text-body, #475569)' }}>
+                        Versi {d.version} · {reviewItems.length} item · Total estimasi {formatRupiah(reviewTotals.estimatedTotal)}
+                        {reviewUnpriced > 0 ? ` · ${reviewUnpriced} item belum berharga (PARSIAL)` : ''}
+                      </div>
+                      <div style={{ fontSize: 12.5, color: 'var(--ez-color-text-body, #475569)', marginTop: 8, fontWeight: 600 }}>
+                        {reviewUnpriced === 0 && reviewWarnings === 0
+                          ? 'Tidak ada item yang perlu perhatian.'
+                          : `${reviewUnpriced > 0 ? `${reviewUnpriced} item belum berharga` : ''}${reviewUnpriced > 0 && reviewWarnings > 0 ? ' · ' : ''}${reviewWarnings > 0 ? `${reviewWarnings} peringatan draft` : ''} — detail disembunyikan manual.`}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={closeReviewPanel}
+                      style={{ padding: '7px 14px', borderRadius: 10, border: '1px solid var(--ez-color-border-line, #E2E8F0)', background: 'var(--ez-color-surface, #fff)', color: 'var(--ez-color-text-secondary, #334155)', fontWeight: 600, fontSize: 13, cursor: 'pointer', flexShrink: 0 }}
+                      aria-label="Tutup panel review"
+                    >
+                      Tutup
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    className="ezhist-newbtn"
+                    onClick={() => setReviewDetailsManual(true)}
+                    aria-expanded={false}
+                    style={{ marginTop: 12 }}
+                  >
+                    <ChevronDown size={13} /> Lihat detail
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: 4 }}>
+                    <button
+                      type="button"
+                      className="ezhist-newbtn"
+                      onClick={() => setReviewDetailsManual(false)}
+                      aria-expanded
+                    >
+                      <ChevronUp size={13} /> Sembunyikan detail
+                    </button>
+                  </div>
+                  <DraftReviewPanel
+                    draft={d}
+                    projectId={effProject.id}
+                    dedAttachment={att}
+                    pendingRevision={pendingRevisionRef.current}
+                    onApplyDraft={handleApplyReviewDraft}
+                    onResolveMissing={handleResolveMissingFromPanel}
+                    onActivateRevision={handleActivateRevisionFromPanel}
+                    onCancelRevision={handleCancelRevisionFromPanel}
+                    onCompareVersions={handleCompareVersionsFromPanel}
+                    onClose={closeReviewPanel}
+                  />
+                </>
+              )}
             </div>
           </>
         );
@@ -7029,10 +7120,35 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
                 </div>
               </div>
             ))}
+            {/* Streaming Fase 2 (mockup-chat-ai-streaming): jawaban tampil
+                kata per kata + kursor berkedip; tabel RAB terisi baris per
+                baris dan total menghitung naik (lihat renderStreamingContent
+                + streamingReveal.ts). Sesudah reveal selesai, entry penuh
+                ditempel ke `messages` dan gelembung ini hilang. */}
+            {streaming && (
+              <div className="ezchat2-row ai">
+                <img src={MASCOT_PNG} alt="Ezrab" className="ezchat2-avatar" />
+                <div className="ezchat2-col">
+                  <div className="ezchat2-bubble ai">
+                    <div className="ezchat2-text md-body" style={{ overflowX: 'auto', maxWidth: '100%' }}>
+                      {renderStreamingContent(streaming.plan, streaming.step)}
+                      <span className="ezstream-cursor" aria-hidden="true" />
+                    </div>
+                  </div>
+                  <div className="ezchat2-ts">{fmtTime(streaming.entry.ts)}</div>
+                </div>
+              </div>
+            )}
             {busy && (
               <div className="ezchat2-row ai">
                 <img src={MASCOT_PNG} alt="Ezrab" className="ezchat2-avatar thinking" />
                 <div className="ezchat2-bubble ai typing">
+                  {/* Streaming Fase 2 (mockup-chat-ai-streaming): sparkle
+                      berdenyut + status tahap berkilau + penghitung detik
+                      berjalan. Tahapnya tetap label TAHAP NYATA dari event
+                      eksekusi (bukan karangan); detiknya waktu nyata sejak
+                      eksekusi dimulai. */}
+                  <Sparkles size={15} className="ezstream-spark" aria-hidden="true" />
                   <span className="tdot" /><span className="tdot" /><span className="tdot" />
                   {/* P2: bila eksekusi runtime sudah melewati 'preparing',
                       tampilkan label TAHAP NYATA terakhir (dari event
@@ -7041,7 +7157,8 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
                       seluruh cabang jawaban lokal deterministik yang
                       sinkron dan tidak punya event tahap — teks status
                       klasifikasi lama tetap dipakai (tanpa tahap karangan). */}
-                  <span className="ezchat2-thinking">{reportedActiveStage && reportedActiveStage !== 'preparing' ? EXECUTION_STAGE_LABELS[reportedActiveStage] : thinkingText}</span>
+                  <span className="ezchat2-thinking ezstream-shimmer">{reportedActiveStage && reportedActiveStage !== 'preparing' ? EXECUTION_STAGE_LABELS[reportedActiveStage] : thinkingText}</span>
+                  <span className="ezstream-elapsed">{formatElapsedDtk(thinkingElapsedMs)}</span>
                   {/* Berhenti — pembatalan EKSPLISIT satu-satunya (lifecycle
                       fix 2026-11-12). Navigasi tidak pernah membatalkan;
                       tombol ini menghentikan request aktif ini saja. */}

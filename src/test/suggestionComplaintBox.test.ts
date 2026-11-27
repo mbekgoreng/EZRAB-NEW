@@ -1,4 +1,9 @@
 // Suite: Kotak Saran & Pengaduan (UI-first, Pusat Bantuan) — 2026-10-29.
+// Migrasi kontrak 2026-11-27 ke mockup Kirim Masukan v2 (ACC owner "7 mockup
+// dulu"): form inline lama diganti dialog gaya Google — 4 chip kategori,
+// 1 textarea wajib, tanpa judul/prioritas/konteks-halaman. Tujuh cek di bawah
+// diperbarui ke kontrak baru dengan komentar penanda; 4 gagal pra-ada di HEAD
+// dibiarkan apa adanya (bukan regresi program ini).
 // Gaya harness sama seperti suite src/test lainnya (plain-tsx, tanpa vitest):
 // logika murni diuji langsung dari modulnya, integrasi UI diuji source-level
 // terhadap file yang dirender (aplikasi React penuh tidak dapat di-mount
@@ -71,7 +76,10 @@ const expectedCategories = [
 ];
 check('tujuh kategori, urutan & ejaan persis', JSON.stringify(REPORT_CATEGORIES) === JSON.stringify(expectedCategories));
 check('prioritas Rendah/Normal/Tinggi', JSON.stringify(REPORT_PRIORITIES) === JSON.stringify(['Rendah', 'Normal', 'Tinggi']));
-check('semua kategori dirender sebagai opsi select', expectedCategories.every((c) => box.includes('REPORT_CATEGORIES.map')));
+// Mockup v2 (2026-11-27): 7 kategori logika tetap ada, tetapi dialog hanya
+// memakai 4 chip single-select (Laporan Bug / Saran Fitur / Pertanyaan /
+// Lainnya); select REPORT_CATEGORIES.map tidak lagi dirender.
+check('empat kategori mockup dirender sebagai chip single-select', ['Laporan Bug', 'Saran Fitur', 'Pertanyaan', 'Lainnya'].every((c) => box.includes(`'${c}'`)) && box.includes('aria-pressed={category === value}'));
 
 console.log('=== VALIDASI: wajib isi, batas panjang, kategori tak dikenal ===');
 const emptyResult = validateReportDraft(EMPTY_REPORT_DRAFT);
@@ -94,7 +102,9 @@ const snapshot = JSON.stringify(draftCopy);
 validateReportDraft(draftCopy);
 attemptSubmit(draftCopy);
 check('validate/attemptSubmit tidak mengubah draf', JSON.stringify(draftCopy) === snapshot);
-check('komponen mempertahankan draf di state (bukan storage)', box.includes('useState<ReportDraft>') && box.includes('attemptSubmit(draft)'));
+// Mockup v2 (2026-11-27): draf ReportDraft + attemptSubmit(draft) diganti
+// state dialog (kategori + pesan); draf tetap di state komponen, bukan storage.
+check('komponen mempertahankan draf di state (bukan storage)', box.includes("useState<FeedbackCategory>('Saran Fitur')") && box.includes('value={message}'));
 
 console.log('=== KEJUJURAN PENGIRIMAN: tidak ada sukses palsu / tiket palsu ===');
 check('flag backend MATI (belum ada backend terverifikasi)', SUBMISSION_BACKEND_AVAILABLE === false);
@@ -153,14 +163,18 @@ check('sufiks identitas gerbang ditampilkan', box.includes('(sesi gerbang kode a
 check('keadaan belum masuk dijelaskan (laporan anonim tidak didukung)', box.includes('Laporan anonim tidak didukung'));
 
 console.log('=== AKSESIBILITAS & LAMPIRAN JUJUR ===');
-check('label terprogram untuk judul/kategori/deskripsi', ['htmlFor="ks-title"', 'htmlFor="ks-category"', 'htmlFor="ks-description"'].every((s) => box.includes(s)));
-check('field wajib ditandai aria-required', (box.match(/aria-required="true"/g) ?? []).length >= 3);
-check('error terhubung via aria-describedby', box.includes('aria-describedby={errors.title') && box.includes('aria-describedby={errors.description'));
+// Mockup v2 (2026-11-27): tanpa field judul/prioritas; satu textarea wajib
+// berlabel "Jelaskan masukan Anda (wajib diisi)".
+check('label terprogram untuk isi masukan', box.includes('htmlFor="ks-message"') && box.includes('Jelaskan masukan Anda'));
+check('field wajib ditandai aria-required', box.includes('aria-required="true"'));
+check('counter terhubung via aria-describedby', box.includes('aria-describedby="ks-message-count"'));
 check('tombol entri memakai aria-expanded + aria-controls', box.includes('aria-expanded={open}') && box.includes('aria-controls="ks-panel"'));
 check('pesan unavailable memakai role="status"', box.includes('role="status"'));
 check('lampiran dalam keadaan nonaktif jujur', box.includes('Lampiran belum tersedia') && /id="ks-attachment"[^>]*disabled/.test(box));
-check('konteks halaman opsional tersedia sebagai checkbox', box.includes('PAGE_CONTEXT_LABEL') && box.includes('type="checkbox"'));
-check('tombol kirim dilindungi dari klik ganda', box.includes('disabled={checking}') && box.includes("if (checking) return"));
+// Mockup v2 (2026-11-27): tanpa checkbox konteks halaman; checkbox opsional
+// yang ada adalah "Sertakan screenshot ini" (+ opt-in info terbaru).
+check('checkbox opsional tersedia (sertakan screenshot)', box.includes('Sertakan screenshot ini') && box.includes('type="checkbox"'));
+check('tombol kirim dilindungi dari klik ganda', box.includes('disabled={checking || messageEmpty}') && box.includes("if (checking) return"));
 
 console.log(`\nHASIL: ${pass} PASS, ${fail} FAIL`);
 if (fail > 0) process.exit(1);

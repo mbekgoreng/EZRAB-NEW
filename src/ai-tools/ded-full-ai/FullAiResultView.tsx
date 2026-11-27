@@ -4,8 +4,8 @@
  * Menampilkan hasil Full AI dengan transparansi penuh:
  * provenance, formula, asumsi, sumber harga, status verifikasi.
  */
-import React, { useEffect, useMemo, useState } from 'react';
-import { ChevronDown, ChevronRight, AlertTriangle, CheckCircle2, HelpCircle, XCircle, MessageSquare, Lock } from 'lucide-react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { ChevronDown, ChevronRight, AlertTriangle, Check, CheckCircle2, HelpCircle, XCircle, MessageSquare, Lock, MoreVertical, Trash2 } from 'lucide-react';
 import { FullAiOutput, FullAiItem } from './types';
 // DED Hasil + Gerbang Review (mockup v2.3, ACC owner 2026-11-19 04:14):
 // taksonomi chip bukti kuantitas + gerbang review dari SATU modul murni
@@ -14,6 +14,7 @@ import { FullAiOutput, FullAiItem } from './types';
 import {
   quantityEvidenceChipForFullAiItem, reviewGateItemsForFullAi, reviewGateSummary,
   reviewedCount, isReviewGateComplete, canFinalizeWithGate, countSavableFullAi,
+  allGateItemIds,
 } from '../ded-ai-estimate/dedReviewGate';
 import '../ded-ai-estimate/dedAi.css';
 import { resolveCanonicalCode, getDedPriceSourceLabel, DED_PRICE_SOURCE_LABELS } from '../ded-canonical/canonicalDedPricing';
@@ -74,9 +75,11 @@ const STATUS_ICON: Record<string, React.ReactNode> = {
 const fmtRp = (n: number | null) =>
   n == null ? '—' : `Rp${n.toLocaleString('id-ID')}`;
 
-function ItemCard({ item, onUpdate, rabMode, openRequest }: {
+function ItemCard({ item, onUpdate, onDelete, rabMode, openRequest }: {
   item: FullAiItem;
   onUpdate: (updated: FullAiItem) => void;
+  /** Hapus item dari draf (mockup DED RAB AI: menu ⋮ per item). */
+  onDelete?: (item: FullAiItem) => void;
   /** Mode dual DED-RAB (§7, G-IS-3): di FULL_AI konfirmasi kandidat AHSP ke katalog ditutup. Absen = perilaku lama (diizinkan). */
   rabMode?: DedRabAiMode;
   /** Permintaan buka dari gerbang ("Lihat"): kartu yang id-nya cocok membuka detailnya. */
@@ -112,6 +115,22 @@ function ItemCard({ item, onUpdate, rabMode, openRequest }: {
   const priceBadge = provenanceBadgeForDedSource(p.source);
   const isEdited = q.provenance === 'USER_INPUT' || p.source === 'USER_INPUT';
   const [confirmMsg, setConfirmMsg] = useState('');
+  // Menu ⋮ per item (mockup DED RAB AI): satu aksi — "Hapus item dari
+  // draf". Tutup saat klik di luar atau Escape.
+  const [menuOpen, setMenuOpen] = useState(false);
+  useEffect(() => {
+    if (!menuOpen) return;
+    const close = (e: MouseEvent | KeyboardEvent) => {
+      if (e.type === 'keydown' && (e as KeyboardEvent).key !== 'Escape') return;
+      setMenuOpen(false);
+    };
+    document.addEventListener('click', close);
+    document.addEventListener('keydown', close);
+    return () => {
+      document.removeEventListener('click', close);
+      document.removeEventListener('keydown', close);
+    };
+  }, [menuOpen]);
 
   // §7 (G-IS-3): konfirmasi kandidat AHSP ke katalog HANYA di mode
   // EZRAB_AI. Di mode FULL_AI kandidat hanya usulan AI — tombol "Pilih"
@@ -188,6 +207,49 @@ function ItemCard({ item, onUpdate, rabMode, openRequest }: {
         }}>
           {priceBadge.text}
         </span>
+        {onDelete && (
+          <span style={{ position: 'relative', marginLeft: 'auto', display: 'inline-flex' }}>
+            <button
+              type="button"
+              aria-label="Menu item"
+              aria-haspopup="true"
+              aria-expanded={menuOpen}
+              onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen); }}
+              style={{
+                width: 34, height: 34, minHeight: 34, borderRadius: 9, padding: 0,
+                border: '1px solid transparent', background: 'transparent',
+                color: 'var(--ez-color-text-muted)', display: 'inline-flex',
+                alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+              }}
+            >
+              <MoreVertical size={18} />
+            </button>
+            {menuOpen && (
+              <span style={{
+                position: 'absolute', right: 0, top: 40, zIndex: 35, display: 'block',
+                background: 'var(--ez-color-surface)', border: '1px solid var(--ez-color-border-neutral)',
+                borderRadius: 12, boxShadow: '0 24px 60px -18px rgba(13,24,46,.45)',
+                padding: 6, minWidth: 225,
+              }}>
+                <span style={{ display: 'block', padding: '7px 10px 3px', fontSize: 11.5, color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>
+                  Item no. {item.no}
+                </span>
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setMenuOpen(false); onDelete(item); }}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 9, width: '100%', minHeight: 38,
+                    padding: '8px 10px', border: 0, background: 'transparent', borderRadius: 8,
+                    fontSize: 13.5, fontWeight: 600, color: 'var(--ez-color-danger-strong)',
+                    textAlign: 'left', cursor: 'pointer',
+                  }}
+                >
+                  <Trash2 size={16} /> Hapus item dari draf
+                </button>
+              </span>
+            )}
+          </span>
+        )}
       </div>
 
       {open && (
@@ -530,11 +592,38 @@ export const FullAiResultView: React.FC<Props> = ({ output, onFinalize, onSaveDr
   const [finalMsg, setFinalMsg] = useState('');
   const [items, setItems] = useState<FullAiItem[]>(output.items);
   // Gerbang review (mockup v2.3 §2): centang per item tinjau — state
-  // lokal view ini saja. TIDAK ADA "tandai semua" (keputusan owner
-  // no. 3 masih terbuka — default fail-closed). openRequest membuka
-  // kartu yang ditunjuk tombol "Lihat" di gerbang.
+  // lokal view ini saja. openRequest membuka kartu yang ditunjuk
+  // tombol "Lihat" di gerbang.
   const [reviewed, setReviewed] = useState<Set<string>>(new Set());
   const [openRequest, setOpenRequest] = useState<{ id: string; n: number } | null>(null);
+
+  // Mockup DED RAB AI (2026-11-27):
+  // - "Centang Semua Item Asumsi" / "Batalkan Centang Semua" (tombol
+  //   centang-semua — keputusan owner no. 3 DITUTUP lewat mockup ini;
+  //   lihat dedReviewGate.ts). Fail-closed tetap: gerbang menuntut
+  //   semua entri dicentang, tombol hanya melakukannya sekaligus.
+  // - Hapus item dari draf (menu ⋮ per kartu) + toast Undo.
+  // - Dialog konfirmasi dengan total live → chip "Sudah Masuk ke RAB".
+  const [toast, setToast] = useState<{ msg: string; undo: boolean } | null>(null);
+  const [lastDeleted, setLastDeleted] = useState<{ item: FullAiItem; index: number; wasReviewed: boolean } | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmed, setConfirmed] = useState(false);
+  const toastTimer = useRef<number | null>(null);
+  useEffect(() => () => {
+    if (toastTimer.current != null) window.clearTimeout(toastTimer.current);
+  }, []);
+  // Escape menutup dialog konfirmasi (mockup).
+  useEffect(() => {
+    if (!confirmOpen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setConfirmOpen(false); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [confirmOpen]);
+  const showToast = (msg: string, undo: boolean) => {
+    setToast({ msg, undo });
+    if (toastTimer.current != null) window.clearTimeout(toastTimer.current);
+    toastTimer.current = window.setTimeout(() => setToast(null), 5000);
+  };
 
   // §7 (G-IS-3): mode dual diturunkan dari policy hasil lewat
   // modeFromPolicy (REKONSILIASI: mesin-menang — view ini selalu
@@ -566,6 +655,55 @@ export const FullAiResultView: React.FC<Props> = ({ output, onFinalize, onSaveDr
       return next;
     });
   };
+  // "Centang Semua Item Asumsi" / "Batalkan Centang Semua" (mockup):
+  // mencentang / membatalkan SELURUH daftar tinjau gerbang sekaligus.
+  // Label mengikuti keadaan gerbang; progres "X dari N" di panel
+  // gerbang ikut terhitung karena diturunkan dari `reviewed`.
+  const toggleCheckAll = () => {
+    if (gateItems.length === 0) return;
+    if (gateComplete) {
+      setReviewed((prev) => {
+        const next = new Set(prev);
+        gateItems.forEach((g) => next.delete(g.itemId));
+        return next;
+      });
+      showToast('Centang semua item Estimasi AI dibatalkan.', false);
+    } else {
+      setReviewed((prev) => new Set([...prev, ...allGateItemIds(gateItems)]));
+      showToast('Semua item Estimasi AI dicentang — progress peninjauan 100%.', false);
+    }
+  };
+  // Hapus item dari draf (mockup): keluar dari `items` sehingga total,
+  // subtotal grup, jumlah item, meter, dan progres gerbang — semuanya
+  // diturunkan dari `items` — terhitung ulang otomatis. Undo
+  // mengembalikan item ke posisi semula (+ centang gerbangnya bila ada).
+  // Seperti edit kartu, hapus hanya mengubah draf lokal sampai Simpan
+  // Draft / finalisasi.
+  const handleDeleteItem = (item: FullAiItem) => {
+    const idx = items.findIndex((it) => it.id === item.id);
+    if (idx < 0) return;
+    setLastDeleted({ item, index: idx, wasReviewed: reviewed.has(item.id) });
+    setItems(items.filter((it) => it.id !== item.id));
+    if (reviewed.has(item.id)) {
+      const next = new Set(reviewed);
+      next.delete(item.id);
+      setReviewed(next);
+    }
+    showToast(`Item no. ${item.no} dihapus dari draf`, true);
+  };
+  const handleUndoDelete = () => {
+    if (!lastDeleted) return;
+    setItems((prev) => {
+      const next = [...prev];
+      next.splice(Math.min(lastDeleted.index, next.length), 0, lastDeleted.item);
+      return next;
+    });
+    if (lastDeleted.wasReviewed) {
+      setReviewed((prev) => new Set(prev).add(lastDeleted.item.id));
+    }
+    setLastDeleted(null);
+    setToast(null);
+  };
   // "Lihat" di gerbang: buka kartu item + scroll ke kartunya.
   const viewGateItem = (id: string) => {
     setOpenRequest({ id, n: Date.now() });
@@ -596,6 +734,7 @@ export const FullAiResultView: React.FC<Props> = ({ output, onFinalize, onSaveDr
     itemsWithAiPrice: items.filter((it) => it.price.source === 'AI_ESTIMATE').length,
     itemsWithCanonicalPrice: items.filter((it) => it.price.source === 'AHSP_2026').length,
     itemsWithVerifiedPrice: items.filter((it) => it.price.source === 'VERIFIED_SOURCE').length,
+    itemsClaimDed: items.filter((it) => it.quantity.provenance === 'EXPLICIT').length,
     itemsNeedAhspReview: items.filter((it) => it.price.ahspMatch?.status === 'NEEDS_REVIEW').length,
     itemsAhspIncomplete: items.filter((it) => it.price.ahspMatch?.status === 'INCOMPLETE_COMPONENTS').length,
     itemsUnresolved: items.filter((it) => it.status === 'UNRESOLVED').length,
@@ -622,6 +761,14 @@ export const FullAiResultView: React.FC<Props> = ({ output, onFinalize, onSaveDr
     );
     const res = await onFinalize(savable);
     setFinalMsg(res.message);
+    // Mockup DED RAB AI: finalisasi sukses → tombol konfirmasi menjadi
+    // chip "Sudah Masuk ke RAB" (terkunci) + toast sukses. `res.ok`
+    // satu-satunya penanda sukses — gagal tetap menampilkan pesan di
+    // bawah total seperti sebelumnya.
+    if (res.ok) {
+      setConfirmed(true);
+      showToast(`Berhasil — ${savable.length} item draf sudah masuk ke RAB proyek.`, false);
+    }
     setFinalizing(false);
   };
 
@@ -748,18 +895,21 @@ export const FullAiResultView: React.FC<Props> = ({ output, onFinalize, onSaveDr
                   <strong>{groupName}</strong>
                   <span style={{ fontWeight: 700 }}>{fmtRp(groupTotal)}</span>
                 </div>
-                {items.map((it) => <ItemCard key={it.id} item={it} onUpdate={handleItemUpdate} rabMode={rabMode} openRequest={openRequest} />)}
+                {items.map((it) => <ItemCard key={it.id} item={it} onUpdate={handleItemUpdate} onDelete={handleDeleteItem} rabMode={rabMode} openRequest={openRequest} />)}
               </div>
             );
           })}
 
-          {/* ---- Gerbang review sebelum finalisasi (mockup v2.3 §2) ----
+          {/* ---- Gerbang review sebelum finalisasi (mockup v2.3 §2 +
+              mockup DED RAB AI 2026-11-27) ----
               Lapisan TAMBAHAN di atas validasi fail-closed: finalisasi
-              terkunci sampai semua item tinjau dicentang satu per satu.
-              TIDAK ADA tombol "tandai semua" (keputusan owner no. 3
-              masih terbuka — default fail-closed). Di mode Full AI,
-              padanan AHSP tidak bisa dipilih (keputusan 5) — gerbang
-              hanya meminta pengakuan harga Estimasi AI. ---- */}
+              terkunci sampai semua item tinjau dicentang. Tombol
+              "Centang Semua Item Asumsi" / "Batalkan Centang Semua"
+              mencentang seluruh daftar tinjau sekaligus (keputusan
+              owner no. 3 DITUTUP lewat mockup ini); progres "X dari N"
+              di bawah ikut terhitung. Di mode Full AI, padanan AHSP
+              tidak bisa dipilih (keputusan 5) — gerbang hanya meminta
+              pengakuan harga Estimasi AI. ---- */}
           <div className={`dedai-gate ${gateComplete ? 'complete' : 'locked'}`}>
             <div className="dedai-gate-head">
               {gateComplete
@@ -780,6 +930,33 @@ export const FullAiResultView: React.FC<Props> = ({ output, onFinalize, onSaveDr
                 <div className="dedai-gate-progress">
                   <div className="dedai-gate-bar"><div className="dedai-gate-fill" style={{ width: `${gateItems.length > 0 ? Math.round((gateCheckedCount / gateItems.length) * 100) : 0}%` }} /></div>
                   <span className="dedai-gate-progress-txt">{gateCheckedCount}{t('ai.ded.result.trace_b')}{gateItems.length}{t('ai.ded.result.gate_prog_b')}</span>
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center', marginBottom: 12 }}>
+                  <button
+                    type="button"
+                    onClick={toggleCheckAll}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                      borderRadius: 11, border: '1px solid var(--ez-color-text-primary)',
+                      background: 'var(--ez-color-text-primary)', color: 'var(--ez-color-surface)',
+                      fontWeight: 700, fontSize: 14, padding: '9px 16px', minHeight: 42, cursor: 'pointer',
+                    }}
+                  >
+                    <Check size={17} /> {gateComplete ? 'Batalkan Centang Semua' : 'Centang Semua Item Asumsi'}
+                  </button>
+                  {confirmed ? (
+                    <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--ez-hue-green-text-bright)' }}>
+                      Draf sudah dimasukkan ke RAB proyek.
+                    </span>
+                  ) : gateComplete ? (
+                    <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--ez-hue-green-text-bright)' }}>
+                      Semua item Estimasi AI sudah ditinjau — tombol Konfirmasi sekarang aktif.
+                    </span>
+                  ) : (
+                    <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--ez-color-text-muted)', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                      <Lock size={14} /> {t('ai.ded.fullai.final_locked_a')}{gateItems.length - gateCheckedCount}{t('ai.ded.fullai.final_locked_b')}
+                    </span>
+                  )}
                 </div>
                 {gateItems.map((g) => (
                   <div className="dedai-gate-item" key={g.itemId}>
@@ -860,20 +1037,26 @@ export const FullAiResultView: React.FC<Props> = ({ output, onFinalize, onSaveDr
                   <MessageSquare size={16} /> {t('ai.ded.result.send_chat')}
                 </button>
               )}
+              {/* Mockup DED RAB AI: tombol terkunci (ikon gembok +
+                  jumlah item belum dicentang di panel gerbang di atas)
+                  sampai semua item Estimasi AI dicentang; klik saat
+                  terbuka MEMBUKA DIALOG konfirmasi (total live) — bukan
+                  langsung finalisasi. Sesudah sukses menjadi chip
+                  "Sudah Masuk ke RAB" yang terkunci. */}
               <button
-                onClick={handleFinalize}
-                disabled={finalizing || !gateComplete}
-                title={!gateComplete ? t('ai.ded.result.finalize_locked_a') + (gateItems.length - gateCheckedCount) + t('ai.ded.result.finalize_locked_b') : undefined}
+                onClick={() => { if (!confirmed && gateComplete && !finalizing) setConfirmOpen(true); }}
+                disabled={finalizing || !gateComplete || confirmed}
+                title={confirmed ? undefined : !gateComplete ? t('ai.ded.result.finalize_locked_a') + (gateItems.length - gateCheckedCount) + t('ai.ded.result.finalize_locked_b') : undefined}
                 className="dedai-ftotal-btn"
                 style={{
                   padding: '12px 24px', borderRadius: 8, border: 'none',
                   background: '#7C3AED', color: '#fff', fontWeight: 600, cursor: 'pointer',
-                  opacity: (finalizing || !gateComplete) ? 0.6 : 1,
+                  opacity: (finalizing || !gateComplete || confirmed) ? 0.6 : 1,
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                 }}
               >
-                {!gateComplete && !finalizing && <Lock size={16} />}
-                {finalizing ? t('ai.ded.result.act_finalizing') : t('ai.ded.fullai.finalize_btn')}
+                {confirmed ? <Check size={16} /> : !gateComplete && !finalizing && <Lock size={16} />}
+                {finalizing ? t('ai.ded.result.act_finalizing') : confirmed ? 'Sudah Masuk ke RAB' : t('ai.ded.fullai.finalize_btn')}
               </button>
             </div>
           </div>
@@ -881,6 +1064,111 @@ export const FullAiResultView: React.FC<Props> = ({ output, onFinalize, onSaveDr
           {finalMsg && (
             <div style={{ padding: 12, background: 'var(--ez-hue-green-bg)', borderRadius: 8, marginBottom: 16, fontSize: 13 }}>
               {finalMsg}
+            </div>
+          )}
+
+          {/* ---- Dialog konfirmasi (mockup DED RAB AI): total live +
+              rincian jumlah item dari `items` SAAT INI (sesudah edit /
+              hapus) — bukan dari prop output yang bisa basi. Nama proyek
+              tidak ditampilkan: view ini tidak menerima nama proyek
+              (ada di session view.tsx) — jangan dikarang. ---- */}
+          {confirmOpen && (
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-label="Masukkan draf ini ke RAB proyek?"
+              onClick={(e) => { if (e.target === e.currentTarget) setConfirmOpen(false); }}
+              style={{
+                position: 'fixed', inset: 0, zIndex: 60, display: 'flex',
+                alignItems: 'center', justifyContent: 'center', padding: 20,
+                background: 'rgba(10,18,34,.52)',
+              }}
+            >
+              <div style={{
+                background: 'var(--ez-color-surface)', width: '100%', maxWidth: 520,
+                maxHeight: '88vh', overflow: 'auto', borderRadius: 20, padding: 22,
+                boxShadow: '0 24px 60px -18px rgba(13,24,46,.45)',
+              }}>
+                <h2 style={{ margin: '0 0 6px', fontSize: 19, fontWeight: 800 }}>Masukkan draf ini ke RAB proyek?</h2>
+                <p style={{ margin: '0 0 14px', color: 'var(--ez-color-text-body)', fontSize: 14 }}>
+                  {savableCount} item akan tersalin ke RAB proyek sebagai draf yang masih bisa diedit di sana. Semua item Estimasi AI sudah Anda centang.
+                </p>
+                <div style={{ border: '1px solid var(--ez-color-border-neutral)', borderRadius: 12, overflow: 'hidden', marginBottom: 16 }}>
+                  {[
+                    ['Total estimasi sementara', fmtRp(grandTotal)],
+                    ['Item yang masuk RAB', `${savableCount} item`],
+                    ['Harga terverifikasi AHSP', `${s.itemsWithCanonicalPrice} item`],
+                    ['Estimasi AI (sudah dicentang, tetap berlabel asumsi)', `${s.itemsWithAiPrice} item`],
+                    ['Klaim dari DED', `${s.itemsClaimDed} item`],
+                  ].map(([label, val], i) => (
+                    <div key={label} style={{
+                      display: 'flex', justifyContent: 'space-between', gap: 14,
+                      padding: '11px 14px', fontSize: 14,
+                      background: 'var(--ez-color-surface-secondary)',
+                      borderTop: i === 0 ? 'none' : '1px solid var(--ez-color-border-neutral)',
+                    }}>
+                      <span>{label}</span>
+                      <b style={{ fontWeight: 800, textAlign: 'right' }}>{val}</b>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmOpen(false)}
+                    style={{
+                      flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                      borderRadius: 11, border: '1px solid var(--ez-color-border-strong)',
+                      background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)',
+                      fontWeight: 700, fontSize: 14, padding: '9px 16px', minHeight: 42, cursor: 'pointer',
+                    }}
+                  >
+                    {t('ai.ded.result.modal_batal')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setConfirmOpen(false); void handleFinalize(); }}
+                    style={{
+                      flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                      borderRadius: 11, border: 'none', background: '#7C3AED', color: '#fff',
+                      fontWeight: 700, fontSize: 14, padding: '9px 16px', minHeight: 42, cursor: 'pointer',
+                    }}
+                  >
+                    Ya, Masukkan ke RAB
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ---- Toast (mockup): konfirmasi hapus + sukses finalisasi,
+              hilang otomatis 5 detik, "Urungkan" memulihkan item. ---- */}
+          {toast && (
+            <div
+              role="status"
+              aria-live="polite"
+              style={{
+                position: 'fixed', left: '50%', bottom: 28, transform: 'translate(-50%, 0)',
+                zIndex: 70, background: '#111827', color: '#fff', fontSize: 13.5, fontWeight: 600,
+                padding: '11px 12px 11px 18px', borderRadius: 999,
+                boxShadow: '0 24px 60px -18px rgba(13,24,46,.45)',
+                maxWidth: 'calc(100vw - 32px)', display: 'flex', alignItems: 'center', gap: 10,
+              }}
+            >
+              <span>{toast.msg}</span>
+              {toast.undo && (
+                <button
+                  type="button"
+                  onClick={handleUndoDelete}
+                  style={{
+                    minHeight: 32, border: '1px solid rgba(255,255,255,.45)', background: 'transparent',
+                    color: '#fff', borderRadius: 999, padding: '4px 13px', fontWeight: 800,
+                    fontSize: 13, cursor: 'pointer', flexShrink: 0,
+                  }}
+                >
+                  Urungkan
+                </button>
+              )}
             </div>
           )}
         </>

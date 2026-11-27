@@ -1,0 +1,75 @@
+/* EZRAB Chat AI — Streaming Fase 2 (mockup-chat-ai-streaming).
+ * Token warna mengikuti mockup: biru pekat #1D4ED8, aksen #2563EB,
+ * oranye #EA580C. Pola reduced-motion mengikuti ezrab-ai-chat.css:
+ * semua animasi dimatikan bila perangkat memintanya. */
+
+.ezstream-spark {
+  flex: none;
+  color: var(--ez-color-primary, #2563EB);
+  animation: ezstream-spark-pulse 1.1s ease-in-out infinite;
+}
+@keyframes ezstream-spark-pulse {
+  0%, 100% { transform: scale(0.82) rotate(0deg); opacity: 0.55; }
+  50% { transform: scale(1.12) rotate(20deg); opacity: 1; }
+}
+
+/* Status tahap berkilau (gradasi biru → oranye → biru, seperti mockup). */
+.ezstream-shimmer {
+  background: linear-gradient(100deg, #1D4ED8 20%, #EA580C 42%, #1D4ED8 64%);
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: ezstream-shimmer 1.6s linear infinite;
+}
+@keyframes ezstream-shimmer {
+  to { background-position: -220% 0; }
+}
+
+/* Penghitung detik berjalan ("0,6 dtk"). */
+.ezstream-elapsed {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+  color: var(--ez-color-text-muted, #64748B);
+  font-weight: 500;
+  white-space: nowrap;
+  flex: none;
+}
+
+/* Kursor berkedip di ujung jawaban yang sedang mengalir. */
+.ezstream-cursor {
+  display: inline-block;
+  width: 8px;
+  height: 1.05em;
+  background: var(--ez-color-primary, #2563EB);
+  border-radius: 2px;
+  vertical-align: text-bottom;
+  margin-left: 2px;
+  animation: ezstream-blink 0.85s steps(1) infinite;
+}
+@keyframes ezstream-blink {
+  50% { opacity: 0; }
+}
+
+/* Baris tabel RAB yang muncul satu per satu (animasi saat mount). */
+.ezstream-row {
+  animation: ezstream-row-in 0.3s ease both;
+}
+@keyframes ezstream-row-in {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ezstream-spark,
+  .ezstream-shimmer,
+  .ezstream-cursor,
+  .ezstream-row {
+    animation: none !important;
+  }
+  .ezstream-row {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

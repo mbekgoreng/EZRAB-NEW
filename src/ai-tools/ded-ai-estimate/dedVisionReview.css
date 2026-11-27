@@ -1042,3 +1042,17 @@
   color: #fff;
 }
 
+
+/* ==========================================================================
+   LAYAR HASIL LEBIH LUAS (mockup "DED & Document AI Lebih Luas", ACC
+   owner 2026-11-27): lepas kunci 1480px bila tampil di dalam
+   FeaturePageShell — shell sudah menetapkan max-width: none, tetapi
+   aturan .dedai:has(> .dedvr-split) di atas berspesifikasi sama
+   sehingga hasil akhirnya tergantung urutan muat CSS; override
+   eksplisit ini (spesifisitas lebih tinggi) memastikan split-view
+   memakai lebar penuh. Rel sumber tetap min. 340px (sudah sesuai
+   mockup); tabel RAB memakai sisa lebar penuh.
+   ========================================================================== */
+.fp-shell .dedai:has(> .dedvr-split) {
+  max-width: none;
+}

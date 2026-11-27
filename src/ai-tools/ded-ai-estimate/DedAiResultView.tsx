@@ -733,7 +733,17 @@ export const DedAiResultView: React.FC<Props> = ({
   return (
     <div className="dedai dedai-result">
       {topNotice}
+      {/* Kepala ramping layar hasil (mockup "DED & Document AI Lebih
+          Luas", ACC owner 2026-11-27): satu baris — tombol "← Input"
+          (pengganti stepper sebagai jalan pulang; label + handler sama
+          persis dengan tombol di bar aksi bawah) + judul + nama proyek
+          inline. Subtitle penjelasan disembunyikan CSS (.dedai-result
+          .dedai-head p) — fungsinya selesai di layar hasil. Header
+          shell SUDAH dihapus (724fc61); ini bukan header baru. */}
       <div className="dedai-head">
+        <button type="button" className="dedai-btn ghost dedai-result-back" onClick={onBackToInput}>
+          <ArrowLeft size={15} /> {t('ai.ded.result.act_back_input')}
+        </button>
         <h1>{t('ai.ded.result.head_a')} <span className="accent">{output.projectName}</span></h1>
         <p>{t('ai.ded.result.head_sub')}</p>
       </div>
@@ -1201,7 +1211,7 @@ export const DedAiResultView: React.FC<Props> = ({
           <thead>
             <tr>
               <th>No</th><th>{t('ai.ded.result.th_desc')}</th><th>{t('ai.ded.result.th_volume')}</th><th>{t('ai.ded.result.qlegend_title')}</th><th>{t('ai.ded.result.th_unit')}</th>
-              <th>{t('ai.ded.result.th_unit_price')}</th><th>{t('ai.ded.result.th_total')}</th><th>{t('ai.ded.result.th_status')}</th><th>{t('ai.ded.result.th_action')}</th>
+              <th className="dedai-col-unitprice">{t('ai.ded.result.th_unit_price')}</th><th>{t('ai.ded.result.th_total')}</th><th>{t('ai.ded.result.th_status')}</th><th>{t('ai.ded.result.th_action')}</th>
             </tr>
           </thead>
           <tbody>
@@ -1264,7 +1274,7 @@ export const DedAiResultView: React.FC<Props> = ({
                         </>
                       )}
                     </td>
-                    <td><span className="dedai-num">{fmtRp(it.unitPrice)}</span></td>
+                    <td className="dedai-col-unitprice"><span className="dedai-num">{fmtRp(it.unitPrice)}</span></td>
                     <td><span className="dedai-num">{fmtRp(it.subtotal)}</span></td>
                     <td>
                       <span className={`dedai-badge ${status}`}>{statusMeta[status].icon}{statusMeta[status].label}</span>

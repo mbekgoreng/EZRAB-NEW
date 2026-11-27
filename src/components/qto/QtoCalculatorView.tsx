@@ -66,6 +66,20 @@ import { CONSTRUCTION_CALCULATORS, getCalculatorById } from '../../engine/constr
 import { MASTER_VOLUME_CALCULATOR_SPEC } from '../../engine/constructionCalculators/masterJsonSpec';
 import { getCalculatorIllustration } from './calculatorIllustrations';
 import { getCalcFamilyIcon } from './calcFamilyIcon';
+import {
+  VOLUME_MOCKUP_DOMAINS,
+  mockupCatItemCount,
+  mockupDomainItemCount,
+  searchMockupItems,
+  formatMockupNumber,
+  formatMockupInput,
+  FIELD_CLS_COLOR,
+  type MockupDomain,
+  type MockupCat,
+  type MockupSub,
+  type MockupItem,
+  type SavedSimpleResult,
+} from './volumeStepNav';
 import { formatRupiah, formatNumberId } from '../../engine/formulaEngine';
 import { SafeDecimalEngine } from '../../engine/safeDecimalEngine';
 import { MASTER_PRICE_ITEMS } from '../../data/indonesianPrices';
@@ -566,6 +580,52 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
   const [selectedCalcId, setSelectedCalcId] = useState<string>(initialCalcId || 'BOWPLANK');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
+  // Navigasi bertingkat mockup Kalkulator Volume (ACC owner 2026-11-26):
+  // Jenis Konstruksi › Kategori › Sub Kategori › Kalkulator. Satu-satunya
+  // sumber hierarki mockup adalah volumeStepNav.ts (5 jenis, 13 kategori,
+  // 21 sub, 48 hitungan verbatim). Kategori aplikasi (CALCULATOR_CATEGORIES)
+  // ditampilkan SESUDAH kartu mockup pada langkah Kategori agar ke-190
+  // kalkulator tetap bisa dijelajahi — bukan hanya lewat pencarian.
+  type StepView = 'domains' | 'cats' | 'subs' | 'items' | 'calc' | 'calc-simple' | 'summary';
+  type StepDomain =
+    | { kind: 'mockup'; domain: MockupDomain }
+    | { kind: 'app'; domain: CivilDomainDef };
+  type StepCat =
+    | { kind: 'mockup'; cat: MockupCat }
+    | { kind: 'app'; cat: (typeof CALCULATOR_CATEGORIES)[number] };
+  const [stepView, setStepView] = useState<StepView>(initialCalcId || initialQtoId ? 'calc' : 'domains');
+  const [stepDomain, setStepDomain] = useState<StepDomain | null>(null);
+  const [stepCat, setStepCat] = useState<StepCat | null>(null);
+  const [stepSub, setStepSub] = useState<MockupSub | null>(null);
+  const [stepItem, setStepItem] = useState<MockupItem | null>(null);
+  const [fromSearch, setFromSearch] = useState(false);
+  // Kalkulator sederhana mockup (9 hitungan tanpa padanan registry):
+  // nilai field + hasil tersimpan sesi ini (bukan QTO — tidak ada speknya).
+  const [simpleItem, setSimpleItem] = useState<MockupItem | null>(null);
+  const [simpleValues, setSimpleValues] = useState<Record<string, number>>({});
+  const [simpleText, setSimpleText] = useState<Record<string, string>>({});
+  const [savedSimple, setSavedSimple] = useState<SavedSimpleResult[]>([]);
+  const [summaryReturnStep, setSummaryReturnStep] = useState<StepView | null>(null);
+  // Label jalur untuk kalkulator registry yang dibuka dari pencarian
+  // (kategori aplikasinya — data yang sudah ada, bukan copy baru).
+  const [searchPathLabel, setSearchPathLabel] = useState<string | null>(null);
+  // Mode PC mockup: layout kalkulator 2 kolom mulai 900px.
+  const [isWidePc, setIsWidePc] = useState<boolean>(
+    () => typeof window !== 'undefined' && window.matchMedia('(min-width: 900px)').matches,
+  );
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mq = window.matchMedia('(min-width: 900px)');
+    const onChange = () => setIsWidePc(mq.matches);
+    onChange();
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+  // Mockup: tiap pindah langkah, gulir ke atas.
+  useEffect(() => {
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0 });
+  }, [stepView]);
+
   // Workstation Favorites & Recents Persistence (Real localStorage integration)
   const RECENT_KEY = 'ezrab_recent_calculators';
   const FAVORITE_KEY = 'ezrab_favorite_calculators';
@@ -687,6 +747,10 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
   useEffect(() => {
     if (initialCalcId && initialCalcId !== selectedCalcId) {
       setSelectedCalcId(initialCalcId);
+      // Deep link (mis. dari Rekap QTO / dashboard) langsung membuka
+      // workbench kalkulator itu, melewati langkah penelusuran.
+      setStepView('calc');
+      setFromSearch(false);
     }
   }, [initialCalcId]);
 
@@ -1439,6 +1503,427 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
   const selectedCalcName =
     groupedCalculators.flatMap((g) => g.items).find((i) => i.id === selectedCalcId)?.name ?? '';
 
+  /* ================= Navigasi bertingkat mockup Kalkulator Volume ================= */
+
+  // Pack aplikasi yang dicakup tiap jenis mockup (pemetaan domain mockup →
+  // pack CALCULATOR_CATEGORIES; dipakai untuk kartu kategori aplikasi pada
+  // langkah Kategori — SETELAH kartu mockup).
+  const MOCKUP_DOMAIN_PACKS: Record<string, string[]> = {
+    bangunan: ['RESIDENTIAL'],
+    jembatan: ['BRIDGE'],
+    bendungan: ['DAM'],
+    jalan: ['ROAD', 'DRAINAGE'],
+    sni: ['LEGACY'],
+  };
+
+  // Langkah 1: 5 jenis mockup (verbatim) + jenis aplikasi yang belum
+  // tercakup mockup (Irigasi, Sungai, Bendung, Embung, Bangunan Air).
+  const stepDomains: StepDomain[] = useMemo(() => {
+    const covered = new Set(Object.values(MOCKUP_DOMAIN_PACKS).flat());
+    const mockup: StepDomain[] = VOLUME_MOCKUP_DOMAINS.map((domain) => ({ kind: 'mockup' as const, domain }));
+    const extra: StepDomain[] = CIVIL_DOMAINS.filter((d) => d.packs.some((p) => !covered.has(p))).map(
+      (domain) => ({ kind: 'app' as const, domain }),
+    );
+    return [...mockup, ...extra];
+  }, []);
+
+  const stepCatsForDomain = (sd: StepDomain): StepCat[] => {
+    if (sd.kind === 'mockup') {
+      const packs = MOCKUP_DOMAIN_PACKS[sd.domain.id] || [];
+      const appCats: StepCat[] = CALCULATOR_CATEGORIES.filter((c) => packs.includes(c.pack)).map((cat) => ({
+        kind: 'app' as const,
+        cat,
+      }));
+      const mockupCats: StepCat[] = sd.domain.cats.map((cat) => ({ kind: 'mockup' as const, cat }));
+      return [...mockupCats, ...appCats];
+    }
+    return CALCULATOR_CATEGORIES.filter((c) => sd.domain.packs.includes(c.pack)).map((cat) => ({
+      kind: 'app' as const,
+      cat,
+    }));
+  };
+
+  const stepDomainCount = (sd: StepDomain): { cats: number; items: number } => {
+    if (sd.kind === 'mockup') {
+      return { cats: sd.domain.cats.length, items: mockupDomainItemCount(sd.domain) };
+    }
+    const cats = stepCatsForDomain(sd);
+    return {
+      cats: cats.length,
+      items: cats.reduce((n, c) => n + (c.kind === 'app' ? c.cat.items.length : 0), 0),
+    };
+  };
+
+  const stepCatCount = (sc: StepCat): { subs: number; items: number } => {
+    if (sc.kind === 'mockup') return { subs: sc.cat.subs.length, items: mockupCatItemCount(sc.cat) };
+    return { subs: 0, items: sc.cat.items.length };
+  };
+
+  const stepCatArt = (sc: StepCat): string | null => {
+    const calcId = sc.kind === 'mockup' ? sc.cat.illusCalcId : sc.cat.items[0]?.id;
+    return calcId ? getCalculatorIllustration(calcId)?.src ?? null : null;
+  };
+
+  const stepDomainArt = (sd: StepDomain): string | null => {
+    if (sd.kind === 'mockup') return getCalculatorIllustration(sd.domain.illusCalcId)?.src ?? null;
+    const first = stepCatsForDomain(sd).find((c) => c.kind === 'app');
+    const calcId = first && first.kind === 'app' ? first.cat.items[0]?.id : undefined;
+    return calcId ? getCalculatorIllustration(calcId)?.src ?? null : null;
+  };
+
+  const goDomains = () => {
+    setStepDomain(null);
+    setStepCat(null);
+    setStepSub(null);
+    setStepItem(null);
+    setSimpleItem(null);
+    setFromSearch(false);
+    setSearchPathLabel(null);
+    setStepView('domains');
+  };
+
+  const goCats = (sd: StepDomain) => {
+    setStepDomain(sd);
+    setStepCat(null);
+    setStepSub(null);
+    setStepItem(null);
+    setSimpleItem(null);
+    setFromSearch(false);
+    setStepView('cats');
+  };
+
+  const goSubs = (sc: StepCat) => {
+    setStepCat(sc);
+    setStepSub(null);
+    setStepItem(null);
+    setSimpleItem(null);
+    setFromSearch(false);
+    setStepView('subs');
+  };
+
+  const goItemsForSub = (sc: StepCat, sub: MockupSub) => {
+    setStepCat(sc);
+    setStepSub(sub);
+    setStepItem(null);
+    setSimpleItem(null);
+    setFromSearch(false);
+    setStepView('items');
+  };
+
+  const goItemsForAppCat = (sc: StepCat) => {
+    setStepCat(sc);
+    setStepSub(null);
+    setStepItem(null);
+    setSimpleItem(null);
+    setFromSearch(false);
+    setStepView('items');
+  };
+
+  // Aturan lewati mockup: sub berisi 1 hitungan langsung membuka
+  // kalkulatornya, tanpa layar daftar ekstra.
+  const openMockupSub = (sc: StepCat, sub: MockupSub) => {
+    if (sub.items.length === 1) {
+      const only = sub.items[0];
+      const domain = stepDomain && stepDomain.kind === 'mockup' ? stepDomain.domain : null;
+      const cat = sc.kind === 'mockup' ? sc.cat : null;
+      if (domain && cat) openMockupItem(only, { domain, cat, sub });
+    } else {
+      goItemsForSub(sc, sub);
+    }
+  };
+
+  const openMockupItem = (
+    item: MockupItem,
+    ctx: { domain: MockupDomain; cat: MockupCat; sub: MockupSub },
+    opts?: { fromSearch?: boolean },
+  ) => {
+    setStepDomain({ kind: 'mockup', domain: ctx.domain });
+    setStepCat({ kind: 'mockup', cat: ctx.cat });
+    setStepSub(ctx.sub);
+    setStepItem(item);
+    setFromSearch(!!opts?.fromSearch);
+    setSearchPathLabel(null);
+    if (item.calcId) {
+      handleSelectCalculator(item.calcId);
+      setStepView('calc');
+    } else if (item.simple) {
+      const initial: Record<string, number> = {};
+      const initialText: Record<string, string> = {};
+      item.simple.fields.forEach((fld) => {
+        initial[fld.key] = fld.defaultValue;
+        initialText[fld.key] = String(fld.defaultValue);
+      });
+      setSimpleValues(initial);
+      setSimpleText(initialText);
+      setSimpleItem(item);
+      setStepView('calc-simple');
+    }
+  };
+
+  const openRegistryCalc = (calcId: string, opts?: { fromSearch?: boolean; catName?: string }) => {
+    setFromSearch(!!opts?.fromSearch);
+    setSearchPathLabel(opts?.catName ?? null);
+    handleSelectCalculator(calcId);
+    setStepView('calc');
+  };
+
+  const goSummary = () => {
+    setSummaryReturnStep(stepView === 'calc' || stepView === 'calc-simple' ? stepView : null);
+    setStepView('summary');
+  };
+
+  // Kembali satu tingkat — mengikuti logika tombol kembali mockup.
+  const backStep = () => {
+    if (stepView === 'calc' || stepView === 'calc-simple') {
+      if (fromSearch || !stepCat) {
+        goDomains();
+      } else if (stepSub) {
+        if (stepSub.items.length > 1) goItemsForSub(stepCat, stepSub);
+        else goSubs(stepCat);
+      } else {
+        goItemsForAppCat(stepCat);
+      }
+    } else if (stepView === 'items') {
+      if (stepSub && stepCat) goSubs(stepCat);
+      else if (stepDomain) goCats(stepDomain);
+      else goDomains();
+    } else if (stepView === 'subs') {
+      if (stepDomain) goCats(stepDomain);
+      else goDomains();
+    } else if (stepView === 'summary') {
+      if (summaryReturnStep) setStepView(summaryReturnStep);
+      else goDomains();
+    } else {
+      goDomains();
+    }
+  };
+
+  // Judul + subjudul appbar per langkah (verbatim mockup).
+  const barTitle =
+    stepView === 'domains'
+      ? 'Kalkulator Volume'
+      : stepView === 'cats'
+        ? stepDomain
+          ? stepDomain.kind === 'mockup'
+            ? stepDomain.domain.name
+            : stepDomain.domain.name
+          : 'Kalkulator Volume'
+        : stepView === 'subs'
+          ? stepCat
+            ? stepCat.kind === 'mockup'
+              ? stepCat.cat.name
+              : stepCat.cat.name
+            : 'Kalkulator Volume'
+          : stepView === 'items'
+            ? stepSub
+              ? stepSub.name
+              : stepCat
+                ? stepCat.kind === 'mockup'
+                  ? stepCat.cat.name
+                  : stepCat.cat.name
+                : 'Kalkulator Volume'
+            : stepView === 'calc'
+              ? activeSpec.title
+              : stepView === 'calc-simple'
+                ? simpleItem?.name ?? 'Kalkulator Volume'
+                : stepView === 'summary'
+                  ? 'Hasil Hitungan'
+                  : 'Kalkulator Volume';
+
+  const calcPathLabel = (): string => {
+    if (stepItem && stepDomain && stepDomain.kind === 'mockup' && stepCat && stepCat.kind === 'mockup') {
+      return `${stepDomain.domain.name} · ${stepCat.cat.name}${stepSub ? ` · ${stepSub.name}` : ''}`;
+    }
+    if (stepCat && stepCat.kind === 'app') {
+      return stepDomain ? `${stepDomain.kind === 'mockup' ? stepDomain.domain.name : stepDomain.domain.name} · ${stepCat.cat.name}` : stepCat.cat.name;
+    }
+    if (fromSearch) return searchPathLabel ?? 'Hasil pencarian';
+    const cat = CALCULATOR_CATEGORIES.find((c) => c.items.some((it) => it.id === selectedCalcId));
+    return cat ? cat.name : 'Kalkulator Volume';
+  };
+
+  const barSub =
+    stepView === 'domains'
+      ? 'Pilih jenis konstruksi dulu'
+      : stepView === 'cats'
+        ? 'Pilih kategori pekerjaan'
+        : stepView === 'subs'
+          ? 'Pilih sub kategori'
+          : stepView === 'items'
+            ? stepCat
+              ? stepCat.kind === 'mockup'
+                ? stepCat.cat.name
+                : stepDomain
+                  ? stepDomain.kind === 'mockup'
+                    ? stepDomain.domain.name
+                    : stepDomain.domain.name
+                  : 'Kalkulator Volume'
+              : 'Kalkulator Volume'
+            : stepView === 'calc'
+              ? calcPathLabel()
+              : stepView === 'calc-simple'
+                ? calcPathLabel()
+                : stepView === 'summary'
+                  ? `${savedSimple.length} item tersimpan sesi ini`
+                  : 'Hitung volume pekerjaan per item';
+
+  // Pencarian langkah 1: hitungan mockup (nama) + seluruh kalkulator
+  // registry (pencarian lama: nama/id/kode/deskripsi/kategori/AHSP).
+  // Hasil registry yang sudah terwakili hitungan mockup tidak diduplikasi.
+  const mockupHits = useMemo(() => searchMockupItems(searchQuery), [searchQuery]);
+  const registryHits = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return [];
+    const covered = new Set(mockupHits.map((h) => h.item.calcId).filter((id): id is string => !!id));
+    return groupedCalculators
+      .flatMap((g) => g.items)
+      .filter((it) => !covered.has(it.id));
+  }, [searchQuery, groupedCalculators, mockupHits]);
+  const isSearching = searchQuery.trim().length > 0;
+  const searchHitCount = mockupHits.length + registryHits.length;
+
+  // Hasil live kalkulator sederhana mockup.
+  const simpleResult = useMemo(() => {
+    if (!simpleItem?.simple) return { value: 0, detail: '' };
+    const def = simpleItem.simple;
+    const raw = def.calc(simpleValues);
+    const value = Number.isFinite(raw) ? raw : 0;
+    const detail = def.breakdown
+      ? def.breakdown(simpleValues, formatMockupNumber)
+      : `${def.fields.map((fld) => `${fld.label} ${formatMockupInput(simpleValues[fld.key] || 0)} ${fld.unit}`).join('  ×  ')}  =  ${formatMockupNumber(value)} ${simpleItem.unit}`;
+    return { value, detail };
+  }, [simpleItem, simpleValues]);
+
+  const saveSimpleResult = () => {
+    if (!simpleItem?.simple) return;
+    const path =
+      stepDomain && stepDomain.kind === 'mockup' && stepCat && stepCat.kind === 'mockup'
+        ? `${stepDomain.domain.name} · ${stepCat.cat.name}${stepSub ? ` · ${stepSub.name}` : ''}`
+        : '';
+    setSavedSimple((prev) => [
+      ...prev,
+      { name: simpleItem.name, path, value: simpleResult.value, unit: simpleItem.unit, detail: simpleResult.detail },
+    ]);
+    showToast(`Tersimpan: ${simpleItem.name} — ${formatMockupNumber(simpleResult.value)} ${simpleItem.unit}`);
+  };
+
+  const copySimpleSummary = () => {
+    if (savedSimple.length === 0) {
+      showToast('Belum ada hasil untuk disalin', 'info');
+      return;
+    }
+    const lines = ['Hasil Kalkulator Volume EZRAB', ''];
+    savedSimple.forEach((s, i) => lines.push(`${i + 1}. ${s.name} — ${formatMockupNumber(s.value)} ${s.unit}  (${s.detail})`));
+    const byUnit: Record<string, number> = {};
+    savedSimple.forEach((s) => {
+      byUnit[s.unit] = (byUnit[s.unit] || 0) + s.value;
+    });
+    lines.push('');
+    Object.keys(byUnit).forEach((u) => lines.push(`Total ${u}: ${formatMockupNumber(byUnit[u])} ${u}`));
+    const done = () => showToast('Ringkasan tersalin — siap ditempel ke RAB');
+    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(lines.join('\n')).then(done, done);
+    } else {
+      done();
+    }
+  };
+
+  // Crumb: Jenis › Domain › Kategori › Sub › Hitungan (klik = naik tingkat).
+  const crumbs: Array<{ label: string; onClick: (() => void) | null; current: boolean }> = [];
+  crumbs.push({ label: 'Jenis', onClick: stepView === 'domains' ? null : goDomains, current: stepView === 'domains' });
+  if (stepDomain && stepView !== 'domains') {
+    const domainName = stepDomain.kind === 'mockup' ? stepDomain.domain.name : stepDomain.domain.name;
+    crumbs.push({ label: domainName, onClick: stepView === 'cats' ? null : () => goCats(stepDomain as StepDomain), current: stepView === 'cats' });
+  }
+  if (stepCat && (stepView === 'subs' || stepView === 'items' || stepView === 'calc' || stepView === 'calc-simple')) {
+    const catName = stepCat.kind === 'mockup' ? stepCat.cat.name : stepCat.cat.name;
+    crumbs.push({
+      label: catName,
+      onClick:
+        stepView === 'subs'
+          ? null
+          : stepCat.kind === 'app'
+            ? () => stepDomain && goCats(stepDomain)
+            : () => goSubs(stepCat),
+      current: stepView === 'subs',
+    });
+  }
+  if (stepSub && (stepView === 'items' || stepView === 'calc' || stepView === 'calc-simple')) {
+    crumbs.push({
+      label: stepSub.name,
+      onClick: stepView === 'items' ? null : () => stepCat && goItemsForSub(stepCat, stepSub),
+      current: stepView === 'items',
+    });
+  }
+  if (stepItem && (stepView === 'calc' || stepView === 'calc-simple')) {
+    crumbs.push({ label: stepItem.name, onClick: null, current: true });
+  }
+  if (stepView === 'summary') {
+    crumbs.push({ label: 'Hasil', onClick: null, current: true });
+  }
+
+  // Total ringkasan sesi per satuan (mockup: "Total volume (m³)" dst).
+  const savedSimpleTotals = useMemo(() => {
+    const byUnit: Record<string, number> = {};
+    savedSimple.forEach((s) => {
+      byUnit[s.unit] = (byUnit[s.unit] || 0) + s.value;
+    });
+    return byUnit;
+  }, [savedSimple]);
+
+  // Gaya kartu langkah mockup (token --ez-* + biru pekat #1D4ED8, aksen #2563EB).
+  const stepStyles: Record<string, React.CSSProperties> = {
+    secTitle: { fontSize: '17px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '2px 2px 4px', letterSpacing: '-0.01em', fontFamily: "'Plus Jakarta Sans', sans-serif" },
+    secSub: { fontSize: '13px', fontWeight: 500, color: 'var(--ez-color-text-muted)', margin: '0 2px 14px' },
+    catCard: { border: '1px solid #EEF1F6', background: 'var(--ez-color-surface)', borderRadius: '16px', padding: 0, overflow: 'hidden', textAlign: 'left', width: '100%', display: 'flex', flexDirection: 'column', cursor: 'pointer', boxShadow: '0 2px 10px rgba(23, 63, 110, 0.08)' },
+    art: { height: '110px', flex: '0 0 110px', display: 'block', background: 'linear-gradient(160deg, #E9EFF7 0%, #F8FAFC 70%)', overflow: 'hidden' },
+    meta: { padding: '11px 13px 13px', display: 'block' },
+    cardTitle: { margin: 0, fontSize: '15px', fontWeight: 800, lineHeight: 1.25, color: 'var(--ez-color-text-primary)', fontFamily: "'Plus Jakarta Sans', sans-serif" },
+    cardDesc: { margin: '4px 0 0', fontSize: '12px', color: 'var(--ez-color-text-muted)', fontWeight: 500, lineHeight: 1.4 },
+    countPill: { display: 'inline-block', marginTop: '8px', fontSize: '11px', fontWeight: 800, color: '#1D4ED8', background: '#E3EDFD', padding: '3px 8px', borderRadius: '999px' },
+    itemRow: { display: 'flex', alignItems: 'center', gap: '13px', width: '100%', background: 'var(--ez-color-surface)', border: '1px solid #EEF1F6', borderRadius: '16px', padding: '10px 12px', textAlign: 'left', boxShadow: '0 2px 10px rgba(23, 63, 110, 0.08)', cursor: 'pointer' },
+    thumb: { width: '86px', height: '62px', flex: '0 0 86px', borderRadius: '11px', overflow: 'hidden', background: 'linear-gradient(160deg, #E9EFF7 0%, #F8FAFC 70%)', border: '1px solid #EEF1F6', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+    unitBadge: { fontSize: '11px', fontWeight: 800, color: '#1D4ED8', background: '#E3EDFD', borderRadius: '7px', padding: '4px 7px', whiteSpace: 'nowrap' },
+    subCard: { display: 'flex', alignItems: 'center', gap: '13px', width: '100%', background: 'var(--ez-color-surface)', border: '1px solid #EEF1F6', borderRadius: '16px', padding: '12px', textAlign: 'left', cursor: 'pointer', boxShadow: '0 2px 10px rgba(23, 63, 110, 0.08)' },
+    emptyNote: { textAlign: 'center', color: 'var(--ez-color-text-muted)', fontSize: '13.5px', fontWeight: 500, padding: '26px 10px' },
+  };
+
+  // Baris hitungan langkah mockup (dipakai daftar hitungan + hasil pencarian).
+  const renderStepItemRow = (opts: {
+    key: string;
+    artSrc: string | null;
+    artIcon?: LucideIcon;
+    name: string;
+    sub: string;
+    unit: string;
+    onClick: () => void;
+  }) => {
+    const ArtIcon = opts.artIcon;
+    return (
+      <button key={opts.key} type="button" onClick={opts.onClick} style={stepStyles.itemRow}>
+        <span style={stepStyles.thumb}>
+          {opts.artSrc ? (
+            <img src={opts.artSrc} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+          ) : ArtIcon ? (
+            <ArtIcon size={26} color="#1D4ED8" />
+          ) : (
+            <Calculator size={26} color="#1D4ED8" />
+          )}
+        </span>
+        <span style={{ flex: 1, minWidth: 0 }}>
+          <span style={{ display: 'block', fontSize: '14px', fontWeight: 800, color: 'var(--ez-color-text-primary)', lineHeight: 1.3, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+            {opts.name}
+          </span>
+          <span style={{ display: 'block', fontSize: '12px', color: 'var(--ez-color-text-muted)', fontWeight: 500, marginTop: '2px', lineHeight: 1.4 }}>
+            {opts.sub}
+          </span>
+        </span>
+        <span style={stepStyles.unitBadge}>{opts.unit}</span>
+        <ChevronRight size={18} color="#63798E" style={{ flexShrink: 0 }} />
+      </button>
+    );
+  };
+
   return (
     <div
       onPaste={handlePasteExcelData}
@@ -1571,806 +2056,657 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
         </div>
       )}
 
-      {/* 1. PROFESSIONAL CAD / QUANTITY SURVEYOR WORKSTATION HEADER (70-80px) */}
+      {/* Navigasi bertingkat mockup Kalkulator Volume (ACC owner 2026-11-26):
+          Jenis Konstruksi › Kategori › Sub Kategori › Kalkulator.
+          Menggantikan header workstation + bar akses cepat + daftar pohon
+          lama. Workbench, ilustrasi, dan tabel QTO di bawah TIDAK berubah. */}
       <div
         style={{
+          maxWidth: '1180px',
+          margin: '0 auto',
+          width: '100%',
           background: 'var(--ez-color-surface)',
-          borderRadius: 'var(--ez-radius-card)',
+          borderRadius: '24px',
           border: '1px solid #EEF1F6',
-          padding: '14px 20px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: '12px',
-          boxShadow: '0 4px 20px rgba(38, 54, 75, 0.045)',
+          boxShadow: '0 10px 30px rgba(23, 63, 110, 0.13)',
+          overflow: 'hidden',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <div
-            style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: '14px',
-              background: 'var(--ez-pastel-sky)',
-              color: 'var(--ez-color-primary)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 4px 10px rgba(37,99,235,0.12)',
-              flexShrink: 0,
-            }}
-          >
-            <Calculator size={22} />
-          </div>
-
-          <div>
-            <div className="ezrab-qto-title-row" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <h1 data-tutorial="qto-calc" style={{ fontSize: '17px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0, letterSpacing: '-0.01em', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                Volume Calculator
-              </h1>
-              <TutorialHelpButton tutorialId="qto" label="Buka tutorial QTO" />
-              <span
-                style={{
-                  fontSize: '10px',
-                  fontWeight: 800,
-                  letterSpacing: '0.04em',
-                  background: 'var(--ez-hue-blue-bg)',
-                  color: 'var(--ez-color-primary)',
-                  padding: '1px 6px',
-                  borderRadius: 'var(--ez-radius-pill)',
-                  border: '1px solid var(--ez-hue-blue-bg-deep)',
-                }}
-              >
-                QTO WORKSTATION
-              </span>
-              <span style={{ fontSize: '11px', color: '#94A3B8' }}>•</span>
-              <span className="ez-qto-header-counts" style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)', fontWeight: 500 }}>
-                {domainCounts.ALL} Kalkulator / 10 Domain
-              </span>
-            </div>
-            <p className="ez-qto-header-desc" style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', margin: '2px 0 0', lineHeight: 1.3 }}>
-              QTO • Hitung volume pekerjaan konstruksi dengan cepat, presisi dan terstandarisasi SNI.
-            </p>
-          </div>
-        </div>
-
-        {/* Header Action Buttons */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-          <button
-            onClick={() => onNavigateToTab?.('qto')}
-            style={{
-              height: '36px',
-              padding: '0 14px',
-              borderRadius: 'var(--ez-radius-control)',
-              background: 'var(--ez-color-surface)',
-              border: '1px solid var(--ez-color-border-line)',
-              color: 'var(--ez-color-text-body)',
-              fontSize: '12px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '5px',
-              transition: 'all 0.12s ease',
-            }}
-          >
-            <ArrowLeft size={13} />
-            <span>Kembali</span>
-          </button>
-
-          <button
-            onClick={handleResetClick}
-            style={{
-              height: '36px',
-              padding: '0 14px',
-              borderRadius: 'var(--ez-radius-control)',
-              background: 'var(--ez-color-surface)',
-              border: '1px solid var(--ez-color-border-line)',
-              color: hasUnsavedChanges ? 'var(--ez-hue-amber-text-deep)' : 'var(--ez-color-text-muted)',
-              fontSize: '12px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '5px',
-            }}
-            title="Reset parameter"
-            aria-label="Reset parameter kalkulator aktif ke nilai standar"
-          >
-            <RefreshCw size={12} />
-            <span>Reset {hasUnsavedChanges ? '(*)' : ''}</span>
-          </button>
-
-
-
-          <button
-            onClick={() => setIsFullscreen(!isFullscreen)}
-            style={{
-              height: '36px',
-              padding: '0 10px',
-              borderRadius: 'var(--ez-radius-control)',
-              background: 'var(--ez-color-surface)',
-              border: '1px solid var(--ez-color-border-line)',
-              color: 'var(--ez-color-text-slate)',
-              fontSize: '12px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-            }}
-            title="Toggle Fullscreen"
-          >
-            {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
-          </button>
-        </div>
-      </div>
-
-      {/* 2. QUICK ACCESS (TERAKHIR DIGUNAKAN) & FAVORIT BAR */}
-      <div
-        style={{
-          background: 'var(--ez-color-surface)',
-          borderRadius: 'var(--ez-radius-card)',
-          border: '1px solid #EEF1F6',
-          boxShadow: '0 4px 20px rgba(38, 54, 75, 0.045)',
-          padding: '8px 16px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: '8px',
-          fontSize: '11.5px',
-        }}
-      >
-        {/* Left: Terakhir Digunakan Chips */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: 'var(--ez-color-text-slate)', fontWeight: 700, flexShrink: 0 }}>
-            <History size={13} color="#64748B" />
-            <span>Terakhir digunakan:</span>
-          </div>
-
-          {recentIds.length === 0 ? (
-            <span style={{ color: '#94A3B8', fontStyle: 'italic', fontSize: '11px' }}>
-              Belum ada kalkulator terakhir digunakan
-            </span>
-          ) : (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-              {recentIds.map((id) => {
-                const spec = getCalculatorById(id);
-                const title = spec?.shortName || spec?.title || id;
-                const isSelected = selectedCalcId === id;
-                return (
-                  <button
-                    key={id}
-                    onClick={() => handleSelectCalculator(id)}
-                    style={{
-                      height: '24px',
-                      padding: '0 8px',
-                      borderRadius: '5px',
-                      background: isSelected ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
-                      border: isSelected ? '1px solid #2563EB' : '1px solid var(--ez-hue-slate-border)',
-                      color: isSelected ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-body)',
-                      fontSize: '11px',
-                      fontWeight: isSelected ? 700 : 500,
-                      cursor: 'pointer',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      transition: 'all 0.1s ease',
-                    }}
-                    title={`Pilih kalkulator ${title}`}
-                  >
-                    <span>{title}</span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Right: Starred Favorite Quick Filter Toggle */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-          <button
-            onClick={() => setFilterFavoritesOnly((prev) => !prev)}
-            style={{
-              height: '24px',
-              padding: '0 9px',
-              borderRadius: '5px',
-              background: filterFavoritesOnly ? 'var(--ez-hue-amber-bg-deep)' : 'var(--ez-color-surface)',
-              border: filterFavoritesOnly ? '1px solid #F59E0B' : '1px solid var(--ez-hue-slate-border)',
-              color: filterFavoritesOnly ? 'var(--ez-hue-amber-text)' : 'var(--ez-color-text-slate)',
-              fontSize: '11px',
-              fontWeight: 700,
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '4px',
-              transition: 'all 0.12s ease',
-            }}
-            title="Filter daftar hanya kalkulator berbintang (favorit)"
-          >
-            <Star size={11} fill={filterFavoritesOnly ? '#F59E0B' : 'none'} color={filterFavoritesOnly ? '#F59E0B' : '#64748B'} />
-            <span>Favorit ({favoriteIds.length})</span>
-          </button>
-        </div>
-      </div>
-
-      {/* 3. ALUR VERTIKAL (konsep final acc owner 2026-10-30): DAFTAR KALKULATOR
-          (panel atas) -> ILUSTRASI LEBAR PENUH -> WORKBENCH KALKULATOR AKTIF */}
-      <div className="ezrab-workstation-split">
-        {/* =========================================================================
-            PANEL ATAS: DAFTAR KALKULATOR (CHIP DOMAIN + CARI + LIST)
-           ========================================================================= */}
-        <div className="ezrab-workstation-sidebar">
-          {/* Bar header panel + minimize (owner 2026-10-30): panel daftar
-              dapat diminimize menyisakan bar ini saja. */}
-          <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-            <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--ez-color-text-strong)', fontFamily: "'Plus Jakarta Sans', sans-serif", whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>
-              Daftar Kalkulator
-              {listMinimized && selectedCalcName && (
-                <span style={{ fontWeight: 600, color: 'var(--ez-color-text-muted)' }}>{` — ${selectedCalcName}`}</span>
-              )}
-            </span>
+        {/* Appbar mockup: kembali + judul + tombol Hasil */}
+        <header
+          style={{
+            position: 'sticky',
+            top: 0,
+            zIndex: 20,
+            background: 'var(--ez-color-surface)',
+            padding: '14px 16px 10px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+          }}
+        >
+          {stepView !== 'domains' && (
             <button
               type="button"
-              onClick={() => setListMinimized((v) => !v)}
+              onClick={backStep}
+              aria-label="Kembali"
               style={{
-                flexShrink: 0,
-                display: 'inline-flex',
+                width: '40px',
+                height: '40px',
+                flex: '0 0 40px',
+                borderRadius: '12px',
+                border: '1px solid #EEF1F6',
+                background: 'var(--ez-color-surface)',
+                color: 'var(--ez-color-text-primary)',
+                display: 'flex',
                 alignItems: 'center',
-                gap: '4px',
-                height: '24px',
-                padding: '0 8px',
-                borderRadius: 'var(--ez-radius-pill)',
-                background: 'var(--ez-color-surface-secondary)',
-                border: '1px solid var(--ez-color-border-line)',
-                color: 'var(--ez-color-text-slate)',
-                fontSize: '11px',
-                fontWeight: 700,
+                justifyContent: 'center',
                 cursor: 'pointer',
               }}
-              title={listMinimized ? 'Buka daftar kalkulator' : 'Minimize daftar kalkulator'}
             >
-              {listMinimized ? <ChevronDown size={13} /> : <ChevronUp size={13} />}
-              <span>{listMinimized ? 'Buka' : 'Minimize'}</span>
+              <ArrowLeft size={20} />
             </button>
+          )}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <h1
+              style={{
+                fontSize: '19px',
+                fontWeight: 800,
+                margin: 0,
+                letterSpacing: '-0.01em',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                fontFamily: "'Plus Jakarta Sans', sans-serif",
+                color: 'var(--ez-color-text-primary)',
+              }}
+            >
+              {barTitle}
+            </h1>
+            <p
+              style={{
+                fontSize: '12.5px',
+                color: 'var(--ez-color-text-muted)',
+                margin: '2px 0 0',
+                fontWeight: 500,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              {barSub}
+            </p>
           </div>
-          {!listMinimized && (
-          <>
-          {/* Top Controls: Search + Unit Filter + Status & Expand/Collapse */}
-          <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {/* Chip Domain — pintasan membuka satu kelompok domain pada
-                daftar di bawahnya (murni navigasi expand/collapse). */}
-            <div className="ezrab-domain-chips" style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-              {domainGroups.map((domain) => {
-                const isActive = activeDomainChip === domain.id;
-                return (
-                  <button
-                    key={domain.id}
-                    type="button"
-                    onClick={() => {
-                      setActiveDomainChip(domain.id);
-                      setCollapsedDomains(() => {
-                        const next: Record<string, boolean> = {};
-                        domainGroups.forEach((d) => { next[d.id] = d.id !== domain.id; });
-                        return next;
-                      });
-                    }}
-                    style={{
-                      height: '28px',
-                      padding: '0 10px',
-                      borderRadius: 'var(--ez-radius-pill)',
-                      background: isActive ? 'var(--ez-color-primary)' : 'var(--ez-color-surface-secondary)',
-                      border: isActive ? '1px solid var(--ez-color-primary)' : '1px solid var(--ez-color-border-line)',
-                      color: isActive ? '#FFFFFF' : 'var(--ez-color-text-body)',
-                      fontSize: '11.5px',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '5px',
-                      transition: 'all 0.12s ease',
-                    }}
-                    title={`Buka kelompok ${domain.name}`}
-                  >
-                    <domain.icon size={13} />
-                    <span>{domain.name}</span>
-                  </button>
-                );
-              })}
-            </div>
+          <button
+            type="button"
+            onClick={goSummary}
+            style={{
+              minHeight: '40px',
+              padding: '0 13px',
+              borderRadius: '12px',
+              border: '1px solid #EEF1F6',
+              background: 'var(--ez-color-surface)',
+              color: '#173F6E',
+              fontWeight: 700,
+              fontSize: '13px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '7px',
+              cursor: 'pointer',
+            }}
+          >
+            <List size={17} />
+            <span>Hasil</span>
+            <span
+              style={{
+                background: '#1D4ED8',
+                color: '#FFFFFF',
+                minWidth: '20px',
+                height: '20px',
+                borderRadius: '999px',
+                fontSize: '11.5px',
+                fontWeight: 800,
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '0 5px',
+              }}
+            >
+              {savedSimple.length}
+            </span>
+          </button>
+        </header>
 
-            {/* Search Bar */}
-            <div style={{ position: 'relative', width: '100%' }}>
-              <Search
-                size={14}
-                style={{
-                  position: 'absolute',
-                  left: '10px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  color: '#94A3B8',
-                }}
-              />
-              <label
-                htmlFor="volume-calculator-search"
-                style={{
-                  position: 'absolute',
-                  width: 1,
-                  height: 1,
-                  padding: 0,
-                  margin: -1,
-                  overflow: 'hidden',
-                  clip: 'rect(0, 0, 0, 0)',
-                  whiteSpace: 'nowrap',
-                  border: 0,
-                }}
-              >
-                Cari kalkulator
-              </label>
-              <input
-                id="volume-calculator-search"
-                type="text"
-                placeholder="Cari kalkulator (nama, kode, kelompok)..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                style={{
-                  width: '100%',
-                  height: '36px',
-                  paddingLeft: '34px',
-                  paddingRight: searchQuery ? '32px' : '12px',
-                  borderRadius: 'var(--ez-radius-control)',
-                  border: '1px solid var(--ez-color-border-line)',
-                  fontSize: '12px',
-                  outline: 'none',
-                  boxSizing: 'border-box',
-                  background: 'var(--ez-color-surface-secondary)',
-                  color: 'var(--ez-color-text-primary)',
-                }}
-              />
-              {searchQuery && (
+        {/* Breadcrumb alur */}
+        <nav
+          aria-label="Alur kalkulator"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '2px',
+            padding: '2px 16px 12px',
+            fontSize: '12.5px',
+            fontWeight: 600,
+            color: 'var(--ez-color-text-muted)',
+          }}
+        >
+          {crumbs.map((c, i) => (
+            <React.Fragment key={`${c.label}-${i}`}>
+              {i > 0 && <span style={{ opacity: 0.6, padding: '0 3px' }}>›</span>}
+              {c.onClick ? (
                 <button
                   type="button"
-                  onClick={() => setSearchQuery('')}
+                  onClick={c.onClick}
                   style={{
-                    position: 'absolute',
-                    right: '6px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    background: 'transparent',
-                    border: 'none',
-                    color: '#94A3B8',
+                    border: 0,
+                    background: 'none',
+                    padding: '4px 2px',
+                    fontSize: '12.5px',
+                    fontWeight: 700,
+                    color: 'var(--ez-color-text-muted)',
                     cursor: 'pointer',
-                    padding: '4px',
+                    fontFamily: "'Plus Jakarta Sans', sans-serif",
+                  }}
+                >
+                  {c.label}
+                </button>
+              ) : (
+                <span style={{ padding: '4px 2px', color: c.current ? '#1D4ED8' : 'var(--ez-color-text-muted)' }}>{c.label}</span>
+              )}
+            </React.Fragment>
+          ))}
+        </nav>
+
+        <main style={{ flex: 1, padding: '2px 16px 30px' }}>
+          {/* LANGKAH 1 : menu jenis konstruksi + pencarian */}
+          {stepView === 'domains' && (
+            <>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '9px',
+                  background: 'var(--ez-color-surface)',
+                  border: '1px solid #EEF1F6',
+                  borderRadius: '14px',
+                  padding: '0 14px',
+                  marginBottom: '16px',
+                  boxShadow: '0 2px 10px rgba(23, 63, 110, 0.08)',
+                }}
+              >
+                <Search size={18} color="#63798E" style={{ flexShrink: 0 }} />
+                <input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  type="search"
+                  placeholder="Cari hitungan… mis. abutment, spillway, kolom, culvert"
+                  autoComplete="off"
+                  style={{
+                    flex: 1,
+                    border: 0,
+                    outline: 0,
+                    background: 'transparent',
+                    minHeight: '48px',
+                    fontSize: '15px',
+                    color: 'var(--ez-color-text-primary)',
+                    fontWeight: 500,
+                    fontFamily: "'Plus Jakarta Sans', sans-serif",
+                  }}
+                />
+              </div>
+              {!isSearching ? (
+                <>
+                  <h2 style={stepStyles.secTitle}>Pilih Jenis Konstruksi</h2>
+                  <p style={stepStyles.secSub}>EZRAB punya banyak jenis — ketuk satu untuk melihat kategori hitungannya.</p>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    {stepDomains.map((sd) => {
+                      const DomainIcon = sd.domain.icon;
+                      const count = stepDomainCount(sd);
+                      const art = stepDomainArt(sd);
+                      return (
+                        <button
+                          key={sd.kind === 'mockup' ? `mockup-${sd.domain.id}` : `app-${sd.domain.id}`}
+                          type="button"
+                          onClick={() => goCats(sd)}
+                          style={stepStyles.catCard}
+                        >
+                          <span style={stepStyles.art}>
+                            {art ? (
+                              <img src={art} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                            ) : (
+                              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                                <DomainIcon size={40} color="#1D4ED8" />
+                              </span>
+                            )}
+                          </span>
+                          <span style={stepStyles.meta}>
+                            <h3 style={stepStyles.cardTitle}>{sd.domain.name}</h3>
+                            <p style={stepStyles.cardDesc}>{sd.kind === 'mockup' ? sd.domain.desc : sd.domain.subtitle}</p>
+                            <span style={stepStyles.countPill}>
+                              {count.cats} kategori · {count.items} hitungan
+                            </span>
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <h2 style={stepStyles.secTitle}>{searchHitCount > 0 ? `Hasil Pencarian — ${searchHitCount} hitungan` : 'Hasil Pencarian'}</h2>
+                  <p style={stepStyles.secSub}>Ketuk untuk langsung membuka kalkulatornya.</p>
+                  {searchHitCount === 0 ? (
+                    <p style={stepStyles.emptyNote}>
+                      Tidak ada hitungan yang cocok dengan “{searchQuery.trim()}”. Coba kata lain, mis. abutment atau culvert.
+                    </p>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      {mockupHits.map((h) =>
+                        renderStepItemRow({
+                          key: `mockup-${h.item.id}`,
+                          artSrc: getCalculatorIllustration(h.item.illusCalcId)?.src ?? null,
+                          name: h.item.name,
+                          sub: `${h.domain.name} · ${h.cat.name} · ${h.sub.name}`,
+                          unit: h.item.unit,
+                          onClick: () => openMockupItem(h.item, { domain: h.domain, cat: h.cat, sub: h.sub }, { fromSearch: true }),
+                        }),
+                      )}
+                      {registryHits.map((it) =>
+                        renderStepItemRow({
+                          key: `reg-${it.id}`,
+                          artSrc: getCalculatorIllustration(it.id)?.src ?? null,
+                          name: it.name,
+                          sub: it.categoryName || '',
+                          unit: it.primaryUnit || 'm³',
+                          onClick: () => openRegistryCalc(it.id, { fromSearch: true, catName: it.categoryName }),
+                        }),
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+            </>
+          )}
+
+          {/* LANGKAH 2 : menu kategori di dalam jenis */}
+          {stepView === 'cats' && stepDomain && (
+            <>
+              <h2 style={stepStyles.secTitle}>Pilih Kategori</h2>
+              <p style={stepStyles.secSub}>
+                {stepDomain.domain.name} — {stepCatsForDomain(stepDomain).length} kategori, {stepDomainCount(stepDomain).items} hitungan.
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                {stepCatsForDomain(stepDomain).map((sc) => {
+                  const key = sc.kind === 'mockup' ? `mockup-${sc.cat.id}` : `app-${sc.cat.id}`;
+                  const desc = sc.kind === 'mockup' ? sc.cat.desc : null;
+                  const count = stepCatCount(sc);
+                  const art = stepCatArt(sc);
+                  const Icon = sc.kind === 'app' ? sc.cat.icon : null;
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => (sc.kind === 'mockup' ? goSubs(sc) : goItemsForAppCat(sc))}
+                      style={stepStyles.catCard}
+                    >
+                      <span style={stepStyles.art}>
+                        {art ? (
+                          <img src={art} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                        ) : Icon ? (
+                          <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                            <Icon size={40} color="#1D4ED8" />
+                          </span>
+                        ) : null}
+                      </span>
+                      <span style={stepStyles.meta}>
+                        <h3 style={stepStyles.cardTitle}>{sc.cat.name}</h3>
+                        {desc ? <p style={stepStyles.cardDesc}>{desc}</p> : null}
+                        <span style={stepStyles.countPill}>
+                          {sc.kind === 'mockup' ? `${count.subs} sub · ${count.items} hitungan` : `${count.items} hitungan`}
+                        </span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
+
+          {/* LANGKAH 3 : menu sub kategori */}
+          {stepView === 'subs' && stepCat && stepCat.kind === 'mockup' && (
+            <>
+              <h2 style={stepStyles.secTitle}>Pilih Sub Kategori</h2>
+              <p style={stepStyles.secSub}>
+                {stepCat.cat.name} — {stepCat.cat.subs.length} sub kategori, {mockupCatItemCount(stepCat.cat)} hitungan.
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '11px' }}>
+                {stepCat.cat.subs.map((sub) => {
+                  const art = getCalculatorIllustration(sub.illusCalcId)?.src ?? null;
+                  return (
+                    <button key={sub.id} type="button" onClick={() => openMockupSub(stepCat, sub)} style={stepStyles.subCard}>
+                      <span style={stepStyles.thumb}>
+                        {art ? (
+                          <img src={art} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                        ) : (
+                          <Calculator size={26} color="#1D4ED8" />
+                        )}
+                      </span>
+                      <span style={{ flex: 1, minWidth: 0 }}>
+                        <span style={{ display: 'block', fontSize: '14px', fontWeight: 800, color: 'var(--ez-color-text-primary)', lineHeight: 1.3, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                          {sub.name}
+                        </span>
+                        <span style={{ display: 'block', fontSize: '12px', color: 'var(--ez-color-text-muted)', fontWeight: 500, marginTop: '2px', lineHeight: 1.4 }}>
+                          {sub.desc} · {sub.items.length} hitungan
+                        </span>
+                      </span>
+                      <ChevronRight size={18} color="#63798E" style={{ flexShrink: 0 }} />
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
+
+          {/* LANGKAH 4 : daftar hitungan di dalam sub kategori / kategori aplikasi */}
+          {stepView === 'items' && stepCat && (
+            <>
+              <h2 style={stepStyles.secTitle}>Pilih Hitungan</h2>
+              <p style={stepStyles.secSub}>
+                {stepSub
+                  ? `${stepSub.name} — ketuk satu hitungan untuk membuka kalkulatornya.`
+                  : `${stepCat.cat.name} — ketuk satu hitungan untuk membuka kalkulatornya.`}
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {stepCat.kind === 'mockup' && stepSub
+                  ? stepSub.items.map((it) =>
+                      renderStepItemRow({
+                        key: it.id,
+                        artSrc: getCalculatorIllustration(it.illusCalcId)?.src ?? null,
+                        name: it.name,
+                        sub: it.fields.map((fld) => fld.label).join(' × '),
+                        unit: it.unit,
+                        onClick: () => {
+                          if (stepDomain && stepDomain.kind === 'mockup') {
+                            openMockupItem(it, { domain: stepDomain.domain, cat: stepCat.cat, sub: stepSub });
+                          }
+                        },
+                      }),
+                    )
+                  : stepCat.kind === 'app'
+                    ? stepCat.cat.items.map((it) => {
+                        const spec = getCalculatorById(it.id);
+                        return renderStepItemRow({
+                          key: it.id,
+                          artSrc: getCalculatorIllustration(it.id)?.src ?? null,
+                          name: it.name,
+                          sub: it.shortDesc || it.inputPreview || '',
+                          unit: spec?.primaryUnit || 'm³',
+                          onClick: () => openRegistryCalc(it.id),
+                        });
+                      })
+                    : null}
+              </div>
+            </>
+          )}
+
+          {/* Kalkulator sederhana mockup (9 hitungan tanpa padanan registry) */}
+          {stepView === 'calc-simple' && simpleItem?.simple && (
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: isWidePc ? '1.05fr 1fr' : '1fr',
+                gap: '30px',
+                alignItems: 'start',
+                maxWidth: '980px',
+              }}
+            >
+              <div>
+                <div
+                  style={{
+                    borderRadius: '20px',
+                    overflow: 'hidden',
+                    border: '1px solid #EEF1F6',
+                    background: 'linear-gradient(160deg, #E9EFF7 0%, #F8FAFC 70%)',
+                    boxShadow: '0 2px 10px rgba(23, 63, 110, 0.08)',
+                  }}
+                >
+                  {(() => {
+                    const ill = getCalculatorIllustration(simpleItem.illusCalcId);
+                    return ill ? <img src={ill.src} alt={ill.title} title={ill.title} style={{ width: '100%', height: 'auto', display: 'block' }} /> : null;
+                  })()}
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '6px', margin: '14px 2px 4px' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-muted)', marginRight: '2px' }}>Rumus:</span>
+                  {simpleItem.simple.formulaKeys.map((k, i) => {
+                    const fld = simpleItem.simple!.fields.find((x) => x.key === k);
+                    const label = (simpleItem.simple!.formulaText && simpleItem.simple!.formulaText[k]) || (fld ? fld.label : k);
+                    if (!label) return null;
+                    const colors = fld ? FIELD_CLS_COLOR[fld.cls] : FIELD_CLS_COLOR['c-x'];
+                    return (
+                      <React.Fragment key={k}>
+                        {i > 0 && <span style={{ fontSize: '12.5px', fontWeight: 800, color: 'var(--ez-color-text-muted)' }}>×</span>}
+                        <span style={{ fontSize: '12.5px', fontWeight: 800, padding: '5px 10px', borderRadius: '999px', color: colors.bg, background: colors.fg }}>{label}</span>
+                      </React.Fragment>
+                    );
+                  })}
+                  {simpleItem.simple.formulaNote ? (
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-muted)', marginRight: '2px', width: '100%', marginTop: '2px' }}>
+                      {simpleItem.simple.formulaNote}
+                    </span>
+                  ) : null}
+                </div>
+              </div>
+              <div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '11px', marginTop: '12px' }}>
+                  {simpleItem.simple.fields.map((fld, i) => {
+                    const full = fld.full || (simpleItem.simple!.fields.length % 2 === 1 && i === simpleItem.simple!.fields.length - 1);
+                    const colors = FIELD_CLS_COLOR[fld.cls];
+                    return (
+                      <div
+                        key={fld.key}
+                        style={{
+                          background: 'var(--ez-color-surface)',
+                          border: '1px solid #EEF1F6',
+                          borderRadius: '15px',
+                          padding: '11px 13px 12px',
+                          ...(full ? { gridColumn: '1 / -1' } : {}),
+                        }}
+                      >
+                        <label
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '7px',
+                            fontSize: '13px',
+                            fontWeight: 700,
+                            color: 'var(--ez-color-text-primary)',
+                            fontFamily: "'Plus Jakarta Sans', sans-serif",
+                          }}
+                        >
+                          <span style={{ width: '9px', height: '9px', borderRadius: '3px', flex: '0 0 9px', background: colors.bg }} />
+                          {fld.label}
+                        </label>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginTop: '5px' }}>
+                          <input
+                            type="number"
+                            inputMode="decimal"
+                            min={0}
+                            step="any"
+                            value={simpleText[fld.key] ?? String(fld.defaultValue)}
+                            onChange={(e) => {
+                              const raw = e.target.value;
+                              setSimpleText((prev) => ({ ...prev, [fld.key]: raw }));
+                              const n = parseFloat(raw);
+                              setSimpleValues((prev) => ({ ...prev, [fld.key]: Number.isFinite(n) ? n : 0 }));
+                            }}
+                            style={{
+                              flex: 1,
+                              minWidth: 0,
+                              border: 0,
+                              outline: 0,
+                              background: 'transparent',
+                              fontSize: '17px',
+                              fontWeight: 700,
+                              color: 'var(--ez-color-text-primary)',
+                              fontFamily: "'Plus Jakarta Sans', monospace",
+                              padding: 0,
+                            }}
+                          />
+                          <span style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--ez-color-text-muted)' }}>{fld.unit}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div style={{ marginTop: '16px', borderRadius: '18px', padding: '16px', background: '#173F6E', color: '#EAF2FF' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 700, letterSpacing: '0.04em', opacity: 0.85 }}>{simpleItem.simple.resLabel}</div>
+                  <div style={{ fontSize: '31px', fontWeight: 800, marginTop: '3px', letterSpacing: '-0.01em' }}>
+                    {formatMockupNumber(simpleResult.value)} <small style={{ fontSize: '16px' }}>{simpleItem.unit}</small>
+                  </div>
+                  <div style={{ fontSize: '12.5px', fontWeight: 500, opacity: 0.85, marginTop: '5px', lineHeight: 1.5, wordBreak: 'break-word' }}>{simpleResult.detail}</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={saveSimpleResult}
+                  style={{
+                    width: '100%',
+                    marginTop: '12px',
+                    minHeight: '50px',
+                    border: 0,
+                    borderRadius: '14px',
+                    background: '#EA580C',
+                    color: '#FFFFFF',
+                    fontSize: '15px',
+                    fontWeight: 800,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                  }}
-                  title="Hapus pencarian"
-                >
-                  <X size={13} />
-                </button>
-              )}
-            </div>
-
-            {/* Compact Filters Row: Unit Dropdown */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '6px' }}>
-              {/* Unit Dropdown */}
-              <div>
-                <label htmlFor="filter-work-unit" style={{ display: 'none' }}>Satuan</label>
-                <select
-                  id="filter-work-unit"
-                  value={filterUnit}
-                  onChange={(e) => setFilterUnit(e.target.value)}
-                  style={{
-                    width: '100%',
-                    height: '32px',
-                    borderRadius: '10px',
-                    border: '1px solid var(--ez-color-border-line)',
-                    background: 'var(--ez-color-surface)',
-                    fontSize: '11px',
-                    color: 'var(--ez-color-text-body)',
-                    padding: '0 6px',
-                    outline: 'none',
+                    gap: '8px',
                     cursor: 'pointer',
-                    fontWeight: filterUnit !== 'ALL' ? 700 : 500,
+                    boxShadow: '0 4px 14px rgba(234, 88, 12, 0.35)',
+                    fontFamily: "'Plus Jakarta Sans', sans-serif",
                   }}
                 >
-                  <option value="ALL">Semua Satuan</option>
-                  {availableUnits.map((u) => (
-                    <option key={u} value={u}>
-                      Satuan: {u}
-                    </option>
-                  ))}
-                </select>
+                  <Plus size={18} />
+                  Simpan Hasil Hitungan
+                </button>
               </div>
             </div>
+          )}
 
-            {/* Filter Status, Collapse/Expand All & Reset Action */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11px', color: 'var(--ez-color-text-muted)', paddingTop: '2px' }}>
-              <span>
-                Menampilkan <strong>{totalFilteredCount}</strong> dari {domainCounts.ALL} kalkulator
-              </span>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <button
-                  type="button"
-                  onClick={toggleAllCategories}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: 'var(--ez-color-text-slate)',
-                    cursor: 'pointer',
-                    padding: 0,
-                    fontSize: '11px',
-                    fontWeight: 600,
-                    textDecoration: 'underline',
-                  }}
-                  title={allCategoriesCollapsed ? 'Buka semua kelompok' : 'Tutup semua kelompok'}
-                >
-                  {allCategoriesCollapsed ? 'Buka Semua' : 'Tutup Semua'}
-                </button>
-
-                {(searchQuery || filterUnit !== 'ALL' || filterFavoritesOnly) && (
-                  <>
-                    <span style={{ color: '#CBD5E1' }}>•</span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSearchQuery('');
-                        setFilterUnit('ALL');
-                        setFilterFavoritesOnly(false);
-                      }}
+          {/* Ringkasan hasil tersimpan sesi ini */}
+          {stepView === 'summary' && (
+            <>
+              <h2 style={stepStyles.secTitle}>Hasil Hitungan Tersimpan</h2>
+              <p style={stepStyles.secSub}>Hasil yang kamu simpan dari kalkulator, sesi ini.</p>
+              {savedSimple.length === 0 ? (
+                <p style={stepStyles.emptyNote}>
+                  Belum ada hasil tersimpan.
+                  <br />
+                  Hitung satu item dulu, lalu ketuk “Simpan Hasil Hitungan”.
+                </p>
+              ) : (
+                <>
+                  <div>
+                    {savedSimple.map((s, i) => (
+                      <div
+                        key={`${s.name}-${i}`}
+                        style={{
+                          display: 'flex',
+                          gap: '11px',
+                          alignItems: 'flex-start',
+                          background: 'var(--ez-color-surface)',
+                          border: '1px solid #EEF1F6',
+                          borderRadius: '15px',
+                          padding: '13px 14px',
+                          marginBottom: '10px',
+                        }}
+                      >
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: 'var(--ez-color-text-primary)', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                            {s.name}
+                          </h3>
+                          <p style={{ margin: '3px 0 0', fontSize: '12px', color: 'var(--ez-color-text-muted)', fontWeight: 500, lineHeight: 1.5 }}>
+                            {s.path}
+                            <br />
+                            {s.detail}
+                          </p>
+                        </div>
+                        <span style={{ fontSize: '14px', fontWeight: 800, color: 'var(--ez-color-text-primary)', whiteSpace: 'nowrap' }}>
+                          {formatMockupNumber(s.value)} {s.unit}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setSavedSimple((prev) => prev.filter((_, idx) => idx !== i))}
+                          aria-label={`Hapus ${s.name}`}
+                          style={{
+                            border: 0,
+                            background: 'none',
+                            color: 'var(--ez-color-text-muted)',
+                            cursor: 'pointer',
+                            padding: '2px',
+                            flexShrink: 0,
+                          }}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  {Object.entries(savedSimpleTotals).map(([u, total]) => (
+                    <div
+                      key={u}
                       style={{
-                        background: 'none',
-                        border: 'none',
-                        color: 'var(--ez-color-primary)',
-                        cursor: 'pointer',
-                        padding: 0,
-                        fontSize: '11px',
-                        fontWeight: 700,
-                        textDecoration: 'underline',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        background: '#E3EDFD',
+                        borderRadius: '14px',
+                        padding: '13px 15px',
+                        margin: '4px 0 12px',
+                        fontWeight: 800,
+                        fontSize: '14px',
+                        color: '#173F6E',
                       }}
                     >
-                      Reset
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Grouped Calculator Scrollable Tree */}
-          <div className="ezrab-workstation-scrollable">
-            {groupedCalculators.length === 0 ? (
-              <div
+                      <span>Total volume ({u})</span>
+                      <span>
+                        {formatMockupNumber(total)} {u}
+                      </span>
+                    </div>
+                  ))}
+                </>
+              )}
+              <button
+                type="button"
+                onClick={copySimpleSummary}
                 style={{
-                  padding: '32px 16px',
-                  textAlign: 'center',
-                  background: 'var(--ez-color-surface-secondary)',
-                  borderRadius: '8px',
-                  border: '1px dashed var(--ez-hue-slate-border)',
-                  flexShrink: 0,
+                  width: '100%',
+                  minHeight: '48px',
+                  borderRadius: '13px',
+                  border: '1.5px solid #1D4ED8',
+                  background: 'transparent',
+                  color: '#1D4ED8',
+                  fontSize: '14.5px',
+                  fontWeight: 800,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  cursor: 'pointer',
+                  fontFamily: "'Plus Jakarta Sans', sans-serif",
                 }}
               >
-                <p style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-body)', margin: '0 0 6px' }}>
-                  Tidak ada kalkulator yang cocok.
-                </p>
-                <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', textAlign: 'left', display: 'inline-block', lineHeight: 1.6 }}>
-                  Coba:
-                  <ul style={{ margin: '4px 0 10px 16px', padding: 0 }}>
-                    <li>Gunakan kata kunci pencarian yang lebih umum</li>
-                    <li>Hapus filter satuan</li>
-                  </ul>
-                </div>
-                <div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSearchQuery('');
-                      setFilterUnit('ALL');
-                      setFilterFavoritesOnly(false);
-                    }}
-                    style={{
-                      height: '28px',
-                      padding: '0 12px',
-                      borderRadius: '6px',
-                      background: 'var(--ez-color-primary)',
-                      color: '#FFFFFF',
-                      fontSize: '11px',
-                      fontWeight: 600,
-                      border: 'none',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    Reset Semua Filter
-                  </button>
-                </div>
-              </div>
-            ) : (
-              domainGroups.map((domain) => {
-                const isDomainCollapsed = !!collapsedDomains[domain.id];
-                const domainItemCount = domain.categories.reduce((n, c) => n + c.items.length, 0);
-                return (
-                  <div
-                    key={domain.id}
-                    style={{
-                      flexShrink: 0,
-                      border: '1px solid #EEF1F6',
-                      borderRadius: 'var(--ez-radius-card)',
-                      overflow: 'hidden',
-                      background: 'var(--ez-color-surface)',
-                      boxShadow: '0 4px 20px rgba(38, 54, 75, 0.045)',
-                    }}
-                  >
-                    {/* Header Domain — satu kelompok, isinya langsung di bawah */}
-                    <div
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => toggleDomainCollapse(domain.id)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') toggleDomainCollapse(domain.id);
-                      }}
-                      style={{
-                        padding: '10px 12px',
-                        background: 'var(--ez-hue-blue-bg)',
-                        borderBottom: isDomainCollapsed ? 'none' : '1px solid #EEF1F6',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        cursor: 'pointer',
-                        userSelect: 'none',
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-                        <span
-                          style={{
-                            width: '28px',
-                            height: '28px',
-                            borderRadius: '9px',
-                            background: 'var(--ez-hue-blue-bg-deep)',
-                            color: 'var(--ez-color-primary-hover)',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            flexShrink: 0,
-                          }}
-                        >
-                          <domain.icon size={15} />
-                        </span>
-                        <span style={{ fontSize: '12.5px', fontWeight: 800, color: 'var(--ez-color-text-strong)', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                          {domain.name}
-                        </span>
-                        <span style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>
-                          {domain.subtitle}
-                        </span>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
-                        <span
-                          style={{
-                            fontSize: '10px',
-                            fontWeight: 700,
-                            background: 'var(--ez-color-surface)',
-                            color: 'var(--ez-color-text-slate)',
-                            padding: '1px 6px',
-                            borderRadius: 'var(--ez-radius-pill)',
-                            border: '1px solid var(--ez-color-border-line)',
-                          }}
-                        >
-                          {domainItemCount}
-                        </span>
-                        {isDomainCollapsed ? <ChevronDown size={14} color="#64748B" /> : <ChevronUp size={14} color="#64748B" />}
-                      </div>
-                    </div>
-                    {!isDomainCollapsed && (
-                      <div style={{ padding: '8px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                        {domain.categories.map((group) => {
-                const isCollapsed = !!collapsedCategories[group.id];
-                return (
-                  <div
-                    key={group.id}
-                    className="ezrab-calc-group-card"
-                    style={{
-                      flexShrink: 0,
-                      border: '1px solid #EEF1F6',
-                      borderRadius: 'var(--ez-radius-card)',
-                      overflow: 'hidden',
-                      background: 'var(--ez-color-surface)',
-                      boxShadow: '0 4px 20px rgba(38, 54, 75, 0.045)',
-                    }}
-                  >
-                    {/* Collapsible Section Header */}
-                    <div
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => toggleCategoryCollapse(group.id)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') toggleCategoryCollapse(group.id);
-                      }}
-                      style={{
-                        padding: '8px 10px',
-                        background: 'var(--ez-color-surface-secondary)',
-                        borderBottom: isCollapsed ? 'none' : '1px solid #EEF1F6',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        cursor: 'pointer',
-                        userSelect: 'none',
-                        transition: 'background 0.1s ease',
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span
-                          style={{
-                            width: '26px',
-                            height: '26px',
-                            borderRadius: '8px',
-                            background: 'var(--ez-hue-blue-bg)',
-                            color: 'var(--ez-color-primary)',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            flexShrink: 0,
-                          }}
-                        >
-                          <group.icon size={14} />
-                        </span>
-                        <span style={{ fontSize: '11.5px', fontWeight: 800, color: 'var(--ez-color-text-strong)', textTransform: 'uppercase', letterSpacing: '0.02em', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                          {group.name.replace(/^[A-Z][.]\s*/, '')}
-                        </span>
-                      </div>
-
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <span
-                          style={{
-                            fontSize: '10px',
-                            fontWeight: 700,
-                            background: 'var(--ez-color-border-line)',
-                            color: 'var(--ez-color-text-slate)',
-                            padding: '1px 6px',
-                            borderRadius: 'var(--ez-radius-pill)',
-                          }}
-                        >
-                          {group.items.length}
-                        </span>
-                        {isCollapsed ? <ChevronDown size={14} color="#64748B" /> : <ChevronUp size={14} color="#64748B" />}
-                      </div>
-                    </div>
-
-                    {/* Category Items List */}
-                    {!isCollapsed && (
-                      <div className="ezrab-calc-card-grid">
-                        {group.items.map((item) => {
-                          const isSelected = selectedCalcId === item.id;
-                          const familyIcon = getCalcFamilyIcon(item.name);
-                          return (
-                            <div
-                              key={item.id}
-                              role="button"
-                              tabIndex={0}
-                              onClick={() => handleSelectCalculator(item.id)}
-                              onFocus={() => { if (!isSelected) handleSelectCalculator(item.id); }}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter' || e.key === ' ') handleSelectCalculator(item.id);
-                              }}
-                              className={`ezrab-calc-card ${isSelected ? 'active' : ''}${familyIcon ? ' has-icon' : ''}`}
-                              title={item.name}
-                            >
-                              {/* Bar atas kartu: bintang favorit (kiri) */}
-                              <div className="ezrab-calc-card-topbar" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', width: '100%' }}>
-                                <button
-                                  type="button"
-                                  tabIndex={-1}
-                                  onClick={(e) => toggleFavorite(item.id, e)}
-                                  style={{
-                                    background: 'transparent',
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    padding: '2px 0 0',
-                                    color: item.isFavorite ? '#F59E0B' : 'var(--ez-hue-slate-border)',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    flexShrink: 0,
-                                  }}
-                                  title={item.isFavorite ? 'Hapus dari favorit' : 'Tambahkan ke favorit'}
-                                >
-                                  <Star size={13} fill={item.isFavorite ? '#F59E0B' : 'none'} />
-                                </button>
-                                <span
-                                  className="ezrab-calc-card-unit"
-                                  style={{
-                                    fontSize: '10.5px',
-                                    fontWeight: 700,
-                                    color: 'var(--ez-color-text-slate)',
-                                    background: 'var(--ez-color-surface-tertiary)',
-                                    padding: '2px 6px',
-                                    borderRadius: 'var(--ez-radius-pill)',
-                                    border: '1px solid #EEF1F6',
-                                  }}
-                                >
-                                  {item.primaryUnit}
-                                </span>
-
-                              </div>
-
-                              {/* Ikon keluarga kalkulator — pola HP praktis
-                                  (ACC owner 2026-11-09); hanya tampil menonjol
-                                  di layout baris mobile (.has-icon). */}
-                              {familyIcon && (
-                                <img
-                                  className="ezrab-calc-card-icon"
-                                  src={familyIcon}
-                                  alt=""
-                                  aria-hidden="true"
-                                  loading="lazy"
-                                  width={40}
-                                  height={40}
-                                />
-                              )}
-
-                              {/* Nama + deskripsi kartu (maks 2 baris) */}
-                              <div className="ezrab-calc-card-text" style={{ minWidth: 0, width: '100%' }}>
-                                <span style={{ fontSize: '12px', fontWeight: isSelected ? 800 : 700, color: isSelected ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-primary)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', lineHeight: 1.3 }}>
-                                  {item.name}
-                                </span>
-                                <p
-                                  className="ezrab-calc-card-desc"
-                                  style={{
-                                    fontSize: '10.5px',
-                                    color: 'var(--ez-color-text-muted)',
-                                    margin: '2px 0 0',
-                                    lineHeight: 1.3,
-                                    display: '-webkit-box',
-                                    WebkitLineClamp: 2,
-                                    WebkitBoxOrient: 'vertical',
-                                    overflow: 'hidden',
-                                  }}
-                                >
-                                  {item.shortDesc}
-                                </p>
-                              </div>
-
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                );
-              })
-            )}
-          </div>
-
-          {/* Sidebar Bottom Standard Indicator */}
-          <div
-            style={{
-              flexShrink: 0,
-              paddingTop: '8px',
-              borderTop: '1px solid var(--ez-color-surface-tertiary)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              fontSize: '10.5px',
-              color: '#94A3B8',
-            }}
-          >
-            <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10B981', display: 'inline-block' }} />
-              Standar PUPR 2026 & SNI
-            </span>
-            <span>Deterministic QTO</span>
-          </div>
-          </>
+                <Copy size={16} />
+                Salin Ringkasan
+              </button>
+            </>
           )}
-        </div>
 
+          {/* Workbench kalkulator registry (mesin hitung penuh — tidak berubah) */}
+          {stepView === 'calc' && (
+            <>
           {/* Ilustrasi Pekerjaan — lebar penuh: di bawah daftar kalkulator,
               di atas workbench (konsep final acc owner 2026-10-30). */}
             {/* Ilustrasi Pekerjaan — gambar render-style sebagai satu-satunya
@@ -3222,8 +3558,12 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
           </div>
 
         </div>
+            </>
+          )}
+        </main>
       </div>
-
+      {stepView === 'calc' && (
+        <>
       {/* 4. SAVED QTO PREVIEW TABLE AT BOTTOM */}
       <div
         style={{
@@ -3330,6 +3670,9 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
           </div>
         )}
       </div>
+        </>
+      )}
+
     </div>
   );
 };

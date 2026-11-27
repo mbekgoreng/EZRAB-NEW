@@ -1346,3 +1346,26 @@
   .docai-funnel-reviewrow { grid-template-columns: 1fr; gap: 4px; }
   .docai-funnel-paper { padding: 20px; }
 }
+
+/* ==========================================================================
+   LAYAR HASIL (EDITOR) LEBIH LUAS — mockup "DED & Document AI Lebih
+   Luas" (ACC owner 2026-11-27), pola yang sama dengan DED. Berlaku
+   HANYA untuk layar editor/draf (.docai-tab-editor); layar input
+   (compose/funnel/template) TIDAK berubah.
+   Adaptasi: header shell SUDAH dihapus (724fc61) — TIDAK ada header baru
+   yang ditambahkan. "Isi Pokok" mockup tidak punya padanan di aplikasi
+   (funnel hanya mengisi isi pokok, tidak menampilkannya di samping
+   kertas) — TIDAK dibuatkan panel isi pokok baru; panel kiri yang ada
+   adalah outline (244px, rel sempit, hanya bila dibuka). Strip
+   ringkasan mockup (jenis/status/format/halaman) juga TIDAK ditambah
+   sebagai kartu baru — info yang sama sudah ada di kepala editor
+   (judul + meta proyek/template + lencana status) dan bar aksi
+   (Simpan/Unduh/PDF/DOCX/Pratinjau). Kertas A4 (.docai-page) TETAP
+   max-width 210mm: itu ukuran ekspor PDF yang sesungguhnya, bukan
+   kunci layout — yang diperluas adalah ruang di sekitar kertas
+   (padding bawah shell + padding kanvas dipangkas) dan kepala editor
+   dirampingkan.
+   ========================================================================== */
+.docai-shell:has(> .docai-content > .docai-tab-editor) { padding: 8px 24px 20px; }
+.docai-tab-editor .docai-edhead { margin-bottom: 8px; }
+.docai-tab-editor .docai-canvas { padding: 18px 12px 28px; }

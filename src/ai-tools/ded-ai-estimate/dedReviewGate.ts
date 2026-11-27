@@ -19,8 +19,14 @@
  * 5. Full AI: padanan AHSP TIDAK bisa dipilih di dalam mode (mode ini
  *    tidak mengakses katalog AHSP) — user mengakui harga Estimasi AI
  *    lewat gerbang, atau menjalankan ulang di mode EZRAB AI.
- * Keputusan owner no. 3 (tombol "Tandai semua sudah ditinjau") masih
- * TERBUKA — default fail-closed: wajib centang satu per satu.
+ * Keputusan owner no. 3 (tombol "Tandai semua sudah ditinjau") —
+ * DITUTUP 2026-11-27 lewat mockup DED RAB AI: FullAiResultView kini
+ * punya tombol "Centang Semua Item Asumsi" / "Batalkan Centang Semua"
+ * (helper `allGateItemIds` di bawah). Fail-closed dipertahankan:
+ * gerbang tetap menuntut SEMUA entri dicentang; tombol itu hanya
+ * mencentang semuanya dalam satu aksi eksplisit pengguna, bukan
+ * mencentang otomatis. Jalur standar (DedAiResultView) belum
+ * menerapkannya — gerbangnya tetap centang satu per satu.
  *
  * Gerbang ini LAPISAN TAMBAHAN di atas validasi fail-closed yang ada
  * (dedFinalizeValidation.ts): item terblokir (tanpa kuantitas/harga)
@@ -356,6 +362,17 @@ export function reviewedCount(
   checkedIds: ReadonlySet<string>,
 ): number {
   return gateItems.filter((g) => checkedIds.has(g.itemId)).length;
+}
+
+/**
+ * Semua id entri gerbang — untuk tombol "Centang Semua Item Asumsi"
+ * (mockup DED RAB AI): satu aksi eksplisit pengguna mencentang
+ * seluruh daftar tinjau, dan "Batalkan Centang Semua" menghapus
+ * centang yang sama. Murni daftar id; view yang memutuskan kapan
+ * memakainya.
+ */
+export function allGateItemIds(gateItems: ReviewGateItem[]): string[] {
+  return gateItems.map((g) => g.itemId);
 }
 
 /**
