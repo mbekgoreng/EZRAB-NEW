@@ -21,12 +21,21 @@
  * permintaan yang SUDAH menyebut spek (ukuran/tipe/luas). Cabang
  * advisory hanya aktif bila keputusan ukuran/tipe didelegasikan ke AI
  * (budget disebut + frasa saran + rumah, TANPA ukuran/tipe eksplisit).
+ *
+ * ARAH OWNER 2026-11-28 15:06 (Option B): jawaban advisory DISUSUN Full AI
+ * dari data hitungan di bawah (angka dari EZRAB, kalimat dari AI) — bukan
+ * lagi balasan template deterministik. computeBudgetAdvisory tetap SATU-
+ * SATUNYA sumber angka; formatBudgetAdvisoryMessage tetap ada sebagai
+ * FALLBACK bila panggilan Full AI gagal / jawabannya tidak memuat total
+ * utama digit-per-digit (angka dikarang / dump katalog). buildBudget-
+ * AdvisoryFullAiPrompt menyusun prompt grounding untuk model; view yang
+ * mengirimnya ke pipeline Chat AI dan memeriksa angka totalnya.
  */
 
 import { buildDirectRab, getLastDirectRab, setLastDirectRab } from './directRab';
 import type { DirectRabResult } from './directRab';
 import { HouseTypeCatalog } from '../../data/houseTypeCatalog';
-import { extractRabNeeds, parseBudgetMentions, stripLandPhrases } from './rabNeeds';
+import { extractRabNeeds, parseBudgetMentions, stripLandPhrases, BUDGET_UNIT_FACTORS } from './rabNeeds';
 import type { RabNeeds } from './rabNeeds';
 import { formatRupiah } from './budgetFeasibility';
 
@@ -84,6 +93,110 @@ export function detectBudgetAdvisoryIntent(rawText: string): BudgetAdvisoryDetec
   if (DIM_RE.test(stripped)) return null;
   const needs = extractRabNeeds(stripped);
   return { budgetIdr, floors: needs.floors ?? null, floorsMentioned: needs.floors != null };
+}
+
+/* ------------------------------------------------------------------ */
+/* Konteks advisory sesi + deteksi follow-up (Option B, 2026-11-28).    */
+/*                                                                        */
+/* Masalah yang diperbaiki (diagnosis read-only 2026-11-28): follow-up  */
+/* "jika saya ada 200jt?" / "jika 2 lantai?" jatuh UNKNOWN. Dua sebab:   */
+/* (1) "200jt" telanjang tidak diparse parseBudgetMentions (butuh kata   */
+/* kunci budget atau "Rp"); (2) "jika 2 lantai?" diparse (floors=2)     */
+/* tapi ditelan blok refinement kebutuhan di view SEBELUM routeIntent,   */
+/* karena case advisory sendiri menyimpan setLastRabNeeds — jebakan yang */
+/* dipasang jawabannya sendiri. Slot konteks di bawah + gate di view     */
+/* (sebelum blok refinement) + hook routeIntent menutup keduanya.        */
+/* ------------------------------------------------------------------ */
+
+export interface BudgetAdvisoryContext {
+  projectId: string | null;
+  budgetIdr: number;
+  floors: number;
+  needs: RabNeeds;
+  at: number;
+}
+
+let lastBudgetAdvisoryContext: BudgetAdvisoryContext | null = null;
+
+export function getLastBudgetAdvisoryContext(projectId: string | null): BudgetAdvisoryContext | null {
+  if (!lastBudgetAdvisoryContext) return null;
+  if (lastBudgetAdvisoryContext.projectId !== projectId) return null;
+  return lastBudgetAdvisoryContext;
+}
+
+export function setLastBudgetAdvisoryContext(ctx: BudgetAdvisoryContext): void {
+  lastBudgetAdvisoryContext = ctx;
+}
+
+export function clearBudgetAdvisoryContext(): void {
+  lastBudgetAdvisoryContext = null;
+}
+
+/** Budget telanjang ("200jt", "kalau 599jt?", "200jt gimana?") — pola
+ *  longgar yang HANYA aman di dalam konteks advisory aktif (di luar
+ *  konteks, "200jt" bisa berarti apa saja). Satuan "m" (meter) SENGAJA
+ *  tidak diterima — "200m" ambigu dengan 200 meter. */
+const BARE_BUDGET_RE = /(\d+(?:[.,]\d+)?)\s*(jt|juta|miliar|milyar|rb|ribu|k)\b/i;
+
+export function parseBareBudgetMention(rawText: string): number | null {
+  const m = (rawText ?? '').match(BARE_BUDGET_RE);
+  if (!m) return null;
+  const v = parseFloat(m[1].replace(',', '.'));
+  if (!Number.isFinite(v) || v <= 0) return null;
+  const factor = BUDGET_UNIT_FACTORS[m[2].toLowerCase()] ?? 1;
+  return Math.round(v * factor);
+}
+
+export interface BudgetAdvisoryFollowUp {
+  budgetIdr: number;
+  floors: number | null;
+  floorsMentioned: boolean;
+  /** Needs hasil gabungan (konteks lama + revisi baru). */
+  needs: RabNeeds;
+}
+
+/** Jenis pekerjaan BARU — follow-up yang mengganti jenis bukan lagi
+ *  advisory rumah (mis. "200jt untuk gudang?"). */
+const NEW_KIND_RE = /\b(gudang|jembatan|drainase|jalan|kantor|mall|ruko|kolam|taman|villa|gedung|renovasi|sekolah|masjid|pabrik)\b/i;
+const FICTION_FOLLOWUP_RE = /\b(fiksi|khayalan|khayal|fantasi|dongeng|seandainya|andaikan)\b|\bdi\s+mars\b|\bplanet\b|\bberandai\b/i;
+
+export function detectBudgetAdvisoryFollowUp(
+  rawText: string,
+  context: BudgetAdvisoryContext | null,
+): BudgetAdvisoryFollowUp | null {
+  const raw = rawText ?? '';
+  if (!raw.trim() || !context) return null;
+  if (FULL_AI_RE.test(raw)) return null;
+  if (DED_RE.test(raw)) return null;
+  if (FICTION_FOLLOWUP_RE.test(raw)) return null;
+  const stripped = stripLandPhrases(raw);
+  if (NEW_KIND_RE.test(stripped)) return null;
+  // Spek eksplisit = echo-first, bukan follow-up advisory.
+  if (TYPE_NUM_RE.test(stripped)) return null;
+  if (AREA_NUM_RE.test(stripped)) return null;
+  if (DIM_RE.test(stripped)) return null;
+  const bareBudget = parseBareBudgetMention(raw);
+  const needs = extractRabNeeds(stripped);
+  const paramRevision =
+    needs.floors != null || needs.bedrooms != null || needs.bathrooms != null || needs.location != null;
+  if (bareBudget == null && !paramRevision) return null;
+  // Gabung: budget baru menang, bila tidak ada pakai konteks; parameter
+  // baru menimpa konteks, sisanya dipertahankan (lantai dibawa saat
+  // hanya budget berubah, budget dibawa saat hanya lantai berubah).
+  const merged: RabNeeds = {
+    ...context.needs,
+    floors: needs.floors ?? context.needs.floors ?? context.floors,
+    floorsMentioned: needs.floors != null ? true : context.needs.floorsMentioned,
+    bedrooms: needs.bedrooms ?? context.needs.bedrooms,
+    bathrooms: needs.bathrooms ?? context.needs.bathrooms,
+    location: needs.location ?? context.needs.location,
+  };
+  return {
+    budgetIdr: bareBudget ?? context.budgetIdr,
+    floors: merged.floors ?? null,
+    floorsMentioned: merged.floorsMentioned,
+    needs: merged,
+  };
 }
 
 /* ------------------------------------------------------------------ */
@@ -397,6 +510,120 @@ export function formatBudgetAdvisoryMessage(comp: BudgetAdvisoryComputation): st
     'Mau lanjut dengan yang mana? Pilih di bawah — saya susun RAB lengkapnya.',
   );
   return lines.join('\n');
+}
+
+/* ------------------------------------------------------------------ */
+/* Prompt grounding Full AI (Option B, 2026-11-28) + pemeriksaan angka.  */
+/*                                                                        */
+/* Model MENYUSUN jawaban dari DATA HITUNGAN di bawah — angka-angka itu  */
+/* SATU-SATUNYA yang boleh muncul sebagai total/harga. Instruksi         */
+/* "jangan memanggil tool" ada karena model di chat punya tool            */
+/* cari_template_rab; bila ia tetap memanggilnya, jawabannya jadi dump   */
+/* katalog — dan pemeriksaan digit total utama di view (di bawah) akan   */
+/* menggagalkannya ke fallback deterministik.                             */
+/* ------------------------------------------------------------------ */
+
+function optionDataLine(o: AdvisoryOption): string {
+  const size = o.viaAreaAdaptation
+    ? `${o.areaM2} m² (basis Type ${o.basisType})`
+    : `Type ${o.basisType} (${o.areaM2} m²)`;
+  return `- Rumah ${size}, ${o.floors} lantai — Total RAB ${formatRupiah(o.totalRabCost)}${partialNote(o)}`;
+}
+
+export function buildBudgetAdvisoryFullAiPrompt(comp: BudgetAdvisoryComputation, userText: string): string {
+  const budgetRp = formatRupiah(comp.budgetIdr);
+  const lines: string[] = [
+    'Anda adalah AI EZRAB, asisten estimasi konstruksi. Jawab dalam Bahasa Indonesia.',
+    '',
+    `PERTANYAAN PENGGUNA: "${(userText ?? '').trim()}"`,
+    '',
+    'DATA HITUNGAN EZRAB — satu-satunya sumber angka untuk jawaban ini. Pakai angka-angka di bawah ini PERSIS, digit per digit. JANGAN mengarang angka, harga, atau total lain. JANGAN memanggil tool apa pun — semua data yang kamu butuhkan SUDAH ADA di bawah; jawab LANGSUNG dari data ini.',
+    '',
+    `Budget pengguna: ${budgetRp}`,
+    `Jumlah lantai: ${comp.floors}`,
+  ];
+  if (!comp.cheapest) {
+    lines.push(
+      `Template terdaftar: TIDAK ADA template rumah untuk ${comp.floors} lantai di katalog EZRAB.`,
+      '',
+      'CARA MENJAWAB: katakan dengan jujur bahwa belum ada template rumah terdaftar untuk jumlah lantai itu, jadi kamu tidak bisa menghitung rekomendasi dari data — dan jangan mengarang angkanya. Sarankan menyusun manual lewat RAB & Estimasi, atau menyebutkan 1–2 lantai.',
+    );
+    return lines.join('\n');
+  }
+  const primary = comp.primary;
+  if (!primary) {
+    const cheapest = comp.cheapest;
+    const gap = cheapest.totalRabCost - comp.budgetIdr;
+    lines.push(
+      `Rekomendasi yang muat: TIDAK ADA — budget belum cukup untuk rumah dari katalog EZRAB.`,
+      `Tipe standar terkecil: ${optionDataLine(cheapest)}`,
+      `Selisih yang masih kurang: ${formatRupiah(gap)}.`,
+    );
+    if (comp.smallestLadder) {
+      lines.push(`Rumah paling kecil yang bisa dihitung dari template yang sama: ${optionDataLine(comp.smallestLadder)}`);
+    }
+    lines.push(
+      `Dihitung dari: template parametrik EZRAB (${cheapest.templateName}), AHSP 2026, indeks harga ${cheapest.regionIsDefault ? `${cheapest.region} (default — lokasi tidak disebutkan)` : cheapest.region}.`,
+      '',
+      'CARA MENJAWAB: katakan dengan jujur bahwa budget belum bisa membangun rumah dari katalog EZRAB. Sebutkan tipe standar terkecil beserta totalnya dan selisih yang masih kurang — semua dengan angka dari data di atas. Bila ada rumah paling kecil yang bisa dihitung, sebutkan totalnya dan budget minimal yang dibutuhkan. Jangan memaksakan rekomendasi yang muat. Jangan meminta luas bangunan atau ukuran tanah. Tutup dengan menawarkan hitung ulang bila budget ditambah, atau susun manual.',
+    );
+    return lines.join('\n');
+  }
+  lines.push(`Rekomendasi utama: ${optionDataLine(primary)}`);
+  if (primary.viaAreaAdaptation && comp.cheapest) {
+    lines.push(
+      `Basis rekomendasi utama: template Type ${primary.basisType} dengan denah diskalakan ke ${primary.areaM2} m² — tipe standar terkecil (Type ${comp.cheapest.basisType}, ${comp.cheapest.areaM2} m²) totalnya ${formatRupiah(comp.cheapest.totalRabCost)}, di atas budget ${formatRupiah(comp.cheapest.totalRabCost - comp.budgetIdr)}, jadi bukan rekomendasi utama.`,
+    );
+  }
+  if (primary.costPerM2 != null) {
+    lines.push(`Biaya per m² rekomendasi utama: ±${formatRupiah(primary.costPerM2)}/m².`);
+  }
+  lines.push(`Sisa budget bila memakai rekomendasi utama: ${formatRupiah(comp.budgetIdr - primary.totalRabCost)}.`);
+  const alternatives = comp.fitting.filter((o) => o !== primary).slice(0, 2);
+  if (alternatives.length > 0) {
+    lines.push('Alternatif lain yang juga muat di budget:');
+    for (const alt of alternatives) lines.push(optionDataLine(alt));
+  }
+  const regionNote = primary.regionIsDefault
+    ? `${primary.region} (default — lokasi tidak disebutkan)`
+    : primary.region;
+  const assumptions: string[] = [];
+  assumptions.push(
+    comp.floorsMentioned
+      ? `${comp.floors} lantai (pengguna menyebutkan)`
+      : `${comp.floors} lantai (asumsi — tidak disebutkan; koreksi bila berbeda)`,
+  );
+  if (primary.bedrooms != null && primary.bathrooms != null) {
+    assumptions.push(
+      `kamar tidur ${primary.bedrooms} dan kamar mandi ${primary.bathrooms} mengikuti default template`,
+    );
+  }
+  assumptions.push('biaya pembelian tanah tidak termasuk dalam RAB ini');
+  lines.push(
+    `Dihitung dari: template parametrik EZRAB (${primary.templateName}), AHSP 2026, indeks harga ${regionNote}.`,
+    `Asumsi: ${assumptions.join('; ')}.`,
+    '',
+    'CARA MENJAWAB:',
+    `1. Buka dengan kalimat: "Dengan budget ${budgetRp}, menurut perhitungan saya Anda bisa membangun rumah dengan ukuran ${primary.areaM2} m² dan tipe ${primary.basisType} (${primary.floors} lantai) — Total RAB ${formatRupiah(primary.totalRabCost)}${partialNote(primary)}" — angka-angka di kalimat ini HARUS sama persis dengan data di atas.`,
+    '2. Sebutkan biaya per m², sisa budget, dan alternatif yang muat — semua dengan angka dari data di atas.',
+    '3. Sebutkan dasar perhitungan dan asumsi seperti di data.',
+    '4. Tutup dengan menanyakan mana yang mau dilanjutkan.',
+    '5. Jangan menambah angka, harga, atau total lain di luar data di atas. Jangan meminta luas bangunan, ukuran tanah, atau jumlah lantai — semua sudah diputuskan dari data.',
+  );
+  return lines.join('\n');
+}
+
+/** Apakah balasan tersusun memuat angka `amount` digit-per-digit
+ *  (format Rp bebas — "Rp183.726.930", "Rp 183.726.930", "183726930"
+ *  semua lolos; "183.726.931" tidak). Dipakai view untuk menggagalkan
+ *  jawaban yang mengarang total / dump katalog ke fallback. */
+export function replyContainsFigure(reply: string, amount: number): boolean {
+  const target = String(Math.round(amount));
+  for (const m of (reply ?? '').matchAll(/[\d.,]+/g)) {
+    const digits = m[0].replace(/[.,]/g, '');
+    if (digits === target) return true;
+  }
+  return false;
 }
 
 export interface BudgetAdvisoryAction {

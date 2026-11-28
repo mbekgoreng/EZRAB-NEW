@@ -166,6 +166,7 @@ import {
 import { buildRevealPlan, summarizeReveal, shouldRevealEntry, formatRupiah as formatRevealRupiah, type RevealPlan } from './streamingReveal';
 import './streaming.css';
 import { looksLikeNeedsAnswer, parseFloorsMention } from './rabNeeds';
+import { detectBudgetAdvisoryFollowUp, getLastBudgetAdvisoryContext, replyContainsFigure } from './budgetAdvisory';
 import { extractRabIntentSpec } from './rabIntentSpec';
 import { notificationBus } from '../../notifications/notificationBus';
 import { navigateTo, paths, routeForMenu } from '../../routing/routes';
@@ -576,6 +577,21 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
    *  (lewati router lokal) — prompt-nya memang berbentuk perintah RAB yang
    *  akan tertangkap CREATE_RAB_SUMMARY bila dirutekan ulang. */
   const forceAiRef = useRef(false);
+  /** Advisory Full AI (2026-11-28, Option B): payload sekali-pakai
+   *  untuk jawaban tersusun Full AI — tombol Lanjut + pesan fallback
+   *  deterministik + angka grounding (total utama). Disetel cabang
+   *  lokal RAB_BUDGET_ADVISORY, dikonsumsi oleh pengiriman pipeline
+   *  yang sama (forcedAi) saat entry jawaban dibangun — sukses +
+   *  total utama muncul digit-per-digit → tombol menempel; gagal /
+   *  kosong / total tidak muncul → fallback deterministik. Selalu
+   *  dibersihkan bila pengiriman itu disalip/dibatalkan, agar tidak
+   *  pernah bocor ke pengiriman lain. */
+  const pendingAdvisoryFullAiRef = useRef<{
+    fallbackMessage: string;
+    actions: ChatActionButton[];
+    primaryTotal: number | null;
+    budgetIdr: number;
+  } | null>(null);
   /** Teks user terakhir yang BENAR-BENAR dikirim ke pipeline AI
    *  (diisi tepat sebelum service.send — bukan pada jawaban lokal
    *  registry). Target tombol "Coba Lagi" pada pesan error AI. */
@@ -3274,13 +3290,24 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       }
       setAwaitingConcept(false);
     }
+    /* ---- Follow-up advisory budget (2026-11-28, Option B) ----
+     * Selama konteks advisory aktif, revisi budget/lantai ("jika saya
+     * ada 200jt?", "jika 2 lantai?") adalah pertanyaan advisory
+     * lanjutan, BUKAN jawaban kebutuhan — kedua blok refinement di
+     * bawah tidak boleh menelannya. (hasActiveRabNeeds true karena
+     * case advisory sendiri menyimpan setLastRabNeeds — tanpa gate
+     * ini, "jika 2 lantai?" ditelan continueRabNeeds dan berakhir
+     * meminta luas tanah.) Gate ini murni boolean; eksekusinya tetap
+     * lewat routeIntent → RAB_BUDGET_ADVISORY di bawah. */
+    const isAdvisoryFollowUp = !forcedAi &&
+      detectBudgetAdvisoryFollowUp(msg, getLastBudgetAdvisoryContext(effProject?.id ?? null)) != null;
     /* ---- Chat-to-RAB Fase 2: jawaban atas "Lengkapi kebutuhan" ----
      * Bila chat sedang menunggu kelengkapan dan pesan ini berbentuk jawaban
      * (lantai/dimensi/kamar), gabungkan ke ringkasan — jangan lempar ke AI.
      * Scope eksplisit (null = global): tanpa ini, di chat global
      * projectId undefined lolos sebagai "tanpa filter" dan kebutuhan
      * proyek lain bisa terbaca (B-gap-3). */
-    if (!forcedAi && awaitingNeeds) {
+    if (!forcedAi && !isAdvisoryFollowUp && awaitingNeeds) {
       setAwaitingNeeds(false);
       if (looksLikeNeedsAnswer(msg)) {
         try {
@@ -3300,7 +3327,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
      * karena flag awaitingNeeds (yang kini juga disetel ringkasan
      * pertama) sedang tidak aktif. Perintah baru berbentuk perintah
      * tidak tertangkap looksLikeNeedsAnswer dan diproses normal. */
-    if (!forcedAi && hasActiveRabNeeds(effProject?.id ?? null)) {
+    if (!forcedAi && !isAdvisoryFollowUp && hasActiveRabNeeds(effProject?.id ?? null)) {
       const fin = continueRabFinalize(msg, effProject?.id ?? null);
       if (fin) {
         try {
@@ -3790,6 +3817,46 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
           if (res.awaitRabMaterial) setAwaitingMaterial(true);
           if (res.awaitProjectConcept) setAwaitingConcept(true);
           if (res.awaitClarify) setAwaitingClarify(res.awaitClarify);
+          // Full AI prompt dari registry (2026-11-28, Option B — advisory
+          // budget; pola yang sama dengan klik tombol "Full AI"): prompt
+          // grounding dikirim ke pipeline Chat AI, BUKAN ditempel sebagai
+          // jawaban lokal. Resubmit ditunda satu tick agar busy pengiriman
+          // ini sudah bersih (guard busy submit menolak pemanggilan
+          // rekursif langsung); echo=false supaya prompt grounding tidak
+          // muncul sebagai gelembung user (gelembung aslinya — pertanyaan
+          // pengguna — sudah tampil). Untuk advisory, payload sekali-pakai
+          // (tombol Lanjut + fallback + angka grounding) dititipkan ke
+          // ref agar menempel di balon jawaban tersusun nanti; intent
+          // lain yang membawa fullAiPrompt (fallback RAB_FULL_AI teks)
+          // tetap dikirim tanpa payload itu.
+          if (res.fullAiPrompt) {
+            const isAdvisory = routed.intent === 'RAB_BUDGET_ADVISORY';
+            if (isAdvisory) {
+              pendingAdvisoryFullAiRef.current = {
+                fallbackMessage: res.message,
+                actions: res.actions ?? [],
+                primaryTotal: res.budgetAdvisory?.primaryTotal ?? null,
+                budgetIdr: res.budgetAdvisory?.budgetIdr ?? 0,
+              };
+            }
+            forceAiRef.current = true;
+            const fullAiPrompt = res.fullAiPrompt;
+            const fallbackActions = res.actions && res.actions.length > 0 ? res.actions : undefined;
+            setTimeout(() => {
+              if (busyRef.current) {
+                // Seseorang mengirim duluan dalam jeda satu tick —
+                // jangan biarkan payload bocor ke pengiriman lain:
+                // jawab pesan registry sekarang (advisory: fallback
+                // deterministik yang angkanya tetap benar; lainnya:
+                // perilaku lama).
+                pendingAdvisoryFullAiRef.current = null;
+                void postLocalAssistantPaced(res.message, { actions: fallbackActions, kind: 'rab' });
+                return;
+              }
+              void submit(fullAiPrompt, { echo: false });
+            }, 0);
+            return;
+          }
           // Action buttons — attached to the assistant message
           const entryActions = res.actions && res.actions.length > 0 ? res.actions : undefined;
           const delivered = await postAssistant(reply, entryActions, res.questionnaire, res.planId);
@@ -4005,7 +4072,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       // eksplisit dicatat jujur sebagai "Permintaan dibatalkan."
       // (noteCancelledIfNeeded no-op bila status bukan cancelled),
       // eksekusi yang disalip tetap diam seperti sebelumnya.
-      if (!llmExec.isCurrent()) { noteCancelledIfNeeded(); endExec(); return; }
+      if (!llmExec.isCurrent()) { pendingAdvisoryFullAiRef.current = null; noteCancelledIfNeeded(); endExec(); return; }
       // S3-C (F1): scope kirim dari record eksekusi (conversationId +
       // projectId ASAL — sudah ada di record, tanpa plumbing baru),
       // di-resolve lewat pemetaan migrasi B5-3 (DEFECT-1). Semua tulis
@@ -4112,15 +4179,42 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       if (!res.success) {
         res.reply = formatAiFailureMessage(res.reply, (res as any).errorCode ?? null);
       }
+      // Advisory Full AI (2026-11-28, Option B): konsumsi payload
+      // sekali-pakai pengiriman ini (hanya bila pengiriman ini memang
+      // forcedAi — pengiriman biasa tidak pernah menyentuhnya).
+      const advisoryPending = forcedAi ? pendingAdvisoryFullAiRef.current : null;
+      pendingAdvisoryFullAiRef.current = null;
+      let advisoryFallback = false;
+      if (advisoryPending) {
+        const replyText = res.reply ?? '';
+        // Total utama HARUS muncul digit-per-digit — bila tidak, model
+        // mengarang angka / membalas dump katalog / kosong. Jawaban
+        // yang ditahan gate kualitas (heldReplyNotice) juga jatuh ke
+        // fallback: pesan deterministik itu berbasis data dan lolos
+        // gate dengan sendirinya (teruji di suite).
+        const hasPrimary =
+          advisoryPending.primaryTotal == null ||
+          replyContainsFigure(replyText, advisoryPending.primaryTotal);
+        if (!res.success || !replyText.trim() || !hasPrimary || heldReplyNotice) {
+          res.reply = advisoryPending.fallbackMessage;
+          heldReplyNotice = null;
+          advisoryFallback = true;
+        }
+      }
+      const advisoryActions =
+        advisoryPending && advisoryPending.actions.length > 0 ? advisoryPending.actions : undefined;
       const assistantEntry: ChatEntry = {
         role: 'assistant',
         content: res.reply,
-        isError: !res.success,
+        isError: !res.success && !advisoryFallback,
         fromAi: true,
         model: (res as any).model,
         ts: Date.now(),
         creditsUsed: res.success && charged ? simUsed : undefined,
         planId: newPlans[0]?.id,
+        // Tombol Lanjut advisory (angka sama persis dengan jawaban —
+        // param tombol mereproduksi total dari mesin).
+        actions: advisoryActions,
         // D-50 (16 Nov 2026): saran lanjutan dari service.send —
         // ditempel LANGSUNG ke entry (tanpa salin/serialisasi ulang
         // sebelum render; persistMessage di bawah hanya menyimpan
@@ -4152,15 +4246,22 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       // asal, pelacak proyek lain tidak boleh ditimpa/dibersihkan
       // (retry di percakapan tampil tidak boleh menarget error A).
       if (replyDisplayed) lastAiErrorMessageIdRef.current = res.success ? null : persistedReplyId;
+      // Advisory fallback bukan error: pelacak di atas (literal yang
+      // dipin suite F-04 — JANGAN ubah bentuknya) sempat menunjuk id
+      // fallback; bersihkan agar retry nanti tidak menggantikan jawaban
+      // yang sudah benar.
+      if (replyDisplayed && advisoryFallback) lastAiErrorMessageIdRef.current = null;
       for (const extra of newPlans.slice(1)) {
         if (replyDisplayed) setMessages((prev) => [...prev, { role: 'assistant', content: extra.previewText, ts: Date.now(), planId: extra.id }]);
         persistMessageScoped('assistant', extra.previewText, sendScope);
       }
       notificationBus.publish({
-        type: heldReplyNotice ? 'error' : res.success ? 'success' : 'error',
-        title: heldReplyNotice
-          ? 'Jawaban AI ditahan — tidak lolos pemeriksaan kualitas'
-          : res.success ? t('ai.chat.notif_done') : t('ai.chat.notif_fail'),
+        type: advisoryFallback ? 'success' : heldReplyNotice ? 'error' : res.success ? 'success' : 'error',
+        title: advisoryFallback
+          ? t('ai.chat.notif_done')
+          : heldReplyNotice
+            ? 'Jawaban AI ditahan — tidak lolos pemeriksaan kualitas'
+            : res.success ? t('ai.chat.notif_done') : t('ai.chat.notif_fail'),
         message: msg.length > 90 ? `${msg.slice(0, 90)}…` : msg,
         link: 'ezrab-ai',
       });
@@ -4172,37 +4273,60 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       if (res.success && newPlans.length > 0) {
         emitExecutionStage(llmExec.record.requestId, 'awaiting-review');
       }
-      endExec(res.success ? 'completed' : 'failed', res.success ? undefined : (res.reply ?? 'AI gagal menjawab'));
+      endExec(res.success || advisoryFallback ? 'completed' : 'failed', res.success || advisoryFallback ? undefined : (res.reply ?? 'AI gagal menjawab'));
     } catch (err: any) {
       // Pembatalan EKSPLISIT pengguna (tombol Berhenti): catat penandanya,
       // bukan diam seperti abort-unmount lama. Error provider tetap
       // menunggu sisa minimum sebelum ditampilkan — dan tidak pernah
       // membuka wizard (cabang ini tidak punya aksi wizard).
       if (isAbortError(err)) {
+        // Pembatalan eksplisit pengguna: payload advisory dibuang —
+        // fallback TIDAK boleh tampil untuk permintaan yang dibatalkan.
+        pendingAdvisoryFullAiRef.current = null;
         noteCancelledIfNeeded();
         endExec();
         return;
       }
-      if (!(await gateWait())) { noteCancelledIfNeeded(); endExec(); return; }
+      if (!(await gateWait())) { pendingAdvisoryFullAiRef.current = null; noteCancelledIfNeeded(); endExec(); return; }
       // CHAT-08: wajah kegagalan yang sama seperti cabang !success —
-      // pesan error dipertahankan + panduan (tanpa emoji).
-      const errMsg = formatAiFailureMessage(err?.message ?? '', (err as any)?.code ?? (err as any)?.errorCode ?? null);
+      // pesan error dipertahankan + panduan (tanpa emoji). Advisory
+      // Full AI: provider gagal total → fallback deterministik + tombol
+      // Lanjut (angka tetap benar), bukan pesan error.
+      const advisoryPendingErr = forcedAi ? pendingAdvisoryFullAiRef.current : null;
+      pendingAdvisoryFullAiRef.current = null;
+      const errMsg = advisoryPendingErr
+        ? advisoryPendingErr.fallbackMessage
+        : formatAiFailureMessage(err?.message ?? '', (err as any)?.code ?? (err as any)?.errorCode ?? null);
+      const errActs = advisoryPendingErr && advisoryPendingErr.actions.length > 0 ? advisoryPendingErr.actions : undefined;
       // S3-C (F1/S3): pesan error milik percakapan ASAL (S3) — tulis ke
       // scope kirim, tampilkan + lacak id-nya hanya bila percakapan
       // asal masih tampil.
       const errScope = resolveSendScope({ conversationId: llmExec.record.conversationId, projectId: llmExec.record.projectId });
       const errDisplayed = isScopeDisplayed(errScope);
-      if (errDisplayed) setMessages((prev) => [...prev, { role: 'assistant', content: errMsg, isError: true, fromAi: true, ts: Date.now() }]);
+      // Advisory fallback bukan error: tampil sebagai jawaban biasa
+      // (dengan tombol Lanjut) dan TIDAK dilacak sebagai error untuk
+      // retry — "Coba Lagi" tidak berlaku untuk jawaban yang sudah
+      // benar; pengguna cukup bertanya lagi bila mau versi tersusun.
+      if (errDisplayed) {
+        setMessages((prev) => [...prev, {
+          role: 'assistant',
+          content: errMsg,
+          isError: !advisoryPendingErr,
+          fromAi: true,
+          ts: Date.now(),
+          actions: errActs,
+        }]);
+      }
       const persistedErrId = persistMessageScoped('assistant', errMsg, errScope);
       // F-6B: lacak id store error ini agar retry dapat menggantikannya.
-      if (errDisplayed) lastAiErrorMessageIdRef.current = persistedErrId;
+      if (errDisplayed && !advisoryPendingErr) lastAiErrorMessageIdRef.current = persistedErrId;
       notificationBus.publish({
-        type: 'error',
-        title: t('ai.chat.notif_error'),
+        type: advisoryPendingErr ? 'success' : 'error',
+        title: advisoryPendingErr ? t('ai.chat.notif_done') : t('ai.chat.notif_error'),
         message: errMsg.length > 140 ? `${errMsg.slice(0, 140)}…` : errMsg,
         link: 'ezrab-ai',
       });
-      endExec('failed', errMsg);
+      endExec(advisoryPendingErr ? 'completed' : 'failed', advisoryPendingErr ? undefined : errMsg);
     } finally {
       // Jaring pengaman: eksekusi selalu ditutup (idempotent) agar tidak
       // ada record 'generating' yang menggantung sesudah submit selesai.

@@ -24,7 +24,7 @@ import { hasNavNegation } from './navRegistry';
 // Cast `as unknown as Pattern[]` karena modul mengetikkan intent sebagai
 // string; nama intent diverifikasi runtime oleh chatCommandWiring.
 import { QTO_PATTERNS, CREATE_QTO_CLARIFICATION, SYNC_QTO_CLARIFICATION } from './commands/qtoCommands';
-import { detectBudgetAdvisoryIntent } from './budgetAdvisory';
+import { detectBudgetAdvisoryIntent, detectBudgetAdvisoryFollowUp, getLastBudgetAdvisoryContext } from './budgetAdvisory';
 import { EXPORT_CREDIT_PATTERNS } from './commands/exportCreditCommands';
 import { PROJECT_SETTINGS_PATTERNS, UPDATE_PROJECT_SETTINGS_CLARIFICATION } from './commands/projectSettingsCommands';
 import { DED_DOC_PATTERNS } from './commands/dedDocCommands';
@@ -633,6 +633,17 @@ export function routeIntent(rawInput: string): IntentResult {
   if (!fictionFramed) {
     const advisory = detectBudgetAdvisoryIntent(rawInput);
     if (advisory) {
+      return { intent: 'RAB_BUDGET_ADVISORY', confidence: 0.95, needsClarification: false, param: rawInput, localOnly: true };
+    }
+    // Follow-up advisory (Option B, 2026-11-28): revisi budget/lantai
+    // di dalam percakapan advisory ("jika saya ada 200jt?", "jika 2
+    // lantai?") merute ke intent yang sama. routeIntent tidak membawa
+    // konteks proyek — di sini hanya konteks global (projectId null)
+    // yang diperiksa; konteks ber-proyek ditangkap gate view sebelum
+    // blok refinement (lihat view.tsx). Detektor sendiri menolak bila
+    // tidak ada konteks aktif, jadi panggilan dingin tetap UNKNOWN.
+    const advisoryFollowUp = detectBudgetAdvisoryFollowUp(rawInput, getLastBudgetAdvisoryContext(null));
+    if (advisoryFollowUp) {
       return { intent: 'RAB_BUDGET_ADVISORY', confidence: 0.95, needsClarification: false, param: rawInput, localOnly: true };
     }
   }

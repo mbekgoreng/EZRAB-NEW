@@ -117,9 +117,13 @@ import type { UniversalDraft, OverBudgetDecision, WithinBudgetProposal } from '.
 import { formatRupiah } from './budgetFeasibility';
 import {
   detectBudgetAdvisoryIntent,
+  detectBudgetAdvisoryFollowUp,
+  getLastBudgetAdvisoryContext,
+  setLastBudgetAdvisoryContext,
   computeBudgetAdvisory,
   formatBudgetAdvisoryMessage,
   buildBudgetAdvisoryActions,
+  buildBudgetAdvisoryFullAiPrompt,
 } from './budgetAdvisory';
 import { getDraftProjectEnsurer } from './tempProject';
 import { authorizeChatAiMutation } from './mutationInventory';
@@ -396,6 +400,11 @@ export interface ActionResult {
   awaitClarify?: string;
   /** Prompt Full AI yang disusun dari kebutuhan terkumpul (dijalankan view) */
   fullAiPrompt?: string;
+  /** Budget-advisory Full AI (2026-11-28, Option B): angka grounding
+   *  untuk pemeriksaan jawaban tersusun di view — total utama harus
+   *  muncul digit-per-digit di balasan model, bila tidak fallback
+   *  deterministik yang dipakai. */
+  budgetAdvisory?: { primaryTotal: number | null; budgetIdr: number };
   /** ID plan operasi (ChangePlan) yang pratinjaunya ada pada pesan ini —
    *  view meneruskannya ke ChatEntry.planId sehingga kartu Konfirmasi
    *  Eksekusi ter-render (mutasi item deterministik 2026-11-17). */
@@ -5315,35 +5324,69 @@ export function executeIntent(
     }
 
     case 'RAB_BUDGET_ADVISORY': {
-      // Saran budget (2026-11-28, perintah owner 04:12): "budget 100jt,
-      // sebaiknya rumah tipe/ukuran berapa?" — pengguna mendelegasikan
-      // keputusan ukuran/tipe ke AI, jadi AI MENJAWAB dengan rekomendasi
-      // dari perhitungannya sendiri (template parametrik + AHSP 2026),
-      // BUKAN menanyakan balik ukuran yang didelegasikan. Cabang ini
-      // deterministik penuh (tanpa LLM) — jawaban tidak pernah datang
-      // dari pengetahuan model semata (aturan alur owner 04:20).
+      // Saran budget (2026-11-28, perintah owner 04:12; arah Option B
+      // 2026-11-28 15:06): "budget 100jt, sebaiknya rumah tipe/ukuran
+      // berapa?" — pengguna mendelegasikan keputusan ukuran/tipe ke AI.
+      // Jawaban DISUSUN Full AI dari data hitungan EZRAB (katalog +
+      // mesin parametrik + AHSP 2026): computeBudgetAdvisory tetap
+      // SATU-SATUNYA sumber angka; prompt grounding dibawa fullAiPrompt
+      // untuk dikirim view ke pipeline Chat AI; message di sini adalah
+      // FALLBACK deterministik bila panggilan Full AI gagal / jawabannya
+      // tidak memuat total utama. Follow-up ("jika saya ada 200jt?",
+      // "jika 2 lantai?") diterima lewat detektor konteks — validasi
+      // ulang via detectBudgetAdvisoryIntent saja akan mengembalikan
+      // null untuk keduanya dan jatuh ke rabSummaryResult (cacat live
+      // 2026-11-28 15:00/15:01).
       const rawAdv = ctx.rawText ?? param ?? '';
+      const projectId = ctx.activeProject?.id ?? null;
       const det = detectBudgetAdvisoryIntent(rawAdv);
+      const followUp = !det
+        ? detectBudgetAdvisoryFollowUp(rawAdv, getLastBudgetAdvisoryContext(projectId))
+        : null;
       // Pertahanan lapis-dalam: bila validasi ketat gagal di sini
       // (mis. tombol lama / teks berubah), jatuh ke ringkasan kebutuhan
       // seperti sebelumnya — tidak pernah menjawab saran tanpa data.
-      if (!det) return rabSummaryResult(rawAdv, undefined, ctx.activeProject?.id ?? null);
+      if (!det && !followUp) return rabSummaryResult(rawAdv, undefined, projectId);
+      const budgetIdr = det ? det.budgetIdr : (followUp?.budgetIdr ?? 0);
+      const floorsOverride = det ? det.floors : (followUp?.floors ?? null);
+      const userNeeds = followUp
+        ? followUp.needs
+        : extractRabNeeds(stripLandPhrases(rawAdv));
       // Anggaran + jenis tercatat di state sesi (cermin cabang rumah
       // CREATE_RAB_CLARIFY) agar giliran berikut + tombol "Lanjut"
       // membawa budget yang sama tanpa mengetik ulang.
       const intentSpec = extractRabIntentSpec(rawAdv);
+      if (!det && followUp && intentSpec.budgetIdr == null) {
+        // Follow-up tanpa kata kunci budget ("jika saya ada 200jt?")
+        // tidak diparse spek intent (butuh kata kunci/Rp) — budget
+        // hasil gabungan dibawa ke spek agar tidak hilang dari sesi.
+        intentSpec.budgetIdr = followUp.budgetIdr;
+      }
       const storedNeeds = specToRabNeeds(intentSpec);
       storedNeeds.kind = 'rumah';
       storedNeeds.kindLabel = 'Rumah Tinggal';
       setLastRabIntentSpec(intentSpec);
-      setLastRabNeeds(storedNeeds, ctx.activeProject?.id ?? null);
+      setLastRabNeeds(storedNeeds, projectId);
       if (rawAdv) lastRabRaw = rawAdv;
-      const userNeeds = extractRabNeeds(stripLandPhrases(rawAdv));
-      const comp = computeBudgetAdvisory(det.budgetIdr, userNeeds, det.floors);
+      const comp = computeBudgetAdvisory(budgetIdr, userNeeds, floorsOverride);
+      // Konteks advisory untuk follow-up berikutnya (budget + parameter
+      // hasil gabungan dibawa; proyek dicap agar tidak bocor lintas
+      // proyek — cermin setLastRabNeeds ber-scope).
+      setLastBudgetAdvisoryContext({
+        projectId,
+        budgetIdr: comp.budgetIdr,
+        floors: comp.floors,
+        needs: userNeeds,
+        at: Date.now(),
+      });
       return {
         ok: true,
+        // Fallback deterministik (dipakai view bila Full AI gagal /
+        // jawabannya tidak memuat total utama) — BUKAN jawaban utama.
         message: formatBudgetAdvisoryMessage(comp),
+        fullAiPrompt: buildBudgetAdvisoryFullAiPrompt(comp, rawAdv),
         actions: buildBudgetAdvisoryActions(comp),
+        budgetAdvisory: { primaryTotal: comp.primary?.totalRabCost ?? null, budgetIdr: comp.budgetIdr },
       };
     }
 
