@@ -115,6 +115,12 @@ import type { RabIntentSpec } from './rabIntentSpec';
 import { buildUniversalDraft, formatUniversalDraftMessage, extractUniversalSpec, getLastUniversalDraft, getLastUniversalDraftProjectId, setLastUniversalDraft, effectiveItems, isPriceValidForTotal, itemKey, computeTotals, overBudgetDecision, formatCostContributorLine, UNIVERSAL_DRAFT_PUSH_SENTENCE, looksLikeUniversalRevision, selectWithinBudgetScope, formatWithinBudgetProposal, snapshotVersion, rebuildWbsAttachment } from './universalRab';
 import type { UniversalDraft, OverBudgetDecision, WithinBudgetProposal } from './universalRab';
 import { formatRupiah } from './budgetFeasibility';
+import {
+  detectBudgetAdvisoryIntent,
+  computeBudgetAdvisory,
+  formatBudgetAdvisoryMessage,
+  buildBudgetAdvisoryActions,
+} from './budgetAdvisory';
 import { getDraftProjectEnsurer } from './tempProject';
 import { authorizeChatAiMutation } from './mutationInventory';
 import { appendMutationAuditRecord } from './mutationAuditLog';
@@ -5306,6 +5312,39 @@ export function executeIntent(
       // tiga tombol yang sama) agar klik "Pakai Template" juga
       // memastikan proyek sementara bila belum ada proyek aktif.
       return directRabTableResult(built);
+    }
+
+    case 'RAB_BUDGET_ADVISORY': {
+      // Saran budget (2026-11-28, perintah owner 04:12): "budget 100jt,
+      // sebaiknya rumah tipe/ukuran berapa?" — pengguna mendelegasikan
+      // keputusan ukuran/tipe ke AI, jadi AI MENJAWAB dengan rekomendasi
+      // dari perhitungannya sendiri (template parametrik + AHSP 2026),
+      // BUKAN menanyakan balik ukuran yang didelegasikan. Cabang ini
+      // deterministik penuh (tanpa LLM) — jawaban tidak pernah datang
+      // dari pengetahuan model semata (aturan alur owner 04:20).
+      const rawAdv = ctx.rawText ?? param ?? '';
+      const det = detectBudgetAdvisoryIntent(rawAdv);
+      // Pertahanan lapis-dalam: bila validasi ketat gagal di sini
+      // (mis. tombol lama / teks berubah), jatuh ke ringkasan kebutuhan
+      // seperti sebelumnya — tidak pernah menjawab saran tanpa data.
+      if (!det) return rabSummaryResult(rawAdv, undefined, ctx.activeProject?.id ?? null);
+      // Anggaran + jenis tercatat di state sesi (cermin cabang rumah
+      // CREATE_RAB_CLARIFY) agar giliran berikut + tombol "Lanjut"
+      // membawa budget yang sama tanpa mengetik ulang.
+      const intentSpec = extractRabIntentSpec(rawAdv);
+      const storedNeeds = specToRabNeeds(intentSpec);
+      storedNeeds.kind = 'rumah';
+      storedNeeds.kindLabel = 'Rumah Tinggal';
+      setLastRabIntentSpec(intentSpec);
+      setLastRabNeeds(storedNeeds, ctx.activeProject?.id ?? null);
+      if (rawAdv) lastRabRaw = rawAdv;
+      const userNeeds = extractRabNeeds(stripLandPhrases(rawAdv));
+      const comp = computeBudgetAdvisory(det.budgetIdr, userNeeds, det.floors);
+      return {
+        ok: true,
+        message: formatBudgetAdvisoryMessage(comp),
+        actions: buildBudgetAdvisoryActions(comp),
+      };
     }
 
     case 'CREATE_RAB_SUMMARY': {

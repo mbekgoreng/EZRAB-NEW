@@ -24,6 +24,7 @@ import { hasNavNegation } from './navRegistry';
 // Cast `as unknown as Pattern[]` karena modul mengetikkan intent sebagai
 // string; nama intent diverifikasi runtime oleh chatCommandWiring.
 import { QTO_PATTERNS, CREATE_QTO_CLARIFICATION, SYNC_QTO_CLARIFICATION } from './commands/qtoCommands';
+import { detectBudgetAdvisoryIntent } from './budgetAdvisory';
 import { EXPORT_CREDIT_PATTERNS } from './commands/exportCreditCommands';
 import { PROJECT_SETTINGS_PATTERNS, UPDATE_PROJECT_SETTINGS_CLARIFICATION } from './commands/projectSettingsCommands';
 import { DED_DOC_PATTERNS } from './commands/dedDocCommands';
@@ -61,6 +62,7 @@ export type ChatIntent =
   | 'RAB_PATH_TEMPLATE'
   | 'RAB_FULL_AI'
   | 'RAB_NEEDS_REFINE'
+  | 'RAB_BUDGET_ADVISORY'
   | 'OPEN_DESIGN_WORKSPACE'
   | 'CAPABILITIES'
   | 'KURVA_S'
@@ -619,6 +621,21 @@ export function routeIntent(rawInput: string): IntentResult {
     // SYNC_QTO "semua" justru perilaku yang diminta).
     'DELETE_PROJECT',
   ]);
+  // 2c. Saran budget (2026-11-28, perintah owner 04:12): "budget 100jt,
+  // sebaiknya rumah tipe/ukuran berapa?" — pengguna mendelegasikan
+  // keputusan ukuran/tipe ke AI. Deteksi deterministik (budget + frasa
+  // saran + rumah, tanpa ukuran/tipe eksplisit) SEBELUM pola
+  // CREATE_RAB_SUMMARY — kalau tidak, pesan ini jatuh ke ringkasan
+  // kebutuhan yang justru menanyakan balik ukuran yang diminta AI
+  // putuskan. Fiksi berbingkai tetap ke AI (penjaga yang sama dengan
+  // pola CREATE_RAB_*); "full ai" dan DED tidak diambil alih (dijaga
+  // di dalam detektor).
+  if (!fictionFramed) {
+    const advisory = detectBudgetAdvisoryIntent(rawInput);
+    if (advisory) {
+      return { intent: 'RAB_BUDGET_ADVISORY', confidence: 0.95, needsClarification: false, param: rawInput, localOnly: true };
+    }
+  }
   for (const p of PATTERNS) {
     if (fictionFramed && RAB_CREATE_INTENTS.has(p.intent)) continue;
     if (bulkMutationFramed && MUTATION_INTENTS.has(p.intent)) continue;
